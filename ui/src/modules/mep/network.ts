@@ -13,7 +13,7 @@ import { setMep, useMep } from './prefs';
 const SYSTEM_CLASS = 'IfcDistributionSystem';
 export const RUN_CLASSES = ['IfcPipeSegment', 'IfcDuctSegment', 'IfcCableSegment'];
 /** Every class a node or a run may be, for the tools that pick one and the sections that show one. */
-export const PICKABLE = [...RUN_CLASSES, 'IfcBoiler', 'IfcSpaceHeater', 'IfcPipeFitting', 'IfcFlowMeter', 'IfcValve', 'IfcSanitaryTerminal', 'IfcElectricDistributionBoard', 'IfcOutlet', 'IfcLightFixture', 'IfcSwitchingDevice', 'IfcFan', 'IfcAirTerminal'];
+export const PICKABLE = [...RUN_CLASSES, 'IfcBoiler', 'IfcSpaceHeater', 'IfcPipeFitting', 'IfcFlowMeter', 'IfcValve', 'IfcSanitaryTerminal', 'IfcElectricDistributionBoard', 'IfcOutlet', 'IfcLightFixture', 'IfcSwitchingDevice', 'IfcFan', 'IfcAirTerminal', 'IfcDistributionChamberElement', 'IfcBurner', 'IfcTank', 'IfcFilter'];
 
 interface RoleInfo {
   id: string; label: string; ifcClass: string; kind: 'source' | 'endpoint' | 'inline' | 'rise'; symbol: string;
@@ -24,6 +24,8 @@ interface ServiceInfo { id: string; label: string; defaults: Defaults }
 export interface Defaults {
   size: number; plane: 'floor' | 'ceiling' | 'wall'; floorElevation: number; ceilingElevation: number; wallElevation: number;
   slope: number; pair: boolean; separation: number; material: string | null; insulation: number; bendRadius: number;
+  /** A gas system's gas (natural, LPG) and pressure class (low, medium); null for the other services. */
+  gas?: 'natural' | 'lpg' | null; pressure?: 'low' | 'medium' | null;
 }
 export interface SystemInfo { id: string; name: string; service: string; defaults: Defaults; nodes: number; runs: number }
 type RunEnd = { nodeId: string; port: string } | { runId: string; station: number } | null;

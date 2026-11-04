@@ -6,7 +6,8 @@ import { setTool, useUi } from '../../app/store';
 import { useScope } from '../../platform/scope';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
-import { describeEnd, isRun, networkQuery, roleOf, serviceLabel, type NetworkSystem } from './network';
+import { describeEnd, isRun, networkQuery, roleOf, serviceLabel, systemsOf, type NetworkSystem } from './network';
+import { joinTargets } from './gas';
 import { mepHooks } from './hooks';
 import { setMep } from './prefs';
 import { editSystem } from './edit';
@@ -34,6 +35,8 @@ export function MepSection({ node }: { node: NodeDto }) {
   const role = run ? null : roleOf(node);
   const me = run ? net?.runs.find((r) => r.id === node.id) : null;
   const ports = run ? [] : net?.nodes.find((n) => n.id === node.id)?.ports ?? [];
+  // A node with an open port of another service joins that service's system by a run of its own (a heating system's gas boiler to the gas).
+  const joins = run || !service ? [] : joinTargets(ports, service, systemsOf(nodes).map((s) => ({ id: s.id, name: s.name, service: String(s.props.service) })));
   return (
     <div className="layers">
       <dl className="fields">
@@ -64,6 +67,7 @@ export function MepSection({ node }: { node: NodeDto }) {
         <div className="row" style={{ flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
           {!editing && <button type="button" className="btn small" disabled={!node.editable} onClick={() => editSystem(systemId)}><SquarePen size={13} /> Edit system</button>}
           {run && mepHooks.runActions && <mepHooks.runActions node={node} />}
+          {joins.map((s) => <button type="button" key={s.id} className="btn small" data-join-system={s.id} disabled={!node.editable} title="Joined to this system by a run of its own" onClick={() => void execute('mep.joinSystem', { systemId: s.id, nodeId: node.id })}><Plus size={13} /> {s.name}</button>)}
           {adds.map((r) => <button type="button" key={r} className="btn small" disabled={!node.editable} title={`Place a ${(roles().find((x) => x.id === r)?.label ?? r).toLowerCase()}, joined to the system where you click`} onClick={() => add(r)}><Plus size={13} /> {roles().find((x) => x.id === r)?.label ?? r}</button>)}
         </div>
       )}

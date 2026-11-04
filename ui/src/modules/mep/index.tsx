@@ -8,6 +8,7 @@
  * assistants) is mep-pro's, which adds its groups to this tab.
  */
 
+import { Box, Container, CookingPot, Cylinder, Filter, Fuel, GitBranchPlus, Heater, ShieldCheck, Waypoints } from 'lucide-react';
 import { AirVent, ArrowDownToLine, Ban, Bath, CircleDot, Droplets, Fan, Flame, Gauge, GitFork, Lightbulb, Link2, Milestone, PencilLine, Route, SquarePen, Waves, MoveVertical, Plug, ScanSearch, ShowerHead, Spline, Thermometer, ToggleLeft, Toilet, Unlink, Utensils, Wind, Workflow, Wrench, Zap, Map as MapIcon } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -23,6 +24,8 @@ import { MepSection } from './MepSection';
 import { SystemsDialog } from './SystemsDialog';
 import { editSystem, editedSystem, toggleEdit } from './edit';
 import { Background } from './Background';
+import { mainArgs } from './gas';
+import { LengthField } from '../../shell/cells';
 
 /** A role as its tool places it: its id in the engine's catalogue, the services it takes ("*": any), whether it sits on a run. */
 interface RoleTool { id: string; label: string; icon: Icon; services: string[]; inline?: boolean; shortcut?: string }
@@ -49,6 +52,23 @@ const ROLES: RoleTool[] = [
   { id: 'valve', label: 'Valve', icon: CircleDot, services: ['*'], inline: true },
   { id: 'rise', label: 'Rise / drop', icon: MoveVertical, services: ['*'] },
   { id: 'cap', label: 'Cap', icon: Ban, services: ['*'] },
+  // Gas: a residence's installation, from the meter box to the appliances; the street's tapping tee.
+  { id: 'meterBox', label: 'Meter box', icon: Box, services: ['gas'] },
+  { id: 'regulator', label: 'Gas regulator', icon: Gauge, services: ['gas'], inline: true },
+  { id: 'gasMeter', label: 'Gas meter', icon: Gauge, services: ['gas'], inline: true },
+  { id: 'gasShutoff', label: 'Main gas shut-off valve', icon: ShieldCheck, services: ['gas'], inline: true },
+  { id: 'gasTap', label: 'Appliance gas valve', icon: CircleDot, services: ['gas'], inline: true },
+  { id: 'flexConnector', label: 'Flexible connector', icon: Waypoints, services: ['gas', 'fuelOil'], inline: true },
+  { id: 'gasBoiler', label: 'Gas boiler', icon: Flame, services: ['gas', 'heating'] },
+  { id: 'cooker', label: 'Gas cooker', icon: CookingPot, services: ['gas'] },
+  { id: 'waterHeater', label: 'Gas water heater', icon: Heater, services: ['gas'] },
+  { id: 'tappingTee', label: 'Tapping tee', icon: GitBranchPlus, services: ['gas'], inline: true },
+  // Fuel oil: the tank, its fill point and vent cap, the filter, the oil boiler.
+  { id: 'oilTank', label: 'Fuel oil tank', icon: Cylinder, services: ['fuelOil'] },
+  { id: 'fillPoint', label: 'Fill point', icon: Fuel, services: ['fuelOil'] },
+  { id: 'ventCap', label: 'Vent cap', icon: Wind, services: ['fuelOil'] },
+  { id: 'oilFilter', label: 'Oil filter', icon: Filter, services: ['fuelOil'], inline: true },
+  { id: 'oilBoiler', label: 'Oil boiler', icon: Container, services: ['fuelOil', 'heating'] },
 ];
 const role = (id: string) => ROLES.find((r) => r.id === id)!;
 
@@ -95,8 +115,8 @@ const run: ToolDef = {
 };
 
 /** The class fields a run and a node have (one class may hold both: a stack is an IfcPipeSegment). */
-const RUN_FIELDS = ['size', 'height', 'elevation', 'plane', 'pair', 'separation', 'slope', 'material'];
-const NODE_FIELDS = ['role', 'x', 'y', 'rotation', 'elevation', 'width', 'depth', 'height', 'duty', 'toElevation'];
+const RUN_FIELDS = ['size', 'height', 'elevation', 'plane', 'pair', 'separation', 'slope', 'material', 'cover', 'warningTape'];
+const NODE_FIELDS = ['role', 'x', 'y', 'rotation', 'elevation', 'width', 'depth', 'height', 'duty', 'toElevation', 'consumption', 'flue', 'placement', 'capacity'];
 
 /** Connect: a run (its end nearer the click), then the node or run it joins. */
 const connect: ToolDef = {
@@ -142,6 +162,7 @@ const newSystem = (service: string, label: string, icon: Icon): ToolDef => ({
 const newSystems: ToolDef[] = [
   newSystem('heating', 'Heating', Flame), newSystem('coldWater', 'Water', Droplets), newSystem('hotWater', 'Hot water', Waves),
   newSystem('drainage', 'Drainage', ArrowDownToLine), newSystem('electrical', 'Electrical', Zap), newSystem('supplyAir', 'Ventilation', Wind),
+  newSystem('gas', 'Gas', Flame), newSystem('fuelOil', 'Fuel oil', Fuel),
 ];
 const edit: ToolDef = { id: 'mep.edit', label: 'Edit system', icon: SquarePen, shortcut: 'ES', run: () => toggleEdit(useMep.getState().systemId) };
 
@@ -240,6 +261,64 @@ const mepPlan: ToolDef = {
   }),
 };
 
+/** A gas main's offset to the left of its line and its cover, chosen in the command line's bar while the tool is on. */
+function MainOptions() {
+  const { mainOffset, mainDepth } = useMep();
+  return (
+    <span className="row" data-gas-main-options>
+      <span className="muted small">Offset from the line</span><LengthField metres={mainOffset} onCommit={(v) => { if (v != null) setMep({ mainOffset: v }); }} />
+      <span className="muted small">Depth (cover)</span><LengthField metres={mainDepth} min={0} onCommit={(v) => { if (v != null) setMep({ mainDepth: v }); }} />
+    </span>
+  );
+}
+
+/** A gas main along a road, an alignment, a drafted line or a wall: click it; the main lies at the offset to its left and the cover under the ground. */
+const gasMain: ToolDef = {
+  id: 'mep.gasMain', label: 'Gas main along…', icon: Waypoints, shortcut: 'GM',
+  gesture: { kind: 'pick', types: ['*'] },
+  options: MainOptions,
+  complete: async ({ entity }, ctx) => {
+    if (!entity) return;
+    const { mainOffset, mainDepth } = useMep.getState();
+    const r = await ctx.execute('mep.mainAlong', mainArgs({ alongId: entity.id }, mainOffset, mainDepth, ctx.storeyId)) as { id: string; systemId: string } | null;
+    if (r?.id) { setMep({ systemId: r.systemId }); useUi.setState({ selected: [r.id], selection: r.id }); }
+  },
+};
+
+/** A gas main drawn point by point (Enter finishes), at the cover under the ground. */
+const gasMainDrawn: ToolDef = {
+  id: 'mep.gasMainDrawn', label: 'Gas main', icon: Spline,
+  gesture: { kind: 'polyline' },
+  options: MainOptions,
+  complete: async ({ points }, ctx) => {
+    if (points.length < 2) return;
+    const { mainDepth } = useMep.getState();
+    const r = await ctx.execute('mep.mainAlong', mainArgs({ points }, 0, mainDepth, ctx.storeyId)) as { id: string; systemId: string } | null;
+    if (r?.id) { setMep({ systemId: r.systemId }); useUi.setState({ selected: [r.id], selection: r.id }); }
+  },
+};
+
+/** Service connection: the gas main, then the meter box; a tapping tee, the service pipe at its cover, the riser into the box. */
+const serviceConnection: ToolDef = {
+  id: 'mep.serviceConnection', label: 'Service connection', icon: GitBranchPlus, shortcut: 'GS',
+  gesture: { kind: 'pick', types: PICKABLE },
+  complete: async ({ points: [p], entity }) => {
+    if (!entity) return;
+    const main = useMep.getState().pendingMain;
+    if (!main) {
+      if (!isRun(entity)) { notify('Pick the gas main first.'); return; }
+      setMep({ pendingMain: entity.id });
+      notify('Now pick the meter box.');
+      return;
+    }
+    setMep({ pendingMain: null });
+    if (!isNode(entity)) { notify('Pick the meter box.'); return; }
+    const r = await execute('mep.serviceConnection', { mainId: main, toNodeId: entity.id, at: [p.x, p.y] }) as { id: string } | null;
+    if (r?.id) useUi.setState({ selected: [r.id], selection: r.id });
+  },
+};
+
+const gasSchedule = schedule('mep.scheduleGas', 'Gas and fuel oil bill of materials', 'mep-gas');
 const equipmentSchedule = schedule('mep.scheduleEquipment', 'Equipment list', 'mep-equipment');
 const runSchedule = schedule('mep.scheduleRuns', 'Run list', 'mep-runs');
 
@@ -289,13 +368,16 @@ const mep: LapinModule = {
     id: 'mep', label: 'MEP', order: 45,
     groups: [
       { label: 'New system', tools: [], small: newSystems },
-      { label: 'System', tools: [edit], small: [systems, mepPlan, openPorts, equipmentSchedule, runSchedule] },
+      { label: 'System', tools: [edit], small: [systems, mepPlan, openPorts, equipmentSchedule, runSchedule, gasSchedule] },
       { label: 'Runs', tools: [run], small: [connect, disconnect, addHandle, detour, redraw] },
       { label: 'Heating', tools: [], small: [nodeTool(role('boiler')), nodeTool(role('radiator')), nodeTool(role('manifold'))] },
       { label: 'Plumbing', tools: [], small: [nodeTool(role('basin')), nodeTool(role('wc')), nodeTool(role('sink')), nodeTool(role('shower')), nodeTool(role('bath')), nodeTool(role('waterMeter')), nodeTool(role('stack')), nodeTool(role('cleanout'))] },
       { label: 'Electrical', tools: [], small: [nodeTool(role('panel')), nodeTool(role('outlet')), nodeTool(role('light')), nodeTool(role('switch'))] },
       { label: 'Air', tools: [], small: [nodeTool(role('fan')), nodeTool(role('diffuser')), nodeTool(role('grille'))] },
       { label: 'Fittings', tools: [], small: [nodeTool(role('valve')), nodeTool(role('rise')), nodeTool(role('cap'))] },
+      { label: 'Gas', tools: [], small: [nodeTool(role('meterBox')), nodeTool(role('regulator')), nodeTool(role('gasMeter')), nodeTool(role('gasShutoff')), nodeTool(role('gasTap')), nodeTool(role('flexConnector')), nodeTool(role('gasBoiler')), nodeTool(role('cooker')), nodeTool(role('waterHeater'))] },
+      { label: 'Street', tools: [], small: [gasMain, gasMainDrawn, serviceConnection, nodeTool(role('tappingTee'))] },
+      { label: 'Fuel oil', tools: [], small: [nodeTool(role('oilTank')), nodeTool(role('fillPoint')), nodeTool(role('ventCap')), nodeTool(role('oilFilter')), nodeTool(role('oilBoiler'))] },
     ],
   }],
   hotbar: [run, nodeTool(role('radiator')), nodeTool(role('valve'))],

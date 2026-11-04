@@ -25,6 +25,8 @@ public static class Layout
         new(Services.Drainage, "stack", "wc", ["wc", "basin", "sink", "shower", "bath"]),
         new(Services.Electrical, "panel", "outlet", ["outlet", "light"]),
         new(Services.SupplyAir, "fan", "diffuser", ["diffuser"]),
+        new(Services.Gas, "meterBox", "gasBoiler", ["gasBoiler", "cooker", "waterHeater"]),
+        new(Services.FuelOil, "oilTank", "oilBoiler", ["oilBoiler", "fillPoint", "ventCap"]),
     ];
 
     public static SystemTemplate? TemplateOf(string service) => Templates.FirstOrDefault(t => t.Service == service);
@@ -44,12 +46,17 @@ public static class Layout
         return (system, source, endpoint, run);
     }
 
-    /// <summary>The endpoint's free port for the service: what it takes (supply), or what it gives (drainage).</summary>
-    static NodePort? FreePort(IModelView m, Entity node, string service)
+    /// <summary>
+    /// The endpoint's free port for the service: what it takes (supply), or
+    /// what it gives (drainage); else one the other way (a fill point gives
+    /// to its tank), with <c>Against</c> set: its run then flows from it.
+    /// </summary>
+    static (NodePort Port, bool Against)? FreePort(IModelView m, Entity node, string service)
     {
         var drain = service == Services.Drainage;
-        return Nodes.Ports(m, node).FirstOrDefault(p => Roles.Takes(p.Port, service) && !Runs.PortTaken(m, node, p.Port.Key)
-            && (p.Port.Flow == Flow.Both || (drain ? p.Port.Flow == Flow.Out : p.Port.Flow == Flow.In)));
+        var free = Nodes.Ports(m, node).Where(p => Roles.Takes(p.Port, service) && !Runs.PortTaken(m, node, p.Port.Key)).ToList();
+        if (free.FirstOrDefault(p => p.Port.Flow == Flow.Both || (drain ? p.Port.Flow == Flow.Out : p.Port.Flow == Flow.In)) is { } own) return (own, false);
+        return free.FirstOrDefault() is { } other ? (other, true) : null;
     }
 
     /// <summary>
@@ -62,18 +69,22 @@ public static class Layout
         var m = ctx.Model;
         var service = Systems.Service(system);
         var storey = Spatial.StoreyOf(m, node.Id)?.Id;
-        if (storey == null || FreePort(m, node, service) is not { } port) return null;
-        var drain = service == Services.Drainage;
+        if (storey == null || FreePort(m, node, service) is not { } free) return null;
+        var (port, against) = free;
+        // Drainage flows from the endpoint, and so does an endpoint that gives (a fill point to its tank).
+        var drain = (service == Services.Drainage) != against;
         var to = port.At.Xy;
         JsonObject? other = null; Vec2 from = default;
-        // A source's free port, or an inline fitting's (a meter where the supply enters).
-        var source = Nodes.Of(m, system.Id).Where(n => n.Id != node.Id && Nodes.RoleOf(n) is { IsSource: true } or { IsInline: true } && Spatial.StoreyOf(m, n.Id)?.Id == storey)
-            .SelectMany(n => Nodes.Ports(m, n).Where(p => Roles.Takes(p.Port, service) && !Runs.PortTaken(m, n, p.Port.Key)
+        // A source's free port, or an inline fitting's (a meter where the supply enters), of the same tag (a tank's fill for a fill point).
+        var source = Nodes.Of(m, system.Id).Where(n => n.Id != node.Id && Nodes.RoleOf(n)?.KindIn(service) is "source" or "inline" && Spatial.StoreyOf(m, n.Id)?.Id == storey)
+            .SelectMany(n => Nodes.Ports(m, n).Where(p => Roles.Takes(p.Port, service) && !Runs.PortTaken(m, n, p.Port.Key) && p.Port.Link == port.Port.Link
                 && (p.Port.Flow == Flow.Both || (drain ? p.Port.Flow == Flow.In : p.Port.Flow == Flow.Out))).Select(p => (Node: n, Port: p)))
             .OrderBy(x => (x.Port.At.Xy - to).Length).FirstOrDefault();
         if (source.Node != null) { other = new JsonObject { ["nodeId"] = source.Node.Id, ["port"] = source.Port.Port.Key }; from = source.Port.At.Xy; }
         else
         {
+            // A tagged port (a vent, a fill) is joined to its own port only, never teed onto the supply.
+            if (port.Port.Link != null) return null;
             var best = Runs.Of(m, system.Id).Where(r => Spatial.StoreyOf(m, r.Id)?.Id == storey).Select(r => (Run: r, Near: Pipes.Nearest(Runs.Points(r), to)))
                 .OrderBy(x => x.Near.Distance).FirstOrDefault();
             if (best.Run == null) return null;

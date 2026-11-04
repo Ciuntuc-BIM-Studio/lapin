@@ -55,6 +55,38 @@ W panelu Właściwości węzeł pokazuje swój system, rolę i porty (otwarte lu
 
 W eksporcie IFC każdy system jest IfcDistributionSystem, każdy węzeł i przewód ma swoje IfcDistributionPorts, a połączenia są zapisywane między portami, więc sieć trafia do innego programu połączona od źródła do ostatniego odbiornika.
 
+## Gaz i olej opałowy
+
+**Gaz** i **Olej opałowy** to osobne media w **Nowy system**. System gazowy podaje w **Systemy…** swój gaz (**Gaz ziemny** lub **LPG**) i **Klasę ciśnienia** (niskie w domu, średnie w ulicy); jego rury to domyślnie stal czarna na ścianach na wysokości 2,1 m, a mogą być miedziane, wielowarstwowe lub z **PE 100** dla tego, co w ziemi. Olej opałowy płynie miedzią.
+
+Instalacja gazowa domu zaczyna się w **szafce gazowej** na elewacji. Kliknij **Nowy system → Gaz**: szafka staje tam, gdzie klikniesz, a **kocioł gazowy** w środku, połączone przewodem. Po drodze narzędzia z **Gaz** kładą na przewodzie **reduktor gazu**, **gazomierz**, **główny zawór gazu**, **zawory przy urządzeniach** i **przyłącza elastyczne**, które dzielą go jak każda kształtka; **kuchenka gazowa** i **podgrzewacz gazowy** łączą się z instalacją własnym przewodem. Gdzie rura gazowa lub olejowa przechodzi przez ścianę, idzie w **tulei ochronnej**, rysowanej i liczonej z przewodem. Kocioł gazowy narysowany w systemie grzewczym jako jego źródło łączy się z instalacją gazową z jego właściwości (przycisk **+** z nazwą systemu gazowego).
+
+![Instalacja gazowa domu: szafka, reduktor i gazomierz na zewnątrz, kocioł i kuchenka w kuchni](shots/mep-gas-plan.webp)
+
+Każde urządzenie zachowuje swoje **zużycie** (m³/h) i **typ urządzenia** według odprowadzenia spalin (A bez odprowadzenia, B z otwartą komorą, C z zamkniętą komorą), dla wykazów i wymiarowania.
+
+**Olej opałowy** stawia **zbiornik oleju opałowego** (wewnątrz, na zewnątrz lub podziemny) i **kocioł olejowy**; **króciec napełniania** i **kołpak odpowietrzający** łączą się z napełnianiem i odpowietrzeniem zbiornika, a **filtr oleju** siedzi na zasilaniu.
+
+### Zasilanie w ulicy
+
+W **Ulica** narzędzie **Gazociąg wzdłuż…** (<kbd>GM</kbd>) układa gazociąg wzdłuż tego, co klikniesz — drogi, osi trasy, narysowanej linii, ściany — w **odległości od linii** i na **głębokości (przykryciu)** z paska linii poleceń; pod terenem głębokość liczy się od gruntu, inaczej od kondygnacji. **Gazociąg** rysuje go punkt po punkcie. Gazociąg trafia do systemu gazowego średniego ciśnienia z rur PE, z **taśmą ostrzegawczą**.
+
+**Przyłącze** (<kbd>GS</kbd>): kliknij gazociąg, potem szafkę. Lapin stawia **trójnik siodłowy** na gazociągu, układa rurę przyłącza prostopadle od niego na jej przykryciu aż do szafki i tam wprowadza ją w górę do szafki.
+
+![Przyłącze od gazociągu w ulicy do szafki gazowej, zaznaczone](shots/mep-gas-street.webp)
+
+![Gazociąg i przyłącze pod ziemią, instalacja na elewacji](shots/mep-gas-3d.webp)
+
+![Właściwości przyłącza: od trójnika siodłowego do szafki, przykrycie i średnica](shots/mep-gas-service-properties.webp)
+
+![Wartości domyślne systemu gazowego: jego gaz i klasa ciśnienia](shots/mep-gas-systems.webp)
+
+**Zestawienie materiałów gazu i oleju** w **System** wymienia, system po systemie, rury według materiału i średnicy z ich długością (a z niej piony), kolana, trójniki i tuleje, taśmę ostrzegawczą, zawory, gazomierze i szafki oraz urządzenia z zainstalowanym zużyciem i mocą. W IFC system gazowy to IfcDistributionSystem typu GAS, a olejowy FUEL; szafka to IfcDistributionChamberElement, gazomierz IfcFlowMeter GASMETER, zawory IfcValve, kuchenka IfcBurner, zbiornik IfcTank.
+
+![Zestawienie materiałów gazu i oleju](shots/mep-gas-list.webp)
+
+Dobór średnic rur ze zużycia urządzeń i sprawdzenie spadku ciśnienia to inżynieria, w edycji **Lapin MEP**.
+
 ## MEP Pro
 
 Obliczenia inżynierskie sieci — zapotrzebowanie przenoszone przez każdy przewód i dobrany do niego rozmiar, sprawdzenia (otwarte końce, ciasne kolana, spadki kanalizacji, przeciążone źródła), zasady prowadzenia według materiału (miedź w krokach co 45°, PVC skręcające najwyżej o 45°), grzejniki proponowane pod oknami, trasy sugerowane wzdłuż ścian, profil przewodu i aksonometria systemu — znajdują się w edycji **Lapin MEP**, która dodaje do tej karty grupy **Inżynieria** i **Asystenci**.

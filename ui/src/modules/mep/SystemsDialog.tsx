@@ -80,6 +80,12 @@ export function SystemsDialog() {
                   </select>
                   {rule && <span className="muted small"> {rule}</span>}
                 </dd>
+                {current.service === 'gas' && (
+                  <>
+                    <dt>Gas</dt><dd><select data-gas-kind value={d.gas ?? 'natural'} onChange={(e) => update(current.id, { gas: e.target.value as 'natural' | 'lpg' })}><option value="natural">Natural gas</option><option value="lpg">LPG</option></select></dd>
+                    <dt>Pressure class</dt><dd><select data-gas-pressure value={d.pressure ?? 'low'} onChange={(e) => update(current.id, { pressure: e.target.value as 'low' | 'medium' })}><option value="low">Low pressure</option><option value="medium">Medium pressure</option></select></dd>
+                  </>
+                )}
                 <dt>Insulation</dt><dd><LengthField metres={d.insulation} min={0} onCommit={(v) => { if (v != null) update(current.id, { insulation: v }); }} /></dd>
                 <dt>Bend radius</dt><dd><LengthField metres={d.bendRadius} min={0} onCommit={(v) => { if (v != null) update(current.id, { bendRadius: v }); }} /></dd>
               </dl>

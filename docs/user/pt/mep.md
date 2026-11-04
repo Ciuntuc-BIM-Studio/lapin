@@ -55,6 +55,38 @@ No painel Propriedades, um nó mostra o sistema, a função e as portas (abertas
 
 Em uma exportação IFC, cada sistema é um IfcDistributionSystem, cada nó e trecho tem as suas IfcDistributionPorts, e as conexões são gravadas entre as portas, assim a rede chega a outro programa conectada da fonte até o último ponto terminal.
 
+## Gás e óleo combustível
+
+**Gás** e **Óleo combustível** são serviços próprios em **Novo sistema**. Um sistema de gás diz seu gás (**Gás natural** ou **GLP**) e sua **Classe de pressão** (baixa dentro da casa, média na rua) em **Sistemas…**; seus tubos são por padrão de aço preto nas paredes a 2,1 m, e podem ser de cobre, multicamada ou **PE 100** para o que fica enterrado. O óleo corre em cobre.
+
+A instalação de gás de uma casa começa na **caixa do medidor** na fachada. Clique em **Novo sistema → Gás**: a caixa vai onde você clica e uma **caldeira a gás** dentro, ligadas por um trecho. No caminho, as ferramentas de **Gás** colocam no trecho o **regulador de gás**, o **medidor de gás**, o **registro geral de gás**, os **registros dos aparelhos** e os **conectores flexíveis**, que o dividem como qualquer conexão; o **fogão a gás** e o **aquecedor a gás** se ligam à instalação por um trecho próprio. Onde um tubo de gás ou de óleo atravessa uma parede, ele passa por uma **luva de proteção**, desenhada e contada com o trecho. Uma caldeira a gás desenhada no sistema de aquecimento como sua fonte se liga à instalação de gás pelas suas propriedades (o botão **+** com o nome do sistema de gás).
+
+![A instalação de gás de uma casa: a caixa, o regulador e o medidor do lado de fora, a caldeira e o fogão na cozinha](shots/mep-gas-plan.webp)
+
+Cada aparelho guarda seu **consumo** (m³/h) e seu **tipo de aparelho** pela exaustão (A sem chaminé, B com chaminé aberta, C estanque), para as listas e o dimensionamento.
+
+**Óleo combustível** coloca um **tanque de óleo** (interno, externo ou enterrado) e uma **caldeira a óleo**; o **bocal de abastecimento** e o **terminal de respiro** se ligam ao abastecimento e ao respiro do tanque, e o **filtro de óleo** fica na ida.
+
+### O abastecimento na rua
+
+Em **Rua**, **Rede de gás ao longo de…** (<kbd>GM</kbd>) assenta uma rede de gás ao longo do que você clica — uma rua, um alinhamento, uma linha desenhada, uma parede — na **distância à linha** e na **profundidade (recobrimento)** da barra da linha de comando; sob um terreno a profundidade é medida a partir do solo, senão a partir do nível. **Rede de gás** a desenha ponto a ponto. A rede vai num sistema de gás de média pressão, em tubo de PE, com sua **fita de advertência**.
+
+**Ramal de ligação** (<kbd>GS</kbd>): clique na rede, depois na caixa. O Lapin coloca um **tê de derivação** na rede, assenta o tubo do ramal em esquadro a partir dela na sua profundidade até a caixa, e sobe ali para dentro da caixa.
+
+![O ramal de ligação da rede da rua até a caixa do medidor, selecionado](shots/mep-gas-street.webp)
+
+![A rede e o ramal debaixo da terra, a instalação na fachada](shots/mep-gas-3d.webp)
+
+![As propriedades de um ramal: do tê de derivação à caixa, seu recobrimento e diâmetro](shots/mep-gas-service-properties.webp)
+
+![Os padrões de um sistema de gás: seu gás e sua classe de pressão](shots/mep-gas-systems.webp)
+
+**Quantitativo de gás e óleo** em **Sistema** lista, sistema por sistema, os tubos por material e diâmetro com seu comprimento (e dele as prumadas), as curvas, tês e luvas, a fita de advertência, os registros, medidores e caixas, e os aparelhos com consumo e potência instalados. Em IFC um sistema de gás é um IfcDistributionSystem do tipo GAS e um de óleo FUEL; a caixa é um IfcDistributionChamberElement, o medidor um IfcFlowMeter GASMETER, os registros IfcValve, o fogão um IfcBurner, o tanque um IfcTank.
+
+![O quantitativo de gás e óleo](shots/mep-gas-list.webp)
+
+Dimensionar os tubos pelo consumo dos aparelhos e verificar a perda de carga é engenharia, na edição **Lapin MEP**.
+
 ## MEP Pro
 
 A engenharia sobre a rede — a demanda que cada trecho leva e a dimensão que a comporta, as verificações (pontas abertas, curvas fechadas demais, caimentos de esgoto, fontes sobrecarregadas), as regras de assentamento por material (cobre em passos de 45°, PVC virando no máximo 45°), radiadores propostos sob as janelas, percursos sugeridos ao longo das paredes, o perfil de um trecho e a isométrica de um sistema — está na edição **Lapin MEP**, que acrescenta os grupos **Engenharia** e **Assistentes** a esta guia.

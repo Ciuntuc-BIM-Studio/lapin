@@ -169,6 +169,64 @@ public static class Nodes
             case "cap":
                 o.Add(new PlanItem("heavy", false, [P(0, -0.04), P(0, 0.04)]));
                 break;
+            case "meterBox":
+                // The box on the facade, its door's diagonal, the service coming up into it.
+                o.Add(new PlanItem("heavy", true, box));
+                o.Add(new PlanItem("symbol", false, [P(-w, d), P(w, -d)]));
+                break;
+            case "regulator":
+                // A valve with the regulator's spring dome over it.
+                o.Add(new PlanItem("symbol", true, [P(-w, -d), P(w, d), P(w, -d), P(-w, d)]));
+                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d) * 0.6, 12)));
+                break;
+            case "gasMeter":
+                o.Add(new PlanItem("symbol", true, box));
+                o.Add(new PlanItem("symbol", false, [P(-w, -d), P(w, d)]));
+                o.Add(new PlanItem("symbol", false, [P(-w, d), P(w, -d)]));
+                break;
+            case "gasCock":
+                // ISO 4067's valve, its body filled for gas, a handle across.
+                o.Add(new PlanItem("heavy", true, [P(-w, -d), P(w, d), P(w, -d), P(-w, d)]));
+                o.Add(new PlanItem("symbol", false, [P(0, 0), P(0, d * 1.8)]));
+                break;
+            case "flex":
+            {
+                // A wavy line between its ends.
+                var wave = new List<Vec2>();
+                for (var k = 0; k <= 10; k++) wave.Add(P(-w + 2 * w * k / 10, k % 2 == 0 ? 0 : (k % 4 == 1 ? 0.025 : -0.025)));
+                o.Add(new PlanItem("symbol", false, wave));
+                break;
+            }
+            case "cooker":
+                o.Add(new PlanItem("symbol", true, box));
+                foreach (var (cx, cy) in new[] { (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (0.5, 0.5) })
+                    o.Add(new PlanItem("symbol", true, Enumerable.Range(0, 16).Select(k => P(cx * w + 0.08 * Math.Cos(2 * Math.PI * k / 16), cy * d + 0.08 * Math.Sin(2 * Math.PI * k / 16))).ToList()));
+                break;
+            case "waterHeater":
+                o.Add(new PlanItem("symbol", true, box));
+                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d) * 0.6, 16)));
+                break;
+            case "tappingTee":
+                o.Add(new PlanItem("heavy", true, Circle(0.07, 16)));
+                o.Add(new PlanItem("symbol", false, [P(-w, 0), P(w, 0)]));
+                break;
+            case "oilTank":
+                // The tank's outline and its level line.
+                o.Add(new PlanItem("heavy", true, box));
+                o.Add(new PlanItem("symbol", false, [P(-w, -d * 0.4), P(w, -d * 0.4)]));
+                break;
+            case "oilFilter":
+                o.Add(new PlanItem("symbol", true, [P(-w, 0), P(0, d), P(w, 0), P(0, -d)]));
+                o.Add(new PlanItem("symbol", false, [P(0, -d), P(0, d)]));
+                break;
+            case "fillPoint":
+                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d))));
+                o.Add(new PlanItem("symbol", true, [P(-w * 0.6, -d * 0.4), P(w * 0.6, -d * 0.4), P(0, d * 0.6)]));
+                break;
+            case "ventCap":
+                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d))));
+                o.Add(new PlanItem("symbol", false, [P(-w, w), P(w, -w)]));
+                break;
             default:
                 o.Add(new PlanItem("symbol", true, box));
                 break;
@@ -185,9 +243,16 @@ public static class Nodes
         if (role == null) yield break;
         var list = new List<Quantity> { new("Count", 1, "COUNT") };
         if (role.Duty > 0 || e.NumOrNull("duty") != null) list.Add(new("Duty", e.NumOrNull("duty") ?? role.Duty, "COUNT", role.DutyUnit));
+        if (Consumption(e, role) is > 0 and var c) list.Add(new("Consumption", c, "COUNT", role.EndpointFor == Services.FuelOil || role.Ports.Any(p => p.Service == Services.FuelOil) ? "L/h" : "m³/h"));
         if (role.IsRise) list.Add(new("Length", Math.Abs(RiseTop(m, e) - (StoreyZ(m, e) + Elevation(e, role))), "LENGTH"));
         yield return new QuantitySet("Lapin_Mep", list);
     }
+
+    /// <summary>A gas or fuel oil appliance's consumption: its own, else its role's (0 for what burns nothing).</summary>
+    public static double Consumption(Entity e, Role role) => e.NumOrNull("consumption") ?? role.Consumption;
+
+    /// <summary>A gas appliance's type by its flue (A, B, C): its own, else its role's.</summary>
+    public static string? Flue(Entity e, Role role) => e.Str("flue") is "A" or "B" or "C" ? e.Str("flue") : role.Flue;
 
     /// <summary>A node placed: on the storey, in the system, with the role's defaults and what the command gives over them.</summary>
     public static Entity Place(ICommandContext ctx, Entity system, Role role, string storeyId, JsonObject a)
@@ -200,7 +265,12 @@ public static class Nodes
             ["x"] = Json.Number(a["x"]) ?? throw new CommandException("Where? (x, y)"), ["y"] = Json.Number(a["y"]) ?? throw new CommandException("Where? (x, y)"),
             ["rotation"] = Json.Number(a["rotation"]) ?? 0,
         };
-        foreach (var k in new[] { "elevation", "width", "depth", "height", "duty", "toElevation" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+        foreach (var k in new[] { "elevation", "width", "depth", "height", "duty", "toElevation", "consumption", "capacity" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+        if ((string?)a["flue"] is "A" or "B" or "C") attrs["flue"] = (string)a["flue"]!;
+        if ((string?)a["placement"] is "indoor" or "outdoor" or "buried") attrs["placement"] = (string)a["placement"]!;
+        // A buried tank lies under the ground, its top 0.6 m down, unless an elevation is given.
+        if ((string?)attrs["placement"] == "buried" && attrs["elevation"] == null) attrs["elevation"] = -(Json.Number(a["height"]) ?? role.Size.Z) - 0.6;
+        if (role.ObjectType != null) attrs["objectType"] = role.ObjectType;
         if ((string?)a["toStoreyId"] is { } to) attrs["toStoreyId"] = Spatial.Require(ctx.Model, to, IfcClass.BuildingStorey).Id;
         if ((string?)a["name"] is { Length: > 0 } nm) attrs["name"] = nm;
         var count = Of(ctx.Model, system.Id).Count(n => n.Str("role") == role.Id) + 1;
@@ -217,6 +287,8 @@ public static class Nodes
         new("x", "X", "length"), new("y", "Y", "length"), new("rotation", "Rotation", "number", Min: -360, Max: 360),
         new("elevation", "Elevation", "length"), new("width", "Width", "length", Min: 0.01), new("depth", "Depth", "length", Min: 0.01), new("height", "Height", "length", Min: 0.01),
         new("duty", "Duty", "number", Min: 0), new("toElevation", "Goes to (elevation)", "length"),
+        new("consumption", "Consumption", "number", Min: 0), new("flue", "Appliance type (flue)", "choice", Choices: ["A", "B", "C"]),
+        new("placement", "Placement", "choice", Choices: ["indoor", "outdoor", "buried"]), new("capacity", "Capacity (L)", "number", Min: 0),
     ];
 
     public static string Label(string cls) => Roles.All.First(x => x.IfcClass == cls).Label;

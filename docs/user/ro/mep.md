@@ -1,7 +1,7 @@
 ---
 title: Instalații
 order: 57
-summary: Desenează instalațiile de încălzire, apă, canalizare, electrice și ventilație ca scheme pe plan, cu surse, consumatori și traseele dintre ele, și exportă-le ca rețea IFC.
+summary: Desenează instalațiile de încălzire, apă, canalizare, electrice, ventilație, gaze și motorină ca scheme pe plan, cu surse, consumatori și traseele dintre ele, alimentarea cu gaz din stradă, și exportă-le ca rețea IFC.
 ---
 
 Fila **Instalații** desenează instalațiile clădirii așa cum le schițează un inginer: un sistem pentru fiecare serviciu, **sursa** lui (o centrală, un apometru, o coloană, un tablou electric, un ventilator), **consumatorii** (radiatoare, lavoare, WC-uri, prize, corpuri de iluminat, difuzoare) și **traseele** dintre ei. Fiecare nod e un element IFC adevărat, cu porturile lui; fiecare traseu e un segment de conductă, tubulatură sau cablu; conexiunile țin când muți lucrurile.
@@ -54,6 +54,38 @@ Fiecare nod are un **rol**: centrală, radiator, distribuitor, apometru, lavoar,
 **Plan instalații** face un plan al disciplinei MEP pentru nivel, pus în setul MEP din navigator. **Lista de echipamente** și **lista de trasee** de sub **Sistem** sunt tabele ca oricare altele: merg pe planșe și se exportă cu ele.
 
 La exportul IFC fiecare sistem e un IfcDistributionSystem, fiecare nod și traseu își are porturile IfcDistributionPort, iar conexiunile se scriu între porturi, așa că rețeaua ajunge în alt program conectată de la sursă la ultimul consumator.
+
+## Gaze și motorină
+
+**Gaz** și **Motorină** sunt servicii separate sub **Sistem nou**. Un sistem de gaz își spune gazul (**Gaz natural** sau **GPL**) și **Treapta de presiune** (joasă în casă, medie pe stradă) în **Sisteme…**; țevile lui sunt implicit din oțel negru, pe pereți, la 2,1 m, și pot fi din cupru, multistrat sau **PE 100** pentru ce se îngroapă. Motorina merge prin cupru.
+
+Instalația de gaz a unei case pornește din **firida de branșament** de pe fațadă. Apasă **Sistem nou → Gaz**: firida se pune unde dai clic, iar o **centrală pe gaz** înăuntru, legată printr-un traseu. Pe drum, uneltele din **Gaz** pun pe traseu **regulatorul de gaz**, **contorul de gaz**, **robinetul general de gaz**, **robinetele de consumator** și **racordurile flexibile**, care îl taie ca orice fiting; **aragazul** și **încălzitorul de apă pe gaz** se leagă de instalație printr-un traseu propriu. Unde o țeavă de gaz sau de motorină trece printr-un perete, trece printr-un **tub de protecție**, desenat și numărat cu traseul. O centrală pe gaz desenată în sistemul de încălzire ca sursă se leagă de instalația de gaz din proprietățile ei (butonul **+** cu numele sistemului de gaz).
+
+![Instalația de gaz a unei case: firida, regulatorul și contorul afară, centrala și aragazul în bucătărie](shots/mep-gas-plan.webp)
+
+Fiecare aparat își păstrează **consumul** (m³/h) și **tipul aparatului** după evacuarea gazelor arse (A fără coș, B cu coș, C etanș), pentru liste și dimensionare.
+
+**Motorină** pune un **rezervor de motorină** (interior, exterior sau îngropat) și o **centrală pe motorină**; **racordul de umplere** și **căciula de aerisire** se leagă de umplerea și aerisirea rezervorului, iar **filtrul de motorină** stă pe tur.
+
+### Alimentarea din stradă
+
+Din **Stradă**, **Conductă de gaz de-a lungul…** (<kbd>GM</kbd>) pozează o conductă de gaz de-a lungul a ce alegi — un drum, un aliniament, o linie desenată, un perete — la **distanța față de linie** și **adâncimea (acoperirea)** din bara liniei de comandă; sub un teren adâncimea se ia de la sol, altfel de la nivel. **Conductă de gaz** o desenează punct cu punct. Conducta intră într-un sistem de gaz de presiune medie, din țeavă de PE, cu **banda de avertizare**.
+
+**Branșament** (<kbd>GS</kbd>): alege conducta, apoi firida. Lapin pune un **teu de branșament** pe conductă, pozează țeava de branșament perpendicular pe ea la adâncimea ei și mai departe până la firidă, și urcă în firidă acolo.
+
+![Branșamentul de la conducta din stradă la firidă, selectat](shots/mep-gas-street.webp)
+
+![Conducta și branșamentul sub pământ, instalația pe fațadă](shots/mep-gas-3d.webp)
+
+![Proprietățile unui branșament: de la teul de branșament la firidă, acoperirea și diametrul](shots/mep-gas-service-properties.webp)
+
+![Valorile implicite ale unui sistem de gaz: gazul și treapta de presiune](shots/mep-gas-systems.webp)
+
+**Antemăsurătoare gaze și motorină** din **Sistem** listează, sistem cu sistem, țevile pe material și diametru cu lungimea lor (și din ea coloanele), coturile, teurile și tuburile de protecție, banda de avertizare, robinetele, contoarele și firidele, și aparatele cu consumul și puterea instalate. În IFC un sistem de gaz este un IfcDistributionSystem de tip GAS, iar unul de motorină FUEL; firida este un IfcDistributionChamberElement, contorul un IfcFlowMeter GASMETER, robinetele IfcValve, aragazul un IfcBurner, rezervorul un IfcTank.
+
+![Antemăsurătoarea de gaze și motorină](shots/mep-gas-list.webp)
+
+Dimensionarea țevilor după consumul aparatelor și verificarea căderii de presiune țin de inginerie, în ediția **Lapin MEP**.
 
 ## Instalații Pro
 

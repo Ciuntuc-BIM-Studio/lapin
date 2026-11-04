@@ -3,14 +3,16 @@ namespace Lapin.Mep;
 /// <summary>A pipe, duct or cable material a run may be of, and the services it carries; its laying rules come with mep-pro (<see cref="ILayingRules"/>).</summary>
 public sealed record RunMaterial(string Id, string Label, string[] Services, string[]? Aliases = null);
 
-/// <summary>The materials runs are made of, by service; the system's default is the usual one (multilayer pipe, PVC drain, galvanised duct, cable).</summary>
+/// <summary>The materials runs are made of, by service; the system's default is the usual one (multilayer pipe, PVC drain, galvanised duct, cable, steel for gas, copper for fuel oil).</summary>
 public static class RunMaterials
 {
     public static readonly IReadOnlyList<RunMaterial> All =
     [
-        new("steel", "Black steel", [Services.Heating], ["Steel"]),
-        new("copper", "Copper", [Services.Heating, Services.ColdWater, Services.HotWater]),
-        new("pex-al-pex", "PEX-AL-PEX multilayer", [Services.Heating, Services.ColdWater, Services.HotWater], ["PEX", "Pexal"]),
+        new("steel", "Black steel", [Services.Heating, Services.Gas, Services.FuelOil], ["Steel"]),
+        new("copper", "Copper", [Services.Heating, Services.ColdWater, Services.HotWater, Services.Gas, Services.FuelOil]),
+        new("pex-al-pex", "PEX-AL-PEX multilayer", [Services.Heating, Services.ColdWater, Services.HotWater, Services.Gas], ["PEX", "Pexal"]),
+        // Gas buried in the ground, the street's main and a service pipe: polyethylene (PE 100, SDR 11), laid bent and joined by electrofusion.
+        new("pe", "PE 100 (buried)", [Services.Gas, Services.ColdWater], ["PE", "Polyethylene"]),
         new("pp-r", "PP-R", [Services.ColdWater, Services.HotWater]),
         new("pvc", "PVC drainage", [Services.Drainage], ["PVC"]),
         new("pp-drain", "PP drainage", [Services.Drainage]),

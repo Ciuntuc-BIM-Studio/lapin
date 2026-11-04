@@ -55,6 +55,38 @@ Dans le panneau des propriétés, un nœud montre son système, son rôle et ses
 
 Dans un export IFC, chaque système est un IfcDistributionSystem, chaque nœud et chaque tronçon a ses IfcDistributionPorts, et les connexions sont écrites entre les ports, de sorte que le réseau arrive dans un autre logiciel connecté de la source jusqu’au dernier terminal.
 
+## Gaz et fioul
+
+**Gaz** et **Fioul** sont des services à part sous **Nouveau système**. Un système de gaz dit son gaz (**Gaz naturel** ou **GPL**) et sa **Classe de pression** (basse dans la maison, moyenne dans la rue) dans **Systèmes…** ; ses tubes sont par défaut en acier noir sur les murs à 2,10 m, et peuvent être en cuivre, multicouche ou **PE 100** pour ce qui est enterré. Le fioul passe en cuivre.
+
+L’installation de gaz d’une maison part du **coffret de comptage** sur la façade. Clique **Nouveau système → Gaz** : le coffret va où tu cliques et une **chaudière gaz** à l’intérieur, reliés par une conduite. En chemin, les outils de **Gaz** posent sur la conduite le **détendeur de gaz**, le **compteur de gaz**, le **robinet général de gaz**, les **robinets d’appareil** et les **raccords flexibles**, qui la coupent comme tout raccord ; la **cuisinière à gaz** et le **chauffe-eau à gaz** rejoignent l’installation par une conduite à eux. Là où un tube de gaz ou de fioul traverse un mur, il passe dans un **fourreau**, dessiné et compté avec la conduite. Une chaudière gaz dessinée dans le système de chauffage comme sa source rejoint l’installation de gaz depuis ses propriétés (le bouton **+** avec le nom du système de gaz).
+
+![L’installation de gaz d’une maison : le coffret, le détendeur et le compteur dehors, la chaudière et la cuisinière dans la cuisine](shots/mep-gas-plan.webp)
+
+Chaque appareil garde sa **consommation** (m³/h) et son **type d’appareil** selon son évacuation (A sans conduit, B raccordé, C étanche), pour les listes et le dimensionnement.
+
+**Fioul** pose une **cuve à fioul** (intérieure, extérieure ou enterrée) et une **chaudière fioul** ; la **bouche de remplissage** et le **chapeau d’évent** rejoignent le remplissage et l’évent de la cuve, et le **filtre à fioul** se place sur l’aller.
+
+### L’alimentation dans la rue
+
+Sous **Rue**, **Conduite de gaz le long de…** (<kbd>GM</kbd>) pose une conduite de gaz le long de ce que tu cliques — une route, un axe, une ligne dessinée, un mur — à la **distance à la ligne** et à la **profondeur (couverture)** de la barre de la ligne de commande ; sous un terrain la profondeur se prend depuis le sol, sinon depuis le niveau. **Conduite de gaz** la dessine point par point. La conduite va dans un système de gaz moyenne pression, en tube PE, avec son **grillage avertisseur**.
+
+**Branchement** (<kbd>GS</kbd>) : clique la conduite, puis le coffret. Lapin pose une **prise de branchement** sur la conduite, pose le tube de branchement d’équerre à sa profondeur jusqu’au coffret, et y remonte dans le coffret.
+
+![Le branchement de la conduite de la rue au coffret, sélectionné](shots/mep-gas-street.webp)
+
+![La conduite et le branchement sous terre, l’installation sur la façade](shots/mep-gas-3d.webp)
+
+![Les propriétés d’un branchement : de la prise de branchement au coffret, sa couverture et son diamètre](shots/mep-gas-service-properties.webp)
+
+![Les valeurs par défaut d’un système de gaz : son gaz et sa classe de pression](shots/mep-gas-systems.webp)
+
+**Métré gaz et fioul** sous **Système** liste, système par système, les tubes par matériau et diamètre avec leur longueur (et dedans les colonnes montantes), les coudes, tés et fourreaux, le grillage avertisseur, les robinets, compteurs et coffrets, et les appareils avec leur consommation et leur puissance installées. En IFC un système de gaz est un IfcDistributionSystem de type GAS et un système de fioul FUEL ; le coffret est un IfcDistributionChamberElement, le compteur un IfcFlowMeter GASMETER, les robinets des IfcValve, la cuisinière un IfcBurner, la cuve un IfcTank.
+
+![Le métré gaz et fioul](shots/mep-gas-list.webp)
+
+Dimensionner les tubes d’après la consommation des appareils et vérifier la perte de charge relèvent de l’ingénierie, dans l’édition **Lapin MEP**.
+
 ## MEP Pro
 
 L’ingénierie du réseau — le débit que porte chaque tronçon et la taille qui le supporte, les vérifications (extrémités ouvertes, coudes trop serrés, pentes d’évacuation, sources surchargées), les règles de pose par matériau (le cuivre par pas de 45°, le PVC tournant au plus de 45°), les radiateurs proposés sous les fenêtres, les tracés suggérés le long des murs, le profil d’un tronçon et l’isométrie d’un système — se trouve dans l’édition **Lapin MEP**, qui ajoute les groupes **Ingénierie** et **Assistants** à cet onglet.

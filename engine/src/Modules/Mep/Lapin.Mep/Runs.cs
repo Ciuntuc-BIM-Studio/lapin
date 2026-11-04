@@ -310,7 +310,8 @@ public static partial class Runs
         return o;
     }
 
-    static double ZAt(List<Vec3> line, Vec2 p)
+    /// <summary>The centreline's height where it passes nearest a point in plan.</summary>
+    public static double ZAt(List<Vec3> line, Vec2 p)
     {
         var best = double.PositiveInfinity; var z = line[0].Z;
         for (var i = 1; i < line.Count; i++)
@@ -333,7 +334,8 @@ public static partial class Runs
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
         var radius = s.Size / 2;
-        var color = s.Service switch { Services.Heating => "#c0392b", Services.ColdWater => "#2e86de", Services.HotWater => "#e67e22", Services.Drainage => "#7f8c8d", Services.Electrical => "#f1c40f", _ => "#95a5a6" };
+        var color = s.Service switch { Services.Heating => "#c0392b", Services.ColdWater => "#2e86de", Services.HotWater => "#e67e22", Services.Drainage => "#7f8c8d", Services.Electrical => "#f1c40f",
+            Services.Gas => "#e1b12c", Services.FuelOil => "#8e5b3a", _ => "#95a5a6" };
         var lines = s.Pair ? new[] { ("supply", Shift(line, s.Separation / 2)), ("return", Shift(line, -s.Separation / 2)) } : [("pipe", line)];
         foreach (var (name, pts) in lines)
         {
@@ -358,6 +360,15 @@ public static partial class Runs
             var centre = new Vec3(at.X, at.Y, z);
             if (Pipes.Tube(centre - across * (radius * 1.6), centre + across * (radius * 1.6), radius * 1.15, 0, "tee") is { } tee) parts.Add(new GeometryPart("Tee", color, tee, null, "tee:" + branch.Id));
             plan.Add(new PlanItem("heavy", true, [at + across.Xy * 0.03, at - across.Xy * 0.03, at - across.Xy * 0.03 + dir * 0.03, at + across.Xy * 0.03 + dir * 0.03]));
+        }
+        // Gas and fuel oil go through walls in sleeves: a short tube round the pipe across each wall it crosses, two ticks on the plan.
+        foreach (var sleeve in Sleeves.Of(m, run, s, line))
+        {
+            if (Pipes.Tube(sleeve.A, sleeve.B, sleeve.Diameter / 2, 0, "sleeve") is { } tube) parts.Add(new GeometryPart("Sleeve", "#7f8c8d", tube, null, "sleeve:" + sleeve.WallId));
+            var d = (sleeve.B.Xy - sleeve.A.Xy).Normalized();
+            var n = new Vec2(-d.Y, d.X) * Math.Max(0.04, sleeve.Diameter);
+            plan.Add(new PlanItem("symbol", false, [sleeve.A.Xy + n, sleeve.A.Xy - n]));
+            plan.Add(new PlanItem("symbol", false, [sleeve.B.Xy + n, sleeve.B.Xy - n]));
         }
         plan.Add(new PlanItem("hit", false, Spots(line)));
         return new ElementGeometry(parts, plan, line.Select(p => p.Xy).ToList());
@@ -435,7 +446,10 @@ public static partial class Runs
     {
         var service = Systems.Service(system);
         var attrs = new JsonObject { ["systemId"] = system.Id, ["points"] = J(Lay(service, (string?)a["material"] ?? Systems.Of(system).Material, PointsArg(a["points"]))) };
-        foreach (var k in new[] { "elevation", "size", "separation", "slope", "height" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+        foreach (var k in new[] { "elevation", "size", "separation", "slope", "height", "cover", "offset" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+        if (a["warningTape"] is JsonValue wt && wt.TryGetValue<bool>(out var tape)) attrs["warningTape"] = tape;
+        if ((string?)a["along"] is { Length: > 0 } along) attrs["along"] = along;
+        if (a["levels"] is JsonArray lv && lv.Count == ((JsonArray)attrs["points"]!).Count) attrs["levels"] = lv.DeepClone();
         if ((string?)a["plane"] is "floor" or "ceiling" or "wall") attrs["plane"] = (string)a["plane"]!;
         if (a["pair"] is JsonValue pv && pv.TryGetValue<bool>(out var pair)) attrs["pair"] = pair;
         if ((string?)a["material"] is { Length: > 0 } mat) attrs["material"] = mat;
@@ -500,6 +514,7 @@ public static partial class Runs
         new("elevation", "Elevation", "length"), new("plane", "Plane", "choice", Choices: ["floor", "ceiling", "wall"]),
         new("pair", "Pair (supply and return)", "bool"), new("separation", "Separation", "length", Min: 0), new("slope", "Slope", "number", Min: 0, Max: 0.5),
         new("material", "Material", "choice", Choices: [.. RunMaterials.All.Select(x => x.Id)]),
+        new("cover", "Depth (cover)", "length", Min: 0), new("warningTape", "Warning tape", "bool"),
     ];
 
     public static string Label(string cls) => cls switch { "IfcDuctSegment" => "Duct run", "IfcCableSegment" => "Cable run", _ => "Pipe run" };

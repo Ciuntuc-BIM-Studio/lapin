@@ -42,6 +42,8 @@ public sealed class MepModule : ILapinModule
         r.Service<IIfcNetwork>(new MepNetwork());
         r.Service<IScheduleSource>(new MepEquipmentSchedule());
         r.Service<IScheduleSource>(new MepRunSchedule());
+        r.Service<IScheduleSource>(new GasSchedule());
+        GasSupply.Register(r);
         // On the plan the schematic is drawn from symbols, not from the bodies' cut.
         foreach (var cls in Nodes.Classes.Concat(Runs.Classes)) Generator.SymbolicInPlan.Add(cls);
         r.Catalog("roles", new JsonArray(Roles.All.Select(x => (JsonNode)new JsonObject
@@ -50,6 +52,7 @@ public sealed class MepModule : ILapinModule
             ["services"] = new JsonArray(x.Ports.Select(p => p.Service).Distinct().Select(s => (JsonNode)s).ToArray()),
             ["ports"] = new JsonArray(x.Ports.Select(p => (JsonNode)new JsonObject { ["key"] = p.Key, ["service"] = p.Service, ["flow"] = p.Flow.ToString().ToLowerInvariant(), ["pair"] = p.Pair }).ToArray()),
             ["size"] = new JsonArray(x.Size.X, x.Size.Y, x.Size.Z), ["elevation"] = x.Elevation, ["duty"] = x.Duty, ["dutyUnit"] = x.DutyUnit,
+            ["endpointFor"] = x.EndpointFor, ["consumption"] = x.Consumption, ["flue"] = x.Flue,
         }).ToArray()));
         r.Catalog("services", new JsonArray(Services.All.Select(s => (JsonNode)new JsonObject { ["id"] = s, ["label"] = Services.Label(s), ["defaults"] = SystemDefaults.For(s).ToJson() }).ToArray()));
         r.Catalog("materials", new JsonArray(RunMaterials.All.Select(x => (JsonNode)new JsonObject
@@ -66,7 +69,7 @@ public sealed class MepModule : ILapinModule
             var storey = (string?)a["storeyId"] is { } sid ? Spatial.Require(ctx.Model, sid, IfcClass.BuildingStorey) : Spatial.Storeys(ctx.Model).FirstOrDefault() ?? throw new CommandException("The project has no storey.");
             var node = Nodes.Place(ctx, system, role, storey.Id, a);
             // An endpoint placed with connect: joined to the system's network by a run of its own.
-            if (a["connect"] is JsonValue cv && cv.TryGetValue<bool>(out var connect) && connect && role.IsEndpoint && (string?)a["onRunId"] == null)
+            if (a["connect"] is JsonValue cv && cv.TryGetValue<bool>(out var connect) && connect && role.KindIn(Systems.Service(system)) == "endpoint" && (string?)a["onRunId"] == null)
             {
                 var joined = Layout.Connect(ctx, ctx.Model.Get(system.Id)!, ctx.Model.Get(node.Id)!);
                 return new JsonObject { ["id"] = node.Id, ["runId"] = joined?.Id };

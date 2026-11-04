@@ -1136,6 +1136,67 @@ export const scenes = [
     },
   },
   {
+    // Gas and fuel oil (report #72): a house's gas installation from the meter box on the facade to the boiler and the cooker,
+    // the regulator and the meter on the way, sleeved through the wall; the street's main 0.9 m down and the service connection
+    // rising into the box; the gas system's defaults; the bill of materials.
+    id: 'mep-gas',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.button('MEP', { exact: true });
+      // The meter box outside the front wall, the gas boiler in the kitchen: the system placed whole.
+      const r = await t.cmd('mep.placeSystem', { service: 'gas', storeyId: storey, x: 7.6, y: -0.4, to: [10.5, 6.5] });
+      const runOf = async (id) => (await t.nodes()).find((n) => n.id === id);
+      const first = await runOf(r.runId);
+      const y = first.props.points[0][1];
+      // The regulator and the meter dropped on the run, outside, by the box.
+      const reg = await t.cmd('mep.placeNode', { systemId: r.id, role: 'regulator', storeyId: storey, x: 8.3, y, onRunId: r.runId });
+      const tail = (await t.nodes()).find((n) => n.type === 'IfcPipeSegment' && n.props.systemId === r.id && n.id !== r.runId && n.name.includes('after'));
+      t.expect(!!tail, 'the regulator cuts the run');
+      await t.cmd('mep.placeNode', { systemId: r.id, role: 'gasMeter', storeyId: storey, x: 8.9, y, onRunId: tail.id });
+      // The cooker in the kitchen joins by a run of its own, a tee on the boiler's.
+      const cooker = await t.cmd('mep.placeNode', { systemId: r.id, role: 'cooker', storeyId: storey, x: 8.2, y: 7.4, connect: true });
+      t.expect(!!cooker.runId, 'the cooker joins the gas installation');
+      await t.ui({ keyPlan: false, view: 'plan' });
+      await t.wait(1000);
+      await t.fit();
+      // The quick tools would lie over the meter box and the street.
+      const quiet = await t.page.addStyleTag({ content: '.hotbar { display: none !important }' });
+      await t.shot('mep-gas-plan', { of: '[data-testid=plan]', pad: 0 });
+
+      // The street: a main 6 m in front of the house, 0.9 m down; the service connection from it to the box.
+      const main = await t.cmd('mep.mainAlong', { points: [[-4, -6], [16, -6]], depth: 0.9, storeyId: storey });
+      const conn = await t.cmd('mep.serviceConnection', { mainId: main.id, toNodeId: r.sourceId });
+      t.expect(!!conn.teeId, 'a tapping tee on the main');
+      await select(t, conn.id);
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('mep-gas-street', { of: '[data-testid=plan]', pad: 0 });
+      await t.shot('mep-gas-service-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async ([target, azimuth, pitch, distance]) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target, azimuth, pitch, distance }, false), [{ x: 8, y: -2.5, z: -0.3 }, Math.PI * 0.35, -0.3, 11]);
+      await t.wait(1500);
+      await t.shot('mep-gas-3d', { of: '[data-testid=view3d]', pad: 0 });
+
+      // The gas system's defaults: natural gas or LPG, the pressure class.
+      await t.ui({ view: 'plan' });
+      await t.page.evaluate(async (id) => (await import('/src/modules/mep/prefs.ts')).setMep({ systemId: id }), r.id);
+      await t.tool('mep.systems');
+      t.expect(await t.page.locator('[data-gas-pressure]').count() > 0, 'the gas system shows its pressure class');
+      await t.shot('mep-gas-systems', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // The bill of materials.
+      const list = await t.cmd('architecture.createSchedule', { kind: 'mep-gas' });
+      await t.ui({ view: 'schedule', scheduleId: list.id });
+      await t.wait(1500);
+      t.expect(await t.page.locator('.schedule-grid').count() > 0, 'the gas bill of materials');
+      await t.shot('mep-gas-list', { of: '.schedule-pane', pad: 0, maxHeight: 760 });
+      await quiet.evaluate((el) => el.remove());
+      await t.ui({ view: 'plan', keyPlan: true });
+    },
+  },
+  {
     id: 'structure',
     async run(t) {
       await t.fresh();

@@ -74,6 +74,8 @@ public sealed class MepNetwork : IIfcNetwork
         Services.SupplyAir => "VENTILATION",
         Services.ExtractAir => "EXHAUST",
         Services.Electrical => "ELECTRICAL",
+        Services.Gas => "GAS",
+        Services.FuelOil => "FUEL",
         _ => "USERDEFINED",
     };
 }

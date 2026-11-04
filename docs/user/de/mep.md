@@ -55,6 +55,38 @@ Im Eigenschaftenbereich zeigt ein Knoten sein System, seine Rolle und seine Ansc
 
 In einem IFC-Export ist jedes System ein IfcDistributionSystem, jeder Knoten und jede Leitung hat ihre IfcDistributionPorts, und die Verbindungen werden zwischen den Anschlüssen geschrieben, sodass das Netz in einem anderen Programm verbunden ankommt, von der Quelle bis zum letzten Endpunkt.
 
+## Gas und Heizöl
+
+**Gas** und **Heizöl** sind eigene Gewerke unter **Neues System**. Ein Gassystem nennt in **Systeme…** sein Gas (**Erdgas** oder **Flüssiggas**) und seine **Druckstufe** (Niederdruck im Haus, Mitteldruck in der Straße); seine Rohre sind standardmäßig Stahlrohr auf den Wänden in 2,1 m Höhe, wahlweise Kupfer, Mehrschichtverbund oder **PE 100** für das Erdverlegte. Heizöl läuft in Kupfer.
+
+Die Gasinstallation eines Hauses beginnt am **Zählerschrank** an der Fassade. Klicke **Neues System → Gas**: Der Zählerschrank kommt an den Klickpunkt und ein **Gaskessel** ins Haus, verbunden durch eine Leitung. Unterwegs setzen die Werkzeuge unter **Gas** den **Gasdruckregler**, den **Gaszähler**, die **Hauptabsperreinrichtung Gas**, die **Geräteanschlusshähne** und **flexible Anschlüsse** auf die Leitung, die sie wie jedes Formstück teilen; **Gasherd** und **Gas-Durchlauferhitzer** schließen sich mit einer eigenen Leitung an. Wo ein Gas- oder Heizölrohr eine Wand quert, geht es durch eine **Schutzhülse**, die mit der Leitung gezeichnet und gezählt wird. Ein Gaskessel, der im Heizsystem als dessen Quelle gezeichnet ist, schließt sich aus seinen Eigenschaften an die Gasinstallation an (die Schaltfläche **+** mit dem Namen des Gassystems).
+
+![Die Gasinstallation eines Hauses: Zählerschrank, Regler und Zähler außen, Kessel und Herd in der Küche](shots/mep-gas-plan.webp)
+
+Jedes Gerät behält seinen **Verbrauch** (m³/h) und seine **Geräteart** nach der Abgasführung (A ohne Abgasanlage, B raumluftabhängig, C raumluftunabhängig), für die Listen und die Bemessung.
+
+**Heizöl** setzt einen **Heizöltank** (innen, außen oder erdverlegt) und einen **Ölkessel**; **Füllanschluss** und **Entlüftungshaube** schließen sich an Füll- und Entlüftungsstutzen des Tanks an, der **Heizölfilter** sitzt im Vorlauf.
+
+### Die Versorgung in der Straße
+
+Unter **Straße** verlegt **Gasleitung entlang…** (<kbd>GM</kbd>) eine Gasleitung entlang dessen, was du anklickst — eine Straße, eine Achse, eine gezeichnete Linie, eine Wand — mit dem **Abstand zur Linie** und der **Tiefe (Überdeckung)** aus der Leiste der Befehlszeile; unter einem Gelände wird die Tiefe vom Boden gemessen, sonst vom Geschoss. **Gasleitung** zeichnet sie Punkt für Punkt. Die Leitung kommt in ein Mitteldruck-Gassystem aus PE-Rohr, mit ihrem **Warnband**.
+
+**Hausanschluss** (<kbd>GS</kbd>): Klicke die Leitung, dann den Zählerschrank. Lapin setzt eine **Anbohrschelle** auf die Leitung, verlegt die Anschlussleitung rechtwinklig von ihr in ihrer Überdeckung bis zum Schrank und führt sie dort in den Schrank hoch.
+
+![Der Hausanschluss von der Gasleitung der Straße zum Zählerschrank, ausgewählt](shots/mep-gas-street.webp)
+
+![Leitung und Hausanschluss im Erdreich, die Installation an der Fassade](shots/mep-gas-3d.webp)
+
+![Die Eigenschaften eines Hausanschlusses: von der Anbohrschelle zum Zählerschrank, Überdeckung und Durchmesser](shots/mep-gas-service-properties.webp)
+
+![Die Vorgaben eines Gassystems: sein Gas und seine Druckstufe](shots/mep-gas-systems.webp)
+
+**Gas- und Heizöl-Materialliste** unter **System** listet System für System die Rohre nach Material und Durchmesser mit ihrer Länge (davon die Steigleitungen), Bögen, T-Stücke und Schutzhülsen, das Warnband, Armaturen, Zähler und Schränke und die Geräte mit installiertem Verbrauch und Leistung. In IFC ist ein Gassystem ein IfcDistributionSystem vom Typ GAS, ein Heizölsystem FUEL; der Zählerschrank ist ein IfcDistributionChamberElement, der Zähler ein IfcFlowMeter GASMETER, die Armaturen IfcValve, der Herd ein IfcBurner, der Tank ein IfcTank.
+
+![Die Gas- und Heizöl-Materialliste](shots/mep-gas-list.webp)
+
+Die Rohrbemessung aus dem Verbrauch der Geräte und der Nachweis des Druckverlusts sind Ingenieurarbeit, in der Edition **Lapin MEP**.
+
 ## MEP Pro
 
 Die Ingenieursarbeit am Netz – der Bedarf, den jede Leitung trägt, und die Größe, die ihn aufnimmt, die Prüfungen (offene Enden, enge Bögen, Abwassergefälle, überlastete Quellen), die Verlegeregeln nach Material (Kupfer in 45°-Schritten, PVC mit höchstens 45° Richtungsänderung), Heizkörper als Vorschlag unter Fenstern, Verläufe als Vorschlag entlang der Wände, das Profil einer Leitung und die Isometrie eines Systems – steckt in der Edition **Lapin MEP**, die dieser Registerkarte die Gruppen **Auslegung** und **Assistenten** hinzufügt.

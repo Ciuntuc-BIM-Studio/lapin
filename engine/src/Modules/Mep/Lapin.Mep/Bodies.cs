@@ -17,7 +17,7 @@ public static class Bodies
 {
     public sealed record Piece(string Key, string Label, string Color, Solid Solid);
 
-    const string Steel = "#9aa0a6", White = "#eceae6", Dark = "#4a4f55", Chrome = "#b8bec6", Accent = "#c0392b";
+    const string Gas = "#e1b12c", Steel = "#9aa0a6", White = "#eceae6", Dark = "#4a4f55", Chrome = "#b8bec6", Accent = "#c0392b";
 
     public static List<Piece> Of(IModelView m, Entity e, Role role, Vec3 size)
     {
@@ -147,6 +147,71 @@ public static class Bodies
                 break;
             case "cap":
                 Tube(body, new(-w, 0, h / 2), new(w, 0, h / 2), Math.Min(d, h) / 2, 12);
+                color = Steel;
+                break;
+            case "meterBox":
+                // The cabinet on the facade and its door, the yellow of gas.
+                Block(body, -w, w, -d, d, 0, h);
+                Block(detail, -w * 0.9, w * 0.9, -d - 0.01, -d, h * 0.08, h * 0.92);
+                color = White; detailColor = Gas;
+                break;
+            case "regulator":
+                // The valve body, the spring dome over it.
+                Tube(body, new(-w, 0, 0.04), new(w, 0, 0.04), 0.025);
+                if (Prism.Cylinder(L(0, 0, 0).Xy, L(0, 0, 0.06).Z, Math.Min(w, d) * 0.8, h - 0.06, 20, "body") is { } dome) detail.Add(dome);
+                color = Gas; detailColor = Steel;
+                break;
+            case "gasMeter":
+                // A diaphragm meter: its case, the two spigots on top, the dial at the front.
+                Block(body, -w, w, -d, d, 0, h);
+                Tube(detail, new(-0.06, 0, h), new(-0.06, 0, h + 0.03), 0.015, 10);
+                Tube(detail, new(0.06, 0, h), new(0.06, 0, h + 0.03), 0.015, 10);
+                Block(detail, -w * 0.5, w * 0.5, -d - 0.005, -d, h * 0.45, h * 0.75);
+                color = Chrome; detailColor = Dark;
+                break;
+            case "gasCock":
+                // A ball valve with the yellow handle gas valves have.
+                Tube(body, new(-w, 0, h / 2), new(w, 0, h / 2), Math.Min(d, h) / 2);
+                Block(detail, -0.008, 0.008, -0.008, 0.008, h / 2, h + 0.02);
+                Block(detail, -0.008, 0.008, -0.07, 0.008, h + 0.02, h + 0.035);
+                color = "#b0803a"; detailColor = Gas;
+                break;
+            case "flex":
+                Tube(body, new(-w, 0, h / 2), new(w, 0, h / 2), Math.Min(d, h) / 2, 10);
+                color = Chrome;
+                break;
+            case "cooker":
+                // The cooker, the hob on top with its four burners.
+                Block(body, -w, w, -d, d, 0, h);
+                foreach (var (cx, cy) in new[] { (-0.5, -0.5), (0.5, -0.5), (-0.5, 0.5), (0.5, 0.5) })
+                    if (Prism.Cylinder(L(cx * w, cy * d, 0).Xy, L(0, 0, h).Z, 0.07, 0.015, 16, "body") is { } burner) detail.Add(burner);
+                color = White;
+                break;
+            case "waterHeater":
+                Block(body, -w, w, -d, d, 0, h);
+                Tube(detail, new(0, 0, h), new(0, 0, h + 0.2), 0.05);
+                color = White;
+                break;
+            case "tappingTee":
+                // The saddle round the main, the outlet up.
+                Tube(body, new(-w, 0, 0), new(w, 0, 0), Math.Max(d, 0.04) * 0.6, 16);
+                Tube(detail, new(0, 0, 0), new(0, 0, 0.12), 0.025, 12);
+                color = Gas; detailColor = Gas;
+                break;
+            case "oilTank":
+                // The tank and its manhole with the fill, vent, supply and return on it.
+                Block(body, -w, w, -d, d, 0, h);
+                Tube(detail, new(-0.7, 0, h), new(0.7, 0, h), 0.03, 10);
+                color = "#5f7a5a";
+                break;
+            case "oilFilter":
+                Tube(body, new(0, 0, 0), new(0, 0, h * 0.75), Math.Min(w, d) / 2, 16);
+                Tube(detail, new(-w, 0, h * 0.78), new(w, 0, h * 0.78), 0.012, 10);
+                color = Chrome;
+                break;
+            case "fillPoint":
+            case "ventCap":
+                Tube(body, new(0, 0, 0), new(0, 0, h), Math.Min(w, d) / 2, 14);
                 color = Steel;
                 break;
             default:

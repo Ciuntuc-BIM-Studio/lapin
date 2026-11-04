@@ -13,8 +13,13 @@ interface MepPrefs {
   plane: Plane | null;
   /** Connect: the run end picked first, waiting for what it joins. */
   pending: { runId: string; end: 'start' | 'end' } | null;
+  /** A gas main: how far to the left of the line it follows (m; right when negative), and its cover (m). */
+  mainOffset: number;
+  mainDepth: number;
+  /** Service connection: the main picked first, waiting for the meter box. */
+  pendingMain: string | null;
 }
 
-export const useMep = create<MepPrefs>(() => ({ systemId: null, pair: null, plane: null, pending: null }));
+export const useMep = create<MepPrefs>(() => ({ systemId: null, pair: null, plane: null, pending: null, mainOffset: 1, mainDepth: 0.9, pendingMain: null }));
 
 export const setMep = (patch: Partial<MepPrefs>): void => useMep.setState(patch);

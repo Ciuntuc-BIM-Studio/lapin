@@ -55,6 +55,38 @@ I egenskabspanelet viser en knude sit system, sin rolle og sine porte (åbne ell
 
 Ved eksport til IFC er hvert system et IfcDistributionSystem, hver knude og strækning har sine IfcDistributionPorts, og forbindelserne skrives mellem portene, så netværket ankommer til et andet program forbundet fra kilden til det sidste endepunkt.
 
+## Gas og fyringsolie
+
+**Gas** og **Fyringsolie** er egne fag under **Nyt system**. Et gassystem angiver sin gas (**Naturgas** eller **F-gas**) og sin **Trykklasse** (lavtryk i huset, mellemtryk i gaden) i **Systemer…**; dets rør er som standard sorte stålrør på væggene i 2,1 m og kan være kobber, flerlagsrør eller **PE 100** til det nedgravede. Fyringsolie løber i kobber.
+
+Et hus' gasinstallation begynder ved **målerskabet** på facaden. Klik **Nyt system → Gas**: målerskabet sættes hvor du klikker og en **gaskedel** indenfor, forbundet af en strækning. Undervejs sætter værktøjerne under **Gas** **gasregulatoren**, **gasmåleren**, **hovedhanen for gas**, **apparathanerne** og **fleksible tilslutninger** på strækningen, som de deler ligesom enhver fitting; **gaskomfuret** og **gasvandvarmeren** forbindes med installationen af deres egen strækning. Hvor et gas- eller olierør går gennem en væg, går det gennem et **foringsrør**, tegnet og talt med strækningen. En gaskedel tegnet i varmesystemet som dets kilde forbindes med gasinstallationen fra sine egenskaber (knappen **+** med gassystemets navn).
+
+![Et hus' gasinstallation: målerskab, regulator og måler udenfor, kedel og komfur i køkkenet](shots/mep-gas-plan.webp)
+
+Hvert apparat beholder sit **forbrug** (m³/h) og sin **apparattype** efter aftrækket (A uden aftræk, B åbent aftræk, C lukket), til listerne og dimensioneringen.
+
+**Fyringsolie** sætter en **olietank** (inde, ude eller nedgravet) og en **oliekedel**; **påfyldningsstudsen** og **udluftningshætten** forbindes med tankens påfyldning og udluftning, og **oliefilteret** sidder på fremløbet.
+
+### Forsyningen i gaden
+
+Under **Gade** lægger **Gasledning langs…** (<kbd>GM</kbd>) en gasledning langs det du klikker — en vej, en linjeføring, en tegnet linje, en væg — med **afstand til linjen** og **dybde (jorddække)** fra kommandolinjens bjælke; under et terræn måles dybden fra jorden, ellers fra etagen. **Gasledning** tegner den punkt for punkt. Ledningen kommer i et mellemtryks-gassystem af PE-rør med sit **advarselsbånd**.
+
+**Stikledning** (<kbd>GS</kbd>): klik ledningen, så målerskabet. Lapin sætter en **anboringsbøjle** på ledningen, lægger stikledningen vinkelret fra den i dens jorddække hen til skabet og fører den op i skabet dér.
+
+![Stikledningen fra gadens gasledning til målerskabet, valgt](shots/mep-gas-street.webp)
+
+![Ledningen og stikledningen under jorden, installationen på facaden](shots/mep-gas-3d.webp)
+
+![En stiklednings egenskaber: fra anboringsbøjlen til målerskabet, jorddække og diameter](shots/mep-gas-service-properties.webp)
+
+![Et gassystems standarder: dets gas og dets trykklasse](shots/mep-gas-systems.webp)
+
+**Mængdeliste for gas og olie** under **System** viser system for system rørene efter materiale og diameter med deres længde (og heraf stigrørene), bøjninger, T-stykker og foringsrør, advarselsbåndet, haner, målere og skabe og apparaterne med installeret forbrug og effekt. I IFC er et gassystem et IfcDistributionSystem af typen GAS og et oliesystem FUEL; målerskabet er et IfcDistributionChamberElement, måleren en IfcFlowMeter GASMETER, hanerne IfcValve, komfuret en IfcBurner, tanken en IfcTank.
+
+![Mængdelisten for gas og olie](shots/mep-gas-list.webp)
+
+At dimensionere rørene ud fra apparaternes forbrug og eftervise tryktabet er ingeniørarbejde, i udgaven **Lapin MEP**.
+
 ## MEP Pro
 
 Ingeniørarbejdet på netværket — den belastning hver strækning bærer og den dimension der kan klare den, kontrollerne (åbne ender, skarpe bøjninger, fald på afløb, overbelastede kilder), føringsreglerne efter materiale (kobber i trin på 45°, PVC der drejer højst 45°), radiatorer foreslået under vinduer, føringer foreslået langs væggene, en strækningsprofil og et systems isometri — ligger i udgaven **Lapin MEP**, som føjer grupperne **Dimensionering** og **Assistenter** til denne fane.

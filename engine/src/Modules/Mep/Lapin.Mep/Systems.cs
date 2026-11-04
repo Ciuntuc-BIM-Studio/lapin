@@ -8,13 +8,14 @@ namespace Lapin.Mep;
 public static class Services
 {
     public const string Heating = "heating", ColdWater = "coldWater", HotWater = "hotWater", Drainage = "drainage",
-        SupplyAir = "supplyAir", ExtractAir = "extractAir", Electrical = "electrical";
-    public static readonly string[] All = [Heating, ColdWater, HotWater, Drainage, SupplyAir, ExtractAir, Electrical];
+        SupplyAir = "supplyAir", ExtractAir = "extractAir", Electrical = "electrical", Gas = "gas", FuelOil = "fuelOil";
+    public static readonly string[] All = [Heating, ColdWater, HotWater, Drainage, SupplyAir, ExtractAir, Electrical, Gas, FuelOil];
 
     public static string Label(string service) => service switch
     {
         Heating => "Heating", ColdWater => "Cold water", HotWater => "Hot water", Drainage => "Drainage",
-        SupplyAir => "Supply air", ExtractAir => "Extract air", Electrical => "Electrical", _ => service,
+        SupplyAir => "Supply air", ExtractAir => "Extract air", Electrical => "Electrical",
+        Gas => "Gas", FuelOil => "Fuel oil", _ => service,
     };
 
     /// <summary>What a run of the service is in IFC: a pipe, a duct or a cable.</summary>
@@ -26,6 +27,15 @@ public static class Services
     };
 
     public static bool IsAir(string service) => service is SupplyAir or ExtractAir;
+
+    /// <summary>A fuel the building burns (gas, fuel oil): its pipes go through walls in sleeves, and its list is the gas and fuel oil bill of materials.</summary>
+    public static bool IsFuel(string service) => service is Gas or FuelOil;
+
+    /// <summary>What a gas system carries: natural gas or LPG (data for the list and for mep-pro's sizing).</summary>
+    public static readonly string[] Gases = ["natural", "lpg"];
+
+    /// <summary>A gas installation's pressure class: low (the house's, after the regulator) or medium (the street's, before it).</summary>
+    public static readonly string[] Pressures = ["low", "medium"];
 }
 
 /// <summary>
@@ -39,6 +49,11 @@ public static class Services
 public sealed record SystemDefaults(double Size, string Plane, double FloorElevation, double CeilingElevation, double WallElevation,
     double Slope, bool Pair, double Separation, string? Material, double Insulation, double BendRadius)
 {
+    /// <summary>A gas system's gas: natural or LPG (<see cref="Services.Gases"/>); null for the other services.</summary>
+    public string? Gas { get; init; }
+    /// <summary>A gas system's pressure class: low or medium (<see cref="Services.Pressures"/>); null for the other services.</summary>
+    public string? Pressure { get; init; }
+
     public double ElevationOf(string? plane) => (plane ?? Plane) switch { "ceiling" => CeilingElevation, "wall" => WallElevation, _ => FloorElevation };
 
     public static SystemDefaults For(string service) => service switch
@@ -49,6 +64,10 @@ public sealed record SystemDefaults(double Size, string Plane, double FloorEleva
         Services.Drainage => new(0.11, "floor", 0.1, 2.3, 0.5, 0.02, false, 0, "pvc", 0, 1.5),
         Services.SupplyAir or Services.ExtractAir => new(0.125, "ceiling", 0.2, 2.5, 2.2, 0, false, 0, "galvanised", 0.03, 1.5),
         Services.Electrical => new(0.016, "ceiling", 0.05, 2.6, 1.1, 0, false, 0, "cable", 0, 3),
+        // Gas: steel on the walls, high (2.1 m), low pressure after the regulator; natural gas.
+        Services.Gas => new(0.022, "wall", 0.2, 2.4, 2.1, 0, false, 0, "steel", 0, 1.5) { Gas = "natural", Pressure = "low" },
+        // Fuel oil: one copper pipe to the burner's filter (a single-pipe system), on the floor.
+        Services.FuelOil => new(0.012, "floor", 0.2, 2.4, 1.1, 0, false, 0.05, "copper", 0, 3),
         _ => new(0.02, "floor", 0.2, 2.4, 1.1, 0, false, 0.1, null, 0, 1.5),
     };
 
@@ -56,6 +75,7 @@ public sealed record SystemDefaults(double Size, string Plane, double FloorEleva
     {
         ["size"] = Size, ["plane"] = Plane, ["floorElevation"] = FloorElevation, ["ceilingElevation"] = CeilingElevation, ["wallElevation"] = WallElevation,
         ["slope"] = Slope, ["pair"] = Pair, ["separation"] = Separation, ["material"] = Material, ["insulation"] = Insulation, ["bendRadius"] = BendRadius,
+        ["gas"] = Gas, ["pressure"] = Pressure,
     };
 
     /// <summary>The defaults with what a JSON object gives over them (a system's own attributes, a command's patch).</summary>
@@ -66,7 +86,12 @@ public sealed record SystemDefaults(double Size, string Plane, double FloorEleva
         return new(N("size", Size), (string?)o["plane"] is "floor" or "ceiling" or "wall" ? (string)o["plane"]! : Plane,
             N("floorElevation", FloorElevation), N("ceilingElevation", CeilingElevation), N("wallElevation", WallElevation), N("slope", Slope),
             o["pair"] is JsonValue pv && pv.TryGetValue<bool>(out var pair) ? pair : Pair, N("separation", Separation),
-            o.ContainsKey("material") ? (string?)o["material"] : Material, N("insulation", Insulation), N("bendRadius", BendRadius));
+            o.ContainsKey("material") ? (string?)o["material"] : Material, N("insulation", Insulation), N("bendRadius", BendRadius))
+        {
+            // Data on a gas system only: a fuel and a pressure class the lists name.
+            Gas = Gas != null && (string?)o["gas"] is { } g && Services.Gases.Contains(g) ? g : Gas,
+            Pressure = Pressure != null && (string?)o["pressure"] is { } p && Services.Pressures.Contains(p) ? p : Pressure,
+        };
     }
 }
 
