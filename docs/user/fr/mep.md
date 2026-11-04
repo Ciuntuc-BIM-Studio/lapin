@@ -106,9 +106,15 @@ L'onglet **Volumes** liste chaque volume avec sa marque (V1, V2… niveau par ni
 
 ![Les volumes avec leurs marques et leurs tailles](shots/mep-voids-list.webp)
 
-**Vue → Volumes de réservation** les dessine en 3D, violet translucide, avec leurs marques ; un clic sur l'un sélectionne son ouverture. Ils sont pour l'écran : les planches et les dessins ne les portent jamais.
+**Vue → Volumes de réservation**, avec la vue 3D devant, les dessine en 3D, violet translucide, avec leurs marques ; un clic sur l'un sélectionne son ouverture.
 
 ![Les volumes du mur intérieur, avec les tuyaux qui les traversent](shots/mep-voids-3d.webp)
+
+Avec un plan, une coupe ou une façade devant, **Vue → Volumes de réservation** les dessine dans cette vue, comme un plan de synthèse montre les réservations : coupés là où la vue les coupe (l'ouverture d'un mur sur toute son épaisseur, celle d'un plancher à travers la dalle), vus là où elle les voit (une trémie sous la coupe du plan, l'ouverture d'un mur sur la face que regarde une façade), en tirets quand l'ouverture d'un mur est sous la coupe ou celle d'un plancher au-dessus ; chacun barré en croix, avec sa marque et, dessous, sa taille et le niveau bas d'une ouverture dans un mur (**400×200 +0.90**, **Ø200**). Le moteur les dessine avec le reste du dessin, donc les feuilles, le PDF et le DXF (calque **VOIDS**) les impriment comme l'écran les montre.
+
+![Le plan avec les réservations : coupées dans les murs, la trémie vue, chacune barrée et marquée](shots/mep-voids-plan.webp)
+
+C'est un réglage de la vue, aussi dans ses propriétés (**Vue → Paramètres de vue**) : **Volumes de réservation**, et **Tailles des réservations** pour la taille sous la marque. Par défaut aucune vue ne les dessine ; le style de vue **Coordination** (**Gérer → Styles de vue**, choisi comme **Style** de la vue) les dessine dans chaque vue qui le prend. Leurs lignes sont la catégorie **Volumes** : plumes et couleurs dans **Gérer → Styles d’objets** (lignes coupées, en projection, cachées, au-dessus), montrées ou masquées par vue dans **Vue → Visibilité / Graphismes…**.
 
 Pour donner les volumes à un outil de conflits, cochez **Volumes de réservation** dans **Fichier → Exporter IFC ou Fragments…** (ou **Exporter en 3D…**). En IFC chaque volume est un **IfcBuildingElementProxy** de type **PROVISIONFORVOID** avec **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter pour un rond, Depth) et le jeu Lapin **Lapin_OpeningVoid** (marque, type, hôte, ouverture et décalage), lié à son hôte ; les ouvertures restent des IfcOpeningElement. Chaque volume garde son GlobalId d'un export à l'autre. Dans un export de maillages, ils forment un groupe à part, **Opening voids**. Case décochée, les exports restent comme avant.
 

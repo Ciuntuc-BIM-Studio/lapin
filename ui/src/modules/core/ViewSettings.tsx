@@ -5,7 +5,7 @@
  * all but the finishes, the cores), whether one material goes on from
  * element to element without a line, whether a plan draws what is above its
  * cut, whether a plan draws the 2D an IFC file gave its elements instead of
- * their cut; with a plan's cut plane and range (View range) and the storeys it
+ * their cut, whether the openings' voids are drawn (decision 290); with a plan's cut plane and range (View range) and the storeys it
  * shows. A 3D view has its discipline, style and layers too (the walls and
  * floors without their finishes, or their cores alone) and the storeys it
  * shows. In the view's properties and as View → View settings for the view in
@@ -106,6 +106,18 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
             </dd>
           </>
         )}
+        {!threeD && !site && (
+          <>
+            <dt title="Each opening's void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it">Opening voids</dt>
+            <dd><input type="checkbox" data-testid="view-voids" checked={state.resolved.voids === true} onChange={(e) => set({ voids: e.target.checked })} /><Reset field="voids" /></dd>
+            {state.resolved.voids && (
+              <>
+                <dt title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</dt>
+                <dd><input type="checkbox" checked={state.resolved.voidSizes !== false} onChange={(e) => set({ voidSizes: e.target.checked })} /><Reset field="voidSizes" /></dd>
+              </>
+            )}
+          </>
+        )}
         {site && <SitePlanFields view={view} />}
         {section && <SectionFields view={view} />}
         <dt title="What this view shows and how, by category, class and element (VV)">Graphics</dt>
@@ -170,7 +182,7 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>
@@ -180,6 +192,8 @@ export function ViewStylesDialog() {
                   <td><input type="checkbox" checked={s.joins} onChange={(e) => update(s.id, { joins: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.overhead} onChange={(e) => update(s.id, { overhead: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.ifc2d !== false} onChange={(e) => update(s.id, { ifc2d: e.target.checked })} /></td>
+                  <td><input type="checkbox" checked={s.voids === true} onChange={(e) => update(s.id, { voids: e.target.checked })} /></td>
+                  <td><input type="checkbox" checked={s.voidSizes !== false} disabled={!s.voids} onChange={(e) => update(s.id, { voidSizes: e.target.checked })} /></td>
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Duplicate" onClick={() => void execute('viewStyle.create', { from: s.id })}><Copy size={12} /></button>
                     <button type="button" className="icon mini" title="Delete: its views take their discipline's style" disabled={styles.length < 2}

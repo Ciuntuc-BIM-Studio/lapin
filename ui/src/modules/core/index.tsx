@@ -37,6 +37,7 @@ import { ProjectFolderDialog } from './cde/ProjectFolderDialog';
 import { IssueDialog } from './cde/IssueDialog';
 import { CheckDialog } from './cde/CheckDialog';
 import { CoordinationDialog } from './coordination/CoordinationDialog';
+import { toggleVoids2d } from './coordination/coordination';
 import { RemarksDialog } from './remarks/RemarksDialog';
 import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { DisplayQualityDialog } from './DisplayQualityDialog';
@@ -195,8 +196,13 @@ const core: LapinModule = {
         { id: 'view.sections', label: 'Sections…', icon: SectionIcon, run: () => useUi.setState({ dialog: 'sections' }) },
         // The reinforcement as tubes in 3D (docs/plan-rebar.md, decision 221): asked of the engine while on, freed when off.
         { id: 'view.rebar3d', label: 'Bars in 3D', icon: Cable, run: () => useUi.setState((s) => ({ rebar3d: !s.rebar3d })) },
-        // The openings as translucent voids in 3D (decision 289): asked of the engine while on.
-        { id: 'view.openingVoids', label: 'Opening voids', icon: SquareDashed, run: () => useUi.setState((s) => ({ openingVoids: !s.openingVoids, ...(s.view !== '3d' && !s.openingVoids ? { view: '3d' as const } : {}) })) },
+        // The openings as translucent voids in 3D (decision 289): asked of the engine while on. In a plan, section or
+        // elevation the view in front draws them itself, crossed and marked, as it prints them (decision 290).
+        { id: 'view.openingVoids', label: 'Opening voids', icon: SquareDashed, run: () => {
+          const s = useUi.getState();
+          if (s.view === '3d') useUi.setState({ openingVoids: !s.openingVoids });
+          else void toggleVoids2d();
+        } },
         { id: 'view.displayQuality', label: 'Display quality', icon: Gauge, run: () => useUi.setState({ dialog: 'displayQuality' }) },
       ] },
       // Selecting and clearing up in 3D (docs/groups.md): a region, and hiding for now, with Revit's keys.

@@ -1009,6 +1009,11 @@ export const RO: Record<string, string> = {
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Fiecare gol dintr-un perete, o placă sau un acoperiș și ca solid propriu (IfcBuildingElementProxy PROVISIONFORVOID cu Pset_ProvisionForVoid), pentru programele de coliziuni; felurile și decalajul din Gestionare → Goluri vs instalații',
   'as solids, for clash tools': 'ca solide, pentru programele de coliziuni',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Fiecare gol dintr-un perete, o placă sau un acoperiș și ca solid propriu, într-un grup numit Opening voids, pentru programele de coliziuni; felurile și decalajul din Gestionare → Goluri vs instalații',
+  // Opening voids on plans, sections and elevations (decision 290)
+  'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Volumul fiecărui gol desenat unde vederea îl taie sau îl vede, cu diagonale și cu marca lui (V1, V2…), cum arată un plan de coordonare golurile prevăzute; planșele îl tipăresc',
+  'Void sizes': 'Dimensiunile golurilor',
+  'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Sub marca fiecărui gol, lățime × înălțime (diametrul la unul rotund) și cota de jos a unui gol din perete',
+  'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Planurile, secțiunile și fațadele desenează volumele golurilor, cu diagonale și cu mărcile lor',
 };
 
 /** Phrases with a number or a name in them. */

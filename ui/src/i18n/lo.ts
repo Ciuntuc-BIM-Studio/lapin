@@ -1067,6 +1067,11 @@ export const LO: Record<string, string> = {
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'ທຸກຊ່ອງເປີດໃນຝາ, ພື້ນ ຫຼື ຫຼັງຄາ ຍັງເປັນທຶບຂອງຕົນເອງ (IfcBuildingElementProxy PROVISIONFORVOID ພ້ອມ Pset_ProvisionForVoid), ສຳລັບໂປຣແກຣມກວດການຂັດກັນ; ປະເພດ ແລະ ໄລຍະເລື່ອນຈາກ ຈັດການ → ຊ່ອງເປີດ ທຽບກັບ MEP',
   'as solids, for clash tools': 'ເປັນທຶບ, ສຳລັບໂປຣແກຣມກວດການຂັດກັນ',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'ທຸກຊ່ອງເປີດໃນຝາ, ພື້ນ ຫຼື ຫຼັງຄາ ຍັງເປັນທຶບຂອງຕົນເອງ, ໃນກຸ່ມຊື່ Opening voids, ສຳລັບໂປຣແກຣມກວດການຂັດກັນ; ປະເພດ ແລະ ໄລຍະເລື່ອນຈາກ ຈັດການ → ຊ່ອງເປີດ ທຽບກັບ MEP',
+  // Opening voids on plans, sections and elevations (decision 290)
+  'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'ບລັອກຊ່ອງຂອງແຕ່ລະຊ່ອງເປີດ ແຕ້ມບ່ອນທີ່ມຸມມອງຕັດ ຫຼື ເຫັນມັນ, ມີເສັ້ນຂວາງ, ພ້ອມເຄື່ອງໝາຍ (V1, V2…), ຄືແຜນປະສານງານສະແດງຊ່ອງທີ່ກຽມໄວ້; ແຜ່ນແບບພິມມັນອອກ',
+  'Void sizes': 'ຂະໜາດຊ່ອງ',
+  'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'ກ້ອງເຄື່ອງໝາຍຂອງແຕ່ລະຊ່ອງ: ກວ້າງ × ສູງ (ເສັ້ນຜ່າສູນກາງຖ້າມົນ) ແລະ ລະດັບລຸ່ມຂອງຊ່ອງເປີດໃນຝາ',
+  'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'ແຜນຜັງ, ພາກຕັດ ແລະ ຮູບດ້ານ ແຕ້ມບລັອກຊ່ອງຂອງຊ່ອງເປີດ, ມີເສັ້ນຂວາງ, ພ້ອມເຄື່ອງໝາຍ',
 };
 
 /** Phrases with a number or a name in them. */

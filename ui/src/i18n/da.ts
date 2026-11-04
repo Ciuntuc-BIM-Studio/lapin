@@ -1007,6 +1007,11 @@ export const DA: Record<string, string> = {
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Hver åbning i en væg, et dæk eller et tag også som et selvstændigt legeme (IfcBuildingElementProxy PROVISIONFORVOID med Pset_ProvisionForVoid), til kollisionsprogrammer; slagsene og forskydningen fra Administrer → Åbninger mod installationer',
   'as solids, for clash tools': 'som legemer, til kollisionsprogrammer',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Hver åbning i en væg, et dæk eller et tag også som et selvstændigt legeme, i en gruppe ved navn Opening voids, til kollisionsprogrammer; slagsene og forskydningen fra Administrer → Åbninger mod installationer',
+  // Opening voids on plans, sections and elevations (decision 290)
+  'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Hver åbnings udsparingslegeme tegnet hvor visningen skærer eller ser det, krydset, med sit mærke (V1, V2…), som en koordineringstegning viser udsparinger; tegningsark udskriver det',
+  'Void sizes': 'Udsparingers størrelser',
+  'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Under hver udsparings mærke dens bredde × højde (en rund ens diameter) og en vægåbnings underkant',
+  'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Planer, snit og facader tegner åbningernes udsparingslegemer, krydset, med deres mærker',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

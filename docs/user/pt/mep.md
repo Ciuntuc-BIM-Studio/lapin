@@ -106,9 +106,15 @@ A guia **Volumes** lista cada volume com a sua marca (V1, V2… pavimento a pavi
 
 ![Os volumes com marcas e tamanhos](shots/mep-voids-list.webp)
 
-**Vista → Volumes de abertura** desenha-os em 3D, violeta translúcido com as suas marcas; um clique num seleciona a abertura. São para a tela: pranchas e desenhos nunca os levam.
+**Vista → Volumes de abertura**, com a vista 3D à frente, desenha-os em 3D, violeta translúcido com as suas marcas; um clique num seleciona a abertura.
 
 ![Os volumes na parede interna, com os tubos através deles](shots/mep-voids-3d.webp)
+
+Com uma planta, corte ou alçado à frente, **Vista → Volumes de abertura** desenha-os nessa vista, como um desenho de coordenação mostra as aberturas previstas: cortados onde a vista os corta (a abertura de uma parede em toda a sua espessura, a de uma laje através dela), vistos onde os vê (uma abertura de laje abaixo do corte da planta, a abertura de uma parede na face que um alçado olha), tracejados quando a abertura de uma parede fica abaixo do corte ou a de uma laje acima; cada um em cruz, com a sua marca e, por baixo, o tamanho e a cota inferior de uma abertura em parede (**400×200 +0.90**, **Ø200**). O motor desenha-os com o resto do desenho, por isso as folhas, o PDF e o DXF (camada **VOIDS**) imprimem-nos como o ecrã os mostra.
+
+![A planta com os volumes: cortados nas paredes, a abertura da laje vista, cada um em cruz e marcado](shots/mep-voids-plan.webp)
+
+É uma definição da vista, também nas suas propriedades (**Vista → Configurações da vista**): **Volumes de abertura**, e **Tamanhos das aberturas** para o tamanho sob a marca. Por omissão nenhuma vista os desenha; o estilo de vista **Coordenação** (**Gerenciar → Estilos de vista**, escolhido como **Estilo** da vista) desenha-os em cada vista que o usa. As suas linhas são a categoria **Volumes**: canetas e cores em **Gerenciar → Estilos de objeto** (linhas de corte, projeção, ocultas, acima), mostradas ou ocultas por vista em **Vista → Visibilidade / Gráficos…**.
 
 Para passar os volumes a um programa de conflitos, marque **Volumes de abertura** em **Arquivo → Exportar IFC ou Fragments…** (ou **Exportar 3D…**). Em IFC cada volume é um **IfcBuildingElementProxy** do tipo **PROVISIONFORVOID** com **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter se redondo, Depth) e o conjunto do Lapin **Lapin_OpeningVoid** (marca, tipo, hospedeiro, abertura e deslocamento), ligado ao hospedeiro; as aberturas continuam IfcOpeningElement. Cada volume mantém o seu GlobalId de uma exportação para outra. Numa exportação de malhas formam um grupo próprio, **Opening voids**. Sem a marca, as exportações ficam como antes.
 

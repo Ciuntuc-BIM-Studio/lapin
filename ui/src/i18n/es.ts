@@ -1013,6 +1013,11 @@ export const ES: Record<string, string> = {
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Cada hueco en un muro, losa o cubierta también como un sólido propio (IfcBuildingElementProxy PROVISIONFORVOID con Pset_ProvisionForVoid), para los programas de colisiones; los tipos y el desfase de Gestionar → Huecos vs instalaciones',
   'as solids, for clash tools': 'como sólidos, para los programas de colisiones',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Cada hueco en un muro, losa o cubierta también como un sólido propio, en un grupo llamado Opening voids, para los programas de colisiones; los tipos y el desfase de Gestionar → Huecos vs instalaciones',
+  // Opening voids on plans, sections and elevations (decision 290)
+  'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'El volumen de cada hueco dibujado donde la vista lo corta o lo ve, en cruz, con su marca (V1, V2…), como un plano de coordinación muestra los huecos previstos; los planos lo imprimen',
+  'Void sizes': 'Tamaños de huecos',
+  'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Bajo la marca de cada hueco, su ancho × alto (el diámetro si es redondo) y la cota inferior de un hueco en muro',
+  'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Las plantas, secciones y alzados dibujan los volúmenes de los huecos, en cruz, con sus marcas',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

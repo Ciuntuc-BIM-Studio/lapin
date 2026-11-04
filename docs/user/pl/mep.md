@@ -106,9 +106,15 @@ Karta **Bryły** wypisuje każdą bryłę z jej znakiem (V1, V2… kondygnacja p
 
 ![Bryły ze znakami i rozmiarami](shots/mep-voids-list.webp)
 
-**Widok → Bryły otworów** rysuje je w 3D, półprzezroczyste fioletowe ze znakami; kliknięcie zaznacza otwór. Są tylko na ekran: arkusze i rysunki nigdy ich nie zawierają.
+**Widok → Bryły otworów**, z widokiem 3D z przodu, rysuje je w 3D, półprzezroczyste fioletowe ze znakami; kliknięcie zaznacza otwór.
 
 ![Bryły w ścianie wewnętrznej, z rurami przez nie](shots/mep-voids-3d.webp)
+
+Z rzutem, przekrojem lub elewacją z przodu **Widok → Bryły otworów** rysuje je w tym widoku, jak rysunek koordynacyjny pokazuje przewidziane otwory: przecięte tam, gdzie widok je tnie (otwór w ścianie na całej jej grubości, w stropie przez płytę), widziane tam, gdzie je widzi (otwór w stropie poniżej cięcia rzutu, otwór w ścianie na licu, na które patrzy elewacja), przerywane, gdy otwór w ścianie leży pod cięciem, a w stropie nad nim; każdy przekreślony po przekątnych, z oznaczeniem, a pod nim wymiar i rzędna dołu otworu w ścianie (**400×200 +0.90**, **Ø200**). Rysuje je silnik razem z resztą rysunku, więc arkusze, PDF i DXF (warstwa **VOIDS**) drukują je tak, jak pokazuje ekran.
+
+![Rzut z bryłami otworów: przecięte w ścianach, otwór w stropie widziany, każdy przekreślony i oznaczony](shots/mep-voids-plan.webp)
+
+To ustawienie widoku, także w jego właściwościach (**Widok → Ustawienia widoku**): **Bryły otworów** oraz **Wymiary otworów** dla wymiaru pod oznaczeniem. Domyślnie żaden widok ich nie rysuje; styl widoku **Koordynacja** (**Zarządzaj → Style widoku**, wybrany jako **Styl** widoku) rysuje je w każdym widoku, który go przyjmie. Ich linie to kategoria **Bryły**: pióra i kolory w **Zarządzaj → Style obiektów** (linie cięcia, rzutu, ukryte, nad cięciem), pokazywane lub ukrywane w widoku w **Widok → Widoczność / Grafika…**.
 
 Aby przekazać bryły do programu kolizji, zaznacz **Bryły otworów** w **Plik → Eksportuj IFC lub Fragments…** (lub **Eksportuj 3D…**). W IFC każda bryła to **IfcBuildingElementProxy** typu **PROVISIONFORVOID** z **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter dla okrągłej, Depth) i zestawem Lapina **Lapin_OpeningVoid** (znak, rodzaj, element nośny, otwór, odsunięcie), powiązana z elementem nośnym; same otwory pozostają IfcOpeningElement. Każda bryła zachowuje GlobalId między eksportami. W eksporcie siatek tworzą osobną grupę **Opening voids**. Bez zaznaczenia eksporty są jak dotąd.
 

@@ -1013,6 +1013,11 @@ export const IT: Record<string, string> = {
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Ogni apertura in un muro, un solaio o un tetto anche come solido a sé (IfcBuildingElementProxy PROVISIONFORVOID con Pset_ProvisionForVoid), per i programmi di interferenze; i tipi e lo scostamento di Gestisci → Aperture vs impianti',
   'as solids, for clash tools': 'come solidi, per i programmi di interferenze',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Ogni apertura in un muro, un solaio o un tetto anche come solido a sé, in un gruppo chiamato Opening voids, per i programmi di interferenze; i tipi e lo scostamento di Gestisci → Aperture vs impianti',
+  // Opening voids on plans, sections and elevations (decision 290)
+  'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Il volume di ogni apertura disegnato dove la vista lo taglia o lo vede, con la croce, con la sua sigla (V1, V2…), come una tavola di coordinamento mostra i fori previsti; le tavole lo stampano',
+  'Void sizes': 'Dimensioni dei fori',
+  'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Sotto la sigla di ogni foro, larghezza × altezza (il diametro se tondo) e la quota inferiore di un\'apertura nel muro',
+  'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Piante, sezioni e prospetti disegnano i volumi delle aperture, con la croce, con le loro sigle',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

@@ -106,9 +106,15 @@ La pestaña **Volúmenes** lista cada volumen con su marca (V1, V2… planta por
 
 ![Los volúmenes con sus marcas y tamaños](shots/mep-voids-list.webp)
 
-**Vista → Volúmenes de hueco** los dibuja en 3D, violeta translúcido, con sus marcas; un clic en uno selecciona su hueco. Son para la pantalla: los planos y dibujos nunca los llevan.
+**Vista → Volúmenes de hueco** con la vista 3D delante los dibuja en 3D, violeta translúcido, con sus marcas; un clic en uno selecciona su hueco.
 
 ![Los volúmenes del muro interior, con las tuberías que los atraviesan](shots/mep-voids-3d.webp)
+
+Con una planta, sección o alzado delante, **Vista → Volúmenes de hueco** los dibuja en esa vista, como un plano de coordinación muestra los huecos previstos: cortados donde la vista los corta (el hueco de un muro en todo su espesor, el de un forjado a través de la losa), vistos donde los ve (un hueco de forjado bajo el corte de la planta, el hueco de un muro en la cara que mira un alzado), a trazos cuando el hueco de un muro queda bajo el corte o el de un forjado sobre él; cada uno en cruz, con su marca y, debajo, su tamaño y la cota inferior de un hueco en muro (**400×200 +0.90**, **Ø200**). Los dibuja el motor con el resto del dibujo, así que los planos, el PDF y el DXF (capa **VOIDS**) los imprimen como los muestra la pantalla.
+
+![La planta con los volúmenes: cortados en los muros, el hueco del forjado visto, cada uno en cruz y con su marca](shots/mep-voids-plan.webp)
+
+Es un ajuste de la vista, también en sus propiedades (**Vista → Configuración de vista**): **Volúmenes de hueco**, y **Tamaños de huecos** para el tamaño bajo la marca. Por defecto ninguna vista los dibuja; el estilo de vista **Coordinación** (**Gestionar → Estilos de vista**, elegido como **Estilo** de la vista) los dibuja en cada vista que lo toma. Sus líneas son la categoría **Volúmenes**: sus plumas y colores en **Gestionar → Estilos de objeto** (líneas de corte, proyección, ocultas, por encima), mostradas u ocultas por vista en **Vista → Visibilidad / Gráficos…**.
 
 Para pasar los volúmenes a un programa de colisiones, marca **Volúmenes de hueco** en **Archivo → Exportar IFC o Fragments…** (o **Exportar 3D…**). En IFC cada volumen es un **IfcBuildingElementProxy** de tipo **PROVISIONFORVOID** con **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter si es redondo, Depth) y el conjunto de Lapin **Lapin_OpeningVoid** (marca, tipo, anfitrión, hueco y desfase), relacionado con su anfitrión; los huecos siguen siendo IfcOpeningElement. Cada volumen conserva su GlobalId de una exportación a otra. En una exportación de mallas son un grupo propio, **Opening voids**. Sin marcar la casilla, las exportaciones quedan como estaban.
 

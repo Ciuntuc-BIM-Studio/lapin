@@ -106,9 +106,15 @@ The **Voids** tab lists every void with its mark (V1, V2… storey by storey), i
 
 ![The voids listed with their marks and sizes](shots/mep-voids-list.webp)
 
-**View → Opening voids** draws them in 3D, translucent violet with their marks; a click on one selects its opening. They are for the screen: sheets and drawings never carry them.
+**View → Opening voids** with the 3D view in front draws them in 3D, translucent violet with their marks; a click on one selects its opening.
 
 ![The voids in the inner wall and the floor, with the pipes through them](shots/mep-voids-3d.webp)
+
+With a plan, section or elevation in front, **View → Opening voids** draws them in that view instead, as a coordination drawing shows provisions for voids: cut where the view cuts them (a wall's opening through the wall's thickness, a floor's through the slab), seen where it sees them (a floor opening below the plan's cut, a wall's opening on the face an elevation looks at), dashed when a wall's opening lies under the cut or a floor's above it; each crossed corner to corner, with its mark and, under it, its size and a wall opening's bottom level (**400×200 +0.90**, **Ø200**). The engine draws them with the rest of the drawing, so sheets, the PDF and DXF (layer **VOIDS**) print them as the screen shows them.
+
+![The plan with the voids: cut through the walls, the floor opening seen, each crossed and marked](shots/mep-voids-plan.webp)
+
+It is a setting of the view, also in its properties (**View → View settings**): **Opening voids**, and **Void sizes** for the size under the mark. Views draw none by default; the **Coordination** view style (**Manage → View styles**, chosen as the view's **Style**) draws them in every view that takes it. Their lines are the **Voids** category: their pens and colours in **Manage → Object styles** (cut, projection, hidden, overhead lines), shown or hidden per view in **View → Visibility / Graphics…**.
 
 To hand the voids to a clash program, tick **Opening voids** in **File → Export IFC or Fragments…** (or **Export 3D…**). In IFC each void is an **IfcBuildingElementProxy** of type **PROVISIONFORVOID** with **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter for a round one, Depth) and Lapin's **Lapin_OpeningVoid** (its mark, kind, host, opening and offset), related to its host; the openings themselves stay IfcOpeningElements as always. Each void keeps its GlobalId from one export to the next, so the clash program follows it. In a mesh export they are a group of their own, **Opening voids**. Without the box ticked, the exports are as they were.
 

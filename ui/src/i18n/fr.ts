@@ -1014,6 +1014,11 @@ export const FR: Record<string, string> = {
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Chaque ouverture dans un mur, une dalle ou un toit aussi comme un solide à part (IfcBuildingElementProxy PROVISIONFORVOID avec Pset_ProvisionForVoid), pour les outils de détection de conflits ; les types et le décalage de Gérer → Ouvertures vs fluides',
   'as solids, for clash tools': 'comme solides, pour les outils de détection de conflits',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Chaque ouverture dans un mur, une dalle ou un toit aussi comme un solide à part, dans un groupe nommé Opening voids, pour les outils de détection de conflits ; les types et le décalage de Gérer → Ouvertures vs fluides',
+  // Opening voids on plans, sections and elevations (decision 290)
+  'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Le volume de chaque ouverture dessiné là où la vue le coupe ou le voit, barré en croix, avec sa marque (V1, V2…), comme un plan de synthèse montre les réservations ; les feuilles l\'impriment',
+  'Void sizes': 'Tailles des réservations',
+  'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Sous la marque de chaque réservation, largeur × hauteur (le diamètre pour une ronde) et le niveau bas d\'une ouverture dans un mur',
+  'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Les plans, coupes et façades dessinent les volumes des ouvertures, barrés en croix, avec leurs marques',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

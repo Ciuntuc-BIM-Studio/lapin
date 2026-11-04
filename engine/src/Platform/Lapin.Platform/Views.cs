@@ -604,6 +604,10 @@ public static class Views
         foreach (var source in q.Services.All<IViewAnnotations>())
             try { marks.AddRange(source.Marks(ctx)); }
             catch (CommandException) { }
+        // The openings' voids when the view's style draws them (decision 290): a coordination drawing's provisions for voids.
+        if (ViewStyles.Of(m, view) is { Voids: true } voidStyle)
+            try { marks.AddRange(Coordination.VoidDrawings.Marks(q, ctx, spec, Pieces(q, view), voidStyle.VoidSizes, styles, categories?.GetValueOrDefault(Coordination.VoidDrawings.Category))); }
+            catch (CommandException) { }
         // Every element the drawing shows can be picked by what it drew: its cut outlines and its seen lines, as a
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
         marks.AddRange(PickMarks(drawing));

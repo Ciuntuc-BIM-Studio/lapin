@@ -143,9 +143,10 @@ public sealed class ViewStyleTests
     public void Styles_are_the_projects_made_changed_and_deleted()
     {
         var (f, a, _, plan) = Corner();
-        Assert.Equal(["architectural", "structural", "mep"], ViewStyles.All(f.Model).Select(s => s.Id));
+        // One per discipline, and Coordination (the openings' voids drawn, decision 290), taken by name.
+        Assert.Equal(["architectural", "structural", "mep", "coordination"], ViewStyles.All(f.Model).Select(s => s.Id));
         var made = (string)f.Run("viewStyle.create", new JsonObject { ["from"] = "structural", ["name"] = "Formwork", ["layers"] = "noFinishes" })!["id"]!;
-        Assert.Equal(4, ViewStyles.All(f.Model).Count);
+        Assert.Equal(5, ViewStyles.All(f.Model).Count);
         f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = made });
         // The footing's protection board is a finish by its name? No: "Protection board" is not; its XPS neither: all its layers draw.
         Assert.Equal(4, Keys(f, plan, a).Count);

@@ -106,9 +106,15 @@ Fila **Volume** listează fiecare volum cu marca lui (V1, V2… etaj cu etaj), g
 
 ![Volumele listate cu mărcile și dimensiunile lor](shots/mep-voids-list.webp)
 
-**Vedere → Volume de gol** le desenează în 3D, violet transparent, cu mărcile lor; un clic pe unul îi selectează golul. Sunt doar pentru ecran: planșele și desenele nu le poartă niciodată.
+**Vedere → Volume de gol** cu vederea 3D în față le desenează în 3D, violet transparent, cu mărcile lor; un clic pe unul îi selectează golul.
 
 ![Volumele din peretele interior, cu țevile prin ele](shots/mep-voids-3d.webp)
+
+Cu un plan, o secțiune sau o fațadă în față, **Vedere → Volume de gol** le desenează în acea vedere, cum arată un plan de coordonare golurile prevăzute: secționate unde vederea le taie (golul din perete pe toată grosimea peretelui, cel din placă prin placă), văzute unde le vede (un gol din placă sub planul de secționare, un gol din perete pe fața spre care privește fațada), punctate când un gol din perete e sub secționare sau unul din placă deasupra ei; fiecare cu diagonale, cu marca și, sub ea, dimensiunea și cota de jos a unui gol din perete (**400×200 +0.90**, **Ø200**). Le desenează motorul, odată cu restul desenului, așa că planșele, PDF-ul și DXF-ul (layerul **VOIDS**) le tipăresc cum le arată ecranul.
+
+![Planul cu volumele de gol: secționate prin pereți, golul din placă văzut, fiecare cu diagonale și marcă](shots/mep-voids-plan.webp)
+
+E o setare a vederii, și în proprietățile ei (**Vedere → Setările vederii**): **Volume de gol**, și **Dimensiunile golurilor** pentru dimensiunea de sub marcă. Implicit nicio vedere nu le desenează; stilul de vedere **Coordonare** (**Gestionare → Stiluri de vedere**, ales ca **Stil** al vederii) le desenează în fiecare vedere care îl ia. Liniile lor sunt categoria **Volume**: creioanele și culorile în **Gestionare → Stiluri de obiecte** (linii secționate, în proiecție, ascunse, deasupra), arătate sau ascunse pe vedere în **Vedere → Vizibilitate / Grafică…**.
 
 Ca să dai volumele unui program de coliziuni, bifează **Volume de gol** în **Fișier → Export IFC sau Fragments…** (sau **Export 3D…**). În IFC fiecare volum e un **IfcBuildingElementProxy** de tip **PROVISIONFORVOID** cu **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter pentru unul rotund, Depth) și setul Lapin **Lapin_OpeningVoid** (marca, felul, gazda, golul și decalajul), legat de gazda lui; golurile înseși rămân IfcOpeningElement ca întotdeauna. Fiecare volum își păstrează GlobalId-ul de la un export la altul, așa că programul de coliziuni îl urmărește. Într-un export de suprafețe 3D ele sunt un grup aparte, **Opening voids**. Fără bifă, exporturile sunt ca înainte.
 

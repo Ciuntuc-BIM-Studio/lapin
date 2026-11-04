@@ -9,8 +9,11 @@ import { create } from 'zustand';
 import { query, useSession } from '../../engine/session';
 
 export type LayerMode = 'all' | 'noFinishes' | 'core';
-/** ifc2d: plans draw the 2D an IFC file gave its elements (footprints, symbols) instead of their cut. */
-export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean }
+/**
+ * ifc2d: plans draw the 2D an IFC file gave its elements (footprints, symbols) instead of their cut.
+ * voids: the openings' voids drawn, crossed and marked (decision 290); voidSizes: with their sizes and bottom levels.
+ */
+export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean }
 
 /** The styles, and the model they were asked for (the session's nodes map, new with every diff). */
 const useStyles = create<{ styles: ViewStyle[]; asked: unknown }>(() => ({ styles: [], asked: null }));

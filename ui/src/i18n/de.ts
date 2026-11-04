@@ -1012,6 +1012,11 @@ export const DE: Record<string, string> = {
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Jede Öffnung in Wand, Decke oder Dach auch als eigener Körper (IfcBuildingElementProxy PROVISIONFORVOID mit Pset_ProvisionForVoid), für Kollisionsprogramme; die Arten und der Versatz aus Verwalten → Öffnungen vs TGA',
   'as solids, for clash tools': 'als Körper, für Kollisionsprogramme',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Jede Öffnung in Wand, Decke oder Dach auch als eigener Körper, in einer Gruppe namens Opening voids, für Kollisionsprogramme; die Arten und der Versatz aus Verwalten → Öffnungen vs TGA',
+  // Opening voids on plans, sections and elevations (decision 290)
+  'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Der Körper jeder Öffnung, gezeichnet wo die Ansicht ihn schneidet oder sieht, durchkreuzt, mit seiner Marke (V1, V2…), wie ein Koordinationsplan Aussparungen zeigt; Pläne drucken ihn',
+  'Void sizes': 'Größen der Aussparungen',
+  'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Unter der Marke jeder Aussparung Breite × Höhe (bei einer runden der Durchmesser) und die Unterkante einer Wandöffnung',
+  'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Grundrisse, Schnitte und Ansichten zeichnen die Aussparungskörper der Öffnungen, durchkreuzt, mit ihren Marken',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

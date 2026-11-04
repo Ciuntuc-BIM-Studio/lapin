@@ -1321,7 +1321,22 @@ export const scenes = [
       await t.wait(2000);
       await t.shot('mep-voids-3d', { of: '[data-testid=view3d]', pad: 0 });
       await quiet.evaluate((el) => el.remove());
-      await t.ui({ openingVoids: false, view: 'plan', keyPlan: true });
+      // The voids in plan (decision 290): View → Opening voids with the plan in front draws them there, cut through the walls,
+      // dashed where they lie in the wall under the cut, the floor opening seen, each crossed with its mark and size, as sheets print them.
+      await t.ui({ openingVoids: false, view: 'plan' });
+      await t.wait(1000);
+      await t.tool('view.openingVoids');
+      await t.wait(2000);
+      const marks = await t.page.locator('[data-testid=plan] text').filter({ hasText: /^V\d+$/ }).count();
+      t.expect(marks === 8, `the plan draws the eight voids with their marks, found ${marks}`);
+      await t.fit();
+      // Zoomed out a little about the house, so the marks beside the outer walls stand clear of the plan's edges.
+      { const [px, py] = await t.planPoint(6, 4); await t.page.mouse.move(px, py); for (let i = 0; i < 2; i++) { await t.page.mouse.wheel(0, 100); await t.wait(80); } await t.wait(600); }
+      await t.shot('mep-voids-plan', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('view.openingVoids');
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=plan] text').filter({ hasText: /^V\d+$/ }).count() === 0, 'View → Opening voids again takes them off the plan');
+      await t.ui({ keyPlan: true });
     },
   },
   {

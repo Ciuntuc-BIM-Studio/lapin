@@ -106,9 +106,15 @@ Fanen **Volumener** viser hvert volumen med sit mærke (V1, V2… etage for etag
 
 ![Volumenerne med mærker og størrelser](shots/mep-voids-list.webp)
 
-**Vis → Åbningsvolumener** tegner dem i 3D, gennemsigtigt violette med deres mærker; et klik vælger åbningen. De er kun til skærmen: tegningsark og tegninger viser dem aldrig.
+**Vis → Åbningsvolumener** tegner dem med 3D-visningen forrest i 3D, gennemsigtigt violette med deres mærker; et klik vælger åbningen.
 
 ![Volumenerne i den indre væg, med rørene igennem](shots/mep-voids-3d.webp)
+
+Med en plan, et snit eller en facade forrest tegner **Vis → Åbningsvolumener** dem i den visning, som en koordineringstegning viser udsparinger: skåret hvor visningen skærer dem (en vægs åbning gennem vægtykkelsen, et dæks gennem pladen), set hvor den ser dem (en dækåbning under planens snit, en vægåbning på den flade en facade ser på), stiplet når en vægåbning ligger under snittet eller en dækåbning over det; hver krydset fra hjørne til hjørne, med sit mærke og under det størrelsen og en vægåbnings underkant (**400×200 +0.90**, **Ø200**). Motoren tegner dem sammen med resten af tegningen, så tegningsark, PDF og DXF (lag **VOIDS**) udskriver dem som skærmen viser dem.
+
+![Planen med udsparingerne: skåret i væggene, dækåbningen set, hver krydset og mærket](shots/mep-voids-plan.webp)
+
+Det er en indstilling på visningen, også i dens egenskaber (**Vis → Visningsindstillinger**): **Åbningsvolumener**, og **Udsparingers størrelser** for størrelsen under mærket. Som standard tegner ingen visning dem; visningsstilen **Koordinering** (**Administrer → Visningsstile**, valgt som visningens **Stil**) tegner dem i hver visning der bruger den. Deres linjer er kategorien **Volumener**: penne og farver i **Administrer → Objektstile** (snit-, projektions-, skjulte og overliggende linjer), vist eller skjult pr. visning i **Vis → Synlighed / Grafik…**.
 
 For at give volumenerne til et kollisionsprogram markeres **Åbningsvolumener** i **Filer → Eksportér IFC eller Fragments…** (eller **Eksportér 3D…**). I IFC er hvert volumen en **IfcBuildingElementProxy** af typen **PROVISIONFORVOID** med **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter for en rund, Depth) og Lapins **Lapin_OpeningVoid** (mærke, slags, vært, åbning og forskydning), knyttet til sin vært; åbningerne forbliver IfcOpeningElement. Hvert volumen beholder sit GlobalId fra eksport til eksport. I en mesh-eksport er de en gruppe for sig, **Opening voids**. Uden markering er eksporterne som før.
 

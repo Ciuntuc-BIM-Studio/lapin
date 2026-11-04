@@ -1012,6 +1012,11 @@ export const PL: Record<string, string> = {
   'Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Każdy otwór w ścianie, stropie lub dachu także jako osobna bryła (IfcBuildingElementProxy PROVISIONFORVOID z Pset_ProvisionForVoid), dla programów wykrywania kolizji; rodzaje i odsunięcie z Zarządzaj → Otwory a instalacje',
   'as solids, for clash tools': 'jako bryły, dla programów wykrywania kolizji',
   'Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP': 'Każdy otwór w ścianie, stropie lub dachu także jako osobna bryła, w grupie o nazwie Opening voids, dla programów wykrywania kolizji; rodzaje i odsunięcie z Zarządzaj → Otwory a instalacje',
+  // Opening voids on plans, sections and elevations (decision 290)
+  'Each opening\'s void drawn where the view cuts or sees it, crossed, with its mark (V1, V2…), as a coordination drawing shows provisions for voids; sheets print it': 'Bryła każdego otworu rysowana tam, gdzie widok ją tnie lub widzi, przekreślona, z jej oznaczeniem (V1, V2…), jak rysunek koordynacyjny pokazuje przewidziane otwory; arkusze ją drukują',
+  'Void sizes': 'Wymiary otworów',
+  'Under each void\'s mark its width × height (a round one\'s diameter) and a wall opening\'s bottom level': 'Pod oznaczeniem każdego otworu szerokość × wysokość (średnica okrągłego) i rzędna dołu otworu w ścianie',
+  'Plans, sections and elevations draw the openings\' voids, crossed, with their marks': 'Rzuty, przekroje i elewacje rysują bryły otworów, przekreślone, z ich oznaczeniami',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

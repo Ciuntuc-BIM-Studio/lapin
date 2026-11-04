@@ -106,9 +106,15 @@ La scheda **Volumi** elenca ogni volume con la sua marca (V1, V2… piano per pi
 
 ![I volumi con marche e dimensioni](shots/mep-voids-list.webp)
 
-**Vista → Volumi di foro** li disegna in 3D, viola traslucido con le loro marche; un clic su uno ne seleziona l'apertura. Sono per lo schermo: tavole e disegni non li portano mai.
+**Vista → Volumi di foro**, con la vista 3D davanti, li disegna in 3D, viola traslucido con le loro marche; un clic su uno ne seleziona l'apertura.
 
 ![I volumi nel muro interno, con i tubi che li attraversano](shots/mep-voids-3d.webp)
+
+Con una pianta, una sezione o un prospetto davanti, **Vista → Volumi di foro** li disegna in quella vista, come una tavola di coordinamento mostra i fori previsti: tagliati dove la vista li taglia (l'apertura di un muro per tutto il suo spessore, quella di un solaio attraverso la soletta), visti dove li vede (un foro nel solaio sotto il piano di taglio, l'apertura di un muro sulla faccia che un prospetto guarda), tratteggiati quando l'apertura di un muro sta sotto il taglio o quella di un solaio sopra; ciascuno con la croce, con la sua sigla e, sotto, la dimensione e la quota inferiore di un'apertura nel muro (**400×200 +0.90**, **Ø200**). Li disegna il motore con il resto del disegno, quindi le tavole, il PDF e il DXF (layer **VOIDS**) li stampano come li mostra lo schermo.
+
+![La pianta con i volumi: tagliati nei muri, il foro del solaio visto, ciascuno con la croce e la sigla](shots/mep-voids-plan.webp)
+
+È un'impostazione della vista, anche nelle sue proprietà (**Vista → Impostazioni di vista**): **Volumi di foro**, e **Dimensioni dei fori** per la dimensione sotto la sigla. Di base nessuna vista li disegna; lo stile di vista **Coordinamento** (**Gestisci → Stili di vista**, scelto come **Stile** della vista) li disegna in ogni vista che lo usa. Le loro linee sono la categoria **Volumi**: penne e colori in **Gestisci → Stili oggetto** (linee di taglio, in proiezione, nascoste, sopra), mostrate o nascoste per vista in **Vista → Visibilità / Grafica…**.
 
 Per dare i volumi a un programma di interferenze, spunta **Volumi di foro** in **File → Esporta IFC o Fragments…** (o **Esporta 3D…**). In IFC ogni volume è un **IfcBuildingElementProxy** di tipo **PROVISIONFORVOID** con **Pset_ProvisionForVoid** (Shape, Width, Height, Diameter se tondo, Depth) e il set di Lapin **Lapin_OpeningVoid** (marca, tipo, ospite, apertura e scostamento), legato al suo ospite; le aperture restano IfcOpeningElement. Ogni volume conserva il suo GlobalId da un'esportazione all'altra. In un'esportazione mesh formano un gruppo a sé, **Opening voids**. Senza spunta le esportazioni restano come prima.
 

@@ -18,7 +18,11 @@ namespace Lapin.Platform;
 /// its range's top;</item>
 /// <item><c>ifc2d</c>: whether a plan draws the 2D an IFC file gave its
 /// elements (their footprints and symbols, <see cref="Plan2d"/>) instead of
-/// their cut, on by default.</item>
+/// their cut, on by default;</item>
+/// <item><c>voids</c>: whether the openings' voids are drawn (decision 290,
+/// <see cref="Coordination.VoidDrawings"/>): cut or seen, crossed, with their
+/// marks; off by default, on in the Coordination style; <c>voidSizes</c>:
+/// with their sizes and bottom levels under the marks, on by default.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -27,14 +31,15 @@ public static class ViewStyles
 {
     public const string Key = "viewStyles";
     public static readonly string[] LayerModes = ["all", "noFinishes", "core"];
-    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d"];
+    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes"];
 
     /// <summary>A style, or a view's settings as its style and its own choices make them.</summary>
-    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true)
+    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true)
     {
         public JsonObject ToJson() => new()
         {
             ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead, ["ifc2d"] = Ifc2d,
+            ["voids"] = Voids, ["voidSizes"] = VoidSizes,
         };
 
         public static Style From(JsonObject o) => new(
@@ -42,7 +47,9 @@ public static class ViewStyles
             (string?)o["layers"] is { } l && LayerModes.Contains(l) ? l : "all",
             o["joins"] is not JsonValue jv || !jv.TryGetValue<bool>(out var j) || j,
             o["overhead"] is not JsonValue ov || !ov.TryGetValue<bool>(out var h) || h,
-            o["ifc2d"] is not JsonValue iv || !iv.TryGetValue<bool>(out var i) || i);
+            o["ifc2d"] is not JsonValue iv || !iv.TryGetValue<bool>(out var i) || i,
+            o["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var v) && v,
+            o["voidSizes"] is not JsonValue sv || !sv.TryGetValue<bool>(out var sz) || sz);
     }
 
     /// <summary>The styles a project without its own reads as: one per discipline; the structural one draws the cores alone.</summary>
@@ -51,6 +58,8 @@ public static class ViewStyles
         new("architectural", "Architectural", "Architecture", "all", true, true),
         new("structural", "Structural", "Structure", "core", true, true),
         new("mep", "MEP", "MEP", "all", true, true),
+        // For coordination drawings (decision 290): the openings' voids drawn, marked and sized; taken by name, no discipline's.
+        new("coordination", "Coordination", null, "all", true, true, Voids: true),
     ];
 
     public static IReadOnlyList<Style> All(IModelView m) =>
@@ -79,6 +88,8 @@ public static class ViewStyles
             Joins = o["joins"] is JsonValue jv && jv.TryGetValue<bool>(out var j) ? j : s.Joins,
             Overhead = o["overhead"] is JsonValue ov && ov.TryGetValue<bool>(out var h) ? h : s.Overhead,
             Ifc2d = o["ifc2d"] is JsonValue iv && iv.TryGetValue<bool>(out var i) ? i : s.Ifc2d,
+            Voids = o["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var v) ? v : s.Voids,
+            VoidSizes = o["voidSizes"] is JsonValue sv && sv.TryGetValue<bool>(out var sz) ? sz : s.VoidSizes,
         };
     }
 
@@ -145,6 +156,8 @@ public static class ViewStyles
         if (a["joins"] is JsonValue jv && jv.TryGetValue<bool>(out var j)) s = s with { Joins = j };
         if (a["overhead"] is JsonValue ov && ov.TryGetValue<bool>(out var h)) s = s with { Overhead = h };
         if (a["ifc2d"] is JsonValue iv && iv.TryGetValue<bool>(out var i)) s = s with { Ifc2d = i };
+        if (a["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var v)) s = s with { Voids = v };
+        if (a["voidSizes"] is JsonValue sv && sv.TryGetValue<bool>(out var sz)) s = s with { VoidSizes = sz };
         return s;
     }
 

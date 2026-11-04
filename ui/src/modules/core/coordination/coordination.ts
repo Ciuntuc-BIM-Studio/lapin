@@ -8,6 +8,7 @@
  */
 
 import { execute, query } from '../../../engine/session';
+import { frontView } from '../../../viewport/frontView';
 
 export type VoidKind = 'wall' | 'door' | 'window' | 'slab' | 'roof';
 export type ClashStatus = 'missing' | 'tooSmall' | 'ok' | 'empty';
@@ -37,6 +38,20 @@ export const DEFAULT_SETTINGS: CoordinationSettings = { kinds: [...VOID_KINDS], 
 
 export const loadSettings = () => query<CoordinationSettings>('coordination.settings').then((s) => (s ? { ...DEFAULT_SETTINGS, ...s } : DEFAULT_SETTINGS));
 export const saveSettings = (s: CoordinationSettings) => execute('coordination.setSettings', { kinds: s.kinds, offset: s.offset, clearance: s.clearance, empty: s.empty });
+/**
+ * View → Opening voids in a plan, section or elevation (decision 290): the view in front draws its openings' voids, or
+ * stops, as its own setting over its style's; the engine draws them, so sheets print them. Returns what the view does now.
+ */
+export async function toggleVoids2d(): Promise<boolean | null> {
+  const id = await frontView();
+  if (!id || id === '3d') return null;
+  const style = await query<{ resolved: { voids?: boolean } }>('view.style', { id });
+  if (!style) return null;
+  const on = !style.resolved.voids;
+  await execute('view.setStyle', { id, voids: on });
+  return on;
+}
+
 export const loadVoids = (mesh = false) => query<{ voids: VoidDto[]; count: number }>('coordination.voids', { mesh }).then((r) => r?.voids ?? []);
 export const runCheck = () => query<ClashCheck>('coordination.clashes', {});
 export const clashRemarks = (author: string) => execute('coordination.remarks', { author }) as Promise<{ added: number; updated: number } | null>;
