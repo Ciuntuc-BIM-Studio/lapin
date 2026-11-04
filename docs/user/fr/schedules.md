@@ -86,6 +86,10 @@ Les dessins **Sur chaque fiche** (vue intérieure, vue extérieure, plan, coupe)
 
 ![La nomenclature des compositions des types avec la composition de chaque type](shots/type-assemblies.webp)
 
+## Moulures de mur
+
+La nomenclature **Moulures de mur** (**Architecture → Nomenclature des moulures de mur**, ou **Métrés → Nomenclatures…** → **Moulures de mur**) additionne les moulures et engravures de mur du projet par profil, genre et matériau : combien il y en a, leurs pièces (une moulure coupée par des ouvertures en fait plusieurs), leur longueur le long des faces et leur volume ; pour une engravure, le volume qu'elle retire au mur. Un total pour les moulures et un pour les engravures terminent le tableau. Sa barre les additionne d'abord **par profil**, **par niveau** ou **par type de mur**. Les retours comptent dans le volume, pas dans la longueur.
+
 ## Exporter
 
 **CSV** et **XLSX** dans la barre exportent la nomenclature en tableur (un XLSX a une feuille par tableau). Dans l'application de bureau, Lapin demande où enregistrer le fichier et propose le nom de la nomenclature ; dans un navigateur, le fichier est téléchargé. Les types de murs et de planchers exportés s'enregistrent de la même façon.

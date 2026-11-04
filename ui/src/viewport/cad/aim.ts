@@ -90,6 +90,9 @@ export function useCadCanvas(o: {
   /** Everything selectable a region takes (the command line's WP and CP). */
   inRegion?: (takes: RegionTest) => string[];
 }) {
+  // A section's or an elevation's frame: its moves are also given in the model (a wall sweep moved up its wall).
+  const frameRef = useRef(o.drawing?.frame ?? null);
+  frameRef.current = o.drawing?.kind === 'plan' ? null : o.drawing?.frame ?? null;
   const { shapes, drafts } = useMemo(() => snapShapes(o.drawing, o.extra), [o.drawing, o.extra]);
   const index = useMemo(() => new SnapIndex(shapes), [shapes]);
   const acquired = useRef<Vec2[]>([]);
@@ -132,6 +135,12 @@ export function useCadCanvas(o: {
         return out;
       },
       inRegion: (takes) => regionRef.current?.(takes) ?? [],
+      toModel: (from, to) => {
+        const f = frameRef.current;
+        if (!f) return null;
+        const [dx, dy] = [to.x - from.x, to.y - from.y];
+        return [0, 1, 2].map((k) => (f.right[k] ?? 0) * dx + (f.up[k] ?? 0) * dy) as [number, number, number];
+      },
     };
     useCad.setState({ host });
     return () => { if (useCad.getState().host === host) useCad.setState({ host: null }); };

@@ -18,7 +18,8 @@ public class WallSweepTests : IDisposable
     readonly string _dir = Directory.CreateTempSubdirectory("lapin-sweeps-").FullName;
     public void Dispose() { try { Directory.Delete(_dir, true); } catch (IOException) { } }
 
-    static JsonObject Rect(double depth, double height) => new() { ["catalog"] = "rectangle", ["params"] = new JsonObject { ["depth"] = depth, ["height"] = height } };
+    // Square ends: these tests measure the sweeps without their returns at free ends (decision 298: WallSweepTypeTests).
+    static JsonObject Rect(double depth, double height) => new() { ["catalog"] = "rectangle", ["params"] = new JsonObject { ["depth"] = depth, ["height"] = height }, ["returns"] = "none" };
 
     static string Sweep(Fixture f, string wall, JsonObject args)
     {
@@ -83,7 +84,7 @@ public class WallSweepTests : IDisposable
         var wallSolid = f.Session.Geometry(wall)!.Parts.Single().Solid;
         Assert.DoesNotContain(wallSolid.Vertices, v => v.Y < -0.0801 && v.Z > 1.5001 && v.Z < 1.5299);
         // Its mode turned: a sweep of its own material, the wall whole again.
-        f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["mode"] = "add" } });
+        f.Run("element.update", new JsonObject { ["id"] = id, ["attrs"] = new JsonObject { ["mode"] = "add", ["returns"] = "none" } });
         Assert.Equal("MOLDING", f.Model.Get(id)!.PredefinedType);
         Assert.Equal("IfcCovering", f.Model.Get(id)!.Str("exportAs"));
         Assert.Equal(3.0, Volume(f, wall), 9);

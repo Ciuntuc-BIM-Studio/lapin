@@ -76,6 +76,22 @@ Las molduras y ranuras van con su muro cuando se copia, se mueve a otro nivel o 
 
 ![Cornisas, impostas y una ranura en los muros exteriores de una casa](shots/wall-sweeps-3d.webp)
 
+### Molduras en el tipo de muro
+
+Una moldura que deben llevar todos los muros de un tipo (una imposta de zócalo, una cornisa, una junta de sombra) pertenece al tipo. En **Arquitectura → Tipos de muro**, bajo las capas, **Molduras y ranuras** las muestra, una fila cada una: el perfil, **Moldura de muro** o **Ranura de muro**, la cara (D, la cara de la primera capa del tipo, o I, como las nombra la leyenda), la altura sobre la base del muro (o bajo su coronación con **Desde arriba**), el desfase hacia fuera de la cara, el material de una moldura y sus retornos. **Moldura de muro** y **Ranura de muro** bajo la tabla añaden una fila. Guarde el tipo: todos sus muros las reciben, y también un muro dibujado con el tipo o cambiado a él. Son molduras como las demás: medidas, en la tabla de molduras de muro, a inglete en las esquinas donde se encuentran muros del tipo, escritas en IFC. Las molduras de un muro volteado cambian de cara con sus capas. **Exportar JSON**, bajo la lista de tipos, las lleva consigo, con el contorno de los perfiles y los materiales por su nombre (el CSV solo lleva las capas).
+
+Seleccione una en un muro: Propiedades indica **Del tipo**. Si cambia su altura, su desfase o cualquier otro campo, ese campo pasa a ser propio del muro (**Propios:** altura): los cambios posteriores del tipo no lo tocan. **Volver al tipo** le devuelve los valores del tipo. **Desactivar en este muro**, o borrarla, deja la moldura del tipo desactivada en ese muro; **Volver a activar las molduras del tipo**, en **Molduras y ranuras** del muro, las recupera.
+
+![Una moldura en el tipo de muro, en el diálogo Tipos de muro](shots/wall-type-sweeps.webp)
+
+### Retornos
+
+Una moldura que llega a un extremo libre de su muro (sin otro muro unido ahí) hace retorno: a inglete en el extremo, su perfil dobla la esquina sobre la testa del muro y se detiene en el plano de la cara, de modo que la moldura queda cerrada en lugar de mostrar su corte. **Retornos en extremos libres**, en Propiedades, elige ambos (por defecto en una moldura), al inicio, al final o ninguno, para extremos rectos. Una ranura nunca hace retorno. En una esquina unida a otro muro la moldura no hace retorno: llega hasta la esquina, o se une a una moldura igual del otro muro. En puertas y ventanas se interrumpe en recto; marque **Retornos en huecos** para que también haga retorno alrededor de las jambas. **Retranqueo desde el inicio** y **Retranqueo desde el final** la detienen antes de los extremos de la cara (en recto ahí), y **Perfil invertido** da la vuelta a su perfil.
+
+### Mover y copiar una moldura
+
+Seleccione una moldura y use **MOVE** o **COPY** como con cualquier elemento; su muro no se mueve. Lo que el desplazamiento recorre a lo largo del muro la desliza sobre él (una moldura en toda la cara recibe entonces su propio inicio y final); lo que recorre a través del muro se ignora. Movida hacia arriba o hacia abajo en un alzado o una sección, cambia su altura. Una copia queda en el mismo muro, desplazada, o en otro muro cuando cae dentro de él, en la cara en la que cae. **ROTATE** y **MIRROR** la mantienen en su muro: reflejada respecto al eje del muro, pasa a la otra cara. Una moldura del tipo que usted mueva conserva su nuevo sitio como propio; movida a otro muro, pasa a ser una moldura propia de ese muro y la del tipo queda desactivada en el primero.
+
 ### Perfiles
 
 **Gestionar → Perfiles** guarda los perfiles del proyecto, los contornos con los que se barren las molduras, las ranuras y las zapatas corridas. **Perfil nuevo** parte del catálogo con sus medidas: un rectángulo, una banda achaflanada, una cornisa, una media caña, una nariz de vierteaguas, una banda con goterón; una ranura en V, rectangular o redonda; para zapatas, rectangular, escalonada en 2 o 3 escalones, con la cara superior inclinada, excéntrica, con murete. O elija **Vértices escritos**: cada vértice u v en milímetros, con punto y coma entre ellos, y un tercer número para que el lado que sale de ese vértice sea un arco. **De un contorno dibujado** lee una polilínea cerrada o un rectángulo dibujado con Dibujo y seleccionado en su vista. El círculo de la vista previa es el punto de inserción: en una moldura está en la cara del muro, a la altura de la moldura, con u hacia fuera de la cara (hacia dentro del muro en una ranura). Si cambia un perfil, todo lo que lo usa lo sigue.

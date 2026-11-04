@@ -3,12 +3,14 @@
  * a band, a plinth, a sill standing out of the face) and Wall reveal (a groove taken out of the wall), each put on the face
  * picked (in 3D at the height picked, in plan at the height typed) or on every wall selected; their profile and height in
  * the command line's bar; the sweep in the inspector (its profile with its preview, its material, the face), and on a wall
- * the sweeps it carries.
+ * the sweeps it carries. A sweep of the wall's type (decision 298) says so in the inspector: "From the type", or
+ * the fields the wall made its own, with Back to the type and Switch off on this wall; the wall's list offers the type's
+ * sweeps switched off on it again. The Wall sweeps schedule adds them all up.
  */
 
 import { useMemo } from 'react';
 import { create } from 'zustand';
-import { FlipHorizontal2, MousePointer2 } from 'lucide-react';
+import { FlipHorizontal2, MousePointer2, RotateCcw, Table2, EyeOff, Eye } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import type { ToolDef } from '../../platform/module';
 import { notify, select, useUi } from '../../app/store';
@@ -106,10 +108,33 @@ export function WallSweepSection({ node }: { node: NodeDto }) {
         </div>
       </div>
       {mode === 'add' && <label className="field-line"><span className="eyebrow">Material</span><MaterialPicker value={material} onChange={(name) => set({ material: name })} /></label>}
+      {typeof node.props.typeSweep === 'string' && <TypeSweepState node={node} />}
       <div className="row" style={{ gap: 6 }}>
         <button type="button" className="btn small" disabled={!node.editable} onClick={() => set({ side: 'flip' })}><FlipHorizontal2 size={13} /> Flip side</button>
         {wall && <button type="button" className="btn small" onClick={() => select(wall.id)}><MousePointer2 size={13} /> Select its wall</button>}
       </div>
+    </div>
+  );
+}
+
+/** The labels of the fields a wall makes its own, as the inspector names them. */
+const OWN_LABELS: Record<string, string> = {
+  mode: 'kind', side: 'face', height: 'height', fromTop: 'from the top', offset: 'offset', gaps: 'openings', flip: 'flip', setbackStart: 'set-back', setbackEnd: 'set-back',
+  returns: 'returns', returnsAtOpenings: 'returns at openings', material: 'material', profile: 'profile', start: 'start', end: 'end',
+};
+
+/** A wall type's sweep: whether it is as the type has it or the wall's own in some fields, and the way back. */
+function TypeSweepState({ node }: { node: NodeDto }) {
+  const own = Array.isArray(node.props.own) ? (node.props.own as string[]) : [];
+  const fields = [...new Set(own.map((k) => OWN_LABELS[k] ?? k))];
+  return (
+    <div className="row" style={{ gap: 6, flexWrap: 'wrap' }} data-testid="type-sweep-state">
+      {own.length === 0
+        ? <span className="chip">From the type</span>
+        : <span className="chip on" title="These fields are this wall's own: the type's changes leave them"><span>Own:</span> {fields.map((f, i) => <span key={f}>{i > 0 ? ', ' : ''}<span>{f}</span></span>)}</span>}
+      {own.length > 0 && <button type="button" className="btn small" onClick={() => void execute('architecture.updateWallSweep', { id: node.id, reset: true })}><RotateCcw size={13} /> Back to the type</button>}
+      <button type="button" className="btn small" title="The type's sweep is left off this wall (as deleting it does); the wall's Sweeps and reveals switch it on again"
+        onClick={() => void execute('architecture.updateWallSweep', { id: node.id, off: true })}><EyeOff size={13} /> Switch off on this wall</button>
     </div>
   );
 }
@@ -121,14 +146,28 @@ export function WallSweepsOnWall({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
   const list = useMemo(() => relatedOf({ nodes, relations }, node.id, 'IfcRelVoidsElement').filter((n) => n.type === 'LapinWallSweep'), [nodes, relations, node.id]);
+  const off = Array.isArray(node.props.sweepsOff) ? node.props.sweepsOff.length : 0;
   return (
-    <ul className="plain-list">
-      {list.map((s) => (
-        <li key={s.id}><button type="button" className="link small" onClick={() => select(s.id)}><span data-no-i18n>{s.name}</span></button>
-          <span className="muted small"> · {s.props.side === 'right' ? 'exterior' : 'interior'}</span></li>
-      ))}
-    </ul>
+    <>
+      <ul className="plain-list">
+        {list.map((s) => (
+          <li key={s.id}><button type="button" className="link small" onClick={() => select(s.id)}><span data-no-i18n>{s.name}</span></button>
+            <span className="muted small"> · {s.props.side === 'right' ? 'exterior' : 'interior'}{typeof s.props.typeSweep === 'string' ? ' · from the type' : ''}</span></li>
+        ))}
+      </ul>
+      {off > 0 && (
+        <button type="button" className="btn small" disabled={!node.editable} data-testid="type-sweeps-on" onClick={() => void execute('architecture.restoreWallSweeps', { wallId: node.id })}>
+          <Eye size={13} /> <span>Switch the type's sweeps on again</span> <span className="muted" data-no-i18n>({off})</span>
+        </button>
+      )}
+    </>
   );
 }
 
-export const hasSweeps = (node: NodeDto) => sweepsOf(node.id).length > 0;
+export const hasSweeps = (node: NodeDto) => sweepsOf(node.id).length > 0 || (Array.isArray(node.props.sweepsOff) && node.props.sweepsOff.length > 0);
+
+/** The wall sweeps schedule: every sweep and reveal by profile, kind and material, their count, pieces, length and volume. */
+export const wallSweepSchedule: ToolDef = {
+  id: 'architecture.wallSweepSchedule', label: 'Wall sweeps schedule', icon: Table2,
+  run: () => void execute('architecture.createSchedule', { kind: 'wallSweeps' }).then((r) => { if (r) notify('Wall sweeps schedule made: it is in the project browser, under Schedules.'); }),
+};

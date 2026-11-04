@@ -5,8 +5,8 @@
  * left one; the core carries the axis. A type may also be composed in its
  * height: zones from the bottom up (a first course, the masonry, a ring
  * beam) that divide the core; any other layer may change material up its
- * height (decision 264: tiles to 2.10 m, plaster over them). Saving is one engine command; every wall of
- * the type follows.
+ * height (decision 264: tiles to 2.10 m, plaster over them). Under the layers, the type's sweeps and
+ * reveals (decision 298: WallTypeSweeps). Saving is one engine command; every wall of the type follows.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -23,6 +23,7 @@ import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
 import { deleteType } from '../core/deleteType';
 import { WallLayersLegend } from './WallLayersLegend';
+import { WallTypeSweeps, sweepJson, sweepRows, type TypeSweepRow } from './WallTypeSweeps';
 
 /** A layer as the editor holds it: lengths in metres; from and to null for the whole height. */
 interface Row { material: string; thickness: number; core: boolean; from: number | null; to: number | null; parts: Part[]; priority: number | null }
@@ -70,6 +71,7 @@ export function WallTypesDialog() {
   const [rows, setRows] = useState<Row[]>(blank());
   const [zones, setZones] = useState<ZoneRow[]>([]);
   const [lintels, setLintels] = useState<Rule>(DEFAULT_RULE);
+  const [sweeps, setSweeps] = useState<TypeSweepRow[]>([]);
   const info = useSession((s) => s.info);
 
   // The editor loads when the picked type changes, not on every diff (which
@@ -80,7 +82,8 @@ export function WallTypesDialog() {
   useEffect(() => {
     const model = modelRef.current;
     const t = editing ? model.nodes.get(editing) : undefined;
-    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); return; }
+    if (!t) { setName(''); setRows(blank()); setZones([]); setLintels(DEFAULT_RULE); setSweeps([]); return; }
+    setSweeps(sweepRows(t.props.sweeps, (id) => materialName(model, id)));
     setLintels((t.props.lintels as unknown as Rule | undefined) ?? DEFAULT_RULE);
     setName(t.name);
     setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, from: l.from || null, to: l.to || null,
@@ -90,7 +93,7 @@ export function WallTypesDialog() {
   }, [editing]);
 
   // A refusal speaks of what was saved then (report #79: "Every layer needs a thickness." under layers that all had one): it goes once the type is edited or another picked.
-  useEffect(() => { if (useSession.getState().error) useSession.setState({ error: null }); }, [editing, name, rows, zones, lintels]);
+  useEffect(() => { if (useSession.getState().error) useSession.setState({ error: null }); }, [editing, name, rows, zones, lintels, sweeps]);
 
   const close = () => useUi.setState({ dialog: null });
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
@@ -120,11 +123,15 @@ export function WallTypesDialog() {
   };
 
   const save = async () => {
-    if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson, lintels });
+    const sweepList = sweeps.map(sweepJson);
+    if (editing) await execute('architecture.updateWallType', { id: editing, name, layers, zones: zoneJson, lintels, sweeps: sweepList });
     else {
-      const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson, lintels }) as { id?: string } | null;
+      const r = await execute('architecture.createWallType', { name, layers, zones: zoneJson, lintels, sweeps: sweepList }) as { id?: string } | null;
       if (r?.id) { setEditing(r.id); useUi.setState({ wallTypeId: r.id }); }
     }
+    // The sweeps as saved, with the keys the engine gave the new ones: saved again, the walls keep the same sweeps.
+    const saved = editing ? useSession.getState().nodes.get(editing) : undefined;
+    if (saved) setSweeps(sweepRows(saved.props.sweeps, (id) => materialName({ nodes: useSession.getState().nodes, relations: useSession.getState().relations }, id)));
   };
   const use = (id: string) => { useUi.setState({ wallTypeId: id }); };
 
@@ -190,6 +197,7 @@ export function WallTypesDialog() {
                 <tr className="total"><td>Total</td><td className="num">{formatLength(total)}</td><td colSpan={4} /></tr>
               </tbody>
             </table>
+            <WallTypeSweeps rows={sweeps} onChange={setSweeps} />
             <div className="row">
               <span className="eyebrow">Zones in height</span>
               <span className="muted small">bottom to top · they divide the core</span>

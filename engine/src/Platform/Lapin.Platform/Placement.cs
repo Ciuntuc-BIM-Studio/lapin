@@ -7,9 +7,11 @@ namespace Lapin.Platform;
 /// <summary>
 /// A plan transformation of elements: where a point goes, how much directions
 /// turn (radians), and whether it mirrors (directions then reflect about the
-/// mirror line's angle <see cref="Axis"/>).
+/// mirror line's angle <see cref="Axis"/>). <see cref="Rise"/>: how far a move
+/// also goes up (a move in an elevation or a section), which only what reads a
+/// height from it uses (a wall sweep's height); plan elements ignore it.
 /// </summary>
-public sealed record Placement2D(Func<Vec2, Vec2> Point, double Turn, bool Mirrored, double Axis = 0)
+public sealed record Placement2D(Func<Vec2, Vec2> Point, double Turn, bool Mirrored, double Axis = 0, double Rise = 0)
 {
     public Vec2 Dir(Vec2 d)
     {
@@ -25,7 +27,7 @@ public sealed record Placement2D(Func<Vec2, Vec2> Point, double Turn, bool Mirro
     /// <summary>An angle (radians) the way the transformation carries it.</summary>
     public double Angle(double a) => Mirrored ? 2 * Axis - a : a + Turn;
 
-    public static Placement2D Move(Vec2 d) => new(p => p + d, 0, false);
+    public static Placement2D Move(Vec2 d, double rise = 0) => new(p => p + d, 0, false, 0, rise);
     public static Placement2D Rotate(Vec2 c, double angle) => new(p =>
     {
         var (co, s) = (Math.Cos(angle), Math.Sin(angle));

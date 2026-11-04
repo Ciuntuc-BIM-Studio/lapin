@@ -86,6 +86,10 @@ Los dibujos **En cada ficha** (vista interior, vista exterior, planta, sección)
 
 ![La tabla de composición de los tipos con la composición de cada tipo](shots/type-assemblies.webp)
 
+## Molduras de muro
+
+La tabla **Molduras de muro** (**Arquitectura → Tabla de molduras de muro**, o **Cantidades → Tablas…** → **Molduras de muro**) suma las molduras y ranuras de muro del proyecto por perfil, clase y material: cuántas hay, sus piezas (una moldura cortada por huecos son varias), su longitud a lo largo de las caras y su volumen; en una ranura, el volumen que quita al muro. Un total para las molduras y otro para las ranuras cierran la tabla. Su barra las suma primero **por perfil**, **por planta** o **por tipo de muro**. Los retornos cuentan en el volumen, no en la longitud.
+
 ## Exportar
 
 **CSV** y **XLSX** en la barra exportan la tabla como hoja de cálculo (un XLSX tiene una hoja por cada tabla). En la aplicación de escritorio, Lapin pregunta dónde guardar el archivo y propone el nombre de la tabla; en un navegador el archivo se descarga. Los tipos de muro y de forjado exportados se guardan del mismo modo.

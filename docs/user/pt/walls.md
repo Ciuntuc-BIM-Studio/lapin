@@ -76,6 +76,22 @@ Molduras e frisos acompanham a sua parede quando é copiada, movida para outro n
 
 ![Cornijas, faixas e um friso nas paredes exteriores de uma casa](shots/wall-sweeps-3d.webp)
 
+### Molduras no tipo de parede
+
+Uma moldura que todas as paredes de um tipo devem ter (uma faixa de soco, uma cornija, uma junta de sombra) pertence ao tipo. Em **Arquitetura → Tipos de parede**, por baixo das camadas, **Molduras e frisos** lista-as, uma linha cada: o perfil, **Moldura de parede** ou **Friso de parede**, a face (D, a face da primeira camada do tipo, ou E, como a legenda as designa), a altura acima da base da parede (ou abaixo do seu topo com **Do topo**), o afastamento para fora da face, o material de uma moldura e os seus retornos. **Moldura de parede** e **Friso de parede** por baixo da tabela acrescentam uma linha. Guarde o tipo: todas as suas paredes recebem-nas, e também uma parede desenhada com o tipo ou mudada para ele. São molduras como as outras: medidas, na tabela de molduras de parede, cortadas em meia-esquadria nos cantos onde paredes do tipo se encontram, escritas em IFC. As molduras de uma parede invertida mudam de face com as suas camadas. **Exportar JSON**, por baixo da lista de tipos, leva-as consigo, com o contorno dos perfis e os materiais pelo nome (o CSV só tem as camadas).
+
+Selecione uma numa parede: as Propriedades indicam **Do tipo**. Se mudar a sua altura, o seu afastamento ou outro campo, esse campo passa a ser próprio da parede (**Próprios:** altura): as alterações posteriores do tipo não lhe tocam. **Voltar ao tipo** devolve-lhe os valores do tipo. **Desligar nesta parede**, ou apagá-la, deixa a moldura do tipo desligada nessa parede; **Voltar a ligar as molduras do tipo**, em **Molduras e frisos** da parede, tra-las de volta.
+
+![Uma moldura no tipo de parede, no diálogo Tipos de parede](shots/wall-type-sweeps.webp)
+
+### Retornos
+
+Uma moldura que chega a uma extremidade livre da sua parede (sem outra parede ligada aí) faz retorno: cortada em meia-esquadria na extremidade, o seu perfil contorna o canto sobre o topo da parede e para no plano da face, de modo que a moldura fica fechada em vez de mostrar o corte. **Retornos nas extremidades livres**, nas Propriedades, escolhe ambos (o predefinido numa moldura), no início, no fim ou nenhum, para extremidades retas. Um friso nunca faz retorno. Num canto ligado a outra parede a moldura não faz retorno: vai até ao canto, ou junta-se a uma moldura igual na outra parede. Nas portas e janelas para a direito; marque **Retornos nos vãos** para que também faça retorno à volta das ombreiras. **Recuo desde o início** e **Recuo desde o fim** param-na antes das extremidades da face (a direito aí), e **Perfil invertido** vira o seu perfil ao contrário.
+
+### Mover e copiar uma moldura
+
+Selecione uma moldura e use **MOVE** ou **COPY** como em qualquer elemento; a sua parede fica no lugar. O que o deslocamento percorre ao longo da parede desliza a moldura sobre ela (uma moldura em toda a face recebe então um início e um fim próprios); o que percorre através da parede é ignorado. Movida para cima ou para baixo num alçado ou num corte, a sua altura muda. Uma cópia fica na mesma parede, deslocada, ou noutra parede quando cai dentro dela, na face em que cai. **ROTATE** e **MIRROR** mantêm-na na sua parede: espelhada em relação ao eixo da parede, passa para a outra face. Uma moldura do tipo que mova guarda o novo lugar como próprio; movida para outra parede, passa a ser uma moldura própria dessa parede e a do tipo fica desligada na primeira.
+
 ### Perfis
 
 **Gerenciar → Perfis** guarda os perfis do projeto, os contornos com que se varrem molduras, frisos e sapatas corridas. **Novo perfil** parte do catálogo com as suas medidas: um retângulo, uma faixa chanfrada, uma cornija, uma meia-cana, um nariz de peitoril, uma faixa com pingadeira; um friso em V, retangular ou redondo; para sapatas, retangular, escalonada em 2 ou 3 degraus, com a face superior inclinada, excêntrica, com murete. Ou escolha **Vértices escritos**: cada vértice u v em milímetros, com ponto e vírgula entre eles, e um terceiro número para fazer do lado que sai desse vértice um arco. **De um contorno desenhado** lê uma polilinha fechada ou um retângulo desenhado com Desenho e selecionado na sua vista. O círculo na pré-visualização é o ponto de inserção: numa moldura fica na face da parede, à altura da moldura, com u para fora da face (para dentro da parede num friso). Se alterar um perfil, tudo o que o usa acompanha-o.

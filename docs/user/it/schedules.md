@@ -86,6 +86,10 @@ I disegni **Su ogni scheda** (vista interna, vista esterna, pianta, sezione), ne
 
 ![L'abaco delle stratigrafie dei tipi con la stratigrafia di ogni tipo](shots/type-assemblies.webp)
 
+## Modanature di muro
+
+L'abaco **Modanature di muro** (**Architettura → Abaco delle modanature di muro**, oppure **Quantità → Abachi…** → **Modanature di muro**) somma le modanature e le scanalature di muro del progetto per profilo, genere e materiale: quante sono, i loro pezzi (una modanatura interrotta dalle aperture è più pezzi), la loro lunghezza lungo le facce e il loro volume; per una scanalatura, il volume che toglie al muro. Un totale per le modanature e uno per le scanalature chiudono la tabella. La sua barra le somma prima **per profilo**, **per piano** o **per tipo di muro**. I risvolti contano nel volume, non nella lunghezza.
+
 ## Esportare
 
 **CSV** e **XLSX** nella barra esportano l'abaco come foglio di calcolo (un XLSX ha un foglio per ogni tabella). Nell'app desktop Lapin chiede dove salvare il file e propone il nome dell'abaco; in un browser il file viene scaricato. I tipi di muro e di solaio esportati si salvano allo stesso modo.

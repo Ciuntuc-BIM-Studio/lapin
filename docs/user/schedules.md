@@ -86,6 +86,10 @@ The drawings **On each card** (interior view, exterior view, plan, section), in 
 
 ![The type assemblies schedule with each type's build-up](shots/type-assemblies.webp)
 
+## Wall sweeps
+
+The **Wall sweeps** schedule (**Architecture → Wall sweeps schedule**, or **Quantities → Schedules…** → **Wall sweeps**) adds up the project's wall sweeps and reveals by profile, kind and material: how many there are, their pieces (a sweep the openings cut is several), their length along the faces and their volume; for a reveal, the volume it takes out of the wall. A total for the sweeps and one for the reveals close the table. Its toolbar adds them up **by profile**, **by storey** or **by wall type** first. Returns count in the volume, not in the length.
+
 ## Exporting
 
 **CSV** and **XLSX** in the toolbar export the schedule as a spreadsheet (an XLSX has one sheet for each table). In the desktop app Lapin asks where to save the file and offers the schedule's name; in a browser the file is downloaded. Exported wall and floor types are saved the same way.

@@ -67,7 +67,7 @@ sealed class HostedOpenings : IHostedPlacement
     }
 
     /// <summary>Whether a point lies in the wall's thickness, along its length.</summary>
-    static bool Inside(IModelView m, Entity wall, Vec2 p)
+    internal static bool Inside(IModelView m, Entity wall, Vec2 p)
     {
         var along = Openings.AlongOf(wall, p);
         if (along < -1e-6 || along > PathCurve.Of(wall).Length + 1e-6) return false;
@@ -77,7 +77,7 @@ sealed class HostedOpenings : IHostedPlacement
     }
 
     /// <summary>Another wall of the storey the point lies in, if any.</summary>
-    static Entity? WallAt(IModelView m, Entity wall, Vec2 p)
+    internal static Entity? WallAt(IModelView m, Entity wall, Vec2 p)
     {
         var storey = Spatial.StoreyOf(m, wall.Id)?.Id;
         return m.OfClass(IfcClass.Wall).FirstOrDefault(w => w.Id != wall.Id && Spatial.StoreyOf(m, w.Id)?.Id == storey && Inside(m, w, p));

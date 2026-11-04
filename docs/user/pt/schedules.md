@@ -86,6 +86,10 @@ Os desenhos **Em cada ficha** (vista interior, vista exterior, planta, corte), n
 
 ![A tabela das composições dos tipos com a composição de cada tipo](shots/type-assemblies.webp)
 
+## Molduras de parede
+
+A tabela **Molduras de parede** (**Arquitetura → Tabela de molduras de parede**, ou **Quantitativos → Tabelas…** → **Molduras de parede**) soma as molduras e frisos de parede do projeto por perfil, tipo de peça e material: quantas há, as suas peças (uma moldura cortada por vãos são várias), o seu comprimento ao longo das faces e o seu volume; num friso, o volume que tira à parede. Um total para as molduras e outro para os frisos fecham a tabela. A sua barra soma-as primeiro **por perfil**, **por piso** ou **por tipo de parede**. Os retornos contam no volume, não no comprimento.
+
 ## Exportar
 
 **CSV** e **XLSX** na barra exportam a tabela como folha de cálculo (um XLSX tem uma folha por tabela). Na aplicação de computador, o Lapin pergunta onde guardar o ficheiro e propõe o nome da tabela; num navegador o ficheiro é transferido. Os tipos de parede e de laje exportados guardam-se da mesma forma.

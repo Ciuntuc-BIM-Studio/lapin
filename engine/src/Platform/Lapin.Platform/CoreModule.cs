@@ -221,9 +221,12 @@ public sealed class CoreModule : ILapinModule
             // A group selected is its members (docs/groups.md).
             var (ids, groups) = Groups.Expand(ctx.Model, Args.Ids(a));
             var op = (string?)a["op"] ?? "move";
+            // A move's height (rise, or world's third value: an elevation's or a section's move in the model, decision 298).
+            var world = a["world"] is JsonArray { Count: >= 2 } wv ? wv : null;
+            var rise = Json.Number(a["rise"]) ?? (world is { Count: >= 3 } ? Json.Number(world[2]) : null) ?? 0;
             var t = op switch
             {
-                "move" or "copy" => Placement2D.Move(V(a["by"], "displacement")),
+                "move" or "copy" => Placement2D.Move(V(a["by"], "displacement"), rise),
                 "rotate" => Placement2D.Rotate(V(a["center"], "centre"), (Json.Number(a["angle"]) ?? 0) * Math.PI / 180),
                 "mirror" => (V(a["a"], "mirror line's start") - V(a["b"], "mirror line's end")).Length < 1e-9
                     ? throw new CommandException("A mirror line needs two different points.") : Placement2D.Mirror(V(a["a"], "start"), V(a["b"], "end")),
@@ -251,9 +254,11 @@ public sealed class CoreModule : ILapinModule
                 if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
                 else Placement.Transform(ctx, now, t, moving);
             }
+            // In a section or an elevation the view's move is given in the model too (world): what is placed in a host moves by it.
+            var inHost = world != null && op is "move" or "copy" ? Placement2D.Move(Args.PointOf(world), rise) : t;
             foreach (var own in ctx.Services.All<IHostedPlacement>())
                 if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
-                    foreach (var c in own.Transform(ctx, mine, t, copy)) made.Add((JsonNode)c);
+                    foreach (var c in own.Transform(ctx, mine, inHost, copy)) made.Add((JsonNode)c);
             // Elements copied together keep their joins: a corner or a T between two of them joins their copies the same way.
             if (copy)
                 foreach (var r in copies.Keys.SelectMany(id => ctx.Model.RelationsOf(id, IfcClass.RelConnectsPathElements)).DistinctBy(r => r.Id).Where(r => copies.ContainsKey(r.Relating) && r.Related.All(copies.ContainsKey)).ToList())

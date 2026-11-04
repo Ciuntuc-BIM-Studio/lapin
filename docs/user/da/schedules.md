@@ -86,6 +86,10 @@ Tegningerne **På hvert kort** (indvendig visning, udvendig visning, plan, snit)
 
 ![Skemaet over typeopbygninger med hver types opbygning](shots/type-assemblies.webp)
 
+## Vægprofiler
+
+Skemaet **Vægprofiler** (**Arkitektur → Vægprofilskema**, eller **Mængder → Skemaer…** → **Vægprofiler**) lægger projektets vægprofiler og vægnoter sammen efter profil, art og materiale: hvor mange der er, deres stykker (en profil, som åbninger afbryder, er flere), deres længde langs siderne og deres volumen; for en not det volumen, den tager ud af væggen. En sum for profilerne og en for noterne afslutter tabellen. Dens bjælke lægger dem først sammen **efter profil**, **efter etage** eller **efter vægtype**. Returer tæller med i volumen, ikke i længden.
+
 ## Eksport
 
 **CSV** og **XLSX** i værktøjslinjen eksporterer skemaet som regneark (en XLSX har ét ark for hver tabel). I skrivebordsappen spørger Lapin, hvor filen skal gemmes, og foreslår skemaets navn; i en browser hentes filen ned. Eksporterede væg- og dæktyper gemmes på samme måde.

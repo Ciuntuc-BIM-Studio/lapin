@@ -86,6 +86,10 @@ Rysunki **Na każdej karcie** (widok od wewnątrz, widok od zewnątrz, rzut, prz
 
 ![Zestawienie układów warstw typów z układem każdego typu](shots/type-assemblies.webp)
 
+## Profile ścian
+
+Zestawienie **Profile ścian** (**Architektura → Zestawienie profili ścian** albo **Ilości → Zestawienia…** → **Profile ścian**) sumuje profile i bruzdy ścian projektu według profilu, rodzaju i materiału: ile ich jest, ich kawałki (profil przerwany przez otwory to kilka kawałków), ich długość wzdłuż lic i ich objętość; dla bruzdy objętość, którą wybiera ze ściany. Suma dla profili i suma dla bruzd zamykają tabelę. Jej pasek sumuje je najpierw **według profilu**, **według kondygnacji** albo **według typu ściany**. Zawinięcia liczą się w objętości, nie w długości.
+
 ## Eksport
 
 **CSV** i **XLSX** na pasku eksportują zestawienie jako arkusz kalkulacyjny (XLSX ma jeden arkusz na każdą tabelę). W aplikacji desktopowej Lapin pyta, gdzie zapisać plik, i proponuje nazwę zestawienia; w przeglądarce plik jest pobierany. Wyeksportowane typy ścian i stropów zapisuje się tak samo.

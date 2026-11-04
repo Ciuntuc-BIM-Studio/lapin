@@ -86,6 +86,10 @@ Die Zeichnungen **Auf jeder Karte** (Innenansicht, Außenansicht, Grundriss, Sch
 
 ![Die Liste der Typenaufbauten mit dem Aufbau jedes Typs](shots/type-assemblies.webp)
 
+## Wandprofile
+
+Die Liste **Wandprofile** (**Architektur → Wandprofilliste** oder **Mengen → Bauteillisten…** → **Wandprofile**) fasst die Wandprofile und Wandnuten des Projekts nach Profil, Art und Material zusammen: wie viele es sind, ihre Stücke (ein Profil, das Öffnungen unterbrechen, sind mehrere), ihre Länge entlang der Wandseiten und ihr Volumen; bei einer Nut das Volumen, das sie der Wand nimmt. Eine Summe für die Profile und eine für die Nuten schließen die Tabelle ab. Ihre Leiste fasst sie zuerst **nach Profil**, **nach Geschoss** oder **nach Wandtyp** zusammen. Rückläufe zählen im Volumen, nicht in der Länge.
+
 ## Exportieren
 
 **CSV** und **XLSX** in der Leiste exportieren die Liste als Tabellenkalkulation (eine XLSX hat ein Blatt je Tabelle). In der Desktop-App fragt Lapin, wo die Datei gespeichert werden soll, und schlägt den Namen der Liste vor; im Browser wird die Datei heruntergeladen. Exportierte Wand- und Deckentypen werden genauso gespeichert.

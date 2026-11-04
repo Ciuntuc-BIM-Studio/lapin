@@ -76,6 +76,22 @@ Profiler og noter følger deres væg, når den kopieres, flyttes til en anden et
 
 ![Gesimser, bånd og en not på et hus' ydervægge](shots/wall-sweeps-3d.webp)
 
+### Profiler på vægtypen
+
+En profil, som alle vægge af en type skal have (et soklebånd, en gesims, en skyggefuge), hører til typen. I **Arkitektur → Vægtyper** viser **Profiler og noter** dem under lagene, én række hver: profilen, **Vægprofil** eller **Vægnot**, siden (H, siden med typens første lag, eller V, som forklaringen kalder dem), højden over væggens fod (eller under dens top med **Fra toppen**), forskydningen ud fra siden, en profils materiale og dens returer. **Vægprofil** og **Vægnot** under tabellen tilføjer en række. Gem typen: alle dens vægge får dem, og det gør en væg tegnet med typen eller skiftet til den også. De er profiler som de andre: målt, med i vægprofilskemaet, geringsskåret i hjørnerne, hvor vægge af typen mødes, skrevet til IFC. En vendt vægs profiler skifter side med dens lag. **Eksportér JSON** under typelisten tager dem med, med profilernes omrids og materialerne efter navn (CSV'en har kun lagene).
+
+Vælg en på en væg: Egenskaber siger **Fra typen**. Ændrer du dens højde, forskydning eller et andet felt, bliver det felt væggens eget (**Egne:** højde): senere ændringer af typen rører det ikke. **Tilbage til typen** giver den typens værdier igen. **Slå fra på denne væg**, eller at slette den, lader typens profil være slået fra på den væg; **Slå typens profiler til igen** under væggens **Profiler og noter** bringer dem tilbage.
+
+![En profil på vægtypen, i dialogen Vægtyper](shots/wall-type-sweeps.webp)
+
+### Returer
+
+En profil, der når en fri ende af sin væg (ingen væg er samlet der), laver retur: geringsskåret i enden fører den sin profil rundt om hjørnet ind på væggens ende og stopper i sidens plan, så profilen er lukket i stedet for at vise sit snit. **Returer ved frie ender** i Egenskaber vælger begge (standard for en profil), ved start, ved slut eller ingen, for lige ender. En not laver aldrig retur. Ved et hjørne samlet med en anden væg laver profilen ikke retur: den går til hjørnet eller ind i en ens profil på den anden væg. Ved døre og vinduer stopper den lige; sæt hak i **Returer ved åbninger** for også at få retur rundt om lysningerne. **Tilbagerykket fra start** og **Tilbagerykket fra slut** stopper den før sidens ender (lige der), og **Profil på hovedet** vender dens profil.
+
+### Flyt og kopiér en profil
+
+Vælg en profil og brug **MOVE** eller **COPY** som for ethvert element; dens væg bliver stående. Det, flytningen går langs væggen, skubber profilen langs den (en profil langs hele siden får så sin egen start og slut); det, den går på tværs af væggen, ses der bort fra. Flyttet op eller ned i en facade eller et snit ændres dens højde. En kopi lander på samme væg, forskudt, eller på en anden væg, når den lander inde i den, på den side, den lander på. **ROTATE** og **MIRROR** holder den på sin væg: spejlet om væggens akse går den over på den anden side. En profil fra typen, som du flytter, beholder sin nye plads som sin egen; flyttet over på en anden væg bliver den den vægs egen profil, og typens slås fra på den første.
+
 ### Profiler
 
 **Administrer → Profiler** rummer projektets profiler, de omrids som vægprofiler, noter og stribefundamenter føres med. **Ny profil** starter fra kataloget med sine mål: et rektangel, et affaset bånd, en gesims, en halvrund, en sålbænksnæse, et bånd med drypnæse; en V-not, en rektangulær eller en rund not; til fundamenter rektangulært, trappet i 2 eller 3 trin, med skrå overside, excentrisk, med sokkelvæg. Eller vælg **Indtastede hjørner**: hvert hjørne u v i millimeter, semikolon imellem, og et tredje tal gør siden fra det hjørne til en bue. **Fra en tegnet kontur** læser en lukket polylinje eller et rektangel tegnet med Tegning og valgt i sin visning. Cirklen i forhåndsvisningen er indsættelsespunktet: for en vægprofil ligger den på væggens flade i profilens højde, med u ud af fladen (ind i væggen for en not). Ændrer du en profil, følger alt, der bruger den.

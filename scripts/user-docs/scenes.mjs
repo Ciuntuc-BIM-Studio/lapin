@@ -1117,6 +1117,17 @@ export const scenes = [
       t.expect(await t.page.locator('.dialog svg.profile-preview').count() === 1, 'the profile is drawn');
       await t.shot('profiles', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
+      // Decision 298: a drip band on the wall type itself, which every wall of the type then carries; its row in Wall types.
+      const type = (await t.nodes()).find((n) => n.type === 'IfcWallType');
+      await t.cmd('architecture.updateWallType', { id: type.id, sweeps: [{ catalog: 'drip', mode: 'add', side: 'right', height: 1.0, material: 'Plaster' }] });
+      await t.wait(800);
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinWallSweep' && typeof n.props.typeSweep === 'string').length === 5, 'every wall of the type has its sweep');
+      await t.ui({ wallTypeId: type.id });
+      await t.tool('architecture.wallTypes');
+      await t.wait(600);
+      t.expect(await t.page.locator('.dialog [data-testid=type-sweep]').count() === 1, 'the type lists its sweep');
+      await t.shot('wall-type-sweeps', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
     },
   },
   {

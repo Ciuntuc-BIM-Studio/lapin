@@ -272,6 +272,13 @@ public static class Profiles
             attrs[Key] = shape.ToJson();
             ctx.Replace(e.With(attrs: attrs));
         }
+        // A type's sweeps (a wall type's, decision 298) keep their copies in a list.
+        foreach (var e in ctx.Model.Entities.Where(x => x.Attrs["sweeps"] is JsonArray l && l.OfType<JsonObject>().Any(o => (string?)o[IdKey] == profile.Id)).ToList())
+        {
+            var attrs = e.CloneAttrs();
+            foreach (var o in ((JsonArray)attrs["sweeps"]!).OfType<JsonObject>().Where(o => (string?)o[IdKey] == profile.Id)) o[Key] = shape.ToJson();
+            ctx.Replace(e.With(attrs: attrs));
+        }
     }
 
     /// <summary>
@@ -430,11 +437,26 @@ public static class ProfileSweeps
         return rings;
     }
 
-    /// <summary>The closed body through the sections: their sides joined ring to ring, the first and the last closing its ends.</summary>
+    /// <summary>
+    /// The closed body through the sections: their sides joined ring to ring, the first and the last closing its ends. A point
+    /// of a section where the one before has it too is the same vertex (a wall sweep's return, decision 298, wraps the
+    /// profile round a corner on the face: its points on the face stay), the sides there triangles or none.
+    /// </summary>
     public static Solid Solid(IReadOnlyList<Vec3[]> rings, string tag = "sweep")
     {
         var verts = new List<Vec3>();
-        var idx = rings.Select(r => r.Select(v => { verts.Add(v); return verts.Count - 1; }).ToArray()).ToList();
+        var idx = new List<int[]>();
+        for (var i = 0; i < rings.Count; i++)
+        {
+            var row = new int[rings[i].Length];
+            for (var k = 0; k < row.Length; k++)
+            {
+                if (i > 0 && (rings[i][k] - rings[i - 1][k]).Length < 1e-9) { row[k] = idx[i - 1][k]; continue; }
+                verts.Add(rings[i][k]);
+                row[k] = verts.Count - 1;
+            }
+            idx.Add(row);
+        }
         var faces = new List<FaceInput>();
         var np = rings[0].Length;
         for (var i = 0; i + 1 < idx.Count; i++)
@@ -443,7 +465,10 @@ public static class ProfileSweeps
             for (var k = 0; k < np; k++)
             {
                 var j = (k + 1) % np;
-                faces.Add(new FaceInput([lo[k], lo[j], hi[j], hi[k]], null, null, "side"));
+                var quad = new List<int>(4);
+                foreach (var v in new[] { lo[k], lo[j], hi[j], hi[k] }) if (quad.Count == 0 || quad[^1] != v) quad.Add(v);
+                if (quad.Count > 1 && quad[^1] == quad[0]) quad.RemoveAt(quad.Count - 1);
+                if (quad.Count >= 3) faces.Add(new FaceInput([.. quad], null, null, "side"));
             }
         }
         faces.Add(new FaceInput(idx[0].Reverse().ToArray(), null, null, "start"));

@@ -41,7 +41,7 @@ import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
 import { RoomFinishesDialog } from './RoomFinishes';
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
-import { WallSweepSection, WallSweepsOnWall, hasSweeps, revealSelected, sweepSelected, wallReveal, wallSweep } from './WallSweeps';
+import { WallSweepSection, WallSweepsOnWall, hasSweeps, revealSelected, sweepSelected, wallReveal, wallSweep, wallSweepSchedule } from './WallSweeps';
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
 import { colorLegend, room, roomColors, roomOutline, roomTag, updateRooms } from './roomTools';
 import { RoomTagDialog } from './RoomTagDialog';
@@ -376,7 +376,7 @@ const architecture: LapinModule = {
       { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
-      { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected] },
+      { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },

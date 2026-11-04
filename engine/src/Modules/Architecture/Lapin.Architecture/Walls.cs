@@ -64,6 +64,8 @@ public static class Walls
     {
         edit.Relate(IfcClass.RelDefinesByType, type.Id, wall.Id);
         LayOut(edit, wall, type);
+        // The type's sweeps and reveals (decision 298).
+        WallSweepTypes.Rebuild(edit, wall);
     }
 
     /// <summary>
@@ -84,6 +86,8 @@ public static class Walls
     {
         if (axis == "x") throw new CommandException("A wall flips across its axis (Flip Y): its ends stay where they are.");
         LayerSets.Flip(edit, wall.Id);
+        // Its type's sweeps go with the type's faces.
+        WallSweepTypes.Rebuild(edit, wall);
     }
 
     /// <summary>A layer band of the wall's section: across the axis (left of it positive), its material, whether it is the core, its priority at joins (<see cref="Layers.Rank"/>).</summary>

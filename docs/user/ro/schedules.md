@@ -86,6 +86,10 @@ Desenele **Pe fiecare fișă** (vedere din interior, vedere din exterior, plan, 
 
 ![Extrasul alcătuirilor tipurilor cu alcătuirea fiecărui tip](shots/type-assemblies.webp)
 
+## Profile de perete
+
+Extrasul **Profile de perete** (**Arhitectură → Extras de profile de perete**, sau **Cantități → Extrase…** → **Profile de perete**) adună profilele și canalele din pereții proiectului pe profil, fel și material: câte sunt, bucățile lor (un profil tăiat de goluri e mai multe), lungimea de-a lungul fețelor și volumul; la un canal, volumul scos din perete. Un total pentru profile și unul pentru canale încheie tabelul. Bara lui le adună întâi **pe profil**, **pe nivel** sau **pe tip de perete**. Întoarcerile intră în volum, nu în lungime.
+
 ## Exportul
 
 **CSV** și **XLSX** din bară exportă extrasul ca tabel de calcul (un XLSX are câte o foaie pentru fiecare tabel). În aplicația desktop, Lapin te întreabă unde să salveze fișierul și propune numele extrasului; în browser fișierul se descarcă. Tipurile de pereți și de plăci exportate se salvează la fel.

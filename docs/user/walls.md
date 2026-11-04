@@ -76,6 +76,22 @@ Sweeps and reveals go with their wall when it is copied, moved to another level 
 
 ![Cornices, bands and a reveal on a house's outer walls](shots/wall-sweeps-3d.webp)
 
+### Sweeps on the wall type
+
+A sweep every wall of a type should carry (a plinth band, a cornice, a shadow gap) belongs to the type. In **Architecture → Wall types**, under the layers, **Sweeps and reveals** lists them, one row each: the profile, **Wall sweep** or **Wall reveal**, the face (R, the face of the type's first layer, or L, as the legend names them), the height over the wall's base (or under its top with **From the top**), the offset out from the face, a sweep's material and its returns. **Wall sweep** and **Wall reveal** under the table add a row. Save the type: every wall of it gets them, and so does a wall drawn with the type or changed to it. They are sweeps like the others: measured, listed in the Wall sweeps schedule, mitred round the corners where walls of the type meet, written to IFC. A flipped wall's sweeps change face with its layers. **Export JSON** under the list of types carries them, with the profiles' outlines and the materials by name (the CSV has only the layers).
+
+Select one on a wall: Properties says **From the type**. Change its height, its offset or any other of its fields and that field becomes the wall's own (**Own: height**): later changes to the type leave it as it is. **Back to the type** gives it the type's values again. **Switch off on this wall**, or deleting it, leaves the type's sweep off that wall; **Switch the type's sweeps on again**, in the wall's **Sweeps and reveals**, brings them back.
+
+![A sweep on the wall type, in the Wall types dialog](shots/wall-type-sweeps.webp)
+
+### Returns
+
+A sweep that reaches a free end of its wall (no wall joined there) returns: mitred at the end, its profile turns round the corner onto the end of the wall and stops in the plane of the face, so the moulding is closed instead of showing its cut. **Returns at free ends** in Properties chooses both (the default for a sweep), at the start, at the end or none, for square ends. A reveal never returns. At a corner joined to another wall a sweep does not return: it runs to the corner, or into a like sweep on the other wall. At doors and windows it stops square; tick **Returns at openings** to return it round the jambs as well. **Set back from the start** and **Set back from the end** stop it short of the face's ends (square there), and **Profile upside down** turns its profile over.
+
+### Moving and copying a sweep
+
+Select a sweep and use **MOVE** or **COPY** as for any element; its wall stays. What the move goes along the wall slides the sweep along it (a sweep along the whole face then gets its own start and end); what it goes across the wall is left out. Moved up or down in an elevation or a section, its height changes. A copy lands on the same wall, shifted, or on another wall when it lands inside it, on the face it lands on. **ROTATE** and **MIRROR** keep it on its wall: mirrored across the wall's axis, it goes to the other face. A sweep of the type you move keeps its new place as its own; moved onto another wall, it becomes that wall's own sweep and the type's is switched off on the first.
+
 ### Profiles
 
 **Manage → Profiles** holds the project's profiles, the outlines that sweeps, reveals and strip footings are swept with. **New profile** starts from the catalogue with its sizes: a rectangle, a chamfered band, a cornice, a half-round, a sill nose, a band with a drip; a V-groove, a rectangular or a round groove; for footings, rectangular, stepped in 2 or 3 steps, with a sloped top, eccentric, with a stem. Or choose **Typed corners**: each corner u v in millimetres, a semicolon between them, a third number to make the side from that corner an arc. **From a drafted outline** reads a closed polyline or rectangle drawn with Drafting and selected in its view. The circle in the preview is the insertion point: for a sweep it lies on the wall's face at the sweep's height, u going out of the face (into the wall for a reveal). Change a profile and everything that uses it follows.

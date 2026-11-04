@@ -32,6 +32,8 @@ export interface CadHost {
   outlinesOf?(id: string): Shape[];
   /** Everything selectable a region takes (a window or crossing polygon). */
   inRegion?(takes: RegionTest): string[];
+  /** A section's or an elevation's move from one of its points to another, in the model ([dx, dy, dz]); none in a plan (decision 298: a wall sweep moved up). */
+  toModel?(from: Vec2, to: Vec2): [number, number, number] | null;
 }
 
 type Next = Step | null | void | Promise<Step | null | void>;
@@ -247,7 +249,8 @@ function moveOrCopy(copy: boolean): Step | null | void | Promise<Step | null | v
         prompt: copy ? 'Second point (Enter to finish)' : 'Second point', want: 'point', base, trace: ghost,
         preview: (c) => ghost.map((s) => moved(s, { x: c.x - base.x, y: c.y - base.y })),
         point: async (p) => {
-          await execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y] });
+          const world = useCad.getState().host?.toModel?.(base, p);
+          await execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y], ...(world ? { world } : {}) });
           return copy ? second() : null;
         },
         enter: () => null,

@@ -23,7 +23,11 @@ public static class TypeExchange
         Kinds.Where(k => kinds is null || kinds.Count == 0 || kinds.Contains(k.Kind))
              .SelectMany(k => m.OfClass(k.Class).OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase).Select(t => (k.Kind, t)));
 
-    /// <summary>The types as a JSON document: <c>{format, version, types: [{kind, name, mark?, layers: [{material, thickness, core?, color?, name?, from?, to?, priority?, parts?: [{material, height}]}]}]}</c>, metres.</summary>
+    /// <summary>
+    /// The types as a JSON document: <c>{format, version, types: [{kind, name, mark?, layers: [{material, thickness, core?, color?, name?, from?, to?,
+    /// priority?, parts?: [{material, height}]}], sweeps?: [{profile: {name, points, insertion}, mode, side, height, fromTop?, offset?, material?, flip?,
+    /// setbackStart?, setbackEnd?, returns?, returnsAtOpenings?, gaps?}]}]}</c>, metres.
+    /// </summary>
     public static JsonObject Json(IModelView m, IReadOnlyCollection<string>? kinds = null)
     {
         var types = new JsonArray();
@@ -51,6 +55,8 @@ public static class TypeExchange
             var type = new JsonObject { ["kind"] = kind, ["name"] = t.Name };
             if (t.Str("mark") is { Length: > 0 } mark) type["mark"] = mark;
             type["layers"] = layers;
+            // A wall type's sweeps and reveals (decision 298): each profile's outline with its name, the material by name.
+            if (kind == "wall" && WallSweepTypes.Export(m, t) is { } sweeps) type[WallSweepTypes.Key] = sweeps;
             types.Add((JsonNode)type);
         }
         return new JsonObject { ["format"] = Format, ["version"] = 1, ["types"] = types };
@@ -82,7 +88,7 @@ public static class TypeExchange
     /// layer under the header's names (any order, comma, semicolon or tab between cells, a decimal comma where the
     /// separator is not one), a type's layers in the order given; the kind "wall" when the file says none.
     /// </summary>
-    public static List<(string Kind, string Name, string? Mark, IReadOnlyList<LayerSpec> Layers)> Read(string text)
+    public static List<(string Kind, string Name, string? Mark, IReadOnlyList<LayerSpec> Layers, JsonArray? Sweeps)> Read(string text)
     {
         var trimmed = text.TrimStart('﻿', ' ', '\t', '\r', '\n');
         if (trimmed.StartsWith('{') || trimmed.StartsWith('['))
@@ -95,7 +101,8 @@ public static class TypeExchange
             {
                 var name = ((string?)t["name"])?.Trim();
                 if (string.IsNullOrEmpty(name)) throw new CommandException("Every type needs a name.");
-                return (KindOf((string?)t["kind"]), name, ((string?)t["mark"])?.Trim() is { Length: > 0 } mk ? mk : null, LayerSets.Parse(t["layers"], $"The type „{name}”"));
+                return (KindOf((string?)t["kind"]), name, ((string?)t["mark"])?.Trim() is { Length: > 0 } mk ? mk : null, LayerSets.Parse(t["layers"], $"The type „{name}”"),
+                    t[WallSweepTypes.Key] as JsonArray);
             }).ToList();
         }
         return ReadCsv(trimmed);
@@ -108,7 +115,7 @@ public static class TypeExchange
         var k => throw new CommandException($"„{k}” is not a kind of type Lapin brings in: wall or floor."),
     };
 
-    static List<(string, string, string?, IReadOnlyList<LayerSpec>)> ReadCsv(string text)
+    static List<(string, string, string?, IReadOnlyList<LayerSpec>, JsonArray?)> ReadCsv(string text)
     {
         var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').Where(l => l.Trim().Length > 0).ToList();
         if (lines.Count < 2) throw new CommandException("The CSV has no layers under its header.");
@@ -134,7 +141,7 @@ public static class TypeExchange
             if (At(to).Length > 0) l["to"] = Metres(At(to), sep, name);
             t.Layers.Add(l);
         }
-        return order.Select(k => (k.Kind, k.Name, found[k].Mark, LayerSets.Parse(new JsonArray([.. found[k].Layers]), $"The type „{k.Name}”"))).ToList();
+        return order.Select(k => (k.Kind, k.Name, found[k].Mark, LayerSets.Parse(new JsonArray([.. found[k].Layers]), $"The type „{k.Name}”"), (JsonArray?)null)).ToList();
     }
 
     static double Metres(string mm, char sep, string type)
@@ -172,17 +179,19 @@ public static class TypeExchange
         var types = Read(text);
         if (types.Count == 0) throw new CommandException("The file has no types.");
         var (created, updated) = (0, 0);
-        foreach (var (kind, name, mark, layers) in types)
+        foreach (var (kind, name, mark, layers, sweeps) in types)
         {
             var cls = kind == "floor" ? IfcClass.SlabType : IfcClass.WallType;
             var existing = ctx.Model.OfClass(cls).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase));
+            // A wall type's sweeps: its profiles the project's, its materials by name (a file without them leaves the type's own).
+            var parsed = kind == "wall" && sweeps != null ? WallSweepTypes.Parse(ctx, existing, WallSweepTypes.Import(ctx, sweeps, existing)) : null;
             if (existing is null)
             {
-                if (kind == "floor") Slabs.CreateType(ctx, name, layers); else WallTypes.Create(ctx, name, layers, mark);
+                if (kind == "floor") Slabs.CreateType(ctx, name, layers); else WallTypes.Create(ctx, name, layers, mark, sweeps: parsed);
                 created++;
                 continue;
             }
-            if (kind == "floor") Slabs.UpdateType(ctx, existing, null, layers); else WallTypes.Update(ctx, existing, null, layers);
+            if (kind == "floor") Slabs.UpdateType(ctx, existing, null, layers); else WallTypes.Update(ctx, existing, null, layers, sweeps: parsed);
             if (mark != null && ctx.Model.Get(existing.Id) is { } now && now.Str("mark") != mark)
             {
                 var attrs = now.CloneAttrs();

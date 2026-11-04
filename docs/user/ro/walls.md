@@ -76,6 +76,22 @@ Profilele și canalele merg cu peretele lor când e copiat, mutat pe alt nivel s
 
 ![Cornișe, brâuri și un canal pe pereții exteriori ai unei case](shots/wall-sweeps-3d.webp)
 
+### Profile pe tipul de perete
+
+Un profil pe care trebuie să-l aibă toți pereții unui tip (un brâu de soclu, o cornișă, un rost de umbră) ține de tip. În **Arhitectură → Tipuri de pereți**, sub straturi, **Profile și canale** le arată, câte un rând fiecare: profilul, **Profil de perete** sau **Canal în perete**, fața (D, fața primului strat al tipului, sau S, cum le numește legenda), înălțimea peste baza peretelui (sau sub vârful lui, cu **De sus**), distanța în afară de la față, materialul unui profil și întoarcerile lui. **Profil de perete** și **Canal în perete** de sub tabel adaugă un rând. Salvezi tipul: toți pereții lui le primesc, la fel și un perete desenat cu tipul sau schimbat pe el. Sunt profile ca celelalte: măsurate, în extrasul de profile de perete, tăiate pe bisectoare la colțurile unde se întâlnesc pereți ai tipului, scrise în IFC. Profilele unui perete întors își schimbă fața odată cu straturile lui. **Exportă JSON** de sub lista tipurilor le duce cu el, cu conturul profilelor și materialele după nume (CSV-ul are doar straturile).
+
+Selectezi unul pe un perete: Proprietăți scrie **Din tip**. Îi schimbi înălțimea, distanța sau alt câmp și câmpul acela devine al peretelui (**Proprii:** înălțime): schimbările de mai târziu ale tipului nu-l mai ating. **Înapoi la tip** îi dă din nou valorile tipului. **Oprește pe acest perete**, sau ștergerea lui, lasă profilul tipului oprit pe peretele acela; **Repornește profilele tipului**, în **Profile și canale** ale peretelui, le aduce înapoi.
+
+![Un profil pe tipul de perete, în dialogul Tipuri de pereți](shots/wall-type-sweeps.webp)
+
+### Întoarceri
+
+Un profil care ajunge la un capăt liber al peretelui (fără alt perete îmbinat acolo) se întoarce: tăiat pe bisectoare la capăt, profilul lui ocolește colțul pe capătul peretelui și se oprește în planul feței, așa că ornamentul e închis, nu își arată tăietura. **Întoarceri la capete libere** din Proprietăți alege ambele (implicit pentru un profil), la început, la sfârșit sau niciuna, pentru capete drepte. Un canal nu se întoarce niciodată. La un colț îmbinat cu alt perete profilul nu se întoarce: merge până la colț sau intră în profilul la fel de pe celălalt perete. La uși și ferestre se oprește drept; bifezi **Întoarceri la goluri** ca să se întoarcă și în jurul glafurilor. **Retras de la început** și **Retras de la sfârșit** îl opresc înainte de capetele feței (drept acolo), iar **Profil răsturnat** îi întoarce profilul cu susul în jos.
+
+### Mutarea și copierea unui profil
+
+Selectezi un profil și folosești **MOVE** sau **COPY** ca pentru orice element; peretele rămâne pe loc. Ce merge mutarea de-a lungul peretelui deplasează profilul pe el (un profil pe toată fața primește atunci un început și un sfârșit ale lui); ce merge peste perete e lăsat deoparte. Mutat în sus sau în jos într-o fațadă sau o secțiune, își schimbă înălțimea. O copie ajunge pe același perete, deplasată, sau pe alt perete când ajunge în el, pe fața pe care ajunge. **ROTATE** și **MIRROR** îl țin pe peretele lui: oglindit față de axa peretelui, trece pe cealaltă față. Un profil al tipului pe care îl muți își păstrează noul loc ca al lui; mutat pe alt perete, devine profilul propriu al acelui perete, iar al tipului rămâne oprit pe primul.
+
 ### Profile
 
 **Gestionare → Profile** ține profilele proiectului, contururile după care se extrudează profilele de perete, canalele și fundațiile continue. **Profil nou** pornește din catalog, cu dimensiunile lui: un dreptunghi, un brâu teșit, o cornișă, un semirotund, un nas de glaf, un brâu cu lăcrimar; un canal în V, un canal dreptunghiular sau rotund; pentru fundații, dreptunghiulară, în 2 sau 3 trepte, cu fața de sus înclinată, excentrică, cu elevație. Sau alegi **Colțuri tastate**: fiecare colț u v în milimetri, cu punct și virgulă între ele, iar un al treilea număr face din latura care pleacă din colț un arc. **Dintr-un contur desenat** citește o polilinie închisă sau un dreptunghi desenat cu Desen și selectat în vederea lui. Cercul din previzualizare e punctul de inserție: la un profil de perete stă pe fața peretelui, la înălțimea profilului, cu u spre exteriorul feței (spre interiorul peretelui la un canal). Când schimbi un profil, tot ce îl folosește se schimbă cu el.

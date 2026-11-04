@@ -41,7 +41,7 @@ public static class WallTypes
         return $"{core.Material} wall {Math.Round(layers.Sum(l => l.Thickness) * 1000)}";
     }
 
-    public static Entity Create(IEdit edit, string? name, IReadOnlyList<LayerSpec> layers, string? mark = null, JsonNode? zones = null, JsonNode? lintels = null)
+    public static Entity Create(IEdit edit, string? name, IReadOnlyList<LayerSpec> layers, string? mark = null, JsonNode? zones = null, JsonNode? lintels = null, JsonArray? sweeps = null)
     {
         Validate(layers);
         var typeName = string.IsNullOrWhiteSpace(name) ? DefaultName(layers) : name.Trim();
@@ -49,6 +49,8 @@ public static class WallTypes
         if (mark != null) attrs["mark"] = mark;
         if (zones is JsonArray { Count: > 0 }) attrs["zones"] = WallZones.Parse(edit, zones);
         if (lintels != null) attrs["lintels"] = ParseLintels(lintels);
+        // Its sweeps and reveals (decision 298), as WallSweepTypes.Parse gives them.
+        if (sweeps is { Count: > 0 }) attrs[WallSweepTypes.Key] = sweeps;
         var type = new Entity(edit.NewId(), IfcClass.WallType, typeName, attrs, "STANDARD");
         edit.Add(type);
         LayerSets.Attach(edit, type, layers);
@@ -62,10 +64,11 @@ public static class WallTypes
     /// <summary>
     /// A changed type: its name, and its layers rewritten in its own layer set.
     /// Every wall of the type keeps its axis on the (new) core, mirrored for a
-    /// flipped wall.
+    /// flipped wall. Its sweeps given (decision 298), its walls' sweeps follow.
     /// </summary>
-    public static void Update(IEdit edit, Entity type, string? name, IReadOnlyList<LayerSpec>? layers, JsonNode? zones = null, JsonNode? lintels = null)
+    public static void Update(IEdit edit, Entity type, string? name, IReadOnlyList<LayerSpec>? layers, JsonNode? zones = null, JsonNode? lintels = null, JsonArray? sweeps = null)
     {
+        if (sweeps != null) WallSweepTypes.Set(edit, type, sweeps);
         if (name != null)
         {
             var trimmed = name.Trim();

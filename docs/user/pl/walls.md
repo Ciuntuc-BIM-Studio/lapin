@@ -76,6 +76,22 @@ Profile i bruzdy idą razem ze swoją ścianą, gdy jest kopiowana, przenoszona 
 
 ![Gzymsy, opaski i bruzda na ścianach zewnętrznych domu](shots/wall-sweeps-3d.webp)
 
+### Profile na typie ściany
+
+Profil, który mają mieć wszystkie ściany danego typu (opaska cokołowa, gzyms, fuga cieniowa), należy do typu. W **Architektura → Typy ścian**, pod warstwami, **Profile i bruzdy** pokazuje je, po jednym wierszu: profil, **Profil ściany** albo **Bruzda w ścianie**, lico (P, lico pierwszej warstwy typu, albo L, jak nazywa je legenda), wysokość nad podstawą ściany (albo pod jej koroną z **Od góry**), odsunięcie na zewnątrz od lica, materiał profilu i jego zawinięcia. **Profil ściany** i **Bruzda w ścianie** pod tabelą dodają wiersz. Zapisz typ: dostają je wszystkie jego ściany, a także ściana narysowana tym typem lub na niego zmieniona. To profile jak inne: mierzone, w zestawieniu profili ścian, docinane na ukos w narożnikach, gdzie spotykają się ściany tego typu, zapisywane do IFC. Profile odwróconej ściany zmieniają lico razem z jej warstwami. **Eksportuj JSON** pod listą typów zabiera je ze sobą, z obrysem profili i materiałami według nazwy (CSV ma tylko warstwy).
+
+Zaznacz jeden na ścianie: Właściwości pokazują **Z typu**. Zmień jego wysokość, odsunięcie albo inne pole, a to pole stanie się własne tej ściany (**Własne:** wysokość): późniejsze zmiany typu go nie ruszają. **Wróć do typu** przywraca mu wartości typu. **Wyłącz na tej ścianie**, albo usunięcie go, zostawia profil typu wyłączony na tej ścianie; **Włącz ponownie profile typu** w **Profile i bruzdy** ściany przywraca je.
+
+![Profil na typie ściany, w oknie Typy ścian](shots/wall-type-sweeps.webp)
+
+### Zawinięcia
+
+Profil, który dochodzi do wolnego końca swojej ściany (nie dołączono tam innej ściany), zawija się: docięty na ukos na końcu, prowadzi swój profil za narożnik na czoło ściany i kończy się w płaszczyźnie lica, więc profil jest zamknięty, zamiast pokazywać przekrój. **Zawinięcia na wolnych końcach** we Właściwościach wybiera oba (domyślnie dla profilu), na początku, na końcu albo żadne, dla prostych końców. Bruzda nigdy się nie zawija. W narożniku połączonym z inną ścianą profil się nie zawija: dochodzi do narożnika albo łączy się z takim samym profilem na drugiej ścianie. Przy drzwiach i oknach kończy się prosto; zaznacz **Zawinięcia przy otworach**, aby zawijał się też wokół ościeży. **Cofnięty od początku** i **Cofnięty od końca** kończą go przed końcami lica (prosto w tym miejscu), a **Profil odwrócony** odwraca jego profil.
+
+### Przesuwanie i kopiowanie profilu
+
+Zaznacz profil i użyj **MOVE** albo **COPY** jak dla każdego elementu; jego ściana zostaje na miejscu. To, co przesunięcie pokonuje wzdłuż ściany, przesuwa profil po niej (profil na całym licu dostaje wtedy własny początek i koniec); to, co pokonuje w poprzek ściany, jest pomijane. Przesunięty w górę lub w dół na elewacji albo w przekroju zmienia wysokość. Kopia trafia na tę samą ścianę, przesunięta, albo na inną ścianę, gdy w nią trafi, na lico, na które trafi. **ROTATE** i **MIRROR** zostawiają go na jego ścianie: odbity względem osi ściany przechodzi na drugie lico. Profil typu, który przesuniesz, zachowuje nowe miejsce jako własne; przesunięty na inną ścianę staje się własnym profilem tej ściany, a profil typu zostaje wyłączony na pierwszej.
+
 ### Profile
 
 **Zarządzaj → Profile** przechowuje profile projektu, kontury, wzdłuż których przeciąga się profile ścian, bruzdy i ławy fundamentowe. **Nowy profil** zaczyna od katalogu z jego wymiarami: prostokąt, gzyms fazowany, gzyms, półwałek, nos parapetu, gzyms z kapinosem; bruzda V, prostokątna lub okrągła; dla ław prostokątna, schodkowa z 2 lub 3 stopniami, ze skośną górą, mimośrodowa, ze ścianą fundamentową. Albo wybierz **Wpisane wierzchołki**: każdy wierzchołek u v w milimetrach, oddzielone średnikiem, a trzecia liczba zamienia bok wychodzący z tego wierzchołka w łuk. **Z narysowanego konturu** odczytuje zamkniętą polilinię lub prostokąt narysowany narzędziami Rysowania i zaznaczony w swoim widoku. Okrąg na podglądzie to punkt wstawienia: dla profilu ściany leży na licu ściany na wysokości profilu, a u biegnie na zewnątrz lica (w głąb ściany dla bruzdy). Gdy zmienisz profil, wszystko, co go używa, zmienia się razem z nim.

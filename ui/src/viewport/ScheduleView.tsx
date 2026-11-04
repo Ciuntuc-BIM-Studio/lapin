@@ -161,6 +161,12 @@ export function ScheduleView() {
         {kind !== 'lintel' && <button type="button" className="icon" title={joinery ? 'A column of your own: a card with no type, every value typed' : 'A column of your own, typed in'} onClick={addColumn} data-testid="schedule-add-column" data-i18n-ctx="schedule"><Plus size={14} /><span className="small">Column</span></button>}
         <button type="button" className={`icon${side === 'charts' ? ' on' : ''}`} title="Charts of the table" onClick={() => setSide(side === 'charts' ? null : 'charts')} data-testid="schedule-charts-toggle"><ChartColumn size={14} /><span className="small">Charts</span></button>
         {kind === 'quantities' && <TakeoffControls id={node.id} groupBy={node.props.groupBy} classes={node.props.classes} />}
+        {kind === 'wallSweeps' && (
+          <select value={Array.isArray(node.props.groupBy) ? String(node.props.groupBy[0] ?? '') : ''} title="What the wall sweeps are added up by first" data-testid="sweeps-group"
+            onChange={(e) => void execute('architecture.updateSchedule', { id: node.id, groupBy: e.target.value ? [e.target.value] : null })}>
+            <option value="">by profile</option><option value="storey">by storey</option><option value="type">by wall type</option>
+          </select>
+        )}
         <select value="" title="Place the schedule on a sheet: it is drawn there as it is here, follows the model, and prints and goes to PDF with the sheet" data-testid="schedule-place"
           onChange={(e) => { const v = e.target.value; if (v) void placeOnSheet(node.id, v === 'new' ? null : v); }}>
           <option value="">Place on sheet…</option>
