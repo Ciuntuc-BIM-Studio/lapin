@@ -45,9 +45,10 @@ public interface IModuleRegistry
     /// a wall, a slab over its head). <paramref name="priority"/> is the
     /// class's (an entity's <c>cutPriority</c> attribute overrides it, among
     /// the classes above the one it would cut: a wall never cuts a wall);
-    /// <paramref name="envelope"/> is the solid it cuts with, from its attributes.
+    /// <paramref name="envelope"/> is the solid it cuts with, from its attributes; null: the class ranks in the cut order but
+    /// cuts by its own means (an MEP run cuts provision openings, decision 293, read through <see cref="Coordination.IProvisionOpenings"/>).
     /// </summary>
-    void Cutter(string ifcClass, int priority, EnvelopeProducer envelope);
+    void Cutter(string ifcClass, int priority, EnvelopeProducer? envelope);
 
     /// <summary>
     /// Entities of <paramref name="ifcClass"/> are path elements: along an axis
@@ -112,6 +113,8 @@ public interface ICutters
     IReadOnlyDictionary<string, int> CutDefaults { get; }
     /// <summary>A class's priority in this project (the cut order, else the default); null when it takes no part.</summary>
     int? ClassPriority(string ifcClass, IModelView model);
+    /// <summary>An element's priority in this project: its own, its material's, its class's; null when it takes no part.</summary>
+    int? PriorityOf(Entity e, IModelView model) => ClassPriority(e.Class, model);
     /// <summary>The envelopes of the entities of higher priority that reach into <paramref name="bounds"/> (the target's own, of its body).</summary>
     IReadOnlyList<Solid> For(Entity target, IModelView model, (Vec3 Min, Vec3 Max) bounds);
     /// <summary>An element's envelope as its class gives it (its body from its attributes, without the openings); null when its class cuts nothing.</summary>

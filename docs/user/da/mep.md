@@ -91,16 +91,30 @@ At dimensionere rørene ud fra apparaternes forbrug og eftervise tryktabet er in
 
 Hver åbning i en væg, et dæk eller et tag kan være et **åbningsvolumen** for sig: et legeme så stort som åbningen, gennem hele værtens tykkelse, beklædning medregnet. Kollisionsprogrammer (Navisworks, Solibri, BIMcollab) tester installationer mod sådanne volumener med "helt indeni": et rør, en kanal eller en kabelbakke helt inde i et volumen er i orden; en, der stikker ud, eller som krydser en væg uden åbning, er en kollision. Lapin kører selv den samme kontrol.
 
-**Administrer → Åbninger mod installationer…** bestemmer, hvilke åbninger der får volumener (**Vægåbninger**, **Døråbninger**, **Vinduesåbninger**, **Dækåbninger**, **Tagåbninger**), hvor meget større eller mindre end åbningerne de er (**Forskydning af åbningen**), og den **Frigang**, et installationselement skal holde til en åbnings sider. **Kør kontrol** gennemgår hvert rør, hver kanal og kabelbakke — Lapins føringer såvel som segmenterne i en importeret installationsmodel og dens egne udsparingsønsker — og viser hvert sted, hvor en krydser en væg, et dæk eller et tag:
+**Administrer → Kollisionskontrol…** kører kontrollen kun, når du beder om det: intet starter den af sig selv, hverken en ændring eller **Administrer → Kontrol**. Dens fane **Indstillinger** bestemmer, hvilke åbninger der laves volumener for (åbninger i vægge, døre, vinduer, dæk og tage), hvor meget større eller mindre end åbningerne de er (**Forskydning af volumen**), og den **Frigang** et installationselement skal holde fra et volumens sider. **Kør kollisionskontrol** går én gang gennem hvert rør, hver kanal og hver kabelbakke — Lapins føringer og segmenterne i en importeret installationsmodel ligeså, og en installationsmodels egne udsparinger — og gemmer det fundne som projektets **kollisionsrapport** med datoen for kørslen, indtil den køres igen. Ændres modellen bagefter, siger rapporten, at den er **forældet**. Dens problemer er grupperet efter art og nummereret, og hvert nummer bevares fra den ene kørsel til den næste:
 
-- **Ingen åbning**: den krydser værten, hvor der ingen er;
-- **Åbning for lille**: den går gennem en åbning men stikker ud, frigang medregnet; **Mangler** siger hvor mange millimeter på den værste side;
-- **Passer** (med **vis det, der passer**): helt inde i volumenet, med frigang;
-- **Tom åbning** (med **Tomme åbninger** markeret): en væg- eller dækåbning, som intet går igennem (et trappehul er aldrig en).
+- **Ingen åbning**: den går gennem værten, hvor den ingen har;
+- **Ikke skåret: bærende eller snitrækkefølge**: ingen åbning, fordi føringernes egne åbninger (nedenfor) ikke skærer den vært;
+- **For lille åbning**: den går gennem en åbning men stikker ud af den, frigangen medregnet; **Mangler** siger med hvor mange millimeter på den værste side;
+- **Tomt volumen** (med **Tomme åbninger** afkrydset i **Indstillinger**): en væg- eller dækåbning, som intet går igennem (et trapperum er aldrig et).
 
-Et klik på en række viser parret i 3D, begge valgt. **Lav bemærkninger** gør hver kollision til en bemærkning af typen **Clash** med sit synspunkt (**Administrer → Bemærkninger til modellen…**), klar til BCF; kørt igen opdaterer den de samme bemærkninger. Kollisionerne vises også blandt advarslerne i **Administrer → Kontrol**.
+![Kollisionsrapporten: ingen åbning, en for lille åbning og et tomt volumen, hver nummereret](shots/mep-voids-check.webp)
 
-![Åbninger mod installationer: hvad volumenerne laves for, frigangen og kontrollen af tre rør](shots/mep-voids-check.webp)
+Hvert problem er **Skal løses**, **Løst** eller **Ignoreret**, med en kommentar. Et klik på en række viser parret i 3D, begge valgt (**alene i 3D** skjuler resten indtil videre); pilene går til den forrige og den næste. **Markér i visningen** (også **Vis → Kollisionsmærker**) tegner hvert åbent problem i planen, snittet eller facaden forrest som en rød sky med sit nummer, kun på skærmen.
+
+![Planen med kollisionerne markeret: røde skyer med deres numre](shots/mep-voids-clouds.webp)
+
+**Lav åbning** skærer en enkel åbning om elementet i væggen (rund for et rør eller et kabel, rektangulær for en kanal) eller i dækket, med siderne i frigangens afstand og størrelsen rundet op, som snitrækkefølgens installationsregel siger; **Forstør åbning** forstørrer den for lille åbning. **Løs de valgte** gør det for hver afkrydset række, **Ignorer** og **Genåbn** sætter deres status; hver er ét trin at fortryde. Rapporten siger så, at den er forældet: kør den igen, og det løste står som **Løst** (**vis løste**).
+
+![Kørt igen efter rettelserne: de to kollisioner løst](shots/mep-voids-fixed.webp)
+
+**BCF** gør de åbne kollisioner til bemærkninger af typen **Clash** med deres synspunkter (**Administrer → Bemærkninger til modellen…**) og gemmer dem som en BCF-fil; kørt igen opdaterer den de samme bemærkninger. **CSV** og **PDF** gemmer rapporten som en liste. **Administrer → Kontrol** læser kun rapporten: dens åbne kollisioner er advarsler, og det er en forældet rapport også.
+
+### Føringer der skærer deres egne åbninger
+
+Snitrækkefølgen (**Administrer → Snitrækkefølge**) rummer også installationsføringer, over vægge og dæk. Med **Føringer skærer vægge og dæk** slået til skærer en føring, der krydser en væg eller et dæk, sin egen åbning der: rund for et rør eller et kabel, der går vinkelret igennem, rektangulær for en kanal eller en skrå føring, så stor som føringens yderside (dens isolering, et gasrørs beskyttelsesrør) plus **Frigangen** rundt om, rundet op til trinnet, aldrig under **Mindste åbning**. Åbningen gemmes ikke for sig: den flytter sig og vokser med føringen og forsvinder, når føringen forsvinder eller ikke længere krydser. Den er et volumen som enhver åbning (tegnet, listet, kontrolleret), og IFC-eksporten skriver den som **IfcOpeningElement** med **Lapin_ProvisionOpening** (og som udsparing med **Åbningsvolumener** afkrydset), så en kontrol kørt igen ikke finder noget at melde. En væg eller et dæk, der står over føringerne i snitrækkefølgen (efter klasse eller materiale), skæres ikke, og heller ikke en bærende (LoadBearing i dens Pset_…Common), medmindre **skær også dem** er afkrydset: kollisionskontrollen melder dem som **Ikke skåret**. En nedrevet føring skærer intet, og hvor en føring allerede går gennem en åbning, skæres ingen. Et system kan bestemme andet i **Installationer → Systemer…** (**Føringer skærer vægge og dæk**: som snitrækkefølgen, ja, nej). Det er slået til i et nyt projekt; et projekt lavet før holder det slået fra, indtil det slås til.
+
+![Installationsføringer i snitrækkefølgen](shots/mep-voids-cut-order.webp)
 
 Fanen **Volumener** viser hvert volumen med sit mærke (V1, V2… etage for etage), værten, døren eller vinduet i det, størrelse og dybde; et klik vælger åbningen.
 

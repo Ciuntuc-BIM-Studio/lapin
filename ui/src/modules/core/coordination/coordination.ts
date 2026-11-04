@@ -7,7 +7,7 @@
  * here are the settings, the list's order and filters, and how a row reads.
  */
 
-import { execute, query } from '../../../engine/session';
+import { execute, query, useSession } from '../../../engine/session';
 import { frontView } from '../../../viewport/frontView';
 
 export type VoidKind = 'wall' | 'door' | 'window' | 'slab' | 'roof';
@@ -107,3 +107,94 @@ export function toggleKind(kinds: VoidKind[], kind: VoidKind): VoidKind[] {
 
 /** The voids of one kind or all, as the Voids list filters them. */
 export const voidsOfKinds = (voids: VoidDto[], kinds: VoidKind[]) => voids.filter((v) => kinds.includes(v.kind));
+
+// ─── The clash report (decision 293): run on demand, kept in the project, fixed from it ───────────────
+
+export type ItemState = 'open' | 'fixed' | 'ignored';
+/** An item's group: no opening, no opening because the cut order held it (load-bearing, ranked over the run), too small, empty. */
+export type ItemKind = 'missing' | 'held' | 'tooSmall' | 'empty';
+
+export interface ClashItem {
+  n: number; key: string; kind: ClashStatus; held?: 'structural' | 'order'; mepId?: string | null; hostId: string; mark?: string | null; openingId?: string | null; voidKey?: string | null;
+  by: number; centre: [number, number, number]; message: string; state: ItemState; comment?: string; fixedBy?: string;
+  mep?: string | null; mepClass?: string | null; host?: string | null; hostClass?: string | null;
+}
+
+export interface ClashReport { id: string; date: string; hash: string; stale: boolean; clearance: number; counts: Record<string, number>; items: ClashItem[] }
+
+export const ITEM_KINDS: ItemKind[] = ['missing', 'held', 'tooSmall', 'empty'];
+export const ITEM_KIND_LABELS: Record<ItemKind, string> = { missing: 'No opening', held: 'Not cut: load-bearing or cut order', tooSmall: 'Opening too small', empty: 'Empty void' };
+export const STATE_LABELS: Record<ItemState, string> = { open: 'To fix', fixed: 'Resolved', ignored: 'Ignored' };
+
+export const itemKind = (i: Pick<ClashItem, 'kind' | 'held'>): ItemKind => (i.kind === 'missing' && i.held ? 'held' : i.kind === 'ok' ? 'missing' : i.kind);
+
+/** The items the report shows, grouped by kind in its order, each group by number; fixed and ignored ones only when asked. */
+export function groupItems(items: ClashItem[], show: { fixed: boolean; ignored: boolean }): { kind: ItemKind; items: ClashItem[] }[] {
+  const shownItems = items.filter((i) => i.state === 'open' || (i.state === 'fixed' && show.fixed) || (i.state === 'ignored' && show.ignored));
+  return ITEM_KINDS.map((kind) => ({ kind, items: shownItems.filter((i) => itemKind(i) === kind).sort((a, b) => a.n - b.n) })).filter((g) => g.items.length > 0);
+}
+
+/** The next (or previous) item after the one shown, in the list's order, round the end; the first when none is shown. */
+export function step(groups: { items: ClashItem[] }[], current: number | null, dir: 1 | -1): number | null {
+  const order = groups.flatMap((g) => g.items.map((i) => i.n));
+  if (order.length === 0) return null;
+  const at = current == null ? -1 : order.indexOf(current);
+  if (at < 0) return dir === 1 ? order[0] : order[order.length - 1];
+  return order[(at + dir + order.length) % order.length];
+}
+
+/** What fixes an item: an opening made where there is none, the opening enlarged where it is too small; nothing for an empty void. */
+export function fixOf(i: Pick<ClashItem, 'kind' | 'openingId' | 'mepId'>): 'make' | 'enlarge' | null {
+  if (!i.mepId || i.kind === 'empty' || i.kind === 'ok') return null;
+  return i.kind === 'tooSmall' && i.openingId ? 'enlarge' : 'make';
+}
+
+/** What an item selects: its MEP element, its host, and its opening when there is one. */
+export const itemPair = (i: ClashItem): string[] => [...new Set([i.mepId, i.hostId, i.kind !== 'missing' ? i.openingId : null].filter((x): x is string => !!x))];
+
+/** When a report ran, as the interface writes a date: dd.mm.yyyy hh:mm in local time; the text as given when it is no date. */
+export function reportDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/** How much too small an item's opening is, as the list writes it (mm, rounded up). */
+export const itemShortBy = (i: Pick<ClashItem, 'kind' | 'by' | 'state'>) => (i.state === 'open' ? shortBy({ status: i.kind, by: i.by }) : '');
+
+export const loadReport = () => query<ClashReport | null>('coordination.report');
+export const runClashCheck = () => execute('coordination.runCheck', {}) as Promise<ClashReport | null>;
+export const setItems = (numbers: number[], patch: { state?: 'open' | 'ignored'; comment?: string }) => execute('coordination.setItems', { numbers, ...patch });
+export const fixItems = (numbers: number[], action: 'auto' | 'make' | 'enlarge' = 'auto') =>
+  execute('coordination.fix', { numbers, action }) as Promise<{ fixed: number; failed: { n: number; message: string }[] } | null>;
+/** The report's open clashes as remarks (numbered), for BCF: their ids. */
+export const reportRemarks = (author: string) => execute('coordination.remarks', { author }) as Promise<{ added: number; updated: number; ids: string[] } | null>;
+export const reportFile = (format: 'csv' | 'pdf') => query<{ name: string; data: string }>('coordination.reportFile', { format });
+
+/**
+ * View → Clash marks: the view in front (a plan, section or elevation) marks the report's open clashes with red clouds
+ * and their numbers, or stops; on the screen only. Returns what the view does now, null with no 2D view in front.
+ */
+export async function toggleClashMarks(on?: boolean): Promise<boolean | null> {
+  const id = await frontView();
+  if (!id || id === '3d') return null;
+  const now = useSession.getState().nodes.get(id)?.props.clashMarks === true;
+  const next = on ?? !now;
+  const r = await execute('coordination.markView', { id, on: next }) as { on: boolean } | null;
+  return r?.on ?? null;
+}
+
+// ─── MEP in the cut order (decision 293) ───────────────────────────────────────────────────────────
+
+export interface MepCut { cut: boolean; clearance: number; step: number; minSize: number; structural: boolean }
+export const DEFAULT_MEP_CUT: MepCut = { cut: false, clearance: 0.02, step: 0.01, minSize: 0.05, structural: false };
+export const loadMepCut = () => query<MepCut>('cutOrder.mep').then((r) => ({ ...DEFAULT_MEP_CUT, ...(r ?? {}) }));
+export const saveMepCut = (patch: Partial<MepCut>) => execute('cutOrder.setMep', patch);
+
+/** The opening a run cuts round itself: its outside grown by the clearance on both sides, rounded up to the step, never under the smallest. */
+export function provisionSize(outside: number, rule: Pick<MepCut, 'clearance' | 'step' | 'minSize'>): number {
+  let s = outside + 2 * rule.clearance;
+  if (rule.step > 1e-6) s = Math.ceil(s / rule.step - 1e-6) * rule.step;
+  return Math.round(Math.max(s, rule.minSize) * 1e6) / 1e6;
+}

@@ -20,6 +20,48 @@ public static class CutOrder
     public static JsonObject? MaterialsOf(IModelView m) => m.OfClass(Class).FirstOrDefault()?.Attrs["materials"] is JsonObject { Count: > 0 } t ? t : null;
 
     /// <summary>
+    /// MEP in the cut order (decision 293): whether runs cut provision openings in the walls and floors they cross
+    /// (<see cref="Cut"/>; a system may say otherwise, <c>cutHosts</c>), the clearance round the run, the step the sizes
+    /// are rounded up to, the smallest opening, and whether load-bearing hosts are cut too (else reported, not cut).
+    /// Kept in the cut order's entity under <c>mep</c>, so every wall and floor reads it already; a project without it: off.
+    /// </summary>
+    public sealed record MepCut(bool Cut = false, double Clearance = 0.02, double Step = 0.01, double MinSize = 0.05, bool CutStructural = false)
+    {
+        /// <summary>A new project's (decision 293): on, load-bearing hosts reported rather than cut.</summary>
+        public static readonly MepCut NewProject = new(Cut: true);
+
+        public static MepCut From(JsonNode? n)
+        {
+            if (n is not JsonObject o) return new();
+            static bool B(JsonNode? x, bool d) => x is JsonValue v && v.TryGetValue<bool>(out var b) ? b : d;
+            var d = new MepCut();
+            return new(B(o["cut"], d.Cut), Math.Clamp(Json.Number(o["clearance"]) ?? d.Clearance, 0, 0.5), Math.Clamp(Json.Number(o["step"]) ?? d.Step, 0, 0.1),
+                Math.Clamp(Json.Number(o["minSize"]) ?? d.MinSize, 0, 1), B(o["structural"], d.CutStructural));
+        }
+
+        public JsonObject ToJson() => new() { ["cut"] = Cut, ["clearance"] = Clearance, ["step"] = Step, ["minSize"] = MinSize, ["structural"] = CutStructural };
+
+        /// <summary>A size grown by the clearance on both sides and rounded up to the step, never under the smallest opening.</summary>
+        public double Size(double element, double clearance)
+        {
+            var s = element + 2 * clearance;
+            if (Step > 1e-6) s = Math.Ceiling(s / Step - 1e-6) * Step;
+            return Math.Max(s, MinSize);
+        }
+    }
+
+    /// <summary>The project's MEP cutting rule.</summary>
+    public static MepCut Mep(IModelView m) => MepCut.From(m.OfClass(Class).FirstOrDefault()?.Attrs["mep"]);
+
+    /// <summary>The cut order's attributes kept when a part of it changes (the MEP rule beside the priorities).</summary>
+    static JsonObject Kept(Entity? existing, params string[] except)
+    {
+        var o = new JsonObject();
+        foreach (var (k, v) in existing?.Attrs ?? []) if (!except.Contains(k)) o[k] = v?.DeepClone();
+        return o;
+    }
+
+    /// <summary>
     /// What an element is mainly made of: its core layer's material (a wall, a
     /// floor), else the material it or its type names (a beam, a column, a
     /// Studio solid).
@@ -84,17 +126,40 @@ public static class CutOrder
                 var mat = ctx.Model.Get(id) is { Class: IfcClass.Material } x ? x : throw new CommandException($"There is no material {id}.");
                 if (v is null) materials.Remove(id); else materials[id] = Priority(v, mat.Name);
             }
-            var attrs = new JsonObject { ["priorities"] = table };
+            var attrs = Kept(existing, "priorities", "materials");
+            attrs["priorities"] = table;
             if (materials.Count > 0) attrs["materials"] = materials;
             if (existing == null) ctx.Add(new Entity(ctx.NewId(), Class, "Cut order", attrs));
             else ctx.Replace(existing.With(attrs: attrs));
             return null;
         });
 
+        // The priorities back to their defaults; the MEP rule stays as it is.
         r.Command("cutOrder.reset", "Default cut order", (ctx, _) =>
         {
-            foreach (var e in ctx.Model.OfClass(Class).ToList()) ctx.Remove(e.Id);
+            foreach (var e in ctx.Model.OfClass(Class).ToList())
+            {
+                if (e.Attrs["mep"] is JsonObject mep) ctx.Replace(e.With(attrs: new JsonObject { ["priorities"] = new JsonObject(), ["mep"] = mep.DeepClone() }));
+                else ctx.Remove(e.Id);
+            }
             return null;
+        });
+
+        // MEP in the cut order (decision 293): {cut?, clearance?, step?, minSize?, structural?}.
+        r.Query("cutOrder.mep", (q, _) => Mep(q.Model).ToJson());
+        r.Command("cutOrder.setMep", "MEP cuts walls and floors", (ctx, a) =>
+        {
+            var existing = ctx.Model.OfClass(Class).FirstOrDefault();
+            var now = Mep(ctx.Model).ToJson();
+            foreach (var k in new[] { "cut", "clearance", "step", "minSize", "structural" })
+                if (a[k] is JsonValue v) now[k] = v.DeepClone();
+            var next = MepCut.From(now);
+            var attrs = Kept(existing, "mep");
+            if (!attrs.ContainsKey("priorities")) attrs["priorities"] = new JsonObject();
+            attrs["mep"] = next.ToJson();
+            if (existing == null) ctx.Add(new Entity(ctx.NewId(), Class, "Cut order", attrs));
+            else ctx.Replace(existing.With(attrs: attrs));
+            return next.ToJson();
         });
     }
 }

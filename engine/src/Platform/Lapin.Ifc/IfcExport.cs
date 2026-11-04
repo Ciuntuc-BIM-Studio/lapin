@@ -58,6 +58,8 @@ public static class IfcExport
 {
     // Lapin's own sets: no "Pset_" prefix, which IFC keeps for the sets its specification declares (IfcPropertySet).
     public const string IntentSetName = "Lapin_Intent";
+    /// <summary>A provision opening's set (decision 293): the run that cut it, its shape and size.</summary>
+    public const string ProvisionSetName = "Lapin_ProvisionOpening";
     public const string PhaseSetName = "Lapin_Phase";
     public const string ParamsSetName = "Lapin_Parameters";
     /// <summary>An opening void's own set (decision 289): its mark, kind, host, opening, fill and offset.</summary>
@@ -1243,6 +1245,22 @@ public static class IfcExport
                     f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, entity, opening);
                     Define(opening, IntentOf(op, Gid(op.Id, IntentKey), null), Gid(op.Id, "intent-rel"));
                     pendingFills.AddRange(m.RelationsOf(op.Id, IfcClass.RelFillsElement).Where(r => r.Relating == op.Id));
+                }
+            // The provision openings MEP runs cut by the cut order (decision 293): IfcOpeningElements of their own, voiding the host,
+            // with what made them (Lapin_ProvisionOpening); the voids option writes them as provisions for voids too.
+            if (e.Class is IfcClass.Wall or IfcClass.Slab)
+                foreach (var p in Lapin.Platform.Coordination.Provisions.Of(m, s.Catalog, e).Where(p => p.Cuts))
+                {
+                    var body = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(p.Cutter, null, Frame.AtZ(z0))]) }));
+                    var opening = f.Add("IFCOPENINGELEMENT", S(p.GlobalId), Null, S("Provision opening"), Null, Null, Place(place, 0), body, S(p.Key), E("OPENING"));
+                    f.Add("IFCRELVOIDSELEMENT", Gid(p.Key, "provision-voids"), Null, Null, Null, entity, opening);
+                    var props = new List<string>
+                    {
+                        Single("Source", Typed("IFCIDENTIFIER", S(GlobalIdOf(p.SourceId)))), Single("Shape", Typed("IFCLABEL", S(p.Shape))),
+                        Single("Width", Typed("IFCPOSITIVELENGTHMEASURE", R(p.Width))), Single("Height", Typed("IFCPOSITIVELENGTHMEASURE", R(p.Height))),
+                        Single("Depth", Typed("IFCPOSITIVELENGTHMEASURE", R(p.Depth))),
+                    };
+                    Define(opening, f.Add("IFCPROPERTYSET", Gid(p.Key, "provision-pset"), Null, S(ProvisionSetName), Null, L(props)), Gid(p.Key, "provision-pset-rel"));
                 }
         }
 

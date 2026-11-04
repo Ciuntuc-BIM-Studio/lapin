@@ -46,7 +46,7 @@ public static class Openings
     }
 
     /// <summary>The head kinds a bare opening takes (decision 253): "round" is the semicircle.</summary>
-    public static readonly string[] BareKinds = ["rect", "segmental", "elliptical", "round", "radiused"];
+    public static readonly string[] BareKinds = ["rect", "segmental", "elliptical", "round", "radiused", "circle"];
 
     /// <summary>A bare opening's own outline (its <c>shape</c> and <c>rise</c>); null for a rectangle.</summary>
     public static JoineryShape? BareShape(Entity opening) =>

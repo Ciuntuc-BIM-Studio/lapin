@@ -91,16 +91,30 @@ Dimensionar os tubos pelo consumo dos aparelhos e verificar a perda de carga é 
 
 Cada abertura numa parede, laje ou telhado pode ser um **volume de abertura** próprio: um sólido do tamanho da abertura, por toda a espessura do seu hospedeiro, acabamentos incluídos. Os programas de conflitos (Navisworks, Solibri, BIMcollab) testam as instalações contra esses volumes com "completamente dentro": um tubo, duto ou eletrocalha inteiro dentro de um volume passa; um que sai dele, ou que atravessa uma parede sem abertura, é um conflito. O Lapin faz a mesma verificação.
 
-**Gerenciar → Aberturas vs instalações…** define para que aberturas se fazem volumes (**Aberturas em paredes**, **Aberturas de portas**, **Aberturas de janelas**, **Aberturas em lajes**, **Aberturas no telhado**), quanto maiores ou menores que as aberturas eles são (**Deslocamento da abertura**) e a **Folga** que um elemento de instalações deve manter dos lados de uma abertura. **Executar verificação** percorre cada tubo, duto e eletrocalha — os traçados do Lapin e os segmentos de um modelo de instalações importado, e os pedidos de abertura desse modelo — e lista cada lugar onde um atravessa uma parede, laje ou telhado:
+**Gerenciar → Verificação de conflitos…** executa a verificação só quando pedida: nada a executa sozinho, nem uma edição nem **Gerenciar → Verificar**. A sua aba **Configurações** define para que aberturas se fazem volumes (aberturas em paredes, portas, janelas, lajes e coberturas), quanto maiores ou menores que as suas aberturas eles são (**Deslocamento do volume**) e a **Folga** que um elemento de instalações deve manter dos lados de um volume. **Executar verificação de conflitos** passa uma vez por cada tubo, duto e eletrocalha — os troços do Lapin e os segmentos de um modelo de instalações importado da mesma forma, e as reservas de passagem próprias de um modelo de instalações — e guarda o que encontrou como o **relatório de conflitos** do projeto, com a data em que foi executada, até ser executada de novo. Quando o modelo muda depois disso, o relatório diz que está **desatualizado**. Os seus problemas são agrupados por tipo e numerados, e cada número se mantém de uma execução à seguinte:
 
-- **Sem abertura**: atravessa o hospedeiro onde não há nenhuma;
+- **Sem abertura**: atravessa o hospedeiro onde ele não tem nenhuma;
+- **Não cortados: estrutural ou ordem de corte**: sem abertura, porque as aberturas próprias dos troços (abaixo) não cortam esse hospedeiro;
 - **Abertura pequena demais**: passa por uma abertura mas sai dela, folga incluída; **Falta** diz quantos milímetros do pior lado;
-- **Cabe** (com **mostrar o que cabe**): inteiro dentro do volume, com a folga;
-- **Abertura vazia** (com **Aberturas vazias** marcado): uma abertura em parede ou laje por onde nada passa (um vão de escada nunca é).
+- **Volume vazio** (com **Aberturas vazias** marcado em **Configurações**): uma abertura de parede ou laje por onde nada passa (um vão de escada nunca é uma).
 
-Um clique numa linha mostra o par em 3D, ambos selecionados. **Criar observações** faz de cada conflito uma observação do tipo **Clash** com o seu ponto de vista (**Gerenciar → Observações do modelo…**), pronta para sair como BCF; executada de novo, atualiza as mesmas observações. Os conflitos também aparecem entre os avisos de **Gerenciar → Verificar**.
+![O relatório de conflitos: sem abertura, uma abertura pequena demais e um volume vazio, cada um numerado](shots/mep-voids-check.webp)
 
-![Aberturas vs instalações: para que se fazem os volumes, a folga e a verificação de três tubos](shots/mep-voids-check.webp)
+Cada problema está **A corrigir**, **Resolvida** ou **Ignorada**, com um comentário. Um clique numa linha mostra o par em 3D, ambos selecionados (**sozinhos em 3D** esconde o resto por enquanto); as setas vão ao anterior e ao seguinte. **Marcar na vista** (também **Vista → Marcas de conflitos**) desenha cada problema aberto na planta, no corte ou na elevação à frente como uma nuvem vermelha com o seu número, só na tela.
+
+![A planta com os conflitos marcados: nuvens vermelhas com os seus números](shots/mep-voids-clouds.webp)
+
+**Fazer abertura** corta uma abertura simples à volta do elemento na parede (redonda para um tubo ou um cabo, retangular para um duto) ou na laje, com os lados à distância da folga e o tamanho arredondado para cima como diz a regra de instalações da ordem de corte; **Alargar abertura** aumenta a abertura pequena demais. **Corrigir seleção** faz isso para cada linha marcada, **Ignorar** e **Reabrir** mudam o seu estado; cada um é um só passo para desfazer. O relatório diz então que está desatualizado: execute-o de novo, e o que foi corrigido aparece **Resolvida** (**mostrar resolvidas**).
+
+![Executada de novo depois das correções: os dois conflitos resolvidos](shots/mep-voids-fixed.webp)
+
+**BCF** transforma os conflitos abertos em observações do tipo **Clash** com os seus pontos de vista (**Gerenciar → Observações do modelo…**) e salva-as como arquivo BCF; executado de novo, atualiza as mesmas observações. **CSV** e **PDF** salvam o relatório como lista. **Gerenciar → Verificar** só lê o relatório: os seus conflitos abertos são avisos, e um relatório desatualizado também.
+
+### Troços que cortam as suas próprias aberturas
+
+A ordem de corte (**Gerenciar → Ordem de corte**) inclui também os troços de instalações, acima de paredes e lajes. Com **Os troços cortam paredes e lajes** ativado, um troço que atravessa uma parede ou uma laje corta ali a sua própria abertura: redonda para um tubo ou um cabo que passa em esquadro, retangular para um duto ou um troço inclinado, do tamanho do exterior do troço (o seu isolamento, a manga de um tubo de gás) mais a **Folga** à volta, arredondada para cima ao passo, nunca abaixo da **Abertura mínima**. A abertura não é guardada à parte: desloca-se e cresce com o troço e desaparece quando o troço desaparece ou deixa de atravessar. É um volume como qualquer abertura (desenhado, listado, verificado), e a exportação IFC escreve-a como **IfcOpeningElement** com **Lapin_ProvisionOpening** (e como reserva de passagem com **Volumes de abertura** marcado), de modo que uma verificação executada de novo não encontra nada a indicar. Uma parede ou laje colocada acima dos troços na ordem de corte (pela sua classe ou pelo seu material) não é cortada, nem uma estrutural (LoadBearing no seu Pset_…Common) a menos que **cortá-las também** esteja marcado: a verificação de conflitos indica-as como **Não cortados**. Um troço demolido não corta nada, e onde um troço já passa por uma abertura não se corta outra. Um sistema pode decidir de outra forma em **Instalações → Sistemas…** (**Os troços cortam paredes e lajes**: como a ordem de corte, sim, não). Está ativado num projeto novo; um projeto feito antes mantém-no desativado até ser ativado.
+
+![Os troços de instalações na ordem de corte](shots/mep-voids-cut-order.webp)
 
 A guia **Volumes** lista cada volume com a sua marca (V1, V2… pavimento a pavimento), o hospedeiro, a porta ou janela nele, tamanho e profundidade; um clique seleciona a abertura.
 

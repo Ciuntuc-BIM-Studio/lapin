@@ -91,16 +91,30 @@ Dobór średnic rur ze zużycia urządzeń i sprawdzenie spadku ciśnienia to in
 
 Każdy otwór w ścianie, stropie lub dachu może być osobną **bryłą otworu**: bryłą tak dużą jak otwór, przez całą grubość elementu nośnego, z wykończeniami. Programy wykrywania kolizji (Navisworks, Solibri, BIMcollab) sprawdzają instalacje względem takich brył regułą „całkowicie wewnątrz”: rura, kanał lub koryto kablowe w całości w bryle jest w porządku; element wystający z niej albo przechodzący przez ścianę bez otworu to kolizja. Lapin wykonuje to samo sprawdzenie.
 
-**Zarządzaj → Otwory a instalacje…** ustala, dla jakich otworów powstają bryły (**Otwory w ścianach**, **Otwory drzwiowe**, **Otwory okienne**, **Otwory w stropach**, **Otwory w dachu**), o ile są większe lub mniejsze od otworów (**Odsunięcie otworu**) i jaki **Luz** element instalacji musi zachować od boków otworu. **Uruchom sprawdzenie** przechodzi przez każdą rurę, kanał i koryto — trasy Lapina, segmenty zaimportowanego modelu instalacji i jego własne zapotrzebowania na otwory — i wypisuje każde miejsce, gdzie któryś przechodzi przez ścianę, strop lub dach:
+**Zarządzaj → Wykrywanie kolizji…** uruchamia sprawdzenie tylko na żądanie: nic nie uruchamia go samo, ani edycja, ani **Zarządzaj → Sprawdź**. Jego karta **Ustawienia** ustala, dla jakich otworów powstają bryły (otwory w ścianach, drzwi, okna, stropy i dachy), o ile są większe lub mniejsze od swoich otworów (**Odsunięcie bryły**) oraz **Luz**, jaki element instalacji musi zachować od boków bryły. **Uruchom wykrywanie kolizji** przechodzi raz przez każdą rurę, kanał i korytko kablowe — ciągi Lapin i segmenty zaimportowanego modelu instalacji tak samo, a także przepusty własne modelu instalacji — i zachowuje to, co znalazło, jako **raport kolizji** projektu z datą uruchomienia, dopóki nie zostanie uruchomione ponownie. Gdy model zmieni się potem, raport mówi, że jest **nieaktualny**. Jego problemy są pogrupowane według rodzaju i ponumerowane, a każdy numer zostaje ten sam od uruchomienia do uruchomienia:
 
-- **Brak otworu**: przechodzi przez element tam, gdzie otworu nie ma;
-- **Za mały otwór**: przechodzi przez otwór, ale z niego wystaje, z luzem; **Brakuje** podaje milimetry po najgorszej stronie;
-- **Mieści się** (z **pokaż to, co się mieści**): w całości w bryle, z luzem;
-- **Pusty otwór** (z zaznaczonym **Puste otwory**): otwór w ścianie lub stropie, przez który nic nie przechodzi (otwór schodowy nigdy).
+- **Brak otworu**: przechodzi przez element nośny tam, gdzie nie ma otworu;
+- **Nieprzecięte: nośne lub kolejność cięcia**: brak otworu, bo własne otwory ciągów (niżej) nie przecinają tego elementu;
+- **Otwór za mały**: przechodzi przez otwór, ale z niego wystaje, z luzem; **Brakuje** mówi, o ile milimetrów po najgorszej stronie;
+- **Pusta bryła** (z zaznaczonymi **Pustymi otworami** w **Ustawieniach**): otwór w ścianie lub stropie, przez który nic nie przechodzi (otwór schodowy nigdy nim nie jest).
 
-Kliknięcie wiersza pokazuje parę w 3D, obie zaznaczone. **Utwórz uwagi** zmienia każdą kolizję w uwagę typu **Clash** z jej punktem widzenia (**Zarządzaj → Uwagi do modelu…**), gotową do BCF; ponownie uruchomione aktualizuje te same uwagi. Kolizje pojawiają się też wśród ostrzeżeń **Zarządzaj → Sprawdź**.
+![Raport kolizji: brak otworu, otwór za mały i pusta bryła, każde ponumerowane](shots/mep-voids-check.webp)
 
-![Otwory a instalacje: dla czego powstają bryły, luz i sprawdzenie trzech rur](shots/mep-voids-check.webp)
+Każdy problem jest **Do poprawy**, **Rozwiązana** lub **Zignorowana**, z komentarzem. Kliknięcie wiersza pokazuje parę w 3D, oba zaznaczone (**same w 3D** ukrywa na razie resztę); strzałki przechodzą do poprzedniej i następnej. **Zaznacz w widoku** (także **Widok → Znaczniki kolizji**) rysuje każdy otwarty problem w rzucie, przekroju lub elewacji na wierzchu jako czerwoną chmurkę z jego numerem, tylko na ekranie.
+
+![Rzut z zaznaczonymi kolizjami: czerwone chmurki z ich numerami](shots/mep-voids-clouds.webp)
+
+**Wykonaj otwór** wycina prosty otwór wokół elementu w ścianie (okrągły dla rury lub kabla, prostokątny dla kanału) lub w stropie, z bokami w odległości luzu i wymiarem zaokrąglonym w górę według reguły instalacji z kolejności cięcia; **Powiększ otwór** powiększa za mały otwór. **Popraw zaznaczone** robi to dla każdego zaznaczonego wiersza, **Ignoruj** i **Otwórz ponownie** zmieniają ich stan; każde to jeden krok do cofnięcia. Raport mówi wtedy, że jest nieaktualny: uruchom go ponownie, a poprawione pojawi się jako **Rozwiązana** (**pokaż rozwiązane**).
+
+![Uruchomione ponownie po poprawkach: obie kolizje rozwiązane](shots/mep-voids-fixed.webp)
+
+**BCF** zamienia otwarte kolizje w uwagi typu **Clash** z ich punktami widzenia (**Zarządzaj → Uwagi do modelu…**) i zapisuje je jako plik BCF; uruchomione ponownie aktualizuje te same uwagi. **CSV** i **PDF** zapisują raport jako listę. **Zarządzaj → Sprawdź** tylko czyta raport: jego otwarte kolizje są ostrzeżeniami, tak jak nieaktualny raport.
+
+### Ciągi, które same wycinają swoje otwory
+
+Kolejność cięcia (**Zarządzaj → Kolejność cięcia**) obejmuje też ciągi instalacyjne, ponad ścianami i stropami. Z włączonym **Ciągi przecinają ściany i stropy** ciąg, który przechodzi przez ścianę lub strop, wycina tam własny otwór: okrągły dla rury lub kabla przechodzącego prostopadle, prostokątny dla kanału lub ciągu ukośnego, tak duży jak zewnętrzna strona ciągu (jego izolacja, rura osłonowa przewodu gazowego) plus **Luz** dookoła, zaokrąglony w górę do kroku, nigdy mniejszy niż **Najmniejszy otwór**. Otwór nie jest przechowywany osobno: przesuwa się i rośnie razem z ciągiem i znika, gdy ciąg znika lub już nie przechodzi. Jest bryłą jak każdy otwór (rysowaną, listowaną, sprawdzaną), a eksport IFC zapisuje go jako **IfcOpeningElement** z **Lapin_ProvisionOpening** (i jako przepust z zaznaczonymi **Bryłami otworów**), więc ponowne sprawdzenie nie ma nic do zgłoszenia. Ściana lub strop ustawione nad ciągami w kolejności cięcia (według klasy lub materiału) nie są przecinane, ani nośne (LoadBearing w ich Pset_…Common), chyba że zaznaczono **przecinaj także je**: wykrywanie kolizji zgłasza je jako **Nieprzecięte**. Ciąg wyburzony nic nie przecina, a tam, gdzie ciąg przechodzi już przez otwór, żaden nie jest wycinany. System może zdecydować inaczej w **Instalacje → Systemy…** (**Ciągi przecinają ściany i stropy**: jak kolejność cięcia, tak, nie). W nowym projekcie jest włączone; projekt zrobiony wcześniej ma je wyłączone, dopóki się go nie włączy.
+
+![Ciągi instalacyjne w kolejności cięcia](shots/mep-voids-cut-order.webp)
 
 Karta **Bryły** wypisuje każdą bryłę z jej znakiem (V1, V2… kondygnacja po kondygnacji), elementem nośnym, drzwiami lub oknem w niej, rozmiarem i głębokością; kliknięcie zaznacza jej otwór.
 

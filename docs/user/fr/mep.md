@@ -91,16 +91,30 @@ Dimensionner les tubes d’après la consommation des appareils et vérifier la 
 
 Chaque ouverture dans un mur, une dalle ou un toit peut devenir un **volume de réservation** : un solide aussi grand que l'ouverture, sur toute l'épaisseur de son hôte, revêtements compris. Les outils de détection de conflits (Navisworks, Solibri, BIMcollab) testent les réseaux contre ces volumes avec « entièrement à l'intérieur » : un tuyau, une gaine ou un chemin de câbles entièrement dans un volume passe ; celui qui en dépasse, ou qui traverse un mur sans ouverture, est un conflit. Lapin fait lui-même le même contrôle.
 
-**Gérer → Ouvertures vs fluides…** fixe pour quelles ouvertures les volumes sont faits (**Ouvertures de murs**, **Ouvertures de portes**, **Ouvertures de fenêtres**, **Trémies de dalles**, **Ouvertures de toit**), de combien ils sont plus grands ou plus petits (**Décalage de la réservation**) et le **Jeu** qu'un élément de fluides doit garder avec les côtés d'une réservation. **Lancer le contrôle** parcourt chaque tuyau, gaine et chemin de câbles — les réseaux de Lapin comme les segments d'une maquette fluides importée, et ses propres demandes de réservation — et liste chaque endroit où l'un traverse un mur, une dalle ou un toit :
+**Gérer → Détection de conflits…** n'exécute la détection que sur demande : rien ne la lance de lui-même, ni une modification ni **Gérer → Vérification**. Son onglet **Paramètres** fixe pour quelles ouvertures les volumes sont faits (ouvertures dans les murs, de portes, de fenêtres, dans les planchers et les toitures), de combien ils sont plus grands ou plus petits que leurs ouvertures (**Décalage du volume**) et le **Jeu** qu'un élément de fluides doit garder par rapport aux côtés d'un volume. **Lancer la détection de conflits** passe une fois par chaque tuyau, gaine et chemin de câbles — les tronçons de Lapin comme les segments d'une maquette fluides importée, et les réservations propres à une maquette fluides — et garde ce qu'elle a trouvé comme **rapport de conflits** du projet, avec la date de l'exécution, jusqu'à la prochaine. Quand la maquette change ensuite, le rapport dit qu'il est **périmé**. Ses problèmes sont groupés par type et numérotés, chaque numéro gardé d'une exécution à l'autre :
 
-- **Pas d'ouverture** : il traverse l'hôte là où il n'y en a pas ;
-- **Ouverture trop petite** : il passe par une ouverture mais en dépasse, jeu compris ; **Manque** donne les millimètres du pire côté ;
-- **Passe** (avec **afficher ce qui passe**) : entièrement dans le volume, avec le jeu ;
-- **Réservation vide** (avec **Réservations vides** coché) : une ouverture de mur ou de dalle que rien ne traverse (une trémie d'escalier n'en est jamais une).
+- **Sans ouverture** : il traverse l'hôte là où il n'en a pas ;
+- **Non coupés : porteur ou ordre de coupe** : sans ouverture, parce que les ouvertures propres des tronçons (plus bas) ne coupent pas cet hôte ;
+- **Ouverture trop petite** : il passe par une ouverture mais en dépasse, jeu compris ; **Manque** dit de combien de millimètres du côté le plus défavorable ;
+- **Volume vide** (avec **Réservations vides** coché dans **Paramètres**) : une ouverture de mur ou de plancher par laquelle rien ne passe (une trémie d'escalier n'en est jamais une).
 
-Un clic sur une ligne montre la paire en 3D, toutes deux sélectionnées. **Créer des remarques** fait de chaque conflit une remarque de type **Clash** avec son point de vue (**Gérer → Remarques sur le modèle…**), prête à partir en BCF ; relancé, il met à jour les mêmes remarques. Les conflits figurent aussi parmi les avertissements de **Gérer → Vérification**.
+![Le rapport de conflits : sans ouverture, une ouverture trop petite et un volume vide, chacun numéroté](shots/mep-voids-check.webp)
 
-![Ouvertures vs fluides : pour quoi les volumes sont faits, le jeu et le contrôle de trois tuyaux](shots/mep-voids-check.webp)
+Chaque problème est **À corriger**, **Résolu** ou **Ignoré**, avec un commentaire. Un clic sur une ligne montre la paire en 3D, toutes deux sélectionnées (**seuls en 3D** masque le reste pour l'instant) ; les flèches vont au précédent et au suivant. **Marquer dans la vue** (aussi **Vue → Marques de conflits**) dessine chaque problème ouvert dans le plan, la coupe ou l'élévation au premier plan comme un nuage rouge avec son numéro, à l'écran seulement.
+
+![Le plan avec les conflits marqués : nuages rouges et leurs numéros](shots/mep-voids-clouds.webp)
+
+**Créer une ouverture** découpe une ouverture simple autour de l'élément dans le mur (ronde pour un tuyau ou un câble, rectangulaire pour une gaine) ou dans le plancher, ses côtés au jeu et sa taille arrondie au-dessus comme le dit la règle fluides de l'ordre de coupe ; **Agrandir l'ouverture** agrandit l'ouverture trop petite. **Corriger la sélection** le fait pour chaque ligne cochée, **Ignorer** et **Rouvrir** changent leur état ; chacun est une seule étape à annuler. Le rapport dit alors qu'il est périmé : relancez-le, et ce qui est corrigé apparaît **Résolu** (**afficher les résolus**).
+
+![Relancée après les corrections : les deux conflits résolus](shots/mep-voids-fixed.webp)
+
+**BCF** fait des conflits ouverts des remarques de type **Clash** avec leurs points de vue (**Gérer → Remarques sur le modèle…**) et les enregistre en fichier BCF ; relancé, il met à jour les mêmes remarques. **CSV** et **PDF** enregistrent le rapport sous forme de liste. **Gérer → Vérification** ne fait que lire le rapport : ses conflits ouverts sont des avertissements, de même qu'un rapport périmé.
+
+### Des tronçons qui coupent leurs propres ouvertures
+
+L'ordre de coupe (**Gérer → Ordre de coupe**) comprend aussi les tronçons de fluides, au-dessus des murs et des planchers. Avec **Les tronçons coupent murs et planchers** activé, un tronçon qui traverse un mur ou un plancher y coupe sa propre ouverture : ronde pour un tuyau ou un câble qui passe d'équerre, rectangulaire pour une gaine ou un tronçon en biais, aussi grande que l'extérieur du tronçon (son isolant, le fourreau d'un tuyau de gaz) plus le **Jeu** autour, arrondie au-dessus au pas, jamais sous la **Plus petite ouverture**. L'ouverture n'est pas gardée à part : elle se déplace et grandit avec le tronçon et disparaît quand le tronçon disparaît ou ne traverse plus. C'est un volume comme toute ouverture (dessiné, listé, contrôlé), et l'export IFC l'écrit comme **IfcOpeningElement** avec **Lapin_ProvisionOpening** (et comme réservation avec **Volumes de réservation** coché), si bien qu'une détection relancée n'a rien à signaler. Un mur ou un plancher placé au-dessus des tronçons dans l'ordre de coupe (par sa classe ou son matériau) n'est pas coupé, ni un porteur (LoadBearing dans son Pset_…Common) sauf si **les couper aussi** est coché : la détection de conflits les signale comme **Non coupés**. Un tronçon démoli ne coupe rien, et là où un tronçon passe déjà par une ouverture, aucune n'est coupée. Un système peut en décider autrement dans **Fluides → Systèmes…** (**Les tronçons coupent murs et planchers** : selon l'ordre de coupe, oui, non). C'est activé dans un nouveau projet ; un projet fait avant le garde désactivé jusqu'à ce qu'on l'active.
+
+![Les tronçons de fluides dans l'ordre de coupe](shots/mep-voids-cut-order.webp)
 
 L'onglet **Volumes** liste chaque volume avec sa marque (V1, V2… niveau par niveau), son hôte, la porte ou la fenêtre qu'il contient, sa taille et sa profondeur ; un clic sélectionne son ouverture.
 

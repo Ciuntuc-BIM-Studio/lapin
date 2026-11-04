@@ -124,6 +124,10 @@ public sealed class Session
                 edit.Add(storey);
                 edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
             }
+            // A new project's MEP runs cut provision openings in the walls and floors they cross (decision 293), load-bearing ones
+            // reported instead; a project opened from a file keeps what it has (none: off).
+            if (storeys.Count > 1 && _catalog.CutDefaults.ContainsKey("IfcPipeSegment"))
+                edit.Add(new Entity(edit.NewId(), CutOrder.Class, "Cut order", new JsonObject { ["priorities"] = new JsonObject(), ["mep"] = CutOrder.MepCut.NewProject.ToJson() }));
             // A new project's Site: its site plan and its location plan, on the ground floor.
             if (storeys.Count > 1 && SitePlans.Host(edit.Model) is { } host)
                 foreach (var purpose in SitePlans.Purposes)

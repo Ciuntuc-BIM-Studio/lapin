@@ -40,6 +40,10 @@ public sealed class MepModule : ILapinModule
         r.Service<IElementUpdate>(placement);
         RegisterLayout(r);
         r.Service<IIfcNetwork>(new MepNetwork());
+        // Runs in the cut order (decision 293): over walls (50), roofs (55) and floors (60), under beams, columns and footings;
+        // they cut no envelope of their own but provision openings, worked out from the run (MepProvisions).
+        foreach (var cls in Runs.Classes) r.Cutter(cls, 70, null);
+        r.Service<Lapin.Platform.Coordination.IProvisionOpenings>(new MepProvisions());
         r.Service<IScheduleSource>(new MepEquipmentSchedule());
         r.Service<IScheduleSource>(new MepRunSchedule());
         r.Service<IScheduleSource>(new GasSchedule());

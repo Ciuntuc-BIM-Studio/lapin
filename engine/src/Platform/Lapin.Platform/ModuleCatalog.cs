@@ -15,7 +15,7 @@ public sealed record CommandEntry(string Name, string Label, string Module, Comm
 public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometryProducers
 {
     readonly Dictionary<string, PathFrame> _paths = [];
-    readonly Dictionary<string, (int Priority, EnvelopeProducer Envelope)> _cutters = [];
+    readonly Dictionary<string, (int Priority, EnvelopeProducer? Envelope)> _cutters = [];
     readonly Dictionary<string, (ClassDescriptor Descriptor, string Module)> _classes = [];
     readonly Dictionary<string, CommandEntry> _commands = [];
     readonly Dictionary<string, QueryHandler> _queries = [];
@@ -90,7 +90,8 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         var o = new List<Solid>();
         foreach (var (cls, (_, envelope)) in _cutters)
         {
-            if (ClassPriority(cls, model) is not { } classPriority) continue;
+            // A class that ranks without an envelope (MEP runs) cuts by its own means: not read here.
+            if (envelope == null || ClassPriority(cls, model) is not { } classPriority) continue;
             // A class ranked under the target's: only its elements raised over the target by their own priority
             // (read under a narrow key, so a wall does not rebuild on every edit of every other wall).
             // Priorities by material: any element may rank over its class, read whole.
@@ -108,7 +109,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         }
         return o;
     }
-    public Solid? EnvelopeOf(Entity element, IModelView model) => _cutters.TryGetValue(element.Class, out var c) ? c.Envelope(element, model) : null;
+    public Solid? EnvelopeOf(Entity element, IModelView model) => _cutters.TryGetValue(element.Class, out var c) ? c.Envelope?.Invoke(element, model) : null;
 
     public IReadOnlyList<T> All<T>() where T : class => _services.Where(s => s.Contract == typeof(T)).Select(s => (T)s.Implementation).ToList();
 
@@ -147,7 +148,7 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
             c._quantities[ifcClass] = producer;
         }
 
-        public void Cutter(string ifcClass, int priority, EnvelopeProducer envelope)
+        public void Cutter(string ifcClass, int priority, EnvelopeProducer? envelope)
         {
             if (c.OwnerOf(ifcClass) != module) throw new InvalidOperationException($"„{module}” gives cut priorities to {ifcClass}, which it does not own.");
             c._cutters[ifcClass] = (priority, envelope);

@@ -91,16 +91,30 @@ Dimensionar las tuberías por el consumo de los aparatos y comprobar la pérdida
 
 Cada hueco en un muro, losa o cubierta puede ser un **volumen** propio: un sólido del tamaño del hueco, a través de todo el espesor de su anfitrión, acabados incluidos. Los programas de colisiones (Navisworks, Solibri, BIMcollab) comprueban las instalaciones contra esos volúmenes con «completamente dentro»: una tubería, un conducto o una bandeja de cables entero dentro de un volumen pasa; uno que sobresale, o que atraviesa un muro donde no hay hueco, es una colisión. Lapin hace la misma comprobación.
 
-**Gestionar → Huecos vs instalaciones…** fija para qué huecos se hacen volúmenes (**Huecos en muros**, **Huecos de puertas**, **Huecos de ventanas**, **Huecos en losas**, **Huecos en cubierta**), cuánto mayores o menores son que sus huecos (**Desfase del hueco**) y la **Holgura** que un elemento de instalaciones debe guardar con los lados de un hueco. **Ejecutar comprobación** recorre cada tubería, conducto y bandeja — los recorridos de Lapin y los segmentos de un modelo de instalaciones importado, y las reservas de hueco del propio modelo de instalaciones — y lista cada lugar donde uno atraviesa un muro, losa o cubierta:
+**Gestionar → Comprobación de colisiones…** ejecuta la comprobación solo cuando se pide: nada la ejecuta por sí solo, ni una edición ni **Gestionar → Comprobación**. Su pestaña **Configuración** fija para qué huecos se hacen volúmenes (huecos en muros, de puertas, de ventanas, en forjados y en cubiertas), cuánto mayores o menores que sus huecos son (**Desfase del volumen**) y la **Holgura** que un elemento de instalaciones debe guardar respecto a los lados de un volumen. **Ejecutar comprobación de colisiones** recorre una vez cada tubería, conducto y bandeja de cables — los tramos de Lapin y los segmentos de un modelo de instalaciones importado por igual, y los huecos previstos de un modelo de instalaciones — y guarda lo que encontró como el **informe de colisiones** del proyecto, con la fecha en que se ejecutó, hasta que se ejecute de nuevo. Cuando el modelo cambia después, el informe dice que está **desactualizado**. Sus problemas se agrupan por tipo y se numeran, y cada número se mantiene de una ejecución a la siguiente:
 
-- **Sin hueco**: atraviesa el anfitrión donde no hay ninguno;
-- **Hueco demasiado pequeño**: pasa por un hueco pero sobresale, holgura incluida; **Falta** dice cuántos milímetros en el peor lado;
-- **Cabe** (con **mostrar lo que cabe**): entero dentro del volumen, con la holgura;
-- **Hueco vacío** (con **Huecos vacíos** marcado): un hueco en muro o losa por el que no pasa nada (un hueco de escalera nunca lo es).
+- **Sin hueco**: atraviesa el anfitrión donde no tiene ninguno;
+- **Sin cortar: portante u orden de corte**: sin hueco, porque los huecos propios de los tramos (abajo) no cortan ese anfitrión;
+- **Hueco demasiado pequeño**: pasa por un hueco pero sobresale de él, holgura incluida; **Falta** dice cuántos milímetros en el peor lado;
+- **Volumen vacío** (con **Huecos vacíos** marcado en **Configuración**): un hueco de muro o forjado por el que no pasa nada (un hueco de escalera nunca lo es).
 
-Un clic en una fila muestra el par en 3D, ambos seleccionados. **Crear observaciones** convierte cada colisión en una observación de tipo **Clash** con su punto de vista (**Gestionar → Observaciones en el modelo…**), lista para salir como BCF; ejecutada de nuevo, actualiza las mismas en vez de añadir otras. Las colisiones también aparecen entre los avisos de **Gestionar → Comprobación**.
+![El informe de colisiones: sin hueco, un hueco demasiado pequeño y un volumen vacío, cada uno numerado](shots/mep-voids-check.webp)
 
-![Huecos vs instalaciones: para qué se hacen los volúmenes, la holgura y la comprobación de tres tuberías](shots/mep-voids-check.webp)
+Cada problema está **Por corregir**, **Resuelta** o **Ignorada**, con un comentario. Un clic en una fila muestra la pareja en 3D, ambas seleccionadas (**solas en 3D** oculta el resto por ahora); las flechas van a la anterior y a la siguiente. **Marcar en la vista** (también **Vista → Marcas de colisiones**) dibuja cada problema abierto en la planta, sección o alzado al frente como una nube roja con su número, solo en pantalla.
+
+![La planta con las colisiones marcadas: nubes rojas con sus números](shots/mep-voids-clouds.webp)
+
+**Hacer hueco** corta un hueco simple alrededor del elemento en el muro (redondo para una tubería o un cable, rectangular para un conducto) o en el forjado, con sus lados a la holgura y su tamaño redondeado hacia arriba según la regla de instalaciones del orden de corte; **Ampliar hueco** agranda el hueco demasiado pequeño. **Corregir selección** lo hace para cada fila marcada, **Ignorar** y **Reabrir** cambian su estado; cada uno es un solo paso para deshacer. El informe dice entonces que está desactualizado: ejecútalo de nuevo y lo corregido aparece **Resuelta** (**mostrar resueltas**).
+
+![Ejecutada de nuevo tras las correcciones: las dos colisiones resueltas](shots/mep-voids-fixed.webp)
+
+**BCF** convierte las colisiones abiertas en observaciones de tipo **Clash** con sus puntos de vista (**Gestionar → Observaciones en el modelo…**) y las guarda como archivo BCF; ejecutada de nuevo, actualiza las mismas observaciones. **CSV** y **PDF** guardan el informe como lista. **Gestionar → Comprobación** solo lee el informe: sus colisiones abiertas son avisos, y también lo es un informe desactualizado.
+
+### Tramos que cortan sus propios huecos
+
+El orden de corte (**Gestionar → Orden de corte**) incluye también los tramos de instalaciones, por encima de muros y forjados. Con **Los tramos cortan muros y forjados** activado, un tramo que atraviesa un muro o un forjado corta allí su propio hueco: redondo para una tubería o un cable que pasa en perpendicular, rectangular para un conducto o un tramo inclinado, tan grande como el exterior del tramo (su aislamiento, la vaina de una tubería de gas) más la **Holgura** alrededor, redondeado hacia arriba al paso, nunca menor que el **Hueco mínimo**. El hueco no se guarda aparte: se mueve y crece con el tramo y desaparece cuando el tramo desaparece o deja de atravesar. Es un volumen como cualquier hueco (dibujado, listado, comprobado), y la exportación IFC lo escribe como **IfcOpeningElement** con **Lapin_ProvisionOpening** (y como hueco previsto con **Volúmenes de hueco** marcado), así que una comprobación ejecutada de nuevo no encuentra nada que informar. Un muro o forjado situado por encima de los tramos en el orden de corte (por su clase o su material) no se corta, ni uno portante (LoadBearing en su Pset_…Common) salvo que **cortarlos también** esté marcado: la comprobación de colisiones los informa como **Sin cortar**. Un tramo demolido no corta nada, y donde un tramo ya pasa por un hueco no se corta otro. Un sistema puede decidir otra cosa en **Instalaciones → Sistemas…** (**Los tramos cortan muros y forjados**: según el orden de corte, sí, no). Está activado en un proyecto nuevo; un proyecto hecho antes lo mantiene desactivado hasta que se active.
+
+![Los tramos de instalaciones en el orden de corte](shots/mep-voids-cut-order.webp)
 
 La pestaña **Volúmenes** lista cada volumen con su marca (V1, V2… planta por planta), su anfitrión, la puerta o ventana que contiene, su tamaño y profundidad; un clic selecciona su hueco.
 

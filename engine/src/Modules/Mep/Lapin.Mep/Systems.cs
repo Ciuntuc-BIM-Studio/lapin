@@ -148,6 +148,12 @@ public static class Systems
             var system = Require(ctx.Model, (string?)a["id"]);
             var attrs = system.CloneAttrs();
             if (a["defaults"] is JsonObject d) attrs["defaults"] = Of(system).With(d).ToJson();
+            // Whether its runs cut provision openings in the walls and floors they cross (decision 293): true, false, null as the project's cut order says.
+            if (a.ContainsKey("cutHosts"))
+            {
+                if (a["cutHosts"] is JsonValue cv && cv.TryGetValue<bool>(out var cut)) attrs["cutHosts"] = cut;
+                else attrs.Remove("cutHosts");
+            }
             var name = ((string?)a["name"])?.Trim();
             ctx.Replace(system.With(name: string.IsNullOrEmpty(name) ? null : name, attrs: attrs));
             return null;
@@ -155,7 +161,7 @@ public static class Systems
 
         r.Query("systems", (q, _) => new JsonArray(All(q.Model).Select(s => (JsonNode)new JsonObject
         {
-            ["id"] = s.Id, ["name"] = s.Name, ["service"] = Service(s), ["defaults"] = Of(s).ToJson(),
+            ["id"] = s.Id, ["name"] = s.Name, ["service"] = Service(s), ["defaults"] = Of(s).ToJson(), ["cutHosts"] = s.Attrs["cutHosts"]?.DeepClone(),
             ["nodes"] = Nodes.Of(q.Model, s.Id).Count(), ["runs"] = Runs.Of(q.Model, s.Id).Count(),
         }).ToArray()));
     }

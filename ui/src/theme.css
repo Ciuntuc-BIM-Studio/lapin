@@ -1214,3 +1214,8 @@ button.mode-chip:hover { color: var(--accent); }
 .preset:hover { border-color: var(--accent); }
 .preset-ball { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--rule-strong); }
 @media (max-width: 720px) { .material-look { grid-template-columns: 1fr; } }
+/* The clash report (decision 293): the item in front, the tools over the list. */
+.coordination .coordination-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 6px 0; }
+.coordination-table tbody tr.current { background: var(--accent-wash); outline: 1px solid var(--accent); }
+.coordination-table td .link + .link { margin-left: 8px; }
+.coordination-table td .cell-wrap input { min-width: 90px; }

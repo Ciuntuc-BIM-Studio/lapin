@@ -280,7 +280,8 @@ public class OpeningVoidTests
         var bcf = BcfReader.Read(BcfWriter.Write(Remarks.Export(f.Model, new JsonObject())));
         Assert.Equal("Clash", Assert.Single(bcf.Topics).Type);
 
-        // Manage → Check lists it as a warning on the pipe.
+        // Manage → Check lists it as a warning on the pipe once the check has run (decision 293: it runs only when asked).
+        f.Run("coordination.runCheck", new JsonObject());
         var check = (JsonObject)f.Session.Query("cde.check", new JsonObject())!;
         Assert.Contains(((JsonArray)check["findings"]!).OfType<JsonObject>(), x => (string?)x["rule"] == "openingsMep" && (string?)x["entityId"] == pipe && (string?)x["severity"] == "warn");
 

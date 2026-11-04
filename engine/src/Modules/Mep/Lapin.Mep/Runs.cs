@@ -387,7 +387,7 @@ public static partial class Runs
         return o;
     }
 
-    static List<Vec3> Shift(List<Vec3> line, double offset)
+    internal static List<Vec3> Shift(List<Vec3> line, double offset)
     {
         var spots = new List<Vec2>();
         var spotOf = new int[line.Count];

@@ -27,8 +27,10 @@ public sealed record OpeningVoid(string Key, string HostId, string? OpeningId, s
     public double? Diameter => Shape == OpeningVoids.Round ? Width : null;
     /// <summary>A wall opening's wall direction where it stands (plan, unit), else null: its label's directions in a plan (decision 292).</summary>
     public Vec2? Along { get; init; }
-    /// <summary>What a click on it selects: its opening, else its host.</summary>
-    public string SelectId => OpeningId ?? HostId;
+    /// <summary>What made it when it is no opening of the model's own: the MEP run a provision opening is cut for (decision 293).</summary>
+    public string? Source { get; init; }
+    /// <summary>What a click on it selects: its opening, else what made it, else its host.</summary>
+    public string SelectId => OpeningId ?? Source ?? HostId;
     /// <summary>The void's GlobalId as an element of its own (the IFC proxy, a mesh export's element): derived from its key, the same at every export.</summary>
     public string GlobalId => OpeningVoids.DerivedId(Key, "void");
 }
@@ -87,7 +89,10 @@ public static class OpeningVoids
 
     public static List<OpeningVoid> Of(IModelView m, IServices services, VoidOptions o)
     {
-        var all = services.All<IOpeningVoids>().SelectMany(s => s.Voids(m, o.Offset)).Where(v => o.Kinds.Contains(v.Kind)).ToList();
+        var all = services.All<IOpeningVoids>().SelectMany(s => s.Voids(m, o.Offset))
+            // The provision openings MEP runs cut (decision 293) are voids as any opening's.
+            .Concat(Provisions.Of(m, services, null, o.Offset).Where(p => p.Cuts).Select(p => p.AsVoid(m)))
+            .Where(v => o.Kinds.Contains(v.Kind)).ToList();
         var storeys = Spatial.Storeys(m).Select((s, i) => (s.Id, i)).ToDictionary(x => x.Id, x => x.i);
         var ordered = all.Select(v => (v, b: Measure.Bounds(v.Solid)))
             .OrderBy(x => x.v.StoreyId is { } s && storeys.TryGetValue(s, out var i) ? i : int.MaxValue)
@@ -101,7 +106,7 @@ public static class OpeningVoids
         {
             ["key"] = v.Key, ["mark"] = v.Mark, ["kind"] = v.Kind, ["shape"] = v.Shape,
             ["hostId"] = v.HostId, ["host"] = m.Get(v.HostId)?.Name, ["openingId"] = v.OpeningId, ["fillId"] = v.FillId, ["fill"] = v.FillId is { } f ? m.Get(f)?.Name : null,
-            ["selectId"] = v.SelectId, ["storeyId"] = v.StoreyId, ["globalId"] = v.GlobalId,
+            ["selectId"] = v.SelectId, ["source"] = v.Source, ["storeyId"] = v.StoreyId, ["globalId"] = v.GlobalId,
             ["width"] = Math.Round(v.Width, 4), ["height"] = Math.Round(v.Height, 4), ["depth"] = Math.Round(v.Depth, 4),
         };
         if (v.Diameter is { } d) o["diameter"] = Math.Round(d, 4);
@@ -158,5 +163,7 @@ public static class OpeningVoids
             return new JsonObject { ["voids"] = new JsonArray(voids.Select(v => (JsonNode)ToJson(v, q.Model, mesh)).ToArray()), ["count"] = voids.Count };
         });
         OpeningClashes.Register(r);
+        Provisions.Register(r);
+        ClashReports.Register(r);
     }
 }

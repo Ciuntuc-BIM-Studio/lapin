@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { clashCount, metresToMm, mmToMetres, pairOf, shortBy, shown, sizeOf, toggleKind, voidsOfKinds, type ClashCheck, type ClashResult, type VoidDto } from './coordination';
+import {
+  clashCount, fixOf, groupItems, itemKind, itemPair, itemShortBy, metresToMm, mmToMetres, pairOf, provisionSize, reportDate, shortBy, shown, sizeOf, step, toggleKind, voidsOfKinds,
+  type ClashCheck, type ClashItem, type ClashResult, type VoidDto,
+} from './coordination';
 
 const r = (status: ClashResult['status'], by = 0, more: Partial<ClashResult> = {}): ClashResult =>
   ({ key: `${status}-${by}-${more.mepId ?? ''}`, status, by, hostId: 'wall', mepId: 'pipe', centre: [0, 0, 0], message: '', ...more });
@@ -53,5 +56,52 @@ describe('openings vs MEP', () => {
     expect(toggleKind(['wall', 'door', 'slab'], 'door')).toEqual(['wall', 'slab']);
     const v = (kind: VoidDto['kind']): VoidDto => ({ key: kind, mark: 'V1', kind, shape: 'Rectangle', hostId: 'h', selectId: 'h', globalId: 'g', width: 1, height: 1, depth: 1 });
     expect(voidsOfKinds([v('wall'), v('door'), v('roof')], ['door', 'roof']).map((x) => x.kind)).toEqual(['door', 'roof']);
+  });
+});
+
+const item = (n: number, kind: ClashItem['kind'], state: ClashItem['state'] = 'open', more: Partial<ClashItem> = {}): ClashItem =>
+  ({ n, key: `k${n}`, kind, state, hostId: 'wall', mepId: `pipe${n}`, by: 0, centre: [0, 0, 0], message: '', ...more });
+
+describe('the clash report (decision 293)', () => {
+  const items = [item(4, 'tooSmall', 'open', { openingId: 'op', by: 0.012 }), item(1, 'missing'), item(2, 'missing', 'open', { held: 'structural' }), item(3, 'missing', 'fixed'),
+    item(5, 'empty', 'open', { mepId: null, openingId: 'op5' }), item(6, 'missing', 'ignored')];
+
+  it('groups the open items by kind in the report\'s order, numbered, and the fixed and ignored ones only when asked', () => {
+    const open = groupItems(items, { fixed: false, ignored: false });
+    expect(open.map((g) => g.kind)).toEqual(['missing', 'held', 'tooSmall', 'empty']);
+    expect(open.map((g) => g.items.map((i) => i.n))).toEqual([[1], [2], [4], [5]]);
+    expect(groupItems(items, { fixed: true, ignored: true })[0].items.map((i) => i.n)).toEqual([1, 3, 6]);
+    expect(itemKind(items[2])).toBe('held');
+    expect(itemKind(items[1])).toBe('missing');
+  });
+
+  it('goes to the next and previous item round the end, the first when none is shown', () => {
+    const g = groupItems(items, { fixed: false, ignored: false });
+    expect(step(g, null, 1)).toBe(1);
+    expect(step(g, null, -1)).toBe(5);
+    expect(step(g, 1, 1)).toBe(2);
+    expect(step(g, 5, 1)).toBe(1);
+    expect(step(g, 1, -1)).toBe(5);
+    expect(step([], 1, 1)).toBeNull();
+  });
+
+  it('fixes no opening by making one, too small by enlarging it, and an empty void not at all', () => {
+    expect(fixOf(items[1])).toBe('make');
+    expect(fixOf(items[0])).toBe('enlarge');
+    expect(fixOf(item(7, 'tooSmall'))).toBe('make');
+    expect(fixOf(items[4])).toBeNull();
+    expect(itemPair(items[0])).toEqual(['pipe4', 'wall', 'op']);
+    expect(itemPair(items[1])).toEqual(['pipe1', 'wall']);
+    expect(itemShortBy(items[0])).toBe('12');
+  });
+
+  it('writes when it ran as a local date, and a provision\'s size as the cut order rounds it', () => {
+    expect(reportDate(new Date(2026, 10, 4, 9, 5).toISOString())).toBe('04.11.2026 09:05');
+    expect(reportDate('soon')).toBe('soon');
+    const rule = { clearance: 0.02, step: 0.01, minSize: 0.05 };
+    expect(provisionSize(0.16, rule)).toBe(0.2);
+    expect(provisionSize(0.161, rule)).toBe(0.21);
+    expect(provisionSize(0.001, { ...rule, clearance: 0 })).toBe(0.05);
+    expect(provisionSize(0.123, { clearance: 0, step: 0, minSize: 0 })).toBe(0.123);
   });
 });

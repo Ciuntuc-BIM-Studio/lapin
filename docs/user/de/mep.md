@@ -91,16 +91,30 @@ Die Rohrbemessung aus dem Verbrauch der Geräte und der Nachweis des Druckverlus
 
 Jede Öffnung in Wand, Decke oder Dach kann ein eigener **Öffnungskörper** sein: ein Körper so groß wie die Öffnung, durch die ganze Dicke ihres Wirtsbauteils, Bekleidungen eingeschlossen. Kollisionsprogramme (Navisworks, Solibri, BIMcollab) prüfen die TGA mit „vollständig innerhalb“ gegen solche Körper: ein Rohr, ein Kanal oder eine Kabeltrasse ganz in einem Körper ist in Ordnung; eines, das herausragt oder eine Wand ohne Öffnung kreuzt, ist eine Kollision. Lapin führt dieselbe Prüfung selbst aus.
 
-**Verwalten → Öffnungen vs TGA…** legt fest, für welche Öffnungen Körper entstehen (**Wandöffnungen**, **Türöffnungen**, **Fensteröffnungen**, **Deckenöffnungen**, **Dachöffnungen**), um wie viel größer oder kleiner als die Öffnungen sie sind (**Versatz der Öffnung**) und welchen **Abstand** ein TGA-Element zu den Seiten einer Öffnung halten muss. **Prüfung ausführen** geht jedes Rohr, jeden Kanal und jede Kabeltrasse durch — Lapins Leitungen ebenso wie die Segmente eines importierten TGA-Modells und dessen eigene Aussparungsanforderungen — und listet jede Stelle, an der eines eine Wand, Decke oder ein Dach kreuzt:
+**Verwalten → Kollisionsprüfung…** führt die Prüfung nur auf Anforderung aus: Nichts startet sie von selbst, weder eine Änderung noch **Verwalten → Prüfung**. Ihr Reiter **Einstellungen** legt fest, für welche Öffnungen Körper entstehen (Öffnungen in Wänden, Türen, Fenstern, Decken und Dächern), um wie viel größer oder kleiner als ihre Öffnungen sie sind (**Versatz der Körper**) und welchen **Abstand** ein TGA-Element zu den Seiten eines Körpers halten muss. **Kollisionsprüfung ausführen** geht einmal durch jedes Rohr, jeden Kanal und jede Kabeltrasse — Lapins Leitungen ebenso wie die Segmente eines importierten TGA-Modells und dessen eigene Aussparungen — und behält das Gefundene als **Kollisionsbericht** des Projekts mit dem Datum des Laufs, bis sie erneut ausgeführt wird. Ändert sich das Modell danach, sagt der Bericht, dass er **veraltet** ist. Seine Probleme sind nach Art gruppiert und nummeriert; jede Nummer bleibt von einem Lauf zum nächsten erhalten:
 
-- **Keine Öffnung**: es kreuzt das Bauteil, wo keine ist;
-- **Öffnung zu klein**: es geht durch eine Öffnung, ragt aber heraus, Abstand eingeschlossen; **Fehlt** nennt die Millimeter an der ungünstigsten Seite;
-- **Passt** (mit **zeigen, was passt**): ganz im Körper, mit Abstand;
-- **Leere Öffnung** (mit **Leere Öffnungen** angehakt): eine Wand- oder Deckenöffnung, durch die nichts führt (ein Treppenloch nie).
+- **Keine Öffnung**: Es geht durch das Bauteil, wo es keine hat;
+- **Nicht geschnitten: tragend oder Schnittreihenfolge**: keine Öffnung, weil die eigenen Öffnungen der Leitungen (unten) dieses Bauteil nicht schneiden;
+- **Öffnung zu klein**: Es geht durch eine Öffnung, ragt aber heraus, den Abstand eingerechnet; **Fehlt** sagt, um wie viele Millimeter auf der ungünstigsten Seite;
+- **Leerer Körper** (mit **Leere Öffnungen** in **Einstellungen** angehakt): eine Wand- oder Deckenöffnung, durch die nichts geht (ein Treppenloch ist nie eine).
 
-Ein Klick auf eine Zeile zeigt das Paar in 3D, beide ausgewählt. **Anmerkungen erstellen** macht aus jeder Kollision eine Anmerkung vom Typ **Clash** mit ihrem Blickpunkt (**Verwalten → Anmerkungen am Modell…**), bereit für BCF; erneut ausgeführt, aktualisiert es dieselben Anmerkungen. Die Kollisionen erscheinen auch unter den Warnungen von **Verwalten → Prüfung**.
+![Der Kollisionsbericht: keine Öffnung, eine zu kleine Öffnung und ein leerer Körper, jeweils nummeriert](shots/mep-voids-check.webp)
 
-![Öffnungen vs TGA: wofür die Körper entstehen, der Abstand und die Prüfung über drei Rohre](shots/mep-voids-check.webp)
+Jedes Problem ist **Zu beheben**, **Behoben** oder **Ignoriert**, mit einem Kommentar. Ein Klick auf eine Zeile zeigt das Paar in 3D, beide ausgewählt (**allein in 3D** blendet den Rest vorübergehend aus); die Pfeile gehen zum vorherigen und zum nächsten. **In der Ansicht markieren** (auch **Ansicht → Kollisionsmarken**) zeichnet jedes offene Problem im vorderen Grundriss, Schnitt oder in der vorderen Ansicht als rote Wolke mit seiner Nummer, nur am Bildschirm.
+
+![Der Grundriss mit markierten Kollisionen: rote Wolken mit ihren Nummern](shots/mep-voids-clouds.webp)
+
+**Öffnung erstellen** schneidet eine einfache Öffnung um das Element in die Wand (rund für ein Rohr oder Kabel, rechteckig für einen Kanal) oder in die Decke, ihre Seiten im Abstand und ihre Größe aufgerundet, wie es die TGA-Regel der Schnittreihenfolge sagt; **Öffnung vergrößern** vergrößert die zu kleine Öffnung. **Auswahl beheben** tut das für jede angehakte Zeile, **Ignorieren** und **Wieder öffnen** setzen ihren Status; jedes ist ein Schritt zum Rückgängigmachen. Der Bericht sagt dann, dass er veraltet ist: Führe ihn erneut aus, und das Behobene steht als **Behoben** da (**behobene zeigen**).
+
+![Nach den Korrekturen erneut ausgeführt: die beiden Kollisionen behoben](shots/mep-voids-fixed.webp)
+
+**BCF** macht aus den offenen Kollisionen Anmerkungen vom Typ **Clash** mit ihren Blickpunkten (**Verwalten → Anmerkungen am Modell…**) und speichert sie als BCF-Datei; erneut ausgeführt, aktualisiert es dieselben Anmerkungen. **CSV** und **PDF** speichern den Bericht als Liste. **Verwalten → Prüfung** liest den Bericht nur: Seine offenen Kollisionen sind Warnungen, ebenso ein veralteter Bericht.
+
+### Leitungen, die ihre Öffnungen selbst schneiden
+
+Die Schnittreihenfolge (**Verwalten → Schnittreihenfolge**) enthält auch TGA-Leitungen, über Wänden und Decken. Mit **Leitungen schneiden Wände und Decken** eingeschaltet schneidet eine Leitung, die eine Wand oder Decke durchquert, dort ihre eigene Öffnung: rund für ein Rohr oder Kabel, das rechtwinklig durchgeht, rechteckig für einen Kanal oder eine schräge Leitung, so groß wie die Außenseite der Leitung (ihre Dämmung, das Schutzrohr einer Gasleitung) plus der **Abstand** rundum, auf das Raster aufgerundet, nie unter der **Kleinsten Öffnung**. Die Öffnung wird nicht getrennt gespeichert: Sie wandert und wächst mit der Leitung und verschwindet, wenn die Leitung verschwindet oder nicht mehr durchquert. Sie ist ein Körper wie jede Öffnung (gezeichnet, gelistet, geprüft), und der IFC-Export schreibt sie als **IfcOpeningElement** mit **Lapin_ProvisionOpening** (und als Aussparung mit angehakten **Öffnungskörper**), sodass eine erneute Prüfung nichts zu melden findet. Eine Wand oder Decke, die in der Schnittreihenfolge über den Leitungen steht (nach Klasse oder Material), wird nicht geschnitten, eine tragende (LoadBearing in ihrem Pset_…Common) nur, wenn **auch diese schneiden** angehakt ist: Die Kollisionsprüfung meldet sie als **Nicht geschnitten**. Eine abgebrochene Leitung schneidet nichts, und wo eine Leitung schon durch eine Öffnung geht, wird keine geschnitten. Ein System kann anders entscheiden unter **TGA → Systeme…** (**Leitungen schneiden Wände und Decken**: wie die Schnittreihenfolge, ja, nein). In einem neuen Projekt ist es eingeschaltet; ein älteres Projekt behält es ausgeschaltet, bis es eingeschaltet wird.
+
+![TGA-Leitungen in der Schnittreihenfolge](shots/mep-voids-cut-order.webp)
 
 Der Reiter **Körper** listet jeden Öffnungskörper mit seiner Marke (V1, V2… Geschoss für Geschoss), seinem Wirt, der Tür oder dem Fenster darin, Größe und Tiefe; ein Klick wählt seine Öffnung.
 

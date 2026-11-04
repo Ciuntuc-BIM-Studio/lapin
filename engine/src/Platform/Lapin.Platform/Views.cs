@@ -608,6 +608,10 @@ public static class Views
         if (ViewStyles.Of(m, view) is { Voids: true } voidStyle)
             try { marks.AddRange(Coordination.VoidDrawings.Marks(q, ctx, spec, Pieces(q, view), voidStyle.VoidSizes, styles, categories?.GetValueOrDefault(Coordination.VoidDrawings.Category), marks)); }
             catch (CommandException) { }
+        // The clash report's open problems as red clouds with their numbers (decision 293): on the screen, printed only when asked.
+        if (Coordination.ClashMarks.Shows(view, print))
+            try { marks.AddRange(Coordination.ClashMarks.Marks(q, ctx, spec, Pieces(q, view))); }
+            catch (CommandException) { }
         // Every element the drawing shows can be picked by what it drew: its cut outlines and its seen lines, as a
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
         marks.AddRange(PickMarks(drawing));

@@ -10,6 +10,8 @@ import { RotateCcw, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from './PendingDialog';
+import { LengthField } from '../../shell/cells';
+import { DEFAULT_MEP_CUT, loadMepCut, saveMepCut, type MepCut } from './coordination/coordination';
 
 interface Row { class: string; label: string; default: number; priority: number }
 interface MaterialRow { id: string; name: string; priority: number | null }
@@ -19,13 +21,17 @@ export function CutOrderDialog() {
   const error = useSession((s) => s.error);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
+  const [mep, setMep] = useState<MepCut>(DEFAULT_MEP_CUT);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
     let live = true;
     void query<Row[]>('cutOrder.list').then((r) => { if (live) setRows(r ?? []); });
     void query<MaterialRow[]>('cutOrder.materials').then((r) => { if (live) setMaterials(r ?? []); });
+    void loadMepCut().then((r) => { if (live) setMep(r); });
     return () => { live = false; };
   }, [nodes]);
+  // The MEP rule as changed, shown at once, kept in the project (one step).
+  const setRule = (patch: Partial<MepCut>) => { setMep((m) => ({ ...m, ...patch })); void saveMepCut(patch); };
   const setMaterial = (id: string, value: number | null) => void execute('cutOrder.set', { materials: { [id]: value } });
   if (!rows) return <PendingDialog title="Cut order" />;
   const sorted = [...rows].sort((a, b) => b.priority - a.priority || a.label.localeCompare(b.label));
@@ -80,6 +86,25 @@ export function CutOrderDialog() {
               ))}
             </tbody>
           </table>
+          {rows.some((r) => r.class === 'IfcPipeSegment') && (
+            <div data-testid="cut-order-mep">
+              <p className="eyebrow">MEP runs</p>
+              <p className="muted small">A run that crosses a wall or a floor cuts its own opening there, round for a pipe or a cable, rectangular for a duct; it moves and grows with the run and goes with it. A wall or floor ranked over the runs above is not cut, nor a load-bearing one unless asked: the clash check reports them.</p>
+              <dl className="fields">
+                <dt>Runs cut walls and floors</dt>
+                <dd><input type="checkbox" data-testid="mep-cut" style={{ width: 'auto' }} checked={mep.cut} onChange={(e) => setRule({ cut: e.target.checked })} /></dd>
+                <dt title="Round the run's outside (its insulation, a gas pipe's sleeve), on every side">Clearance</dt>
+                <dd><LengthField metres={mep.clearance} min={0} max={0.5} testId="mep-cut-clearance" onCommit={(v) => { if (v != null) setRule({ clearance: v }); }} /></dd>
+                <dt title="Sizes rounded up to it">Rounded up to</dt>
+                <dd><LengthField metres={mep.step} min={0} max={0.1} onCommit={(v) => { if (v != null) setRule({ step: v }); }} /></dd>
+                <dt>Smallest opening</dt>
+                <dd><LengthField metres={mep.minSize} min={0} max={1} onCommit={(v) => { if (v != null) setRule({ minSize: v }); }} /></dd>
+                <dt>Load-bearing walls and floors</dt>
+                <dd><label><input type="checkbox" data-testid="mep-cut-structural" style={{ width: 'auto', marginRight: 6 }} checked={mep.structural} onChange={(e) => setRule({ structural: e.target.checked })} /> cut them too (else reported, not cut)</label></dd>
+              </dl>
+              <p className="muted small">A system may say otherwise: MEP → Systems….</p>
+            </div>
+          )}
         </div>
         <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}
           <button type="button" className="btn" onClick={() => void execute('cutOrder.reset')}>Default order</button>

@@ -61,3 +61,9 @@ useSession.subscribe((s) => {
   last = s.render;
   if (temporaryOn(useTemporary.getState())) apply();
 });
+
+/** Everything but these hidden for now (a clash report's item shown alone in 3D, decision 293). */
+export function isolateIds(ids: string[]): void {
+  useTemporary.setState({ isolated: new Set(ids) });
+  apply();
+}

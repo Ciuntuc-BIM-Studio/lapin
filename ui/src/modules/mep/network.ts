@@ -27,7 +27,7 @@ export interface Defaults {
   /** A gas system's gas (natural, LPG) and pressure class (low, medium); null for the other services. */
   gas?: 'natural' | 'lpg' | null; pressure?: 'low' | 'medium' | null;
 }
-export interface SystemInfo { id: string; name: string; service: string; defaults: Defaults; nodes: number; runs: number }
+export interface SystemInfo { id: string; name: string; service: string; defaults: Defaults; nodes: number; runs: number; cutHosts?: boolean | null }
 type RunEnd = { nodeId: string; port: string } | { runId: string; station: number } | null;
 interface NetworkPort { key: string; service: string; flow: string; at: [number, number, number]; taken: boolean }
 interface NetworkNode { id: string; name: string; role: string; storeyId: string | null; ports: NetworkPort[] }

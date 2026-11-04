@@ -4,7 +4,7 @@ import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
 import { toggleGrid, toggleThinLines } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Keyboard, Layers, LayoutGrid, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
+import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Keyboard, Layers, LayoutGrid, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -38,7 +38,7 @@ import { ProjectFolderDialog } from './cde/ProjectFolderDialog';
 import { IssueDialog } from './cde/IssueDialog';
 import { CheckDialog } from './cde/CheckDialog';
 import { CoordinationDialog } from './coordination/CoordinationDialog';
-import { toggleVoids2d } from './coordination/coordination';
+import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { RemarksDialog } from './remarks/RemarksDialog';
 import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { DisplayQualityDialog } from './DisplayQualityDialog';
@@ -152,9 +152,9 @@ const core: LapinModule = {
         // The reviewers' PDF annotations read back as remarks on the sheets (stage 3).
         { id: 'manage.sheetRemarks', label: 'Sheet remarks…', icon: MessageSquare, run: () => useUi.setState({ dialog: 'cdeRemarks' }) },
       ] },
-      // Openings as solid voids and MEP checked against them (a tester's request, decision 289).
+      // Openings as solid voids and MEP checked against them (a tester's request, decision 289), run only when asked, as a report (decision 293).
       { label: 'Coordination', tools: [
-        { id: 'manage.openingsMep', label: 'Openings vs MEP…', icon: SquareDashed, run: () => useUi.setState({ dialog: 'coordination' }) },
+        { id: 'manage.openingsMep', label: 'Clash check…', icon: SquareDashed, run: () => useUi.setState({ dialog: 'coordination' }) },
       ] },
     ],
   }, {
@@ -204,6 +204,8 @@ const core: LapinModule = {
           if (s.view === '3d') useUi.setState({ openingVoids: !s.openingVoids });
           else void toggleVoids2d();
         } },
+        // The clash report's open clashes as red clouds with their numbers in the plan, section or elevation in front (decision 293), on the screen only.
+        { id: 'view.clashMarks', label: 'Clash marks', icon: Cloud, run: () => void toggleClashMarks().then((on) => { if (on == null) notify('Open a plan, section or elevation to mark the clashes in.'); }) },
         { id: 'view.displayQuality', label: 'Display quality', icon: Gauge, run: () => useUi.setState({ dialog: 'displayQuality' }) },
       ] },
       // Selecting and clearing up in 3D (docs/groups.md): a region, and hiding for now, with Revit's keys.

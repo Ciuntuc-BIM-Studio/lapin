@@ -91,16 +91,30 @@ Dimensionare i tubi dal consumo degli apparecchi e verificare la perdita di cari
 
 Ogni apertura in un muro, un solaio o un tetto può essere un **volume di foro** a sé: un solido grande quanto l'apertura, attraverso tutto lo spessore del suo ospite, finiture comprese. I programmi di interferenze (Navisworks, Solibri, BIMcollab) verificano gli impianti contro tali volumi con «completamente dentro»: un tubo, un canale o una passerella portacavi interamente dentro un volume passa; uno che sporge, o che attraversa un muro senza apertura, è un'interferenza. Lapin esegue la stessa verifica.
 
-**Gestisci → Aperture vs impianti…** stabilisce per quali aperture si fanno i volumi (**Aperture nei muri**, **Aperture delle porte**, **Aperture delle finestre**, **Fori nei solai**, **Aperture nel tetto**), di quanto sono più grandi o più piccoli delle aperture (**Scostamento del foro**) e il **Franco** che un elemento degli impianti deve tenere dai lati di un foro. **Esegui la verifica** passa ogni tubo, canale e passerella — le linee di Lapin come i segmenti di un modello impiantistico importato, e le sue richieste di foro — ed elenca ogni punto in cui uno attraversa un muro, un solaio o un tetto:
+**Gestisci → Verifica interferenze…** esegue la verifica solo su richiesta: niente la avvia da sé, né una modifica né **Gestisci → Verifica**. La sua scheda **Impostazioni** stabilisce per quali aperture si fanno i volumi (aperture in muri, porte, finestre, solai e coperture), di quanto sono più grandi o più piccoli delle loro aperture (**Scostamento del volume**) e il **Gioco** che un elemento impiantistico deve tenere dai lati di un volume. **Esegui verifica interferenze** passa una volta per ogni tubo, canale e passerella portacavi — le tratte di Lapin e i segmenti di un modello impiantistico importato allo stesso modo, e i fori previsti propri di un modello impiantistico — e conserva quanto trovato come **rapporto delle interferenze** del progetto, con la data dell'esecuzione, finché non viene eseguita di nuovo. Quando il modello cambia dopo, il rapporto dice che è **non aggiornato**. I suoi problemi sono raggruppati per tipo e numerati, e ogni numero resta lo stesso da un'esecuzione all'altra:
 
-- **Nessun foro**: attraversa l'ospite dove non ce n'è;
-- **Foro troppo piccolo**: passa per un'apertura ma ne sporge, franco compreso; **Manca** dice quanti millimetri sul lato peggiore;
-- **Ci sta** (con **mostra ciò che ci sta**): interamente nel volume, con il franco;
-- **Foro vuoto** (con **Fori vuoti** spuntato): un'apertura in muro o solaio da cui non passa nulla (un vano scala non lo è mai).
+- **Nessun foro**: attraversa l'ospite dove non ne ha;
+- **Non tagliati: portante o ordine di taglio**: nessun foro, perché i fori propri delle tratte (sotto) non tagliano quell'ospite;
+- **Foro troppo piccolo**: passa per un foro ma ne sporge, gioco compreso; **Mancano** dice di quanti millimetri sul lato peggiore;
+- **Volume vuoto** (con **Fori vuoti** spuntato in **Impostazioni**): un foro di muro o solaio da cui non passa nulla (un vano scala non lo è mai).
 
-Un clic su una riga mostra la coppia in 3D, entrambi selezionati. **Crea osservazioni** fa di ogni interferenza un'osservazione di tipo **Clash** con il suo punto di vista (**Gestisci → Osservazioni sul modello…**), pronta per il BCF; rieseguita, aggiorna le stesse osservazioni. Le interferenze compaiono anche tra gli avvisi di **Gestisci → Verifica**.
+![Il rapporto delle interferenze: nessun foro, un foro troppo piccolo e un volume vuoto, ciascuno numerato](shots/mep-voids-check.webp)
 
-![Aperture vs impianti: per cosa si fanno i volumi, il franco e la verifica di tre tubi](shots/mep-voids-check.webp)
+Ogni problema è **Da correggere**, **Risolta** o **Ignorata**, con un commento. Un clic su una riga mostra la coppia in 3D, entrambi selezionati (**isolati in 3D** nasconde il resto per ora); le frecce vanno alla precedente e alla successiva. **Segna nella vista** (anche **Vista → Segni interferenze**) disegna ogni problema aperto nella pianta, sezione o prospetto in primo piano come una nuvola rossa con il suo numero, solo a schermo.
+
+![La pianta con le interferenze segnate: nuvole rosse con i loro numeri](shots/mep-voids-clouds.webp)
+
+**Crea foro** taglia un foro semplice attorno all'elemento nel muro (tondo per un tubo o un cavo, rettangolare per un canale) o nel solaio, con i lati alla distanza del gioco e la misura arrotondata per eccesso come dice la regola impiantistica dell'ordine di taglio; **Allarga foro** allarga il foro troppo piccolo. **Correggi selezione** lo fa per ogni riga spuntata, **Ignora** e **Riapri** ne cambiano lo stato; ciascuno è un solo passo da annullare. Il rapporto dice allora che non è aggiornato: eseguilo di nuovo, e ciò che è corretto risulta **Risolta** (**mostra risolte**).
+
+![Eseguita di nuovo dopo le correzioni: le due interferenze risolte](shots/mep-voids-fixed.webp)
+
+**BCF** trasforma le interferenze aperte in osservazioni di tipo **Clash** con i loro punti di vista (**Gestisci → Osservazioni sul modello…**) e le salva come file BCF; eseguito di nuovo, aggiorna le stesse osservazioni. **CSV** e **PDF** salvano il rapporto come elenco. **Gestisci → Verifica** legge soltanto il rapporto: le sue interferenze aperte sono avvisi, e lo è anche un rapporto non aggiornato.
+
+### Tratte che tagliano i propri fori
+
+L'ordine di taglio (**Gestisci → Ordine di taglio**) comprende anche le tratte impiantistiche, sopra muri e solai. Con **Le tratte tagliano muri e solai** attivo, una tratta che attraversa un muro o un solaio vi taglia il proprio foro: tondo per un tubo o un cavo che passa in squadra, rettangolare per un canale o una tratta obliqua, grande quanto l'esterno della tratta (il suo isolamento, la guaina di un tubo del gas) più il **Gioco** attorno, arrotondato per eccesso al passo, mai sotto il **Foro minimo**. Il foro non è tenuto a parte: si sposta e cresce con la tratta e sparisce quando la tratta sparisce o non attraversa più. È un volume come ogni foro (disegnato, elencato, verificato), e l'esportazione IFC lo scrive come **IfcOpeningElement** con **Lapin_ProvisionOpening** (e come foro previsto con **Volumi di foro** spuntato), così una verifica eseguita di nuovo non trova nulla da segnalare. Un muro o un solaio posto sopra le tratte nell'ordine di taglio (per classe o per materiale) non viene tagliato, né uno portante (LoadBearing nel suo Pset_…Common) a meno che **tagliali anche loro** sia spuntato: la verifica interferenze li segnala come **Non tagliati**. Una tratta demolita non taglia nulla, e dove una tratta passa già per un foro non se ne taglia un altro. Un sistema può decidere diversamente in **Impianti → Sistemi…** (**Le tratte tagliano muri e solai**: come l'ordine di taglio, sì, no). È attivo in un progetto nuovo; un progetto fatto prima lo tiene spento finché non viene acceso.
+
+![Le tratte impiantistiche nell'ordine di taglio](shots/mep-voids-cut-order.webp)
 
 La scheda **Volumi** elenca ogni volume con la sua marca (V1, V2… piano per piano), l'ospite, la porta o finestra che contiene, dimensione e profondità; un clic ne seleziona l'apertura.
 

@@ -16,6 +16,10 @@ public sealed record OpeningClash(string Status, string? MepId, string HostId, O
     public bool IsClash => Status is OpeningClashes.Missing or OpeningClashes.TooSmall;
     /// <summary>A stable key for the pair: the same clash found again names the same remark.</summary>
     public string Key => $"{MepId ?? "-"}|{HostId}|{Void?.Key ?? "-"}|{Status}";
+    /// <summary>The pair whatever its status (an empty void: the void), what a clash report follows an item by from one run to the next.</summary>
+    public string PairKey => MepId != null ? $"{MepId}|{HostId}" : $"-|{HostId}|{Void?.Key}";
+    /// <summary>Why the cut order's MEP rule did not cut this opening (decision 293): "structural" or "order"; null otherwise.</summary>
+    public string? Held { get; init; }
 
     public JsonObject ToJson(IModelView m)
     {
@@ -26,6 +30,7 @@ public sealed record OpeningClash(string Status, string? MepId, string HostId, O
             ["by"] = Math.Round(By, 4), ["centre"] = new JsonArray(Math.Round(Centre.X, 4), Math.Round(Centre.Y, 4), Math.Round(Centre.Z, 4)), ["message"] = Message,
         };
         if (Void != null) { o["mark"] = Void.Mark; o["voidKind"] = Void.Kind; o["openingId"] = Void.OpeningId; o["selectId"] = Void.SelectId; }
+        if (Held != null) o["held"] = Held;
         return o;
     }
 }
@@ -98,6 +103,8 @@ public static class OpeningClashes
         var voidsOf = exact.GroupBy(v => v.HostId).ToDictionary(g => g.Key, g => g.Select(v => (Void: v, Box: Measure.Bounds(v.Solid)!.Value)).ToList());
         var hosts = HostClasses.SelectMany(m.OfClass).Select(e => BodyOf(q, e)).OfType<Body>().ToList();
         var used = new HashSet<string>();
+        // The provisions the cut order's MEP rule left uncut (a load-bearing host, a host ranked over the run): reported, with why.
+        var held = Provisions.Of(m, q.Services).Where(p => !p.Cuts).GroupBy(p => (p.SourceId, p.HostId)).ToDictionary(g => g.Key, g => g.First().Held!);
         foreach (var e in m.Entities.Where(IsMep).ToList())
         {
             if (BodyOf(q, e) is not { } mep) continue;
@@ -134,7 +141,9 @@ public static class OpeningClashes
                 }
                 if (through.Count == 0)
                 {
-                    results.Add(new OpeningClash(Missing, e.Id, host.Entity.Id, null, 0, centre, $"No opening: {Label(e)} goes through {Label(host.Entity)} where it has none."));
+                    var why = held.GetValueOrDefault((e.Id, host.Entity.Id));
+                    var note = why == ProvisionOpening.Structural ? " It bears load: not cut automatically." : why == ProvisionOpening.Order ? " It ranks over the run in the cut order: not cut automatically." : "";
+                    results.Add(new OpeningClash(Missing, e.Id, host.Entity.Id, null, 0, centre, $"No opening: {Label(e)} goes through {Label(host.Entity)} where it has none.{note}") { Held = why });
                     continue;
                 }
                 // How far out of the void (shrunk by the clearance) the element reaches: what the opening lacks on its worst side.
@@ -214,37 +223,50 @@ public static class OpeningClashes
         ["available"] = booleans,
     };
 
+    /// <summary>What a remark is made of: the pair, its status, how far out, where, what it says, the void's mark and opening, the report's number.</summary>
+    public sealed record RemarkSource(string MepId, string HostId, string Status, double By, Vec3 Centre, string Message, string? Mark, string? OpeningId, int? Number = null)
+    {
+        public static RemarkSource Of(OpeningClash c) => new(c.MepId!, c.HostId, c.Status, c.By, c.Centre, c.Message, c.Void?.Mark, c.Void?.OpeningId);
+    }
+
     /// <summary>
     /// The clashes as remarks (BCF topics of type Clash), one per element and host: its GUID derived from the pair, so a check
     /// run again updates the remark it made (title, description; its comments and status kept) instead of adding another.
-    /// The viewpoint selects both and looks at the clash from 3 m away.
+    /// The viewpoint selects both and looks at the clash from 3 m away. Returns the remarks' ids too.
     /// </summary>
-    public static (int Added, int Updated) ToRemarks(ICommandContext ctx, IEnumerable<OpeningClash> clashes, string author)
+    public static (int Added, int Updated) ToRemarks(ICommandContext ctx, IEnumerable<OpeningClash> clashes, string author) =>
+        ToRemarks(ctx, clashes.Where(c => c.IsClash).Select(RemarkSource.Of), author, out _);
+
+    public static (int Added, int Updated) ToRemarks(ICommandContext ctx, IEnumerable<RemarkSource> clashes, string author, out List<string> ids)
     {
         int added = 0, updated = 0;
-        foreach (var c in clashes.Where(c => c.IsClash))
+        ids = [];
+        foreach (var c in clashes)
         {
             var guid = Model.GlobalId.ToGuid(OpeningVoids.DerivedId($"{c.MepId}|{c.HostId}", "clash"));
             var id = Remarks.IdOf(guid);
-            var title = c.Status == Missing ? $"No opening: {ctx.Model.Get(c.MepId!)?.Name} / {ctx.Model.Get(c.HostId)?.Name}" : $"Opening too small: {c.Void?.Mark} ({Math.Ceiling(c.By * 1000 - 0.05):0} mm)";
+            var title = c.Status == Missing ? $"No opening: {ctx.Model.Get(c.MepId)?.Name} / {ctx.Model.Get(c.HostId)?.Name}" : $"Opening too small: {c.Mark} ({Math.Ceiling(c.By * 1000 - 0.05):0} mm)";
+            var description = c.Number is { } n ? $"Clash {n}: {c.Message}" : c.Message;
             var eye = c.Centre + new Vec3(-2, -2, 1.5);
             var dir = (c.Centre - eye).Normalized();
             var right = Vec3.Cross(dir, new Vec3(0, 0, 1)).Normalized();
             var up = Vec3.Cross(right, dir).Normalized();
-            var selection = new List<string> { c.MepId!, c.HostId };
-            if (c.Void?.OpeningId is { } op) selection.Add(op);
+            var selection = new List<string> { c.MepId, c.HostId };
+            if (c.OpeningId is { } op) selection.Add(op);
             var now = Bcf.Now();
             if (ctx.Model.Get(id) is { Class: Remarks.Class } existing)
             {
                 var t = Remarks.Read(existing);
-                ctx.Replace(Remarks.ToEntity(t with { Title = title, Description = c.Message, ModifiedDate = now, ModifiedAuthor = author }));
+                ctx.Replace(Remarks.ToEntity(t with { Title = title, Description = description, ModifiedDate = now, ModifiedAuthor = author }));
                 updated++;
+                ids.Add(id);
                 continue;
             }
             if (ctx.Model.Get(id) != null) continue;
             var vp = new BcfViewpoint(Guid.NewGuid(), new BcfCamera(true, P(eye), P(dir), P(up), 60, 1), selection, true, [], [], [], null);
-            ctx.Add(Remarks.ToEntity(new BcfTopic(guid, title, c.Message, "Clash", "Open", "Normal", null, now, author, null, null, null, null, null, ["Openings vs MEP"], [], [vp])));
+            ctx.Add(Remarks.ToEntity(new BcfTopic(guid, title, description, "Clash", "Open", "Normal", null, now, author, null, null, null, null, null, ["Openings vs MEP"], [], [vp])));
             added++;
+            ids.Add(id);
         }
         return (added, updated);
     }
@@ -256,14 +278,18 @@ public static class OpeningClashes
         // The check: {clearance?, empty?} over the project's settings; the results, clashes first, and their counts.
         r.Query("coordination.clashes", (q, a) => ToJson(q.Model, Run(q, Options.From(q.Model, a)), q.Services.Get<ISolidBooleans>() != null));
         // The clashes as remarks of type Clash (Manage → Remarks, BCF): {clearance?, author?}; how many were added and updated.
+        // With a clash report (decision 293): its open clashes, numbered, without running the check again; else the check is run.
         r.Command("coordination.remarks", "Clashes as remarks", (ctx, a) =>
         {
-            var found = Run(ctx.Query, Options.From(ctx.Model, a));
             var author = ((string?)a["author"])?.Trim() is { Length: > 0 } s ? s : "Lapin";
-            var (added, updated) = ToRemarks(ctx, found, author);
-            return new JsonObject { ["added"] = added, ["updated"] = updated };
+            var sources = ClashReports.Read(ctx.Model) is { } report
+                ? report.Items.Where(i => i.State == ClashReports.Open && i.MepId != null && i.Kind is Missing or TooSmall)
+                    .Select(i => new RemarkSource(i.MepId!, i.HostId, i.Kind, i.By, i.Centre, i.Message, i.Mark, i.OpeningId, i.Number)).ToList()
+                : Run(ctx.Query, Options.From(ctx.Model, a)).Where(c => c.IsClash).Select(RemarkSource.Of).ToList();
+            var (added, updated) = ToRemarks(ctx, sources, author, out var ids);
+            return new JsonObject { ["added"] = added, ["updated"] = updated, ["ids"] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray()) };
         });
-        // In Manage → Check: each clash a warning on its MEP element.
+        // In Manage → Check: the clash report's open clashes, never the check itself (decision 293: it runs only when asked).
         r.Service<ICdeRule>(new MepRule());
     }
 
@@ -272,10 +298,6 @@ public static class OpeningClashes
         public string Id => "openingsMep";
         public string Label => "Openings vs MEP";
         public bool Blocking => false;
-        public IEnumerable<CdeFinding> Run(CdeCheckContext c)
-        {
-            if (!c.Model.Entities.Any(IsMep)) return [];
-            return OpeningClashes.Run(c.Query, Options.From(c.Model, null)).Where(x => x.IsClash).Select(x => new CdeFinding(Id, CdeFinding.Warn, x.Message, x.MepId));
-        }
+        public IEnumerable<CdeFinding> Run(CdeCheckContext c) => ClashReports.Findings(c.Model, Id);
     }
 }

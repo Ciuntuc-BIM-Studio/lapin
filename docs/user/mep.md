@@ -91,16 +91,30 @@ Sizing the pipes from the appliances' consumption and checking the pressure drop
 
 Every opening in a wall, floor or roof can be a **void** of its own: a solid as large as the opening, through the whole thickness of its host, finishes included. Clash programs (Navisworks, Solibri, BIMcollab) test MEP against such voids with "completely inside": a pipe, duct or cable tray wholly inside a void passes, one that sticks out of it, or crosses a wall where there is none, is a clash. Lapin runs the same check itself.
 
-**Manage → Openings vs MEP…** sets what the voids are made for (**Wall openings**, **Door openings**, **Window openings**, **Floor openings**, **Roof openings**), how much bigger or smaller than their openings they are (**Void offset**), and the **Clearance** an MEP element must keep from a void's sides. **Run check** goes through every pipe, duct and cable carrier — Lapin's runs and the segments of an imported MEP model alike, and an MEP model's own provisions for voids — and lists each place one crosses a wall, floor or roof:
+**Manage → Clash check…** runs the check only when asked: nothing runs it by itself, neither an edit nor **Manage → Check**. Its **Settings** tab sets what the voids are made for (wall, door, window, floor and roof openings), how much bigger or smaller than their openings they are (**Void offset**), and the **Clearance** an MEP element must keep from a void's sides. **Run clash check** goes once through every pipe, duct and cable carrier — Lapin's runs and the segments of an imported MEP model alike, and an MEP model's own provisions for voids — and keeps what it found as the project's **clash report**, with the date it ran, until it is run again. When the model changes after that, the report says it is **out of date**. Its problems are grouped by kind and numbered, each number kept from one run to the next:
 
 - **No opening**: it goes through the host where there is none;
+- **Not cut: load-bearing or cut order**: no opening, because the runs' own openings (below) do not cut that host;
 - **Opening too small**: it goes through an opening but stands out of it, the clearance included; **Short by** says by how many millimetres on the worst side;
-- **Fits** (with **show what fits**): wholly inside the void, keeping the clearance;
-- **Empty void** (with **Empty voids** ticked): a wall or floor opening nothing goes through (a stairwell is never one).
+- **Empty void** (with **Empty voids** ticked in **Settings**): a wall or floor opening nothing goes through (a stairwell is never one).
 
-A click on a row shows the pair in 3D, both selected. **Make remarks** turns each clash into a remark of type **Clash** with its viewpoint (**Manage → Model remarks…**), ready to go out as BCF; run again, it updates the same remarks instead of adding others. The clashes also show among the warnings of **Manage → Check**.
+![The clash report: no opening, an opening too small and an empty void, each numbered](shots/mep-voids-check.webp)
 
-![Openings vs MEP: what the voids are made for, the clearance, and the check over three pipes](shots/mep-voids-check.webp)
+Each problem is **To fix**, **Resolved** or **Ignored**, with a comment. A click on a row shows the pair in 3D, both selected (**alone in 3D** hides the rest for now); the arrows go to the previous and the next one. **Mark in view** (also **View → Clash marks**) draws each open problem in the plan, section or elevation in front as a red cloud with its number, on the screen only.
+
+![The plan with the clashes marked: red clouds with their numbers](shots/mep-voids-clouds.webp)
+
+**Make opening** cuts a bare opening round the element in the wall (round for a pipe or a cable, rectangular for a duct) or in the floor, its sides the clearance away and its size rounded up as the cut order's MEP rule says; **Enlarge opening** grows the opening that is too small. **Fix selected** does it for every ticked row, **Ignore** and **Reopen** set their status; each is one step to undo. The report then says it is out of date: run it again, and what is fixed is listed **Resolved** (**show resolved**).
+
+![Run again after the fixes: the two clashes resolved](shots/mep-voids-fixed.webp)
+
+**BCF** turns the open clashes into remarks of type **Clash** with their viewpoints (**Manage → Model remarks…**) and saves them as a BCF file; run again, it updates the same remarks. **CSV** and **PDF** save the report as a list. **Manage → Check** only reads the report: its open clashes are warnings, and so is a report out of date.
+
+### Runs that cut their own openings
+
+The cut order (**Manage → Cut order**) holds MEP runs too, over walls and floors. With **Runs cut walls and floors** on, a run that crosses a wall or a floor cuts its own opening there: round for a pipe or a cable going square through, rectangular for a duct or a run at a slant, as large as the run's outside (its insulation, a gas pipe's sleeve) and the **Clearance** round it, rounded up to the step, never under the **Smallest opening**. The opening is not kept apart: it moves and grows with the run, and goes when the run goes or no longer crosses. It is a void like any opening (drawn, listed, checked), and the IFC export writes it as an **IfcOpeningElement** with **Lapin_ProvisionOpening** (and as a provision for void with **Opening voids** ticked), so a check run again finds nothing to report. A wall or floor that ranks over the runs in the cut order (by its class or its material) is not cut, nor a load-bearing one (LoadBearing in its Pset_…Common) unless **cut them too** is ticked: the clash check reports them as **Not cut**. A demolished run cuts nothing, and where a run already passes through an opening none is cut. A system can say otherwise in **MEP → Systems…** (**Runs cut walls and floors**: as the cut order, yes, no). It is on in a new project; a project made before keeps it off until it is switched on.
+
+![MEP runs in the cut order](shots/mep-voids-cut-order.webp)
 
 The **Voids** tab lists every void with its mark (V1, V2… storey by storey), its host, the door or window in it, its size and depth; a click selects its opening.
 

@@ -91,16 +91,30 @@ Dimensionarea țevilor după consumul aparatelor și verificarea căderii de pre
 
 Fiecare gol dintr-un perete, o placă sau un acoperiș poate fi un **volum de gol** al lui: un solid cât golul, prin toată grosimea elementului-gazdă, cu finisaje cu tot. Programele de coliziuni (Navisworks, Solibri, BIMcollab) verifică instalațiile față de astfel de volume cu „complet în interior”: o țeavă, o tubulatură sau un jgheab de cabluri aflat în întregime într-un volum trece; unul care iese din el, sau care trece printr-un perete unde nu e niciun gol, e o coliziune. Lapin face aceeași verificare singur.
 
-**Gestionare → Goluri vs instalații…** stabilește pentru ce goluri se fac volume (**Goluri în pereți**, **Goluri de uși**, **Goluri de ferestre**, **Goluri în plăci**, **Goluri în acoperiș**), cu cât sunt mai mari sau mai mici decât golurile (**Decalajul golului**) și **Distanța liberă** pe care un element de instalații trebuie s-o păstreze față de laturile unui gol. **Rulează verificarea** trece prin fiecare țeavă, tubulatură și jgheab de cabluri — traseele Lapin și segmentele unui model de instalații importat deopotrivă, plus golurile cerute de modelul de instalații (provisions for void) — și listează fiecare loc unde unul trece printr-un perete, o placă sau un acoperiș:
+**Gestionare → Verificare coliziuni…** rulează verificarea doar la cerere: nimic nu o pornește singur, nici o modificare, nici **Gestionare → Verificare**. Fila **Setări** stabilește pentru ce goluri se fac volume (goluri în pereți, de uși, de ferestre, în plăci și în acoperiș), cu cât sunt mai mari sau mai mici decât golurile lor (**Decalajul golului**) și **Distanța liberă** pe care un element de instalații trebuie s-o păstreze față de laturile unui gol. **Rulează verificarea coliziunilor** trece o dată prin fiecare țeavă, tubulatură și jgheab de cabluri — traseele Lapin și segmentele unui model de instalații importat deopotrivă, și golurile prevăzute ale unui model de instalații — și păstrează ce a găsit ca **raportul de coliziuni** al proiectului, cu data rulării, până rulează din nou. Când modelul se schimbă după aceea, raportul spune că e **învechit**. Problemele lui sunt grupate pe feluri și numerotate, fiecare număr păstrat de la o rulare la alta:
 
-- **Fără gol**: trece prin gazdă acolo unde nu e niciun gol;
-- **Gol prea mic**: trece printr-un gol, dar iese din el, cu distanța liberă inclusă; **Lipsă** spune cu câți milimetri pe partea cea mai rea;
-- **Încape** (cu **arată ce încape**): în întregime în volum, păstrând distanța liberă;
-- **Gol neocupat** (cu **Goluri neocupate** bifat): un gol în perete sau placă prin care nu trece nimic (un gol de scară nu e niciodată unul).
+- **Fără gol**: trece prin gazdă unde aceasta nu are gol;
+- **Netăiate: portante sau ordinea de tăiere**: fără gol, pentru că golurile proprii ale traseelor (mai jos) nu taie acea gazdă;
+- **Gol prea mic**: trece printr-un gol dar iese din el, cu distanța liberă inclusă; **Lipsă** spune cu câți milimetri pe partea cea mai rea;
+- **Gol neocupat** (cu **Goluri neocupate** bifat în **Setări**): un gol din perete sau placă prin care nu trece nimic (un gol de scară nu e niciodată unul).
 
-Un clic pe un rând arată perechea în 3D, ambele selectate. **Fă observații** transformă fiecare coliziune într-o observație de tip **Clash** cu punctul ei de vedere (**Gestionare → Observații pe model…**), gata de trimis ca BCF; rulată din nou, actualizează aceleași observații în loc să adauge altele. Coliziunile apar și printre avertismentele din **Gestionare → Verificare**.
+![Raportul de coliziuni: fără gol, un gol prea mic și un gol neocupat, fiecare numerotat](shots/mep-voids-check.webp)
 
-![Goluri vs instalații: pentru ce se fac volumele, distanța liberă și verificarea a trei țevi](shots/mep-voids-check.webp)
+Fiecare problemă e **De corectat**, **Rezolvată** sau **Ignorată**, cu un comentariu. Un clic pe un rând arată perechea în 3D, amândouă selectate (**singure în 3D** ascunde restul pentru moment); săgețile duc la cea anterioară și la cea următoare. **Marchează în vedere** (și **Vedere → Marcaje coliziuni**) desenează fiecare problemă deschisă în planul, secțiunea sau fațada din față ca un nor roșu cu numărul ei, doar pe ecran.
+
+![Planul cu coliziunile marcate: nori roșii cu numerele lor](shots/mep-voids-clouds.webp)
+
+**Fă gol** taie un gol simplu în jurul elementului, în perete (rotund pentru o țeavă sau un cablu, dreptunghiular pentru o tubulatură) sau în placă, cu laturile la distanța liberă și dimensiunea rotunjită în sus cum spune regula de instalații din ordinea de tăiere; **Mărește golul** mărește golul prea mic. **Corectează selecția** face asta pentru fiecare rând bifat, **Ignoră** și **Redeschide** le schimbă starea; fiecare e un singur pas de anulat. Raportul spune apoi că e învechit: rulează-l din nou, iar ce s-a corectat apare **Rezolvată** (**arată rezolvatele**).
+
+![Rulat din nou după corecturi: cele două coliziuni rezolvate](shots/mep-voids-fixed.webp)
+
+**BCF** face din coliziunile deschise observații de tip **Clash** cu punctele lor de vedere (**Gestionare → Observații pe model…**) și le salvează ca fișier BCF; rulat din nou, actualizează aceleași observații. **CSV** și **PDF** salvează raportul ca listă. **Gestionare → Verificare** doar citește raportul: coliziunile lui deschise sunt avertismente, la fel și un raport învechit.
+
+### Trasee care își taie singure golurile
+
+Ordinea de tăiere (**Gestionare → Ordinea de tăiere**) cuprinde și traseele de instalații, deasupra pereților și plăcilor. Cu **Traseele taie pereți și plăci** pornit, un traseu care trece printr-un perete sau o placă își taie acolo golul lui: rotund pentru o țeavă sau un cablu care trece drept, dreptunghiular pentru o tubulatură sau un traseu oblic, cât exteriorul traseului (izolația, tubul de protecție al unei țevi de gaz) plus **Distanța liberă** în jur, rotunjit în sus la pas, niciodată sub **Cel mai mic gol**. Golul nu e ținut separat: se mută și crește odată cu traseul și dispare când traseul dispare sau nu mai trece. E un volum de gol ca oricare (desenat, listat, verificat), iar exportul IFC îl scrie ca **IfcOpeningElement** cu **Lapin_ProvisionOpening** (și ca gol prevăzut cu **Volume de gol** bifat), așa că o verificare rulată din nou nu mai găsește nimic de raportat. Un perete sau o placă pusă deasupra traseelor în ordinea de tăiere (după clasă sau după material) nu se taie, nici una portantă (LoadBearing în Pset_…Common) dacă **taie-le și pe ele** nu e bifat: verificarea coliziunilor le raportează ca **Netăiate**. Un traseu demolat nu taie nimic, iar unde un traseu trece deja printr-un gol nu se mai taie altul. Un sistem poate hotărî altfel în **Instalații → Sisteme…** (**Traseele taie pereți și plăci**: ca ordinea de tăiere, da, nu). E pornit într-un proiect nou; un proiect făcut înainte îl ține oprit până e pornit.
+
+![Traseele de instalații în ordinea de tăiere](shots/mep-voids-cut-order.webp)
 
 Fila **Volume** listează fiecare volum cu marca lui (V1, V2… etaj cu etaj), gazda, ușa sau fereastra din el, dimensiunea și adâncimea; un clic îi selectează golul.
 
