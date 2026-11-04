@@ -8,6 +8,7 @@ summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilenste
 
 ![Der Reiter Terminplanung](shots/ribbon-planning.webp)
 
+- **Terminplan erzeugen…**: ein ganzer Terminplan aus dem Modell, in einem Schritt (unten).
 - **Gantt**: öffnet den Terminplan unter der Ansicht. Der Bildschirm teilt sich in zwei Zeilen: oben das Modell, unten der Terminplan.
 - **Kalender…**: die Arbeitstage und -stunden, die Feiertage und die Winterpause (unten).
 - **Vorgang** und **Meilenstein**: ein neuer Vorgang oder Meilenstein vor dem im Gantt gewählten Vorgang (oder am Ende).
@@ -16,6 +17,68 @@ summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilenste
 - **MS Project importieren…**, **MS Project exportieren…**, **XLSX exportieren** und **IFC exportieren…**: der Terminplan zu und von anderen Programmen (unten).
 
 Ein Projekt hat einen Terminplan. Er wird beim ersten Hinzufügen eines Vorgangs angelegt und beginnt am nächsten Montag. Den Beginn ändern Sie in der Leiste des Gantt.
+
+## Den Terminplan aus dem Modell erzeugen
+
+![Terminplan erzeugen: die Vorlagen, der Reiter Anfang und die Vorschau](shots/planning-generate.webp)
+
+**Terminplanung → Terminplan erzeugen…** (auch in der Leiste des Gantt) macht aus dem Modell einen vollständigen Terminplan: einen Vorgang für jeden Schritt der Arbeiten und, wo der Schritt Geschoss für Geschoss geht, einen je Geschoss, jeder Vorgang schon mit seinen Elementen. Links stehen die **Vorlagen**: **Stahlbetonskelett**, **Tragendes Mauerwerk**, **Stahlhalle** und **Holzrahmenbau**. Lapin markiert die vom Modell verlangte als *empfohlen*: die Stahlhalle, wenn das Modell eine hat, den Holzrahmenbau, wenn seine Wände Ständerwände sind, tragendes Mauerwerk ohne Stützen, sonst das Stahlbetonskelett. Darüber stehen die Stile des Projekts (**Als Stil speichern…** behält, was du eingestellt hast).
+
+Rechts ist die **Vorschau**: die Vorgänge, die der Generator anlegen würde, als Balken, jeder mit der Menge, die seine Dauer ergab, und darunter die Zählungen:
+
+- **Verknüpfte Elemente**: die Elemente, die die Vorgänge nehmen, von allen, die einen Vorgang brauchen. Das ist hier die wichtigste Zahl. Bleiben Elemente draußen, wählt **Die Elemente ohne Vorgang zeigen** sie in der Ansicht aus, und **Ein Schritt für sie** fügt einen Schritt mit ihren Klassen hinzu.
+- **Dauern aus Aufwandswerten** und **Standarddauern (ohne Aufwandswert)**: wie viele Vorgänge ein Aufwandswert getaktet hat und wie viele die Tage ihres Schritts nahmen.
+- **Schalungen und Gerüste an den Vorgängen ihrer Träger** (unten).
+
+**Anwenden** schreibt den Terminplan als einen Schritt zum Rückgängigmachen. Der Bildschirm teilt sich dann: oben das Modell, unten das Gantt.
+
+### Der Reiter Anfang
+
+- **Anfang**: der erste Tag des Terminplans.
+- **Nach Geschossen aufteilen**: ein Vorgang je Geschoss für die Schritte, die Geschoss für Geschoss gehen (Rohbau, Mauerwerk, Oberflächen); ohne Haken ein Vorgang je Schritt.
+- **Abbruch zuerst**: die Elemente, die die Phasen abbrechen, kommen in einen Vorgang **Abbruch** vor allen anderen (IFC-Art DEMOLITION). Bestehende Elemente, die bleiben, gehören keinem Vorgang.
+- **Schalung** und **Gerüst**: ob diese temporären Elemente nach den Vorgängen ihrer Träger leben (unten).
+- **Von Hand angelegte Vorgänge behalten**: beim erneuten Erzeugen (unten).
+
+### Der Reiter Ablauf
+
+![Der Reiter Ablauf: die Schritte der Reihe nach](shots/planning-generate-sequence.webp)
+
+Die Schritte der Vorlage der Reihe nach. Jeder lässt sich abschalten, umbenennen und mit seinen Pfeilen nach oben oder unten schieben. Er sagt, ob er **einmal** für das Gebäude oder **je Geschoss** geht und wie er dem vorigen Schritt im selben Geschoss folgt: Ende–Anfang (FS) oder Anfang–Anfang (SS) mit Zeitabstand, für Oberflächen, die hinter dem Rohbau hochsteigen. Der Stift öffnet, was der Schritt baut: die Klassen der Elemente, gewählt aus denen des Modells, und den **Teil** davon (ganz, der Kern oder die Oberflächen).
+
+Die Verknüpfungen ergeben sich aus der Reihenfolge: jeder Vorgang folgt dem vorigen Schritt im selben Geschoss und demselben Schritt im Geschoss darunter. Bei tragendem Mauerwerk und Holzrahmenbau warten die Wände eines Geschosses auch auf die Decke des Geschosses darunter.
+
+Jeder Vorgang bekommt eine **Regel** (seine Klassen, sein Geschoss) und behält so seine Elemente: eine nach dem Erzeugen gezeichnete Wand kommt von selbst in ihren Vorgang.
+
+### Der Reiter Dauern
+
+![Der Reiter Dauern: die Aufwandswerte und je Schritt Aufwandswert, Kolonne und Tage](shots/planning-generate-durations.webp)
+
+Die Dauer eines Vorgangs ergibt sich aus der Menge seiner Elemente (aus der Mengenermittlung: das Volumen des Kerns, die Fläche der Oberflächen, Türen und Fenster nach Stück, Stahl nach Gewicht) und einem **Aufwandswert**:
+
+*Dauer = Menge × Lohnstunden je Einheit ÷ (Kolonne × Stunden am Tag)*, in ganzen Arbeitstagen. Zum Beispiel 4,5 m³ Mauerwerk zu 4 Lohnstunden je Kubikmeter, mit einer Kolonne von 2, die 8 Stunden arbeitet: 18 ÷ 16 = 1,125, also 2 Tage.
+
+Die Aufwandswerte sind deine: Lapin liefert kein Kalkulationswerk. **Aufwandswerte importieren…** liest deine Tabelle aus einer CSV- oder XLSX-Datei: eine Spalte für den Code, eine für den Text, eine für die Einheit (m3, m2, m, Stk, kg, t…), eine für die Lohnstunden je Einheit (oder eine Leistung in Einheiten pro Stunde) und wahlweise eine für die Kolonne. **Vorlage (CSV)** speichert die Spalten mit einigen Zeilen grober Werte von Lapin, jede als *indicative* (Richtwert) markiert. **Lapins Richtwerte verwenden** legt diese Zeilen ins Projekt, um den Generator auszuprobieren; der Dialog warnt dann, dass die Dauern aus Richtwerten kommen.
+
+Darunter wählt jeder Schritt seinen **Aufwandswert**, seine **Kolonne** (0: die des Aufwandswerts) und seine **Tage**, die gelten, wenn kein Aufwandswert sie ergibt. Der Reiter Kalender zeigt den Kalender, in dem die Dauern gezählt werden.
+
+### Erneut erzeugt
+
+Öffne den Generator wieder und klicke **Anwenden**: der Terminplan wird über denselben Vorgängen neu gemacht, ihre Kennungen bleiben. Was du von Hand geändert hast, bleibt:
+
+- ein erzeugter Vorgang, den du bearbeitet hast (Name, Dauer, Termine, Regel, Teil), ist **Wie bearbeitet behalten**, angehakt in seinen Eigenschaften; nimm den Haken weg, damit er aus seinem Schritt neu entsteht;
+- Elemente, die du von Hand hinzugefügt oder herausgenommen hast, bleiben seine Ausnahmen;
+- deine eigenen Vorgänge und Verknüpfungen bleiben; ohne **Von Hand angelegte Vorgänge behalten** bleiben nur die erzeugten.
+
+![Der erzeugte Terminplan: oben das Modell, unten das Gantt](shots/planning-generated.webp)
+
+In den Eigenschaften sagt ein erzeugter Vorgang, woher seine Dauer kommt: Menge, Aufwandswert und Kolonne, oder die Tage des Schritts.
+
+![Ein erzeugter Vorgang in den Eigenschaften](shots/planning-generated-task.webp)
+
+### Schalungen und Gerüste
+
+Eine Schalung oder ein Gerüst aus der **Baustelleneinrichtung** hat keinen eigenen Vorgang: sie leben nach den Vorgängen dessen, dem sie dienen. Die Schalung wird aufgestellt, wenn ihre Decke, ihr Unterzug oder ihre Wand beginnt, und ausgeschalt, wenn die Tage ihres Typs nach deren Ende vergangen sind (**Ausgeschalt nach**, in Arbeitstagen: 21 bei Decken und Unterzügen, 7 bei Wänden, Stützen und Fundamenten, sofern der Typ nichts anderes sagt). Das Gerüst steht vom ersten Vorgang an seinen Wänden bis zum letzten, ihre Oberflächen eingeschlossen. Wähle eines aus, und seine Eigenschaften sagen, wann es **Auf der Baustelle** ist und nach welchen Vorgängen es **Lebt nach**.
 
 ## Das Gantt
 
@@ -123,5 +186,5 @@ Lapins eigene Felder, für die andere Programme keinen Platz haben (die Einschr�
 
 ## Was als Nächstes kommt
 
-Ein aus dem Modell erzeugter Terminplan, die 4D-Simulation des in 3D wachsenden Gebäudes, Fortschritt und Basispläne sowie die Kostenberechnung kommen in den nächsten Stufen.
+Die 4D-Simulation des in 3D wachsenden Gebäudes, Fortschritt und Basispläne sowie die Kostenberechnung kommen in den nächsten Stufen.
 

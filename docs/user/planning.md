@@ -1,13 +1,14 @@
 ---
 title: Planning
 order: 97
-summary: The work schedule in a Gantt chart: tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; to and from MS Project, IFC and Excel.
+summary: The work schedule in a Gantt chart: generated from the model or made by hand, tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; to and from MS Project, IFC and Excel.
 ---
 
 ## The Planning tab
 
 ![The Planning tab](shots/ribbon-planning.webp)
 
+- **Generate schedule…**: a whole schedule made from the model in one step (below).
 - **Gantt**: opens the schedule under the view. The screen splits into two rows, so you see the model above and the schedule below.
 - **Calendar…**: the working days and hours, the holidays and the winter break (below).
 - **Task** and **Milestone**: a new task or milestone before the task selected in the Gantt (or at the end).
@@ -15,7 +16,69 @@ summary: The work schedule in a Gantt chart: tasks in a WBS, milestones, links w
 - **Add to task…** (TA) and **Elements without a task**: the model's elements in the tasks (below).
 - **Import MS Project…**, **Export MS Project…**, **Export XLSX** and **Export IFC…**: the schedule to and from other programs (below).
 
-A project has one schedule. It is made the first time you add a task and starts the next Monday. Change its start in the Gantt's toolbar.
+A project has one schedule. It is made the first time you add a task or generate one, and starts the next Monday. Change its start in the Gantt's toolbar.
+
+## Generating the schedule from the model
+
+![Generate schedule: the templates, the Start tab and the preview](shots/planning-generate.webp)
+
+**Planning → Generate schedule…** (also in the Gantt's toolbar) makes a complete schedule from the model: a task for each step of the works, and for each storey where the step goes storey by storey, every task already holding its elements. On the left are the **templates**: **Concrete frame**, **Load-bearing masonry**, **Steel hall** and **Timber frame**. Lapin marks the one the model asks for as *suggested*: a steel hall when the model has one, a timber frame when its walls are framed, load-bearing masonry when it has no columns, else a concrete frame. Above them are the project's own styles (**Save as style…** keeps the spec you configured, for this project and the next you make from it).
+
+On the right is the **preview**: the tasks the generator would make, as bars, each with the quantity that timed it, and under them the counts:
+
+- **Elements linked**: the elements the tasks take out of all those that need a task. It is the most important number here. When some are left out, **Show the elements without a task** selects them in the view, and **A step for them** adds a step that takes their kinds.
+- **Durations from norms** and **Durations by default (no norm)**: how many tasks a norm timed, and how many took their step's days.
+- **Formwork and scaffolds on their hosts' tasks** (below).
+
+**Apply** writes the schedule in one step to undo. The screen then splits: the model above, the Gantt below.
+
+### The Start tab
+
+- **Start**: the schedule's first day.
+- **Split by storey**: a task a storey for the steps that go storey by storey (the structure, the masonry, the finishes); untick it for a task a step.
+- **Demolition first**: the elements the phases demolish go into a **Demolition** task before all the others (its IFC kind DEMOLITION). Existing elements that stay are no task's.
+- **Formwork** and **Scaffolding**: whether these temporary elements live by their hosts' tasks (below).
+- **Keep the tasks made by hand**: when the schedule is generated again (below).
+
+### The Sequence tab
+
+![The Sequence tab: the steps in order](shots/planning-generate-sequence.webp)
+
+The template's steps in order. Each one can be switched off, renamed and moved up or down with its arrows. It says whether it goes **once** for the building or **per storey**, and how it follows the step before it on the same storey: finish to start (FS), or start to start (SS) with a lag, for finishes that climb behind the structure. The pencil opens what the step builds: the kinds of elements, picked from those the model has, and the **Part** of them (whole, their core, or their finishes, as a task's part).
+
+The links come from the order: each task follows the step before it on the same storey and the same step on the storey below. In load-bearing masonry and timber frames, a storey's walls also wait for the floor of the storey below.
+
+Each task is made with a **rule** (its kinds, its storey), so it keeps its elements: a wall drawn after generating joins its task by itself, with no need to generate again.
+
+### The Durations tab
+
+![The Durations tab: the norms and each step's norm, crew and days](shots/planning-generate-durations.webp)
+
+A task's duration comes from its elements' quantity (from the quantity takeoff: the volume of the core, the area of the finishes, the doors and windows by the piece, the steel by its weight) and a **productivity norm**:
+
+*duration = quantity × man-hours per unit ÷ (crew × hours a day)*, in whole working days. For example 4.5 m³ of masonry at 4 man-hours a cubic metre, with a crew of 2 working 8 hours, is 18 ÷ 16 = 1.125, so 2 days.
+
+The norms are yours. Lapin does not ship any norm book. **Import norms…** reads your table from a CSV or an XLSX file: a column for the code, one for the text, one for the unit (m3, mc, m2, mp, m, ml, buc, pcs, kg, t…), one for the man-hours per unit (or a productivity in units an hour), and optionally one for the crew. The headings may be in English or Romanian. **Template (CSV)** saves the columns with a few rows of rough values written by Lapin, each marked *indicative*. **Use Lapin's indicative values** puts those rows into the project to try the generator; the dialog then warns that the durations come from indicative values, not from a norm.
+
+Under the norms, each step picks its **Norm**, its **Crew** (0: the norm's own) and its **Days**, used when no norm times it. The Calendar tab shows the calendar the durations count in; its hours a day divide the man-hours.
+
+### Generated again
+
+Open the generator again and **Apply**: the schedule is made again over the same tasks, so their ids stay. What you changed by hand stays:
+
+- a generated task you edited (its name, duration, dates, rule, part) is **Kept as edited**, ticked in its Properties; untick it to have it made again from its step;
+- the elements you added to a task or took out of it by hand stay its exceptions;
+- the tasks and the links you made yourself stay; untick **Keep the tasks made by hand** to have only the generated ones.
+
+![A generated task: its duration from the quantity and the norm](shots/planning-generated.webp)
+
+In Properties a generated task says where its duration came from: the quantity, the norm and the crew, or the step's days when no norm timed it.
+
+![A generated task in Properties](shots/planning-generated-task.webp)
+
+### Formwork and scaffolds
+
+A formwork or a scaffold from **Site works** has no task of its own: it lives by the tasks of what it serves. A formwork goes up when its floor, beam or wall starts being built, and is struck when the days set on its type have passed after it is finished (**Struck after**, in working days: 21 for floors and beams, 7 for walls, columns and footings unless the type says otherwise). A scaffold stands from the first task on its walls to the last, their finishes included. Select one and its Properties say when it is **On site** and which tasks it **Lives by**.
 
 ## The Gantt
 
@@ -123,5 +186,5 @@ Lapin's own fields that other programs have no place for (a task's constraint, w
 
 ## What comes next
 
-A schedule generated from the model, the 4D simulation of the building growing in 3D, progress and baselines, and the cost estimate come in the next stages.
+The 4D simulation of the building growing in 3D, progress and baselines, and the cost estimate come in the next stages.
 

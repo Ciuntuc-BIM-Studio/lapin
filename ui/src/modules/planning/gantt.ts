@@ -14,9 +14,13 @@ export interface TaskDto {
   constraint?: 'snet' | 'mso'; constraintDate?: string; wet?: boolean; kind?: string; notes?: string;
   /** Its elements (stage 2): how many, which (a summary's: its tasks' too), the rule they are found by, the part taken, the exceptions. */
   count: number; elements?: string[]; rule?: TaskRule; part?: string; added?: number; removed?: number;
+  /** Made by the generator (stage 3): its step (and storey), edited by hand since (kept as it is), and where its duration came from. */
+  gen?: string; own?: boolean; durationFrom?: 'norm' | 'default'; norm?: string; quantity?: number; unit?: string; crew?: number;
 }
 /** A task's rule: every condition given must hold (ids, classes by their IFC name). */
-export interface TaskRule { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[] }
+export interface TaskRule { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; demolished?: string[] }
+/** A formwork's or a scaffold's time on site, from its hosts' tasks (stage 3). */
+export interface TemporaryDto { id: string; kind: 'formwork' | 'scaffold'; from: string; to: string; tasks: string[] }
 export interface LinkDto { id: string; from: string; to: string; type: LinkType; lag: number; critical: boolean }
 export interface CalendarException { from: string; to: string; working: boolean; name: string }
 export interface CalendarDto {
@@ -28,6 +32,7 @@ export interface ScheduleDto {
   calendar: CalendarDto; nonWorking: { date: string; why: string }[]; tasks: TaskDto[]; links: LinkDto[]; problem: string | null;
   /** The elements that need a task, those no task takes, and those some of whose layers none takes. */
   elements: { total: number; none: number; partial: number };
+  temporaries?: TemporaryDto[];
 }
 
 // ── Dates ────────────────────────────────────────────────────────────────────

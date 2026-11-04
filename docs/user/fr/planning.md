@@ -8,6 +8,7 @@ summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une W
 
 ![L'onglet Planification](shots/ribbon-planning.webp)
 
+- **Générer le planning…** : un planning entier fait à partir du modèle, en une seule étape (ci-dessous).
 - **Gantt** : ouvre le planning sous la vue. L'écran se divise en deux lignes : le modèle en haut, le planning en bas.
 - **Calendrier…** : les jours et heures ouvrés, les jours fériés et la pause hivernale (ci-dessous).
 - **Tâche** et **Jalon** : une nouvelle tâche ou un nouveau jalon avant la tâche sélectionnée dans le Gantt (ou à la fin).
@@ -16,6 +17,68 @@ summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une W
 - **Importer MS Project…**, **Exporter MS Project…**, **Exporter XLSX** et **Exporter IFC…** : le planning vers et depuis d'autres programmes (ci-dessous).
 
 Un projet a un seul planning. Il est créé la première fois que vous ajoutez une tâche et commence le lundi suivant. Changez son début dans la barre du Gantt.
+
+## Générer le planning à partir du modèle
+
+![Générer le planning : les modèles, l'onglet Début et l'aperçu](shots/planning-generate.webp)
+
+**Planification → Générer le planning…** (aussi dans la barre du Gantt) fait un planning complet à partir du modèle : une tâche par étape des travaux et, là où l'étape avance niveau par niveau, une par niveau, chaque tâche ayant déjà ses éléments. À gauche, les **modèles** : **Ossature en béton armé**, **Maçonnerie porteuse**, **Hall en acier** et **Ossature bois**. Lapin marque *suggéré* celui que demande le modèle : le hall en acier s'il en a un, l'ossature bois si ses murs sont à ossature, la maçonnerie porteuse s'il n'a pas de poteaux, sinon l'ossature en béton armé. Au-dessus, les styles du projet (**Enregistrer comme style…** garde ce que vous avez réglé).
+
+À droite, l'**aperçu** : les tâches que ferait le générateur, en barres, chacune avec la quantité qui a donné sa durée, et dessous les comptes :
+
+- **Éléments liés** : les éléments pris par les tâches, sur tous ceux qui ont besoin d'une tâche. C'est le chiffre le plus important. S'il en reste dehors, **Montrer les éléments sans tâche** les sélectionne dans la vue et **Une étape pour eux** ajoute une étape avec leurs classes.
+- **Durées par les cadences** et **Durées par défaut (sans cadence)** : combien de tâches une cadence a minutées, et combien ont pris les jours de leur étape.
+- **Coffrages et échafaudages sur les tâches de leurs supports** (ci-dessous).
+
+**Appliquer** écrit le planning en une seule étape à annuler. L'écran se divise alors : le modèle en haut, le Gantt en bas.
+
+### L'onglet Début
+
+- **Début** : le premier jour du planning.
+- **Découper par niveau** : une tâche par niveau pour les étapes qui avancent niveau par niveau (gros œuvre, maçonnerie, finitions) ; décoché, une tâche par étape.
+- **Démolitions d'abord** : les éléments que les phases démolissent vont dans une tâche **Démolition** avant toutes les autres (type IFC DEMOLITION). Les éléments existants qui restent n'ont pas de tâche.
+- **Coffrage** et **Échafaudage** : si ces éléments provisoires vivent selon les tâches de leurs supports (ci-dessous).
+- **Garder les tâches faites à la main** : quand le planning est généré de nouveau (ci-dessous).
+
+### L'onglet Séquence
+
+![L'onglet Séquence : les étapes dans l'ordre](shots/planning-generate-sequence.webp)
+
+Les étapes du modèle, dans l'ordre. Chacune peut être désactivée, renommée et montée ou descendue avec ses flèches. Elle dit si elle se fait **une fois** pour le bâtiment ou **par niveau**, et comment elle suit l'étape précédente au même niveau : fin à début (FS), ou début à début (SS) avec un décalage, pour les finitions qui montent derrière le gros œuvre. Le crayon ouvre ce que construit l'étape : les classes d'éléments, choisies parmi celles du modèle, et leur **Partie** (entiers, leur âme ou leurs finitions).
+
+Les liens viennent de l'ordre : chaque tâche suit l'étape précédente au même niveau et la même étape au niveau inférieur. En maçonnerie porteuse et en ossature bois, les murs d'un niveau attendent aussi le plancher du niveau inférieur.
+
+Chaque tâche est faite avec une **règle** (ses classes, son niveau) et garde donc ses éléments : un mur dessiné après la génération entre seul dans sa tâche.
+
+### L'onglet Durées
+
+![L'onglet Durées : les cadences et, par étape, cadence, équipe et jours](shots/planning-generate-durations.webp)
+
+La durée d'une tâche vient de la quantité de ses éléments (du métré : le volume de l'âme, la surface des finitions, les portes et fenêtres à la pièce, l'acier au poids) et d'une **cadence de production** :
+
+*durée = quantité × heures de main-d'œuvre par unité ÷ (équipe × heures par jour)*, en jours ouvrés entiers. Par exemple 4,5 m³ de maçonnerie à 4 heures par mètre cube, avec une équipe de 2 qui travaille 8 heures : 18 ÷ 16 = 1,125, donc 2 jours.
+
+Les cadences sont les vôtres : Lapin ne livre aucun recueil. **Importer des cadences…** lit votre tableau d'un fichier CSV ou XLSX : une colonne pour le code, une pour le texte, une pour l'unité (m3, m2, m, u, kg, t…), une pour les heures par unité (ou une productivité en unités par heure) et, si vous voulez, une pour l'équipe. **Modèle (CSV)** enregistre les colonnes avec quelques lignes de valeurs approximatives écrites par Lapin, chacune marquée *indicative*. **Utiliser les valeurs indicatives de Lapin** les met dans le projet pour essayer le générateur ; la fenêtre avertit alors que les durées viennent de valeurs indicatives.
+
+Dessous, chaque étape choisit sa **Cadence**, son **Équipe** (0 : celle de la cadence) et ses **Jours**, pris quand aucune cadence ne donne la durée. L'onglet Calendrier montre le calendrier dans lequel les durées sont comptées.
+
+### Généré de nouveau
+
+Rouvrez le générateur et cliquez sur **Appliquer** : le planning est refait sur les mêmes tâches, qui gardent leurs identifiants. Ce que vous avez changé à la main reste :
+
+- une tâche générée que vous avez modifiée (nom, durée, dates, règle, partie) est **Gardée telle que modifiée**, coché dans ses Propriétés ; décochez pour la refaire depuis son étape ;
+- les éléments ajoutés ou retirés à la main restent ses exceptions ;
+- vos propres tâches et liens restent ; décochez **Garder les tâches faites à la main** pour ne garder que les tâches générées.
+
+![Le planning généré : le modèle en haut, le Gantt en bas](shots/planning-generated.webp)
+
+Dans les Propriétés, une tâche générée dit d'où vient sa durée : la quantité, la cadence et l'équipe, ou les jours de l'étape.
+
+![Une tâche générée dans les Propriétés](shots/planning-generated-task.webp)
+
+### Coffrages et échafaudages
+
+Un coffrage ou un échafaudage des **Installations de chantier** n'a pas de tâche à lui : il vit selon les tâches de ce qu'il sert. Le coffrage est posé quand commence sa dalle, sa poutre ou son mur, et décoffré quand les jours de son type sont passés après leur fin (**Décoffré après**, en jours ouvrés : 21 pour les dalles et poutres, 7 pour les murs, poteaux et semelles, sauf si le type dit autre chose). L'échafaudage reste de la première tâche sur ses murs à la dernière, finitions comprises. Sélectionnez-en un : ses Propriétés disent quand il est **Sur le chantier** et selon quelles tâches il **Vit selon**.
 
 ## Le Gantt
 
@@ -123,5 +186,5 @@ Les champs propres à Lapin pour lesquels les autres programmes n'ont pas de pla
 
 ## La suite
 
-Un planning généré à partir du modèle, la simulation 4D du bâtiment qui grandit en 3D, l'avancement et les plannings de référence, et le devis arrivent dans les prochaines étapes.
+La simulation 4D du bâtiment qui grandit en 3D, l'avancement et les plannings de référence, et le devis arrivent dans les prochaines étapes.
 

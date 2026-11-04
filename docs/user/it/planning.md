@@ -8,6 +8,7 @@ summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS,
 
 ![La scheda Pianificazione](shots/ribbon-planning.webp)
 
+- **Genera cronoprogramma…**: un cronoprogramma intero fatto dal modello in un solo passo (più sotto).
 - **Gantt**: apre il programma sotto la vista. Lo schermo si divide in due righe: il modello sopra, il programma sotto.
 - **Calendario…**: i giorni e le ore lavorative, le festività e la pausa invernale (più sotto).
 - **Attività** e **Milestone**: una nuova attività o milestone prima dell'attività selezionata nel Gantt (o in fondo).
@@ -16,6 +17,68 @@ summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS,
 - **Importa MS Project…**, **Esporta MS Project…**, **Esporta XLSX** e **Esporta IFC…**: il programma da e verso altri programmi (più sotto).
 
 Un progetto ha un solo programma. Si crea la prima volta che aggiungi un'attività e inizia il lunedì successivo. Cambia il suo inizio nella barra del Gantt.
+
+## Generare il cronoprogramma dal modello
+
+![Genera cronoprogramma: i modelli, la scheda Inizio e l'anteprima](shots/planning-generate.webp)
+
+**Pianificazione → Genera cronoprogramma…** (anche nella barra del Gantt) fa un cronoprogramma completo dal modello: un'attività per ogni passo dei lavori e, dove il passo va piano per piano, una per piano, ogni attività già con i suoi elementi. A sinistra ci sono i **modelli**: **Telaio in cemento armato**, **Muratura portante**, **Capannone in acciaio** e **Telaio in legno**. Lapin segna come *suggerito* quello che chiede il modello: il capannone se il modello ne ha uno, il telaio in legno se le pareti sono a telaio, la muratura portante se non ha pilastri, altrimenti il telaio in cemento armato. Sopra ci sono gli stili del progetto (**Salva come stile…** conserva ciò che hai impostato).
+
+A destra c'è l'**anteprima**: le attività che farebbe il generatore, come barre, ognuna con la quantità che ne ha dato la durata, e sotto i conteggi:
+
+- **Elementi collegati**: gli elementi presi dalle attività, su tutti quelli che hanno bisogno di un'attività. È il numero più importante. Se ne restano fuori, **Mostra gli elementi senza attività** li seleziona nella vista e **Un passo per loro** aggiunge un passo con le loro classi.
+- **Durate dalle rese** e **Durate predefinite (senza resa)**: quante attività ha cronometrato una resa e quante hanno preso i giorni del loro passo.
+- **Casseforme e ponteggi sulle attività dei loro supporti** (più sotto).
+
+**Applica** scrive il cronoprogramma come un solo passo da annullare. Lo schermo si divide: il modello sopra, il Gantt sotto.
+
+### La scheda Inizio
+
+- **Inizio**: il primo giorno del cronoprogramma.
+- **Dividi per piano**: un'attività per piano per i passi che vanno piano per piano (struttura, murature, finiture); senza spunta, un'attività per passo.
+- **Prima le demolizioni**: gli elementi che le fasi demoliscono vanno in un'attività **Demolizione** prima di tutte (tipo IFC DEMOLITION). Gli elementi esistenti che restano non sono di nessuna attività.
+- **Casseforme** e **Ponteggi**: se questi elementi provvisori vivono secondo le attività dei loro supporti (più sotto).
+- **Mantieni le attività fatte a mano**: quando il cronoprogramma viene generato di nuovo (più sotto).
+
+### La scheda Sequenza
+
+![La scheda Sequenza: i passi in ordine](shots/planning-generate-sequence.webp)
+
+I passi del modello, in ordine. Ognuno si può spegnere, rinominare e spostare su o giù con le frecce. Dice se va **una volta** per l'edificio o **per piano**, e come segue il passo precedente sullo stesso piano: fine-inizio (FS) o inizio-inizio (SS) con un ritardo, per le finiture che salgono dietro la struttura. La matita apre ciò che costruisce il passo: le classi di elementi, scelte fra quelle del modello, e la loro **Parte** (interi, il nucleo o le finiture).
+
+I collegamenti vengono dall'ordine: ogni attività segue il passo precedente sullo stesso piano e lo stesso passo sul piano sottostante. Nella muratura portante e nel telaio in legno, i muri di un piano aspettano anche il solaio del piano sottostante.
+
+Ogni attività è fatta con una **regola** (le sue classi, il suo piano), quindi tiene i suoi elementi: un muro disegnato dopo la generazione entra da solo nella sua attività.
+
+### La scheda Durate
+
+![La scheda Durate: le rese e, per passo, resa, squadra e giorni](shots/planning-generate-durations.webp)
+
+La durata di un'attività viene dalla quantità dei suoi elementi (dal computo: il volume del nucleo, la superficie delle finiture, porte e finestre a pezzo, l'acciaio a peso) e da una **resa di produttività**:
+
+*durata = quantità × ore-uomo per unità ÷ (squadra × ore al giorno)*, in giorni lavorativi interi. Per esempio 4,5 m³ di muratura a 4 ore-uomo al metro cubo, con una squadra di 2 che lavora 8 ore: 18 ÷ 16 = 1,125, cioè 2 giorni.
+
+Le rese sono tue: Lapin non fornisce alcun prezzario. **Importa rese…** legge la tua tabella da un file CSV o XLSX: una colonna per il codice, una per il testo, una per l'unità (m3, m2, m, cad, kg, t…), una per le ore-uomo per unità (o una produttività in unità all'ora) e, se vuoi, una per la squadra. **Modello (CSV)** salva le colonne con alcune righe di valori approssimativi scritti da Lapin, ognuna segnata *indicative* (indicativa). **Usa i valori indicativi di Lapin** le mette nel progetto per provare il generatore; la finestra avverte allora che le durate vengono da valori indicativi.
+
+Sotto, ogni passo sceglie la sua **Resa**, la sua **Squadra** (0: quella della resa) e i suoi **Giorni**, usati quando nessuna resa dà la durata. La scheda Calendario mostra il calendario in cui si contano le durate.
+
+### Generato di nuovo
+
+Riapri il generatore e premi **Applica**: il cronoprogramma viene rifatto sulle stesse attività, che conservano i loro identificativi. Ciò che hai cambiato a mano resta:
+
+- un'attività generata che hai modificato (nome, durata, date, regola, parte) è **Mantenuta come modificata**, spuntato nelle sue Proprietà; togli la spunta per rifarla dal suo passo;
+- gli elementi aggiunti o tolti a mano restano le sue eccezioni;
+- le attività e i collegamenti fatti da te restano; senza **Mantieni le attività fatte a mano** restano solo quelle generate.
+
+![Il cronoprogramma generato: il modello sopra, il Gantt sotto](shots/planning-generated.webp)
+
+Nelle Proprietà, un'attività generata dice da dove viene la sua durata: la quantità, la resa e la squadra, o i giorni del passo.
+
+![Un'attività generata nelle Proprietà](shots/planning-generated-task.webp)
+
+### Casseforme e ponteggi
+
+Una cassaforma o un ponteggio delle **Opere provvisionali** non ha un'attività sua: vive secondo le attività di ciò che serve. La cassaforma si monta quando inizia il suo solaio, la sua trave o il suo muro, e si disarma passati i giorni del suo tipo dopo la loro fine (**Disarmato dopo**, in giorni lavorativi: 21 per solai e travi, 7 per muri, pilastri e fondazioni, se il tipo non dice altro). Il ponteggio resta dalla prima attività sui suoi muri all'ultima, finiture comprese. Selezionane uno: le sue Proprietà dicono quando è **In cantiere** e secondo quali attività **Vive secondo**.
 
 ## Il Gantt
 
@@ -123,5 +186,5 @@ I campi propri di Lapin per cui gli altri programmi non hanno posto (il vincolo 
 
 ## Cosa viene dopo
 
-Un cronoprogramma generato dal modello, la simulazione 4D dell'edificio che cresce in 3D, l'avanzamento e le linee di base, e il computo metrico estimativo arrivano nelle prossime fasi.
+La simulazione 4D dell'edificio che cresce in 3D, l'avanzamento e le linee di base, e il computo metrico estimativo arrivano nelle prossime fasi.
 

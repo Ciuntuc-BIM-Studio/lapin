@@ -8,6 +8,7 @@ summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, ja
 
 ![Tabul Planificare](shots/ribbon-planning.webp)
 
+- **Generează programul…**: un program întreg făcut din model, dintr-un singur pas (mai jos).
 - **Gantt**: deschide programul sub vedere. Ecranul se împarte în două rânduri: modelul sus, programul jos.
 - **Calendar…**: zilele și orele lucrătoare, sărbătorile și pauza de iarnă (mai jos).
 - **Sarcină** și **Jalon**: o sarcină sau un jalon nou înaintea sarcinii selectate în Gantt (sau la sfârșit).
@@ -16,6 +17,68 @@ summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, ja
 - **Importă MS Project…**, **Exportă MS Project…**, **Export XLSX** și **Exportă IFC…**: programul spre și dinspre alte programe (mai jos).
 
 Un proiect are un singur program. Se face prima oară când adaugi o sarcină și începe lunea următoare. Data de start se schimbă din bara Gantt-ului.
+
+## Programul generat din model
+
+![Generează programul: șabloanele, fila Început și previzualizarea](shots/planning-generate.webp)
+
+**Planificare → Generează programul…** (și din bara Gantt-ului) face un program complet din model: o sarcină pentru fiecare pas al lucrărilor și, unde pasul merge etaj cu etaj, câte una pe etaj, fiecare sarcină având deja elementele ei. În stânga sunt **șabloanele**: **Cadre din beton armat**, **Zidărie portantă**, **Hală metalică** și **Structură pe cadre din lemn**. Lapin îl marchează *sugerat* pe cel cerut de model: hala metalică dacă modelul are una, cadrele din lemn dacă pereții sunt pe cadre, zidăria portantă dacă nu are stâlpi, altfel cadrele din beton armat. Deasupra lor sunt stilurile proiectului (**Salvează ca stil…** păstrează ce ai configurat, pentru proiectul acesta și pentru cele făcute din el).
+
+În dreapta e **previzualizarea**: sarcinile pe care le-ar face generatorul, ca bare, fiecare cu cantitatea care i-a dat durata, iar sub ele numărătorile:
+
+- **Elemente legate**: elementele luate de sarcini din toate cele care au nevoie de o sarcină. E cel mai important număr de aici. Când rămân elemente pe dinafară, **Arată elementele fără sarcină** le selectează în vedere, iar **Un pas pentru ele** adaugă un pas care le ia felurile.
+- **Durate din norme** și **Durate implicite (fără normă)**: câte sarcini au primit durata dintr-o normă și câte au luat zilele pasului.
+- **Cofraje și schele pe sarcinile gazdelor** (mai jos).
+
+**Aplică** scrie programul ca un singur pas de anulat. Ecranul se împarte apoi: modelul sus, Gantt-ul jos.
+
+### Fila Început
+
+- **Început**: prima zi a programului.
+- **Împarte pe etaje**: o sarcină pe etaj pentru pașii care merg etaj cu etaj (structura, zidăria, finisajele); debifat, o sarcină pe pas.
+- **Întâi demolările**: elementele pe care fazele le demolează intră într-o sarcină **Demolare**, înaintea tuturor (felul ei în IFC: DEMOLITION). Elementele existente care rămân nu sunt ale niciunei sarcini.
+- **Cofraje** și **Schele**: dacă aceste elemente temporare trăiesc după sarcinile gazdelor lor (mai jos).
+- **Păstrează sarcinile făcute de mână**: când programul e generat din nou (mai jos).
+
+### Fila Secvență
+
+![Fila Secvență: pașii în ordine](shots/planning-generate-sequence.webp)
+
+Pașii șablonului, în ordine. Fiecare poate fi oprit, redenumit și mutat mai sus sau mai jos cu săgețile. Spune dacă se face **o dată** pentru clădire sau **pe etaj**, și cum urmează pasul dinaintea lui pe același etaj: sfârșit–început (FS) sau început–început (SS) cu decalaj, pentru finisajele care urcă după structură. Creionul deschide ce construiește pasul: felurile de elemente, alese dintre cele din model, și **Partea** din ele (întregi, miezul sau finisajele, ca partea unei sarcini).
+
+Legăturile vin din ordine: fiecare sarcină urmează pasul dinainte pe același etaj și același pas pe etajul de dedesubt. La zidăria portantă și la cadrele din lemn, pereții unui etaj așteaptă și placa etajului de dedesubt.
+
+Fiecare sarcină e făcută cu o **regulă** (felurile, etajul), deci își păstrează elementele: un perete desenat după generare intră singur în sarcina lui, fără să mai generezi o dată.
+
+### Fila Durate
+
+![Fila Durate: normele și, pe fiecare pas, norma, echipa și zilele](shots/planning-generate-durations.webp)
+
+Durata unei sarcini vine din cantitatea elementelor ei (din antemăsurătoare: volumul miezului, aria finisajelor, ușile și ferestrele la bucată, oțelul după greutate) și dintr-o **normă de productivitate**:
+
+*durata = cantitatea × orele-om pe unitate ÷ (echipa × orele pe zi)*, în zile lucrătoare întregi. De exemplu 4,5 m³ de zidărie la 4 ore-om pe metru cub, cu o echipă de 2 care lucrează 8 ore, înseamnă 18 ÷ 16 = 1,125, deci 2 zile.
+
+Normele sunt ale tale. Lapin nu livrează niciun indicator de norme. **Importă norme…** citește tabelul tău dintr-un fișier CSV sau XLSX: o coloană pentru cod, una pentru denumire, una pentru unitate (m3, mc, m2, mp, m, ml, buc, kg, t…), una pentru orele-om pe unitate (sau o productivitate, în unități pe oră) și, opțional, una pentru echipă. Antetele pot fi în română sau în engleză. **Șablon (CSV)** salvează coloanele cu câteva rânduri de valori aproximative scrise de Lapin, fiecare marcat *orientativ*. **Folosește valorile orientative ale lui Lapin** pune rândurile acestea în proiect, ca să încerci generatorul; fereastra avertizează atunci că duratele vin din valori orientative, nu dintr-o normă.
+
+Sub norme, fiecare pas își alege **Norma**, **Echipa** (0: a normei) și **Zilele**, folosite când nicio normă nu-i dă durata. Fila Calendar arată calendarul în care se numără duratele; orele lui pe zi împart orele-om.
+
+### Generat din nou
+
+Deschide din nou generatorul și apasă **Aplică**: programul e refăcut peste aceleași sarcini, deci id-urile lor rămân. Ce ai schimbat de mână rămâne:
+
+- o sarcină generată pe care ai editat-o (numele, durata, datele, regula, partea) e **Păstrată cum a fost editată**, bifat în Proprietățile ei; debifează ca s-o refacă din pasul ei;
+- elementele adăugate sau scoase de mână dintr-o sarcină rămân excepțiile ei;
+- sarcinile și legăturile făcute de tine rămân; debifează **Păstrează sarcinile făcute de mână** ca să rămână doar cele generate.
+
+![Programul generat: modelul sus, Gantt-ul jos](shots/planning-generated.webp)
+
+În Proprietăți, o sarcină generată spune de unde i-a venit durata: cantitatea, norma și echipa, sau zilele pasului când nicio normă nu i-a dat-o.
+
+![O sarcină generată în Proprietăți](shots/planning-generated-task.webp)
+
+### Cofraje și schele
+
+Un cofraj sau o schelă din **Organizare de șantier** nu are sarcina lui: trăiește după sarcinile a ceea ce servește. Cofrajul se montează când începe placa, grinda sau peretele lui și se scoate după ce au trecut zilele spuse de tipul lui de la terminarea lor (**Decofrat după**, în zile lucrătoare: 21 la plăci și grinzi, 7 la pereți, stâlpi și fundații, dacă tipul nu spune altfel). Schela stă de la prima sarcină pe pereții ei până la ultima, cu finisajele lor. Selectează unul și Proprietățile lui spun când e **Pe șantier** și după ce sarcini **Trăiește după**.
 
 ## Gantt-ul
 
@@ -123,5 +186,5 @@ Câmpurile proprii ale lui Lapin pentru care alte programe n-au loc (constrânge
 
 ## Ce urmează
 
-Un program generat din model, simularea 4D a clădirii care crește în 3D, progresul și liniile de bază, și devizul vin în etapele următoare.
+Simularea 4D a clădirii care crește în 3D, progresul și liniile de bază, și devizul vin în etapele următoare.
 

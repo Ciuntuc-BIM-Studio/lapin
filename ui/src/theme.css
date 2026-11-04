@@ -1350,3 +1350,44 @@ button.mode-chip:hover { color: var(--accent); }
 .assign-row { display: grid; grid-template-columns: 3em 1fr auto; gap: 6px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--rule); background: none; padding: 4px 6px; font: inherit; font-size: 12px; cursor: pointer; }
 .assign-row:hover { background: var(--accent-wash); }
 .assign-row.holds { box-shadow: inset 3px 0 0 var(--accent); }
+/* Planning, stage 3: the schedule generator (its steps, durations, the preview's bars). */
+.gen-dialog .joinery-edit { grid-template-columns: minmax(380px, 460px) minmax(320px, 1fr); }
+.gen-form { max-height: 62vh; overflow: auto; padding-right: 6px; }
+.gen-form > .eyebrow { margin: 10px 0 2px; }
+.gen-steps { display: grid; gap: 4px; }
+.gen-step { border: 1px solid var(--rule); padding: 4px 6px; display: grid; gap: 2px; }
+.gen-step.off { opacity: 0.55; }
+.gen-step .row { gap: 4px; flex-wrap: nowrap; align-items: center; }
+.gen-step .row input:not([type=checkbox]) { min-width: 0; }
+.gen-step .row select { width: auto; }
+.gen-step input.gen-lag { width: 44px; text-align: right; }
+.gen-order { display: inline-flex; flex-direction: column; }
+.gen-order .icon.mini { height: 12px; }
+.gen-what { padding-left: 34px; }
+.gen-classes { display: grid; gap: 4px; padding: 4px 0 2px 34px; }
+.gen-classes .chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.gen-classes .chip { white-space: nowrap; margin: 0; cursor: pointer; background: none; color: var(--ink-muted); border-color: var(--rule-strong); text-transform: none; letter-spacing: 0; font-size: 11px; padding: 1px 7px; }
+.gen-classes .chip.on { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
+.gen-norms { display: grid; gap: 4px; border: 1px solid var(--rule); padding: 6px 8px; }
+.gen-norms .row { gap: 8px; flex-wrap: wrap; }
+.gen-durations { border-collapse: collapse; width: 100%; font-size: 12px; }
+.gen-durations th { text-align: left; font-weight: 500; color: var(--ink-muted); }
+.gen-durations td, .gen-durations th { padding: 2px 4px; border-bottom: 1px solid var(--rule); }
+.gen-durations select { max-width: 220px; }
+.gen-durations input.num { width: 52px; text-align: right; }
+.warn-text { color: #c2410c; }
+.warn-text svg { vertical-align: -2px; }
+.gen-bars { display: grid; gap: 1px; max-height: 44vh; overflow: auto; border: 1px solid var(--rule); background: var(--raised); padding: 4px; font-size: 11px; }
+.gen-bar-row { display: grid; grid-template-columns: minmax(120px, 38%) 1fr 64px; gap: 6px; align-items: center; min-height: 15px; }
+.gen-bar-row.summary { font-weight: 600; }
+.gen-bar-row.kept .gen-bar-name { font-style: italic; }
+.gen-bar-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gen-bar-track { position: relative; height: 9px; }
+.gen-bar { position: absolute; top: 0; bottom: 0; background: #5b7a99; border-radius: 1px; }
+.gen-bar-row.summary .gen-bar { background: var(--ink); height: 4px; top: 2px; }
+.gen-bar.critical { background: #c0392b; }
+.gen-bar.default { background-image: repeating-linear-gradient(135deg, transparent 0 3px, rgba(255, 255, 255, 0.45) 3px 5px); }
+.gen-bar-q { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) { .gen-dialog .joinery-edit { grid-template-columns: 1fr; } }
+dl.fields label.check { display: flex; align-items: center; gap: 6px; }
+dl.fields label.check input { width: auto; margin: 0; }

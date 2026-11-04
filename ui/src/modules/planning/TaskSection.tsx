@@ -11,6 +11,7 @@ import { execute } from '../../engine/session';
 import { select } from '../../app/store';
 import { linkLabel, showDate, type LinkType } from './gantt';
 import { openGantt, taskOf, useSchedule } from './schedule';
+import { quantityText } from './generator';
 
 /** IFC's kinds of task (IfcTaskTypeEnum) and how the interface names them. */
 const KINDS: [string, string][] = [['', '(not set)'], ['CONSTRUCTION', 'Construction'], ['DEMOLITION', 'Demolition'], ['INSTALLATION', 'Installation'], ['RENOVATION', 'Renovation'],
@@ -41,6 +42,14 @@ export function TaskSection({ node }: { node: NodeDto }) {
         <dd><input key={`${t.id}:${t.duration}`} type="number" min={0} step={1} defaultValue={t.duration} data-testid="task-duration"
           onBlur={(e) => { const n = Math.round(Number(e.target.value)); if (Number.isFinite(n) && n >= 0 && n !== t.duration) update(t.id, { duration: n }); }}
           onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} /> d</dd>
+        {t.durationFrom === 'norm' && t.quantity != null && <>
+          <dt title="The elements' quantity × the norm's man-hours per unit ÷ (crew × hours a day)">Duration from</dt>
+          <dd data-testid="task-duration-from"><span data-no-i18n>{`${quantityText(t.quantity, t.unit)} × ${t.norm ?? ''} ·`}</span> <span className="muted small">crew</span> <span data-no-i18n>{t.crew ?? 1}</span></dd>
+        </>}
+        {t.durationFrom === 'default' && t.gen && <>
+          <dt title="The elements' quantity × the norm's man-hours per unit ÷ (crew × hours a day)">Duration from</dt>
+          <dd className="muted small">the step's days (no norm)</dd>
+        </>}
         <dt>Milestone</dt>
         <dd><input type="checkbox" checked={t.milestone} onChange={(e) => update(t.id, { milestone: e.target.checked })} /></dd>
       </>}
@@ -83,6 +92,11 @@ export function TaskSection({ node }: { node: NodeDto }) {
       {succs.length > 0 && <>
         <dt>Successors</dt>
         <dd>{succs.map((l) => <div key={l.id}><button type="button" className="link" onClick={() => select(l.to)} data-no-i18n>{nameOf(l.to)?.row}. {nameOf(l.to)?.name}</button> <span className="muted small" data-no-i18n>{linkLabel(l)}</span></div>)}</dd>
+      </>}
+      {t.gen && <>
+        <dt title="Made by Planning → Generate schedule…">Generated</dt>
+        <dd><label className="check" title="Edited by hand: generated again, it is left as it is; untick to have it made again from its step">
+          <input type="checkbox" checked={!!t.own} onChange={(e) => update(t.id, { own: e.target.checked })} data-testid="task-own" />Kept as edited</label></dd>
       </>}
       <dt>Notes</dt>
       <dd><textarea key={t.notes ?? ''} defaultValue={t.notes ?? ''} rows={2} data-no-i18n onBlur={(e) => e.target.value !== (t.notes ?? '') && update(t.id, { notes: e.target.value })} /></dd>

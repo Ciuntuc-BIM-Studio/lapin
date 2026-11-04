@@ -115,6 +115,16 @@ public static class Formwork
 
     public static Entity? TypeOf(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
 
+    /// <summary>
+    /// The working days a formwork stays after its host is cast (docs/plan-4d5d.md, stage 3): its type's <c>stripAfter</c>,
+    /// else by what it forms: 7 for walls, columns and footings, 21 for floors and beams.
+    /// </summary>
+    public static int StripAfter(IModelView m, Entity e) =>
+        TypeOf(m, e)?.Attrs["spec"] is JsonObject spec && Json.Number(spec["stripAfter"]) is { } d && d >= 0 && double.IsFinite(d) ? (int)Math.Round(d)
+        : DefaultStripAfter(KindOf(e));
+
+    public static int DefaultStripAfter(string kind) => kind == "upright" ? 7 : 21;
+
     public static string KindOf(Entity e) => e.Str("kind") is "beam" or "upright" ? e.Str("kind")! : "slab";
 
     /// <summary>The kind of formwork a host takes: a floor's, a beam's, or the upright faces' of a wall, a column or a footing.</summary>

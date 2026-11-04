@@ -14,11 +14,13 @@ import { useUi } from '../../app/store';
 import { MmList } from './fields';
 import { setSiteWorks, type FormworkKind } from './prefs';
 
-interface Field { key: string; label: string; kind: 'length' | 'lengths' | 'bool' | 'text' | 'number' | 'choice'; int?: boolean; suffix?: string; options?: [string, string][] }
+interface Field { key: string; label: string; kind: 'length' | 'lengths' | 'bool' | 'text' | 'number' | 'choice'; int?: boolean; zero?: boolean; suffix?: string; options?: [string, string][] }
 type Spec = Record<string, unknown>;
 
 const ARTICLE: Field[] = [
   { key: 'reuses', label: 'Reuses', kind: 'number', int: true },
+  // The work schedule's (decision 303): how long a formwork stays once its host is cast.
+  { key: 'stripAfter', label: 'Struck after (working days)', kind: 'number', int: true, zero: true },
   { key: 'article', label: 'Article code', kind: 'text' },
   { key: 'articleText', label: 'Article text', kind: 'text' },
 ];
@@ -98,7 +100,7 @@ function SpecFields({ type, fields, spec, command, configure }: { type: NodeDto;
               : f.kind === 'choice' ? <select className="cell" value={String(spec[f.key] ?? '')} onChange={(e) => set(f.key, e.target.value)}>{(f.options ?? []).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
               : f.kind === 'text' ? <Cell value={String(spec[f.key] ?? '')} onCommit={(t) => set(f.key, t.trim())} />
               : <Cell className="num" value={spec[f.key] == null ? '' : String(spec[f.key])} suffix={f.suffix}
-                  onCommit={(t) => { const n = parseNumber(t); if (n != null && n >= 0) set(f.key, f.int ? Math.max(1, Math.round(n)) : n); }} />}
+                  onCommit={(t) => { const n = parseNumber(t); if (n != null && n >= 0) set(f.key, f.int ? Math.max(f.zero ? 0 : 1, Math.round(n)) : n); }} />}
           </dd>
         </span>
       ))}
@@ -117,7 +119,7 @@ export function ScaffoldTypeFields({ type }: { type: NodeDto }) {
 export function FormworkTypeFields({ type }: { type: NodeDto }) {
   const kind = ((type.props.kind as string | undefined) ?? 'slab') as FormworkKind;
   const fallback = useSession((s) => s.info?.catalogs[CATALOG[kind]]) as Spec | undefined;
-  const spec = { ...(fallback ?? {}), ...((type.props.spec as Spec | undefined) ?? {}) };
+  const spec = { ...(fallback ?? {}), stripAfter: kind === 'upright' ? 7 : 21, ...((type.props.spec as Spec | undefined) ?? {}) };
   const fields = kind === 'beam' ? BEAM : kind === 'upright' ? UPRIGHT : slab(spec);
   const configure = () => { setSiteWorks({ formworkTypeId: type.id, formworkKind: kind }); useUi.setState({ dialog: 'formworkTypes' }); };
   return <SpecFields type={type} fields={fields} spec={spec} command="sitework.updateFormworkType" configure={configure} />;

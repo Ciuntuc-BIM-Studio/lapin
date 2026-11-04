@@ -12,19 +12,22 @@ namespace Lapin.Planning;
 /// out from the model on every ask, so a wall drawn today joins the task "Masonry first floor" by itself.
 /// </summary>
 public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<string> Types, IReadOnlyList<string> Storeys,
-    IReadOnlyList<string> Materials, IReadOnlyList<string> Groups, IReadOnlyList<string> Phases)
+    IReadOnlyList<string> Materials, IReadOnlyList<string> Groups, IReadOnlyList<string> Phases, IReadOnlyList<string>? DemolishedIn = null)
 {
-    public static readonly string[] Keys = ["classes", "types", "storeys", "materials", "groups", "phases"];
+    public static readonly string[] Keys = ["classes", "types", "storeys", "materials", "groups", "phases", "demolished"];
+
+    /// <summary>The phases its elements are demolished in (stage 3: a demolition task's rule); empty: demolished or not.</summary>
+    public IReadOnlyList<string> Demolished => DemolishedIn ?? [];
 
     static List<string> Strings(JsonNode? n) => n is JsonArray a ? a.Select(x => (string?)x).OfType<string>().Where(s => s.Length > 0).Distinct().ToList() : [];
 
     /// <summary>A rule as stored (or as a command gives it); null when there is none.</summary>
     public static TaskRule? Read(JsonNode? n) => n is JsonObject o
-        ? new(Strings(o["classes"]), Strings(o["types"]), Strings(o["storeys"]), Strings(o["materials"]), Strings(o["groups"]), Strings(o["phases"]))
+        ? new(Strings(o["classes"]), Strings(o["types"]), Strings(o["storeys"]), Strings(o["materials"]), Strings(o["groups"]), Strings(o["phases"]), Strings(o["demolished"]))
         : null;
 
     IEnumerable<(string Key, IReadOnlyList<string> Values)> Lists() =>
-        [("classes", Classes), ("types", Types), ("storeys", Storeys), ("materials", Materials), ("groups", Groups), ("phases", Phases)];
+        [("classes", Classes), ("types", Types), ("storeys", Storeys), ("materials", Materials), ("groups", Groups), ("phases", Phases), ("demolished", Demolished)];
 
     /// <summary>The rule as stored: only the conditions it has.</summary>
     public JsonObject ToJson()
@@ -40,7 +43,8 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
         && (Storeys.Count == 0 || f.Storey != null && Storeys.Contains(f.Storey))
         && (Materials.Count == 0 || Materials.Any(f.Materials.Contains))
         && (Groups.Count == 0 || f.Group != null && Groups.Contains(f.Group))
-        && (Phases.Count == 0 || Phases.Contains(f.Phase ?? defaultPhase));
+        && (Phases.Count == 0 || Phases.Contains(f.Phase ?? defaultPhase))
+        && (Demolished.Count == 0 || f.Demolished != null && Demolished.Contains(f.Demolished));
 }
 
 /// <summary>One layer of an element as a task may take it: its place, whether it is the core, its name and its materials (its own and those of its pieces up its height).</summary>
@@ -289,6 +293,11 @@ public sealed class TaskElements
             {
                 var ph = PhasesModule.Settings(m);
                 bits.Add(string.Join(", ", rule.Phases.Select(p => ph.Phases.FirstOrDefault(x => x.Id == p)?.Name ?? p)));
+            }
+            if (rule.Demolished.Count > 0)
+            {
+                var ph = PhasesModule.Settings(m);
+                bits.Add("demolished in " + string.Join(", ", rule.Demolished.Select(p => ph.Phases.FirstOrDefault(x => x.Id == p)?.Name ?? p)));
             }
             if (bits.Count == 0) bits.Add("every element");
         }

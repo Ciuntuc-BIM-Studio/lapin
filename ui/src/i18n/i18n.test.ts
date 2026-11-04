@@ -214,6 +214,8 @@ describe('labels the guide found in English', () => {
     'Width: how wide one copy of the picture lies on the model', 'Height: how high one copy of the picture lies on the model',
     'Gantt', 'Critical path', 'Work calendar', 'Import MS Project…',
     'Add to task…', 'Elements without a task', 'Rule', 'Whole elements', 'Core (structure)', 'Finishes (layers but the core)', 'Add the selection', 'Rule from the selection',
+    'Generate schedule…', 'Sequence', 'Durations', 'Productivity norms', 'Import norms…', "Use Lapin's indicative values", 'Elements linked', 'Durations from norms',
+    'Kept as edited', 'Concrete frame', 'Load-bearing masonry', 'Steel hall', 'Site set-up', 'Struck after (working days)',
   ];
   for (const lang of langs) {
     it(`are translated into ${lang}`, () => {

@@ -8,13 +8,13 @@ using Lapin.Platform;
 namespace Lapin.Planning;
 
 /// <summary>
-/// Planning (4D, docs/plan-4d5d.md, stages 1–2): the project's work schedule — tasks in a WBS, milestones, links FS / SS /
+/// Planning (4D, docs/plan-4d5d.md, stages 1–3): the project's work schedule — tasks in a WBS, milestones, links FS / SS /
 /// FF / SF with lags, the work calendar with Romania's legal holidays — the critical path worked out on every change, the
 /// model's elements in the tasks (each task's rule, part and exceptions, <see cref="TaskElements"/>), and the schedule in
-/// and out as IFC processes, MS Project XML and a workbook. Every command is one undo step; the dates,
+/// and out as IFC processes, MS Project XML and a workbook; the generator (<see cref="Generator"/>, stage 3). Every command is one undo step; the dates,
 /// floats and critical flags are derived (<see cref="Cpm"/>), never stored.
 /// </summary>
-public sealed class PlanningModule : ILapinModule, IDeletion
+public sealed partial class PlanningModule : ILapinModule, IDeletion
 {
     public string Id => "planning";
     public string Name => "Planning";
@@ -49,6 +49,9 @@ public sealed class PlanningModule : ILapinModule, IDeletion
         }
         return (schedule, calendar);
     }
+
+    /// <summary>What makes a generated task the user's when changed by hand.</summary>
+    static readonly string[] OwnKeys = ["name", "duration", "finish", "start", "constraint", "constraintDate", "milestone", "kind", "wet", "rule", "part"];
 
     static Entity RequireTask(IModelView m, string? id) =>
         m.Get(id ?? "") is { Class: Plan.TaskClass } e ? e : throw new CommandException("There is no such task.");
@@ -145,6 +148,8 @@ public sealed class PlanningModule : ILapinModule, IDeletion
         r.Class(new(Plan.ScheduleClass, "Work schedule", [], "#5b7a99", Kind: "resource"));
         r.Class(new(WorkCalendar.Class, "Work calendar", [], "#5b7a99", Kind: "resource"));
         r.Class(new(Plan.TaskClass, "Task", [], "#5b7a99", Kind: "resource"));
+        r.Class(new(Norms.Class, "Productivity norms", [], "#5b7a99", Kind: "resource"));
+        r.Catalog("scheduleTemplates", new JsonArray(Generator.Templates.Select(t => (JsonNode)t.ToJson()).ToArray()));
         r.Service<IDeletion>(this);
         r.Service<IIfcProcesses>(new ScheduleIfc());
         r.Service<Lapin.Platform.Cde.ICdeRule>(new TaskCheck());
@@ -257,6 +262,9 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             if (a.ContainsKey("wet")) { if (a["wet"] is JsonValue wv && wv.TryGetValue<bool>(out var w) && w) attrs["wet"] = true; else attrs.Remove("wet"); }
             if (a.ContainsKey("notes")) { if (((string?)a["notes"])?.Trim() is { Length: > 0 } notes) attrs["notes"] = notes; else attrs.Remove("notes"); }
             SetLinks(attrs, a);
+            // A generated task changed by hand is the user's now: the generator leaves it as it is (its exceptions are not such a change).
+            if (a.ContainsKey("own")) { if (a["own"] is JsonValue ov && ov.TryGetValue<bool>(out var ob) && ob) attrs["own"] = true; else attrs.Remove("own"); }
+            else if (e.Str("gen") != null && OwnKeys.Any(a.ContainsKey)) attrs["own"] = true;
             ctx.Replace(new Entity(e.Id, e.Class, name ?? e.Name, attrs, kind == null ? e.PredefinedType : kind.Length == 0 ? null : kind));
             return null;
         });
@@ -501,9 +509,12 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             attrs["rule"] = rule.ToJson();
             var task = Plan.ReadTask(e);
             WriteIds(attrs, "add", task.Add.Where(id => links.Facts(id) is not { } f || !rule.Matches(f, PhasesModule.Settings(ctx.Model).DefaultCreated?.Id ?? "")).ToList());
+            if (e.Str("gen") != null) attrs["own"] = true;
             ctx.Replace(e.With(attrs: attrs));
             return null;
         });
+
+        RegisterGenerator(r);
 
         r.Query("schedule", (q, _) => ScheduleJson(q));
 
@@ -591,6 +602,8 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             ["materials"] = Counted(links.Candidates.SelectMany(f => f.Materials), id => m.Get(id) is { } mat ? new JsonObject { ["id"] = id, ["name"] = mat.Name, ["category"] = mat.Str("category") } : null),
             ["groups"] = Counted(links.Candidates.Select(f => f.Group), Named),
             ["phases"] = new JsonArray(ph.Phases.Select(p => (JsonNode)new JsonObject { ["id"] = p.Id, ["name"] = p.Name, ["kind"] = p.Kind, ["count"] = links.Candidates.Count(f => (f.Phase ?? defaultPhase) == p.Id) }).ToArray()),
+            ["demolished"] = new JsonArray(ph.Phases.Select(p => (p, n: links.Candidates.Count(f => f.Demolished == p.Id))).Where(x => x.n > 0)
+                .Select(x => (JsonNode)new JsonObject { ["id"] = x.p.Id, ["name"] = x.p.Name, ["kind"] = x.p.Kind, ["count"] = x.n }).ToArray()),
             ["categories"] = new JsonArray(Platform.Materials.Categories.Select(c => (JsonNode)c).ToArray()),
         };
     }
@@ -655,6 +668,15 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             if (t.Part != null) o["part"] = t.Part;
             if (t.Add.Count > 0) o["added"] = t.Add.Count;
             if (t.Remove.Count > 0) o["removed"] = t.Remove.Count;
+            // Made by the generator (stage 3): from which step, whether edited by hand since, and where its duration came from.
+            if (m.Get(t.Id) is { } te)
+            {
+                if (te.Str("gen") is { } gen) o["gen"] = gen;
+                if (te.Bool("own")) o["own"] = true;
+                foreach (var k in new[] { "durationFrom", "norm", "unit" }) if (te.Str(k) is { } v) o[k] = v;
+                if (te.NumOrNull("quantity") is { } qv) o["quantity"] = qv;
+                if (te.NumOrNull("crew") is { } cv) o["crew"] = (int)Math.Round(cv);
+            }
             tasks.Add((JsonNode)o);
         }
         var linkRows = new JsonArray(p.Links.Select(l => (JsonNode)new JsonObject
@@ -677,8 +699,15 @@ public sealed class PlanningModule : ILapinModule, IDeletion
             ["tasks"] = tasks, ["links"] = linkRows, ["problem"] = problem,
             // The elements a task could take, how many some task takes, and those no task takes (whole, or some of their layers).
             ["elements"] = new JsonObject { ["total"] = links.Candidates.Count(links.NeedsTask), ["none"] = none.Count, ["partial"] = partial.Count },
+            // The formwork and scaffolds, each on site while its hosts' tasks need it.
+            ["temporaries"] = TemporariesJson(TaskLives.Of(p, r, links, q.Services, m)),
         };
     }
+
+    static JsonArray TemporariesJson(IEnumerable<TemporaryTime> lives) => new(lives.Select(x => (JsonNode)new JsonObject
+    {
+        ["id"] = x.Element, ["kind"] = x.Kind, ["from"] = D(x.From), ["to"] = D(x.To), ["tasks"] = new JsonArray(x.Tasks.Select(t => (JsonNode)t).ToArray()),
+    }).ToArray());
 
     /// <summary>The schedule as a table: what the Gantt's columns show, a row a task.</summary>
     public static List<IReadOnlyList<string>> Table(Plan p, CpmResult r, IQueryContext q)

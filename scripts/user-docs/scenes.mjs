@@ -1032,6 +1032,79 @@ export const scenes = [
     },
   },
   {
+    // Planning, stage 3 (docs/plan-4d5d.md): a two-storey concrete-frame house generated into a schedule — the configurator
+    // with its templates, sequence and durations (Lapin's indicative norms), the preview and its counter of linked elements,
+    // then the Gantt under the 3D, a generated task in Properties, the formwork's days on site.
+    id: 'planning-generate',
+    async run(t) {
+      await t.fresh();
+      const gf = await t.storey('Ground floor');
+      const ff = await t.storey('First floor');
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Lime plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Gypsum plaster', thickness: 0.015 },
+      ] })).id;
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const outer = {};
+      for (const s of [gf, ff]) {
+        outer[s] = [];
+        for (let i = 0; i < 4; i++) {
+          const [a, b] = [outline[i], outline[(i + 1) % 4]];
+          outer[s].push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type })).id);
+        }
+        await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8, typeId: type });
+        for (const [w, x, y] of [[0, 9.5, 0], [2, 3.5, 8], [2, 9.5, 8]]) await t.cmd('architecture.addWindow', { wallId: outer[s][w], x, y });
+        for (const [x, y] of outline) await t.cmd('structure.addColumn', { storeyId: s, x, y });
+      }
+      await t.cmd('architecture.addDoor', { wallId: outer[gf][0], x: 3, y: 0 });
+      await t.cmd('architecture.addSlab', { storeyId: gf, points: outline });
+      const floor = (await t.cmd('architecture.addSlab', { storeyId: ff, points: outline })).id;
+      const roof = await t.cmd('architecture.addRoof', { storeyId: ff, points: outline });
+      await t.cmd('architecture.roofStyle', { id: roof.id, style: 'ro_saxon' });
+      for (const [x, y] of outline) await t.cmd('structure.addPadFooting', { storeyId: gf, x, y });
+      await t.cmd('sitework.addFormwork', { hostIds: [floor] });
+      await t.cmd('sitework.scaffoldFromWalls', { wallIds: outer[gf] });
+      await t.cmd('planning.updateSchedule', { name: 'House', start: '2027-03-01' });
+      await t.cmd('planning.useIndicativeNorms', {});
+      await open3d(t);
+      await t.button('Planning', { exact: true });
+      await t.tool('planning.generate');
+      const dialog = t.page.locator('[data-dialog=planning-generate]');
+      t.expect(await dialog.count() > 0, 'the generator opens');
+      await t.page.waitForFunction(() => document.querySelectorAll('[data-dialog=planning-generate] .gen-bar-row').length >= 10, null, { timeout: 20000 }).catch(() => {});
+      t.expect(await dialog.locator('.gen-bar-row').count() >= 10, 'the preview lists the tasks it would make');
+      t.expect(await dialog.locator('[data-field=gen-template-concrete] .muted').count() === 1, 'the columns make the concrete frame the suggested template');
+      const linked = (await dialog.locator('[data-field=gen-linked]').textContent()) ?? '';
+      const [a, b] = linked.split('/').map((x) => Number(x.trim()));
+      t.expect(a > 0 && a === b, `every element linked (${linked})`);
+      await t.shot('planning-generate', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-tab=gen-sequence]').click();
+      await t.wait(600);
+      await t.shot('planning-generate-sequence', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-tab=gen-durations]').click();
+      await t.wait(600);
+      t.expect(await dialog.locator('[data-field=gen-indicative]').count() === 1, "Lapin's indicative values say so");
+      await t.shot('planning-generate-durations', { of: '.dialog', pad: 0 });
+      // Applied in the picture's language, so the tasks are named in it.
+      const setLang = (l) => t.page.evaluate(async (l) => (await import('/src/i18n/index.ts')).setLang(l), l);
+      if (t.lang !== 'en') { await setLang(t.lang); await t.wait(800); }
+      await dialog.locator('[data-field=gen-apply]').click();
+      await t.wait(2500);
+      if (t.lang !== 'en') await setLang('en');
+      const sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
+      t.expect(sched.tasks.length >= 10 && sched.elements.none === 0, 'the schedule is made, every element in a task');
+      t.expect(sched.tasks.some((x) => x.durationFrom === 'norm'), 'durations from the norms');
+      t.expect((sched.temporaries ?? []).length === 2, 'the formwork and the scaffold live by their hosts\' tasks');
+      t.expect(await t.page.locator('[data-testid=gantt]').count() > 0, 'the Gantt opens under the 3D');
+      const masonry = sched.tasks.find((x) => x.gen === `masonry/${gf}`);
+      t.expect(t.lang === 'en' || masonry.name !== 'Masonry · Ground floor', 'the tasks are named in the interface\'s language');
+      await t.ui({ selection: masonry.id, selected: [masonry.id] });
+      await t.wait(1200);
+      await t.shot('planning-generated');
+      await t.shot('planning-generated-task', { of: '[data-testid=task-section]', pad: 8 });
+      await t.ui({ selection: null, selected: [] });
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

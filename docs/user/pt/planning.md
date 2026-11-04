@@ -8,6 +8,7 @@ summary: O cronograma da obra em um gráfico de Gantt: tarefas em uma EAP, marco
 
 ![A aba Planejamento](shots/ribbon-planning.webp)
 
+- **Gerar cronograma…**: um cronograma inteiro feito a partir do modelo, num só passo (abaixo).
 - **Gantt**: abre o cronograma sob a vista. A tela se divide em duas linhas: o modelo em cima e o cronograma embaixo.
 - **Calendário…**: os dias e horas de trabalho, os feriados e a pausa de inverno (abaixo).
 - **Tarefa** e **Marco**: uma nova tarefa ou marco antes da tarefa selecionada no Gantt (ou no fim).
@@ -16,6 +17,68 @@ summary: O cronograma da obra em um gráfico de Gantt: tarefas em uma EAP, marco
 - **Importar MS Project…**, **Exportar MS Project…**, **Exportar XLSX** e **Exportar IFC…**: o cronograma para e de outros programas (abaixo).
 
 Um projeto tem um cronograma. Ele é criado na primeira vez que você adiciona uma tarefa e começa na segunda-feira seguinte. Mude o início na barra do Gantt.
+
+## Gerar o cronograma a partir do modelo
+
+![Gerar cronograma: os modelos, a aba Início e a prévia](shots/planning-generate.webp)
+
+**Planejamento → Gerar cronograma…** (também na barra do Gantt) faz um cronograma completo a partir do modelo: uma tarefa para cada etapa da obra e, onde a etapa vai pavimento a pavimento, uma por pavimento, cada tarefa já com seus elementos. À esquerda estão os **modelos**: **Estrutura de concreto armado**, **Alvenaria estrutural**, **Galpão de aço** e **Wood frame**. O Lapin marca como *sugerido* o que o modelo pede: o galpão se o modelo tiver um, o wood frame se as paredes forem estruturadas em madeira, a alvenaria estrutural se não houver pilares, senão o concreto armado. Acima ficam os estilos do projeto (**Salvar como estilo…** guarda o que você configurou).
+
+À direita está a **prévia**: as tarefas que o gerador faria, como barras, cada uma com a quantidade que deu sua duração, e abaixo as contagens:
+
+- **Elementos vinculados**: os elementos que as tarefas pegam, de todos os que precisam de uma tarefa. É o número mais importante. Se sobrarem elementos, **Mostrar os elementos sem tarefa** os seleciona na vista e **Uma etapa para eles** acrescenta uma etapa com as suas classes.
+- **Durações por produtividades** e **Durações padrão (sem produtividade)**: quantas tarefas uma produtividade cronometrou e quantas pegaram os dias da sua etapa.
+- **Fôrmas e andaimes nas tarefas dos seus suportes** (abaixo).
+
+**Aplicar** grava o cronograma como um só passo para desfazer. A tela então se divide: o modelo em cima, o Gantt embaixo.
+
+### A aba Início
+
+- **Início**: o primeiro dia do cronograma.
+- **Dividir por pavimento**: uma tarefa por pavimento para as etapas que vão pavimento a pavimento (estrutura, alvenaria, acabamentos); desmarcado, uma tarefa por etapa.
+- **Demolições primeiro**: os elementos que as fases demolem vão para uma tarefa **Demolição** antes de todas (tipo IFC DEMOLITION). Os elementos existentes que ficam não são de nenhuma tarefa.
+- **Fôrmas** e **Andaimes**: se esses elementos temporários vivem conforme as tarefas dos seus suportes (abaixo).
+- **Manter as tarefas feitas à mão**: quando o cronograma é gerado de novo (abaixo).
+
+### A aba Sequência
+
+![A aba Sequência: as etapas em ordem](shots/planning-generate-sequence.webp)
+
+As etapas do modelo, em ordem. Cada uma pode ser desligada, renomeada e movida para cima ou para baixo com as setas. Diz se vai **uma vez** para o edifício ou **por pavimento**, e como segue a etapa anterior no mesmo pavimento: término-início (FS), ou início-início (SS) com defasagem, para os acabamentos que sobem atrás da estrutura. O lápis abre o que a etapa constrói: as classes de elementos, escolhidas entre as do modelo, e a **Parte** deles (inteiros, o núcleo ou os acabamentos).
+
+Os vínculos vêm da ordem: cada tarefa segue a etapa anterior no mesmo pavimento e a mesma etapa no pavimento de baixo. Na alvenaria estrutural e no wood frame, as paredes de um pavimento esperam também a laje do pavimento de baixo.
+
+Cada tarefa é feita com uma **regra** (suas classes, seu pavimento), então guarda os seus elementos: uma parede desenhada depois de gerar entra sozinha na sua tarefa.
+
+### A aba Durações
+
+![A aba Durações: as produtividades e, por etapa, produtividade, equipe e dias](shots/planning-generate-durations.webp)
+
+A duração de uma tarefa vem da quantidade dos seus elementos (do levantamento de quantitativos: o volume do núcleo, a área dos acabamentos, portas e janelas por unidade, o aço pelo peso) e de uma **produtividade**:
+
+*duração = quantidade × horas-homem por unidade ÷ (equipe × horas por dia)*, em dias úteis inteiros. Por exemplo 4,5 m³ de alvenaria a 4 horas-homem por metro cúbico, com uma equipe de 2 que trabalha 8 horas: 18 ÷ 16 = 1,125, ou seja, 2 dias.
+
+As produtividades são suas: o Lapin não traz nenhuma tabela de composições. **Importar produtividades…** lê sua tabela de um arquivo CSV ou XLSX: uma coluna para o código, uma para o texto, uma para a unidade (m3, m2, m, un, kg, t…), uma para as horas-homem por unidade (ou uma produtividade em unidades por hora) e, se quiser, uma para a equipe. **Modelo (CSV)** salva as colunas com algumas linhas de valores aproximados escritos pelo Lapin, cada uma marcada *indicative* (indicativa). **Usar os valores indicativos do Lapin** os coloca no projeto para experimentar o gerador; a janela avisa então que as durações vêm de valores indicativos.
+
+Abaixo, cada etapa escolhe a sua **Produtividade**, a sua **Equipe** (0: a da produtividade) e os seus **Dias**, usados quando nenhuma produtividade dá a duração. A aba Calendário mostra o calendário em que as durações são contadas.
+
+### Gerado de novo
+
+Abra o gerador de novo e clique em **Aplicar**: o cronograma é refeito sobre as mesmas tarefas, que mantêm seus identificadores. O que você mudou à mão fica:
+
+- uma tarefa gerada que você editou (nome, duração, datas, regra, parte) fica **Mantida como editada**, marcado nas suas Propriedades; desmarque para refazê-la a partir da sua etapa;
+- os elementos adicionados ou retirados à mão continuam sendo suas exceções;
+- as suas próprias tarefas e vínculos ficam; sem **Manter as tarefas feitas à mão** ficam só as geradas.
+
+![O cronograma gerado: o modelo em cima, o Gantt embaixo](shots/planning-generated.webp)
+
+Nas Propriedades, uma tarefa gerada diz de onde veio sua duração: a quantidade, a produtividade e a equipe, ou os dias da etapa.
+
+![Uma tarefa gerada nas Propriedades](shots/planning-generated-task.webp)
+
+### Fôrmas e andaimes
+
+Uma fôrma ou um andaime do **Canteiro de obras** não tem tarefa própria: vive conforme as tarefas do que serve. A fôrma é montada quando começa sua laje, viga ou parede, e retirada passados os dias do seu tipo após o fim delas (**Desformada após**, em dias úteis: 21 para lajes e vigas, 7 para paredes, pilares e fundações, salvo se o tipo disser outra coisa). O andaime fica da primeira tarefa nas suas paredes até a última, acabamentos incluídos. Selecione um e as suas Propriedades dizem quando está **Na obra** e conforme quais tarefas **Vive conforme**.
 
 ## O Gantt
 
@@ -123,5 +186,5 @@ Os campos próprios do Lapin para os quais outros programas não têm lugar (a r
 
 ## O que vem a seguir
 
-Um cronograma gerado a partir do modelo, a simulação 4D do edifício crescendo em 3D, o avanço e as linhas de base, e o orçamento chegam nas próximas etapas.
+A simulação 4D do edifício crescendo em 3D, o avanço e as linhas de base, e o orçamento chegam nas próximas etapas.
 

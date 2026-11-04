@@ -8,6 +8,7 @@ summary: El cronograma de obra en un diagrama de Gantt: tareas en una EDT, hitos
 
 ![La pestaña Planificación](shots/ribbon-planning.webp)
 
+- **Generar cronograma…**: un cronograma entero hecho desde el modelo en un solo paso (más abajo).
 - **Gantt**: abre el cronograma bajo la vista. La pantalla se divide en dos filas: el modelo arriba y el cronograma abajo.
 - **Calendario…**: los días y horas laborables, los festivos y la pausa de invierno (más abajo).
 - **Tarea** e **Hito**: una tarea o un hito nuevo antes de la tarea seleccionada en el Gantt (o al final).
@@ -16,6 +17,68 @@ summary: El cronograma de obra en un diagrama de Gantt: tareas en una EDT, hitos
 - **Importar MS Project…**, **Exportar MS Project…**, **Exportar XLSX** y **Exportar IFC…**: el cronograma hacia y desde otros programas (más abajo).
 
 Un proyecto tiene un solo cronograma. Se crea la primera vez que añades una tarea y empieza el lunes siguiente. Cambia su inicio en la barra del Gantt.
+
+## Generar el cronograma desde el modelo
+
+![Generar cronograma: las plantillas, la pestaña Inicio y la vista previa](shots/planning-generate.webp)
+
+**Planificación → Generar cronograma…** (también en la barra del Gantt) hace un cronograma completo desde el modelo: una tarea por cada paso de la obra y, donde el paso va planta a planta, una por planta, cada tarea ya con sus elementos. A la izquierda están las **plantillas**: **Estructura de hormigón armado**, **Muros de carga de fábrica**, **Nave de acero** y **Entramado de madera**. Lapin marca como *sugerida* la que pide el modelo: la nave de acero si el modelo tiene una, el entramado de madera si sus muros son entramados, los muros de carga si no tiene pilares y, si no, la estructura de hormigón. Encima están los estilos del proyecto (**Guardar como estilo…** guarda lo que configuraste).
+
+A la derecha está la **vista previa**: las tareas que haría el generador, como barras, cada una con la cantidad que le dio su duración, y debajo los recuentos:
+
+- **Elementos vinculados**: los elementos que toman las tareas, de todos los que necesitan una. Es el número más importante. Si quedan elementos fuera, **Mostrar los elementos sin tarea** los selecciona en la vista y **Un paso para ellos** añade un paso con sus clases.
+- **Duraciones por rendimientos** y **Duraciones por defecto (sin rendimiento)**: cuántas tareas cronometró un rendimiento y cuántas tomaron los días de su paso.
+- **Encofrados y andamios en las tareas de sus soportes** (más abajo).
+
+**Aplicar** escribe el cronograma en un solo paso para deshacer. La pantalla se divide: el modelo arriba, el Gantt abajo.
+
+### La pestaña Inicio
+
+- **Inicio**: el primer día del cronograma.
+- **Dividir por plantas**: una tarea por planta para los pasos que van planta a planta (estructura, fábrica, acabados); desmarcado, una tarea por paso.
+- **Primero las demoliciones**: los elementos que las fases demuelen entran en una tarea **Demolición** antes de todas (su clase IFC DEMOLITION). Los elementos existentes que se quedan no son de ninguna tarea.
+- **Encofrados** y **Andamios**: si estos elementos provisionales viven según las tareas de sus soportes (más abajo).
+- **Conservar las tareas hechas a mano**: cuando el cronograma se genera de nuevo (más abajo).
+
+### La pestaña Secuencia
+
+![La pestaña Secuencia: los pasos en orden](shots/planning-generate-sequence.webp)
+
+Los pasos de la plantilla, en orden. Cada uno se puede desactivar, renombrar y subir o bajar con sus flechas. Dice si va **una vez** para el edificio o **por planta**, y cómo sigue al paso anterior en la misma planta: fin a comienzo (FS), o comienzo a comienzo (SS) con desfase, para los acabados que suben tras la estructura. El lápiz abre lo que construye el paso: las clases de elementos, elegidas entre las del modelo, y la **Parte** de ellos (enteros, su núcleo o sus acabados).
+
+Los vínculos salen del orden: cada tarea sigue al paso anterior en la misma planta y al mismo paso en la planta inferior. En los muros de carga y el entramado de madera, los muros de una planta esperan también al forjado de la planta inferior.
+
+Cada tarea se hace con una **regla** (sus clases, su planta), así que conserva sus elementos: un muro dibujado después de generar entra solo en su tarea.
+
+### La pestaña Duraciones
+
+![La pestaña Duraciones: los rendimientos y, por paso, rendimiento, cuadrilla y días](shots/planning-generate-durations.webp)
+
+La duración de una tarea sale de la cantidad de sus elementos (de las mediciones: el volumen del núcleo, la superficie de los acabados, las puertas y ventanas por unidad, el acero por su peso) y de un **rendimiento**:
+
+*duración = cantidad × horas-hombre por unidad ÷ (cuadrilla × horas al día)*, en días laborables enteros. Por ejemplo 4,5 m³ de fábrica a 4 horas-hombre por metro cúbico, con una cuadrilla de 2 que trabaja 8 horas, son 18 ÷ 16 = 1,125, o sea 2 días.
+
+Los rendimientos son tuyos: Lapin no incluye ningún prontuario. **Importar rendimientos…** lee tu tabla de un archivo CSV o XLSX: una columna para el código, otra para el texto, otra para la unidad (m3, m2, m, ud, kg, t…), otra para las horas-hombre por unidad (o un rendimiento en unidades por hora) y, opcionalmente, otra para la cuadrilla. **Plantilla (CSV)** guarda las columnas con unas filas de valores aproximados escritos por Lapin, cada una marcada como *orientativa*. **Usar los valores orientativos de Lapin** las pone en el proyecto para probar el generador; el diálogo avisa entonces de que las duraciones salen de valores orientativos, no de un rendimiento real.
+
+Debajo, cada paso elige su **Rendimiento**, su **Cuadrilla** (0: la del rendimiento) y sus **Días**, usados cuando ningún rendimiento la da. La pestaña Calendario muestra el calendario en que se cuentan las duraciones.
+
+### Generado de nuevo
+
+Abre de nuevo el generador y pulsa **Aplicar**: el cronograma se rehace sobre las mismas tareas, que conservan sus identificadores. Lo que cambiaste a mano se queda:
+
+- una tarea generada que editaste (nombre, duración, fechas, regla, parte) queda **Conservada como se editó**, marcado en sus Propiedades; desmárcalo para que se rehaga desde su paso;
+- los elementos que añadiste o quitaste a mano siguen siendo sus excepciones;
+- las tareas y los vínculos que hiciste tú se quedan; desmarca **Conservar las tareas hechas a mano** para quedarte solo con las generadas.
+
+![El cronograma generado: el modelo arriba, el Gantt abajo](shots/planning-generated.webp)
+
+En Propiedades, una tarea generada dice de dónde salió su duración: la cantidad, el rendimiento y la cuadrilla, o los días del paso.
+
+![Una tarea generada en Propiedades](shots/planning-generated-task.webp)
+
+### Encofrados y andamios
+
+Un encofrado o un andamio de **Medios auxiliares** no tiene tarea propia: vive según las tareas de lo que sirve. El encofrado se monta cuando empieza su forjado, viga o muro, y se retira cuando pasan los días que dice su tipo tras terminarlos (**Desencofrado tras**, en días laborables: 21 en forjados y vigas, 7 en muros, pilares y zapatas, salvo que el tipo diga otra cosa). El andamio está desde la primera tarea en sus muros hasta la última, acabados incluidos. Selecciona uno y sus Propiedades dicen cuándo está **En obra** y según qué tareas **Vive según**.
 
 ## El Gantt
 
@@ -123,5 +186,5 @@ Los campos propios de Lapin para los que otros programas no tienen sitio (la res
 
 ## Lo que viene
 
-Un cronograma generado a partir del modelo, la simulación 4D del edificio creciendo en 3D, el avance y las líneas base, y el presupuesto llegan en las próximas etapas.
+La simulación 4D del edificio creciendo en 3D, el avance y las líneas base, y el presupuesto llegan en las próximas etapas.
 

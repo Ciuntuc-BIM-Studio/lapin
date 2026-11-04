@@ -32,6 +32,7 @@ public sealed class SiteWorksModule : ILapinModule
         r.Quantities(Formwork.Class, Formwork.Quantities);
         r.Service<IScheduleSource>(new FormworkSchedule());
         r.Service<IScheduleSource>(new ScaffoldSchedule());
+        r.Service<ITaskLife>(new TemporaryLives());
         r.Catalog("scaffoldDefault", Scaffolds.DefaultSpec());
         r.Catalog("slabFormworkDefault", Formwork.DefaultSpec("slab"));
         r.Catalog("beamFormworkDefault", Formwork.DefaultSpec("beam"));
@@ -212,7 +213,8 @@ public sealed class SiteWorksModule : ILapinModule
     {
         var known = cls == Scaffolds.TypeClass ? Scaffolds.DefaultSpec() : Formwork.DefaultSpec(kind ?? "slab");
         var o = new JsonObject();
-        foreach (var (k, v) in spec) if (known.ContainsKey(k)) o[k] = v?.DeepClone();
+        // A formwork's strip-after days (the work schedule's, decision 303) have no default of their own: by what it forms.
+        foreach (var (k, v) in spec) if (known.ContainsKey(k) || cls == Formwork.TypeClass && k == "stripAfter" && Json.Number(v) is >= 0) o[k] = v?.DeepClone();
         return o;
     }
 

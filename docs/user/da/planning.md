@@ -8,6 +8,7 @@ summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder m
 
 ![Fanen Tidsplanlægning](shots/ribbon-planning.webp)
 
+- **Generér tidsplan…**: en hel tidsplan lavet ud fra modellen i ét trin (nedenfor).
 - **Gantt**: åbner tidsplanen under visningen. Skærmen deles i to rækker, så du ser modellen øverst og tidsplanen nederst.
 - **Kalender…**: arbejdsdage og arbejdstimer, helligdage og vinterpausen (nedenfor).
 - **Opgave** og **Milepæl**: en ny opgave eller milepæl før den opgave, der er valgt i Gantt (eller til sidst).
@@ -16,6 +17,68 @@ summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder m
 - **Importér MS Project…**, **Eksportér MS Project…**, **Eksportér XLSX** og **Eksportér IFC…**: tidsplanen til og fra andre programmer (nedenfor).
 
 Et projekt har én tidsplan. Den oprettes første gang, du tilføjer en opgave, og starter den næste mandag. Ret starten i Gantts værktøjslinje.
+
+## Tidsplanen genereret ud fra modellen
+
+![Generér tidsplan: skabelonerne, fanen Start og forhåndsvisningen](shots/planning-generate.webp)
+
+**Tidsplanlægning → Generér tidsplan…** (også i Gantt-diagrammets værktøjslinje) laver en hel tidsplan ud fra modellen: en opgave for hvert trin i arbejdet og, hvor trinnet går etage for etage, én pr. etage, hver opgave allerede med sine elementer. Til venstre er **skabelonerne**: **Betonskelet**, **Bærende murværk**, **Stålhal** og **Træskelet**. Lapin markerer den, modellen beder om, som *foreslået*: stålhallen, hvis modellen har en, træskelettet, hvis væggene er rammevægge, bærende murværk, hvis den ikke har søjler, ellers betonskelettet. Over dem er projektets stilarter (**Gem som stil…** gemmer det, du har indstillet).
+
+Til højre er **forhåndsvisningen**: de opgaver, generatoren ville lave, som bjælker, hver med den mængde, der gav dens varighed, og under dem optællingerne:
+
+- **Tilknyttede elementer**: de elementer, opgaverne tager, ud af alle dem, der har brug for en opgave. Det er det vigtigste tal her. Bliver nogle udenfor, vælger **Vis elementerne uden opgave** dem i visningen, og **Et trin til dem** tilføjer et trin med deres typer.
+- **Varigheder fra normer** og **Standardvarigheder (ingen norm)**: hvor mange opgaver en norm gav varigheden, og hvor mange der tog deres trins dage.
+- **Forskalling og stilladser på deres værters opgaver** (nedenfor).
+
+**Anvend** skriver tidsplanen som ét trin at fortryde. Skærmen deles så: modellen øverst, Gantt nederst.
+
+### Fanen Start
+
+- **Start**: tidsplanens første dag.
+- **Opdel efter etage**: en opgave pr. etage for de trin, der går etage for etage (råhus, murværk, overflader); uden flueben en opgave pr. trin.
+- **Nedrivning først**: de elementer, faserne river ned, kommer i en opgave **Nedrivning** før alle de andre (IFC-art DEMOLITION). Eksisterende elementer, der bliver, hører ikke til nogen opgave.
+- **Forskalling** og **Stillads**: om disse midlertidige elementer lever efter deres værters opgaver (nedenfor).
+- **Behold opgaver lavet i hånden**: når tidsplanen genereres igen (nedenfor).
+
+### Fanen Rækkefølge
+
+![Fanen Rækkefølge: trinene i rækkefølge](shots/planning-generate-sequence.webp)
+
+Skabelonens trin i rækkefølge. Hvert kan slås fra, omdøbes og flyttes op eller ned med pilene. Det siger, om det gøres **én gang** for bygningen eller **pr. etage**, og hvordan det følger trinnet før på samme etage: slut–start (FS) eller start–start (SS) med forskydning, for overflader der kravler op efter råhuset. Blyanten åbner, hvad trinnet bygger: elementernes typer, valgt blandt modellens, og **Del** af dem (hele, kernen eller overfladerne).
+
+Kæderne kommer af rækkefølgen: hver opgave følger trinnet før på samme etage og samme trin på etagen nedenunder. I bærende murværk og træskelet venter en etages vægge også på dækket på etagen nedenunder.
+
+Hver opgave laves med en **regel** (dens typer, dens etage) og beholder derfor sine elementer: en væg tegnet efter genereringen kommer selv med i sin opgave.
+
+### Fanen Varigheder
+
+![Fanen Varigheder: normerne og for hvert trin norm, sjak og dage](shots/planning-generate-durations.webp)
+
+En opgaves varighed kommer af dens elementers mængde (fra mængdeopgørelsen: kernens volumen, overfladernes areal, døre og vinduer pr. stk., stål efter vægt) og en **produktivitetsnorm**:
+
+*varighed = mængde × mandetimer pr. enhed ÷ (sjak × timer om dagen)*, i hele arbejdsdage. For eksempel 4,5 m³ murværk til 4 mandetimer pr. kubikmeter med et sjak på 2, der arbejder 8 timer: 18 ÷ 16 = 1,125, altså 2 dage.
+
+Normerne er dine: Lapin leverer ingen normsamling. **Importér normer…** læser din tabel fra en CSV- eller XLSX-fil: en kolonne til koden, én til teksten, én til enheden (m3, m2, m, stk, kg, t…), én til mandetimer pr. enhed (eller en produktivitet i enheder i timen) og eventuelt én til sjakket. **Skabelon (CSV)** gemmer kolonnerne med nogle rækker grove værdier skrevet af Lapin, hver mærket *indicative* (vejledende). **Brug Lapins vejledende værdier** lægger dem i projektet, så du kan prøve generatoren; dialogen advarer så om, at varighederne kommer fra vejledende værdier.
+
+Nedenunder vælger hvert trin sin **Norm**, sit **Sjak** (0: normens eget) og sine **Dage**, der bruges, når ingen norm giver varigheden. Fanen Kalender viser den kalender, varighederne tælles i.
+
+### Genereret igen
+
+Åbn generatoren igen og klik **Anvend**: tidsplanen laves igen over de samme opgaver, som beholder deres id'er. Det, du har ændret i hånden, bliver:
+
+- en genereret opgave, du har redigeret (navn, varighed, datoer, regel, del), er **Beholdt som redigeret**, afkrydset i dens Egenskaber; fjern fluebenet for at få den lavet igen fra dens trin;
+- elementer, du har tilføjet eller taget ud i hånden, forbliver dens undtagelser;
+- dine egne opgaver og kæder bliver; uden **Behold opgaver lavet i hånden** bliver kun de genererede.
+
+![Den genererede tidsplan: modellen øverst, Gantt nederst](shots/planning-generated.webp)
+
+I Egenskaber siger en genereret opgave, hvor dens varighed kom fra: mængden, normen og sjakket, eller trinnets dage.
+
+![En genereret opgave i Egenskaber](shots/planning-generated-task.webp)
+
+### Forskalling og stilladser
+
+En forskalling eller et stillads fra **Byggepladsindretning** har ingen opgave selv: det lever efter opgaverne på det, det tjener. Forskallingen sættes op, når dens dæk, bjælke eller væg begynder, og tages ned, når typens dage er gået efter, at de er færdige (**Afforskallet efter**, i arbejdsdage: 21 for dæk og bjælker, 7 for vægge, søjler og fundamenter, medmindre typen siger andet). Stilladset står fra den første opgave på dets vægge til den sidste, overfladerne med. Vælg et, og dets Egenskaber siger, hvornår det er **På byggepladsen**, og efter hvilke opgaver det **Lever efter**.
 
 ## Gantt
 
@@ -123,5 +186,5 @@ Lapins egne felter, som andre programmer ikke har plads til (en opgaves begræns
 
 ## Hvad der kommer
 
-En tidsplan genereret ud fra modellen, 4D-simuleringen af bygningen, der vokser i 3D, fremdrift og basisplaner samt overslaget kommer i de næste trin.
+4D-simuleringen af bygningen, der vokser i 3D, fremdrift og basisplaner samt overslaget kommer i de næste trin.
 

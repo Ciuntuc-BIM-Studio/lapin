@@ -31,7 +31,7 @@ export function tasksOf(tasks: readonly TaskDto[], element: string): TaskDto[] {
   return tasks.filter((t) => !t.summary && t.elements?.includes(element));
 }
 
-export const RULE_KEYS = ['classes', 'types', 'storeys', 'materials', 'groups', 'phases'] as const;
+export const RULE_KEYS = ['classes', 'types', 'storeys', 'materials', 'groups', 'phases', 'demolished'] as const;
 export type RuleKey = (typeof RULE_KEYS)[number];
 
 /** A rule with one value of a condition switched on or off; a condition left empty goes (it then lets everything through). */

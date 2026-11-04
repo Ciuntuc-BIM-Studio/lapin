@@ -25,8 +25,8 @@ function useRuleOptions(): Options | null {
   return o;
 }
 
-const HEADINGS: Record<RuleKey, string> = { classes: 'Kinds', storeys: 'Storeys', types: 'Types', materials: 'Materials', groups: 'Groups', phases: 'Phases' };
-const ORDER: RuleKey[] = ['classes', 'storeys', 'types', 'materials', 'groups', 'phases'];
+const HEADINGS: Record<RuleKey, string> = { classes: 'Kinds', storeys: 'Storeys', types: 'Types', materials: 'Materials', groups: 'Groups', phases: 'Phases', demolished: 'Demolished in' };
+const ORDER: RuleKey[] = ['classes', 'storeys', 'types', 'materials', 'groups', 'phases', 'demolished'];
 
 const update = (id: string, args: Record<string, unknown>) => void execute('planning.updateTask', { id, ...args });
 
@@ -87,17 +87,17 @@ export function TaskLinksSection({ node }: { node: NodeDto }) {
 function RuleEditor({ rule, options, onChange }: { task: TaskDto; rule: TaskRule; options: Options; onChange: (r: TaskRule) => void }) {
   return (
     <div className="rule-editor" data-testid="rule-editor">
-      {ORDER.filter((k) => options[k].length > (k === 'phases' ? 1 : 0) || (rule[k]?.length ?? 0) > 0).map((k) => (
+      {ORDER.filter((k) => (options[k]?.length ?? 0) > (k === 'phases' ? 1 : 0) || (rule[k]?.length ?? 0) > 0).map((k) => (
         <div key={k} className="rule-condition">
           <span className="eyebrow">{HEADINGS[k]}</span>
           <span className="chips">
-            {options[k].map((o) => (
+            {(options[k] ?? []).map((o) => (
               <button type="button" key={o.id} className={`chip${rule[k]?.includes(o.id) ? ' on' : ''}`} onClick={() => onChange(toggleRule(rule, k, o.id))}
                 data-rule={`${k}:${o.id}`} title={`${o.count}`}>
-                <span data-no-i18n={k === 'classes' || k === 'phases' ? undefined : true}>{o.name}</span><span className="muted small" data-no-i18n>{` ${o.count}`}</span>
+                <span data-no-i18n={k === 'classes' || k === 'phases' || k === 'demolished' ? undefined : true}>{o.name}</span><span className="muted small" data-no-i18n>{` ${o.count}`}</span>
               </button>
             ))}
-            {(rule[k] ?? []).filter((id) => !options[k].some((o) => o.id === id)).map((id) => (
+            {(rule[k] ?? []).filter((id) => !(options[k] ?? []).some((o) => o.id === id)).map((id) => (
               <button type="button" key={id} className="chip on" onClick={() => onChange(toggleRule(rule, k, id))} title="Not in the model now" data-no-i18n>{id}</button>
             ))}
           </span>
@@ -111,6 +111,19 @@ function RuleEditor({ rule, options, onChange }: { task: TaskDto; rule: TaskRule
 export function ElementTasksSection({ node }: { node: NodeDto }) {
   const data = useSchedule();
   const tasks = data ? tasksOf(data.tasks, node.id) : [];
+  const temp = data?.temporaries?.find((x) => x.id === node.id);
+  if (temp && data) {
+    // A formwork or a scaffold: no task of its own, on site while its hosts' tasks need it.
+    const hosts = temp.tasks.map((id) => data.tasks.find((x) => x.id === id)).filter((x): x is TaskDto => !!x);
+    return (
+      <dl className="fields" data-testid="element-temporary">
+        <dt title="From the first task on what it serves to its striking (a formwork) or the last task on its walls (a scaffold)">On site</dt>
+        <dd data-no-i18n>{`${showDate(temp.from)} – ${showDate(temp.to)}`}</dd>
+        <dt>Lives by</dt>
+        <dd>{hosts.map((h) => <div key={h.id}><button type="button" className="link" onClick={() => { select(h.id); useUi.setState({ selected: [h.id] }); }} data-no-i18n>{h.name}</button></div>)}</dd>
+      </dl>
+    );
+  }
   if (!tasks.length) return null;
   return (
     <dl className="fields" data-testid="element-tasks">
@@ -128,4 +141,5 @@ export function ElementTasksSection({ node }: { node: NodeDto }) {
 }
 
 /** Whether an element is in a task (the section shows only then). */
-export const inSomeTask = (node: NodeDto): boolean => node.type !== 'IfcTask' && !!usePlanning.getState().data?.tasks.some((t) => !t.summary && t.elements?.includes(node.id));
+export const inSomeTask = (node: NodeDto): boolean => node.type !== 'IfcTask'
+  && (!!usePlanning.getState().data?.tasks.some((t) => !t.summary && t.elements?.includes(node.id)) || !!usePlanning.getState().data?.temporaries?.some((x) => x.id === node.id));

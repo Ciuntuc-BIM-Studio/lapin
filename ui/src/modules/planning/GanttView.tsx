@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import {
-  CalendarDays, ChevronDown, ChevronRight, Crosshair, Diamond, IndentDecrease, IndentIncrease, Link2, Maximize, Plus, Route, Trash2, Unlink2, X,
+  CalendarDays, ChevronDown, ChevronRight, Crosshair, Diamond, IndentDecrease, IndentIncrease, Link2, Maximize, Plus, Route, Trash2, Unlink2, Wand2, X,
 } from 'lucide-react';
 import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -323,6 +323,7 @@ export function GanttView() {
         <button type="button" className="icon" title="Go to today" onClick={goToday}><Crosshair size={14} /><span className="small">Today</span></button>
         <button type="button" className={`icon${critical ? ' on' : ''}`} title="The critical path in red: the tasks with no float" onClick={() => setCritical(!critical)} data-testid="gantt-critical"><Route size={14} /><span className="small">Critical path</span></button>
         <button type="button" className="icon" title="Working days and hours, holidays, the winter break" onClick={() => useUi.setState({ dialog: 'planning.calendar' })}><CalendarDays size={14} /><span className="small">Calendar…</span></button>
+        <button type="button" className="icon" title="A schedule made from the model: its storeys, its elements and your norms" onClick={() => useUi.setState({ dialog: 'planning.generate' })} data-testid="gantt-generate-tool"><Wand2 size={14} /><span className="small">Generate schedule…</span></button>
         <span className="gantt-facts" data-testid="gantt-facts">
           <label title="The day the schedule starts">Start <input type="date" value={data.start} onChange={(e) => e.target.value && void execute('planning.updateSchedule', { start: e.target.value })} /></label>
           <span>{`${data.tasks.length} tasks · ${data.workingDays} working days · finish ${showDate(data.finish)}`}</span>
@@ -430,8 +431,11 @@ export function GanttView() {
             </div>
             {rows.length === 0 && (
               <div className="gantt-empty" style={{ top: HEAD_H + 24 }}>
-                <p>No tasks yet. Add the first with Task or the Insert key, or import a schedule from MS Project (Planning → Import MS Project…).</p>
-                <button type="button" className="btn primary" onClick={() => void addTask(false, null)} data-testid="gantt-first-task"><Plus size={14} />First task</button>
+                <p>No tasks yet. Generate a schedule from the model, add the first task with Task or the Insert key, or import a schedule from MS Project (Planning → Import MS Project…).</p>
+                <div className="row">
+                  <button type="button" className="btn primary" onClick={() => useUi.setState({ dialog: 'planning.generate' })} data-testid="gantt-generate"><Wand2 size={14} />Generate schedule…</button>
+                  <button type="button" className="btn" onClick={() => void addTask(false, null)} data-testid="gantt-first-task"><Plus size={14} />First task</button>
+                </div>
               </div>
             )}
             {linkEdit && <LinkEditor link={linkEdit.link} x={linkEdit.x} y={linkEdit.y} onClose={() => setLinkEdit(null)} names={(id) => data.tasks.find((t) => t.id === id)?.name ?? ''} />}

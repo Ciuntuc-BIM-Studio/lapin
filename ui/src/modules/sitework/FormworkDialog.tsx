@@ -30,7 +30,7 @@ interface SlabSpec {
 }
 interface BeamSpec { plywood: number; bearerHeight: number; bearerWidth: number; bearers: number; propSpacing: number; yokes: Yoke[]; chamfer: number; props: PropSize[]; reuses: number }
 interface UprightSpec { panelWidths: number[]; panelHeights: number[]; panelThickness: number; tieAlong: number; tieUp: number; clampSpacing: number; braceSpacing: number; reuses: number }
-type Spec = SlabSpec & BeamSpec & UprightSpec & { article: string; articleText: string };
+type Spec = SlabSpec & BeamSpec & UprightSpec & { article: string; articleText: string; stripAfter?: number };
 interface Preview {
   secondary?: number; primary?: number; prop?: number | string; propSize?: string | null; propLength?: number; yokeSpacing?: number; propSpacing?: number; rowThickness?: number;
   across?: number[]; up?: number[]; panels?: number; ties?: number; clamps?: number; area?: number;
@@ -189,6 +189,7 @@ export function FormworkDialog() {
               </>}
               {kind !== 'upright' && <><p className="eyebrow">Props</p>{props}</>}
               <Line label="Reuses"><Num value={spec.reuses} min={1} onCommit={(v) => set({ reuses: Math.round(v) })} /></Line>
+              <Line label="Struck after (working days)"><Num value={spec.stripAfter ?? (kind === 'upright' ? 7 : 21)} min={0} onCommit={(v) => set({ stripAfter: Math.max(0, Math.round(v)) })} /></Line>
               <p className="eyebrow">Bill of quantities</p>
               <Line label="Article code"><input value={spec.article ?? ''} placeholder="as the norms the estimate uses" onChange={(e) => set({ article: e.target.value })} /></Line>
               <Line label="Article text"><input value={spec.articleText ?? ''} onChange={(e) => set({ articleText: e.target.value })} /></Line>

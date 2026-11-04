@@ -1,17 +1,19 @@
 /**
- * Planning (4D, docs/plan-4d5d.md, stages 1–2): the work schedule — tasks in a WBS, milestones, links with lags, the work
+ * Planning (4D, docs/plan-4d5d.md, stages 1–3): the work schedule — tasks in a WBS, milestones, links with lags, the work
  * calendar with Romania's legal holidays, the critical path the engine works out — shown and edited in the Gantt, a
  * view under the 3D or in a window of its own; the model's elements in the tasks, found by each task's rule with its
  * exceptions (the selection dragged onto a row, TA), parts of layered elements in tasks of their own, the selection one
- * between the Gantt and the views; IFC processes, MS Project XML and a workbook to exchange it. The generator and the 4D
- * simulation follow in later stages.
+ * between the Gantt and the views; IFC processes, MS Project XML and a workbook to exchange it; the generator (stage 3):
+ * a schedule made from a template's sequence, the model's storeys and elements and the user's norms, in one step. The 4D
+ * simulation follows in a later stage.
  */
 
-import { CalendarDays, ChartGantt, Diamond, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2 } from 'lucide-react';
+import { CalendarDays, ChartGantt, Diamond, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2, Wand2 } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { exportIfc } from '../../engine/files';
 import { CalendarDialog } from './CalendarDialog';
+import { GenerateDialog } from './GenerateDialog';
 import { GanttView } from './GanttView';
 import { TaskSection } from './TaskSection';
 import { AssignDialog } from './AssignDialog';
@@ -28,6 +30,7 @@ const planning: LapinModule = {
     groups: [
       {
         label: 'Work schedule', tools: [
+          { id: 'planning.generate', label: 'Generate schedule…', icon: Wand2, run: () => useUi.setState({ dialog: 'planning.generate' }) },
           { id: 'planning.gantt', label: 'Gantt', icon: ChartGantt, run: openGantt },
           { id: 'planning.calendar', label: 'Calendar…', icon: CalendarDays, run: () => useUi.setState({ dialog: 'planning.calendar' }) },
         ],
@@ -65,7 +68,7 @@ const planning: LapinModule = {
     ],
   }],
   views: { gantt: { label: 'Gantt', component: GanttView } },
-  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog },
+  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog },
   propertySections: [
     { id: 'task', label: 'Task', classes: ['IfcTask'], component: TaskSection, replacesFields: () => true },
     { id: 'task-elements', label: 'Elements', classes: ['IfcTask'], component: TaskLinksSection },

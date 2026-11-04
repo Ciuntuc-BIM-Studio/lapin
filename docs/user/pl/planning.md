@@ -8,6 +8,7 @@ summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamien
 
 ![Karta Harmonogram](shots/ribbon-planning.webp)
 
+- **Generuj harmonogram…**: cały harmonogram zrobiony z modelu w jednym kroku (poniżej).
 - **Gantt**: otwiera harmonogram pod widokiem. Ekran dzieli się na dwa wiersze: model u góry, harmonogram na dole.
 - **Kalendarz…**: dni i godziny robocze, święta i przerwa zimowa (poniżej).
 - **Zadanie** i **Kamień milowy**: nowe zadanie lub kamień milowy przed zadaniem zaznaczonym w Gantcie (albo na końcu).
@@ -16,6 +17,68 @@ summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamien
 - **Importuj MS Project…**, **Eksportuj MS Project…**, **Eksportuj XLSX** i **Eksportuj IFC…**: harmonogram do i z innych programów (poniżej).
 
 Projekt ma jeden harmonogram. Powstaje przy pierwszym dodaniu zadania i zaczyna się w następny poniedziałek. Jego początek zmienisz na pasku Gantta.
+
+## Harmonogram wygenerowany z modelu
+
+![Generuj harmonogram: szablony, karta Początek i podgląd](shots/planning-generate.webp)
+
+**Harmonogram → Generuj harmonogram…** (także na pasku wykresu Gantta) robi z modelu pełny harmonogram: zadanie dla każdego kroku robót, a tam, gdzie krok idzie kondygnacja po kondygnacji, jedno na kondygnację, każde zadanie od razu ze swoimi elementami. Po lewej są **szablony**: **Szkielet żelbetowy**, **Murowane ściany nośne**, **Hala stalowa** i **Szkielet drewniany**. Lapin oznacza jako *sugerowany* ten, o który prosi model: halę stalową, jeśli model ją ma, szkielet drewniany, jeśli ściany są szkieletowe, murowane ściany nośne, jeśli nie ma słupów, w przeciwnym razie szkielet żelbetowy. Nad nimi są style projektu (**Zapisz jako styl…** zachowuje to, co ustawiłeś).
+
+Po prawej jest **podgląd**: zadania, które zrobiłby generator, jako paski, każde z ilością, która dała czas trwania, a pod nimi liczniki:
+
+- **Elementy powiązane**: elementy wzięte przez zadania spośród wszystkich, które potrzebują zadania. To tu najważniejsza liczba. Gdy jakieś zostają poza, **Pokaż elementy bez zadania** zaznacza je w widoku, a **Krok dla nich** dodaje krok z ich klasami.
+- **Czasy trwania z norm** i **Domyślne czasy trwania (bez normy)**: ile zadań dostało czas z normy, a ile wzięło dni swojego kroku.
+- **Deskowania i rusztowania na zadaniach ich podpór** (poniżej).
+
+**Zastosuj** zapisuje harmonogram jako jeden krok do cofnięcia. Ekran dzieli się wtedy: model u góry, Gantt na dole.
+
+### Karta Początek
+
+- **Początek**: pierwszy dzień harmonogramu.
+- **Dziel na kondygnacje**: jedno zadanie na kondygnację dla kroków, które idą kondygnacja po kondygnacji (konstrukcja, mury, wykończenie); bez zaznaczenia jedno zadanie na krok.
+- **Najpierw rozbiórki**: elementy, które fazy rozbierają, trafiają do zadania **Rozbiórka** przed wszystkimi innymi (rodzaj IFC DEMOLITION). Istniejące elementy, które zostają, nie należą do żadnego zadania.
+- **Szalunek** i **Rusztowania**: czy te elementy tymczasowe żyją według zadań swoich podpór (poniżej).
+- **Zachowaj zadania zrobione ręcznie**: przy ponownym generowaniu (poniżej).
+
+### Karta Kolejność
+
+![Karta Kolejność: kroki po kolei](shots/planning-generate-sequence.webp)
+
+Kroki szablonu po kolei. Każdy można wyłączyć, przemianować i przesunąć w górę lub w dół strzałkami. Mówi, czy idzie **raz** dla budynku, czy **na kondygnację**, i jak następuje po poprzednim kroku na tej samej kondygnacji: koniec–początek (FS) albo początek–początek (SS) z opóźnieniem, dla wykończeń, które idą w górę za konstrukcją. Ołówek otwiera to, co krok buduje: klasy elementów, wybrane spośród tych w modelu, i ich **Część** (całe, rdzeń albo wykończenie).
+
+Powiązania wynikają z kolejności: każde zadanie następuje po poprzednim kroku na tej samej kondygnacji i po tym samym kroku na kondygnacji poniżej. W murowanych ścianach nośnych i szkielecie drewnianym ściany kondygnacji czekają też na strop kondygnacji poniżej.
+
+Każde zadanie dostaje **regułę** (swoje klasy, swoją kondygnację), więc zachowuje swoje elementy: ściana narysowana po wygenerowaniu sama trafia do swojego zadania.
+
+### Karta Czasy trwania
+
+![Karta Czasy trwania: normy, a dla każdego kroku norma, brygada i dni](shots/planning-generate-durations.webp)
+
+Czas trwania zadania wynika z ilości jego elementów (z przedmiaru: objętość rdzenia, powierzchnia wykończeń, drzwi i okna na sztuki, stal według ciężaru) i z **normy wydajności**:
+
+*czas trwania = ilość × roboczogodziny na jednostkę ÷ (brygada × godziny dziennie)*, w pełnych dniach roboczych. Na przykład 4,5 m³ muru po 4 roboczogodziny na metr sześcienny, z brygadą 2 osób pracującą 8 godzin: 18 ÷ 16 = 1,125, czyli 2 dni.
+
+Normy są twoje: Lapin nie dostarcza żadnego katalogu nakładów. **Importuj normy…** czyta twoją tabelę z pliku CSV lub XLSX: kolumna na kod, na opis, na jednostkę (m3, m2, m, szt, kg, t…), na roboczogodziny na jednostkę (albo wydajność w jednostkach na godzinę) i opcjonalnie na brygadę. **Szablon (CSV)** zapisuje kolumny z kilkoma wierszami przybliżonych wartości Lapina, każdy oznaczony *indicative* (orientacyjny). **Użyj wartości orientacyjnych Lapina** wstawia je do projektu, by wypróbować generator; okno ostrzega wtedy, że czasy trwania pochodzą z wartości orientacyjnych.
+
+Poniżej każdy krok wybiera swoją **Normę**, **Brygadę** (0: z normy) i **Dni**, używane, gdy żadna norma nie daje czasu. Karta Kalendarz pokazuje kalendarz, w którym liczone są czasy trwania.
+
+### Wygenerowany ponownie
+
+Otwórz generator jeszcze raz i kliknij **Zastosuj**: harmonogram powstaje od nowa na tych samych zadaniach, które zachowują identyfikatory. To, co zmieniłeś ręcznie, zostaje:
+
+- wygenerowane zadanie, które edytowałeś (nazwa, czas, daty, reguła, część), jest **Zachowane jak edytowano**, zaznaczone w jego Właściwościach; odznacz, aby powstało od nowa ze swojego kroku;
+- elementy dodane lub usunięte ręcznie pozostają jego wyjątkami;
+- twoje własne zadania i powiązania zostają; bez **Zachowaj zadania zrobione ręcznie** zostają tylko wygenerowane.
+
+![Wygenerowany harmonogram: model u góry, Gantt na dole](shots/planning-generated.webp)
+
+We Właściwościach wygenerowane zadanie mówi, skąd ma czas trwania: ilość, norma i brygada albo dni kroku.
+
+![Wygenerowane zadanie we Właściwościach](shots/planning-generated-task.webp)
+
+### Deskowania i rusztowania
+
+Deskowanie lub rusztowanie z **Robót pomocniczych** nie ma własnego zadania: żyje według zadań tego, czemu służy. Deskowanie stawia się, gdy zaczyna się jego strop, belka lub ściana, i rozbiera po dniach podanych w jego typie od ich końca (**Rozbierane po**, w dniach roboczych: 21 dla stropów i belek, 7 dla ścian, słupów i fundamentów, jeśli typ nie mówi inaczej). Rusztowanie stoi od pierwszego zadania na jego ścianach do ostatniego, z wykończeniem. Zaznacz jedno, a jego Właściwości powiedzą, kiedy jest **Na budowie** i według jakich zadań **Żyje według**.
 
 ## Gantt
 
@@ -123,5 +186,5 @@ Własne pola Lapin, dla których inne programy nie mają miejsca (ograniczenie z
 
 ## Co dalej
 
-Harmonogram wygenerowany z modelu, symulacja 4D budynku rosnącego w 3D, postęp i plany bazowe oraz kosztorys przyjdą w kolejnych etapach.
+Symulacja 4D budynku rosnącego w 3D, postęp i plany bazowe oraz kosztorys przyjdą w kolejnych etapach.
 
