@@ -798,6 +798,17 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     : throw new CommandException("There is no such sheet or view.");
                 return (Deliver(bytes, "drawing.dxf"), null);
             }
+            // Bytes the interface made (a schedule's CSV or XLSX, exported types) written where the desktop's save dialog says (report #66).
+            case "file.write":
+            {
+                var path = PathParam();
+                var data = (string?)p["data"] ?? throw new CommandException("Nothing to write.");
+                byte[] bytes;
+                try { bytes = Convert.FromBase64String(data); }
+                catch (FormatException) { throw new CommandException("The file's content is not base64."); }
+                File.WriteAllBytes(path, bytes);
+                return (new JsonObject { ["path"] = path, ["bytes"] = bytes.Length }, null);
+            }
             // An issue (docs/plan-cde.md): the files made and hashed, kept in the project's file (and written into the project folder's container
             // when there is one), the transmittal, the issue recorded (one undo step) and the project saved as a version named after it, in the
             // same call, so the record names its version and the project is saved after an issue. `bytes`: the file comes back (the browser);

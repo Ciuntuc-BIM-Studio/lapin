@@ -299,7 +299,11 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 
 /* The plan: ink on paper; cut outlines heavy, the selection in the accent. */
 .view-pane { position: absolute; inset: 0; display: flex; flex-direction: column; }
-.view-toolbar { position: absolute; top: 8px; right: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; }
+.view-toolbar { position: absolute; top: 8px; right: 12px; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; row-gap: 4px; max-width: calc(100% - 24px); }
+/* A button with a word beside its icon is as wide as both (report #65: a fixed 28 px let the words run under the next button). */
+.view-toolbar .icon { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; width: auto; min-width: 28px; padding: 0 6px; flex: none; }
+.view-toolbar > select, .view-toolbar > .chip { flex: none; max-width: 100%; }
+.view-toolbar .view-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
 .view-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); }
 .plan-svg { flex: 1; width: 100%; height: 100%; background: var(--bg); touch-action: none; user-select: none; }
 .plan-svg.tool { cursor: crosshair; }
@@ -608,13 +612,16 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .chip.warn .link { margin-left: 6px; border: none; background: none; color: inherit; text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }
 .schedule-body { display: flex; flex: 1; min-height: 0; }
 /* The schedule's toolbar in the pane's flow, above its drawing and its side panels, wrapping when the tools outgrow it. */
-.schedule-pane .view-toolbar { position: static; flex-wrap: wrap; justify-content: flex-end; row-gap: 4px; padding: 6px 12px; }
-.schedule-pane .view-toolbar .icon { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; width: auto; min-width: 28px; padding: 0 6px; }
+.schedule-pane .view-toolbar { position: static; max-width: none; padding: 6px 12px; }
 .schedule-body .schedule-svg { flex: 1; }
-.schedule-settings { width: 280px; overflow: auto; padding: 8px 12px; border-left: 1px solid var(--rule); background: var(--panel); font-size: 12px; }
+.schedule-settings { width: 280px; max-width: 45%; flex: none; box-sizing: border-box; overflow: auto; overflow-wrap: break-word; padding: 8px 12px; border-left: 1px solid var(--rule); background: var(--panel); font-size: 12px; }
 .schedule-settings h4 { margin: 12px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); }
 .schedule-settings ul.plain { list-style: none; margin: 0; padding: 0; }
 .schedule-settings li.row { padding: 2px 0; }
+.schedule-settings .row > .grow { min-width: 0; }
+.schedule-settings .icon:not(.mini) { display: inline-flex; align-items: center; gap: 3px; width: auto; padding: 0 6px; white-space: nowrap; }
+.schedule-settings .link { text-align: left; }
+.schedule-part .row > select { min-width: 0; flex: 1; }
 .chart-form { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .chart-form label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--ink-muted); }
 .chart-form .seg { gap: 2px; }

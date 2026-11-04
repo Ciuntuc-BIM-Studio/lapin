@@ -48,6 +48,7 @@ export function ScheduleSettings({ id, s, kind }: { id: string; s: Settings; kin
 
       {kind !== 'lintel' && <>
         <h4>On each card</h4>
+        <p className="muted small">Drawn on each type's card, at the schedule's scale.</p>
         {DRAWINGS.map(([k, l]) => (
           <label key={k} className="row"><input type="checkbox" checked={s.drawings.includes(k)}
             onChange={(e) => update({ drawings: e.target.checked ? [...s.drawings, k] : s.drawings.filter((x) => x !== k) })} /> {l}</label>

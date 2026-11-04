@@ -13,7 +13,7 @@ import { tableCsv, type Table } from './tools';
 import { cleanText } from './loop';
 import { Markdown } from './Markdown';
 import type { ChangeRow, Scalar } from './changeset';
-import { download, isDesktop } from '../engine/files';
+import { isDesktop, safeFileName, saveFile } from '../engine/files';
 import { notify, select } from '../app/store';
 import { t, useLang } from '../i18n';
 
@@ -72,7 +72,7 @@ function Status({ status }: { status: OllamaStatus | null }) {
   return <span className="assistant-ok small">Ollama is running</span>;
 }
 
-const saveCsv = (t: Table): void => download(new TextEncoder().encode(tableCsv(t)), `${t.title.replace(/[\\/:*?"<>|]+/g, '_') || 'report'}.csv`, 'text/csv');
+const saveCsv = (t: Table): void => { void saveFile(new TextEncoder().encode(tableCsv(t)), `${safeFileName(t.title, 'report')}.csv`, 'text/csv'); };
 
 const PREVIEW_ROWS = 12;
 

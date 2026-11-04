@@ -49,3 +49,17 @@ Tudo isso sai impresso: em uma prancha, no PDF e no DXF, e nas exportações CSV
 O motor desenha cada gráfico depois dos quadros, assim ele aparece na tabela, em uma prancha que coloca a tabela e no PDF, exatamente igual. Ele acompanha o modelo e o que você digitou: mude a área de um ambiente ou adicione uma linha sua, e o gráfico muda junto. **✎** altera um gráfico, **×** o remove.
 
 ![Uma tabela de ambientes com uma linha própria e um gráfico de pizza das áreas por função](shots/schedule-chart.webp)
+
+## Composições dos tipos
+
+A tabela **Composições dos tipos** (**+** → **Composições dos tipos**) lista cada tipo de parede e de laje: a sua marca, a espessura total, quantos elementos o usam e depois as suas camadas em ordem, com materiais e espessuras.
+
+**Desenhos das composições**, na sua barra, desenha cada tipo após a tabela, cortado pelas suas camadas à escala da tabela (1:50 se não escolher outra): uma parede como a corta uma planta, uma laje como a corta um corte, a camada 1 em cima. Cada camada é preenchida e hachurada como o seu material nos cortes, as faces do núcleo são desenhadas mais grossas, a espessura total é cotada e cada camada é nomeada ao lado como a tabela a nomeia. Os desenhos imprimem-se com a tabela, numa folha e no PDF. Uma nova tabela de composições desenha-os; desmarque **Desenhos das composições** para ficar só com a tabela.
+
+Os desenhos **Em cada ficha** (vista interior, vista exterior, planta, corte), nas **Configurações** de uma tabela, pertencem às fichas das tabelas de caixilharia; uma tabela simples não tem fichas, por isso não são oferecidos aí.
+
+![A tabela das composições dos tipos com a composição de cada tipo](shots/type-assemblies.webp)
+
+## Exportar
+
+**CSV** e **XLSX** na barra exportam a tabela como folha de cálculo (um XLSX tem uma folha por tabela). Na aplicação de computador, o Lapin pergunta onde guardar o ficheiro e propõe o nome da tabela; num navegador o ficheiro é transferido. Os tipos de parede e de laje exportados guardam-se da mesma forma.

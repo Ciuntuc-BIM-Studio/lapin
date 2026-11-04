@@ -86,7 +86,8 @@ export function ViewportHud() {
   const hintText = toolHint(tool);
   return (
     <>
-      {parts.hud === 'over' && (
+      {/* Not over a schedule: its toolbar runs across the pane's top, and it has no mode, level or snap to tell (report #65). */}
+      {parts.hud === 'over' && facts.view !== 'SCHEDULE' && (
         <div className="hud-card">
           <span className="eyebrow">Mode</span><span>{facts.mode}</span>
           <span className="eyebrow">Level</span><span>{facts.level} <span className="accent">{facts.elevation}</span></span>

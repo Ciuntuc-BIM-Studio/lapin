@@ -6,7 +6,7 @@
 
 import { FileDown, FileUp } from 'lucide-react';
 import { notify } from '../../app/store';
-import { download, pickFile } from '../../engine/files';
+import { pickFile, saveFile } from '../../engine/files';
 import { execute, query } from '../../engine/session';
 
 export function TypeFiles({ kind }: { kind: 'wall' | 'floor' }) {
@@ -15,8 +15,8 @@ export function TypeFiles({ kind }: { kind: 'wall' | 'floor' }) {
     if (!r) return;
     // A byte order mark first, so a spreadsheet reads the CSV as UTF-8 (ă, ș, ț, ø).
     const bytes = new TextEncoder().encode(format === 'csv' ? `﻿${r.text}` : r.text);
-    download(bytes, `${kind === 'wall' ? 'Wall' : 'Floor'} types.${format}`, format === 'csv' ? 'text/csv' : 'application/json');
-    notify('The types were exported: one row a layer in the CSV, thicknesses in millimetres.');
+    const saved = await saveFile(bytes, `${kind === 'wall' ? 'Wall' : 'Floor'} types.${format}`, format === 'csv' ? 'text/csv' : 'application/json');
+    if (saved) notify('The types were exported: one row a layer in the CSV, thicknesses in millimetres.');
   };
   const bring = async () => {
     const file = await pickFile('Types (CSV or JSON)', ['csv', 'json', 'txt']);

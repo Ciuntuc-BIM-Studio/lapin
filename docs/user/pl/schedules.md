@@ -49,3 +49,17 @@ Wszystko to się drukuje: na arkuszu, w PDF i DXF oraz w eksportach CSV i XLSX.
 Silnik rysuje każdy wykres za tabelami, więc wygląda dokładnie tak samo w zestawieniu, na arkuszu, który umieszcza zestawienie, i w PDF. Podąża za modelem i za tym, co wpisałeś: zmień powierzchnię pomieszczenia lub dodaj własny wiersz, a wykres zmieni się razem z nimi. **✎** zmienia wykres, **×** go usuwa.
 
 ![Zestawienie pomieszczeń z własnym wierszem i wykresem kołowym powierzchni według funkcji](shots/schedule-chart.webp)
+
+## Układy warstw typów
+
+Zestawienie **Układy warstw typów** (**+** → **Układy warstw typów**) wymienia każdy typ ściany i stropu: jego oznaczenie, grubość całkowitą, liczbę elementów, które go używają, a potem jego warstwy po kolei z materiałami i grubościami.
+
+**Rysunki układów warstw** na jego pasku rysuje każdy typ pod tabelą, w przekroju przez jego warstwy, w skali zestawienia (1:50, chyba że wybierzesz inną): ścianę tak, jak tnie ją rzut, strop tak, jak tnie go przekrój, warstwa 1 na górze. Każda warstwa jest wypełniona i zakreskowana jak jej materiał w przekrojach, lica rdzenia są rysowane grubiej, grubość całkowita jest zwymiarowana, a każda warstwa jest nazwana obok tak, jak nazywa ją tabela. Rysunki drukują się razem z tabelą, na arkuszu i w PDF. Nowe zestawienie układów warstw je rysuje; odznacz **Rysunki układów warstw**, aby zostawić samą tabelę.
+
+Rysunki **Na każdej karcie** (widok od wewnątrz, widok od zewnątrz, rzut, przekrój) w **Ustawieniach** zestawienia należą do kart zestawień stolarki; zwykła tabela nie ma kart, więc nie są tam oferowane.
+
+![Zestawienie układów warstw typów z układem każdego typu](shots/type-assemblies.webp)
+
+## Eksport
+
+**CSV** i **XLSX** na pasku eksportują zestawienie jako arkusz kalkulacyjny (XLSX ma jeden arkusz na każdą tabelę). W aplikacji desktopowej Lapin pyta, gdzie zapisać plik, i proponuje nazwę zestawienia; w przeglądarce plik jest pobierany. Wyeksportowane typy ścian i stropów zapisuje się tak samo.

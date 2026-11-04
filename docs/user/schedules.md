@@ -49,3 +49,17 @@ All of it prints: on a sheet, in the PDF and DXF, and in the CSV and XLSX export
 The engine draws each chart after the tables, so it shows in the schedule, on a sheet that places the schedule, and in the PDF, exactly the same. It follows the model, and what you typed: change a room's area or add a row of your own, and the chart changes with it. **✎** changes a chart, **×** removes it.
 
 ![A room schedule with a row of its own and a pie chart of the areas by function](shots/schedule-chart.webp)
+
+## Type assemblies
+
+The **Type assemblies** schedule (**+** → **Type assemblies**) lists every wall and floor type: its mark, its total thickness, how many elements use it, then its layers in order with their materials and thicknesses.
+
+**Build-up drawings**, in its toolbar, draws each type after the table, cut through its layers at the schedule's scale (1:50 unless you pick another): a wall as a plan cuts it, a floor as a section does, layer 1 on top. Each layer is filled and hatched as its material is in sections, the core's faces are drawn heavier, the total thickness is dimensioned, and each layer is named beside it as the table names it. The drawings print with the table, on a sheet and in the PDF. A new type assemblies schedule draws them; untick **Build-up drawings** to keep the table alone.
+
+The drawings **On each card** (interior view, exterior view, plan, section), in a schedule's **Settings**, belong to the cards of the joinery schedules; a plain table has no cards, so they are not offered there.
+
+![The type assemblies schedule with each type's build-up](shots/type-assemblies.webp)
+
+## Exporting
+
+**CSV** and **XLSX** in the toolbar export the schedule as a spreadsheet (an XLSX has one sheet for each table). In the desktop app Lapin asks where to save the file and offers the schedule's name; in a browser the file is downloaded. Exported wall and floor types are saved the same way.

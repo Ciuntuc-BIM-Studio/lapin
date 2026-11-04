@@ -49,3 +49,17 @@ Tutto si stampa: su una tavola, nel PDF e nel DXF, e nelle esportazioni CSV e XL
 Il motore disegna ogni grafico dopo le tabelle, quindi si vede nell’abaco, su una tavola che posiziona l’abaco e nel PDF, esattamente uguale. Segue il modello e ciò che hai scritto: cambia l’area di un locale o aggiungi una riga tua, e il grafico cambia con loro. **✎** modifica un grafico, **×** lo toglie.
 
 ![Un abaco dei locali con una riga sua e un grafico a torta delle aree per destinazione d’uso](shots/schedule-chart.webp)
+
+## Stratigrafie dei tipi
+
+L'abaco **Stratigrafie dei tipi** (**+** → **Stratigrafie dei tipi**) elenca ogni tipo di muro e di solaio: il suo contrassegno, lo spessore totale, quanti elementi lo usano, poi i suoi strati in ordine con materiali e spessori.
+
+**Disegni delle stratigrafie**, nella sua barra, disegna ogni tipo dopo la tabella, sezionato attraverso i suoi strati alla scala dell'abaco (1:50 se non ne scegli un'altra): un muro come lo taglia una pianta, un solaio come lo taglia una sezione, lo strato 1 in alto. Ogni strato è riempito e campito come il suo materiale nelle sezioni, le facce del nucleo sono disegnate più spesse, lo spessore totale è quotato e ogni strato è nominato accanto come lo nomina la tabella. I disegni si stampano con la tabella, su una tavola e nel PDF. Un nuovo abaco delle stratigrafie li disegna; togli la spunta a **Disegni delle stratigrafie** per tenere solo la tabella.
+
+I disegni **Su ogni scheda** (vista interna, vista esterna, pianta, sezione), nelle **Impostazioni** di un abaco, appartengono alle schede degli abachi dei serramenti; una tabella semplice non ha schede, quindi lì non sono proposti.
+
+![L'abaco delle stratigrafie dei tipi con la stratigrafia di ogni tipo](shots/type-assemblies.webp)
+
+## Esportare
+
+**CSV** e **XLSX** nella barra esportano l'abaco come foglio di calcolo (un XLSX ha un foglio per ogni tabella). Nell'app desktop Lapin chiede dove salvare il file e propone il nome dell'abaco; in un browser il file viene scaricato. I tipi di muro e di solaio esportati si salvano allo stesso modo.

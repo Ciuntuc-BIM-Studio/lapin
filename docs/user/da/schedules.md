@@ -49,3 +49,17 @@ Det hele udskrives: på et tegningsark, i PDF og DXF og i eksporten til CSV og X
 Motoren tegner hvert diagram efter tabellerne, så det vises i skemaet, på et tegningsark, der placerer skemaet, og i PDF'en nøjagtigt ens. Det følger modellen og det, du har skrevet: ændr et rums areal, eller tilføj din egen række, og diagrammet ændrer sig med dem. **✎** ændrer et diagram, **×** fjerner det.
 
 ![Et rumskema med sin egen række og et cirkeldiagram over arealerne efter funktion](shots/schedule-chart.webp)
+
+## Typeopbygninger
+
+Skemaet **Typeopbygninger** (**+** → **Typeopbygninger**) viser hver væg- og dæktype: dens mærke, dens samlede tykkelse, hvor mange elementer der bruger den, og derefter dens lag i rækkefølge med materialer og tykkelser.
+
+**Opbygningstegninger** i dets værktøjslinje tegner hver type efter tabellen, skåret gennem lagene i skemaets målestok (1:50, medmindre du vælger en anden): en væg som en plan skærer den, et dæk som et snit skærer det, lag 1 øverst. Hvert lag er udfyldt og skraveret som dets materiale i snit, kernens flader er tegnet kraftigere, den samlede tykkelse er målsat, og hvert lag er navngivet ved siden af, som tabellen navngiver det. Tegningerne udskrives med tabellen, på et tegningsark og i PDF'en. Et nyt skema over typeopbygninger tegner dem; fjern fluebenet ved **Opbygningstegninger** for kun at beholde tabellen.
+
+Tegningerne **På hvert kort** (indvendig visning, udvendig visning, plan, snit) i et skemas **Indstillinger** hører til kortene i skemaerne over døre og vinduer; en almindelig tabel har ingen kort, så de tilbydes ikke der.
+
+![Skemaet over typeopbygninger med hver types opbygning](shots/type-assemblies.webp)
+
+## Eksport
+
+**CSV** og **XLSX** i værktøjslinjen eksporterer skemaet som regneark (en XLSX har ét ark for hver tabel). I skrivebordsappen spørger Lapin, hvor filen skal gemmes, og foreslår skemaets navn; i en browser hentes filen ned. Eksporterede væg- og dæktyper gemmes på samme måde.

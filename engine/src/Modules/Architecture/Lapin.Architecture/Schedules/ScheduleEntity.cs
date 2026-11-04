@@ -158,13 +158,21 @@ public sealed class ScheduleEntity : ISheetContent
     /// <summary>What a type's card shows: the schedule's drawings (interior by default).</summary>
     static IReadOnlyList<string> Drawings(Entity s) => s.Attrs["drawings"] is JsonArray a ? a.Select(x => (string?)x).OfType<string>().ToList() : ["interior"];
 
+    /// <summary>Whether a type assemblies schedule draws each type's build-up after its table (its <c>drawings</c> hold <see cref="TypeBuildUps.Drawing"/>).</summary>
+    public static bool DrawsBuildUps(Entity s) => s.Attrs["drawings"] is JsonArray a && a.Any(x => (string?)x == TypeBuildUps.Drawing);
+
     /// <summary>The module that fills a schedule of this kind (a planting schedule), if the kind is not one of the joinery's.</summary>
     static IScheduleSource? Source(IServices services, string? kind) => kind == null || Kinds.Contains(kind) ? null : services.All<IScheduleSource>().FirstOrDefault(x => x.Kind == kind);
 
     public IReadOnlyList<(double W, double H, List<Pen> Pens)> Pages(IQueryContext q, Entity e, double maxWidth, double? maxHeight)
     {
         if (Source(q.Services, e.Str("kind")) is { } source)
-            return ScheduleLayout.Pages([(source.Label, ScheduleLayout.Table(SourceGrid(q, e, source).ToGrid(), maxWidth)), .. Charts(q, e, maxWidth)], maxHeight);
+        {
+            // A type assemblies schedule's build-ups (reports #65–#67) after its table, at its scale, when it draws them.
+            var buildUps = source is TypeAssemblies && DrawsBuildUps(e) ? TypeBuildUps.Bands(q.Model, Scale(e), maxWidth) : [];
+            return ScheduleLayout.Pages([(source.Label, ScheduleLayout.Table(SourceGrid(q, e, source).ToGrid(), maxWidth)),
+                .. buildUps.Count > 0 ? [("Build-ups", buildUps)] : new List<(string, List<ScheduleBand>)>(), .. Charts(q, e, maxWidth)], maxHeight);
+        }
         var data = Data(q, e);
         var table = ScheduleTable.Of(e);
         var drawings = Drawings(e);
@@ -258,7 +266,10 @@ public sealed class ScheduleEntity : ISheetContent
             var source = Source(ctx.Services, kind);
             if (!Kinds.Contains(kind) && source == null) throw new CommandException("A schedule lists doors, windows, all of them, lintels, or a table another module offers.");
             var name = (string?)a["name"] ?? source?.Label ?? kind switch { "door" => "Door schedule", "window" => "Window schedule", "lintel" => "Lintel schedule", _ => "Joinery schedule" };
-            var s = new Entity(ctx.NewId(), Class, name, new JsonObject { ["kind"] = kind, ["scale"] = 50 });
+            var attrs = new JsonObject { ["kind"] = kind, ["scale"] = 50 };
+            // A new type assemblies schedule draws the build-ups (reports #65–#67); one made before keeps its plain table until asked.
+            if (source is TypeAssemblies) attrs["drawings"] = new JsonArray((JsonNode)TypeBuildUps.Drawing);
+            var s = new Entity(ctx.NewId(), Class, name, attrs);
             ctx.Add(s);
             return new JsonObject { ["id"] = s.Id };
         });
@@ -467,7 +478,7 @@ public sealed class ScheduleEntity : ISheetContent
                 {
                     ["w"] = gw, ["h"] = gh, ["pens"] = new JsonArray(gpens.Select(p => (JsonNode)p.ToJson()).ToArray()),
                     ["entries"] = new JsonArray(), ["rows"] = new JsonArray(), ["problems"] = new JsonObject { ["twice"] = 0, ["none"] = 0, ["marks"] = new JsonArray() },
-                    ["available"] = new JsonArray(), ["order"] = new JsonArray(), ["drawings"] = new JsonArray(), ["parts"] = new JsonArray(), ["reviewed"] = new JsonArray(), ["check"] = new JsonArray(), ["overridden"] = new JsonObject(),
+                    ["available"] = new JsonArray(), ["order"] = new JsonArray(), ["drawings"] = s.Attrs["drawings"]?.DeepClone() ?? new JsonArray(), ["parts"] = new JsonArray(), ["reviewed"] = new JsonArray(), ["check"] = new JsonArray(), ["overridden"] = new JsonObject(),
                     ["table"] = new JsonObject { ["columns"] = new JsonArray(plain.Columns.Select(c => (JsonNode)c).ToArray()), ["rows"] = new JsonArray(plain.Rows.Select(r => (JsonNode)new JsonArray(r.Select(c => (JsonNode)c).ToArray())).ToArray()) },
                     ["grid"] = ScheduleGrids.ToJson(grid),
                     ["charts"] = ChartsJson(s), ["chartColumns"] = new JsonArray(plain.Columns.Select(c => (JsonNode)c).ToArray()),

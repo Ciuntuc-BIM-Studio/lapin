@@ -49,3 +49,17 @@ Toate se tipăresc: pe o planșă, în PDF și DXF, și în exporturile CSV și 
 Motorul desenează fiecare grafic după tabele, așa că apare în extras, pe o planșă care pune extrasul și în PDF, exact la fel. Urmează modelul și ce ai scris: schimbi aria unei încăperi sau adaugi un rând al tău, și graficul se schimbă odată cu ele. **✎** schimbă un grafic, **×** îl scoate.
 
 ![Un extras de încăperi cu un rând propriu și un grafic cu sectoare al ariilor după funcțiune](shots/schedule-chart.webp)
+
+## Alcătuirile tipurilor
+
+Extrasul **Alcătuirile tipurilor** (**+** → **Alcătuirile tipurilor**) listează fiecare tip de perete și de placă: marca, grosimea totală, câte elemente îl folosesc, apoi straturile lui în ordine, cu materialele și grosimile lor.
+
+**Desenele alcătuirilor**, în bara extrasului, desenează fiecare tip după tabel, secționat prin straturile lui la scara extrasului (1:50 dacă nu alegi alta): peretele așa cum îl taie un plan, placa așa cum o taie o secțiune, stratul 1 sus. Fiecare strat e umplut și hașurat ca materialul lui în secțiuni, fețele miezului se desenează mai groase, grosimea totală e cotată, iar fiecare strat e numit alături așa cum îl numește tabelul. Desenele se tipăresc cu tabelul, pe planșă și în PDF. Un extras nou de alcătuiri le desenează; debifează **Desenele alcătuirilor** ca să rămână doar tabelul.
+
+Desenele **Pe fiecare fișă** (vedere din interior, vedere din exterior, plan, secțiune), din **Setări**, țin de fișele extraselor de tâmplărie; un tabel simplu nu are fișe, așa că acolo nu sunt oferite.
+
+![Extrasul alcătuirilor tipurilor cu alcătuirea fiecărui tip](shots/type-assemblies.webp)
+
+## Exportul
+
+**CSV** și **XLSX** din bară exportă extrasul ca tabel de calcul (un XLSX are câte o foaie pentru fiecare tabel). În aplicația desktop, Lapin te întreabă unde să salveze fișierul și propune numele extrasului; în browser fișierul se descarcă. Tipurile de pereți și de plăci exportate se salvează la fel.

@@ -49,3 +49,17 @@ Alles wird gedruckt: auf einem Plan, im PDF und DXF und in den Exporten als CSV 
 Die Engine zeichnet jedes Diagramm nach den Tabellen, daher erscheint es in der Liste, auf einem Plan, der die Liste platziert, und im PDF genau gleich. Es folgt dem Modell und dem, was Sie eingegeben haben: Ändern Sie die Fläche eines Raums oder fügen Sie eine eigene Zeile hinzu, und das Diagramm ändert sich mit. **✎** ändert ein Diagramm, **×** entfernt es.
 
 ![Eine Raumliste mit einer eigenen Zeile und einem Kreisdiagramm der Flächen nach Nutzung](shots/schedule-chart.webp)
+
+## Typenaufbauten
+
+Die Liste **Typenaufbauten** (**+** → **Typenaufbauten**) zeigt jeden Wand- und Deckentyp: sein Kennzeichen, seine Gesamtdicke, wie viele Bauteile ihn verwenden, dann seine Schichten der Reihe nach mit Materialien und Dicken.
+
+**Aufbauzeichnungen** in ihrer Leiste zeichnet jeden Typ nach der Tabelle, durch seine Schichten geschnitten, im Maßstab der Liste (1:50, wenn Sie keinen anderen wählen): eine Wand, wie ein Grundriss sie schneidet, eine Decke, wie ein Schnitt sie schneidet, Schicht 1 oben. Jede Schicht ist gefüllt und schraffiert wie ihr Material in Schnitten, die Flächen des Kerns sind kräftiger gezeichnet, die Gesamtdicke ist bemaßt, und jede Schicht ist daneben so benannt, wie die Tabelle sie nennt. Die Zeichnungen werden mit der Tabelle gedruckt, auf einem Plan und im PDF. Eine neue Liste der Typenaufbauten zeichnet sie; nehmen Sie den Haken bei **Aufbauzeichnungen** heraus, um nur die Tabelle zu behalten.
+
+Die Zeichnungen **Auf jeder Karte** (Innenansicht, Außenansicht, Grundriss, Schnitt) in den **Einstellungen** einer Liste gehören zu den Karten der Tür- und Fensterlisten; eine einfache Tabelle hat keine Karten, deshalb werden sie dort nicht angeboten.
+
+![Die Liste der Typenaufbauten mit dem Aufbau jedes Typs](shots/type-assemblies.webp)
+
+## Exportieren
+
+**CSV** und **XLSX** in der Leiste exportieren die Liste als Tabellenkalkulation (eine XLSX hat ein Blatt je Tabelle). In der Desktop-App fragt Lapin, wo die Datei gespeichert werden soll, und schlägt den Namen der Liste vor; im Browser wird die Datei heruntergeladen. Exportierte Wand- und Deckentypen werden genauso gespeichert.

@@ -15,7 +15,7 @@ import {
   usersOf, withBinding, withoutBinding, withPreset, type Binding, type PresetId,
 } from '../app/shortcuts';
 import { commands, findCommandDef, useBindings } from '../app/commands';
-import { isDesktop } from '../engine/files';
+import { isDesktop, saveFile } from '../engine/files';
 
 /** Listening for a binding: a chord at once, or letters ended by Enter. */
 function useCapture(active: boolean, onDone: (b: Binding | null) => void): string {
@@ -73,12 +73,7 @@ export function ShortcutsDialog() {
     if (Object.keys(state.overrides).length && !window.confirm('Your own changes to the shortcuts go, and the preset’s come. Go on?')) return;
     setKeymap(withPreset(p));
   };
-  const exportFile = () => {
-    const blob = new Blob([exportKeymap(state)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'lapin-shortcuts.json'; a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
+  const exportFile = () => { void saveFile(new TextEncoder().encode(exportKeymap(state)), 'lapin-shortcuts.json', 'application/json'); };
   const importFile = async (f: File) => {
     const s = importKeymap(await f.text());
     if (!s) { notify('That is not a Lapin shortcuts file.'); return; }

@@ -14,6 +14,7 @@ import { setTypeParam } from './scheduleParams';
 import { notify } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { execute, query, useSession } from '../engine/session';
+import { saveFile, safeFileName } from '../engine/files';
 import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
@@ -92,26 +93,27 @@ export function ScheduleView() {
   const toScreen = useCallback((p: { x: number; y: number }) => ({ x: p.x * v.k + v.ox, y: p.y * v.k + v.oy }), [v.k, v.ox, v.oy]);
 
   if (!node) return <div className="view-pane"><p className="muted">No schedule.</p></div>;
+  // Saved where the user says on the desktop, downloaded in a browser (report #66).
   const csv = async () => {
     const text = await query<string>('schedule.csv', { id: node.id });
     if (text == null) return;
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
-    a.download = `${node.name}.csv`; a.click();
-    notify(`Exported ${node.name}.csv.`);
+    // A byte order mark first, so a spreadsheet reads the CSV as UTF-8 (ă, ș, ț, ø).
+    const saved = await saveFile(new TextEncoder().encode(`﻿${text}`), `${safeFileName(node.name, 'Schedule')}.csv`, 'text/csv');
+    if (saved) notify(`Exported ${saved}.`);
   };
   const xlsx = async () => {
     const b64 = await query<string>('schedule.xlsx', { id: node.id });
     if (!b64) return;
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-    a.download = `${node.name}.xlsx`; a.click();
-    notify(`Exported ${node.name}.xlsx.`);
+    const saved = await saveFile(bytes, `${safeFileName(node.name, 'Schedule')}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    if (saved) notify(`Exported ${saved}.`);
   };
   const problems = d ? d.problems.twice + d.problems.none + d.problems.marks.length : 0;
   const kind = String(node.props.kind ?? 'all');
   const joinery = ['door', 'window', 'all', 'lintel'].includes(kind);
+  // The type assemblies schedule draws each type's build-up after its table (reports #65–#67), at its scale.
+  const types = kind === 'types';
+  const buildUps = types && (d?.drawings ?? []).includes('buildup');
   const addRow = () => {
     if (!joinery) { void execute('architecture.addScheduleManualRow', { id: node.id }); return; }
     const l = window.prompt('Row label');
@@ -130,10 +132,18 @@ export function ScheduleView() {
       <div className="view-toolbar">
         <span className="view-title">{node.name}</span>
         {problems > 0 && <span className="chip warn" title={[...(d?.problems.marks ?? []), d?.problems.twice ? `${d.problems.twice} in two tables` : '', d?.problems.none ? `${d.problems.none} in none` : ''].filter(Boolean).join('\n')}>{problems} to check</span>}
+        {types && (
+          <label className="chip" title="Each type's build-up drawn after the table, cut through its layers: on screen, on sheets and in the PDF" data-testid="schedule-buildups">
+            <input type="checkbox" checked={buildUps} onChange={(e) => void execute('architecture.updateSchedule', { id: node.id, drawings: e.target.checked ? ['buildup'] : [] })} />
+            Build-up drawings
+          </label>
+        )}
+        {(joinery || buildUps) && (
+          <select value={String(node.props.scale ?? 50)} title="Scale of the drawings" onChange={(e) => void execute('architecture.updateSchedule', { id: node.id, scale: Number(e.target.value) })}>
+            {[10, 20, 25, 50, 100].map((s) => <option key={s} value={s}>1:{s}</option>)}
+          </select>
+        )}
         {joinery && <>
-        <select value={String(node.props.scale ?? 50)} title="Scale of the drawings" onChange={(e) => void execute('architecture.updateSchedule', { id: node.id, scale: Number(e.target.value) })}>
-          {[10, 20, 25, 50, 100].map((s) => <option key={s} value={s}>1:{s}</option>)}
-        </select>
         <select value={String(node.props.sort ?? '')} title="Order of the cards" onChange={(e) => void execute('architecture.updateSchedule', { id: node.id, sort: e.target.value || null })}>
           <option value="">by kind and mark</option><option value="name">by name</option><option value="width">by width</option><option value="height">by height</option><option value="total">most first</option>
         </select>

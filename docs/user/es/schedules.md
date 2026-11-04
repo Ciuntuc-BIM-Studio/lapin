@@ -49,3 +49,17 @@ Todo se imprime: en una lámina, en el PDF y el DXF, y en las exportaciones CSV 
 El motor dibuja cada gráfico después de las tablas, así que se ve en la tabla, en una lámina que coloca la tabla y en el PDF, exactamente igual. Sigue al modelo y lo que usted escribió: cambie el área de una habitación o añada una fila propia, y el gráfico cambia con ellos. **✎** cambia un gráfico, **×** lo quita.
 
 ![Una tabla de habitaciones con una fila propia y un gráfico circular de las áreas por uso](shots/schedule-chart.webp)
+
+## Composición de los tipos
+
+La tabla **Composición de los tipos** (**+** → **Composición de los tipos**) lista cada tipo de muro y de forjado: su marca, su espesor total, cuántos elementos lo usan y luego sus capas en orden, con sus materiales y espesores.
+
+**Dibujos de la composición**, en su barra, dibuja cada tipo tras la tabla, cortado por sus capas a la escala de la tabla (1:50 si no eliges otra): un muro como lo corta una planta, un forjado como lo corta una sección, la capa 1 arriba. Cada capa se rellena y se sombrea como su material en las secciones, las caras del núcleo se dibujan más gruesas, el espesor total se acota y cada capa se nombra a su lado como la nombra la tabla. Los dibujos se imprimen con la tabla, en una lámina y en el PDF. Una tabla de composición nueva los dibuja; desmarca **Dibujos de la composición** para dejar solo la tabla.
+
+Los dibujos **En cada ficha** (vista interior, vista exterior, planta, sección), en la **Configuración** de una tabla, pertenecen a las fichas de las tablas de carpintería; una tabla simple no tiene fichas, así que allí no se ofrecen.
+
+![La tabla de composición de los tipos con la composición de cada tipo](shots/type-assemblies.webp)
+
+## Exportar
+
+**CSV** y **XLSX** en la barra exportan la tabla como hoja de cálculo (un XLSX tiene una hoja por cada tabla). En la aplicación de escritorio, Lapin pregunta dónde guardar el archivo y propone el nombre de la tabla; en un navegador el archivo se descarga. Los tipos de muro y de forjado exportados se guardan del mismo modo.

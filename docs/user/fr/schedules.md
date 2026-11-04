@@ -49,3 +49,17 @@ Tout s’imprime : sur une feuille, dans le PDF et le DXF, et dans les exports C
 Le moteur dessine chaque graphique après les tableaux, il s’affiche donc dans la nomenclature, sur une feuille qui place la nomenclature et dans le PDF, exactement pareil. Il suit le modèle et ce que vous avez saisi : changez la surface d’une pièce ou ajoutez une ligne à vous, et le graphique change avec eux. **✎** modifie un graphique, **×** le retire.
 
 ![Une nomenclature des pièces avec une ligne à elle et un graphique en secteurs des surfaces par fonction](shots/schedule-chart.webp)
+
+## Compositions des types
+
+La nomenclature **Compositions des types** (**+** → **Compositions des types**) liste chaque type de mur et de plancher : son repère, son épaisseur totale, le nombre d'éléments qui l'utilisent, puis ses couches dans l'ordre avec leurs matériaux et leurs épaisseurs.
+
+**Dessins des compositions**, dans sa barre, dessine chaque type après le tableau, coupé à travers ses couches à l'échelle de la nomenclature (1:50 si vous n'en choisissez pas une autre) : un mur comme le coupe un plan, un plancher comme le coupe une coupe, la couche 1 en haut. Chaque couche est remplie et hachurée comme son matériau en coupe, les faces du noyau sont dessinées plus épaisses, l'épaisseur totale est cotée et chaque couche est nommée à côté comme le tableau la nomme. Les dessins s'impriment avec le tableau, sur une feuille et dans le PDF. Une nouvelle nomenclature des compositions les dessine ; décochez **Dessins des compositions** pour garder le tableau seul.
+
+Les dessins **Sur chaque fiche** (vue intérieure, vue extérieure, plan, coupe), dans les **Paramètres** d'une nomenclature, appartiennent aux fiches des nomenclatures de menuiseries ; un tableau simple n'a pas de fiches, ils n'y sont donc pas proposés.
+
+![La nomenclature des compositions des types avec la composition de chaque type](shots/type-assemblies.webp)
+
+## Exporter
+
+**CSV** et **XLSX** dans la barre exportent la nomenclature en tableur (un XLSX a une feuille par tableau). Dans l'application de bureau, Lapin demande où enregistrer le fichier et propose le nom de la nomenclature ; dans un navigateur, le fichier est téléchargé. Les types de murs et de planchers exportés s'enregistrent de la même façon.

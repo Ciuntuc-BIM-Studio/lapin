@@ -287,6 +287,14 @@ ENDSEC;
 END-ISO-10303-21;
 `;
 
+/** Whether no two controls of the schedule's toolbar overlap (report #65: words ran under the next button). */
+async function toolbarClear(t) {
+  return t.page.evaluate(() => {
+    const r = [...document.querySelectorAll('.schedule-pane .view-toolbar > *')].map((e) => e.getBoundingClientRect()).filter((b) => b.width > 0);
+    return r.every((a, i) => r.every((b, j) => j <= i || a.right <= b.left + 0.5 || b.right <= a.left + 0.5 || a.bottom <= b.top + 0.5 || b.bottom <= a.top + 0.5));
+  });
+}
+
 export const scenes = [
   {
     id: 'start',
@@ -501,6 +509,7 @@ export const scenes = [
       await t.wait(1500);
       t.expect(await t.page.locator('.schedule-grid input[value="EI2 30"]').count() === 1, 'the fire rating row reads the door type\'s FireRating');
       t.expect(await t.page.locator('[data-testid^=param-Manufacturer]').count() >= 2, 'the types\' Manufacturer is a row');
+      t.expect(await toolbarClear(t), 'the schedule\'s toolbar lays out without its controls overlapping (report #65)');
       await t.shot('joinery-schedule', { of: '.schedule-pane', pad: 0 });
       // The configurator's parameters.
       await t.ui({ dialog: 'joinery' });
@@ -531,6 +540,17 @@ export const scenes = [
       await t.wait(400);
       await t.fit();
       await t.shot('schedule-chart', { of: '.schedule-pane', pad: 0 });
+      // The type assemblies schedule (reports #65–#67): each type's build-up drawn after the table.
+      const types = await t.cmd('architecture.createSchedule', { kind: 'types' });
+      await t.ui({ view: 'schedule', scheduleId: types.id });
+      await t.wait(1500);
+      if (await t.page.locator('[data-testid=schedule-charts]').count()) await t.page.locator('[data-testid=schedule-charts-toggle]').click();
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=schedule-buildups] input:checked').count() === 1, 'a new type assemblies schedule draws the build-ups');
+      t.expect(await t.page.locator('[data-testid=schedule] text', { hasText: 'Build-ups' }).count() === 1, 'the build-ups follow the table');
+      t.expect(await toolbarClear(t), 'the type assemblies toolbar lays out without its controls overlapping (report #65)');
+      await t.fit();
+      await t.shot('type-assemblies', { of: '.schedule-pane', pad: 0 });
       await t.ui({ keyPlan: true });
     },
   },

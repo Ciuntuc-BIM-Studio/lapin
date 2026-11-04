@@ -1,4 +1,5 @@
 import { engine } from '../../engine/session';
+import { saveFile } from '../../engine/files';
 /** Survey files: picking one (xyz or PENZD points). */
 
 /** A text file the user picks (a survey: xyz or PENZD), or null when cancelled. */
@@ -19,13 +20,10 @@ export function pickText(accept: string): Promise<{ name: string; text: string }
 /** What a survey file can be. */
 export const SURVEY = '.csv,.txt,.xyz,.pts';
 
-/** The LandXML of the project's terrains, saved by the browser; rejects with the engine's reason when it cannot write it. */
+/** The LandXML of the project's terrains, saved where the user says (a download in a browser); rejects with the engine's reason when it cannot write it. */
 export async function downloadLandXml(ids?: string[]): Promise<void> {
   const r = await engine.call<{ name: string; text: string }>('doc.query', { name: 'civil.landXml', args: ids ? { ids } : {} });
-  const url = URL.createObjectURL(new Blob([r.text], { type: 'application/xml' }));
-  const a = document.createElement('a');
-  a.href = url; a.download = r.name; a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  await saveFile(new TextEncoder().encode(r.text), r.name, 'application/xml');
 }
 
 /** A binary file the user picks, as base64 (a DXF: its code page is read by the engine), or null when cancelled. */

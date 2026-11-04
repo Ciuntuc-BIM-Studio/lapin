@@ -68,6 +68,32 @@ export function download(bytes: Uint8Array, name: string, type = 'application/oc
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/**
+ * Bytes the interface made (a schedule's CSV or XLSX, exported types) saved where the user says (report #66): on the
+ * desktop the save dialog, the default name given, and the engine writes them; in a browser a download. The file's
+ * name when saved, null when the user stepped back or it failed (said in a notice).
+ */
+export async function saveFile(bytes: Uint8Array, name: string, type = 'application/octet-stream'): Promise<string | null> {
+  try {
+    if (isDesktop()) {
+      const ext = name.includes('.') ? name.split('.').pop()!.toLowerCase() : '';
+      const dialog = await import('@tauri-apps/plugin-dialog');
+      const path = await dialog.save({ defaultPath: name, filters: ext ? [{ name: ext.toUpperCase(), extensions: [ext] }] : [] });
+      if (typeof path !== 'string') return null;
+      await engine.call('file.write', { path, data: toBase64(bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
+      return path.split(/[\\/]/).pop() ?? name;
+    }
+    download(bytes, name, type);
+    return name;
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+    return null;
+  }
+}
+
+/** A file name the systems accept, from a schedule's or a type's name (no slashes, colons, quotes…). */
+export const safeFileName = (name: string, fallback = 'export') => name.replace(/[\\/:*?"<>|]+/g, '_').trim() || fallback;
+
 /** Bytes written into a file the user chose (where the browser can), else downloaded; false: the user cancelled. */
 async function keep(bytes: Uint8Array, name: string, handle: FileSystemFileHandle | null, ask: boolean): Promise<{ handle: FileSystemFileHandle | null } | false> {
   let target = ask ? null : handle;
