@@ -31,6 +31,7 @@ public static class RoomBounds
         var z = storey.Num("elevation") + Height;
         var frame = new ViewFrame(new Vec3(0, 0, z), new Vec3(1, 0, 0), new Vec3(0, 1, 0), -Vec3.UnitZ);
         var cutters = services.Get<ICutters>();
+        var paths = services.Get<IPathElements>();
         var areas = new List<IReadOnlyList<IReadOnlyList<Vec2>>>();
         if (cutters != null)
             foreach (var cls in Bounding)
@@ -40,10 +41,33 @@ public static class RoomBounds
                     try { env = cutters.EnvelopeOf(e, m); }
                     catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { continue; }
                     if (env == null || Measure.Bounds(env) is not { } b || b.Min.Z >= z || b.Max.Z <= z) continue;
+                    // A straight wall's footprint as its joins cut it: the envelope ends square at the axis, so at a corner
+                    // the two left out the corner's outer square, and a room on that side (its corner over 180°) ran into it.
+                    if (paths != null && JoinedFootprint(e, m, paths) is { } joined) { areas.Add([joined]); continue; }
                     var loops = HiddenLines.Section(env, frame);
                     if (loops.Count > 0) areas.Add(loops.Select(l => (IReadOnlyList<Vec2>)l).ToList());
                 }
         return FreeSpace.Of(areas);
+    }
+
+    /// <summary>
+    /// A straight path element's outline in plan with its ends where its joins put them (a mitre, a butt corner, a T),
+    /// as its body is built; null for an arc or an element that is not a path.
+    /// </summary>
+    public static IReadOnlyList<Vec2>? JoinedFootprint(Entity e, IModelView m, IPathElements paths)
+    {
+        if (!paths.IsPath(e.Class) || PathCurve.Of(e).IsArc || paths.FrameOf(e, m) is not { } f) return null;
+        var ends = Joins.EndsOf(m, e, paths, []);
+        var start = ends[0]?.Point ?? f.Start;
+        var along = (ends[1]?.Point ?? f.End) - start;
+        var length = along.Length;
+        if (length < 1e-9) return null;
+        var dir = along.Normalized();
+        var left = dir.Perp;
+        var (sc, ec) = (ends[0]?.Cut ?? EndCut.Square, ends[1]?.Cut ?? EndCut.Square);
+        Vec2 P(double x, double y) => start + dir * x + left * y;
+        // A cut's Right is at the right face (YMin), its Left at the left face (YMax).
+        return [P(-sc.Right, f.YMin), P(length + ec.Right, f.YMin), P(length + ec.Left, f.YMax), P(-sc.Left, f.YMax)];
     }
 
     /// <summary>The region round <paramref name="p"/> on the storey, or why there is none.</summary>

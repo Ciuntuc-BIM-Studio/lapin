@@ -55,6 +55,28 @@ public sealed class RoomTests : IDisposable
     static Rooms.Outline Outline(Fixture f, string id) => Rooms.OfGeometry(f.Session.Geometry(id)) ?? throw new InvalidOperationException("no outline");
     static double Qty(Fixture f, string id, string name) => f.Session.Quantities(id).Single().Quantities.Single(q => q.Name == name).Value;
 
+    /// <summary>
+    /// A tester's report (0.1.592): at a corner of a room over 180° (an L-shaped room's inner corner), the room ran past the
+    /// walls' faces round the corner of their axes, a 10 × 10 cm notch, and its corners there were snap points off the walls.
+    /// </summary>
+    [Theory]
+    [InlineData("mitre")]
+    [InlineData("butt")]
+    public void An_L_shaped_room_turns_its_corner_over_180_degrees_at_the_walls_faces(string style)
+    {
+        var f = New();
+        var type = f.Type("Core 20", ("Brick", 0.2, true));
+        // An L of 20 cm walls on their axes, its corner over 180° at (3, 3).
+        foreach (var (x1, y1, x2, y2) in new[] { (0.0, 0.0, 6.0, 0.0), (6, 0, 6, 3), (6, 3, 3, 3), (3, 3, 3, 6), (3, 6, 0, 6), (0, 6, 0, 0) })
+            f.Wall(x1, y1, x2, y2, type, style);
+        var o = Outline(f, Room(f, 1, 1));
+        // Six corners on the faces, 0.1 inside the axes; the one over 180° at (2.9, 2.9), not round the axes' corner (3, 3).
+        Assert.Equal(6, o.Outer.Count);
+        foreach (var c in new Vec2[] { new(0.1, 0.1), new(5.9, 0.1), new(5.9, 2.9), new(2.9, 2.9), new(2.9, 5.9), new(0.1, 5.9) })
+            Assert.Contains(o.Outer, p => (p - c).Length < 1e-6);
+        Assert.Equal(5.8 * 5.8 - 3 * 3, o.NetArea, 6);
+    }
+
     [Fact]
     public void A_click_inside_four_walls_finds_the_room_between_their_faces()
     {
