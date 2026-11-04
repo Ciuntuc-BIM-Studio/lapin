@@ -37,6 +37,8 @@ Egenskabspanelet viser den markerede væg. Øverst i panelet står dens type og 
 
 ![En vægs egenskaber](shots/wall-properties.webp)
 
+Længere nede viser **Afhængigheder**, hvad der er bygget af væggen, og hvad væggen er bygget af. **Bruges af** viser de elementer, der ændres, når væggen ændres: de vægge, den samles med, dens døre og vinduer, en væg fastgjort til den. Klik på et navn for at vælge elementet. **Bygget af** viser de elementer, væggen afhænger af, og derefter dens type og materialer. Når du sletter et element, som andre afhænger af, nævner en besked dem, der blev genopbygget; <kbd>Ctrl</kbd> <kbd>Z</kbd> bringer det hele tilbage.
+
 **Vend** vender væggens lag til den anden side. Du kan også klikke på de små pile, der vises ved siden af en markeret væg i planen.
 
 ## Vægtyper

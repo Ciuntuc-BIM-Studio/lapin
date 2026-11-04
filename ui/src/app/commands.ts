@@ -14,7 +14,8 @@ import { toggleGrid, toggleThinLines } from './display';
 import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSPACE_LABELS } from './interface';
 import { effectiveBindings, formatBinding, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
 import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
-import { execute, redo, undo } from '../engine/session';
+import { redo, undo } from '../engine/session';
+import { deleteElements } from '../engine/dependents';
 import { newProject, openProject, saveProject } from '../engine/files';
 import { COMMANDS, TOOL_WORDS, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
@@ -37,7 +38,7 @@ function appCommands(): CommandDef[] {
       // Over a roof window's grip on its selected roof: that window, not the roof (decision 280).
       if (takeHotRemove()) return;
       const ids = useUi.getState().selected;
-      if (ids.length) { void execute('element.delete', { ids }); select(null); }
+      if (ids.length) { void deleteElements(ids); select(null); }
     } },
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },

@@ -37,6 +37,8 @@ Panoul de proprietăți arată peretele selectat. Sus sunt tipul și straturile 
 
 ![Proprietățile unui perete](shots/wall-properties.webp)
 
+Mai jos, **Dependențe** arată ce e construit din perete și din ce e construit peretele. **Folosit de** enumeră elementele care se schimbă când se schimbă peretele: pereții cu care se îmbină, ușile și ferestrele lui, un perete atașat de el. Dai clic pe un nume ca să selectezi elementul. **Construit din** enumeră elementele de care depinde peretele, apoi tipul și materialele lui. Când ștergi un element de care depind altele, un mesaj le numește pe cele reconstruite; <kbd>Ctrl</kbd> <kbd>Z</kbd> le aduce pe toate înapoi.
+
 **Întoarce** mută straturile peretelui pe partea cealaltă. Poți da clic și pe săgețile mici de lângă un perete selectat în plan.
 
 ## Tipurile de pereți

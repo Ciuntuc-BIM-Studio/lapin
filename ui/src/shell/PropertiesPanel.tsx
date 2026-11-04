@@ -19,6 +19,8 @@ import type { FieldDescriptor, NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
 import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
+import { DependenciesSection } from './DependenciesSection';
+import { deleteElements } from '../engine/dependents';
 import { ParamsSection } from './ParamsSection';
 import { AxisFields } from './AxisFields';
 import { paramKey, sameKind, type Param } from './params';
@@ -300,10 +302,11 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
         </Group>
       )}
       <QuantitiesSection node={node} />
+      <DependenciesSection node={node} />
       <IfcPropertiesSection node={node} />
       {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
         <section className="sect actions">
-          <button type="button" className="btn" onClick={() => void execute('element.delete', { id: node.id })}><Trash2 size={14} />Delete</button>
+          <button type="button" className="btn" onClick={() => void deleteElements([node.id])}><Trash2 size={14} />Delete</button>
         </section>
       )}
       <details className="sect advanced">

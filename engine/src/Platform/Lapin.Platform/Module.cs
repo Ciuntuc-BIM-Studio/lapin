@@ -157,6 +157,10 @@ public interface IQueryContext
     ElementGeometry? Geometry(string entityId);
     /// <summary>The project's file name without its extension ("House"), what the interface calls the project; null before it has a file.</summary>
     string? Title => null;
+    /// <summary>The elements built from what <paramref name="id"/> is (its attributes, or its relationships): built again when it changes (<see cref="Dependencies"/>).</summary>
+    IReadOnlyList<string> DependentsOf(string id) => [];
+    /// <summary>What the element <paramref name="id"/> was built from: the entities its geometry read (its type, its host, the walls it joins).</summary>
+    IReadOnlyList<string> DependenciesOf(string id) => [];
 }
 
 /// <summary>How the inspector shows and edits one attribute. Lengths are metres in the engine; the UI shows mm.</summary>

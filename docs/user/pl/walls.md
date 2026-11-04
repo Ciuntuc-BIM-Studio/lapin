@@ -37,6 +37,8 @@ Panel Właściwości pokazuje zaznaczoną ścianę. U góry panelu są jej typ i
 
 ![Właściwości ściany](shots/wall-properties.webp)
 
+Niżej sekcja **Zależności** pokazuje, co jest zbudowane ze ściany i z czego jest zbudowana ściana. **Używany przez** wymienia elementy, które zmieniają się razem ze ścianą: ściany, z którymi się łączy, jej drzwi i okna, ścianę do niej dołączoną. Kliknij nazwę, aby zaznaczyć element. **Zbudowany z** wymienia elementy, od których zależy ściana, a potem jej typ i materiały. Gdy usuwasz element, od którego zależą inne, komunikat wymienia te, które zostały przebudowane; <kbd>Ctrl</kbd> <kbd>Z</kbd> przywraca wszystko.
+
 **Odwróć** przenosi warstwy ściany na drugą stronę. Możesz też kliknąć małe strzałki widoczne obok zaznaczonej ściany na rzucie.
 
 ## Typy ścian

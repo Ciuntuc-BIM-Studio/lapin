@@ -37,6 +37,8 @@ O painel Propriedades mostra a parede selecionada. O alto do painel traz o tipo 
 
 ![As propriedades de uma parede](shots/wall-properties.webp)
 
+Mais abaixo, **Dependências** mostra o que é construído a partir da parede e a partir de que a parede é construída. **Usado por** lista os elementos que mudam quando a parede muda: as paredes a que se une, suas portas e janelas, uma parede ligada a ela. Clique em um nome para selecionar o elemento. **Construído a partir de** lista os elementos de que a parede depende, depois seu tipo e seus materiais. Quando você exclui um elemento de que outros dependem, uma mensagem nomeia os que foram reconstruídos; <kbd>Ctrl</kbd> <kbd>Z</kbd> traz tudo de volta.
+
 **Inverter** vira as camadas da parede para o outro lado. Você também pode clicar nas pequenas setas mostradas ao lado de uma parede selecionada na planta.
 
 ## Tipos de parede

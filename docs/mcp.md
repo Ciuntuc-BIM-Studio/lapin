@@ -31,7 +31,7 @@ The engine listens only on 127.0.0.1.
 | `lapin_info` | The product, its modules, every command with the arguments it reads, the queries, and the classes with their fields. Call it first. The arguments come from the engine source beside the script (each handler's `a["key"]`), so they never drift; keys read inside helpers are not listed, and the command's error names them. |
 | `lapin_model` | The entities (id, class, name, storey, attributes), optionally only some classes. |
 | `lapin_execute` | One command, for example `architecture.addWall {x1, y1, x2, y2}`. Lengths are in metres. |
-| `lapin_query` | A question that changes nothing, for example `view.drawing`, `schedule.csv` or `civil.elevationAt`. |
+| `lapin_query` | A question that changes nothing, for example `view.drawing`, `schedule.csv`, `civil.elevationAt`, or `core.dependents {id}`: what is built from an element and what it is built from (docs/dependencies.md), to know what an edit changes before making it. |
 | `lapin_quantities` | An element's quantity sets. |
 | `lapin_undo`, `lapin_redo` | One step back or forward. |
 | `lapin_save` | Save the project. |

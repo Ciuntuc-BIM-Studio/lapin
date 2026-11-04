@@ -37,6 +37,8 @@ Il pannello Proprietà mostra il muro selezionato. La parte superiore del pannel
 
 ![Le proprietà di un muro](shots/wall-properties.webp)
 
+Più in basso, **Dipendenze** mostra cosa è costruito dal muro e da cosa è costruito il muro. **Usato da** elenca gli elementi che cambiano quando cambia il muro: i muri a cui si unisce, le sue porte e finestre, un muro collegato a esso. Fai clic su un nome per selezionare l’elemento. **Costruito da** elenca gli elementi da cui dipende il muro, poi il suo tipo e i suoi materiali. Quando elimini un elemento da cui altri dipendono, un messaggio nomina quelli ricostruiti; <kbd>Ctrl</kbd> <kbd>Z</kbd> riporta tutto com’era.
+
 **Capovolgi** porta gli strati del muro dall’altro lato. Puoi anche fare clic sulle piccole frecce mostrate accanto a un muro selezionato in pianta.
 
 ## Tipi di muro

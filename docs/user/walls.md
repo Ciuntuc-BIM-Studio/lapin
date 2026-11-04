@@ -37,6 +37,8 @@ The properties panel shows the selected wall. The top of the panel holds its typ
 
 ![A wall's properties](shots/wall-properties.webp)
 
+Further down, **Dependencies** shows what is built from the wall and what the wall is built from. **Used by** lists the elements that change when the wall changes: the walls it joins, its doors and windows, a wall attached to it. Click a name to select that element. **Built from** lists the elements the wall depends on, then its type and materials. When you delete an element that others depend on, a message names the ones that were rebuilt; <kbd>Ctrl</kbd> <kbd>Z</kbd> brings everything back.
+
 **Flip** turns the wall's layers to the other side. You can also click the small arrows shown next to a selected wall in the plan.
 
 ## Wall types

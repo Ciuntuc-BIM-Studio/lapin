@@ -74,6 +74,7 @@ public sealed class CoreModule : ILapinModule
         r.Class(new(IfcSource.RecordClass, "IFC record", [], "#888888", Kind: "resource"));
         ViewStyles.Register(r);
         ElementFaces.Register(r);
+        Dependencies.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>
         {

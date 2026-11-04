@@ -311,6 +311,42 @@ public sealed class Session
         return q(new QueryContext(this), args);
     }
 
+    /// <summary>
+    /// The elements built from what <paramref name="id"/> is: those whose geometry read the entity or its
+    /// relationships, so an edit of it builds them again (what <see cref="DiffOf"/> rebuilds for that id).
+    /// Reads of a whole class (every wall, for the joins' search) are left out: they say nothing about this one.
+    /// </summary>
+    public IReadOnlyList<string> DependentsOf(string id)
+    {
+        EnsureBuilt();
+        var found = new HashSet<string>();
+        foreach (var key in new[] { id, TrackingView.RelationsKey(id) })
+            if (_readers.TryGetValue(key, out var r)) found.UnionWith(r);
+        found.Remove(id);
+        return [.. found.Where(x => _store.Get(x) != null).Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>The entities the element <paramref name="id"/> was built from (its type, its storey, its host, the walls it joins), itself left out.</summary>
+    public IReadOnlyList<string> DependenciesOf(string id)
+    {
+        EnsureBuilt();
+        return _built.TryGetValue(id, out var b)
+            ? [.. b.Reads.Where(r => r != id && _store.Get(r) != null).Order(StringComparer.Ordinal)]
+            : [];
+    }
+
+    /// <summary>
+    /// Every element built, so what read what is known for all of them. The interface's snapshot builds them
+    /// and each edit builds what it adds, so only a session that has built nothing yet looks (a million
+    /// references are not walked for every selection).
+    /// </summary>
+    void EnsureBuilt()
+    {
+        if (_built.Count > 0) return;
+        var missing = _store.Entities.Where(e => ProducerOf(e) != null).ToList();
+        if (missing.Count > 0) BuildMany(missing);
+    }
+
     /// <summary>An element's geometry as it is now (built when first asked for).</summary>
     public ElementGeometry? Geometry(string id)
     {
@@ -916,6 +952,8 @@ public sealed class Session
         public IServices Services => s._catalog;
         public ElementGeometry? Geometry(string entityId) => s.Geometry(entityId);
         public string? Title => s.Path is { Length: > 0 } p ? System.IO.Path.GetFileNameWithoutExtension(p.Replace('\\', '/').Split('/')[^1]) : null;
+        public IReadOnlyList<string> DependentsOf(string id) => s.DependentsOf(id);
+        public IReadOnlyList<string> DependenciesOf(string id) => s.DependenciesOf(id);
     }
 }
 

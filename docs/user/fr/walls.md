@@ -37,6 +37,8 @@ Le panneau des propriétés affiche le mur sélectionné. Le haut du panneau con
 
 ![Les propriétés d’un mur](shots/wall-properties.webp)
 
+Plus bas, **Dépendances** montre ce qui est construit à partir du mur et ce à partir de quoi le mur est construit. **Utilisé par** liste les éléments qui changent quand le mur change : les murs qu’il raccorde, ses portes et fenêtres, un mur attaché à lui. Cliquez sur un nom pour sélectionner l’élément. **Construit à partir de** liste les éléments dont dépend le mur, puis son type et ses matériaux. Quand vous supprimez un élément dont d’autres dépendent, un message nomme ceux qui ont été reconstruits ; <kbd>Ctrl</kbd> <kbd>Z</kbd> ramène tout.
+
 **Retourner** fait passer les couches du mur de l’autre côté. Vous pouvez aussi cliquer sur les petites flèches affichées à côté d’un mur sélectionné dans le plan.
 
 ## Types de murs

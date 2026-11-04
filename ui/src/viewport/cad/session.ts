@@ -11,6 +11,7 @@ import { create } from 'zustand';
 import type { Vec2 } from '../../platform/module';
 import { select, useUi } from '../../app/store';
 import { execute, undo } from '../../engine/session';
+import { deleteElements } from '../../engine/dependents';
 import { applyOrtho, parseCoordinateInput, pointAlong } from './input';
 import { arcThrough, dist, toJson, type Shape } from './shapes';
 import { liveBegin, liveEnd } from '../liveInput';
@@ -289,7 +290,7 @@ function scale(): Step | null | void | Promise<Step | null | void> {
 }
 
 function erase(): Step | null | void | Promise<Step | null | void> {
-  return withSelection(async (ids) => { await execute('element.delete', { ids }); select(null); return null; });
+  return withSelection(async (ids) => { await deleteElements(ids); select(null); return null; });
 }
 
 function offset(): Step {

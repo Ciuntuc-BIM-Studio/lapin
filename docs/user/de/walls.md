@@ -37,6 +37,8 @@ Der Eigenschaftenbereich zeigt die ausgewählte Wand. Oben im Bereich stehen ihr
 
 ![Die Eigenschaften einer Wand](shots/wall-properties.webp)
 
+Weiter unten zeigt **Abhängigkeiten**, was aus der Wand aufgebaut ist und woraus die Wand aufgebaut ist. **Verwendet von** listet die Elemente, die sich mit der Wand ändern: die Wände, an die sie anschließt, ihre Türen und Fenster, eine an ihr befestigte Wand. Ein Klick auf einen Namen wählt das Element aus. **Aufgebaut aus** listet die Elemente, von denen die Wand abhängt, dann ihren Typ und ihre Materialien. Wenn Sie ein Element löschen, von dem andere abhängen, nennt eine Meldung die neu aufgebauten; <kbd>Ctrl</kbd> <kbd>Z</kbd> holt alles zurück.
+
 **Umkehren** dreht die Schichten der Wand auf die andere Seite. Sie können auch auf die kleinen Pfeile klicken, die im Grundriss neben einer ausgewählten Wand angezeigt werden.
 
 ## Wandtypen
