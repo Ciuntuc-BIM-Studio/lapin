@@ -224,6 +224,7 @@ public static class IfcExport
             Network();
             carry?.Finish(buildingRef);
             Finish();
+            Processes();
         }
 
         // ─── Ids and small helpers ──────────────────────────────────────────
@@ -1830,6 +1831,84 @@ public static class IfcExport
             // Rooms are parts of their storey: aggregated, as IFC has spaces.
             foreach (var (spatial, list) in spaces)
                 f.Add("IFCRELAGGREGATES", Gid(refIdOf.GetValueOrDefault(spatial) ?? project.Id, "aggregates/spaces"), Null, Null, Null, spatial, L(list));
+        }
+
+        // ─── Processes: the work schedule (docs/plan-4d5d.md) ─────────────────
+
+        static string IfcDateTime(DateTime d) => S(d.ToString("yyyy-MM-ddTHH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
+        static string IfcDate(DateOnly d) => S(d.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+        static string IfcTime(TimeOnly t) => S(t.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture));
+
+        /// <summary>A number of working days as an IfcDuration (ISO 8601: P5D, P0D; a negative float -P2D; a part of a day in hours).</summary>
+        internal static string IfcDuration(double days)
+        {
+            var sign = days < 0 ? "-" : "";
+            days = Math.Abs(days);
+            var whole = Math.Floor(days);
+            var hours = Math.Round((days - whole) * 24, 3);
+            var text = hours > 0 ? $"P{whole:0}DT{hours.ToString(System.Globalization.CultureInfo.InvariantCulture)}H" : $"P{whole:0}D";
+            return S(sign + text);
+        }
+
+        /// <summary>
+        /// The modules' work schedules (IIfcProcesses): each an IfcWorkSchedule declared by the project, its calendar an
+        /// IfcWorkCalendar (the weekdays and hours a WEEKLY recurrence, each day not worked an exception) controlling the schedule
+        /// and its tasks, the IfcTasks with their IfcTaskTime nested in one another (IfcRelNests) and the top ones controlled by the
+        /// schedule (IfcRelAssignsToControl), the IfcRelSequences with their IfcLagTime, each task's own fields a property set.
+        /// </summary>
+        void Processes()
+        {
+            foreach (var src in s.Catalog.All<IIfcProcesses>())
+                foreach (var ws in src.Schedules(m))
+                {
+                    var schedule = f.Add("IFCWORKSCHEDULE", Gid(ws.Id), Null, S(ws.Name), Null, Null, Null, IfcDateTime(DateTime.UtcNow), Null, Null, Null, Null,
+                        IfcDateTime(ws.Start), ws.Finish is { } fin ? IfcDateTime(fin) : Null, E(ws.Predefined));
+                    var declared = new List<string> { schedule };
+                    string? calendar = null;
+                    if (ws.Calendar is { } c)
+                    {
+                        var period = f.Add("IFCTIMEPERIOD", IfcTime(c.DayStart), IfcTime(c.DayEnd));
+                        var pattern = f.Add("IFCRECURRENCEPATTERN", E("WEEKLY"), Null, L(c.Weekdays.Select(d => I(d))), Null, Null, Null, Null, L(new[] { period }));
+                        var working = f.Add("IFCWORKTIME", S("Working days"), Null, Null, pattern, Null, Null);
+                        var exceptions = c.Exceptions.Select(x => f.Add("IFCWORKTIME", S(x.Name), Null, Null, Null, IfcDate(x.From), IfcDate(x.To))).ToList();
+                        calendar = f.Add("IFCWORKCALENDAR", Gid(c.Id), Null, S(c.Name), Null, Null, Null, L(new[] { working }), exceptions.Count > 0 ? L(exceptions) : Null, E("FIRSTSHIFT"));
+                        declared.Add(calendar);
+                        if (c.Properties.Count > 0)
+                            Define(calendar, f.Add("IFCPROPERTYSET", Gid(c.Id, "pset"), Null, S(c.PropertySet), Null, L(c.Properties.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(c.Id, "pset-rel"));
+                    }
+                    f.Add("IFCRELDECLARES", Gid(ws.Id, "declares"), Null, Null, Null, projectRef, L(declared));
+                    var taskRef = new Dictionary<string, string>();
+                    foreach (var t in ws.Tasks)
+                    {
+                        string time = Null;
+                        if (t.Time is { } tt)
+                        {
+                            string Dt(DateTime? d) => d is { } x ? IfcDateTime(x) : Null;
+                            string Dur(double? d) => d is { } x ? IfcDuration(x) : Null;
+                            time = f.Add("IFCTASKTIME", Null, Null, Null, E("WORKTIME"), Dur(tt.DurationDays), Dt(tt.ScheduleStart), Dt(tt.ScheduleFinish),
+                                Dt(tt.ScheduleStart), Dt(tt.ScheduleFinish), Dt(tt.LateStart), Dt(tt.LateFinish), Dur(tt.FreeFloatDays), Dur(tt.TotalFloatDays),
+                                tt.IsCritical is { } crit ? (crit ? Step.True : Step.False) : Null, Null, Null, Null, Null, Null, tt.Completion is { } pc ? R(pc) : Null);
+                        }
+                        var kind = t.Predefined is { Length: > 0 } k ? k : "NOTDEFINED";
+                        var task = f.Add("IFCTASK", Gid(t.Id), Null, S(t.Name), S(t.Description), Null, S(t.Identification), Null, Null, Null,
+                            t.IsMilestone ? Step.True : Step.False, Null, time, E(kind));
+                        taskRef[t.Id] = task;
+                        if (t.Properties.Count > 0)
+                            Define(task, f.Add("IFCPROPERTYSET", Gid(t.Id, "pset"), Null, S(t.PropertySet), Null, L(t.Properties.Select(x => Single(x.Name, Typed("IFCLABEL", S(x.Value)))).ToArray())), Gid(t.Id, "pset-rel"));
+                    }
+                    var top = ws.Tasks.Where(t => t.Parent == null || !taskRef.ContainsKey(t.Parent)).Select(t => taskRef[t.Id]).ToList();
+                    if (top.Count > 0) f.Add("IFCRELASSIGNSTOCONTROL", Gid(ws.Id, "controls"), Null, Null, Null, L(top), Null, schedule);
+                    foreach (var g in ws.Tasks.Where(t => t.Parent != null && taskRef.ContainsKey(t.Parent)).GroupBy(t => t.Parent!))
+                        f.Add("IFCRELNESTS", Gid(g.Key, "nests"), Null, Null, Null, taskRef[g.Key], L(g.Select(t => taskRef[t.Id])));
+                    if (calendar != null)
+                        f.Add("IFCRELASSIGNSTOCONTROL", Gid(ws.Calendar!.Id, "controls"), Null, Null, Null, L(taskRef.Values.Prepend(schedule)), Null, calendar);
+                    foreach (var q in ws.Sequences)
+                    {
+                        if (!taskRef.TryGetValue(q.Relating, out var a) || !taskRef.TryGetValue(q.Related, out var b)) continue;
+                        var lag = f.Add("IFCLAGTIME", Null, Null, Null, Typed("IFCDURATION", IfcDuration(q.LagDays)), E("WORKTIME"));
+                        f.Add("IFCRELSEQUENCE", Gid(q.Id), Null, Null, Null, a, b, lag, E(q.Type), Null);
+                    }
+                }
         }
 
         static string Connection(string? value)

@@ -134,6 +134,8 @@ describe('the languages', () => {
     'Door 3',
     'The playhouse door is lowered to 950 mm to fit under the slope.',
     'Remarks: 3 added, 1 updated (Manage → Model remarks…).',
+    '13 tasks · 51 working days · finish 03.02.2027',
+    'Imported casa.xml: 4 tasks, 2 links.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 
@@ -201,6 +203,7 @@ describe('labels the guide found in English', () => {
     'Buildable volume', 'Sun study', 'Send the question', 'Ask Lapin', 'Your question…', 'Ask', 'Custom', 'Ends', 'Top and bottom',
     'Radiator', 'Wash basin', 'Layer', 'Architectural', 'Structural', 'hip', 'gable', 'shed', 'mansard', 'barrel', 'flat',
     'Width: how wide one copy of the picture lies on the model', 'Height: how high one copy of the picture lies on the model',
+    'Gantt', 'Critical path', 'Work calendar', 'Import MS Project…',
   ];
   for (const lang of langs) {
     it(`are translated into ${lang}`, () => {

@@ -2,7 +2,7 @@
 
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
-import type { Grip, GripView, LapinModule, RefLine, RibbonTabDef, ToolDef } from './module';
+import type { Grip, GripView, LapinModule, ModuleViewDef, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
@@ -20,6 +20,8 @@ export const defaultHotbar = (): ToolDef[] => modules.flatMap((m) => m.hotbar ??
 export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.propertySections ?? []).filter((s) => s.classes.includes(ifcClass) || s.classes.includes('*'));
 export const backgrounds = (): ComponentType[] => modules.map((m) => m.background).filter((b): b is ComponentType => Boolean(b));
 export const dialog = (id: string): ComponentType | null => modules.map((m) => m.dialogs?.[id]).find(Boolean) ?? null;
+/** A kind of view a module adds (the Gantt), null when no module of the product has it. */
+export const moduleView = (kind: string): ModuleViewDef | null => modules.map((m) => m.views?.[kind]).find(Boolean) ?? null;
 
 export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => modules.flatMap((m) => m.grips?.[node.type]?.(node, view) ?? []).map((g) => ({ owner: node.id, ...g }));
 export const referencesOf = (node: NodeDto): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node) ?? []);

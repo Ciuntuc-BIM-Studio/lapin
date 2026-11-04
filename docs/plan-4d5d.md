@@ -1,6 +1,6 @@
 # 4D și 5D: programul lucrărilor (Gantt) și devizul din model
 
-Cerut de utilizator la 04.11.2026: „Mă gândesc la funcții 4D și 5D, inclusiv o diagramă Gantt, dar cu cel mai prietenos flux UX. Poți face un plan?”. Decizia 300 în `decisions-pending.md`: propus, de aprobat. Planul pornește de la ce e deja hotărât: fazele (`Lapin.Phases`), organizarea de șantier cu elementele ei temporare și articolele de deviz pe tipuri (deciziile 151–152), antemăsurătoarea (decizia 287), versiunile (decizia 134), CDE și BCF (deciziile 180–183), și de la planul vechi `Lapin/docs/pereti-compusi-si-executie.md` (partea 3: rețetele tehnologice; partea 4: catalogul de articole editabil ca tabel, cu import și export; „4D: sarcini generate pe etaj × categorie, cu durate din norme și echipe”).
+Cerut de utilizator la 04.11.2026: „Mă gândesc la funcții 4D și 5D, inclusiv o diagramă Gantt, dar cu cel mai prietenos flux UX. Poți face un plan?”. Decizia 300 în `decisions-pending.md`: aprobată de utilizator la 04.11.2026 („ok, start implementing”), cu răspunsurile de mai jos. Etapa 1 făcută (decizia 301). Planul pornește de la ce e deja hotărât: fazele (`Lapin.Phases`), organizarea de șantier cu elementele ei temporare și articolele de deviz pe tipuri (deciziile 151–152), antemăsurătoarea (decizia 287), versiunile (decizia 134), CDE și BCF (deciziile 180–183), și de la planul vechi `Lapin/docs/pereti-compusi-si-executie.md` (partea 3: rețetele tehnologice; partea 4: catalogul de articole editabil ca tabel, cu import și export; „4D: sarcini generate pe etaj × categorie, cu durate din norme și echipe”).
 
 ## Ce există deja
 
@@ -193,7 +193,7 @@ După Apply, panoul se împarte singur pe orizontală: 3D sus, Gantt jos (`split
 
 ## Etape
 
-1. **Programul și Gantt-ul** — modulul `planning`: `IfcWorkSchedule`, `IfcTask`, legăturile FS/SS/FF/SF cu decalaj, WBS, calendarul cu sărbătorile românești, drumul critic în engine; vederea `gantt` (în panou, detașată), editarea prin tragere, tastatura, sarcina în Proprietăți; IFC (procesele) și MS Project XML în ambele sensuri, XLSX.
+1. **Programul și Gantt-ul** (făcută, decizia 301) — modulul `planning`: `IfcWorkSchedule`, `IfcTask`, legăturile FS/SS/FF/SF cu decalaj, WBS, calendarul cu sărbătorile românești, drumul critic în engine; vederea `gantt` (în panou, detașată), editarea prin tragere, tastatura, sarcina în Proprietăți; IFC (procesele) și MS Project XML în ambele sensuri, XLSX.
 2. **Legarea elementelor** — regula pe sarcină și excepțiile, părțile elementelor (miez, finisaje, material), tragerea selecției pe un rând, `TA`, selecția sincronizată, contorul elementelor nelegate și regula CDE „elemente fără sarcină”.
 3. **Generatorul** — configuratorul cu șabloanele (cadre, zidărie, hală, lemn), alegerea șablonului după model, secvența pe etaje, duratele din cantități × norme (tabelul de norme al utilizatorului), stilurile proiectului, regenerarea care păstrează editările; temporarele din `sitework` (`ITaskLife`, `stripAfter`) și demolările din faze.
 4. **Simularea 4D** — `planning.timeline`, stările colorate în 3D, cursorul și redarea, *State at date* în vederi și pe planșe, planșa de etape, Gantt-ul pe planșă, exportul video.
@@ -204,15 +204,17 @@ După Apply, panoul se împarte singur pe orizontală: 3D sus, Gantt jos (`split
 
 Fiecare etapă: teste în engine (`PlanningTests`, `CostTests`: CPM pe exemple cunoscute, calendarul pe anii 2026–2030 cu Paștele ortodox, duratele din norme, IFC și MSPDI citite înapoi la aceleași cifre, devizul egal cu antemăsurătoarea × prețurile), teste UI (Gantt: tragerea, legarea, tastatura), paginile ghidului (`docs/user/planning.md`, `docs/user/cost.md`, în toate limbile) și scenele lor (`planning`, `planning-simulation`, `cost-estimate`).
 
-## Întrebări pentru utilizator
+## Răspunsuri
 
-1. **Granița**: `planning` (4D) și `cost` (5D de bază) deschise, în ediția `lapin`; `planning-pro` premium (resurse și nivelare, P6, valoare câștigată, situații de lucrări, scenarii, aplicația de șantier). E bine așa? Curba S și situațiile de lucrări lunare: care libere, care premium?
-2. **Formularele devizului**: care sunt cerute în practica ta (lista cantităților de lucrări pe categorii, listele de resurse materiale, manoperă, utilaj, transport, centralizatoarele pe obiect și pe obiectiv) și în ce formă exactă? Ai un exemplu de deviz real pe care să-l reproducem?
-3. **Programele de deviz** cu care trebuie să schimbăm date (formatul lor de export sau import), dacă e cazul, pe lângă CSV/XLSX.
-4. **Normele**: livrăm doar șablonul cu câteva valori orientative scrise de noi și importul normelor tale, sau nimic în afară de import? Ai un tabel de productivități (ore-om pe unitate) pe care să-l folosim la teste?
-5. **Granularitatea legăturii**: e bine ca o sarcină să poată lua doar o parte a unui element (miezul peretelui într-o sarcină, tencuiala în alta), sau ajunge elementul întreg la început?
-6. **Calendarul**: 5 zile × 8 ore și sărbătorile legale implicit; perioada de iarnă pentru lucrările umede pornită implicit sau nu?
-7. **Progresul de pe șantier**: prin sesiunea partajată din browser, în ediția liberă, sau ca aplicație separată (premium)?
-8. **Moneda**: RON implicit, EUR cu cursul pe proiect; trebuie și devize în două monede?
-9. **Tabul**: un tab nou **Planning** pentru 4D, iar devizul în tabul existent Quantities (redenumit Cost?), sau un singur tab pentru amândouă?
-10. **Fazele**: să genereze generatorul și faze de execuție din capitolele programului (ca să meargă filtrele de fază pe vederi), sau rămân separate, iar 4D folosește doar data?
+Utilizatorul a aprobat planul („ok, start implementing”, 04.11.2026) și a acceptat fără obiecții răspunsurile recomandate:
+
+1. **Granița**: ca propus. `planning` și `cost` deschise, în ediția `lapin`; `planning-pro` premium. Curba S liberă; situațiile de lucrări lunare din progres premium.
+2. **Formularele devizului**: deschis (etapa 6); un deviz real de reprodus e încă cerut.
+3. **Programele de deviz** cu care se schimbă date: deschis (etapa 6).
+4. **Normele**: doar importul, plus un mic șablon cu valori orientative scrise de Lapin; un tabel real de productivități e încă cerut utilizatorului, pentru teste.
+5. **Părți de elemente într-o sarcină**: da, din etapa 2.
+6. **Calendarul**: 5 zile × 8 ore și sărbătorile legale din România implicit; pauza de iarnă pentru lucrările umede există, oprită implicit.
+7. **Progresul de pe șantier**: marcarea simplă liberă, prin sesiunea partajată; fotografiile și rapoartele premium.
+8. **Moneda**: RON implicit, EUR la cursul proiectului; devizele în două monede rămân deschise.
+9. **Taburile**: două, **Planning** și Quantities redenumit **Cost** (redenumirea poate aștepta etapa 6).
+10. **Fazele** rămân separate; 4D folosește datele.

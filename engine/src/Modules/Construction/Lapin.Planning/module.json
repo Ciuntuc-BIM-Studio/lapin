@@ -1,0 +1,1 @@
+{ "id": "planning", "name": "Planning", "assembly": "Lapin.Planning.dll", "requires": ["core", "phases"] }

@@ -101,7 +101,12 @@ export interface RibbonTabDef {
   include?: string[];
   /** Lower comes first (Architecture before Annotate). */
   order: number;
+  /** The context its label is translated in, when the same English word means something else elsewhere (Planning: the schedule, not urbanism). */
+  i18nCtx?: string;
 }
+
+/** A kind of view a module adds to the panes (the planning module's Gantt): its tab's label and what draws it. */
+export interface ModuleViewDef { label: string; component: ComponentType }
 
 /** One engine command a grip asks for; several grips dragged together go as one edit (edit.batch). */
 export interface GripStep { command: string; args: Record<string, unknown> }
@@ -186,6 +191,8 @@ export interface LapinModule {
   /** Tools for the viewport hotbar (1–9), in order. */
   hotbar?: ToolDef[];
   propertySections?: PropertySectionDef[];
+  /** Kinds of view the module adds, by the pane's `view` (the Gantt): shown in a pane, a tab, a window of their own. */
+  views?: Record<string, ModuleViewDef>;
   /** Dialogs the module opens (by the store's `dialog`). */
   dialogs?: Record<string, ComponentType>;
   /** Mounted (invisible) while the workspace is open: what keeps a module's state in step with the model. */

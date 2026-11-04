@@ -125,7 +125,7 @@ public static partial class IfcImport
     /// <summary>A read IFC file as a link (the survey read it already).</summary>
     public static IfcImportResult Link(Session session, StepFile file, string name, string? path, IfcImportOptions? options, out Diff diff, string? existing = null)
     {
-        var reader = new Reader(session, file, options ?? new IfcImportOptions());
+        var reader = new Reader(session, file, options ?? new IfcImportOptions()) { ReadProcesses = false };
         string? linkId = null;
         diff = session.Edit(existing != null ? $"Reload {name}" : $"Link {name}", edit =>
         {
@@ -156,6 +156,8 @@ public static partial class IfcImport
         readonly List<string> notes = [];
         /// <summary>The file's name, which the types it brings remember (Manage → Map imported types).</summary>
         public string? FileName;
+        /// <summary>Whether the file's work schedule comes in (not for a link: a linked file brings its elements only).</summary>
+        public bool ReadProcesses = true;
         int elements, updated, references, storeys;
         readonly Dictionary<int, List<int>> definitions = [];     // product → its property sets
         readonly Dictionary<int, int> containedIn = [];            // product → its spatial structure
@@ -197,6 +199,7 @@ public static partial class IfcImport
             foreach (var r in relations) r(edit);
             ProvisionOpenings(edit);
             WriteContainment(edit);
+            if (ReadProcesses && !o.ReferenceOnly) Processes(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));
             if (left > 0 && elements + updated > 0) notes.Add($"{left} element(s) of the project are not in the file; they stay as they are.");
         }

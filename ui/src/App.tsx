@@ -18,7 +18,7 @@ import { useSession } from './engine/session';
 import { unitLabel, useStandards } from './engine/unitsStore';
 import { openStandards } from './modules/core/standardsTab';
 import { isDesktop, projectTitle } from './engine/files';
-import { backgrounds, dialog, modules, productInfo } from './platform/modules';
+import { backgrounds, dialog, moduleView, modules, productInfo } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
 import { PropertiesPanel } from './shell/PropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
@@ -126,6 +126,7 @@ function PaneTabs({ i }: { i: number }) {
       case '3d': return t.view3dId ? nodes.get(t.view3dId)?.name ?? '3D' : '3D';
       case 'drawing': return (t.drawingViewId && nodes.get(t.drawingViewId)?.name) || 'Drawing';
       case 'sheet': return (t.sheetId && nodes.get(t.sheetId)?.name) || 'Sheet';
+      case 'gantt': return moduleView('gantt')?.label ?? 'Gantt';
       default: return (t.scheduleId && nodes.get(t.scheduleId)?.name) || 'Schedule';
     }
   };
@@ -172,15 +173,23 @@ function PaneBody({ i }: { i: number }) {
       <div className={`pane${active ? ' on' : ''}`} onPointerDownCapture={() => focusPane(i)} data-testid={`pane-${i}`}>
         <PaneTabs i={i} />
         <div className="view-area">
-          {view === 'plan' ? <PlanView /> : view === 'drawing' ? <DrawingView /> : view === 'sheet' ? <SheetView /> : view === 'schedule' ? <ScheduleView /> : <Viewport3D />}
-          {active && <ViewportHud />}
-          {active && <SelectionCard />}
+          {view === 'plan' ? <PlanView /> : view === 'drawing' ? <DrawingView /> : view === 'sheet' ? <SheetView /> : view === 'schedule' ? <ScheduleView /> : view && view !== '3d' && ModuleView(view) ? <ModuleViewBody kind={view} /> : <Viewport3D />}
+          {/* The Gantt is a table with its own toolbar: no HUD, quick tools or selection card over it. */}
+          {active && view !== 'gantt' && <ViewportHud />}
+          {active && view !== 'gantt' && <SelectionCard />}
           {active && error && <div className="error" role="alert" onClick={() => useSession.setState({ error: null })}>{error}</div>}
           {active && <Notice />}
         </div>
       </div>
     </PaneContext.Provider>
   );
+}
+
+/** A module's own view (the Gantt), when the product has the module. */
+const ModuleView = (kind: string) => moduleView(kind)?.component ?? null;
+function ModuleViewBody({ kind }: { kind: string }) {
+  const View = ModuleView(kind);
+  return View ? <View /> : null;
 }
 
 /** The panes of the workspace: one, or two with a separator to drag. */

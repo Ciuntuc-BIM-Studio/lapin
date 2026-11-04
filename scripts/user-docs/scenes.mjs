@@ -914,6 +914,58 @@ export const scenes = [
     },
   },
   {
+    // Planning (docs/plan-4d5d.md, stage 1): a house's schedule in the Gantt under the view, a task in Properties, the calendar.
+    id: 'planning',
+    async run(t) {
+      await t.fresh();
+      await t.cmd('planning.updateSchedule', { name: 'House', start: '2026-11-16' });
+      const add = async (name, duration, extra = {}) => (await t.cmd('planning.addTask', { name, duration, ...extra })).id;
+      const site = await add('Site set-up', 3);
+      const found = await add('Foundations', 1);
+      const exc = await add('Excavation', 4, { parent: found });
+      const foot = await add('Footings', 6, { parent: found });
+      const struct = await add('Structure', 1);
+      const walls = await add('Ground floor walls', 10, { parent: struct });
+      const slab = await add('Floor slab', 6, { parent: struct });
+      const roof = await add('Roof', 8, { parent: struct });
+      const env = await add('Envelope and finishes', 1);
+      const windows = await add('Windows and doors', 4, { parent: env });
+      const plaster = await add('Plaster', 8, { parent: env });
+      const paint = await add('Floors and paint', 10, { parent: env });
+      const handover = (await t.cmd('planning.addTask', { name: 'Handover', milestone: true })).id;
+      for (const id of [foot, slab, plaster]) await t.cmd('planning.updateTask', { id, wet: true });
+      const link = (from, to, type = 'FS', lag = 0) => t.cmd('planning.link', { from, to, type, lag });
+      await link(site, exc);
+      await link(exc, foot, 'SS', 2);
+      await link(foot, walls, 'FS', 3);
+      await link(walls, slab);
+      await link(slab, roof);
+      await link(roof, windows, 'SS', 3);
+      await link(windows, plaster);
+      await link(plaster, paint, 'SS', 4);
+      await link(paint, handover);
+      await link(roof, handover);
+      await t.button('Planning', { exact: true });
+      await t.shot('ribbon-planning', { of: '.topbar', pad: 0 });
+      await t.tool('planning.gantt');
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-testid=gantt]').count() > 0, 'the Gantt opens under the view');
+      t.expect(await t.page.locator('.gantt-row').count() === 13, 'every task has its row');
+      const s = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
+      t.expect(s.tasks.filter((x) => x.critical && !x.summary).length >= 6, 'the critical path runs through the structure');
+      t.expect(s.tasks.find((x) => x.name === 'Handover').start > '2027-01-01', 'the holidays and the weekends push the handover into 2027');
+      await t.ui({ selection: plaster, selected: [plaster] });
+      await t.wait(800);
+      await t.shot('planning-gantt');
+      await t.shot('planning-task', { of: '[data-testid=task-section]', pad: 8 });
+      await t.tool('planning.calendar');
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=calendar-holiday-list] li').count() >= 16, 'the calendar lists the year\'s holidays');
+      await t.shot('planning-calendar', { of: '[data-testid=calendar-dialog]', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

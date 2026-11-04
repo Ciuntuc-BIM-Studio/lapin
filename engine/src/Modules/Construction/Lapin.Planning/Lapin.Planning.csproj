@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Planning (4D, docs/plan-4d5d.md, stage 1): the work schedule as IFC has it — IfcWorkSchedule, IfcTask with its WBS,
+    IfcRelSequence links (FS, SS, FF, SF with a lag), IfcWorkCalendar with Romania's legal holidays — the critical path
+    worked out by the engine on the calendar, IFC processes, MS Project XML both ways and XLSX. The links to elements,
+    the generator and the 4D simulation come in later stages.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>planning</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+</Project>

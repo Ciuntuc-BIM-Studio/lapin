@@ -43,7 +43,7 @@ export function useHudFacts() {
   return {
     mode: active ? active.label.toUpperCase() : 'SELECT',
     level: (storey?.name ?? '—').toUpperCase(), elevation: level(num(storey ?? undefined, 'elevation')),
-    view: view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : '3D · SHADED',
+    view: view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : view === 'gantt' ? 'GANTT' : '3D · SHADED',
     snap: `POINTS · GRID ${lengthText(0.05)}`,
   };
 }

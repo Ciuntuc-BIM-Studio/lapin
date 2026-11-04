@@ -188,7 +188,7 @@ export function Ribbon() {
         <button type="button" className="brand" onClick={() => !isGuest() && useUi.setState({ screen: 'start' })} title="Start screen"><BrandName /></button>
         <FileMenu />
         {tabs.map((t) => (
-          <button type="button" key={t.id} className={`tab${t.id === tab?.id ? ' on' : ''}${mode === 'dropdown' && dropped && t.id === tab?.id ? ' open' : ''}`} onClick={() => pickTab(t.id)}>{t.label}</button>
+          <button type="button" key={t.id} className={`tab${t.id === tab?.id ? ' on' : ''}${mode === 'dropdown' && dropped && t.id === tab?.id ? ' open' : ''}`} onClick={() => pickTab(t.id)} data-i18n-ctx={t.i18nCtx}>{t.label}</button>
         ))}
         <span className="grow" />
         <Participants />

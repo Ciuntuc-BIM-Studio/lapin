@@ -14,7 +14,8 @@
 import { create } from 'zustand';
 
 export type Theme = 'paper' | 'graphite';
-export type ViewKind = '3d' | 'plan' | 'drawing' | 'sheet' | 'schedule';
+/** The views of the panes; 'gantt' is the planning module's (a module adds its own through `views`). */
+export type ViewKind = '3d' | 'plan' | 'drawing' | 'sheet' | 'schedule' | 'gantt';
 export type Dialog = string | null;
 /** A bare wall opening's head (decision 253): 'round' is the semicircle. */
 export type OpeningHead = 'rect' | 'segmental' | 'elliptical' | 'round' | 'radiused';
@@ -52,6 +53,7 @@ export function tabKey(t: Pane & { storeyId?: string | null }): string {
     case 'drawing': return t.drawingViewId ?? 'drawing:none';
     case 'sheet': return t.sheetId ?? 'sheet:none';
     case 'schedule': return t.scheduleId ?? 'schedule:none';
+    case 'gantt': return 'gantt';
     default: return t.view3dId ?? '3d';
   }
 }
