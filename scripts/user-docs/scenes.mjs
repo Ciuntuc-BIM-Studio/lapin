@@ -1389,7 +1389,9 @@ export const scenes = [
       await t.tool('mep.detour');
       for (const [x, y] of [at(0.3), at(0.65), [at(0.65)[0] + side[0], at(0.65)[1] + side[1]]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(300); }
       await t.keys('Escape');
-      const after = (await t.nodes()).find((n) => n.id === r.runId);
+      // The run's hosts are rebuilt with it (their provision openings), so the new route comes in a moment later.
+      let after = (await t.nodes()).find((n) => n.id === r.runId);
+      for (let i = 0; i < 50 && after.props.points.length === pts.length; i++) { await t.wait(100); after = (await t.nodes()).find((n) => n.id === r.runId); }
       t.expect(after.props.points.length === pts.length + 4, `the detour adds four corners (${pts.length} → ${after.props.points.length})`);
       await select(t, r.runId);
       await t.wait(500);
@@ -2041,7 +2043,7 @@ export const scenes = [
       // The cut above the level, set in the 3D view's properties, says so on the chip.
       await t.cmd('view.setStoreys', { id: '3d', cut: 1.2 });
       await t.wait(500);
-      t.expect(await page.locator('.mode-chip.storeys').getByText('cut at 1.20 m').count() === 1, 'the chip says where the model is cut');
+      t.expect(await page.locator('.mode-chip.storeys').getByText('cut at 1200 mm').count() === 1, 'the chip says where the model is cut');
       // The cut is closed like a section's: each cut layer capped in its material.
       const capped = await t.call('view.caps', { planes: [{ normal: [0, 0, -1], constant: 1.2 }] });
       t.expect(Array.isArray(capped) && capped.length > 0, 'the walls cut above the level are closed by caps');
