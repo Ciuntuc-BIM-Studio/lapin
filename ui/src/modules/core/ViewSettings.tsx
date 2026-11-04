@@ -86,6 +86,8 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
             <dd><input type="checkbox" checked={state.resolved.overhead} onChange={(e) => set({ overhead: e.target.checked })} /><Reset field="overhead" /></dd>
             <dt title="Elements from an IFC file that bring their own plan drawing (a footprint, a door's swing, a fixture's symbol) draw it instead of their cut; off: their 3D cut">IFC 2D symbols</dt>
             <dd><input type="checkbox" checked={state.resolved.ifc2d !== false} onChange={(e) => set({ ifc2d: e.target.checked })} /><Reset field="ifc2d" /></dd>
+            <dt title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</dt>
+            <dd><input type="checkbox" data-testid="view-finish-hatch" checked={state.resolved.finishHatch !== false} onChange={(e) => set({ finishHatch: e.target.checked })} /><Reset field="finishHatch" /></dd>
             <dt title="From above: a plan. From below: a reflected ceiling plan, what lies above the cut up to the range's top (soffits, beams, formwork), drawn the way the plan lies">Seen from</dt>
             <dd>
               <select value={view.props.look === 'up' ? 'up' : 'down'} onChange={(e) => void execute('view.setRange', { id: view.id, look: e.target.value })}>
@@ -182,7 +184,7 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>
@@ -194,6 +196,7 @@ export function ViewStylesDialog() {
                   <td><input type="checkbox" checked={s.ifc2d !== false} onChange={(e) => update(s.id, { ifc2d: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.voids === true} onChange={(e) => update(s.id, { voids: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.voidSizes !== false} disabled={!s.voids} onChange={(e) => update(s.id, { voidSizes: e.target.checked })} /></td>
+                  <td><input type="checkbox" checked={s.finishHatch !== false} onChange={(e) => update(s.id, { finishHatch: e.target.checked })} /></td>
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Duplicate" onClick={() => void execute('viewStyle.create', { from: s.id })}><Copy size={12} /></button>
                     <button type="button" className="icon mini" title="Delete: its views take their discipline's style" disabled={styles.length < 2}

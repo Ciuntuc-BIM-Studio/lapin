@@ -25,6 +25,7 @@ Un stil spune cum desenează un tip de planșă (ca afișarea parțială a struc
 - **Finisajele** se recunosc după categoria materialului (`IfcMaterial.Category`, exportată în IFC): Manage → Materials → Category (Structure, Finish, Insulation, Membrane, Other). Fără categorie, un material e finisaj după nume: plaster, render, paint, tile, gypsum, parquet, laminate, carpet, tencuială, glet, vopsea, faianță, gresie, parchet, rigips, finisaj, zugrăveală.
 - **Overhead**: dacă planul desenează ce e deasupra planului de secționare, până la marginea de sus a intervalului.
 - **Volume de gol** (`voids`, decizia 290): dacă planurile, secțiunile și fațadele desenează volumele golurilor (`Coordination/VoidDrawings`), secționate sau văzute, cu diagonale, marcă și, cu `voidSizes` (implicit da), dimensiunea și cota de jos a golului din perete; implicit nu, doar stilul Coordination. Categoria lor de linii e `voids` (Object styles, Visibility/Graphics), layerul `VOIDS`.
+- **Hașurile finisajelor de pardoseală** (`finishHatch`, decizia 299): dacă planurile hașurează pardoselile încăperilor finisate (un plan văzut de jos, tavanele) cum spun tipurile lor (`docs/rooms.md`); implicit da în Architectural, nu în Structural, MEP și Coordination; un stil salvat înainte de câmp îl ia după disciplină (nu pentru Structure și MEP).
 
 O vedere ia stilul pe care îl numește (`viewStyle`), altfel pe al disciplinei ei. Peste stil, vederea poate seta singură oricare dintre câmpuri (`styleOverrides`); ce setează ea câștigă, iar butonul de lângă câmp o întoarce la stil.
 
@@ -35,7 +36,7 @@ O vedere ia stilul pe care îl numește (`viewStyle`), altfel pe al disciplinei 
 
 - **View → View settings** (vederea din față) și **proprietățile unei vederi**: stilul, straturile, unirea materialelor, overhead-ul, simbolurile 2D din IFC (`ifc2d`, decizia 148), intervalul vederii (planul de secționare, sus, jos, adâncime: View range…) și etajele afișate (decizia 136).
 - **Manage → View styles**: stilurile proiectului, cu nume, disciplină, straturi, unire, overhead și IFC 2D; duplicare, stil nou, ștergere (vederile lui iau stilul disciplinei).
-- Comenzi: `viewStyle.create {from?, name?, …}`, `viewStyle.update {id, …}`, `viewStyle.delete {id}`, `view.setStyle {id, style?, layers?, joins?, overhead?, ifc2d?, voids?, voidSizes?}` (null: înapoi la stil); interogări `viewStyle.list`, `view.style {id}`.
+- Comenzi: `viewStyle.create {from?, name?, …}`, `viewStyle.update {id, …}`, `viewStyle.delete {id}`, `view.setStyle {id, style?, layers?, joins?, overhead?, ifc2d?, voids?, voidSizes?, finishHatch?}` (null: înapoi la stil); interogări `viewStyle.list`, `view.style {id}`.
 
 Totul e în desenul motorului (`Views.Gather`, `Views.Spec`, `Views.Render`), deci planșele tipăresc ce arată ecranul. Teste: `ViewStyleTests`.
 

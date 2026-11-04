@@ -1149,6 +1149,10 @@ button.mode-chip:hover { color: var(--accent); }
 .layer-edit tr.layer-parts td > * { margin-right: 8px; vertical-align: middle; }
 .layer-edit .layer-part { display: inline-flex; gap: 3px; align-items: center; }
 .layer-edit .layer-part input { width: auto; }
+.finish-hatch { gap: 6px; align-items: center; flex-wrap: wrap; }
+.finish-hatch > .eyebrow { white-space: nowrap; }
+.finish-hatch .cell-wrap { width: auto; flex: 0 0 auto; }
+.finish-hatch input.narrow { width: 56px; }
 .layer-edit .block-size { display: flex; gap: 2px; align-items: center; }
 /* A value asked for beside the cursor (Studio's face tools in 3D, a mesh's units). */
 .ask-box { position: fixed; z-index: 60; min-width: 220px; max-width: 280px; padding: 8px 10px; background: var(--raised); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 6px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); font-size: 12px; }

@@ -352,7 +352,10 @@ public static class Rooms
     /// A plan's rooms: on its storey, each filled as the view's colour scheme
     /// (or the room's own colour) says, under the walls, with its stamp over
     /// them: the room's tag type's lines (name, number, area by default),
-    /// centred on its stamp point. A click on the stamp picks the room.
+    /// centred on its stamp point. A click on the stamp picks the room. A room
+    /// with a finish has its floor's hatch over its fill (decision 299; its
+    /// ceiling's in a plan seen from below), unless the room, the view's style
+    /// or the finish element's visibility says not.
     /// </summary>
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
@@ -365,11 +368,15 @@ public static class Rooms
         var patterns = DraftingResources.Patterns(m);
         var type = Standards.TagTypeOf(c.Book, null, Class) is { Shape: "room" } t ? t : Standards.DefaultRoomTag;
         var style = Standards.TextOf(c.Book, type.TextStyle);
+        // The finishes' hatches (decision 299): the floor's, or the ceiling's in a reflected ceiling plan; not on a site plan.
+        var finishPart = c.View.Str("look") == "up" ? "ceiling" : "floor";
+        var finishes = ViewStyles.Of(m, c.View).FinishHatch && c.View.Str("site") == null;
         foreach (var room in m.OfClass(Class))
         {
             if (hiddenElements.Contains(room.Id) || GraphicsSets.Hides(graphics, room) || Spatial.StoreyOf(m, room.Id)?.Id != storeyId) continue;
             if (Of(room, m, c.Geometry) is not { } o) continue;
             if (scheme != null && ColorSchemes.LookOf(scheme, room) is { } look && Fill(c, o, look, patterns) is { } fill) yield return fill;
+            if (finishes && FinishHatchMark(c, room, o, finishPart, patterns, hiddenElements, graphics) is { } fh) yield return fh;
             yield return Stamp(c, room, o, type, style);
         }
     }
@@ -391,6 +398,30 @@ public static class Rooms
         }
         return mark.Fills.Count > 0 || mark.Lines.Count > 0 ? mark : null;
     }
+
+    /// <summary>
+    /// A room's finish hatched over its floor (or its ceiling) in plan, lines only, under the model's pens and over the room's
+    /// fill; null when the room has no such finish, says not (<c>finishHatch</c> false), or its finish element is hidden.
+    /// </summary>
+    static ViewMark? FinishHatchMark(ViewContext c, Entity room, Outline o, string part, IReadOnlyList<HatchPattern> patterns, HashSet<string> hidden, JsonObject? graphics)
+    {
+        if (room.Attrs["finishHatch"] is JsonValue on && on.TryGetValue<bool>(out var shows) && !shows) return null;
+        var m = c.Model;
+        if (m.OfClass(RoomFinishes.Class).FirstOrDefault(e => e.Str("roomId") == room.Id && e.Str("part") == part) is not { } finish
+            || hidden.Contains(finish.Id) || GraphicsSets.Hides(graphics, finish)) return null;
+        if (RoomFinishes.SpecOf(m, finish) is not { } spec || RoomFinishes.HatchOf(m, spec, part) is not { } h
+            || HatchLibrary.Find(h.Pattern, patterns) is not { Solid: false } pattern) return null;
+        var mark = new ViewMark(null) { Under = true };
+        foreach (var loops in RoomFinishes.PlanRegions(m, room, o, spec, part))
+        {
+            var (segs, _) = HatchFill.Segments(loops, pattern, new HatchOptions(h.Scale * c.Mm, h.Angle, null, 40_000));
+            foreach (var s in segs) mark.Line(s.A, s.B, FinishLayer, Pens.Default.Hatch, h.Color);
+        }
+        return mark.Lines.Count > 0 ? mark : null;
+    }
+
+    /// <summary>The layer the finishes' plan hatches draw on (DXF, the PDF's groups).</summary>
+    public const string FinishLayer = "FINISH-HATCH";
 
     static ViewMark Stamp(ViewContext c, Entity room, Outline o, TagType type, TextStyle style)
     {

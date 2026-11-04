@@ -22,7 +22,10 @@ namespace Lapin.Platform;
 /// <item><c>voids</c>: whether the openings' voids are drawn (decision 290,
 /// <see cref="Coordination.VoidDrawings"/>): cut or seen, crossed, with their
 /// marks; off by default, on in the Coordination style; <c>voidSizes</c>:
-/// with their sizes and bottom levels under the marks, on by default.</item>
+/// with their sizes and bottom levels under the marks, on by default;</item>
+/// <item><c>finishHatch</c>: whether a plan hatches the rooms' floor finishes
+/// (a reflected ceiling plan their ceilings') as their types say (decision
+/// 299); on in the Architectural style, off in the others.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -31,15 +34,15 @@ public static class ViewStyles
 {
     public const string Key = "viewStyles";
     public static readonly string[] LayerModes = ["all", "noFinishes", "core"];
-    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes"];
+    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch"];
 
     /// <summary>A style, or a view's settings as its style and its own choices make them.</summary>
-    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true)
+    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true)
     {
         public JsonObject ToJson() => new()
         {
             ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead, ["ifc2d"] = Ifc2d,
-            ["voids"] = Voids, ["voidSizes"] = VoidSizes,
+            ["voids"] = Voids, ["voidSizes"] = VoidSizes, ["finishHatch"] = FinishHatch,
         };
 
         public static Style From(JsonObject o) => new(
@@ -49,17 +52,20 @@ public static class ViewStyles
             o["overhead"] is not JsonValue ov || !ov.TryGetValue<bool>(out var h) || h,
             o["ifc2d"] is not JsonValue iv || !iv.TryGetValue<bool>(out var i) || i,
             o["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var v) && v,
-            o["voidSizes"] is not JsonValue sv || !sv.TryGetValue<bool>(out var sz) || sz);
+            o["voidSizes"] is not JsonValue sv || !sv.TryGetValue<bool>(out var sz) || sz,
+            // A style saved before floor finish hatches (decision 299): on unless it is a structural, MEP or coordination one.
+            o["finishHatch"] is JsonValue fv && fv.TryGetValue<bool>(out var fh) ? fh
+                : !((string?)o["discipline"] is "Structure" or "MEP" || (string?)o["id"] is "structural" or "mep" or "coordination"));
     }
 
     /// <summary>The styles a project without its own reads as: one per discipline; the structural one draws the cores alone.</summary>
     public static readonly IReadOnlyList<Style> Defaults =
     [
         new("architectural", "Architectural", "Architecture", "all", true, true),
-        new("structural", "Structural", "Structure", "core", true, true),
-        new("mep", "MEP", "MEP", "all", true, true),
+        new("structural", "Structural", "Structure", "core", true, true, FinishHatch: false),
+        new("mep", "MEP", "MEP", "all", true, true, FinishHatch: false),
         // For coordination drawings (decision 290): the openings' voids drawn, marked and sized; taken by name, no discipline's.
-        new("coordination", "Coordination", null, "all", true, true, Voids: true),
+        new("coordination", "Coordination", null, "all", true, true, Voids: true, FinishHatch: false),
     ];
 
     public static IReadOnlyList<Style> All(IModelView m) =>
@@ -90,6 +96,7 @@ public static class ViewStyles
             Ifc2d = o["ifc2d"] is JsonValue iv && iv.TryGetValue<bool>(out var i) ? i : s.Ifc2d,
             Voids = o["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var v) ? v : s.Voids,
             VoidSizes = o["voidSizes"] is JsonValue sv && sv.TryGetValue<bool>(out var sz) ? sz : s.VoidSizes,
+            FinishHatch = o["finishHatch"] is JsonValue fv && fv.TryGetValue<bool>(out var fh) ? fh : s.FinishHatch,
         };
     }
 
@@ -158,6 +165,7 @@ public static class ViewStyles
         if (a["ifc2d"] is JsonValue iv && iv.TryGetValue<bool>(out var i)) s = s with { Ifc2d = i };
         if (a["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var v)) s = s with { Voids = v };
         if (a["voidSizes"] is JsonValue sv && sv.TryGetValue<bool>(out var sz)) s = s with { VoidSizes = sz };
+        if (a["finishHatch"] is JsonValue fv && fv.TryGetValue<bool>(out var fh)) s = s with { FinishHatch = fh };
         return s;
     }
 

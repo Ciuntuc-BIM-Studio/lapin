@@ -17,13 +17,24 @@ public sealed record FinishLayer(string Material, double Thickness, List<FinishP
 public sealed record FinishSlab(string Material = "Reinforced concrete", double Thickness = 0.15, double Extend = 0);
 
 /// <summary>
+/// How a finish's floor (or ceiling, in a plan seen from below) is hatched in plans (decision 299): <c>material</c> (the default)
+/// the face material's surface pattern (its own Elevation hatch in Manage → Materials, else one its name suggests: tiles, wood,
+/// carpet, vinyl, concrete; else diagonal lines); <c>own</c> the pattern, scale, angle and colour given here; <c>none</c>.
+/// </summary>
+public sealed record FinishHatch(string Mode = "material", string? Pattern = null, double Scale = 1, double Angle = 0, string? Color = null)
+{
+    public static readonly string[] Modes = ["material", "own", "none"];
+}
+
+/// <summary>
 /// What a room is finished with (decision 265): the floor's layers from the top down, the walls' from the wall's face into the room
 /// (each with its pieces up the height: tiles to 2.10 m, paint over them), the ceiling's from the slab down; how high the walls'
 /// go (null: up to the ceiling); a skirting type by name; whether the floor runs on through the doors to the wall's axis; and
 /// a structural slab under the floor, made a floor of its own.
 /// </summary>
 public sealed record RoomFinishSpec(string Name, List<FinishLayer>? Floor = null, List<FinishLayer>? Walls = null, List<FinishLayer>? Ceiling = null,
-    double? WallHeight = null, string? Skirting = null, bool Thresholds = true, FinishSlab? Slab = null)
+    double? WallHeight = null, string? Skirting = null, bool Thresholds = true, FinishSlab? Slab = null,
+    FinishHatch? FloorHatch = null, FinishHatch? CeilingHatch = null)
 {
     static FinishLayer L(string material, double t, params FinishPart[] parts) => new(material, t, parts.Length > 0 ? [.. parts] : null);
 
@@ -77,8 +88,19 @@ public sealed record RoomFinishSpec(string Name, List<FinishLayer>? Floor = null
         }
         if (s.WallHeight is { } wh && !(wh > 0)) throw new CommandException("The walls' finish height must be more than nothing.");
         if (s.Slab is { } sl && !(sl.Thickness > 0)) throw new CommandException("The slab needs a thickness.");
+        FinishHatch? Hatch(FinishHatch? h, string what)
+        {
+            if (h is null) return null;
+            if (!FinishHatch.Modes.Contains(h.Mode)) throw new CommandException($"The {what}'s plan hatch is from its material, its own or none.");
+            if (h.Mode == "own" && string.IsNullOrWhiteSpace(h.Pattern)) throw new CommandException($"The {what}'s own plan hatch needs a pattern.");
+            if (!(h.Scale > 0 && double.IsFinite(h.Scale))) throw new CommandException($"The {what}'s plan hatch needs a scale above nothing.");
+            // The default (from the material, as it is) is kept as nothing, so the spec reads as before.
+            return h is { Mode: "material", Pattern: null, Scale: 1, Angle: 0, Color: null } ? null
+                : h with { Pattern = string.IsNullOrWhiteSpace(h.Pattern) ? null : h.Pattern.Trim().ToUpperInvariant(), Color = string.IsNullOrWhiteSpace(h.Color) ? null : h.Color.Trim() };
+        }
         return s with
         {
+            FloorHatch = Hatch(s.FloorHatch, "floor"), CeilingHatch = Hatch(s.CeilingHatch, "ceiling"),
             Name = s.Name.Trim(), Floor = Check(s.Floor, "floor"), Walls = Check(s.Walls, "walls"), Ceiling = Check(s.Ceiling, "ceiling"),
             Skirting = string.IsNullOrWhiteSpace(s.Skirting) ? null : s.Skirting.Trim(),
             Slab = s.Slab is { } slab ? slab with { Material = string.IsNullOrWhiteSpace(slab.Material) ? "Reinforced concrete" : slab.Material.Trim(), Extend = Math.Clamp(slab.Extend, 0, 1) } : null,
@@ -381,6 +403,76 @@ public static class RoomFinishes
         if (Math.Abs(face - frame) < 1e-3) return null;
         var z0 = f.Base + p.Sill;
         return new RevealLining(f, p.Along - p.Width / 2, p.Along + p.Width / 2, face, frame, z0, z0 + p.Height, bottom);
+    }
+
+    // ------------------------------------------------------------ in plans (decision 299)
+
+    /// <summary>A finish's hatch as a plan draws it: a pattern, its scale on paper, its angle, its colour.</summary>
+    public sealed record PlanHatch(string Pattern, double Scale, double Angle, string Color);
+
+    public const string HatchColor = "#7a7a7a";
+
+    /// <summary>What a material's name suggests for its surface seen from above: tiles, boards, carpet, sheet flooring, a poured floor.</summary>
+    static readonly (System.Text.RegularExpressions.Regex Re, string Pattern)[] Surfaces =
+    [
+        (new(@"tile|ceramic|porcelain|stone|marble|granit|terrazzo|gresie|faianta|piatra|marmura"), "TILES"),
+        (new(@"parquet|laminat|wood|timber|oak|beech|plank|board|deck|lemn|parchet|stejar"), "WOOD"),
+        (new(@"carpet|textile|mocheta|covor"), "CROSS"),
+        (new(@"vinyl|linoleum|pvc|rubber|lvt|cauciuc"), "HORIZONTAL"),
+        (new(@"epoxy|resin|concrete|screed|terrazzo|beton|sapa|rasina"), "CONCRETE"),
+    ];
+
+    static string? SurfaceOf(string name)
+    {
+        var n = Lapin.Drawing.MaterialGraphics.Normalise(name).Replace('ă', 'a').Replace('â', 'a').Replace('î', 'i').Replace('ș', 's').Replace('ş', 's').Replace('ț', 't').Replace('ţ', 't');
+        foreach (var (re, pattern) in Surfaces) if (re.IsMatch(n)) return pattern;
+        return null;
+    }
+
+    /// <summary>
+    /// The hatch a finish's floor (or ceiling) draws in plan: none when the part has no layers or its hatch is off; its own
+    /// pattern when it has one; else the face layer's material's (the floor's top layer, the ceiling's last), the first going
+    /// inwards whose surface pattern is set (Manage → Materials, Elevation) or suggested by its name; else diagonal lines.
+    /// </summary>
+    public static PlanHatch? HatchOf(IModelView m, RoomFinishSpec spec, string part)
+    {
+        var (layers, h) = part == "ceiling" ? (spec.Ceiling, spec.CeilingHatch) : (spec.Floor, spec.FloorHatch);
+        if (layers is not { Count: > 0 }) return null;
+        h ??= new FinishHatch();
+        if (h.Mode == "none") return null;
+        var color = h.Color ?? HatchColor;
+        if (h.Mode == "own" && h.Pattern is { } own) return new PlanHatch(own, h.Scale, h.Angle, color);
+        // From the face inwards: the floor's top layer first, the ceiling's lowest.
+        foreach (var l in part == "ceiling" ? layers.AsEnumerable().Reverse() : layers)
+        {
+            var material = Materials.Find(m, l.Material);
+            if (Lapin.Drawing.ViewGraphics.From(material?.Attrs["elevation"]) is { Hatch: { Length: > 0 } mine } g)
+                return new PlanHatch(mine.ToUpperInvariant(), (g.HatchScale ?? 1) * h.Scale, (g.HatchAngle ?? 0) + h.Angle, color);
+            if (SurfaceOf(l.Material) is { } guess) return new PlanHatch(guess, h.Scale, h.Angle, color);
+        }
+        return new PlanHatch("LINES45", h.Scale, h.Angle, color);
+    }
+
+    /// <summary>
+    /// The regions a room's finish covers in plan, each a set of loops (even-odd): the floor over the room's outline with its
+    /// islands and the floor's openings out, and each threshold through a door when the finish takes the floor there; the
+    /// ceiling over the outline with the openings of the slab above out.
+    /// </summary>
+    public static List<IReadOnlyList<IReadOnlyList<Vec2>>> PlanRegions(IModelView m, Entity room, Rooms.Outline o, RoomFinishSpec spec, string part)
+    {
+        var level = Level(m, room);
+        var loops = o.Loops.ToList();
+        if (part == "ceiling")
+        {
+            loops.AddRange(Ceiling(m, room, o, level).Holes);
+            return [loops];
+        }
+        loops.AddRange(FloorHoles(m, o, level));
+        var regions = new List<IReadOnlyList<IReadOnlyList<Vec2>>> { loops };
+        if (spec.Thresholds)
+            foreach (var x in OpeningsAlong(m, Spatial.StoreyOf(m, room.Id)?.Id, o).Where(x => x.P.Sill < 0.05))
+                regions.Add([Rect(x.F, x.P.Along - x.P.Width / 2, x.P.Along + x.P.Width / 2, x.Face, 0)]);
+        return regions;
     }
 
     // ------------------------------------------------------------ the body

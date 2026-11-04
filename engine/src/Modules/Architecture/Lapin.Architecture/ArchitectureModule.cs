@@ -272,6 +272,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("fillHatch", "Own hatch", "text"),
             new("hatchScale", "Hatch scale", "number", Min: 0.01, Max: 100),
             new("hatchColor", "Hatch colour", "color"),
+            // Whether plans hatch the room's floor finish (decision 299): absent, yes.
+            new("finishHatch", "Show floor finish hatch", "bool"),
         ], Rooms.Color));
         r.Geometry(Rooms.Class, Rooms.Geometry);
         r.Quantities(Rooms.Class, Rooms.Quantities);

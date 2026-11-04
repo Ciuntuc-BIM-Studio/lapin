@@ -1,5 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Drawing;
+using Lapin.Drawing.Views;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -147,5 +149,123 @@ public class RoomFinishTests
         f.Run("architecture.updateRoomFinishType", new JsonObject { ["id"] = tech, ["spec"] = spec.ToJson() });
         Assert.Contains(Finishes(f, room), e => e.Str("part") == "ceiling");
         Assert.Throws<CommandException>(() => RoomFinishSpec.From(new JsonObject { ["name"] = "Bad", ["floor"] = new JsonArray(new JsonObject { ["material"] = "Tiles" }) }));
+    }
+
+    // ------------------------------------------------------------ the plan hatch (decision 299)
+
+    static (string Plan, Views.Rendered R) Plan(Fixture f, string? plan = null, JsonObject? attrs = null)
+    {
+        plan ??= (string)f.Run("view.create", attrs ?? new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        return (plan, Views.Render(f.Session.Reader, Views.Find(f.Model, plan)!));
+    }
+
+    static List<(Vec2 A, Vec2 B)> Hatch(Views.Rendered r) => r.Pens.Where(p => p.Layer == Rooms.FinishLayer).SelectMany(p => p.Segments).ToList();
+
+    static bool Horizontal((Vec2 A, Vec2 B) s) => Math.Abs(s.A.Y - s.B.Y) < 1e-9;
+    static bool Vertical((Vec2 A, Vec2 B) s) => Math.Abs(s.A.X - s.B.X) < 1e-9;
+
+    [Fact]
+    public void A_finished_floor_is_hatched_in_plan_by_its_material_under_the_walls_and_the_room_or_the_view_style_turns_it_off()
+    {
+        var (f, room, walls) = Room();
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = walls[0], ["x"] = 2, ["y"] = 0 });
+        var (plan, bare) = Plan(f);
+        Assert.Empty(Hatch(bare));
+
+        // A bathroom's floor is ceramic tiles: a square grid, inside the room's outline, under the walls' cut lines.
+        f.Run("architecture.applyRoomFinish", new JsonObject { ["roomId"] = room, ["typeId"] = Library(f, "Bathroom") });
+        var (_, r) = Plan(f, plan);
+        var tiles = Hatch(r);
+        Assert.NotEmpty(tiles);
+        Assert.All(tiles, s => Assert.True(Horizontal(s) || Vertical(s)));
+        Assert.Contains(tiles, Horizontal);
+        Assert.Contains(tiles, Vertical);
+        Assert.All(tiles, s => Assert.True(s.A.X >= Inside - 1e-6 && s.A.X <= 5 - Inside + 1e-6 && s.A.Y >= Inside - 1e-6 && s.A.Y <= 4 - Inside + 1e-6));
+        var pen = r.Pens.Single(p => p.Layer == Rooms.FinishLayer);
+        Assert.Equal(RoomFinishes.HatchColor, pen.Stroke);
+        Assert.True(r.Pens.IndexOf(pen) < r.Pens.FindIndex(p => p.Layer == PenLayer.Cut));
+
+        // The living room's laminate is boards; its floor runs on through the door, and so does its hatch.
+        f.Run("architecture.applyRoomFinish", new JsonObject { ["roomId"] = room, ["typeId"] = Library(f, "Living room") });
+        var boards = Hatch(Plan(f, plan).R);
+        Assert.NotEmpty(boards);
+        var spec = RoomFinishes.SpecOf(f.Model, f.Model.OfClass(RoomFinishes.TypeClass).Single(t => t.Name == "Living room"))!;
+        var o = Rooms.Of(f.Model.Get(room)!, f.Model, f.Session.Geometry)!;
+        Assert.Equal(2, RoomFinishes.PlanRegions(f.Model, f.Model.Get(room)!, o, spec, "floor").Count);
+        Assert.Equal("WOOD", RoomFinishes.HatchOf(f.Model, spec, "floor")!.Pattern);
+
+        // The room says not: no hatch; null brings it back.
+        f.Run("element.update", new JsonObject { ["id"] = room, ["attrs"] = new JsonObject { ["finishHatch"] = false } });
+        Assert.Empty(Hatch(Plan(f, plan).R));
+        f.Run("element.update", new JsonObject { ["id"] = room, ["attrs"] = new JsonObject { ["finishHatch"] = null } });
+        Assert.NotEmpty(Hatch(Plan(f, plan).R));
+
+        // The view's style: off in Structural, on in Architectural; the view may turn it off itself.
+        Assert.False(ViewStyles.Defaults.Single(s => s.Id == "structural").FinishHatch);
+        Assert.True(ViewStyles.Defaults.Single(s => s.Id == "architectural").FinishHatch);
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = "structural" });
+        Assert.Empty(Hatch(Plan(f, plan).R));
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["style"] = null, ["finishHatch"] = false });
+        Assert.Empty(Hatch(Plan(f, plan).R));
+        f.Run("view.setStyle", new JsonObject { ["id"] = plan, ["finishHatch"] = null });
+        Assert.NotEmpty(Hatch(Plan(f, plan).R));
+        // A style saved before the field: on in an architectural one, off in a structural one.
+        Assert.True(ViewStyles.Style.From(new JsonObject { ["id"] = "x", ["discipline"] = "Architecture" }).FinishHatch);
+        Assert.False(ViewStyles.Style.From(new JsonObject { ["id"] = "y", ["discipline"] = "Structure" }).FinishHatch);
+    }
+
+    [Fact]
+    public void The_finish_types_own_hatch_wins_over_the_materials_and_none_draws_nothing()
+    {
+        var (f, room, _) = Room();
+        var living = Library(f, "Living room");
+        f.Run("architecture.applyRoomFinish", new JsonObject { ["roomId"] = room, ["typeId"] = living });
+        var (plan, _) = Plan(f);
+
+        // The material's own surface pattern (Manage → Materials, Elevation) wins over what its name suggests.
+        var laminate = Materials.Find(f.Model, "Laminate")!.Id;
+        f.Run("material.update", new JsonObject { ["id"] = laminate, ["elevation"] = new JsonObject { ["hatch"] = "LINES45" } });
+        var diagonal = Hatch(Plan(f, plan).R);
+        Assert.NotEmpty(diagonal);
+        Assert.All(diagonal, s => Assert.False(Horizontal(s) || Vertical(s)));
+
+        // The type's own pattern wins over the material's: horizontal lines, in the colour given.
+        var spec = RoomFinishes.SpecOf(f.Model, f.Model.Get(living)!)! with { FloorHatch = new FinishHatch("own", "horizontal", 2, 0, "#336699") };
+        f.Run("architecture.updateRoomFinishType", new JsonObject { ["id"] = living, ["spec"] = spec.ToJson() });
+        Assert.Equal("HORIZONTAL", RoomFinishes.SpecOf(f.Model, f.Model.Get(living)!)!.FloorHatch!.Pattern);
+        var (_, r) = Plan(f, plan);
+        var own = Hatch(r);
+        Assert.NotEmpty(own);
+        Assert.All(own, s => Assert.True(Horizontal(s)));
+        Assert.Equal("#336699", r.Pens.Single(p => p.Layer == Rooms.FinishLayer).Stroke);
+
+        // None: no hatch; an own hatch without a pattern is refused.
+        f.Run("architecture.updateRoomFinishType", new JsonObject { ["id"] = living, ["spec"] = (spec with { FloorHatch = new FinishHatch("none") }).ToJson() });
+        Assert.Empty(Hatch(Plan(f, plan).R));
+        Assert.Throws<CommandException>(() => f.Run("architecture.updateRoomFinishType", new JsonObject { ["id"] = living, ["spec"] = (spec with { FloorHatch = new FinishHatch("own") }).ToJson() }));
+    }
+
+    [Fact]
+    public void A_reflected_ceiling_plan_hatches_the_ceiling_and_a_colour_scheme_fills_under_the_hatch()
+    {
+        var (f, room, _) = Room();
+        var bathroom = Library(f, "Bathroom");
+        f.Run("architecture.applyRoomFinish", new JsonObject { ["roomId"] = room, ["typeId"] = bathroom });
+        var spec = RoomFinishes.SpecOf(f.Model, f.Model.Get(bathroom)!)! with { CeilingHatch = new FinishHatch("own", "CROSS") };
+        f.Run("architecture.updateRoomFinishType", new JsonObject { ["id"] = bathroom, ["spec"] = spec.ToJson() });
+        var (plan, _) = Plan(f);
+        f.Run("view.setRange", new JsonObject { ["id"] = plan, ["look"] = "up" });
+        var ceiling = Hatch(Plan(f, plan).R);
+        Assert.NotEmpty(ceiling);
+        Assert.All(ceiling, s => Assert.False(Horizontal(s) || Vertical(s)));
+
+        // A plan with a colour scheme: the room's fill first, the floor's hatch over it, both under the walls.
+        var (plan2, _) = Plan(f);
+        f.Run("architecture.viewColorScheme", new JsonObject { ["viewId"] = plan2, ["schemeId"] = "by-function" });
+        f.Run("element.update", new JsonObject { ["id"] = room, ["attrs"] = new JsonObject { ["fillColor"] = "#123456" } });
+        var r = Plan(f, plan2).R;
+        var fill = r.Pens.FindIndex(p => p.Layer == "ROOM-FILL");
+        var hatch = r.Pens.FindIndex(p => p.Layer == Rooms.FinishLayer);
+        Assert.True(fill >= 0 && hatch > fill && hatch < r.Pens.FindIndex(p => p.Layer == PenLayer.Cut));
     }
 }

@@ -1,7 +1,8 @@
 /**
  * Room finishes (decision 265), the Finishes tab's Room group: the configurator (a finish's floor from the top down, its
  * walls from the wall's face into the room with their pieces up the height, its ceiling from the slab down, the walls'
- * height, the skirting, the floor through the doors, a structural slab under the floor; the ready-made library), the
+ * height, the skirting, the floor through the doors, a structural slab under the floor, how plans hatch the floor and a
+ * reflected ceiling plan the ceiling (decision 299); the ready-made library), the
  * room's finish in its properties; the tools are in roomFinishTools.ts.
  */
 
@@ -9,10 +10,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Layers, Library, Plus, Settings2, Trash2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { execute, query, useSession } from '../../engine/session';
 import { ofClass } from '../../engine/model';
 import { formatLength } from '../../engine/unitsStore';
-import { LengthField } from '../../shell/cells';
+import { LengthField, NumberField } from '../../shell/cells';
+import { HatchSwatch } from '../core/HatchSwatch';
+import { hatchOf, withHatch, type FinishHatch, type FinishHatchMode, type HatchPart } from './finishHatch';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
 
@@ -22,6 +25,7 @@ interface FinishSlab { material: string; thickness: number; extend: number }
 export interface RoomFinishSpec {
   name: string; floor?: FinishLayer[] | null; walls?: FinishLayer[] | null; ceiling?: FinishLayer[] | null;
   wallHeight?: number | null; skirting?: string | null; thresholds: boolean; slab?: FinishSlab | null;
+  floorHatch?: FinishHatch | null; ceilingHatch?: FinishHatch | null;
 }
 type Catalog = { spec: RoomFinishSpec; library: RoomFinishSpec[] };
 
@@ -73,6 +77,43 @@ function LayersTable({ layers, onChange, pieces, testId }: { layers: FinishLayer
         ])}
       </tbody>
     </table>
+  );
+}
+
+/** How plans hatch a finish's floor (or a reflected ceiling plan its ceiling): from its material, a pattern of its own, or not at all. */
+function PlanHatchRow({ spec, part, onChange }: { spec: RoomFinishSpec; part: HatchPart; onChange: (patch: Partial<RoomFinishSpec>) => void }) {
+  const [patterns, setPatterns] = useState<string[]>([]);
+  useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setPatterns(r.map((h) => h.name).filter((n) => n !== 'SOLID'))); }, []);
+  const h = hatchOf(spec, part);
+  const set = (patch: Partial<FinishHatch>) => onChange(withHatch(spec, part, patch));
+  return (
+    <div className="row finish-hatch" data-testid={`finish-${part}-hatch`}>
+      <span className="eyebrow" title={part === 'floor'
+        ? "How plans hatch this floor: by its top material's surface pattern, by a pattern of its own, or not at all; each room may turn it off"
+        : "How a plan seen from below hatches this ceiling: by its lowest material's surface pattern, by a pattern of its own, or not at all"}>Plan hatch</span>
+      <select data-field="hatch-mode" value={h.mode} onChange={(e) => set({ mode: e.target.value as FinishHatchMode })}>
+        <option value="material">from its material</option>
+        <option value="own">own pattern</option>
+        <option value="none">not hatched</option>
+      </select>
+      {h.mode === 'own' && (
+        <select data-field="hatch-pattern" value={h.pattern ?? ''} onChange={(e) => set({ pattern: e.target.value })}>
+          {patterns.map((n) => <option key={n} value={n} data-no-i18n>{n}</option>)}
+        </select>
+      )}
+      {h.mode !== 'none' && (
+        <>
+          <NumberField className="narrow" min={0.05} max={100} title="Hatch scale" value={h.scale} onCommit={(v) => { if (v != null && v > 0) set({ scale: v }); }} />
+          <NumberField className="narrow" min={-360} max={360} suffix="°" title="Hatch angle" value={h.angle} onCommit={(v) => set({ angle: v ?? 0 })} />
+        </>
+      )}
+      {h.mode === 'own' && (
+        <>
+          <input type="color" title="Hatch colour" value={h.color ?? '#7a7a7a'} onChange={(e) => set({ color: e.target.value })} />
+          <HatchSwatch hatch={h.pattern} scale={h.scale} size={24} />
+        </>
+      )}
+    </div>
   );
 }
 
@@ -161,6 +202,7 @@ export function RoomFinishesDialog() {
                   {key === 'floor' && layers.length > 0 && (
                     <label className="check"><input type="checkbox" checked={spec.thresholds} onChange={(e) => set({ thresholds: e.target.checked })} /> Through the doors, to the wall's axis</label>
                   )}
+                  {key !== 'walls' && layers.length > 0 && <PlanHatchRow spec={spec} part={key} onChange={set} />}
                 </section>
               );
             })}

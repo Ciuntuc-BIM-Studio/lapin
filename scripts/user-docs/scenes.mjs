@@ -1175,12 +1175,21 @@ export const scenes = [
       const dialog = t.page.locator('.dialog');
       await t.wait(800);
       t.expect(await dialog.locator('[data-part=walls] tr.layer-parts').count() === 1, 'the walls show their tiles up the height');
+      t.expect(await dialog.locator('[data-testid=finish-floor-hatch] select[data-field=hatch-mode]').count() === 1, 'the floor has its plan hatch');
       await t.shot('room-finishes', { of: '.dialog', pad: 0 });
       await t.ui({ dialog: null });
       await select(t, rooms[0]);
       await t.wait(800);
       t.expect(await t.page.locator('select[data-field=room-finish]').count() === 1, 'the room shows its finish');
+      t.expect(await t.page.locator('input[data-field=room-finish-hatch]').count() === 1, 'the room can turn its floor hatch off');
       await t.shot('room-finish-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      // Decision 299: the floors hatched on the plan, the bathroom's tiles and the living room's boards, under the walls.
+      await t.ui({ selection: null, selected: [] });
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Finishes plan' });
+      await t.ui({ planViewId: plan.id, keyPlan: false });
+      await t.wait(1200);
+      await t.fit();
+      await t.shot('room-finish-hatch', { of: '[data-testid=plan]', pad: 0 });
       // A wall type's layer of two materials up its height: tiles to 2.10 m, the plaster over them.
       await t.ui({ selection: null, selected: [] });
       await t.tool('architecture.wallTypes');

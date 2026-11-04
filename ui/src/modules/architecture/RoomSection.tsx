@@ -59,6 +59,12 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dd><Suggest id={`ff-${node.id}`} value={str('finishFloor')} options={known('finishFloor')} onCommit={(v) => update('finishFloor', v.trim())} /></dd>
         <dt title="What lines the room: its floor, walls and ceiling laid by Finishes → Finish room">Finish</dt>
         <dd><RoomFinishField node={node} /></dd>
+        {typeof node.props.finishType === 'string' && (
+          <>
+            <dt title="Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)">Show floor finish hatch</dt>
+            <dd><input type="checkbox" data-field="room-finish-hatch" checked={node.props.finishHatch !== false} onChange={(e) => update('finishHatch', e.target.checked ? null : false)} /></dd>
+          </>
+        )}
         <dt title="Empty: the storey's height">Height</dt>
         <dd><LengthCell metres={typeof node.props.height === 'number' ? node.props.height : null} placeholder="the storey's" onCommit={(m) => update('height', m)} /></dd>
         <dt title="How far above its storey's level the room starts (a gallery, a raised floor)">Base offset</dt>
