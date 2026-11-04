@@ -59,11 +59,13 @@ static class Product
 }
 `);
 
-// 3. The engine: AOT, trimmed.
+// 3. The engine: AOT, trimmed, with the desktop's version (0.1.<commit count>, or LAPIN_VERSION) for Help and About.
+const commits = execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+const version = process.env.LAPIN_VERSION ?? `0.1.${commits}`;
 const engineOut = join(out, 'web-engine');
 if (!uiOnly) {
   rmSync(engineOut, { recursive: true, force: true });
-  sh(dotnet, ['publish', host, '-c', 'Release', '-o', engineOut, '-nologo', '-v', 'q', `-p:LapinProDir=${root}/`], { env: { DOTNET_ROOT: dotnetRoot } });
+  sh(dotnet, ['publish', host, '-c', 'Release', '-o', engineOut, '-nologo', '-v', 'q', `-p:LapinProDir=${root}/`, `-p:InformationalVersion=${version}`], { env: { DOTNET_ROOT: dotnetRoot } });
 } else if (!existsSync(join(engineOut, 'wwwroot'))) { console.error(`build-web: no engine built for ${id} yet (run without --ui-only once).`); process.exit(1); }
 
 /** The bytes a browser downloads for a folder (brotli), MB. */
