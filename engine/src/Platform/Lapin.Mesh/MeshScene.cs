@@ -124,6 +124,8 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         if (o.Hidden != null) hidden.UnionWith(o.Hidden);
         var planes = MeshClip.Unit(o.Planes ?? []);
         var filters = session.Catalog.All<IViewElementFilter>();
+        var reader = session.Reader;
+        IReadOnlyList<IViewPartFilter> partFilters = view == null ? [] : session.Catalog.All<IViewPartFilter>();
         // The layers a 3D view shows (its style's, or its own), the parts it leaves out left out here too.
         var layers = o.Layers ?? (view != null ? ViewStyles.Of(m, view).Layers : "all");
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
@@ -180,12 +182,12 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             if (view != null)
             {
                 if (GraphicsSets.Hides3d(graphics, e)) continue;
-                if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
+                if (filters.Select(f => f.For(reader, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             }
             ElementGeometry? geo;
             try { geo = session.Geometry(e.Id); }
             catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { notes.Add($"„{e.Name}” was left out: {ex.Message}"); continue; }
-            var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0 && ViewStyles.Shows3d(m, layers, e.Id, p, bands)).ToList() ?? [];
+            var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0 && ViewStyles.Shows3d(m, layers, e.Id, p, bands) && !partFilters.Any(f => f.Hides(reader, view!, e, p.Key))).ToList() ?? [];
             if (parts.Count == 0) continue;
             // Cut as the view cuts it: each part's cap (in its material) closes what the planes open.
             var caps = planes.Length > 0 && o.Caps ? SectionCaps.Make(parts.Select(p => p.Solid).ToList(), planes) : null;

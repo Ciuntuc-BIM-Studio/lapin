@@ -186,13 +186,16 @@ function meshOf(item: RenderItem): THREE.Group {
   add(group, item.positions, item.normals, item.indices, item.edges, item.color);
   const lods: LodSet[] = [];
   for (const p of item.parts ?? []) {
-    if (!p.lods?.length) { add(group, p.positions, p.normals, p.indices, p.edges, p.color, p.material); continue; }
+    // A part with a key (a layer) in a group of its own, so a look can show it apart (the 4D simulation's layers).
+    let into = group;
+    if (p.key) { into = new THREE.Group(); into.userData.part = p.key; group.add(into); }
+    if (!p.lods?.length) { add(into, p.positions, p.normals, p.indices, p.edges, p.color, p.material); continue; }
     const levels = [p, ...p.lods.map(copyArrays)].map((m, k) => {
       const g = new THREE.Group();
       g.visible = k === 0;
       add(g, m.positions, m.normals, m.indices, m.edges, p.color, p.material);
       if (k > 0) g.traverse((c) => { c.raycast = NO_RAYCAST; });
-      group.add(g);
+      into.add(g);
       return g;
     });
     lods.push({ levels, errors: p.lods.map((l) => l.error), ...sphereOf(p.positions) });
@@ -263,24 +266,48 @@ function highlight(group: THREE.Object3D, on: boolean) {
   });
 }
 
-/** A module's look (a phase's): hidden, or its faces tinted and see-through; none: its own colours back. */
+/**
+ * A module's look (a phase's, the 4D simulation's): hidden, or its faces tinted and see-through; a part (a layer) its own
+ * look or hidden; none: its own colours back. The same look as last time leaves the materials as they are (a simulation's
+ * day that changes nothing for an element costs nothing).
+ */
 function look(group: THREE.Object3D, l: Look | undefined) {
   group.visible = !l?.hidden;
-  group.traverse((c) => {
-    const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-    if (!m || !('emissive' in m)) return;
-    if (m.userData.own === undefined) m.userData.own = m.color.getHex();
-    m.color.setHex(l?.color ? new THREE.Color(l.color).getHex() : m.userData.own as number);
-    // A see-through material (glass) stays as see-through as it is, and fades further with the look.
-    const opacity = (l?.opacity ?? 1) * ((m.userData.opacity as number | undefined) ?? 1);
-    // Turning see-through, or back, changes the shader three.js compiled: it must be told.
-    if (m.transparent !== opacity < 1) m.needsUpdate = true;
-    m.transparent = opacity < 1;
-    m.opacity = opacity;
-    m.depthWrite = opacity >= 1;
-    // What is seen through casts no shadow (a buildable volume, a phase shown faded).
-    (c as THREE.Mesh).castShadow = opacity >= 1;
-  });
+  if (group.userData.look === l) return;
+  group.userData.look = l;
+  paint(group, l);
+}
+
+function paint(group: THREE.Object3D, l: Look | undefined) {
+  // The element's own meshes take its look; a part's group (a layer) its own, or the element's without the parts'.
+  const base = l?.parts ? { ...l, parts: undefined } : l;
+  const visit = (c: THREE.Object3D) => {
+    if (c !== group && c.userData.part) {
+      const own = l?.parts?.[c.userData.part as string];
+      c.visible = !own?.hidden;
+      paint(c, own ?? base);
+      return;
+    }
+    tint(c, l);
+    for (const k of c.children) visit(k);
+  };
+  visit(group);
+}
+
+function tint(c: THREE.Object3D, l: Look | undefined) {
+  const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+  if (!m || !('emissive' in m)) return;
+  if (m.userData.own === undefined) m.userData.own = m.color.getHex();
+  m.color.setHex(l?.color ? new THREE.Color(l.color).getHex() : m.userData.own as number);
+  // A see-through material (glass) stays as see-through as it is, and fades further with the look.
+  const opacity = (l?.opacity ?? 1) * ((m.userData.opacity as number | undefined) ?? 1);
+  // Turning see-through, or back, changes the shader three.js compiled: it must be told.
+  if (m.transparent !== opacity < 1) m.needsUpdate = true;
+  m.transparent = opacity < 1;
+  m.opacity = opacity;
+  m.depthWrite = opacity >= 1;
+  // What is seen through casts no shadow (a buildable volume, a phase shown faded).
+  (c as THREE.Mesh).castShadow = opacity >= 1;
 }
 
 /** Free an object's GPU resources: geometries, materials and their textures (not the shared ones). */
@@ -621,6 +648,14 @@ export function Viewport3D() {
         const box = new THREE.Box3();
         for (const id of ids) { const o = live.get(id)?.object; if (o?.visible) box.expandByObject(o); }
         return box.isEmpty() ? null : { min: { x: box.min.x, y: box.min.y, z: box.min.z }, max: { x: box.max.x, y: box.max.y, z: box.max.z } };
+      },
+      // The view drawn now, on its own canvas (a video's frames are copied from it right away).
+      canvas: () => {
+        const refPlanes = s.getObjectByName('ref-planes');
+        const shown = refPlanes?.visible ?? false;
+        if (refPlanes) refPlanes.visible = false;
+        try { renderer.render(s, cam); } finally { if (refPlanes) refPlanes.visible = shown; }
+        return renderer.domElement;
       },
       // Drawn once more right before it is read: the drawing buffer is not kept between frames.
       snapshot: (maxWidth = 1280) => {

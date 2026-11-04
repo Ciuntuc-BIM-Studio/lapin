@@ -34,7 +34,8 @@ public sealed class PhasesModule : ILapinModule, IViewElementFilter
 
     public (bool Hide, string? Color)? For(IModelView m, Entity view, Entity e)
     {
-        if (!Phased(m, e)) return null;
+        // A view at a date (the 4D simulation's State at date) shows the schedule's states, not a phase's.
+        if (!Phased(m, e) || view.Str("stateDate") != null) return null;
         var s = Settings(m);
         // A view on a phase that is gone follows the active one.
         var phase = view.Str("phaseId") is { } own && s.IndexOf(own) >= 0 ? own : s.ActivePhase?.Id;

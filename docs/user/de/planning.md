@@ -1,7 +1,7 @@
 ---
 title: Terminplanung
 order: 97
-summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilensteine, Verknüpfungen mit Zeitabständen, der kritische Pfad auf einem Kalender mit den gesetzlichen Feiertagen Rumäniens; zu und von MS Project, IFC und Excel.
+summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilensteine, Verknüpfungen mit Zeitabständen, der kritische Pfad auf einem Kalender mit den gesetzlichen Feiertagen Rumäniens; die 4D-Simulation des Tag für Tag wachsenden Gebäudes, in Ansichten, auf Plänen und als Video; zu und von MS Project, IFC und Excel.
 ---
 
 ## Der Reiter Terminplanung
@@ -14,6 +14,7 @@ summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilenste
 - **Vorgang** und **Meilenstein**: ein neuer Vorgang oder Meilenstein vor dem im Gantt gewählten Vorgang (oder am Ende).
 - **Einrücken**, **Ausrücken**, **Vorgänge verknüpfen** und **Verknüpfungen lösen**: der PSP und die Verknüpfungen der gewählten Vorgänge.
 - **Zu Vorgang hinzufügen…** (TA) und **Elemente ohne Vorgang**: die Elemente des Modells in den Vorgängen (unten).
+- **Simulieren**, **Bauabschnittsplan…**, **Gantt auf Plan** und **Video exportieren…**: die 4D-Simulation, das Modell, wie der Bauzeitenplan es an einem Tag hat (unten).
 - **MS Project importieren…**, **MS Project exportieren…**, **XLSX exportieren** und **IFC exportieren…**: der Terminplan zu und von anderen Programmen (unten).
 
 Ein Projekt hat einen Terminplan. Er wird beim ersten Hinzufügen eines Vorgangs angelegt und beginnt am nächsten Montag. Den Beginn ändern Sie in der Leiste des Gantt.
@@ -163,6 +164,63 @@ Sobald ein Vorgang Elemente nimmt, sagt die Leiste des Gantt, wie viele Elemente
 
 Der IFC-Export schreibt, was jeder Vorgang baut, als IfcRelAssignsToProduct (das Element mit den Vorgängen, die es bauen), und worauf ein Abbruch-, Entfernungs- oder Rückbauvorgang wirkt, als IfcRelAssignsToProcess. Regel, Teil und Ausnahmen reisen in `Lapin_Task`, so liest Lapin die Regel zurück; eine Datei aus einem anderen Programm ergibt Vorgänge mit den Elementen, die sie ihnen zuweist. MS Project XML trägt sie im Feld Text1 mit dem Namen *Lapin elements*. Die Arbeitsmappe hat die Spalten **Elements** und **Rule**.
 
+## Die 4D-Simulation
+
+![Das Haus an einem Tag seines Bauzeitenplans: die Decke des Obergeschosses in Arbeit in ihrer Schalung, die Wände darüber nicht begonnen](shots/planning-simulation.webp)
+
+**Terminplanung → Simulieren** (auch **Simulieren** in der Werkzeugleiste des Gantt) zeigt das Modell, wie der Bauzeitenplan es an einem Tag hat. Das Gantt öffnet sich unter der Ansicht, wenn es nicht offen ist, mit dem Player oben und dem Tag als Band über dem Diagramm:
+
+- was **nicht begonnen** ist, ist ausgeblendet (oder als blasser Geist gezeigt, in den Einstellungen);
+- was **in Arbeit** ist, wird in seiner Farbe gezeichnet (Bernstein);
+- was **gebaut** ist, wird gezeichnet, wie es ist;
+- was **im Abbruch** ist, ist rot, solange sein Vorgang läuft, und dann verschwunden;
+- **Schalung und Gerüste** stehen, in ihrer Farbe (Blau), nur zwischen den Tagen, die ihnen die Vorgänge ihrer Bauteile geben: die Schalung einer Decke vom Beginn des Betonierens bis zum Ausschalen, ein Gerüst vom ersten Vorgang an seinen Wänden bis zum letzten.
+
+Eine mehrschichtige Wand, in einem Vorgang gemauert und in einem anderen verputzt, wächst in zwei Schritten: erst ihr Kern, dann der Putz. Elemente, die kein Vorgang nimmt, bleiben, wie sie sind. Eine Karte über der Modellansicht nennt den Tag, was jede Farbe bedeutet und wie viele Elemente in jedem Zustand sind.
+
+### Abspielen
+
+![Der Player oben im Gantt](shots/planning-simulation-bar.webp)
+
+- **Abspielen** (▶) lässt die Tage mit der gewählten Geschwindigkeit (1 bis 60 Tage pro Sekunde) bis zum Ende laufen; **Pause** hält an.
+- Die Pfeile auf beiden Seiten gehen **einen Tag** oder **eine Woche** zurück oder vor.
+- Ziehe den Schieberegler, tippe ein Datum, oder klicke und ziehe auf der Zeitskala des Gantt: das Band über dem Diagramm und das Modell folgen.
+- Neben dem Datum: die Vorgänge, die an dem Tag in Arbeit sind.
+
+Von einem Tag zum nächsten ändern sich nur Farben und Sichtbarkeit der Elemente: nichts wird neu gebaut, darum läuft ein großes Modell so flüssig wie ein kleines.
+
+### Ihre Farben
+
+![Die Simulationseinstellungen](shots/planning-simulation-settings.webp)
+
+Das Zahnrad öffnet die Simulationseinstellungen, im Projekt gespeichert: die Farben dessen, was in Arbeit ist, im Abbruch, der Schalung und Gerüste und der Geister; ob **Nicht begonnenes** ausgeblendet oder **als Geister** gezeigt wird; ob die **Elemente ohne Vorgang** gezeigt oder ausgeblendet werden; und ob **getrennt gebaute Schichten** getrennt erscheinen. **Standardfarben** bringt die von Lapin zurück.
+
+### Stand am Datum in Ansichten und Plänen
+
+![Der Stand am Datum eines Grundrisses in seinen Eigenschaften](shots/planning-view-date.webp)
+
+Ein Grundriss, ein Schnitt, eine Ansicht oder eine gespeicherte 3D-Ansicht hat in den Eigenschaften **Stand am Datum**: Die Ansicht zeichnet dann das Modell, wie der Bauzeitenplan es an dem Tag hat, in denselben Farben, und ihre Pläne drucken es so (das PDF zeigt, was der Bildschirm zeigt). Läuft die Simulation, übernimmt **das Datum des Cursors** ihren Tag. Eine Ansicht an einem Datum zeichnet die Zustände des Bauzeitenplans, nicht die ihrer Phase. Das × neben dem Datum bringt das Modell zurück, wie es ist. Eine 3D-Ansicht mit einem Datum zeigt diesen Tag auch bei ausgeschalteter Simulation.
+
+### Der Bauabschnittsplan
+
+![Bauabschnittsplan: die Daten der Kapitelenden](shots/planning-stages-dialog.webp)
+
+**Terminplanung → Bauabschnittsplan…** (auch im Player) stellt das Modell an mehreren Daten nebeneinander auf einen neuen Plan. Gezeichnet wird aus **der 3D-Ansicht, wie sie jetzt aussieht** (ein Bild je Datum) oder aus einem Grundriss, einem Schnitt oder einer Ansicht, die die Engine an jedem Datum zeichnet. Die Daten sind **das Ende jedes Kapitels** (jeder Vorgang oben im PSP), **das Ende jedes Monats** oder **gewählte**. Jedes Bild trägt sein Datum und die Vorgänge in Arbeit.
+
+![Ein Bauabschnittsplan](shots/planning-stages-sheet.webp)
+
+### Das Gantt auf einem Plan
+
+![Das Gantt auf einem Plan](shots/planning-gantt-sheet.webp)
+
+**Terminplanung → Gantt auf Plan** setzt den Bauzeitenplan auf einen neuen Plan: die Tabelle (Zeile, PSP und Vorgang, Tage, Anfang, Ende) und die Balken auf einer Zeitskala, die kritischen Vorgänge rot, die Sammelvorgänge als Klammern, die Meilensteine als Rauten, die Verknüpfungen. Ein Bauzeitenplan, der höher ist als der Plan, kommt auf so viele Pläne wie nötig, mit seiner Kopfzeile auf jedem. Er ist als Vektoren gezeichnet, wie die Ansichten, und wird im PDF gedruckt.
+
+### Video exportieren
+
+![Video exportieren](shots/planning-video.webp)
+
+**Terminplanung → Video exportieren…** (auch im Player) nimmt die 3D-Ansicht auf, von wo sie jetzt schaut, von einem Tag zum anderen, ein Bild je **ein Tag** oder **eine Woche**, mit dem Datum und den Vorgängen in Arbeit darunter. Die Datei ist ein WebM-Video, oder MP4, wo das System nur das anbietet (die macOS-App). Ein Browser, der kein Video aufnimmt, speichert stattdessen die Bilder als PNG-Dateien in einem ZIP.
+
 ## Der Kalender
 
 ![Der Arbeitskalender](shots/planning-calendar.webp)
@@ -186,5 +244,5 @@ Lapins eigene Felder, für die andere Programme keinen Platz haben (die Einschr�
 
 ## Was als Nächstes kommt
 
-Die 4D-Simulation des in 3D wachsenden Gebäudes, Fortschritt und Basispläne sowie die Kostenberechnung kommen in den nächsten Stufen.
+Fortschritt und Basispläne sowie die Kostenberechnung kommen in den nächsten Stufen.
 

@@ -40,6 +40,8 @@ export interface RenderPart {
   hiddenBy?: ('noFinishes' | 'core')[] | null;
   /** Coarser copies for the screen, finest first (docs/plan-display-precision.md): only a part of many triangles has them. */
   lods?: RenderLod[] | null;
+  /** The part's key (a layered element's layer:<n>): a look may show it apart (the 4D simulation). */
+  key?: string | null;
 }
 
 /** A coarser copy of a part: flat shaded, with its edges; `error`, the most it strays from the part (m). */

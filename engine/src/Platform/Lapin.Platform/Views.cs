@@ -388,6 +388,8 @@ public static class Views
         var viewGraphics = GraphicsSets.Of(m, view);
         var hiddenElements = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         var filters = q.Services.All<IViewElementFilter>();
+        var partFilters = q.Services.All<IViewPartFilter>();
+        bool PartShown(Entity e, string? key) => partFilters.Count == 0 || !partFilters.Any(f => f.Hides(q, view, e, key));
         var plan = view.Str("kind") is "plan" or null;
         // A site plan: the model from above, what lies under the ground left out, the site's own symbols from every storey.
         var site = plan && SitePlans.Of(view) != null;
@@ -404,7 +406,7 @@ public static class Views
             if (e.Class is IfcClass.OpeningElement or IfcClass.Space || hiddenElements.Contains(e.Id)) continue;
             // A plan shows its own storey's elements, and the other storeys' only as it says (StoreyDisplay).
             if (plan && display.Shows(storey, Spatial.StoreyOf(m, e.Id)?.Id) == null) continue;
-            if (filters.Select(f => f.For(m, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
+            if (filters.Select(f => f.For(q, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             if (GraphicsSets.Hides(viewGraphics, e)) continue;
             if (q.Geometry(e.Id) is not { } g) continue;
             var stored = StoredBodies.Has(e);
@@ -418,7 +420,7 @@ public static class Views
                 // By its symbols when it has them (a stored terrain from an IFC file has only its body).
                 var bySymbol = SiteSymbols.Contains(e.Class) && g.Plan is { Count: > 0 };
                 foreach (var p in g.Parts)
-                    if (!bySymbol && Measure.Bounds(p.Solid) is { } b && b.Max.Z > SitePlans.Underground && ViewStyles.Draws(m, style, e.Id, p.Key, bandCache))
+                    if (!bySymbol && Measure.Bounds(p.Solid) is { } b && b.Max.Z > SitePlans.Underground && ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key))
                         parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: true));
                 if (bySymbol)
                     foreach (var item in g.Plan!)
@@ -431,7 +433,7 @@ public static class Views
                 continue;
             }
             foreach (var p in g.Parts)
-                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored));
+                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored));
             if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
                 foreach (var item in g.Plan)
                 {
@@ -588,7 +590,7 @@ public static class Views
             foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Concat((drawing.Fills ?? []).Select(f => f.Element)).Concat((drawing.Texts ?? []).Select(t => t.Element)).Distinct())
             {
                 if (m.Get(id) is not { } el) continue;
-                if (filters.Select(f => f.For(m, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
+                if (filters.Select(f => f.For(q, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
                 // Another storey's element in a plan that shows it halftone: grey, as a halftone link.
                 else if (halftoneOthers && ShowsByStorey(m, view, el) == true) colors[id] = Links.Halftone;
             }

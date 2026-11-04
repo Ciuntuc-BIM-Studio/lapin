@@ -216,6 +216,7 @@ describe('labels the guide found in English', () => {
     'Add to task…', 'Elements without a task', 'Rule', 'Whole elements', 'Core (structure)', 'Finishes (layers but the core)', 'Add the selection', 'Rule from the selection',
     'Generate schedule…', 'Sequence', 'Durations', 'Productivity norms', 'Import norms…', "Use Lapin's indicative values", 'Elements linked', 'Durations from norms',
     'Kept as edited', 'Concrete frame', 'Load-bearing masonry', 'Steel hall', 'Site set-up', 'Struck after (working days)',
+    'Simulate', '4D simulation', 'Stages sheet…', 'Gantt on sheet', 'Export video…', 'State at date', 'Under way', 'Being demolished', 'Formwork and scaffolding',
   ];
   for (const lang of langs) {
     it(`are translated into ${lang}`, () => {
@@ -249,6 +250,9 @@ describe('a word with two meanings', () => {
     expect(translate('Part', 'ro')).toBe('Piesă');
     expect(translate('Kinds', 'es', 'task')).toBe('Clases');
     expect(translate('Kinds', 'es')).toBe('Clases de vista');
+    // A date range's To (until) is not a move's To (towards).
+    expect(translate('To', 'ro', 'period')).toBe('Până la');
+    expect(translate('To', 'ro')).toBe('Către');
     // A context with no phrase of its own falls back to the common one.
     expect(translate('Wall', 'es', 'session')).toBe('Muro');
   });

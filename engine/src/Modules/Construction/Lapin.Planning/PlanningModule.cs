@@ -8,10 +8,10 @@ using Lapin.Platform;
 namespace Lapin.Planning;
 
 /// <summary>
-/// Planning (4D, docs/plan-4d5d.md, stages 1–3): the project's work schedule — tasks in a WBS, milestones, links FS / SS /
+/// Planning (4D, docs/plan-4d5d.md, stages 1–4): the project's work schedule — tasks in a WBS, milestones, links FS / SS /
 /// FF / SF with lags, the work calendar with Romania's legal holidays — the critical path worked out on every change, the
 /// model's elements in the tasks (each task's rule, part and exceptions, <see cref="TaskElements"/>), and the schedule in
-/// and out as IFC processes, MS Project XML and a workbook; the generator (<see cref="Generator"/>, stage 3). Every command is one undo step; the dates,
+/// and out as IFC processes, MS Project XML and a workbook; the generator (<see cref="Generator"/>, stage 3); the 4D simulation (<see cref="Timeline"/>, stage 4). Every command is one undo step; the dates,
 /// floats and critical flags are derived (<see cref="Cpm"/>), never stored.
 /// </summary>
 public sealed partial class PlanningModule : ILapinModule, IDeletion
@@ -515,6 +515,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         });
 
         RegisterGenerator(r);
+        RegisterSimulation(r);
 
         r.Query("schedule", (q, _) => ScheduleJson(q));
 
@@ -618,7 +619,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
     }
 
     /// <summary>The critical path, or (links looping, from a file) every task at the start, with the reason.</summary>
-    static (CpmResult Result, string? Problem) Solve(Plan p)
+    internal static (CpmResult Result, string? Problem) Solve(Plan p)
     {
         try { return (Cpm.Solve(p), null); }
         catch (CommandException ex)

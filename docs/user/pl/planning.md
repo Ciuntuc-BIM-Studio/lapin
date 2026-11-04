@@ -1,7 +1,7 @@
 ---
 title: Harmonogram
 order: 97
-summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamienie milowe, powiązania z opóźnieniami, ścieżka krytyczna liczona na kalendarzu z rumuńskimi świętami ustawowymi; do i z MS Project, IFC i Excela.
+summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamienie milowe, powiązania z opóźnieniami, ścieżka krytyczna liczona na kalendarzu z rumuńskimi świętami ustawowymi; symulacja 4D budynku rosnącego dzień po dniu, w widokach, na arkuszach i jako wideo; do i z MS Project, IFC i Excela.
 ---
 
 ## Karta Harmonogram
@@ -14,6 +14,7 @@ summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamien
 - **Zadanie** i **Kamień milowy**: nowe zadanie lub kamień milowy przed zadaniem zaznaczonym w Gantcie (albo na końcu).
 - **Zwiększ wcięcie**, **Zmniejsz wcięcie**, **Połącz zadania** i **Rozłącz zadania**: WBS i powiązania zaznaczonych zadań.
 - **Dodaj do zadania…** (TA) i **Elementy bez zadania**: elementy modelu w zadaniach (poniżej).
+- **Symuluj**, **Arkusz etapów…**, **Gantt na arkuszu** i **Eksportuj wideo…**: symulacja 4D, model taki, jaki ma go harmonogram danego dnia (poniżej).
 - **Importuj MS Project…**, **Eksportuj MS Project…**, **Eksportuj XLSX** i **Eksportuj IFC…**: harmonogram do i z innych programów (poniżej).
 
 Projekt ma jeden harmonogram. Powstaje przy pierwszym dodaniu zadania i zaczyna się w następny poniedziałek. Jego początek zmienisz na pasku Gantta.
@@ -163,6 +164,63 @@ Gdy tylko jakieś zadanie bierze elementy, pasek Gantta mówi, ile elementów ni
 
 Eksport IFC zapisuje to, co buduje każde zadanie, jako IfcRelAssignsToProduct (element z zadaniami, które go budują), a to, na co działa zadanie rozbiórki, usunięcia lub demontażu, jako IfcRelAssignsToProcess. Reguła, część i wyjątki są zapisywane w `Lapin_Task`, więc Lapin odczytuje regułę z powrotem; plik z innego programu daje zadania z elementami, które im przypisuje. MS Project XML przenosi je w polu Text1 o nazwie *Lapin elements*. Skoroszyt ma kolumny **Elements** i **Rule**.
 
+## Symulacja 4D
+
+![Dom w jednym dniu harmonogramu: strop piętra w toku w swoim szalunku, ściany nad nim nierozpoczęte](shots/planning-simulation.webp)
+
+**Harmonogram → Symuluj** (także **Symuluj** na pasku wykresu Gantta) pokazuje model taki, jaki ma go harmonogram danego dnia. Wykres Gantta otwiera się pod widokiem, jeśli nie jest otwarty, z odtwarzaczem u góry i dniem jako pasem na wykresie:
+
+- to, co **nierozpoczęte**, jest ukryte (albo pokazane jako blady duch, w ustawieniach);
+- to, co **w toku**, jest rysowane w swoim kolorze (bursztynowym);
+- to, co **zbudowane**, jest rysowane takie, jakie jest;
+- to, co **w rozbiórce**, jest czerwone, dopóki trwa jego zadanie, a potem znika;
+- **szalunki i rusztowania** stoją, w swoim kolorze (niebieskim), tylko między dniami, które dają im zadania ich elementów: szalunek stropu od początku betonowania do rozszalowania, rusztowanie od pierwszego zadania na jego ścianach do ostatniego.
+
+Ściana warstwowa murowana w jednym zadaniu i tynkowana w innym rośnie w dwóch krokach: najpierw rdzeń, potem tynk. Elementy, których nie bierze żadne zadanie, zostają, jakie są. Karta nad widokiem modelu podaje dzień, co znaczy każdy kolor i ile elementów jest w każdym stanie.
+
+### Odtwarzanie
+
+![Odtwarzacz u góry wykresu Gantta](shots/planning-simulation-bar.webp)
+
+- **Odtwórz** (▶) przewija dni z wybraną prędkością (od 1 do 60 dni na sekundę) do końca; **Pauza** je zatrzymuje.
+- Strzałki po obu stronach cofają lub przesuwają o **dzień** lub **tydzień**.
+- Przeciągnij suwak, wpisz datę albo kliknij i przeciągnij po skali czasu wykresu Gantta: pas na wykresie i model podążają za nim.
+- Obok daty: zadania w toku tego dnia.
+
+Z dnia na dzień zmieniają się tylko kolory i widoczność elementów: nic nie jest budowane od nowa, więc duży model odtwarza się tak płynnie jak mały.
+
+### Jej kolory
+
+![Ustawienia symulacji](shots/planning-simulation-settings.webp)
+
+Koło zębate otwiera ustawienia symulacji, zapisane w projekcie: kolory tego, co w toku, w rozbiórce, szalunków i rusztowań oraz duchów; czy to, co **nierozpoczęte**, jest ukryte, czy pokazane **jako duchy**; czy **elementy bez zadania** są pokazane, czy ukryte; oraz czy **warstwy budowane osobno** pokazują się osobno. **Domyślne kolory** przywraca kolory Lapin.
+
+### Stan na dzień w widokach i na arkuszach
+
+![Stan na dzień rzutu w jego właściwościach](shots/planning-view-date.webp)
+
+Rzut, przekrój, elewacja lub zapisany widok 3D ma we właściwościach **Stan na dzień**: widok rysuje wtedy model taki, jaki ma go harmonogram tego dnia, w tych samych kolorach, a jego arkusze tak go drukują (PDF pokazuje to, co ekran). Gdy symulacja działa, **data kursora** daje mu swój dzień. Widok na dzień rysuje stany harmonogramu, nie swojej fazy. × obok daty przywraca model taki, jaki jest. Widok 3D z datą pokazuje ten dzień także przy wyłączonej symulacji.
+
+### Arkusz etapów
+
+![Arkusz etapów: daty końców rozdziałów](shots/planning-stages-dialog.webp)
+
+**Harmonogram → Arkusz etapów…** (także w odtwarzaczu) stawia model w kilku datach obok siebie na nowym arkuszu. Jest rysowany z **widoku 3D, tak jak wygląda teraz** (obraz w każdej dacie) albo z rzutu, przekroju lub elewacji, które silnik rysuje w każdej dacie. Daty to **koniec każdego rozdziału** (każde zadanie na szczycie WBS), **koniec każdego miesiąca** albo daty **wybrane**. Każda klatka ma swoją datę i zadania w toku.
+
+![Arkusz etapów](shots/planning-stages-sheet.webp)
+
+### Wykres Gantta na arkuszu
+
+![Wykres Gantta na arkuszu](shots/planning-gantt-sheet.webp)
+
+**Harmonogram → Gantt na arkuszu** stawia harmonogram na nowym arkuszu: tabelę (wiersz, WBS i zadanie, dni, początek, koniec) i paski na skali czasu, zadania krytyczne na czerwono, zadania sumaryczne jako klamry, kamienie milowe jako romby, powiązania. Harmonogram wyższy niż arkusz idzie na tyle arkuszy, ile potrzeba, z nagłówkiem na każdym. Jest rysowany wektorowo, jak widoki, i drukuje się w PDF.
+
+### Eksport wideo
+
+![Eksportuj wideo](shots/planning-video.webp)
+
+**Harmonogram → Eksportuj wideo…** (także w odtwarzaczu) nagrywa widok 3D, skąd patrzy teraz, od jednego dnia do drugiego, klatka na **dzień** lub na **tydzień**, z datą i zadaniami w toku zapisanymi pod spodem. Plik to wideo WebM albo MP4 tam, gdzie system oferuje tylko to (aplikacja na macOS). Przeglądarka, która nie nagrywa wideo, zapisuje zamiast tego klatki jako pliki PNG w archiwum ZIP.
+
 ## Kalendarz
 
 ![Kalendarz pracy](shots/planning-calendar.webp)
@@ -186,5 +244,5 @@ Własne pola Lapin, dla których inne programy nie mają miejsca (ograniczenie z
 
 ## Co dalej
 
-Symulacja 4D budynku rosnącego w 3D, postęp i plany bazowe oraz kosztorys przyjdą w kolejnych etapach.
+Postęp i plany bazowe oraz kosztorys przyjdą w kolejnych etapach.
 

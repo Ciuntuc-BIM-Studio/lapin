@@ -4,11 +4,12 @@
  * view under the 3D or in a window of its own; the model's elements in the tasks, found by each task's rule with its
  * exceptions (the selection dragged onto a row, TA), parts of layered elements in tasks of their own, the selection one
  * between the Gantt and the views; IFC processes, MS Project XML and a workbook to exchange it; the generator (stage 3):
- * a schedule made from a template's sequence, the model's storeys and elements and the user's norms, in one step. The 4D
- * simulation follows in a later stage.
+ * a schedule made from a template's sequence, the model's storeys and elements and the user's norms, in one step; the 4D
+ * simulation (stage 4): the model as the schedule has it on a day, played from the Gantt's date line, State at date on
+ * views and sheets, the stages sheet, the Gantt on sheets, the video.
  */
 
-import { CalendarDays, ChartGantt, Diamond, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2, Wand2 } from 'lucide-react';
+import { CalendarDays, ChartGantt, Clapperboard, Diamond, FileVideo, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2, Wand2 } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { exportIfc } from '../../engine/files';
@@ -19,12 +20,14 @@ import { TaskSection } from './TaskSection';
 import { AssignDialog } from './AssignDialog';
 import { SelectionToTask } from './SelectionToTask';
 import { ElementTasksSection, inSomeTask, TaskLinksSection } from './TaskLinksSection';
+import { ganttOnSheet, SimulationCard, SimulationLooks, toggleSimulation, ViewDateSection } from './SimulationView';
+import { StagesDialog, VideoDialog } from './SimulationDialogs';
 import { addTask, assignSelection, exportMsp, exportXlsx, importMsp, indent, linkSelected, openGantt, outdent, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
 
 const planning: LapinModule = {
   id: 'planning',
   name: 'Planning',
-  summary: 'The work schedule: a Gantt with its WBS, links and critical path on a calendar with Romania\'s holidays; IFC and MS Project exchange.',
+  summary: 'The work schedule: a Gantt with its WBS, links and critical path on a calendar with Romania\'s holidays; the 4D simulation; IFC and MS Project exchange.',
   tabs: [{
     id: 'planning', label: 'Planning', i18nCtx: 'schedule', order: 84,
     groups: [
@@ -56,6 +59,16 @@ const planning: LapinModule = {
         ],
       },
       {
+        label: '4D simulation', tools: [
+          { id: 'planning.simulate', label: 'Simulate', icon: Clapperboard, run: () => void toggleSimulation() },
+          { id: 'planning.stages', label: 'Stages sheet…', icon: LayoutPanelTop, run: () => useUi.setState({ dialog: 'planning.stages' }) },
+        ],
+        small: [
+          { id: 'planning.ganttSheet', label: 'Gantt on sheet', icon: Sheet, run: () => void ganttOnSheet() },
+          { id: 'planning.video', label: 'Export video…', icon: FileVideo, run: () => useUi.setState({ dialog: 'planning.video' }) },
+        ],
+      },
+      {
         label: 'Exchange', tools: [
           { id: 'planning.importMsp', label: 'Import MS Project…', icon: FileUp, run: () => void importMsp() },
           { id: 'planning.exportMsp', label: 'Export MS Project…', icon: FileDown, run: () => void exportMsp() },
@@ -68,14 +81,16 @@ const planning: LapinModule = {
     ],
   }],
   views: { gantt: { label: 'Gantt', component: GanttView } },
-  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog },
+  dialogs: { 'planning.calendar': CalendarDialog, 'planning.assign': AssignDialog, 'planning.generate': GenerateDialog, 'planning.stages': StagesDialog, 'planning.video': VideoDialog },
+  background: SimulationLooks,
   propertySections: [
     { id: 'task', label: 'Task', classes: ['IfcTask'], component: TaskSection, replacesFields: () => true },
     { id: 'task-elements', label: 'Elements', classes: ['IfcTask'], component: TaskLinksSection },
     { id: 'element-tasks', label: 'Work schedule', classes: ['*'], shows: inSomeTask, component: ElementTasksSection },
+    { id: 'view-date', label: '4D simulation', classes: ['LapinView'], shows: (n) => ['plan', 'section', 'elevation', '3d'].includes(String(n.props.kind)), component: ViewDateSection },
   ],
   expandSelection: taskElementsOf,
-  overlays: [SelectionToTask],
+  overlays: [SelectionToTask, SimulationCard],
 };
 
 export default planning;

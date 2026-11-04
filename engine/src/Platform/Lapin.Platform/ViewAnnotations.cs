@@ -118,6 +118,17 @@ public interface ICutFill
 public interface IViewElementFilter
 {
     (bool Hide, string? Color)? For(IModelView model, Entity view, Entity element);
+    /// <summary>The same, asked with the whole query (a filter that needs the services: the schedule's state at a date).</summary>
+    (bool Hide, string? Color)? For(IQueryContext q, Entity view, Entity element) => For(q.Model, view, element);
+}
+
+/// <summary>
+/// Whether a view leaves out one part of an element it shows (a layered wall's plaster not yet laid on the date a view
+/// shows: the 4D simulation's state at a date); <paramref name="partKey"/> is the part's key (<c>layer:&lt;n&gt;</c>).
+/// </summary>
+public interface IViewPartFilter
+{
+    bool Hides(IQueryContext q, Entity view, Entity element, string? partKey);
 }
 
 /// <summary>

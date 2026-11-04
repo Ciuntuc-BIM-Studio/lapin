@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import {
-  CalendarDays, ChevronDown, ChevronRight, Crosshair, Diamond, IndentDecrease, IndentIncrease, Link2, Maximize, Plus, Route, Trash2, Unlink2, Wand2, X,
+  CalendarDays, ChevronDown, ChevronRight, Clapperboard, Crosshair, Diamond, IndentDecrease, IndentIncrease, Link2, Maximize, Plus, Route, Trash2, Unlink2, Wand2, X,
 } from 'lucide-react';
 import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -21,6 +21,7 @@ import {
 } from './gantt';
 import { addTask, assignTo, deleteSelected, indent, linkSelected, outdent, selectUnlinked, showTaskElements, unlinkSelected, useSchedule } from './schedule';
 import { DRAG_TYPE, dropOf, elementIds, ruleSummary, tasksHolding } from './links';
+import { setDay, SimulationBar, toggleSimulation, useSimulation } from './SimulationView';
 
 const ROW_H = 26;
 const HEAD_H = 40;
@@ -80,6 +81,10 @@ export function GanttView() {
   // The row the selection is being dragged over (stage 2: dropped, its elements go into that task).
   const [dropRow, setDropRow] = useState<string | null>(null);
   const fitted = useRef(false);
+  // The 4D simulation's day (stage 4): the date line over the chart, dragged on the time scale.
+  const simOn = useSimulation((s) => s.on);
+  const simDay = useSimulation((s) => (s.on ? s.day : null));
+  const scrubbing = useRef(false);
 
   useEffect(() => {
     const el = scroller.current;
@@ -108,6 +113,18 @@ export function GanttView() {
   }, [data, viewW, range.from]);
 
   const xOf = (day: number) => (day - range.from) * ppd;
+  // The date line kept in view while the simulation plays or steps.
+  useEffect(() => {
+    const el = scroller.current;
+    if (simDay == null || !el || scrubbing.current) return;
+    const x = (simDay - range.from) * ppd;
+    if (x < el.scrollLeft + 20 || x > el.scrollLeft + viewW - 40) el.scrollTo({ left: Math.max(0, x - viewW / 3) });
+  }, [simDay, ppd, range.from, viewW]);
+  /** The day under a pointer on the time scale. */
+  const dayAtX = (clientX: number) => {
+    const r = scroller.current!.getBoundingClientRect();
+    return Math.floor((clientX - r.left - TABLE_W + scroll.left) / ppd) + range.from;
+  };
   const barFor = (t: TaskDto, row: number): Bar => barOf(t, row, range.from, ppd, ROW_H);
 
   const zoomTo = (k: number, anchorX = viewW / 2) => {
@@ -323,6 +340,7 @@ export function GanttView() {
         <button type="button" className="icon" title="Go to today" onClick={goToday}><Crosshair size={14} /><span className="small">Today</span></button>
         <button type="button" className={`icon${critical ? ' on' : ''}`} title="The critical path in red: the tasks with no float" onClick={() => setCritical(!critical)} data-testid="gantt-critical"><Route size={14} /><span className="small">Critical path</span></button>
         <button type="button" className="icon" title="Working days and hours, holidays, the winter break" onClick={() => useUi.setState({ dialog: 'planning.calendar' })}><CalendarDays size={14} /><span className="small">Calendar…</span></button>
+        <button type="button" className={`icon${simOn ? ' on' : ''}`} title="The model as it is built, day by day: drag the date line on the time scale, or play" onClick={() => void toggleSimulation()} data-testid="gantt-simulate"><Clapperboard size={14} /><span className="small">Simulate</span></button>
         <button type="button" className="icon" title="A schedule made from the model: its storeys, its elements and your norms" onClick={() => useUi.setState({ dialog: 'planning.generate' })} data-testid="gantt-generate-tool"><Wand2 size={14} /><span className="small">Generate schedule…</span></button>
         <span className="gantt-facts" data-testid="gantt-facts">
           <label title="The day the schedule starts">Start <input type="date" value={data.start} onChange={(e) => e.target.value && void execute('planning.updateSchedule', { start: e.target.value })} /></label>
@@ -333,15 +351,20 @@ export function GanttView() {
             : <span className="muted" data-testid="gantt-unlinked">{`all ${data.elements.total} elements have a task`}</span>)}
         </span>
       </div>
+      <SimulationBar />
       <div className="gantt-scroll" ref={scroller} onScroll={(e) => { const el = e.currentTarget; setScroll({ left: el.scrollLeft, top: el.scrollTop }); setLinkEdit(null); }}>
         <div className="gantt-canvas" style={{ width: TABLE_W + chartW, height: HEAD_H + totalH }}>
           <div className="gantt-view" style={{ width: size.w, height: size.h }}>
             {/* The time scale */}
-            <svg className="gantt-head-time" style={{ left: TABLE_W, width: viewW, height: HEAD_H }} aria-hidden>
+            <svg className={`gantt-head-time${simOn ? ' scrub' : ''}`} style={{ left: TABLE_W, width: viewW, height: HEAD_H }} aria-hidden data-testid="gantt-time"
+              onPointerDown={(e) => { if (e.button !== 0) return; scrubbing.current = true; (e.target as Element).setPointerCapture?.(e.pointerId); useSimulation.setState({ playing: false }); setDay(dayAtX(e.clientX)); }}
+              onPointerMove={(e) => { if (scrubbing.current) setDay(dayAtX(e.clientX)); }}
+              onPointerUp={() => { scrubbing.current = false; }}>
               <g transform={`translate(${-scroll.left},0)`}>
                 {scale.top.map((k) => <g key={`t${k.from}`}><line x1={xOf(k.from)} x2={xOf(k.from)} y1={0} y2={HEAD_H} className="gantt-tick major" /><text x={Math.max(xOf(k.from), scroll.left) + 4} y={14} className="gantt-tick-label">{k.label}</text></g>)}
                 {scale.bottom.map((k) => (k.to - k.from) * ppd >= 14 && <g key={`b${k.from}`}><line x1={xOf(k.from)} x2={xOf(k.from)} y1={20} y2={HEAD_H} className="gantt-tick" /><text x={xOf(k.from) + 3} y={34} className="gantt-tick-label minor">{k.label}</text></g>)}
                 <line x1={xOf(now)} x2={xOf(now)} y1={20} y2={HEAD_H} className="gantt-today" />
+                {simDay != null && <path d={`M${xOf(simDay) + ppd / 2 - 6},${HEAD_H - 9} h12 l-6,9 z`} className="gantt-sim-handle" />}
               </g>
             </svg>
             {/* The chart */}
@@ -360,6 +383,7 @@ export function GanttView() {
                 {scale.bottom.map((k) => (k.to - k.from) * ppd >= 14 && <line key={k.from} x1={xOf(k.from)} x2={xOf(k.from)} y1={scroll.top} y2={scroll.top + viewH} className="gantt-grid" />)}
                 {rows.slice(r0, r1 + 1).map((t, k) => (sel.has(t.id) || holding.has(t.id) || dropRow === t.id) && <rect key={t.id} x={scroll.left} y={(r0 + k) * ROW_H} width={viewW} height={ROW_H} className={dropRow === t.id ? 'gantt-row-drop' : sel.has(t.id) ? 'gantt-row-on' : 'gantt-row-holds'} />)}
                 <line x1={xOf(now)} x2={xOf(now)} y1={scroll.top} y2={scroll.top + viewH} className="gantt-today" />
+                {simDay != null && <rect x={xOf(simDay)} y={scroll.top} width={Math.max(1, ppd)} height={viewH} className="gantt-sim-day" data-testid="gantt-sim-day" />}
                 {data.dataDate && <line x1={xOf(dayOf(data.dataDate))} x2={xOf(dayOf(data.dataDate))} y1={scroll.top} y2={scroll.top + viewH} className="gantt-data-date" />}
                 {data.links.map((l) => {
                   const i = rowOf.get(l.from), j = rowOf.get(l.to);

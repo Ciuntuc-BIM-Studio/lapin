@@ -411,8 +411,27 @@ public static class Sheets
         ctx.Replace(sheet.With(attrs: attrs));
     }
 
+    /// <summary>
+    /// A new sheet (the next number) with the views or contents given, each by its id, centre (paper mm) and page: what a
+    /// module's command lays out in one step (the Gantt on a sheet, a stages sheet).
+    /// </summary>
+    public static Entity AddSheet(ICommandContext ctx, string name, string paper, bool portrait, IEnumerable<(string ViewId, double X, double Y, int Page)> views, string? discipline = null)
+    {
+        if (!Papers.ContainsKey(paper)) throw new CommandException("A sheet is A0, A1, A2, A3 or A4.");
+        var id = ctx.NewId();
+        var vps = views.Select(v => (JsonNode)new SheetViewport(ctx.NewId(), v.ViewId, v.X, v.Y, Page: v.Page).ToJson()).ToArray();
+        var sheet = new Entity(id, Class, name, new JsonObject
+        {
+            ["number"] = NextNumber(ctx.Model), ["paper"] = paper, ["orientation"] = portrait ? "portrait" : "landscape",
+            ["titleBlock"] = new JsonObject(), ["viewports"] = new JsonArray(vps),
+        });
+        if (discipline != null) sheet.Attrs["discipline"] = discipline;
+        ctx.Add(sheet);
+        return sheet;
+    }
+
     /// <summary>The next sheet number after the last one: A-101 → A-102.</summary>
-    static string NextNumber(IModelView m)
+    public static string NextNumber(IModelView m)
     {
         var last = m.OfClass(Class).Select(s => s.Str("number")).OfType<string>().LastOrDefault();
         if (last == null) return "A-101";

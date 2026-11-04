@@ -6,7 +6,11 @@
 
 import { create } from 'zustand';
 
-export interface Look { hidden?: boolean; color?: string; opacity?: number }
+export interface Look {
+  hidden?: boolean; color?: string; opacity?: number;
+  /** Looks of an element's parts by their keys (layer:0…): a layer hidden or tinted apart (the 4D simulation); the rest take the element's. */
+  parts?: Record<string, Look>;
+}
 
 interface LooksState { bySource: Record<string, Record<string, Look>>; looks: Record<string, Look> }
 
@@ -17,6 +21,7 @@ export function setLooks(source: string, looks: Record<string, Look>): void {
   const bySource = { ...useLooks.getState().bySource, [source]: looks };
   const merged: Record<string, Look> = {};
   for (const map of Object.values(bySource))
-    for (const [id, l] of Object.entries(map)) merged[id] = merged[id]?.hidden ? merged[id] : { ...merged[id], ...l };
+    // One source's look kept as it is (the same object while it does not change, so the views restyle only what changed).
+    for (const [id, l] of Object.entries(map)) merged[id] = !merged[id] ? l : merged[id].hidden ? merged[id] : { ...merged[id], ...l };
   useLooks.setState({ bySource, looks: merged });
 }

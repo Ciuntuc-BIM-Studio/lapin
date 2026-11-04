@@ -1,7 +1,7 @@
 ---
 title: Planification
 order: 97
-summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une WBS, jalons, liens avec décalages, chemin critique calculé sur un calendrier avec les jours fériés légaux de la Roumanie ; vers et depuis MS Project, IFC et Excel.
+summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une WBS, jalons, liens avec décalages, chemin critique calculé sur un calendrier avec les jours fériés légaux de la Roumanie ; la simulation 4D du bâtiment qui grandit jour après jour, sur les vues, les feuilles et en vidéo ; vers et depuis MS Project, IFC et Excel.
 ---
 
 ## L'onglet Planification
@@ -14,6 +14,7 @@ summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une W
 - **Tâche** et **Jalon** : une nouvelle tâche ou un nouveau jalon avant la tâche sélectionnée dans le Gantt (ou à la fin).
 - **Abaisser**, **Hausser**, **Lier les tâches** et **Délier les tâches** : la WBS et les liens des tâches sélectionnées.
 - **Ajouter à la tâche…** (TA) et **Éléments sans tâche** : les éléments du modèle dans les tâches (plus bas).
+- **Simuler**, **Feuille des étapes…**, **Gantt sur feuille** et **Exporter la vidéo…** : la simulation 4D, le modèle tel que le planning l'a un jour donné (plus bas).
 - **Importer MS Project…**, **Exporter MS Project…**, **Exporter XLSX** et **Exporter IFC…** : le planning vers et depuis d'autres programmes (ci-dessous).
 
 Un projet a un seul planning. Il est créé la première fois que vous ajoutez une tâche et commence le lundi suivant. Changez son début dans la barre du Gantt.
@@ -163,6 +164,63 @@ Dès qu'une tâche prend des éléments, la barre du Gantt dit combien d'éléme
 
 L'export IFC écrit ce que chaque tâche construit comme IfcRelAssignsToProduct (l'élément, avec les tâches qui le construisent), et ce sur quoi agit une tâche de démolition, d'enlèvement ou de démontage comme IfcRelAssignsToProcess. La règle, la partie et les exceptions voyagent dans `Lapin_Task`, Lapin relit donc la règle ; un fichier d'un autre programme donne des tâches tenant les éléments qu'il leur affecte. MS Project XML les porte dans le champ Text1, nommé *Lapin elements*. Le classeur a les colonnes **Elements** et **Rule**.
 
+## La simulation 4D
+
+![La maison un jour de son planning : la dalle de l'étage en cours dans son coffrage, les murs au-dessus non commencés](shots/planning-simulation.webp)
+
+**Planification → Simuler** (aussi **Simuler** dans la barre du Gantt) montre le modèle tel que le planning l'a un jour donné. Le Gantt s'ouvre sous la vue s'il n'est pas ouvert, avec le lecteur en haut et le jour comme une bande sur le diagramme :
+
+- ce qui n'est **pas commencé** est masqué (ou montré comme un fantôme pâle, dans les réglages) ;
+- ce qui est **en cours** est dessiné dans sa couleur (ambre) ;
+- ce qui est **construit** est dessiné tel qu'il est ;
+- ce qui est **en démolition** est rouge tant que sa tâche dure, puis disparaît ;
+- les **coffrages et échafaudages** sont là, dans leur couleur (bleu), seulement entre les jours que leur donnent les tâches de leurs supports : le coffrage d'une dalle du début de son coulage à son décoffrage, un échafaudage de la première tâche sur ses murs à la dernière.
+
+Un mur multicouche maçonné dans une tâche et enduit dans une autre grandit en deux temps : son noyau d'abord, son enduit ensuite. Les éléments qu'aucune tâche ne prend restent tels quels. Une carte sur la vue du modèle donne le jour, ce que veut dire chaque couleur et combien d'éléments sont dans chaque état.
+
+### La lecture
+
+![Le lecteur en haut du Gantt](shots/planning-simulation-bar.webp)
+
+- **Lecture** (▶) fait défiler les jours à la vitesse choisie (de 1 à 60 jours par seconde) jusqu'à la fin ; **Pause** l'arrête.
+- Les flèches de chaque côté reculent ou avancent d'**un jour** ou d'**une semaine**.
+- Fais glisser le curseur, tape une date, ou clique et glisse sur l'échelle de temps du Gantt : la bande sur le diagramme et le modèle suivent.
+- À côté de la date : les tâches en cours ce jour-là.
+
+D'un jour à l'autre, seules les couleurs et la visibilité des éléments changent : rien n'est reconstruit, donc un grand modèle défile aussi bien qu'un petit.
+
+### Ses couleurs
+
+![Les réglages de la simulation](shots/planning-simulation-settings.webp)
+
+L'engrenage ouvre les réglages de la simulation, gardés dans le projet : les couleurs de ce qui est en cours, en démolition, des coffrages et échafaudages et des fantômes ; si ce qui n'est **pas commencé** est masqué ou montré **en fantômes** ; si les **éléments sans tâche** sont montrés ou masqués ; et si les **couches construites à part** se montrent à part. **Couleurs par défaut** remet celles de Lapin.
+
+### État à la date sur les vues et les feuilles
+
+![L'État à la date d'un plan dans ses propriétés](shots/planning-view-date.webp)
+
+Un plan, une coupe, une élévation ou une vue 3D enregistrée a dans ses propriétés **État à la date** : la vue dessine alors le modèle tel que le planning l'a ce jour-là, dans les mêmes couleurs, et ses feuilles l'impriment ainsi (le PDF montre ce que montre l'écran). Quand la simulation tourne, **la date du curseur** lui donne son jour. Une vue à une date dessine les états du planning, pas ceux de sa phase. Le × à côté de la date remet le modèle tel qu'il est. Une vue 3D avec une date montre ce jour même simulation arrêtée.
+
+### La feuille des étapes
+
+![Feuille des étapes : les dates des fins de chapitre](shots/planning-stages-dialog.webp)
+
+**Planification → Feuille des étapes…** (aussi dans le lecteur) met le modèle à plusieurs dates côte à côte sur une nouvelle feuille. Il est dessiné depuis **la vue 3D, telle qu'elle est maintenant** (une image à chaque date) ou depuis un plan, une coupe ou une élévation, que le moteur dessine à chaque date. Les dates sont **la fin de chaque chapitre** (chaque tâche en haut de la WBS), **la fin de chaque mois**, ou des dates **choisies**. Chaque cadre porte sa date et les tâches en cours.
+
+![Une feuille des étapes](shots/planning-stages-sheet.webp)
+
+### Le Gantt sur une feuille
+
+![Le Gantt sur une feuille](shots/planning-gantt-sheet.webp)
+
+**Planification → Gantt sur feuille** met le planning sur une nouvelle feuille : le tableau (ligne, WBS et tâche, jours, début, fin) et les barres sur une échelle de temps, les tâches critiques en rouge, les récapitulatives en accolades, les jalons en losanges, les liens. Un planning plus haut que la feuille va sur autant de feuilles qu'il faut, son en-tête sur chacune. Il est dessiné en vecteurs, comme les vues, et s'imprime dans le PDF.
+
+### Exporter la vidéo
+
+![Exporter la vidéo](shots/planning-video.webp)
+
+**Planification → Exporter la vidéo…** (aussi dans le lecteur) enregistre la vue 3D, d'où elle regarde maintenant, d'un jour à un autre, une image par **un jour** ou par **une semaine**, avec la date et les tâches en cours écrites dessous. Le fichier est une vidéo WebM, ou MP4 là où le système n'offre que cela (l'application macOS). Un navigateur qui n'enregistre pas de vidéo enregistre à la place les images en fichiers PNG dans un ZIP.
+
 ## Le calendrier
 
 ![Le calendrier de travail](shots/planning-calendar.webp)
@@ -186,5 +244,5 @@ Les champs propres à Lapin pour lesquels les autres programmes n'ont pas de pla
 
 ## La suite
 
-La simulation 4D du bâtiment qui grandit en 3D, l'avancement et les plannings de référence, et le devis arrivent dans les prochaines étapes.
+L'avancement et les plannings de référence, et le devis arrivent dans les prochaines étapes.
 

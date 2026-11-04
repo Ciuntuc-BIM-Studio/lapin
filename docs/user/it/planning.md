@@ -1,7 +1,7 @@
 ---
 title: Pianificazione
 order: 97
-summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS, milestone, collegamenti con ritardi, il percorso critico calcolato su un calendario con le festività legali della Romania; da e verso MS Project, IFC ed Excel.
+summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS, milestone, collegamenti con ritardi, il percorso critico calcolato su un calendario con le festività legali della Romania; la simulazione 4D dell'edificio che cresce giorno per giorno, su viste, tavole e in video; da e verso MS Project, IFC ed Excel.
 ---
 
 ## La scheda Pianificazione
@@ -14,6 +14,7 @@ summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS,
 - **Attività** e **Milestone**: una nuova attività o milestone prima dell'attività selezionata nel Gantt (o in fondo).
 - **Rientra**, **Riduci rientro**, **Collega le attività** e **Scollega le attività**: la WBS e i collegamenti delle attività selezionate.
 - **Aggiungi all'attività…** (TA) ed **Elementi senza attività**: gli elementi del modello nelle attività (più avanti).
+- **Simula**, **Tavola delle tappe…**, **Gantt su tavola** ed **Esporta video…**: la simulazione 4D, il modello come lo ha il programma in un giorno (più avanti).
 - **Importa MS Project…**, **Esporta MS Project…**, **Esporta XLSX** e **Esporta IFC…**: il programma da e verso altri programmi (più sotto).
 
 Un progetto ha un solo programma. Si crea la prima volta che aggiungi un'attività e inizia il lunedì successivo. Cambia il suo inizio nella barra del Gantt.
@@ -163,6 +164,63 @@ Appena un'attività prende elementi, la barra del Gantt dice quanti elementi non
 
 L'esportazione IFC scrive ciò che ogni attività costruisce come IfcRelAssignsToProduct (l'elemento, con le attività che lo costruiscono), e ciò su cui agisce un'attività di demolizione, rimozione o smontaggio come IfcRelAssignsToProcess. La regola, la parte e le eccezioni viaggiano in `Lapin_Task`, così Lapin rilegge la regola; un file di un altro programma dà attività con gli elementi che assegna loro. MS Project XML le porta nel campo Text1, chiamato *Lapin elements*. La cartella di lavoro ha le colonne **Elements** e **Rule**.
 
+## La simulazione 4D
+
+![La casa in un giorno del suo programma: il solaio del primo piano in corso nella sua cassaforma, i muri sopra non iniziati](shots/planning-simulation.webp)
+
+**Pianificazione → Simula** (anche **Simula** nella barra del Gantt) mostra il modello come lo ha il programma in un giorno. Il Gantt si apre sotto la vista se non è aperto, con il lettore in alto e il giorno come una banda sul diagramma:
+
+- ciò che **non è iniziato** è nascosto (o mostrato come un fantasma pallido, nelle impostazioni);
+- ciò che è **in corso** è disegnato nel suo colore (ambra);
+- ciò che è **costruito** è disegnato com'è;
+- ciò che è **in demolizione** è rosso finché dura la sua attività, poi scompare;
+- **casseforme e ponteggi** ci sono, nel loro colore (blu), solo tra i giorni che danno loro le attività dei loro elementi: la cassaforma di un solaio dall'inizio del getto al disarmo, un ponteggio dalla prima attività sui suoi muri all'ultima.
+
+Un muro a strati murato in un'attività e intonacato in un'altra cresce in due passi: prima il nucleo, poi l'intonaco. Gli elementi che nessuna attività prende restano come sono. Una scheda sulla vista del modello dice il giorno, cosa vuol dire ogni colore e quanti elementi ci sono in ogni stato.
+
+### La riproduzione
+
+![Il lettore in cima al Gantt](shots/planning-simulation-bar.webp)
+
+- **Riproduci** (▶) fa scorrere i giorni alla velocità scelta (da 1 a 60 giorni al secondo) fino alla fine; **Pausa** la ferma.
+- Le frecce ai due lati tornano indietro o vanno avanti di **un giorno** o **una settimana**.
+- Trascina il cursore, scrivi una data, o clicca e trascina sulla scala dei tempi del Gantt: la banda sul diagramma e il modello seguono.
+- Accanto alla data: le attività in corso quel giorno.
+
+Da un giorno all'altro cambiano solo i colori e la visibilità degli elementi: nulla viene ricostruito, quindi un modello grande scorre fluido come uno piccolo.
+
+### I suoi colori
+
+![Le impostazioni della simulazione](shots/planning-simulation-settings.webp)
+
+L'ingranaggio apre le impostazioni della simulazione, tenute nel progetto: i colori di ciò che è in corso, in demolizione, di casseforme e ponteggi e dei fantasmi; se ciò che **non è iniziato** è nascosto o mostrato **come fantasmi**; se gli **elementi senza attività** sono mostrati o nascosti; e se gli **strati costruiti a parte** si vedono a parte. **Colori predefiniti** riporta quelli di Lapin.
+
+### Stato alla data su viste e tavole
+
+![Lo Stato alla data di una pianta nelle sue proprietà](shots/planning-view-date.webp)
+
+Una pianta, una sezione, un prospetto o una vista 3D salvata ha nelle proprietà **Stato alla data**: la vista disegna allora il modello come lo ha il programma quel giorno, negli stessi colori, e le sue tavole lo stampano così (il PDF mostra ciò che mostra lo schermo). Con la simulazione in corso, **la data del cursore** prende il suo giorno. Una vista a una data disegna gli stati del programma, non quelli della sua fase. La × accanto alla data riporta il modello com'è. Una vista 3D con una data mostra quel giorno anche a simulazione spenta.
+
+### La tavola delle tappe
+
+![Tavola delle tappe: le date dalle fini dei capitoli](shots/planning-stages-dialog.webp)
+
+**Pianificazione → Tavola delle tappe…** (anche nel lettore) mette il modello a più date affiancato su una nuova tavola. È disegnato dalla **vista 3D, com'è ora** (un'immagine a ogni data) o da una pianta, una sezione o un prospetto, che il motore disegna a ogni data. Le date sono **la fine di ogni capitolo** (ogni attività in cima alla WBS), **la fine di ogni mese**, o date **scelte**. Ogni riquadro porta la sua data e le attività in corso.
+
+![Una tavola delle tappe](shots/planning-stages-sheet.webp)
+
+### Il Gantt su una tavola
+
+![Il Gantt su una tavola](shots/planning-gantt-sheet.webp)
+
+**Pianificazione → Gantt su tavola** mette il programma su una nuova tavola: la tabella (riga, WBS e attività, giorni, inizio, fine) e le barre su una scala dei tempi, le attività critiche in rosso, i riepiloghi come parentesi, le milestone come rombi, i collegamenti. Un programma più alto della tavola va su quante tavole servono, con la sua intestazione su ognuna. È disegnato in vettoriale, come le viste, e si stampa nel PDF.
+
+### Esporta video
+
+![Esporta video](shots/planning-video.webp)
+
+**Pianificazione → Esporta video…** (anche nel lettore) registra la vista 3D, da dove guarda ora, da un giorno a un altro, un fotogramma per **un giorno** o per **una settimana**, con la data e le attività in corso scritte sotto. Il file è un video WebM, o MP4 dove il sistema offre solo quello (l'app per macOS). Un browser che non registra video salva invece i fotogrammi come file PNG in uno ZIP.
+
 ## Il calendario
 
 ![Il calendario di lavoro](shots/planning-calendar.webp)
@@ -186,5 +244,5 @@ I campi propri di Lapin per cui gli altri programmi non hanno posto (il vincolo 
 
 ## Cosa viene dopo
 
-La simulazione 4D dell'edificio che cresce in 3D, l'avanzamento e le linee di base, e il computo metrico estimativo arrivano nelle prossime fasi.
+L'avanzamento e le linee di base, e il computo metrico estimativo arrivano nelle prossime fasi.
 

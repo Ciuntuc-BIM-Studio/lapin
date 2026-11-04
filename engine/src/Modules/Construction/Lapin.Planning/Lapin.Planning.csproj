@@ -2,8 +2,9 @@
   <!--
     Planning (4D, docs/plan-4d5d.md, stage 1): the work schedule as IFC has it — IfcWorkSchedule, IfcTask with its WBS,
     IfcRelSequence links (FS, SS, FF, SF with a lag), IfcWorkCalendar with Romania's legal holidays — the critical path
-    worked out by the engine on the calendar, IFC processes, MS Project XML both ways and XLSX. The links to elements,
-    the generator and the 4D simulation come in later stages.
+    worked out by the engine on the calendar, IFC processes, MS Project XML both ways and XLSX; the links to elements
+    (stage 2), the generator (stage 3) and the 4D simulation (stage 4: the timeline, State at date, the Gantt and the
+    stages on sheets).
   -->
   <PropertyGroup>
     <LapinModuleId>planning</LapinModuleId>

@@ -1391,3 +1391,28 @@ button.mode-chip:hover { color: var(--accent); }
 @media (max-width: 900px) { .gen-dialog .joinery-edit { grid-template-columns: 1fr; } }
 dl.fields label.check { display: flex; align-items: center; gap: 6px; }
 dl.fields label.check input { width: auto; margin: 0; }
+/* The 4D simulation (docs/plan-4d5d.md, stage 4): the player at the Gantt's top, the date line, the card over the model, the settings. */
+.sim-bar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 5px 10px; border-bottom: 1px solid var(--rule); background: var(--raised); font-size: 12px; }
+.sim-bar .icon.on { background: var(--accent-wash); color: var(--accent); }
+.sim-bar select, .sim-bar .sim-date { font-size: 12px; padding: 1px 4px; }
+.sim-scrub { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
+.sim-tasks { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-legend { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.sim-key { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--ink-muted); }
+.sim-key i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; border: 1px solid rgba(0, 0, 0, 0.25); }
+.sim-key b { color: var(--ink); font-weight: 600; }
+.sim-settings { position: absolute; right: 10px; top: 100%; z-index: 20; display: grid; gap: 6px; width: 270px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); }
+.sim-colour { display: flex; align-items: center; gap: 8px; }
+.sim-colour input[type='color'] { width: 28px; height: 20px; padding: 0; border: 1px solid var(--rule-strong); background: none; }
+.sel-card.sim-card { left: 12px; right: auto; bottom: 12px; width: auto; max-width: 340px; gap: 4px; }
+.sel-card.sim-card .sim-legend { flex-direction: column; align-items: flex-start; }
+.gantt-head-time.scrub { cursor: ew-resize; }
+.gantt-sim-day { fill: rgba(232, 163, 61, 0.28); stroke: #e8a33d; stroke-width: 1; pointer-events: none; }
+.gantt-sim-handle { fill: #e8a33d; }
+.stages-dates { display: flex; flex-wrap: wrap; gap: 4px; }
+.stages-dates .chip { text-transform: none; letter-spacing: 0; }
+.video-progress { width: 100%; }
+.sim-bar .icon { flex: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; width: auto; }
+[data-testid='view-date'] dd { flex-wrap: wrap; gap: 4px; }
+[data-testid='view-date'] input[type='date'], [data-testid='video-dialog'] input[type='date'], [data-testid='stages-dialog'] input[type='date'] { min-width: 150px; }
+[data-testid='view-date'] .link { white-space: nowrap; font-size: 12px; }

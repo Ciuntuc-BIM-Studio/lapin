@@ -1105,6 +1105,116 @@ export const scenes = [
     },
   },
   {
+    // Planning, stage 4 (docs/plan-4d5d.md): the 4D simulation — a generated two-storey house shown on a day of its
+    // schedule (the first floor's structure under way, its formwork up, the walls above not started), the player at the
+    // Gantt's top and its settings; a plan at a date in its properties; the stages sheet; the Gantt on a sheet; the video.
+    id: 'planning-simulation',
+    async run(t) {
+      await t.fresh();
+      const gf = await t.storey('Ground floor');
+      const ff = await t.storey('First floor');
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Lime plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Gypsum plaster', thickness: 0.015 },
+      ] })).id;
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const outer = {};
+      for (const s of [gf, ff]) {
+        outer[s] = [];
+        for (let i = 0; i < 4; i++) {
+          const [a, b] = [outline[i], outline[(i + 1) % 4]];
+          outer[s].push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type })).id);
+        }
+        await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8, typeId: type });
+        for (const [w, x, y] of [[0, 9.5, 0], [2, 3.5, 8], [2, 9.5, 8]]) await t.cmd('architecture.addWindow', { wallId: outer[s][w], x, y });
+        for (const [x, y] of outline) await t.cmd('structure.addColumn', { storeyId: s, x, y });
+      }
+      await t.cmd('architecture.addDoor', { wallId: outer[gf][0], x: 3, y: 0 });
+      await t.cmd('architecture.addSlab', { storeyId: gf, points: outline });
+      const floor = (await t.cmd('architecture.addSlab', { storeyId: ff, points: outline })).id;
+      for (const [x, y] of outline) await t.cmd('structure.addPadFooting', { storeyId: gf, x, y });
+      await t.cmd('sitework.addFormwork', { hostIds: [floor] });
+      await t.cmd('sitework.scaffoldFromWalls', { wallIds: outer[gf] });
+      await t.cmd('planning.updateSchedule', { name: 'House', start: '2027-03-01' });
+      await t.cmd('planning.useIndicativeNorms', {});
+      // Generated with the tasks named in the picture's language.
+      await t.page.evaluate(async (lang) => {
+        const [s, i, g] = [await import('/src/engine/session.ts'), await import('/src/i18n/index.ts'), await import('/src/modules/planning/generator.ts')];
+        const o = await s.query('planning.generatorOptions', { style: 'concrete' });
+        await s.execute('planning.generate', { spec: g.translateNames(o.spec, (x) => i.translate(x, lang) ?? x) });
+      }, t.lang);
+      await open3d(t);
+      await t.button('Planning', { exact: true });
+      await t.tool('planning.simulate');
+      await t.wait(2500);
+      t.expect(await t.page.locator('[data-testid=sim-bar]').count() === 1, 'the player opens at the Gantt\'s top');
+      const tl = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.timeline'));
+      const fw = tl.elements.find((e) => e.temporary === 'formwork');
+      t.expect(!!fw, 'the formwork has its days on site');
+      // A day in the first floor's slab: its formwork up, the walls above not started.
+      const day = fw.present[0];
+      const goTo = (iso) => t.page.evaluate(async (iso) => {
+        const [m, g] = [await import('/src/modules/planning/SimulationView.tsx'), await import('/src/modules/planning/gantt.ts')];
+        m.setDay(g.dayOf(iso));
+      }, iso);
+      await goTo(day);
+      await t.wait(2000);
+      const looks = await t.page.evaluate(async () => Object.values((await import('/src/platform/looks.ts')).useLooks.getState().bySource.planning ?? {}));
+      t.expect(looks.some((l) => l.hidden) && looks.some((l) => l.color === tl.look.temporary) && looks.some((l) => l.color === tl.look.active), 'some elements hidden, the formwork and the work under way coloured');
+      t.expect(await t.page.locator('[data-testid=gantt-sim-day]').count() === 1, 'the date line on the Gantt');
+      await t.ui({ selection: null, selected: [], pane: 0 });
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=sim-card]').count() === 1, 'the card over the 3D says the day and the colours');
+      await t.shot('planning-simulation');
+      await t.shot('planning-simulation-bar', { of: '[data-testid=sim-bar]', pad: 0 });
+      await t.page.locator('[data-testid=sim-settings-open]').click();
+      await t.wait(500);
+      await t.shot('planning-simulation-settings', { of: '[data-testid=sim-settings]', pad: 6 });
+      await t.page.locator('[data-testid=sim-settings-open]').click();
+      // A plan at that date: its State at date in its properties, printed so on its sheets.
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: gf, name: 'Ground floor at a date' })).id;
+      await t.cmd('planning.viewDate', { id: plan, date: day });
+      await t.ui({ selection: plan, selected: [plan] });
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=view-date-input]').inputValue() === day, 'the view\'s State at date in its properties');
+      await t.page.locator('[data-testid=view-date]').scrollIntoViewIfNeeded();
+      await t.wait(300);
+      await t.shot('planning-view-date', { of: '[data-testid=view-date]', pad: 8 });
+      await t.ui({ selection: null, selected: [] });
+      // The stages sheet: the 3D's pictures at the end of each chapter, the 3D framed on the house first.
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.fit(false));
+      await t.wait(600);
+      await t.tool('planning.stages');
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=stages-dates] .chip').count() >= 3, 'the chapters\' ends as dates');
+      await t.shot('planning-stages-dialog', { of: '[data-testid=stages-dialog]', pad: 0 });
+      await t.page.locator('[data-testid=stages-make]').click();
+      await t.page.waitForSelector('[data-testid=sheet]', { timeout: 30_000 }).catch(() => {});
+      await t.wait(2500);
+      t.expect(await t.page.locator('[data-testid=sheet]').count() === 1, 'the stages sheet opens');
+      // The sheet alone on the screen, fitted.
+      const alone = () => t.page.evaluate(async () => { const { useUi } = await import('/src/app/store.ts'); const s = useUi.getState(); useUi.setState({ panes: [s.panes[s.pane]], pane: 0 }); });
+      await alone();
+      await t.wait(800);
+      await t.fit();
+      t.expect(await t.page.locator('[data-testid=sheet] image').count() >= 3, 'with the 3D\'s pictures');
+      await t.shot('planning-stages-sheet', { of: '.view-pane:has([data-testid=sheet])', pad: 0 });
+      // The Gantt on a sheet.
+      await t.tool('planning.ganttSheet');
+      await t.wait(2500);
+      await t.ui({ notice: null });
+      await t.fit();
+      await t.wait(600);
+      const texts = await t.page.locator('[data-testid=sheet] text').allTextContents();
+      t.expect(texts.length > 20, 'the Gantt drawn on the sheet');
+      await t.shot('planning-gantt-sheet', { of: '.view-pane:has([data-testid=sheet])', pad: 0 });
+      await t.tool('planning.video');
+      await t.wait(800);
+      await t.shot('planning-video', { of: '[data-testid=video-dialog]', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.page.evaluate(async () => (await import('/src/modules/planning/SimulationView.tsx')).toggleSimulation(false));
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

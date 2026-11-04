@@ -1,7 +1,7 @@
 ---
 title: Tidsplanlægning
 order: 97
-summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder med forskydninger, den kritiske vej beregnet på en kalender med Rumæniens lovbestemte helligdage; til og fra MS Project, IFC og Excel.
+summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder med forskydninger, den kritiske vej beregnet på en kalender med Rumæniens lovbestemte helligdage; 4D-simuleringen af bygningen, der vokser dag for dag, i visninger, på ark og som video; til og fra MS Project, IFC og Excel.
 ---
 
 ## Fanen Tidsplanlægning
@@ -14,6 +14,7 @@ summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder m
 - **Opgave** og **Milepæl**: en ny opgave eller milepæl før den opgave, der er valgt i Gantt (eller til sidst).
 - **Indryk**, **Ryk ud**, **Kæd opgaver** og **Fjern kæder**: WBS og kæderne for de valgte opgaver.
 - **Føj til opgave…** (TA) og **Elementer uden opgave**: modellens elementer i opgaverne (nedenfor).
+- **Simulér**, **Etapeark…**, **Gantt på ark** og **Eksportér video…**: 4D-simuleringen, modellen som tidsplanen har den på en dag (nedenfor).
 - **Importér MS Project…**, **Eksportér MS Project…**, **Eksportér XLSX** og **Eksportér IFC…**: tidsplanen til og fra andre programmer (nedenfor).
 
 Et projekt har én tidsplan. Den oprettes første gang, du tilføjer en opgave, og starter den næste mandag. Ret starten i Gantts værktøjslinje.
@@ -163,6 +164,63 @@ Så snart en opgave tager elementer, siger Gantts værktøjslinje, hvor mange el
 
 IFC-eksporten skriver, hvad hver opgave bygger, som IfcRelAssignsToProduct (elementet med de opgaver, der bygger det), og hvad en nedrivnings-, fjernelses- eller demonteringsopgave virker på, som IfcRelAssignsToProcess. Regel, del og undtagelser rejser i `Lapin_Task`, så Lapin læser reglen tilbage; en fil fra et andet program giver opgaver med de elementer, den tildeler dem. MS Project XML bærer dem i feltet Text1, kaldet *Lapin elements*. Projektmappen har kolonnerne **Elements** og **Rule**.
 
+## 4D-simuleringen
+
+![Huset på en dag i tidsplanen: førstesalens dæk i gang i sin forskalling, væggene ovenover ikke startet](shots/planning-simulation.webp)
+
+**Tidsplanlægning → Simulér** (også **Simulér** i Gantt-diagrammets værktøjslinje) viser modellen, som tidsplanen har den på en dag. Gantt-diagrammet åbner under visningen, hvis det ikke er åbent, med afspilleren øverst og dagen som et bånd hen over diagrammet:
+
+- det, der **ikke er startet**, er skjult (eller vist som et blegt spøgelse, i indstillingerne);
+- det, der er **i gang**, tegnes i sin farve (rav);
+- det, der er **bygget**, tegnes, som det er;
+- det, der er **under nedrivning**, er rødt, mens dets opgave kører, og er så væk;
+- **forskalling og stilladser** står, i deres farve (blå), kun mellem de dage, deres værtselementers opgaver giver dem: et dæks forskalling fra støbningens start til afforskallingen, et stillads fra den første opgave på dets vægge til den sidste.
+
+En lagdelt væg, muret i én opgave og pudset i en anden, vokser i to trin: først kernen, så pudsen. Elementer, som ingen opgave tager, forbliver, som de er. Et kort over modelvisningen viser dagen, hvad hver farve betyder, og hvor mange elementer der er i hver tilstand.
+
+### Afspilning
+
+![Afspilleren øverst i Gantt-diagrammet](shots/planning-simulation-bar.webp)
+
+- **Afspil** (▶) kører dagene med den valgte hastighed (1 til 60 dage i sekundet) frem til slutningen; **Pause** stopper den.
+- Pilene i hver side går **en dag** eller **en uge** tilbage eller frem.
+- Træk skyderen, skriv en dato, eller klik og træk på Gantt-diagrammets tidsskala: båndet over diagrammet og modellen følger med.
+- Ved siden af datoen: opgaverne i gang den dag.
+
+Fra dag til dag ændres kun elementernes farver og synlighed: intet bygges igen, så en stor model afspilles lige så jævnt som en lille.
+
+### Farverne
+
+![Simuleringsindstillingerne](shots/planning-simulation-settings.webp)
+
+Tandhjulet åbner simuleringsindstillingerne, gemt i projektet: farverne for det, der er i gang, under nedrivning, for forskalling og stilladser og for spøgelserne; om det, der **ikke er startet**, er skjult eller vist **som spøgelser**; om **elementer uden opgave** vises eller skjules; og om **lag bygget hver for sig** vises hver for sig. **Standardfarver** henter Lapins tilbage.
+
+### Tilstand på dato i visninger og ark
+
+![En plans Tilstand på dato i dens egenskaber](shots/planning-view-date.webp)
+
+En plan, et snit, en facade eller en gemt 3D-visning har **Tilstand på dato** i sine egenskaber: visningen tegner så modellen, som tidsplanen har den den dag, i de samme farver, og dens ark udskriver den sådan (PDF'en viser det, skærmen viser). Når simuleringen kører, tager **markørens dato** dens dag. En visning på en dato tegner tidsplanens tilstande, ikke dens fases. × ved datoen henter modellen tilbage, som den er. En 3D-visning med en dato viser den dag, også når simuleringen er slået fra.
+
+### Etapearket
+
+![Etapeark: datoerne fra kapitlernes slutninger](shots/planning-stages-dialog.webp)
+
+**Tidsplanlægning → Etapeark…** (også i afspilleren) sætter modellen på flere datoer side om side på et nyt ark. Den tegnes fra **3D-visningen, som den ser ud nu** (et billede på hver dato) eller fra en plan, et snit eller en facade, som motoren tegner på hver dato. Datoerne er **slutningen af hvert kapitel** (hver opgave øverst i WBS'en), **slutningen af hver måned** eller **valgte** datoer. Hvert billede er mærket med sin dato og opgaverne i gang.
+
+![Et etapeark](shots/planning-stages-sheet.webp)
+
+### Gantt-diagrammet på et ark
+
+![Gantt-diagrammet på et ark](shots/planning-gantt-sheet.webp)
+
+**Tidsplanlægning → Gantt på ark** sætter tidsplanen på et nyt ark: tabellen (række, WBS og opgave, dage, start, slut) og bjælkerne på en tidsskala, de kritiske opgaver i rødt, sammenfatningerne som klammer, milepælene som ruder, kæderne. En tidsplan, der er højere end arket, kommer på så mange ark, som den behøver, med sit hoved på hvert. Den tegnes som vektorer, ligesom visningerne, og udskrives i PDF'en.
+
+### Eksportér video
+
+![Eksportér video](shots/planning-video.webp)
+
+**Tidsplanlægning → Eksportér video…** (også i afspilleren) optager 3D-visningen, hvorfra den ser nu, fra én dag til en anden, et billede pr. **en dag** eller **en uge**, med datoen og opgaverne i gang skrevet nedenunder. Filen er en WebM-video, eller MP4, hvor systemet kun tilbyder det (macOS-appen). En browser, der ikke optager video, gemmer i stedet billederne som PNG-filer i en ZIP.
+
 ## Kalenderen
 
 ![Arbejdskalenderen](shots/planning-calendar.webp)
@@ -186,5 +244,5 @@ Lapins egne felter, som andre programmer ikke har plads til (en opgaves begræns
 
 ## Hvad der kommer
 
-4D-simuleringen af bygningen, der vokser i 3D, fremdrift og basisplaner samt overslaget kommer i de næste trin.
+Fremdrift og basisplaner samt overslaget kommer i de næste trin.
 

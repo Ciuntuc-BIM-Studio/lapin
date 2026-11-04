@@ -1,7 +1,7 @@
 ---
 title: Planning
 order: 97
-summary: The work schedule in a Gantt chart: generated from the model or made by hand, tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; to and from MS Project, IFC and Excel.
+summary: The work schedule in a Gantt chart: generated from the model or made by hand, tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; the 4D simulation of the building growing day by day, on views and sheets and as a video; to and from MS Project, IFC and Excel.
 ---
 
 ## The Planning tab
@@ -14,6 +14,7 @@ summary: The work schedule in a Gantt chart: generated from the model or made by
 - **Task** and **Milestone**: a new task or milestone before the task selected in the Gantt (or at the end).
 - **Indent**, **Outdent**, **Link** and **Unlink**: the WBS and the links of the tasks selected.
 - **Add to task…** (TA) and **Elements without a task**: the model's elements in the tasks (below).
+- **Simulate**, **Stages sheet…**, **Gantt on sheet** and **Export video…**: the 4D simulation, the model as the schedule has it on a day (below).
 - **Import MS Project…**, **Export MS Project…**, **Export XLSX** and **Export IFC…**: the schedule to and from other programs (below).
 
 A project has one schedule. It is made the first time you add a task or generate one, and starts the next Monday. Change its start in the Gantt's toolbar.
@@ -163,6 +164,63 @@ Once a task takes elements, the Gantt's toolbar says how many elements have no t
 
 The IFC export writes what each task builds as an IfcRelAssignsToProduct (the element, with the tasks building it), and what a demolition, removal or dismantling task acts on as an IfcRelAssignsToProcess. The rule, the part and the exceptions travel in `Lapin_Task`, so Lapin reads the rule back; a file from another program gives tasks holding the elements it assigns to them. MS Project XML carries them in the field Text1, named *Lapin elements*. The workbook has an **Elements** and a **Rule** column.
 
+## The 4D simulation
+
+![The house on a day of its schedule: the first floor's slab under way in its formwork, the walls above not started](shots/planning-simulation.webp)
+
+**Planning → Simulate** (also **Simulate** in the Gantt's toolbar) shows the model as the schedule has it on a day. The Gantt opens under the view if it is not open, with the player at its top and the day as a band over its chart:
+
+- what is **not started** is hidden (or shown as a pale ghost, in the settings);
+- what is **under way** is drawn in its colour (amber);
+- what is **built** is drawn as it is;
+- what is **being demolished** is red while its task runs, then it is gone;
+- the **formwork and scaffolding** stand, in their colour (blue), only between the days their hosts' tasks give them: a slab's formwork from the start of its casting to its striking, a scaffold from the first task on its walls to the last.
+
+A layered wall built in one task and plastered in another grows in two steps: its core first, its plaster later. Elements no task takes stay as they are. A card over the model view says the day, what each colour means and how many elements are in each state.
+
+### Playing it
+
+![The player at the Gantt's top](shots/planning-simulation-bar.webp)
+
+- **Play** (▶) runs the days at the speed chosen (1 to 60 days a second) up to the finish; **Pause** stops it.
+- The arrows on each side step back or on by **a day** or **a week**.
+- Drag the slider, type a date, or click and drag on the Gantt's time scale: the band over the chart and the model follow.
+- Beside the date: the tasks under way that day.
+
+Only the elements' colours and visibility change from one day to the next: nothing is built again, so a large model plays as smoothly as a small one.
+
+### Its colours
+
+![The simulation's settings](shots/planning-simulation-settings.webp)
+
+The gear opens the simulation's settings, kept in the project: the colours of what is under way, being demolished, of the formwork and scaffolding and of the ghosts; whether what is **not started** is hidden or shown **as ghosts**; whether the **elements without a task** are shown or hidden; and whether **layers built apart** show apart. **Default colours** brings Lapin's back.
+
+### State at date on views and sheets
+
+![A plan's State at date in its properties](shots/planning-view-date.webp)
+
+A plan, a section, an elevation or a saved 3D view has **State at date** in its properties: the view then draws the model as the schedule has it that day, in the same colours, and its sheets print it so (the PDF shows what the screen shows). With the simulation running, **the cursor's date** takes its day. A view at a date draws the schedule's states, not its phase's. The × beside the date brings the model back as it is. A 3D view with a date shows that day even with the simulation off.
+
+### The stages sheet
+
+![Stages sheet: the dates from the chapters' ends](shots/planning-stages-dialog.webp)
+
+**Planning → Stages sheet…** (also in the player) puts the model at several dates side by side on a new sheet. It is drawn from **the 3D view, as it looks now** (a picture at each date) or from a plan, a section or an elevation, which the engine draws at each date. The dates are **the end of each chapter** (each task at the top of the WBS), **the end of each month**, or **chosen** ones. Each frame is labelled with its date and the tasks under way.
+
+![A stages sheet](shots/planning-stages-sheet.webp)
+
+### The Gantt on a sheet
+
+![The Gantt on a sheet](shots/planning-gantt-sheet.webp)
+
+**Planning → Gantt on sheet** puts the schedule on a new sheet: the table (row, WBS and task, days, start, finish) and the bars on a time scale, the critical tasks in red, the summaries as brackets, the milestones as diamonds, the links. A schedule taller than the sheet goes on as many sheets as it needs, its header on each. It is drawn as vectors, like the views, and prints in the PDF.
+
+### Export video
+
+![Export video](shots/planning-video.webp)
+
+**Planning → Export video…** (also in the player) records the 3D view, from where it looks now, from one day to another, **a day** or **a week** a frame, with the date and the tasks under way written under it. The file is a WebM video, or MP4 where the system offers only that (the macOS app). A browser that records no video saves the frames as PNG files in a ZIP instead.
+
 ## The calendar
 
 ![The work calendar](shots/planning-calendar.webp)
@@ -186,5 +244,5 @@ Lapin's own fields that other programs have no place for (a task's constraint, w
 
 ## What comes next
 
-The 4D simulation of the building growing in 3D, progress and baselines, and the cost estimate come in the next stages.
+Progress and baselines, and the cost estimate come in the next stages.
 

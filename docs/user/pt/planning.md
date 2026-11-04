@@ -1,7 +1,7 @@
 ---
 title: Planejamento
 order: 97
-summary: O cronograma da obra em um gráfico de Gantt: tarefas em uma EAP, marcos, vínculos com defasagens, o caminho crítico calculado em um calendário com os feriados legais da Romênia; de e para MS Project, IFC e Excel.
+summary: O cronograma da obra em um gráfico de Gantt: tarefas em uma EAP, marcos, vínculos com defasagens, o caminho crítico calculado em um calendário com os feriados legais da Romênia; a simulação 4D do edifício crescendo dia a dia, em vistas, pranchas e em vídeo; de e para MS Project, IFC e Excel.
 ---
 
 ## A aba Planejamento
@@ -14,6 +14,7 @@ summary: O cronograma da obra em um gráfico de Gantt: tarefas em uma EAP, marco
 - **Tarefa** e **Marco**: uma nova tarefa ou marco antes da tarefa selecionada no Gantt (ou no fim).
 - **Recuar**, **Avançar**, **Vincular tarefas** e **Desvincular tarefas**: a EAP e os vínculos das tarefas selecionadas.
 - **Adicionar à tarefa…** (TA) e **Elementos sem tarefa**: os elementos do modelo nas tarefas (abaixo).
+- **Simular**, **Prancha de etapas…**, **Gantt na prancha** e **Exportar vídeo…**: a simulação 4D, o modelo como o cronograma o tem em um dia (abaixo).
 - **Importar MS Project…**, **Exportar MS Project…**, **Exportar XLSX** e **Exportar IFC…**: o cronograma para e de outros programas (abaixo).
 
 Um projeto tem um cronograma. Ele é criado na primeira vez que você adiciona uma tarefa e começa na segunda-feira seguinte. Mude o início na barra do Gantt.
@@ -163,6 +164,63 @@ Assim que uma tarefa leva elementos, a barra do Gantt diz quantos elementos não
 
 A exportação IFC escreve o que cada tarefa constrói como IfcRelAssignsToProduct (o elemento, com as tarefas que o constroem), e aquilo em que atua uma tarefa de demolição, remoção ou desmontagem como IfcRelAssignsToProcess. A regra, a parte e as exceções viajam em `Lapin_Task`, então o Lapin relê a regra; um arquivo de outro programa dá tarefas com os elementos que ele lhes atribui. O MS Project XML as leva no campo Text1, chamado *Lapin elements*. A pasta de trabalho tem as colunas **Elements** e **Rule**.
 
+## A simulação 4D
+
+![A casa em um dia do seu cronograma: a laje do pavimento superior em andamento na sua fôrma, as paredes acima não iniciadas](shots/planning-simulation.webp)
+
+**Planejamento → Simular** (também **Simular** na barra do Gantt) mostra o modelo como o cronograma o tem em um dia. O Gantt abre sob a vista se não estiver aberto, com o reprodutor no topo e o dia como uma faixa sobre o gráfico:
+
+- o que **não começou** fica oculto (ou mostrado como um fantasma pálido, nas configurações);
+- o que está **em andamento** é desenhado na sua cor (âmbar);
+- o que está **construído** é desenhado como é;
+- o que está **em demolição** fica vermelho enquanto a sua tarefa dura, e depois some;
+- as **fôrmas e andaimes** ficam, na sua cor (azul), só entre os dias que as tarefas dos seus elementos lhes dão: a fôrma de uma laje do início da concretagem à desforma, um andaime da primeira tarefa nas suas paredes até a última.
+
+Uma parede em camadas erguida em uma tarefa e rebocada em outra cresce em dois passos: primeiro o núcleo, depois o reboco. Os elementos que nenhuma tarefa toma ficam como estão. Um cartão sobre a vista do modelo diz o dia, o que cada cor significa e quantos elementos há em cada estado.
+
+### A reprodução
+
+![O reprodutor no topo do Gantt](shots/planning-simulation-bar.webp)
+
+- **Reproduzir** (▶) passa os dias na velocidade escolhida (de 1 a 60 dias por segundo) até o fim; **Pausar** a detém.
+- As setas de cada lado voltam ou avançam **um dia** ou **uma semana**.
+- Arraste o controle deslizante, digite uma data, ou clique e arraste na escala de tempo do Gantt: a faixa sobre o gráfico e o modelo acompanham.
+- Ao lado da data: as tarefas em andamento naquele dia.
+
+De um dia para o outro mudam só as cores e a visibilidade dos elementos: nada é reconstruído, então um modelo grande roda tão suave quanto um pequeno.
+
+### As suas cores
+
+![As configurações da simulação](shots/planning-simulation-settings.webp)
+
+A engrenagem abre as configurações da simulação, guardadas no projeto: as cores do que está em andamento, em demolição, das fôrmas e andaimes e dos fantasmas; se o que **não começou** fica oculto ou aparece **como fantasmas**; se os **elementos sem tarefa** são mostrados ou ocultos; e se as **camadas construídas à parte** aparecem à parte. **Cores padrão** traz de volta as do Lapin.
+
+### Estado na data em vistas e pranchas
+
+![O Estado na data de uma planta nas suas propriedades](shots/planning-view-date.webp)
+
+Uma planta, um corte, uma elevação ou uma vista 3D salva tem nas propriedades **Estado na data**: a vista desenha então o modelo como o cronograma o tem naquele dia, nas mesmas cores, e as suas pranchas o imprimem assim (o PDF mostra o que a tela mostra). Com a simulação rodando, **a data do cursor** dá o seu dia. Uma vista em uma data desenha os estados do cronograma, não os da sua fase. O × ao lado da data traz o modelo de volta como está. Uma vista 3D com uma data mostra esse dia mesmo com a simulação desligada.
+
+### A prancha de etapas
+
+![Prancha de etapas: as datas dos fins de capítulo](shots/planning-stages-dialog.webp)
+
+**Planejamento → Prancha de etapas…** (também no reprodutor) põe o modelo em várias datas lado a lado em uma prancha nova. É desenhado a partir da **vista 3D, como está agora** (uma imagem em cada data) ou de uma planta, um corte ou uma elevação, que o motor desenha em cada data. As datas são **o fim de cada capítulo** (cada tarefa no topo da EAP), **o fim de cada mês**, ou datas **escolhidas**. Cada quadro leva a sua data e as tarefas em andamento.
+
+![Uma prancha de etapas](shots/planning-stages-sheet.webp)
+
+### O Gantt em uma prancha
+
+![O Gantt em uma prancha](shots/planning-gantt-sheet.webp)
+
+**Planejamento → Gantt na prancha** põe o cronograma em uma prancha nova: a tabela (linha, EAP e tarefa, dias, início, fim) e as barras em uma escala de tempo, as tarefas críticas em vermelho, os resumos como colchetes, os marcos como losangos, os vínculos. Um cronograma mais alto que a prancha vai em quantas pranchas precisar, com o cabeçalho em cada uma. É desenhado em vetores, como as vistas, e sai impresso no PDF.
+
+### Exportar vídeo
+
+![Exportar vídeo](shots/planning-video.webp)
+
+**Planejamento → Exportar vídeo…** (também no reprodutor) grava a vista 3D, de onde olha agora, de um dia a outro, um quadro por **um dia** ou por **uma semana**, com a data e as tarefas em andamento escritas embaixo. O arquivo é um vídeo WebM, ou MP4 onde o sistema só oferece isso (o app para macOS). Um navegador que não grava vídeo salva no lugar os quadros como arquivos PNG em um ZIP.
+
 ## O calendário
 
 ![O calendário de trabalho](shots/planning-calendar.webp)
@@ -186,5 +244,5 @@ Os campos próprios do Lapin para os quais outros programas não têm lugar (a r
 
 ## O que vem a seguir
 
-A simulação 4D do edifício crescendo em 3D, o avanço e as linhas de base, e o orçamento chegam nas próximas etapas.
+O avanço e as linhas de base, e o orçamento chegam nas próximas etapas.
 

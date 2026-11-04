@@ -1,7 +1,7 @@
 ---
 title: Planificare
 order: 97
-summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, jaloane, legături cu decalaje, drumul critic calculat pe un calendar cu sărbătorile legale din România; schimb cu MS Project, IFC și Excel.
+summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, jaloane, legături cu decalaje, drumul critic calculat pe un calendar cu sărbătorile legale din România; simularea 4D a clădirii care crește zi de zi, pe vederi, pe planșe și ca video; schimb cu MS Project, IFC și Excel.
 ---
 
 ## Tabul Planificare
@@ -14,6 +14,7 @@ summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, ja
 - **Sarcină** și **Jalon**: o sarcină sau un jalon nou înaintea sarcinii selectate în Gantt (sau la sfârșit).
 - **Retrage în dreapta**, **Scoate la stânga**, **Leagă sarcinile** și **Dezleagă sarcinile**: WBS-ul și legăturile sarcinilor selectate.
 - **Adaugă la sarcină…** (TA) și **Elemente fără sarcină**: elementele modelului în sarcini (mai jos).
+- **Simulează**, **Planșa de etape…**, **Gantt pe planșă** și **Exportă video…**: simularea 4D, modelul așa cum îl are programul într-o zi (mai jos).
 - **Importă MS Project…**, **Exportă MS Project…**, **Export XLSX** și **Exportă IFC…**: programul spre și dinspre alte programe (mai jos).
 
 Un proiect are un singur program. Se face prima oară când adaugi o sarcină și începe lunea următoare. Data de start se schimbă din bara Gantt-ului.
@@ -163,6 +164,63 @@ Odată ce o sarcină ia elemente, bara Gantt-ului spune câte elemente n-au sarc
 
 Exportul IFC scrie ce construiește fiecare sarcină ca IfcRelAssignsToProduct (elementul, cu sarcinile care îl construiesc), iar ce face o sarcină de demolare, îndepărtare sau dezmembrare ca IfcRelAssignsToProcess. Regula, partea și excepțiile merg în `Lapin_Task`, deci Lapin citește regula înapoi; un fișier din alt program dă sarcini cu elementele pe care le atribuie lor. MS Project XML le duce în câmpul Text1, numit *Lapin elements*. Registrul XLSX are coloanele **Elements** și **Rule**.
 
+## Simularea 4D
+
+![Casa într-o zi a programului ei: placa etajului în lucru în cofrajul ei, pereții de deasupra neîncepuți](shots/planning-simulation.webp)
+
+**Planificare → Simulează** (și **Simulează** în bara Gantt-ului) arată modelul așa cum îl are programul într-o zi. Gantt-ul se deschide sub vedere dacă nu e deschis, cu playerul deasupra lui și ziua ca o bandă peste diagramă:
+
+- ce **nu a început** e ascuns (sau arătat ca o fantomă palidă, din setări);
+- ce e **în lucru** e desenat în culoarea lui (chihlimbar);
+- ce e **construit** e desenat așa cum e;
+- ce e **în demolare** e roșu cât durează sarcina lui, apoi dispare;
+- **cofrajele și schelele** stau, în culoarea lor (albastru), doar între zilele pe care li le dau sarcinile gazdelor: cofrajul unei plăci de la începutul turnării până la decofrare, o schelă de la prima sarcină pe pereții ei până la ultima.
+
+Un perete stratificat zidit într-o sarcină și tencuit în alta crește în doi pași: întâi miezul, apoi tencuiala. Elementele pe care nu le ia nicio sarcină rămân cum sunt. O cartelă peste vederea modelului spune ziua, ce înseamnă fiecare culoare și câte elemente sunt în fiecare stare.
+
+### Redarea
+
+![Playerul deasupra Gantt-ului](shots/planning-simulation-bar.webp)
+
+- **Pornește** (▶) trece zilele cu viteza aleasă (de la 1 la 60 de zile pe secundă) până la final; **Pauză** o oprește.
+- Săgețile din fiecare parte merg înapoi sau înainte cu **o zi** sau **o săptămână**.
+- Trage cursorul, scrie o dată sau apasă și trage pe scara timpului a Gantt-ului: banda de peste diagramă și modelul urmează.
+- Lângă dată: sarcinile în lucru în ziua aceea.
+
+De la o zi la alta se schimbă doar culorile și vizibilitatea elementelor: nimic nu se reconstruiește, deci un model mare rulează la fel de lin ca unul mic.
+
+### Culorile ei
+
+![Setările simulării](shots/planning-simulation-settings.webp)
+
+Rotița deschide setările simulării, păstrate în proiect: culorile a ce e în lucru, în demolare, ale cofrajelor și schelelor și ale fantomelor; dacă ce **nu a început** e ascuns sau arătat **ca fantome**; dacă **elementele fără sarcină** sunt arătate sau ascunse; și dacă **straturile construite separat** apar separat. **Culorile implicite** le aduce înapoi pe ale lui Lapin.
+
+### Starea la data pe vederi și planșe
+
+![Starea la data a unui plan în proprietățile lui](shots/planning-view-date.webp)
+
+Un plan, o secțiune, o fațadă sau o vedere 3D salvată are în proprietăți **Starea la data**: vederea desenează atunci modelul așa cum îl are programul în ziua aceea, în aceleași culori, iar planșele ei îl tipăresc la fel (PDF-ul arată ce arată ecranul). Cu simularea pornită, **data cursorului** îi ia ziua. O vedere la o dată desenează stările programului, nu ale fazei ei. × de lângă dată readuce modelul așa cum e. O vedere 3D cu o dată arată ziua aceea chiar cu simularea oprită.
+
+### Planșa de etape
+
+![Planșa de etape: datele de la sfârșitul capitolelor](shots/planning-stages-dialog.webp)
+
+**Planificare → Planșa de etape…** (și din player) pune modelul la mai multe date alăturat, pe o planșă nouă. E desenat din **vederea 3D, așa cum arată acum** (o imagine la fiecare dată) sau dintr-un plan, o secțiune ori o fațadă, pe care engine-ul o desenează la fiecare dată. Datele sunt **sfârșitul fiecărui capitol** (fiecare sarcină din vârful WBS-ului), **sfârșitul fiecărei luni** sau date **alese**. Fiecare cadru e etichetat cu data lui și sarcinile în lucru.
+
+![O planșă de etape](shots/planning-stages-sheet.webp)
+
+### Gantt-ul pe planșă
+
+![Gantt-ul pe o planșă](shots/planning-gantt-sheet.webp)
+
+**Planificare → Gantt pe planșă** pune programul pe o planșă nouă: tabelul (rândul, WBS-ul și sarcina, zilele, începutul, finalul) și barele pe o scară a timpului, sarcinile critice cu roșu, rezumatele ca acolade, jaloanele ca romburi, legăturile. Un program mai înalt decât planșa merge pe câte planșe îi trebuie, cu antetul pe fiecare. E desenat vectorial, ca vederile, și se tipărește în PDF.
+
+### Export video
+
+![Exportă video](shots/planning-video.webp)
+
+**Planificare → Exportă video…** (și din player) înregistrează vederea 3D, de unde privește acum, de la o zi la alta, câte un cadru pe **o zi** sau pe **o săptămână**, cu data și sarcinile în lucru scrise dedesubt. Fișierul e un video WebM, sau MP4 unde sistemul oferă doar atât (aplicația de macOS). Un browser care nu înregistrează video salvează în schimb cadrele ca fișiere PNG într-un ZIP.
+
 ## Calendarul
 
 ![Calendarul de lucru](shots/planning-calendar.webp)
@@ -186,5 +244,5 @@ Câmpurile proprii ale lui Lapin pentru care alte programe n-au loc (constrânge
 
 ## Ce urmează
 
-Simularea 4D a clădirii care crește în 3D, progresul și liniile de bază, și devizul vin în etapele următoare.
+Progresul și liniile de bază, și devizul vin în etapele următoare.
 

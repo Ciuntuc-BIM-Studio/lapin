@@ -25,8 +25,9 @@ public sealed record PlanItemDto(string Kind, bool Closed, double[] Points, stri
 /// so what is kept stays closed.
 /// <para><see cref="Lods"/>: coarser copies for the screen (docs/plan-display-precision.md), finest first, each with the
 /// most it strays from the part (m); the interface draws one when that is under a pixel or so. Only a part of many triangles has them.</para>
+/// <para><see cref="Key"/>: the part's key (a layered element's <c>layer:&lt;n&gt;</c>), so a look may show one layer and not another (the 4D simulation).</para>
 /// </summary>
-public sealed record RenderPart(string Name, string Color, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Material = null, string[]? HiddenBy = null, IReadOnlyList<RenderLod>? Lods = null);
+public sealed record RenderPart(string Name, string Color, float[] Positions, float[] Normals, int[] Indices, float[] Edges, string? Material = null, string[]? HiddenBy = null, IReadOnlyList<RenderLod>? Lods = null, string? Key = null);
 
 /// <summary>A coarser copy of a part (<see cref="Lapin.Geometry.MeshSimplify"/>): its triangles as three corners each (no normals or indices: shaded flat), its edges, the most it strays (m).</summary>
 public sealed record RenderLod(float Error, float[] Positions, float[] Normals, int[] Indices, float[] Edges)
