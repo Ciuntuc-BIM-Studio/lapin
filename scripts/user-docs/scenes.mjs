@@ -1099,6 +1099,53 @@ export const scenes = [
     },
   },
   {
+    id: 'wall-sweeps',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      // Decision PROFILES: a cornice under the top of the outer walls (mitred round the corners), a plinth band, a reveal; the Profiles dialog.
+      const outer = [walls[0], walls[1], walls[2], walls[3]];
+      await t.cmd('architecture.addWallSweep', { wallIds: outer, side: 'right', catalog: 'cornice', fromTop: true, height: 0.2 });
+      await t.cmd('architecture.addWallSweep', { wallIds: outer, side: 'right', catalog: 'chamfered', height: 0.3 });
+      await t.cmd('architecture.addWallSweep', { wallIds: [walls[1]], side: 'right', mode: 'cut', catalog: 'vGroove', height: 1.5 });
+      await t.wait(800);
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinWallSweep').length === 9, 'the outer walls have their cornice and band, one wall its reveal');
+      await open3d(t);
+      await t.shot('wall-sweeps-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await t.tool('manage.profiles');
+      await t.wait(800);
+      t.expect(await t.page.locator('.dialog svg.profile-preview').count() === 1, 'the profile is drawn');
+      await t.shot('profiles', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
+    id: 'footing-profile',
+    async run(t) {
+      await t.fresh();
+      const f = await t.storey('Foundations');
+      // Decision PROFILES: a stepped strip footing type round a rectangle, mitred at the corners; its type in Structure types.
+      const type = (await t.cmd('structure.createStripType', { name: 'Stepped 100/60', catalog: 'stepped2', bottom: -1.2 })).id;
+      const pts = [[0, 0], [10, 0], [10, 7], [0, 7]];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [pts[i], pts[(i + 1) % 4]];
+        await t.cmd('structure.addStripFooting', { storeyId: f, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type });
+      }
+      await t.cmd('structure.addStripFooting', { storeyId: f, x1: 5, y1: 0, x2: 5, y2: 7, typeId: type });
+      await t.wait(800);
+      await open3d(t);
+      await t.shot('footing-profile-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await t.tool('structure.types');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByText('Strip', { exact: true }).click();
+      await dialog.locator('li.tree-item').first().click();
+      await t.wait(600);
+      t.expect(await dialog.locator('select[data-field=strip-shape]').inputValue() === 'profile', 'the type is of a profile');
+      await t.shot('footing-profile-type', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'room-finishes',
     async run(t) {
       await t.fresh();

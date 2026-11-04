@@ -205,6 +205,9 @@ public static class Placement
                         var oc = new Entity(ctx.NewId(), o.Class, o.Name, Carry(o, t), o.PredefinedType);
                         ctx.Add(oc);
                         ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelVoidsElement, copy.Id, [oc.Id]));
+                        // A hosted element on a storey of its own (a wall sweep, decision 297) stays on it.
+                        foreach (var cr in m.RelationsOf(o.Id, IfcClass.RelContainedInSpatialStructure).Where(x => x.Related.Contains(o.Id)).ToList())
+                            ctx.Relate(cr.Class, cr.Relating, oc.Id);
                         foreach (var fr in m.RelationsOf(o.Id, IfcClass.RelFillsElement).Where(x => x.Relating == o.Id).ToList())
                             foreach (var fid in fr.Related)
                                 if (m.Get(fid) is { } fill)

@@ -19,13 +19,14 @@ public static class StructureTypes
     {
         IfcClass.ColumnType => Section.From(type.Attrs["section"]) is { } s ? $"Column {s.Label}" : null,
         IfcClass.BeamType => Section.From(type.Attrs["section"]) is { } s ? $"Beam {s.Label}" : null,
+        IfcClass.FootingType when StripFootings.ProfileOf(m, type) is { } p => $"SF {p.Name}",
         IfcClass.FootingType when StripFootings.IsStrip(type) => LayerSets.LayersOf(m, type.Id) is { Count: > 0 } layers
             ? $"SF {(layers.FirstOrDefault(l => l.Core) ?? layers.MaxBy(l => l.Thickness)!).Thickness * 100:0}" : null,
         IfcClass.FootingType when PadFootings.IsPad(type) => PadFootings.Steps(type) is { Count: > 0 } steps ? $"PF {steps[0].Length * 100:0}×{steps[0].Width * 100:0}" : null,
         _ => null,
     };
 
-    public static void Update(IEdit edit, Entity type, JsonObject a)
+    public static void Update(ICommandContext edit, Entity type, JsonObject a)
     {
         var oldName = type.Name;
         var wasAuto = AutoName(edit.Model, type) == oldName;
@@ -42,6 +43,14 @@ public static class StructureTypes
                 }
                 break;
             case IfcClass.FootingType when StripFootings.IsStrip(type):
+                // Its profile (decision 297): one of the project's, a ready-made one, or none (profile: null) for the standard stem on a footing.
+                if (a.ContainsKey(Profiles.Key) && a[Profiles.Key] == null && a[Profiles.IdKey] == null && a["catalog"] == null)
+                {
+                    if (LayerSets.LayersOf(edit.Model, type.Id).Count == 0) throw new CommandException("This type was made of a profile: it has no stem layers to go back to; make a standard type instead.");
+                    attrs.Remove(Profiles.Key);
+                    attrs.Remove(Profiles.IdKey);
+                }
+                else if (Profiles.FromArgs(edit, a) is { } profile) Profiles.Assign(attrs, profile.Shape, profile.Id);
                 foreach (var key in new[] { "stemHeight", "footingWidth", "footingHeight" })
                     if (Json.Number(a[key]) is { } v) attrs[key] = v > 0 ? v : throw new CommandException("The stem's height and the footing's width and height must be positive.");
                 if (Json.Number(a["bottom"]) is { } sb) attrs["bottom"] = sb;

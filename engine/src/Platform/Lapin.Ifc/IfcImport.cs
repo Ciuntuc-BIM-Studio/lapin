@@ -735,7 +735,8 @@ public static partial class IfcImport
                     // A provision opening an MEP run cut (decision 296): made again by the run when it comes too, else a real opening (ProvisionOpenings).
                     if (ProvisionOf(op.Id) != null) { provisions.Add((gid, op)); continue; }
                     if (IntentOf(op.Id) is not { } opIntent) continue;
-                    Put(edit, opGid, IfcClass.OpeningElement, Str(op[2]) ?? "Opening", opIntent.Attrs, opIntent.Predefined ?? "OPENING", counts: false);
+                    // A recess of Lapin's own (a wall reveal, decision 297) comes back as its class.
+                    Put(edit, opGid, opIntent.Class ?? IfcClass.OpeningElement, Str(op[2]) ?? "Opening", opIntent.Attrs, opIntent.Predefined ?? "OPENING", counts: false);
                     foreach (var fill in Rels.FillsOf[op.Id])
                         if (f.Get(fill[5]) is { } filler && Str(filler[0]) is { } fillGid)
                         {

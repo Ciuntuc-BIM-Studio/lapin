@@ -66,6 +66,26 @@ En ændring af en type ændrer alle vægge af den type.
 
 **Import…**, **Export CSV** og **Export JSON** under typelisten flytter væg- og dæktyperne fra ét projekt til et andet eller til et regneark og tilbage: CSV-filen har én række pr. lag (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), en types rækker efter hinanden, og Excels semikolonner og decimalkommaer læses også. Ved import får en type med samme navn filens lag, og de øvrige oprettes, i ét trin at fortryde; et materiale, projektet mangler, oprettes ud fra sit navn. Skemaet **Typeopbygninger** (Schedules → + → Type assemblies) viser hver væg- og dæktype med mærke, samlet tykkelse, hvor mange elementer der bruger den, og dens lag i rækkefølge.
 
+## Vægprofiler og vægnoter
+
+**Arkitektur → Vægprofil** (<kbd>WB</kbd>) fører en profil langs en vægs flade: en gesims, et bånd, en sokkel, en sålbænk. **Vægnot** (<kbd>RV</kbd>) skærer den ind i væggen: en not, en skyggefuge. Vælg profilen og højden i kommandolinjens bjælke, og klik så på væggens flade. I 3D sættes profilen i den højde, du klikker; i en plan i den indtastede højde, på den side, du klikker. **fra toppen** måler højden nedad fra væggens top, til en gesims under tagudhænget. **Profil på valgte vægge** og **Not i valgte vægge** sætter det samme på hver valgt væg, på dens yderside.
+
+En profil løber i fladens fulde længde og afbrydes ved de døre og vinduer, den ville krydse. Hvor to vægge mødes i et hjørne, og begge har en profil af samme form i samme højde på de flader, der mødes, føres de to i gering ind i hinanden, én gesims rundt om hjørnet. Vælg en profil for at ændre den i Egenskaber: dens profil, dens materiale, dens flade (**Skift side**), dens højde, dens afstand fra fladen, hvor den begynder og slutter langs væggen, og om den afbrydes ved åbninger. En vægs egenskaber viser de profiler og noter, den har.
+
+Profiler og noter følger deres væg, når den kopieres, flyttes til en anden etage eller slettes. De måles i længde og volumen (for en not det fjernede volumen). I IFC er en profil en IfcCovering MOLDING og en not en IfcOpeningElement RECESS i sin væg; begge kommer tilbage, som de var.
+
+![Gesimser, bånd og en not på et hus' ydervægge](shots/wall-sweeps-3d.webp)
+
+### Profiler
+
+**Administrer → Profiler** rummer projektets profiler, de omrids som vægprofiler, noter og stribefundamenter føres med. **Ny profil** starter fra kataloget med sine mål: et rektangel, et affaset bånd, en gesims, en halvrund, en sålbænksnæse, et bånd med drypnæse; en V-not, en rektangulær eller en rund not; til fundamenter rektangulært, trappet i 2 eller 3 trin, med skrå overside, excentrisk, med sokkelvæg. Eller vælg **Indtastede hjørner**: hvert hjørne u v i millimeter, semikolon imellem, og et tredje tal gør siden fra det hjørne til en bue. **Fra en tegnet kontur** læser en lukket polylinje eller et rektangel tegnet med Tegning og valgt i sin visning. Cirklen i forhåndsvisningen er indsættelsespunktet: for en vægprofil ligger den på væggens flade i profilens højde, med u ud af fladen (ind i væggen for en not). Ændrer du en profil, følger alt, der bruger den.
+
+![Dialogen Profiler](shots/profiles.webp)
+
+### Beklædning
+
+Beklædning modelleres med væggens egne lag, ikke med profiler. Tilføj et overfladelag på ydersiden af vægtypen (natursten, træbeklædning, fibercement, en efterisolering med puds), med dets tykkelse og materiale. **Fra** og **Op til** giver det en egen højde (en stensokkel op til 600, puds over den), og lagets knap **lag** skifter dets materiale i bånd op ad højden. Til en beklædning, der står fri af væggen, tegner du en væg for sig på fladen (vægværktøjets linjevalg **Yderside**) med en type af beklædningens lag. Beklædning lagt bræt for bræt (lodrette eller vandrette brædder, lægter) modelleres endnu ikke.
+
 ## Vægge under et tag
 
 Vægge på samme niveau som et tag stopper selv under det og går op til dets gavle. For en væg på et andet niveau: markér den og vælg **Arkitektur → Fastgør til tag** (<kbd>AR</kbd>), og klik derefter på taget — eller et hvilket som helst andet legeme, væggen skal gå op til: et Studio-legeme, et importeret element. Se [Dæk og tage](floors-roofs.md).

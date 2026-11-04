@@ -1,7 +1,8 @@
 /**
  * Structure types: columns and beams (their section), strip foundations
  * (the stem's layers, the footing's size, its level) and pad footings (the
- * steps, bottom up). A new type is made here, and a type clicked in the list
+ * steps, bottom up). A strip foundation is the standard stem on a footing, or any
+ * profile of the project swept along its axis (decision 297). A new type is made here, and a type clicked in the list
  * is changed here (report #42), its elements following it; the inspector
  * gives an element another one.
  */
@@ -18,6 +19,8 @@ import { deleteType } from '../core/deleteType';
 import { useStandards } from '../../engine/unitsStore';
 import { formatSteps, parseSteps, type Step } from './steps';
 import { Cell, LengthField } from '../../shell/cells';
+import { ProfilePicker, ProfilePreview } from '../core/ProfilesDialog';
+import type { ProfileJson } from '../core/profiles';
 
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
 const num = (m: unknown, fallback: number) => (typeof m === 'number' ? m : fallback);
@@ -46,6 +49,9 @@ export function StructureTypesDialog() {
   const [fh, setFh] = useState(0.4);
   const [bottom, setBottom] = useState(-1.8);
   const [core, setCore] = useState(0.3);
+  // A strip foundation's shape: the standard stem on a footing, or a profile of the project.
+  const [stripShape, setStripShape] = useState<'standard' | 'profile'>('standard');
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [steps, setSteps] = useState<Step[]>([{ length: 1.8, width: 1.8, height: 0.5 }, { length: 1, width: 1, height: 0.4 }]);
   const list = kind === 'column' ? ofClass(model, 'IfcColumnType') : kind === 'beam' ? ofClass(model, 'IfcBeamType')
     : ofClass(model, 'IfcFootingType').filter((t) => t.props.kind === kind);
@@ -59,6 +65,8 @@ export function StructureTypesDialog() {
     const sec = t.props.section as { kind?: string; width?: number; depth?: number } | undefined;
     if (sec) { setShape(sec.kind === 'circle' ? 'circle' : 'rectangle'); setW(num(sec.width, 0.3)); setD(num(sec.depth, 0.3)); }
     if (t.props.kind === 'strip') {
+      setStripShape(t.props.profile ? 'profile' : 'standard');
+      setProfileId(typeof t.props.profileId === 'string' ? t.props.profileId : null);
       setStem(num(t.props.stemHeight, 1.4)); setFw(num(t.props.footingWidth, 0.6)); setFh(num(t.props.footingHeight, 0.4)); setBottom(num(t.props.bottom, -1.8));
       const layers = typeLayers(model, t.id);
       const core = layers.find((l) => l.core) ?? layers.reduce<(typeof layers)[number] | undefined>((a, l) => (!a || l.thickness > a.thickness ? l : a), undefined);
@@ -77,7 +85,8 @@ export function StructureTypesDialog() {
     const section = { kind: shape, width: w, depth: shape === 'circle' ? w : d };
     const args: Record<string, unknown> = { id: edited.id, name };
     if (kind === 'column' || kind === 'beam') args.section = section;
-    else if (kind === 'strip') Object.assign(args, { stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, core });
+    else if (kind === 'strip' && stripShape === 'profile') Object.assign(args, { bottom, ...(profileId ? { profileId } : {}) });
+    else if (kind === 'strip') Object.assign(args, { stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, ...(edited.props.profile ? { profile: null } : { core }) });
     else Object.assign(args, { bottom, steps });
     // The name as it was: left to the engine, which renames a type still named after its size.
     if (name.trim() === edited.name) delete args.name;
@@ -88,7 +97,10 @@ export function StructureTypesDialog() {
     const section = { kind: shape, width: w, depth: shape === 'circle' ? w : d };
     if (kind === 'column') await execute('structure.createColumnType', { name, section });
     else if (kind === 'beam') await execute('structure.createBeamType', { name, section });
-    else if (kind === 'strip') {
+    else if (kind === 'strip' && stripShape === 'profile') {
+      if (!profileId) return;
+      await execute('structure.createStripType', { name, bottom, profileId });
+    } else if (kind === 'strip') {
       await execute('structure.createStripType', {
         name, stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom,
         layers: [
@@ -137,7 +149,19 @@ export function StructureTypesDialog() {
               {shape === 'rectangle' && <Len label={kind === 'beam' ? 'Depth' : 'Length'} value={d} min={0.01} onChange={setD} />}
             </>}
             {edited && (kind === 'column' || kind === 'beam') && structureHooks.typeExtras.map((Extra, i) => <Extra key={i} type={edited} kind={kind} />)}
-            {kind === 'strip' && <>
+            {kind === 'strip' && <label className="field-line"><span className="eyebrow">Shape</span>
+              <select data-field="strip-shape" value={stripShape} onChange={(e) => setStripShape(e.target.value as 'standard' | 'profile')}>
+                <option value="standard">Standard (stem on a footing)</option>
+                <option value="profile">Profile</option>
+              </select></label>}
+            {kind === 'strip' && stripShape === 'profile' && <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+              <ProfilePreview shape={(profileId ? nodes.get(profileId)?.props.profile : edited?.props.profile) as unknown as ProfileJson | undefined} size={96} />
+              <div className="grow">
+                <label className="field-line"><span className="eyebrow">Profile</span><ProfilePicker use="footing" value={profileId} testId="strip-profile" onPick={setProfileId} /></label>
+                <p className="muted small">Swept along the axis, its insertion point on the axis at the bottom level; corners mitred, a footing ending against another cut by it.</p>
+              </div>
+            </div>}
+            {kind === 'strip' && stripShape === 'standard' && <>
               <Len label="Core" value={core} min={0.01} onChange={setCore} />
               <Len label="Stem height" value={stem} min={0} onChange={setStem} />
               <Len label="Footing width" value={fw} min={0.01} onChange={setFw} />

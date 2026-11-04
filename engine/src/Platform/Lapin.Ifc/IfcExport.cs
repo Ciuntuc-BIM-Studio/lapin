@@ -632,10 +632,14 @@ public static class IfcExport
         void Element(Entity e, IVoidShapes? voids, ElementGeometry? prepared = null)
         {
             if (e.Class == IfcClass.Space) { Space(e); return; }
+            if (written.ContainsKey(e.Id)) return;
             var geo = prepared ?? s.Geometry(e.Id, new GeometryOptions(CutOpenings: false));
             var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0).ToList() ?? [];
+            // What an element hosts that is an element of its own (a wall sweep, decision 297) says its host, so an import puts it back on it.
+            var hostedBy = e.Class != IfcClass.OpeningElement && m.RelatingOf(e.Id, IfcClass.RelVoidsElement) is { } hostOf ? hostOf : null;
             if (parts.Count == 0)
             {
+                if (hostedBy != null) return;
                 if (geo?.Diagnostics is { Count: > 0 } d) Notes.Add($"„{e.Name}” has no body and was not exported: {d[0]}");
                 return;
             }
@@ -688,8 +692,16 @@ public static class IfcExport
             Openings(e, entity, place, z0, voids);
             if (swept != null) SweptOpenings(e, swept, entity, place, fr);
             if (swept is { Parts.Count: > 0 }) SweptParts(e, swept, entity, spatial, place, fr, parts);
-            Properties(e, kind, entity, type);
+            Properties(e, kind, entity, type, hostedBy != null ? [("LapinHost", hostedBy.Id)] : null);
             Quantities(e, entity, grouped);
+        }
+
+        /// <summary>A hosted element's body as a recess in its host, from the first module that gives one (<see cref="IIfcRecesses"/>).</summary>
+        Solid? RecessOf(Entity e)
+        {
+            foreach (var src in s.Catalog.All<IIfcRecesses>())
+                if (src.RecessOf(m, s.Catalog, e) is { } b) return b;
+            return null;
         }
 
         /// <summary>The element's body as constructive solids, from the first module that gives one (<see cref="IIfcSweptBodies"/>).</summary>
@@ -1222,6 +1234,18 @@ public static class IfcExport
                 foreach (var oid in rel.Related)
                 {
                     if (m.Get(oid) is not { } op) continue;
+                    if (op.Class != IfcClass.OpeningElement && RecessOf(op) is { } recess)
+                    {
+                        // A recess the element hosts (a wall reveal, decision 297): an IfcOpeningElement of its kind, with its intent.
+                        var body = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf([Brep(recess, null, Frame.AtZ(z0))]) }));
+                        var pre = op.PredefinedType ?? "RECESS";
+                        var recessRef = f.Add("IFCOPENINGELEMENT", Gid(op.Id), Null, S(op.Name), Null, Null, Place(place, 0), body, S(op.Id), E(pre));
+                        written[op.Id] = recessRef;
+                        f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, entity, recessRef);
+                        Define(recessRef, IntentOf(op, Gid(op.Id, IntentKey), new Kind(IfcClass.OpeningElement, pre, null)), Gid(op.Id, "intent-rel"));
+                        Quantities(op, recessRef, false);
+                        continue;
+                    }
                     if (op.Class != IfcClass.OpeningElement)
                     {
                         // A void that is an element of its own (a platform in the terrain): its host's body already shows it, so it has no

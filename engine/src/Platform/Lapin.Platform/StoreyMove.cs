@@ -114,7 +114,11 @@ public static class StoreyMove
                 if (!seen.Add(e.Id)) return;
                 all.Add(e);
                 foreach (var o in ctx.Model.RelatedOf(e.Id, IfcClass.RelVoidsElement))
+                {
+                    // What the element hosts goes with it: a door in its opening, a wall sweep (decision 297; an opening, on no storey, is left alone).
+                    if (o.Class != IfcClass.OpeningElement) Take(o);
                     foreach (var fill in ctx.Model.RelatedOf(o.Id, IfcClass.RelFillsElement)) Take(fill);
+                }
                 foreach (var part in ctx.Model.RelatedOf(e.Id, IfcClass.RelAggregates)) Take(part);
             }
             foreach (var e in moving) Take(e);

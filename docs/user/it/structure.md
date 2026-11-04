@@ -30,6 +30,16 @@ Disegna le fondazioni sul livello **Foundations**, oppure dai loro una pianta pr
 
 Travi e fondazioni si uniscono da sole dove si incontrano, con un angolo a quartabuono. Una trave disegnata da asse di pilastro ad asse di pilastro si ferma alle facce dei pilastri; la sua lunghezza, il suo volume e le sue staffe contano la luce netta tra di essi. **A quartabuono**, **Di testa** e **Scambia** cambiano il modo in cui si incontrano due travi o due fondazioni. **Corrispondenza tipo** (<kbd>MA</kbd>) copia il tipo di un elemento su altri, e **Crea simile** (<kbd>CS</kbd>) avvia il disegno di un altro elemento dello stesso tipo.
 
+## Travi di fondazione con profilo
+
+Un tipo di trave di fondazione è quello standard, un muretto con i suoi strati su una fondazione, oppure qualsiasi profilo estruso lungo l'asse della fondazione, come i profili di fondazione di Revit. In **Tipi strutturali → Strip**, scegli **Forma: Profilo** e un profilo: uno del catalogo (rettangolare, a 2 o 3 gradoni, con la faccia superiore inclinata, eccentrica con il muretto su un bordo, con muretto) con le sue misure, oppure uno del progetto (**Gestisci → Profili**, dove puoi anche digitarne i vertici o leggere un contorno disegnato). Il punto di inserimento del profilo va sull'asse della fondazione, alla quota **Inferiore** del tipo.
+
+Le fondazioni con profilo sono diritte o curve. Due che si incontrano in un angolo si tagliano a quartabuono, e una che termina contro un'altra vi entra ed è tagliata dal suo corpo, così ogni gradone incontra il gradone dell'altra. Piante, sezioni e prospetti tagliano il corpo estruso. Le quantità danno la sua lunghezza, l'area della sezione e il volume, e le sue facce verticali sono quelle che le Opere provvisionali casserano. In IFC una diritta è un IfcFooting STRIP_FOOTING il cui corpo è il profilo estruso (un IfcArbitraryClosedProfileDef), tagliato dai piani degli angoli; una curva va come le sue facce. Scegli **Standard** per tornare al muretto su fondazione.
+
+![Travi di fondazione a gradoni sotto una casa, a quartabuono negli angoli](shots/footing-profile-3d.webp)
+
+![Un tipo di trave di fondazione con profilo](shots/footing-profile-type.webp)
+
 ## Una vista strutturale
 
 La disciplina di una vista decide cosa mostra. Una vista **Struttura** mostra solo i nuclei portanti, senza le finiture. Scegli la disciplina nelle proprietà della vista. Vedi [Viste](views.md).

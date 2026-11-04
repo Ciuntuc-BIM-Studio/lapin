@@ -30,6 +30,16 @@ Draw foundations on the **Foundations** level, or give them a plan of their own.
 
 Beams and footings join by themselves where they meet, a corner as a mitre. A beam drawn from column axis to column axis stops at the columns' faces; its length, volume and stirrups count the clear span between them. **Mitre**, **Butt** and **Swap** change how two beams or two footings meet. **Match type** (<kbd>MA</kbd>) copies one element's type to others, and **Create similar** (<kbd>CS</kbd>) starts drawing another element of the same type.
 
+## Strip footing profile
+
+A strip footing type is either the standard one, a stem with its layers on a footing, or any profile swept along the footing's axis, as with Revit's footing profiles. In **Structure types → Strip**, choose **Shape: Profile** and pick a profile: one of the catalogue's (rectangular, stepped in 2 or 3 steps, with a sloped top, eccentric with its stem at one edge, with a stem), made with its sizes, or one of the project's (**Manage → Profiles**, where you can also type its corners or read a drafted outline). The profile's insertion point goes on the footing's axis at the type's **Bottom** level.
+
+Profile footings run straight or curved. Two of them meeting in a corner are mitred, and one ending against another's run goes on into it and is cut by its body, so each step meets the other's step. Plans, sections and elevations cut the swept body. The quantities give its length, cross-section area and volume, and its upright sides are the faces Site works forms. In IFC a straight one is an IfcFooting STRIP_FOOTING whose body is its profile extruded (an IfcArbitraryClosedProfileDef), cut by the corners' planes; a curved one goes as its faces. Choose **Standard** to go back to the stem on a footing.
+
+![Stepped strip footings under a house, mitred at the corners](shots/footing-profile-3d.webp)
+
+![A strip footing type of a profile](shots/footing-profile-type.webp)
+
 ## A structural view
 
 A view's discipline decides what it shows. A **Structure** view shows the load-bearing cores only, without the finishes. You choose the discipline in the view's properties. See [Views](views.md).

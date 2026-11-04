@@ -44,6 +44,16 @@ public interface IIfcSystems
     IEnumerable<IfcSystem> Systems(IModelView model);
 }
 
+/// <summary>
+/// A module's elements that are recesses in their host (a wall reveal, decision 297): related to it by IfcRelVoidsElement,
+/// with no body of their own, written to IFC as an IfcOpeningElement of their predefined type (RECESS) voiding the host, its
+/// body the one given here; null for the others.
+/// </summary>
+public interface IIfcRecesses
+{
+    Solid? RecessOf(IModelView model, IServices services, Entity element);
+}
+
 /// <summary>A module's elements whose bodies the IFC export writes as constructive solids rather than as B-reps; null for the others.</summary>
 public interface IIfcSweptBodies
 {

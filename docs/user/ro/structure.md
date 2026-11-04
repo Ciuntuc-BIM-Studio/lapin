@@ -30,6 +30,16 @@ Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
 Grinzile și fundațiile se îmbină singure unde se întâlnesc, un colț la 45°. O grindă trasată din axul unui stâlp în axul altuia se oprește la fețele stâlpilor; lungimea, volumul și etrierii ei numără deschiderea liberă dintre ele. **La 45°**, **Cap la cap** și **Inversează** schimbă cum se întâlnesc două grinzi sau două fundații. **Preia tipul** (<kbd>MA</kbd>) copiază tipul unui element pe altele, iar **Creează similar** (<kbd>CS</kbd>) începe desenarea unui alt element de același tip.
 
+## Fundații continue cu profil
+
+Un tip de fundație continuă e fie cel standard, o elevație cu straturile ei pe o talpă, fie orice profil extrudat de-a lungul axului fundației, ca profilele de fundație din Revit. În **Tipuri structurale → Strip**, alegi **Formă: Profil** și un profil: unul din catalog (dreptunghiulară, în 2 sau 3 trepte, cu fața de sus înclinată, excentrică cu elevația la o margine, cu elevație), făcut cu dimensiunile lui, sau unul al proiectului (**Gestionare → Profile**, unde poți și să-i tastezi colțurile sau să citești un contur desenat). Punctul de inserție al profilului stă pe axul fundației, la cota **Jos** a tipului.
+
+Fundațiile cu profil merg drept sau curb. Două care se întâlnesc într-un colț se taie pe bisectoare, iar una care se oprește în alta intră în ea și e tăiată de corpul ei, așa că fiecare treaptă se întâlnește cu treapta celeilalte. Planurile, secțiunile și fațadele taie corpul extrudat. Cantitățile dau lungimea, aria secțiunii și volumul, iar fețele ei verticale sunt cele pe care Organizarea de șantier le cofrează. În IFC una dreaptă e un IfcFooting STRIP_FOOTING al cărui corp e profilul extrudat (un IfcArbitraryClosedProfileDef), tăiat de planele colțurilor; una curbă merge ca fețele ei. Alegi **Standard** ca să te întorci la elevația pe talpă.
+
+![Fundații continue în trepte sub o casă, tăiate pe bisectoare la colțuri](shots/footing-profile-3d.webp)
+
+![Un tip de fundație continuă cu profil](shots/footing-profile-type.webp)
+
 ## O vedere de structură
 
 Disciplina unei vederi decide ce arată. O vedere **Structură** arată doar miezurile portante, fără finisaje. Disciplina o alegi în proprietățile vederii. Vezi [Secțiuni, fațade și 3D](views.md).

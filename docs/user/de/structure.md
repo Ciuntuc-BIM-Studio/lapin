@@ -30,6 +30,16 @@ Zeichnen Sie die Gründung auf der Ebene **Foundations**, oder geben Sie ihr ein
 
 Träger und Fundamente verbinden sich von selbst, wo sie aufeinandertreffen, eine Ecke als Gehrung. Ein von Stützenachse zu Stützenachse gezeichneter Träger endet an den Stützenflächen; seine Länge, sein Volumen und seine Bügel zählen die lichte Weite dazwischen. **Gehrung**, **Stumpf** und **Tauschen** ändern, wie zwei Träger oder zwei Fundamente aufeinandertreffen. **Typ übertragen** (<kbd>MA</kbd>) überträgt den Typ eines Elements auf andere, und **Ähnliches erstellen** (<kbd>CS</kbd>) beginnt, ein weiteres Element desselben Typs zu zeichnen.
 
+## Streifenfundamente mit Profil
+
+Ein Streifenfundamenttyp ist entweder der Standardtyp, eine Sockelwand mit ihren Schichten auf einem Fundament, oder ein beliebiges Profil, das entlang der Fundamentachse geführt wird, wie die Fundamentprofile in Revit. Wählen Sie in **Tragwerkstypen → Strip** **Form: Profil** und ein Profil: eines aus dem Katalog (rechteckig, in 2 oder 3 Stufen, mit geneigter Oberseite, exzentrisch mit der Sockelwand an einem Rand, mit Sockelwand) mit seinen Maßen, oder eines des Projekts (**Verwalten → Profile**, wo Sie auch seine Eckpunkte eingeben oder eine gezeichnete Kontur einlesen können). Der Einfügepunkt des Profils liegt auf der Fundamentachse in der Höhe **Unten** des Typs.
+
+Fundamente mit Profil verlaufen gerade oder gekrümmt. Zwei, die sich in einer Ecke treffen, werden auf Gehrung geschnitten, und eines, das an einem anderen endet, läuft in dieses hinein und wird von dessen Körper geschnitten, sodass jede Stufe auf die Stufe des anderen trifft. Grundrisse, Schnitte und Ansichten schneiden den geführten Körper. Die Mengen geben seine Länge, seine Querschnittsfläche und sein Volumen an, und seine senkrechten Seiten sind die Flächen, die die Baustelleneinrichtung einschalt. In IFC ist ein gerades Fundament ein IfcFooting STRIP_FOOTING, dessen Körper sein extrudiertes Profil ist (ein IfcArbitraryClosedProfileDef), von den Ebenen der Ecken geschnitten; ein gekrümmtes wird als seine Flächen geschrieben. Wählen Sie **Standard**, um zur Sockelwand auf dem Fundament zurückzukehren.
+
+![Gestufte Streifenfundamente unter einem Haus, an den Ecken auf Gehrung](shots/footing-profile-3d.webp)
+
+![Ein Streifenfundamenttyp mit Profil](shots/footing-profile-type.webp)
+
 ## Eine Tragwerksansicht
 
 Die Disziplin einer Ansicht entscheidet, was sie zeigt. Eine Ansicht der Disziplin **Tragwerk** zeigt nur die tragenden Kerne, ohne die Bekleidungen. Die Disziplin wählen Sie in den Eigenschaften der Ansicht. Siehe [Schnitte, Ansichten und 3D](views.md).

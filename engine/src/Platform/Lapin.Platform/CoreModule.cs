@@ -77,6 +77,7 @@ public sealed class CoreModule : ILapinModule
         ViewStyles.Register(r);
         Coordination.VoidDrawings.Register(r);
         ElementFaces.Register(r);
+        Profiles.Register(r);
         Dependencies.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>

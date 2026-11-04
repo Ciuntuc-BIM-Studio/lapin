@@ -31,7 +31,14 @@ sealed class WallPlacement : IElementPlacement
     {
         LayerSets.Flip(ctx, wallId);
         foreach (var opening in ctx.Model.RelatedOf(wallId, IfcClass.RelVoidsElement).ToList())
-            if (Openings.FillOf(ctx.Model, opening.Id) is { } fill)
+            if (opening.Class == WallSweeps.Class)
+            {
+                // A sweep keeps to its face, which the mirror has turned to the wall's other side.
+                var sa = opening.CloneAttrs();
+                sa["side"] = opening.Str("side") == "right" ? "left" : "right";
+                ctx.Replace(opening.With(attrs: sa));
+            }
+            else if (Openings.FillOf(ctx.Model, opening.Id) is { } fill)
             {
                 var attrs = fill.CloneAttrs();
                 attrs["flipSide"] = !fill.Bool("flipSide");

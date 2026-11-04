@@ -70,3 +70,9 @@ export const DiameterIcon = icon('diameter');
 export const ArcLengthIcon = icon('arcLength');
 export const SlopeIcon = icon('slope');
 export const OrdinateIcon = icon('ordinate');
+/** A wall sweep (decision 297): a cornice and a band standing out of a wall's face, seen in section. */
+export const WallSweepIcon = icon('wallSweep');
+/** A wall reveal: a groove in the wall's face, seen in section. */
+export const WallRevealIcon = icon('wallReveal');
+/** A profile: a stepped footing's outline and its insertion point. */
+export const ProfileIcon = icon('profile');

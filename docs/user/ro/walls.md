@@ -66,6 +66,26 @@ O schimbare a tipului schimbă toți pereții de acel tip.
 
 **Import…**, **Export CSV** și **Export JSON**, sub lista de tipuri, scot tipurile de pereți și de plăci dintr-un proiect și le duc în altul, sau într-un tabel Excel și înapoi: CSV-ul are câte un rând pe strat (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), rândurile unui tip unul după altul, iar punctul și virgula și virgula zecimală ale Excelului se citesc și ele. La import, un tip cu același nume primește straturile din fișier, iar celelalte se creează, într-un singur pas de anulat; un material pe care proiectul nu-l are se creează după nume. Extrasul **Alcătuirile tipurilor** (Schedules → + → Type assemblies) arată fiecare tip de perete și de placă cu marca, grosimea totală, câte elemente îl folosesc și straturile lui în ordine.
 
+## Profile și canale în pereți
+
+**Arhitectură → Profil de perete** (<kbd>WB</kbd>) duce un profil de-a lungul feței unui perete: o cornișă, un brâu, un soclu, un glaf. **Canal în perete** (<kbd>RV</kbd>) îl taie în perete: un canal, un rost de umbră. Alegi profilul și înălțimea în bara liniei de comandă, apoi dai clic pe fața peretelui. În 3D profilul se pune la înălțimea pe care dai clic; în plan, la înălțimea tastată, pe partea pe care dai clic. **de sus** măsoară înălțimea în jos de la vârful peretelui, pentru o cornișă sub streașină. **Profil pe pereții selectați** și **Canal pe pereții selectați** pun același lucru pe fiecare perete selectat, pe fața lui exterioară.
+
+Un profil merge pe toată lungimea feței și se oprește la ușile și ferestrele peste care ar trece. Acolo unde doi pereți se întâlnesc într-un colț și amândoi au un profil de același fel, la aceeași înălțime, pe fețele care se întâlnesc, cele două se taie pe bisectoare una în alta, ca o singură cornișă care întoarce colțul. Selectezi un profil ca să-l schimbi în Proprietăți: profilul, materialul, fața (**Schimbă partea**), înălțimea, distanța de la față, unde începe și unde se termină de-a lungul peretelui și dacă se oprește la goluri. Proprietățile unui perete arată profilele și canalele pe care le are.
+
+Profilele și canalele merg cu peretele lor când e copiat, mutat pe alt nivel sau șters. Se măsoară pe lungime și pe volum (la un canal, volumul scos). În IFC un profil e un IfcCovering MOLDING, iar un canal un IfcOpeningElement RECESS în peretele lui; amândouă se întorc la import cum erau.
+
+![Cornișe, brâuri și un canal pe pereții exteriori ai unei case](shots/wall-sweeps-3d.webp)
+
+### Profile
+
+**Gestionare → Profile** ține profilele proiectului, contururile după care se extrudează profilele de perete, canalele și fundațiile continue. **Profil nou** pornește din catalog, cu dimensiunile lui: un dreptunghi, un brâu teșit, o cornișă, un semirotund, un nas de glaf, un brâu cu lăcrimar; un canal în V, un canal dreptunghiular sau rotund; pentru fundații, dreptunghiulară, în 2 sau 3 trepte, cu fața de sus înclinată, excentrică, cu elevație. Sau alegi **Colțuri tastate**: fiecare colț u v în milimetri, cu punct și virgulă între ele, iar un al treilea număr face din latura care pleacă din colț un arc. **Dintr-un contur desenat** citește o polilinie închisă sau un dreptunghi desenat cu Desen și selectat în vederea lui. Cercul din previzualizare e punctul de inserție: la un profil de perete stă pe fața peretelui, la înălțimea profilului, cu u spre exteriorul feței (spre interiorul peretelui la un canal). Când schimbi un profil, tot ce îl folosește se schimbă cu el.
+
+![Dialogul Profile](shots/profiles.webp)
+
+### Placaje
+
+Placajele se modelează cu straturile peretelui, nu cu profile. Adaugi un strat de finisaj pe exteriorul tipului de perete (piatră, lambriu, plăci fibrociment, un termosistem), cu grosimea și materialul lui. **De la** și **Până la** îi dau o înălțime proprie (un soclu de piatră până la 600, tencuială deasupra), iar butonul **straturi** al stratului îi schimbă materialul în benzi pe înălțime. Pentru un placaj care stă separat de perete, desenezi un perete al lui pe față (opțiunea de linie **Fața exterioară** a uneltei de pereți), cu un tip făcut din straturile placajului. Placajul pus scândură cu scândură (scânduri verticale sau orizontale, șipci) nu se modelează încă.
+
 ## Pereți sub acoperiș
 
 Pereții de pe același nivel cu un acoperiș se opresc singuri sub el și urcă până la frontoanele lui. Pentru un perete de pe alt nivel, selectează-l și alege **Arhitectură → Atașează la acoperiș** (<kbd>AR</kbd>), apoi dă clic pe acoperiș, sau pe orice alt corp până la care trebuie să urce peretele: un solid din Studio, un element importat. Vezi [Plăci și acoperișuri](floors-roofs.md).

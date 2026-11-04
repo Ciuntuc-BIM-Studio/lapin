@@ -124,6 +124,34 @@ public sealed class StructureFaces : IElementFaces
             }
             return faces;
         }
+        if (StripFootings.ProfileOf(m, type) is { } profile)
+        {
+            // A profile footing (decision 297), straight: each upright side of its profile a face along the axis, each level side a top or the bottom.
+            if (PathCurve.Of(footing).IsArc) return [];
+            var (ps, pe) = (Joins.Start(footing), Joins.End(footing));
+            var pl = (pe - ps).Normalized().Perp;
+            var outline = profile.Outline();
+            int ups = 0, tops = 0;
+            for (var i = 0; i < outline.Count; i++)
+            {
+                var (a, b) = (outline[i], outline[(i + 1) % outline.Count]);
+                var (du, dv) = (b.X - a.X, b.Y - a.Y);
+                if (Math.Abs(du) < 1e-6 && Math.Abs(dv) > 1e-6)
+                {
+                    var outward = dv > 0 ? pl : -pl;
+                    faces.Add(ElementFaces.Upright($"Side[{ups}]", $"Side {++ups}", ps + pl * a.X, pe + pl * a.X, bottom + Math.Min(a.Y, b.Y), bottom + Math.Max(a.Y, b.Y), outward));
+                }
+                else if (Math.Abs(dv) < 1e-6 && Math.Abs(du) > 1e-6)
+                {
+                    var (u0, u1) = (Math.Min(a.X, b.X), Math.Max(a.X, b.X));
+                    var band = new List<Vec2> { ps + pl * u0, pe + pl * u0, pe + pl * u1, ps + pl * u1 };
+                    if (du > 0) faces.Add(ElementFaces.Level("Bottom", "Bottom", band, bottom + a.Y, true));
+                    else faces.Add(ElementFaces.Level(tops == 0 ? "Top" : $"Top[{tops}]", tops == 0 ? "Top" : $"Top {tops + 1}", band, bottom + a.Y, false));
+                    if (du < 0) tops++;
+                }
+            }
+            return faces;
+        }
         if (!StripFootings.IsStrip(type) || PathCurve.Of(footing).IsArc || StripFootings.Frame(footing, m) is not { } stem) return [];
         var (s, e) = (Joins.Start(footing), Joins.End(footing));
         var left = (e - s).Normalized().Perp;

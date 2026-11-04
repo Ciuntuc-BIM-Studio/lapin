@@ -66,6 +66,26 @@ Zmiana typu zmienia każdą ścianę tego typu.
 
 **Importuj…**, **Eksportuj CSV** i **Eksportuj JSON**, pod listą typów, przenoszą typy ścian i stropów z jednego projektu do drugiego albo do arkusza kalkulacyjnego i z powrotem: CSV ma jeden wiersz na warstwę (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), wiersze typu jeden po drugim, a średniki i przecinki dziesiętne Excela również są odczytywane. Po wczytaniu typ o tej samej nazwie otrzymuje warstwy z pliku, a każdy inny zostaje utworzony, w jednym kroku do cofnięcia; materiał, którego brakuje w projekcie, jest tworzony pod swoją nazwą. Zestawienie **Układy warstw typów** (Zestawienia → + → Zestawy typów) wymienia każdy typ ściany i stropu z jego oznaczeniem, całkowitą grubością, liczbą elementów, które go używają, i jego warstwami po kolei.
 
+## Profile i bruzdy w ścianach
+
+**Architektura → Profil ściany** (<kbd>WB</kbd>) prowadzi profil wzdłuż lica ściany: gzyms, opaskę, cokół, parapet. **Bruzda w ścianie** (<kbd>RV</kbd>) wycina go w ścianie: bruzdę, fugę cieniową. Wybierz profil i wysokość na pasku wiersza poleceń, a potem kliknij lico ściany. W 3D profil staje na wysokości, którą klikniesz; na rzucie na wpisanej wysokości, po stronie, którą klikniesz. **od góry** mierzy wysokość w dół od korony ściany, dla gzymsu pod okapem. **Profil na zaznaczonych ścianach** i **Bruzda w zaznaczonych ścianach** dodają to samo na każdej zaznaczonej ścianie, na jej zewnętrznym licu.
+
+Profil biegnie przez całą długość lica i przerywa się przy drzwiach i oknach, które by przeciął. Tam, gdzie dwie ściany spotykają się w narożniku i obie mają profil tego samego kształtu na tej samej wysokości na spotykających się licach, oba łączą się na ucios, jeden gzyms wokół narożnika. Zaznacz profil, aby zmienić go we Właściwościach: jego profil, materiał, lico (**Odwróć stronę**), wysokość, odsunięcie od lica, gdzie zaczyna się i kończy wzdłuż ściany i czy przerywa się przy otworach. Właściwości ściany pokazują profile i bruzdy, które na niej są.
+
+Profile i bruzdy idą razem ze swoją ścianą, gdy jest kopiowana, przenoszona na inną kondygnację albo usuwana. Mierzy się je długością i objętością (dla bruzdy objętością wyciętą). W IFC profil to IfcCovering MOLDING, a bruzda to IfcOpeningElement RECESS w jego ścianie; oba wracają takie, jakie były.
+
+![Gzymsy, opaski i bruzda na ścianach zewnętrznych domu](shots/wall-sweeps-3d.webp)
+
+### Profile
+
+**Zarządzaj → Profile** przechowuje profile projektu, kontury, wzdłuż których przeciąga się profile ścian, bruzdy i ławy fundamentowe. **Nowy profil** zaczyna od katalogu z jego wymiarami: prostokąt, gzyms fazowany, gzyms, półwałek, nos parapetu, gzyms z kapinosem; bruzda V, prostokątna lub okrągła; dla ław prostokątna, schodkowa z 2 lub 3 stopniami, ze skośną górą, mimośrodowa, ze ścianą fundamentową. Albo wybierz **Wpisane wierzchołki**: każdy wierzchołek u v w milimetrach, oddzielone średnikiem, a trzecia liczba zamienia bok wychodzący z tego wierzchołka w łuk. **Z narysowanego konturu** odczytuje zamkniętą polilinię lub prostokąt narysowany narzędziami Rysowania i zaznaczony w swoim widoku. Okrąg na podglądzie to punkt wstawienia: dla profilu ściany leży na licu ściany na wysokości profilu, a u biegnie na zewnątrz lica (w głąb ściany dla bruzdy). Gdy zmienisz profil, wszystko, co go używa, zmienia się razem z nim.
+
+![Okno Profile](shots/profiles.webp)
+
+### Okładziny
+
+Okładziny modeluje się warstwami samej ściany, nie profilami. Dodaj warstwę wykończeniową po zewnętrznej stronie typu ściany (kamień, deski, płyty włóknocementowe, ETICS) z jej grubością i materiałem. **Od** i **Do** nadają jej własną wysokość (kamienny cokół do 600, tynk powyżej), a przycisk **warstwy** tej warstwy zmienia jej materiał pasami na wysokości. Dla okładziny odsuniętej od ściany narysuj osobną ścianę na licu (opcja linii **Lico zewnętrzne** narzędzia ściany) z typem zbudowanym z warstw okładziny. Okładzina układana deska po desce (deski pionowe lub poziome, łaty) nie jest jeszcze modelowana.
+
 ## Ściany pod dachem
 
 Ściany na tym samym poziomie co dach same zatrzymują się pod nim i wznoszą się do jego szczytów. Dla ściany na innym poziomie zaznacz ją i wybierz **Architektura → Dołącz do dachu** (<kbd>AR</kbd>), a następnie kliknij dach — lub dowolną inną bryłę, do której ściana ma się wznosić: bryłę Studio, zaimportowany element. Zobacz [Stropy i dachy](floors-roofs.md).

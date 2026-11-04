@@ -30,6 +30,16 @@ Desenhe as fundações no nível **Fundações**, ou dê a elas uma planta próp
 
 Vigas e sapatas se unem sozinhas onde se encontram, um canto em meia-esquadria. Uma viga desenhada de eixo de pilar a eixo de pilar para nas faces dos pilares; o seu comprimento, volume e estribos contam o vão livre entre eles. **Meia-esquadria**, **Topo** e **Inverter** mudam como duas vigas ou duas sapatas se encontram. **Corresponder tipo** (<kbd>MA</kbd>) copia o tipo de um elemento para outros, e **Criar similar** (<kbd>CS</kbd>) começa a desenhar outro elemento do mesmo tipo.
 
+## Sapatas corridas com perfil
+
+Um tipo de sapata corrida é o padrão, um murete com as suas camadas sobre uma sapata, ou qualquer perfil varrido ao longo do eixo da sapata, como os perfis de fundação do Revit. Em **Tipos estruturais → Strip**, escolha **Forma: Perfil** e um perfil: um do catálogo (retangular, escalonada em 2 ou 3 degraus, com a face superior inclinada, excêntrica com o murete num bordo, com murete) com as suas medidas, ou um do projeto (**Gerenciar → Perfis**, onde também pode escrever os seus vértices ou ler um contorno desenhado). O ponto de inserção do perfil fica no eixo da sapata, à cota **Inferior** do tipo.
+
+As sapatas com perfil são retas ou curvas. Duas que se encontram num canto unem-se em meia-esquadria, e uma que termina contra outra entra nela e é cortada pelo seu corpo, de modo que cada degrau encontra o degrau da outra. Plantas, cortes e alçados cortam o corpo varrido. As quantidades dão o seu comprimento, a área da secção e o volume, e as suas faces verticais são as que o Canteiro de obras cofra. Em IFC uma reta é um IfcFooting STRIP_FOOTING cujo corpo é o seu perfil extrudido (um IfcArbitraryClosedProfileDef), cortado pelos planos dos cantos; uma curva vai como as suas faces. Escolha **Padrão** para voltar ao murete sobre sapata.
+
+![Sapatas corridas escalonadas sob uma casa, em meia-esquadria nos cantos](shots/footing-profile-3d.webp)
+
+![Um tipo de sapata corrida com perfil](shots/footing-profile-type.webp)
+
 ## Uma vista estrutural
 
 A disciplina de uma vista decide o que ela mostra. Uma vista de **Estrutura** mostra só os núcleos portantes, sem os acabamentos. Você escolhe a disciplina nas propriedades da vista. Veja [Vistas](views.md).

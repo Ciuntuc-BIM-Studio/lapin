@@ -5,7 +5,7 @@ import { ImportIfcDialog } from './ImportIfcDialog';
 import { toggleGrid, toggleThinLines } from '../../app/display';
 import { measure } from './measure';
 import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Keyboard, Layers, LayoutGrid, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, Trash2, Ungroup, Wand2 } from 'lucide-react';
-import { ElevationIcon, MoveToStoreyIcon, SectionIcon } from '../../icons';
+import { ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
 import { notify } from '../../app/store';
@@ -42,6 +42,7 @@ import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { RemarksDialog } from './remarks/RemarksDialog';
 import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { DisplayQualityDialog } from './DisplayQualityDialog';
+import { ProfilesDialog } from './ProfilesDialog';
 import { SectionsDialog } from './SectionsDialog';
 import { convertToNative } from './convertTools';
 import { GroupSection } from './GroupSection';
@@ -135,6 +136,8 @@ const core: LapinModule = {
         { id: 'manage.location', label: 'Location', icon: MapPin, run: () => useUi.setState({ dialog: 'location' }) },
         { id: 'manage.cutOrder', label: 'Cut order', icon: Scissors, run: () => useUi.setState({ dialog: 'cutOrder' }) },
         { id: 'manage.viewStyles', label: 'View styles', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'viewStyles' }) },
+        // The project's 2D profiles: what wall sweeps, reveals and strip footings are swept with (decision 297).
+        { id: 'manage.profiles', label: 'Profiles', icon: ProfileIcon, run: () => useUi.setState({ dialog: 'profiles' }) },
       ] },
       { label: 'Files', tools: [
         { id: 'manage.links', label: 'Links', icon: Link2, run: () => useUi.setState({ dialog: 'links' }) },
@@ -235,7 +238,7 @@ const core: LapinModule = {
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: { LapinView: sectionGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

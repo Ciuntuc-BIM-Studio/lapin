@@ -66,6 +66,26 @@ Un cambio en un tipo cambia todos los muros de ese tipo.
 
 **Import…**, **Export CSV** y **Export JSON**, bajo la lista de tipos, llevan los tipos de muro y de forjado de un proyecto a otro, o a una hoja de cálculo y de vuelta: el CSV tiene una fila por capa (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), las filas de un tipo seguidas, y también se leen el punto y coma y la coma decimal de Excel. Al importar, un tipo del mismo nombre toma las capas del archivo y los demás se crean, en un solo paso que deshacer; un material que el proyecto no tiene se crea por su nombre. La tabla **Composición de los tipos** (Schedules → + → Type assemblies) lista cada tipo de muro y de forjado con su marca, su espesor total, cuántos elementos lo usan y sus capas en orden.
 
+## Molduras y ranuras de muro
+
+**Arquitectura → Moldura de muro** (<kbd>WB</kbd>) lleva un perfil a lo largo de la cara de un muro: una cornisa, una imposta, un zócalo, un vierteaguas. **Ranura de muro** (<kbd>RV</kbd>) lo corta en el muro: una ranura, una junta de sombra. Elija el perfil y la altura en la barra de la línea de comandos y haga clic en la cara del muro. En 3D la moldura va a la altura en la que hace clic; en planta, a la altura escrita, en el lado en el que hace clic. **desde arriba** mide la altura hacia abajo desde la coronación del muro, para una cornisa bajo el alero. **Moldura en los muros seleccionados** y **Ranura en los muros seleccionados** ponen lo mismo en cada muro seleccionado, en su cara exterior.
+
+Una moldura recorre toda la cara y se interrumpe en las puertas y ventanas que cruzaría. Donde dos muros se encuentran en una esquina y ambos llevan una moldura del mismo perfil a la misma altura en las caras que se encuentran, las dos se unen a inglete, como una sola moldura que dobla la esquina. Seleccione una moldura para cambiarla en Propiedades: su perfil, su material, su cara (**Cambiar de lado**), su altura, su separación de la cara, dónde empieza y dónde termina a lo largo del muro y si se interrumpe en los huecos. Las propiedades de un muro muestran las molduras y ranuras que lleva.
+
+Las molduras y ranuras van con su muro cuando se copia, se mueve a otro nivel o se borra. Se miden por longitud y volumen (en una ranura, el volumen quitado). En IFC una moldura es un IfcCovering MOLDING y una ranura un IfcOpeningElement RECESS en su muro; ambas vuelven como estaban.
+
+![Cornisas, impostas y una ranura en los muros exteriores de una casa](shots/wall-sweeps-3d.webp)
+
+### Perfiles
+
+**Gestionar → Perfiles** guarda los perfiles del proyecto, los contornos con los que se barren las molduras, las ranuras y las zapatas corridas. **Perfil nuevo** parte del catálogo con sus medidas: un rectángulo, una banda achaflanada, una cornisa, una media caña, una nariz de vierteaguas, una banda con goterón; una ranura en V, rectangular o redonda; para zapatas, rectangular, escalonada en 2 o 3 escalones, con la cara superior inclinada, excéntrica, con murete. O elija **Vértices escritos**: cada vértice u v en milímetros, con punto y coma entre ellos, y un tercer número para que el lado que sale de ese vértice sea un arco. **De un contorno dibujado** lee una polilínea cerrada o un rectángulo dibujado con Dibujo y seleccionado en su vista. El círculo de la vista previa es el punto de inserción: en una moldura está en la cara del muro, a la altura de la moldura, con u hacia fuera de la cara (hacia dentro del muro en una ranura). Si cambia un perfil, todo lo que lo usa lo sigue.
+
+![El diálogo Perfiles](shots/profiles.webp)
+
+### Revestimientos
+
+Modele los revestimientos con las capas del propio muro, no con molduras. Añada una capa de acabado en el exterior del tipo de muro (piedra, tablas de madera, fibrocemento, un SATE), con su espesor y su material. **Desde** y **Hasta** le dan una altura propia (un zócalo de piedra hasta 600, revoco encima), y el botón **capas** de la capa cambia su material en franjas a lo largo de su altura. Para un revestimiento separado del muro, dibuje un muro propio sobre la cara (la opción de línea **Cara exterior** de la herramienta de muro) con un tipo hecho de las capas del revestimiento. El revestimiento colocado tabla a tabla (tablas verticales u horizontales, rastreles) todavía no se modela.
+
 ## Muros bajo una cubierta
 
 Los muros del mismo nivel que una cubierta se detienen bajo ella por sí mismos y suben hasta sus hastiales. Para un muro de otro nivel, selecciónelo y elija **Arquitectura → Enlazar a cubierta** (<kbd>AR</kbd>), y luego haga clic en la cubierta — o en cualquier otro cuerpo hasta el que deba subir el muro: un sólido de Studio, un elemento importado. Consulte [Losas y cubiertas](floors-roofs.md).

@@ -106,6 +106,7 @@ public static class StripFootings
 
     public static Entity CreateType(IEdit edit, string? name, IReadOnlyList<LayerSpec> layers, double stemHeight = 1.4, double footingWidth = 0.6, double footingHeight = 0.4, double bottom = -1.8, string concrete = "Reinforced concrete")
     {
+        if (layers.Count == 0) throw new CommandException("A strip foundation needs its layers, or a profile.");
         LayerSets.Validate(layers, "A strip foundation");
         if (!(stemHeight > 0 && footingWidth > 0 && footingHeight > 0)) throw new CommandException("The stem's height and the footing's width and height must be positive.");
         var core = layers.FirstOrDefault(l => l.Core) ?? layers.MaxBy(l => l.Thickness)!;
@@ -120,6 +121,25 @@ public static class StripFootings
     }
 
     public static Entity DefaultType(IEdit edit) => CreateType(edit, null, DefaultLayers);
+
+    /// <summary>
+    /// A strip foundation type of a profile (decision 297): the profile (its id and its copy) swept along the axis, its
+    /// insertion point on the axis at the bottom level; no stem layers.
+    /// </summary>
+    public static Entity CreateProfileType(IEdit edit, string? name, ProfileShape profile, string? profileId, double bottom = -1.8, string concrete = "Reinforced concrete")
+    {
+        var attrs = new JsonObject { ["kind"] = "strip", ["bottom"] = bottom, ["concrete"] = Materials.Ensure(edit, concrete).Id };
+        Profiles.Assign(attrs, profile, profileId);
+        var type = new Entity(edit.NewId(), IfcClass.FootingType, string.IsNullOrWhiteSpace(name) ? $"SF {profile.Name}" : name.Trim(), attrs, "STRIP_FOOTING");
+        edit.Add(type);
+        return type;
+    }
+
+    /// <summary>The profile a strip foundation type is swept with; null for the standard one (a layered stem on a footing).</summary>
+    public static ProfileShape? ProfileOf(IModelView m, Entity type) =>
+        IsStrip(type) && (type.Attrs[Profiles.Key] != null || type.Str(Profiles.IdKey) != null) ? Profiles.Of(m, type) : null;
+
+    static ProfileShape? ProfileOfFooting(IModelView m, Entity footing) => Place.TypeOf(m, footing.Id) is { } t ? ProfileOf(m, t) : null;
 
     public static Entity Add(IEdit edit, IPathElements paths, Entity storey, Vec2 start, Vec2 end, Entity type, JoinStyle style, double rise = 0)
     {
@@ -148,6 +168,7 @@ public static class StripFootings
     /// <summary>The stem as joins see it: its axis and its layers' extent.</summary>
     public static JoinWall? Frame(Entity footing, IModelView m)
     {
+        if (ProfileFrame(footing, m) is { } pf) return pf;
         var bands = Bands(m, footing);
         var (s, e) = (Joins.Start(footing), Joins.End(footing));
         if (bands.Count == 0 || (e - s).Length < 1e-3) return null;
@@ -157,6 +178,7 @@ public static class StripFootings
     /// <summary>The stem's core alone, as the cores' joins see it.</summary>
     static JoinWall? CoreFrame(Entity footing, IModelView m)
     {
+        if (ProfileFrame(footing, m) is { } pf) return pf;
         var bands = LayerSets.BandsOf(m, footing.Id);
         var (s, e) = (Joins.Start(footing), Joins.End(footing));
         if (bands is not { Count: > 0 } || (e - s).Length < 1e-3) return null;
@@ -169,12 +191,23 @@ public static class StripFootings
     static JoinWall? FootingFrame(Entity footing, IModelView m)
     {
         if (Place.TypeOf(m, footing.Id) is not { } type || !IsStrip(type)) return null;
+        if (ProfileFrame(footing, m) is { } pf) return pf;
         var w = type.Num("footingWidth", 0.6);
         return new JoinWall(Joins.Start(footing), Joins.End(footing), -w / 2, w / 2);
     }
 
+    /// <summary>A profile footing as joins see it: its axis, the profile's extent across it.</summary>
+    static JoinWall? ProfileFrame(Entity footing, IModelView m)
+    {
+        if (ProfileOfFooting(m, footing) is not { } p) return null;
+        var (s, e) = (Joins.Start(footing), Joins.End(footing));
+        var (u0, u1, _, _) = p.Bounds;
+        return (e - s).Length < 1e-3 || u1 - u0 < 1e-6 ? null : new JoinWall(s, e, u0, u1);
+    }
+
     public static Solid? Envelope(Entity footing, IModelView m)
     {
+        if (Place.TypeOf(m, footing.Id) is { } pt && ProfileOf(m, pt) is { } profile) return Plain(footing, m, profile, Place.Elevation(m, footing) + pt.Num("bottom", -1.8));
         if (Place.TypeOf(m, footing.Id) is not { } type || !IsStrip(type) || FootingFrame(footing, m) is not { } f) return null;
         var left = (f.End - f.Start).Normalized().Perp;
         var y0 = Math.Min(f.YMin, Frame(footing, m)?.YMin ?? 0);
@@ -188,6 +221,7 @@ public static class StripFootings
     public static ElementGeometry? Geometry(Entity footing, IModelView m, IServices? services)
     {
         if (Place.TypeOf(m, footing.Id) is not { } type || !IsStrip(type)) return new ElementGeometry([], Diagnostics: ["A strip foundation needs its type."]);
+        if (ProfileOf(m, type) is { } profile) return ProfileGeometry(footing, type, profile, m, services);
         var paths = services?.Get<IPathElements>();
         var problems = new List<string>();
         var bottom = Place.Elevation(m, footing) + type.Num("bottom", -1.8);
@@ -238,10 +272,204 @@ public static class StripFootings
         return new ElementGeometry(parts, plan, snaps, problems.Count > 0 ? problems : null);
     }
 
+    /// <summary>
+    /// A profile footing's ends as its joins leave them: the cut there (across the profile's extent), the kind of join, the
+    /// other footing, and whether this one ends against the other's run (a T). An L corner is mitred whatever its style, so
+    /// the profile runs round it unbroken.
+    /// </summary>
+    readonly record struct ProfileEnd(Strips.End End, Entity Other, bool Ending);
+
+    static ProfileEnd?[] ProfileEnds(IModelView m, Entity footing, IPathElements paths, List<string> problems)
+    {
+        var ends = new ProfileEnd?[2];
+        foreach (var r in Joins.Of(m, footing.Id))
+        {
+            if (m.Get(r.Relating) is not { } a || r.Related.Count == 0 || m.Get(r.Related[0]) is not { } b || a.Class != b.Class || !paths.IsPath(a.Class)) continue;
+            if (Frame(a, m) is not { } fa || Frame(b, m) is not { } fb) continue;
+            WallJoin join;
+            try
+            {
+                var style = Joins.StyleOf(r);
+                join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: 'a', Style: style));
+                if (join.Kind == JoinKind.L && style != JoinStyle.Mitre) join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: 'a', Style: JoinStyle.Mitre));
+            }
+            catch (CommandException ex) { problems.Add(ex.Message); continue; }
+            var side = r.Relating == footing.Id ? join.A : join.B;
+            var i = side.Connection switch { Connection.AtStart => 0, Connection.AtEnd => 1, _ => -1 };
+            if (i < 0 || ends[i] != null) continue;
+            var end = i == 0
+                ? new Strips.End(side.Wall.Start, side.Wall.StartCut ?? EndCut.Square, side.Wall.YMin, side.Wall.YMax, join.Kind)
+                : new Strips.End(side.Wall.End, side.Wall.EndCut ?? EndCut.Square, side.Wall.YMin, side.Wall.YMax, join.Kind);
+            ends[i] = new ProfileEnd(end, r.Relating == footing.Id ? b : a, join.Kind == JoinKind.T && !side.RunsThrough);
+        }
+        return ends;
+    }
+
+    static double At(Strips.End e, double y) =>
+        e.YMax - e.YMin < 1e-12 ? e.Cut.Right : e.Cut.Right + (e.Cut.Left - e.Cut.Right) * (y - e.YMin) / (e.YMax - e.YMin);
+
+    /// <summary>The profile swept along a footing's whole axis, no join cutting it: its envelope, and what cuts a footing ending against it.</summary>
+    static Solid? Plain(Entity footing, IModelView m, ProfileShape profile, double bottom)
+    {
+        var c = PathCurve.Of(footing);
+        IReadOnlyList<Vec2> line = c.IsArc ? c.Line(0, c.Length, 0) : [Joins.Start(footing), Joins.End(footing)];
+        return ProfileSweeps.Along(line, profile.Outline(), bottom, tag: "footing");
+    }
+
+    /// <summary>What another footing's body is where one ends against it: its profile, or its sole and stem, along its whole axis.</summary>
+    static List<Solid> PlainBodies(Entity other, IModelView m)
+    {
+        if (Place.TypeOf(m, other.Id) is not { } type || !IsStrip(type)) return [];
+        var bottom = Place.Elevation(m, other) + type.Num("bottom", -1.8);
+        if (ProfileOf(m, type) is { } p) return Plain(other, m, p, bottom) is { } s ? [s] : [];
+        var o = new List<Solid>();
+        var c = PathCurve.Of(other);
+        IReadOnlyList<Vec2> Band(double y0, double y1)
+        {
+            if (c.IsArc) return c.Band(_ => 0, _ => c.Length, y0, y1);
+            var (a, b) = (Joins.Start(other), Joins.End(other));
+            var left = (b - a).Normalized().Perp;
+            return [a + left * y0, b + left * y0, b + left * y1, a + left * y1];
+        }
+        var (fw, fh, sh) = (type.Num("footingWidth", 0.6), type.Num("footingHeight", 0.4), type.Num("stemHeight", 1.4));
+        if (Prism.ExtrudeFootprint(Band(-fw / 2, fw / 2), bottom, fh, "footing") is { } sole) o.Add(sole);
+        if (Frame(other, m) is { } stem && sh > 0 && Prism.ExtrudeFootprint(Band(stem.YMin, stem.YMax), bottom + fh, sh, "stem") is { } st) o.Add(st);
+        return o;
+    }
+
+    /// <summary>
+    /// How far an end ending against another footing's run goes on past that one's face, to its axis: the face's distance
+    /// from the axis across the way this one meets it. Cut there by the other's body, each part of the profile meets the
+    /// other's face at its own height (a top step its top step, a bottom step its bottom step).
+    /// </summary>
+    static double Through(Entity me, Entity other, IModelView m)
+    {
+        if (Frame(other, m) is not { } f) return 0;
+        var mine = (Joins.End(me) - Joins.Start(me)).Normalized();
+        var oc = PathCurve.Of(other);
+        var at = oc.IsArc ? oc.Project(Joins.Start(me)) : 0;
+        var theirs = oc.IsArc ? oc.TangentAt(at) : (f.End - f.Start).Normalized();
+        var origin = oc.IsArc ? oc.PointAt(at) : f.Start;
+        var sin = Math.Abs(Vec2.Cross(mine, theirs));
+        if (sin < 0.1) return 0;
+        // The face on this footing's side: its far end's side of the other's axis.
+        var far = (Joins.Start(me) - origin).Length > (Joins.End(me) - origin).Length ? Joins.Start(me) : Joins.End(me);
+        var face = Vec2.Dot(far - origin, theirs.Perp) >= 0 ? f.YMax : f.YMin;
+        return Math.Abs(face) / sin;
+    }
+
+    /// <summary>
+    /// A profile footing's body (decision 297): its profile swept along its axis, straight or curved, its insertion point
+    /// on the axis at the bottom level. Its ends are cut as its joins say (an L mitred, so two footings of one profile run
+    /// round it as one); one ending against another's run (a T) goes on to that one's far side and is cut by its body, so a
+    /// stepped or sloped profile meets the other's faces wherever they are.
+    /// </summary>
+    static ElementGeometry ProfileGeometry(Entity footing, Entity type, ProfileShape profile, IModelView m, IServices? services)
+    {
+        var paths = services?.Get<IPathElements>();
+        var problems = new List<string>();
+        var bottom = Place.Elevation(m, footing) + type.Num("bottom", -1.8);
+        var outline = profile.Outline();
+        var (u0, u1, _, _) = profile.Bounds;
+        var c = PathCurve.Of(footing);
+        var concrete = type.Str("concrete");
+        Solid? solid;
+        IReadOnlyList<Vec2> footprint;
+        var cutters = new List<Solid>();
+        if (c.IsArc)
+        {
+            var frame = Frame(footing, m)!;
+            var ends = paths != null ? Joins.EndsOf(m, footing, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
+            var (s0, s1) = Strips.Reach(c, frame, ends);
+            solid = ProfileSweeps.Along(c.Line(s0, s1, 0), outline, bottom, tag: "footing");
+            footprint = c.Band(_ => s0, _ => s1, u0, u1);
+        }
+        else
+        {
+            var ends = paths != null ? ProfileEnds(m, footing, paths, problems) : new ProfileEnd?[2];
+            var a = ends[0]?.End.Point ?? Joins.Start(footing);
+            var b = ends[1]?.End.Point ?? Joins.End(footing);
+            var extra = new double[2];
+            for (var k = 0; k < 2; k++)
+                if (ends[k] is { Ending: true } te)
+                {
+                    extra[k] = Through(footing, te.Other, m);
+                    cutters.AddRange(PlainBodies(te.Other, m));
+                }
+            Func<double, double>? Reach(int k) => ends[k] is { } pe ? y => At(pe.End, y) + extra[k] : null;
+            solid = ProfileSweeps.Along([a, b], outline, bottom, startReach: Reach(0), endReach: Reach(1), tag: "footing");
+            var dir = (b - a).Normalized();
+            var left = dir.Perp;
+            var len = (b - a).Length;
+            double R(int k, double y) => Reach(k)?.Invoke(y) ?? 0;
+            footprint = [a + dir * -R(0, u0) + left * u0, a + dir * (len + R(1, u0)) + left * u0, a + dir * (len + R(1, u1)) + left * u1, a + dir * -R(0, u1) + left * u1];
+        }
+        var parts = new List<GeometryPart>();
+        if (solid != null && cutters.Count > 0)
+        {
+            if (services?.Get<ISolidBooleans>() is { } booleans)
+                try { solid = booleans.Difference(solid, cutters, "footing") ?? solid; }
+                catch (InvalidOperationException ex) { problems.Add($"The footing could not be cut where it ends against another ({ex.Message})."); }
+            else problems.Add("Footings ending against another need the boolean library (manifold), missing here: the end is left square.");
+        }
+        if (solid != null) parts.Add(new GeometryPart("Footing", Materials.ColorOf(m, concrete), solid, concrete, "footing"));
+        parts = CutPriorities.Apply(footing, m, services, parts, problems);
+        IReadOnlyList<Vec2> snaps = c.IsArc ? [c.Start, c.End, c.PointAt(c.Length / 2)] : [Joins.Start(footing), Joins.End(footing)];
+        return new ElementGeometry(parts, [new PlanItem("outline", true, footprint)], snaps, problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>
+    /// A straight profile footing in IFC (decision 297): its profile (IfcArbitraryClosedProfileDef) extruded along its axis
+    /// between its ends, each end cut by its join's plane when the cut is not square; null when an end runs into another
+    /// footing (a T, cut by that one's body) or the footing is curved, which go as their faces.
+    /// </summary>
+    public static IfcSweptBody? IfcBody(IModelView m, Entity footing)
+    {
+        if (footing.Class != IfcClass.Footing || Place.TypeOf(m, footing.Id) is not { } type || ProfileOf(m, type) is not { } profile || PathCurve.Of(footing).IsArc) return null;
+        var ends = ProfileEnds(m, footing, FootingPaths.Instance, []);
+        if (ends.Any(e => e is { Ending: true })) return null;
+        var outline = profile.Outline();
+        var a = ends[0]?.End.Point ?? Joins.Start(footing);
+        var b = ends[1]?.End.Point ?? Joins.End(footing);
+        var dir = (b - a).Normalized();
+        var left = dir.Perp;
+        var len = (b - a).Length;
+        var bottom = Place.Elevation(m, footing) + type.Num("bottom", -1.8);
+        double R(int k, double y) => ends[k] is { } pe ? At(pe.End, y) : 0;
+        var e0 = outline.Max(q => R(0, q.X));
+        var e1 = outline.Max(q => R(1, q.X));
+        var clips = new List<IfcClip>();
+        for (var k = 0; k < 2; k++)
+        {
+            var slope = R(k, 1) - R(k, 0);
+            if (Math.Abs(slope) < 1e-9) continue;
+            // The cut line in plan: through the point the axis reaches, along left − dir × slope at the start (+ at the end); its normal out of the body.
+            var at = k == 0 ? a - dir * R(0, 0) : b + dir * R(1, 0);
+            var along = k == 0 ? left - dir * slope : left + dir * slope;
+            var n = along.Normalized().Perp;
+            if (Vec2.Dot(n, k == 0 ? -dir : dir) < 0) n = -n;
+            clips.Add(new IfcClip(at.At(bottom), new Vec3(n.X, n.Y, 0)));
+        }
+        var origin = (a - dir * e0).At(bottom);
+        var sweep = new IfcSweep(outline, [], origin, new Vec3(left.X, left.Y, 0), new Vec3(dir.X, dir.Y, 0), len + e0 + e1);
+        return new IfcSweptBody(sweep, clips, []);
+    }
+
     public static IEnumerable<QuantitySet> Quantities(Entity footing, ElementGeometry? g, IModelView m)
     {
         if (g == null || g.Parts.Count == 0 || Place.TypeOf(m, footing.Id) is not { } type) yield break;
         var length = PathCurve.Of(footing).Length;
+        if (ProfileOf(m, type) is { } profile)
+        {
+            var (u0, u1, v0, v1) = profile.Bounds;
+            yield return new QuantitySet("Qto_FootingBaseQuantities",
+            [
+                new("Length", length, "LENGTH"), new("Width", u1 - u0, "LENGTH"), new("Height", v1 - v0, "LENGTH"),
+                new("CrossSectionArea", profile.Area, "AREA", "Cross section"),
+                new("NetVolume", g.Parts.Sum(p => Measure.Volume(p.Solid)), "VOLUME", "Net volume"),
+            ]);
+            yield break;
+        }
         var fh = type.Num("footingHeight", 0.4);
         yield return new QuantitySet("Qto_FootingBaseQuantities",
         [
@@ -263,6 +491,20 @@ public static class StripFootings
                 yield return new QuantitySet("Lapin_StemLayerQuantities", [new("NetVolume", v, "VOLUME", "Net volume")], part.Key, part.Name, part.Material);
         }
     }
+}
+
+/// <summary>Strip foundations as joins see them, for what has no services at hand (the IFC export's bodies).</summary>
+sealed class FootingPaths : IPathElements
+{
+    public static readonly FootingPaths Instance = new();
+    public bool IsPath(string ifcClass) => ifcClass == IfcClass.Footing;
+    public JoinWall? FrameOf(Entity entity, IModelView model) => StripFootings.Frame(entity, model);
+}
+
+/// <summary>Profile footings written to IFC as their profile extruded (decision 297).</summary>
+sealed class FootingIfcBodies : IIfcSweptBodies
+{
+    public IfcSweptBody? BodyOf(IModelView model, Entity element) => StripFootings.IfcBody(model, element);
 }
 
 /// <summary>A step of a pad footing, bottom up: its length (along its direction), width and height.</summary>

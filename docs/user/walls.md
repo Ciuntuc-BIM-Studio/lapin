@@ -66,6 +66,26 @@ A change to a type changes every wall of that type.
 
 **Import…**, **Export CSV** and **Export JSON**, under the list of types, take the wall and floor types out of a project and into another, or into a spreadsheet and back: the CSV has one row a layer (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), a type's rows one after another, and Excel's semicolons and decimal commas are read too. Brought in, a type of the same name is changed to the file's layers and any other is made, in one step to undo; a material the project lacks is made by its name. The **Type assemblies** schedule (Schedules → + → Type assemblies) lists every wall and floor type with its mark, its total thickness, how many elements use it, and its layers in order.
 
+## Wall sweeps and reveals
+
+**Architecture → Wall sweep** (<kbd>WB</kbd>) runs a profile along a wall's face: a cornice, a band, a plinth, a sill. **Wall reveal** (<kbd>RV</kbd>) cuts one into the wall: a groove, a shadow gap. Choose the profile and the height in the command line's bar, then click the wall's face. In 3D the sweep goes at the height you click; in a plan it goes at the height typed, on the side you click. **from the top** measures the height down from the wall's top, for a cornice under the eaves. **Sweep on selected walls** and **Reveal on selected walls** put the same on every wall selected, on its exterior face.
+
+A sweep runs the face's whole length and stops at the doors and windows it would cross. Where two walls meet in a corner and both carry a sweep of the same profile at the same height on the faces that meet, the two are mitred into one another, one moulding round the corner. Select a sweep to change it in Properties: its profile, its material, its face (**Flip side**), its height, its offset from the face, where it starts and ends along the wall, and whether it stops at openings. A wall's properties list the sweeps and reveals it carries.
+
+Sweeps and reveals go with their wall when it is copied, moved to another level or deleted. They are measured by length and volume (for a reveal, the volume taken out). In IFC a sweep is an IfcCovering MOLDING and a reveal an IfcOpeningElement RECESS in its wall; both come back as they were.
+
+![Cornices, bands and a reveal on a house's outer walls](shots/wall-sweeps-3d.webp)
+
+### Profiles
+
+**Manage → Profiles** holds the project's profiles, the outlines that sweeps, reveals and strip footings are swept with. **New profile** starts from the catalogue with its sizes: a rectangle, a chamfered band, a cornice, a half-round, a sill nose, a band with a drip; a V-groove, a rectangular or a round groove; for footings, rectangular, stepped in 2 or 3 steps, with a sloped top, eccentric, with a stem. Or choose **Typed corners**: each corner u v in millimetres, a semicolon between them, a third number to make the side from that corner an arc. **From a drafted outline** reads a closed polyline or rectangle drawn with Drafting and selected in its view. The circle in the preview is the insertion point: for a sweep it lies on the wall's face at the sweep's height, u going out of the face (into the wall for a reveal). Change a profile and everything that uses it follows.
+
+![The Profiles dialog](shots/profiles.webp)
+
+### Cladding
+
+Model cladding with the wall's own layers, not with sweeps. Add a finish layer on the outside of the wall type (stone, timber boards, fibre cement, an ETICS), with its thickness and material. **From** and **Up to** give it a height of its own (a stone plinth up to 600, render above it), and the layer's **layers** button changes its material in bands up its height. For cladding that stands apart from the wall, draw a wall of its own on the face (the wall tool's line option **Exterior face**) with a type made of the cladding's layers. Cladding laid board by board (vertical or horizontal boards, battens) is not modelled yet.
+
 ## Walls under a roof
 
 Walls on the same level as a roof stop under it by themselves and rise to its gables. For a wall on another level, select it and choose **Architecture → Attach to roof** (<kbd>AR</kbd>), then click the roof — or any other body the wall should rise to: a Studio solid, an imported element. See [Floors and roofs](floors-roofs.md).

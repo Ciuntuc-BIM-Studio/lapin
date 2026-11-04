@@ -66,6 +66,26 @@ Eine Änderung an einem Typ ändert jede Wand dieses Typs.
 
 **Import…**, **Export CSV** und **Export JSON** unter der Typenliste bringen die Wand- und Deckentypen aus einem Projekt in ein anderes oder in eine Tabellenkalkulation und zurück: die CSV hat eine Zeile je Schicht (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), die Zeilen eines Typs hintereinander, und auch Excels Semikolons und Dezimalkommas werden gelesen. Beim Import bekommt ein gleichnamiger Typ die Schichten der Datei, die übrigen werden angelegt, in einem Schritt rückgängig zu machen; ein Material, das dem Projekt fehlt, wird nach seinem Namen angelegt. Die Liste **Typenaufbauten** (Schedules → + → Type assemblies) zeigt jeden Wand- und Deckentyp mit Kennzeichen, Gesamtdicke, der Zahl der Bauteile, die ihn verwenden, und seinen Schichten der Reihe nach.
 
+## Wandprofile und Wandnuten
+
+**Architektur → Wandprofil** (<kbd>WB</kbd>) führt ein Profil an der Fläche einer Wand entlang: ein Gesims, ein Band, einen Sockel, eine Fensterbank. **Wandnut** (<kbd>RV</kbd>) schneidet es in die Wand: eine Nut, eine Schattenfuge. Wählen Sie Profil und Höhe in der Leiste der Befehlszeile und klicken Sie dann auf die Wandfläche. In 3D sitzt das Profil in der angeklickten Höhe; im Grundriss in der eingegebenen Höhe, auf der angeklickten Seite. **von oben** misst die Höhe von der Wandkrone nach unten, für ein Gesims unter der Traufe. **Profil an den ausgewählten Wänden** und **Nut in den ausgewählten Wänden** setzen dasselbe an jede ausgewählte Wand, auf ihre Außenseite.
+
+Ein Profil läuft über die ganze Länge der Fläche und ist an den Türen und Fenstern unterbrochen, die es kreuzen würde. Wo zwei Wände in einer Ecke zusammentreffen und beide auf den zusammentreffenden Flächen ein Profil gleicher Form in gleicher Höhe tragen, werden die beiden auf Gehrung ineinandergeführt, ein Gesims um die Ecke. Wählen Sie ein Profil aus, um es in den Eigenschaften zu ändern: sein Profil, sein Material, seine Fläche (**Seite wechseln**), seine Höhe, seinen Abstand von der Fläche, wo es entlang der Wand beginnt und endet und ob es an Öffnungen unterbrochen ist. Die Eigenschaften einer Wand zeigen die Profile und Nuten, die sie trägt.
+
+Profile und Nuten gehen mit ihrer Wand, wenn sie kopiert, in ein anderes Geschoss verschoben oder gelöscht wird. Sie werden nach Länge und Volumen gemessen (bei einer Nut das herausgenommene Volumen). In IFC ist ein Profil eine IfcCovering MOLDING und eine Nut ein IfcOpeningElement RECESS in seiner Wand; beide kommen so zurück, wie sie waren.
+
+![Gesimse, Bänder und eine Nut an den Außenwänden eines Hauses](shots/wall-sweeps-3d.webp)
+
+### Profile
+
+**Verwalten → Profile** enthält die Profile des Projekts, die Umrisse, mit denen Wandprofile, Nuten und Streifenfundamente geführt werden. **Neues Profil** beginnt mit einem Katalogprofil und seinen Maßen: ein Rechteck, ein gefastes Band, ein Gesims, ein Halbrund, eine Fensterbanknase, ein Band mit Tropfnase; eine V-Nut, eine Rechteck- oder eine Rundnut; für Fundamente rechteckig, in 2 oder 3 Stufen, mit geneigter Oberseite, exzentrisch, mit Sockelwand. Oder wählen Sie **Eingegebene Eckpunkte**: jeder Eckpunkt u v in Millimetern, dazwischen ein Semikolon, eine dritte Zahl macht die Seite ab diesem Eckpunkt zu einem Bogen. **Aus einer gezeichneten Kontur** liest eine geschlossene Polylinie oder ein Rechteck, mit Zeichnen gezeichnet und in seiner Ansicht ausgewählt. Der Kreis in der Vorschau ist der Einfügepunkt: bei einem Wandprofil liegt er auf der Wandfläche in der Höhe des Profils, u zeigt aus der Fläche heraus (bei einer Nut in die Wand hinein). Ändern Sie ein Profil, folgt alles, was es verwendet.
+
+![Der Dialog Profile](shots/profiles.webp)
+
+### Bekleidungen
+
+Bekleidungen modellieren Sie mit den Schichten der Wand selbst, nicht mit Profilen. Fügen Sie dem Wandtyp außen eine Ausbauschicht hinzu (Naturstein, Holzschalung, Faserzement, ein WDVS), mit ihrer Dicke und ihrem Material. **Von** und **Bis** geben ihr eine eigene Höhe (ein Natursteinsockel bis 600, darüber Putz), und die Schaltfläche **Schichten** der Schicht wechselt ihr Material in Bändern über die Höhe. Für eine Bekleidung, die von der Wand absteht, zeichnen Sie eine eigene Wand auf die Fläche (die Linienoption **Außenseite** des Wandwerkzeugs), mit einem Typ aus den Schichten der Bekleidung. Eine Schalung, Brett für Brett verlegt (senkrechte oder waagerechte Bretter, Latten), wird noch nicht modelliert.
+
 ## Wände unter einem Dach
 
 Wände auf derselben Ebene wie ein Dach enden von selbst unter ihm und steigen bis zu seinen Giebeln. Bei einer Wand auf einer anderen Ebene wählen Sie sie aus und wählen **Architektur → An Dach anbinden** (<kbd>AR</kbd>), dann klicken Sie auf das Dach – oder auf einen anderen Körper, bis zu dem die Wand reichen soll: einen Studio-Volumenkörper, ein importiertes Element. Siehe [Decken und Dächer](floors-roofs.md).

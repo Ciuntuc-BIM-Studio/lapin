@@ -66,6 +66,26 @@ Una modifica a un tipo cambia tutti i muri di quel tipo.
 
 **Importa…**, **Esporta CSV** ed **Esporta JSON**, sotto l’elenco dei tipi, portano i tipi di muro e di solaio da un progetto a un altro, oppure in un foglio di calcolo e ritorno: il CSV ha una riga per strato (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), le righe di un tipo una dopo l’altra, e vengono letti anche il punto e virgola e la virgola decimale di Excel. All’importazione, un tipo con lo stesso nome prende gli strati del file e gli altri vengono creati, in un unico passo da annullare; un materiale che manca al progetto viene creato con il suo nome. L’abaco **Stratigrafie dei tipi** (Abachi → + → Stratigrafie dei tipi) elenca ogni tipo di muro e di solaio con la sua sigla, il suo spessore totale, quanti elementi lo usano e i suoi strati in ordine.
 
+## Modanature e scanalature di muro
+
+**Architettura → Modanatura di muro** (<kbd>WB</kbd>) fa correre un profilo lungo la faccia di un muro: una cornice, una fascia, uno zoccolo, un davanzale. **Scanalatura di muro** (<kbd>RV</kbd>) lo incide nel muro: una scanalatura, una fuga d'ombra. Scegli il profilo e l'altezza nella barra della riga di comando, poi fai clic sulla faccia del muro. In 3D la modanatura va all'altezza su cui fai clic; in pianta all'altezza digitata, dal lato su cui fai clic. **dall'alto** misura l'altezza verso il basso dalla sommità del muro, per una cornice sotto la gronda. **Modanatura sui muri selezionati** e **Scanalatura sui muri selezionati** mettono la stessa cosa su ogni muro selezionato, sulla sua faccia esterna.
+
+Una modanatura corre per tutta la lunghezza della faccia e si interrompe alle porte e alle finestre che attraverserebbe. Dove due muri si incontrano in un angolo ed entrambi portano una modanatura dello stesso profilo alla stessa altezza sulle facce che si incontrano, le due si uniscono a quartabuono, un'unica cornice che gira l'angolo. Seleziona una modanatura per cambiarla nelle Proprietà: il suo profilo, il suo materiale, la sua faccia (**Cambia lato**), la sua altezza, la distanza dalla faccia, dove inizia e finisce lungo il muro e se si interrompe alle aperture. Le proprietà di un muro elencano le modanature e le scanalature che porta.
+
+Modanature e scanalature seguono il loro muro quando viene copiato, spostato su un altro livello o eliminato. Si misurano in lunghezza e volume (per una scanalatura, il volume tolto). In IFC una modanatura è un IfcCovering MOLDING e una scanalatura un IfcOpeningElement RECESS nel suo muro; entrambe tornano com'erano.
+
+![Cornici, fasce e una scanalatura sui muri esterni di una casa](shots/wall-sweeps-3d.webp)
+
+### Profili
+
+**Gestisci → Profili** contiene i profili del progetto, i contorni con cui si estrudono modanature, scanalature e travi di fondazione. **Nuovo profilo** parte dal catalogo con le sue misure: un rettangolo, una fascia smussata, una cornice, un mezzo tondo, un naso di davanzale, una fascia con gocciolatoio; una scanalatura a V, rettangolare o tonda; per le fondazioni, rettangolare, a 2 o 3 gradoni, con la faccia superiore inclinata, eccentrica, con muretto. Oppure scegli **Vertici digitati**: ogni vertice u v in millimetri, separati da un punto e virgola, e un terzo numero per fare del lato che parte da quel vertice un arco. **Da un contorno disegnato** legge una polilinea chiusa o un rettangolo disegnato con Disegno e selezionato nella sua vista. Il cerchio nell'anteprima è il punto di inserimento: per una modanatura sta sulla faccia del muro all'altezza della modanatura, con u verso l'esterno della faccia (dentro il muro per una scanalatura). Se cambi un profilo, tutto ciò che lo usa lo segue.
+
+![La finestra Profili](shots/profiles.webp)
+
+### Rivestimenti
+
+Modella i rivestimenti con gli strati del muro stesso, non con le modanature. Aggiungi uno strato di finitura all'esterno del tipo di muro (pietra, doghe di legno, fibrocemento, un cappotto), con il suo spessore e il suo materiale. **Da** e **Fino a** gli danno un'altezza propria (uno zoccolo in pietra fino a 600, intonaco sopra), e il pulsante **strati** dello strato ne cambia il materiale a fasce lungo l'altezza. Per un rivestimento staccato dal muro, disegna un muro a sé sulla faccia (l'opzione di linea **Faccia esterna** dello strumento muro) con un tipo fatto degli strati del rivestimento. Il rivestimento posato doga per doga (doghe verticali o orizzontali, listelli) non è ancora modellato.
+
 ## Muri sotto un tetto
 
 I muri sullo stesso livello di un tetto si fermano da soli sotto di esso e salgono fino ai suoi timpani. Per un muro su un altro livello, selezionalo e scegli **Architettura → Collega al tetto** (<kbd>AR</kbd>), poi fai clic sul tetto, o su qualsiasi altro corpo fino a cui il muro deve salire: un solido di Studio, un elemento importato. Vedi [Solai e tetti](floors-roofs.md).

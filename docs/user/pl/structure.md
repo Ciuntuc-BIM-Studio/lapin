@@ -30,6 +30,16 @@ Rysuj fundamenty na poziomie **Fundamenty** albo daj im osobny rzut.
 
 Belki i fundamenty łączą się same tam, gdzie się spotykają, narożniki na ucios. Belka narysowana od osi słupa do osi słupa kończy się na licach słupów; jej długość, objętość i strzemiona liczą się w świetle między nimi. **Na ukos**, **Na styk** i **Zamień** zmieniają sposób, w jaki spotykają się dwie belki lub dwa fundamenty. **Dopasuj typ** (<kbd>MA</kbd>) kopiuje typ jednego elementu na inne, a **Utwórz podobny** (<kbd>CS</kbd>) zaczyna rysowanie kolejnego elementu tego samego typu.
 
+## Ławy fundamentowe z profilem
+
+Typ ławy fundamentowej to typ standardowy, czyli ściana fundamentowa z warstwami na ławie, albo dowolny profil przeciągnięty wzdłuż osi ławy, jak profile fundamentów w Revit. W **Typy konstrukcyjne → Strip** wybierz **Kształt: Profil** i profil: jeden z katalogu (prostokątna, schodkowa z 2 lub 3 stopniami, ze skośną górą, mimośrodowa ze ścianą przy jednej krawędzi, ze ścianą fundamentową) z jego wymiarami, albo jeden z profili projektu (**Zarządzaj → Profile**, gdzie można też wpisać jego wierzchołki lub odczytać narysowany kontur). Punkt wstawienia profilu leży na osi ławy, na poziomie **Dół** typu.
+
+Ławy z profilem mogą być proste albo łukowe. Dwie spotykające się w narożniku łączą się na ucios, a ława kończąca się na innej wchodzi w nią i jest przycinana jej bryłą, więc każdy stopień spotyka stopień drugiej. Rzuty, przekroje i elewacje przecinają przeciągniętą bryłę. Ilości podają jej długość, pole przekroju i objętość, a jej pionowe boki to lica, które deskują Roboty pomocnicze. W IFC prosta ława to IfcFooting STRIP_FOOTING, którego bryła to wyciągnięty profil (IfcArbitraryClosedProfileDef) przycięty płaszczyznami narożników; łukowa zapisywana jest jako jej ściany. Wybierz **Standardowa**, aby wrócić do ściany fundamentowej na ławie.
+
+![Schodkowe ławy fundamentowe pod domem, na ucios w narożnikach](shots/footing-profile-3d.webp)
+
+![Typ ławy fundamentowej z profilem](shots/footing-profile-type.webp)
+
 ## Widok konstrukcyjny
 
 Branża widoku decyduje o tym, co on pokazuje. Widok **Konstrukcja** pokazuje tylko nośne rdzenie, bez wykończeń. Branżę wybierasz we właściwościach widoku. Zobacz [Widoki](views.md).

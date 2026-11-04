@@ -41,6 +41,7 @@ import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
 import { RoomFinishesDialog } from './RoomFinishes';
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
+import { WallSweepSection, WallSweepsOnWall, hasSweeps, revealSelected, sweepSelected, wallReveal, wallSweep } from './WallSweeps';
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
 import { colorLegend, room, roomColors, roomOutline, roomTag, updateRooms } from './roomTools';
 import { RoomTagDialog } from './RoomTagDialog';
@@ -374,6 +375,8 @@ const architecture: LapinModule = {
     groups: [
       { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
       { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
+      // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
+      { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
@@ -398,6 +401,8 @@ const architecture: LapinModule = {
   hotbar: [wall, door, window_, slab, roof],
   propertySections: [
     { id: 'wall', label: 'Wall', classes: ['IfcWall'], component: WallLayers },
+    { id: 'wallSweeps', label: 'Sweeps and reveals', classes: ['IfcWall'], shows: hasSweeps, component: WallSweepsOnWall },
+    { id: 'wallSweep', label: 'Wall sweep', classes: ['LapinWallSweep'], component: WallSweepSection },
     { id: 'joinery', label: 'Door or window', classes: ['IfcDoor', 'IfcWindow'], component: JoinerySection },
     { id: 'wallOpening', label: 'Opening', classes: ['IfcOpeningElement'], shows: isWallOpening, component: WallOpeningSection },
     { id: 'slab', label: 'Floor', classes: ['IfcSlab'], component: SlabSection },

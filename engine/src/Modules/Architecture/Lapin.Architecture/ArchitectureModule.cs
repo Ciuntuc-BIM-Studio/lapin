@@ -191,6 +191,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Stairs.UnderStairs.Register(r);
         Ceilings.Register(r);
         Skirtings.Register(r);
+        WallSweeps.Register(r);
         RoomFinishes.Register(r);
         TypeExchange.Register(r);
 

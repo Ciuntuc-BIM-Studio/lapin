@@ -66,6 +66,26 @@ Un changement apporté à un type change chaque mur de ce type.
 
 **Import…**, **Export CSV** et **Export JSON**, sous la liste des types, font passer les types de murs et de dalles d’un projet à un autre, ou vers un tableur et retour : le CSV a une ligne par couche (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), les lignes d’un type à la suite, et les points-virgules et virgules décimales d’Excel sont lus aussi. À l’import, un type du même nom prend les couches du fichier et les autres sont créés, en une seule étape à annuler ; un matériau que le projet n’a pas est créé d’après son nom. La nomenclature **Compositions des types** (Schedules → + → Type assemblies) liste chaque type de mur et de dalle avec son repère, son épaisseur totale, le nombre d’éléments qui l’utilisent et ses couches dans l’ordre.
 
+## Moulures et engravures de mur
+
+**Architecture → Moulure de mur** (<kbd>WB</kbd>) fait courir un profil le long de la face d'un mur : une corniche, un bandeau, un soubassement, un appui. **Engravure de mur** (<kbd>RV</kbd>) le creuse dans le mur : une rainure, un joint creux. Choisissez le profil et la hauteur dans la barre de la ligne de commande, puis cliquez sur la face du mur. En 3D la moulure se place à la hauteur cliquée ; en plan, à la hauteur saisie, du côté cliqué. **depuis le haut** mesure la hauteur vers le bas depuis le sommet du mur, pour une corniche sous l'avant-toit. **Moulure sur les murs sélectionnés** et **Engravure sur les murs sélectionnés** posent la même chose sur chaque mur sélectionné, sur sa face extérieure.
+
+Une moulure court sur toute la longueur de la face et s'interrompt aux portes et fenêtres qu'elle traverserait. Là où deux murs se rencontrent en angle et portent tous deux une moulure du même profil à la même hauteur sur les faces qui se rejoignent, les deux se rejoignent en onglet, une seule moulure qui tourne l'angle. Sélectionnez une moulure pour la modifier dans les Propriétés : son profil, son matériau, sa face (**Changer de côté**), sa hauteur, son décalage par rapport à la face, où elle commence et finit le long du mur, et si elle s'interrompt aux ouvertures. Les propriétés d'un mur listent les moulures et engravures qu'il porte.
+
+Moulures et engravures suivent leur mur quand il est copié, déplacé vers un autre niveau ou supprimé. Elles sont métrées en longueur et en volume (pour une engravure, le volume retiré). En IFC, une moulure est un IfcCovering MOLDING et une engravure un IfcOpeningElement RECESS dans son mur ; les deux reviennent telles qu'elles étaient.
+
+![Corniches, bandeaux et une engravure sur les murs extérieurs d'une maison](shots/wall-sweeps-3d.webp)
+
+### Profils
+
+**Gérer → Profils** contient les profils du projet, les contours selon lesquels sont balayés les moulures, les engravures et les semelles filantes. **Nouveau profil** part du catalogue avec ses dimensions : un rectangle, un bandeau chanfreiné, une corniche, un demi-rond, un nez d'appui, un bandeau avec goutte d'eau ; une rainure en V, rectangulaire ou ronde ; pour les semelles, rectangulaire, à 2 ou 3 redans, à dessus incliné, excentrée, avec voile. Ou choisissez **Sommets saisis** : chaque sommet u v en millimètres, séparés par un point-virgule, un troisième nombre faisant du côté qui part de ce sommet un arc. **À partir d'un contour dessiné** lit une polyligne fermée ou un rectangle dessiné avec Dessin et sélectionné dans sa vue. Le cercle de l'aperçu est le point d'insertion : pour une moulure, il est sur la face du mur à la hauteur de la moulure, u vers l'extérieur de la face (dans le mur pour une engravure). Modifiez un profil, et tout ce qui l'utilise suit.
+
+![La boîte de dialogue Profils](shots/profiles.webp)
+
+### Bardages
+
+Modélisez les bardages avec les couches du mur lui-même, pas avec des moulures. Ajoutez une couche de finition à l'extérieur du type de mur (pierre, bardage bois, fibres-ciment, une ITE), avec son épaisseur et son matériau. **De** et **Jusqu’à** lui donnent une hauteur propre (un soubassement en pierre jusqu'à 600, de l'enduit au-dessus), et le bouton **couches** de la couche change son matériau par bandes sur sa hauteur. Pour un bardage qui se tient à distance du mur, dessinez un mur à part sur la face (l'option de ligne **Face extérieure** de l'outil mur) avec un type fait des couches du bardage. Le bardage posé lame par lame (lames verticales ou horizontales, tasseaux) n'est pas encore modélisé.
+
 ## Murs sous un toit
 
 Les murs du même niveau qu’un toit s’arrêtent d’eux-mêmes dessous et montent jusqu’à ses pignons. Pour un mur d’un autre niveau, sélectionnez-le et choisissez **Architecture → Attacher au toit** (<kbd>AR</kbd>), puis cliquez le toit — ou tout autre corps jusqu’auquel le mur doit monter : un solide Studio, un élément importé. Voir [Dalles et toits](floors-roofs.md).

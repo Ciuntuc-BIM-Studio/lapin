@@ -25,6 +25,7 @@ public sealed class StructureModule : ILapinModule
 
         r.Service<IStoreyLevels>(new Levels());
         r.Service<IElementFaces>(new StructureFaces());
+        r.Service<IIfcSweptBodies>(new FootingIfcBodies());
         r.Geometry(IfcClass.Column, Columns.Geometry);
         r.Geometry(IfcClass.Beam, Beams.Geometry);
         r.Geometry(IfcClass.Footing, (f, m, s) => IsPad(m, f) ? PadFootings.Geometry(f, m, s) : StripFootings.Geometry(f, m, s));
@@ -128,7 +129,9 @@ public sealed class StructureModule : ILapinModule
 
         // ------------------------------------------------------------ foundations
         r.Command("createStripType", "New strip foundation type", (ctx, a) =>
-            new JsonObject
+            Profiles.FromArgs(ctx, a) is { } profile
+            ? new JsonObject { ["id"] = StripFootings.CreateProfileType(ctx, (string?)a["name"], profile.Shape, profile.Id, Json.Number(a["bottom"]) ?? -1.8).Id }
+            : new JsonObject
             {
                 ["id"] = StripFootings.CreateType(ctx, (string?)a["name"], LayerSets.Parse(a["layers"], "A strip foundation"),
                     Json.Number(a["stemHeight"]) ?? 1.4, Json.Number(a["footingWidth"]) ?? 0.6, Json.Number(a["footingHeight"]) ?? 0.4, Json.Number(a["bottom"]) ?? -1.8).Id,

@@ -66,6 +66,26 @@ Uma mudança em um tipo muda todas as paredes desse tipo.
 
 **Importar…**, **Exportar CSV** e **Exportar JSON**, sob a lista de tipos, levam os tipos de parede e de piso de um projeto para outro, ou para uma planilha e de volta: o CSV tem uma linha por camada (Kind, Type, Mark, Layer, Material, Thickness (mm), Core, From, To), as linhas de um tipo uma depois da outra, e os pontos e vírgulas e as vírgulas decimais do Excel também são lidos. Ao entrar, um tipo de mesmo nome passa a ter as camadas do arquivo e qualquer outro é criado, em um único passo para desfazer; um material que o projeto não tem é criado pelo nome. A tabela **Composições dos tipos** (Tabelas → + → Composições de tipos) lista cada tipo de parede e de piso com a marca, a espessura total, quantos elementos o usam e as camadas em ordem.
 
+## Molduras e frisos de parede
+
+**Arquitetura → Moldura de parede** (<kbd>WB</kbd>) faz correr um perfil ao longo da face de uma parede: uma cornija, uma faixa, um rodapé exterior, um peitoril. **Friso de parede** (<kbd>RV</kbd>) recorta-o na parede: um friso, uma junta de sombra. Escolha o perfil e a altura na barra da linha de comandos e clique na face da parede. Em 3D a moldura fica à altura clicada; em planta, à altura escrita, do lado clicado. **a partir do topo** mede a altura para baixo a partir do topo da parede, para uma cornija sob o beiral. **Moldura nas paredes selecionadas** e **Friso nas paredes selecionadas** põem o mesmo em cada parede selecionada, na sua face exterior.
+
+Uma moldura percorre toda a face e interrompe-se nas portas e janelas que atravessaria. Onde duas paredes se encontram num canto e ambas têm uma moldura do mesmo perfil à mesma altura nas faces que se encontram, as duas unem-se em meia-esquadria, uma só cornija que dá a volta ao canto. Selecione uma moldura para a alterar nas Propriedades: o seu perfil, o seu material, a sua face (**Trocar de lado**), a sua altura, o afastamento da face, onde começa e acaba ao longo da parede e se se interrompe nos vãos. As propriedades de uma parede mostram as molduras e os frisos que tem.
+
+Molduras e frisos acompanham a sua parede quando é copiada, movida para outro nível ou apagada. São medidos em comprimento e volume (num friso, o volume retirado). Em IFC uma moldura é um IfcCovering MOLDING e um friso um IfcOpeningElement RECESS na sua parede; ambos voltam como estavam.
+
+![Cornijas, faixas e um friso nas paredes exteriores de uma casa](shots/wall-sweeps-3d.webp)
+
+### Perfis
+
+**Gerenciar → Perfis** guarda os perfis do projeto, os contornos com que se varrem molduras, frisos e sapatas corridas. **Novo perfil** parte do catálogo com as suas medidas: um retângulo, uma faixa chanfrada, uma cornija, uma meia-cana, um nariz de peitoril, uma faixa com pingadeira; um friso em V, retangular ou redondo; para sapatas, retangular, escalonada em 2 ou 3 degraus, com a face superior inclinada, excêntrica, com murete. Ou escolha **Vértices escritos**: cada vértice u v em milímetros, com ponto e vírgula entre eles, e um terceiro número para fazer do lado que sai desse vértice um arco. **De um contorno desenhado** lê uma polilinha fechada ou um retângulo desenhado com Desenho e selecionado na sua vista. O círculo na pré-visualização é o ponto de inserção: numa moldura fica na face da parede, à altura da moldura, com u para fora da face (para dentro da parede num friso). Se alterar um perfil, tudo o que o usa acompanha-o.
+
+![A caixa de diálogo Perfis](shots/profiles.webp)
+
+### Revestimentos
+
+Modele os revestimentos com as camadas da própria parede, não com molduras. Acrescente uma camada de acabamento no exterior do tipo de parede (pedra, réguas de madeira, fibrocimento, um ETICS), com a sua espessura e o seu material. **De** e **Até** dão-lhe uma altura própria (um soco de pedra até 600, reboco por cima), e o botão **camadas** da camada muda o seu material em faixas ao longo da altura. Para um revestimento afastado da parede, desenhe uma parede própria sobre a face (a opção de linha **Face externa** da ferramenta de parede) com um tipo feito das camadas do revestimento. O revestimento assente régua a régua (réguas verticais ou horizontais, ripas) ainda não é modelado.
+
 ## Paredes sob um telhado
 
 As paredes no mesmo nível de um telhado param sob ele sozinhas e sobem até as empenas. Para uma parede em outro nível, selecione-a e escolha **Arquitetura → Anexar ao telhado** (<kbd>AR</kbd>), depois clique no telhado — ou em qualquer outro corpo até o qual a parede deve subir: um sólido do Studio, um elemento importado. Veja [Pisos e telhados](floors-roofs.md).
