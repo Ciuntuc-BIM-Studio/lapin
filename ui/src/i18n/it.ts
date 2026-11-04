@@ -1098,7 +1098,7 @@ export const IT: Record<string, string> = {
   "own pattern": "motivo proprio",
   "not hatched": "senza retino",
   "Hatch angle": "Angolo del retino",
-  "Show floor finish hatch": "Mostra il retino della finitura del pavimento",
+  "Floor hatch": "Retino pavimento",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "Le piante retinano la finitura del pavimento del locale come dice il suo tipo (una pianta vista dal basso, quella del soffitto)",
   "Floor finish hatches": "Retini delle finiture dei pavimenti",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "Le piante retinano le finiture dei pavimenti dei locali come dicono i loro tipi (una pianta vista dal basso, quelle dei soffitti)",

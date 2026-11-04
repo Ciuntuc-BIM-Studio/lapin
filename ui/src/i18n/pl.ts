@@ -1097,7 +1097,7 @@ export const PL: Record<string, string> = {
   "own pattern": "własny wzór",
   "not hatched": "bez kreskowania",
   "Hatch angle": "Kąt kreskowania",
-  "Show floor finish hatch": "Pokaż kreskowanie wykończenia podłogi",
+  "Floor hatch": "Kreskowanie podłogi",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "Rzuty kreskują wykończenie podłogi pomieszczenia, jak mówi jego typ (rzut widziany od dołu: wykończenie sufitu)",
   "Floor finish hatches": "Kreskowania wykończeń podłóg",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "Rzuty kreskują wykończenia podłóg pomieszczeń, jak mówią ich typy (rzut widziany od dołu: wykończenia sufitów)",

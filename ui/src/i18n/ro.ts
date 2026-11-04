@@ -1094,7 +1094,7 @@ export const RO: Record<string, string> = {
   "own pattern": "model propriu",
   "not hatched": "fără hașură",
   "Hatch angle": "Unghiul hașurii",
-  "Show floor finish hatch": "Arată hașura finisajului pardoselii",
+  "Floor hatch": "Hașură pardoseală",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "Planurile hașurează finisajul pardoselii camerei cum spune tipul lui (un plan văzut de jos, pe al tavanului)",
   "Floor finish hatches": "Hașurile finisajelor de pardoseală",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "Planurile hașurează finisajele pardoselilor camerelor cum spun tipurile lor (un plan văzut de jos, pe ale tavanelor)",

@@ -1099,7 +1099,7 @@ export const FR: Record<string, string> = {
   "own pattern": "motif propre",
   "not hatched": "sans hachure",
   "Hatch angle": "Angle de hachure",
-  "Show floor finish hatch": "Afficher la hachure du revêtement de sol",
+  "Floor hatch": "Hachure du sol",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "Les plans hachurent le revêtement de sol de la pièce comme le dit son type (un plan vu de dessous, celui du plafond)",
   "Floor finish hatches": "Hachures des revêtements de sol",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "Les plans hachurent les revêtements de sol des pièces comme le disent leurs types (un plan vu de dessous, ceux des plafonds)",

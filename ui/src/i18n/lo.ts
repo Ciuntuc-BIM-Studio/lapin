@@ -1152,7 +1152,7 @@ export const LO: Record<string, string> = {
   "own pattern": "ລາຍຂອງມັນເອງ",
   "not hatched": "ບໍ່ມີລາຍແຮັດ",
   "Hatch angle": "ມຸມຂອງລາຍແຮັດ",
-  "Show floor finish hatch": "ສະແດງລາຍແຮັດຂອງວັດສະດຸປູພື້ນ",
+  "Floor hatch": "ລາຍແຮັດພື້ນ",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "ແຜນຜັງແຮັດວັດສະດຸປູພື້ນຂອງຫ້ອງຕາມທີ່ປະເພດຂອງມັນບອກ (ແຜນຜັງທີ່ເບິ່ງຈາກລຸ່ມ, ຂອງເພດານ)",
   "Floor finish hatches": "ລາຍແຮັດຂອງວັດສະດຸປູພື້ນ",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "ແຜນຜັງແຮັດວັດສະດຸປູພື້ນຂອງຫ້ອງຕ່າງໆຕາມທີ່ປະເພດຂອງມັນບອກ (ແຜນຜັງທີ່ເບິ່ງຈາກລຸ່ມ, ຂອງເພດານ)",

@@ -1097,7 +1097,7 @@ export const DE: Record<string, string> = {
   "own pattern": "eigenes Muster",
   "not hatched": "keine Schraffur",
   "Hatch angle": "Schraffurwinkel",
-  "Show floor finish hatch": "Schraffur des Bodenbelags zeigen",
+  "Floor hatch": "Bodenschraffur",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "Grundrisse schraffieren den Bodenbelag des Raums, wie sein Typ sagt (ein Grundriss von unten den der Decke)",
   "Floor finish hatches": "Schraffuren der Bodenbeläge",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "Grundrisse schraffieren die Bodenbeläge der Räume, wie ihre Typen sagen (ein Grundriss von unten die der Decken)",

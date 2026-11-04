@@ -1097,7 +1097,7 @@ export const PT: Record<string, string> = {
   "own pattern": "padrão próprio",
   "not hatched": "sem tracejado",
   "Hatch angle": "Ângulo do tracejado",
-  "Show floor finish hatch": "Mostrar o tracejado do acabamento do piso",
+  "Floor hatch": "Tracejado do piso",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "As plantas tracejam o acabamento do piso do compartimento como diz o seu tipo (uma planta vista de baixo, o do teto)",
   "Floor finish hatches": "Tracejados dos acabamentos de piso",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "As plantas tracejam os acabamentos de piso dos compartimentos como dizem os seus tipos (uma planta vista de baixo, os dos tetos)",

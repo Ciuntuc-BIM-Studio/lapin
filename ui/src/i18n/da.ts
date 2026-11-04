@@ -1092,7 +1092,7 @@ export const DA: Record<string, string> = {
   "own pattern": "eget mønster",
   "not hatched": "ingen skravering",
   "Hatch angle": "Skraveringsvinkel",
-  "Show floor finish hatch": "Vis gulvbelægningens skravering",
+  "Floor hatch": "Gulvskravering",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "Planer skraverer rummets gulvbelægning, som dens type siger (en plan set nedefra loftets)",
   "Floor finish hatches": "Skraveringer af gulvbelægninger",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "Planer skraverer rummenes gulvbelægninger, som deres typer siger (en plan set nedefra loftenes)",

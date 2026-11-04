@@ -1098,7 +1098,7 @@ export const ES: Record<string, string> = {
   "own pattern": "patrón propio",
   "not hatched": "sin trama",
   "Hatch angle": "Ángulo de la trama",
-  "Show floor finish hatch": "Mostrar la trama del acabado del suelo",
+  "Floor hatch": "Trama del suelo",
   "Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)": "Las plantas traman el acabado del suelo del local como dice su tipo (una planta vista desde abajo, el del techo)",
   "Floor finish hatches": "Tramas de acabados de suelo",
   "Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)": "Las plantas traman los acabados de suelo de los locales como dicen sus tipos (una planta vista desde abajo, los de los techos)",

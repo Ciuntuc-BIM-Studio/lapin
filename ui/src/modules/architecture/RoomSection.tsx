@@ -61,7 +61,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dd><RoomFinishField node={node} /></dd>
         {typeof node.props.finishType === 'string' && (
           <>
-            <dt title="Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)">Show floor finish hatch</dt>
+            <dt title="Plans hatch the room's floor finish as its type says (a plan seen from below, its ceiling's)">Floor hatch</dt>
             <dd><input type="checkbox" data-field="room-finish-hatch" checked={node.props.finishHatch !== false} onChange={(e) => update('finishHatch', e.target.checked ? null : false)} /></dd>
           </>
         )}
