@@ -169,6 +169,22 @@ public static class Slabs
         return Prism.ExtrudeFootprint(contour, top + bottom, section.Max(b => b.To) - bottom, "slab");
     }
 
+    /// <summary>The area a layer of no thickness covers: the net area of the next layer with a thickness towards the core (the core always has one).</summary>
+    static double? ZeroLayerArea(IModelView m, Entity slab, ElementGeometry g, IReadOnlyList<(double From, double To, string? Material, string Name, int Index)> section, int i)
+    {
+        if (LayerSets.BandsOf(m, slab.Id)?.FirstOrDefault(b => b.Core) is not { Core: true } coreBand) return null;
+        var core = coreBand.Index;
+        var step = i < core ? 1 : -1;
+        for (var j = i + step; j >= 0 && j < section.Count; j += step)
+        {
+            var (from, to, _, _, index) = section[j];
+            if (to - from <= 1e-9) continue;
+            var v = g.Parts.Where(p => p.Key == $"layer:{index}").Sum(p => Measure.Volume(p.Solid));
+            return v > 0 ? v / (to - from) : null;
+        }
+        return null;
+    }
+
     public static IEnumerable<QuantitySet> Quantities(Entity slab, ElementGeometry? g, IModelView m)
     {
         if (g == null || g.Parts.Count == 0) yield break;
@@ -186,8 +202,16 @@ public static class Slabs
             new("GrossVolume", area * width, "VOLUME", "Gross volume"),
             new("NetVolume", net, "VOLUME", "Net volume"),
         ]);
-        foreach (var (from, to, material, name, index) in section)
+        for (var i = 0; i < section.Count; i++)
         {
+            var (from, to, material, name, index) = section[i];
+            // A layer of no thickness (a membrane, paint; decision 291): the area of the layer it lies on (the next one with a thickness towards the core), no volume.
+            if (to - from <= 1e-9)
+            {
+                if (ZeroLayerArea(m, slab, g, section, i) is { } za)
+                    yield return new QuantitySet("Lapin_SlabLayerQuantities", [new("Width", 0, "LENGTH"), new("NetArea", za, "AREA", "Net area"), new("NetVolume", 0, "VOLUME", "Net volume")], $"layer:{index}", name, material);
+                continue;
+            }
             var part = g.Parts.FirstOrDefault(p => p.Key == $"layer:{index}");
             if (part == null) continue;
             var v = Measure.Volume(part.Solid);

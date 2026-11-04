@@ -47,6 +47,8 @@ Un tip de perete e un set de straturi, de la fața exterioară la cea interioar�
 
 Un strat altul decât miezul poate și să-și schimbe materialul pe înălțime: butonul **straturi** de la capătul rândului lui adaugă o bucată (faianță, 2100 implicit), de la baza stratului în sus; mai adaugi pentru o bandă (vopsea până la 900, faianță până la 1500), iar deasupra ultimei bucăți stratul continuă în materialul lui până sus. Fiecare bucată e desenată, tăiată în plan și secțiuni și măsurată în materialul ei.
 
+Un strat altul decât miezul poate avea grosimea 0, pentru un material prea subțire ca să fie modelat, dar care trebuie măsurat: o hidroizolație, o barieră de vapori, vopseaua. Nu face niciun solid; planurile și secțiunile îl desenează ca o linie groasă întreruptă acolo unde stă între două straturi (pe o față, linia feței e chiar a lui), desenul din Alcătuirile tipurilor îl numește ca pe celelalte, iar măsurătoarea lui e pe suprafață: fața stratului pe care stă, fără goluri, în cantitățile peretelui și în antemăsurătoarea pe materiale.
+
 ![Un strat de tencuială cu faianță până la 2100 și tencuiala deasupra](shots/wall-layer-parts.webp)
 
 ![Tipuri de pereți: straturile unui perete de cărămidă](shots/wall-types.webp)

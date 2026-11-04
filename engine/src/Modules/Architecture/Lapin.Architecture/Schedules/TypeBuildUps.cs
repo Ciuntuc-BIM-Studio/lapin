@@ -28,8 +28,8 @@ public static class TypeBuildUps
     {
         public readonly Dictionary<string, Pen> Pens = [];
         Pen Get(string key, Func<Pen> make) => Pens.TryGetValue(key, out var p) ? p : Pens[key] = make();
-        public void Line(Vec2 a, Vec2 b, double width, string layer = "SCHEDULE-SYMBOLS") =>
-            Get($"{layer}:{width}", () => new Pen(layer, "#000000", width, null, null)).Segments.Add((a, b));
+        public void Line(Vec2 a, Vec2 b, double width, string layer = "SCHEDULE-SYMBOLS", double[]? dash = null) =>
+            Get($"{layer}:{width}{(dash == null ? "" : ":dash")}", () => new Pen(layer, "#000000", width, null, dash)).Segments.Add((a, b));
         public void Fill(IReadOnlyList<Vec2> loop, string colour) => Get($"f:{colour}", () => new Pen("SCHEDULE-FILL", null, 0, colour, null)).Loops.Add(loop);
         public void Hatch(Vec2 a, Vec2 b) => Get("hatch", () => new Pen("SCHEDULE-HATCH", "#000000", ThinPen, null, null)).Segments.Add((a, b));
         public void Text(Vec2 at, string text, double size, bool bold = false, string anchor = "start", double angle = 0) =>
@@ -95,6 +95,8 @@ public static class TypeBuildUps
                 foreach (var l in c.Layers)
                 {
                     var t = l.Thickness * k;
+                    // A layer of no thickness (a membrane, paint; decision 291) has no band: its line is drawn below.
+                    if (!(t > 0)) { bounds.Add(y); continue; }
                     IReadOnlyList<Vec2> loop = [new(x0, y), new(x1, y), new(x1, y + t), new(x0, y + t)];
                     var look = MaterialGraphics.Resolve(l.MaterialEntity, "section", l.MaterialEntity == null ? l.Material : null);
                     var pattern = look.Hatch is { } hn ? HatchLibrary.Find(hn, patterns) : null;
@@ -116,9 +118,15 @@ public static class TypeBuildUps
                 // The cut's outer faces and the core's heavier, the layers' joints lighter; the strip's ends broken off thin.
                 for (var i = 0; i < bounds.Count; i++)
                 {
+                    // A joint a layer of no thickness lies on is drawn once, as that layer (below).
+                    if (i > 0 && i < bounds.Count - 1 && (c.Layers[i - 1].Thickness <= 0 || c.Layers[i].Thickness <= 0)) continue;
                     var heavy = i == 0 || i == bounds.Count - 1 || (i > 0 && c.Layers[i - 1].Core) != (i < c.Layers.Count && c.Layers[i].Core);
                     s.Line(new Vec2(x0, bounds[i]), new Vec2(x1, bounds[i]), heavy ? CutPen : LayerPen);
                 }
+                // A layer of no thickness inside the build-up: a heavy dashed line where it lies, as a section draws a membrane; on a face, the face's line is its own.
+                for (var i = 0; i < c.Layers.Count; i++)
+                    if (c.Layers[i].Thickness <= 0 && bounds[i] > top + 1e-9 && bounds[i] < y - 1e-9)
+                        s.Line(new Vec2(x0, bounds[i]), new Vec2(x1, bounds[i]), CutPen, dash: [3, 1.5]);
                 s.Line(new Vec2(x0, top), new Vec2(x0, y), ThinPen);
                 s.Line(new Vec2(x1, top), new Vec2(x1, y), ThinPen);
 

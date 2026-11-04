@@ -6,7 +6,7 @@ summary: Desenezi plăci și acoperișuri după contur, alegi forma și streași
 
 ## Plăci
 
-Alege **Arhitectură → Placă** (<kbd>SB</kbd>), apoi dă clic în colțurile conturului. Închide conturul pe primul punct sau apasă <kbd>Enter</kbd>. Și placa e făcută din straturi, setate în **Arhitectură → Tipuri de plăci**.
+Alege **Arhitectură → Placă** (<kbd>SB</kbd>), apoi dă clic în colțurile conturului. Închide conturul pe primul punct sau apasă <kbd>Enter</kbd>. Și placa e făcută din straturi, setate în **Arhitectură → Tipuri de plăci**. Un strat al unui tip de placă poate avea grosimea 0 (o hidroizolație, vopseaua): nu construiește nimic, e desenat ca o linie în secțiuni și e măsurat pe suprafața plăcii.
 
 Ca să schimbi conturul, selectează placa și trage de colțuri. **Gol în placă** (<kbd>SH</kbd>) taie o gaură în placă, pentru o scară sau un ghen.
 

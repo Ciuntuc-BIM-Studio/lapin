@@ -47,6 +47,8 @@ Um tipo de parede é um conjunto de camadas, da face externa à face interna. Ca
 
 Uma camada que não é o núcleo também pode mudar de material na altura: o botão **camadas** no fim da sua linha adiciona uma peça (azulejos, 2100 por padrão), da base da camada para cima; adicione mais para uma faixa (pintura até 900, azulejos até 1500), e acima da última peça a camada continua no seu próprio material até o topo. Cada peça é desenhada, cortada em planta e em cortes e medida no seu próprio material.
 
+Uma camada que não é o núcleo pode ter espessura 0, para um material fino demais para modelar mas que precisa ser medido: uma impermeabilização, uma barreira de vapor, a pintura. Ela não forma nenhum sólido; as plantas e os cortes a desenham como uma linha grossa tracejada onde ela fica entre duas camadas (numa face, a linha da face é a dela), o desenho de Composições dos tipos a nomeia como as outras, e ela é medida por área: a face da camada sobre a qual fica, descontadas as aberturas, nas quantidades da parede e no levantamento de quantidades por material.
+
 ![Uma camada de reboco com azulejos até 2100 e o reboco acima](shots/wall-layer-parts.webp)
 
 ![Tipos de parede: as camadas de uma parede de tijolos](shots/wall-types.webp)

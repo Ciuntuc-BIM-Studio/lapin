@@ -6,7 +6,7 @@ summary: Tegn dæk og tage efter deres omrids, vælg et tags form og kanter, og 
 
 ## Dæk
 
-Vælg **Arkitektur → Dæk** (<kbd>SB</kbd>), og klik derefter på hjørnerne i omridset. Luk omridset på det første punkt, eller tryk på <kbd>Enter</kbd>. Et dæk består også af lag, som indstilles under **Arkitektur → Dæktyper**.
+Vælg **Arkitektur → Dæk** (<kbd>SB</kbd>), og klik derefter på hjørnerne i omridset. Luk omridset på det første punkt, eller tryk på <kbd>Enter</kbd>. Et dæk består også af lag, som indstilles under **Arkitektur → Dæktyper**. Et lag i en dæktype kan have tykkelsen 0 (en fugtspærre, maling): det bygger intet, tegnes som en linje i snit og måles efter dækkets areal.
 
 Vil du ændre omridset, så markér dækket og træk i dets hjørner. **Dækåbning** (<kbd>SH</kbd>) skærer et hul i et dæk, til en trappe eller en skakt.
 

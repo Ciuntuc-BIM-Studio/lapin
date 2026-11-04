@@ -425,7 +425,8 @@ public static class Openings
         {
             if (r.Mode == "none") return [(0, null), (0, null)];
             if (r.Mode == "material") { var id = MaterialNamed(m, r.Material); return [(Math.Max(0, r.Thickness), id), (Math.Max(0, r.Thickness), id)]; }
-            var bands = Walls.Section(m, wall);
+            // A layer of no thickness (paint, a membrane; decision 291) lines nothing: the face's layer is the outermost with a thickness.
+            var bands = Walls.Section(m, wall).Where(b => b.To - b.From > 1e-9).ToList();
             if (bands.Count < 2) return [(0, null), (0, null)];
             // The exterior is the wall's right face's layer, the left's when the side is flipped (by place: a flipped wall's first layer is on its left).
             var (right, left) = (bands.MinBy(b => b.From), bands.MaxBy(b => b.To));

@@ -37,7 +37,8 @@ public static class LayerSets
             var material = ((string?)l["material"])?.Trim();
             var thickness = Json.Number(l["thickness"]);
             if (string.IsNullOrEmpty(material)) throw new CommandException("Every layer needs a material.");
-            if (thickness is not > 0) throw new CommandException("Every layer needs a thickness.");
+            // Zero is a layer of no thickness worth modelling (a membrane, paint, decision 291): drawn as a line, measured by area.
+            if (thickness is not >= 0) throw new CommandException("Every layer needs a thickness.");
             // How high the layer goes over the element's base (null: the whole height).
             var from = Json.Number(l["from"]) is { } f && f > 0 ? f : (double?)null;
             var to = Json.Number(l["to"]) is { } t && t > 0 ? t : (double?)null;
@@ -67,8 +68,11 @@ public static class LayerSets
     public static void Validate(IReadOnlyList<LayerSpec> layers, string what = "A type")
     {
         if (layers.Count == 0) throw new CommandException($"{what} needs at least one layer.");
-        if (layers.Any(l => !(l.Thickness > 0))) throw new CommandException("Every layer needs a thickness.");
+        if (layers.Any(l => !(l.Thickness >= 0) || double.IsInfinity(l.Thickness))) throw new CommandException("Every layer needs a thickness.");
         if (layers.Count(l => l.Core) > 1) throw new CommandException("Only one layer can be the core.");
+        // A layer of thickness 0 (a membrane, paint; decision 291) is kept, but the core and the build-up need a body.
+        if (!layers.Any(l => l.Thickness > 0)) throw new CommandException($"{what} needs at least one layer with a thickness.");
+        if (layers.Any(l => l.Core && !(l.Thickness > 0))) throw new CommandException("The core needs a thickness.");
     }
 
     /// <summary>The layers with their materials, made when the project has none of that name.</summary>

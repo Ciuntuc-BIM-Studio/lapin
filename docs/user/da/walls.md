@@ -47,6 +47,8 @@ En vægtype er et sæt lag, fra yderside til inderside. Hvert lag har et materia
 
 Et lag, der ikke er kernen, kan også skifte materiale op ad sin højde: knappen **lag** for enden af dets række tilføjer et stykke (fliser, 2100 som standard), fra lagets bund og op; tilføj flere for et bånd (maling til 900, fliser til 1500), og over det sidste stykke fortsætter laget i sit eget materiale til toppen. Hvert stykke tegnes, snittes i plan og snit og måles i sit eget materiale.
 
+Et andet lag end kernen kan have tykkelsen 0, for et materiale, der er for tyndt til at modellere, men skal måles: en fugtspærre, en dampspærre, maling. Det danner intet legeme; planer og snit tegner det som en kraftig stiplet linje, hvor det ligger mellem to lag (på en flade er fladens linje dets egen), tegningen i Typeopbygninger navngiver det som de andre, og det måles i areal: siden af det lag, det ligger på, fratrukket åbninger, i væggens mængder og i mængdeudtræk efter materiale.
+
 ![Et pudslag med fliser til 2100 og pudsen ovenover](shots/wall-layer-parts.webp)
 
 ![Vægtyper: lagene i en murstensvæg](shots/wall-types.webp)

@@ -52,13 +52,21 @@ public sealed record RoomFinishSpec(string Name, List<FinishLayer>? Floor = null
         try { s = node?.Deserialize(ArchitectureJson.Default.RoomFinishSpec); }
         catch (JsonException) { throw new CommandException("The room finish cannot be read."); }
         if (s is null || string.IsNullOrWhiteSpace(s.Name)) throw new CommandException("A room finish needs a name.");
+        // A thickness of 0 is a layer measured by its area (decision 291); one not given at all is still refused.
+        if (node is JsonObject spec)
+            foreach (var (key, what) in new[] { ("floor", "floor"), ("walls", "walls"), ("ceiling", "ceiling") })
+                if (spec.FirstOrDefault(kv => string.Equals(kv.Key, key, StringComparison.OrdinalIgnoreCase)).Value is JsonArray given)
+                    foreach (var l in given)
+                        if (l is JsonObject lo && !lo.Any(kv => string.Equals(kv.Key, "thickness", StringComparison.OrdinalIgnoreCase) && kv.Value is JsonValue))
+                            throw new CommandException($"Every layer of the {what} needs a thickness.");
         List<FinishLayer>? Check(List<FinishLayer>? layers, string what)
         {
             if (layers is not { Count: > 0 }) return null;
             foreach (var l in layers)
             {
                 if (string.IsNullOrWhiteSpace(l.Material)) throw new CommandException($"Every layer of the {what} needs a material.");
-                if (!(l.Thickness > 0 && l.Thickness < 1)) throw new CommandException($"Every layer of the {what} needs a thickness.");
+                // Zero is a layer measured by its area only (paint, a membrane; decision 291).
+                if (!(l.Thickness >= 0 && l.Thickness < 1)) throw new CommandException($"Every layer of the {what} needs a thickness.");
                 foreach (var p in l.Parts ?? [])
                 {
                     if (!(p.Height > 0)) throw new CommandException($"Every piece of a layer of the {what} needs a height.");
@@ -413,9 +421,10 @@ public static class RoomFinishes
             for (var i = 0; i < floor.Count; i++)
             {
                 var l = floor[i];
-                Add(l.Material, l.Material, Slab(outer, holes, top - l.Thickness, l.Thickness, "floor"), $"floor:{i}");
+                // A layer of no thickness (paint, a membrane; decision 291) builds nothing: it is measured by its area only.
+                if (l.Thickness > 0) Add(l.Material, l.Material, Slab(outer, holes, top - l.Thickness, l.Thickness, "floor"), $"floor:{i}");
                 gross.Add((i, l.Material, l.Thickness, o.GrossArea, -1));
-                foreach (var t in thresholds) Add(l.Material, l.Material, Prism.ExtrudeFootprint(Polygon2.EnsureCcw(t), top - l.Thickness, l.Thickness, "threshold"), $"floor:{i}");
+                if (l.Thickness > 0) foreach (var t in thresholds) Add(l.Material, l.Material, Prism.ExtrudeFootprint(Polygon2.EnsureCcw(t), top - l.Thickness, l.Thickness, "threshold"), $"floor:{i}");
                 top -= l.Thickness;
             }
         }
@@ -427,7 +436,7 @@ public static class RoomFinishes
             for (var i = 0; i < ceiling.Count; i++)
             {
                 var l = ceiling[i];
-                Add(l.Material, l.Material, Slab(outer, holes, at - l.Thickness, l.Thickness, "ceiling"), $"ceiling:{i}");
+                if (l.Thickness > 0) Add(l.Material, l.Material, Slab(outer, holes, at - l.Thickness, l.Thickness, "ceiling"), $"ceiling:{i}");
                 gross.Add((i, l.Material, l.Thickness, o.GrossArea, -1));
                 at -= l.Thickness;
             }
@@ -466,7 +475,8 @@ public static class RoomFinishes
                 {
                     if (at >= z1 - 1e-9) break;
                     var top = Math.Min(z1, at + p.Height);
-                    if (p.Material.Length > 0 && top - at > 1e-9)
+                    var thick = (p.Thickness ?? l.Thickness) > 0;
+                    if (p.Material.Length > 0 && top - at > 1e-9 && thick)
                         foreach (var ring in Rings(d, d + (p.Thickness ?? l.Thickness), at, top - at))
                         {
                             gross.Add((i, p.Material, p.Thickness ?? l.Thickness, 0, Measure.Volume(ring)));
@@ -482,7 +492,7 @@ public static class RoomFinishes
                     {
                         gross.Add((i, p.Material, p.Thickness ?? l.Thickness, o.NetPerimeter * (top - at), 0));
                         // The reveals of the doors and windows lined too, from the room's face to the frame, this piece where it reaches.
-                        foreach (var lining in linings)
+                        foreach (var lining in thick ? linings : [])
                             foreach (var box in lining.Boxes(d, d + (p.Thickness ?? l.Thickness), at, top, top >= z1 - 1e-9))
                             {
                                 Add(p.Material, p.Material, box, $"walls:{i}");
@@ -496,17 +506,32 @@ public static class RoomFinishes
         }
         var g = new ElementGeometry(parts, [], [.. outer], problems.Count > 0 ? problems : null);
         // The measures, by layer and material: the gross as laid out, the net as built (what the openings left).
-        Built.AddOrUpdate(g, gross.GroupBy(x => (x.Layer, x.Material)).Select(gr =>
+        var measures = gross.GroupBy(x => (x.Layer, x.Material)).Select(gr =>
         {
             var id = Mat(gr.Key.Material);
             var v = parts.Where(q => q.Key == $"{part}:{gr.Key.Layer}" && q.Material == id).Sum(q => Measure.Volume(q.Solid));
             var t = gr.First().Thickness;
             var area = gr.Sum(x => x.Area);
+            if (!(t > 0)) return new FinishMeasure(part, gr.Key.Layer, gr.Key.Material, 0, area, double.NaN, 0);
             // A floor's or a ceiling's net is what is built; the walls' is their gross less what the openings took out of it.
             var lined = reveals.Where(x => x.Layer == gr.Key.Layer && x.Material == gr.Key.Material).Sum(x => x.Volume);
             var net = gr.Any(x => x.Uncut < 0) ? (t > 0 ? v / t : 0) : Math.Max(0, area - (gr.Sum(x => x.Uncut) - (v - lined)) / t) + lined / t;
             return new FinishMeasure(part, gr.Key.Layer, gr.Key.Material, t, area, net, v, t > 0 ? lined / t : 0);
-        }).ToList());
+        }).ToList();
+        // A layer of no thickness (decision 291): its net as the layer it lies on sees it (a floor's the one under it, the walls'
+        // and a ceiling's the one before it), that layer's net over its gross times its own gross; its own gross when it lies alone.
+        var below = part == "floor" ? 1 : -1;
+        for (var k = 0; k < measures.Count; k++)
+        {
+            if (!double.IsNaN(measures[k].Net)) continue;
+            var x = measures[k];
+            List<FinishMeasure> On(int layer) => measures.Where(y => y.Layer == layer && y.Thickness > 0).ToList();
+            var maxLayer = measures.Max(y => y.Layer);
+            var on = Enumerable.Range(1, maxLayer + 1).SelectMany(n => new[] { x.Layer + below * n, x.Layer - below * n }).Select(On).FirstOrDefault(l => l.Count > 0);
+            var ratio = on is { Count: > 0 } && on.Sum(y => y.Gross) > 1e-9 ? on.Sum(y => y.Net) / on.Sum(y => y.Gross) : 1;
+            measures[k] = x with { Net = x.Gross * ratio };
+        }
+        Built.AddOrUpdate(g, measures);
         return g;
     }
 

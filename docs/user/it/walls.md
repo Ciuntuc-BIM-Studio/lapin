@@ -47,6 +47,8 @@ Un tipo di muro è un insieme di strati, dalla faccia esterna alla faccia intern
 
 Uno strato diverso dal nucleo può anche cambiare materiale lungo la sua altezza: il pulsante **strati** alla fine della sua riga aggiunge un pezzo (piastrelle, 2100 per impostazione predefinita), dalla base dello strato in su; aggiungine altri per una fascia (pittura fino a 900, piastrelle fino a 1500), e sopra l’ultimo pezzo lo strato prosegue nel suo materiale fino in cima. Ogni pezzo è disegnato, tagliato in pianta e in sezione e misurato nel suo materiale.
 
+Uno strato diverso dal nucleo può avere spessore 0, per un materiale troppo sottile da modellare ma che va misurato: una guaina impermeabile, una barriera al vapore, la pittura. Non forma alcun solido; piante e sezioni lo disegnano come una linea spessa tratteggiata dove sta tra due strati (su una faccia, la linea della faccia è la sua), il disegno delle Stratigrafie dei tipi lo nomina come gli altri, e si misura a superficie: la faccia dello strato su cui poggia, al netto delle aperture, nelle quantità del muro e nel computo per materiale.
+
 ![Uno strato di intonaco con piastrelle fino a 2100 e l’intonaco sopra](shots/wall-layer-parts.webp)
 
 ![Tipi di muro: gli strati di un muro in laterizio](shots/wall-types.webp)

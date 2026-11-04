@@ -6,7 +6,7 @@ summary: Desenhe pisos e telhados pelo contorno, escolha a forma e as bordas de 
 
 ## Pisos
 
-Escolha **Arquitetura → Piso** (<kbd>SB</kbd>) e clique nos cantos do contorno. Feche o contorno no primeiro ponto ou pressione <kbd>Enter</kbd>. Um piso também é feito de camadas, definidas em **Arquitetura → Tipos de piso**.
+Escolha **Arquitetura → Piso** (<kbd>SB</kbd>) e clique nos cantos do contorno. Feche o contorno no primeiro ponto ou pressione <kbd>Enter</kbd>. Um piso também é feito de camadas, definidas em **Arquitetura → Tipos de piso**. Uma camada de um tipo de piso pode ter espessura 0 (uma impermeabilização, a pintura): ela não constrói nada, é desenhada como uma linha nos cortes e é medida pela área do piso.
 
 Para mudar o contorno, selecione o piso e arraste os cantos. **Abertura no piso** (<kbd>SH</kbd>) corta um furo no piso, para uma escada ou um shaft.
 

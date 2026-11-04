@@ -47,6 +47,8 @@ Un type de mur est un ensemble de couches, de la face extérieure à la face int
 
 Une couche autre que le noyau peut aussi changer de matériau sur sa hauteur : le bouton **couches** au bout de sa ligne ajoute un morceau (carrelage, 2100 par défaut), depuis le bas de la couche vers le haut ; ajoutez-en d’autres pour une bande (peinture jusqu’à 900, carrelage jusqu’à 1500), et au-dessus du dernier morceau la couche continue dans son propre matériau jusqu’en haut. Chaque morceau est dessiné, coupé en plan et en coupe, et métré dans son propre matériau.
 
+Une couche autre que le noyau peut avoir une épaisseur de 0, pour un matériau trop fin pour être modélisé mais qu’il faut métrer : une étanchéité, un pare-vapeur, une peinture. Elle ne forme aucun solide ; les plans et les coupes la dessinent en trait épais discontinu là où elle se trouve entre deux couches (sur une face, le trait de la face est le sien), le dessin des Compositions des types la nomme comme les autres, et elle est métrée en surface : la face de la couche sur laquelle elle repose, ouvertures déduites, dans les quantités du mur et dans le métré par matériau.
+
 ![Une couche d’enduit avec du carrelage jusqu’à 2100 et l’enduit au-dessus](shots/wall-layer-parts.webp)
 
 ![Types de murs : les couches d’un mur en brique](shots/wall-types.webp)

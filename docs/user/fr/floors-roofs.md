@@ -6,7 +6,7 @@ summary: Dessinez dalles et toits par leur contour, choisissez la forme et les r
 
 ## Dalles
 
-Choisissez **Architecture → Dalle** (<kbd>SB</kbd>), puis cliquez les angles de son contour. Fermez le contour sur le premier point, ou appuyez sur <kbd>Enter</kbd>. Une dalle est elle aussi faite de couches, définies dans **Architecture → Types de dalles**.
+Choisissez **Architecture → Dalle** (<kbd>SB</kbd>), puis cliquez les angles de son contour. Fermez le contour sur le premier point, ou appuyez sur <kbd>Enter</kbd>. Une dalle est elle aussi faite de couches, définies dans **Architecture → Types de dalles**. Une couche d’un type de dalle peut avoir une épaisseur de 0 (une étanchéité, une peinture) : elle ne construit rien, est dessinée en trait dans les coupes et est métrée à la surface de la dalle.
 
 Pour changer le contour, sélectionnez la dalle et faites glisser ses angles. **Trémie de dalle** (<kbd>SH</kbd>) perce un trou dans une dalle, pour un escalier ou une gaine.
 

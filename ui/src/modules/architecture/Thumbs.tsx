@@ -27,7 +27,12 @@ function Layers({ type, across }: { type: NodeDto; across: boolean }) {
     <svg className="thumb-svg" viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
       {layers.map((l, i) => {
         const d = (l.thickness / total) * span;
-        const r = across
+        // A layer of no thickness (a membrane, paint): a dashed line where it lies, as the drawings show it.
+        const r = d <= 0
+          ? (across
+            ? <line key={i} x1={at} y1={8} x2={at} y2={H - 8} stroke="var(--ink)" strokeWidth={1.2} strokeDasharray="3 1.5" />
+            : <line key={i} x1={10} y1={at} x2={W - 10} y2={at} stroke="var(--ink)" strokeWidth={1.2} strokeDasharray="3 1.5" />)
+          : across
           ? <rect key={i} x={at} y={8} width={d} height={H - 16} fill={materialColor({ nodes, relations }, l.material)} stroke="var(--ink)" strokeWidth={0.6} />
           : <rect key={i} x={10} y={at} width={W - 20} height={d} fill={materialColor({ nodes, relations }, l.material)} stroke="var(--ink)" strokeWidth={0.6} />;
         at += d;

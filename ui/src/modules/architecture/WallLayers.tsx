@@ -37,7 +37,8 @@ export function WallLayers({ node }: { node: NodeDto }) {
       {layers.length > 0 && (
         <>
           <div className="layer-bar" title="Right face → left face">
-            {shown.map((l, i) => <span key={i} style={{ flex: l.thickness, background: materialColor(model, l.material) }} title={materialName(model, l.material)} />)}
+            {/* A layer of no thickness (a membrane, paint) as a thin dark line where it lies. */}
+            {shown.map((l, i) => <span key={i} style={l.thickness > 0 ? { flex: l.thickness, background: materialColor(model, l.material) } : { flex: '0 0 2px', background: 'var(--ink)' }} title={materialName(model, l.material)} />)}
           </div>
           <table>
             <tbody>

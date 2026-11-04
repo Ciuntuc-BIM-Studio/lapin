@@ -47,6 +47,8 @@ A wall type is a set of layers, from the outside face to the inside face. Each l
 
 A layer other than the core may also change material up its height: the **layers** button at the end of its row adds a piece (tiles, 2100 by default), from the layer's bottom up; add more for a band (paint to 900, tiles to 1500), and above the last piece the layer goes on in its own material to its top. Each piece is drawn, cut in plan and sections, and measured in its own material.
 
+A layer other than the core may have a thickness of 0, for a material too thin to model but that must be measured: a waterproofing membrane, a vapour barrier, paint. It builds no solid; plans and sections draw it as a heavy dashed line where it lies between two layers (on a face, the face's line is its own), the Type assemblies build-up names it like the others, and it is measured by area: the side of the layer it lies on, net of openings, in the wall's quantities and the quantity takeoff by material.
+
 ![A plaster layer with ceramic tiles up to 2100 and the plaster above them](shots/wall-layer-parts.webp)
 
 ![Wall types: the layers of a brick wall](shots/wall-types.webp)

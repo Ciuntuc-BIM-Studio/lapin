@@ -47,6 +47,8 @@ Un tipo de muro es un conjunto de capas, desde la cara exterior hasta la cara in
 
 Una capa que no sea el núcleo también puede cambiar de material en su altura: el botón **capas** al final de su fila añade una pieza (azulejos, 2100 por defecto), desde la base de la capa hacia arriba; añada más para una franja (pintura hasta 900, azulejos hasta 1500), y por encima de la última pieza la capa sigue en su propio material hasta arriba. Cada pieza se dibuja, se corta en planta y en secciones y se mide en su propio material.
 
+Una capa que no sea el núcleo puede tener espesor 0, para un material demasiado fino para modelarlo pero que hay que medir: una lámina impermeabilizante, una barrera de vapor, la pintura. No forma ningún sólido; las plantas y las secciones la dibujan como una línea gruesa discontinua donde queda entre dos capas (en una cara, la línea de la cara es la suya), el dibujo de Composición de los tipos la nombra como a las demás, y se mide por superficie: la cara de la capa sobre la que va, descontados los huecos, en las cantidades del muro y en la medición por material.
+
 ![Una capa de enlucido con azulejos hasta 2100 y el enlucido encima](shots/wall-layer-parts.webp)
 
 ![Tipos de muro: las capas de un muro de ladrillo](shots/wall-types.webp)

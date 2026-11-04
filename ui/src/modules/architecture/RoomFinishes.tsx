@@ -45,7 +45,7 @@ function LayersTable({ layers, onChange, pieces, testId }: { layers: FinishLayer
         {layers.map((l, i) => [
           <tr key={i}>
             <td><MaterialPicker value={l.material} onChange={(material) => set(i, { material })} /></td>
-            <td className="num"><LengthField metres={l.thickness} min={0} onCommit={(m) => { if (m != null && m > 0) set(i, { thickness: m }); }} /></td>
+            <td className="num"><LengthField metres={l.thickness} min={0} onCommit={(m) => { if (m != null && m >= 0) set(i, { thickness: m }); }} /></td>
             <td className="row-tools">
               <button type="button" className="icon mini" title="Up" onClick={() => move(i, -1)}>↑</button>
               <button type="button" className="icon mini" title="Down" onClick={() => move(i, 1)}>↓</button>

@@ -6,7 +6,7 @@ summary: Rysuj stropy i dachy po ich obrysie, wybieraj kształt i krawędzie dac
 
 ## Stropy
 
-Wybierz **Architektura → Strop** (<kbd>SB</kbd>), a następnie kliknij narożniki jego obrysu. Zamknij obrys na pierwszym punkcie albo naciśnij <kbd>Enter</kbd>. Strop również składa się z warstw, ustawianych w **Architektura → Typy stropów**.
+Wybierz **Architektura → Strop** (<kbd>SB</kbd>), a następnie kliknij narożniki jego obrysu. Zamknij obrys na pierwszym punkcie albo naciśnij <kbd>Enter</kbd>. Strop również składa się z warstw, ustawianych w **Architektura → Typy stropów**. Warstwa typu stropu może mieć grubość 0 (hydroizolacja, farba): niczego nie buduje, na przekrojach jest rysowana linią i liczona powierzchnią stropu.
 
 Aby zmienić obrys, zaznacz strop i przeciągnij jego narożniki. **Otwór w stropie** (<kbd>SH</kbd>) wycina w stropie otwór na schody lub szyb.
 

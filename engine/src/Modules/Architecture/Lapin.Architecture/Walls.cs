@@ -787,5 +787,46 @@ public static class Walls
                 ], byMaterial.Count == 1 ? $"layer:{band.Index}" : $"layer:{band.Index}:{g.Key}", byMaterial.Count == 1 ? band.Name : g.First().Name, g.Key ?? band.Material);
             }
         }
+        foreach (var set in ZeroLayerQuantities(m, bands, volumes, height)) yield return set;
+    }
+
+    /// <summary>
+    /// The layers of no thickness (a membrane, paint; decision 291), measured by the area they cover: the side of the layer
+    /// they lie on (the next one with a thickness towards the core) as it is built, net of openings and joins, within their
+    /// own height and pieces; width and volume 0.
+    /// </summary>
+    static IEnumerable<QuantitySet> ZeroLayerQuantities(IModelView m, IReadOnlyList<Band> bands, Dictionary<string, double> volumes, double height)
+    {
+        var core = bands.ToList().FindIndex(b => b.Core);
+        if (core < 0) yield break;
+        for (var i = 0; i < bands.Count; i++)
+        {
+            var band = bands[i];
+            if (band.Core || band.To - band.From > 1e-9) continue;
+            var step = i < core ? 1 : -1;
+            var on = -1;
+            for (var j = i + step; j >= 0 && j < bands.Count; j += step)
+                if (bands[j].To - bands[j].From > 1e-9) { on = j; break; }
+            if (on < 0) continue;
+            var o = bands[on];
+            // The core of a zoned wall is measured by its zones.
+            var ov = volumes.TryGetValue($"layer:{o.Index}", out var v) ? v
+                : o.Core ? volumes.Where(kv => kv.Key.StartsWith("zone:", StringComparison.Ordinal)).Sum(kv => kv.Value) : 0;
+            if (!(ov > 0) || LayerSpan(o, height) is not { } os) continue;
+            var onArea = ov / (o.To - o.From);
+            var (z0, z1) = (Math.Max(Math.Clamp(band.Z0 ?? 0, 0, height), os.Z0), Math.Min(Math.Clamp(band.Z1 ?? height, 0, height), os.Z1));
+            if (z1 - z0 <= 1e-6) continue;
+            var pieces = HeightPieces(m, band, z0, z1).GroupBy(p => p.Material).ToList();
+            foreach (var g in pieces)
+            {
+                var area = onArea * g.Sum(p => p.Z1 - p.Z0) / (os.Z1 - os.Z0);
+                yield return new QuantitySet("Lapin_WallLayerQuantities",
+                [
+                    new("Width", 0, "LENGTH"),
+                    new("NetSideArea", area, "AREA", "Net side area"),
+                    new("NetVolume", 0, "VOLUME", "Net volume"),
+                ], pieces.Count == 1 ? $"layer:{band.Index}" : $"layer:{band.Index}:{g.Key}", pieces.Count == 1 ? band.Name : g.First().Name, g.Key ?? band.Material);
+            }
+        }
     }
 }

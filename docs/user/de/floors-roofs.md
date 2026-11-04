@@ -6,7 +6,7 @@ summary: Zeichnen Sie Decken und Dächer über ihren Umriss, wählen Sie die For
 
 ## Decken
 
-Wählen Sie **Ausbau → Decke** (<kbd>SB</kbd>) und klicken Sie dann auf die Ecken ihres Umrisses. Schließen Sie den Umriss am ersten Punkt oder drücken Sie <kbd>Enter</kbd>. Auch eine Decke besteht aus Schichten, die unter **Ausbau → Deckentypen** festgelegt werden.
+Wählen Sie **Ausbau → Decke** (<kbd>SB</kbd>) und klicken Sie dann auf die Ecken ihres Umrisses. Schließen Sie den Umriss am ersten Punkt oder drücken Sie <kbd>Enter</kbd>. Auch eine Decke besteht aus Schichten, die unter **Ausbau → Deckentypen** festgelegt werden. Eine Schicht eines Deckentyps kann die Dicke 0 haben (eine Abdichtung, ein Anstrich): Sie bildet nichts, wird in Schnitten als Linie gezeichnet und nach der Fläche der Decke gemessen.
 
 Um den Umriss zu ändern, wählen Sie die Decke aus und ziehen Sie ihre Ecken. **Deckenöffnung** (<kbd>SH</kbd>) schneidet ein Loch in eine Decke, für eine Treppe oder einen Schacht.
 

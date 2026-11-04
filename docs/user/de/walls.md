@@ -47,6 +47,8 @@ Ein Wandtyp ist eine Folge von Schichten, von der Außenseite zur Innenseite. Je
 
 Eine Schicht außer dem Kern kann auch über ihre Höhe das Material wechseln: Die Schaltfläche **Schichten** am Ende ihrer Zeile fügt ein Stück hinzu (Fliesen, standardmäßig 2100), von der Unterkante der Schicht aufwärts; fügen Sie weitere für ein Band hinzu (Anstrich bis 900, Fliesen bis 1500), und über dem letzten Stück läuft die Schicht in ihrem eigenen Material bis oben weiter. Jedes Stück wird gezeichnet, in Grundriss und Schnitten geschnitten und in seinem eigenen Material gemessen.
 
+Eine Schicht außer dem Kern kann die Dicke 0 haben, für ein Material, das zu dünn zum Modellieren ist, aber gemessen werden muss: eine Abdichtung, eine Dampfsperre, ein Anstrich. Sie bildet keinen Körper; Grundrisse und Schnitte zeichnen sie als kräftige gestrichelte Linie, wo sie zwischen zwei Schichten liegt (an einer Außenfläche ist die Linie der Fläche ihre eigene), die Zeichnung der Typenaufbauten benennt sie wie die anderen, und sie wird nach Fläche gemessen: die Fläche der Schicht, auf der sie liegt, abzüglich der Öffnungen, in den Mengen der Wand und in der Mengenermittlung nach Material.
+
 ![Eine Putzschicht mit Fliesen bis 2100 und dem Putz darüber](shots/wall-layer-parts.webp)
 
 ![Wandtypen: die Schichten einer Ziegelwand](shots/wall-types.webp)

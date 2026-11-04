@@ -6,7 +6,7 @@ summary: Draw floors and roofs by their outline, choose a roof's shape and edges
 
 ## Floors
 
-Choose **Architecture → Floor** (<kbd>SB</kbd>), then click the corners of its outline. Close the outline on the first point, or press <kbd>Enter</kbd>. A floor is made of layers too, set in **Architecture → Floor types**.
+Choose **Architecture → Floor** (<kbd>SB</kbd>), then click the corners of its outline. Close the outline on the first point, or press <kbd>Enter</kbd>. A floor is made of layers too, set in **Architecture → Floor types**. A layer of a floor type may have a thickness of 0 (a waterproofing, paint): it builds nothing, is drawn as a line in sections and is measured by the floor's area.
 
 To change the outline, select the floor and drag its corners. **Floor opening** (<kbd>SH</kbd>) cuts a hole in a floor, for a stair or a shaft.
 
