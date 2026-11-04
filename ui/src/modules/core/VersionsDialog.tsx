@@ -24,7 +24,17 @@ interface Comparison {
   entities: { added: Change[]; removed: Change[]; changed: Change[] };
   relations: { added: number; removed: number; changed: number };
   parts: { added: string[]; removed: string[]; changed: string[]; same: number; areas: Record<string, number> };
+  /** What the modules say changed beside the elements (the work schedule: its finish, tasks moved, durations changed). */
+  sections?: DiffSection[];
 }
+interface DiffSection {
+  key: string; title: string;
+  facts: { label: string; from: string | null; to: string | null }[];
+  rows: { id: string | null; name: string; what: string; from: string | null; to: string | null; days: number | null }[];
+}
+
+/** How a module's row says what changed. */
+const WHAT: Record<string, string> = { added: 'Added', removed: 'Removed', moved: 'Moved', duration: 'Duration changed', finish: 'Finish moved', progress: 'Progress' };
 
 const CURRENT = 'current';
 /** A version's time, kept in UTC, shown in the user's own. */
@@ -125,6 +135,7 @@ export function VersionsDialog() {
                   <p className="muted small">
                     {label(sides.a)} → {label(sides.b)}: {comparison.same ? 'the same.' : `${comparison.entities.added.length} added, ${comparison.entities.removed.length} removed, ${comparison.entities.changed.length} changed; relationships ${comparison.relations.added}/${comparison.relations.removed}/${comparison.relations.changed}; parts changed ${Object.entries(comparison.parts.areas).map(([k, n]) => `${k} ${n}`).join(', ') || 'none'}, ${comparison.parts.same} the same.`}
                   </p>
+                  {(comparison.sections ?? []).map((sec) => <SectionDiff key={sec.key} section={sec} onPick={pick} />)}
                   {(['added', 'removed', 'changed'] as const).map((kind) => comparison.entities[kind].length > 0 && (
                     <ChangeList key={kind} title={kind === 'added' ? 'Added' : kind === 'removed' ? 'Removed' : 'Changed'} changes={comparison.entities[kind]} onPick={pick} />
                   ))}
@@ -180,6 +191,31 @@ function VersionRows({ v, busy, path, title, nodesKnown, onRename, onNote, onRes
         </tr>
       ))}
     </>
+  );
+}
+
+/** A module's comparison (the work schedule's): its facts from → to, then its rows; a click selects what the project still has. */
+function SectionDiff({ section, onPick }: { section: DiffSection; onPick: (id: string) => void }) {
+  const [open, setOpen] = useState(section.rows.length <= 40);
+  return (
+    <div className="version-changes" data-testid={`version-section-${section.key}`} data-i18n-ctx={section.key}>
+      <button type="button" className="link" onClick={() => setOpen(!open)}>{section.title}</button>
+      {section.facts.map((f) => (
+        <div key={f.label} className="small"><span>{f.label}</span>: <span data-no-i18n>{`${f.from ?? '—'} → ${f.to ?? '—'}`}</span></div>
+      ))}
+      {open && section.rows.length > 0 && (
+        <ul>
+          {section.rows.map((r, i) => (
+            <li key={`${r.id ?? r.name}:${r.what}:${i}`}>
+              {r.id ? <button type="button" className="link" onClick={() => onPick(r.id!)} data-no-i18n>{r.name}</button> : <span data-no-i18n>{r.name}</span>}
+              {' '}<span className="muted small">{WHAT[r.what] ?? r.what}</span>
+              {(r.from || r.to) && <span className="muted small" data-no-i18n>{` ${r.from ?? ''}${r.from && r.to ? ' → ' : ''}${r.to ?? ''}`}</span>}
+              {r.days != null && r.days !== 0 && <span className={`small${r.days > 0 ? ' error-text' : ''}`} data-no-i18n>{` (${r.days > 0 ? '+' : '−'}${Math.abs(r.days)} d)`}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

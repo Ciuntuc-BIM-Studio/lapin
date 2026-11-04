@@ -1,7 +1,7 @@
 ---
 title: Pianificazione
 order: 97
-summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS, milestone, collegamenti con ritardi, il percorso critico calcolato su un calendario con le festività legali della Romania; la simulazione 4D dell'edificio che cresce giorno per giorno, su viste, tavole e in video; da e verso MS Project, IFC ed Excel.
+summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS, milestone, collegamenti con ritardi, il percorso critico calcolato su un calendario con le festività legali della Romania; la simulazione 4D dell'edificio che cresce giorno per giorno, su viste, tavole e in video; l’avanzamento segnato in cantiere, anche da un telefono, rispetto a una baseline; da e verso MS Project, IFC ed Excel.
 ---
 
 ## La scheda Pianificazione
@@ -15,6 +15,7 @@ summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS,
 - **Rientra**, **Riduci rientro**, **Collega le attività** e **Scollega le attività**: la WBS e i collegamenti delle attività selezionate.
 - **Aggiungi all'attività…** (TA) ed **Elementi senza attività**: gli elementi del modello nelle attività (più avanti).
 - **Simula**, **Tavola delle tappe…**, **Gantt su tavola** ed **Esporta video…**: la simulazione 4D, il modello come lo ha il programma in un giorno (più avanti).
+- **Segna completato** (MD), **Segna iniziato** (MS), **Segna non iniziato**, **Salva la baseline**, **Cancella la baseline** e **Importa l’avanzamento…**: l’avanzamento e la baseline (sotto).
 - **Importa MS Project…**, **Esporta MS Project…**, **Esporta XLSX** e **Esporta IFC…**: il programma da e verso altri programmi (più sotto).
 
 Un progetto ha un solo programma. Si crea la prima volta che aggiungi un'attività e inizia il lunedì successivo. Cambia il suo inizio nella barra del Gantt.
@@ -221,6 +222,46 @@ Una pianta, una sezione, un prospetto o una vista 3D salvata ha nelle proprietà
 
 **Pianificazione → Esporta video…** (anche nel lettore) registra la vista 3D, da dove guarda ora, da un giorno a un altro, un fotogramma per **un giorno** o per **una settimana**, con la data e le attività in corso scritte sotto. Il file è un video WebM, o MP4 dove il sistema offre solo quello (l'app per macOS). Un browser che non registra video salva invece i fotogrammi come file PNG in uno ZIP.
 
+## L’avanzamento
+
+![Il Gantt con l’avanzamento: la colonna %, la parte fatta più scura in ogni barra, la baseline sotto e lo scostamento](shots/planning-progress.webp)
+
+Man mano che i lavori procedono, il cronoprogramma dice a che punto sono e sposta ciò che resta:
+
+- La **data di stato**, nella barra del Gantt, è il giorno fino al quale è riportato l’avanzamento. Il lavoro rimanente inizia il giorno lavorativo successivo: un’attività non iniziata non può iniziare prima, e una in corso fa ciò che le resta da lì in poi. Il diagramma la disegna come una linea blu.
+- La **% completato** di un’attività si scrive nella sua colonna o nelle Proprietà. Senza, viene dai suoi elementi segnati in cantiere: la quantità fatta sulla quantità dell’attività (nella sua unità, quando il generatore gliene ha data una), altrimenti il loro numero. Quella di un’attività di riepilogo viene dalle sue attività, pesata sulle loro durate.
+- L’**inizio effettivo** e la **fine effettiva** si scrivono nelle Proprietà. Lasciati vuoti, vengono dai segni: il primo giorno in cui un elemento è stato segnato, e il giorno dell’ultimo elemento quando sono tutti completati. Un’attività finita resta sulle sue date effettive, fuori dal percorso critico.
+- Un’attività in corso tiene il suo inizio effettivo e fa la parte della sua durata non ancora fatta (arrotondata per eccesso) dopo la data di stato; le attività successive si spostano con lei.
+
+Le barre mostrano la parte fatta più scura. Le Proprietà dicono da dove viene una percentuale e quanti giorni lavorativi restano.
+
+![L’avanzamento di un’attività nelle Proprietà](shots/planning-progress-task.webp)
+
+### Segnare gli elementi in cantiere
+
+**Pianificazione → Segna completato** (MD) e **Segna iniziato** (MS) segnano gli elementi selezionati in 3D o in una pianta, alla data di stato (oggi, se non ce n’è una), in ogni attività che li comprende; **Segna non iniziato** toglie i segni. Le proprietà di un elemento selezionato mostrano il suo stato in cantiere con gli stessi tre pulsanti e, in ciascuna delle sue attività, il giorno in cui è stato completato o iniziato, con un pulsante che lo segna completato solo in quell’attività. Un muro stratificato in un’attività di muratura e in una di intonaco si segna in entrambe, o in una dalla sua riga.
+
+![I segni di un muro nelle sue proprietà](shots/planning-element-marks.webp)
+
+In cantiere, da un telefono: entra nella sessione condivisa del progetto dal browser (**File → Condividi sessione…** sul computer che lo ha aperto). Un ospite entrato solo per guardare può comunque segnare elementi e scrivere l’avanzamento di un’attività: il segnare è l’unica modifica aperta a ogni ospite. Foto e rapporti sulle attività sono per l’edizione premium.
+
+### La baseline
+
+**Pianificazione → Salva la baseline** conserva le date e la durata di ogni attività come sono ora; salvata di nuovo, viene sostituita (una sola baseline: più baseline e scenari sono per l’edizione premium). Il Gantt la disegna allora come una barra grigia sottile sotto la barra di ogni attività (**Baseline** nella barra degli strumenti la nasconde), aggiunge la colonna **Scostamento** (i giorni lavorativi di cui si è spostata la fine: positivo è ritardo, la riga segnata in rosso) e dice nella sua barra quante attività sono in ritardo e di quanto si è spostata la fine. Le Proprietà danno le date della baseline e gli scostamenti di inizio e fine. **Cancella la baseline** la toglie.
+
+### In ritardo e in anticipo nella simulazione
+
+![La simulazione alla data di stato: le finestre in ritardo sulla baseline](shots/planning-progress-simulation.webp)
+
+Con una baseline, la simulazione confronta: un elemento non costruito (o non iniziato) in un giorno in cui la baseline lo aveva così è **in ritardo** (cremisi), e uno in corso o costruito prima che la baseline lo facesse iniziare è **in anticipo** (verde). Fino alla data di stato gli elementi stanno sui loro giorni effettivi: uno segnato completato è costruito il giorno in cui è stato segnato. **Confrontato con la baseline**, nelle impostazioni della simulazione, lo disattiva; lì si scelgono anche i suoi due colori. Le viste e le tavole a una data mostrano lo stesso.
+
+### L’avanzamento nei file
+
+- **Esporta XLSX** aggiunge le colonne **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** e **GlobalId** (la cartella è in inglese). Compilale in cantiere e rileggile con **Pianificazione → Importa l’avanzamento…**: le righe si trovano per GlobalId, WBS o ID, e una *Status date* scritta sopra la tabella fissa la data di stato. Va bene anche un CSV.
+- **MS Project XML** porta la data di stato, la percentuale di ogni attività, l’inizio e la fine effettivi, la durata rimanente e la baseline (Baseline 0); i segni degli elementi viaggiano con gli elementi, in *Lapin elements*.
+- **IFC** li scrive nell’IfcTaskTime di ogni attività (l’ora di stato, l’inizio e la fine effettivi, il tempo rimanente, il grado di completamento), e la baseline come un secondo IfcWorkSchedule di tipo BASELINE; i campi propri di Lapin (la percentuale scritta, i segni) vanno in `Lapin_Task`. Entrambi tornano alle stesse date.
+- **Gestisci → Versioni → Confronta** dice, oltre agli elementi, cosa è cambiato nel cronoprogramma: la fine, i giorni lavorativi, la data di stato, e le attività aggiunte, eliminate, spostate (di quanti giorni lavorativi), con la durata o l’avanzamento cambiati.
+
 ## Il calendario
 
 ![Il calendario di lavoro](shots/planning-calendar.webp)
@@ -244,5 +285,4 @@ I campi propri di Lapin per cui gli altri programmi non hanno posto (il vincolo 
 
 ## Cosa viene dopo
 
-L'avanzamento e le linee di base, e il computo metrico estimativo arrivano nelle prossime fasi.
-
+Il computo metrico estimativo arriva nelle prossime fasi.

@@ -1215,6 +1215,88 @@ export const scenes = [
     },
   },
   {
+    // Planning, stage 5 (docs/plan-4d5d.md): progress. A house's schedule with a baseline saved; the slab done on its actual
+    // dates, two walls marked done on site and one started, the status date; the Gantt with the % column, the part done in
+    // each bar, the baseline under it and the variance; a task's progress in Properties; a wall's marks; the simulation's late.
+    id: 'planning-progress',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick 250 plastered', layers: [
+        { material: 'Lime plaster', thickness: 0.02 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Gypsum plaster', thickness: 0.015 },
+      ] })).id;
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type })).id);
+      }
+      walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8, typeId: type })).id);
+      for (const [w, x, y] of [[0, 9.5, 0], [2, 3.5, 8], [2, 9.5, 8], [1, 12, 4]]) await t.cmd('architecture.addWindow', { wallId: walls[w], x, y });
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      await t.cmd('planning.updateSchedule', { name: 'House', start: '2027-03-01' });
+      const add = async (name, duration, extra = {}) => {
+        const id = (await t.cmd('planning.addTask', { name, duration })).id;
+        if (Object.keys(extra).length) await t.cmd('planning.updateTask', { id, ...extra });
+        return id;
+      };
+      const slab = await add('Floor slab', 6, { rule: { classes: ['IfcSlab'] }, wet: true });
+      const masonry = await add('Masonry', 10, { rule: { classes: ['IfcWall'] }, part: 'core' });
+      const joinery = await add('Windows and doors', 4, { rule: { classes: ['IfcWindow'] } });
+      const plaster = await add('Plaster', 8, { rule: { classes: ['IfcWall'] }, part: 'finishes', wet: true });
+      await t.cmd('planning.link', { from: slab, to: masonry });
+      await t.cmd('planning.link', { from: masonry, to: joinery, type: 'SS', lag: 5 });
+      await t.cmd('planning.link', { from: joinery, to: plaster });
+      // The baseline, then the site: the slab two days late, the masonry under way, the status date Friday 19 March.
+      await t.cmd('planning.saveBaseline', { date: '2027-02-26' });
+      await t.cmd('planning.setProgress', { id: slab, actualStart: '2027-03-01', actualFinish: '2027-03-10' });
+      await t.cmd('planning.updateSchedule', { dataDate: '2027-03-19' });
+      await t.cmd('planning.markDone', { ids: [walls[0], walls[1]], date: '2027-03-17', task: masonry });
+      await t.cmd('planning.markStarted', { ids: [walls[2]], date: '2027-03-18', task: masonry });
+      await open3d(t);
+      await t.button('Planning', { exact: true });
+      await t.tool('planning.gantt');
+      await t.wait(1500);
+      const sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
+      const row = (id) => sched.tasks.find((x) => x.id === id);
+      t.expect(row(slab).status === 'done' && row(masonry).status === 'started', 'the slab done, the masonry under way');
+      t.expect(Math.round(row(masonry).complete) === 40 && row(masonry).progressFrom === 'elements', "the masonry's 40 % from its walls marked on site");
+      t.expect(row(plaster).finishVariance > 0 && sched.baseline.late >= 3, 'the tasks after the slab late on the baseline');
+      await t.page.locator('[data-testid=gantt-fit]').click();
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=gantt-baseline-bar]').count() === 4, 'the baseline under each bar');
+      t.expect(await t.page.locator('[data-testid=gantt-done-bar]').count() === 2, 'the part done in the bars');
+      await t.ui({ selection: masonry, selected: [masonry] });
+      await t.wait(1200);
+      await t.shot('planning-progress');
+      await t.page.locator('[data-testid=task-progress]').scrollIntoViewIfNeeded();
+      await t.wait(300);
+      await t.shot('planning-progress-task', { of: '[data-testid=task-section]', pad: 8 });
+      // A wall selected: its marks on site, in each of its tasks.
+      await t.ui({ selection: walls[2], selected: [walls[2]], pane: 0 });
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=element-mark][data-mark=started]').count() === 1, "the wall's mark in its properties");
+      await t.page.locator('[data-testid=element-tasks]').scrollIntoViewIfNeeded();
+      await t.wait(300);
+      await t.shot('planning-element-marks', { of: '[data-testid=element-tasks]', pad: 8 });
+      // The simulation on the status date: the masonry late on its baseline.
+      await t.ui({ selection: null, selected: [] });
+      await t.tool('planning.simulate');
+      await t.wait(2500);
+      await t.page.evaluate(async () => {
+        const [m, g] = [await import('/src/modules/planning/SimulationView.tsx'), await import('/src/modules/planning/gantt.ts')];
+        m.setDay(g.dayOf('2027-03-19'));
+      });
+      await t.wait(2000);
+      const tl = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.timeline'));
+      const looks = await t.page.evaluate(async () => Object.values((await import('/src/platform/looks.ts')).useLooks.getState().bySource.planning ?? {}));
+      t.expect(tl.baseline && looks.some((l) => l.color === tl.look.late), 'what is late on the baseline in its colour');
+      t.expect(await t.page.locator('[data-testid=sim-legend] [data-state=late]').count() >= 1, 'late in the legend');
+      await t.shot('planning-progress-simulation');
+      await t.page.evaluate(async () => (await import('/src/modules/planning/SimulationView.tsx')).toggleSimulation(false));
+    },
+  },
+  {
     id: 'stairs',
     async run(t) {
       await t.fresh();

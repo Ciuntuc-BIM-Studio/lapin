@@ -1292,6 +1292,13 @@ button.mode-chip:hover { color: var(--accent); }
 .gantt-row.on { background: var(--accent-wash); }
 .gantt-row.summary { font-weight: 600; }
 .gantt-row.critical .c-float { color: var(--gantt-critical); }
+/* Progress and the baseline (stage 5): the part done dark in each bar, the baseline a thin grey bar under it, the late rows' variance red. */
+.gantt-done { fill: rgba(20, 28, 38, 0.55); pointer-events: none; }
+.gantt-bar.done { opacity: 0.75; }
+.gantt-baseline { fill: #9aa3ad; stroke: none; pointer-events: none; opacity: 0.85; }
+.gantt-row.late .c-variance { color: var(--gantt-critical); font-weight: 600; }
+.gantt-td.c-complete, .gantt-td.c-variance { text-align: right; padding-right: 6px; }
+.task-progress-marks { display: flex; gap: 4px; flex-wrap: wrap; }
 .gantt-td { display: flex; align-items: center; height: 100%; padding: 0 4px; overflow: hidden; white-space: nowrap; box-sizing: border-box; border-right: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
 .gantt-td.c-row, .gantt-td.c-wbs { color: var(--ink-muted); }
 .gantt-td.c-duration, .gantt-td.c-float { justify-content: flex-end; }

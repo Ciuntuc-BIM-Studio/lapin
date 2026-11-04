@@ -11,7 +11,9 @@ namespace Lapin.Planning;
 /// MS Project's XML (MSPDI, written after Microsoft's public schema, no library): the project's start and calendar (its
 /// weekdays, working hours and the days not worked as exceptions), the tasks in row order with their WBS, outline level,
 /// dates, duration, milestone and summary flags, constraint, floats and critical flag, their GUID (Lapin's GlobalId), and
-/// the predecessor links with their type and lag. MS Project, ProjectLibre and GanttProject read it; Primavera P6 imports it.
+/// the predecessor links with their type and lag; the progress (stage 5: the status date, each task's percentage, actual
+/// start and finish, the duration left) and the baseline (Baseline 0). MS Project, ProjectLibre and GanttProject read it;
+/// Primavera P6 imports it.
 /// Read back, a schedule written here gives the same tasks, links, ids and dates.
 /// </summary>
 public static class MsProject
@@ -58,6 +60,7 @@ public static class MsProject
         E("MinutesPerWeek", $"{minutesPerDay * cal.Days.Count}");
         E("DaysPerMonth", "20");
         E("DurationFormat", "7");
+        if (p.DataDate is { } statusDate) E("StatusDate", Dt(statusDate, endTime));
 
         // The tasks' elements (their rule, part and exceptions) in the custom field Text1, named so (stage 2).
         var withLinks = p.Rows.Any(t => TaskLinkData.Of(t) != null);
@@ -156,7 +159,8 @@ public static class MsProject
             var tm = r.Times.GetValueOrDefault(t.Id);
             var summary = p.IsSummary(t.Id);
             var milestone = !summary && (t.Milestone || t.Duration == 0);
-            var dur = tm?.Duration ?? t.Duration;
+            // A task's own duration (one under way keeps it: what is left is its RemainingDuration); a summary's from its tasks.
+            var dur = summary ? tm?.Duration ?? t.Duration : t.Duration;
             w.WriteStartElement("Task", Ns);
             E("UID", $"{uid[t.Id]}");
             if (GlobalId.IsValid(t.Id)) E("GUID", GlobalId.ToGuid(t.Id).ToString("D").ToUpperInvariant());
@@ -186,7 +190,11 @@ public static class MsProject
                 E("FreeSlack", $"{Tenths(tm.FreeFloat)}");
                 E("TotalSlack", $"{Tenths(tm.TotalFloat)}");
             }
-            E("PercentComplete", "0");
+            var pr = p.ProgressOf(t.Id);
+            E("PercentComplete", $"{(int)Math.Round(pr.Complete)}");
+            if (pr.ActualStart is { } ast) E("ActualStart", Dt(ast, startTime));
+            if (pr.ActualFinish is { } afi) E("ActualFinish", Dt(afi, milestone ? startTime : endTime));
+            if (tm != null && tm.Status == "started") E("RemainingDuration", Duration(tm.Remaining, cal.Hours));
             // ConstraintType: 0 as soon as possible, 2 must start on, 4 start no earlier than.
             E("ConstraintType", t.Constraint switch { "mso" => "2", "snet" => "4", _ => "0" });
             if (t.Constraint != null && t.ConstraintDate is { } cd) E("ConstraintDate", Dt(cd, startTime));
@@ -208,6 +216,16 @@ public static class MsProject
                 w.WriteStartElement("ExtendedAttribute", Ns);
                 E("FieldID", LinksField);
                 E("Value", links.ToJsonString());
+                w.WriteEndElement();
+            }
+            if (t.Baseline is { } bl)
+            {
+                w.WriteStartElement("Baseline", Ns);
+                E("Number", "0");
+                E("Start", Dt(bl.Start, startTime));
+                E("Finish", Dt(bl.Finish, bl.Duration == 0 ? startTime : endTime));
+                E("Duration", Duration(bl.Duration, cal.Hours));
+                E("DurationFormat", "7");
                 w.WriteEndElement();
             }
             w.WriteEndElement();
@@ -306,8 +324,21 @@ public static class MsProject
             if (constraintDate == null) constraint = null;
             string? id = Guid.TryParse(Val(t, "GUID"), out var g) ? GlobalId.FromGuid(g) : null;
             var elementLinks = linksField == null ? null : TaskLinkData.Parse(Els(t, "ExtendedAttribute").FirstOrDefault(x => Val(x, "FieldID") == linksField) is { } xa ? Val(xa, "Value") : null);
+            // Its progress, unless its elements' marks give it (Lapin wrote them with the elements); a summary's comes from its tasks.
+            DateOnly? Day(string name) => When(Val(t, name)) is { } x ? DateOnly.FromDateTime(x) : null;
+            var marked = elementLinks?["marks"] is System.Text.Json.Nodes.JsonObject { Count: > 0 };
+            var summary = Val(t, "Summary") == "1";
+            double? pc = !marked && !summary && Num(t, "PercentComplete", -1) is var pcv && pcv > 0 ? Math.Min(100, pcv) : null;
+            var actualStart = marked || summary ? null : Day("ActualStart");
+            var actualFinish = marked || summary ? null : Day("ActualFinish");
+            // MS Project gives a finished task 100 % and its actual finish: the finish alone says so.
+            if (actualFinish != null && pc >= 100) pc = null;
+            TaskBaseline? baseline = null;
+            if (Els(t, "Baseline").FirstOrDefault(b => Int(b, "Number") == 0) is { } bx && When(Val(bx, "Start")) is { } bs && When(Val(bx, "Finish")) is { } bf)
+                baseline = new TaskBaseline(DateOnly.FromDateTime(bs), DateOnly.FromDateTime(bf), (int)Math.Round(Hours(Val(bx, "Duration")) / hoursPerDay));
             tasks.Add(new ImportedTask(key, id, Val(t, "Name") ?? "", parent, duration, milestone && duration == 0, constraint, constraintDate,
-                When(Val(t, "Start")) is { } s ? DateOnly.FromDateTime(s) : null, Notes: Val(t, "Notes"), Links: elementLinks));
+                When(Val(t, "Start")) is { } s ? DateOnly.FromDateTime(s) : null, Notes: Val(t, "Notes"), Links: elementLinks,
+                ActualStart: actualStart, ActualFinish: actualFinish, Complete: pc, Baseline: baseline));
         }
         var links = new List<ImportedLink>();
         foreach (var t in rows)
@@ -320,6 +351,7 @@ public static class MsProject
             }
         var name = Val(project, "Title") is { Length: > 0 } title ? title : Val(project, "Name") ?? "Work schedule";
         if (name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".mpp", StringComparison.OrdinalIgnoreCase)) name = name[..^4];
-        return new ImportedSchedule(name, start, cal, tasks, links, CalendarName: calendar is { } c ? Val(c, "Name") : null);
+        return new ImportedSchedule(name, start, cal, tasks, links, CalendarName: calendar is { } c ? Val(c, "Name") : null,
+            DataDate: When(Val(project, "StatusDate")) is { } sd ? DateOnly.FromDateTime(sd) : null);
     }
 }

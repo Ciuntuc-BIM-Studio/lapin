@@ -4,12 +4,14 @@ using Lapin.Platform;
 namespace Lapin.Planning;
 
 /// <summary>
-/// A task's times as the critical path gives them: early and late start (the start of a day) and early and late finish
+/// A task's times as the critical path gives them (stage 5: its status, done, started or planned, and the working days it
+/// has left): early and late start (the start of a day) and early and late finish
 /// (exclusive: the day after the last working day), the floats in working days, and whether it is critical. Its
 /// <see cref="Start"/> and <see cref="Finish"/> are the dates the Gantt shows (the first and the last working day;
 /// a milestone's both its day).
 /// </summary>
-public sealed record TaskTimes(DateOnly EarlyStart, DateOnly EarlyFinish, DateOnly LateStart, DateOnly LateFinish, int TotalFloat, int FreeFloat, bool Critical, int Duration)
+public sealed record TaskTimes(DateOnly EarlyStart, DateOnly EarlyFinish, DateOnly LateStart, DateOnly LateFinish, int TotalFloat, int FreeFloat, bool Critical, int Duration,
+    string Status = "planned", int Remaining = 0)
 {
     public DateOnly Start => EarlyStart;
     public DateOnly Finish => EarlyFinish > EarlyStart ? EarlyFinish.AddDays(-1) : EarlyStart;
@@ -24,6 +26,12 @@ public sealed record CpmResult(IReadOnlyDictionary<string, TaskTimes> Times, Dat
 /// critical tasks (no total float). Links run between leaves: a summary task as a successor passes its constraint to every
 /// task under it; as a predecessor it starts at its first task's start and ends at its last one's finish. Lags count
 /// working days of the project's calendar; durations count the task's own (a wet task skips the winter break).
+/// With progress (stage 5): a finished task stands on its actual dates (its finish worked out from its start when it has
+/// none), off the critical path; a started one keeps its actual start and does what is left of it (its duration × the part
+/// not done, rounded up) from the working day after the status date, or straight after the part done when there is no
+/// status date; one not started starts no earlier than the day after the status date. The status date is the last day the
+/// progress is reported through (MS Project's status date); the work left starts after it.
+/// A task already started or done holds nothing back in the backward pass.
 /// </summary>
 public static class Cpm
 {
@@ -88,7 +96,13 @@ public static class Cpm
 
         var es = new Dictionary<string, DateOnly>();
         var ef = new Dictionary<string, DateOnly>();
+        // Stage 5: each leaf's status, the working days it has left and the day the work left starts (its start when not started).
+        var status = new Dictionary<string, string>();
+        var remaining = new Dictionary<string, int>();
+        var resume = new Dictionary<string, DateOnly>();
+        int Left(string id) => remaining.TryGetValue(id, out var r) ? r : Dur(id);
         var start = cal.NextWorking(p.Start);
+        var dataDate = p.DataDate;
 
         // A predecessor's start and finish as a link reads them: a summary's are its first leaf's start and its last leaf's finish.
         (DateOnly S, DateOnly F) Early(string task) =>
@@ -117,9 +131,37 @@ public static class Cpm
             }
             if (t.Constraint == "snet" && t.ConstraintDate is { } snet && snet > earliest) earliest = snet;
             if (t.Constraint == "mso" && t.ConstraintDate is { } mso) earliest = mso;
+            var pr = p.ProgressOf(id);
+            if (pr.Finished)
+            {
+                // Done: on its actual dates (the finish from its start and duration when only the percentage says so).
+                var s0 = pr.ActualStart ?? cal.NextWorking(earliest, wet);
+                var f0 = pr.ActualFinish is { } af ? af.AddDays(1) : d == 0 ? s0 : cal.Offset(cal.NextWorking(s0, wet), d, wet);
+                if (pr.ActualStart == null && f0 <= s0) s0 = f0.AddDays(-1);
+                if (f0 < s0) f0 = s0;
+                es[id] = s0; ef[id] = f0; resume[id] = f0;
+                status[id] = "done"; remaining[id] = 0;
+                continue;
+            }
+            if (pr.Begun)
+            {
+                // Started: from its actual start; what is left of it from the data date (or after the part done).
+                var s0 = pr.ActualStart ?? cal.NextWorking(earliest, wet);
+                var left = d == 0 ? 0 : Math.Max(1, (int)Math.Ceiling(d * (100 - pr.Complete) / 100 - 1e-9));
+                var r0 = dataDate is { } dd && dd >= s0 ? cal.NextWorking(dd.AddDays(1), wet) : cal.NextWorking(cal.Offset(cal.NextWorking(s0, wet), d - left, wet), wet);
+                if (d == 0) r0 = s0;
+                es[id] = s0; resume[id] = r0;
+                ef[id] = left == 0 ? r0 : cal.Offset(r0, left, wet);
+                status[id] = "started"; remaining[id] = left;
+                continue;
+            }
+            // Not started: no earlier than the day after the status date.
+            if (dataDate is { } ddate && ddate.AddDays(1) > earliest) earliest = ddate.AddDays(1);
             var s = cal.NextWorking(earliest, wet);
             es[id] = s;
             ef[id] = d == 0 ? s : cal.Offset(s, d, wet);
+            resume[id] = s;
+            status[id] = "planned";
         }
 
         DateOnly Back(DateOnly end, int d, bool wet) => d == 0 ? end : cal.Offset(end, -d, wet);
@@ -134,11 +176,16 @@ public static class Cpm
         {
             var id = order[i];
             var t = p.ById[id];
-            var d = Dur(id);
+            var d = Left(id);
             var wet = Wet(id);
+            if (status[id] == "done") { ls[id] = es[id]; lf[id] = ef[id]; continue; }
             var latest = finish;
             foreach (var (l, to) in outgoing[id])
             {
+                // A successor already started or done holds nothing back.
+                if (status[to] != "planned") continue;
+                // A task under way has started: what ties its start (SS, SF) holds nothing back either.
+                if (status[id] == "started" && l.Type is "SS" or "SF") continue;
                 var c = l.Type switch
                 {
                     "SS" => Fwd(cal.Offset(ls[to], -l.Lag), d, wet),
@@ -148,7 +195,7 @@ public static class Cpm
                 };
                 if (c < latest) latest = c;
             }
-            if (t.Constraint == "mso") { ls[id] = es[id]; lf[id] = ef[id]; continue; }
+            if (t.Constraint == "mso" && status[id] == "planned") { ls[id] = es[id]; lf[id] = ef[id]; continue; }
             if (d == 0) { ls[id] = latest; lf[id] = latest; continue; }
             var end = cal.PrevEnd(latest, wet);
             lf[id] = end;
@@ -168,11 +215,17 @@ public static class Cpm
         foreach (var id in order)
         {
             var wet = Wet(id);
-            var total = cal.WorkingDays(es[id], ls[id], wet);
+            if (status[id] == "done")
+            {
+                times[id] = new TaskTimes(es[id], ef[id], ls[id], lf[id], 0, 0, false, cal.WorkingDays(es[id], ef[id], wet), "done", 0);
+                continue;
+            }
+            var total = cal.WorkingDays(resume[id], ls[id], wet);
             // Free float: how far it may slip before any successor does (or the project's finish, with none).
             var free = int.MaxValue;
             foreach (var (l, to) in outgoing[id])
             {
+                if (status[to] != "planned") continue;
                 var d = Dur(to);
                 var need = l.Type switch
                 {
@@ -184,9 +237,10 @@ public static class Cpm
                 var slack = cal.WorkingDays(need, es[to]);
                 if (slack < free) free = slack;
             }
-            if (outgoing[id].Count == 0) free = cal.WorkingDays(ef[id], finish, wet);
+            if (free == int.MaxValue) free = cal.WorkingDays(ef[id], finish, wet);
             free = Math.Max(0, Math.Min(free, Math.Max(total, 0)));
-            times[id] = new TaskTimes(es[id], ef[id], ls[id], lf[id], total, free, total <= 0, Dur(id));
+            var started = status[id] == "started";
+            times[id] = new TaskTimes(es[id], ef[id], ls[id], lf[id], total, free, total <= 0, started ? cal.WorkingDays(es[id], ef[id], wet) : Dur(id), status[id], Left(id));
         }
         // A link is critical when it drives a critical successor from a critical predecessor (no slack between them).
         foreach (var (l, a, b) in edges)
@@ -209,9 +263,11 @@ public static class Cpm
             if (under.Count == 0) { times[t.Id] = new TaskTimes(start, start, start, start, 0, 0, false, 0); continue; }
             var s = under.Min(x => times[x].EarlyStart);
             var f = under.Max(x => times[x].EarlyFinish);
-            var tf = under.Min(x => times[x].TotalFloat);
+            var open = under.Where(x => times[x].Status != "done").ToList();
+            var tf = open.Count > 0 ? open.Min(x => times[x].TotalFloat) : 0;
+            var st = under.All(x => times[x].Status == "done") ? "done" : under.Any(x => times[x].Status != "planned") ? "started" : "planned";
             times[t.Id] = new TaskTimes(s, f, under.Min(x => times[x].LateStart), under.Max(x => times[x].LateFinish), tf,
-                under.Min(x => times[x].FreeFloat), tf <= 0, cal.WorkingDays(s, f));
+                under.Min(x => times[x].FreeFloat), open.Count > 0 && tf <= 0, cal.WorkingDays(s, f), st, open.Count > 0 ? open.Max(x => times[x].Remaining) : 0);
         }
         return new CpmResult(times, finish, criticalLinks);
     }

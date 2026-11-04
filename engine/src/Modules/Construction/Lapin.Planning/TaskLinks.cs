@@ -321,17 +321,19 @@ public sealed class TaskElements
 /// </summary>
 public static class TaskLinkData
 {
-    public static readonly string[] Keys = ["rule", "part", "add", "remove"];
+    public static readonly string[] Keys = ["rule", "part", "add", "remove", "marks"];
 
     /// <summary>What a task holds of its elements; null when it takes none and names no part.</summary>
     public static JsonObject? Of(PlanTask t)
     {
-        if (!t.Links && t.Part == null) return null;
+        if (!t.Links && t.Part == null && t.Marks.Count == 0) return null;
         var o = new JsonObject();
         if (t.Rule != null) o["rule"] = t.Rule.ToJson();
         if (t.Part != null) o["part"] = t.Part;
         if (t.Add.Count > 0) o["add"] = new JsonArray(t.Add.Select(x => (JsonNode)x).ToArray());
         if (t.Remove.Count > 0) o["remove"] = new JsonArray(t.Remove.Select(x => (JsonNode)x).ToArray());
+        // Its elements marked on site (stage 5), so a schedule exchanged keeps them.
+        if (t.Marks.Count > 0) o["marks"] = new JsonObject(t.Marks.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.ToJson())));
         return o;
     }
 
@@ -351,5 +353,7 @@ public static class TaskLinkData
         foreach (var key in new[] { "add", "remove" })
             if (links[key] is JsonArray a && a.Select(x => (string?)x).OfType<string>().Distinct().ToList() is { Count: > 0 } ids)
                 attrs[key] = new JsonArray(ids.Select(x => (JsonNode)x).ToArray());
+        if (ElementMark.ReadAll(links["marks"]) is { } marks)
+            attrs["marks"] = new JsonObject(marks.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.ToJson())));
     }
 }

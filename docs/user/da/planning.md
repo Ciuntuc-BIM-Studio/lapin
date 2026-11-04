@@ -1,7 +1,7 @@
 ---
 title: Tidsplanlægning
 order: 97
-summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder med forskydninger, den kritiske vej beregnet på en kalender med Rumæniens lovbestemte helligdage; 4D-simuleringen af bygningen, der vokser dag for dag, i visninger, på ark og som video; til og fra MS Project, IFC og Excel.
+summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder med forskydninger, den kritiske vej beregnet på en kalender med Rumæniens lovbestemte helligdage; 4D-simuleringen af bygningen, der vokser dag for dag, i visninger, på ark og som video; fremdriften markeret på byggepladsen, også fra en telefon, mod en basisplan; til og fra MS Project, IFC og Excel.
 ---
 
 ## Fanen Tidsplanlægning
@@ -15,6 +15,7 @@ summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder m
 - **Indryk**, **Ryk ud**, **Kæd opgaver** og **Fjern kæder**: WBS og kæderne for de valgte opgaver.
 - **Føj til opgave…** (TA) og **Elementer uden opgave**: modellens elementer i opgaverne (nedenfor).
 - **Simulér**, **Etapeark…**, **Gantt på ark** og **Eksportér video…**: 4D-simuleringen, modellen som tidsplanen har den på en dag (nedenfor).
+- **Markér færdig** (MD), **Markér påbegyndt** (MS), **Markér ikke påbegyndt**, **Gem basisplan**, **Ryd basisplan** og **Importér fremdrift…**: fremdriften og basisplanen (nedenfor).
 - **Importér MS Project…**, **Eksportér MS Project…**, **Eksportér XLSX** og **Eksportér IFC…**: tidsplanen til og fra andre programmer (nedenfor).
 
 Et projekt har én tidsplan. Den oprettes første gang, du tilføjer en opgave, og starter den næste mandag. Ret starten i Gantts værktøjslinje.
@@ -221,6 +222,46 @@ En plan, et snit, en facade eller en gemt 3D-visning har **Tilstand på dato** i
 
 **Tidsplanlægning → Eksportér video…** (også i afspilleren) optager 3D-visningen, hvorfra den ser nu, fra én dag til en anden, et billede pr. **en dag** eller **en uge**, med datoen og opgaverne i gang skrevet nedenunder. Filen er en WebM-video, eller MP4, hvor systemet kun tilbyder det (macOS-appen). En browser, der ikke optager video, gemmer i stedet billederne som PNG-filer i en ZIP.
 
+## Fremdriften
+
+![Gantt-diagrammet med fremdrift: kolonnen %, den udførte del mørkere i hver bjælke, basisplanen under den og afvigelsen](shots/planning-progress.webp)
+
+Efterhånden som arbejdet skrider frem, siger tidsplanen, hvor langt det er, og flytter det, der mangler:
+
+- **Statusdatoen** i Gantt-diagrammets værktøjslinje er den dag, fremdriften er meldt til og med. Det resterende arbejde begynder arbejdsdagen efter: en opgave, der ikke er påbegyndt, kan ikke begynde tidligere, og en igangværende gør det, der mangler, derfra. Diagrammet tegner den som en blå linje.
+- En opgaves **% færdig** skrives i dens kolonne eller i Egenskaber. Uden det kommer det fra dens elementer markeret på byggepladsen: den udførte mængde af opgavens mængde (i dens enhed, når generatoren gav den en), ellers deres antal. En sammenfatningsopgaves kommer fra dens opgaver, vægtet efter deres varighed.
+- **Faktisk start** og **faktisk slut** skrives i Egenskaber. Tomme kommer de fra markeringerne: den første dag et element blev markeret, og det sidste elements dag, når alle er færdige. En afsluttet opgave står på sine faktiske datoer, uden for den kritiske vej.
+- En igangværende opgave beholder sin faktiske start og udfører den del af sin varighed, der ikke er gjort endnu (rundet op), efter statusdatoen; opgaverne efter den flytter med.
+
+Bjælkerne viser den udførte del mørkere. Egenskaber siger, hvor en procentdel kommer fra, og hvor mange arbejdsdage der er tilbage.
+
+![En opgaves fremdrift i Egenskaber](shots/planning-progress-task.webp)
+
+### Markering af elementer på byggepladsen
+
+**Tidsplanlægning → Markér færdig** (MD) og **Markér påbegyndt** (MS) markerer de elementer, der er valgt i 3D eller i en plan, på statusdatoen (i dag, når der ikke er nogen), i hver opgave, der omfatter dem; **Markér ikke påbegyndt** fjerner markeringerne. Et valgt elements egenskaber viser dets tilstand på byggepladsen med de samme tre knapper og i hver af dets opgaver den dag, det blev færdigt eller påbegyndt, med en knap, der markerer det færdigt i netop den opgave. En lagdelt væg i en murer- og en pudsopgave markeres i begge eller i én fra dens række.
+
+![En vægs markeringer i dens egenskaber](shots/planning-element-marks.webp)
+
+På byggepladsen, fra en telefon: gå ind i projektets delte session fra browseren (**Filer → Del session…** på den computer, der har det åbent). En gæst, der kun kom for at kigge, kan stadig markere elementer og skrive en opgaves fremdrift: markering er den eneste ændring, der er åben for alle gæster. Fotos og rapporter på opgaver hører til premium-udgaven.
+
+### Basisplanen
+
+**Tidsplanlægning → Gem basisplan** gemmer hver opgaves datoer og varighed, som de er nu; gemt igen erstattes den (én basisplan: flere basisplaner og scenarier hører til premium-udgaven). Gantt-diagrammet tegner den så som en tynd grå bjælke under hver opgaves bjælke (**Basisplan** i værktøjslinjen skjuler den), tilføjer kolonnen **Afvigelse** (de arbejdsdage, slutningen flyttede sig: positiv er forsinket, rækken markeret med rødt) og siger i sin linje, hvor mange opgaver der er forsinkede, og hvor langt slutningen flyttede sig. Egenskaber giver basisplanens datoer og afvigelserne i start og slut. **Ryd basisplan** fjerner den.
+
+### Bagud og foran i simuleringen
+
+![Simuleringen på statusdatoen: vinduerne bagud i forhold til basisplanen](shots/planning-progress-simulation.webp)
+
+Med en basisplan sammenligner simuleringen: et element, der ikke er bygget (eller ikke påbegyndt) en dag, hvor basisplanen havde det sådan, er **bagud** (karmosin), og et, der er i gang eller bygget, før basisplanen lod det begynde, er **foran** (grøn). Frem til statusdatoen står elementerne på deres faktiske dage: et element markeret færdigt er bygget den dag, det blev markeret. **Sammenlignet med basisplanen** i simuleringens indstillinger slår det fra; dens to farver vælges også dér. Visninger og tegningsark på en dato viser det samme.
+
+### Fremdriften i filerne
+
+- **Eksportér XLSX** tilføjer kolonnerne **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** og **GlobalId** (regnearket er på engelsk). Udfyld dem på byggepladsen og læs dem tilbage med **Tidsplanlægning → Importér fremdrift…**: rækkerne findes efter GlobalId, WBS eller ID, og en *Status date* skrevet over tabellen sætter statusdatoen. En CSV virker også.
+- **MS Project XML** bærer statusdatoen, hver opgaves procentdel, faktisk start og slut, den resterende varighed og basisplanen (Baseline 0); elementernes markeringer følger elementerne i *Lapin elements*.
+- **IFC** skriver dem i hver opgaves IfcTaskTime (statustiden, faktisk start og slut, den resterende tid, færdiggørelsesgraden) og basisplanen som et andet IfcWorkSchedule af typen BASELINE; Lapins egne felter (den skrevne procentdel, markeringerne) står i `Lapin_Task`. Begge kommer tilbage til de samme datoer.
+- **Administrer → Versioner → Sammenlign** siger ud over elementerne, hvad der ændrede sig i tidsplanen: slutningen, arbejdsdagene, statusdatoen og de opgaver, der kom til, blev slettet, flyttet (hvor mange arbejdsdage), eller hvis varighed eller fremdrift ændrede sig.
+
 ## Kalenderen
 
 ![Arbejdskalenderen](shots/planning-calendar.webp)
@@ -244,5 +285,4 @@ Lapins egne felter, som andre programmer ikke har plads til (en opgaves begræns
 
 ## Hvad der kommer
 
-Fremdrift og basisplaner samt overslaget kommer i de næste trin.
-
+Overslaget kommer i de næste trin.

@@ -1,7 +1,7 @@
 ---
 title: Planification
 order: 97
-summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une WBS, jalons, liens avec décalages, chemin critique calculé sur un calendrier avec les jours fériés légaux de la Roumanie ; la simulation 4D du bâtiment qui grandit jour après jour, sur les vues, les feuilles et en vidéo ; vers et depuis MS Project, IFC et Excel.
+summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une WBS, jalons, liens avec décalages, chemin critique calculé sur un calendrier avec les jours fériés légaux de la Roumanie ; la simulation 4D du bâtiment qui grandit jour après jour, sur les vues, les feuilles et en vidéo ; l’avancement marqué sur le chantier, depuis un téléphone aussi, face à une planification initiale; vers et depuis MS Project, IFC et Excel.
 ---
 
 ## L'onglet Planification
@@ -15,6 +15,7 @@ summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une W
 - **Abaisser**, **Hausser**, **Lier les tâches** et **Délier les tâches** : la WBS et les liens des tâches sélectionnées.
 - **Ajouter à la tâche…** (TA) et **Éléments sans tâche** : les éléments du modèle dans les tâches (plus bas).
 - **Simuler**, **Feuille des étapes…**, **Gantt sur feuille** et **Exporter la vidéo…** : la simulation 4D, le modèle tel que le planning l'a un jour donné (plus bas).
+- **Marquer terminé** (MD), **Marquer commencé** (MS), **Marquer non commencé**, **Enregistrer la planification initiale**, **Effacer la planification initiale** et **Importer l’avancement…** : l’avancement et la planification initiale (plus bas).
 - **Importer MS Project…**, **Exporter MS Project…**, **Exporter XLSX** et **Exporter IFC…** : le planning vers et depuis d'autres programmes (ci-dessous).
 
 Un projet a un seul planning. Il est créé la première fois que vous ajoutez une tâche et commence le lundi suivant. Changez son début dans la barre du Gantt.
@@ -221,6 +222,46 @@ Un plan, une coupe, une élévation ou une vue 3D enregistrée a dans ses propri
 
 **Planification → Exporter la vidéo…** (aussi dans le lecteur) enregistre la vue 3D, d'où elle regarde maintenant, d'un jour à un autre, une image par **un jour** ou par **une semaine**, avec la date et les tâches en cours écrites dessous. Le fichier est une vidéo WebM, ou MP4 là où le système n'offre que cela (l'application macOS). Un navigateur qui n'enregistre pas de vidéo enregistre à la place les images en fichiers PNG dans un ZIP.
 
+## L’avancement
+
+![Le Gantt avec l’avancement : la colonne %, la part faite plus sombre dans chaque barre, la planification initiale dessous et l’écart](shots/planning-progress.webp)
+
+À mesure que les travaux avancent, le planning dit où ils en sont et déplace ce qui reste :
+
+- La **date d’état**, dans la barre du Gantt, est le jour jusqu’auquel l’avancement est déclaré. Le travail restant commence le jour ouvré suivant : une tâche non commencée ne peut pas commencer plus tôt, et une tâche en cours fait ce qui lui reste à partir de là. Le diagramme la dessine en ligne bleue.
+- Le **% achevé** d’une tâche se saisit dans sa colonne ou dans les Propriétés. Sans saisie, il vient de ses éléments marqués sur le chantier : la quantité faite sur la quantité de la tâche (dans son unité, quand le générateur lui en a donné une), sinon leur nombre. Celui d’une tâche récapitulative vient de ses tâches, pondéré par leurs durées.
+- Le **début réel** et la **fin réelle** se saisissent dans les Propriétés. Laissés vides, ils viennent des marques : le premier jour où un élément a été marqué, et le jour du dernier élément une fois tous terminés. Une tâche terminée reste sur ses dates réelles, hors du chemin critique.
+- Une tâche en cours garde son début réel et fait la part de sa durée pas encore faite (arrondie au-dessus) après la date d’état ; les tâches qui la suivent se déplacent avec elle.
+
+Les barres montrent la part faite plus sombre. Les Propriétés disent d’où vient un pourcentage et combien de jours ouvrés restent.
+
+![L’avancement d’une tâche dans les Propriétés](shots/planning-progress-task.webp)
+
+### Marquer les éléments sur le chantier
+
+**Planification → Marquer terminé** (MD) et **Marquer commencé** (MS) marquent les éléments sélectionnés en 3D ou dans un plan, à la date d’état (aujourd’hui s’il n’y en a pas), dans chaque tâche qui les contient ; **Marquer non commencé** retire les marques. Les propriétés d’un élément sélectionné montrent son état sur le chantier avec les mêmes trois boutons et, dans chacune de ses tâches, le jour où il a été terminé ou commencé, avec un bouton qui le marque terminé dans cette tâche seule. Un mur multicouche dans une tâche de maçonnerie et une d’enduit est marqué dans les deux, ou dans une depuis sa ligne.
+
+![Les marques d’un mur dans ses propriétés](shots/planning-element-marks.webp)
+
+Sur le chantier, depuis un téléphone : rejoignez la session partagée du projet depuis le navigateur (**Fichier → Partager la session…** sur l’ordinateur qui l’a ouvert). Un invité venu seulement pour regarder peut tout de même marquer des éléments et saisir l’avancement d’une tâche : le marquage est la seule modification ouverte à tout invité. Les photos et les rapports sur les tâches sont pour l’édition premium.
+
+### La planification initiale
+
+**Planification → Enregistrer la planification initiale** garde les dates et la durée de chaque tâche telles qu’elles sont maintenant ; enregistrée de nouveau, elle est remplacée (une seule planification initiale : plusieurs et des scénarios sont pour l’édition premium). Le Gantt la dessine alors en barre grise fine sous la barre de chaque tâche (**Planification initiale** dans la barre d’outils la cache), ajoute la colonne **Écart** (les jours ouvrés dont la fin a bougé : positif est un retard, la ligne marquée en rouge) et dit dans sa barre combien de tâches sont en retard et de combien la fin a bougé. Les Propriétés donnent les dates initiales et les écarts de début et de fin. **Effacer la planification initiale** la retire.
+
+### En retard et en avance dans la simulation
+
+![La simulation à la date d’état : les fenêtres en retard sur la planification initiale](shots/planning-progress-simulation.webp)
+
+Avec une planification initiale, la simulation compare : un élément non construit (ou non commencé) un jour où la planification initiale l’avait ainsi est **en retard** (cramoisi), et un élément en cours ou construit avant que la planification initiale ne le commence est **en avance** (vert). Jusqu’à la date d’état, les éléments restent sur leurs jours réels : un élément marqué terminé est construit le jour où il a été marqué. **Comparé à la planification initiale**, dans les réglages de la simulation, la désactive ; ses deux couleurs s’y choisissent aussi. Les vues et les planches à une date montrent la même chose.
+
+### L’avancement dans les fichiers
+
+- **Exporter XLSX** ajoute les colonnes **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** et **GlobalId** (le classeur est en anglais). Remplissez-les sur le chantier et relisez-les avec **Planification → Importer l’avancement…** : les lignes sont retrouvées par GlobalId, code WBS ou ID, et une *Status date* écrite au-dessus du tableau fixe la date d’état. Un CSV marche aussi.
+- **MS Project XML** porte la date d’état, le pourcentage de chaque tâche, le début et la fin réels, la durée restante et la planification initiale (Baseline 0) ; les marques des éléments voyagent avec les éléments, dans *Lapin elements*.
+- **IFC** les écrit dans l’IfcTaskTime de chaque tâche (l’heure d’état, le début et la fin réels, le temps restant, le degré d’achèvement), et la planification initiale comme un second IfcWorkSchedule de type BASELINE ; les champs propres à Lapin (le pourcentage saisi, les marques) vont dans `Lapin_Task`. Les deux reviennent aux mêmes dates.
+- **Gérer → Versions → Comparer** dit, à côté des éléments, ce qui a changé dans le planning : la fin, les jours ouvrés, la date d’état, et les tâches ajoutées, supprimées, déplacées (de combien de jours ouvrés), dont la durée ou l’avancement a changé.
+
 ## Le calendrier
 
 ![Le calendrier de travail](shots/planning-calendar.webp)
@@ -244,5 +285,4 @@ Les champs propres à Lapin pour lesquels les autres programmes n'ont pas de pla
 
 ## La suite
 
-L'avancement et les plannings de référence, et le devis arrivent dans les prochaines étapes.
-
+Le devis vient dans les étapes suivantes.

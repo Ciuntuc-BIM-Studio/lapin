@@ -14,7 +14,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { expansionChanged } from '../../platform/groups';
 import { useCamera } from '../../viewport/camera';
 import { zoomHost } from '../../viewport/zoom';
-import type { ScheduleDto, TaskDto } from './gantt';
+import { showDate, type ScheduleDto, type TaskDto } from './gantt';
 import { elementIds, frameDistance, TASK } from './links';
 
 export const usePlanning = create<{ data: ScheduleDto | null; version: number }>(() => ({ data: null, version: -2 }));
@@ -173,4 +173,44 @@ export async function selectUnlinked(): Promise<void> {
 export function assignSelection(): void {
   if (!selectedElements().length) { notify('Select elements of the model first: in 3D or in a plan.'); return; }
   useUi.setState({ dialog: 'planning.assign' });
+}
+
+// ── Progress (stage 5) ───────────────────────────────────────────────────────
+
+/**
+ * The elements selected marked done, started, or back to not started, in every task that takes them (or `task` alone), on
+ * the status date unless a day is given. A guest who joined to look may do it too (site marking through the shared session).
+ */
+export async function markSelection(state: 'done' | 'started' | 'none', ids = selectedElements(), task?: string, date?: string): Promise<void> {
+  if (!ids.length) { notify('Select elements of the model first: in 3D or in a plan.'); return; }
+  const command = state === 'done' ? 'planning.markDone' : state === 'started' ? 'planning.markStarted' : 'planning.unmark';
+  const r = await execute(command, { ids, ...(task ? { task } : {}), ...(date ? { date } : {}) }) as { changed: number; tasks: number; none: number; date: string } | null;
+  if (!r) return;
+  if (state === 'none') notify(`${ids.length} element(s) not started, in ${r.tasks} task(s).`);
+  else notify(`${ids.length} element(s) marked ${state === 'done' ? 'done' : 'started'} on ${showDate(r.date)}, in ${r.tasks} task(s).`);
+}
+
+/** The baseline saved from the dates as they are now (the one baseline: saved again, it is replaced, asked first). */
+export async function saveBaseline(): Promise<void> {
+  const data = usePlanning.getState().data;
+  if (!data?.tasks.length) { notify('The schedule has no tasks to keep as a baseline.'); return; }
+  if (data.baseline && !window.confirm(t('The baseline is replaced by the dates as they are now. Go on?'))) return;
+  const r = await execute('planning.saveBaseline', {}) as { tasks: number } | null;
+  if (r) { notify(`Baseline saved: ${r.tasks} tasks.`); openGantt(); }
+}
+
+export async function clearBaseline(): Promise<void> {
+  if (!usePlanning.getState().data?.baseline) { notify('The schedule has no baseline.'); return; }
+  if (!window.confirm(t('The baseline is taken off every task. Go on?'))) return;
+  await execute('planning.clearBaseline', {});
+}
+
+/** The progress read back from a workbook (as Export XLSX writes it, filled in on site) or a CSV. */
+export async function importProgress(): Promise<void> {
+  const picked = await pickFile('Workbook', ['xlsx', 'csv']);
+  if (!picked) return;
+  const r = await execute('planning.importProgress', { data: toBase64(picked.bytes) }) as { rows: number; changed: number; unknown: number } | null;
+  if (!r) return;
+  notify(`Progress from ${picked.name}: ${r.changed} of ${r.rows} task(s) changed, ${r.unknown} row(s) not found.`);
+  openGantt();
 }

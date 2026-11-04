@@ -6,13 +6,13 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ListChecks, MousePointer2, Wand2, X } from 'lucide-react';
+import { CheckCheck, CircleOff, CirclePlay, ListChecks, MousePointer2, Wand2, X } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, query, useSession } from '../../engine/session';
 import { select, useUi } from '../../app/store';
-import { showDate, type TaskDto, type TaskRule } from './gantt';
+import { markOf, showDate, type TaskDto, type TaskRule } from './gantt';
 import { tasksOf, toggleRule, type RuleKey } from './links';
-import { assignTo, selectedElements, showTaskElements, taskOf, usePlanning, useSchedule } from './schedule';
+import { assignTo, markSelection, selectedElements, showTaskElements, taskOf, usePlanning, useSchedule } from './schedule';
 
 interface Option { id: string; name: string; count: number; class?: string; category?: string | null; kind?: string }
 type Options = Record<RuleKey, Option[]> & { categories: string[] };
@@ -125,17 +125,33 @@ export function ElementTasksSection({ node }: { node: NodeDto }) {
     );
   }
   if (!tasks.length) return null;
+  // On site (stage 5): the element marked done or started, in all its tasks or in one; the selection's when it is selected with others.
+  const sel = useUi.getState().selected;
+  const ids = sel.includes(node.id) && sel.length > 1 ? selectedElements() : [node.id];
+  const state = data ? markOf(data.tasks, node.id) : 'none';
   return (
     <dl className="fields" data-testid="element-tasks">
-      {tasks.map((t) => (
-        <div key={t.id} className="element-task">
-          <dt data-no-i18n>{t.wbs}</dt>
-          <dd>
-            <button type="button" className="link" onClick={() => { select(t.id); useUi.setState({ selected: [t.id] }); }} title={`${showDate(t.start)} – ${showDate(t.finish)}`} data-no-i18n>{t.name}</button>
-            <button type="button" className="icon mini" title="Take it out of this task" onClick={() => void assignTo(t.id, [node.id], true)}><X size={11} /></button>
-          </dd>
-        </div>
-      ))}
+      <dt>On site</dt>
+      <dd className="task-progress-marks" data-testid="element-mark" data-mark={state}>
+        <span data-i18n-ctx="progress">{state === 'done' ? 'Done' : state === 'started' ? 'Started' : 'Not started yet'}</span>
+        <button type="button" className={`icon mini${state === 'done' ? ' on' : ''}`} title="Mark done: on the status date, in every task that takes it" onClick={() => void markSelection('done', ids)} data-testid="element-mark-done"><CheckCheck size={12} /></button>
+        <button type="button" className={`icon mini${state === 'started' ? ' on' : ''}`} title="Mark started: on the status date, in every task that takes it" onClick={() => void markSelection('started', ids)} data-testid="element-mark-started"><CirclePlay size={12} /></button>
+        <button type="button" className="icon mini" title="Mark not started, in every task" disabled={state === 'none'} onClick={() => void markSelection('none', ids)}><CircleOff size={12} /></button>
+      </dd>
+      {tasks.map((t) => {
+        const m = t.marks?.[node.id];
+        return (
+          <div key={t.id} className="element-task">
+            <dt data-no-i18n>{t.wbs}</dt>
+            <dd>
+              <button type="button" className="link" onClick={() => { select(t.id); useUi.setState({ selected: [t.id] }); }} title={`${showDate(t.start)} – ${showDate(t.finish)}`} data-no-i18n>{t.name}</button>
+              {m?.done ? <span className="muted small" title="Done on" data-no-i18n>{` ✓ ${showDate(m.done)}`}</span> : m?.started ? <span className="muted small" title="Started on" data-no-i18n>{` ▶ ${showDate(m.started)}`}</span> : null}
+              {!m?.done && <button type="button" className="icon mini" title="Mark done in this task" onClick={() => void markSelection('done', ids, t.id)}><CheckCheck size={11} /></button>}
+              <button type="button" className="icon mini" title="Take it out of this task" onClick={() => void assignTo(t.id, [node.id], true)}><X size={11} /></button>
+            </dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }

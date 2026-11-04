@@ -145,6 +145,13 @@ describe('the languages', () => {
     '1 element(s) have no such part and stay out of „Plaster”.',
     '„Masonry” takes 12 element(s).',
     '2 element(s) without a task, 3 with layers without one: selected.',
+    '3 element(s) marked done on 05.03.2027, in 2 task(s).',
+    '3 element(s) not started, in 2 task(s).',
+    'Baseline saved: 6 tasks.',
+    'Progress from site.xlsx: 2 of 6 task(s) changed, 1 row(s) not found.',
+    '41.7 % done',
+    '2 tasks late · finish +2 d',
+    'on the baseline · finish 0 d',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

@@ -16,16 +16,20 @@ public sealed record DaySpan(DateOnly From, DateOnly To)
 /// <summary>
 /// An element's time on the schedule (docs/plan-4d5d.md, stage 4): the days it is built (its first task's start to its last
 /// one's finish), each layer's own days when tasks take its layers apart (a wall's core in one, its plaster in another), the
-/// days it is demolished, and, for a formwork or a scaffold, the days it stands.
+/// days it is demolished, and, for a formwork or a scaffold, the days it stands; with progress (stage 5) the days are the
+/// actual ones up to the status date (an element marked done is built on its day, whatever its task's), and
+/// <see cref="Base"/> the days its tasks' baseline gave it, which the simulation compares them with.
 /// </summary>
-public sealed record ElementTime(string Id, DaySpan? Build, IReadOnlyDictionary<int, DaySpan>? Layers, DaySpan? Demolish, string? Temporary, DaySpan? Present)
+public sealed record ElementTime(string Id, DaySpan? Build, IReadOnlyDictionary<int, DaySpan>? Layers, DaySpan? Demolish, string? Temporary, DaySpan? Present, DaySpan? Base = null)
 {
     /// <summary>A layer's days: its own, else the element's (a layer no task takes goes up with the element).</summary>
     public DaySpan? LayerSpan(int index) => Layers != null && Layers.TryGetValue(index, out var s) ? s : Build;
 }
 
 /// <summary>
-/// The states an element goes through on the schedule: not started yet (<see cref="Planned"/>), being built
+/// The states an element goes through on the schedule (and, against a baseline, <see cref="Late"/>: not built when the
+/// baseline had it built, or not started when it had it started; <see cref="Ahead"/>: under way or built before the
+/// baseline had it start): not started yet (<see cref="Planned"/>), being built
 /// (<see cref="Active"/>), built (<see cref="Done"/>), standing as it was (<see cref="Existing"/>: not built by the works, or
 /// before its demolition), being demolished (<see cref="Demolishing"/>), gone (<see cref="Gone"/>: demolished, or a temporary
 /// not up), a formwork or scaffold standing (<see cref="Temporary"/>), and in no task (<see cref="Unlinked"/>).
@@ -33,7 +37,7 @@ public sealed record ElementTime(string Id, DaySpan? Build, IReadOnlyDictionary<
 public static class Status
 {
     public const string Planned = "planned", Active = "active", Done = "done", Existing = "existing", Demolishing = "demolishing", Gone = "gone",
-        Temporary = "temporary", Unlinked = "unlinked";
+        Temporary = "temporary", Unlinked = "unlinked", Late = "late", Ahead = "ahead";
 }
 
 /// <summary>
@@ -41,7 +45,8 @@ public static class Status
 /// built, demolished, of the temporaries and of the ghosts; whether what is not started shows as a ghost or not at all;
 /// whether what no task takes shows; whether layers built apart show apart.
 /// </summary>
-public sealed record SimulationLook(string Active, string Demolishing, string Temporary, string Planned, bool Ghosts, bool HideUnlinked, bool Layers)
+public sealed record SimulationLook(string Active, string Demolishing, string Temporary, string Planned, bool Ghosts, bool HideUnlinked, bool Layers,
+    string Late = "#c2255c", string Ahead = "#2f9e44", bool Compare = true)
 {
     public static readonly SimulationLook Default = new("#e8a33d", "#d64545", "#3d8fd6", "#b8c0c8", false, false, true);
 
@@ -52,13 +57,15 @@ public sealed record SimulationLook(string Active, string Demolishing, string Te
         if (n is not JsonObject o) return Default;
         var d = Default;
         return new(Color(o["active"], d.Active), Color(o["demolishing"], d.Demolishing), Color(o["temporary"], d.Temporary), Color(o["planned"], d.Planned),
-            (string?)o["plannedMode"] == "ghost", (string?)o["unlinked"] == "hide", o["layers"] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b);
+            (string?)o["plannedMode"] == "ghost", (string?)o["unlinked"] == "hide", o["layers"] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b,
+            Color(o["late"], d.Late), Color(o["ahead"], d.Ahead), o["compare"] is not JsonValue cv || !cv.TryGetValue<bool>(out var cb) || cb);
     }
 
     public JsonObject ToJson() => new()
     {
         ["active"] = Active, ["demolishing"] = Demolishing, ["temporary"] = Temporary, ["planned"] = Planned,
         ["plannedMode"] = Ghosts ? "ghost" : "hide", ["unlinked"] = HideUnlinked ? "hide" : "show", ["layers"] = Layers,
+        ["late"] = Late, ["ahead"] = Ahead, ["compare"] = Compare,
     };
 
     public static SimulationLook Of(Plan p) => Read(p.Schedule?.Attrs["simulation"]);
@@ -97,25 +104,39 @@ public sealed class Timeline
     /// <summary>Whether a task takes its elements down rather than up.</summary>
     public static bool Demolishes(PlanTask t) => (t.Kind != null && DemolitionKinds.Contains(t.Kind)) || (t.Rule?.Demolished.Count ?? 0) > 0;
 
-    public static Timeline Build(IQueryContext q) => Build(q.Model, q.Services, q.Describe);
+    public static Timeline Build(IQueryContext q) => Build(q.Model, q.Services, q.Describe, q.Quantities);
 
     public static Timeline Build(IModelView m, IServices services, Func<string, ClassDescriptor?> describe)
+        => Build(m, services, describe, null);
+
+    public static Timeline Build(IModelView m, IServices services, Func<string, ClassDescriptor?> describe, Func<string, IReadOnlyList<QuantitySet>>? quantities)
     {
         var p = Plan.Read(m);
-        var (r, _) = PlanningModule.Solve(p);
         var links = TaskElements.Resolve(m, services, describe, p);
+        PlanningModule.ApplyProgress(m, quantities, p, links);
+        var (r, _) = PlanningModule.Solve(p);
         var t = new Timeline(p, r);
         var build = new Dictionary<string, DaySpan>();
         var layers = new Dictionary<string, Dictionary<int, DaySpan>>();
         var demolish = new Dictionary<string, DaySpan>();
+        var bases = new Dictionary<string, DaySpan>();
         foreach (var task in p.Rows)
         {
             if (!links.ByTask.TryGetValue(task.Id, out var own) || !r.Times.TryGetValue(task.Id, out var tm)) continue;
-            var span = new DaySpan(tm.Start, tm.Finish);
+            var taskSpan = new DaySpan(tm.Start, tm.Finish);
             var down = Demolishes(task);
+            var baseline = task.Baseline is { } bl ? new DaySpan(bl.Start, bl.Finish) : null;
             foreach (var (id, mask) in own)
             {
+                // An element marked on site keeps its own days: started on its mark (or with the task), built on the day it was marked done.
+                var span = taskSpan;
+                if (task.Marks.TryGetValue(id, out var mk))
+                {
+                    var from = mk.Started ?? (mk.Done is { } d0 && d0 < taskSpan.From ? d0 : taskSpan.From);
+                    span = mk.Done is { } done ? new DaySpan(from <= done ? from : done, done) : new DaySpan(from, taskSpan.To < from ? from : taskSpan.To);
+                }
                 if (down) { demolish[id] = demolish.TryGetValue(id, out var d) ? d.With(span) : span; continue; }
+                if (baseline != null) bases[id] = bases.TryGetValue(id, out var bb) ? bb.With(baseline) : baseline;
                 build[id] = build.TryGetValue(id, out var b) ? b.With(span) : span;
                 var count = links.Facts(id)?.Layers.Count ?? 1;
                 if (count <= 1) continue;
@@ -130,7 +151,7 @@ public sealed class Timeline
             var b = build.GetValueOrDefault(id);
             // Layers apart only when some layer's days are not the element's.
             IReadOnlyDictionary<int, DaySpan>? per = layers.TryGetValue(id, out var l) && b != null && (l.Count < t.LayerCounts[id] || l.Values.Any(s => s != b)) ? l : null;
-            t.Elements[id] = new ElementTime(id, b, per, demolish.GetValueOrDefault(id), null, null);
+            t.Elements[id] = new ElementTime(id, b, per, demolish.GetValueOrDefault(id), null, null, b != null ? bases.GetValueOrDefault(id) : null);
         }
         foreach (var life in TaskLives.Of(p, r, links, services, m))
             t.Elements[life.Element] = new ElementTime(life.Element, null, null, null, life.Kind, new DaySpan(life.From, life.To));
@@ -159,6 +180,23 @@ public sealed class Timeline
 
     /// <summary>An element's state on a day; <see cref="Status.Unlinked"/> when the schedule does not know it.</summary>
     public string StateOf(string id, DateOnly d) => Elements.TryGetValue(id, out var e) ? StateOf(e, d) : Status.Unlinked;
+
+    /// <summary>
+    /// An element's state on a day measured against its baseline (stage 5): <see cref="Status.Late"/> when the baseline had it
+    /// built (or started) by then and it is not, <see cref="Status.Ahead"/> when it is under way or built before the baseline
+    /// had it start; else its own state.
+    /// </summary>
+    public static string Compared(ElementTime e, DateOnly d)
+    {
+        var s = StateOf(e, d);
+        if (e.Base is not { } b || e.Build == null) return s;
+        if ((s == Status.Planned && d >= b.From) || (s == Status.Active && d > b.To)) return Status.Late;
+        if ((s == Status.Active || s == Status.Done) && d < b.From) return Status.Ahead;
+        return s;
+    }
+
+    /// <summary>The state the simulation shows: against the baseline when there is one and the look compares, else the element's own.</summary>
+    public string Shown(ElementTime e, DateOnly d) => Look.Compare ? Compared(e, d) : StateOf(e, d);
 
     public static string StateOf(ElementTime e, DateOnly d)
     {
@@ -227,6 +265,7 @@ public sealed class Timeline
                 o["layers"] = l;
             }
             if (e.Demolish is { } d) o["demolish"] = d.ToJson();
+            if (e.Base is { } bs) o["base"] = bs.ToJson();
             if (e.Present is { } pr) { o["temporary"] = e.Temporary; o["present"] = pr.ToJson(); }
             elements.Add((JsonNode)o);
         }
@@ -238,6 +277,7 @@ public sealed class Timeline
         {
             ["start"] = WorkCalendar.Date(Start), ["finish"] = WorkCalendar.Date(Finish),
             ["dataDate"] = Plan.DataDate is { } dd ? WorkCalendar.Date(dd) : null,
+            ["baseline"] = Elements.Values.Any(e => e.Base != null),
             ["look"] = Look.ToJson(), ["elements"] = elements, ["tasks"] = tasks,
             ["stages"] = new JsonObject
             {
@@ -267,7 +307,9 @@ public sealed class StateAtDate : IViewElementFilter, IViewPartFilter
         var t = Timeline.Of(q);
         if (!t.Elements.TryGetValue(element.Id, out var e))
             return t.Look.HideUnlinked && t.Elements.Count > 0 && Spatial.StoreyOf(q.Model, element.Id) != null && IsBuilt(q, element) ? (true, null) : null;
-        var state = Timeline.StateOf(e, d);
+        var state = t.Shown(e, d);
+        if (state is Status.Late) return (false, t.Look.Late);
+        if (state is Status.Ahead) return (false, t.Look.Ahead);
         // A layered element partly built: drawn by the state of the layers it shows.
         if (state is Status.Planned or Status.Active or Status.Done && e.Layers != null && t.Look.Layers)
         {

@@ -8,10 +8,10 @@ using Lapin.Platform;
 namespace Lapin.Planning;
 
 /// <summary>
-/// Planning (4D, docs/plan-4d5d.md, stages 1–4): the project's work schedule — tasks in a WBS, milestones, links FS / SS /
+/// Planning (4D, docs/plan-4d5d.md, stages 1–5): the project's work schedule — tasks in a WBS, milestones, links FS / SS /
 /// FF / SF with lags, the work calendar with Romania's legal holidays — the critical path worked out on every change, the
 /// model's elements in the tasks (each task's rule, part and exceptions, <see cref="TaskElements"/>), and the schedule in
-/// and out as IFC processes, MS Project XML and a workbook; the generator (<see cref="Generator"/>, stage 3); the 4D simulation (<see cref="Timeline"/>, stage 4). Every command is one undo step; the dates,
+/// and out as IFC processes, MS Project XML and a workbook; the generator (<see cref="Generator"/>, stage 3); the 4D simulation (<see cref="Timeline"/>, stage 4); progress and the baseline (stage 5, <see cref="TaskProgress"/>). Every command is one undo step; the dates,
 /// floats and critical flags are derived (<see cref="Cpm"/>), never stored.
 /// </summary>
 public sealed partial class PlanningModule : ILapinModule, IDeletion
@@ -239,7 +239,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
                 else
                 {
                     attrs["constraint"] = c;
-                    attrs["constraintDate"] = WorkCalendar.Date(a.ContainsKey("constraintDate") ? DateArg(a["constraintDate"], "constraint's date") : Cpm.Solve(p).Times[e.Id].Start);
+                    attrs["constraintDate"] = WorkCalendar.Date(a.ContainsKey("constraintDate") ? DateArg(a["constraintDate"], "constraint's date") : Solve(ReadResolved(ctx.Query)).Result.Times[e.Id].Start);
                 }
             }
             else if (a.ContainsKey("constraintDate") && attrs["constraint"] != null) attrs["constraintDate"] = WorkCalendar.Date(DateArg(a["constraintDate"], "constraint's date"));
@@ -254,7 +254,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             if (a.ContainsKey("finish"))
             {
                 var f = DateArg(a["finish"], "finish");
-                var start = a.ContainsKey("start") ? p.Calendar.NextWorking(DateArg(a["start"], "start"), e.Bool("wet")) : Cpm.Solve(p).Times[e.Id].Start;
+                var start = a.ContainsKey("start") ? p.Calendar.NextWorking(DateArg(a["start"], "start"), e.Bool("wet")) : Solve(ReadResolved(ctx.Query)).Result.Times[e.Id].Start;
                 var d = Math.Max(1, p.Calendar.WorkingDays(start, f.AddDays(1), attrs["wet"] is JsonValue wv && wv.TryGetValue<bool>(out var wb) && wb));
                 attrs["duration"] = d;
                 attrs.Remove("milestone");
@@ -516,6 +516,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
 
         RegisterGenerator(r);
         RegisterSimulation(r);
+        RegisterProgress(r);
+        r.Service<IVersionCompare>(new ScheduleCompare());
 
         r.Query("schedule", (q, _) => ScheduleJson(q));
 
@@ -543,13 +545,13 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
 
         r.Query("exportMsp", (q, _) =>
         {
-            var p = Plan.Read(q.Model);
+            var p = ReadResolved(q);
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(MsProject.Write(p, Solve(p).Result)));
         });
 
         r.Query("exportXlsx", (q, _) =>
         {
-            var p = Plan.Read(q.Model);
+            var p = ReadResolved(q);
             return Convert.ToBase64String(Lapin.Drawing.Export.XlsxWriter.Write([("Schedule", Table(p, Solve(p).Result, q)), ("Calendar", CalendarTable(p))]));
         });
     }
@@ -636,9 +638,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
     public static JsonObject ScheduleJson(IQueryContext q)
     {
         var m = q.Model;
-        var p = Plan.Read(m);
+        var p = ReadResolved(q, out var links);
         var (r, problem) = Solve(p);
-        var links = TaskElements.Resolve(q, p);
         var (none, partial) = links.Unlinked();
         var incoming = p.Links.GroupBy(l => l.To).ToDictionary(g => g.Key, g => g.OrderBy(l => p.RowOf.GetValueOrDefault(l.From)).ToList());
         var tasks = new JsonArray();
@@ -670,6 +671,30 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             if (t.Add.Count > 0) o["added"] = t.Add.Count;
             if (t.Remove.Count > 0) o["removed"] = t.Remove.Count;
             // Made by the generator (stage 3): from which step, whether edited by hand since, and where its duration came from.
+            // Its progress (stage 5): how much is done and where that came from, its status and actual dates, the marks on its elements; its baseline and how far it moved.
+            var pr = p.ProgressOf(t.Id);
+            o["complete"] = Math.Round(pr.Complete, 1);
+            o["progressFrom"] = pr.From;
+            o["status"] = tm.Status;
+            if (tm.Status == "started") o["remaining"] = tm.Remaining;
+            if (pr.ActualStart is { } ast) o["actualStart"] = D(ast);
+            if (pr.ActualFinish is { } afi) o["actualFinish"] = D(afi);
+            if (pr.Done + pr.Started > 0) { o["marked"] = new JsonObject { ["done"] = pr.Done, ["started"] = pr.Started, ["of"] = pr.Count }; }
+            if (!summary)
+            {
+                if (t.Complete is { } own) o["completeOwn"] = own;
+                if (t.ActualStart is { } ownS) o["actualStartOwn"] = D(ownS);
+                if (t.ActualFinish is { } ownF) o["actualFinishOwn"] = D(ownF);
+                if (t.Marks.Count > 0) o["marks"] = new JsonObject(t.Marks.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value.ToJson())));
+            }
+            if (t.Baseline is { } bl)
+            {
+                o["baselineStart"] = D(bl.Start);
+                o["baselineFinish"] = D(bl.Finish);
+                o["baselineDuration"] = bl.Duration;
+                o["startVariance"] = bl.StartVariance(p.Calendar, tm.Start);
+                o["finishVariance"] = bl.FinishVariance(p.Calendar, tm.Finish);
+            }
             if (m.Get(t.Id) is { } te)
             {
                 if (te.Str("gen") is { } gen) o["gen"] = gen;
@@ -689,11 +714,23 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         cal["id"] = p.CalendarEntity?.Id;
         cal["name"] = p.CalendarEntity?.Name ?? "Standard";
         var shownFrom = p.Start.AddDays(-62);
+        var leaves = p.Rows.Where(t => !p.IsSummary(t.Id)).ToList();
+        double weights = leaves.Sum(t => t.Milestone ? 0 : Math.Max(0, t.Duration));
+        var overall = leaves.Count == 0 ? 0 : weights > 0 ? leaves.Sum(t => p.ProgressOf(t.Id).Complete * (t.Milestone ? 0 : Math.Max(0, t.Duration))) / weights : leaves.Average(t => p.ProgressOf(t.Id).Complete);
+        var late = leaves.Count(t => t.Baseline is { } b && r.Times.TryGetValue(t.Id, out var x) && b.FinishVariance(p.Calendar, x.Finish) > 0);
+        var baseFinish = p.Rows.Where(t => t.Baseline != null).Select(t => t.Baseline!.Finish).DefaultIfEmpty().Max();
         var shownTo = finish.AddDays(400);
         return new JsonObject
         {
             ["id"] = p.Schedule?.Id, ["name"] = p.Name, ["start"] = D(p.Start), ["finish"] = D(finish),
             ["dataDate"] = p.DataDate is { } dd ? D(dd) : null,
+            // Progress and the baseline (stage 5): the whole schedule's percentage (by the tasks' durations), the tasks late on the baseline, when it was saved and the finish it had.
+            ["complete"] = Math.Round(overall, 1),
+            ["baseline"] = p.Rows.Any(t => t.Baseline != null) ? new JsonObject
+            {
+                ["saved"] = p.BaselineSaved is { } bs ? D(bs) : null, ["finish"] = D(baseFinish),
+                ["finishVariance"] = new TaskBaseline(baseFinish, baseFinish, 0).FinishVariance(p.Calendar, finish), ["late"] = late,
+            } : null,
             ["workingDays"] = p.Calendar.WorkingDays(p.Calendar.NextWorking(p.Start), r.Finish),
             ["calendar"] = cal,
             ["nonWorking"] = new JsonArray(p.Calendar.NonWorking(shownFrom, shownTo).Select(x => (JsonNode)new JsonObject { ["date"] = D(x.Day), ["why"] = x.Why }).ToArray()),
@@ -715,7 +752,8 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
     {
         var incoming = p.Links.GroupBy(l => l.To).ToDictionary(g => g.Key, g => g.ToList());
         var links = TaskElements.Resolve(q, p);
-        var rows = new List<IReadOnlyList<string>> { new[] { "ID", "WBS", "Task", "Duration (working days)", "Start", "Finish", "Predecessors", "Total float", "Free float", "Critical", "Milestone", "Summary", "Elements", "Rule" } };
+        var rows = new List<IReadOnlyList<string>> { new[] { "ID", "WBS", "Task", "Duration (working days)", "Start", "Finish", "Predecessors", "Total float", "Free float", "Critical", "Milestone", "Summary",
+            "% complete", "Actual start", "Actual finish", "Baseline start", "Baseline finish", "Finish variance", "GlobalId", "Elements", "Rule" } };
         foreach (var t in p.Rows)
         {
             var tm = r.Times[t.Id];
@@ -725,11 +763,15 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
                 $"{p.RowOf[t.Id]}", p.Wbs[t.Id], new string(' ', 2 * p.Level[t.Id]) + t.Name, $"{(summary ? tm.Duration : milestone ? 0 : t.Duration)}",
                 D(tm.Start), D(tm.Finish), string.Join(", ", (incoming.GetValueOrDefault(t.Id) ?? []).Select(p.LinkText)),
                 $"{tm.TotalFloat}", $"{tm.FreeFloat}", tm.Critical ? "yes" : "", milestone ? "yes" : "", summary ? "yes" : "",
+                Pct(p.ProgressOf(t.Id).Complete), p.ProgressOf(t.Id).ActualStart is { } ast ? D(ast) : "", p.ProgressOf(t.Id).ActualFinish is { } afi ? D(afi) : "",
+                t.Baseline is { } bl ? D(bl.Start) : "", t.Baseline is { } bf ? D(bf.Finish) : "", t.Baseline is { } bv ? $"{bv.FinishVariance(p.Calendar, tm.Finish)}" : "", t.Id,
                 $"{links.Under(t.Id).Count}", t.Links || t.Part != null ? TaskElements.Describe(q.Model, q.Describe, t.Rule, t.Part, t.Add.Count, t.Remove.Count) : "",
             ]);
         }
         return rows;
     }
+
+    static string Pct(double v) => Math.Round(v, 1).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>The calendar as a table: its rules, then each day not worked from the schedule's first year to the year after its finish.</summary>
     static List<IReadOnlyList<string>> CalendarTable(Plan p)

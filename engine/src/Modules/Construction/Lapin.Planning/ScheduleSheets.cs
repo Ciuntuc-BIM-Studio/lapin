@@ -28,7 +28,7 @@ public sealed class GanttSheet : ISheetContent
 
     public IReadOnlyList<(double W, double H, List<Pen> Pens)> Pages(IQueryContext q, Entity e, double maxWidth, double? maxHeight)
     {
-        var p = Plan.Read(q.Model);
+        var p = PlanningModule.ReadResolved(q);
         var (r, _) = PlanningModule.Solve(p);
         var width = Math.Max(200, maxWidth);
         // The table's columns: row, task (WBS and name), duration, start, finish; the task column gives way on narrow paper.
@@ -66,6 +66,9 @@ public sealed class GanttSheet : ISheetContent
         var black = new Pen("GANTT-BAR", "#000000", 0.1, "#000000", null);
         var links = new Pen("GANTT-LINK", "#555555", 0.15, null, null);
         var status = new Pen("GANTT-STATUS", Critical, 0.25, null, [2, 1]);
+        // Stage 5: the baseline as a thin grey bar under each task's, the part done as a dark band through its bar.
+        var baselinePen = new Pen("GANTT-BASELINE", "#7d8791", 0.05, "#aab2bb", null);
+        var donePen = new Pen("GANTT-PROGRESS", "#000000", 0, "#26313d", null);
         var y0 = TitleH;
         text.Texts.Add(new PenText(new Vec2(0, 6), firstPage ? p.Name : $"{p.Name} (continued)", 5, Anchor: "start", Bold: true));
         var finish = r.Times.Count > 0 ? r.Times.Values.Max(t => t.Finish) : p.Start;
@@ -133,6 +136,17 @@ public sealed class GanttSheet : ISheetContent
                 black.Loops.Add([new(xa, cy - 1.2), new(xb, cy - 1.2), new(xb, cy + 1.4), new(xb - 1, cy + 0.4), new(xa + 1, cy + 0.4), new(xa, cy + 1.4)]);
             else
                 (tm.Critical ? critical : bars).Loops.Add([new(xa, cy - 1.3), new(Math.Max(xb, xa + 0.4), cy - 1.3), new(Math.Max(xb, xa + 0.4), cy + 1.3), new(xa, cy + 1.3)]);
+            if (!milestone && p.ProgressOf(t.Id).Complete is var pc && pc > 0)
+            {
+                var xd = xa + (Math.Max(xb, xa + 0.4) - xa) * Math.Min(100, pc) / 100;
+                donePen.Loops.Add([new(xa, cy - 0.45), new(xd, cy - 0.45), new(xd, cy + 0.45), new(xa, cy + 0.45)]);
+            }
+            if (t.Baseline is { } bl)
+            {
+                var ba = X(bl.Start);
+                var bb = Math.Max(X(bl.Finish.AddDays(1)), ba + 0.4);
+                baselinePen.Loops.Add([new(ba, cy + 1.55), new(bb, cy + 1.55), new(bb, cy + 2.2), new(ba, cy + 2.2)]);
+            }
         }
         // The links on this page: from the predecessor's end to the successor's (the elbow over the gap).
         foreach (var l in p.Links)
@@ -152,7 +166,7 @@ public sealed class GanttSheet : ISheetContent
             links.Segments.Add((new Vec2(l.Type is "FS" ? xm : xb, yb), new Vec2((l.Type is "FS" ? xm : xb) + 0.6, yb - 0.9 * dir)));
         }
         if (p.DataDate is { } dd && dd >= from && dd <= to) status.Segments.Add((new Vec2(X(dd), y0 + HeadH / 2), new Vec2(X(dd), bodyBottom)));
-        return (width, bodyBottom, new List<Pen> { thin, rule, links, bars, critical, black, status, text }.Where(x => x.Segments.Count + x.Loops.Count + x.Texts.Count > 0).ToList());
+        return (width, bodyBottom, new List<Pen> { thin, rule, links, baselinePen, bars, critical, black, donePen, status, text }.Where(x => x.Segments.Count + x.Loops.Count + x.Texts.Count > 0).ToList());
     }
 }
 

@@ -1,7 +1,7 @@
 ---
 title: Planning
 order: 97
-summary: The work schedule in a Gantt chart: generated from the model or made by hand, tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; the 4D simulation of the building growing day by day, on views and sheets and as a video; to and from MS Project, IFC and Excel.
+summary: The work schedule in a Gantt chart: generated from the model or made by hand, tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; the 4D simulation of the building growing day by day, on views and sheets and as a video; progress marked on site, from a phone too, against a baseline; to and from MS Project, IFC and Excel.
 ---
 
 ## The Planning tab
@@ -15,6 +15,7 @@ summary: The work schedule in a Gantt chart: generated from the model or made by
 - **Indent**, **Outdent**, **Link** and **Unlink**: the WBS and the links of the tasks selected.
 - **Add to task…** (TA) and **Elements without a task**: the model's elements in the tasks (below).
 - **Simulate**, **Stages sheet…**, **Gantt on sheet** and **Export video…**: the 4D simulation, the model as the schedule has it on a day (below).
+- **Mark done** (MD), **Mark started** (MS), **Mark not started**, **Save baseline**, **Clear baseline** and **Import progress…**: progress and the baseline (below).
 - **Import MS Project…**, **Export MS Project…**, **Export XLSX** and **Export IFC…**: the schedule to and from other programs (below).
 
 A project has one schedule. It is made the first time you add a task or generate one, and starts the next Monday. Change its start in the Gantt's toolbar.
@@ -221,6 +222,46 @@ A plan, a section, an elevation or a saved 3D view has **State at date** in its 
 
 **Planning → Export video…** (also in the player) records the 3D view, from where it looks now, from one day to another, **a day** or **a week** a frame, with the date and the tasks under way written under it. The file is a WebM video, or MP4 where the system offers only that (the macOS app). A browser that records no video saves the frames as PNG files in a ZIP instead.
 
+## Progress
+
+![The Gantt with progress: the % column, the part done dark in each bar, the baseline under it and the variance](shots/planning-progress.webp)
+
+As the works go on, the schedule says how far they are and moves what is left:
+
+- The **status date**, in the Gantt's toolbar, is the day the progress is reported through. The work left starts the working day after it: a task not started cannot start earlier, and one under way does what is left of it from then on. The chart draws it as a blue line.
+- A task's **% complete** is typed in its column or in Properties. Without one, it comes from its elements marked on site: the quantity done out of the task's quantity (in its unit, when the generator gave it one), else their count. A summary's comes from its tasks, weighted by their durations.
+- A task's **actual start** and **actual finish** are typed in Properties. Left empty, they come from the marks: the first day an element was marked, and the last element's day once all are done. A finished task stands on its actual dates, off the critical path.
+- A task under way keeps its actual start and does the part of its duration not done yet (rounded up) after the status date; the tasks after it move with it.
+
+The bars show the part done darker. Properties says where a percentage came from and how many working days are left.
+
+![A task's progress in Properties](shots/planning-progress-task.webp)
+
+### Marking elements on site
+
+**Planning → Mark done** (MD) and **Mark started** (MS) mark the elements selected in 3D or in a plan, on the status date (today when there is none), in every task that takes them; **Mark not started** takes the marks off. A selected element's properties show its state on site with the same three buttons, and in each of its tasks the day it was done or started, with a button to mark it done in that task alone. A layered wall in a masonry task and a plaster task is marked in both, or in one from its row.
+
+![A wall's marks in its properties](shots/planning-element-marks.webp)
+
+On site, from a phone: join the project's shared session from the browser (**File → Share session…** on the computer that has it open). A guest who joined only to look may still mark elements and set a task's progress: marking is the only edit open to every guest. Photos and reports on tasks are for the premium edition.
+
+### The baseline
+
+**Planning → Save baseline** keeps every task's dates and duration as they are now; saved again, it is replaced (one baseline: several baselines and scenarios are for the premium edition). The Gantt then draws it as a thin grey bar under each task's bar (**Baseline** in the toolbar hides it), adds the **Variance** column (the working days the finish moved: positive is late, the row marked in red), and says in its toolbar how many tasks are late and how far the finish moved. Properties gives the baseline's dates and the start and finish variances. **Clear baseline** takes it off.
+
+### Late and ahead in the simulation
+
+![The simulation on the status date: the windows late on the baseline](shots/planning-progress-simulation.webp)
+
+With a baseline, the simulation compares: an element not built (or not started) on a day the baseline had it so is **late** (crimson), and one under way or built before the baseline had it start is **ahead** (green). Up to the status date the elements stand on their actual days: one marked done is built on the day it was marked. **Compared with the baseline**, in the simulation's settings, switches it off; its two colours are set there too. Views and sheets at a date show the same.
+
+### Progress in the files
+
+- **Export XLSX** adds the columns **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** and **GlobalId**. Fill them in on site and read them back with **Planning → Import progress…**: the rows are found by GlobalId, WBS or ID, and a *Status date* written above the table sets the status date. A CSV works too.
+- **MS Project XML** carries the status date, each task's percentage, actual start and finish, the duration left and the baseline (Baseline 0); the elements' marks travel with the elements in *Lapin elements*.
+- **IFC** writes them in each task's IfcTaskTime (the status time, the actual start and finish, the time left, the completion), and the baseline as a second IfcWorkSchedule of type BASELINE; Lapin's own fields (the percentage typed, the marks) go in `Lapin_Task`. Both come back to the same dates.
+- **Manage → Versions → Compare** says, beside the elements, what changed in the schedule: the finish, the working days, the status date, and the tasks added, removed, moved (by how many working days), whose duration changed or whose progress changed.
+
 ## The calendar
 
 ![The work calendar](shots/planning-calendar.webp)
@@ -244,5 +285,4 @@ Lapin's own fields that other programs have no place for (a task's constraint, w
 
 ## What comes next
 
-Progress and baselines, and the cost estimate come in the next stages.
-
+The cost estimate comes in the next stages.

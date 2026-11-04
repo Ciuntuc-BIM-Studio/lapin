@@ -274,7 +274,32 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
                 ["changed"] = new JsonArray(parts.Changed.Select(s => (JsonNode)s).ToArray()), ["same"] = parts.Same,
                 ["areas"] = new JsonObject(parts.Areas.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))),
             },
+            // What the modules say changed beside the elements (the work schedule: tasks moved, durations changed, the finish).
+            ["sections"] = Sections(session, x.Entities, x.Relations, y.Entities, y.Relations),
         };
+    }
+
+    static JsonArray Sections(Session session, IReadOnlyList<Entity> ae, IReadOnlyList<Relation> ar, IReadOnlyList<Entity> be, IReadOnlyList<Relation> br)
+    {
+        var o = new JsonArray();
+        var compares = session.Catalog.All<IVersionCompare>();
+        if (compares.Count == 0) return o;
+        var a = new ModelSnapshot(ae, ar);
+        var b = new ModelSnapshot(be, br);
+        foreach (var c in compares)
+        {
+            VersionDiffSection? s;
+            try { s = c.Compare(a, b); }
+            catch (CommandException) { continue; }
+            if (s == null) continue;
+            o.Add((JsonNode)new JsonObject
+            {
+                ["key"] = s.Key, ["title"] = s.Title,
+                ["facts"] = new JsonArray(s.Facts.Select(f => (JsonNode)new JsonObject { ["label"] = f.Label, ["from"] = f.From, ["to"] = f.To }).ToArray()),
+                ["rows"] = new JsonArray(s.Rows.Select(r => (JsonNode)new JsonObject { ["id"] = r.Id, ["name"] = r.Name, ["what"] = r.What, ["from"] = r.From, ["to"] = r.To, ["days"] = r.Days }).ToArray()),
+            });
+        }
+        return o;
     }
 }
 
@@ -482,6 +507,8 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey":
                 return null;
             case "doc.execute":
+                // Marking progress on site (docs/plan-4d5d.md, stage 5) is open to every guest, one who joined to look too.
+                if (!editor && (string?)p["command"] is { } command && SiteCommands.Contains(command)) return null;
                 return editor ? null : "You joined to look: ask the host to let you edit.";
             case "doc.undo" or "doc.redo" or "project.convertToNative":
                 return editor ? null : "You joined to look: ask the host to let you edit.";
@@ -494,6 +521,13 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return "Only the host can do that.";
         }
     }
+
+    /// <summary>
+    /// The commands any guest may run, one who joined to look too: progress marked on site (the planning module's
+    /// <c>markDone</c>, <c>markStarted</c>, <c>unmark</c> and <c>setProgress</c>; docs/plan-4d5d.md, stage 5). Named here
+    /// rather than read from the module, so a product without planning refuses them like any command it lacks.
+    /// </summary>
+    public static readonly HashSet<string> SiteCommands = ["planning.markDone", "planning.markStarted", "planning.unmark", "planning.setProgress"];
 
     /// <summary>The keys that name a file or a folder on the computer that reads them.</summary>
     static readonly HashSet<string> PathKeys = new(StringComparer.OrdinalIgnoreCase) { "path", "paths", "folder", "directory", "dir" };

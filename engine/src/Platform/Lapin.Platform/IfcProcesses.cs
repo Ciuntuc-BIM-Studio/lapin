@@ -12,10 +12,13 @@ public sealed record IfcCalendarData(string Id, string Name, IReadOnlyList<int> 
 
 /// <summary>
 /// An IfcTaskTime: the scheduled duration in working days, the scheduled (early) start and finish, the late ones, the
-/// floats in working days and whether the task is critical; the times of day are the calendar's. What a file leaves out is null.
+/// floats in working days and whether the task is critical; the times of day are the calendar's; its progress (the status
+/// time, the actual start and finish, the working days left, and the completion as a fraction, 0.6 for 60 %). What a file
+/// leaves out is null.
 /// </summary>
 public sealed record IfcTaskTimeData(double? DurationDays, DateTime? ScheduleStart, DateTime? ScheduleFinish, DateTime? LateStart = null, DateTime? LateFinish = null,
-    double? FreeFloatDays = null, double? TotalFloatDays = null, bool? IsCritical = null, double? Completion = null);
+    double? FreeFloatDays = null, double? TotalFloatDays = null, bool? IsCritical = null, double? Completion = null,
+    DateTime? StatusTime = null, DateTime? ActualStart = null, DateTime? ActualFinish = null, double? RemainingDays = null);
 
 /// <summary>
 /// An IfcTask of a schedule: its GlobalId, name, WBS code (Identification), the task it is nested in (IfcRelNests; null at

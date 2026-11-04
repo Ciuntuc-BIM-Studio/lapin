@@ -7,17 +7,21 @@
  * only while it stands, a layered wall's layers not yet laid left out. The looks are shared objects, one per state (and per
  * mix of layer states), so a day that changes nothing changes no look, and the 3D restyles only what moved: nothing is built
  * again, so a large model plays smoothly. Playback: the day moves by the speed (days a second) as time passes, or steps a
- * day or a week.
+ * day or a week. With progress and a baseline (stage 5): an element's days are the actual ones up to the status date, and,
+ * measured against the baseline's days, one not built (or not started) when the baseline had it so is late, one under way
+ * before the baseline had it start is ahead, each in its colour.
  */
 
 import type { Look } from '../../platform/looks';
 import { dateOf, dayOf } from './gantt';
 
-export type SimState = 'planned' | 'active' | 'done' | 'existing' | 'demolishing' | 'gone' | 'temporary' | 'unlinked';
+export type SimState = 'planned' | 'active' | 'done' | 'existing' | 'demolishing' | 'gone' | 'temporary' | 'unlinked' | 'late' | 'ahead';
 
 export interface SimLookDto {
   active: string; demolishing: string; temporary: string; planned: string;
   plannedMode: 'hide' | 'ghost'; unlinked: 'show' | 'hide'; layers: boolean;
+  /** Against the baseline (stage 5): the colours of what is late and what is ahead, and whether the simulation compares at all. */
+  late: string; ahead: string; compare: boolean;
 }
 
 export interface TimelineElementDto {
@@ -28,10 +32,12 @@ export interface TimelineElementDto {
   demolish?: [string, string];
   temporary?: string;
   present?: [string, string];
+  /** The days its tasks' baseline gave it (stage 5). */
+  base?: [string, string];
 }
 
 export interface TimelineDto {
-  start: string; finish: string; dataDate: string | null; look: SimLookDto;
+  start: string; finish: string; dataDate: string | null; look: SimLookDto; baseline?: boolean;
   elements: TimelineElementDto[];
   tasks: { id: string; name: string; start: string; finish: string; duration: number }[];
   stages: { chapters: string[]; months: string[] };
@@ -39,28 +45,33 @@ export interface TimelineDto {
 
 type Span = [number, number];
 
-export interface SimElement { id: string; build: Span | null; layers: [string, Span][] | null; demolish: Span | null; present: Span | null; temporary: string | null }
+export interface SimElement { id: string; build: Span | null; layers: [string, Span][] | null; demolish: Span | null; present: Span | null; temporary: string | null; base?: Span | null }
 
 export interface SimTimeline {
   start: number; finish: number; look: SimLookDto;
+  /** Whether some element has baseline days to be compared with. */
+  baseline: boolean;
   elements: SimElement[];
   ids: Set<string>;
   tasks: { id: string; name: string; start: number; finish: number; duration: number }[];
   stages: { chapters: number[]; months: number[] };
 }
 
-export const DEFAULT_LOOK: SimLookDto = { active: '#e8a33d', demolishing: '#d64545', temporary: '#3d8fd6', planned: '#b8c0c8', plannedMode: 'hide', unlinked: 'show', layers: true };
+export const DEFAULT_LOOK: SimLookDto = {
+  active: '#e8a33d', demolishing: '#d64545', temporary: '#3d8fd6', planned: '#b8c0c8', plannedMode: 'hide', unlinked: 'show', layers: true,
+  late: '#c2255c', ahead: '#2f9e44', compare: true,
+};
 
 const span = (s: [string, string] | undefined): Span | null => (s ? [dayOf(s[0]), dayOf(s[1])] : null);
 
 /** The timeline as day numbers. */
 export function prepare(t: TimelineDto): SimTimeline {
   const elements = t.elements.map((e): SimElement => ({
-    id: e.id, build: span(e.build), demolish: span(e.demolish), present: span(e.present), temporary: e.temporary ?? null,
+    id: e.id, build: span(e.build), demolish: span(e.demolish), present: span(e.present), temporary: e.temporary ?? null, base: span(e.base),
     layers: e.layers ? Object.entries(e.layers).map(([k, s]) => [k, span(s)!] as [string, Span]) : null,
   }));
   return {
-    start: dayOf(t.start), finish: dayOf(t.finish), look: { ...DEFAULT_LOOK, ...t.look },
+    start: dayOf(t.start), finish: dayOf(t.finish), look: { ...DEFAULT_LOOK, ...t.look }, baseline: elements.some((e) => !!e.base),
     elements, ids: new Set(elements.map((e) => e.id)),
     tasks: t.tasks.map((x) => ({ ...x, start: dayOf(x.start), finish: dayOf(x.finish) })),
     stages: { chapters: t.stages.chapters.map(dayOf), months: t.stages.months.map(dayOf) },
@@ -75,6 +86,21 @@ export function stateOf(e: SimElement, d: number): SimState {
   if (e.demolish && (!e.build || d >= e.demolish[0])) return d < e.demolish[0] ? 'existing' : d <= e.demolish[1] ? 'demolishing' : 'gone';
   return built(e.build, d);
 }
+
+/**
+ * An element's state on a day measured against its baseline (as the engine's Timeline.Compared): late when the baseline
+ * had it started (or built) by then and it is not, ahead when it is under way or built before the baseline had it start.
+ */
+export function comparedOf(e: SimElement, d: number): SimState {
+  const s = stateOf(e, d);
+  if (!e.base || !e.build) return s;
+  if ((s === 'planned' && d >= e.base[0]) || (s === 'active' && d > e.base[1])) return 'late';
+  if ((s === 'active' || s === 'done') && d < e.base[0]) return 'ahead';
+  return s;
+}
+
+/** The state the simulation shows: against the baseline when the look compares, else the element's own. */
+export const shownOf = (e: SimElement, d: number, look: Pick<SimLookDto, 'compare'>): SimState => (look.compare ? comparedOf(e, d) : stateOf(e, d));
 
 /** Each layer's state on a day (null: built in one piece, or demolished). */
 export function layerStates(e: SimElement, d: number): [string, SimState][] | null {
@@ -97,6 +123,8 @@ export function lookKit(look: SimLookDto): LookKit {
     demolishing: { color: look.demolishing },
     temporary: { color: look.temporary },
     gone: { hidden: true },
+    late: { color: look.late },
+    ahead: { color: look.ahead },
   };
   if (look.unlinked === 'hide') byState.unlinked = { hidden: true };
   return { look, byState, mixed: new Map() };
@@ -131,7 +159,7 @@ export function looksAt(t: SimTimeline, d: number, kit: LookKit, others: Iterabl
   const looks: Record<string, Look> = {};
   const sig: string[] = [];
   for (const e of t.elements) {
-    const s = stateOf(e, d);
+    const s = shownOf(e, d, kit.look);
     const ls = kit.look.layers && (s === 'active' || s === 'done') ? layerStates(e, d) : null;
     const l = ls ? mixedLook(kit, ls) : kit.byState[s];
     if (!l) continue;
@@ -146,18 +174,20 @@ export function looksAt(t: SimTimeline, d: number, kit: LookKit, others: Iterabl
 /** How many elements are in each state on a day (the legend's counts). */
 export function counts(t: SimTimeline, d: number): Partial<Record<SimState, number>> {
   const o: Partial<Record<SimState, number>> = {};
-  for (const e of t.elements) { const s = stateOf(e, d); o[s] = (o[s] ?? 0) + 1; }
+  for (const e of t.elements) { const s = shownOf(e, d, t.look); o[s] = (o[s] ?? 0) + 1; }
   return o;
 }
 
-/** The legend: what each colour means, in the simulation's colours (the ghost only when not started shows as one). */
-export function legend(look: SimLookDto): { state: SimState; color: string; label: string }[] {
-  const o = [
-    { state: 'active' as const, color: look.active, label: 'Under way' },
-    { state: 'demolishing' as const, color: look.demolishing, label: 'Being demolished' },
-    { state: 'temporary' as const, color: look.temporary, label: 'Formwork and scaffolding' },
+/** The legend: what each colour means, in the simulation's colours (the ghost only when not started shows as one; late and ahead with a baseline to compare with). */
+export function legend(look: SimLookDto, baseline = false): { state: SimState; color: string; label: string }[] {
+  const o: { state: SimState; color: string; label: string }[] = [
+    { state: 'active', color: look.active, label: 'Under way' },
+    { state: 'demolishing', color: look.demolishing, label: 'Being demolished' },
+    { state: 'temporary', color: look.temporary, label: 'Formwork and scaffolding' },
   ];
-  return look.plannedMode === 'ghost' ? [...o, { state: 'planned', color: look.planned, label: 'Not started (ghost)' }] : o;
+  if (look.plannedMode === 'ghost') o.push({ state: 'planned', color: look.planned, label: 'Not started (ghost)' });
+  if (baseline && look.compare) o.push({ state: 'late', color: look.late, label: 'Late on the baseline' }, { state: 'ahead', color: look.ahead, label: 'Ahead of the baseline' });
+  return o;
 }
 
 // ── Playback ─────────────────────────────────────────────────────────────────

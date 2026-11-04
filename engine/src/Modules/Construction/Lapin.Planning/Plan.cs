@@ -8,11 +8,16 @@ namespace Lapin.Planning;
 /// A task as the scheduler reads it from its IfcTask: its place in the WBS (parent and order among its siblings), its
 /// duration in working days (0: a milestone), its constraint (start no earlier than, must start on, with a date), and
 /// whether it is wet (it keeps the calendar's winter break); and its elements (stage 2): the rule they are found by, those
-/// added and taken off by hand (ids), and the part of them it takes (<see cref="TaskParts"/>). Crews and norms come later.
+/// added and taken off by hand (ids), and the part of them it takes (<see cref="TaskParts"/>); its progress (stage 5): the
+/// actual start and finish and the percentage typed on it, its elements marked started or done, and its baseline.
 /// </summary>
 public sealed record PlanTask(string Id, string Name, string? Parent, double Order, int Duration, bool Milestone, string? Constraint, DateOnly? ConstraintDate, bool Wet, string? Kind, string? Notes,
-    TaskRule? Rule = null, string? Part = null, IReadOnlyList<string>? AddIds = null, IReadOnlyList<string>? RemoveIds = null)
+    TaskRule? Rule = null, string? Part = null, IReadOnlyList<string>? AddIds = null, IReadOnlyList<string>? RemoveIds = null,
+    DateOnly? ActualStart = null, DateOnly? ActualFinish = null, double? Complete = null, IReadOnlyDictionary<string, ElementMark>? MarkMap = null, TaskBaseline? Baseline = null)
 {
+    /// <summary>Its elements marked on site (stage 5): started, done, by element id.</summary>
+    public IReadOnlyDictionary<string, ElementMark> Marks => MarkMap ?? EmptyMarks;
+    static readonly Dictionary<string, ElementMark> EmptyMarks = [];
     public IReadOnlyList<string> Add => AddIds ?? [];
     public IReadOnlyList<string> Remove => RemoveIds ?? [];
     /// <summary>Whether the task takes elements at all (a rule, or elements added by hand).</summary>
@@ -42,6 +47,23 @@ public sealed class Plan
     public WorkCalendar Calendar { get; init; } = WorkCalendar.Default;
     public DateOnly Start { get; init; }
     public DateOnly? DataDate { get; init; }
+    /// <summary>When the baseline was saved (null: none).</summary>
+    public DateOnly? BaselineSaved { get; init; }
+    /// <summary>Each task's progress (stage 5): its own fields, its elements' marks once <see cref="ProgressOf"/> was given them (<see cref="ApplyElements"/>), the summaries from their tasks.</summary>
+    public Dictionary<string, TaskProgress> Progress { get; private set; } = [];
+
+    public TaskProgress ProgressOf(string id) => Progress.TryGetValue(id, out var p) ? p : TaskProgress.None;
+
+    /// <summary>
+    /// The leaves' progress worked out again from their elements (each task's own, by id, with the part it takes) and the
+    /// measure of a part of an element (null: a count), then the summaries from their leaves.
+    /// </summary>
+    public void ApplyElements(Func<string, IReadOnlyDictionary<string, ulong>?> elementsOf, Func<PlanTask, string, ulong, double>? measure)
+    {
+        foreach (var t in Rows)
+            if (!IsSummary(t.Id)) Progress[t.Id] = TaskProgress.Of(t, elementsOf(t.Id), measure);
+        TaskProgress.Rollup(this);
+    }
     public string Name { get; init; } = "Work schedule";
     /// <summary>The tasks in row order: depth first, siblings by their order.</summary>
     public IReadOnlyList<PlanTask> Rows { get; private set; } = [];
@@ -72,7 +94,9 @@ public sealed class Plan
         Math.Max(0, (int)Math.Round(e.Num("duration", 1))), e.Bool("milestone"),
         e.Str("constraint") is { } c && Constraints.Contains(c) ? c : null, WorkCalendar.ParseDate(e.Str("constraintDate")),
         e.Bool("wet"), e.PredefinedType, e.Str("notes"),
-        TaskRule.Read(e.Attrs["rule"]), PartOf(e.Str("part")), Ids(e.Attrs["add"]), Ids(e.Attrs["remove"]));
+        TaskRule.Read(e.Attrs["rule"]), PartOf(e.Str("part")), Ids(e.Attrs["add"]), Ids(e.Attrs["remove"]),
+        WorkCalendar.ParseDate(e.Str("actualStart")), WorkCalendar.ParseDate(e.Str("actualFinish")),
+        e.NumOrNull("complete") is { } pc && double.IsFinite(pc) ? Math.Clamp(pc, 0, 100) : null, ElementMark.ReadAll(e.Attrs["marks"]), TaskBaseline.Read(e.Attrs["baseline"]));
 
     static string? PartOf(string? s) { try { return TaskParts.Parse(s); } catch (CommandException) { return null; } }
 
@@ -101,6 +125,7 @@ public sealed class Plan
             Calendar = WorkCalendar.Read(calendarEntity?.Attrs),
             Start = WorkCalendar.ParseDate(schedule?.Str("start")) ?? NextMonday(Today()),
             DataDate = WorkCalendar.ParseDate(schedule?.Str("dataDate")),
+            BaselineSaved = WorkCalendar.ParseDate(schedule?.Str("baselineSaved")),
             Name = schedule?.Name ?? "Work schedule",
             Links = links,
         };
@@ -143,6 +168,8 @@ public sealed class Plan
         Walk(roots, 0, "");
         foreach (var kids in plan.Children.Values) kids.Sort((a, b) => plan.RowOf[a].CompareTo(plan.RowOf[b]));
         plan.Rows = rows;
+        foreach (var t in rows) if (!plan.IsSummary(t.Id)) plan.Progress[t.Id] = TaskProgress.Of(t, null, null);
+        TaskProgress.Rollup(plan);
         return plan;
     }
 
@@ -151,6 +178,7 @@ public sealed class Plan
     {
         var p = (Plan)MemberwiseClone();
         p.Links = links;
+        p.Progress = new Dictionary<string, TaskProgress>(Progress);
         return p;
     }
 

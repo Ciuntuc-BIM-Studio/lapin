@@ -134,10 +134,10 @@ export function SimulationLooks() {
 }
 
 /** The colours and what each means, the day's counts beside. */
-function Legend({ look, tally }: { look: SimLookDto; tally?: Partial<Record<string, number>> }) {
+function Legend({ look, tally, baseline }: { look: SimLookDto; tally?: Partial<Record<string, number>>; baseline: boolean }) {
   return (
     <span className="sim-legend" data-testid="sim-legend">
-      {legend(look).map((x) => (
+      {legend(look, baseline).map((x) => (
         <span key={x.state} className="sim-key" data-state={x.state}>
           <i style={{ background: x.color }} aria-hidden />
           <span>{x.label}</span>
@@ -151,7 +151,7 @@ function Legend({ look, tally }: { look: SimLookDto; tally?: Partial<Record<stri
 /** The simulation's settings: the colours, what is not started and what no task takes, layers apart. */
 function SimulationSettings({ look, onClose }: { look: SimLookDto; onClose: () => void }) {
   const set = (args: Record<string, unknown>) => void execute('planning.setSimulation', args);
-  const colour = (key: 'active' | 'demolishing' | 'temporary' | 'planned', label: string) => (
+  const colour = (key: 'active' | 'demolishing' | 'temporary' | 'planned' | 'late' | 'ahead', label: string) => (
     <label className="sim-colour"><input type="color" value={look[key]} onChange={(e) => set({ [key]: e.target.value })} data-sim-colour={key} /><span>{label}</span></label>
   );
   return (
@@ -168,6 +168,8 @@ function SimulationSettings({ look, onClose }: { look: SimLookDto; onClose: () =
         <option value="show">shown</option><option value="hide">hidden</option>
       </select></label>
       <label className="check"><input type="checkbox" checked={look.layers} onChange={(e) => set({ layers: e.target.checked })} />Layers built apart (the plaster after the brick)</label>
+      <label className="check" title="With a baseline saved: what is behind it and what is ahead of it, each in its colour"><input type="checkbox" checked={look.compare} onChange={(e) => set({ compare: e.target.checked })} data-testid="sim-compare" />Compared with the baseline</label>
+      {look.compare && <>{colour('late', 'Late on the baseline')}{colour('ahead', 'Ahead of the baseline')}</>}
       <button type="button" className="link" onClick={() => set({ reset: true })}>Default colours</button>
     </div>
   );
@@ -205,7 +207,7 @@ export function SimulationBar() {
         <span>{under.length === 1 ? 'task under way' : under.length ? 'tasks under way' : 'no task under way'}</span>
         {under.length > 0 && <span data-no-i18n>{`: ${under.map((t) => t.name).join(', ')}`}</span>}
       </span>
-      <Legend look={timeline.look} />
+      <Legend look={timeline.look} baseline={timeline.baseline} />
       <button type="button" className={`icon${settings ? ' on' : ''}`} title="Simulation settings: the colours, what is not started" onClick={() => setSettings(!settings)} data-testid="sim-settings-open"><Settings2 size={14} /></button>
       <button type="button" className="icon" title="A sheet of the model at several dates" onClick={() => useUi.setState({ dialog: 'planning.stages' })} data-testid="sim-stages"><LayoutPanelTop size={14} /><span className="small">Stages sheet…</span></button>
       <button type="button" className="icon" title="The simulation as a video file" onClick={() => useUi.setState({ dialog: 'planning.video' })} data-testid="sim-video"><Clapperboard size={14} /><span className="small">Export video…</span></button>
@@ -224,7 +226,7 @@ export function SimulationCard() {
   return (
     <div className="sel-card sim-card" role="status" aria-label="4D simulation" data-testid="sim-card">
       <b data-no-i18n>{showDate(isoOf(day))}</b>
-      <Legend look={timeline.look} tally={tally} />
+      <Legend look={timeline.look} tally={tally} baseline={timeline.baseline} />
     </div>
   );
 }

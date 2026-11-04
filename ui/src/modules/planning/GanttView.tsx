@@ -6,17 +6,20 @@
  * ends touched give FS, SS, FF or SF), the links as arrows (a click changes the type and lag), the critical path in red,
  * the days not worked shaded, today's line. Only the rows and days in view are drawn, so thousands of tasks scroll
  * smoothly. The keyboard works as in a table: arrows, Insert, Delete, Tab and Shift+Tab to indent and outdent, F2 to rename.
+ * Progress (stage 5): the % column (typed on a task, or from its elements marked on site), the part done dark in each bar,
+ * the status date in the toolbar and as a line, the baseline as a thin bar under each task's and the variance column,
+ * the late rows marked.
  */
 
 import { useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import {
-  CalendarDays, ChevronDown, ChevronRight, Clapperboard, Crosshair, Diamond, IndentDecrease, IndentIncrease, Link2, Maximize, Plus, Route, Trash2, Unlink2, Wand2, X,
+  CalendarDays, ChevronDown, ChevronRight, Clapperboard, Crosshair, Diamond, Flag, IndentDecrease, IndentIncrease, Link2, Maximize, Plus, Route, Trash2, Unlink2, Wand2, X,
 } from 'lucide-react';
 import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { useLang } from '../../i18n';
 import {
-  arrowPoints, barOf, dateOf, dayOf, dragDays, endAt, fitScale, linkLabel, linkType, MAX_PX, MIN_PX, movedFinish, movedStart, namesOf, parseDate,
+  arrowPoints, barOf, baselineBarOf, dateOf, dayOf, doneBar, dragDays, endAt, fitScale, isLate, linkLabel, linkType, MAX_PX, MIN_PX, movedFinish, movedStart, namesOf, parseDate, parsePercent, percentText, varianceText,
   rowWindow, showDate, span, ticks, tierOf, today, visibleRows, workingDaysBetween, workingTest, ZOOMS, type Bar, type LinkDto, type LinkType, type TaskDto, type Zoom,
 } from './gantt';
 import { addTask, assignTo, deleteSelected, indent, linkSelected, outdent, selectUnlinked, showTaskElements, unlinkSelected, useSchedule } from './schedule';
@@ -30,14 +33,27 @@ const COLUMNS = [
   { key: 'wbs', label: 'WBS', w: 40 },
   { key: 'name', label: 'Task', w: 170 },
   { key: 'duration', label: 'Duration', w: 58 },
+  { key: 'complete', label: '%', w: 52 },
   { key: 'start', label: 'Start', w: 84 },
   { key: 'finish', label: 'Finish', w: 84 },
   { key: 'predecessors', label: 'Predecessors', w: 84 },
   { key: 'float', label: 'Float', w: 46 },
   { key: 'elements', label: 'Elements', w: 70 },
+  { key: 'variance', label: 'Variance', w: 58 },
 ] as const;
 type Column = (typeof COLUMNS)[number]['key'];
-const TABLE_W = COLUMNS.reduce((s, c) => s + c.w, 0);
+/** The columns shown: the variance only with a baseline saved. */
+const columnsOf = (baseline: boolean) => COLUMNS.filter((c) => baseline || c.key !== 'variance');
+/** The columns that leave the bars room in a narrow pane: the least needed go first while the table takes more than 60 % of the width. */
+const DROP: Column[] = ['elements', 'predecessors', 'float', 'wbs'];
+function fitColumns(cols: (typeof COLUMNS)[number][], width: number): (typeof COLUMNS)[number][] {
+  let o = cols;
+  for (const k of DROP) {
+    if (o.reduce((s, c) => s + c.w, 0) <= Math.max(360, width * 0.6)) break;
+    o = o.filter((c) => c.key !== k);
+  }
+  return o;
+}
 
 type Drag =
   | { kind: 'move' | 'finish'; id: string; x0: number; days: number }
@@ -74,6 +90,7 @@ export function GanttView() {
   const [ppd, setPpd] = useState<number>(ZOOMS.week);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [critical, setCritical] = useState(true);
+  const [showBaseline, setShowBaseline] = useState(true);
   const [editing, setEditing] = useState<{ id: string; col: Column } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -95,6 +112,8 @@ export function GanttView() {
   }, []);
 
   const rows = useMemo(() => visibleRows(data?.tasks ?? [], collapsed), [data, collapsed]);
+  const columns = useMemo(() => fitColumns(columnsOf(!!data?.baseline), size.w), [data?.baseline, size.w]);
+  const TABLE_W = columns.reduce((s, c) => s + c.w, 0);
   const rowOf = useMemo(() => new Map(rows.map((t, i) => [t.id, i])), [rows]);
   const range = useMemo(() => (data ? span(data) : { from: today() - 7, to: today() + 90 }), [data]);
   const works = useMemo(() => (data ? workingTest(data.calendar, data.nonWorking) : () => true), [data]);
@@ -252,6 +271,7 @@ export function GanttView() {
       case 'start': { const d = parseDate(v); if (d) void execute('planning.updateTask', { id: t.id, start: d }); break; }
       case 'finish': { const d = parseDate(v); if (d) void execute('planning.updateTask', { id: t.id, finish: d }); break; }
       case 'predecessors': void execute('planning.setPredecessors', { id: t.id, text: v }); break;
+      case 'complete': { const n = v === '' ? null : parsePercent(v); if (v === '' || n !== null) void execute('planning.setProgress', { id: t.id, complete: n }); break; }
       default: break;
     }
   };
@@ -286,10 +306,12 @@ export function GanttView() {
       case 'finish': return showDate(t.finish);
       case 'predecessors': return t.predecessors;
       case 'elements': return t.count ? String(t.count) : '';
+      case 'complete': return percentText(t.complete);
+      case 'variance': return varianceText(t.finishVariance);
       default: return t.summary ? '' : `${t.totalFloat} d`;
     }
   };
-  const editable = (t: TaskDto, col: Column) => col === 'name' || (!t.summary && (col === 'duration' || col === 'start' || col === 'finish' || col === 'predecessors'));
+  const editable = (t: TaskDto, col: Column) => col === 'name' || (!t.summary && (col === 'duration' || col === 'start' || col === 'finish' || col === 'predecessors' || col === 'complete'));
 
   // The bar being dragged as it would land, and what it says.
   const ghost = (() => {
@@ -336,15 +358,21 @@ export function GanttView() {
             <button type="button" key={z} className={`chip${tier === z ? ' on' : ''}`} onClick={() => zoomTo(ZOOMS[z])} data-testid={`gantt-zoom-${z}`}>{z === 'day' ? 'Days' : z === 'week' ? 'Weeks' : z === 'month' ? 'Months' : 'Quarters'}</button>
           ))}
         </span>
-        <button type="button" className="icon" title="The whole schedule in view" onClick={fit}><Maximize size={14} /></button>
+        <button type="button" className="icon" title="The whole schedule in view" onClick={fit} data-testid="gantt-fit"><Maximize size={14} /></button>
         <button type="button" className="icon" title="Go to today" onClick={goToday}><Crosshair size={14} /><span className="small">Today</span></button>
         <button type="button" className={`icon${critical ? ' on' : ''}`} title="The critical path in red: the tasks with no float" onClick={() => setCritical(!critical)} data-testid="gantt-critical"><Route size={14} /><span className="small">Critical path</span></button>
+        {data.baseline && <button type="button" className={`icon${showBaseline ? ' on' : ''}`} title="The baseline as a thin bar under each task" onClick={() => setShowBaseline(!showBaseline)} data-testid="gantt-baseline"><Flag size={14} /><span className="small">Baseline</span></button>}
         <button type="button" className="icon" title="Working days and hours, holidays, the winter break" onClick={() => useUi.setState({ dialog: 'planning.calendar' })}><CalendarDays size={14} /><span className="small">Calendar…</span></button>
         <button type="button" className={`icon${simOn ? ' on' : ''}`} title="The model as it is built, day by day: drag the date line on the time scale, or play" onClick={() => void toggleSimulation()} data-testid="gantt-simulate"><Clapperboard size={14} /><span className="small">Simulate</span></button>
         <button type="button" className="icon" title="A schedule made from the model: its storeys, its elements and your norms" onClick={() => useUi.setState({ dialog: 'planning.generate' })} data-testid="gantt-generate-tool"><Wand2 size={14} /><span className="small">Generate schedule…</span></button>
         <span className="gantt-facts" data-testid="gantt-facts">
           <label title="The day the schedule starts">Start <input type="date" value={data.start} onChange={(e) => e.target.value && void execute('planning.updateSchedule', { start: e.target.value })} /></label>
+          <label title="The day the progress is reported through: the work left starts the working day after it">Status date <input type="date" value={data.dataDate ?? ''} onChange={(e) => void execute('planning.updateSchedule', { dataDate: e.target.value })} data-testid="gantt-status-date" /></label>
           <span>{`${data.tasks.length} tasks · ${data.workingDays} working days · finish ${showDate(data.finish)}`}</span>
+          {(data.complete ?? 0) > 0 && <span data-testid="gantt-complete">{`${percentText(data.complete)} done`}</span>}
+          {data.baseline && (data.baseline.late > 0
+            ? <span className="error-text" data-testid="gantt-late">{`${data.baseline.late} tasks late · finish ${varianceText(data.baseline.finishVariance)}`}</span>
+            : <span className="muted" data-testid="gantt-late">{`on the baseline · finish ${varianceText(data.baseline.finishVariance)}`}</span>)}
           {data.problem && <span className="error-text">{data.problem}</span>}
           {data.tasks.some((t) => t.count > 0) && (data.elements.none > 0 || data.elements.partial > 0
             ? <button type="button" className="link cde-warn" onClick={() => void selectUnlinked()} title="Select them, to drag them onto a task" data-testid="gantt-unlinked">{`${data.elements.none + data.elements.partial} of ${data.elements.total} elements without a task`}</button>
@@ -404,13 +432,19 @@ export function GanttView() {
                   if (b.x + b.w < scroll.left - 200 || b.x > scroll.left + viewW + 50) return null;
                   const red = critical && t.critical;
                   const cy = b.y + b.h / 2;
+                  const base = showBaseline ? baselineBarOf(t, i, range.from, ppd, ROW_H) : null;
+                  const done = t.milestone ? null : doneBar(b, t.complete);
                   return (
                     <g key={t.id} className={`gantt-task${sel.has(t.id) ? ' on' : ''}`} data-task={t.id}>
+                      {base && (base.w > 0
+                        ? <rect x={base.x} y={base.y} width={Math.max(2, base.w)} height={base.h} className="gantt-baseline" data-testid="gantt-baseline-bar" />
+                        : <path d={`M${base.x},${base.y - 1} l3,3 l-3,3 l-3,-3 z`} className="gantt-baseline" />)}
                       {t.summary
                         ? <path d={`M${b.x},${b.y + 2} h${b.w} v${b.h - 2} l-5,-4 h${-(b.w - 10)} l-5,4 z`} className={`gantt-summary${red ? ' critical' : ''}`} />
                         : t.milestone
                           ? <path d={`M${b.x},${cy - 7} l7,7 l-7,7 l-7,-7 z`} className={`gantt-milestone${red ? ' critical' : ''}`} />
-                          : <rect x={b.x} y={b.y} width={Math.max(2, b.w)} height={b.h} rx={2} className={`gantt-bar${red ? ' critical' : ''}${t.wet ? ' wet' : ''}`} />}
+                          : <rect x={b.x} y={b.y} width={Math.max(2, b.w)} height={b.h} rx={2} className={`gantt-bar${red ? ' critical' : ''}${t.wet ? ' wet' : ''}${t.status === 'done' ? ' done' : ''}`} />}
+                      {done && <rect x={done.x} y={done.y} width={Math.max(1, done.w)} height={done.h} className="gantt-done" data-testid="gantt-done-bar" />}
                       <text x={b.x + Math.max(b.w, 7) + 12} y={cy + 4} className="gantt-bar-label">{t.name}</text>
                       {!t.summary && (hover === t.id || drag?.kind === 'link') && <>
                         <circle cx={b.x - 7} cy={cy} r={4} className="gantt-handle" />
@@ -425,19 +459,19 @@ export function GanttView() {
             </svg>
             {/* The table's header and rows, over the chart's left */}
             <div className="gantt-head-table" style={{ width: TABLE_W, height: HEAD_H }}>
-              {COLUMNS.map((c) => <span key={c.key} className={`gantt-th c-${c.key}`} style={{ width: c.w }} data-i18n-ctx="schedule">{c.label}</span>)}
+              {columns.map((c) => <span key={c.key} className={`gantt-th c-${c.key}`} style={{ width: c.w }} data-i18n-ctx="schedule">{c.label}</span>)}
             </div>
             <div className="gantt-table" style={{ width: TABLE_W, top: HEAD_H, height: viewH }}>
               {rows.slice(r0, r1 + 1).map((t, k) => {
                 const i = r0 + k;
                 return (
-                  <div key={t.id} className={`gantt-row${sel.has(t.id) ? ' on' : ''}${holding.has(t.id) ? ' holds' : ''}${dropRow === t.id ? ' drop' : ''}${t.summary ? ' summary' : ''}${critical && t.critical ? ' critical' : ''}`}
+                  <div key={t.id} className={`gantt-row${sel.has(t.id) ? ' on' : ''}${holding.has(t.id) ? ' holds' : ''}${dropRow === t.id ? ' drop' : ''}${t.summary ? ' summary' : ''}${critical && t.critical ? ' critical' : ''}${isLate(t) ? ' late' : ''}`}
                     style={{ top: i * ROW_H - scroll.top, height: ROW_H }} data-row={t.row} data-task={t.id}
                     onDragOver={(e) => { if (!e.dataTransfer.types.includes(DRAG_TYPE)) return; e.preventDefault(); e.dataTransfer.dropEffect = e.shiftKey ? 'move' : 'copy'; setDropRow(t.id); }}
                     onDragLeave={() => setDropRow((r) => (r === t.id ? null : r))}
                     onDrop={(e) => drop(e, t)}
                     onPointerDown={(e) => { if (!(e.target as HTMLElement).closest('input')) { root.current?.focus(); select(t.id, e.shiftKey || e.ctrlKey || e.metaKey); } }}>
-                    {COLUMNS.map((c) => (
+                    {columns.map((c) => (
                       <span key={c.key} className={`gantt-td c-${c.key}`} style={{ width: c.w, ...(c.key === 'name' ? { paddingLeft: 4 + t.level * 14 } : {}) }}
                         title={c.key === 'elements' && t.count ? ruleSummary(t, nameOf, classLabel) || undefined : undefined}
                         onDoubleClick={() => editable(t, c.key) && setEditing({ id: t.id, col: c.key })}>
@@ -445,7 +479,7 @@ export function GanttView() {
                           ? <button type="button" className="gantt-fold" onClick={(e) => { e.stopPropagation(); toggle(t.id); }} title={collapsed.has(t.id) ? 'Show the tasks under it' : 'Hide the tasks under it'}>{collapsed.has(t.id) ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</button>
                           : <span className="gantt-fold-space">{t.milestone ? <Diamond size={9} /> : null}</span>)}
                         {editing?.id === t.id && editing.col === c.key
-                          ? <CellEditor value={c.key === 'duration' ? String(t.duration) : cell(t, c.key)} onCommit={(text) => commit(t, c.key, text)} onDone={() => { setEditing(null); root.current?.focus(); }} testId={`gantt-edit-${c.key}`} />
+                          ? <CellEditor value={c.key === 'duration' ? String(t.duration) : c.key === 'complete' ? (t.completeOwn != null ? String(t.completeOwn) : '') : cell(t, c.key)} onCommit={(text) => commit(t, c.key, text)} onDone={() => { setEditing(null); root.current?.focus(); }} testId={`gantt-edit-${c.key}`} />
                           : <span className="gantt-text" data-no-i18n={c.key === 'name' || c.key === 'predecessors' ? true : undefined}>{cell(t, c.key)}</span>}
                       </span>
                     ))}

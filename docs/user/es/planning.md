@@ -1,7 +1,7 @@
 ---
 title: Planificación
 order: 97
-summary: El cronograma de obra en un diagrama de Gantt: tareas en una EDT, hitos, vínculos con desfases, la ruta crítica calculada sobre un calendario con los festivos legales de Rumanía; la simulación 4D del edificio creciendo día a día, en vistas, láminas y en vídeo; de y hacia MS Project, IFC y Excel.
+summary: El cronograma de obra en un diagrama de Gantt: tareas en una EDT, hitos, vínculos con desfases, la ruta crítica calculada sobre un calendario con los festivos legales de Rumanía; la simulación 4D del edificio creciendo día a día, en vistas, láminas y en vídeo; el avance marcado en obra, también desde un teléfono, frente a una línea base; de y hacia MS Project, IFC y Excel.
 ---
 
 ## La pestaña Planificación
@@ -15,6 +15,7 @@ summary: El cronograma de obra en un diagrama de Gantt: tareas en una EDT, hitos
 - **Aumentar sangría**, **Reducir sangría**, **Vincular tareas** y **Desvincular tareas**: la EDT y los vínculos de las tareas seleccionadas.
 - **Añadir a la tarea…** (TA) y **Elementos sin tarea**: los elementos del modelo en las tareas (más abajo).
 - **Simular**, **Lámina de etapas…**, **Gantt en lámina** y **Exportar vídeo…**: la simulación 4D, el modelo como lo tiene el cronograma en un día (más abajo).
+- **Marcar terminado** (MD), **Marcar iniciado** (MS), **Marcar no iniciado**, **Guardar línea base**, **Borrar línea base** e **Importar avance…**: el avance y la línea base (abajo).
 - **Importar MS Project…**, **Exportar MS Project…**, **Exportar XLSX** y **Exportar IFC…**: el cronograma hacia y desde otros programas (más abajo).
 
 Un proyecto tiene un solo cronograma. Se crea la primera vez que añades una tarea y empieza el lunes siguiente. Cambia su inicio en la barra del Gantt.
@@ -221,6 +222,46 @@ Una planta, una sección, un alzado o una vista 3D guardada tiene en sus propied
 
 **Planificación → Exportar vídeo…** (también en el reproductor) graba la vista 3D, desde donde mira ahora, de un día a otro, un fotograma por **un día** o por **una semana**, con la fecha y las tareas en curso escritas debajo. El archivo es un vídeo WebM, o MP4 donde el sistema solo ofrece eso (la aplicación de macOS). Un navegador que no graba vídeo guarda en su lugar los fotogramas como archivos PNG en un ZIP.
 
+## El avance
+
+![El Gantt con el avance: la columna %, la parte hecha más oscura en cada barra, la línea base debajo y la desviación](shots/planning-progress.webp)
+
+A medida que avanzan las obras, el cronograma dice cuánto se ha hecho y mueve lo que queda:
+
+- La **fecha de estado**, en la barra del Gantt, es el día hasta el que se informa el avance. El trabajo restante empieza el día laborable siguiente: una tarea sin empezar no puede empezar antes, y una en curso hace lo que le queda a partir de entonces. El diagrama la dibuja como una línea azul.
+- El **% completado** de una tarea se escribe en su columna o en Propiedades. Sin él, sale de sus elementos marcados en obra: la cantidad hecha de la cantidad de la tarea (en su unidad, cuando el generador le dio una), si no, su número. El de una tarea resumen sale de sus tareas, ponderado por sus duraciones.
+- El **comienzo real** y el **fin real** se escriben en Propiedades. Vacíos, salen de las marcas: el primer día en que se marcó un elemento, y el día del último elemento cuando todos están terminados. Una tarea terminada queda en sus fechas reales, fuera de la ruta crítica.
+- Una tarea en curso conserva su comienzo real y hace la parte de su duración aún no hecha (redondeada hacia arriba) después de la fecha de estado; las tareas siguientes se mueven con ella.
+
+Las barras muestran la parte hecha más oscura. Propiedades dice de dónde viene el porcentaje y cuántos días laborables quedan.
+
+![El avance de una tarea en Propiedades](shots/planning-progress-task.webp)
+
+### Marcar elementos en obra
+
+**Planificación → Marcar terminado** (MD) y **Marcar iniciado** (MS) marcan los elementos seleccionados en 3D o en una planta, en la fecha de estado (hoy, si no hay ninguna), en cada tarea que los incluye; **Marcar no iniciado** quita las marcas. Las propiedades de un elemento seleccionado muestran su estado en obra con los mismos tres botones y, en cada una de sus tareas, el día en que se terminó o se inició, con un botón para marcarlo terminado solo en esa tarea. Un muro multicapa en una tarea de albañilería y otra de enlucido se marca en ambas, o en una desde su fila.
+
+![Las marcas de un muro en sus propiedades](shots/planning-element-marks.webp)
+
+En obra, desde un teléfono: entra en la sesión compartida del proyecto desde el navegador (**Archivo → Compartir sesión…** en el ordenador que lo tiene abierto). Un invitado que entró solo para mirar puede igualmente marcar elementos y escribir el avance de una tarea: marcar es la única edición abierta a todo invitado. Las fotos y los informes sobre las tareas son de la edición premium.
+
+### La línea base
+
+**Planificación → Guardar línea base** guarda las fechas y la duración de cada tarea tal como están ahora; guardada de nuevo, se sustituye (una sola línea base: varias líneas base y escenarios son de la edición premium). El Gantt la dibuja entonces como una barra gris fina bajo la barra de cada tarea (**Línea base**, en la barra de herramientas, la oculta), añade la columna **Desviación** (los días laborables que se movió el fin: positivo es retraso, la fila marcada en rojo) y dice en su barra cuántas tareas van retrasadas y cuánto se movió el fin. Propiedades da las fechas de la línea base y las desviaciones del comienzo y del fin. **Borrar línea base** la quita.
+
+### Retrasado y adelantado en la simulación
+
+![La simulación en la fecha de estado: las ventanas retrasadas respecto a la línea base](shots/planning-progress-simulation.webp)
+
+Con una línea base, la simulación compara: un elemento sin construir (o sin empezar) un día en que la línea base lo tenía así va **retrasado** (carmesí), y uno en curso o construido antes de que la línea base lo empezara va **adelantado** (verde). Hasta la fecha de estado los elementos quedan en sus días reales: uno marcado terminado se construye el día en que se marcó. **Comparado con la línea base**, en los ajustes de la simulación, lo desactiva; allí se eligen también sus dos colores. Las vistas y los planos a una fecha muestran lo mismo.
+
+### El avance en los archivos
+
+- **Exportar XLSX** añade las columnas **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** y **GlobalId** (el libro está en inglés). Rellénalas en obra y léelas de vuelta con **Planificación → Importar avance…**: las filas se encuentran por GlobalId, EDT o ID, y una *Status date* escrita encima de la tabla fija la fecha de estado. También sirve un CSV.
+- **MS Project XML** lleva la fecha de estado, el porcentaje de cada tarea, el comienzo y el fin reales, la duración restante y la línea base (Baseline 0); las marcas de los elementos viajan con los elementos, en *Lapin elements*.
+- **IFC** los escribe en el IfcTaskTime de cada tarea (la hora de estado, el comienzo y el fin reales, el tiempo restante, el grado de avance), y la línea base como un segundo IfcWorkSchedule de tipo BASELINE; los campos propios de Lapin (el porcentaje escrito, las marcas) van en `Lapin_Task`. Ambos vuelven a las mismas fechas.
+- **Gestionar → Versiones → Comparar** dice, además de los elementos, qué cambió en el cronograma: el fin, los días laborables, la fecha de estado, y las tareas añadidas, eliminadas, movidas (cuántos días laborables), con la duración o el avance cambiados.
+
 ## El calendario
 
 ![El calendario de trabajo](shots/planning-calendar.webp)
@@ -244,5 +285,4 @@ Los campos propios de Lapin para los que otros programas no tienen sitio (la res
 
 ## Lo que viene
 
-El avance y las líneas base, y el presupuesto llegan en las próximas etapas.
-
+El presupuesto llega en las próximas etapas.

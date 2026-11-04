@@ -1,7 +1,7 @@
 ---
 title: Harmonogram
 order: 97
-summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamienie milowe, powiązania z opóźnieniami, ścieżka krytyczna liczona na kalendarzu z rumuńskimi świętami ustawowymi; symulacja 4D budynku rosnącego dzień po dniu, w widokach, na arkuszach i jako wideo; do i z MS Project, IFC i Excela.
+summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamienie milowe, powiązania z opóźnieniami, ścieżka krytyczna liczona na kalendarzu z rumuńskimi świętami ustawowymi; symulacja 4D budynku rosnącego dzień po dniu, w widokach, na arkuszach i jako wideo; postęp oznaczany na budowie, także z telefonu, względem planu bazowego; do i z MS Project, IFC i Excela.
 ---
 
 ## Karta Harmonogram
@@ -15,6 +15,7 @@ summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamien
 - **Zwiększ wcięcie**, **Zmniejsz wcięcie**, **Połącz zadania** i **Rozłącz zadania**: WBS i powiązania zaznaczonych zadań.
 - **Dodaj do zadania…** (TA) i **Elementy bez zadania**: elementy modelu w zadaniach (poniżej).
 - **Symuluj**, **Arkusz etapów…**, **Gantt na arkuszu** i **Eksportuj wideo…**: symulacja 4D, model taki, jaki ma go harmonogram danego dnia (poniżej).
+- **Oznacz jako wykonane** (MD), **Oznacz jako rozpoczęte** (MS), **Oznacz jako nierozpoczęte**, **Zapisz plan bazowy**, **Usuń plan bazowy** i **Importuj postęp…**: postęp i plan bazowy (poniżej).
 - **Importuj MS Project…**, **Eksportuj MS Project…**, **Eksportuj XLSX** i **Eksportuj IFC…**: harmonogram do i z innych programów (poniżej).
 
 Projekt ma jeden harmonogram. Powstaje przy pierwszym dodaniu zadania i zaczyna się w następny poniedziałek. Jego początek zmienisz na pasku Gantta.
@@ -221,6 +222,46 @@ Rzut, przekrój, elewacja lub zapisany widok 3D ma we właściwościach **Stan n
 
 **Harmonogram → Eksportuj wideo…** (także w odtwarzaczu) nagrywa widok 3D, skąd patrzy teraz, od jednego dnia do drugiego, klatka na **dzień** lub na **tydzień**, z datą i zadaniami w toku zapisanymi pod spodem. Plik to wideo WebM albo MP4 tam, gdzie system oferuje tylko to (aplikacja na macOS). Przeglądarka, która nie nagrywa wideo, zapisuje zamiast tego klatki jako pliki PNG w archiwum ZIP.
 
+## Postęp
+
+![Wykres Gantta z postępem: kolumna %, wykonana część ciemniejsza w każdym pasku, plan bazowy pod nim i odchylenie](shots/planning-progress.webp)
+
+W miarę postępu robót harmonogram mówi, jak daleko są, i przesuwa to, co zostało:
+
+- **Data stanu** na pasku narzędzi wykresu Gantta to dzień, do którego zgłoszono postęp. Pozostała praca zaczyna się następnego dnia roboczego: zadanie nierozpoczęte nie może zacząć się wcześniej, a zadanie w toku wykonuje od tego dnia to, co mu zostało. Wykres rysuje ją jako niebieską linię.
+- **% wykonania** zadania wpisuje się w jego kolumnie lub we Właściwościach. Bez wpisu bierze się z jego elementów oznaczonych na budowie: wykonana ilość z ilości zadania (w jego jednostce, gdy generator mu ją nadał), w przeciwnym razie ich liczba. Postęp zadania sumarycznego bierze się z jego zadań, ważony ich czasem trwania.
+- **Rzeczywisty początek** i **rzeczywisty koniec** wpisuje się we Właściwościach. Puste biorą się z oznaczeń: pierwszy dzień, w którym oznaczono element, i dzień ostatniego elementu, gdy wszystkie są wykonane. Zakończone zadanie stoi na swoich rzeczywistych datach, poza ścieżką krytyczną.
+- Zadanie w toku zachowuje swój rzeczywisty początek i wykonuje jeszcze niewykonaną część czasu trwania (zaokrągloną w górę) po dacie stanu; zadania po nim przesuwają się razem z nim.
+
+Paski pokazują wykonaną część ciemniej. Właściwości mówią, skąd pochodzi procent i ile dni roboczych zostało.
+
+![Postęp zadania we Właściwościach](shots/planning-progress-task.webp)
+
+### Oznaczanie elementów na budowie
+
+**Harmonogram → Oznacz jako wykonane** (MD) i **Oznacz jako rozpoczęte** (MS) oznaczają elementy wybrane w 3D lub w rzucie, w dacie stanu (dziś, gdy jej nie ma), w każdym zadaniu, które je obejmuje; **Oznacz jako nierozpoczęte** usuwa oznaczenia. Właściwości wybranego elementu pokazują jego stan na budowie z tymi samymi trzema przyciskami, a w każdym z jego zadań dzień, w którym został wykonany lub rozpoczęty, z przyciskiem, który oznacza go jako wykonany tylko w tym zadaniu. Ściana warstwowa w zadaniu murarskim i w zadaniu tynkarskim jest oznaczana w obu lub w jednym, z jego wiersza.
+
+![Oznaczenia ściany w jej właściwościach](shots/planning-element-marks.webp)
+
+Na budowie, z telefonu: dołącz do udostępnionej sesji projektu z przeglądarki (**Plik → Udostępnij sesję…** na komputerze, na którym jest otwarty). Gość, który dołączył tylko do oglądania, może mimo to oznaczać elementy i wpisywać postęp zadania: oznaczanie to jedyna zmiana dostępna dla każdego gościa. Zdjęcia i raporty do zadań należą do edycji premium.
+
+### Plan bazowy
+
+**Harmonogram → Zapisz plan bazowy** zachowuje daty i czas trwania każdego zadania takie, jakie są teraz; zapisany ponownie, zostaje zastąpiony (jeden plan bazowy: wiele planów bazowych i scenariusze należą do edycji premium). Wykres Gantta rysuje go wtedy jako cienki szary pasek pod paskiem każdego zadania (**Plan bazowy** na pasku narzędzi go ukrywa), dodaje kolumnę **Odchylenie** (dni robocze, o które przesunął się koniec: dodatnie to opóźnienie, wiersz oznaczony na czerwono) i mówi na swoim pasku, ile zadań jest opóźnionych i o ile przesunął się koniec. Właściwości podają daty planu bazowego oraz odchylenia początku i końca. **Usuń plan bazowy** go usuwa.
+
+### Opóźnione i przed czasem w symulacji
+
+![Symulacja w dacie stanu: okna opóźnione względem planu bazowego](shots/planning-progress-simulation.webp)
+
+Z planem bazowym symulacja porównuje: element niezbudowany (lub nierozpoczęty) w dniu, w którym plan bazowy miał go takim, jest **opóźniony** (karmazynowy), a element w toku lub zbudowany, zanim plan bazowy pozwolił mu się zacząć, jest **przed czasem** (zielony). Do daty stanu elementy stoją na swoich rzeczywistych dniach: element oznaczony jako wykonany jest zbudowany w dniu, w którym go oznaczono. **W porównaniu z planem bazowym** w ustawieniach symulacji to wyłącza; tam wybiera się też jego dwa kolory. Widoki i arkusze w danej dacie pokazują to samo.
+
+### Postęp w plikach
+
+- **Eksportuj XLSX** dodaje kolumny **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** i **GlobalId** (skoroszyt jest po angielsku). Wypełnij je na budowie i wczytaj z powrotem przez **Harmonogram → Importuj postęp…**: wiersze są odnajdywane po GlobalId, WBS lub ID, a *Status date* wpisana nad tabelą ustawia datę stanu. Działa też CSV.
+- **MS Project XML** niesie datę stanu, procent każdego zadania, rzeczywisty początek i koniec, pozostały czas trwania i plan bazowy (Baseline 0); oznaczenia elementów wędrują z elementami w *Lapin elements*.
+- **IFC** zapisuje je w IfcTaskTime każdego zadania (czas stanu, rzeczywisty początek i koniec, pozostały czas, stopień wykonania), a plan bazowy jako drugi IfcWorkSchedule typu BASELINE; własne pola Lapin (wpisany procent, oznaczenia) trafiają do `Lapin_Task`. Oba wracają do tych samych dat.
+- **Zarządzaj → Wersje → Porównaj** mówi, obok elementów, co zmieniło się w harmonogramie: koniec, dni robocze, data stanu oraz zadania dodane, usunięte, przesunięte (o ile dni roboczych), ze zmienionym czasem trwania lub postępem.
+
 ## Kalendarz
 
 ![Kalendarz pracy](shots/planning-calendar.webp)
@@ -244,5 +285,4 @@ Własne pola Lapin, dla których inne programy nie mają miejsca (ograniczenie z
 
 ## Co dalej
 
-Postęp i plany bazowe oraz kosztorys przyjdą w kolejnych etapach.
-
+Kosztorys przyjdzie w następnych etapach.

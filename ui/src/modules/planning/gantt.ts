@@ -16,7 +16,18 @@ export interface TaskDto {
   count: number; elements?: string[]; rule?: TaskRule; part?: string; added?: number; removed?: number;
   /** Made by the generator (stage 3): its step (and storey), edited by hand since (kept as it is), and where its duration came from. */
   gen?: string; own?: boolean; durationFrom?: 'norm' | 'default'; norm?: string; quantity?: number; unit?: string; crew?: number;
+  /** Its progress (stage 5): how much is done and where that came from, its status, the working days left, its actual dates. */
+  complete?: number; progressFrom?: ProgressFrom; status?: TaskStatus; remaining?: number; actualStart?: string; actualFinish?: string;
+  /** What is typed on the task itself (a leaf): its percentage, its actual dates. */
+  completeOwn?: number; actualStartOwn?: string; actualFinishOwn?: string;
+  /** Its elements marked on site: by element, the day started and the day done; and how many of its elements are. */
+  marks?: Record<string, ElementMark>; marked?: { done: number; started: number; of: number };
+  /** Its baseline and how far it moved from it (working days; positive: later). */
+  baselineStart?: string; baselineFinish?: string; baselineDuration?: number; startVariance?: number; finishVariance?: number;
 }
+export type TaskStatus = 'planned' | 'started' | 'done';
+export type ProgressFrom = 'none' | 'manual' | 'elements' | 'actual' | 'children';
+export interface ElementMark { started?: string; done?: string }
 /** A task's rule: every condition given must hold (ids, classes by their IFC name). */
 export interface TaskRule { classes?: string[]; types?: string[]; storeys?: string[]; materials?: string[]; groups?: string[]; phases?: string[]; demolished?: string[] }
 /** A formwork's or a scaffold's time on site, from its hosts' tasks (stage 3). */
@@ -33,6 +44,9 @@ export interface ScheduleDto {
   /** The elements that need a task, those no task takes, and those some of whose layers none takes. */
   elements: { total: number; none: number; partial: number };
   temporaries?: TemporaryDto[];
+  /** The whole schedule's percentage done (by the tasks' durations), and its baseline: when saved, the finish it had, how far the finish moved, how many tasks are late. */
+  complete?: number;
+  baseline?: { saved: string | null; finish: string; finishVariance: number; late: number } | null;
 }
 
 // ── Dates ────────────────────────────────────────────────────────────────────
@@ -274,3 +288,59 @@ export function rowWindow(scrollTop: number, height: number, rowH: number, count
 export function linkLabel(l: Pick<LinkDto, 'type' | 'lag'>): string {
   return `${l.type}${l.lag > 0 ? `+${l.lag}d` : l.lag < 0 ? `−${-l.lag}d` : ''}`;
 }
+
+// ── Progress and the baseline (stage 5) ─────────────────────────────────────
+
+/** The part of a bar that is done: from its start, as wide as the percentage. */
+export function doneBar(bar: Bar, complete: number | undefined): Bar | null {
+  const c = Math.max(0, Math.min(100, complete ?? 0));
+  if (c <= 0 || bar.w <= 0) return null;
+  const h = Math.max(2, Math.round(bar.h * 0.4));
+  return { x: bar.x, w: bar.w * c / 100, y: bar.y + Math.round((bar.h - h) / 2), h };
+}
+
+/** A task's baseline as a thin bar under its own (null: no baseline). */
+export function baselineBarOf(t: Pick<TaskDto, 'baselineStart' | 'baselineFinish' | 'baselineDuration' | 'milestone'>, row: number, origin: number, pxPerDay: number, rowH: number): Bar | null {
+  if (!t.baselineStart || !t.baselineFinish) return null;
+  const x = (dayOf(t.baselineStart) - origin) * pxPerDay;
+  const w = t.baselineDuration === 0 ? 0 : (dayOf(t.baselineFinish) + 1 - dayOf(t.baselineStart)) * pxPerDay;
+  const own = barOf({ start: t.baselineStart, finish: t.baselineFinish, milestone: t.milestone }, row, origin, pxPerDay, rowH);
+  return { x, w, y: own.y + own.h + 1, h: 3 };
+}
+
+/** A variance as the column writes it: +2 d late, −1 d early, 0 d (empty without a baseline). */
+export function varianceText(v: number | undefined): string {
+  if (v === undefined || v === null) return '';
+  return v > 0 ? `+${v} d` : v < 0 ? `−${-v} d` : '0 d';
+}
+
+/** A percentage as the column writes it: 33.3 %, 100 % (a whole number without decimals). */
+export function percentText(v: number | undefined): string {
+  const c = Math.round((v ?? 0) * 10) / 10;
+  return `${Number.isInteger(c) ? c.toFixed(0) : c.toFixed(1)} %`;
+}
+
+/** A percentage typed (60, 60 %, 60,5): a number from 0 to 100, or null. */
+export function parsePercent(text: string): number | null {
+  const t = text.trim().replace(/\s*%$/, '').replace(',', '.');
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : null;
+}
+
+/** An element's marks across the leaf tasks that take it: done in all, started (or done in some), or none. */
+export function markOf(tasks: Pick<TaskDto, 'summary' | 'elements' | 'marks'>[], element: string): 'done' | 'started' | 'none' {
+  let any = false, all = true, holders = 0;
+  for (const t of tasks) {
+    if (t.summary || !t.elements?.includes(element)) continue;
+    holders++;
+    const m = t.marks?.[element];
+    if (m?.done) { any = true; continue; }
+    all = false;
+    if (m?.started) any = true;
+  }
+  return holders > 0 && all && any ? 'done' : any ? 'started' : 'none';
+}
+
+/** Whether a task is late on its baseline (its finish later than the baseline's). */
+export const isLate = (t: Pick<TaskDto, 'finishVariance'>) => (t.finishVariance ?? 0) > 0;

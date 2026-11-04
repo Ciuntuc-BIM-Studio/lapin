@@ -6,10 +6,12 @@
  * between the Gantt and the views; IFC processes, MS Project XML and a workbook to exchange it; the generator (stage 3):
  * a schedule made from a template's sequence, the model's storeys and elements and the user's norms, in one step; the 4D
  * simulation (stage 4): the model as the schedule has it on a day, played from the Gantt's date line, State at date on
- * views and sheets, the stages sheet, the Gantt on sheets, the video.
+ * views and sheets, the stages sheet, the Gantt on sheets, the video; progress (stage 5): the status date, the elements
+ * marked done or started in 3D or in a plan (from a phone too, as a guest of the shared session), the percentages and
+ * actual dates, the baseline and its variances, the progress read back from a workbook.
  */
 
-import { CalendarDays, ChartGantt, Clapperboard, Diamond, FileVideo, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2, Wand2 } from 'lucide-react';
+import { CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboard, Diamond, FileVideo, Flag, FlagOff, LayoutPanelTop, Sheet, FileDown, FileSpreadsheet, FileUp, IndentDecrease, IndentIncrease, Link2, ListPlus, Plus, SearchX, Unlink2, Wand2 } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { exportIfc } from '../../engine/files';
@@ -22,7 +24,7 @@ import { SelectionToTask } from './SelectionToTask';
 import { ElementTasksSection, inSomeTask, TaskLinksSection } from './TaskLinksSection';
 import { ganttOnSheet, SimulationCard, SimulationLooks, toggleSimulation, ViewDateSection } from './SimulationView';
 import { StagesDialog, VideoDialog } from './SimulationDialogs';
-import { addTask, assignSelection, exportMsp, exportXlsx, importMsp, indent, linkSelected, openGantt, outdent, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
+import { addTask, assignSelection, clearBaseline, exportMsp, exportXlsx, importMsp, importProgress, indent, linkSelected, markSelection, openGantt, outdent, saveBaseline, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
 
 const planning: LapinModule = {
   id: 'planning',
@@ -56,6 +58,18 @@ const planning: LapinModule = {
         ],
         small: [
           { id: 'planning.unlinked', label: 'Elements without a task', icon: SearchX, run: () => void selectUnlinked() },
+        ],
+      },
+      {
+        label: 'Progress', tools: [
+          { id: 'planning.markDone', label: 'Mark done', icon: CheckCheck, shortcut: 'MD', run: () => void markSelection('done') },
+          { id: 'planning.markStarted', label: 'Mark started', icon: CirclePlay, shortcut: 'MS', run: () => void markSelection('started') },
+          { id: 'planning.saveBaseline', label: 'Save baseline', icon: Flag, run: () => void saveBaseline() },
+        ],
+        small: [
+          { id: 'planning.unmark', label: 'Mark not started', icon: CircleOff, run: () => void markSelection('none') },
+          { id: 'planning.clearBaseline', label: 'Clear baseline', icon: FlagOff, run: () => void clearBaseline() },
+          { id: 'planning.importProgress', label: 'Import progress…', icon: FileUp, run: () => void importProgress() },
         ],
       },
       {

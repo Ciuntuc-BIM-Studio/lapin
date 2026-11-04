@@ -1887,7 +1887,8 @@ public static class IfcExport
                             string Dur(double? d) => d is { } x ? IfcDuration(x) : Null;
                             time = f.Add("IFCTASKTIME", Null, Null, Null, E("WORKTIME"), Dur(tt.DurationDays), Dt(tt.ScheduleStart), Dt(tt.ScheduleFinish),
                                 Dt(tt.ScheduleStart), Dt(tt.ScheduleFinish), Dt(tt.LateStart), Dt(tt.LateFinish), Dur(tt.FreeFloatDays), Dur(tt.TotalFloatDays),
-                                tt.IsCritical is { } crit ? (crit ? Step.True : Step.False) : Null, Null, Null, Null, Null, Null, tt.Completion is { } pc ? R(pc) : Null);
+                                tt.IsCritical is { } crit ? (crit ? Step.True : Step.False) : Null, Dt(tt.StatusTime), Null, Dt(tt.ActualStart), Dt(tt.ActualFinish),
+                                Dur(tt.RemainingDays), tt.Completion is { } pc && pc > 0 ? R(pc) : Null);
                         }
                         var kind = t.Predefined is { Length: > 0 } k ? k : "NOTDEFINED";
                         var task = f.Add("IFCTASK", Gid(t.Id), Null, S(t.Name), S(t.Description), Null, S(t.Identification), Null, Null, Null,

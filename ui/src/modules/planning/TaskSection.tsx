@@ -1,7 +1,9 @@
 /**
  * A task in Properties: its name and kind, its duration (a milestone has none), its dates as the critical path gives them,
  * a constraint on its start, whether it is wet (it keeps the calendar's winter break), its predecessors with their type and
- * lag, what follows it, its floats, and notes. Every change one undo step.
+ * lag, what follows it, its floats, and notes; its progress (stage 5): the percentage (typed, or from its elements marked
+ * on site, or a summary's from its tasks), its actual start and finish, its status, its baseline and the variances.
+ * Every change one undo step.
  */
 
 import { Fragment } from 'react';
@@ -9,7 +11,7 @@ import { Trash2 } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute } from '../../engine/session';
 import { select } from '../../app/store';
-import { linkLabel, showDate, type LinkType } from './gantt';
+import { linkLabel, parsePercent, percentText, showDate, varianceText, type LinkType, type TaskDto } from './gantt';
 import { openGantt, taskOf, useSchedule } from './schedule';
 import { quantityText } from './generator';
 
@@ -55,6 +57,7 @@ export function TaskSection({ node }: { node: NodeDto }) {
       </>}
       <dt>Start</dt><dd>{showDate(t.start)}</dd>
       <dt data-i18n-ctx="schedule">Finish</dt><dd>{showDate(t.finish)}</dd>
+      <TaskProgress t={t} />
       {!t.summary && <>
         <dt title="What holds the start, besides the links">Constraint</dt>
         <dd>
@@ -104,4 +107,51 @@ export function TaskSection({ node }: { node: NodeDto }) {
       <dd><button type="button" className="link" onClick={openGantt}>Show in the Gantt</button></dd>
     </dl>
   );
+}
+
+/** Where a task's percentage comes from, as Properties says it. */
+const FROM: Record<string, string> = {
+  manual: 'typed on the task', elements: 'its elements marked on site', actual: 'its actual dates', children: 'the tasks under it', none: 'nothing done yet',
+};
+const STATUS: Record<string, string> = { planned: 'Not started yet', started: 'Under way', done: 'Finished' };
+
+/** A task's progress and baseline in Properties (stage 5). */
+function TaskProgress({ t }: { t: TaskDto }) {
+  const set = (args: Record<string, unknown>) => void execute('planning.setProgress', { id: t.id, ...args });
+  return (<>
+    <dt title="The status date is in the Gantt's toolbar">Progress</dt>
+    <dd data-testid="task-progress" title={t.status === 'started' ? 'Working days left' : undefined}>
+      <span>{STATUS[t.status ?? 'planned']}</span>
+      {t.status === 'started' && t.remaining != null && <span className="muted small" data-no-i18n>{` · ${t.remaining} d`}</span>}
+    </dd>
+    <dt title="How much of the task is done: typed here, else from its elements marked on site (their quantity in the task's unit, or their count)">% complete</dt>
+    <dd>
+      {t.summary
+        ? <span data-no-i18n>{percentText(t.complete)}</span>
+        : <input key={`${t.id}:${t.completeOwn ?? ''}:${t.complete ?? 0}`} defaultValue={t.completeOwn != null ? String(t.completeOwn) : ''} placeholder={percentText(t.complete)} inputMode="decimal" data-testid="task-complete"
+          onBlur={(e) => { const v = e.target.value.trim(); const n = parsePercent(v); if (v === '' ? t.completeOwn != null : n !== null && n !== t.completeOwn) set({ complete: v === '' ? null : n }); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} style={{ width: 70 }} />}
+      <div className="muted small"><span>{FROM[t.progressFrom ?? 'none']}</span>
+        {t.marked && <span data-no-i18n>{` (${t.marked.done}/${t.marked.of}${t.marked.started ? `, +${t.marked.started}` : ''})`}</span>}</div>
+    </dd>
+    {t.summary ? <>
+      {t.actualStart && <><dt>Actual start</dt><dd>{showDate(t.actualStart)}</dd></>}
+      {t.actualFinish && <><dt>Actual finish</dt><dd>{showDate(t.actualFinish)}</dd></>}
+    </> : <>
+      <dt title="Empty: from its elements marked on site, if any">Actual start</dt>
+      <dd><input type="date" value={t.actualStartOwn ?? ''} onChange={(e) => set({ actualStart: e.target.value })} data-testid="task-actual-start" />
+        {!t.actualStartOwn && t.actualStart && <div className="muted small" data-no-i18n>{showDate(t.actualStart)}</div>}</dd>
+      <dt title="Empty: from its elements marked on site, once all are done">Actual finish</dt>
+      <dd><input type="date" value={t.actualFinishOwn ?? ''} onChange={(e) => set({ actualFinish: e.target.value })} data-testid="task-actual-finish" />
+        {!t.actualFinishOwn && t.actualFinish && <div className="muted small" data-no-i18n>{showDate(t.actualFinish)}</div>}</dd>
+    </>}
+    {t.baselineStart && <>
+      <dt title="Planning → Save baseline">Baseline</dt>
+      <dd data-no-i18n>{`${showDate(t.baselineStart)} – ${showDate(t.baselineFinish)} · ${t.baselineDuration ?? 0} d`}</dd>
+      <dt title="Working days from the baseline's start: positive, later">Start variance</dt>
+      <dd data-no-i18n>{varianceText(t.startVariance)}</dd>
+      <dt title="Working days from the baseline's finish: positive, the task is late">Finish variance</dt>
+      <dd className={(t.finishVariance ?? 0) > 0 ? 'error-text' : undefined} style={{ margin: 0 }} data-no-i18n data-testid="task-variance">{varianceText(t.finishVariance)}</dd>
+    </>}
+  </>);
 }

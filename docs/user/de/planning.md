@@ -1,7 +1,7 @@
 ---
 title: Terminplanung
 order: 97
-summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilensteine, Verknüpfungen mit Zeitabständen, der kritische Pfad auf einem Kalender mit den gesetzlichen Feiertagen Rumäniens; die 4D-Simulation des Tag für Tag wachsenden Gebäudes, in Ansichten, auf Plänen und als Video; zu und von MS Project, IFC und Excel.
+summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilensteine, Verknüpfungen mit Zeitabständen, der kritische Pfad auf einem Kalender mit den gesetzlichen Feiertagen Rumäniens; die 4D-Simulation des Tag für Tag wachsenden Gebäudes, in Ansichten, auf Plänen und als Video; der Fortschritt, auf der Baustelle markiert, auch vom Telefon, gegen einen Basisplan; zu und von MS Project, IFC und Excel.
 ---
 
 ## Der Reiter Terminplanung
@@ -15,6 +15,7 @@ summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilenste
 - **Einrücken**, **Ausrücken**, **Vorgänge verknüpfen** und **Verknüpfungen lösen**: der PSP und die Verknüpfungen der gewählten Vorgänge.
 - **Zu Vorgang hinzufügen…** (TA) und **Elemente ohne Vorgang**: die Elemente des Modells in den Vorgängen (unten).
 - **Simulieren**, **Bauabschnittsplan…**, **Gantt auf Plan** und **Video exportieren…**: die 4D-Simulation, das Modell, wie der Bauzeitenplan es an einem Tag hat (unten).
+- **Als fertig markieren** (MD), **Als begonnen markieren** (MS), **Als nicht begonnen markieren**, **Basisplan speichern**, **Basisplan löschen** und **Fortschritt importieren…**: der Fortschritt und der Basisplan (unten).
 - **MS Project importieren…**, **MS Project exportieren…**, **XLSX exportieren** und **IFC exportieren…**: der Terminplan zu und von anderen Programmen (unten).
 
 Ein Projekt hat einen Terminplan. Er wird beim ersten Hinzufügen eines Vorgangs angelegt und beginnt am nächsten Montag. Den Beginn ändern Sie in der Leiste des Gantt.
@@ -221,6 +222,46 @@ Ein Grundriss, ein Schnitt, eine Ansicht oder eine gespeicherte 3D-Ansicht hat i
 
 **Terminplanung → Video exportieren…** (auch im Player) nimmt die 3D-Ansicht auf, von wo sie jetzt schaut, von einem Tag zum anderen, ein Bild je **ein Tag** oder **eine Woche**, mit dem Datum und den Vorgängen in Arbeit darunter. Die Datei ist ein WebM-Video, oder MP4, wo das System nur das anbietet (die macOS-App). Ein Browser, der kein Video aufnimmt, speichert stattdessen die Bilder als PNG-Dateien in einem ZIP.
 
+## Der Fortschritt
+
+![Das Gantt mit Fortschritt: die Spalte %, der erledigte Teil dunkler in jedem Balken, der Basisplan darunter und die Abweichung](shots/planning-progress.webp)
+
+Während die Arbeiten laufen, sagt der Terminplan, wie weit sie sind, und verschiebt, was bleibt:
+
+- Das **Statusdatum** in der Werkzeugleiste des Gantt ist der Tag, bis zu dem der Fortschritt gemeldet ist. Die restliche Arbeit beginnt am Arbeitstag danach: ein nicht begonnener Vorgang kann nicht früher beginnen, ein laufender erledigt ab dann, was ihm bleibt. Das Diagramm zeichnet es als blaue Linie.
+- Das **% abgeschlossen** eines Vorgangs wird in seiner Spalte oder in den Eigenschaften eingegeben. Ohne Eingabe kommt es aus seinen auf der Baustelle markierten Elementen: die erledigte Menge von der Menge des Vorgangs (in seiner Einheit, wenn der Generator ihm eine gab), sonst ihre Anzahl. Das eines Sammelvorgangs kommt aus seinen Vorgängen, nach ihrer Dauer gewichtet.
+- **Tatsächlicher Anfang** und **tatsächliches Ende** werden in den Eigenschaften eingegeben. Leer kommen sie aus den Markierungen: der erste Tag, an dem ein Element markiert wurde, und der Tag des letzten Elements, sobald alle fertig sind. Ein abgeschlossener Vorgang steht auf seinen tatsächlichen Terminen, außerhalb des kritischen Pfads.
+- Ein laufender Vorgang behält seinen tatsächlichen Anfang und erledigt den noch offenen Teil seiner Dauer (aufgerundet) nach dem Statusdatum; die Vorgänge danach verschieben sich mit ihm.
+
+Die Balken zeigen den erledigten Teil dunkler. Die Eigenschaften sagen, woher ein Prozentsatz kommt und wie viele Arbeitstage bleiben.
+
+![Der Fortschritt eines Vorgangs in den Eigenschaften](shots/planning-progress-task.webp)
+
+### Elemente auf der Baustelle markieren
+
+**Terminplanung → Als fertig markieren** (MD) und **Als begonnen markieren** (MS) markieren die in 3D oder in einem Grundriss gewählten Elemente zum Statusdatum (heute, wenn keines gesetzt ist), in jedem Vorgang, der sie enthält; **Als nicht begonnen markieren** nimmt die Markierungen weg. Die Eigenschaften eines gewählten Elements zeigen seinen Stand auf der Baustelle mit denselben drei Knöpfen und in jedem seiner Vorgänge den Tag, an dem es fertig wurde oder begann, mit einem Knopf, der es nur in diesem Vorgang als fertig markiert. Eine geschichtete Wand in einem Mauerwerks- und einem Putzvorgang wird in beiden markiert, oder in einem über seine Zeile.
+
+![Die Markierungen einer Wand in ihren Eigenschaften](shots/planning-element-marks.webp)
+
+Auf der Baustelle, vom Telefon: tritt der geteilten Sitzung des Projekts im Browser bei (**Datei → Sitzung teilen…** auf dem Rechner, auf dem es offen ist). Ein Gast, der nur zum Ansehen beigetreten ist, kann trotzdem Elemente markieren und den Fortschritt eines Vorgangs eingeben: das Markieren ist die einzige Änderung, die jedem Gast offensteht. Fotos und Berichte zu Vorgängen gehören zur Premium-Edition.
+
+### Der Basisplan
+
+**Terminplanung → Basisplan speichern** behält die Termine und die Dauer jedes Vorgangs, wie sie jetzt sind; erneut gespeichert, wird er ersetzt (ein Basisplan: mehrere Basispläne und Szenarien gehören zur Premium-Edition). Das Gantt zeichnet ihn dann als dünnen grauen Balken unter dem Balken jedes Vorgangs (**Basisplan** in der Werkzeugleiste blendet ihn aus), fügt die Spalte **Abweichung** hinzu (die Arbeitstage, um die sich das Ende verschoben hat: positiv ist verspätet, die Zeile rot markiert) und sagt in seiner Leiste, wie viele Vorgänge verspätet sind und wie weit sich das Ende verschoben hat. Die Eigenschaften geben die Termine des Basisplans und die Abweichungen von Anfang und Ende. **Basisplan löschen** entfernt ihn.
+
+### Verspätet und voraus in der Simulation
+
+![Die Simulation zum Statusdatum: die Fenster hinter dem Basisplan](shots/planning-progress-simulation.webp)
+
+Mit einem Basisplan vergleicht die Simulation: ein Element, das an einem Tag nicht gebaut (oder nicht begonnen) ist, an dem der Basisplan es so hatte, ist **verspätet** (karminrot), eines, das in Arbeit oder gebaut ist, bevor der Basisplan es beginnen ließ, ist **voraus** (grün). Bis zum Statusdatum stehen die Elemente auf ihren tatsächlichen Tagen: ein als fertig markiertes ist an dem Tag gebaut, an dem es markiert wurde. **Mit dem Basisplan verglichen** in den Einstellungen der Simulation schaltet es ab; dort werden auch seine zwei Farben gewählt. Ansichten und Pläne zu einem Datum zeigen dasselbe.
+
+### Der Fortschritt in den Dateien
+
+- **XLSX exportieren** fügt die Spalten **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** und **GlobalId** hinzu (die Arbeitsmappe ist englisch). Fülle sie auf der Baustelle aus und lies sie mit **Terminplanung → Fortschritt importieren…** zurück: die Zeilen werden nach GlobalId, PSP-Code oder ID gefunden, und ein über der Tabelle geschriebenes *Status date* setzt das Statusdatum. Eine CSV geht auch.
+- **MS Project XML** trägt das Statusdatum, den Prozentsatz jedes Vorgangs, den tatsächlichen Anfang und das tatsächliche Ende, die Restdauer und den Basisplan (Baseline 0); die Markierungen der Elemente reisen mit den Elementen in *Lapin elements*.
+- **IFC** schreibt sie in die IfcTaskTime jedes Vorgangs (die Statuszeit, den tatsächlichen Anfang und das tatsächliche Ende, die Restzeit, den Fertigstellungsgrad) und den Basisplan als zweiten IfcWorkSchedule vom Typ BASELINE; Lapins eigene Felder (der eingegebene Prozentsatz, die Markierungen) stehen in `Lapin_Task`. Beides kommt auf dieselben Termine zurück.
+- **Verwalten → Versionen → Vergleichen** sagt neben den Elementen, was sich im Terminplan geändert hat: das Ende, die Arbeitstage, das Statusdatum und die Vorgänge, die hinzukamen, gelöscht oder verschoben wurden (um wie viele Arbeitstage) oder deren Dauer oder Fortschritt sich geändert hat.
+
 ## Der Kalender
 
 ![Der Arbeitskalender](shots/planning-calendar.webp)
@@ -244,5 +285,4 @@ Lapins eigene Felder, für die andere Programme keinen Platz haben (die Einschr�
 
 ## Was als Nächstes kommt
 
-Fortschritt und Basispläne sowie die Kostenberechnung kommen in den nächsten Stufen.
-
+Die Kostenberechnung kommt in den nächsten Stufen.

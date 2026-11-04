@@ -33,6 +33,8 @@ public sealed partial class PlanningModule
             foreach (var e in t.Elements.Values)
             {
                 var o = new JsonObject { ["state"] = Timeline.StateOf(e, d) };
+                // Against the baseline (stage 5): late or ahead, as the simulation shows it.
+                if (t.Shown(e, d) is var shown && shown != (string)o["state"]!) o["shown"] = shown;
                 if (e.Layers != null)
                     o["layers"] = new JsonArray(Enumerable.Range(0, t.LayerCounts.GetValueOrDefault(e.Id)).Select(i => (JsonNode)Timeline.LayerStateOf(e, i, d)).ToArray());
                 states[e.Id] = o;
@@ -50,7 +52,7 @@ public sealed partial class PlanningModule
         {
             var (s, _) = EnsureSchedule(ctx);
             var o = SimulationLook.Read(s.Attrs["simulation"]).ToJson();
-            foreach (var key in new[] { "active", "demolishing", "temporary", "planned" })
+            foreach (var key in new[] { "active", "demolishing", "temporary", "planned", "late", "ahead" })
                 if (a.ContainsKey(key))
                 {
                     if ((string?)a[key] is not { } c || !System.Text.RegularExpressions.Regex.IsMatch(c, "^#[0-9a-fA-F]{6}$")) throw new CommandException("A colour is #rrggbb.");
@@ -59,6 +61,7 @@ public sealed partial class PlanningModule
             if (a.ContainsKey("plannedMode")) o["plannedMode"] = (string?)a["plannedMode"] is "hide" or "ghost" ? (string?)a["plannedMode"] : throw new CommandException("What is not started is hidden or a ghost.");
             if (a.ContainsKey("unlinked")) o["unlinked"] = (string?)a["unlinked"] is "show" or "hide" ? (string?)a["unlinked"] : throw new CommandException("What no task takes is shown or hidden.");
             if (a.ContainsKey("layers")) o["layers"] = a["layers"] is JsonValue lv && lv.TryGetValue<bool>(out var lb) && lb;
+            if (a.ContainsKey("compare")) o["compare"] = a["compare"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb;
             if (a["reset"] is JsonValue rv && rv.TryGetValue<bool>(out var reset) && reset) o = SimulationLook.Default.ToJson();
             var attrs = s.CloneAttrs();
             attrs["simulation"] = SimulationLook.Read(o).ToJson();

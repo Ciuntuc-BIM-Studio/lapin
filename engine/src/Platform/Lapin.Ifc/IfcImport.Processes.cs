@@ -125,7 +125,8 @@ public static partial class IfcImport
                     IfcTaskTimeData? time = null;
                     if (!ifc2x3 && f.Get(t[11]) is { Type: "IFCTASKTIME" } tt)
                         time = new IfcTaskTimeData(DurationDays(Str(tt[4]), hours), IfcWhen(tt[5]) ?? IfcWhen(tt[7]), IfcWhen(tt[6]) ?? IfcWhen(tt[8]), IfcWhen(tt[9]), IfcWhen(tt[10]),
-                            DurationDays(Str(tt[11]), hours), DurationDays(Str(tt[12]), hours), (tt[13] as StepEnum)?.Value == "T", tt[19] is double pc ? pc : null);
+                            DurationDays(Str(tt[11]), hours), DurationDays(Str(tt[12]), hours), (tt[13] as StepEnum)?.Value == "T", tt[19] is double pc ? pc : null,
+                            IfcWhen(tt[14]), IfcWhen(tt[16]), IfcWhen(tt[17]), DurationDays(Str(tt[18]), hours));
                     var milestone = ((ifc2x3 ? t[8] : t[9]) as StepEnum)?.Value == "T";
                     var parent = parentOf.TryGetValue(t.Id, out var pid) && seen.Contains(pid) ? gidOf[pid] : null;
                     data.Add(new IfcTaskData(gidOf[t.Id], Str(t[2]) ?? "Task", Str(t[3]), Str(ifc2x3 ? t[5] : t[5]), parent, milestone,

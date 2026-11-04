@@ -1,7 +1,7 @@
 ---
 title: Planificare
 order: 97
-summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, jaloane, legături cu decalaje, drumul critic calculat pe un calendar cu sărbătorile legale din România; simularea 4D a clădirii care crește zi de zi, pe vederi, pe planșe și ca video; schimb cu MS Project, IFC și Excel.
+summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, jaloane, legături cu decalaje, drumul critic calculat pe un calendar cu sărbătorile legale din România; simularea 4D a clădirii care crește zi de zi, pe vederi, pe planșe și ca video; progresul marcat pe șantier, și de pe telefon, față de o linie de bază; schimb cu MS Project, IFC și Excel.
 ---
 
 ## Tabul Planificare
@@ -15,6 +15,7 @@ summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, ja
 - **Retrage în dreapta**, **Scoate la stânga**, **Leagă sarcinile** și **Dezleagă sarcinile**: WBS-ul și legăturile sarcinilor selectate.
 - **Adaugă la sarcină…** (TA) și **Elemente fără sarcină**: elementele modelului în sarcini (mai jos).
 - **Simulează**, **Planșa de etape…**, **Gantt pe planșă** și **Exportă video…**: simularea 4D, modelul așa cum îl are programul într-o zi (mai jos).
+- **Marchează realizat** (MD), **Marchează început** (MS), **Marchează neînceput**, **Salvează linia de bază**, **Șterge linia de bază** și **Importă progresul…**: progresul și linia de bază (mai jos).
 - **Importă MS Project…**, **Exportă MS Project…**, **Export XLSX** și **Exportă IFC…**: programul spre și dinspre alte programe (mai jos).
 
 Un proiect are un singur program. Se face prima oară când adaugi o sarcină și începe lunea următoare. Data de start se schimbă din bara Gantt-ului.
@@ -221,6 +222,46 @@ Un plan, o secțiune, o fațadă sau o vedere 3D salvată are în proprietăți 
 
 **Planificare → Exportă video…** (și din player) înregistrează vederea 3D, de unde privește acum, de la o zi la alta, câte un cadru pe **o zi** sau pe **o săptămână**, cu data și sarcinile în lucru scrise dedesubt. Fișierul e un video WebM, sau MP4 unde sistemul oferă doar atât (aplicația de macOS). Un browser care nu înregistrează video salvează în schimb cadrele ca fișiere PNG într-un ZIP.
 
+## Progresul
+
+![Gantt-ul cu progresul: coloana %, partea realizată mai închisă în fiecare bară, linia de bază sub ea și abaterea](shots/planning-progress.webp)
+
+Pe măsură ce lucrările avansează, programul spune cât s-a făcut și mută ce a rămas:
+
+- **Data de stare**, în bara Gantt-ului, e ziua până la care e raportat progresul. Lucrul rămas începe în ziua lucrătoare de după: o sarcină neîncepută nu poate începe mai devreme, iar una în lucru face ce i-a rămas de atunci încolo. Diagrama o desenează ca o linie albastră.
+- **% realizat** al unei sarcini se scrie în coloana lui sau în Proprietăți. Fără el, vine din elementele ei marcate pe șantier: cantitatea realizată din cantitatea sarcinii (în unitatea ei, când generatorul i-a dat una), altfel numărul lor. Al unei sarcini rezumat vine din sarcinile ei, ponderat cu duratele lor.
+- **Începutul real** și **finalul real** se scriu în Proprietăți. Lăsate goale, vin din marcaje: prima zi în care a fost marcat un element și ziua ultimului element, după ce toate sunt realizate. O sarcină terminată stă pe datele ei reale, în afara drumului critic.
+- O sarcină în lucru își păstrează începutul real și face partea din durată încă nerealizată (rotunjită în sus) după data de stare; sarcinile de după ea se mută odată cu ea.
+
+Barele arată partea realizată mai închisă. Proprietățile spun de unde vine procentul și câte zile lucrătoare au rămas.
+
+![Progresul unei sarcini în Proprietăți](shots/planning-progress-task.webp)
+
+### Marcarea elementelor pe șantier
+
+**Planificare → Marchează realizat** (MD) și **Marchează început** (MS) marchează elementele selectate în 3D sau într-un plan, la data de stare (azi, când nu e una), în fiecare sarcină care le ia; **Marchează neînceput** scoate marcajele. Proprietățile unui element selectat îi arată starea pe șantier, cu aceleași trei butoane, iar în fiecare sarcină a lui ziua în care a fost realizat sau început, cu un buton care îl marchează realizat doar în sarcina aceea. Un perete stratificat dintr-o sarcină de zidărie și una de tencuieli se marchează în amândouă, sau într-una, din rândul ei.
+
+![Marcajele unui perete în proprietățile lui](shots/planning-element-marks.webp)
+
+Pe șantier, de pe telefon: intră în sesiunea partajată a proiectului din browser (**Fișier → Partajează sesiunea…** pe calculatorul care îl are deschis). Un invitat care a intrat doar ca să se uite poate totuși marca elemente și scrie progresul unei sarcini: marcarea e singura modificare deschisă oricărui invitat. Fotografiile și rapoartele pe sarcini sunt pentru ediția premium.
+
+### Linia de bază
+
+**Planificare → Salvează linia de bază** păstrează datele și durata fiecărei sarcini așa cum sunt acum; salvată din nou, e înlocuită (o singură linie de bază: mai multe linii de bază și scenarii sunt pentru ediția premium). Gantt-ul o desenează apoi ca o bară gri subțire sub bara fiecărei sarcini (**Linia de bază** din bară o ascunde), adaugă coloana **Abatere** (zilele lucrătoare cu care s-a mutat finalul: pozitiv înseamnă întârziere, rândul marcat cu roșu) și spune în bara lui câte sarcini întârzie și cu cât s-a mutat finalul. Proprietățile dau datele liniei de bază și abaterile la început și la final. **Șterge linia de bază** o scoate.
+
+### Întârziat și înainte în simulare
+
+![Simularea la data de stare: ferestrele întârziate față de linia de bază](shots/planning-progress-simulation.webp)
+
+Cu o linie de bază, simularea compară: un element neconstruit (sau neînceput) într-o zi în care linia de bază îl avea așa e **întârziat** (carmin), iar unul în lucru sau construit înainte ca linia de bază să-l înceapă e **înainte** (verde). Până la data de stare elementele stau pe zilele lor reale: unul marcat realizat e construit în ziua în care a fost marcat. **Comparat cu linia de bază**, din setările simulării, o oprește; tot acolo se aleg și cele două culori. Vederile și planșele la o dată arată la fel.
+
+### Progresul în fișiere
+
+- **Export XLSX** adaugă coloanele **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** și **GlobalId** (registrul e în engleză; un tabel făcut de mână le poate numi și *% realizat*, *Început real*, *Final real*). Completează-le pe șantier și citește-le înapoi cu **Planificare → Importă progresul…**: rândurile sunt găsite după GlobalId, WBS sau ID, iar o *Data de stare* (sau *Status date*) scrisă deasupra tabelului pune data de stare. Merge și un CSV.
+- **MS Project XML** poartă data de stare, procentul fiecărei sarcini, începutul și finalul real, durata rămasă și linia de bază (Baseline 0); marcajele elementelor merg cu elementele, în *Lapin elements*.
+- **IFC** le scrie în IfcTaskTime-ul fiecărei sarcini (timpul de stare, începutul și finalul real, timpul rămas, gradul de realizare), iar linia de bază ca al doilea IfcWorkSchedule, de tip BASELINE; câmpurile proprii ale lui Lapin (procentul scris, marcajele) merg în `Lapin_Task`. Amândouă revin la aceleași date.
+- **Gestionare → Versiuni → Compară** spune, pe lângă elemente, ce s-a schimbat în program: finalul, zilele lucrătoare, data de stare și sarcinile adăugate, șterse, mutate (cu câte zile lucrătoare), cele cu durata sau progresul schimbat.
+
 ## Calendarul
 
 ![Calendarul de lucru](shots/planning-calendar.webp)
@@ -244,5 +285,4 @@ Câmpurile proprii ale lui Lapin pentru care alte programe n-au loc (constrânge
 
 ## Ce urmează
 
-Progresul și liniile de bază, și devizul vin în etapele următoare.
-
+Devizul vine în etapele următoare.

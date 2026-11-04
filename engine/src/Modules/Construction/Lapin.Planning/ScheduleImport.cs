@@ -4,16 +4,17 @@ using Lapin.Platform;
 
 namespace Lapin.Planning;
 
-/// <summary>A task read from a file (MS Project, IFC): its key in the file, its id when it carries one (a GlobalId), its parent's key, and what Lapin keeps of it (its elements: <see cref="TaskLinkData"/>).</summary>
+/// <summary>A task read from a file (MS Project, IFC): its key in the file, its id when it carries one (a GlobalId), its parent's key, and what Lapin keeps of it (its elements: <see cref="TaskLinkData"/>; its progress and baseline, stage 5).</summary>
 public sealed record ImportedTask(string Key, string? Id, string Name, string? ParentKey, int Duration, bool Milestone, string? Constraint = null, DateOnly? ConstraintDate = null,
-    DateOnly? Start = null, bool Wet = false, string? Kind = null, string? Notes = null, JsonObject? Links = null);
+    DateOnly? Start = null, bool Wet = false, string? Kind = null, string? Notes = null, JsonObject? Links = null,
+    DateOnly? ActualStart = null, DateOnly? ActualFinish = null, double? Complete = null, TaskBaseline? Baseline = null);
 
 /// <summary>A link read from a file, between two tasks' keys.</summary>
 public sealed record ImportedLink(string FromKey, string ToKey, string Type, int Lag, string? Id = null);
 
 /// <summary>A whole schedule read from a file: its name and start, its calendar, its tasks in row order, its links; the ids it carries for the schedule and calendar.</summary>
 public sealed record ImportedSchedule(string Name, DateOnly Start, WorkCalendar Calendar, IReadOnlyList<ImportedTask> Tasks, IReadOnlyList<ImportedLink> Links,
-    string? ScheduleId = null, string? CalendarId = null, string? CalendarName = null);
+    string? ScheduleId = null, string? CalendarId = null, string? CalendarName = null, DateOnly? DataDate = null, DateOnly? BaselineSaved = null);
 
 /// <summary>What an import did.</summary>
 public sealed record ImportResult(int Tasks, int Links, int Dropped, IReadOnlyList<string> Notes)
@@ -42,6 +43,8 @@ public static class ScheduleImport
 
         var sa = schedule.CloneAttrs();
         sa["start"] = WorkCalendar.Date(s.Start);
+        if (s.DataDate is { } dd) sa["dataDate"] = WorkCalendar.Date(dd); else sa.Remove("dataDate");
+        if (s.Tasks.Any(t => t.Baseline != null)) sa["baselineSaved"] = WorkCalendar.Date(s.BaselineSaved ?? Plan.Today()); else sa.Remove("baselineSaved");
         edit.Replace(schedule.With(name: s.Name.Length > 0 ? s.Name : schedule.Name, attrs: sa));
         var cal = edit.Model.Get(calendar.Id)!;
         edit.Replace(cal.With(name: s.CalendarName is { Length: > 0 } cn ? cn : cal.Name, attrs: s.Calendar.ToJson()));
@@ -65,6 +68,10 @@ public static class ScheduleImport
             if (t.Wet) attrs["wet"] = true;
             if (!string.IsNullOrWhiteSpace(t.Notes)) attrs["notes"] = t.Notes;
             if (t.Links != null) TaskLinkData.Write(attrs, t.Links);
+            if (t.ActualStart is { } ast) attrs["actualStart"] = WorkCalendar.Date(ast);
+            if (t.ActualFinish is { } afi && (t.ActualStart is not { } a0 || afi >= a0)) attrs["actualFinish"] = WorkCalendar.Date(afi);
+            if (t.Complete is { } pc && double.IsFinite(pc)) attrs["complete"] = Math.Round(Math.Clamp(pc, 0, 100), 2);
+            if (t.Baseline is { } bl) attrs["baseline"] = bl.ToJson();
             var kind = t.Kind is { } k && Plan.Kinds.Contains(k) ? k : null;
             edit.Add(new Entity(idOf[t.Key], Plan.TaskClass, t.Name.Length > 0 ? t.Name : "Task", attrs, kind));
         }
