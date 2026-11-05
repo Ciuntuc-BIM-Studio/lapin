@@ -104,7 +104,7 @@ public sealed record MeshGroup(string GlobalId, string Name, string IfcClass, do
 /// Coordinates are metres, Z up, as the model has them; a writer turns them
 /// as its format asks (glTF: Y up).
 /// </summary>
-public sealed record MeshScene(string Project, string Building, List<MeshGroup> Groups, List<MeshMaterial> Materials, (double X, double Y, double Z) RootOffset, List<string> Notes)
+public sealed record MeshScene(string Project, string Building, List<MeshGroup> Groups, List<MeshMaterial> Materials, (double X, double Y, double Z) RootOffset, List<string> Notes, (double X, double Y, double Z) Origin = default)
 {
     /// <summary>The elements with a body (an assembly counts its parts, not itself).</summary>
     public int ElementCount => Groups.Sum(g => g.Elements.SelectMany(e => e.Flatten()).Count(e => e.Parts.Count > 0));
@@ -229,7 +229,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         var list = groups.Values.Where(g => g.Elements.Count > 0).ToList();
         if (siteGroup.Elements.Count > 0) list.Insert(0, siteGroup);
         if (voidGroup is { Elements.Count: > 0 }) list.Add(voidGroup);
-        return new MeshScene(project?.Name ?? "Project", Spatial.Building(m)?.Name ?? "Building", list, materials, root, notes);
+        return new MeshScene(project?.Name ?? "Project", Spatial.Building(m)?.Name ?? "Building", list, materials, root, notes, (ox, oy, oz));
     }
 
     /// <summary>The voids of the project's openings (the kinds and offset its settings say), as elements of a group named "Opening voids", in a translucent violet.</summary>

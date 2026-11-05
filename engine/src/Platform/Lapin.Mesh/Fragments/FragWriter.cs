@@ -29,9 +29,9 @@ namespace Lapin.Mesh.Fragments;
 public static class FragWriter
 {
     /// <summary>The file: zlib-compressed unless <paramref name="raw"/> (what <c>core.load(bytes, {raw})</c> expects either way).</summary>
-    public static byte[] Write(MeshScene scene, bool raw = false, string? modelGuid = null)
+    public static byte[] Write(MeshScene scene, bool raw = false, string? modelGuid = null, FragContext? context = null)
     {
-        var data = Build(scene, modelGuid);
+        var data = Build(scene, modelGuid, context);
         if (raw) return data;
         using var ms = new MemoryStream();
         using (var z = new ZLibStream(ms, CompressionLevel.Optimal, leaveOpen: true)) z.Write(data);
@@ -47,7 +47,7 @@ public static class FragWriter
     sealed class Geometry
     {
         public readonly List<(double X, double Y, double Z)> Centres = [];
-        public readonly List<(float[] Points, int[] Triangles, ushort[] FaceIds, float[] Min, float[] Max)> Shells = [];
+        public readonly List<(float[] Points, FragFaces.Polygons Faces, float[] Min, float[] Max)> Shells = [];
         readonly Dictionary<string, int> _shellIndex = [];
         public readonly List<(byte R, byte G, byte B, byte A, bool TwoSided)> Materials = [];
         readonly Dictionary<(byte, byte, byte, byte, bool), int> _materialIndex = [];
@@ -83,7 +83,7 @@ public static class FragWriter
                 if (!_shellIndex.TryGetValue(key, out var shell))
                 {
                     var (lo, hi) = MeshMath.Bounds(points);
-                    Shells.Add((points, tris, faces, lo, hi));
+                    Shells.Add((points, FragFaces.Of(points, tris, faces), lo, hi));
                     shell = _shellIndex[key] = Shells.Count - 1;
                 }
                 Samples.Add((item, Material(materials[p.Material]), shell));
@@ -143,9 +143,19 @@ public static class FragWriter
     }
 
     /// <summary>The uncompressed FlatBuffer.</summary>
-    public static byte[] Build(MeshScene scene, string? modelGuid = null)
+    public static byte[] Build(MeshScene scene, string? modelGuid = null, FragContext? context = null)
     {
         var geometry = new Geometry();
+        // What the context says of each element (its attributes, type, materials, sets), asked once.
+        var elementData = new Dictionary<MeshElement, FragElementData?>(ReferenceEqualityComparer.Instance);
+        FragElementData? DataOf(MeshElement e) => context == null ? null : elementData.TryGetValue(e, out var d) ? d : elementData[e] = context.Element(e.GlobalId);
+        List<string> Attributes(MeshElement e)
+        {
+            var attrs = new List<string> { Json("Name", e.Name, "IFCLABEL") };
+            if (e.Type != null) attrs.Add(Json("ObjectType", e.Type, "IFCLABEL"));
+            foreach (var a in DataOf(e)?.Attributes ?? []) attrs.Add(Json(a.Name, a.Value?.DeepClone(), a.Type));
+            return attrs;
+        }
         var items = new List<Item>();
         uint next = 1;
         var elementIds = new Dictionary<MeshElement, uint>(ReferenceEqualityComparer.Instance);
@@ -155,9 +165,7 @@ public static class FragWriter
             {
                 if (e.IsAssembly) continue;
                 geometry.Add(e, scene.Materials);
-                var attrs = new List<string> { Json("Name", e.Name, "IFCLABEL") };
-                if (e.Type != null) attrs.Add(Json("ObjectType", e.Type, "IFCLABEL"));
-                var item = new Item(next++, e.IfcClass.ToUpperInvariant(), Guid22(e.GlobalId), attrs, []);
+                var item = new Item(next++, e.IfcClass.ToUpperInvariant(), Guid22(e.GlobalId), Attributes(e), []);
                 elementIds[e] = item.LocalId;
                 items.Add(item);
             }
@@ -165,9 +173,7 @@ public static class FragWriter
         foreach (var g in scene.Groups)
             foreach (var e in g.Elements.SelectMany(x => x.Flatten()).Where(x => x.IsAssembly))
             {
-                var attrs = new List<string> { Json("Name", e.Name, "IFCLABEL") };
-                if (e.Type != null) attrs.Add(Json("ObjectType", e.Type, "IFCLABEL"));
-                var item = new Item(next++, e.IfcClass.ToUpperInvariant(), Guid22(e.GlobalId), attrs, []);
+                var item = new Item(next++, e.IfcClass.ToUpperInvariant(), Guid22(e.GlobalId), Attributes(e), []);
                 elementIds[e] = item.LocalId;
                 items.Add(item);
                 item.Relations.Add(Json(["IsDecomposedBy", .. e.Children!.Select(c => (JsonNode?)elementIds[c])]));
@@ -183,10 +189,11 @@ public static class FragWriter
             groupItems.Add((g, item));
             items.Add(item);
         }
-        var building = new Item(next++, "IFCBUILDING", null, [Json("Name", scene.Building, "IFCLABEL")], []);
+        // The building, the site and the project with their GlobalIds, as the IFC export writes them.
+        var building = new Item(next++, "IFCBUILDING", Guid22(context?.BuildingGuid ?? ""), [Json("Name", scene.Building, "IFCLABEL")], []);
         var siteGroup = groupItems.FirstOrDefault(x => x.Group.IfcClass == "IfcSite");
-        var site = siteGroup.Item ?? new Item(next++, "IFCSITE", null, [Json("Name", "Site", "IFCLABEL")], []);
-        var project = new Item(next++, "IFCPROJECT", null, [Json("Name", scene.Project, "IFCLABEL")], []);
+        var site = siteGroup.Item ?? new Item(next++, "IFCSITE", Guid22(context?.SiteGuid ?? ""), [Json("Name", "Site", "IFCLABEL")], []);
+        var project = new Item(next++, "IFCPROJECT", Guid22(context?.ProjectGuid ?? ""), [Json("Name", scene.Project, "IFCLABEL")], []);
         if (siteGroup.Item == null) items.Add(site);
         items.Add(building);
         items.Add(project);
@@ -207,6 +214,79 @@ public static class FragWriter
         site.Relations.Add(Json("Decomposes", project.LocalId));
         project.Relations.Add(Json("IsDecomposedBy", site.LocalId));
 
+        // Then what the elements carry, as items without geometry, related as That Open's IfcImporter relates them: the type and the
+        // property and quantity sets by IsDefinedBy (ObjectTypeOf and DefinesOccurrence back), the sets' values by HasProperties and
+        // Quantities, the materials by HasAssociations (AssociatedTo back). A type and a material are one item however many use them.
+        if (context != null)
+        {
+            var typeItems = new Dictionary<string, Item>();
+            var materialItems = new Dictionary<string, Item>(StringComparer.Ordinal);
+            var typedBy = new Dictionary<Item, List<JsonNode?>>(ReferenceEqualityComparer.Instance);
+            var valueItems = new Dictionary<string, Item>(StringComparer.Ordinal);
+            var associatedTo = new Dictionary<Item, List<JsonNode?>>(ReferenceEqualityComparer.Instance);
+            foreach (var (e, id) in elementIds.OrderBy(kv => kv.Value))
+            {
+                if (DataOf(e) is not { } d) continue;
+                var element = items[(int)id - 1];
+                var definedBy = new List<JsonNode?>();
+                if (d.Type is var (typeId, typeName))
+                {
+                    if (!typeItems.TryGetValue(typeId, out var type))
+                    {
+                        typeItems[typeId] = type = new Item(next++, e.IfcClass.ToUpperInvariant() + "TYPE", Guid22(typeId), [Json("Name", typeName, "IFCLABEL"), Json("Tag", typeId, "IFCLABEL")], []);
+                        items.Add(type);
+                        typedBy[type] = [];
+                    }
+                    definedBy.Add(type.LocalId);
+                    typedBy[type].Add(id);
+                }
+                foreach (var set in d.Sets)
+                {
+                    // A value the same as one written is that one: a model of thousands of references with the same sets carries
+                    // each value once. A set stays the element's own: shared, its DefinesOccurrence would lead the library's
+                    // getItemsData (IsDefinedBy with relations) from element to element until its stack overflows.
+                    var values = new List<JsonNode?>();
+                    foreach (var v in set.Items)
+                    {
+                        var attrs = new List<string> { Json("Name", v.Name, set.Quantities ? "IFCLABEL" : "IFCIDENTIFIER") };
+                        if (v.Description != null) attrs.Add(Json("Description", v.Description, "IFCTEXT"));
+                        attrs.Add(Json(v.Value.Name, v.Value.Value?.DeepClone(), v.Value.Type));
+                        var valueKey = v.Category + "\n" + string.Join("\n", attrs);
+                        if (!valueItems.TryGetValue(valueKey, out var value))
+                        {
+                            valueItems[valueKey] = value = new Item(next++, v.Category, null, attrs, []);
+                            items.Add(value);
+                        }
+                        values.Add(value.LocalId);
+                    }
+                    var setAttrs = new List<string> { Json("Name", set.Name, "IFCLABEL") };
+                    if (set.Description != null) setAttrs.Add(Json("Description", set.Description, "IFCTEXT"));
+                    var category = set.Quantities ? "IFCELEMENTQUANTITY" : "IFCPROPERTYSET";
+                    var setItem = new Item(next++, category, null, setAttrs, []);
+                    setItem.Relations.Add(Json([set.Quantities ? "Quantities" : "HasProperties", .. values]));
+                    setItem.Relations.Add(Json("DefinesOccurrence", id));
+                    items.Add(setItem);
+                    definedBy.Add(setItem.LocalId);
+                }
+                if (definedBy.Count > 0) element.Relations.Add(Json(["IsDefinedBy", .. definedBy]));
+                var associations = new List<JsonNode?>();
+                foreach (var name in d.Materials)
+                {
+                    if (!materialItems.TryGetValue(name, out var mat))
+                    {
+                        materialItems[name] = mat = new Item(next++, "IFCMATERIAL", null, [Json("Name", name, "IFCLABEL")], []);
+                        items.Add(mat);
+                        associatedTo[mat] = [];
+                    }
+                    associations.Add(mat.LocalId);
+                    associatedTo[mat].Add(id);
+                }
+                if (associations.Count > 0) element.Relations.Add(Json(["HasAssociations", .. associations]));
+            }
+            foreach (var (type, users) in typedBy) type.Relations.Add(Json(["ObjectTypeOf", .. users]));
+            foreach (var (mat, users) in associatedTo) mat.Relations.Add(Json(["AssociatedTo", .. users]));
+        }
+
         // Synthetic ids for the geometry resources, above every item's.
         uint[] Allocate(int n) { var o = new uint[n]; for (var i = 0; i < n; i++) o[i] = next++; return o; }
         var globalTransformIds = Allocate(geometry.Centres.Count);
@@ -219,14 +299,14 @@ public static class FragWriter
         var b = new FlatBuilder(1 << 20);
 
         // ------------------------------------------------------------ meshes
-        var shellOffsets = geometry.Shells.Select(s => ShellOffset(b, s.Points, s.Triangles, s.FaceIds)).ToList();
+        var shellOffsets = geometry.Shells.Select(s => ShellOffset(b, s.Points, s.Faces)).ToList();
         var shellsVec = b.CreateOffsetVector(shellOffsets);
         var circleExtrusionsVec = b.CreateOffsetVector([]);
 
         b.StartVector(FragSchema.SizeRepresentation, geometry.Shells.Count, 4);
         for (var i = geometry.Shells.Count - 1; i >= 0; i--)
         {
-            var (_, _, _, lo, hi) = geometry.Shells[i];
+            var (_, _, lo, hi) = geometry.Shells[i];
             b.Prep(4, FragSchema.SizeRepresentation);
             b.Pad(3);
             b.PutSbyte(FragSchema.RepresentationShell);
@@ -296,7 +376,7 @@ public static class FragWriter
         var attributeOffsets = new List<int>();
         foreach (var item in items)
         {
-            var data = b.CreateStringVector(item.Attributes);
+            var data = b.CreateStringVector(item.Attributes, shared: true);
             b.StartObject(FragSchema.Attribute.Fields);
             b.AddOffset(FragSchema.Attribute.Data, data);
             attributeOffsets.Add(b.EndObject());
@@ -307,7 +387,7 @@ public static class FragWriter
         var relationItems = new List<int>();
         foreach (var item in items.Where(i => i.Relations.Count > 0))
         {
-            var data = b.CreateStringVector(item.Relations);
+            var data = b.CreateStringVector(item.Relations, shared: true);
             b.StartObject(FragSchema.Relation.Fields);
             b.AddOffset(FragSchema.Relation.Data, data);
             relationOffsets.Add(b.EndObject());
@@ -321,7 +401,9 @@ public static class FragWriter
             ["schema"] = "IFC4",
             ["names"] = new JsonArray(scene.Project, DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssK", CultureInfo.InvariantCulture), "", "", "Lapin", "Lapin", ""),
             ["descriptions"] = new JsonArray(),
-            ["crs"] = scene.RootOffset is var (east, north, up) && (east != 0 || north != 0 || up != 0)
+            // The tie to the map as the IFC export's IfcMapConversion, at the export's origin; without a project, the survey origin's offset.
+            ["crs"] = context != null ? context.Crs?.DeepClone()
+                : scene.RootOffset is var (east, north, up) && (east != 0 || north != 0 || up != 0)
                 ? new JsonObject { ["mapConversion"] = new JsonObject { ["eastings"] = east, ["northings"] = north, ["orthogonalHeight"] = up, ["xAxisAbscissa"] = 1.0, ["xAxisOrdinate"] = 0.0, ["scale"] = 1.0 } }
                 : null,
         };
@@ -331,9 +413,10 @@ public static class FragWriter
         var guidsVec = b.CreateStringVector(withGuid.Select(i => i.Guid!).ToList());
         var guidsItemsVec = b.CreateUintVector(withGuid.Select(i => i.LocalId).ToList());
         var localIdsVec = b.CreateUintVector(items.Select(i => i.LocalId).ToList());
-        var categoriesVec = b.CreateStringVector(items.Select(i => i.Category).ToList());
-        var uniqueAttributesVec = b.CreateStringVector([]);
-        var relationNamesVec = b.CreateStringVector([]);
+        var categoriesVec = b.CreateStringVector(items.Select(i => i.Category).ToList(), shared: true);
+        // Every attribute once, and the relations' names, as the library's own writer lists them (its getAttributeNames, getRelationNames).
+        var uniqueAttributesVec = b.CreateStringVector(items.SelectMany(i => i.Attributes).Distinct(StringComparer.Ordinal).ToList(), shared: true);
+        var relationNamesVec = b.CreateStringVector(items.SelectMany(i => i.Relations).Select(RelationName).Distinct(StringComparer.Ordinal).ToList(), shared: true);
         var indexesVec = b.CreateOffsetVector([]);
 
         // The spatial tree: entity nodes and category nodes in turn; an assembly's parts under it, by class.
@@ -358,7 +441,7 @@ public static class FragWriter
         int CategoryNode(string category, List<int> childOffs)
         {
             var childrenVec = b.CreateOffsetVector(childOffs);
-            var categoryOff = b.CreateString(category);
+            var categoryOff = b.CreateSharedString(category);
             b.StartObject(FragSchema.Spatial.Fields);
             b.AddOffset(FragSchema.Spatial.Category, categoryOff);
             b.AddOffset(FragSchema.Spatial.Children, childrenVec);
@@ -394,6 +477,13 @@ public static class FragWriter
         return b.Finish(modelOff);
     }
 
+    /// <summary>A relation's name: the first string of its JSON array.</summary>
+    static string RelationName(string relation)
+    {
+        var end = relation.IndexOf('"', 2);
+        return end > 2 ? relation[2..end] : relation;
+    }
+
     /// <summary>An IFC GlobalId as the file carries it (22 characters); anything else is no guid.</summary>
     static string? Guid22(string id) => id.Length == 22 ? id : null;
 
@@ -406,24 +496,33 @@ public static class FragWriter
         b.Prep(8, 24); b.PutDouble(pos.Z); b.PutDouble(pos.Y); b.PutDouble(pos.X);
     }
 
-    /// <summary>One Shell: its points, a profile per triangle, and the face each triangle belongs to; holes stay empty.</summary>
-    static int ShellOffset(FlatBuilder b, float[] points, int[] tris, ushort[] faceIds)
+    /// <summary>One Shell: its points, a profile per planar region (its holes cut from it), and the face each profile belongs to.</summary>
+    static int ShellOffset(FlatBuilder b, float[] points, FragFaces.Polygons faces)
     {
         var n = points.Length / 3;
         var big = n > FragSchema.MaxSmallPoints;
-        var profileOffsets = new List<int>(tris.Length / 3);
-        for (var t = 0; t < tris.Length; t += 3)
+        int Indices(int[] loop) => big ? b.CreateUintVector(loop.Select(i => (uint)i).ToArray()) : b.CreateUshortVector(loop.Select(i => (ushort)i).ToArray());
+        var profileOffsets = new List<int>(faces.Profiles.Count);
+        foreach (var loop in faces.Profiles)
         {
-            var data = big
-                ? b.CreateUintVector([(uint)tris[t], (uint)tris[t + 1], (uint)tris[t + 2]])
-                : b.CreateUshortVector([(ushort)tris[t], (ushort)tris[t + 1], (ushort)tris[t + 2]]);
+            var data = Indices(loop);
             b.StartObject(FragSchema.ShellProfile.Fields);
             b.AddOffset(FragSchema.ShellProfile.Indices, data);
             profileOffsets.Add(b.EndObject());
         }
         var profilesVec = b.CreateOffsetVector(profileOffsets);
+        var holeOffsets = new List<int>(faces.Holes.Count);
+        foreach (var (loop, profile) in faces.Holes)
+        {
+            var data = Indices(loop);
+            b.StartObject(FragSchema.ShellHole.Fields);
+            b.AddOffset(FragSchema.ShellHole.Indices, data);
+            b.AddUshort(FragSchema.ShellHole.ProfileId, (ushort)profile);
+            holeOffsets.Add(b.EndObject());
+        }
+        var holesVec = b.CreateOffsetVector(holeOffsets);
         var emptyVec = b.CreateOffsetVector([]);
-        var faceIdsVec = b.CreateUshortVector(faceIds);
+        var faceIdsVec = b.CreateUshortVector(faces.FaceIds);
         b.StartVector(FragSchema.SizeFloatVector, n, 4);
         for (var i = n - 1; i >= 0; i--) { b.Prep(4, 12); b.PutFloat(points[i * 3 + 2]); b.PutFloat(points[i * 3 + 1]); b.PutFloat(points[i * 3]); }
         var pointsVec = b.EndVector(n);
@@ -431,8 +530,8 @@ public static class FragWriter
         b.StartObject(FragSchema.Shell.Fields);
         b.AddOffset(big ? FragSchema.Shell.BigProfiles : FragSchema.Shell.Profiles, profilesVec);
         b.AddOffset(big ? FragSchema.Shell.Profiles : FragSchema.Shell.BigProfiles, emptyVec);
-        b.AddOffset(FragSchema.Shell.Holes, emptyVec);
-        b.AddOffset(FragSchema.Shell.BigHoles, emptyVec);
+        b.AddOffset(big ? FragSchema.Shell.BigHoles : FragSchema.Shell.Holes, holesVec);
+        b.AddOffset(big ? FragSchema.Shell.Holes : FragSchema.Shell.BigHoles, emptyVec);
         b.AddOffset(FragSchema.Shell.Points, pointsVec);
         b.AddOffset(FragSchema.Shell.ProfilesFaceIds, faceIdsVec);
         b.AddSbyte(FragSchema.Shell.Type, big ? FragSchema.ShellTypeBig : FragSchema.ShellTypeNone);

@@ -46,9 +46,9 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 
 ![Importér Fragments](shots/import-frag.webp)
 
-**Importér Fragments…** henter en `.frag`-fil ind: hvert element med geometri bliver en reference tegnet fra sin krop, i den klasse filen nævner, på den etage filen sætter det på (matchet på navn med dine, oprettet når den mangler), med filens attributter under **IFC-egenskaber**. Elementer med samme krop (samme form sat mange steder) deler den. Importeres samme fil igen, opdateres det, den bragte før. Hvad der genkendes ud fra dens trekanter, afgør **Hvordan**, som ovenfor.
+**Importér Fragments…** henter en `.frag`-fil ind: hvert element med geometri bliver en reference tegnet fra sin krop, i den klasse filen nævner, på den etage filen sætter det på (matchet på navn med dine, oprettet når den mangler), med filens attributter under **IFC-egenskaber**. Elementer med samme krop (samme form sat mange steder) deler den. Importeres samme fil igen, opdateres det, den bragte før. Hvad der genkendes ud fra dens trekanter, afgør **Hvordan**, som ovenfor. Dens egenskabs- og mængdesæt, dens type og dens materialer kommer med attributterne; glas forbliver gennemsigtigt; en fil lavet af That Opens egen konverter lander, hvor dens IFC ville placere den, og dens flader med huller (en væg om sit vindue) beholder dem.
 
-**Eksportér IFC eller Fragments…** skriver modellen som IFC eller som Fragments, valgt som en import: elementerne efter fagområde og type, etagerne, fasen og kun det, 3D-visningen viser. IFC går ud i IFC4 eller IFC4X3, et lagdelt elements dele under det eller ét legeme hver; Fragments fra projektets basispunkt, det interne origo eller opmålingspunktet.
+**Eksportér IFC eller Fragments…** skriver modellen som IFC eller som Fragments, valgt som en import: elementerne efter fagområde og type, etagerne, fasen og kun det, 3D-visningen viser. IFC går ud i IFC4 eller IFC4X3, et lagdelt elements dele under det eller ét legeme hver; Fragments fra projektets basispunkt, det interne origo eller opmålingspunktet. En Fragments-fil bærer det, en IFC-viewer viser: hvert elements type, dets mængder, dine parametre, dets materialer og kortkoordinaterne, sådan som That Opens konverter skriver dem.
 
 ![Eksportér IFC eller Fragments](shots/export-exchange.webp)
 

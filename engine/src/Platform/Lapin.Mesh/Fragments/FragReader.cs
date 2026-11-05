@@ -16,6 +16,14 @@ public readonly record struct FragTransform(double X, double Y, double Z, float 
         double zx = Xy * Yz - Xz * Yy, zy = Xz * Yx - Xx * Yz, zz = Xx * Yy - Xy * Yx;
         return (X + Xx * x + Yx * y + zx * z, Y + Xy * x + Yy * y + zy * z, Z + Xz * x + Yz * y + zz * z);
     }
+
+    /// <summary>A point taken back through the transform (its axes orthonormal): the inverse of <see cref="Apply"/>.</summary>
+    public (double X, double Y, double Z) Unapply(double x, double y, double z)
+    {
+        double zx = Xy * Yz - Xz * Yy, zy = Xz * Yx - Xx * Yz, zz = Xx * Yy - Xy * Yx;
+        double dx = x - X, dy = y - Y, dz = z - Z;
+        return (Xx * dx + Xy * dy + Xz * dz, Yx * dx + Yy * dy + Yz * dz, zx * dx + zy * dy + zz * dz);
+    }
 }
 
 /// <summary>A shell: points (x y z … float, relative to its element's transform), a profile per polygon (indices), holes (indices, the profile they cut), the face of each profile.</summary>

@@ -8,7 +8,10 @@
  * it is taken from another checkout's node_modules (BubbleBIM Standalone's,
  * ../BubbleBIM-Standalone/node_modules, by default). Prints what the library
  * sees: the items, their categories, the geometry, the spatial tree, the
- * metadata; exits 1 when it cannot read the file.
+ * metadata, and one element's properties the way BubbleBIM Standalone's properties
+ * panel asks for them (attributes, IsDefinedBy with the sets' values, the type,
+ * HasAssociations); exits 1 when it cannot read the file. The picture in That Open's
+ * own viewer is scripts/fragments-render.mjs (docs/fragments.md).
  */
 
 import { readFileSync } from 'node:fs';
@@ -44,6 +47,23 @@ for (const name of ['getItemsData', 'getBoxes', 'getPositions', 'getItemsGeometr
     const s = JSON.stringify(r, (k, v) => (ArrayBuffer.isView(v) ? `[${v.constructor.name} ×${v.length}]` : v));
     console.log(`${name}: ${s.slice(0, 400)}${s.length > 400 ? '…' : ''}`);
   } catch (e) { console.log(`${name}: ${e.message}`); }
+}
+// What the viewer's panel shows for the first element: BubbleBIM Standalone's ITEM_DATA_CONFIG (src/lib/ifc/ifcFragments.ts).
+const config = {
+  attributesDefault: true,
+  relationsDefault: { attributes: true, relations: false },
+  relations: { IsDefinedBy: { attributes: true, relations: true }, IsTypedBy: { attributes: true, relations: false }, HasAssociations: { attributes: true, relations: true } },
+};
+try {
+  const [item] = await settle(model.getItemsData(withGeometry.slice(0, 1), config));
+  const value = (a) => (a && typeof a === 'object' && 'value' in a ? a.value : a);
+  const sets = (item?.IsDefinedBy ?? []).map((d) => `${value(d._category)} ${value(d.Name)}: ${((d.HasProperties ?? d.Quantities) ?? []).map((p) => `${value(p.Name)}=${value(p.NominalValue ?? p.LengthValue ?? p.AreaValue ?? p.VolumeValue ?? p.CountValue ?? p.WeightValue)}`).join(', ')}`);
+  console.log(`properties of #${withGeometry[0]}: ${Object.entries(item ?? {}).filter(([, v]) => !Array.isArray(v)).map(([k, v]) => `${k}=${value(v)}`).join('; ')}`);
+  for (const line of sets.slice(0, 12)) console.log(`  ${line.slice(0, 300)}`);
+  console.log(`  materials: ${(item?.HasAssociations ?? []).map((m) => value(m.Name)).join(', ') || '(none)'}`);
+} catch (e) { console.log(`properties: ${e.message}`); }
+for (const name of ['getCRS']) {
+  try { const r = await settle(Promise.resolve(model[name]())); console.log(`${name}: ${JSON.stringify(r).slice(0, 300)}`); } catch (e) { console.log(`${name}: ${e.message}`); }
 }
 const again = new Uint8Array(model.getBuffer(true));
 console.log(`buffer back from the library: ${again.length} bytes`);

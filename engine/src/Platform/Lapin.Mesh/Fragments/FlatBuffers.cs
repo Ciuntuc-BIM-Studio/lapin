@@ -100,12 +100,21 @@ public sealed class FlatBuilder
         return EndVector(bytes.Length);
     }
 
-    public int CreateStringVector(IReadOnlyList<string> values)
+    public int CreateStringVector(IReadOnlyList<string> values, bool shared = false)
     {
         var offs = new int[values.Count];
-        for (var i = 0; i < values.Count; i++) offs[i] = CreateString(values[i]);
+        for (var i = 0; i < values.Count; i++) offs[i] = shared ? CreateSharedString(values[i]) : CreateString(values[i]);
         return CreateOffsetVector(offs);
     }
+
+    /// <summary>A string written once however often it is asked for (as the official builders' createSharedString): a category, an attribute that repeats.</summary>
+    public int CreateSharedString(string s)
+    {
+        if (_strings.TryGetValue(s, out var off)) return off;
+        return _strings[s] = CreateString(s);
+    }
+
+    readonly Dictionary<string, int> _strings = new(StringComparer.Ordinal);
 
     public int CreateOffsetVector(IReadOnlyList<int> offs)
     {
@@ -151,6 +160,7 @@ public sealed class FlatBuilder
     public void AddOffset(int slot, int off) { if (off == 0) return; PrependUOffset(off); Slot(slot); }
     public void AddUint(int slot, uint v, uint def = 0, bool force = false) { if (v == def && !force) return; PrependUint(v); Slot(slot); }
     public void AddSbyte(int slot, sbyte v, sbyte def = 0) { if (v == def) return; PrependSbyte(v); Slot(slot); }
+    public void AddUshort(int slot, ushort v, ushort def = 0) { if (v == def) return; PrependUshort(v); Slot(slot); }
     /// <summary>A struct written just before, inline in the table.</summary>
     public void AddStruct(int slot, int off) { if (off == 0) return; Slot(slot); }
 

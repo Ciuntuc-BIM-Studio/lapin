@@ -158,6 +158,9 @@ public static class StoredBodies
         return new Solid(vertices, [.. faces]);
     }
 
+    /// <summary>A part's material, when it names one (a Fragments part that lets light through: decision 323); else its colour alone.</summary>
+    static string? MaterialOf(JsonObject p) => (string?)p["material"] is { Length: > 0 } m ? m : null;
+
     static List<GeometryPart> Parts(JsonObject body)
     {
         var list = new List<GeometryPart>();
@@ -168,7 +171,7 @@ public static class StoredBodies
             if (t.Length / 3 > MeshFrom)
             {
                 var (name, color) = ((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6");
-                list.Add(new GeometryPart(name, color, (v, t), () => FaceSolid(v, t), null, $"part:{list.Count}"));
+                list.Add(new GeometryPart(name, color, (v, t), () => FaceSolid(v, t), MaterialOf(p), $"part:{list.Count}"));
                 continue;
             }
             var vertices = new Vec3[v.Length / 3];
@@ -182,7 +185,7 @@ public static class StoredBodies
             try { merged = SolidFromMesh.Build(vertices, tris); } catch (InvalidOperationException) { merged = null; }
             if (merged != null && merged.Faces.Length > 0)
             {
-                list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", merged, null, $"part:{list.Count}"));
+                list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", merged, MaterialOf(p), $"part:{list.Count}"));
                 continue;
             }
             var faces = new List<Face>();
@@ -195,7 +198,7 @@ public static class StoredBodies
                 faces.Add(new Face([a, b, c], [], n.Normalized()));
             }
             if (faces.Count == 0) continue;
-            list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", new Solid(vertices, [.. faces]), null, $"part:{list.Count}"));
+            list.Add(new GeometryPart((string?)p["name"] ?? "Body", (string?)p["color"] ?? "#c9ced6", new Solid(vertices, [.. faces]), MaterialOf(p), $"part:{list.Count}"));
         }
         return list;
     }

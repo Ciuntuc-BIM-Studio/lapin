@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
+using Lapin.Geometry;
 using Lapin.Mesh;
 using Lapin.Mesh.Fragments;
 using Lapin.Model;
@@ -62,13 +63,18 @@ public class FragmentsTests
         var wallShell = meshes.Shells[(int)meshes.Representations[(int)meshes.Samples[0].Representation].Id];
         var xs = Enumerable.Range(0, wallShell.Points.Length / 3).Select(i => wallShell.Points[i * 3]).ToList();
         Assert.Equal(-xs.Min(), xs.Max(), 3);
-        // Every profile is a triangle of its own shell's points, one face id per profile; the representation's box is the shell's.
+        // Every profile is a polygon of its own shell's points, one per planar face (decision 323), one face id per profile; the representation's box is the shell's.
         foreach (var s in meshes.Shells)
         {
-            Assert.All(s.Profiles, p => { Assert.Equal(3, p.Length); Assert.All(p, k => Assert.InRange(k, 0, s.Points.Length / 3 - 1)); });
+            Assert.All(s.Profiles, p => { Assert.True(p.Length >= 3); Assert.All(p, k => Assert.InRange(k, 0, s.Points.Length / 3 - 1)); });
             Assert.Equal(s.Profiles.Length, s.FaceIds.Length);
+            Assert.Equal(s.Profiles.Length, s.FaceIds.Distinct().Count());
             Assert.False(s.Big);
         }
+        // The columns' shell is a box: six faces of four corners, as the official importer writes one.
+        var columnShell = meshes.Shells[(int)meshes.Representations[(int)meshes.Samples[^1].Representation].Id];
+        Assert.Equal(6, columnShell.Profiles.Length);
+        Assert.All(columnShell.Profiles, p => Assert.Equal(4, p.Length));
         var rep = meshes.Representations[0];
         Assert.Equal(wallShell.Points.Where((_, i) => i % 3 == 0).Min(), rep.Min[0], 5);
         Assert.Equal(wallShell.Points.Where((_, i) => i % 3 == 2).Max(), rep.Max[2], 5);
@@ -286,14 +292,30 @@ public class FragmentsTests
     }
 
     [Fact]
-    public void Shells_with_holes_are_noted_once_for_the_whole_import()
+    public void A_profile_with_a_hole_imports_open_and_a_concave_one_whole()
     {
-        var model = FragReader.Read(FragWriter.Write(Scene(House()), raw: true, modelGuid: "holes"));
-        var holed = model with { Meshes = model.Meshes with { Shells = model.Meshes.Shells.Select(s => s with { Holes = [([0, 1, 2], 0)] }).ToArray() } };
-        Assert.True(holed.Meshes.Samples.Length > 1);
-        var g = new Fixture(new ArchitectureModule(), new StructureModule());
-        var r = FragImport.Run(g.Session, holed, "holes.frag", out _);
-        Assert.Single(r.Notes, n => n.Contains("holes"));
+        // One shell: an L-shaped face (concave, one profile) and a square with a square hole, in the file's frame (Y up: z = 0 is the model's y = 0).
+        float[] pts =
+        [
+            0, 0, 0,  2, 0, 0,  2, 1, 0,  1, 1, 0,  1, 2, 0,  0, 2, 0,                    // the L
+            3, 0, 0,  6, 0, 0,  6, 3, 0,  3, 3, 0,  4, 1, 0,  4, 2, 0,  5, 2, 0,  5, 1, 0,  // the frame and its hole (clockwise)
+        ];
+        var shell = new FragShell(pts, [[0, 1, 2, 3, 4, 5], [6, 7, 8, 9]], [([10, 11, 12, 13], 1)], [0, 1], false);
+        var meshes = new FragMeshes(null, [0], [new FragSample(0, 0, 0, 0)], [new FragRepresentation(0, [0, 0, 0], [6, 3, 0], FragSchema.RepresentationShell)],
+            [new FragMaterial(200, 200, 200, 255, 0, 0)], [shell], 0, [FragTransform.Identity], [FragTransform.Identity], null, null, null, null, null);
+        var model = new FragModel(null, ["2AbCdEfGhIjKlMnOpQrStu"], [1], 3, [1], ["IFCPLATE"], meshes, [[]], null, null, "holes", null);
+        var g = new Fixture(new ArchitectureModule());
+        FragImport.Run(g.Session, model, "holes.frag", out _);
+        var plate = g.Model.Get("2AbCdEfGhIjKlMnOpQrStu")!;
+        var mesh = Lapin.Geometry.Tessellator.Tessellate(g.Session.Geometry(plate.Id)!.Parts.Single().Solid);
+        double area = 0;
+        for (var t = 0; t < mesh.Indices.Length; t += 3)
+        {
+            Vec3 P(int i) => new(mesh.Positions[i * 3], mesh.Positions[i * 3 + 1], mesh.Positions[i * 3 + 2]);
+            area += Vec3.Cross(P(mesh.Indices[t + 1]) - P(mesh.Indices[t]), P(mesh.Indices[t + 2]) - P(mesh.Indices[t])).Length / 2;
+        }
+        // The L is 3 m², the frame 9 − 1: a fan from the L's first corner would have covered 4, the hole filled 9.
+        Assert.Equal(3 + 8, area, 6);
     }
 
     /// <summary>The BubbleBIM converter's Python reader on Lapin's file, when it is at hand: LAPIN_FRAG_PYTHON (the interpreter) and LAPIN_FRAG_PACKAGE (the folder holding ifc_convert).</summary>

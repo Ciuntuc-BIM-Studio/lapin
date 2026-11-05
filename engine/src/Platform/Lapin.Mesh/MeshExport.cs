@@ -28,7 +28,7 @@ public static class MeshExport
             "usda" => UsdWriter.Usda(scene),
             "dae" => ColladaWriter.Dae(scene),
             "obj" => ObjWriter.Zip(scene),
-            "frag" => Fragments.FragWriter.Write(scene),
+            "frag" => Fragments.FragWriter.Write(scene, context: Fragments.FragContext.Of(session, scene, o)),
             _ => throw new CommandException($"„{o.Format}” is not a 3D format."),
         };
         // One file with no room for an image: the materials' own textures go out in GLB, glTF and USDZ.

@@ -91,9 +91,17 @@ public static class FragImport
         readonly List<string> notes = [];
         readonly Dictionary<string, int> byClass = [];
         int elements, shared, storeysMade, skipped, native, leftOut;
-        /// <summary>Whether a shell read had holes: said once in the notes, however many pieces had them.</summary>
-        bool holes;
         public FragImportResult Result => new(elements, shared, storeysMade, skipped, notes, byClass, native, leftOut);
+        /// <summary>The file's coordinates transform (null: the identity), undone on every point.</summary>
+        FragTransform? coordinates;
+
+        /// <summary>A point of the file's (Y up, coordinated) placed by <paramref name="g"/>, in the model's frame (Z up, the project's coordinates).</summary>
+        Vec3 Place(FragTransform g, double x, double y, double z, bool world = true)
+        {
+            var p = g.Apply(x, y, z);
+            if (world && coordinates is { } c) p = c.Unapply(p.X, p.Y, p.Z);
+            return ToModel(p);
+        }
 
         /// <summary>One item's geometry: its samples (a shell in a material, placed by a local transform) and its global transform.</summary>
         sealed record Piece(int Shell, FragMaterial Material, FragTransform Local);
@@ -103,7 +111,10 @@ public static class FragImport
             var m = model.Meshes;
             var itemOfLocal = new Dictionary<uint, int>();
             for (var i = 0; i < model.LocalIds.Length; i++) itemOfLocal[model.LocalIds[i]] = i;
-            if (m.Coordinates is { IsIdentity: false }) notes.Add("The file places its model by a coordinates transform; it was read as it is, in its own coordinates.");
+            itemOf = itemOfLocal;
+            // The official importer stores the model moved near the origin and keeps the move as `coordinates` (stored = coordinates · project):
+            // taken back, the elements stand where the IFC file had them, where Lapin's own import of that file puts them.
+            coordinates = m.Coordinates is { IsIdentity: false } c ? c : null;
 
             // The pieces of every mesh (an item with geometry), by mesh index.
             var pieces = new Dictionary<uint, List<Piece>>();
@@ -141,7 +152,7 @@ public static class FragImport
                     if (storeyLocals.Contains(id)) { storeyOfElement[local] = id; break; }
                 if (storeyOfElement.TryGetValue(local, out var sid) && mesh < m.GlobalTransforms.Length)
                 {
-                    var z = ToModel((m.GlobalTransforms[mesh].X, m.GlobalTransforms[mesh].Y, m.GlobalTransforms[mesh].Z)).Z;
+                    var z = Place(m.GlobalTransforms[mesh], 0, 0, 0).Z;
                     lowest[sid] = Math.Min(lowest.GetValueOrDefault(sid, double.MaxValue), z);
                 }
             }
@@ -201,29 +212,34 @@ public static class FragImport
                     // A body many items share, once, in its own frame; the item an instance of it, placed by its transform.
                     if (!sharedIds.TryGetValue(key, out var bodyId))
                     {
-                        var parts = Parts(list, FragTransform.Identity);
+                        // In its own frame: the coordinates are undone by the instances' placement.
+                        var parts = Parts(list, FragTransform.Identity, world: false);
                         bodyId = null;
                         if (parts.Count > 0)
                         {
                             bodyId = DerivedId($"shared-body\n{key}");
-                            Put(edit, new Entity(bodyId, StoredBodies.SharedClass, $"{cls[3..]} (shared)", new JsonObject { [StoredBodies.Key] = StoredBodies.Write(parts), ["source"] = key }));
+                            Put(edit, new Entity(bodyId, StoredBodies.SharedClass, $"{cls[3..]} (shared)", new JsonObject { [StoredBodies.Key] = Stored(edit, parts), ["source"] = key }));
                             shared++;
                         }
                         sharedIds[key] = bodyId;
                     }
                     if (bodyId == null) { skipped++; continue; }
                     json[StoredBodies.BodyOf] = bodyId;
-                    json[StoredBodies.XfKey] = StoredBodies.WriteXf(Xf(global));
+                    json[StoredBodies.XfKey] = StoredBodies.WriteXf(Xf(global, coordinates));
                 }
                 else
                 {
                     var parts = Parts(list, global);
                     if (parts.Count == 0) { skipped++; continue; }
-                    json[StoredBodies.Key] = StoredBodies.Write(parts);
+                    json[StoredBodies.Key] = Stored(edit, parts);
                 }
                 var props = new JsonObject();
                 foreach (var (k, v) in attrs) if (v is JsonValue) props[k] = v.DeepClone();
-                if (props.Count > 0) json["properties"] = new JsonObject { ["Fragments"] = props };
+                var properties = new JsonObject();
+                if (props.Count > 0) properties["Fragments"] = props;
+                // Its property and quantity sets, its type and its materials, as the file relates them, shown under IFC properties as an IFC reference's.
+                Definitions(local, props, properties);
+                if (properties.Count > 0) json["properties"] = properties;
                 json["fragment"] = new JsonObject { ["localId"] = local, ["category"] = category, ["model"] = modelGuid };
                 Put(edit, new Entity(id, cls, elementName, json, Text(attrs, "PredefinedType")));
                 var storeyId = storeyOfElement.TryGetValue(local, out var sl) && storeyOfLocal.TryGetValue(sl, out var st) ? st : fallback;
@@ -232,16 +248,15 @@ public static class FragImport
                 byClass[cls] = byClass.GetValueOrDefault(cls) + 1;
             }
             foreach (var (storeyId, ids) in joins) edit.RelateAll(IfcClass.RelContainedInSpatialStructure, storeyId, ids);
-            if (holes) notes.Add("Shells with holes were read by their outer profiles: the holes are filled.");
             if (native > 0) notes.Add($"{native} element(s) are already in the project as Lapin elements (the file came from it): they were left as they are.");
             var withoutGeometry = model.LocalIds.Length - meshOfLocal.Count;
-            if (withoutGeometry > 0) notes.Add($"{withoutGeometry} item(s) without geometry (types, materials, the spatial structure) were read for their names only.");
+            if (withoutGeometry > 0) notes.Add($"{withoutGeometry} item(s) without geometry (types, property sets, materials, the spatial structure) were read into the elements' properties.");
         }
 
         /// <summary>An item's pieces as a stored body's parts, in the model's frame, placed by <paramref name="global"/> (the identity for a shared body's own frame).</summary>
-        List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> Parts(List<Piece> list, FragTransform global)
+        List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles, FragMaterial Material)> Parts(List<Piece> list, FragTransform global, bool world = true)
         {
-            var o = new List<(string, string, IReadOnlyList<Vec3>, IReadOnlyList<(int, int, int)>)>();
+            var o = new List<(string, string, IReadOnlyList<Vec3>, IReadOnlyList<(int, int, int)>, FragMaterial)>();
             foreach (var p in list)
             {
                 var shell = model.Meshes.Shells[p.Shell];
@@ -250,37 +265,146 @@ public static class FragImport
                 for (var i = 0; i < n; i++)
                 {
                     var q = p.Local.Apply(shell.Points[i * 3], shell.Points[i * 3 + 1], shell.Points[i * 3 + 2]);
-                    vertices.Add(ToModel(global.Apply(q.X, q.Y, q.Z)));
+                    vertices.Add(Place(global, q.X, q.Y, q.Z, world));
                 }
-                var tris = new List<(int, int, int)>();
-                foreach (var profile in shell.Profiles)
-                {
-                    // A profile is one polygon: a fan from its first point (a triangle is itself).
-                    if (profile.Length < 3) continue;
-                    if (profile.Any(k => k < 0 || k >= n)) continue;
-                    for (var k = 1; k + 1 < profile.Length; k++) tris.Add((profile[0], profile[k], profile[k + 1]));
-                }
-                holes |= shell.Holes.Length > 0;
+                var tris = Triangles(shell, vertices);
                 if (tris.Count == 0) continue;
-                o.Add(("Body", $"#{p.Material.R:x2}{p.Material.G:x2}{p.Material.B:x2}", vertices, tris));
+                o.Add(("Body", $"#{p.Material.R:x2}{p.Material.G:x2}{p.Material.B:x2}", vertices, tris, p.Material));
             }
             return o;
         }
 
-        /// <summary>An instance's twelve numbers in the model's frame: the images of the axes and of the origin under the file's global transform.</summary>
-        static double[] Xf(FragTransform g)
+        /// <summary>
+        /// The parts as a stored body; a part whose colour lets light through (glass) takes a material of that colour and
+        /// transparency, one per colour, so it draws, renders and exports see-through as in the file.
+        /// </summary>
+        JsonObject Stored(IEdit edit, List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles, FragMaterial Material)> parts)
         {
+            var body = StoredBodies.Write(parts.Select(p => (p.Name, p.Color, p.Vertices, p.Triangles)));
+            if (body["parts"] is not JsonArray written) return body;
+            for (var i = 0; i < parts.Count && i < written.Count; i++)
+            {
+                var mat = parts[i].Material;
+                if (mat.A >= 255 || written[i] is not JsonObject part) continue;
+                var colour = $"#{mat.R:x2}{mat.G:x2}{mat.B:x2}";
+                if (!glassIds.TryGetValue(colour + mat.A, out var materialId))
+                {
+                    var name = $"Fragments {colour.TrimStart('#').ToUpperInvariant()} {Math.Round(100.0 * mat.A / 255)}%";
+                    var material = Lapin.Platform.Materials.Ensure(edit, name, colour);
+                    var a = material.CloneAttrs();
+                    a["transparency"] = Math.Round(1 - mat.A / 255.0, 3);
+                    edit.Replace(material.With(attrs: a));
+                    glassIds[colour + mat.A] = materialId = material.Id;
+                }
+                part["material"] = materialId;
+            }
+            return body;
+        }
+
+        readonly Dictionary<string, string> glassIds = [];
+
+        /// <summary>
+        /// What the file defines an item by (IsDefinedBy: its property sets with their HasProperties, its quantity sets with their
+        /// Quantities, its type) and associates it with (HasAssociations: its materials): each set under its name in
+        /// <paramref name="properties"/>, the type's and materials' names with the item's own attributes.
+        /// </summary>
+        void Definitions(uint local, JsonObject attributes, JsonObject properties)
+        {
+            var rels = model.RelationsOf(local);
+            foreach (var def in rels.GetValueOrDefault("IsDefinedBy") ?? [])
+            {
+                if (!itemOf.TryGetValue(def, out var d) || d >= model.Categories.Length) continue;
+                var category = model.Categories[d];
+                var defAttrs = model.AttributesOf(d);
+                if (category.EndsWith("TYPE", StringComparison.Ordinal))
+                {
+                    if (Text(defAttrs, "Name") is { Length: > 0 } typeName) attributes["Type"] = typeName;
+                    continue;
+                }
+                if (category is not ("IFCPROPERTYSET" or "IFCELEMENTQUANTITY") || Text(defAttrs, "Name") is not { Length: > 0 } setName) continue;
+                // A part's set (a lintel's, a layer's) bears the element's set name; its description, the part, keeps it apart.
+                if (properties.ContainsKey(setName) && Text(defAttrs, "Description") is { Length: > 0 } part) setName = $"{setName} ({part})";
+                var set = properties[setName] as JsonObject ?? new JsonObject();
+                var defRels = model.RelationsOf(def);
+                foreach (var v in (defRels.GetValueOrDefault("HasProperties") ?? []).Concat(defRels.GetValueOrDefault("Quantities") ?? []))
+                {
+                    if (!itemOf.TryGetValue(v, out var vi)) continue;
+                    var va = model.AttributesOf(vi);
+                    if (Text(va, "Name") is not { Length: > 0 } name) continue;
+                    var value = va.FirstOrDefault(kv => kv.Key is "NominalValue" or "LengthValue" or "AreaValue" or "VolumeValue" or "CountValue" or "WeightValue" or "TimeValue").Value;
+                    if (value is JsonValue) set[name] = value.DeepClone();
+                }
+                if (set.Count > 0) properties[setName] = set;
+            }
+            var materials = new List<string>();
+            foreach (var a in rels.GetValueOrDefault("HasAssociations") ?? []) MaterialNames(a, materials, 0);
+            if (materials.Count > 0) attributes["Material"] = string.Join(", ", materials.Distinct());
+        }
+
+        /// <summary>The material names under an association: a material's own, a layer set's layers', a usage's set's.</summary>
+        void MaterialNames(uint local, List<string> names, int depth)
+        {
+            if (depth > 4 || !itemOf.TryGetValue(local, out var i) || i >= model.Categories.Length) return;
+            var attrs = model.AttributesOf(i);
+            if (model.Categories[i] == "IFCMATERIAL") { if (Text(attrs, "Name") is { Length: > 0 } n) names.Add(n); return; }
+            foreach (var (_, ids) in model.RelationsOf(local))
+                foreach (var id in ids)
+                    if (itemOf.TryGetValue(id, out var j) && j < model.Categories.Length && model.Categories[j].StartsWith("IFCMATERIAL", StringComparison.Ordinal)) MaterialNames(id, names, depth + 1);
+        }
+
+        /// <summary>Each local id's index in the file's lists.</summary>
+        Dictionary<uint, int> itemOf = [];
+
+        /// <summary>
+        /// A shell's profiles as triangles: a triangle is itself; any other profile, a polygon that may be concave and
+        /// have holes (the official importer writes a wall's side as one polygon, its window a hole), triangulated in its plane.
+        /// </summary>
+        static List<(int, int, int)> Triangles(FragShell shell, List<Vec3> vertices)
+        {
+            var n = vertices.Count;
+            var holesOf = new Dictionary<int, List<int[]>>();
+            foreach (var (indices, profile) in shell.Holes)
+                if (indices.Length >= 3 && indices.All(k => k >= 0 && k < n)) (holesOf.TryGetValue(profile, out var l) ? l : holesOf[profile] = []).Add(indices);
+            var tris = new List<(int, int, int)>();
+            for (var p = 0; p < shell.Profiles.Length; p++)
+            {
+                var profile = shell.Profiles[p];
+                if (profile.Length < 3 || profile.Any(k => k < 0 || k >= n)) continue;
+                var holes = holesOf.GetValueOrDefault(p);
+                if (profile.Length == 3 && holes == null) { tris.Add((profile[0], profile[1], profile[2])); continue; }
+                // The polygon's normal by Newell's rule, as the library takes it.
+                var normal = new Vec3(0, 0, 0);
+                for (var k = 0; k < profile.Length; k++)
+                {
+                    Vec3 a = vertices[profile[k]], b = vertices[profile[(k + 1) % profile.Length]];
+                    normal += new Vec3((a.Y - b.Y) * (a.Z + b.Z), (a.Z - b.Z) * (a.X + b.X), (a.X - b.X) * (a.Y + b.Y));
+                }
+                if (normal.Length < 1e-14) continue;
+                tris.AddRange(Triangulator.Face(vertices, profile, holes?.ToArray(), normal.Normalized()));
+            }
+            return tris;
+        }
+
+        /// <summary>An instance's twelve numbers in the model's frame: the images of the axes and of the origin under the file's global transform.</summary>
+        static double[] Xf(FragTransform g, FragTransform? coordinates)
+        {
+            (double X, double Y, double Z) At(double x, double y, double z)
+            {
+                var p = g.Apply(x, y, z);
+                return coordinates is { } c ? c.Unapply(p.X, p.Y, p.Z) : p;
+            }
             var o = new double[12];
             // The model's axes, taken to the file's frame, placed (as directions), brought back.
             Vec3[] axes = [new(1, 0, 0), new(0, 1, 0), new(0, 0, 1)];
+            var zero = At(0, 0, 0);
             for (var k = 0; k < 3; k++)
             {
                 var f = ToFrag(axes[k]);
-                var placed = g.Apply(f.X, f.Y, f.Z);
-                var dir = ToModel((placed.X - g.X, placed.Y - g.Y, placed.Z - g.Z));
+                var placed = At(f.X, f.Y, f.Z);
+                var dir = ToModel((placed.X - zero.X, placed.Y - zero.Y, placed.Z - zero.Z));
                 o[k * 3] = dir.X; o[k * 3 + 1] = dir.Y; o[k * 3 + 2] = dir.Z;
             }
-            var origin = ToModel((g.X, g.Y, g.Z));
+            var origin = ToModel(zero);
             o[9] = origin.X; o[10] = origin.Y; o[11] = origin.Z;
             return o;
         }
