@@ -57,7 +57,7 @@ public class ScheduleTests
         Assert.Equal("Ground floor", w.Occurrences[2].Level);
         var bands = ScheduleLayout.Bands(data, ScheduleTable.Of(f.Model.Get(Schedule(f))!));
         var texts = Texts(bands.SelectMany(b => b.Pens));
-        foreach (var t in new[] { "W1", "D1", "1200", "1500", "900", "2100", "Ground floor", "Level 1", "3", "2", "5", "tilt & turn left + side hung right" })
+        foreach (var t in new[] { "W1", "D1", "1200", "1500", "900", "2100", "Ground floor", "Level 1", "3", "2", "5", "tilt & turn right + side hung left" })
             Assert.Contains(t, texts);
         Assert.True(bands[0].W > 34 + 2 * 30 - 1);
         Assert.True(bands.SelectMany(b => b.Pens).Sum(p => p.Segments.Count) > 10);
@@ -81,7 +81,7 @@ public class ScheduleTests
         var (f, _, _) = House();
         var csv = ScheduleEntity.ToCsv(f.Model.Get(Schedule(f))!, Data(f)).Split('\n');
         Assert.Equal("Mark,Name,Width (mm),Height (mm),Opening,Sill,Ground floor,Level 1,Total,U,Fire", csv[0]);
-        Assert.Equal("W1,W,1200,1500,tilt & turn left + side hung right,900,3,2,5,1.1,", csv[1]);
+        Assert.Equal("W1,W,1200,1500,tilt & turn right + side hung left,900,3,2,5,1.1,", csv[1]);
         Assert.StartsWith("D1,D,900,2100,swing right,,1,0,1,", csv[2]);
     }
 

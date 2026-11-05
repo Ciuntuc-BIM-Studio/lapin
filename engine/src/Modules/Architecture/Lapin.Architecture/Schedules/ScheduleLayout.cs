@@ -50,7 +50,10 @@ public static class ScheduleLayout
 
     static readonly Dictionary<string, string> OperationLabel = new()
     {
-        ["fixed"] = "fixed", ["side-left"] = "side hung left", ["side-right"] = "side hung right", ["tilt-turn-left"] = "tilt & turn left", ["tilt-turn-right"] = "tilt & turn right",
+        ["fixed"] = "fixed",
+        // A window's hand is the architects' too: seen from the side its sashes open to, inside (Lapin's windows open inwards).
+        // "side-left" (IFC's left: the hinges on the left seen from outside) has them on the right seen from inside.
+        ["side-left"] = "side hung right", ["side-right"] = "side hung left", ["tilt-turn-left"] = "tilt & turn right", ["tilt-turn-right"] = "tilt & turn left",
         ["bottom-hung"] = "bottom hung", ["top-hung"] = "top hung", ["pivot-horizontal"] = "horizontal pivot", ["pivot-vertical"] = "vertical pivot",
         ["sliding-left"] = "sliding left", ["sliding-right"] = "sliding right", ["sliding-vertical"] = "vertical sliding",
         // A hinged door's hand is the architects' (report #91), not IFC's: see DoorHand. "swing-left" (IFC's left: the hinges on
@@ -275,7 +278,7 @@ public static class ScheduleLayout
 
     /// <summary>
     /// What a joinery schedule says under its cards (report #83): how it names the hand (a door's by the architects' rule,
-    /// report #91; a window's IFC's way, docs/spec-ifc.md),
+    /// report #91; a window's seen from inside, the side it opens to),
     /// where its elevations are seen from, and what a mark's -M is.
     /// </summary>
     public static List<string> HandNote(ScheduleData data, IReadOnlyList<string> drawings)
@@ -283,7 +286,7 @@ public static class ScheduleLayout
         if (!data.Entries.Any(e => e.Spec != null)) return [];
         var lines = new List<string>();
         if (data.Entries.Any(e => e.Spec?.IsDoor == true)) lines.Add("Swing left or right: the leaf opens to the left or right of the line from its handle to its hinges.");
-        if (data.Entries.Any(e => e.Spec is { IsDoor: false })) lines.Add("Windows' left and right: the hinges as seen from outside (IFC's hand).");
+        if (data.Entries.Any(e => e.Spec is { IsDoor: false })) lines.Add("Windows' left and right: the hinges as seen from inside, the side the sashes open to.");
         if (drawings.Contains("interior") || !drawings.Any(d => d is "interior" or "exterior")) lines.Add("Elevations seen from the interior, the side it opens to" + (drawings.Contains("exterior") ? "; exterior ones from outside." : "."));
         else if (drawings.Contains("exterior")) lines.Add("Elevations seen from outside, the side it is pushed from.");
         if (data.Entries.Any(e => e.Mirrored)) lines.Add($"{Schedules.MirroredMark}: the type's mirror image, flipped to the other hand.");

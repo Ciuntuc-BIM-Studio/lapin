@@ -268,7 +268,7 @@ public sealed class DoorReportsTests
         Assert.Equal("swing right + fixed", ScheduleLayout.OperationText(withSide));
         var sliding = JoinerySpec.DefaultDoor() with { Panels = [new(0, 0, "door-sliding-left")] };
         Assert.Equal("sliding left", ScheduleLayout.OperationText(sliding));
-        // A window keeps IFC's hand.
-        Assert.Equal("tilt & turn left + side hung right", ScheduleLayout.OperationText(JoinerySpec.DefaultWindow()));
+        // A window's hand is seen from inside, the side it opens to: IFC's tilt-turn-left has its hinges on the right there.
+        Assert.Equal("tilt & turn right + side hung left", ScheduleLayout.OperationText(JoinerySpec.DefaultWindow()));
     }
 }

@@ -25,14 +25,18 @@ import type { Rule } from './lintels';
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean }
 
 /**
- * A hinged door leaf's operation as the schedules name its hand (report #91): looking from the handle towards the
+ * A hinged door leaf's operation as the schedules name its hand (report #91) and a window's: looking from the handle towards the
  * hinges, a leaf opening to the left is a left swing. The operation ids are IFC's hand (hinges on the left of someone
- * pushing it open: the left of the Panels grid, seen from outside), so swing-left is a right swing.
+ * pushing it open: the left of the Panels grid, seen from outside), so swing-left is a right swing; a window's hand is
+ * seen from inside, the side its sashes open to, so side-left is hung right.
  */
-const DOOR_HAND_LABELS: Record<string, string> = {
+const HAND_LABELS: Record<string, string> = {
   'swing-left': 'Swing right (hinges at left)', 'swing-right': 'Swing left (hinges at right)',
   'double-acting-left': 'Double acting right (hinges at left)', 'double-acting-right': 'Double acting left (hinges at right)',
   'folding-left': 'Folding right (hinges at left)', 'folding-right': 'Folding left (hinges at right)',
+  // A window's hand seen from inside, the side its sashes open to; the grid is seen from outside.
+  'side-left': 'Side hung right (hinges at left)', 'side-right': 'Side hung left (hinges at right)',
+  'tilt-turn-left': 'Tilt & turn right (hinges at left)', 'tilt-turn-right': 'Tilt & turn left (hinges at right)',
 };
 interface Spec {
   kind: 'door' | 'window'; name: string; mark: string; width: number; height: number; sillHeight: number;
@@ -532,7 +536,7 @@ export function JoineryDialog() {
                       {spec.columns.map((_, col) => (
                         <td key={col}>
                           <select value={cellOp(col, row)} onChange={(e) => setCell(col, row, e.target.value)}>
-                            {operations.map((o) => <option key={o} value={o}>{DOOR_HAND_LABELS[o] ?? o}</option>)}
+                            {operations.map((o) => <option key={o} value={o}>{HAND_LABELS[o] ?? o}</option>)}
                           </select>
                         </td>
                       ))}
