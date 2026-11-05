@@ -116,6 +116,8 @@ public static class IfcExport
         ["IfcRamp"] = ["STRAIGHT_RUN_RAMP", "TWO_STRAIGHT_RUN_RAMP", "QUARTER_TURN_RAMP", "TWO_QUARTER_TURN_RAMP", "HALF_TURN_RAMP", "SPIRAL_RAMP"],
         ["IfcChimney"] = [],
         ["IfcFurnishingElement"] = null,
+        // Furniture (docs/plan-furniture.md): IFC4's IfcFurnitureTypeEnum.
+        ["IfcFurniture"] = ["CHAIR", "TABLE", "DESK", "BED", "FILECABINET", "SHELF", "SOFA"],
         [IfcClass.BuildingElementProxy] = ["COMPLEX", "ELEMENT", "PARTIAL", "PROVISIONFORVOID", "PROVISIONFORSPACE"],
         [IfcClass.GeographicElement] = ["TERRAIN"],
         [IfcClass.Pavement] = ["FLEXIBLE", "RIGID"],
@@ -988,6 +990,8 @@ public static class IfcExport
                 {
                     IfcClass.Door => f.Add(up, [.. common, pre, operation, False, userDefined]),
                     IfcClass.Window => f.Add(up, [.. common, pre, operation, False, userDefined]),
+                    // IfcFurnitureType: its AssemblyPlace before its PredefinedType.
+                    "IfcFurniture" => f.Add(up, [.. common, E("NOTDEFINED"), pre]),
                     _ => f.Add(up, [.. common, pre]),
                 };
                 types[key] = t = (r, []);

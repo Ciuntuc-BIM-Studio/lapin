@@ -3,6 +3,7 @@
   "name": "Lapin",
   "modules": [
     "architecture",
+    "furniture",
     "structure",
     "rebar",
     "wood",

@@ -1,0 +1,93 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
+using Lapin.Architecture;
+using Lapin.Geometry;
+using Lapin.Model;
+using Lapin.Platform;
+
+namespace Lapin.Furniture;
+
+/// <summary>Where each piece stands: the room (its number and name) whose outline holds its middle, on its storey.</summary>
+static class FurnitureRooms
+{
+    public static Dictionary<string, Entity?> Of(IQueryContext q)
+    {
+        var m = q.Model;
+        var rooms = m.OfClass(Rooms.Class).Select(r => (Room: r, Storey: Spatial.StoreyOf(m, r.Id)?.Id, Outline: Rooms.Of(r, m, id => q.Geometry(id)))).Where(x => x.Outline != null).ToList();
+        var o = new Dictionary<string, Entity?>();
+        foreach (var e in m.OfClass(FurnitureModule.Class))
+        {
+            var p = Args.PointOf(e.Attrs["at"]);
+            var storey = Spatial.StoreyOf(m, e.Id)?.Id;
+            o[e.Id] = rooms.FirstOrDefault(r => r.Storey == storey && r.Outline!.Holds(p)).Room;
+        }
+        return o;
+    }
+
+    public static string Label(Entity? room) => room == null ? "" : room.Str("number") is { Length: > 0 } n ? $"{n} {room.Name}" : room.Name;
+
+    public static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
+
+    public static string Size(Entity e, Spec s) => s.Kind.Key == "kitchen"
+        ? $"{Mm(e.NumOrNull("length") ?? s.W)} × {Mm(s.D)} × {Mm(s.H)}"
+        : $"{Mm(s.W)} × {Mm(s.D)} × {Mm(s.H)}";
+}
+
+/// <summary>The furniture schedule: a row per type (a kitchen per length too), its kind, size, how many and the rooms they stand in; the total.</summary>
+public sealed class FurnitureSchedule : IScheduleSource
+{
+    public string Kind => "furniture";
+    public string Label => "Furniture schedule";
+
+    public ScheduleGrid Grid(IQueryContext q)
+    {
+        var m = q.Model;
+        var rooms = FurnitureRooms.Of(q);
+        var groups = m.OfClass(FurnitureModule.Class)
+            .Select(e => (E: e, T: FurnitureModule.TypeOf(m, e)))
+            .GroupBy(x => (x.T?.Id ?? "", Size: FurnitureRooms.Size(x.E, new Spec(x.T?.Attrs["spec"] as JsonObject))))
+            .Select(g =>
+            {
+                var s = new Spec(g.First().T?.Attrs["spec"] as JsonObject);
+                var where = g.Select(x => FurnitureRooms.Label(rooms.GetValueOrDefault(x.E.Id))).Where(x => x.Length > 0).Distinct().OrderBy(x => x, StringComparer.Ordinal);
+                return (Group: FurnitureKinds.All.ToList().IndexOf(s.Kind), Row: (IReadOnlyList<string>)[g.First().T?.Name ?? g.First().E.Name, s.Kind.Label, g.Key.Size, g.Count().ToString(CultureInfo.InvariantCulture), string.Join(", ", where)], Key: g.First().T?.Id);
+            })
+            .OrderBy(x => x.Group).ThenBy(x => x.Row[0], StringComparer.Ordinal).ToList();
+        var rows = groups.Select(x => x.Row).ToList();
+        var keys = groups.Select(x => x.Key).ToList();
+        if (rows.Count > 0) { rows.Add(["Total", "", "", groups.Sum(x => int.Parse(x.Row[3], CultureInfo.InvariantCulture)).ToString(CultureInfo.InvariantCulture), ""]); keys.Add(null); }
+        return new ScheduleGrid(Label, ["Type", "Kind", "Size (mm)", "Count", "Rooms"], rows, keys);
+    }
+}
+
+/// <summary>Furniture by room: each room (in its storey's order, then by number) with each type standing in it and how many; the pieces in no room last.</summary>
+public sealed class FurnitureByRoom : IScheduleSource
+{
+    public string Kind => "furnitureRooms";
+    public string Label => "Furniture by room";
+
+    public ScheduleGrid Grid(IQueryContext q)
+    {
+        var m = q.Model;
+        var rooms = FurnitureRooms.Of(q);
+        var storeys = Spatial.Storeys(m).Select((s, i) => (s.Id, i)).ToDictionary(x => x.Id, x => x.i);
+        var rows = new List<IReadOnlyList<string>>();
+        var byRoom = m.OfClass(FurnitureModule.Class).GroupBy(e => rooms.GetValueOrDefault(e.Id)?.Id ?? "")
+            .OrderBy(g => g.Key == "" ? 1 : 0)
+            .ThenBy(g => g.Key == "" ? 0 : storeys.GetValueOrDefault(Spatial.StoreyOf(m, g.Key)?.Id ?? "", 99))
+            .ThenBy(g => g.Key == "" ? "" : m.Get(g.Key)?.Str("number") ?? "", StringComparer.Ordinal);
+        foreach (var g in byRoom)
+        {
+            var room = g.Key == "" ? null : m.Get(g.Key);
+            var label = room == null ? "(no room)" : FurnitureRooms.Label(room);
+            var first = true;
+            foreach (var t in g.GroupBy(e => FurnitureModule.TypeOf(m, e)?.Id ?? e.Id).OrderBy(t => t.First().Name, StringComparer.Ordinal))
+            {
+                var s = new Spec(FurnitureModule.TypeOf(m, t.First())?.Attrs["spec"] as JsonObject);
+                rows.Add([first ? label : "", t.First().Name, s.Kind.Label, t.Count().ToString(CultureInfo.InvariantCulture)]);
+                first = false;
+            }
+        }
+        return new ScheduleGrid(Label, ["Room", "Type", "Kind", "Count"], rows);
+    }
+}

@@ -3271,6 +3271,68 @@ export const scenes = [
     },
   },
   {
+    // Furniture (docs/plan-furniture.md): a living room and a bedroom furnished — a sofa clicked by the wall (backed onto it),
+    // armchairs, a coffee table, a table with chairs round it, a bed, bedside tables, a wardrobe, a kitchen drawn along a
+    // wall — in plan by their symbols and in 3D; the types dialog with its preview; a piece's properties.
+    id: 'furniture',
+    async run(t) {
+      await t.fresh();
+      const { storey: s } = await house(t, { roof: false });
+      await t.fit();
+      await t.button('Furniture', { exact: true });
+      // The sofa by a click near the south wall of the living room: its back on the wall, its front to the room.
+      await t.tool('furniture.sofa');
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=furniture-against].on').count() === 1, 'the bar backs pieces onto walls');
+      { const [px, py] = await t.planPoint(4.6, 0.7); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(800); }
+      await t.keys('Escape');
+      const pieces = async () => (await t.nodes()).filter((n) => n.type === 'IfcFurniture');
+      const sofa = (await pieces())[0];
+      t.expect(sofa && Math.abs((sofa.props.rotation ?? 0) - 180) < 1e-6, `the sofa clicked by the wall faces the room (${sofa?.props.rotation})`);
+      const place = (kind, x, y, extra = {}) => t.cmd('furniture.place', { storeyId: s, kind, x, y, ...extra });
+      await place('armchair', 2.3, 3.6, { against: false, rotation: 90 });
+      await place('armchair', 6.3, 3.6, { against: false, rotation: 270 });
+      await place('coffeeTable', 4.0, 2.45, { against: false });
+      const table = (await place('table', 3.4, 6.0, { against: false })).id;
+      await t.cmd('furniture.chairsAround', { tableId: table });
+      await place('sideboard', 6.3, 7.6);
+      await t.cmd('furniture.kitchen', { storeyId: s, x1: 0.4, y1: 7.6, x2: 0.4, y2: 4.6 });
+      await place('bed', 9.5, 7.6);
+      await place('bedside', 8.2, 7.6);
+      await place('bedside', 10.8, 7.6);
+      await place('wardrobe', 11.5, 2.3);
+      await place('desk', 8.5, 0.5);
+      await place('chair', 8.5, 1.15, { against: false, rotation: 0 });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      t.expect((await pieces()).length >= 18, `the rooms are furnished (${(await pieces()).length} pieces)`);
+      await t.shot('furniture-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The types dialog: a sofa type with a chaise longue, seen in its preview.
+      const sofaType = (await t.nodes()).find((n) => n.type === 'IfcFurnitureType' && n.props.spec?.kind === 'sofa');
+      await t.cmd('furniture.updateType', { id: sofaType.id, spec: { chaise: 'right' } });
+      await t.tool('furniture.types');
+      await t.wait(400);
+      await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: sofaType.name }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-testid=furniture-preview] path').count() > 4, 'the dialog previews the type\'s plan symbol');
+      t.expect(await t.page.locator('.dialog [data-param=chaise] select').count() === 1, 'the sofa\'s own parameters are edited there');
+      await t.shot('furniture-types', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      // A piece's properties.
+      await select(t, sofa.id);
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=furniture-section]').count() === 1, 'a piece shows its furniture properties');
+      await t.shot('furniture-properties', { of: '[data-testid=furniture-section]', pad: 8 });
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.95, pitch: -1.05, distance: 16, target: { x: 6, y: 4, z: 0.2 } }, false));
+      await t.wait(1500);
+      await t.shot('furniture-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'standards',
     async run(t) {
       await t.fresh();

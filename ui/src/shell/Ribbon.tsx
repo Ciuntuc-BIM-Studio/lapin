@@ -111,7 +111,7 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
   useBindings();
   const press = (tl: ToolDef) => { activate(tl); onPicked?.(); };
   if (icons) return (
-    <div className={`band icons${drop ? ' drop' : ''}`} role="toolbar" aria-label={tab.label}>
+    <div className={`band icons${drop ? ' drop' : ''}`} role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx}>
       {tab.groups.map((g, gi) => (
         <div className="group-inline" key={g.label} role="group" aria-label={g.label}>
           {gi > 0 && <span className="group-rule" aria-hidden />}
@@ -125,7 +125,7 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
     </div>
   );
   return (
-    <div className="band" role="toolbar" aria-label={tab.label}>
+    <div className="band" role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx}>
       {tab.groups.map((g) => (
         <div className="group" key={g.label}>
           <div className="group-tools">

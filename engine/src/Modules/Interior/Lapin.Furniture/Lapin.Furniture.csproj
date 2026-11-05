@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Furniture (docs/plan-furniture.md): sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards,
+    tables, desks and the straight kitchen, as IfcFurniture of an IfcFurnitureType that holds their shape. Bodies and
+    plan symbols are built by Lapin, never taken from a library. It needs the architecture module (walls to stand
+    against, rooms to count in).
+  -->
+  <PropertyGroup>
+    <LapinModuleId>furniture</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" Private="false" />
+    <ProjectReference Include="../../Architecture/Lapin.Architecture/Lapin.Architecture.csproj" Private="false" />
+  </ItemGroup>
+</Project>

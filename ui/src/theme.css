@@ -1719,3 +1719,14 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .buildup-preview { margin: 0; }
 .buildup-preview-svg { width: 100%; height: auto; max-height: 420px; display: block; border: 1px solid var(--rule); border-radius: 2px; }
 .buildup-preview-svg .paper { fill: #fbfaf7; }
+
+/* Furniture types (docs/plan-furniture.md): the type's fields beside the engine's preview, the plan above the front. */
+.furniture-edit-grid { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 14px; align-items: start; }
+.furniture-preview { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line, #d8d2c6); border-radius: 6px; background: var(--paper, #fff); }
+.furniture-preview svg { width: 100%; height: auto; max-height: 220px; color: var(--ink, #1e2a3a); }
+.furniture-preview .furniture-front { max-height: 150px; }
+.furniture-edit dl.fields .section-dt { margin-top: 8px; font-weight: 600; }
+@media (max-width: 760px) { .furniture-edit-grid { grid-template-columns: 1fr; } }
+.furniture-edit dl.fields dd input:not([type=checkbox]), .furniture-edit dl.fields dd select { width: 100%; }
+.dialog[data-dialog=furniture-types] .type-list .tree-item { white-space: nowrap; }
+.furniture-edit dl.fields dd input:not([type=checkbox]):not(.num) { text-align: left; }
