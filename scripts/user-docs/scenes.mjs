@@ -2498,7 +2498,8 @@ export const scenes = [
       const { storey } = await house(t, { roof: false });
       await t.cmd('cutOrder.setMep', { cut: false });
       const system = (await t.cmd('mep.createSystem', { service: 'heating', defaults: { insulation: 0 } })).id;
-      for (const [x1, y1, x2, y2] of [[2, -1, 2, 4], [9, 2, 13, 2], [4, 6, 10, 6]]) {
+      // Two runs across the house (through the front and the back walls) and one through the inner and the end walls.
+      for (const [x1, y1, x2, y2] of [[2, -1, 2, 9], [5, -1, 5, 9], [6, 4, 13, 4]]) {
         const run = (await t.cmd('mep.drawRun', { systemId: system, storeyId: storey, points: [[x1, y1], [x2, y2]], pair: false })).id;
         await t.cmd('element.update', { id: run, attrs: { size: 0.11, elevation: 1.2 } });
       }
@@ -2512,10 +2513,15 @@ export const scenes = [
       await t.wait(800);
       await t.page.locator('[data-testid=clash-run-test]').click();
       await t.page.waitForSelector('[data-clash-n]', { timeout: 20_000 });
-      t.expect(await t.page.locator('[data-clash-n]').count() === 3, 'three runs through the walls');
+      t.expect(await t.page.locator('[data-clash-n]').count() === 6, 'three runs through two walls each');
       await t.page.locator('[data-clash-n="1"]').click();
       await t.wait(2500);
       await t.shot('clash-dialog');
+      // Grouped by element: each wall with its runs.
+      await t.page.locator('[data-testid=clash-group-by]').selectOption('element');
+      await t.page.waitForSelector('[data-clash-group]');
+      await t.shot('clash-groups', { of: '[data-testid=clash-dialog]', pad: 0 });
+      await t.page.locator('[data-testid=clash-group-by]').selectOption('none');
       await t.page.locator('[data-clash-tab=test]').click();
       await t.wait(400);
       await t.shot('clash-test', { of: '[data-testid=clash-dialog]', pad: 0 });
@@ -2528,6 +2534,15 @@ export const scenes = [
       await t.wait(600);
       await t.shot('clash-3d', { of: '[data-testid=view3d]', pad: 0 });
       await t.page.evaluate(async () => { (await import('/src/viewport/sectionBox.ts')).useSectionBox.setState({ box: null }); });
+      // The open clashes as red clouds in the ground floor's plan (View → Clash marks).
+      await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.setState({ view: 'plan' }));
+      await t.page.waitForSelector('.plan-svg');
+      await t.wait(1500);
+      await t.tool('view.clashMarks');
+      await t.wait(1500);
+      t.expect(await t.page.locator('.plan-svg text', { hasText: /^\d+\.\d+$/ }).count() >= 6, 'six clouds labelled test.clash');
+      await t.shot('clash-marks', { of: '.plan-svg', pad: 0 });
+      await t.tool('view.clashMarks');
     },
   },
   {

@@ -39,4 +39,21 @@ Un insieme prende gli elementi che soddisfano una regola, o tutte. Una regola «
 
 ![Le regole di un insieme di ricerca](shots/clash-sets.webp)
 
+## Gruppi, rapporti e nuvole
+
+L’elenco raggruppa le sue interferenze **per piano**, **per elemento** (l’elemento presente nel maggior numero di interferenze le prende, poi il successivo), **per classi** o **per stato**. La casella di un gruppo seleziona tutte le sue interferenze, per dar loro uno stato insieme.
+
+![Interferenze raggruppate per elemento](shots/clash-groups.webp)
+
+- **XML** scrive le interferenze come Navisworks scrive i suoi rapporti, nei loro gruppi, perché altri strumenti di coordinamento le leggano.
+- **PDF** stampa l’elenco su A4, raggruppato allo stesso modo.
+- **HTML** crea una pagina con un’immagine di ogni interferenza aperta, inquadrata a turno nella vista 3D.
+- **Segna nella vista** disegna le interferenze aperte nella pianta, sezione o prospetto in primo piano come nuvole rosse con l’etichetta test.interferenza (2.14: il secondo test, interferenza 14), solo sullo schermo. Un clic su una nuvola seleziona l’elemento.
+
+![Interferenze come nuvole in una pianta](shots/clash-marks.webp)
+
+Un progetto parte anche con un quarto test, **Openings for MEP**: la verifica di Gestisci → Verifica interferenze… eseguita come test, così i suoi problemi sono numerati e seguiti come gli altri. La sua profondità è quanto manca a un percorso nella sua apertura.
+
+Un test duro trova anche un elemento interamente dentro un altro, senza facce che si attraversano: un tubo dimenticato dentro un solaio. La sua profondità è la larghezza minore dell’elemento interno.
+
 > I percorsi impiantistici di Lapin possono tagliare da soli le loro aperture in muri e solai (Gestisci → Ordine di taglio). Allora un tubo attraverso un muro non è un’interferenza: il muro ha la sua apertura. **Gestisci → Verifica interferenze…** controlla quelle aperture.

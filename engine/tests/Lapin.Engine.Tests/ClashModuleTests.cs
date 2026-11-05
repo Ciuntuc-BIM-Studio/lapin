@@ -5,6 +5,7 @@ using Lapin.Mep;
 using Lapin.Model;
 using Lapin.Platform;
 using Lapin.Platform.Cde.Remarks;
+using Lapin.Drawing.Views;
 
 namespace Lapin.Engine.Tests;
 
@@ -45,19 +46,20 @@ public class ClashModuleTests
     }
 
     [Fact]
-    public void A_project_starts_with_three_sets_and_three_hard_tests_at_5_mm()
+    public void A_project_starts_with_three_sets_three_hard_tests_at_5_mm_and_the_openings_check()
     {
         var f = new F();
         f.Run("clash.seed", new JsonObject());
         var list = f.List();
         Assert.Equal(["Architecture", "Services", "Structure"], list["sets"]!.AsArray().Select(s => (string)s!["name"]!));
         var tests = list["tests"]!.AsArray().OfType<JsonObject>().ToList();
-        Assert.Equal(3, tests.Count);
-        Assert.All(tests, t => { Assert.Equal("hard", (string?)t["kind"]); Assert.Equal(0.005, (double)t["tolerance"]!); });
+        Assert.Equal(4, tests.Count);
+        Assert.Equal("openings", (string?)tests.Single(t => (string?)t["name"] == "Openings for MEP")["kind"]);
+        Assert.All(tests.Where(t => (string?)t["kind"] != "openings"), t => { Assert.Equal("hard", (string?)t["kind"]); Assert.Equal(0.005, (double)t["tolerance"]!); });
         Assert.Null(tests.Single(t => (string?)t["name"] == "Services × Services")["setB"]);
         // Asked again with sets in the project: nothing more.
         f.Run("clash.seed", new JsonObject());
-        Assert.Equal(3, f.List()["tests"]!.AsArray().Count);
+        Assert.Equal(4, f.List()["tests"]!.AsArray().Count);
     }
 
     [Fact]
@@ -189,7 +191,122 @@ public class ClashModuleTests
         Assert.Empty(f.Clashes(test));
         // Run all takes every test that is on.
         var all = (JsonArray)f.Run("clash.run", new JsonObject())!;
-        Assert.Equal(3, all.Count);
+        Assert.Equal(4, all.Count);
+    }
+}
+
+public class ClashPartBTests
+{
+    sealed class F
+    {
+        public readonly Session Session;
+        public F()
+        {
+            ILapinModule[] use = [new ArchitectureModule(), new MepModule(), new ClashModule()];
+            Session = new Session(ModuleCatalog.Create(use), new ProductManifest("test", "Test", ["core", .. use.Select(m => m.Id)]));
+        }
+        public IModelView Model => Session.Model;
+        public string Storey => Spatial.Storeys(Model).First().Id;
+        public JsonNode? Run(string c, JsonObject a) { Session.Execute(c, a, out var r); return r; }
+        public JsonNode? Query(string q, JsonObject? a = null) => Session.Query(q, a ?? []);
+        public string Wall(double x1, double y1, double x2, double y2) =>
+            (string)Run("architecture.addWall", new JsonObject { ["storeyId"] = Storey, ["x1"] = x1, ["y1"] = y1, ["x2"] = x2, ["y2"] = y2, ["join"] = false })!["id"]!;
+        public string Pipe(double x)
+        {
+            var system = (string)Run("mep.createSystem", new JsonObject { ["service"] = Services.Heating, ["defaults"] = new JsonObject { ["insulation"] = 0 } })!["id"]!;
+            var run = (string)Run("mep.drawRun", new JsonObject { ["systemId"] = system, ["points"] = new JsonArray(new JsonArray(x, -1), new JsonArray(x, 3)), ["pair"] = false })!["id"]!;
+            Session.Edit("set", e => { var p = e.Model.Get(run)!; var a = p.CloneAttrs(); a["size"] = 0.16; a["elevation"] = 1.0; e.Replace(p.With(attrs: a)); });
+            return run;
+        }
+        public string Test(string name)
+        {
+            Run("clash.seed", new JsonObject());
+            return (string)((JsonObject)Query("clash.list")!)["tests"]!.AsArray().OfType<JsonObject>().Single(t => (string?)t["name"] == name)["id"]!;
+        }
+        public List<JsonObject> Results(string test, string? groupBy = null) =>
+            ((JsonArray)((JsonObject)Query("clash.results", new JsonObject { ["id"] = test, ["groupBy"] = groupBy })!)["clashes"]!).OfType<JsonObject>().ToList();
+        public byte[] File(string test, string format, string? groupBy = null) =>
+            Convert.FromBase64String((string)((JsonObject)Query("clash.reportFile", new JsonObject { ["id"] = test, ["format"] = format, ["groupBy"] = groupBy })!)["data"]!);
+    }
+
+    [Fact]
+    public void The_openings_check_is_a_test_too_its_clashes_followed_like_the_others()
+    {
+        var f = new F();
+        var wall = f.Wall(-2, 1, 8, 1);
+        var pipe = f.Pipe(0);
+        var test = f.Test("Openings for MEP");
+        f.Run("clash.run", new JsonObject { ["ids"] = new JsonArray(test) });
+        var c = Assert.Single(f.Results(test));
+        Assert.Equal(wall, (string?)c["a"]);
+        Assert.Equal(pipe, (string?)c["b"]);
+        Assert.Equal("new", (string?)c["status"]);
+        // The pipe's opening cut by the cut order: no longer a clash.
+        f.Run("cutOrder.setMep", new JsonObject { ["cut"] = true });
+        f.Run("clash.run", new JsonObject { ["ids"] = new JsonArray(test) });
+        Assert.Equal("resolved", (string?)Assert.Single(f.Results(test))["status"]);
+    }
+
+    [Fact]
+    public void Clashes_group_by_element_storey_or_classes_and_go_out_as_navisworks_xml_and_pdf()
+    {
+        var f = new F();
+        var wall = f.Wall(-2, 1, 8, 1);
+        var other = f.Wall(-2, 2.5, 8, 2.5);
+        f.Pipe(0);
+        f.Pipe(4);
+        var test = f.Test("Architecture × Services");
+        f.Run("clash.run", new JsonObject { ["ids"] = new JsonArray(test) });
+        Assert.Equal(4, f.Results(test).Count);
+        // By element: each wall takes its two (the one in most first), named as the wall.
+        var byElement = f.Results(test, "element");
+        Assert.Equal(2, byElement.Select(c => (string?)c["group"]).Distinct().Count());
+        // The first group's two clashes share their element.
+        var first = byElement.Take(2).ToList();
+        Assert.Single(new[] { (string)first[0]["a"]!, (string)first[0]["b"]! }.Intersect(new[] { (string)first[1]["a"]!, (string)first[1]["b"]! }));
+        Assert.Single(f.Results(test, "classes").Select(c => (string?)c["group"]).Distinct());
+        // A third run through only one wall: alone, in Other clashes, last.
+        f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 8, ["y1"] = -2, ["x2"] = 8, ["y2"] = 4, ["join"] = false });
+        var system = (string)f.Run("mep.createSystem", new JsonObject { ["service"] = Services.Heating })!["id"]!;
+        var lone = (string)f.Run("mep.drawRun", new JsonObject { ["systemId"] = system, ["points"] = new JsonArray(new JsonArray(7, 0), new JsonArray(9, 0)), ["pair"] = false })!["id"]!;
+        f.Session.Edit("set", e => { var p = e.Model.Get(lone)!; var a = p.CloneAttrs(); a["size"] = 0.16; a["elevation"] = 1.0; e.Replace(p.With(attrs: a)); });
+        f.Run("clash.run", new JsonObject { ["ids"] = new JsonArray(test) });
+        var regrouped = f.Results(test, "element");
+        Assert.Equal(5, regrouped.Count);
+        Assert.Equal("Other clashes", (string?)regrouped[^1]["group"]);
+        Assert.Single(f.Results(test, "storey").Select(c => (string?)c["group"]).Distinct());
+        var xml = System.Text.Encoding.UTF8.GetString(f.File(test, "xml", "element"));
+        // Two walls of two runs each, the lone run apart.
+        Assert.Contains("<exchange units=\"m\"", xml);
+        Assert.Contains("<clashtest name=\"Architecture × Services\"", xml);
+        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(xml, "<clashgroup ").Count);
+        Assert.Equal(5, System.Text.RegularExpressions.Regex.Matches(xml, "<clashresult ").Count);
+        // A crossing's distance written negative, as Navisworks writes a hard clash's.
+        Assert.Matches("distance=\"-0\\.1[56]", xml);
+        Assert.Contains(wall, xml);
+        Assert.Contains(other, xml);
+        Assert.StartsWith("%PDF", System.Text.Encoding.ASCII.GetString(f.File(test, "pdf", "storey"), 0, 4));
+    }
+
+    [Fact]
+    public void Open_clashes_are_red_clouds_in_a_plan_that_asks_labelled_by_test_and_number()
+    {
+        var f = new F();
+        f.Wall(-2, 1, 8, 1);
+        var pipe = f.Pipe(0);
+        var test = f.Test("Architecture × Services");
+        f.Run("clash.run", new JsonObject { ["ids"] = new JsonArray(test) });
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        List<ViewMark> Clouds() => Views.Render(f.Session.Reader, Views.Find(f.Model, plan)!).Marks.Where(m => m.Data?["test"] != null).ToList();
+        Assert.Empty(Clouds());
+        f.Run("coordination.markView", new JsonObject { ["id"] = plan, ["on"] = true });
+        var cloud = Assert.Single(Clouds());
+        Assert.Equal(pipe, cloud.Owner);
+        // "Architecture × Services" is the first test by name: 1.1.
+        Assert.Contains("1.1", Views.Render(f.Session.Reader, Views.Find(f.Model, plan)!).Pens.SelectMany(p => p.Texts).Select(t => t.Text));
+        // Reviewed: no longer marked.
+        f.Run("clash.setStatus", new JsonObject { ["id"] = test, ["numbers"] = new JsonArray(1), ["status"] = "reviewed" });
+        Assert.Empty(Clouds());
     }
 }
 

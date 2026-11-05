@@ -39,4 +39,21 @@ Un set ia elementele care îndeplinesc oricare regulă sau toate regulile. O reg
 
 ![Regulile unui set de căutare](shots/clash-sets.webp)
 
+## Grupe, rapoarte și nori
+
+Lista grupează coliziunile **pe niveluri**, **pe elemente** (elementul din cele mai multe coliziuni le ia, apoi următorul), **pe clase** sau **pe stări**. Bifa unei grupe îi selectează toate coliziunile, ca să le dai o stare odată.
+
+![Coliziuni grupate pe elemente](shots/clash-groups.webp)
+
+- **XML** scrie coliziunile cum își scrie Navisworks rapoartele, pe grupe, ca să le citească alte programe de coordonare.
+- **PDF** tipărește lista pe A4, grupată la fel.
+- **HTML** face o pagină cu o imagine a fiecărei coliziuni deschise, încadrată pe rând în vederea 3D.
+- **Marchează în vedere** desenează coliziunile deschise în planul, secțiunea sau fațada din față ca nori roșii cu eticheta test.coliziune (2.14: al doilea test, coliziunea 14), doar pe ecran. Un clic pe nor selectează elementul.
+
+![Coliziuni ca nori într-un plan](shots/clash-marks.webp)
+
+Un proiect pornește și cu al patrulea test, **Openings for MEP**: verificarea din Gestionare → Verificare coliziuni… rulată ca test, ca problemele ei să fie numerotate și urmărite ca celelalte. Adâncimea e cât îi lipsește traseului din gol.
+
+Un test dur găsește și un element cuprins întreg în altul, unde nicio față nu se intersectează: o conductă uitată într-o placă. Adâncimea e cea mai mică lățime a elementului din interior.
+
 > Traseele de instalații Lapin își pot tăia singure golurile în pereți și planșee (Gestionare → Ordinea de tăiere). Atunci o conductă prin perete nu e o coliziune: peretele are golul lui. **Gestionare → Verificare coliziuni…** verifică acele goluri.

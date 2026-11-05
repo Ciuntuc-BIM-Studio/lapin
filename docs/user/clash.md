@@ -39,4 +39,21 @@ A set takes the elements meeting any rule, or every rule. A "not" rule always ta
 
 ![The rules of a search set](shots/clash-sets.webp)
 
+## Groups, reports and clouds
+
+The list groups its clashes **by storey**, **by element** (the element in most clashes takes them, then the next), **by classes** or **by status**. A group's box selects all its clashes, to give them a status together.
+
+![Clashes grouped by element](shots/clash-groups.webp)
+
+- **XML** writes the clashes as Navisworks writes its clash reports, in their groups, so other coordination tools read them.
+- **PDF** prints the list on A4, grouped the same way.
+- **HTML** makes one page with a picture of each open clash, framed in the 3D view in turn.
+- **Mark in view** draws the open clashes in the plan, section or elevation in front as red clouds labelled test.clash (2.14: the second test, clash 14), on the screen only. A click on a cloud selects the element.
+
+![Clashes as clouds in a plan](shots/clash-marks.webp)
+
+A project also starts with a fourth test, **Openings for MEP**: the check of Manage → Clash check… run as a test, so its problems are numbered and followed like the others. Its depth is how far a run is short of its opening.
+
+A hard test also finds an element wholly inside another, where no faces cross: a pipe forgotten inside a slab. Its depth is the inner element's smallest width.
+
 > Lapin's own MEP runs can cut their openings in walls and floors by themselves (Manage → Cut order). Then a pipe through a wall is not a clash: the wall has its opening. **Manage → Clash check…** checks those openings.

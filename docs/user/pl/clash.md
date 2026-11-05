@@ -39,4 +39,21 @@ Zestaw bierze elementy spełniające dowolną regułę albo wszystkie reguły. R
 
 ![Reguły zestawu wyszukiwania](shots/clash-sets.webp)
 
+## Grupy, raporty i chmurki
+
+Lista grupuje kolizje **według kondygnacji**, **według elementu** (element w największej liczbie kolizji je bierze, potem następny), **według klas** lub **według statusu**. Pole grupy zaznacza wszystkie jej kolizje, żeby nadać im status razem.
+
+![Kolizje pogrupowane według elementu](shots/clash-groups.webp)
+
+- **XML** zapisuje kolizje tak, jak Navisworks zapisuje raporty kolizji, w ich grupach, żeby inne narzędzia koordynacji je odczytały.
+- **PDF** drukuje listę na A4, pogrupowaną tak samo.
+- **HTML** tworzy jedną stronę z obrazem każdej otwartej kolizji, po kolei w kadrze widoku 3D.
+- **Oznacz w widoku** rysuje otwarte kolizje w rzucie, przekroju lub elewacji na wierzchu jako czerwone chmurki z etykietą test.kolizja (2.14: drugi test, kolizja 14), tylko na ekranie. Kliknięcie chmurki zaznacza element.
+
+![Kolizje jako chmurki na rzucie](shots/clash-marks.webp)
+
+Projekt zaczyna też z czwartym testem, **Openings for MEP**: sprawdzeniem z Zarządzaj → Wykrywanie kolizji… uruchamianym jako test, żeby jego problemy były numerowane i śledzone jak inne. Jego głębokość to brak przewodu w otworze.
+
+Test twardy znajduje też element w całości wewnątrz innego, bez przenikających się ścianek: rurę zapomnianą w stropie. Jego głębokość to najmniejsza szerokość elementu wewnętrznego.
+
 > Instalacje Lapina mogą same wycinać swoje otwory w ścianach i stropach (Zarządzaj → Kolejność cięcia). Wtedy rura przez ścianę nie jest kolizją: ściana ma swój otwór. **Zarządzaj → Wykrywanie kolizji…** sprawdza te otwory.

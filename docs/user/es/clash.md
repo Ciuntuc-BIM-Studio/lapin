@@ -39,4 +39,21 @@ Un conjunto toma los elementos que cumplen alguna regla, o todas. Una regla «no
 
 ![Las reglas de un conjunto de búsqueda](shots/clash-sets.webp)
 
+## Grupos, informes y nubes
+
+La lista agrupa sus colisiones **por planta**, **por elemento** (el elemento con más colisiones se las lleva, luego el siguiente), **por clases** o **por estado**. La casilla de un grupo selecciona todas sus colisiones, para darles un estado a la vez.
+
+![Colisiones agrupadas por elemento](shots/clash-groups.webp)
+
+- **XML** escribe las colisiones como Navisworks escribe sus informes, en sus grupos, para que otras herramientas de coordinación las lean.
+- **PDF** imprime la lista en A4, agrupada igual.
+- **HTML** crea una página con una imagen de cada colisión abierta, encuadrada por turno en la vista 3D.
+- **Marcar en la vista** dibuja las colisiones abiertas en la planta, sección o alzado al frente como nubes rojas con la etiqueta prueba.colisión (2.14: la segunda prueba, colisión 14), solo en pantalla. Un clic en una nube selecciona el elemento.
+
+![Colisiones como nubes en una planta](shots/clash-marks.webp)
+
+Un proyecto empieza también con una cuarta prueba, **Openings for MEP**: la comprobación de Gestionar → Comprobación de colisiones… ejecutada como prueba, para que sus problemas se numeren y sigan como los demás. Su profundidad es cuánto le falta al tramo para su hueco.
+
+Una prueba dura encuentra también un elemento entero dentro de otro, donde ninguna cara se cruza: un tubo olvidado dentro de un forjado. Su profundidad es la menor anchura del elemento interior.
+
 > Los tramos de instalaciones de Lapin pueden cortar sus propios huecos en muros y forjados (Gestionar → Orden de corte). Entonces un tubo que atraviesa un muro no es una colisión: el muro tiene su hueco. **Gestionar → Comprobación de colisiones…** revisa esos huecos.

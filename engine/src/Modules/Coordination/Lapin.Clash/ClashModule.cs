@@ -126,6 +126,16 @@ public sealed class ClashModule : ILapinModule
     /// <summary>One test run over a universe: its clashes as (A, B, where, depth or gap, crossing), the engine's run.</summary>
     public static (ClashRun Run, List<(string A, string B, Vec3 At, double Distance, bool Crossing)> Found) RunTest(Universe u, ClashTests.Test t, IReadOnlyDictionary<string, SearchSets.Set> sets)
     {
+        if (t.Kind == ClashTests.Openings)
+        {
+            // The openings check (Manage → Clash check…'s): each MEP run through a wall, floor or roof without an opening big enough;
+            // how far short it is as the depth. Its fixes stay that dialog's (Make opening, Enlarge opening).
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            var found = OpeningClashes.Run(u.Query, OpeningClashes.Options.From(u.Query.Model, null)).Where(c => c.IsClash && c.MepId != null)
+                .GroupBy(c => (c.HostId, c.MepId)).Select(g => g.First()).Select(c => (c.HostId, c.MepId!, c.Centre, Math.Max(c.By, 0), true)).ToList();
+            var hosts = found.Select(f => f.HostId).Distinct().Count();
+            return (new ClashRun([], false, found.Count, hosts, found.Select(f => f.Item2).Distinct().Count(), clock.Elapsed.TotalSeconds), found);
+        }
         if (!sets.TryGetValue(t.SetA, out var setA)) throw new CommandException($"The test {t.Name} has no set A.");
         SearchSets.Set? setB = null;
         if (!t.IsSelf && !sets.TryGetValue(t.SetB!, out setB)) throw new CommandException($"The test {t.Name} has no set B.");
@@ -167,6 +177,41 @@ public sealed class ClashModule : ILapinModule
 
     static ElementFacts? FactsOf(IQueryContext q, string id) => q.Model.Get(id) is { } e ? SearchSets.Facts(q, e) : null;
 
+    static Dictionary<int, string> Grouped(IQueryContext q, IReadOnlyList<ClashRecord> clashes, string? mode)
+    {
+        if (mode is null or ClashGroups.None) return [];
+        if (!ClashGroups.Modes.Contains(mode)) throw new CommandException($"Clashes are grouped by {string.Join(", ", ClashGroups.Modes)}.");
+        var cache = new Dictionary<string, ElementFacts?>();
+        return ClashGroups.Of(clashes, mode, id => cache.TryGetValue(id, out var f) ? f : cache[id] = FactsOf(q, id));
+    }
+
+    /// <summary>The clashes in their groups' order (the first clash of each group placing it), by number within each.</summary>
+    static List<ClashRecord> Ordered(List<ClashRecord> clashes, IReadOnlyDictionary<int, string> groups)
+    {
+        if (groups.Count == 0) return clashes;
+        var order = new Dictionary<string, int>();
+        foreach (var c in clashes) if (groups.TryGetValue(c.Number, out var g) && !order.ContainsKey(g)) order[g] = order.Count;
+        return clashes.OrderBy(c => groups.TryGetValue(c.Number, out var g) ? order[g] : int.MaxValue).ThenBy(c => c.Number).ToList();
+    }
+
+    /// <summary>
+    /// The open clashes (new, active) of the tests Run all takes, as red clouds in plans, sections and elevations, with the
+    /// openings' report's (View → Clash marks): labelled "test.clash", the test's number its place among the tests by name.
+    /// </summary>
+    sealed class Marks : ClashMarks.ISource
+    {
+        public IEnumerable<ClashMarks.Item> Items(IQueryContext q)
+        {
+            var tests = q.Model.OfClass(ClashTests.Class).Select(ClashTests.Read).OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+            for (var k = 0; k < tests.Count; k++)
+            {
+                if (!tests[k].Enabled) continue;
+                foreach (var c in tests[k].Clashes.Where(c => c.Status is ClashTests.New or ClashTests.Active))
+                    yield return new ClashMarks.Item(c.At, c.B, c.A, $"{k + 1}.{c.Number}", new JsonObject { ["test"] = tests[k].Id, ["clash"] = c.Number });
+            }
+        }
+    }
+
     static JsonObject ClashJson(IQueryContext q, ClashRecord c)
     {
         var o = c.ToJson();
@@ -200,6 +245,7 @@ public sealed class ClashModule : ILapinModule
         Test("Structure × Services", structure, services);
         Test("Services × Services", services, null);
         Test("Architecture × Services", architecture, services);
+        ctx.Add(new Entity(ctx.NewId(), ClashTests.Class, "Openings for MEP", new JsonObject { ["kind"] = ClashTests.Openings, ["setA"] = "", ["tolerance"] = 0, ["enabled"] = true }));
     }
 
     static string Text(JsonObject a, string key, string fallback) => ((string?)a[key])?.Trim() is { Length: > 0 } s ? s : fallback;
@@ -208,6 +254,7 @@ public sealed class ClashModule : ILapinModule
     {
         r.Class(new(SearchSets.Class, "Search set", [], Kind: "resource"));
         r.Class(new(ClashTests.Class, "Clash test", [], Kind: "resource"));
+        r.Service<ClashMarks.ISource>(new Marks());
 
         // The sets and tests, each set with how many elements it holds now, each test with its counts and whether the model changed since its run.
         r.Query("clash.list", (q, _) =>
@@ -248,15 +295,35 @@ public sealed class ClashModule : ILapinModule
             }).ToArray());
         });
         // A test's clashes with what they are between: {id, status?}.
+        // A test's clashes with what they are between: {id, status?, groupBy?: none | storey | element | classes | status}; each with its group, in the groups' order.
         r.Query("clash.results", (q, a) =>
         {
             var t = q.Model.Get((string?)a["id"] ?? "") is { Class: ClashTests.Class } e ? ClashTests.Read(e) : throw new CommandException("Which clash test?");
             var status = (string?)a["status"];
+            var list = t.Clashes.Where(c => status == null || c.Status == status).ToList();
+            var groups = Grouped(q, list, (string?)a["groupBy"]);
             return new JsonObject
             {
                 ["test"] = TestJson(q.Model, t, ClashReports.ModelHash(q.Model)),
-                ["clashes"] = new JsonArray(t.Clashes.Where(c => status == null || c.Status == status).Select(c => (JsonNode)ClashJson(q, c)).ToArray()),
+                ["clashes"] = new JsonArray(Ordered(list, groups).Select(c => { var o = ClashJson(q, c); if (groups.TryGetValue(c.Number, out var g)) o["group"] = g; return (JsonNode)o; }).ToArray()),
             };
+        });
+        // A test's clashes as a file: {id, format: xml | pdf, groupBy?, resolved?}; {name, data (base64)}. XML as Navisworks writes its clash reports.
+        r.Query("clash.reportFile", (q, a) =>
+        {
+            var t = q.Model.Get((string?)a["id"] ?? "") is { Class: ClashTests.Class } e ? ClashTests.Read(e) : throw new CommandException("Which clash test?");
+            var resolved = a["resolved"] is JsonValue rv && rv.TryGetValue<bool>(out var rb) && rb;
+            var list = t.Clashes.Where(c => resolved || c.Status != ClashTests.Resolved).ToList();
+            var groups = Grouped(q, list, (string?)a["groupBy"]);
+            list = Ordered(list, groups);
+            var format = (string?)a["format"] ?? "xml";
+            var bytes = format switch
+            {
+                "xml" => ClashReportFiles.Xml(q, t, list, groups, Sets(q.Model)),
+                "pdf" => ClashReportFiles.Pdf(q, t, list, groups, t.LastRun != null && (string?)t.LastRun["hash"] != ClashReports.ModelHash(q.Model)),
+                _ => throw new CommandException("A clash report is written as XML or PDF."),
+            };
+            return new JsonObject { ["name"] = $"{t.Name}.{format}", ["data"] = Convert.ToBase64String(bytes) };
         });
 
         // The starting sets and tests, when the project has none: one undo step.
@@ -302,9 +369,9 @@ public sealed class ClashModule : ILapinModule
             var existing = (string?)a["id"] is { } id ? m.Get(id) is { Class: ClashTests.Class } x ? x : throw new CommandException("There is no such clash test.") : null;
             var old = existing != null ? ClashTests.Read(existing) : null;
             var kind = (string?)a["kind"] ?? old?.Kind ?? ClashTests.Hard;
-            if (kind is not (ClashTests.Hard or ClashTests.Clearance)) throw new CommandException("A clash test is hard or clearance.");
+            if (!ClashTests.Kinds.Contains(kind)) throw new CommandException("A clash test is hard, clearance or openings.");
             var setA = (string?)a["setA"] ?? old?.SetA ?? "";
-            if (m.Get(setA) is not { Class: SearchSets.Class }) throw new CommandException("Set A is one of the search sets.");
+            if (kind != ClashTests.Openings && m.Get(setA) is not { Class: SearchSets.Class }) throw new CommandException("Set A is one of the search sets.");
             var setB = a.ContainsKey("setB") ? (string?)a["setB"] is { Length: > 0 } sb ? sb : null : old?.SetB;
             if (setB != null && m.Get(setB) is not { Class: SearchSets.Class }) throw new CommandException("Set B is one of the search sets, or none to test set A against itself.");
             var tolerance = Json.Number(a["tolerance"]) ?? old?.Tolerance ?? (kind == ClashTests.Clearance ? ClashEngine.ClearanceDistance : ClashEngine.HardTolerance);
@@ -313,7 +380,7 @@ public sealed class ClashModule : ILapinModule
             var attrs = existing?.CloneAttrs() ?? new JsonObject();
             attrs["kind"] = kind; attrs["setA"] = setA; attrs["setB"] = setB; attrs["tolerance"] = tolerance; attrs["enabled"] = enabled;
             if (old != null && (old.Kind != kind || old.SetA != setA || old.SetB != setB)) { attrs.Remove("clashes"); attrs.Remove("runs"); }
-            var name = Text(a, "name", old?.Name ?? $"{m.Get(setA)?.Name} × {(setB != null ? m.Get(setB)?.Name : "itself")}");
+            var name = Text(a, "name", old?.Name ?? (kind == ClashTests.Openings ? "Openings for MEP" : $"{m.Get(setA)?.Name} × {(setB != null ? m.Get(setB)?.Name : "itself")}"));
             if (existing != null) { ctx.Replace(existing.With(name: name, attrs: attrs)); return new JsonObject { ["id"] = existing.Id }; }
             var made = new Entity(ctx.NewId(), ClashTests.Class, name, attrs);
             ctx.Add(made);

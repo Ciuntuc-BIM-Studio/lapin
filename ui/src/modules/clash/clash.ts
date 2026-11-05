@@ -16,7 +16,7 @@ export const STATUSES: ClashStatus[] = ['new', 'active', 'reviewed', 'approved',
 export const STATUS_LABELS: Record<ClashStatus, string> = { new: 'New', active: 'Active', reviewed: 'Reviewed', approved: 'Approved', resolved: 'Resolved' };
 export interface RunSummary { date: string; found: number; new: number; reopened: number; resolved: number; countA: number; countB: number; pairs: number; truncated: boolean; seconds: number; id?: string; name?: string }
 export interface ClashTest {
-  id: string; name: string; kind: 'hard' | 'clearance'; setA: string; setB: string | null; tolerance: number; enabled: boolean;
+  id: string; name: string; kind: 'hard' | 'clearance' | 'openings'; setA: string; setB: string | null; tolerance: number; enabled: boolean;
   counts: Record<ClashStatus, number>; lastRun: RunSummary | null; stale?: boolean;
 }
 export interface Clash {
@@ -24,7 +24,11 @@ export interface Clash {
   found: string; seen: string; resolved?: string; assignedTo?: string; notes?: string; remark?: string;
   aName?: string | null; aClass?: string | null; aStorey?: string | null; aLink?: string | null;
   bName?: string | null; bClass?: string | null; bStorey?: string | null; bLink?: string | null;
+  /** Its group, when the clashes are asked grouped. */
+  group?: string;
 }
+export type GroupBy = 'none' | 'storey' | 'element' | 'classes' | 'status';
+export const GROUP_LABELS: Record<GroupBy, string> = { none: 'No groups', storey: 'By storey', element: 'By element', classes: 'By classes', status: 'By status' };
 export interface ClashList { sets: SearchSet[]; tests: ClashTest[]; fields: RuleField[]; ops: RuleOp[] }
 
 export const FIELD_LABELS: Record<RuleField, string> = {
@@ -37,7 +41,8 @@ export const OP_LABELS: Record<RuleOp, string> = {
 export const isList = (op: RuleOp) => op === 'isOneOf' || op === 'isNotAnyOf' || op === 'between';
 
 export const loadClashes = () => query<ClashList>('clash.list');
-export const loadResults = (id: string) => query<{ test: ClashTest; clashes: Clash[] }>('clash.results', { id });
+export const loadResults = (id: string, groupBy: GroupBy = 'none') => query<{ test: ClashTest; clashes: Clash[] }>('clash.results', { id, groupBy });
+export const reportFile = (id: string, format: 'xml' | 'pdf', groupBy: GroupBy = 'none') => query<{ name: string; data: string }>('clash.reportFile', { id, format, groupBy });
 export const loadMembers = (set: RuleGroup) => query<{ count: number; ids: string[] }>('clash.members', { set });
 export const loadValues = (field: RuleField, parameter?: string) => query<{ value: string; count: number; label: string }[]>('clash.values', { field, parameter });
 export const seedClashes = () => execute('clash.seed', {});
@@ -109,4 +114,31 @@ export function clashCsv(test: ClashTest, clashes: Clash[]): string {
     rows.push([c.n, c.status, q(c.aName), q(c.aClass), q(c.aStorey), q(c.bName), q(c.bClass), q(c.bStorey), Math.round(c.d * 1000), c.crossing ? 'yes' : 'no',
       c.at[0].toFixed(3), c.at[1].toFixed(3), c.at[2].toFixed(3), q(c.assignedTo), q(c.notes), c.found, c.resolved ?? ''].join(','));
   return '﻿' + rows.join('\n') + '\n';
+}
+
+const esc = (s: string | null | undefined) => (s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+/**
+ * A test's clashes as one HTML page (after BimGo's report): the project and test, the counts, then each clash under its
+ * group with its picture (the 3D view framed on it, as PNG data), the pair, depth or gap, status, who has it and notes.
+ * Self-contained: it opens anywhere and prints on A4.
+ */
+export function clashHtml(project: string, test: ClashTest, clashes: Clash[], pictures: ReadonlyMap<number, string>): string {
+  const counts = STATUSES.map((s) => `${clashes.filter((c) => c.status === s).length} ${STATUS_LABELS[s].toLowerCase()}`).join(' · ');
+  let group: string | undefined;
+  const rows: string[] = [];
+  for (const c of clashes) {
+    if (c.group !== undefined && c.group !== group) { group = c.group; rows.push(`<h2>${esc(group)}</h2>`); }
+    const pic = pictures.get(c.n);
+    rows.push(`<section class="clash">${pic ? `<img src="${pic}" alt="Clash ${c.n}">` : ''}<div><h3>${c.n}. ${esc(c.aName || c.aClass)} × ${esc(c.bName || c.bClass)}</h3>`
+      + `<p><b>${esc(STATUS_LABELS[c.status])}</b> · ${test.kind === 'clearance' && !c.crossing ? 'gap' : 'depth'} ${Math.round(c.d * 1000)} mm · ${esc(c.aStorey ?? c.bStorey ?? '')}</p>`
+      + `<p class="muted">${esc(c.aClass)}${c.aLink ? ` (${esc(c.aLink)})` : ''} × ${esc(c.bClass)}${c.bLink ? ` (${esc(c.bLink)})` : ''} · at ${c.at.map((v) => v.toFixed(2)).join(', ')}</p>`
+      + (c.assignedTo ? `<p>Assigned to: ${esc(c.assignedTo)}</p>` : '') + (c.notes ? `<p>${esc(c.notes)}</p>` : '') + '</div></section>');
+  }
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(test.name)}</title><style>
+body{font:13px/1.45 system-ui,sans-serif;margin:24px;color:#222}h1{font-size:20px;margin:0}h2{font-size:15px;margin:20px 0 6px;border-bottom:1px solid #ccc}
+h3{font-size:14px;margin:0 0 4px}.muted{color:#777}.clash{display:flex;gap:14px;align-items:flex-start;margin:10px 0;page-break-inside:avoid}
+.clash img{width:320px;border:1px solid #ddd}@page{size:A4;margin:14mm}</style></head><body>
+<h1>Clash report · ${esc(test.name)}</h1><p class="muted">${esc(project)} · ${test.lastRun ? esc(test.lastRun.date) : ''}${test.stale ? ' · out of date: the model has changed since this run' : ''}</p>
+<p>${counts}</p>${rows.join('\n')}</body></html>`;
 }

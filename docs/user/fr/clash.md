@@ -39,4 +39,21 @@ Un jeu prend les éléments qui remplissent une règle, ou toutes les règles. U
 
 ![Les règles d’un jeu de recherche](shots/clash-sets.webp)
 
+## Groupes, rapports et nuages
+
+La liste groupe ses conflits **par niveau**, **par élément** (l’élément présent dans le plus de conflits les prend, puis le suivant), **par classes** ou **par état**. La case d’un groupe sélectionne tous ses conflits, pour leur donner un état ensemble.
+
+![Conflits groupés par élément](shots/clash-groups.webp)
+
+- **XML** écrit les conflits comme Navisworks écrit ses rapports, dans leurs groupes, pour que d’autres outils de coordination les lisent.
+- **PDF** imprime la liste en A4, groupée de même.
+- **HTML** crée une page avec une image de chaque conflit ouvert, cadré tour à tour dans la vue 3D.
+- **Marquer dans la vue** dessine les conflits ouverts dans le plan, la coupe ou la façade affichés en nuages rouges étiquetés test.conflit (2.14 : le deuxième test, conflit 14), à l’écran seulement. Un clic sur un nuage sélectionne l’élément.
+
+![Conflits en nuages dans un plan](shots/clash-marks.webp)
+
+Un projet commence aussi avec un quatrième test, **Openings for MEP** : la vérification de Gérer → Détection de conflits… lancée comme un test, pour que ses problèmes soient numérotés et suivis comme les autres. Sa profondeur est ce qui manque à un réseau dans son ouverture.
+
+Un test dur trouve aussi un élément entièrement dans un autre, sans face qui se traverse : un tuyau oublié dans une dalle. Sa profondeur est la plus petite largeur de l’élément intérieur.
+
 > Les réseaux de Lapin peuvent percer eux-mêmes leurs ouvertures dans les murs et les planchers (Gérer → Ordre de coupe). Un tuyau à travers un mur n’est alors pas un conflit : le mur a son ouverture. **Gérer → Détection de conflits…** vérifie ces ouvertures.

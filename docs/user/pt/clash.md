@@ -39,4 +39,21 @@ Um conjunto inclui os elementos que cumprem alguma regra, ou todas. Uma regra «
 
 ![As regras de um conjunto de pesquisa](shots/clash-sets.webp)
 
+## Grupos, relatórios e nuvens
+
+A lista agrupa as colisões **por piso**, **por elemento** (o elemento presente em mais colisões fica com elas, depois o seguinte), **por classes** ou **por estado**. A caixa de um grupo seleciona todas as suas colisões, para lhes dar um estado de uma vez.
+
+![Colisões agrupadas por elemento](shots/clash-groups.webp)
+
+- **XML** escreve as colisões como o Navisworks escreve os seus relatórios, nos seus grupos, para que outras ferramentas de coordenação as leiam.
+- **PDF** imprime a lista em A4, agrupada da mesma forma.
+- **HTML** cria uma página com uma imagem de cada colisão aberta, enquadrada à vez na vista 3D.
+- **Marcar na vista** desenha as colisões abertas na planta, corte ou alçado à frente como nuvens vermelhas com a etiqueta teste.colisão (2.14: o segundo teste, colisão 14), só no ecrã. Um clique numa nuvem seleciona o elemento.
+
+![Colisões como nuvens numa planta](shots/clash-marks.webp)
+
+Um projeto começa também com um quarto teste, **Openings for MEP**: a verificação de Gerenciar → Verificação de conflitos… executada como teste, para que os seus problemas sejam numerados e seguidos como os outros. A sua profundidade é quanto falta a um traçado na sua abertura.
+
+Um teste rígido encontra também um elemento inteiramente dentro de outro, sem faces que se atravessem: um tubo esquecido dentro de uma laje. A sua profundidade é a menor largura do elemento interior.
+
 > Os traçados de instalações do Lapin podem abrir eles próprios as suas aberturas em paredes e lajes (Gerenciar → Ordem de corte). Então um tubo a atravessar uma parede não é uma colisão: a parede tem a sua abertura. **Gerenciar → Verificação de conflitos…** verifica essas aberturas.

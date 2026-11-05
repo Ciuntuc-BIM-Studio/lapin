@@ -50,6 +50,9 @@ public static class ClashTests
 {
     public const string Class = "LapinClashTest";
     public const string Hard = "hard", Clearance = "clearance";
+    /// <summary>The openings check (decisions 289 and 293) as a test: MEP runs crossing walls, floors and roofs without an opening big enough; no sets.</summary>
+    public const string Openings = "openings";
+    public static readonly string[] Kinds = [Hard, Clearance, Openings];
     public const string New = "new", Active = "active", Reviewed = "reviewed", Approved = "approved", Resolved = "resolved";
     public static readonly string[] Statuses = [New, Active, Reviewed, Approved, Resolved];
     /// <summary>The runs a test remembers.</summary>
@@ -60,7 +63,7 @@ public static class ClashTests
         public bool IsSelf => SetB == null || SetB == SetA;
     }
 
-    public static Test Read(Entity e) => new(e.Id, e.Name ?? "", (string?)e.Attrs["kind"] == Clearance ? Clearance : Hard, e.Str("setA") ?? "", e.Str("setB") is { Length: > 0 } b ? b : null,
+    public static Test Read(Entity e) => new(e.Id, e.Name ?? "", (string?)e.Attrs["kind"] is Clearance or Openings ? (string)e.Attrs["kind"]! : Hard, e.Str("setA") ?? "", e.Str("setB") is { Length: > 0 } b ? b : null,
         Json.Number(e.Attrs["tolerance"]) ?? ClashEngine.HardTolerance, e.Attrs["enabled"] is not JsonValue v || !v.TryGetValue<bool>(out var on) || on,
         (e.Attrs["clashes"] as JsonArray ?? []).Select(ClashRecord.From).OfType<ClashRecord>().ToList(), (e.Attrs["runs"] as JsonArray)?.LastOrDefault() as JsonObject);
 

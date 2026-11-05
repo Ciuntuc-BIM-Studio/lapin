@@ -39,4 +39,21 @@ Ein Satz nimmt die Elemente, die irgendeine Regel erfüllen, oder jede Regel. Ei
 
 ![Die Regeln eines Suchsatzes](shots/clash-sets.webp)
 
+## Gruppen, Berichte und Wolken
+
+Die Liste gruppiert ihre Kollisionen **nach Geschoss**, **nach Element** (das Element mit den meisten Kollisionen nimmt sie, dann das nächste), **nach Klassen** oder **nach Status**. Das Kästchen einer Gruppe wählt alle ihre Kollisionen, um ihnen gemeinsam einen Status zu geben.
+
+![Kollisionen nach Element gruppiert](shots/clash-groups.webp)
+
+- **XML** schreibt die Kollisionen, wie Navisworks seine Kollisionsberichte schreibt, in ihren Gruppen, damit andere Koordinationsprogramme sie lesen.
+- **PDF** druckt die Liste auf A4, gleich gruppiert.
+- **HTML** macht eine Seite mit einem Bild jeder offenen Kollision, der Reihe nach in der 3D-Ansicht gerahmt.
+- **In der Ansicht markieren** zeichnet die offenen Kollisionen im vorderen Grundriss, Schnitt oder in der Ansicht als rote Wolken mit der Beschriftung Test.Kollision (2.14: der zweite Test, Kollision 14), nur am Bildschirm. Ein Klick auf eine Wolke wählt das Element.
+
+![Kollisionen als Wolken in einem Grundriss](shots/clash-marks.webp)
+
+Ein Projekt beginnt auch mit einem vierten Test, **Openings for MEP**: die Prüfung aus Verwalten → Kollisionsprüfung… als Test, damit ihre Probleme nummeriert und wie die anderen verfolgt werden. Ihre Tiefe ist, wie viel einer Leitung an ihrer Öffnung fehlt.
+
+Ein harter Test findet auch ein Element ganz in einem anderen, wo sich keine Flächen kreuzen: ein in einer Decke vergessenes Rohr. Seine Tiefe ist die kleinste Breite des inneren Elements.
+
 > Lapins eigene Installationsleitungen können ihre Öffnungen in Wänden und Decken selbst schneiden (Verwalten → Schnittreihenfolge). Dann ist ein Rohr durch eine Wand keine Kollision: Die Wand hat ihre Öffnung. **Verwalten → Kollisionsprüfung…** prüft diese Öffnungen.

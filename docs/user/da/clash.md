@@ -39,4 +39,21 @@ Et sæt tager elementerne, der opfylder en regel, eller alle regler. En "ikke"-r
 
 ![Et søgesæts regler](shots/clash-sets.webp)
 
+## Grupper, rapporter og skyer
+
+Listen grupperer sine kollisioner **efter etage**, **efter element** (elementet i flest kollisioner tager dem, så det næste), **efter klasser** eller **efter status**. En gruppes afkrydsning vælger alle dens kollisioner, så de kan få en status sammen.
+
+![Kollisioner grupperet efter element](shots/clash-groups.webp)
+
+- **XML** skriver kollisionerne, som Navisworks skriver sine kollisionsrapporter, i deres grupper, så andre koordineringsværktøjer kan læse dem.
+- **PDF** udskriver listen på A4, grupperet på samme måde.
+- **HTML** laver én side med et billede af hver åben kollision, indrammet i 3D-visningen efter tur.
+- **Markér i visningen** tegner de åbne kollisioner i planen, snittet eller facaden forrest som røde skyer mærket test.kollision (2.14: den anden test, kollision 14), kun på skærmen. Et klik på en sky vælger elementet.
+
+![Kollisioner som skyer i en plan](shots/clash-marks.webp)
+
+Et projekt starter også med en fjerde test, **Openings for MEP**: kontrollen fra Administrer → Kollisionskontrol… kørt som en test, så dens problemer nummereres og følges som de andre. Dens dybde er, hvor meget en føring mangler i sin åbning.
+
+En hård test finder også et element helt inde i et andet, hvor ingen flader krydser: et rør glemt inde i et dæk. Dybden er det inderste elements mindste bredde.
+
 > Lapins egne installationsføringer kan selv skære deres åbninger i vægge og dæk (Administrer → Snitrækkefølge). Så er et rør gennem en væg ikke en kollision: væggen har sin åbning. **Administrer → Kollisionskontrol…** kontrollerer de åbninger.

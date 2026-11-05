@@ -13,7 +13,7 @@ public sealed record ClashBody(string Id, Vec3 Min, Vec3 Max, Func<IReadOnlyList
 /// and which pairs are never tested (an element and its own opening's filling, the members of one assembly...).
 /// </summary>
 public sealed record ClashJob(IReadOnlyList<ClashBody> Items, IReadOnlyList<int> SetA, IReadOnlyList<int>? SetB, bool Clearance = false, double Tolerance = ClashEngine.HardTolerance,
-    int MaxClashes = ClashEngine.MaxClashesPerTest, Func<int, int, bool>? Skip = null, int Threads = 0);
+    int MaxClashes = ClashEngine.MaxClashesPerTest, Func<int, int, bool>? Skip = null, int Threads = 0, bool Contained = true);
 
 /// <summary>A clash found: the two bodies (set A's first), where, how deep (a crossing) or how far apart (a gap), and whether they cross.</summary>
 public readonly record struct ClashHit(int A, int B, Vec3 Point, double Distance, bool Crossing);
@@ -34,7 +34,8 @@ public sealed record ClashRun(IReadOnlyList<ClashHit> Hits, bool Truncated, long
 /// a clash (a pipe sunk into a slab). Faces that only touch never clash.</item>
 /// <item><b>Clearance</b>: crossings (marked) and gaps under the distance, with the nearest points.</item>
 /// </list>
-/// A body wholly inside another (no face crossing) is not found here.
+/// A body wholly inside another, no face crossing (a pipe forgotten inside a slab), is found too, unlike BimGo: its box
+/// lies within the other's and a corner of it is inside the other; its depth is its own least width (<see cref="ClashJob.Contained"/>).
 /// </summary>
 public static class ClashEngine
 {
@@ -79,7 +80,7 @@ public static class ClashEngine
             var (a, b) = pairs[index];
             try
             {
-                if (TestPair(context, s, a, b, job.Clearance, tolerance, out var hit))
+                if (TestPair(context, s, a, b, job.Clearance, tolerance, job.Contained, out var hit))
                 {
                     found.Add(hit);
                     if (Interlocked.Increment(ref hits) >= job.MaxClashes) truncated = true;
@@ -154,7 +155,7 @@ public static class ClashEngine
     static (Vec3 Min, Vec3 Max) Intersect((Vec3 Min, Vec3 Max) a, (Vec3 Min, Vec3 Max) b) => (Collisions.Max(a.Min, b.Min), Collisions.Min(a.Max, b.Max));
     static bool Valid((Vec3 Min, Vec3 Max) b) => b.Min.X <= b.Max.X && b.Min.Y <= b.Max.Y && b.Min.Z <= b.Max.Z;
 
-    static bool TestPair(Context context, Scratch s, int a, int b, bool clearance, double tolerance, out ClashHit hit)
+    static bool TestPair(Context context, Scratch s, int a, int b, bool clearance, double tolerance, bool contained, out ClashHit hit)
     {
         hit = default;
         ClashBody ia = context.Items[a], ib = context.Items[b];
@@ -166,11 +167,31 @@ public static class ClashEngine
         // A hard test also takes the faces within the tolerance round the common box: the inside test needs the nearest surface.
         var qa = clearance ? overlapA : Grow(overlapA.Min, overlapA.Max, tolerance);
         context.Gather(a, qa, centre, s.A);
-        if (s.A.Count == 0) return false;
         var qb = clearance ? overlapB : Grow(overlapB.Min, overlapB.Max, tolerance);
-        context.Gather(b, qb, centre, s.B);
-        if (s.B.Count == 0) return false;
-        return clearance ? TestClearance(s, a, b, tolerance, centre, out hit) : TestHard(context, s, a, b, tolerance, centre, out hit);
+        if (s.A.Count > 0) context.Gather(b, qb, centre, s.B);
+        // No faces near each other: one may still lie wholly inside the other (the slab's faces far from the pipe in it).
+        if (s.A.Count == 0 || s.B.Count == 0) return contained && Inside(context, a, b, tolerance, out hit);
+        if (clearance ? TestClearance(s, a, b, tolerance, centre, out hit) : TestHard(context, s, a, b, tolerance, centre, out hit)) return true;
+        return contained && Inside(context, a, b, tolerance, out hit);
+    }
+
+    /// <summary>One body wholly inside the other, no face crossing: its box within the other's and a corner of it inside the other.</summary>
+    static bool Inside(Context context, int a, int b, double tolerance, out ClashHit hit)
+    {
+        hit = default;
+        ClashBody ia = context.Items[a], ib = context.Items[b];
+        static bool Within(ClashBody inner, ClashBody outer) =>
+            inner.Min.X >= outer.Min.X && inner.Min.Y >= outer.Min.Y && inner.Min.Z >= outer.Min.Z && inner.Max.X <= outer.Max.X && inner.Max.Y <= outer.Max.Y && inner.Max.Z <= outer.Max.Z;
+        var (inner, outer) = Within(ia, ib) ? (a, b) : Within(ib, ia) ? (b, a) : (-1, -1);
+        if (inner < 0) return false;
+        var body = context.Items[inner];
+        var size = body.Max - body.Min;
+        var depth = Math.Min(size.X, Math.Min(size.Y, size.Z));
+        if (depth <= tolerance) return false;
+        var tris = context.All(inner);
+        if (tris.Count == 0 || !context.Inside(outer, tris[0].A)) return false;
+        hit = new ClashHit(a, b, (body.Min + body.Max) * 0.5, depth, true);
+        return true;
     }
 
     static bool TestHard(Context context, Scratch s, int a, int b, double tolerance, Vec3 centre, out ClashHit hit)
@@ -314,6 +335,9 @@ public static class ClashEngine
             var all = Items[k].Triangles();
             return (all, all.Count >= TreeMin ? new TriangleTree(all) : null);
         }, LazyThreadSafetyMode.ExecutionAndPublication)).Value;
+
+        /// <summary>All a body's triangles, in the world.</summary>
+        public IReadOnlyList<Tri> All(int i) => Body(i).All;
 
         /// <summary>A body's triangles whose boxes meet a box, less <paramref name="centre"/>.</summary>
         public void Gather(int i, (Vec3 Min, Vec3 Max) box, Vec3 centre, List<Tri> output)

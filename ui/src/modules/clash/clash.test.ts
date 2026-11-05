@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clashCsv, framing, valuesOf, type Clash, type ClashTest } from './clash';
+import { clashCsv, clashHtml, framing, valuesOf, type Clash, type ClashTest } from './clash';
 
 describe('a clash framed in 3D', () => {
   it('boxes where the two meet, a metre round, at least two metres along each axis', () => {
@@ -45,5 +45,23 @@ describe('a test as CSV', () => {
     const csv = clashCsv(test, [c]);
     expect(csv.startsWith('﻿No.,Status')).toBe(true);
     expect(csv).toContain('1,new,"Wall, ground",,,,Pipe,,160,yes,1.000,2.000,3.000');
+  });
+});
+
+describe('a test as an HTML page', () => {
+  it('each clash under its group with its picture, the text escaped', () => {
+    const test = { id: 't', name: 'A × B', kind: 'hard', setA: 'a', setB: 'b', tolerance: 0.005, enabled: true, counts: {} as ClashTest['counts'], lastRun: null } as ClashTest;
+    const base = { key: 'k', a: 'x', b: 'y', at: [1, 2, 3] as [number, number, number], d: 0.16, crossing: true, status: 'new' as const, found: '', seen: '' };
+    const page = clashHtml('House', test, [
+      { ...base, n: 1, key: '1', aName: 'Wall <1>', bClass: 'Pipe', group: 'Wall <1>' },
+      { ...base, n: 2, key: '2', aName: 'Wall <1>', bClass: 'Duct', group: 'Wall <1>' },
+      { ...base, n: 3, key: '3', aName: 'Slab', bClass: 'Pipe', group: 'Slab', notes: 'sleeve' },
+    ], new Map([[1, 'data:image/png;base64,AAAA']]));
+    expect(page.match(/<h2>/g)).toHaveLength(2);
+    expect(page).toContain('<h2>Wall &lt;1&gt;</h2>');
+    expect(page.match(/<img /g)).toHaveLength(1);
+    expect(page).toContain('depth 160 mm');
+    expect(page).toContain('<p>sleeve</p>');
+    expect(page).toContain('3 new');
   });
 });

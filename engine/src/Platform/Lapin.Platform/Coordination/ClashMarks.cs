@@ -14,6 +14,18 @@ namespace Lapin.Platform.Coordination;
 /// </summary>
 public static class ClashMarks
 {
+    /// <summary>
+    /// A clash another module keeps (the clash module's tests, docs/plan-visualisation.md): where, the element a click on its
+    /// cloud selects, the element whose storey a plan asks about, the label in the cloud ("2.14": the test's number and the clash's).
+    /// </summary>
+    public sealed record Item(Vec3 Centre, string SelectId, string? StoreyOf, string Label, System.Text.Json.Nodes.JsonObject? Data = null);
+
+    /// <summary>A module's open clashes, drawn by the same clouds as the openings' report.</summary>
+    public interface ISource
+    {
+        IEnumerable<Item> Items(IQueryContext q);
+    }
+
     public const string Attr = "clashMarks", PrintAttr = "clashMarksPrint";
     public const string Layer = "CLASHES";
     public const string Color = "#e03131";
@@ -27,15 +39,23 @@ public static class ClashMarks
     {
         var o = new List<ViewMark>();
         var m = q.Model;
-        if (ClashReports.Read(m) is not { } report) return o;
+        var items = new List<Item>();
+        if (ClashReports.Read(m) is { } report)
+            foreach (var i in report.Items.Where(i => i.State == ClashReports.Open))
+                items.Add(new Item(i.Centre, i.MepId ?? i.HostId, i.HostId, i.Number.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    new System.Text.Json.Nodes.JsonObject { ["clash"] = i.Number, ["key"] = i.Key }));
+        foreach (var source in q.Services.All<ISource>())
+            try { items.AddRange(source.Items(q)); }
+            catch (CommandException) { }
+        if (items.Count == 0) return o;
         var display = Views.StoreyDisplay.Of(c.View);
         var storey = c.View.Str("storeyId");
         var list = pieces.Count > 1 ? pieces : [(spec, 0.0)];
-        foreach (var item in report.Items.Where(i => i.State == ClashReports.Open))
+        foreach (var item in items)
         {
             if (spec.Kind == "plan")
             {
-                var hostStorey = m.Get(item.HostId) is { } h ? Spatial.StoreyOf(m, h.Id)?.Id : null;
+                var hostStorey = item.StoreyOf is { } sid && m.Get(sid) is { } h ? Spatial.StoreyOf(m, h.Id)?.Id : null;
                 if (display.Shows(storey, hostStorey) == null) continue;
             }
             foreach (var (s, station) in list)
@@ -55,9 +75,9 @@ public static class ClashMarks
     }
 
     /// <summary>A revision cloud: arcs bulging out round a circle, the number in its middle.</summary>
-    static ViewMark Cloud(ViewContext c, ClashItem item, Vec2 at)
+    static ViewMark Cloud(ViewContext c, Item item, Vec2 at)
     {
-        var mark = new ViewMark(item.MepId ?? item.HostId) { Data = new System.Text.Json.Nodes.JsonObject { ["clash"] = item.Number, ["key"] = item.Key } };
+        var mark = new ViewMark(item.SelectId) { Data = item.Data };
         var r = Radius * c.Mm;
         const int bumps = 10, steps = 6;
         var pts = new List<Vec2>();
@@ -77,7 +97,7 @@ public static class ClashMarks
             }
         }
         mark.Polyline(pts, true, Layer, 0.35, Color);
-        mark.Text(new PenText(at - new Vec2(0, TextHeight * c.Mm / 2), item.Number.ToString(System.Globalization.CultureInfo.InvariantCulture), TextHeight, 0, "middle", "bottom", true), Color);
+        mark.Text(new PenText(at - new Vec2(0, TextHeight * c.Mm / 2), item.Label, TextHeight, 0, "middle", "bottom", true), Color);
         mark.Snaps.Add(at);
         return mark;
     }

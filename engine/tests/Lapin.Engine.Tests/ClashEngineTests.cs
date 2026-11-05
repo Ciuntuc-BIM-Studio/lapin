@@ -14,7 +14,7 @@ public class ClashEngineTests
     const double Hard = 0.005;
 
     /// <summary>A closed box's triangles (outward normals), each face split n × n.</summary>
-    static List<Tri> Box(Vec3 min, Vec3 max, int n = 1)
+    internal static List<Tri> Box(Vec3 min, Vec3 max, int n = 1)
     {
         var o = new List<Tri>();
         var d = max - min;
@@ -113,9 +113,18 @@ public class ClashEngineTests
     }
 
     [Fact]
-    public void A_body_wholly_inside_another_is_left_out()
+    public void A_body_wholly_inside_another_is_found_as_deep_as_it_is_narrow_unless_asked_as_BimGo_does()
     {
-        Assert.Empty(Run([Body("slab", Vec3.Zero, new(4, 4, 4)), Body("pipe", new(1, 1, 1), new(2, 2, 2))], [0], [1]).Hits);
+        ClashBody[] bodies = [Body("slab", Vec3.Zero, new(4, 4, 4)), Body("pipe", new(1, 1, 1), new(2, 2, 2.5))];
+        var hit = Assert.Single(Run(bodies, [0], [1]).Hits);
+        Assert.True(hit.Crossing);
+        Assert.Equal(1, hit.Distance, 6);
+        Assert.Equal(1.5, hit.Point.X, 6);
+        // BimGo leaves it out (its own test, Hard_ContainedElementIsLeftOut).
+        Assert.Empty(ClashEngine.Run(new ClashJob(bodies, [0], [1], Threads: 2, Contained: false)).Hits);
+        // Inside the other's box but not inside the other (an L of two boxes round it): no clash.
+        var l = Box(Vec3.Zero, new(4, 1, 4)).Concat(Box(new(0, 1, 0), new(1, 4, 4))).ToList();
+        Assert.Empty(Run([new ClashBody("L", Vec3.Zero, new(4, 4, 4), () => l), Body("pipe", new(2, 2, 1), new(3, 3, 2))], [0], [1]).Hits);
     }
 
     [Fact]
