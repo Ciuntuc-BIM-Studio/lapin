@@ -319,6 +319,52 @@ public static class StairBuilder
         return [path];
     }
 
+    /// <summary>
+    /// The top of the stair under a post (world <paramref name="at"/>, <paramref name="half"/> its half size; null where there is
+    /// none): the highest of the tread, landing or winder under its centre and its corners, so a post over a nosing stands on the
+    /// upper tread.
+    /// </summary>
+    static double? GroundUnder(Resolved r, StairPlacement place, Vec3 at, double half)
+    {
+        double? best = null;
+        var c = new Vec2(at.X, at.Y);
+        var k = half * 0.9;
+        foreach (var w in (Vec2[])[c, c + new Vec2(-k, -k), c + new Vec2(k, -k), c + new Vec2(k, k), c + new Vec2(-k, k)])
+        {
+            var d = w - place.At;
+            var p = new Vec2(Vec2.Dot(d, place.Dir), Vec2.Dot(d, place.Dir.Perp));
+            if (SurfaceAt(r, p) is { } z && (best is not { } b || z > b)) best = z;
+        }
+        return best is { } top ? place.Z0 + top : null;
+    }
+
+    /// <summary>The finished surface of the stair at a point of its own frame (above its foot), or null outside it.</summary>
+    static double? SurfaceAt(Resolved r, Vec2 p)
+    {
+        const double eps = 1e-6;
+        double? best = null;
+        void Take(double z) { if (best is not { } b || z > b) best = z; }
+        // Behind the first riser the floor; just past the last the floor above (a little way only: a spiral's top may stand over its foot).
+        var foot = r.Foot;
+        if (Vec2.Dot(p - foot.At, foot.Dir) < eps && Math.Abs(Vec2.Dot(p - foot.At, foot.Left)) <= foot.Width / 2 + eps) Take(0);
+        var (topAt, topDir) = r.Top;
+        var past = Vec2.Dot(p - topAt, topDir);
+        if (past > -eps && past < 0.3 && Math.Abs(Vec2.Dot(p - topAt, topDir.Perp)) <= r.Width / 2 + eps) Take(r.Height);
+        foreach (var fl in r.Flights)
+        {
+            var d = p - fl.Start;
+            var (u, v) = (Vec2.Dot(d, fl.Dir), Vec2.Dot(d, fl.Left));
+            if (Math.Abs(v) > r.WidthOf(fl) / 2 + eps) continue;
+            if (u < -eps || u > (fl.Risers - 1) * r.Tread + eps) continue;
+            // Tread s + 1 lies between nosings s and s + 1; the last nosing is the floor above (or the landing).
+            var s = Math.Clamp((int)Math.Floor(u / r.Tread + eps), 0, fl.Risers - 1);
+            Take(fl.Z0 + (s + 1) * r.RiserHeight);
+        }
+        foreach (var ld in r.Landings) if (Polygon2.Contains(ld.Outline, p)) Take(ld.Z);
+        foreach (var wd in r.Winders) if (Polygon2.Contains(wd.Outline, p)) Take(wd.Z);
+        return best;
+    }
+
     /// <summary>A round bar from a to b (an octagon swept along), <paramref name="d"/> across.</summary>
     internal static Solid? RoundBar(Vec3 a, Vec3 b, double d, string tag)
     {
@@ -344,7 +390,7 @@ public static class StairBuilder
         // Each path along its surface, built as any railing is (Railings, shared with the balconies').
         foreach (var path in RailingPaths(r, place, rail, left))
         {
-            var (m, g) = Railings.Solids(path.Select(p => place.World(p.P, p.Surface)).ToList(), rail);
+            var (m, g) = Railings.Solids(path.Select(p => place.World(p.P, p.Surface)).ToList(), rail, (at, half) => GroundUnder(r, place, at, half));
             metal.AddRange(m);
             glass.AddRange(g);
         }

@@ -53,9 +53,42 @@ public static class ScheduleLayout
         ["fixed"] = "fixed", ["side-left"] = "side hung left", ["side-right"] = "side hung right", ["tilt-turn-left"] = "tilt & turn left", ["tilt-turn-right"] = "tilt & turn right",
         ["bottom-hung"] = "bottom hung", ["top-hung"] = "top hung", ["pivot-horizontal"] = "horizontal pivot", ["pivot-vertical"] = "vertical pivot",
         ["sliding-left"] = "sliding left", ["sliding-right"] = "sliding right", ["sliding-vertical"] = "vertical sliding",
-        ["swing-left"] = "swing left", ["swing-right"] = "swing right", ["double-acting-left"] = "double acting left", ["double-acting-right"] = "double acting right",
-        ["door-sliding-left"] = "sliding left", ["door-sliding-right"] = "sliding right", ["folding-left"] = "folding left", ["folding-right"] = "folding right",
+        // A hinged door's hand is the architects' (report #91), not IFC's: see DoorHand. "swing-left" (IFC's left: the hinges on
+        // the left of someone pushing it open) opens to the right of the line from its handle to its hinges, a right swing.
+        ["swing-left"] = "swing right", ["swing-right"] = "swing left", ["double-acting-left"] = "double acting right", ["double-acting-right"] = "double acting left",
+        ["door-sliding-left"] = "sliding left", ["door-sliding-right"] = "sliding right", ["folding-left"] = "folding right", ["folding-right"] = "folding left",
     };
+
+    /// <summary>
+    /// A hinged door leaf's hand as schedules name it (report #91, the architects' rule): looking from its handle towards its
+    /// hinges, a leaf that opens to the left of that line is a left swing, to the right a right swing. It is the opposite of
+    /// IFC's naming (<c>SINGLE_SWING_LEFT</c>: the hinges on the left looking the way the leaf opens, docs/spec-ifc.md), which
+    /// the configurator's operations follow and the IFC export keeps: facing the way the leaf opens (+Y, Z up) with the hinges
+    /// on the left (−X), the line from the handle to the hinges runs −X, whose left is −Y, behind; the leaf opens to its right.
+    /// Null for anything not hinged on a vertical side of a door (sliding, fixed, windows).
+    /// </summary>
+    public static string? DoorHand(string operation) => operation switch
+    {
+        "swing-left" or "double-acting-left" or "folding-left" => "right",
+        "swing-right" or "double-acting-right" or "folding-right" => "left",
+        _ => null,
+    };
+
+    /// <summary>
+    /// The Opening row: each operation once, in the schedule's words; a pair of leaves swinging apart from the middle
+    /// (one of each IFC hand) is a double door.
+    /// </summary>
+    public static string OperationText(JoinerySpec spec)
+    {
+        var ops = Joinery.Normalised(spec).Select(p => p.Operation).ToList();
+        var leaves = ops.Where(o => DoorHand(o) != null).ToList();
+        if (spec.IsDoor && leaves.Count == 2 && DoorHand(leaves[0]) != DoorHand(leaves[1]) && leaves.All(o => o.StartsWith("swing", StringComparison.Ordinal) || o.StartsWith("double-acting", StringComparison.Ordinal)))
+        {
+            var pair = leaves.All(o => o.StartsWith("double-acting", StringComparison.Ordinal)) ? "double acting, double" : "double swing";
+            return string.Join(" + ", ops.Where(o => !leaves.Contains(o)).Distinct().Select(o => OperationLabel.GetValueOrDefault(o, o)).Prepend(pair));
+        }
+        return string.Join(" + ", ops.Distinct().Select(o => OperationLabel.GetValueOrDefault(o, o)));
+    }
 
     /// <summary>The rows the data takes (lintel rows when every entry is a lintel), in the table's order, typed text over the model's.</summary>
     public static List<ScheduleRow> Rows(ScheduleData data, ScheduleTable table)
@@ -89,7 +122,7 @@ public static class ScheduleLayout
             {
                 "name" => new(id, "Name", e => e.Name, true),
                 "size" => new(id, "Size W × H (mm)", e => $"{Mm(e.Width)} × {Mm(e.Height)}", true),
-                "operation" => new(id, "Opening", e => e.Spec == null ? "—" : string.Join(" + ", Joinery.Normalised(e.Spec).Select(p => p.Operation).Distinct().Select(o => OperationLabel.GetValueOrDefault(o, o))), true),
+                "operation" => new(id, "Opening", e => e.Spec == null ? "—" : OperationText(e.Spec), true),
                 "sill" => data.Entries.Any(e => e.Kind == "window") ? new(id, "Sill height (mm)", e => e.Kind == "window" && e.Spec != null ? Mm(e.Spec.SillHeight) : "—", true) : null,
                 "total" => new(id, "Total", e => e.Total.ToString(CultureInfo.InvariantCulture), true, true),
                 "uValue" => new(id, "U (W/m²K)", e => e.Spec?.ThermalTransmittance is { } u ? u.ToString(CultureInfo.InvariantCulture) : "—", true),
@@ -241,13 +274,16 @@ public static class ScheduleLayout
     }
 
     /// <summary>
-    /// What a joinery schedule says under its cards (report #83): how it names the hand, IFC's way (docs/spec-ifc.md),
+    /// What a joinery schedule says under its cards (report #83): how it names the hand (a door's by the architects' rule,
+    /// report #91; a window's IFC's way, docs/spec-ifc.md),
     /// where its elevations are seen from, and what a mark's -M is.
     /// </summary>
     public static List<string> HandNote(ScheduleData data, IReadOnlyList<string> drawings)
     {
         if (!data.Entries.Any(e => e.Spec != null)) return [];
-        var lines = new List<string> { "Left and right: the hinges as seen by someone pushing it open (IFC's hand)." };
+        var lines = new List<string>();
+        if (data.Entries.Any(e => e.Spec?.IsDoor == true)) lines.Add("Swing left or right: the leaf opens to the left or right of the line from its handle to its hinges.");
+        if (data.Entries.Any(e => e.Spec is { IsDoor: false })) lines.Add("Windows' left and right: the hinges as seen from outside (IFC's hand).");
         if (drawings.Contains("interior") || !drawings.Any(d => d is "interior" or "exterior")) lines.Add("Elevations seen from the interior, the side it opens to" + (drawings.Contains("exterior") ? "; exterior ones from outside." : "."));
         else if (drawings.Contains("exterior")) lines.Add("Elevations seen from outside, the side it is pushed from.");
         if (data.Entries.Any(e => e.Mirrored)) lines.Add($"{Schedules.MirroredMark}: the type's mirror image, flipped to the other hand.");

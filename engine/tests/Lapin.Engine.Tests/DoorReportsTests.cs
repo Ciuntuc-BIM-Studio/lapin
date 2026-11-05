@@ -8,8 +8,9 @@ using Lapin.Platform;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Testers' reports #82 (a window would not move with MOVE, only by dragging) and #83 (the door schedule kept a door's
-/// type's hand after the door was flipped to the other one).
+/// Testers' reports #82 (a window would not move with MOVE, only by dragging), #83 (the door schedule kept a door's
+/// type's hand after the door was flipped to the other one) and #91 (the schedule named the swing the other way round
+/// from the plan).
 /// </summary>
 public sealed class DoorReportsTests
 {
@@ -146,8 +147,9 @@ public sealed class DoorReportsTests
         var (own, mirror) = (data.Entries[0], data.Entries[1]);
         Assert.Equal(2, own.Total);
         Assert.Equal(2, mirror.Total);
-        Assert.Equal("swing left", Opening(data, own));
-        Assert.Equal("swing right", Opening(data, mirror));
+        // The type's swing-left (IFC's left) opens to the right of the line from its handle to its hinges (report #91).
+        Assert.Equal("swing right", Opening(data, own));
+        Assert.Equal("swing left", Opening(data, mirror));
         Assert.Equal("Door 900×2100 (mirrored)", mirror.Name);
         Assert.Equal(new[] { b, c }.Order(), mirror.Occurrences.Select(o => o.Id).Order());
         Assert.Equal(own.Key, mirror.TypeKey);
@@ -196,8 +198,77 @@ public sealed class DoorReportsTests
             Assert.Equal(handleLeft, apex.X < ends.Average(p => p.X));
         }
         var texts = bands.SelectMany(b => b.Pens).SelectMany(p => p.Texts).Select(t => t.Text).ToList();
-        Assert.Contains(texts, t => t.StartsWith("Left and right: the hinges as seen by someone pushing it open", StringComparison.Ordinal));
+        Assert.Contains(texts, t => t.StartsWith("Swing left or right: the leaf opens to the left or right of the line from its handle to its hinges", StringComparison.Ordinal));
         Assert.Contains(texts, t => t.StartsWith("Elevations seen from the interior", StringComparison.Ordinal));
         Assert.Contains(texts, t => t.StartsWith("-M: the type's mirror image", StringComparison.Ordinal));
+    }
+
+    // ─── #91: the schedule's hand is the plan's ─────────────────────────────
+
+    /// <summary>
+    /// A hinged door's hand read off its plan symbol, the architects' way (report #91): the arc's centre is the hinge, its
+    /// end along the wall the handle (the leaf shut), its other end the leaf open; looking from the handle towards the
+    /// hinge, a leaf opening to the left is a left swing. Also IFC's hand from the same drawing: looking the way the leaf
+    /// opens, the hinge on the left is IFC's LEFT.
+    /// </summary>
+    static (string Architects, string Ifc, Vec2 Opens) HandInPlan(Fixture f, string door)
+    {
+        var arc = f.Session.Geometry(door)!.Plan!.Single(i => i.Kind == "symbol" && !i.Closed && i.Points.Count > 4).Points;
+        var (a, b, c) = (arc[0], arc[arc.Count / 2], arc[^1]);
+        // The circle through three points of the arc.
+        var d = 2 * (a.X * (b.Y - c.Y) + b.X * (c.Y - a.Y) + c.X * (a.Y - b.Y));
+        double S(Vec2 p) => p.X * p.X + p.Y * p.Y;
+        var hinge = new Vec2((S(a) * (b.Y - c.Y) + S(b) * (c.Y - a.Y) + S(c) * (a.Y - b.Y)) / d, (S(a) * (c.X - b.X) + S(b) * (a.X - c.X) + S(c) * (b.X - a.X)) / d);
+        // Every wall here runs along X: the handle is the arc's end level with the hinge.
+        var (handle, open) = Math.Abs(a.Y - hinge.Y) < Math.Abs(c.Y - hinge.Y) ? (a, c) : (c, a);
+        var toHinge = hinge - handle;
+        var opens = open - hinge;
+        var cross = toHinge.X * opens.Y - toHinge.Y * opens.X;
+        // Facing the way it opens, the hinge on the left: the hinge's offset from the handle is to the left of `opens`.
+        var ifcLeft = opens.X * toHinge.Y - opens.Y * toHinge.X > 0;
+        return (cross > 0 ? "left" : "right", ifcLeft ? "LEFT" : "RIGHT", opens);
+    }
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, true)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    public void A_doors_swing_in_the_schedule_is_the_one_its_plan_shows(bool hand, bool side, bool northWall)
+    {
+        var f = Room(out var south, out var north);
+        var door = Add(f, "door", northWall ? north : south, 3);
+        if (hand) Flip(f, door, "x");
+        if (side) Flip(f, door, "y");
+        var (architects, ifc, opens) = HandInPlan(f, door);
+        var data = Schedules.Of(f.Session.Reader, "door");
+        var entry = Assert.Single(data.Entries);
+        Assert.Equal("swing " + architects, Opening(data, entry));
+        Assert.Equal(hand != side, entry.Mirrored);
+        // IFC keeps its own rule, the other way round from the architects': the placement's +Y the way the plan's leaf
+        // opens, and the hand looking that way.
+        var place = new JoineryIfc().Place(f.Model, f.Model.Get(door)!)!;
+        Assert.True(place.Y.X * opens.X + place.Y.Y * opens.Y > 0);
+        var type = JoineryIfc.Of(Openings.SpecOf(f.Model, door)!, place.Mirrored);
+        Assert.Equal("SINGLE_SWING_" + ifc, type.Operation);
+        Assert.NotEqual(architects.ToUpperInvariant(), ifc);
+    }
+
+    [Fact]
+    public void A_pair_of_leaves_is_a_double_door_and_a_sliding_door_keeps_its_side()
+    {
+        var pair = JoinerySpec.DefaultDoor() with { Width = 1.6, Columns = [1, 1], Panels = [new(0, 0, "swing-left"), new(1, 0, "swing-right")] };
+        Assert.Equal("double swing", ScheduleLayout.OperationText(pair));
+        Assert.Equal("double swing", ScheduleLayout.OperationText(Joinery.Mirrored(pair)));
+        var withSide = JoinerySpec.DefaultDoor() with { Width = 1.2, Columns = [2, 1], Panels = [new(0, 0, "swing-left"), new(1, 0, "fixed")] };
+        Assert.Equal("swing right + fixed", ScheduleLayout.OperationText(withSide));
+        var sliding = JoinerySpec.DefaultDoor() with { Panels = [new(0, 0, "door-sliding-left")] };
+        Assert.Equal("sliding left", ScheduleLayout.OperationText(sliding));
+        // A window keeps IFC's hand.
+        Assert.Equal("tilt & turn left + side hung right", ScheduleLayout.OperationText(JoinerySpec.DefaultWindow()));
     }
 }

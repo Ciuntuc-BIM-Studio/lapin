@@ -23,6 +23,17 @@ import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean }
+
+/**
+ * A hinged door leaf's operation as the schedules name its hand (report #91): looking from the handle towards the
+ * hinges, a leaf opening to the left is a left swing. The operation ids are IFC's hand (hinges on the left of someone
+ * pushing it open: the left of the Panels grid, seen from outside), so swing-left is a right swing.
+ */
+const DOOR_HAND_LABELS: Record<string, string> = {
+  'swing-left': 'Swing right (hinges at left)', 'swing-right': 'Swing left (hinges at right)',
+  'double-acting-left': 'Double acting right (hinges at left)', 'double-acting-right': 'Double acting left (hinges at right)',
+  'folding-left': 'Folding right (hinges at left)', 'folding-right': 'Folding left (hinges at right)',
+};
 interface Spec {
   kind: 'door' | 'window'; name: string; mark: string; width: number; height: number; sillHeight: number;
   frame: { depth: number; width: number; mullion: number; transom: number; offset: number };
@@ -521,7 +532,7 @@ export function JoineryDialog() {
                       {spec.columns.map((_, col) => (
                         <td key={col}>
                           <select value={cellOp(col, row)} onChange={(e) => setCell(col, row, e.target.value)}>
-                            {operations.map((o) => <option key={o} value={o}>{o}</option>)}
+                            {operations.map((o) => <option key={o} value={o}>{DOOR_HAND_LABELS[o] ?? o}</option>)}
                           </select>
                         </td>
                       ))}

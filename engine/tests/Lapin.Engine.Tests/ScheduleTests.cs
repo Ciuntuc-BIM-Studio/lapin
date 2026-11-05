@@ -82,7 +82,7 @@ public class ScheduleTests
         var csv = ScheduleEntity.ToCsv(f.Model.Get(Schedule(f))!, Data(f)).Split('\n');
         Assert.Equal("Mark,Name,Width (mm),Height (mm),Opening,Sill,Ground floor,Level 1,Total,U,Fire", csv[0]);
         Assert.Equal("W1,W,1200,1500,tilt & turn left + side hung right,900,3,2,5,1.1,", csv[1]);
-        Assert.StartsWith("D1,D,900,2100,swing left,,1,0,1,", csv[2]);
+        Assert.StartsWith("D1,D,900,2100,swing right,,1,0,1,", csv[2]);
     }
 
     [Fact]

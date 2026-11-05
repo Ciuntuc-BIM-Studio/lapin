@@ -318,4 +318,97 @@ public class StairTests
         }
         finally { File.Delete(path); }
     }
+
+    /// <summary>
+    /// The posts of a stair's railing (report #88): each stands on the tread, landing or winder under it (the highest top of
+    /// the stair's own parts under its footprint), not in the air along the nosing line; and reaches the handrail.
+    /// </summary>
+    static List<(Vec2 At, double Bottom, double Top)> Posts(ElementGeometry g)
+    {
+        var posts = new List<(Vec2, double, double)>();
+        foreach (var part in g.Parts.Where(p => p.Key!.StartsWith("railing:", StringComparison.Ordinal)))
+        {
+            // The part is its shells side by side: group the vertices by the faces that share them.
+            var s = part.Solid;
+            var root = Enumerable.Range(0, s.Vertices.Length).ToArray();
+            int Find(int x) { while (root[x] != x) x = root[x] = root[root[x]]; return x; }
+            foreach (var f in s.Faces) foreach (var v in f.Outer) root[Find(v)] = Find(f.Outer[0]);
+            foreach (var shell in Enumerable.Range(0, s.Vertices.Length).GroupBy(Find))
+            {
+                var pts = shell.Select(v => s.Vertices[v]).ToList();
+                var (dx, dy) = (pts.Max(p => p.X) - pts.Min(p => p.X), pts.Max(p => p.Y) - pts.Min(p => p.Y));
+                if (dx > 0.06 || dy > 0.06) continue;   // a handrail or a bottom rail
+                posts.Add((new Vec2((pts.Max(p => p.X) + pts.Min(p => p.X)) / 2, (pts.Max(p => p.Y) + pts.Min(p => p.Y)) / 2), pts.Min(p => p.Z), pts.Max(p => p.Z)));
+            }
+        }
+        return posts;
+    }
+
+    static double? StairTopUnder(ElementGeometry g, Vec2 at, double half)
+    {
+        var tops = g.Parts.Where(p => !p.Key!.StartsWith("railing", StringComparison.Ordinal))
+            .SelectMany(p => p.Solid.Faces.Where(f => f.Normal.Z > 0.99).Select(f => f.Outer.Select(v => p.Solid.Vertices[v]).ToList())).ToList();
+        double? best = null;
+        var k = half * 0.9;
+        foreach (var w in (Vec2[])[at, at + new Vec2(-k, -k), at + new Vec2(k, -k), at + new Vec2(k, k), at + new Vec2(-k, k)])
+            foreach (var t in tops)
+                if (Polygon2.Contains(t.Select(v => v.Xy).ToList(), w) && (best is not { } b || t[0].Z > b)) best = t[0].Z;
+        return best;
+    }
+
+    static string StairOf(Fixture f, StairSpec spec)
+    {
+        var type = (string)f.Run("architecture.createStairType", new JsonObject { ["spec"] = spec.ToJson() })!["id"]!;
+        return (string)f.Run("architecture.addStair", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = type, ["x"] = 0, ["y"] = 0, ["x2"] = 1, ["y2"] = 0, ["turn"] = "left" })!["id"]!;
+    }
+
+    [Fact]
+    public void A_straight_stair_s_railing_posts_stand_on_the_treads_under_them()
+    {
+        var f = TwoStoreys(out _);
+        var rail = new StairRailing("both", 0.9, 0.04, 0.03, 0.5);
+        var id = StairOf(f, StairSpec.Default() with { Shape = "straight", Railing = rail, Name = "posts" });
+        var g = f.Session.Geometry(id)!;
+        var r = StairSolver.Resolve(StairSpec.Default(), 3.0);
+        var posts = Posts(g);
+        Assert.True(posts.Count >= 10, $"{posts.Count} posts");
+        // The last post on each side stands at the top nosing, on the floor above (not one of the stair's parts).
+        Assert.Equal(2, posts.Count(p => Math.Abs(p.Bottom - 3.0) < 1e-6));
+        foreach (var (at, bottom, top) in posts.Where(p => Math.Abs(p.Bottom - 3.0) >= 1e-6))
+        {
+            var under = StairTopUnder(g, at, rail.PostSize / 2);
+            Assert.True(under != null, $"a post at {at} off the stair");
+            Assert.Equal(under!.Value, bottom, 3);
+            // The handrail keeps its height over the nosing line (from the first nosing to the floor above).
+            var pitch = r.RiserHeight + Math.Clamp(at.X, 0, (r.Risers - 1) * r.Tread) * r.RiserHeight / r.Tread;
+            Assert.Equal(pitch + rail.Height, top, 3);
+        }
+        // Some stand a good way under the nosing line: the treads, not the line, carry them.
+        Assert.Contains(posts, p => p.Top - p.Bottom > rail.Height + r.RiserHeight / 4);
+    }
+
+    [Theory]
+    [InlineData("l", "landing", "bar")]
+    [InlineData("l", "winders", "balusters")]
+    [InlineData("u", "landing", "glass")]
+    [InlineData("curved", "landing", "bar")]
+    public void A_turned_stair_s_railing_posts_stand_on_its_treads_landings_and_winders(string shape, string turn, string style)
+    {
+        var f = TwoStoreys(out _);
+        var rail = new StairRailing("both", 0.9, 0.04, 0.03, 0.5, style);
+        var spec = StairSpec.Default() with { Shape = shape, Turn = turn, Winders = 3, Railing = rail, Name = $"{shape} posts" };
+        if (shape == "curved") spec = spec with { InnerRadius = 1.5, Width = 1.2 };
+        var g = f.Session.Geometry(StairOf(f, spec))!;
+        var posts = Posts(g);
+        Assert.True(posts.Count >= 10, $"{posts.Count} posts");
+        Assert.InRange(posts.Count(p => Math.Abs(p.Bottom - 3.0) < 1e-6), 1, 2);   // the top ones, on the floor above
+        foreach (var (at, bottom, top) in posts.Where(p => Math.Abs(p.Bottom - 3.0) >= 1e-6))
+        {
+            var under = StairTopUnder(g, at, (style == "balusters" ? Math.Max(0.012, rail.PostSize * 0.6) : rail.PostSize) / 2);
+            Assert.True(under != null, $"a post at {at} off the stair");
+            Assert.Equal(under!.Value, bottom, 3);
+            // Its full height over a tread or landing; over winders the handrail climbs the turn's corner in a straight line, a little under the steps.
+            Assert.True(top - bottom >= rail.Height - (turn == "winders" ? 0.1 : 1e-3), $"a post at {at} {top - bottom:0.000} high");
+        }
+    }
 }

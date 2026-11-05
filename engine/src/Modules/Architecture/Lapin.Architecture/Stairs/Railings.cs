@@ -21,9 +21,11 @@ public static class Railings
     /// <summary>
     /// A railing's solids along a line (its foot, point by point; it may climb), in its style: the handrail (square or round)
     /// on top, then posts at their spacing (glass and cables between them), balusters at most their spacing apart, or a solid
-    /// panel; glass apart, to be drawn as glass.
+    /// panel; glass apart, to be drawn as glass. On a stair the line runs along the nosings, over the treads: <paramref name="ground"/>
+    /// gives the top of what lies under a post's footprint (its centre, its half size), so each post stands on the tread or landing
+    /// under it and still reaches the handrail; without it (or where it finds nothing) a post stands on the line.
     /// </summary>
-    public static (List<Solid> Metal, List<Solid> Glass) Solids(IReadOnlyList<Vec3> path, StairRailing rail)
+    public static (List<Solid> Metal, List<Solid> Glass) Solids(IReadOnlyList<Vec3> path, StairRailing rail, Func<Vec3, double, double?>? ground = null)
     {
         var metal = new List<Solid>();
         var glass = new List<Solid>();
@@ -51,8 +53,10 @@ public static class Railings
                 for (var j = 0; j <= count; j++)
                 {
                     if (j == count && !last) continue;
-                    var bottom = a + (b - a) * ((double)j / count);
-                    if (Prism.Box(new Vec3(bottom.X, bottom.Y, bottom.Z + height / 2), size, size, height, tag) is { } post) metal.Add(post);
+                    var on = a + (b - a) * ((double)j / count);
+                    var top = on.Z + height;
+                    var foot = Math.Min(ground?.Invoke(on, size / 2) ?? on.Z, top - 0.05);
+                    if (Prism.Box(new Vec3(on.X, on.Y, (foot + top) / 2), size, size, top - foot, tag) is { } post) metal.Add(post);
                 }
             }
             var lastSegment = i + 2 >= path.Count;
