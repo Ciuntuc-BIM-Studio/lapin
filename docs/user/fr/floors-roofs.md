@@ -25,6 +25,7 @@ Sélectionnez le toit pour le modifier dans le panneau des propriétés :
 - **Direction du faîtage (deux pans, monopente)** : auto, x ou y. Sur un toit monopente, le faîtage est le côté haut : sur x il descend vers −y, sur y vers −x ; **Monopente : inverser la pente** le fait descendre de l'autre côté.
 - **Chaque rive** avec son propre type (égout ou pignon), sa pente et son débord. Un toit à la Mansart avec des rives en pignon est un comble à la hollandaise.
 - **Style.** Les styles de toit donnent tout un aspect en un seul choix : la couverture, les égouts, les gouttières et les descentes.
+- **Matériau de la couverture.** La couverture est faite d’un matériau du projet, par défaut celui de la couverture choisie (Clay tile, Metal sheet, Slate…), créé dans la couleur de la couverture la première fois qu’un toit en a besoin. Choisissez-en un autre dans les propriétés ou dans **Couverture et évacuation** du configurateur ; changer de couverture le change aussi, sauf si vous en avez choisi un. Les façades et les coupes hachurent la couverture selon ce matériau (tuiles, bardeaux et ardoises en rangs horizontaux, tôle en joints verticaux, sauf si vous lui donnez une hachure **Elevation** propre), une coupe dessine la couverture coupée avec la hachure de coupe du matériau, et l’IFC, le métré et le devis listent la couverture sous son matériau.
 
 ![Les propriétés d’un toit](shots/roof-properties.webp)
 

@@ -25,6 +25,7 @@ import { ParamsSection } from './ParamsSection';
 import { AxisFields } from './AxisFields';
 import { paramKey, sameKind, type Param } from './params';
 import { filterSets, importedSets } from './ifcProperties';
+import { MaterialPicker } from '../modules/core/MaterialPicker';
 
 /** An input that commits on Enter or when it loses focus, not on every key. */
 function Commit({ value, onCommit, suffix, className }: { value: string; onCommit: (v: string) => void; suffix?: string; className?: string }) {
@@ -66,6 +67,9 @@ export function FieldRow({ node, field }: { node: NodeDto; field: FieldDescripto
     input = <input type="checkbox" checked={v === true} ref={(el) => { if (el) el.indeterminate = varies; }} onChange={(e) => update(e.target.checked)} />;
   } else if (field.kind === 'choice') {
     input = <select className="cell" value={!varies && typeof v === 'string' ? v : ''} onChange={(e) => update(e.target.value)}>{varies && <option value="">varies</option>}{!varies && typeof v !== 'string' && <option value="" disabled>—</option>}{(field.choices ?? []).map((c) => <option key={c} value={c}>{c}</option>)}</select>;
+  } else if (field.kind === 'material') {
+    // A project material by name (a roof's covering, decision 328): picked from the project's, or a new one made.
+    input = <MaterialPicker value={!varies && typeof v === 'string' ? v : ''} placeholder={varies ? 'varies' : 'none'} allowEmpty onChange={(name) => update(name)} />;
   } else if (field.kind === 'color') {
     input = <input type="color" value={typeof v === 'string' ? v : '#c9ced6'} onChange={(e) => update(e.target.value)} />;
   } else {

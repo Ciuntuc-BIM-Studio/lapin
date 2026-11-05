@@ -241,9 +241,12 @@ public static class Roof
         var plan = new List<PlanItem>();
         var eaves = EaveOutline(r);
         plan.Add(new PlanItem("overhead", true, eaves));
+        // The covering's material (decision 328): elevations and sections hatch it, IFC and the takeoff carry it; its colour in 3D.
+        var coveringMaterial = RoofCoverings.MaterialOf(roof, m);
+        var coveringColor = RoofCoverings.ColorOf(roof, m, r.Covering);
         if (r.Flat)
         {
-            if (Prism.ExtrudeFootprint(eaves, r.BaseZ, r.Thickness, "roof") is { } slab) parts.Add(new GeometryPart("Covering", r.Covering.Color, slab, null, "covering"));
+            if (Prism.ExtrudeFootprint(eaves, r.BaseZ, r.Thickness, "roof") is { } slab) parts.Add(new GeometryPart("Covering", coveringColor, slab, coveringMaterial, "covering"));
             return new ElementGeometry(parts, plan, r.Outline);
         }
         var (shape, problem) = Solve(r);
@@ -268,7 +271,7 @@ public static class Roof
             var holes = openings.Where(o => o.Host.PlaneIndex == i).Select(o => (IReadOnlyList<Vec3>)o.Hole.Select(Lift).ToArray()).ToList();
             if (Prism.Extrude(p.Points.Select(Lift).ToArray(), holes, new Vec3(0, 0, layer), "covering") is { } s) covering.Add(s);
         }
-        if (covering.Count > 0) parts.Add(new GeometryPart("Covering", r.Covering.Color, Openings.Combine(covering, "covering"), null, "covering"));
+        if (covering.Count > 0) parts.Add(new GeometryPart("Covering", coveringColor, Openings.Combine(covering, "covering"), coveringMaterial, "covering"));
 
         // Its roof windows and dormers, as parts of it.
         var (frames, glass, dormerWalls, dormerRoofs) = (new List<Solid>(), new List<Solid>(), new List<Solid>(), new List<Solid>());
@@ -287,7 +290,7 @@ public static class Roof
         }
         if (frames.Count > 0) parts.Add(new GeometryPart("Roof windows", "#3c4247", Openings.Combine(frames, "roof-windows"), null, "roof-windows"));
         if (dormerWalls.Count > 0) parts.Add(new GeometryPart("Dormer walls", "#ece8df", Openings.Combine(dormerWalls, "dormer-walls"), null, "dormer-walls"));
-        if (dormerRoofs.Count > 0) parts.Add(new GeometryPart("Dormer roofs", r.Covering.Color, Openings.Combine(dormerRoofs, "dormer-roofs"), null, "dormer-roofs"));
+        if (dormerRoofs.Count > 0) parts.Add(new GeometryPart("Dormer roofs", coveringColor, Openings.Combine(dormerRoofs, "dormer-roofs"), coveringMaterial, "dormer-roofs"));
         if (glass.Count > 0) parts.Add(new GeometryPart("Glass", "#9cc7e6", Openings.Combine(glass, "glass"), null, "glass"));
 
         // Every timber member a part of its own (decision 229): a truss's under "truss:<n>:", the rest under "timber:".
@@ -344,7 +347,9 @@ public static class Roof
         if (r == null) yield break;
         if (r.Flat)
         {
-            yield return new QuantitySet("Qto_RoofBaseQuantities", [new("GrossArea", Math.Abs(Polygon2.SignedArea(EaveOutline(r))), "AREA", "Covering")]);
+            var flat = Math.Abs(Polygon2.SignedArea(EaveOutline(r)));
+            yield return new QuantitySet("Qto_RoofBaseQuantities", [new("GrossArea", flat, "AREA", "Covering")]);
+            if (CoveringSet(roof, r, m, flat, flat) is { } fc) yield return fc;
             yield break;
         }
         var (shape, _) = Solve(r);
@@ -367,6 +372,7 @@ public static class Roof
             if (len > 1e-6) q.Add(new(name, len, "LENGTH", label));
         }
         yield return new QuantitySet("Qto_RoofBaseQuantities", q);
+        if (CoveringSet(roof, r, m, q[0].Value, q[1].Value) is { } cs) yield return cs;
         if (RoofOpenings.Quantities(holes).ToList() is { Count: > 0 } oq) yield return new QuantitySet("Lapin_RoofOpeningQuantities", oq, "openings", "Roof windows and dormers");
 
         var members = RoofParts.Framing(r, shape, holes);
@@ -415,6 +421,22 @@ public static class Roof
         if (rows.Count > 0) yield return new QuantitySet("Lapin_RoofSnowGuardQuantities", [new("Length", rows.Sum(x => (x.B - x.A).Length), "LENGTH", "Snow guards")], "snow", "Snow guards");
     }
 
+    /// <summary>
+    /// The covering as a part of its material (decision 328): its thickness and its sloped areas, gross and less the openings,
+    /// so the takeoff by material and an article ruled by the material measure it (the roof's own areas stay its whole's, never
+    /// added to it); none without a material.
+    /// </summary>
+    static QuantitySet? CoveringSet(Entity roof, Resolved r, IModelView m, double gross, double net)
+    {
+        if (RoofCoverings.MaterialOf(roof, m) is not { } material) return null;
+        return new QuantitySet("Lapin_RoofCoveringQuantities",
+        [
+            new("Width", r.Covering.Thickness, "LENGTH", "Thickness"),
+            new("GrossArea", gross, "AREA", "Gross area"),
+            new("NetArea", net, "AREA", "Net area"),
+        ], "covering", $"Covering ({RoofCoverings.NameOf(roof)})", material);
+    }
+
     /// <summary>The body between a strip of the vault's underside and the same strip moved out: 8 corners, 6 faces.</summary>
     static Solid? Shell(IReadOnlyList<Vec3> inner, IReadOnlyList<Vec3> outer, string tag)
     {
@@ -435,7 +457,7 @@ public static class Roof
         var o = new JsonObject
         {
             ["contour"] = Slabs.ContourJson(contour), ["style"] = s.Id, ["shape"] = s.Shape, ["ridgeDirection"] = "auto", ["pitch"] = s.Pitch,
-            ["overhang"] = s.Overhang, ["gableOverhang"] = s.GableOverhang, ["covering"] = s.Covering, ["gutterProfile"] = s.GutterProfile,
+            ["overhang"] = s.Overhang, ["gableOverhang"] = s.GableOverhang, ["covering"] = s.Covering, [RoofCoverings.Key] = s.Covering, ["gutterProfile"] = s.GutterProfile,
             ["gutterMaterial"] = s.GutterMaterial, ["snowGuards"] = (s.SnowGuards ?? RoofCatalog.CoveringOf(s.Covering).SnowGuards) ? "True" : "False",
             ["structure"] = s.Structure ?? "rafters", ["rafterSection"] = s.RafterSection ?? "8x16", ["rafterSpacing"] = s.RafterSpacing ?? 0.8,
             ["purlins"] = s.Structure is null or "rafters" ? 1 : 0, ["eaveOffset"] = 0.0, ["timberGrade"] = s.TimberGrade ?? "C24",

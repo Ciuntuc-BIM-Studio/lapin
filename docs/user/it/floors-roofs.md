@@ -25,6 +25,7 @@ Seleziona il tetto per modificarlo nel pannello Proprietà:
 - **Direzione del colmo (a due falde, a una falda)**: auto, x o y. Il colmo di un tetto a una falda è il suo lato alto: su x scende verso −y, su y verso −x; **Una falda: inverti la pendenza** lo fa scendere dall’altra parte.
 - **Ogni bordo** con il proprio tipo (gronda o timpano), pendenza e sporto. Una mansarda con bordi a timpano è un tetto alla olandese (gambrel).
 - **Stile.** Gli stili di tetto danno un intero aspetto con una sola scelta: la copertura, le gronde, le grondaie e i pluviali.
+- **Materiale del manto.** Il manto di copertura è di un materiale del progetto, per impostazione quello del manto scelto (Clay tile, Metal sheet, Slate…), creato nel colore del manto la prima volta che un tetto ne ha bisogno. Sceglietene un altro nelle proprietà o in **Copertura e smaltimento acque** del configuratore; cambiando il manto cambia anche lui, a meno che non ne abbiate scelto uno. Prospetti e sezioni retinano il manto secondo quel materiale (coppi, scandole e ardesia a corsi orizzontali, lamiera a giunti verticali, se non gli date un retino **Elevation** proprio), una sezione disegna il manto tagliato con il retino di sezione del materiale, e l’IFC, il computo e il preventivo elencano il manto sotto il suo materiale.
 
 ![Le proprietà di un tetto](shots/roof-properties.webp)
 

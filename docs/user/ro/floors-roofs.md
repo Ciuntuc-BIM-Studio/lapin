@@ -25,6 +25,7 @@ Selectează acoperișul ca să-l schimbi în panoul de proprietăți:
 - **Direcția coamei (în două ape, într-o apă)**: auto, x sau y. La acoperișul într-o apă coama e latura de sus: pe x apa curge spre −y, pe y spre −x; **Într-o apă: inversează panta** o întoarce.
 - **Fiecare latură** cu felul ei (streașină sau fronton), panta și consola ei. O mansardă cu laturi fronton dă un acoperiș frânt.
 - **Stil.** Stilurile de acoperiș dau tot aspectul dintr-o alegere: învelitoarea, streașinile, jgheaburile și burlanele.
+- **Materialul învelitorii.** Învelitoarea e făcută dintr-un material al proiectului, implicit cel al învelitorii alese (Clay tile, Metal sheet, Slate…), creat în culoarea învelitorii prima dată când un acoperiș are nevoie de el. Alegeți altul în proprietăți sau în **Învelitoare și ape** din configurator; schimbarea învelitorii îl schimbă și pe el, dacă nu ați ales unul. Fațadele și secțiunile hașurează învelitoarea după acest material (țigla, șindrila și ardezia în asize orizontale, tabla în fălțuiri verticale, dacă nu îi dați o hașură **Elevation** proprie), o secțiune desenează învelitoarea tăiată cu hașura de secțiune a materialului, iar IFC-ul, antemăsurătoarea și devizul trec învelitoarea sub materialul ei.
 
 ![Proprietățile unui acoperiș](shots/roof-properties.webp)
 

@@ -25,6 +25,7 @@ Selecione o telhado para mudá-lo no painel de propriedades:
 - **Direção da cumeeira (duas águas, uma água)**: automática, x ou y. A cumeeira de um telhado de uma água é o seu lado alto: em x ele cai para −y, em y para −x; **Uma água: inverter a inclinação** faz ele cair para o outro lado.
 - **Cada borda** com o seu tipo (beiral ou empena), inclinação e beiral. Uma mansarda com bordas de empena é um telhado holandês.
 - **Estilo.** Os estilos de telhado dão um visual completo numa só escolha: a cobertura, os beirais, as calhas e os condutores.
+- **Material da cobertura.** A cobertura é de um material do projeto, por omissão o da cobertura escolhida (Clay tile, Metal sheet, Slate…), criado na cor da cobertura da primeira vez que um telhado precisa dele. Escolha outro nas propriedades ou em **Cobertura e drenagem** do configurador; mudar a cobertura muda-o também, a menos que tenha escolhido um. Alçados e cortes tracejam a cobertura por esse material (telhas, telhas de madeira e ardósia em fiadas horizontais, chapa em juntas verticais, a menos que lhe dê um tracejado **Elevation** próprio), um corte desenha a cobertura cortada com o tracejado de corte do material, e o IFC, as medições e o orçamento listam a cobertura sob o seu material.
 
 ![As propriedades de um telhado](shots/roof-properties.webp)
 

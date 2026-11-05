@@ -466,6 +466,9 @@ export const scenes = [
       t.expect(roof, 'a roof on the house');
       await select(t, roof.id);
       await t.wait(600);
+      // The covering's material (decision 328): the covering's own, made in the project, picked in the properties.
+      t.expect(roof.props?.coveringMaterial && (await t.nodes()).some((n) => n.type === 'IfcMaterial' && n.name === roof.props.coveringMaterial), `the covering is made of a project material (${roof.props?.coveringMaterial})`);
+      t.expect(await t.page.locator('aside.props dt[title=coveringMaterial]').count() > 0, 'the properties show the covering material');
       await t.shot('roof-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       t.expect((await t.nodes()).some((n) => n.type === 'IfcSlab'), 'a floor in the house');
       // The roof configurator (decision 231): the Swedish truss style picked, its framing seen in the section, applied.
@@ -2652,6 +2655,8 @@ export const scenes = [
       await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
       const roof = await t.cmd('architecture.addRoof', { storeyId: s, points: outline });
       await t.cmd('architecture.roofStyle', { id: roof.id, style: 'ro_saxon' });
+      // Its covering is made of Clay tile (decision 328): the south slope hatched in level courses as the name suggests.
+      t.expect((await t.nodes()).find((n) => n.id === roof.id)?.props?.coveringMaterial === 'Clay tile', 'the roof\'s covering is made of Clay tile');
       // A garden wall of facing brick behind the house.
       const garden = (await t.cmd('architecture.createWallType', { name: 'Garden wall', layers: [{ material: 'Facing brick', thickness: 0.25, core: true }] })).id;
       await t.cmd('architecture.addWall', { storeyId: s, x1: -2, y1: 11, x2: 14, y2: 11, typeId: garden });

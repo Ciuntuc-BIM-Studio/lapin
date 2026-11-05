@@ -25,6 +25,7 @@ Wählen Sie das Dach aus, um es im Eigenschaftenbereich zu ändern:
 - **Firstrichtung (Sattel-, Pultdach)**: auto, x oder y. Beim Pultdach ist der First die hohe Seite: auf x fällt es nach −y, auf y nach −x; **Pultdach: Neigung umkehren** lässt es zur anderen Seite fallen.
 - **Jede Kante** mit ihrer eigenen Art (Traufe oder Ortgang), Neigung und ihrem Überstand. Ein Mansarddach mit Giebelkanten ist ein Mansardgiebeldach.
 - **Stil.** Die Dachstile geben mit einer einzigen Wahl ein ganzes Erscheinungsbild vor: die Deckung, die Traufen, die Dachrinnen und Fallrohre.
+- **Material der Dachdeckung.** Die Dachdeckung besteht aus einem Material des Projekts, standardmäßig dem der gewählten Deckung (Clay tile, Metal sheet, Slate…), das in der Farbe der Deckung angelegt wird, wenn ein Dach es zum ersten Mal braucht. Wählen Sie in den Eigenschaften oder im Konfigurator unter **Deckung und Entwässerung** ein anderes; wechselt die Deckung, wechselt es mit, außer Sie haben eines gewählt. Ansichten und Schnitte schraffieren die Deckung nach diesem Material (Ziegel, Schindeln und Schiefer in waagrechten Reihen, Blech in senkrechten Falzen, sofern Sie ihm keine eigene **Elevation**-Schraffur geben), ein Schnitt zeichnet die geschnittene Deckung mit der Schnittschraffur des Materials, und IFC, Mengenermittlung und Kostenschätzung führen die Deckung unter ihrem Material.
 
 ![Die Eigenschaften eines Dachs](shots/roof-properties.webp)
 

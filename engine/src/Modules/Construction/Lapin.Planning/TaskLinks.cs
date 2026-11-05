@@ -227,6 +227,8 @@ public sealed class TaskElements
         Take(e.Str("material"));
         Take(m.RelatingOf(e.Id, IfcClass.RelAssociatesMaterial)?.Id);
         if (type != null) { Take(type.Str("material")); Take(m.RelatingOf(type.Id, IfcClass.RelAssociatesMaterial)?.Id); }
+        // And what a module says it is built of (a roof's covering, decision 328), still one layer: the element whole.
+        foreach (var l in BuildUps.Of(m, e, services)?.Layers ?? []) Take(l.Material);
         return [new LayerFact(0, true, materials.Count > 0 ? NameOf(materials[0]) : e.Name, materials)];
     }
 

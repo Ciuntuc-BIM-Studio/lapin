@@ -25,6 +25,7 @@ Select the roof to change it in the properties panel:
 - **Ridge direction (gable, shed)**: auto, x or y. A shed roof's ridge is its high side: on x it falls towards −y, on y towards −x; **Shed: flip the slope** makes it fall the other way.
 - **Each edge** with its own kind (eave or gable), pitch and overhang. A mansard with gable edges is a gambrel.
 - **Style.** The roof styles give a whole look in one choice: the covering, the eaves, the gutters and downpipes.
+- **Covering material.** The covering is made of a project material, the covering's own by default (Clay tile, Metal sheet, Slate…), made in the covering's colour the first time a roof needs it. Pick another one in the properties or in the configurator's **Covering and drainage**; changing the covering changes it too, unless you chose one. Elevations and sections hatch the covering by that material (tiles, shingles and slates in level courses, metal sheet in vertical seams, unless you give it an **Elevation** hatch of its own), a section draws the cut covering with the material's section hatch, and IFC, the quantity takeoff and the estimate list the covering under its material.
 
 ![A roof's properties](shots/roof-properties.webp)
 

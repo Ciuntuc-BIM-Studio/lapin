@@ -259,6 +259,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IElementBuildUps>(new RoomFinishBuildUps());
         r.Service<IElementUpdate>(new RoomUpdate());
         r.Service<IProjectUpgrade>(new RoomNameUpgrade());
+        // Roofs' covering materials (decision 328): following the covering when it changes in the properties, made for old roofs.
+        r.Service<IElementUpdate>(new RoofCoveringUpdate());
+        r.Service<IProjectUpgrade>(new RoofCoveringUpgrade());
+        r.Service<IElementBuildUps>(new RoofBuildUps());
         r.Service<IScheduleSource>(new Roofs.RoofTimberSchedule());
         // The architecture's fields and collections for documents (docs/plan-documents.md).
         r.Service<Lapin.Platform.Documents.IDocumentFields>(new DocumentFields());
@@ -318,6 +322,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new("shedFlip", "Shed: flip the slope", "bool"),
             new("eaveOffset", "Wall plate over the storey's top", "length"),
             new("covering", "Covering", "choice", Choices: [.. RoofCatalog.Coverings.Select(c => c.Id)]),
+            // The covering's material (decision 328): the covering's own by default, any of the project's.
+            new(RoofCoverings.Key, "Covering material", "material"),
             new("structure", "Structure", "choice", Choices: Roof.Structures),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
             new("rafterSection", "Rafters and chords (cm, or mm)", "choice", Choices: Roof.RafterSections),
@@ -360,6 +366,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var attrs = Roof.Attrs(style, contour);
             if (own != null) ProjectRoofStyles.Apply(attrs, own, contour);
             var roof = new Entity(ctx.NewId(), IfcClass.Roof, $"Roof {Numbering.Next(ctx.Model.OfClass(IfcClass.Roof))}", attrs, "NOTDEFINED");
+            roof = RoofCoverings.Settle(ctx, null, roof);
             CheckRoof(ctx.Model, roof);
             ctx.Add(roof);
             Spatial.Contain(ctx, storeyId, roof.Id);
@@ -415,6 +422,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var next = RoofDraft(ctx.Model, roof, new JsonObject { ["style"] = (string?)a["style"] });
             CheckRoof(ctx.Model, next);
             CheckRoofOpenings(ctx.Model, next);
+            RoofCoverings.Ensure(ctx, next);
             ctx.Replace(next);
             return null;
         });
@@ -427,6 +435,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var next = RoofDraft(ctx.Model, roof, a);
             CheckRoof(ctx.Model, next);
             CheckRoofOpenings(ctx.Model, next);
+            RoofCoverings.Ensure(ctx, next);
             ctx.Replace(next);
             // Its downpipes stay where they were on the gutters of the edges redrawn.
             if (a["points"] != null || a["x1"] != null) RoofEdges.Downpipes(ctx, roof, next, RoofEdges.Match(Roof.Contour(roof), Roof.Contour(next)), p => p);
@@ -443,7 +452,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             {
                 CheckRoof(ctx.Model, next);
                 CheckRoofOpenings(ctx.Model, next);
-                return next;
+                return RoofCoverings.Settle(ctx, ctx.Model.Get(next.Id), next);
             });
             return new JsonObject { ["styleId"] = sid };
         });
@@ -721,7 +730,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var style = RoofCatalog.StyleOf(sid) ?? throw new CommandException($"There is no roof style „{sid}”.");
             attrs.Remove("edges");
             string[] own = style.Structure != null ? ["eaveOffset", "rafterTail", "rafterSeat"] : ["structure", "rafterSection", "rafterSpacing", "purlins", "eaveOffset", "webSection", "timberGrade", "rafterTail", "rafterSeat"];
-            foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (!own.Contains(k) || attrs[k] == null) attrs[k] = v?.DeepClone();
+            // The covering's material follows the covering below (one chosen by the user stays).
+            foreach (var (k, v) in Roof.Attrs(style, Roof.Contour(roof))) if (k != RoofCoverings.Key && (!own.Contains(k) || attrs[k] == null)) attrs[k] = v?.DeepClone();
             if (style.Shape != "mansard") { attrs.Remove("upperPitch"); attrs.Remove("mansardInset"); }
             if (style.Shape != "barrel") attrs.Remove("rise");
             if (style.GutterColor.Length == 0) attrs.Remove("gutterColor");
@@ -763,6 +773,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         }
         // A roof shaped by hand is no longer exactly its style.
         if (a.ContainsKey("edges") || (a["attrs"] as JsonObject)?.Count > 0) attrs.Remove("style");
+        RoofCoverings.Follow(roof.Attrs, attrs);
         return roof.With(attrs: attrs);
     }
 

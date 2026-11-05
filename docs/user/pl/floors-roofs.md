@@ -25,6 +25,7 @@ Zaznacz dach, aby zmienić go w panelu Właściwości:
 - **Kierunek kalenicy (dwuspadowy, jednospadowy)**: auto, x lub y. Kalenicą dachu jednospadowego jest jego wyższa krawędź: przy x opada w stronę −y, przy y w stronę −x; **Jednospadowy: odwróć spadek** sprawia, że opada w drugą stronę.
 - **Każda krawędź** z własnym rodzajem (okap lub szczyt), nachyleniem i wysunięciem. Dach mansardowy z krawędziami szczytowymi to dach polski (łamany dwuspadowy).
 - **Styl.** Style dachów nadają cały wygląd jednym wyborem: pokrycie, okapy, rynny i rury spustowe.
+- **Materiał pokrycia.** Pokrycie jest z materiału projektu, domyślnie z materiału wybranego pokrycia (Clay tile, Metal sheet, Slate…), tworzonego w kolorze pokrycia, gdy dach po raz pierwszy go potrzebuje. Wybierz inny we właściwościach lub w **Pokrycie i odwodnienie** konfiguratora; zmiana pokrycia zmienia i jego, chyba że wybrałeś własny. Elewacje i przekroje kreskują pokrycie według tego materiału (dachówka, gont i łupek w poziomych rzędach, blacha w pionowych rąbkach, o ile nie nadasz mu własnego kreskowania **Elevation**), przekrój rysuje przecięte pokrycie kreskowaniem przekroju materiału, a IFC, przedmiar i kosztorys podają pokrycie pod jego materiałem.
 
 ![Właściwości dachu](shots/roof-properties.webp)
 

@@ -102,7 +102,7 @@ export interface Diff {
 
 export interface FieldDescriptor {
   key: string; label: string;
-  kind: 'number' | 'length' | 'angle' | 'text' | 'bool' | 'choice' | 'ref' | 'color' | 'table';
+  kind: 'number' | 'length' | 'angle' | 'text' | 'bool' | 'choice' | 'ref' | 'color' | 'table' | 'material';
   min?: number | null; max?: number | null; choices?: string[] | null; readOnly?: boolean;
 }
 

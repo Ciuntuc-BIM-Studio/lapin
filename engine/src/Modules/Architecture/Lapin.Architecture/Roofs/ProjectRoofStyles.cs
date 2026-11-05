@@ -21,7 +21,7 @@ public static class ProjectRoofStyles
     public static readonly string[] Fields =
     [
         "shape", "pitch", "overhang", "gableOverhang", "ridgeDirection", "shedFlip", "upperPitch", "mansardInset",
-        "covering", "gutterProfile", "gutterMaterial", "gutterColor", "snowGuards",
+        "covering", RoofCoverings.Key, "gutterProfile", "gutterMaterial", "gutterColor", "snowGuards",
         "structure", "rafterSection", "rafterSpacing", "purlins", "webSection", "timberGrade", "collarHeight", "rafterTail", "rafterSeat",
     ];
 

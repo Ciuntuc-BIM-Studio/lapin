@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { lengthText } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { PendingDialog } from '../core/PendingDialog';
+import { MaterialPicker } from '../core/MaterialPicker';
 import { mergeEdge, type Edge } from './roofEdges';
 import { Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -44,7 +45,7 @@ type Tab = (typeof TABS)[number][0];
 const FIELDS: Record<Tab, [string, ((v: (k: string) => unknown) => boolean)?][]> = {
   shape: [['shape'], ['pitch', (v) => v('shape') !== 'barrel'], ['overhang'], ['gableOverhang'], ['ridgeDirection', (v) => ['gable', 'shed', 'barrel'].includes(String(v('shape')))],
     ['shedFlip', (v) => v('shape') === 'shed'], ['upperPitch', (v) => v('shape') === 'mansard'], ['mansardInset', (v) => v('shape') === 'mansard'], ['rise', (v) => v('shape') === 'barrel'], ['eaveOffset']],
-  covering: [['covering'], ['gutterProfile'], ['gutterMaterial', (v) => v('gutterProfile') !== 'none'],
+  covering: [['covering'], ['coveringMaterial'], ['gutterProfile'], ['gutterMaterial', (v) => v('gutterProfile') !== 'none'],
     ['gutterWidth', (v) => v('gutterProfile') !== 'none'], ['gutterOffset', (v) => v('gutterProfile') !== 'none'], ['gutterDrop', (v) => v('gutterProfile') !== 'none'],
     ['gutterFall', (v) => v('gutterProfile') !== 'none'], ['gutterEnds', (v) => v('gutterProfile') !== 'none'], ['downpipes', (v) => v('gutterProfile') !== 'none'], ['snowGuards']],
   framing: [['structure', (v) => !['flat', 'barrel'].includes(String(v('shape')))],
@@ -73,6 +74,7 @@ function FieldInput({ f, value, onChange }: { f: FieldDescriptor; value: unknown
       </select>
     );
   }
+  if (f.kind === 'material') return <MaterialPicker value={typeof value === 'string' ? value : ''} placeholder="none" allowEmpty onChange={(name) => onChange(name)} />;
   if (f.kind === 'bool') return <input type="checkbox" checked={value === true} onChange={(e) => onChange(e.target.checked)} />;
   const n = typeof value === 'number' ? value : null;
   return f.kind === 'length'

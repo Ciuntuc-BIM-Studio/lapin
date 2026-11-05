@@ -25,6 +25,7 @@ Seleccione la cubierta para cambiarla en el panel de propiedades:
 - **Dirección de la cumbrera (a dos aguas, a un agua)**: auto, x o y. En una cubierta a un agua la cumbrera es el lado alto: en x cae hacia −y, en y hacia −x; **A un agua: invertir la pendiente** la hace caer al otro lado.
 - **Cada borde** con su propio tipo (alero o hastial), pendiente y vuelo. Una mansarda con bordes de hastial es una cubierta holandesa.
 - **Estilo.** Los estilos de cubierta dan un aspecto completo en una sola elección: el material de cobertura, los aleros, los canalones y las bajantes.
+- **Material de la cubierta.** La cubierta es de un material del proyecto, por defecto el de la cubierta elegida (Clay tile, Metal sheet, Slate…), creado con el color de la cubierta la primera vez que un tejado lo necesita. Elija otro en las propiedades o en **Cobertura y desagüe** del configurador; al cambiar la cubierta cambia también, salvo que haya elegido uno. Los alzados y las secciones rayan la cubierta según ese material (tejas, ripias y pizarra en hiladas horizontales, chapa en juntas verticales, salvo que le dé un rayado **Elevation** propio), una sección dibuja la cubierta cortada con el rayado de sección del material, y el IFC, la medición y el presupuesto listan la cubierta bajo su material.
 
 ![Las propiedades de una cubierta](shots/roof-properties.webp)
 

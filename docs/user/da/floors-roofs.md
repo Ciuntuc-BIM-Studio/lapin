@@ -25,6 +25,7 @@ Markér taget for at ændre det i egenskabspanelet:
 - **Kiprichtning (sadeltag, pulttag)**: auto, x eller y. På et pulttag er kippen den høje side: på x falder det mod −y, på y mod −x; **Pulttag: vend hældningen** får det til at falde den anden vej.
 - **Hver kant** med sin egen art (tagfod eller gavl), hældning og udhæng. Et mansardtag med gavlkanter er et gambreltag.
 - **Stil.** Tagstilene giver et helt udtryk med ét valg: tagdækningen, tagfødderne, tagrenderne og nedløbsrørene.
+- **Tagdækningens materiale.** Tagdækningen er af et af projektets materialer, som standard tagdækningens eget (Clay tile, Metal sheet, Slate…), oprettet i tagdækningens farve første gang et tag har brug for det. Vælg et andet i egenskaberne eller under konfiguratorens **Tagdækning og afvanding**; skifter du tagdækning, skifter det med, medmindre du har valgt et. Facader og snit skraverer tagdækningen efter materialet (tegl, spån og skifer i vandrette skifter, metalplader i lodrette false, medmindre du giver det sin egen **Elevation**-skravering), et snit tegner den skårne tagdækning med materialets snitskravering, og IFC, mængdeudtrækket og overslaget fører tagdækningen under dens materiale.
 
 ![Et tags egenskaber](shots/roof-properties.webp)
 
