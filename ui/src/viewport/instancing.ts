@@ -20,6 +20,9 @@ import type { RenderItem, RenderPart, SharedMesh } from '../engine/protocol';
 import type { Look } from '../platform/looks';
 import { elements, placedBox } from '../engine/instances';
 import { copyArrays, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
+import { useSession } from '../engine/session';
+import { lookOf } from './look';
+import { standardMaterial } from './materialLook';
 
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0).elements;
 const SELECTED = new THREE.Color(0xb5532d);
@@ -78,15 +81,17 @@ class Batch {
     const make = (part: RenderPart, prev: PartBatch | undefined): PartBatch => {
       const geometry = prev?.solid.geometry ?? geometryOf(part);
       const colour = new THREE.Color(part.color);
-      const solid = new THREE.InstancedMesh(geometry, prev?.solid.material ?? material(1), capacity);
-      const faded = new THREE.InstancedMesh(geometry, prev?.faded.material ?? material(0.35), capacity);
+      const solid = new THREE.InstancedMesh(geometry, prev?.solid.material ?? material(part, 1), capacity);
+      const faded = new THREE.InstancedMesh(geometry, prev?.faded.material ?? material(part, 0.35), capacity);
       for (const m of [solid, faded]) {
         m.userData.batch = this;
         m.frustumCulled = false;
         m.count = this.ids.length;
         m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       }
-      solid.castShadow = solid.receiveShadow = true;
+      // Glass and what is seen through cast no shadow, as an element's own meshes do.
+      solid.castShadow = !(solid.material as THREE.Material).transparent && !(solid.material as THREE.Material).userData.glass;
+      solid.receiveShadow = true;
       faded.castShadow = false;
       const edgeMatrix = part.edges.length ? new THREE.InstancedBufferAttribute(new Float32Array(capacity * 16), 16) : null;
       const edges = edgeMatrix ? instancedLines(part.edges, this.edgeMaterial, edgeMatrix) : null;
@@ -248,12 +253,13 @@ function geometryOf(part: RenderPart): THREE.BufferGeometry {
   return g;
 }
 
-function material(opacity: number): THREE.MeshStandardMaterial {
-  // White, so each instance's colour is its own (instanceColor multiplies it).
-  return new THREE.MeshStandardMaterial({
-    color: 0xffffff, roughness: 0.85, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
-    transparent: opacity < 1, opacity, depthWrite: opacity >= 1,
-  });
+/**
+ * A part's material in its look (rough or glossy, metal, glass, glowing: look.ts), white so each instance's colour
+ * is its own (instanceColor multiplies it); the faded one as see-through as a phase shows it.
+ */
+function material(part: RenderPart, opacity: number): THREE.MeshStandardMaterial {
+  const look = lookOf(part.material ? useSession.getState().nodes.get(part.material) : undefined);
+  return standardMaterial(0xffffff, null, opacity < 1 ? { ...look, transparency: 1 - opacity, transmission: 0 } : look);
 }
 
 /** Every instance in the 3D view, by shared mesh. */

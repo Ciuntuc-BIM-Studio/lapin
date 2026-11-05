@@ -114,6 +114,20 @@ You walk as a person would. Walls, columns, furniture and closed windows stop yo
 
 <kbd>Esc</kbd> or **Exit walk** brings back the camera you had before.
 
+### Realistic, with the sun
+
+View → **Display quality** sets how the 3D view renders, on this computer:
+
+- **Drawing**: the sheet’s palette and an even light, as Lapin always drew. Quick on any computer.
+- **Medium**: the sun’s shadows, shade in the corners where faces meet, and light from the sky.
+- **Realistic**: the sky behind the model and a ground under it (where the project has no terrain), and glass the light comes through. For presenting, on a good graphics card.
+
+![A house in the realistic view](shots/view-realistic.webp)
+
+The sun is the project’s: where it stands for the project’s place (Manage → **Location**) on a day at an hour. View → **Sun and shadows** sets the day (the equinox and the solstices are a click away) and the hour, plays the day through, and turns the sun on in the drawing view too. Without a coordinate system and a survey point, the place is Bucharest. The time zone follows the place’s longitude, with European summer time in Europe.
+
+![Sun and shadows](shots/sun-dialog.webp)
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.
@@ -127,6 +141,7 @@ The **View** tab sets what the view in front shows and how it looks.
 - **IFC 2D symbols.** Elements imported or linked from an IFC file that bring their own plan drawing (a footprint, a door's swing, a fixture's symbol, with the file's colours, fills and texts) draw it in plans instead of their cut. Untick it in View settings (or in a view style) to draw their 3D cut instead.
 - **Visibility** (<kbd>VV</kbd>) and **Graphics** (<kbd>VG</kbd>). They show or hide categories and set their pens, line types and fills.
 - **Split** and **Window.** They show two views side by side, or open a view in a separate window.
-- **Display quality.** How the 3D view draws parts of many triangles (an imported plant, furniture, pipes) when they are far away. **Balanced** draws a far part coarser only where the difference is under a pixel. **Fast** lets it stray up to 3 pixels, for large models and slower computers. **Precise** draws every part as it is. The setting belongs to the project. The model, its drawings, exports and quantities are never coarsened: a curve is made of straight pieces that stray at most a millimetre from it.
+- **Display quality.** How the 3D view renders (**Drawing**, **Medium** or **Realistic**, kept on this computer: see *Realistic, with the sun*), and how the 3D view draws parts of many triangles (an imported plant, furniture, pipes) when they are far away. **Balanced** draws a far part coarser only where the difference is under a pixel. **Fast** lets it stray up to 3 pixels, for large models and slower computers. **Precise** draws every part as it is. The precision belongs to the project. The model, its drawings, exports and quantities are never coarsened: a curve is made of straight pieces that stray at most a millimetre from it.
+- **Sun and shadows.** The project’s sun on a day at an hour, lighting the 3D view with its shadows (see *Realistic, with the sun*).
 
 ![Display quality](shots/display-quality.webp)

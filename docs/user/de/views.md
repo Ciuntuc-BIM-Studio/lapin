@@ -114,6 +114,20 @@ Sie gehen, wie ein Mensch gehen würde. Wände, Stützen, Möbel und geschlossen
 
 <kbd>Esc</kbd> oder **Begehung beenden** stellt die Kamera wieder her, die Sie vorher hatten.
 
+### Realistisch, mit der Sonne
+
+Ansicht → **Anzeigequalität** legt fest, wie die 3D-Ansicht dargestellt wird, auf diesem Rechner:
+
+- **Zeichnung**: die Farben des Plans und gleichmäßiges Licht, wie Lapin immer gezeichnet hat. Schnell auf jedem Rechner.
+- **Mittel**: die Schatten der Sonne, Schatten in den Ecken, wo Flächen zusammenstoßen, und Licht vom Himmel.
+- **Realistisch**: der Himmel hinter dem Modell und ein Gelände darunter (wo das Projekt kein Gelände hat), und Glas, durch das Licht fällt. Zum Präsentieren, mit einer guten Grafikkarte.
+
+![Ein Haus in der realistischen Ansicht](shots/view-realistic.webp)
+
+Die Sonne ist die des Projekts: wo sie für den Ort des Projekts (Verwalten → **Standort**) an einem Tag zu einer Uhrzeit steht. Ansicht → **Sonne und Schatten** legt den Tag (Tagundnachtgleiche und Sonnenwenden mit einem Klick) und die Uhrzeit fest, spielt den Tag ab und schaltet die Sonne auch in der Zeichnungsansicht ein. Ohne Koordinatensystem und Vermessungspunkt ist der Ort Bukarest. Die Zeitzone folgt der Länge des Ortes, mit europäischer Sommerzeit in Europa.
+
+![Sonne und Schatten](shots/sun-dialog.webp)
+
 ## Was eine Ansicht zeigt
 
 Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt und wie sie aussieht.
@@ -127,6 +141,7 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 - **IFC-2D-Symbole.** Aus einer IFC-Datei importierte oder verknüpfte Elemente, die ihre eigene Grundrisszeichnung mitbringen (eine Grundfläche, den Aufschlag einer Tür, das Symbol eines Objekts, mit den Farben, Füllungen und Texten der Datei), zeichnen diese in Grundrissen statt ihres Schnitts. Entfernen Sie das Häkchen in den Ansichtseinstellungen (oder in einem Ansichtsstil), um stattdessen ihren 3D-Schnitt zu zeichnen.
 - **Sichtbarkeit** (<kbd>VV</kbd>) und **Grafiken** (<kbd>VG</kbd>). Sie blenden Kategorien ein oder aus und legen ihre Stifte, Linientypen und Füllungen fest.
 - **Teilen** und **Fenster.** Sie zeigen zwei Ansichten nebeneinander oder öffnen eine Ansicht in einem eigenen Fenster.
-- **Anzeigequalität.** Wie die 3D-Ansicht Teile mit vielen Dreiecken (eine importierte Anlage, Möbel, Rohre) zeichnet, wenn sie weit weg sind. **Ausgewogen** zeichnet ein entferntes Teil nur dort gröber, wo der Unterschied unter einem Pixel liegt. **Schnell** lässt es bis zu 3 Pixel abweichen, für große Modelle und langsamere Rechner. **Genau** zeichnet jedes Teil so, wie es ist. Die Einstellung gehört zum Projekt. Das Modell, seine Zeichnungen, Exporte und Mengen werden nie gröber: Eine Kurve besteht aus geraden Stücken, die höchstens einen Millimeter von ihr abweichen.
+- **Anzeigequalität.** Wie die 3D-Ansicht dargestellt wird (**Zeichnung**, **Mittel** oder **Realistisch**, auf diesem Rechner gespeichert: siehe *Realistisch, mit der Sonne*) und wie die 3D-Ansicht Teile mit vielen Dreiecken (eine importierte Anlage, Möbel, Rohre) zeichnet, wenn sie weit weg sind. **Ausgewogen** zeichnet ein entferntes Teil nur dort gröber, wo der Unterschied unter einem Pixel liegt. **Schnell** lässt es bis zu 3 Pixel abweichen, für große Modelle und langsamere Rechner. **Genau** zeichnet jedes Teil so, wie es ist. Die Einstellung gehört zum Projekt. Das Modell, seine Zeichnungen, Exporte und Mengen werden nie gröber: Eine Kurve besteht aus geraden Stücken, die höchstens einen Millimeter von ihr abweichen.
+- **Sonne und Schatten.** Die Sonne des Projekts an einem Tag zu einer Uhrzeit, die die 3D-Ansicht mit ihren Schatten beleuchtet (siehe *Realistisch, mit der Sonne*).
 
 ![Anzeigequalität](shots/display-quality.webp)

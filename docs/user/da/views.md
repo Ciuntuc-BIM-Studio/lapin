@@ -114,6 +114,20 @@ Du går, som et menneske ville. Vægge, søjler, møbler og lukkede vinduer stop
 
 <kbd>Esc</kbd> eller **Afslut gåtur** henter det kamera tilbage, du havde før.
 
+### Realistisk, med solen
+
+Vis → **Visningskvalitet** bestemmer, hvordan 3D-visningen gengives, på denne computer:
+
+- **Tegning**: tegningens farver og et jævnt lys, som Lapin altid har tegnet. Hurtigt på enhver computer.
+- **Mellem**: solens skygger, skygge i hjørnerne, hvor flader mødes, og lys fra himlen.
+- **Realistisk**: himlen bag modellen og et terræn under den (hvor projektet ikke har terræn), og glas, lyset går igennem. Til præsentationer, på et godt grafikkort.
+
+![Et hus i den realistiske visning](shots/view-realistic.webp)
+
+Solen er projektets: hvor den står for projektets sted (Administrer → **Placering**) en dag på et klokkeslæt. Vis → **Sol og skygger** bestemmer dagen (jævndøgn og solhverv er et klik væk) og klokkeslættet, afspiller dagen og tænder også solen i tegningsvisningen. Uden koordinatsystem og opmålingspunkt er stedet Bukarest. Tidszonen følger stedets længdegrad, med europæisk sommertid i Europa.
+
+![Sol og skygger](shots/sun-dialog.webp)
+
 ## Hvad en visning viser
 
 Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
@@ -127,6 +141,7 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 - **IFC 2D-symboler.** Elementer importeret eller linket fra en IFC-fil, som har deres egen plantegning med (et fodaftryk, en dørs slag, et inventars symbol, med filens farver, udfyldninger og tekster), tegner den i planer i stedet for deres snit. Fjern fluebenet under Visningsindstillinger (eller i en visningsstil) for i stedet at tegne deres 3D-snit.
 - **Synlighed** (<kbd>VV</kbd>) og **Grafik** (<kbd>VG</kbd>). De viser eller skjuler kategorier og indstiller deres penne, linjetyper og udfyldninger.
 - **Opdel** og **Vindue.** De viser to visninger side om side eller åbner en visning i et separat vindue.
-- **Visningskvalitet.** Hvordan 3D-visningen tegner dele med mange trekanter (et importeret anlæg, møbler, rør), når de er langt væk. **Afbalanceret** tegner en fjern del grovere kun, hvor forskellen er under en pixel. **Hurtig** lader den afvige op til 3 pixels, til store modeller og langsommere computere. **Præcis** tegner hver del, som den er. Indstillingen hører til projektet. Modellen, dens tegninger, eksporter og mængder bliver aldrig grovere: en kurve består af lige stykker, der højst afviger en millimeter fra den.
+- **Visningskvalitet.** Hvordan 3D-visningen gengives (**Tegning**, **Mellem** eller **Realistisk**, gemt på denne computer: se *Realistisk, med solen*), og hvordan 3D-visningen tegner dele med mange trekanter (et importeret anlæg, møbler, rør), når de er langt væk. **Afbalanceret** tegner en fjern del grovere kun, hvor forskellen er under en pixel. **Hurtig** lader den afvige op til 3 pixels, til store modeller og langsommere computere. **Præcis** tegner hver del, som den er. Indstillingen hører til projektet. Modellen, dens tegninger, eksporter og mængder bliver aldrig grovere: en kurve består af lige stykker, der højst afviger en millimeter fra den.
+- **Sol og skygger.** Projektets sol en dag på et klokkeslæt, der lyser 3D-visningen op med sine skygger (se *Realistisk, med solen*).
 
 ![Visningskvalitet](shots/display-quality.webp)

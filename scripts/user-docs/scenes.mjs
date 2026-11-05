@@ -2302,7 +2302,7 @@ export const scenes = [
       await t.keys('Escape');
       // View → Display quality (decision 203): the project's, Balanced chosen until it is changed.
       await t.tool('view.displayQuality');
-      t.expect(await t.page.locator('.dialog input[type=radio]:checked').count() === 1, 'one display quality chosen');
+      t.expect(await t.page.locator('.dialog input[type=radio]:checked').count() === 2, 'a rendering and a display quality chosen');
       await t.shot('display-quality', { of: '.dialog', pad: 0 });
     },
   },
@@ -2451,6 +2451,33 @@ export const scenes = [
       t.expect(await page.locator('.mode-chip.walk').count() === 0, 'Esc ends the walk');
       const back = await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().position);
       t.expect(back.z > 5, `the camera there was comes back (z ${back.z.toFixed(2)})`);
+    },
+  },
+  {
+    // The 3D view rendered realistic (docs/plan-visualisation.md): the sky, a ground, the sun's shadows; View → Sun and shadows.
+    id: 'views-realistic',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const profile = (p) => t.page.evaluate(async (v) => (await import('/src/viewport/render3d.ts')).setRenderProfile(v), p);
+      try {
+        await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.setState({ view: '3d', keyPlan: false }));
+        await t.page.waitForSelector('[data-testid=view3d] canvas');
+        await t.page.evaluate(async () => (await import('/src/modules/core/sun.ts')).setSun({ date: '2026-06-21', hour: 17 }));
+        await profile('realistic');
+        await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -1.2, pitch: -0.22, distance: 24, target: { x: 6, y: 4, z: 2 } }, false));
+        await t.wait(2500);
+        t.expect(await t.page.evaluate(async () => !!(await import('/src/platform/sunlight.ts')).useSunlight.getState().dir), 'the realistic view has a sun');
+        await t.shot('view-realistic', { of: '[data-testid=view3d]', pad: 0 });
+        await t.tool('view.sun');
+        await t.wait(800);
+        t.expect(await t.page.locator('.dialog input[type=date]').count() === 1, "the sun's day");
+        await t.shot('sun-dialog', { of: '.dialog', pad: 0 });
+        await t.keys('Escape');
+      } finally {
+        // The scenes after draw as the drawing does.
+        await profile('drawing');
+      }
     },
   },
   {

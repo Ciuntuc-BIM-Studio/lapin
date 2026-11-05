@@ -3,8 +3,9 @@
  * see-through and glass, a light's glow, from look.ts. Metals and glossy faces
  * reflect a soft room (three's RoomEnvironment, made once per renderer), since
  * without something to reflect a metal shows black; the rest keep the scene's
- * own lights. Glass in the 3D view is see-through (its opacity), not refracted:
- * refraction is the preview's and the renderers' job.
+ * own lights. Glass is see-through (its opacity) in the drawing and medium
+ * views, and lets light through (its transmission and index of refraction)
+ * in the realistic one (render3d.ts), switched in place on its materials.
  */
 
 import * as THREE from 'three';
@@ -36,11 +37,14 @@ export const opacityOf = (l: Look): number => Math.max(0.05, Math.min(1, 1 - l.t
  */
 export function standardMaterial(color: THREE.ColorRepresentation, map: THREE.Texture | null, l: Look): THREE.MeshStandardMaterial {
   const opacity = opacityOf(l);
-  const m = new THREE.MeshStandardMaterial({
+  const params: THREE.MeshStandardMaterialParameters = {
     color, map, roughness: l.roughness, metalness: l.metalness,
     transparent: opacity < 1, opacity, depthWrite: opacity >= 1, side: opacity < 1 ? THREE.DoubleSide : THREE.FrontSide,
     polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
-  });
+  };
+  // Glass: physically based, so the realistic view can let light through it (glassThrough).
+  const m = l.transmission > 0 ? new THREE.MeshPhysicalMaterial({ ...params, ior: l.ior, thickness: 0 }) : new THREE.MeshStandardMaterial(params);
+  if (l.transmission > 0) { m.userData.glass = { transmission: l.transmission }; lightThrough(m as THREE.MeshPhysicalMaterial, glassOn); }
   const env = reflects(l) ? reflections() : null;
   if (env) { m.envMap = env; m.envMapIntensity = 0.8; }
   m.userData.opacity = opacity;
@@ -50,6 +54,30 @@ export function standardMaterial(color: THREE.ColorRepresentation, map: THREE.Te
     m.userData.emissive = { hex: m.emissive.getHex(), intensity: l.emissiveStrength };
   }
   return m;
+}
+
+/** Whether glass lets light through now (the realistic view), for the materials made from here on. */
+let glassOn = false;
+
+/** A glass material switched between see-through (its opacity) and letting light through (its transmission). */
+function lightThrough(m: THREE.MeshPhysicalMaterial, on: boolean): void {
+  const g = m.userData.glass as { transmission: number } | undefined;
+  if (!g) return;
+  const opacity = (m.userData.opacity as number | undefined) ?? m.opacity;
+  m.transmission = on ? g.transmission : 0;
+  m.transparent = !on && opacity < 1;
+  m.opacity = on ? 1 : opacity;
+  m.depthWrite = on || opacity >= 1;
+  m.needsUpdate = true;
+}
+
+/** Glass through the scene (and the materials made later) letting light through, or see-through again. */
+export function glassThrough(root: THREE.Object3D, on: boolean): void {
+  glassOn = on;
+  root.traverse((o) => {
+    const mat = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+    for (const m of Array.isArray(mat) ? mat : mat ? [mat] : []) if (m.userData.glass) lightThrough(m as THREE.MeshPhysicalMaterial, on);
+  });
 }
 
 /** The preview's material: physically based, glass refracting through its transmission. */

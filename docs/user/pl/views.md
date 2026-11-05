@@ -114,6 +114,20 @@ Chodzisz tak, jak chodziłby człowiek. Ściany, słupy, meble i zamknięte okna
 
 <kbd>Esc</kbd> lub **Zakończ spacer** przywraca kamerę, którą miałeś wcześniej.
 
+### Realistyczny, ze słońcem
+
+Widok → **Jakość wyświetlania** ustala, jak renderuje się widok 3D, na tym komputerze:
+
+- **Rysunek**: paleta arkusza i równe światło, tak jak Lapin rysował zawsze. Szybko na każdym komputerze.
+- **Średni**: cienie słońca, cień w narożnikach, gdzie stykają się ściany, i światło nieba.
+- **Realistyczny**: niebo za modelem i teren pod nim (tam, gdzie projekt nie ma terenu), i szkło, przez które przechodzi światło. Do prezentacji, na dobrej karcie graficznej.
+
+![Dom w widoku realistycznym](shots/view-realistic.webp)
+
+Słońce jest słońcem projektu: gdzie stoi dla miejsca projektu (Zarządzaj → **Lokalizacja**) w danym dniu o danej godzinie. Widok → **Słońce i cienie** ustala dzień (równonoc i przesilenia są o jedno kliknięcie) i godzinę, odtwarza dzień i włącza słońce także w widoku rysunku. Bez układu współrzędnych i punktu pomiarowego miejscem jest Bukareszt. Strefa czasowa wynika z długości geograficznej miejsca, z europejskim czasem letnim w Europie.
+
+![Słońce i cienie](shots/sun-dialog.webp)
+
 ## Co pokazuje widok
 
 Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
@@ -127,6 +141,7 @@ Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 - **Symbole 2D IFC.** Elementy zaimportowane lub połączone z pliku IFC, które przynoszą własny rysunek rzutu (obrys, łuk otwierania drzwi, symbol urządzenia, z kolorami, wypełnieniami i tekstami pliku), rysują go na rzutach zamiast swojego cięcia. Odznacz to w Ustawieniach widoku (lub w stylu widoku), aby zamiast tego rysować ich cięcie 3D.
 - **Widoczność** (<kbd>VV</kbd>) i **Grafika** (<kbd>VG</kbd>). Pokazują lub ukrywają kategorie i ustawiają ich pióra, rodzaje linii i wypełnienia.
 - **Podziel** i **Okno.** Pokazują dwa widoki obok siebie lub otwierają widok w osobnym oknie.
-- **Jakość wyświetlania.** Jak widok 3D rysuje części z wieloma trójkątami (zaimportowaną roślinę, meble, rury), gdy są daleko. **Zrównoważona** rysuje daleką część zgrubniej tylko tam, gdzie różnica jest mniejsza niż piksel. **Szybka** pozwala jej odbiegać do 3 pikseli, dla dużych modeli i wolniejszych komputerów. **Precyzyjna** rysuje każdą część taką, jaka jest. Ustawienie należy do projektu. Model, jego rysunki, eksporty i ilości nigdy nie są upraszczane: krzywa składa się z prostych odcinków, które odbiegają od niej najwyżej o milimetr.
+- **Jakość wyświetlania.** Jak renderuje się widok 3D (**Rysunek**, **Średni** lub **Realistyczny**, zapisane na tym komputerze: zob. *Realistyczny, ze słońcem*) oraz jak widok 3D rysuje części z wieloma trójkątami (zaimportowaną roślinę, meble, rury), gdy są daleko. **Zrównoważona** rysuje daleką część zgrubniej tylko tam, gdzie różnica jest mniejsza niż piksel. **Szybka** pozwala jej odbiegać do 3 pikseli, dla dużych modeli i wolniejszych komputerów. **Precyzyjna** rysuje każdą część taką, jaka jest. Ustawienie należy do projektu. Model, jego rysunki, eksporty i ilości nigdy nie są upraszczane: krzywa składa się z prostych odcinków, które odbiegają od niej najwyżej o milimetr.
+- **Słońce i cienie.** Słońce projektu w danym dniu o danej godzinie, oświetlające widok 3D z jego cieniami (zob. *Realistyczny, ze słońcem*).
 
 ![Jakość wyświetlania](shots/display-quality.webp)

@@ -114,6 +114,20 @@ Vous marchez comme le ferait une personne. Les murs, les poteaux, les meubles et
 
 <kbd>Esc</kbd> ou **Quitter la visite** rétablit la caméra que vous aviez avant.
 
+### Réaliste, avec le soleil
+
+Vue → **Qualité d’affichage** règle le rendu de la vue 3D, sur cet ordinateur :
+
+- **Dessin** : la palette du plan et une lumière égale, comme Lapin a toujours dessiné. Rapide sur tout ordinateur.
+- **Moyen** : les ombres du soleil, l’ombre dans les angles où les faces se rencontrent, et la lumière du ciel.
+- **Réaliste** : le ciel derrière le modèle et un sol dessous (là où le projet n’a pas de terrain), et un vitrage que la lumière traverse. Pour présenter, avec une bonne carte graphique.
+
+![Une maison dans la vue réaliste](shots/view-realistic.webp)
+
+Le soleil est celui du projet : où il se trouve pour le lieu du projet (Gérer → **Emplacement**) un jour à une heure. Vue → **Soleil et ombres** règle le jour (l’équinoxe et les solstices sont à un clic) et l’heure, joue la journée et allume le soleil aussi dans la vue de dessin. Sans système de coordonnées ni point de levé, le lieu est Bucarest. Le fuseau horaire suit la longitude du lieu, avec l’heure d’été européenne en Europe.
+
+![Soleil et ombres](shots/sun-dialog.webp)
+
 ## Ce que montre une vue
 
 L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
@@ -127,6 +141,7 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 - **Symboles 2D IFC.** Les éléments importés ou liés depuis un fichier IFC qui apportent leur propre dessin en plan (une emprise, le débattement d’une porte, le symbole d’un appareil, avec les couleurs, remplissages et textes du fichier) le dessinent dans les plans au lieu de leur coupe. Décochez-le dans Paramètres de vue (ou dans un style de vue) pour dessiner plutôt leur coupe 3D.
 - **Visibilité** (<kbd>VV</kbd>) et **Graphismes** (<kbd>VG</kbd>). Ils affichent ou masquent des catégories et règlent leurs plumes, types de ligne et remplissages.
 - **Scinder** et **Fenêtre.** Ils affichent deux vues côte à côte, ou ouvrent une vue dans une fenêtre séparée.
-- **Qualité d’affichage.** Comment la vue 3D dessine les pièces de nombreux triangles (une installation importée, du mobilier, des tuyaux) quand elles sont loin. **Équilibrée** dessine une pièce éloignée plus grossièrement seulement là où l’écart reste sous un pixel. **Rapide** la laisse s’écarter jusqu’à 3 pixels, pour les grands modèles et les ordinateurs plus lents. **Précise** dessine chaque pièce telle quelle. Le réglage appartient au projet. Le modèle, ses dessins, ses exports et ses quantités ne sont jamais simplifiés : une courbe est faite de morceaux droits qui s’en écartent d’un millimètre au plus.
+- **Qualité d’affichage.** Le rendu de la vue 3D (**Dessin**, **Moyen** ou **Réaliste**, gardé sur cet ordinateur : voir *Réaliste, avec le soleil*) et comment la vue 3D dessine les pièces de nombreux triangles (une installation importée, du mobilier, des tuyaux) quand elles sont loin. **Équilibrée** dessine une pièce éloignée plus grossièrement seulement là où l’écart reste sous un pixel. **Rapide** la laisse s’écarter jusqu’à 3 pixels, pour les grands modèles et les ordinateurs plus lents. **Précise** dessine chaque pièce telle quelle. Le réglage appartient au projet. Le modèle, ses dessins, ses exports et ses quantités ne sont jamais simplifiés : une courbe est faite de morceaux droits qui s’en écartent d’un millimètre au plus.
+- **Soleil et ombres.** Le soleil du projet un jour à une heure, qui éclaire la vue 3D avec ses ombres (voir *Réaliste, avec le soleil*).
 
 ![Qualité d’affichage](shots/display-quality.webp)

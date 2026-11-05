@@ -110,6 +110,20 @@ Usted camina como lo haría una persona. Los muros, los pilares, el mobiliario y
 
 <kbd>Esc</kbd> o **Salir del recorrido** recupera la cámara que tenía antes.
 
+### Realista, con el sol
+
+Vista → **Calidad de visualización** fija cómo se dibuja la vista 3D, en este ordenador:
+
+- **Dibujo**: la paleta del plano y una luz uniforme, como Lapin dibujó siempre. Rápido en cualquier ordenador.
+- **Medio**: las sombras del sol, sombra en las esquinas donde se juntan las caras y luz del cielo.
+- **Realista**: el cielo detrás del modelo y un terreno debajo (donde el proyecto no tiene terreno), y vidrio que deja pasar la luz. Para presentar, con una buena tarjeta gráfica.
+
+![Una casa en la vista realista](shots/view-realistic.webp)
+
+El sol es el del proyecto: dónde está para el lugar del proyecto (Gestionar → **Ubicación**) un día a una hora. Vista → **Sol y sombras** fija el día (el equinoccio y los solsticios están a un clic) y la hora, reproduce el día y enciende el sol también en la vista de dibujo. Sin sistema de coordenadas ni punto de reconocimiento, el lugar es Bucarest. El huso horario sigue la longitud del lugar, con el horario de verano europeo en Europa.
+
+![Sol y sombras](shots/sun-dialog.webp)
+
 ## Qué muestra una vista
 
 La ficha **Vista** configura qué muestra la vista que está delante y cómo se ve.
@@ -123,6 +137,7 @@ La ficha **Vista** configura qué muestra la vista que está delante y cómo se 
 - **Símbolos 2D de IFC.** Los elementos importados o vinculados desde un archivo IFC que traen su propio dibujo en planta (una huella, el barrido de una puerta, el símbolo de un aparato, con los colores, rellenos y textos del archivo) lo dibujan en las plantas en lugar de su corte. Desmárquelo en Configuración de vista (o en un estilo de vista) para dibujar en su lugar su corte 3D.
 - **Visibilidad** (<kbd>VV</kbd>) y **Gráficos** (<kbd>VG</kbd>). Muestran u ocultan categorías y configuran sus plumas, tipos de línea y rellenos.
 - **Dividir** y **Ventana.** Muestran dos vistas una al lado de la otra, o abren una vista en una ventana separada.
-- **Calidad de visualización.** Cómo dibuja la vista 3D las piezas de muchos triángulos (una planta importada, mobiliario, tuberías) cuando están lejos. **Equilibrada** dibuja una pieza lejana más basta solo donde la diferencia queda bajo un píxel. **Rápida** la deja desviarse hasta 3 píxeles, para modelos grandes y ordenadores más lentos. **Precisa** dibuja cada pieza tal como es. El ajuste pertenece al proyecto. El modelo, sus dibujos, exportaciones y cantidades nunca se simplifican: una curva está hecha de tramos rectos que se desvían de ella como mucho un milímetro.
+- **Calidad de visualización.** Cómo se dibuja la vista 3D (**Dibujo**, **Medio** o **Realista**, guardado en este ordenador: ver *Realista, con el sol*) y cómo dibuja la vista 3D las piezas de muchos triángulos (una planta importada, mobiliario, tuberías) cuando están lejos. **Equilibrada** dibuja una pieza lejana más basta solo donde la diferencia queda bajo un píxel. **Rápida** la deja desviarse hasta 3 píxeles, para modelos grandes y ordenadores más lentos. **Precisa** dibuja cada pieza tal como es. El ajuste pertenece al proyecto. El modelo, sus dibujos, exportaciones y cantidades nunca se simplifican: una curva está hecha de tramos rectos que se desvían de ella como mucho un milímetro.
+- **Sol y sombras.** El sol del proyecto un día a una hora, iluminando la vista 3D con sus sombras (ver *Realista, con el sol*).
 
 ![Calidad de visualización](shots/display-quality.webp)

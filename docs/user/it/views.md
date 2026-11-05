@@ -114,6 +114,20 @@ Cammini come camminerebbe una persona. Muri, pilastri, arredi e finestre chiuse 
 
 <kbd>Esc</kbd> o **Esci dalla camminata** riporta la camera che avevi prima.
 
+### Realistica, con il sole
+
+Vista → **Qualità di visualizzazione** stabilisce la resa della vista 3D, su questo computer:
+
+- **Disegno**: la tavolozza della tavola e una luce uniforme, come Lapin ha sempre disegnato. Veloce su qualsiasi computer.
+- **Media**: le ombre del sole, l’ombra negli angoli dove le facce si incontrano e la luce del cielo.
+- **Realistica**: il cielo dietro il modello e un terreno sotto (dove il progetto non ha terreno), e vetro attraversato dalla luce. Per presentare, con una buona scheda grafica.
+
+![Una casa nella vista realistica](shots/view-realistic.webp)
+
+Il sole è quello del progetto: dove si trova per il luogo del progetto (Gestisci → **Posizione**) in un giorno a un’ora. Vista → **Sole e ombre** stabilisce il giorno (l’equinozio e i solstizi sono a un clic) e l’ora, riproduce la giornata e accende il sole anche nella vista disegno. Senza sistema di coordinate e punto di rilievo, il luogo è Bucarest. Il fuso orario segue la longitudine del luogo, con l’ora legale europea in Europa.
+
+![Sole e ombre](shots/sun-dialog.webp)
+
 ## Che cosa mostra una vista
 
 La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appare.
@@ -127,6 +141,7 @@ La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appar
 - **Simboli 2D IFC.** Gli elementi importati o collegati da un file IFC che portano un proprio disegno in pianta (un’impronta, l’apertura di una porta, il simbolo di un apparecchio, con i colori, i riempimenti e i testi del file) lo disegnano nelle piante al posto del loro taglio. Togli la spunta in Impostazioni di vista (o in uno stile di vista) per disegnare invece il loro taglio 3D.
 - **Visibilità** (<kbd>VV</kbd>) e **Grafica** (<kbd>VG</kbd>). Mostrano o nascondono le categorie e ne impostano penne, tipi di linea e riempimenti.
 - **Dividi** e **Finestra.** Mostrano due viste affiancate, o aprono una vista in una finestra separata.
-- **Qualità di visualizzazione.** Come la vista 3D disegna le parti fatte di molti triangoli (un impianto importato, arredi, tubazioni) quando sono lontane. **Bilanciata** disegna una parte lontana in modo più grossolano solo dove la differenza resta sotto un pixel. **Veloce** le lascia scostarsi fino a 3 pixel, per modelli grandi e computer più lenti. **Precisa** disegna ogni parte così com’è. L’impostazione appartiene al progetto. Il modello, i suoi disegni, le esportazioni e le quantità non sono mai semplificati: una curva è fatta di tratti rettilinei che se ne scostano al massimo di un millimetro.
+- **Qualità di visualizzazione.** La resa della vista 3D (**Disegno**, **Media** o **Realistica**, salvata su questo computer: vedi *Realistica, con il sole*) e come la vista 3D disegna le parti fatte di molti triangoli (un impianto importato, arredi, tubazioni) quando sono lontane. **Bilanciata** disegna una parte lontana in modo più grossolano solo dove la differenza resta sotto un pixel. **Veloce** le lascia scostarsi fino a 3 pixel, per modelli grandi e computer più lenti. **Precisa** disegna ogni parte così com’è. L’impostazione appartiene al progetto. Il modello, i suoi disegni, le esportazioni e le quantità non sono mai semplificati: una curva è fatta di tratti rettilinei che se ne scostano al massimo di un millimetro.
+- **Sole e ombre.** Il sole del progetto in un giorno a un’ora, che illumina la vista 3D con le sue ombre (vedi *Realistica, con il sole*).
 
 ![Qualità di visualizzazione](shots/display-quality.webp)

@@ -18,15 +18,16 @@ Azi `Viewport3D.tsx` are o lumină de emisferă, un soare fix, o singură hartă
 
 **Etapa 1, vederea realistă de bază:**
 
-- **Tone mapping** AgX sau ACES (`renderer.toneMapping`), cu expunere; aspectul de azi rămâne profilul **Desen** (fără tone mapping, lumină plată), cel realist se alege din View → Display quality.
+- **Tone mapping** (Neutral în profilul Mediu, AgX în Realist, cu expunere); aspectul de azi rămâne profilul **Desen** (fără tone mapping, lumină plată), cel realist se alege din View → Display quality.
 - **Cerul**: `Sky` (Preetham, după poziția soarelui) ca fundal și ca mediu (`scene.environment` prin PMREM, refăcut când se mută soarele), în locul fundalului plat; culoarea soarelui după înălțime, ca la BimGo (de la (1, .62, .36) la răsărit la (1, .97, .92) la amiază).
 - **Soarele adevărat**: poziția din dată, oră și locul proiectului (`Location` + `GeoRef` dau latitudinea și longitudinea; nordul real din `NorthAngle`), ora de vară după regula europeană sau fusul IANA (`Intl` în interfață, `TimeZoneInfo` în engine). Panoul **Soare** din fila View: zi (echinocții, solstiții), oră, rulează ziua; `sunlight.ts` primește în sfârșit o sursă.
-- **Umbre în cascadă** (`CSM`), pe trepte de calitate ca la BimGo: Scăzut 1 × 2048 la 60 m, Mediu 3 × 2048 la 120 m, Ridicat 4 × 3072 la 200 m; marginea estompată spre capăt.
+- **Umbrele**: o hartă (2048 în Mediu, 4096 în Realist) potrivită pe ce privește camera (cel puțin 30 m, cât modelul dacă e mai mic), nu pe tot modelul. Umbrele în cascadă (`CSM`, treptele lui BimGo: 1 × 2048 la 60 m, 3 × 2048 la 120 m, 4 × 3072 la 200 m) rămân pentru când plimbarea prin modele mari le cere: `CSM` cere fiecărui material un shader schimbat.
+- **Terenul**: în profilul Realist, sub model, unde proiectul nu are teren (`civil`), o pajiște care primește umbrele; grila se ascunde.
 - **Ocluzia ambientală** (`GTAOPass`, raza 0,6 m ca la BimGo), doar pe lumina ambientală.
-- **Strălucirea** (`UnrealBloomPass`) doar pe materialele cu `Emissive`.
+- **Strălucirea** doar pe materialele cu `Emissive`, mai târziu: `UnrealBloomPass` pe toată imaginea încețoșează cerul și pereții însoriți (încercat); trebuie o trecere care să înflorească doar ce emite (BimGo scrie culoarea emisivă într-o țintă proprie).
 - **Sticla**: `MeshPhysicalMaterial` cu `transmission`, `ior` și `thickness` pentru materialele cu transmisie, în profilul realist; umbrele colorate prin sticlă mai târziu.
 - **Instanțele cu aspect**: un `InstancedMesh` pe (parte × material), cu rugozitatea, metalicitatea, emisia și textura materialului, nu un alb comun.
-- **Profilele de calitate**: View → Display quality capătă, lângă precizie, **Desen** (azi), **Mediu** (soare, umbre medii, AO) și **Realist** (tot), salvate cu proiectul; randarea rămâne la cerere (`invalidate()`), iar în profilul realist cadrul se rafinează când camera stă pe loc (AO și umbre la rezoluție întreagă).
+- **Profilele de randare**: View → Display quality capătă, lângă precizie, **Desen** (azi), **Mediu** (soare, umbre, AO, lumina cerului) și **Realist** (cer, teren, sticlă cu transmisie), păstrate **pe calculator**, nu în proiect (un calculator slab desenează proiectul unui coleg cum poate); randarea rămâne la cerere (`invalidate()`). Profilele Mediu și Realist au mereu soare: ziua și ora din View → Sun and shadows (`ui/src/modules/core/sun.ts`, interogarea `sun.at` din platformă), implicit azi la 14:00.
 - Browserul primește tot (WebGL2); un calculator slab coboară singur un profil dacă cadrul trece de 50 ms.
 
 **Etapa 2, texturi și reflexii:**
@@ -138,6 +139,10 @@ Verificarea de goluri de azi devine un **tip de test** în același dialog (Mana
 8. Lumina artificială cu IES și noaptea.
 
 Fiecare etapă cu testele ei (în BimGo, `ClashTests`, `DaylightTests`, `SunHoursAndCommentsTests`, `SolarPositionTests` au cazurile și numerele, portate ca specificație: conducta prin grindă dă adâncimea dimensiunii mai mici, o suprapunere de 3 mm a pereților nu contează la 5 mm, o țeavă îngropată 40 mm într-o placă dă 40 mm), pagina din ghid în toate limbile și scena ei.
+
+## Ce s-a făcut
+
+- **Etapa 1 (05.11.2026, decizia 310)**: `Lapin.Platform/Sun.cs` (mutat din `urban`, cu `sun.at`: fusul din longitudine, ora de vară europeană în Europa; `SunTests`), View → **Sun and shadows** (`SunDialog.tsx`, folosit și de studiul de însorire din `urban`), `ui/src/viewport/render3d.ts` (profilele, cerul `Sky` și lumina lui prin PMREM, `GTAOPass` orb la ce e transparent, tone mapping), umbrele potrivite pe vedere, terenul, sticla `MeshPhysicalMaterial` cu transmisie în Realist (`glassThrough`), instanțele cu aspectul materialului lor; ghidul (views.md, *Realistic, with the sun*) în toate limbile și scena `views-realistic`. Amânate: strălucirea și umbrele în cascadă (mai sus).
 
 ## Răspunsurile utilizatorului (05.11.2026)
 

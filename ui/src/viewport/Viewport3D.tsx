@@ -28,7 +28,8 @@ import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
 import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, type Face, type TextureKind } from './textures';
 import { lookOf } from './look';
-import { reflections, standardMaterial } from './materialLook';
+import { glassThrough, reflections, standardMaterial } from './materialLook';
+import { Realism, sunColour, useRenderProfile } from './render3d';
 import { KeyPlan } from './KeyPlan';
 import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from './camera';
 import { Grips3D } from './Grips3D';
@@ -300,14 +301,16 @@ function tint(c: THREE.Object3D, l: Look | undefined) {
   if (m.userData.own === undefined) m.userData.own = m.color.getHex();
   m.color.setHex(l?.color ? new THREE.Color(l.color).getHex() : m.userData.own as number);
   // A see-through material (glass) stays as see-through as it is, and fades further with the look.
-  const opacity = (l?.opacity ?? 1) * ((m.userData.opacity as number | undefined) ?? 1);
+  // Glass letting light through (the realistic view) is drawn whole: the light comes through it, not past it.
+  const through = !!m.userData.glass && (m as THREE.MeshPhysicalMaterial).transmission > 0;
+  const opacity = (l?.opacity ?? 1) * (through ? 1 : (m.userData.opacity as number | undefined) ?? 1);
   // Turning see-through, or back, changes the shader three.js compiled: it must be told.
   if (m.transparent !== opacity < 1) m.needsUpdate = true;
   m.transparent = opacity < 1;
   m.opacity = opacity;
   m.depthWrite = opacity >= 1;
-  // What is seen through casts no shadow (a buildable volume, a phase shown faded).
-  (c as THREE.Mesh).castShadow = opacity >= 1;
+  // What is seen through casts no shadow (a buildable volume, a phase shown faded), nor does glass.
+  (c as THREE.Mesh).castShadow = opacity >= 1 && !m.userData.glass;
 }
 
 /** Free an object's GPU resources: geometries, materials and their textures (not the shared ones). */
@@ -491,6 +494,8 @@ export function Viewport3D() {
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
   /** The elements drawn as instances of shared meshes (instancing.ts). */
   const instances = useRef<InstanceLayer | null>(null);
+  /** The model's box (the sun's shadows are fitted in it) forgotten: the elements changed. */
+  const boxDirty = useRef<() => void>(() => undefined);
   /** The cut elements' caps, by element (a section or the section box shown). */
   const caps = useRef(new Map<string, THREE.Group>());
   /** The caps' meshes as the engine sent them, for the walker to collide with. */
@@ -572,6 +577,8 @@ export function Viewport3D() {
     THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
     const s = new THREE.Scene();
     scene.current = s;
+    // How the view renders: as a drawing, medium or realistic (render3d.ts), the passes made once.
+    const realism = new Realism(renderer, s);
     const persp = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
     persp.up.set(0, 0, 1);
     persp.position.set(18, -22, 16);
@@ -654,7 +661,7 @@ export function Viewport3D() {
         const refPlanes = s.getObjectByName('ref-planes');
         const shown = refPlanes?.visible ?? false;
         if (refPlanes) refPlanes.visible = false;
-        try { renderer.render(s, cam); } finally { if (refPlanes) refPlanes.visible = shown; }
+        try { realism.render(cam); } finally { if (refPlanes) refPlanes.visible = shown; }
         return renderer.domElement;
       },
       // Drawn once more right before it is read: the drawing buffer is not kept between frames.
@@ -664,7 +671,7 @@ export function Viewport3D() {
           const refPlanes = s.getObjectByName('ref-planes');
           const shown = refPlanes?.visible ?? false;
           if (refPlanes) refPlanes.visible = false;
-          try { renderer.render(s, cam); } finally { if (refPlanes) refPlanes.visible = shown; }
+          try { realism.render(cam); } finally { if (refPlanes) refPlanes.visible = shown; }
           const src = renderer.domElement;
           const scale = Math.min(1, maxWidth / Math.max(src.width, 1));
           if (scale >= 1) return src.toDataURL('image/png');
@@ -687,41 +694,102 @@ export function Viewport3D() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // The ground the shadows fall on where there is no terrain: invisible but for them.
-    const shadowGround = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: 0.28 }));
+    const shadowOnly = new THREE.ShadowMaterial({ opacity: 0.28 });
+    // The realistic view's ground where the model has no terrain: a dry meadow's colour, rough, taking the shadows.
+    const meadow = new THREE.MeshStandardMaterial({ color: 0xa3ab86, roughness: 1, metalness: 0 });
+    const shadowGround = new THREE.Mesh<THREE.PlaneGeometry, THREE.Material>(new THREE.PlaneGeometry(4000, 4000), shadowOnly);
     shadowGround.receiveShadow = true;
     shadowGround.visible = false;
     s.add(shadowGround);
+    // The model's box the sun's shadows are fitted to, found again only when the elements change.
+    let modelBox: THREE.Box3 | null = null;
+    let terrain = false;
+    boxDirty.current = () => { modelBox = null; };
+    const boxOfModel = () => {
+      if (modelBox) return modelBox;
+      const box = new THREE.Box3();
+      terrain = false;
+      for (const { item, object } of items.current.values()) {
+        if (object.visible) box.expandByObject(object);
+        if (item.type === 'IfcGeographicElement') terrain = true;
+      }
+      instances.current?.expand(box, useLooks.getState().looks);
+      if (box.isEmpty()) box.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 10));
+      return (modelBox = box);
+    };
+    // The shadows fitted to what the camera looks at (a site's buildings near, not all of it at once), no further than the model.
+    let fitted = '';
+    // The ground: the realistic view's meadow where there is no terrain (the grid put away), else only the sun's shadows.
+    const placeGround = () => {
+      const spec = realism.spec;
+      boxOfModel();
+      const dir = useSunlight.getState().dir;
+      const meadowOn = spec.ground && !terrain;
+      shadowGround.material = meadowOn ? meadow : shadowOnly;
+      shadowGround.visible = meadowOn || (!!dir && dir[2] > 0.005);
+      shadowGround.position.z = (meadowOn ? 0 : elevationRef.current) - 0.002;
+      const grid = s.getObjectByName('ground-grid');
+      if (grid) grid.visible = !spec.ground;
+    };
+    const fitShadow = () => {
+      placeGround();
+      if (!sun.castShadow) return;
+      const dir = useSunlight.getState().dir;
+      if (!dir) return;
+      const box = boxOfModel();
+      const whole = box.getBoundingSphere(new THREE.Sphere());
+      const near = Math.max(30, controls.target.distanceTo(cam.position) * 1.6);
+      const centre = whole.radius <= near ? whole.center.clone() : box.clampPoint(controls.target, new THREE.Vector3());
+      const radius = Math.max(Math.min(whole.radius, near), 5);
+      const key = `${centre.x.toFixed(1)},${centre.y.toFixed(1)},${centre.z.toFixed(1)},${radius.toFixed(1)},${dir.join(',')}`;
+      if (key === fitted) return;
+      fitted = key;
+      sun.target.position.copy(centre);
+      sun.position.set(centre.x + dir[0] * radius * 2, centre.y + dir[1] * radius * 2, centre.z + dir[2] * radius * 2);
+      const c = sun.shadow.camera;
+      c.left = -radius; c.right = radius; c.top = radius; c.bottom = -radius; c.near = 0.1; c.far = radius * 4;
+      c.updateProjectionMatrix();
+    };
     const aimSun = () => {
       const { dir } = useSunlight.getState();
-      shadowGround.visible = !!dir && dir[2] > 0.005;
-      shadowGround.position.z = elevationRef.current - 0.002;
+      const spec = realism.spec;
+      realism.setSun(dir);
+      placeGround();
+      fitted = '';
       if (!dir) {
-        sun.castShadow = false; sun.intensity = 1.6; hemi.intensity = 2.2;
+        sun.castShadow = false; sun.intensity = 1.6; hemi.intensity = spec.skyLight ? 1.2 : 2.2;
+        sun.color.set(0xffffff);
         sun.position.set(20, -30, 40); sun.target.position.set(0, 0, 0);
         invalidate.current();
         return;
       }
-      const box = new THREE.Box3();
-      for (const { object } of items.current.values()) if (object.visible) box.expandByObject(object);
-      instances.current?.expand(box, useLooks.getState().looks);
-      if (box.isEmpty()) box.set(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(10, 10, 10));
-      const centre = box.getCenter(new THREE.Vector3());
-      const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 5);
       const up = dir[2] > 0.005;
-      sun.target.position.copy(centre);
-      sun.position.set(centre.x + dir[0] * radius * 2, centre.y + dir[1] * radius * 2, centre.z + dir[2] * radius * 2);
-      sun.intensity = up ? 2.6 : 0;
-      hemi.intensity = up ? 1.1 : 0.6;
+      const altitude = (Math.asin(Math.max(-1, Math.min(1, dir[2]))) * 180) / Math.PI;
+      // The drawing keeps its even light under the sun; the others take most of theirs from the sky (render3d.ts).
+      sun.intensity = up ? (spec.skyLight ? 3.2 : 2.6) : 0;
+      hemi.intensity = spec.skyLight ? (up ? 0.25 : 0.4) : up ? 1.1 : 0.6;
+      sunColour(altitude, sun.color);
       sun.castShadow = up;
-      const c = sun.shadow.camera;
-      c.left = -radius; c.right = radius; c.top = radius; c.bottom = -radius; c.near = 0.1; c.far = radius * 4;
-      c.updateProjectionMatrix();
-      sun.shadow.mapSize.set(2048, 2048);
+      if (sun.shadow.mapSize.x !== spec.shadowMap) {
+        sun.shadow.mapSize.set(spec.shadowMap, spec.shadowMap);
+        sun.shadow.map?.dispose();
+        sun.shadow.map = null;
+      }
       sun.shadow.bias = -0.0005;
       sun.shadow.normalBias = 0.02;
+      fitShadow();
       invalidate.current();
     };
+    // A profile chosen: its passes, glass letting light through or not, the sun's light and shadows again.
+    const applyProfile = () => {
+      const { profile } = useRenderProfile.getState();
+      realism.setProfile(profile);
+      glassThrough(s, realism.spec.glass);
+      aimSun();
+    };
+    const unprofile = useRenderProfile.subscribe(applyProfile);
     const unsunlight = useSunlight.subscribe(aimSun);
+    applyProfile();
     s.add(groundGrid(useUi.getState().theme, elevationRef.current));
     const layer = new InstanceLayer(EDGES);
     s.add(layer.group);
@@ -752,7 +820,7 @@ export function Viewport3D() {
     };
     let frame = 0;
     invalidate.current = () => {
-      if (!frame) frame = requestAnimationFrame(() => { frame = 0; relevel(); renderer.render(s, cam); });
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; relevel(); fitShadow(); realism.render(cam); });
     };
     controls.addEventListener('change', invalidate.current);
     controls.addEventListener('change', publish);
@@ -761,6 +829,7 @@ export function Viewport3D() {
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = el;
       renderer.setSize(w, h);
+      realism.resize(w, h);
       persp.aspect = w / Math.max(h, 1);
       persp.updateProjectionMatrix();
       orthoFrustum(pose().distance);
@@ -1140,6 +1209,8 @@ export function Viewport3D() {
     window.addEventListener('keydown', onKey);
     return () => {
       unsunlight();
+      unprofile();
+      realism.dispose();
       cancelAnimationFrame(frame);
       clearTimeout(trailing);
       cancelAnimationFrame(flight);
@@ -1176,6 +1247,8 @@ export function Viewport3D() {
       window.removeEventListener('keyup', onWalkKey, true);
       window.removeEventListener('blur', onWalkBlur);
       // The elements, the lights, the ground grid and the grid's axes.
+      shadowOnly.dispose();
+      meadow.dispose();
       dispose(s);
       s.clear();
       live.clear();
@@ -1341,6 +1414,7 @@ export function Viewport3D() {
     // The instances of shared meshes: added, moved, taken out; drawn as their looks and the selection say.
     const layer = instances.current;
     if (layer) { layer.sync(render, meshes); layer.restyle(looks, [...shown], visualStyle, layers); }
+    boxDirty.current();
     invalidate.current();
   }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown]);
 

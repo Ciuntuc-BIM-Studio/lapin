@@ -114,6 +114,20 @@ Você caminha como uma pessoa caminharia. Paredes, pilares, móveis e janelas fe
 
 <kbd>Esc</kbd> ou **Sair da caminhada** traz de volta a câmera que você tinha antes.
 
+### Realista, com o sol
+
+Vista → **Qualidade de exibição** define como a vista 3D é desenhada, neste computador:
+
+- **Desenho**: a paleta da folha e uma luz uniforme, como o Lapin sempre desenhou. Rápido em qualquer computador.
+- **Médio**: as sombras do sol, sombra nos cantos onde as faces se encontram, e luz do céu.
+- **Realista**: o céu atrás do modelo e um terreno por baixo (onde o projeto não tem terreno), e vidro que a luz atravessa. Para apresentar, com uma boa placa gráfica.
+
+![Uma casa na vista realista](shots/view-realistic.webp)
+
+O sol é o do projeto: onde está para o local do projeto (Gerenciar → **Localização**) num dia a uma hora. Vista → **Sol e sombras** define o dia (o equinócio e os solstícios estão a um clique) e a hora, reproduz o dia e acende o sol também na vista de desenho. Sem sistema de coordenadas nem ponto de levantamento, o local é Bucareste. O fuso horário segue a longitude do local, com a hora de verão europeia na Europa.
+
+![Sol e sombras](shots/sun-dialog.webp)
+
 ## O que uma vista mostra
 
 A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua aparência.
@@ -127,6 +141,7 @@ A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua a
 - **Símbolos 2D do IFC.** Elementos importados ou vinculados de um arquivo IFC que trazem o seu próprio desenho de planta (uma projeção, o giro de uma porta, o símbolo de uma peça, com as cores, os preenchimentos e os textos do arquivo) o desenham nas plantas em vez do seu corte. Desmarque a opção em Configurações da vista (ou em um estilo de vista) para desenhar o corte 3D deles em vez disso.
 - **Visibilidade** (<kbd>VV</kbd>) e **Gráficos** (<kbd>VG</kbd>). Eles mostram ou ocultam categorias e definem as suas penas, tipos de linha e preenchimentos.
 - **Dividir** e **Janela.** Eles mostram duas vistas lado a lado ou abrem uma vista em uma janela separada.
-- **Qualidade de exibição.** Como a vista 3D desenha as peças de muitos triângulos (uma planta importada, móveis, tubulações) quando estão longe. **Equilibrada** desenha uma peça distante mais grosseira só onde a diferença é menor que um pixel. **Rápida** a deixa se desviar até 3 pixels, para modelos grandes e computadores mais lentos. **Precisa** desenha cada peça como ela é. A configuração pertence ao projeto. O modelo, os seus desenhos, as exportações e os quantitativos nunca são simplificados: uma curva é feita de trechos retos que se desviam no máximo um milímetro dela.
+- **Qualidade de exibição.** Como a vista 3D é desenhada (**Desenho**, **Médio** ou **Realista**, guardado neste computador: ver *Realista, com o sol*) e como a vista 3D desenha as peças de muitos triângulos (uma planta importada, móveis, tubulações) quando estão longe. **Equilibrada** desenha uma peça distante mais grosseira só onde a diferença é menor que um pixel. **Rápida** a deixa se desviar até 3 pixels, para modelos grandes e computadores mais lentos. **Precisa** desenha cada peça como ela é. A configuração pertence ao projeto. O modelo, os seus desenhos, as exportações e os quantitativos nunca são simplificados: uma curva é feita de trechos retos que se desviam no máximo um milímetro dela.
+- **Sol e sombras.** O sol do projeto num dia a uma hora, iluminando a vista 3D com as suas sombras (ver *Realista, com o sol*).
 
 ![Qualidade de exibição](shots/display-quality.webp)
