@@ -327,7 +327,8 @@ public sealed class Session
         foreach (var key in new[] { id, TrackingView.RelationsKey(id) })
             if (_readers.TryGetValue(key, out var r)) found.UnionWith(r);
         found.Remove(id);
-        return [.. found.Where(x => _store.Get(x) != null).Order(StringComparer.Ordinal)];
+        // What builds nothing of itself (an opening a door fills: the door is what is drawn) is no dependent.
+        return [.. found.Where(x => _store.Get(x) != null && !(_built.TryGetValue(x, out var b) && b.Geometry == null)).Order(StringComparer.Ordinal)];
     }
 
     /// <summary>The entities the element <paramref name="id"/> was built from (its type, its storey, its host, the walls it joins), itself left out.</summary>
@@ -677,7 +678,7 @@ public sealed class Session
         foreach (var extra in _catalog.All<INodeProps>())
             try { extra.Add(e, _store, props); } catch (Exception) { /* derived only: the node goes without it */ }
         var owner = _catalog.OwnerOf(e.Class);
-        var storey = e.Class == IfcClass.BuildingStorey ? null : Spatial.StoreyOf(_store, e.Id)?.Id;
+        var storey = e.Class == IfcClass.BuildingStorey ? null : Spatial.ShownOn(_store, e)?.Id;
         return new NodeDto(e.Id, e.Class, e.Name, Spatial.ParentOf(_store, e.Id)?.Id, 0, 0, props, owner != null, owner, storey);
     }
 
@@ -951,7 +952,7 @@ public sealed class Session
         if (g?.Instance is { } inst && MeshOf(inst.Body, e, read, bands) is { } mesh)
         {
             var plan2d = (g.Plan ?? []).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();
-            return new RenderItem(e.Id, e.Class, Spatial.StoreyOf(_store, e.Id)?.Id, _catalog.OwnerOf(e.Class) != null,
+            return new RenderItem(e.Id, e.Class, Spatial.ShownOn(_store, e)?.Id, _catalog.OwnerOf(e.Class) != null,
                 mesh.Parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan2d, [],
                 [.. problems, .. g.Diagnostics ?? []], [], new RenderInstance(inst.Body, [.. inst.Xf.Select(v => (float)v)]));
         }
@@ -972,7 +973,7 @@ public sealed class Session
                 for (var i = 0; i + 1 < pl.Count; i++) seg.AddRange([(float)pl[i].X, (float)pl[i].Y, (float)pl[i].Z, (float)pl[i + 1].X, (float)pl[i + 1].Y, (float)pl[i + 1].Z]);
             if (seg.Count > 0) lines = [.. seg];
         }
-        return new RenderItem(e.Id, e.Class, Spatial.StoreyOf(_store, e.Id)?.Id, _catalog.OwnerOf(e.Class) != null,
+        return new RenderItem(e.Id, e.Class, Spatial.ShownOn(_store, e)?.Id, _catalog.OwnerOf(e.Class) != null,
             g?.LineColor ?? parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan, snaps,
             [.. problems, .. g?.Diagnostics ?? []], parts, null, lines);
     }

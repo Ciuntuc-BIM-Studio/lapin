@@ -132,7 +132,7 @@ The sun is the project’s: where it stands for the project’s place (Manage �
 
 The **View** tab sets what the view in front shows and how it looks.
 
-**Grid** (<kbd>F7</kbd>) hides or shows the plan's background grid, and **Thin lines** (<kbd>TL</kbd>) draws every line one pixel thick, to read a dense drawing. Both are for the screen only: sheets, PDF and DXF keep their pens, and snapping to the grid stays.
+**Grid** (<kbd>F7</kbd>) hides or shows the plan's background grid, and **Thin lines** (<kbd>TL</kbd>) draws every line one pixel thick, to read a dense drawing. Both are for the screen only: sheets, PDF and DXF keep their pens, and snapping to the grid stays. The 3D view's ground grid follows the same switch.
 
 ![The View tab](shots/ribbon-view.webp)
 

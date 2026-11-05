@@ -24,7 +24,7 @@ Du kan skitsere på fire slags visninger:
 
 ## At lave et legeme
 
-- **Ekstrudér** (EXTRUDE) skubber omridset lige ud. Skriv S for begge veje fra skitsen, T for en konicitet, der hælder siderne ind, og Cut for at det skærer de elementer, du valgte før. Vil du føre det op til et andet elements flade, så brug **Op til → en flade…** i dets egenskaber, eller **Ekstrudér til flade**.
+- **Ekstrudér** (EXTRUDE) skubber omridset lige ud. Skriv S for begge veje fra skitsen, T for en konicitet, der hælder siderne ind, og Cut for at det skærer de elementer, du valgte før. Vil du føre det op til et andet elements flade, så brug **Op til → en flade…** i dets egenskaber, eller **Ekstrudér til flade**. Dybden, højderne og tykkelserne skrives i projektets enhed, som prompten siger (`Depth (mm)`: `2000` er 2 m).
 - **Sweep** (SWEEP) fører en profil langs en sti. TWist drejer snittet undervejs, SCale gør det større, og RIse løfter det. En cirkel, der stiger, bliver en skruelinje og går TUrns gange rundt.
 - **Overgangsform** (LOFT) forbinder profiler tegnet på forskellige visninger. Skriv S for at gå glat gennem dem. En linje valgt med rollen *skinne* bøjer den som styr.
 - **Drej** (REVOLVE) drejer en profil om en aksellinje.

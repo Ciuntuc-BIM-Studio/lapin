@@ -56,6 +56,20 @@ Fanen **Tegn** tegner linjer, polylinjer, rektangler, cirkler og buer. Den redig
 
 ![Fanen Tegn](shots/ribbon-draft.webp)
 
+**Forskyd** (<kbd>O</kbd>) kopierer en linje, en polylinje, et rektangel, en cirkel eller en bue i en afstand. Skriv afstanden i projektets enhed (i et projekt i millimeter er `500` en halv meter; `2m` eller `1'6"` siger deres egen enhed), klik på formen og så på den side, den skal til; den beder om den næste form, til du trykker <kbd>Enter</kbd> eller <kbd>Esc</kbd>. Skriv **T** (Through) i stedet, så går hver kopi gennem det punkt, du klikker. En polylinjes hjørner forbliver skarpe (i geringer), som i CAD. Forskyd virker i planer, snit, facader, på referenceplaner og i 3D-visningen.
+
+Hver længde, kommandolinjen beder om, er i projektets enhed, og prompten siger hvilken: `Depth (mm)`, `Height (ft-in)`. Vinkler, faktorer og antal er almindelige tal: `90` efter **Rotér** er 90°, uanset enheden.
+
+### Tegning i 3D-visningen
+
+**Linje**, **Polylinje**, **Rektangel**, **Cirkel**, **Bue** og redigeringerne fra Tegning virker også i 3D-visningen, med kommandolinjen nederst. Mens en kommando kører, siger mærket øverst, hvor du tegner: i den aktive etages kote eller på det valgte referenceplan. **Vælg en flade** i mærket og så et klik på en flade i modellen laver et referenceplan på fladen og tegner på det. Punkter fanges som i en plan: til planens snitlinjer (væggenes hjørner og flader) og til det, der er tegnet på samme plan, med ortho og sporingslinjerne. Det, du tegner, er det samme tegneelement som et tegnet på planen og ses også der.
+
+![Tegning i 3D-visningen: mærket siger planet, linjen følger musen i etagens kote](shots/draft-3d.webp)
+
+### Tegninger i 3D-visningen
+
+Det, du tegner på en plan (linjer, polylinjer, rektangler, cirkler, buer), står også i 3D-visningen som linjer i etagens kote (selve koten, ikke planens snithøjde); det, du tegner på et referenceplan, et snit eller en facade, står på det plan. Klik på en i 3D for at vælge den, og flyt, kopiér, forskyd eller slet den. **Vis → Tegninger i 3D**, også i **Vis → Visningsindstillinger** for en 3D-visning, viser eller skjuler dem alle; den er slået til, til du slår den fra. Mål, tekster, mærker, skraveringer og hjælpelinjer (rollen draft) bliver på deres visninger, og en DXF bragt ind på en plan forbliver en 2D-tegning, bortset fra dens linjer med koter.
+
 ## Annotering
 
 Fanen **Annotér** har målene, tekst, modullinjer, niveauer og mærker. Et mål læser modellen, så det opdateres, når en væg flyttes. Hvordan tekst, mål, modullinjer og mærker ser ud, indstilles under **Administrer → Tegningsstandarder**.

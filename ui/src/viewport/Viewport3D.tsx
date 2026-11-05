@@ -22,6 +22,7 @@ import { chipText, cutZ, settingOf } from './storeys3d';
 import { showAllStoreys3d } from './storeys3dActions';
 import { everyLayerPatch, layers3dOf, layersChip, shownIn } from './layers3d';
 import { select, setTool, useUi } from '../app/store';
+import { useDisplay } from '../app/display';
 import { usePaneField } from '../app/pane';
 import { findTool } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
@@ -35,6 +36,7 @@ import { poseOf, positionOf, useCamera, type CameraApi, type CameraPose } from '
 import { Grips3D } from './Grips3D';
 import { AxisDrag3D } from './AxisDrag3D';
 import { FaceSketch3D } from './FaceSketch3D';
+import { Draft3D } from './Draft3D';
 import { useFaceSketch } from './faceSketch';
 import { useAxisDrag } from './axisDrag';
 import { SectionBox3D } from './SectionBox3D';
@@ -172,6 +174,20 @@ function sphereOf(positions: Float32Array): { centre: [number, number, number]; 
 }
 
 const NO_RAYCAST = () => undefined;
+/** What is picked but not drawn (a bare opening's face in its hole, its outline until selected). */
+const UNSEEN_FACE = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
+UNSEEN_FACE.userData.shared = true;
+const UNSEEN_LINE = new THREE.LineBasicMaterial({ visible: false });
+UNSEEN_LINE.userData.shared = true;
+
+/** How near a line a ray passes to meet it: about six pixels where the ray meets the ground, never less than a centimetre. */
+function lineThreshold(cam: THREE.Camera, ray: THREE.Raycaster): number {
+  const ortho = (cam as THREE.OrthographicCamera).isOrthographicCamera ? cam as THREE.OrthographicCamera : null;
+  if (ortho) return Math.max(0.01, ((ortho.top - ortho.bottom) / ortho.zoom) * 0.008);
+  const g = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
+  const d = g ? g.distanceTo(ray.ray.origin) : cam.position.length();
+  return Math.max(0.01, d * 0.008);
+}
 
 function meshOf(item: RenderItem): THREE.Group {
   const group = new THREE.Group();
@@ -202,11 +218,28 @@ function meshOf(item: RenderItem): THREE.Group {
     lods.push({ levels, errors: p.lods.map((l) => l.error), ...sphereOf(p.positions) });
   }
   if (lods.length) group.userData.lods = lods;
-  // Linework with heights (a DXF's 3D lines): lines in space, in their own colour.
+  // Linework (a DXF's 3D lines, the shapes drafted on a view's plane: decision 312): lines in space, in their own colour, picked as their element.
   if (item.lines?.length) {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(item.lines, 3));
-    group.add(new THREE.LineSegments(g, lineworkMaterial(item.color)));
+    // A bare wall opening's outline (decision 312): drawn only while selected, its face (unseen) taking the click in the hole.
+    const opening = item.type === 'IfcOpeningElement';
+    const lines = new THREE.LineSegments(g, opening ? UNSEEN_LINE : lineworkMaterial(item.color));
+    lines.userData.nodeId = item.nodeId;
+    lines.userData.linework = opening ? '' : item.color;
+    group.add(lines);
+    if (opening && item.lines.length >= 18) {
+      const q = item.lines;
+      // The outline's first three segments' starts are three corners; the fourth closes the quad.
+      const corner = (k: number) => [q[k * 6], q[k * 6 + 1], q[k * 6 + 2]];
+      const quad = new THREE.BufferGeometry();
+      quad.setAttribute('position', new THREE.BufferAttribute(new Float32Array([...corner(0), ...corner(1), ...corner(2), ...(q.length >= 24 ? corner(3) : corner(2))]), 3));
+      quad.setIndex([0, 1, 2, 0, 2, 3]);
+      const hit = new THREE.Mesh(quad, UNSEEN_FACE);
+      hit.userData.nodeId = item.nodeId;
+      hit.userData.pickOnly = true;
+      group.add(hit);
+    }
   }
   return group;
 }
@@ -259,6 +292,8 @@ function capsOf(item: CapItem): THREE.Group {
 
 function highlight(group: THREE.Object3D, on: boolean) {
   group.traverse((c) => {
+    // Linework has no faces to glow: its lines take the selection's colour.
+    if (typeof c.userData.linework === 'string') { (c as THREE.LineSegments).material = on ? lineworkMaterial('#b5532d') : c.userData.linework ? lineworkMaterial(c.userData.linework) : UNSEEN_LINE; return; }
     const m = (c as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
     // Off, a glowing material gets its own glow back.
     const own = m?.userData.emissive as { hex: number; intensity: number } | undefined;
@@ -868,6 +903,8 @@ export function Viewport3D() {
       const voids = s.getObjectByName(VOIDS_GROUP);
       if (voids && !useUi.getState().tool) for (const c of voids.children) if (c.userData.openingVoid) meshes.push(c);
       const cut = cutRef.current;
+      // Lines are met within a few pixels of the cursor, as far off as the camera looks.
+      ray.params.Line = { threshold: lineThreshold(cam, ray) };
       return ray.intersectObjects(meshes, true).find((h) => nodeOfHit(h) && (cut === null || h.point.z <= cut + 1e-3));
     };
     /** The element a hit is on: its own mesh's, or the instance's. */
@@ -1263,8 +1300,9 @@ export function Viewport3D() {
     };
   }, []);
 
-  // The view clears to the theme's paper or graphite; the grid lies on the active storey.
+  // The view clears to the theme's paper or graphite; the grid lies on the active storey, shown or hidden by View → Grid (F7) as in plans.
   const theme = useUi((st) => st.theme);
+  const gridShown = useDisplay((st) => st.grid);
   const elevation = elevationRef.current;
   useEffect(() => {
     rendererRef.current?.setClearColor(CLEAR[theme]);
@@ -1272,9 +1310,11 @@ export function Viewport3D() {
     const old = s?.getObjectByName('ground-grid');
     if (!s) return;
     if (old) { s.remove(old); dispose(old); }
-    s.add(groundGrid(theme, elevation));
+    const grid = groundGrid(theme, elevation);
+    grid.visible = gridShown;
+    s.add(grid);
     invalidate.current();
-  }, [theme, elevation]);
+  }, [theme, elevation, gridShown]);
 
   // The grid's axes, on the lowest storey: dash-dot lines with their labels at both ends.
   // Keyed on the grids and the lowest storey only, not on every diff.
@@ -1370,6 +1410,7 @@ export function Viewport3D() {
   const flying = useWalk((st) => st.fly);
   const looks = useLooks((st) => st.looks);
   const visualStyle = useUi((st) => st.visualStyle);
+  const drafts3d = useDisplay((st) => st.drafts3d);
   const fog = useUi((st) => st.fog);
   // The layers this 3D view shows (its style's or its own): the parts the others are drawn without, picked through, walked through.
   const layers = useSession((st) => layers3dOf(st.nodes, view3dId).mode);
@@ -1407,16 +1448,20 @@ export function Viewport3D() {
       if (walking && item.type === 'IfcSpace') object.visible = false;
       // The visual style: faces, edges, or both.
       object.traverse((c) => {
-        if ((c as THREE.Mesh).isMesh) c.visible = visualStyle !== 'wireframe';
+        if (c.userData.pickOnly) c.visible = true;
+        else if ((c as THREE.Mesh).isMesh) c.visible = visualStyle !== 'wireframe';
+        else if (typeof c.userData.linework === 'string') c.visible = true;
         else if ((c as THREE.LineSegments).isLineSegments) c.visible = visualStyle !== 'shaded';
       });
+      // Drafted shapes (View → Drafts in 3D).
+      if (!drafts3d && item.type === 'IfcAnnotation') object.visible = false;
     }
     // The instances of shared meshes: added, moved, taken out; drawn as their looks and the selection say.
     const layer = instances.current;
     if (layer) { layer.sync(render, meshes); layer.restyle(looks, [...shown], visualStyle, layers); }
     boxDirty.current();
     invalidate.current();
-  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown]);
+  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d]);
 
   // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);
@@ -1584,6 +1629,7 @@ export function Viewport3D() {
       {!walkStart && <SectionBox3D camera={camRef} canvas={host} />}
       {!walkStart && <AxisDrag3D camera={camRef} canvas={host} />}
       {!walkStart && <FaceSketch3D camera={camRef} canvas={host} />}
+      {!walkStart && <Draft3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
       <KeyPlan mode="3d" />
     </>

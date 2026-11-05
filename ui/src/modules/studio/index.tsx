@@ -19,6 +19,7 @@ import { fromJson } from '../../viewport/cad/shapes';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
 import { ask, choiceField, lengthField, numberField } from '../../shell/AskBox';
+import { formatLength, lengthText, unitName } from '../../engine/unitsStore';
 import { editSketch } from './sketch';
 import { FeatureCard, featureFieldKeys, takeUpTo } from './FeatureCard';
 import { OperationsCard, hasTools } from './OperationsCard';
@@ -51,7 +52,7 @@ function thick(op: ThickOp): Step {
     return null;
   };
   const heightStep = (go: (h: number) => Promise<null>, prompt: string): Step => ({
-    prompt: `${prompt} <${last.height}>`, want: 'none',
+    prompt: `${prompt} <${formatLength(last.height)}>`, want: 'none',
     value: (h) => { if (h !== 0) last.height = h; return go(h); },
     enter: () => go(last.height),
   });
@@ -72,12 +73,12 @@ function thick(op: ThickOp): Step {
       const view = viewOf(typeof draft?.props.viewId === 'string' ? draft.props.viewId : undefined, nodes);
       if (makesNative(view.kind, solid)) {
         const typeId = useUi.getState().wallTypeId;
-        return heightStep((h) => run('architecture.wallsAlong', nativeArgs(shape, view.storeyId ?? activeStorey()?.id ?? null, typeId, choice(last.thickness, h)), 'Walls laid along the shape, joined at its corners.'), 'Wall height (m)');
+        return heightStep((h) => run('architecture.wallsAlong', nativeArgs(shape, view.storeyId ?? activeStorey()?.id ?? null, typeId, choice(last.thickness, h)), 'Walls laid along the shape, joined at its corners.'), `Wall height (${unitName()})`);
       }
       return {
-        prompt: `Thickness (m) <${last.thickness}>`, want: 'none',
-        value: (t) => { if (t > 0) last.thickness = t; return heightStep((h) => run(COMMAND[op], solidArgs(hit.id, choice(last.thickness, h)), 'Made: it follows the shape and its plane.'), 'Height (m; negative: away from you)'); },
-        enter: () => heightStep((h) => run(COMMAND[op], solidArgs(hit.id, choice(last.thickness, h)), 'Made: it follows the shape and its plane.'), 'Height (m; negative: away from you)'),
+        prompt: `Thickness (${unitName()}) <${formatLength(last.thickness)}>`, want: 'none',
+        value: (t) => { if (t > 0) last.thickness = t; return heightStep((h) => run(COMMAND[op], solidArgs(hit.id, choice(last.thickness, h)), 'Made: it follows the shape and its plane.'), `Height (${unitName()}; negative: away from you)`); },
+        enter: () => heightStep((h) => run(COMMAND[op], solidArgs(hit.id, choice(last.thickness, h)), 'Made: it follows the shape and its plane.'), `Height (${unitName()}; negative: away from you)`),
       };
     },
   });
@@ -98,7 +99,7 @@ function refPlane(): Step | null {
   const viewId = frontViewId(useUi.getState(), activeStorey()?.id ?? null);
   if (!viewId) { cadLog('Open a plan, a section, an elevation or a reference plane first.'); return null; }
   const make = async (offset: number) => { openPlane(await execute('view.create', { kind: 'plane', fromView: viewId, offset })); return null; };
-  return { prompt: 'Offset from this view\'s plane (m; negative: away from you) <0>', want: 'none', value: make, enter: () => make(0) };
+  return { prompt: `Offset from this view's plane (${unitName()}; negative: away from you) <0>`, want: 'none', value: make, enter: () => make(0) };
 }
 registerCommand({ names: ['REFPLANE', 'RPLANE'], label: 'Reference plane', start: refPlane });
 
@@ -159,7 +160,7 @@ function extrude(): Step {
   const kw = (next: () => Step): Record<string, () => Step> => ({
     ...Object.fromEntries(CLASSES.map((c) => [c, () => { cls = c; cadLog(`Class ${c}.`); return next(); }])),
     S: () => { symmetric = !symmetric; cadLog(symmetric ? 'Both ways from the sketch.' : 'One way from the sketch.'); return next(); },
-    T: () => ({ prompt: 'Taper angle (°; positive leans in)', want: 'none', value: (v) => { taper = v; return next(); } }),
+    T: () => ({ prompt: 'Taper angle (°; positive leans in)', want: 'none', scalar: (v) => { taper = v; return next(); } }),
     CUT: () => {
       if (!cut.length) { cadLog('Select the elements to cut before EXTRUDE, then Cut.'); return next(); }
       cutting = !cutting; cadLog(cutting ? `It cuts the ${cut.length} element(s) selected, and is not drawn.` : 'It is a solid of its own.'); return next();
@@ -172,7 +173,7 @@ function extrude(): Step {
     prompt: `Pick a closed outline [${opts()}; Symmetric/Taper${cut.length ? '/Cut' : ''}]`, want: 'pick', keywords: kw(pick),
     pick: (hit) => {
       const depth = (): Step => ({
-        prompt: `Depth (m; negative: away from you) [${opts()}] <1>`, want: 'none', keywords: kw(depth),
+        prompt: `Depth (${unitName()}; negative: away from you) [${opts()}] <${formatLength(1)}>`, want: 'none', keywords: kw(depth),
         value: async (d) => { await run(hit.id, d); return null; },
         enter: async () => { await run(hit.id, 1); return null; },
       });
@@ -214,17 +215,18 @@ function sweep(): Step | null | Promise<null> {
     selectMade(await execute('studio.sweep', { profileId: profile.id, pathId: path.id, place, placeOffset: gap, ...shape, ...(endId ? { endProfileId: endId } : {}), ...(railId ? { railId } : {}) }));
     return null;
   };
-  const number = (key: string, prompt: string, path: { id: string }): Step => ({ prompt, want: 'none', value: (v) => { shape[key] = v; return pickProfile(path); } });
-  const extras = () => Object.entries(shape).map(([k, v]) => `${k} ${v}`).join(', ');
+  const number = (key: string, prompt: string, path: { id: string }): Step => ({ prompt, want: 'none', scalar: (v) => { shape[key] = v; return pickProfile(path); } });
+  const length = (key: string, prompt: string, path: { id: string }): Step => ({ prompt, want: 'none', value: (v) => { shape[key] = v; return pickProfile(path); } });
+  const extras = () => Object.entries(shape).map(([k, v]) => `${k} ${k === 'rise' ? lengthText(v) : v}`).join(', ');
   const pickProfile = (path: { id: string }): Step => ({
-    prompt: `Pick the closed profile [Centre/Right/Left/Outside/Inside: ${place}; gap ${gap} m; End profile${endId ? ' ✓' : ''}; RAil${railId ? ' ✓' : ''}; TWist/SCale/RIse/TUrns${extras() ? ': ' + extras() : ''}]`, want: 'pick',
+    prompt: `Pick the closed profile [Centre/Right/Left/Outside/Inside: ${place}; gap ${lengthText(gap)}; End profile${endId ? ' ✓' : ''}; RAil${railId ? ' ✓' : ''}; TWist/SCale/RIse/TUrns${extras() ? ': ' + extras() : ''}]`, want: 'pick',
     keywords: {
       ...Object.fromEntries(Object.entries(PLACES).map(([k, v]) => [k, () => { place = v; return pickProfile(path); }])),
       E: () => ({ prompt: 'Pick the profile it ends with', want: 'pick', pick: (h) => { endId = h.id; railId = null; return pickProfile(path); } }),
       RA: () => ({ prompt: 'Pick the second rail', want: 'pick', pick: (h) => { railId = h.id; endId = null; return pickProfile(path); } }),
       TW: () => number('twist', 'Twist by the end of the path (°)', path),
       SC: () => number('scaleEnd', 'Scale at the end (1: as drawn)', path),
-      RI: () => number('rise', 'Rise by the end of the path (m)', path),
+      RI: () => length('rise', `Rise by the end of the path (${unitName()})`, path),
       TU: () => number('turns', 'Turns round a closed path that rises', path),
     },
     value: (v) => { gap = v; return pickProfile(path); },
@@ -258,7 +260,7 @@ function revolve(): Step {
       prompt: 'Pick the axis (a line)', want: 'pick',
       pick: (axis) => ({
         prompt: 'Angle (degrees) <360>', want: 'none',
-        value: async (a) => { selectMade(await execute('studio.revolve', { profileId: profile.id, axisId: axis.id, angle: a })); return null; },
+        scalar: async (a) => { selectMade(await execute('studio.revolve', { profileId: profile.id, axisId: axis.id, angle: a })); return null; },
         enter: async () => { selectMade(await execute('studio.revolve', { profileId: profile.id, axisId: axis.id, angle: 360 })); return null; },
       }),
     }),

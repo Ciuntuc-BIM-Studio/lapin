@@ -56,6 +56,20 @@ La scheda **Disegno** disegna linee, polilinee, rettangoli, cerchi e archi. Li m
 
 ![La scheda Disegno](shots/ribbon-draft.webp)
 
+**Offset** (<kbd>O</kbd>) copia una linea, una polilinea, un rettangolo, un cerchio o un arco a una distanza. Scrivi la distanza nell’unità del progetto (in un progetto in millimetri `500` è mezzo metro; `2m` o `1'6"` dicono la propria unità), fai clic sulla forma, poi sul lato verso cui va; chiede la forma successiva finché premi <kbd>Invio</kbd> o <kbd>Esc</kbd>. Scrivi invece **T** (Through) e ogni copia passa per il punto su cui fai clic. Gli spigoli di una polilinea restano vivi (a quartabuono), come in CAD. L’offset funziona in piante, sezioni, prospetti, su piani di riferimento e nella vista 3D.
+
+Ogni lunghezza che la riga di comando chiede è nell’unità del progetto, e il messaggio dice quale: `Depth (mm)`, `Height (ft-in)`. Angoli, fattori e conteggi sono numeri semplici: `90` dopo **Ruota** è 90°, qualunque sia l’unità.
+
+### Disegnare nella vista 3D
+
+**Linea**, **Polilinea**, **Rettangolo**, **Cerchio**, **Arco** e le modifiche di Disegno funzionano anche nella vista 3D, con la riga di comando in basso. Mentre un comando è in corso, l’etichetta in alto dice dove disegni: alla quota del piano attivo o sul piano di riferimento selezionato. **Scegli una faccia** nell’etichetta, poi un clic su una faccia del modello, crea su quella faccia un piano di riferimento e disegna su di esso. I punti si agganciano come in pianta: alle linee tagliate della pianta (spigoli e facce dei muri) e a ciò che è disegnato sullo stesso piano, con l’orto e le linee di tracciamento. Ciò che disegni è lo stesso elemento di disegno di uno fatto in pianta, e si vede anche lì.
+
+![Disegnare nella vista 3D: l’etichetta dice il piano, la linea segue il mouse alla quota del piano](shots/draft-3d.webp)
+
+### I disegni nella vista 3D
+
+Ciò che disegni in una pianta (linee, polilinee, rettangoli, cerchi, archi) compare anche nella vista 3D, come linee alla quota del suo piano (la quota stessa, non l’altezza di taglio); ciò che disegni su un piano di riferimento, una sezione o un prospetto sta su quel piano. Fai clic su uno in 3D per selezionarlo, poi spostalo, copialo, fanne l’offset o cancellalo. **Vista → Disegni in 3D**, anche in **Vista → Impostazioni di vista** di una vista 3D, li mostra o li nasconde tutti; è attivo finché non lo spegni. Quote, testi, etichette, retini e linee di costruzione (il ruolo draft) restano nelle loro viste, e un DXF portato su una pianta resta un disegno 2D, tranne le sue linee con quote.
+
 ## Annotazioni
 
 La scheda **Annota** contiene le quote, i testi, gli assi della griglia, i livelli e le etichette. Una quota legge il modello, quindi si aggiorna quando un muro si sposta. L’aspetto di testi, quote, assi ed etichette si imposta in **Gestisci → Standard di disegno**.

@@ -335,6 +335,13 @@ public static class Spatial
     /// <summary>The storey an element stands on.</summary>
     public static Entity? StoreyOf(IModelView m, string elementId) => m.RelatingOf(elementId, IfcClass.RelContainedInSpatialStructure);
 
+    /// <summary>
+    /// The storey an element is drawn on: its own, or for an opening (never contained itself, as IFC has it) the storey of
+    /// the element it voids, so a plan shows and picks a wall's bare opening on the wall's storey only (decision 312).
+    /// </summary>
+    public static Entity? ShownOn(IModelView m, Entity e) =>
+        StoreyOf(m, e.Id) ?? (e.Class == IfcClass.OpeningElement && m.RelatingOf(e.Id, IfcClass.RelVoidsElement) is { } host ? StoreyOf(m, host.Id) : null);
+
     /// <summary>The spatial parent: an element's storey, a storey's building, a building's site.</summary>
     public static Entity? ParentOf(IModelView m, string id) =>
         StoreyOf(m, id) ?? m.RelatingOf(id, IfcClass.RelAggregates);

@@ -2,6 +2,7 @@
 
 import type { Vec2 } from '../platform/module';
 import { execute, query, useSession } from '../engine/session';
+import { formatLength, parseLength, unitName } from '../engine/unitsStore';
 
 export interface DimensionInfo {
   value: number | null;
@@ -26,8 +27,8 @@ export async function editDimension(id: string, at?: Vec2): Promise<boolean> {
   if (d.orphan) { useSession.setState({ error: 'The dimension lost its element: free it in its properties first.' }); return true; }
   if (!d.driving) { useSession.setState({ error: 'Neither end of this segment holds on an element: there is nothing to move.' }); return true; }
   const which = (d.segments ?? 1) > 1 ? ` (segment ${(d.segment ?? 0) + 1} of ${d.segments})` : '';
-  const answer = window.prompt(`Dimension value (m)${which}: the element moves to match`, d.value.toFixed(3));
-  const v = answer == null ? NaN : Number(answer.replace(',', '.'));
-  if (v > 0) await execute('drafting.setDimensionValue', { id, value: v, ...(d.segment != null ? { segment: d.segment } : {}) });
+  const answer = window.prompt(`Dimension value (${unitName()})${which}: the element moves to match`, formatLength(d.value));
+  const v = answer == null ? null : parseLength(answer);
+  if (v != null && v > 0) await execute('drafting.setDimensionValue', { id, value: v, ...(d.segment != null ? { segment: d.segment } : {}) });
   return true;
 }

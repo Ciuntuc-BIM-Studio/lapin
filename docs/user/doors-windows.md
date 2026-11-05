@@ -24,6 +24,8 @@ For an exact distance, use **Move** (<kbd>M</kbd>) or **Copy** (<kbd>CO</kbd>) o
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) cuts an opening alone through a wall where you click it: a passage, a hatch, a hole for a door that comes later. Set its width, height and sill in the properties panel before the click. Selected, its size, its place along the wall and its sill are changed there; like a door, it must fit in the wall and stay clear of the wall's other openings. In IFC it is an opening voiding the wall, with nothing filling it.
 
+Selected, an opening has grips like a window: drag its middle to slide it along the wall, or a jamb to make it wider or narrower while the other jamb stays put; the length beside the mouse can be typed, as when you draw. It is picked by a click in its gap in the plan, or in its hole in the 3D view, where its outline lights up. **Move** (<kbd>M</kbd>) slides it along the wall by a typed distance, and its height and sill are in the properties panel.
+
 **Head** shapes its top: **Rectangle**, **Segmental arch** (a shallow arc), **Elliptical arch** (a half ellipse, a quarter of the width high unless you say), **Semicircle**, or **Radiused corners** (a flat head with its top corners rounded). **Rise of the head** sets how high a segmental or elliptical head rises, **Corner radius** how round the corners are (150 mm unless you say, never more than half the width); empty, the kind's own. The wall's opening follows the outline in 3D, in elevations and sections and in IFC; a plan shows its jambs as before.
 
 ## The configurator

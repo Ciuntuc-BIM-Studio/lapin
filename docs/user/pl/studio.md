@@ -24,7 +24,7 @@ Możesz szkicować na czterech rodzajach widoków:
 
 ## Tworzenie bryły
 
-- **Wyciągnij** (EXTRUDE) wypycha obrys prosto na zewnątrz. Wpisz S, aby wyciągnąć w obie strony od szkicu, T, aby uzyskać zbieżność pochylającą boki do środka, i Cut, aby wycinała elementy zaznaczone wcześniej. Aby doprowadzić ją do ściany innego elementu, użyj **Do → lico…** w jej właściwościach lub **Wyciągnij do lica**.
+- **Wyciągnij** (EXTRUDE) wypycha obrys prosto na zewnątrz. Wpisz S, aby wyciągnąć w obie strony od szkicu, T, aby uzyskać zbieżność pochylającą boki do środka, i Cut, aby wycinała elementy zaznaczone wcześniej. Aby doprowadzić ją do ściany innego elementu, użyj **Do → lico…** w jej właściwościach lub **Wyciągnij do lica**. Głębokość, wysokości i grubości wpisuje się w jednostce projektu, jak mówi monit (`Depth (mm)`: `2000` to 2 m).
 - **Przeciągnięcie** (SWEEP) prowadzi profil wzdłuż ścieżki. TWist obraca przekrój po drodze, SCale go powiększa, a RIse go podnosi. Okrąg, który się wznosi, staje się helisą, okrążającą TUrns razy.
 - **Loft** (LOFT) łączy profile narysowane na różnych widokach. Wpisz S, aby przejście przez nie było gładkie. Linia zaznaczona z rolą *rail* wygina je jako prowadnica.
 - **Obrót** (REVOLVE) obraca profil wokół linii osi.

@@ -1,12 +1,14 @@
 /** The command line's state machine, with the engine mocked: steps, keywords, and points fed faster than the engine replies. */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Vec2 } from '../../platform/module';
 
 const engine = vi.hoisted(() => ({ execute: vi.fn(), undo: vi.fn() }));
 vi.mock('../../engine/session', () => engine);
 
 import { cancel, feedPoint, startCommand, submit, useCad } from './session';
+import { useStandards } from '../../engine/unitsStore';
+import { useUi } from '../../app/store';
 
 const P = (x: number, y: number): Vec2 => ({ x, y });
 /** The segments drawn, as "x,y-x,y". */
@@ -98,5 +100,59 @@ describe('PLINE', () => {
     await submit('');
     const shapes = engine.execute.mock.calls.filter(([c]) => c === 'drafting.draw').map(([, a]) => (a as { shapes: unknown[] }).shapes[0]);
     expect(shapes).toEqual([{ type: 'polyline', pts: [[0, 0], [1, 0], [1, 1]], closed: false }]);
+  });
+});
+
+describe('typed values and the project\'s unit', () => {
+  const offsets = () => engine.execute.mock.calls.filter(([c]) => c === 'drafting.offset').map(([, a]) => a as Record<string, unknown>);
+  const pickable = () => useCad.setState({ host: { viewId: 'v', pickDraft: () => ({ id: 'l1', shape: { type: 'line', a: P(0, 0), b: P(10, 0) } }), pickAny: () => null, shapeOf: () => null } });
+  afterEach(() => { useStandards.setState({ units: 'mm' }); useUi.setState({ selected: [] }); });
+
+  it('reads an OFFSET distance in millimetres (500 is half a metre), with its own unit or in feet and inches, and shows it so', async () => {
+    useStandards.setState({ units: 'mm' });
+    pickable();
+    await startCommand('OFFSET');
+    await submit('500');
+    expect(useCad.getState().offset).toBeCloseTo(0.5, 9);
+    expect(useCad.getState().step?.prompt).toContain('500 mm');
+    await submit('2m');
+    expect(useCad.getState().offset).toBeCloseTo(2, 9);
+    await submit('1500+250');
+    expect(useCad.getState().offset).toBeCloseTo(1.75, 9);
+    useStandards.setState({ units: 'ft-in' });
+    await submit('1\'6"');
+    expect(useCad.getState().offset).toBeCloseTo(0.4572, 9);
+    await feedPoint(P(1, 1));
+    await feedPoint(P(2, 3));
+    expect(offsets()[0]).toEqual({ id: 'l1', side: [2, 3], distance: useCad.getState().offset });
+  });
+
+  it('offsets Through a point picked, again until Enter', async () => {
+    pickable();
+    await startCommand('OFFSET');
+    await submit('T');
+    expect(useCad.getState().step?.prompt).toContain('through a point');
+    await feedPoint(P(1, 0));
+    await feedPoint(P(3, 0.75));
+    await feedPoint(P(1, 0));
+    await feedPoint(P(3, -2));
+    expect(offsets()).toEqual([{ id: 'l1', side: [3, 0.75], through: true }, { id: 'l1', side: [3, -2], through: true }]);
+    await submit('');
+    expect(useCad.getState().step).toBeNull();
+    useCad.setState({ offsetThrough: false });
+  });
+
+  it('never reads an angle or a factor in the project\'s unit: ROTATE 90 is 90°, SCALE 2 is twice, in millimetres too', async () => {
+    useStandards.setState({ units: 'mm' });
+    useUi.setState({ selected: ['a'] });
+    await startCommand('ROTATE');
+    await feedPoint(P(0, 0));
+    await submit('90');
+    await startCommand('SCALE');
+    await feedPoint(P(0, 0));
+    await submit('2,5');
+    const calls = engine.execute.mock.calls.map(([c, a]) => [c, a] as [string, Record<string, unknown>]);
+    expect(calls.find(([c]) => c === 'element.transform')?.[1].angle).toBe(90);
+    expect(calls.find(([c]) => c === 'drafting.transform')?.[1].factor).toBe(2.5);
   });
 });

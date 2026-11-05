@@ -314,6 +314,7 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .plan-item.outline { stroke-width: 0.8; }
 .plan-item.foreign { stroke: var(--ink-muted); stroke-dasharray: 4 3; }
 .plan-item.selected { stroke: var(--accent); fill: var(--accent-wash); stroke-width: 2; }
+.plan-item.hit.selected { stroke-dasharray: 4 3; stroke-width: 1.5; }
 .plan-label { font-size: 11px; fill: var(--ink-muted); }
 .plan-preview line, .plan-preview polyline, .plan-preview rect { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
 .plan-preview line.closing { opacity: 0.5; }

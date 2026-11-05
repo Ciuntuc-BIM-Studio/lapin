@@ -60,6 +60,20 @@ The **Draft** tab draws lines, polylines, rectangles, circles and arcs. It edits
 
 ![The Draft tab](shots/ribbon-draft.webp)
 
+**Offset** (<kbd>O</kbd>) copies a line, a polyline, a rectangle, a circle or an arc at a distance. Type the distance in the project's unit (in a project in millimetres `500` is half a metre; `2m` or `1'6"` say their own unit), click the shape, then the side it goes to; it asks for the next shape until you press <kbd>Enter</kbd> or <kbd>Esc</kbd>. Type **T** (Through) instead and each copy passes through the point you click. A polyline's corners stay sharp (mitred), as in CAD. Offset works in plans, sections, elevations, on reference planes and in the 3D view.
+
+Every length the command line asks for is in the project's unit, and the prompt says which: `Depth (mm)`, `Height (ft-in)`. Angles, factors and counts are plain numbers: `90` after **Rotate** is 90° whatever the unit.
+
+### Drafting in the 3D view
+
+**Line**, **Polyline**, **Rectangle**, **Circle**, **Arc** and the Draft edits work in the 3D view too, with the command line at the bottom. While a command runs, the chip at the top says where you draw: on the active storey's level, or on the reference plane you selected. **Pick a face** in the chip, then a click on a face of the model, makes a reference plane on that face and draws on it. Points snap as on a plan: to the plan's cut lines (the walls' corners and faces) and to what is drafted on the same plane, with ortho and the tracking guides. What you draw is the same drafted element as one drawn on the plan, and shows there too.
+
+![Drafting in the 3D view: the chip says the plane, the line follows the mouse on the storey's level](shots/draft-3d.webp)
+
+### Drafts in the 3D view
+
+What you draft on a plan (lines, polylines, rectangles, circles, arcs) also stands in the 3D view, as lines at its storey's level (the level itself, not the plan's cut height); what you draft on a reference plane, a section or an elevation stands on that plane. Click one in 3D to select it, then move, copy, offset or delete it. **View → Drafts in 3D**, also in **View → View settings** of a 3D view, shows or hides them all; it is on unless you turn it off. Dimensions, texts, tags, hatches and construction lines (the role draft) stay on their views, and a DXF brought onto a plan stays a 2D drawing, but for its lines with heights.
+
 ## Annotating
 
 The **Annotate** tab has the dimensions, text, grid axes, levels and tags. A dimension reads the model, so it updates when a wall moves. How text, dimensions, axes and tags look is set in **Manage → Drafting standards**.

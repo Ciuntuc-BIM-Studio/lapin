@@ -132,7 +132,7 @@ Die Sonne ist die des Projekts: wo sie für den Ort des Projekts (Verwalten → 
 
 Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt und wie sie aussieht.
 
-**Grid** (<kbd>F7</kbd>) blendet das Hintergrundraster des Grundrisses aus oder ein, und **Dünne Linien** (<kbd>TL</kbd>) zeichnet jede Linie ein Pixel dick, um eine dichte Zeichnung zu lesen. Beides gilt nur für den Bildschirm: Pläne, PDF und DXF behalten ihre Stifte, und das Fangen am Raster bleibt.
+**Grid** (<kbd>F7</kbd>) blendet das Hintergrundraster des Grundrisses aus oder ein, und **Dünne Linien** (<kbd>TL</kbd>) zeichnet jede Linie ein Pixel dick, um eine dichte Zeichnung zu lesen. Beides gilt nur für den Bildschirm: Pläne, PDF und DXF behalten ihre Stifte, und das Fangen am Raster bleibt. Das Bodenraster der 3D-Ansicht folgt demselben Schalter.
 
 ![Die Registerkarte Ansicht](shots/ribbon-view.webp)
 

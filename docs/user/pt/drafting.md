@@ -56,6 +56,20 @@ A guia **Desenho** desenha linhas, polilinhas, retângulos, círculos e arcos. E
 
 ![A guia Desenho](shots/ribbon-draft.webp)
 
+**Deslocamento** (<kbd>O</kbd>) copia uma linha, uma polilinha, um retângulo, um círculo ou um arco a uma distância. Digite a distância na unidade do projeto (num projeto em milímetros `500` é meio metro; `2m` ou `1'6"` dizem a própria unidade), clique na forma e depois no lado para onde ela vai; ele pede a forma seguinte até você apertar <kbd>Enter</kbd> ou <kbd>Esc</kbd>. Digite **T** (Through) em vez disso e cada cópia passa pelo ponto clicado. Os cantos de uma polilinha ficam vivos (em meia-esquadria), como no CAD. O deslocamento funciona em plantas, cortes, elevações, em planos de referência e na vista 3D.
+
+Todo comprimento que a linha de comando pede está na unidade do projeto, e a mensagem diz qual: `Depth (mm)`, `Height (ft-in)`. Ângulos, fatores e contagens são números simples: `90` depois de **Girar** é 90°, seja qual for a unidade.
+
+### Desenhar na vista 3D
+
+**Linha**, **Polilinha**, **Retângulo**, **Círculo**, **Arco** e as edições de Desenho funcionam também na vista 3D, com a linha de comando embaixo. Enquanto um comando roda, a etiqueta no alto diz onde você desenha: no nível do pavimento ativo ou no plano de referência selecionado. **Escolher uma face** na etiqueta, e depois um clique numa face do modelo, cria um plano de referência nessa face e desenha nele. Os pontos se prendem como numa planta: às linhas cortadas da planta (cantos e faces das paredes) e ao que está desenhado no mesmo plano, com orto e as linhas de rastreamento. O que você desenha é o mesmo elemento de desenho que um feito na planta, e aparece lá também.
+
+![Desenhar na vista 3D: a etiqueta diz o plano, a linha segue o mouse no nível do pavimento](shots/draft-3d.webp)
+
+### Os desenhos na vista 3D
+
+O que você desenha numa planta (linhas, polilinhas, retângulos, círculos, arcos) aparece também na vista 3D, como linhas no nível do seu pavimento (o próprio nível, não a altura de corte); o que você desenha num plano de referência, num corte ou numa elevação fica nesse plano. Clique num deles em 3D para selecioná-lo e depois mova, copie, desloque ou apague. **Vista → Desenhos em 3D**, também em **Vista → Configurações da vista** de uma vista 3D, mostra ou oculta todos; fica ligado até você desligar. Cotas, textos, etiquetas, hachuras e linhas de construção (o papel draft) ficam nas suas vistas, e um DXF trazido para uma planta continua um desenho 2D, menos as linhas com cotas.
+
 ## Anotando
 
 A guia **Anotar** tem as cotas, os textos, os eixos da malha, os níveis e os identificadores. Uma cota lê o modelo, então ela se atualiza quando uma parede se move. A aparência de textos, cotas, eixos e identificadores é definida em **Gerenciar → Padrões de desenho**.

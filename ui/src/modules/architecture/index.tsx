@@ -38,6 +38,7 @@ import { roomGrips, roomRefs } from './rooms';
 import { newElement, typedBy } from './NewElement';
 import { WallThumb, SlabThumb, JoineryThumb } from './Thumbs';
 import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
+import { wallOpeningGrips } from './wallOpeningGrips';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
 import { RoomFinishesDialog } from './RoomFinishes';
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
@@ -169,6 +170,15 @@ function joineryGrips(node: NodeDto): Grip[] {
     arrow('side+', f.left, 'Flip the side: opens to the other face', side),
     arrow('side-', { x: -f.left.x, y: -f.left.y }, 'Flip the side: opens to the other face', side),
   ];
+}
+
+/** An opening: a floor's by its outline; a bare wall opening along its wall and by its jambs, as a window (decision 312). */
+function openingGrips(node: NodeDto): Grip[] {
+  if (node.props.contour) return contourGrips('architecture.updateSlabOpening')(node);
+  if (!isWallOpening(node)) return [];
+  const wall = relatingOf(useSession.getState(), node.id, 'IfcRelVoidsElement');
+  const c = wall ? arcOf(wall.props) : null;
+  return c ? wallOpeningGrips(node.id, c, num(node, 'along'), num(node, 'width')) : [];
 }
 
 /** A curtain wall: its ends, its middle, its arc. */
@@ -417,7 +427,7 @@ const architecture: LapinModule = {
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
   ],
   dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog },
-  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: (n) => (n.props.contour ? contourGrips('architecture.updateSlabOpening')(n) : []), IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips },
+  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips },
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },

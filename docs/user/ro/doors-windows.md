@@ -24,6 +24,8 @@ Pentru o distanță exactă, folosește **Mută** (<kbd>M</kbd>) sau **Copiază*
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) taie un gol simplu prin perete acolo unde dai clic: o trecere, un chepeng, un gol pentru o ușă care vine mai târziu. Lățimea, înălțimea și parapetul le pui în panoul de proprietăți înainte de clic. Selectat, i se schimbă acolo dimensiunile, locul de-a lungul peretelui și parapetul; ca o ușă, trebuie să încapă în perete și să nu atingă celelalte goluri ale lui. În IFC e un gol care taie peretele, fără nimic care să-l umple.
 
+Selectat, un gol are mânere ca o fereastră: trage de mijlocul lui ca să-l muți de-a lungul peretelui sau de o ambrasură ca să-l lărgești sau să-l îngustezi, cealaltă rămânând pe loc; lungimea de lângă mouse se poate scrie, ca la desen. Se alege cu un clic în spațiul lui din plan sau în gaura lui din vederea 3D, unde i se aprinde conturul. **Mutare** (<kbd>M</kbd>) îl mută de-a lungul peretelui cu o distanță scrisă, iar înălțimea și parapetul sunt în panoul de proprietăți.
+
 **Forma de sus** dă forma capului: **Dreptunghi**, **Arc de segment** (un arc turtit), **Arc eliptic** (o jumătate de elipsă, înaltă cât un sfert din lățime dacă nu spui altfel), **Semicerc** sau **Colțuri rotunjite** (un cap drept cu colțurile de sus rotunjite). **Înălțimea arcului** spune cât se ridică un arc de segment sau eliptic, **Raza colțurilor** cât de rotunde sunt colțurile (150 mm dacă nu spui altfel, niciodată mai mult de jumătate din lățime); goală, cea a formei. Golul din perete urmează conturul în 3D, în fațade și secțiuni și în IFC; planul îi arată spaletele ca înainte.
 
 ## Configuratorul

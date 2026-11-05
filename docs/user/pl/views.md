@@ -132,7 +132,7 @@ Słońce jest słońcem projektu: gdzie stoi dla miejsca projektu (Zarządzaj �
 
 Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 
-**Siatka** (<kbd>F7</kbd>) ukrywa lub pokazuje siatkę tła rzutu, a **Cienkie linie** (<kbd>TL</kbd>) rysuje każdą linię o grubości jednego piksela, aby łatwiej czytać gęsty rysunek. Oba ustawienia dotyczą tylko ekranu: arkusze, PDF i DXF zachowują swoje pióra, a przyciąganie do siatki pozostaje.
+**Siatka** (<kbd>F7</kbd>) ukrywa lub pokazuje siatkę tła rzutu, a **Cienkie linie** (<kbd>TL</kbd>) rysuje każdą linię o grubości jednego piksela, aby łatwiej czytać gęsty rysunek. Oba ustawienia dotyczą tylko ekranu: arkusze, PDF i DXF zachowują swoje pióra, a przyciąganie do siatki pozostaje. Siatka gruntu w widoku 3D idzie za tym samym przełącznikiem.
 
 ![Karta Widok](shots/ribbon-view.webp)
 

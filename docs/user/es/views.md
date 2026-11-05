@@ -128,7 +128,7 @@ El sol es el del proyecto: dónde está para el lugar del proyecto (Gestionar �
 
 La ficha **Vista** configura qué muestra la vista que está delante y cómo se ve.
 
-**Grid** (<kbd>F7</kbd>) oculta o muestra la rejilla de fondo de la planta, y **Líneas finas** (<kbd>TL</kbd>) dibuja todas las líneas de un píxel, para leer un dibujo denso. Las dos son solo para la pantalla: los planos, el PDF y el DXF conservan sus plumas, y el forzado a la rejilla sigue.
+**Grid** (<kbd>F7</kbd>) oculta o muestra la rejilla de fondo de la planta, y **Líneas finas** (<kbd>TL</kbd>) dibuja todas las líneas de un píxel, para leer un dibujo denso. Las dos son solo para la pantalla: los planos, el PDF y el DXF conservan sus plumas, y el forzado a la rejilla sigue. La rejilla del suelo de la vista 3D sigue el mismo interruptor.
 
 ![La ficha Vista](shots/ribbon-view.webp)
 

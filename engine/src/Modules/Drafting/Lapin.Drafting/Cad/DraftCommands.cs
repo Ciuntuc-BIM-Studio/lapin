@@ -172,10 +172,13 @@ public static class DraftCommands
         r.Command("offset", "Offset", (ctx, a) =>
         {
             var e = Drafts.Require(ctx.Model, (string?)a["id"]);
-            var d = Json.Number(a["distance"]) ?? throw new CommandException("Offset by how much?");
-            if (d <= 0) throw new CommandException("The offset distance must be positive.");
             var s = Drafts.ShapeOf(e) ?? throw new CommandException("Only lines, polylines, circles and arcs offset.");
-            var o = Ops.Offset(s, d, P(a["side"], "side")) ?? throw new CommandException("The offset would collapse the shape.");
+            var side = P(a["side"], "side");
+            // Through: the copy passes through the point picked (its distance taken from it).
+            var d = a["through"] is JsonValue tv && tv.TryGetValue<bool>(out var tb) && tb ? Ops.ThroughDistance(s, side)
+                : Json.Number(a["distance"]) ?? throw new CommandException("Offset by how much?");
+            if (d <= 1e-9) throw new CommandException("The offset distance must be positive.");
+            var o = Ops.Offset(s, d, side) ?? throw new CommandException("The offset would collapse the shape.");
             return new JsonObject { ["id"] = Drafts.Add(ctx, e.Str("viewId")!, e.Str("layer"), o).Id };
         });
 

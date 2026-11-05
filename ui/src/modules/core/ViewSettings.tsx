@@ -12,6 +12,7 @@
  * front. Manage → View styles edits the styles themselves.
  */
 
+import { setDisplay, useDisplay } from '../../app/display';
 import { useEffect, useState } from 'react';
 import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
@@ -120,6 +121,7 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
             )}
           </>
         )}
+        {threeD && <Drafts3dField />}
         {site && <SitePlanFields view={view} />}
         {section && <SectionFields view={view} />}
         <dt title="What this view shows and how, by category, class and element (VV)">Graphics</dt>
@@ -215,5 +217,16 @@ export function ViewStylesDialog() {
         <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
     </div>
+  );
+}
+
+/** The shapes drafted on plans and reference planes, drawn in 3D (View → Drafts in 3D; for the eyes, every 3D view). */
+function Drafts3dField() {
+  const on = useDisplay((s) => s.drafts3d);
+  return (
+    <>
+      <dt title="The lines, polylines, rectangles, circles and arcs drafted on plans and reference planes, on their planes in 3D (View → Drafts in 3D)">Drafts in 3D</dt>
+      <dd><input type="checkbox" data-testid="view-drafts3d" checked={on} onChange={(e) => setDisplay({ drafts3d: e.target.checked })} /></dd>
+    </>
   );
 }

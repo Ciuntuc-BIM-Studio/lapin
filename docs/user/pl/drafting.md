@@ -56,6 +56,20 @@ Karta **Rysunek** rysuje linie, polilinie, prostokąty, okręgi i łuki. Edytuje
 
 ![Karta Rysuj](shots/ribbon-draft.webp)
 
+**Odsuń** (<kbd>O</kbd>) kopiuje linię, polilinię, prostokąt, okrąg lub łuk w odległości. Wpisz odległość w jednostce projektu (w projekcie w milimetrach `500` to pół metra; `2m` lub `1'6"` mówią swoją jednostkę), kliknij kształt, a potem stronę, na którą idzie; pyta o kolejny kształt, aż naciśniesz <kbd>Enter</kbd> lub <kbd>Esc</kbd>. Wpisz zamiast tego **T** (Through), a każda kopia przejdzie przez kliknięty punkt. Narożniki polilinii zostają ostre (na ucios), jak w CAD. Odsunięcie działa na rzutach, przekrojach, elewacjach, na płaszczyznach odniesienia i w widoku 3D.
+
+Każda długość, o którą pyta wiersz poleceń, jest w jednostce projektu, a monit mówi, w jakiej: `Depth (mm)`, `Height (ft-in)`. Kąty, współczynniki i liczności to zwykłe liczby: `90` po **Obróć** to 90°, bez względu na jednostkę.
+
+### Rysowanie w widoku 3D
+
+**Linia**, **Polilinia**, **Prostokąt**, **Okrąg**, **Łuk** i edycje z Rysunku działają też w widoku 3D, z wierszem poleceń na dole. Gdy polecenie trwa, etykieta u góry mówi, na czym rysujesz: na poziomie aktywnej kondygnacji lub na zaznaczonej płaszczyźnie odniesienia. **Wybierz ścianę bryły** w etykiecie, a potem kliknięcie ściany modelu, tworzy na niej płaszczyznę odniesienia i rysuje na niej. Punkty przyciągają się jak na rzucie: do linii przekroju rzutu (narożników i lic ścian) i do tego, co narysowano na tej samej płaszczyźnie, z orto i liniami śledzenia. To, co rysujesz, jest tym samym elementem rysunku co narysowany na rzucie i widać go też tam.
+
+![Rysowanie w widoku 3D: etykieta mówi płaszczyznę, linia idzie za myszą na poziomie kondygnacji](shots/draft-3d.webp)
+
+### Rysunki w widoku 3D
+
+To, co narysujesz na rzucie (linie, polilinie, prostokąty, okręgi, łuki), stoi też w widoku 3D jako linie na poziomie kondygnacji (na samym poziomie, nie na wysokości cięcia); to, co narysujesz na płaszczyźnie odniesienia, przekroju lub elewacji, stoi na tej płaszczyźnie. Kliknij jeden w 3D, aby go zaznaczyć, a potem przesuń, skopiuj, odsuń lub usuń. **Widok → Rysunki w 3D**, także w **Widok → Ustawienia widoku** widoku 3D, pokazuje lub ukrywa je wszystkie; jest włączone, dopóki go nie wyłączysz. Wymiary, teksty, etykiety, kreskowania i linie pomocnicze (rola draft) zostają w swoich widokach, a DXF wczytany na rzut pozostaje rysunkiem 2D, poza liniami z wysokościami.
+
 ## Opisywanie
 
 Karta **Opisz** zawiera wymiary, teksty, osie siatki, poziomy i etykiety. Wymiar odczytuje model, więc aktualizuje się, gdy ściana się przesunie. Wygląd tekstów, wymiarów, osi i etykiet ustawisz w **Zarządzaj → Standardy rysunkowe**.

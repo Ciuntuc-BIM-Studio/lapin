@@ -192,6 +192,19 @@ public class DraftGeometryTests
     }
 
     [Fact]
+    public void An_offset_through_a_point_measures_square_to_a_line_across_a_ring_and_to_a_polyline_s_nearest_leg()
+    {
+        Near(Ops.ThroughDistance(L(P(0, 0), P(4, 0)), P(9, 2)), 2);
+        Near(Ops.ThroughDistance(new Circle(P(0, 0), 2), P(0, 3)), 1);
+        Near(Ops.ThroughDistance(new Arc(P(0, 0), 2, 0, H), P(0.5, 0)), 1.5);
+        Near(Ops.ThroughDistance(new Polyline([P(0, 0), P(4, 0), P(4, 4)], false), P(5, 2)), 1);
+        // The copy then passes through the point: a rectangle offset out through a point 0.5 off its side.
+        var rect = new Polyline([P(0, 0), P(4, 0), P(4, 2), P(0, 2)], true);
+        var o = (Polyline)Ops.Offset(rect, Ops.ThroughDistance(rect, P(2, 2.5)), P(2, 2.5))!;
+        Assert.True(HasPt(o.Pts, P(-0.5, -0.5)) && HasPt(o.Pts, P(4.5, 2.5)));
+    }
+
+    [Fact]
     public void Offsets_an_open_L_polyline_with_a_miter_join()
     {
         var o = (Polyline)Ops.Offset(new Polyline([P(0, 0), P(4, 0), P(4, 4)], false), 1, P(2, 1))!;

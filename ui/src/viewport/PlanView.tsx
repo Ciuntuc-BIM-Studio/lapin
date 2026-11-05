@@ -514,7 +514,8 @@ export function PlanView() {
 
   const drawn = useMemo(() => {
     const out: { key: string; r: RenderItem; kind: string; d: string; closed: boolean; text: string | null; at: Vec2; pattern: string | null }[] = [];
-    for (const r of items) r.plan.forEach((it, i) => it.kind !== 'hit' && out.push({
+    // Hit areas are drawn only round what is selected (a bare opening's gap: decision 312).
+    for (const r of items) r.plan.forEach((it, i) => out.push({
       key: `${r.nodeId}:${i}`, r, kind: it.kind, closed: it.closed, text: it.text ?? null, pattern: it.pattern ?? null,
       d: it.kind === 'label' ? '' : path(it.points, it.closed), at: toScreen({ x: it.points[0] ?? 0, y: it.points[1] ?? 0 }),
     }));
@@ -634,7 +635,7 @@ export function PlanView() {
         {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
         {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
         <g className={`plan-items${drawing && (planDrawing || siteView) ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>
-          {drawn.map(({ key, r, kind, d, closed, text, at, pattern }) => kind === 'label' ? (
+          {drawn.map(({ key, r, kind, d, closed, text, at, pattern }) => kind === 'hit' && !shown.has(r.nodeId) ? null : kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (
             <path key={key} d={d} strokeDasharray={pattern && DASHES[pattern] ? DASHES[pattern].map((mm) => mm * (drawing?.scale ?? 100) / 1000 * view.scale).join(' ') : undefined}
@@ -645,7 +646,7 @@ export function PlanView() {
           const theirs = new Set(p.presence.selection ?? []);
           return theirs.size === 0 ? null : (
             <g key={`peer:${p.id}`} className="plan-peer" style={{ stroke: p.color }} aria-label={`${p.name}'s selection`}>
-              {drawn.filter((x) => x.kind !== 'label' && theirs.has(x.r.nodeId)).map((x) => <path key={x.key} d={x.d} />)}
+              {drawn.filter((x) => x.kind !== 'label' && x.kind !== 'hit' && theirs.has(x.r.nodeId)).map((x) => <path key={x.key} d={x.d} />)}
             </g>
           );
         })}

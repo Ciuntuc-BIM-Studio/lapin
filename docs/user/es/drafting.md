@@ -56,6 +56,20 @@ La ficha **Dibujo** dibuja líneas, polilíneas, rectángulos, círculos y arcos
 
 ![La ficha Dibujo](shots/ribbon-draft.webp)
 
+**Desfase** (<kbd>O</kbd>) copia una línea, una polilínea, un rectángulo, un círculo o un arco a una distancia. Escribe la distancia en la unidad del proyecto (en un proyecto en milímetros `500` es medio metro; `2m` o `1'6"` dicen su propia unidad), haz clic en la forma y luego en el lado hacia el que va; pide la forma siguiente hasta que pulses <kbd>Enter</kbd> o <kbd>Esc</kbd>. Escribe **T** (Through) en su lugar y cada copia pasa por el punto en que haces clic. Las esquinas de una polilínea quedan vivas (en inglete), como en CAD. El desfase funciona en plantas, secciones, alzados, en planos de referencia y en la vista 3D.
+
+Toda longitud que pide la línea de comandos está en la unidad del proyecto, y el mensaje dice cuál: `Depth (mm)`, `Height (ft-in)`. Los ángulos, factores y recuentos son números simples: `90` tras **Girar** es 90°, sea cual sea la unidad.
+
+### Dibujar en la vista 3D
+
+**Línea**, **Polilínea**, **Rectángulo**, **Círculo**, **Arco** y las ediciones de Dibujo funcionan también en la vista 3D, con la línea de comandos abajo. Mientras corre un comando, la etiqueta de arriba dice dónde dibujas: en el nivel de la planta activa o en el plano de referencia seleccionado. **Elegir una cara** en la etiqueta, y luego un clic en una cara del modelo, crea un plano de referencia en esa cara y dibuja en él. Los puntos se enganchan como en una planta: a las líneas cortadas de la planta (esquinas y caras de los muros) y a lo dibujado en el mismo plano, con orto y las guías de rastreo. Lo que dibujas es el mismo elemento de dibujo que uno hecho en la planta, y se ve también allí.
+
+![Dibujar en la vista 3D: la etiqueta dice el plano, la línea sigue al ratón en el nivel de la planta](shots/draft-3d.webp)
+
+### Los dibujos en la vista 3D
+
+Lo que dibujas en una planta (líneas, polilíneas, rectángulos, círculos, arcos) aparece también en la vista 3D, como líneas en el nivel de su planta (el nivel mismo, no la altura de corte); lo dibujado en un plano de referencia, una sección o un alzado queda en ese plano. Haz clic en uno en 3D para seleccionarlo y luego muévelo, cópialo, desfásalo o bórralo. **Vista → Dibujos en 3D**, también en **Vista → Configuración de vista** de una vista 3D, los muestra u oculta todos; está activado mientras no lo apagues. Las cotas, textos, etiquetas, sombreados y líneas auxiliares (el rol draft) quedan en sus vistas, y un DXF traído a una planta sigue siendo un dibujo 2D, salvo sus líneas con cotas.
+
 ## Anotar
 
 La ficha **Anotar** contiene las cotas, los textos, los ejes de rejilla, los niveles y las etiquetas. Una cota lee el modelo, así que se actualiza cuando un muro se mueve. El aspecto de los textos, las cotas, los ejes y las etiquetas se define en **Gestionar → Normas de dibujo**.

@@ -24,6 +24,8 @@ Pour une distance exacte, utilisez **Déplacer** (<kbd>M</kbd>) ou **Copier** (<
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) découpe une baie seule dans un mur là où vous cliquez : un passage, une trappe, un trou pour une porte qui viendra plus tard. Sa largeur, sa hauteur et son allège se règlent dans le panneau des propriétés avant le clic. Sélectionnée, sa taille, sa place le long du mur et son allège s’y modifient ; comme une porte, elle doit tenir dans le mur et rester à l’écart de ses autres baies. En IFC, c’est une ouverture qui évide le mur, sans rien pour la remplir.
 
+Sélectionnée, une baie a des poignées comme une fenêtre : faites glisser son milieu pour la déplacer le long du mur, ou un tableau pour l’élargir ou la rétrécir tandis que l’autre reste en place ; la longueur près de la souris peut se taper, comme en dessinant. On la prend d’un clic dans son vide sur le plan, ou dans son trou dans la vue 3D, où son contour s’allume. **Déplacer** (<kbd>M</kbd>) la fait glisser le long du mur d’une distance tapée, et sa hauteur et son allège sont dans le panneau des propriétés.
+
 **Couvrement** donne la forme de son haut : **Rectangle**, **Arc segmentaire** (un arc surbaissé), **Arc elliptique** (une demi-ellipse, haute d’un quart de la largeur sauf indication contraire), **Plein cintre** ou **Angles arrondis** (un haut droit aux angles supérieurs arrondis). **Flèche de l’arc** règle la montée d’un arc segmentaire ou elliptique, **Rayon des angles** l’arrondi des angles (150 mm sauf indication contraire, jamais plus de la moitié de la largeur) ; vide, celui de la forme. La baie dans le mur suit le contour en 3D, dans les élévations et les coupes et dans l’IFC ; le plan montre ses tableaux comme avant.
 
 ## Le configurateur

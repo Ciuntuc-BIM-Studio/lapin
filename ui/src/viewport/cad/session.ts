@@ -12,7 +12,8 @@ import type { Vec2 } from '../../platform/module';
 import { select, useUi } from '../../app/store';
 import { execute, undo } from '../../engine/session';
 import { deleteElements } from '../../engine/dependents';
-import { applyOrtho, parseCoordinateInput, pointAlong } from './input';
+import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
+import { lengthText, parseLength } from '../../engine/unitsStore';
 import { arcThrough, dist, toJson, type Shape } from './shapes';
 import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
@@ -47,7 +48,10 @@ export interface Step {
   trace?: Shape[];
   point?: (p: Vec2) => Next;
   pick?: (hit: { id: string; shape: Shape }, at: Vec2) => Next;
+  /** A typed length, read in the project's unit unless it carries its own (2000 in a project in millimetres is 2 m); metres. */
   value?: (v: number) => Next;
+  /** A typed plain number (an angle in degrees, a factor, a count, a pen), never converted by the project's unit. */
+  scalar?: (n: number) => Next;
   text?: (s: string) => Next;
   /** Keywords (upper case) and what they do. */
   keywords?: Record<string, () => Next>;
@@ -78,16 +82,20 @@ interface CadState {
   chamfer: number;
   pattern: string;
   hatchScale: number;
+  /** OFFSET through a point picked rather than by the distance. */
+  offsetThrough: boolean;
 }
 
 export const useCad = create<CadState>(() => ({
   buffer: '', history: [], command: null, step: null, last: null, cursor: null, lastPoint: null,
   osnap: true, ortho: false, polar: true, layer: '0', role: '', host: null,
-  offset: 0.5, radius: 0, chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
+  offset: 0.5, offsetThrough: false, radius: 0, chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
 
 const log = (line: string) => useCad.setState((s) => ({ history: [...s.history, line].slice(-50) }));
 const fmt = (v: number) => String(Math.round(v * 1000) / 1000);
+/** A length as the prompt shows it, in the project's unit with its label ("500 mm"). */
+const len = (m: number) => lengthText(m);
 
 /** Bumped when a command is cancelled or another starts: a step that answers after that is dropped. */
 let generation = 0;
@@ -265,7 +273,7 @@ function rotate(): Step | null | void | Promise<Step | null | void> {
     prompt: 'Base point', want: 'point',
     point: (c) => {
       const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: xy(c), angle: deg }); return null; };
-      return { prompt: 'Angle (degrees, or a point)', want: 'point', base: c, preview: (p) => [{ type: 'line', a: c, b: p }], value: go, point: (p) => go((Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI) };
+      return { prompt: 'Angle (degrees, or a point)', want: 'point', base: c, preview: (p) => [{ type: 'line', a: c, b: p }], scalar: go, point: (p) => go((Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI) };
     },
   }));
 }
@@ -288,7 +296,7 @@ function mirror(): Step | null | void | Promise<Step | null | void> {
 function scale(): Step | null | void | Promise<Step | null | void> {
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
-    point: (c) => ({ prompt: 'Scale factor', want: 'none', base: c, value: async (k) => { await execute('drafting.transform', { ids, op: 'scale', center: xy(c), factor: k }); return null; } }),
+    point: (c) => ({ prompt: 'Scale factor', want: 'none', base: c, scalar: async (k) => { await execute('drafting.transform', { ids, op: 'scale', center: xy(c), factor: k }); return null; } }),
   }));
 }
 
@@ -296,13 +304,25 @@ function erase(): Step | null | void | Promise<Step | null | void> {
   return withSelection(async (ids) => { await deleteElements(ids); select(null); return null; });
 }
 
+/**
+ * OFFSET (O): a distance typed (the project's unit) or Through a point; then, again and again until Enter or Escape,
+ * the shape to offset and the side it goes (lines, polylines and rectangles with mitred corners, circles, arcs).
+ */
 function offset(): Step {
+  const through = () => useCad.getState().offsetThrough;
   const pickStep = (): Step => ({
-    prompt: `Pick what to offset (distance ${fmt(useCad.getState().offset)}; type a value to change)`, want: 'pick',
-    value: (d) => { if (d > 0) useCad.setState({ offset: d }); return pickStep(); },
+    prompt: through()
+      ? 'Pick what to offset (through a point; type a distance to give one)'
+      : `Pick what to offset (distance ${len(useCad.getState().offset)}; type a distance to change) [Through]`,
+    want: 'pick',
+    value: (d) => { if (d > 0) useCad.setState({ offset: d, offsetThrough: false }); return pickStep(); },
+    keywords: { T: () => { useCad.setState({ offsetThrough: !through() }); return pickStep(); }, THROUGH: () => { useCad.setState({ offsetThrough: !through() }); return pickStep(); } },
     pick: (hit) => ({
-      prompt: 'Which side?', want: 'point',
-      point: async (side) => { await execute('drafting.offset', { id: hit.id, distance: useCad.getState().offset, side: xy(side) }); return pickStep(); },
+      prompt: through() ? 'Through which point?' : 'Which side?', want: 'point',
+      point: async (side) => {
+        await execute('drafting.offset', { id: hit.id, side: xy(side), ...(through() ? { through: true } : { distance: useCad.getState().offset }) });
+        return pickStep();
+      },
     }),
     enter: () => null,
   });
@@ -320,7 +340,7 @@ function trimOrExtend(kind: 'trim' | 'extend'): Step {
 
 function corner(kind: 'fillet' | 'chamfer'): Step {
   const first = (): Step => ({
-    prompt: kind === 'fillet' ? `First line (radius ${fmt(useCad.getState().radius)}; type a value to change)` : `First line (distance ${fmt(useCad.getState().chamfer)}; type a value to change)`,
+    prompt: kind === 'fillet' ? `First line (radius ${len(useCad.getState().radius)}; type a value to change)` : `First line (distance ${len(useCad.getState().chamfer)}; type a value to change)`,
     want: 'pick',
     value: (v) => { if (v >= 0) useCad.setState(kind === 'fillet' ? { radius: v } : { chamfer: v }); return first(); },
     pick: (a, atA) => ({
@@ -344,7 +364,7 @@ function hatch(): Step {
       await execute('drafting.hatch', { viewId: h.viewId, at: xy(p), pattern: s.pattern, scale: s.hatchScale, layer: s.layer });
       return step();
     },
-    value: (v) => { if (v > 0) useCad.setState({ hatchScale: v }); return step(); },
+    scalar: (v) => { if (v > 0) useCad.setState({ hatchScale: v }); return step(); },
     text: (t) => { useCad.setState({ pattern: t.trim().toUpperCase() }); return step(); },
     enter: () => null,
   });
@@ -492,6 +512,8 @@ export const submit = serial(async (raw: string): Promise<void> => {
   if (step.want === 'text' && step.text) { await advance(step.text(raw)); return; }
   const kw = text.toUpperCase();
   if (step.keywords?.[kw]) { await advance(step.keywords[kw]()); return; }
+  const n = step.scalar ? parseScalar(text, step.want !== 'point') : null;
+  if (n != null && step.scalar) { await advance(step.scalar(n)); return; }
   if (step.want === 'point' || step.want === 'select' || step.want === 'pick' || step.want === 'none') {
     const parsed = parseCoordinateInput(text, { last: step.base ?? s.lastPoint });
     if (parsed?.kind === 'point' && step.point) { useCad.setState({ lastPoint: parsed.pt }); await advance(step.point(parsed.pt)); return; }
@@ -506,6 +528,9 @@ export const submit = serial(async (raw: string): Promise<void> => {
         return;
       }
     }
+    // A length with its own unit or a sum (2.4m, 240cm, 3'6", 3000+250).
+    const l = step.value && !parsed ? parseLength(text) : null;
+    if (l != null && step.value) { await advance(step.value(l)); return; }
   }
   if (/^[a-z][a-z0-9_.-]*$/i.test(text) && step.text) { await advance(step.text(text)); return; }
   log(`„${text}”? ${step.prompt}`);

@@ -24,7 +24,7 @@ Sie können auf vier Arten von Ansichten skizzieren:
 
 ## Einen Körper erzeugen
 
-- **Extrusion** (EXTRUDE) schiebt den Umriss gerade hinaus. Geben Sie S für beide Richtungen ab der Skizze ein, T für eine Verjüngung, die die Seiten nach innen neigt, und Cut, damit er die vorher gewählten Elemente schneidet. Um ihn bis zur Fläche eines anderen Elements laufen zu lassen, nutzen Sie **Bis → eine Fläche…** in seinen Eigenschaften oder **Bis Fläche extrudieren**.
+- **Extrusion** (EXTRUDE) schiebt den Umriss gerade hinaus. Geben Sie S für beide Richtungen ab der Skizze ein, T für eine Verjüngung, die die Seiten nach innen neigt, und Cut, damit er die vorher gewählten Elemente schneidet. Um ihn bis zur Fläche eines anderen Elements laufen zu lassen, nutzen Sie **Bis → eine Fläche…** in seinen Eigenschaften oder **Bis Fläche extrudieren**. Tiefe, Höhen und Dicken werden in der Einheit des Projekts eingegeben, wie die Aufforderung sagt (`Depth (mm)`: `2000` sind 2 m).
 - **Sweep** (SWEEP) führt ein Profil entlang eines Pfads. TWist verdreht den Querschnitt unterwegs, SCale vergrößert ihn und RIse hebt ihn an. Ein Kreis, der ansteigt, wird zur Schraubenlinie und läuft TUrns-mal herum.
 - **Loft** (LOFT) verbindet Profile, die auf verschiedenen Ansichten gezeichnet sind. Geben Sie S ein, damit er glatt durch sie läuft. Eine Linie, die mit der Rolle *zweiter Pfad* gewählt ist, biegt ihn als Führung.
 - **Rotation** (REVOLVE) dreht ein Profil um eine Achslinie.

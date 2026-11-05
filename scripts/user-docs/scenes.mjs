@@ -2731,6 +2731,60 @@ export const scenes = [
     },
   },
   {
+    // A tester's report (decision 312): a wall opening edited by its grips as a window is, OFFSET read in the project's
+    // millimetres, then a line drafted in the 3D view on the storey's level, standing there in 3D as the plan's drafts do.
+    id: 'draft-3d',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.fit();
+      const page = t.page;
+      // The wall opening: picked in its gap on the plan, its middle and both jambs as grips.
+      const opening = (await t.cmd('architecture.addWallOpening', { wallId: walls[3], along: 4, width: 1, height: 2.1 })).id;
+      await t.wait(800);
+      const [ox, oy] = await t.planPoint(0, 4);
+      await page.mouse.click(ox, oy);
+      await t.wait(500);
+      const picked = await page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selection);
+      t.expect(picked === opening, `a click in the opening's gap selects the opening (took ${picked})`);
+      const grips = await page.locator('[data-grip]').count();
+      t.expect(grips >= 3, `the opening shows its grips: its middle and its two jambs (${grips})`);
+      await t.ui({ selection: null, selected: [] });
+      // OFFSET's distance in the project's unit: 500 is half a metre in millimetres.
+      await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await t.keys('o', 'Enter');
+      await t.keys('5', '0', '0', 'Enter');
+      const asks = await page.locator('[data-testid=command-line]').innerText();
+      t.expect(/500 mm/.test(asks), `OFFSET shows its distance in millimetres (it says: ${asks.replace(/\s+/g, ' ').slice(0, 120)})`);
+      await t.keys('Escape', 'Escape');
+      // A line in the 3D view, on the ground floor's level.
+      await open3d(t);
+      const before = (await t.nodes()).filter((n) => n.props.predefinedType === 'DRAFT').length;
+      await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
+      await t.keys('l', 'Enter');
+      await t.wait(600);
+      t.expect(await page.locator('[data-draft3d=plane]').count() === 1, 'the chip says where the line is drawn');
+      const box = await page.locator('[data-testid=view3d]').boundingBox();
+      const at = (fx, fy) => [box.x + box.width * fx, box.y + box.height * fy];
+      for (const [fx, fy] of [[0.35, 0.72], [0.62, 0.66]]) {
+        const [x, y] = at(fx, fy);
+        await page.mouse.move(x, y, { steps: 6 });
+        await page.mouse.click(x, y);
+        await t.wait(500);
+      }
+      const [cx, cy] = at(0.7, 0.5);
+      await page.mouse.move(cx, cy, { steps: 10 });
+      await t.wait(500);
+      const drafts = (await t.nodes()).filter((n) => n.props.predefinedType === 'DRAFT');
+      t.expect(drafts.length === before + 1, `two clicks in 3D draft a line (${drafts.length - before})`);
+      t.expect(await page.locator('[data-draft3d=overlay] .cad-preview').count() > 0, 'the next segment follows the mouse in 3D');
+      await t.shot('draft-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await t.keys('Escape', 'Escape');
+      const lined = await page.evaluate(async (id) => !!(await import('/src/engine/session.ts')).useSession.getState().render.get(id)?.lines?.length, drafts.at(-1).id);
+      t.expect(lined, 'the line stands in the 3D view, as the plan\'s drafts do');
+    },
+  },
+  {
     // Studio's thick solids and reference planes (docs/plan-studio-thick.md): native walls round a circle with RING on the plan,
     // a box with its bottom and top, a wall strip, a reference plane on the south facade with a ring drawn on it.
     id: 'studio',

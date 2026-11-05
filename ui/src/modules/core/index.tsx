@@ -2,9 +2,9 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { toggleGrid, toggleThinLines } from '../../app/display';
+import { toggleDrafts3d, toggleGrid, toggleThinLines } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileText, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2 } from 'lucide-react';
+import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileText, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PenTool, PencilRuler, PenLine, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2 } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -203,6 +203,8 @@ const core: LapinModule = {
         // For the eyes only (decision 247): the plan's background grid (F7) and every line one pixel (TL); sheets and PDFs keep their pens.
         { id: 'view.grid', label: 'Grid', icon: Grid3x3, run: toggleGrid },
         { id: 'view.thinLines', label: 'Thin lines', icon: Minus, shortcut: 'TL', run: toggleThinLines },
+        // The shapes drafted on plans, sections and reference planes, as lines on their planes in 3D (decision 312).
+        { id: 'view.drafts3d', label: 'Drafts in 3D', icon: PenLine, run: toggleDrafts3d },
         // The reference planes' quads in 3D (docs/plan-studio-thick.md); their marks in plans and sections stay.
         { id: 'view.refPlanes', label: 'Reference planes', icon: Frame, run: () => useUi.setState((s) => ({ refPlanes: !s.refPlanes })) },
         // Which sections are marked in the view in front, by layer (docs/sections.md, decision 223).

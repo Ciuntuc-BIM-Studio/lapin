@@ -317,7 +317,8 @@ public static class DxfImport
 
         public void Add(Shape shape, string layer, string? color, IReadOnlyList<double>? z = null)
         {
-            var attrs = new JsonObject { ["viewId"] = view.Id, ["layer"] = layer, ["shape"] = shape.ToJson() };
+            // dxf: a drawing brought in, kept on its view (only its lines with heights stand in the 3D view).
+            var attrs = new JsonObject { ["viewId"] = view.Id, ["layer"] = layer, ["shape"] = shape.ToJson(), ["dxf"] = true };
             if (color != null) attrs["color"] = color;
             // The heights the file gave the line: kept, for the 3D view and for what the civil module makes of the line.
             if (z is { Count: >= 2 }) attrs["heights"] = new JsonArray(z.Select(v => (JsonNode)Math.Round(v, 4)).ToArray());

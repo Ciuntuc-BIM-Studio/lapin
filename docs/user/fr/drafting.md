@@ -56,6 +56,20 @@ L’onglet **Dessin** trace des lignes, des polylignes, des rectangles, des cerc
 
 ![L’onglet Dessin](shots/ribbon-draft.webp)
 
+**Décaler** (<kbd>O</kbd>) copie une ligne, une polyligne, un rectangle, un cercle ou un arc à une distance. Tapez la distance dans l’unité du projet (dans un projet en millimètres, `500` est un demi-mètre ; `2m` ou `1'6"` disent leur propre unité), cliquez sur la forme, puis sur le côté où elle va ; il demande la forme suivante jusqu’à <kbd>Entrée</kbd> ou <kbd>Échap</kbd>. Tapez plutôt **T** (Through) et chaque copie passe par le point cliqué. Les angles d’une polyligne restent vifs (en onglet), comme en CAO. Décaler fonctionne dans les plans, coupes, élévations, sur les plans de référence et dans la vue 3D.
+
+Toute longueur que demande la ligne de commande est dans l’unité du projet, et l’invite dit laquelle : `Depth (mm)`, `Height (ft-in)`. Les angles, facteurs et nombres sont de simples nombres : `90` après **Rotation** fait 90°, quelle que soit l’unité.
+
+### Dessiner dans la vue 3D
+
+**Ligne**, **Polyligne**, **Rectangle**, **Cercle**, **Arc** et les modifications de Dessin fonctionnent aussi dans la vue 3D, avec la ligne de commande en bas. Pendant une commande, l’étiquette du haut dit où vous dessinez : au niveau de l’étage actif, ou sur le plan de référence sélectionné. **Choisir une face** dans l’étiquette, puis un clic sur une face du modèle, crée un plan de référence sur cette face et dessine dessus. Les points s’accrochent comme sur un plan : aux lignes coupées du plan (angles et faces des murs) et à ce qui est dessiné sur le même plan, avec l’ortho et les lignes de repérage. Ce que vous dessinez est le même élément de dessin que sur le plan, et s’y voit aussi.
+
+![Dessiner dans la vue 3D : l’étiquette dit le plan, la ligne suit la souris au niveau de l’étage](shots/draft-3d.webp)
+
+### Les dessins dans la vue 3D
+
+Ce que vous dessinez sur un plan (lignes, polylignes, rectangles, cercles, arcs) figure aussi dans la vue 3D, en lignes au niveau de son étage (le niveau lui-même, pas la hauteur de coupe) ; ce que vous dessinez sur un plan de référence, une coupe ou une élévation se tient sur ce plan. Cliquez-en un en 3D pour le sélectionner, puis déplacez-le, copiez-le, décalez-le ou supprimez-le. **Vue → Dessins en 3D**, aussi dans **Vue → Paramètres de vue** d’une vue 3D, les montre ou les cache tous ; c’est activé tant que vous ne l’éteignez pas. Cotes, textes, étiquettes, hachures et lignes de construction (le rôle draft) restent sur leurs vues, et un DXF apporté sur un plan reste un dessin 2D, sauf ses lignes avec des altitudes.
+
 ## Annotation
 
 L’onglet **Annoter** contient les cotes, les textes, les axes de quadrillage, les niveaux et les étiquettes. Une cote lit le modèle : elle se met donc à jour quand un mur bouge. L’aspect des textes, des cotes, des axes et des étiquettes se règle dans **Gérer → Normes de dessin**.

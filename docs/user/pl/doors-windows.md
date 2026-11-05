@@ -24,6 +24,8 @@ Aby przesunąć o dokładną odległość, użyj **Przesuń** (<kbd>M</kbd>) lub
 
 **Architektura → Otwór w ścianie** (<kbd>WO</kbd>) wycina sam otwór w ścianie tam, gdzie klikniesz: przejście, właz, otwór na drzwi, które pojawią się później. Ustaw jego szerokość, wysokość i parapet w panelu Właściwości przed kliknięciem. Po zaznaczeniu zmienisz tam jego wymiary, położenie wzdłuż ściany i parapet; tak jak drzwi, musi mieścić się w ścianie i nie wchodzić na inne otwory ściany. W IFC jest to otwór drążący ścianę, niczym niewypełniony.
 
+Zaznaczony otwór ma uchwyty jak okno: przeciągnij jego środek, aby przesunąć go wzdłuż ściany, albo ościeże, aby go poszerzyć lub zwęzić, podczas gdy drugie zostaje; długość przy myszy można wpisać, jak przy rysowaniu. Wybiera się go kliknięciem w jego przerwę na rzucie lub w jego otwór w widoku 3D, gdzie podświetla się jego obrys. **Przesuń** (<kbd>M</kbd>) przesuwa go wzdłuż ściany o wpisaną odległość, a jego wysokość i parapet są w panelu właściwości.
+
 **Zwieńczenie** kształtuje jego górę: **Prostokąt**, **Łuk odcinkowy** (płaski łuk), **Łuk eliptyczny** (połowa elipsy, o wysokości jednej czwartej szerokości, chyba że podasz inaczej), **Półkole** lub **Zaokrąglone narożniki** (płaskie nadproże z zaokrąglonymi górnymi narożnikami). **Strzałka zwieńczenia** ustala, jak wysoko wznosi się łuk odcinkowy lub eliptyczny, a **Promień narożników**, jak bardzo zaokrąglone są narożniki (150 mm, chyba że podasz inaczej, nigdy więcej niż połowa szerokości); puste pole oznacza wartość domyślną danego rodzaju. Otwór w ścianie podąża za tym obrysem w 3D, na elewacjach i przekrojach oraz w IFC; rzut pokazuje jego ościeża jak dotąd.
 
 ## Konfigurator

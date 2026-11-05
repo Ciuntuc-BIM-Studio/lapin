@@ -19,6 +19,9 @@ export const unit = (): Unit => useStandards.getState().units;
 /** The unit's label after a shown length ('' for imperial, which carries its own marks). */
 export const unitLabel = (u: Unit = unit()): string => (u === 'ft-in' || u === 'in' ? '' : u);
 
+/** The unit's name in a prompt: "Depth (mm)", "Depth (ft-in)". */
+export const unitName = (u: Unit = unit()): string => u;
+
 const METRIC: Record<string, number> = { mm: 0.001, cm: 0.01, dm: 0.1, m: 1 };
 const INCH = 0.0254;
 
@@ -99,3 +102,9 @@ export function parseLength(text: string, dflt: Unit = unit()): number | null {
   }
   return sum;
 }
+
+/** The unit levels are written in (report #68): metres in a metric project, the project's own unit in an imperial one. */
+export const levelUnit = (u: Unit = unit()): Unit => (u === 'ft-in' || u === 'in' ? u : 'm');
+
+/** A typed level (an elevation): metres in a metric project unless it says its own unit, feet and inches in an imperial one; metres, or null. */
+export const parseLevel = (text: string, u: Unit = unit()): number | null => parseLength(text, levelUnit(u));

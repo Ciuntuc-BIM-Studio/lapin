@@ -24,6 +24,8 @@ Für einen genauen Abstand verwenden Sie **Verschieben** (<kbd>M</kbd>) oder **K
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) schneidet dort, wo Sie klicken, eine Öffnung allein durch eine Wand: einen Durchgang, eine Luke, ein Loch für eine spätere Tür. Breite, Höhe und Brüstung stellen Sie vor dem Klick im Eigenschaftenbereich ein. Ausgewählt werden dort ihre Größe, ihre Lage entlang der Wand und ihre Brüstung geändert; wie eine Tür muss sie in die Wand passen und von deren anderen Öffnungen frei bleiben. In IFC ist sie eine Öffnung, die die Wand ausspart, ohne Füllung.
 
+Ausgewählt hat eine Öffnung Griffe wie ein Fenster: ziehen Sie ihre Mitte, um sie entlang der Wand zu schieben, oder eine Laibung, um sie breiter oder schmaler zu machen, während die andere bleibt; die Länge neben der Maus lässt sich eingeben, wie beim Zeichnen. Sie wird mit einem Klick in ihre Lücke im Grundriss oder in ihr Loch in der 3D-Ansicht gewählt, wo ihr Umriss aufleuchtet. **Verschieben** (<kbd>M</kbd>) schiebt sie um einen eingegebenen Abstand entlang der Wand, und Höhe und Brüstung stehen in den Eigenschaften.
+
 **Sturzform** formt ihren oberen Abschluss: **Rechteck**, **Segmentbogen** (ein flacher Bogen), **Ellipsenbogen** (eine halbe Ellipse, ohne Angabe ein Viertel der Breite hoch), **Halbkreis** oder **Abgerundete Ecken** (ein gerader Sturz mit gerundeten oberen Ecken). **Stichhöhe** legt fest, wie hoch ein Segment- oder Ellipsenbogen steigt, **Eckradius**, wie rund die Ecken sind (ohne Angabe 150 mm, nie mehr als die halbe Breite); leer gilt der Wert der Form. Die Wandöffnung folgt dem Umriss in 3D, in Ansichten und Schnitten und im IFC; der Grundriss zeigt ihre Laibungen wie bisher.
 
 ## Der Konfigurator

@@ -349,6 +349,24 @@ public static class Openings
     /// wall's, the exterior on the wall's right face; mirrored for a flipped
     /// hand (X) or side (Y). One part per role.
     /// </summary>
+    /// <summary>
+    /// What a bare wall opening is in the views (a tester's report, decision 312): no body (its wall is cut by it), but
+    /// a hit area over the gap in plan and its outline on the wall's middle plane in 3D (drawn when selected), so it is
+    /// clicked and edited as a door or a window is; its jambs' middles snap. An opening a door or window fills, or a
+    /// floor's, has none.
+    /// </summary>
+    public static ElementGeometry? BareGeometry(Entity opening, IModelView m)
+    {
+        if (opening.Attrs["contour"] != null || FillOf(m, opening.Id) != null || WallOf(m, opening.Id) is not { Class: IfcClass.Wall } wall) return null;
+        var p = Place(m, opening);
+        var f = FrameOf(m, wall, p.Along);
+        var (lo, hi) = (p.Along - p.Width / 2, p.Along + p.Width / 2);
+        var plan = new List<Vec2> { f.At(lo, f.YMin, 0).Xy, f.At(hi, f.YMin, 0).Xy, f.At(hi, f.YMax, 0).Xy, f.At(lo, f.YMax, 0).Xy };
+        var c = f.Centre;
+        var outline = new List<Vec3> { f.At(lo, c, p.Sill), f.At(hi, c, p.Sill), f.At(hi, c, p.Sill + p.Height), f.At(lo, c, p.Sill + p.Height), f.At(lo, c, p.Sill) };
+        return new ElementGeometry([], [new PlanItem("hit", true, plan)], [f.At(lo, c, 0).Xy, f.At(hi, c, 0).Xy, f.At(p.Along, c, 0).Xy], Lines: [outline], LineColor: "#b5532d");
+    }
+
     public static ElementGeometry? FillGeometry(Entity fill, IModelView m)
     {
         var spec = SpecOf(m, fill.Id);

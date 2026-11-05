@@ -24,6 +24,8 @@ Para una distancia exacta, use **Desplazar** (<kbd>M</kbd>) o **Copiar** (<kbd>C
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) abre un hueco solo en un muro donde se hace clic: un paso, una trampilla, un hueco para una puerta que vendrá después. Su ancho, alto y antepecho se fijan en el panel de propiedades antes del clic. Seleccionado, ahí se cambian su tamaño, su posición a lo largo del muro y su antepecho; como una puerta, debe caber en el muro y no tocar los demás huecos. En IFC es una abertura que vacía el muro, sin nada que la rellene.
 
+Seleccionado, un hueco tiene pinzamientos como una ventana: arrastra su centro para deslizarlo a lo largo del muro, o una jamba para ensancharlo o estrecharlo mientras la otra queda quieta; la longitud junto al ratón se puede escribir, como al dibujar. Se elige con un clic en su vano en la planta, o en su agujero en la vista 3D, donde se ilumina su contorno. **Mover** (<kbd>M</kbd>) lo desliza a lo largo del muro una distancia escrita, y su altura y antepecho están en el panel de propiedades.
+
 **Forma superior** da forma a su remate: **Rectángulo**, **Arco rebajado** (un arco poco peraltado), **Arco elíptico** (media elipse, de una cuarta parte del ancho de alto salvo que se indique otra cosa), **Semicírculo** o **Esquinas redondeadas** (un remate recto con las esquinas superiores redondeadas). **Flecha del arco** fija cuánto sube un remate rebajado o elíptico, **Radio de las esquinas** cuán redondas son las esquinas (150 mm salvo que se indique otra cosa, nunca más de la mitad del ancho); vacío, el propio de la forma. El hueco del muro sigue el contorno en 3D, en alzados y secciones y en IFC; la planta muestra sus jambas como antes.
 
 ## El configurador

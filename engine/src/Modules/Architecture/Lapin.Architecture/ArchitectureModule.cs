@@ -112,6 +112,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IDeletion>(new Roofs.RoofDeletion());
         r.Geometry(IfcClass.Door, (fill, model, _) => Openings.FillGeometry(fill, model));
         r.Geometry(IfcClass.Window, (fill, model, _) => Openings.FillGeometry(fill, model));
+        r.Geometry(IfcClass.OpeningElement, (opening, model, _) => Openings.BareGeometry(opening, model));
         r.Quantities(IfcClass.Door, (fill, _, model) => FillQuantities(fill, model, "Qto_DoorBaseQuantities"));
         r.Quantities(IfcClass.Window, (fill, _, model) => FillQuantities(fill, model, "Qto_WindowBaseQuantities"));
         r.Catalog("joinery", new JsonObject

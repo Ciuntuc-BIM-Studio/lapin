@@ -132,7 +132,7 @@ Solen er projektets: hvor den står for projektets sted (Administrer → **Place
 
 Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 
-**Grid** (<kbd>F7</kbd>) skjuler eller viser planens baggrundsgitter, og **Tynde linjer** (<kbd>TL</kbd>) tegner hver linje én pixel tyk, så en tæt tegning kan læses. Begge gælder kun skærmen: tegningsark, PDF og DXF beholder deres penne, og fang til gitteret bliver.
+**Grid** (<kbd>F7</kbd>) skjuler eller viser planens baggrundsgitter, og **Tynde linjer** (<kbd>TL</kbd>) tegner hver linje én pixel tyk, så en tæt tegning kan læses. Begge gælder kun skærmen: tegningsark, PDF og DXF beholder deres penne, og fang til gitteret bliver. 3D-visningens jordgitter følger samme kontakt.
 
 ![Fanen Vis](shots/ribbon-view.webp)
 

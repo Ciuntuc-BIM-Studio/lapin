@@ -24,6 +24,8 @@ Til en nøjagtig afstand bruger du **Flyt** (<kbd>M</kbd>) eller **Kopiér** (<k
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) skærer en åbning alene gennem en væg, hvor du klikker: en gennemgang, en lem, et hul til en dør, der kommer senere. Dens bredde, højde og brystning indstilles i egenskabspanelet før klikket. Når den er valgt, ændres dens størrelse, dens plads langs væggen og dens brystning der; som en dør skal den passe i væggen og holde sig fri af væggens andre åbninger. I IFC er den en åbning, der udsparer væggen, uden noget, der fylder den.
 
+Valgt har en åbning greb som et vindue: træk i midten for at skubbe den langs væggen, eller i en lysning for at gøre den bredere eller smallere, mens den anden bliver; længden ved musen kan skrives, som når du tegner. Den vælges med et klik i dens hul i planen eller i 3D-visningen, hvor dens omrids lyser op. **Flyt** (<kbd>M</kbd>) skubber den langs væggen med en skrevet afstand, og dens højde og brystning står i egenskaberne.
+
 **Topform** former dens top: **Rektangel**, **Segmentbue** (en flad bue), **Elliptisk bue** (en halv ellipse, en fjerdedel af bredden høj, medmindre du angiver andet), **Halvcirkel** eller **Afrundede hjørner** (en lige top med afrundede øverste hjørner). **Buens pilhøjde** angiver, hvor højt en segment- eller elliptisk bue rejser sig, **Hjørneradius**, hvor runde hjørnerne er (150 mm, medmindre du angiver andet, aldrig mere end halvdelen af bredden); tom gælder formens egen. Hullet i væggen følger omridset i 3D, i facader og snit og i IFC; planen viser lysningerne som før.
 
 ## Konfiguratoren

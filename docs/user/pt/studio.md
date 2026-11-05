@@ -24,7 +24,7 @@ Você pode esboçar em quatro tipos de vista:
 
 ## Criar um sólido
 
-- **Extrusão** (EXTRUDE) empurra o contorno para fora em linha reta. Digite S para os dois sentidos a partir do esboço, T para uma conicidade que inclina os lados para dentro, e Cut para que ela corte os elementos que você selecionou antes. Para levá-la até a face de outro elemento, use **Até → uma face…** nas suas propriedades, ou **Extrudar até a face**.
+- **Extrusão** (EXTRUDE) empurra o contorno para fora em linha reta. Digite S para os dois sentidos a partir do esboço, T para uma conicidade que inclina os lados para dentro, e Cut para que ela corte os elementos que você selecionou antes. Para levá-la até a face de outro elemento, use **Até → uma face…** nas suas propriedades, ou **Extrudar até a face**. A profundidade, as alturas e as espessuras são digitadas na unidade do projeto, como diz a mensagem (`Depth (mm)`: `2000` é 2 m).
 - **Varredura** (SWEEP) passa um perfil ao longo de um caminho. TWist gira a seção no caminho, SCale a aumenta e RIse a eleva. Um círculo que sobe vira uma hélice, dando TUrns voltas.
 - **Loft** (LOFT) une perfis desenhados em vistas diferentes. Digite S para que ele passe suave por eles. Uma linha selecionada com o papel *trilho* o curva como guia.
 - **Revolução** (REVOLVE) gira um perfil em torno de uma linha de eixo.

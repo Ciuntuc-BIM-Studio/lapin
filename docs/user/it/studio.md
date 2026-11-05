@@ -24,7 +24,7 @@ Puoi schizzare su quattro tipi di vista:
 
 ## Creare un solido
 
-- **Estrusione** (EXTRUDE) spinge il contorno dritto in fuori. Digita S per entrambi i lati dello schizzo, T per una rastremazione che inclina i lati verso l’interno, e Cut perché tagli gli elementi selezionati prima. Per portarla fino alla faccia di un altro elemento, usa **Fino a → una faccia…** nelle sue proprietà, oppure **Estrudi fino a faccia**.
+- **Estrusione** (EXTRUDE) spinge il contorno dritto in fuori. Digita S per entrambi i lati dello schizzo, T per una rastremazione che inclina i lati verso l’interno, e Cut perché tagli gli elementi selezionati prima. Per portarla fino alla faccia di un altro elemento, usa **Fino a → una faccia…** nelle sue proprietà, oppure **Estrudi fino a faccia**. La profondità, le altezze e gli spessori si scrivono nell’unità del progetto, come dice il messaggio (`Depth (mm)`: `2000` è 2 m).
 - **Sweep** (SWEEP) fa scorrere un profilo lungo un percorso. TWist ruota la sezione lungo il cammino, SCale la ingrandisce e RIse la solleva. Un cerchio che sale diventa un’elica, che compie TUrns giri.
 - **Loft** (LOFT) unisce profili disegnati su viste diverse. Digita S per farlo passare in modo continuo attraverso di essi. Una linea selezionata con il ruolo *secondo percorso* lo curva come guida.
 - **Rivoluzione** (REVOLVE) fa ruotare un profilo attorno a una linea d’asse.

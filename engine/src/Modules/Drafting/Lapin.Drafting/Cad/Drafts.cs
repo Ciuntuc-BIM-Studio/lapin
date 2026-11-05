@@ -62,20 +62,51 @@ public static class Drafts
     public static Shape? ShapeOf(Entity e) => Shape.From(e.Attrs["shape"]);
 
     /// <summary>
-    /// A drafted line or polyline with heights (a DXF's 3D lines, kept as <c>heights</c>, one a vertex) as lines in
-    /// space, in its own colour or its layer's: what the 3D view draws of it, under the linework category (hidden
-    /// in 3D until the view's graphics show it). Any other annotation has no geometry.
+    /// A drafted shape as lines in space, what the 3D view draws of it (decision 312), in its own colour or its layer's:
+    /// a line or polyline with heights (a DXF's 3D lines, kept as <c>heights</c>, one a vertex) at those heights; any
+    /// other shape drawn by hand on its view's plane (<see cref="Views.PlaneOf"/>: a plan's at its storey's level, a
+    /// section's, an elevation's once fixed, a reference plane's), circles and arcs in chords. Construction lines
+    /// (role draft) and a DXF's flat drawing (<c>dxf</c>, from an import) stay on their views; dimensions, texts and
+    /// tags are other annotations and have no geometry. View → Drafts in 3D hides them all in the interface.
     /// </summary>
-    public static ElementGeometry? Geometry3d(Entity e, IModelView m, IServices _)
+    public static ElementGeometry? Geometry3d(Entity e, IModelView m, IServices services)
     {
-        if (e.PredefinedType != Predefined || e.Attrs["heights"] is not JsonArray za) return null;
-        var pts = ShapeOf(e) switch { Line l => new List<Vec2> { l.A, l.B }, Polyline p => [.. p.Pts, .. p.Closed ? new[] { p.Pts[0] } : []], _ => null };
-        if (pts == null) return null;
-        var zs = za.Select(z => Json.Number(z) ?? 0).ToList();
-        if (zs.Count == pts.Count - 1 && pts.Count >= 3) zs.Add(zs[0]); // a closed polyline's return to its start
-        if (zs.Count != pts.Count) return null;
-        var line = pts.Select((p, i) => new Vec3(p.X, p.Y, zs[i])).ToList();
-        return new ElementGeometry([], Lines: [line], LineColor: e.Str("color") ?? LayerOf(m, e.Str("layer")).Color);
+        if (e.PredefinedType != Predefined) return null;
+        var shape = ShapeOf(e);
+        var color = e.Str("color") ?? LayerOf(m, e.Str("layer")).Color;
+        if (e.Attrs["heights"] is JsonArray za)
+        {
+            var pts = shape switch { Line l => new List<Vec2> { l.A, l.B }, Polyline p => [.. p.Pts, .. p.Closed ? new[] { p.Pts[0] } : []], _ => null };
+            if (pts == null) return null;
+            var zs = za.Select(z => Json.Number(z) ?? 0).ToList();
+            if (zs.Count == pts.Count - 1 && pts.Count >= 3) zs.Add(zs[0]); // a closed polyline's return to its start
+            if (zs.Count != pts.Count) return null;
+            return new ElementGeometry([], Lines: [pts.Select((p, i) => new Vec3(p.X, p.Y, zs[i])).ToList()], LineColor: color);
+        }
+        if (shape == null || e.Str("role") == "draft" || e.Bool("dxf")) return null;
+        if (Views.Find(m, e.Str("viewId") ?? "") is not { } view || view.Str("kind") is "3d") return null;
+        var (lo, hi) = Geo.Bounds(shape);
+        if (Views.PlaneOf(m, services, view, (lo.X + hi.X) / 2) is not { } plane) return null;
+        var flat = Flatten(shape);
+        return flat.Count == 0 ? null : new ElementGeometry([], Lines: flat.Select(run => (IReadOnlyList<Vec3>)run.Select(plane.World).ToList()).ToList(), LineColor: color);
+    }
+
+    /// <summary>A shape's runs of points on its view: a polyline closed back to its start, a circle and an arc in chords (decision 203: at most 1 mm off).</summary>
+    public static List<List<Vec2>> Flatten(Shape s)
+    {
+        static List<Vec2> Round(Vec2 c, double r, double start, double sweep)
+        {
+            var n = Chords.Count(r, sweep, 3);
+            return Enumerable.Range(0, n + 1).Select(i => { var a = start + sweep * i / n; return new Vec2(c.X + r * Math.Cos(a), c.Y + r * Math.Sin(a)); }).ToList();
+        }
+        return s switch
+        {
+            Line l => [[l.A, l.B]],
+            Polyline { Pts.Count: >= 2 } p => [[.. p.Pts, .. p.Closed ? new[] { p.Pts[0] } : []]],
+            Circle c when c.R > 1e-9 => [Round(c.C, c.R, 0, 2 * Math.PI)],
+            Arc a when a.R > 1e-9 => [Round(a.C, a.R, a.Start, a.Sweep)],
+            _ => [],
+        };
     }
 
     public static Entity Require(IModelView m, string? id, bool editable = true)

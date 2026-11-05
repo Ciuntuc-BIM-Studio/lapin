@@ -132,7 +132,7 @@ O sol é o do projeto: onde está para o local do projeto (Gerenciar → **Local
 
 A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua aparência.
 
-**Grade** (<kbd>F7</kbd>) oculta ou mostra a grade de fundo da planta, e **Linhas finas** (<kbd>TL</kbd>) desenha todas as linhas com um pixel de espessura, para ler um desenho denso. As duas valem só para a tela: pranchas, PDF e DXF mantêm as suas penas, e o snap na grade continua.
+**Grade** (<kbd>F7</kbd>) oculta ou mostra a grade de fundo da planta, e **Linhas finas** (<kbd>TL</kbd>) desenha todas as linhas com um pixel de espessura, para ler um desenho denso. As duas valem só para a tela: pranchas, PDF e DXF mantêm as suas penas, e o snap na grade continua. A grade do chão da vista 3D segue o mesmo botão.
 
 ![A guia Vista](shots/ribbon-view.webp)
 

@@ -97,6 +97,24 @@ public class DraftTests
     }
 
     [Fact]
+    public void Offset_through_a_point_takes_its_distance_from_the_point()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var ids = Draw(f, plan, Line(0, 0, 10, 0));
+        // Through (2, 0.75): the copy lies 0.75 off the line, on that side; a point past its end still measures square to it.
+        var off = (string)f.Run("drafting.offset", new JsonObject { ["id"] = ids[0], ["through"] = true, ["side"] = J(2, 0.75) })!["id"]!;
+        Assert.Equal(0.75, ((Lapin.Drafting.Cad.Line)S(f, off)).A.Y, 9);
+        var past = (string)f.Run("drafting.offset", new JsonObject { ["id"] = ids[0], ["through"] = true, ["side"] = J(14, -2) })!["id"]!;
+        Assert.Equal(-2, ((Lapin.Drafting.Cad.Line)S(f, past)).B.Y, 9);
+        // A point on the shape gives nothing to offset by.
+        Assert.Throws<CommandException>(() => f.Run("drafting.offset", new JsonObject { ["id"] = ids[0], ["through"] = true, ["side"] = J(3, 0) }));
+        // One undo step each.
+        f.Session.Undo();
+        Assert.Null(f.Model.Get(past));
+    }
+
+    [Fact]
     public void A_hatch_fills_the_smallest_outline_around_its_point_leaving_its_islands_out()
     {
         var f = F();

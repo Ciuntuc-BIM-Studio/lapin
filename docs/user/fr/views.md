@@ -132,7 +132,7 @@ Le soleil est celui du projet : où il se trouve pour le lieu du projet (Gérer 
 
 L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 
-**Grid** (<kbd>F7</kbd>) masque ou montre la grille de fond du plan, et **Traits fins** (<kbd>TL</kbd>) dessine chaque trait d’un pixel, pour lire un dessin chargé. Les deux ne valent que pour l’écran : les planches, le PDF et le DXF gardent leurs plumes, et l’accrochage à la grille reste.
+**Grid** (<kbd>F7</kbd>) masque ou montre la grille de fond du plan, et **Traits fins** (<kbd>TL</kbd>) dessine chaque trait d’un pixel, pour lire un dessin chargé. Les deux ne valent que pour l’écran : les planches, le PDF et le DXF gardent leurs plumes, et l’accrochage à la grille reste. La grille au sol de la vue 3D suit le même interrupteur.
 
 ![L’onglet Vue](shots/ribbon-view.webp)
 

@@ -24,7 +24,7 @@ Vous pouvez esquisser sur quatre sortes de vues :
 
 ## Créer un solide
 
-- **Extrusion** (EXTRUDE) pousse le contour tout droit. Tapez S pour les deux côtés de l’esquisse, T pour une dépouille qui incline les côtés vers l’intérieur, et Cut pour qu’il coupe les éléments sélectionnés avant. Pour le mener jusqu’à la face d’un autre élément, utilisez **Jusqu’à → une face…** dans ses propriétés, ou **Extruder jusqu’à la face**.
+- **Extrusion** (EXTRUDE) pousse le contour tout droit. Tapez S pour les deux côtés de l’esquisse, T pour une dépouille qui incline les côtés vers l’intérieur, et Cut pour qu’il coupe les éléments sélectionnés avant. Pour le mener jusqu’à la face d’un autre élément, utilisez **Jusqu’à → une face…** dans ses propriétés, ou **Extruder jusqu’à la face**. La profondeur, les hauteurs et les épaisseurs se tapent dans l’unité du projet, comme le dit l’invite (`Depth (mm)` : `2000` fait 2 m).
 - **Balayage** (SWEEP) fait suivre un chemin à un profil. TWist tord la section en chemin, SCale l’agrandit, RIse la soulève. Un cercle qui monte devient une hélice et fait TUrns tours.
 - **Lissage** (LOFT) relie des profils dessinés sur des vues différentes. Tapez S pour passer en douceur par eux. Une ligne sélectionnée avec le rôle *rail* le courbe, comme guide.
 - **Révolution** (REVOLVE) fait tourner un profil autour d’une ligne d’axe.

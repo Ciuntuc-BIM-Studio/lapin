@@ -24,7 +24,7 @@ Puede dibujar en cuatro clases de vista:
 
 ## Crear un sólido
 
-- **Extrusión** (EXTRUDE) empuja el contorno en línea recta. Escriba S para ambos sentidos desde el croquis, T para una conicidad que inclina los lados hacia dentro, y Cut para que corte los elementos seleccionados antes. Para llevarlo hasta la cara de otro elemento, use **Hasta → una cara…** en sus propiedades, o **Extruir hasta cara**.
+- **Extrusión** (EXTRUDE) empuja el contorno en línea recta. Escriba S para ambos sentidos desde el croquis, T para una conicidad que inclina los lados hacia dentro, y Cut para que corte los elementos seleccionados antes. Para llevarlo hasta la cara de otro elemento, use **Hasta → una cara…** en sus propiedades, o **Extruir hasta cara**. La profundidad, las alturas y los espesores se escriben en la unidad del proyecto, como dice el mensaje (`Depth (mm)`: `2000` es 2 m).
 - **Barrido** (SWEEP) lleva un perfil a lo largo de un recorrido. TWist gira la sección por el camino, SCale la agranda y RIse la eleva. Un círculo que sube se convierte en una hélice y da TUrns vueltas.
 - **Solevado** (LOFT) une perfiles dibujados en vistas distintas. Escriba S para que pase suavemente por ellos. Una línea seleccionada con el papel de *segunda trayectoria* lo curva como guía.
 - **Revolución** (REVOLVE) gira un perfil alrededor de una línea de eje.

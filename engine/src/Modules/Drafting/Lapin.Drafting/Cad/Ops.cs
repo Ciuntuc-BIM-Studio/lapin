@@ -53,6 +53,18 @@ public static class Ops
         return null;
     }
 
+    /// <summary>
+    /// The distance an offset through <paramref name="p"/> takes (OFFSET Through): square to a line (as if it ran on),
+    /// across the ring of a circle or an arc, to the nearest segment of a polyline.
+    /// </summary>
+    public static double ThroughDistance(Shape s, Vec2 p) => s switch
+    {
+        Line l => Math.Abs(Vec2.Cross(Geo.Norm(l.B - l.A), p - l.A)),
+        Circle c => Math.Abs((p - c.C).Length - c.R),
+        Arc a => Math.Abs((p - a.C).Length - a.R),
+        _ => Geo.Nearest(s, p).Dist,
+    };
+
     // ------------------------------------------------------------ trim
 
     /// <summary>

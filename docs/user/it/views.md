@@ -132,7 +132,7 @@ Il sole è quello del progetto: dove si trova per il luogo del progetto (Gestisc
 
 La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appare.
 
-**Griglia** (<kbd>F7</kbd>) nasconde o mostra la griglia di sfondo della pianta, e **Linee sottili** (<kbd>TL</kbd>) disegna ogni linea spessa un pixel, per leggere un disegno fitto. Entrambe valgono solo per lo schermo: tavole, PDF e DXF mantengono le loro penne, e lo snap alla griglia resta.
+**Griglia** (<kbd>F7</kbd>) nasconde o mostra la griglia di sfondo della pianta, e **Linee sottili** (<kbd>TL</kbd>) disegna ogni linea spessa un pixel, per leggere un disegno fitto. Entrambe valgono solo per lo schermo: tavole, PDF e DXF mantengono le loro penne, e lo snap alla griglia resta. La griglia a terra della vista 3D segue lo stesso interruttore.
 
 ![La scheda Vista](shots/ribbon-view.webp)
 

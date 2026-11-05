@@ -56,6 +56,20 @@ Die Registerkarte **Zeichnen** zeichnet Linien, Polylinien, Rechtecke, Kreise un
 
 ![Die Registerkarte Zeichnen](shots/ribbon-draft.webp)
 
+**Versatz** (<kbd>O</kbd>) kopiert eine Linie, eine Polylinie, ein Rechteck, einen Kreis oder einen Bogen in einem Abstand. Geben Sie den Abstand in der Einheit des Projekts ein (in einem Projekt in Millimetern ist `500` ein halber Meter; `2m` oder `1'6"` nennen ihre eigene Einheit), klicken Sie die Form an, dann die Seite, zu der sie geht; es fragt nach der nächsten Form, bis Sie <kbd>Enter</kbd> oder <kbd>Esc</kbd> drücken. Geben Sie stattdessen **T** (Through) ein, geht jede Kopie durch den angeklickten Punkt. Die Ecken einer Polylinie bleiben scharf (auf Gehrung), wie im CAD. Versatz arbeitet in Grundrissen, Schnitten, Ansichten, auf Referenzebenen und in der 3D-Ansicht.
+
+Jede Länge, nach der die Befehlszeile fragt, ist in der Einheit des Projekts, und die Aufforderung nennt sie: `Depth (mm)`, `Height (ft-in)`. Winkel, Faktoren und Anzahlen sind einfache Zahlen: `90` nach **Drehen** sind 90°, gleich welche Einheit.
+
+### Zeichnen in der 3D-Ansicht
+
+**Linie**, **Polylinie**, **Rechteck**, **Kreis**, **Bogen** und die Bearbeitungen aus Zeichnen gehen auch in der 3D-Ansicht, mit der Befehlszeile unten. Solange ein Befehl läuft, sagt das Schild oben, worauf Sie zeichnen: auf der Höhe des aktiven Geschosses oder auf der ausgewählten Referenzebene. **Fläche wählen** im Schild, dann ein Klick auf eine Fläche des Modells, legt auf dieser Fläche eine Referenzebene an und zeichnet darauf. Punkte fangen wie im Grundriss: an den geschnittenen Linien des Grundrisses (Ecken und Flächen der Wände) und an dem, was auf derselben Ebene gezeichnet ist, mit Ortho und den Spurlinien. Was Sie zeichnen, ist dasselbe Zeichenelement wie eines im Grundriss und erscheint auch dort.
+
+![Zeichnen in der 3D-Ansicht: das Schild nennt die Ebene, die Linie folgt der Maus auf der Höhe des Geschosses](shots/draft-3d.webp)
+
+### Zeichnungen in der 3D-Ansicht
+
+Was Sie in einem Grundriss zeichnen (Linien, Polylinien, Rechtecke, Kreise, Bögen), steht auch in der 3D-Ansicht, als Linien auf der Höhe seines Geschosses (die Geschosshöhe selbst, nicht die Schnitthöhe); was Sie auf einer Referenzebene, in einem Schnitt oder einer Ansicht zeichnen, steht auf dieser Ebene. Klicken Sie eines in 3D an, um es auszuwählen, und verschieben, kopieren, versetzen oder löschen Sie es. **Ansicht → Zeichnungen in 3D**, auch in **Ansicht → Ansichtseinstellungen** einer 3D-Ansicht, zeigt oder verbirgt alle; es ist an, solange Sie es nicht ausschalten. Bemaßungen, Texte, Beschriftungen, Schraffuren und Hilfslinien (die Rolle draft) bleiben in ihren Ansichten, und ein DXF in einem Grundriss bleibt eine 2D-Zeichnung, außer seinen Linien mit Höhen.
+
 ## Beschriften
 
 Die Registerkarte **Beschriften** enthält die Bemaßungen, Texte, Rasterachsen, Ebenen und Beschriftungen. Eine Bemaßung liest das Modell, sie aktualisiert sich also, wenn eine Wand verschoben wird. Wie Texte, Bemaßungen, Achsen und Beschriftungen aussehen, legen Sie unter **Verwalten → Zeichnungsstandards** fest.

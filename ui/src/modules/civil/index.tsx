@@ -13,6 +13,7 @@ import { outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
 import { edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
+import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unitsStore';
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
@@ -41,9 +42,9 @@ const terrainFromFile: ToolDef = {
     if (!file) return;
     const low = lowest(file.text);
     if (low == null) { notify('No points found: one per line, x y z or number northing easting elevation.'); return; }
-    const answer = window.prompt('The surveyed elevation of the project\'s ±0.00 (m):', String(low));
+    const answer = window.prompt(`The surveyed elevation of the project's ±0.00 (${unitName(levelUnit())}):`, formatLength(low, levelUnit()));
     if (answer == null) return;
-    const datum = answer.trim() === '' ? low : Number(answer.replace(',', '.'));
+    const datum = answer.trim() === '' ? low : parseLevel(answer) ?? NaN;
     const storeyId = useUi.getState().storeyId;
     const r = await execute('civil.addTerrain', { text: file.text, name: file.name, datum: Number.isFinite(datum) ? datum : low, ...(storeyId ? { storeyId } : {}) });
     if (r) notify(`Terrain created from ${(r as { points: number }).points} points.`);
@@ -55,10 +56,10 @@ const terrainFromLandXml: ToolDef = {
   id: 'civil.landxml', label: 'Terrain from LandXML', icon: FileUp,
   run: () => void pickText('.xml,.landxml').then(async (file) => {
     if (!file) return;
-    const answer = window.prompt('The surveyed elevation of the project\'s ±0.00 (m):', '0');
+    const answer = window.prompt(`The surveyed elevation of the project's ±0.00 (${unitName(levelUnit())}):`, '0');
     if (answer == null) return;
     const storeyId = useUi.getState().storeyId;
-    const r = await execute('civil.importLandXml', { text: file.text, datum: Number(answer.replace(',', '.')) || 0, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
+    const r = await execute('civil.importLandXml', { text: file.text, datum: parseLevel(answer) ?? 0, ...(storeyId ? { storeyId } : {}) }) as { ids: string[] } | null;
     if (r) notify(`${r.ids.length} terrain(s) from ${file.name}.`);
   }),
 };
@@ -137,9 +138,9 @@ const flatTerrain: ToolDef = {
   id: 'civil.flatTerrain', label: 'Flat terrain', icon: Mountain, shortcut: 'TF',
   gesture: { kind: 'rectangle' },
   complete: async ({ points: [a, b] }, ctx) => {
-    const answer = window.prompt('The ground\'s elevation (m, ±0.00 = 0):', '0');
+    const answer = window.prompt(`The ground's elevation (${unitName(levelUnit())}, ±0.00 = 0):`, '0');
     if (answer == null) return;
-    await ctx.execute('civil.addFlatTerrain', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, elevation: Number(answer.replace(',', '.')) || 0 });
+    await ctx.execute('civil.addFlatTerrain', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, elevation: parseLevel(answer) ?? 0 });
   },
 };
 

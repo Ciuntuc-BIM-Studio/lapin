@@ -60,6 +60,20 @@ Tabul **Desen** desenează linii, polilinii, dreptunghiuri, cercuri și arce. Le
 
 ![Tabul Desen](shots/ribbon-draft.webp)
 
+**Paralelă** (<kbd>O</kbd>) copiază o linie, o polilinie, un dreptunghi, un cerc sau un arc la o distanță. Scrie distanța în unitatea proiectului (într-un proiect în milimetri `500` înseamnă jumătate de metru; `2m` sau `1'6"` își spun unitatea), fă clic pe formă, apoi pe partea în care merge; îți cere forma următoare până apeși <kbd>Enter</kbd> sau <kbd>Esc</kbd>. Scrie **T** (Through) în loc și fiecare copie trece prin punctul pe care faci clic. Colțurile unei polilinii rămân ascuțite (în teșitură), ca în CAD. Paralela merge în planuri, secțiuni, fațade, pe planuri de referință și în vederea 3D.
+
+Orice lungime cerută de linia de comandă e în unitatea proiectului, iar mesajul spune care: `Depth (mm)`, `Height (ft-in)`. Unghiurile, factorii și numărătorile sunt numere simple: `90` după **Rotire** înseamnă 90°, oricare ar fi unitatea.
+
+### Desen în vederea 3D
+
+**Linie**, **Polilinie**, **Dreptunghi**, **Cerc**, **Arc** și editările din Desen merg și în vederea 3D, cu linia de comandă jos. Cât timp rulează o comandă, eticheta de sus spune pe ce desenezi: la cota nivelului activ sau pe planul de referință selectat. **Alege o față** din etichetă, apoi un clic pe o față a modelului, face pe fața aceea un plan de referință și desenează pe el. Punctele se prind ca într-un plan: pe liniile tăiate ale planului (colțurile și fețele pereților) și pe ce e desenat pe același plan, cu orto și liniile de urmărire. Ce desenezi e același element desenat ca unul făcut pe plan și se vede și acolo.
+
+![Desen în vederea 3D: eticheta spune planul, linia urmează mouse-ul la cota nivelului](shots/draft-3d.webp)
+
+### Desenele în vederea 3D
+
+Ce desenezi pe un plan (linii, polilinii, dreptunghiuri, cercuri, arce) apare și în vederea 3D, ca linii la cota nivelului (cota nivelului, nu înălțimea de tăiere a planului); ce desenezi pe un plan de referință, o secțiune sau o fațadă stă pe acel plan. Fă clic pe una în 3D ca s-o selectezi, apoi mut-o, copiaz-o, fă-i o paralelă sau șterge-o. **Vedere → Desene în 3D**, și în **Vedere → Setările vederii** ale unei vederi 3D, le arată sau le ascunde pe toate; e pornit până îl oprești. Cotele, textele, etichetele, hașurile și liniile ajutătoare (rolul draft) rămân pe vederile lor, iar un DXF adus pe un plan rămâne desen 2D, în afară de liniile lui cu cote.
+
 ## Adnotări
 
 Tabul **Adnotări** are cotele, textele, axele, cotele de nivel și etichetele. O cotă citește modelul, așa că se actualizează când se mută un perete. Cum arată textele, cotele, axele și etichetele se setează în **Gestionare → Standarde de desen**.

@@ -60,7 +60,7 @@ public class IfcImportTests : IDisposable
 
     static Dictionary<string, int> Counts(IModelView m) => m.Entities.GroupBy(e => e.Class).ToDictionary(g => g.Key, g => g.Count());
     static Dictionary<string, int> RelationCounts(IModelView m) => m.Relations.GroupBy(r => r.Class).ToDictionary(g => g.Key, g => g.Count());
-    static double Volume(Fixture f, string id) => f.Session.Geometry(id)!.Parts.Sum(p => Measure.Volume(p.Solid));
+    static double Volume(Fixture f, string id) => f.Session.Geometry(id)?.Parts.Sum(p => Measure.Volume(p.Solid)) ?? 0;
 
     [Fact]
     public void Lapins_own_file_comes_back_as_the_same_model()

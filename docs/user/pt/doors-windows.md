@@ -24,6 +24,8 @@ Para uma distância exata, use **Mover** (<kbd>M</kbd>) ou **Copiar** (<kbd>CO</
 
 **Arquitetura → Abertura na parede** (<kbd>WO</kbd>) corta só uma abertura numa parede onde você clica: uma passagem, um alçapão, um vão para uma porta que vem depois. Defina a largura, a altura e o peitoril no painel de propriedades antes do clique. Com ela selecionada, o tamanho, a posição ao longo da parede e o peitoril são mudados ali; como uma porta, ela precisa caber na parede e ficar livre das outras aberturas da parede. No IFC, ela é uma abertura que vaza a parede, sem nada preenchendo-a.
 
+Selecionada, uma abertura tem alças como uma janela: arraste o meio para deslizá-la ao longo da parede, ou um batente para alargá-la ou estreitá-la enquanto o outro fica parado; o comprimento junto ao mouse pode ser digitado, como ao desenhar. Ela é escolhida com um clique no seu vão na planta, ou no seu furo na vista 3D, onde o contorno se acende. **Mover** (<kbd>M</kbd>) a desliza ao longo da parede por uma distância digitada, e a altura e o peitoril estão no painel de propriedades.
+
 **Forma superior** dá a forma da parte de cima: **Retângulo**, **Arco abatido** (um arco abatido), **Arco elíptico** (meia elipse, com um quarto da largura de altura, a menos que você diga outra coisa), **Semicírculo** ou **Cantos arredondados** (um topo reto com os cantos superiores arredondados). **Flecha do arco** define quanto sobe um topo segmentado ou elíptico, **Raio dos cantos** quanto os cantos são arredondados (150 mm, a menos que você diga outra coisa, nunca mais que metade da largura); vazio, o do próprio tipo. A abertura da parede segue o contorno em 3D, nas elevações e nos cortes e no IFC; uma planta mostra os batentes como antes.
 
 ## O configurador

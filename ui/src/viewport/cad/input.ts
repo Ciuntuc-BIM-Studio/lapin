@@ -49,6 +49,13 @@ export function parseCoordinateInput(text: string, o: { last: Vec2 | null }): Pa
   return null;
 }
 
+/** A plain number typed (an angle, a factor, a count): never read in the project's unit; a comma may be the decimal mark (not where x,y could be meant). */
+export function parseScalar(text: string, comma = true): number | null {
+  let t = text.trim().replace(/°$/, '');
+  if (comma) t = t.replace(',', '.');
+  return BARE.test(t) ? Number(t) : null;
+}
+
 /** The point squared to its base: along the dominant axis. */
 export function applyOrtho(base: Vec2, p: Vec2): Vec2 {
   return Math.abs(p.x - base.x) >= Math.abs(p.y - base.y) ? { x: p.x, y: base.y } : { x: base.x, y: p.y };
