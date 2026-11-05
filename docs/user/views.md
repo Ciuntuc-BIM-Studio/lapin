@@ -143,6 +143,8 @@ The sun is the project’s: where it stands for the project’s place (Manage �
 
 ![Sun and shadows](shots/sun-dialog.webp)
 
+The realistic view takes some of its numbers (the shade in corners, the shadows' quality, the sun's colour) from [BimGo](https://github.com/aussieBIMguru/BimGo), by Aussie BIM Guru (MIT-0).
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.

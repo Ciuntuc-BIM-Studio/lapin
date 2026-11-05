@@ -143,6 +143,8 @@ Słońce jest słońcem projektu: gdzie stoi dla miejsca projektu (Zarządzaj �
 
 ![Słońce i cienie](shots/sun-dialog.webp)
 
+Widok realistyczny bierze część liczb (cień w narożnikach, jakość cieni, kolor słońca) z [BimGo](https://github.com/aussieBIMguru/BimGo) autorstwa Aussie BIM Guru (MIT-0).
+
 ## Co pokazuje widok
 
 Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.

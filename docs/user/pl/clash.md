@@ -57,3 +57,5 @@ Projekt zaczyna też z czwartym testem, **Openings for MEP**: sprawdzeniem z Zar
 Test twardy znajduje też element w całości wewnątrz innego, bez przenikających się ścianek: rurę zapomnianą w stropie. Jego głębokość to najmniejsza szerokość elementu wewnętrznego.
 
 > Instalacje Lapina mogą same wycinać swoje otwory w ścianach i stropach (Zarządzaj → Kolejność cięcia). Wtedy rura przez ścianę nie jest kolizją: ściana ma swój otwór. **Zarządzaj → Wykrywanie kolizji…** sprawdza te otwory.
+
+Testy kolizji opierają się na projekcie, liczbach i testach [BimGo](https://github.com/aussieBIMguru/BimGo) autorstwa Aussie BIM Guru (MIT-0), przepisanych w Lapinie.

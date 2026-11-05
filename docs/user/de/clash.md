@@ -57,3 +57,5 @@ Ein Projekt beginnt auch mit einem vierten Test, **Openings for MEP**: die Prüf
 Ein harter Test findet auch ein Element ganz in einem anderen, wo sich keine Flächen kreuzen: ein in einer Decke vergessenes Rohr. Seine Tiefe ist die kleinste Breite des inneren Elements.
 
 > Lapins eigene Installationsleitungen können ihre Öffnungen in Wänden und Decken selbst schneiden (Verwalten → Schnittreihenfolge). Dann ist ein Rohr durch eine Wand keine Kollision: Die Wand hat ihre Öffnung. **Verwalten → Kollisionsprüfung…** prüft diese Öffnungen.
+
+Die Kollisionserkennung folgt dem Entwurf, den Zahlen und den Tests von [BimGo](https://github.com/aussieBIMguru/BimGo) von Aussie BIM Guru (MIT-0), in Lapin neu geschrieben.

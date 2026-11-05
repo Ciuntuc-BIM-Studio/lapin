@@ -143,6 +143,8 @@ Il sole è quello del progetto: dove si trova per il luogo del progetto (Gestisc
 
 ![Sole e ombre](shots/sun-dialog.webp)
 
+La vista realistica prende alcuni numeri (l’ombra negli angoli, la qualità delle ombre, il colore del sole) da [BimGo](https://github.com/aussieBIMguru/BimGo), di Aussie BIM Guru (MIT-0).
+
 ## Che cosa mostra una vista
 
 La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appare.

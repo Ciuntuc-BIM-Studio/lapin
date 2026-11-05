@@ -143,6 +143,8 @@ Die Sonne ist die des Projekts: wo sie für den Ort des Projekts (Verwalten → 
 
 ![Sonne und Schatten](shots/sun-dialog.webp)
 
+Die realistische Ansicht übernimmt einige Zahlen (den Schatten in Ecken, die Schattenqualität, die Farbe der Sonne) von [BimGo](https://github.com/aussieBIMguru/BimGo) von Aussie BIM Guru (MIT-0).
+
 ## Was eine Ansicht zeigt
 
 Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt und wie sie aussieht.

@@ -57,3 +57,5 @@ Un proiect pornește și cu al patrulea test, **Openings for MEP**: verificarea 
 Un test dur găsește și un element cuprins întreg în altul, unde nicio față nu se intersectează: o conductă uitată într-o placă. Adâncimea e cea mai mică lățime a elementului din interior.
 
 > Traseele de instalații Lapin își pot tăia singure golurile în pereți și planșee (Gestionare → Ordinea de tăiere). Atunci o conductă prin perete nu e o coliziune: peretele are golul lui. **Gestionare → Verificare coliziuni…** verifică acele goluri.
+
+Detectarea coliziunilor urmează proiectarea, cifrele și testele lui [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0), rescrise în Lapin.

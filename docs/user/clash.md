@@ -57,3 +57,5 @@ A project also starts with a fourth test, **Openings for MEP**: the check of Man
 A hard test also finds an element wholly inside another, where no faces cross: a pipe forgotten inside a slab. Its depth is the inner element's smallest width.
 
 > Lapin's own MEP runs can cut their openings in walls and floors by themselves (Manage → Cut order). Then a pipe through a wall is not a clash: the wall has its opening. **Manage → Clash check…** checks those openings.
+
+Clash detection follows the design, the numbers and the tests of [BimGo](https://github.com/aussieBIMguru/BimGo), by Aussie BIM Guru (MIT-0), rewritten in Lapin.

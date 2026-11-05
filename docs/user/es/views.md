@@ -139,6 +139,8 @@ El sol es el del proyecto: dónde está para el lugar del proyecto (Gestionar �
 
 ![Sol y sombras](shots/sun-dialog.webp)
 
+La vista realista toma algunas de sus cifras (la sombra en las esquinas, la calidad de las sombras, el color del sol) de [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0).
+
 ## Qué muestra una vista
 
 La ficha **Vista** configura qué muestra la vista que está delante y cómo se ve.

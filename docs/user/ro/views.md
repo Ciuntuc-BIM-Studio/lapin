@@ -143,6 +143,8 @@ Soarele e al proiectului: unde stă pentru locul proiectului (Gestionare → **A
 
 ![Soare și umbre](shots/sun-dialog.webp)
 
+Vederea realistă își ia câteva cifre (umbra din colțuri, calitatea umbrelor, culoarea soarelui) din [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0).
+
 ## Ce arată o vedere
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.

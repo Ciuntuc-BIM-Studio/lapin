@@ -57,6 +57,12 @@ Lapin is MIT. `pnpm check:licenses` (run by `pnpm build` and `pnpm build:product
 fails when a production dependency, npm or NuGet, is not under a permissive
 licence (MIT, ISC, BSD, Apache-2.0…), so nothing copyleft gets in by accident.
 
+## Acknowledgements
+
+Lapin's clash detection, and parts of its realistic 3D view, follow the design, the numbers and the tests of
+[BimGo](https://github.com/aussieBIMguru/BimGo) by Aussie BIM Guru (MIT-0). Nothing is owed under its licence;
+we credit it anyway. What came from where is listed in [docs/acknowledgements.md](docs/acknowledgements.md).
+
 ## Run
 
 Requires .NET 10, Node 22 + pnpm, Rust (for the desktop shell).

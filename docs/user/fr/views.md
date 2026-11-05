@@ -143,6 +143,8 @@ Le soleil est celui du projet : où il se trouve pour le lieu du projet (Gérer 
 
 ![Soleil et ombres](shots/sun-dialog.webp)
 
+La vue réaliste reprend certains chiffres (l’ombre dans les angles, la qualité des ombres, la couleur du soleil) de [BimGo](https://github.com/aussieBIMguru/BimGo), d’Aussie BIM Guru (MIT-0).
+
 ## Ce que montre une vue
 
 L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.

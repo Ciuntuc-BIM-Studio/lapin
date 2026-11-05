@@ -57,3 +57,5 @@ Um projeto começa também com um quarto teste, **Openings for MEP**: a verifica
 Um teste rígido encontra também um elemento inteiramente dentro de outro, sem faces que se atravessem: um tubo esquecido dentro de uma laje. A sua profundidade é a menor largura do elemento interior.
 
 > Os traçados de instalações do Lapin podem abrir eles próprios as suas aberturas em paredes e lajes (Gerenciar → Ordem de corte). Então um tubo a atravessar uma parede não é uma colisão: a parede tem a sua abertura. **Gerenciar → Verificação de conflitos…** verifica essas aberturas.
+
+A deteção de colisões segue o desenho, os números e os testes do [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0), reescritos no Lapin.

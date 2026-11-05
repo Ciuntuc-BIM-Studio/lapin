@@ -143,6 +143,8 @@ Solen er projektets: hvor den står for projektets sted (Administrer → **Place
 
 ![Sol og skygger](shots/sun-dialog.webp)
 
+Den realistiske visning tager nogle af sine tal (skyggen i hjørner, skyggernes kvalitet, solens farve) fra [BimGo](https://github.com/aussieBIMguru/BimGo) af Aussie BIM Guru (MIT-0).
+
 ## Hvad en visning viser
 
 Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.

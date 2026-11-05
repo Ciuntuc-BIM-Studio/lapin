@@ -57,3 +57,5 @@ Un progetto parte anche con un quarto test, **Openings for MEP**: la verifica di
 Un test duro trova anche un elemento interamente dentro un altro, senza facce che si attraversano: un tubo dimenticato dentro un solaio. La sua profondità è la larghezza minore dell’elemento interno.
 
 > I percorsi impiantistici di Lapin possono tagliare da soli le loro aperture in muri e solai (Gestisci → Ordine di taglio). Allora un tubo attraverso un muro non è un’interferenza: il muro ha la sua apertura. **Gestisci → Verifica interferenze…** controlla quelle aperture.
+
+Il rilevamento delle interferenze segue il progetto, i numeri e i test di [BimGo](https://github.com/aussieBIMguru/BimGo), di Aussie BIM Guru (MIT-0), riscritti in Lapin.

@@ -57,3 +57,5 @@ Un proyecto empieza también con una cuarta prueba, **Openings for MEP**: la com
 Una prueba dura encuentra también un elemento entero dentro de otro, donde ninguna cara se cruza: un tubo olvidado dentro de un forjado. Su profundidad es la menor anchura del elemento interior.
 
 > Los tramos de instalaciones de Lapin pueden cortar sus propios huecos en muros y forjados (Gestionar → Orden de corte). Entonces un tubo que atraviesa un muro no es una colisión: el muro tiene su hueco. **Gestionar → Comprobación de colisiones…** revisa esos huecos.
+
+La detección de colisiones sigue el diseño, las cifras y las pruebas de [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0), reescritos en Lapin.

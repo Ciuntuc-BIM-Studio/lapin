@@ -57,3 +57,5 @@ Un projet commence aussi avec un quatrième test, **Openings for MEP** : la vér
 Un test dur trouve aussi un élément entièrement dans un autre, sans face qui se traverse : un tuyau oublié dans une dalle. Sa profondeur est la plus petite largeur de l’élément intérieur.
 
 > Les réseaux de Lapin peuvent percer eux-mêmes leurs ouvertures dans les murs et les planchers (Gérer → Ordre de coupe). Un tuyau à travers un mur n’est alors pas un conflit : le mur a son ouverture. **Gérer → Détection de conflits…** vérifie ces ouvertures.
+
+La recherche de conflits suit la conception, les chiffres et les tests de [BimGo](https://github.com/aussieBIMguru/BimGo), d’Aussie BIM Guru (MIT-0), réécrits dans Lapin.

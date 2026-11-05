@@ -57,3 +57,5 @@ Et projekt starter også med en fjerde test, **Openings for MEP**: kontrollen fr
 En hård test finder også et element helt inde i et andet, hvor ingen flader krydser: et rør glemt inde i et dæk. Dybden er det inderste elements mindste bredde.
 
 > Lapins egne installationsføringer kan selv skære deres åbninger i vægge og dæk (Administrer → Snitrækkefølge). Så er et rør gennem en væg ikke en kollision: væggen har sin åbning. **Administrer → Kollisionskontrol…** kontrollerer de åbninger.
+
+Kollisionsdetektionen følger design, tal og test fra [BimGo](https://github.com/aussieBIMguru/BimGo) af Aussie BIM Guru (MIT-0), skrevet om i Lapin.
