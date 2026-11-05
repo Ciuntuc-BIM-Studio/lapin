@@ -98,10 +98,10 @@ public static class CdeChecks
             {
                 if (s.Str("number") is not { Length: > 0 }) o.Add(Block(s, "The sheet has no number."));
                 if (s.Name is not { Length: > 0 } || s.Name == "Sheet") o.Add(Block(s, $"Sheet {s.Str("number")} has no title."));
-                if (CdeCheckContext.Field(s, "drawnBy") == null) o.Add(Block(s, $"Sheet {SheetLabel(s)}: „Drawn by” is empty."));
-                if (CdeCheckContext.Field(s, "checkedBy") == null) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: „Checked by” is empty."));
+                if (Documents.ProjectInfo.TitleField(c.Model, s, "drawnBy") == null) o.Add(Block(s, $"Sheet {SheetLabel(s)}: „Drawn by” is empty."));
+                if (Documents.ProjectInfo.TitleField(c.Model, s, "checkedBy") == null) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: „Checked by” is empty."));
                 if (CdeCheckContext.Field(s, "date") == null) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: the date is empty (today's is printed)."));
-                if (CdeCheckContext.Field(s, "phase") == null) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: the phase is empty."));
+                if (Documents.ProjectInfo.TitleField(c.Model, s, "phase") == null) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: the phase is empty."));
                 if (c.Revision == null && CdeCheckContext.Field(s, "revision") == null) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: the revision is empty (an issue sets it)."));
                 if (!Sheets.Place(c.Query, s).Any(p => !p.Content)) o.Add(Warn(s, $"Sheet {SheetLabel(s)} has no view on it, so no scale."));
             }

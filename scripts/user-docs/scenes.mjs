@@ -3339,6 +3339,71 @@ export const scenes = [
     },
   },
   {
+    // The written documents (docs/plan-documents.md): the house with two rooms and a sheet, the project's information written
+    // in part, Manage → Documents…, a technical report from its template, the client typed in Project information (its chip
+    // leaves To complete), an input written, then Manage → Project information… alone and the Issue dialog's documents.
+    id: 'documents',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t);
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor plan', scale: 100 });
+      const sheet = await t.cmd('sheet.create', { name: 'Ground floor plan', number: 'A-101', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: plan.id, x: 150, y: 120 });
+      await t.cmd('cde.setNaming', { project: 'HOUSE', originator: 'CBS' });
+      await t.cmd('project.setInfo', {
+        name: 'Locuință unifamilială P', number: '12/2026', phase: 'DTAC', address: 'Str. Corneliu Codreanu nr. 14, Huși, jud. Vaslui',
+        designer: 'Ciuntuc BIM Studio SRL', designerAddress: 'Huși, jud. Vaslui', chiefArchitect: 'arh. Ionuț Ciuntuc', author: 'arh. Ionuț Ciuntuc',
+      });
+      await t.tool('manage.documents');
+      await t.page.waitForSelector('[data-dialog=documents]', { timeout: 10_000 });
+      await t.page.locator('[data-field="doc-template-memoriu-arhitectura"]').click();
+      await t.page.waitForSelector('[data-dialog=documents] .doc-sheet:not(.doc-measure)', { timeout: 20_000 });
+      await t.wait(800);
+      t.expect((await t.page.locator('[data-field=doc-preview]').innerText()).includes('Memoriu tehnic de arhitectură'), 'the preview shows the technical report filled from the project');
+      t.expect((await t.page.locator('[data-field=doc-preview]').innerText()).includes('12/2026'), 'the preview reads the project number from Project information');
+      t.expect(await t.page.locator('[data-field="doc-missing-project.client"]').count() === 1, 'To complete lists the client, not written yet');
+      await t.shot('documents', { of: '[data-dialog=documents]', pad: 0 });
+      await t.shot('documents-missing', { of: '[data-field=doc-missing]', pad: 6 });
+      // The client written where To complete sends it: the Project information tab, the field focused.
+      await t.page.locator('[data-field="doc-missing-project.client"]').click();
+      await t.wait(400);
+      await t.page.locator('[data-dialog=documents] [data-field=info-client]').fill('Popescu Ion și Maria');
+      await t.page.locator('[data-dialog=documents] [data-field=info-client]').press('Enter');
+      await t.page.locator('[data-dialog=documents] [data-field=info-clientAddress]').fill('Str. Mihail Kogălniceanu nr. 3, Huși, jud. Vaslui');
+      await t.page.locator('[data-dialog=documents] [data-field=info-clientAddress]').blur();
+      await t.page.waitForFunction(() => !document.querySelector('[data-field="doc-missing-project.client"]'), null, { timeout: 10_000 });
+      t.expect((await t.page.locator('[data-field=doc-preview]').innerText()).includes('Popescu Ion și Maria'), 'the client typed shows in the preview');
+      // An input: the structure, written over its [De completat] text.
+      await t.page.locator('[data-field=doc-inputs-tab]').click();
+      await t.wait(300);
+      const structure = t.page.locator('[data-dialog=documents] [data-field=input-structura]');
+      await structure.fill('Fundații continue din beton armat sub pereți, pereți portanți din zidărie de cărămidă cu stâlpișori și centuri din beton armat, planșeu din beton armat peste parter, șarpantă din lemn.');
+      await structure.blur();
+      await t.page.waitForFunction(() => (document.querySelector('[data-field=doc-preview]')?.textContent ?? '').includes('Fundații continue din beton armat'), null, { timeout: 10_000 })
+        .catch(() => { throw new Error('expected: the input written shows in the preview'); });
+      await t.wait(400);
+      t.expect((await structure.inputValue()).startsWith('Fundații continue'), 'the input keeps what was written');
+      await structure.scrollIntoViewIfNeeded();
+      await t.shot('documents-inputs', { of: '[data-dialog=documents] .doc-side.right', pad: 0 });
+      await t.page.locator('[data-dialog=documents] .dialog-head button[title=Close]').click(); await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=browser-documents]').getByText('Memoriu tehnic de arhitectură').count() > 0, 'the project browser lists the document under Documents');
+      await t.tool('manage.projectInfo');
+      await t.page.waitForSelector('[data-dialog=project-info]', { timeout: 10_000 });
+      t.expect((await t.page.locator('[data-dialog=project-info] [data-field=info-client]').inputValue()) === 'Popescu Ion și Maria', 'Project information shows what the Documents dialog wrote');
+      await t.shot('project-info', { of: '[data-dialog=project-info]', pad: 0 });
+      await t.page.locator('[data-dialog=project-info] .dialog-head button[title=Close]').click(); await t.wait(300);
+      await t.tool('manage.issue');
+      await t.page.waitForSelector('[data-field=issue-documents]', { timeout: 10_000 });
+      await t.page.waitForFunction(() => /-RP-/.test(document.querySelector('[data-field=issue-documents]')?.textContent ?? ''), null, { timeout: 10_000 });
+      await t.page.locator('[data-field=issue-documents-docx]').check();
+      t.expect(await t.page.locator('[data-field=issue-documents] input[type=checkbox]').first().isChecked(), 'the document goes with the issue, ticked at first');
+      await t.shot('issue-documents', { of: '.dialog .cde-sheets', pad: 6 });
+      await t.page.locator('.dialog-head button[title=Close]').click(); await t.wait(300);
+    },
+  },
+  {
     // Remarks on the model as BCF (docs/plan-cde.md, stage 2): a tiny BCF 2.1 file made here (a topic on a wall, a comment, a viewpoint
     // looking at the house) is imported, the list shown, and the remark opened at its viewpoint in the 3D view.
     id: 'remarks',

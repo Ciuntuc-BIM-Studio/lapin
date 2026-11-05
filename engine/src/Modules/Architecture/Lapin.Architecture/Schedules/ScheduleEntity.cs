@@ -24,7 +24,7 @@ public sealed record SchedulePart(string Id, string Title, string? Kind = null, 
 /// drawings, its rows, typed cells, custom rows, card order and tables. Its
 /// cards are laid out on demand from the model; a sheet places its pages.
 /// </summary>
-public sealed class ScheduleEntity : ISheetContent
+public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDocumentTables
 {
     public const string Class = "LapinSchedule";
     public static readonly string[] Kinds = ["door", "window", "all", "lintel"];
@@ -181,6 +181,47 @@ public sealed class ScheduleEntity : ISheetContent
         return ScheduleLayout.Pages([.. tables, .. Charts(q, e, maxWidth)], maxHeight);
     }
 
+    // ------------------------------------------------------------ documents' tables (docs/plan-documents.md)
+
+    static readonly (string Kind, string Label)[] KindLabels = [("all", "Joinery schedule"), ("door", "Door schedule"), ("window", "Window schedule"), ("lintel", "Lintel schedule")];
+
+    /// <summary>The tables a document can show: the project's schedules by id, then the joinery's and every module's by kind.</summary>
+    public IEnumerable<Lapin.Platform.Documents.DocTableChoice> Choices(IQueryContext q) =>
+    [
+        .. q.Model.OfClass(Class).Select(s => new Lapin.Platform.Documents.DocTableChoice("schedule:" + s.Id, s.Name)),
+        .. KindLabels.Select(k => new Lapin.Platform.Documents.DocTableChoice("kind:" + k.Kind, k.Label)),
+        .. q.Services.All<IScheduleSource>().Select(x => new Lapin.Platform.Documents.DocTableChoice("kind:" + x.Kind, x.Label)),
+    ];
+
+    /// <summary>
+    /// A document's table: <c>schedule:&lt;id&gt;</c> as that schedule shows it (its columns, typed cells, order), <c>kind:all|door|window|lintel</c> the
+    /// joinery's of the types in use, <c>kind:&lt;kind&gt;</c> a module's table; a totals line keyed null. Null when there is no such table.
+    /// </summary>
+    public ScheduleGrid? Table(IQueryContext q, string source)
+    {
+        if (source.StartsWith("schedule:", StringComparison.Ordinal))
+            return q.Model.Get(source[9..]) is { Class: Class } s ? DocumentGrid(q, s) : null;
+        if (!source.StartsWith("kind:", StringComparison.Ordinal)) return null;
+        var kind = source[5..];
+        if (KindLabels.FirstOrDefault(k => k.Kind == kind) is { Label: { } label })
+            return DocumentGrid(q, new Entity("document:" + kind, Class, label, new JsonObject { ["kind"] = kind }));
+        return Source(q.Services, kind) is { } src ? src.Grid(q) : null;
+    }
+
+    static ScheduleGrid DocumentGrid(IQueryContext q, Entity s)
+    {
+        if (Source(q.Services, s.Str("kind")) is { } source)
+        {
+            var raw = source.Grid(q, s);
+            var g = SourceGrid(q, s, source).ToGrid();
+            // The module's totals line stays last (the schedule's own rows go before it).
+            var total = raw.Keys is { Count: > 0 } keys && keys.Count == raw.Rows.Count && keys[^1] == null && g.Rows.Count > 0;
+            return g with { Keys = total ? [.. Enumerable.Repeat<string?>("", g.Rows.Count - 1), null] : null };
+        }
+        var lines = Grid(s, Data(q, s)).Select(r => (IReadOnlyList<string>)r.ToList()).ToList();
+        return new ScheduleGrid(s.Name, lines[0], lines.Skip(1).ToList());
+    }
+
     static string Csv(IEnumerable<IEnumerable<string>> lines) =>
         string.Concat(lines.Select(l => string.Join(",", l.Select(f => System.Text.RegularExpressions.Regex.IsMatch(f, "[\",\n;]") ? $"\"{f.Replace("\"", "\"\"")}\"" : f)) + "\n"));
 
@@ -259,6 +300,7 @@ public sealed class ScheduleEntity : ISheetContent
             new("sort", "Order", "choice", Choices: ["mark", "name", "width", "height", "total"]),
         ], "#555555", Kind: "view"));
         r.Service<ISheetContent>(this);
+        r.Service<Lapin.Platform.Documents.IDocumentTables>(this);
         r.Service<IScheduleSource>(new QuantityTakeoff());
 
         r.Command("createSchedule", "New schedule", (ctx, a) =>

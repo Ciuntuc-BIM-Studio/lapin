@@ -6,6 +6,7 @@ using Lapin.Model;
 using Lapin.Package;
 using Lapin.Platform;
 using Lapin.Platform.Cde;
+using Lapin.Platform.Documents;
 
 namespace Lapin.Protocol;
 
@@ -23,7 +24,8 @@ namespace Lapin.Protocol;
 /// </summary>
 public static class CdeIssue
 {
-    public static (JsonObject Result, Diff Diff) Run(Session session, PackageIssues store, JsonObject p, int? version = null)
+    /// <param name="writeDocument">How a written document becomes a file (its PDF, or DOCX): the writers of Lapin.Drawing by default; a test's own.</param>
+    public static (JsonObject Result, Diff Diff) Run(Session session, PackageIssues store, JsonObject p, int? version = null, DocumentExport.Writer? writeDocument = null)
     {
         var m = session.Model;
         var q = session.Reader;
@@ -32,7 +34,9 @@ public static class CdeIssue
         var folder = !toFolder ? null : (string?)p["folder"] is { Length: > 0 } given ? HostFiles.Check(given) : Cde.Folder(m);
         var sheets = Cde.SheetsOf(m, p["sheets"]);
         var model = Flag(p, "model");
-        if (sheets.Count == 0 && !model) throw new CommandException("Choose at least one sheet, or the model.");
+        // The written documents only when asked (docs/plan-documents.md): each as a PDF, and as a DOCX too with documentsDocx.
+        var documents = p["documents"] is JsonArray ? Cde.DocumentsOf(m, p["documents"]) : [];
+        if (sheets.Count == 0 && !model && documents.Count == 0) throw new CommandException("Choose at least one sheet, a document, or the model.");
         var names = Cde.Names(m, p);
         var revision = (string)names["revision"]!;
         var status = (string)names["status"]!;
@@ -72,12 +76,12 @@ public static class CdeIssue
         var rows = new List<CdeTransmittal.Row>();
         // A file kept in the project (by its hash, once), written into the container when there is one; `Put` also lists it in the transmittal
         // (the transmittal's own files are not).
-        IssuedFile Write(string fileName, byte[] bytes, string kind, Entity? sheet = null, string? hash = null)
+        IssuedFile Write(string fileName, byte[] bytes, string kind, Entity? sheet = null, string? hash = null, string? documentId = null)
         {
             var stored = kind != "ifc" || keepModel;
             var sha = stored ? store.Put(bytes) : CdeTransmittal.Sha256(bytes);
             if (into != null) File.WriteAllBytes(Path.Combine(into, fileName), bytes);
-            var f = new IssuedFile(fileName, kind, sheet?.Id, sha, bytes.LongLength, hash, stored);
+            var f = new IssuedFile(fileName, kind, sheet?.Id, sha, bytes.LongLength, hash, stored, documentId);
             files.Add(f);
             return f;
         }
@@ -97,6 +101,20 @@ public static class CdeIssue
         }
         if (sheets.Count > 1 && Flag(p, "set"))
             Put((string)names["set"]!, Sheets.Pdf(q, sheets, issuing), "pdf", null);
+        // Each document filled as the issue sends it (its revision and status the issue's), written, named by its template's type.
+        var writer = writeDocument ?? DocumentExport.Write;
+        var naming0 = CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
+        var docx = Flag(p, "documentsDocx");
+        foreach (var doc in documents)
+        {
+            var issued = doc.CloneAttrs();
+            issued["revision"] = revision;
+            issued["status"] = status;
+            var (filled, _) = DocumentFill.Fill(q, doc.With(attrs: issued));
+            var stem = Cde.DocumentName(m, naming0, doc);
+            rows.Add(new CdeTransmittal.Row(Write(CdeNaming.WithRevision(stem, status, revision, "pdf"), writer(filled, "pdf", null), "document", documentId: doc.Id), null, doc.Name));
+            if (docx) rows.Add(new CdeTransmittal.Row(Write(CdeNaming.WithRevision(stem, status, revision, "docx"), writer(filled, "docx", null), "document", documentId: doc.Id), null, doc.Name));
+        }
         if (model)
         {
             using var ms = new MemoryStream();

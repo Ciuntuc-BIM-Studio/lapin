@@ -94,6 +94,9 @@ public sealed record CdeNaming(string Project = "PRJ", string Originator = "ORG"
     /// <summary>The set of every sheet in one file.</summary>
     public string ForSet() => Join(Project, Originator, Volume, Level, Drawing, Role, "0000");
 
+    /// <summary>A written document's container (docs/plan-documents.md): its type (RP a report, SP a specification) and its number among the project's documents of that type.</summary>
+    public string ForDocument(string type, int number) => Join(Project, Originator, Volume, Level, type, Role, number.ToString("0000"));
+
     /// <summary>The transmittal (and its manifest) of issue number <paramref name="n"/>.</summary>
     public string ForTransmittal(int n) => Join(Project, Originator, Volume, Level, Exchange, Role, n.ToString("0000"));
 

@@ -272,8 +272,9 @@ public static class Sheets
             ("NUMBER", sheet.Str("number") ?? ""),
             ("SCALE", scales.Count == 0 ? "—" : string.Join(", ", scales)),
             ("DATE", Field("date", DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture))),
-            ("DRAWN BY", Field("drawnBy")),
-            ("CHECKED BY", Field("checkedBy")),
+            // Who drew and checked it: the sheet's own, else the project's information (Manage → Project information…).
+            ("DRAWN BY", Field("drawnBy", Documents.ProjectInfo.Get(q.Model, "author") ?? "")),
+            ("CHECKED BY", Field("checkedBy", Documents.ProjectInfo.Get(q.Model, "checkedBy") ?? "")),
         };
         for (var i = 0; i < cellCount; i++)
         {

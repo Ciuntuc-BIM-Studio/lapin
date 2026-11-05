@@ -7,9 +7,10 @@ namespace Lapin.Platform.Cde;
 /// <summary>
 /// One file an issue made: its name, what it is (pdf, ifc, dxf, csv, json), the sheet it prints, its SHA-256 and size, the sheet's drawing hash at
 /// the time, and whether its bytes are kept in the project's file (<see cref="Stored"/>: under <c>issues/blobs/</c> by its hash; the IFC only on
-/// request, and none once the user deletes an old issue's stored files, its name and hash staying in the record).
+/// request, and none once the user deletes an old issue's stored files, its name and hash staying in the record); a written document's (kind
+/// <c>document</c>: its PDF, or its DOCX) names the document (<see cref="DocumentId"/>).
 /// </summary>
-public sealed record IssuedFile(string Name, string Kind, string? SheetId, string Sha256, long Size, string? DrawingHash = null, bool Stored = false)
+public sealed record IssuedFile(string Name, string Kind, string? SheetId, string Sha256, long Size, string? DrawingHash = null, bool Stored = false, string? DocumentId = null)
 {
     public JsonObject ToJson()
     {
@@ -17,12 +18,13 @@ public sealed record IssuedFile(string Name, string Kind, string? SheetId, strin
         if (SheetId != null) o["sheetId"] = SheetId;
         if (DrawingHash != null) o["drawingHash"] = DrawingHash;
         if (Stored) o["stored"] = true;
+        if (DocumentId != null) o["documentId"] = DocumentId;
         return o;
     }
 
     public static IssuedFile? From(JsonNode? n) => n is JsonObject o && (string?)o["name"] is { } name
         ? new IssuedFile(name, (string?)o["kind"] ?? "", (string?)o["sheetId"], (string?)o["sha256"] ?? "", (long)(Json.Number(o["size"]) ?? 0), (string?)o["drawingHash"],
-            o["stored"] is JsonValue sv && sv.TryGetValue<bool>(out var stored) && stored)
+            o["stored"] is JsonValue sv && sv.TryGetValue<bool>(out var stored) && stored, (string?)o["documentId"])
         : null;
 }
 
@@ -96,6 +98,15 @@ public static class CdeIssues
             tb["status"] = status;
             sa["titleBlock"] = tb;
             ctx.Replace(sheet.With(attrs: sa));
+        }
+        // Each written document issued takes the issue's revision and status (docs/plan-documents.md).
+        foreach (var docId in files.Where(f => f.DocumentId != null).Select(f => f.DocumentId!).Distinct())
+        {
+            if (ctx.Model.Get(docId) is not { Class: Documents.Documents.Class } doc) continue;
+            var da = doc.CloneAttrs();
+            da["revision"] = revision;
+            da["status"] = status;
+            ctx.Replace(doc.With(attrs: da));
         }
         return issue;
     }

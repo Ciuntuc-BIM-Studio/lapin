@@ -4,7 +4,7 @@ import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
 import { toggleGrid, toggleThinLines } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Keyboard, Layers, LayoutGrid, Layers3, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PencilRuler, PenTool, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2 } from 'lucide-react';
+import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileText, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Palette, PanelsTopLeft, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2 } from 'lucide-react';
 import { ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -40,6 +40,9 @@ import { CheckDialog } from './cde/CheckDialog';
 import { CoordinationDialog } from './coordination/CoordinationDialog';
 import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { RemarksDialog } from './remarks/RemarksDialog';
+import { DocumentsDialog } from './documents/DocumentsDialog';
+import { ProjectInfoDialog } from './documents/ProjectInfoForm';
+import { openDocuments } from './documents/documents';
 import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDialog';
 import { DisplayQualityDialog } from './DisplayQualityDialog';
 import { SunDialog } from './SunDialog';
@@ -146,6 +149,11 @@ const core: LapinModule = {
         // The types imports made replaced by the project's own, the choice remembered (docs/spec-ifc.md, Î9).
         { id: 'manage.mapTypes', label: 'Map imported types', icon: ArrowRightLeft, run: () => useUi.setState({ dialog: 'mapTypes' }) },
       ] },
+      // The written documents (docs/plan-documents.md): the project's information they read, and the documents from templates.
+      { label: 'Documents', tools: [
+        { id: 'manage.projectInfo', label: 'Project information…', icon: Info, run: () => useUi.setState({ dialog: 'projectInfo' }) },
+        { id: 'manage.documents', label: 'Documents…', icon: FileText, run: () => openDocuments() },
+      ] },
       // The project folder as a CDE (docs/plan-cde.md): the folder and its naming, the pre-issue checks, the issue.
       { label: 'Issue', tools: [
         { id: 'manage.projectFolder', label: 'Project folder', icon: FolderOpen, run: () => useUi.setState({ dialog: 'projectFolder' }) },
@@ -241,7 +249,7 @@ const core: LapinModule = {
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: { LapinView: sectionGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

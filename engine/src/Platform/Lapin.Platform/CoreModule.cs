@@ -38,7 +38,7 @@ public sealed class CoreModule : ILapinModule
     static readonly HashSet<string> PlatformClasses =
     [
         IfcClass.Project, IfcClass.Site, IfcClass.Building, IfcClass.BuildingStorey,
-        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class, Sheets.Class, Links.Class, StoredBodies.SharedClass, IfcSource.RecordClass, Cde.CdeIssues.Class, Cde.Remarks.Remarks.Class,
+        IfcClass.Material, IfcClass.MaterialLayerSet, IfcClass.MaterialLayerSetUsage, Views.Class, Sheets.Class, Links.Class, StoredBodies.SharedClass, IfcSource.RecordClass, Cde.CdeIssues.Class, Cde.Remarks.Remarks.Class, Documents.Documents.Class,
     ];
 
     public static bool Owns(string ifcClass) => PlatformClasses.Contains(ifcClass) || ifcClass.StartsWith("IfcRel", StringComparison.Ordinal);
@@ -70,6 +70,8 @@ public sealed class CoreModule : ILapinModule
         // The project folder as a CDE: naming, checks, issues (docs/plan-cde.md); the remarks on the model exchanged as BCF.
         Cde.Cde.Register(r);
         Cde.Remarks.Remarks.Register(r);
+        // The written documents filled from the project (docs/plan-documents.md), and the project's information they and the title blocks read.
+        Documents.Documents.Register(r);
         // Openings as solid voids, and MEP checked against them (decision 289).
         Coordination.OpeningVoids.Register(r);
         // A body many references share (docs/plan-instancing.md): drawn by its instances, never on its own.

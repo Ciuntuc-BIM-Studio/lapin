@@ -17,8 +17,11 @@ public static class PdfWriter
 {
     const double Pt = 72 / 25.4;
 
-    /// <summary>The pages; <paramref name="image"/> gives a picture's file (PNG or JPEG) by its id, and a picture without one is left out.</summary>
-    public static byte[] Write(IReadOnlyList<PaperPage> pages, Func<string, byte[]?>? image = null)
+    /// <summary>
+    /// The pages; <paramref name="image"/> gives a picture's file (PNG or JPEG) by its id, and a picture without one is left out;
+    /// <paramref name="info"/>, the document's title and author in its Info and its bookmarks (a document's headings), none when null.
+    /// </summary>
+    public static byte[] Write(IReadOnlyList<PaperPage> pages, Func<string, byte[]?>? image = null, PdfInfo? info = null)
     {
         var pictures = new List<Raster>();
         var index = new Dictionary<string, int>();
@@ -41,7 +44,7 @@ public static class PdfWriter
             return k;
         }
         var streams = pages.Select(p => Deflate(Encoding.Latin1.GetBytes(Content(p, Picture, Alpha)))).ToList();
-        return File(pages, streams, pictures, alphas);
+        return File(pages, streams, pictures, alphas, info);
     }
 
     static string F(double v) => double.IsFinite(v) ? v.ToString("0.###", CultureInfo.InvariantCulture) : "0";
@@ -148,6 +151,9 @@ public static class PdfWriter
     };
     const string Differences = "[127 /Tcommaaccent 129 /abreve 141 /Abreve 143 /scommaaccent 144 /Scommaaccent 157 /tcommaaccent]";
 
+    /// <summary>Whether a letter prints as itself (else as '?').</summary>
+    public static bool CanEncode(char ch) => ch < 256 || Extra.ContainsKey(ch);
+
     static string Encode(string s)
     {
         var b = new StringBuilder();
@@ -168,13 +174,17 @@ public static class PdfWriter
         return ms.ToArray();
     }
 
-    static byte[] File(IReadOnlyList<PaperPage> pages, List<byte[]> streams, List<Raster> pictures, List<double> alphas)
+    static byte[] File(IReadOnlyList<PaperPage> pages, List<byte[]> streams, List<Raster> pictures, List<double> alphas, PdfInfo? info)
     {
         // 1 catalog, 2 pages, 3 and 4 the fonts, then a page and its content for each, then the pictures (each with its alpha, if any).
         var objects = new List<byte[]>();
         void Obj(string s) => objects.Add(Encoding.ASCII.GetBytes(s));
         var encoding = $"<< /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences {Differences} >>";
-        Obj("<< /Type /Catalog /Pages 2 0 R >>");
+        // The Info and the bookmarks come after the pictures: their numbers are known before the catalog is written.
+        var afterPictures = 5 + 2 * pages.Count + pictures.Sum(r => r.Alpha != null ? 2 : 1);
+        var outline = info?.Outline?.Where(o => o.Page >= 0 && o.Page < pages.Count).ToList() ?? [];
+        var outlineRoot = info != null ? afterPictures + 1 : 0;
+        Obj(outline.Count > 0 ? $"<< /Type /Catalog /Pages 2 0 R /Outlines {outlineRoot} 0 R /PageMode /UseOutlines >>" : "<< /Type /Catalog /Pages 2 0 R >>");
         Obj($"<< /Type /Pages /Kids [{string.Join(' ', pages.Select((_, i) => $"{5 + 2 * i} 0 R"))}] /Count {pages.Count} >>");
         Obj($"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding {encoding} >>");
         Obj($"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding {encoding} >>");
@@ -200,6 +210,15 @@ public static class PdfWriter
                 if (r.Alpha != null) objects.Add(Stream($"/Type /XObject /Subtype /Image /Width {r.W} /Height {r.H} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode", Deflate(r.Alpha)));
             }
         }
+        if (info != null)
+        {
+            var dict = new StringBuilder("<< /Producer (Lapin)");
+            if (info.Title.Length > 0) dict.Append(" /Title ").Append(TextString(info.Title));
+            if (info.Author.Length > 0) dict.Append(" /Author ").Append(TextString(info.Author));
+            if (info.Subject.Length > 0) dict.Append(" /Subject ").Append(TextString(info.Subject));
+            Obj(dict.Append(" >>").ToString());
+            if (outline.Count > 0) Outline(outline, outlineRoot, pages, Obj);
+        }
         using var f = new MemoryStream();
         void W(string s) => f.Write(Encoding.ASCII.GetBytes(s));
         W("%PDF-1.4\n");
@@ -215,7 +234,50 @@ public static class PdfWriter
         var xref = f.Position;
         W($"xref\n0 {objects.Count + 1}\n0000000000 65535 f \n");
         foreach (var o in offsets) W($"{o:D10} 00000 n \n");
-        W($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
+        W($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R{(info != null ? $" /Info {afterPictures} 0 R" : "")} >>\nstartxref\n{xref}\n%%EOF\n");
         return f.ToArray();
     }
+
+    /// <summary>
+    /// The bookmarks as PDF's outline tree: the root at <paramref name="root"/>, then one object a bookmark in order, each
+    /// under the last one of a lower level before it; each opens its page at its height.
+    /// </summary>
+    static void Outline(List<PdfOutline> items, int root, IReadOnlyList<PaperPage> pages, Action<string> obj)
+    {
+        var parent = new int[items.Count];   // -1: the root
+        var stack = new List<int>();
+        for (var i = 0; i < items.Count; i++)
+        {
+            while (stack.Count > 0 && items[stack[^1]].Level >= items[i].Level) stack.RemoveAt(stack.Count - 1);
+            parent[i] = stack.Count > 0 ? stack[^1] : -1;
+            stack.Add(i);
+        }
+        int Id(int i) => i < 0 ? root : root + 1 + i;
+        List<int> Children(int p) => [.. Enumerable.Range(0, items.Count).Where(i => parent[i] == p)];
+        int Descendants(int p) => Children(p).Sum(c => 1 + Descendants(c));
+        var top = Children(-1);
+        obj($"<< /Type /Outlines /First {Id(top[0])} 0 R /Last {Id(top[^1])} 0 R /Count {items.Count} >>");
+        for (var i = 0; i < items.Count; i++)
+        {
+            var siblings = Children(parent[i]);
+            var k = siblings.IndexOf(i);
+            var kids = Children(i);
+            var o = new StringBuilder("<< /Title ").Append(TextString(items[i].Title)).Append(" /Parent ").Append(Id(parent[i])).Append(" 0 R");
+            if (k > 0) o.Append(" /Prev ").Append(Id(siblings[k - 1])).Append(" 0 R");
+            if (k < siblings.Count - 1) o.Append(" /Next ").Append(Id(siblings[k + 1])).Append(" 0 R");
+            if (kids.Count > 0) o.Append(" /First ").Append(Id(kids[0])).Append(" 0 R /Last ").Append(Id(kids[^1])).Append(" 0 R /Count ").Append(Descendants(i));
+            var page = pages[items[i].Page];
+            o.Append(" /Dest [").Append(5 + 2 * items[i].Page).Append(" 0 R /XYZ 0 ").Append(F((page.H - items[i].Y) * Pt)).Append(" null] >>");
+            obj(o.ToString());
+        }
+    }
+
+    /// <summary>A PDF text string in UTF-16BE (any letter, for the Info and the bookmarks).</summary>
+    static string TextString(string s) => "<FEFF" + Convert.ToHexString(Encoding.BigEndianUnicode.GetBytes(s)) + ">";
 }
+
+/// <summary>A bookmark: its title, the page (from 0), the height it opens at (paper mm from the top), its level (1: top).</summary>
+public sealed record PdfOutline(string Title, int Page, double Y, int Level);
+
+/// <summary>A document's Info (title, author, subject) and bookmarks.</summary>
+public sealed record PdfInfo(string Title = "", string Author = "", string Subject = "", IReadOnlyList<PdfOutline>? Outline = null);

@@ -27,8 +27,11 @@ export function IssueDialog() {
   const nodes = useSession((s) => s.nodes);
   const path = useSession((s) => s.doc?.path ?? null);
   const sheets = useMemo(() => [...nodes.values()].filter((n) => n.type === 'LapinSheet'), [nodes]);
+  const docs = useMemo(() => [...nodes.values()].filter((n) => n.type === 'LapinDocument'), [nodes]);
   const [s, setS] = useState<CdeSettings | null>(null);
   const [chosen, setChosen] = useState<Set<string> | null>(null);
+  const [chosenDocs, setChosenDocs] = useState<Set<string> | null>(null);
+  const [docx, setDocx] = useState(false);
   const [model, setModel] = useState(true);
   const [keepModel, setKeepModel] = useState(false);
   const [toFolder, setToFolder] = useState(true);
@@ -61,6 +64,9 @@ export function IssueDialog() {
   }, [nodes]);
   useEffect(() => { setChosen((c) => c ?? new Set(sheets.map((x) => x.id))); }, [sheets]);
   const ids = useMemo(() => sheets.filter((x) => chosen?.has(x.id)).map((x) => x.id), [sheets, chosen]);
+  // The written documents go too, all ticked at first (docs/plan-documents.md).
+  useEffect(() => { setChosenDocs((c) => c ?? (docs.length ? new Set(docs.map((x) => x.id)) : null)); }, [docs]);
+  const docIds = useMemo(() => docs.filter((x) => chosenDocs?.has(x.id)).map((x) => x.id), [docs, chosenDocs]);
 
   // The checks and the names follow what is chosen (not while the issue made is shown), a moment after the typing stops;
   // each answer is kept with what it was asked for, so an issue goes only on the checks of what is chosen now.
@@ -81,13 +87,14 @@ export function IssueDialog() {
   const current = check?.key === asked ? check.result : undefined;
 
   const toggle = (id: string) => setChosen((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleDoc = (id: string) => setChosenDocs((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const chooseStatus = (code: string) => { setStatus(code); setContainer(containerFor(code)); };
   const chooseKind = (c: boolean) => { setContractual(c); setRevision(nextRevision(s?.lastRevision ?? null, c)); };
 
   const folderHere = canUseFolder() && Boolean(s?.folder);
   const blocked = (current?.blocking ?? 0) > 0;
   const warned = (current?.warnings ?? 0) > 0;
-  const ready = canIssue() && current != null && chosen && (ids.length > 0 || model) && isRevision(revision) && !blocked && (!warned || anyway) && !busy && !done;
+  const ready = canIssue() && current != null && chosen && (ids.length > 0 || model || docIds.length > 0) && isRevision(revision) && !blocked && (!warned || anyway) && !busy && !done;
 
   const go = async () => {
     if (!ready) return;
@@ -99,7 +106,7 @@ export function IssueDialog() {
     dispatch({ type: 'start' });
     try {
       const r = await issue({
-        name: name.trim(), revision, status, container, sheets: ids, model, keepModel: model && keepModel, dxf, set, note: note.trim(),
+        name: name.trim(), revision, status, container, sheets: ids, model, keepModel: model && keepModel, dxf, set, note: note.trim(), documents: docIds, documentsDocx: docIds.length > 0 && docx,
         toFolder: folderHere && toFolder, ...(engineInBrowser ? { bytes: true } : {}),
       });
       if (r.file) await keepProjectFile(r.file);
@@ -165,7 +172,7 @@ export function IssueDialog() {
             </div>
             <h4>What goes</h4>
             <div className="cde-sheets">
-              {sheets.length === 0 && <p className="muted small">The project has no sheet; the model alone can go.</p>}
+              {sheets.length === 0 && docs.length === 0 && <p className="muted small">The project has no sheet; the model alone can go.</p>}
               {sheets.map((x) => {
                 const nm = names?.sheets.find((y) => y.id === x.id);
                 return (
@@ -181,6 +188,22 @@ export function IssueDialog() {
               {model && !keepModel && !(folderHere && toFolder) && <p className="muted small indent">Without a project folder, an IFC not kept in the project file goes nowhere: only its name and hash are recorded.</p>}
               <label className="row small"><input type="checkbox" checked={dxf} onChange={(e) => setDxf(e.target.checked)} /> <span>Each sheet as DXF too</span></label>
               {ids.length > 1 && <label className="row small"><input type="checkbox" checked={set} onChange={(e) => setSet(e.target.checked)} /> <span>All the sheets in one PDF too</span>{names && set && <code className="muted">{names.set}</code>}</label>}
+              {docs.length > 0 && (
+                <div className="cde-documents" data-field="issue-documents">
+                  <p className="muted small">Documents, each as a PDF:</p>
+                  {docs.map((x) => {
+                    const nm = names?.documents?.find((y) => y.id === x.id);
+                    return (
+                      <label key={x.id} className="row small" title={nm?.problems.length ? nm.problems.join('\n') : undefined}>
+                        <input type="checkbox" data-field={`issue-document-${x.id}`} checked={chosenDocs?.has(x.id) ?? false} onChange={() => toggleDoc(x.id)} />
+                        <span data-no-i18n="">{x.name}</span>
+                        {nm && <code className={nm.problems.length ? 'cde-warn' : 'muted'}>{nm.file}</code>}
+                      </label>
+                    );
+                  })}
+                  {docIds.length > 0 && <label className="row small indent"><input type="checkbox" data-field="issue-documents-docx" checked={docx} onChange={(e) => setDocx(e.target.checked)} /> <span>Also as DOCX</span></label>}
+                </div>
+              )}
               {names && <p className="muted small">With the transmittal (PDF and CSV) and the manifest: <code>{names.transmittal}</code></p>}
             </div>
             <h4>Where it goes</h4>

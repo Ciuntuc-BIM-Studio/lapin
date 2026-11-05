@@ -25,7 +25,7 @@ export interface CdeSettings {
   roles: { code: string; label: string }[]; statuses: { code: string; label: string; container: string }[];
   lastRevision: string | null; nextRevision: string; nextNumber: number;
 }
-export interface Names { revision: string; status: string; number: number; sheets: { id: string; number: string; title: string; name: string; file: string; problems: string[] }[]; model: string; set: string; transmittal: string }
+export interface Names { revision: string; status: string; number: number; sheets: { id: string; number: string; title: string; name: string; file: string; problems: string[] }[]; documents?: { id: string; title: string; name: string; file: string; problems: string[] }[]; model: string; set: string; transmittal: string }
 
 /** The revision after `last`: P02 after P01, C01 for the first contractual one, C02 after C01; P01 with none. */
 export function nextRevision(last: string | null | undefined, contractual?: boolean): string {
@@ -100,6 +100,8 @@ export async function openFolder(path: string): Promise<void> {
 
 export interface IssueRequest {
   name: string; revision: string; status: string; container: string; sheets: string[]; model: boolean; dxf: boolean; set: boolean; note: string;
+  /** The written documents to issue (docs/plan-documents.md), each as a PDF; as a DOCX too with documentsDocx. */
+  documents?: string[]; documentsDocx?: boolean;
   /** Keep the IFC in the project file too (off by default: a large model is tens of MB an issue). */
   keepModel: boolean;
   /** Also write the files into the project folder's container (when it has one, on the desktop). */

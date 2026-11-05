@@ -45,7 +45,23 @@ public static class Cde
         return wanted.Select(id => all.FirstOrDefault(s => s.Id == id) ?? throw new CommandException("There is no such sheet.")).ToList();
     }
 
-    /// <summary>The names an issue would write, for the sheets asked (all by default), the model, the set and the transmittal.</summary>
+    /// <summary>The documents asked (ids), else every document of the project.</summary>
+    public static List<Entity> DocumentsOf(IModelView m, JsonNode? ids)
+    {
+        var all = Documents.Documents.All(m).ToList();
+        if (ids is not JsonArray a) return all;
+        return a.Select(x => (string?)x).OfType<string>().Select(id => all.FirstOrDefault(d => d.Id == id) ?? throw new CommandException("There is no such document.")).ToList();
+    }
+
+    /// <summary>A document's container name: its template's type, numbered in the order of the project's documents of that type.</summary>
+    public static string DocumentName(IModelView m, CdeNaming naming, Entity doc)
+    {
+        var type = Documents.Documents.IsoType(doc);
+        var n = Documents.Documents.All(m).Where(d => Documents.Documents.IsoType(d) == type).Select(d => d.Id).ToList().IndexOf(doc.Id) + 1;
+        return naming.ForDocument(type, Math.Max(n, 1));
+    }
+
+    /// <summary>The names an issue would write, for the sheets asked (all by default), the documents asked (all by default), the model, the set and the transmittal.</summary>
     public static JsonObject Names(IModelView m, JsonObject a)
     {
         var naming = CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
@@ -62,6 +78,15 @@ public static class Cde
                 {
                     ["id"] = sheet.Id, ["number"] = sheet.Str("number"), ["title"] = sheet.Name, ["name"] = name,
                     ["file"] = CdeNaming.WithRevision(name, status, revision, "pdf"),
+                    ["problems"] = new JsonArray(naming.Validate(name).Select(p => (JsonNode)p).ToArray()),
+                };
+            }).ToArray()),
+            ["documents"] = new JsonArray(DocumentsOf(m, a["documents"]).Select(doc =>
+            {
+                var name = DocumentName(m, naming, doc);
+                return (JsonNode)new JsonObject
+                {
+                    ["id"] = doc.Id, ["title"] = doc.Name, ["name"] = name, ["file"] = CdeNaming.WithRevision(name, status, revision, "pdf"),
                     ["problems"] = new JsonArray(naming.Validate(name).Select(p => (JsonNode)p).ToArray()),
                 };
             }).ToArray()),

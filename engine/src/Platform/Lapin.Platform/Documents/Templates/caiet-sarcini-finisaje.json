@@ -1,0 +1,110 @@
+{
+  "id": "caiet-sarcini-finisaje",
+  "title": "Caiet de sarcini: tâmplărie și finisaje",
+  "description": "Caietul de sarcini pentru tâmplărie și finisaje, cu materialele, extrasul de tâmplărie și finisajele pe încăperi luate din proiect, și textele de execuție și recepție de completat de proiectant.",
+  "lang": "ro",
+  "isoType": "SP",
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [20, 20, 20, 25],
+    "header": "{{project.name}} · {{project.number}}",
+    "footer": "{{project.designer}} · pagina {{page}} din {{pages}}"
+  },
+  "inputs": [
+    {
+      "key": "generalitati",
+      "label": "Generalități",
+      "multiline": true,
+      "default": "[De completat] Prezentul caiet de sarcini cuprinde condițiile tehnice pentru furnizarea, punerea în operă și recepția tâmplăriei și a finisajelor interioare și exterioare ale obiectivului.\n[De completat] Lista reglementărilor tehnice și a standardelor aplicabile (normative de execuție, standarde de produs, reglementări privind calitatea în construcții), stabilită de proiectant.\nOrice abatere de la prevederile proiectului se face numai cu acordul scris al proiectantului.",
+      "group": "Generalități"
+    },
+    {
+      "key": "cerinteTamplarie",
+      "label": "Cerințe pentru tâmplărie",
+      "multiline": true,
+      "default": "[De completat] Performanțele cerute tâmplăriei: transmitanța termică, izolarea acustică, permeabilitatea la aer, etanșeitatea la apă, rezistența la vânt și, unde e cazul, rezistența la foc și la efracție.\n[De completat] Materialul profilelor, tipul geamului, feroneria, culorile și finisajul, montajul în gol (etanșarea perimetrală, glafurile).\nProdusele se pun în operă numai cu documentele de calitate și declarațiile de performanță cerute de lege.",
+      "group": "Tâmplărie"
+    },
+    {
+      "key": "finisajeInterioare",
+      "label": "Finisaje interioare",
+      "multiline": true,
+      "default": "[De completat] Cerințele pentru pardoseli, finisajele pereților și ale tavanelor: pregătirea stratului suport, materialele, toleranțele de planeitate, rosturile, culorile.\n[De completat] Condițiile de mediu pentru execuție (temperatura, umiditatea) după fișele tehnice ale producătorilor.",
+      "group": "Finisaje"
+    },
+    {
+      "key": "finisajeExterioare",
+      "label": "Finisaje exterioare",
+      "multiline": true,
+      "default": "[De completat] Sistemul de finisaj al fațadelor (tencuieli, placaje, vopsitorii), al soclului și al elementelor de tinichigerie, cu culorile și texturile din planșele de fațade.\n[De completat] Cerințele pentru stratul suport, protecția lucrărilor pe timp nefavorabil și ordinea execuției.",
+      "group": "Finisaje"
+    },
+    {
+      "key": "executie",
+      "label": "Execuția lucrărilor",
+      "multiline": true,
+      "default": "Lucrările se execută în ordinea: verificarea și pregătirea stratului suport, montajul tâmplăriei, finisajele umede, pardoselile, finisajele finale și montajul accesoriilor.\nMaterialele se depozitează și se pun în operă după instrucțiunile producătorilor.\n[De completat] Condițiile particulare ale obiectivului și lucrările care cer verificarea proiectantului înainte de a continua.",
+      "group": "Execuție și recepție"
+    },
+    {
+      "key": "receptie",
+      "label": "Controlul calității și recepția",
+      "multiline": true,
+      "default": "Calitatea materialelor se verifică la livrare, pe baza documentelor de însoțire, și se consemnează.\nLucrările care devin ascunse se recepționează pe faze, cu procese-verbale, înainte de a fi acoperite.\n[De completat] Verificările cerute la recepție (aspectul, planeitatea, funcționarea tâmplăriei, etanșeitatea) și toleranțele admise.",
+      "group": "Execuție și recepție"
+    }
+  ],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "Caiet de sarcini: tâmplărie și finisaje" },
+    { "kind": "paragraph", "text": "**{{project.name}}**" },
+    { "kind": "paragraph", "text": "Amplasament: {{project.address}} · Beneficiar: {{project.client}}" },
+    { "kind": "paragraph", "text": "Faza: {{project.phase}} · Proiect nr. {{project.number}} · {{date.today}}" },
+    { "kind": "toc" },
+    { "kind": "pageBreak" },
+
+    { "kind": "heading", "level": 2, "text": "1. Generalități" },
+    { "kind": "input", "key": "generalitati" },
+
+    { "kind": "heading", "level": 2, "text": "2. Materiale" },
+    { "kind": "paragraph", "text": "Materialele folosite în proiect, cu categoria lor:" },
+    {
+      "kind": "repeat",
+      "over": "materials", "empty": [{ "kind": "paragraph", "text": "Nu sunt materiale folosite în model." }],
+      "blocks": [
+        { "kind": "list", "ordered": false, "items": ["{{material.name}} ({{material.category}})"] }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "3. Tâmplăria" },
+    { "kind": "paragraph", "text": "Proiectul cuprinde {{counts.doors}} uși și {{counts.windows}} ferestre, cu dimensiunile și numărul din extrasul de mai jos." },
+    { "kind": "table", "source": "kind:all", "title": "Extras de tâmplărie" },
+    { "kind": "heading", "level": 3, "text": "3.1. Cerințe pentru tâmplărie" },
+    { "kind": "input", "key": "cerinteTamplarie" },
+
+    { "kind": "heading", "level": 2, "text": "4. Finisaje interioare" },
+    { "kind": "paragraph", "text": "Pardoselile, finisajele pereților și ale tavanelor pe încăperi:" },
+    { "kind": "table", "source": "kind:roomFinishes", "title": "Finisaje pe încăperi" },
+    { "kind": "input", "key": "finisajeInterioare" },
+
+    { "kind": "heading", "level": 2, "text": "5. Finisaje exterioare" },
+    { "kind": "input", "key": "finisajeExterioare" },
+
+    { "kind": "heading", "level": 2, "text": "6. Execuția lucrărilor" },
+    { "kind": "input", "key": "executie" },
+
+    { "kind": "heading", "level": 2, "text": "7. Controlul calității și recepția" },
+    { "kind": "input", "key": "receptie" },
+
+    { "kind": "heading", "level": 2, "text": "Întocmit" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Proiectant", "{{project.designer}}"],
+        ["Șef de proiect / arhitect", "{{project.chiefArchitect}}"],
+        ["Întocmit", "{{project.author}}"],
+        ["Data", "{{date.today}}"]
+      ]
+    }
+  ]
+}

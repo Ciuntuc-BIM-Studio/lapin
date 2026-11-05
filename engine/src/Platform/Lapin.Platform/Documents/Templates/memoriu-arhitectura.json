@@ -1,0 +1,212 @@
+{
+  "id": "memoriu-arhitectura",
+  "title": "Memoriu tehnic de arhitectură",
+  "description": "Memoriul de arhitectură pentru DTAC și PT, după conținutul-cadru al Legii 50/1991 (anexa 1), completat din datele, suprafețele, tipurile și extrasele proiectului.",
+  "lang": "ro",
+  "isoType": "RP",
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [20, 20, 20, 25],
+    "header": "{{project.name}} · {{project.number}}",
+    "footer": "{{project.designer}} · pagina {{page}} din {{pages}}"
+  },
+  "inputs": [
+    {
+      "key": "situatiaExistenta",
+      "label": "Situația existentă",
+      "multiline": true,
+      "default": "[De completat] Descrierea amplasamentului: vecinătățile, accesele, topografia terenului, construcțiile existente pe parcelă și starea lor, rețelele edilitare din zonă.\n[De completat] Regimul juridic, economic și tehnic al terenului, după certificatul de urbanism.",
+      "group": "Situația existentă"
+    },
+    {
+      "key": "functiunea",
+      "label": "Funcțiunea",
+      "multiline": true,
+      "default": "[De completat] Funcțiunea propusă a construcției și descrierea pe scurt a organizării spațiilor (zona de zi, zona de noapte, spațiile tehnice etc.).",
+      "group": "Descrierea construcției"
+    },
+    {
+      "key": "structura",
+      "label": "Structura",
+      "multiline": true,
+      "default": "[De completat] Sistemul structural (fundații, elemente verticale, planșee, acoperiș) și materialele principale, după proiectul de rezistență.\n[De completat] Clasa de importanță și categoria de importanță a construcției, stabilite de proiectant.",
+      "group": "Descrierea construcției"
+    },
+    {
+      "key": "finisajeExterioare",
+      "label": "Finisaje exterioare",
+      "multiline": true,
+      "default": "[De completat] Finisajele fațadelor (tencuieli, placaje, culori), ale soclului, ale învelitorii și ale tâmplăriei exterioare, cu detaliile din planșele de fațade.",
+      "group": "Finisaje"
+    },
+    {
+      "key": "instalatii",
+      "label": "Instalații",
+      "multiline": true,
+      "default": "[De completat] Racordurile la rețelele edilitare și echiparea construcției cu instalații sanitare, termice, de ventilare, electrice și de curenți slabi, după proiectele de specialitate.",
+      "group": "Instalații și cerințe"
+    },
+    {
+      "key": "incendiu",
+      "label": "Securitatea la incendiu",
+      "multiline": true,
+      "default": "[De completat] Măsurile de securitate la incendiu: gradul de rezistență la foc, compartimentarea, căile de evacuare, materialele folosite și echiparea, după scenariul de securitate la incendiu, unde e cerut.",
+      "group": "Instalații și cerințe"
+    },
+    {
+      "key": "accesibilitate",
+      "label": "Accesibilitate",
+      "multiline": true,
+      "default": "[De completat] Măsurile pentru accesul și folosirea construcției de către persoanele cu dizabilități, acolo unde sunt cerute.",
+      "group": "Instalații și cerințe"
+    },
+    {
+      "key": "eficientaEnergetica",
+      "label": "Eficiența energetică",
+      "multiline": true,
+      "default": "[De completat] Măsurile pentru performanța energetică a clădirii: izolarea termică a anvelopei, tâmplăria, sursele de energie, după calculul energetic.",
+      "group": "Instalații și cerințe"
+    },
+    {
+      "key": "organizareSantier",
+      "label": "Organizarea de șantier",
+      "multiline": true,
+      "default": "[De completat] Împrejmuirea și accesul în șantier, spațiile pentru depozitarea materialelor, racordurile provizorii, colectarea deșeurilor și măsurile pentru protecția vecinătăților.",
+      "group": "Organizarea de șantier"
+    }
+  ],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "Memoriu tehnic de arhitectură" },
+    { "kind": "paragraph", "text": "**{{project.name}}**" },
+    { "kind": "paragraph", "text": "Faza: {{project.phase}} · Proiect nr. {{project.number}} · {{date.today}}" },
+    { "kind": "toc" },
+    { "kind": "pageBreak" },
+
+    { "kind": "heading", "level": 2, "text": "1. Date generale" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Denumirea obiectivului", "{{project.name}}"],
+        ["Amplasamentul", "{{project.address}}"],
+        ["Număr cadastral", "{{project.cadastral}}"],
+        ["Carte funciară", "{{project.landBook}}"],
+        ["Beneficiar", "{{project.client}}"],
+        ["Adresa beneficiarului", "{{project.clientAddress}}"],
+        ["Proiectant general", "{{project.designer}}"],
+        ["Adresa proiectantului", "{{project.designerAddress}}"],
+        ["Șef de proiect / arhitect", "{{project.chiefArchitect}}"],
+        ["Număr proiect", "{{project.number}}"],
+        ["Faza de proiectare", "{{project.phase}}"],
+        ["Data", "{{date.today}}"]
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "2. Situația existentă" },
+    { "kind": "input", "key": "situatiaExistenta" },
+
+    { "kind": "heading", "level": 2, "text": "3. Descrierea construcției" },
+    { "kind": "heading", "level": 3, "text": "3.1. Funcțiunea" },
+    { "kind": "input", "key": "functiunea" },
+    { "kind": "heading", "level": 3, "text": "3.2. Regimul de înălțime" },
+    { "kind": "paragraph", "text": "Construcția are regimul de înălțime **{{levels.text}}** ({{counts.storeys}} niveluri), cu înălțimea maximă de {{height.max}}, măsurată de la cota ±0,00." },
+    { "kind": "heading", "level": 3, "text": "3.3. Suprafețe" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Aria construită (Ac)", "{{areas.built}}"],
+        ["Aria desfășurată (Ad)", "{{areas.gross}}"],
+        ["Aria utilă (Au)", "{{areas.usable}}"],
+        ["Înălțimea maximă", "{{height.max}}"],
+        ["Aria subsolului", "{{areas.basement}}"],
+        ["Numărul de încăperi", "{{counts.rooms}}"]
+      ],
+      "skipEmpty": true
+    },
+    { "kind": "heading", "level": 3, "text": "3.4. Suprafețele pe niveluri" },
+    {
+      "kind": "repeat",
+      "over": "storeys",
+      "blocks": [
+        { "kind": "heading", "level": 3, "text": "{{storey.name}}" },
+        { "kind": "if", "field": "storey.area", "blocks": [{ "kind": "paragraph", "text": "Cota {{storey.elevation}}, înălțimea nivelului {{storey.height}}, aria construită {{storey.area}}." }], "else": [{ "kind": "paragraph", "text": "Cota {{storey.elevation}}, înălțimea nivelului {{storey.height}}." }] },
+        { "kind": "if", "field": "storey.usable", "blocks": [{ "kind": "paragraph", "text": "Aria utilă: **{{storey.usable}}**, din care:" }] },
+        {
+          "kind": "repeat",
+          "over": "rooms",
+          "where": { "storeyId": "{{storey.id}}" },
+          "blocks": [
+            { "kind": "paragraph", "text": "{{room.number}} {{room.name}}: {{room.area}}" }
+          ]
+        }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "4. Structura" },
+    { "kind": "input", "key": "structura" },
+
+    { "kind": "heading", "level": 2, "text": "5. Închideri și compartimentări" },
+    { "kind": "paragraph", "text": "Pereții exteriori și interiori sunt alcătuiți după tipurile de mai jos (straturile de la exterior spre interior):" },
+    {
+      "kind": "repeat",
+      "over": "wallTypes", "empty": [{ "kind": "paragraph", "text": "[De completat] Nu sunt pereți modelați în proiect." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "**{{wallType.name}}**, {{wallType.thickness}}: {{wallType.layers}}" }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "6. Planșee și acoperiș" },
+    { "kind": "heading", "level": 3, "text": "6.1. Planșee și pardoseli" },
+    {
+      "kind": "repeat",
+      "over": "slabTypes", "empty": [{ "kind": "paragraph", "text": "[De completat] Nu sunt planșee modelate în proiect." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "**{{slabType.name}}**, {{slabType.thickness}}: {{slabType.layers}}" }
+      ]
+    },
+    { "kind": "heading", "level": 3, "text": "6.2. Acoperișul" },
+    {
+      "kind": "repeat",
+      "over": "roofs", "empty": [{ "kind": "paragraph", "text": "[De completat] Nu este un acoperiș modelat în proiect." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "**{{roof.name}}**: acoperiș {{roof.shape}}, panta {{roof.pitch}}, învelitoare {{roof.covering}}." }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "7. Tâmplăria" },
+    { "kind": "paragraph", "text": "Construcția are {{counts.doors}} uși și {{counts.windows}} ferestre, după extrasul de tâmplărie de mai jos." },
+    { "kind": "table", "source": "kind:all", "title": "Extras de tâmplărie" },
+
+    { "kind": "heading", "level": 2, "text": "8. Finisaje" },
+    { "kind": "heading", "level": 3, "text": "8.1. Finisaje interioare" },
+    { "kind": "table", "source": "kind:roomFinishes", "title": "Finisaje pe încăperi" },
+    { "kind": "heading", "level": 3, "text": "8.2. Finisaje exterioare" },
+    { "kind": "input", "key": "finisajeExterioare" },
+
+    { "kind": "heading", "level": 2, "text": "9. Instalații" },
+    { "kind": "input", "key": "instalatii" },
+
+    { "kind": "heading", "level": 2, "text": "10. Securitatea la incendiu" },
+    { "kind": "input", "key": "incendiu" },
+
+    { "kind": "heading", "level": 2, "text": "11. Accesibilitate" },
+    { "kind": "input", "key": "accesibilitate" },
+
+    { "kind": "heading", "level": 2, "text": "12. Eficiența energetică" },
+    { "kind": "input", "key": "eficientaEnergetica" },
+
+    { "kind": "heading", "level": 2, "text": "13. Organizarea de șantier" },
+    { "kind": "input", "key": "organizareSantier" },
+
+    { "kind": "heading", "level": 2, "text": "Întocmit" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Șef de proiect / arhitect", "{{project.chiefArchitect}}"],
+        ["Întocmit", "{{project.author}}"],
+        ["Verificat", "{{project.checkedBy}}"],
+        ["Data", "{{date.today}}"]
+      ]
+    }
+  ]
+}

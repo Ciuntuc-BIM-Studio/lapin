@@ -25,6 +25,7 @@ import { useSectionBox } from '../viewport/sectionBox';
 import { createSiteView, SITE_PURPOSES, type SitePurpose } from '../modules/core/SitePlans';
 import { countOpen } from '../modules/core/cde/pdfRemarks/remarks';
 import { formatLevel, useStandards } from '../engine/unitsStore';
+import { openDocuments, useDocumentsDialog } from '../modules/core/documents/documents';
 
 const TAB_KEY = 'lapin.browser.tab';
 
@@ -69,6 +70,8 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   };
 
   const sets = setsOf(nodes);
+  const documents = [...nodes.values()].filter((n) => n.type === 'LapinDocument').sort((a, b) => a.name.localeCompare(b.name));
+  const docOpen = useDocumentsDialog((s) => s.id);
   // A level's default plan stands in until the level has a plan view of its own (made by the first drafting on it, or by hand): then that one is the level's plan, and the default is not listed beside it under the same name.
   const ownPlan = new Set([...nodes.values()].filter((n) => n.type === 'LapinView' && n.props.kind === 'plan' && !n.props.foundation && n.props.storeyId).map((n) => String(n.props.storeyId)));
   const items: BrowserItem[] = [...levels.filter((s) => !ownPlan.has(s.id)).map(implicitPlan), THREE_D, ...[...nodes.values()].map(itemOf).filter((i): i is BrowserItem => i !== null)];
@@ -263,6 +266,21 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
         </div>
       )}
       {tab === 'project' && !levelsOnly && groups.map((g) => <SetGroup key={g.set?.id ?? 'other'} set={g.set} list={g.items} />)}
+      {/* The written documents (docs/plan-documents.md), after the sets' sheets: a click opens Manage → Documents… on one. */}
+      {tab === 'project' && !levelsOnly && (
+        <div className="tree-group" data-testid="browser-documents">
+          <div className="tree-label">
+            <button type="button" className="icon mini fold" title={collapsed.has('documents') ? 'Expand' : 'Collapse'} onClick={() => toggle('documents')}>{collapsed.has('documents') ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</button>
+            <FileText size={13} />Documents<span className="count">{documents.length}</span>
+            <button type="button" className="icon mini" title="New document from a template" onClick={() => openDocuments(null)}><Plus size={12} /></button>
+          </div>
+          {!collapsed.has('documents') && documents.map((d) => (
+            <span key={d.id} className="tree-row">
+              <button type="button" className={`tree-item${ui.dialog === 'documents' && docOpen === d.id ? ' on' : ''}`} data-no-i18n="" title="Open in Documents" onClick={() => openDocuments(d.id)}>{d.name}</button>
+            </span>
+          ))}
+        </div>
+      )}
     </nav>
   );
 }

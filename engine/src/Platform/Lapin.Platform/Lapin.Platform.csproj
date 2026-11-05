@@ -13,4 +13,8 @@
     <!-- IFC 4.3 alignments: roads' and modules' axes, and the curve segments the IFC export writes (IIfcAlignments). -->
     <ProjectReference Include="$(LapinGeometryDir)Lapin.Alignments/Lapin.Alignments.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The documents' built-in templates (docs/plan-documents.md), read by DocumentTemplates. -->
+    <EmbeddedResource Include="Documents/Templates/*.json" LogicalName="Lapin.Platform.Documents.Templates.%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

@@ -258,6 +258,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IElementUpdate>(new RoomUpdate());
         r.Service<IProjectUpgrade>(new RoomNameUpgrade());
         r.Service<IScheduleSource>(new Roofs.RoofTimberSchedule());
+        // The architecture's fields and collections for documents (docs/plan-documents.md).
+        r.Service<Lapin.Platform.Documents.IDocumentFields>(new DocumentFields());
 
         // ------------------------------------------------------------ rooms
         r.Class(new(Rooms.Class, "Room",

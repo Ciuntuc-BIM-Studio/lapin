@@ -1,0 +1,56 @@
+{
+  "id": "borderou",
+  "title": "Borderou de piese scrise și desenate",
+  "description": "Borderoul proiectului: piesele scrise din documentele proiectului și piesele desenate din planșe, cu numărul, titlul, scara și revizia fiecăreia.",
+  "lang": "ro",
+  "isoType": "SH",
+  "page": {
+    "size": "A4",
+    "orientation": "portrait",
+    "margins": [20, 20, 20, 25],
+    "header": "{{project.name}} · {{project.number}}",
+    "footer": "{{project.designer}} · pagina {{page}} din {{pages}}"
+  },
+  "inputs": [],
+  "blocks": [
+    { "kind": "heading", "level": 1, "text": "Borderou" },
+    {
+      "kind": "fields",
+      "rows": [
+        ["Proiect", "{{project.name}}"],
+        ["Număr proiect", "{{project.number}}"],
+        ["Faza", "{{project.phase}}"],
+        ["Beneficiar", "{{project.client}}"],
+        ["Proiectant", "{{project.designer}}"],
+        ["Data", "{{date.today}}"],
+        ["Revizia", "{{cde.revision}}"]
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Piese scrise" },
+    {
+      "kind": "repeat",
+      "over": "documents", "empty": [{ "kind": "paragraph", "text": "Proiectul nu are încă piese scrise." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "{{doc.name}} · rev. {{doc.revision}}" }
+      ]
+    },
+
+    { "kind": "heading", "level": 2, "text": "Piese desenate" },
+    {
+      "kind": "repeat",
+      "over": "sheets", "empty": [{ "kind": "paragraph", "text": "Proiectul nu are încă planșe." }],
+      "blocks": [
+        { "kind": "paragraph", "text": "**{{sheet.number}}** {{sheet.title}} · sc. {{sheet.scale}} · rev. {{sheet.revision}}" }
+      ]
+    },
+
+    {
+      "kind": "fields",
+      "rows": [
+        ["Întocmit", "{{project.author}}"],
+        ["Verificat", "{{project.checkedBy}}"]
+      ]
+    }
+  ]
+}
