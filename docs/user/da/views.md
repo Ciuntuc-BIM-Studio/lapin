@@ -55,9 +55,11 @@ En facade eller et snit skraverer hver flade, den ser, med materialets **Elevati
 
 Med **Alignment** *view* fortsætter mønstret fra flade til flade; med *layer* ligger det på selve fladen, langs dens vandrette linje fra det nederste hjørne, og en flade set skråt viser det forkortet. Et materiale, der fortsætter i samme plan over flere elementer, skraveres som ét, medmindre visningsstilens **Join materials** er slået fra.
 
-Et materiale har ingen facadeskravering, før du giver det en (**none (default)**). Visningsstilens **Surface hatches** (**Vis → View settings**, **Administrer → View styles**) slår dem fra for hele visninger: til i Architectural, fra i Structural, MEP og Coordination. Planer beholder deres egne snit- og planskraveringer.
+Indtil du vælger en, kommer et materiales facadeskravering **ud fra navnet**, ligesom dets snitskravering, og **Administrer → Materials** viser hvilken (*ud fra navnet (BRICK)*): mursten og murværk BRICK, sten STONE, træ BOARDS, metalbeklædning VERTICAL, tagsten, spån og skifer HORIZONTAL, fliser TILES, grus og jord som i snit. Isolering, membraner, puds, maling og beton får ingen: isoleringens BATT er en snitskravering og foreslås aldrig for en flade (valgt i hånden tegnes den). Vælg **none** for ingen skravering. Et udfoldet snit (forskudt, buet eller langs et element) skraverer hvert af sine stykker mellem stykkets ender og tegner solskyggerne på samme måde. Visningsstilens **Surface hatches** (**Vis → View settings**, **Administrer → View styles**) slår dem fra for hele visninger: til i Architectural, fra i Structural, MEP og Coordination. Planer beholder deres egne snit- og planskraveringer.
 
-![Sydfacaden med skraveret puds](shots/elevation-surface-hatch.webp)
+![Sydfacaden, blankmuren skraveret ud fra sit navn](shots/elevation-surface-hatch.webp)
+
+![Et forskudt snit skraverer havemuren, som dets sidste stykke ser](shots/section-developed-surface-hatch.webp)
 
 ![Overfladeskraveringer i visningens indstillinger](shots/view-surface-hatch.webp)
 

@@ -55,9 +55,11 @@ Elewacja lub przekrój kreskuje każdą widzianą ścianę kreskowaniem **Elevat
 
 Przy **Alignment** *view* wzór biegnie dalej z jednej ściany na następną; przy *layer* leży na samej ścianie, wzdłuż jej poziomu od dolnego narożnika, a ściana widziana skośnie pokazuje go skrócony. Materiał biegnący w jednej płaszczyźnie przez kilka elementów jest kreskowany jako jeden, chyba że **Join materials** w stylu widoku jest wyłączone.
 
-Materiał nie ma kreskowania elewacyjnego, dopóki mu go nie nadasz (**none (default)**). **Surface hatches** w stylu widoku (**Widok → View settings**, **Zarządzaj → View styles**) wyłącza je dla całych widoków: włączone w Architectural, wyłączone w Structural, MEP i Coordination. Rzuty zachowują własne kreskowania przekroju i rzutu.
+Dopóki go nie wybierzesz, kreskowanie elewacyjne materiału pochodzi **z nazwy**, jak jego kreskowanie przekroju, a **Zarządzaj → Materials** pokazuje które (*z nazwy (BRICK)*): cegła i mur BRICK, kamień STONE, drewno BOARDS, okładzina metalowa VERTICAL, dachówki, gonty i łupek HORIZONTAL, płytki TILES, żwir i ziemia jak w przekroju. Izolacja, membrany, tynk, farba i beton nie dostają żadnego: BATT izolacji to kreskowanie przekroju, nigdy nie proponowane dla powierzchni (wybrane ręcznie jest rysowane). Wybierz **none**, aby nic nie rysować. Przekrój rozwinięty (łamany, łukowy lub wzdłuż elementu) kreskuje każdy swój odcinek między jego końcami i tak samo rysuje na nim cienie słońca. **Surface hatches** w stylu widoku (**Widok → View settings**, **Zarządzaj → View styles**) wyłącza je dla całych widoków: włączone w Architectural, wyłączone w Structural, MEP i Coordination. Rzuty zachowują własne kreskowania przekroju i rzutu.
 
-![Elewacja południowa z kreskowanym tynkiem](shots/elevation-surface-hatch.webp)
+![Elewacja południowa, cegła licowa kreskowana według nazwy](shots/elevation-surface-hatch.webp)
+
+![Przekrój łamany kreskuje mur ogrodowy widziany przez jego ostatni odcinek](shots/section-developed-surface-hatch.webp)
 
 ![Kreskowania powierzchni w ustawieniach widoku](shots/view-surface-hatch.webp)
 

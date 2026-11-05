@@ -55,9 +55,11 @@ Um alçado ou um corte traceja cada face que vê com o tracejado **Elevation** d
 
 Com **Alignment** *view* o padrão continua de uma face para a seguinte; com *layer* assenta na própria face, ao longo da sua horizontal a partir do canto de baixo, e uma face vista de viés mostra-o encurtado. Um material que continua no mesmo plano por vários elementos é tracejado como um só, a não ser que **Join materials** do estilo de vista esteja desligado.
 
-Um material não tem tracejado de alçado até lhe dar um (**none (default)**). **Surface hatches** do estilo de vista (**Vista → View settings**, **Gerir → View styles**) desliga-os para vistas inteiras: ligado em Architectural, desligado em Structural, MEP e Coordination. As plantas mantêm os seus próprios tracejados de corte e de planta.
+Até escolher um, o tracejado de alçado de um material vem **pelo nome**, como o seu tracejado de corte, e **Gerir → Materials** mostra qual (*pelo nome (BRICK)*): tijolo e alvenaria BRICK, pedra STONE, madeira BOARDS, revestimento metálico VERTICAL, telhas, telhas de madeira e ardósia HORIZONTAL, ladrilhos TILES, gravilha e terra como em corte. O isolamento, as membranas, o reboco, a pintura e o betão não recebem nenhum: o BATT do isolamento é um tracejado de corte, nunca proposto para uma superfície (escolhido à mão, é desenhado). Escolha **none** para não desenhar nada. Um corte desenvolvido (quebrado, curvo ou ao longo de um elemento) traceja cada um dos seus troços entre as suas pontas, e desenha neles da mesma forma as sombras do sol. **Surface hatches** do estilo de vista (**Vista → View settings**, **Gerir → View styles**) desliga-os para vistas inteiras: ligado em Architectural, desligado em Structural, MEP e Coordination. As plantas mantêm os seus próprios tracejados de corte e de planta.
 
-![O alçado sul com o reboco tracejado](shots/elevation-surface-hatch.webp)
+![O alçado sul, o tijolo à vista tracejado pelo seu nome](shots/elevation-surface-hatch.webp)
+
+![Um corte quebrado traceja o muro do jardim visto pelo seu último troço](shots/section-developed-surface-hatch.webp)
 
 ![Os tracejados de superfície nas definições da vista](shots/view-surface-hatch.webp)
 

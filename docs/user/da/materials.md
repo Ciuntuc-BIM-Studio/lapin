@@ -70,7 +70,7 @@ IFC-eksporten navngiver også hvert materiales overfladestil efter det, med dets
 ## Hvad et materiale indstiller
 
 - **Farve (3D)** og de flader, der tegnes på det i 3D. Lapin gætter dem ud fra navnet, for eksempel en murstens skifter eller en flises gitter. **Ender** og **Top og bund** kan se anderledes ud end fladerne.
-- **Skravering** for hvert sted, det tegnes: skåret i et snit, skåret i en plan og set i en facade. Hver har sin skala, vinkel, justering, udfyldning og pen. En facade eller et snit skraverer de flader, den ser, med facadeskraveringen, hvor intet nærmere skjuler dem (Visninger, Overfladeskraveringer); et materiale har ingen, før du giver det en.
+- **Skravering** for hvert sted, det tegnes: skåret i et snit, skåret i en plan og set i en facade. Hver har sin skala, vinkel, justering, udfyldning og pen. En facade eller et snit skraverer de flader, den ser, med facadeskraveringen, hvor intet nærmere skjuler dem (Visninger, Overfladeskraveringer); indtil du giver det en, foreslår dets navn en (mursten BRICK, sten STONE, træ BOARDS, metalbeklædning VERTICAL), aldrig isoleringens BATT.
 - **Kategori**, for eksempel overflade, isolering eller konstruktion. Visningsstilene bruger den til at udelade overfladerne i en konstruktionsvisning.
 - **Membran** tegner et tyndt lag som en stiplet linje i stedet for et bånd.
 - **Tegn fuger.** Som standard løber et materiale videre fra ét element ind i det næste uden en linje, som to vægge på linje eller puds over to etager. Sæt flueben for at tegne fugen.

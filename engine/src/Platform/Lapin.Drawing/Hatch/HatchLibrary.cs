@@ -61,6 +61,17 @@ public static class HatchLibrary
 98, -0.9,0, 5.1,2.4, 4.2,-11
 82, -1.4,3, 6.7,2.4, 3.6,-9.8
 
+*VERTICAL, Vertical lines 4 mm (cladding seams)
+90, 0,0, 0,4
+
+*BOARDS, Timber boards 3 mm with staggered butt joints
+0, 0,0, 0,3
+90, 0,0, 3,15, 3,-9
+
+*STONE, Coursed stone 18 x 6 mm
+0, 0,0, 0,6
+90, 0,0, 6,6, 6,-12
+
 *GRAVEL, Gravel dots and grains
 0, 0,0, 1.7,2.9, 0,-3.3
 37, 0.8,1.1, 2.3,3.1, 0.5,-4.2

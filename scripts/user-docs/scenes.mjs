@@ -2630,21 +2630,43 @@ export const scenes = [
     },
   },
   {
-    // Surface hatches in elevations (decision 325): the render hatched with its material's elevation pattern where it is
-    // seen, round the door and windows, the roof's covering too; the view style's switch in the view's properties.
+    // Surface hatches in elevations (decisions 325, 327): nothing set by hand, each material's elevation hatch as its name
+    // suggests — the facing brick BRICK, the insulation and plaster none; a jogged section seeing a brick garden wall beyond
+    // its pieces; the view style's switch in the view's properties.
     id: 'views-surface-hatch',
     async run(t) {
       await t.fresh();
-      await house(t);
-      const materials = (await t.nodes()).filter((n) => n.type === 'IfcMaterial');
-      const render = materials.find((n) => n.name === 'Render');
-      t.expect(render, 'the Render material');
-      await t.cmd('material.update', { id: render.id, elevation: { hatch: 'CONCRETE', hatchScale: 0.6 } });
-      for (const m of materials.filter((n) => /tile|roof|covering/i.test(n.name ?? ''))) await t.cmd('material.update', { id: m.id, elevation: { hatch: 'HORIZONTAL', hatchScale: 0.5 } });
+      const s = await t.storey();
+      const type = (await t.cmd('architecture.createWallType', { name: 'Brick facade 50', layers: [
+        { material: 'Facing brick', thickness: 0.12 }, { material: 'Mineral wool', thickness: 0.1 }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 },
+      ] })).id;
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: type })).id);
+      }
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 7, y1: 0, x2: 7, y2: 8 });
+      await t.cmd('architecture.addDoor', { wallId: walls[0], x: 3, y: 0 });
+      for (const [w, x, y] of [[0, 9.5, 0], [2, 3.5, 8], [2, 9.5, 8], [1, 12, 4]]) await t.cmd('architecture.addWindow', { wallId: walls[w], x, y });
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      const roof = await t.cmd('architecture.addRoof', { storeyId: s, points: outline });
+      await t.cmd('architecture.roofStyle', { id: roof.id, style: 'ro_saxon' });
+      // A garden wall of facing brick behind the house.
+      const garden = (await t.cmd('architecture.createWallType', { name: 'Garden wall', layers: [{ material: 'Facing brick', thickness: 0.25, core: true }] })).id;
+      await t.cmd('architecture.addWall', { storeyId: s, x1: -2, y1: 11, x2: 14, y2: 11, typeId: garden });
+      await t.wait(800);
       const south = (await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' })).id;
       await openFromBrowser(t, 'South', 2500);
-      t.expect(await t.page.locator('[data-testid=drawing] .pen-surface-hatch').count() > 0, 'the elevation hatches the faces it sees');
+      t.expect(await t.page.locator('[data-testid=drawing] .pen-surface-hatch').count() > 0, 'the elevation hatches the faces it sees, from their materials\' names');
       await t.shot('elevation-surface-hatch', { of: '[data-testid=drawing]', pad: 0 });
+      // A jogged section: through the house along y = 4, north along x = 5, then along y = 9.5 looking at the garden wall.
+      await t.cmd('view.create', { kind: 'section', name: 'J-J', pts: [[-1, 4], [5, 4], [5, 9.5], [14, 9.5]] });
+      await openFromBrowser(t, 'J-J', 1500);
+      await t.fit();
+      t.expect(await t.page.locator('[data-testid=drawing] .pen-surface-hatch').count() > 0, 'the developed section hatches what its pieces see');
+      await t.shot('section-developed-surface-hatch', { of: '[data-testid=drawing]', pad: 0 });
+      await openFromBrowser(t, 'South', 1500);
       await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ selected: [], selection: id }), south);
       await t.page.locator('nav.browser').getByText('South', { exact: true }).first().click();
       await t.page.waitForSelector('[data-testid=view-surface-hatch]');

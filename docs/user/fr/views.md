@@ -55,9 +55,11 @@ Une élévation ou une coupe hachure chaque face qu’elle voit avec la hachure 
 
 Avec **Alignment** *view*, le motif continue d’une face à l’autre ; avec *layer*, il se pose sur la face elle-même, le long de son horizontale depuis son coin bas, et une face vue en biais le montre raccourci. Un matériau qui continue dans un même plan sur plusieurs éléments est hachuré d’un seul tenant, sauf si **Join materials** du style de vue est désactivé.
 
-Un matériau n’a pas de hachure d’élévation tant que vous ne lui en donnez pas (**none (default)**). **Surface hatches** du style de vue (**Vue → View settings**, **Gérer → View styles**) les désactive pour des vues entières : activé en Architectural, désactivé en Structural, MEP et Coordination. Les plans gardent leurs propres hachures de coupe et de plan.
+Tant que vous n’en choisissez pas, la hachure d’élévation d’un matériau vient **d’après le nom**, comme sa hachure de coupe, et **Gérer → Materials** indique laquelle (*d’après le nom (BRICK)*) : brique et maçonnerie BRICK, pierre STONE, bois BOARDS, bardage métallique VERTICAL, tuiles, bardeaux et ardoises HORIZONTAL, carrelage TILES, gravier et terre comme en coupe. L’isolant, les membranes, l’enduit, la peinture et le béton n’en reçoivent aucune : le BATT de l’isolant est une hachure de coupe, jamais proposée pour une surface (choisie à la main, elle est dessinée). Choisissez **none** pour ne rien dessiner. Une coupe développée (brisée, courbe ou le long d’un élément) hachure chacun de ses morceaux entre ses extrémités, et y dessine de même les ombres du soleil. **Surface hatches** du style de vue (**Vue → View settings**, **Gérer → View styles**) les désactive pour des vues entières : activé en Architectural, désactivé en Structural, MEP et Coordination. Les plans gardent leurs propres hachures de coupe et de plan.
 
-![L’élévation sud avec son enduit hachuré](shots/elevation-surface-hatch.webp)
+![L’élévation sud, sa brique de parement hachurée d’après son nom](shots/elevation-surface-hatch.webp)
+
+![Une coupe brisée hachure le mur de jardin que voit son dernier morceau](shots/section-developed-surface-hatch.webp)
 
 ![Les hachures de surface dans les réglages de la vue](shots/view-surface-hatch.webp)
 

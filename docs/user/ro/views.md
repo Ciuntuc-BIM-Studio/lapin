@@ -55,9 +55,11 @@ O fațadă sau o secțiune hașurează fiecare față pe care o vede cu hașura 
 
 Cu **Alignment** *view* modelul continuă de la o față la alta; cu *layer* stă pe față, de-a lungul orizontalei ei, din colțul ei de jos, iar o față văzută oblic îl arată scurtat. Un material care continuă în același plan peste mai multe elemente se hașurează ca unul singur, dacă **Join materials** din stilul vederii e pornit.
 
-Un material nu are hașură de fațadă până nu i-o dai (**none (default)**). **Surface hatches** din stilul vederii (**Vedere → View settings**, **Gestionare → View styles**) le oprește pentru vederi întregi: pornit în Architectural, oprit în Structural, MEP și Coordination. Planurile își păstrează hașurile lor de secțiune și de plan.
+Până alegi una, hașura de fațadă a unui material vine **după nume**, ca hașura lui de secțiune, iar **Gestionare → Materials** arată care (*după nume (BRICK)*): cărămida și zidăria BRICK, piatra STONE, lemnul BOARDS, placările metalice VERTICAL, țigla, șindrila și ardezia HORIZONTAL, plăcile ceramice TILES, pietrișul și pământul ca în secțiuni. Izolația, membranele, tencuiala, vopseaua și betonul nu primesc niciuna: BATT-ul izolației e o hașură de secțiune, nu se propune niciodată pentru o suprafață (aleasă de mână, se desenează). Alege **none** ca să nu se deseneze nimic. O secțiune desfășurată (în trepte, curbă sau după un element) hașurează fiecare bucată a ei între capetele bucății și îi desenează la fel umbrele de soare. **Surface hatches** din stilul vederii (**Vedere → View settings**, **Gestionare → View styles**) le oprește pentru vederi întregi: pornit în Architectural, oprit în Structural, MEP și Coordination. Planurile își păstrează hașurile lor de secțiune și de plan.
 
-![Fațada de sud cu tencuiala hașurată](shots/elevation-surface-hatch.webp)
+![Fațada de sud, cu cărămida aparentă hașurată după numele ei](shots/elevation-surface-hatch.webp)
+
+![O secțiune în trepte care hașurează zidul de grădină văzut de ultima ei bucată](shots/section-developed-surface-hatch.webp)
 
 ![Hașurile suprafețelor în setările vederii](shots/view-surface-hatch.webp)
 

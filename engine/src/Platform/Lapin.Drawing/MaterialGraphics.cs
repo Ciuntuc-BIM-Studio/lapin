@@ -43,7 +43,8 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
 /// <c>membrane</c> (drawn as a heavy dashed line); <c>drawJoints</c>.
 /// A field the material does not give comes from its name: concrete,
 /// brick, insulation, timber, steel… A plan takes the section's graphics
-/// unless it has its own; an elevation draws nothing unless told.
+/// unless it has its own; an elevation guesses its surface from the name
+/// apart (<see cref="ElevationFromName"/>: brick, stone, boards, never BATT).
 /// <c>hatch</c> null (JSON null) means "no hatch", absent means "from the name".
 /// </summary>
 public static class MaterialGraphics
@@ -71,11 +72,45 @@ public static class MaterialGraphics
         (new(@"plaster|render|gypsum|tencuial|gips|finish|paint"), new()),
     ];
 
+    /// <summary>
+    /// What a name suggests for the surface an elevation sees (decision 327): what the material looks like on a facade,
+    /// not what its cut shows. Insulation and membranes are hidden in a build-up and draw nothing (BATT is a section's
+    /// hatch only); plaster, render and paint none; concrete none either (its speckle over a whole facade reads as noise);
+    /// timber as boards, metal cladding and sheet roofs as vertical seams, stone in courses, roof tiles, shingles and slates
+    /// as horizontal courses. The first match wins: roof coverings first ("concrete tile", "bitumen shingle"), then the hidden
+    /// layers ("stone wool" is insulation), then timber before cladding ("timber cladding" is boards).
+    /// </summary>
+    static readonly (Regex Re, string? Hatch)[] ElevationGuesses =
+    [
+        (new(@"clay tile|concrete tile|roof ?tile|tigla|olan|shingle|sindrila|slate|ardezie"), "HORIZONTAL"),
+        (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|folie|barier"), null),
+        (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), null),
+        (new(@"plaster|render|gypsum|tencuial|gips|paint|vopsea|stucco|adhesive|adeziv"), null),
+        (new(@"brick|masonry|block|caramid|zidari|bca|aac|clinker"), "BRICK"),
+        (new(@"stone|piatra|granit|marble|marmura|travertin|limestone|calcar|sandstone|ashlar"), "STONE"),
+        (new(@"timber|wood|lemn|larch|cedar|pine|spruce|lambriu|siding|weatherboard|scandura"), "BOARDS"),
+        (new(@"clad|placare|sandwich|trapez|tabla|zinc|copper|cupru|standing seam|faltuit|corrugated|cutat|metal sheet|steel sheet|roof sheet"), "VERTICAL"),
+        (new(@"concrete|beton|screed|sapa|c\d\d/"), null),
+        (new(@"gravel|ballast|pietris|aggregate"), "GRAVEL"),
+        (new(@"earth|soil|pamant|ground"), "EARTH"),
+        (new(@"tile|ceramic|gresie|faianta|porcelain"), "TILES"),
+    ];
+
+    // Romanian diacritics fold to their letters, as the old names were typed.
+    static string Fold(string name) => Normalise(name).Replace('ă', 'a').Replace('â', 'a').Replace('î', 'i').Replace('ș', 's').Replace('ş', 's').Replace('ț', 't').Replace('ţ', 't');
+
     static Guess? GuessOf(string name)
     {
-        // Romanian diacritics fold to their letters, as the old names were typed.
-        var n = Normalise(name).Replace('ă', 'a').Replace('â', 'a').Replace('î', 'i').Replace('ș', 's').Replace('ş', 's').Replace('ț', 't').Replace('ţ', 't');
+        var n = Fold(name);
         foreach (var (re, g) in Guesses) if (re.IsMatch(n)) return g;
+        return null;
+    }
+
+    /// <summary>What a name suggests for an elevation's surface hatch: a pattern, or none (insulation, membranes, finishes, concrete, an unknown name).</summary>
+    public static string? ElevationFromName(string name)
+    {
+        var n = Fold(name);
+        foreach (var (re, h) in ElevationGuesses) if (re.IsMatch(n)) return h;
         return null;
     }
 
@@ -103,15 +138,16 @@ public static class MaterialGraphics
         _ => new ViewGraphics(b!.Hatch ?? a!.Hatch, b.HatchScale ?? a!.HatchScale, b.Fill ?? a!.Fill, b.HatchPen ?? a!.HatchPen, b.HatchAngle ?? a!.HatchAngle, b.HatchAlign ?? a!.HatchAlign),
     };
 
-    /// <summary>The material's graphics in one kind of view: its own fields, else what its name suggests (not for elevations).</summary>
+    /// <summary>The material's graphics in one kind of view: its own fields, else what its name suggests (an elevation: <see cref="ElevationFromName"/>).</summary>
     public static ResolvedMaterial Resolve(Entity? material, string kind = "section", string? name = null)
     {
         name ??= material?.Name ?? "";
         var own = Own(material, kind);
-        var guess = kind == "elevation" ? null : GuessOf(name);
+        var elevation = kind == "elevation";
+        var guess = elevation ? null : GuessOf(name);
         var color = material?.Str("color");
-        // "" in an own field is an explicit none; null is "not given".
-        string? hatch = own?.Hatch is { } h ? (h.Length == 0 ? null : h.ToUpperInvariant()) : guess?.Hatch;
+        // "" in an own field is an explicit none; null is "not given". An elevation's guess is the facade's (ElevationFromName).
+        string? hatch = own?.Hatch is { } h ? (h.Length == 0 ? null : h.ToUpperInvariant()) : elevation ? ElevationFromName(name) : guess?.Hatch;
         // A fill only when asked: a colour, or "material" for the material's own (every material has a colour for 3D).
         string? fill = own?.Fill is { Length: > 0 } f ? (f == "material" ? color : f) : null;
         var hasOwn = own != null || material?.Attrs.ContainsKey("membrane") == true;

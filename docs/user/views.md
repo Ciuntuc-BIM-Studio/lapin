@@ -55,9 +55,11 @@ An elevation or a section hatches each face it sees with its material's **Elevat
 
 With **Alignment** *view* the pattern runs on from one face to the next; with *layer* it lies on the face itself, along its level line from its bottom corner, and a face seen at a slant shows it foreshortened. One material going on in one plane across several elements is hatched as one, unless the view style's **Join materials** is off.
 
-A material has no elevation hatch until you give it one (**none (default)**). The view style's **Surface hatches** (**View → View settings**, **Manage → View styles**) turns them off for whole views: on in Architectural, off in Structural, MEP and Coordination. Plans keep their own cut and plan hatches.
+Until you choose one, a material's elevation hatch comes **from the name**, as its section hatch does, and **Manage → Materials** shows which (*from the name (BRICK)*): brick and masonry BRICK, stone STONE, timber BOARDS, metal cladding VERTICAL, roof tiles, shingles and slates HORIZONTAL, tiles TILES, gravel and earth as in sections. Insulation, membranes, plaster, render, paint and concrete get none: insulation's BATT is a section's hatch, never suggested for a surface (chosen by hand, it is drawn). Choose **none** to draw nothing. A developed section (jogged, curved or along an element) hatches each of its pieces between the piece's ends, and draws their sun shadows the same way. The view style's **Surface hatches** (**View → View settings**, **Manage → View styles**) turns them off for whole views: on in Architectural, off in Structural, MEP and Coordination. Plans keep their own cut and plan hatches.
 
-![The south elevation with its render hatched](shots/elevation-surface-hatch.webp)
+![The south elevation, its facing brick hatched as its name suggests](shots/elevation-surface-hatch.webp)
+
+![A jogged section hatching the garden wall its last piece sees](shots/section-developed-surface-hatch.webp)
 
 ![Surface hatches in the view's settings](shots/view-surface-hatch.webp)
 

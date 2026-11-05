@@ -37,24 +37,23 @@ public sealed class ViewFaces
     /// <param name="cut">Whether the view cuts: only what lies beyond its plane is seen and hides, within <paramref name="depth"/>.</param>
     /// <param name="caps">The view's cut areas, each its loops in the view's coordinates on the cut plane: they hide what is behind them.</param>
     public ViewFaces(IReadOnlyList<(Solid Solid, int Owner)> solids, ViewFrame view, bool cut = false, double depth = double.PositiveInfinity, IEnumerable<IReadOnlyList<Vec2[]>>? caps = null)
+        : this(FacesOf(solids), view, cut, depth, caps) { }
+
+    /// <summary>
+    /// As the other, from faces already gathered (<see cref="FacesOf"/>: the pieces of a developed section share them);
+    /// <paramref name="span"/>: the view sees only between these x (a piece's ends), a face wholly outside them is not seen
+    /// (it still casts a shadow).
+    /// </summary>
+    public ViewFaces(IReadOnlyList<Face> faces, ViewFrame view, bool cut = false, double depth = double.PositiveInfinity, IEnumerable<IReadOnlyList<Vec2[]>>? caps = null, (double Min, double Max)? span = null)
     {
         Frame = view; Cut = cut; Depth = depth;
         var toEye = -view.Dir;
-        var faces = new List<Face>();
-        foreach (var (s, owner) in solids)
-            for (var fi = 0; fi < s.Faces.Length; fi++)
-            {
-                var f = s.Faces[fi];
-                if (f.Outer.Length < 3 || f.Normal == Vec3.Zero) continue;
-                var loops = new List<Vec3[]> { f.Outer.Select(i => s.Vertices[i]).ToArray() };
-                foreach (var h in f.Holes) if (h.Length >= 3) loops.Add(h.Select(i => s.Vertices[i]).ToArray());
-                faces.Add(new Face(loops, f.Normal.Normalized(), owner, s, fi));
-            }
         Faces = faces;
         var seen = new List<Seen>();
         foreach (var f in faces)
         {
             if (Vec3.Dot(f.Normal, toEye) < 0.02) continue;
+            if (span is { } sp && Outside(f.Loops, view, sp)) continue;
             var loops = f.Loops.Select(Beyond).Where(l => l.Length >= 3).ToList();
             if (loops.Count == 0 || loops.All(l => l.Min(view.Depth) > depth)) continue;
             seen.Add(Make(f, loops));
@@ -69,6 +68,35 @@ public sealed class ViewFaces
                 if (loops.Count > 0) seen.Add(Make(new Face(loops, toEye, -1, null, hash.ToHashCode()), loops));
             }
         SeenFaces = seen;
+    }
+
+    /// <summary>Every face of the solids with three corners or more, its loops in world space.</summary>
+    public static List<Face> FacesOf(IReadOnlyList<(Solid Solid, int Owner)> solids)
+    {
+        var faces = new List<Face>();
+        foreach (var (s, owner) in solids)
+            for (var fi = 0; fi < s.Faces.Length; fi++)
+            {
+                var f = s.Faces[fi];
+                if (f.Outer.Length < 3 || f.Normal == Vec3.Zero) continue;
+                var loops = new List<Vec3[]> { f.Outer.Select(i => s.Vertices[i]).ToArray() };
+                foreach (var h in f.Holes) if (h.Length >= 3) loops.Add(h.Select(i => s.Vertices[i]).ToArray());
+                faces.Add(new Face(loops, f.Normal.Normalized(), owner, s, fi));
+            }
+        return faces;
+    }
+
+    /// <summary>Whether a face lies wholly to one side of the view's x span.</summary>
+    static bool Outside(List<Vec3[]> loops, ViewFrame view, (double Min, double Max) span)
+    {
+        bool left = true, right = true;
+        foreach (var p in loops[0])
+        {
+            var x = Vec3.Dot(p - view.Origin, view.Right);
+            left &= x <= span.Min; right &= x >= span.Max;
+            if (!left && !right) return false;
+        }
+        return true;
     }
 
     Seen Make(Face f, List<Vec3[]> loops)

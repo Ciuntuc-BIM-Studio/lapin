@@ -59,29 +59,44 @@ public static class ViewShadows
         return (level * Math.Cos(alt) + Vec3.UnitZ * Math.Sin(alt)).Normalized();
     }
 
-    /// <summary>The view's shadows as one filled pen (under everything it draws), or null when it draws none.</summary>
-    /// <param name="scene">The faces the drawing sees (<see cref="Scene"/>), made once for the drawing and shared with its surface hatches.</param>
-    public static Pen? PenOf(IModelView m, Entity view, ViewSpec spec, IReadOnlyList<DrawPart> parts, bool pieces, Func<ViewFaces>? scene = null)
+    /// <summary>
+    /// The view's shadows as one filled pen (under everything it draws), or null when it draws none. Each piece
+    /// (<see cref="SurfaceHatches.Piece"/>: a plain view is one, a developed section one per straight piece) casts on what
+    /// it sees with its faces (made once for the drawing, shared with its surface hatches), kept within what it sees (a
+    /// piece between its ends, a section across an element its window) and laid at its station; a sun of the view's own
+    /// turns with each piece.
+    /// </summary>
+    public static Pen? PenOf(IModelView m, Entity view, IReadOnlyList<SurfaceHatches.Piece> pieces)
     {
-        if (pieces || SunOf(m, view, spec.Frame) is not { } sun) return null;
-        var areas = SunShadows.Draw(scene?.Invoke() ?? Scene(spec, parts), sun);
-        if (areas.Count == 0) return null;
-        var color = view.Str("shadowColor") is { Length: 7 } c && c[0] == '#' ? c : DefaultColor;
-        var pen = new Pen(Layer, null, 0, color, null);
-        foreach (var a in areas) pen.Loops.Add(a.Outline);
-        return pen;
+        Pen? pen = null;
+        foreach (var piece in pieces)
+        {
+            if (SunOf(m, view, piece.Spec.Frame) is not { } sun) continue;
+            var areas = SunShadows.Draw(piece.Scene(), sun);
+            if (areas.Count == 0) continue;
+            var window = SurfaceHatches.WindowOf(piece.Spec);
+            var shift = new Vec2(piece.Station, 0);
+            pen ??= new Pen(Layer, null, 0, view.Str("shadowColor") is { Length: 7 } c && c[0] == '#' ? c : DefaultColor, null);
+            foreach (var a in areas)
+            {
+                var loop = window is { } w ? SurfaceHatches.ClipBox(a.Outline, w.X, w.Y) : a.Outline;
+                if (loop.Length >= 3) pen.Loops.Add(loop.Select(p => p + shift).ToArray());
+            }
+        }
+        return pen is { Loops.Count: > 0 } ? pen : null;
     }
 
     /// <summary>
     /// The faces a drawing sees, for its shadows and its surface hatches: a section's (or a plan's: a site plan) only beyond
-    /// its cut and within its depth, a section's cut areas hiding what is behind them.
+    /// its cut and within its depth (and between a piece's ends), a section's cut areas hiding what is behind them.
+    /// <paramref name="faces"/>: the parts' faces when already gathered (the pieces of a developed section share them).
     /// </summary>
-    public static ViewFaces Scene(ViewSpec spec, IReadOnlyList<DrawPart> parts, ViewDrawing? drawing = null)
+    public static ViewFaces Scene(ViewSpec spec, IReadOnlyList<DrawPart> parts, ViewDrawing? drawing = null, IReadOnlyList<ViewFaces.Face>? faces = null)
     {
         var plan = spec.Kind == "plan";
         var cut = spec.Cut && !plan;
-        var solids = parts.Select((p, i) => (p.Solid, i)).ToList();
-        return new ViewFaces(solids, spec.Frame, cut, cut ? spec.Below : double.PositiveInfinity, cut && drawing != null ? drawing.Cuts.Select(c => c.Loops) : null);
+        faces ??= ViewFaces.FacesOf(parts.Select((p, i) => (p.Solid, i)).ToList());
+        return new ViewFaces(faces, spec.Frame, cut, cut ? spec.Below : double.PositiveInfinity, cut && drawing != null ? drawing.Cuts.Select(c => c.Loops) : null, spec.Span);
     }
 
     public static void Register(IModuleRegistry r)

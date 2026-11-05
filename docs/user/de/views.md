@@ -55,9 +55,11 @@ Eine Ansicht oder ein Schnitt schraffiert jede Fläche, die sie sieht, mit der *
 
 Mit **Alignment** *view* läuft das Muster von einer Fläche zur nächsten weiter; mit *layer* liegt es auf der Fläche selbst, entlang ihrer Waagerechten ab ihrer unteren Ecke, und eine schräg gesehene Fläche zeigt es verkürzt. Ein Material, das in einer Ebene über mehrere Elemente weiterläuft, wird als eines schraffiert, sofern **Join materials** im Ansichtsstil eingeschaltet ist.
 
-Ein Material hat keine Ansichtsschraffur, bis Sie ihm eine geben (**none (default)**). **Surface hatches** im Ansichtsstil (**Ansicht → View settings**, **Verwalten → View styles**) schaltet sie für ganze Ansichten aus: an in Architectural, aus in Structural, MEP und Coordination. Grundrisse behalten ihre eigenen Schnitt- und Grundrissschraffuren.
+Bis Sie eine wählen, kommt die Ansichtsschraffur eines Materials **aus dem Namen**, wie seine Schnittschraffur, und **Verwalten → Materials** zeigt welche (*aus dem Namen (BRICK)*): Ziegel und Mauerwerk BRICK, Naturstein STONE, Holz BOARDS, Metallverkleidung VERTICAL, Dachziegel, Schindeln und Schiefer HORIZONTAL, Fliesen TILES, Kies und Erde wie im Schnitt. Dämmung, Bahnen, Putz, Farbe und Beton bekommen keine: das BATT der Dämmung ist eine Schnittschraffur und wird für Flächen nie vorgeschlagen (von Hand gewählt, wird es gezeichnet). Wählen Sie **none**, damit nichts gezeichnet wird. Ein abgewickelter Schnitt (versetzt, gekrümmt oder entlang eines Elements) schraffiert jedes seiner Stücke zwischen dessen Enden und zeichnet dort ebenso die Sonnenschatten. **Surface hatches** im Ansichtsstil (**Ansicht → View settings**, **Verwalten → View styles**) schaltet sie für ganze Ansichten aus: an in Architectural, aus in Structural, MEP und Coordination. Grundrisse behalten ihre eigenen Schnitt- und Grundrissschraffuren.
 
-![Die Südansicht mit schraffiertem Putz](shots/elevation-surface-hatch.webp)
+![Die Südansicht, der Verblender nach seinem Namen schraffiert](shots/elevation-surface-hatch.webp)
+
+![Ein versetzter Schnitt schraffiert die Gartenmauer, die sein letztes Stück sieht](shots/section-developed-surface-hatch.webp)
 
 ![Oberflächenschraffuren in den Einstellungen der Ansicht](shots/view-surface-hatch.webp)
 

@@ -16,7 +16,8 @@ namespace Lapin.Engine.Tests;
 
 /// <summary>
 /// An IFC file's elevations timed without and with surface hatches (decision 325), and with the sun's shadows, when one is
-/// given (LAPIN_HATCH_BENCH=/path/file.ifc; run in Release): every material of the file is given an elevation hatch.
+/// given (LAPIN_HATCH_BENCH=/path/file.ifc; run in Release): every material of the file is given an elevation hatch, or with
+/// LAPIN_HATCH_GUESS=1 none is, each taking the one its name suggests.
 /// </summary>
 public class SurfaceHatchBenchmarkTests(ITestOutputHelper output)
 {
@@ -47,7 +48,10 @@ public class SurfaceHatchBenchmarkTests(ITestOutputHelper output)
         IfcImport.Run(f.Session, File.ReadAllBytes(path), Path.GetFileName(path), null, out _);
         var materials = f.Model.OfClass(IfcClass.Material).ToList();
         Log($"{materials.Count} materials: {string.Join(", ", materials.Select(m => m.Name).Take(20))}");
-        foreach (var m in materials)
+        // LAPIN_HATCH_GUESS=1: nothing set, each material's elevation hatch as its name suggests (decision 327).
+        var guess = Environment.GetEnvironmentVariable("LAPIN_HATCH_GUESS") is { Length: > 0 };
+        if (guess) Log("guessed: " + string.Join(", ", materials.Select(m => $"{m.Name} → {MaterialGraphics.Resolve(m, "elevation").Hatch ?? "none"}")));
+        else foreach (var m in materials)
             f.Run("material.update", new JsonObject { ["id"] = m.Id, ["elevation"] = new JsonObject { ["hatch"] = MaterialGraphics.FromName(m.Name ?? "").Hatch ?? "BRICK" } });
         foreach (var dir in new[] { "south", "east" })
         {

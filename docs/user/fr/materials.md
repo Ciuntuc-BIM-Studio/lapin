@@ -70,7 +70,7 @@ L’export IFC nomme aussi le style de surface de chaque matériau d’après lu
 ## Ce que règle un matériau
 
 - **Couleur (3D)** et les faces dessinées dessus en 3D. Lapin les devine à partir du nom, par exemple les assises d’une brique ou la grille d’un carrelage. Les **Extrémités** et le **Dessus et dessous** peuvent avoir un aspect différent des faces.
-- **Hachure** pour chaque endroit où il est dessiné : coupé dans une coupe, coupé dans un plan, et vu dans une élévation. Chacune a son échelle, son angle, son alignement, son remplissage et sa plume. Une élévation ou une coupe hachure les faces qu’elle voit avec la hachure d’élévation, là où rien de plus proche ne les cache (Vues, Hachures de surface) ; un matériau n’en a pas tant que vous ne lui en donnez pas.
+- **Hachure** pour chaque endroit où il est dessiné : coupé dans une coupe, coupé dans un plan, et vu dans une élévation. Chacune a son échelle, son angle, son alignement, son remplissage et sa plume. Une élévation ou une coupe hachure les faces qu’elle voit avec la hachure d’élévation, là où rien de plus proche ne les cache (Vues, Hachures de surface) ; tant que vous ne lui en donnez pas, son nom en propose une (brique BRICK, pierre STONE, bois BOARDS, bardage métallique VERTICAL), jamais le BATT de l’isolant.
 - **Catégorie**, par exemple finition, isolation ou structure. Les styles de vue l’utilisent pour exclure les finitions d’une vue structurelle.
 - **Membrane** dessine une couche mince comme une ligne pointillée au lieu d’une bande.
 - **Dessiner les joints.** Par défaut, un matériau continue d’un élément à l’autre sans ligne, comme deux murs alignés ou un enduit sur deux niveaux. Cochez-la pour dessiner le joint.

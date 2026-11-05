@@ -70,7 +70,7 @@ Anche l’export IFC chiama lo stile di superficie di ogni materiale come il mat
 ## Cosa imposta un materiale
 
 - **Colore (3D)** e le facce disegnate su di esso in 3D. Lapin le deduce dal nome, per esempio i corsi di un mattone o la griglia di una piastrella. Le **Estremità** e **Superiore e inferiore** possono apparire diverse dalle facce.
-- **Retino** per ogni posto in cui viene disegnato: tagliato in una sezione, tagliato in una pianta e visto in un prospetto. Ognuno ha la sua scala, il suo angolo, il suo allineamento, il suo riempimento e la sua penna. Un prospetto o una sezione retina le facce che vede con il retino di prospetto, dove nulla di più vicino le nasconde (Viste, Retini delle superfici); un materiale non ne ha finché non glielo dai.
+- **Retino** per ogni posto in cui viene disegnato: tagliato in una sezione, tagliato in una pianta e visto in un prospetto. Ognuno ha la sua scala, il suo angolo, il suo allineamento, il suo riempimento e la sua penna. Un prospetto o una sezione retina le facce che vede con il retino di prospetto, dove nulla di più vicino le nasconde (Viste, Retini delle superfici); finché non glielo dai, il suo nome ne propone uno (mattoni BRICK, pietra STONE, legno BOARDS, rivestimento metallico VERTICAL), mai il BATT dell’isolante.
 - **Categoria**, per esempio finitura, isolante o struttura. Gli stili di vista la usano per escludere le finiture da una vista strutturale.
 - **Membrana** disegna uno strato sottile come una linea tratteggiata invece che come una fascia.
 - **Disegna i giunti.** Per impostazione predefinita, un materiale prosegue da un elemento nel successivo senza una linea, come due muri allineati o un intonaco su due piani. Spuntala per disegnare il giunto.

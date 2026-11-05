@@ -486,25 +486,24 @@ public static class Views
         return (drawing, spec, problem);
     }
 
-    /// <summary>As <see cref="Generate"/>, with the parts it drew and whether it was laid in pieces (a developed section).</summary>
-    static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem, List<DrawPart> Parts, bool Pieces) GenerateWith(IQueryContext q, Entity view)
+    /// <summary>As <see cref="Generate"/>, with the parts it drew and, laid in pieces (a developed section), each piece's spec, station and own drawing (before it was laid).</summary>
+    static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem, List<DrawPart> Parts, List<(ViewSpec Spec, double Station, ViewDrawing Drawing)>? Pieces) GenerateWith(IQueryContext q, Entity view)
     {
         var (parts, symbols, fills, texts) = Gather(q, view);
         var (spec, problem) = Spec(q.Model, view, parts, q.Services);
-        if (spec == null) return (null, null, problem, parts, false);
+        if (spec == null) return (null, null, problem, parts, null);
         var keys = new Dictionary<string, string?>();
         // Without the view style's joins, a surface goes on only within its own element.
         var joins = ViewStyles.Of(q.Model, view).Joins;
         string? Key(DrawPart p) => SeamKeyOf(q.Model, p.Material, p.Class, keys) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null;
         ViewDrawing drawing;
-        var laid = false;
+        List<(ViewSpec, double, ViewDrawing)>? laid = null;
         if (spec.Kind == "section" && Pieces(q, view) is { Count: > 1 } pieces)
         {
             // A developed section: each piece a planar cut seen between its ends, laid at its station.
-            var drawn = new List<ViewDrawing>(pieces.Count);
-            foreach (var (piece, station) in pieces) drawn.Add(Generator.Draw(parts, piece, symbols, Key).Shifted(station));
-            drawing = ViewDrawing.Join(drawn);
-            laid = true;
+            laid = new(pieces.Count);
+            foreach (var (piece, station) in pieces) laid.Add((piece, station, Generator.Draw(parts, piece, symbols, Key)));
+            drawing = ViewDrawing.Join(laid.Select(p => p.Item3.Shifted(p.Item2)).ToList());
         }
         else drawing = Generator.Draw(parts, spec, symbols, Key);
         if (spec.Kind == "plan" && (fills.Count > 0 || texts.Count > 0)) drawing = drawing with { Fills = fills, Texts = texts };
@@ -605,13 +604,20 @@ public static class Views
             }
         var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table);
         var pens = Pens.Of(drawing, materials, penOptions);
-        // The faces the drawing sees, worked out once for its shadows and its surface hatches.
-        ViewFaces? scene = null;
-        ViewFaces Scene() => scene ??= ViewShadows.Scene(spec, drawnParts, drawing);
+        // The faces the drawing sees, worked out once for its shadows and its surface hatches: a developed section's on each
+        // piece (its own cut areas hiding what is behind them), the parts' faces gathered once for all of them.
+        List<ViewFaces.Face>? allFaces = null;
+        List<ViewFaces.Face> AllFaces() => allFaces ??= ViewFaces.FacesOf(drawnParts.Select((p, i) => (p.Solid, i)).ToList());
+        SurfaceHatches.Piece PieceOf(ViewSpec s, double station, ViewDrawing d, int index)
+        {
+            ViewFaces? scene = null;
+            return new SurfaceHatches.Piece(s, station, () => scene ??= ViewShadows.Scene(s, drawnParts, d, AllFaces()), index);
+        }
+        List<SurfaceHatches.Piece> scenes = laid == null ? [PieceOf(spec, 0, drawing, 0)] : laid.Select((p, i) => PieceOf(p.Spec, p.Station, p.Drawing, i)).ToList();
         // The faces' surface hatches (SurfaceHatches): under the lines, the hatches over their fills.
-        var surfaces = SurfaceHatches.PensOf(m, view, spec, drawnParts, laid, Scene, penOptions, new Dictionary<string, string?>());
+        var surfaces = SurfaceHatches.PensOf(m, view, scenes, drawnParts, penOptions, new Dictionary<string, string?>());
         // The sun's shadows on what the view sees (ViewShadows), filled under everything it draws: over the surfaces' fills, under their hatches.
-        var shadows = ViewShadows.PenOf(m, view, spec, drawnParts, laid, Scene);
+        var shadows = ViewShadows.PenOf(m, view, scenes);
         pens.InsertRange(0, [.. surfaces.Where(p => p.Layer == SurfaceHatches.FillLayer), .. shadows != null ? [shadows] : Array.Empty<Pen>(), .. surfaces.Where(p => p.Layer != SurfaceHatches.FillLayer)]);
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.

@@ -316,6 +316,8 @@ export function MaterialsDialog() {
                         const r = m[kind];
                         const own = m.own[kind];
                         const hatchValue = own && 'hatch' in own ? (own.hatch ?? '') : '*';
+                        // The hatch shown came from the name: none of its own (a plan's, none of the section's either). An elevation's guess is the facade's (brick, stone, boards; never BATT).
+                        const guessed = hatchValue === '*' && !(kind === 'plan' && m.own.section && 'hatch' in m.own.section);
                         const fillMode = own?.fill === 'material' ? 'material' : own?.fill ? 'colour' : '';
                         return (
                           <tr key={kind}>
@@ -323,7 +325,7 @@ export function MaterialsDialog() {
                             <td><HatchSwatch hatch={r.hatch} scale={r.hatchScale} fill={r.fill} membrane={kind !== 'elevation' && r.membrane} /></td>
                             <td>
                               <select value={hatchValue} onChange={(e) => (e.target.value === '*' ? clearField(kind, 'hatch') : setView(kind, { hatch: e.target.value || null }))}>
-                                <option value="*">{kind === 'elevation' ? 'none (default)' : `from the name${r.source === 'name' && r.hatch ? ` (${r.hatch})` : ''}`}</option>
+                                <option value="*">{`from the name${guessed && r.hatch ? ` (${r.hatch})` : ''}`}</option>
                                 <option value="">none</option>
                                 {hatches.map((h) => <option key={h.name} value={h.name}>{h.name}{h.project ? ' (project)' : ''}</option>)}
                               </select>

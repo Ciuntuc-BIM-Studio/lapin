@@ -51,9 +51,11 @@ Un alzado o una sección trama cada cara que ve con la trama **Elevation** de su
 
 Con **Alignment** *view* el patrón sigue de una cara a la siguiente; con *layer* se apoya en la propia cara, a lo largo de su horizontal desde su esquina inferior, y una cara vista en escorzo lo muestra acortado. Un material que sigue en un mismo plano por varios elementos se trama como uno solo, salvo que **Join materials** del estilo de vista esté desactivado.
 
-Un material no tiene trama de alzado hasta que se la das (**none (default)**). **Surface hatches** del estilo de vista (**Vista → View settings**, **Gestionar → View styles**) las desactiva para vistas enteras: activado en Architectural, desactivado en Structural, MEP y Coordination. Las plantas conservan sus propias tramas de corte y de planta.
+Hasta que elijas una, la trama de alzado de un material viene **por el nombre**, como su trama de sección, y **Gestionar → Materials** muestra cuál (*por el nombre (BRICK)*): ladrillo y fábrica BRICK, piedra STONE, madera BOARDS, revestimiento metálico VERTICAL, tejas, tejuelas y pizarra HORIZONTAL, baldosas TILES, grava y tierra como en sección. El aislamiento, las membranas, el enlucido, la pintura y el hormigón no reciben ninguna: el BATT del aislamiento es una trama de sección y nunca se propone para una superficie (elegida a mano, se dibuja). Elige **none** para no dibujar nada. Una sección desarrollada (quebrada, curva o a lo largo de un elemento) trama cada uno de sus tramos entre sus extremos, y dibuja igual en ellos las sombras del sol. **Surface hatches** del estilo de vista (**Vista → View settings**, **Gestionar → View styles**) las desactiva para vistas enteras: activado en Architectural, desactivado en Structural, MEP y Coordination. Las plantas conservan sus propias tramas de corte y de planta.
 
-![El alzado sur con su revoco tramado](shots/elevation-surface-hatch.webp)
+![El alzado sur, su ladrillo visto tramado por su nombre](shots/elevation-surface-hatch.webp)
+
+![Una sección quebrada trama el muro del jardín que ve su último tramo](shots/section-developed-surface-hatch.webp)
 
 ![Las tramas de superficie en los ajustes de la vista](shots/view-surface-hatch.webp)
 
