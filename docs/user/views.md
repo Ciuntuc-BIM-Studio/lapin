@@ -36,6 +36,19 @@ A section cut across a beam or a column (**Section here**, **Section across** on
 
 ![The south elevation](shots/elevation-view.webp)
 
+### Sun shadows
+
+An elevation, a section or a site plan can draw the shadows the sun casts on what it sees, filled under its lines, so they print on sheets and in PDF and DXF. Choose them in the view's properties, under **Sun shadows**:
+
+- **own sun**: a sun of the view's own. By default the drawing convention: the sun over your left shoulder, its rays along a cube's diagonal (from 45°, 35.26° high), so a shadow is as deep as what casts it stands out. **Sun from** and **Sun altitude** turn it; **Drawing convention** brings it back.
+- **project sun**: the sun of the project's place (Manage → Location) on a day and at an hour of the view's own. **As in Sun and shadows** takes the day and hour of View → Sun and shadows.
+
+A section casts and receives only what lies beyond its cut. A storey plan draws no shadows: its walls, cut at the plan's height, would cast them too short.
+
+![The south elevation with the roof's shadow](shots/elevation-shadows.webp)
+
+![A view's sun shadows](shots/view-shadows.webp)
+
 ## 3D views
 
 <!-- video section-3d -->

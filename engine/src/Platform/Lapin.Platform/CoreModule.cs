@@ -61,6 +61,8 @@ public sealed class CoreModule : ILapinModule
         DisplayQuality.Register(r);
         // Where the sun is for the project's place (docs/plan-visualisation.md): the 3D view's sun, a sun study's.
         Sun.Register(r);
+        // A view's sun shadows, drawn as filled areas under elevations, sections and site plans.
+        ViewShadows.Register(r);
         Groups.Register(r);
         TypeMappings.Register(r);
         Sheets.Register(r);

@@ -27,6 +27,7 @@ import { Storeys3DEditor } from './Storeys3D';
 import { view3dNode } from '../../viewport/storeys3d';
 import { SitePlanFields } from './SitePlans';
 import { SectionFields } from './sections';
+import { shadowsAllowed, ViewShadowFields } from './ViewShadowFields';
 
 interface ViewStyleState { style: ViewStyle; named: boolean; resolved: ViewStyle; overrides: string[] }
 
@@ -124,6 +125,7 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
         {threeD && <Drafts3dField />}
         {threeD && <Navigation3dFields />}
         {site && <SitePlanFields view={view} />}
+        {shadowsAllowed(view) && <ViewShadowFields view={view} />}
         {section && <SectionFields view={view} />}
         <dt title="What this view shows and how, by category, class and element (VV)">Graphics</dt>
         <dd><button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'visibility' })}>Visibility / Graphics…</button></dd>

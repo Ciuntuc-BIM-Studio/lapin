@@ -36,6 +36,19 @@ O **+** ao lado de **Elevações** cria as quatro elevações do edifício de um
 
 ![A elevação sul](shots/elevation-view.webp)
 
+### Sombras do sol
+
+Um alçado, um corte ou uma planta de implantação podem desenhar as sombras que o sol projeta sobre o que veem, preenchidas por baixo das suas linhas, para que se imprimam nas folhas, em PDF e DXF. Escolhem-se nas propriedades da vista, em **Sombras do sol**:
+
+- **sol próprio**: um sol da vista. Por omissão a convenção de desenho: o sol sobre o ombro esquerdo, os raios na diagonal de um cubo (de 45°, a 35,26° de altura), assim uma sombra é tão funda quanto sobressai o que a projeta. **Sol de** e **Altura do sol** rodam-no; **Convenção de desenho** repõe-no.
+- **sol do projeto**: o sol do local do projeto (Gerenciar → Localização) num dia e a uma hora da vista. **Como em Sol e sombras** toma o dia e a hora de Vista → Sol e sombras.
+
+Um corte projeta e recebe sombras só do que está para lá do seu corte. Uma planta de piso não desenha sombras: as suas paredes, cortadas à altura da planta, projetá-las-iam curtas demais.
+
+![O alçado sul com a sombra da cobertura](shots/elevation-shadows.webp)
+
+![As sombras do sol de uma vista](shots/view-shadows.webp)
+
 ## Vistas 3D
 
 <!-- video section-3d -->

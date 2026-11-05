@@ -36,6 +36,19 @@ Et snit skåret på tværs af en bjælke eller en søjle (**Snit her**, **Tværs
 
 ![Sydfacaden](shots/elevation-view.webp)
 
+### Solskygger
+
+En facade, et snit eller en situationsplan kan tegne de skygger, solen kaster på det, de ser, udfyldt under deres streger, så de udskrives på tegninger, i PDF og DXF. Vælg dem i visningens egenskaber under **Solskygger**:
+
+- **egen sol**: en sol for visningen. Som standard tegnekonventionen: solen over venstre skulder, strålerne langs en terninges diagonal (fra 45°, 35,26° høj), så en skygge er lige så dyb, som det, der kaster den, rager ud. **Sol fra** og **Solhøjde** drejer den; **Tegnekonvention** sætter den tilbage.
+- **projektets sol**: solen på projektets sted (Administrer → Placering) på en dag og et klokkeslæt for visningen. **Som i Sol og skygger** tager dagen og klokkeslættet fra Vis → Sol og skygger.
+
+Et snit kaster og modtager kun skygger fra det, der ligger bag dets snitplan. En etageplan tegner ingen skygger: dens vægge, skåret i planens højde, ville kaste dem for korte.
+
+![Sydfacaden med tagets skygge](shots/elevation-shadows.webp)
+
+![En visnings solskygger](shots/view-shadows.webp)
+
 ## 3D-visninger
 
 <!-- video section-3d -->

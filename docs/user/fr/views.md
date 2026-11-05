@@ -36,6 +36,19 @@ Le **+** à côté de **Élévations** crée d’un coup les quatre élévations
 
 ![L’élévation sud](shots/elevation-view.webp)
 
+### Ombres du soleil
+
+Une façade, une coupe ou un plan de situation peuvent dessiner les ombres que le soleil porte sur ce qu’ils voient, remplies sous leurs traits, de sorte qu’elles s’impriment sur les planches, en PDF et DXF. Elles se choisissent dans les propriétés de la vue, sous **Ombres du soleil** :
+
+- **soleil propre** : un soleil de la vue. Par défaut la convention de dessin : le soleil par-dessus l’épaule gauche, ses rayons selon la diagonale d’un cube (depuis 45°, à 35,26° de hauteur), ainsi une ombre est aussi profonde que ce qui la porte est saillant. **Soleil depuis** et **Hauteur du soleil** le tournent ; **Convention de dessin** le remet.
+- **soleil du projet** : le soleil du lieu du projet (Gérer → Emplacement) un jour et à une heure de la vue. **Comme dans Soleil et ombres** prend le jour et l’heure de Vue → Soleil et ombres.
+
+Une coupe porte et reçoit des ombres seulement de ce qui est au-delà de son plan de coupe. Un plan de niveau ne dessine pas d’ombres : ses murs, coupés à la hauteur du plan, les porteraient trop courtes.
+
+![La façade sud avec l’ombre du toit](shots/elevation-shadows.webp)
+
+![Les ombres du soleil d’une vue](shots/view-shadows.webp)
+
 ## Vues 3D
 
 <!-- video section-3d -->

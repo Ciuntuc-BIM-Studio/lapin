@@ -32,6 +32,19 @@ Una sección cortada a través de una viga o un pilar (**Sección aquí**, **Sec
 
 ![El alzado sur](shots/elevation-view.webp)
 
+### Sombras del sol
+
+Un alzado, una sección o un plano de situación pueden dibujar las sombras que el sol proyecta sobre lo que ven, rellenas bajo sus líneas, de modo que se imprimen en planos, PDF y DXF. Se eligen en las propiedades de la vista, en **Sombras del sol**:
+
+- **sol propio**: un sol de la vista. Por defecto la convención de dibujo: el sol sobre tu hombro izquierdo, con los rayos por la diagonal de un cubo (desde 45°, a 35,26° de altura), así una sombra es tan profunda como sobresale lo que la proyecta. **Sol desde** y **Altura del sol** lo giran; **Convención de dibujo** lo devuelve.
+- **sol del proyecto**: el sol del lugar del proyecto (Gestionar → Ubicación) en un día y una hora de la vista. **Como en Sol y sombras** toma el día y la hora de Vista → Sol y sombras.
+
+Una sección proyecta y recibe sombras solo de lo que está más allá de su corte. Una planta de nivel no dibuja sombras: sus muros, cortados a la altura de la planta, las proyectarían demasiado cortas.
+
+![El alzado sur con la sombra de la cubierta](shots/elevation-shadows.webp)
+
+![Las sombras del sol de una vista](shots/view-shadows.webp)
+
 ## Vistas 3D
 
 <!-- video section-3d -->

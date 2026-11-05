@@ -36,6 +36,19 @@ O secțiune tăiată transversal printr-o grindă sau un stâlp (**Secțiune aic
 
 ![Fațada de sud](shots/elevation-view.webp)
 
+### Umbre de soare
+
+O fațadă, o secțiune sau un plan de situație pot desena umbrele pe care soarele le aruncă pe ce văd, pline sub liniile lor, așa că se tipăresc pe planșe, în PDF și DXF. Le alegi în proprietățile vederii, la **Umbre de soare**:
+
+- **soare propriu**: un soare al vederii. Implicit convenția de desen: soarele peste umărul stâng, cu razele pe diagonala unui cub (din 45°, la 35,26° înălțime), deci o umbră e cât de adânc iese ce o aruncă. **Soarele din** și **Înălțimea soarelui** îl rotesc; **Convenția de desen** îl readuce.
+- **soarele proiectului**: soarele locului proiectului (Gestionare → Amplasament) într-o zi și la o oră ale vederii. **Ca în Soare și umbre** ia ziua și ora din Vedere → Soare și umbre.
+
+O secțiune aruncă și primește umbre doar din ce e dincolo de tăietura ei. Un plan de nivel nu desenează umbre: pereții lui, tăiați la înălțimea planului, le-ar arunca prea scurte.
+
+![Fațada sudică cu umbra acoperișului](shots/elevation-shadows.webp)
+
+![Umbrele de soare ale unei vederi](shots/view-shadows.webp)
+
 ## Vederi 3D
 
 <!-- video section-3d -->

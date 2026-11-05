@@ -36,6 +36,19 @@ Przekrój poprzeczny przez belkę lub słup (**Przekrój tutaj**, **Przekrój po
 
 ![Elewacja południowa](shots/elevation-view.webp)
 
+### Cienie słońca
+
+Elewacja, przekrój lub plan sytuacyjny mogą rysować cienie, które słońce rzuca na to, co widzą, wypełnione pod ich liniami, więc drukują się na arkuszach, w PDF i DXF. Wybiera się je we właściwościach widoku, w **Cienie słońca**:
+
+- **własne słońce**: słońce widoku. Domyślnie konwencja rysunkowa: słońce zza lewego ramienia, promienie wzdłuż przekątnej sześcianu (z 45°, na wysokości 35,26°), więc cień jest tak głęboki, jak wystaje to, co go rzuca. **Słońce z** i **Wysokość słońca** je obracają; **Konwencja rysunkowa** je przywraca.
+- **słońce projektu**: słońce w miejscu projektu (Zarządzaj → Lokalizacja) w dniu i o godzinie widoku. **Jak w Słońce i cienie** bierze dzień i godzinę z Widok → Słońce i cienie.
+
+Przekrój rzuca i przyjmuje cienie tylko z tego, co leży za jego cięciem. Rzut kondygnacji nie rysuje cieni: jego ściany, przecięte na wysokości rzutu, rzucałyby je za krótkie.
+
+![Elewacja południowa z cieniem dachu](shots/elevation-shadows.webp)
+
+![Cienie słońca widoku](shots/view-shadows.webp)
+
 ## Widoki 3D
 
 <!-- video section-3d -->

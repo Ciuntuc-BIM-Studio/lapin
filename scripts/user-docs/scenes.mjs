@@ -2572,6 +2572,24 @@ export const scenes = [
     },
   },
   {
+    // Sun shadows in a drawing (docs/plan-visualisation.md): the south elevation of a house with its roof, by the drawing
+    // convention (the sun over the left shoulder), and its fields in the view's properties.
+    id: 'views-shadows',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const south = (await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' })).id;
+      await t.cmd('view.setShadows', { id: south, mode: 'view' });
+      await openFromBrowser(t, 'South', 2500);
+      t.expect(await t.page.locator('[data-testid=drawing] .pen-shadows').count() > 0, 'the elevation fills its shadows');
+      await t.shot('elevation-shadows', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ selected: [], selection: id }), south);
+      await t.page.locator('nav.browser').getByText('South', { exact: true }).first().click();
+      await t.page.waitForSelector('[data-testid=view-shadows]');
+      await t.shot('view-shadows', { of: '.view-settings', pad: 0 });
+    },
+  },
+  {
     // One storey at a time in 3D (report #29): a level's right-click in the browser, the chip, and back to every storey.
     id: 'views-3d-storeys',
     async run(t) {

@@ -36,6 +36,19 @@ Una sezione tagliata trasversalmente a una trave o a un pilastro (**Sezione qui*
 
 ![Il prospetto sud](shots/elevation-view.webp)
 
+### Ombre del sole
+
+Un prospetto, una sezione o una planimetria possono disegnare le ombre che il sole proietta su ciò che vedono, campite sotto le loro linee, così si stampano sulle tavole, in PDF e DXF. Si scelgono nelle proprietà della vista, in **Ombre del sole**:
+
+- **sole proprio**: un sole della vista. Di base la convenzione di disegno: il sole sopra la spalla sinistra, i raggi lungo la diagonale di un cubo (da 45°, a 35,26° di altezza), così un’ombra è profonda quanto sporge ciò che la proietta. **Sole da** e **Altezza del sole** lo ruotano; **Convenzione di disegno** lo riporta.
+- **sole del progetto**: il sole del luogo del progetto (Gestisci → Posizione) in un giorno e a un’ora della vista. **Come in Sole e ombre** prende il giorno e l’ora di Vista → Sole e ombre.
+
+Una sezione proietta e riceve ombre solo da ciò che sta oltre il suo taglio. Una pianta di piano non disegna ombre: i suoi muri, tagliati all’altezza della pianta, le proietterebbero troppo corte.
+
+![Il prospetto sud con l’ombra del tetto](shots/elevation-shadows.webp)
+
+![Le ombre del sole di una vista](shots/view-shadows.webp)
+
 ## Viste 3D
 
 <!-- video section-3d -->

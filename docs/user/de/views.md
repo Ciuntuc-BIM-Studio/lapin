@@ -36,6 +36,19 @@ Ein Schnitt quer durch einen Balken oder eine Stütze (**Schnitt hier**, **Quers
 
 ![Die Südansicht](shots/elevation-view.webp)
 
+### Sonnenschatten
+
+Eine Ansicht, ein Schnitt oder ein Lageplan kann die Schatten zeichnen, die die Sonne auf das wirft, was er sieht, gefüllt unter seinen Linien, so dass sie auf Plänen, in PDF und DXF gedruckt werden. Gewählt in den Eigenschaften der Ansicht, unter **Sonnenschatten**:
+
+- **eigene Sonne**: eine Sonne der Ansicht. Standard ist die Zeichenkonvention: die Sonne über der linken Schulter, die Strahlen entlang der Diagonale eines Würfels (aus 45°, 35,26° hoch), so ist ein Schatten so tief, wie das Werfende vorsteht. **Sonne aus** und **Sonnenhöhe** drehen sie; **Zeichenkonvention** stellt sie zurück.
+- **Projektsonne**: die Sonne am Ort des Projekts (Verwalten → Standort) an einem Tag und zu einer Uhrzeit der Ansicht. **Wie in Sonne und Schatten** übernimmt Tag und Uhrzeit aus Ansicht → Sonne und Schatten.
+
+Ein Schnitt wirft und empfängt nur Schatten dessen, was hinter seiner Schnittebene liegt. Ein Geschossgrundriss zeichnet keine Schatten: seine auf Grundrisshöhe geschnittenen Wände würden sie zu kurz werfen.
+
+![Die Südansicht mit dem Schatten des Daches](shots/elevation-shadows.webp)
+
+![Die Sonnenschatten einer Ansicht](shots/view-shadows.webp)
+
 ## 3D-Ansichten
 
 <!-- video section-3d -->

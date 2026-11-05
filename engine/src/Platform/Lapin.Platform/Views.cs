@@ -482,24 +482,33 @@ public static class Views
     /// <summary>The view's generated drawing (cut areas and lines, before materials and pens), or why there is none.</summary>
     public static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem) Generate(IQueryContext q, Entity view)
     {
+        var (drawing, spec, problem, _, _) = GenerateWith(q, view);
+        return (drawing, spec, problem);
+    }
+
+    /// <summary>As <see cref="Generate"/>, with the parts it drew and whether it was laid in pieces (a developed section).</summary>
+    static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem, List<DrawPart> Parts, bool Pieces) GenerateWith(IQueryContext q, Entity view)
+    {
         var (parts, symbols, fills, texts) = Gather(q, view);
         var (spec, problem) = Spec(q.Model, view, parts, q.Services);
-        if (spec == null) return (null, null, problem);
+        if (spec == null) return (null, null, problem, parts, false);
         var keys = new Dictionary<string, string?>();
         // Without the view style's joins, a surface goes on only within its own element.
         var joins = ViewStyles.Of(q.Model, view).Joins;
         string? Key(DrawPart p) => SeamKeyOf(q.Model, p.Material, p.Class, keys) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null;
         ViewDrawing drawing;
+        var laid = false;
         if (spec.Kind == "section" && Pieces(q, view) is { Count: > 1 } pieces)
         {
             // A developed section: each piece a planar cut seen between its ends, laid at its station.
             var drawn = new List<ViewDrawing>(pieces.Count);
             foreach (var (piece, station) in pieces) drawn.Add(Generator.Draw(parts, piece, symbols, Key).Shifted(station));
             drawing = ViewDrawing.Join(drawn);
+            laid = true;
         }
         else drawing = Generator.Draw(parts, spec, symbols, Key);
         if (spec.Kind == "plan" && (fills.Count > 0 || texts.Count > 0)) drawing = drawing with { Fills = fills, Texts = texts };
-        return (drawing, spec, null);
+        return (drawing, spec, null, parts, laid);
     }
 
     /// <summary>A developed section's pieces: each straight piece's spec (seeing only between its ends) and the station it is laid at; one piece (or none) for a plain section.</summary>
@@ -549,7 +558,7 @@ public static class Views
     {
         var m = q.Model;
         var scale = view.NumOrNull("scale") ?? 100;
-        var (generated, spec, problem) = Generate(q, view);
+        var (generated, spec, problem, drawnParts, laid) = GenerateWith(q, view);
         if (generated == null || spec == null) return new Rendered([], [], null, scale, view.Str("kind") ?? "plan", problem, []);
         // The view's line edits (Linework) over its generated lines.
         var (drawing, lineworkOrphans) = Linework.Apply(generated, ViewLinework.Edits(view));
@@ -595,6 +604,8 @@ public static class Views
                 else if (halftoneOthers && ShowsByStorey(m, view, el) == true) colors[id] = Links.Halftone;
             }
         var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table));
+        // The sun's shadows on what the view sees (ViewShadows), filled under everything it draws.
+        if (ViewShadows.PenOf(m, view, spec, drawnParts, laid) is { } shadows) pens.Insert(0, shadows);
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };
