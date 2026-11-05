@@ -1,0 +1,1 @@
+{ "id": "clash", "name": "Clash detection", "assembly": "Lapin.Clash.dll", "requires": ["core"] }

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Clash detection (docs/plan-visualisation.md, stage 2): search sets by rules,
+    hard and clearance tests between them, run only when asked, their clashes
+    kept from run to run with their statuses, shown, grouped and reported
+    (BCF, HTML, CSV). It needs only the platform.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>clash</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+</Project>

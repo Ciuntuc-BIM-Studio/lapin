@@ -790,6 +790,28 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .coordination-table tbody tr { cursor: pointer; }
 .coordination-table tbody tr:hover { background: var(--accent-wash); }
 .coordination .coordination-results { max-height: 320px; overflow: auto; }
+/* Manage → Clash detection (docs/plan-visualisation.md, stage 2): the tests on the left, the clashes, a test or the sets on the right. */
+/* Docked at the right, over nothing that blocks: the 3D view shows the clash picked and stays at hand. */
+.dialog-backdrop.clash-backdrop { background: transparent; pointer-events: none; place-items: stretch end; padding: 64px 12px 36px 0; }
+.clash-backdrop .clash-dialog { pointer-events: auto; width: min(640px, 48vw); min-width: 0; max-height: none; }
+.clash-dialog .clash-body { display: flex; gap: 12px; align-items: stretch; min-height: 0; flex: 1; overflow: hidden; }
+.clash-dialog .clash-main { overflow: auto; }
+.clash-dialog .clash-set-form dd input { width: 100%; }
+.clash-dialog dd .cell-wrap { display: block; width: 100%; }
+.clash-dialog dd .cell-wrap .cell { width: 100%; text-align: left; }
+.clash-dialog .clash-test-row { gap: 6px; }
+.clash-dialog .clash-test-row select { flex: 1; }
+.clash-dialog .clash-counts { margin: 6px 0 2px; }
+.clash-dialog .clash-main { flex: 1; min-width: 0; }
+.clash-dialog .tabs-row { display: flex; gap: 6px; margin: 0 0 8px; }
+.clash-dialog .tabs-row .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.clash-dialog .coordination-results { overflow: auto; }
+.clash-dialog .coordination-table tr.current { background: var(--accent-wash); }
+.clash-dialog .coordination-table select { padding: 1px 4px; font-size: 12px; }
+.clash-dialog .clash-rules { width: 100%; margin: 6px 0; }
+.clash-dialog .clash-rules td { padding: 2px 6px 2px 0; }
+.clash-dialog .clash-rules input, .clash-dialog .clash-rules select { width: 100%; }
+.clash-dialog .clash-sets > .row { gap: 6px; margin-bottom: 8px; }
 
 /* Remarks on sheets read from PDFs (docs/plan-cde.md, stage 3): the overlay over the sheet, its card, the list in Manage → Remarks */
 :root { --remark: #d6452a; }

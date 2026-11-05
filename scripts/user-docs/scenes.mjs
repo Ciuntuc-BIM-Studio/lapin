@@ -2481,6 +2481,47 @@ export const scenes = [
     },
   },
   {
+    // Manage → Clash detection (docs/plan-visualisation.md, stage 2): heating runs through walls (the cut order's MEP cutting off,
+    // so they clash), the starting tests run, a clash framed in 3D, a test's settings and a search set's rules.
+    id: 'clash',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('cutOrder.setMep', { cut: false });
+      const system = (await t.cmd('mep.createSystem', { service: 'heating', defaults: { insulation: 0 } })).id;
+      for (const [x1, y1, x2, y2] of [[2, -1, 2, 4], [9, 2, 13, 2], [4, 6, 10, 6]]) {
+        const run = (await t.cmd('mep.drawRun', { systemId: system, storeyId: storey, points: [[x1, y1], [x2, y2]], pair: false })).id;
+        await t.cmd('element.update', { id: run, attrs: { size: 0.11, elevation: 1.2 } });
+      }
+      t.expect(storey, 'a storey');
+      await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.setState({ view: '3d', keyPlan: false }));
+      await t.page.waitForSelector('[data-testid=view3d] canvas');
+      await t.tool('clash.manage');
+      await t.page.waitForSelector('[data-testid=clash-dialog] [data-testid=clash-test] option', { state: 'attached' });
+      await t.wait(1500);
+      await t.page.locator('[data-testid=clash-test]').selectOption({ label: 'Architecture × Services' });
+      await t.wait(800);
+      await t.page.locator('[data-testid=clash-run-test]').click();
+      await t.page.waitForSelector('[data-clash-n]', { timeout: 20_000 });
+      t.expect(await t.page.locator('[data-clash-n]').count() === 3, 'three runs through the walls');
+      await t.page.locator('[data-clash-n="1"]').click();
+      await t.wait(2500);
+      await t.shot('clash-dialog');
+      await t.page.locator('[data-clash-tab=test]').click();
+      await t.wait(400);
+      await t.shot('clash-test', { of: '[data-testid=clash-dialog]', pad: 0 });
+      await t.page.locator('[data-clash-tab=sets]').click();
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=clash-set-count]').count() === 1, 'a set and how many elements it takes');
+      await t.shot('clash-sets', { of: '[data-testid=clash-dialog]', pad: 0 });
+      // The clash as the dialog left it framed, without the dialog over it.
+      await t.page.locator('[data-testid=clash-dialog] button[title="Close"]').click();
+      await t.wait(600);
+      await t.shot('clash-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.evaluate(async () => { (await import('/src/viewport/sectionBox.ts')).useSectionBox.setState({ box: null }); });
+    },
+  },
+  {
     // One storey at a time in 3D (report #29): a level's right-click in the browser, the chip, and back to every storey.
     id: 'views-3d-storeys',
     async run(t) {

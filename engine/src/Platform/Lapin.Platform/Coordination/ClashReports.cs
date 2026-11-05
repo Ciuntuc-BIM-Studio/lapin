@@ -69,11 +69,11 @@ public static class ClashReports
     public static readonly string[] States = [Open, Fixed, Ignored];
 
     /// <summary>What is not the model a clash report checks: its own report, remarks, views, sheets, annotations, issues.</summary>
-    static readonly HashSet<string> NotModel = [Class, Cde.Remarks.Remarks.Class, "LapinSheetRemark", Views.Class, Sheets.Class, "LapinIssue", IfcClass.Annotation, "LapinViewBoundary", "LapinInset", "LapinImage", "LapinSchedule", "LapinVersion"];
+    static readonly HashSet<string> NotModel = [Class, Cde.Remarks.Remarks.Class, "LapinSheetRemark", Views.Class, Sheets.Class, "LapinIssue", IfcClass.Annotation, "LapinViewBoundary", "LapinInset", "LapinImage", "LapinSchedule", "LapinVersion", "LapinClashTest", "LapinSearchSet"];
 
     /// <summary>
     /// The model's state as a clash check sees it: a SHA-256 over every element, type, material and relation (sorted by
-    /// id), leaving out what only documents it (views, sheets, annotations, remarks, issues, the report itself) and of the
+    /// id), leaving out what only documents it (views, sheets, annotations, remarks, issues, the report itself, the clash module's tests) and of the
     /// project only its coordination settings. The same model gives the same hash, saved and opened again.
     /// </summary>
     public static string ModelHash(IModelView m)
