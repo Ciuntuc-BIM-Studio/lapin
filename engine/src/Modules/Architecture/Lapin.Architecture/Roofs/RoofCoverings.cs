@@ -20,6 +20,11 @@ namespace Lapin.Architecture.Roofs;
 public static class RoofCoverings
 {
     public const string Key = "coveringMaterial";
+    /// <summary>
+    /// A roof without framing (flat, barrel, <c>structure: none</c>) has a deck under its covering (decision 329), a part of
+    /// its own made of this material (by name, Reinforced concrete by default), <see cref="Roof.Resolved.DeckThickness"/> thick.
+    /// </summary>
+    public const string DeckKey = "deckMaterial", DeckDefault = "Reinforced concrete";
 
     static string? Text(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s.Trim() : null;
 
@@ -40,6 +45,23 @@ public static class RoofCoverings
     /// <summary>The covering's colour in 3D: its material's, else the covering choice's.</summary>
     public static string ColorOf(Entity roof, IModelView m, RoofCatalog.Covering covering) =>
         NameOf(roof) is { Length: > 0 } name && Materials.Find(m, name)?.Str("color") is { Length: > 0 } c ? c : covering.Color;
+
+    /// <summary>Whether a roof's attributes give it no framing, so a deck: flat, a vault, or no structure.</summary>
+    public static bool Unframed(JsonObject attrs) => (string?)attrs["shape"] is "flat" or "barrel" || (string?)attrs["structure"] == "none";
+
+    /// <summary>The name of the material the deck is made of: the roof's own, else reinforced concrete; empty for none.</summary>
+    public static string DeckNameOf(Entity roof) => Text(roof.Attrs[DeckKey]) ?? DeckDefault;
+
+    /// <summary>The deck's material as its part carries it: the project's of that name, else the name; null for none.</summary>
+    public static string? DeckMaterialOf(Entity roof, IModelView m)
+    {
+        var name = DeckNameOf(roof);
+        return name.Length == 0 ? null : Materials.Find(m, name)?.Id ?? name;
+    }
+
+    /// <summary>The deck's colour in 3D: its material's, else the colour its name suggests.</summary>
+    public static string DeckColorOf(Entity roof, IModelView m) =>
+        DeckNameOf(roof) is { Length: > 0 } name ? Materials.Find(m, name)?.Str("color") is { Length: > 0 } c ? c : Materials.DefaultColor(name) : "#c9ced6";
 
     /// <summary>A material made for a covering: its colour, no texture (the roof looks as it did), never a membrane in a cut.</summary>
     public static JsonObject MaterialAttrs(RoofCatalog.Covering covering, string name)
@@ -64,11 +86,14 @@ public static class RoofCoverings
         var named = Text(after[Key]) ?? had;
         if (!Same(was, now) && (named == null || Same(named, had) && Same(had ?? was, was))) named = now;
         after[Key] = named ?? now;
+        // Without framing, its deck's material stated too (so a rename follows it).
+        if (Unframed(after) && Text(after[DeckKey]) == null) after[DeckKey] = Text(before[DeckKey]) ?? DeckDefault;
     }
 
     /// <summary>The roof's covering material made when the project has none of that name (none for an empty name).</summary>
     public static void Ensure(IEdit edit, Entity roof)
     {
+        if (Unframed(roof.Attrs) && DeckNameOf(roof) is { Length: > 0 } deck) Materials.Ensure(edit, deck);
         var name = NameOf(roof);
         if (name.Length == 0 || Materials.Find(edit.Model, name) != null) return;
         edit.Add(new Entity(edit.NewId(), IfcClass.Material, name, MaterialAttrs(CoveringFor(name, roof.Attrs), name)));
@@ -79,14 +104,43 @@ public static class RoofCoverings
     {
         var attrs = roof.CloneAttrs();
         Follow(before?.Attrs ?? roof.Attrs, attrs);
-        var next = Text(attrs[Key]) == Text(roof.Attrs[Key]) ? roof : roof.With(attrs: attrs);
+        var next = Text(attrs[Key]) == Text(roof.Attrs[Key]) && Text(attrs[DeckKey]) == Text(roof.Attrs[DeckKey]) ? roof : roof.With(attrs: attrs);
         Ensure(edit, next);
         return next;
     }
 
     /// <summary>A material's id for a project upgrade: the same for the same roof and name every time the file opens (a recovery replays edits on it).</summary>
-    public static string UpgradeId(string roofId, string name) =>
-        GlobalId.FromGuid(new Guid(MD5.HashData(Encoding.UTF8.GetBytes($"lapin/roof-covering/{roofId}/{name.ToLowerInvariant()}"))));
+    public static string UpgradeId(string roofId, string name, string what = "covering") =>
+        GlobalId.FromGuid(new Guid(MD5.HashData(Encoding.UTF8.GetBytes($"lapin/roof-{what}/{roofId}/{name.ToLowerInvariant()}"))));
+}
+
+/// <summary>
+/// Roofs without framing from before decision 329, whose deck and covering were one body of the covering's material: each
+/// names its deck's material (reinforced concrete), made when the project has none, so the deck is a part of its own. The
+/// thicknesses stay (the deck 16 cm, the covering its own), so the roof's outside is the same.
+/// </summary>
+public sealed class RoofDeckUpgrade : IProjectUpgrade
+{
+    public (IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations) Upgrade(IReadOnlyList<Entity> entities, IReadOnlyList<Relation> relations)
+    {
+        static bool Old(Entity e) => e.Class == IfcClass.Roof && RoofCoverings.Unframed(e.Attrs) && !e.Attrs.ContainsKey(RoofCoverings.DeckKey);
+        if (!entities.Any(Old)) return (entities, relations);
+        var names = entities.Where(e => e.Class == IfcClass.Material).Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var o = new List<Entity>(entities.Count + 1);
+        var made = new List<Entity>();
+        foreach (var e in entities)
+        {
+            if (!Old(e)) { o.Add(e); continue; }
+            var attrs = e.CloneAttrs();
+            attrs[RoofCoverings.DeckKey] = RoofCoverings.DeckDefault;
+            o.Add(e.With(attrs: attrs));
+            if (names.Add(RoofCoverings.DeckDefault))
+                made.Add(new Entity(RoofCoverings.UpgradeId(e.Id, RoofCoverings.DeckDefault, "deck"), IfcClass.Material, RoofCoverings.DeckDefault,
+                    new JsonObject { ["color"] = Materials.DefaultColor(RoofCoverings.DeckDefault) }));
+        }
+        o.AddRange(made);
+        return (o, relations);
+    }
 }
 
 /// <summary>
@@ -129,7 +183,7 @@ sealed class RoofCoveringUpdate : IElementUpdate
 
 /// <summary>
 /// A roof's build-up from the top (decision 328): its covering in its material, then the battens and the rafters (or the
-/// deck), these without a material; what a build-up tag lists and what a task's rule by material finds the roof by.
+/// deck in its material, decision 329), the battens and rafters without one; what a build-up tag lists and what a task's rule by material finds the roof by.
 /// </summary>
 public sealed class RoofBuildUps : IElementBuildUps
 {
@@ -140,7 +194,7 @@ public sealed class RoofBuildUps : IElementBuildUps
         var covering = new BuildupLayer(0, name.Length == 0 ? null : Materials.Find(m, name)?.Id, r.Covering.Thickness, false, name.Length == 0 ? r.Covering.Id : name);
         List<BuildupLayer> layers = r.Framed
             ? [covering, new(1, null, Roof.Battens, false, "Battens and counter-battens"), new(2, null, r.Rafter.D, true, $"{RoofParts.RoleLabel(r.Scheme == "trusses" ? "topChord" : "rafter")}s {r.Roof.Str("rafterSection") ?? "8x16"}")]
-            : [covering, new(1, null, r.StructureDepth, true, "Deck")];
+            : [covering, new(1, RoofCoverings.DeckNameOf(e) is { Length: > 0 } deck ? Materials.Find(m, deck)?.Id : null, r.StructureDepth, true, RoofCoverings.DeckNameOf(e) is { Length: > 0 } d ? d : "Deck")];
         return new BuildUp(layers, true);
     }
 }

@@ -262,6 +262,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // Roofs' covering materials (decision 328): following the covering when it changes in the properties, made for old roofs.
         r.Service<IElementUpdate>(new RoofCoveringUpdate());
         r.Service<IProjectUpgrade>(new RoofCoveringUpgrade());
+        r.Service<IProjectUpgrade>(new RoofDeckUpgrade());
         r.Service<IElementBuildUps>(new RoofBuildUps());
         r.Service<IScheduleSource>(new Roofs.RoofTimberSchedule());
         // The architecture's fields and collections for documents (docs/plan-documents.md).
@@ -325,6 +326,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             // The covering's material (decision 328): the covering's own by default, any of the project's.
             new(RoofCoverings.Key, "Covering material", "material"),
             new("structure", "Structure", "choice", Choices: Roof.Structures),
+            // Without framing (flat, barrel, none): the deck under the covering, a part of its own (decision 329).
+            new(RoofCoverings.DeckKey, "Deck material", "material"),
+            new("deckThickness", "Deck thickness", "length", Min: 0.01, Max: 1),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
             new("rafterSection", "Rafters and chords (cm, or mm)", "choice", Choices: Roof.RafterSections),
             new("rafterSpacing", "Rafter spacing", "length", Min: 0.3, Max: 2),
@@ -891,9 +895,8 @@ static class RoofCuts
         return g with { Parts = parts, Diagnostics = problems.Count > 0 ? [.. g.Diagnostics ?? [], .. problems] : g.Diagnostics };
     }
 
-    /// <summary>A roof's covering as what it cuts with, solved once per model revision (every wall around asks for it).</summary>
+    /// <summary>A roof's covering (with its deck, unframed) as what it cuts with, solved once per model revision (every wall around asks for it).</summary>
     static readonly RevisionCache<Solid?> RoofEnvelopes = new();
-    public static Solid? Envelope(Entity roof, IModelView m) =>
-        RoofEnvelopes.Get(roof, m, v => Roof.Geometry(roof, v)?.Parts.FirstOrDefault(p => p.Key == "covering")?.Solid);
+    public static Solid? Envelope(Entity roof, IModelView m) => RoofEnvelopes.Get(roof, m, v => Roof.Envelope(roof, v));
 
 }

@@ -1113,7 +1113,8 @@ public static class IfcExport
                 (IfcClass.Wall, "lintel") => new(IfcClass.Beam, "LINTEL", null),
                 (IfcClass.Wall, "downstand") => new(IfcClass.Beam, "USERDEFINED", "Ring beam"),
                 (IfcClass.Wall, "zone") when zones.FirstOrDefault(z => (string?)z["key"] == rest) is { } zone && (string?)zone["role"] == "ringBeam" => new(IfcClass.Beam, "USERDEFINED", "Ring beam"),
-                (IfcClass.Roof, "covering") or (IfcClass.Roof, "dormer-roofs") => new(IfcClass.Slab, "ROOF", null),
+                // A roof without framing: its deck (decision 329) and its covering, each an IfcSlab ROOF of its material.
+                (IfcClass.Roof, "covering") or (IfcClass.Roof, "deck") or (IfcClass.Roof, "dormer-roofs") => new(IfcClass.Slab, "ROOF", null),
                 (IfcClass.Roof, "roof-windows") => new(IfcClass.Window, "SKYLIGHT", null),
                 (IfcClass.Roof, "glass") => new("IfcPlate", "SHEET", null),
                 (IfcClass.Roof, "dormer-walls") => new(IfcClass.Wall, "NOTDEFINED", null),

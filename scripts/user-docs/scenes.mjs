@@ -553,6 +553,37 @@ export const scenes = [
     },
   },
   {
+    // A flat roof's deck under its covering (decision 329): two parts, two bands in a section, each hatched by its material.
+    id: 'floors-roofs-deck',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const roof = await t.cmd('architecture.addRoof', { storeyId: storey, points: [[0, 0], [12, 0], [12, 8], [0, 8]], style: 'modern_minimalist' });
+      await t.cmd('architecture.updateRoof', { id: roof.id, attrs: { covering: 'Green roof', coveringMaterial: 'Soil substrate' } });
+      await t.wait(800);
+      const node = (await t.nodes()).find((n) => n.id === roof.id);
+      t.expect(node?.props?.deckMaterial === 'Reinforced concrete', `the flat roof has a deck of reinforced concrete (${node?.props?.deckMaterial})`);
+      await t.cmd('view.create', { kind: 'section', name: 'R-R', start: [10.5, -1], end: [10.5, 9], scale: 20 });
+      await openFromBrowser(t, 'R-R', 1500);
+      await t.fit();
+      t.expect(await t.page.locator('[data-testid=drawing] .pen-hatch').count() > 0, 'the section hatches the deck and the covering');
+      // Zoomed in on the eave over the south wall (a wheel event zooms one notch at most).
+      await t.ui({ keyPlan: false });
+      const box = await t.page.locator('[data-testid=drawing]').boundingBox();
+      const [cx, cy] = [box.x + 0.161 * box.width, box.y + 0.25 * box.height];
+      await t.page.mouse.move(cx, cy);
+      for (let i = 0; i < 13; i++) { await t.page.mouse.wheel(0, -100); await t.wait(80); }
+      // The corner panned to the middle (a middle-button drag).
+      await t.page.mouse.down({ button: 'middle' });
+      await t.page.mouse.move(box.x + 0.42 * box.width, box.y + 0.52 * box.height, { steps: 8 });
+      await t.page.mouse.up({ button: 'middle' });
+      await t.page.mouse.move(box.x + box.width - 20, box.y + box.height - 20);
+      await t.wait(800);
+      await t.shot('roof-deck-section', { of: '[data-testid=drawing]', pad: 0 });
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     id: 'schedules',
     async run(t) {
       await t.fresh();

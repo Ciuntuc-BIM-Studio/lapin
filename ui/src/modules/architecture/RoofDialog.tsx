@@ -41,6 +41,9 @@ interface Draft { style?: string; attrs: Record<string, unknown>; edges?: Edge[]
 const TABS = [['shape', 'Shape'], ['covering', 'Covering and drainage'], ['framing', 'Framing'], ['openings', 'Openings']] as const;
 type Tab = (typeof TABS)[number][0];
 
+/** A flat roof, a vault or one without a structure: a deck under its covering. */
+const unframed = (v: (k: string) => unknown) => ['flat', 'barrel'].includes(String(v('shape'))) || v('structure') === 'none';
+
 /** Which fields each tab shows, and when (a mansard's upper pitch only on a mansard…). */
 const FIELDS: Record<Tab, [string, ((v: (k: string) => unknown) => boolean)?][]> = {
   shape: [['shape'], ['pitch', (v) => v('shape') !== 'barrel'], ['overhang'], ['gableOverhang'], ['ridgeDirection', (v) => ['gable', 'shed', 'barrel'].includes(String(v('shape')))],
@@ -51,13 +54,15 @@ const FIELDS: Record<Tab, [string, ((v: (k: string) => unknown) => boolean)?][]>
   framing: [['structure', (v) => !['flat', 'barrel'].includes(String(v('shape')))],
     ['rafterSection', (v) => !['none'].includes(String(v('structure')))], ['rafterSpacing', (v) => v('structure') !== 'none'],
     ['purlins', (v) => (v('structure') ?? 'rafters') === 'rafters'], ['webSection', (v) => v('structure') === 'trusses'], ['collarHeight', (v) => v('structure') === 'collar'],
-    ['timberGrade', (v) => v('structure') !== 'none'], ['rafterTail', (v) => v('structure') !== 'none'], ['rafterSeat', (v) => ['rafters', 'collar', undefined].includes(v('structure') as string | undefined)]],
+    ['timberGrade', (v) => v('structure') !== 'none'], ['rafterTail', (v) => v('structure') !== 'none'], ['rafterSeat', (v) => ['rafters', 'collar', undefined].includes(v('structure') as string | undefined)],
+    // Without framing, the deck under the covering (decision 329).
+    ['deckMaterial', unframed], ['deckThickness', unframed]],
   openings: [],
 };
 
 /** What the engine takes for a field the roof does not have yet (a roof made before the field was). */
 const DEFAULTS: Record<string, unknown> = { rafterTail: 'plumb', rafterSeat: 'birdsmouth', collarHeight: 0.66, timberGrade: 'C24', webSection: '45x95 mm', ridgeDirection: 'auto', shedFlip: false,
-  gutterWidth: 0.125, gutterOffset: 0, gutterDrop: 0, gutterFall: 0, gutterEnds: 'True', downpipes: 'auto' };
+  gutterWidth: 0.125, gutterOffset: 0, gutterDrop: 0, gutterFall: 0, gutterEnds: 'True', downpipes: 'auto', deckMaterial: 'Reinforced concrete', deckThickness: 0.16 };
 
 const ROLE_FILL: Record<string, string> = {
   covering: '#b0563d', deck: '#c9b79c', wall: '#d9d4c9', plate: '#8a6a48', rafter: '#c99a64', topChord: '#c99a64', bottomChord: '#b98a5a',

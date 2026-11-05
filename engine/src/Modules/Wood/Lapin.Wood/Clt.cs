@@ -227,9 +227,12 @@ public static class Clt
         if (services.Get<ISolidBooleans>() is not { } booleans || Lapin.Architecture.Roofs.Roof.Resolve(roof, m) is not { Flat: false, Barrel: false } r) return null;
         if (Lapin.Architecture.Roofs.Roof.Solve(r).Shape is not { } shape) return null;
         var openings = Lapin.Architecture.Roofs.RoofOpenings.Place(roof, shape, m, []);
-        var parts = g.Parts.Where(p => !(p.Key ?? "").StartsWith("truss:", StringComparison.Ordinal) && !((p.Key ?? "").StartsWith("timber:", StringComparison.Ordinal) && !(p.Key ?? "").StartsWith("timber:plate", StringComparison.Ordinal))).ToList();
+        // The CLT in place of the rafters and trusses (the plates kept), or of a deck (decision 329).
+        var parts = g.Parts.Where(p => p.Key != "deck" && !(p.Key ?? "").StartsWith("truss:", StringComparison.Ordinal) && !((p.Key ?? "").StartsWith("timber:", StringComparison.Ordinal) && !(p.Key ?? "").StartsWith("timber:plate", StringComparison.Ordinal))).ToList();
         var warnings = new List<string>();
-        if (r.Framed && spec.Thickness > r.StructureDepth + 1e-6) warnings.Add($"The CLT ({Math.Round(spec.Thickness * 1000)} mm) is deeper than the roof's structure ({Math.Round(r.StructureDepth * 1000)} mm): set the rafters' depth to it.");
+        if (spec.Thickness > r.StructureDepth + 1e-6) warnings.Add(r.Framed
+            ? $"The CLT ({Math.Round(spec.Thickness * 1000)} mm) is deeper than the roof's structure ({Math.Round(r.StructureDepth * 1000)} mm): set the rafters' depth to it."
+            : $"The CLT ({Math.Round(spec.Thickness * 1000)} mm) is deeper than the roof's deck ({Math.Round(r.StructureDepth * 1000)} mm): set the deck's thickness to it.");
         var n = 0;
         for (var i = 0; i < shape.Planes.Count; i++)
         {

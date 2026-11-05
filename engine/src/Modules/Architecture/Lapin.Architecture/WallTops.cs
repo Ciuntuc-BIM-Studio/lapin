@@ -50,8 +50,9 @@ public static class WallTops
         foreach (var t in targets)
         {
             if (t.Class == IfcClass.Wall || t.Id == wall.Id) continue;
-            // Lapin's own roofs are read by their planes (RoofTop), not by their covering.
-            if (t.Class == IfcClass.Roof && !StoredBodies.Has(t) && Roof.Resolve(t, m) != null) continue;
+            // Lapin's own roofs are read by their planes (RoofTop), not by their covering; a flat one, which has no planes, by its
+            // deck's underside when the wall is attached to it (decision 329).
+            if (t.Class == IfcClass.Roof && !StoredBodies.Has(t) && Roof.Resolve(t, m) is { } own && !(own.Flat && mode == "attach")) continue;
             o.AddRange(TrianglesOf(t, m, services));
         }
         return o;

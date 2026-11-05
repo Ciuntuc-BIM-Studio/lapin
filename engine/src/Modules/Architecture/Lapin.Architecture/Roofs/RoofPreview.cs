@@ -27,7 +27,7 @@ public static class RoofPreview
         if (Roof.Problem(r) is { } problem) { o["problem"] = problem; return o; }
         if (r.Flat)
         {
-            o["summary"] = new JsonArray(Row("Covering", $"{N(Math.Abs(Polygon2.SignedArea(Roof.EaveOutline(r))), "0.0")} m²"));
+            o["summary"] = new JsonArray(Row("Covering", $"{N(Math.Abs(Polygon2.SignedArea(Roof.EaveOutline(r))), "0.0")} m²"), DeckRow(r));
             return o;
         }
         var (shape, why) = Roof.Solve(r);
@@ -43,6 +43,7 @@ public static class RoofPreview
         var summary = new JsonArray(
             Row("Covering", $"{N(shape.Planes.Sum(p => VecMath.NewellNormal(p.Points).Length), "0.0")} m² · {r.Covering.Id}"),
             Row("Height over the plates", $"{N(shape.Height - r.BaseZ, "0.00")} m"));
+        if (!r.Framed) summary.Add((JsonNode)DeckRow(r));
         if (members.Count > 0)
         {
             var trusses = members.Where(x => x.Truss >= 0).Select(x => x.Truss).Distinct().Count();
@@ -63,6 +64,10 @@ public static class RoofPreview
     }
 
     static JsonArray Row(string label, string value) => new(label, value);
+
+    /// <summary>A roof without framing: its deck's material and thickness (decision 329).</summary>
+    static JsonArray DeckRow(Roof.Resolved r) =>
+        Row("Deck", $"{(RoofCoverings.DeckNameOf(r.Roof) is { Length: > 0 } d ? d : "—")} · {N(r.StructureDepth * 100, "0.#")} cm");
 
     /// <summary>
     /// A vertical section across the main ridge (or the longest eave) through the outline's middle: x across, z up. The covering
@@ -91,8 +96,10 @@ public static class RoofPreview
             {
                 double Zk(double k) => z(c + n * k);
                 var sec = Math.Sqrt(1 + Math.Pow((Zk(k1) - Zk(k0)) / (k1 - k0), 2));
-                var (lo, hi) = r.Framed ? (r.StructureDepth * sec, r.Thickness * sec) : (0, r.Thickness * sec);
-                Add(r.Framed ? "covering" : "deck", [(k0, Zk(k0) + lo), (k1, Zk(k1) + lo), (k1, Zk(k1) + hi), (k0, Zk(k0) + hi)]);
+                var (lo, hi) = (r.StructureDepth * sec, r.Thickness * sec);
+                Add("covering", [(k0, Zk(k0) + lo), (k1, Zk(k1) + lo), (k1, Zk(k1) + hi), (k0, Zk(k0) + hi)]);
+                // Without framing, the deck under it (decision 329).
+                if (!r.Framed) Add("deck", [(k0, Zk(k0)), (k1, Zk(k1)), (k1, Zk(k1) + lo), (k0, Zk(k0) + lo)]);
             }
         }
         // The walls under the wall line, a storey's top's worth down.

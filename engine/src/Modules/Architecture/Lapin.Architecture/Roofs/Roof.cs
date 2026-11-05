@@ -21,8 +21,8 @@ public static class Roof
     public static readonly (double W, double D) WallPlate = (0.14, 0.14), RidgeBeam = (0.14, 0.20), HipRafter = (0.10, 0.20), Purlin = (0.14, 0.16);
     /// <summary>Battens and counter-battens between the rafters and the covering.</summary>
     public const double Battens = 0.04;
-    /// <summary>A roof without a structure: a solid deck under the covering.</summary>
-    const double Deck = 0.16;
+    /// <summary>A roof without a structure: a solid deck under the covering, this thick unless the roof says (<c>deckThickness</c>).</summary>
+    public const double Deck = 0.16;
     /// <summary>Rafter and chord sections: the old ones in cm, the Nordic ones in mm (said so).</summary>
     public static readonly string[] RafterSections = ["8x16", "10x16", "10x18", "10x20", "12x22", "45x95 mm", "45x120 mm", "45x145 mm", "45x170 mm", "45x195 mm", "45x220 mm", "45x245 mm", "70x220 mm"];
     /// <summary>The framing systems (decision 229): rafters on purlins, couples with collar ties, prefabricated trusses, or none (a deck).</summary>
@@ -64,8 +64,10 @@ public static class Roof
         public (double W, double D) Rafter => Section(Roof.Str("rafterSection"), (0.08, 0.16));
         /// <summary>The planes' height over the wall line: on the plates when framed.</summary>
         public double BaseZ => PlateZ + (Framed ? WallPlate.D : 0);
+        /// <summary>A roof without framing: its deck's thickness (decision 329), the roof's own, else 16 cm.</summary>
+        public double DeckThickness => Roof.NumOrNull("deckThickness") is { } t && t > 0.005 ? t : Deck;
         /// <summary>From the planes to the covering's underside: rafters and battens, or the deck.</summary>
-        public double StructureDepth => Framed ? Rafter.D + Battens : Deck;
+        public double StructureDepth => Framed ? Rafter.D + Battens : DeckThickness;
         public double Thickness => StructureDepth + Covering.Thickness;
     }
 
@@ -244,9 +246,12 @@ public static class Roof
         // The covering's material (decision 328): elevations and sections hatch it, IFC and the takeoff carry it; its colour in 3D.
         var coveringMaterial = RoofCoverings.MaterialOf(roof, m);
         var coveringColor = RoofCoverings.ColorOf(roof, m, r.Covering);
+        // Without framing the deck is a part of its own under the covering (decision 329), each of its material.
+        GeometryPart DeckPart(Solid s) => new("Deck", RoofCoverings.DeckColorOf(roof, m), s, RoofCoverings.DeckMaterialOf(roof, m), "deck");
         if (r.Flat)
         {
-            if (Prism.ExtrudeFootprint(eaves, r.BaseZ, r.Thickness, "roof") is { } slab) parts.Add(new GeometryPart("Covering", coveringColor, slab, coveringMaterial, "covering"));
+            if (Prism.ExtrudeFootprint(eaves, r.BaseZ, r.StructureDepth, "deck") is { } deck) parts.Add(DeckPart(deck));
+            if (Prism.ExtrudeFootprint(eaves, r.BaseZ + r.StructureDepth, r.Covering.Thickness, "covering") is { } slab) parts.Add(new GeometryPart("Covering", coveringColor, slab, coveringMaterial, "covering"));
             return new ElementGeometry(parts, plan, r.Outline);
         }
         var (shape, problem) = Solve(r);
@@ -258,19 +263,8 @@ public static class Roof
         // A vault's strips go out along the circle's radius instead, so they meet on their shared edges.
         var openings = r.Barrel ? [] : RoofOpenings.Place(roof, shape, m, diags);
         if (r.Barrel && RoofOpenings.Of(roof).Any()) diags.Add("A barrel roof takes no roof windows or dormers yet: they are left out.");
-        var covering = new List<Solid>();
-        if (r.Barrel && shape.Arc is { } arc)
-            foreach (var p in shape.Planes)
-                if (Shell(p.Points, p.Points.Select(q => arc.Out(q, r.Thickness)).ToList(), "covering") is { } s) covering.Add(s);
-        for (var i = 0; !r.Barrel && i < shape.Planes.Count; i++)
-        {
-            var p = shape.Planes[i];
-            var cos = Math.Cos(p.Pitch * Math.PI / 180);
-            var (below, layer) = r.Framed ? (r.StructureDepth / cos, r.Covering.Thickness / cos) : (0, r.Thickness / cos);
-            Vec3 Lift(Vec3 q) => q with { Z = q.Z + below };
-            var holes = openings.Where(o => o.Host.PlaneIndex == i).Select(o => (IReadOnlyList<Vec3>)o.Hole.Select(Lift).ToArray()).ToList();
-            if (Prism.Extrude(p.Points.Select(Lift).ToArray(), holes, new Vec3(0, 0, layer), "covering") is { } s) covering.Add(s);
-        }
+        if (!r.Framed && Band(r, shape, openings, 0, r.StructureDepth, "deck") is { Count: > 0 } deckBody) parts.Add(DeckPart(Openings.Combine(deckBody, "deck")));
+        var covering = Band(r, shape, openings, r.StructureDepth, r.Covering.Thickness, "covering");
         if (covering.Count > 0) parts.Add(new GeometryPart("Covering", coveringColor, Openings.Combine(covering, "covering"), coveringMaterial, "covering"));
 
         // Its roof windows and dormers, as parts of it.
@@ -341,6 +335,48 @@ public static class Roof
         return new ElementGeometry(parts, plan, r.Outline, diags.Count > 0 ? diags : null);
     }
 
+    /// <summary>
+    /// A band of the roof's thickness over its planes, <paramref name="from"/> over them and <paramref name="depth"/> deep:
+    /// on slopes measured plumb (planes of one pitch share their hips and ridges), the holes of its roof windows and dormers
+    /// cut; on a vault out along the circle's radius, so its strips meet on their shared edges.
+    /// </summary>
+    static List<Solid> Band(Resolved r, RoofShape shape, IReadOnlyList<RoofOpenings.Placed> openings, double from, double depth, string tag)
+    {
+        var o = new List<Solid>();
+        if (r.Barrel)
+        {
+            if (shape.Arc is { } arc)
+                foreach (var p in shape.Planes)
+                    if (Shell(from == 0 ? p.Points : p.Points.Select(q => arc.Out(q, from)).ToList(), p.Points.Select(q => arc.Out(q, from + depth)).ToList(), tag) is { } s) o.Add(s);
+            return o;
+        }
+        for (var i = 0; i < shape.Planes.Count; i++)
+        {
+            var p = shape.Planes[i];
+            var cos = Math.Cos(p.Pitch * Math.PI / 180);
+            var below = from / cos;
+            Vec3 Lift(Vec3 q) => q with { Z = q.Z + below };
+            var holes = openings.Where(x => x.Host.PlaneIndex == i).Select(x => (IReadOnlyList<Vec3>)x.Hole.Select(Lift).ToArray()).ToList();
+            if (Prism.Extrude(p.Points.Select(Lift).ToArray(), holes, new Vec3(0, 0, depth / cos), tag) is { } s) o.Add(s);
+        }
+        return o;
+    }
+
+    /// <summary>
+    /// What a roof cuts walls and Studio solids with (the cut order): its covering, and without framing its deck with it, as
+    /// one body the roof's whole thickness, as before the deck was a part of its own (decision 329).
+    /// </summary>
+    public static Solid? Envelope(Entity roof, IModelView m)
+    {
+        if (Resolve(roof, m) is not { } r) return null;
+        if (r.Framed) return Geometry(roof, m)?.Parts.FirstOrDefault(p => p.Key == "covering")?.Solid;
+        if (r.Flat) return Prism.ExtrudeFootprint(EaveOutline(r), r.BaseZ, r.Thickness, "covering");
+        var (shape, _) = Solve(r);
+        if (shape == null) return null;
+        var body = Band(r, shape, r.Barrel ? [] : RoofOpenings.Place(roof, shape, m, []), 0, r.Thickness, "covering");
+        return body.Count == 0 ? null : Openings.Combine(body, "covering");
+    }
+
     public static IEnumerable<QuantitySet> Quantities(Entity roof, ElementGeometry? geometry, IModelView m)
     {
         var r = Resolve(roof, m);
@@ -350,6 +386,7 @@ public static class Roof
             var flat = Math.Abs(Polygon2.SignedArea(EaveOutline(r)));
             yield return new QuantitySet("Qto_RoofBaseQuantities", [new("GrossArea", flat, "AREA", "Covering")]);
             if (CoveringSet(roof, r, m, flat, flat) is { } fc) yield return fc;
+            if (DeckSet(roof, r, m, flat, flat, geometry) is { } fd) yield return fd;
             yield break;
         }
         var (shape, _) = Solve(r);
@@ -373,6 +410,7 @@ public static class Roof
         }
         yield return new QuantitySet("Qto_RoofBaseQuantities", q);
         if (CoveringSet(roof, r, m, q[0].Value, q[1].Value) is { } cs) yield return cs;
+        if (!r.Framed && DeckSet(roof, r, m, q[0].Value, q[1].Value, geometry) is { } ds) yield return ds;
         if (RoofOpenings.Quantities(holes).ToList() is { Count: > 0 } oq) yield return new QuantitySet("Lapin_RoofOpeningQuantities", oq, "openings", "Roof windows and dormers");
 
         var members = RoofParts.Framing(r, shape, holes);
@@ -435,6 +473,26 @@ public static class Roof
             new("GrossArea", gross, "AREA", "Gross area"),
             new("NetArea", net, "AREA", "Net area"),
         ], "covering", $"Covering ({RoofCoverings.NameOf(roof)})", material);
+    }
+
+    /// <summary>
+    /// The deck of a roof without framing as a part of its material (decision 329): its thickness, its areas (sloped, as the
+    /// covering's) and its volume, the built part's when there is one (a vault's shell), else the net area times the
+    /// thickness; none without a material.
+    /// </summary>
+    static QuantitySet? DeckSet(Entity roof, Resolved r, IModelView m, double gross, double net, ElementGeometry? geometry)
+    {
+        if (RoofCoverings.DeckMaterialOf(roof, m) is not { } material) return null;
+        var t = r.StructureDepth;
+        var built = geometry?.Parts.FirstOrDefault(p => p.Key == "deck") is { } part ? Measure.Volume(part.Solid) : (double?)null;
+        return new QuantitySet("Lapin_RoofDeckQuantities",
+        [
+            new("Width", t, "LENGTH", "Thickness"),
+            new("GrossArea", gross, "AREA", "Gross area"),
+            new("NetArea", net, "AREA", "Net area"),
+            new("GrossVolume", r.Barrel && built is { } bg ? bg : gross * t, "VOLUME", "Gross volume"),
+            new("NetVolume", built ?? net * t, "VOLUME", "Net volume"),
+        ], "deck", $"Deck ({RoofCoverings.DeckNameOf(roof)})", material);
     }
 
     /// <summary>The body between a strip of the vault's underside and the same strip moved out: 8 corners, 6 faces.</summary>
