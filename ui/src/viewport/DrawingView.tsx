@@ -17,7 +17,7 @@ import type { NodeDto } from '../engine/protocol';
 import { findTool } from '../platform/modules';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
-import { useDrawing } from './drawing';
+import { drawsOnDark, useDrawing } from './drawing';
 import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { pickDrawing } from './drawingPick';
@@ -43,6 +43,8 @@ export function DrawingView() {
   const node = useSession((s) => (id ? s.nodes.get(id) : undefined));
   const nodes = useSession((s) => s.nodes);
   const selected = useUi((s) => s.selected);
+  // The dark theme: the drawing on the theme's background, its black pens in the theme's ink, as a plan (report #90).
+  const onDark = drawsOnDark(useUi((s) => s.theme));
   const drawing = useDrawing(id);
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -311,7 +313,7 @@ export function DrawingView() {
           if (id && !openPickedView(id)) void editDimension(id, w);
         }}>
         <rect width="100%" height="100%" className="paper" />
-        {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} />}
+        {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} onDark={onDark} />}
         {(drawing?.marks ?? []).filter((m) => markSelected(m.id, selected)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });

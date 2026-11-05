@@ -29,7 +29,7 @@ import { formatLength, lengthText } from '../engine/unitsStore';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
 import { useDisplay } from '../app/display';
-import { useDrawing } from './drawing';
+import { drawsOnDark, useDrawing } from './drawing';
 import { setUnderlay, useUnderlay } from './underlay';
 import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
@@ -100,7 +100,7 @@ export function PlanView() {
   const planViewId = usePaneField('planViewId');
   const active = usePaneActive();
   const planDrawing = useUi((s) => s.planDrawing);
-  const onDark = useUi((s) => s.theme) === 'graphite';
+  const onDark = drawsOnDark(useUi((s) => s.theme));
   const ownPlan = planViewId && nodes.get(planViewId)?.props.storeyId === storey?.id ? planViewId : null;
   const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);
   // A site plan or a location plan (docs/site-plans.md): the whole model from above, so no reference level or view range of its own.

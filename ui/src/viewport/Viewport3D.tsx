@@ -59,7 +59,8 @@ import { resetTemporary, temporaryOn, useTemporary } from './temporary';
 import { place } from '../engine/instances';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
-import { clampWheel } from './zoom';
+import { clampWheel, wheelZoom } from './zoom';
+import { orbitAbout, orbitAngles, orbitPivot, orthoZoomShift, zoomAbout, type Rig } from './navigate3d';
 
 const CLEAR = { paper: 0xf3efe7, graphite: 0x1c1b19 } as const;
 /** How often the instances' copies are chosen again while the camera moves (ms). */
@@ -997,6 +998,86 @@ export function Viewport3D() {
       else openGroupOf(nodeOfHit(hit));
     };
     renderer.domElement.addEventListener('dblclick', onDouble);
+
+    // Navigating (navigate3d.ts, report #89): the wheel zooms to the point under the cursor, a drag orbits round
+    // the selection or the point under the cursor, each kept where it is on the screen; View → Zoom to cursor and
+    // Orbit around selection turn them off. Listened to on the canvas's parent, capturing, so they come before
+    // the orbit controls' own (which then never see a wheel taken here, nor turn while an orbit about a point runs).
+    const ndc = (e: { clientX: number; clientY: number }) => {
+      const r = renderer.domElement.getBoundingClientRect();
+      return new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    };
+    const rigNow = (): Rig => ({ position: cam.position.clone(), target: controls.target.clone() });
+    const setRig = (r: Rig) => {
+      cam.position.set(r.position.x, r.position.y, r.position.z);
+      controls.target.set(r.target.x, r.target.y, r.target.z);
+      controls.update();
+      controls.dispatchEvent({ type: 'change' });
+    };
+    // The point a wheel zooms to: the model under the cursor, else the plane through the target across the view.
+    // Kept while the cursor stays put (the point stays under it), so a run of wheel steps asks the model once.
+    let zoomAt: { x: number; y: number; t: number; p: THREE.Vector3 } | null = null;
+    const zoomPoint = (e: WheelEvent) => {
+      const now = performance.now();
+      if (zoomAt && zoomAt.x === e.clientX && zoomAt.y === e.clientY && now - zoomAt.t < 600) { zoomAt.t = now; return zoomAt.p; }
+      ray.setFromCamera(ndc(e), cam);
+      const hit = pickAt();
+      let p = hit?.point.clone() ?? null;
+      if (!p) {
+        const dir = cam.getWorldDirection(new THREE.Vector3());
+        p = ray.ray.intersectPlane(new THREE.Plane().setFromNormalAndCoplanarPoint(dir, controls.target), new THREE.Vector3());
+      }
+      zoomAt = p ? { x: e.clientX, y: e.clientY, t: now, p } : null;
+      return p;
+    };
+    const onNavWheel = (e: WheelEvent) => {
+      if (e.target !== renderer.domElement || !controls.enabled || !controls.enableZoom || !useDisplay.getState().zoomToCursor) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const k = wheelZoom(e, renderer.domElement.clientHeight || 800);
+      const p = zoomPoint(e);
+      if (!p || k === 1) return;
+      cancelAnimationFrame(flight);
+      if (cam === orthoCam) {
+        const next = Math.max(1e-3, Math.min(1e4, orthoCam.zoom * k));
+        const shifted = orthoZoomShift(rigNow(), p, cam.getWorldDirection(new THREE.Vector3()), orthoCam.zoom, next);
+        orthoCam.zoom = next;
+        orthoCam.updateProjectionMatrix();
+        setRig(shifted);
+      } else setRig(zoomAbout(rigNow(), p, k));
+    };
+    el.addEventListener('wheel', onNavWheel, { capture: true, passive: false });
+    // An orbit about a point: from the button the orbit controls turn with, the selection's middle or the model under the cursor.
+    let orbit: { id: number; x: number; y: number; pivot: THREE.Vector3 } | null = null;
+    const rotateButton = (button: number) => (button === 0 ? controls.mouseButtons.LEFT : button === 1 ? controls.mouseButtons.MIDDLE : button === 2 ? controls.mouseButtons.RIGHT : -1) === THREE.MOUSE.ROTATE;
+    const onNavDown = (e: PointerEvent) => {
+      if (e.target !== renderer.domElement || e.pointerType === 'touch' || !controls.enabled || !useDisplay.getState().orbitSelection) return;
+      if (!rotateButton(e.button) || e.ctrlKey || e.metaKey || e.shiftKey || orbit) return;
+      const box = api.boxOf?.(useUi.getState().selected) ?? null;
+      let hit: THREE.Vector3 | null = null;
+      if (!box) { ray.setFromCamera(ndc(e), cam); hit = pickAt()?.point.clone() ?? null; }
+      const pivot = orbitPivot(box, hit);
+      if (!pivot) return;
+      // The orbit controls see the press but do not turn: this orbit does, about the pivot.
+      controls.enableRotate = false;
+      cancelAnimationFrame(flight);
+      orbit = { id: e.pointerId, x: e.clientX, y: e.clientY, pivot: new THREE.Vector3(pivot.x, pivot.y, pivot.z) };
+    };
+    const onNavMove = (e: PointerEvent) => {
+      if (!orbit || e.pointerId !== orbit.id) return;
+      const { dAzimuth, dPolar } = orbitAngles(e.clientX - orbit.x, e.clientY - orbit.y, renderer.domElement.clientHeight);
+      orbit.x = e.clientX; orbit.y = e.clientY;
+      if (dAzimuth || dPolar) setRig(orbitAbout(rigNow(), orbit.pivot, dAzimuth, dPolar));
+    };
+    const onNavUp = (e: PointerEvent) => {
+      if (!orbit || e.pointerId !== orbit.id) return;
+      orbit = null;
+      controls.enableRotate = true;
+    };
+    el.addEventListener('pointerdown', onNavDown, true);
+    window.addEventListener('pointermove', onNavMove, true);
+    window.addEventListener('pointerup', onNavUp, true);
+    window.addEventListener('pointercancel', onNavUp, true);
     // Walking (walk.ts): the orbit controls off, the perspective camera at the eye, turned by a drag, moved by keys and the wheel;
     // a body (walkPhysics.ts) against the shown elements' triangles, built on the walk's first step and again when the model changes;
     // clipped by the planes the renderer cuts by (the storeys' cut, a section, the section box) and closed by their caps, so what is
@@ -1260,6 +1341,11 @@ export function Viewport3D() {
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
       renderer.domElement.removeEventListener('dblclick', onDouble);
+      el.removeEventListener('wheel', onNavWheel, { capture: true });
+      el.removeEventListener('pointerdown', onNavDown, true);
+      window.removeEventListener('pointermove', onNavMove, true);
+      window.removeEventListener('pointerup', onNavUp, true);
+      window.removeEventListener('pointercancel', onNavUp, true);
       renderer.domElement.removeEventListener('pointerdown', onRegionDown);
       renderer.domElement.removeEventListener('pointermove', onRegionMove);
       renderer.domElement.removeEventListener('pointerup', onRegionUp);

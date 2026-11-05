@@ -33,7 +33,7 @@ Want more room for the drawing? **View → Interface…** chooses a more compact
 
 - **Zoom.** Turn the mouse wheel or pinch on a trackpad. Lapin zooms where the cursor is.
 - **Pan.** Drag with the middle or the right mouse button, or with two fingers on a trackpad.
-- **Orbit in 3D.** Drag with the left mouse button.
+- **Orbit in 3D.** Drag with the left mouse button. With elements selected, the view turns round them; otherwise round the point of the model under the cursor.
 - **Show everything.** Press the **Fit** button, type <kbd>ZE</kbd>, or double-click the middle button.
 
 ## Units

@@ -33,7 +33,7 @@ Un proyecto nuevo ya tiene tres niveles: **Foundations** (−1.50), **Ground flo
 
 - **Zoom.** Gire la rueda del ratón o pellizque en un trackpad. Lapin hace zoom donde está el cursor.
 - **Encuadre.** Arrastre con el botón central o el derecho del ratón, o con dos dedos en un trackpad.
-- **Órbita en 3D.** Arrastre con el botón izquierdo del ratón.
+- **Órbita en 3D.** Arrastre con el botón izquierdo del ratón. Con elementos seleccionados, la vista gira alrededor de ellos; si no, alrededor del punto del modelo bajo el cursor.
 - **Mostrarlo todo.** Pulse el botón **Ajustar**, escriba <kbd>ZE</kbd> o haga doble clic con el botón central.
 
 ## Unidades

@@ -2295,6 +2295,15 @@ export const scenes = [
       await t.shot('elevation-view', { of: '[data-testid=drawing]', pad: 0 });
       await t.button('View', { exact: true });
       await t.shot('ribbon-view', { of: '.topbar', pad: 0 });
+      // View → Zoom to cursor and Orbit around selection (report #89): each turns off and on again, kept on this computer.
+      const navigation = () => t.page.evaluate(async () => { const d = (await import('/src/app/display.ts')).useDisplay.getState(); return [d.zoomToCursor, d.orbitSelection]; });
+      t.expect((await navigation()).every(Boolean), 'zoom to cursor and orbit around selection on by default');
+      await t.tool('view.zoomToCursor');
+      await t.tool('view.orbitSelection');
+      t.expect((await navigation()).every((on) => !on), 'View turns zoom to cursor and orbit around selection off');
+      await t.tool('view.zoomToCursor');
+      await t.tool('view.orbitSelection');
+      t.expect((await navigation()).every(Boolean), 'and on again');
       // View → Sections… (decision 223): the project's sections under their marker layer, what the elevation in front marks.
       await t.tool('view.sections');
       t.expect(await t.page.locator('.dialog .layer-table tbody tr').count() >= 3, 'the sections listed under their layer');

@@ -33,7 +33,7 @@ Potrzebujesz więcej miejsca na rysunek? **Widok → Interfejs…** wybiera bard
 
 - **Powiększanie.** Obróć kółko myszy lub zsuń palce na gładziku. Lapin powiększa w miejscu kursora.
 - **Przesuwanie widoku.** Przeciągnij środkowym lub prawym przyciskiem myszy albo dwoma palcami na gładziku.
-- **Obracanie w 3D.** Przeciągnij lewym przyciskiem myszy.
+- **Obracanie w 3D.** Przeciągnij lewym przyciskiem myszy. Gdy elementy są zaznaczone, widok obraca się wokół nich; w przeciwnym razie wokół punktu modelu pod kursorem.
 - **Pokaż wszystko.** Naciśnij przycisk **Dopasuj**, wpisz <kbd>ZE</kbd> lub kliknij dwukrotnie środkowym przyciskiem.
 
 ## Jednostki

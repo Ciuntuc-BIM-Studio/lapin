@@ -24,6 +24,15 @@ export interface PenDto {
   clip?: number[];
 }
 
+/**
+ * Whether a view's drawing is drawn straight on the theme's dark background:
+ * plans, sections, elevations and the other drawing panes in the graphite
+ * theme (report #90). Sheets and schedules stay on their white paper, as they print.
+ */
+export function drawsOnDark(theme: string | null | undefined): boolean {
+  return theme === 'graphite';
+}
+
 /** What a dark plan shows for black: the graphite theme's ink. */
 export const DARK_INK = '#e9e4da';
 

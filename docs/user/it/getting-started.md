@@ -33,7 +33,7 @@ Ti serve più spazio per il disegno? **Vista → Interfaccia…** sceglie una fi
 
 - **Zoom.** Ruota la rotellina del mouse o avvicina due dita sul trackpad. Lapin ingrandisce dove si trova il cursore.
 - **Panoramica.** Trascina con il tasto centrale o destro del mouse, oppure con due dita sul trackpad.
-- **Orbita in 3D.** Trascina con il tasto sinistro del mouse.
+- **Orbita in 3D.** Trascina con il tasto sinistro del mouse. Con elementi selezionati, la vista ruota attorno a loro; altrimenti attorno al punto del modello sotto il cursore.
 - **Mostra tutto.** Premi il pulsante **Adatta**, digita <kbd>ZE</kbd>, oppure fai doppio clic con il tasto centrale.
 
 ## Unità

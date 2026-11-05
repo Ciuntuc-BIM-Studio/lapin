@@ -33,7 +33,7 @@ Vil du have mere plads til tegningen? **Vis → Brugerflade…** vælger et mere
 
 - **Zoom.** Drej musehjulet, eller knib på en pegeflade. Lapin zoomer, hvor markøren er.
 - **Panorér.** Træk med den midterste eller den højre museknap, eller med to fingre på en pegeflade.
-- **Kredsløb i 3D.** Træk med den venstre museknap.
+- **Kredsløb i 3D.** Træk med den venstre museknap. Med elementer markeret drejer visningen om dem, ellers om modellens punkt under markøren.
 - **Vis alt.** Tryk på knappen **Tilpas**, skriv <kbd>ZE</kbd>, eller dobbeltklik med den midterste knap.
 
 ## Enheder

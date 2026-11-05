@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DARK_INK, DARK_PAPER, screenFill, screenInk } from './drawing';
+import { DARK_INK, DARK_PAPER, drawsOnDark, screenFill, screenInk } from './drawing';
 
 describe('screenInk (report #36: a plan in the dark theme)', () => {
   it('draws black and near-black pens in the theme ink on a dark plan', () => {
@@ -23,5 +23,13 @@ describe('screenInk (report #36: a plan in the dark theme)', () => {
     expect(screenFill('#ffffff', false)).toBe('#ffffff');
     expect(screenFill('#d9c7a3', true)).toBe('#d9c7a3');
     expect(screenFill('#000000', true)).toBe(DARK_INK);
+  });
+});
+
+describe('drawsOnDark (report #90: sections and elevations follow the dark theme as plans do)', () => {
+  it('is the graphite theme only', () => {
+    expect(drawsOnDark('graphite')).toBe(true);
+    expect(drawsOnDark('paper')).toBe(false);
+    expect(drawsOnDark(undefined)).toBe(false);
   });
 });

@@ -498,6 +498,8 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .scope-bar + .hud-hint { top: 50px; }
 .scope-bar .scope-what { display: flex; gap: 0.4em; text-transform: uppercase; }
 .drawing-svg .paper { fill: var(--paper, #fbfaf7); }
+/* A section or an elevation in the dark theme lies on the theme's background like a plan (report #90); its black pens in the theme's ink (DrawingLayer's onDark). */
+[data-theme="graphite"] .drawing-svg .paper { fill: var(--bg); }
 .view-problem { position: absolute; top: 48px; left: 16px; }
 .tree-row { display: flex; align-items: center; }
 .tree-row .tree-item { flex: 1; }

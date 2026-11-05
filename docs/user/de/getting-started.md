@@ -33,7 +33,7 @@ Sie möchten mehr Platz für die Zeichnung? **Ansicht → Oberfläche…** wähl
 
 - **Zoomen.** Drehen Sie das Mausrad oder ziehen Sie auf einem Trackpad zwei Finger auseinander oder zusammen. Lapin zoomt dorthin, wo der Cursor steht.
 - **Verschieben.** Ziehen Sie mit der mittleren oder der rechten Maustaste oder mit zwei Fingern auf einem Trackpad.
-- **Orbit in 3D.** Ziehen Sie mit der linken Maustaste.
+- **Orbit in 3D.** Ziehen Sie mit der linken Maustaste. Sind Elemente ausgewählt, dreht sich die Ansicht um sie, sonst um den Punkt des Modells unter dem Cursor.
 - **Alles anzeigen.** Klicken Sie auf die Schaltfläche **Einpassen**, geben Sie <kbd>ZE</kbd> ein oder doppelklicken Sie mit der mittleren Taste.
 
 ## Einheiten

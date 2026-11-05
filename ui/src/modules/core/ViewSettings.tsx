@@ -122,6 +122,7 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
           </>
         )}
         {threeD && <Drafts3dField />}
+        {threeD && <Navigation3dFields />}
         {site && <SitePlanFields view={view} />}
         {section && <SectionFields view={view} />}
         <dt title="What this view shows and how, by category, class and element (VV)">Graphics</dt>
@@ -227,6 +228,20 @@ function Drafts3dField() {
     <>
       <dt title="The lines, polylines, rectangles, circles and arcs drafted on plans and reference planes, on their planes in 3D (View → Drafts in 3D)">Drafts in 3D</dt>
       <dd><input type="checkbox" data-testid="view-drafts3d" checked={on} onChange={(e) => setDisplay({ drafts3d: e.target.checked })} /></dd>
+    </>
+  );
+}
+
+/** Navigating in 3D (report #89): the wheel to the cursor, the orbit round the selection; for this computer, every 3D view (View → Zoom to cursor, Orbit around selection). */
+function Navigation3dFields() {
+  const zoom = useDisplay((s) => s.zoomToCursor);
+  const orbit = useDisplay((s) => s.orbitSelection);
+  return (
+    <>
+      <dt title="The mouse wheel zooms to the point of the model under the cursor, which stays where it is (View → Zoom to cursor); off, to the middle of the view">Zoom to cursor</dt>
+      <dd><input type="checkbox" data-testid="view-zoom-cursor" checked={zoom} onChange={(e) => setDisplay({ zoomToCursor: e.target.checked })} /></dd>
+      <dt title="A drag turns the view round the selection's middle, else round the point of the model under the cursor (View → Orbit around selection); off, round the middle of the view">Orbit around selection</dt>
+      <dd><input type="checkbox" data-testid="view-orbit-selection" checked={orbit} onChange={(e) => setDisplay({ orbitSelection: e.target.checked })} /></dd>
     </>
   );
 }

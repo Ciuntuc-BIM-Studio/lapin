@@ -33,7 +33,7 @@ Quer mais espaço para o desenho? **Vista → Interface…** escolhe uma janela 
 
 - **Zoom.** Gire a roda do mouse ou faça o movimento de pinça em um trackpad. O Lapin aplica o zoom onde está o cursor.
 - **Deslocar.** Arraste com o botão do meio ou o botão direito do mouse, ou com dois dedos em um trackpad.
-- **Orbitar em 3D.** Arraste com o botão esquerdo do mouse.
+- **Orbitar em 3D.** Arraste com o botão esquerdo do mouse. Com elementos selecionados, a vista gira em volta deles; senão, em volta do ponto do modelo sob o cursor.
 - **Mostrar tudo.** Pressione o botão **Ajustar**, digite <kbd>ZE</kbd> ou dê um clique duplo com o botão do meio.
 
 ## Unidades
