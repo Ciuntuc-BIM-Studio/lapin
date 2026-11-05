@@ -14,6 +14,8 @@ Alles, was Lapin modelliert, wird aus seiner Geometrie gemessen: Länge, Höhe, 
 
 ![Die Mengenermittlung nach Art und Material gruppiert](shots/quantity-takeoff.webp)
 
+Nach Material bekommt ein nach **Fläche** gemessenes Material (siehe [Materialien](materials.md)) eine Zeile je Dicke, in der es verlegt ist, mit einer Spalte **Dicke (mm)**: *Mineralwolle 150 mm: 84,20 m²*, *Mineralwolle 200 mm: 31,00 m²*. Eines nach Volumen bekommt nur seine m³, nach Masse seine kg, nach Stück seine **Stück**. Eine Spalte **Notiz** sagt, wenn eine Schicht keine Katalogdicke des Materials hat. Die Kostenberechnung macht es ebenso: eine Position auf einem Material wird gemessen, wie das Material es sagt, eine Zeile je Dicke. Ein Material ohne Regel wird wie bisher gemessen.
+
 **Kosten → XLSX exportieren** speichert die Mengenermittlung direkt als Arbeitsmappe (im Browser wird sie heruntergeladen).
 
 ## Mengen auf einem Plan

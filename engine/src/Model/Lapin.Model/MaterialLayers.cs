@@ -13,8 +13,10 @@ namespace Lapin.Model;
 /// Its <see cref="Priority"/> (testers' report #81; IFC4's IfcMaterialLayer.Priority, 0–100) says how it meets the layers of
 /// another element where the two join: a layer goes on through the other's layers ranked under it and stops at the first
 /// ranked as high or higher. Null: its material's priority in the cut order, else the defaults (<see cref="Layers.Rank"/>).
+/// Its <see cref="Note"/> (docs/plan-buildup-tags.md) says how it is laid in this build-up ("in a continuous layer, Baumit
+/// SupraFix"): the type's, not the material's; written in IFC as the IfcMaterialLayer's Description.
 /// </summary>
-public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null, List<LayerPart>? Parts = null, int? Priority = null);
+public sealed record MaterialLayer(string Material, double Thickness, bool Core = false, string? Name = null, double? From = null, double? To = null, List<LayerPart>? Parts = null, int? Priority = null, string? Note = null);
 
 /// <summary>A piece of a layer in its height (decision 264): its material (an IfcMaterial id), how high it is, its own name.</summary>
 public sealed record LayerPart(string Material, double Height, string? Name = null);

@@ -14,6 +14,8 @@ Tudo o que o Lapin modela é medido pela sua geometria: o comprimento, a altura,
 
 ![O levantamento agrupado por categoria e material](shots/quantity-takeoff.webp)
 
+Por material, um material medido por **área** (ver [Materiais](materials.md)) tem uma linha para cada espessura em que é aplicado, com uma coluna **Espessura (mm)**: *Lã mineral 150 mm: 84,20 m²*, *Lã mineral 200 mm: 31,00 m²*. Um medido por volume tem só os seus m³, por massa os seus kg, por peças as suas **Peças**. Uma coluna **Nota** indica quando uma camada não tem uma espessura do catálogo do material. O orçamento faz o mesmo: um artigo sobre um material mede-se como o material diz, uma linha por espessura. Um material sem regra mede-se como antes.
+
 **Custos → Exportar XLSX** guarda logo o levantamento como pasta de trabalho (num navegador é descarregado).
 
 ## Quantidades numa prancha

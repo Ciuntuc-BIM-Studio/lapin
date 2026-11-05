@@ -38,7 +38,7 @@ public static class Tags
         viewKind == "plan" && type?.Shape == "opening" && e?.Class is IfcClass.Door or IfcClass.Window;
 
     /// <summary>Where a leader points: the middle of what the element draws on the view (its cut, else its lines).</summary>
-    static Vec2? Anchor(ViewDrawing d, string element)
+    internal static Vec2? Anchor(ViewDrawing d, string element)
     {
         var pts = d.Cuts.Where(p => p.Element == element).SelectMany(p => p.Loops.SelectMany(l => l))
             .Concat(d.Lines.Where(l => l.Element == element).SelectMany(l => new[] { l.A, l.B })).ToList();
@@ -77,6 +77,8 @@ public static class Tags
             // Its points where its element has taken them since they were set (report #93).
             var follow = TagHold.Follow(c.Model, t, e, c.Frame.Right, c.Frame.Up, c.Kind == "plan", c.Geometry);
             Vec2? Followed(Vec2? p) => p is { } q && follow != null ? follow(q) : p;
+            // A build-up tag (docs/plan-buildup-tags.md): the element's layers as a note, its leaders one or one per layer.
+            if (type is { Shape: "buildup" }) { yield return BuildupTags.Mark(c, t, e, type, style, follow); continue; }
             var at = Followed(Pt(t.Attrs["at"])) ?? default;
             var lines = LinesOf(c.Model, t, e, type, c.Book.Units);
             var color = e == null ? "#c0392b" : style.Color ?? "#000000";
@@ -196,6 +198,46 @@ public static class Tags
                 ctx.Replace(t.With(attrs: attrs));
             }
             return null;
+        });
+
+        // A build-up tag type as it would write a build-up (docs/plan-buildup-tags.md), for its editor's preview: the type
+        // given (a draft, read as the standards read it; else the one named by id), on an element, a type (a wall type's
+        // layers) or the project's first layered wall type (else floor type); its texts laid out on paper (mm).
+        r.Query("drafting.buildupPreview", (q, a) =>
+        {
+            var book = DraftingResources.Book(q.Model);
+            var type = a["entry"] is JsonObject draft
+                ? Standards.Read(new JsonObject { ["tagTypes"] = new JsonArray(draft.DeepClone()) }).TagTypes.FirstOrDefault()
+                : Standards.TagTypeOf(book, (string?)a["tagType"] ?? Standards.DefaultBuildupTag.Id);
+            type ??= Standards.DefaultBuildupTag;
+            var sample = q.Model.Get((string?)a["element"] ?? (string?)a["type"] ?? "")
+                ?? q.Model.OfClass(IfcClass.WallType).FirstOrDefault(x => BuildUps.OfType(q.Model, x) != null)
+                ?? q.Model.OfClass(IfcClass.SlabType).FirstOrDefault(x => BuildUps.OfType(q.Model, x) != null);
+            if (sample == null) return new JsonObject { ["texts"] = new JsonArray(), ["width"] = 0, ["height"] = 0 };
+            var b = sample.Class.EndsWith("Type", StringComparison.Ordinal) ? BuildUps.OfType(q.Model, sample) : BuildUps.Of(q.Model, sample, q.Services);
+            var content = b != null ? BuildupText.Content(q.Model, sample, type, book.Units, q.Services, b) : null;
+            var style = Standards.TextOf(book, type.TextStyle);
+            var lay = BuildupText.Lay(content ?? new BuildupContent(["?"], [], [], false), style.Height, style.Bold, type.BulletOrDefault, type.WidthOrDefault);
+            return new JsonObject
+            {
+                ["sample"] = new JsonObject { ["id"] = sample.Id, ["name"] = sample.Name, ["class"] = sample.Class },
+                ["stack"] = b?.Stack ?? false,
+                ["height"] = Math.Round(lay.Height, 3),
+                ["width"] = Math.Round(lay.Width, 3),
+                ["textHeight"] = style.Height,
+                ["bold"] = style.Bold,
+                ["texts"] = new JsonArray(lay.Texts.Select(x => (JsonNode)new JsonObject
+                {
+                    ["x"] = Math.Round(x.X, 3), ["y"] = Math.Round(x.Y, 3), ["text"] = x.Text, ["role"] = x.Role, ["entry"] = x.Entry,
+                }).ToArray()),
+                ["mids"] = new JsonArray(lay.EntryMid.Select(y => (JsonNode)Math.Round(y, 3)).ToArray()),
+                // The sample's layers in their natural order (thickness in metres, colour), and the layer each entry writes.
+                ["layers"] = new JsonArray((b?.Layers ?? []).Select(l => (JsonNode)new JsonObject
+                {
+                    ["index"] = l.Index, ["thickness"] = l.Thickness, ["color"] = Materials.ColorOf(q.Model, l.Material), ["name"] = l.Name,
+                }).ToArray()),
+                ["entries"] = new JsonArray((content?.Entries ?? []).Select(x => (JsonNode)x.Layer).ToArray()),
+            };
         });
 
         // What a tag of this element can show: its fields, its and its type's parameters, the standard sets' properties for its class, an import's sets.

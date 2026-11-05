@@ -1004,7 +1004,7 @@ public static class IfcExport
         {
             if (layerSets.TryGetValue(set.Id, out var r)) return r;
             var layers = Layers.Read(set).Select(l =>
-                f.Add("IFCMATERIALLAYER", Material(l.Material), R(l.Thickness), Null, S(l.Name ?? m.Get(l.Material)?.Name), Null, S(l.Core ? "Core" : null), l.Priority is { } p ? I(Math.Clamp(p, 0, 100)) : Null)).ToList();
+                f.Add("IFCMATERIALLAYER", Material(l.Material), R(l.Thickness), Null, S(l.Name ?? m.Get(l.Material)?.Name), S(l.Note), S(l.Core ? "Core" : null), l.Priority is { } p ? I(Math.Clamp(p, 0, 100)) : Null)).ToList();
             return layerSets[set.Id] = f.Add("IFCMATERIALLAYERSET", L(layers), S(set.Name), Null);
         }
 
@@ -1013,10 +1013,15 @@ public static class IfcExport
         {
             if (materials.TryGetValue(id, out var r)) return r;
             var mat = m.Get(id);
-            r = f.Add("IFCMATERIAL", S(mat?.Name ?? id), Null, S(mat?.Str("category")));
+            // Its description (docs/plan-buildup-tags.md) as IfcMaterial.Description.
+            r = f.Add("IFCMATERIAL", S(mat?.Name ?? id), S(mat?.Str("description") is { Length: > 0 } d ? d : null), S(mat?.Str("category")));
             materials[id] = r;
             // Its Lapin id and attributes, so an import gives the material the same id and what refers to it (a column type, a zone) still finds it.
             if (mat != null) f.Add("IFCMATERIALPROPERTIES", S(IntentSetName), Null, L(IntentProperties(mat, null, [("LapinId", mat.Id)])), r);
+            // Its parameters: the standard ones in IFC's own sets (Pset_MaterialThermal.ThermalConductivity, typed as IFC types them), the user's in Lapin_Material.
+            if (mat != null)
+                foreach (var (set, props) in MaterialSets(mat))
+                    f.Add("IFCMATERIALPROPERTIES", S(set), Null, L(props.Select(p => Single(p.Name, p.Value)).ToArray()), r);
             var style = Style(MaterialKey + id);
             f.Add("IFCMATERIALDEFINITIONREPRESENTATION", Null, Null,
                 L(new[] { f.Add("IFCSTYLEDREPRESENTATION", model, Null, Null, L(new[] { f.Add("IFCSTYLEDITEM", Null, L(new[] { style }), Null) })) }), r);
@@ -1385,6 +1390,24 @@ public static class IfcExport
             "choice" => Typed("IFCLABEL", S(pv.ToString())),
             _ => Typed(standard ? "IFCLABEL" : "IFCTEXT", S(pv.ToString())),
         };
+
+        /// <summary>A material's parameters set by set: its own (no set) in Lapin_Material, a standard set's numbers as their IFC measures (W/(m·K), kg/m³).</summary>
+        static List<(string Set, List<(string Name, string Value)> Props)> MaterialSets(Entity mat)
+        {
+            var sets = new List<(string Set, List<(string Name, string Value)> Props)>();
+            foreach (var p in (mat.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                if ((string?)p["name"] is not { Length: > 0 } name) continue;
+                var set = Params.SetOf(p) ?? StandardPsets.MaterialOwn;
+                var standard = StandardPsets.IsStandard(set);
+                var value = standard && (string?)p["kind"] == "number" && StandardPsets.MaterialMeasures.TryGetValue(name, out var measure) && Json.Number(p["value"]) is { } n
+                    ? Typed(measure, R(n)) : ParamValue(p, standard);
+                if (value is null) continue;
+                var i = sets.FindIndex(x => string.Equals(x.Set, set, StringComparison.OrdinalIgnoreCase));
+                if (i < 0) sets.Add((set, [(name, value)])); else sets[i].Props.Add((name, value));
+            }
+            return sets;
+        }
 
         /// <summary>The user's parameters in named sets (Pset_DoorCommon, a set of their own), set by set.</summary>
         static List<(string Set, List<(string Name, string Value)> Props)> NamedParams(Entity e)

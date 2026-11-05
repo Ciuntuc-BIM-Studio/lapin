@@ -46,7 +46,8 @@ public static class PdfWriter
         }
         var streams = pages.Select(p => Deflate(Encoding.Latin1.GetBytes(Content(p, Picture, Alpha)))).ToList();
         var times = pages.Any(p => p.Pens.Any(pen => pen.Texts.Any(t => t.Font == "times")));
-        return File(pages, streams, pictures, alphas, info, times);
+        var symbols = pages.Any(p => p.Pens.Any(pen => pen.Texts.Any(t => t.Text.Any(Greek.ContainsKey))));
+        return File(pages, streams, pictures, alphas, info, times, symbols);
     }
 
     static string F(double v) => double.IsFinite(v) ? v.ToString("0.###", CultureInfo.InvariantCulture) : "0";
@@ -118,7 +119,9 @@ public static class PdfWriter
         // The cap height is the text's height (paper mm): Helvetica's is 0.718 em.
         var size = t.Height / 0.718;
         var times = t.Font == "times";
-        var width = (times ? Documents.TimesMetrics.Advance(t.Text, t.Bold) : Advance(t.Text, t.Bold)) * size;
+        // Greek letters (λ, μ, ρ of a build-up tag) are the Symbol font's: the text in runs, each in its font.
+        var runs = Runs(t.Text);
+        var width = runs.Sum(r => r.Greek ? r.Text.Sum(ch => GreekWidth(ch)) : times ? Documents.TimesMetrics.Advance(r.Text, t.Bold) : Advance(r.Text, t.Bold)) * size;
         var rad = t.Angle * Math.PI / 180;   // counter-clockwise on paper
         double cos = Math.Cos(rad), sin = Math.Sin(rad);
         var ox = t.Anchor switch { "middle" => -width / 2, "end" => -width, _ => 0 };
@@ -128,9 +131,16 @@ public static class PdfWriter
         var y = t.At.Y - (ox * sin + oy * cos);
         // Italic: the text slanted 12° along its baseline (Helvetica-Oblique's lean), the same font's shapes.
         var k = t.Italic ? Math.Tan(12 * Math.PI / 180) : 0;
-        c.Append("BT /").Append(times ? t.Bold ? "F4" : "F3" : t.Bold ? "F2" : "F1").Append(' ').Append(F(size * Pt)).Append(" Tf ")
+        var font = times ? t.Bold ? "F4" : "F3" : t.Bold ? "F2" : "F1";
+        c.Append("BT /").Append(runs.Count > 0 && runs[0].Greek ? "F5" : font).Append(' ').Append(F(size * Pt)).Append(" Tf ")
          .Append(F(cos)).Append(' ').Append(F(sin)).Append(' ').Append(F(k * cos - sin)).Append(' ').Append(F(k * sin + cos)).Append(' ')
-         .Append(X(x)).Append(' ').Append(Y(y)).Append(" Tm (").Append(Encode(t.Text)).Append(") Tj ET\n");
+         .Append(X(x)).Append(' ').Append(Y(y)).Append(" Tm");
+        for (var i = 0; i < runs.Count; i++)
+        {
+            if (i > 0) c.Append(" /").Append(runs[i].Greek ? "F5" : font).Append(' ').Append(F(size * Pt)).Append(" Tf");
+            c.Append(" (").Append(runs[i].Greek ? EncodeGreek(runs[i].Text) : Encode(runs[i].Text)).Append(") Tj");
+        }
+        c.Append(" ET\n");
     }
 
     /// <summary>Helvetica's advance widths (em) for the common letters, an average for the rest.</summary>
@@ -154,8 +164,38 @@ public static class PdfWriter
     };
     const string Differences = "[127 /Tcommaaccent 129 /abreve 141 /Abreve 143 /scommaaccent 144 /Scommaaccent 157 /tcommaaccent]";
 
+    /// <summary>The Greek letters a drawing writes (λ, μ, ρ…), by their code in the standard Symbol font, and their widths (em).</summary>
+    static readonly Dictionary<char, (char Code, double Width)> Greek = new()
+    {
+        ['α'] = ('a', 0.631), ['β'] = ('b', 0.549), ['γ'] = ('g', 0.411), ['δ'] = ('d', 0.494), ['ε'] = ('e', 0.439), ['η'] = ('h', 0.603),
+        ['θ'] = ('q', 0.521), ['λ'] = ('l', 0.549), ['μ'] = ('m', 0.576), ['ν'] = ('n', 0.521), ['π'] = ('p', 0.549), ['ρ'] = ('r', 0.549),
+        ['σ'] = ('s', 0.603), ['τ'] = ('t', 0.439), ['φ'] = ('f', 0.521), ['ψ'] = ('y', 0.686), ['ω'] = ('w', 0.686),
+        ['Δ'] = ('D', 0.612), ['Σ'] = ('S', 0.592), ['Φ'] = ('F', 0.763), ['Ω'] = ('W', 0.768),
+    };
+
+    static double GreekWidth(char ch) => Greek.TryGetValue(ch, out var g) ? g.Width : 0.55;
+
+    /// <summary>A text in runs: those the text font prints, and those of Greek letters the Symbol font prints.</summary>
+    static List<(string Text, bool Greek)> Runs(string s)
+    {
+        var o = new List<(string, bool)>();
+        var b = new StringBuilder();
+        var greek = false;
+        foreach (var ch in s)
+        {
+            var g = Greek.ContainsKey(ch);
+            if (b.Length > 0 && g != greek) { o.Add((b.ToString(), greek)); b.Clear(); }
+            greek = g;
+            b.Append(ch);
+        }
+        if (b.Length > 0) o.Add((b.ToString(), greek));
+        return o;
+    }
+
+    static string EncodeGreek(string s) => new(s.Select(ch => Greek[ch].Code).ToArray());
+
     /// <summary>Whether a letter prints as itself (else as '?').</summary>
-    public static bool CanEncode(char ch) => ch < 256 || Extra.ContainsKey(ch);
+    public static bool CanEncode(char ch) => ch < 256 || Extra.ContainsKey(ch) || Greek.ContainsKey(ch);
 
     static string Encode(string s)
     {
@@ -177,7 +217,7 @@ public static class PdfWriter
         return ms.ToArray();
     }
 
-    static byte[] File(IReadOnlyList<PaperPage> pages, List<byte[]> streams, List<Raster> pictures, List<double> alphas, PdfInfo? info, bool times = false)
+    static byte[] File(IReadOnlyList<PaperPage> pages, List<byte[]> streams, List<Raster> pictures, List<double> alphas, PdfInfo? info, bool times = false, bool symbols = false)
     {
         // 1 catalog, 2 pages, 3 and 4 the fonts, then a page and its content for each, then the pictures (each with its alpha, if any).
         var objects = new List<byte[]>();
@@ -199,6 +239,8 @@ public static class PdfWriter
         // Times (a document's style) comes last, after the Info and the bookmarks, so a PDF without it is written as before.
         var timesFirst = afterPictures + (info != null ? 1 + (outline.Count > 0 ? 1 + outline.Count : 0) : 0);
         var timesFonts = times ? $" /F3 {timesFirst} 0 R /F4 {timesFirst + 1} 0 R" : "";
+        // The Symbol font (Greek letters) after them, only in a PDF that writes one.
+        if (symbols) timesFonts += $" /F5 {timesFirst + (times ? 2 : 0)} 0 R";
         byte[] Stream(string dict, byte[] data) => [.. Encoding.ASCII.GetBytes($"<< /Length {data.Length} {dict} >>\nstream\n"), .. data, .. Encoding.ASCII.GetBytes("\nendstream")];
         for (var i = 0; i < pages.Count; i++)
         {
@@ -230,6 +272,7 @@ public static class PdfWriter
             Obj($"<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding {encoding} >>");
             Obj($"<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding {encoding} >>");
         }
+        if (symbols) Obj("<< /Type /Font /Subtype /Type1 /BaseFont /Symbol >>");
         using var f = new MemoryStream();
         void W(string s) => f.Write(Encoding.ASCII.GetBytes(s));
         W("%PDF-1.4\n");

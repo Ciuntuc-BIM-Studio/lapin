@@ -27,7 +27,7 @@ Les fichiers sont nommés selon l'ISO 19650-2 : **Projet-Émetteur-Volume-Niveau
 
 ![Vérification : les constats par règle](shots/cde-check.webp)
 
-Bloquants : un cartouche sans numéro, sans titre ou sans dessinateur ; une vue sans échelle ; une vue hors du cadre ou sur le cartouche ; une feuille modifiée depuis sa dernière émission mais toujours à cette révision ; un numéro de feuille qui ne donne aucun numéro de fichier. Avertissements : vérificateur, date et phase vides ; un plan coloré par un schéma de pièces, ou avec beaucoup de hachures, sans légende ; un plan, une coupe ou une élévation sur aucune feuille ; un plan de situation sans flèche du nord ; des éléments sans étage, sans type ou sans matériau ; des portes et fenêtres sans étiquette ; des pièces sans numéro ; les propriétés IFC requises (IsExternal, LoadBearing, FireRating sur les portes) vides.
+Bloquants : un cartouche sans numéro, sans titre ou sans dessinateur ; une vue sans échelle ; une vue hors du cadre ou sur le cartouche ; une feuille modifiée depuis sa dernière émission mais toujours à cette révision ; un numéro de feuille qui ne donne aucun numéro de fichier. Avertissements : vérificateur, date et phase vides ; un plan coloré par un schéma de pièces, ou avec beaucoup de hachures, sans légende ; un plan, une coupe ou une élévation sur aucune feuille ; un plan de situation sans flèche du nord ; des éléments sans étage, sans type ou sans matériau ; des portes et fenêtres sans étiquette ; des pièces sans numéro ; les propriétés IFC requises (IsExternal, LoadBearing, FireRating sur les portes) vides; une couche dont l’épaisseur n’est pas une épaisseur du catalogue de son matériau.
 
 ## Émettre
 

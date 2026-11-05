@@ -27,17 +27,28 @@ export const QUICK_FIELDS: [string, string][] = [
   ['FireRating', 'Fire rating'], ['AcousticRating', 'Acoustic rating'], ['ThermalTransmittance', 'Thermal transmittance'],
 ];
 
-interface TagTypeDto { id: string; name: string; template: string; shape?: string }
-/** The drafting standards' tag types a box can take (not a door's marker, not a room's stamp). */
+interface TagTypeDto { id: string; name: string; template: string; shape?: string; classes?: string[] }
+/** The drafting standards' tag types a box can take, and the build-up tags (not a door's marker, not a room's stamp). */
 export function useTagTypes(): TagTypeDto[] {
   const nodes = useSession((s) => s.nodes);
   const [types, setTypes] = useState<TagTypeDto[]>([]);
   useEffect(() => {
     let live = true;
-    void query<{ tagTypes?: TagTypeDto[] }>('standards.get').then((b) => { if (live) setTypes((b?.tagTypes ?? []).filter((t) => (t.shape ?? 'box') === 'box')); });
+    void query<{ tagTypes?: TagTypeDto[] }>('standards.get').then((b) => { if (live) setTypes((b?.tagTypes ?? []).filter((t) => (t.shape ?? 'box') === 'box' || t.shape === 'buildup')); });
     return () => { live = false; };
   }, [nodes]);
   return types;
+}
+
+/** A tag type of the standards by its id. */
+async function tagTypeById(id: string): Promise<TagTypeDto | undefined> {
+  const b = await query<{ tagTypes?: TagTypeDto[] }>('standards.get');
+  return b?.tagTypes?.find((t) => t.id === id);
+}
+
+/** Whether a build-up tag type tags an element of class `cls`: one of its classes, or any when it names none. */
+export function buildupTags(type: Pick<TagTypeDto, 'classes'>, cls: string | undefined): boolean {
+  return !type.classes?.length || (!!cls && type.classes.includes(cls));
 }
 
 /** Asks for a parameter's name; null when none is given. */
@@ -91,9 +102,13 @@ export function tagCommand(): Step {
     const h = cadHost();
     if (!h) return;
     const p = useTagPrefs.getState();
+    // A build-up tag type tags what has layers (its classes: walls, floors, roofs, ceilings); anything else gets the field.
+    const type = p.tagType ? (await tagTypeById(p.tagType)) : undefined;
+    const cls = useSession.getState().nodes.get(id)?.type;
+    const typed = !!p.tagType && !(type?.shape === 'buildup' && !buildupTags(type, cls));
     await execute('drafting.addTag', {
       viewId: h.viewId, element: id, at: [at.x, at.y],
-      ...(p.tagType ? { tagType: p.tagType } : { field: p.field }),
+      ...(typed ? { tagType: p.tagType } : { field: p.field }),
       ...(p.leader ? {} : { leader: false }),
       ...(elbow ? { elbow: [elbow.x, elbow.y] } : {}),
     });

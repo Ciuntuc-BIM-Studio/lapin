@@ -5,13 +5,14 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model';
-import { LengthField } from '../../shell/cells';
+import { Cell } from '../../shell/cells';
+import { LayerThickness } from '../core/LayerThickness';
 import { deleteType } from '../core/deleteType';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
 
 /** A layer as the editor holds it: the thickness in metres. */
-interface Row { material: string; thickness: number; core: boolean }
+interface Row { material: string; thickness: number; core: boolean; note?: string }
 const blank = (): Row[] => [{ material: 'Floor finish', thickness: 0.02, core: false }, { material: 'Screed', thickness: 0.05, core: false }, { material: 'Reinforced concrete', thickness: 0.15, core: true }];
 
 export function SlabTypesDialog() {
@@ -32,10 +33,10 @@ export function SlabTypesDialog() {
     const t = editing ? model.nodes.get(editing) : undefined;
     if (!t) { setName(''); setRows(blank()); return; }
     setName(t.name);
-    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true })));
+    setRows(typeLayers(model, t.id).map((l) => ({ material: materialName(model, l.material), thickness: l.thickness, core: l.core === true, note: l.note ?? '' })));
   }, [editing]);
   const set = (i: number, patch: Partial<Row>) => setRows(rows.map((r, k) => (k === i ? { ...r, ...patch } : patch.core ? { ...r, core: false } : r)));
-  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core }));
+  const layers = rows.map((r) => ({ material: r.material.trim(), thickness: r.thickness, core: r.core, ...(r.note?.trim() ? { note: r.note.trim() } : {}) }));
   const save = async () => {
     if (editing) await execute('architecture.updateSlabType', { id: editing, name, layers });
     else {
@@ -62,13 +63,14 @@ export function SlabTypesDialog() {
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its core and thickness)" onChange={(e) => setName(e.target.value)} /></label>
             <p className="muted small">Layers from the top down.</p>
             <table className="layer-edit">
-              <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th /></tr></thead>
+              <thead><tr><th>Material</th><th>Thickness</th><th>Core</th><th title="How the layer is laid in this build-up (a build-up tag writes it)">Note</th><th /></tr></thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
                     <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
-                    <td className="num"><LengthField metres={r.thickness} min={0} onCommit={(m) => { if (m != null) set(i, { thickness: m }); }} /></td>
+                    <td className="num"><LayerThickness model={model} material={r.material} metres={r.thickness} onCommit={(m) => set(i, { thickness: m })} /></td>
                     <td><input type="radio" name="slab-core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
+                    <td><Cell className="layer-note" testId="layer-note" value={r.note ?? ''} placeholder="—" title="How the layer is laid in this build-up (a build-up tag writes it)" onCommit={(t) => set(i, { note: t })} /></td>
                     <td className="row-tools"><button type="button" className="icon mini" title="Remove" onClick={() => setRows(rows.filter((_, k) => k !== i))}><Trash2 size={12} /></button></td>
                   </tr>
                 ))}

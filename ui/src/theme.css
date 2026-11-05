@@ -408,9 +408,9 @@ select, input { padding: 4px 6px; border: 1px solid var(--rule); border-radius: 
 .wall-legend .layer-band.core { fill: var(--accent-wash); stroke: var(--accent); }
 .wall-legend .band-no { fill: var(--ink); font: 600 10px var(--font); text-anchor: end; dominant-baseline: central; }
 .wall-legend .axis { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 10 3 2 3; }
-table.layer-edit:not(.zones) > tbody { counter-reset: layer; }
+table.layer-edit:not(.zones):not(.material-params) > tbody { counter-reset: layer; }
 table.layer-edit:not(.zones) > tbody > tr:not(.layer-parts):not(.total) > td:first-child { position: relative; padding-left: 16px; }
-table.layer-edit:not(.zones) > tbody > tr:not(.layer-parts):not(.total) > td:first-child::before { counter-increment: layer; content: counter(layer); position: absolute; left: 2px; top: 50%; transform: translateY(-50%); font-weight: 600; font-size: 11px; color: var(--ink); }
+table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts):not(.total) > td:first-child::before { counter-increment: layer; content: counter(layer); position: absolute; left: 2px; top: 50%; transform: translateY(-50%); font-weight: 600; font-size: 11px; color: var(--ink); }
 .ref-face { fill: var(--accent); font: 700 11px var(--font); text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: var(--bg, #fff); stroke-width: 3px; }
 .grip-hint { font-size: 11px; fill: var(--accent); font-weight: 600; pointer-events: none; }
 .plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
@@ -1263,6 +1263,16 @@ button.mode-chip:hover { color: var(--accent); }
 .preset:hover { border-color: var(--accent); }
 .preset-ball { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--rule-strong); }
 @media (max-width: 720px) { .material-look { grid-template-columns: 1fr; } }
+/* The materials dialog's Data tab (docs/plan-buildup-tags.md) and the layer tables' catalogue marks. */
+.material-data { display: flex; flex-direction: column; gap: 8px; }
+.material-data textarea { width: 100%; box-sizing: border-box; font: inherit; resize: vertical; min-height: 54px; padding: 4px 6px; border: 1px solid var(--rule-strong); border-radius: 4px; background: var(--raised); color: var(--ink); }
+.material-data .row { gap: 8px; align-items: end; flex-wrap: wrap; }
+.material-data .field-line.grow input { width: 100%; box-sizing: border-box; }
+.material-params td:first-child { white-space: nowrap; }
+.layer-thickness { display: inline-flex; align-items: center; gap: 2px; }
+.layer-thickness select.catalogue { width: 18px; padding: 0; border: none; background: transparent; color: var(--muted); cursor: pointer; }
+.layer-thickness .off-catalogue { color: var(--warn, #c77700); display: inline-flex; }
+.layer-note { min-width: 90px; }
 /* The clash report (decision 293): the item in front, the tools over the list. */
 .coordination .coordination-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 6px 0; }
 .coordination-table tbody tr.current { background: var(--accent-wash); outline: 1px solid var(--accent); }
@@ -1696,3 +1706,16 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .tpl-list > .row { display: flex; gap: 6px; align-items: center; }
 .tpl-list > .row select { flex: 1; min-width: 0; }
 .tpl-style > .link { align-self: flex-start; }
+/* Drafting standards → Tags: a build-up tag's editor, its fields beside the engine's preview of it. */
+.buildup-editor { border: 1px solid var(--rule); border-radius: 2px; padding: 8px 10px; margin: 0 0 10px; background: var(--raised); }
+.buildup-editor > header { margin-bottom: 8px; }
+.buildup-editor-body { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(280px, 1.2fr); gap: 14px; align-items: start; }
+.buildup-fields { grid-template-columns: auto 1fr; }
+.buildup-fields input:not([type]), .buildup-fields input.num { width: 100%; text-align: left; box-sizing: border-box; }
+.buildup-fields input.num { width: 6em; }
+.buildup-fields input.invalid { border-color: var(--danger, #c0392b); }
+.buildup-picker { gap: 6px; margin-top: 4px; }
+.buildup-picker select { flex: 1; }
+.buildup-preview { margin: 0; }
+.buildup-preview-svg { width: 100%; height: auto; max-height: 420px; display: block; border: 1px solid var(--rule); border-radius: 2px; }
+.buildup-preview-svg .paper { fill: #fbfaf7; }

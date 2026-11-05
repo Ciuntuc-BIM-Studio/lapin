@@ -522,9 +522,58 @@ public static partial class IfcImport
                 {
                     var found = Lapin.Platform.Materials.Ensure(edit, name, Colour(mat.Id));
                     id = found.Id;
+                    // Another program's material: its description and its property sets (docs/plan-buildup-tags.md), what the project's lacks.
+                    if (ForeignData(found, mat) is { } withData) edit.Replace(withData);
                 }
                 materialIds[mat.Id] = id;
             }
+        }
+
+        /// <summary>
+        /// A foreign material's IfcMaterial.Description and IfcMaterialProperties read into the project's material: the description
+        /// when it has none, each property it lacks as a parameter (a standard set's by its own names, Lapin_Material's as the user's
+        /// own, any other set as a set of the user's); null when nothing is added.
+        /// </summary>
+        Entity? ForeignData(Entity material, StepEntity mat)
+        {
+            var attrs = material.CloneAttrs();
+            var changed = false;
+            if (material.Str("description") is not { Length: > 0 } && mat.Args.Count > 1 && Str(mat[1]) is { Length: > 0 } description) { attrs["description"] = description; changed = true; }
+            var list = attrs["params"] as JsonArray ?? [];
+            foreach (var props in Rels.PropertiesOf[mat.Id])
+            {
+                var setName = Str(props[0]);
+                if (setName is not { Length: > 0 } || IfcExport.IsIntentSet(setName)) continue;
+                string? pset = setName == StandardPsets.MaterialOwn || setName == StandardPsets.Own ? null : setName;
+                foreach (var p in Items(props[2]))
+                {
+                    if (p.Type != "IFCPROPERTYSINGLEVALUE" || Str(p[0]) is not { Length: > 0 } pname) continue;
+                    if (list.OfType<JsonObject>().Any(x => Params.Same(x, pset, pname))) continue;
+                    var (kind, value) = p[2] switch
+                    {
+                        StepTyped { Type: "IFCLENGTHMEASURE" or "IFCPOSITIVELENGTHMEASURE" } t => ("length", (JsonNode?)Length(t.Value)),
+                        StepTyped { Type: "IFCAREAMEASURE" } t => ("area", (JsonNode?)(Num(t.Value) * model.Scale * model.Scale)),
+                        StepTyped { Type: "IFCBOOLEAN" or "IFCLOGICAL", Value: StepEnum e } => ("bool", (JsonNode?)(e.Value == "T")),
+                        StepTyped { Value: double or long } t => ("number", (JsonNode?)Num(t.Value)),
+                        StepTyped { Value: string text } => ("text", (JsonNode?)text),
+                        _ => ("", null),
+                    };
+                    if (kind == "" || value is null) continue;
+                    try
+                    {
+                        var (set, standardKind) = StandardPsets.Check(IfcClass.Material, pset, pname);
+                        var entry = new JsonObject { ["name"] = pname, ["kind"] = standardKind ?? kind, ["value"] = Params.Check(standardKind ?? kind, value, null) };
+                        if (set != null) entry["pset"] = set;
+                        list.Add((JsonNode)entry);
+                        changed = true;
+                    }
+                    // A standard set Lapin does not know, or a value not of its kind: left out.
+                    catch (CommandException) { }
+                }
+            }
+            if (!changed) return null;
+            if (list.Count > 0) attrs["params"] = list;
+            return material.With(attrs: attrs);
         }
 
         /// <summary>A material's colour from its representation (a styled item with a surface style).</summary>
@@ -553,7 +602,9 @@ public static partial class IfcImport
             var set = f.Entities[fileSet];
             // IFC4's Priority (0–100): how the layer meets another element's where they join (report #81).
             var layers = Items(set[0]).Select(l => new MaterialLayer(MaterialId(edit, Ref(l[0])), Length(l[1]), Str(l[5]) == "Core", Str(l[3]),
-                Priority: l.Args.Count > 6 && l[6] is long or double or StepTyped ? (int)Math.Clamp(Math.Round(Num(l[6])), 0, 100) : null)).ToList();
+                Priority: l.Args.Count > 6 && l[6] is long or double or StepTyped ? (int)Math.Clamp(Math.Round(Num(l[6])), 0, 100) : null,
+                // Its Description: how the layer is laid in this build-up (the layer's note, docs/plan-buildup-tags.md).
+                Note: l.Args.Count > 4 && Str(l[4]) is { Length: > 0 } note ? note : null)).ToList();
             id = Step.Guid(ownerId, "layerset");
             Put(edit, id, IfcClass.MaterialLayerSet, Str(set[1]) ?? "Layers", Layers.Write(layers), null, counts: false);
             return layerSets[fileSet] = id;

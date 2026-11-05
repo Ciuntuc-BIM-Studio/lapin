@@ -14,6 +14,8 @@ Tout ce que Lapin modélise est mesuré à partir de sa géométrie : la longueu
 
 ![Le métré groupé par catégorie et matériau](shots/quantity-takeoff.webp)
 
+Par matériau, un matériau mesuré par **surface** (voir [Matériaux](materials.md)) a une ligne pour chaque épaisseur où il est posé, avec une colonne **Épaisseur (mm)** : *Laine minérale 150 mm : 84,20 m²*, *Laine minérale 200 mm : 31,00 m²*. Un matériau mesuré par volume n’a que ses m³, par masse ses kg, par pièces ses **Pièces**. Une colonne **Note** signale une couche qui n’a pas une épaisseur du catalogue du matériau. Le devis fait de même : un article sur un matériau se mesure comme le dit le matériau, une ligne par épaisseur. Un matériau sans règle se mesure comme avant.
+
 **Coûts → Exporter XLSX** enregistre directement le métré comme classeur (téléchargé dans un navigateur).
 
 ## Les quantités sur une feuille

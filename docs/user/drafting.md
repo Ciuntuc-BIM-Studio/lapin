@@ -98,6 +98,26 @@ A selected tag has grips. Drag the box to move the tag: the leader keeps pointin
 
 A door's or window's marker is edited part by part, each text moved or turned and each end of its line drawn out: see [Doors and windows](doors-windows.md).
 
+#### Build-up tag
+
+A build-up tag writes an element's layers as an architectural note: a header (*EXTERIOR*), a line for each layer, a footer (*INTERIOR*). A new project has **Build-up (exterior → interior)**: each line is the material's description (its name when it has none), its λ when it has one, and the layer's thickness in mm. Choose it in the **Tag** tool's bar and click a wall, a floor, a roof or a room's finish; other elements get the field instead. The text is read from the model each time it is drawn: change a layer, a material's description or its λ, and the tag follows.
+
+![Two build-up tags on a facade wall: one leader, and one leader per layer](shots/buildup-tag.webp)
+
+Its form is set in **Manage → Drafting standards → Tags**: make a tag type's **Shape** *build-up*, or click **Build-up…** on one, to edit it beside a preview on one of the project's wall or floor types.
+
+- **Header text** and **Footer**: written above and under the layers (empty: none; `|` starts a new line).
+- **Each layer**: the line written once per layer. It reads the layer's fields, `{description}`, `{material}`, `{thickness}` (in the unit chosen under **Thickness in**), `{note}` (the layer's note in its type), `{function}` (core, finish, insulation…) and `{index}`; any parameter of the material by its name or its symbol, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (see the material's [Data](materials.md#data-description-parameters-how-it-is-measured)); and the element's, `{name}`, `{type}`, `{mark}`. **Insert a field…** puts one where the cursor is and lists the parameters the project's materials have.
+- **Square brackets** make a part optional: `[, λ = {λ} W/mK]` is written only where the material has a λ; a part is left out whole when a field in it is empty. **[ ]** makes the selection such a part. To write a bracket itself, type `\[` or `\]`.
+- **Order**: from the exterior to the interior of a wall (its first layer's side is its exterior, so a flipped wall still starts there), from the top to the bottom of a floor or a roof; or the other way. Choose the order that runs as the layers lie beside the note, so leaders per layer never cross.
+- **Layers of no thickness** (membranes, foils, paint) are written unless you untick **shown**. A layer that changes material up its height writes a line for each material.
+- **Leaders**: one, to the element, or **one per layer**, each from its line to a point inside its own layer, where the view can tell the layers apart (a wall in plans and sections, a floor in sections; elsewhere the tag keeps one). Drag the leader's end along the element to cross it elsewhere.
+- **Lines start with** a bullet, a dash, their number or nothing; they wrap at **Width mm** on paper, hanging after the bullet, and a value stays with its symbol and unit (`λ = 0.035 W/mK`).
+
+![A build-up tag type's editor beside its preview](shots/buildup-tag-type.webp)
+
+Like any tag, a build-up tag follows its element, and sheets and PDFs print it as you see it, λ, μ and ρ included. A **Text** of its own in its properties replaces the line per layer for that tag alone.
+
 ### Grid axes
 
 **Annotate → Grid axis** (<kbd>GR</kbd>) draws one axis by its two ends; it takes the next label of its direction. **Annotate → Axis grid…** lays a whole grid at once: the spacings **Across** (the numbered axes, left to right) and **Along** (the lettered axes, bottom to top) in the project's units, as `6000 6000 4500` or `3*6000`; the **Origin** where the first axes cross, an **Angle**, how far the axes run **Past the grid**, the **First labels** and the **Axis type**. With **replace the grid's axes** ticked, the axes drawn so far go.

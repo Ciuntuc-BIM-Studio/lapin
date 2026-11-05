@@ -35,7 +35,12 @@ public sealed class QuantityTakeoff : IScheduleSource
         ("Gross volume (m³)", ["GrossVolume"]),
         ("Net volume (m³)", ["NetVolume", "Volume"]),
         ("Weight (kg)", ["NetWeight", "GrossWeight", "Weight"]),
+        // Pieces of a material counted by its board (docs/plan-buildup-tags.md): its area over the board's, rounded up per row.
+        ("Pieces", [Pieces]),
     ];
+
+    /// <summary>The quantity a material counted by its board gives (pieces), made by the takeoff.</summary>
+    public const string Pieces = "Pieces";
 
     public static IReadOnlyList<string> GroupsOf(Entity? schedule)
     {
@@ -77,10 +82,56 @@ public sealed class QuantityTakeoff : IScheduleSource
     /// <summary>Whether a set has any of the measures the takeoff adds up (a door's reveal set may have none of them).</summary>
     static bool HasMeasure(IReadOnlyList<Quantity> qs) => Measures.Any(m => Pick(qs, m.Names) != null);
 
+    /// <summary>
+    /// A part's quantities as its material is measured (docs/plan-buildup-tags.md, <see cref="MaterialMeasure"/>): by area, its
+    /// areas under the layer's thickness (a row per material × thickness: mineral wool 150 mm apart from 200 mm); by volume, its
+    /// volumes; by mass, its weight from the volume and the material's density; by count, the pieces of its board, per thickness
+    /// too. Each share: the thickness (mm, null for an element measured whole), the quantities, a note (not a catalogue thickness,
+    /// no density, no board size). Null: the material has no rule, the part is measured as before.
+    /// </summary>
+    public static List<(double? Thickness, IReadOnlyList<Quantity> Quantities, string? Note)>? ByMeasure(Entity? material, IReadOnlyList<Quantity> qs, bool layered)
+    {
+        if (MaterialMeasure.Of(material) is not { } rule) return null;
+        var areas = qs.Where(x => x.Kind == "AREA" && Measures.Take(3).Any(m => m.Names.Contains(x.Name))).ToList();
+        var volumes = qs.Where(x => x.Kind == "VOLUME").ToList();
+        var o = new List<(double?, IReadOnlyList<Quantity>, string?)>();
+        // The layer's thickness (mm): its Width; none for an element measured whole.
+        double? layer = layered && Pick(qs, ["Width"]) is { } w && w > 1e-9 ? w * 1000 : null;
+        switch (rule.By)
+        {
+            case "volume":
+                if (volumes.Count == 0) return null;
+                o.Add((null, volumes, null));
+                return o;
+            case "mass":
+                if (Pick(qs, ["NetVolume", "Volume", "GrossVolume"]) is not { } v) return null;
+                if (MaterialMeasure.DensityOf(material) is not { } density) { o.Add((null, volumes, "no density: by volume")); return o; }
+                o.Add((null, [new Quantity("Weight", v * density, "WEIGHT", "Weight")], null));
+                return o;
+        }
+        if (areas.Count == 0) return null;
+        IReadOnlyList<Quantity> counted = areas;
+        string? note = null;
+        if (rule.By == "count")
+        {
+            if (material != null && rule.BoardOf(material) is { } board && (Pick(areas, Measures[2].Names) ?? Pick(areas, Measures[1].Names)) is { } area)
+                counted = [new Quantity(Pieces, area / (board.Length * board.Width), "COUNT", "Pieces"), .. areas];
+            else note = "no board size: by area";
+        }
+        // A thickness the material is not made in (its catalogue, the thicknesses it is sold in) is flagged.
+        if (layer is { } t && !MaterialMeasure.InCatalogue(rule, t)) note = note is null ? NotCatalogue : $"{NotCatalogue}; {note}";
+        o.Add((layer is { } lt ? Math.Round(lt, 1) : null, counted, note));
+        return o;
+    }
+
+    /// <summary>The note on a row whose layer is not one of its material's catalogue thicknesses.</summary>
+    public const string NotCatalogue = "not a catalogue thickness";
+
     sealed class Sum
     {
         public readonly HashSet<string> Elements = [];
         public readonly double?[] Values = new double?[Measures.Length];
+        public readonly SortedSet<string> Notes = new(StringComparer.Ordinal);
         public void Add(string element, IReadOnlyList<Quantity> qs, double share = 1)
         {
             Elements.Add(element);
@@ -95,13 +146,13 @@ public sealed class QuantityTakeoff : IScheduleSource
         var groups = GroupsOf(schedule);
         var byMaterial = groups.Contains("material");
         var storeyOrder = Spatial.Storeys(m).Select((s, i) => (s.Id, i)).ToDictionary(x => x.Id, x => x.i);
-        var sums = new Dictionary<string, (string[] Cells, (int, string)[] Order, Sum Sum)>();
+        var sums = new Dictionary<string, (string[] Cells, string Thickness, (int, string)[] Order, Sum Sum)>();
         string MaterialName(string? id) => id == null ? "—" : m.Get(id)?.Name is { Length: > 0 } n ? n : id;
 
-        void Add(Entity e, string? material, IReadOnlyList<Quantity> qs, double share = 1)
+        void Add(Entity e, string? material, IReadOnlyList<Quantity> qs, double share = 1, double? thickness = null, string? note = null)
         {
             var cells = new string[groups.Count];
-            var order = new (int, string)[groups.Count];
+            var order = new (int, string)[groups.Count + 1];
             for (var i = 0; i < groups.Count; i++)
             {
                 switch (groups[i])
@@ -114,9 +165,19 @@ public sealed class QuantityTakeoff : IScheduleSource
                     default: cells[i] = MaterialName(material); order[i] = (material == null ? 1 : 0, cells[i]); break;
                 }
             }
-            var key = string.Join("\u001f", cells);
-            if (!sums.TryGetValue(key, out var row)) sums[key] = row = (cells, order, new Sum());
+            var thick = thickness is { } th ? MaterialFields.Mm(th) : "";
+            order[groups.Count] = (0, thick);
+            var key = string.Join("\u001f", cells) + "\u001f" + thick;
+            if (!sums.TryGetValue(key, out var row)) sums[key] = row = (cells, thick, order, new Sum());
             row.Sum.Add(e.Id, qs, share);
+            if (note != null) row.Sum.Notes.Add(note);
+        }
+
+        /// <summary>A part (or an element of one material) under its material, as the material is measured.</summary>
+        void AddMeasured(Entity e, string? material, IReadOnlyList<Quantity> qs, bool layered)
+        {
+            if (ByMeasure(material == null ? null : m.Get(material), qs, layered) is not { } shares) { Add(e, material, qs); return; }
+            foreach (var (thickness, quantities, note) in shares) Add(e, material, quantities, 1, thickness, note);
         }
 
         foreach (var (e, sets) in Measured(q, ClassesOf(schedule)))
@@ -125,11 +186,11 @@ public sealed class QuantityTakeoff : IScheduleSource
             if (!byMaterial) { if (main != null) Add(e, null, main.Quantities); else foreach (var s in sets) Add(e, s.Material, s.Quantities); continue; }
             // By material: each part with its material (a layer, a zone, a finish, a lintel); else the element's own parts' material.
             var parts = sets.Where(s => s.Part != null && s.Material != null && HasMeasure(s.Quantities)).ToList();
-            if (parts.Count > 0) { foreach (var s in parts) Add(e, s.Material, s.Quantities); continue; }
+            if (parts.Count > 0) { foreach (var s in parts) AddMeasured(e, s.Material, s.Quantities, true); continue; }
             if (main == null) continue;
             var built = q.Geometry(e.Id)?.Parts ?? [];
             var materials = built.Select(p => p.Material).Distinct().ToList();
-            if (materials.Count <= 1) { Add(e, materials.FirstOrDefault(), main.Quantities); continue; }
+            if (materials.Count <= 1) { AddMeasured(e, materials.FirstOrDefault(), main.Quantities, false); continue; }
             // Several materials and no measured parts: the volume shared out by the parts' own volumes, the rest left to the element.
             var volumes = built.Where(p => p.Instances == null).GroupBy(p => p.Material).ToDictionary(g => g.Key ?? "", g => g.Sum(p => Measure.Volume(p.Solid)));
             var total = volumes.Values.Sum();
@@ -137,7 +198,12 @@ public sealed class QuantityTakeoff : IScheduleSource
             var only = main.Quantities.Where(x => x.Kind == "VOLUME" || x.Kind == "WEIGHT").ToList();
             // Nothing to share out (a door measured by its opening): the element whole, under no one material.
             if (!HasMeasure(only)) { Add(e, null, main.Quantities); continue; }
-            foreach (var (mat, v) in volumes) Add(e, mat.Length == 0 ? null : mat, only, v / total);
+            foreach (var (mat, v) in volumes)
+            {
+                var shared = only.Select(x => x with { Value = x.Value * v / total }).ToList();
+                if (mat.Length > 0 && MaterialMeasure.Of(m.Get(mat)) is { By: "mass" or "volume" }) AddMeasured(e, mat, shared, false);
+                else Add(e, mat.Length == 0 ? null : mat, shared);
+            }
         }
 
         var ordered = sums.Values.OrderBy(r => r.Order, Comparer<(int, string)[]>.Create((a, b) =>
@@ -152,21 +218,28 @@ public sealed class QuantityTakeoff : IScheduleSource
         })).ToList();
         // A measure no row has is left out: a table of walls has no weight column.
         var shown = Enumerable.Range(0, Measures.Length).Where(i => ordered.Any(r => r.Sum.Values[i] is { } v && Math.Abs(v) > 1e-9)).ToList();
-        string N(double? v, int i) => v is { } x ? x.ToString(i == 5 ? "0.0" : i is 3 or 4 ? "0.000" : "0.00", CultureInfo.InvariantCulture) : "";
+        // The thickness a row is in, and its notes, only when a material measured by thickness or with a note is in it.
+        var thicknessShown = ordered.Any(r => r.Thickness.Length > 0);
+        var notesShown = ordered.Any(r => r.Sum.Notes.Count > 0);
+        string N(double? v, int i) => v is { } x ? i == 6 ? Math.Ceiling(x - 1e-9).ToString("0", CultureInfo.InvariantCulture)
+            : x.ToString(i == 5 ? "0.0" : i is 3 or 4 ? "0.000" : "0.00", CultureInfo.InvariantCulture) : "";
         var rows = new List<IReadOnlyList<string>>();
         var keys = new List<string?>();
         foreach (var r in ordered)
         {
-            rows.Add([.. r.Cells, r.Sum.Elements.Count.ToString(CultureInfo.InvariantCulture), .. shown.Select(i => N(r.Sum.Values[i], i))]);
-            keys.Add(string.Join("|", r.Cells));
+            rows.Add([.. r.Cells, .. thicknessShown ? [r.Thickness] : Array.Empty<string>(), r.Sum.Elements.Count.ToString(CultureInfo.InvariantCulture), .. shown.Select(i => N(r.Sum.Values[i], i)),
+                .. notesShown ? [string.Join("; ", r.Sum.Notes)] : Array.Empty<string>()]);
+            keys.Add(string.Join("|", r.Cells) + (r.Thickness.Length > 0 ? "|" + r.Thickness : ""));
         }
         if (rows.Count > 1)
         {
             var count = ordered.SelectMany(r => r.Sum.Elements).Distinct().Count();
-            rows.Add(["Total", .. Enumerable.Repeat("", groups.Count - 1), count.ToString(CultureInfo.InvariantCulture),
-                .. shown.Select(i => N(ordered.Sum(r => r.Sum.Values[i] ?? 0), i))]);
+            rows.Add(["Total", .. Enumerable.Repeat("", groups.Count - 1), .. thicknessShown ? [""] : Array.Empty<string>(), count.ToString(CultureInfo.InvariantCulture),
+                .. shown.Select(i => N(i == 6 ? ordered.Sum(r => r.Sum.Values[i] is { } p ? Math.Ceiling(p - 1e-9) : 0) : ordered.Sum(r => r.Sum.Values[i] ?? 0), i)),
+                .. notesShown ? [""] : Array.Empty<string>()]);
             keys.Add(null);
         }
-        return new ScheduleGrid(Title, [.. groups.Select(g => Headings[g]), "Count", .. shown.Select(i => Measures[i].Heading)], rows, keys);
+        return new ScheduleGrid(Title, [.. groups.Select(g => Headings[g]), .. thicknessShown ? ["Thickness (mm)"] : Array.Empty<string>(), "Count", .. shown.Select(i => Measures[i].Heading),
+            .. notesShown ? ["Note"] : Array.Empty<string>()], rows, keys);
     }
 }

@@ -27,7 +27,7 @@ Filer navngives efter ISO 19650-2: **Projekt-Afsender-Volumen-Niveau-Type-Rolle-
 
 ![Kontrol: fundene efter regel](shots/cde-check.webp)
 
-Blokerende: et tegningshoved uden nummer, titel eller tegner; en visning uden målestok; en visning uden for rammen eller over tegningshovedet; et ark, der er ændret siden sidste udgivelse, men stadig står på den revision; et arknummer, der ikke giver et filnummer. Advarsler: kontrollant, dato og fase tomme; en plan farvet efter et rumskema, eller med mange skraveringer, uden signaturforklaring; en plan, et snit eller en facade på intet ark; en situationsplan uden nordpil; elementer uden etage, type eller materiale; døre og vinduer uden mærke; rum uden nummer; de påkrævede IFC-egenskaber (IsExternal, LoadBearing, FireRating på døre) tomme.
+Blokerende: et tegningshoved uden nummer, titel eller tegner; en visning uden målestok; en visning uden for rammen eller over tegningshovedet; et ark, der er ændret siden sidste udgivelse, men stadig står på den revision; et arknummer, der ikke giver et filnummer. Advarsler: kontrollant, dato og fase tomme; en plan farvet efter et rumskema, eller med mange skraveringer, uden signaturforklaring; en plan, et snit eller en facade på intet ark; en situationsplan uden nordpil; elementer uden etage, type eller materiale; døre og vinduer uden mærke; rum uden nummer; de påkrævede IFC-egenskaber (IsExternal, LoadBearing, FireRating på døre) tomme; et lag hvis tykkelse ikke er en af dets materiales katalogtykkelser.
 
 ## Udgivelse
 

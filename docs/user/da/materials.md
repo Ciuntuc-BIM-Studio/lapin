@@ -27,6 +27,19 @@ Kuglen viser resultatet med det samme. Det, du ikke sætter, kommer fra navnet: 
 
 ![Materialebiblioteket](shots/material-library.webp)
 
+## Data: beskrivelse, parametre, hvordan det måles
+
+Fanen **Data** rummer det, materialet siger om sig selv. Du skriver det én gang; hver type materialet er i læser det: lagopbygningsetiketten, mængdeudtaget, overslaget, IFC-eksporten.
+
+![Et materiales data: beskrivelse, parametre, hvordan det måles og katalogtykkelser](shots/material-data.webp)
+
+- **Beskrivelse**: beskrivelsesteksten, over flere linjer (*Mineraluldsplader, λ = 0,035 W/mK, dyblet*). En lagopbygningsetiket skriver den i stedet for navnet.
+- **Parametre**: et navn, en slags og en værdi, som på elementer. **Tilføj en almindelig…** tilbyder **Varmeledningsevne λ**, **Dampdiffusionsmodstand μ** og **Densitet**, som går til IFC under deres standardnavne (*Pset_MaterialThermal.ThermalConductivity*, *Pset_MaterialHygroscopic.UpperVaporResistanceFactor*, *Pset_MaterialCommon.MassDensity*, i SI-enheder), og **Reaktion på brand** og **Trykstyrke**, som forbliver dine egne. Dine egne parametre går til IFC som *Lapin_Material*.
+- **Målt efter** siger, hvordan **Økonomi → Mængdeudtræk** (efter materiale) og overslaget tæller det: **areal** (m², en række pr. tykkelse: plader, isolering, membraner), **volumen** (m³: beton, grus, afretning), **masse** (kg, ud fra densiteten) eller **stk.** (plader af den størrelse du angiver). Tomt måles det som dets elementer.
+- **Katalogtykkelser (mm)**: de tykkelser producenten laver det i, for eksempel *50, 80, 100, 150, 200, 240*. Lagtabellerne i **Vægtyper** og **Dæktyper** tilbyder dem ved tykkelsen (du kan stadig skrive en anden), og et lag af en anden tykkelse markeres med et advarselstegn.
+
+IFC-eksporten skriver beskrivelsen som materialets Description og parametrene som dets egenskabssæt; importen læser dem tilbage, også fra et andet programs fil.
+
 ## Ét materiale til alle karme og alt glas
 
 Nye døre og vinduer er lavet af fælles materialer, del for del: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** og **Hardware**. Ret **Window frame** én gang, og alle vindueskarme ændres.

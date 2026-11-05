@@ -94,6 +94,26 @@ Um identificador selecionado tem pegas. Arraste a caixa para mover o identificad
 
 O marcador de uma porta ou janela é editado parte por parte, cada texto movido ou girado e cada ponta da sua linha alongada: veja [Portas e janelas](doors-windows.md).
 
+#### Identificador de composição
+
+Um identificador de composição escreve as camadas de um elemento como uma nota de arquitetura: um cabeçalho (*EXTERIOR*), uma linha por camada, um rodapé (*INTERIOR*). Um projeto novo tem **Build-up (exterior → interior)**: cada linha é a descrição do material (o seu nome, se não tiver), o seu λ, se o tiver, e a espessura da camada em mm. Escolha-o na barra da ferramenta **Identificador** e clique numa parede, numa laje, numa cobertura ou no acabamento de um compartimento; os outros elementos recebem o campo escolhido. O texto é lido do modelo sempre que é desenhado: mude uma camada, a descrição de um material ou o seu λ, e o identificador acompanha.
+
+![Dois identificadores de composição numa parede de fachada: uma linha de chamada, e uma por camada](shots/buildup-tag.webp)
+
+A sua forma define-se em **Gerenciar → Padrões de desenho → Identificadores**: ponha a **Forma** de um tipo de identificador em *composição*, ou clique em **Composição…** num deles, para o editar ao lado de uma pré-visualização num dos tipos de parede ou de laje do projeto.
+
+- **Cabeçalho** e **Rodapé**: escritos acima e abaixo das camadas (vazio: nenhum; `|` começa uma nova linha).
+- **Cada camada**: a linha escrita uma vez por camada. Lê os campos da camada, `{description}`, `{material}`, `{thickness}` (na unidade escolhida em **Espessura em**), `{note}` (a nota da camada no seu tipo), `{function}` (núcleo, acabamento, isolamento…) e `{index}`; qualquer parâmetro do material pelo nome ou símbolo, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (veja os [Dados](materials.md#dados-descricao-parametros-como-se-mede) do material); e os do elemento, `{name}`, `{type}`, `{mark}`. **Inserir um campo…** põe um onde está o cursor e lista os parâmetros que os materiais do projeto têm.
+- **Os colchetes** tornam uma parte opcional: `[, λ = {λ} W/mK]` só se escreve onde o material tem λ; uma parte cai inteira quando um campo nela está vazio. **[ ]** faz da seleção uma parte assim. Para escrever o próprio colchete, digite `\[` ou `\]`.
+- **Ordem**: do exterior para o interior de uma parede (o lado da sua primeira camada é o seu exterior, por isso uma parede espelhada continua a começar aí), de cima para baixo numa laje ou numa cobertura; ou ao contrário. Escolha a ordem em que as camadas estão ao lado da nota, para que as linhas de chamada por camada nunca se cruzem.
+- **As camadas sem espessura** (membranas, películas, tinta) são escritas, a menos que desmarque **visíveis**. Uma camada que muda de material em altura escreve uma linha por material.
+- **Linhas de chamada**: uma, ao elemento, ou **uma por camada**, cada uma da sua linha até um ponto dentro da sua camada, onde a vista distingue as camadas (uma parede em plantas e cortes, uma laje em cortes; noutros casos o identificador mantém uma). Arraste a ponta da linha de chamada ao longo do elemento para o atravessar noutro sítio.
+- **As linhas começam com** um marcador, um travessão, o seu número ou nada; quebram em **Largura mm** no papel, recuadas após o marcador, e um valor fica junto ao seu símbolo e à sua unidade (`λ = 0.035 W/mK`).
+
+![O editor de um tipo de identificador de composição ao lado da sua pré-visualização](shots/buildup-tag-type.webp)
+
+Como qualquer identificador, o identificador de composição acompanha o seu elemento, e as folhas e os PDF imprimem-no como o vê, com λ, μ e ρ. Um **Texto** próprio nas suas propriedades substitui a linha por camada só para esse identificador.
+
 ### Eixos da grade
 
 **Anotar → Eixo de grade** (<kbd>GR</kbd>) desenha um eixo pelas suas duas pontas; recebe o rótulo seguinte da sua direção. **Anotar → Grelha de eixos…** coloca uma grade inteira de uma vez: os espaçamentos **Na transversal** (os eixos numerados, da esquerda para a direita) e **Na longitudinal** (os eixos com letras, de baixo para cima) nas unidades do projeto, como `6000 6000 4500` ou `3*6000`; a **Origem** onde se cruzam os primeiros eixos, um **Ângulo**, quanto os eixos se prolongam **Além da grelha**, os **Primeiros rótulos** e o **Tipo de eixo**. Com **substituir os eixos da grelha** marcado, os eixos desenhados até então desaparecem.

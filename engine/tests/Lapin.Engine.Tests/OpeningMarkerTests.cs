@@ -139,7 +139,7 @@ public sealed class OpeningMarkerTests
     [Fact]
     public void A_project_starts_with_the_door_and_window_markers_and_reads_its_own()
     {
-        Assert.Equal(["door", "window", "room", "fire", "acoustic", "thermal"], Standards.Read(null).TagTypes.Select(t => t.Id));
+        Assert.Equal(["door", "window", "room", "fire", "acoustic", "thermal", "buildup"], Standards.Read(null).TagTypes.Select(t => t.Id));
         var own = Standards.Read(new JsonObject { ["tagTypes"] = new JsonArray(new JsonObject { ["id"] = "w", ["template"] = "{mark}", ["shape"] = "opening", ["unit"] = "km", ["classes"] = "IfcWindow, IfcDoor" }) }).TagTypes.Single();
         Assert.Equal(("opening", "cm", 6.0), (own.Shape, own.Unit, own.Reach));
         Assert.Equal(["IfcWindow", "IfcDoor"], own.Classes);

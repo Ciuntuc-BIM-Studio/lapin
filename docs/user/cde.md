@@ -27,7 +27,7 @@ Files are named after ISO 19650-2: **Project-Originator-Volume-Level-Type-Role-N
 
 ![Check: the findings by rule](shots/cde-check.webp)
 
-Blocking: a title block without a number, a title or who drew it; a view without a scale; a view outside the frame or over the title block; a sheet that changed since its last issue but is still at that revision; a sheet number that gives no file number. Warnings: who checked, the date and the phase left empty; a plan coloured by a room scheme, or with many hatches, without a legend; a plan, section or elevation on no sheet; a site plan without a north arrow; elements on no storey, without a type or a material; doors and windows without a tag; rooms without a number; the required IFC properties (IsExternal, LoadBearing, FireRating on doors) left empty.
+Blocking: a title block without a number, a title or who drew it; a view without a scale; a view outside the frame or over the title block; a sheet that changed since its last issue but is still at that revision; a sheet number that gives no file number. Warnings: who checked, the date and the phase left empty; a plan coloured by a room scheme, or with many hatches, without a legend; a plan, section or elevation on no sheet; a site plan without a north arrow; elements on no storey, without a type or a material; doors and windows without a tag; rooms without a number; the required IFC properties (IsExternal, LoadBearing, FireRating on doors) left empty; a layer whose thickness is not one of its material's catalogue thicknesses.
 
 ## Issuing
 

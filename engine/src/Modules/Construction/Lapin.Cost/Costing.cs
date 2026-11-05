@@ -299,10 +299,19 @@ public static class Costing
             }
         }
 
-        void Add(Entity e, ArticleRef a, IReadOnlyList<QuantitySet> sets, bool core)
+        void Add(Entity e, ArticleRef a, IReadOnlyList<QuantitySet> sets, bool core, string? material = null)
         {
             var hit = Find(lists, a.Code);
             var basis = Measures.BasisFor(a, hit?.Row);
+            // An article bound to a material (a rule, or a type's article on material:<id>) takes its quantity by the material's
+            // measure (docs/plan-buildup-tags.md) unless it names its own; by area or count, a line per thickness.
+            string? thickness = null;
+            if (material != null && MaterialMeasures.For(m.Get(material), sets) is { } byRule)
+            {
+                if (a.Basis == "auto") basis = byRule.Basis;
+                sets = byRule.Sets;
+                thickness = byRule.Thickness;
+            }
             if (Measures.Quantity(sets, basis, a, hit?.Row) is not { } qty || qty == 0) return;
             var chapter = a.Chapter ?? (core ? ChapterOf(e.Class) : "Finishes and insulation");
             string? storey = null;
@@ -313,11 +322,12 @@ public static class Costing
                     storey = Spatial.StoreyOf(m, host.Id)?.Id;
                 chapter = $"{(storey != null ? m.Get(storey)?.Name : null) ?? "—"} · {chapter}";
             }
-            var key = $"{chapter}\u001f{a.Code.ToUpperInvariant()}";
+            var key = $"{chapter}\u001f{a.Code.ToUpperInvariant()}" + (thickness != null ? $"\u001f{thickness}" : "");
             if (!lines.TryGetValue(key, out var line))
             {
                 line = new EstimateLine(key, chapter, a.Code) { Basis = basis };
                 Price(line, a.Code);
+                if (thickness != null) line.Name = $"{line.Name} · {thickness} mm";
                 lines[key] = line;
                 chapterMeta.TryAdd(chapter, OrderOf(a.Chapter ?? (core ? ChapterOf(e.Class) : "Finishes and insulation"), storey));
             }
@@ -352,7 +362,11 @@ public static class Costing
                 foreach (var a in arts)
                 {
                     var sel = Parts.Select(m, e.Id, sets, a.Part);
-                    Add(e, a, sel, a.Part is null or Parts.Core || a.Part.StartsWith(Parts.LayerPrefix, StringComparison.Ordinal) && IsCoreLayer(m, e.Id, a.Part));
+                    var isCore = a.Part is null or Parts.Core || a.Part.StartsWith(Parts.LayerPrefix, StringComparison.Ordinal) && IsCoreLayer(m, e.Id, a.Part);
+                    // An article on one material: each of its parts by the material's measure (a line per thickness).
+                    if (a.Part?.StartsWith(Parts.MaterialPrefix, StringComparison.Ordinal) == true && MaterialMeasure.Of(m.Get(a.Part[Parts.MaterialPrefix.Length..])) != null)
+                        foreach (var one in sel) Add(e, a, [one], isCore, a.Part[Parts.MaterialPrefix.Length..]);
+                    else Add(e, a, sel, isCore);
                     priced |= sel.Count > 0;
                     if (a.Part == null) whole = true;
                     foreach (var x in sel) if (x.Part != null) covered.Add(x.Part);
@@ -366,13 +380,13 @@ public static class Costing
                         if (RuleFor(m, rules, ps.Material) is { } rule)
                         {
                             var isCore = Parts.LayerIndex(ps.Part) is { } li ? li == coreIndex : ps.Part!.StartsWith("zone:", StringComparison.Ordinal);
-                            Add(e, rule.Article, [ps], isCore);
+                            Add(e, rule.Article, [ps], isCore, ps.Material);
                             priced = true;
                         }
                     // An element of one material and no parts: ruled by its own material, whole.
                     if (arts.Count == 0 && !sets.Any(x => x.Part != null) && OwnMaterial(m, e.Id) is { } ownMaterial && RuleFor(m, rules, ownMaterial) is { } r2)
                     {
-                        Add(e, r2.Article, Parts.Select(m, e.Id, sets, null), true);
+                        Add(e, r2.Article, Parts.Select(m, e.Id, sets, null), true, ownMaterial);
                         priced = true;
                     }
                 }

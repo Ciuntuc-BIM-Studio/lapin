@@ -240,3 +240,30 @@ public static class Measures
     static bool SameMeasure(string unitBasis, string basis) => basis.Equals(unitBasis, StringComparison.Ordinal)
         || unitBasis == "volume" && basis == "grossVolume" || unitBasis == "area" && basis == "grossArea";
 }
+
+/// <summary>
+/// A material's measure read for an article bound to it (docs/plan-buildup-tags.md): the basis its rule gives (area, volume,
+/// weight from the density, pieces from the board), the sets with what that needs added (a weight, the pieces) and, by area
+/// or count, the thickness the sets are in (mm), so a line is kept per thickness.
+/// </summary>
+public static class MaterialMeasures
+{
+    public static (string Basis, IReadOnlyList<QuantitySet> Sets, string? Thickness)? For(Entity? material, IReadOnlyList<QuantitySet> sets)
+    {
+        if (MaterialMeasure.Of(material) is not { } rule) return null;
+        switch (rule.By)
+        {
+            case "volume": return ("volume", sets, null);
+            case "mass":
+                if (MaterialMeasure.DensityOf(material) is not { } density) return ("volume", sets, null);
+                return ("weight", sets.Select(s => Measures.Of(s, "volume") is { } v
+                    ? s with { Quantities = [.. s.Quantities.Where(q => q.Kind != "WEIGHT"), new Quantity("Weight", v * density, "WEIGHT", "Weight")] } : s).ToList(), null);
+        }
+        var widths = sets.Select(s => s.Quantities.FirstOrDefault(q => q.Name == "Width")?.Value).Distinct().ToList();
+        var thickness = sets.Count > 0 && sets.All(s => s.Part != null) && widths is [{ } w] && w > 1e-9 ? MaterialFields.Mm(w * 1000) : null;
+        if (rule.By == "count" && rule.BoardOf(material!) is { } board)
+            return ("Pieces", sets.Select(s => Measures.Of(s, "area") is { } a
+                ? s with { Quantities = [.. s.Quantities, new Quantity("Pieces", a / (board.Length * board.Width), "COUNT", "Pieces")] } : s).ToList(), thickness);
+        return ("area", sets, thickness);
+    }
+}

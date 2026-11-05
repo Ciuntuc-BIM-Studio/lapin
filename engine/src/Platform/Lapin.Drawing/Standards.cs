@@ -26,13 +26,32 @@ public sealed record AxisStyle(string Id, string Name, string TextStyle, string 
 /// written in <see cref="Unit"/>. A marker's texts run across its line (along
 /// the wall, "across") or along it ("along"), <see cref="TextOrientation"/>,
 /// always upright (decision 292).
+/// A build-up tag ("buildup", docs/plan-buildup-tags.md) writes the element's layers: its <see cref="Header"/>, the
+/// <see cref="Template"/> once per layer (its [optional parts] dropped when a field in them is empty), its
+/// <see cref="Footer"/>; the layers exterior to interior (a wall) or top to bottom (a floor, a roof) as the element
+/// stands, or the other way (<see cref="Order"/> "in-out"); layers of no thickness shown unless <see cref="ZeroLayers"/>
+/// is false; one leader to the element, or one per layer into its own (<see cref="Leaders"/>); each line after a
+/// <see cref="Bullet"/>, wrapped at <see cref="Width"/> paper mm. Each is null on other shapes (and then its default).
 /// </summary>
 public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes,
-    string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard, string TextOrientation = "across")
+    string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard, string TextOrientation = "across",
+    string? Header = null, string? Footer = null, string? Order = null, bool? ZeroLayers = null, string? Leaders = null, string? Bullet = null, double? Width = null)
 {
     public bool Equals(TagType? o) => o is not null && Id == o.Id && Name == o.Name && Template == o.Template && Classes.SequenceEqual(o.Classes)
-        && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle && TextOrientation == o.TextOrientation;
-    public override int GetHashCode() => HashCode.Combine(Id, Name, Template, Shape, Inner);
+        && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle && TextOrientation == o.TextOrientation
+        && Header == o.Header && Footer == o.Footer && Order == o.Order && ZeroLayers == o.ZeroLayers && Leaders == o.Leaders && Bullet == o.Bullet && Width == o.Width;
+    public override int GetHashCode() => HashCode.Combine(Id, Name, Template, Shape, Inner, Header, Footer, Order);
+
+    /// <summary>A build-up tag's layers the other way: interior to exterior, bottom to top.</summary>
+    [JsonIgnore] public bool Reversed => Order == "in-out";
+    /// <summary>Whether a build-up tag writes the layers of no thickness (a membrane, paint; decision 291).</summary>
+    [JsonIgnore] public bool ShowsZeroLayers => ZeroLayers != false;
+    /// <summary>Whether a build-up tag draws a leader per layer, each into its own layer.</summary>
+    [JsonIgnore] public bool LeaderPerLayer => Leaders == "per-layer";
+    /// <summary>What a build-up tag's lines start with: a bullet, a dash, a number, nothing.</summary>
+    [JsonIgnore] public string BulletOrDefault => Bullet ?? "bullet";
+    /// <summary>The paper width (mm) a build-up tag's lines wrap at.</summary>
+    [JsonIgnore] public double WidthOrDefault => Width is > 0 ? Width.Value : Standards.BuildupWidth;
 }
 
 /// <summary>Layers gathered under a group that shows and locks them together.</summary>
@@ -123,13 +142,36 @@ public static class Standards
             : v["classes"] is JsonValue cs && cs.TryGetValue<string>(out var text)
                 ? text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList()
                 : [];
+        string? Text(string key) => v[key] is JsonValue x && x.TryGetValue<string>(out var t) && t.Length > 0 ? t : null;
+        string? Choice(string key, string[] values) => v[key] is JsonValue x && x.TryGetValue<string>(out var t) && values.Contains(t) ? t : null;
+        // A build-up's order, as a wall or as a floor says it: top to bottom is exterior to interior.
+        var order = Choice("order", [.. BuildupOrders, "top-down", "bottom-up"]) switch { "top-down" => "out-in", "bottom-up" => "in-out", var o => o };
         return new TagType(id, Str(v["name"], "Tag"), template, classes,
             OneOf(v["shape"], TagShapes, "box"), v["inner"] is JsonValue iv && iv.TryGetValue<string>(out var inner) ? inner : "",
-            OneOf(v["unit"], TagUnits, "cm"), Positive(v["reach"], 6), Str(v["textStyle"], Standard), OneOf(v["textOrientation"], TagOrientations, "across"));
+            OneOf(v["unit"], TagUnits, "cm"), Positive(v["reach"], 6), Str(v["textStyle"], Standard), OneOf(v["textOrientation"], TagOrientations, "across"),
+            Text("header"), Text("footer"), order, v["zeroLayers"] is JsonValue zv && zv.TryGetValue<bool>(out var zero) ? zero : null,
+            Choice("leaders", BuildupLeaders), Choice("bullet", BuildupBullets),
+            Lapin.Model.Json.Number(v["width"]) is { } w && double.IsFinite(w) && w > 0 ? Math.Clamp(w, 10, 1000) : null);
     }
 
     /// <summary>A tag's shape: a box with a leader, a door's or window's marker across its wall in plan, or a room's stamp.</summary>
-    public static readonly string[] TagShapes = ["box", "opening", "room"];
+    public static readonly string[] TagShapes = ["box", "opening", "room", "buildup"];
+    /// <summary>A build-up tag's order: exterior to interior (a wall; top to bottom on a floor or a roof), or the other way.</summary>
+    public static readonly string[] BuildupOrders = ["out-in", "in-out"];
+    /// <summary>A build-up tag's leaders: one to the element, or one per layer.</summary>
+    public static readonly string[] BuildupLeaders = ["one", "per-layer"];
+    /// <summary>What a build-up tag's lines start with: a bullet (•), a dash (–), their number, nothing.</summary>
+    public static readonly string[] BuildupBullets = ["bullet", "dash", "number", "none"];
+    /// <summary>The paper width (mm) a build-up tag's lines wrap at by default.</summary>
+    public const double BuildupWidth = 80;
+
+    /// <summary>
+    /// The build-up tag a project starts with (docs/plan-buildup-tags.md), after the tester's: EXTERIOR, a line per layer
+    /// (the material's description, its λ when it has one, the layer's thickness in mm), INTERIOR.
+    /// </summary>
+    public static readonly TagType DefaultBuildupTag = new("buildup", "Build-up (exterior → interior)", "{description}[, λ = {λ} W/mK]: {thickness} mm",
+        ["IfcWall", "IfcSlab", "IfcRoof", "IfcCovering", "LapinRoomFinish"], "buildup", Unit: "mm", Header: "EXTERIOR", Footer: "INTERIOR",
+        Order: "out-in", ZeroLayers: true, Leaders: "one", Bullet: "bullet", Width: BuildupWidth);
     /// <summary>How a marker's texts lie to its line: across it (along the wall), or along it.</summary>
     public static readonly string[] TagOrientations = ["across", "along"];
     /// <summary>The unit a tag writes sizes in.</summary>
@@ -153,12 +195,16 @@ public static class Standards
         new("fire", "Fire rating", "{FireRating}", []),
         new("acoustic", "Acoustic rating", "{AcousticRating}", []),
         new("thermal", "Thermal transmittance", "U = {ThermalTransmittance}", []),
+        DefaultBuildupTag,
     ];
 
-    /// <summary>A tag's type: the one it names, else the first that tags its element's class; null when none does.</summary>
+    /// <summary>
+    /// A tag's type: the one it names, else the first that tags its element's class (a build-up tag only when named: a
+    /// wall tagged by its mark stays so); null when none does.
+    /// </summary>
     public static TagType? TagTypeOf(StyleBook b, string? id, string? ifcClass = null) =>
         (id != null ? b.TagTypes.FirstOrDefault(t => t.Id == id) : null)
-        ?? (ifcClass != null && id == null ? b.TagTypes.FirstOrDefault(t => t.Classes.Contains(ifcClass)) : null);
+        ?? (ifcClass != null && id == null ? b.TagTypes.FirstOrDefault(t => t.Classes.Contains(ifcClass) && t.Shape != "buildup") : null);
 
     static DraftLayer ReadLayer(JsonObject v) => new(
         Str(v["id"], "0"), Str(v["name"], Str(v["id"], "0")), Color(v["color"]) ?? Layer0.Color, v["visible"] is not JsonValue vv || !vv.TryGetValue<bool>(out var vis) || vis,

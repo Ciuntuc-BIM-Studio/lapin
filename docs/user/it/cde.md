@@ -27,7 +27,7 @@ I file sono denominati secondo la ISO 19650-2: **Progetto-Autore-Volume-Livello-
 
 ![Verifica: i problemi per regola](shots/cde-check.webp)
 
-Bloccanti: un cartiglio senza numero, senza titolo o senza chi l’ha disegnato; una vista senza scala; una vista fuori dalla cornice o sopra il cartiglio; una tavola che è cambiata dalla sua ultima emissione ma è ancora a quella revisione; un numero di tavola che non dà alcun numero di file. Avvisi: chi ha verificato, la data e la fase lasciati vuoti; una pianta colorata secondo uno schema dei locali, o con molti retini, senza legenda; una pianta, una sezione o un prospetto su nessuna tavola; una planimetria senza freccia del nord; elementi su nessun piano, senza tipo o senza materiale; porte e finestre senza etichetta; locali senza numero; le proprietà IFC richieste (IsExternal, LoadBearing, FireRating sulle porte) lasciate vuote.
+Bloccanti: un cartiglio senza numero, senza titolo o senza chi l’ha disegnato; una vista senza scala; una vista fuori dalla cornice o sopra il cartiglio; una tavola che è cambiata dalla sua ultima emissione ma è ancora a quella revisione; un numero di tavola che non dà alcun numero di file. Avvisi: chi ha verificato, la data e la fase lasciati vuoti; una pianta colorata secondo uno schema dei locali, o con molti retini, senza legenda; una pianta, una sezione o un prospetto su nessuna tavola; una planimetria senza freccia del nord; elementi su nessun piano, senza tipo o senza materiale; porte e finestre senza etichetta; locali senza numero; le proprietà IFC richieste (IsExternal, LoadBearing, FireRating sulle porte) lasciate vuote; uno strato il cui spessore non è uno degli spessori di catalogo del suo materiale.
 
 ## Emettere
 

@@ -684,7 +684,7 @@ public sealed class RoomFinishSchedule : IScheduleSource
             var finish = m.Get(room.Str("finishType")!)?.Name ?? "";
             foreach (var e in m.OfClass(RoomFinishes.Class).Where(x => x.Str("roomId") == room.Id).OrderBy(x => Array.IndexOf(RoomFinishes.PartNames, x.Str("part"))))
                 foreach (var x in RoomFinishes.Measures(q.Geometry(e.Id)))
-                    o.Add(new(storey, label, finish, Capital(x.Part), x.Material, x.Gross, x.Net, null, x.Volume, room.Id));
+                    o.Add(new(storey, label, finish, Capital(x.Part), ByThickness(m, x.Material, x.Thickness), x.Gross, x.Net, null, x.Volume, room.Id));
             foreach (var s in m.OfClass(Skirtings.Class).Where(x => x.Str("finishOf") == room.Id))
                 o.Add(new(storey, label, finish, "Skirting", Skirtings.SpecOf(m, s).Material, null, null, Skirtings.LengthOf(q.Geometry(s.Id)), null, room.Id));
             foreach (var s in m.OfClass(IfcClass.Slab).Where(x => x.Str("finishOf") == room.Id))
@@ -697,6 +697,17 @@ public sealed class RoomFinishSchedule : IScheduleSource
                     }
         }
         return o;
+    }
+
+    /// <summary>
+    /// A material measured by area (docs/plan-buildup-tags.md) listed by its thickness, so the totals keep each thickness apart
+    /// ("Ceramic tiles · 10 mm"), flagged when the thickness is not in its catalogue; any other material by its name.
+    /// </summary>
+    static string ByThickness(IModelView m, string material, double thickness)
+    {
+        if (thickness <= 1e-9 || MaterialMeasure.Of(Materials.Find(m, material)) is not { By: "area" or "count" } rule) return material;
+        var mm = thickness * 1000;
+        return $"{material} · {MaterialFields.Mm(mm)} mm" + (MaterialMeasure.InCatalogue(rule, mm) ? "" : " (not a catalogue thickness)");
     }
 
     static string Capital(string s) => s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
@@ -715,5 +726,24 @@ public sealed class RoomFinishSchedule : IScheduleSource
             keys.Add(null);
         }
         return new ScheduleGrid(Label, ["Storey", "Room", "Finish", "Part", "Material", "Gross (m²)", "Net (m²)", "Length (m)", "Volume (m³)"], grid, keys);
+    }
+}
+
+/// <summary>
+/// A room finish's build-up for a build-up tag (docs/plan-buildup-tags.md): its part's layers as its type lists them, the
+/// floor's and the ceiling's from the top down, the walls' from the wall's face into the room; pieces up the walls'
+/// height a line each.
+/// </summary>
+public sealed class RoomFinishBuildUps : IElementBuildUps
+{
+    public BuildUp? Of(IModelView m, Entity e)
+    {
+        if (e.Class != RoomFinishes.Class || RoomFinishes.SpecOf(m, e) is not { } spec) return null;
+        var part = e.Str("part");
+        var layers = part switch { "floor" => spec.Floor, "walls" => spec.Walls, "ceiling" => spec.Ceiling, _ => null };
+        if (layers is not { Count: > 0 }) return null;
+        string? Id(string name) => name.Length == 0 ? null : Materials.Find(m, name)?.Id;
+        return new BuildUp(layers.Select((l, i) => new BuildupLayer(i, Id(l.Material), l.Thickness, false, l.Material,
+            PartMaterials: l.Parts?.Select(p => Id(p.Material)).OfType<string>().Where(x => x != Id(l.Material)).Distinct().ToList())).ToList(), part != "walls");
     }
 }

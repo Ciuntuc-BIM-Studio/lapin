@@ -94,6 +94,26 @@ Eine ausgewählte Beschriftung hat Griffe. Ziehen Sie den Kasten, um die Beschri
 
 Die Markierung einer Tür oder eines Fensters wird Teil für Teil bearbeitet, jeder Text verschoben oder gedreht und jedes Linienende verlängert: siehe [Türen und Fenster](doors-windows.md).
 
+#### Schichtaufbau-Beschriftung
+
+Eine Schichtaufbau-Beschriftung schreibt die Schichten eines Elements als Architekturhinweis: eine Kopfzeile (*EXTERIOR*), eine Zeile je Schicht, eine Fußzeile (*INTERIOR*). Ein neues Projekt hat **Build-up (exterior → interior)**: jede Zeile ist die Beschreibung des Materials (sein Name, wenn es keine hat), sein λ, wenn es eines hat, und die Dicke der Schicht in mm. Wähle sie in der Leiste des Werkzeugs **Beschriftung** und klicke auf eine Wand, eine Decke, ein Dach oder die Bekleidung eines Raums; andere Elemente erhalten das gewählte Feld. Der Text wird bei jedem Zeichnen aus dem Modell gelesen: ändere eine Schicht, die Beschreibung eines Materials oder sein λ, und die Beschriftung folgt.
+
+![Zwei Schichtaufbau-Beschriftungen an einer Fassadenwand: eine Hinweislinie und eine Hinweislinie je Schicht](shots/buildup-tag.webp)
+
+Ihre Form wird in **Verwalten → Zeichnungsstandards → Beschriftungen** festgelegt: setze die **Form** eines Beschriftungstyps auf *Schichtaufbau* oder klicke bei einem auf **Schichtaufbau…**, um ihn neben einer Vorschau an einem Wand- oder Deckentyp des Projekts zu bearbeiten.
+
+- **Kopfzeile** und **Fußzeile**: über und unter den Schichten geschrieben (leer: keine; `|` beginnt eine neue Zeile).
+- **Jede Schicht**: die Zeile, die einmal je Schicht geschrieben wird. Sie liest die Felder der Schicht, `{description}`, `{material}`, `{thickness}` (in der unter **Dicke in** gewählten Einheit), `{note}` (die Notiz der Schicht in ihrem Typ), `{function}` (Kern, Bekleidung, Dämmung…) und `{index}`; jeden Parameter des Materials nach Namen oder Symbol, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (siehe die [Daten](materials.md#daten-beschreibung-parameter-wie-es-gemessen-wird) des Materials); und die des Elements, `{name}`, `{type}`, `{mark}`. **Feld einfügen…** setzt eines an die Cursorposition und listet die Parameter der Materialien des Projekts.
+- **Eckige Klammern** machen einen Teil optional: `[, λ = {λ} W/mK]` wird nur geschrieben, wo das Material ein λ hat; ein Teil entfällt ganz, wenn ein Feld darin leer ist. **[ ]** macht die Auswahl zu so einem Teil. Um eine Klammer selbst zu schreiben, tippe `\[` oder `\]`.
+- **Reihenfolge**: von außen nach innen bei einer Wand (die Seite ihrer ersten Schicht ist ihre Außenseite, eine gespiegelte Wand beginnt also weiterhin dort), von oben nach unten bei einer Decke oder einem Dach; oder umgekehrt. Wähle die Reihenfolge, in der die Schichten neben dem Hinweis liegen, damit sich Hinweislinien je Schicht nie kreuzen.
+- **Schichten ohne Dicke** (Bahnen, Folien, Anstriche) werden geschrieben, außer du entfernst den Haken bei **sichtbar**. Eine Schicht, die über ihre Höhe das Material wechselt, schreibt eine Zeile je Material.
+- **Hinweislinien**: eine, zum Element, oder **eine je Schicht**, jede von ihrer Zeile zu einem Punkt in ihrer eigenen Schicht, wo die Ansicht die Schichten unterscheidet (eine Wand in Grundrissen und Schnitten, eine Decke in Schnitten; sonst behält die Beschriftung eine). Ziehe das Ende der Hinweislinie am Element entlang, um es an anderer Stelle zu queren.
+- **Zeilen beginnen mit** einem Punkt, einem Strich, ihrer Nummer oder nichts; sie brechen bei **Breite mm** auf dem Papier um, hängend nach dem Aufzählungszeichen, und ein Wert bleibt bei seinem Symbol und seiner Einheit (`λ = 0.035 W/mK`).
+
+![Der Editor eines Schichtaufbau-Beschriftungstyps neben seiner Vorschau](shots/buildup-tag-type.webp)
+
+Wie jede Beschriftung folgt die Schichtaufbau-Beschriftung ihrem Element, und Pläne und PDFs drucken sie so, wie du sie siehst, λ, μ und ρ eingeschlossen. Ein eigener **Text** in ihren Eigenschaften ersetzt die Zeile je Schicht nur für diese Beschriftung.
+
 ### Rasterachsen
 
 **Beschriften → Rasterachse** (<kbd>GR</kbd>) zeichnet eine Achse über ihre beiden Enden; sie erhält die nächste Bezeichnung ihrer Richtung. **Beschriften → Achsraster…** legt ein ganzes Raster auf einmal an: die Abstände **Quer** (die nummerierten Achsen, von links nach rechts) und **Längs** (die Achsen mit Buchstaben, von unten nach oben) in den Einheiten des Projekts, etwa `6000 6000 4500` oder `3*6000`; den **Ursprung**, wo sich die ersten Achsen kreuzen, einen **Winkel**, wie weit die Achsen **Über das Raster hinaus** laufen, die **Ersten Bezeichnungen** und den **Achstyp**. Mit **die Achsen des Rasters ersetzen** entfallen die bisher gezeichneten Achsen.

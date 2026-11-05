@@ -14,6 +14,8 @@ Wszystko, co Lapin modeluje, jest mierzone z geometrii: długość, wysokość, 
 
 ![Przedmiar pogrupowany według rodzaju i materiału](shots/quantity-takeoff.webp)
 
+Według materiału materiał mierzony według **powierzchni** (zob. [Materiały](materials.md)) ma wiersz dla każdej grubości, w jakiej jest ułożony, z kolumną **Grubość (mm)**: *Wełna mineralna 150 mm: 84,20 m²*, *Wełna mineralna 200 mm: 31,00 m²*. Mierzony według objętości ma tylko swoje m³, według masy swoje kg, według sztuk swoje **Sztuki**. Kolumna **Notatka** mówi, kiedy warstwa nie ma grubości z katalogu materiału. Kosztorys robi to samo: pozycja na materiale jest mierzona tak, jak mówi materiał, wiersz na grubość. Materiał bez reguły jest mierzony jak dotąd.
+
 **Koszty → Eksportuj XLSX** zapisuje od razu przedmiar jako skoroszyt (w przeglądarce jest pobierany).
 
 ## Ilości na arkuszu

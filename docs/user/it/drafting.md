@@ -94,6 +94,26 @@ Un’etichetta selezionata ha delle maniglie. Trascina il riquadro per spostare 
 
 Il contrassegno di una porta o di una finestra si modifica parte per parte, ogni testo spostato o ruotato e ogni estremità della sua linea allungata: vedi [Porte e finestre](doors-windows.md).
 
+#### Etichetta di stratigrafia
+
+Un’etichetta di stratigrafia scrive gli strati di un elemento come una nota architettonica: un’intestazione (*EXTERIOR*), una riga per ogni strato, un piè (*INTERIOR*). Un nuovo progetto ha **Build-up (exterior → interior)**: ogni riga è la descrizione del materiale (il suo nome se non ne ha), il suo λ se ce l’ha e lo spessore dello strato in mm. Sceglila nella barra dello strumento **Etichetta** e fai clic su un muro, un solaio, una copertura o la finitura di un locale; gli altri elementi ricevono il campo scelto. Il testo è letto dal modello ogni volta che viene disegnato: cambia uno strato, la descrizione di un materiale o il suo λ, e l’etichetta segue.
+
+![Due etichette di stratigrafia su un muro di facciata: una linea di richiamo, e una per strato](shots/buildup-tag.webp)
+
+La sua forma si imposta in **Gestisci → Standard di disegno → Etichette**: imposta la **Forma** di un tipo di etichetta su *stratigrafia*, o fai clic su **Stratigrafia…** su uno di essi, per modificarlo accanto a un’anteprima su uno dei tipi di muro o di solaio del progetto.
+
+- **Intestazione** e **Piè**: scritti sopra e sotto gli strati (vuoto: nessuno; `|` inizia una nuova riga).
+- **Ogni strato**: la riga scritta una volta per strato. Legge i campi dello strato, `{description}`, `{material}`, `{thickness}` (nell’unità scelta in **Spessore in**), `{note}` (la nota dello strato nel suo tipo), `{function}` (nucleo, finitura, isolante…) e `{index}`; qualsiasi parametro del materiale per nome o simbolo, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (vedi i [Dati](materials.md#dati-descrizione-parametri-come-si-misura) del materiale); e quelli dell’elemento, `{name}`, `{type}`, `{mark}`. **Inserisci un campo…** ne mette uno dove si trova il cursore ed elenca i parametri dei materiali del progetto.
+- **Le parentesi quadre** rendono facoltativa una parte: `[, λ = {λ} W/mK]` si scrive solo dove il materiale ha un λ; una parte cade intera quando un campo al suo interno è vuoto. **[ ]** rende la selezione una parte così. Per scrivere una parentesi, digita `\[` o `\]`.
+- **Ordine**: dall’esterno all’interno di un muro (il lato del suo primo strato è il suo esterno, quindi un muro ribaltato comincia comunque da lì), dall’alto in basso in un solaio o una copertura; oppure al contrario. Scegli l’ordine in cui gli strati stanno accanto alla nota, così le linee di richiamo per strato non si incrociano.
+- **Gli strati senza spessore** (membrane, teli, pittura) vengono scritti, a meno che non togli la spunta a **visibili**. Uno strato che cambia materiale in altezza scrive una riga per materiale.
+- **Linee di richiamo**: una, all’elemento, oppure **una per strato**, ognuna dalla sua riga a un punto dentro il proprio strato, dove la vista distingue gli strati (un muro in pianta e in sezione, un solaio in sezione; altrove l’etichetta ne tiene una). Trascina l’estremità della linea di richiamo lungo l’elemento per attraversarlo altrove.
+- **Le righe iniziano con** un punto, un trattino, il loro numero o niente; vanno a capo a **Larghezza mm** sulla carta, rientrate dopo il punto elenco, e un valore resta con il suo simbolo e la sua unità (`λ = 0.035 W/mK`).
+
+![L’editor di un tipo di etichetta di stratigrafia accanto alla sua anteprima](shots/buildup-tag-type.webp)
+
+Come ogni etichetta, l’etichetta di stratigrafia segue il suo elemento, e le tavole e i PDF la stampano come la vedi, λ, μ e ρ compresi. Un **Testo** proprio nelle sue proprietà sostituisce la riga per strato solo per quell’etichetta.
+
 ### Assi della griglia
 
 **Annota → Asse di griglia** (<kbd>GR</kbd>) disegna un asse dalle sue due estremità; prende l’etichetta successiva della sua direzione. **Annota → Griglia di assi…** posa un’intera griglia in una volta: gli interassi **In orizzontale** (gli assi numerati, da sinistra a destra) e **In verticale** (gli assi con lettere, dal basso in alto) nelle unità del progetto, come `6000 6000 4500` o `3*6000`; l’**Origine** dove si incrociano i primi assi, un **Angolo**, quanto gli assi proseguono **Oltre la griglia**, le **Prime etichette** e il **Tipo di asse**. Con **sostituisci gli assi della griglia** spuntato, gli assi disegnati finora spariscono.

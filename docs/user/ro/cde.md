@@ -27,7 +27,7 @@ Fișierele se denumesc după ISO 19650-2: **Proiect-Emitent-Volum-Nivel-Tip-Rol-
 
 ![Verificare: constatările pe reguli](shots/cde-check.webp)
 
-Blocante: un cartuș fără număr, fără titlu sau fără cine a desenat; o vedere fără scară; o vedere în afara chenarului sau peste cartuș; o planșă schimbată de la ultima emitere, dar rămasă la aceeași revizie; un număr de planșă din care nu iese un număr de fișier. Avertismente: cine a verificat, data și faza lăsate goale; un plan colorat după o schemă de încăperi, sau cu multe hașuri, fără legendă; un plan, o secțiune sau o fațadă pe nicio planșă; un plan de situație fără săgeata nordului; elemente fără etaj, fără tip sau fără material; uși și ferestre fără etichetă; încăperi fără număr; proprietățile IFC obligatorii (IsExternal, LoadBearing, FireRating la uși) lăsate goale.
+Blocante: un cartuș fără număr, fără titlu sau fără cine a desenat; o vedere fără scară; o vedere în afara chenarului sau peste cartuș; o planșă schimbată de la ultima emitere, dar rămasă la aceeași revizie; un număr de planșă din care nu iese un număr de fișier. Avertismente: cine a verificat, data și faza lăsate goale; un plan colorat după o schemă de încăperi, sau cu multe hașuri, fără legendă; un plan, o secțiune sau o fațadă pe nicio planșă; un plan de situație fără săgeata nordului; elemente fără etaj, fără tip sau fără material; uși și ferestre fără etichetă; încăperi fără număr; proprietățile IFC obligatorii (IsExternal, LoadBearing, FireRating la uși) lăsate goale; un strat a cărui grosime nu e una din grosimile din catalogul materialului lui.
 
 ## Emiterea
 

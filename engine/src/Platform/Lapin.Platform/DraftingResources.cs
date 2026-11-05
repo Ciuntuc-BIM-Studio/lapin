@@ -121,6 +121,8 @@ public static class DraftingResources
             {
                 if (a[flag] is JsonValue fv && fv.TryGetValue<bool>(out var b)) attrs[flag] = b; else attrs.Remove(flag);
             }
+        // What it says of itself (docs/plan-buildup-tags.md): its description, its parameters, how it is measured and bought.
+        MaterialFields.Apply(attrs, a);
         foreach (var kind in MaterialGraphics.Kinds)
         {
             if (!a.ContainsKey(kind)) continue;
@@ -272,7 +274,8 @@ public static class DraftingResources
             return o;
         });
 
-        // One step: the colour, transparency, category, membrane and joints, and each kind of view's graphics (null: back to the name / the section).
+        // One step: the colour, transparency, category, membrane and joints, each kind of view's graphics (null: back to the name / the section),
+        // and its data as material.setData takes it (description, params, measure).
         r.Command("material.update", "Change material", (ctx, a) =>
         {
             var mat = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material);
@@ -283,6 +286,20 @@ public static class DraftingResources
             ctx.Replace(updated);
             // A material named elsewhere by its name (a door's frame, a sill, a zone) follows the new name.
             if (renamed != null) Rename(ctx, mat.Name, renamed, mat.Id);
+            return null;
+        });
+
+        // What the material says of itself (docs/plan-buildup-tags.md), in one step: its description (text, several lines), its
+        // parameters ([{name, kind, value, pset?, options?}] as element.setParam checks them; a standard set's only with its own
+        // names: Pset_MaterialThermal.ThermalConductivity), how it is measured ({by: area|volume|mass|count, thicknesses?: [mm],
+        // unit?, board?: [length, width]}). A key present replaces, null takes it off; the others stay.
+        r.Command("material.setData", "Change material data", (ctx, a) =>
+        {
+            var mat = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.Material);
+            if (!a.ContainsKey("description") && !a.ContainsKey("params") && !a.ContainsKey("measure")) throw new CommandException("Nothing to change.");
+            var attrs = mat.CloneAttrs();
+            MaterialFields.Apply(attrs, a);
+            ctx.Replace(mat.With(attrs: attrs));
             return null;
         });
 
@@ -319,6 +336,7 @@ public static class DraftingResources
             o["look"] = MaterialLook.Of(mat).ToJson(mat);
             foreach (var kind in MaterialGraphics.Kinds) o[kind] = MaterialGraphics.Resolve(mat, kind).ToJson();
             o["own"] = new JsonObject(MaterialGraphics.Kinds.Where(k => mat.Attrs[k] != null).Select(k => KeyValuePair.Create(k, (JsonNode?)mat.Attrs[k]!.DeepClone())));
+            MaterialFields.Write(mat, o);
             return (JsonNode)o;
         }).ToArray()));
 

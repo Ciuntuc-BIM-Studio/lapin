@@ -94,6 +94,26 @@ Une étiquette sélectionnée a des poignées. Faites glisser le cadre pour dép
 
 Le repère d’une porte ou d’une fenêtre se modifie partie par partie, chaque texte déplacé ou tourné et chaque extrémité de sa ligne allongée : voir [Portes et fenêtres](doors-windows.md).
 
+#### Étiquette de composition
+
+Une étiquette de composition écrit les couches d’un élément comme une note d’architecte : un en-tête (*EXTERIOR*), une ligne par couche, un pied (*INTERIOR*). Un nouveau projet a **Build-up (exterior → interior)** : chaque ligne est la description du matériau (son nom s’il n’en a pas), son λ s’il en a un et l’épaisseur de la couche en mm. Choisissez-la dans la barre de l’outil **Étiquette** et cliquez sur un mur, une dalle, une toiture ou la finition d’une pièce ; les autres éléments reçoivent le champ choisi. Le texte est lu dans le modèle à chaque dessin : changez une couche, la description d’un matériau ou son λ, et l’étiquette suit.
+
+![Deux étiquettes de composition sur un mur de façade : une ligne de rappel, et une par couche](shots/buildup-tag.webp)
+
+Sa forme se règle dans **Gérer → Normes de dessin → Étiquettes** : mettez la **Forme** d’un type d’étiquette sur *composition*, ou cliquez sur **Composition…** sur l’un d’eux, pour le modifier à côté d’un aperçu sur un des types de mur ou de dalle du projet.
+
+- **En-tête** et **Pied** : écrits au-dessus et au-dessous des couches (vide : aucun ; `|` commence une nouvelle ligne).
+- **Chaque couche** : la ligne écrite une fois par couche. Elle lit les champs de la couche, `{description}`, `{material}`, `{thickness}` (dans l’unité choisie sous **Épaisseur en**), `{note}` (la note de la couche dans son type), `{function}` (âme, finition, isolant…) et `{index}` ; tout paramètre du matériau par son nom ou son symbole, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (voir les [Données](materials.md#donnees-description-parametres-comment-il-se-mesure) du matériau) ; et ceux de l’élément, `{name}`, `{type}`, `{mark}`. **Insérer un champ…** en place un à la place du curseur et liste les paramètres des matériaux du projet.
+- **Les crochets** rendent une partie facultative : `[, λ = {λ} W/mK]` n’est écrit que là où le matériau a un λ ; une partie disparaît entière quand un champ y est vide. **[ ]** fait de la sélection une telle partie. Pour écrire un crochet lui-même, tapez `\[` ou `\]`.
+- **Ordre** : de l’extérieur vers l’intérieur d’un mur (le côté de sa première couche est son extérieur, un mur retourné commence donc toujours là), du haut vers le bas d’une dalle ou d’une toiture ; ou l’inverse. Choisissez l’ordre dans lequel les couches se trouvent à côté de la note, pour que les lignes de rappel par couche ne se croisent pas.
+- **Les couches sans épaisseur** (membranes, films, peinture) sont écrites sauf si vous décochez **visibles**. Une couche qui change de matériau sur sa hauteur écrit une ligne par matériau.
+- **Lignes de rappel** : une, vers l’élément, ou **une par couche**, chacune de sa ligne jusqu’à un point dans sa propre couche, là où la vue distingue les couches (un mur en plan et en coupe, une dalle en coupe ; ailleurs l’étiquette en garde une). Faites glisser l’extrémité de la ligne de rappel le long de l’élément pour le traverser ailleurs.
+- **Les lignes commencent par** une puce, un tiret, leur numéro ou rien ; elles passent à la ligne à **Largeur mm** sur le papier, alignées après la puce, et une valeur reste avec son symbole et son unité (`λ = 0.035 W/mK`).
+
+![L’éditeur d’un type d’étiquette de composition à côté de son aperçu](shots/buildup-tag-type.webp)
+
+Comme toute étiquette, l’étiquette de composition suit son élément, et les feuilles et les PDF l’impriment comme vous la voyez, λ, μ et ρ compris. Un **Texte** propre dans ses propriétés remplace la ligne par couche pour cette seule étiquette.
+
 ### Axes du quadrillage
 
 **Annoter → Axe de quadrillage** (<kbd>GR</kbd>) dessine un axe par ses deux extrémités ; il prend le repère suivant de sa direction. **Annoter → Trame d’axes…** pose une trame entière d’un coup : les espacements **En travers** (les axes numérotés, de gauche à droite) et **En long** (les axes lettrés, de bas en haut) dans les unités du projet, comme `6000 6000 4500` ou `3*6000` ; l’**Origine** où se croisent les premiers axes, un **Angle**, de combien les axes vont **Au-delà de la trame**, les **Premiers repères** et le **Type d’axe**. Avec **remplacer les axes de la trame** coché, les axes dessinés jusque-là disparaissent.

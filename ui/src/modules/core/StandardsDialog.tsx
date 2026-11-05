@@ -11,6 +11,8 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from './PendingDialog';
+import { BuildupEditor } from './BuildupEditor';
+import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
 type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string };
@@ -19,7 +21,7 @@ type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list:
 
 const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
 /** How a choice reads where its value alone would not say it. */
-const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line' };
+const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line', buildup: 'build-up' };
 const TABS: Tab[] = [
   { id: 'text', label: 'Text', list: 'textStyles', fresh: { name: 'Text', height: 2.5 }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'height', label: 'Height mm', kind: 'mm' }, { key: 'font', label: 'Font', kind: 'choice', choices: ['sans', 'serif', 'mono'] },
@@ -35,7 +37,7 @@ const TABS: Tab[] = [
     { key: 'lineType', label: 'Line', kind: 'choice', choices: LINE_TYPES }, { key: 'firstLabel', label: 'First', kind: 'text' }, { key: 'color', label: 'Colour', kind: 'color' }] },
   // A tag's template reads the element: {mark}, {name}, {type}, {class}, a door's or window's {width}, {height}, {sill} (in the unit given), a room's {number}, {area}, {perimeter}, {height}, {volume}, {function}; "|" starts a new line.
   { id: 'tag', label: 'Tags', list: 'tagTypes', fresh: { name: 'Tag', template: '{mark}' }, cols: [
-    { key: 'name', label: 'Name', kind: 'text' }, { key: 'shape', label: 'Shape', kind: 'choice', choices: ['box', 'opening', 'room'] },
+    { key: 'name', label: 'Name', kind: 'text' }, { key: 'shape', label: 'Shape', kind: 'choice', choices: ['box', 'opening', 'room', 'buildup'] },
     { key: 'template', label: 'Text (outside)', kind: 'text' }, { key: 'inner', label: 'Inside', kind: 'text' },
     { key: 'unit', label: 'Unit', kind: 'choice', choices: ['cm', 'mm', 'm', 'ft-in', 'in', 'project'] }, { key: 'reach', label: 'Past faces mm', kind: 'mm' },
     // A door's or window's marker: its texts across its line (along the wall) or along it, always upright (decision 292).
@@ -48,6 +50,8 @@ const TABS: Tab[] = [
 
 /** How a tag's template reads the element (report #64), one phrase for the translations. */
 const TAG_HELP = 'A template reads the element: {mark}, {name}, {type}, {class}, any parameter by its name ({Fire rating}) or a standard one ({Pset_WallCommon.FireRating}); | starts a new line.';
+/** A build-up tag's own rule, one phrase for the translations. */
+const BUILDUP_HELP = 'A build-up tag writes the element\'s layers: its header, its line once per layer, its footer. Open it with Build-up… to set them.';
 
 export function StandardsDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -56,6 +60,7 @@ export function StandardsDialog() {
   const [tab, setTab] = useState<Tab>(() => TABS.find((t) => t.id === standardsTab()) ?? TABS[0]);
   const [group, setGroup] = useState('');
   const [project, setProject] = useState(() => standardsTab() === 'project');
+  const [editing, setEditing] = useState<string | null>(null);
   useEffect(() => { clearStandardsTab(); }, []);
   useEffect(() => {
     let live = true;
@@ -68,7 +73,16 @@ export function StandardsDialog() {
 
   const cell = (e: Entry, c: Col) => {
     const v = e[c.key];
-    const put = (value: unknown) => set({ id: e.id, [c.key]: value });
+    // A tag type made a build-up takes the build-up's defaults (its template too, unless it has one of its own) and opens its editor.
+    const put = (value: unknown) => {
+      if (tab.id === 'tag' && c.key === 'shape' && value === 'buildup' && e.shape !== 'buildup') {
+        const { template, ...rest } = BUILDUP_DEFAULTS;
+        set({ id: e.id, shape: 'buildup', ...rest, template: !e.template || e.template === '{mark}' ? template : e.template });
+        setEditing(e.id);
+        return;
+      }
+      set({ id: e.id, [c.key]: value });
+    };
     switch (c.kind) {
       case 'bool': return <input type="checkbox" checked={v === true || (c.key === 'visible' && v !== false)} onChange={(ev) => put(ev.target.checked)} />;
       case 'color': return <input type="color" value={typeof v === 'string' ? v : '#18181b'} onChange={(ev) => put(ev.target.value)} />;
@@ -117,20 +131,24 @@ export function StandardsDialog() {
             {TABS.map((t) => <button key={t.id} type="button" className={`tab-chip${t.id === tab.id ? ' on' : ''}`} onClick={() => { setTab(t); setProject(false); }}>{t.label}</button>)}
             <button type="button" className={`tab-chip${project ? ' on' : ''}`} onClick={() => setProject(true)}>Project</button>
           </div>
-          {project ? options : <>
+          {project ? options : tab.id === 'tag' && rows.some((r) => r.id === editing && r.shape === 'buildup')
+            ? <BuildupEditor entry={rows.find((r) => r.id === editing) as unknown as BuildupEntry} onClose={() => setEditing(null)} />
+            : <>
           <table className="standards-table">
-            <thead><tr>{tab.id === 'axis' && <th title="New axes and the BIM grids use it">Default</th>}{tab.cols.map((c) => <th key={c.key}>{c.label}</th>)}<th /></tr></thead>
+            <thead><tr>{tab.id === 'axis' && <th title="New axes and the BIM grids use it">Default</th>}{tab.cols.map((c) => <th key={c.key}>{c.label}</th>)}{tab.id === 'tag' && <th />}<th /></tr></thead>
             <tbody>
               {rows.map((e) => (
                 <tr key={e.id}>
                   {tab.id === 'axis' && <td><input type="radio" name="default-axis" checked={book.defaultAxisStyle === e.id} onChange={() => set({ id: e.id }, { default: true })} /></td>}
                   {tab.cols.map((c) => <td key={c.key}>{cell(e, c)}</td>)}
+                  {tab.id === 'tag' && <td>{e.shape === 'buildup' && <button type="button" className={`btn mini${editing === e.id ? ' on' : ''}`} data-field="tag-shape-buildup" title="Its header, line per layer, footer, order, leaders and width, with a preview" onClick={() => setEditing(editing === e.id ? null : e.id)}>Build-up…</button>}</td>}
                   <td className="row-tools">{!fixed(e) && <button type="button" className="icon mini" title="Remove" onClick={() => void execute('standards.remove', { kind: tab.id, id: e.id })}><Trash2 size={12} /></button>}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           {tab.id === 'tag' && <p className="muted small" data-tag-help>{TAG_HELP}</p>}
+          {tab.id === 'tag' && <p className="muted small">{BUILDUP_HELP}</p>}
           <div className="row">
             <button type="button" className="btn" onClick={() => set({ ...tab.fresh, name: `${tab.fresh.name} ${rows.length + 1}` })}><Plus size={14} />New</button>
             {tab.id === 'layer' && (

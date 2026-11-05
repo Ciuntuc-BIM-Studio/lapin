@@ -27,6 +27,19 @@ La sphère montre le résultat aussitôt. Ce que vous ne réglez pas vient du no
 
 ![La bibliothèque de matériaux](shots/material-library.webp)
 
+## Données : description, paramètres, comment il se mesure
+
+L’onglet **Données** contient ce que le matériau dit de lui-même. Vous l’écrivez une fois ; chaque type où se trouve le matériau le lit : l’étiquette de composition, le métré, le devis, l’export IFC.
+
+![Les données d’un matériau : sa description, ses paramètres, comment il se mesure et ses épaisseurs du catalogue](shots/material-data.webp)
+
+- **Description** : le texte du descriptif, sur plusieurs lignes (*Panneaux de laine minérale, λ = 0,035 W/mK, fixés par chevilles*). Une étiquette de composition l’écrit à la place du nom.
+- **Paramètres** : un nom, un genre et une valeur, comme sur les éléments. **Ajouter un paramètre courant…** propose **Conductivité thermique λ**, **Résistance à la vapeur μ** et **Masse volumique**, qui vont dans l’IFC sous leurs noms standard (*Pset_MaterialThermal.ThermalConductivity*, *Pset_MaterialHygroscopic.UpperVaporResistanceFactor*, *Pset_MaterialCommon.MassDensity*, en unités SI), ainsi que **Réaction au feu** et **Résistance à la compression**, qui restent les vôtres. Vos paramètres vont dans l’IFC comme *Lapin_Material*.
+- **Mesuré par** dit comment **Coûts → Métré** (par matériau) et le devis le comptent : **surface** (m², une ligne par épaisseur : panneaux, isolants, membranes), **volume** (m³ : béton, grave, chape), **masse** (kg, d’après sa masse volumique) ou **pièces** (des panneaux de la taille indiquée). Vide, il se mesure comme ses éléments.
+- **Épaisseurs du catalogue (mm)** : les épaisseurs dans lesquelles le fabricant le produit, par exemple *50, 80, 100, 150, 200, 240*. Les tableaux de couches de **Types de murs** et **Types de dalles** les proposent à côté de l’épaisseur (vous pouvez en taper une autre) et une couche d’une autre épaisseur est marquée d’un signe d’avertissement.
+
+L’export IFC écrit la description comme Description du matériau et les paramètres comme ses jeux de propriétés ; l’import les relit, y compris depuis le fichier d’un autre logiciel.
+
 ## Un matériau pour tous les dormants et tout le verre
 
 Les nouvelles portes et fenêtres sont faites de matériaux partagés, partie par partie : **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** et **Hardware**. Modifiez **Window frame** une fois et tous les dormants de fenêtre changent.

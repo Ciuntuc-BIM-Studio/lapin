@@ -94,6 +94,26 @@ Una etiqueta seleccionada tiene pinzamientos. Arrastre el recuadro para mover la
 
 El marcador de una puerta o ventana se edita parte por parte, cada texto movido o girado y cada extremo de su línea alargado: ver [Puertas y ventanas](doors-windows.md).
 
+#### Etiqueta de composición
+
+Una etiqueta de composición escribe las capas de un elemento como una nota de arquitectura: una cabecera (*EXTERIOR*), una línea por capa, un pie (*INTERIOR*). Un proyecto nuevo tiene **Build-up (exterior → interior)**: cada línea es la descripción del material (su nombre si no tiene), su λ si lo tiene y el espesor de la capa en mm. Elígela en la barra de la herramienta **Etiqueta** y haz clic en un muro, un forjado, una cubierta o el acabado de un local; los demás elementos reciben el campo elegido. El texto se lee del modelo cada vez que se dibuja: cambia una capa, la descripción de un material o su λ, y la etiqueta lo sigue.
+
+![Dos etiquetas de composición en un muro de fachada: una directriz, y una directriz por capa](shots/buildup-tag.webp)
+
+Su forma se define en **Gestionar → Normas de dibujo → Etiquetas**: pon la **Forma** de un tipo de etiqueta en *composición*, o haz clic en **Composición…** en uno, para editarlo junto a una vista previa sobre uno de los tipos de muro o de forjado del proyecto.
+
+- **Cabecera** y **Pie**: se escriben encima y debajo de las capas (vacío: ninguno; `|` empieza una línea nueva).
+- **Cada capa**: la línea escrita una vez por capa. Lee los campos de la capa, `{description}`, `{material}`, `{thickness}` (en la unidad elegida en **Espesor en**), `{note}` (la nota de la capa en su tipo), `{function}` (núcleo, acabado, aislamiento…) e `{index}`; cualquier parámetro del material por su nombre o su símbolo, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (consulta los [Datos](materials.md#datos-descripcion-parametros-como-se-mide) del material); y los del elemento, `{name}`, `{type}`, `{mark}`. **Insertar un campo…** pone uno donde está el cursor y lista los parámetros que tienen los materiales del proyecto.
+- **Los corchetes** hacen opcional una parte: `[, λ = {λ} W/mK]` solo se escribe donde el material tiene λ; una parte desaparece entera cuando un campo en ella está vacío. **[ ]** convierte la selección en una parte así. Para escribir un corchete, teclea `\[` o `\]`.
+- **Orden**: del exterior al interior de un muro (el lado de su primera capa es su exterior, así que un muro volteado empieza ahí igualmente), de arriba abajo en un forjado o una cubierta; o al revés. Elige el orden en que las capas quedan junto a la nota, para que las directrices por capa no se crucen.
+- **Las capas sin espesor** (membranas, láminas, pintura) se escriben salvo que desmarques **visibles**. Una capa que cambia de material en altura escribe una línea por material.
+- **Directrices**: una, al elemento, o **una por capa**, cada una desde su línea hasta un punto dentro de su capa, donde la vista distingue las capas (un muro en plantas y secciones, un forjado en secciones; en otros casos la etiqueta mantiene una). Arrastra el extremo de la directriz a lo largo del elemento para cruzarlo en otro sitio.
+- **Las líneas empiezan con** una viñeta, un guion, su número o nada; se cortan al **Ancho mm** en el papel, sangradas tras la viñeta, y un valor se queda junto a su símbolo y su unidad (`λ = 0.035 W/mK`).
+
+![El editor de un tipo de etiqueta de composición junto a su vista previa](shots/buildup-tag-type.webp)
+
+Como cualquier etiqueta, la etiqueta de composición sigue a su elemento, y los planos y los PDF la imprimen tal como la ves, con λ, μ y ρ. Un **Texto** propio en sus propiedades sustituye la línea por capa solo para esa etiqueta.
+
 ### Ejes de rejilla
 
 **Anotar → Eje de rejilla** (<kbd>GR</kbd>) dibuja un eje por sus dos extremos; toma la siguiente etiqueta de su dirección. **Anotar → Retícula de ejes…** coloca una retícula entera de una vez: las separaciones **En horizontal** (los ejes numerados, de izquierda a derecha) y **En vertical** (los ejes con letras, de abajo arriba) en las unidades del proyecto, como `6000 6000 4500` o `3*6000`; el **Origen** donde se cruzan los primeros ejes, un **Ángulo**, cuánto se prolongan los ejes **Más allá de la retícula**, las **Primeras etiquetas** y el **Tipo de eje**. Con **sustituir los ejes de la retícula** marcado, los ejes dibujados hasta entonces desaparecen.

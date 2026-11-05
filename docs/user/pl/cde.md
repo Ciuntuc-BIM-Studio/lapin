@@ -27,7 +27,7 @@ Pliki są nazywane według ISO 19650-2: **Projekt-Autor-Wolumen-Poziom-Typ-Rola-
 
 ![Sprawdzenie: ustalenia według reguł](shots/cde-check.webp)
 
-Blokujące: tabliczka rysunkowa bez numeru, tytułu lub autora rysunku; widok bez skali; widok poza ramką lub na tabliczce rysunkowej; arkusz zmieniony od ostatniego wydania, ale wciąż z tą samą rewizją; numer arkusza, z którego nie wynika numer pliku. Ostrzeżenia: puste pola sprawdzającego, daty i fazy; rzut pokolorowany schematem pomieszczeń albo z wieloma kreskowaniami, bez legendy; rzut, przekrój lub elewacja na żadnym arkuszu; plan zagospodarowania bez strzałki północy; elementy bez kondygnacji, bez typu lub bez materiału; drzwi i okna bez etykiety; pomieszczenia bez numeru; puste wymagane właściwości IFC (IsExternal, LoadBearing, FireRating na drzwiach).
+Blokujące: tabliczka rysunkowa bez numeru, tytułu lub autora rysunku; widok bez skali; widok poza ramką lub na tabliczce rysunkowej; arkusz zmieniony od ostatniego wydania, ale wciąż z tą samą rewizją; numer arkusza, z którego nie wynika numer pliku. Ostrzeżenia: puste pola sprawdzającego, daty i fazy; rzut pokolorowany schematem pomieszczeń albo z wieloma kreskowaniami, bez legendy; rzut, przekrój lub elewacja na żadnym arkuszu; plan zagospodarowania bez strzałki północy; elementy bez kondygnacji, bez typu lub bez materiału; drzwi i okna bez etykiety; pomieszczenia bez numeru; puste wymagane właściwości IFC (IsExternal, LoadBearing, FireRating na drzwiach); warstwa, której grubość nie jest jedną z grubości katalogowych jej materiału.
 
 ## Wydawanie
 

@@ -27,6 +27,19 @@ Kula od razu pokazuje wynik. Czego nie ustawisz, wynika z nazwy: materiał o naz
 
 ![Biblioteka materiałów](shots/material-library.webp)
 
+## Dane: opis, parametry, sposób pomiaru
+
+Karta **Dane** przechowuje to, co materiał mówi o sobie. Piszesz to raz; czyta to każdy typ, w którym jest materiał: etykieta przekroju warstw, przedmiar, kosztorys, eksport IFC.
+
+![Dane materiału: opis, parametry, sposób pomiaru i grubości katalogowe](shots/material-data.webp)
+
+- **Opis**: tekst specyfikacji, w kilku wierszach (*Płyty z wełny mineralnej, λ = 0,035 W/mK, mocowane łącznikami*). Etykieta przekroju warstw pisze go zamiast nazwy.
+- **Parametry**: nazwa, rodzaj i wartość, jak przy elementach. **Dodaj typowy…** podpowiada **Przewodność cieplna λ**, **Opór dyfuzyjny μ** i **Gęstość**, które trafiają do IFC pod nazwami standardowymi (*Pset_MaterialThermal.ThermalConductivity*, *Pset_MaterialHygroscopic.UpperVaporResistanceFactor*, *Pset_MaterialCommon.MassDensity*, w jednostkach SI), oraz **Reakcja na ogień** i **Wytrzymałość na ściskanie**, które pozostają twoje. Twoje parametry trafiają do IFC jako *Lapin_Material*.
+- **Mierzony według** mówi, jak liczą go **Koszty → Przedmiar** (według materiału) i kosztorys: **powierzchnia** (m², wiersz na grubość: płyty, izolacje, membrany), **objętość** (m³: beton, kruszywo, jastrych), **masa** (kg, z gęstości) lub **sztuki** (płyty podanego wymiaru). Puste: mierzony tak jak jego elementy.
+- **Grubości katalogowe (mm)**: grubości, w jakich wytwarza go producent, na przykład *50, 80, 100, 150, 200, 240*. Tabele warstw w **Typy ścian** i **Typy stropów** podpowiadają je przy grubości (można wpisać inną), a warstwa o innej grubości jest oznaczona znakiem ostrzeżenia.
+
+Eksport IFC zapisuje opis jako Description materiału, a parametry jako jego zestawy właściwości; import odczytuje je z powrotem, także z pliku innego programu.
+
 ## Jeden materiał dla wszystkich ościeżnic i całego szkła
 
 Nowe drzwi i okna są zrobione ze wspólnych materiałów, część po części: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** i **Hardware**. Zmień raz **Window frame**, a zmienią się wszystkie ościeżnice okien.

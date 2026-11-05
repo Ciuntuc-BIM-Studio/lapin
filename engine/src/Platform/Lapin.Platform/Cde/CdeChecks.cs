@@ -177,6 +177,14 @@ public static class CdeChecks
             return c.Model.Entities.Where(e => e.Class is IfcClass.Door or IfcClass.Window && !tagged.Contains(e.Id))
                 .Select(e => new CdeFinding("openingTag", CdeFinding.Warn, $"{Label(e)} has no tag.", e.Id));
         }),
+        // A layer whose material has a catalogue of thicknesses (docs/plan-buildup-tags.md) and is laid in another: a warning, the type to click.
+        new Rule("catalogueThickness", "Catalogue thicknesses", false, c => c.Model.OfClass(IfcClass.MaterialLayerSet).SelectMany(set =>
+        {
+            var owner = c.Model.RelationsOf(set.Id).FirstOrDefault(r => r.Class == IfcClass.RelAssociatesMaterial && r.Relating == set.Id)?.Related.Select(c.Model.Get).FirstOrDefault(x => x != null);
+            return Layers.Read(set).Select(l => (l, mat: c.Model.Get(l.Material))).Where(x => x.l.Thickness > 1e-9 && !MaterialMeasure.InCatalogue(MaterialMeasure.Of(x.mat), x.l.Thickness * 1000))
+                .Select(x => new CdeFinding("catalogueThickness", CdeFinding.Warn,
+                    $"Layer of {x.mat!.Name} in {owner?.Name ?? set.Name} is {MaterialFields.Mm(x.l.Thickness * 1000)} mm, not a catalogue thickness.", owner?.Id ?? set.Id));
+        })),
         new Rule("roomNumber", "Room numbers", false, c => c.Model.OfClass(IfcClass.Space)
             .Where(r => r.Str("number") is not { Length: > 0 })
             .Select(r => new CdeFinding("roomNumber", CdeFinding.Warn, $"Room „{r.Name}” has no number.", r.Id))),

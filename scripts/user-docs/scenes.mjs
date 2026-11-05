@@ -3051,6 +3051,122 @@ export const scenes = [
     },
   },
   {
+    // A material's data (docs/plan-buildup-tags.md): its description, λ from the usual parameters, measured by area with its
+    // catalogue of thicknesses; a layer of another thickness marked in Wall types, and the takeoff by material a row per thickness.
+    id: 'materials-data',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const layers = (wool) => [{ material: 'Render', thickness: 0.01 }, { material: 'Mineral wool', thickness: wool }, { material: 'Brick', thickness: 0.25, core: true }, { material: 'Plaster', thickness: 0.015 }];
+      const t150 = await t.cmd('architecture.createWallType', { name: 'ETICS 150', layers: layers(0.15) });
+      const t130 = await t.cmd('architecture.createWallType', { name: 'ETICS 130', layers: layers(0.13) });
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 10, y2: 0, typeId: t150.id });
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 4, x2: 6, y2: 4, typeId: t130.id });
+      await t.tool('manage.materials');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('[data-material="Mineral wool"]').click();
+      await t.wait(400);
+      await dialog.locator('[data-field=mat-data-tab]').click();
+      await t.wait(300);
+      t.expect(await dialog.locator('[data-testid=material-data]').count() === 1, 'the Data tab shows the material\'s data');
+      await dialog.locator('[data-field=mat-description]').fill('Mineral wool boards, Knauf FKD-S Thermal\nfixed with dowels, joints staggered');
+      await dialog.locator('[data-field=mat-measure-by]').focus();
+      await t.wait(600);
+      // λ from the usual parameters, in IFC's own set; its value typed in its row.
+      await dialog.locator('[data-field=mat-param-preset]').selectOption({ index: 1 });
+      await t.wait(800);
+      const lambda = dialog.locator('tr[data-param="ThermalConductivity"] input.cell');
+      t.expect(await lambda.count() === 1, 'Thermal conductivity λ is added in Pset_MaterialThermal');
+      await lambda.fill('0.035');
+      await lambda.press('Enter');
+      await t.wait(600);
+      await dialog.locator('[data-field=mat-measure-by]').selectOption('area');
+      await t.wait(800);
+      await dialog.locator('[data-field=mat-thicknesses]').fill('50, 80, 100, 150, 200, 240');
+      await dialog.locator('[data-field=mat-thicknesses]').press('Tab');
+      await t.wait(800);
+      const wool = (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === 'Mineral wool');
+      t.expect(wool?.props.description?.startsWith('Mineral wool boards'), 'the description is saved');
+      t.expect(wool?.props.measure?.by === 'area' && wool.props.measure.thicknesses?.join(',') === '50,80,100,150,200,240', 'measured by area, with its catalogue thicknesses');
+      t.expect(wool?.props.params?.some((p) => p.pset === 'Pset_MaterialThermal' && p.name === 'ThermalConductivity' && p.value === 0.035), 'λ = 0.035 in Pset_MaterialThermal.ThermalConductivity');
+      await t.shot('material-data', { of: '.dialog', pad: 0 });
+      await dialog.locator('button[title="Close"]').first().click();
+      await t.wait(300);
+      // Wall types: the 130 mm layer marked, the catalogue offered beside the thickness.
+      await t.ui({ wallTypeId: t130.id });
+      await t.tool('architecture.wallTypes');
+      await t.wait(600);
+      t.expect(await t.page.locator('.dialog [data-testid=layer-off-catalogue]').count() === 1, 'a layer not of its material\'s catalogue thicknesses is marked');
+      t.expect(await t.page.locator('.dialog [data-field=layer-catalogue]').count() === 1, 'the catalogue is offered beside the wool\'s thickness');
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      // The takeoff by material: a row per thickness, the 130 mm one with its note.
+      const takeoff = await t.cmd('architecture.createSchedule', { kind: 'quantities' });
+      await t.cmd('architecture.updateSchedule', { id: takeoff.id, groupBy: ['material'], classes: ['IfcWall'] });
+      await t.ui({ view: 'schedule', scheduleId: takeoff.id });
+      await t.wait(1500);
+      t.expect(await t.page.locator('[data-testid=schedule-grid] th', { hasText: /Thickness|Grosime|Espesor|Dicke|Épaisseur|Tykkelse|Spessore|Grubość|Espessura/ }).count() === 1, 'the takeoff by material has a Thickness column');
+      t.expect(await t.page.locator('[data-testid=schedule-grid] input[value="150"]').count() >= 1, 'the wool 150 mm has its own row');
+    },
+  },
+  {
+    // The build-up tag (docs/plan-buildup-tags.md, stage 2): a facade wall drawn east to west (its exterior, its first layer's
+    // side, to the north), its materials described with their λ; the default build-up tag placed by TAG above it, a second
+    // tag type with a leader per layer beside its end; then the tag type's editor in Drafting standards → Tags with its preview.
+    id: 'buildup-tag',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const type = await t.cmd('architecture.createWallType', { name: 'ETICS 150 on clay blocks', layers: [
+        { material: 'Silicone render', thickness: 0.005 }, { material: 'Mineral wool', thickness: 0.15 },
+        { material: 'Clay block', thickness: 0.25, core: true }, { material: 'Gypsum plaster', thickness: 0.015 }] });
+      const id = async (name) => (await t.nodes()).find((n) => n.type === 'IfcMaterial' && n.name === name)?.id;
+      const lambda = (v) => [{ pset: 'Pset_MaterialThermal', name: 'ThermalConductivity', value: v }];
+      await t.cmd('material.setData', { id: await id('Silicone render'), description: 'Silicone render, 1.5 mm grain, on reinforced adhesive' });
+      await t.cmd('material.setData', { id: await id('Mineral wool'), description: 'Mineral wool boards, fixed with dowels', params: lambda(0.035) });
+      await t.cmd('material.setData', { id: await id('Clay block'), description: 'Clay blocks 25 cm, M10 mortar', params: lambda(0.2) });
+      await t.cmd('material.setData', { id: await id('Gypsum plaster'), description: 'Gypsum plaster, two coats', params: lambda(0.57) });
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 9, y1: 0, x2: 0, y2: 0, typeId: type.id })).id;
+      // A second build-up type: no header or footer, a leader into each layer.
+      await t.cmd('standards.set', { kind: 'tag', entry: { id: 'buildup-layers', name: 'Build-up, a leader per layer', shape: 'buildup', template: '{description}: {thickness} mm',
+        classes: 'IfcWall', unit: 'mm', leaders: 'per-layer', bullet: 'number', width: 70 } });
+      await t.fit();
+      await t.button('Annotate', { exact: true });
+      await t.tool('cad.tag');
+      await t.page.locator('[data-tag-type]').selectOption('buildup');
+      await t.wait(300);
+      for (const [x, y] of [[4.5, 0], [1, 2.4]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(600); }
+      await t.keys('Escape', 'Escape');
+      const tags = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG');
+      t.expect(tags.length === 1 && tags[0].props.tagType === 'buildup', `TAG puts the build-up tag on the wall (${tags.map((x) => x.props.tagType).join(', ')})`);
+      // Above the wall, its exterior side, the note's head where a drafter would put it.
+      await t.cmd('drafting.updateTag', { id: tags[0].id, at: [0.3, 5.3] });
+      const second = await t.cmd('drafting.addTag', { viewId: `plan:${s}`, element: wall, tagType: 'buildup-layers', at: [10.4, 1.5] });
+      await t.cmd('drafting.updateTag', { id: second.id, end: [8, 0] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -0.8, y: -2.8 }, { x: 17.8, y: 5.9 }));
+      await t.wait(800);
+      const plan = t.page.locator('[data-testid=plan]');
+      t.expect(await plan.locator('text', { hasText: 'EXTERIOR' }).count() === 1, 'the tag writes its header');
+      t.expect(await plan.locator('text', { hasText: /λ = 0.035 W\/mK:/ }).count() === 1, 'a layer\'s line: its material\'s description, its λ, its thickness');
+      t.expect(await plan.locator('text', { hasText: /^Silicone render, 1.5 mm grain/ }).count() >= 1, 'the render has no λ: its optional part is left out');
+      const [x0, y0] = await t.planPoint(-0.7, 5.8);
+      const [x1, y1] = await t.planPoint(17.7, -2.7);
+      await t.shot('buildup-tag', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      // The tag type's editor, beside its preview on the project's wall type.
+      await t.tool('manage.standards');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByText('Tags', { exact: true }).first().click();
+      await t.wait(400);
+      await dialog.locator('[data-field=tag-shape-buildup]').first().click();
+      await t.wait(1200);
+      t.expect(await dialog.locator('[data-buildup-editor] [data-field=tag-preview] text').count() >= 6, 'the editor shows its preview on the wall type');
+      for (const f of ['tag-header', 'tag-line', 'tag-footer', 'tag-order', 'tag-zero-layers', 'tag-leaders', 'tag-bullet', 'tag-width'])
+        t.expect(await dialog.locator(`[data-field=${f}]`).count() === 1, `the editor has its ${f}`);
+      await t.shot('buildup-tag-type', { of: '[data-buildup-editor]', pad: 6 });
+    },
+  },
+  {
     // Materials for rendering (report #76): from the library, the appearance with its preview, every window's frame and glass at once, the house in 3D.
     id: 'materials-render',
     async run(t) {

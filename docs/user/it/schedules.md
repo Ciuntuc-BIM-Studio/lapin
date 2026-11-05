@@ -14,6 +14,8 @@ Tutto ciò che Lapin modella è misurato dalla sua geometria: la lunghezza, l’
 
 ![Il computo raggruppato per categoria e materiale](shots/quantity-takeoff.webp)
 
+Per materiale, un materiale misurato per **area** (vedi [Materiali](materials.md)) ha una riga per ogni spessore in cui è posato, con una colonna **Spessore (mm)**: *Lana minerale 150 mm: 84,20 m²*, *Lana minerale 200 mm: 31,00 m²*. Uno misurato per volume ha solo i suoi m³, per massa i suoi kg, per pezzi i suoi **Pezzi**. Una colonna **Nota** segnala uno strato che non ha uno spessore del catalogo del materiale. Il computo fa lo stesso: una voce su un materiale si misura come dice il materiale, una riga per spessore. Un materiale senza regola si misura come prima.
+
 **Costi → Esporta XLSX** salva subito il computo come cartella di lavoro (in un browser viene scaricato).
 
 ## Le quantità su una tavola

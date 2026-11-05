@@ -27,6 +27,19 @@ Sfera arată rezultatul imediat. Ce nu setezi vine din nume: un material numit *
 
 ![Biblioteca de materiale](shots/material-library.webp)
 
+## Date: descriere, parametri, cum se măsoară
+
+Tabul **Date** ține ce spune materialul despre el. Îl scrii o dată; îl citește fiecare tip în care e materialul: eticheta de stratificație, antemăsurătoarea, devizul, exportul IFC.
+
+![Datele unui material: descrierea, parametrii, cum se măsoară și grosimile din catalog](shots/material-data.webp)
+
+- **Descriere**: textul de specificație, pe mai multe rânduri (*Plăci de vată minerală, λ = 0,035 W/mK, prinse cu dibluri*). O etichetă de stratificație îl scrie în locul numelui.
+- **Parametri**: un nume, un fel și o valoare, ca la elemente. **Adaugă unul obișnuit…** oferă **Conductivitate termică λ**, **Rezistență la vapori μ** și **Densitate**, care merg în IFC cu numele lor standard (*Pset_MaterialThermal.ThermalConductivity*, *Pset_MaterialHygroscopic.UpperVaporResistanceFactor*, *Pset_MaterialCommon.MassDensity*, în unități SI), și **Reacția la foc** și **Rezistență la compresiune**, care rămân ale tale. Parametrii tăi merg în IFC ca *Lapin_Material*.
+- **Măsurat după** spune cum îl numără **Cost → Antemăsurătoare** (pe material) și devizul: **arie** (m², un rând pe grosime: plăci, termoizolații, membrane), **volum** (m³: beton, balast, șapă), **masă** (kg, din densitate) sau **bucăți** (plăci de mărimea pe care o dai). Lăsat gol, se măsoară cum se măsoară elementele lui.
+- **Grosimi din catalog (mm)**: grosimile în care îl face producătorul, de exemplu *50, 80, 100, 150, 200, 240*. Tabelele de straturi din **Tipuri de pereți** și **Tipuri de plăci** le oferă lângă grosime (poți scrie și alta), iar un strat de altă grosime e marcat cu un semn de avertizare.
+
+Exportul IFC scrie descrierea ca Description a materialului și parametrii ca seturile lui de proprietăți; importul le citește înapoi, și din fișierul altui program.
+
 ## Un singur material pentru toate tocurile și toată sticla
 
 Ușile și ferestrele noi sunt făcute din materiale comune, parte cu parte: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** și **Hardware**. Schimbi **Window frame** o dată și se schimbă tocul tuturor ferestrelor.

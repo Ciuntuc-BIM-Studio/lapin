@@ -94,6 +94,26 @@ Et valgt mærke har greb. Træk i boksen for at flytte mærket: henvisningslinje
 
 En dørs eller et vindues mærke redigeres del for del, hver tekst flyttet eller drejet og hver ende af linjen forlænget: se [Døre og vinduer](doors-windows.md).
 
+#### Opbygningsmærke
+
+Et opbygningsmærke skriver et elements lag som en arkitektnote: en overskrift (*EXTERIOR*), en linje for hvert lag, en bundtekst (*INTERIOR*). Et nyt projekt har **Build-up (exterior → interior)**: hver linje er materialets beskrivelse (dets navn, hvis det ingen har), dets λ, hvis det har en, og lagets tykkelse i mm. Vælg det i værktøjet **Mærke**s bjælke og klik på en væg, et dæk, et tag eller et rums overflade; andre elementer får det valgte felt. Teksten læses fra modellen, hver gang den tegnes: ret et lag, et materiales beskrivelse eller dets λ, og mærket følger med.
+
+![To opbygningsmærker på en facadevæg: én henvisningslinje, og én pr. lag](shots/buildup-tag.webp)
+
+Dets form indstilles i **Administrer → Tegningsstandarder → Mærker**: sæt en mærketypes **Form** til *opbygning*, eller klik på **Opbygning…** ud for en, for at redigere den ved siden af en forhåndsvisning på en af projektets væg- eller dæktyper.
+
+- **Overskrift** og **Bundtekst**: skrives over og under lagene (tom: ingen; `|` starter en ny linje).
+- **Hvert lag**: linjen, der skrives én gang pr. lag. Den læser lagets felter, `{description}`, `{material}`, `{thickness}` (i den enhed, der er valgt under **Tykkelse i**), `{note}` (lagets note i dets type), `{function}` (kerne, overflade, isolering…) og `{index}`; enhver af materialets parametre efter navn eller symbol, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (se materialets [Data](materials.md#data-beskrivelse-parametre-hvordan-det-males)); og elementets, `{name}`, `{type}`, `{mark}`. **Indsæt et felt…** sætter et ind, hvor markøren er, og viser de parametre, projektets materialer har.
+- **Firkantede klammer** gør en del valgfri: `[, λ = {λ} W/mK]` skrives kun, hvor materialet har en λ; en del udgår helt, når et felt i den er tomt. **[ ]** gør markeringen til sådan en del. Skriv `\[` eller `\]` for at skrive selve klammen.
+- **Rækkefølge**: fra ydersiden mod indersiden af en væg (siden med dens første lag er dens yderside, så en spejlet væg starter stadig der), fra toppen mod bunden af et dæk eller et tag; eller omvendt. Vælg den rækkefølge, lagene ligger i ved siden af noten, så henvisningslinjer pr. lag aldrig krydser hinanden.
+- **Lag uden tykkelse** (membraner, folier, maling) skrives, medmindre du fjerner fluebenet ved **vist**. Et lag, der skifter materiale op ad højden, skriver en linje for hvert materiale.
+- **Henvisningslinjer**: én, til elementet, eller **én pr. lag**, hver fra sin linje til et punkt inde i sit eget lag, hvor visningen kan skelne lagene (en væg i planer og snit, et dæk i snit; ellers beholder mærket én). Træk henvisningslinjens ende langs elementet for at krydse det et andet sted.
+- **Linjer starter med** et punkt, en tankestreg, deres nummer eller ingenting; de ombrydes ved **Bredde mm** på papiret, hængende efter punkttegnet, og en værdi bliver ved sit symbol og sin enhed (`λ = 0.035 W/mK`).
+
+![Editoren for en opbygningsmærketype ved siden af dens forhåndsvisning](shots/buildup-tag-type.webp)
+
+Som ethvert mærke følger opbygningsmærket sit element, og tegningsark og PDF'er udskriver det, som du ser det, med λ, μ og ρ. En egen **Tekst** i dets egenskaber erstatter linjen pr. lag for netop det mærke.
+
 ### Modullinjer
 
 **Annotér → Modullinje** (<kbd>GR</kbd>) tegner én akse ud fra dens to ender; den får den næste betegnelse i sin retning. **Annotér → Aksenet…** lægger et helt net på én gang: afstandene **På tværs** (de nummererede akser, fra venstre mod højre) og **På langs** (akserne med bogstaver, nedefra og op) i projektets enheder, fx `6000 6000 4500` eller `3*6000`; **Origo**, hvor de første akser krydser, en **Vinkel**, hvor langt akserne går **Ud over nettet**, de **Første betegnelser** og **Aksetypen**. Med **erstat nettets akser** markeret forsvinder de akser, der er tegnet indtil da.

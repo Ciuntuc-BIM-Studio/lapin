@@ -27,7 +27,7 @@ Los archivos se nombran según ISO 19650-2: **Proyecto-Originador-Volumen-Nivel-
 
 ![Comprobación: los hallazgos por regla](shots/cde-check.webp)
 
-Bloqueantes: un cajetín sin número, sin título o sin quién lo dibujó; una vista sin escala; una vista fuera del marco o sobre el cajetín; una lámina que cambió desde su última emisión pero sigue en esa revisión; un número de lámina que no da número de archivo. Avisos: quién comprobó, la fecha y la fase vacías; un plano coloreado por un esquema de habitaciones, o con muchas tramas, sin leyenda; un plano, una sección o un alzado en ninguna lámina; un plano de situación sin flecha del norte; elementos sin planta, sin tipo o sin material; puertas y ventanas sin etiqueta; habitaciones sin número; las propiedades IFC obligatorias (IsExternal, LoadBearing, FireRating en puertas) vacías.
+Bloqueantes: un cajetín sin número, sin título o sin quién lo dibujó; una vista sin escala; una vista fuera del marco o sobre el cajetín; una lámina que cambió desde su última emisión pero sigue en esa revisión; un número de lámina que no da número de archivo. Avisos: quién comprobó, la fecha y la fase vacías; un plano coloreado por un esquema de habitaciones, o con muchas tramas, sin leyenda; un plano, una sección o un alzado en ninguna lámina; un plano de situación sin flecha del norte; elementos sin planta, sin tipo o sin material; puertas y ventanas sin etiqueta; habitaciones sin número; las propiedades IFC obligatorias (IsExternal, LoadBearing, FireRating en puertas) vacías; una capa cuyo espesor no es uno de los espesores de catálogo de su material.
 
 ## Emitir
 

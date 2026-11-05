@@ -54,10 +54,41 @@ public static class StandardPsets
             ("IsExternal", B), ("ThermalTransmittance", N))),
         new("Pset_BuildingElementProxyCommon", [IfcClass.BuildingElementProxy], P(("Reference", T), ("Status", T), ("IsExternal", B), ("ThermalTransmittance", N), ("LoadBearing", B), ("FireRating", T))),
         new("Pset_SpaceCommon", [IfcClass.Space], P(("Reference", T), ("IsExternal", B), ("GrossPlannedArea", A), ("NetPlannedArea", A), ("PubliclyAccessible", B), ("HandicapAccessible", B))),
+        // A material's own sets (IFC 4's Pset_Material…, docs/plan-buildup-tags.md): SI values, as IFC holds them (W/(m·K), kg/m³, Pa).
+        new("Pset_MaterialCommon", [IfcClass.Material], P(("MolecularWeight", N), ("Porosity", N), ("MassDensity", N))),
+        new("Pset_MaterialThermal", [IfcClass.Material], P(("SpecificHeatCapacity", N), ("BoilingPoint", N), ("FreezingPoint", N), ("ThermalConductivity", N))),
+        new("Pset_MaterialHygroscopic", [IfcClass.Material], P(("UpperVaporResistanceFactor", N), ("LowerVaporResistanceFactor", N), ("IsothermalMoistureCapacity", N),
+            ("VaporPermeability", N), ("MoistureDiffusivity", N))),
+        new("Pset_MaterialMechanical", [IfcClass.Material], P(("DynamicViscosity", N), ("YoungModulus", N), ("ShearModulus", N), ("PoissonRatio", N), ("ThermalExpansionCoefficient", N))),
+        new("Pset_MaterialConcrete", [IfcClass.Material], P(("CompressiveStrength", N), ("MaxAggregateSize", L), ("AdmixturesDescription", T), ("Workability", T),
+            ("WaterImpermeability", T), ("ProtectivePoreRatio", N))),
+        new("Pset_MaterialSteel", [IfcClass.Material], P(("YieldStress", N), ("UltimateStress", N), ("UltimateStrain", N), ("HardeningModule", N), ("ProportionalStress", N), ("PlasticStrain", N))),
+        new("Pset_MaterialWood", [IfcClass.Material], P(("Species", T), ("StrengthGrade", T), ("AppearanceGrade", T), ("MoistureContent", N))),
     ];
+
+    /// <summary>
+    /// The IFC measure a material set's number is written as (IFC 4's types for these properties); a number not listed is an IfcReal.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> MaterialMeasures = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["MolecularWeight"] = "IFCMOLECULARWEIGHTMEASURE", ["Porosity"] = "IFCNORMALISEDRATIOMEASURE", ["MassDensity"] = "IFCMASSDENSITYMEASURE",
+        ["SpecificHeatCapacity"] = "IFCSPECIFICHEATCAPACITYMEASURE", ["BoilingPoint"] = "IFCTHERMODYNAMICTEMPERATUREMEASURE", ["FreezingPoint"] = "IFCTHERMODYNAMICTEMPERATUREMEASURE",
+        ["ThermalConductivity"] = "IFCTHERMALCONDUCTIVITYMEASURE",
+        ["UpperVaporResistanceFactor"] = "IFCPOSITIVERATIOMEASURE", ["LowerVaporResistanceFactor"] = "IFCPOSITIVERATIOMEASURE",
+        ["IsothermalMoistureCapacity"] = "IFCISOTHERMALMOISTURECAPACITYMEASURE", ["VaporPermeability"] = "IFCVAPORPERMEABILITYMEASURE", ["MoistureDiffusivity"] = "IFCMOISTUREDIFFUSIVITYMEASURE",
+        ["DynamicViscosity"] = "IFCDYNAMICVISCOSITYMEASURE", ["YoungModulus"] = "IFCMODULUSOFELASTICITYMEASURE", ["ShearModulus"] = "IFCMODULUSOFELASTICITYMEASURE",
+        ["PoissonRatio"] = "IFCPOSITIVERATIOMEASURE", ["ThermalExpansionCoefficient"] = "IFCTHERMALEXPANSIONCOEFFICIENTMEASURE",
+        ["CompressiveStrength"] = "IFCPRESSUREMEASURE", ["ProtectivePoreRatio"] = "IFCNORMALISEDRATIOMEASURE",
+        ["YieldStress"] = "IFCPRESSUREMEASURE", ["UltimateStress"] = "IFCPRESSUREMEASURE", ["UltimateStrain"] = "IFCPOSITIVERATIOMEASURE",
+        ["HardeningModule"] = "IFCMODULUSOFELASTICITYMEASURE", ["ProportionalStress"] = "IFCPRESSUREMEASURE", ["PlasticStrain"] = "IFCPOSITIVERATIOMEASURE",
+        ["MoistureContent"] = "IFCPOSITIVERATIOMEASURE",
+    };
 
     /// <summary>Lapin's own sets, which only Lapin writes.</summary>
     public static readonly string[] Reserved = ["Lapin_Intent", "Lapin_Phase"];
+
+    /// <summary>The set a material's own parameters are written to in IFC (the user's, not a standard one).</summary>
+    public const string MaterialOwn = "Lapin_Material";
 
     /// <summary>The set the user's parameters go to when none is named.</summary>
     public const string Own = "Lapin_Parameters";

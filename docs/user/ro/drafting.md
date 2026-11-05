@@ -98,6 +98,26 @@ O etichetă selectată are mânere. Trage de casetă ca s-o muți: linia de indi
 
 Marcajul unei uși sau ferestre se modifică parte cu parte, fiecare text mutat sau rotit și fiecare capăt al liniei lungit: vezi [Uși și ferestre](doors-windows.md).
 
+#### Eticheta de stratificație
+
+O etichetă de stratificație scrie straturile unui element ca o notă de arhitectură: un antet (*EXTERIOR*), un rând pentru fiecare strat, un final (*INTERIOR*). Un proiect nou are **Build-up (exterior → interior)**: fiecare rând e descrierea materialului (numele lui, dacă nu are descriere), λ-ul lui dacă îl are și grosimea stratului în mm. Alege-o în bara uneltei **Etichetă** și dă clic pe un perete, o placă, un acoperiș sau finisajul unei încăperi; celelalte elemente primesc câmpul ales. Textul se citește din model de fiecare dată când se desenează: schimbi un strat, descrierea unui material sau λ-ul lui, iar eticheta urmează.
+
+![Două etichete de stratificație pe un perete de fațadă: o singură săgeată și câte o săgeată pe strat](shots/buildup-tag.webp)
+
+Forma ei se stabilește în **Gestionare → Standarde de desen → Etichete**: pune **Forma** unui tip de etichetă pe *stratificație* sau dă clic pe **Stratificație…** la unul, ca să-l editezi lângă o previzualizare pe unul dintre tipurile de perete sau de placă ale proiectului.
+
+- **Antet** și **Final**: scrise deasupra și dedesubtul straturilor (gol: niciunul; `|` începe un rând nou).
+- **Fiecare strat**: rândul scris o dată pentru fiecare strat. Citește câmpurile stratului, `{description}`, `{material}`, `{thickness}` (în unitatea aleasă la **Grosimea în**), `{note}` (nota stratului în tipul lui), `{function}` (miez, finisaj, izolație…) și `{index}`; orice parametru al materialului după nume sau simbol, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (vezi [Datele](materials.md#date-descriere-parametri-cum-se-masoara) materialului); și pe ale elementului, `{name}`, `{type}`, `{mark}`. **Inserează un câmp…** pune unul unde e cursorul și arată parametrii pe care îi au materialele proiectului.
+- **Parantezele drepte** fac o parte opțională: `[, λ = {λ} W/mK]` se scrie doar unde materialul are λ; o parte cade întreagă când un câmp din ea e gol. **[ ]** face din selecție o astfel de parte. Ca să scrii chiar o paranteză, tastează `\[` sau `\]`.
+- **Ordine**: de la exteriorul spre interiorul unui perete (partea primului lui strat e exteriorul, deci un perete oglindit începe tot de acolo), de sus în jos la o placă sau un acoperiș; ori invers. Alege ordinea în care straturile stau lângă notă, ca săgețile pe straturi să nu se încrucișeze.
+- **Straturile fără grosime** (membrane, folii, vopsea) se scriu, dacă nu debifezi **arătate**. Un strat care își schimbă materialul pe înălțime scrie un rând pentru fiecare material.
+- **Săgeți**: una, spre element, sau **câte una pe strat**, fiecare de la rândul ei până într-un punct din stratul ei, acolo unde vederea deosebește straturile (un perete în planuri și secțiuni, o placă în secțiuni; în rest eticheta păstrează una). Trage capătul săgeții de-a lungul elementului ca să-l traverseze în alt loc.
+- **Rândurile încep cu** o bulină, o liniuță, numărul lor sau nimic; se rup la **Lățime mm** pe hârtie, aliniate după bulină, iar o valoare rămâne lângă simbolul și unitatea ei (`λ = 0.035 W/mK`).
+
+![Editorul unui tip de etichetă de stratificație, lângă previzualizarea lui](shots/buildup-tag-type.webp)
+
+Ca orice etichetă, eticheta de stratificație își urmează elementul, iar planșele și PDF-urile o tipăresc cum o vezi, cu λ, μ și ρ cu tot. Un **Text** propriu în proprietățile ei înlocuiește rândul fiecărui strat doar pentru eticheta aceea.
+
 ### Axe
 
 **Adnotări → Axă** (<kbd>GR</kbd>) desenează o axă după cele două capete; ia următoarea etichetă a direcției ei. **Adnotări → Rețea de axe…** pune o rețea întreagă dintr-odată: distanțele pe **Transversal** (axele numerotate, de la stânga la dreapta) și pe **Longitudinal** (axele cu litere, de jos în sus), în unitățile proiectului, ca `6000 6000 4500` sau `3*6000`; **Originea** unde se intersectează primele axe, un **Unghi**, cât trec axele **Dincolo de rețea**, **Primele etichete** și **Tipul de axă**. Cu **înlocuiește axele rețelei** bifat, axele desenate până atunci dispar.

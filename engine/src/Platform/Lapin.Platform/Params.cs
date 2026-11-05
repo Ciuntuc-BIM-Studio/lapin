@@ -15,6 +15,33 @@ public static class Params
     public static bool Same(JsonObject p, string? pset, string name) =>
         string.Equals((string?)p["name"], name, StringComparison.OrdinalIgnoreCase) && string.Equals(SetOf(p), pset, StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// A whole list of parameters as a command gives it ([{name, kind, value, pset?, options?}], a material's), each checked as
+    /// element.setParam checks one: a standard set's property only by its own name and held as its kind, a set of the user's
+    /// never „Pset_”; the same name twice in one set refused. Stored as given, in order.
+    /// </summary>
+    public static JsonArray ParseList(JsonNode? node, string ifcClass)
+    {
+        if (node is null) return [];
+        if (node is not JsonArray arr) throw new CommandException("Parameters are a list.");
+        var o = new JsonArray();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var n in arr)
+        {
+            if (n is not JsonObject p) throw new CommandException("Every parameter is an object: name, kind and value.");
+            var name = ((string?)p["name"])?.Trim() is { Length: > 0 } nm ? nm : throw new CommandException("A parameter needs a name.");
+            var (pset, standardKind) = StandardPsets.Check(ifcClass, (string?)p["pset"], name);
+            if (!seen.Add($"{pset}\u001f{name}")) throw new CommandException($"„{name}” is there twice.");
+            var kind = standardKind ?? (string?)p["kind"] ?? throw new CommandException($"„{name}” needs its kind ({string.Join(", ", Kinds)}).");
+            var options = p["options"] as JsonArray;
+            var entry = new JsonObject { ["name"] = name, ["kind"] = kind, ["value"] = Check(kind, p["value"], options) };
+            if (pset != null) entry["pset"] = pset;
+            if (kind == "choice" && options != null) entry["options"] = options.DeepClone();
+            o.Add((JsonNode)entry);
+        }
+        return o;
+    }
+
     public static JsonNode? Check(string kind, JsonNode? value, JsonArray? options)
     {
         if (!Kinds.Contains(kind)) throw new CommandException($"„{kind}” is not a kind of parameter ({string.Join(", ", Kinds)}).");

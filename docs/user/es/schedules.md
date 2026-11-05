@@ -14,6 +14,8 @@ Todo lo que Lapin modela se mide a partir de su geometría: la longitud, la altu
 
 ![Las mediciones agrupadas por clase y material](shots/quantity-takeoff.webp)
 
+Por material, un material medido por **área** (ver [Materiales](materials.md)) tiene una fila por cada espesor en que se coloca, con una columna **Espesor (mm)**: *Lana mineral 150 mm: 84,20 m²*, *Lana mineral 200 mm: 31,00 m²*. Uno medido por volumen tiene solo sus m³, por masa sus kg, por piezas sus **Piezas**. Una columna **Nota** indica cuándo una capa no tiene un espesor del catálogo del material. El presupuesto hace lo mismo: un artículo sobre un material se mide como dice el material, una línea por espesor. Un material sin regla se mide como antes.
+
 **Costes → Exportar XLSX** guarda directamente las mediciones como libro de cálculo (en el navegador se descarga).
 
 ## Cantidades en una lámina

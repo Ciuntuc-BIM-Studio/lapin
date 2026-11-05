@@ -14,6 +14,8 @@ Tot ce modelează Lapin e măsurat din geometrie: lungimea, înălțimea, aria l
 
 ![Antemăsurătoarea grupată pe tip de element și material](shots/quantity-takeoff.webp)
 
+Pe material, un material măsurat după **arie** (vezi [Materiale](materials.md)) are câte un rând pentru fiecare grosime în care e pus, cu o coloană **Grosime (mm)**: *Vată minerală 150 mm: 84,20 m²*, *Vată minerală 200 mm: 31,00 m²*. Unul măsurat după volum are doar m³, după masă kg, după bucăți **Bucăți**. O coloană **Notă** spune când un strat nu are o grosime din catalogul materialului. Devizul face la fel: un articol pe un material se măsoară cum spune materialul, câte un rând pe grosime. Un material fără regulă se măsoară ca înainte.
+
 **Cost → Export XLSX** salvează direct antemăsurătoarea ca registru de calcul (în browser se descarcă).
 
 ## Cantitățile pe planșă

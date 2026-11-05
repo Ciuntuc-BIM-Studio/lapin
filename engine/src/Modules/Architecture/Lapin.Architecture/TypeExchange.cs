@@ -17,7 +17,7 @@ public static class TypeExchange
 {
     public const string Format = "lapin-types";
     static readonly (string Kind, string Class)[] Kinds = [("wall", IfcClass.WallType), ("floor", IfcClass.SlabType)];
-    static readonly string[] Header = ["Kind", "Type", "Mark", "Layer", "Material", "Thickness (mm)", "Core", "From (mm)", "To (mm)"];
+    static readonly string[] Header = ["Kind", "Type", "Mark", "Layer", "Material", "Thickness (mm)", "Core", "From (mm)", "To (mm)", "Note"];
 
     public static IEnumerable<(string Kind, Entity Type)> Types(IModelView m, IReadOnlyCollection<string>? kinds = null) =>
         Kinds.Where(k => kinds is null || kinds.Count == 0 || kinds.Contains(k.Kind))
@@ -25,7 +25,7 @@ public static class TypeExchange
 
     /// <summary>
     /// The types as a JSON document: <c>{format, version, types: [{kind, name, mark?, layers: [{material, thickness, core?, color?, name?, from?, to?,
-    /// priority?, parts?: [{material, height}]}], sweeps?: [{profile: {name, points, insertion}, mode, side, height, fromTop?, offset?, material?, flip?,
+    /// priority?, note?, parts?: [{material, height}]}], sweeps?: [{profile: {name, points, insertion}, mode, side, height, fromTop?, offset?, material?, flip?,
     /// setbackStart?, setbackEnd?, returns?, returnsAtOpenings?, gaps?}]}]}</c>, metres.
     /// </summary>
     public static JsonObject Json(IModelView m, IReadOnlyCollection<string>? kinds = null)
@@ -44,6 +44,7 @@ public static class TypeExchange
                 if (l.From is { } f) o["from"] = Math.Round(f, 6);
                 if (l.To is { } to) o["to"] = Math.Round(to, 6);
                 if (l.Priority is { } pr) o["priority"] = pr;
+                if (l.Note is { Length: > 0 } note) o["note"] = note;
                 if (l.Parts is { Count: > 0 } parts)
                     o["parts"] = new JsonArray(parts.Select(p => (JsonNode)new JsonObject
                     {
@@ -74,7 +75,7 @@ public static class TypeExchange
                 sb.AppendLine(string.Join(',', new[]
                 {
                     (string)t["kind"]!, (string)t["name"]!, (string?)t["mark"] ?? "", (string?)l["name"] ?? (++i).ToString(CultureInfo.InvariantCulture),
-                    (string)l["material"]!, Mm(l["thickness"]), l["core"] is not null ? "yes" : "", Mm(l["from"]), Mm(l["to"]),
+                    (string)l["material"]!, Mm(l["thickness"]), l["core"] is not null ? "yes" : "", Mm(l["from"]), Mm(l["to"]), ((string?)l["note"] ?? "").Replace("\r\n", " ").Replace('\n', ' '),
                 }.Select(Cell)));
         }
         return sb.ToString();
@@ -122,7 +123,7 @@ public static class TypeExchange
         var sep = new[] { ';', '\t', ',' }.MaxBy(c => lines[0].Count(x => x == c));
         var head = Cells(lines[0], sep).Select(h => h.Trim().ToLowerInvariant()).ToList();
         int Col(params string[] names) => head.FindIndex(h => names.Any(n => h == n || h.StartsWith(n + " ")));
-        int kind = Col("kind"), type = Col("type", "name"), mark = Col("mark"), layer = Col("layer"), material = Col("material"), thick = Col("thickness"), core = Col("core"), from = Col("from"), to = Col("to");
+        int kind = Col("kind"), type = Col("type", "name"), mark = Col("mark"), layer = Col("layer"), material = Col("material"), thick = Col("thickness"), core = Col("core"), from = Col("from"), to = Col("to"), note = Col("note");
         if (type < 0 || material < 0 || thick < 0) throw new CommandException("The CSV needs at least the columns Type, Material and Thickness (mm).");
         var order = new List<(string Kind, string Name)>();
         var found = new Dictionary<(string, string), (string? Mark, List<JsonObject> Layers)>();
@@ -139,6 +140,7 @@ public static class TypeExchange
             if (layer >= 0 && At(layer) is { Length: > 0 } ln && !int.TryParse(ln, out _)) l["name"] = ln;
             if (At(from).Length > 0) l["from"] = Metres(At(from), sep, name);
             if (At(to).Length > 0) l["to"] = Metres(At(to), sep, name);
+            if (At(note).Length > 0) l["note"] = At(note);
             t.Layers.Add(l);
         }
         return order.Select(k => (k.Kind, k.Name, found[k].Mark, LayerSets.Parse(new JsonArray([.. found[k].Layers]), $"The type „{k.Name}”"), (JsonArray?)null)).ToList();

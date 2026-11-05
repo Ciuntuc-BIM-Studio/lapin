@@ -27,7 +27,7 @@ Dateien werden nach ISO 19650-2 benannt: **Projekt-Urheber-Volumen-Ebene-Typ-Rol
 
 ![Prüfung: die Befunde nach Regel](shots/cde-check.webp)
 
-Blockierend: ein Schriftfeld ohne Nummer, Titel oder Zeichner; eine Ansicht ohne Maßstab; eine Ansicht außerhalb des Rahmens oder über dem Schriftfeld; ein Blatt, das sich seit der letzten Ausgabe geändert hat, aber noch auf dieser Revision steht; eine Blattnummer, die keine Dateinummer ergibt. Warnungen: Prüfer, Datum und Phase leer; ein Grundriss, der nach einem Raumschema gefärbt ist oder viele Schraffuren hat, ohne Legende; ein Grundriss, Schnitt oder eine Ansicht auf keinem Blatt; ein Lageplan ohne Nordpfeil; Elemente ohne Geschoss, Typ oder Material; Türen und Fenster ohne Beschriftung; Räume ohne Nummer; die Pflicht-IFC-Eigenschaften (IsExternal, LoadBearing, FireRating bei Türen) leer.
+Blockierend: ein Schriftfeld ohne Nummer, Titel oder Zeichner; eine Ansicht ohne Maßstab; eine Ansicht außerhalb des Rahmens oder über dem Schriftfeld; ein Blatt, das sich seit der letzten Ausgabe geändert hat, aber noch auf dieser Revision steht; eine Blattnummer, die keine Dateinummer ergibt. Warnungen: Prüfer, Datum und Phase leer; ein Grundriss, der nach einem Raumschema gefärbt ist oder viele Schraffuren hat, ohne Legende; ein Grundriss, Schnitt oder eine Ansicht auf keinem Blatt; ein Lageplan ohne Nordpfeil; Elemente ohne Geschoss, Typ oder Material; Türen und Fenster ohne Beschriftung; Räume ohne Nummer; die Pflicht-IFC-Eigenschaften (IsExternal, LoadBearing, FireRating bei Türen) leer; eine Schicht, deren Dicke keine Katalogdicke ihres Materials ist.
 
 ## Ausgeben
 

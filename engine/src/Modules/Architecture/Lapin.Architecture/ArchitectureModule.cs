@@ -256,6 +256,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // ------------------------------------------------------------ schedules
         new Schedules.ScheduleEntity().Register(r);
         r.Service<IScheduleSource>(new RoomSchedule());
+        r.Service<IElementBuildUps>(new RoomFinishBuildUps());
         r.Service<IElementUpdate>(new RoomUpdate());
         r.Service<IProjectUpgrade>(new RoomNameUpgrade());
         r.Service<IScheduleSource>(new Roofs.RoofTimberSchedule());

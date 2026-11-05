@@ -10,7 +10,8 @@
  * how it draws where a section or plan cuts it and in elevation (hatch, scale,
  * fill and pen, or a membrane line), as before. Hatch patterns are imported
  * from .pat files and travel with the project. Every 3D export names its
- * materials after these, one each, with these values.
+ * materials after these, one each, with these values. Data (MaterialDataTab): its
+ * description, parameters, measure and catalogue of thicknesses.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -26,6 +27,7 @@ import { forgetHatchPreviews } from './hatchCache';
 import { freeName, matches, PRESET_GROUPS, PRESETS, presetArgs, type Preset } from './materialLibrary';
 import { lookOf, LOOK_RANGES, type Look } from '../../viewport/look';
 import { LengthField } from '../../shell/cells';
+import { MaterialDataTab } from './MaterialDataTab';
 
 type Kind = 'section' | 'plan' | 'elevation';
 /** IfcMaterial.Category as the interface offers it (Materials.Categories in the engine). */
@@ -59,7 +61,7 @@ export function MaterialsDialog() {
   const [newName, setNewName] = useState('');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [tab, setTab] = useState<'appearance' | 'graphics'>('appearance');
+  const [tab, setTab] = useState<'appearance' | 'graphics' | 'data'>('appearance');
   const [library, setLibrary] = useState(false);
   const [replaceWith, setReplaceWith] = useState('');
   /** A slider being dragged: its value shows in the preview, and goes to the engine when let go. */
@@ -241,7 +243,9 @@ export function MaterialsDialog() {
               <div className="tabs-inline" role="tablist">
                 <button type="button" role="tab" aria-selected={tab === 'appearance'} className={tab === 'appearance' ? 'on' : ''} data-tab="appearance" onClick={() => setTab('appearance')}>Appearance</button>
                 <button type="button" role="tab" aria-selected={tab === 'graphics'} className={tab === 'graphics' ? 'on' : ''} data-tab="graphics" onClick={() => setTab('graphics')}>2D graphics</button>
+                <button type="button" role="tab" aria-selected={tab === 'data'} className={tab === 'data' ? 'on' : ''} data-tab="data" data-field="mat-data-tab" onClick={() => setTab('data')}>Data</button>
               </div>
+              {tab === 'data' && node && <MaterialDataTab node={node} />}
               {tab === 'appearance' && previewNode && (
                 <div className="material-look" data-testid="material-look">
                   <MaterialPreview material={previewNode} />

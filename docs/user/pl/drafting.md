@@ -94,6 +94,26 @@ Zaznaczona etykieta ma uchwyty. Przeciągnij ramkę, aby przesunąć etykietę: 
 
 Znacznik drzwi lub okna edytuje się część po części: każdy tekst przesunięty lub obrócony, każdy koniec jego linii wydłużony; zob. [Drzwi i okna](doors-windows.md).
 
+#### Etykieta układu warstw
+
+Etykieta układu warstw pisze warstwy elementu jako notatkę architektoniczną: nagłówek (*EXTERIOR*), wiersz dla każdej warstwy, stopkę (*INTERIOR*). Nowy projekt ma **Build-up (exterior → interior)**: każdy wiersz to opis materiału (jego nazwa, gdy nie ma opisu), jego λ, jeśli je ma, i grubość warstwy w mm. Wybierz ją na pasku narzędzia **Etykieta** i kliknij ścianę, strop, dach lub wykończenie pomieszczenia; inne elementy dostają wybrane pole. Tekst jest czytany z modelu przy każdym rysowaniu: zmień warstwę, opis materiału lub jego λ, a etykieta podąży za zmianą.
+
+![Dwie etykiety układu warstw na ścianie elewacyjnej: jeden odnośnik i odnośnik do każdej warstwy](shots/buildup-tag.webp)
+
+Jej formę ustala się w **Zarządzaj → Standardy rysunkowe → Etykiety**: ustaw **Kształt** typu etykiety na *układ warstw* albo kliknij **Układ warstw…** przy jednym z nich, aby go edytować obok podglądu na jednym z typów ścian lub stropów projektu.
+
+- **Nagłówek** i **Stopka**: pisane nad i pod warstwami (puste: brak; `|` zaczyna nowy wiersz).
+- **Każda warstwa**: wiersz pisany raz dla każdej warstwy. Czyta pola warstwy, `{description}`, `{material}`, `{thickness}` (w jednostce wybranej w **Grubość w**), `{note}` (uwaga warstwy w jej typie), `{function}` (rdzeń, wykończenie, izolacja…) i `{index}`; dowolny parametr materiału po nazwie lub symbolu, `{λ}`, `{μ}`, `{ρ}`, `{Reaction to fire}` (zob. [Dane](materials.md#dane-opis-parametry-sposob-pomiaru) materiału); oraz pola elementu, `{name}`, `{type}`, `{mark}`. **Wstaw pole…** wstawia jedno w miejscu kursora i pokazuje parametry, które mają materiały projektu.
+- **Nawiasy kwadratowe** czynią część opcjonalną: `[, λ = {λ} W/mK]` pisze się tylko tam, gdzie materiał ma λ; część znika w całości, gdy pole w niej jest puste. **[ ]** robi z zaznaczenia taką część. Aby napisać sam nawias, wpisz `\[` lub `\]`.
+- **Kolejność**: od zewnątrz do wnętrza ściany (strona jej pierwszej warstwy jest jej zewnętrzem, więc odbita ściana nadal zaczyna się tam), od góry do dołu stropu lub dachu; albo odwrotnie. Wybierz kolejność, w jakiej warstwy leżą obok notatki, aby odnośniki do warstw się nie krzyżowały.
+- **Warstwy bez grubości** (membrany, folie, farba) są pisane, chyba że odznaczysz **widoczne**. Warstwa zmieniająca materiał na wysokości pisze wiersz dla każdego materiału.
+- **Odnośniki**: jeden, do elementu, albo **jeden na warstwę**, każdy od swojego wiersza do punktu wewnątrz swojej warstwy, tam gdzie widok rozróżnia warstwy (ściana w rzutach i przekrojach, strop w przekrojach; gdzie indziej etykieta zachowuje jeden). Przeciągnij koniec odnośnika wzdłuż elementu, aby przeciąć go w innym miejscu.
+- **Wiersze zaczynają się od** punktora, myślnika, swojego numeru lub niczego; łamią się przy **Szerokość mm** na papierze, z wcięciem po punktorze, a wartość zostaje przy swoim symbolu i jednostce (`λ = 0.035 W/mK`).
+
+![Edytor typu etykiety układu warstw obok jego podglądu](shots/buildup-tag-type.webp)
+
+Jak każda etykieta, etykieta układu warstw podąża za swoim elementem, a arkusze i pliki PDF drukują ją tak, jak ją widzisz, łącznie z λ, μ i ρ. Własny **Tekst** w jej właściwościach zastępuje wiersz każdej warstwy tylko dla tej etykiety.
+
 ### Osie siatki
 
 **Opisz → Oś siatki** (<kbd>GR</kbd>) rysuje jedną oś przez jej dwa końce; dostaje kolejną etykietę swojego kierunku. **Opisz → Siatka osi…** wstawia od razu całą siatkę: rozstawy **W poprzek** (osie numerowane, od lewej do prawej) i **Wzdłuż** (osie literowane, od dołu do góry) w jednostkach projektu, np. `6000 6000 4500` lub `3*6000`; **Początek**, gdzie przecinają się pierwsze osie, **Kąt**, jak daleko osie wychodzą **Poza siatkę**, **Pierwsze etykiety** i **Typ osi**. Gdy zaznaczysz **zastąp osie siatki**, dotychczasowe osie znikają.

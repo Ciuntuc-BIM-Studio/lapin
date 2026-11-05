@@ -27,6 +27,19 @@ La sfera mostra subito il risultato. Ciò che non imposti viene dal nome: un mat
 
 ![La libreria dei materiali](shots/material-library.webp)
 
+## Dati: descrizione, parametri, come si misura
+
+La scheda **Dati** contiene ciò che il materiale dice di sé. Lo scrivi una volta; lo legge ogni tipo in cui è il materiale: l’etichetta di stratigrafia, il computo delle quantità, il computo metrico, l’esportazione IFC.
+
+![I dati di un materiale: descrizione, parametri, come si misura e spessori di catalogo](shots/material-data.webp)
+
+- **Descrizione**: il testo del capitolato, su più righe (*Pannelli in lana minerale, λ = 0,035 W/mK, fissati con tasselli*). Un’etichetta di stratigrafia lo scrive al posto del nome.
+- **Parametri**: un nome, un tipo e un valore, come sugli elementi. **Aggiungi uno consueto…** propone **Conducibilità termica λ**, **Resistenza al vapore μ** e **Densità**, che vanno in IFC con i loro nomi standard (*Pset_MaterialThermal.ThermalConductivity*, *Pset_MaterialHygroscopic.UpperVaporResistanceFactor*, *Pset_MaterialCommon.MassDensity*, in unità SI), e **Reazione al fuoco** e **Resistenza a compressione**, che restano tuoi. I tuoi parametri vanno in IFC come *Lapin_Material*.
+- **Misurato per** dice come lo contano **Costi → Computo delle quantità** (per materiale) e il computo: **area** (m², una riga per spessore: pannelli, isolanti, membrane), **volume** (m³: calcestruzzo, ghiaia, massetto), **massa** (kg, dalla densità) o **pezzi** (pannelli della misura indicata). Vuoto, si misura come i suoi elementi.
+- **Spessori di catalogo (mm)**: gli spessori in cui lo produce il fabbricante, per esempio *50, 80, 100, 150, 200, 240*. Le tabelle degli strati di **Tipi di muro** e **Tipi di solaio** li propongono accanto allo spessore (puoi comunque scriverne un altro) e uno strato di altro spessore è segnato da un avviso.
+
+L’esportazione IFC scrive la descrizione come Description del materiale e i parametri come suoi insiemi di proprietà; l’importazione li rilegge, anche dal file di un altro programma.
+
 ## Un materiale per tutti i telai e tutto il vetro
 
 Le nuove porte e finestre sono fatte di materiali condivisi, parte per parte: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** e **Hardware**. Modifica **Window frame** una volta e cambiano tutti i telai delle finestre.

@@ -27,6 +27,19 @@ La esfera muestra el resultado al momento. Lo que no fijas viene del nombre: un 
 
 ![La biblioteca de materiales](shots/material-library.webp)
 
+## Datos: descripción, parámetros, cómo se mide
+
+La pestaña **Datos** guarda lo que el material dice de sí mismo. Lo escribes una vez; lo lee cada tipo en que está el material: la etiqueta de composición, las mediciones, el presupuesto, la exportación IFC.
+
+![Los datos de un material: su descripción, sus parámetros, cómo se mide y sus espesores de catálogo](shots/material-data.webp)
+
+- **Descripción**: el texto del pliego, en varias líneas (*Paneles de lana mineral, λ = 0,035 W/mK, fijados con tacos*). Una etiqueta de composición lo escribe en lugar del nombre.
+- **Parámetros**: un nombre, un tipo y un valor, como en los elementos. **Añadir uno habitual…** ofrece **Conductividad térmica λ**, **Resistencia al vapor μ** y **Densidad**, que van a IFC con sus nombres estándar (*Pset_MaterialThermal.ThermalConductivity*, *Pset_MaterialHygroscopic.UpperVaporResistanceFactor*, *Pset_MaterialCommon.MassDensity*, en unidades SI), y **Reacción al fuego** y **Resistencia a compresión**, que quedan como tuyos. Tus parámetros van a IFC como *Lapin_Material*.
+- **Medido por** dice cómo lo cuentan **Costes → Mediciones** (por material) y el presupuesto: **área** (m², una fila por espesor: placas, aislamientos, láminas), **volumen** (m³: hormigón, grava, solera), **masa** (kg, por su densidad) o **piezas** (de una placa del tamaño que indiques). Vacío, se mide como sus elementos.
+- **Espesores de catálogo (mm)**: los espesores en que lo fabrica el fabricante, por ejemplo *50, 80, 100, 150, 200, 240*. Las tablas de capas de **Tipos de muro** y **Tipos de losa** los ofrecen junto al espesor (puedes escribir otro) y una capa de otro espesor se marca con un aviso.
+
+La exportación IFC escribe la descripción como Description del material y los parámetros como sus conjuntos de propiedades; la importación los lee de vuelta, también del archivo de otro programa.
+
 ## Un material para todos los marcos y todo el vidrio
 
 Las puertas y ventanas nuevas se hacen con materiales compartidos, parte por parte: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** y **Hardware**. Cambia **Window frame** una vez y cambian todos los marcos de ventana.

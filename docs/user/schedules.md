@@ -14,6 +14,8 @@ Everything Lapin models is measured from its geometry: a wall's length, height, 
 
 ![The quantity takeoff grouped by kind and material](shots/quantity-takeoff.webp)
 
+By material, a material measured by **area** (see [Materials](materials.md)) gets a row for each thickness it is laid in, with a **Thickness (mm)** column: *Mineral wool 150 mm: 84.20 m²*, *Mineral wool 200 mm: 31.00 m²*. One measured by volume gets its m³ only, by mass its kg, by count its **Pieces**. A **Note** column says when a layer is not one of the material's catalogue thicknesses. The estimate does the same: an article on a material is measured as the material says, a line per thickness. A material without a rule is measured as before.
+
 **Cost → Export XLSX** saves the takeoff as a workbook straight away (downloaded in a browser).
 
 ## Quantities on a sheet

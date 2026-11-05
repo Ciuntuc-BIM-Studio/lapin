@@ -14,6 +14,8 @@ Alt, hvad Lapin modellerer, måles ud fra geometrien: en væg længde, højde, b
 
 ![Mængdeudtrækket grupperet efter art og materiale](shots/quantity-takeoff.webp)
 
+Efter materiale får et materiale målt efter **areal** (se [Materialer](materials.md)) en række for hver tykkelse det er lagt i, med en kolonne **Tykkelse (mm)**: *Mineraluld 150 mm: 84,20 m²*, *Mineraluld 200 mm: 31,00 m²*. Et målt efter volumen får kun sine m³, efter masse sine kg, efter stk. sine **Stk.**. En kolonne **Note** siger, når et lag ikke har en af materialets katalogtykkelser. Overslaget gør det samme: en post på et materiale måles som materialet siger, en linje pr. tykkelse. Et materiale uden regel måles som før.
+
 **Økonomi → Eksportér XLSX** gemmer mængdeudtrækket direkte som regneark (i en browser hentes det ned).
 
 ## Mængder på et ark

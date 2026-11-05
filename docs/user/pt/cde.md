@@ -27,7 +27,7 @@ Os arquivos são nomeados conforme a ISO 19650-2: **Projeto-Autor-Volume-Nível-
 
 ![Verificar: as ocorrências por regra](shots/cde-check.webp)
 
-Bloqueantes: um carimbo sem número, sem título ou sem quem desenhou; uma vista sem escala; uma vista fora do quadro ou sobre o carimbo; uma prancha que mudou desde a última emissão mas continua naquela revisão; um número de prancha que não dá número de arquivo. Avisos: quem verificou, a data e a fase deixados em branco; uma planta colorida por um esquema de ambientes, ou com muitas hachuras, sem legenda; uma planta, corte ou elevação em nenhuma prancha; uma planta de situação sem indicação do norte; elementos sem pavimento, sem tipo ou sem material; portas e janelas sem etiqueta; ambientes sem número; as propriedades IFC exigidas (IsExternal, LoadBearing, FireRating nas portas) deixadas em branco.
+Bloqueantes: um carimbo sem número, sem título ou sem quem desenhou; uma vista sem escala; uma vista fora do quadro ou sobre o carimbo; uma prancha que mudou desde a última emissão mas continua naquela revisão; um número de prancha que não dá número de arquivo. Avisos: quem verificou, a data e a fase deixados em branco; uma planta colorida por um esquema de ambientes, ou com muitas hachuras, sem legenda; uma planta, corte ou elevação em nenhuma prancha; uma planta de situação sem indicação do norte; elementos sem pavimento, sem tipo ou sem material; portas e janelas sem etiqueta; ambientes sem número; as propriedades IFC exigidas (IsExternal, LoadBearing, FireRating nas portas) deixadas em branco; uma camada cuja espessura não é uma das espessuras de catálogo do seu material.
 
 ## Emitir
 

@@ -27,6 +27,19 @@ Die Kugel zeigt das Ergebnis sofort. Was Sie nicht setzen, kommt aus dem Namen: 
 
 ![Die Materialbibliothek](shots/material-library.webp)
 
+## Daten: Beschreibung, Parameter, wie es gemessen wird
+
+Der Reiter **Daten** hält, was das Material über sich sagt. Du schreibst es einmal; jeder Typ, in dem das Material ist, liest es: das Schichtaufbau-Etikett, die Mengenermittlung, die Kostenberechnung, der IFC-Export.
+
+![Die Daten eines Materials: Beschreibung, Parameter, wie es gemessen wird, Katalogdicken](shots/material-data.webp)
+
+- **Beschreibung**: der Ausschreibungstext, über mehrere Zeilen (*Mineralwolleplatten, λ = 0,035 W/mK, gedübelt*). Ein Schichtaufbau-Etikett schreibt ihn statt des Namens.
+- **Parameter**: ein Name, eine Art und ein Wert, wie bei Bauteilen. **Einen üblichen hinzufügen…** bietet **Wärmeleitfähigkeit λ**, **Dampfdiffusionswiderstand μ** und **Dichte**, die mit ihren Standardnamen in IFC gehen (*Pset_MaterialThermal.ThermalConductivity*, *Pset_MaterialHygroscopic.UpperVaporResistanceFactor*, *Pset_MaterialCommon.MassDensity*, in SI-Einheiten), sowie **Brandverhalten** und **Druckfestigkeit**, die deine eigenen bleiben. Deine eigenen Parameter gehen als *Lapin_Material* in IFC.
+- **Gemessen nach** sagt, wie **Kosten → Mengenermittlung** (nach Material) und die Kostenberechnung es zählen: **Fläche** (m², eine Zeile je Dicke: Platten, Dämmung, Bahnen), **Volumen** (m³: Beton, Schotter, Estrich), **Masse** (kg, aus der Dichte) oder **Stück** (Platten der angegebenen Größe). Leer wird es gemessen wie seine Bauteile.
+- **Katalogdicken (mm)**: die Dicken, in denen der Hersteller es liefert, etwa *50, 80, 100, 150, 200, 240*. Die Schichttabellen von **Wandtypen** und **Deckentypen** bieten sie neben der Dicke an (eine andere kannst du trotzdem tippen), und eine Schicht anderer Dicke wird mit einem Warnzeichen markiert.
+
+Der IFC-Export schreibt die Beschreibung als Description des Materials und die Parameter als seine Eigenschaftssätze; der Import liest sie zurück, auch aus der Datei eines anderen Programms.
+
 ## Ein Material für alle Rahmen und alles Glas
 
 Neue Türen und Fenster bestehen aus gemeinsamen Materialien, Teil für Teil: **Window frame**, **Door frame**, **Glass**, **Door leaf**, **Window board** und **Hardware**. Ändern Sie **Window frame** einmal, und alle Fensterrahmen ändern sich.

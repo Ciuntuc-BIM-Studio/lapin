@@ -3,8 +3,8 @@ using Lapin.Model;
 
 namespace Lapin.Platform;
 
-/// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark, its priority at joins (null: its material's).</summary>
-public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null, IReadOnlyList<LayerPartSpec>? Parts = null, int? Priority = null);
+/// <summary>A layer as a command gives it: a material by name, a thickness in metres, the core mark, its priority at joins (null: its material's), its note (how it is laid in this build-up).</summary>
+public sealed record LayerSpec(string Material, double Thickness, bool Core = false, string? Color = null, string? Name = null, double? From = null, double? To = null, IReadOnlyList<LayerPartSpec>? Parts = null, int? Priority = null, string? Note = null);
 
 /// <summary>A piece of a layer in its height as a command gives it (decision 264): a material by name, its height in metres.</summary>
 public sealed record LayerPartSpec(string Material, double Height, string? Name = null, string? Color = null);
@@ -53,7 +53,10 @@ public static class LayerSets
                 if (Json.Number(pv) is not { } pn || pn < 0 || pn > 100) throw new CommandException("A layer's priority runs from 0 to 100.");
                 priority = (int)Math.Round(pn);
             }
-            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to, ParseParts(l["parts"]), priority));
+            // How it is laid in this build-up (docs/plan-buildup-tags.md): free text, kept as given (its lines too), none when blank.
+            var note = l["note"] is JsonValue nv && nv.TryGetValue<string>(out var ns) && ns.Trim().Length > 0 ? ns.Trim() : null;
+            if (note is { Length: > 2000 }) throw new CommandException("A layer's note is at most 2000 characters.");
+            o.Add(new LayerSpec(material, thickness.Value, l["core"] is JsonValue c && c.TryGetValue<bool>(out var core) && core, (string?)l["color"], (string?)l["name"], from, to, ParseParts(l["parts"]), priority, note));
         }
         Validate(o, what);
         return o;
@@ -88,12 +91,12 @@ public static class LayerSets
     /// <summary>The layers with their materials, made when the project has none of that name.</summary>
     public static List<MaterialLayer> Resolve(IEdit edit, IReadOnlyList<LayerSpec> layers) =>
         layers.Select(l => new MaterialLayer(Materials.Ensure(edit, l.Material, l.Color).Id, l.Thickness, l.Core, l.Name, l.From, l.To,
-            l.Parts is { Count: > 0 } ps ? ps.Select(p => new LayerPart(Materials.Ensure(edit, p.Material, p.Color).Id, p.Height, p.Name)).ToList() : null, l.Priority)).ToList();
+            l.Parts is { Count: > 0 } ps ? ps.Select(p => new LayerPart(Materials.Ensure(edit, p.Material, p.Color).Id, p.Height, p.Name)).ToList() : null, l.Priority, l.Note)).ToList();
 
     /// <summary>A stored layer as a command would give it again (materials by name), its pieces in height with it.</summary>
     public static LayerSpec SpecOf(IModelView m, MaterialLayer l) =>
         new(m.Get(l.Material)?.Name ?? "Material", l.Thickness, l.Core, Name: l.Name, From: l.From, To: l.To,
-            Parts: l.Parts?.Select(p => new LayerPartSpec(m.Get(p.Material)?.Name ?? "Material", p.Height, p.Name)).ToList(), Priority: l.Priority);
+            Parts: l.Parts?.Select(p => new LayerPartSpec(m.Get(p.Material)?.Name ?? "Material", p.Height, p.Name)).ToList(), Priority: l.Priority, Note: l.Note);
 
     /// <summary>A new layer set, associated with the type.</summary>
     public static Entity Attach(IEdit edit, Entity type, IReadOnlyList<LayerSpec> layers)
