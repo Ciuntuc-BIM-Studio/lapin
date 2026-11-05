@@ -31,7 +31,8 @@ public sealed record CpmResult(IReadOnlyDictionary<string, TaskTimes> Times, Dat
 /// not done, rounded up) from the working day after the status date, or straight after the part done when there is no
 /// status date; one not started starts no earlier than the day after the status date. The status date is the last day the
 /// progress is reported through (MS Project's status date); the work left starts after it.
-/// A task already started or done holds nothing back in the backward pass.
+/// A task already started or done holds nothing back in the backward pass. A task not started keeps the start a resource
+/// levelling gave it (<see cref="PlanTask.LevelStart"/>) unless asked for the schedule without it (<c>levelled: false</c>).
 /// </summary>
 public static class Cpm
 {
@@ -81,7 +82,7 @@ public static class Cpm
         return Topological(leaves, edges) == null;
     }
 
-    public static CpmResult Solve(Plan p)
+    public static CpmResult Solve(Plan p, bool levelled = true)
     {
         var cal = p.Calendar;
         var leaves = p.Rows.Where(t => !p.IsSummary(t.Id)).Select(t => t.Id).ToList();
@@ -155,7 +156,8 @@ public static class Cpm
                 status[id] = "started"; remaining[id] = left;
                 continue;
             }
-            // Not started: no earlier than the day after the status date.
+            // Not started: no earlier than the levelling's start, nor than the day after the status date.
+            if (levelled && t.LevelStart is { } lv && lv > earliest) earliest = lv;
             if (dataDate is { } ddate && ddate.AddDays(1) > earliest) earliest = ddate.AddDays(1);
             var s = cal.NextWorking(earliest, wet);
             es[id] = s;

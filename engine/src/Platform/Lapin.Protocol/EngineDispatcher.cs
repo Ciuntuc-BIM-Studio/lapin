@@ -532,10 +532,11 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
 
     /// <summary>
     /// The commands any guest may run, one who joined to look too: progress marked on site (the planning module's
-    /// <c>markDone</c>, <c>markStarted</c>, <c>unmark</c> and <c>setProgress</c>; docs/plan-4d5d.md, stage 5). Named here
-    /// rather than read from the module, so a product without planning refuses them like any command it lacks.
+    /// <c>markDone</c>, <c>markStarted</c>, <c>unmark</c> and <c>setProgress</c>; docs/plan-4d5d.md, stage 5), and a site photo
+    /// or a daily report added (the premium planning edition's, stage 8). Named here rather than read from the module, so a
+    /// product without them refuses them like any command it lacks.
     /// </summary>
-    public static readonly HashSet<string> SiteCommands = ["planning.markDone", "planning.markStarted", "planning.unmark", "planning.setProgress"];
+    public static readonly HashSet<string> SiteCommands = ["planning.markDone", "planning.markStarted", "planning.unmark", "planning.setProgress", "planning-pro.addPhoto", "planning-pro.addReport"];
 
     /// <summary>The keys that name a file or a folder on the computer that reads them.</summary>
     static readonly HashSet<string> PathKeys = new(StringComparer.OrdinalIgnoreCase) { "path", "paths", "folder", "directory", "dir" };

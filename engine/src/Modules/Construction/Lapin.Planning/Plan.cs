@@ -9,11 +9,13 @@ namespace Lapin.Planning;
 /// duration in working days (0: a milestone), its constraint (start no earlier than, must start on, with a date), and
 /// whether it is wet (it keeps the calendar's winter break); and its elements (stage 2): the rule they are found by, those
 /// added and taken off by hand (ids), and the part of them it takes (<see cref="TaskParts"/>); its progress (stage 5): the
-/// actual start and finish and the percentage typed on it, its elements marked started or done, and its baseline.
+/// actual start and finish and the percentage typed on it, its elements marked started or done, and its baseline; the start
+/// a resource levelling gave it (<c>levelStart</c>: no earlier than that day while it has not started; another module levels,
+/// MS Project's leveling delay as a date), cleared when its start is set by hand.
 /// </summary>
 public sealed record PlanTask(string Id, string Name, string? Parent, double Order, int Duration, bool Milestone, string? Constraint, DateOnly? ConstraintDate, bool Wet, string? Kind, string? Notes,
     TaskRule? Rule = null, string? Part = null, IReadOnlyList<string>? AddIds = null, IReadOnlyList<string>? RemoveIds = null,
-    DateOnly? ActualStart = null, DateOnly? ActualFinish = null, double? Complete = null, IReadOnlyDictionary<string, ElementMark>? MarkMap = null, TaskBaseline? Baseline = null)
+    DateOnly? ActualStart = null, DateOnly? ActualFinish = null, double? Complete = null, IReadOnlyDictionary<string, ElementMark>? MarkMap = null, TaskBaseline? Baseline = null, DateOnly? LevelStart = null)
 {
     /// <summary>Its elements marked on site (stage 5): started, done, by element id.</summary>
     public IReadOnlyDictionary<string, ElementMark> Marks => MarkMap ?? EmptyMarks;
@@ -96,7 +98,8 @@ public sealed class Plan
         e.Bool("wet"), e.PredefinedType, e.Str("notes"),
         TaskRule.Read(e.Attrs["rule"]), PartOf(e.Str("part")), Ids(e.Attrs["add"]), Ids(e.Attrs["remove"]),
         WorkCalendar.ParseDate(e.Str("actualStart")), WorkCalendar.ParseDate(e.Str("actualFinish")),
-        e.NumOrNull("complete") is { } pc && double.IsFinite(pc) ? Math.Clamp(pc, 0, 100) : null, ElementMark.ReadAll(e.Attrs["marks"]), TaskBaseline.Read(e.Attrs["baseline"]));
+        e.NumOrNull("complete") is { } pc && double.IsFinite(pc) ? Math.Clamp(pc, 0, 100) : null, ElementMark.ReadAll(e.Attrs["marks"]), TaskBaseline.Read(e.Attrs["baseline"]),
+        WorkCalendar.ParseDate(e.Str("levelStart")));
 
     static string? PartOf(string? s) { try { return TaskParts.Parse(s); } catch (CommandException) { return null; } }
 

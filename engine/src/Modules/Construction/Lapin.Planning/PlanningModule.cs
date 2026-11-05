@@ -249,6 +249,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
                 var s = DateArg(a["start"], "start");
                 if ((string?)attrs["constraint"] != "mso") attrs["constraint"] = "snet";
                 attrs["constraintDate"] = WorkCalendar.Date(s);
+                attrs.Remove("levelStart");
             }
             // Dragged or typed to a finish: its duration is the working days from its start to that day.
             if (a.ContainsKey("finish"))
@@ -622,10 +623,10 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
         ctx.Replace(s.With(name: name, attrs: attrs));
     }
 
-    /// <summary>The critical path, or (links looping, from a file) every task at the start, with the reason.</summary>
-    internal static (CpmResult Result, string? Problem) Solve(Plan p)
+    /// <summary>The critical path (without the levelling's starts when <paramref name="levelled"/> is false), or (links looping, from a file) every task at the start, with the reason.</summary>
+    public static (CpmResult Result, string? Problem) Solve(Plan p, bool levelled = true)
     {
-        try { return (Cpm.Solve(p), null); }
+        try { return (Cpm.Solve(p, levelled), null); }
         catch (CommandException ex)
         {
             var start = p.Calendar.NextWorking(p.Start);
@@ -664,6 +665,7 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
             };
             if (t.Constraint != null && t.ConstraintDate is { } cd) { o["constraint"] = t.Constraint; o["constraintDate"] = D(cd); }
             if (t.Wet) o["wet"] = true;
+            if (t.LevelStart is { } lvs) o["levelStart"] = D(lvs);
             if (t.Kind != null) o["kind"] = t.Kind;
             if (t.Notes != null) o["notes"] = t.Notes;
             // Its elements (a summary's: those of the tasks under it too), and how they are found.

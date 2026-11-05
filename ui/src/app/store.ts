@@ -14,11 +14,18 @@
 import { create } from 'zustand';
 
 export type Theme = 'paper' | 'graphite';
-/** The views of the panes; 'gantt' is the planning module's, 'estimate' and 'costTime' the cost module's (a module adds its own through `views`). */
-export type ViewKind = '3d' | 'plan' | 'drawing' | 'sheet' | 'schedule' | 'gantt' | 'estimate' | 'costTime';
+/**
+ * The views of the panes; 'gantt' is the planning module's, 'estimate' and 'costTime' the cost module's (a module adds its
+ * own through `views`, named by any string: a module outside this repository too).
+ */
+export type ViewKind = '3d' | 'plan' | 'drawing' | 'sheet' | 'schedule' | 'gantt' | 'estimate' | 'costTime' | (string & {});
 
-/** The views that are tables with their own toolbar (the Gantt, the estimate): no HUD, quick tools or selection card over them. */
-export const isTableView = (v: ViewKind | undefined | null): boolean => v === 'gantt' || v === 'estimate' || v === 'costTime';
+/** The views the modules add (platform/modules.ts names them all at start). */
+const moduleViews = new Set<string>(['gantt', 'estimate', 'costTime']);
+export const addModuleViews = (kinds: Iterable<string>): void => { for (const k of kinds) moduleViews.add(k); };
+
+/** The views that are tables with their own toolbar (the Gantt, the estimate, any module's view): no HUD, quick tools or selection card over them. */
+export const isTableView = (v: ViewKind | undefined | null): boolean => v != null && moduleViews.has(v);
 export type Dialog = string | null;
 /** A bare wall opening's head (decision 253): 'round' is the semicircle. */
 export type OpeningHead = 'rect' | 'segmental' | 'elliptical' | 'round' | 'radiused';
@@ -59,7 +66,8 @@ export function tabKey(t: Pane & { storeyId?: string | null }): string {
     case 'gantt': return 'gantt';
     case 'estimate': return 'estimate';
     case 'costTime': return 'costTime';
-    default: return t.view3dId ?? '3d';
+    // A module's own view is one of its kind, as the Gantt.
+    default: return moduleViews.has(t.view) ? t.view : t.view3dId ?? '3d';
   }
 }
 const tabOf = (pane: Pane, storeyId: string | null): ViewTab => ({ ...pane, storeyId: pane.view === 'plan' ? storeyId : null });

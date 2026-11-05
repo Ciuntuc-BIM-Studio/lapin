@@ -1,0 +1,23 @@
+{
+  "id": "lapin-planning",
+  "name": "Lapin Planning",
+  "modules": [
+    "architecture",
+    "structure",
+    "rebar",
+    "wood",
+    "steel",
+    "drafting",
+    "studio",
+    "phases",
+    "planning",
+    "civil",
+    "sitework",
+    "cost",
+    "mep",
+    "planning-pro"
+  ],
+  "external": {
+    "planning-pro": "../lapin-planning"
+  }
+}

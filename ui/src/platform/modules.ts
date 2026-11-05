@@ -4,7 +4,7 @@ import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
 import type { Grip, GripView, LapinModule, ModuleViewDef, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
-import { toggleTool, useUi } from '../app/store';
+import { addModuleViews, toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
 import { cancel, useCad } from '../viewport/cad/session';
 import { parseSlot, setSlots, slotsOf, useHotbars, withSlot, withSlotType, withSwap, type Slots } from '../app/hotbar';
@@ -15,6 +15,7 @@ import { addSelectionExpander } from './groups';
 export const modules: readonly LapinModule[] = loaded;
 export const productInfo = product;
 for (const m of modules) if (m.expandSelection) addSelectionExpander(m.expandSelection);
+addModuleViews(modules.flatMap((m) => Object.keys(m.views ?? {})));
 /** What the modules show over the active model view (the planning module's card to drag the selection onto a task). */
 export const overlays = (): ComponentType[] => modules.flatMap((m) => m.overlays ?? []);
 

@@ -129,7 +129,7 @@ function PaneTabs({ i }: { i: number }) {
       case 'gantt': return moduleView('gantt')?.label ?? 'Gantt';
       case 'estimate': return moduleView('estimate')?.label ?? 'Estimate';
       case 'costTime': return moduleView('costTime')?.label ?? 'Cost over time';
-      default: return (t.scheduleId && nodes.get(t.scheduleId)?.name) || 'Schedule';
+      default: return (t.view !== 'schedule' ? moduleView(t.view)?.label : null) ?? ((t.scheduleId && nodes.get(t.scheduleId)?.name) || 'Schedule');
     }
   };
   const mine = tabKey({ ...pane, storeyId: pane.view === 'plan' ? storeyId : null });

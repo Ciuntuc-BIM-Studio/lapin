@@ -463,4 +463,32 @@ public class PlanningTests
         Assert.Equal(-2, IfcImport.DurationDays("-P2D"));
         Assert.Null(IfcImport.DurationDays("five days"));
     }
+    /// <summary>
+    /// A levelling's start (stage 8: another module levels the resources and writes <c>levelStart</c> on the tasks it moves):
+    /// the critical path keeps it for a task not started, as a floor its links can push past; asked without it, the plain
+    /// schedule; a start set by hand takes it off.
+    /// </summary>
+    [Fact]
+    public void A_levelling_start_holds_a_task_not_started_and_the_plain_schedule_leaves_it_out()
+    {
+        var f = F();
+        Start(f, "2026-11-02");
+        var a = Task(f, "A", 3);
+        var b = Task(f, "B", 2);
+        Link(f, a, b);
+        var draft = new ScheduleDraft(f.Model, f.Model.OfClass(Plan.ScheduleClass).Concat(f.Model.OfClass(Plan.TaskClass).Select(t =>
+        {
+            var attrs = t.CloneAttrs();
+            if (t.Id == a) attrs["levelStart"] = "2026-11-04";
+            return t.With(attrs: attrs);
+        })).ToList(), f.Model.Relations.Where(r => r.Class == Plan.SequenceClass).ToList());
+        var p = Plan.Read(draft);
+        Assert.Equal(D("2026-11-04"), p.ById[a].LevelStart);
+        var r = Cpm.Solve(p);
+        Assert.Equal(D("2026-11-04"), r.Times[a].Start);
+        Assert.Equal(D("2026-11-09"), r.Times[b].Start);      // A 04–06.11, B after it
+        Assert.Equal(D("2026-11-02"), Cpm.Solve(p, levelled: false).Times[a].Start);
+        // The model itself has none: A from Monday, B after it.
+        Assert.Equal(D("2026-11-05"), Cpm.Solve(Plan.Read(f.Model)).Times[b].Start);
+    }
 }

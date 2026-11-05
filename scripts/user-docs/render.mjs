@@ -8,6 +8,7 @@
 //   summary: One sentence for the list of pages and the search.
 //   ---
 // A picture is written ![What it shows](shots/<name>.webp); the scenes take it.
+// The pages are read from docs/user, or from the folder given (run.mjs --docs: an edition's own pages merged in).
 // English pages are docs/user/*.md (→ build/user-docs); another language's
 // (languages.mjs) are docs/user/<id>/*.md (→ build/user-docs/<id>, their
 // pictures from shots/<id>), each with the same file name as its English
@@ -115,11 +116,11 @@ function videoFigure(v, W, lang, up, small = false) {
  * One language's pages → out/<language>/: its own pages, and the English one
  * for each page it does not have yet (`english` lists those).
  */
-export function render(root, out, lang = 'en') {
+export function render(root, out, lang = 'en', docs = join(root, 'docs/user')) {
   if (!WORDS[lang]) throw new Error(`no such language: ${lang} (languages.mjs)`);
   const W = WORDS[lang];
   const sub = lang === 'en' ? '' : lang;
-  const enSrc = join(root, 'docs/user');
+  const enSrc = docs;
   const src = join(enSrc, sub);
   const mdIn = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.md')) : []);
   const enFiles = mdIn(enSrc);

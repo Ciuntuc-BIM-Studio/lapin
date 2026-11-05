@@ -16,7 +16,7 @@
 //
 // CHROME: the browser to drive (default: the installed Google Chrome).
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve as resolvePath } from 'node:path';
@@ -34,9 +34,12 @@ const args = process.argv.slice(2);
 const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 checkInterfaceLanguages(root);
 // Another edition (a premium module's pictures, taken with its own scenes from its repository): --product lapin-urban --scenes ../lapin-urban/docs/scenes.mjs
+// (and its pages: --docs ../lapin-planning/docs/user)
 const productId = args.includes('--product') ? args[args.indexOf('--product') + 1] : 'lapin';
 const extra = args.includes('--scenes') ? (await import(pathToFileURL(resolvePath(args[args.indexOf('--scenes') + 1])).href)).scenes ?? [] : [];
 const scenes = [...ownScenes, ...extra];
+// Its pages too (--docs ../lapin-planning/docs/user: English *.md and <lang>/*.md), rendered with the guide's from a merged copy.
+const extraDocs = args.includes('--docs') ? resolvePath(args[args.indexOf('--docs') + 1]) : null;
 const langs = args.includes('--lang') ? String(args[args.indexOf('--lang') + 1]).split(',') : LANGS;
 if (!langs.every((l) => LANGS.includes(l))) { console.error(`✗ --lang: one or more of ${LANGS.join(', ')}`); process.exit(1); }
 /** A language's pictures: shots/ for English, shots/<id>/ for the others. */
@@ -49,9 +52,10 @@ for (const lang of langs) {
 
 if (!args.includes('--pages')) await takePictures();
 let failed = false;
+const docs = extraDocs ? mergedDocs(extraDocs) : join(root, 'docs/user');
 for (const lang of LANGS) {
   let r;
-  try { r = render(root, out, lang); } catch (e) { console.error(`✗ ${lang}: ${e instanceof Error ? e.message : e}`); failed = true; continue; }
+  try { r = render(root, out, lang, docs); } catch (e) { console.error(`✗ ${lang}: ${e instanceof Error ? e.message : e}`); failed = true; continue; }
   const { pages, missing, unused, english } = r;
   for (const u of unused) console.warn(`▸ ${lang}: a picture no page shows: ${u}`);
   if (missing.length) { console.error(`✗ ${lang}: pictures the pages show but no scene takes: ${missing.join(', ')}`); failed = true; }
@@ -59,6 +63,14 @@ for (const lang of LANGS) {
   console.log(`✓ ${lang}: ${pages} pages → build/user-docs${lang === 'en' ? '' : `/${lang}`}`);
 }
 if (failed) process.exit(1);
+
+/** The guide's pages with an edition's own laid over them, in a folder of their own (the repository's stay as they are). */
+function mergedDocs(extra) {
+  const merged = mkdtempSync(join(tmpdir(), 'lapin-user-docs-pages-'));
+  cpSync(join(root, 'docs/user'), merged, { recursive: true });
+  cpSync(extra, merged, { recursive: true });
+  return merged;
+}
 
 async function takePictures() {
   const free = () => new Promise((r) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => r(p)); }); });
