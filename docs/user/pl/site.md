@@ -63,6 +63,26 @@ Na rzucie każda roślina jest rysowana z góry tak, jak pokazuje ją rysunek ar
 
 ![Mały sad na rzucie: drzewa owocowe, orzech, drzewa iglaste i krzewy](shots/planting-symbols.webp)
 
+## Ludzie i samochody
+
+**Sztafaż** (EN) stawia osobę lub samochód jednym kliknięciem; wybierz, co, na pasku wiersza poleceń, gdy narzędzie jest włączone: **stojącego mężczyznę**, **idącą kobietę**, **dziecko**, **osobę przy telefonie**, **samochód** lub **SUV / furgonetkę**. **Rząd sztafażu** (ER) stawia rząd wzdłuż narysowanej linii: samochody co 2,5 m, zaparkowane obok siebie w poprzek niej, przodem w lewo od linii, ludzi co 1,2 m, idących wzdłuż niej. Każdy stoi na terenie pod sobą, a gdzie nie ma terenu, na posadzce swojej kondygnacji.
+
+![Ludzie przy drzwiach i samochody zaparkowane obok domu](shots/entourage-3d.webp)
+
+Zaznacz jeden, aby zmienić go we właściwościach: rodzaj, **obrót**, **wysokość** (domyślnie zwykły rozmiar rodzaju), jak wysoko stoi **nad terenem** (na tarasie lub balkonie) i **kolor** ubrania lub nadwozia. Przesuwasz, obracasz, odbijasz i kopiujesz go jak każdy element.
+
+W 3D to proste postacie: ludzie z kończynami, ubraniem, włosami i butami, samochody z szybami, kołami i światłami. Elewacje i przekroje rysują je z ich brył, z cieniami słońca widoku, gdy je ma. Rzuty i plany sytuacyjne rysują je z góry jako symbole: ramiona i głowę osoby, obrys samochodu i jego szyby.
+
+![Na rzucie](shots/entourage-plan.webp)
+
+![Na elewacji południowej](shots/entourage-elevation.webp)
+
+![Właściwości samochodu](shots/entourage-properties.webp)
+
+Nadają rysunkom i obrazom skalę, ale nie są częścią budynku. Eksport IFC lub Fragments (File → Export…) pomija je, chyba że zaznaczysz **Sztafaż** na jego liście rodzajów; IFC zapisuje je jako IfcBuildingElementProxy „Entourage”. Eksporty 3D (glTF, USD, COLLADA) je zabierają. Testy kolizji je pomijają.
+
+Postacie idą za ludźmi i samochodami z [BimGo](https://github.com/aussieBIMguru/BimGo) autorstwa Aussie BIM Guru (MIT-0): ich proporcjami, postawami i profilami.
+
 ## Zasady zagospodarowania i słońce (Lapin Urban)
 
 Edycja **Lapin Urban** dodaje do tej karty grupę **Planowanie**: zasady zagospodarowania działki (POT, CUT, maksymalne wysokości, odsunięcia od ulicy, boków, tyłu i osi drogi), **dopuszczalną bryłę zabudowy**, którą one pozostawiają, wskaźniki, jakie model osiąga względem nich, oraz **analizę nasłonecznienia**: słońce i jego cienie w 3D dla dowolnego dnia i godziny w miejscu projektu oraz plany zacienienia dla równonocy i przesileń.

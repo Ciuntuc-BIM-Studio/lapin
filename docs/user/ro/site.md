@@ -63,6 +63,26 @@ Extrasul **Inventar de coordonate** (Extrase → + → Inventar de coordonate) l
 
 ![O livadă mică în plan: pomi fructiferi, un nuc, conifere și arbuști](shots/planting-symbols.webp)
 
+## Oameni și mașini
+
+**Anturaj** (EN) pune un om sau o mașină la un clic; alegi ce în bara liniei de comandă cât timp unealta e pornită: un **bărbat în picioare**, o **femeie mergând**, un **copil**, o **persoană la telefon**, o **mașină** sau un **SUV / dubă**. **Rând de anturaj** (ER) pune un rând de-a lungul unei linii pe care o desenezi: mașini la 2,5 m, parcate una lângă alta de-a curmezișul ei, cu fața spre stânga liniei, oameni la 1,2 m, mergând de-a lungul ei. Fiecare stă pe terenul de sub el, sau pe pardoseala etajului lui unde nu e teren.
+
+![Oameni la ușă și mașini parcate lângă casă](shots/entourage-3d.webp)
+
+Selectează unul ca să-l schimbi în proprietăți: felul, **rotația**, **înălțimea** (implicit mărimea obișnuită a felului său), cât stă **deasupra terenului** (pe o terasă sau un balcon) și **culoarea** hainelor sau a caroseriei. Îl muți, rotești, oglindești și copiezi ca pe orice element.
+
+În 3D sunt figuri simple: oameni cu membre, haine, păr și pantofi, mașini cu geamuri, roți și faruri. Fațadele și secțiunile îi desenează din corpurile lor, cu umbrele de soare ale vederii când le are. Planurile și planurile de situație îi desenează de sus, ca simboluri: umerii și capul unui om, conturul unei mașini și geamurile ei.
+
+![În plan](shots/entourage-plan.webp)
+
+![În fațada sudică](shots/entourage-elevation.webp)
+
+![Proprietățile unei mașini](shots/entourage-properties.webp)
+
+Dau desenelor și imaginilor scara, dar nu fac parte din clădire. Un export IFC sau Fragments (File → Export…) îi lasă afară dacă nu bifezi **Anturaj** în lista de feluri; IFC îi scrie ca IfcBuildingElementProxy „Entourage”. Exporturile 3D (glTF, USD, COLLADA) îi iau. Testele de coliziuni îi lasă afară.
+
+Figurile urmează oamenii și mașinile din [BimGo](https://github.com/aussieBIMguru/BimGo) de Aussie BIM Guru (MIT-0): proporțiile, pozițiile și profilele lor.
+
 ## Reglementări urbanistice și însorire (Lapin Urban)
 
 Ediția **Lapin Urban** adaugă în această filă grupul **Urbanism**: reglementările parcelei (POT, CUT, înălțimile maxime, retragerile față de stradă, laterale, limita posterioară și axul drumului), **volumul construibil** pe care îl lasă, indicatorii pe care îi atinge modelul față de ele și **studiul de însorire**: soarele și umbrele lui în 3D pentru orice zi și oră în locul proiectului, și planuri de umbre pentru echinocțiu și solstiții.

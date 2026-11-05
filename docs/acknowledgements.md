@@ -68,9 +68,18 @@ The plan in `docs/plan-visualisation.md` follows BimGo's sun hours, daylight fac
 - the Ladybug colour scale;
 - the CSV columns.
 
-### Entourage (planned, stage 4)
+### People and cars (decision 324)
 
-BimGo's trees, people and cars are drawn in code (`EntourageArt.cs`), with no third-party pictures. They are the starting point for Lapin's.
+BimGo draws its trees, people and cars in code (`EntourageArt.cs`), with no third-party pictures. `engine/src/Modules/Civil/Lapin.Civil/Entourage.cs` takes from it:
+- the four people (a man standing, a woman walking, a child waving, a person on the phone), with their proportions (the head about 1/7.5 of the height, a child's 1/5.5), their joints, the radii of their limbs, their stances and their colours;
+- the car's and the SUV's side profiles, their belt lines and their wheels;
+- the kinds' heights (1.78, 1.66, 1.15, 1.72, 1.45 and 1.85 m).
+
+BimGo draws these as pictures that turn to the camera. Lapin builds them as bodies, so plans, elevations, sections, sun shadows and exports see them:
+- a person's limbs are rings tapered from joint to joint, its torso is rings down its side, and its head is an ellipsoid under its hair;
+- a car's profile is carried across its width, with its cabin glass under the roof.
+
+The trees stay Lapin's own plantings (decision 234).
 
 ## Published methods
 

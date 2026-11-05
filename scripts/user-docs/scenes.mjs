@@ -2160,6 +2160,46 @@ export const scenes = [
     },
   },
   {
+    // Entourage (stage 4 of docs/plan-visualisation.md): people at the door and a row of parked cars, in 3D, in plan and in the south elevation.
+    id: 'entourage',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const s = await t.storey();
+      for (const [kind, x, y, rotation] of [['man', 2.2, -1.6, 20], ['woman', 3.4, -2.4, 340], ['child', 4.1, -2.1, 10], ['phone', 6.2, -1.8, 30]]) await t.cmd('civil.addEntourage', { storeyId: s, kind, x, y, rotation });
+      // Parked beside the house, their fronts to it: the south elevation sees them from the side.
+      const row = await t.cmd('civil.addEntourage', { storeyId: s, kind: 'car', points: [[16, 0.5], [16, 8]], spacing: 2.5 });
+      await t.cmd('element.update', { ids: [row.ids[1]], attrs: { kind: 'suv' } });
+      await t.cmd('element.update', { ids: [row.ids[2]], attrs: { color: '#9b3b32' } });
+      await t.cmd('civil.addPlanting', { storeyId: s, x: -4, y: 6, seed: 4, species: [{ name: 'Lime (Tilia)' }] });
+      t.expect((await t.nodes()).filter((n) => n.type === 'LapinEntourage').length === 8, 'four people and four cars');
+      await t.button('Site', { exact: true });
+      await open3d(t);
+      const orbit = (view) => t.page.evaluate(async (v) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo(v, false), view);
+      await orbit({ azimuth: 2.2, pitch: -0.22, distance: 22, target: { x: 9, y: 1.5, z: 1.2 } });
+      await t.wait(1500);
+      await t.shot('entourage-3d', { of: 'canvas', pad: 0 });
+      // In plan: the shoulders and heads, the cars' outlines and glass.
+      await t.ui({ view: 'plan', storeyId: s });
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(600);
+      await t.ui({ keyPlan: false });
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      await t.shot('entourage-plan', { of: '[data-testid=plan]', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+      await t.ui({ keyPlan: true });
+      // The south elevation draws them from their bodies.
+      await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' });
+      await openFromBrowser(t, 'South', 2500);
+      await t.shot('entourage-elevation', { of: '[data-testid=drawing]', pad: 0 });
+      await select(t, row.ids[2]);
+      await t.wait(600);
+      t.expect(await t.page.locator('aside.props').getByText('Above the ground').count() > 0, 'the car\'s properties');
+      await t.shot('entourage-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
+    },
+  },
+  {
     id: 'site-works',
     async run(t) {
       await t.fresh();

@@ -63,6 +63,26 @@ En planta cada planta se dibuja vista desde arriba, como en un plano de paisajis
 
 ![Un pequeño huerto en planta: frutales, un nogal, coníferas y arbustos](shots/planting-symbols.webp)
 
+## Personas y coches
+
+**Ambientación** (EN) coloca una persona o un coche con un clic; elige cuál en la barra de la línea de comandos mientras la herramienta está activa: un **hombre de pie**, una **mujer caminando**, un **niño**, una **persona al teléfono**, un **coche** o un **SUV / furgoneta**. **Fila de ambientación** (ER) coloca una fila a lo largo de una línea que dibujas: coches cada 2,5 m, aparcados uno junto a otro de través, con el frente a la izquierda de la línea, y personas cada 1,2 m, caminando a lo largo de ella. Cada uno se apoya en el terreno que tiene debajo, o en el suelo de su planta donde no hay terreno.
+
+![Personas en la puerta y coches aparcados junto a la casa](shots/entourage-3d.webp)
+
+Selecciona uno para cambiarlo en las propiedades: su tipo, su **rotación**, su **altura** (por defecto la habitual de su tipo), cuánto está **sobre el terreno** (en una terraza o un balcón) y el **color** de su ropa o carrocería. Se mueve, gira, refleja y copia como cualquier elemento.
+
+En 3D son figuras sencillas: personas con sus miembros, ropa, pelo y zapatos, coches con sus cristales, ruedas y faros. Los alzados y las secciones los dibujan a partir de sus cuerpos, con las sombras del sol de la vista cuando las tiene. Las plantas y los planos de situación los dibujan desde arriba como símbolos: los hombros y la cabeza de una persona, el contorno de un coche y sus cristales.
+
+![En planta](shots/entourage-plan.webp)
+
+![En el alzado sur](shots/entourage-elevation.webp)
+
+![Las propiedades de un coche](shots/entourage-properties.webp)
+
+Dan escala a los dibujos y a las imágenes, pero no forman parte del edificio. Una exportación IFC o Fragments (File → Export…) los deja fuera salvo que marques **Ambientación** en su lista de tipos; IFC los escribe como IfcBuildingElementProxy «Entourage». Las exportaciones 3D (glTF, USD, COLLADA) los incluyen. Las pruebas de colisiones los dejan fuera.
+
+Las figuras siguen a las personas y los coches de [BimGo](https://github.com/aussieBIMguru/BimGo) de Aussie BIM Guru (MIT-0): sus proporciones, posturas y perfiles.
+
 ## Normas urbanísticas y el sol (Lapin Urban)
 
 La edición **Lapin Urban** añade a esta ficha un grupo **Urbanismo**: las normas urbanísticas de la parcela (POT, CUT, las alturas máximas, los retranqueos a la calle, a los linderos laterales, al fondo y al eje de la vía), el **volumen edificable** que dejan, los indicadores que alcanza el modelo frente a ellas, y el **estudio de soleamiento**: el sol y sus sombras en 3D para cualquier día y hora en el lugar del proyecto, y planos de sombras para el equinoccio y los solsticios.

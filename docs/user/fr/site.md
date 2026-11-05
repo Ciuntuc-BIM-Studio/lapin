@@ -63,6 +63,26 @@ En plan chaque plante est dessinée vue de dessus, comme dans un plan paysager, 
 
 ![Un petit verger en plan : fruitiers, un noyer, des conifères et des arbustes](shots/planting-symbols.webp)
 
+## Personnes et voitures
+
+**Entourage** (EN) pose une personne ou une voiture d’un clic ; choisissez laquelle dans la barre de la ligne de commande tant que l’outil est actif : un **homme debout**, une **femme qui marche**, un **enfant**, une **personne au téléphone**, une **voiture** ou un **SUV / fourgon**. **Rangée d’entourage** (ER) en pose une rangée le long d’une ligne que vous dessinez : des voitures tous les 2,5 m, garées côte à côte en travers, l’avant vers la gauche de la ligne, des personnes tous les 1,2 m, qui marchent le long d’elle. Chacune se pose sur le terrain en dessous, ou sur le sol de son niveau là où il n’y a pas de terrain.
+
+![Des personnes à la porte et des voitures garées à côté de la maison](shots/entourage-3d.webp)
+
+Sélectionnez-en une pour la modifier dans les propriétés : son type, sa **rotation**, sa **hauteur** (par défaut la taille habituelle de son type), sa hauteur **au-dessus du terrain** (sur une terrasse ou un balcon) et la **couleur** de ses vêtements ou de sa carrosserie. Elle se déplace, tourne, se reflète et se copie comme tout élément.
+
+En 3D ce sont des figures simples : des personnes avec leurs membres, vêtements, cheveux et chaussures, des voitures avec leurs vitres, roues et phares. Les façades et les coupes les dessinent d’après leurs corps, avec les ombres du soleil de la vue quand elle en a. Les plans et les plans de masse les dessinent vues de dessus, en symboles : les épaules et la tête d’une personne, le contour d’une voiture et ses vitres.
+
+![En plan](shots/entourage-plan.webp)
+
+![Dans la façade sud](shots/entourage-elevation.webp)
+
+![Les propriétés d’une voiture](shots/entourage-properties.webp)
+
+Elles donnent l’échelle aux dessins et aux images, mais ne font pas partie du bâtiment. Un export IFC ou Fragments (File → Export…) les laisse de côté sauf si vous cochez **Entourage** dans sa liste de types ; IFC les écrit en IfcBuildingElementProxy « Entourage ». Les exports 3D (glTF, USD, COLLADA) les prennent. Les tests de conflits les laissent de côté.
+
+Les figures suivent les personnes et les voitures de [BimGo](https://github.com/aussieBIMguru/BimGo) par Aussie BIM Guru (MIT-0) : leurs proportions, attitudes et profils.
+
 ## Règles d’urbanisme et soleil (Lapin Urban)
 
 L’édition **Lapin Urban** ajoute un groupe **Urbanisme** à cet onglet : les règles d’urbanisme de la parcelle (POT, CUT, les hauteurs maximales, les reculs par rapport à la rue, aux limites latérales, au fond de parcelle et à l’axe de la voie), le **gabarit constructible** qu’elles laissent, les indicateurs que le modèle atteint par rapport à elles, et l’**étude d’ensoleillement** : le soleil et ses ombres en 3D pour n’importe quel jour et n’importe quelle heure à l’emplacement du projet, et des plans d’ombres pour l’équinoxe et les solstices.

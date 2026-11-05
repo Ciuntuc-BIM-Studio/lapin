@@ -20,6 +20,7 @@ import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } 
 import { BrushDialog } from './BrushDialog';
 import { CorridorDialog } from './CorridorDialog';
 import { isDitch, setBrush, useBrush, type BrushKind } from './prefs';
+import { EntourageSection, entourage, entourageRow } from './entourage';
 
 /** The lowest surveyed elevation, rounded down to the metre: what ±0.00 defaults to. */
 function lowest(text: string): number | null {
@@ -267,7 +268,7 @@ const pathRefs = (n: NodeDto): RefLine[] => { const pts = pathOf(n); return pts.
 const civil: LapinModule = {
   id: 'civil',
   name: 'Civil',
-  summary: 'The terrain from survey points or flat, its contours, the brush that works it, platforms and ditches with their cut and fill, paths, retaining walls and plantings.',
+  summary: 'The terrain from survey points or flat, its contours, the brush that works it, platforms and ditches with their cut and fill, paths, retaining walls, plantings, people and cars.',
   tabs: [{
     id: 'site', label: 'Site', order: 40,
     groups: [
@@ -275,6 +276,7 @@ const civil: LapinModule = {
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
+      { label: 'Entourage', tools: [entourage], small: [entourageRow] },
     ],
   }],
   grips: {
@@ -299,6 +301,7 @@ const civil: LapinModule = {
     { id: 'path', label: 'Path', classes: ['IfcPavement'], component: PathSection, replacesFields: () => true },
     { id: 'retainingWall', label: 'Retaining wall', classes: ['LapinRetainingWall'], component: RetainingWallSection, replacesFields: () => true },
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },
+    { id: 'entourage', label: 'Entourage', classes: ['LapinEntourage'], component: EntourageSection, replacesFields: () => true },
   ],
   dialogs: { brush: BrushDialog, corridor: CorridorDialog },
 };

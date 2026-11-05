@@ -24,7 +24,7 @@ public sealed class ClashModule : ILapinModule
     public string Name => "Clash detection";
 
     /// <summary>What never takes part: spaces, voids, annotations, grids and the spatial structure.</summary>
-    static readonly HashSet<string> NotPhysical = [IfcClass.Space, IfcClass.OpeningElement, IfcClass.Annotation, "IfcGrid", "IfcVirtualElement", IfcClass.BuildingStorey, IfcClass.Site, IfcClass.Building, IfcClass.Project];
+    static readonly HashSet<string> NotPhysical = [IfcClass.Space, IfcClass.OpeningElement, IfcClass.Annotation, "IfcGrid", "IfcVirtualElement", IfcClass.BuildingStorey, IfcClass.Site, IfcClass.Building, IfcClass.Project, "LapinEntourage"];
     /// <summary>The relations that say nothing about two elements meeting.</summary>
     static readonly HashSet<string> Unrelating = [IfcClass.RelContainedInSpatialStructure, IfcClass.RelDefinesByType, IfcClass.RelAssociatesMaterial, "IfcRelAssignsToGroup", "IfcRelServicesBuildings", "IfcRelDefinesByProperties"];
 

@@ -63,6 +63,26 @@ I plan tegnes hver plante set fra oven, som på en landskabsplan, i sort og så 
 
 ![En lille frugthave i plan: frugttræer, en valnød, nåletræer og buske](shots/planting-symbols.webp)
 
+## Personer og biler
+
+**Staffage** (EN) sætter en person eller en bil med et klik; vælg hvilken i kommandolinjens bjælke, mens værktøjet er slået til: en **stående mand**, en **gående kvinde**, et **barn**, en **person i telefon**, en **bil** eller en **SUV / varevogn**. **Staffage-række** (ER) sætter en række langs en linje, du tegner: biler for hver 2,5 m, parkeret side om side på tværs af den med fronten mod linjens venstre side, personer for hver 1,2 m, der går langs den. Hver står på terrænet under den, eller på etagens gulv, hvor der ikke er terræn.
+
+![Personer ved døren og biler parkeret ved huset](shots/entourage-3d.webp)
+
+Vælg en for at ændre den i egenskaberne: dens art, dens **rotation**, dens **højde** (som standard artens sædvanlige størrelse), hvor højt den står **over terrænet** (på en terrasse eller en altan) og **farven** på tøjet eller karosseriet. Flyt, drej, spejl og kopiér den som ethvert element.
+
+I 3D er de enkle figurer: personer med lemmer, tøj, hår og sko, biler med ruder, hjul og lygter. Facader og snit tegner dem ud fra deres kroppe, med visningens solskygger, når den har dem. Planer og situationsplaner tegner dem oppefra som symboler: en persons skuldre og hoved, en bils omrids og dens ruder.
+
+![I plan](shots/entourage-plan.webp)
+
+![I sydfacaden](shots/entourage-elevation.webp)
+
+![En bils egenskaber](shots/entourage-properties.webp)
+
+De giver tegninger og billeder deres målestok, men er ingen del af bygningen. En IFC- eller Fragments-eksport (File → Export…) udelader dem, medmindre du sætter flueben ved **Staffage** i dens liste over arter; IFC skriver dem som IfcBuildingElementProxy »Entourage«. 3D-eksporterne (glTF, USD, COLLADA) tager dem med. Kollisionstest udelader dem.
+
+Figurerne følger personerne og bilerne i [BimGo](https://github.com/aussieBIMguru/BimGo) af Aussie BIM Guru (MIT-0): deres proportioner, stillinger og profiler.
+
 ## Planlægningsregler og solen (Lapin Urban)
 
 Udgaven **Lapin Urban** føjer en gruppe **Byplanlægning** til denne fane: matriklens planlægningsregler (POT, CUT, de maksimale højder, afstandene til vejen, siderne, bagskellet og vejens akse), det **tilladte bygningsvolumen** de efterlader, de nøgletal, modellen når op på i forhold til dem, og **solstudie**: solen og dens skygger i 3D for en hvilken som helst dag og time på projektets placering, og skyggeplaner for jævndøgn og solhverv.

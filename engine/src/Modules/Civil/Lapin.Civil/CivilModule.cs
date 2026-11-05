@@ -44,6 +44,11 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
             new("side", "High ground on the", "choice", Choices: ["left", "right"]),
         ], RetainingWalls.Color));
         r.Class(new(Plantings.Class, "Planting", [new("density", "Plants per 100 m²", "number", Min: 0.1, Max: 500), new("seed", "Seed", "number", Min: 0, Max: 1e9)], "#5a9440"));
+        r.Class(new(Entourage.Class, "Entourage",
+        [
+            new("kind", "Kind", "choice", Choices: [.. Entourage.Kinds.Select(k => k.Key)]), new("rotation", "Rotation (°)", "number"),
+            new("height", "Height", "length", Min: 0.3, Max: 6), new("offset", "Above the ground", "length"), new("color", "Colour", "color"),
+        ], "#9aa3ad"));
         r.Geometry(IfcClass.GeographicElement, Terrains.Geometry);
         r.Quantities(IfcClass.GeographicElement, Terrains.Quantities);
         r.Geometry(IfcClass.Pavement, (e, m, _) => Paths.Geometry(e, m));
@@ -53,12 +58,15 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         LineworkElements.Register(r);
         r.Geometry(Plantings.Class, (e, m, _) => Plantings.Geometry(e, m));
         r.Quantities(Plantings.Class, Plantings.Quantities);
+        r.Geometry(Entourage.Class, (e, m, _) => Entourage.Geometry(e, m));
+        Entourage.Register(r);
         r.Service<IViewAnnotations>(this);
         r.Service<IGround>(new Ground());
         r.Service<IScheduleSource>(new PlantingSchedule());
         r.Service<IScheduleSource>(new ParcelCoordinates());
         r.Service<ISectionPaths>(new CivilSectionPaths());
         r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
+        r.Catalog("entourage", new JsonArray([.. Entourage.Kinds.Select(k => (JsonNode)new JsonObject { ["key"] = k.Key, ["label"] = k.Label, ["category"] = k.Category, ["height"] = k.Height, ["color"] = k.Color })]));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
         SiteCommands.Register(r);
         GeoImportCommands.Register(r);

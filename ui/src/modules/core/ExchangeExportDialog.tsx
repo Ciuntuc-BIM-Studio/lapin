@@ -41,7 +41,11 @@ export function ExchangeExportDialog() {
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   useEffect(() => {
-    void engine.call<Survey>('project.exportSurvey', {}).then(setSurvey).catch(() => setSurvey(null));
+    void engine.call<Survey>('project.exportSurvey', {}).then((s) => {
+      setSurvey(s);
+      // What is left out unless chosen (entourage) starts unticked.
+      setOffKinds(new Set(s.groups.flatMap((g) => g.kinds.filter((k) => k.off).map((k) => k.key))));
+    }).catch(() => setSurvey(null));
   }, []);
   const choice = useMemo(() => (survey ? choiceOf(survey, offKinds, offStoreys) : { kinds: null, storeys: null }), [survey, offKinds, offStoreys]);
   const mm = Number(tolerance.replace(',', '.'));
@@ -52,7 +56,8 @@ export function ExchangeExportDialog() {
       ...(choice.kinds ? { kinds: choice.kinds } : {}), ...(choice.storeys ? { storeys: choice.storeys } : {}),
       ...(phase ? { phase } : {}), ...(onlyShown ? { hidden } : {}), ...(voids ? { voids: true } : {}),
     };
-    if (format === 'ifc') await exportFile('project.exportIfc', { ...common, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    // The kinds ticked decide; all of them ticked takes the entourage too (the engine leaves it out when not told).
+    if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else await exportFile('project.exportMesh', { ...common, format: 'frag', origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.frag`, 'frag');
     setBusy(false);
     close();

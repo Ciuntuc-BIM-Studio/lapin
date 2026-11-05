@@ -681,7 +681,12 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var options = Lapin.Mesh.MeshExportOptions.From(p);
                 // The kinds and storeys chosen (the export survey's), left out as the hidden are.
                 if (p["kinds"] is JsonArray || p["storeys"] is JsonArray)
-                    options = options with { Hidden = Lapin.Ifc.ModelSurvey.Excluded(session, p) };
+                {
+                    // A mesh is for showing the model: its entourage goes with it unless the kinds chosen leave it out.
+                    var q = (JsonObject)p.DeepClone();
+                    q["entourage"] = true;
+                    options = options with { Hidden = Lapin.Ifc.ModelSurvey.Excluded(session, q) };
+                }
                 var (bytes, result) = Lapin.Mesh.MeshExport.Write(session, options);
                 var name = $"{(session.Path is { } sp ? Path.GetFileNameWithoutExtension(sp) : "project")}.{options.Extension}";
                 var delivered = Deliver(bytes, name);

@@ -63,6 +63,26 @@ In pianta ogni pianta è disegnata dall’alto come la mostra un disegno di paes
 
 ![Un piccolo frutteto in pianta: alberi da frutto, un noce, conifere e arbusti](shots/planting-symbols.webp)
 
+## Persone e automobili
+
+**Entourage** (EN) mette una persona o un’auto con un clic; scegli quale nella barra della riga di comando mentre lo strumento è attivo: un **uomo in piedi**, una **donna che cammina**, un **bambino**, una **persona al telefono**, un’**auto** o un **SUV / furgone**. **Fila di entourage** (ER) ne mette una fila lungo una linea che disegni: auto ogni 2,5 m, parcheggiate una accanto all’altra di traverso, con il muso verso la sinistra della linea, persone ogni 1,2 m, che camminano lungo di essa. Ognuna poggia sul terreno sottostante, o sul pavimento del suo piano dove non c’è terreno.
+
+![Persone alla porta e auto parcheggiate accanto alla casa](shots/entourage-3d.webp)
+
+Selezionane una per cambiarla nelle proprietà: il tipo, la **rotazione**, l’**altezza** (di base la misura consueta del suo tipo), quanto sta **sopra il terreno** (su una terrazza o un balcone) e il **colore** dei vestiti o della carrozzeria. Si sposta, ruota, specchia e copia come ogni elemento.
+
+In 3D sono figure semplici: persone con arti, vestiti, capelli e scarpe, auto con vetri, ruote e fari. Prospetti e sezioni le disegnano dai loro corpi, con le ombre del sole della vista quando le ha. Piante e planimetrie le disegnano dall’alto come simboli: le spalle e la testa di una persona, il contorno di un’auto e i suoi vetri.
+
+![In pianta](shots/entourage-plan.webp)
+
+![Nel prospetto sud](shots/entourage-elevation.webp)
+
+![Le proprietà di un’auto](shots/entourage-properties.webp)
+
+Danno la scala ai disegni e alle immagini, ma non fanno parte dell’edificio. Un’esportazione IFC o Fragments (File → Export…) le lascia fuori se non spunti **Entourage** nel suo elenco di tipi; IFC le scrive come IfcBuildingElementProxy «Entourage». Le esportazioni 3D (glTF, USD, COLLADA) le includono. I test di interferenza le lasciano fuori.
+
+Le figure seguono le persone e le auto di [BimGo](https://github.com/aussieBIMguru/BimGo) di Aussie BIM Guru (MIT-0): le loro proporzioni, pose e profili.
+
 ## Regole urbanistiche e il sole (Lapin Urban)
 
 L’edizione **Lapin Urban** aggiunge a questa scheda un gruppo **Urbanistica**: le regole urbanistiche del lotto (POT, CUT, le altezze massime, le distanze dalla strada, dai lati, dal retro e dall’asse stradale), il **volume edificabile** che lasciano, gli indicatori che il modello raggiunge rispetto a esse, e lo **studio del soleggiamento**: il sole e le sue ombre in 3D per qualsiasi giorno e ora nel luogo del progetto, e le piante delle ombre per l’equinozio e i solstizi.

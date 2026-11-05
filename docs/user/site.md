@@ -63,6 +63,26 @@ In plan each plant is drawn from above as a landscape drawing shows it, in black
 
 ![A small orchard in plan: fruit trees, a walnut, conifers and shrubs](shots/planting-symbols.webp)
 
+## People and cars
+
+**Entourage** (EN) puts a person or a car at a click; choose which in the command line's bar while the tool is on: a **man standing**, a **woman walking**, a **child**, a **person on the phone**, a **car** or an **SUV / van**. **Entourage row** (ER) puts a row of them along a line you draw: cars every 2.5 m, parked side by side across it with their fronts to its left, people every 1.2 m, walking along it. Each stands on the terrain under it, or on its storey's floor where there is no terrain.
+
+![People at the door and cars parked beside the house](shots/entourage-3d.webp)
+
+Select one to change it in the properties: its kind, its **rotation**, its **height** (its kind's usual size by default), how far **above the ground** it stands (on a deck or a balcony) and the **colour** of its clothes or body. Move, rotate, mirror and copy it as any element.
+
+In 3D they are simple figures: people with their limbs, clothes, hair and shoes, cars with their glass, wheels and lights. Elevations and sections draw them from their bodies, with the view's sun shadows when it has them. Plans and site plans draw them from above as symbols: a person's shoulders and head, a car's outline and its glass.
+
+![In plan](shots/entourage-plan.webp)
+
+![In the south elevation](shots/entourage-elevation.webp)
+
+![A car's properties](shots/entourage-properties.webp)
+
+They give drawings and pictures their scale but are no part of the building. An IFC or Fragments export (File → Export…) leaves them out unless you tick **Entourage** in its list of kinds; IFC writes them as IfcBuildingElementProxy "Entourage". The 3D exports (glTF, USD, COLLADA) take them. Clash tests leave them out.
+
+The figures follow the people and cars of [BimGo](https://github.com/aussieBIMguru/BimGo) by Aussie BIM Guru (MIT-0): their proportions, stances and profiles.
+
 ## Planning rules and the sun (Lapin Urban)
 
 The **Lapin Urban** edition adds a **Planning** group to this tab: the parcel's planning rules (POT, CUT, the maximum heights, the setbacks from the street, the sides, the rear and the road's axis), the **buildable volume** they leave, the indicators the model reaches against them, and the **sun study**: the sun and its shadows in 3D for any day and hour at the project's place, and shadow plans for the equinox and the solstices.

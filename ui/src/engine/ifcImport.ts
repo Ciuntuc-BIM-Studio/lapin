@@ -11,7 +11,7 @@ import { engine } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { notify, useUi } from '../app/store';
 
-export interface SurveyKind { key: string; class: string; category?: string | null; label: string; count: number }
+export interface SurveyKind { key: string; class: string; category?: string | null; label: string; count: number; /** Left out unless ticked (entourage). */ off?: boolean }
 export interface SurveyGroup { discipline: string; label: string; count: number; kinds: SurveyKind[] }
 export interface SurveyStorey { id: string; name: string; elevation: number; count: number }
 export interface Survey {

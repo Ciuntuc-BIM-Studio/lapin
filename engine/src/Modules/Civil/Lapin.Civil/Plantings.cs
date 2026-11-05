@@ -97,7 +97,7 @@ public static class Plantings
 
     static int StableHash(string s) { unchecked { var h = 2166136261u; foreach (var c in s) h = (h ^ c) * 16777619u; return (int)h; } }
 
-    static Terrain? TerrainFor(IModelView m, Entity e) =>
+    internal static Terrain? TerrainFor(IModelView m, Entity e) =>
         m.OfClass(IfcClass.GeographicElement).FirstOrDefault(t => t.PredefinedType == Terrains.Predefined && Spatial.StoreyOf(m, t.Id)?.Id == Spatial.StoreyOf(m, e.Id)?.Id) is { } te ? Terrains.Of(te) : null;
 
     /// <summary>The plants: one at the point, or as many as the density gives over the zone's area, scattered by the seed, each on the ground.</summary>

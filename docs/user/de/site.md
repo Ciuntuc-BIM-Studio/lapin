@@ -63,6 +63,26 @@ Im Grundriss wird jede Pflanze von oben gezeichnet, wie in einem Freiflächenpla
 
 ![Ein kleiner Obstgarten im Grundriss: Obstbäume, ein Walnussbaum, Nadelbäume und Sträucher](shots/planting-symbols.webp)
 
+## Personen und Autos
+
+**Staffage** (EN) setzt eine Person oder ein Auto per Klick; welche, wählst du in der Leiste der Befehlszeile, solange das Werkzeug aktiv ist: einen **stehenden Mann**, eine **gehende Frau**, ein **Kind**, eine **Person am Telefon**, ein **Auto** oder einen **SUV / Transporter**. **Staffage-Reihe** (ER) setzt eine Reihe entlang einer Linie, die du zeichnest: Autos alle 2,5 m, nebeneinander quer dazu geparkt, die Front zur linken Seite der Linie, Personen alle 1,2 m, die an ihr entlang gehen. Jedes steht auf dem Gelände darunter, oder auf dem Boden seines Geschosses, wo es kein Gelände gibt.
+
+![Personen an der Tür und Autos neben dem Haus geparkt](shots/entourage-3d.webp)
+
+Wähle eines aus, um es in den Eigenschaften zu ändern: seine Art, seine **Drehung**, seine **Höhe** (standardmäßig die übliche Größe seiner Art), wie weit es **über dem Gelände** steht (auf einer Terrasse oder einem Balkon) und die **Farbe** seiner Kleidung oder Karosserie. Verschieben, drehen, spiegeln und kopieren wie jedes Element.
+
+In 3D sind es einfache Figuren: Personen mit Gliedern, Kleidung, Haaren und Schuhen, Autos mit Scheiben, Rädern und Lichtern. Ansichten und Schnitte zeichnen sie aus ihren Körpern, mit den Sonnenschatten der Ansicht, wenn sie welche hat. Grundrisse und Lagepläne zeichnen sie von oben als Symbole: Schultern und Kopf einer Person, den Umriss eines Autos und seine Scheiben.
+
+![Im Grundriss](shots/entourage-plan.webp)
+
+![In der Südansicht](shots/entourage-elevation.webp)
+
+![Die Eigenschaften eines Autos](shots/entourage-properties.webp)
+
+Sie geben Zeichnungen und Bildern ihren Maßstab, gehören aber nicht zum Gebäude. Ein IFC- oder Fragments-Export (File → Export…) lässt sie weg, außer du hakst **Staffage** in seiner Liste der Arten an; IFC schreibt sie als IfcBuildingElementProxy „Entourage“. Die 3D-Exporte (glTF, USD, COLLADA) nehmen sie mit. Kollisionsprüfungen lassen sie weg.
+
+Die Figuren folgen den Personen und Autos von [BimGo](https://github.com/aussieBIMguru/BimGo) von Aussie BIM Guru (MIT-0): ihren Proportionen, Haltungen und Profilen.
+
 ## Bauleitplanung und Sonne (Lapin Urban)
 
 Die Edition **Lapin Urban** fügt dieser Registerkarte eine Gruppe **Stadtplanung** hinzu: die Bebauungsvorschriften des Grundstücks (POT, CUT, die maximalen Höhen, die Abstände zur Straße, zu den Seiten, nach hinten und zur Straßenachse), das **zulässige Bauvolumen**, das sie übrig lassen, die Kennwerte, die das Modell im Vergleich dazu erreicht, und die **Besonnungsstudie**: die Sonne und ihre Schatten in 3D für jeden Tag und jede Stunde am Ort des Projekts, sowie Schattenpläne für die Tagundnachtgleiche und die Sonnenwenden.

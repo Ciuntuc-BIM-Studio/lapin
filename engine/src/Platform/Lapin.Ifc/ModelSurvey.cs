@@ -19,6 +19,9 @@ public static class ModelSurvey
 
     public static string KindOf(Entity e) => IfcSurvey.KindOf(e.Class, e.Name);
 
+    /// <summary>The kinds an IFC export leaves out unless chosen: entourage, which shows a site's scale but is no part of the building.</summary>
+    public static readonly IReadOnlySet<string> OffByDefault = new HashSet<string> { "LapinEntourage" };
+
     public static JsonObject Of(Session s)
     {
         var m = s.Model;
@@ -33,7 +36,11 @@ public static class ModelSurvey
             if (Spatial.StoreyOf(m, e.Id) is { } st) per[st.Id] = per.GetValueOrDefault(st.Id) + 1; else none++;
         }
         var storeys = Spatial.Storeys(m).Where(st => per.ContainsKey(st.Id)).Select(st => (st.Id, st.Name, st.Num("elevation"), per[st.Id]));
-        return IfcSurvey.Shape(Spatial.Project(m)?.Name ?? "Project", 0, "Lapin", null, kinds, storeys, none);
+        var o = IfcSurvey.Shape(Spatial.Project(m)?.Name ?? "Project", 0, "Lapin", null, kinds, storeys, none);
+        // The kinds left out unless chosen start unticked.
+        foreach (var k in (o["groups"] as JsonArray ?? []).SelectMany(g => g?["kinds"] as JsonArray ?? []).OfType<JsonObject>())
+            if (OffByDefault.Contains((string?)k["key"] ?? "")) { k["off"] = true; k["label"] = "Entourage"; }
+        return o;
     }
 
     /// <summary>The elements an export leaves out: of a kind or on a storey not chosen ("" for those on none), and those given as hidden.</summary>
@@ -43,6 +50,9 @@ public static class ModelSurvey
         var kinds = Set(p["kinds"]);
         var storeys = Set(p["storeys"]);
         var o = Set(p["hidden"])?.ToHashSet() ?? [];
+        // Entourage (people, cars) is left out unless the kinds chosen take it or it is asked for (`entourage: true`).
+        if (kinds == null && !(p["entourage"] is JsonValue ev && ev.TryGetValue<bool>(out var withEntourage) && withEntourage))
+            foreach (var e in s.Model.Entities) if (OffByDefault.Contains(e.Class)) o.Add(e.Id);
         if (kinds == null && storeys == null) return o;
         foreach (var e in s.Model.Entities)
         {
