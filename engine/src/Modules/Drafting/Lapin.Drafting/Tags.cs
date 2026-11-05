@@ -19,7 +19,8 @@ namespace Lapin.Drafting;
 /// be switched off, bent at an elbow and pointed at another spot of the
 /// element; dragged, the tag's head leaves the leader's end where it is. A
 /// door's or window's marker (a type shaped "opening") is drawn in plans by
-/// the architecture module, which knows the wall it sits in.
+/// the architecture module, which knows the wall it sits in. A tag follows its
+/// element when it moves, turns or is reshaped (report #93, <see cref="TagHold"/>).
 /// </summary>
 public static class Tags
 {
@@ -73,7 +74,10 @@ public static class Tags
             var p = Dimensions.ParamsOf(t);
             if (type != null && p["textStyle"] == null) p["textStyle"] = type.TextStyle;
             var style = Standards.ResolveText(c.Book, p);
-            var at = Pt(t.Attrs["at"]) ?? default;
+            // Its points where its element has taken them since they were set (report #93).
+            var follow = TagHold.Follow(c.Model, t, e, c.Frame.Right, c.Frame.Up, c.Kind == "plan", c.Geometry);
+            Vec2? Followed(Vec2? p) => p is { } q && follow != null ? follow(q) : p;
+            var at = Followed(Pt(t.Attrs["at"])) ?? default;
             var lines = LinesOf(c.Model, t, e, type, c.Book.Units);
             var color = e == null ? "#c0392b" : style.Color ?? "#000000";
             var h = style.Height * c.Mm;
@@ -87,8 +91,8 @@ public static class Tags
                 mk.Text(new PenText(new Vec2(at.X, at.Y + halfH - 0.25 * h - 1.5 * h * (i + 0.5)), lines[i], style.Height, 0, "middle", "middle", style.Bold, style.Font, style.Italic), color);
             var data = new JsonObject { ["at"] = J(at), ["leader"] = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on, ["of"] = e?.Id };
             // The leader: to the spot it was pointed at, else the middle of what the element draws here; through its elbow.
-            var end = Pt(t.Attrs["end"]) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
-            var elbow = Pt(t.Attrs["elbow"]);
+            var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
+            var elbow = Followed(Pt(t.Attrs["elbow"]));
             var shaped = t.Attrs["end"] is JsonArray || elbow != null;
             if ((bool)data["leader"]! && end is { } target && (shaped || (target - at).Length > halfH * 1.5))
             {
@@ -128,6 +132,8 @@ public static class Tags
             if (type != null) attrs["tagType"] = type.Id;
             if (a["leader"] is JsonValue lv && lv.TryGetValue<bool>(out var leader) && !leader) attrs["leader"] = false;
             if (Pt(a["elbow"]) is { } elbow) attrs["elbow"] = J(elbow);
+            // Where the element stands now: the tag follows it from there (report #93).
+            TagHold.Hold(ctx.Model, attrs, e, Views.Find(ctx.Model, viewId) is { } v && TagHold.Axes(ctx.Model, v) is { Plan: true }, ctx.Query.Geometry);
             var tag = new Entity(ctx.NewId(), IfcClass.Annotation, $"Tag {TagText.Mark(ctx.Model, e)}", attrs, "TAG");
             ctx.Add(tag);
             return new JsonObject { ["id"] = tag.Id };
@@ -147,7 +153,8 @@ public static class Tags
             {
                 var t = ctx.Model.Get(id);
                 if (t is not { PredefinedType: "TAG" }) throw new CommandException("That is not a tag.");
-                var attrs = t.CloneAttrs();
+                // Its points first where its element has taken them (report #93): what the view shows, which the change is made on.
+                var attrs = TagHold.Baked(ctx.Model, t, ctx.Query.Geometry);
                 foreach (var key in new[] { "at", "elbow", "end" })
                 {
                     if (!a.ContainsKey(key)) continue;
@@ -184,6 +191,8 @@ public static class Tags
                 {
                     if (LabelParts.Apply(attrs["parts"] as JsonObject, a) is { } parts) attrs["parts"] = parts; else attrs.Remove("parts");
                 }
+                // The element's frame again: a leader's end moved along a wall holds on there.
+                TagHold.Hold(ctx.Model, attrs, ctx.Model.Get(t.Str("element") ?? ""), TagHold.InPlan(ctx.Model, t), ctx.Query.Geometry);
                 ctx.Replace(t.With(attrs: attrs));
             }
             return null;

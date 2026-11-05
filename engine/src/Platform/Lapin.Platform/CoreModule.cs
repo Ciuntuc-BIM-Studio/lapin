@@ -252,17 +252,21 @@ public sealed class CoreModule : ILapinModule
             var hosted = all.Where(e => hostedIds.Contains(e.Id) && !ctx.Model.RelatedOf(e.Id, IfcClass.RelFillsElement).Any(f => hostedIds.Contains(f.Id))).ToList();
             var made = new JsonArray();
             var copies = new Dictionary<string, string>();
+            // In a section or an elevation the view's move is given in the model too (world): what is placed in a host moves by it.
+            var inHost = world != null && op is "move" or "copy" ? Placement2D.Move(Args.PointOf(world), rise) : t;
+            // What follows the elements without being selected (their tags, report #93) is told before and after.
+            var selected = all.Select(e => e.Id).ToHashSet();
+            var followers = ctx.Services.All<ITransformFollowers>().Select(f => (f, State: f.Before(ctx, moving, selected))).ToList();
             foreach (var e in entities)
             {
                 if (ctx.Model.Get(e.Id) is not { } now) continue;
                 if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
                 else Placement.Transform(ctx, now, t, moving);
             }
-            // In a section or an elevation the view's move is given in the model too (world): what is placed in a host moves by it.
-            var inHost = world != null && op is "move" or "copy" ? Placement2D.Move(Args.PointOf(world), rise) : t;
             foreach (var own in ctx.Services.All<IHostedPlacement>())
                 if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
                     foreach (var c in own.Transform(ctx, mine, inHost, copy)) made.Add((JsonNode)c);
+            foreach (var (f, state) in followers) f.After(ctx, state, t, inHost, moving, selected, copies);
             // Elements copied together keep their joins: a corner or a T between two of them joins their copies the same way.
             if (copy)
                 foreach (var r in copies.Keys.SelectMany(id => ctx.Model.RelationsOf(id, IfcClass.RelConnectsPathElements)).DistinctBy(r => r.Id).Where(r => copies.ContainsKey(r.Relating) && r.Related.All(copies.ContainsKey)).ToList())

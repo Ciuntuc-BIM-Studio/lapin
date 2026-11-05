@@ -29,6 +29,9 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Service<IDeletion>(new AxisDeletion());
         r.Service<IPartPlacement>(new AxisPlacement());
         r.Service<IProjectUpgrade>(new DimensionUpgrade());
+        // Tags follow their elements (report #93).
+        r.Service<ITransformFollowers>(new TagFollowers());
+        r.Service<IProjectUpgrade>(new TagHoldUpgrade());
         Tags.Register(r);
 
         // ------------------------------------------------------------ grids

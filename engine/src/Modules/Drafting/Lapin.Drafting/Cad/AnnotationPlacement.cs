@@ -42,9 +42,9 @@ public sealed class AnnotationPlacement : IElementPlacement
                 break;
             case "TAG" or "LEGEND":
                 attrs["at"] = J(t.Point(P(attrs["at"])));
-                // A tag's leader: its elbow goes with the tag; its end stays on the element unless the element goes too (or it tags nothing now).
+                // A tag's leader: its elbow goes with the tag; its end stays on the element unless the element goes too, or the wall it is in (or it tags nothing now).
                 if (attrs["elbow"] is JsonArray) attrs["elbow"] = J(t.Point(P(attrs["elbow"])));
-                if (attrs["end"] is JsonArray && ((string?)attrs["element"] is not { } tagged || moving.Contains(tagged) || m.Get(tagged) == null))
+                if (attrs["end"] is JsonArray && ((string?)attrs["element"] is not { } tagged || TagHold.Moves(m, tagged, moving) || m.Get(tagged) == null))
                     attrs["end"] = J(t.Point(P(attrs["end"])));
                 break;
             case "TEXT":

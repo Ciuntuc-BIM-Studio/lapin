@@ -64,6 +64,21 @@ public interface IHostedPlacement
     IReadOnlyList<string> Transform(ICommandContext ctx, IReadOnlyList<Entity> elements, Placement2D t, bool copy);
 }
 
+/// <summary>
+/// What follows elements element.transform carries without being selected itself (a tag on its element, tester's
+/// report #93): told before anything moves and after, in the same undo step.
+/// </summary>
+public interface ITransformFollowers
+{
+    /// <summary>Before anything moves: <paramref name="moving"/> is carried whole, <paramref name="selected"/> is everything asked for (what slides in its host too). What <see cref="After"/> gets back.</summary>
+    object? Before(ICommandContext ctx, IReadOnlySet<string> moving, IReadOnlySet<string> selected);
+    /// <summary>
+    /// After: <paramref name="t"/> as the command gave it (in the view's coordinates), <paramref name="plan"/> the same in
+    /// the model's plan; <paramref name="copies"/>: each copied id's copy.
+    /// </summary>
+    void After(ICommandContext ctx, object? state, Placement2D t, Placement2D plan, IReadOnlySet<string> moving, IReadOnlySet<string> selected, IReadOnlyDictionary<string, string> copies);
+}
+
 /// <summary>What a module does when element.update has changed an element (a node moved by its x, y or rotation: the runs on its ports follow it), in the same undo step.</summary>
 public interface IElementUpdate
 {
