@@ -3,7 +3,9 @@
  * ungrouping it or selecting its members one by one.
  */
 
-import { PencilRuler, Ungroup, MousePointer2 } from 'lucide-react';
+import { Feather, PencilRuler, Ungroup, MousePointer2 } from 'lucide-react';
+import { isDesktop } from '../../engine/files';
+import { fileName, openOptimize } from '../../engine/ifcOptimize';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
 import { useUi } from '../../app/store';
@@ -24,6 +26,10 @@ export function GroupSection({ node }: { node: NodeDto }) {
           useUi.setState({ selected: ids, selection: ids[ids.length - 1] ?? null });
         })}><Ungroup size={14} />Ungroup</button>
         <button type="button" className="btn" onClick={() => useUi.setState({ selected: members, selection: members[members.length - 1] ?? null })}><MousePointer2 size={14} />Select members</button>
+        {/* An imported IFC's group keeps its file: a lighter copy of it, its GlobalIds and properties the same (docs/ifc-optimize.md). */}
+        {isDesktop() && typeof node.props.source === 'string' && /\.ifc(zip)?$/i.test(node.props.source) && (
+          <button type="button" className="btn" data-group="optimize" title={node.props.source} onClick={() => openOptimize([{ name: fileName(node.props.source as string), path: node.props.source as string }])}><Feather size={14} />Optimize the source file…</button>
+        )}
       </div>
     </>
   );

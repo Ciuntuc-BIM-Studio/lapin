@@ -52,6 +52,16 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 
 ![Export IFC or Fragments](shots/export-exchange.webp)
 
+## Optimize an IFC file
+
+**Optimize IFC…** (in File, or on the start screen: no project needs to be open) makes a lighter copy of one or more IFC files without changing what they say. The copy keeps every GlobalId, name, property set, quantity, type, material and relationship exactly as the file wrote them, and its header too; nothing of Lapin's is added. Only the geometry changes: meshes (face sets, faceted B-reps of plain faces) are cleaned (duplicate vertices welded, degenerate and repeated triangles and unused coordinates dropped) and simplified, never further from the original than the **Precision** (Fast 5 mm, Balanced 1 mm, Precise 0.1 mm, or your own), measured both ways; identical bodies are written once and shared by their products; and what nothing references (unused points, styles, empty representations) goes. Extrusions, booleans and other exact bodies stay as they are. Rounding the coordinates, B-reps written as face sets (IFC4 and IFC4X3 only) and a zipped `.ifczip` are there when you want them.
+
+![Optimize IFC](shots/optimize-ifc.webp)
+
+The copy is written next to the original, or in a folder you choose, under the original's name with an **Ending** (`.optimized` to start with): `house.ifc` gives `house.optimized.ifc`. The original is never written, and when the copy is already there Lapin asks before replacing it. For each file the report gives the size, entities and triangles before and after, the bodies shared, the orphans removed, the largest deviation measured and the time taken; **Open folder** shows the copy and **Open in Lapin** opens it in another window. In the browser the copy is downloaded. A file already in the project keeps its way back: **Optimize the source file…** on an imported IFC's group (in its properties) or on a link (Manage → Links) does the same to the file it came from, while that file is still on disk.
+
+![The report](shots/optimize-ifc-report.webp)
+
 ## DXF and DWG
 
 **Import DXF…** brings a CAD drawing into the view in front, with its layers, hatches, texts and dimensions. It comes in as drafting you can snap to and edit. To use a DWG, first save it as DXF from your CAD program (AutoCAD, BricsCAD or DraftSight: **Save As → DXF**). PDF import is not available yet. Into a plan, **Placed: by the map's coordinates** lays a drawing in real coordinates (a cadastral plan in Stereo 70) where the map puts it (see [Site](site.md)).

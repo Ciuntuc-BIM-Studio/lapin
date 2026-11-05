@@ -52,6 +52,16 @@ Przestrzenie z pliku (z Revita, ArchiCAD-a i innych) wchodzą jako pomieszczenia
 
 ![Eksportuj IFC lub Fragments](shots/export-exchange.webp)
 
+## Optymalizacja pliku IFC
+
+**Optymalizuj IFC…** (w menu Plik lub na ekranie startowym: żaden projekt nie musi być otwarty) tworzy lżejszą kopię jednego lub kilku plików IFC, nie zmieniając tego, co mówią. Kopia zachowuje każdy GlobalId, nazwę, zestaw właściwości, ilość, typ, materiał i relację dokładnie tak, jak zapisał je plik, a także jego nagłówek; nic od Lapina nie jest dodawane. Zmienia się tylko geometria: siatki (zestawy ścian, fasetowe B-repy z płaskich ścian) są oczyszczane (zduplikowane wierzchołki zespawane, zdegenerowane i powtórzone trójkąty oraz nieużywane współrzędne usunięte) i upraszczane, nigdy dalej od oryginału niż **Precyzja** (Szybko 5 mm, Zrównoważenie 1 mm, Dokładnie 0,1 mm lub własna), mierzona w obie strony; identyczne bryły są zapisywane raz i współdzielone przez swoje produkty; a to, do czego nic się nie odwołuje (nieużywane punkty, style, puste reprezentacje), znika. Wyciągnięcia, operacje logiczne i inne dokładne bryły pozostają bez zmian. Zaokrąglanie współrzędnych, B-repy zapisane jako zestawy ścian (tylko IFC4 i IFC4X3) i spakowany `.ifczip` są dostępne, gdy ich chcesz.
+
+![Optymalizuj IFC](shots/optimize-ifc.webp)
+
+Kopia jest zapisywana obok oryginału lub w wybranym folderze, pod nazwą oryginału z **Końcówką** (na początek `.optimized`): z `dom.ifc` powstaje `dom.optimized.ifc`. Oryginał nigdy nie jest zapisywany, a gdy kopia już istnieje, Lapin pyta przed jej zastąpieniem. Dla każdego pliku raport podaje rozmiar, encje i trójkąty przed i po, współdzielone bryły, usunięte osierocone, największe zmierzone odchylenie i czas trwania; **Otwórz folder** pokazuje kopię, a **Otwórz w Lapin** otwiera ją w innym oknie. W przeglądarce kopia jest pobierana. Plik już wprowadzony do projektu zachowuje drogę powrotną: **Optymalizuj plik źródłowy…** na grupie zaimportowanego IFC (w jej właściwościach) lub na łączu (Zarządzaj → Łącza) robi to samo z plikiem, z którego pochodzi, dopóki jest on jeszcze na dysku.
+
+![Raport](shots/optimize-ifc-report.webp)
+
 ## DXF i DWG
 
 **Importuj DXF…** wprowadza rysunek CAD do widoku na pierwszym planie, z warstwami, kreskowaniami, tekstami i wymiarami. Wchodzi jako rysunek, do którego możesz się przyciągać i który możesz edytować. Aby użyć pliku DWG, najpierw zapisz go jako DXF w swoim programie CAD (AutoCAD, BricsCAD lub DraftSight: **Zapisz jako → DXF**). Import PDF nie jest jeszcze dostępny. Na rzucie opcja **Umieszczony: według współrzędnych mapy** kładzie rysunek w rzeczywistych współrzędnych (plan katastralny w Stereo 70) tam, gdzie umieszcza go mapa (zobacz [Teren](site.md)).

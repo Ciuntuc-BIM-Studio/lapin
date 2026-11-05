@@ -368,6 +368,10 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         sink(new JsonObject { ["stage"] = stage, ["done"] = done, ["total"] = total });
     }
 
+    /// <summary>The long call that can be stopped now (an IFC file being optimised), and stopping it: the host calls it from outside the calls' queue.</summary>
+    CancellationTokenSource? _long;
+    public void CancelLong() { try { _long?.Cancel(); } catch (ObjectDisposedException) { } }
+
     /// <summary>The last file surveyed (project.ifcSurvey), read and indexed, for the import that follows to take as it is.</summary>
     (string Key, byte[] Bytes, StepFile File, string Hash)? _surveyed;
     (string Key, Lapin.Mesh.Fragments.FragModel Model)? _fragSurveyed;
@@ -684,6 +688,45 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 foreach (var (k, v) in result.ToJson()) delivered[k] = v?.DeepClone();
                 return (delivered, null);
             }
+            case "ifc.optimize":
+            {
+                // An IFC file cleaned and optimised into a copy (docs/ifc-optimize.md): a pass from file to file, no project needed, the original
+                // never written. By path (the desktop: the copy beside it or in `folder`, its name the original's with `suffix`; one already there is
+                // overwritten only with `overwrite`, else the reply says it exists), or by its bytes (the browser: the copy comes back to download).
+                var options = IfcOptimizeOptions.FromJson(p["options"] as JsonObject);
+                var suffix = IfcOptimize.CleanSuffix((string?)p["suffix"]) ?? throw new CommandException("The copy needs an ending to tell it from the original.");
+                using var cts = new CancellationTokenSource();
+                _long = cts;
+                try
+                {
+                    if ((string?)p["data"] is { } data)
+                    {
+                        var name = (string?)p["name"] ?? "model.ifc";
+                        using var ms = new MemoryStream();
+                        var r = IfcOptimize.Run(Convert.FromBase64String(data), ms, options, ReportProgress, cts.Token, name);
+                        var o = r.ToJson();
+                        o["name"] = Path.GetFileName(IfcOptimize.Target(name, suffix, null, options.Zip));
+                        o["data"] = Convert.ToBase64String(ms.ToArray());
+                        return (o, null);
+                    }
+                    var source = PathParam();
+                    if (!File.Exists(source)) throw new CommandException($"There is no file at {source}.");
+                    var folder = (string?)p["folder"] is { Length: > 0 } f ? HostFiles.Check(f) : null;
+                    var target = IfcOptimize.Target(source, suffix, folder, options.Zip);
+                    if (IfcOptimize.SamePath(source, target)) throw new CommandException("The copy would overwrite the original: choose another ending or folder.");
+                    var overwrite = p["overwrite"] is JsonValue ov && ov.TryGetValue<bool>(out var yes) && yes;
+                    if (File.Exists(target) && !overwrite)
+                        return (new JsonObject { ["exists"] = true, ["target"] = target }, null);
+                    if (folder != null) Directory.CreateDirectory(folder);
+                    var report = IfcOptimize.RunFile(source, target, options, ReportProgress, cts.Token).ToJson();
+                    report["source"] = source;
+                    report["target"] = target;
+                    return (report, null);
+                }
+                catch (OperationCanceledException) { throw new CommandException("Cancelled: nothing was written."); }
+                catch (InvalidOperationException e) { throw new CommandException(e.Message); }
+                finally { _long = null; }
+            }
             case "project.ifcSurvey":
             {
                 // What a file holds, for the user to choose from before it is imported: read and indexed here, kept for the import that follows.
@@ -733,7 +776,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     try
                     {
                         using var seeded = session.SeededIds(seed);
-                        result = modeName == "link" ? IfcImport.Link(session, file, name, path, mode, out imported) : IfcImport.Run(session, file, name, mode, out imported);
+                        result = modeName == "link" ? IfcImport.Link(session, file, name, path, mode, out imported) : IfcImport.Run(session, file, name, mode with { Source = path }, out imported);
                     }
                     finally { session.EditSource = null; }
                 }

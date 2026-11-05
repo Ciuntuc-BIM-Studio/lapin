@@ -52,6 +52,16 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 
 ![Eksportér IFC eller Fragments](shots/export-exchange.webp)
 
+## Optimér en IFC-fil
+
+**Optimér IFC…** (under Fil eller på startskærmen: intet projekt behøver at være åbent) laver en lettere kopi af en eller flere IFC-filer uden at ændre, hvad de siger. Kopien beholder hver GlobalId, hvert navn, egenskabssæt, hver mængde, type, materiale og relation præcis, som filen skrev dem, også dens hoved; intet af Lapins tilføjes. Kun geometrien ændres: net (fladesæt, facetterede B-reps af plane flader) renses (dobbelte punkter svejset, degenererede og gentagne trekanter og ubrugte koordinater fjernet) og forenkles, aldrig længere fra originalen end **Præcisionen** (Hurtig 5 mm, Afbalanceret 1 mm, Præcis 0,1 mm eller din egen), målt begge veje; ens legemer skrives én gang og deles af deres produkter; og det, intet refererer til (ubrugte punkter, stilarter, tomme repræsentationer), forsvinder. Ekstruderinger, booleske legemer og andre eksakte legemer forbliver, som de er. Afrundede koordinater, B-reps skrevet som fladesæt (kun IFC4 og IFC4X3) og en zippet `.ifczip` er der, når du vil have dem.
+
+![Optimér IFC](shots/optimize-ifc.webp)
+
+Kopien skrives ved siden af originalen eller i en mappe, du vælger, under originalens navn med en **Endelse** (`.optimized` til at begynde med): `hus.ifc` giver `hus.optimized.ifc`. Originalen skrives aldrig, og findes kopien allerede, spørger Lapin, før den erstattes. For hver fil giver rapporten størrelse, entiteter og trekanter før og efter, de delte legemer, de fjernede forældreløse, den største målte afvigelse og varigheden; **Åbn mappe** viser kopien, og **Åbn i Lapin** åbner den i et andet vindue. I browseren downloades kopien. En fil, der allerede er i projektet, har stadig vejen tilbage: **Optimér kildefilen…** på et importeret IFC's gruppe (i dens egenskaber) eller på et link (Administrer → Links) gør det samme ved den fil, den kom fra, så længe den stadig ligger på disken.
+
+![Rapporten](shots/optimize-ifc-report.webp)
+
 ## DXF og DWG
 
 **Importér DXF…** henter en CAD-tegning ind i visningen forrest, med dens lag, skraveringer, tekster og mål. Den kommer ind som tegning, du kan fange til og redigere. Vil du bruge en DWG, så gem den først som DXF fra dit CAD-program (AutoCAD, BricsCAD eller DraftSight: **Save As → DXF**). Import af PDF er endnu ikke tilgængelig. I en plan lægger **Placeret: efter kortets koordinater** en tegning i rigtige koordinater (en matrikelplan i Stereo 70) der, hvor kortet placerer den (se [Grunden og dens data](site.md)).

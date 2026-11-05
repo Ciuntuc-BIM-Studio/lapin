@@ -52,6 +52,16 @@ Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapi
 
 ![Exporter IFC ou Fragments](shots/export-exchange.webp)
 
+## Optimiser un fichier IFC
+
+**Optimiser IFC…** (dans Fichier, ou sur l’écran d’accueil : aucun projet n’a besoin d’être ouvert) fait une copie plus légère d’un ou de plusieurs fichiers IFC sans changer ce qu’ils disent. La copie garde chaque GlobalId, nom, jeu de propriétés, quantité, type, matériau et relation exactement tels que le fichier les a écrits, et son en-tête aussi ; rien de Lapin n’est ajouté. Seule la géométrie change : les maillages (ensembles de faces, B-reps facettés de faces planes) sont nettoyés (sommets en double soudés, triangles dégénérés et répétés et coordonnées inutilisées supprimés) et simplifiés, jamais plus loin de l’original que la **Précision** (Rapide 5 mm, Équilibré 1 mm, Précis 0,1 mm, ou la vôtre), mesurée dans les deux sens ; les corps identiques sont écrits une seule fois et partagés par leurs produits ; et ce que rien ne référence (points, styles inutilisés, représentations vides) disparaît. Les extrusions, les booléens et les autres corps exacts restent tels quels. Arrondir les coordonnées, écrire les B-reps en ensembles de faces (IFC4 et IFC4X3 seulement) et un `.ifczip` compressé sont là quand vous le voulez.
+
+![Optimiser IFC](shots/optimize-ifc.webp)
+
+La copie est écrite à côté de l’original, ou dans un dossier de votre choix, sous le nom de l’original avec une **Terminaison** (`.optimized` pour commencer) : `maison.ifc` donne `maison.optimized.ifc`. L’original n’est jamais écrit, et si la copie existe déjà, Lapin demande avant de la remplacer. Pour chaque fichier, le rapport donne la taille, les entités et les triangles avant et après, les corps partagés, les orphelins supprimés, l’écart maximal mesuré et la durée ; **Ouvrir le dossier** montre la copie et **Ouvrir dans Lapin** l’ouvre dans une autre fenêtre. Dans le navigateur, la copie est téléchargée. Un fichier déjà dans le projet garde son chemin de retour : **Optimiser le fichier source…** sur le groupe d’un IFC importé (dans ses propriétés) ou sur un lien (Gérer → Liens) fait de même avec le fichier d’où il vient, tant qu’il est encore sur le disque.
+
+![Le rapport](shots/optimize-ifc-report.webp)
+
 ## DXF et DWG
 
 **Importer DXF…** fait entrer un dessin de CAO dans la vue au premier plan, avec ses calques, ses hachures, ses textes et ses cotes. Il arrive sous forme de dessin auquel vous pouvez vous accrocher et que vous pouvez modifier. Pour utiliser un DWG, enregistrez-le d’abord en DXF depuis votre logiciel de CAO (AutoCAD, BricsCAD ou DraftSight : **Save As → DXF**). L’import de PDF n’est pas encore disponible. Dans un plan, **Placé : par les coordonnées de la carte** pose un dessin en coordonnées réelles (un plan cadastral en Stereo 70) là où la carte le place (voir [Le site et ses données](site.md)).

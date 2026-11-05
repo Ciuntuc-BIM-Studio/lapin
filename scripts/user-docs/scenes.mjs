@@ -3177,6 +3177,42 @@ export const scenes = [
     },
   },
   {
+    // An IFC file cleaned and lightened into a copy (docs/ifc-optimize.md): no project needed, the original never written.
+    id: 'optimize-ifc',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      for (const x of [0, 4, 8, 12]) await t.cmd('structure.addColumn', { storeyId: storey, x, y: 0 });
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const file = join(tmpdir(), 'lapin-guide-house.ifc');
+      await t.call('project.exportIfc', { geometry: 'faceset', path: file });
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      await t.button('File', { exact: true });
+      await t.page.locator('[data-menu=optimize-ifc]').click();
+      const dialog = t.page.locator('[data-dialog=optimize-ifc]');
+      await dialog.waitFor({ timeout: 10_000 });
+      const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await dialog.locator('[data-optimize=add]').click();
+      await (await chooser).setFiles(file);
+      await dialog.locator('[data-optimize-file=waiting]').waitFor({ timeout: 10_000 });
+      t.expect(await dialog.locator('input[data-optimize=simplify]').isChecked() && await dialog.locator('input[data-optimize=share]').isChecked(), 'simplify and share are on by default');
+      t.expect(!(await dialog.locator('input[data-optimize=zip]').isChecked()) && !(await dialog.locator('input[data-optimize=breps]').isChecked()), 'zip and face sets are off by default');
+      t.expect(await dialog.locator('input[data-optimize=suffix]').inputValue() === '.optimized', 'the ending starts as .optimized');
+      await t.shot('optimize-ifc', { of: '[data-dialog=optimize-ifc]', pad: 0 });
+      const download = t.page.waitForEvent('download', { timeout: 60_000 });
+      await dialog.locator('[data-optimize=run]').click();
+      const copy = await download;
+      t.expect(copy.suggestedFilename() === 'lapin-guide-house.optimized.ifc', "the copy is the original's name with its ending");
+      await dialog.locator('[data-optimize=report]').waitFor({ timeout: 60_000 });
+      t.expect(await dialog.locator('[data-optimize-file=done]').count() === 1, 'the file was optimised');
+      await t.shot('optimize-ifc-report', { of: '[data-dialog=optimize-ifc]', pad: 0 });
+      // The copy keeps the file's GlobalIds: the same products come in from it.
+      const report = await t.call('ifc.optimize', { name: 'house.ifc', data: (await import('node:fs')).readFileSync(file).toString('base64'), suffix: '.optimized' });
+      t.expect(report.entitiesAfter <= report.entitiesBefore && report.deviationMm <= 1, 'the copy is no bigger and stays within 1 mm');
+    },
+  },
+  {
     // Imported types mapped onto the project's own (docs/spec-ifc.md, Î9): Manage → Map imported types after a foreign file came in.
     id: 'import-types',
     async run(t) {

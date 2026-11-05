@@ -14,6 +14,7 @@ import { useUi } from '../app/store';
 import { activate, ribbonTabs } from '../platform/modules';
 import { redo, undo, useSession } from '../engine/session';
 import { importDxf, importIfc, newProject, openProject, saveProject, importFragments, importMesh } from '../engine/files';
+import { openOptimize } from '../engine/ifcOptimize';
 import { engineInBrowser } from '../engine/session';
 import { isGuest, leave } from '../engine/share';
 import { Participants } from './Sharing';
@@ -81,6 +82,8 @@ function FileMenu() {
           <button type="button" role="menuitem" onClick={run(() => importFragments())}>Import Fragments…</button>
           <button type="button" role="menuitem" onClick={run(() => importIfc('link'))}>Link IFC…</button>
           <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportExchange' }))}>Export IFC or Fragments…</button>
+          {/* A file cleaned and lightened into a copy, no project needed (docs/ifc-optimize.md). */}
+          <button type="button" role="menuitem" data-menu="optimize-ifc" onClick={run(() => openOptimize())}>Optimize IFC…</button>
           <div className="menu-sep" role="separator" />
           <div className="menu-head">Other formats</div>
           <button type="button" role="menuitem" onClick={run(() => importDxf())}>Import DXF…</button>

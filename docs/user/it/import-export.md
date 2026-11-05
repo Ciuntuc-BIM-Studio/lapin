@@ -52,6 +52,16 @@ Gli spazi del file (da Revit, ArchiCAD e altri) entrano come locali di Lapin, ci
 
 ![Esporta IFC o Fragments](shots/export-exchange.webp)
 
+## Ottimizzare un file IFC
+
+**Ottimizza IFC…** (nel menu File o nella schermata iniziale: non serve aprire alcun progetto) crea una copia più leggera di uno o più file IFC senza cambiare ciò che dicono. La copia mantiene ogni GlobalId, nome, set di proprietà, quantità, tipo, materiale e relazione esattamente come il file li ha scritti, e anche la sua intestazione; non si aggiunge nulla di Lapin. Cambia solo la geometria: le mesh (insiemi di facce, B-rep sfaccettati con facce piane) vengono ripulite (vertici duplicati saldati, triangoli degeneri e ripetuti e coordinate inutilizzate rimossi) e semplificate, mai più lontano dall’originale della **Precisione** (Veloce 5 mm, Bilanciato 1 mm, Preciso 0,1 mm o la tua), misurata nei due sensi; i corpi identici vengono scritti una sola volta e condivisi dai loro prodotti; e ciò a cui nulla fa riferimento (punti, stili inutilizzati, rappresentazioni vuote) scompare. Estrusioni, booleane e gli altri corpi esatti restano come sono. Arrotondare le coordinate, scrivere i B-rep come insiemi di facce (solo IFC4 e IFC4X3) e un `.ifczip` compresso ci sono quando li vuoi.
+
+![Ottimizza IFC](shots/optimize-ifc.webp)
+
+La copia viene scritta accanto all’originale, o in una cartella scelta da te, con il nome dell’originale e una **Terminazione** (all’inizio `.optimized`): `casa.ifc` diventa `casa.optimized.ifc`. L’originale non viene mai scritto, e se la copia esiste già Lapin chiede prima di sostituirla. Per ogni file il rapporto dà dimensione, entità e triangoli prima e dopo, i corpi condivisi, gli orfani rimossi, lo scostamento massimo misurato e la durata; **Apri cartella** mostra la copia e **Apri in Lapin** la apre in un’altra finestra. Nel browser la copia viene scaricata. Un file già portato nel progetto conserva la strada del ritorno: **Ottimizza il file sorgente…** sul gruppo di un IFC importato (nelle sue proprietà) o su un collegamento (Gestisci → Collegamenti) fa lo stesso con il file da cui è venuto, finché è ancora sul disco.
+
+![Il rapporto](shots/optimize-ifc-report.webp)
+
 ## DXF e DWG
 
 **Importa DXF…** porta un disegno CAD nella vista in primo piano, con i suoi layer, retini, testi e quote. Entra come disegno 2D su cui puoi fare snap e che puoi modificare. Per usare un DWG, salvalo prima come DXF dal tuo programma CAD (AutoCAD, BricsCAD o DraftSight: **Save As → DXF**). L’importazione di PDF non è ancora disponibile. In una pianta, **Posizionato: dalle coordinate della mappa** posa un disegno in coordinate reali (una mappa catastale in Stereo 70) dove lo mette la mappa (vedi [Il sito e i suoi dati](site.md)).

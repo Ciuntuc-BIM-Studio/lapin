@@ -1,8 +1,10 @@
 /** The start screen, Atrium's way: the actions on the left; unsaved work to bring back, the templates to start from (decision 261) and the recent projects on the right. */
 
 import { useEffect, useState } from 'react';
-import { FilePlus2, FolderOpen, History, Trash2, Users } from 'lucide-react';
+import { Feather, FilePlus2, FolderOpen, History, Trash2, Users } from 'lucide-react';
 import { JoinDialog } from './Sharing';
+import { OptimizeIfcDialog } from './OptimizeIfcDialog';
+import { openOptimize } from '../engine/ifcOptimize';
 import { modules, productInfo } from '../platform/modules';
 import { brand, tagline } from '../platform/brand';
 import { BrandName } from './BrandMark';
@@ -25,6 +27,7 @@ export function StartScreen() {
   useEffect(() => { if (connected) void listRecovery().then(setWork); }, [connected]);
   const back = () => useUi.setState({ screen: 'workspace' });
   const joining = useUi((s) => s.dialog === 'join');
+  const optimizing = useUi((s) => s.dialog === 'optimizeIfc');
   return (
     <div className="start">
       <section className="start-left">
@@ -33,6 +36,7 @@ export function StartScreen() {
         <button type="button" className="btn primary big" disabled={!connected} onClick={() => void newProject()}><FilePlus2 size={18} />New project</button>
         <button type="button" className="btn big" disabled={!connected} onClick={() => void openProject()}><FolderOpen size={18} />Open project…</button>
         <button type="button" className="btn big" onClick={() => useUi.setState({ dialog: 'join' })}><Users size={18} />Join session…</button>
+        <button type="button" className="btn big" data-start="optimize-ifc" disabled={!connected} onClick={() => openOptimize()}><Feather size={18} />Optimize IFC…</button>
         {doc && (doc.path || doc.canUndo) && <button type="button" className="btn big" onClick={back}>Back to {projectTitle(doc.path)}</button>}
         {!connected && <p className="muted small">Starting the engine…</p>}
         <p className="eyebrow">Workspace</p>
@@ -100,6 +104,7 @@ export function StartScreen() {
         </span>
       </footer>
       {joining && <JoinDialog />}
+      {optimizing && <OptimizeIfcDialog />}
     </div>
   );
 }

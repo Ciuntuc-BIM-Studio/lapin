@@ -52,6 +52,16 @@ Os espaços do arquivo (do Revit, do ArchiCAD e de outros) entram como ambientes
 
 ![Exportar IFC ou Fragments](shots/export-exchange.webp)
 
+## Otimizar um arquivo IFC
+
+**Otimizar IFC…** (em Arquivo, ou na tela inicial: nenhum projeto precisa estar aberto) faz uma cópia mais leve de um ou mais arquivos IFC sem mudar o que eles dizem. A cópia mantém cada GlobalId, nome, conjunto de propriedades, quantidade, tipo, material e relação exatamente como o arquivo os escreveu, e também o cabeçalho; nada do Lapin é acrescentado. Só a geometria muda: as malhas (conjuntos de faces, B-reps facetados de faces planas) são limpas (vértices duplicados soldados, triângulos degenerados e repetidos e coordenadas não usadas removidos) e simplificadas, nunca mais longe do original do que a **Precisão** (Rápido 5 mm, Equilibrado 1 mm, Preciso 0,1 mm ou a sua), medida nos dois sentidos; corpos idênticos são escritos uma vez e compartilhados pelos seus produtos; e o que nada referencia (pontos, estilos não usados, representações vazias) some. Extrusões, booleanas e os outros corpos exatos ficam como estão. Arredondar as coordenadas, escrever os B-reps como conjuntos de faces (só IFC4 e IFC4X3) e um `.ifczip` compactado estão lá quando você quiser.
+
+![Otimizar IFC](shots/optimize-ifc.webp)
+
+A cópia é escrita ao lado do original, ou numa pasta que você escolher, com o nome do original e uma **Terminação** (`.optimized` para começar): `casa.ifc` dá `casa.optimized.ifc`. O original nunca é escrito, e se a cópia já existir o Lapin pergunta antes de substituí-la. Para cada arquivo, o relatório dá o tamanho, as entidades e os triângulos antes e depois, os corpos compartilhados, os órfãos removidos, o maior desvio medido e a duração; **Abrir pasta** mostra a cópia e **Abrir no Lapin** a abre em outra janela. No navegador a cópia é baixada. Um arquivo já trazido para o projeto guarda o caminho de volta: **Otimizar o arquivo de origem…** no grupo de um IFC importado (nas suas propriedades) ou num vínculo (Gerenciar → Vínculos) faz o mesmo com o arquivo de onde veio, enquanto ele ainda estiver no disco.
+
+![O relatório](shots/optimize-ifc-report.webp)
+
 ## DXF e DWG
 
 **Importar DXF…** traz um desenho CAD para a vista em primeiro plano, com as suas camadas, hachuras, textos e cotas. Ele entra como desenho no qual você pode usar o snap e que pode editar. Para usar um DWG, primeiro salve-o como DXF no seu programa CAD (AutoCAD, BricsCAD ou DraftSight: **Salvar como → DXF**). A importação de PDF ainda não está disponível. Em uma planta, **Posicionado: pelas coordenadas do mapa** coloca um desenho em coordenadas reais (uma planta cadastral em Stereo 70) onde o mapa o coloca (veja [Terreno](site.md)).

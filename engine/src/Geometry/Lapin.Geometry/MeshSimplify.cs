@@ -43,7 +43,7 @@ public static class MeshSimplify
     {
         var tris = m.Indices.Length / 3;
         if (tris < From) return null;
-        var s = new State(m.Positions, m.Indices);
+        var s = new State(Array.ConvertAll(m.Positions, v => (double)v), m.Indices);
         if (s.Diagonal <= 0) return null;
         var o = new List<Level>();
         var last = s.Alive;
@@ -59,6 +59,33 @@ public static class MeshSimplify
         return o.Count > 0 ? o : null;
     }
 
+    /// <summary>A mesh made coarser within an error: its welded corners (x y z each), its triangles, and the most it strays from the original, measured.</summary>
+    public sealed record Reduced(double[] Positions, int[] Indices, double Stray);
+
+    /// <summary>
+    /// The mesh with as few triangles as it can have while no point of it strays more than <paramref name="maxError"/>
+    /// (in the positions' unit) from the original, and no original corner from it: the collapses stop at that error, the
+    /// result is measured, and when the measure is over (the quadric's error is a mean) it is done again from the start
+    /// at half the error, then a quarter. Open edges and folds past <see cref="Tessellator.CreaseDeg"/> hold their place.
+    /// Null when no triangle could go within the error (IFC optimisation: docs/ifc-optimize.md).
+    /// </summary>
+    public static Reduced? Reduce(double[] positions, int[] indices, double maxError)
+    {
+        if (!(maxError > 0) || indices.Length < 6) return null;
+        for (var share = 1.0; share >= 0.5; share /= 2)
+        {
+            var s = new State(positions, indices, strict: true);
+            var before = s.Alive;
+            var limit = maxError * share;
+            s.Run(limit * limit);
+            if (s.Alive >= before) return null;
+            var stray = s.Measure(maxError);
+            var (p, f) = s.Indexed();
+            if (stray <= maxError) return new Reduced(p, f, stray);
+        }
+        return null;
+    }
+
     sealed class State
     {
         readonly double[] _p;          // x y z per welded vertex
@@ -70,6 +97,8 @@ public static class MeshSimplify
         readonly int[] _f;             // a b c per triangle
         readonly int[] _f0;            // the triangles as they were
         readonly bool[] _dead;
+        /// <summary>A triangle a collapse changed (a corner moved or replaced): only these differ from the original.</summary>
+        readonly bool[] _touched;
         readonly bool[] _gone;         // a vertex collapsed into another
         readonly int[] _stamp;
         readonly List<int>[] _faces;   // the triangles at each vertex (dead ones dropped as met)
@@ -77,10 +106,17 @@ public static class MeshSimplify
         public int Alive;
         public readonly double Diagonal;
 
-        public State(float[] positions, int[] indices)
+        /// <summary>
+        /// Strict (<see cref="Reduce"/>): each triangle's plane counted whole, not by its area, and the cost their sum, not their
+        /// mean, so a collapse's cost is at least its farthest plane's distance squared: what a tolerance needs, not a screen.
+        /// </summary>
+        readonly bool _strict;
+
+        public State(double[] positions, int[] indices, bool strict = false)
         {
+            _strict = strict;
             // Welded by position: a flat-shaded part repeats each corner per face.
-            var at = new Dictionary<(float, float, float), int>();
+            var at = new Dictionary<(double, double, double), int>();
             var map = new int[positions.Length / 3];
             var pts = new List<double>();
             for (var i = 0; i < map.Length; i++)
@@ -104,6 +140,7 @@ public static class MeshSimplify
             var T = _f.Length / 3;
             Alive = T;
             _dead = new bool[T];
+            _touched = new bool[T];
             _gone = new bool[n];
             _stamp = new int[n];
             _q = new double[10 * n];
@@ -135,7 +172,7 @@ public static class MeshSimplify
                 var a = _f[3 * t];
                 var d = -(nx * _p[3 * a] + ny * _p[3 * a + 1] + nz * _p[3 * a + 2]);
                 var area = Area(t);
-                for (var e = 0; e < 3; e++) { AddPlane(_q, _f[3 * t + e], nx, ny, nz, d, area); _w[_f[3 * t + e]] += area; }
+                for (var e = 0; e < 3; e++) { AddPlane(_q, _f[3 * t + e], nx, ny, nz, d, _strict ? 1 : area); _w[_f[3 * t + e]] += area; }
             }
             _f0 = [.. _f];
             var fold = Math.Cos(FeatureDeg * Math.PI / 180);
@@ -194,7 +231,7 @@ public static class MeshSimplify
                 return C(0) * x * x + 2 * C(1) * x * y + 2 * C(2) * x * z + 2 * C(3) * x + C(4) * y * y
                     + 2 * C(5) * y * z + 2 * C(6) * y + C(7) * z * z + 2 * C(8) * z + C(9);
             }
-            return Q(_q, u, v, x, y, z) / Math.Max(_w[u] + _w[v], 1e-18) + Q(_e, u, v, x, y, z);
+            return (_strict ? Q(_q, u, v, x, y, z) : Q(_q, u, v, x, y, z) / Math.Max(_w[u] + _w[v], 1e-18)) + Q(_e, u, v, x, y, z);
         }
 
         /// <summary>The best place for u and v together: u, v or their middle, and what it costs.</summary>
@@ -242,6 +279,51 @@ public static class MeshSimplify
         int[]? _mark;
         int _token;
 
+        /// <summary>The original corners each standing corner holds (strict): itself, and those collapsed into it.</summary>
+        List<int>[]? _members;
+
+        /// <summary>At most this many original corners in one: past it the corner stays (the check below stays cheap).</summary>
+        const int MaxMembers = 256;
+
+        /// <summary>
+        /// Whether every original corner u and v hold lies within <paramref name="d"/> of the triangles left round them with both
+        /// at x y z: a collapse never takes away a part of the surface (a thin piece folded into a line), which planes alone allow.
+        /// </summary>
+        bool Near(int u, int v, double x, double y, double z, double d)
+        {
+            if (_members == null)
+            {
+                _members = new List<int>[_gone.Length];
+                for (var i = 0; i < _members.Length; i++) _members[i] = [i];
+            }
+            if (_members[u].Count + _members[v].Count > MaxMembers) return false;
+            Span<double> c = stackalloc double[9];
+            var fan = new List<double>(48);
+            foreach (var list in (ReadOnlySpan<List<int>>)[_faces[u], _faces[v]])
+                foreach (var t in list)
+                {
+                    if (_dead[t] || (Has(t, u) && Has(t, v))) continue;
+                    for (var k = 0; k < 3; k++)
+                    {
+                        var i = _f[3 * t + k];
+                        if (i == u || i == v) { fan.Add(x); fan.Add(y); fan.Add(z); }
+                        else { fan.Add(_p[3 * i]); fan.Add(_p[3 * i + 1]); fan.Add(_p[3 * i + 2]); }
+                    }
+                }
+            if (fan.Count == 0) return false;
+            var pts = fan.ToArray();
+            var tris = new int[pts.Length / 3];
+            for (var i = 0; i < tris.Length; i++) tris[i] = i;
+            foreach (var list in (ReadOnlySpan<List<int>>)[_members[u], _members[v]])
+                foreach (var m in list)
+                {
+                    var best = double.MaxValue;
+                    for (var t = 0; t < tris.Length / 3 && best > d; t++) best = Math.Min(best, PointTriangle(_p0[3 * m], _p0[3 * m + 1], _p0[3 * m + 2], t, tris, pts));
+                    if (best > d) return false;
+                }
+            return true;
+        }
+
         /// <summary>Whether no triangle round <paramref name="v"/> (but those on the edge) folds over or loses its area with v at x y z.</summary>
         bool Keeps(int v, int u, int w, double x, double y, double z)
         {
@@ -285,6 +367,8 @@ public static class MeshSimplify
                 if (c > limit) continue;
                 // No triangle may fold over or lose its area.
                 if (!Keeps(u, u, v, x, y, z) || !Keeps(v, u, v, x, y, z)) continue;
+                // Strict: the triangles left round the new corner stay on the original surface (corners, edge middles, centres).
+                if (_strict && !Near(u, v, x, y, z, Math.Sqrt(limit))) continue;
                 // v into u.
                 _p[3 * u] = x; _p[3 * u + 1] = y; _p[3 * u + 2] = z;
                 for (var k = 0; k < 10; k++) { _q[10 * u + k] += _q[10 * v + k]; _e[10 * u + k] += _e[10 * v + k]; }
@@ -296,9 +380,11 @@ public static class MeshSimplify
                     _faces[u].Add(t);
                 }
                 _faces[v].Clear();
+                if (_members != null) { _members[u].AddRange(_members[v]); _members[v].Clear(); }
                 _gone[v] = true;
                 _into[v] = u;
                 _stamp[u]++;
+                foreach (var t in _faces[u]) _touched[t] = true;
                 Compact(u);
                 if (++_token == int.MaxValue) { Array.Clear(_mark); _token = 1; }
                 foreach (var t in _faces[u]) for (var k = 0; k < 3; k++) { var w = _f[3 * t + k]; if (w != u && _mark[w] != _token) { _mark[w] = _token; Push(u, w); } }
@@ -338,6 +424,45 @@ public static class MeshSimplify
         }
 
         Grid? _grid;
+
+        /// <summary>
+        /// The most what is left and the original lie apart where a collapse changed them: each triangle changed or gone sampled
+        /// at its corners, edge middles and centres and measured to the other's nearest triangle (what no collapse touched is
+        /// the original's own). Past <paramref name="enough"/> the search stops: the answer is over.
+        /// </summary>
+        public double Measure(double enough)
+        {
+            _grid ??= new Grid(_f0, _p0);
+            var alive = new List<int>(Alive * 3);
+            for (var t = 0; t < _dead.Length; t++) if (!_dead[t]) { alive.Add(_f[3 * t]); alive.Add(_f[3 * t + 1]); alive.Add(_f[3 * t + 2]); }
+            if (alive.Count == 0) return double.MaxValue;
+            var left = new Grid([.. alive], _p);
+            var worst = 0.0;
+            Span<double> s = stackalloc double[21];
+            void Samples(int[] f, double[] p, int t, Span<double> into)
+            {
+                int a = f[3 * t], b = f[3 * t + 1], c = f[3 * t + 2];
+                for (var k = 0; k < 3; k++)
+                {
+                    double pa = p[3 * a + k], pb = p[3 * b + k], pc = p[3 * c + k];
+                    into[k] = pa; into[3 + k] = pb; into[6 + k] = pc;
+                    into[9 + k] = (pa + pb) / 2; into[12 + k] = (pb + pc) / 2; into[15 + k] = (pc + pa) / 2; into[18 + k] = (pa + pb + pc) / 3;
+                }
+            }
+            for (var t = 0; t < _dead.Length; t++)
+            {
+                if (!_dead[t] && !_touched[t]) continue;
+                // What is left, to the original; the original, to what is left.
+                if (!_dead[t])
+                {
+                    Samples(_f, _p, t, s);
+                    for (var i = 0; i < 7; i++) { worst = Math.Max(worst, _grid.Distance(s[3 * i], s[3 * i + 1], s[3 * i + 2], worst)); if (worst > enough) return worst; }
+                }
+                Samples(_f0, _p0, t, s);
+                for (var i = 0; i < 7; i++) { worst = Math.Max(worst, left.Distance(s[3 * i], s[3 * i + 1], s[3 * i + 2], worst)); if (worst > enough) return worst; }
+            }
+            return worst;
+        }
 
         /// <summary>The most a point of what is left lies from the original surface.</summary>
         double Back()
@@ -463,6 +588,26 @@ public static class MeshSimplify
             if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) return (p - (b + (c - b) * ((d4 - d3) / (d4 - d3 + (d5 - d6))))).Length;
             var den = 1 / (va + vb + vc);
             return (p - (a + ab * (vb * den) + ac * (vc * den))).Length;
+        }
+
+        /// <summary>What is left as an indexed mesh: the corners still standing (in their first use's order) and the live triangles.</summary>
+        public (double[] Positions, int[] Indices) Indexed()
+        {
+            var remap = new int[_gone.Length];
+            Array.Fill(remap, -1);
+            var pos = new List<double>();
+            var idx = new List<int>(Alive * 3);
+            for (var t = 0; t < _dead.Length; t++)
+            {
+                if (_dead[t]) continue;
+                for (var k = 0; k < 3; k++)
+                {
+                    var v = _f[3 * t + k];
+                    if (remap[v] < 0) { remap[v] = pos.Count / 3; pos.Add(_p[3 * v]); pos.Add(_p[3 * v + 1]); pos.Add(_p[3 * v + 2]); }
+                    idx.Add(remap[v]);
+                }
+            }
+            return ([.. pos], [.. idx]);
         }
 
         /// <summary>

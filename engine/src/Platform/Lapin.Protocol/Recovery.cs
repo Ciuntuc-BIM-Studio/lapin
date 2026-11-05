@@ -239,7 +239,7 @@ public sealed class Recovery : IRecoveryJournal, IDisposable
         using (s.SeededIds((long?)source["seed"] ?? 0))
         {
             if (mode == "link") IfcImport.Link(s, bytes, System.IO.Path.GetFileName(path), path, options, out _);
-            else IfcImport.Run(s, bytes, System.IO.Path.GetFileName(path), options, out _);
+            else IfcImport.Run(s, bytes, System.IO.Path.GetFileName(path), options with { Source = path }, out _);
         }
     }
 

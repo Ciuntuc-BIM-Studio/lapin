@@ -52,6 +52,16 @@ Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume h
 
 ![IFC oder Fragments exportieren](shots/export-exchange.webp)
 
+## Eine IFC-Datei optimieren
+
+**IFC optimieren…** (im Menü Datei oder auf dem Startbildschirm: es muss kein Projekt offen sein) erstellt eine leichtere Kopie einer oder mehrerer IFC-Dateien, ohne zu ändern, was sie aussagen. Die Kopie behält jede GlobalId, jeden Namen, Eigenschaftssatz, jede Menge, jeden Typ, jedes Material und jede Beziehung genau so, wie die Datei sie geschrieben hat, auch ihren Kopf; nichts von Lapin wird hinzugefügt. Nur die Geometrie ändert sich: Netze (Flächensätze, facettierte B-Reps aus ebenen Flächen) werden bereinigt (doppelte Punkte verschweißt, entartete und wiederholte Dreiecke und ungenutzte Koordinaten entfernt) und vereinfacht, nie weiter vom Original entfernt als die **Genauigkeit** (Schnell 5 mm, Ausgewogen 1 mm, Genau 0,1 mm oder Ihre eigene), in beide Richtungen gemessen; gleiche Körper werden einmal geschrieben und von ihren Produkten geteilt; und was nichts referenziert (ungenutzte Punkte, Stile, leere Darstellungen), entfällt. Extrusionen, boolesche Körper und andere exakte Körper bleiben, wie sie sind. Gerundete Koordinaten, B-Reps als Flächensätze (nur IFC4 und IFC4X3) und ein gezipptes `.ifczip` gibt es, wenn Sie sie wollen.
+
+![IFC optimieren](shots/optimize-ifc.webp)
+
+Die Kopie wird neben das Original geschrieben oder in einen Ordner Ihrer Wahl, unter dem Namen des Originals mit einer **Endung** (zu Beginn `.optimized`): aus `haus.ifc` wird `haus.optimized.ifc`. Das Original wird nie geschrieben, und wenn die Kopie schon da ist, fragt Lapin, bevor es sie ersetzt. Für jede Datei nennt der Bericht Größe, Entitäten und Dreiecke vorher und nachher, die geteilten Körper, die entfernten verwaisten Entitäten, die größte gemessene Abweichung und die Dauer; **Ordner öffnen** zeigt die Kopie, **In Lapin öffnen** öffnet sie in einem anderen Fenster. Im Browser wird die Kopie heruntergeladen. Eine Datei, die schon im Projekt ist, behält ihren Rückweg: **Quelldatei optimieren…** an der Gruppe einer importierten IFC (in ihren Eigenschaften) oder an einer Verknüpfung (Verwalten → Verknüpfungen) tut dasselbe mit der Datei, aus der sie kam, solange diese noch auf der Festplatte liegt.
+
+![Der Bericht](shots/optimize-ifc-report.webp)
+
 ## DXF und DWG
 
 **DXF importieren…** holt eine CAD-Zeichnung in die vorne liegende Ansicht, mit ihren Layern, Schraffuren, Texten und Bemaßungen. Sie kommt als Zeichnung herein, an der Sie fangen und die Sie bearbeiten können. Um eine DWG zu verwenden, speichern Sie sie zuerst in Ihrem CAD-Programm als DXF (AutoCAD, BricsCAD oder DraftSight: **Save As → DXF**). Ein PDF-Import ist noch nicht verfügbar. In einem Grundriss legt **Platziert: nach den Kartenkoordinaten** eine Zeichnung in echten Koordinaten (einen Katasterplan in Stereo 70) dorthin, wo die Karte sie hinlegt (siehe [Das Gelände und seine Daten](site.md)).

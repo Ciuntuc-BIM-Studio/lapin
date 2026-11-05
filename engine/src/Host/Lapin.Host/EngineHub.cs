@@ -227,14 +227,15 @@ public sealed class EngineHub
         }
     }
 
-    /// <summary>A share.* or presence.* call, parsed; null for any other.</summary>
+    /// <summary>A share.*, presence.* or cancel.* call, parsed; null for any other. They are answered at once, past the queue of calls (a cancel stops the one running).</summary>
     static JsonObject? Own(string text)
     {
         // Cheap test first: every other call goes on untouched.
-        if (!text.Contains("\"share.", StringComparison.Ordinal) && !text.Contains("\"presence.", StringComparison.Ordinal)) return null;
+        if (!text.Contains("\"share.", StringComparison.Ordinal) && !text.Contains("\"presence.", StringComparison.Ordinal) && !text.Contains("\"cancel.", StringComparison.Ordinal)) return null;
         try
         {
-            return JsonNode.Parse(text) is JsonObject o && (string?)o["method"] is { } m && (m.StartsWith("share.", StringComparison.Ordinal) || m.StartsWith("presence.", StringComparison.Ordinal)) ? o : null;
+            return JsonNode.Parse(text) is JsonObject o && (string?)o["method"] is { } m
+                && (m.StartsWith("share.", StringComparison.Ordinal) || m.StartsWith("presence.", StringComparison.Ordinal) || m.StartsWith("cancel.", StringComparison.Ordinal)) ? o : null;
         }
         catch (System.Text.Json.JsonException) { return null; }
     }
@@ -261,6 +262,12 @@ public sealed class EngineHub
                         await BroadcastPresence();
                     }
                     return null;
+                case "cancel.long":
+                    // The long call running (an IFC file being optimised) stopped: this computer's own interface only.
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    _dispatcher.CancelLong();
+                    result = new JsonObject { ["cancelled"] = true };
+                    break;
                 default:
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = await Sharing.Handle(method, p);

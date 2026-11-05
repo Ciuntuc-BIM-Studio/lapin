@@ -52,6 +52,16 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 ![Exportă IFC sau Fragments](shots/export-exchange.webp)
 
+## Optimizarea unui fișier IFC
+
+**Optimizează IFC…** (în Fișier, sau pe ecranul de start: nu trebuie să fie deschis niciun proiect) face o copie mai ușoară a unuia sau mai multor fișiere IFC, fără să schimbe ce spun ele. Copia păstrează fiecare GlobalId, nume, set de proprietăți, cantitate, tip, material și relație exact cum le-a scris fișierul, și antetul lui; nu se adaugă nimic de-al lui Lapin. Se schimbă doar geometria: mesh-urile (seturi de fețe, B-rep-uri fațetate cu fețe plane) sunt curățate (vârfurile duplicate sudate, triunghiurile degenerate și repetate și coordonatele nefolosite eliminate) și simplificate, niciodată mai departe de original decât **Precizia** (Rapid 5 mm, Echilibrat 1 mm, Precis 0,1 mm sau a ta), măsurată în ambele sensuri; corpurile identice se scriu o singură dată și sunt partajate de produsele lor; iar ce nu e referit de nimic (puncte, stiluri nefolosite, reprezentări goale) dispare. Extrudările, operațiile booleene și celelalte corpuri exacte rămân cum sunt. Rotunjirea coordonatelor, B-rep-urile scrise ca seturi de fețe (doar IFC4 și IFC4X3) și un `.ifczip` arhivat sunt acolo când le vrei.
+
+![Optimizează IFC](shots/optimize-ifc.webp)
+
+Copia se scrie lângă original, sau într-un folder ales de tine, cu numele originalului și o **Terminație** (la început `.optimized`): din `casa.ifc` iese `casa.optimized.ifc`. Originalul nu este scris niciodată, iar dacă copia există deja Lapin întreabă înainte s-o înlocuiască. Pentru fiecare fișier raportul dă mărimea, entitățile și triunghiurile înainte și după, corpurile partajate, orfanii eliminați, abaterea cea mai mare măsurată și durata; **Deschide folderul** arată copia, iar **Deschide în Lapin** o deschide în altă fereastră. În browser copia se descarcă. Un fișier deja adus în proiect își păstrează drumul înapoi: **Optimizează fișierul sursă…** pe grupul unui IFC importat (în proprietățile lui) sau pe o legătură (Gestionare → Legături) face același lucru cu fișierul din care a venit, cât timp acesta e încă pe disc.
+
+![Raportul](shots/optimize-ifc-report.webp)
+
 ## DXF și DWG
 
 **Importă DXF…** aduce un desen CAD în vederea din față, cu layerele, hașurile, textele și cotele lui. Intră ca desen de care te poți prinde și pe care îl poți edita. Ca să folosești un DWG, salvează-l întâi ca DXF din programul tău CAD (AutoCAD, BricsCAD sau DraftSight: **Save As → DXF**). Importul de PDF nu există încă. Într-un plan, **Așezat: după coordonatele hărții** pune un desen în coordonate reale (un plan cadastral în Stereo 70) unde îl pune harta (vezi [Amplasamentul și datele lui](site.md)).

@@ -29,7 +29,7 @@ namespace Lapin.Ifc;
 /// </summary>
 /// <summary><paramref name="Group"/>: what the file places comes in as one group named after it (docs/groups.md); false for a link, and for an import the journal recorded before groups were.</summary>
 public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Plan2d = true, bool Only2d = true,
-    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null, bool Group = false, bool Editable = false)
+    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null, bool Group = false, bool Editable = false, string? Source = null)
 {
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
     public bool Filtered => Kinds != null || Storeys != null;
@@ -97,7 +97,12 @@ public static partial class IfcImport
         }
         diff = session.Edit($"Import {name}", edit =>
         {
-            if (o.Group) Groups.Around(edit, System.IO.Path.GetFileNameWithoutExtension(name), Apply);
+            if (o.Group)
+            {
+                // The group keeps the file it came from (on this computer), for File → Optimize IFC… to find it again (docs/ifc-optimize.md).
+                var g = Groups.Around(edit, System.IO.Path.GetFileNameWithoutExtension(name), Apply);
+                if (g != null && o.Source != null) { var a = g.CloneAttrs(); a["source"] = o.Source; edit.Replace(g.With(attrs: a)); }
+            }
             else Apply(edit);
         });
         var result = reader.Result() with { Editable = editable };

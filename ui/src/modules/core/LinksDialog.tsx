@@ -8,7 +8,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, RefreshCw, Trash2, Unlink, Wand2, X } from 'lucide-react';
+import { ExternalLink, Feather, RefreshCw, Trash2, Unlink, Wand2, X } from 'lucide-react';
+import { fileName, openOptimize } from '../../engine/ifcOptimize';
 import { notify, useUi } from '../../app/store';
 import { engine, execute, useSession } from '../../engine/session';
 import { isDesktop } from '../../engine/files';
@@ -59,6 +60,7 @@ export function LinksDialog() {
                       <td className="row-tools">
                         {path && <button type="button" className="icon mini" title="Read the file again (what the link holds is replaced)" disabled={busy != null} onClick={() => void run(l.id, () => engine.call('project.reloadLink', { id: l.id }, { timeoutMs: 600_000 }).then(() => notify(`${l.name} read again.`)))}><RefreshCw size={12} /></button>}
                         <button type="button" className="icon mini" title="Convert to native: what it brought stays, editable, as the project's own" disabled={busy != null} onClick={() => void run(l.id, () => execute('link.convert', { id: l.id }))}><Wand2 size={12} /></button>
+                        {path && isDesktop() && l.props.kind === 'ifc' && <button type="button" className="icon mini" data-link="optimize" title="Optimize the source file…" disabled={busy != null} onClick={() => openOptimize([{ name: fileName(path), path }])}><Feather size={12} /></button>}
                         {path && isDesktop() && <button type="button" className="icon mini" title="Open on its own in another Lapin window, to edit there" disabled={busy != null} onClick={() => void run(l.id, () => openSeparately(path))}><ExternalLink size={12} /></button>}
                         <button type="button" className="icon mini" title="Unlink: the link and everything it brought go" disabled={busy != null}
                           onClick={() => { if (window.confirm(`Unlink ${l.name}? Everything it brought in goes (undo brings it back).`)) void run(l.id, () => execute('link.unlink', { id: l.id })); }}><Unlink size={12} /></button>

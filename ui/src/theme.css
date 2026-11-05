@@ -1586,3 +1586,14 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .doc-missing-list button.link { display: inline-flex; gap: 4px; text-decoration: none; color: var(--accent); text-align: left; }
 .doc-missing-list button.link:hover { text-decoration: underline; }
 .cde-documents { margin-top: 6px; }
+
+/* File → Optimize IFC… (docs/ifc-optimize.md): the files, each with its stage or its report. */
+.optimize-ifc .optimize-files { display: grid; gap: 8px; margin-top: 8px; }
+.optimize-ifc .optimize-files > .btn { justify-self: start; }
+.optimize-file { border: 1px solid var(--rule); border-radius: 3px; padding: 6px 8px; display: grid; gap: 6px; }
+.optimize-file.done { border-color: var(--rule-strong); }
+.optimize-file.failed { border-color: var(--danger, #b3261e); }
+.optimize-file-head { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.optimize-file-head > .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.optimize-report { grid-template-columns: max-content 1fr; }
+.optimize-checks { display: grid; gap: 2px; margin-top: 8px; }
