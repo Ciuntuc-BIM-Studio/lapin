@@ -60,17 +60,28 @@ public static class ViewShadows
     }
 
     /// <summary>The view's shadows as one filled pen (under everything it draws), or null when it draws none.</summary>
-    public static Pen? PenOf(IModelView m, Entity view, ViewSpec spec, IReadOnlyList<DrawPart> parts, bool pieces)
+    /// <param name="scene">The faces the drawing sees (<see cref="Scene"/>), made once for the drawing and shared with its surface hatches.</param>
+    public static Pen? PenOf(IModelView m, Entity view, ViewSpec spec, IReadOnlyList<DrawPart> parts, bool pieces, Func<ViewFaces>? scene = null)
     {
         if (pieces || SunOf(m, view, spec.Frame) is not { } sun) return null;
-        var plan = spec.Kind == "plan";
-        var solids = parts.Select((p, i) => (p.Solid, i)).ToList();
-        var areas = SunShadows.Draw(solids, spec.Frame, sun, cut: spec.Cut && !plan, depth: spec.Cut && !plan ? spec.Below : double.PositiveInfinity);
+        var areas = SunShadows.Draw(scene?.Invoke() ?? Scene(spec, parts), sun);
         if (areas.Count == 0) return null;
         var color = view.Str("shadowColor") is { Length: 7 } c && c[0] == '#' ? c : DefaultColor;
         var pen = new Pen(Layer, null, 0, color, null);
         foreach (var a in areas) pen.Loops.Add(a.Outline);
         return pen;
+    }
+
+    /// <summary>
+    /// The faces a drawing sees, for its shadows and its surface hatches: a section's (or a plan's: a site plan) only beyond
+    /// its cut and within its depth, a section's cut areas hiding what is behind them.
+    /// </summary>
+    public static ViewFaces Scene(ViewSpec spec, IReadOnlyList<DrawPart> parts, ViewDrawing? drawing = null)
+    {
+        var plan = spec.Kind == "plan";
+        var cut = spec.Cut && !plan;
+        var solids = parts.Select((p, i) => (p.Solid, i)).ToList();
+        return new ViewFaces(solids, spec.Frame, cut, cut ? spec.Below : double.PositiveInfinity, cut && drawing != null ? drawing.Cuts.Select(c => c.Loops) : null);
     }
 
     public static void Register(IModuleRegistry r)

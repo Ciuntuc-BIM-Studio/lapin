@@ -2630,6 +2630,28 @@ export const scenes = [
     },
   },
   {
+    // Surface hatches in elevations (decision 325): the render hatched with its material's elevation pattern where it is
+    // seen, round the door and windows, the roof's covering too; the view style's switch in the view's properties.
+    id: 'views-surface-hatch',
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      const materials = (await t.nodes()).filter((n) => n.type === 'IfcMaterial');
+      const render = materials.find((n) => n.name === 'Render');
+      t.expect(render, 'the Render material');
+      await t.cmd('material.update', { id: render.id, elevation: { hatch: 'CONCRETE', hatchScale: 0.6 } });
+      for (const m of materials.filter((n) => /tile|roof|covering/i.test(n.name ?? ''))) await t.cmd('material.update', { id: m.id, elevation: { hatch: 'HORIZONTAL', hatchScale: 0.5 } });
+      const south = (await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' })).id;
+      await openFromBrowser(t, 'South', 2500);
+      t.expect(await t.page.locator('[data-testid=drawing] .pen-surface-hatch').count() > 0, 'the elevation hatches the faces it sees');
+      await t.shot('elevation-surface-hatch', { of: '[data-testid=drawing]', pad: 0 });
+      await t.page.evaluate(async (id) => (await import('/src/app/store.ts')).useUi.setState({ selected: [], selection: id }), south);
+      await t.page.locator('nav.browser').getByText('South', { exact: true }).first().click();
+      await t.page.waitForSelector('[data-testid=view-surface-hatch]');
+      await t.shot('view-surface-hatch', { of: '.view-settings', pad: 0 });
+    },
+  },
+  {
     // One storey at a time in 3D (report #29): a level's right-click in the browser, the chip, and back to every storey.
     id: 'views-3d-storeys',
     async run(t) {

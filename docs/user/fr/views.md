@@ -49,6 +49,18 @@ Une coupe porte et reçoit des ombres seulement de ce qui est au-delà de son pl
 
 ![Les ombres du soleil d’une vue](shots/view-shadows.webp)
 
+### Hachures de surface
+
+Une élévation ou une coupe hachure chaque face qu’elle voit avec la hachure **Elevation** de son matériau (**Gérer → Matériaux**, onglet **2D graphics**) : motif, échelle, angle, plume et remplissage. Seule la partie d’une face qu’aucun élément plus proche ne cache est hachurée : l’enduit ou la brique d’une façade apparaît autour des portes et fenêtres, et une coupe hachure ce qu’elle voit au-delà de son plan de coupe, pas derrière les éléments qu’elle coupe. Un mur multicouche montre le matériau de sa couche extérieure. La hachure est dessinée sous les traits, elle s’imprime donc sur les planches, en PDF et en DXF (calques SURFACE-HATCH et SURFACE-FILL).
+
+Avec **Alignment** *view*, le motif continue d’une face à l’autre ; avec *layer*, il se pose sur la face elle-même, le long de son horizontale depuis son coin bas, et une face vue en biais le montre raccourci. Un matériau qui continue dans un même plan sur plusieurs éléments est hachuré d’un seul tenant, sauf si **Join materials** du style de vue est désactivé.
+
+Un matériau n’a pas de hachure d’élévation tant que vous ne lui en donnez pas (**none (default)**). **Surface hatches** du style de vue (**Vue → View settings**, **Gérer → View styles**) les désactive pour des vues entières : activé en Architectural, désactivé en Structural, MEP et Coordination. Les plans gardent leurs propres hachures de coupe et de plan.
+
+![L’élévation sud avec son enduit hachuré](shots/elevation-surface-hatch.webp)
+
+![Les hachures de surface dans les réglages de la vue](shots/view-surface-hatch.webp)
+
 ## Vues 3D
 
 <!-- video section-3d -->

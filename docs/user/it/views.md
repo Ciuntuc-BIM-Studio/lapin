@@ -49,6 +49,18 @@ Una sezione proietta e riceve ombre solo da ciò che sta oltre il suo taglio. Un
 
 ![Le ombre del sole di una vista](shots/view-shadows.webp)
 
+### Retini delle superfici
+
+Un prospetto o una sezione retina ogni faccia che vede con il retino **Elevation** del suo materiale (**Gestisci → Materiali**, scheda **2D graphics**): motivo, scala, angolo, penna e riempimento. Si retina solo la parte di una faccia che nessun elemento più vicino nasconde, quindi l’intonaco o il mattone di una facciata si vede intorno a porte e finestre, e una sezione retina ciò che vede oltre il taglio, non dietro gli elementi che taglia. Un muro a strati mostra il materiale del suo strato più esterno. Il retino è disegnato sotto le linee, quindi si stampa sulle tavole, in PDF e in DXF (layer SURFACE-HATCH e SURFACE-FILL).
+
+Con **Alignment** *view* il motivo prosegue da una faccia all’altra; con *layer* si appoggia sulla faccia stessa, lungo la sua orizzontale dal suo angolo in basso, e una faccia vista di scorcio lo mostra accorciato. Un materiale che prosegue nello stesso piano su più elementi è retinato come uno solo, a meno che **Join materials** dello stile di vista sia spento.
+
+Un materiale non ha un retino di prospetto finché non glielo dai (**none (default)**). **Surface hatches** dello stile di vista (**Vista → View settings**, **Gestisci → View styles**) li spegne per viste intere: acceso in Architectural, spento in Structural, MEP e Coordination. Le piante mantengono i propri retini di taglio e di pianta.
+
+![Il prospetto sud con l’intonaco retinato](shots/elevation-surface-hatch.webp)
+
+![I retini delle superfici nelle impostazioni della vista](shots/view-surface-hatch.webp)
+
 ## Viste 3D
 
 <!-- video section-3d -->

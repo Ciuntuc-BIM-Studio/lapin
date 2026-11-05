@@ -49,6 +49,18 @@ O secțiune aruncă și primește umbre doar din ce e dincolo de tăietura ei. U
 
 ![Umbrele de soare ale unei vederi](shots/view-shadows.webp)
 
+### Hașurile suprafețelor
+
+O fațadă sau o secțiune hașurează fiecare față pe care o vede cu hașura **Elevation** a materialului ei (**Gestionare → Materiale**, fila **2D graphics**): modelul, scara, unghiul, penița și umplerea. Se hașurează doar partea feței pe care nu o ascunde un element mai apropiat, deci tencuiala sau cărămida unei fațade se vede în jurul ușilor și ferestrelor, iar o secțiune hașurează ce vede dincolo de tăietură, nu în spatele elementelor pe care le taie. Un perete stratificat arată materialul stratului lui exterior. Hașura se desenează sub linii, deci se tipărește pe planșe, în PDF și în DXF (layerele SURFACE-HATCH și SURFACE-FILL).
+
+Cu **Alignment** *view* modelul continuă de la o față la alta; cu *layer* stă pe față, de-a lungul orizontalei ei, din colțul ei de jos, iar o față văzută oblic îl arată scurtat. Un material care continuă în același plan peste mai multe elemente se hașurează ca unul singur, dacă **Join materials** din stilul vederii e pornit.
+
+Un material nu are hașură de fațadă până nu i-o dai (**none (default)**). **Surface hatches** din stilul vederii (**Vedere → View settings**, **Gestionare → View styles**) le oprește pentru vederi întregi: pornit în Architectural, oprit în Structural, MEP și Coordination. Planurile își păstrează hașurile lor de secțiune și de plan.
+
+![Fațada de sud cu tencuiala hașurată](shots/elevation-surface-hatch.webp)
+
+![Hașurile suprafețelor în setările vederii](shots/view-surface-hatch.webp)
+
 ## Vederi 3D
 
 <!-- video section-3d -->

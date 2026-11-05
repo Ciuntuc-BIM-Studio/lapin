@@ -49,6 +49,18 @@ A section casts and receives only what lies beyond its cut. A storey plan draws 
 
 ![A view's sun shadows](shots/view-shadows.webp)
 
+### Surface hatches
+
+An elevation or a section hatches each face it sees with its material's **Elevation** hatch (**Manage → Materials**, the **2D graphics** tab): its pattern, scale, angle, pen and fill. Only the part of a face no nearer element hides is hatched, so a facade's render or brick shows round its doors and windows, and a section hatches what it sees beyond its cut, not behind the elements it cuts. A layered wall shows its outermost layer's material. The hatch is drawn under the lines, so it prints on sheets and in PDF and DXF (layers SURFACE-HATCH and SURFACE-FILL).
+
+With **Alignment** *view* the pattern runs on from one face to the next; with *layer* it lies on the face itself, along its level line from its bottom corner, and a face seen at a slant shows it foreshortened. One material going on in one plane across several elements is hatched as one, unless the view style's **Join materials** is off.
+
+A material has no elevation hatch until you give it one (**none (default)**). The view style's **Surface hatches** (**View → View settings**, **Manage → View styles**) turns them off for whole views: on in Architectural, off in Structural, MEP and Coordination. Plans keep their own cut and plan hatches.
+
+![The south elevation with its render hatched](shots/elevation-surface-hatch.webp)
+
+![Surface hatches in the view's settings](shots/view-surface-hatch.webp)
+
 ## 3D views
 
 <!-- video section-3d -->

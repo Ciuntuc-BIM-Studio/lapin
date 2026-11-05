@@ -57,7 +57,7 @@ Twinmotion, Lumion, Enscape, Blender și alte programe de randare înlocuiesc ma
 ## Ce setează un material
 
 - **Culoare (3D)** și fețele desenate pe el în 3D. Lapin le ghicește din nume, de exemplu rândurile unei cărămizi sau rosturile unei plăci de faianță. **Capete** și **Sus și jos** pot arăta altfel decât fețele.
-- **Hașura** pentru fiecare loc în care se desenează: secționat într-o secțiune, secționat într-un plan, și văzut într-o fațadă. Fiecare are scara, unghiul, alinierea, umplutura și penița ei.
+- **Hașura** pentru fiecare loc în care se desenează: secționat într-o secțiune, secționat într-un plan, și văzut într-o fațadă. Fiecare are scara, unghiul, alinierea, umplutura și penița ei. O fațadă sau o secțiune hașurează fețele pe care le vede cu hașura de fațadă, unde nimic mai apropiat nu le ascunde (Vederi, Hașurile suprafețelor); un material nu are una până nu i-o dai.
 - **Categoria**, de exemplu finisaj, izolație sau structură. Stilurile de vedere o folosesc ca să lase finisajele afară dintr-o vedere de structură.
 - **Membrană** desenează un strat subțire ca linie întreruptă în loc de bandă.
 - **Desenează rosturile.** Implicit, un material trece de la un element la următorul fără linie, ca doi pereți în prelungire sau o tencuială peste două etaje. Bifează ca să se deseneze rostul.

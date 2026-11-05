@@ -49,6 +49,18 @@ Et snit kaster og modtager kun skygger fra det, der ligger bag dets snitplan. En
 
 ![En visnings solskygger](shots/view-shadows.webp)
 
+### Overfladeskraveringer
+
+En facade eller et snit skraverer hver flade, den ser, med materialets **Elevation**-skravering (**Administrer → Materialer**, fanen **2D graphics**): mønster, skala, vinkel, pen og fyld. Kun den del af en flade, som intet nærmere element skjuler, skraveres, så en facades puds eller tegl vises omkring døre og vinduer, og et snit skraverer det, det ser bag snitplanet, ikke bag de elementer, det skærer. En lagdelt væg viser materialet i sit yderste lag. Skraveringen tegnes under stregerne og udskrives derfor på tegningsark, i PDF og i DXF (lagene SURFACE-HATCH og SURFACE-FILL).
+
+Med **Alignment** *view* fortsætter mønstret fra flade til flade; med *layer* ligger det på selve fladen, langs dens vandrette linje fra det nederste hjørne, og en flade set skråt viser det forkortet. Et materiale, der fortsætter i samme plan over flere elementer, skraveres som ét, medmindre visningsstilens **Join materials** er slået fra.
+
+Et materiale har ingen facadeskravering, før du giver det en (**none (default)**). Visningsstilens **Surface hatches** (**Vis → View settings**, **Administrer → View styles**) slår dem fra for hele visninger: til i Architectural, fra i Structural, MEP og Coordination. Planer beholder deres egne snit- og planskraveringer.
+
+![Sydfacaden med skraveret puds](shots/elevation-surface-hatch.webp)
+
+![Overfladeskraveringer i visningens indstillinger](shots/view-surface-hatch.webp)
+
 ## 3D-visninger
 
 <!-- video section-3d -->

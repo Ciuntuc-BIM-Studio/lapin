@@ -49,6 +49,18 @@ Um corte projeta e recebe sombras só do que está para lá do seu corte. Uma pl
 
 ![As sombras do sol de uma vista](shots/view-shadows.webp)
 
+### Tracejados de superfície
+
+Um alçado ou um corte traceja cada face que vê com o tracejado **Elevation** do seu material (**Gerir → Materiais**, separador **2D graphics**): padrão, escala, ângulo, pena e preenchimento. Só se traceja a parte de uma face que nenhum elemento mais próximo esconde, por isso o reboco ou o tijolo de uma fachada vê-se à volta das portas e janelas, e um corte traceja o que vê para lá do seu plano de corte, não atrás dos elementos que corta. Uma parede em camadas mostra o material da sua camada exterior. O tracejado é desenhado sob as linhas, por isso imprime-se nas folhas, em PDF e em DXF (camadas SURFACE-HATCH e SURFACE-FILL).
+
+Com **Alignment** *view* o padrão continua de uma face para a seguinte; com *layer* assenta na própria face, ao longo da sua horizontal a partir do canto de baixo, e uma face vista de viés mostra-o encurtado. Um material que continua no mesmo plano por vários elementos é tracejado como um só, a não ser que **Join materials** do estilo de vista esteja desligado.
+
+Um material não tem tracejado de alçado até lhe dar um (**none (default)**). **Surface hatches** do estilo de vista (**Vista → View settings**, **Gerir → View styles**) desliga-os para vistas inteiras: ligado em Architectural, desligado em Structural, MEP e Coordination. As plantas mantêm os seus próprios tracejados de corte e de planta.
+
+![O alçado sul com o reboco tracejado](shots/elevation-surface-hatch.webp)
+
+![Os tracejados de superfície nas definições da vista](shots/view-surface-hatch.webp)
+
 ## Vistas 3D
 
 <!-- video section-3d -->

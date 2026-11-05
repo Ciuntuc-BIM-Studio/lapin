@@ -57,7 +57,7 @@ A exportação IFC também nomeia o estilo de superfície de cada material como 
 ## O que um material define
 
 - **Cor (3D)** e as faces desenhadas sobre ele em 3D. O Lapin as deduz pelo nome, por exemplo as fiadas de um tijolo ou a grade de uma cerâmica. **Extremidades** e **Topo e base** podem ter aparência diferente das faces.
-- **Hachura** para cada lugar em que ele é desenhado: cortado em um corte, cortado em uma planta e visto em uma elevação. Cada uma tem a sua escala, ângulo, alinhamento, preenchimento e pena.
+- **Hachura** para cada lugar em que ele é desenhado: cortado em um corte, cortado em uma planta e visto em uma elevação. Cada uma tem a sua escala, ângulo, alinhamento, preenchimento e pena. Um alçado ou um corte tracejam as faces que veem com a hachura de elevação, onde nada mais próximo as esconde (Vistas, Tracejados de superfície); um material não tem nenhuma até lhe dar uma.
 - **Categoria**, por exemplo acabamento, isolamento ou estrutura. Os estilos de vista a usam para deixar os acabamentos fora de uma vista estrutural.
 - **Membrana** desenha uma camada fina como uma linha tracejada em vez de uma faixa.
 - **Desenhar juntas.** Por padrão, um material continua de um elemento para o próximo sem uma linha, como duas paredes alinhadas ou um reboco sobre dois pavimentos. Marque a opção para desenhar a junta.

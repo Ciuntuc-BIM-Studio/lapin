@@ -49,6 +49,18 @@ Przekrój rzuca i przyjmuje cienie tylko z tego, co leży za jego cięciem. Rzut
 
 ![Cienie słońca widoku](shots/view-shadows.webp)
 
+### Kreskowania powierzchni
+
+Elewacja lub przekrój kreskuje każdą widzianą ścianę kreskowaniem **Elevation** jej materiału (**Zarządzaj → Materiały**, karta **2D graphics**): wzorem, skalą, kątem, piórem i wypełnieniem. Kreskowana jest tylko ta część ściany, której nie zasłania bliższy element, więc tynk czy cegłę elewacji widać wokół drzwi i okien, a przekrój kreskuje to, co widzi za płaszczyzną cięcia, a nie za elementami, które przecina. Ściana warstwowa pokazuje materiał swojej zewnętrznej warstwy. Kreskowanie rysowane jest pod liniami, więc drukuje się na arkuszach, w PDF i w DXF (warstwy SURFACE-HATCH i SURFACE-FILL).
+
+Przy **Alignment** *view* wzór biegnie dalej z jednej ściany na następną; przy *layer* leży na samej ścianie, wzdłuż jej poziomu od dolnego narożnika, a ściana widziana skośnie pokazuje go skrócony. Materiał biegnący w jednej płaszczyźnie przez kilka elementów jest kreskowany jako jeden, chyba że **Join materials** w stylu widoku jest wyłączone.
+
+Materiał nie ma kreskowania elewacyjnego, dopóki mu go nie nadasz (**none (default)**). **Surface hatches** w stylu widoku (**Widok → View settings**, **Zarządzaj → View styles**) wyłącza je dla całych widoków: włączone w Architectural, wyłączone w Structural, MEP i Coordination. Rzuty zachowują własne kreskowania przekroju i rzutu.
+
+![Elewacja południowa z kreskowanym tynkiem](shots/elevation-surface-hatch.webp)
+
+![Kreskowania powierzchni w ustawieniach widoku](shots/view-surface-hatch.webp)
+
 ## Widoki 3D
 
 <!-- video section-3d -->

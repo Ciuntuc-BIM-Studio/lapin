@@ -603,9 +603,16 @@ public static class Views
                 // Another storey's element in a plan that shows it halftone: grey, as a halftone link.
                 else if (halftoneOthers && ShowsByStorey(m, view, el) == true) colors[id] = Links.Halftone;
             }
-        var pens = Pens.Of(drawing, materials, new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table));
-        // The sun's shadows on what the view sees (ViewShadows), filled under everything it draws.
-        if (ViewShadows.PenOf(m, view, spec, drawnParts, laid) is { } shadows) pens.Insert(0, shadows);
+        var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table);
+        var pens = Pens.Of(drawing, materials, penOptions);
+        // The faces the drawing sees, worked out once for its shadows and its surface hatches.
+        ViewFaces? scene = null;
+        ViewFaces Scene() => scene ??= ViewShadows.Scene(spec, drawnParts, drawing);
+        // The faces' surface hatches (SurfaceHatches): under the lines, the hatches over their fills.
+        var surfaces = SurfaceHatches.PensOf(m, view, spec, drawnParts, laid, Scene, penOptions, new Dictionary<string, string?>());
+        // The sun's shadows on what the view sees (ViewShadows), filled under everything it draws: over the surfaces' fills, under their hatches.
+        var shadows = ViewShadows.PenOf(m, view, spec, drawnParts, laid, Scene);
+        pens.InsertRange(0, [.. surfaces.Where(p => p.Layer == SurfaceHatches.FillLayer), .. shadows != null ? [shadows] : Array.Empty<Pen>(), .. surfaces.Where(p => p.Layer != SurfaceHatches.FillLayer)]);
 
         // Annotations: the views' own marks, then each module's (grids, dimensions, texts), over the drawing.
         var ctx = new ViewContext(m, view, spec.Kind, spec.Frame, scale, DraftingResources.Book(m), drawing, q.Geometry) { Services = q.Services };

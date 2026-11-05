@@ -57,7 +57,7 @@ Eksport IFC także nazywa styl powierzchni każdego materiału jego nazwą, z pr
 ## Co ustawia materiał
 
 - **Kolor (3D)** i powierzchnie rysowane na nim w widoku 3D. Lapin odgaduje je z nazwy, na przykład warstwy cegieł lub siatkę płytek. **Końce** oraz **Góra i dół** mogą wyglądać inaczej niż powierzchnie.
-- **Kreskowanie** dla każdego miejsca, w którym materiał jest rysowany: przecięty w przekroju, przecięty na rzucie i widoczny na elewacji. Każde ma swoją skalę, kąt, wyrównanie, wypełnienie i pióro.
+- **Kreskowanie** dla każdego miejsca, w którym materiał jest rysowany: przecięty w przekroju, przecięty na rzucie i widoczny na elewacji. Każde ma swoją skalę, kąt, wyrównanie, wypełnienie i pióro. Elewacja lub przekrój kreskuje widziane ściany kreskowaniem elewacyjnym, tam gdzie nic bliższego ich nie zasłania (Widoki, Kreskowania powierzchni); materiał nie ma go, dopóki mu go nie nadasz.
 - **Kategoria**, na przykład wykończenie, izolacja lub konstrukcja. Style widoku używają jej, aby pominąć wykończenia w widoku konstrukcyjnym.
 - **Membrana** rysuje cienką warstwę jako linię przerywaną zamiast pasa.
 - **Rysuj spoiny.** Domyślnie materiał przechodzi z jednego elementu w następny bez linii, jak dwie ściany w jednej linii lub tynk na dwóch kondygnacjach. Zaznacz, aby rysować spoinę.

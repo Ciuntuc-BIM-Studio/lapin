@@ -49,6 +49,18 @@ Ein Schnitt wirft und empfängt nur Schatten dessen, was hinter seiner Schnitteb
 
 ![Die Sonnenschatten einer Ansicht](shots/view-shadows.webp)
 
+### Oberflächenschraffuren
+
+Eine Ansicht oder ein Schnitt schraffiert jede Fläche, die sie sieht, mit der **Elevation**-Schraffur ihres Materials (**Verwalten → Materialien**, Registerkarte **2D graphics**): Muster, Maßstab, Winkel, Stift und Füllung. Schraffiert wird nur der Teil einer Fläche, den kein näheres Element verdeckt, so zeigt sich der Putz oder Ziegel einer Fassade um ihre Türen und Fenster, und ein Schnitt schraffiert, was er jenseits seiner Schnittebene sieht, nicht hinter den Elementen, die er schneidet. Eine mehrschichtige Wand zeigt das Material ihrer äußersten Schicht. Die Schraffur liegt unter den Linien, wird also auf Plänen, im PDF und im DXF gedruckt (Layer SURFACE-HATCH und SURFACE-FILL).
+
+Mit **Alignment** *view* läuft das Muster von einer Fläche zur nächsten weiter; mit *layer* liegt es auf der Fläche selbst, entlang ihrer Waagerechten ab ihrer unteren Ecke, und eine schräg gesehene Fläche zeigt es verkürzt. Ein Material, das in einer Ebene über mehrere Elemente weiterläuft, wird als eines schraffiert, sofern **Join materials** im Ansichtsstil eingeschaltet ist.
+
+Ein Material hat keine Ansichtsschraffur, bis Sie ihm eine geben (**none (default)**). **Surface hatches** im Ansichtsstil (**Ansicht → View settings**, **Verwalten → View styles**) schaltet sie für ganze Ansichten aus: an in Architectural, aus in Structural, MEP und Coordination. Grundrisse behalten ihre eigenen Schnitt- und Grundrissschraffuren.
+
+![Die Südansicht mit schraffiertem Putz](shots/elevation-surface-hatch.webp)
+
+![Oberflächenschraffuren in den Einstellungen der Ansicht](shots/view-surface-hatch.webp)
+
 ## 3D-Ansichten
 
 <!-- video section-3d -->

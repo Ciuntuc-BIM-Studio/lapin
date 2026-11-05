@@ -45,6 +45,18 @@ Una sección proyecta y recibe sombras solo de lo que está más allá de su cor
 
 ![Las sombras del sol de una vista](shots/view-shadows.webp)
 
+### Tramas de superficie
+
+Un alzado o una sección trama cada cara que ve con la trama **Elevation** de su material (**Gestionar → Materiales**, pestaña **2D graphics**): su patrón, escala, ángulo, plumilla y relleno. Solo se trama la parte de una cara que ningún elemento más cercano oculta, así que el revoco o el ladrillo de una fachada se ve alrededor de sus puertas y ventanas, y una sección trama lo que ve más allá de su corte, no detrás de los elementos que corta. Un muro por capas muestra el material de su capa exterior. La trama se dibuja bajo las líneas, así que se imprime en los planos, en PDF y en DXF (capas SURFACE-HATCH y SURFACE-FILL).
+
+Con **Alignment** *view* el patrón sigue de una cara a la siguiente; con *layer* se apoya en la propia cara, a lo largo de su horizontal desde su esquina inferior, y una cara vista en escorzo lo muestra acortado. Un material que sigue en un mismo plano por varios elementos se trama como uno solo, salvo que **Join materials** del estilo de vista esté desactivado.
+
+Un material no tiene trama de alzado hasta que se la das (**none (default)**). **Surface hatches** del estilo de vista (**Vista → View settings**, **Gestionar → View styles**) las desactiva para vistas enteras: activado en Architectural, desactivado en Structural, MEP y Coordination. Las plantas conservan sus propias tramas de corte y de planta.
+
+![El alzado sur con su revoco tramado](shots/elevation-surface-hatch.webp)
+
+![Las tramas de superficie en los ajustes de la vista](shots/view-surface-hatch.webp)
+
 ## Vistas 3D
 
 <!-- video section-3d -->

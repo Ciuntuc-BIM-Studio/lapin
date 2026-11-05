@@ -57,7 +57,7 @@ La exportación IFC también nombra el estilo de superficie de cada material com
 ## Lo que define un material
 
 - **Color (3D)** y las caras dibujadas sobre él en 3D. Lapin las deduce del nombre, por ejemplo las hiladas de un ladrillo o la retícula de una baldosa. Los **Extremos** y **Superior e inferior** pueden verse distintos de las caras.
-- **Sombreado** para cada lugar donde se dibuja: cortado en una sección, cortado en una planta y visto en una elevación. Cada uno tiene su escala, ángulo, alineación, relleno y pluma.
+- **Sombreado** para cada lugar donde se dibuja: cortado en una sección, cortado en una planta y visto en una elevación. Cada uno tiene su escala, ángulo, alineación, relleno y pluma. Un alzado o una sección trama las caras que ve con el sombreado de elevación, donde nada más cercano las oculta (Vistas, Tramas de superficie); un material no tiene ninguno hasta que se lo das.
 - **Categoría**, por ejemplo acabado, aislamiento o estructura. Los estilos de vista la usan para dejar fuera los acabados en una vista estructural.
 - **Membrana** dibuja una capa fina como una línea discontinua en lugar de una banda.
 - **Dibujar juntas.** De forma predeterminada, un material continúa de un elemento al siguiente sin línea, como dos muros alineados o un revoco sobre dos plantas. Márquelo para dibujar la junta.
