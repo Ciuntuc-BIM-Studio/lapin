@@ -39,4 +39,28 @@ describe('project units', () => {
     expect(formatLength(3.048)).toBe("10'-0\"");
     useStandards.setState({ units: 'mm' });
   });
+  it('keeps a metric length to a tenth of a millimetre, whole ones without decimals (report #94)', () => {
+    // A 12.5 mm gypsum board typed, kept and shown as typed, in each metric unit.
+    expect(parseLength('12.5', 'mm')).toBeCloseTo(0.0125, 12);
+    expect(parseLength('12,5', 'mm')).toBeCloseTo(0.0125, 12);
+    expect(parseLength('1.25', 'cm')).toBeCloseTo(0.0125, 12);
+    expect(parseLength('1,25', 'cm')).toBeCloseTo(0.0125, 12);
+    expect(parseLength('0.1', 'mm')).toBeCloseTo(0.0001, 12);
+    expect(formatLength(0.0125, 'mm')).toBe('12.5');
+    expect(formatLength(0.0125, 'cm')).toBe('1.25');
+    expect(formatLength(0.0125, 'm')).toBe('0.0125');
+    expect(formatLength(0.0001, 'mm')).toBe('0.1');
+    expect(formatLength(0.3375, 'mm')).toBe('337.5');
+    expect(lengthText(0.0125, 'mm')).toBe('12.5 mm');
+    // Whole values stay whole (no trailing zeros), finer ones round to the tenth, no "-0".
+    expect(formatLength(0.012, 'mm')).toBe('12');
+    expect(formatLength(0.1 + 0.2, 'mm')).toBe('300');
+    expect(formatLength(1.23456, 'mm')).toBe('1234.6');
+    expect(formatLength(1.23456, 'cm')).toBe('123.46');
+    expect(formatLength(-0.00001, 'mm')).toBe('0');
+    expect(formatLength(-0.0125, 'mm')).toBe('-12.5');
+    for (const u of ['mm', 'cm', 'm'] as const) expect(parseLength(formatLength(0.0125, u), u)).toBeCloseTo(0.0125, 12);
+    // Imperial keeps its sixteenths.
+    expect(formatLength(0.0125, 'in')).toBe('1/2"');
+  });
 });

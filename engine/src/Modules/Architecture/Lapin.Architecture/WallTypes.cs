@@ -38,7 +38,7 @@ public static class WallTypes
     public static string DefaultName(IReadOnlyList<LayerSpec> layers)
     {
         var core = layers.FirstOrDefault(l => l.Core) ?? layers.MaxBy(l => l.Thickness)!;
-        return $"{core.Material} wall {Math.Round(layers.Sum(l => l.Thickness) * 1000)}";
+        return $"{core.Material} wall {LayerSets.Millimetres(layers.Sum(l => l.Thickness))}";
     }
 
     public static Entity Create(IEdit edit, string? name, IReadOnlyList<LayerSpec> layers, string? mark = null, JsonNode? zones = null, JsonNode? lintels = null, JsonArray? sweeps = null)

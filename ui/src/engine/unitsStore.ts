@@ -34,12 +34,22 @@ function inches(totalInches: number, denominator = 16): { whole: number; frac: s
   return { whole, frac: num > 0 ? `${num}/${den}` : '' };
 }
 
-/** A length in metres as the project shows it (no label). */
+/** Tenths of a millimetre in a metre: the step a metric length is kept and shown to (report #94: a 12.5 mm gypsum board). */
+const TENTHS = 10_000;
+
+/** Metres rounded to a tenth of a millimetre, then in `perMetre` units: whole values without decimals (12, not 12.0), never "-0". */
+const metric = (m: number, perMetre: number) => String(Math.round(m * TENTHS) / (TENTHS / perMetre) || 0);
+
+/**
+ * A length in metres as the project shows it (no label): metric to a tenth of
+ * a millimetre (12.5 mm, 1.25 cm, 0.0125 m; whole values without decimals),
+ * imperial to the nearest 1/16".
+ */
 export function formatLength(m: number, u: Unit = unit()): string {
   if (!Number.isFinite(m)) return '';
   switch (u) {
-    case 'cm': return String(Math.round(m * 1000) / 10);
-    case 'm': return String(Math.round(m * 1000) / 1000);
+    case 'cm': return metric(m, 100);
+    case 'm': return metric(m, 1);
     case 'in': {
       const { whole, frac } = inches(Math.abs(m) / INCH);
       return `${m < 0 ? '-' : ''}${whole === 0 && frac ? '' : whole}${whole && frac ? ' ' : ''}${frac}"`;
@@ -50,7 +60,7 @@ export function formatLength(m: number, u: Unit = unit()): string {
       const inchText = `${inch === 0 && frac ? '' : inch}${inch && frac ? ' ' : ''}${frac}"`;
       return `${m < 0 ? '-' : ''}${ft > 0 ? `${ft}'-` : ''}${inchText}`;
     }
-    default: return String(Math.round(m * 1000));
+    default: return metric(m, 1000);
   }
 }
 

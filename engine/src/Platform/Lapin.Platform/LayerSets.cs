@@ -20,6 +20,9 @@ public readonly record struct LayerBand(double From, double To, string Material,
 
 public static class LayerSets
 {
+    /// <summary>A thickness (metres) in millimetres for a type's name, to a tenth (report #94: a 12.5 mm board), whole ones without decimals: "300", "12.5".</summary>
+    public static string Millimetres(double m) => (Math.Round(m * 10000) / 10).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
     public static Entity? Of(IModelView m, string typeId) =>
         m.RelatingOf(typeId, IfcClass.RelAssociatesMaterial) is { Class: IfcClass.MaterialLayerSet } set ? set : null;
 

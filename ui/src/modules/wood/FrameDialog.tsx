@@ -343,7 +343,7 @@ export function FrameDialog() {
                         : [...(spec.boards ?? []).filter((x) => x.layer !== l.index), { layer: l.index, width: b?.width ?? 1.2, height: b?.height ?? 2.7, ...patch }] });
                       return (
                         <div key={l.index} className="row wood-board" title="Laid as sheets: upright, their joints on the studs' module, cut at the rough openings">
-                          <label className="row"><input type="checkbox" checked={Boolean(b)} onChange={(e) => setBoard(e.target.checked ? {} : null)} /> {l.name} <span className="muted small">{Math.round(l.thickness * 1000)} mm</span></label>
+                          <label className="row"><input type="checkbox" checked={Boolean(b)} onChange={(e) => setBoard(e.target.checked ? {} : null)} /> {l.name} <span className="muted small">{Math.round(l.thickness * 10000) / 10} mm</span></label>
                           {b && <>
                             <input className="num" defaultValue={Math.round(b.width * 1000)} key={`bw${l.index}${b.width}`} title="Sheet width (mm)" onBlur={(e) => setBoard({ width: Number(e.target.value) / 1000 })} />
                             <span>×</span>

@@ -47,7 +47,7 @@ public static class Slabs
     {
         LayerSets.Validate(layers, "A floor type");
         var core = layers.FirstOrDefault(l => l.Core) ?? layers.MaxBy(l => l.Thickness)!;
-        var typeName = string.IsNullOrWhiteSpace(name) ? $"{core.Material} floor {Math.Round(layers.Sum(l => l.Thickness) * 1000)}" : name.Trim();
+        var typeName = string.IsNullOrWhiteSpace(name) ? $"{core.Material} floor {LayerSets.Millimetres(layers.Sum(l => l.Thickness))}" : name.Trim();
         var type = new Entity(edit.NewId(), IfcClass.SlabType, typeName, [], "FLOOR");
         edit.Add(type);
         LayerSets.Attach(edit, type, layers);

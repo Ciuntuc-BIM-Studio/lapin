@@ -44,6 +44,8 @@ O Lapin trabalha em milímetros, a menos que você escolha outra coisa. Para mud
 
 Todo comprimento segue essa configuração: os painéis, os valores que você digita enquanto desenha, a linha de comando e as cotas. O modelo em si é guardado em metros, então mudar as unidades nunca muda o seu edifício. Os níveis e os eixos da grade também a seguem.
 
+Em milímetros, centímetros e metros, os comprimentos são guardados e mostrados com um décimo de milímetro: uma placa de 12,5 mm continua 12.5 mm (1.25 cm), e os valores inteiros são escritos sem decimais. Pés e polegadas vão ao 1/16" mais próximo. As cotas dos desenhos são arredondadas como diz o seu estilo de cota.
+
 ## Salvar
 
 **Arquivo → Salvar** (<kbd>Ctrl</kbd> <kbd>S</kbd>) grava um arquivo `.lapin`. Veja [Arquivos, versões e recuperação](files.md).

@@ -44,6 +44,8 @@ Lapin pracuje w milimetrach, chyba że wybierzesz inaczej. Aby zmienić jednostk
 
 Każda długość stosuje się do tego ustawienia: panele, wartości wpisywane podczas rysowania, wiersz poleceń i wymiary. Sam model jest przechowywany w metrach, więc zmiana jednostek nigdy nie zmienia budynku. Poziomy i osie siatki też za tym podążają.
 
+W milimetrach, centymetrach i metrach długości są przechowywane i pokazywane z dokładnością do dziesiątej części milimetra: płyta 12,5 mm pozostaje 12.5 mm (1.25 cm), a wartości całkowite są pisane bez miejsc po przecinku. Stopy i cale idą do najbliższej 1/16". Wymiary na rysunkach są zaokrąglane tak, jak mówi ich styl wymiarowania.
+
 ## Zapisywanie
 
 **Plik → Zapisz** (<kbd>Ctrl</kbd> <kbd>S</kbd>) zapisuje plik `.lapin`. Zobacz [Pliki, wersje i odzyskiwanie](files.md).

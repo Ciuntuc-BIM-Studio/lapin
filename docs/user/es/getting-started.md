@@ -44,6 +44,8 @@ Lapin trabaja en milímetros, salvo que usted elija otra cosa. Para cambiar las 
 
 Todas las longitudes siguen este ajuste: los paneles, los valores que escribe mientras dibuja, la línea de comandos y las cotas. El modelo en sí se guarda en metros, así que cambiar las unidades nunca cambia su edificio. Los niveles y los ejes de rejilla también la siguen.
 
+En milímetros, centímetros y metros, las longitudes se guardan y se muestran con una décima de milímetro: una placa de 12,5 mm sigue siendo 12.5 mm (1.25 cm), y los valores enteros se escriben sin decimales. Los pies y pulgadas van al 1/16" más cercano. Las cotas de los dibujos se redondean como dice su estilo de cota.
+
 ## Guardar
 
 **Archivo → Guardar** (<kbd>Ctrl</kbd> <kbd>S</kbd>) escribe un archivo `.lapin`. Consulte [Archivos, versiones y recuperación](files.md).

@@ -44,6 +44,8 @@ Lapin arbeitet in Millimetern, sofern Sie nichts anderes wählen. Um die Einheit
 
 Jede Länge folgt dieser Einstellung: die Bereiche, die Werte, die Sie beim Zeichnen eingeben, die Befehlszeile und die Bemaßungen. Das Modell selbst wird in Metern geführt, sodass eine Änderung der Einheiten Ihr Gebäude nie verändert. Ebenen und Rasterachsen folgen ihr ebenfalls.
 
+In Millimetern, Zentimetern und Metern werden Längen auf ein Zehntel Millimeter geführt und angezeigt: eine 12,5-mm-Platte bleibt 12.5 mm (1.25 cm), ganze Werte erscheinen ohne Nachkommastellen. Fuß und Zoll gehen auf das nächste 1/16". Bemaßungen in Zeichnungen werden gerundet, wie ihr Bemaßungsstil es vorgibt.
+
 ## Speichern
 
 **Datei → Speichern** (<kbd>Strg</kbd> <kbd>S</kbd>) schreibt eine `.lapin`-Datei. Siehe [Dateien, Versionen und Wiederherstellung](files.md).

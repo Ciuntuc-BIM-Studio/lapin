@@ -44,6 +44,8 @@ Lapin works in millimetres unless you choose otherwise. To change the units, ope
 
 Every length follows this setting: the panels, the values you type while drawing, the command line and the dimensions. The model itself is kept in metres, so changing the units never changes your building. Levels and grid axes follow it too.
 
+In millimetres, centimetres and metres, lengths are kept and shown to a tenth of a millimetre: a 12.5 mm board stays 12.5 mm (1.25 cm), and whole values are written without decimals. Feet and inches go to the nearest 1/16". Dimensions on drawings are rounded as their dimension style says.
+
 ## Saving
 
 **File → Save** (<kbd>Ctrl</kbd> <kbd>S</kbd>) writes a `.lapin` file. See [Files, versions and recovery](files.md).

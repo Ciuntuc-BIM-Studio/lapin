@@ -44,6 +44,8 @@ Lapin lucrează în milimetri dacă nu alegi altceva. Ca să schimbi unitățile
 
 Toate lungimile urmează setarea: panourile, valorile pe care le scrii când desenezi, linia de comandă și cotele. Modelul în sine e ținut în metri, așa că schimbarea unităților nu-ți schimbă niciodată clădirea. Nivelurile și axele o urmează și ele.
 
+În milimetri, centimetri și metri, lungimile sunt ținute și arătate la o zecime de milimetru: o placă de 12,5 mm rămâne 12.5 mm (1.25 cm), iar valorile întregi se scriu fără zecimale. Picioarele și țolii merg la cea mai apropiată 1/16". Cotele de pe desene se rotunjesc cum spune stilul lor de cotare.
+
 ## Salvarea
 
 **Fișier → Salvează** (<kbd>Ctrl</kbd> <kbd>S</kbd>) scrie un fișier `.lapin`. Vezi [Fișiere, versiuni și recuperare](files.md).

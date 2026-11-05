@@ -44,6 +44,8 @@ Lapin arbejder i millimeter, medmindre du vælger andet. Du skifter enhederne un
 
 Alle længder følger denne indstilling: panelerne, de værdier du skriver, mens du tegner, kommandolinjen og målene. Selve modellen gemmes i meter, så et skift af enheder ændrer aldrig din bygning. Niveauer og modullinjer følger den også.
 
+I millimeter, centimeter og meter gemmes og vises længder med en tiendedel millimeter: en plade på 12,5 mm forbliver 12.5 mm (1.25 cm), og hele værdier skrives uden decimaler. Fod og tommer går til nærmeste 1/16". Mål på tegninger afrundes, som deres målstil siger.
+
 ## At gemme
 
 **Filer → Gem** (<kbd>Ctrl</kbd> <kbd>S</kbd>) skriver en `.lapin`-fil. Se [Filer, versioner og gendannelse](files.md).

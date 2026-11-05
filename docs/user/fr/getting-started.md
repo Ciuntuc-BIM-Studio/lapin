@@ -44,6 +44,8 @@ Lapin travaille en millimètres, sauf si vous choisissez autre chose. Pour chang
 
 Chaque longueur suit ce réglage : les panneaux, les valeurs que vous tapez en dessinant, la ligne de commande et les cotes. Le modèle lui-même est conservé en mètres, si bien que changer d’unités ne modifie jamais votre bâtiment. Les niveaux et les axes du quadrillage la suivent aussi.
 
+En millimètres, centimètres et mètres, les longueurs sont conservées et affichées au dixième de millimètre : une plaque de 12,5 mm reste 12.5 mm (1.25 cm), et les valeurs entières s’écrivent sans décimales. Les pieds et pouces vont au 1/16" le plus proche. Les cotes des dessins sont arrondies comme le dit leur style de cote.
+
 ## Enregistrer
 
 **Fichier → Enregistrer** (<kbd>Ctrl</kbd> <kbd>S</kbd>) écrit un fichier `.lapin`. Voir [Fichiers, versions et récupération](files.md).

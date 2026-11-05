@@ -44,6 +44,8 @@ Lapin lavora in millimetri, a meno che tu non scelga altrimenti. Per cambiare le
 
 Ogni lunghezza segue questa impostazione: i pannelli, i valori che digiti mentre disegni, la riga di comando e le quote. Il modello stesso è conservato in metri, quindi cambiare le unità non modifica mai il tuo edificio. Anche i livelli e gli assi della griglia la seguono.
 
+In millimetri, centimetri e metri, le lunghezze sono conservate e mostrate al decimo di millimetro: una lastra da 12,5 mm resta 12.5 mm (1.25 cm), e i valori interi si scrivono senza decimali. Piedi e pollici vanno al 1/16" più vicino. Le quote dei disegni sono arrotondate come dice il loro stile di quotatura.
+
 ## Salvare
 
 **File → Salva** (<kbd>Ctrl</kbd> <kbd>S</kbd>) scrive un file `.lapin`. Vedi [File, versioni e ripristino](files.md).

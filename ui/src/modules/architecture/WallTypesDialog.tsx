@@ -14,7 +14,7 @@ import { ArrowDown, ArrowUp, Layers, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model';
-import { formatLength } from '../../engine/unitsStore';
+import { formatLength, useStandards } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { layerRankHint } from './layerRank';
 import { LintelRuleEditor } from './LintelRule';
@@ -73,6 +73,8 @@ export function WallTypesDialog() {
   const [lintels, setLintels] = useState<Rule>(DEFAULT_RULE);
   const [sweeps, setSweeps] = useState<TypeSweepRow[]>([]);
   const info = useSession((s) => s.info);
+  // The total and the heights below are written in the project's units: shown again when they change.
+  useStandards((s) => s.units);
 
   // The editor loads when the picked type changes, not on every diff (which
   // would throw away what is being typed): it reads the model through a ref.
