@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Lapin.Drawing.Documents;
 using Lapin.Drawing.Views;
 using Lapin.Geometry;
@@ -21,9 +22,10 @@ public static class DocumentImages
     /// <summary>
     /// The picture of <paramref name="viewId"/> (a view or a sheet): at <paramref name="scale"/> when given, else fitted to
     /// <paramref name="width"/> mm when given, else at the view's own scale; then, when wider than <paramref name="maxWidth"/>, at the
-    /// next standard scale that fits (a width given is fitted exactly). Null when there is no such view or it draws nothing.
+    /// next standard scale that fits (a width given is fitted exactly). With <paramref name="boundaryId"/>, only that boundary of the
+    /// view, cropped as a sheet's viewport bound to it is. Null when there is no such view or it draws nothing.
     /// </summary>
-    public static DocImage? Draw(IQueryContext q, string viewId, double? scale, double? width, double maxWidth, string key, string? caption)
+    public static DocImage? Draw(IQueryContext q, string viewId, double? scale, double? width, double maxWidth, string key, string? caption, string? boundaryId = null)
     {
         var m = q.Model;
         var target = Math.Max(10, Math.Min(width is > 0 ? width.Value : maxWidth, maxWidth));
@@ -36,6 +38,7 @@ public static class DocumentImages
         if (Views.Find(m, viewId) is not { } view) return null;
         var own = view.NumOrNull("scale") is { } vs && vs > 0 ? vs : 100;
         var sc = scale is > 0 ? scale.Value : own;
+        if (boundaryId is { Length: > 0 }) return Cropped(q, view, Boundary(m, view.Id, boundaryId), scale, width, sc, own, target, maxWidth, key, caption);
         var r = Render(q, view, sc, own);
         if (r.Bounds is not { } b) return null;
         var extent = Math.Max(b.Max.X - b.Min.X, 1e-6);
@@ -54,6 +57,41 @@ public static class DocumentImages
         var (minX, maxY) = (b.Min.X, b.Max.Y);
         var pens = Transform(r.Pens, p => new Vec2((p.X - minX) * k + Margin, (maxY - p.Y) * k + Margin), 1);
         return new DocImage(key, (b.Max.X - b.Min.X) * k + 2 * Margin, (b.Max.Y - b.Min.Y) * k + 2 * Margin, pens, caption);
+    }
+
+    /// <summary>A named boundary of the view (decision 236); refused when it is another view's or not a boundary.</summary>
+    public static Entity Boundary(IModelView m, string viewId, string boundaryId) =>
+        m.Get(boundaryId) is { Class: ViewBoundaries.Class } b && b.Str("viewId") == viewId ? b : throw new CommandException("The view has no such boundary.");
+
+    /// <summary>The image blocks' boundaries checked against their views, nested blocks too (a document's blocks as given).</summary>
+    public static void CheckBoundaries(IModelView m, JsonArray blocks)
+    {
+        foreach (var b in blocks.OfType<JsonObject>())
+        {
+            if ((string?)b["kind"] == "image" && (string?)b["boundary"] is { Length: > 0 } bid && (string?)b["view"] is { } view && !view.Contains("{{"))
+                Boundary(m, view, bid);
+            foreach (var inner in new[] { b["blocks"], b["else"] }.OfType<JsonArray>()) CheckBoundaries(m, inner);
+        }
+    }
+
+    /// <summary>
+    /// The view cropped to one of its boundaries as a sheet's viewport bound to it shows it: the boundary's box at the scale, its
+    /// middle the picture's, the pens clipped to it (<see cref="Sheets.ClipToBox"/>), no margin. The scale steps down as a whole view's does.
+    /// </summary>
+    static DocImage? Cropped(IQueryContext q, Entity view, Entity boundary, double? scale, double? width, double sc, double own, double target, double maxWidth, string key, string? caption)
+    {
+        var (min, max) = ViewBoundaries.Box(boundary);
+        var extent = max.X - min.X;
+        if (scale is not > 0 && width is > 0) sc = extent * 1000 / target;
+        else if (extent * 1000 / sc > maxWidth + 1e-6) sc = Scales.FirstOrDefault(x => x >= sc && extent * 1000 / x <= maxWidth + 1e-6, extent * 1000 / maxWidth);
+        var r = Render(q, view, sc, own);
+        var k = 1000 / sc;
+        var (w, h) = (extent * k, (max.Y - min.Y) * k);
+        Vec2 ToPaper(Vec2 p) => new((p.X - min.X) * k, (max.Y - p.Y) * k);
+        var pens = new List<Pen>();
+        foreach (var pen in r.Pens)
+            if (pen.Layer != "PICK" && Sheets.ClipToBox(pen, ToPaper, 0, 0, w, h) is { } c) pens.Add(c);
+        return new DocImage(key, w, h, pens, caption);
     }
 
     /// <summary>A view drawn for print at a scale: its own entity given the scale, so its pens, texts and hatches are sized for it.</summary>

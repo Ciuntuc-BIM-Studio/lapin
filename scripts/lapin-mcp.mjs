@@ -12,9 +12,9 @@
  *   claude mcp add lapin -- node /path/to/lapin-pro/scripts/lapin-mcp.mjs
  */
 
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createInterface } from 'node:readline';
 
@@ -133,6 +133,83 @@ async function call(method, params = {}) {
   });
 }
 
+// ─── A document's pictures as SVG (as ui/src/modules/core/documents/docModel.ts pensToSvg makes them) ──
+
+const SVG_U = 10; // SVG units a paper mm
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const num = (v) => (Math.round(v * SVG_U * 10) / 10).toString();
+
+/**
+ * A picture's pens (`document.images`) as a standalone SVG at its paper size, on white: the same drawing the interface
+ * makes for a DOCX or ODT. The bridge has no rasteriser, so a document exported here carries its pictures as SVG only
+ * (the engine puts a blank PNG beside each, which Word needs; Word 2016+ and LibreOffice show the SVG).
+ */
+function pensToSvg(img, image) {
+  const out = [`<svg xmlns="http://www.w3.org/2000/svg" width="${img.w}mm" height="${img.h}mm" viewBox="0 0 ${num(img.w)} ${num(img.h)}">`,
+    `<rect x="0" y="0" width="${num(img.w)}" height="${num(img.h)}" fill="#ffffff"/>`];
+  for (const p of img.pens ?? []) {
+    if (p.images?.length) {
+      for (const im of p.images) {
+        const href = image(im.id), c = im.corners;
+        if (!href || c.length < 8) continue;
+        out.push(`<image href="${esc(href)}" x="0" y="0" width="1" height="1" preserveAspectRatio="none" opacity="${im.opacity}" transform="matrix(${num(c[2] - c[0])} ${num(c[3] - c[1])} ${num(c[6] - c[0])} ${num(c[7] - c[1])} ${num(c[0])} ${num(c[1])})"/>`);
+      }
+      continue;
+    }
+    if (p.texts?.length) {
+      out.push(`<g fill="${esc(p.stroke ?? '#000000')}">`);
+      for (const t of p.texts) {
+        const family = t.font === 'serif' ? 'Georgia, serif' : t.font === 'mono' ? 'Menlo, monospace' : 'Arial, Helvetica, sans-serif';
+        const anchor = t.anchor === 'start' ? 'start' : t.anchor === 'end' ? 'end' : 'middle';
+        const base = t.baseline === 'middle' ? 'central' : 'alphabetic';
+        const rot = t.angle ? ` transform="rotate(${-t.angle} ${num(t.x)} ${num(t.y)})"` : '';
+        out.push(`<text x="${num(t.x)}" y="${num(t.y)}" font-size="${num(t.height)}" font-family="${family}" font-weight="${t.bold ? 700 : 400}"${t.italic ? ' font-style="italic"' : ''} text-anchor="${anchor}" dominant-baseline="${base}"${rot}>${esc(t.text)}</text>`);
+      }
+      out.push('</g>');
+      continue;
+    }
+    let d = '';
+    for (const loop of p.loops ?? []) {
+      for (let k = 0; k + 1 < loop.length; k += 2) d += `${k === 0 ? 'M' : 'L'}${num(loop[k])} ${num(loop[k + 1])}`;
+      if (loop.length >= 2) d += 'Z';
+    }
+    const s = p.segments ?? [];
+    for (let k = 0; k + 3 < s.length; k += 4) d += `M${num(s[k])} ${num(s[k + 1])}L${num(s[k + 2])} ${num(s[k + 3])}`;
+    if (!d) continue;
+    const stroke = p.stroke ? ` stroke="${esc(p.stroke)}" stroke-width="${num(Math.max(p.width, 0.05))}" stroke-linecap="round" stroke-linejoin="round"` : ' stroke="none"';
+    const dash = p.stroke && p.dash?.length ? ` stroke-dasharray="${p.dash.map(num).join(' ')}"` : '';
+    out.push(`<path d="${d}" fill="${p.fill ? esc(p.fill) : 'none'}" fill-rule="evenodd"${stroke}${dash}/>`);
+  }
+  out.push('</svg>');
+  return out.join('');
+}
+
+/** A document's pictures for a DOCX or ODT: {key: {svg}}; an orthophoto's data read from the model when a picture has one. */
+async function documentPictures(id) {
+  const images = (await call('doc.query', { name: 'document.images', args: { id } })) ?? [];
+  let nodes = null;
+  if (images.some((i) => i.pens?.some((p) => p.images?.length))) nodes = new Map(((await call('doc.snapshot')).nodes ?? []).map((n) => [n.id, n]));
+  const data = (imageId) => {
+    const p = nodes?.get(imageId)?.props;
+    return typeof p?.data === 'string' && typeof p?.mime === 'string' ? `data:${p.mime};base64,${p.data}` : null;
+  };
+  return Object.fromEntries(images.map((img) => [img.key, { svg: pensToSvg(img, data) }]));
+}
+
+/** A document written by the engine (`document.export`) to an absolute path on this computer. */
+async function exportDocument({ id, format, path }) {
+  const fmt = String(format ?? '').toLowerCase();
+  if (!['docx', 'odt', 'pdf'].includes(fmt)) throw new Error('format is docx, odt or pdf.');
+  if (typeof path !== 'string' || !path || !isAbsolute(path)) throw new Error('path must be an absolute file path, e.g. /Users/me/Desktop/memoriu.docx.');
+  const images = fmt === 'pdf' ? undefined : await documentPictures(id);
+  const r = await call('doc.query', { name: 'document.export', args: { id, format: fmt, ...(images ? { images } : {}) } });
+  const bytes = Buffer.from(r.data, 'base64');
+  const file = resolve(path);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, bytes);
+  return { path: file, bytes: bytes.length, name: r.name, missing: r.missing ?? [] };
+}
+
 const TOOLS = [
   {
     name: 'lapin_info',
@@ -178,6 +255,29 @@ const TOOLS = [
   },
   { name: 'lapin_undo', description: 'Undo the last step.', inputSchema: { type: 'object', properties: {} }, run: async () => { await call('doc.undo'); return 'undone'; } },
   { name: 'lapin_redo', description: 'Redo the step undone.', inputSchema: { type: 'object', properties: {} }, run: async () => { await call('doc.redo'); return 'redone'; } },
+  {
+    name: 'lapin_documents',
+    description: "The project's written documents (id, name, template, language, revision, status) and the templates a new one starts from (id, title, description). Make one with lapin_execute \"document.create\" {template, name?}; see docs/mcp.md, Documents.",
+    inputSchema: { type: 'object', properties: {} },
+    run: async () => ({
+      documents: await call('doc.query', { name: 'document.list', args: {} }),
+      templates: await call('doc.query', { name: 'document.templates', args: {} }),
+    }),
+  },
+  {
+    name: 'lapin_document_export',
+    description: 'Write a document (from lapin_documents) as DOCX, ODT or PDF to an absolute path on this computer (folders made). Returns {path, bytes, name, missing}: missing lists the fields the project does not fill yet (written empty). DOCX and ODT carry their pictures as SVG.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'The document id' },
+        format: { type: 'string', enum: ['docx', 'odt', 'pdf'] },
+        path: { type: 'string', description: 'Absolute path of the file to write, e.g. /Users/me/Desktop/memoriu.pdf' },
+      },
+      required: ['id', 'format', 'path'],
+    },
+    run: exportDocument,
+  },
   {
     name: 'lapin_save',
     description: 'Save the project (to its own file, or to a .lapin path given).',

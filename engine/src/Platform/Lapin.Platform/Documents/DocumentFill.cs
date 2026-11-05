@@ -94,6 +94,20 @@ public static class DocumentFill
         return (new FilledDocument(doc.Name, page, blocks, meta), filler.Missing);
     }
 
+    /// <summary>
+    /// Some blocks filled in a document's context (its language, fields, inputs and page) as if inside the repeats' items
+    /// <paramref name="scopes"/> name, outer first (the editor's <c>document.block</c>): the blocks, what they leave to complete,
+    /// the items' values and how many items each repeat keeps (-1: a collection no module gives).
+    /// </summary>
+    public static (List<DocBlock> Blocks, IReadOnlyList<string> Missing, Dictionary<string, string> Scope, List<int> Counts) FillPart(IQueryContext q, Entity doc, JsonArray blocks, IReadOnlyList<DocScope> scopes)
+    {
+        var filler = new Filler(q, doc, FormatOf(q.Model, doc));
+        filler.TextWidth = filler.Page(doc.Attrs["page"] as JsonObject).TextWidth;
+        var counts = scopes.Select(s => filler.Enter(s.Collection, s.As, s.Where, s.Index)).ToList();
+        var filled = filler.Blocks(blocks, "part");
+        return (filled, filler.Missing, filler.ScopeValues(), counts);
+    }
+
     /// <summary>The inputs a document declares, with their values now (its own, else the default).</summary>
     public static List<(DocInput Input, string? Value)> Inputs(Entity doc)
     {
@@ -192,7 +206,7 @@ public static class DocumentFill
             if ((string?)p?["orientation"] == "landscape") (w, h) = (h, w);
             var d = DocPage.A4;
             double M(int i, double fallback) => p?["margins"] is JsonArray { Count: 4 } a && Json.Number(a[i]) is { } v && v >= 0 && v < Math.Min(w, h) / 3 ? v : fallback;
-            return new DocPage(w, h, M(0, d.Top), M(1, d.Right), M(2, d.Bottom), M(3, d.Left), Runs((string?)p?["header"]), Runs((string?)p?["footer"]));
+            return new DocPage(w, h, M(0, d.Top), M(1, d.Right), M(2, d.Bottom), M(3, d.Left), Runs((string?)p?["header"]), Runs((string?)p?["footer"]), DocumentStyles.Parse(p?["style"]));
         }
 
         public List<DocBlock> Blocks(JsonArray blocks, string path)
@@ -311,7 +325,16 @@ public static class DocumentFill
             var key = $"img-{path}-{viewId}";
             var caption = (string?)b["caption"] is { Length: > 0 } c ? Plain(c, record: true) : null;
             DocImage? image;
-            try { image = DocumentImages.Draw(q, viewId, Json.Number(b["scale"]), Json.Number(b["width"]), TextWidth, key, caption); }
+            // Cropped to a named boundary of the view when it says one (decision 236); a boundary that is not the view's is to complete.
+            var boundary = (string?)b["boundary"] is { Length: > 0 } bd ? Plain(bd) : null;
+            if (boundary != null) key += $"-{boundary}";
+            try { image = DocumentImages.Draw(q, viewId, Json.Number(b["scale"]), Json.Number(b["width"]), TextWidth, key, caption, boundary); }
+            catch (CommandException) when (boundary != null && Views.Find(q.Model, viewId) != null)
+            {
+                Miss("boundary:" + boundary);
+                o.Add(new DocParagraph([new DocRun("boundary:" + boundary, Missing: true)], "caption"));
+                return;
+            }
             catch (CommandException) { image = null; }
             if (image == null)
             {
@@ -324,6 +347,41 @@ public static class DocumentFill
 
         List<Dictionary<string, string>> ItemsOf(string over) => _items.TryGetValue(over, out var l) ? l : _items[over] = Items(q, over, f);
 
+        /// <summary>The items of a collection a repeat's where keeps, its values filled in the repeats around it.</summary>
+        List<Dictionary<string, string>> Matching(string over, JsonObject? whereObj)
+        {
+            var where = whereObj?.Select(kv => (kv.Key, Value: Plain((string?)kv.Value))).ToList() ?? [];
+            // A where on "storey" given an id matches the item's "storeyId" too (the plan's own example).
+            return ItemsOf(over).Where(item => !where.Any(w => !string.Equals(item.GetValueOrDefault(w.Key) ?? "", w.Value, StringComparison.Ordinal)
+                && !string.Equals(item.GetValueOrDefault(w.Key + "Id") ?? "", w.Value, StringComparison.Ordinal))).ToList();
+        }
+
+        /// <summary>
+        /// Stands inside a repeat's item (the editor's, <see cref="DocumentEditing"/>): the index-th of the items its where keeps
+        /// (the last when there are fewer; none when it keeps none, its fields then missing). The number of items it keeps, or -1
+        /// for a collection no module gives.
+        /// </summary>
+        public int Enter(string over, string? alias, JsonObject? where, int index)
+        {
+            if (!_collections.TryGetValue(over, out var collection)) return -1;
+            var items = Matching(over, where);
+            var prefix = alias is { Length: > 0 } ? alias : collection.ItemPrefix;
+            var at = Math.Clamp(index, 0, Math.Max(items.Count - 1, 0));
+            var scoped = items.Count == 0 ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, string>(items[at], StringComparer.OrdinalIgnoreCase) { ["index"] = (at + 1).ToString(System.Globalization.CultureInfo.InvariantCulture) };
+            _scopes.Add((prefix, scoped));
+            return items.Count;
+        }
+
+        /// <summary>The values of the items stood in, by their full key (room.name), the inner ones last.</summary>
+        public Dictionary<string, string> ScopeValues()
+        {
+            var o = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (prefix, item) in _scopes)
+                foreach (var (k, v) in item) o[$"{prefix}.{k}"] = v;
+            return o;
+        }
+
         void Repeat(JsonObject b, string path, List<DocBlock> o)
         {
             var over = (string?)b["over"] ?? "";
@@ -333,14 +391,10 @@ public static class DocumentFill
                 return;
             }
             var prefix = (string?)b["as"] is { Length: > 0 } alias ? alias : collection.ItemPrefix;
-            var where = (b["where"] as JsonObject)?.Select(kv => (kv.Key, Value: Plain((string?)kv.Value))).ToList() ?? [];
             var inner = b["blocks"] as JsonArray ?? [];
             var n = 0;
-            foreach (var item in ItemsOf(over))
+            foreach (var item in Matching(over, b["where"] as JsonObject))
             {
-                // A where on "storey" given an id matches the item's "storeyId" too (the plan's own example).
-                if (where.Any(w => !string.Equals(item.GetValueOrDefault(w.Key) ?? "", w.Value, StringComparison.Ordinal)
-                    && !string.Equals(item.GetValueOrDefault(w.Key + "Id") ?? "", w.Value, StringComparison.Ordinal))) continue;
                 n++;
                 var scoped = new Dictionary<string, string>(item, StringComparer.OrdinalIgnoreCase) { ["index"] = n.ToString(System.Globalization.CultureInfo.InvariantCulture) };
                 _scopes.Add((prefix, scoped));

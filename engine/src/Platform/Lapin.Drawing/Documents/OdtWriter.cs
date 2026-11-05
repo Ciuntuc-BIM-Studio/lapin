@@ -34,7 +34,7 @@ public static class OdtWriter
             // First and stored, so a reader knows the package by its first bytes.
             Put(zip, "mimetype", Encoding.ASCII.GetBytes("application/vnd.oasis.opendocument.text"), store: true);
             Put(zip, "content.xml", Head + $"<office:document-content {Ns} office:version=\"1.3\">"
-                + "<office:font-face-decls><style:font-face style:name=\"Arial\" svg:font-family=\"Arial\" style:font-family-generic=\"swiss\" style:font-pitch=\"variable\"/></office:font-face-decls>"
+                + FontFaces(DocLook.Of(doc.Page))
                 + "<office:automatic-styles>" + w.Automatic() + "</office:automatic-styles>"
                 + "<office:body><office:text>" + body + "</office:text></office:body></office:document-content>");
             Put(zip, "styles.xml", Styles(doc));
@@ -44,6 +44,11 @@ public static class OdtWriter
                 + "<manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/>"
                 + "<manifest:file-entry manifest:full-path=\"styles.xml\" manifest:media-type=\"text/xml\"/>"
                 + "<manifest:file-entry manifest:full-path=\"meta.xml\" manifest:media-type=\"text/xml\"/>");
+            if (DocLook.Of(doc.Page).LogoBox(doc.Page) != null && DocLook.Of(doc.Page).Logo is { } logo)
+            {
+                Put(zip, $"Pictures/logo.{logo.Extension}", logo.Data, store: true);
+                manifest.Append($"<manifest:file-entry manifest:full-path=\"Pictures/logo.{logo.Extension}\" manifest:media-type=\"{logo.Mime}\"/>");
+            }
             foreach (var (path, type, data) in w.Media)
             {
                 Put(zip, path, data, store: type == "image/png");
@@ -52,6 +57,15 @@ public static class OdtWriter
             Put(zip, "META-INF/manifest.xml", manifest.Append("</manifest:manifest>").ToString());
         }
         return ms.ToArray();
+    }
+
+    /// <summary>The fonts the styles name: Arial always (Lapin's), and the style's own when it is another.</summary>
+    static string FontFaces(DocLook look)
+    {
+        var b = new StringBuilder("<office:font-face-decls><style:font-face style:name=\"Arial\" svg:font-family=\"Arial\" style:font-family-generic=\"swiss\" style:font-pitch=\"variable\"/>");
+        if (look.Font != "Arial")
+            b.Append($"<style:font-face style:name=\"{Xml(look.Font)}\" svg:font-family=\"&apos;{Xml(look.Font)}&apos;\" style:font-family-generic=\"{(look.Times ? "roman" : "swiss")}\" style:font-pitch=\"variable\"/>");
+        return b.Append("</office:font-face-decls>").ToString();
     }
 
     static string Meta(FilledDocument doc)
@@ -73,13 +87,16 @@ public static class OdtWriter
     static string Styles(FilledDocument doc)
     {
         var p = doc.Page;
+        var look = DocLook.Of(p);
+        var logo = look.LogoBox(p);
+        var color = look.HeadingColor is { Length: 7 } hc ? $" fo:color=\"{hc.ToLowerInvariant()}\"" : "";
         var (lang, country) = Language(doc.Meta.Lang);
         var tw = p.TextWidth;
         string Para(string name, string display, string parent, string ppr, string tpr, string extra = "") =>
             $"<style:style style:name=\"{name}\"{(display.Length > 0 ? $" style:display-name=\"{display}\"" : "")} style:family=\"paragraph\"{(parent.Length > 0 ? $" style:parent-style-name=\"{parent}\"" : "")}{extra}>"
             + (ppr.Length > 0 ? $"<style:paragraph-properties {ppr}/>" : "") + (tpr.Length > 0 ? $"<style:text-properties {tpr}/>" : "") + "</style:style>";
         string Heading(int level, double before) => Para($"Heading_20_{level}", $"Heading {level}", "Heading", $"fo:margin-top=\"{Mm(before)}\" fo:margin-bottom=\"2.2mm\"",
-            $"fo:font-size=\"{Pt(HeadingPt(level))}\" fo:font-weight=\"bold\" style:font-weight-complex=\"bold\"",
+            $"fo:font-size=\"{Pt(look.Heading(level))}\" fo:font-weight=\"bold\" style:font-weight-complex=\"bold\"{color}",
             $" style:next-style-name=\"Text_20_body\" style:default-outline-level=\"{level}\" style:class=\"text\"");
         string Tabbed(string name, string display, double indent, bool bold) =>
             $"<style:style style:name=\"{name}\" style:display-name=\"{display}\" style:family=\"paragraph\" style:parent-style-name=\"Index\" style:class=\"index\">"
@@ -88,44 +105,62 @@ public static class OdtWriter
             + (bold ? "<style:text-properties fo:font-weight=\"bold\"/>" : "") + "</style:style>";
 
         var b = new StringBuilder(Head + $"<office:document-styles {Ns} office:version=\"1.3\">");
-        b.Append("<office:font-face-decls><style:font-face style:name=\"Arial\" svg:font-family=\"Arial\" style:font-family-generic=\"swiss\" style:font-pitch=\"variable\"/></office:font-face-decls>");
+        b.Append(FontFaces(look));
         b.Append("<office:styles>");
-        b.Append($"<style:default-style style:family=\"paragraph\"><style:paragraph-properties fo:orphans=\"2\" fo:widows=\"2\"/><style:text-properties style:font-name=\"Arial\" fo:font-size=\"{Pt(BodyPt)}\" fo:language=\"{lang}\" fo:country=\"{country}\"/></style:default-style>");
+        b.Append($"<style:default-style style:family=\"paragraph\"><style:paragraph-properties fo:orphans=\"2\" fo:widows=\"2\"/><style:text-properties style:font-name=\"{Xml(look.Font)}\" fo:font-size=\"{Pt(look.Body)}\" fo:language=\"{lang}\" fo:country=\"{country}\"/></style:default-style>");
         b.Append("<style:default-style style:family=\"table\"><style:table-properties table:border-model=\"collapsing\"/></style:default-style>");
         b.Append(Para("Standard", "", "", "", "", " style:class=\"text\""));
         b.Append(Para("Text_20_body", "Text body", "Standard", "fo:margin-top=\"0mm\" fo:margin-bottom=\"2.5mm\" fo:line-height=\"115%\"", "", " style:class=\"text\""));
         b.Append(Para("Heading", "", "Standard", "fo:keep-with-next=\"always\" fo:margin-top=\"4mm\" fo:margin-bottom=\"2mm\"", "fo:font-weight=\"bold\"", " style:next-style-name=\"Text_20_body\" style:class=\"text\""));
         b.Append(Heading(1, 7)).Append(Heading(2, 5)).Append(Heading(3, 4));
         b.Append(Para("Title", "", "Heading", "fo:text-align=\"center\"", "fo:font-size=\"22pt\" fo:font-weight=\"bold\"", " style:class=\"chapter\""));
-        b.Append(Para("Caption", "", "Standard", "fo:margin-top=\"1.5mm\" fo:margin-bottom=\"3.5mm\"", $"fo:font-size=\"{Pt(CaptionPt)}\" fo:font-style=\"italic\"", " style:class=\"extra\""));
-        b.Append(Para("Note", "", "Text_20_body", "", $"fo:font-size=\"{Pt(NotePt)}\" fo:color=\"#555555\"", " style:class=\"text\""));
+        b.Append(Para("Caption", "", "Standard", "fo:margin-top=\"1.5mm\" fo:margin-bottom=\"3.5mm\"", $"fo:font-size=\"{Pt(look.Caption)}\" fo:font-style=\"italic\"", " style:class=\"extra\""));
+        b.Append(Para("Note", "", "Text_20_body", "", $"fo:font-size=\"{Pt(look.Note)}\" fo:color=\"#555555\"", " style:class=\"text\""));
         b.Append(Para("List", "", "Text_20_body", "fo:margin-bottom=\"1mm\"", "", " style:class=\"list\""));
-        b.Append(Para("Table_20_Contents", "Table Contents", "Standard", "fo:margin-top=\"0.3mm\" fo:margin-bottom=\"0.3mm\"", $"fo:font-size=\"{Pt(TablePt)}\"", " style:class=\"extra\""));
+        b.Append(Para("Table_20_Contents", "Table Contents", "Standard", "fo:margin-top=\"0.3mm\" fo:margin-bottom=\"0.3mm\"", $"fo:font-size=\"{Pt(look.Table)}\"", " style:class=\"extra\""));
         b.Append(Para("Table_20_Heading", "Table Heading", "Table_20_Contents", "", "fo:font-weight=\"bold\"", " style:class=\"extra\""));
         b.Append(Para("Index", "", "Standard", "", "", " style:class=\"index\""));
-        b.Append(Para("Contents_20_Heading", "Contents Heading", "Heading", "fo:margin-top=\"4mm\" fo:margin-bottom=\"3mm\"", $"fo:font-size=\"{Pt(HeadingPt(1))}\" fo:font-weight=\"bold\"", " style:class=\"index\""));
+        b.Append(Para("Contents_20_Heading", "Contents Heading", "Heading", "fo:margin-top=\"4mm\" fo:margin-bottom=\"3mm\"", $"fo:font-size=\"{Pt(look.Heading(1))}\" fo:font-weight=\"bold\"", " style:class=\"index\""));
         b.Append(Tabbed("Contents_20_1", "Contents 1", 0, true)).Append(Tabbed("Contents_20_2", "Contents 2", 6, false));
-        b.Append(Para("Header", "", "Standard", "", $"fo:font-size=\"{Pt(HeaderPt)}\" fo:color=\"#555555\"", " style:class=\"extra\""));
-        b.Append(Para("Footer", "", "Standard", "fo:text-align=\"center\"", $"fo:font-size=\"{Pt(HeaderPt)}\" fo:color=\"#555555\"", " style:class=\"extra\""));
+        b.Append(Para("Header", "", "Standard", "", $"fo:font-size=\"{Pt(look.Header)}\" fo:color=\"#555555\"", " style:class=\"extra\""));
+        b.Append(Para("Footer", "", "Standard", "fo:text-align=\"center\"", $"fo:font-size=\"{Pt(look.Header)}\" fo:color=\"#555555\"", " style:class=\"extra\""));
         b.Append("<text:outline-style style:name=\"Outline\">");
         for (var l = 1; l <= 10; l++) b.Append($"<text:outline-level-style text:level=\"{l}\" style:num-format=\"\"/>");
         b.Append("</text:outline-style>");
         b.Append("</office:styles>");
 
         // The body starts at the margins as the PDF's does: the header in the top margin, the footer in the bottom one.
-        var hasHeader = p.Header.Count > 0;
+        var hasHeader = p.Header.Count > 0 || logo != null;
         var hasFooter = p.Footer.Count > 0;
-        var band = HeaderPt * 1.2 * 25.4 / 72;
-        var top = hasHeader ? Math.Max(5, p.Top * 0.4) : p.Top;
+        var band = look.Header * 1.2 * 25.4 / 72;
+        var headerBand = logo is { } lb ? Math.Max(band, lb.H) : band;
+        var top = hasHeader ? DocLook.HeaderTop(p) : p.Top;
         var bottom = hasFooter ? Math.Max(5, p.Bottom * 0.4) : p.Bottom;
         b.Append("<office:automatic-styles><style:page-layout style:name=\"pm1\">")
          .Append($"<style:page-layout-properties fo:page-width=\"{Mm(p.W)}\" fo:page-height=\"{Mm(p.H)}\" style:print-orientation=\"{(p.W > p.H ? "landscape" : "portrait")}\"")
          .Append($" fo:margin-top=\"{Mm(top)}\" fo:margin-bottom=\"{Mm(bottom)}\" fo:margin-left=\"{Mm(p.Left)}\" fo:margin-right=\"{Mm(p.Right)}\"/>")
-         .Append(hasHeader ? $"<style:header-style><style:header-footer-properties fo:min-height=\"0mm\" fo:margin-bottom=\"{Mm(Math.Max(1, p.Top - top - band))}\" style:dynamic-spacing=\"false\"/></style:header-style>" : "<style:header-style/>")
+         .Append(hasHeader ? $"<style:header-style><style:header-footer-properties fo:min-height=\"0mm\" fo:margin-bottom=\"{Mm(Math.Max(1, p.Top - top - headerBand))}\" style:dynamic-spacing=\"false\"/></style:header-style>" : "<style:header-style/>")
          .Append(hasFooter ? $"<style:footer-style><style:header-footer-properties fo:min-height=\"0mm\" fo:margin-top=\"{Mm(Math.Max(1, p.Bottom - bottom - band))}\" style:dynamic-spacing=\"false\"/></style:footer-style>" : "<style:footer-style/>")
-         .Append("</style:page-layout></office:automatic-styles>");
+         .Append("</style:page-layout>");
+        if (logo is { } box)
+        {
+            // The logo's frame standing on the line (as the body's pictures), and the header's tab: after the logo on the left, at the text's edge on the right.
+            b.Append("<style:style style:name=\"frLogo\" style:family=\"graphic\"><style:graphic-properties style:vertical-pos=\"top\" style:vertical-rel=\"baseline\" fo:border=\"none\" fo:padding=\"0mm\"/></style:style>")
+             .Append("<style:style style:name=\"P_header_logo\" style:family=\"paragraph\" style:parent-style-name=\"Header\"><style:paragraph-properties><style:tab-stops>")
+             .Append(look.Logo!.Right ? $"<style:tab-stop style:position=\"{Mm(tw)}\" style:type=\"right\"/>" : $"<style:tab-stop style:position=\"{Mm(box.W + DocLook.LogoGap)}\"/>")
+             .Append("</style:tab-stops></style:paragraph-properties></style:style>");
+        }
+        b.Append("</office:automatic-styles>");
         b.Append("<office:master-styles><style:master-page style:name=\"Standard\" style:page-layout-name=\"pm1\">");
-        if (hasHeader) b.Append("<style:header><text:p text:style-name=\"Header\">").Append(Writer.Runs(p.Header)).Append("</text:p></style:header>");
+        if (logo is { } frame)
+        {
+            var image = $"<draw:frame draw:style-name=\"frLogo\" draw:name=\"Logo\" text:anchor-type=\"as-char\" svg:width=\"{Mm(frame.W)}\" svg:height=\"{Mm(frame.H)}\" draw:z-index=\"0\">"
+                + $"<draw:image xlink:href=\"Pictures/logo.{look.Logo!.Extension}\" xlink:type=\"simple\" xlink:show=\"embed\" xlink:actuate=\"onLoad\" draw:mime-type=\"{look.Logo.Mime}\"/></draw:frame>";
+            var runs = Writer.Runs(p.Header);
+            b.Append("<style:header><text:p text:style-name=\"P_header_logo\">")
+             .Append(look.Logo.Right ? runs + "<text:tab/>" + image : image + "<text:tab/>" + runs).Append("</text:p></style:header>");
+        }
+        else if (hasHeader) b.Append("<style:header><text:p text:style-name=\"Header\">").Append(Writer.Runs(p.Header)).Append("</text:p></style:header>");
         if (hasFooter) b.Append("<style:footer><text:p text:style-name=\"Footer\">").Append(Writer.Runs(p.Footer)).Append("</text:p></style:footer>");
         b.Append("</style:master-page></office:master-styles></office:document-styles>");
         return b.ToString();
@@ -200,7 +235,7 @@ public static class OdtWriter
             b.Append("<style:style style:name=\"P_head_num\" style:family=\"paragraph\" style:parent-style-name=\"Table_20_Heading\"><style:paragraph-properties fo:text-align=\"end\"/></style:style>");
             b.Append("<style:style style:name=\"P_picture\" style:family=\"paragraph\" style:parent-style-name=\"Standard\"><style:paragraph-properties fo:text-align=\"center\" fo:keep-with-next=\"always\" fo:margin-bottom=\"1mm\"/></style:style>");
             b.Append("<style:style style:name=\"P_caption\" style:family=\"paragraph\" style:parent-style-name=\"Caption\"><style:paragraph-properties fo:text-align=\"center\"/></style:style>");
-            b.Append("<style:style style:name=\"P_title\" style:family=\"paragraph\" style:parent-style-name=\"Caption\"><style:paragraph-properties fo:keep-with-next=\"always\" fo:margin-bottom=\"1.5mm\"/><style:text-properties fo:font-style=\"normal\" fo:font-weight=\"bold\" fo:font-size=\"" + Pt(BodyPt) + "\"/></style:style>");
+            b.Append("<style:style style:name=\"P_title\" style:family=\"paragraph\" style:parent-style-name=\"Caption\"><style:paragraph-properties fo:keep-with-next=\"always\" fo:margin-bottom=\"1.5mm\"/><style:text-properties fo:font-style=\"normal\" fo:font-weight=\"bold\" fo:font-size=\"" + Pt(DocLook.Of(doc.Page).Body) + "\"/></style:style>");
             b.Append("<style:style style:name=\"P_break\" style:family=\"paragraph\" style:parent-style-name=\"Standard\"><style:paragraph-properties fo:break-before=\"page\"/></style:style>");
             b.Append("<style:style style:name=\"P_after\" style:family=\"paragraph\" style:parent-style-name=\"Standard\"><style:paragraph-properties fo:margin-bottom=\"1mm\"/><style:text-properties fo:font-size=\"4pt\"/></style:style>");
             const string border = "0.5pt solid #000000";

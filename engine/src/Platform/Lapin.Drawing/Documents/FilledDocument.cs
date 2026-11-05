@@ -12,8 +12,11 @@ public sealed record FilledDocument(string Title, DocPage Page, IReadOnlyList<Do
 /// <summary>Who and what the document is: written into the file's properties (DOCX core.xml, ODT meta.xml, the PDF's Info).</summary>
 public sealed record DocMeta(string Author = "", string Subject = "", string Revision = "", string Status = "", string Lang = "ro");
 
-/// <summary>The paper (mm), its margins (top, right, bottom, left), and the header and footer as runs; a run's Field "page" or "pages" is the page number or count.</summary>
-public sealed record DocPage(double W, double H, double Top, double Right, double Bottom, double Left, IReadOnlyList<DocRun> Header, IReadOnlyList<DocRun> Footer)
+/// <summary>
+/// The paper (mm), its margins (top, right, bottom, left), and the header and footer as runs; a run's Field "page" or "pages" is
+/// the page number or count; its style (fonts, sizes, the headings' colour, the logo), null for Lapin's own look.
+/// </summary>
+public sealed record DocPage(double W, double H, double Top, double Right, double Bottom, double Left, IReadOnlyList<DocRun> Header, IReadOnlyList<DocRun> Footer, DocStyle? Style = null)
 {
     public static DocPage A4 => new(210, 297, 20, 20, 20, 25, [], []);
     public double TextWidth => W - Left - Right;

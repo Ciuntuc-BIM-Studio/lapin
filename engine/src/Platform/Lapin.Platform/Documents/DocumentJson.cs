@@ -61,6 +61,8 @@ public static class DocumentJson
         {
             ["w"] = d.Page.W, ["h"] = d.Page.H, ["margins"] = new JsonArray(d.Page.Top, d.Page.Right, d.Page.Bottom, d.Page.Left),
             ["header"] = Runs(d.Page.Header), ["footer"] = Runs(d.Page.Footer),
+            // The style as kept (fonts, size, the headings' colour, the logo), for the preview to look as the files will.
+            ["style"] = (doc.Attrs["page"] as JsonObject)?["style"]?.DeepClone(),
         },
         ["meta"] = new JsonObject { ["author"] = d.Meta.Author, ["subject"] = d.Meta.Subject, ["revision"] = d.Meta.Revision, ["status"] = d.Meta.Status, ["lang"] = d.Meta.Lang },
         ["blocks"] = new JsonArray(d.Blocks.Select(b => (JsonNode)Block(b)).ToArray()),

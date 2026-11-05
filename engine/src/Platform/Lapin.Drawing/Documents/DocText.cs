@@ -54,8 +54,9 @@ public static class DocText
     /// A table's column widths (mm) filling <paramref name="width"/>: by its relative Widths when given, else by content,
     /// each column at least as wide as its longest word, the rest shared by how much text each holds on one line.
     /// </summary>
-    public static double[] ColumnWidths(DocTable t, double width, double padding = 3)
+    public static double[] ColumnWidths(DocTable t, double width, double padding = 3, Func<string, bool, double, double>? measure = null, double pt = TablePt)
     {
+        var mm = measure ?? HelveticaMetrics.Mm;
         var n = Math.Max(t.Header.Count, t.Rows.Count == 0 ? 0 : t.Rows.Max(r => r.Count));
         if (n == 0) return [];
         if (t.Widths is { } given && given.Count >= n && given.Take(n).All(w => w > 0))
@@ -67,9 +68,9 @@ public static class DocText
         var least = new double[n];
         void Take(int c, string text, bool bold)
         {
-            natural[c] = Math.Max(natural[c], HelveticaMetrics.Mm(text, bold, TablePt) + padding);
+            natural[c] = Math.Max(natural[c], mm(text, bold, pt) + padding);
             foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                least[c] = Math.Max(least[c], Math.Min(HelveticaMetrics.Mm(word, bold, TablePt), width / n) + padding);
+                least[c] = Math.Max(least[c], Math.Min(mm(word, bold, pt), width / n) + padding);
         }
         if (!t.Plain) for (var c = 0; c < t.Header.Count; c++) Take(c, t.Header[c], true);
         for (var r = 0; r < t.Rows.Count; r++)

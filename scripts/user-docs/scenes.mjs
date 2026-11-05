@@ -61,6 +61,32 @@ const ASSISTANT = {
 };
 
 /** A small house on the ground floor: 12 × 8 m, two rooms, a door, windows, a floor and a gable roof. */
+/**
+ * A small company logo for the guide, as a PNG made here (a blue mark and three grey bars, 240 × 80 px): the Style tab's Choose logo… takes it.
+ */
+async function logoPng() {
+  const { deflateSync, crc32 } = await import('node:zlib');
+  const w = 240, h = 80;
+  const raw = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) {
+    raw[y * (w * 4 + 1)] = 0;
+    for (let x = 0; x < w; x++) {
+      const mark = x >= 6 && x < 74 && y >= 6 && y < 74 && !(x >= 26 && x < 54 && y >= 26 && y < 74);
+      const bar = (x >= 90 && x < 232 && y >= 14 && y < 32) || (x >= 90 && x < 200 && y >= 40 && y < 50) || (x >= 90 && x < 170 && y >= 58 && y < 66);
+      const [r, g, b, a] = mark ? [31, 95, 158, 255] : bar ? [96, 104, 116, 255] : [255, 255, 255, 0];
+      raw.set([r, g, b, a], y * (w * 4 + 1) + 1 + x * 4);
+    }
+  }
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td) >>> 0);
+    return Buffer.concat([len, td, crc]);
+  };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr.set([8, 6, 0, 0, 0], 8);
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+
 async function house(t, { roof = true } = {}) {
   const s = await t.storey();
   const walls = {};
@@ -3556,6 +3582,136 @@ export const scenes = [
       t.expect(await t.page.locator('[data-field=issue-documents] input[type=checkbox]').first().isChecked(), 'the document goes with the issue, ticked at first');
       await t.shot('issue-documents', { of: '.dialog .cde-sheets', pad: 6 });
       await t.page.locator('.dialog-head button[title=Close]').click(); await t.wait(300);
+    },
+  },
+  {
+    // The document editor, templates and the company style (docs/plan-documents.md, stages 2 and 4): the technical report of the
+    // house edited — a line with the client's field (Insert → Field…, searched), a table of the project, the storeys' repeat with
+    // its item stepper —, then the Style tab (the headings' colour, a small logo made here), Save as template… into the project,
+    // and Manage → Document templates… on it.
+    id: 'documents-editor',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t);
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      await t.cmd('project.setInfo', {
+        name: 'Locuință unifamilială P', number: '12/2026', phase: 'DTAC', address: 'Str. Corneliu Codreanu nr. 14, Huși, jud. Vaslui',
+        client: 'Popescu Ion și Maria', designer: 'Ciuntuc BIM Studio SRL', chiefArchitect: 'arh. Ionuț Ciuntuc', author: 'arh. Ionuț Ciuntuc',
+      });
+      await t.cmd('document.create', { template: 'memoriu-arhitectura' });
+      await t.tool('manage.documents');
+      await t.page.waitForSelector('[data-dialog=documents] .doc-sheet:not(.doc-measure)', { timeout: 20_000 });
+      await t.wait(500);
+      // Edit: the document's own blocks on a page, its fields as chips with their values.
+      await t.page.locator('[data-field=doc-edit]').click();
+      await t.page.waitForSelector('[data-field=doc-editor] .doc-chip', { timeout: 20_000 });
+      await t.wait(800);
+      t.expect((await t.page.locator('[data-field=doc-editor] .doc-chip[data-chip="project.number"]').first().innerText()).includes('12/2026'), 'a field shows as a chip with its value now');
+      // A line of its own after the phase's: "Beneficiar: " and the client's field, found by searching.
+      // The caret at the end of the phase's paragraph, as a click there puts it (the line wraps, so no key reaches its end alike everywhere).
+      await t.page.locator('[data-field=doc-editor] .doc-editor-text p', { hasText: 'Faza:' }).first().click();
+      t.expect(await t.page.evaluate(async () => {
+        const { useDocEditor } = await import('/src/modules/core/documents/editor/editorStore.ts');
+        const ed = useDocEditor.getState().editor;
+        let end = -1;
+        ed.state.doc.descendants((n, pos) => { if (end < 0 && n.type.name === 'paragraph' && n.textContent.startsWith('Faza:')) end = pos + n.nodeSize - 1; return end < 0; });
+        if (end < 0) return false;
+        ed.chain().focus().setTextSelection(end).run();
+        return true;
+      }), 'the phase\'s paragraph is in the editor');
+      await t.page.keyboard.press('Enter');
+      await t.page.keyboard.type('Beneficiar: ');
+      await t.page.locator('[data-field=doc-insert]').click();
+      await t.page.locator('[data-field=doc-insert-field]').click();
+      await t.page.locator('[data-field=doc-field-search]').fill('client');
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-field="doc-field-project.client"]').count() === 1, 'searching "client" finds the client\'s field');
+      t.expect((await t.page.locator('[data-field="doc-field-project.client"]').innerText()).includes('Popescu'), 'the picker shows the field\'s value');
+      await t.shot('documents-insert-field', { of: '[data-field=doc-editor] .doc-insert .doc-menu', pad: 8 });
+      await t.page.locator('[data-field="doc-field-project.client"]').click();
+      await t.wait(300);
+      t.expect((await t.page.locator('[data-field=doc-editor] p', { hasText: 'Beneficiar:' }).first().locator('.doc-chip[data-chip="project.client"]').count()) === 1, 'the client\'s chip stands in the line typed');
+      // A table of the project after it: the block's settings on the right.
+      await t.page.keyboard.press('Enter');
+      await t.page.locator('[data-field=doc-insert]').click();
+      await t.page.locator('[data-field=doc-insert-table]').click();
+      const table = t.page.locator('[data-field^=doc-table-]').first();
+      await table.waitFor({ timeout: 10_000 });
+      await table.click();
+      await t.wait(800);
+      // The table stands after the client's line; a click on it selects it.
+      const placed = await t.page.evaluate(() => {
+        const line = [...document.querySelectorAll('[data-field=doc-editor] .doc-editor-text p')].find((p) => p.textContent.includes('Beneficiar:'));
+        let n = line?.nextElementSibling;
+        const atom = n && (n.matches('.doc-atom') ? n : n.querySelector('.doc-atom'));
+        if (!atom || !atom.matches('.doc-atom-table')) return false;
+        atom.setAttribute('data-user-docs-new', '');
+        return true;
+      });
+      t.expect(placed, 'the table is inserted after the client\'s line');
+      await t.page.locator('[data-user-docs-new] .doc-atom-tag').click();
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-field=doc-block-settings] [data-field=doc-set-source]').count() === 1, 'the table inserted is selected, its settings on the right');
+      await t.page.waitForFunction(() => document.querySelectorAll('[data-field=doc-set-columns] input').length > 0, null, { timeout: 10_000 }).catch(() => {});
+      await t.shot('documents-editor', { of: '[data-dialog=documents]', pad: 0 });
+      // The storeys' repeat: its band, and the item shown while editing stepped with › .
+      const band = t.page.locator('[data-field=doc-editor] .doc-repeat[data-repeat=storeys] > .doc-band').first();
+      await band.scrollIntoViewIfNeeded();
+      t.expect((await band.innerText()).match(/\d+ items/) != null, 'the repeat\'s band counts the storeys');
+      await band.locator('[data-field=doc-repeat-next]').click();
+      await t.wait(400);
+      t.expect((await band.innerText()).includes('2/'), 'the band\'s › shows the next storey');
+      await band.click();
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-field=doc-block-settings] [data-field=doc-set-over]').count() === 1, 'a click on the band shows the repeat\'s settings');
+      await t.shot('documents-repeat', { of: t.page.locator('[data-field=doc-editor] .doc-repeat[data-repeat=storeys]').first(), pad: 6, maxHeight: 360 });
+      // The company style: the Style tab in preview, the headings' colour and a logo.
+      await t.page.locator('[data-field=doc-edit]').click();
+      await t.wait(800);
+      await t.page.locator('[data-field=doc-style-tab]').click();
+      await t.page.waitForSelector('[data-field=tpl-style-color]', { timeout: 10_000 });
+      await t.page.locator('[data-field=tpl-style-color]').fill('#1f5f9e');
+      await t.wait(900);
+      const { writeFileSync } = await import('node:fs');
+      const logo = join(mkdtempSync(join(tmpdir(), 'lapin-guide-logo-')), 'logo.png');
+      writeFileSync(logo, await logoPng());
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await t.page.locator('[data-field=tpl-style-logo]').click();
+      await (await chooser).setFiles(logo);
+      await t.page.waitForSelector('[data-field=tpl-style-logo-width]', { timeout: 10_000 });
+      await t.page.locator('[data-field=tpl-style-logo-width]').fill('35');
+      await t.page.locator('[data-field=tpl-style-logo-width]').press('Enter');
+      await t.page.locator('[data-field=tpl-style-logo-width]').blur();
+      await t.wait(1200);
+      const style = await t.call('doc.query', { name: 'document.style', args: { id: (await t.nodes()).find((n) => n.type === 'LapinDocument')?.id } });
+      t.expect(/1f5f9e/i.test(JSON.stringify(style ?? {})), 'the headings\' colour is kept on the document');
+      t.expect(JSON.stringify(style ?? {}).includes('"w":35'), 'the logo is kept with its width');
+      await t.shot('documents-style', { of: '[data-dialog=documents] .doc-side.right', pad: 0 });
+      // Save as template… into this project.
+      await t.page.locator('[data-field=doc-save-template]').click();
+      await t.page.waitForSelector('[data-dialog=save-template]', { timeout: 10_000 });
+      await t.page.locator('[data-field=tpl-save-title]').fill('Memoriu CBS');
+      await t.page.locator('[data-field=tpl-save-description]').fill('The technical report with the company\'s logo and colours');
+      await t.page.locator('[data-field=tpl-save-where]').selectOption('project');
+      await t.shot('documents-save-template', { of: '[data-dialog=save-template]', pad: 0 });
+      await t.page.locator('[data-field=tpl-save-go]').click();
+      await t.page.waitForSelector('[data-dialog=save-template]', { state: 'detached', timeout: 10_000 });
+      await t.wait(500);
+      t.expect((await t.page.locator('[data-dialog=documents] [data-field^=doc-template-]').allInnerTexts()).some((s) => s.includes('Memoriu CBS')), 'the template is offered under New from template');
+      await t.page.locator('[data-dialog=documents] .dialog-head button[title=Close]').click(); await t.wait(300);
+      // Manage → Document templates…: the three groups, the project's template with its style.
+      await t.tool('manage.documentTemplates');
+      await t.page.waitForSelector('[data-dialog=document-templates]', { timeout: 10_000 });
+      const own = t.page.locator('[data-dialog=document-templates] [data-origin=project]').first();
+      await own.waitFor({ timeout: 10_000 });
+      await own.click();
+      await t.page.waitForSelector('[data-dialog=document-templates] [data-field=tpl-style-sample] img', { timeout: 10_000 });
+      t.expect(await t.page.locator('[data-dialog=document-templates] [data-field=tpl-rename]').count() === 1, 'a project template can be renamed');
+      t.expect(await t.page.locator('[data-dialog=document-templates] [data-origin=builtin]').count() === 3, 'the three built-in templates are listed');
+      await t.shot('document-templates', { of: '[data-dialog=document-templates]', pad: 0 });
+      await t.page.locator('[data-dialog=document-templates] .dialog-head button[title=Close]').click(); await t.wait(300);
     },
   },
   {

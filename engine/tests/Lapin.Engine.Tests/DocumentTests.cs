@@ -578,4 +578,69 @@ public sealed class DocumentTests : IDisposable
         // Nothing asked: refused.
         Assert.Throws<CommandException>(() => CdeIssue.Run(f.Session, files.Issues(f.Session), new JsonObject { ["sheets"] = new JsonArray() }));
     }
+
+    [Fact]
+    public void A_picture_cropped_to_a_boundary_is_the_boundary_at_its_scale_as_a_sheet_shows_it()
+    {
+        var (f, storeys) = House();
+        var id = Create(f);
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = storeys["P"], ["name"] = "Plan parter", ["scale"] = 50 })!["id"]!;
+        var other = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = storeys["E1"], ["name"] = "Plan etaj", ["scale"] = 50 })!["id"]!;
+        // A corner of the house, 4 × 3 m of its 10 × 8.
+        var corner = (string)f.Run("view.addBoundary", new JsonObject { ["viewId"] = plan, ["a"] = new JsonArray(-0.5, -0.5), ["b"] = new JsonArray(3.5, 2.5), ["name"] = "Colț" })!["id"]!;
+        var elsewhere = (string)f.Run("view.addBoundary", new JsonObject { ["viewId"] = other, ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(2, 2) })!["id"]!;
+        var blocks = new JsonArray(
+            new JsonObject { ["kind"] = "image", ["view"] = plan, ["boundary"] = corner },
+            new JsonObject { ["kind"] = "image", ["view"] = plan, ["boundary"] = corner, ["scale"] = 100 },
+            new JsonObject { ["kind"] = "image", ["view"] = plan, ["boundary"] = corner, ["width"] = 60 },
+            new JsonObject { ["kind"] = "image", ["view"] = plan });
+        f.Run("document.update", new JsonObject { ["id"] = id, ["blocks"] = blocks });
+        var images = Fill(f, id).Doc.Blocks.OfType<DocImage>().ToList();
+        Assert.Equal(4, images.Count);
+        // At the view's 1:50: 4 m → 80 mm, 3 m → 60 mm, exactly the boundary (no margin, as a bound viewport's box).
+        Assert.Equal(80, images[0].W, 3);
+        Assert.Equal(60, images[0].H, 3);
+        Assert.Equal(40, images[1].W, 3);
+        Assert.Equal(30, images[1].H, 3);
+        Assert.Equal(60, images[2].W, 3);
+        Assert.Equal(45, images[2].H, 3);
+        // Cropped: every pen inside the box, and less drawn than the whole plan.
+        var pts = images[1].Pens.SelectMany(p => p.Segments.SelectMany(x => new[] { x.A, x.B }).Concat(p.Loops.SelectMany(l => l))).ToList();
+        Assert.NotEmpty(pts);
+        Assert.True(pts.All(p => p.X >= -1e-6 && p.Y >= -1e-6 && p.X <= images[1].W + 1e-6 && p.Y <= images[1].H + 1e-6));
+        Assert.True(images[3].W > images[0].W);
+        Assert.NotEqual(images[0].Key, images[3].Key);
+
+        // A boundary of another view is refused.
+        var wrong = new JsonArray(new JsonObject { ["kind"] = "image", ["view"] = plan, ["boundary"] = elsewhere });
+        Assert.Throws<CommandException>(() => f.Run("document.update", new JsonObject { ["id"] = id, ["blocks"] = wrong }));
+    }
+
+    [Fact]
+    public void An_issued_docx_carries_the_pictures_the_interface_made()
+    {
+        var (f, storeys) = House();
+        var id = Create(f);
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = storeys["P"], ["name"] = "Plan parter", ["scale"] = 100 })!["id"]!;
+        f.Run("document.update", new JsonObject { ["id"] = id, ["blocks"] = new JsonArray(new JsonObject { ["kind"] = "image", ["view"] = plan, ["caption"] = "Plan" }) });
+        var key = Assert.Single(Fill(f, id).Doc.Blocks.OfType<DocImage>()).Key;
+        var png = DocPng.Encode(2, 2, [.. Enumerable.Repeat((byte)128, 12)]);
+        const string svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10mm\" height=\"10mm\"/>";
+        byte[]? docx = null;
+        CdeIssue.Run(f.Session, PackageFiles.Create().Issues(f.Session),
+            new JsonObject
+            {
+                ["sheets"] = new JsonArray(), ["documents"] = new JsonArray(id), ["documentsDocx"] = true, ["revision"] = "P01", ["status"] = "S2", ["toFolder"] = false,
+                ["documentImages"] = new JsonObject { [id] = new JsonObject { [key] = new JsonObject { ["svg"] = svg, ["png"] = Convert.ToBase64String(png) } } },
+            },
+            null, (doc, format, pictures) => { var b = DocumentExport.Write(doc, format, pictures); if (format == "docx") docx = b; return b; });
+        Assert.NotNull(docx);
+        using var zip = new System.IO.Compression.ZipArchive(new MemoryStream(docx!));
+        var media = zip.Entries.Where(e => e.FullName.StartsWith("word/media/", StringComparison.Ordinal)).ToDictionary(e => e.FullName);
+        Assert.Contains("word/media/image1.png", media.Keys);
+        Assert.Contains("word/media/image1.svg", media.Keys);
+        using var ms = new MemoryStream();
+        media["word/media/image1.png"].Open().CopyTo(ms);
+        Assert.Equal(png, ms.ToArray());
+    }
 }

@@ -43,6 +43,73 @@ La scheda **Input** ha i testi che solo il progettista può scrivere, raggruppat
 - **Aggiorna dal modello** riprende il testo e l’impaginazione del modello, per un documento fatto prima che il modello cambiasse. I tuoi input restano.
 - **Rinomina**, **Duplica** ed **Elimina** agiscono sul documento mostrato. Un’eliminazione è un solo passo di annullamento.
 
+## Modificare un documento
+
+**Modifica**, in basso nella finestra Documenti, trasforma la pagina al centro in un editor del testo proprio del documento; **Anteprima** lo mostra di nuovo sulle sue pagine. Quello che cambi appartiene solo a questo documento: il modello resta com’era (**Salva come modello…**, più sotto, tiene le tue modifiche come modello).
+
+![Modificare un documento: i campi come etichette con i loro valori, una tabella del progetto selezionata e le sue impostazioni a destra](shots/documents-editor.webp)
+
+- **La barra degli strumenti** ha gli stili del testo: **Paragrafo**, **Titolo 1**–**3**, grassetto, corsivo, elenchi puntati e numerati, annulla e ripeti. Funzionano anche i tasti consueti (Ctrl+B, Ctrl+I, Ctrl+Z nell’editor).
+- **I campi** appaiono come etichette con il loro nome e il valore attuale, per esempio il committente, *Popescu Ion și Maria*. Un campo che il progetto non compila ancora è arancione.
+- **I blocchi del progetto** — una tabella, un’immagine, l’indice — sono disegnati con il loro contenuto reale. Un clic ne seleziona uno: le sue impostazioni appaiono a destra, al posto delle schede.
+
+Il salvataggio è automatico: un attimo dopo che smetti di scrivere e quando torni ad **Anteprima**; ogni modifica è un passo di annullamento del progetto.
+
+### Inserisci
+
+**Inserisci** mette al cursore:
+
+- **Campo…**: un campo del progetto, cercato per nome; l’elenco mostra il valore di ciascuno. Dentro una ripetizione sono offerti anche i campi dei suoi elementi (il nome di un piano, la superficie di un locale).
+
+  ![Inserisci → Campo…: “client” cercato, i campi con i loro valori](shots/documents-insert-field.webp)
+
+- **Tabella dal progetto…**: un abaco o un elenco del progetto (l’abaco dei serramenti, i locali, i materiali…). Nelle sue impostazioni: l’origine, il **Titolo**, le colonne mostrate e la riga del totale.
+- **Immagine di una vista…**: una pianta, una sezione, un prospetto o una vista 3D. Nelle sue impostazioni: **Scala 1:** o **Larghezza (mm)** (mai più larga del testo) e una **Didascalia**.
+- **Campi chiave–valore**: una tabella a due colonne di etichette e valori; un valore può contenere campi, come `{{project.name}}`.
+- **Ripeti per…**: il testo all’interno è scritto una volta per ogni elemento di una raccolta: i piani, i locali, le coperture, i materiali, le tavole, i documenti… Una fascia sopra dice **Per ogni** e quanti elementi ci sono; le sue frecce **‹ ›** cambiano l’elemento che l’editor mostra mentre scrivi. Nelle impostazioni, **Solo gli elementi dove** ne tiene alcuni, e **Testo quando non ce n’è nessuno** aggiunge ciò che si scrive quando non ce n’è nessuno.
+- **Condizione…**: il testo all’interno è scritto solo quando un campo ha un valore (o, spuntato, solo quando è vuoto). **Altrimenti: testo quando non è soddisfatta** aggiunge una seconda parte, scritta al suo posto.
+- **Testo da completare…**: un nuovo input, con etichetta, gruppo e testo predefinito; il suo testo lo scrivi nella scheda **Input**, in anteprima.
+- **Indice** e **Interruzione di pagina**.
+
+![Una ripetizione sui piani, una condizione al suo interno e i locali del piano mostrato, cambiato con ‹ ›](shots/documents-repeat.webp)
+
+Nelle impostazioni di un blocco, **Rimuovi** lo toglie; per una ripetizione o una condizione, **Mantieni solo il contenuto** toglie la fascia e tiene ciò che contiene.
+
+## I tuoi modelli
+
+**Salva come modello…** tiene il testo, l’impaginazione, gli input e lo stile del documento come modello. Dagli un titolo e una descrizione e scegli dove conservarlo:
+
+- **Questo progetto**: va con il file del progetto, a chiunque lo apra.
+- **La libreria di questo computer**: lo offre ogni progetto su questo computer.
+- **Entrambi**.
+
+**Salva come** può sostituire un modello salvato prima; i documenti già fatti da esso tengono il loro testo fino ad **Aggiorna dal modello**. Il nuovo modello compare subito sotto **Nuovo da modello**.
+
+![Salva come modello: il titolo, la descrizione e dove conservarlo](shots/documents-save-template.webp)
+
+**Gestisci → Modelli di documento…** mostra i modelli in tre gruppi: **Integrati** (quelli di Lapin), **Questo progetto** e **Questo computer**. Per quello scelto:
+
+- **Rinomina** ed **Elimina** (eliminare un modello del progetto è un passo di annullamento; i documenti fatti da esso tengono il loro testo).
+- **Duplica nel progetto** o **Duplica nella libreria**: un modello integrato si cambia solo attraverso una copia.
+- **Copia nella libreria** o **Copia nel progetto**, per spostarlo da un posto all’altro.
+- **Esporta…** scrive il modello come file `.json`; **Importa…** ne legge uno in questo progetto o nella libreria di questo computer. Così i colleghi condividono i modelli di uno studio.
+
+![Modelli di documento: gli integrati, quelli del progetto e quelli del computer, quello scelto con il suo stile](shots/document-templates.webp)
+
+## Lo stile dello studio
+
+Un documento, e un modello del progetto o della libreria, ha il suo stile: la scheda **Stile** della finestra Documenti per il documento mostrato, la parte **Stile** di Gestisci → Modelli di documento… per un modello. I modelli integrati tengono l’aspetto di Lapin: duplicane uno per dargli il tuo.
+
+- **Carattere (DOCX, ODT)**: Arial (quello di Lapin), Calibri, Times New Roman, Georgia, Verdana o Liberation Sans.
+- **Carattere del PDF**: Helvetica o Times, i caratteri propri del PDF; per impostazione predefinita il più vicino al carattere sopra.
+- **Dimensione del testo (pt)**: la dimensione del testo corrente, da 6 a 24 pt.
+- **Colore dei titoli**.
+- **Logo nell’intestazione**: **Scegli il logo…** prende un PNG o un JPEG (sotto 1 MB); imposta la sua **Larghezza (mm)** e se sta **A sinistra** o **A destra**. È scritto allo stesso modo in DOCX, ODT e PDF.
+
+Un campione sotto i campi mostra la parte alta della pagina come la mostreranno i file. **L’aspetto proprio di Lapin** toglie lo stile. Ogni modifica è un passo di annullamento.
+
+![La scheda Stile: il colore dei titoli e un logo nell’intestazione, con il campione](shots/documents-style.webp)
+
 ## Esportare
 
 - **Esporta DOCX** ed **Esporta ODT** scrivono un file che apri e modifichi in Word o LibreOffice, con i titoli come stili propri del programma, l’indice e la numerazione delle pagine come campi, e le immagini del progetto.
@@ -64,4 +131,8 @@ Lapin ha tre modelli, per ora in rumeno:
 - **Caiet de sarcini: tâmplărie și finisaje** (il capitolato per serramenti e finiture): i materiali del progetto per categoria, l’abaco dei serramenti con le quantità, le finiture locale per locale, e input per le generalità, i requisiti, l’esecuzione e il collaudo, con testi predefiniti da adattare.
 - **Borderou de piese scrise și desenate** (l’elenco degli elaborati scritti e grafici): i documenti e le tavole del progetto, con numero, titolo, scala e revisione.
 
-Un editor visuale per i tuoi modelli arriverà più avanti.
+Parti da uno di essi, cambialo nell’editor, poi **Salva come modello…** per avere il tuo.
+
+## Per gli assistenti IA
+
+Un assistente collegato tramite il ponte MCP di Lapin può creare un documento, scriverne gli input ed esportarlo con `lapin_document_export`: vedi [Lapin and AI agents](https://github.com/Ciuntuc-BIM-Studio/lapin-pro/blob/main/docs/mcp.md#documents) (in inglese).

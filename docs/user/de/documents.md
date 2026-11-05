@@ -43,6 +43,73 @@ Der Reiter **Eingaben** enthält die Texte, die nur der Planer schreiben kann, g
 - **Aus Vorlage aktualisieren** übernimmt Text und Aufbau der Vorlage erneut, für ein Dokument, das vor einer Änderung der Vorlage erstellt wurde. Ihre Eingaben bleiben erhalten.
 - **Umbenennen**, **Duplizieren** und **Löschen** wirken auf das angezeigte Dokument. Ein Löschen ist ein Rückgängig-Schritt.
 
+## Ein Dokument bearbeiten
+
+**Bearbeiten**, unten im Dialog Dokumente, macht die Seite in der Mitte zu einem Editor für den eigenen Text des Dokuments; **Vorschau** zeigt es wieder auf seinen Seiten. Was Sie ändern, gehört nur zu diesem Dokument: Die Vorlage bleibt, wie sie war (**Als Vorlage speichern…**, weiter unten, behält Ihre Änderungen als Vorlage).
+
+![Ein Dokument bearbeiten: die Felder als Marken mit ihren Werten, eine Tabelle des Projekts ausgewählt und ihre Einstellungen rechts](shots/documents-editor.webp)
+
+- **Die Werkzeugleiste** hat die Stile des Textes: **Absatz**, **Überschrift 1**–**3**, fett, kursiv, Aufzählung und nummerierte Liste, Rückgängig und Wiederholen. Die üblichen Tasten gehen auch (Strg+B, Strg+I, Strg+Z im Editor).
+- **Felder** erscheinen als Marken mit ihrem Namen und ihrem jetzigen Wert, zum Beispiel der Bauherr, *Popescu Ion și Maria*. Ein Feld, das das Projekt noch nicht füllt, ist orange.
+- **Die Blöcke des Projekts** — eine Tabelle, ein Bild, das Inhaltsverzeichnis — werden mit ihrem echten Inhalt gezeigt. Ein Klick wählt einen aus: Seine Einstellungen erscheinen rechts, anstelle der Reiter.
+
+Gespeichert wird von selbst: einen Moment, nachdem Sie aufhören zu tippen, und wenn Sie zur **Vorschau** zurückgehst; jede Änderung ist ein Rückgängig-Schritt des Projekts.
+
+### Einfügen
+
+**Einfügen** setzt an den Cursor:
+
+- **Feld…**: ein Feld des Projekts, nach seinem Namen gesucht; die Liste zeigt den Wert jedes Felds. In einer Wiederholung werden auch die Felder ihrer Elemente angeboten (der Name eines Geschosses, die Fläche eines Raums).
+
+  ![Einfügen → Feld…: „client“ gesucht, die Felder mit ihren Werten](shots/documents-insert-field.webp)
+
+- **Tabelle aus dem Projekt…**: eine Liste oder ein Verzeichnis des Projekts (die Fenster- und Türliste, die Räume, die Materialien…). In ihren Einstellungen: die **Quelle**, der **Titel**, die gezeigten Spalten und die Summenzeile.
+- **Bild einer Ansicht…**: ein Grundriss, Schnitt, eine Ansicht oder eine 3D-Ansicht. In seinen Einstellungen: **Maßstab 1:** oder **Breite (mm)** (nie breiter als der Text) und eine **Bildunterschrift**.
+- **Schlüssel–Wert-Felder**: eine zweispaltige Tabelle mit Bezeichnungen und Werten; ein Wert darf Felder enthalten, wie `{{project.name}}`.
+- **Wiederholen für…**: Der Text darin wird einmal für jedes Element einer Sammlung geschrieben: die Geschosse, die Räume, die Dächer, die Materialien, die Pläne, die Dokumente… Ein Band darüber sagt **Für jedes** und wie viele Elemente es gibt; seine Pfeile **‹ ›** wechseln das Element, das der Editor beim Schreiben zeigt. In den Einstellungen behält **Nur die Elemente, wo** einige davon, und **Text, wenn es keine gibt** fügt hinzu, was geschrieben wird, wenn es keine gibt.
+- **Bedingung…**: Der Text darin wird nur geschrieben, wenn ein Feld einen Wert hat (oder, angehakt, nur wenn es leer ist). **Sonst: Text, wenn sie nicht zutrifft** fügt einen zweiten Teil hinzu, der an seiner Stelle geschrieben wird.
+- **Zu ergänzender Text…**: eine neue Eingabe mit Bezeichnung, Gruppe und Standardtext; ihren Text schreiben Sie im Reiter **Eingaben**, in der Vorschau.
+- **Inhaltsverzeichnis** und **Seitenumbruch**.
+
+![Eine Wiederholung über die Geschosse, eine Bedingung darin und die Räume des gezeigten Geschosses, gewechselt mit ‹ ›](shots/documents-repeat.webp)
+
+In den Einstellungen eines Blocks entfernt **Entfernen** ihn; bei einer Wiederholung oder Bedingung nimmt **Nur den Inhalt behalten** das Band weg und behält, was darin steht.
+
+## Eigene Vorlagen
+
+**Als Vorlage speichern…** behält Text, Layout, Eingaben und Stil des Dokuments als Vorlage. Geben Sie ihr einen Titel und eine Beschreibung und wählen Sie, wo sie bleibt:
+
+- **Dieses Projekt**: Sie geht mit der Projektdatei, zu jedem, der sie öffnet.
+- **Die Bibliothek dieses Computers**: Jedes Projekt auf diesem Computer bietet sie an.
+- **Beides**.
+
+**Speichern als** kann eine früher gespeicherte Vorlage ersetzen; daraus erstellte Dokumente behalten ihren Text bis **Aus Vorlage aktualisieren**. Die neue Vorlage steht sofort unter **Neu aus Vorlage**.
+
+![Als Vorlage speichern: Titel, Beschreibung und wo sie bleibt](shots/documents-save-template.webp)
+
+**Verwalten → Dokumentvorlagen…** zeigt die Vorlagen in drei Gruppen: **Eingebaut** (Lapins), **Dieses Projekt** und **Dieser Computer**. Für die gewählte:
+
+- **Umbenennen** und **Löschen** (das Löschen einer Projektvorlage ist ein Rückgängig-Schritt; daraus erstellte Dokumente behalten ihren Text).
+- **Ins Projekt duplizieren** oder **In die Bibliothek duplizieren**: Eine eingebaute Vorlage wird nur über eine Kopie geändert.
+- **In die Bibliothek kopieren** oder **Ins Projekt kopieren**, um sie von einem Ort zum anderen zu bringen.
+- **Exportieren…** schreibt die Vorlage als `.json`-Datei; **Importieren…** liest eine in dieses Projekt oder in die Bibliothek dieses Computers. So teilen Kollegen die Vorlagen einer Firma.
+
+![Dokumentvorlagen: die eingebauten, die des Projekts und die des Computers, die gewählte mit ihrem Stil](shots/document-templates.webp)
+
+## Firmenstil
+
+Ein Dokument, und eine Vorlage des Projekts oder der Bibliothek, hat einen eigenen Stil: der Reiter **Stil** im Dialog Dokumente für das gezeigte Dokument, der Teil **Stil** in Verwalten → Dokumentvorlagen… für eine Vorlage. Eingebaute Vorlagen behalten Lapins Aussehen: Duplizieren Sie eine, um ihr Ihres zu geben.
+
+- **Schrift (DOCX, ODT)**: Arial (Lapins), Calibri, Times New Roman, Georgia, Verdana oder Liberation Sans.
+- **PDF-Schrift**: Helvetica oder Times, die eigenen Schriften des PDF; standardmäßig die, die der Schrift oben am nächsten kommt.
+- **Textgröße (pt)**: die Größe des Fließtexts, 6 bis 24 pt.
+- **Farbe der Überschriften**.
+- **Logo in der Kopfzeile**: **Logo wählen…** nimmt ein PNG oder JPEG (unter 1 MB); legen Sie seine **Breite (mm)** fest und ob es **Links** oder **Rechts** steht. Es wird in DOCX, ODT und PDF gleich geschrieben.
+
+Ein Muster unter den Feldern zeigt den Kopf der Seite, wie die Dateien ihn zeigen werden. **Lapins eigenes Aussehen** nimmt den Stil weg. Jede Änderung ist ein Rückgängig-Schritt.
+
+![Der Reiter Stil: die Farbe der Überschriften und ein Logo in der Kopfzeile, mit dem Muster](shots/documents-style.webp)
+
 ## Exportieren
 
 - **DOCX exportieren** und **ODT exportieren** schreiben eine Datei, die Sie in Word oder LibreOffice öffnen und bearbeiten können, mit den Überschriften als eigene Formatvorlagen des Programms, Inhaltsverzeichnis und Seitenzahlen als Felder und den Bildern des Projekts.
@@ -64,4 +131,8 @@ Lapin bringt drei Vorlagen mit, vorerst auf Rumänisch:
 - **Caiet de sarcini: tâmplărie și finisaje** (die Leistungsbeschreibung für Fenster, Türen und Oberflächen): die Materialien des Projekts nach Kategorie, die Tür- und Fensterliste mit Stückzahlen, die Oberflächen Raum für Raum und Eingaben für Allgemeines, Anforderungen, Ausführung und Abnahme, mit Standardtexten zum Anpassen.
 - **Borderou de piese scrise și desenate** (das Verzeichnis der schriftlichen und gezeichneten Teile): die Dokumente und Pläne des Projekts mit Nummer, Titel, Maßstab und Revision.
 
-Ein visueller Editor für eigene Vorlagen folgt später.
+Gehen Sie von einer davon aus, ändern Sie sie im Editor und dann **Als Vorlage speichern…**, um Ihre eigene zu haben.
+
+## Für KI-Assistenten
+
+Ein über Lapins MCP-Brücke verbundener Assistent kann ein Dokument erstellen, seine Eingaben schreiben und es mit `lapin_document_export` exportieren: siehe [Lapin and AI agents](https://github.com/Ciuntuc-BIM-Studio/lapin-pro/blob/main/docs/mcp.md#documents) (auf Englisch).

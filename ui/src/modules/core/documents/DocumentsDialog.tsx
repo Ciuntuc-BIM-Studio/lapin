@@ -5,16 +5,22 @@
  * typing stops) and the Project information they share with every document, then To complete (a click shows the field's
  * place and where to fill it). Below: the exports (DOCX and ODT with the pictures the interface draws, PDF), Update from
  * template (the template's blocks again, the inputs kept), Rename, Duplicate and Delete. The preview follows every edit.
+ * Edit (stage 2) turns the middle into the editor of the document's own blocks (`editor/`), the right panel then showing the
+ * settings of the block selected over To complete; Preview shows the pages again.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Copy, FileDown, FilePlus2, FileText, Pencil, RefreshCw, RotateCcw, Trash2, X } from 'lucide-react';
+import { Copy, Eye, FileDown, FilePlus2, FileText, Pencil, RefreshCw, RotateCcw, SquarePen, Trash2, X } from 'lucide-react';
 import { useUi } from '../../../app/store';
 import { useSession } from '../../../engine/session';
 import { t } from '../../../i18n';
 import { PendingDialog } from '../PendingDialog';
 import { DocumentPreview } from './DocumentPreview';
+import { BlockSettings } from './editor/BlockSettings';
+import { DocumentEditor } from './editor/DocumentEditor';
 import { ProjectInfoForm, useProjectInfo } from './ProjectInfoForm';
+import { SaveTemplateButton } from './SaveTemplateButton';
+import { DocumentStyleForm } from './DocumentStyleForm';
 import {
   createDocument, deleteDocument, documentPreview, documentTemplates, duplicateDocument, exportDocument, listDocuments, refreshDocument, updateDocument, useDocumentsDialog,
 } from './documents';
@@ -104,14 +110,17 @@ export function DocumentsDialog() {
   const [docs, setDocs] = useState<DocSummary[] | null>(null);
   const [templates, setTemplates] = useState<DocTemplate[]>([]);
   const [preview, setPreview] = useState<DocPreview | null>(null);
-  const [tab, setTab] = useState<'inputs' | 'info'>('inputs');
+  const [tab, setTab] = useState<'inputs' | 'info' | 'style'>('inputs');
+  const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [centre, setCentre] = useState<HTMLDivElement | null>(null);
   const info = useProjectInfo();
   const close = () => useUi.setState({ dialog: null });
   const choose = (id: string | null) => useDocumentsDialog.setState({ id });
 
-  useEffect(() => { void documentTemplates().then(setTemplates); }, []);
+  // The templates again when the project's change (one saved into it) or one is saved into this computer's library.
+  const [saved, setSaved] = useState(0);
+  useEffect(() => { void documentTemplates().then(setTemplates); }, [version, saved]);
   useEffect(() => {
     let live = true;
     void listDocuments().then((r) => { if (live) setDocs(r); });
@@ -202,6 +211,7 @@ export function DocumentsDialog() {
                   <button type="button" data-field={`doc-template-${tp.id}`} title="A new document from this template, filled from the project" onClick={() => void make(tp.id)}>
                     <span className="doc-docs-name" data-no-i18n="">{tp.title}</span>
                     <span className="muted small" data-no-i18n="">{tp.description}</span>
+                    {tp.origin === 'project' ? <span className="tag small">This project</span> : tp.origin === 'library' ? <span className="tag small">This computer</span> : null}
                   </button>
                 </li>
               ))}
@@ -210,18 +220,21 @@ export function DocumentsDialog() {
           <div className="doc-centre" ref={setCentre} data-field="doc-preview">
             {!current && <p className="muted doc-empty">Choose a template on the left: the document is filled from the project, and what it cannot fill is marked.</p>}
             {current && !shown && <p className="muted doc-empty">Reading…</p>}
-            {shown && <DocumentPreview doc={shown} k={k} />}
+            {shown && (editing ? <DocumentEditor id={shown.id} k={k} page={shown.page} /> : <DocumentPreview doc={shown} k={k} />)}
           </div>
           <aside className="doc-side right">
             {current && shown && (
               <>
+                {editing ? <div className="doc-tab"><BlockSettings /></div> : <>
                 <div className="tabs-inline" role="tablist">
                   <button type="button" role="tab" aria-selected={tab === 'inputs'} className={tab === 'inputs' ? 'on' : ''} data-field="doc-inputs-tab" onClick={() => setTab('inputs')}>Inputs</button>
                   <button type="button" role="tab" aria-selected={tab === 'info'} className={tab === 'info' ? 'on' : ''} data-field="doc-info-tab" onClick={() => setTab('info')}>Project information</button>
+                  <button type="button" role="tab" aria-selected={tab === 'style'} className={tab === 'style' ? 'on' : ''} data-field="doc-style-tab" onClick={() => setTab('style')}>Style</button>
                 </div>
                 <div className="doc-tab">
-                  {tab === 'inputs' ? <InputsForm doc={shown} /> : info ? <ProjectInfoForm info={info} /> : <p className="muted">Reading…</p>}
+                  {tab === 'inputs' ? <InputsForm doc={shown} /> : tab === 'style' ? <DocumentStyleForm documentId={current.id} /> : info ? <ProjectInfoForm info={info} /> : <p className="muted">Reading…</p>}
                 </div>
+                </>}
                 <div className="doc-missing-list" data-field="doc-missing">
                   <h4>To complete <span className="count">{missing.length}</span></h4>
                   {missing.length === 0
@@ -246,11 +259,16 @@ export function DocumentsDialog() {
         </div>
         <footer className="dialog-foot">
           {current && <>
+            <button type="button" className={`btn${editing ? ' on' : ''}`} data-field="doc-edit" aria-pressed={editing} disabled={!shown}
+              title={editing ? 'The document on its pages, as it prints' : 'Edit the document\'s text, fields, tables and pictures'} onClick={() => setEditing(!editing)}>
+              {editing ? <><Eye size={13} /> Preview</> : <><SquarePen size={13} /> Edit</>}
+            </button>
             <button type="button" className="btn" disabled={busy != null} data-field="doc-export-docx" title="Word, with the project's pictures" onClick={() => void run('docx', () => exportDocument(current.id, 'docx'))}><FileDown size={13} /> {busy === 'docx' ? 'Exporting…' : 'Export DOCX'}</button>
             <button type="button" className="btn" disabled={busy != null} data-field="doc-export-odt" title="OpenDocument (LibreOffice), with the project's pictures" onClick={() => void run('odt', () => exportDocument(current.id, 'odt'))}><FileDown size={13} /> {busy === 'odt' ? 'Exporting…' : 'Export ODT'}</button>
             <button type="button" className="btn" disabled={busy != null} data-field="doc-export-pdf" title="The document as it prints" onClick={() => void run('pdf', () => exportDocument(current.id, 'pdf'))}><FileDown size={13} /> {busy === 'pdf' ? 'Exporting…' : 'Export PDF'}</button>
             <span className="grow" />
             <button type="button" className="btn" data-field="doc-refresh" title="The template's text and layout again, your inputs kept" onClick={refresh}><RefreshCw size={13} /> Update from template</button>
+            <SaveTemplateButton documentId={current.id} onSaved={() => setSaved((n) => n + 1)} />
             <button type="button" className="btn" data-field="doc-rename" onClick={rename}><Pencil size={13} /> Rename</button>
             <button type="button" className="btn" data-field="doc-duplicate" onClick={() => void duplicate()}><Copy size={13} /> Duplicate</button>
             <button type="button" className="btn" data-field="doc-delete" onClick={remove}><Trash2 size={13} /> Delete</button>

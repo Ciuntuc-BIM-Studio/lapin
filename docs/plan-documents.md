@@ -1,6 +1,6 @@
 # Piesele scrise: documente din șabloane, completate din proiect
 
-Cerut de utilizator la 04.11.2026: „pentru a genera documentație text folosind un template și rapoarte introduse dinamic din proiect, cum ar fi mai bine să facem? integrare cu LibreOffice, un fel de bridge, sau modul dedicat in-app?”, apoi „șablonul ar fi interesant să îl facem vizual în aplicație, apoi export, sau un MCP cu LibreOffice sau Google Docs”. Răspunsul convenit: **un model de document al lui Lapin**, completat din proiect și exportat de Lapin în DOCX, ODT și PDF, fără dependențe; editorul vizual peste el; MCP doar ca drum separat, pentru asistent. Aprobat la 05.11.2026 („sunt de acord. 1 și 3 putem să începem să scriem planul și să implementăm”): etapele 1 și 3 întâi. Etapele 1 și 3 făcute (decizia 311).
+Cerut de utilizator la 04.11.2026: „pentru a genera documentație text folosind un template și rapoarte introduse dinamic din proiect, cum ar fi mai bine să facem? integrare cu LibreOffice, un fel de bridge, sau modul dedicat in-app?”, apoi „șablonul ar fi interesant să îl facem vizual în aplicație, apoi export, sau un MCP cu LibreOffice sau Google Docs”. Răspunsul convenit: **un model de document al lui Lapin**, completat din proiect și exportat de Lapin în DOCX, ODT și PDF, fără dependențe; editorul vizual peste el; MCP doar ca drum separat, pentru asistent. Aprobat la 05.11.2026 („sunt de acord. 1 și 3 putem să începem să scriem planul și să implementăm”): etapele 1 și 3 întâi. Etapele 1 și 3 făcute (decizia 311); etapele 2, 4 și 5 făcute (decizia 321).
 
 ## De ce așa
 
@@ -135,6 +135,45 @@ Textele implicite ale intrărilor sunt scrise de noi, generale, de completat de 
 3. **Șabloanele de pornire** (de mai sus), în română; apoi în engleză.
 4. **Biblioteca firmei**: șabloane salvate în aplicație și refolosite, importul unui DOCX al firmei ca stiluri (antet, logo, fonturi), exportul unui șablon.
 5. **MCP**: `document.fields`, tabelele și imaginile ca unelte pentru asistent.
+
+## Etapele 2, 4 și 5, în detaliu
+
+Cerut la 05.11.2026: „continuă cu etapele următoare ce intră în free”. Toate trei sunt **gratuite**, în ediția `lapin`: editorul, șabloanele proiectului și ale calculatorului, stilul firmei și uneltele MCP. Premium ar putea fi mai târziu doar o bibliotecă de firmă pe un server, comună tuturor calculatoarelor ei, ca legătura SharePoint de la CDE.
+
+### Etapa 2: editorul
+
+- **Butonul Edit** din Manage → Documents… face pagina din mijloc editabilă (TipTap peste ProseMirror, MIT). Se editează blocurile documentului, adică copia lui proprie a șablonului; **Save as template** le duce mai departe (etapa 4).
+- **Textul**: titluri 1–3, paragrafe, liste cu buline și numerotate, îngroșat, cursiv; bara de sus are stilurile, iar scurtăturile sunt cele obișnuite (Ctrl+B, Ctrl+I, Ctrl+Z).
+- **Câmpurile** sunt etichete în text: `{{project.client}}` apare ca „Beneficiar: Ionescu Maria”, cu valoarea de acum. **Insert → Field** caută în `document.fields`, cu valorile lor. Într-un bloc repetat, sunt oferite și câmpurile elementului (`room.name`).
+- **Blocurile din proiect** sunt noduri atomice, desenate cu valorile reale prin `document.block {id, block, scope?}`, completarea unui singur bloc; un clic deschide setările lor într-un panou:
+  - tabelul unui extras (sursa, coloanele, titlul, totalul);
+  - imaginea unei vederi (vederea, scara sau lățimea, legenda);
+  - tabelul cheie–valoare;
+  - cuprinsul;
+  - saltul de pagină;
+  - textul de completat (`input`, cu cheia, eticheta, grupul și textul implicit; definițiile stau în `inputDefs`).
+- **Repetările și condițiile** sunt zone marcate, cu o bandă deasupra („Pentru fiecare nivel”, „Doar dacă există subsol”), editabile în ele; ramura `else` e a doua zonă a condiției.
+- **Salvarea**: după o pauză în scriere, ca un pas de undo în motor (`document.update {blocks, inputDefs}`); previzualizarea paginată rămâne butonul **Preview**.
+
+### Etapa 4: șabloanele și stilul firmei
+
+- **Save as template…** dintr-un document: în **proiect** (`documentTemplates` pe `IfcProject`, merg cu fișierul) sau în **biblioteca acestui calculator** (ca listele de prețuri: le ia orice proiect de pe calculator). `document.templates` le dă pe toate trei, fiecare cu originea lui (`builtin`, `project`, `library`).
+- **Manage → Document templates…**: lista, redenumirea, ștergerea, duplicarea unui șablon încorporat ca să fie schimbat, **Export** ca fișier `.json` și **Import**, ca o firmă să-și dea șabloanele de la un calculator la altul.
+- **Stilul** pe șablon și pe document (`page.style`):
+  - fontul textului (în DOCX și ODT: Arial, Calibri, Times New Roman, Georgia, Verdana, Liberation Sans; în PDF: Helvetica sau Times, fonturile standard ale PDF-ului, cu lățimile lor AFM);
+  - mărimea textului;
+  - culoarea titlurilor;
+  - **logo-ul** firmei în antet (PNG sau JPEG, cu lățimea în mm), scris în toate trei formatele.
+- Importul stilurilor dintr-un DOCX al firmei rămâne pentru mai târziu: logo-ul, fontul și culorile alese în dialog acoperă ce cer cele mai multe firme.
+
+### Etapa 5: MCP
+
+- Bridge-ul ajunge deja la toate comenzile prin `lapin_query` și `lapin_execute`. Se adaugă `lapin_document_export {id, format, path}`, care scrie fișierul pe disc în loc să-l întoarcă în base64, și o secțiune în `docs/mcp.md`: cum face un asistent un document, cum îi scrie intrările și cum îl exportă.
+
+### Ce rămăsese din etapa 1
+
+- Imaginile ajung și în DOCX-ul emis: Manage → Issue… le trimite, făcute de interfață, cu `documentImages`.
+- O imagine poate fi decupată la o limită de vedere (`boundary`, `LapinViewBoundary`).
 
 ## Răspunsuri
 

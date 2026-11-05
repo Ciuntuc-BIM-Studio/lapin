@@ -102,6 +102,8 @@ export interface IssueRequest {
   name: string; revision: string; status: string; container: string; sheets: string[]; model: boolean; dxf: boolean; set: boolean; note: string;
   /** The written documents to issue (docs/plan-documents.md), each as a PDF; as a DOCX too with documentsDocx. */
   documents?: string[]; documentsDocx?: boolean;
+  /** A DOCX's pictures, made by the interface, by document: {documentId: {key: {svg, png?}}} (documentPictures). */
+  documentImages?: Record<string, Record<string, { svg: string; png?: string }>>;
   /** Keep the IFC in the project file too (off by default: a large model is tens of MB an issue). */
   keepModel: boolean;
   /** Also write the files into the project folder's container (when it has one, on the desktop). */

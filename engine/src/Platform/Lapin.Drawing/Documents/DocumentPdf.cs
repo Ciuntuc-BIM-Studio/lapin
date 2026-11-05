@@ -19,7 +19,9 @@ public static class DocumentPdf
         var outline = second.Headings.Where(h => h.Heading.Level <= 3)
             .Select(h => new PdfOutline(DocText.Plain(h.Heading.Runs), h.Page - 1, Math.Max(0, h.Y - 2), h.Heading.Level)).ToList();
         var info = new PdfInfo(doc.Title, doc.Meta.Author, doc.Meta.Subject, outline);
-        return PdfWriter.Write(second.Pages, null, info);
+        // The style's logo is the only picture a page asks for by id (the views' pictures are pens).
+        var logo = DocLook.Of(doc.Page).Logo;
+        return PdfWriter.Write(second.Pages, logo == null ? null : id => id == DocumentLayout.LogoId ? logo.Data : null, info);
     }
 
     /// <summary>Every heading with its page (from 1), as the PDF lays them out.</summary>
@@ -44,6 +46,12 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
     const string Ink = "#000000", Grey = "#555555", Rule = "#000000", Shade = "#E6E6E6";
 
     readonly DocPage P = doc.Page;
+    readonly DocLook L = DocLook.Of(doc.Page);
+    string HeadingInk => L.HeadingColor ?? Ink;
+    string FontName => L.Times ? "times" : "sans";
+
+    /// <summary>The id the header's logo is drawn by (the PDF writer asks for its file by it).</summary>
+    public const string LogoId = "doc-logo";
     double Tw => P.TextWidth;
     double X0 => P.Left;
     double Bottom => P.H - P.Bottom;
@@ -161,7 +169,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
         void Flush() { lines.Add(new Line(cur, x)); cur = []; x = 0; space = null; }
         void Add(string t, bool b, bool it)
         {
-            var w = HelveticaMetrics.Mm(t, b, pt);
+            var w = L.Mm(t, b, pt);
             if (cur.Count > 0 && cur[^1].Bold == b && cur[^1].Italic == it)
             {
                 var last = cur[^1];
@@ -174,8 +182,8 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
         {
             if (kind == 'n') { Flush(); continue; }
             if (kind == ' ') { if (cur.Count > 0) space = parts[0]; continue; }
-            var w = parts.Sum(p => HelveticaMetrics.Mm(p.T, p.B, pt));
-            var sw = space is { } s ? HelveticaMetrics.Mm(" ", s.B, pt) : 0;
+            var w = parts.Sum(p => L.Mm(p.T, p.B, pt));
+            var sw = space is { } s ? L.Mm(" ", s.B, pt) : 0;
             if (cur.Count > 0 && x + sw + w > maxW + 1e-6) Flush();
             if (cur.Count == 0 && w > maxW)
             {
@@ -183,7 +191,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
                 foreach (var (t, b, it) in parts)
                     foreach (var ch in t)
                     {
-                        var cw = HelveticaMetrics.Mm(ch.ToString(), b, pt);
+                        var cw = L.Mm(ch.ToString(), b, pt);
                         if (cur.Count > 0 && x + cw > maxW) Flush();
                         Add(ch.ToString(), b, it);
                     }
@@ -207,7 +215,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
         foreach (var seg in line.Segs)
         {
             if (seg.Text.Trim().Length == 0) continue;
-            pen.Texts.Add(new PenText(new Vec2(x + off + seg.X, baseline), seg.Text, Cap(pt), 0, "start", "bottom", seg.Bold, "sans", seg.Italic));
+            pen.Texts.Add(new PenText(new Vec2(x + off + seg.X, baseline), seg.Text, Cap(pt), 0, "start", "bottom", seg.Bold, FontName, seg.Italic));
         }
     }
 
@@ -228,7 +236,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
 
     void Heading(DocHeading h, DocBlock? next)
     {
-        var pt = DocText.HeadingPt(h.Level);
+        var pt = L.Heading(h.Level);
         var before = h.Level <= 1 ? 7.0 : h.Level == 2 ? 5.0 : 4.0;
         const double after = 2.2;
         var lines = Wrap(h.Runs, pt, Tw, bold: true);
@@ -236,7 +244,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
         if (!atTop && y + need > Bottom) NewPage();
         else Space(before);
         headings.Add(new Placed(h, PageNo, y));
-        Lines(lines, X0, Tw, pt, Ink);
+        Lines(lines, X0, Tw, pt, HeadingInk);
         y += after;
     }
 
@@ -244,17 +252,17 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
     double Least(DocBlock? b) => b switch
     {
         DocParagraph p => LineH(Style(p.Style).Pt) * 2,
-        DocList => LineH(DocText.BodyPt) * 2,
-        DocTable t => (t.Title != null ? LineH(DocText.BodyPt) + 1.5 : 0) + (t.Plain ? 1 : 2) * (LineH(DocText.TablePt) + 2.4),
-        DocImage img => Math.Min(DocText.Fit(img, Tw).H, (Bottom - P.Top) * 0.6) + (img.Caption != null ? LineH(DocText.CaptionPt) + 2 : 0),
+        DocList => LineH(L.Body) * 2,
+        DocTable t => (t.Title != null ? LineH(L.Body) + 1.5 : 0) + (t.Plain ? 1 : 2) * (LineH(L.Table) + 2.4),
+        DocImage img => Math.Min(DocText.Fit(img, Tw).H, (Bottom - P.Top) * 0.6) + (img.Caption != null ? LineH(L.Caption) + 2 : 0),
         _ => 0,
     };
 
-    static (double Pt, bool Italic, string Color, double After) Style(string style) => style switch
+    (double Pt, bool Italic, string Color, double After) Style(string style) => style switch
     {
-        "caption" => (DocText.CaptionPt, true, Ink, 3.5),
-        "note" => (DocText.NotePt, false, Grey, 2.5),
-        _ => (DocText.BodyPt, false, Ink, 2.5),
+        "caption" => (L.Caption, true, Ink, 3.5),
+        "note" => (L.Note, false, Grey, 2.5),
+        _ => (L.Body, false, Ink, 2.5),
     };
 
     void Paragraph(DocParagraph p)
@@ -266,9 +274,9 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
 
     void List(DocList l)
     {
-        var pt = DocText.BodyPt;
+        var pt = L.Body;
         var lh = LineH(pt);
-        var indent = l.Ordered ? Math.Max(6.5, HelveticaMetrics.Mm($"{l.Items.Count}.", false, pt) + 3) : 6;
+        var indent = l.Ordered ? Math.Max(6.5, L.Mm($"{l.Items.Count}.", false, pt) + 3) : 6;
         for (var i = 0; i < l.Items.Count; i++)
         {
             var lines = Wrap(l.Items[i], pt, Tw - indent);
@@ -278,7 +286,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
                 if (k == 0)
                 {
                     var marker = l.Ordered ? $"{i + 1}." : "•";
-                    var mw = HelveticaMetrics.Mm(marker, false, pt);
+                    var mw = L.Mm(marker, false, pt);
                     Draw(Cur, new Line([new Seg(marker, false, false, 0, mw)], mw), X0, indent - 2, y, pt, Ink, l.Ordered ? 'r' : 'l');
                 }
                 Draw(Cur, lines[k], X0 + indent, Tw - indent, y, pt, Ink);
@@ -292,10 +300,10 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
 
     void Table(DocTable t)
     {
-        var widths = DocText.ColumnWidths(t, Tw);
+        var widths = DocText.ColumnWidths(t, Tw, measure: L.Mm, pt: L.Table);
         var n = widths.Length;
         if (n == 0) return;
-        var pt = DocText.TablePt;
+        var pt = L.Table;
         var lh = LineH(pt);
         const double padX = 1.5, padY = 1.2;
         var edges = new double[n + 1];
@@ -312,9 +320,9 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
 
         if (t.Title is { } title)
         {
-            var tl = Wrap([new DocRun(title, Bold: true)], DocText.BodyPt, Tw);
-            Ensure(tl.Count * LineH(DocText.BodyPt) + 1.5 + headerH + (rows.Count > 0 ? Height(rows[0]) : 0));
-            Lines(tl, X0, Tw, DocText.BodyPt, Ink);
+            var tl = Wrap([new DocRun(title, Bold: true)], L.Body, Tw);
+            Ensure(tl.Count * LineH(L.Body) + 1.5 + headerH + (rows.Count > 0 ? Height(rows[0]) : 0));
+            Lines(tl, X0, Tw, L.Body, Ink);
             y += 1.5;
         }
         else Ensure(headerH + (rows.Count > 0 ? Height(rows[0]) : 0));
@@ -368,8 +376,8 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
     void Image(DocImage img)
     {
         var (w, h) = DocText.Fit(img, Tw);
-        var cap = img.Caption is { Length: > 0 } c ? Wrap([new DocRun(c, Italic: true)], DocText.CaptionPt, Tw) : null;
-        var capH = cap != null ? cap.Count * LineH(DocText.CaptionPt) + 1.5 : 0;
+        var cap = img.Caption is { Length: > 0 } c ? Wrap([new DocRun(c, Italic: true)], L.Caption, Tw) : null;
+        var capH = cap != null ? cap.Count * LineH(L.Caption) + 1.5 : 0;
         if (w > 0)
         {
             if (y + h + capH > Bottom && !atTop) NewPage();
@@ -381,7 +389,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
             y += h;
             atTop = false;
         }
-        if (cap != null) { y += 1.5; Lines(cap, X0, Tw, DocText.CaptionPt, Ink, 'c'); }
+        if (cap != null) { y += 1.5; Lines(cap, X0, Tw, L.Caption, Ink, 'c'); }
         y += 3.5;
     }
 
@@ -399,14 +407,14 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
     void Toc(DocToc toc)
     {
         Space(4);
-        var pt = DocText.HeadingPt(1);
+        var pt = L.Heading(1);
         Lines(Wrap([new DocRun(toc.Title, Bold: true)], pt, Tw), X0, Tw, pt, Ink);
         y += 3;
         var all = doc.Blocks.OfType<DocHeading>().ToList();
-        var body = DocText.BodyPt;
+        var body = L.Body;
         var lh = LineH(body);
-        var numberW = HelveticaMetrics.Mm("0000", false, body);
-        var dot = HelveticaMetrics.Mm(" .", false, body);
+        var numberW = L.Mm("0000", false, body);
+        var dot = L.Mm(" .", false, body);
         for (var i = 0; i < all.Count; i++)
         {
             var h = all[i];
@@ -421,7 +429,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
                 Draw(Cur, lines[k], X0 + indent, Tw - indent, y, body, Ink);
                 if (k == lines.Count - 1 && page.Length > 0)
                 {
-                    var pw = HelveticaMetrics.Mm(page, bold, body);
+                    var pw = L.Mm(page, bold, body);
                     Draw(Cur, new Line([new Seg(page, bold, false, 0, pw)], pw), X0, Tw, y, body, Ink, 'r');
                     var from = X0 + indent + lines[k].W + 1.5;
                     var to = X0 + Tw - pw - 1.5;
@@ -429,7 +437,7 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
                     if (count > 0)
                     {
                         var dots = string.Concat(Enumerable.Repeat(" .", count));
-                        var dw = HelveticaMetrics.Mm(dots, false, body);
+                        var dw = L.Mm(dots, false, body);
                         Draw(Cur, new Line([new Seg(dots, false, false, 0, dw)], dw), to - dw, dw, y, body, Grey);
                     }
                 }
@@ -444,16 +452,26 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
     /// <summary>The header and the footer of a page: the header left at the top margin's middle, the footer centred in the bottom one.</summary>
     void Bands(Sheet s, int page, int total)
     {
-        var pt = DocText.HeaderPt;
+        var pt = L.Header;
         List<Line> Band(IReadOnlyList<DocRun> runs)
         {
             return WrapAt(runs, page, total);
         }
+        var logo = L.LogoBox(P);
+        if (logo is { } box)
+        {
+            // The logo at the header's top, by its corners (top left, top right, bottom right, bottom left).
+            var pen = new Pen("IMAGE", null, 0, null, null);
+            pen.Images.Add(new PenImage(LogoId, [new Vec2(box.X, box.Y), new Vec2(box.X + box.W, box.Y), new Vec2(box.X + box.W, box.Y + box.H), new Vec2(box.X, box.Y + box.H)]));
+            s.Under.Add(pen);
+        }
         if (P.Header.Count > 0)
         {
-            var lines = Band(P.Header);
-            var top = Math.Max(3, P.Top * 0.5 - LineH(pt) * lines.Count / 2);
-            foreach (var line in lines) { Draw(s, line, X0, Tw, top, pt, Grey); top += LineH(pt); }
+            // Beside a logo, the text takes the rest of the width, its last line on the logo's bottom (as Word and LibreOffice set it).
+            var (tx, tw) = logo is { } b ? (L.Logo!.Right ? X0 : X0 + b.W + DocLook.LogoGap, Tw - b.W - DocLook.LogoGap) : (X0, Tw);
+            var lines = WrapAt(P.Header, page, total, tw);
+            var top = logo is { } lb ? lb.Y + lb.H - LineH(pt) * lines.Count + pt * PtMm * 0.25 : Math.Max(3, P.Top * 0.5 - LineH(pt) * lines.Count / 2);
+            foreach (var line in lines) { Draw(s, line, tx, tw, top, pt, Grey); top += LineH(pt); }
         }
         if (P.Footer.Count > 0)
         {
@@ -464,6 +482,6 @@ sealed class DocumentLayout(FilledDocument doc, IReadOnlyList<int>? headingPages
     }
 
     /// <summary>Runs wrapped with the page fields of a given page.</summary>
-    List<Line> WrapAt(IReadOnlyList<DocRun> runs, int page, int total) =>
-        Wrap(runs.Select(r => r.Field is "page" or "pages" && !r.Missing ? r with { Text = r.Field == "page" ? page.ToString() : total.ToString(), Field = null } : r), DocText.HeaderPt, Tw);
+    List<Line> WrapAt(IReadOnlyList<DocRun> runs, int page, int total, double? width = null) =>
+        Wrap(runs.Select(r => r.Field is "page" or "pages" && !r.Missing ? r with { Text = r.Field == "page" ? page.ToString() : total.ToString(), Field = null } : r), L.Header, width ?? Tw);
 }

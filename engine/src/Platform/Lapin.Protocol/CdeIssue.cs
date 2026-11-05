@@ -105,6 +105,8 @@ public static class CdeIssue
         var writer = writeDocument ?? DocumentExport.Write;
         var naming0 = CdeHooks.Naming?.Invoke(CdeNaming.Of(m)) ?? CdeNaming.Of(m);
         var docx = Flag(p, "documentsDocx");
+        // A DOCX's pictures as the interface made them, by document: {documentId: {key: {svg?, png?}}} (the engine has no rasteriser).
+        var pictures = p["documentImages"] as JsonObject;
         foreach (var doc in documents)
         {
             var issued = doc.CloneAttrs();
@@ -113,7 +115,7 @@ public static class CdeIssue
             var (filled, _) = DocumentFill.Fill(q, doc.With(attrs: issued));
             var stem = Cde.DocumentName(m, naming0, doc);
             rows.Add(new CdeTransmittal.Row(Write(CdeNaming.WithRevision(stem, status, revision, "pdf"), writer(filled, "pdf", null), "document", documentId: doc.Id), null, doc.Name));
-            if (docx) rows.Add(new CdeTransmittal.Row(Write(CdeNaming.WithRevision(stem, status, revision, "docx"), writer(filled, "docx", null), "document", documentId: doc.Id), null, doc.Name));
+            if (docx) rows.Add(new CdeTransmittal.Row(Write(CdeNaming.WithRevision(stem, status, revision, "docx"), writer(filled, "docx", DocumentExport.Pictures(pictures?[doc.Id])), "document", documentId: doc.Id), null, doc.Name));
         }
         if (model)
         {

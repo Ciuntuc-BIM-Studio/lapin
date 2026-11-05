@@ -22,6 +22,7 @@ import {
   type CdeSettings, type CheckResult, type Names,
 } from './cde';
 import { PendingDialog } from '../PendingDialog';
+import { documentPictures } from '../documents/documents';
 
 export function IssueDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -105,8 +106,12 @@ export function IssueDialog() {
     }
     dispatch({ type: 'start' });
     try {
+      // A DOCX carries its pictures as the interface draws them (an SVG and a PNG each), as File → Export makes them.
+      const withDocx = docIds.length > 0 && docx;
+      const documentImages = withDocx ? Object.fromEntries(await Promise.all(docIds.map(async (id) => [id, await documentPictures(id)] as const))) : undefined;
       const r = await issue({
-        name: name.trim(), revision, status, container, sheets: ids, model, keepModel: model && keepModel, dxf, set, note: note.trim(), documents: docIds, documentsDocx: docIds.length > 0 && docx,
+        name: name.trim(), revision, status, container, sheets: ids, model, keepModel: model && keepModel, dxf, set, note: note.trim(), documents: docIds, documentsDocx: withDocx,
+        ...(documentImages ? { documentImages } : {}),
         toFolder: folderHere && toFolder, ...(engineInBrowser ? { bytes: true } : {}),
       });
       if (r.file) await keepProjectFile(r.file);

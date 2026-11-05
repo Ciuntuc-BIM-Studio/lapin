@@ -43,6 +43,73 @@ L'onglet **Saisies** contient les textes que seul le concepteur peut écrire, gr
 - **Mettre à jour depuis le modèle** reprend le texte et la mise en page du modèle, pour un document fait avant que le modèle ne change. Vos saisies sont conservées.
 - **Renommer**, **Dupliquer** et **Supprimer** agissent sur le document affiché. Une suppression est une seule étape d'annulation.
 
+## Modifier un document
+
+**Modifier**, en bas du dialogue Documents, fait de la page du milieu un éditeur du texte propre au document ; **Aperçu** le montre de nouveau sur ses pages. Ce que vous changez n'appartient qu'à ce document : le modèle reste tel qu'il était (**Enregistrer comme modèle…**, plus bas, garde vos changements comme modèle).
+
+![Modifier un document : les champs comme étiquettes avec leurs valeurs, un tableau du projet sélectionné et ses réglages à droite](shots/documents-editor.webp)
+
+- **La barre d'outils** porte les styles du texte : **Paragraphe**, **Titre 1**–**3**, gras, italique, listes à puces et numérotées, annuler et rétablir. Les touches habituelles marchent aussi (Ctrl+B, Ctrl+I, Ctrl+Z dans l'éditeur).
+- **Les champs** apparaissent comme des étiquettes avec leur nom et leur valeur actuelle, par exemple le maître d'ouvrage, *Popescu Ion și Maria*. Un champ que le projet ne remplit pas encore est orange.
+- **Les blocs du projet** — un tableau, une image, le sommaire — sont dessinés avec leur vrai contenu. Un clic en sélectionne un : ses réglages s'affichent à droite, à la place des onglets.
+
+L'enregistrement est automatique : un instant après que vous cessez de taper, et quand vous revenez à **Aperçu** ; chaque changement est un pas d'annulation du projet.
+
+### Insérer
+
+**Insérer** place au curseur :
+
+- **Champ…** : un champ du projet, cherché par son nom ; la liste montre la valeur de chacun. Dans une répétition, les champs de ses éléments sont aussi proposés (le nom d'un niveau, la surface d'une pièce).
+
+  ![Insérer → Champ… : « client » cherché, les champs avec leurs valeurs](shots/documents-insert-field.webp)
+
+- **Tableau du projet…** : une nomenclature ou une liste du projet (les menuiseries, les pièces, les matériaux…). Dans ses réglages : la **Source**, le **Titre**, les colonnes affichées et la ligne de total.
+- **Image d'une vue…** : un plan, une coupe, une élévation ou une vue 3D. Dans ses réglages : **Échelle 1:** ou **Largeur (mm)** (jamais plus large que le texte) et une **Légende**.
+- **Champs clé–valeur** : un tableau à deux colonnes de libellés et de valeurs ; une valeur peut contenir des champs, comme `{{project.name}}`.
+- **Répéter pour…** : le texte à l'intérieur est écrit une fois pour chaque élément d'une collection : les niveaux, les pièces, les toitures, les matériaux, les feuilles, les documents… Un bandeau au-dessus indique **Pour chaque** et combien d'éléments il y a ; ses flèches **‹ ›** changent l'élément que l'éditeur montre pendant que vous écrivez. Dans ses réglages, **Seulement les éléments où** n'en garde que certains, et **Texte quand il n'y en a aucun** ajoute ce qui s'écrit quand il n'y en a aucun.
+- **Condition…** : le texte à l'intérieur n'est écrit que quand un champ a une valeur (ou, coché, seulement quand il est vide). **Sinon : texte quand elle n'est pas remplie** ajoute une seconde partie, écrite à sa place.
+- **Texte à compléter…** : une nouvelle saisie, avec son libellé, son groupe et son texte par défaut ; son texte s'écrit dans l'onglet **Saisies**, en aperçu.
+- **Sommaire** et **Saut de page**.
+
+![Une répétition sur les niveaux, une condition à l'intérieur et les pièces du niveau montré, changé avec ‹ ›](shots/documents-repeat.webp)
+
+Dans les réglages d'un bloc, **Retirer** l'enlève ; pour une répétition ou une condition, **Garder seulement le contenu** enlève le bandeau et garde ce qu'il contient.
+
+## Vos modèles
+
+**Enregistrer comme modèle…** garde le texte, la mise en page, les saisies et le style du document comme modèle. Donnez-lui un titre et une description et choisissez où le garder :
+
+- **Ce projet** : il part avec le fichier du projet, chez quiconque l'ouvre.
+- **La bibliothèque de cet ordinateur** : tout projet de cet ordinateur le propose.
+- **Les deux**.
+
+**Enregistrer comme** peut remplacer un modèle enregistré avant ; les documents déjà faits à partir de lui gardent leur texte jusqu'à **Mettre à jour depuis le modèle**. Le nouveau modèle apparaît aussitôt sous **Nouveau à partir d'un modèle**.
+
+![Enregistrer comme modèle : le titre, la description et où le garder](shots/documents-save-template.webp)
+
+**Gérer → Modèles de documents…** montre les modèles en trois groupes : **Intégrés** (ceux de Lapin), **Ce projet** et **Cet ordinateur**. Pour celui choisi :
+
+- **Renommer** et **Supprimer** (supprimer un modèle du projet est un pas d'annulation ; les documents faits à partir de lui gardent leur texte).
+- **Dupliquer dans le projet** ou **Dupliquer dans la bibliothèque** : un modèle intégré ne se change qu'à travers une copie.
+- **Copier dans la bibliothèque** ou **Copier dans le projet**, pour le passer d'un endroit à l'autre.
+- **Exporter…** écrit le modèle dans un fichier `.json` ; **Importer…** en lit un dans ce projet ou dans la bibliothèque de cet ordinateur. C'est ainsi que des collègues partagent les modèles d'une entreprise.
+
+![Modèles de documents : les intégrés, ceux du projet et ceux de l'ordinateur, celui choisi avec son style](shots/document-templates.webp)
+
+## Le style de l'entreprise
+
+Un document, et un modèle du projet ou de la bibliothèque, a son propre style : l'onglet **Style** du dialogue Documents pour le document affiché, la partie **Style** de Gérer → Modèles de documents… pour un modèle. Les modèles intégrés gardent l'apparence de Lapin : dupliquez-en un pour lui donner la vôtre.
+
+- **Police (DOCX, ODT)** : Arial (celle de Lapin), Calibri, Times New Roman, Georgia, Verdana ou Liberation Sans.
+- **Police du PDF** : Helvetica ou Times, les polices propres au PDF ; par défaut la plus proche de la police ci-dessus.
+- **Taille du texte (pt)** : la taille du texte courant, de 6 à 24 pt.
+- **Couleur des titres**.
+- **Logo dans l'en-tête** : **Choisir le logo…** prend un PNG ou un JPEG (moins de 1 Mo) ; réglez sa **Largeur (mm)** et s'il se place **À gauche** ou **À droite**. Il est écrit de la même façon en DOCX, ODT et PDF.
+
+Un échantillon sous les champs montre le haut de la page tel que les fichiers le montreront. **L'apparence propre à Lapin** retire le style. Chaque changement est un pas d'annulation.
+
+![L'onglet Style : la couleur des titres et un logo dans l'en-tête, avec l'échantillon](shots/documents-style.webp)
+
 ## Exporter
 
 - **Exporter DOCX** et **Exporter ODT** écrivent un fichier que vous ouvrez et modifiez dans Word ou LibreOffice, avec ses titres comme styles propres au logiciel, sa table des matières et sa numérotation des pages comme champs, et les images du projet.
@@ -64,4 +131,8 @@ Lapin est livré avec trois modèles, en roumain pour l'instant :
 - **Caiet de sarcini: tâmplărie și finisaje** (le cahier des charges menuiseries et finitions) : les matériaux du projet par catégorie, la nomenclature des menuiseries avec leurs quantités, les finitions pièce par pièce, et des saisies pour les généralités, les exigences, l'exécution et la réception, avec des textes par défaut à adapter.
 - **Borderou de piese scrise și desenate** (le bordereau des pièces écrites et dessinées) : les documents et les feuilles du projet, avec leur numéro, titre, échelle et révision.
 
-Un éditeur visuel pour vos propres modèles viendra plus tard.
+Partez de l'un d'eux, changez-le dans l'éditeur, puis **Enregistrer comme modèle…** pour avoir le vôtre.
+
+## Pour les assistants IA
+
+Un assistant connecté par le pont MCP de Lapin peut créer un document, écrire ses saisies et l'exporter avec `lapin_document_export` : voir [Lapin and AI agents](https://github.com/Ciuntuc-BIM-Studio/lapin-pro/blob/main/docs/mcp.md#documents) (en anglais).

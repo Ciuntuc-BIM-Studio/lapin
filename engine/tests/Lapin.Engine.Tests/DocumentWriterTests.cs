@@ -275,5 +275,10 @@ public class DocumentWriterTests
         File.WriteAllBytes(Path.Combine(folder, "sample.docx"), DocxWriter.Write(doc, Pictures()));
         File.WriteAllBytes(Path.Combine(folder, "sample.odt"), OdtWriter.Write(doc, Pictures()));
         File.WriteAllBytes(Path.Combine(folder, "sample.pdf"), DocumentPdf.Write(doc));
+        // The same with a company's style (stage 4): Georgia 12 pt, blue headings, a logo on the left, Times in the PDF.
+        var styled = DocumentStyleWriterTests.Styled();
+        File.WriteAllBytes(Path.Combine(folder, "sample-styled.docx"), DocxWriter.Write(styled, Pictures()));
+        File.WriteAllBytes(Path.Combine(folder, "sample-styled.odt"), OdtWriter.Write(styled, Pictures()));
+        File.WriteAllBytes(Path.Combine(folder, "sample-styled.pdf"), DocumentPdf.Write(styled));
     }
 }

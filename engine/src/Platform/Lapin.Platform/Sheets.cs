@@ -177,6 +177,31 @@ public static class Sheets
         return pts;
     }
 
+    /// <summary>
+    /// A view's pen on paper, cut to a box as a viewport shows it (segments and fills clipped, texts kept when their point is
+    /// inside, pictures clipped where printed); null when nothing of it is inside. A document's picture cropped to a boundary uses it too.
+    /// </summary>
+    public static Pen? ClipToBox(Pen pen, Func<Vec2, Vec2> toPaper, double x0, double y0, double x1, double y1, string? viewport = null)
+    {
+        var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash) { Viewport = viewport };
+        foreach (var (a, b) in pen.Segments)
+        {
+            var (pa, pb) = (toPaper(a), toPaper(b));
+            if (ClipSegment(ref pa, ref pb, x0, y0, x1, y1)) o.Segments.Add((pa, pb));
+        }
+        foreach (var loop in pen.Loops)
+            if (ClipLoop(loop.Select(toPaper).ToList(), x0, y0, x1, y1) is { Count: >= 3 } c) o.Loops.Add(c);
+        foreach (var t in pen.Texts)
+        {
+            var at = toPaper(t.At);
+            if (at.X >= x0 && at.X <= x1 && at.Y >= y0 && at.Y <= y1) o.Texts.Add(t with { At = at });
+        }
+        // A picture keeps its corners and is clipped to the box where it is printed.
+        foreach (var img in pen.Images) o.Images.Add(img with { Corners = [.. img.Corners.Select(toPaper)] });
+        if (o.Images.Count > 0) o.Clip = (x0, y0, x1, y1);
+        return o.Segments.Count + o.Loops.Count + o.Texts.Count + o.Images.Count > 0 ? o : null;
+    }
+
     // ------------------------------------------------------------ the sheet on paper
 
     /// <summary>An issue being made (docs/plan-cde.md): its revision, status, name and date, printed on the sheet's title block and revision table as issued.</summary>
@@ -202,25 +227,7 @@ public static class Sheets
         var placements = placed ?? Place(q, sheet);
         foreach (var pl in placements)
             foreach (var pen in pl.Drawing.Pens)
-            {
-                var o = new Pen(pen.Layer, pen.Stroke, pen.Width, pen.Fill, pen.Dash) { Viewport = pl.Viewport.Id };
-                foreach (var (a, b) in pen.Segments)
-                {
-                    var (pa, pb) = (pl.ToPaper(a), pl.ToPaper(b));
-                    if (ClipSegment(ref pa, ref pb, pl.X0, pl.Y0, pl.X1, pl.Y1)) o.Segments.Add((pa, pb));
-                }
-                foreach (var loop in pen.Loops)
-                    if (ClipLoop(loop.Select(pl.ToPaper).ToList(), pl.X0, pl.Y0, pl.X1, pl.Y1) is { Count: >= 3 } c) o.Loops.Add(c);
-                foreach (var t in pen.Texts)
-                {
-                    var at = pl.ToPaper(t.At);
-                    if (at.X >= pl.X0 && at.X <= pl.X1 && at.Y >= pl.Y0 && at.Y <= pl.Y1) o.Texts.Add(t with { At = at });
-                }
-                // A picture keeps its corners and is clipped to the box where it is printed.
-                foreach (var img in pen.Images) o.Images.Add(img with { Corners = [.. img.Corners.Select(pl.ToPaper)] });
-                if (o.Images.Count > 0) o.Clip = (pl.X0, pl.Y0, pl.X1, pl.Y1);
-                if (o.Segments.Count + o.Loops.Count + o.Texts.Count + o.Images.Count > 0) pens.Add(o);
-            }
+                if (ClipToBox(pen, pl.ToPaper, pl.X0, pl.Y0, pl.X1, pl.Y1, pl.Viewport.Id) is { } o) pens.Add(o);
 
         var frame = new Pen("FRAME", "#000000", FramePen, null, null);
         var rules = new Pen("TITLE", "#000000", RulePen, null, null);

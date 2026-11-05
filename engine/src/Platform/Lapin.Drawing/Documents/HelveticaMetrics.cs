@@ -52,11 +52,7 @@ public static class HelveticaMetrics
     /// <summary>A letter's advance in 1/1000 em.</summary>
     public static int Width(char ch, bool bold)
     {
-        ch = ch switch
-        {
-            'ă' => 'a', 'Ă' => 'A', 'ș' or 'ş' => 's', 'Ș' or 'Ş' => 'S', 'ț' or 'ţ' => 't', 'Ț' or 'Ţ' => 'T', '−' => '-', '\t' => ' ',
-            _ => ch,
-        };
+        ch = Base(ch);
         switch (ch)
         {
             case '„' or '”' or '“': return bold ? 500 : 333;
@@ -70,6 +66,13 @@ public static class HelveticaMetrics
         if (ch >= 160 && ch <= 255) return (bold ? BoldLatin1 : RegularLatin1)[ch - 160];
         return 0;   // a control character prints nothing
     }
+
+    /// <summary>The letter a Romanian letter (and the minus, a tab) is measured as: its base letter.</summary>
+    internal static char Base(char ch) => ch switch
+    {
+        'ă' => 'a', 'Ă' => 'A', 'ș' or 'ş' => 's', 'Ș' or 'Ş' => 'S', 'ț' or 'ţ' => 't', 'Ț' or 'Ţ' => 'T', '−' => '-', '\t' => ' ',
+        _ => ch,
+    };
 
     /// <summary>A text's advance in em.</summary>
     public static double Advance(string s, bool bold)

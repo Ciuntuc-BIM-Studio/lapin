@@ -44,7 +44,8 @@ function Picture({ img, k, width }: { img: DocImage; k: number; width: number })
   );
 }
 
-function Block({ b, k, width, page, pages, toc }: { b: DocBlock; k: number; width: number; page: number; pages: number; toc: { level: number; text: string; page: number }[] }) {
+/** One filled block as the pages show it (the editor's atoms too), k pixels a paper mm, `width` the text's in mm. */
+export function Block({ b, k, width, page, pages, toc }: { b: DocBlock; k: number; width: number; page: number; pages: number; toc: { level: number; text: string; page: number }[] }) {
   const fs = (pt: number) => pt * PT * k;
   switch (b.kind) {
     case 'heading': {

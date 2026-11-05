@@ -5,7 +5,8 @@
  *   node scripts/documents-check.mjs [<out folder>] [--png]
  *
  * Runs DocumentWriterTests' sample test with LAPIN_DOCS_SAMPLES set to a folder (a temporary one by default), which
- * writes sample.docx, sample.odt and sample.pdf there; then, when LibreOffice is installed (the macOS app, else soffice
+ * writes sample.docx, sample.odt and sample.pdf there, and the same with a company's style (sample-styled.*: Georgia 12 pt, blue
+ * headings, a logo in the header, Times in the PDF); then, when LibreOffice is installed (the macOS app, else soffice
  * on PATH), converts the DOCX and the ODT to PDF headless and counts the pages of all three. Exits 1 when the samples
  * are not written or a conversion fails or gives no page; skips the conversion (exit 0) when LibreOffice is absent.
  * With --png, also converts each file's first page to PNG beside it, to look at.
@@ -33,13 +34,13 @@ if (test.status !== 0) {
   console.error('the sample test failed');
   process.exit(1);
 }
-const samples = ['sample.docx', 'sample.odt', 'sample.pdf'].map((f) => join(out, f));
-for (const f of samples) if (!existsSync(f)) { console.error(`missing ${f}`); process.exit(1); }
+const sets = ['sample', 'sample-styled'].map((stem) => ['docx', 'odt', 'pdf'].map((ext) => join(out, `${stem}.${ext}`)));
+for (const f of sets.flat()) if (!existsSync(f)) { console.error(`missing ${f}`); process.exit(1); }
 
 /** A PDF's pages: its /Type /Page objects (not /Pages). */
 const pages = (file) => (readFileSync(file).toString('latin1').match(/\/Type\s*\/Page(?![a-zA-Z])/g) ?? []).length;
 
-console.log(`Lapin's PDF: ${pages(samples[2])} pages, ${statSync(samples[2]).size} bytes`);
+for (const samples of sets) console.log(`Lapin's PDF ${samples[2]}: ${pages(samples[2])} pages, ${statSync(samples[2]).size} bytes`);
 
 const mac = '/Applications/LibreOffice.app/Contents/MacOS/soffice';
 const soffice = existsSync(mac) ? mac : spawnSync('soffice', ['--version'], { stdio: 'ignore' }).status === 0 ? 'soffice' : null;
@@ -55,11 +56,11 @@ const convert = (file, format, dir) => {
 };
 
 let failed = false;
-for (const [file, kind] of [[samples[0], 'docx'], [samples[1], 'odt']]) {
+for (const samples of sets) for (const [file, kind] of [[samples[0], 'docx'], [samples[1], 'odt']]) {
   const dir = mkdtempSync(join(tmpdir(), `lapin-${kind}-`));
   try {
     convert(file, 'pdf', dir);
-    const pdf = join(dir, 'sample.pdf');
+    const pdf = join(dir, file.split('/').pop().replace(/\.\w+$/, '.pdf'));
     const n = existsSync(pdf) ? pages(pdf) : 0;
     console.log(`${kind} → PDF by LibreOffice: ${n} pages${n ? ` (${pdf})` : ''}`);
     if (n === 0) failed = true;
@@ -69,9 +70,10 @@ for (const [file, kind] of [[samples[0], 'docx'], [samples[1], 'odt']]) {
   }
 }
 if (png) {
-  for (const file of samples) {
-    const dir = join(out, `png-${file.split('.').pop()}`);
-    try { convert(file, 'png', dir); console.log(`first page as PNG: ${join(dir, 'sample.png')}`); } catch (e) { console.error(`png of ${file}: ${e.message}`); }
+  for (const file of sets.flat()) {
+    const name = file.split('/').pop();
+    const dir = join(out, `png-${name.replace('.', '-')}`);
+    try { convert(file, 'png', dir); console.log(`first page as PNG: ${join(dir, name.replace(/\.\w+$/, '.png'))}`); } catch (e) { console.error(`png of ${file}: ${e.message}`); }
   }
 }
 process.exit(failed ? 1 : 0);

@@ -9,7 +9,8 @@ namespace Lapin.Drawing.Export;
 /// <summary>
 /// Pages as a PDF (after BubbleBIM Pro's writer): vectors, no library.
 /// Fills even-odd, lines with their colour, paper width and dashes, texts in
-/// the PDF standard Helvetica with the Romanian letters added to its encoding;
+/// the PDF standard Helvetica (Times for a text whose font is "times", a
+/// document's) with the Romanian letters added to its encoding;
 /// pictures (an orthophoto) as image XObjects laid by their corners, clipped
 /// to their pen's box, as transparent as they are drawn.
 /// </summary>
@@ -44,7 +45,8 @@ public static class PdfWriter
             return k;
         }
         var streams = pages.Select(p => Deflate(Encoding.Latin1.GetBytes(Content(p, Picture, Alpha)))).ToList();
-        return File(pages, streams, pictures, alphas, info);
+        var times = pages.Any(p => p.Pens.Any(pen => pen.Texts.Any(t => t.Font == "times")));
+        return File(pages, streams, pictures, alphas, info, times);
     }
 
     static string F(double v) => double.IsFinite(v) ? v.ToString("0.###", CultureInfo.InvariantCulture) : "0";
@@ -115,7 +117,8 @@ public static class PdfWriter
     {
         // The cap height is the text's height (paper mm): Helvetica's is 0.718 em.
         var size = t.Height / 0.718;
-        var width = Advance(t.Text, t.Bold) * size;
+        var times = t.Font == "times";
+        var width = (times ? Documents.TimesMetrics.Advance(t.Text, t.Bold) : Advance(t.Text, t.Bold)) * size;
         var rad = t.Angle * Math.PI / 180;   // counter-clockwise on paper
         double cos = Math.Cos(rad), sin = Math.Sin(rad);
         var ox = t.Anchor switch { "middle" => -width / 2, "end" => -width, _ => 0 };
@@ -125,7 +128,7 @@ public static class PdfWriter
         var y = t.At.Y - (ox * sin + oy * cos);
         // Italic: the text slanted 12° along its baseline (Helvetica-Oblique's lean), the same font's shapes.
         var k = t.Italic ? Math.Tan(12 * Math.PI / 180) : 0;
-        c.Append("BT /").Append(t.Bold ? "F2" : "F1").Append(' ').Append(F(size * Pt)).Append(" Tf ")
+        c.Append("BT /").Append(times ? t.Bold ? "F4" : "F3" : t.Bold ? "F2" : "F1").Append(' ').Append(F(size * Pt)).Append(" Tf ")
          .Append(F(cos)).Append(' ').Append(F(sin)).Append(' ').Append(F(k * cos - sin)).Append(' ').Append(F(k * sin + cos)).Append(' ')
          .Append(X(x)).Append(' ').Append(Y(y)).Append(" Tm (").Append(Encode(t.Text)).Append(") Tj ET\n");
     }
@@ -174,7 +177,7 @@ public static class PdfWriter
         return ms.ToArray();
     }
 
-    static byte[] File(IReadOnlyList<PaperPage> pages, List<byte[]> streams, List<Raster> pictures, List<double> alphas, PdfInfo? info)
+    static byte[] File(IReadOnlyList<PaperPage> pages, List<byte[]> streams, List<Raster> pictures, List<double> alphas, PdfInfo? info, bool times = false)
     {
         // 1 catalog, 2 pages, 3 and 4 the fonts, then a page and its content for each, then the pictures (each with its alpha, if any).
         var objects = new List<byte[]>();
@@ -193,10 +196,13 @@ public static class PdfWriter
         for (int k = 0, next = first; k < pictures.Count; k++) { pictureIds.Add(next); next += pictures[k].Alpha != null ? 2 : 1; }
         var xobjects = pictures.Count == 0 ? "" : $" /XObject << {string.Join(' ', pictureIds.Select((id, k) => $"/Im{k} {id} 0 R"))} >>";
         var states = alphas.Count == 0 ? "" : $" /ExtGState << {string.Join(' ', alphas.Select((a, k) => $"/GS{k} << /ca {F(a)} /CA {F(a)} >>"))} >>";
+        // Times (a document's style) comes last, after the Info and the bookmarks, so a PDF without it is written as before.
+        var timesFirst = afterPictures + (info != null ? 1 + (outline.Count > 0 ? 1 + outline.Count : 0) : 0);
+        var timesFonts = times ? $" /F3 {timesFirst} 0 R /F4 {timesFirst + 1} 0 R" : "";
         byte[] Stream(string dict, byte[] data) => [.. Encoding.ASCII.GetBytes($"<< /Length {data.Length} {dict} >>\nstream\n"), .. data, .. Encoding.ASCII.GetBytes("\nendstream")];
         for (var i = 0; i < pages.Count; i++)
         {
-            Obj($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {F(pages[i].W * Pt)} {F(pages[i].H * Pt)}] /Contents {6 + 2 * i} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >>{xobjects}{states} >> >>");
+            Obj($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {F(pages[i].W * Pt)} {F(pages[i].H * Pt)}] /Contents {6 + 2 * i} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R{timesFonts} >>{xobjects}{states} >> >>");
             objects.Add(Stream("/Filter /FlateDecode", streams[i]));
         }
         for (var k = 0; k < pictures.Count; k++)
@@ -218,6 +224,11 @@ public static class PdfWriter
             if (info.Subject.Length > 0) dict.Append(" /Subject ").Append(TextString(info.Subject));
             Obj(dict.Append(" >>").ToString());
             if (outline.Count > 0) Outline(outline, outlineRoot, pages, Obj);
+        }
+        if (times)
+        {
+            Obj($"<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding {encoding} >>");
+            Obj($"<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold /Encoding {encoding} >>");
         }
         using var f = new MemoryStream();
         void W(string s) => f.Write(Encoding.ASCII.GetBytes(s));

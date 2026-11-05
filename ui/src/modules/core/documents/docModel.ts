@@ -24,7 +24,11 @@ export type DocBlock =
 
 export interface DocInput { key: string; label: string; multiline: boolean; default?: string | null; group?: string | null; value?: string | null }
 
-export interface DocPage { w: number; h: number; margins: [number, number, number, number]; header: DocRun[]; footer: DocRun[] }
+export interface DocPage {
+  w: number; h: number; margins: [number, number, number, number]; header: DocRun[]; footer: DocRun[];
+  /** The style as kept (fonts, size, headings' colour, logo), null for Lapin's own look. */
+  style?: { font?: string; pdfFont?: string; size?: number; headingColor?: string; logo?: { data: string; w: number; position?: string } } | null;
+}
 
 export interface DocSummary { id: string; name: string; template: string | null; templateTitle: string | null; lang: string | null; revision: string | null; status: string | null; isoType: string }
 
@@ -34,7 +38,8 @@ export interface DocPreview {
   blocks: DocBlock[]; missing: string[]; inputs: DocInput[]; summary: DocSummary;
 }
 
-export interface DocTemplate { id: string; title: string; description: string; lang: string; isoType: string; inputs: DocInput[] }
+/** A template as listed: where it is kept (Lapin's own, the project's, this computer's library). */
+export interface DocTemplate { id: string; title: string; description: string; lang: string; isoType: string; inputs: DocInput[]; origin?: 'builtin' | 'project' | 'library' }
 
 export interface ProjectInfo {
   name: string; projectId?: string | null;

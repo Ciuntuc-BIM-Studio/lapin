@@ -26,13 +26,16 @@ public static class DocxWriter
         using var ms = new MemoryStream();
         using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, true))
         {
-            var hasHeader = doc.Page.Header.Count > 0;
+            var look = DocLook.Of(doc.Page);
+            var logo = look.LogoBox(doc.Page);
+            var hasHeader = doc.Page.Header.Count > 0 || logo != null;
             var hasFooter = doc.Page.Footer.Count > 0;
             var types = new StringBuilder(XmlHead + "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
                 + "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>"
                 + "<Default Extension=\"xml\" ContentType=\"application/xml\"/>"
                 + "<Default Extension=\"png\" ContentType=\"image/png\"/>"
                 + "<Default Extension=\"svg\" ContentType=\"image/svg+xml\"/>"
+                + (logo != null && look.Logo!.Jpeg ? "<Default Extension=\"jpeg\" ContentType=\"image/jpeg\"/>" : "")
                 + "<Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/>"
                 + "<Override PartName=\"/word/styles.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml\"/>"
                 + "<Override PartName=\"/word/numbering.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml\"/>"
@@ -73,7 +76,13 @@ public static class DocxWriter
             Put(zip, "word/numbering.xml", w.Numbering());
             Put(zip, "word/settings.xml", XmlHead + $"<w:settings xmlns:w=\"{W}\"><w:defaultTabStop w:val=\"709\"/>"
                 + $"<w:characterSpacingControl w:val=\"doNotCompress\"/><w:updateFields w:val=\"true\"/><w:themeFontLang w:val=\"{Xml(Lang(doc.Meta.Lang))}\"/><w:compat><w:compatSetting w:name=\"compatibilityMode\" w:uri=\"http://schemas.microsoft.com/office/word\" w:val=\"15\"/></w:compat></w:settings>");
-            if (hasHeader) Put(zip, "word/header1.xml", XmlHead + $"<w:hdr xmlns:w=\"{W}\" xmlns:r=\"{R}\"><w:p><w:pPr><w:pStyle w:val=\"Header\"/></w:pPr>{Writer.Runs(p.Header)}</w:p></w:hdr>");
+            if (hasHeader) Put(zip, "word/header1.xml", Header(doc, look, logo));
+            if (logo != null)
+            {
+                Put(zip, "word/_rels/header1.xml.rels", XmlHead + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+                    + $"<Relationship Id=\"rIdLogo\" Type=\"{Rel}image\" Target=\"media/logo.{look.Logo!.Extension}\"/></Relationships>");
+                Put(zip, $"word/media/logo.{look.Logo.Extension}", look.Logo.Data);
+            }
             if (hasFooter) Put(zip, "word/footer1.xml", XmlHead + $"<w:ftr xmlns:w=\"{W}\" xmlns:r=\"{R}\"><w:p><w:pPr><w:pStyle w:val=\"Footer\"/><w:jc w:val=\"center\"/></w:pPr>{Writer.Runs(p.Footer)}</w:p></w:ftr>");
             foreach (var (_, path, data) in w.Media) Put(zip, "word/" + path, data);
             Put(zip, "docProps/core.xml", Core(doc));
@@ -104,30 +113,64 @@ public static class DocxWriter
         return b.Append("</cp:coreProperties>").ToString();
     }
 
+    /// <summary>
+    /// The header: its text, and the style's logo as an inline picture (on the left, the text after it at a tab; on the right,
+    /// the text first and the logo at a right tab on the text's edge).
+    /// </summary>
+    static string Header(FilledDocument doc, DocLook look, (double X, double Y, double W, double H)? logo)
+    {
+        var p = doc.Page;
+        var runs = Writer.Runs(p.Header);
+        if (logo is null) return XmlHead + $"<w:hdr xmlns:w=\"{W}\" xmlns:r=\"{R}\"><w:p><w:pPr><w:pStyle w:val=\"Header\"/></w:pPr>{runs}</w:p></w:hdr>";
+        var b = new StringBuilder(XmlHead + $"<w:hdr xmlns:w=\"{W}\" xmlns:r=\"{R}\""
+            + " xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\""
+            + " xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\""
+            + " xmlns:pic=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><w:p><w:pPr><w:pStyle w:val=\"Header\"/>");
+        var box = logo.Value;
+        var right = look.Logo!.Right;
+        b.Append(right ? $"<w:tabs><w:tab w:val=\"right\" w:pos=\"{Twips(p.TextWidth)}\"/></w:tabs>" : $"<w:tabs><w:tab w:val=\"left\" w:pos=\"{Twips(box.W + DocLook.LogoGap)}\"/></w:tabs>")
+         .Append("</w:pPr>");
+        var (cx, cy) = (Emu(box.W), Emu(box.H));
+        var picture = "<w:r><w:drawing><wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\">"
+            + $"<wp:extent cx=\"{cx}\" cy=\"{cy}\"/><wp:effectExtent l=\"0\" t=\"0\" r=\"0\" b=\"0\"/><wp:docPr id=\"9000\" name=\"Logo\" descr=\"Logo\"/>"
+            + "<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect=\"1\"/></wp:cNvGraphicFramePr>"
+            + "<a:graphic><a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\"><pic:pic>"
+            + "<pic:nvPicPr><pic:cNvPr id=\"9000\" name=\"Logo\"/><pic:cNvPicPr><a:picLocks noChangeAspect=\"1\"/></pic:cNvPicPr></pic:nvPicPr>"
+            + "<pic:blipFill><a:blip r:embed=\"rIdLogo\"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>"
+            + $"<pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"{cx}\" cy=\"{cy}\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr>"
+            + "</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>";
+        if (right) b.Append(runs).Append("<w:r><w:tab/></w:r>").Append(picture);
+        else b.Append(picture).Append("<w:r><w:tab/></w:r>").Append(runs);
+        return b.Append("</w:p></w:hdr>").ToString();
+    }
+
     static string Styles(FilledDocument doc)
     {
         static string Hp(double pt) => ((int)Math.Round(pt * 2)).ToString(CultureInfo.InvariantCulture);
+        var look = DocLook.Of(doc.Page);
+        var font = Xml(look.Font);
+        var color = look.HeadingColor is { Length: 7 } hc ? $"<w:color w:val=\"{hc[1..].ToUpperInvariant()}\"/>" : "";
         var tab = Twips(doc.Page.TextWidth);
         string Para(string id, string name, string ppr, string rpr, string basedOn = "Normal", string next = "Normal", string extra = "") =>
             $"<w:style w:type=\"paragraph\" w:styleId=\"{id}\"><w:name w:val=\"{name}\"/>{(basedOn.Length > 0 ? $"<w:basedOn w:val=\"{basedOn}\"/>" : "")}<w:next w:val=\"{next}\"/>{extra}<w:qFormat/><w:pPr>{ppr}</w:pPr><w:rPr>{rpr}</w:rPr></w:style>";
         string Heading(int level, int before) =>
             Para($"Heading{level}", $"heading {level}", $"<w:keepNext/><w:keepLines/><w:spacing w:before=\"{before}\" w:after=\"120\"/><w:outlineLvl w:val=\"{level - 1}\"/>",
-                $"<w:b/><w:bCs/><w:sz w:val=\"{Hp(HeadingPt(level))}\"/><w:szCs w:val=\"{Hp(HeadingPt(level))}\"/>", extra: "<w:uiPriority w:val=\"9\"/>");
+                $"<w:b/><w:bCs/>{color}<w:sz w:val=\"{Hp(look.Heading(level))}\"/><w:szCs w:val=\"{Hp(look.Heading(level))}\"/>", extra: "<w:uiPriority w:val=\"9\"/>");
         var b = new StringBuilder(XmlHead + $"<w:styles xmlns:w=\"{W}\">");
-        b.Append($"<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii=\"{Font}\" w:hAnsi=\"{Font}\" w:eastAsia=\"{Font}\" w:cs=\"{Font}\"/><w:sz w:val=\"{Hp(BodyPt)}\"/><w:szCs w:val=\"{Hp(BodyPt)}\"/><w:lang w:val=\"{Xml(Lang(doc.Meta.Lang))}\"/></w:rPr></w:rPrDefault>")
+        b.Append($"<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii=\"{font}\" w:hAnsi=\"{font}\" w:eastAsia=\"{font}\" w:cs=\"{font}\"/><w:sz w:val=\"{Hp(look.Body)}\"/><w:szCs w:val=\"{Hp(look.Body)}\"/><w:lang w:val=\"{Xml(Lang(doc.Meta.Lang))}\"/></w:rPr></w:rPrDefault>")
          .Append("<w:pPrDefault><w:pPr><w:spacing w:after=\"140\" w:line=\"264\" w:lineRule=\"auto\"/></w:pPr></w:pPrDefault></w:docDefaults>");
         b.Append(Para("Normal", "Normal", "", "", basedOn: "").Replace("<w:style w:type=\"paragraph\" w:styleId=\"Normal\">", "<w:style w:type=\"paragraph\" w:default=\"1\" w:styleId=\"Normal\">"));
         b.Append(Heading(1, 360)).Append(Heading(2, 240)).Append(Heading(3, 200));
         b.Append(Para("Title", "Title", "<w:spacing w:after=\"240\"/>", "<w:b/><w:sz w:val=\"44\"/><w:szCs w:val=\"44\"/>"));
-        b.Append(Para("Caption", "caption", "<w:spacing w:before=\"60\" w:after=\"200\"/>", $"<w:i/><w:iCs/><w:sz w:val=\"{Hp(CaptionPt)}\"/><w:szCs w:val=\"{Hp(CaptionPt)}\"/>"));
-        b.Append(Para("Note", "Note", "", $"<w:color w:val=\"555555\"/><w:sz w:val=\"{Hp(NotePt)}\"/><w:szCs w:val=\"{Hp(NotePt)}\"/>"));
+        b.Append(Para("Caption", "caption", "<w:spacing w:before=\"60\" w:after=\"200\"/>", $"<w:i/><w:iCs/><w:sz w:val=\"{Hp(look.Caption)}\"/><w:szCs w:val=\"{Hp(look.Caption)}\"/>"));
+        b.Append(Para("Note", "Note", "", $"<w:color w:val=\"555555\"/><w:sz w:val=\"{Hp(look.Note)}\"/><w:szCs w:val=\"{Hp(look.Note)}\"/>"));
         b.Append(Para("ListParagraph", "List Paragraph", "<w:spacing w:after=\"60\"/><w:ind w:left=\"720\"/><w:contextualSpacing/>", ""));
-        b.Append(Para("TableText", "Table Text", "<w:spacing w:before=\"20\" w:after=\"20\" w:line=\"240\" w:lineRule=\"auto\"/>", $"<w:sz w:val=\"{Hp(TablePt)}\"/><w:szCs w:val=\"{Hp(TablePt)}\"/>"));
-        b.Append(Para("TOCHeading", "TOC Heading", "<w:keepNext/><w:spacing w:before=\"240\" w:after=\"160\"/>", $"<w:b/><w:sz w:val=\"{Hp(HeadingPt(1))}\"/><w:szCs w:val=\"{Hp(HeadingPt(1))}\"/>", basedOn: "Normal"));
+        b.Append(Para("TableText", "Table Text", "<w:spacing w:before=\"20\" w:after=\"20\" w:line=\"240\" w:lineRule=\"auto\"/>", $"<w:sz w:val=\"{Hp(look.Table)}\"/><w:szCs w:val=\"{Hp(look.Table)}\"/>"));
+        b.Append(Para("TOCHeading", "TOC Heading", "<w:keepNext/><w:spacing w:before=\"240\" w:after=\"160\"/>", $"<w:b/><w:sz w:val=\"{Hp(look.Heading(1))}\"/><w:szCs w:val=\"{Hp(look.Heading(1))}\"/>", basedOn: "Normal"));
         b.Append(Para("TOC1", "toc 1", $"<w:tabs><w:tab w:val=\"right\" w:leader=\"dot\" w:pos=\"{tab}\"/></w:tabs><w:spacing w:after=\"60\"/>", "<w:b/>"));
         b.Append(Para("TOC2", "toc 2", $"<w:tabs><w:tab w:val=\"right\" w:leader=\"dot\" w:pos=\"{tab}\"/></w:tabs><w:spacing w:after=\"40\"/><w:ind w:left=\"340\"/>", ""));
-        b.Append(Para("Header", "header", "<w:spacing w:after=\"0\"/>", $"<w:color w:val=\"555555\"/><w:sz w:val=\"{Hp(HeaderPt)}\"/><w:szCs w:val=\"{Hp(HeaderPt)}\"/>"));
-        b.Append(Para("Footer", "footer", "<w:spacing w:after=\"0\"/>", $"<w:color w:val=\"555555\"/><w:sz w:val=\"{Hp(HeaderPt)}\"/><w:szCs w:val=\"{Hp(HeaderPt)}\"/>"));
+        b.Append(Para("Header", "header", "<w:spacing w:after=\"0\"/>", $"<w:color w:val=\"555555\"/><w:sz w:val=\"{Hp(look.Header)}\"/><w:szCs w:val=\"{Hp(look.Header)}\"/>"));
+        b.Append(Para("Footer", "footer", "<w:spacing w:after=\"0\"/>", $"<w:color w:val=\"555555\"/><w:sz w:val=\"{Hp(look.Header)}\"/><w:szCs w:val=\"{Hp(look.Header)}\"/>"));
         b.Append("<w:style w:type=\"character\" w:styleId=\"Hyperlink\"><w:name w:val=\"Hyperlink\"/><w:rPr><w:color w:val=\"0563C1\"/><w:u w:val=\"single\"/></w:rPr></w:style>");
         b.Append("<w:style w:type=\"table\" w:default=\"1\" w:styleId=\"TableNormal\"><w:name w:val=\"Normal Table\"/><w:tblPr><w:tblInd w:w=\"0\" w:type=\"dxa\"/><w:tblCellMar><w:top w:w=\"0\" w:type=\"dxa\"/><w:left w:w=\"85\" w:type=\"dxa\"/><w:bottom w:w=\"0\" w:type=\"dxa\"/><w:right w:w=\"85\" w:type=\"dxa\"/></w:tblCellMar></w:tblPr></w:style>");
         b.Append("<w:style w:type=\"table\" w:styleId=\"TableGrid\"><w:name w:val=\"Table Grid\"/><w:basedOn w:val=\"TableNormal\"/><w:pPr><w:spacing w:after=\"0\"/></w:pPr><w:tblPr><w:tblBorders>"

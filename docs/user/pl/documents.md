@@ -43,6 +43,73 @@ Karta **Dane wejściowe** zawiera teksty, które może napisać tylko projektant
 - **Aktualizuj z szablonu** bierze ponownie tekst i układ szablonu, dla dokumentu utworzonego przed zmianą szablonu. Twoje dane wejściowe zostają.
 - **Zmień nazwę**, **Duplikuj** i **Usuń** działają na pokazanym dokumencie. Usunięcie to jeden krok cofania.
 
+## Edycja dokumentu
+
+**Edytuj**, na dole okna Dokumenty, zamienia stronę pośrodku w edytor własnego tekstu dokumentu; **Podgląd** pokazuje go znowu na jego stronach. To, co zmieniasz, należy tylko do tego dokumentu: szablon zostaje taki, jaki był (**Zapisz jako szablon…**, niżej, zachowuje twoje zmiany jako szablon).
+
+![Edycja dokumentu: pola jako etykiety z ich wartościami, zaznaczona tabela z projektu i jej ustawienia po prawej](shots/documents-editor.webp)
+
+- **Pasek narzędzi** ma style tekstu: **Akapit**, **Nagłówek 1**–**3**, pogrubienie, kursywę, listy punktowane i numerowane, cofnij i ponów. Działają też zwykłe skróty (Ctrl+B, Ctrl+I, Ctrl+Z w edytorze).
+- **Pola** są widoczne jako etykiety z nazwą i obecną wartością, na przykład inwestor, *Popescu Ion și Maria*. Pole, którego projekt jeszcze nie wypełnia, jest pomarańczowe.
+- **Bloki projektu** — tabela, obraz, spis treści — są rysowane z prawdziwą zawartością. Kliknięcie zaznacza blok: jego ustawienia pojawiają się po prawej, w miejscu kart.
+
+Zapis jest automatyczny: chwilę po tym, jak przestaniesz pisać, i po powrocie do **Podglądu**; każda zmiana to jeden krok cofania w projekcie.
+
+### Wstaw
+
+**Wstaw** umieszcza przy kursorze:
+
+- **Pole…**: pole projektu, wyszukane po nazwie; lista pokazuje wartość każdego pola. Wewnątrz powtórzenia proponowane są też pola jego elementów (nazwa kondygnacji, powierzchnia pomieszczenia).
+
+  ![Wstaw → Pole…: wyszukane „client”, pola z ich wartościami](shots/documents-insert-field.webp)
+
+- **Tabela z projektu…**: zestawienie lub lista projektu (zestawienie stolarki, pomieszczenia, materiały…). W jej ustawieniach: źródło, **Tytuł**, pokazywane kolumny i wiersz sumy.
+- **Obraz widoku…**: rzut, przekrój, elewacja lub widok 3D. W jego ustawieniach: **Skala 1:** albo **Szerokość (mm)** (nigdy szerszy niż tekst) i **Podpis**.
+- **Pola klucz–wartość**: dwukolumnowa tabela etykiet i wartości; wartość może zawierać pola, jak `{{project.name}}`.
+- **Powtórz dla…**: tekst w środku jest pisany raz dla każdego elementu kolekcji: kondygnacji, pomieszczeń, dachów, materiałów, arkuszy, dokumentów… Pasek nad nim mówi **Dla każdego** i ile jest elementów; jego strzałki **‹ ›** zmieniają element, który edytor pokazuje podczas pisania. W ustawieniach **Tylko elementy, gdzie** zostawia niektóre z nich, a **Tekst, gdy nie ma żadnego** dodaje to, co jest pisane, gdy nie ma żadnego.
+- **Warunek…**: tekst w środku jest pisany tylko wtedy, gdy pole ma wartość (albo, po zaznaczeniu, tylko gdy jest puste). **W przeciwnym razie: tekst, gdy warunek nie jest spełniony** dodaje drugą część, pisaną zamiast niego.
+- **Tekst do uzupełnienia…**: nowe dane wejściowe z etykietą, grupą i tekstem domyślnym; ich tekst wpisujesz na karcie **Dane wejściowe**, w podglądzie.
+- **Spis treści** i **Podział strony**.
+
+![Powtórzenie dla kondygnacji, warunek w nim i pomieszczenia pokazanej kondygnacji, zmienianej przez ‹ ›](shots/documents-repeat.webp)
+
+W ustawieniach bloku **Usuń** go usuwa; dla powtórzenia lub warunku **Zachowaj tylko zawartość** usuwa pasek i zostawia to, co jest w środku.
+
+## Twoje szablony
+
+**Zapisz jako szablon…** zachowuje tekst, układ, dane wejściowe i styl dokumentu jako szablon. Nadaj mu tytuł i opis i wybierz, gdzie go zachować:
+
+- **Ten projekt**: idzie z plikiem projektu do każdego, kto go otworzy.
+- **Biblioteka tego komputera**: proponuje go każdy projekt na tym komputerze.
+- **Oba**.
+
+**Zapisz jako** może zastąpić szablon zapisany wcześniej; dokumenty już z niego utworzone zachowują swój tekst do **Aktualizuj z szablonu**. Nowy szablon od razu pojawia się w **Nowy z szablonu**.
+
+![Zapisz jako szablon: tytuł, opis i gdzie go zachować](shots/documents-save-template.webp)
+
+**Zarządzaj → Szablony dokumentów…** pokazuje szablony w trzech grupach: **Wbudowane** (Lapina), **Ten projekt** i **Ten komputer**. Dla wybranego:
+
+- **Zmień nazwę** i **Usuń** (usunięcie szablonu projektu to jeden krok cofania; dokumenty z niego utworzone zachowują swój tekst).
+- **Powiel do projektu** lub **Powiel do biblioteki**: szablon wbudowany zmienia się tylko przez kopię.
+- **Kopiuj do biblioteki** lub **Kopiuj do projektu**, aby przenieść go z jednego miejsca do drugiego.
+- **Eksportuj…** zapisuje szablon jako plik `.json`; **Importuj…** wczytuje go do tego projektu lub do biblioteki tego komputera. Tak koledzy dzielą się szablonami firmy.
+
+![Szablony dokumentów: wbudowane, projektu i komputera, wybrany z jego stylem](shots/document-templates.webp)
+
+## Styl firmy
+
+Dokument, a także szablon projektu lub biblioteki, ma własny styl: karta **Styl** okna Dokumenty dla pokazanego dokumentu, część **Styl** w Zarządzaj → Szablony dokumentów… dla szablonu. Szablony wbudowane zachowują wygląd Lapina: powiel jeden, aby nadać mu swój.
+
+- **Czcionka (DOCX, ODT)**: Arial (Lapina), Calibri, Times New Roman, Georgia, Verdana lub Liberation Sans.
+- **Czcionka PDF**: Helvetica lub Times, własne czcionki PDF; domyślnie ta najbliższa czcionce powyżej.
+- **Rozmiar tekstu (pt)**: rozmiar tekstu głównego, od 6 do 24 pt.
+- **Kolor nagłówków**.
+- **Logo w nagłówku**: **Wybierz logo…** bierze plik PNG lub JPEG (poniżej 1 MB); ustaw jego **Szerokość (mm)** i czy stoi **Po lewej**, czy **Po prawej**. Jest zapisywane tak samo w DOCX, ODT i PDF.
+
+Próbka pod polami pokazuje górę strony tak, jak pokażą ją pliki. **Własny wygląd Lapina** usuwa styl. Każda zmiana to jeden krok cofania.
+
+![Karta Styl: kolor nagłówków i logo w nagłówku, z próbką](shots/documents-style.webp)
+
 ## Eksport
 
 - **Eksportuj DOCX** i **Eksportuj ODT** zapisują plik, który otworzysz i zmienisz w Wordzie lub LibreOffice, z nagłówkami jako własnymi stylami programu, spisem treści i numerami stron jako polami oraz obrazami projektu.
@@ -64,4 +131,8 @@ Lapin ma trzy szablony, na razie po rumuńsku:
 - **Caiet de sarcini: tâmplărie și finisaje** (specyfikacja stolarki i wykończeń): materiały projektu według kategorii, zestawienie stolarki z liczbą sztuk, wykończenia pomieszczenie po pomieszczeniu oraz dane wejściowe dla postanowień ogólnych, wymagań, wykonania i odbioru, z domyślnymi tekstami do dostosowania.
 - **Borderou de piese scrise și desenate** (wykaz części opisowych i rysunkowych): dokumenty i arkusze projektu, z numerem, tytułem, skalą i rewizją.
 
-Wizualny edytor własnych szablonów pojawi się później.
+Zacznij od jednego z nich, zmień go w edytorze, a potem **Zapisz jako szablon…**, aby mieć własny.
+
+## Dla asystentów AI
+
+Asystent połączony przez most MCP Lapina może utworzyć dokument, wpisać jego dane wejściowe i wyeksportować go przez `lapin_document_export`: zobacz [Lapin and AI agents](https://github.com/Ciuntuc-BIM-Studio/lapin-pro/blob/main/docs/mcp.md#documents) (po angielsku).

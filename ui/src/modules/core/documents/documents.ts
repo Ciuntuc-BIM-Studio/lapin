@@ -10,19 +10,55 @@ import { saveFile } from '../../../engine/files';
 import { create } from 'zustand';
 import { notify, useUi } from '../../../app/store';
 import { DOC_MIME, pensToSvg, pixelsAt, type DocImage, type DocPreview, type DocSummary, type DocTemplate, type ProjectInfo } from './docModel';
+import { libraryTemplate, libraryTemplates, mergeTemplates, type DocStyle, type TemplateJson } from './templateLibrary';
 
 export const listDocuments = () => query<DocSummary[]>('document.list').then((r) => r ?? []);
-export const documentTemplates = () => query<DocTemplate[]>('document.templates').then((r) => r ?? []);
+/** The engine's templates: Lapin's own and the project's, each with its origin. */
+export const engineTemplates = () => query<DocTemplate[]>('document.templates').then((r) => r ?? []);
+/** Every template a document can start from: the engine's, then this computer's library (origin library). */
+export const documentTemplates = () => engineTemplates().then((r) => mergeTemplates(r, libraryTemplates()));
 export const documentPreview = (id: string) => query<DocPreview>('document.preview', { id });
 export const projectInfo = () => query<ProjectInfo>('project.info');
 
-export const createDocument = (template: string, name?: string) =>
-  execute('document.create', { template, ...(name ? { name } : {}) }).then((r) => (r as { id?: string } | null)?.id ?? null);
+/** A template the engine is given: its id when the engine has it, else the library's template whole. */
+async function templateArg(id: string): Promise<string | TemplateJson> {
+  const kept = libraryTemplate(id);
+  if (!kept) return id;
+  return (await engineTemplates()).some((t) => t.id === id) ? id : kept;
+}
+
+/** A document from a template: one of the engine's by its id, the library's given whole. */
+export const createDocument = async (template: string, name?: string) =>
+  execute('document.create', { template: await templateArg(template), ...(name ? { name } : {}) }).then((r) => (r as { id?: string } | null)?.id ?? null);
 export const updateDocument = (id: string, args: { name?: string; lang?: string; inputs?: Record<string, string | null> }) => execute('document.update', { id, ...args });
 export const deleteDocument = (id: string) => execute('document.delete', { id });
 export const duplicateDocument = (id: string) => execute('document.duplicate', { id }).then((r) => (r as { id?: string } | null)?.id ?? null);
-export const refreshDocument = (id: string) => execute('document.refresh', { id });
+/** Update from template: from the library's template, given whole, when the engine has not the one the document came from. */
+export async function refreshDocument(id: string): Promise<unknown> {
+  const from = (await listDocuments()).find((d) => d.id === id)?.template;
+  const t = from ? await templateArg(from) : null;
+  return execute('document.refresh', { id, ...(t && typeof t !== 'string' ? { template: t } : {}) });
+}
 export const setProjectInfo = (fields: Record<string, string | null>) => execute('project.setInfo', fields);
+
+// ── Templates (stage 4): the project's, saved, renamed, deleted, imported; the style of a document or a template ──
+
+/** A template whole: an engine template by its id, or one made from a document (title, description). */
+export const templateJson = (args: { templateId: string } | { id: string; title?: string; description?: string; newId?: string }) => query<TemplateJson>('document.templateJson', args);
+export const saveTemplate = (id: string, title: string, description?: string, templateId?: string) =>
+  execute('document.saveTemplate', { id, title, ...(description != null ? { description } : {}), ...(templateId ? { templateId } : {}) }).then((r) => (r as { templateId?: string } | null)?.templateId ?? null);
+export const deleteTemplate = (templateId: string) => execute('document.deleteTemplate', { templateId });
+export const renameTemplate = (templateId: string, title: string, description?: string) => execute('document.renameTemplate', { templateId, title, ...(description != null ? { description } : {}) });
+export const importTemplate = (template: TemplateJson, options: { overwrite?: boolean; title?: string } = {}) =>
+  execute('document.importTemplate', { template: stripAdded(template), ...options }).then((r) => (r as { templateId?: string; replaced?: boolean } | null) ?? null);
+export const documentStyle = (args: { id: string } | { templateId: string }) => query<DocStyle>('document.style', args).then((r) => r ?? {});
+export const setDocumentStyle = (args: { id: string } | { templateId: string }, style: DocStyle | null) => execute('document.setStyle', { ...args, style });
+
+/** A library template without what only the library keeps. */
+function stripAdded(t: TemplateJson): TemplateJson {
+  const { added: _added, ...rest } = t;
+  return rest;
+}
 
 /** A picture's data URL for a pen's image (an orthophoto: a LapinImage the interface holds). */
 function imageData(id: string): string | null {

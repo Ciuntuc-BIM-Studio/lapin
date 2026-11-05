@@ -59,15 +59,17 @@ public static class Documents
         r.Class(new(Class, "Document", [], "#4a6fa5", Kind: "resource"));
         r.Service<IDocumentFields>(new CoreDocumentFields());
         ProjectInfo.Register(r);
+        DocumentEditing.Register(r);
+        DocumentTemplateStore.Register(r);
 
         // A document from a template: a built-in one by its id, or one given whole (a company's, stage 4).
         r.Command("document.create", "New document", (ctx, a) =>
         {
-            var doc = Create(ctx, DocumentTemplates.Resolve(a["template"]), (string?)a["name"]);
+            var doc = Create(ctx, DocumentTemplateStore.Resolve(ctx.Model, a["template"]), (string?)a["name"]);
             return new JsonObject { ["id"] = doc.Id };
         });
 
-        // A document's name, language, page and blocks replaced as given; its inputs merged (a null value removes one).
+        // A document's name, language, page, blocks and input definitions replaced as given; its inputs merged (a null value removes one).
         r.Command("document.update", "Change document", (ctx, a) =>
         {
             var doc = Require(ctx.Model, (string?)a["id"]);
@@ -77,8 +79,10 @@ public static class Documents
             if (a["blocks"] is JsonArray blocks)
             {
                 DocumentBlocks.Check(blocks);
+                DocumentImages.CheckBoundaries(ctx.Model, blocks);
                 attrs["blocks"] = blocks.DeepClone();
             }
+            if (a["inputDefs"] is JsonArray defs) attrs["inputDefs"] = DocumentEditing.InputDefs(defs);
             if (a["inputs"] is JsonObject inputs)
             {
                 var kept = (attrs["inputs"] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
@@ -115,14 +119,12 @@ public static class Documents
         {
             var doc = Require(ctx.Model, (string?)a["id"]);
             var t = a["template"] is JsonObject given ? DocumentTemplates.From(given)
-                : DocumentTemplates.Find(doc.Str("template")) ?? throw new CommandException($"The template „{doc.Str("template")}” is not in this Lapin.");
+                : DocumentTemplateStore.Find(ctx.Model, doc.Str("template")) ?? throw new CommandException($"The template „{doc.Str("template")}” is not in this Lapin.");
             var attrs = doc.CloneAttrs();
             FromTemplate(attrs, t);
             ctx.Replace(doc.With(attrs: attrs));
             return null;
         });
-
-        r.Query("document.templates", (_, _) => new JsonArray(DocumentTemplates.BuiltIn.Select(t => (JsonNode)t.Summary()).ToArray()));
 
         r.Query("document.list", (q, _) => new JsonArray(All(q.Model).Select(d => (JsonNode)Summary(d)).ToArray()));
 

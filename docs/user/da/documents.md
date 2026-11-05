@@ -43,6 +43,73 @@ Fanen **Input** har de tekster, kun den projekterende kan skrive, grupperet som 
 - **Opdatér fra skabelon** henter skabelonens tekst og opsætning igen, til et dokument lavet før skabelonen blev ændret. Dine input beholdes.
 - **Omdøb**, **Duplikér** og **Slet** virker på det viste dokument. En sletning er ét fortryd-trin.
 
+## Redigér et dokument
+
+**Redigér**, nederst i dialogen Dokumenter, gør siden i midten til en editor for dokumentets egen tekst; **Forhåndsvisning** viser det igen på dets sider. Det, du ændrer, hører kun til dette dokument: Skabelonen forbliver, som den var (**Gem som skabelon…**, længere nede, gemmer dine ændringer som skabelon).
+
+![Redigér et dokument: felterne som mærker med deres værdier, en tabel fra projektet valgt og dens indstillinger til højre](shots/documents-editor.webp)
+
+- **Værktøjslinjen** har tekstens typografier: **Afsnit**, **Overskrift 1**–**3**, fed, kursiv, punktopstilling og nummereret liste, fortryd og gentag. De sædvanlige taster virker også (Ctrl+B, Ctrl+I, Ctrl+Z i editoren).
+- **Felter** vises som mærker med deres navn og deres nuværende værdi, for eksempel bygherren, *Popescu Ion și Maria*. Et felt, som projektet endnu ikke udfylder, er orange.
+- **Projektets blokke** — en tabel, et billede, indholdsfortegnelsen — tegnes med deres rigtige indhold. Klik på en for at vælge den: Dens indstillinger vises til højre i stedet for fanerne.
+
+Der gemmes automatisk: et øjeblik efter du holder op med at skrive, og når du går tilbage til **Forhåndsvisning**; hver ændring er et fortryd-trin i projektet.
+
+### Indsæt
+
+**Indsæt** sætter ind ved markøren:
+
+- **Felt…**: et felt fra projektet, søgt efter navn; listen viser hvert felts værdi. Inde i en gentagelse tilbydes også dens elementers felter (en etages navn, et rums areal).
+
+  ![Indsæt → Felt…: „client“ søgt, felterne med deres værdier](shots/documents-insert-field.webp)
+
+- **Tabel fra projektet…**: en liste fra projektet (dør- og vinduesliste, rummene, materialerne…). I dens indstillinger: **Kilde**, **Titel**, de viste kolonner og totalrækken.
+- **Billede af en visning…**: en plan, et snit, en facade eller en 3D-visning. I dets indstillinger: **Målestok 1:** eller **Bredde (mm)** (aldrig bredere end teksten) og en **Billedtekst**.
+- **Nøgle–værdi-felter**: en tabel med to kolonner af etiketter og værdier; en værdi kan indeholde felter, som `{{project.name}}`.
+- **Gentag for…**: Teksten indeni skrives én gang for hvert element i en samling: etagerne, rummene, tagene, materialerne, tegningsarkene, dokumenterne… Et bånd over den siger **For hver** og hvor mange elementer der er; dets pile **‹ ›** skifter det element, editoren viser, mens du skriver. I indstillingerne beholder **Kun de elementer, hvor** nogle af dem, og **Tekst når der ingen er** tilføjer det, der skrives, når der ingen er.
+- **Betingelse…**: Teksten indeni skrives kun, når et felt har en værdi (eller, afkrydset, kun når det er tomt). **Ellers: tekst når den ikke gælder** tilføjer en anden del, der skrives i stedet.
+- **Tekst at udfylde…**: et nyt input med etiket, gruppe og standardtekst; dets tekst skriver du i fanen **Input**, i forhåndsvisning.
+- **Indhold** og **Sideskift**.
+
+![En gentagelse over etagerne, en betingelse i den og rummene på den viste etage, skiftet med ‹ ›](shots/documents-repeat.webp)
+
+I en bloks indstillinger fjerner **Fjern** den; for en gentagelse eller en betingelse fjerner **Behold kun indholdet** båndet og beholder det, der står i det.
+
+## Dine skabeloner
+
+**Gem som skabelon…** gemmer dokumentets tekst, layout, input og stil som en skabelon. Giv den en titel og en beskrivelse, og vælg, hvor den skal gemmes:
+
+- **Dette projekt**: Den følger med projektfilen til alle, der åbner den.
+- **Denne computers bibliotek**: Alle projekter på denne computer tilbyder den.
+- **Begge**.
+
+**Gem som** kan erstatte en skabelon, du har gemt før; dokumenter, der allerede er lavet ud fra den, beholder deres tekst indtil **Opdatér fra skabelon**. Den nye skabelon står straks under **Ny fra skabelon**.
+
+![Gem som skabelon: titlen, beskrivelsen og hvor den gemmes](shots/documents-save-template.webp)
+
+**Administrer → Dokumentskabeloner…** viser skabelonerne i tre grupper: **Indbyggede** (Lapins), **Dette projekt** og **Denne computer**. For den valgte:
+
+- **Omdøb** og **Slet** (at slette en projektskabelon er ét fortryd-trin; dokumenter lavet ud fra den beholder deres tekst).
+- **Dupliker ind i projektet** eller **Dupliker ind i biblioteket**: En indbygget skabelon ændres kun gennem en kopi.
+- **Kopiér til biblioteket** eller **Kopiér til projektet** for at flytte den fra det ene sted til det andet.
+- **Eksportér…** skriver skabelonen som en `.json`-fil; **Importér…** læser en ind i dette projekt eller i denne computers bibliotek. Sådan deler kolleger et firmas skabeloner.
+
+![Dokumentskabeloner: de indbyggede, projektets og computerens, den valgte med sin stil](shots/document-templates.webp)
+
+## Firmaets stil
+
+Et dokument, og en skabelon i projektet eller biblioteket, har sin egen stil: fanen **Stil** i dialogen Dokumenter for det viste dokument, delen **Stil** i Administrer → Dokumentskabeloner… for en skabelon. Indbyggede skabeloner beholder Lapins udseende: Dupliker en for at give den dit.
+
+- **Skrifttype (DOCX, ODT)**: Arial (Lapins), Calibri, Times New Roman, Georgia, Verdana eller Liberation Sans.
+- **PDF-skrifttype**: Helvetica eller Times, PDF'ens egne skrifttyper; som standard den, der ligger nærmest skrifttypen ovenfor.
+- **Tekststørrelse (pt)**: brødtekstens størrelse, fra 6 til 24 pt.
+- **Overskrifternes farve**.
+- **Logo i sidehovedet**: **Vælg logo…** tager en PNG eller JPEG (under 1 MB); sæt dens **Bredde (mm)** og om den står **Til venstre** eller **Til højre**. Den skrives ens i DOCX, ODT og PDF.
+
+En prøve under felterne viser sidens top, som filerne vil vise den. **Lapins eget udseende** fjerner stilen. Hver ændring er ét fortryd-trin.
+
+![Fanen Stil: overskrifternes farve og et logo i sidehovedet, med prøven](shots/documents-style.webp)
+
 ## Eksport
 
 - **Eksportér DOCX** og **Eksportér ODT** skriver en fil, du kan åbne og redigere i Word eller LibreOffice, med overskrifterne som programmets egne typografier, indholdsfortegnelse og sidetal som felter og projektets billeder.
@@ -64,4 +131,8 @@ Lapin har tre skabeloner, foreløbig på rumænsk:
 - **Caiet de sarcini: tâmplărie și finisaje** (arbejdsbeskrivelsen for vinduer, døre og overflader): projektets materialer efter kategori, vindues- og dørlisten med antal, overfladerne rum for rum og input til generelle bestemmelser, krav, udførelse og aflevering, med standardtekster at tilpasse.
 - **Borderou de piese scrise și desenate** (listen over skriftlige og tegnede dele): projektets dokumenter og tegningsark med nummer, titel, målestok og revision.
 
-En visuel editor til dine egne skabeloner kommer senere.
+Start fra en af dem, ændr den i editoren, og brug så **Gem som skabelon…** for at have din egen.
+
+## Til AI-assistenter
+
+En assistent, der er forbundet gennem Lapins MCP-bro, kan lave et dokument, skrive dets input og eksportere det med `lapin_document_export`: se [Lapin and AI agents](https://github.com/Ciuntuc-BIM-Studio/lapin-pro/blob/main/docs/mcp.md#documents) (på engelsk).
