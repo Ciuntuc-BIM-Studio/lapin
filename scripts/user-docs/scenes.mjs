@@ -2958,7 +2958,9 @@ export const scenes = [
       t.expect(await page.locator('.view3d-modes').count() === 0, 'Show in 3D again turns it off');
 
       // The section box: on from the View tab, its top at the ground floor's plan cut, its east face dragged in.
-      await page.locator('.tabs-row button.tab').getByText('View', { exact: true }).click();
+      // The View tab may be under More ▾ (decision 367): chosen as the tab strip does.
+      await t.ui({ tab: 'view' });
+      await t.wait(300);
       await page.locator('.band').getByRole('button', { name: 'Section box' }).click();
       await t.wait(800);
       t.expect(await page.locator('.section-box-handle:not(.section-box-turn)').count() === 6, 'the section box has a handle on each face');
@@ -4520,11 +4522,11 @@ export const scenes = [
       await t.shot('quick-tools-dialog', { of: '.quick-tools-dialog', pad: 0 });
       await t.page.locator('.quick-tools-dialog .btn.primary').click();
       await t.wait(300);
-      t.expect(await t.page.locator('.hotbar.named .slot.empty').count() >= 1, 'an emptied slot waits for a tool');
-      t.expect(await t.page.locator('.hotbar.named .slot').nth(6).getAttribute('data-tool') === 'architecture.stair', 'the stair stands in slot 7');
-      const typed = t.page.locator('.hotbar.named .slot.typed').first();
+      t.expect(await t.page.locator('.hotbar .slot.empty').count() >= 1, 'an emptied slot waits for a tool');
+      t.expect(await t.page.locator('.hotbar .slot').nth(6).getAttribute('data-tool') === 'architecture.stair', 'the stair stands in slot 7');
+      const typed = t.page.locator('.hotbar .slot.typed').first();
       t.expect(await typed.count() === 1 && !!(await typed.getAttribute('data-type')), 'the wall\'s slot shows its type\'s name');
-      await t.shot('quick-tools', { of: '.hotbar.named', pad: 8 });
+      await t.shot('quick-tools', { of: '.hotbar', pad: 8 });
       await typed.click();
       await t.wait(200);
       t.expect(await t.page.evaluate(async () => { const { useUi } = await import('/src/app/store.ts'); const s = useUi.getState(); return s.tool === 'architecture.wall' && !!s.wallTypeId; }), 'the typed slot starts the wall tool with its type');
@@ -4557,11 +4559,11 @@ export const scenes = [
       // A window card dragged onto the empty quick slot after the last tool.
       const card = t.page.locator('[data-testid=catalog] .catalog-card').first();
       const name = await card.getAttribute('data-type');
-      const empty = t.page.locator('.hotbar.named .slot.empty').last();
+      const empty = t.page.locator('.hotbar .slot.empty').last();
       if (await empty.count() === 0) await t.page.evaluate(async () => (await import('/src/platform/modules.ts')).putInSlot(8, null));
-      await card.dragTo(t.page.locator('.hotbar.named .slot.empty').last());
+      await card.dragTo(t.page.locator('.hotbar .slot.empty').last());
       await t.wait(300);
-      t.expect(await t.page.locator(`.hotbar.named .slot[data-type="${name}"]`).count() === 1, 'the dragged card stands in a quick slot with its type');
+      t.expect(await t.page.locator(`.hotbar .slot[data-type="${name}"]`).count() === 1, 'the dragged card stands in a quick slot with its type');
       // A click on a wall card places walls of that type.
       await t.page.locator('[data-testid=catalog] [data-kind="architecture.wall"]').click();
       await t.page.locator('[data-testid=catalog] .catalog-card').first().click();
