@@ -26,6 +26,8 @@ public sealed class JoineryIfc : IJoineryIfc
     {
         string M(string v) => mirrored ? IfcHands.Mirror(v) : v;
         var (op, user) = spec.IsDoor ? Joinery.DoorOperation(spec) : Joinery.WindowPartitioning(spec);
+        // A bay, bow or box window's panels and lining are its faces unfolded side by side (report #60).
+        if (BayWindows.Projecting(spec)) spec = BayWindows.Developed(spec);
         // A door panel's width is a ratio of the clear opening's (inside the lining).
         var inner = Joinery.InnerRect(spec);
         var clear = Math.Max(1e-9, inner.X1 - inner.X0);

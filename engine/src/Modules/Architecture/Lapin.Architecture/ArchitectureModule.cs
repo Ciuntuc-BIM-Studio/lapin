@@ -136,9 +136,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (spec == null) return new JsonObject { ["problem"] = "The configuration is unreadable." };
             var (convention, hardware) = Joinery.SymbolSettings(q.Model);
             var problem = Joinery.Problem(spec);
-            var boxes = problem == null ? Joinery.Boxes(spec) : [];
             // The drawings show the dressings on a wall this thick (the type's own walls vary: 300 mm unless asked).
             var wall = Math.Clamp(Json.Number(a["wall"]) ?? 0.3, 0.05, 2);
+            // A bay, bow or box window (report #60): its pieces seen from inside, its own plan, elevations and section.
+            var bay = BayWindows.Projecting(spec);
+            var boxes = problem != null ? [] : bay ? BayWindows.PreviewBoxes(spec, wall) : Joinery.Boxes(spec);
             return new JsonObject
             {
                 ["problem"] = problem,
@@ -156,7 +158,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 }).ToArray()),
                 ["ifcType"] = spec.IsDoor ? Joinery.DoorOperation(spec).Type : Joinery.WindowPartitioning(spec).Type,
                 // The drawings (the symbol engine's): the elevation from inside and from outside, the plan, the section.
-                ["drawings"] = problem != null ? null : new JsonObject
+                ["drawings"] = problem != null ? null : bay ? new JsonObject
+                {
+                    ["elevation"] = Strokes(BayWindows.Elevation(spec, wall, false, convention, hardware)),
+                    ["exterior"] = Strokes(BayWindows.Elevation(spec, wall, true, convention, hardware)),
+                    ["plan"] = Strokes(BayWindows.PlanStrokes(spec, wall)),
+                    ["section"] = Strokes(BayWindows.Section(spec, wall)),
+                } : new JsonObject
                 {
                     ["elevation"] = Strokes([.. JoinerySymbols.Elevation(spec, false, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "elevation")]),
                     ["exterior"] = Strokes([.. JoinerySymbols.Elevation(spec, true, convention, hardware), .. JoinerySymbols.Dressings(spec, wall, "exterior")]),
@@ -166,6 +174,18 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 ["symbols"] = new JsonObject { ["convention"] = convention, ["hardware"] = hardware },
             };
         });
+
+        // Bay, bow and box windows (report #60): the built-in styles, and the project's own (bayStyles on the project), saved from the configurator.
+        r.Catalog("bayStyles", BayWindows.Catalog());
+        r.Command("saveBayStyle", "Save bay window style", (ctx, a) =>
+        {
+            var spec = JoinerySpec.From(a["spec"]) ?? throw new CommandException("The window's configuration is missing or unreadable.");
+            if (!BayWindows.Projecting(spec)) throw new CommandException("Only a bay, bow or box window is saved as a bay style.");
+            if (Joinery.Problem(spec) is { } problem) throw new CommandException(problem);
+            return new JsonObject { ["styleId"] = ProjectStyles.Save(ctx, "bayStyles", (string?)a["name"] ?? "", (string?)a["styleId"], spec.ToJson(), "bay window") };
+        });
+        r.Command("renameBayStyle", "Rename bay window style", (ctx, a) => { ProjectStyles.Rename(ctx, "bayStyles", (string?)a["styleId"] ?? "", (string?)a["name"] ?? "", "bay window"); return null; });
+        r.Command("deleteBayStyle", "Delete bay window style", (ctx, a) => { ProjectStyles.Delete(ctx, "bayStyles", (string?)a["styleId"] ?? "", "bay window"); return null; });
 
         // How the opening symbols are drawn, for the project: the convention (handle: the makers' way; hinge: DIN 1356), the hardware.
         r.Command("joinerySymbols", "Opening symbols", (ctx, a) =>
@@ -191,6 +211,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
         LintelProducts.Register(r);
         CurtainWalls.Register(r);
+        // Sunshades (report #56): canopies, fins, louvres, egg-crates, screens, awnings, pergolas, external blinds.
+        Sunshades.Register(r);
         Stairs.StairsModule.Register(r);
         Stairs.UnderStairs.Register(r);
         Ceilings.Register(r);
@@ -851,11 +873,13 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     static IEnumerable<QuantitySet> FillQuantities(Entity fill, IModelView m, string set)
     {
         if (Openings.SpecOf(m, fill.Id) is not { } spec) yield break;
+        // A bay, bow or box window's area is its faces' unfolded (report #60): what is glazed and priced.
+        var area = BayWindows.Projecting(spec) ? BayWindows.Developed(spec).Width * spec.Height : spec.Width * spec.Height;
         yield return new QuantitySet(set,
         [
             new("Width", spec.Width, "LENGTH"),
             new("Height", spec.Height, "LENGTH"),
-            new("Area", spec.Width * spec.Height, "AREA"),
+            new("Area", area, "AREA"),
         ]);
         // The details around it: the reveal's finish, the sills, the surround, the threshold.
         var details = Openings.DetailQuantities(m, fill).Select(q => new Quantity(q.Name, q.Value, q.Unit)).ToList();

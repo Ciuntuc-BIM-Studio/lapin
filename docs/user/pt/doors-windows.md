@@ -81,6 +81,29 @@ Na fachada, além da moldura, uma janela pode ter uma **Fecho de arco**, um **Co
 
 ![Janelas em arco em 3D](shots/window-styles-3d.webp)
 
+### Janelas de sacada, em arco e em caixa
+
+Um tipo de janela pode sair da parede. No configurador, **Projects** torna-o um **Bay** (um centro e dois lados em ângulo), um **Bow** (painéis iguais num arco) ou um **Box** (lados em esquadria com a parede), e **New bay window** começa um tipo novo como sacada a 45°. A janela continua a preencher uma só abertura na parede, tão larga e alta como o tipo: coloca-se, move-se, copia-se, vira-se, numera-se e entra nos mapas como qualquer janela. **Architecture → Bay window** (<kbd>BW</kbd>) põe uma na parede clicada: o tipo escolhido no configurador quando sai da parede, senão a primeira sacada do projeto, senão uma sacada a 45°.
+
+As colunas da grelha são as suas faces. Numa sacada e numa caixa a primeira e a última coluna são os lados e as do meio o centro; uma janela em arco tem uma face por coluna, as larguras repartindo o arco. Cada folha abre como diz **Panels**, por isso os lados podem abrir e o centro ficar fixo. Depois:
+
+- **Projection**, da face exterior da parede à face exterior dos caixilhos, e numa sacada o ângulo **Sides to the wall** (15° a 90°);
+- **Sides**: os lados da caixa envidraçados ou cheios, com o seu material;
+- **Seat inside**: o assento no peitoril, quanto entra na divisão, o seu material;
+- **Sill outside** sob as faces;
+- **Base**: nenhuma (suspensa na parede), **paredes até ao chão**, **uma laje em consola** ou **uma laje sobre consolas**, com espessura, avanço e material;
+- **Head**: um telhado **de quatro águas**, **de uma água** ou **plano**, ou uma **laje**, a espessura no beirado, o avanço, a inclinação e o material, e um **rufo contra a parede**.
+
+Caixilhos, folhas, vidros e puxadores são os do tipo, por isso os seus materiais e puxadores valem para todas as faces. **Bay style** define tudo de uma vez: sacada a 45° ou pouco funda a 30°, sacada assente no chão, janela em arco de cinco ou quatro painéis, caixa com lados envidraçados ou cheios, sacada sobre consolas. **Save as bay style…** guarda a configurada como estilo do projeto, junto aos do Lapin; renomeia-se ou elimina-se na lista sob os campos.
+
+Em planta as faces são cortadas, o assento, o peitoril e a base desenhados sob o corte e o telhado a tracejado por cima; alçados, cortes e 3D mostram o corpo todo. O mapa de janelas tem uma ficha para o tipo, as faces desdobradas, com uma linha **Projecting** (tipo, saliência, faces); a sua área é a das faces envidraçadas e os detalhes medem o telhado, o assento e a base. Em IFC é um único IfcWindow de partição definida pelo utilizador (*Bay 45°, projection 600, 3 faces, 4 panels*) cujo corpo é toda a sacada, os painéis face a face; o Lapin lê a sacada de volta.
+
+![Uma janela em arco no configurador](shots/bay-configurator.webp)
+
+![Sacada, janela em arco, caixa e sacada sobre consolas em planta](shots/bay-plan.webp)
+
+![Sacada, janela em arco, caixa e sacada sobre consolas em 3D](shots/bay-3d.webp)
+
 ### Puxadores
 
 **Maçaneta** escolhe o puxador do tipo: uma **Alavanca**, uma **Bola**, um **Puxador** ou uma **Puxador de janela**, ou **Nenhum**. Por padrão, uma porta tem uma maçaneta de alavanca e uma janela uma manopla de janela. Uma porta tem o puxador nas duas faces, na **Altura da maçaneta** que você define; **Cor da maçaneta** define a sua cor. Os puxadores aparecem em 3D, nos cortes e nas elevações, e nos desenhos do configurador quando **Ferragens** está marcado.
@@ -88,6 +111,35 @@ Na fachada, além da moldura, uma janela pode ter uma **Fecho de arco**, um **Co
 ### Parâmetros
 
 **Parâmetros · nas tabelas**, embaixo no configurador, guarda os parâmetros próprios do tipo: **+ Resistência ao fogo** (guardada no Pset_DoorCommon ou no Pset_WindowCommon do IFC como FireRating), **+ Fabricante**, **+ Código do produto**, **+ Site**, ou qualquer parâmetro que você nomear. As portas e janelas do tipo os herdam, e cada um vira uma linha das tabelas de esquadrias: veja [Tabelas e gráficos](schedules.md).
+
+## Palas de sombreamento
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) põe uma pala na porta ou janela clicada: do tamanho da sua abertura, para além das ombreiras, acima da padieira ou à frente, e segue-a quando se move. **Sunshade along a facade** toma dois pontos: numa parede corre ao longo da sua face exterior, noutro sítio ao longo da linha, para a direita. A barra das duas ferramentas escolhe o tipo, ou um estilo de que se faz um tipo novo.
+
+Os tipos:
+
+- **Canopy** (pala): laje, de lâminas ou de vidro, com saliência, espessura, inclinação e testeira, sobre consolas, tirantes ou postes;
+- **Vertical fins**: profundidade, espessura, espaçamento e ângulo, travessas em cima e em baixo;
+- **Louvres (brise-soleil)**: lâminas horizontais, planas, aerodinâmicas ou em caixa, profundidade, espaçamento e ângulo, afastadas da parede, entre placas de topo;
+- **Egg-crate**: placas horizontais e verticais juntas;
+- **Perforated screen**: uma chapa afastada da parede, com furos redondos ou quadrados ou rasgos, o seu tamanho e passo;
+- **Awning** (toldo): lona inclinada, sanefa, caixa e braços articulados;
+- **Pergola**: varas, uma viga, ripas por cima e postes até ao chão;
+- **External venetian blind**: lâminas, quanto está descido, caixa e calhas guia.
+
+**Sunshade types** (em Types) edita um tipo: o seu tipo e cada parâmetro, os materiais, ao lado do seu desenho de fora, em corte e em planta. Cada pala do tipo segue uma alteração. Um tipo novo parte de um estilo: pala de betão, de madeira sobre consolas, de vidro com tirantes, de lâminas, alpendre de telha, brise-soleil, aletas verticais, grelha de betão, painel perfurado em Corten, toldo de lona, pérgola de madeira, estore veneziano exterior; **Save as style…** guarda um tipo como estilo do projeto.
+
+![As propriedades de uma pala após o cálculo do meio-dia](shots/sunshade-properties.webp)
+
+Selecionada, uma pala mostra o seu tipo, onde está e a sua própria **Projection** (vazia: a do tipo). **Full shade at noon, 21 June** calcula, para uma pala, um toldo ou uma pérgola sobre uma janela, quanto tem de sair para que toda a janela fique à sombra quando o sol está mais alto no dia mais longo, no local do projeto (**Manage → Location**; Bucareste até se definir um), e define-o. Numa fachada sul a 45° N o sol está então a 68,4°: uma janela de 1,5 m sob uma pala 150 mm acima da padieira precisa de 650 mm. As suas pegas arrastam as pontas ao longo da parede ou linha e a saliência.
+
+![Os tipos de pala: lâminas, de fora, em corte e em planta](shots/sunshade-types.webp)
+
+As plantas desenham a tracejado uma pala acima do corte, cortada uma que o atravessa (aletas, um painel) e vista uma abaixo; alçados, cortes e 3D mostram o corpo com a trama do material, e projeta a sua sombra com o resto (**View → Sun and shadows**). **Sunshade schedule** lista-as por tipo com onde estão, comprimento e saliência, quantas e a área sombreada; as suas quantidades (comprimento, saliência, área, volume) tomam os artigos de custo do tipo. Em IFC são IfcShadingDevice de um IfcShadingDeviceType: um toldo AWNING, um estore JALOUSIE, as lâminas LOUVER em IFC 4.3 (definidas pelo utilizador em IFC4), as outras definidas pelo utilizador (Canopy, Fins, Egg-crate, Screen, Pergola); o Lapin lê-as de volta como eram.
+
+![Palas em planta](shots/sunshades-plan.webp)
+
+![Uma pala, lâminas, aletas, um toldo, uma pérgola e um estore em 3D](shots/sunshades-3d.webp)
 
 ## Etiquetas na planta
 

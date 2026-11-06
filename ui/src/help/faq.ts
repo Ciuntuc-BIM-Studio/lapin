@@ -467,6 +467,26 @@ export const FAQ: Entry[] = [
     action: { label: 'Place a balcony', labelRo: 'Pune un balcon', run: { kind: 'tool', id: 'architecture.balcony' } },
     source: 'report #96',
   },
+  {
+    id: 'bay-windows',
+    q: ['How do I make a bay window?', 'Can I make bow and box windows?', 'How do I make a window that projects from the wall, with a seat and a roof?'],
+    qRo: ['Cum fac un bovindou?', 'Pot face ferestre în arc sau în cutie?', 'Cum fac o fereastră ieșită din perete, cu banchetă și acoperiș?'],
+    keywords: ['bay', 'bow', 'box', 'oriel', 'projecting', 'protruding', 'seat', 'corbel', 'corbels', 'bovindou', 'erker', 'iesita', 'iesind', 'consola', 'console', 'bancheta'],
+    a: 'Architecture → Bay window (BW) puts a bay in the wall you click. In Architecture → Doors & windows, New bay window, or Projects on any window type, makes it a Bay (sides at an angle), a Bow (panels on an arc) or a Box (square sides). The grid\'s columns are its faces (a bay\'s first and last columns its sides), each pane opening as Panels says; then the projection, the sides\' angle, the seat inside, the sill, the base (walls to the floor, a slab, a slab on corbels), the head (hipped, lean-to or flat roof, a slab) with its flashing, each with its material. Bay style sets them all at once (45° and 30° bays, a canted bay, bows of 5 or 4 panels, boxes, an oriel); Save as bay style… keeps your own. It stays one window in one opening: scheduled with its faces unfolded and a Projecting row, one IfcWindow in IFC.',
+    aRo: 'Architecture → Bay window (BW) pune un bovindou în peretele pe care dai clic. În Architecture → Doors & windows, New bay window, sau Projects la orice tip de fereastră, o face Bay (laturi oblice), Bow (panouri pe un arc) sau Box (laturi în unghi drept). Coloanele grilei sunt fețele ei (prima și ultima coloană ale unui bovindou sunt laturile), fiecare ochi deschizându-se cum spune Panels; apoi ieșirea din perete, unghiul laturilor, bancheta din interior, glaful, baza (pereți până la pardoseală, o placă, o placă pe console), capul (acoperiș în patru ape, într-o apă sau plat, o placă) cu șorțul de tablă, fiecare cu materialul lui. Bay style le pune pe toate deodată (bovindouri la 45° și 30°, unul pe pardoseală, arce de 5 sau 4 panouri, cutii, un erker); Save as bay style… le păstrează pe ale tale. Rămâne o fereastră într-un gol: în extras cu fețele desfășurate și rândul Projecting, un IfcWindow în IFC.',
+    action: { label: 'Open Doors & windows', labelRo: 'Deschide Doors & windows', run: { kind: 'tool', id: 'architecture.joineryTypes' } },
+    source: 'report #60',
+  },
+  {
+    id: 'sunshades',
+    q: ['How do I add a sunshade over a window?', 'Can I model louvres, fins or a brise-soleil?', 'How deep must a canopy be to shade the window in summer?'],
+    qRo: ['Cum pun o copertină parasolar peste o fereastră?', 'Pot modela lamele, aripioare sau brise-soleil?', 'Cât de adâncă trebuie să fie copertina ca să umbrească fereastra vara?'],
+    keywords: ['sunshade', 'sunshades', 'shade', 'shading', 'sunlight', 'louvre', 'louvres', 'louver', 'louvers', 'brise', 'soleil', 'fins', 'pergola', 'blind', 'blinds', 'jalousie', 'eggcrate', 'perforated', 'overhang', 'facade', 'parasolar', 'umbrire', 'umbra', 'lamele', 'jaluzele', 'jaluzea', 'marchiza', 'aripioare'],
+    a: 'Architecture → Sunshade (SN) puts one on the door or window you click, sized to its opening and following it; Sunshade along a facade takes two points (along a wall, or a facade line). The bar picks the type or a style: canopies (a slab, louvred or glass, on brackets, tie rods or posts), vertical fins, louvres (brise-soleil), an egg-crate, a perforated screen, an awning, a pergola, an external venetian blind. Sunshade types edits every parameter of a type with its drawing; Save as style… keeps one for the project. Selected over a window, Full shade at noon, 21 June sets the projection that keeps the whole window in shade when the sun is highest, at the project\'s place. They are drawn in plans (dashed over the cut), elevations, sections and 3D, cast shadows, have their schedule and quantities, and are IfcShadingDevice in IFC.',
+    aRo: 'Architecture → Sunshade (SN) pune unul pe ușa sau fereastra pe care dai clic, cât golul ei, și o urmează; Sunshade along a facade ia două puncte (de-a lungul unui perete sau al unei linii de fațadă). Bara alege tipul sau un stil: copertine (placă, cu lamele sau din sticlă, pe console, tiranți sau stâlpi), aripioare verticale, lamele orizontale (brise-soleil), un egg-crate, un ecran perforat, o marchiză, o pergolă, o jaluzea exterioară. Sunshade types editează fiecare parametru al unui tip, cu desenul lui; Save as style… îl păstrează în proiect. Selectat peste o fereastră, Full shade at noon, 21 June pune ieșirea care ține toată fereastra în umbră când soarele e cel mai sus, în locul proiectului. Se desenează în plan (punctat peste secțiune), fațade, secțiuni și 3D, aruncă umbră, au extrasul și cantitățile lor și sunt IfcShadingDevice în IFC.',
+    action: { label: 'Sunshade types', labelRo: 'Sunshade types', run: { kind: 'tool', id: 'architecture.sunshadeTypes' } },
+    source: 'report #56',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

@@ -100,6 +100,7 @@ public static class Openings
     {
         if (Joinery.Problem(spec) is { } problem) throw new CommandException(problem);
         spec = WithDefaultMaterials(edit, spec);
+        BayWindows.EnsureMaterials(edit, spec);
         var (cls, predefined) = spec.IsDoor ? (IfcClass.DoorType, "DOOR") : (IfcClass.WindowType, "WINDOW");
         var type = new Entity(edit.NewId(), cls, spec.Name, TypeAttrs(spec), predefined);
         edit.Add(type);
@@ -120,6 +121,7 @@ public static class Openings
     {
         if (Joinery.Problem(spec) is { } problem) throw new CommandException(problem);
         if ((type.Class == IfcClass.DoorType) != spec.IsDoor) throw new CommandException("A door type stays a door type, a window type a window type.");
+        BayWindows.EnsureMaterials(edit, spec);
         edit.Replace(type.With(name: spec.Name, attrs: TypeAttrs(spec)));
         foreach (var fill in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
@@ -284,7 +286,7 @@ public static class Openings
         if (Cutter(f, p) is { } box) o.Add((p, box));
         if (p.Spec == null || p.Fill == null) return o;
         if (PathCurve.Of(wall) is { IsArc: true }) return o;
-        var d = new Dressing(m, wall, f, p, p.Spec, p.Fill.Bool("flipHand") ? -1 : 1, p.Fill.Bool("flipSide") ? -1 : 1).WithPlaced(p);
+        var d = new Dressing(m, wall, f, p, p.Spec, p.Fill.Bool("flipHand") ? -1 : 1, p.Fill.Bool("flipSide") ? -1 : 1, BayWindows.Projecting(p.Spec)).WithPlaced(p);
         o.AddRange(d.Cutters());
         return o;
     }
@@ -381,7 +383,9 @@ public static class Openings
         Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.Sill + z);
 
         var parts = new List<GeometryPart>();
-        var dressing = PathCurve.Of(wall) is { IsArc: true } ? null : new Dressing(m, wall, f, p, spec, sx, sy);
+        var bay = BayWindows.Projecting(spec);
+        var dressing = PathCurve.Of(wall) is { IsArc: true } ? null : new Dressing(m, wall, f, p, spec, sx, sy, bay);
+        if (bay) return BayGeometry(fill, m, spec, wall, f, p, sx, sy, dressing);
         foreach (var group in Joinery.Boxes(spec).Where(b => dressing?.Replaces(b) != true).GroupBy(b => b.Role))
         {
             var solids = group.Select(b => Box(b, Map)).OfType<Solid>().ToList();
@@ -398,6 +402,57 @@ public static class Openings
         }
         if (dressing != null) parts.AddRange(dressing.Parts());
         return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null), [f.At(p.Along, f.Centre, 0).Xy]);
+    }
+
+    /// <summary>The colour of a part of a door's or window's body by its role: its material's, else the type's for the part.</summary>
+    static string RoleColor(IModelView m, JoinerySpec spec, string role, string? material) => material != null ? Materials.ColorOf(m, material) : role switch
+    {
+        "glass" => spec.Colors.Glass, "leaf" => spec.Colors.Leaf,
+        "handle" or "hardware" => spec.Hardware?.Color ?? HandleColor["handle"],
+        _ => HandleColor.GetValueOrDefault(role, spec.Colors.Frame),
+    };
+
+    /// <summary>
+    /// A bay, bow or box window's body (report #60): each face's joinery grouped by role as a flat window's is (one part per
+    /// role, its material by the type's), the corner posts with the frames, then the seat, sill, base, roof and flashing as
+    /// parts of their own with their materials, and the reveal's finish in the wall's opening.
+    /// </summary>
+    static ElementGeometry BayGeometry(Entity fill, IModelView m, JoinerySpec spec, Entity wall, WallFrame f, Placed p, int sx, int sy, Dressing? dressing)
+    {
+        Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.Sill + z);
+        var t = f.YMax - f.YMin;
+        var zFloor = -(p.Sill + wall.Num("baseOffset"));
+        var faces = BayWindows.Faces(spec, t / 2);
+        var parts = new List<GeometryPart>();
+        foreach (var group in BayWindows.Pieces(spec, t, zFloor).GroupBy(x => x.Key))
+        {
+            var solids = group.Select(x => BayWindows.Make(x, faces, Map)).OfType<Solid>().ToList();
+            if (solids.Count == 0) continue;
+            var first = group.First();
+            var named = first.Key.StartsWith("bay:", StringComparison.Ordinal);
+            var material = named
+                ? (first.Material is { Length: > 0 } name ? Materials.Find(m, name.Trim())?.Id : null) ?? (first.Key is "bay:side" or "bay:seat" ? MaterialOfPart(m, spec, first.Key == "bay:seat" ? "board" : "frame") : null)
+                : MaterialOfPart(m, spec, first.Key);
+            var fallback = first.Key switch
+            {
+                "bay:seat" => HandleColor["board"], "bay:sill" => "#b8b8b8", "bay:base" or "bay:corbels" => "#c9c3b6",
+                "bay:head" => "#6f7378", "bay:flashing" => "#9a9fa6", "bay:side" => spec.Colors.Frame, _ => null,
+            };
+            var color = named ? (material != null ? Materials.ColorOf(m, material) : first.Material is { Length: > 0 } n2 ? Materials.DefaultColor(n2) : fallback!) : RoleColor(m, spec, first.Key, material);
+            parts.Add(new GeometryPart(first.Name, color, Combine(solids, first.Key), material, first.Key));
+        }
+        if (dressing != null) parts.AddRange(dressing.Parts());
+        Vec2 P(double x, double y) => f.Start + f.Dir * (p.Along + sx * x) + f.Left * (f.Centre - sy * y);
+        var o = new List<PlanItem>();
+        var half = spec.Width / 2;
+        o.Add(new PlanItem("hit", true, [P(-half, -t / 2), P(half, -t / 2), P(half, t / 2), P(-half, t / 2)]));
+        var line = BayWindows.Line(spec, t / 2);
+        o.Add(new PlanItem("hit", true, [.. line.Select(q => P(q.X, q.Y))]));
+        o.Add(new PlanItem("symbol", false, [P(-half, -t / 2), P(-half, t / 2)]));
+        o.Add(new PlanItem("symbol", false, [P(half, -t / 2), P(half, t / 2)]));
+        foreach (var (kind, closed, pts) in BayWindows.Plan(spec, t, zFloor, PlanCut - p.Sill))
+            o.Add(new PlanItem(kind, closed, [.. pts.Select(q => P(q.X, q.Y))]));
+        return new ElementGeometry(parts, o, [f.At(p.Along, f.Centre, 0).Xy, .. line.Select(q => P(q.X, q.Y))]);
     }
 
     /// <summary>
@@ -420,9 +475,11 @@ public static class Openings
         readonly double _t, _yFE, _yFI;
         readonly (double Thickness, string? Material)[] _finish; // [0] the exterior side, [1] the interior
 
-        public Dressing(IModelView m, Entity wall, WallFrame f, Placed p, JoinerySpec spec, int sx, int sy)
+        public Dressing(IModelView m, Entity wall, WallFrame f, Placed p, JoinerySpec spec, int sx, int sy, bool revealOnly = false)
         {
             _m = m;
+            // A bay, bow or box window (report #60) keeps only the reveal: its sills, seat and roof are its own.
+            if (revealOnly) spec = spec with { Details = new JoineryDetails(Reveal: spec.Details?.Reveal) };
             _spec = spec;
             _d = spec.Details ?? new JoineryDetails();
             _map = (x, y, z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.Sill + z);
@@ -594,6 +651,8 @@ public static class Openings
         if (SpecOf(m, fill.Id) is not { } spec || OpeningOf(m, fill.Id) is not { } opening || WallOf(m, opening.Id) is not { } wall) yield break;
         var p = Place(m, opening);
         var f = FrameOf(m, wall, p.Along);
+        // A bay, bow or box window's own measures (report #60).
+        if (BayWindows.Projecting(spec)) foreach (var q in BayWindows.Quantities(spec, f.YMax - f.YMin)) yield return q;
         foreach (var part in (FillGeometry(fill, m)?.Parts ?? []).Where(x => x.Key != null && (x.Key.StartsWith("reveal", StringComparison.Ordinal) || x.Key.StartsWith("sill", StringComparison.Ordinal) || x.Key is "surround" or "threshold" or "shutters" or "grille" or "windowbox" or "canopy")))
         {
             var (w, h, t) = (spec.Width, spec.Height, f.YMax - f.YMin);
@@ -625,7 +684,7 @@ public static class Openings
         }
     }
 
-    static Solid? Box(JoineryBox b, Func<double, double, double, Vec3> map)
+    internal static Solid? Box(JoineryBox b, Func<double, double, double, Vec3> map)
     {
         // An outline (an arch, a slanting bar): its points mapped at the near face, swept to the far one.
         if (b.Profile is { Count: >= 3 } outline)

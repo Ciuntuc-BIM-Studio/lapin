@@ -81,6 +81,29 @@ Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**
 
 ![Ferestre cu arc, în 3D](shots/window-styles-3d.webp)
 
+### Bovindouri, ferestre în arc și în cutie
+
+Un tip de fereastră poate ieși din perete. În configurator, **Projects** o face **Bay** (un mijloc și două laturi oblice față de perete), **Bow** (panouri egale pe un arc) sau **Box** (laturi în unghi drept cu peretele), iar **New bay window** începe un tip nou ca bovindou la 45°. Fereastra umple tot un singur gol în perete, cât tipul de lată și de înaltă: se pune, se mută, se copiază, se întoarce, se numerotează și intră în extrase ca orice fereastră. **Architecture → Bay window** (<kbd>BW</kbd>) pune una în peretele pe care dai clic: tipul ales în configurator când iese din perete, altfel primul bovindou al proiectului, altfel un bovindou la 45°.
+
+Coloanele grilei sunt fețele ei. La bovindou și la cutie prima și ultima coloană sunt laturile, coloanele dintre ele mijlocul; o fereastră în arc are o față pe coloană, lățimile lor împărțind arcul. Fiecare ochi se deschide cum spune **Panels**, deci laturile se pot deschide și mijlocul rămâne fix. Apoi:
+
+- **Projection**, de la fața exterioară a peretelui la fața exterioară a tocurilor, iar la bovindou unghiul **Sides to the wall** (15° la 90°);
+- **Sides**: laturile cutiei vitrate sau pline, cu materialul lor;
+- **Seat inside**: bancheta de la glaf, cât intră în încăpere, materialul ei;
+- **Sill outside**, glaful de sub fețe;
+- **Base**: fără (atârnă pe perete), **pereți până la pardoseală**, **o placă în consolă** sau **o placă pe console**, cu grosimea, cât trece de fețe și materialul;
+- **Head**: un acoperiș **în patru ape**, **într-o apă** sau **plat**, ori o **placă**, grosimea la streașină, cât iese, panta și materialul, și un **șorț de tablă la perete**.
+
+Tocurile, cercevelele, sticla și mânerele sunt ale tipului, deci materialele și mânerele lui merg pe toate fețele. **Bay style** le pune pe toate deodată: bovindou la 45° sau puțin adânc la 30°, bovindou pe pardoseală, arc de cinci sau patru panouri, cutie cu laturi vitrate sau pline, erker pe console. **Save as bay style…** păstrează ce ai configurat ca stil al proiectului, oferit lângă ale lui Lapin; îl redenumești sau îl ștergi în lista de sub câmpuri.
+
+În plan fețele sunt secționate, bancheta, glaful și baza se desenează sub secțiune, iar acoperișul punctat deasupra; fațadele, secțiunile și 3D arată tot corpul. Extrasul de ferestre are o fișă pentru tip, cu fețele desfășurate și rândul **Projecting** (felul, ieșirea, fețele); aria lui e a fețelor vitrate, iar detaliile măsoară acoperișul, bancheta și baza. În IFC e un singur IfcWindow cu partiționare definită de utilizator (*Bay 45°, projection 600, 3 faces, 4 panels*), al cărui corp e tot bovindoul, cu panourile enumerate față cu față; Lapin citește bovindoul înapoi din el.
+
+![O fereastră în arc în configurator](shots/bay-configurator.webp)
+
+![Bovindou, fereastră în arc, cutie și erker în plan](shots/bay-plan.webp)
+
+![Bovindou, fereastră în arc, cutie și erker în 3D](shots/bay-3d.webp)
+
 ### Mânere
 
 **Mâner** alege mânerul tipului: **Clanță**, **Buton**, **Bară de tragere**, **Mâner de fereastră** sau niciunul. Implicit, o ușă are clanță, iar o fereastră mâner de fereastră. O ușă are mâner pe ambele fețe, la **Înălțimea mânerului** pe care o dai; **Culoarea mânerului** îi dă culoarea. Mânerele se văd în 3D, în secțiuni și fațade, și în desenele configuratorului când e bifată **Feronerie**.
@@ -88,6 +111,35 @@ Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**
 ### Parametri
 
 **Parametri · în extrase**, în partea de jos a configuratorului, ține parametrii proprii ai tipului: **+ Rezistență la foc** (păstrată în Pset_DoorCommon sau Pset_WindowCommon din IFC ca FireRating), **+ Producător**, **+ Cod produs**, **+ Site web** sau orice parametru căruia îi dai un nume. Ușile și ferestrele tipului îi moștenesc, și fiecare devine un rând al extraselor de tâmplărie: vezi [Extrase și grafice](schedules.md).
+
+## Parasolare
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) pune un parasolar pe ușa sau fereastra pe care dai clic: cât golul ei, trecând de ancadramente, deasupra buiandrugului sau peste ea, și o urmează când se mută. **Sunshade along a facade** ia două puncte: pe un perete merge de-a lungul feței lui exterioare, în altă parte de-a lungul liniei, spre dreapta ei. Bara ambelor unelte alege tipul, sau un stil din care se face un tip nou.
+
+Felurile:
+
+- **Canopy** (copertină): placă, cu lamele sau din sticlă, cu ieșirea, grosimea, înclinarea și un atic, pe console, tiranți sau stâlpi;
+- **Vertical fins** (aripioare verticale): adâncimea, grosimea, distanța și unghiul lor, rigle sus și jos;
+- **Louvres (brise-soleil)**: lamele orizontale, plate, aerodinamice sau tubulare, adâncimea, distanța și unghiul lor, departe de perete, între plăci de capăt;
+- **Egg-crate**: plăci orizontale și verticale împreună;
+- **Perforated screen**: o tablă departe de perete, cu găuri rotunde sau pătrate ori fante, mărimea și pasul lor;
+- **Awning** (marchiză): pânză în pantă, volan, casetă și brațe articulate;
+- **Pergola**: căpriori, o grindă, șipci deasupra și stâlpi până la pardoseală;
+- **External venetian blind** (jaluzea exterioară): lamele, cât e coborâtă, caseta și șinele de ghidaj.
+
+**Sunshade types** (în Types) editează un tip: felul și fiecare parametru al lui, materialele, lângă desenul lui din exterior, în secțiune și în plan. Fiecare parasolar de acel tip urmează o schimbare. Un tip nou pornește dintr-un stil: copertină din beton, din lemn pe console, din sticlă pe tiranți, cu lamele, streașină cu țiglă, brise-soleil, aripioare verticale, grilă din beton, ecran perforat din Corten, marchiză din pânză, pergolă din lemn, jaluzea exterioară; **Save as style…** păstrează un tip ca stil al proiectului.
+
+![Proprietățile unei copertine după calculul pentru amiază](shots/sunshade-properties.webp)
+
+Selectat, un parasolar arată tipul, pe ce stă și **Projection** proprie (goală: a tipului). **Full shade at noon, 21 June** calculează, pentru o copertină, o marchiză sau o pergolă peste o fereastră, cât trebuie să iasă ca toată fereastra să fie în umbră când soarele e cel mai sus în cea mai lungă zi, în locul proiectului (**Manage → Location**; Bucureștiul până se pune unul), și o pune. Pe o fațadă sudică la 45° N soarele e atunci la 68,4°: o fereastră de 1,5 m sub o copertină cu 150 mm peste buiandrug are nevoie de 650 mm. Mânerele lui trag capetele de-a lungul peretelui sau liniei și ieșirea.
+
+![Tipurile de parasolare: lamele, din exterior, în secțiune și în plan](shots/sunshade-types.webp)
+
+Planurile desenează un parasolar de deasupra secțiunii punctat, unul care o traversează secționat (aripioare, ecran) și unul de dedesubt văzut; fațadele, secțiunile și 3D arată corpul, cu hașura materialului, și aruncă umbră cu restul (**View → Sun and shadows**). **Sunshade schedule** le enumeră pe tipuri, cu pe ce stau, lungimea și ieșirea, câte sunt și aria umbrită; cantitățile lor (lungime, ieșire, arie, volum) iau articolele de deviz ale tipului. În IFC sunt IfcShadingDevice ale unui IfcShadingDeviceType: marchiza AWNING, jaluzeaua JALOUSIE, lamelele LOUVER în IFC 4.3 (definite de utilizator în IFC4), celelalte definite de utilizator (Canopy, Fins, Egg-crate, Screen, Pergola); Lapin le citește înapoi cum erau.
+
+![Parasolare în plan](shots/sunshades-plan.webp)
+
+![O copertină, lamele, aripioare, o marchiză, o pergolă și o jaluzea în 3D](shots/sunshades-3d.webp)
 
 ## Etichete în plan
 

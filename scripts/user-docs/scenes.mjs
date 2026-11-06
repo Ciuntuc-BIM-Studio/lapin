@@ -493,6 +493,127 @@ export const scenes = [
     },
   },
   {
+    // Bay, bow and box windows (report #60): a bay window type from the configurator (New bay window, a bow style), placed
+    // with the Bay window tool and by command, in plan (the projection, the roof dashed over it) and in 3D.
+    id: 'bay-windows',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      }
+      await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
+      await t.fit();
+      // The configurator: a new bay window, then a bow from Lapin's styles.
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('[data-action=new-bay-window]').click();
+      await t.wait(500);
+      t.expect(await dialog.locator('select[data-field=bay-kind]').inputValue() === 'bay', 'a new bay window projects');
+      await dialog.locator('select[data-field=bay-style]').selectOption('bow-5');
+      await t.wait(800);
+      t.expect(await dialog.locator('select[data-field=bay-kind]').inputValue() === 'bow', 'the style makes it a bow');
+      await dialog.locator('[data-testid=bay-fields]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await t.wait(400);
+      await t.shot('bay-configurator', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      await t.keys('Escape');
+      const bow = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.bay?.kind === 'bow');
+      t.expect(bow, 'the bow window type is saved');
+      await t.cmd('architecture.addWindow', { wallId: walls[2], x: 6, y: 8, typeId: bow.id });
+      // The Bay window tool: a click on the south wall puts a 45° bay in it.
+      await t.ui({ windowTypeId: null });
+      await t.tool('architecture.bayWindow');
+      { const [px, py] = await t.planPoint(3.5, 0); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(1200); }
+      await t.keys('Escape');
+      const bays = (await t.nodes()).filter((n) => n.type === 'IfcWindow');
+      t.expect(bays.length === 2, `the bay tool placed a window (${bays.length})`);
+      // A box window with solid sides, and an oriel on corbels, by their styles.
+      const styles = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().info?.catalogs['architecture.bayStyles']);
+      for (const [id, wall, x, y] of [['box-solid', 0, 9.2, 0], ['oriel', 1, 12, 4]]) {
+        const type = (await t.cmd('architecture.createJoineryType', { spec: styles.find((st) => st.id === id).spec })).id;
+        await t.cmd('architecture.addWindow', { wallId: walls[wall], x, y, typeId: type });
+      }
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      // Zoomed out a little about the middle, the quick tools and the card hidden, so what projects stands clear.
+      { const [px, py] = await t.planPoint(6, 4); await t.page.mouse.move(px, py); for (let i = 0; i < 3; i++) { await t.page.mouse.wheel(0, 100); await t.wait(80); } await t.wait(600); }
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      await t.wait(300);
+      await t.shot('bay-plan', { of: '[data-testid=plan]', pad: 0 });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.6, pitch: -0.45, distance: 19, target: { x: 6, y: 4, z: 1.2 } }, false));
+      await t.wait(1800);
+      await t.shot('bay-3d', { of: 'canvas', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+    },
+  },
+  {
+    // Sunshades (report #56): a concrete canopy put on a window with the Sunshade tool, louvres, fins, an awning, a pergola and
+    // an external blind; the noon helper on the canopy; the types dialog; in plan (overhead dashed) and in 3D.
+    id: 'sunshades',
+    async run(t) {
+      await t.fresh();
+      const { storey: s, walls } = await house(t, { roof: false });
+      await t.fit();
+      const windows = (await t.nodes()).filter((n) => n.type === 'IfcWindow');
+      const door = (await t.nodes()).find((n) => n.type === 'IfcDoor');
+      // The Sunshade tool, with a style in its bar: a click on the south window.
+      await t.tool('architecture.sunshade');
+      await t.wait(300);
+      await t.page.locator('[data-testid=sunshade-type]').selectOption('style:concrete-canopy');
+      { const [px, py] = await t.planPoint(9.5, 0); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(1000); }
+      await t.keys('Escape');
+      const shades = async () => (await t.nodes()).filter((n) => n.type === 'IfcShadingDevice');
+      const canopy = (await shades())[0];
+      t.expect(canopy && canopy.props.host, 'the canopy stands on the window');
+      await t.cmd('architecture.addSunshade', { style: 'brise-soleil', hostId: windows[1].id });
+      await t.cmd('architecture.addSunshade', { style: 'venetian-blind', hostId: windows[3].id });
+      await t.cmd('architecture.addSunshade', { style: 'fabric-awning', hostId: door.id });
+      await t.cmd('architecture.addSunshade', { style: 'vertical-fins', wallId: walls[2], x1: 7.4, y1: 8, x2: 11.6, y2: 8 });
+      await t.cmd('architecture.addSunshade', { style: 'timber-pergola', storeyId: s, x1: 12.2, y1: 0.4, x2: 12.2, y2: 3.2 });
+      t.expect((await shades()).length === 6, `six sunshades (${(await shades()).length})`);
+      // The canopy's properties and the noon helper.
+      await select(t, canopy.id);
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=sunshade-section]').count() === 1, 'a sunshade shows its properties');
+      await t.page.locator('[data-action=sunshade-noon]').click();
+      await t.wait(1000);
+      const after = (await shades()).find((n) => n.id === canopy.id);
+      t.expect(typeof after.props.projection === 'number' && after.props.projection > 0.2, `the noon helper sets the canopy's projection (${after.props.projection})`);
+      await t.shot('sunshade-properties', { of: '[data-testid=sunshade-section]', pad: 8 });
+      // The types dialog on the louvres' type.
+      await t.page.locator('[data-action=sunshade-edit-type]').click();
+      await t.wait(400);
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('[data-sunshade-type]').filter({ hasText: 'Brise-soleil' }).first().click();
+      await t.wait(1200);
+      t.expect(await dialog.locator('[data-testid=sunshade-preview] svg polyline').count() > 4, 'the dialog previews the type');
+      t.expect(await dialog.locator('[data-param=angle]').count() === 1, 'the louvres\' own parameters are edited there');
+      await t.shot('sunshade-types', { of: '.dialog', pad: 0 });
+      await dialog.locator('button[title="Close"]').first().click();
+      await t.wait(300);
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      // Zoomed out a little about the middle, the quick tools and the card hidden, so what projects stands clear.
+      { const [px, py] = await t.planPoint(6, 4); await t.page.mouse.move(px, py); for (let i = 0; i < 3; i++) { await t.page.mouse.wheel(0, 100); await t.wait(80); } await t.wait(600); }
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      await t.wait(300);
+      await t.shot('sunshades-plan', { of: '[data-testid=plan]', pad: 0 });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.75, pitch: -0.4, distance: 20, target: { x: 6, y: 4, z: 1.4 } }, false));
+      await t.wait(1800);
+      await t.shot('sunshades-3d', { of: 'canvas', pad: 0 });
+      await quiet.evaluate((el) => el.remove());
+    },
+  },
+  {
     id: 'floors-roofs',
     async run(t) {
       await t.fresh();

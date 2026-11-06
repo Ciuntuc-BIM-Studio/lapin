@@ -81,6 +81,29 @@ Sulla facciata, oltre alla cornice, una finestra può avere una **Chiave di volt
 
 ![Finestre ad arco in 3D](shots/window-styles-3d.webp)
 
+### Bow-window, finestre ad arco e a scatola
+
+Un tipo di finestra può sporgere dal muro. Nel configuratore, **Projects** la rende un **Bay** (un centro e due lati inclinati), un **Bow** (pannelli uguali su un arco) o un **Box** (lati a squadra con il muro), e **New bay window** inizia un nuovo tipo come bow-window a 45°. La finestra riempie sempre una sola apertura del muro, larga e alta quanto il tipo: si posa, sposta, copia, ribalta, numera e compare negli abachi come ogni finestra. **Architecture → Bay window** (<kbd>BW</kbd>) ne mette una nel muro cliccato: il tipo scelto nel configuratore se sporge, altrimenti il primo bow-window del progetto, altrimenti un bow-window a 45°.
+
+Le colonne della griglia sono le sue facce. In un bow-window e in una scatola la prima e l'ultima colonna sono i lati, quelle in mezzo il centro; una finestra ad arco ha una faccia per colonna, le loro larghezze che si dividono l'arco. Ogni anta si apre come dice **Panels**, quindi i lati possono aprirsi e il centro restare fisso. Poi:
+
+- **Projection**, dalla faccia esterna del muro alla faccia esterna dei telai, e per un bow-window l'angolo **Sides to the wall** (da 15° a 90°);
+- **Sides**: i lati della scatola vetrati o pieni, con il loro materiale;
+- **Seat inside**: la seduta al davanzale, quanto entra nella stanza, il suo materiale;
+- **Sill outside** sotto le facce;
+- **Base**: nessuna (appeso al muro), **muri fino al pavimento**, **una soletta sporgente** o **una soletta su mensole**, con spessore, sporto e materiale;
+- **Head**: un tetto **a padiglione**, **a una falda** o **piano**, o una **soletta**, il suo spessore alla gronda, lo sporto, la pendenza e il materiale, e una **scossalina contro il muro**.
+
+Telai, ante, vetri e maniglie sono quelli del tipo: i suoi materiali e le maniglie valgono per tutte le facce. **Bay style** imposta tutto insieme: bow-window a 45° o poco profondo a 30°, bow-window a terra, finestra ad arco di cinque o quattro pannelli, scatola con lati vetrati o pieni, bovindo su mensole. **Save as bay style…** tiene quello configurato come stile del progetto, accanto a quelli di Lapin; si rinomina o elimina nell'elenco sotto i campi.
+
+In pianta le facce sono tagliate, seduta, davanzale e base disegnati sotto il taglio e il tetto tratteggiato sopra; prospetti, sezioni e 3D mostrano tutto il corpo. L'abaco delle finestre ha una scheda per il tipo, le facce sviluppate, con una riga **Projecting** (genere, sporgenza, facce); la sua area è quella delle facce vetrate e i dettagli misurano tetto, seduta e base. In IFC è un solo IfcWindow a partizione definita dall'utente (*Bay 45°, projection 600, 3 faces, 4 panels*) il cui corpo è tutto il bow-window, i pannelli faccia per faccia; Lapin rilegge il bow-window.
+
+![Una finestra ad arco nel configuratore](shots/bay-configurator.webp)
+
+![Bow-window, finestra ad arco, scatola e bovindo in pianta](shots/bay-plan.webp)
+
+![Bow-window, finestra ad arco, scatola e bovindo in 3D](shots/bay-3d.webp)
+
 ### Maniglie
 
 **Maniglia** sceglie la maniglia del tipo: una **Maniglia a leva**, un **Pomolo**, un **Maniglione** o una **Maniglia per finestra**, oppure **Nessuno**. Per impostazione predefinita una porta ha una maniglia a leva e una finestra una maniglia per finestra. Una porta ha la maniglia su entrambe le facce, all’**Altezza della maniglia** che imposti; **Colore della maniglia** ne imposta il colore. Le maniglie si vedono in 3D, nelle sezioni e nei prospetti, e nei disegni del configuratore quando **Ferramenta** è spuntato.
@@ -88,6 +111,35 @@ Sulla facciata, oltre alla cornice, una finestra può avere una **Chiave di volt
 ### Parametri
 
 **Parametri · negli abachi**, in fondo al configuratore, contiene i parametri propri del tipo: **+ Resistenza al fuoco** (tenuta in Pset_DoorCommon o Pset_WindowCommon di IFC come FireRating), **+ Produttore**, **+ Codice prodotto**, **+ Sito web**, o qualsiasi parametro a cui dai un nome. Le porte e le finestre del tipo li ereditano, e ognuno diventa una riga degli abachi dei serramenti: vedi [Abachi e grafici](schedules.md).
+
+## Frangisole
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) mette un frangisole sulla porta o finestra cliccata: grande quanto la sua apertura, oltre le spalle, sopra l'architrave o davanti, e la segue quando si sposta. **Sunshade along a facade** prende due punti: su un muro corre lungo la sua faccia esterna, altrove lungo la linea, verso destra. La barra dei due strumenti sceglie il tipo, o uno stile da cui si crea un tipo nuovo.
+
+I generi:
+
+- **Canopy** (pensilina): soletta, a lamelle o in vetro, con sporgenza, spessore, inclinazione e veletta, su mensole, tiranti o montanti;
+- **Vertical fins**: profondità, spessore, passo e angolo, correnti sopra e sotto;
+- **Louvres (brise-soleil)**: lamelle orizzontali, piatte, alari o scatolari, profondità, passo e angolo, staccate dal muro, tra piastre di testata;
+- **Egg-crate**: piastre orizzontali e verticali insieme;
+- **Perforated screen**: una lamiera staccata dal muro, a fori tondi o quadrati o asole, loro dimensione e passo;
+- **Awning** (tenda da sole): tessuto inclinato, mantovana, cassonetto e bracci snodati;
+- **Pergola**: travetti, una trave, listelli sopra e montanti fino a terra;
+- **External venetian blind**: stecche, quanto è abbassata, cassonetto e guide.
+
+**Sunshade types** (in Types) modifica un tipo: il genere e ogni parametro, i materiali, accanto al suo disegno da fuori, in sezione e in pianta. Ogni frangisole del tipo segue una modifica. Un nuovo tipo parte da uno stile: pensilina in calcestruzzo, in legno su mensole, in vetro su tiranti, a lamelle, tettoia in coppi, brise-soleil, alette verticali, griglia in calcestruzzo, schermo forato in Corten, tenda in tessuto, pergola in legno, veneziana esterna; **Save as style…** tiene un tipo come stile del progetto.
+
+![Le proprietà di una pensilina dopo il calcolo di mezzogiorno](shots/sunshade-properties.webp)
+
+Selezionato, un frangisole mostra il tipo, su cosa sta e la propria **Projection** (vuota: quella del tipo). **Full shade at noon, 21 June** calcola, per una pensilina, una tenda o una pergola sopra una finestra, quanto deve sporgere perché tutta la finestra sia in ombra quando il sole è più alto nel giorno più lungo, nel luogo del progetto (**Manage → Location**; Bucarest finché non se ne imposta uno), e la imposta. Su una facciata sud a 45° N il sole è allora a 68,4°: una finestra di 1,5 m sotto una pensilina 150 mm sopra l'architrave richiede 650 mm. Le sue maniglie trascinano gli estremi lungo il muro o la linea e la sporgenza.
+
+![I tipi di frangisole: lamelle, da fuori, in sezione e in pianta](shots/sunshade-types.webp)
+
+Le piante disegnano tratteggiato un frangisole sopra il taglio, tagliato uno che lo attraversa (alette, uno schermo) e visto uno sotto; prospetti, sezioni e 3D mostrano il corpo con il retino del materiale, e proietta l'ombra con il resto (**View → Sun and shadows**). **Sunshade schedule** li elenca per tipo con dove stanno, lunghezza e sporgenza, quanti e l'area ombreggiata; le quantità (lunghezza, sporgenza, area, volume) prendono le voci di costo del tipo. In IFC sono IfcShadingDevice di un IfcShadingDeviceType: una tenda AWNING, una veneziana JALOUSIE, le lamelle LOUVER in IFC 4.3 (definite dall'utente in IFC4), gli altri definiti dall'utente (Canopy, Fins, Egg-crate, Screen, Pergola); Lapin li rilegge com'erano.
+
+![Frangisole in pianta](shots/sunshades-plan.webp)
+
+![Una pensilina, lamelle, alette, una tenda, una pergola e una veneziana in 3D](shots/sunshades-3d.webp)
 
 ## Etichette in pianta
 

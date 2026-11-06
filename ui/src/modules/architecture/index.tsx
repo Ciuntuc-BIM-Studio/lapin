@@ -49,6 +49,7 @@ import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirting
 import { colorLegend, room, roomColors, roomOutline, roomTag, updateRooms } from './roomTools';
 import { RoomTagDialog } from './RoomTagDialog';
 import { sameKind } from '../../shell/params';
+import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
 
 const wall: ToolDef = {
   id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),
@@ -246,6 +247,30 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
 });
 const door = fillTool('door', 'Door', DoorIcon, 'DR');
 const window_ = fillTool('window', 'Window', WindowIcon, 'WN');
+/**
+ * A bay, bow or box window (report #60): click a wall. The type picked in the configurator when it projects, else the
+ * project's first that does, else one made from Lapin's first bay style (a 45° bay).
+ */
+const bayWindow: ToolDef = {
+  id: 'architecture.bayWindow', label: 'Bay window', icon: WindowIcon, shortcut: 'BW',
+  gesture: { kind: 'pick', types: ['IfcWall'] },
+  complete: async ({ points: [p], entity }, ctx) => {
+    if (!entity) return;
+    const s = useSession.getState();
+    const projects = (id?: string | null) => { const n = id ? s.nodes.get(id) : undefined; return n?.type === 'IfcWindowType' && Boolean((n.props.spec as { bay?: unknown } | undefined)?.bay); };
+    const picked = useUi.getState().windowTypeId;
+    let typeId = projects(picked) ? picked : [...s.nodes.values()].find((n) => projects(n.id))?.id ?? null;
+    if (!typeId) {
+      const style = (s.info?.catalogs['architecture.bayStyles'] as unknown as { spec: unknown }[] | undefined)?.[0];
+      if (!style) return;
+      const r = (await ctx.execute('architecture.createJoineryType', { spec: style.spec })) as { id?: string } | null;
+      typeId = r?.id ?? null;
+    }
+    if (!typeId) return;
+    useUi.setState({ windowTypeId: typeId });
+    await ctx.execute('architecture.addWindow', { wallId: entity.id, x: p.x, y: p.y, typeId });
+  },
+};
 const joineryTypes: ToolDef = { id: 'architecture.joineryTypes', label: 'Doors & windows', icon: Settings2, run: () => useUi.setState({ dialog: 'joinery' }) };
 /** A floor: click its corners, then the first one again (or Enter). */
 const slab: ToolDef = {
@@ -385,8 +410,10 @@ const architecture: LapinModule = {
   tabs: [{
     id: 'architecture', label: 'Architecture', order: 20, include: ['modify'],
     groups: [
-      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
-      { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes] },
+      { label: 'Build', tools: [wall, door, window_, slab, roof], small: [curvedWall, curtainWall, bayWindow, wallOpening, slabOpening, roofOpening('window'), roofOpening('dormer'), roofConfigurator, downpipe, railing] },
+      { label: 'Types', tools: [wallTypes, slabTypes, joineryTypes], small: [curtainTypes, sunshadeTypes] },
+      // Sunshades (report #56): on a window, along a facade; their schedule.
+      { label: 'Sunshades', tools: [sunshade], small: [sunshadeAlong, sunshadeSchedule] },
       // Profiles swept along a wall's face: added (a cornice, a band) or taken out (a reveal), decision 297.
       { label: 'Sweeps', tools: [wallSweep, wallReveal], small: [sweepSelected, revealSelected, wallSweepSchedule] },
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
@@ -428,11 +455,12 @@ const architecture: LapinModule = {
     { id: 'ceiling', label: 'Ceiling', classes: ['LapinCeiling'], component: CeilingSection },
     { id: 'skirting', label: 'Skirting', classes: ['LapinSkirting'], component: SkirtingSection },
     { id: 'curtainWall', label: 'Curtain wall', classes: ['IfcCurtainWall'], component: CurtainWallSection },
+    { id: 'sunshade', label: 'Sunshade', classes: [SHADE], component: SunshadeSection, replacesFields: () => true },
     { id: 'room', label: 'Room', classes: ['IfcSpace'], component: RoomSection, replacesFields: () => true },
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
   ],
-  dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, balcony: BalconyDialog },
-  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [BALCONY]: balconyGrips },
+  dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog },
+  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips },
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
@@ -450,6 +478,7 @@ const architecture: LapinModule = {
     IfcDoor: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
     IfcWindow: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
     IfcCurtainWall: (ids, typeId) => execute('architecture.setCurtainWallType', { ids, typeId }),
+    [SHADE]: (ids, typeId) => execute('architecture.setSunshadeType', { ids, typeId }),
   },
 };
 

@@ -17,6 +17,8 @@ public static class JoineryElevation
 {
     public static List<Stroke> Of(JoinerySpec s, bool exterior = false)
     {
+        // A bay, bow or box window's card shows its faces unfolded (report #60), as its makers draw it.
+        if (BayWindows.Projecting(s)) s = BayWindows.Developed(s);
         var o = new List<Stroke>();
         void Rect(double x0, double y0, double x1, double y1, string w)
         {

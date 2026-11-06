@@ -81,6 +81,29 @@ En la fachada, además del recercado, una ventana puede tener **Clave**, **Remat
 
 ![Ventanas con arco en 3D](shots/window-styles-3d.webp)
 
+### Miradores, ventanas curvas y en caja
+
+Un tipo de ventana puede sobresalir del muro. En el configurador, **Projects** la convierte en **Bay** (un centro y dos lados en ángulo con el muro), **Bow** (paneles iguales en un arco) o **Box** (lados en escuadra con el muro), y **New bay window** empieza un tipo nuevo como mirador a 45°. La ventana sigue llenando un solo hueco en el muro, tan ancho y alto como el tipo: se coloca, mueve, copia, voltea, numera y lista como cualquier ventana. **Architecture → Bay window** (<kbd>BW</kbd>) pone una en el muro en que haces clic: el tipo elegido en el configurador si sobresale, si no el primer mirador del proyecto, si no un mirador a 45°.
+
+Las columnas de la cuadrícula son sus caras. En un mirador y en una caja, la primera y la última columna son sus lados y las de en medio su centro; una ventana curva tiene una cara por columna, sus anchos repartiéndose el arco. Cada hoja abre como dice **Panels**, así que los lados pueden abrir y el centro quedar fijo. Después:
+
+- **Projection**, desde la cara exterior del muro hasta la cara exterior de los marcos, y en un mirador el ángulo **Sides to the wall** (15° a 90°);
+- **Sides**: los lados de la caja acristalados o macizos, con su material;
+- **Seat inside**: el asiento en el alféizar, cuánto entra en la estancia, su material;
+- **Sill outside** bajo las caras;
+- **Base**: ninguna (colgado del muro), **muros hasta el suelo**, **una losa en voladizo** o **una losa sobre ménsulas**, con su espesor, cuánto pasa de las caras y su material;
+- **Head**: una cubierta **a cuatro aguas**, **a un agua** o **plana**, o una **losa**, su espesor en el alero, su vuelo, su pendiente y material, y un **babero contra el muro**.
+
+Los marcos, hojas, vidrios y manillas son los del tipo, así que sus materiales y manillas valen para todas las caras. **Bay style** lo fija todo a la vez: mirador a 45° o poco profundo a 30°, mirador apoyado en el suelo, ventana curva de cinco o cuatro paneles, caja con lados acristalados o macizos, mirador sobre ménsulas. **Save as bay style…** guarda el configurado como estilo del proyecto, junto a los de Lapin; se renombra o elimina en la lista bajo los campos.
+
+En planta las caras se cortan, el asiento, el vierteaguas y la base se dibujan bajo el corte y la cubierta a trazos encima; alzados, secciones y 3D muestran todo el cuerpo. La tabla de ventanas tiene una ficha para el tipo, con sus caras desplegadas y una fila **Projecting** (tipo, vuelo, caras); su área es la de las caras acristaladas y sus detalles miden la cubierta, el asiento y la base. En IFC es un único IfcWindow de particionado definido por el usuario (*Bay 45°, projection 600, 3 faces, 4 panels*) cuyo cuerpo es todo el mirador, con sus paneles cara a cara; Lapin lee el mirador de vuelta.
+
+![Una ventana curva en el configurador](shots/bay-configurator.webp)
+
+![Mirador, ventana curva, caja y mirador sobre ménsulas en planta](shots/bay-plan.webp)
+
+![Mirador, ventana curva, caja y mirador sobre ménsulas en 3D](shots/bay-3d.webp)
+
 ### Manillas
 
 **Manilla** elige la manilla del tipo: **Manilla de palanca**, **Pomo**, **Tirador de barra**, **Manilla de ventana** o ninguna. Por defecto, una puerta lleva manilla de palanca y una ventana manilla de ventana. Una puerta tiene manilla en ambas caras, a la **Altura de la manilla** que se indique; **Color de la manilla** le da su color. Las manillas se ven en 3D, en secciones y alzados, y en los dibujos del configurador cuando está marcado **Herrajes**.
@@ -88,6 +111,35 @@ En la fachada, además del recercado, una ventana puede tener **Clave**, **Remat
 ### Parámetros
 
 **Parámetros · en tablas**, al pie del configurador, guarda los parámetros propios del tipo: **+ Resistencia al fuego** (guardada en Pset_DoorCommon o Pset_WindowCommon de IFC como FireRating), **+ Fabricante**, **+ Código de producto**, **+ Sitio web**, o cualquier parámetro al que dé nombre. Las puertas y ventanas del tipo los heredan, y cada uno se convierte en una fila de las tablas de carpintería: vea [Tablas y gráficos](schedules.md).
+
+## Parasoles
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) pone un parasol en la puerta o ventana en que haces clic: del tamaño de su hueco, pasando las jambas, sobre el dintel o delante, y la sigue cuando se mueve. **Sunshade along a facade** toma dos puntos: en un muro va a lo largo de su cara exterior, en otro sitio a lo largo de la línea, hacia su derecha. La barra de ambas herramientas elige el tipo, o un estilo del que se crea un tipo nuevo.
+
+Los tipos:
+
+- **Canopy** (marquesina): losa, de lamas o de vidrio, con su vuelo, espesor, inclinación y un frente, sobre ménsulas, tirantes o postes;
+- **Vertical fins** (lamas verticales): su profundidad, espesor, separación y ángulo, rieles arriba y abajo;
+- **Louvres (brise-soleil)**: lamas horizontales, planas, aerodinámicas o en caja, su profundidad, separación y ángulo, separadas del muro, entre placas de extremo;
+- **Egg-crate**: placas horizontales y verticales juntas;
+- **Perforated screen**: una chapa separada del muro, con agujeros redondos o cuadrados o ranuras, su tamaño y paso;
+- **Awning** (toldo): tela inclinada, faldón, cofre y brazos articulados;
+- **Pergola**: cabios, una viga, listones encima y postes hasta el suelo;
+- **External venetian blind**: lamas, cuánto está bajada, su cajón y guías.
+
+**Sunshade types** (en Types) edita un tipo: su clase y cada parámetro, sus materiales, junto a su dibujo desde fuera, en sección y en planta. Cada parasol del tipo sigue un cambio. Un tipo nuevo parte de un estilo: marquesina de hormigón, de madera sobre ménsulas, de vidrio con tirantes, de lamas, tejadillo de teja, brise-soleil, lamas verticales, retícula de hormigón, pantalla perforada de acero corten, toldo de tela, pérgola de madera, veneciana exterior; **Save as style…** guarda un tipo como estilo del proyecto.
+
+![Las propiedades de una marquesina tras el cálculo de mediodía](shots/sunshade-properties.webp)
+
+Seleccionado, un parasol muestra su tipo, sobre qué está y su propio **Projection** (vacío: el del tipo). **Full shade at noon, 21 June** calcula, para una marquesina, un toldo o una pérgola sobre una ventana, cuánto debe volar para que toda la ventana quede en sombra cuando el sol está más alto en el día más largo, en el lugar del proyecto (**Manage → Location**; Bucarest hasta que se fije uno), y lo fija. En una fachada sur a 45° N el sol está entonces a 68,4°: una ventana de 1,5 m bajo una marquesina 150 mm sobre el dintel necesita 650 mm. Sus pinzamientos arrastran sus extremos a lo largo del muro o línea y su vuelo.
+
+![Los tipos de parasol: lamas, desde fuera, en sección y en planta](shots/sunshade-types.webp)
+
+Las plantas dibujan a trazos un parasol por encima del corte, cortado uno que lo atraviesa (lamas verticales, una pantalla) y visto uno por debajo; alzados, secciones y 3D muestran su cuerpo, con el sombreado de su material, y proyecta su sombra con el resto (**View → Sun and shadows**). **Sunshade schedule** los lista por tipo con dónde están, su longitud y vuelo, cuántos y el área que sombrean; sus cantidades (longitud, vuelo, área, volumen) toman las partidas de coste de su tipo. En IFC son IfcShadingDevice de un IfcShadingDeviceType: un toldo AWNING, una veneciana JALOUSIE, las lamas LOUVER en IFC 4.3 (definidas por el usuario en IFC4), los demás definidos por el usuario (Canopy, Fins, Egg-crate, Screen, Pergola); Lapin los lee de vuelta tal como eran.
+
+![Parasoles en planta](shots/sunshades-plan.webp)
+
+![Una marquesina, lamas, lamas verticales, un toldo, una pérgola y una veneciana en 3D](shots/sunshades-3d.webp)
 
 ## Etiquetas en planta
 

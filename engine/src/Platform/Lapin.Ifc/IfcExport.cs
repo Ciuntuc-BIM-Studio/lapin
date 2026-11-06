@@ -120,6 +120,8 @@ public static class IfcExport
         ["IfcFurnishingElement"] = null,
         // Furniture (docs/plan-furniture.md): IFC4's IfcFurnitureTypeEnum.
         ["IfcFurniture"] = ["CHAIR", "TABLE", "DESK", "BED", "FILECABINET", "SHELF", "SOFA"],
+        // Sunshades (report #56): IFC4's IfcShadingDeviceTypeEnum (louvres are USERDEFINED there, LOUVER in IFC 4.3).
+        ["IfcShadingDevice"] = ["JALOUSIE", "SHUTTER", "AWNING"],
         [IfcClass.BuildingElementProxy] = ["COMPLEX", "ELEMENT", "PARTIAL", "PROVISIONFORVOID", "PROVISIONFORSPACE"],
         [IfcClass.GeographicElement] = ["TERRAIN"],
         [IfcClass.Pavement] = ["FLEXIBLE", "RIGID"],
@@ -165,6 +167,7 @@ public static class IfcExport
     /// <summary>What IFC 4.3 adds: the railway's classes, and predefined types IFC4 lacks (a platform slab, a track panel).</summary>
     static readonly Dictionary<string, string[]?> Classes43 = new()
     {
+        ["IfcShadingDevice"] = ["JALOUSIE", "SHUTTER", "AWNING", "LOUVER"],
         [IfcClass.Slab] = ["FLOOR", "ROOF", "LANDING", "BASESLAB", "APPROACH_SLAB", "PAVING", "WEARING", "SIDEWALK", "TRACKSLAB"],
         ["IfcElementAssembly"] = ["ACCESSORY_ASSEMBLY", "ARCH", "BEAM_GRID", "BRACED_FRAME", "GIRDER", "REINFORCEMENT_UNIT", "RIGID_FRAME", "SLAB_FIELD", "TRUSS", "ABUTMENT", "PIER", "PYLON", "CROSS_BRACING", "DECK", "MAST", "SIGNALASSEMBLY", "GRID", "SHELTER", "SUPPORTINGASSEMBLY", "SUSPENSIONASSEMBLY", "TRACTION_SWITCHING_ASSEMBLY", "TRACKPANEL", "TURNOUTPANEL", "DILATATIONPANEL", "RAIL_MECHANICAL_EQUIPMENT_ASSEMBLY", "ENTRANCEWORKS", "SUMPBUSTER", "TRAFFIC_CALMING_DEVICE"],
         ["IfcRail"] = ["RACKRAIL", "BLADE", "GUARDRAIL", "STOCKRAIL", "CHECKRAIL", "RAIL"],

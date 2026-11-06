@@ -43,7 +43,7 @@ public static class ScheduleLayout
     static readonly Dictionary<string, double> DrawingPen = new() { ["cut"] = 0.35, ["outline"] = 0.25, ["thin"] = 0.13 };
     public const double TitleH = 10, BandGap = 8, TableGap = 10;
 
-    public static readonly string[] JoineryRows = ["name", "size", "operation", "sill", "levels", "total", "uValue", "fire", "lintel"];
+    public static readonly string[] JoineryRows = ["name", "size", "bay", "operation", "sill", "levels", "total", "uValue", "fire", "lintel"];
     public static readonly string[] LintelRows = ["lintelKind", "product", "section", "length", "levels", "total", "openings", "concrete", "steel"];
 
     internal static string Mm(double m) => Math.Round(m * 1000).ToString(CultureInfo.InvariantCulture);
@@ -83,6 +83,8 @@ public static class ScheduleLayout
     /// </summary>
     public static string OperationText(JoinerySpec spec)
     {
+        // A bay, bow or box window (report #60): its faces' panels, left to right.
+        if (BayWindows.Projecting(spec)) spec = BayWindows.Developed(spec);
         var ops = Joinery.Normalised(spec).Select(p => p.Operation).ToList();
         var leaves = ops.Where(o => DoorHand(o) != null).ToList();
         if (spec.IsDoor && leaves.Count == 2 && DoorHand(leaves[0]) != DoorHand(leaves[1]) && leaves.All(o => o.StartsWith("swing", StringComparison.Ordinal) || o.StartsWith("double-acting", StringComparison.Ordinal)))
@@ -125,6 +127,9 @@ public static class ScheduleLayout
             {
                 "name" => new(id, "Name", e => e.Name, true),
                 "size" => new(id, "Size W × H (mm)", e => $"{Mm(e.Width)} × {Mm(e.Height)}", true),
+                // A bay, bow or box window's projection and faces (report #60): one row per type, as it is ordered.
+                "bay" => data.Entries.Any(e => e.Spec != null && BayWindows.Projecting(e.Spec))
+                    ? new(id, "Projecting", e => e.Spec != null && BayWindows.Projecting(e.Spec) ? BayWindows.Describe(e.Spec) : "—", true) : null,
                 "operation" => new(id, "Opening", e => e.Spec == null ? "—" : OperationText(e.Spec), true),
                 "sill" => data.Entries.Any(e => e.Kind == "window") ? new(id, "Sill height (mm)", e => e.Kind == "window" && e.Spec != null ? Mm(e.Spec.SillHeight) : "—", true) : null,
                 "total" => new(id, "Total", e => e.Total.ToString(CultureInfo.InvariantCulture), true, true),

@@ -1,7 +1,7 @@
 ---
 title: Doors and windows
 order: 30
-summary: Place doors and windows in walls, move them, and design their types in the configurator.
+summary: Place doors and windows in walls, move them, design their types in the configurator, make them bay, bow or box windows, and shade them.
 ---
 
 <!-- video doors-windows -->
@@ -81,6 +81,29 @@ On the facade, besides the surround, a window can have a **Keystone**, a **Crown
 
 ![Arched windows in 3D](shots/window-styles-3d.webp)
 
+### Bay, bow and box windows
+
+A window type can project from its wall. In the configurator, **Projects** makes it a **Bay** (a centre and two sides at an angle to the wall), a **Bow** (equal panels on an arc) or a **Box** (sides square to the wall), and **New bay window** starts a new type as a 45° bay. The window still fills one opening in the wall, as wide and high as the type: it is placed, moved, copied, flipped, numbered and scheduled like any window. **Architecture → Bay window** (<kbd>BW</kbd>) puts one in the wall you click: the type picked in the configurator when it projects, else the project's first bay, else a 45° bay.
+
+The grid's columns are its faces. A bay's and a box's first and last columns are its sides and the columns between them its centre; a bow has one face per column, their widths sharing the arc. Each pane opens as **Panels** says, so a bay can have its sides opening and its centre fixed. Then:
+
+- **Projection**, from the wall's exterior face to the frames' outer face, and for a bay the **Sides to the wall** angle (15° to 90°);
+- **Sides**: a box's sides glazed or solid, with their material;
+- **Seat inside**: the board at the sill, how far it runs into the room, its material;
+- **Sill outside** under the faces;
+- **Base**: none (hung on the wall), **walls down to the floor**, **a projecting slab**, or **a slab on corbels**, with its thickness, how far it runs past the faces and its material;
+- **Head**: a **hipped**, **lean-to** or **flat roof**, or a **slab**, its thickness at the eaves, its overhang, its pitch and material, and a **flashing against the wall**.
+
+The frames, sashes, glass and handles are the type's, so its materials and handles apply to every face. **Bay style** sets everything at once: a 45° or shallow 30° bay, a canted bay on the floor, a bow of five or four panels, a box with glazed or solid sides, an oriel on corbels. **Save as bay style…** keeps the one you configured as a style of the project, offered next to Lapin's; rename or delete it in the list under the fields.
+
+In a plan the faces are cut, the seat, sill and base are drawn below the cut and the roof dashed over them; elevations, sections and 3D show the whole body. The windows schedule has one card for the type, its faces unfolded, with a **Projecting** row (kind, projection, faces); its area is the glazed faces' and its details measure the roof, the seat and the base. In IFC it is one IfcWindow of a user-defined partitioning (*Bay 45°, projection 600, 3 faces, 4 panels*) whose body is the whole bay, its panels listed face by face; Lapin reads the bay back from it.
+
+![A bow window in the configurator](shots/bay-configurator.webp)
+
+![Bay, bow, box and oriel windows in plan](shots/bay-plan.webp)
+
+![Bay, bow, box and oriel windows in 3D](shots/bay-3d.webp)
+
 ### Handles
 
 **Handle** picks the handle of the type: a **Lever**, a **Knob**, a **Pull bar** or a **Window handle**, or **None**. By default a door has a lever and a window a window handle. A door has its handle on both faces, at the **Handle height** you set; **Handle colour** sets its colour. Handles show in 3D, in sections and elevations, and in the configurator's drawings when **Hardware** is ticked.
@@ -88,6 +111,35 @@ On the facade, besides the surround, a window can have a **Keystone**, a **Crown
 ### Parameters
 
 **Parameters · in schedules**, at the bottom of the configurator, holds the type's own parameters: **+ Fire rating** (kept in IFC's Pset_DoorCommon or Pset_WindowCommon as FireRating), **+ Manufacturer**, **+ Product code**, **+ Website**, or any parameter you name. The type's doors and windows inherit them, and each one becomes a row of the joinery schedules: see [Schedules and charts](schedules.md).
+
+## Sunshades
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) puts a sunshade on the door or window you click: sized to its opening, past its jambs, over its head or across it, and it follows the window when it moves. **Sunshade along a facade** takes two points: on a wall it runs along that wall's exterior face, anywhere else along the line, out to its right. The bar of both tools picks the type, or a style a new type is made from.
+
+The kinds:
+
+- **Canopy**: a slab, louvred or glass, with its projection, thickness, tilt and a fascia, on brackets, tie rods or posts;
+- **Vertical fins**: their depth, thickness, spacing and angle, rails top and bottom;
+- **Louvres (brise-soleil)**: horizontal blades, flat, aerofoil or box, their depth, spacing and angle, off the wall, between end plates;
+- **Egg-crate**: horizontal and vertical plates together;
+- **Perforated screen**: a plate off the wall, with round or square holes or slots, their size and pitch;
+- **Awning**: fabric on a slope, a valance, a cassette and folding arms;
+- **Pergola**: rafters, a beam, slats on top and posts to the floor;
+- **External venetian blind**: slats, how far it is lowered, its head box and guide rails.
+
+**Sunshade types** (in Types) edits a type: its kind and every parameter of it, its materials, beside the drawing of it from outside, in section and in plan. Every sunshade of the type follows a change. A new type starts from a style: a concrete canopy, a timber canopy on brackets, a glass canopy on tie rods, a louvred canopy, a tiled hood, a brise-soleil, vertical fins, a concrete egg-crate, a perforated Corten screen, a fabric awning, a timber pergola, an external venetian blind; **Save as style…** keeps a type as a style of the project.
+
+![A canopy's properties after the noon helper](shots/sunshade-properties.webp)
+
+Selected, a sunshade shows its type, what it stands on and its own **Projection** (empty: its type's). **Full shade at noon, 21 June** works out, for a canopy, an awning or a pergola over a window, how far it must project so that the whole window is in shade when the sun is highest on the longest day, at the project's place (**Manage → Location**; Bucharest until one is set), and sets it. On a south facade at 45° N the sun is 68.4° high then: a window 1.5 m high under a canopy 150 mm over its head needs 650 mm. Its grips drag its ends along the wall or line and its projection.
+
+![The sunshade types: louvres, from outside, in section and in plan](shots/sunshade-types.webp)
+
+Plans draw a sunshade over the cut dashed, one crossing it cut (fins, a screen) and one under it seen; elevations, sections and 3D show its body, with the hatch of its material, and it casts its shadow with the rest (**View → Sun and shadows**). **Sunshade schedule** lists them by type with where they stand, their length and projection, how many and the area they shade; their quantities (length, projection, area, volume) take the cost articles of their type. In IFC they are IfcShadingDevice of an IfcShadingDeviceType: an awning AWNING, an external blind JALOUSIE, louvres LOUVER in IFC 4.3 (user-defined in IFC4), the others user-defined (Canopy, Fins, Egg-crate, Screen, Pergola); Lapin reads them back as they were.
+
+![Sunshades in plan](shots/sunshades-plan.webp)
+
+![A canopy, louvres, fins, an awning, a pergola and a blind in 3D](shots/sunshades-3d.webp)
 
 ## Tags in plan
 

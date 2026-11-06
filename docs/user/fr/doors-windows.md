@@ -81,6 +81,29 @@ Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé d
 
 ![Fenêtres cintrées en 3D](shots/window-styles-3d.webp)
 
+### Bow-windows, fenêtres arrondies et en boîte
+
+Un type de fenêtre peut faire saillie sur son mur. Dans le configurateur, **Projects** en fait un **Bay** (un centre et deux côtés en biais), un **Bow** (des panneaux égaux sur un arc) ou un **Box** (côtés d'équerre avec le mur), et **New bay window** commence un nouveau type en bow-window à 45°. La fenêtre remplit toujours une seule ouverture du mur, aussi large et haute que le type : elle se pose, se déplace, se copie, se retourne, se numérote et se liste comme toute fenêtre. **Architecture → Bay window** (<kbd>BW</kbd>) en pose une dans le mur cliqué : le type choisi dans le configurateur s'il fait saillie, sinon le premier bow-window du projet, sinon un bow-window à 45°.
+
+Les colonnes de la grille sont ses faces. Pour un bow-window et une boîte, la première et la dernière colonne sont ses côtés, celles d'entre elles son centre ; une fenêtre arrondie a une face par colonne, leurs largeurs se partageant l'arc. Chaque vantail s'ouvre comme le dit **Panels** : les côtés peuvent s'ouvrir et le centre rester fixe. Puis :
+
+- **Projection**, de la face extérieure du mur à la face extérieure des cadres, et pour un bow-window l'angle **Sides to the wall** (15° à 90°) ;
+- **Sides** : les côtés de la boîte vitrés ou pleins, avec leur matériau ;
+- **Seat inside** : l'assise à l'appui, ce qu'elle avance dans la pièce, son matériau ;
+- **Sill outside** sous les faces ;
+- **Base** : aucune (accroché au mur), **murs jusqu'au sol**, **une dalle en saillie** ou **une dalle sur consoles**, avec épaisseur, débord et matériau ;
+- **Head** : un toit **à quatre pans**, **en appentis** ou **plat**, ou une **dalle**, son épaisseur à l'égout, son débord, sa pente et son matériau, et un **solin contre le mur**.
+
+Cadres, ouvrants, vitrages et poignées sont ceux du type : ses matériaux et poignées valent pour toutes les faces. **Bay style** règle tout à la fois : bow-window à 45° ou peu profond à 30°, bow-window posé au sol, fenêtre arrondie de cinq ou quatre panneaux, boîte à côtés vitrés ou pleins, oriel sur consoles. **Save as bay style…** garde celui configuré comme style du projet, à côté de ceux de Lapin ; renommez-le ou supprimez-le dans la liste sous les champs.
+
+En plan, les faces sont coupées, l'assise, l'appui et la base dessinés sous la coupe et le toit en tirets au-dessus ; élévations, coupes et 3D montrent tout le corps. La nomenclature des fenêtres a une fiche pour le type, ses faces dépliées, avec une ligne **Projecting** (genre, saillie, faces) ; sa surface est celle des faces vitrées et ses détails mesurent le toit, l'assise et la base. En IFC c'est un seul IfcWindow à partitionnement défini par l'utilisateur (*Bay 45°, projection 600, 3 faces, 4 panels*) dont le corps est tout le bow-window, ses panneaux face par face ; Lapin relit le bow-window.
+
+![Une fenêtre arrondie dans le configurateur](shots/bay-configurator.webp)
+
+![Bow-window, fenêtre arrondie, boîte et oriel en plan](shots/bay-plan.webp)
+
+![Bow-window, fenêtre arrondie, boîte et oriel en 3D](shots/bay-3d.webp)
+
 ### Poignées
 
 **Poignée** choisit la poignée du type : **Béquille**, **Bouton**, **Barre de tirage**, **Poignée de fenêtre** ou aucune. Par défaut, une porte a une béquille et une fenêtre une poignée de fenêtre. Une porte a sa poignée sur les deux faces, à la **Hauteur de la poignée** indiquée ; **Couleur de la poignée** règle sa couleur. Les poignées se voient en 3D, en coupe et en élévation, et dans les dessins du configurateur quand **Quincaillerie** est cochée.
@@ -88,6 +111,35 @@ Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé d
 ### Paramètres
 
 **Paramètres · dans les nomenclatures**, en bas du configurateur, contient les paramètres propres du type : **+ Résistance au feu** (rangée dans Pset_DoorCommon ou Pset_WindowCommon d’IFC comme FireRating), **+ Fabricant**, **+ Code produit**, **+ Site web**, ou tout paramètre que vous nommez. Les portes et fenêtres du type en héritent, et chacun devient une ligne des nomenclatures des menuiseries : voir [Nomenclatures et graphiques](schedules.md).
+
+## Pare-soleil
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) pose un pare-soleil sur la porte ou fenêtre cliquée : à la taille de son ouverture, au-delà des tableaux, au-dessus du linteau ou devant, et il la suit quand elle bouge. **Sunshade along a facade** prend deux points : sur un mur il court le long de sa face extérieure, ailleurs le long de la ligne, vers sa droite. La barre des deux outils choisit le type, ou un style dont un nouveau type est fait.
+
+Les genres :
+
+- **Canopy** (auvent) : dalle, à lames ou en verre, avec saillie, épaisseur, inclinaison et bandeau, sur consoles, tirants ou poteaux ;
+- **Vertical fins** : leur profondeur, épaisseur, espacement et angle, lisses haut et bas ;
+- **Louvres (brise-soleil)** : lames horizontales, plates, profil aile ou caisson, leur profondeur, espacement et angle, écartées du mur, entre plaques d'extrémité ;
+- **Egg-crate** : plaques horizontales et verticales ensemble ;
+- **Perforated screen** : une tôle écartée du mur, à trous ronds ou carrés ou à fentes, leur taille et pas ;
+- **Awning** (store banne) : toile en pente, lambrequin, coffre et bras articulés ;
+- **Pergola** : chevrons, une poutre, lattes dessus et poteaux jusqu'au sol ;
+- **External venetian blind** : lamelles, sa descente, son coffre et ses coulisses.
+
+**Sunshade types** (dans Types) modifie un type : son genre et chacun de ses paramètres, ses matériaux, à côté de son dessin de l'extérieur, en coupe et en plan. Chaque pare-soleil du type suit une modification. Un nouveau type part d'un style : auvent en béton, en bois sur consoles, en verre sur tirants, à lames, marquise en tuiles, brise-soleil, ailettes verticales, grille alvéolaire en béton, écran perforé en Corten, store banne en toile, pergola en bois, brise-soleil orientable ; **Save as style…** garde un type comme style du projet.
+
+![Les propriétés d'un auvent après le calcul de midi](shots/sunshade-properties.webp)
+
+Sélectionné, un pare-soleil montre son type, sur quoi il est et sa propre **Projection** (vide : celle du type). **Full shade at noon, 21 June** calcule, pour un auvent, un store ou une pergola au-dessus d'une fenêtre, la saillie qui met toute la fenêtre à l'ombre quand le soleil est au plus haut le jour le plus long, au lieu du projet (**Manage → Location** ; Bucarest tant qu'aucun n'est fixé), et la fixe. Sur une façade sud à 45° N le soleil est alors à 68,4° : une fenêtre de 1,5 m sous un auvent à 150 mm au-dessus du linteau demande 650 mm. Ses poignées font glisser ses extrémités le long du mur ou de la ligne, et sa saillie.
+
+![Les types de pare-soleil : lames, de l'extérieur, en coupe et en plan](shots/sunshade-types.webp)
+
+Les plans dessinent en tirets un pare-soleil au-dessus de la coupe, coupé celui qui la traverse (ailettes, écran) et vu celui en dessous ; élévations, coupes et 3D montrent son corps avec la hachure de son matériau, et il porte son ombre avec le reste (**View → Sun and shadows**). **Sunshade schedule** les liste par type avec leur support, longueur et saillie, nombre et surface ombragée ; leurs quantités (longueur, saillie, surface, volume) prennent les articles de prix de leur type. En IFC ce sont des IfcShadingDevice d'un IfcShadingDeviceType : un store AWNING, un brise-soleil orientable JALOUSIE, les lames LOUVER en IFC 4.3 (définies par l'utilisateur en IFC4), les autres définis par l'utilisateur (Canopy, Fins, Egg-crate, Screen, Pergola) ; Lapin les relit tels qu'ils étaient.
+
+![Pare-soleil en plan](shots/sunshades-plan.webp)
+
+![Un auvent, des lames, des ailettes, un store, une pergola et un brise-soleil orientable en 3D](shots/sunshades-3d.webp)
 
 ## Étiquettes en plan
 

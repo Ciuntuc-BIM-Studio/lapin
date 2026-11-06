@@ -81,6 +81,29 @@ Na elewacji, oprócz opaski, okno może mieć **Zwornik**, **Zwieńczenie nad ot
 
 ![Okna łukowe w 3D](shots/window-styles-3d.webp)
 
+### Okna wykuszowe, łukowe i skrzynkowe
+
+Typ okna może wystawać ze ściany. W konfiguratorze **Projects** czyni go **Bay** (środek i dwa skośne boki), **Bow** (równe pola na łuku) lub **Box** (boki prostopadłe do ściany), a **New bay window** zaczyna nowy typ jako wykusz 45°. Okno wciąż wypełnia jeden otwór w ścianie, tak szeroki i wysoki jak typ: wstawia się je, przesuwa, kopiuje, odwraca, numeruje i zestawia jak każde okno. **Architecture → Bay window** (<kbd>BW</kbd>) wstawia je w klikniętą ścianę: typ wybrany w konfiguratorze, gdy wystaje, inaczej pierwszy wykusz projektu, inaczej wykusz 45°.
+
+Kolumny siatki to jego ściany. W wykuszu i skrzynce pierwsza i ostatnia kolumna to boki, kolumny pomiędzy to środek; okno łukowe ma jedną ścianę na kolumnę, ich szerokości dzielą łuk. Każde skrzydło otwiera się tak, jak mówi **Panels**, więc boki mogą się otwierać, a środek być stały. Dalej:
+
+- **Projection**, od zewnętrznego lica ściany do zewnętrznego lica ościeżnic, a w wykuszu kąt **Sides to the wall** (od 15° do 90°);
+- **Sides**: boki skrzynki przeszklone lub pełne, z materiałem;
+- **Seat inside**: siedzisko przy parapecie, jak daleko wchodzi do pomieszczenia, jego materiał;
+- **Sill outside** pod ścianami;
+- **Base**: brak (zawieszony na ścianie), **ściany do podłogi**, **płyta wspornikowa** lub **płyta na wspornikach**, z grubością, wysięgiem i materiałem;
+- **Head**: dach **czterospadowy**, **jednospadowy** lub **płaski** albo **płyta**, grubość przy okapie, wysięg, spadek i materiał, oraz **obróbka blacharska przy ścianie**.
+
+Ościeżnice, skrzydła, szkło i klamki są typu, więc jego materiały i klamki działają na wszystkich ścianach. **Bay style** ustawia wszystko naraz: wykusz 45° lub płytki 30°, wykusz od podłogi, okno łukowe z pięciu lub czterech pól, skrzynkę z bokami przeszklonymi lub pełnymi, wykusz na wspornikach. **Save as bay style…** zachowuje skonfigurowany jako styl projektu, obok stylów Lapina; zmienia się nazwę lub usuwa go na liście pod polami.
+
+W rzucie ściany są przecięte, siedzisko, parapet i podstawa rysowane poniżej cięcia, a dach przerywaną linią nad nimi; widoki, przekroje i 3D pokazują całe ciało. Zestawienie okien ma kartę typu z rozwiniętymi ścianami i wierszem **Projecting** (rodzaj, wysięg, ściany); jego powierzchnia to powierzchnia przeszklonych ścian, a szczegóły mierzą dach, siedzisko i podstawę. W IFC to jedno IfcWindow z podziałem zdefiniowanym przez użytkownika (*Bay 45°, projection 600, 3 faces, 4 panels*), którego ciałem jest cały wykusz, pola ściana po ścianie; Lapin odczytuje wykusz z powrotem.
+
+![Okno łukowe w konfiguratorze](shots/bay-configurator.webp)
+
+![Wykusz, okno łukowe, skrzynka i wykusz na wspornikach w rzucie](shots/bay-plan.webp)
+
+![Wykusz, okno łukowe, skrzynka i wykusz na wspornikach w 3D](shots/bay-3d.webp)
+
 ### Klamki
 
 **Klamka** wybiera klamkę typu: **Klamka**, **Gałka**, **Pochwyt** lub **Klamka okienna** albo **Brak**. Domyślnie drzwi mają klamkę dźwigniową, a okno klamkę okienną. Drzwi mają klamkę po obu stronach, na wysokości z pola **Wysokość klamki**; **Kolor klamki** ustala jej kolor. Klamki są widoczne w 3D, na przekrojach i elewacjach oraz na rysunkach konfiguratora, gdy zaznaczone jest **Okucia**.
@@ -88,6 +111,35 @@ Na elewacji, oprócz opaski, okno może mieć **Zwornik**, **Zwieńczenie nad ot
 ### Parametry
 
 **Parametry · w zestawieniach**, u dołu konfiguratora, zawiera własne parametry typu: **+ Odporność ogniowa** (zapisywana w Pset_DoorCommon lub Pset_WindowCommon IFC jako FireRating), **+ Producent**, **+ Kod produktu**, **+ Strona internetowa** lub dowolny parametr, który nazwiesz. Drzwi i okna tego typu je dziedziczą, a każdy staje się wierszem zestawień stolarki: zobacz [Zestawienia i wykresy](schedules.md).
+
+## Osłony przeciwsłoneczne
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) wstawia osłonę na kliknięte drzwi lub okno: na wymiar otworu, poza węgarki, nad nadprożem lub przed nim, i podąża za nim, gdy się przesuwa. **Sunshade along a facade** bierze dwa punkty: na ścianie biegnie wzdłuż jej zewnętrznego lica, gdzie indziej wzdłuż linii, w prawo. Pasek obu narzędzi wybiera typ lub styl, z którego powstaje nowy typ.
+
+Rodzaje:
+
+- **Canopy** (daszek): płyta, lamelowy lub szklany, z wysięgiem, grubością, nachyleniem i pasem czołowym, na wspornikach, cięgnach lub słupkach;
+- **Vertical fins**: głębokość, grubość, rozstaw i kąt, rygle górą i dołem;
+- **Louvres (brise-soleil)**: poziome lamele, płaskie, lotnicze lub skrzynkowe, głębokość, rozstaw i kąt, odsunięte od ściany, między płytami czołowymi;
+- **Egg-crate**: płyty poziome i pionowe razem;
+- **Perforated screen**: blacha odsunięta od ściany, z otworami okrągłymi, kwadratowymi lub szczelinami, ich rozmiar i podziałka;
+- **Awning** (markiza): tkanina w spadku, falbana, kaseta i ramiona łamane;
+- **Pergola**: krokwie, belka, listwy na górze i słupki do podłogi;
+- **External venetian blind**: lamelki, jak nisko opuszczona, kaseta i prowadnice.
+
+**Sunshade types** (w Types) edytuje typ: rodzaj i każdy parametr, materiały, obok rysunku z zewnątrz, w przekroju i w rzucie. Każda osłona typu podąża za zmianą. Nowy typ zaczyna się od stylu: daszek betonowy, drewniany na wspornikach, szklany na cięgnach, lamelowy, z dachówki, brise-soleil, żebra pionowe, kratownica betonowa, ekran perforowany z Cortenu, markiza materiałowa, pergola drewniana, żaluzja zewnętrzna; **Save as style…** zachowuje typ jako styl projektu.
+
+![Właściwości daszka po obliczeniu dla południa](shots/sunshade-properties.webp)
+
+Zaznaczona osłona pokazuje typ, na czym stoi i własne **Projection** (puste: typu). **Full shade at noon, 21 June** oblicza dla daszka, markizy lub pergoli nad oknem, jak daleko ma wystawać, by całe okno było w cieniu, gdy słońce stoi najwyżej w najdłuższym dniu, w miejscu projektu (**Manage → Location**; Bukareszt, dopóki nie ustawiono), i to ustawia. Na elewacji południowej na 45° N słońce stoi wtedy na 68,4°: okno o wysokości 1,5 m pod daszkiem 150 mm nad nadprożem wymaga 650 mm. Jej uchwyty przeciągają końce wzdłuż ściany lub linii oraz wysięg.
+
+![Typy osłon: lamele, z zewnątrz, w przekroju i w rzucie](shots/sunshade-types.webp)
+
+Rzuty rysują osłonę nad cięciem linią przerywaną, przeciętą tę, która je przecina (żebra, ekran), a widoczną tę poniżej; widoki, przekroje i 3D pokazują jej ciało z kreskowaniem materiału, i rzuca cień razem z resztą (**View → Sun and shadows**). **Sunshade schedule** zestawia je według typów z miejscem, długością i wysięgiem, liczbą i zacienioną powierzchnią; ich ilości (długość, wysięg, powierzchnia, objętość) biorą pozycje kosztorysowe typu. W IFC są to IfcShadingDevice typu IfcShadingDeviceType: markiza AWNING, żaluzja JALOUSIE, lamele LOUVER w IFC 4.3 (zdefiniowane przez użytkownika w IFC4), pozostałe zdefiniowane przez użytkownika (Canopy, Fins, Egg-crate, Screen, Pergola); Lapin odczytuje je z powrotem takie, jakie były.
+
+![Osłony w rzucie](shots/sunshades-plan.webp)
+
+![Daszek, lamele, żebra, markiza, pergola i żaluzja w 3D](shots/sunshades-3d.webp)
 
 ## Etykiety na rzucie
 

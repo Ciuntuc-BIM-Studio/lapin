@@ -109,7 +109,9 @@ public sealed record JoinerySpec(
     /// <summary>The handles; null: a lever on doors, a window handle on windows.</summary>
     JoineryHardware? Hardware = null,
     /// <summary>The parts' materials by name; null: their colours only (a type made before report #76).</summary>
-    JoineryMaterials? Materials = null)
+    JoineryMaterials? Materials = null,
+    /// <summary>A window that projects from its wall (report #60): a bay, a bow or a box, its faces the grid's columns; null: flat in the wall.</summary>
+    JoineryBay? Bay = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -292,6 +294,9 @@ public static class Joinery
     public static string? Problem(JoinerySpec s)
     {
         static bool Positive(double v) => double.IsFinite(v) && v > 0;
+        // A bay, bow or box window (report #60): its faces are flat windows of their own, each checked.
+        if (s.Bay != null && s.IsDoor) return "A door does not project: only a window is a bay, a bow or a box.";
+        if (BayWindows.Projecting(s)) return BayWindows.Problem(s);
         if (!Positive(s.Width) || !Positive(s.Height)) return "Width and height must be positive.";
         if (!Positive(s.Frame.Depth) || !Positive(s.Frame.Width)) return "The frame needs a positive depth and width.";
         if (s.Columns.Length is < 1 or > 12 || s.Rows.Length is < 1 or > 12) return "Use 1 to 12 columns and rows.";
@@ -360,6 +365,8 @@ public static class Joinery
 
     public static (string Type, string? UserDefined) WindowPartitioning(JoinerySpec s)
     {
+        // A bay, bow or box window says so: IFC has no partitioning for a window that projects (report #60).
+        if (BayWindows.Projecting(s)) return ("USERDEFINED", BayWindows.Describe(s) + $", {Normalised(BayWindows.Developed(s)).Count} panels");
         var panels = Normalised(s);
         int nc = s.Columns.Length, nr = s.Rows.Length;
         var grid = $"{nc}x{nr} grid, {panels.Count} panels";

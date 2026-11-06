@@ -81,6 +81,29 @@ An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **
 
 ![Bogenfenster in 3D](shots/window-styles-3d.webp)
 
+### Erker-, Rund- und Kastenfenster
+
+Ein Fenstertyp kann aus der Wand vorspringen. Im Konfigurator macht **Projects** ihn zu einem **Bay** (eine Mitte und zwei schräge Seiten), einem **Bow** (gleiche Felder auf einem Bogen) oder einem **Box** (Seiten rechtwinklig zur Wand), und **New bay window** beginnt einen neuen Typ als 45°-Erker. Das Fenster füllt weiterhin eine Öffnung in der Wand, so breit und hoch wie der Typ: es wird gesetzt, verschoben, kopiert, gespiegelt, nummeriert und gelistet wie jedes Fenster. **Architecture → Bay window** (<kbd>BW</kbd>) setzt eines in die angeklickte Wand: den im Konfigurator gewählten Typ, wenn er vorspringt, sonst den ersten Erker des Projekts, sonst einen 45°-Erker.
+
+Die Spalten des Rasters sind seine Flächen. Beim Erker und Kasten sind die erste und letzte Spalte seine Seiten, die dazwischen seine Mitte; ein Rundfenster hat eine Fläche je Spalte, deren Breiten sich den Bogen teilen. Jedes Feld öffnet, wie **Panels** sagt, die Seiten können also öffnen und die Mitte fest sein. Dann:
+
+- **Projection**, von der Außenfläche der Wand bis zur Außenfläche der Rahmen, beim Erker der Winkel **Sides to the wall** (15° bis 90°);
+- **Sides**: die Seiten des Kastens verglast oder massiv, mit ihrem Material;
+- **Seat inside**: die Sitzbank an der Brüstung, wie weit sie in den Raum reicht, ihr Material;
+- **Sill outside** unter den Flächen;
+- **Base**: keiner (an der Wand hängend), **Wände bis zum Boden**, **eine auskragende Platte** oder **eine Platte auf Konsolen**, mit Dicke, Überstand und Material;
+- **Head**: ein **Walm**-, **Pult**- oder **Flachdach** oder eine **Platte**, die Dicke an der Traufe, Überstand, Neigung und Material, und ein **Anschlussblech an der Wand**.
+
+Rahmen, Flügel, Glas und Griffe sind die des Typs, seine Materialien und Griffe gelten also für alle Flächen. **Bay style** setzt alles auf einmal: 45°- oder flacher 30°-Erker, Erker auf dem Boden, Rundfenster mit fünf oder vier Feldern, Kasten mit verglasten oder massiven Seiten, Erker auf Konsolen. **Save as bay style…** behält den konfigurierten als Stil des Projekts, neben Lapins; umbenennen oder löschen in der Liste unter den Feldern.
+
+Im Grundriss sind die Flächen geschnitten, Sitzbank, Fensterbank und Unterbau unter dem Schnitt gezeichnet und das Dach gestrichelt darüber; Ansichten, Schnitte und 3D zeigen den ganzen Körper. Die Fensterliste hat eine Karte für den Typ, die Flächen abgewickelt, mit einer Zeile **Projecting** (Art, Auskragung, Flächen); seine Fläche ist die der verglasten Flächen, seine Details messen Dach, Sitzbank und Unterbau. In IFC ist es ein IfcWindow mit benutzerdefinierter Teilung (*Bay 45°, projection 600, 3 faces, 4 panels*), dessen Körper der ganze Erker ist, die Felder Fläche für Fläche; Lapin liest den Erker daraus zurück.
+
+![Ein Rundfenster im Konfigurator](shots/bay-configurator.webp)
+
+![Erker, Rund-, Kasten- und Konsolerker im Grundriss](shots/bay-plan.webp)
+
+![Erker, Rund-, Kasten- und Konsolerker in 3D](shots/bay-3d.webp)
+
 ### Griffe
 
 **Griff** wählt den Griff des Typs: **Drücker**, **Knauf**, **Stoßgriff**, **Fenstergriff** oder keinen. Standardmäßig hat eine Tür einen Drücker und ein Fenster einen Fenstergriff. Eine Tür hat den Griff auf beiden Seiten, in der angegebenen **Griffhöhe**; **Griffarbe** setzt seine Farbe. Griffe erscheinen in 3D, in Schnitten und Ansichten und in den Zeichnungen des Konfigurators, wenn **Beschläge** angehakt ist.
@@ -88,6 +111,35 @@ An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **
 ### Parameter
 
 **Parameter · in Bauteillisten**, unten im Konfigurator, enthält die eigenen Parameter des Typs: **+ Feuerwiderstand** (in IFC in Pset_DoorCommon oder Pset_WindowCommon als FireRating geführt), **+ Hersteller**, **+ Produktcode**, **+ Website** oder jeden Parameter, den Sie benennen. Die Türen und Fenster des Typs erben sie, und jeder wird zu einer Zeile der Tür- und Fensterlisten: siehe [Bauteillisten und Diagramme](schedules.md).
+
+## Sonnenschutz
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) setzt einen Sonnenschutz an die angeklickte Tür oder das Fenster: so groß wie die Öffnung, über die Laibungen hinaus, über dem Sturz oder davor, und er folgt ihm, wenn es verschoben wird. **Sunshade along a facade** nimmt zwei Punkte: an einer Wand läuft er entlang ihrer Außenfläche, sonst entlang der Linie, nach rechts. Die Leiste beider Werkzeuge wählt den Typ oder einen Stil, aus dem ein neuer Typ entsteht.
+
+Die Arten:
+
+- **Canopy** (Vordach): massiv, mit Lamellen oder aus Glas, Auskragung, Dicke, Neigung und eine Blende, auf Konsolen, Zugstangen oder Stützen;
+- **Vertical fins**: Tiefe, Dicke, Abstand und Winkel, Riegel oben und unten;
+- **Louvres (brise-soleil)**: horizontale Lamellen, flach, Tragflächenprofil oder Kasten, Tiefe, Abstand und Winkel, abgerückt von der Wand, zwischen Endplatten;
+- **Egg-crate**: horizontale und vertikale Platten zusammen;
+- **Perforated screen**: ein Blech vor der Wand, mit runden oder quadratischen Löchern oder Schlitzen, Größe und Teilung;
+- **Awning** (Markise): Stoff im Gefälle, Volant, Kassette und Gelenkarme;
+- **Pergola**: Sparren, ein Balken, Latten oben und Stützen bis zum Boden;
+- **External venetian blind**: Lamellen, wie weit herabgelassen, Kasten und Führungsschienen.
+
+**Sunshade types** (unter Types) bearbeitet einen Typ: seine Art und jeden Parameter, die Materialien, neben seiner Zeichnung von außen, im Schnitt und im Grundriss. Jeder Sonnenschutz des Typs folgt einer Änderung. Ein neuer Typ beginnt mit einem Stil: Betonvordach, Holzvordach auf Konsolen, Glasvordach mit Zugstangen, Lamellenvordach, Ziegeldach, Brise-Soleil, vertikale Lamellen, Betonwabenraster, gelochter Cortenschirm, Stoffmarkise, Holzpergola, Außenjalousie; **Save as style…** behält einen Typ als Stil des Projekts.
+
+![Die Eigenschaften eines Vordachs nach der Mittagshilfe](shots/sunshade-properties.webp)
+
+Ausgewählt zeigt ein Sonnenschutz seinen Typ, worauf er steht, und seine eigene **Projection** (leer: die des Typs). **Full shade at noon, 21 June** berechnet für ein Vordach, eine Markise oder eine Pergola über einem Fenster, wie weit es auskragen muss, damit das ganze Fenster im Schatten liegt, wenn die Sonne am längsten Tag am höchsten steht, am Ort des Projekts (**Manage → Location**; Bukarest, bis einer gesetzt ist), und setzt es. An einer Südfassade auf 45° N steht die Sonne dann 68,4° hoch: ein 1,5 m hohes Fenster unter einem Vordach 150 mm über dem Sturz braucht 650 mm. Seine Griffe ziehen seine Enden entlang der Wand oder Linie und seine Auskragung.
+
+![Die Sonnenschutztypen: Lamellen, von außen, im Schnitt und im Grundriss](shots/sunshade-types.webp)
+
+Grundrisse zeichnen einen Sonnenschutz über dem Schnitt gestrichelt, einen, der ihn kreuzt, geschnitten (Lamellen, ein Schirm) und einen darunter gesehen; Ansichten, Schnitte und 3D zeigen seinen Körper mit der Schraffur seines Materials, und er wirft seinen Schatten mit dem Rest (**View → Sun and shadows**). **Sunshade schedule** listet sie nach Typ mit Ort, Länge und Auskragung, Anzahl und beschatteter Fläche; ihre Mengen (Länge, Auskragung, Fläche, Volumen) nehmen die Kostenpositionen ihres Typs. In IFC sind sie IfcShadingDevice eines IfcShadingDeviceType: eine Markise AWNING, eine Außenjalousie JALOUSIE, Lamellen LOUVER in IFC 4.3 (benutzerdefiniert in IFC4), die anderen benutzerdefiniert (Canopy, Fins, Egg-crate, Screen, Pergola); Lapin liest sie zurück, wie sie waren.
+
+![Sonnenschutz im Grundriss](shots/sunshades-plan.webp)
+
+![Ein Vordach, Lamellen, vertikale Lamellen, eine Markise, eine Pergola und eine Jalousie in 3D](shots/sunshades-3d.webp)
 
 ## Beschriftungen im Grundriss
 

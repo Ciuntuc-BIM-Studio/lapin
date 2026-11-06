@@ -81,6 +81,29 @@ På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone 
 
 ![Buede vinduer i 3D](shots/window-styles-3d.webp)
 
+### Karnap-, bue- og kassevinduer
+
+En vinduestype kan springe frem fra væggen. I konfiguratoren gør **Projects** den til en **Bay** (en midte og to skrå sider), en **Bow** (ens felter på en bue) eller en **Box** (sider vinkelret på væggen), og **New bay window** starter en ny type som en 45°-karnap. Vinduet udfylder stadig én åbning i væggen, så bred og høj som typen: det placeres, flyttes, kopieres, vendes, nummereres og listes som ethvert vindue. **Architecture → Bay window** (<kbd>BW</kbd>) sætter et i den væg, du klikker på: typen valgt i konfiguratoren, når den springer frem, ellers projektets første karnap, ellers en 45°-karnap.
+
+Gitterets kolonner er dens flader. I en karnap og en kasse er første og sidste kolonne dens sider og kolonnerne imellem dens midte; et buevindue har én flade pr. kolonne, hvis bredder deler buen. Hver rude åbner, som **Panels** siger, så siderne kan åbne og midten være fast. Derefter:
+
+- **Projection**, fra væggens yderside til karmenes yderside, og for en karnap vinklen **Sides to the wall** (15° til 90°);
+- **Sides**: kassens sider glasede eller massive, med deres materiale;
+- **Seat inside**: sædet ved brystningen, hvor langt det går ind i rummet, dets materiale;
+- **Sill outside** under fladerne;
+- **Base**: ingen (hænger på væggen), **vægge ned til gulvet**, **en fremspringende plade** eller **en plade på konsoller**, med tykkelse, udhæng og materiale;
+- **Head**: et **valm**-, **halv**- eller **fladt tag** eller en **plade**, tykkelsen ved tagfoden, udhæng, hældning og materiale, og en **inddækning mod væggen**.
+
+Karme, rammer, glas og greb er typens, så dens materialer og greb gælder for alle flader. **Bay style** sætter alt på én gang: 45°- eller lav 30°-karnap, karnap på gulvet, buevindue med fem eller fire felter, kasse med glasede eller massive sider, karnap på konsoller. **Save as bay style…** gemmer den konfigurerede som projektets stil ved siden af Lapins; omdøb eller slet den i listen under felterne.
+
+I plan er fladerne snittet, sæde, sålbænk og sokkel tegnet under snittet og taget stiplet over dem; opstalter, snit og 3D viser hele kroppen. Vindueslisten har et kort for typen med fladerne foldet ud og en række **Projecting** (art, fremspring, flader); arealet er de glasede fladers, og detaljerne måler tag, sæde og sokkel. I IFC er det ét IfcWindow med brugerdefineret opdeling (*Bay 45°, projection 600, 3 faces, 4 panels*), hvis krop er hele karnappen, felterne flade for flade; Lapin læser karnappen tilbage.
+
+![Et buevindue i konfiguratoren](shots/bay-configurator.webp)
+
+![Karnap-, bue-, kasse- og konsolkarnapvinduer i plan](shots/bay-plan.webp)
+
+![Karnap-, bue-, kasse- og konsolkarnapvinduer i 3D](shots/bay-3d.webp)
+
 ### Greb
 
 **Greb** vælger typens greb: **Dørgreb**, **Knop**, **Trækstang**, **Vinduesgreb** eller intet. Som standard har en dør et dørgreb og et vindue et vinduesgreb. En dør har greb på begge sider i den **Grebshøjde**, du angiver; **Grebets farve** sætter farven. Greb vises i 3D, i snit og opstalter og i konfiguratorens tegninger, når **Beslag** er markeret.
@@ -88,6 +111,35 @@ På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone 
 ### Parametre
 
 **Parametre · i skemaer**, nederst i konfiguratoren, rummer typens egne parametre: **+ Brandmodstand** (holdt i IFC's Pset_DoorCommon eller Pset_WindowCommon som FireRating), **+ Producent**, **+ Varenummer**, **+ Websted** eller enhver parameter, du navngiver. Typens døre og vinduer arver dem, og hver bliver en række i snedkerskemaerne: se [Skemaer og diagrammer](schedules.md).
+
+## Solafskærmning
+
+**Architecture → Sunshade** (<kbd>SN</kbd>) sætter en solafskærmning på den dør eller det vindue, du klikker på: på størrelse med åbningen, ud over karmsiderne, over overliggeren eller foran, og den følger med, når den flyttes. **Sunshade along a facade** tager to punkter: på en væg løber den langs dens yderside, ellers langs linjen, ud til højre. Begge værktøjers bjælke vælger typen eller en stil, som en ny type laves af.
+
+Arterne:
+
+- **Canopy** (udhæng): plade, med lameller eller af glas, med fremspring, tykkelse, hældning og sternbræt, på konsoller, trækstænger eller stolper;
+- **Vertical fins**: dybde, tykkelse, afstand og vinkel, skinner top og bund;
+- **Louvres (brise-soleil)**: vandrette lameller, flade, vingeprofil eller kasse, dybde, afstand og vinkel, fri af væggen, mellem endeplader;
+- **Egg-crate**: vandrette og lodrette plader sammen;
+- **Perforated screen**: en plade fri af væggen, med runde eller firkantede huller eller slidser, størrelse og deling;
+- **Awning** (markise): stof på skrå, kappe, kassette og knækarme;
+- **Pergola**: spær, en bjælke, lægter ovenpå og stolper ned til gulvet;
+- **External venetian blind**: lameller, hvor langt den er rullet ned, kasse og føringsskinner.
+
+**Sunshade types** (under Types) redigerer en type: dens art og hver parameter, materialerne, ved siden af tegningen udefra, i snit og i plan. Hver solafskærmning af typen følger en ændring. En ny type starter fra en stil: betonudhæng, træudhæng på konsoller, glasudhæng på trækstænger, lameludhæng, teglhætte, brise-soleil, lodrette finner, betongitter, perforeret cortenskærm, stofmarkise, træpergola, udvendig persienne; **Save as style…** gemmer en type som projektets stil.
+
+![Et udhængs egenskaber efter middagsberegningen](shots/sunshade-properties.webp)
+
+Valgt viser en solafskærmning sin type, hvad den sidder på, og sit eget **Projection** (tomt: typens). **Full shade at noon, 21 June** beregner for et udhæng, en markise eller en pergola over et vindue, hvor langt det skal springe frem, for at hele vinduet er i skygge, når solen står højest på årets længste dag, på projektets sted (**Manage → Location**; Bukarest, indtil et er sat), og sætter det. På en sydfacade på 45° N står solen da 68,4° højt: et 1,5 m højt vindue under et udhæng 150 mm over overliggeren kræver 650 mm. Dens greb trækker enderne langs væggen eller linjen og fremspringet.
+
+![Solafskærmningstyperne: lameller, udefra, i snit og i plan](shots/sunshade-types.webp)
+
+Planer tegner en solafskærmning over snittet stiplet, en der krydser det snittet (finner, en skærm) og en under det set; opstalter, snit og 3D viser kroppen med materialets skravering, og den kaster sin skygge med resten (**View → Sun and shadows**). **Sunshade schedule** lister dem efter type med placering, længde og fremspring, antal og skygget areal; deres mængder (længde, fremspring, areal, volumen) tager typens prisposter. I IFC er de IfcShadingDevice af en IfcShadingDeviceType: en markise AWNING, en persienne JALOUSIE, lameller LOUVER i IFC 4.3 (brugerdefineret i IFC4), de andre brugerdefinerede (Canopy, Fins, Egg-crate, Screen, Pergola); Lapin læser dem tilbage, som de var.
+
+![Solafskærmning i plan](shots/sunshades-plan.webp)
+
+![Et udhæng, lameller, finner, en markise, en pergola og en persienne i 3D](shots/sunshades-3d.webp)
 
 ## Mærker i plan
 

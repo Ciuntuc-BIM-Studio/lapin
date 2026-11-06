@@ -21,6 +21,7 @@ import { ParamsSection } from '../../shell/ParamsSection';
 import { deleteType } from '../core/deleteType';
 import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
+import { BayFields, type Bay } from './BayFields';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean }
 
@@ -51,6 +52,8 @@ interface Spec {
   muntins?: Muntins | null;
   hardware?: Hardware | null;
   materials?: Materials | null;
+  /** A window that projects from its wall (report #60): a bay, a bow or a box. */
+  bay?: Bay | null;
 }
 /** The parts' materials by name (report #76); a part without one keeps its colour. */
 interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
@@ -413,9 +416,10 @@ export function JoineryDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = [...ofClass(model, 'IfcDoorType'), ...ofClass(model, 'IfcWindowType')];
   const catalog = info?.catalogs['architecture.joinery'] as unknown as { windowOperations: string[]; doorOperations: string[]; defaultDoor: Spec; defaultWindow: Spec } | undefined;
+  const bayStyles = info?.catalogs['architecture.bayStyles'] as unknown as { spec: Spec }[] | undefined;
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
   // What a new type starts from (a new object each time New door or New window is clicked, so the editor reloads).
-  const [fresh, setFresh] = useState<{ kind: 'door' | 'window' }>({ kind: 'window' });
+  const [fresh, setFresh] = useState<{ kind: 'door' | 'window'; bay?: boolean }>({ kind: 'window' });
   const [spec, setSpec] = useState<Spec | null>(null);
   const [cols, setCols] = useState('1');
   const [rows, setRows] = useState('1');
@@ -429,10 +433,11 @@ export function JoineryDialog() {
   // Load the picked type (or a fresh default) into the editor.
   useEffect(() => {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
-    const s = (t?.props.spec as unknown as Spec | undefined) ?? (fresh.kind === 'door' ? catalog?.defaultDoor : catalog?.defaultWindow) ?? null;
+    const bayStyle = fresh.bay ? (bayStyles?.[0]?.spec as unknown as Spec | undefined) : undefined;
+    const s = (t?.props.spec as unknown as Spec | undefined) ?? bayStyle ?? (fresh.kind === 'door' ? catalog?.defaultDoor : catalog?.defaultWindow) ?? null;
     setSpec(s ? structuredClone(s) : null);
     if (s) { setCols(s.columns.join(' ')); setRows(s.rows.join(' ')); }
-  }, [editing, catalog, fresh]);
+  }, [editing, catalog, fresh, bayStyles]);
 
   // The engine builds the preview from the spec as it is now.
   useEffect(() => {
@@ -454,7 +459,7 @@ export function JoineryDialog() {
   const setDetails = (patch: Partial<Details>) => set({ details: { ...details, ...patch } });
   const operations = spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
   const close = () => useUi.setState({ dialog: null });
-  const startNew = (kind: 'door' | 'window') => { setEditing(null); setFresh({ kind }); };
+  const startNew = (kind: 'door' | 'window', bay = false) => { setEditing(null); setFresh({ kind, bay }); };
   const setGrid = (c: string, r: string) => {
     setCols(c); setRows(r);
     const cw = weights(c), rw = weights(r);
@@ -503,6 +508,7 @@ export function JoineryDialog() {
             ))}
             <li><button type="button" className="tree-item" onClick={() => startNew('door')}><Plus size={12} /> New door</button></li>
             <li><button type="button" className="tree-item" onClick={() => startNew('window')}><Plus size={12} /> New window</button></li>
+            <li><button type="button" className="tree-item" data-action="new-bay-window" onClick={() => startNew('window', true)}><Plus size={12} /> New bay window</button></li>
           </ul>
           <div className="joinery-edit">
             <div className="joinery-form">
@@ -523,7 +529,8 @@ export function JoineryDialog() {
                   <option value="">Apply a style…</option>
                   {Object.entries(JOINERY_STYLES).filter(([k]) => spec.kind === 'window' || k !== 'oculus').map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select></label>
-              <ShapeFields spec={spec} onChange={set} />
+              {!spec.bay && <ShapeFields spec={spec} onChange={set} />}
+              {spec.kind === 'window' && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v } })} />
               <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v } })} />
               <label className="field-line"><span className="eyebrow">Columns of panes</span><input data-field="columns" value={cols} title="Relative widths, e.g. 1 1 or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
