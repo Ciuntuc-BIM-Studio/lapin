@@ -111,6 +111,16 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .exchange-options { border-top: 1px solid var(--rule); padding-top: 10px; }
 .exchange-options .row { display: flex; gap: 22px; flex-wrap: wrap; }
 .check-line { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; cursor: pointer; }
+/* File → Export JG Structures: the preview's counts and the contract's checks (docs/jg-structures.md). */
+.jg-export .split > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.jg-report { border-top: 1px solid var(--rule); padding-top: 10px; max-height: 260px; overflow-y: auto; }
+.jg-counts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 8px; }
+.jg-count strong { font-variant-numeric: tabular-nums; }
+.jg-good { color: var(--ok); }
+.jg-warn { color: var(--ink); }
+.jg-bad { color: var(--err); }
+.jg-list { margin: 4px 0 8px; padding-left: 18px; font-size: 12px; }
+.jg-list li { margin: 2px 0; overflow-wrap: anywhere; }
 .check-line input { margin: 0; width: auto; flex: none; }
 /* A tab wider than the window scrolls sideways; its groups never squeeze below their tools (their labels would run into each other). */
 .band { display: flex; height: 86px; padding: 4px 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }

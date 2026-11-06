@@ -507,6 +507,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Gate types…', labelRo: 'Tipuri de porți…', run: { kind: 'tool', id: 'architecture.gateTypes' } },
     source: 'report #57',
   },
+  {
+    id: 'jg-structures',
+    q: ['How do I export the structure for analysis in JG Structures?', 'Can I send the model to a structural analysis program?', 'How do I get an analytical model for FEA?'],
+    qRo: ['Cum export structura pentru calcul în JG Structures?', 'Pot trimite modelul la un program de calcul structural?', 'Cum obțin modelul analitic pentru calcul cu elemente finite?'],
+    keywords: ['jg', 'structures', 'analysis', 'analytical', 'fea', 'etabs', 'frame', 'frames', 'shells', 'nodes', 'calcul', 'structural', 'analitic', 'bare', 'noduri', 'elemente', 'finite'],
+    a: 'File → Export JG Structures (JSON)… writes the analytical model in JG Structures\' exchange file: columns, beams and steel members as frames on their axes, load-bearing walls and floors as shells on their cores, on shared nodes, with the footings\' supports, the materials (C25/30, S355… by EN, or your own values) and the sections\' properties worked out from their geometry. Choose the storeys, the kinds and the units (the contract\'s cm and kgf, or SI); the report checks the file against the contract and lists what analysis still needs (a material without a class, a column on nothing). A wall counts when Pset_WallCommon.LoadBearing is on it or its type.',
+    aRo: 'Fișier → Exportă JG Structures (JSON)… scrie modelul analitic în fișierul de schimb al lui JG Structures: stâlpii, grinzile și barele de oțel ca bare pe axele lor, pereții portanți și planșeele ca plăci pe miezurile lor, pe noduri comune, cu reazemele fundațiilor, materialele (C25/30, S355… după EN, sau valorile tale) și caracteristicile secțiunilor calculate din geometrie. Alegi etajele, tipurile și unitățile (cm și kgf ale contractului, sau SI); raportul verifică fișierul după contract și arată ce mai lipsește calculului (un material fără clasă, un stâlp care nu stă pe nimic). Un perete intră când are Pset_WallCommon.LoadBearing, el sau tipul lui.',
+    action: { label: 'Export JG Structures (JSON)…', labelRo: 'Exportă JG Structures (JSON)…', run: { kind: 'dialog', id: 'exportJg' } },
+    source: 'faq',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

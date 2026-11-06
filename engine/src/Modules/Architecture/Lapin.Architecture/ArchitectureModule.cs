@@ -104,6 +104,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Service<IJoineryIfc>(new JoineryIfc());
         r.Service<IIfcRecognizer>(new ForeignElements());
         r.Service<ITypeAssigner>(new TypeAssigner());
+        r.Service<Lapin.Platform.Analysis.IAnalyticalElements>(new ArchitectureAnalytical());
         // A roof window's and dormer's frame on its slope, for their grips (decision 280).
         r.Service<INodeProps>(new RoofOpeningFrames());
         r.Service<IStoreyLevels>(new Levels());

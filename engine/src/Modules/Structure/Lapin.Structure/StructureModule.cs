@@ -15,6 +15,7 @@ public sealed class StructureModule : ILapinModule
     {
         r.Service<IIfcRecognizer>(new ForeignMembers());
         r.Service<ITypeAssigner>(new TypeAssigner());
+        r.Service<Lapin.Platform.Analysis.IAnalyticalElements>(new StructureAnalytical());
         FieldDescriptor priority = new("cutPriority", "Cut priority", "number", Min: 0, Max: 100);
         r.Class(new(IfcClass.Column, "Column", [new("height", "Height (own)", "length", Min: 0.01), new("baseOffset", "Base offset", "length"), new("rotation", "Rotation", "angle"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.ColumnType, "Column type", [new("height", "Height", "length", Min: 0.01)], "#a8a8a8", Kind: "type"));

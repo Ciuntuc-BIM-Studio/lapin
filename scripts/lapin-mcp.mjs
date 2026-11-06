@@ -210,6 +210,17 @@ async function exportDocument({ id, format, path }) {
   return { path: file, bytes: bytes.length, name: r.name, missing: r.missing ?? [] };
 }
 
+async function exportJg({ path, units, storeys, kinds, allWalls }) {
+  if (typeof path !== 'string' || !path || !isAbsolute(path)) throw new Error('path must be an absolute file path, e.g. /Users/me/Desktop/house.jg.json.');
+  const args = { units: units === 'si' ? 'si' : 'contract', ...(Array.isArray(storeys) ? { storeys } : {}), ...(Array.isArray(kinds) ? { kinds } : {}), ...(allWalls ? { allWalls: true } : {}) };
+  const r = await call('doc.query', { name: 'jg.export', args });
+  const bytes = Buffer.from(r.data, 'base64');
+  const file = resolve(path);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, bytes);
+  return { path: file, bytes: bytes.length, report: r.report };
+}
+
 const TOOLS = [
   {
     name: 'lapin_info',
@@ -277,6 +288,22 @@ const TOOLS = [
       required: ['id', 'format', 'path'],
     },
     run: exportDocument,
+  },
+  {
+    name: 'lapin_export_jg',
+    description: "Write the project's analytical model (frames, shells, nodes, supports, materials, sections) as JG Structures' exchange JSON (contract JG_Structures_v2_exchange 1.0.0; docs/jg-structures.md) to an absolute path on this computer. units: 'contract' (cm, kgf; the default) or 'si' (m, kN). Returns {path, bytes, report}: the report's counts, errors (the contract's checks), warnings, missing values for analysis and what was left out.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'Absolute path of the file to write, e.g. /Users/me/Desktop/house.jg.json' },
+        units: { type: 'string', enum: ['contract', 'si'] },
+        storeys: { type: 'array', items: { type: 'string' }, description: 'Storey ids to export (all when absent)' },
+        kinds: { type: 'array', items: { type: 'string', enum: ['columns', 'beams', 'members', 'walls', 'slabs', 'supports'] } },
+        allWalls: { type: 'boolean', description: 'Every wall, not only the load-bearing ones' },
+      },
+      required: ['path'],
+    },
+    run: exportJg,
   },
   {
     name: 'lapin_save',

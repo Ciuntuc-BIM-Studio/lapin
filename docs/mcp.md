@@ -35,6 +35,7 @@ The engine listens only on 127.0.0.1.
 | `lapin_quantities` | An element's quantity sets. |
 | `lapin_documents` | The project's written documents and the templates a new one starts from, in one call. |
 | `lapin_document_export` | A document written as DOCX, ODT or PDF to an absolute path on this computer (see Documents). |
+| `lapin_export_jg` | The analytical model written as JG Structures' exchange JSON to an absolute path on this computer, with the report of its checks (docs/jg-structures.md). |
 | `lapin_undo`, `lapin_redo` | One step back or forward. |
 | `lapin_save` | Save the project. |
 

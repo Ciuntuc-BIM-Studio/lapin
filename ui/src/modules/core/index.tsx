@@ -54,6 +54,7 @@ import { SectionsDialog } from './SectionsDialog';
 import { convertToNative } from './convertTools';
 import { GroupSection } from './GroupSection';
 import { ExchangeExportDialog } from './ExchangeExportDialog';
+import { JgExportDialog } from './JgExportDialog';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from './groupTools';
 import { toggleRegion3d } from '../../viewport/select3d';
 import { hideSelection, isolateSelection, resetTemporary } from '../../viewport/temporary';
@@ -268,7 +269,7 @@ const core: LapinModule = {
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: { LapinView: sectionGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

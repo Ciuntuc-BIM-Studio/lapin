@@ -52,6 +52,14 @@ Os espaços do arquivo (do Revit, do ArchiCAD e de outros) entram como ambientes
 
 ![Exportar IFC ou Fragments](shots/export-exchange.webp)
 
+## JG Structures (cálculo estrutural)
+
+**Exportar JG Structures (JSON)…** escreve o modelo analítico do projeto no arquivo de intercâmbio do JG Structures, um programa de cálculo estrutural: um arquivo JSON conforme o seu contrato (versão 1.0.0). O Lapin deriva o modelo do que você desenhou. Pilares, vigas e barras de aço viram barras nos seus eixos; as paredes portantes (Pset_WallCommon.LoadBearing na parede ou no seu tipo) e as lajes viram cascas no meio da sua camada resistente, sem acabamentos. Elas compartilham os nós: uma viga que sustenta uma laje fica no plano médio da laje, as extremidades de pilares e paredes chegam à viga ou à laje no topo e na base, os cantos de uma laje passam para os pilares e paredes abaixo dela, e a laje é dividida ao longo das vigas que a atravessam. As bases de pilares e paredes sobre uma fundação são engastadas; a base de um pilar de aço é articulada ou engastada, como diz a sua ligação.
+
+Escolha os pavimentos, os tipos de elementos e as unidades: os centímetros e quilogramas-força do contrato, ou o SI (metros e quilonewtons). Os materiais tomam seus valores dos seus dados (Gerenciar → Materiais, Pset_MaterialMechanical em pascais) ou da classe de resistência no nome, C25/30 ou S355, pelos Eurocódigos; a área, as inércias, os módulos e a constante de torção de uma seção são calculados da sua geometria. O que o Lapin não sabe fica vazio (null) no arquivo, nunca zero. Antes de exportar, o relatório conta o que entra, verifica o arquivo pelas regras do contrato e lista o que ainda falta ao cálculo: um material sem classe, um pilar que não se apoia em nada.
+
+![Exportar JG Structures](shots/export-jg.webp)
+
 ## Otimizar um arquivo IFC
 
 **Otimizar IFC…** (em Arquivo, ou na tela inicial: nenhum projeto precisa estar aberto) faz uma cópia mais leve de um ou mais arquivos IFC sem mudar o que eles dizem. A cópia mantém cada GlobalId, nome, conjunto de propriedades, quantidade, tipo, material e relação exatamente como o arquivo os escreveu, e também o cabeçalho; nada do Lapin é acrescentado. Só a geometria muda: as malhas (conjuntos de faces, B-reps facetados de faces planas) são limpas (vértices duplicados soldados, triângulos degenerados e repetidos e coordenadas não usadas removidos) e simplificadas, nunca mais longe do original do que a **Precisão** (Rápido 5 mm, Equilibrado 1 mm, Preciso 0,1 mm ou a sua), medida nos dois sentidos; corpos idênticos são escritos uma vez e compartilhados pelos seus produtos; e o que nada referencia (pontos, estilos não usados, representações vazias) some. Extrusões, booleanas e os outros corpos exatos ficam como estão. Arredondar as coordenadas, escrever os B-reps como conjuntos de faces (só IFC4 e IFC4X3) e um `.ifczip` compactado estão lá quando você quiser.

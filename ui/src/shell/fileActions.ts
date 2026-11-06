@@ -30,6 +30,8 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.importFragments', label: 'Import Fragments…', run: () => importFragments() },
     { id: 'file.linkIfc', label: 'Link IFC…', run: () => importIfc('link') },
     { id: 'file.exportExchange', label: 'Export IFC or Fragments…', run: dialog('exportExchange') },
+    // The analytical model for JG Structures' structural analysis (docs/jg-structures.md).
+    { id: 'file.exportJg', label: 'Export JG Structures (JSON)…', run: dialog('exportJg') },
     // A file cleaned and lightened into a copy, no project needed (docs/ifc-optimize.md).
     { id: 'file.optimizeIfc', label: 'Optimize IFC…', menu: 'optimize-ifc', run: () => openOptimize() },
     { id: 'file.importDxf', label: 'Import DXF…', run: () => importDxf() },
@@ -45,13 +47,13 @@ export function baseFileActions(): FileAction[] {
 /** The menu of the computer's own user. The model exchanged (docs/fragments.md, Exchange): IFC and Fragments, chosen alike both ways. */
 export const HOST_SECTIONS: FileSection[] = [
   { ids: ['file.new', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion'] },
-  { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.linkIfc', 'file.exportExchange', 'file.optimizeIfc'] },
+  { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.linkIfc', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
   { head: 'Other formats', ids: ['file.importDxf', 'file.importMesh', 'file.exportMesh'] },
   { ids: ['file.share', 'file.join', 'file.startScreen'] },
 ];
 
 /** A guest works in the host's project: the host opens and saves it; a guest exports what they need, or leaves. */
-export const GUEST_SECTIONS: FileSection[] = [{ ids: ['file.exportExchange', 'file.exportMesh', 'file.leave'] }];
+export const GUEST_SECTIONS: FileSection[] = [{ ids: ['file.exportExchange', 'file.exportJg', 'file.exportMesh', 'file.leave'] }];
 
 let actions: Map<string, FileAction> | null = null;
 

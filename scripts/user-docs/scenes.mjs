@@ -4092,6 +4092,46 @@ export const scenes = [
     },
   },
   {
+    // The analytical model for JG Structures (docs/jg-structures.md): a small concrete frame on footings, its export checked.
+    id: 'export-jg',
+    async run(t) {
+      await t.fresh();
+      const gf = await t.storey('Ground floor');
+      const ff = await t.storey('First floor');
+      const col = await t.cmd('structure.createColumnType', { name: 'Column 30×30', section: { kind: 'rectangle', width: 0.3, depth: 0.3 }, material: 'Reinforced concrete C25/30' });
+      const beam = await t.cmd('structure.createBeamType', { name: 'Beam 30×50', section: { kind: 'rectangle', width: 0.3, depth: 0.5 }, material: 'Reinforced concrete C25/30' });
+      const slab = await t.cmd('architecture.createSlabType', { name: 'Slab 20', layers: [{ material: 'Reinforced concrete C25/30', thickness: 0.2, core: true }] });
+      const grid = [[0, 0], [6, 0], [6, 5], [0, 5]];
+      for (const [x, y] of grid) await t.cmd('structure.addColumn', { storeyId: gf, x, y, typeId: col.id });
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [grid[i], grid[(i + 1) % 4]];
+        await t.cmd('structure.addBeam', { storeyId: gf, x1: a[0], y1: a[1], x2: b[0], y2: b[1], typeId: beam.id });
+      }
+      await t.cmd('architecture.addSlab', { storeyId: ff, points: [[-0.15, -0.15], [6.15, -0.15], [6.15, 5.15], [-0.15, 5.15]], typeId: slab.id });
+      for (const [x, y] of grid.slice(0, 3)) await t.cmd('structure.addPadFooting', { storeyId: gf, x, y });
+      // A load-bearing wall under the north beam, on a strip footing; a steel beam across the middle, of a steel with no grade.
+      const rc = await t.cmd('architecture.createWallType', { name: 'RC wall 25', layers: [{ material: 'Reinforced concrete C25/30', thickness: 0.25, core: true }] });
+      const wall = await t.cmd('architecture.addWall', { storeyId: gf, x1: 0, y1: 5, x2: 6, y2: 5, typeId: rc.id });
+      await t.cmd('element.setParam', { id: wall.id, pset: 'Pset_WallCommon', name: 'LoadBearing', value: true });
+      await t.cmd('structure.addStripFooting', { storeyId: gf, x1: 0, y1: 5, x2: 6, y2: 5 });
+      const ipe = await t.cmd('structure.createBeamType', { section: 'IPE 300', material: 'Steel' });
+      await t.cmd('structure.addBeam', { storeyId: gf, x1: 0, y1: 2.5, x2: 6, y2: 2.5, typeId: ipe.id });
+      await t.button('File', { exact: true });
+      await t.page.getByRole('menuitem', { name: 'Export JG Structures (JSON)…' }).click();
+      const dialog = t.page.locator('[aria-label="Export JG Structures"]');
+      await dialog.locator('.jg-counts').waitFor({ timeout: 20_000 });
+      const report = await t.call('doc.query', { name: 'jg.preview', args: {} });
+      t.expect(report.errors.length === 0, `the export passes the contract's checks (${report.errors[0] ?? ''})`);
+      // The steel beam splits the edge beams it frames into and the floor it crosses; the wall is one more shell.
+      t.expect(report.counts.frames === 11 && report.counts.shells === 3, `four columns, four beams (two split), the steel beam, the floor in two and the wall (${report.counts.frames} frames, ${report.counts.shells} shells)`);
+      t.expect(report.counts.supports === 4, `the column and wall feet stand on footings (${report.counts.supports})`);
+      t.expect(report.missing.some((m) => m.name === 'Steel' && m.fields.includes('elastic_modulus')), 'a steel without a grade has no E: said, not guessed');
+      t.expect(await dialog.locator('.jg-warn').count() === 1, 'the report says the file is valid but analysis still needs values');
+      await t.shot('export-jg', { of: '[aria-label="Export JG Structures"]', pad: 0 });
+      await dialog.getByRole('button', { name: 'Cancel' }).click();
+    },
+  },
+  {
     // An IFC file cleaned and lightened into a copy (docs/ifc-optimize.md): no project needed, the original never written.
     id: 'optimize-ifc',
     async run(t) {

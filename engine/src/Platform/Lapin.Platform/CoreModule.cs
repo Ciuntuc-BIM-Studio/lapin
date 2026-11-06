@@ -89,6 +89,7 @@ public sealed class CoreModule : ILapinModule
         ElementFaces.Register(r);
         Profiles.Register(r);
         Dependencies.Register(r);
+        Analysis.JgExchange.Register(r);
 
         r.Command("storey.create", "New storey", (ctx, a) =>
         {

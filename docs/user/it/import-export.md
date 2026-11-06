@@ -52,6 +52,14 @@ Gli spazi del file (da Revit, ArchiCAD e altri) entrano come locali di Lapin, ci
 
 ![Esporta IFC o Fragments](shots/export-exchange.webp)
 
+## JG Structures (calcolo strutturale)
+
+**Esporta JG Structures (JSON)…** scrive il modello analitico del progetto nel file di scambio di JG Structures, un programma di calcolo strutturale: un file JSON secondo il suo contratto (versione 1.0.0). Lapin ricava il modello da ciò che hai disegnato. Pilastri, travi e aste in acciaio diventano aste sui loro assi; i muri portanti (Pset_WallCommon.LoadBearing sul muro o sul suo tipo) e i solai diventano gusci al centro del loro strato resistente, senza finiture. Condividono i nodi: una trave che porta un solaio sta nel piano medio del solaio, le estremità di pilastri e muri raggiungono la trave o il solaio in testa e al piede, gli angoli di un solaio passano sui pilastri e i muri sottostanti, e il solaio si divide lungo le travi che lo attraversano. I piedi di pilastri e muri su una fondazione sono incastrati; la base di un pilastro in acciaio è incernierata o incastrata come dice il suo collegamento.
+
+Scegli i piani, i tipi di elementi e le unità: i centimetri e i chilogrammi-forza del contratto, oppure il SI (metri e kilonewton). I materiali prendono i valori dai loro dati (Gestisci → Materiali, Pset_MaterialMechanical in pascal) o dalla classe di resistenza nel nome, C25/30 o S355, secondo gli Eurocodici; area, momenti d'inerzia, moduli e costante torsionale di una sezione si calcolano dalla sua geometria. Ciò che Lapin non sa resta vuoto (null) nel file, mai zero. Prima dell'esportazione il rapporto conta ciò che entra, controlla il file secondo le regole del contratto ed elenca ciò che manca ancora al calcolo: un materiale senza classe, un pilastro che non poggia su nulla.
+
+![Esporta JG Structures](shots/export-jg.webp)
+
 ## Ottimizzare un file IFC
 
 **Ottimizza IFC…** (nel menu File o nella schermata iniziale: non serve aprire alcun progetto) crea una copia più leggera di uno o più file IFC senza cambiare ciò che dicono. La copia mantiene ogni GlobalId, nome, set di proprietà, quantità, tipo, materiale e relazione esattamente come il file li ha scritti, e anche la sua intestazione; non si aggiunge nulla di Lapin. Cambia solo la geometria: le mesh (insiemi di facce, B-rep sfaccettati con facce piane) vengono ripulite (vertici duplicati saldati, triangoli degeneri e ripetuti e coordinate inutilizzate rimossi) e semplificate, mai più lontano dall’originale della **Precisione** (Veloce 5 mm, Bilanciato 1 mm, Preciso 0,1 mm o la tua), misurata nei due sensi; i corpi identici vengono scritti una sola volta e condivisi dai loro prodotti; e ciò a cui nulla fa riferimento (punti, stili inutilizzati, rappresentazioni vuote) scompare. Estrusioni, booleane e gli altri corpi esatti restano come sono. Arrotondare le coordinate, scrivere i B-rep come insiemi di facce (solo IFC4 e IFC4X3) e un `.ifczip` compresso ci sono quando li vuoi.

@@ -52,6 +52,14 @@ Przestrzenie z pliku (z Revita, ArchiCAD-a i innych) wchodzą jako pomieszczenia
 
 ![Eksportuj IFC lub Fragments](shots/export-exchange.webp)
 
+## JG Structures (obliczenia konstrukcji)
+
+**Eksportuj JG Structures (JSON)…** zapisuje model obliczeniowy projektu w pliku wymiany JG Structures, programu do obliczeń konstrukcji: plik JSON zgodny z jego kontraktem (wersja 1.0.0). Lapin wyprowadza model z tego, co narysowano. Słupy, belki i pręty stalowe stają się prętami na swoich osiach; ściany nośne (Pset_WallCommon.LoadBearing na ścianie lub jej typie) i stropy stają się powłokami w środku swojej warstwy nośnej, bez wykończeń. Mają wspólne węzły: belka niosąca strop leży w płaszczyźnie środkowej stropu, końce słupów i ścian dochodzą do belki lub stropu u góry i u dołu, narożniki stropu przechodzą na słupy i ściany pod nim, a strop dzieli się wzdłuż belek, które go przecinają. Podstawy słupów i ścian na fundamencie są utwierdzone; podstawa słupa stalowego jest przegubowa lub utwierdzona, jak mówi jej połączenie.
+
+Wybierz kondygnacje, rodzaje elementów i jednostki: centymetry i kilogramy-siły kontraktu albo SI (metry i kiloniutony). Materiały biorą wartości ze swoich danych (Zarządzaj → Materiały, Pset_MaterialMechanical w paskalach) lub z klasy wytrzymałości w nazwie, C25/30 lub S355, według Eurokodów; pole, momenty bezwładności, wskaźniki wytrzymałości i stała skręcania przekroju są liczone z jego geometrii. To, czego Lapin nie wie, zostaje w pliku puste (null), nigdy zero. Przed eksportem raport liczy, co wchodzi, sprawdza plik według reguł kontraktu i wymienia, czego jeszcze brakuje do obliczeń: materiału bez klasy, słupa, który na niczym nie stoi.
+
+![Eksportuj JG Structures](shots/export-jg.webp)
+
 ## Optymalizacja pliku IFC
 
 **Optymalizuj IFC…** (w menu Plik lub na ekranie startowym: żaden projekt nie musi być otwarty) tworzy lżejszą kopię jednego lub kilku plików IFC, nie zmieniając tego, co mówią. Kopia zachowuje każdy GlobalId, nazwę, zestaw właściwości, ilość, typ, materiał i relację dokładnie tak, jak zapisał je plik, a także jego nagłówek; nic od Lapina nie jest dodawane. Zmienia się tylko geometria: siatki (zestawy ścian, fasetowe B-repy z płaskich ścian) są oczyszczane (zduplikowane wierzchołki zespawane, zdegenerowane i powtórzone trójkąty oraz nieużywane współrzędne usunięte) i upraszczane, nigdy dalej od oryginału niż **Precyzja** (Szybko 5 mm, Zrównoważenie 1 mm, Dokładnie 0,1 mm lub własna), mierzona w obie strony; identyczne bryły są zapisywane raz i współdzielone przez swoje produkty; a to, do czego nic się nie odwołuje (nieużywane punkty, style, puste reprezentacje), znika. Wyciągnięcia, operacje logiczne i inne dokładne bryły pozostają bez zmian. Zaokrąglanie współrzędnych, B-repy zapisane jako zestawy ścian (tylko IFC4 i IFC4X3) i spakowany `.ifczip` są dostępne, gdy ich chcesz.

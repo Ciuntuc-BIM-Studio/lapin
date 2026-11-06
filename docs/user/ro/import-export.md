@@ -52,6 +52,14 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 ![Exportă IFC sau Fragments](shots/export-exchange.webp)
 
+## JG Structures (calcul structural)
+
+**Exportă JG Structures (JSON)…** scrie modelul analitic al proiectului în fișierul de schimb al lui JG Structures, un program de calcul structural: un fișier JSON după contractul lui (versiunea 1.0.0). Lapin face modelul din ce ai desenat. Stâlpii, grinzile și barele de oțel devin bare pe axele lor; pereții portanți (Pset_WallCommon.LoadBearing pe perete sau pe tipul lui) și planșeele devin plăci pe mijlocul stratului lor de rezistență, fără finisaje. Ele au noduri comune: o grindă care poartă un planșeu stă în planul median al planșeului, capetele stâlpilor și ale pereților ajung la grinda sau planșeul de la cap și de la bază, colțurile unui planșeu trec pe stâlpii și pereții de sub el, iar planșeul se împarte de-a lungul grinzilor care îl traversează. Bazele stâlpilor și ale pereților de pe o fundație sunt încastrate; baza unui stâlp de oțel e articulată sau încastrată, cum spune îmbinarea ei.
+
+Alegi etajele, tipurile de elemente și unitățile: centimetrii și kilogramforța contractului, sau SI (metri și kilonewtoni). Materialele își iau valorile din datele lor (Gestionare → Materiale, Pset_MaterialMechanical în pascali) sau din clasa de rezistență din nume, C25/30 sau S355, după Eurocoduri; aria, momentele de inerție, modulele de rezistență și constanta de torsiune ale unei secțiuni se calculează din geometria ei. Ce nu știe Lapin rămâne gol (null) în fișier, niciodată zero. Înainte de export, raportul numără ce intră, verifică fișierul după regulile contractului și arată ce îi mai lipsește calculului: un material fără clasă, un stâlp care nu stă pe nimic.
+
+![Exportă JG Structures](shots/export-jg.webp)
+
 ## Optimizarea unui fișier IFC
 
 **Optimizează IFC…** (în Fișier, sau pe ecranul de start: nu trebuie să fie deschis niciun proiect) face o copie mai ușoară a unuia sau mai multor fișiere IFC, fără să schimbe ce spun ele. Copia păstrează fiecare GlobalId, nume, set de proprietăți, cantitate, tip, material și relație exact cum le-a scris fișierul, și antetul lui; nu se adaugă nimic de-al lui Lapin. Se schimbă doar geometria: mesh-urile (seturi de fețe, B-rep-uri fațetate cu fețe plane) sunt curățate (vârfurile duplicate sudate, triunghiurile degenerate și repetate și coordonatele nefolosite eliminate) și simplificate, niciodată mai departe de original decât **Precizia** (Rapid 5 mm, Echilibrat 1 mm, Precis 0,1 mm sau a ta), măsurată în ambele sensuri; corpurile identice se scriu o singură dată și sunt partajate de produsele lor; iar ce nu e referit de nimic (puncte, stiluri nefolosite, reprezentări goale) dispare. Extrudările, operațiile booleene și celelalte corpuri exacte rămân cum sunt. Rotunjirea coordonatelor, B-rep-urile scrise ca seturi de fețe (doar IFC4 și IFC4X3) și un `.ifczip` arhivat sunt acolo când le vrei.

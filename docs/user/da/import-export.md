@@ -52,6 +52,14 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 
 ![Eksportér IFC eller Fragments](shots/export-exchange.webp)
 
+## JG Structures (statisk beregning)
+
+**Eksportér JG Structures (JSON)…** skriver projektets analytiske model i udvekslingsfilen til JG Structures, et program til statisk beregning: en JSON-fil efter programmets kontrakt (version 1.0.0). Lapin udleder modellen af det, du har tegnet. Søjler, bjælker og stålprofiler bliver stænger på deres akser; bærende vægge (Pset_WallCommon.LoadBearing på væggen eller dens type) og dæk bliver skaller midt i deres bærende lag, uden overflader. De deler knuder: en bjælke, der bærer et dæk, ligger i dækkets midterplan, søjle- og vægender møder bjælken eller dækket i top og fod, et dæks hjørner flyttes til søjlerne og væggene under det, og dækket deles langs de bjælker, der krydser det. Fødderne af søjler og vægge på et fundament er indspændte; en stålsøjlefod er charniereret eller indspændt, som samlingen siger.
+
+Vælg etagerne, elementtyperne og enhederne: kontraktens centimeter og kilopond eller SI (meter og kilonewton). Materialer tager deres værdier fra deres data (Administrer → Materialer, Pset_MaterialMechanical i pascal) eller fra styrkeklassen i navnet, C25/30 eller S355, efter Eurocodes; et tværsnits areal, inertimomenter, modstandsmomenter og vridningskonstant beregnes ud fra dets geometri. Det, Lapin ikke ved, står tomt (null) i filen, aldrig nul. Før eksporten tæller rapporten, hvad der kommer med, kontrollerer filen efter kontraktens regler og viser, hvad en beregning stadig mangler: et materiale uden klasse, en søjle, der ikke står på noget.
+
+![Eksportér JG Structures](shots/export-jg.webp)
+
 ## Optimér en IFC-fil
 
 **Optimér IFC…** (under Fil eller på startskærmen: intet projekt behøver at være åbent) laver en lettere kopi af en eller flere IFC-filer uden at ændre, hvad de siger. Kopien beholder hver GlobalId, hvert navn, egenskabssæt, hver mængde, type, materiale og relation præcis, som filen skrev dem, også dens hoved; intet af Lapins tilføjes. Kun geometrien ændres: net (fladesæt, facetterede B-reps af plane flader) renses (dobbelte punkter svejset, degenererede og gentagne trekanter og ubrugte koordinater fjernet) og forenkles, aldrig længere fra originalen end **Præcisionen** (Hurtig 5 mm, Afbalanceret 1 mm, Præcis 0,1 mm eller din egen), målt begge veje; ens legemer skrives én gang og deles af deres produkter; og det, intet refererer til (ubrugte punkter, stilarter, tomme repræsentationer), forsvinder. Ekstruderinger, booleske legemer og andre eksakte legemer forbliver, som de er. Afrundede koordinater, B-reps skrevet som fladesæt (kun IFC4 og IFC4X3) og en zippet `.ifczip` er der, når du vil have dem.

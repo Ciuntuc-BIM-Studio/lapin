@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lapin.ciuntucbimstudio.ro/schemas/jg-structures/schema-1.0.0.json",
+  "title": "JG_Structures_v2_exchange 1.0.0",
+  "description": "A JSON Schema written by Lapin from the contract's logical schema (JG_Structures_v2_exchange, schema_version 1.0.0): types, required fields and the rules a schema can state. The rules it cannot (unique ids, references resolving, node_j unlike node_i, verified_tabulated with a table or page) are checked by the exporter's own validator. null means the value is absent: never 0. Extra fields are allowed (Lapin puts its own under \"lapin\").",
+  "type": "object",
+  "required": ["schema_version", "project", "units", "coordinate_system", "stories", "grids", "materials", "sections", "nodes", "frames", "shells", "documentation"],
+  "properties": {
+    "contract": { "const": "JG_Structures_v2_exchange" },
+    "schema_version": { "const": "1.0.0" },
+    "project": {
+      "type": "object",
+      "required": ["id", "name", "source_application"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "source_application": { "type": "string" },
+        "source_file": { "type": ["string", "null"] }
+      }
+    },
+    "units": {
+      "type": "object",
+      "required": ["length", "force", "mass", "temperature", "stress", "weight_density"],
+      "properties": {
+        "length": { "type": "string", "minLength": 1 },
+        "force": { "type": "string", "minLength": 1 },
+        "mass": { "type": "string", "minLength": 1 },
+        "temperature": { "type": "string", "minLength": 1 },
+        "stress": { "type": "string", "minLength": 1 },
+        "weight_density": { "type": "string", "minLength": 1 },
+        "section_area": { "type": "string" },
+        "section_inertia": { "type": "string" },
+        "section_modulus": { "type": "string" },
+        "warping_constant": { "type": "string" }
+      }
+    },
+    "coordinate_system": {
+      "type": "object",
+      "required": ["handedness", "x_axis", "y_axis", "z_axis"],
+      "properties": {
+        "handedness": { "type": "string" },
+        "x_axis": { "type": "string" },
+        "y_axis": { "type": "string" },
+        "z_axis": { "type": "string" },
+        "frame_local_axes": { "type": "string" }
+      }
+    },
+    "stories": { "type": "array", "items": { "$ref": "#/$defs/story" } },
+    "grids": { "type": "array", "items": { "$ref": "#/$defs/grid" } },
+    "materials": { "type": "array", "items": { "$ref": "#/$defs/material" } },
+    "sections": { "type": "array", "items": { "$ref": "#/$defs/section" } },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "frames": { "type": "array", "items": { "$ref": "#/$defs/frame" } },
+    "shells": { "type": "array", "items": { "$ref": "#/$defs/shell" } },
+    "documentation": { "type": "object" }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1 },
+    "numberOrNull": { "type": ["number", "null"] },
+    "story": {
+      "type": "object",
+      "required": ["id", "name", "elevation"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string" },
+        "elevation": { "type": "number" },
+        "height": { "$ref": "#/$defs/numberOrNull" }
+      }
+    },
+    "axis": {
+      "type": "object",
+      "required": ["id", "coordinate"],
+      "properties": { "id": { "type": "string" }, "coordinate": { "type": "number" } }
+    },
+    "grid": {
+      "type": "object",
+      "required": ["id", "type", "x", "y"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "type": "string" },
+        "x": { "type": "array", "items": { "$ref": "#/$defs/axis" } },
+        "y": { "type": "array", "items": { "$ref": "#/$defs/axis" } }
+      }
+    },
+    "material": {
+      "type": "object",
+      "required": ["id", "name", "kind", "elastic_modulus", "poisson_ratio", "source"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string" },
+        "kind": { "type": "string", "minLength": 1 },
+        "elastic_modulus": { "$ref": "#/$defs/numberOrNull" },
+        "poisson_ratio": { "$ref": "#/$defs/numberOrNull" },
+        "yield_strength": { "$ref": "#/$defs/numberOrNull" },
+        "compressive_strength": { "$ref": "#/$defs/numberOrNull" },
+        "weight_density": { "$ref": "#/$defs/numberOrNull" },
+        "source": { "type": "object" }
+      }
+    },
+    "properties": {
+      "type": "object",
+      "properties": {
+        "area": { "$ref": "#/$defs/numberOrNull" },
+        "I22": { "$ref": "#/$defs/numberOrNull" },
+        "I33": { "$ref": "#/$defs/numberOrNull" },
+        "S22": { "$ref": "#/$defs/numberOrNull" },
+        "S33": { "$ref": "#/$defs/numberOrNull" },
+        "Z22": { "$ref": "#/$defs/numberOrNull" },
+        "Z33": { "$ref": "#/$defs/numberOrNull" },
+        "J": { "$ref": "#/$defs/numberOrNull" }
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": ["id", "name", "category", "kind", "geometry", "properties", "property_status", "source"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["catalog", "user_defined"] },
+        "catalog": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["standard", "family", "designation"],
+              "properties": { "standard": { "type": "string", "minLength": 1 }, "family": { "type": "string", "minLength": 1 }, "designation": { "type": "string", "minLength": 1 } }
+            }
+          ]
+        },
+        "geometry": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["shape"],
+              "properties": { "shape": { "type": "string" }, "dimensions": { "type": "object", "additionalProperties": { "type": "number" } }, "source": { "type": "object" } }
+            }
+          ]
+        },
+        "properties": { "$ref": "#/$defs/properties" },
+        "thickness": { "$ref": "#/$defs/numberOrNull" },
+        "property_status": { "enum": ["verified_tabulated", "derived_user_geometry", "pending"] },
+        "source": { "type": "object" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "coordinates", "story_id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "coordinates": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+        "story_id": { "type": ["string", "null"] },
+        "restraints": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "array", "items": { "type": "boolean" }, "minItems": 6, "maxItems": 6 }
+          ]
+        }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "required": ["id", "kind", "node_i", "node_j", "section_id", "material_id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["beam", "column"] },
+        "node_i": { "$ref": "#/$defs/id" },
+        "node_j": { "$ref": "#/$defs/id" },
+        "section_id": { "$ref": "#/$defs/id" },
+        "material_id": { "$ref": "#/$defs/id" },
+        "local_axis_rotation_deg": { "type": "number" },
+        "end_offsets": { "type": ["object", "null"] }
+      }
+    },
+    "shell": {
+      "type": "object",
+      "required": ["id", "kind", "node_ids", "section_id", "material_id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["slab", "deck", "wall"] },
+        "node_ids": { "type": "array", "items": { "$ref": "#/$defs/id" }, "minItems": 3 },
+        "section_id": { "$ref": "#/$defs/id" },
+        "material_id": { "$ref": "#/$defs/id" },
+        "pier_label": { "type": ["string", "null"] },
+        "spandrel_label": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

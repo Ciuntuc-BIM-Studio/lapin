@@ -53,6 +53,7 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         r.Service<IIfcSweptBodies>(this);
         r.Service<IIfcSystems>(this);
         r.Service<IIfcConnections>(this);
+        r.Service<Lapin.Platform.Analysis.IAnalyticalElements>(new SteelAnalytical());
         HallCommands.Register(r);
         NodeCommands.Register(r);
         SteelDrawings.Register(r);

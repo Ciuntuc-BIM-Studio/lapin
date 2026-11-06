@@ -52,6 +52,14 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 
 ![Export IFC or Fragments](shots/export-exchange.webp)
 
+## JG Structures (structural analysis)
+
+**Export JG Structures (JSON)…** writes the project's analytical model in the exchange file of JG Structures, a structural analysis program: a JSON file after its contract (version 1.0.0). Lapin derives the model from what you drew. Columns, beams and steel members become frames on their axes; load-bearing walls (Pset_WallCommon.LoadBearing on the wall or its type) and floors become shells on the middle of their core layer, finishes left out. They share their nodes: a beam that carries a floor lies in the floor's mid-plane, column and wall ends meet the beam or floor at their head and foot, a floor's corners move onto the columns and walls under them, and a floor is split along the beams that cross it. The feet of columns and walls on a footing are fixed; a steel column base is pinned or fixed as its connection says.
+
+Choose the storeys, the kinds of members and the units: the contract's centimetres and kilogram-force, or SI (metres and kilonewtons). Materials take their values from their data (Manage → Materials, Pset_MaterialMechanical in pascals) or from the strength class in their name, C25/30 or S355, by the Eurocodes; a section's area, inertias, moduli and torsion constant are worked out from its geometry. What Lapin does not know stays empty (null) in the file, never zero. Before you export, the report counts what goes in, checks the file against the contract's rules and lists what an analysis still needs: a material without a class, a column that stands on nothing.
+
+![Export JG Structures](shots/export-jg.webp)
+
 ## Optimize an IFC file
 
 **Optimize IFC…** (in File, or on the start screen: no project needs to be open) makes a lighter copy of one or more IFC files without changing what they say. The copy keeps every GlobalId, name, property set, quantity, type, material and relationship exactly as the file wrote them, and its header too; nothing of Lapin's is added. Only the geometry changes: meshes (face sets, faceted B-reps of plain faces) are cleaned (duplicate vertices welded, degenerate and repeated triangles and unused coordinates dropped) and simplified, never further from the original than the **Precision** (Fast 5 mm, Balanced 1 mm, Precise 0.1 mm, or your own), measured both ways; identical bodies are written once and shared by their products; and what nothing references (unused points, styles, empty representations) goes. Extrusions, booleans and other exact bodies stay as they are. Rounding the coordinates, B-reps written as face sets (IFC4 and IFC4X3 only) and a zipped `.ifczip` are there when you want them.
