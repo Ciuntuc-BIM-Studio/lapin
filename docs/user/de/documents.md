@@ -12,7 +12,7 @@ Lapin schreibt die Dateien selbst, als DOCX, ODT und PDF, ohne Word oder LibreOf
 
 ## Projektinformationen
 
-**Verwalten → Projektinformationen…** enthält, was die Dokumente vom Projekt brauchen: Name, Nummer und Bauphase, den Bauherrn und seine Adresse, die Adresse des Grundstücks, die Flurstücksnummer und das Grundbuch, den Planer und seine Adresse, den leitenden Architekten, wer gezeichnet und wer geprüft hat. Schreiben Sie sie einmal: Jedes Dokument liest sie, und die Planköpfe der Pläne nehmen von hier, wer gezeichnet und geprüft hat, wenn ein Plan es nicht selbst angibt. Jedes Feld wird gespeichert, wenn Sie es verlassen.
+**Verwalten → Projektinformationen…** enthält, was die Dokumente vom Projekt brauchen: Name, Nummer und Bauphase, den Bauherrn und seine Adresse, die Adresse des Grundstücks, die Flurstücksnummer und das Grundbuch, den Planer und seine Adresse, den leitenden Architekten, wer gezeichnet und wer geprüft hat. Schreiben Sie sie einmal: Jedes Dokument liest sie, und die Schriftfelder der Pläne nehmen von hier, wer gezeichnet und geprüft hat, wenn ein Plan es nicht selbst angibt. Jedes Feld wird gespeichert, wenn Sie es verlassen.
 
 ![Projektinformationen: Nummer, Bauphase, Bauherr, Grundstück und Planer](shots/project-info.webp)
 
@@ -38,7 +38,7 @@ Der Reiter **Eingaben** enthält die Texte, die nur der Planer schreiben kann, g
 
 ## Zu ergänzen
 
-**Zu ergänzen** listet, was dem Dokument noch fehlt: einen leeren Projektfeld, ein Wert, den das Modell nicht hat. Ein Klick zeigt, wo es im Dokument steht, und führt zu dem Feld, das es füllt (ein Projektfeld öffnet den Reiter **Projektinformationen**). Die Liste leert sich, während Sie sie abarbeiten.
+**Zu ergänzen** listet, was dem Dokument noch fehlt: ein leeres Projektfeld, ein Wert, den das Modell nicht hat. Ein Klick zeigt, wo es im Dokument steht, und führt zu dem Feld, das es füllt (ein Projektfeld öffnet den Reiter **Projektinformationen**). Die Liste leert sich, während Sie sie abarbeiten.
 
 ![Zu ergänzen: die Felder, die dem Dokument noch fehlen](shots/documents-missing.webp)
 

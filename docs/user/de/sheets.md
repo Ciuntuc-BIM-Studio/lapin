@@ -8,7 +8,7 @@ summary: Ordnen Sie Ansichten auf Plänen mit einem Plankopf an und geben Sie si
 
 ## Einen Plan erstellen
 
-Klicken Sie im Projektbrowser auf **+** neben **Pläne**. Um eine Ansicht zu platzieren, ziehen Sie sie aus dem Browser auf den Plan oder wählen Sie sie in der Leiste des Plans unter **Ansicht platzieren…**. Jede Ansicht behält ihren eigenen Maßstab und bleibt mit dem Modell verknüpft, sodass sich der Plan ändert, wenn sich das Modell ändert. Auf dem Plan ziehen Sie eine Ansicht, um sie zu verschieben: nur sie bewegt sich, mit ihrem Titel, während Rahmen, Plankopf und die anderen Ansichten bleiben; sie rastet an den Kanten und der Mitte des Rahmens und an den anderen Ansichten ein, und die Pfeiltasten rücken sie um 1 mm (10 mm mit Umschalt).
+Klicken Sie im Projektbrowser auf **+** neben **Pläne**. Um eine Ansicht zu platzieren, ziehen Sie sie aus dem Browser auf den Plan oder wählen Sie sie in der Leiste des Plans unter **Ansicht platzieren…**. Jede Ansicht behält ihren eigenen Maßstab und bleibt mit dem Modell verknüpft, sodass sich der Plan ändert, wenn sich das Modell ändert. Auf dem Plan ziehen Sie eine Ansicht, um sie zu verschieben: nur sie bewegt sich, mit ihrem Titel, während Rahmen, Schriftfeld und die anderen Ansichten bleiben; sie rastet an den Kanten und der Mitte des Rahmens und an den anderen Ansichten ein, und die Pfeiltasten rücken sie um 1 mm (10 mm mit Umschalt).
 
 ![Ein A3-Plan mit einem Grundriss und einem Schnitt](shots/sheet.webp)
 
@@ -22,7 +22,7 @@ Eine Ansicht auf dem Plan zeigt, was Sie wählen, ohne sie blind zu ziehen:
 - **Ihre Grenze in der Ansicht zeichnen.** **Annotate → View boundary** (<kbd>VB</kbd>): Zeichnen Sie ein Rechteck in einen Grundriss, Schnitt oder eine Ansicht und geben Sie ihm einen im Projekt eindeutigen Namen. In **Place view…** steht die Ansicht dann mit jeder ihrer Grenzen („Ground floor plan › Ostflügel“), und eine so gesetzte Ansicht zeigt genau dieses Rechteck und folgt ihm, wenn Sie es in der Ansicht verschieben oder ändern. Dieselbe Ansicht kann auf mehreren Plänen stehen, je eine Grenze. Eine gesetzte Ansicht wechselt in der Liste auf ihrem Rahmen zwischen ihren Grenzen oder zum freien Zuschnitt. Grenzen sind nur am Bildschirm zu sehen, nie auf Papier.
 - **Anheften.** Die Pinnnadel auf dem Rahmen hält die Ansicht fest: Sie wird gewählt, aber nicht versehentlich verschoben oder zugeschnitten.
 
-Rahmen und Plankopf gehören zum Papier. Sie werden nie gewählt oder verschoben, und ein Klick nimmt die kleinste Ansicht unter dem Zeiger, sodass eine Ansicht über dem Plankopf immer wählbar ist.
+Rahmen und Schriftfeld gehören zum Papier. Sie werden nie gewählt oder verschoben, und ein Klick nimmt die kleinste Ansicht unter dem Zeiger, sodass eine Ansicht über dem Schriftfeld immer wählbar ist.
 
 ![Eine auf dem Plan gewählte Ansicht: ihre Zuschnittgriffe, ihre Grenze, die Pinnnadel](shots/sheet-view-boundary.webp)
 
