@@ -68,13 +68,13 @@ public static class ForeignRoofs
             var bands = new List<Band>();
             foreach (var p in parts)
             {
-                if (ForeignElements.OnePrismOrNull(p.Prisms, x => x.Vertical) is not { } prism || prism.Height < 1e-4) return null;
+                if (ForeignElements.OnePrismOrNull(p.Prisms, x => x.Vertical) is not { } prism || prism.Height < 1e-4 || !Level(prism)) return null;
                 bands.Add(new Band(Footprints.Plan(prism.Outer), prism.Holes.Count, Math.Min(prism.BaseZ, prism.BaseZ + prism.Sweep.Z), prism.Height, p.Material));
             }
             bands = [.. bands.OrderBy(b => b.Bottom)];
             return Stacked(bands) ? bands : null;
         }
-        if (e.Layers is { Count: >= 2 } layers && ForeignElements.OnePrismOrNull(e.Prisms, x => x.Vertical) is { } body
+        if (e.Layers is { Count: >= 2 } layers && ForeignElements.OnePrismOrNull(e.Prisms, x => x.Vertical) is { } body && Level(body)
             && Math.Abs(layers.Sum(l => l.Thickness) - body.Height) < Tol * layers.Count)
         {
             // A slab's layers go up from its underside, the first at the bottom, unless the usage runs the negative way.
@@ -87,6 +87,12 @@ public static class ForeignRoofs
         }
         return null;
     }
+
+    /// <summary>
+    /// Whether a slab's base is level: a sloping slab extruded straight up is a vertical prism too, of the same volume as a flat
+    /// one on its plan, which would come in flat at its lowest point.
+    /// </summary>
+    static bool Level(ShapePrism p) => p.Outer.Max(q => q.Z) - p.Outer.Min(q => q.Z) <= Tol;
 
     /// <summary>Whether the slabs lie one on the other, each on the top of the one under it, of about the same outline (within 10 % of the deck's area).</summary>
     static bool Stacked(List<Band> bands)

@@ -8,9 +8,11 @@ namespace Lapin.Structure;
 /// <summary>
 /// Foreign IFC columns, beams and pad footings rebuilt natively
 /// (docs/spec-ifc.md, Recunoașterea). A column: a vertical prism with a
-/// rectangular or round base, its section and rotation from the base. A
-/// beam: a prism swept horizontally, its section from the profile, its axis
-/// from the sweep; or swept vertically, its axis along the long side of the
+/// rectangular or round base, its section and rotation from the base, its
+/// base offset from the storey and its height its own where its type's is
+/// another. A beam: a prism swept horizontally, its section from the profile
+/// (a rectangle in its plane, else a reference), its axis from the sweep; or
+/// swept vertically, its axis along the long side of the
 /// footprint. A footing: a vertical prism on a rectangle, one step. Each
 /// keeps the file's GlobalId as its id.
 /// </summary>
@@ -47,11 +49,16 @@ public sealed class ForeignMembers : IIfcRecognizer
         var height = Round(prism.Height);
         var type = Type(edit, ctx, IfcClass.ColumnType, e, $"column:{section.Label}:{height}:{e.Material}", $"Column {section.Label}",
             name => Columns.CreateType(edit, name, section, height, e.Material ?? (section.IsProfile ? "Steel" : "Reinforced concrete")));
-        var column = new Entity(e.GlobalId, IfcClass.Column, e.Name ?? type.Name, new JsonObject { ["at"] = Place.Json2(at), ["rotation"] = rotation }, "COLUMN");
+        // Where the file has it: its base as an offset from its storey, and its own height where its type's (the first of
+        // its file type's columns) is another.
+        var attrs = new JsonObject { ["at"] = Place.Json2(at), ["rotation"] = rotation };
+        var baseOffset = Math.Round(prism.BaseZ - storey.Num("elevation"), 6);
+        if (Math.Abs(baseOffset) > 1e-6) attrs["baseOffset"] = baseOffset;
+        if (Math.Abs((type.NumOrNull("height") ?? 0) - height) > 1e-6) attrs["height"] = height;
+        var column = new Entity(e.GlobalId, IfcClass.Column, e.Name ?? type.Name, attrs, "COLUMN");
         edit.Add(column);
         Spatial.Contain(edit, storey.Id, column.Id);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, column.Id);
-        if (Math.Abs(prism.BaseZ - storey.Num("elevation")) > 0.01) ctx.Notes.Add($"Column {e.Name ?? e.GlobalId}: its base is {prism.BaseZ - storey.Num("elevation"):+0.00;-0.00} m from the storey; it stands on the storey.");
         ctx.Made.Add(column.Id);
         return column.Id;
     }
@@ -75,6 +82,11 @@ public sealed class ForeignMembers : IIfcRecognizer
                 xMin = Math.Min(xMin, x); xMax = Math.Max(xMax, x); zMin = Math.Min(zMin, p.Z); zMax = Math.Max(zMax, p.Z);
             }
             width = Round(xMax - xMin); depth = Round(zMax - zMin); top = zMax;
+            // A native beam is a horizontal rectangle swept along its axis: a profile that is no rectangle in its plane (a T,
+            // a haunch, or a sloping beam's parallelogram or turned rectangle read across its sweep) would come in as its bounding box.
+            Vec2 InPlane(Vec3 p) => new(Vec2.Dot(new Vec2(p.X, p.Y) - origin, across), p.Z);
+            var area = Math.Abs(Polygon2.SignedArea([.. prism.Outer.Select(InPlane)])) - prism.Holes.Sum(h => Math.Abs(Polygon2.SignedArea([.. h.Select(InPlane)])));
+            if (area < 0.99 * (xMax - xMin) * (zMax - zMin)) { ctx.Skip("a beam whose profile is not a rectangle (a shaped section, or a sloping beam)"); return null; }
             var centre = origin + across * ((xMin + xMax) / 2);
             start = centre; end = centre + dir * prism.Height;
         }
@@ -155,11 +167,21 @@ public sealed class ForeignMembers : IIfcRecognizer
 
     static double Round(double v) => Math.Round(v, 4);
 
+    /// <summary>The box a prism fills: its base and its base swept.</summary>
+    static (Vec3 Min, Vec3 Max) Span(ShapePrism p)
+    {
+        var pts = p.Outer.Concat(p.Outer.Select(q => q + p.Sweep)).ToList();
+        return (new Vec3(pts.Min(q => q.X), pts.Min(q => q.Y), pts.Min(q => q.Z)), new Vec3(pts.Max(q => q.X), pts.Max(q => q.Y), pts.Max(q => q.Z)));
+    }
+
     static bool One(ForeignElement e, RecognitionContext ctx, Func<ShapePrism, bool> wanted, string reason, out ShapePrism prism)
     {
         prism = null!;
         if (e.Prisms.Count == 0) { ctx.Skip(e.ShapeNote is { } why ? $"{reason.Split(" whose")[0]}: {why}" : reason); return false; }
-        var distinct = e.Prisms.Where(p => p.Source != "brep").Count() + (e.Prisms.Any(p => p.Source == "brep") ? 1 : 0);
+        // A B-rep's prisms (a box's three) all span its box: prisms spanning different ones are of several B-reps.
+        var breps = e.Prisms.Where(p => p.Source == "brep").Select(Span).ToList();
+        var oneBrep = breps.All(b => (b.Min - breps[0].Min).Length <= 1e-3 && (b.Max - breps[0].Max).Length <= 1e-3);
+        var distinct = e.Prisms.Count(p => p.Source != "brep") + (breps.Count == 0 ? 0 : oneBrep ? 1 : 2);
         if (distinct > 1) { ctx.Skip($"{reason.Split(" whose")[0]} made of several bodies"); return false; }
         var candidates = e.Prisms.Where(wanted).ToList();
         if (candidates.Count == 0) { ctx.Skip(reason); return false; }
