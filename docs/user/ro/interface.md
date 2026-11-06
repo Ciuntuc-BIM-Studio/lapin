@@ -45,7 +45,7 @@ Lapin îți păstrează alegerea pe acest calculator, pentru tine. Aplicația de
 
 ## Uneltele rapide
 
-Uneltele rapide sunt locurile numerotate de jos din vedere (pe marginea ei din stânga în Compact și Concentrare); tastele <kbd>1</kbd>–<kbd>9</kbd> le pornesc. Fiecare spațiu de lucru are uneltele lui: pornesc așa cum le dă ediția ta, iar tu le alegi singur:
+Uneltele rapide sunt locurile numerotate de pe marginea din stânga a vederii, lipite de browserul proiectului, așa că se mută odată cu el; sunt mici și semi-transparente până când vine cursorul peste ele (View → Interface… le poate pune și plutind jos în vedere); tastele <kbd>1</kbd>–<kbd>9</kbd> le pornesc. Fiecare spațiu de lucru are uneltele lui: pornesc așa cum le dă ediția ta, iar tu le alegi singur:
 
 - trage o unealtă din panglică pe un loc. O unealtă stă într-un singur loc, așa că îl lasă pe cel în care era;
 - trage un loc peste altul ca să le schimbi între ele;

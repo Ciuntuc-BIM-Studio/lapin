@@ -11,6 +11,13 @@ describe('the interface modes', () => {
     expect(initialSettings(withPreset('comfortable'), { web: true, height: 700 })).toMatchObject({ preset: 'comfortable' });
   });
 
+  it('docks the quick tools by the browser; a floating bar kept from before is docked once, then kept if chosen again', () => {
+    expect(PRESETS.comfortable.quickTools).toBe('docked');
+    const old = withPart(withPreset('comfortable'), 'quickTools', 'floating');
+    expect(initialSettings(old, { web: false, height: 900 }).parts.quickTools).toBe('docked');
+    expect(initialSettings({ ...old, rev: 2 }, { web: false, height: 900 }).parts.quickTools).toBe('floating');
+  });
+
   it('sets every part from a preset; a part changed on its own makes it custom, and back', () => {
     const compact = withPreset('compact');
     expect(compact.parts.ribbon).toBe('icons');

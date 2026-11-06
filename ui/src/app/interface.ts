@@ -21,7 +21,7 @@ export type InterfacePreset = 'comfortable' | 'compact' | 'focus';
 export interface InterfaceParts {
   /** Large tools with their names, icons only, or a band that opens from its tab. */
   ribbon: 'large' | 'icons' | 'dropdown';
-  /** The quick tools 1–9: floating at the bottom of the view, docked on its left edge, or off (the number keys still work). */
+  /** The quick tools 1–9: floating at the bottom of the view, docked on its left edge by the project browser (the default since decision 358), or off (the number keys still work). */
   quickTools: 'floating' | 'docked' | 'off';
   /** The command line under each 2D view, or in the status line. */
   commandLine: 'own' | 'status';
@@ -38,7 +38,7 @@ export interface InterfaceParts {
 }
 
 export const PRESETS: Record<InterfacePreset, InterfaceParts> = {
-  comfortable: { ribbon: 'large', quickTools: 'floating', commandLine: 'own', hud: 'over', prompt: 'banner', keyPlan: 'shown', panels: 'docked', rows: 'normal' },
+  comfortable: { ribbon: 'large', quickTools: 'docked', commandLine: 'own', hud: 'over', prompt: 'banner', keyPlan: 'shown', panels: 'docked', rows: 'normal' },
   compact: { ribbon: 'icons', quickTools: 'docked', commandLine: 'status', hud: 'status', prompt: 'commandLine', keyPlan: 'button', panels: 'browserRail', rows: 'dense' },
   focus: { ribbon: 'dropdown', quickTools: 'docked', commandLine: 'status', hud: 'status', prompt: 'commandLine', keyPlan: 'button', panels: 'hidden', rows: 'dense' },
 };
@@ -83,6 +83,9 @@ export interface InterfaceSettings {
   /** The tabs an older Lapin kept hidden, read into the user's own workspace. */
   hiddenTabs: string[];
 }
+
+/** The settings' revision: before 2 the quick tools floated by default, so a floating bar kept from then is docked once (decision 358). */
+export const INTERFACE_REV = 2;
 
 /** A tab as the ribbon has it: its id and its place among the others. */
 export interface TabRef { id: string; order: number }
@@ -146,7 +149,7 @@ export interface InterfaceEnv { web: boolean; height: number }
 
 /** The settings from what was kept (anything unreadable left out), else the default for where Lapin runs. */
 export function initialSettings(stored: unknown, env: InterfaceEnv): InterfaceSettings {
-  const o = stored as { parts?: Record<string, unknown>; chosen?: unknown; hiddenTabs?: unknown; workspace?: unknown; mine?: unknown } | null;
+  const o = stored as { parts?: Record<string, unknown>; chosen?: unknown; hiddenTabs?: unknown; workspace?: unknown; mine?: unknown; rev?: unknown } | null;
   const hiddenTabs = o && typeof o === 'object' && Array.isArray(o.hiddenTabs) ? o.hiddenTabs.filter((t): t is string => typeof t === 'string' && !ALWAYS_SHOWN_TABS.includes(t)) : [];
   const mine = o && typeof o === 'object' && Array.isArray(o.mine) ? o.mine.filter((t): t is string => typeof t === 'string') : null;
   // Tabs hidden before workspaces were: the user's own workspace, every tab but those.
@@ -158,6 +161,7 @@ export function initialSettings(stored: unknown, env: InterfaceEnv): InterfaceSe
       const v = o.parts[k];
       if ((CHOICES[k] as readonly unknown[]).includes(v)) (parts as Record<string, unknown>)[k] = v;
     }
+    if (o.rev !== INTERFACE_REV && parts.quickTools === 'floating') parts.quickTools = 'docked';
     return { preset: presetOf(parts), parts, chosen: true, ...tabs };
   }
   const preset: InterfacePreset = env.web && env.height < 800 ? 'compact' : 'comfortable';
@@ -186,7 +190,7 @@ export const onInterfaceChange = (f: (s: InterfaceSettings, before: InterfaceSet
 export function setInterface(s: InterfaceSettings): void {
   const before = useInterface.getState();
   useInterface.setState(s, true);
-  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* kept for this session */ }
+  try { localStorage.setItem(KEY, JSON.stringify({ ...s, rev: INTERFACE_REV })); } catch { /* kept for this session */ }
   for (const f of listeners) f(s, before);
 }
 

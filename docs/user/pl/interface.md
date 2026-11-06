@@ -45,7 +45,7 @@ Lapin zapamiętuje twój wybór na tym komputerze, dla ciebie. Aplikacja desktop
 
 ## Szybkie narzędzia
 
-Szybkie narzędzia to ponumerowane miejsca na dole widoku (w trybach Kompaktowy i Skupienie na jego lewej krawędzi); uruchamiają je klawisze <kbd>1</kbd>–<kbd>9</kbd>. Każdy obszar roboczy ma własne: na początku takie, jakie daje Twoja edycja, a potem wybierasz je sam:
+Szybkie narzędzia to ponumerowane miejsca przy lewej krawędzi widoku, tuż przy przeglądarce projektu, więc przesuwają się razem z nią; małe i półprzezroczyste, dopóki nie najedzie na nie kursor (View → Interface… może zamiast tego umieścić je na dole widoku); uruchamiają je klawisze <kbd>1</kbd>–<kbd>9</kbd>. Każdy obszar roboczy ma własne: na początku takie, jakie daje Twoja edycja, a potem wybierasz je sam:
 
 - przeciągnij narzędzie ze wstążki na miejsce. Narzędzie stoi tylko w jednym miejscu, więc opuszcza poprzednie;
 - przeciągnij jedno miejsce na drugie, aby je zamienić;

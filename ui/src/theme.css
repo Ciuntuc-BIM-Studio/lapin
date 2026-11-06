@@ -7,7 +7,7 @@
 :root, [data-theme="paper"] {
   --bg: #f6f3ec; --panel: #fdfbf7; --raised: #ffffff; --wash: #efeae0; --rule: #e2dccf; --rule-strong: #d6cebf;
   --ink: #1e2a3a; --ink-muted: #6b6357; --accent: #b5532d; --accent-ink: #ffffff; --accent-wash: #f1e3d9;
-  --hud: rgba(253, 251, 247, 0.92); --ok: #4f9d5d; --err: #a1260d;
+  --hud: rgba(253, 251, 247, 0.92); --hud-glass: rgba(253, 251, 247, 0.58); --ok: #4f9d5d; --err: #a1260d;
   /* A move's trace (decision 165): snapped as the snap marker, locked by ortho or polar, on a tracking guide as the guides, free. */
   --trace-snap: #1f9d55; --trace-locked: #2f6db5; --trace-tracking: var(--accent); --trace-free: #6b6357;
   color-scheme: light;
@@ -15,7 +15,7 @@
 [data-theme="graphite"] {
   --bg: #161513; --panel: #1c1b19; --raised: #22201d; --wash: #2c2a26; --rule: #34312c; --rule-strong: #4a463f;
   --ink: #e9e4da; --ink-muted: #a39b8c; --accent: #e07a4f; --accent-ink: #1c1b19; --accent-wash: #3a2c24;
-  --hud: rgba(22, 21, 19, 0.88); --ok: #7fbf8a; --err: #ff8a6b;
+  --hud: rgba(22, 21, 19, 0.88); --hud-glass: rgba(22, 21, 19, 0.55); --ok: #7fbf8a; --err: #ff8a6b;
   --trace-snap: #4cc27e; --trace-locked: #79aef0; --trace-tracking: var(--accent); --trace-free: #b3ab9c;
   color-scheme: dark;
 }
@@ -223,14 +223,16 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .grip-overlay .plan-grip, .grip-overlay .plan-grip-hit { pointer-events: all; }
 
 /* HUD over the view (Atrium) */
-.hud-card { position: absolute; left: 12px; top: 12px; display: grid; grid-template-columns: auto auto; gap: 3px 16px; padding: 10px 14px; background: var(--hud); border: 1px solid var(--rule); border-radius: 3px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; backdrop-filter: blur(4px); }
-.hud-map { position: absolute; right: 12px; top: 12px; width: 180px; padding: 8px 10px 10px; background: var(--hud); border: 1px solid var(--rule); border-radius: 3px; color: var(--ink); }
+.hud-card { position: absolute; left: 10px; top: 10px; display: grid; grid-template-columns: auto auto; gap: 1px 10px; padding: 5px 9px; background: var(--hud-glass); border: 1px solid var(--rule); border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; backdrop-filter: blur(3px); pointer-events: none; }
+.hud-card .eyebrow { font-size: 9px; letter-spacing: 0.1em; }
+.hud-map { position: absolute; right: 12px; top: 12px; width: 180px; padding: 8px 10px 10px; background: var(--hud-glass); border: 1px solid var(--rule); border-radius: 3px; color: var(--ink); backdrop-filter: blur(3px); transition: background .15s; }
+.hud-map:hover { background: var(--hud); }
 .hud-map svg { display: block; width: 100%; margin-top: 6px; }
 .hud-map .you { fill: var(--accent); }
 .hud-map.under { top: 44px; }
 .hud-map .row { gap: 4px; }
 .hud-map svg { touch-action: none; user-select: none; cursor: crosshair; }
-.hud-map .map-box { fill: var(--bg); stroke: var(--rule); }
+.hud-map .map-box { fill: var(--bg); fill-opacity: 0.45; stroke: var(--rule); }
 .hud-map .footprint { fill: var(--wash); stroke: var(--ink-muted); stroke-width: 0.7; stroke-linejoin: round; }
 .hud-map .footprint.empty { fill: none; stroke-dasharray: 2 2; }
 .hud-map .north path { fill: none; stroke: var(--ink-muted); stroke-width: 1; }
@@ -1003,11 +1005,15 @@ button.mode-chip:hover { color: var(--accent); }
 .live-bar.inline { position: static; transform: none; padding: 0 6px; background: none; border: 0; backdrop-filter: none; }
 .live-bar.inline .live-ro { display: none; }
 .live-bar.inline .live-field input { padding: 0 4px; height: 20px; }
-/* The quick tools docked on the view's left edge. */
-.hotbar.docked { left: 0; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; gap: 3px; padding: 4px 3px; border-left: 0; border-radius: 0 4px 4px 0; }
+/* The quick tools docked on the view's left edge, against the project browser (they move with it), small and see-through until the pointer comes (decision 358). */
+.hotbar.docked { left: 0; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; gap: 2px; padding: 3px 2px; border-left: 0; border-radius: 0 4px 4px 0; background: var(--hud-glass); backdrop-filter: blur(3px); transition: background .15s; }
+.hotbar.docked:hover { background: var(--hud); }
 .view-area:has(.cad-line) .hotbar.docked { bottom: auto; }
-.hotbar.docked .slot { width: 34px; height: 34px; }
-.hotbar.docked .slot-n { left: 2px; top: 0; font-size: 8.5px; }
+.hotbar.docked .slot { width: 28px; height: 28px; background: transparent; border-color: transparent; }
+.hotbar.docked .slot:hover { border-color: var(--accent); background: var(--panel); }
+.hotbar.docked .slot.on { background: var(--accent-wash); border-color: var(--accent); }
+.hotbar.docked .slot.empty { border-color: var(--rule-strong); }
+.hotbar.docked .slot-n { left: 1px; top: -1px; font-size: 7.5px; }
 /* The key plan as a button at the view's top right. */
 .key-plan-button { position: absolute; right: 12px; top: 12px; z-index: 2; background: var(--hud); border: 1px solid var(--rule); }
 .key-plan-button.under { top: 44px; }

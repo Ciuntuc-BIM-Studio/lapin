@@ -45,7 +45,7 @@ Lapin speichert Ihre Wahl auf diesem Computer, für Sie. Die Desktop-App und der
 
 ## Schnellwerkzeuge
 
-Die Schnellwerkzeuge sind die nummerierten Plätze unten in der Ansicht (in Kompakt und Fokus an ihrem linken Rand); die Tasten <kbd>1</kbd>–<kbd>9</kbd> starten sie. Jeder Arbeitsbereich hat seine eigenen: Sie beginnen so, wie Ihre Edition sie mitbringt, und Sie wählen sie selbst:
+Die Schnellwerkzeuge sind die nummerierten Plätze am linken Rand der Ansicht, direkt am Projektbrowser, sodass sie mit ihm wandern; klein und durchscheinend, bis der Mauszeiger darüber kommt (View → Interface… kann sie stattdessen unten in der Ansicht schweben lassen); die Tasten <kbd>1</kbd>–<kbd>9</kbd> starten sie. Jeder Arbeitsbereich hat seine eigenen: Sie beginnen so, wie Ihre Edition sie mitbringt, und Sie wählen sie selbst:
 
 - Ziehen Sie ein Werkzeug aus dem Menüband auf einen Platz. Ein Werkzeug steht nur auf einem Platz, also verlässt es den bisherigen;
 - ziehen Sie einen Platz auf einen anderen, um sie zu tauschen;

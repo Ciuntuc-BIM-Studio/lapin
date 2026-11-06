@@ -379,7 +379,7 @@ export const scenes = [
         { of: '.band', n: 2, at: 'bottom' },
         { of: 'nav.browser', n: 3, at: 'right' },
         { of: '[data-testid=plan]', n: 4, at: 'center' },
-        { of: '.hotbar', n: 5, at: 'before' },
+        { of: '.hotbar', n: 5, at: 'after' },
         { of: '[data-testid=command-line]', n: 6, at: 'center' },
         { of: 'aside.props', n: 7, at: 'right' },
         { of: '.ask-me', n: 8, at: 'before' },

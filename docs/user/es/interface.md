@@ -45,7 +45,7 @@ Lapin guarda su elección en este ordenador, para usted. La aplicación de escri
 
 ## Herramientas rápidas
 
-Las herramientas rápidas son las casillas numeradas al pie de la vista (en su borde izquierdo en Compacto y Enfoque); las teclas <kbd>1</kbd>–<kbd>9</kbd> las inician. Cada espacio de trabajo tiene las suyas: empiezan como las da su edición, y usted las elige:
+Las herramientas rápidas son las casillas numeradas en el borde izquierdo de la vista, junto al explorador del proyecto, de modo que se mueven con él; pequeñas y semitransparentes hasta que el puntero llega a ellas (View → Interface… puede, en cambio, dejarlas flotando al pie de la vista); las teclas <kbd>1</kbd>–<kbd>9</kbd> las inician. Cada espacio de trabajo tiene las suyas: empiezan como las da su edición, y usted las elige:
 
 - arrastre una herramienta de la cinta a una casilla. Una herramienta está en una sola casilla, así que deja la que ocupaba;
 - arrastre una casilla sobre otra para intercambiarlas;

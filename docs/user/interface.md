@@ -45,7 +45,7 @@ Lapin keeps your choice on this computer, for you. The desktop app and the brows
 
 ## Quick tools
 
-The quick tools are the numbered slots at the bottom of the view (on its left edge in Compact and Focus); the keys <kbd>1</kbd>–<kbd>9</kbd> start them. Each workspace has its own: they start as your edition gives them, and you choose them yourself:
+The quick tools are the numbered slots on the view's left edge, against the project browser, so they move with it; small and see-through until the pointer comes to them (View → Interface… can float them at the bottom of the view instead); the keys <kbd>1</kbd>–<kbd>9</kbd> start them. Each workspace has its own: they start as your edition gives them, and you choose them yourself:
 
 - drag a tool from the ribbon onto a slot. A tool stands in one slot only, so it leaves the one it was in;
 - drag one slot onto another to swap them;

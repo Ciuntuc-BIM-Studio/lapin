@@ -45,7 +45,7 @@ Lapin conserva la tua scelta su questo computer, per te. L’app desktop e il br
 
 ## Strumenti rapidi
 
-Gli strumenti rapidi sono i posti numerati in fondo alla vista (sul suo bordo sinistro in Compatta e Concentrazione); i tasti <kbd>1</kbd>–<kbd>9</kbd> li avviano. Ogni area di lavoro ha i suoi: partono come li dà la tua edizione, e li scegli tu:
+Gli strumenti rapidi sono i posti numerati sul bordo sinistro della vista, accanto al browser del progetto, così si spostano con lui; piccoli e semitrasparenti finché il puntatore non ci arriva sopra (View → Interface… può invece farli fluttuare in fondo alla vista); i tasti <kbd>1</kbd>–<kbd>9</kbd> li avviano. Ogni area di lavoro ha i suoi: partono come li dà la tua edizione, e li scegli tu:
 
 - trascina uno strumento dalla barra multifunzione su un posto. Uno strumento sta in un solo posto, quindi lascia quello in cui era;
 - trascina un posto su un altro per scambiarli;

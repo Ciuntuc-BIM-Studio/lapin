@@ -45,7 +45,7 @@ Lapin husker dit valg på denne computer, for dig. Skrivebordsprogrammet og brow
 
 ## Hurtigværktøjer
 
-Hurtigværktøjerne er de nummererede pladser nederst i visningen (på dens venstre kant i Kompakt og Fokus); tasterne <kbd>1</kbd>–<kbd>9</kbd> starter dem. Hvert arbejdsområde har sine egne: de begynder, som din udgave giver dem, og du vælger dem selv:
+Hurtigværktøjerne er de nummererede pladser på visningens venstre kant, op ad projektbrowseren, så de flytter med den; små og gennemsigtige, indtil markøren kommer hen over dem (View → Interface… kan i stedet lade dem svæve nederst i visningen); tasterne <kbd>1</kbd>–<kbd>9</kbd> starter dem. Hvert arbejdsområde har sine egne: de begynder, som din udgave giver dem, og du vælger dem selv:
 
 - træk et værktøj fra båndet til en plads. Et værktøj står kun på én plads, så det forlader den, det stod på;
 - træk en plads hen på en anden for at bytte dem;

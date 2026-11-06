@@ -45,7 +45,7 @@ O Lapin guarda a sua escolha neste computador, para você. O aplicativo de deskt
 
 ## Ferramentas rápidas
 
-As ferramentas rápidas são os espaços numerados no pé da vista (na borda esquerda dela nos modos Compacta e Foco); as teclas <kbd>1</kbd>–<kbd>9</kbd> as iniciam. Cada espaço de trabalho tem as suas: começam como sua edição as dá, e você as escolhe:
+As ferramentas rápidas são os espaços numerados na borda esquerda da vista, junto ao navegador do projeto, de modo que se movem com ele; pequenas e semitransparentes até o ponteiro chegar a elas (View → Interface… pode, em vez disso, deixá-las flutuando no pé da vista); as teclas <kbd>1</kbd>–<kbd>9</kbd> as iniciam. Cada espaço de trabalho tem as suas: começam como sua edição as dá, e você as escolhe:
 
 - arraste uma ferramenta da faixa de opções para um espaço. Uma ferramenta fica em um só espaço, então deixa aquele onde estava;
 - arraste um espaço sobre outro para trocá-los;

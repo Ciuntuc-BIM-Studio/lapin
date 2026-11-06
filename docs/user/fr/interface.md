@@ -45,7 +45,7 @@ Lapin garde votre choix sur cet ordinateur, pour vous. L’application de bureau
 
 ## Outils rapides
 
-Les outils rapides sont les emplacements numérotés en bas de la vue (sur son bord gauche en Compact et Concentration) ; les touches <kbd>1</kbd>–<kbd>9</kbd> les lancent. Chaque espace de travail a les siens : ils commencent tels que votre édition les donne, et vous les choisissez vous-même :
+Les outils rapides sont les emplacements numérotés sur le bord gauche de la vue, contre le navigateur du projet, si bien qu’ils se déplacent avec lui ; petits et translucides jusqu’à ce que le pointeur arrive dessus (View → Interface… peut les faire flotter en bas de la vue à la place) ; les touches <kbd>1</kbd>–<kbd>9</kbd> les lancent. Chaque espace de travail a les siens : ils commencent tels que votre édition les donne, et vous les choisissez vous-même :
 
 - glissez un outil du ruban sur un emplacement. Un outil n’occupe qu’un seul emplacement, il quitte donc celui où il était ;
 - glissez un emplacement sur un autre pour les échanger ;

@@ -129,7 +129,7 @@ export function ViewportHud() {
               <button type="button" key={i} data-tool={t.id} data-type={q!.typeName ?? undefined} className={`slot${on ? ' on' : ''}${over === i ? ' over' : ''}${q!.typeName ? ' typed' : ''}`} onClick={() => activateSlot(q!)} title={title}
                 draggable onDragStart={(e) => { e.dataTransfer.setData(SLOT_DRAG, String(i)); e.dataTransfer.effectAllowed = 'move'; }} {...target}>
                 <span className="slot-n">{i + 1}</span>
-                <t.icon size={docked ? 17 : 20} strokeWidth={1.5} />
+                <t.icon size={docked ? 15 : 20} strokeWidth={1.5} />
                 {!docked && (q!.typeName ? <span className="slot-name" data-no-i18n>{q!.typeName}</span> : <span className="slot-name">{t.label}</span>)}
               </button>
             );
