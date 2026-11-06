@@ -26,7 +26,7 @@ Et snits linje tegnes i hver plan, og snittet markeres i hvert andet snit og hve
 
 Hvert snit ligger på et **markørlag** (**Sections** fra start; **Markørlag** i snittets egenskaber ændrer det), og hver visning vælger, hvad den markerer. **Vis → Snit…** viser projektets snit efter lag for den forreste visning, med et afkrydsningsfelt pr. lag og pr. snit kun for denne visning, hvert snits lag (et eksisterende eller **Nyt lag…**) og i hvor mange visninger hvert er skjult. Et tegningsark markerer, hvad dets visninger markerer.
 
-Et snit skåret på tværs af en bjælke eller en søjle (**Snit her**, **Tværsnit** på fanen Armering 2D) har også greb i planen: træk en af enderne langs linjen for at give den side mere eller mindre margen, og træk midten langs elementet for at flytte stationen, det skærer ved. Snittets vindue følger med.
+Et snit skåret på tværs af en bjælke eller en søjle (**Snit her**, **Tværsnit** på fanen Simpel armering) har også greb i planen: træk en af enderne langs linjen for at give den side mere eller mindre margen, og træk midten langs elementet for at flytte stationen, det skærer ved. Snittets vindue følger med.
 
 ![Vis → Snit… for sydfacaden](shots/sections-dialog.webp)
 

@@ -145,7 +145,8 @@ const furniture: LapinModule = {
   name: 'Furniture',
   summary: 'Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and straight kitchens, parametric types placed against walls, with their plan symbols, schedules and IFC.',
   tabs: [{
-    id: 'furniture', label: 'Furniture', order: 27, include: ['modify'], i18nCtx: 'furniture',
+    // On the Interior tab with the finishes (decision 367).
+    id: 'interior', label: 'Interior', order: 25, include: ['modify'], i18nCtx: 'furniture',
     groups: [
       { label: 'Seating', tools: [sofa, armchair], small: [cornerSofa, chair] },
       { label: 'Beds', tools: [bed], small: [bedside] },

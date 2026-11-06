@@ -4,11 +4,11 @@ order: 98
 summary: Devizul din model: listele tale de prețuri importate din CSV sau Excel, articole pe tipuri și reguli pe materiale, cantitățile din antemăsurătoare înmulțite cu prețurile unitare defalcate pe material, manoperă, utilaj și transport, cheltuieli indirecte, profit și TVA, în lei sau euro; formularele F3, F2 și C6–C9 pe planșe, în Excel și PDF; devizul în IFC.
 ---
 
-## Tabul Cost
+## Tabul Execuție
 
-![Tabul Cost](shots/ribbon-cost.webp)
+![Tabul Execuție](shots/ribbon-cost.webp)
 
-Tabul care se numea **Cantități** se numește acum **Cost**. Păstrează cantitățile și adaugă devizul:
+Grupurile de cost sunt pe tabul **Execuție**, după cele ale programului lucrărilor (tabul se numea **Cantități**, apoi **Cost**). Păstrează cantitățile și adaugă devizul:
 
 - **Antemăsurătoare**, **Extrase…** și **Export XLSX**: cantitățile modelului (vezi [Extrase și grafice](schedules.md)).
 - **Liste de prețuri…**: prețurile tale, importate dintr-un fișier CSV sau Excel (mai jos).
@@ -23,7 +23,7 @@ Devizul se calculează din model la fiecare schimbare. Un perete pe care îl des
 
 ![Importul unei liste de prețuri: sensul fiecărei coloane ghicit după antet](shots/price-import.webp)
 
-Prețurile sunt ale tale: Lapin nu livrează niciun catalog de prețuri sau de norme. **Cost → Liste de prețuri… → Import…** citește un fișier CSV sau XLSX, de exemplu un export din programul tău de devize sau lista unui furnizor. Lapin arată primele rânduri ale fișierului sub antetele lor. Deasupra fiecărei coloane e ce a ghicit Lapin că ține, după antet, în română sau în engleză:
+Prețurile sunt ale tale: Lapin nu livrează niciun catalog de prețuri sau de norme. **Execuție → Liste de prețuri… → Import…** citește un fișier CSV sau XLSX, de exemplu un export din programul tău de devize sau lista unui furnizor. Lapin arată primele rânduri ale fișierului sub antetele lor. Deasupra fiecărei coloane e ce a ghicit Lapin că ține, după antet, în română sau în engleză:
 
 - **Cod** și **Denumire** (*Cod articol*, *Simbol*, *Code*, *Description*), **Unitate** (*U.M.*: mc sau m³, mp sau m², m, buc, kg, t, 100 mp).
 - Prețul unitar defalcat pe **Material**, **Manoperă**, **Utilaj** și **Transport**, sau un singur **Preț unitar (nedefalcat)**, care se socotește atunci material.
@@ -45,9 +45,9 @@ Un rând de deviz vine dintr-un **articol**: un cod din lista ta de prețuri. El
 
 Articolul de pe tip are întâietate. Un strat pe care articolele tipului îl măsoară deja nu mai e prețuit de o regulă. Un articol pe elementul întreg îl prețuiește tot, deci regulile se dau la o parte. Pentru un perete stratificat, dă tipului un articol pe **miez** (zidăria, la volum) și reguli pentru finisaje (tencuiala, la arie). Peretele e atunci prețuit strat cu strat: zidăria la **Pereți**, tencuiala la **Finisaje și izolații**.
 
-**Cost → Atribuie articole…** listează tipurile proiectului pe care le folosesc elementele și materialele straturilor lor. Fiecare rând pornește cu articolul pe care îl are, sau cu cel ales pentru un tip sau material cu același nume într-un proiect anterior, sau cu cel sugerat de Lapin: un cod scris în numele lui, sau articolul cu cele mai multe cuvinte comune (*zidărie*, *BCA*, *tencuială*, *C25/30*). Pentru un tip stratificat propune miezul. Scrie sau alege un cod, alege partea și măsura, bifează rândurile dorite și apasă **Aplică**: un singur pas de anulat. Alegerile tale sunt ținute minte pe acest calculator pentru proiectele următoare.
+**Execuție → Atribuie articole…** listează tipurile proiectului pe care le folosesc elementele și materialele straturilor lor. Fiecare rând pornește cu articolul pe care îl are, sau cu cel ales pentru un tip sau material cu același nume într-un proiect anterior, sau cu cel sugerat de Lapin: un cod scris în numele lui, sau articolul cu cele mai multe cuvinte comune (*zidărie*, *BCA*, *tencuială*, *C25/30*). Pentru un tip stratificat propune miezul. Scrie sau alege un cod, alege partea și măsura, bifează rândurile dorite și apasă **Aplică**: un singur pas de anulat. Alegerile tale sunt ținute minte pe acest calculator pentru proiectele următoare.
 
-Tipurile de cofraj și de schelă din tabul **Organizare de șantier** aveau deja un cod de articol (decizia 152): el e un articol pe tip, măsurat după unitatea prețului.
+Tipurile de cofraj și de schelă din organizarea de șantier (tabul **Teren**) aveau deja un cod de articol (decizia 152): el e un articol pe tip, măsurat după unitatea prețului.
 
 Fazele contează: un element care era acolo înainte de lucrări (făcut într-o fază *existentă*) nu se prețuiește. Unul demolat se prețuiește doar prin articolul tipului său a cărui parte e **Demolarea lui (doar când e demolat)**, la capitolul **Demolare**.
 
@@ -55,7 +55,7 @@ Fazele contează: un element care era acolo înainte de lucrări (făcut într-o
 
 ![Devizul: capitole, rânduri, cotele și totalurile](shots/estimate.webp)
 
-**Cost → Deviz…** deschide devizul sub vedere, ca Gantt-ul. Rândurile lui sunt grupate în **capitole** pe categorii de lucrări: terasamente, fundații, structură, pereți, acoperiș, uși și ferestre, finisaje și izolații, instalații, organizare de șantier, altele. Un articol poate numi un capitol al lui. **Pe etaje și categorii de lucrări** pune etajul înaintea fiecărui capitol.
+**Execuție → Deviz…** deschide devizul sub vedere, ca Gantt-ul. Rândurile lui sunt grupate în **capitole** pe categorii de lucrări: terasamente, fundații, structură, pereți, acoperiș, uși și ferestre, finisaje și izolații, instalații, organizare de șantier, altele. Un articol poate numi un capitol al lui. **Pe etaje și categorii de lucrări** pune etajul înaintea fiecărui capitol.
 
 Fiecare rând arată codul, denumirea și unitatea din lista de prețuri, **cantitatea** din model (aceeași ca în antemăsurătoare), prețul unitar defalcat pe **Material**, **Manoperă**, **Utilaj** și **Transport**, prețul unitar și **valoarea**. Un clic pe rând îi selectează elementele în vederi. Selectează elemente într-o vedere și rândurile lor se marchează în deviz.
 
@@ -92,9 +92,9 @@ Formularele urmează practica obișnuită după metodologia Ordinului 863/2008. 
 
 ![Costul în timp: curba S peste barele lunilor, tabelul lunar sub ea](shots/cost-time.webp)
 
-Când proiectul are un program al lucrărilor (tabul **Planificare**), devizul se pune pe el fără nicio legare în plus. Valoarea fiecărui rând se împarte pe elementele lui, iar partea fiecărui element merge la sarcinile care construiesc partea măsurată de rând: articolul zidăriei la sarcina care ia miezul pereților, al tencuielii la cea care le ia finisajele. Un articol pe tot elementul, construit în două sarcini, se împarte egal între ele. Un rând propriu merge la sarcina aleasă lângă descrierea lui (implicit **În nicio sarcină**). Costul unei sarcini se întinde egal pe zilele ei lucrătoare, deci nu se cheltuie nimic într-un sfârșit de săptămână, într-o sărbătoare sau, pentru o sarcină umedă, în pauza de iarnă.
+Când proiectul are un program al lucrărilor (tabul **Execuție**), devizul se pune pe el fără nicio legare în plus. Valoarea fiecărui rând se împarte pe elementele lui, iar partea fiecărui element merge la sarcinile care construiesc partea măsurată de rând: articolul zidăriei la sarcina care ia miezul pereților, al tencuielii la cea care le ia finisajele. Un articol pe tot elementul, construit în două sarcini, se împarte egal între ele. Un rând propriu merge la sarcina aleasă lângă descrierea lui (implicit **În nicio sarcină**). Costul unei sarcini se întinde egal pe zilele ei lucrătoare, deci nu se cheltuie nimic într-un sfârșit de săptămână, într-o sărbătoare sau, pentru o sarcină umedă, în pauza de iarnă.
 
-**Cost → Costul în timp** deschide, sub vedere:
+**Execuție → Costul în timp** deschide, sub vedere:
 
 - **curba S**: costul cumulat planificat pe durata programului, cel al **liniei de bază** (întrerupt) când e salvată una, și **lucrul realizat** (gros) până la data de stare: costul fiecărei sarcini înmulțit cu procentul ei realizat, întins de la începutul ei real;
 - barele lunilor, pe scara din dreapta: planificat și realizat;

@@ -61,6 +61,6 @@ Select an elevator to change its lowest and highest stop, tick the storeys it st
 
 **Architecture → Elevator schedule** lists each elevator with its kind, drive, rated load, persons, car, doors, the stops it serves, the storeys it runs between, its travel, speed and shaft.
 
-Each elevator has a type made from its kind, load and car (Medium passenger 630 kg, 1100 × 1400): elevators alike share it, so a price article put on the type (**Cost → Map articles…**) prices them all, and planning finds them by their class (IfcTransportElement).
+Each elevator has a type made from its kind, load and car (Medium passenger 630 kg, 1100 × 1400): elevators alike share it, so a price article put on the type (**Construction → Map articles…**) prices them all, and planning finds them by their class (IfcTransportElement).
 
 In IFC an elevator is an **IfcTransportElement** with the predefined type **ELEVATOR**, of an **IfcTransportElementType**, with IFC's own **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) and **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). Lapin reads its own file back as a native elevator, with its stops and the floors' openings.

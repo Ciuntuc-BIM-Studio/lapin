@@ -9,14 +9,14 @@ summary: Liste puertas, ventanas, dinteles, habitaciones y todo lo que cuenta un
 Todo lo que Lapin modela se mide a partir de su geometría: la longitud, la altura, el área lateral bruta y neta y el volumen de un muro, el área y el volumen de cada capa, las áreas y el volumen de un forjado, el área y el perímetro de un local, el número de puertas. Hay tres caminos:
 
 - **Un elemento.** Selecciónalo: la sección **Cantidades** del panel de propiedades muestra lo que mide, y después cada capa o parte.
-- **Todo el modelo.** **Costes → Mediciones** crea (o abre) las mediciones: todos los elementos que el modelo mide, sumados fila a fila, con el número, la longitud, el área bruta y neta, el volumen bruto y neto y el peso. Su barra elige qué se suma junto: **Por clase y tipo** (por defecto: los muros de cada tipo de muro, los forjados de cada tipo…), **Por material** (cada capa bajo su material: el ladrillo, el enlucido y el aislamiento de los muros por separado, el hormigón de los dinteles), por planta o combinados. **Todos los elementos** elige qué clases lista (solo muros y forjados, por ejemplo). Las mediciones siguen al modelo como cualquier tabla y admiten filas y columnas propias (una partida alzada, un precio unitario).
-- **Cualquier otra lista.** **Costes → Tablas…** crea cualquier tabla que ofrezca la edición: locales, acabados, carpintería, composiciones de tipos, madera, armaduras, encofrados, acero… La misma lista está en **+** junto a **Tablas** en el navegador del proyecto.
+- **Todo el modelo.** **Ejecución → Mediciones** crea (o abre) las mediciones: todos los elementos que el modelo mide, sumados fila a fila, con el número, la longitud, el área bruta y neta, el volumen bruto y neto y el peso. Su barra elige qué se suma junto: **Por clase y tipo** (por defecto: los muros de cada tipo de muro, los forjados de cada tipo…), **Por material** (cada capa bajo su material: el ladrillo, el enlucido y el aislamiento de los muros por separado, el hormigón de los dinteles), por planta o combinados. **Todos los elementos** elige qué clases lista (solo muros y forjados, por ejemplo). Las mediciones siguen al modelo como cualquier tabla y admiten filas y columnas propias (una partida alzada, un precio unitario).
+- **Cualquier otra lista.** **Ejecución → Tablas…** crea cualquier tabla que ofrezca la edición: locales, acabados, carpintería, composiciones de tipos, madera, armaduras, encofrados, acero… La misma lista está en **+** junto a **Tablas** en el navegador del proyecto.
 
 ![Las mediciones agrupadas por clase y material](shots/quantity-takeoff.webp)
 
 Por material, un material medido por **área** (ver [Materiales](materials.md)) tiene una fila por cada espesor en que se coloca, con una columna **Espesor (mm)**: *Lana mineral 150 mm: 84,20 m²*, *Lana mineral 200 mm: 31,00 m²*. Uno medido por volumen tiene solo sus m³, por masa sus kg, por piezas sus **Piezas**. Una columna **Nota** indica cuándo una capa no tiene un espesor del catálogo del material. El presupuesto hace lo mismo: un artículo sobre un material se mide como dice el material, una línea por espesor. Un material sin regla se mide como antes.
 
-**Costes → Exportar XLSX** guarda directamente las mediciones como libro de cálculo (en el navegador se descarga).
+**Ejecución → Exportar XLSX** guarda directamente las mediciones como libro de cálculo (en el navegador se descarga).
 
 ## Cantidades en una lámina
 
@@ -32,7 +32,7 @@ En la lámina, arrastra la tabla para moverla; una tabla más larga que el marco
 
 ## Crear una tabla
 
-Una tabla es una lista que rellena el modelo: puertas y ventanas, dinteles, habitaciones, armaduras, madera, encofrados y más. Haga clic en **+** junto a **Tablas** en el navegador del proyecto y elija lo que lista, o use la herramienta de un módulo (Madera → Lista de madera, Medios auxiliares → Tabla de encofrados…). Haga doble clic en ella en el navegador para abrirla en una pestaña. Una tabla sigue al modelo: mueva un muro, añada una ventana, y la tabla cambia con ellos.
+Una tabla es una lista que rellena el modelo: puertas y ventanas, dinteles, habitaciones, armaduras, madera, encofrados y más. Haga clic en **+** junto a **Tablas** en el navegador del proyecto y elija lo que lista, o use la herramienta de un módulo (Madera → Lista de madera, Emplazamiento → Tabla de encofrados…). Haga doble clic en ella en el navegador para abrirla en una pestaña. Una tabla sigue al modelo: mueva un muro, añada una ventana, y la tabla cambia con ellos.
 
 Las tablas de **carpintería**, de **puertas**, de **ventanas** y de **dinteles** muestran una ficha por tipo, con su dibujo (la vista interior por defecto) y sus valores fila a fila. Las demás tablas son una tabla simple, una fila por elemento y una línea de totales al final.
 
@@ -94,7 +94,7 @@ Cuando solo interesa el resultado, haz clic en **Editor de la tabla** encima de 
 
 ## Molduras de muro
 
-La tabla **Molduras de muro** (**Arquitectura → Tabla de molduras de muro**, o **Costes → Tablas…** → **Molduras de muro**) suma las molduras y ranuras de muro del proyecto por perfil, clase y material: cuántas hay, sus piezas (una moldura cortada por huecos son varias), su longitud a lo largo de las caras y su volumen; en una ranura, el volumen que quita al muro. Un total para las molduras y otro para las ranuras cierran la tabla. Su barra las suma primero **por perfil**, **por planta** o **por tipo de muro**. Los retornos cuentan en el volumen, no en la longitud.
+La tabla **Molduras de muro** (**Arquitectura → Tabla de molduras de muro**, o **Ejecución → Tablas…** → **Molduras de muro**) suma las molduras y ranuras de muro del proyecto por perfil, clase y material: cuántas hay, sus piezas (una moldura cortada por huecos son varias), su longitud a lo largo de las caras y su volumen; en una ranura, el volumen que quita al muro. Un total para las molduras y otro para las ranuras cierran la tabla. Su barra las suma primero **por perfil**, **por planta** o **por tipo de muro**. Los retornos cuentan en el volumen, no en la longitud.
 
 ## Exportar
 

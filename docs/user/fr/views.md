@@ -26,7 +26,7 @@ La ligne d’une coupe est dessinée dans chaque plan, et la coupe est repérée
 
 Chaque coupe est sur un **calque de repères** (**Sections** au départ ; **Calque du repère** dans les propriétés de la coupe le change), et chaque vue choisit ce qu’elle repère. **Vue → Coupes…** liste les coupes du projet par calque pour la vue au premier plan, avec une case par calque et par coupe pour cette vue seulement, le calque de chaque coupe (un calque existant, ou **Nouveau calque…**) et dans combien de vues chacune est masquée. Une feuille repère ce que ses vues repèrent.
 
-Une coupe faite en travers d’une poutre ou d’un poteau (**Coupe ici**, **Coupe transversale** dans l’onglet Ferraillage 2D) a aussi des poignées dans le plan : glissez l’une des extrémités le long de la ligne pour donner à ce côté plus ou moins de marge, et le milieu le long de l’élément pour déplacer la station où elle passe. La fenêtre de la coupe suit.
+Une coupe faite en travers d’une poutre ou d’un poteau (**Coupe ici**, **Coupe transversale** dans l’onglet Ferraillage simple) a aussi des poignées dans le plan : glissez l’une des extrémités le long de la ligne pour donner à ce côté plus ou moins de marge, et le milieu le long de l’élément pour déplacer la station où elle passe. La fenêtre de la coupe suit.
 
 ![Vue → Coupes… pour l’élévation sud](shots/sections-dialog.webp)
 

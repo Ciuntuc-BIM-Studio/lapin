@@ -60,9 +60,9 @@ Hvert element er en del for sig: listen **Roof timber** viser dem som en skærel
 
 ## Nedhængte lofter
 
-**Overflader → Loft** (<kbd>CG</kbd>) tegner et nedhængt loft over et omrids, du klikker; **Loft i et rum** fylder det rum, du klikker i, efter dets omrids. Et loft hænger i sin **Højde** over etagen (2700 mm, medmindre du ændrer den i egenskaberne).
+**Interiør → Loft** (<kbd>CG</kbd>) tegner et nedhængt loft over et omrids, du klikker; **Loft i et rum** fylder det rum, du klikker i, efter dets omrids. Et loft hænger i sin **Højde** over etagen (2700 mm, medmindre du ændrer den i egenskaberne).
 
-Dets type i **Overflader → Lofttyper** angiver **Systemet**: **Plader på synligt skinnesystem** (pladens bredde, længde og tykkelse, skinnernes synlige bredde, dybde og drejning, nedhæng op til konstruktionen med deres afstand) eller **Gips, sammenhængende**. Skinnerne centreres på loftet, så de afskårne plader ved kanterne bliver ens.
+Dets type i **Interiør → Lofttyper** angiver **Systemet**: **Plader på synligt skinnesystem** (pladens bredde, længde og tykkelse, skinnernes synlige bredde, dybde og drejning, nedhæng op til konstruktionen med deres afstand) eller **Gips, sammenhængende**. Skinnerne centreres på loftet, så de afskårne plader ved kanterne bliver ens.
 
 **Lyspanel** og **Luftindblæsning** sætter et i det felt, du klikker på; et klik på samme felt med det andet værktøj skifter det. I egenskabspanelet sætter **Fordel** lyspaneler eller luftindblæsninger i hvert så mange felt, og **Ryd** fjerner dem. Listerne tæller hele plader, lyspaneler og luftindblæsninger, og loftet går til IFC som IfcCovering af typen CEILING.
 
@@ -72,9 +72,9 @@ Dets type i **Overflader → Lofttyper** angiver **Systemet**: **Plader på synl
 
 ## Fodlister
 
-**Overflader → Fodliste i rum** (<kbd>SK</kbd>) lægger en fodliste rundt i det rum, du klikker i, langs væggenes flader, afbrudt ved hver dør (enhver åbning, der går ned til gulvet); et klik mellem vægge uden rum følger dem på samme måde. Et rums fodliste følger rummet: flyt en væg eller en dør, og fodlisten går med. **Fodliste** tegner en langs en linje, du klikker på en vægs flade (Enter afslutter); listen kommer på siden væk fra væggen, og **Skift side** i dens egenskaber vender den.
+**Interiør → Fodliste i rum** (<kbd>SK</kbd>) lægger en fodliste rundt i det rum, du klikker i, langs væggenes flader, afbrudt ved hver dør (enhver åbning, der går ned til gulvet); et klik mellem vægge uden rum følger dem på samme måde. Et rums fodliste følger rummet: flyt en væg eller en dør, og fodlisten går med. **Fodliste** tegner en langs en linje, du klikker på en vægs flade (Enter afslutter); listen kommer på siden væk fra væggen, og **Skift side** i dens egenskaber vender den.
 
-Dens type, under **Overflader → Fodlistetyper**, sætter **Profilet** — **Glat (firkantet)**, **Affaset (MDF)**, **Profileret (træ)**, **Med hulkehl (metal)**, **Halvrund top** eller **Afrundet kant**, tegnet ved siden af i skala —, **Højden** (40 til 300 mm), **Tykkelsen** (5 til 40 mm), **Materialet** og dets farve. **Fra biblioteket** henter færdige typer ind i projektet: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 og Bullnose 70. Mens et fodlisteværktøj er aktivt, viser egenskabspanelet den type, det lægger, til at vælge før klikket.
+Dens type, under **Interiør → Fodlistetyper**, sætter **Profilet** — **Glat (firkantet)**, **Affaset (MDF)**, **Profileret (træ)**, **Med hulkehl (metal)**, **Halvrund top** eller **Afrundet kant**, tegnet ved siden af i skala —, **Højden** (40 til 300 mm), **Tykkelsen** (5 til 40 mm), **Materialet** og dets farve. **Fra biblioteket** henter færdige typer ind i projektet: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 og Bullnose 70. Mens et fodlisteværktøj er aktivt, viser egenskabspanelet den type, det lægger, til at vælge før klikket.
 
 I sine egenskaber har en fodliste sin type, en **Fodforskydning** over gulvet og **Huller ved dørene** (slået fra løber den forbi dem). **Fodlisteskema** (eller **Fodlister** i projektbrowserens liste over nye skemaer) viser dem efter type med stykker og længde, uden dørenes huller. Listen er geret i hjørnerne; en plan tegner dens forkant, og en fodliste går til IFC som en IfcCovering af typen SKIRTINGBOARD, af en IfcCoveringType af samme type.
 

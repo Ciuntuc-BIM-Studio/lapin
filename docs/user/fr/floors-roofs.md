@@ -60,9 +60,9 @@ Chaque pièce est une partie à part : le tableau **Roof timber** les donne en l
 
 ## Faux plafonds
 
-**Finitions → Plafond** (<kbd>CG</kbd>) dessine un faux plafond sur un contour cliqué ; **Plafond dans une pièce** remplit la pièce cliquée en suivant son contour. Un plafond est suspendu à sa **Hauteur** au-dessus de l’étage (2700 mm sauf réglage dans ses propriétés).
+**Intérieur → Plafond** (<kbd>CG</kbd>) dessine un faux plafond sur un contour cliqué ; **Plafond dans une pièce** remplit la pièce cliquée en suivant son contour. Un plafond est suspendu à sa **Hauteur** au-dessus de l’étage (2700 mm sauf réglage dans ses propriétés).
 
-Son type, dans **Finitions → Types de plafond**, règle le **Système** : **Dalles sur ossature apparente** (largeur, longueur et épaisseur de la dalle, largeur vue, hauteur et rotation de l’ossature, suspentes jusqu’à la structure à leur espacement) ou **Plaques de plâtre, continu**. L’ossature est centrée sur le plafond, si bien que les dalles coupées en rive sont égales.
+Son type, dans **Intérieur → Types de plafond**, règle le **Système** : **Dalles sur ossature apparente** (largeur, longueur et épaisseur de la dalle, largeur vue, hauteur et rotation de l’ossature, suspentes jusqu’à la structure à leur espacement) ou **Plaques de plâtre, continu**. L’ossature est centrée sur le plafond, si bien que les dalles coupées en rive sont égales.
 
 **Dalle lumineuse** et **Diffuseur d’air** en posent un dans la case cliquée ; un clic sur la même case avec l’autre outil le change. Dans le panneau des propriétés, **Répartir** pose des dalles lumineuses ou des diffuseurs toutes les tant de cases, et **Vider** les retire. Les nomenclatures comptent les dalles entières, les dalles lumineuses et les diffuseurs, et le plafond part en IFC comme IfcCovering de type CEILING.
 
@@ -72,9 +72,9 @@ Son type, dans **Finitions → Types de plafond**, règle le **Système** : **Da
 
 ## Plinthes
 
-**Finitions → Plinthe dans la pièce** (<kbd>SK</kbd>) pose une plinthe tout autour de la pièce cliquée, le long des faces des murs, interrompue à chaque porte (toute ouverture qui descend jusqu’au sol) ; un clic entre des murs sans pièce les suit de la même façon. La plinthe d’une pièce suit la pièce : déplacez un mur ou une porte et la plinthe les suit. **Plinthe** en dessine une le long d’une ligne cliquée sur la face d’un mur (Entrée termine) ; la plinthe se place du côté opposé au mur, et **Changer de côté** dans ses propriétés la retourne.
+**Intérieur → Plinthe dans la pièce** (<kbd>SK</kbd>) pose une plinthe tout autour de la pièce cliquée, le long des faces des murs, interrompue à chaque porte (toute ouverture qui descend jusqu’au sol) ; un clic entre des murs sans pièce les suit de la même façon. La plinthe d’une pièce suit la pièce : déplacez un mur ou une porte et la plinthe les suit. **Plinthe** en dessine une le long d’une ligne cliquée sur la face d’un mur (Entrée termine) ; la plinthe se place du côté opposé au mur, et **Changer de côté** dans ses propriétés la retourne.
 
-Son type, dans **Finitions → Types de plinthe**, fixe le **Profil** — **Droite (carrée)**, **Biseautée (MDF)**, **Moulurée (bois)**, **À gorge (métal)**, **Bord demi-rond** ou **Bord arrondi**, dessiné à côté à l’échelle —, la **Hauteur** (40 à 300 mm), l’**Épaisseur** (5 à 40 mm), le **Matériau** et sa couleur. **De la bibliothèque** apporte au projet des types tout faits : MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 et Bullnose 70. Tant qu’un outil de plinthe est actif, le panneau des propriétés montre le type qu’il pose, à choisir avant le clic.
+Son type, dans **Intérieur → Types de plinthe**, fixe le **Profil** — **Droite (carrée)**, **Biseautée (MDF)**, **Moulurée (bois)**, **À gorge (métal)**, **Bord demi-rond** ou **Bord arrondi**, dessiné à côté à l’échelle —, la **Hauteur** (40 à 300 mm), l’**Épaisseur** (5 à 40 mm), le **Matériau** et sa couleur. **De la bibliothèque** apporte au projet des types tout faits : MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 et Bullnose 70. Tant qu’un outil de plinthe est actif, le panneau des propriétés montre le type qu’il pose, à choisir avant le clic.
 
 Dans ses propriétés, une plinthe a son type, un **Décalage de base** au-dessus du sol et **Interrompue aux portes** (décoché, elle passe devant). **Nomenclature des plinthes** (ou **Plinthes** dans la liste des nouvelles nomenclatures du navigateur du projet) les liste par type avec leurs morceaux et leur longueur, sans les vides des portes. La plinthe est coupée d’onglet aux angles ; un plan dessine son arête avant, et une plinthe part en IFC comme un IfcCovering de type SKIRTINGBOARD, d’un IfcCoveringType du même type.
 

@@ -161,7 +161,7 @@ Selectează un ventilator ca să-i schimbi tipul, **înălțimea peste pardoseal
 
 **Extrasul de ventilatoare** arată fiecare ventilator cu încăperea, felul, mărimea, debitul, montajul, comanda, înălțimea și gura de evacuare, plus debitul total. **Verificarea evacuării pe încăperi** arată fiecare baie, WC și bucătărie (și fiecare încăpere cu ventilator) cu volumul, debitul necesar și cât dau ventilatoarele ei: o baie 8 schimburi de aer pe oră și cel puțin 54 m³/h, un WC 6 și 25 m³/h, o bucătărie 6 și 108 m³/h. Sunt valori orientative; verifică-le după normativul după care proiectezi.
 
-Un tip nou are articolul de deviz `LAP-FAN`, numărat pe bucată (Cost → Map articles… îl schimbă).
+Un tip nou are articolul de deviz `LAP-FAN`, numărat pe bucată (Execuție → Atribuie articole… îl schimbă).
 
 IFC scrie un ventilator ca **IfcFan** al unui **IfcFanType**, cu felul lui predefinit (PROPELLORAXIAL pentru unul de perete sau de geam, CENTRIFUGALRADIAL pentru unul de tavan, TUBEAXIAL pentru unul de tubulatură) și **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); golul din perete ca IfcOpeningElement. Lapin le citește înapoi ca ventilatoarele lui.
 

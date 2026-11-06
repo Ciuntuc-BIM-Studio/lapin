@@ -79,7 +79,7 @@ export function InterfaceDialog() {
                 return (
                   <span key={id} className="tab-slot">
                     <label className="check small" title={fixed ? 'Always shown: Interface… is here' : undefined}>
-                      <input type="checkbox" checked={at >= 0} disabled={fixed} onChange={(e) => showTab(id, e.target.checked, all)} /> {t.label}
+                      <input type="checkbox" checked={at >= 0} disabled={fixed} onChange={(e) => showTab(id, e.target.checked, all)} /> <span data-i18n-ctx={t.i18nCtx}>{t.label}</span>
                     </label>
                     {at >= 0 && <>
                       <button type="button" className="icon mini" title="Move left" disabled={at === 0} onClick={() => moveTab(id, -1, all)}><ChevronLeft size={12} /></button>

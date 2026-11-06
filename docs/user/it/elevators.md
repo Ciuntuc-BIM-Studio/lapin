@@ -61,6 +61,6 @@ Seleziona un ascensore per cambiarne la fermata più bassa e quella più alta, s
 
 **Architettura → Abaco degli ascensori** elenca ogni ascensore con tipo, azionamento, portata nominale, persone, cabina, porte, le fermate servite, i piani fra cui corre, la corsa, la velocità e il vano.
 
-Ogni ascensore ha un tipo ricavato da genere, portata e cabina (Passeggeri medio 630 kg, 1100 × 1400): gli ascensori uguali lo condividono, così una voce di prezzo messa sul tipo (**Costi → Assegna voci…**) li prezza tutti, e la pianificazione li trova dalla loro classe (IfcTransportElement).
+Ogni ascensore ha un tipo ricavato da genere, portata e cabina (Passeggeri medio 630 kg, 1100 × 1400): gli ascensori uguali lo condividono, così una voce di prezzo messa sul tipo (**Esecuzione → Assegna voci…**) li prezza tutti, e la pianificazione li trova dalla loro classe (IfcTransportElement).
 
 In IFC un ascensore è un **IfcTransportElement** con il tipo predefinito **ELEVATOR**, di un **IfcTransportElementType**, con i set di IFC **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) e **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). Lapin rilegge il proprio file come un ascensore nativo, con le sue fermate e le aperture nei solai.

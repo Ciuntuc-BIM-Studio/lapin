@@ -4,9 +4,9 @@ order: 97
 summary: Arbejdsplanen i et Gantt-diagram: opgaver i en WBS, milepæle, kæder med forskydninger, den kritiske vej beregnet på en kalender med Rumæniens lovbestemte helligdage; 4D-simuleringen af bygningen, der vokser dag for dag, i visninger, på ark og som video; fremdriften markeret på byggepladsen, også fra en telefon, mod en basisplan; til og fra MS Project, IFC og Excel.
 ---
 
-## Fanen Tidsplanlægning
+## Fanen Udførelse
 
-![Fanen Tidsplanlægning](shots/ribbon-planning.webp)
+![Fanen Udførelse](shots/ribbon-planning.webp)
 
 - **Generér tidsplan…**: en hel tidsplan lavet ud fra modellen i ét trin (nedenfor).
 - **Gantt**: åbner tidsplanen under visningen. Skærmen deles i to rækker, så du ser modellen øverst og tidsplanen nederst.
@@ -24,7 +24,7 @@ Et projekt har én tidsplan. Den oprettes første gang, du tilføjer en opgave, 
 
 ![Generér tidsplan: skabelonerne, fanen Start og forhåndsvisningen](shots/planning-generate.webp)
 
-**Tidsplanlægning → Generér tidsplan…** (også i Gantt-diagrammets værktøjslinje) laver en hel tidsplan ud fra modellen: en opgave for hvert trin i arbejdet og, hvor trinnet går etage for etage, én pr. etage, hver opgave allerede med sine elementer. Til venstre er **skabelonerne**: **Betonskelet**, **Bærende murværk**, **Stålhal** og **Træskelet**. Lapin markerer den, modellen beder om, som *foreslået*: stålhallen, hvis modellen har en, træskelettet, hvis væggene er rammevægge, bærende murværk, hvis den ikke har søjler, ellers betonskelettet. Over dem er projektets stilarter (**Gem som stil…** gemmer det, du har indstillet).
+**Udførelse → Generér tidsplan…** (også i Gantt-diagrammets værktøjslinje) laver en hel tidsplan ud fra modellen: en opgave for hvert trin i arbejdet og, hvor trinnet går etage for etage, én pr. etage, hver opgave allerede med sine elementer. Til venstre er **skabelonerne**: **Betonskelet**, **Bærende murværk**, **Stålhal** og **Træskelet**. Lapin markerer den, modellen beder om, som *foreslået*: stålhallen, hvis modellen har en, træskelettet, hvis væggene er rammevægge, bærende murværk, hvis den ikke har søjler, ellers betonskelettet. Over dem er projektets stilarter (**Gem som stil…** gemmer det, du har indstillet).
 
 Til højre er **forhåndsvisningen**: de opgaver, generatoren ville lave, som bjælker, hver med den mængde, der gav dens varighed, og under dem optællingerne:
 
@@ -153,7 +153,7 @@ Også et tag bygges i lag: dets konstruktion (dækket på et fladt tag, en hvæl
 
 ![Markeringens kort over 3D, en vægs to opgaver markeret i Gantt](shots/planning-element-tasks.webp)
 
-Mens Gantt er åben, siger et kort over modelvisningen, hvor mange elementer der er markeret, og hvilke opgaver de er i. Træk det i håndtaget hen på en opgaves række: elementerne kommer med i opgaven. Hold <kbd>Skift</kbd>, når du slipper, for at tage dem ud af den. **Føj til opgave…** (<kbd>T</kbd> <kbd>A</kbd>, også på fanen Tidsplanlægning) vælger opgaven fra en liste.
+Mens Gantt er åben, siger et kort over modelvisningen, hvor mange elementer der er markeret, og hvilke opgaver de er i. Træk det i håndtaget hen på en opgaves række: elementerne kommer med i opgaven. Hold <kbd>Skift</kbd>, når du slipper, for at tage dem ud af den. **Føj til opgave…** (<kbd>T</kbd> <kbd>A</kbd>, også på fanen Udførelse) vælger opgaven fra en liste.
 
 ![Føj til opgave](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ Det, du lægger i eller tager ud i hånden, er opgavens **undtagelser**: reglen 
 
 ### Elementer uden opgave
 
-Så snart en opgave tager elementer, siger Gantts værktøjslinje, hvor mange elementer der ikke har nogen opgave eller har lag, som ingen opgave tager; et klik markerer dem, klar til at trække hen på en opgave. **Tidsplanlægning → Elementer uden opgave** gør det samme. **Administrer → Kontrol** viser dem også, under *Elements with a task*: én advarsel pr. element, et klik markerer det. Eksisterende elementer, der bliver stående, behøver ingen opgave.
+Så snart en opgave tager elementer, siger Gantts værktøjslinje, hvor mange elementer der ikke har nogen opgave eller har lag, som ingen opgave tager; et klik markerer dem, klar til at trække hen på en opgave. **Udførelse → Elementer uden opgave** gør det samme. **Administrer → Kontrol** viser dem også, under *Elements with a task*: én advarsel pr. element, et klik markerer det. Eksisterende elementer, der bliver stående, behøver ingen opgave.
 
 ### I IFC og MS Project
 
@@ -171,7 +171,7 @@ IFC-eksporten skriver, hvad hver opgave bygger, som IfcRelAssignsToProduct (elem
 
 ![Huset på en dag i tidsplanen: førstesalens dæk i gang i sin forskalling, væggene ovenover ikke startet](shots/planning-simulation.webp)
 
-**Tidsplanlægning → Simulér** (også **Simulér** i Gantt-diagrammets værktøjslinje) viser modellen, som tidsplanen har den på en dag. Gantt-diagrammet åbner under visningen, hvis det ikke er åbent, med afspilleren øverst og dagen som et bånd hen over diagrammet:
+**Udførelse → Simulér** (også **Simulér** i Gantt-diagrammets værktøjslinje) viser modellen, som tidsplanen har den på en dag. Gantt-diagrammet åbner under visningen, hvis det ikke er åbent, med afspilleren øverst og dagen som et bånd hen over diagrammet:
 
 - det, der **ikke er startet**, er skjult (eller vist som et blegt spøgelse, i indstillingerne);
 - det, der er **i gang**, tegnes i sin farve (rav);
@@ -208,7 +208,7 @@ En plan, et snit, en facade eller en gemt 3D-visning har **Tilstand på dato** i
 
 ![Etapeark: datoerne fra kapitlernes slutninger](shots/planning-stages-dialog.webp)
 
-**Tidsplanlægning → Etapeark…** (også i afspilleren) sætter modellen på flere datoer side om side på et nyt ark. Den tegnes fra **3D-visningen, som den ser ud nu** (et billede på hver dato) eller fra en plan, et snit eller en facade, som motoren tegner på hver dato. Datoerne er **slutningen af hvert kapitel** (hver opgave øverst i WBS'en), **slutningen af hver måned** eller **valgte** datoer. Hvert billede er mærket med sin dato og opgaverne i gang.
+**Udførelse → Etapeark…** (også i afspilleren) sætter modellen på flere datoer side om side på et nyt ark. Den tegnes fra **3D-visningen, som den ser ud nu** (et billede på hver dato) eller fra en plan, et snit eller en facade, som motoren tegner på hver dato. Datoerne er **slutningen af hvert kapitel** (hver opgave øverst i WBS'en), **slutningen af hver måned** eller **valgte** datoer. Hvert billede er mærket med sin dato og opgaverne i gang.
 
 ![Et etapeark](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ En plan, et snit, en facade eller en gemt 3D-visning har **Tilstand på dato** i
 
 ![Gantt-diagrammet på et ark](shots/planning-gantt-sheet.webp)
 
-**Tidsplanlægning → Gantt på ark** sætter tidsplanen på et nyt ark: tabellen (række, WBS og opgave, dage, start, slut) og bjælkerne på en tidsskala, de kritiske opgaver i rødt, sammenfatningerne som klammer, milepælene som ruder, kæderne. En tidsplan, der er højere end arket, kommer på så mange ark, som den behøver, med sit hoved på hvert. Den tegnes som vektorer, ligesom visningerne, og udskrives i PDF'en.
+**Udførelse → Gantt på ark** sætter tidsplanen på et nyt ark: tabellen (række, WBS og opgave, dage, start, slut) og bjælkerne på en tidsskala, de kritiske opgaver i rødt, sammenfatningerne som klammer, milepælene som ruder, kæderne. En tidsplan, der er højere end arket, kommer på så mange ark, som den behøver, med sit hoved på hvert. Den tegnes som vektorer, ligesom visningerne, og udskrives i PDF'en.
 
 ### Eksportér video
 
 ![Eksportér video](shots/planning-video.webp)
 
-**Tidsplanlægning → Eksportér video…** (også i afspilleren) optager 3D-visningen, hvorfra den ser nu, fra én dag til en anden, et billede pr. **en dag** eller **en uge**, med datoen og opgaverne i gang skrevet nedenunder. Filen er en WebM-video, eller MP4, hvor systemet kun tilbyder det (macOS-appen). En browser, der ikke optager video, gemmer i stedet billederne som PNG-filer i en ZIP.
+**Udførelse → Eksportér video…** (også i afspilleren) optager 3D-visningen, hvorfra den ser nu, fra én dag til en anden, et billede pr. **en dag** eller **en uge**, med datoen og opgaverne i gang skrevet nedenunder. Filen er en WebM-video, eller MP4, hvor systemet kun tilbyder det (macOS-appen). En browser, der ikke optager video, gemmer i stedet billederne som PNG-filer i en ZIP.
 
 ## Fremdriften
 
@@ -241,7 +241,7 @@ Bjælkerne viser den udførte del mørkere. Egenskaber siger, hvor en procentdel
 
 ### Markering af elementer på byggepladsen
 
-**Tidsplanlægning → Markér færdig** (MD) og **Markér påbegyndt** (MS) markerer de elementer, der er valgt i 3D eller i en plan, på statusdatoen (i dag, når der ikke er nogen), i hver opgave, der omfatter dem; **Markér ikke påbegyndt** fjerner markeringerne. Et valgt elements egenskaber viser dets tilstand på byggepladsen med de samme tre knapper og i hver af dets opgaver den dag, det blev færdigt eller påbegyndt, med en knap, der markerer det færdigt i netop den opgave. En lagdelt væg i en murer- og en pudsopgave markeres i begge eller i én fra dens række.
+**Udførelse → Markér færdig** (MD) og **Markér påbegyndt** (MS) markerer de elementer, der er valgt i 3D eller i en plan, på statusdatoen (i dag, når der ikke er nogen), i hver opgave, der omfatter dem; **Markér ikke påbegyndt** fjerner markeringerne. Et valgt elements egenskaber viser dets tilstand på byggepladsen med de samme tre knapper og i hver af dets opgaver den dag, det blev færdigt eller påbegyndt, med en knap, der markerer det færdigt i netop den opgave. En lagdelt væg i en murer- og en pudsopgave markeres i begge eller i én fra dens række.
 
 ![En vægs markeringer i dens egenskaber](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ På byggepladsen, fra en telefon: gå ind i projektets delte session fra browser
 
 ### Basisplanen
 
-**Tidsplanlægning → Gem basisplan** gemmer hver opgaves datoer og varighed, som de er nu; gemt igen erstattes den (én basisplan: flere basisplaner og scenarier hører til premium-udgaven). Gantt-diagrammet tegner den så som en tynd grå bjælke under hver opgaves bjælke (**Basisplan** i værktøjslinjen skjuler den), tilføjer kolonnen **Afvigelse** (de arbejdsdage, slutningen flyttede sig: positiv er forsinket, rækken markeret med rødt) og siger i sin linje, hvor mange opgaver der er forsinkede, og hvor langt slutningen flyttede sig. Egenskaber giver basisplanens datoer og afvigelserne i start og slut. **Ryd basisplan** fjerner den.
+**Udførelse → Gem basisplan** gemmer hver opgaves datoer og varighed, som de er nu; gemt igen erstattes den (én basisplan: flere basisplaner og scenarier hører til premium-udgaven). Gantt-diagrammet tegner den så som en tynd grå bjælke under hver opgaves bjælke (**Basisplan** i værktøjslinjen skjuler den), tilføjer kolonnen **Afvigelse** (de arbejdsdage, slutningen flyttede sig: positiv er forsinket, rækken markeret med rødt) og siger i sin linje, hvor mange opgaver der er forsinkede, og hvor langt slutningen flyttede sig. Egenskaber giver basisplanens datoer og afvigelserne i start og slut. **Ryd basisplan** fjerner den.
 
 ### Bagud og foran i simuleringen
 
@@ -259,7 +259,7 @@ Med en basisplan sammenligner simuleringen: et element, der ikke er bygget (elle
 
 ### Fremdriften i filerne
 
-- **Eksportér XLSX** tilføjer kolonnerne **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** og **GlobalId** (regnearket er på engelsk). Udfyld dem på byggepladsen og læs dem tilbage med **Tidsplanlægning → Importér fremdrift…**: rækkerne findes efter GlobalId, WBS eller ID, og en *Status date* skrevet over tabellen sætter statusdatoen. En CSV virker også.
+- **Eksportér XLSX** tilføjer kolonnerne **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** og **GlobalId** (regnearket er på engelsk). Udfyld dem på byggepladsen og læs dem tilbage med **Udførelse → Importér fremdrift…**: rækkerne findes efter GlobalId, WBS eller ID, og en *Status date* skrevet over tabellen sætter statusdatoen. En CSV virker også.
 - **MS Project XML** bærer statusdatoen, hver opgaves procentdel, faktisk start og slut, den resterende varighed og basisplanen (Baseline 0); elementernes markeringer følger elementerne i *Lapin elements*.
 - **IFC** skriver dem i hver opgaves IfcTaskTime (statustiden, faktisk start og slut, den resterende tid, færdiggørelsesgraden) og basisplanen som et andet IfcWorkSchedule af typen BASELINE; Lapins egne felter (den skrevne procentdel, markeringerne) står i `Lapin_Task`. Begge kommer tilbage til de samme datoer.
 - **Administrer → Versioner → Sammenlign** siger ud over elementerne, hvad der ændrede sig i tidsplanen: slutningen, arbejdsdagene, statusdatoen og de opgaver, der kom til, blev slettet, flyttet (hvor mange arbejdsdage), eller hvis varighed eller fremdrift ændrede sig.
@@ -268,13 +268,13 @@ Med en basisplan sammenligner simuleringen: et element, der ikke er bygget (elle
 
 ![Gantt-diagrammet med kolonnen Omkostning](shots/planning-cost.webp)
 
-Med et overslag (**Økonomi → Overslag…**) får Gantt-diagrammet kolonnen **Omkostning**: hver opgaves andel af overslaget, fra de poster der prissætter dens elementer (en sammenfatnings er dens opgavers). Værktøjslinjen viser **budgettet** (overslagets direkte omkostninger) og omkostningen **til dato** (hver opgaves omkostning gange dens færdiggørelse i %); Egenskaber viser en opgaves omkostning og den udførte del. **Økonomi → Omkostninger over tid** tegner S-kurven og månedstabellen (se [Overslag](cost.md)).
+Med et overslag (**Udførelse → Overslag…**) får Gantt-diagrammet kolonnen **Omkostning**: hver opgaves andel af overslaget, fra de poster der prissætter dens elementer (en sammenfatnings er dens opgavers). Værktøjslinjen viser **budgettet** (overslagets direkte omkostninger) og omkostningen **til dato** (hver opgaves omkostning gange dens færdiggørelse i %); Egenskaber viser en opgaves omkostning og den udførte del. **Udførelse → Omkostninger over tid** tegner S-kurven og månedstabellen (se [Overslag](cost.md)).
 
 ## Kalenderen
 
 ![Arbejdskalenderen](shots/planning-calendar.webp)
 
-**Tidsplanlægning → Kalender…** fastsætter:
+**Udførelse → Kalender…** fastsætter:
 
 - ugens **arbejdsdage** (mandag til fredag som standard) og dagens **timer** (8 fra 08:00);
 - **helligdagene**: Rumæniens lovbestemte helligdage, beregnet for hvert år (også den ortodokse langfredag, påske og pinse), eller ingen. Listen under dem viser et års helligdage, så du kan kontrollere dem;

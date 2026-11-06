@@ -162,7 +162,7 @@ Der Grundriss zeichnet Platte, Belag und Geländer eines Balkons, wie er sie sch
 
 ![Seine Auflager über einem Schnitt durch den Balkon](shots/balcony-configurator-section.webp)
 
-**Apply** ändert den Balkon in einem Schritt. **Save as style…** behält ihn als Stil des Projekts (einen Balkontyp), den die Leiste des Werkzeugs und die Eigenschaften anbieten; **Update style** speichert ihn erneut in seinen Stil, und jeder Balkon des Stils übernimmt ihn; neben dem Namen eines Stils wird er umbenannt oder gelöscht (seine Balkone bleiben, wie sie sind). Ein Stil ist ein Typ: seine Kostenpositionen (Cost → Map articles) messen seine Balkone.
+**Apply** ändert den Balkon in einem Schritt. **Save as style…** behält ihn als Stil des Projekts (einen Balkontyp), den die Leiste des Werkzeugs und die Eigenschaften anbieten; **Update style** speichert ihn erneut in seinen Stil, und jeder Balkon des Stils übernimmt ihn; neben dem Namen eines Stils wird er umbenannt oder gelöscht (seine Balkone bleiben, wie sie sind). Ein Stil ist ein Typ: seine Kostenpositionen (Ausführung → Map articles) messen seine Balkone.
 
 ![Die Eigenschaften eines Balkons: sein Stil und die Felder seiner Art](shots/balcony-properties.webp)
 

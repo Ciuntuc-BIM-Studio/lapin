@@ -31,7 +31,8 @@ const planning: LapinModule = {
   name: 'Planning',
   summary: 'The work schedule: a Gantt with its WBS, links and critical path on a calendar with Romania\'s holidays; the 4D simulation; IFC and MS Project exchange.',
   tabs: [{
-    id: 'planning', label: 'Planning', i18nCtx: 'schedule', order: 84,
+    // Construction (decision 367): the work schedule and the estimate on one tab, 4D then 5D.
+    id: 'construction', label: 'Construction', i18nCtx: 'schedule', order: 84,
     groups: [
       {
         label: 'Work schedule', tools: [

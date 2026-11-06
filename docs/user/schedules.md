@@ -9,14 +9,14 @@ summary: List doors, windows, lintels, rooms and anything a module counts; add r
 Everything Lapin models is measured from its geometry: a wall's length, height, gross and net side area and volume, each layer's area and volume, a floor's areas and volume, a room's area and perimeter, a door's count. There are three ways to get the numbers:
 
 - **One element.** Select it: the **Quantities** section of the Properties panel lists what it measures, then each of its layers or parts.
-- **The whole model.** **Cost → Quantity takeoff** makes (or opens) the takeoff: every element the model measures, added up row by row, with the count, length, gross and net area, gross and net volume and weight. Its toolbar chooses what is added up together: **By kind and type** (the default: the walls of each wall type, the floors of each floor type…), **By material** (each layer under its own material: the brick, the plaster and the insulation of the walls apart, the lintels' concrete), by storey, or a mix of them. **All elements** chooses which kinds it lists (only walls and floors, say). The takeoff follows the model like any schedule, and takes rows and columns of your own (a provision, a unit price).
-- **Any other list.** **Cost → Schedules…** makes any schedule this edition offers: rooms, room finishes, joinery, type assemblies, timber, rebar, formwork, steel… The same list is under **+** beside **Schedules** in the project browser.
+- **The whole model.** **Construction → Quantity takeoff** makes (or opens) the takeoff: every element the model measures, added up row by row, with the count, length, gross and net area, gross and net volume and weight. Its toolbar chooses what is added up together: **By kind and type** (the default: the walls of each wall type, the floors of each floor type…), **By material** (each layer under its own material: the brick, the plaster and the insulation of the walls apart, the lintels' concrete), by storey, or a mix of them. **All elements** chooses which kinds it lists (only walls and floors, say). The takeoff follows the model like any schedule, and takes rows and columns of your own (a provision, a unit price).
+- **Any other list.** **Construction → Schedules…** makes any schedule this edition offers: rooms, room finishes, joinery, type assemblies, timber, rebar, formwork, steel… The same list is under **+** beside **Schedules** in the project browser.
 
 ![The quantity takeoff grouped by kind and material](shots/quantity-takeoff.webp)
 
 By material, a material measured by **area** (see [Materials](materials.md)) gets a row for each thickness it is laid in, with a **Thickness (mm)** column: *Mineral wool 150 mm: 84.20 m²*, *Mineral wool 200 mm: 31.00 m²*. One measured by volume gets its m³ only, by mass its kg, by count its **Pieces**. A **Note** column says when a layer is not one of the material's catalogue thicknesses. The estimate does the same: an article on a material is measured as the material says, a line per thickness. A material without a rule is measured as before.
 
-**Cost → Export XLSX** saves the takeoff as a workbook straight away (downloaded in a browser).
+**Construction → Export XLSX** saves the takeoff as a workbook straight away (downloaded in a browser).
 
 ## Quantities on a sheet
 
@@ -32,7 +32,7 @@ On the sheet, drag the table to move it; a table longer than the frame goes on o
 
 ## Making a schedule
 
-A schedule is a table the model fills: doors and windows, lintels, rooms, rebar, timber, formwork and more. Click **+** beside **Schedules** in the project browser and pick what it lists, or use a module's tool (Wood → Timber schedule, Site works → Formwork schedule…). Double-click it in the browser to open it in a tab. A schedule follows the model: move a wall, add a window, and the table changes with it.
+A schedule is a table the model fills: doors and windows, lintels, rooms, rebar, timber, formwork and more. Click **+** beside **Schedules** in the project browser and pick what it lists, or use a module's tool (Wood → Timber schedule, Site → Formwork schedule…). Double-click it in the browser to open it in a tab. A schedule follows the model: move a wall, add a window, and the table changes with it.
 
 **Joinery**, **door**, **window** and **lintel** schedules show a card for each type, with its drawing (the interior view by default) and its values row by row. Other schedules are a plain table, one row per item and a totals line at the end.
 
@@ -94,7 +94,7 @@ When only the result is wanted, click **Table editor** over the editing table un
 
 ## Wall sweeps
 
-The **Wall sweeps** schedule (**Architecture → Wall sweeps schedule**, or **Cost → Schedules…** → **Wall sweeps**) adds up the project's wall sweeps and reveals by profile, kind and material: how many there are, their pieces (a sweep the openings cut is several), their length along the faces and their volume; for a reveal, the volume it takes out of the wall. A total for the sweeps and one for the reveals close the table. Its toolbar adds them up **by profile**, **by storey** or **by wall type** first. Returns count in the volume, not in the length.
+The **Wall sweeps** schedule (**Architecture → Wall sweeps schedule**, or **Construction → Schedules…** → **Wall sweeps**) adds up the project's wall sweeps and reveals by profile, kind and material: how many there are, their pieces (a sweep the openings cut is several), their length along the faces and their volume; for a reveal, the volume it takes out of the wall. A total for the sweeps and one for the reveals close the table. Its toolbar adds them up **by profile**, **by storey** or **by wall type** first. Returns count in the volume, not in the length.
 
 ## Exporting
 

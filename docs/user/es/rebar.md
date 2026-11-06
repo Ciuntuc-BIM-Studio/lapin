@@ -1,12 +1,12 @@
 ---
-title: Armado 2D
+title: Armado simple
 order: 52
 summary: El armado dibujado en secciones y plantas, secciones transversales cortadas donde haces clic, y el cuadro de armado.
 ---
 
-La pestaña **Armado 2D** dibuja el armado como se hace un cuadro de barras: barras como formas con sus dimensiones, estribos repartidos a lo largo de una viga, marcas en globos y un cuadro que las suma. Funciona en cualquier vista: una sección, una planta, un alzado.
+La pestaña **Armado simple** dibuja el armado como se hace un cuadro de barras: barras como formas con sus dimensiones, estribos repartidos a lo largo de una viga, marcas en globos y un cuadro que las suma. Funciona en cualquier vista: una sección, una planta, un alzado.
 
-![La pestaña Armado 2D](shots/ribbon-rebar.webp)
+![La pestaña Armado simple](shots/ribbon-rebar.webp)
 
 ## Una sección donde trabajas
 

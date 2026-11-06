@@ -26,7 +26,7 @@ Die Linie eines Schnitts wird in jedem Grundriss gezeichnet, und der Schnitt wir
 
 Jeder Schnitt liegt auf einem **Marker-Layer** (zuerst **Sections**; **Marker-Layer** in den Eigenschaften des Schnitts ändert ihn), und jede Ansicht wählt, was sie markiert. **Ansicht → Schnitte…** listet die Schnitte des Projekts nach Layer für die vordere Ansicht, mit einem Kontrollkästchen je Layer und je Schnitt nur für diese Ansicht, dem Layer jedes Schnitts (ein vorhandener oder **Neuer Layer…**) und in wie vielen Ansichten jeder ausgeblendet ist. Ein Plan markiert, was seine Ansichten markieren.
 
-Ein Schnitt quer durch einen Balken oder eine Stütze (**Schnitt hier**, **Querschnitt** auf der Registerkarte Bewehrung 2D) hat auch im Grundriss Griffe: Ziehen Sie ein Ende entlang der Linie, um dieser Seite mehr oder weniger Rand zu geben, und die Mitte entlang des Elements, um die Station zu verschieben, an der er schneidet. Das Fenster des Schnitts folgt.
+Ein Schnitt quer durch einen Balken oder eine Stütze (**Schnitt hier**, **Querschnitt** auf der Registerkarte Einfache Bewehrung) hat auch im Grundriss Griffe: Ziehen Sie ein Ende entlang der Linie, um dieser Seite mehr oder weniger Rand zu geben, und die Mitte entlang des Elements, um die Station zu verschieben, an der er schneidet. Das Fenster des Schnitts folgt.
 
 ![Ansicht → Schnitte… für die Südansicht](shots/sections-dialog.webp)
 

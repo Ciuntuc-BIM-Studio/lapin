@@ -61,6 +61,6 @@ Selectează un lift ca să-i schimbi oprirea cea mai de jos și cea mai de sus, 
 
 **Arhitectură → Extras de lifturi** listează fiecare lift cu felul, acționarea, sarcina nominală, persoanele, cabina, ușile, opririle deservite, nivelurile între care merge, cursa, viteza și puțul.
 
-Fiecare lift are un tip făcut din felul, sarcina și cabina lui (Persoane mediu 630 kg, 1100 × 1400): lifturile la fel îl împart, deci un articol de preț pus pe tip (**Cost → Atribuie articole…**) le prețuiește pe toate, iar planificarea le găsește după clasă (IfcTransportElement).
+Fiecare lift are un tip făcut din felul, sarcina și cabina lui (Persoane mediu 630 kg, 1100 × 1400): lifturile la fel îl împart, deci un articol de preț pus pe tip (**Execuție → Atribuie articole…**) le prețuiește pe toate, iar planificarea le găsește după clasă (IfcTransportElement).
 
 În IFC un lift e un **IfcTransportElement** cu tipul predefinit **ELEVATOR**, al unui **IfcTransportElementType**, cu seturile IFC proprii **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) și **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). Lapin își citește fișierul înapoi ca lift nativ, cu opririle lui și golurile din plăci.

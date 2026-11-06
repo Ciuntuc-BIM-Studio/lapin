@@ -65,7 +65,7 @@ I colori vengono disegnati sotto i muri, gli arredi e le aperture delle porte, c
 
 ## Finiture dei locali
 
-**Finiture → Rifinisci il locale** (<kbd>FR</kbd>) posa una finitura nel locale in cui fai clic: il suo pavimento, la finitura delle sue pareti e il suo soffitto, ciascuno lungo il contorno del locale come il locale stesso. Sposta un muro e le finiture lo seguono. **Finiture → Finiture dei locali** modifica le finiture; **Dalla libreria** ne porta di già pronte: Soggiorno, Camera da letto, Bagno, Cucina, Piano terra su platea e Locale tecnico. Finché lo strumento è attivo, il pannello delle proprietà mostra la finitura che posa, da scegliere prima del clic. La **Finitura** di un locale, nelle sue proprietà, ne posa un’altra o la toglie.
+**Interni → Rifinisci il locale** (<kbd>FR</kbd>) posa una finitura nel locale in cui fai clic: il suo pavimento, la finitura delle sue pareti e il suo soffitto, ciascuno lungo il contorno del locale come il locale stesso. Sposta un muro e le finiture lo seguono. **Interni → Finiture dei locali** modifica le finiture; **Dalla libreria** ne porta di già pronte: Soggiorno, Camera da letto, Bagno, Cucina, Piano terra su platea e Locale tecnico. Finché lo strumento è attivo, il pannello delle proprietà mostra la finitura che posa, da scegliere prima del clic. La **Finitura** di un locale, nelle sue proprietà, ne posa un’altra o la toglie.
 
 Una finitura ha:
 
@@ -81,7 +81,7 @@ Una finitura ha:
 
 ![Una pianta con il pavimento del bagno retinato a piastrelle e quello del soggiorno a doghe](shots/room-finish-hatch.webp)
 
-Ogni finitura misura, per materiale, la sua superficie **lorda** (il contorno del locale, nulla dedotto: l’area del pavimento, il perimetro delle pareti per l’altezza di ogni pezzo) e quella **netta** (ciò che è costruito: porte, finestre e fori del solaio tolti, le mazzette e il pavimento sotto le porte aggiunti; la quota delle mazzette è nelle quantità, come RevealArea), e il suo volume. **Finiture → Abaco delle finiture** elenca ogni locale rifinito per parte e materiale, con i totali per materiale alla fine; come ogni abaco fa grafici, si esporta e va su una tavola. In IFC una finitura è un IfcCovering: FLOORING, CLADDING o CEILING.
+Ogni finitura misura, per materiale, la sua superficie **lorda** (il contorno del locale, nulla dedotto: l’area del pavimento, il perimetro delle pareti per l’altezza di ogni pezzo) e quella **netta** (ciò che è costruito: porte, finestre e fori del solaio tolti, le mazzette e il pavimento sotto le porte aggiunti; la quota delle mazzette è nelle quantità, come RevealArea), e il suo volume. **Interni → Abaco delle finiture** elenca ogni locale rifinito per parte e materiale, con i totali per materiale alla fine; come ogni abaco fa grafici, si esporta e va su una tavola. In IFC una finitura è un IfcCovering: FLOORING, CLADDING o CEILING.
 
 Una finitura riveste ciò che i muri del locale hanno già: se i tipi di muro portano il proprio intonaco, dai alle pareti del locale solo ciò che va sopra (pittura, piastrelle), oppure usa tipi di muro con il solo nucleo.
 

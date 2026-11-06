@@ -4,11 +4,11 @@ order: 98
 summary: El presupuesto desde el modelo: tus listas de precios importadas de CSV o Excel, partidas en los tipos y reglas en los materiales, cantidades de las mediciones por precios unitarios desglosados en material, mano de obra, maquinaria y transporte, gastos generales, beneficio e IVA, en RON o EUR; los formularios rumanos F3, F2 y C6 a C9 en láminas, en Excel y en PDF; presupuestos IFC.
 ---
 
-## La pestaña Costes
+## La pestaña Ejecución
 
-![La pestaña Costes](shots/ribbon-cost.webp)
+![La pestaña Ejecución](shots/ribbon-cost.webp)
 
-La pestaña que se llamaba **Cantidades** ahora es **Costes**. Conserva las cantidades y añade el presupuesto:
+Los grupos de costes están en la pestaña **Ejecución**, después de los del programa de obra (la pestaña se llamaba **Cantidades**, luego **Costes**). Conservan las cantidades y añaden el presupuesto:
 
 - **Mediciones**, **Tablas…** y **Exportar XLSX**: las cantidades del modelo (ver [Tablas y gráficos](schedules.md)).
 - **Listas de precios…**: tus precios, importados de un archivo CSV o Excel (más abajo).
@@ -23,7 +23,7 @@ El presupuesto se calcula desde el modelo cada vez que este cambia. Un muro que 
 
 ![Importar una lista de precios: el sentido de cada columna deducido de su encabezado](shots/price-import.webp)
 
-Los precios son tuyos: Lapin no trae ningún catálogo de precios ni de normas. **Costes → Listas de precios… → Importar…** lee un archivo CSV o XLSX, por ejemplo una exportación de tu programa de presupuestos o la lista de un proveedor. Lapin muestra las primeras filas del archivo bajo sus encabezados. Sobre cada columna está lo que Lapin dedujo que contiene, a partir del encabezado, en inglés o en rumano:
+Los precios son tuyos: Lapin no trae ningún catálogo de precios ni de normas. **Ejecución → Listas de precios… → Importar…** lee un archivo CSV o XLSX, por ejemplo una exportación de tu programa de presupuestos o la lista de un proveedor. Lapin muestra las primeras filas del archivo bajo sus encabezados. Sobre cada columna está lo que Lapin dedujo que contiene, a partir del encabezado, en inglés o en rumano:
 
 - **Código** y **Descripción** (*Cod*, *Simbol*, *Denumire*), **Unidad** (*U.M.*: m³ o mc, m² o mp, m, pcs o buc, kg, t, 100 m²).
 - El precio unitario desglosado en **Material**, **Mano de obra**, **Maquinaria** y **Transporte** (*Material*, *Manoperă*, *Utilaj*, *Transport*), o un solo **Precio unitario (sin desglosar)**, que entonces cuenta como material.
@@ -45,9 +45,9 @@ Una línea del presupuesto sale de una **partida**: un código de tu lista de pr
 
 La partida del tipo va primero. Una capa que ya miden las partidas de su tipo no se valora otra vez por una regla. Una partida sobre el elemento entero lo valora todo, así que las reglas se apartan. Para un muro por capas, da al tipo una partida sobre su **núcleo** (la fábrica por volumen) y reglas para sus acabados (el enlucido por área). El muro se valora entonces capa a capa: la fábrica en **Muros**, el enlucido en **Acabados y aislamientos**.
 
-**Costes → Asignar partidas…** lista los tipos del proyecto que usan los elementos y los materiales de sus capas. Cada fila empieza con la partida que tiene, o la que elegiste para un tipo o material del mismo nombre en un proyecto anterior, o la que propone Lapin: un código escrito en su nombre, o la partida que comparte más palabras con él (*zidărie*, *BCA*, *tencuială*, *C25/30*). Para un tipo por capas propone el núcleo. Escribe o elige un código, elige la parte y la medida, marca las filas que quieres y haz clic en **Aplicar**: un solo paso para deshacer. Tus elecciones se recuerdan en este ordenador para tus próximos proyectos.
+**Ejecución → Asignar partidas…** lista los tipos del proyecto que usan los elementos y los materiales de sus capas. Cada fila empieza con la partida que tiene, o la que elegiste para un tipo o material del mismo nombre en un proyecto anterior, o la que propone Lapin: un código escrito en su nombre, o la partida que comparte más palabras con él (*zidărie*, *BCA*, *tencuială*, *C25/30*). Para un tipo por capas propone el núcleo. Escribe o elige un código, elige la parte y la medida, marca las filas que quieres y haz clic en **Aplicar**: un solo paso para deshacer. Tus elecciones se recuerdan en este ordenador para tus próximos proyectos.
 
-Los tipos de encofrado y andamio de la pestaña **Medios auxiliares** ya tenían un código de partida (decisión 152): es una partida en el tipo, medida por la unidad del precio.
+Los tipos de encofrado y andamio de los medios auxiliares (la pestaña **Emplazamiento**) ya tenían un código de partida (decisión 152): es una partida en el tipo, medida por la unidad del precio.
 
 Las fases cuentan: un elemento que estaba antes de las obras (hecho en una fase *existente*) no se valora. Uno demolido se valora solo con la partida de su tipo cuya parte es **Su demolición (solo si se demuele)**, en el capítulo **Demolición**.
 
@@ -55,7 +55,7 @@ Las fases cuentan: un elemento que estaba antes de las obras (hecho en una fase 
 
 ![El presupuesto: capítulos, líneas, los porcentajes y los totales](shots/estimate.webp)
 
-**Costes → Presupuesto…** abre el presupuesto bajo la vista, como el Gantt. Sus líneas se agrupan en **capítulos** por tipo de obra: movimiento de tierras, cimentación, estructura, muros, cubierta, carpintería, acabados y aislamientos, instalaciones, medios auxiliares, otros. Una partida puede indicar un capítulo propio. **Por planta y tipo de obra** pone la planta antes de cada capítulo.
+**Ejecución → Presupuesto…** abre el presupuesto bajo la vista, como el Gantt. Sus líneas se agrupan en **capítulos** por tipo de obra: movimiento de tierras, cimentación, estructura, muros, cubierta, carpintería, acabados y aislamientos, instalaciones, medios auxiliares, otros. Una partida puede indicar un capítulo propio. **Por planta y tipo de obra** pone la planta antes de cada capítulo.
 
 Cada línea muestra el código, la descripción y la unidad de la lista de precios, la **cantidad** del modelo (la misma que la de las mediciones), el precio unitario desglosado en **Material**, **Mano de obra**, **Maquinaria** y **Transporte**, el precio unitario y el **valor**. Haz clic en una línea para seleccionar sus elementos en las vistas. Selecciona elementos en una vista y sus líneas se marcan en el presupuesto.
 
@@ -92,9 +92,9 @@ Los formularios siguen la práctica habitual según la metodología de la Orden 
 
 ![Coste en el tiempo: la curva S sobre las barras de los meses, la tabla mensual debajo](shots/cost-time.webp)
 
-Con un programa de obra en el proyecto (la pestaña **Planificación**), el presupuesto se pone sobre él sin ningún enlace propio. El valor de cada partida se reparte entre sus elementos, y la parte de cada elemento va a las tareas que construyen la parte que mide la partida: la de la fábrica a la tarea que toma el núcleo de los muros, la del enlucido a la que toma sus acabados. Una partida sobre el elemento entero, construido en dos tareas, se reparte por igual entre ellas. Una partida propia va a la tarea que elija junto a su descripción (**En ninguna tarea** por defecto). El coste de una tarea se reparte por igual en sus días laborables: nada se gasta un fin de semana, un festivo o, en una tarea húmeda, en la pausa de invierno.
+Con un programa de obra en el proyecto (la pestaña **Ejecución**), el presupuesto se pone sobre él sin ningún enlace propio. El valor de cada partida se reparte entre sus elementos, y la parte de cada elemento va a las tareas que construyen la parte que mide la partida: la de la fábrica a la tarea que toma el núcleo de los muros, la del enlucido a la que toma sus acabados. Una partida sobre el elemento entero, construido en dos tareas, se reparte por igual entre ellas. Una partida propia va a la tarea que elija junto a su descripción (**En ninguna tarea** por defecto). El coste de una tarea se reparte por igual en sus días laborables: nada se gasta un fin de semana, un festivo o, en una tarea húmeda, en la pausa de invierno.
 
-**Costes → Coste en el tiempo** abre, bajo la vista:
+**Ejecución → Coste en el tiempo** abre, bajo la vista:
 
 - la **curva S**: el coste acumulado planificado a lo largo del programa, el de la **línea base** (discontinuo) cuando hay una guardada, y el **trabajo hecho** (grueso) hasta la fecha de estado: el coste de cada tarea por su % completado, repartido desde su inicio real;
 - las barras de los meses, en la escala de la derecha: planificado y hecho;

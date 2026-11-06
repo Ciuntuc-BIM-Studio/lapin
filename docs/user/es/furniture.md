@@ -6,7 +6,7 @@ summary: Sofás, sofás rinconera, sillones, sillas, camas, armarios, cómodas, 
 
 ## Colocar mobiliario
 
-La pestaña **Mobiliario** tiene una herramienta para cada clase de mueble: **Sofá** (<kbd>SO</kbd>), **Sofá rinconera**, **Sillón** (<kbd>AC</kbd>), **Silla**, **Cama** (<kbd>BD</kbd>), **Mesita de noche**, **Armario** (<kbd>WD</kbd>), **Cómoda**, **Librería**, **Aparador**, **Mesa** (<kbd>TB</kbd>), **Mesa de centro** y **Escritorio**. Elija una y haga clic en la planta.
+La pestaña **Interiores** tiene, después de los acabados, una herramienta para cada clase de mueble: **Sofá** (<kbd>SO</kbd>), **Sofá rinconera**, **Sillón** (<kbd>AC</kbd>), **Silla**, **Cama** (<kbd>BD</kbd>), **Mesita de noche**, **Armario** (<kbd>WD</kbd>), **Cómoda**, **Librería**, **Aparador**, **Mesa** (<kbd>TB</kbd>), **Mesa de centro** y **Escritorio**. Elija una y haga clic en la planta.
 
 Haga clic cerca de un muro y el mueble se apoya en él. Su trasera queda sobre la cara del muro (sobre el enlucido, no sobre el núcleo), su frente mira a la estancia, y se desliza a lo largo del muro hasta dejar de entrar en el muro de la esquina. Haga clic lejos de cualquier muro y el mueble queda donde hizo clic.
 
@@ -60,7 +60,7 @@ Arrastre el pinzamiento del centro de un mueble para moverlo; arrastre el que ti
 
 ## Tipos de mobiliario
 
-**Mobiliario → Tipos de mobiliario** lista los tipos del proyecto por grupos (asientos, camas, almacenaje, mesas, cocina), cada uno con cuántos muebles lo usan. Elija una clase y **Tipo nuevo**, o **Duplicar** un tipo para cambiar una copia. Un tipo tiene:
+**Interiores → Tipos de mobiliario** lista los tipos del proyecto por grupos (asientos, camas, almacenaje, mesas, cocina), cada uno con cuántos muebles lo usan. Elija una clase y **Tipo nuevo**, o **Duplicar** un tipo para cambiar una copia. Un tipo tiene:
 
 - su **nombre**, su **anchura**, su **fondo** y su **altura** (en un sofá, la del respaldo; en una cama, la del cabecero; en una cocina, la de la encimera);
 - los parámetros propios de su clase:

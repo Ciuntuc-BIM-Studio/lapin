@@ -4,9 +4,9 @@ order: 55
 summary: Andamios de fachada y encofrados de forjados y vigas, dispuestos a partir del modelo por sus configuradores.
 ---
 
-La ficha **Medios auxiliares** modela las obras provisionales de la obra: los andamios de fachada y el encofrado de forjados y vigas. Lapin los dispone a partir del modelo y cuenta lo que necesitan. Cuando el modelo cambia, ellos lo siguen.
+Los medios auxiliares, en la pestaña **Emplazamiento** después del terreno, modelan las obras provisionales de la obra: los andamios de fachada y el encofrado de forjados y vigas. Lapin los dispone a partir del modelo y cuenta lo que necesitan. Cuando el modelo cambia, ellos lo siguen.
 
-![La ficha Medios auxiliares](shots/ribbon-site-works.webp)
+![Los medios auxiliares en la pestaña Emplazamiento](shots/ribbon-site-works.webp)
 
 Los andamios y encofrados son **temporales**: se montan y se desmontan en la fase **Ejecución**. El primero que coloque añade esa fase si el proyecto no la tiene, y la convierte en la fase activa. Las vistas de fases anteriores no los muestran. Consulte **Gestionar → Fases**.
 

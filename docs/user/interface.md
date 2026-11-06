@@ -8,9 +8,13 @@ summary: Comfortable, Compact and Focus modes, folding the side panels, and the 
 
 ## Workspaces
 
-A workspace shows only the ribbon tabs your work needs, in the order that work uses them. Choose it on the start screen, at the top of **View → Interface…**, or from **Commands…** (Workspace: …): **All** (every tab of your edition), **Architecture**, **Structure & rebar**, **MEP**, **Site & site works** or **Drafting 2D**. The project stays one: a hidden tab's tools are still in Commands… and the keyboard shortcuts, and a model made in one workspace opens whole in another.
+A workspace shows only the ribbon tabs your work needs, in the order that work uses them. Choose it from the button beside **File**, which names the workspace you are in, or on the start screen, at the top of **View → Interface…**, or from **Commands…** (Workspace: …): **All** (every tab of your edition), **Architecture**, **Structure & rebar**, **MEP**, **Site & site works** or **Drafting 2D**. The project stays one: a hidden tab's tools are still in Commands… and the keyboard shortcuts, and a model made in one workspace opens whole in another.
 
 ![The workspaces in View → Interface…](shots/workspaces.webp)
+
+The tabs stay on one line. When the window is too narrow for all of them, the last ones go under **More** at the end of the row, and the tab you are on always stays in sight.
+
+The tabs are grouped by the work they serve. **Interior** holds the finishes and the furniture. **Site** holds the terrain, the landscape and the site works (scaffolding and formwork). **Construction** holds the work schedule and the estimate (4D and 5D).
 
 Show, hide or move a tab under **Tabs** in the same dialog and the choice becomes **My workspace**, kept on this computer for next time; the other workspaces are still there to switch to. **View** always stays, since Interface… is in it.
 
@@ -39,7 +43,7 @@ In every mode the top bar keeps **Undo** and **Redo** at its right end: with the
 
 Below the modes, each part can be set on its own: the ribbon, the quick tools (or none: the number keys still work), the command line, the HUD, the tool's prompt and fields, the key plan, the panels and the height of the property rows. Changing one part makes the choice **Custom**.
 
-Below the parts, **Tabs**: untick the ribbon tabs you do without (an architect may hide Structure, Rebar 2D and MEP, an engineer Architecture and Site). View always stays, since Interface… is there. The tools of a hidden tab are still in Commands… and in the keyboard shortcuts.
+Below the parts, **Tabs**: untick the ribbon tabs you do without (an architect may hide Structure, Simple rebar and MEP, an engineer Architecture and Site). View always stays, since Interface… is there. The tools of a hidden tab are still in Commands… and in the keyboard shortcuts.
 
 Lapin keeps your choice on this computer, for you. The desktop app and the browser keep theirs apart. In the browser, Lapin starts in Compact when the window is less than 800 pixels tall, until you choose.
 

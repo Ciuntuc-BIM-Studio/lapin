@@ -26,7 +26,7 @@ A linha de um corte é desenhada em todas as plantas, e o corte é marcado em to
 
 Cada corte fica em um **layer de marcadores** (**Cortes** no início; **Layer do marcador** nas propriedades do corte a altera), e cada vista escolhe o que marca. **Vista → Cortes…** lista os cortes do projeto por layer para a vista em primeiro plano, com uma caixa de seleção por layer e por corte só para esta vista, o layer de cada corte (um existente ou **Novo layer…**) e em quantas vistas cada um está oculto. Uma prancha marca o que as suas vistas marcam.
 
-Um corte feito através de uma viga ou de um pilar (**Corte aqui**, **Corte transversal** na guia Armadura 2D) também tem alças em planta: arraste qualquer uma das extremidades ao longo da linha para dar mais ou menos margem a esse lado, arraste o meio ao longo do elemento para mover a estaca em que ele corta. A janela do corte acompanha.
+Um corte feito através de uma viga ou de um pilar (**Corte aqui**, **Corte transversal** na guia Armadura simples) também tem alças em planta: arraste qualquer uma das extremidades ao longo da linha para dar mais ou menos margem a esse lado, arraste o meio ao longo do elemento para mover a estaca em que ele corta. A janela do corte acompanha.
 
 ![Vista → Cortes… para a elevação sul](shots/sections-dialog.webp)
 

@@ -4,9 +4,9 @@ order: 97
 summary: Harmonogram robót na wykresie Gantta: zadania w strukturze WBS, kamienie milowe, powiązania z opóźnieniami, ścieżka krytyczna liczona na kalendarzu z rumuńskimi świętami ustawowymi; symulacja 4D budynku rosnącego dzień po dniu, w widokach, na arkuszach i jako wideo; postęp oznaczany na budowie, także z telefonu, względem planu bazowego; do i z MS Project, IFC i Excela.
 ---
 
-## Karta Harmonogram
+## Karta Realizacja
 
-![Karta Harmonogram](shots/ribbon-planning.webp)
+![Karta Realizacja](shots/ribbon-planning.webp)
 
 - **Generuj harmonogram…**: cały harmonogram zrobiony z modelu w jednym kroku (poniżej).
 - **Gantt**: otwiera harmonogram pod widokiem. Ekran dzieli się na dwa wiersze: model u góry, harmonogram na dole.
@@ -24,7 +24,7 @@ Projekt ma jeden harmonogram. Powstaje przy pierwszym dodaniu zadania i zaczyna 
 
 ![Generuj harmonogram: szablony, karta Początek i podgląd](shots/planning-generate.webp)
 
-**Harmonogram → Generuj harmonogram…** (także na pasku wykresu Gantta) robi z modelu pełny harmonogram: zadanie dla każdego kroku robót, a tam, gdzie krok idzie kondygnacja po kondygnacji, jedno na kondygnację, każde zadanie od razu ze swoimi elementami. Po lewej są **szablony**: **Szkielet żelbetowy**, **Murowane ściany nośne**, **Hala stalowa** i **Szkielet drewniany**. Lapin oznacza jako *sugerowany* ten, o który prosi model: halę stalową, jeśli model ją ma, szkielet drewniany, jeśli ściany są szkieletowe, murowane ściany nośne, jeśli nie ma słupów, w przeciwnym razie szkielet żelbetowy. Nad nimi są style projektu (**Zapisz jako styl…** zachowuje to, co ustawiłeś).
+**Realizacja → Generuj harmonogram…** (także na pasku wykresu Gantta) robi z modelu pełny harmonogram: zadanie dla każdego kroku robót, a tam, gdzie krok idzie kondygnacja po kondygnacji, jedno na kondygnację, każde zadanie od razu ze swoimi elementami. Po lewej są **szablony**: **Szkielet żelbetowy**, **Murowane ściany nośne**, **Hala stalowa** i **Szkielet drewniany**. Lapin oznacza jako *sugerowany* ten, o który prosi model: halę stalową, jeśli model ją ma, szkielet drewniany, jeśli ściany są szkieletowe, murowane ściany nośne, jeśli nie ma słupów, w przeciwnym razie szkielet żelbetowy. Nad nimi są style projektu (**Zapisz jako styl…** zachowuje to, co ustawiłeś).
 
 Po prawej jest **podgląd**: zadania, które zrobiłby generator, jako paski, każde z ilością, która dała czas trwania, a pod nimi liczniki:
 
@@ -153,7 +153,7 @@ Dach też buduje się warstwami: jego konstrukcja (płyta dachu płaskiego, skle
 
 ![Karta zaznaczenia nad widokiem 3D, dwa zadania ściany oznaczone w Gantcie](shots/planning-element-tasks.webp)
 
-Gdy Gantt jest otwarty, karta nad widokiem modelu mówi, ile elementów jest zaznaczonych i w jakich zadaniach są. Przeciągnij ją za uchwyt na wiersz zadania: elementy trafią do tego zadania. Przytrzymaj <kbd>Shift</kbd> przy upuszczaniu, aby je z niego usunąć. **Dodaj do zadania…** (<kbd>T</kbd> <kbd>A</kbd>, także na karcie Harmonogram) wybiera zadanie z listy.
+Gdy Gantt jest otwarty, karta nad widokiem modelu mówi, ile elementów jest zaznaczonych i w jakich zadaniach są. Przeciągnij ją za uchwyt na wiersz zadania: elementy trafią do tego zadania. Przytrzymaj <kbd>Shift</kbd> przy upuszczaniu, aby je z niego usunąć. **Dodaj do zadania…** (<kbd>T</kbd> <kbd>A</kbd>, także na karcie Realizacja) wybiera zadanie z listy.
 
 ![Dodaj do zadania](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ To, co dodajesz lub usuwasz ręcznie, to **wyjątki** zadania: reguła pozostaje
 
 ### Elementy bez zadania
 
-Gdy tylko jakieś zadanie bierze elementy, pasek Gantta mówi, ile elementów nie ma zadania albo ma warstwy, których nie bierze żadne zadanie; kliknięcie je zaznacza, gotowe do przeciągnięcia na zadanie. **Harmonogram → Elementy bez zadania** robi to samo. **Zarządzaj → Sprawdź** też je wymienia, pod *Elements with a task*: jedno ostrzeżenie na element, kliknięcie go zaznacza. Istniejące elementy, które zostają, nie potrzebują zadania.
+Gdy tylko jakieś zadanie bierze elementy, pasek Gantta mówi, ile elementów nie ma zadania albo ma warstwy, których nie bierze żadne zadanie; kliknięcie je zaznacza, gotowe do przeciągnięcia na zadanie. **Realizacja → Elementy bez zadania** robi to samo. **Zarządzaj → Sprawdź** też je wymienia, pod *Elements with a task*: jedno ostrzeżenie na element, kliknięcie go zaznacza. Istniejące elementy, które zostają, nie potrzebują zadania.
 
 ### W IFC i MS Project
 
@@ -171,7 +171,7 @@ Eksport IFC zapisuje to, co buduje każde zadanie, jako IfcRelAssignsToProduct (
 
 ![Dom w jednym dniu harmonogramu: strop piętra w toku w swoim szalunku, ściany nad nim nierozpoczęte](shots/planning-simulation.webp)
 
-**Harmonogram → Symuluj** (także **Symuluj** na pasku wykresu Gantta) pokazuje model taki, jaki ma go harmonogram danego dnia. Wykres Gantta otwiera się pod widokiem, jeśli nie jest otwarty, z odtwarzaczem u góry i dniem jako pasem na wykresie:
+**Realizacja → Symuluj** (także **Symuluj** na pasku wykresu Gantta) pokazuje model taki, jaki ma go harmonogram danego dnia. Wykres Gantta otwiera się pod widokiem, jeśli nie jest otwarty, z odtwarzaczem u góry i dniem jako pasem na wykresie:
 
 - to, co **nierozpoczęte**, jest ukryte (albo pokazane jako blady duch, w ustawieniach);
 - to, co **w toku**, jest rysowane w swoim kolorze (bursztynowym);
@@ -208,7 +208,7 @@ Rzut, przekrój, elewacja lub zapisany widok 3D ma we właściwościach **Stan n
 
 ![Arkusz etapów: daty końców rozdziałów](shots/planning-stages-dialog.webp)
 
-**Harmonogram → Arkusz etapów…** (także w odtwarzaczu) stawia model w kilku datach obok siebie na nowym arkuszu. Jest rysowany z **widoku 3D, tak jak wygląda teraz** (obraz w każdej dacie) albo z rzutu, przekroju lub elewacji, które silnik rysuje w każdej dacie. Daty to **koniec każdego rozdziału** (każde zadanie na szczycie WBS), **koniec każdego miesiąca** albo daty **wybrane**. Każda klatka ma swoją datę i zadania w toku.
+**Realizacja → Arkusz etapów…** (także w odtwarzaczu) stawia model w kilku datach obok siebie na nowym arkuszu. Jest rysowany z **widoku 3D, tak jak wygląda teraz** (obraz w każdej dacie) albo z rzutu, przekroju lub elewacji, które silnik rysuje w każdej dacie. Daty to **koniec każdego rozdziału** (każde zadanie na szczycie WBS), **koniec każdego miesiąca** albo daty **wybrane**. Każda klatka ma swoją datę i zadania w toku.
 
 ![Arkusz etapów](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ Rzut, przekrój, elewacja lub zapisany widok 3D ma we właściwościach **Stan n
 
 ![Wykres Gantta na arkuszu](shots/planning-gantt-sheet.webp)
 
-**Harmonogram → Gantt na arkuszu** stawia harmonogram na nowym arkuszu: tabelę (wiersz, WBS i zadanie, dni, początek, koniec) i paski na skali czasu, zadania krytyczne na czerwono, zadania sumaryczne jako klamry, kamienie milowe jako romby, powiązania. Harmonogram wyższy niż arkusz idzie na tyle arkuszy, ile potrzeba, z nagłówkiem na każdym. Jest rysowany wektorowo, jak widoki, i drukuje się w PDF.
+**Realizacja → Gantt na arkuszu** stawia harmonogram na nowym arkuszu: tabelę (wiersz, WBS i zadanie, dni, początek, koniec) i paski na skali czasu, zadania krytyczne na czerwono, zadania sumaryczne jako klamry, kamienie milowe jako romby, powiązania. Harmonogram wyższy niż arkusz idzie na tyle arkuszy, ile potrzeba, z nagłówkiem na każdym. Jest rysowany wektorowo, jak widoki, i drukuje się w PDF.
 
 ### Eksport wideo
 
 ![Eksportuj wideo](shots/planning-video.webp)
 
-**Harmonogram → Eksportuj wideo…** (także w odtwarzaczu) nagrywa widok 3D, skąd patrzy teraz, od jednego dnia do drugiego, klatka na **dzień** lub na **tydzień**, z datą i zadaniami w toku zapisanymi pod spodem. Plik to wideo WebM albo MP4 tam, gdzie system oferuje tylko to (aplikacja na macOS). Przeglądarka, która nie nagrywa wideo, zapisuje zamiast tego klatki jako pliki PNG w archiwum ZIP.
+**Realizacja → Eksportuj wideo…** (także w odtwarzaczu) nagrywa widok 3D, skąd patrzy teraz, od jednego dnia do drugiego, klatka na **dzień** lub na **tydzień**, z datą i zadaniami w toku zapisanymi pod spodem. Plik to wideo WebM albo MP4 tam, gdzie system oferuje tylko to (aplikacja na macOS). Przeglądarka, która nie nagrywa wideo, zapisuje zamiast tego klatki jako pliki PNG w archiwum ZIP.
 
 ## Postęp
 
@@ -241,7 +241,7 @@ Paski pokazują wykonaną część ciemniej. Właściwości mówią, skąd pocho
 
 ### Oznaczanie elementów na budowie
 
-**Harmonogram → Oznacz jako wykonane** (MD) i **Oznacz jako rozpoczęte** (MS) oznaczają elementy wybrane w 3D lub w rzucie, w dacie stanu (dziś, gdy jej nie ma), w każdym zadaniu, które je obejmuje; **Oznacz jako nierozpoczęte** usuwa oznaczenia. Właściwości wybranego elementu pokazują jego stan na budowie z tymi samymi trzema przyciskami, a w każdym z jego zadań dzień, w którym został wykonany lub rozpoczęty, z przyciskiem, który oznacza go jako wykonany tylko w tym zadaniu. Ściana warstwowa w zadaniu murarskim i w zadaniu tynkarskim jest oznaczana w obu lub w jednym, z jego wiersza.
+**Realizacja → Oznacz jako wykonane** (MD) i **Oznacz jako rozpoczęte** (MS) oznaczają elementy wybrane w 3D lub w rzucie, w dacie stanu (dziś, gdy jej nie ma), w każdym zadaniu, które je obejmuje; **Oznacz jako nierozpoczęte** usuwa oznaczenia. Właściwości wybranego elementu pokazują jego stan na budowie z tymi samymi trzema przyciskami, a w każdym z jego zadań dzień, w którym został wykonany lub rozpoczęty, z przyciskiem, który oznacza go jako wykonany tylko w tym zadaniu. Ściana warstwowa w zadaniu murarskim i w zadaniu tynkarskim jest oznaczana w obu lub w jednym, z jego wiersza.
 
 ![Oznaczenia ściany w jej właściwościach](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ Na budowie, z telefonu: dołącz do udostępnionej sesji projektu z przeglądark
 
 ### Plan bazowy
 
-**Harmonogram → Zapisz plan bazowy** zachowuje daty i czas trwania każdego zadania takie, jakie są teraz; zapisany ponownie, zostaje zastąpiony (jeden plan bazowy: wiele planów bazowych i scenariusze należą do edycji premium). Wykres Gantta rysuje go wtedy jako cienki szary pasek pod paskiem każdego zadania (**Plan bazowy** na pasku narzędzi go ukrywa), dodaje kolumnę **Odchylenie** (dni robocze, o które przesunął się koniec: dodatnie to opóźnienie, wiersz oznaczony na czerwono) i mówi na swoim pasku, ile zadań jest opóźnionych i o ile przesunął się koniec. Właściwości podają daty planu bazowego oraz odchylenia początku i końca. **Usuń plan bazowy** go usuwa.
+**Realizacja → Zapisz plan bazowy** zachowuje daty i czas trwania każdego zadania takie, jakie są teraz; zapisany ponownie, zostaje zastąpiony (jeden plan bazowy: wiele planów bazowych i scenariusze należą do edycji premium). Wykres Gantta rysuje go wtedy jako cienki szary pasek pod paskiem każdego zadania (**Plan bazowy** na pasku narzędzi go ukrywa), dodaje kolumnę **Odchylenie** (dni robocze, o które przesunął się koniec: dodatnie to opóźnienie, wiersz oznaczony na czerwono) i mówi na swoim pasku, ile zadań jest opóźnionych i o ile przesunął się koniec. Właściwości podają daty planu bazowego oraz odchylenia początku i końca. **Usuń plan bazowy** go usuwa.
 
 ### Opóźnione i przed czasem w symulacji
 
@@ -259,7 +259,7 @@ Z planem bazowym symulacja porównuje: element niezbudowany (lub nierozpoczęty)
 
 ### Postęp w plikach
 
-- **Eksportuj XLSX** dodaje kolumny **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** i **GlobalId** (skoroszyt jest po angielsku). Wypełnij je na budowie i wczytaj z powrotem przez **Harmonogram → Importuj postęp…**: wiersze są odnajdywane po GlobalId, WBS lub ID, a *Status date* wpisana nad tabelą ustawia datę stanu. Działa też CSV.
+- **Eksportuj XLSX** dodaje kolumny **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** i **GlobalId** (skoroszyt jest po angielsku). Wypełnij je na budowie i wczytaj z powrotem przez **Realizacja → Importuj postęp…**: wiersze są odnajdywane po GlobalId, WBS lub ID, a *Status date* wpisana nad tabelą ustawia datę stanu. Działa też CSV.
 - **MS Project XML** niesie datę stanu, procent każdego zadania, rzeczywisty początek i koniec, pozostały czas trwania i plan bazowy (Baseline 0); oznaczenia elementów wędrują z elementami w *Lapin elements*.
 - **IFC** zapisuje je w IfcTaskTime każdego zadania (czas stanu, rzeczywisty początek i koniec, pozostały czas, stopień wykonania), a plan bazowy jako drugi IfcWorkSchedule typu BASELINE; własne pola Lapin (wpisany procent, oznaczenia) trafiają do `Lapin_Task`. Oba wracają do tych samych dat.
 - **Zarządzaj → Wersje → Porównaj** mówi, obok elementów, co zmieniło się w harmonogramie: koniec, dni robocze, data stanu oraz zadania dodane, usunięte, przesunięte (o ile dni roboczych), ze zmienionym czasem trwania lub postępem.
@@ -268,13 +268,13 @@ Z planem bazowym symulacja porównuje: element niezbudowany (lub nierozpoczęty)
 
 ![Gantt z kolumną Koszt](shots/planning-cost.webp)
 
-Z kosztorysem (**Koszty → Kosztorys…**) Gantt dostaje kolumnę **Koszt**: udział każdego zadania w kosztorysie, z pozycji wyceniających jego elementy (zadania sumarycznego to suma jego zadań). Pasek narzędzi pokazuje **budżet** (koszty bezpośrednie kosztorysu) i koszt **do dziś** (koszt każdego zadania razy jego % wykonania); Właściwości pokazują koszt zadania i część wykonaną. **Koszty → Koszt w czasie** rysuje krzywą S i tabelę miesięczną (zob. [Kosztorys](cost.md)).
+Z kosztorysem (**Realizacja → Kosztorys…**) Gantt dostaje kolumnę **Koszt**: udział każdego zadania w kosztorysie, z pozycji wyceniających jego elementy (zadania sumarycznego to suma jego zadań). Pasek narzędzi pokazuje **budżet** (koszty bezpośrednie kosztorysu) i koszt **do dziś** (koszt każdego zadania razy jego % wykonania); Właściwości pokazują koszt zadania i część wykonaną. **Realizacja → Koszt w czasie** rysuje krzywą S i tabelę miesięczną (zob. [Kosztorys](cost.md)).
 
 ## Kalendarz
 
 ![Kalendarz pracy](shots/planning-calendar.webp)
 
-**Harmonogram → Kalendarz…** ustawia:
+**Realizacja → Kalendarz…** ustawia:
 
 - **dni robocze** tygodnia (domyślnie od poniedziałku do piątku) i **godziny** dnia (8 od 08:00);
 - **święta**: rumuńskie święta ustawowe, liczone dla każdego roku (w tym prawosławny Wielki Piątek, Wielkanoc i Zielone Świątki), albo żadne. Lista pod nimi pokazuje święta danego roku do sprawdzenia;

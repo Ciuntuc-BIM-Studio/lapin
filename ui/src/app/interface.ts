@@ -64,12 +64,16 @@ export const WORKSPACE_LABELS: Record<WorkspaceId, string> = {
 
 /** Each discipline's tabs in its order; a tab the edition lacks is left out (Wood, Steel, Urban and Rail come with their modules). */
 export const WORKSPACE_TABS: Record<Exclude<WorkspaceId, 'all' | 'mine'>, readonly string[]> = {
-  architecture: ['draft', 'architecture', 'finishes', 'studio', 'annotate', 'manage', 'quantities', 'view'],
-  structure: ['draft', 'structure', 'rebar', 'wood', 'steel', 'annotate', 'manage', 'quantities', 'view'],
-  mep: ['draft', 'mep', 'annotate', 'manage', 'quantities', 'view'],
-  site: ['draft', 'site', 'sitework', 'urban', 'rail', 'studio', 'annotate', 'manage', 'quantities', 'view'],
+  architecture: ['draft', 'architecture', 'interior', 'studio', 'annotate', 'manage', 'construction', 'view'],
+  structure: ['draft', 'structure', 'rebar', 'wood', 'steel', 'annotate', 'manage', 'construction', 'view'],
+  mep: ['draft', 'mep', 'annotate', 'manage', 'construction', 'view'],
+  site: ['draft', 'site', 'urban', 'rail', 'studio', 'annotate', 'manage', 'construction', 'view'],
   drafting: ['draft', 'annotate', 'manage', 'view'],
 };
+
+/** Tabs merged into others (decision 367): an old id, kept in a user's own workspace, and the tab it went into. */
+export const MERGED_TABS: Record<string, string> = { finishes: 'interior', furniture: 'interior', sitework: 'site', planning: 'construction', cost: 'construction', quantities: 'construction' };
+const mergedIds = (ids: string[]): string[] => ids.map((id) => MERGED_TABS[id] ?? id).filter((id, i, a) => a.indexOf(id) === i);
 
 export interface InterfaceSettings {
   preset: InterfacePreset | 'custom';
@@ -150,8 +154,8 @@ export interface InterfaceEnv { web: boolean; height: number }
 /** The settings from what was kept (anything unreadable left out), else the default for where Lapin runs. */
 export function initialSettings(stored: unknown, env: InterfaceEnv): InterfaceSettings {
   const o = stored as { parts?: Record<string, unknown>; chosen?: unknown; hiddenTabs?: unknown; workspace?: unknown; mine?: unknown; rev?: unknown } | null;
-  const hiddenTabs = o && typeof o === 'object' && Array.isArray(o.hiddenTabs) ? o.hiddenTabs.filter((t): t is string => typeof t === 'string' && !ALWAYS_SHOWN_TABS.includes(t)) : [];
-  const mine = o && typeof o === 'object' && Array.isArray(o.mine) ? o.mine.filter((t): t is string => typeof t === 'string') : null;
+  const hiddenTabs = o && typeof o === 'object' && Array.isArray(o.hiddenTabs) ? mergedIds(o.hiddenTabs.filter((t): t is string => typeof t === 'string' && !ALWAYS_SHOWN_TABS.includes(t))) : [];
+  const mine = o && typeof o === 'object' && Array.isArray(o.mine) ? mergedIds(o.mine.filter((t): t is string => typeof t === 'string')) : null;
   // Tabs hidden before workspaces were: the user's own workspace, every tab but those.
   const workspace: WorkspaceId = o && typeof o === 'object' && WORKSPACE_IDS.includes(o.workspace as WorkspaceId) ? o.workspace as WorkspaceId : hiddenTabs.length > 0 ? 'mine' : 'all';
   const tabs = { workspace, mine, hiddenTabs };

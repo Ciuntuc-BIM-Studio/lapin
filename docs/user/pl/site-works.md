@@ -4,9 +4,9 @@ order: 55
 summary: Rusztowania elewacyjne i szalunki stropów oraz belek, rozmieszczane na podstawie modelu przez ich konfiguratory.
 ---
 
-Karta **Roboty pomocnicze** modeluje tymczasowe obiekty budowy: rusztowania elewacyjne oraz deskowanie stropów i belek. Lapin rozmieszcza je na podstawie modelu i liczy, czego potrzebują. Gdy model się zmienia, podążają za nim.
+Roboty pomocnicze, na karcie **Zagospodarowanie** po terenie, modelują tymczasowe obiekty budowy: rusztowania elewacyjne oraz deskowanie stropów i belek. Lapin rozmieszcza je na podstawie modelu i liczy, czego potrzebują. Gdy model się zmienia, podążają za nim.
 
-![Karta Roboty pomocnicze](shots/ribbon-site-works.webp)
+![Roboty pomocnicze na karcie Zagospodarowanie](shots/ribbon-site-works.webp)
 
 Rusztowania i deskowania są **tymczasowe**: stawia się je i rozbiera w fazie **Realizacja**. Pierwsze wstawione dodaje tę fazę, jeśli projekt jej nie ma, i czyni ją fazą aktywną. Widoki wcześniejszych faz je pomijają. Zobacz **Zarządzaj → Fazy**.
 

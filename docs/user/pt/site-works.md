@@ -4,9 +4,9 @@ order: 55
 summary: Andaimes de fachada e fôrmas para pisos e vigas, distribuídos a partir do modelo pelos seus configuradores.
 ---
 
-A guia **Canteiro de obras** modela as obras provisórias do canteiro: andaimes de fachada e as fôrmas de pisos e vigas. O Lapin os distribui a partir do modelo e conta o que eles precisam. Quando o modelo muda, eles o acompanham.
+O canteiro de obras, na guia **Implantação** depois do terreno, modela as obras provisórias do canteiro: andaimes de fachada e as fôrmas de pisos e vigas. O Lapin os distribui a partir do modelo e conta o que eles precisam. Quando o modelo muda, eles o acompanham.
 
-![A guia Canteiro de obras](shots/ribbon-site-works.webp)
+![O canteiro de obras na guia Implantação](shots/ribbon-site-works.webp)
 
 Andaimes e fôrmas são **provisórios**: são montados e desmontados na fase de **Execução**. O primeiro que você coloca adiciona essa fase se o projeto não a tiver e a torna a fase ativa. As vistas de fases anteriores os deixam de fora. Veja **Gerenciar → Fases**.
 

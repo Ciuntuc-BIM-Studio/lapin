@@ -6,7 +6,7 @@ summary: Canapés, canapés d’angle, fauteuils, chaises, lits, armoires, commo
 
 ## Placer du mobilier
 
-L’onglet **Mobilier** a un outil pour chaque sorte de meuble : **Canapé** (<kbd>SO</kbd>), **Canapé d’angle**, **Fauteuil** (<kbd>AC</kbd>), **Chaise**, **Lit** (<kbd>BD</kbd>), **Table de chevet**, **Armoire** (<kbd>WD</kbd>), **Commode**, **Bibliothèque**, **Buffet**, **Table** (<kbd>TB</kbd>), **Table basse** et **Bureau**. Choisissez-en un et cliquez dans le plan.
+L’onglet **Intérieur** a, après les finitions, un outil pour chaque sorte de meuble : **Canapé** (<kbd>SO</kbd>), **Canapé d’angle**, **Fauteuil** (<kbd>AC</kbd>), **Chaise**, **Lit** (<kbd>BD</kbd>), **Table de chevet**, **Armoire** (<kbd>WD</kbd>), **Commode**, **Bibliothèque**, **Buffet**, **Table** (<kbd>TB</kbd>), **Table basse** et **Bureau**. Choisissez-en un et cliquez dans le plan.
 
 Cliquez près d’un mur et le meuble s’y adosse. Son dos se pose sur la face du mur (sur l’enduit, pas sur le noyau), son avant regarde la pièce, et il glisse le long du mur jusqu’à ne plus entrer dans le mur d’en face à un angle. Cliquez plus loin de tout mur et le meuble se place là où vous avez cliqué.
 
@@ -60,7 +60,7 @@ Faites glisser la poignée au milieu d’un meuble pour le déplacer ; faites gl
 
 ## Types de mobilier
 
-**Mobilier → Types de mobilier** liste les types du projet par groupe (assises, lits, rangement, tables, cuisine), chacun avec le nombre de meubles qui l’utilisent. Choisissez une sorte et **Nouveau type**, ou **Dupliquer** un type pour en modifier une copie. Un type contient :
+**Intérieur → Types de mobilier** liste les types du projet par groupe (assises, lits, rangement, tables, cuisine), chacun avec le nombre de meubles qui l’utilisent. Choisissez une sorte et **Nouveau type**, ou **Dupliquer** un type pour en modifier une copie. Un type contient :
 
 - son **nom**, sa **largeur**, sa **profondeur** et sa **hauteur** (celle du dossier pour un canapé, de la tête de lit pour un lit, du plan de travail pour une cuisine) ;
 - les paramètres propres à sa sorte :

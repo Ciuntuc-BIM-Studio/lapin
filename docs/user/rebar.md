@@ -1,12 +1,12 @@
 ---
-title: Rebar 2D
+title: Simple rebar
 order: 52
 summary: Reinforcement drawn on sections and plans, cross-sections cut where you click, and the bar bending schedule.
 ---
 
-The **Rebar 2D** tab draws reinforcement the way a bar list is made: bars as shapes with their dimensions, stirrups spread along a beam, marks in balloons, and a schedule that sums them up. It works on any view: a section, a plan, an elevation.
+The **Simple rebar** tab draws reinforcement the way a bar list is made: bars as shapes with their dimensions, stirrups spread along a beam, marks in balloons, and a schedule that sums them up. It works on any view: a section, a plan, an elevation.
 
-![The Rebar 2D tab](shots/ribbon-rebar.webp)
+![The Simple rebar tab](shots/ribbon-rebar.webp)
 
 ## A section where you work
 

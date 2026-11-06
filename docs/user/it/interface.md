@@ -8,9 +8,13 @@ summary: Le modalità Comoda, Compatta e Concentrazione, la riduzione dei pannel
 
 ## Aree di lavoro
 
-Un’area di lavoro mostra solo le schede della barra multifunzione di cui il tuo lavoro ha bisogno, nell’ordine in cui le usa. Sceglila nella schermata iniziale, in cima a **Vista → Interfaccia…** oppure da **Comandi…** (Area di lavoro: …): **Tutto** (ogni scheda della tua edizione), **Architettura**, **Strutture e armature**, **Impianti**, **Sito e opere provvisionali** o **Disegno 2D**. Il progetto resta uno solo: gli strumenti di una scheda nascosta restano in Comandi… e nelle scorciatoie da tastiera, e un modello creato in un’area di lavoro si apre intero in un’altra.
+Un’area di lavoro mostra solo le schede della barra multifunzione di cui il tuo lavoro ha bisogno, nell’ordine in cui le usa. Sceglila dal pulsante accanto a **File**, che indica l’area di lavoro in cui sei, oppure nella schermata iniziale, in cima a **Vista → Interfaccia…** oppure da **Comandi…** (Area di lavoro: …): **Tutto** (ogni scheda della tua edizione), **Architettura**, **Strutture e armature**, **Impianti**, **Sito e opere provvisionali** o **Disegno 2D**. Il progetto resta uno solo: gli strumenti di una scheda nascosta restano in Comandi… e nelle scorciatoie da tastiera, e un modello creato in un’area di lavoro si apre intero in un’altra.
 
 ![Le aree di lavoro in Vista → Interfaccia…](shots/workspaces.webp)
+
+Le schede restano su una sola riga. Quando la finestra è troppo stretta per tutte, le ultime passano sotto **Altro**, in fondo alla riga, e la scheda in cui sei resta sempre in vista.
+
+Le schede sono raggruppate secondo il lavoro che servono. **Interni** riunisce le finiture e gli arredi. **Sito** riunisce il terreno, il paesaggio e le opere provvisionali (ponteggi e casseforme). **Esecuzione** riunisce il programma lavori e il preventivo (4D e 5D).
 
 Mostra, nascondi o sposta una scheda sotto **Schede** nella stessa finestra di dialogo e la scelta diventa **La mia area di lavoro**, conservata su questo computer per la volta successiva; le altre aree di lavoro restano disponibili per passarvi. **Vista** resta sempre, perché contiene Interfaccia….
 
@@ -39,7 +43,7 @@ In ogni modalità la barra superiore mantiene **Annulla** e **Ripeti** alla sua 
 
 Sotto le modalità, ogni parte si può impostare da sola: la barra multifunzione, gli strumenti rapidi (o nessuno: i tasti numerici funzionano comunque), la riga di comando, l’HUD, il messaggio e i campi dello strumento, la pianta chiave, i pannelli e l’altezza delle righe delle proprietà. Cambiare una parte rende la scelta **Personalizzato**.
 
-Sotto le parti, **Schede**: togli la spunta alle schede della barra multifunzione di cui fai a meno (un architetto può nascondere Struttura, Armature 2D e Impianti, un ingegnere Architettura e Sito). Vista resta sempre, perché Interfaccia… si trova lì. Gli strumenti di una scheda nascosta restano in Comandi… e nelle scorciatoie da tastiera.
+Sotto le parti, **Schede**: togli la spunta alle schede della barra multifunzione di cui fai a meno (un architetto può nascondere Struttura, Armature semplici e Impianti, un ingegnere Architettura e Sito). Vista resta sempre, perché Interfaccia… si trova lì. Gli strumenti di una scheda nascosta restano in Comandi… e nelle scorciatoie da tastiera.
 
 Lapin conserva la tua scelta su questo computer, per te. L’app desktop e il browser conservano ciascuno la propria. Nel browser, Lapin parte in Compatta quando la finestra è alta meno di 800 pixel, finché non scegli.
 

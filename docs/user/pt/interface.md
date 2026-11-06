@@ -8,9 +8,13 @@ summary: Os modos Confortável, Compacta e Foco, como recolher os painéis later
 
 ## Espaços de trabalho
 
-Um espaço de trabalho mostra só as guias da faixa de opções de que o seu trabalho precisa, na ordem em que esse trabalho as usa. Escolha-o na tela inicial, no alto de **Vista → Interface…** ou em **Comandos…** (Espaço de trabalho: …): **Tudo** (todas as guias da sua edição), **Arquitetura**, **Estrutura e armaduras**, **Instalações**, **Implantação e canteiro** ou **Desenho 2D**. O projeto continua sendo um só: as ferramentas de uma guia oculta continuam em Comandos… e nos atalhos de teclado, e um modelo feito em um espaço de trabalho abre inteiro em outro.
+Um espaço de trabalho mostra só as guias da faixa de opções de que o seu trabalho precisa, na ordem em que esse trabalho as usa. Escolha-o no botão ao lado de **Arquivo**, que mostra o espaço de trabalho em que você está, ou na tela inicial, no alto de **Vista → Interface…** ou em **Comandos…** (Espaço de trabalho: …): **Tudo** (todas as guias da sua edição), **Arquitetura**, **Estrutura e armaduras**, **Instalações**, **Implantação e canteiro** ou **Desenho 2D**. O projeto continua sendo um só: as ferramentas de uma guia oculta continuam em Comandos… e nos atalhos de teclado, e um modelo feito em um espaço de trabalho abre inteiro em outro.
 
 ![Os espaços de trabalho em Vista → Interface…](shots/workspaces.webp)
+
+As guias ficam numa só linha. Quando a janela é estreita demais para todas, as últimas passam para **Mais**, no fim da linha, e a guia em que você está fica sempre à vista.
+
+As guias são agrupadas pelo trabalho a que servem. **Interiores** reúne os acabamentos e o mobiliário. **Implantação** reúne o terreno, o paisagismo e o canteiro de obras (andaimes e fôrmas). **Execução** reúne o cronograma da obra e o orçamento (4D e 5D).
 
 Mostre, oculte ou mova uma guia em **Guias** na mesma caixa de diálogo, e a escolha passa a ser **Minha área de trabalho**, guardado neste computador para a próxima vez; os outros espaços de trabalho continuam lá para você trocar. **Vista** sempre fica, pois Interface… está nela.
 
@@ -39,7 +43,7 @@ Em todos os modos, a barra superior mantém **Desfazer** e **Refazer** na ponta 
 
 Abaixo dos modos, cada parte pode ser ajustada separadamente: a faixa de opções, as ferramentas rápidas (ou nenhuma: as teclas numéricas continuam funcionando), a linha de comando, o HUD, a solicitação e os campos da ferramenta, a planta-chave, os painéis e a altura das linhas de propriedades. Mudar uma parte torna a escolha **Personalizado**.
 
-Abaixo das partes, **Guias**: desmarque as guias da faixa de opções que você não usa (um arquiteto pode ocultar Estrutura, Armadura 2D e Instalações, um engenheiro Arquitetura e Implantação). Vista sempre fica, pois Interface… está nela. As ferramentas de uma guia oculta continuam em Comandos… e nos atalhos de teclado.
+Abaixo das partes, **Guias**: desmarque as guias da faixa de opções que você não usa (um arquiteto pode ocultar Estrutura, Armadura simples e Instalações, um engenheiro Arquitetura e Implantação). Vista sempre fica, pois Interface… está nela. As ferramentas de uma guia oculta continuam em Comandos… e nos atalhos de teclado.
 
 O Lapin guarda a sua escolha neste computador, para você. O aplicativo de desktop e o navegador guardam as suas separadamente. No navegador, o Lapin começa no modo Compacta quando a janela tem menos de 800 pixels de altura, até você escolher.
 

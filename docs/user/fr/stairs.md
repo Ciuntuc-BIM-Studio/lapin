@@ -162,7 +162,7 @@ Le plan dessine la dalle, le revêtement et le garde-corps d’un balcon comme i
 
 ![Ses appuis, au-dessus d’une coupe du balcon](shots/balcony-configurator-section.webp)
 
-**Apply** modifie le balcon en une étape. **Save as style…** le garde comme style du projet (un type de balcon), que proposent la barre de l’outil et les propriétés ; **Update style** l’enregistre à nouveau dans son style, et chaque balcon du style le reprend ; près du nom d’un style, on le renomme ou on le supprime (ses balcons restent tels quels). Un style est un type : ses articles de coût (Cost → Map articles) métrent ses balcons.
+**Apply** modifie le balcon en une étape. **Save as style…** le garde comme style du projet (un type de balcon), que proposent la barre de l’outil et les propriétés ; **Update style** l’enregistre à nouveau dans son style, et chaque balcon du style le reprend ; près du nom d’un style, on le renomme ou on le supprime (ses balcons restent tels quels). Un style est un type : ses articles de coût (Exécution → Map articles) métrent ses balcons.
 
 ![Les propriétés d’un balcon : son style et les champs de son genre](shots/balcony-properties.webp)
 

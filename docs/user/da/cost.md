@@ -4,11 +4,11 @@ order: 98
 summary: Overslaget ud fra modellen: dine prislister importeret fra CSV eller Excel, poster på typer og regler på materialer, mængder fra mængdeudtrækket gange enhedspriser opdelt i materiale, arbejdsløn, materiel og transport, indirekte omkostninger, avance og moms, RON eller EUR; de rumænske skemaer F3, F2 og C6 til C9 på ark, i Excel og PDF; IFC-omkostningsplaner.
 ---
 
-## Fanen Økonomi
+## Fanen Udførelse
 
-![Fanen Økonomi](shots/ribbon-cost.webp)
+![Fanen Udførelse](shots/ribbon-cost.webp)
 
-Fanen, der hed **Mængder**, hedder nu **Økonomi**. Den beholder mængderne og tilføjer overslaget:
+Økonomiens grupper ligger på fanen **Udførelse**, efter tidsplanens (fanen hed **Mængder**, siden **Økonomi**). De beholder mængderne og tilføjer overslaget:
 
 - **Mængdeudtræk**, **Skemaer…** og **Eksportér XLSX**: modellens mængder (se [Skemaer og diagrammer](schedules.md)).
 - **Prislister…**: dine priser, importeret fra en CSV- eller Excel-fil (nedenfor).
@@ -23,7 +23,7 @@ Overslaget regnes ud fra modellen, hver gang den ændres. En væg, du tegner nu,
 
 ![Import af en prisliste: hver kolonnes betydning gættet ud fra overskriften](shots/price-import.webp)
 
-Priserne er dine: Lapin leverer intet katalog med priser eller normer. **Økonomi → Prislister… → Importér…** læser en CSV- eller XLSX-fil, for eksempel en eksport fra dit kalkulationsprogram eller en leverandørs liste. Lapin viser filens første rækker under deres overskrifter. Over hver kolonne står det, Lapin har gættet, at den indeholder, ud fra overskriften, på engelsk eller rumænsk:
+Priserne er dine: Lapin leverer intet katalog med priser eller normer. **Udførelse → Prislister… → Importér…** læser en CSV- eller XLSX-fil, for eksempel en eksport fra dit kalkulationsprogram eller en leverandørs liste. Lapin viser filens første rækker under deres overskrifter. Over hver kolonne står det, Lapin har gættet, at den indeholder, ud fra overskriften, på engelsk eller rumænsk:
 
 - **Kode** og **Beskrivelse** (*Cod*, *Simbol*, *Denumire*), **Enhed** (*U.M.*: m³ eller mc, m² eller mp, m, pcs eller buc, kg, t, 100 m²).
 - Enhedsprisen opdelt i **Materiale**, **Arbejdsløn**, **Materiel** og **Transport** (*Material*, *Manoperă*, *Utilaj*, *Transport*), eller én **Enhedspris (ikke opdelt)**, som så tæller som materiale.
@@ -45,9 +45,9 @@ En linje i overslaget kommer fra en **post**: en kode fra din prisliste. Der er 
 
 Typens post kommer først. Et lag, som typens poster allerede måler, prissættes ikke igen af en regel. En post på hele elementet prissætter det hele, så reglerne træder til side. Giv en lagdelt væg en post på typens **kerne** (murværket efter volumen) og regler for dens overflader (pudsen efter areal). Væggen prissættes så lag for lag: murværket under **Vægge**, pudsen under **Overflader og isolering**.
 
-**Økonomi → Tildel poster…** viser de typer i projektet, som elementer bruger, og materialerne i deres lag. Hver række starter med den post, den har, eller den, du valgte for en type eller et materiale med samme navn i et tidligere projekt, eller den, Lapin foreslår: en kode skrevet i navnet, eller den post, der deler flest ord med det (*zidărie*, *BCA*, *tencuială*, *C25/30*). For en lagdelt type foreslår den kernen. Skriv eller vælg en kode, vælg delen og målet, afkryds de rækker, du vil have, og klik på **Anvend**: ét trin at fortryde. Dine valg huskes på denne computer til dine næste projekter.
+**Udførelse → Tildel poster…** viser de typer i projektet, som elementer bruger, og materialerne i deres lag. Hver række starter med den post, den har, eller den, du valgte for en type eller et materiale med samme navn i et tidligere projekt, eller den, Lapin foreslår: en kode skrevet i navnet, eller den post, der deler flest ord med det (*zidărie*, *BCA*, *tencuială*, *C25/30*). For en lagdelt type foreslår den kernen. Skriv eller vælg en kode, vælg delen og målet, afkryds de rækker, du vil have, og klik på **Anvend**: ét trin at fortryde. Dine valg huskes på denne computer til dine næste projekter.
 
-Forskallings- og stilladstyperne på fanen **Byggepladsindretning** havde allerede en postkode (beslutning 152): det er en post på typen, målt efter prisens enhed.
+Forskallings- og stilladstyperne i byggepladsindretningen (fanen **Grund**) havde allerede en postkode (beslutning 152): det er en post på typen, målt efter prisens enhed.
 
 Faserne tæller: et element, der var der før arbejdet (lavet i en *eksisterende* fase), prissættes ikke. Et nedrevet prissættes kun af dets types post, hvis del er **Nedrivningen af det (kun når det nedrives)**, under kapitlet **Nedrivning**.
 
@@ -55,7 +55,7 @@ Faserne tæller: et element, der var der før arbejdet (lavet i en *eksisterende
 
 ![Overslaget: kapitler, linjer, satserne og totalerne](shots/estimate.webp)
 
-**Økonomi → Overslag…** åbner overslaget under visningen, som Gantt. Dets linjer er samlet i **kapitler** efter arbejdsart: jordarbejder, fundamenter, konstruktion, vægge, tag, døre og vinduer, overflader og isolering, installationer, byggepladsindretning, andet. En post kan nævne sit eget kapitel. **Efter etage og arbejdsart** sætter etagen foran hvert kapitel.
+**Udførelse → Overslag…** åbner overslaget under visningen, som Gantt. Dets linjer er samlet i **kapitler** efter arbejdsart: jordarbejder, fundamenter, konstruktion, vægge, tag, døre og vinduer, overflader og isolering, installationer, byggepladsindretning, andet. En post kan nævne sit eget kapitel. **Efter etage og arbejdsart** sætter etagen foran hvert kapitel.
 
 Hver linje viser koden, beskrivelsen og enheden fra prislisten, **mængden** fra modellen (den samme som i mængdeudtrækket), enhedsprisen opdelt i **Materiale**, **Arbejdsløn**, **Materiel** og **Transport**, enhedsprisen og **værdien**. Klik på en linje for at vælge dens elementer i visningerne. Vælg elementer i en visning, så markeres deres linjer i overslaget.
 
@@ -92,9 +92,9 @@ Skemaerne følger almindelig praksis efter metodikken i bekendtgørelse 863/2008
 
 ![Omkostninger over tid: S-kurven over månedernes søjler, månedstabellen under den](shots/cost-time.webp)
 
-Når projektet har en tidsplan (fanen **Tidsplanlægning**), lægges overslaget på den uden nogen kobling af sin egen. Hver posts værdi deles mellem dens elementer, og hvert elements andel går til de opgaver, der bygger den del, posten måler: murværkets post til opgaven, der tager væggenes kerne, pudsens til den, der tager deres overflader. En post på hele elementet, bygget i to opgaver, deles ligeligt mellem dem. En egen post går til den opgave, du vælger ved dens beskrivelse (**I ingen opgave** som standard). En opgaves omkostning fordeles jævnt over dens arbejdsdage: intet bruges i en weekend, på en helligdag eller, for en våd opgave, i vinterpausen.
+Når projektet har en tidsplan (fanen **Udførelse**), lægges overslaget på den uden nogen kobling af sin egen. Hver posts værdi deles mellem dens elementer, og hvert elements andel går til de opgaver, der bygger den del, posten måler: murværkets post til opgaven, der tager væggenes kerne, pudsens til den, der tager deres overflader. En post på hele elementet, bygget i to opgaver, deles ligeligt mellem dem. En egen post går til den opgave, du vælger ved dens beskrivelse (**I ingen opgave** som standard). En opgaves omkostning fordeles jævnt over dens arbejdsdage: intet bruges i en weekend, på en helligdag eller, for en våd opgave, i vinterpausen.
 
-**Økonomi → Omkostninger over tid** åbner under visningen:
+**Udførelse → Omkostninger over tid** åbner under visningen:
 
 - **S-kurven**: den planlagte akkumulerede omkostning over tidsplanen, **basisplanens** (stiplet), når en er gemt, og det **udførte arbejde** (tykt) frem til statusdatoen: hver opgaves omkostning gange dens færdiggørelse i %, fordelt fra dens faktiske start;
 - månedernes søjler, mod skalaen til højre: planlagt og udført;

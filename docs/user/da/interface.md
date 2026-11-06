@@ -8,9 +8,13 @@ summary: Tilstandene Komfortabel, Kompakt og Fokus, sidepaneler der foldes ind, 
 
 ## Arbejdsområder
 
-Et arbejdsområde viser kun de faner i båndet, dit arbejde har brug for, i den rækkefølge arbejdet bruger dem. Vælg det på startskærmen, øverst i **View → Interface…** eller fra **Commands…** (Workspace: …): **Alle** (hver fane i din udgave), **Arkitektur**, **Konstruktion og armering**, **Installationer**, **Grund og byggepladsindretning** eller **Tegning 2D**. Projektet forbliver ét: en skjult fanes værktøjer er stadig i Commands… og tastaturgenvejene, og en model lavet i ét arbejdsområde åbner helt i et andet.
+Et arbejdsområde viser kun de faner i båndet, dit arbejde har brug for, i den rækkefølge arbejdet bruger dem. Vælg det med knappen ved siden af **Filer**, som viser det arbejdsområde, du er i, eller på startskærmen, øverst i **View → Interface…** eller fra **Commands…** (Workspace: …): **Alle** (hver fane i din udgave), **Arkitektur**, **Konstruktion og armering**, **Installationer**, **Grund og byggepladsindretning** eller **Tegning 2D**. Projektet forbliver ét: en skjult fanes værktøjer er stadig i Commands… og tastaturgenvejene, og en model lavet i ét arbejdsområde åbner helt i et andet.
 
 ![Arbejdsområderne i View → Interface…](shots/workspaces.webp)
+
+Fanerne bliver på én linje. Når vinduet er for smalt til dem alle, flytter de sidste ind under **Mere** for enden af linjen, og fanen, du er på, bliver altid synlig.
+
+Fanerne er grupperet efter det arbejde, de tjener. **Interiør** samler overfladerne og møblerne. **Grund** samler terrænet, landskabet og byggepladsindretningen (stilladser og forskalling). **Udførelse** samler tidsplanen og overslaget (4D og 5D).
 
 Vis, skjul eller flyt en fane under **Tabs** i samme dialog, og valget bliver **Mit arbejdsområde**, gemt på denne computer til næste gang; de andre arbejdsområder er der stadig at skifte til. **View** bliver altid, da Interface… ligger i den.
 
@@ -39,7 +43,7 @@ I alle tilstande har den øverste bjælke **Fortryd** og **Annuller fortryd** i 
 
 Under tilstandene kan hver del indstilles for sig: båndet, hurtigværktøjerne (eller ingen: taltasterne virker stadig), kommandolinjen, HUD'en, værktøjets prompt og felter, oversigtsplanen, panelerne og højden på egenskabsrækkerne. Ændrer du én del, bliver valget **Tilpasset**.
 
-Under delene **Faner**: fjern fluebenet ved de faner i båndet, du ikke bruger (en arkitekt kan skjule Structure, Rebar 2D og MEP, en ingeniør Architecture og Site). View bliver altid, for der ligger Grænseflade…. En skjult fanes værktøjer bliver i Kommandoer… og i tastaturgenvejene.
+Under delene **Faner**: fjern fluebenet ved de faner i båndet, du ikke bruger (en arkitekt kan skjule Structure, Simpel armering og MEP, en ingeniør Architecture og Site). View bliver altid, for der ligger Grænseflade…. En skjult fanes værktøjer bliver i Kommandoer… og i tastaturgenvejene.
 
 Lapin husker dit valg på denne computer, for dig. Skrivebordsprogrammet og browseren husker hver deres. I browseren starter Lapin i Kompakt, når vinduet er under 800 pixels højt, indtil du selv vælger.
 

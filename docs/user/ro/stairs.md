@@ -162,7 +162,7 @@ Planul desenează placa, finisajul și balustrada unui balcon cum le taie sau le
 
 ![Susținerile, peste o secțiune prin balcon](shots/balcony-configurator-section.webp)
 
-**Apply** schimbă balconul într-un singur pas. **Save as style…** îl păstrează ca stil al proiectului (un tip de balcon), oferit în bara uneltei și în proprietăți; **Update style** îl salvează din nou în stilul lui și toate balcoanele stilului îl iau; lângă numele unui stil îl redenumești sau îl ștergi (balcoanele lui rămân cum sunt). Un stil e un tip: articolele de deviz de pe el (Cost → Map articles) măsoară balcoanele lui.
+**Apply** schimbă balconul într-un singur pas. **Save as style…** îl păstrează ca stil al proiectului (un tip de balcon), oferit în bara uneltei și în proprietăți; **Update style** îl salvează din nou în stilul lui și toate balcoanele stilului îl iau; lângă numele unui stil îl redenumești sau îl ștergi (balcoanele lui rămân cum sunt). Un stil e un tip: articolele de deviz de pe el (Execuție → Map articles) măsoară balcoanele lui.
 
 ![Proprietățile unui balcon: stilul și toate câmpurile felului lui](shots/balcony-properties.webp)
 

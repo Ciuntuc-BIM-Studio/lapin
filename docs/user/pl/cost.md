@@ -4,11 +4,11 @@ order: 98
 summary: Kosztorys z modelu: twoje cenniki zaimportowane z CSV lub Excela, pozycje na typach i reguły na materiałach, ilości z przedmiaru razy ceny jednostkowe z podziałem na materiał, robociznę, sprzęt i transport, koszty pośrednie, zysk i VAT, w RON lub EUR; rumuńskie formularze F3, F2 i od C6 do C9 na arkuszach, w Excelu i PDF; harmonogramy kosztów IFC.
 ---
 
-## Karta Koszty
+## Karta Realizacja
 
-![Karta Koszty](shots/ribbon-cost.webp)
+![Karta Realizacja](shots/ribbon-cost.webp)
 
-Karta, która nazywała się **Ilości**, nazywa się teraz **Koszty**. Zachowuje ilości i dodaje kosztorys:
+Grupy kosztów są na karcie **Realizacja**, po grupach harmonogramu (karta nazywała się **Ilości**, potem **Koszty**). Zachowują ilości i dodają kosztorys:
 
 - **Przedmiar**, **Zestawienia…** i **Eksportuj XLSX**: ilości z modelu (zobacz [Zestawienia i wykresy](schedules.md)).
 - **Cenniki…**: twoje ceny, zaimportowane z pliku CSV lub Excel (poniżej).
@@ -23,7 +23,7 @@ Kosztorys jest liczony z modelu przy każdej jego zmianie. Ściana, którą tera
 
 ![Import cennika: znaczenie każdej kolumny odgadnięte z jej nagłówka](shots/price-import.webp)
 
-Ceny są twoje: Lapin nie dostarcza żadnego katalogu cen ani norm. **Koszty → Cenniki… → Importuj…** wczytuje plik CSV lub XLSX, na przykład eksport z twojego programu kosztorysowego albo cennik dostawcy. Lapin pokazuje pierwsze wiersze pliku pod ich nagłówkami. Nad każdą kolumną jest to, co według Lapina zawiera, odgadnięte z nagłówka, po angielsku lub po rumuńsku:
+Ceny są twoje: Lapin nie dostarcza żadnego katalogu cen ani norm. **Realizacja → Cenniki… → Importuj…** wczytuje plik CSV lub XLSX, na przykład eksport z twojego programu kosztorysowego albo cennik dostawcy. Lapin pokazuje pierwsze wiersze pliku pod ich nagłówkami. Nad każdą kolumną jest to, co według Lapina zawiera, odgadnięte z nagłówka, po angielsku lub po rumuńsku:
 
 - **Kod** i **Opis** (*Cod*, *Simbol*, *Denumire*), **Jednostka** (*U.M.*: m³ lub mc, m² lub mp, m, pcs lub buc, kg, t, 100 m²).
 - Cena jednostkowa z podziałem na kolumny **Materiał**, **Robocizna**, **Sprzęt** i **Transport** (*Material*, *Manoperă*, *Utilaj*, *Transport*) albo jedna **Cena jednostkowa (bez podziału)**, która liczy się wtedy jako materiał.
@@ -45,9 +45,9 @@ Wiersz kosztorysu pochodzi z **pozycji**: kodu z twojego cennika. Elementom moż
 
 Pozycja typu ma pierwszeństwo. Warstwa, którą mierzą już pozycje jej typu, nie jest wyceniana ponownie przez regułę. Pozycja na całym elemencie wycenia go w całości, więc reguły ustępują. Ścianie warstwowej daj na typie pozycję na **rdzeń** (mur według objętości) i reguły dla jej wykończeń (tynk według powierzchni). Ściana jest wtedy wyceniana warstwa po warstwie: mur pod **Ściany**, tynk pod **Wykończenia i izolacje**.
 
-**Koszty → Przypisz pozycje…** wymienia typy projektu, których używają elementy, i materiały ich warstw. Każdy wiersz zaczyna się od pozycji, którą ma, albo od tej, którą wybrałeś dla typu lub materiału o tej samej nazwie we wcześniejszym projekcie, albo od tej, którą podpowiada Lapin: kodu zapisanego w nazwie albo pozycji mającej z nią najwięcej wspólnych słów (*zidărie*, *BCA*, *tencuială*, *C25/30*). Dla typu warstwowego proponuje rdzeń. Wpisz lub wybierz kod, wybierz część i miarę, zaznacz wiersze, które chcesz, i kliknij **Zastosuj**: jeden krok do cofnięcia. Twoje wybory są zapamiętywane na tym komputerze na następne projekty.
+**Realizacja → Przypisz pozycje…** wymienia typy projektu, których używają elementy, i materiały ich warstw. Każdy wiersz zaczyna się od pozycji, którą ma, albo od tej, którą wybrałeś dla typu lub materiału o tej samej nazwie we wcześniejszym projekcie, albo od tej, którą podpowiada Lapin: kodu zapisanego w nazwie albo pozycji mającej z nią najwięcej wspólnych słów (*zidărie*, *BCA*, *tencuială*, *C25/30*). Dla typu warstwowego proponuje rdzeń. Wpisz lub wybierz kod, wybierz część i miarę, zaznacz wiersze, które chcesz, i kliknij **Zastosuj**: jeden krok do cofnięcia. Twoje wybory są zapamiętywane na tym komputerze na następne projekty.
 
-Typy szalunków i rusztowań z karty **Roboty pomocnicze** miały już kod pozycji (decyzja 152): to pozycja na typie, mierzona według jednostki ceny.
+Typy szalunków i rusztowań z robót pomocniczych (karta **Zagospodarowanie**) miały już kod pozycji (decyzja 152): to pozycja na typie, mierzona według jednostki ceny.
 
 Fazy się liczą: element, który był przed robotami (utworzony w fazie *istniejącej*), nie jest wyceniany. Rozebrany jest wyceniany tylko pozycją swojego typu, której częścią jest **Jego rozbiórka (tylko gdy rozebrany)**, w rozdziale **Rozbiórka**.
 
@@ -55,7 +55,7 @@ Fazy się liczą: element, który był przed robotami (utworzony w fazie *istnie
 
 ![Kosztorys: działy, wiersze, stawki i sumy](shots/estimate.webp)
 
-**Koszty → Kosztorys…** otwiera kosztorys pod widokiem, jak wykres Gantta. Jego wiersze są pogrupowane w **działy** według rodzaju robót: roboty ziemne, fundamenty, konstrukcja, ściany, dach, drzwi i okna, wykończenia i izolacje, instalacje, roboty pomocnicze, inne. Pozycja może wskazać własny dział. **Według kondygnacji i rodzaju robót** stawia kondygnację przed każdym działem.
+**Realizacja → Kosztorys…** otwiera kosztorys pod widokiem, jak wykres Gantta. Jego wiersze są pogrupowane w **działy** według rodzaju robót: roboty ziemne, fundamenty, konstrukcja, ściany, dach, drzwi i okna, wykończenia i izolacje, instalacje, roboty pomocnicze, inne. Pozycja może wskazać własny dział. **Według kondygnacji i rodzaju robót** stawia kondygnację przed każdym działem.
 
 Każdy wiersz pokazuje kod, opis i jednostkę z cennika, **ilość** z modelu (tę samą co w przedmiarze), cenę jednostkową z podziałem na kolumny **Materiał**, **Robocizna**, **Sprzęt** i **Transport**, cenę jednostkową i **wartość**. Kliknij wiersz, aby zaznaczyć jego elementy w widokach. Zaznacz elementy w widoku, a ich wiersze zostaną wyróżnione w kosztorysie.
 
@@ -92,9 +92,9 @@ Formularze są zgodne z powszechną praktyką według metodologii Rozporządzeni
 
 ![Koszt w czasie: krzywa S nad słupkami miesięcy, tabela miesięczna pod nią](shots/cost-time.webp)
 
-Gdy projekt ma harmonogram robót (karta **Harmonogram**), kosztorys kładzie się na nim bez żadnego własnego powiązania. Wartość każdej pozycji dzieli się między jej elementy, a udział każdego elementu idzie do zadań, które budują część mierzoną przez pozycję: pozycja murów do zadania, które bierze rdzeń ścian, pozycja tynku do tego, które bierze ich wykończenia. Pozycja na całym elemencie, budowanym w dwóch zadaniach, dzieli się po równo. Własna pozycja idzie do zadania wybranego obok jej opisu (domyślnie **W żadnym zadaniu**). Koszt zadania rozkłada się równo na jego dni robocze: nic nie jest wydawane w weekend, w święto ani, dla zadania mokrego, w przerwie zimowej.
+Gdy projekt ma harmonogram robót (karta **Realizacja**), kosztorys kładzie się na nim bez żadnego własnego powiązania. Wartość każdej pozycji dzieli się między jej elementy, a udział każdego elementu idzie do zadań, które budują część mierzoną przez pozycję: pozycja murów do zadania, które bierze rdzeń ścian, pozycja tynku do tego, które bierze ich wykończenia. Pozycja na całym elemencie, budowanym w dwóch zadaniach, dzieli się po równo. Własna pozycja idzie do zadania wybranego obok jej opisu (domyślnie **W żadnym zadaniu**). Koszt zadania rozkłada się równo na jego dni robocze: nic nie jest wydawane w weekend, w święto ani, dla zadania mokrego, w przerwie zimowej.
 
-**Koszty → Koszt w czasie** otwiera pod widokiem:
+**Realizacja → Koszt w czasie** otwiera pod widokiem:
 
 - **krzywą S**: planowany koszt narastająco w czasie harmonogramu, koszt **planu bazowego** (przerywany), gdy jest zapisany, i **wykonane roboty** (grubo) do daty stanu: koszt każdego zadania razy jego % wykonania, rozłożony od jego rzeczywistego rozpoczęcia;
 - słupki miesięcy, na prawej skali: planowane i wykonane;

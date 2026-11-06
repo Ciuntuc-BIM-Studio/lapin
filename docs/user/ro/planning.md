@@ -4,9 +4,9 @@ order: 97
 summary: Programul lucrărilor într-o diagramă Gantt: sarcini într-un WBS, jaloane, legături cu decalaje, drumul critic calculat pe un calendar cu sărbătorile legale din România; simularea 4D a clădirii care crește zi de zi, pe vederi, pe planșe și ca video; progresul marcat pe șantier, și de pe telefon, față de o linie de bază; schimb cu MS Project, IFC și Excel.
 ---
 
-## Tabul Planificare
+## Tabul Execuție
 
-![Tabul Planificare](shots/ribbon-planning.webp)
+![Tabul Execuție](shots/ribbon-planning.webp)
 
 - **Generează programul…**: un program întreg făcut din model, dintr-un singur pas (mai jos).
 - **Gantt**: deschide programul sub vedere. Ecranul se împarte în două rânduri: modelul sus, programul jos.
@@ -24,7 +24,7 @@ Un proiect are un singur program. Se face prima oară când adaugi o sarcină ș
 
 ![Generează programul: șabloanele, fila Început și previzualizarea](shots/planning-generate.webp)
 
-**Planificare → Generează programul…** (și din bara Gantt-ului) face un program complet din model: o sarcină pentru fiecare pas al lucrărilor și, unde pasul merge etaj cu etaj, câte una pe etaj, fiecare sarcină având deja elementele ei. În stânga sunt **șabloanele**: **Cadre din beton armat**, **Zidărie portantă**, **Hală metalică** și **Structură pe cadre din lemn**. Lapin îl marchează *sugerat* pe cel cerut de model: hala metalică dacă modelul are una, cadrele din lemn dacă pereții sunt pe cadre, zidăria portantă dacă nu are stâlpi, altfel cadrele din beton armat. Deasupra lor sunt stilurile proiectului (**Salvează ca stil…** păstrează ce ai configurat, pentru proiectul acesta și pentru cele făcute din el).
+**Execuție → Generează programul…** (și din bara Gantt-ului) face un program complet din model: o sarcină pentru fiecare pas al lucrărilor și, unde pasul merge etaj cu etaj, câte una pe etaj, fiecare sarcină având deja elementele ei. În stânga sunt **șabloanele**: **Cadre din beton armat**, **Zidărie portantă**, **Hală metalică** și **Structură pe cadre din lemn**. Lapin îl marchează *sugerat* pe cel cerut de model: hala metalică dacă modelul are una, cadrele din lemn dacă pereții sunt pe cadre, zidăria portantă dacă nu are stâlpi, altfel cadrele din beton armat. Deasupra lor sunt stilurile proiectului (**Salvează ca stil…** păstrează ce ai configurat, pentru proiectul acesta și pentru cele făcute din el).
 
 În dreapta e **previzualizarea**: sarcinile pe care le-ar face generatorul, ca bare, fiecare cu cantitatea care i-a dat durata, iar sub ele numărătorile:
 
@@ -153,7 +153,7 @@ La **Elemente** în Proprietăți, bifează **Găsește-le după o regulă** și
 
 ![Cartea selecției peste 3D, cele două sarcini ale unui perete marcate în Gantt](shots/planning-element-tasks.webp)
 
-Cât Gantt-ul e deschis, o carte peste vederea modelului spune câte elemente sunt selectate și în ce sarcini sunt. Trage-o de mâner pe rândul unei sarcini: elementele intră în acea sarcină. Ține <kbd>Shift</kbd> când le lași ca să le scoți din ea. **Adaugă la sarcină…** (<kbd>T</kbd> <kbd>A</kbd>, și în fila Planificare) alege sarcina dintr-o listă.
+Cât Gantt-ul e deschis, o carte peste vederea modelului spune câte elemente sunt selectate și în ce sarcini sunt. Trage-o de mâner pe rândul unei sarcini: elementele intră în acea sarcină. Ține <kbd>Shift</kbd> când le lași ca să le scoți din ea. **Adaugă la sarcină…** (<kbd>T</kbd> <kbd>A</kbd>, și în tabul Execuție) alege sarcina dintr-o listă.
 
 ![Adaugă la sarcină](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ Ce adaugi sau scoți de mână sunt **excepțiile** sarcinii: regula rămâne cu
 
 ### Elemente fără sarcină
 
-Odată ce o sarcină ia elemente, bara Gantt-ului spune câte elemente n-au sarcină sau au straturi pe care nu le ia nicio sarcină; un clic le selectează, gata de tras pe o sarcină. **Planificare → Elemente fără sarcină** face la fel. **Gestionare → Verificare** le listează și ea, la *Elements with a task*: câte un avertisment pentru fiecare, un clic îl selectează. Elementele existente care rămân nu au nevoie de sarcină.
+Odată ce o sarcină ia elemente, bara Gantt-ului spune câte elemente n-au sarcină sau au straturi pe care nu le ia nicio sarcină; un clic le selectează, gata de tras pe o sarcină. **Execuție → Elemente fără sarcină** face la fel. **Gestionare → Verificare** le listează și ea, la *Elements with a task*: câte un avertisment pentru fiecare, un clic îl selectează. Elementele existente care rămân nu au nevoie de sarcină.
 
 ### În IFC și MS Project
 
@@ -171,7 +171,7 @@ Exportul IFC scrie ce construiește fiecare sarcină ca IfcRelAssignsToProduct (
 
 ![Casa într-o zi a programului ei: placa etajului în lucru în cofrajul ei, pereții de deasupra neîncepuți](shots/planning-simulation.webp)
 
-**Planificare → Simulează** (și **Simulează** în bara Gantt-ului) arată modelul așa cum îl are programul într-o zi. Gantt-ul se deschide sub vedere dacă nu e deschis, cu playerul deasupra lui și ziua ca o bandă peste diagramă:
+**Execuție → Simulează** (și **Simulează** în bara Gantt-ului) arată modelul așa cum îl are programul într-o zi. Gantt-ul se deschide sub vedere dacă nu e deschis, cu playerul deasupra lui și ziua ca o bandă peste diagramă:
 
 - ce **nu a început** e ascuns (sau arătat ca o fantomă palidă, din setări);
 - ce e **în lucru** e desenat în culoarea lui (chihlimbar);
@@ -208,7 +208,7 @@ Un plan, o secțiune, o fațadă sau o vedere 3D salvată are în proprietăți 
 
 ![Planșa de etape: datele de la sfârșitul capitolelor](shots/planning-stages-dialog.webp)
 
-**Planificare → Planșa de etape…** (și din player) pune modelul la mai multe date alăturat, pe o planșă nouă. E desenat din **vederea 3D, așa cum arată acum** (o imagine la fiecare dată) sau dintr-un plan, o secțiune ori o fațadă, pe care engine-ul o desenează la fiecare dată. Datele sunt **sfârșitul fiecărui capitol** (fiecare sarcină din vârful WBS-ului), **sfârșitul fiecărei luni** sau date **alese**. Fiecare cadru e etichetat cu data lui și sarcinile în lucru.
+**Execuție → Planșa de etape…** (și din player) pune modelul la mai multe date alăturat, pe o planșă nouă. E desenat din **vederea 3D, așa cum arată acum** (o imagine la fiecare dată) sau dintr-un plan, o secțiune ori o fațadă, pe care engine-ul o desenează la fiecare dată. Datele sunt **sfârșitul fiecărui capitol** (fiecare sarcină din vârful WBS-ului), **sfârșitul fiecărei luni** sau date **alese**. Fiecare cadru e etichetat cu data lui și sarcinile în lucru.
 
 ![O planșă de etape](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ Un plan, o secțiune, o fațadă sau o vedere 3D salvată are în proprietăți 
 
 ![Gantt-ul pe o planșă](shots/planning-gantt-sheet.webp)
 
-**Planificare → Gantt pe planșă** pune programul pe o planșă nouă: tabelul (rândul, WBS-ul și sarcina, zilele, începutul, finalul) și barele pe o scară a timpului, sarcinile critice cu roșu, rezumatele ca acolade, jaloanele ca romburi, legăturile. Un program mai înalt decât planșa merge pe câte planșe îi trebuie, cu antetul pe fiecare. E desenat vectorial, ca vederile, și se tipărește în PDF.
+**Execuție → Gantt pe planșă** pune programul pe o planșă nouă: tabelul (rândul, WBS-ul și sarcina, zilele, începutul, finalul) și barele pe o scară a timpului, sarcinile critice cu roșu, rezumatele ca acolade, jaloanele ca romburi, legăturile. Un program mai înalt decât planșa merge pe câte planșe îi trebuie, cu antetul pe fiecare. E desenat vectorial, ca vederile, și se tipărește în PDF.
 
 ### Export video
 
 ![Exportă video](shots/planning-video.webp)
 
-**Planificare → Exportă video…** (și din player) înregistrează vederea 3D, de unde privește acum, de la o zi la alta, câte un cadru pe **o zi** sau pe **o săptămână**, cu data și sarcinile în lucru scrise dedesubt. Fișierul e un video WebM, sau MP4 unde sistemul oferă doar atât (aplicația de macOS). Un browser care nu înregistrează video salvează în schimb cadrele ca fișiere PNG într-un ZIP.
+**Execuție → Exportă video…** (și din player) înregistrează vederea 3D, de unde privește acum, de la o zi la alta, câte un cadru pe **o zi** sau pe **o săptămână**, cu data și sarcinile în lucru scrise dedesubt. Fișierul e un video WebM, sau MP4 unde sistemul oferă doar atât (aplicația de macOS). Un browser care nu înregistrează video salvează în schimb cadrele ca fișiere PNG într-un ZIP.
 
 ## Progresul
 
@@ -241,7 +241,7 @@ Barele arată partea realizată mai închisă. Proprietățile spun de unde vine
 
 ### Marcarea elementelor pe șantier
 
-**Planificare → Marchează realizat** (MD) și **Marchează început** (MS) marchează elementele selectate în 3D sau într-un plan, la data de stare (azi, când nu e una), în fiecare sarcină care le ia; **Marchează neînceput** scoate marcajele. Proprietățile unui element selectat îi arată starea pe șantier, cu aceleași trei butoane, iar în fiecare sarcină a lui ziua în care a fost realizat sau început, cu un buton care îl marchează realizat doar în sarcina aceea. Un perete stratificat dintr-o sarcină de zidărie și una de tencuieli se marchează în amândouă, sau într-una, din rândul ei.
+**Execuție → Marchează realizat** (MD) și **Marchează început** (MS) marchează elementele selectate în 3D sau într-un plan, la data de stare (azi, când nu e una), în fiecare sarcină care le ia; **Marchează neînceput** scoate marcajele. Proprietățile unui element selectat îi arată starea pe șantier, cu aceleași trei butoane, iar în fiecare sarcină a lui ziua în care a fost realizat sau început, cu un buton care îl marchează realizat doar în sarcina aceea. Un perete stratificat dintr-o sarcină de zidărie și una de tencuieli se marchează în amândouă, sau într-una, din rândul ei.
 
 ![Marcajele unui perete în proprietățile lui](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ Pe șantier, de pe telefon: intră în sesiunea partajată a proiectului din bro
 
 ### Linia de bază
 
-**Planificare → Salvează linia de bază** păstrează datele și durata fiecărei sarcini așa cum sunt acum; salvată din nou, e înlocuită (o singură linie de bază: mai multe linii de bază și scenarii sunt pentru ediția premium). Gantt-ul o desenează apoi ca o bară gri subțire sub bara fiecărei sarcini (**Linia de bază** din bară o ascunde), adaugă coloana **Abatere** (zilele lucrătoare cu care s-a mutat finalul: pozitiv înseamnă întârziere, rândul marcat cu roșu) și spune în bara lui câte sarcini întârzie și cu cât s-a mutat finalul. Proprietățile dau datele liniei de bază și abaterile la început și la final. **Șterge linia de bază** o scoate.
+**Execuție → Salvează linia de bază** păstrează datele și durata fiecărei sarcini așa cum sunt acum; salvată din nou, e înlocuită (o singură linie de bază: mai multe linii de bază și scenarii sunt pentru ediția premium). Gantt-ul o desenează apoi ca o bară gri subțire sub bara fiecărei sarcini (**Linia de bază** din bară o ascunde), adaugă coloana **Abatere** (zilele lucrătoare cu care s-a mutat finalul: pozitiv înseamnă întârziere, rândul marcat cu roșu) și spune în bara lui câte sarcini întârzie și cu cât s-a mutat finalul. Proprietățile dau datele liniei de bază și abaterile la început și la final. **Șterge linia de bază** o scoate.
 
 ### Întârziat și înainte în simulare
 
@@ -259,7 +259,7 @@ Cu o linie de bază, simularea compară: un element neconstruit (sau neînceput)
 
 ### Progresul în fișiere
 
-- **Export XLSX** adaugă coloanele **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** și **GlobalId** (registrul e în engleză; un tabel făcut de mână le poate numi și *% realizat*, *Început real*, *Final real*). Completează-le pe șantier și citește-le înapoi cu **Planificare → Importă progresul…**: rândurile sunt găsite după GlobalId, WBS sau ID, iar o *Data de stare* (sau *Status date*) scrisă deasupra tabelului pune data de stare. Merge și un CSV.
+- **Export XLSX** adaugă coloanele **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** și **GlobalId** (registrul e în engleză; un tabel făcut de mână le poate numi și *% realizat*, *Început real*, *Final real*). Completează-le pe șantier și citește-le înapoi cu **Execuție → Importă progresul…**: rândurile sunt găsite după GlobalId, WBS sau ID, iar o *Data de stare* (sau *Status date*) scrisă deasupra tabelului pune data de stare. Merge și un CSV.
 - **MS Project XML** poartă data de stare, procentul fiecărei sarcini, începutul și finalul real, durata rămasă și linia de bază (Baseline 0); marcajele elementelor merg cu elementele, în *Lapin elements*.
 - **IFC** le scrie în IfcTaskTime-ul fiecărei sarcini (timpul de stare, începutul și finalul real, timpul rămas, gradul de realizare), iar linia de bază ca al doilea IfcWorkSchedule, de tip BASELINE; câmpurile proprii ale lui Lapin (procentul scris, marcajele) merg în `Lapin_Task`. Amândouă revin la aceleași date.
 - **Gestionare → Versiuni → Compară** spune, pe lângă elemente, ce s-a schimbat în program: finalul, zilele lucrătoare, data de stare și sarcinile adăugate, șterse, mutate (cu câte zile lucrătoare), cele cu durata sau progresul schimbat.
@@ -268,13 +268,13 @@ Cu o linie de bază, simularea compară: un element neconstruit (sau neînceput)
 
 ![Gantt-ul cu coloana Cost](shots/planning-cost.webp)
 
-Cu un deviz (**Cost → Deviz…**), Gantt-ul primește coloana **Cost**: partea din deviz a fiecărei sarcini, din rândurile care îi prețuiesc elementele (a unui rezumat e a sarcinilor lui). Bara de unelte arată **bugetul** (cheltuielile directe ale devizului) și costul **la zi** (costul fiecărei sarcini înmulțit cu procentul ei realizat); Proprietăți arată costul unei sarcini și partea realizată. **Cost → Costul în timp** desenează curba S și tabelul lunar (vezi [Devizul](cost.md)).
+Cu un deviz (**Execuție → Deviz…**), Gantt-ul primește coloana **Cost**: partea din deviz a fiecărei sarcini, din rândurile care îi prețuiesc elementele (a unui rezumat e a sarcinilor lui). Bara de unelte arată **bugetul** (cheltuielile directe ale devizului) și costul **la zi** (costul fiecărei sarcini înmulțit cu procentul ei realizat); Proprietăți arată costul unei sarcini și partea realizată. **Execuție → Costul în timp** desenează curba S și tabelul lunar (vezi [Devizul](cost.md)).
 
 ## Calendarul
 
 ![Calendarul de lucru](shots/planning-calendar.webp)
 
-**Planificare → Calendar…** stabilește:
+**Execuție → Calendar…** stabilește:
 
 - **zilele lucrătoare** ale săptămânii (de luni până vineri, implicit) și **orele** unei zile (8, de la 08:00);
 - **sărbătorile**: sărbătorile legale din România, calculate pentru fiecare an (cu Vinerea Mare, Paștele și Rusaliile ortodoxe), sau niciuna. Lista de dedesubt arată sărbătorile unui an, ca să le verifici;

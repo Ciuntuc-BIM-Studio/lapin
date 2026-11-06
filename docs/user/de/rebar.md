@@ -1,12 +1,12 @@
 ---
-title: Bewehrung 2D
+title: Einfache Bewehrung
 order: 52
 summary: Bewehrung auf Schnitten und Grundrissen gezeichnet, Querschnitte dort geschnitten, wo Sie klicken, und die Stahlliste.
 ---
 
-Der Reiter **Bewehrung 2D** zeichnet Bewehrung so, wie eine Stahlliste entsteht: Stäbe als Formen mit ihren Maßen, Bügel entlang eines Balkens verteilt, Positionsnummern in Kreisen und eine Liste, die sie zusammenzählt. Er arbeitet in jeder Ansicht: einem Schnitt, einem Grundriss, einer Fassade.
+Der Reiter **Einfache Bewehrung** zeichnet Bewehrung so, wie eine Stahlliste entsteht: Stäbe als Formen mit ihren Maßen, Bügel entlang eines Balkens verteilt, Positionsnummern in Kreisen und eine Liste, die sie zusammenzählt. Er arbeitet in jeder Ansicht: einem Schnitt, einem Grundriss, einer Fassade.
 
-![Der Reiter Bewehrung 2D](shots/ribbon-rebar.webp)
+![Der Reiter Einfache Bewehrung](shots/ribbon-rebar.webp)
 
 ## Ein Schnitt dort, wo Sie arbeiten
 

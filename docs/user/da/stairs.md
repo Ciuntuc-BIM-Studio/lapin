@@ -162,7 +162,7 @@ Planen tegner en altans plade, belægning og rækværk, som den skærer eller se
 
 ![Dens understøtninger over et snit gennem altanen](shots/balcony-configurator-section.webp)
 
-**Apply** ændrer altanen i ét trin. **Save as style…** gemmer den som en stil i projektet (en altantype), som værktøjets bjælke og egenskaberne tilbyder; **Update style** gemmer den igen i sin stil, og hver altan af stilen følger med; ved en stils navn omdøbes eller slettes den (dens altaner forbliver som de er). En stil er en type: dens prisposter (Cost → Map articles) måler dens altaner.
+**Apply** ændrer altanen i ét trin. **Save as style…** gemmer den som en stil i projektet (en altantype), som værktøjets bjælke og egenskaberne tilbyder; **Update style** gemmer den igen i sin stil, og hver altan af stilen følger med; ved en stils navn omdøbes eller slettes den (dens altaner forbliver som de er). En stil er en type: dens prisposter (Udførelse → Map articles) måler dens altaner.
 
 ![En altans egenskaber: dens stil og felterne for dens type](shots/balcony-properties.webp)
 

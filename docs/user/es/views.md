@@ -22,7 +22,7 @@ La línea de una sección se dibuja en todas las plantas, y la sección se marca
 
 Cada sección está en una **capa de marcadores** (**Sections** al principio; **Capa del marcador** en las propiedades de la sección la cambia), y cada vista elige qué marca. **Vista → Secciones…** lista las secciones del proyecto por capa para la vista en primer plano, con una casilla por capa y por sección solo para esta vista, la capa de cada sección (una existente o **Nueva capa…**) y en cuántas vistas está oculta cada una. Una lámina marca lo que marcan sus vistas.
 
-Una sección cortada a través de una viga o un pilar (**Sección aquí**, **Sección transversal** en la pestaña Armado 2D) también tiene pinzamientos en planta: arrastre cualquiera de los extremos a lo largo de la línea para dar a ese lado más o menos margen, y arrastre el centro a lo largo del elemento para mover la estación en la que corta. La ventana de la sección la sigue.
+Una sección cortada a través de una viga o un pilar (**Sección aquí**, **Sección transversal** en la pestaña Armado simple) también tiene pinzamientos en planta: arrastre cualquiera de los extremos a lo largo de la línea para dar a ese lado más o menos margen, y arrastre el centro a lo largo del elemento para mover la estación en la que corta. La ventana de la sección la sigue.
 
 ![Vista → Secciones… para el alzado sur](shots/sections-dialog.webp)
 

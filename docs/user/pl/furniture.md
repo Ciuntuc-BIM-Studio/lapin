@@ -6,7 +6,7 @@ summary: Sofy, narożniki, fotele, krzesła, łóżka, szafy, komody, regały, k
 
 ## Wstawianie mebli
 
-Karta **Meble** ma narzędzie dla każdego rodzaju mebla: **Sofa** (<kbd>SO</kbd>), **Narożnik**, **Fotel** (<kbd>AC</kbd>), **Krzesło**, **Łóżko** (<kbd>BD</kbd>), **Szafka nocna**, **Szafa** (<kbd>WD</kbd>), **Komoda**, **Regał na książki**, **Kredens**, **Stół** (<kbd>TB</kbd>), **Stolik kawowy** i **Biurko**. Wybierz jedno i kliknij w rzucie.
+Karta **Wnętrza** ma, po wykończeniach, narzędzie dla każdego rodzaju mebla: **Sofa** (<kbd>SO</kbd>), **Narożnik**, **Fotel** (<kbd>AC</kbd>), **Krzesło**, **Łóżko** (<kbd>BD</kbd>), **Szafka nocna**, **Szafa** (<kbd>WD</kbd>), **Komoda**, **Regał na książki**, **Kredens**, **Stół** (<kbd>TB</kbd>), **Stolik kawowy** i **Biurko**. Wybierz jedno i kliknij w rzucie.
 
 Kliknij blisko ściany, a mebel do niej dosunie się tyłem. Jego tył leży na licu ściany (na tynku, nie na rdzeniu), przód zwraca się do pomieszczenia, a mebel przesuwa się wzdłuż ściany, aż przestanie wchodzić w ścianę w narożniku. Kliknij dalej od ścian, a mebel stanie tam, gdzie kliknięto.
 
@@ -60,7 +60,7 @@ Przeciągnij uchwyt na środku mebla, aby go przesunąć; przeciągnij uchwyt pr
 
 ## Typy mebli
 
-**Meble → Typy mebli** wymienia typy projektu według grup (siedziska, łóżka, przechowywanie, stoły, kuchnia), każdy z liczbą mebli, które go używają. Wybierz rodzaj i **Nowy typ** albo **Duplikuj** typ, aby zmienić kopię. Typ zawiera:
+**Wnętrza → Typy mebli** wymienia typy projektu według grup (siedziska, łóżka, przechowywanie, stoły, kuchnia), każdy z liczbą mebli, które go używają. Wybierz rodzaj i **Nowy typ** albo **Duplikuj** typ, aby zmienić kopię. Typ zawiera:
 
 - swoją **nazwę**, **szerokość**, **głębokość** i **wysokość** (dla sofy oparcia, dla łóżka wezgłowia, dla kuchni blatu roboczego);
 - własne parametry swojego rodzaju:

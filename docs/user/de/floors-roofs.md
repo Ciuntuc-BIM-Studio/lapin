@@ -6,7 +6,7 @@ summary: Zeichnen Sie Decken und Dächer über ihren Umriss, wählen Sie die For
 
 ## Decken
 
-Wählen Sie **Ausbau → Decke** (<kbd>SB</kbd>) und klicken Sie dann auf die Ecken ihres Umrisses. Schließen Sie den Umriss am ersten Punkt oder drücken Sie <kbd>Enter</kbd>. Auch eine Decke besteht aus Schichten, die unter **Ausbau → Deckentypen** festgelegt werden. Eine Schicht eines Deckentyps kann die Dicke 0 haben (eine Abdichtung, ein Anstrich): Sie bildet nichts, wird in Schnitten als Linie gezeichnet und nach der Fläche der Decke gemessen.
+Wählen Sie **Innenausbau → Decke** (<kbd>SB</kbd>) und klicken Sie dann auf die Ecken ihres Umrisses. Schließen Sie den Umriss am ersten Punkt oder drücken Sie <kbd>Enter</kbd>. Auch eine Decke besteht aus Schichten, die unter **Innenausbau → Deckentypen** festgelegt werden. Eine Schicht eines Deckentyps kann die Dicke 0 haben (eine Abdichtung, ein Anstrich): Sie bildet nichts, wird in Schnitten als Linie gezeichnet und nach der Fläche der Decke gemessen.
 
 Um den Umriss zu ändern, wählen Sie die Decke aus und ziehen Sie ihre Ecken. **Deckenöffnung** (<kbd>SH</kbd>) schneidet ein Loch in eine Decke, für eine Treppe oder einen Schacht.
 
@@ -60,9 +60,9 @@ Jedes Bauteil ist ein eigener Teil: die Liste **Roof timber** führt sie als Hol
 
 ## Abgehängte Decken
 
-**Ausbau → Decke** (<kbd>CG</kbd>) zeichnet eine abgehängte Decke über einen angeklickten Umriss; **Decke in einem Raum** füllt den angeklickten Raum entlang seines Umrisses. Eine Decke hängt in ihrer **Höhe** über dem Geschoss (2700 mm, sofern in den Eigenschaften nicht anders eingestellt).
+**Innenausbau → Decke** (<kbd>CG</kbd>) zeichnet eine abgehängte Decke über einen angeklickten Umriss; **Decke in einem Raum** füllt den angeklickten Raum entlang seines Umrisses. Eine Decke hängt in ihrer **Höhe** über dem Geschoss (2700 mm, sofern in den Eigenschaften nicht anders eingestellt).
 
-Ihr Typ in **Ausbau → Deckentypen** legt das **System** fest: **Platten auf sichtbarem Raster** (Breite, Länge und Dicke der Platte, Ansichtsbreite, Tiefe und Drehung des Rasters, Abhänger bis zur Rohdecke in ihrem Abstand) oder **Gipskarton, fugenlos**. Das Raster wird auf der Decke zentriert, sodass die Randplatten gleich ausfallen.
+Ihr Typ in **Innenausbau → Deckentypen** legt das **System** fest: **Platten auf sichtbarem Raster** (Breite, Länge und Dicke der Platte, Ansichtsbreite, Tiefe und Drehung des Rasters, Abhänger bis zur Rohdecke in ihrem Abstand) oder **Gipskarton, fugenlos**. Das Raster wird auf der Decke zentriert, sodass die Randplatten gleich ausfallen.
 
 **Leuchtenpaneel** und **Luftauslass** setzen eines in das angeklickte Feld; ein Klick auf dasselbe Feld mit dem anderen Werkzeug tauscht es. Im Eigenschaftenbereich setzt **Verteilen** Leuchtenpaneele oder Luftauslässe in jedes soundsovielte Feld, **Leeren** entfernt sie. Die Listen zählen ganze Platten, Leuchtenpaneele und Luftauslässe, und die Decke geht als IfcCovering vom Typ CEILING ins IFC.
 
@@ -72,9 +72,9 @@ Ihr Typ in **Ausbau → Deckentypen** legt das **System** fest: **Platten auf si
 
 ## Sockelleisten
 
-**Ausbau → Sockelleiste im Raum** (<kbd>SK</kbd>) legt eine Sockelleiste rund um den angeklickten Raum, an den Wandflächen entlang, an jeder Tür unterbrochen (jede Öffnung, die bis zum Boden reicht); ein Klick zwischen Wänden ohne Raum folgt ihnen genauso. Die Sockelleiste eines Raums folgt dem Raum: Wird eine Wand oder eine Tür verschoben, geht die Sockelleiste mit. **Sockelleiste** zeichnet eine entlang einer Linie, die du auf einer Wandfläche anklickst (Enter beendet); die Leiste liegt auf der von der Wand abgewandten Seite, und **Seite wechseln** in ihren Eigenschaften dreht sie um.
+**Innenausbau → Sockelleiste im Raum** (<kbd>SK</kbd>) legt eine Sockelleiste rund um den angeklickten Raum, an den Wandflächen entlang, an jeder Tür unterbrochen (jede Öffnung, die bis zum Boden reicht); ein Klick zwischen Wänden ohne Raum folgt ihnen genauso. Die Sockelleiste eines Raums folgt dem Raum: Wird eine Wand oder eine Tür verschoben, geht die Sockelleiste mit. **Sockelleiste** zeichnet eine entlang einer Linie, die du auf einer Wandfläche anklickst (Enter beendet); die Leiste liegt auf der von der Wand abgewandten Seite, und **Seite wechseln** in ihren Eigenschaften dreht sie um.
 
-Ihr Typ, unter **Ausbau → Sockelleistentypen**, legt das **Profil** fest — **Glatt (eckig)**, **Abgeschrägt (MDF)**, **Profiliert (Holz)**, **Mit Hohlkehle (Metall)**, **Halbrund oben** oder **Abgerundete Kante**, maßstäblich daneben gezeichnet —, die **Höhe** (40 bis 300 mm), die **Dicke** (5 bis 40 mm), das **Material** und seine Farbe. **Aus der Bibliothek** holt fertige Typen ins Projekt: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 und Bullnose 70. Solange ein Sockelleisten-Werkzeug aktiv ist, zeigt das Eigenschaftenfenster den Typ, den es legt, vor dem Klick zu wählen.
+Ihr Typ, unter **Innenausbau → Sockelleistentypen**, legt das **Profil** fest — **Glatt (eckig)**, **Abgeschrägt (MDF)**, **Profiliert (Holz)**, **Mit Hohlkehle (Metall)**, **Halbrund oben** oder **Abgerundete Kante**, maßstäblich daneben gezeichnet —, die **Höhe** (40 bis 300 mm), die **Dicke** (5 bis 40 mm), das **Material** und seine Farbe. **Aus der Bibliothek** holt fertige Typen ins Projekt: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 und Bullnose 70. Solange ein Sockelleisten-Werkzeug aktiv ist, zeigt das Eigenschaftenfenster den Typ, den es legt, vor dem Klick zu wählen.
 
 In ihren Eigenschaften hat eine Sockelleiste ihren Typ, einen **Versatz unten** über dem Boden und **Lücken an den Türen** (aus: Sie läuft vor ihnen durch). **Sockelleistenliste** (oder **Sockelleisten** in der Liste neuer Bauteillisten im Projektbrowser) führt sie nach Typ mit Stücken und Länge auf, ohne die Lücken der Türen. Die Leiste ist an den Ecken auf Gehrung geschnitten; ein Grundriss zeichnet ihre Vorderkante, und in IFC wird eine Sockelleiste ein IfcCovering vom Typ SKIRTINGBOARD, eines IfcCoveringType desselben Typs.
 

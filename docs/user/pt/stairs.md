@@ -162,7 +162,7 @@ A planta desenha a laje, o acabamento e a guarda de uma varanda como os corta ou
 
 ![Os seus apoios, sobre um corte da varanda](shots/balcony-configurator-section.webp)
 
-**Apply** altera a varanda num só passo. **Save as style…** guarda-a como estilo do projeto (um tipo de varanda), oferecido na barra da ferramenta e nas propriedades; **Update style** guarda-a de novo no seu estilo e todas as varandas do estilo a seguem; junto ao nome de um estilo, muda-se-lhe o nome ou elimina-se (as suas varandas ficam como estão). Um estilo é um tipo: os seus artigos de custo (Cost → Map articles) medem as suas varandas.
+**Apply** altera a varanda num só passo. **Save as style…** guarda-a como estilo do projeto (um tipo de varanda), oferecido na barra da ferramenta e nas propriedades; **Update style** guarda-a de novo no seu estilo e todas as varandas do estilo a seguem; junto ao nome de um estilo, muda-se-lhe o nome ou elimina-se (as suas varandas ficam como estão). Um estilo é um tipo: os seus artigos de custo (Execução → Map articles) medem as suas varandas.
 
 ![As propriedades de uma varanda: o seu estilo e os campos do seu tipo](shots/balcony-properties.webp)
 

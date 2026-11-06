@@ -161,7 +161,7 @@ Vælg en ventilator for at ændre dens type, dens **højde over gulvet**, dens d
 
 **Ventilatorliste** viser hver ventilator med rum, slags, størrelse, luftmængde, montering, styring, højde og udløb samt den samlede luftmængde. **Kontrol af udsugning pr. rum** viser hvert badeværelse, toilet og køkken (og hvert rum med en ventilator) med dets rumfang, den udsugning, det kræver, og hvad dets ventilatorer giver: et badeværelse 8 luftskifter i timen og mindst 54 m³/h, et toilet 6 og 25 m³/h, et køkken 6 og 108 m³/h. Det er vejledende værdier; kontrollér dem mod den norm, du projekterer efter.
 
-En ny type har økonomiposten `LAP-FAN`, talt pr. ventilator (**Økonomi → Tildel poster…** ændrer den).
+En ny type har økonomiposten `LAP-FAN`, talt pr. ventilator (**Udførelse → Tildel poster…** ændrer den).
 
 IFC skriver en ventilator som en **IfcFan** af en **IfcFanType** med dens foruddefinerede type (PROPELLORAXIAL for en væg- eller vinduesventilator, CENTRIFUGALRADIAL for en loftventilator, TUBEAXIAL for en kanalventilator) og **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); væggens hul som en IfcOpeningElement. Lapin læser dem tilbage som sine egne ventilatorer.
 

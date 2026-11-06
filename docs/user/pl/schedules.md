@@ -9,14 +9,14 @@ summary: Zestawiaj drzwi, okna, nadproża, pomieszczenia i wszystko, co liczy da
 Wszystko, co Lapin modeluje, jest mierzone z geometrii: długość, wysokość, powierzchnia boczna brutto i netto oraz objętość ściany, powierzchnia i objętość każdej warstwy, powierzchnie i objętość stropu, powierzchnia i obwód pomieszczenia, liczba drzwi. Są trzy drogi:
 
 - **Jeden element.** Zaznacz go: sekcja **Ilości** w panelu właściwości pokazuje, co mierzy, a potem każdą jego warstwę lub część.
-- **Cały model.** **Koszty → Przedmiar** tworzy (lub otwiera) przedmiar: wszystkie elementy, które model mierzy, zsumowane wiersz po wierszu, z liczbą, długością, powierzchnią brutto i netto, objętością brutto i netto i masą. Jego pasek wybiera, co jest sumowane razem: **Według rodzaju i typu** (domyślnie: ściany każdego typu ściany, stropy każdego typu…), **Według materiału** (każda warstwa pod swoim materiałem: cegła, tynk i izolacja ścian osobno, beton nadproży), według kondygnacji albo łącznie. **Wszystkie elementy** wybiera, jakie rodzaje wymienia (na przykład tylko ściany i stropy). Przedmiar nadąża za modelem jak każde zestawienie i przyjmuje własne wiersze i kolumny (rezerwę, cenę jednostkową).
-- **Każda inna lista.** **Koszty → Zestawienia…** tworzy każde zestawienie, jakie oferuje edycja: pomieszczenia, wykończenia, stolarkę, układy warstw typów, drewno, zbrojenie, deskowania, stal… Ta sama lista jest pod **+** obok **Zestawień** w przeglądarce projektu.
+- **Cały model.** **Realizacja → Przedmiar** tworzy (lub otwiera) przedmiar: wszystkie elementy, które model mierzy, zsumowane wiersz po wierszu, z liczbą, długością, powierzchnią brutto i netto, objętością brutto i netto i masą. Jego pasek wybiera, co jest sumowane razem: **Według rodzaju i typu** (domyślnie: ściany każdego typu ściany, stropy każdego typu…), **Według materiału** (każda warstwa pod swoim materiałem: cegła, tynk i izolacja ścian osobno, beton nadproży), według kondygnacji albo łącznie. **Wszystkie elementy** wybiera, jakie rodzaje wymienia (na przykład tylko ściany i stropy). Przedmiar nadąża za modelem jak każde zestawienie i przyjmuje własne wiersze i kolumny (rezerwę, cenę jednostkową).
+- **Każda inna lista.** **Realizacja → Zestawienia…** tworzy każde zestawienie, jakie oferuje edycja: pomieszczenia, wykończenia, stolarkę, układy warstw typów, drewno, zbrojenie, deskowania, stal… Ta sama lista jest pod **+** obok **Zestawień** w przeglądarce projektu.
 
 ![Przedmiar pogrupowany według rodzaju i materiału](shots/quantity-takeoff.webp)
 
 Według materiału materiał mierzony według **powierzchni** (zob. [Materiały](materials.md)) ma wiersz dla każdej grubości, w jakiej jest ułożony, z kolumną **Grubość (mm)**: *Wełna mineralna 150 mm: 84,20 m²*, *Wełna mineralna 200 mm: 31,00 m²*. Mierzony według objętości ma tylko swoje m³, według masy swoje kg, według sztuk swoje **Sztuki**. Kolumna **Notatka** mówi, kiedy warstwa nie ma grubości z katalogu materiału. Kosztorys robi to samo: pozycja na materiale jest mierzona tak, jak mówi materiał, wiersz na grubość. Materiał bez reguły jest mierzony jak dotąd.
 
-**Koszty → Eksportuj XLSX** zapisuje od razu przedmiar jako skoroszyt (w przeglądarce jest pobierany).
+**Realizacja → Eksportuj XLSX** zapisuje od razu przedmiar jako skoroszyt (w przeglądarce jest pobierany).
 
 ## Ilości na arkuszu
 
@@ -32,7 +32,7 @@ Na arkuszu przeciągnij tabelę, aby ją przesunąć; tabela dłuższa niż ramk
 
 ## Tworzenie zestawienia
 
-Zestawienie to tabela wypełniana przez model: drzwi i okna, nadproża, pomieszczenia, zbrojenie, drewno, deskowanie i nie tylko. Kliknij **+** obok **Zestawienia** w przeglądarce projektu i wybierz, co ma zestawiać, albo użyj narzędzia modułu (Drewno → Zestawienie tarcicy, Roboty pomocnicze → Zestawienie szalunków…). Kliknij je dwukrotnie w przeglądarce, aby otworzyć je na karcie. Zestawienie podąża za modelem: przesuń ścianę, dodaj okno, a tabela zmieni się razem z nim.
+Zestawienie to tabela wypełniana przez model: drzwi i okna, nadproża, pomieszczenia, zbrojenie, drewno, deskowanie i nie tylko. Kliknij **+** obok **Zestawienia** w przeglądarce projektu i wybierz, co ma zestawiać, albo użyj narzędzia modułu (Drewno → Zestawienie tarcicy, Zagospodarowanie → Zestawienie szalunków…). Kliknij je dwukrotnie w przeglądarce, aby otworzyć je na karcie. Zestawienie podąża za modelem: przesuń ścianę, dodaj okno, a tabela zmieni się razem z nim.
 
 Zestawienia **Stolarka**, **drzwi**, **okien** i **nadproży** pokazują kartę dla każdego typu, z jego rysunkiem (domyślnie widok od wewnątrz) i jego wartościami wiersz po wierszu. Inne zestawienia są zwykłą tabelą, z jednym wierszem na pozycję i wierszem sum na końcu.
 
@@ -94,7 +94,7 @@ Gdy potrzebny jest tylko wynik, kliknij **Edytor tabeli** nad tabelą edycji pod
 
 ## Profile ścian
 
-Zestawienie **Profile ścian** (**Architektura → Zestawienie profili ścian** albo **Koszty → Zestawienia…** → **Profile ścian**) sumuje profile i bruzdy ścian projektu według profilu, rodzaju i materiału: ile ich jest, ich kawałki (profil przerwany przez otwory to kilka kawałków), ich długość wzdłuż lic i ich objętość; dla bruzdy objętość, którą wybiera ze ściany. Suma dla profili i suma dla bruzd zamykają tabelę. Jej pasek sumuje je najpierw **według profilu**, **według kondygnacji** albo **według typu ściany**. Zawinięcia liczą się w objętości, nie w długości.
+Zestawienie **Profile ścian** (**Architektura → Zestawienie profili ścian** albo **Realizacja → Zestawienia…** → **Profile ścian**) sumuje profile i bruzdy ścian projektu według profilu, rodzaju i materiału: ile ich jest, ich kawałki (profil przerwany przez otwory to kilka kawałków), ich długość wzdłuż lic i ich objętość; dla bruzdy objętość, którą wybiera ze ściany. Suma dla profili i suma dla bruzd zamykają tabelę. Jej pasek sumuje je najpierw **według profilu**, **według kondygnacji** albo **według typu ściany**. Zawinięcia liczą się w objętości, nie w długości.
 
 ## Eksport
 

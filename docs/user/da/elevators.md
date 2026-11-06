@@ -61,6 +61,6 @@ Markér en elevator for at ændre dens nederste og øverste stop, afkrydse de et
 
 **Arkitektur → Elevatorliste** viser hver elevator med type, drift, mærkelast, personer, stol, døre, de stop, den betjener, de etager, den går imellem, løftehøjde, hastighed og skakt.
 
-Hver elevator har en type dannet af art, last og stol (Personelevator mellem 630 kg, 1100 × 1400): ens elevatorer deler den, så en prispost sat på typen (**Økonomi → Tildel poster…**) prissætter dem alle, og planlægningen finder dem ud fra deres klasse (IfcTransportElement).
+Hver elevator har en type dannet af art, last og stol (Personelevator mellem 630 kg, 1100 × 1400): ens elevatorer deler den, så en prispost sat på typen (**Udførelse → Tildel poster…**) prissætter dem alle, og planlægningen finder dem ud fra deres klasse (IfcTransportElement).
 
 I IFC er en elevator et **IfcTransportElement** med den foruddefinerede type **ELEVATOR**, af en **IfcTransportElementType**, med IFC's egne **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) og **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). Lapin læser sin egen fil tilbage som en native elevator med dens stop og dækkenes åbninger.

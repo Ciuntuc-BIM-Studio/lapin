@@ -161,7 +161,7 @@ Sélectionnez un extracteur pour changer son type, sa **hauteur au-dessus du sol
 
 La **Nomenclature des extracteurs** liste chaque extracteur avec sa pièce, son genre, sa taille, son débit, son montage, sa commande, sa hauteur et sa sortie, et le débit total. La **Vérification de l’extraction par pièce** liste chaque salle de bains, WC et cuisine (et chaque pièce avec un extracteur) avec son volume, l’extraction nécessaire et ce que donnent ses extracteurs : une salle de bains 8 renouvellements d’air par heure et au moins 54 m³/h, un WC 6 et 25 m³/h, une cuisine 6 et 108 m³/h. Ce sont des valeurs indicatives ; vérifiez-les avec la norme suivie par votre projet.
 
-Un nouveau type porte l’article de coût `LAP-FAN`, compté par extracteur (Coûts → Affecter les articles… le change).
+Un nouveau type porte l’article de coût `LAP-FAN`, compté par extracteur (Exécution → Affecter les articles… le change).
 
 L’IFC écrit un extracteur comme **IfcFan** d’un **IfcFanType** avec son type prédéfini (PROPELLORAXIAL pour un extracteur mural ou de fenêtre, CENTRIFUGALRADIAL pour un extracteur de plafond, TUBEAXIAL pour un extracteur en ligne) et **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate) ; l’ouverture du mur comme IfcOpeningElement. Lapin les relit comme ses propres extracteurs.
 

@@ -16,7 +16,7 @@ describe('the Cost tab (Quantities until stage 6 of docs/plan-4d5d.md)', () => {
   });
 
   it('makes the quantity takeoff, lists every schedule, exports the workbook, and prices the model', () => {
-    expect(cost.tabs![0].label).toBe('Cost');
+    expect(cost.tabs![0].label).toBe('Construction');
     const tools = cost.tabs![0].groups.flatMap((g) => [...g.tools, ...(g.small ?? [])]).map((t) => t.id);
     expect(tools).toEqual(['cost.takeoff', 'cost.schedules', 'cost.xlsx', 'cost.prices', 'cost.map', 'cost.estimate', 'cost.overTime', 'cost.formSheet', 'cost.estimateXlsx', 'cost.estimatePdf']);
     expect(cost.dialogs?.schedules).toBeTruthy();

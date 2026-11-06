@@ -26,7 +26,7 @@ La linea di una sezione è disegnata in ogni pianta, e la sezione è segnata in 
 
 Ogni sezione sta su un **layer dell’indicatore** (all’inizio **Sezioni**; **Layer dell’indicatore** nelle proprietà della sezione lo cambia), e ogni vista sceglie che cosa segnare. **Vista → Sezioni…** elenca le sezioni del progetto per layer per la vista in primo piano, con una casella per layer e per sezione valida solo per questa vista, il layer di ogni sezione (uno esistente, o **Nuovo layer…**) e in quante viste ciascuna è nascosta. Una tavola segna ciò che segnano le sue viste.
 
-Una sezione tagliata trasversalmente a una trave o a un pilastro (**Sezione qui**, **Sezione trasversale** nella scheda Armature 2D) ha maniglie anche in pianta: trascina uno dei due estremi lungo la linea per dare a quel lato più o meno margine, trascina il centro lungo l’elemento per spostare la progressiva a cui taglia. La finestra della sezione segue.
+Una sezione tagliata trasversalmente a una trave o a un pilastro (**Sezione qui**, **Sezione trasversale** nella scheda Armature semplici) ha maniglie anche in pianta: trascina uno dei due estremi lungo la linea per dare a quel lato più o meno margine, trascina il centro lungo l’elemento per spostare la progressiva a cui taglia. La finestra della sezione segue.
 
 ![Vista → Sezioni… per il prospetto sud](shots/sections-dialog.webp)
 

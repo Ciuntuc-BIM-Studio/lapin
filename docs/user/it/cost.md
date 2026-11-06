@@ -4,11 +4,11 @@ order: 98
 summary: Il preventivo dal modello: i tuoi listini importati da CSV o Excel, voci sui tipi e regole sui materiali, le quantità del computo per i prezzi unitari suddivisi in materiale, manodopera, attrezzature e trasporto, spese generali, utile e IVA, in RON o EUR; i moduli rumeni F3, F2 e da C6 a C9 su tavole, in Excel e PDF; i cost schedule di IFC.
 ---
 
-## La scheda Costi
+## La scheda Esecuzione
 
-![La scheda Costi](shots/ribbon-cost.webp)
+![La scheda Esecuzione](shots/ribbon-cost.webp)
 
-La scheda che si chiamava **Quantità** ora si chiama **Costi**. Mantiene le quantità e aggiunge il preventivo:
+I gruppi dei costi sono nella scheda **Esecuzione**, dopo quelli del programma lavori (la scheda si chiamava **Quantità**, poi **Costi**). Mantengono le quantità e aggiungono il preventivo:
 
 - **Computo delle quantità**, **Abachi…** ed **Esporta XLSX**: le quantità del modello (vedi [Abachi e grafici](schedules.md)).
 - **Listini prezzi…**: i tuoi prezzi, importati da un file CSV o Excel (più sotto).
@@ -23,7 +23,7 @@ Il preventivo è calcolato dal modello a ogni sua modifica. Un muro che disegni 
 
 ![Importare un listino: il significato di ogni colonna dedotto dalla sua intestazione](shots/price-import.webp)
 
-I prezzi sono tuoi: Lapin non fornisce alcun prezzario né norme. **Costi → Listini prezzi… → Importa…** legge un file CSV o XLSX, per esempio un'esportazione dal tuo programma di computo o il listino di un fornitore. Lapin mostra le prime righe del file sotto le loro intestazioni. Sopra ogni colonna c'è ciò che Lapin ha dedotto che contenga, dall'intestazione, in inglese o in rumeno:
+I prezzi sono tuoi: Lapin non fornisce alcun prezzario né norme. **Esecuzione → Listini prezzi… → Importa…** legge un file CSV o XLSX, per esempio un'esportazione dal tuo programma di computo o il listino di un fornitore. Lapin mostra le prime righe del file sotto le loro intestazioni. Sopra ogni colonna c'è ciò che Lapin ha dedotto che contenga, dall'intestazione, in inglese o in rumeno:
 
 - **Codice** e **Descrizione** (*Cod*, *Simbol*, *Denumire*), **Unità** (*U.M.*: m³ o mc, m² o mp, m, pcs o buc, kg, t, 100 m²).
 - Il prezzo unitario suddiviso in **Materiale**, **Manodopera**, **Attrezzature** e **Trasporto** (*Material*, *Manoperă*, *Utilaj*, *Transport*), oppure un solo **Prezzo unitario (non suddiviso)**, che conta allora come materiale.
@@ -45,9 +45,9 @@ Una riga del preventivo viene da una **voce**: un codice del tuo listino. Ci son
 
 La voce del tipo viene prima. Uno strato già misurato dalle voci del suo tipo non è prezzato di nuovo da una regola. Una voce sull'elemento intero lo prezza tutto, quindi le regole si fanno da parte. Per un muro stratificato, dai al tipo una voce sul suo **nucleo** (la muratura a volume) e regole per le sue finiture (l'intonaco ad area). Il muro è allora prezzato strato per strato: la muratura sotto **Muri**, l'intonaco sotto **Finiture e isolamenti**.
 
-**Costi → Assegna voci…** elenca i tipi del progetto usati dagli elementi e i materiali dei loro strati. Ogni riga parte con la voce che ha, oppure quella che hai scelto per un tipo o un materiale con lo stesso nome in un progetto precedente, oppure quella che Lapin suggerisce: un codice scritto nel suo nome, o la voce che ha più parole in comune con esso (*zidărie*, *BCA*, *tencuială*, *C25/30*). Per un tipo stratificato propone il nucleo. Scrivi o scegli un codice, scegli la parte e la misura, spunta le righe che vuoi e fai clic su **Applica**: un solo passo da annullare. Le tue scelte sono ricordate su questo computer per i prossimi progetti.
+**Esecuzione → Assegna voci…** elenca i tipi del progetto usati dagli elementi e i materiali dei loro strati. Ogni riga parte con la voce che ha, oppure quella che hai scelto per un tipo o un materiale con lo stesso nome in un progetto precedente, oppure quella che Lapin suggerisce: un codice scritto nel suo nome, o la voce che ha più parole in comune con esso (*zidărie*, *BCA*, *tencuială*, *C25/30*). Per un tipo stratificato propone il nucleo. Scrivi o scegli un codice, scegli la parte e la misura, spunta le righe che vuoi e fai clic su **Applica**: un solo passo da annullare. Le tue scelte sono ricordate su questo computer per i prossimi progetti.
 
-I tipi di casseforme e ponteggi della scheda **Opere provvisionali** avevano già un codice voce (decisione 152): è una voce sul tipo, misurata secondo l'unità del prezzo.
+I tipi di casseforme e ponteggi delle opere provvisionali (la scheda **Sito**) avevano già un codice voce (decisione 152): è una voce sul tipo, misurata secondo l'unità del prezzo.
 
 Le fasi contano: un elemento che c'era prima dei lavori (creato in una fase *esistente*) non viene prezzato. Uno demolito viene prezzato solo dalla voce del suo tipo la cui parte è **La sua demolizione (solo se demolito)**, nel capitolo **Demolizione**.
 
@@ -55,7 +55,7 @@ Le fasi contano: un elemento che c'era prima dei lavori (creato in una fase *esi
 
 ![Il preventivo: capitoli, righe, aliquote e totali](shots/estimate.webp)
 
-**Costi → Preventivo…** apre il preventivo sotto la vista, come il Gantt. Le sue righe sono raggruppate in **capitoli** per categoria di lavori: scavi, fondazioni, struttura, muri, copertura, porte e finestre, finiture e isolamenti, impianti, opere provvisionali, altro. Una voce può indicare un capitolo proprio. **Per piano e categoria di lavori** mette il piano prima di ogni capitolo.
+**Esecuzione → Preventivo…** apre il preventivo sotto la vista, come il Gantt. Le sue righe sono raggruppate in **capitoli** per categoria di lavori: scavi, fondazioni, struttura, muri, copertura, porte e finestre, finiture e isolamenti, impianti, opere provvisionali, altro. Una voce può indicare un capitolo proprio. **Per piano e categoria di lavori** mette il piano prima di ogni capitolo.
 
 Ogni riga mostra il codice, la descrizione e l'unità dal listino, la **quantità** dal modello (la stessa del computo), il prezzo unitario suddiviso in **Materiale**, **Manodopera**, **Attrezzature** e **Trasporto**, il prezzo unitario e il **valore**. Fai clic su una riga per selezionarne gli elementi nelle viste. Seleziona elementi in una vista, e le loro righe sono evidenziate nel preventivo.
 
@@ -92,9 +92,9 @@ I moduli seguono la pratica comune secondo la metodologia dell'Ordine 863/2008. 
 
 ![Costo nel tempo: la curva a S sulle barre dei mesi, la tabella mensile sotto](shots/cost-time.webp)
 
-Con un programma lavori nel progetto (la scheda **Pianificazione**), il preventivo vi viene posato senza alcun collegamento proprio. Il valore di ogni voce si divide tra i suoi elementi, e la parte di ogni elemento va alle attività che costruiscono la parte misurata dalla voce: la voce della muratura all'attività che prende il nucleo dei muri, quella dell'intonaco a quella che prende le finiture. Una voce sull'elemento intero, costruito in due attività, si divide in parti uguali. Una voce propria va all'attività scelta accanto alla descrizione (**In nessuna attività** per impostazione predefinita). Il costo di un'attività si distribuisce in parti uguali sui suoi giorni lavorativi: nulla si spende in un fine settimana, in un festivo o, per un'attività umida, nella pausa invernale.
+Con un programma lavori nel progetto (la scheda **Esecuzione**), il preventivo vi viene posato senza alcun collegamento proprio. Il valore di ogni voce si divide tra i suoi elementi, e la parte di ogni elemento va alle attività che costruiscono la parte misurata dalla voce: la voce della muratura all'attività che prende il nucleo dei muri, quella dell'intonaco a quella che prende le finiture. Una voce sull'elemento intero, costruito in due attività, si divide in parti uguali. Una voce propria va all'attività scelta accanto alla descrizione (**In nessuna attività** per impostazione predefinita). Il costo di un'attività si distribuisce in parti uguali sui suoi giorni lavorativi: nulla si spende in un fine settimana, in un festivo o, per un'attività umida, nella pausa invernale.
 
-**Costi → Costo nel tempo** apre, sotto la vista:
+**Esecuzione → Costo nel tempo** apre, sotto la vista:
 
 - la **curva a S**: il costo cumulato pianificato sul programma, quello della **linea di base** (tratteggiato) quando ne è salvata una, e il **lavoro fatto** (spesso) fino alla data di stato: il costo di ogni attività per la sua % completata, distribuito dal suo inizio effettivo;
 - le barre dei mesi, sulla scala di destra: pianificato e fatto;

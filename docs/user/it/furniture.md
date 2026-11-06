@@ -6,7 +6,7 @@ summary: Divani, divani angolari, poltrone, sedie, letti, armadi, cassettiere, l
 
 ## Posizionare gli arredi
 
-La scheda **Arredi** ha uno strumento per ogni genere di arredo: **Divano** (<kbd>SO</kbd>), **Divano angolare**, **Poltrona** (<kbd>AC</kbd>), **Sedia**, **Letto** (<kbd>BD</kbd>), **Comodino**, **Armadio** (<kbd>WD</kbd>), **Cassettiera**, **Libreria**, **Credenza**, **Tavolo** (<kbd>TB</kbd>), **Tavolino** e **Scrivania**. Scegline uno e fai clic nella pianta.
+La scheda **Interni** ha, dopo le finiture, uno strumento per ogni genere di arredo: **Divano** (<kbd>SO</kbd>), **Divano angolare**, **Poltrona** (<kbd>AC</kbd>), **Sedia**, **Letto** (<kbd>BD</kbd>), **Comodino**, **Armadio** (<kbd>WD</kbd>), **Cassettiera**, **Libreria**, **Credenza**, **Tavolo** (<kbd>TB</kbd>), **Tavolino** e **Scrivania**. Scegline uno e fai clic nella pianta.
 
 Fai clic vicino a un muro e l’arredo vi si addossa. Il suo retro si appoggia sulla faccia del muro (sull’intonaco, non sul nucleo), il fronte guarda il locale e scorre lungo il muro finché non entra più nel muro d’angolo. Fai clic lontano da ogni muro e l’arredo resta dove hai fatto clic.
 
@@ -60,7 +60,7 @@ Trascina la maniglia al centro di un arredo per spostarlo; trascina la maniglia 
 
 ## Tipi di arredo
 
-**Arredi → Tipi di arredo** elenca i tipi del progetto per gruppo (sedute, letti, contenitori, tavoli, cucina), ciascuno con il numero di arredi che lo usano. Scegli un genere e **Nuovo tipo**, oppure **Duplica** un tipo per modificarne una copia. Un tipo contiene:
+**Interni → Tipi di arredo** elenca i tipi del progetto per gruppo (sedute, letti, contenitori, tavoli, cucina), ciascuno con il numero di arredi che lo usano. Scegli un genere e **Nuovo tipo**, oppure **Duplica** un tipo per modificarne una copia. Un tipo contiene:
 
 - il **nome**, la **larghezza**, la **profondità** e l’**altezza** (dello schienale per un divano, della testiera per un letto, del piano di lavoro per una cucina);
 - i parametri propri del suo genere:

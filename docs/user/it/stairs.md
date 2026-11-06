@@ -162,7 +162,7 @@ La pianta disegna soletta, finitura e parapetto di un balcone come li taglia o l
 
 ![I suoi appoggi, sopra una sezione del balcone](shots/balcony-configurator-section.webp)
 
-**Apply** cambia il balcone in un passo. **Save as style…** lo tiene come stile del progetto (un tipo di balcone), offerto dalla barra dello strumento e dalle proprietà; **Update style** lo salva di nuovo nel suo stile e ogni balcone dello stile lo riprende; accanto al nome di uno stile lo si rinomina o lo si elimina (i suoi balconi restano come sono). Uno stile è un tipo: le sue voci di costo (Cost → Map articles) misurano i suoi balconi.
+**Apply** cambia il balcone in un passo. **Save as style…** lo tiene come stile del progetto (un tipo di balcone), offerto dalla barra dello strumento e dalle proprietà; **Update style** lo salva di nuovo nel suo stile e ogni balcone dello stile lo riprende; accanto al nome di uno stile lo si rinomina o lo si elimina (i suoi balconi restano come sono). Uno stile è un tipo: le sue voci di costo (Esecuzione → Map articles) misurano i suoi balconi.
 
 ![Le proprietà di un balcone: il suo stile e i campi del suo tipo](shots/balcony-properties.webp)
 

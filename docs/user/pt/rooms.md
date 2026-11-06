@@ -65,7 +65,7 @@ As cores são desenhadas sob as paredes, os móveis e os giros das portas, para 
 
 ## Acabamentos de ambientes
 
-**Acabamentos → Acabamento no ambiente** (<kbd>FR</kbd>) aplica um acabamento no ambiente em que você clica: o piso, o acabamento das paredes e o teto, cada um seguindo o contorno do ambiente como o próprio ambiente. Mova uma parede e os acabamentos vão com ela. **Acabamentos → Acabamentos de ambientes** edita os acabamentos; **Da biblioteca** traz alguns prontos: Sala de estar, Quarto, Banheiro, Cozinha, Térreo sobre laje e Sala técnica. Enquanto a ferramenta está ativa, o painel de propriedades mostra o acabamento que ela aplica, para escolhê-lo antes do clique. O **Acabamento** de um ambiente, nas suas propriedades, aplica outro ou o retira.
+**Interiores → Acabamento no ambiente** (<kbd>FR</kbd>) aplica um acabamento no ambiente em que você clica: o piso, o acabamento das paredes e o teto, cada um seguindo o contorno do ambiente como o próprio ambiente. Mova uma parede e os acabamentos vão com ela. **Interiores → Acabamentos de ambientes** edita os acabamentos; **Da biblioteca** traz alguns prontos: Sala de estar, Quarto, Banheiro, Cozinha, Térreo sobre laje e Sala técnica. Enquanto a ferramenta está ativa, o painel de propriedades mostra o acabamento que ela aplica, para escolhê-lo antes do clique. O **Acabamento** de um ambiente, nas suas propriedades, aplica outro ou o retira.
 
 Um acabamento tem:
 
@@ -81,7 +81,7 @@ Um acabamento tem:
 
 ![Uma planta com o piso da casa de banho tracejado como ladrilhos e o da sala como tábuas](shots/room-finish-hatch.webp)
 
-Cada acabamento mede, por material, sua área **bruta** (o contorno do ambiente, sem descontos: a área do piso, o perímetro das paredes vezes a altura de cada peça) e sua área **líquida** (o que é executado: sem as portas, janelas e aberturas da laje, com os requadros e o piso sob as portas; a parte dos requadros está nos quantitativos, como RevealArea), e seu volume. **Acabamentos → Tabela de acabamentos** lista cada ambiente com acabamento por parte e material, com os totais por material no fim; como qualquer tabela, gera gráficos, é exportada e vai para uma prancha. No IFC um acabamento é um IfcCovering: FLOORING, CLADDING ou CEILING.
+Cada acabamento mede, por material, sua área **bruta** (o contorno do ambiente, sem descontos: a área do piso, o perímetro das paredes vezes a altura de cada peça) e sua área **líquida** (o que é executado: sem as portas, janelas e aberturas da laje, com os requadros e o piso sob as portas; a parte dos requadros está nos quantitativos, como RevealArea), e seu volume. **Interiores → Tabela de acabamentos** lista cada ambiente com acabamento por parte e material, com os totais por material no fim; como qualquer tabela, gera gráficos, é exportada e vai para uma prancha. No IFC um acabamento é um IfcCovering: FLOORING, CLADDING ou CEILING.
 
 Um acabamento reveste o que as paredes do ambiente já têm: se os tipos de parede trazem o próprio reboco, dê às paredes do ambiente só o que vai por cima (pintura, azulejos), ou use tipos de parede só com o núcleo.
 

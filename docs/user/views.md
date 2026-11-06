@@ -26,7 +26,7 @@ A section's line is drawn in every plan, and the section is marked in every othe
 
 Each section sits on a **marker layer** (**Sections** at first; **Marker layer** in the section's properties changes it), and each view chooses what it marks. **View → Sections…** lists the project's sections by layer for the view in front, with a checkbox per layer and per section for this view alone, the layer of each section (an existing one, or **New layer…**), and in how many views each is hidden. A sheet marks what its views mark.
 
-A section cut across a beam or a column (**Section here**, **Section across** on the Rebar 2D tab) has grips in plan too: drag either end along the line to give that side more or less margin, drag the middle along the element to move the station it cuts at. The section's window follows.
+A section cut across a beam or a column (**Section here**, **Section across** on the Simple rebar tab) has grips in plan too: drag either end along the line to give that side more or less margin, drag the middle along the element to move the station it cuts at. The section's window follows.
 
 ![View → Sections… for the south elevation](shots/sections-dialog.webp)
 

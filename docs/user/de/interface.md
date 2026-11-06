@@ -8,9 +8,13 @@ summary: Die Modi Komfortabel, Kompakt und Fokus, das Einklappen der Seitenberei
 
 ## Arbeitsbereiche
 
-Ein Arbeitsbereich zeigt nur die Registerkarten des Menübands, die Ihre Arbeit braucht, in der Reihenfolge, in der sie sie braucht. Sie wählen ihn auf dem Startbildschirm, oben in **View → Interface…** oder über **Commands…** (Workspace: …): **Alle** (jede Registerkarte Ihrer Edition), **Architektur**, **Tragwerk und Bewehrung**, **TGA**, **Gelände und Baustelleneinrichtung** oder **Zeichnen 2D**. Das Projekt bleibt eines: die Werkzeuge einer ausgeblendeten Registerkarte sind weiter in Commands… und den Tastenkürzeln, und ein Modell aus einem Arbeitsbereich öffnet sich vollständig in einem anderen.
+Ein Arbeitsbereich zeigt nur die Registerkarten des Menübands, die Ihre Arbeit braucht, in der Reihenfolge, in der sie sie braucht. Sie wählen ihn über die Schaltfläche neben **Datei**, die den Arbeitsbereich nennt, in dem Sie sind, oder auf dem Startbildschirm, oben in **View → Interface…** oder über **Commands…** (Workspace: …): **Alle** (jede Registerkarte Ihrer Edition), **Architektur**, **Tragwerk und Bewehrung**, **TGA**, **Gelände und Baustelleneinrichtung** oder **Zeichnen 2D**. Das Projekt bleibt eines: die Werkzeuge einer ausgeblendeten Registerkarte sind weiter in Commands… und den Tastenkürzeln, und ein Modell aus einem Arbeitsbereich öffnet sich vollständig in einem anderen.
 
 ![Die Arbeitsbereiche in View → Interface…](shots/workspaces.webp)
+
+Die Registerkarten bleiben in einer Zeile. Ist das Fenster für alle zu schmal, wandern die letzten unter **Mehr** am Ende der Zeile, und die Registerkarte, auf der Sie sind, bleibt immer sichtbar.
+
+Die Registerkarten sind nach der Arbeit gruppiert, der sie dienen. **Innenausbau** enthält den Ausbau und die Möbel. **Gelände** enthält das Gelände, die Außenanlagen und die Baustelleneinrichtung (Gerüste und Schalung). **Ausführung** enthält die Terminplanung und die Kostenberechnung (4D und 5D).
 
 Zeigen, verbergen oder verschieben Sie unter **Tabs** im selben Dialog eine Registerkarte, und die Wahl wird **Mein Arbeitsbereich**, auf diesem Computer für das nächste Mal gespeichert; die anderen Arbeitsbereiche bleiben zum Wechseln da. **View** bleibt immer, denn Interface… liegt darin.
 
@@ -39,7 +43,7 @@ In jedem Modus behält die obere Leiste **Rückgängig** und **Wiederholen** an 
 
 Unter den Modi lässt sich jeder Teil für sich einstellen: das Menüband, die Schnellwerkzeuge (oder keine: die Zifferntasten funktionieren weiterhin), die Befehlszeile, das HUD, der Hinweis und die Felder des Werkzeugs, der Übersichtsplan, die Bereiche und die Höhe der Eigenschaftszeilen. Wenn Sie einen Teil ändern, wird die Auswahl zu **Benutzerdefiniert**.
 
-Unter den Teilen **Registerkarten**: Entfernen Sie das Häkchen bei den Registerkarten des Menübands, die Sie nicht brauchen (ein Architekt kann Structure, Rebar 2D und MEP ausblenden, ein Ingenieur Architecture und Site). View bleibt immer, denn dort liegt Oberfläche…. Die Werkzeuge einer ausgeblendeten Registerkarte bleiben in Befehle… und in den Tastenkürzeln.
+Unter den Teilen **Registerkarten**: Entfernen Sie das Häkchen bei den Registerkarten des Menübands, die Sie nicht brauchen (ein Architekt kann Structure, Einfache Bewehrung und MEP ausblenden, ein Ingenieur Architecture und Site). View bleibt immer, denn dort liegt Oberfläche…. Die Werkzeuge einer ausgeblendeten Registerkarte bleiben in Befehle… und in den Tastenkürzeln.
 
 Lapin speichert Ihre Wahl auf diesem Computer, für Sie. Die Desktop-App und der Browser speichern ihre jeweils getrennt. Im Browser startet Lapin im Modus Kompakt, wenn das Fenster weniger als 800 Pixel hoch ist, bis Sie eine Wahl treffen.
 

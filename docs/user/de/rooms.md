@@ -65,7 +65,7 @@ Die Farben werden unter den Wänden, der Möblierung und den Türaufschlägen ge
 
 ## Raumbekleidungen
 
-**Ausbau → Raum bekleiden** (<kbd>FR</kbd>) legt eine Bekleidung in den Raum, in den Sie klicken: seinen Boden, die Bekleidung seiner Wände und seine Decke, jede dem Umriss des Raums folgend, wie der Raum selbst. Verschieben Sie eine Wand, und die Bekleidungen gehen mit. **Ausbau → Raumbekleidungen** bearbeitet die Bekleidungen; **Aus der Bibliothek** holt fertige: Wohnzimmer, Schlafzimmer, Bad, Küche, Erdgeschoss auf Bodenplatte und Technikraum. Solange das Werkzeug aktiv ist, zeigt das Eigenschaftenfenster die Bekleidung, die es verlegt, zur Wahl vor dem Klick. Die **Bekleidung** eines Raums, in seinen Eigenschaften, verlegt eine andere oder nimmt sie weg.
+**Innenausbau → Raum bekleiden** (<kbd>FR</kbd>) legt eine Bekleidung in den Raum, in den Sie klicken: seinen Boden, die Bekleidung seiner Wände und seine Decke, jede dem Umriss des Raums folgend, wie der Raum selbst. Verschieben Sie eine Wand, und die Bekleidungen gehen mit. **Innenausbau → Raumbekleidungen** bearbeitet die Bekleidungen; **Aus der Bibliothek** holt fertige: Wohnzimmer, Schlafzimmer, Bad, Küche, Erdgeschoss auf Bodenplatte und Technikraum. Solange das Werkzeug aktiv ist, zeigt das Eigenschaftenfenster die Bekleidung, die es verlegt, zur Wahl vor dem Klick. Die **Bekleidung** eines Raums, in seinen Eigenschaften, verlegt eine andere oder nimmt sie weg.
 
 Eine Bekleidung hat:
 
@@ -81,7 +81,7 @@ Eine Bekleidung hat:
 
 ![Ein Grundriss mit dem Boden des Bads als Fliesen und dem des Wohnzimmers als Dielen schraffiert](shots/room-finish-hatch.webp)
 
-Jede Bekleidung misst, nach Material, ihre **Brutto**fläche (der Umriss des Raums, nichts abgezogen: die Bodenfläche, der Wandumfang mal der Höhe jedes Stücks) und ihre **Netto**fläche (was gebaut wird: Türen, Fenster und Deckenöffnungen abgezogen, die Laibungen und der Boden unter den Türen hinzugefügt; der Anteil der Laibungen steht in den Mengen, als RevealArea) sowie ihr Volumen. **Ausbau → Bekleidungsliste** listet jeden bekleideten Raum nach Teil und Material, mit den Summen je Material am Ende; wie jede Bauteilliste erstellt sie Diagramme, wird exportiert und kommt auf einen Plan. In IFC ist eine Bekleidung ein IfcCovering: FLOORING, CLADDING oder CEILING.
+Jede Bekleidung misst, nach Material, ihre **Brutto**fläche (der Umriss des Raums, nichts abgezogen: die Bodenfläche, der Wandumfang mal der Höhe jedes Stücks) und ihre **Netto**fläche (was gebaut wird: Türen, Fenster und Deckenöffnungen abgezogen, die Laibungen und der Boden unter den Türen hinzugefügt; der Anteil der Laibungen steht in den Mengen, als RevealArea) sowie ihr Volumen. **Innenausbau → Bekleidungsliste** listet jeden bekleideten Raum nach Teil und Material, mit den Summen je Material am Ende; wie jede Bauteilliste erstellt sie Diagramme, wird exportiert und kommt auf einen Plan. In IFC ist eine Bekleidung ein IfcCovering: FLOORING, CLADDING oder CEILING.
 
 Eine Bekleidung bekleidet, was die Wände des Raums schon haben: Wenn die Wandtypen ihren eigenen Putz tragen, geben Sie den Wänden des Raums nur, was darüber kommt (Anstrich, Fliesen), oder verwenden Sie Wandtypen nur mit dem Kern.
 

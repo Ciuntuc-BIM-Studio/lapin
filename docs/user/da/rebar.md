@@ -1,12 +1,12 @@
 ---
-title: Armering 2D
+title: Simpel armering
 order: 52
 summary: Armering tegnet på snit og planer, tværsnit skåret, hvor du klikker, og armeringslisten.
 ---
 
-Fanen **Armering 2D** tegner armering, som en armeringsliste laves: stænger som former med deres mål, bøjler fordelt langs en bjælke, mærker i cirkler og en liste, der lægger dem sammen. Den virker i enhver visning: et snit, en plan, en facade.
+Fanen **Simpel armering** tegner armering, som en armeringsliste laves: stænger som former med deres mål, bøjler fordelt langs en bjælke, mærker i cirkler og en liste, der lægger dem sammen. Den virker i enhver visning: et snit, en plan, en facade.
 
-![Fanen Armering 2D](shots/ribbon-rebar.webp)
+![Fanen Simpel armering](shots/ribbon-rebar.webp)
 
 ## Et snit, hvor du arbejder
 

@@ -161,7 +161,7 @@ Select a fan to change its type, its **height above the floor**, its turn and, o
 
 The **Fan schedule** lists every fan with its room, kind, size, airflow, mounting, control, height and outlet, and the total airflow. The **Room extract check** lists every bathroom, WC and kitchen (and every room with a fan) with its volume, the extract it needs and what its fans give: a bathroom 8 air changes an hour and at least 54 m³/h, a WC 6 and 25 m³/h, a kitchen 6 and 108 m³/h. These are indicative values; check them against the norm you design to.
 
-A new type has the cost article `LAP-FAN`, counted per fan (Cost → Map articles… changes it).
+A new type has the cost article `LAP-FAN`, counted per fan (Construction → Map articles… changes it).
 
 IFC writes a fan as an **IfcFan** of an **IfcFanType** with its predefined type (PROPELLORAXIAL for a wall or window fan, CENTRIFUGALRADIAL for a ceiling fan, TUBEAXIAL for an inline one) and **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); the wall's opening as an IfcOpeningElement. Lapin reads them back as its own fans.
 

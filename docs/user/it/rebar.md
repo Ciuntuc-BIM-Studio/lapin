@@ -1,12 +1,12 @@
 ---
-title: Armature 2D
+title: Armature semplici
 order: 52
 summary: Armature disegnate su sezioni e piante, sezioni trasversali tagliate dove fai clic e la distinta dei ferri.
 ---
 
-La scheda **Armature 2D** disegna le armature come si compila una distinta dei ferri: barre come forme con le loro dimensioni, staffe distribuite lungo una trave, marche nei fumetti e un abaco che le somma. Funziona in qualsiasi vista: una sezione, una pianta, un prospetto.
+La scheda **Armature semplici** disegna le armature come si compila una distinta dei ferri: barre come forme con le loro dimensioni, staffe distribuite lungo una trave, marche nei fumetti e un abaco che le somma. Funziona in qualsiasi vista: una sezione, una pianta, un prospetto.
 
-![La scheda Armature 2D](shots/ribbon-rebar.webp)
+![La scheda Armature semplici](shots/ribbon-rebar.webp)
 
 ## Una sezione dove lavori
 

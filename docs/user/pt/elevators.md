@@ -61,6 +61,6 @@ Selecione um elevador para mudar a sua parada mais baixa e a mais alta, marcar o
 
 **Arquitetura → Mapa de elevadores** lista cada elevador com o seu tipo, acionamento, carga nominal, pessoas, cabine, portas, as paradas que serve, os pisos entre os quais corre, o curso, a velocidade e a caixa.
 
-Cada elevador tem um tipo formado pelo seu gênero, carga e cabine (Passageiros médio 630 kg, 1100 × 1400): elevadores iguais o compartilham, então uma composição de preço posta no tipo (**Custos → Atribuir composições…**) orça todos eles, e o planejamento os encontra pela sua classe (IfcTransportElement).
+Cada elevador tem um tipo formado pelo seu gênero, carga e cabine (Passageiros médio 630 kg, 1100 × 1400): elevadores iguais o compartilham, então uma composição de preço posta no tipo (**Execução → Atribuir composições…**) orça todos eles, e o planejamento os encontra pela sua classe (IfcTransportElement).
 
 Em IFC um elevador é um **IfcTransportElement** com o tipo predefinido **ELEVATOR**, de um **IfcTransportElementType**, com os conjuntos do próprio IFC **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) e **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). O Lapin lê o seu próprio arquivo de volta como um elevador nativo, com as suas paradas e as aberturas das lajes.

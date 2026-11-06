@@ -161,7 +161,7 @@ Seleccione un extractor para cambiar su tipo, su **altura sobre el suelo**, su g
 
 La **Tabla de extractores** lista cada extractor con su local, clase, tamaño, caudal, montaje, control, altura y salida, y el caudal total. La **Comprobación de extracción por local** lista cada baño, aseo y cocina (y cada local con un extractor) con su volumen, la extracción que necesita y la que dan sus extractores: un baño 8 renovaciones por hora y al menos 54 m³/h, un aseo 6 y 25 m³/h, una cocina 6 y 108 m³/h. Son valores orientativos; compruébelos con la norma con la que proyecta.
 
-Un tipo nuevo tiene la partida de coste `LAP-FAN`, contada por extractor (Costes → Asignar partidas… la cambia).
+Un tipo nuevo tiene la partida de coste `LAP-FAN`, contada por extractor (Ejecución → Asignar partidas… la cambia).
 
 El IFC escribe un extractor como **IfcFan** de un **IfcFanType** con su tipo predefinido (PROPELLORAXIAL para uno de pared o de ventana, CENTRIFUGALRADIAL para uno de techo, TUBEAXIAL para uno en línea) y **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); la abertura del muro como IfcOpeningElement. Lapin los vuelve a leer como sus propios extractores.
 

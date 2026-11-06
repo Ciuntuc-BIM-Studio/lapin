@@ -26,7 +26,7 @@ Linia przekroju jest rysowana na każdym rzucie, a przekrój jest oznaczony w ka
 
 Każdy przekrój leży na **warstwie znaczników** (na początku **Przekroje**; **Warstwa znacznika** we właściwościach przekroju ją zmienia), a każdy widok wybiera, co oznacza. **Widok → Przekroje…** wyświetla przekroje projektu według warstw dla widoku na pierwszym planie, z polem wyboru dla każdej warstwy i każdego przekroju tylko dla tego widoku, warstwą każdego przekroju (istniejącą lub **Nowa warstwa…**) oraz liczbą widoków, w których każdy jest ukryty. Arkusz oznacza to, co oznaczają jego widoki.
 
-Przekrój poprzeczny przez belkę lub słup (**Przekrój tutaj**, **Przekrój poprzeczny** na karcie Zbrojenie 2D) też ma uchwyty na rzucie: przeciągnij dowolny koniec wzdłuż linii, aby dać tej stronie większy lub mniejszy margines, przeciągnij środek wzdłuż elementu, aby przesunąć pikietaż, w którym tnie. Okno przekroju podąża za nim.
+Przekrój poprzeczny przez belkę lub słup (**Przekrój tutaj**, **Przekrój poprzeczny** na karcie Zbrojenie proste) też ma uchwyty na rzucie: przeciągnij dowolny koniec wzdłuż linii, aby dać tej stronie większy lub mniejszy margines, przeciągnij środek wzdłuż elementu, aby przesunąć pikietaż, w którym tnie. Okno przekroju podąża za nim.
 
 ![Widok → Przekroje… dla elewacji południowej](shots/sections-dialog.webp)
 

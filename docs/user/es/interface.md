@@ -8,9 +8,13 @@ summary: Los modos Cómodo, Compacto y Enfoque, cómo plegar los paneles lateral
 
 ## Espacios de trabajo
 
-Un espacio de trabajo muestra solo las pestañas de la cinta que su trabajo necesita, en el orden en que las usa. Elíjalo en la pantalla de inicio, arriba en **View → Interface…** o desde **Commands…** (Workspace: …): **Todo** (todas las pestañas de su edición), **Arquitectura**, **Estructura y armado**, **Instalaciones**, **Emplazamiento y medios auxiliares** o **Dibujo 2D**. El proyecto sigue siendo uno: las herramientas de una pestaña oculta siguen en Commands… y en los atajos de teclado, y un modelo hecho en un espacio de trabajo se abre completo en otro.
+Un espacio de trabajo muestra solo las pestañas de la cinta que su trabajo necesita, en el orden en que las usa. Elíjalo con el botón junto a **Archivo**, que nombra el espacio de trabajo en el que está, o en la pantalla de inicio, arriba en **View → Interface…** o desde **Commands…** (Workspace: …): **Todo** (todas las pestañas de su edición), **Arquitectura**, **Estructura y armado**, **Instalaciones**, **Emplazamiento y medios auxiliares** o **Dibujo 2D**. El proyecto sigue siendo uno: las herramientas de una pestaña oculta siguen en Commands… y en los atajos de teclado, y un modelo hecho en un espacio de trabajo se abre completo en otro.
 
 ![Los espacios de trabajo en View → Interface…](shots/workspaces.webp)
+
+Las pestañas se quedan en una sola línea. Cuando la ventana es demasiado estrecha para todas, las últimas pasan a **Más**, al final de la fila, y la pestaña en la que está siempre queda a la vista.
+
+Las pestañas se agrupan por el trabajo al que sirven. **Interiores** reúne los acabados y el mobiliario. **Emplazamiento** reúne el terreno, el paisajismo y los medios auxiliares (andamios y encofrados). **Ejecución** reúne el programa de obra y el presupuesto (4D y 5D).
 
 Muestre, oculte o mueva una pestaña en **Tabs**, en el mismo diálogo, y la elección pasa a ser **Mi espacio de trabajo**, guardado en este ordenador para la próxima vez; los demás espacios siguen ahí para cambiar a ellos. **View** se queda siempre, porque Interface… está en ella.
 
@@ -39,7 +43,7 @@ En todos los modos, la barra superior mantiene **Deshacer** y **Rehacer** en su 
 
 Debajo de los modos, cada parte se puede configurar por separado: la cinta, las herramientas rápidas (o ninguna: las teclas numéricas siguen funcionando), la línea de comandos, el HUD, el mensaje y los campos de la herramienta, el plano clave, los paneles y la altura de las filas de propiedades. Cambiar una parte convierte la elección en **Personalizado**.
 
-Debajo de las partes, **Pestañas**: desmarca las pestañas de la cinta que no necesitas (un arquitecto puede ocultar Structure, Rebar 2D y MEP; un ingeniero, Architecture y Site). View permanece siempre, porque ahí está Interfaz…. Las herramientas de una pestaña oculta siguen en Comandos… y en los atajos de teclado.
+Debajo de las partes, **Pestañas**: desmarca las pestañas de la cinta que no necesitas (un arquitecto puede ocultar Structure, Armado simple y MEP; un ingeniero, Architecture y Site). View permanece siempre, porque ahí está Interfaz…. Las herramientas de una pestaña oculta siguen en Comandos… y en los atajos de teclado.
 
 Lapin guarda su elección en este ordenador, para usted. La aplicación de escritorio y el navegador guardan la suya por separado. En el navegador, Lapin empieza en Compacto cuando la ventana mide menos de 800 píxeles de alto, hasta que usted elija.
 

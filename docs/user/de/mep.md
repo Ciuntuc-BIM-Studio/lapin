@@ -161,7 +161,7 @@ Wählen Sie einen Ventilator, um seinen Typ, seine **Höhe über dem Boden**, se
 
 Die **Ventilatorliste** führt jeden Ventilator mit Raum, Art, Größe, Luftvolumenstrom, Montage, Steuerung, Höhe und Auslass, und den gesamten Luftvolumenstrom. Die **Abluftprüfung der Räume** führt jedes Bad, WC und jede Küche (und jeden Raum mit einem Ventilator) mit seinem Volumen, der nötigen Abluft und dem, was seine Ventilatoren leisten: ein Bad 8 Luftwechsel pro Stunde und mindestens 54 m³/h, ein WC 6 und 25 m³/h, eine Küche 6 und 108 m³/h. Das sind Richtwerte; prüfen Sie sie an der Norm, nach der Sie planen.
 
-Ein neuer Typ hat die Kostenposition `LAP-FAN`, je Ventilator gezählt (Kosten → Positionen zuordnen… ändert sie).
+Ein neuer Typ hat die Kostenposition `LAP-FAN`, je Ventilator gezählt (Ausführung → Positionen zuordnen… ändert sie).
 
 IFC schreibt einen Ventilator als **IfcFan** eines **IfcFanType** mit seinem vordefinierten Typ (PROPELLORAXIAL für einen Wand- oder Fensterventilator, CENTRIFUGALRADIAL für einen Deckenventilator, TUBEAXIAL für einen Rohrventilator) und **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); die Öffnung der Wand als IfcOpeningElement. Lapin liest sie als eigene Ventilatoren zurück.
 

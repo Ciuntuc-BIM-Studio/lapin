@@ -8,9 +8,13 @@ summary: Tryby Wygodny, Kompaktowy i Skupienie, zwijanie paneli bocznych oraz sk
 
 ## Obszary robocze
 
-Obszar roboczy pokazuje tylko te karty wstążki, których potrzebuje twoja praca, w kolejności, w jakiej z nich korzystasz. Wybierz go na ekranie startowym, u góry okna **Widok → Interfejs…** albo z **Polecenia…** (Obszar roboczy: …): **Wszystko** (każda karta twojej edycji), **Architektura**, **Konstrukcja i zbrojenie**, **Instalacje**, **Zagospodarowanie i roboty pomocnicze** lub **Rysunek 2D**. Projekt pozostaje jeden: narzędzia ukrytej karty są nadal dostępne w Polecenia… i w skrótach klawiszowych, a model wykonany w jednym obszarze roboczym otwiera się w całości w innym.
+Obszar roboczy pokazuje tylko te karty wstążki, których potrzebuje twoja praca, w kolejności, w jakiej z nich korzystasz. Wybierz go przyciskiem obok **Plik**, który pokazuje obszar roboczy, w którym jesteś, albo na ekranie startowym, u góry okna **Widok → Interfejs…** albo z **Polecenia…** (Obszar roboczy: …): **Wszystko** (każda karta twojej edycji), **Architektura**, **Konstrukcja i zbrojenie**, **Instalacje**, **Zagospodarowanie i roboty pomocnicze** lub **Rysunek 2D**. Projekt pozostaje jeden: narzędzia ukrytej karty są nadal dostępne w Polecenia… i w skrótach klawiszowych, a model wykonany w jednym obszarze roboczym otwiera się w całości w innym.
 
 ![Obszary robocze w Widok → Interfejs…](shots/workspaces.webp)
+
+Karty mieszczą się w jednym wierszu. Gdy okno jest za wąskie na wszystkie, ostatnie trafiają pod **Więcej** na końcu wiersza, a karta, na której jesteś, zawsze pozostaje widoczna.
+
+Karty są pogrupowane według pracy, której służą. **Wnętrza** obejmują wykończenia i meble. **Zagospodarowanie** obejmuje teren, zieleń i roboty pomocnicze (rusztowania i deskowania). **Realizacja** obejmuje harmonogram robót i kosztorys (4D i 5D).
 
 Pokaż, ukryj lub przesuń kartę w sekcji **Karty** tego samego okna dialogowego, a wybór staje się układem **Mój obszar roboczy**, zapamiętanym na tym komputerze na następny raz; pozostałe obszary robocze nadal są dostępne do przełączenia. Karta **Widok** zostaje zawsze, bo znajduje się w niej Interfejs….
 
@@ -39,7 +43,7 @@ W każdym trybie górny pasek ma na prawym końcu **Cofnij** i **Ponów**: z naz
 
 Pod trybami każdą część można ustawić osobno: wstążkę, szybkie narzędzia (lub ich brak: klawisze cyfr nadal działają), wiersz poleceń, HUD, monit narzędzia i jego pola, plan kluczowy, panele i wysokość wierszy właściwości. Zmiana jednej części sprawia, że wybór staje się **Własny**.
 
-Pod częściami znajdują się **Karty**: odznacz karty wstążki, bez których się obywasz (architekt może ukryć Konstrukcję, Zbrojenie 2D i Instalacje, inżynier Architekturę i Zagospodarowanie). Widok zostaje zawsze, bo jest w nim Interfejs…. Narzędzia ukrytej karty są nadal dostępne w Polecenia… i w skrótach klawiszowych.
+Pod częściami znajdują się **Karty**: odznacz karty wstążki, bez których się obywasz (architekt może ukryć Konstrukcję, Zbrojenie proste i Instalacje, inżynier Architekturę i Zagospodarowanie). Widok zostaje zawsze, bo jest w nim Interfejs…. Narzędzia ukrytej karty są nadal dostępne w Polecenia… i w skrótach klawiszowych.
 
 Lapin zapamiętuje twój wybór na tym komputerze, dla ciebie. Aplikacja desktopowa i przeglądarka zapamiętują swoje wybory osobno. W przeglądarce Lapin uruchamia się w trybie Kompaktowym, gdy okno ma mniej niż 800 pikseli wysokości, dopóki sam nie wybierzesz.
 

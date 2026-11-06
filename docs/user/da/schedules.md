@@ -9,14 +9,14 @@ summary: List døre, vinduer, overliggere, rum og alt, hvad et modul tæller; ti
 Alt, hvad Lapin modellerer, måles ud fra geometrien: en væg længde, højde, brutto- og nettosideareal og volumen, hvert lags areal og volumen, et dæks arealer og volumen, et rums areal og omkreds, antallet af døre. Der er tre veje:
 
 - **Ét element.** Vælg det: afsnittet **Mængder** i egenskabspanelet viser, hvad det måler, derefter hvert lag eller hver del.
-- **Hele modellen.** **Økonomi → Mængdeudtræk** laver (eller åbner) mængdeudtrækket: alle de elementer, modellen måler, lagt sammen række for række, med antal, længde, brutto- og nettoareal, brutto- og nettovolumen og vægt. Dets værktøjslinje vælger, hvad der lægges sammen: **Efter art og type** (standard: væggene af hver vægtype, dækkene af hver dæktype…), **Efter materiale** (hvert lag under sit materiale: væggenes tegl, puds og isolering hver for sig, overliggernes beton), efter etage eller kombineret. **Alle elementer** vælger, hvilke arter det viser (kun vægge og dæk, for eksempel). Mængdeudtrækket følger modellen som ethvert skema og tager egne rækker og kolonner (et tillæg, en enhedspris).
-- **Enhver anden liste.** **Økonomi → Skemaer…** laver ethvert skema, udgaven tilbyder: rum, rumoverflader, døre og vinduer, typeopbygninger, tømmer, armering, forskalling, stål… Den samme liste ligger under **+** ved **Skemaer** i projektbrowseren.
+- **Hele modellen.** **Udførelse → Mængdeudtræk** laver (eller åbner) mængdeudtrækket: alle de elementer, modellen måler, lagt sammen række for række, med antal, længde, brutto- og nettoareal, brutto- og nettovolumen og vægt. Dets værktøjslinje vælger, hvad der lægges sammen: **Efter art og type** (standard: væggene af hver vægtype, dækkene af hver dæktype…), **Efter materiale** (hvert lag under sit materiale: væggenes tegl, puds og isolering hver for sig, overliggernes beton), efter etage eller kombineret. **Alle elementer** vælger, hvilke arter det viser (kun vægge og dæk, for eksempel). Mængdeudtrækket følger modellen som ethvert skema og tager egne rækker og kolonner (et tillæg, en enhedspris).
+- **Enhver anden liste.** **Udførelse → Skemaer…** laver ethvert skema, udgaven tilbyder: rum, rumoverflader, døre og vinduer, typeopbygninger, tømmer, armering, forskalling, stål… Den samme liste ligger under **+** ved **Skemaer** i projektbrowseren.
 
 ![Mængdeudtrækket grupperet efter art og materiale](shots/quantity-takeoff.webp)
 
 Efter materiale får et materiale målt efter **areal** (se [Materialer](materials.md)) en række for hver tykkelse det er lagt i, med en kolonne **Tykkelse (mm)**: *Mineraluld 150 mm: 84,20 m²*, *Mineraluld 200 mm: 31,00 m²*. Et målt efter volumen får kun sine m³, efter masse sine kg, efter stk. sine **Stk.**. En kolonne **Note** siger, når et lag ikke har en af materialets katalogtykkelser. Overslaget gør det samme: en post på et materiale måles som materialet siger, en linje pr. tykkelse. Et materiale uden regel måles som før.
 
-**Økonomi → Eksportér XLSX** gemmer mængdeudtrækket direkte som regneark (i en browser hentes det ned).
+**Udførelse → Eksportér XLSX** gemmer mængdeudtrækket direkte som regneark (i en browser hentes det ned).
 
 ## Mængder på et ark
 
@@ -32,7 +32,7 @@ På arket trækker du tabellen for at flytte den; en tabel, der er længere end 
 
 ## At lave et skema
 
-Et skema er en tabel, som modellen udfylder: døre og vinduer, overliggere, rum, armering, træ, forskalling og mere. Klik på **+** ved siden af **Skemaer** i projektbrowseren, og vælg, hvad det skal liste, eller brug et moduls værktøj (Træ → Træliste, Byggepladsindretning → Forskallingsskema…). Dobbeltklik på det i browseren for at åbne det i en fane. Et skema følger modellen: flyt en væg, tilføj et vindue, og tabellen ændrer sig med dem.
+Et skema er en tabel, som modellen udfylder: døre og vinduer, overliggere, rum, armering, træ, forskalling og mere. Klik på **+** ved siden af **Skemaer** i projektbrowseren, og vælg, hvad det skal liste, eller brug et moduls værktøj (Træ → Træliste, Grund → Forskallingsskema…). Dobbeltklik på det i browseren for at åbne det i en fane. Et skema følger modellen: flyt en væg, tilføj et vindue, og tabellen ændrer sig med dem.
 
 Skemaer for **snedkerarbejder**, **døre**, **vinduer** og **overliggere** viser et kort for hver type, med dens tegning (som standard den indvendige visning) og dens værdier række for række. Andre skemaer er en almindelig tabel, én række pr. element og en totallinje til sidst.
 
@@ -94,7 +94,7 @@ Når du kun vil se resultatet, så klik på **Tabeleditor** over redigeringstabe
 
 ## Vægprofiler
 
-Skemaet **Vægprofiler** (**Arkitektur → Vægprofilskema**, eller **Økonomi → Skemaer…** → **Vægprofiler**) lægger projektets vægprofiler og vægnoter sammen efter profil, art og materiale: hvor mange der er, deres stykker (en profil, som åbninger afbryder, er flere), deres længde langs siderne og deres volumen; for en not det volumen, den tager ud af væggen. En sum for profilerne og en for noterne afslutter tabellen. Dens bjælke lægger dem først sammen **efter profil**, **efter etage** eller **efter vægtype**. Returer tæller med i volumen, ikke i længden.
+Skemaet **Vægprofiler** (**Arkitektur → Vægprofilskema**, eller **Udførelse → Skemaer…** → **Vægprofiler**) lægger projektets vægprofiler og vægnoter sammen efter profil, art og materiale: hvor mange der er, deres stykker (en profil, som åbninger afbryder, er flere), deres længde langs siderne og deres volumen; for en not det volumen, den tager ud af væggen. En sum for profilerne og en for noterne afslutter tabellen. Dens bjælke lægger dem først sammen **efter profil**, **efter etage** eller **efter vægtype**. Returer tæller med i volumen, ikke i længden.
 
 ## Eksport
 

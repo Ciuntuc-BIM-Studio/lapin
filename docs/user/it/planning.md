@@ -4,9 +4,9 @@ order: 97
 summary: Il programma dei lavori in un diagramma di Gantt: attività in una WBS, milestone, collegamenti con ritardi, il percorso critico calcolato su un calendario con le festività legali della Romania; la simulazione 4D dell'edificio che cresce giorno per giorno, su viste, tavole e in video; l’avanzamento segnato in cantiere, anche da un telefono, rispetto a una baseline; da e verso MS Project, IFC ed Excel.
 ---
 
-## La scheda Pianificazione
+## La scheda Esecuzione
 
-![La scheda Pianificazione](shots/ribbon-planning.webp)
+![La scheda Esecuzione](shots/ribbon-planning.webp)
 
 - **Genera cronoprogramma…**: un cronoprogramma intero fatto dal modello in un solo passo (più sotto).
 - **Gantt**: apre il programma sotto la vista. Lo schermo si divide in due righe: il modello sopra, il programma sotto.
@@ -24,7 +24,7 @@ Un progetto ha un solo programma. Si crea la prima volta che aggiungi un'attivit
 
 ![Genera cronoprogramma: i modelli, la scheda Inizio e l'anteprima](shots/planning-generate.webp)
 
-**Pianificazione → Genera cronoprogramma…** (anche nella barra del Gantt) fa un cronoprogramma completo dal modello: un'attività per ogni passo dei lavori e, dove il passo va piano per piano, una per piano, ogni attività già con i suoi elementi. A sinistra ci sono i **modelli**: **Telaio in cemento armato**, **Muratura portante**, **Capannone in acciaio** e **Telaio in legno**. Lapin segna come *suggerito* quello che chiede il modello: il capannone se il modello ne ha uno, il telaio in legno se le pareti sono a telaio, la muratura portante se non ha pilastri, altrimenti il telaio in cemento armato. Sopra ci sono gli stili del progetto (**Salva come stile…** conserva ciò che hai impostato).
+**Esecuzione → Genera cronoprogramma…** (anche nella barra del Gantt) fa un cronoprogramma completo dal modello: un'attività per ogni passo dei lavori e, dove il passo va piano per piano, una per piano, ogni attività già con i suoi elementi. A sinistra ci sono i **modelli**: **Telaio in cemento armato**, **Muratura portante**, **Capannone in acciaio** e **Telaio in legno**. Lapin segna come *suggerito* quello che chiede il modello: il capannone se il modello ne ha uno, il telaio in legno se le pareti sono a telaio, la muratura portante se non ha pilastri, altrimenti il telaio in cemento armato. Sopra ci sono gli stili del progetto (**Salva come stile…** conserva ciò che hai impostato).
 
 A destra c'è l'**anteprima**: le attività che farebbe il generatore, come barre, ognuna con la quantità che ne ha dato la durata, e sotto i conteggi:
 
@@ -153,7 +153,7 @@ Anche un tetto si costruisce a strati: la sua struttura (il solaio di un tetto p
 
 ![La scheda della selezione sopra il 3D, le due attività di un muro segnate nel Gantt](shots/planning-element-tasks.webp)
 
-Finché il Gantt è aperto, una scheda sopra la vista del modello dice quanti elementi sono selezionati e in quali attività si trovano. Trascinala per la sua maniglia sulla riga di un'attività: gli elementi entrano in quell'attività. Tieni <kbd>Maiusc</kbd> al rilascio per toglierli. **Aggiungi all'attività…** (<kbd>T</kbd> <kbd>A</kbd>, anche nella scheda Pianificazione) sceglie l'attività da un elenco.
+Finché il Gantt è aperto, una scheda sopra la vista del modello dice quanti elementi sono selezionati e in quali attività si trovano. Trascinala per la sua maniglia sulla riga di un'attività: gli elementi entrano in quell'attività. Tieni <kbd>Maiusc</kbd> al rilascio per toglierli. **Aggiungi all'attività…** (<kbd>T</kbd> <kbd>A</kbd>, anche nella scheda Esecuzione) sceglie l'attività da un elenco.
 
 ![Aggiungi all'attività](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ Ciò che aggiungi o togli a mano sono le **eccezioni** dell'attività: la regola
 
 ### Elementi senza attività
 
-Appena un'attività prende elementi, la barra del Gantt dice quanti elementi non hanno un'attività o hanno strati che nessuna attività prende; un clic li seleziona, pronti da trascinare su un'attività. **Pianificazione → Elementi senza attività** fa lo stesso. **Gestisci → Verifica** li elenca anche, in *Elements with a task*: un avviso per ciascuno, un clic lo seleziona. Gli elementi esistenti che restano non hanno bisogno di un'attività.
+Appena un'attività prende elementi, la barra del Gantt dice quanti elementi non hanno un'attività o hanno strati che nessuna attività prende; un clic li seleziona, pronti da trascinare su un'attività. **Esecuzione → Elementi senza attività** fa lo stesso. **Gestisci → Verifica** li elenca anche, in *Elements with a task*: un avviso per ciascuno, un clic lo seleziona. Gli elementi esistenti che restano non hanno bisogno di un'attività.
 
 ### In IFC e MS Project
 
@@ -171,7 +171,7 @@ L'esportazione IFC scrive ciò che ogni attività costruisce come IfcRelAssignsT
 
 ![La casa in un giorno del suo programma: il solaio del primo piano in corso nella sua cassaforma, i muri sopra non iniziati](shots/planning-simulation.webp)
 
-**Pianificazione → Simula** (anche **Simula** nella barra del Gantt) mostra il modello come lo ha il programma in un giorno. Il Gantt si apre sotto la vista se non è aperto, con il lettore in alto e il giorno come una banda sul diagramma:
+**Esecuzione → Simula** (anche **Simula** nella barra del Gantt) mostra il modello come lo ha il programma in un giorno. Il Gantt si apre sotto la vista se non è aperto, con il lettore in alto e il giorno come una banda sul diagramma:
 
 - ciò che **non è iniziato** è nascosto (o mostrato come un fantasma pallido, nelle impostazioni);
 - ciò che è **in corso** è disegnato nel suo colore (ambra);
@@ -208,7 +208,7 @@ Una pianta, una sezione, un prospetto o una vista 3D salvata ha nelle proprietà
 
 ![Tavola delle tappe: le date dalle fini dei capitoli](shots/planning-stages-dialog.webp)
 
-**Pianificazione → Tavola delle tappe…** (anche nel lettore) mette il modello a più date affiancato su una nuova tavola. È disegnato dalla **vista 3D, com'è ora** (un'immagine a ogni data) o da una pianta, una sezione o un prospetto, che il motore disegna a ogni data. Le date sono **la fine di ogni capitolo** (ogni attività in cima alla WBS), **la fine di ogni mese**, o date **scelte**. Ogni riquadro porta la sua data e le attività in corso.
+**Esecuzione → Tavola delle tappe…** (anche nel lettore) mette il modello a più date affiancato su una nuova tavola. È disegnato dalla **vista 3D, com'è ora** (un'immagine a ogni data) o da una pianta, una sezione o un prospetto, che il motore disegna a ogni data. Le date sono **la fine di ogni capitolo** (ogni attività in cima alla WBS), **la fine di ogni mese**, o date **scelte**. Ogni riquadro porta la sua data e le attività in corso.
 
 ![Una tavola delle tappe](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ Una pianta, una sezione, un prospetto o una vista 3D salvata ha nelle proprietà
 
 ![Il Gantt su una tavola](shots/planning-gantt-sheet.webp)
 
-**Pianificazione → Gantt su tavola** mette il programma su una nuova tavola: la tabella (riga, WBS e attività, giorni, inizio, fine) e le barre su una scala dei tempi, le attività critiche in rosso, i riepiloghi come parentesi, le milestone come rombi, i collegamenti. Un programma più alto della tavola va su quante tavole servono, con la sua intestazione su ognuna. È disegnato in vettoriale, come le viste, e si stampa nel PDF.
+**Esecuzione → Gantt su tavola** mette il programma su una nuova tavola: la tabella (riga, WBS e attività, giorni, inizio, fine) e le barre su una scala dei tempi, le attività critiche in rosso, i riepiloghi come parentesi, le milestone come rombi, i collegamenti. Un programma più alto della tavola va su quante tavole servono, con la sua intestazione su ognuna. È disegnato in vettoriale, come le viste, e si stampa nel PDF.
 
 ### Esporta video
 
 ![Esporta video](shots/planning-video.webp)
 
-**Pianificazione → Esporta video…** (anche nel lettore) registra la vista 3D, da dove guarda ora, da un giorno a un altro, un fotogramma per **un giorno** o per **una settimana**, con la data e le attività in corso scritte sotto. Il file è un video WebM, o MP4 dove il sistema offre solo quello (l'app per macOS). Un browser che non registra video salva invece i fotogrammi come file PNG in uno ZIP.
+**Esecuzione → Esporta video…** (anche nel lettore) registra la vista 3D, da dove guarda ora, da un giorno a un altro, un fotogramma per **un giorno** o per **una settimana**, con la data e le attività in corso scritte sotto. Il file è un video WebM, o MP4 dove il sistema offre solo quello (l'app per macOS). Un browser che non registra video salva invece i fotogrammi come file PNG in uno ZIP.
 
 ## L’avanzamento
 
@@ -241,7 +241,7 @@ Le barre mostrano la parte fatta più scura. Le Proprietà dicono da dove viene 
 
 ### Segnare gli elementi in cantiere
 
-**Pianificazione → Segna completato** (MD) e **Segna iniziato** (MS) segnano gli elementi selezionati in 3D o in una pianta, alla data di stato (oggi, se non ce n’è una), in ogni attività che li comprende; **Segna non iniziato** toglie i segni. Le proprietà di un elemento selezionato mostrano il suo stato in cantiere con gli stessi tre pulsanti e, in ciascuna delle sue attività, il giorno in cui è stato completato o iniziato, con un pulsante che lo segna completato solo in quell’attività. Un muro stratificato in un’attività di muratura e in una di intonaco si segna in entrambe, o in una dalla sua riga.
+**Esecuzione → Segna completato** (MD) e **Segna iniziato** (MS) segnano gli elementi selezionati in 3D o in una pianta, alla data di stato (oggi, se non ce n’è una), in ogni attività che li comprende; **Segna non iniziato** toglie i segni. Le proprietà di un elemento selezionato mostrano il suo stato in cantiere con gli stessi tre pulsanti e, in ciascuna delle sue attività, il giorno in cui è stato completato o iniziato, con un pulsante che lo segna completato solo in quell’attività. Un muro stratificato in un’attività di muratura e in una di intonaco si segna in entrambe, o in una dalla sua riga.
 
 ![I segni di un muro nelle sue proprietà](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ In cantiere, da un telefono: entra nella sessione condivisa del progetto dal bro
 
 ### La baseline
 
-**Pianificazione → Salva la baseline** conserva le date e la durata di ogni attività come sono ora; salvata di nuovo, viene sostituita (una sola baseline: più baseline e scenari sono per l’edizione premium). Il Gantt la disegna allora come una barra grigia sottile sotto la barra di ogni attività (**Baseline** nella barra degli strumenti la nasconde), aggiunge la colonna **Scostamento** (i giorni lavorativi di cui si è spostata la fine: positivo è ritardo, la riga segnata in rosso) e dice nella sua barra quante attività sono in ritardo e di quanto si è spostata la fine. Le Proprietà danno le date della baseline e gli scostamenti di inizio e fine. **Cancella la baseline** la toglie.
+**Esecuzione → Salva la baseline** conserva le date e la durata di ogni attività come sono ora; salvata di nuovo, viene sostituita (una sola baseline: più baseline e scenari sono per l’edizione premium). Il Gantt la disegna allora come una barra grigia sottile sotto la barra di ogni attività (**Baseline** nella barra degli strumenti la nasconde), aggiunge la colonna **Scostamento** (i giorni lavorativi di cui si è spostata la fine: positivo è ritardo, la riga segnata in rosso) e dice nella sua barra quante attività sono in ritardo e di quanto si è spostata la fine. Le Proprietà danno le date della baseline e gli scostamenti di inizio e fine. **Cancella la baseline** la toglie.
 
 ### In ritardo e in anticipo nella simulazione
 
@@ -259,7 +259,7 @@ Con una baseline, la simulazione confronta: un elemento non costruito (o non ini
 
 ### L’avanzamento nei file
 
-- **Esporta XLSX** aggiunge le colonne **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** e **GlobalId** (la cartella è in inglese). Compilale in cantiere e rileggile con **Pianificazione → Importa l’avanzamento…**: le righe si trovano per GlobalId, WBS o ID, e una *Status date* scritta sopra la tabella fissa la data di stato. Va bene anche un CSV.
+- **Esporta XLSX** aggiunge le colonne **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** e **GlobalId** (la cartella è in inglese). Compilale in cantiere e rileggile con **Esecuzione → Importa l’avanzamento…**: le righe si trovano per GlobalId, WBS o ID, e una *Status date* scritta sopra la tabella fissa la data di stato. Va bene anche un CSV.
 - **MS Project XML** porta la data di stato, la percentuale di ogni attività, l’inizio e la fine effettivi, la durata rimanente e la baseline (Baseline 0); i segni degli elementi viaggiano con gli elementi, in *Lapin elements*.
 - **IFC** li scrive nell’IfcTaskTime di ogni attività (l’ora di stato, l’inizio e la fine effettivi, il tempo rimanente, il grado di completamento), e la baseline come un secondo IfcWorkSchedule di tipo BASELINE; i campi propri di Lapin (la percentuale scritta, i segni) vanno in `Lapin_Task`. Entrambi tornano alle stesse date.
 - **Gestisci → Versioni → Confronta** dice, oltre agli elementi, cosa è cambiato nel cronoprogramma: la fine, i giorni lavorativi, la data di stato, e le attività aggiunte, eliminate, spostate (di quanti giorni lavorativi), con la durata o l’avanzamento cambiati.
@@ -268,13 +268,13 @@ Con una baseline, la simulazione confronta: un elemento non costruito (o non ini
 
 ![Il Gantt con la colonna Costo](shots/planning-cost.webp)
 
-Con un preventivo (**Costi → Preventivo…**), il Gantt riceve la colonna **Costo**: la parte del preventivo di ogni attività, dalle voci che ne prezzano gli elementi (quella di un riepilogo è delle sue attività). La barra degli strumenti mostra il **budget** (i costi diretti del preventivo) e il costo **a oggi** (il costo di ogni attività per la sua % completata); Proprietà mostra il costo di un'attività e la parte fatta. **Costi → Costo nel tempo** disegna la curva a S e la tabella mensile (vedi [Preventivo](cost.md)).
+Con un preventivo (**Esecuzione → Preventivo…**), il Gantt riceve la colonna **Costo**: la parte del preventivo di ogni attività, dalle voci che ne prezzano gli elementi (quella di un riepilogo è delle sue attività). La barra degli strumenti mostra il **budget** (i costi diretti del preventivo) e il costo **a oggi** (il costo di ogni attività per la sua % completata); Proprietà mostra il costo di un'attività e la parte fatta. **Esecuzione → Costo nel tempo** disegna la curva a S e la tabella mensile (vedi [Preventivo](cost.md)).
 
 ## Il calendario
 
 ![Il calendario di lavoro](shots/planning-calendar.webp)
 
-**Pianificazione → Calendario…** imposta:
+**Esecuzione → Calendario…** imposta:
 
 - i **giorni lavorativi** della settimana (dal lunedì al venerdì per impostazione predefinita) e le **ore** di una giornata (8 dalle 08:00);
 - le **festività**: le festività legali della Romania, calcolate per ogni anno (compresi il Venerdì Santo, la Pasqua e la Pentecoste ortodossi), oppure nessuna. L'elenco sotto mostra le festività di un anno per controllarle;

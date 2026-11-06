@@ -14,6 +14,8 @@ export interface MenuItem {
   checked?: boolean;
   disabled?: boolean;
   onSelect: () => void;
+  /** The translation's context for the label (a tab's i18nCtx: the Construction tab is not a stair's construction). */
+  ctx?: string;
 }
 
 interface MenuState { at: { x: number; y: number } | null; items: MenuItem[] }
@@ -75,7 +77,7 @@ export function ContextMenuHost() {
         <button key={i} type="button" role="menuitem" className="context-item" disabled={it.disabled}
           onClick={() => { closeContextMenu(); it.onSelect(); }}>
           <span className="context-icon">{it.checked ? '✓' : it.icon}</span>
-          <span>{it.label}</span>
+          <span data-i18n-ctx={it.ctx}>{it.label}</span>
         </button>
       ))}
     </div>

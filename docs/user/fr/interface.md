@@ -8,9 +8,13 @@ summary: Les modes Confortable, Compact et Concentration, le repli des panneaux 
 
 ## Espaces de travail
 
-Un espace de travail ne montre que les onglets du ruban dont votre travail a besoin, dans l’ordre où il s’en sert. Choisissez-le sur l’écran d’accueil, en haut de **View → Interface…** ou depuis **Commands…** (Workspace: …) : **Tout** (chaque onglet de votre édition), **Architecture**, **Structure et ferraillage**, **Fluides**, **Site et installations de chantier** ou **Dessin 2D**. Le projet reste un seul : les outils d’un onglet masqué restent dans Commands… et les raccourcis clavier, et un modèle fait dans un espace de travail s’ouvre entier dans un autre.
+Un espace de travail ne montre que les onglets du ruban dont votre travail a besoin, dans l’ordre où il s’en sert. Choisissez-le avec le bouton à côté de **Fichier**, qui nomme l’espace de travail où vous êtes, ou sur l’écran d’accueil, en haut de **View → Interface…** ou depuis **Commands…** (Workspace: …) : **Tout** (chaque onglet de votre édition), **Architecture**, **Structure et ferraillage**, **Fluides**, **Site et installations de chantier** ou **Dessin 2D**. Le projet reste un seul : les outils d’un onglet masqué restent dans Commands… et les raccourcis clavier, et un modèle fait dans un espace de travail s’ouvre entier dans un autre.
 
 ![Les espaces de travail dans View → Interface…](shots/workspaces.webp)
+
+Les onglets restent sur une seule ligne. Quand la fenêtre est trop étroite pour tous, les derniers passent sous **Plus**, au bout de la ligne, et l’onglet où vous êtes reste toujours visible.
+
+Les onglets sont regroupés selon le travail qu’ils servent. **Intérieur** réunit les finitions et le mobilier. **Site** réunit le terrain, l’aménagement paysager et les installations de chantier (échafaudages et coffrages). **Exécution** réunit le planning des travaux et le devis (4D et 5D).
 
 Affichez, masquez ou déplacez un onglet sous **Tabs**, dans le même dialogue, et le choix devient **Mon espace de travail**, gardé sur cet ordinateur pour la prochaine fois ; les autres espaces de travail restent là pour y revenir. **View** reste toujours, puisque Interface… s’y trouve.
 
@@ -39,7 +43,7 @@ Dans tous les modes, la barre du haut garde **Annuler** et **Rétablir** à son 
 
 Sous les modes, chaque élément se règle séparément : le ruban, les outils rapides (ou aucun : les touches numériques fonctionnent toujours), la ligne de commande, le HUD, l’invite et les champs de l’outil, le plan de repérage, les panneaux et la hauteur des lignes de propriétés. Modifier un élément fait passer le choix à **Personnalisé**.
 
-Sous les éléments, **Onglets** : décochez les onglets du ruban dont vous n’avez pas besoin (un architecte peut masquer Structure, Rebar 2D et MEP, un ingénieur Architecture et Site). View reste toujours, puisque Interface… s’y trouve. Les outils d’un onglet masqué restent dans Commandes… et dans les raccourcis clavier.
+Sous les éléments, **Onglets** : décochez les onglets du ruban dont vous n’avez pas besoin (un architecte peut masquer Structure, Ferraillage simple et MEP, un ingénieur Architecture et Site). View reste toujours, puisque Interface… s’y trouve. Les outils d’un onglet masqué restent dans Commandes… et dans les raccourcis clavier.
 
 Lapin garde votre choix sur cet ordinateur, pour vous. L’application de bureau et le navigateur gardent chacun le leur. Dans le navigateur, Lapin démarre en Compact quand la fenêtre fait moins de 800 pixels de haut, jusqu’à ce que vous choisissiez.
 

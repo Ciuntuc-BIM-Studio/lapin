@@ -1,12 +1,12 @@
 ---
-title: Armare 2D
+title: Armare simplă
 order: 52
 summary: Armătura desenată pe secțiuni și planuri, secțiuni transversale tăiate unde apeși, și extrasul de armare.
 ---
 
-Tabul **Armare 2D** desenează armătura așa cum se face un extras: bare ca forme cu dimensiunile lor, etrieri distribuiți pe o grindă, mărci în baloane și un tabel care le adună. Merge pe orice vedere: o secțiune, un plan, o fațadă.
+Tabul **Armare simplă** desenează armătura așa cum se face un extras: bare ca forme cu dimensiunile lor, etrieri distribuiți pe o grindă, mărci în baloane și un tabel care le adună. Merge pe orice vedere: o secțiune, un plan, o fațadă.
 
-![Tabul Armare 2D](shots/ribbon-rebar.webp)
+![Tabul Armare simplă](shots/ribbon-rebar.webp)
 
 ## O secțiune acolo unde lucrezi
 

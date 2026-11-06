@@ -4,9 +4,9 @@ order: 55
 summary: Schele de fațadă și cofraje pentru plăci și grinzi, desfășurate din model de configuratoarele lor.
 ---
 
-Tabul **Organizare de șantier** modelează lucrările provizorii de pe șantier: schelele de fațadă și cofrajele plăcilor și grinzilor. Lapin le desfășoară din model și numără ce le trebuie. Când modelul se schimbă, ele îl urmează.
+Organizarea de șantier, pe tabul **Teren** după teren, modelează lucrările provizorii de pe șantier: schelele de fațadă și cofrajele plăcilor și grinzilor. Lapin le desfășoară din model și numără ce le trebuie. Când modelul se schimbă, ele îl urmează.
 
-![Tabul Organizare de șantier](shots/ribbon-site-works.webp)
+![Organizarea de șantier pe tabul Teren](shots/ribbon-site-works.webp)
 
 Schelele și cofrajele sunt **temporare**: se montează și se demontează în faza **Execuție**. Prima pe care o așezi adaugă faza, dacă proiectul nu o are, și o face faza activă. Vederile fazelor de dinainte nu le arată. Vezi **Gestionează → Faze**.
 

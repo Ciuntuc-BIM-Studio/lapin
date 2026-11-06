@@ -207,7 +207,18 @@ function tools(page, url, folder, lang) {
     /** Types keys as a user does (a tool's letters, Enter, Escape). */
     async keys(...keys) { for (const k of keys) await page.keyboard.press(k); await t.wait(150); },
     /** Clicks the button with this name (its text or its title). */
-    async button(name, opts = {}) { await page.getByRole('button', { name, exact: opts.exact ?? false }).first().click({ timeout: 10_000 }); await t.wait(opts.wait ?? 400); },
+    async button(name, opts = {}) {
+      const exact = opts.exact ?? false;
+      // A tab the row has no room for is under More ▾ (decision 367): opened, and picked from its menu.
+      if (await page.getByRole('button', { name, exact }).count() === 0 && await page.locator('[data-testid=tabs-more]').count() > 0) {
+        await page.locator('[data-testid=tabs-more]').click();
+        const item = page.getByRole('menuitem', { name, exact });
+        if (await item.count() > 0) { await item.first().click(); await t.wait(opts.wait ?? 400); return; }
+        await page.keyboard.press('Escape');
+      }
+      await page.getByRole('button', { name, exact }).first().click({ timeout: 10_000 });
+      await t.wait(opts.wait ?? 400);
+    },
     /** A ribbon tool by its id (architecture.wall, manage.materials…), as its button starts it. */
     async tool(id) {
       const ok = await page.evaluate(async (id) => { const m = await import('/src/platform/modules.ts'); const tool = m.findTool(id); if (tool) m.activate(tool); return Boolean(tool); }, id);

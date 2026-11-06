@@ -61,6 +61,6 @@ Sélectionnez un ascenseur pour changer son arrêt le plus bas et le plus haut, 
 
 **Architecture → Nomenclature des ascenseurs** liste chaque ascenseur avec son type, son entraînement, sa charge nominale, ses personnes, sa cabine, ses portes, les arrêts qu’il dessert, les niveaux entre lesquels il circule, sa course, sa vitesse et sa gaine.
 
-Chaque ascenseur a un type créé d’après son genre, sa charge et sa cabine (Personnes moyen 630 kg, 1100 × 1400) : les ascenseurs identiques le partagent, si bien qu’un article de prix posé sur le type (**Coûts → Affecter les articles…**) les chiffre tous, et la planification les retrouve par leur classe (IfcTransportElement).
+Chaque ascenseur a un type créé d’après son genre, sa charge et sa cabine (Personnes moyen 630 kg, 1100 × 1400) : les ascenseurs identiques le partagent, si bien qu’un article de prix posé sur le type (**Exécution → Affecter les articles…**) les chiffre tous, et la planification les retrouve par leur classe (IfcTransportElement).
 
 En IFC, un ascenseur est un **IfcTransportElement** de type prédéfini **ELEVATOR**, d’un **IfcTransportElementType**, avec les jeux propres à l’IFC **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) et **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). Lapin relit son propre fichier comme un ascenseur natif, avec ses arrêts et les trémies des planchers.

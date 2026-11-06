@@ -65,7 +65,7 @@ Farverne tegnes under væggene, møblerne og dørslagene, så planen forbliver l
 
 ## Rumoverflader
 
-**Overflader → Beklæd rum** (<kbd>FR</kbd>) lægger en overflade i det rum, du klikker i: dets gulv, dets vægges overflade og dets loft, hver efter rummets omrids, som rummet selv. Flyt en væg, og overfladerne følger med. **Overflader → Rumoverflader** redigerer overfladerne; **Fra biblioteket** henter færdige: Stue, Soveværelse, Badeværelse, Køkken, Stueetage på terrændæk og Teknikrum. Mens værktøjet er aktivt, viser egenskabspanelet den overflade, det lægger, så du kan vælge den før klikket. Et rums **Overflade**, i dets egenskaber, lægger en anden eller fjerner den.
+**Interiør → Beklæd rum** (<kbd>FR</kbd>) lægger en overflade i det rum, du klikker i: dets gulv, dets vægges overflade og dets loft, hver efter rummets omrids, som rummet selv. Flyt en væg, og overfladerne følger med. **Interiør → Rumoverflader** redigerer overfladerne; **Fra biblioteket** henter færdige: Stue, Soveværelse, Badeværelse, Køkken, Stueetage på terrændæk og Teknikrum. Mens værktøjet er aktivt, viser egenskabspanelet den overflade, det lægger, så du kan vælge den før klikket. Et rums **Overflade**, i dets egenskaber, lægger en anden eller fjerner den.
 
 En overflade har:
 
@@ -81,7 +81,7 @@ En overflade har:
 
 ![En plan med badeværelsets gulv skraveret som fliser og stuens som brædder](shots/room-finish-hatch.webp)
 
-Hver overflade måler, pr. materiale, sit **brutto**areal (rummets omrids, intet fratrukket: gulvets areal, væggenes omkreds gange hvert stykkes højde) og sit **netto**areal (det, der bygges: døre, vinduer og dækhuller trukket fra, lysningerne og gulvet under dørene lagt til; lysningernes andel står i mængderne, som RevealArea) samt sit volumen. **Overflader → Overfladeskema** viser hvert beklædt rum pr. del og materiale, med totalerne pr. materiale til sidst; som ethvert skema laver det diagrammer, eksporteres og kommer på et tegningsark. I IFC er en overflade en IfcCovering: FLOORING, CLADDING eller CEILING.
+Hver overflade måler, pr. materiale, sit **brutto**areal (rummets omrids, intet fratrukket: gulvets areal, væggenes omkreds gange hvert stykkes højde) og sit **netto**areal (det, der bygges: døre, vinduer og dækhuller trukket fra, lysningerne og gulvet under dørene lagt til; lysningernes andel står i mængderne, som RevealArea) samt sit volumen. **Interiør → Overfladeskema** viser hvert beklædt rum pr. del og materiale, med totalerne pr. materiale til sidst; som ethvert skema laver det diagrammer, eksporteres og kommer på et tegningsark. I IFC er en overflade en IfcCovering: FLOORING, CLADDING eller CEILING.
 
 En overflade beklæder det, rummets vægge allerede har: hvis vægtyperne har deres egen puds, så giv rummets vægge kun det, der kommer ovenpå (maling, fliser), eller brug vægtyper med kun kernen.
 

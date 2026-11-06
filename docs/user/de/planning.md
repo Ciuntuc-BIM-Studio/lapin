@@ -4,9 +4,9 @@ order: 97
 summary: Der Bauzeitenplan als Gantt-Diagramm: Vorgänge in einem PSP, Meilensteine, Verknüpfungen mit Zeitabständen, der kritische Pfad auf einem Kalender mit den gesetzlichen Feiertagen Rumäniens; die 4D-Simulation des Tag für Tag wachsenden Gebäudes, in Ansichten, auf Plänen und als Video; der Fortschritt, auf der Baustelle markiert, auch vom Telefon, gegen einen Basisplan; zu und von MS Project, IFC und Excel.
 ---
 
-## Der Reiter Terminplanung
+## Der Reiter Ausführung
 
-![Der Reiter Terminplanung](shots/ribbon-planning.webp)
+![Der Reiter Ausführung](shots/ribbon-planning.webp)
 
 - **Terminplan erzeugen…**: ein ganzer Terminplan aus dem Modell, in einem Schritt (unten).
 - **Gantt**: öffnet den Terminplan unter der Ansicht. Der Bildschirm teilt sich in zwei Zeilen: oben das Modell, unten der Terminplan.
@@ -24,7 +24,7 @@ Ein Projekt hat einen Terminplan. Er wird beim ersten Hinzufügen eines Vorgangs
 
 ![Terminplan erzeugen: die Vorlagen, der Reiter Anfang und die Vorschau](shots/planning-generate.webp)
 
-**Terminplanung → Terminplan erzeugen…** (auch in der Leiste des Gantt) macht aus dem Modell einen vollständigen Terminplan: einen Vorgang für jeden Schritt der Arbeiten und, wo der Schritt Geschoss für Geschoss geht, einen je Geschoss, jeder Vorgang schon mit seinen Elementen. Links stehen die **Vorlagen**: **Stahlbetonskelett**, **Tragendes Mauerwerk**, **Stahlhalle** und **Holzrahmenbau**. Lapin markiert die vom Modell verlangte als *empfohlen*: die Stahlhalle, wenn das Modell eine hat, den Holzrahmenbau, wenn seine Wände Ständerwände sind, tragendes Mauerwerk ohne Stützen, sonst das Stahlbetonskelett. Darüber stehen die Stile des Projekts (**Als Stil speichern…** behält, was du eingestellt hast).
+**Ausführung → Terminplan erzeugen…** (auch in der Leiste des Gantt) macht aus dem Modell einen vollständigen Terminplan: einen Vorgang für jeden Schritt der Arbeiten und, wo der Schritt Geschoss für Geschoss geht, einen je Geschoss, jeder Vorgang schon mit seinen Elementen. Links stehen die **Vorlagen**: **Stahlbetonskelett**, **Tragendes Mauerwerk**, **Stahlhalle** und **Holzrahmenbau**. Lapin markiert die vom Modell verlangte als *empfohlen*: die Stahlhalle, wenn das Modell eine hat, den Holzrahmenbau, wenn seine Wände Ständerwände sind, tragendes Mauerwerk ohne Stützen, sonst das Stahlbetonskelett. Darüber stehen die Stile des Projekts (**Als Stil speichern…** behält, was du eingestellt hast).
 
 Rechts ist die **Vorschau**: die Vorgänge, die der Generator anlegen würde, als Balken, jeder mit der Menge, die seine Dauer ergab, und darunter die Zählungen:
 
@@ -153,7 +153,7 @@ Auch ein Dach wird in Schichten gebaut: sein Tragwerk (die Tragschale eines Flac
 
 ![Die Karte der Auswahl über dem 3D, die zwei Vorgänge einer Wand im Gantt markiert](shots/planning-element-tasks.webp)
 
-Solange das Gantt offen ist, sagt eine Karte über der Modellansicht, wie viele Elemente gewählt sind und in welchen Vorgängen sie stehen. Ziehe sie an ihrem Griff auf die Zeile eines Vorgangs: Die Elemente kommen in diesen Vorgang. Halte beim Loslassen <kbd>Umschalt</kbd>, um sie herauszunehmen. **Zu Vorgang hinzufügen…** (<kbd>T</kbd> <kbd>A</kbd>, auch im Reiter Terminplanung) wählt den Vorgang aus einer Liste.
+Solange das Gantt offen ist, sagt eine Karte über der Modellansicht, wie viele Elemente gewählt sind und in welchen Vorgängen sie stehen. Ziehe sie an ihrem Griff auf die Zeile eines Vorgangs: Die Elemente kommen in diesen Vorgang. Halte beim Loslassen <kbd>Umschalt</kbd>, um sie herauszunehmen. **Zu Vorgang hinzufügen…** (<kbd>T</kbd> <kbd>A</kbd>, auch im Reiter Ausführung) wählt den Vorgang aus einer Liste.
 
 ![Zu Vorgang hinzufügen](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ Was du von Hand hinzufügst oder herausnimmst, sind die **Ausnahmen** des Vorgan
 
 ### Elemente ohne Vorgang
 
-Sobald ein Vorgang Elemente nimmt, sagt die Leiste des Gantt, wie viele Elemente keinen Vorgang haben oder Schichten, die kein Vorgang nimmt; ein Klick wählt sie, bereit, auf einen Vorgang gezogen zu werden. **Terminplanung → Elemente ohne Vorgang** tut dasselbe. **Verwalten → Prüfung** listet sie ebenfalls, unter *Elements with a task*: eine Warnung je Element, ein Klick wählt es. Bestehende Elemente, die bleiben, brauchen keinen Vorgang.
+Sobald ein Vorgang Elemente nimmt, sagt die Leiste des Gantt, wie viele Elemente keinen Vorgang haben oder Schichten, die kein Vorgang nimmt; ein Klick wählt sie, bereit, auf einen Vorgang gezogen zu werden. **Ausführung → Elemente ohne Vorgang** tut dasselbe. **Verwalten → Prüfung** listet sie ebenfalls, unter *Elements with a task*: eine Warnung je Element, ein Klick wählt es. Bestehende Elemente, die bleiben, brauchen keinen Vorgang.
 
 ### In IFC und MS Project
 
@@ -171,7 +171,7 @@ Der IFC-Export schreibt, was jeder Vorgang baut, als IfcRelAssignsToProduct (das
 
 ![Das Haus an einem Tag seines Bauzeitenplans: die Decke des Obergeschosses in Arbeit in ihrer Schalung, die Wände darüber nicht begonnen](shots/planning-simulation.webp)
 
-**Terminplanung → Simulieren** (auch **Simulieren** in der Werkzeugleiste des Gantt) zeigt das Modell, wie der Bauzeitenplan es an einem Tag hat. Das Gantt öffnet sich unter der Ansicht, wenn es nicht offen ist, mit dem Player oben und dem Tag als Band über dem Diagramm:
+**Ausführung → Simulieren** (auch **Simulieren** in der Werkzeugleiste des Gantt) zeigt das Modell, wie der Bauzeitenplan es an einem Tag hat. Das Gantt öffnet sich unter der Ansicht, wenn es nicht offen ist, mit dem Player oben und dem Tag als Band über dem Diagramm:
 
 - was **nicht begonnen** ist, ist ausgeblendet (oder als blasser Geist gezeigt, in den Einstellungen);
 - was **in Arbeit** ist, wird in seiner Farbe gezeichnet (Bernstein);
@@ -208,7 +208,7 @@ Ein Grundriss, ein Schnitt, eine Ansicht oder eine gespeicherte 3D-Ansicht hat i
 
 ![Bauabschnittsplan: die Daten der Kapitelenden](shots/planning-stages-dialog.webp)
 
-**Terminplanung → Bauabschnittsplan…** (auch im Player) stellt das Modell an mehreren Daten nebeneinander auf einen neuen Plan. Gezeichnet wird aus **der 3D-Ansicht, wie sie jetzt aussieht** (ein Bild je Datum) oder aus einem Grundriss, einem Schnitt oder einer Ansicht, die die Engine an jedem Datum zeichnet. Die Daten sind **das Ende jedes Kapitels** (jeder Vorgang oben im PSP), **das Ende jedes Monats** oder **gewählte**. Jedes Bild trägt sein Datum und die Vorgänge in Arbeit.
+**Ausführung → Bauabschnittsplan…** (auch im Player) stellt das Modell an mehreren Daten nebeneinander auf einen neuen Plan. Gezeichnet wird aus **der 3D-Ansicht, wie sie jetzt aussieht** (ein Bild je Datum) oder aus einem Grundriss, einem Schnitt oder einer Ansicht, die die Engine an jedem Datum zeichnet. Die Daten sind **das Ende jedes Kapitels** (jeder Vorgang oben im PSP), **das Ende jedes Monats** oder **gewählte**. Jedes Bild trägt sein Datum und die Vorgänge in Arbeit.
 
 ![Ein Bauabschnittsplan](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ Ein Grundriss, ein Schnitt, eine Ansicht oder eine gespeicherte 3D-Ansicht hat i
 
 ![Das Gantt auf einem Plan](shots/planning-gantt-sheet.webp)
 
-**Terminplanung → Gantt auf Plan** setzt den Bauzeitenplan auf einen neuen Plan: die Tabelle (Zeile, PSP und Vorgang, Tage, Anfang, Ende) und die Balken auf einer Zeitskala, die kritischen Vorgänge rot, die Sammelvorgänge als Klammern, die Meilensteine als Rauten, die Verknüpfungen. Ein Bauzeitenplan, der höher ist als der Plan, kommt auf so viele Pläne wie nötig, mit seiner Kopfzeile auf jedem. Er ist als Vektoren gezeichnet, wie die Ansichten, und wird im PDF gedruckt.
+**Ausführung → Gantt auf Plan** setzt den Bauzeitenplan auf einen neuen Plan: die Tabelle (Zeile, PSP und Vorgang, Tage, Anfang, Ende) und die Balken auf einer Zeitskala, die kritischen Vorgänge rot, die Sammelvorgänge als Klammern, die Meilensteine als Rauten, die Verknüpfungen. Ein Bauzeitenplan, der höher ist als der Plan, kommt auf so viele Pläne wie nötig, mit seiner Kopfzeile auf jedem. Er ist als Vektoren gezeichnet, wie die Ansichten, und wird im PDF gedruckt.
 
 ### Video exportieren
 
 ![Video exportieren](shots/planning-video.webp)
 
-**Terminplanung → Video exportieren…** (auch im Player) nimmt die 3D-Ansicht auf, von wo sie jetzt schaut, von einem Tag zum anderen, ein Bild je **ein Tag** oder **eine Woche**, mit dem Datum und den Vorgängen in Arbeit darunter. Die Datei ist ein WebM-Video, oder MP4, wo das System nur das anbietet (die macOS-App). Ein Browser, der kein Video aufnimmt, speichert stattdessen die Bilder als PNG-Dateien in einem ZIP.
+**Ausführung → Video exportieren…** (auch im Player) nimmt die 3D-Ansicht auf, von wo sie jetzt schaut, von einem Tag zum anderen, ein Bild je **ein Tag** oder **eine Woche**, mit dem Datum und den Vorgängen in Arbeit darunter. Die Datei ist ein WebM-Video, oder MP4, wo das System nur das anbietet (die macOS-App). Ein Browser, der kein Video aufnimmt, speichert stattdessen die Bilder als PNG-Dateien in einem ZIP.
 
 ## Der Fortschritt
 
@@ -241,7 +241,7 @@ Die Balken zeigen den erledigten Teil dunkler. Die Eigenschaften sagen, woher ei
 
 ### Elemente auf der Baustelle markieren
 
-**Terminplanung → Als fertig markieren** (MD) und **Als begonnen markieren** (MS) markieren die in 3D oder in einem Grundriss gewählten Elemente zum Statusdatum (heute, wenn keines gesetzt ist), in jedem Vorgang, der sie enthält; **Als nicht begonnen markieren** nimmt die Markierungen weg. Die Eigenschaften eines gewählten Elements zeigen seinen Stand auf der Baustelle mit denselben drei Knöpfen und in jedem seiner Vorgänge den Tag, an dem es fertig wurde oder begann, mit einem Knopf, der es nur in diesem Vorgang als fertig markiert. Eine geschichtete Wand in einem Mauerwerks- und einem Putzvorgang wird in beiden markiert, oder in einem über seine Zeile.
+**Ausführung → Als fertig markieren** (MD) und **Als begonnen markieren** (MS) markieren die in 3D oder in einem Grundriss gewählten Elemente zum Statusdatum (heute, wenn keines gesetzt ist), in jedem Vorgang, der sie enthält; **Als nicht begonnen markieren** nimmt die Markierungen weg. Die Eigenschaften eines gewählten Elements zeigen seinen Stand auf der Baustelle mit denselben drei Knöpfen und in jedem seiner Vorgänge den Tag, an dem es fertig wurde oder begann, mit einem Knopf, der es nur in diesem Vorgang als fertig markiert. Eine geschichtete Wand in einem Mauerwerks- und einem Putzvorgang wird in beiden markiert, oder in einem über seine Zeile.
 
 ![Die Markierungen einer Wand in ihren Eigenschaften](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ Auf der Baustelle, vom Telefon: tritt der geteilten Sitzung des Projekts im Brow
 
 ### Der Basisplan
 
-**Terminplanung → Basisplan speichern** behält die Termine und die Dauer jedes Vorgangs, wie sie jetzt sind; erneut gespeichert, wird er ersetzt (ein Basisplan: mehrere Basispläne und Szenarien gehören zur Premium-Edition). Das Gantt zeichnet ihn dann als dünnen grauen Balken unter dem Balken jedes Vorgangs (**Basisplan** in der Werkzeugleiste blendet ihn aus), fügt die Spalte **Abweichung** hinzu (die Arbeitstage, um die sich das Ende verschoben hat: positiv ist verspätet, die Zeile rot markiert) und sagt in seiner Leiste, wie viele Vorgänge verspätet sind und wie weit sich das Ende verschoben hat. Die Eigenschaften geben die Termine des Basisplans und die Abweichungen von Anfang und Ende. **Basisplan löschen** entfernt ihn.
+**Ausführung → Basisplan speichern** behält die Termine und die Dauer jedes Vorgangs, wie sie jetzt sind; erneut gespeichert, wird er ersetzt (ein Basisplan: mehrere Basispläne und Szenarien gehören zur Premium-Edition). Das Gantt zeichnet ihn dann als dünnen grauen Balken unter dem Balken jedes Vorgangs (**Basisplan** in der Werkzeugleiste blendet ihn aus), fügt die Spalte **Abweichung** hinzu (die Arbeitstage, um die sich das Ende verschoben hat: positiv ist verspätet, die Zeile rot markiert) und sagt in seiner Leiste, wie viele Vorgänge verspätet sind und wie weit sich das Ende verschoben hat. Die Eigenschaften geben die Termine des Basisplans und die Abweichungen von Anfang und Ende. **Basisplan löschen** entfernt ihn.
 
 ### Verspätet und voraus in der Simulation
 
@@ -259,7 +259,7 @@ Mit einem Basisplan vergleicht die Simulation: ein Element, das an einem Tag nic
 
 ### Der Fortschritt in den Dateien
 
-- **XLSX exportieren** fügt die Spalten **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** und **GlobalId** hinzu (die Arbeitsmappe ist englisch). Fülle sie auf der Baustelle aus und lies sie mit **Terminplanung → Fortschritt importieren…** zurück: die Zeilen werden nach GlobalId, PSP-Code oder ID gefunden, und ein über der Tabelle geschriebenes *Status date* setzt das Statusdatum. Eine CSV geht auch.
+- **XLSX exportieren** fügt die Spalten **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** und **GlobalId** hinzu (die Arbeitsmappe ist englisch). Fülle sie auf der Baustelle aus und lies sie mit **Ausführung → Fortschritt importieren…** zurück: die Zeilen werden nach GlobalId, PSP-Code oder ID gefunden, und ein über der Tabelle geschriebenes *Status date* setzt das Statusdatum. Eine CSV geht auch.
 - **MS Project XML** trägt das Statusdatum, den Prozentsatz jedes Vorgangs, den tatsächlichen Anfang und das tatsächliche Ende, die Restdauer und den Basisplan (Baseline 0); die Markierungen der Elemente reisen mit den Elementen in *Lapin elements*.
 - **IFC** schreibt sie in die IfcTaskTime jedes Vorgangs (die Statuszeit, den tatsächlichen Anfang und das tatsächliche Ende, die Restzeit, den Fertigstellungsgrad) und den Basisplan als zweiten IfcWorkSchedule vom Typ BASELINE; Lapins eigene Felder (der eingegebene Prozentsatz, die Markierungen) stehen in `Lapin_Task`. Beides kommt auf dieselben Termine zurück.
 - **Verwalten → Versionen → Vergleichen** sagt neben den Elementen, was sich im Terminplan geändert hat: das Ende, die Arbeitstage, das Statusdatum und die Vorgänge, die hinzukamen, gelöscht oder verschoben wurden (um wie viele Arbeitstage) oder deren Dauer oder Fortschritt sich geändert hat.
@@ -268,13 +268,13 @@ Mit einem Basisplan vergleicht die Simulation: ein Element, das an einem Tag nic
 
 ![Das Gantt mit der Spalte Kosten](shots/planning-cost.webp)
 
-Mit einer Kostenberechnung (**Kosten → Kostenberechnung…**) erhält das Gantt eine Spalte **Kosten**: der Anteil jedes Vorgangs an der Kostenberechnung, aus den Positionen, die seine Bauteile bepreisen (der eines Sammelvorgangs ist der seiner Vorgänge). Die Werkzeugleiste zeigt das **Budget** (die direkten Kosten) und die Kosten **bis heute** (die Kosten jedes Vorgangs mal seinem Fertigstellungsgrad); Eigenschaften zeigt die Kosten eines Vorgangs und den erledigten Teil. **Kosten → Kosten im Zeitverlauf** zeichnet die S-Kurve und die Monatstabelle (siehe [Kostenberechnung](cost.md)).
+Mit einer Kostenberechnung (**Ausführung → Kostenberechnung…**) erhält das Gantt eine Spalte **Kosten**: der Anteil jedes Vorgangs an der Kostenberechnung, aus den Positionen, die seine Bauteile bepreisen (der eines Sammelvorgangs ist der seiner Vorgänge). Die Werkzeugleiste zeigt das **Budget** (die direkten Kosten) und die Kosten **bis heute** (die Kosten jedes Vorgangs mal seinem Fertigstellungsgrad); Eigenschaften zeigt die Kosten eines Vorgangs und den erledigten Teil. **Ausführung → Kosten im Zeitverlauf** zeichnet die S-Kurve und die Monatstabelle (siehe [Kostenberechnung](cost.md)).
 
 ## Der Kalender
 
 ![Der Arbeitskalender](shots/planning-calendar.webp)
 
-**Terminplanung → Kalender…** legt fest:
+**Ausführung → Kalender…** legt fest:
 
 - die **Arbeitstage** der Woche (standardmäßig Montag bis Freitag) und die **Stunden** eines Tages (8 ab 08:00);
 - die **Feiertage**: die gesetzlichen Feiertage Rumäniens, für jedes Jahr berechnet (einschließlich des orthodoxen Karfreitags, Ostern und Pfingsten), oder keine. Die Liste darunter zeigt die Feiertage eines Jahres zur Kontrolle;

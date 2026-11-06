@@ -4,9 +4,9 @@ order: 97
 summary: Le planning des travaux dans un diagramme de Gantt : tâches dans une WBS, jalons, liens avec décalages, chemin critique calculé sur un calendrier avec les jours fériés légaux de la Roumanie ; la simulation 4D du bâtiment qui grandit jour après jour, sur les vues, les feuilles et en vidéo ; l’avancement marqué sur le chantier, depuis un téléphone aussi, face à une planification initiale; vers et depuis MS Project, IFC et Excel.
 ---
 
-## L'onglet Planification
+## L'onglet Exécution
 
-![L'onglet Planification](shots/ribbon-planning.webp)
+![L'onglet Exécution](shots/ribbon-planning.webp)
 
 - **Générer le planning…** : un planning entier fait à partir du modèle, en une seule étape (ci-dessous).
 - **Gantt** : ouvre le planning sous la vue. L'écran se divise en deux lignes : le modèle en haut, le planning en bas.
@@ -24,7 +24,7 @@ Un projet a un seul planning. Il est créé la première fois que vous ajoutez u
 
 ![Générer le planning : les modèles, l'onglet Début et l'aperçu](shots/planning-generate.webp)
 
-**Planification → Générer le planning…** (aussi dans la barre du Gantt) fait un planning complet à partir du modèle : une tâche par étape des travaux et, là où l'étape avance niveau par niveau, une par niveau, chaque tâche ayant déjà ses éléments. À gauche, les **modèles** : **Ossature en béton armé**, **Maçonnerie porteuse**, **Hall en acier** et **Ossature bois**. Lapin marque *suggéré* celui que demande le modèle : le hall en acier s'il en a un, l'ossature bois si ses murs sont à ossature, la maçonnerie porteuse s'il n'a pas de poteaux, sinon l'ossature en béton armé. Au-dessus, les styles du projet (**Enregistrer comme style…** garde ce que vous avez réglé).
+**Exécution → Générer le planning…** (aussi dans la barre du Gantt) fait un planning complet à partir du modèle : une tâche par étape des travaux et, là où l'étape avance niveau par niveau, une par niveau, chaque tâche ayant déjà ses éléments. À gauche, les **modèles** : **Ossature en béton armé**, **Maçonnerie porteuse**, **Hall en acier** et **Ossature bois**. Lapin marque *suggéré* celui que demande le modèle : le hall en acier s'il en a un, l'ossature bois si ses murs sont à ossature, la maçonnerie porteuse s'il n'a pas de poteaux, sinon l'ossature en béton armé. Au-dessus, les styles du projet (**Enregistrer comme style…** garde ce que vous avez réglé).
 
 À droite, l'**aperçu** : les tâches que ferait le générateur, en barres, chacune avec la quantité qui a donné sa durée, et dessous les comptes :
 
@@ -153,7 +153,7 @@ Un toit se construit aussi en couches : sa structure (le support d’un toit pla
 
 ![La carte de la sélection sur la 3D, les deux tâches d'un mur marquées dans le Gantt](shots/planning-element-tasks.webp)
 
-Tant que le Gantt est ouvert, une carte sur la vue du modèle dit combien d'éléments sont sélectionnés et dans quelles tâches ils sont. Glissez-la par sa poignée sur la ligne d'une tâche : les éléments entrent dans cette tâche. Maintenez <kbd>Maj</kbd> en lâchant pour les en retirer. **Ajouter à la tâche…** (<kbd>T</kbd> <kbd>A</kbd>, aussi dans l'onglet Planification) choisit la tâche dans une liste.
+Tant que le Gantt est ouvert, une carte sur la vue du modèle dit combien d'éléments sont sélectionnés et dans quelles tâches ils sont. Glissez-la par sa poignée sur la ligne d'une tâche : les éléments entrent dans cette tâche. Maintenez <kbd>Maj</kbd> en lâchant pour les en retirer. **Ajouter à la tâche…** (<kbd>T</kbd> <kbd>A</kbd>, aussi dans l'onglet Exécution) choisit la tâche dans une liste.
 
 ![Ajouter à la tâche](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ Ce que vous ajoutez ou retirez à la main, ce sont les **exceptions** de la tâc
 
 ### Éléments sans tâche
 
-Dès qu'une tâche prend des éléments, la barre du Gantt dit combien d'éléments n'ont pas de tâche, ou ont des couches qu'aucune tâche ne prend ; un clic les sélectionne, prêts à être glissés sur une tâche. **Planification → Éléments sans tâche** fait de même. **Gérer → Vérification** les liste aussi, sous *Elements with a task* : un avertissement par élément, un clic le sélectionne. Les éléments existants qui restent n'ont pas besoin de tâche.
+Dès qu'une tâche prend des éléments, la barre du Gantt dit combien d'éléments n'ont pas de tâche, ou ont des couches qu'aucune tâche ne prend ; un clic les sélectionne, prêts à être glissés sur une tâche. **Exécution → Éléments sans tâche** fait de même. **Gérer → Vérification** les liste aussi, sous *Elements with a task* : un avertissement par élément, un clic le sélectionne. Les éléments existants qui restent n'ont pas besoin de tâche.
 
 ### En IFC et MS Project
 
@@ -171,7 +171,7 @@ L'export IFC écrit ce que chaque tâche construit comme IfcRelAssignsToProduct 
 
 ![La maison un jour de son planning : la dalle de l'étage en cours dans son coffrage, les murs au-dessus non commencés](shots/planning-simulation.webp)
 
-**Planification → Simuler** (aussi **Simuler** dans la barre du Gantt) montre le modèle tel que le planning l'a un jour donné. Le Gantt s'ouvre sous la vue s'il n'est pas ouvert, avec le lecteur en haut et le jour comme une bande sur le diagramme :
+**Exécution → Simuler** (aussi **Simuler** dans la barre du Gantt) montre le modèle tel que le planning l'a un jour donné. Le Gantt s'ouvre sous la vue s'il n'est pas ouvert, avec le lecteur en haut et le jour comme une bande sur le diagramme :
 
 - ce qui n'est **pas commencé** est masqué (ou montré comme un fantôme pâle, dans les réglages) ;
 - ce qui est **en cours** est dessiné dans sa couleur (ambre) ;
@@ -208,7 +208,7 @@ Un plan, une coupe, une élévation ou une vue 3D enregistrée a dans ses propri
 
 ![Feuille des étapes : les dates des fins de chapitre](shots/planning-stages-dialog.webp)
 
-**Planification → Feuille des étapes…** (aussi dans le lecteur) met le modèle à plusieurs dates côte à côte sur une nouvelle feuille. Il est dessiné depuis **la vue 3D, telle qu'elle est maintenant** (une image à chaque date) ou depuis un plan, une coupe ou une élévation, que le moteur dessine à chaque date. Les dates sont **la fin de chaque chapitre** (chaque tâche en haut de la WBS), **la fin de chaque mois**, ou des dates **choisies**. Chaque cadre porte sa date et les tâches en cours.
+**Exécution → Feuille des étapes…** (aussi dans le lecteur) met le modèle à plusieurs dates côte à côte sur une nouvelle feuille. Il est dessiné depuis **la vue 3D, telle qu'elle est maintenant** (une image à chaque date) ou depuis un plan, une coupe ou une élévation, que le moteur dessine à chaque date. Les dates sont **la fin de chaque chapitre** (chaque tâche en haut de la WBS), **la fin de chaque mois**, ou des dates **choisies**. Chaque cadre porte sa date et les tâches en cours.
 
 ![Une feuille des étapes](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ Un plan, une coupe, une élévation ou une vue 3D enregistrée a dans ses propri
 
 ![Le Gantt sur une feuille](shots/planning-gantt-sheet.webp)
 
-**Planification → Gantt sur feuille** met le planning sur une nouvelle feuille : le tableau (ligne, WBS et tâche, jours, début, fin) et les barres sur une échelle de temps, les tâches critiques en rouge, les récapitulatives en accolades, les jalons en losanges, les liens. Un planning plus haut que la feuille va sur autant de feuilles qu'il faut, son en-tête sur chacune. Il est dessiné en vecteurs, comme les vues, et s'imprime dans le PDF.
+**Exécution → Gantt sur feuille** met le planning sur une nouvelle feuille : le tableau (ligne, WBS et tâche, jours, début, fin) et les barres sur une échelle de temps, les tâches critiques en rouge, les récapitulatives en accolades, les jalons en losanges, les liens. Un planning plus haut que la feuille va sur autant de feuilles qu'il faut, son en-tête sur chacune. Il est dessiné en vecteurs, comme les vues, et s'imprime dans le PDF.
 
 ### Exporter la vidéo
 
 ![Exporter la vidéo](shots/planning-video.webp)
 
-**Planification → Exporter la vidéo…** (aussi dans le lecteur) enregistre la vue 3D, d'où elle regarde maintenant, d'un jour à un autre, une image par **un jour** ou par **une semaine**, avec la date et les tâches en cours écrites dessous. Le fichier est une vidéo WebM, ou MP4 là où le système n'offre que cela (l'application macOS). Un navigateur qui n'enregistre pas de vidéo enregistre à la place les images en fichiers PNG dans un ZIP.
+**Exécution → Exporter la vidéo…** (aussi dans le lecteur) enregistre la vue 3D, d'où elle regarde maintenant, d'un jour à un autre, une image par **un jour** ou par **une semaine**, avec la date et les tâches en cours écrites dessous. Le fichier est une vidéo WebM, ou MP4 là où le système n'offre que cela (l'application macOS). Un navigateur qui n'enregistre pas de vidéo enregistre à la place les images en fichiers PNG dans un ZIP.
 
 ## L’avancement
 
@@ -241,7 +241,7 @@ Les barres montrent la part faite plus sombre. Les Propriétés disent d’où v
 
 ### Marquer les éléments sur le chantier
 
-**Planification → Marquer terminé** (MD) et **Marquer commencé** (MS) marquent les éléments sélectionnés en 3D ou dans un plan, à la date d’état (aujourd’hui s’il n’y en a pas), dans chaque tâche qui les contient ; **Marquer non commencé** retire les marques. Les propriétés d’un élément sélectionné montrent son état sur le chantier avec les mêmes trois boutons et, dans chacune de ses tâches, le jour où il a été terminé ou commencé, avec un bouton qui le marque terminé dans cette tâche seule. Un mur multicouche dans une tâche de maçonnerie et une d’enduit est marqué dans les deux, ou dans une depuis sa ligne.
+**Exécution → Marquer terminé** (MD) et **Marquer commencé** (MS) marquent les éléments sélectionnés en 3D ou dans un plan, à la date d’état (aujourd’hui s’il n’y en a pas), dans chaque tâche qui les contient ; **Marquer non commencé** retire les marques. Les propriétés d’un élément sélectionné montrent son état sur le chantier avec les mêmes trois boutons et, dans chacune de ses tâches, le jour où il a été terminé ou commencé, avec un bouton qui le marque terminé dans cette tâche seule. Un mur multicouche dans une tâche de maçonnerie et une d’enduit est marqué dans les deux, ou dans une depuis sa ligne.
 
 ![Les marques d’un mur dans ses propriétés](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ Sur le chantier, depuis un téléphone : rejoignez la session partagée du proje
 
 ### La planification initiale
 
-**Planification → Enregistrer la planification initiale** garde les dates et la durée de chaque tâche telles qu’elles sont maintenant ; enregistrée de nouveau, elle est remplacée (une seule planification initiale : plusieurs et des scénarios sont pour l’édition premium). Le Gantt la dessine alors en barre grise fine sous la barre de chaque tâche (**Planification initiale** dans la barre d’outils la cache), ajoute la colonne **Écart** (les jours ouvrés dont la fin a bougé : positif est un retard, la ligne marquée en rouge) et dit dans sa barre combien de tâches sont en retard et de combien la fin a bougé. Les Propriétés donnent les dates initiales et les écarts de début et de fin. **Effacer la planification initiale** la retire.
+**Exécution → Enregistrer la planification initiale** garde les dates et la durée de chaque tâche telles qu’elles sont maintenant ; enregistrée de nouveau, elle est remplacée (une seule planification initiale : plusieurs et des scénarios sont pour l’édition premium). Le Gantt la dessine alors en barre grise fine sous la barre de chaque tâche (**Planification initiale** dans la barre d’outils la cache), ajoute la colonne **Écart** (les jours ouvrés dont la fin a bougé : positif est un retard, la ligne marquée en rouge) et dit dans sa barre combien de tâches sont en retard et de combien la fin a bougé. Les Propriétés donnent les dates initiales et les écarts de début et de fin. **Effacer la planification initiale** la retire.
 
 ### En retard et en avance dans la simulation
 
@@ -259,7 +259,7 @@ Avec une planification initiale, la simulation compare : un élément non constr
 
 ### L’avancement dans les fichiers
 
-- **Exporter XLSX** ajoute les colonnes **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** et **GlobalId** (le classeur est en anglais). Remplissez-les sur le chantier et relisez-les avec **Planification → Importer l’avancement…** : les lignes sont retrouvées par GlobalId, code WBS ou ID, et une *Status date* écrite au-dessus du tableau fixe la date d’état. Un CSV marche aussi.
+- **Exporter XLSX** ajoute les colonnes **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** et **GlobalId** (le classeur est en anglais). Remplissez-les sur le chantier et relisez-les avec **Exécution → Importer l’avancement…** : les lignes sont retrouvées par GlobalId, code WBS ou ID, et une *Status date* écrite au-dessus du tableau fixe la date d’état. Un CSV marche aussi.
 - **MS Project XML** porte la date d’état, le pourcentage de chaque tâche, le début et la fin réels, la durée restante et la planification initiale (Baseline 0) ; les marques des éléments voyagent avec les éléments, dans *Lapin elements*.
 - **IFC** les écrit dans l’IfcTaskTime de chaque tâche (l’heure d’état, le début et la fin réels, le temps restant, le degré d’achèvement), et la planification initiale comme un second IfcWorkSchedule de type BASELINE ; les champs propres à Lapin (le pourcentage saisi, les marques) vont dans `Lapin_Task`. Les deux reviennent aux mêmes dates.
 - **Gérer → Versions → Comparer** dit, à côté des éléments, ce qui a changé dans le planning : la fin, les jours ouvrés, la date d’état, et les tâches ajoutées, supprimées, déplacées (de combien de jours ouvrés), dont la durée ou l’avancement a changé.
@@ -268,13 +268,13 @@ Avec une planification initiale, la simulation compare : un élément non constr
 
 ![Le Gantt avec la colonne Coût](shots/planning-cost.webp)
 
-Avec un devis (**Coûts → Devis…**), le Gantt reçoit une colonne **Coût** : la part du devis de chaque tâche, d'après les lignes qui chiffrent ses éléments (celle d'un récapitulatif est celle de ses tâches). La barre d'outils montre le **budget** (les coûts directs du devis) et le coût **à date** (le coût de chaque tâche fois son % achevé) ; Propriétés montre le coût d'une tâche et la part réalisée. **Coûts → Coût dans le temps** dessine la courbe en S et le tableau mensuel (voir [Devis](cost.md)).
+Avec un devis (**Exécution → Devis…**), le Gantt reçoit une colonne **Coût** : la part du devis de chaque tâche, d'après les lignes qui chiffrent ses éléments (celle d'un récapitulatif est celle de ses tâches). La barre d'outils montre le **budget** (les coûts directs du devis) et le coût **à date** (le coût de chaque tâche fois son % achevé) ; Propriétés montre le coût d'une tâche et la part réalisée. **Exécution → Coût dans le temps** dessine la courbe en S et le tableau mensuel (voir [Devis](cost.md)).
 
 ## Le calendrier
 
 ![Le calendrier de travail](shots/planning-calendar.webp)
 
-**Planification → Calendrier…** définit :
+**Exécution → Calendrier…** définit :
 
 - les **jours ouvrés** de la semaine (du lundi au vendredi par défaut) et les **heures** d'une journée (8 à partir de 08:00) ;
 - les **jours fériés** : les jours fériés légaux de la Roumanie, calculés pour chaque année (y compris le Vendredi saint, Pâques et la Pentecôte orthodoxes), ou aucun. La liste en dessous montre les jours fériés d'une année pour les vérifier ;

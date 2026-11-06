@@ -1,12 +1,12 @@
 ---
-title: Ferraillage 2D
+title: Ferraillage simple
 order: 52
 summary: Le ferraillage dessiné sur les coupes et les plans, des coupes transversales là où vous cliquez, et la nomenclature d’acier.
 ---
 
-L’onglet **Ferraillage 2D** dessine le ferraillage comme on fait une nomenclature : des barres comme des formes avec leurs dimensions, des cadres répartis le long d’une poutre, des repères dans des bulles et une nomenclature qui les additionne. Il fonctionne dans toute vue : une coupe, un plan, une façade.
+L’onglet **Ferraillage simple** dessine le ferraillage comme on fait une nomenclature : des barres comme des formes avec leurs dimensions, des cadres répartis le long d’une poutre, des repères dans des bulles et une nomenclature qui les additionne. Il fonctionne dans toute vue : une coupe, un plan, une façade.
 
-![L’onglet Ferraillage 2D](shots/ribbon-rebar.webp)
+![L’onglet Ferraillage simple](shots/ribbon-rebar.webp)
 
 ## Une coupe là où vous travaillez
 

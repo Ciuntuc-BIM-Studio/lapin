@@ -18,7 +18,7 @@ Un nuovo progetto ha già tre livelli: **Foundations** (−1.50), **Ground floor
 
 ![Le parti della finestra di Lapin](shots/workspace.webp)
 
-1. **Le schede della barra multifunzione.** Disegno, Architettura, Finiture, Struttura, Sito, Studio, Annota, Gestisci, Costi e Vista raggruppano ciascuna i propri strumenti. **File** apre, salva, importa ed esporta. **Annulla** e **Ripeti** si trovano all’estremità destra della stessa barra (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
+1. **Le schede della barra multifunzione.** Disegno, Architettura, Interni, Struttura, Sito, Studio, Annota, Gestisci, Esecuzione e Vista raggruppano ciascuna i propri strumenti. **File** apre, salva, importa ed esporta. **Annulla** e **Ripeti** si trovano all’estremità destra della stessa barra (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
 2. **La barra multifunzione.** Contiene gli strumenti della scheda corrente. Passa il mouse su uno strumento per vederne il nome e le lettere da tastiera.
 3. **Il browser di progetto.** Elenca i livelli, le piante, le sezioni, i prospetti, le viste 3D, le tavole e gli abachi. Fai doppio clic su uno di essi per aprirlo in una scheda. Un progetto si apre sulla pianta del piano terra, con la vista 3D in una scheda accanto.
 4. **La vista.** È qui che disegni: una pianta, una sezione, una vista 3D o una tavola. Puoi aprire più viste affiancate con i due pulsanti in alto a destra della vista.

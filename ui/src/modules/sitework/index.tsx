@@ -137,7 +137,8 @@ const sitework: LapinModule = {
   name: 'Site works',
   summary: 'Facade scaffolding along a line or round the walls, formwork on floors and beams (soffits, edges, bottoms, sides), from configurable systems, temporary in the execution phase.',
   tabs: [{
-    id: 'sitework', label: 'Site works', order: 45,
+    // On the Site tab, after the terrain, the landscape and the gates (decision 367).
+    id: 'site', label: 'Site', order: 40,
     groups: [
       { label: 'Scaffolding', tools: [scaffold, scaffoldOnWalls], small: [scaffoldTypes] },
       { label: 'Formwork', tools: [formworkOnSelection, formworkOnFace], small: [formworkTypes] },

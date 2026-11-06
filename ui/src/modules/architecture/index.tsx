@@ -428,7 +428,8 @@ const architecture: LapinModule = {
     ],
   }, {
     // Finishes, after Architecture: what lines a room (its floor, walls and ceiling by a finish of its own, false ceilings, skirtings). Other modules add their groups by this id.
-    id: 'finishes', label: 'Finishes', order: 25, include: ['modify'],
+    // Interior (decision 367): finishes and furniture on one tab; the furniture's "Table" is a piece of furniture there.
+    id: 'interior', label: 'Interior', order: 25, include: ['modify'], i18nCtx: 'furniture',
     groups: [
       { label: 'Room', tools: [finishRoom], small: [roomFinishes, roomFinishSchedule] },
       { label: 'Ceiling', tools: [ceiling, ceilingInRoom], small: [ceilingLight, ceilingDiffuser, ceilingTypes] },

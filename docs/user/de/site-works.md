@@ -4,9 +4,9 @@ order: 55
 summary: Fassadengerüste und Schalung für Decken und Träger, von ihren Konfiguratoren aus dem Modell angeordnet.
 ---
 
-Die Registerkarte **Baustelleneinrichtung** modelliert die temporären Bauwerke der Baustelle: Fassadengerüste und die Schalung von Decken und Trägern. Lapin ordnet sie aus dem Modell an und zählt, was sie benötigen. Wenn sich das Modell ändert, folgen sie ihm.
+Die Baustelleneinrichtung, auf der Registerkarte **Gelände** nach dem Gelände, modelliert die temporären Bauwerke der Baustelle: Fassadengerüste und die Schalung von Decken und Trägern. Lapin ordnet sie aus dem Modell an und zählt, was sie benötigen. Wenn sich das Modell ändert, folgen sie ihm.
 
-![Die Registerkarte Baustelleneinrichtung](shots/ribbon-site-works.webp)
+![Die Baustelleneinrichtung auf der Registerkarte Gelände](shots/ribbon-site-works.webp)
 
 Gerüste und Schalungen sind **Temporär**: Sie werden in der Bauphase **Bauausführung** auf- und abgebaut. Das erste Element, das Sie platzieren, fügt diese Bauphase hinzu, falls das Projekt keine hat, und macht sie zur aktiven Bauphase. Ansichten früherer Bauphasen lassen sie weg. Siehe **Verwalten → Bauphasen**.
 

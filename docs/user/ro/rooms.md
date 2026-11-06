@@ -65,7 +65,7 @@ Culorile se desenează sub pereți, sub mobilier și sub deschiderile ușilor, a
 
 ## Finisajele încăperilor
 
-**Finisaje → Finisează încăperea** (<kbd>FR</kbd>) pune un finisaj în încăperea pe care dai clic: pardoseala, finisajul pereților și tavanul, fiecare urmând conturul încăperii, ca și încăperea. Muți un perete și finisajele merg cu el. **Finisaje → Finisajele încăperilor** editează finisajele; **Din bibliotecă** aduce unele gata făcute: Living, Dormitor, Baie, Bucătărie, Parter pe placă și Cameră tehnică. Cât unealta e pornită, panoul de proprietăți arată finisajul pe care îl pune, ca să-l alegi înainte de clic. **Finisajul** unei încăperi, în proprietățile ei, pune altul sau îl scoate.
+**Interior → Finisează încăperea** (<kbd>FR</kbd>) pune un finisaj în încăperea pe care dai clic: pardoseala, finisajul pereților și tavanul, fiecare urmând conturul încăperii, ca și încăperea. Muți un perete și finisajele merg cu el. **Interior → Finisajele încăperilor** editează finisajele; **Din bibliotecă** aduce unele gata făcute: Living, Dormitor, Baie, Bucătărie, Parter pe placă și Cameră tehnică. Cât unealta e pornită, panoul de proprietăți arată finisajul pe care îl pune, ca să-l alegi înainte de clic. **Finisajul** unei încăperi, în proprietățile ei, pune altul sau îl scoate.
 
 Un finisaj are:
 
@@ -81,7 +81,7 @@ Un finisaj are:
 
 ![Un plan cu pardoseala băii hașurată ca plăci și a livingului ca scânduri](shots/room-finish-hatch.webp)
 
-Fiecare finisaj măsoară, pe material, suprafața **brută** (conturul încăperii, nimic scăzut: aria pardoselii, perimetrul pereților înmulțit cu înălțimea fiecărei bucăți) și cea **netă** (ce e construit: ușile, ferestrele și golurile din placă scoase, glafurile și pardoseala de sub uși adăugate; partea glafurilor e în cantități, ca RevealArea), și volumul. **Finisaje → Extrasul finisajelor** listează fiecare încăpere finisată pe parte și material, cu totalurile pe material la sfârșit; ca orice extras, face grafice, se exportă și merge pe o planșă. În IFC un finisaj e un IfcCovering: FLOORING, CLADDING sau CEILING.
+Fiecare finisaj măsoară, pe material, suprafața **brută** (conturul încăperii, nimic scăzut: aria pardoselii, perimetrul pereților înmulțit cu înălțimea fiecărei bucăți) și cea **netă** (ce e construit: ușile, ferestrele și golurile din placă scoase, glafurile și pardoseala de sub uși adăugate; partea glafurilor e în cantități, ca RevealArea), și volumul. **Interior → Extrasul finisajelor** listează fiecare încăpere finisată pe parte și material, cu totalurile pe material la sfârșit; ca orice extras, face grafice, se exportă și merge pe o planșă. În IFC un finisaj e un IfcCovering: FLOORING, CLADDING sau CEILING.
 
 Un finisaj îmbracă ce au deja pereții încăperii: dacă tipurile de pereți au tencuiala lor, dă pereților încăperii doar ce vine peste ea (vopsea, faianță), sau folosește tipuri de pereți doar cu miezul.
 

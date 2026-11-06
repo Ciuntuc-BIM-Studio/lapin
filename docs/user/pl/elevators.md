@@ -61,6 +61,6 @@ Zaznacz windę, aby zmienić jej najniższy i najwyższy przystanek, zaznaczyć 
 
 **Architektura → Zestawienie wind** wymienia każdą windę z rodzajem, napędem, udźwigiem, liczbą osób, kabiną, drzwiami, obsługiwanymi przystankami, kondygnacjami, między którymi kursuje, wysokością podnoszenia, prędkością i szybem.
 
-Każda winda ma typ utworzony z rodzaju, udźwigu i kabiny (Osobowa średnia 630 kg, 1100 × 1400): jednakowe windy go współdzielą, więc pozycja cenowa przypisana typowi (**Koszty → Przypisz pozycje…**) wycenia je wszystkie, a planowanie znajduje je po klasie (IfcTransportElement).
+Każda winda ma typ utworzony z rodzaju, udźwigu i kabiny (Osobowa średnia 630 kg, 1100 × 1400): jednakowe windy go współdzielą, więc pozycja cenowa przypisana typowi (**Realizacja → Przypisz pozycje…**) wycenia je wszystkie, a planowanie znajduje je po klasie (IfcTransportElement).
 
 W IFC winda to **IfcTransportElement** o predefiniowanym typie **ELEVATOR**, typu **IfcTransportElementType**, z własnymi zestawami IFC **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) i **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). Lapin wczytuje własny plik z powrotem jako natywną windę, z jej przystankami i otworami w stropach.

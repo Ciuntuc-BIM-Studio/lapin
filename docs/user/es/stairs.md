@@ -162,7 +162,7 @@ La planta dibuja la losa, el acabado y la barandilla como los corta o los ve, y 
 
 ![Sus apoyos, sobre una sección del balcón](shots/balcony-configurator-section.webp)
 
-**Apply** cambia el balcón en un paso. **Save as style…** lo guarda como estilo del proyecto (un tipo de balcón), que ofrecen la barra de la herramienta y las propiedades; **Update style** lo vuelve a guardar en su estilo y todos los balcones del estilo lo toman; junto al nombre de un estilo se renombra o se elimina (sus balcones quedan como están). Un estilo es un tipo: sus artículos de coste (Cost → Map articles) miden sus balcones.
+**Apply** cambia el balcón en un paso. **Save as style…** lo guarda como estilo del proyecto (un tipo de balcón), que ofrecen la barra de la herramienta y las propiedades; **Update style** lo vuelve a guardar en su estilo y todos los balcones del estilo lo toman; junto al nombre de un estilo se renombra o se elimina (sus balcones quedan como están). Un estilo es un tipo: sus artículos de coste (Ejecución → Map articles) miden sus balcones.
 
 ![Las propiedades de un balcón: su estilo y los campos de su tipo](shots/balcony-properties.webp)
 

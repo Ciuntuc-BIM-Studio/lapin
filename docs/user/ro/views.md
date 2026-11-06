@@ -26,7 +26,7 @@ Linia unei secțiuni se desenează în fiecare plan, iar secțiunea se marcheaz�
 
 Fiecare secțiune stă pe un **strat de marcatori** (**Sections** la început; **Strat de marcator** din proprietățile secțiunii îl schimbă), iar fiecare vedere alege ce marchează. **Vedere → Secțiuni…** listează secțiunile proiectului pe straturi, pentru vederea din față, cu o bifă pe strat și pe secțiune doar pentru această vedere, stratul fiecărei secțiuni (unul existent sau **Strat nou…**) și în câte vederi e ascunsă fiecare. O planșă marchează ce marchează vederile ei.
 
-O secțiune tăiată transversal printr-o grindă sau un stâlp (**Secțiune aici**, **Secțiune transversală** din fila Armare 2D) are și ea grip-uri în plan: trage oricare capăt de-a lungul liniei ca să dai părții aceleia mai multă sau mai puțină margine, trage mijlocul de-a lungul elementului ca să muți stația la care taie. Fereastra secțiunii urmează.
+O secțiune tăiată transversal printr-o grindă sau un stâlp (**Secțiune aici**, **Secțiune transversală** din tabul Armare simplă) are și ea grip-uri în plan: trage oricare capăt de-a lungul liniei ca să dai părții aceleia mai multă sau mai puțină margine, trage mijlocul de-a lungul elementului ca să muți stația la care taie. Fereastra secțiunii urmează.
 
 ![Vedere → Secțiuni… pentru fațada de sud](shots/sections-dialog.webp)
 

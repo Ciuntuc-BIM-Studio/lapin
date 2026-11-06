@@ -60,9 +60,9 @@ Every member is a part of its own: the **Roof timber** schedule lists them as a 
 
 ## False ceilings
 
-**Finishes → Ceiling** (<kbd>CG</kbd>) draws a false ceiling over an outline you click; **Ceiling in a room** fills the room you click, following its outline. A ceiling hangs at its **Height** over the storey (2700 mm unless you change it in its properties).
+**Interior → Ceiling** (<kbd>CG</kbd>) draws a false ceiling over an outline you click; **Ceiling in a room** fills the room you click, following its outline. A ceiling hangs at its **Height** over the storey (2700 mm unless you change it in its properties).
 
-Its type, in **Finishes → Ceiling types**, sets the **System**: **Tiles on an exposed grid** (the tile's width, length and thickness, the grid's face width, depth and rotation, hangers up to the structure at their spacing) or **Plasterboard, continuous**. The grid is centred on the ceiling, so the cut tiles at the edges come out even.
+Its type, in **Interior → Ceiling types**, sets the **System**: **Tiles on an exposed grid** (the tile's width, length and thickness, the grid's face width, depth and rotation, hangers up to the structure at their spacing) or **Plasterboard, continuous**. The grid is centred on the ceiling, so the cut tiles at the edges come out even.
 
 **Light panel** and **Air diffuser** put one in the cell you click; click the cell again with the other tool to change it. In the properties panel, **Lay out** puts light panels or air diffusers every so many cells, and **Clear** takes them away. The schedules count the whole tiles, the light panels and the diffusers, and the ceiling goes to IFC as an IfcCovering of type CEILING.
 
@@ -72,9 +72,9 @@ Its type, in **Finishes → Ceiling types**, sets the **System**: **Tiles on an 
 
 ## Skirtings
 
-**Finishes → Skirting in room** (<kbd>SK</kbd>) lays a skirting board round the room you click, along the walls' faces, broken at each door (any opening that comes down to the floor); clicked inside walls with no room, it follows them the same way. A room's skirting follows the room: move a wall or a door and the skirting goes with it. **Skirting** draws one along a line you click on a wall's face (Enter finishes); the board goes on the side away from the wall, and **Flip side** in its properties turns it over.
+**Interior → Skirting in room** (<kbd>SK</kbd>) lays a skirting board round the room you click, along the walls' faces, broken at each door (any opening that comes down to the floor); clicked inside walls with no room, it follows them the same way. A room's skirting follows the room: move a wall or a door and the skirting goes with it. **Skirting** draws one along a line you click on a wall's face (Enter finishes); the board goes on the side away from the wall, and **Flip side** in its properties turns it over.
 
-Its type, in **Finishes → Skirting types**, sets the **Profile** — **Flush (square)**, **Bevelled (MDF)**, **Moulded (wooden)**, **Cove foot (metal)**, **Pencil round** or **Bullnose**, drawn beside it to scale — the **Height** (40 to 300 mm), the **Thickness** (5 to 40 mm), the **Material** and its colour. **From the library** brings ready-made types into the project: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 and Bullnose 70. While a skirting tool is on, the properties panel shows the type it lays, to choose before the click.
+Its type, in **Interior → Skirting types**, sets the **Profile** — **Flush (square)**, **Bevelled (MDF)**, **Moulded (wooden)**, **Cove foot (metal)**, **Pencil round** or **Bullnose**, drawn beside it to scale — the **Height** (40 to 300 mm), the **Thickness** (5 to 40 mm), the **Material** and its colour. **From the library** brings ready-made types into the project: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 and Bullnose 70. While a skirting tool is on, the properties panel shows the type it lays, to choose before the click.
 
 A skirting's properties hold its type, its **Base offset** over the floor (under Dimensions) and **Gaps at the doors** (off, it runs on across them). **Skirting schedule** (or **Skirtings** in the project browser's list of new schedules) lists them by type with their pieces and length, the doors' gaps left out. The board is mitred at the corners; a plan draws its front edge, and a skirting goes to IFC as an IfcCovering of type SKIRTINGBOARD, of an IfcCoveringType of the same.
 

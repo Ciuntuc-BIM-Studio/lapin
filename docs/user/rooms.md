@@ -65,7 +65,7 @@ The colours are drawn under the walls, the furniture and the door swings, so the
 
 ## Room finishes
 
-**Finishes → Finish room** (<kbd>FR</kbd>) lays a finish in the room you click: its floor, its walls' finish and its ceiling, each following the room's outline as the room does. Move a wall and the finishes go with it. **Finishes → Room finishes** edits the finishes; **From the library** brings in ready-made ones: Living room, Bedroom, Bathroom, Kitchen, Ground floor on slab and Technical room. While the tool is on, the properties panel shows the finish it lays, to choose before the click. A room's **Finish**, in its properties, lays another one or takes it off.
+**Interior → Finish room** (<kbd>FR</kbd>) lays a finish in the room you click: its floor, its walls' finish and its ceiling, each following the room's outline as the room does. Move a wall and the finishes go with it. **Interior → Room finishes** edits the finishes; **From the library** brings in ready-made ones: Living room, Bedroom, Bathroom, Kitchen, Ground floor on slab and Technical room. While the tool is on, the properties panel shows the finish it lays, to choose before the click. A room's **Finish**, in its properties, lays another one or takes it off.
 
 A finish has:
 
@@ -81,7 +81,7 @@ A finish has:
 
 ![A plan with the bathroom's floor hatched as tiles and the living room's as boards](shots/room-finish-hatch.webp)
 
-Each finish measures, by material, its **gross** area (the room's outline, nothing deducted: the floor's area, the walls' perimeter times each piece's height) and its **net** area (what is built: the doors, windows and floor openings taken out, the reveals and the floor through the doors added; the reveals' share is in the quantities, as RevealArea), and its volume. **Finishes → Finishes schedule** lists every finished room by part and material, with the totals by material at the end; like any schedule it charts, exports and goes on a sheet. In IFC a finish is an IfcCovering: FLOORING, CLADDING or CEILING.
+Each finish measures, by material, its **gross** area (the room's outline, nothing deducted: the floor's area, the walls' perimeter times each piece's height) and its **net** area (what is built: the doors, windows and floor openings taken out, the reveals and the floor through the doors added; the reveals' share is in the quantities, as RevealArea), and its volume. **Interior → Finishes schedule** lists every finished room by part and material, with the totals by material at the end; like any schedule it charts, exports and goes on a sheet. In IFC a finish is an IfcCovering: FLOORING, CLADDING or CEILING.
 
 A finish lines what the room's walls already have: if the wall types carry their own plaster, give the room's walls only what goes over it (paint, tiles), or use wall types of the core only.
 

@@ -4,9 +4,9 @@ order: 97
 summary: O cronograma da obra em um gráfico de Gantt: tarefas em uma EAP, marcos, vínculos com defasagens, o caminho crítico calculado em um calendário com os feriados legais da Romênia; a simulação 4D do edifício crescendo dia a dia, em vistas, pranchas e em vídeo; o progresso marcado em obra, também de um telefone, face a uma linha de base; de e para MS Project, IFC e Excel.
 ---
 
-## A aba Planejamento
+## A aba Execução
 
-![A aba Planejamento](shots/ribbon-planning.webp)
+![A aba Execução](shots/ribbon-planning.webp)
 
 - **Gerar cronograma…**: um cronograma inteiro feito a partir do modelo, num só passo (abaixo).
 - **Gantt**: abre o cronograma sob a vista. A tela se divide em duas linhas: o modelo em cima e o cronograma embaixo.
@@ -24,7 +24,7 @@ Um projeto tem um cronograma. Ele é criado na primeira vez que você adiciona u
 
 ![Gerar cronograma: os modelos, a aba Início e a prévia](shots/planning-generate.webp)
 
-**Planejamento → Gerar cronograma…** (também na barra do Gantt) faz um cronograma completo a partir do modelo: uma tarefa para cada etapa da obra e, onde a etapa vai pavimento a pavimento, uma por pavimento, cada tarefa já com seus elementos. À esquerda estão os **modelos**: **Estrutura de concreto armado**, **Alvenaria estrutural**, **Galpão de aço** e **Wood frame**. O Lapin marca como *sugerido* o que o modelo pede: o galpão se o modelo tiver um, o wood frame se as paredes forem estruturadas em madeira, a alvenaria estrutural se não houver pilares, senão o concreto armado. Acima ficam os estilos do projeto (**Salvar como estilo…** guarda o que você configurou).
+**Execução → Gerar cronograma…** (também na barra do Gantt) faz um cronograma completo a partir do modelo: uma tarefa para cada etapa da obra e, onde a etapa vai pavimento a pavimento, uma por pavimento, cada tarefa já com seus elementos. À esquerda estão os **modelos**: **Estrutura de concreto armado**, **Alvenaria estrutural**, **Galpão de aço** e **Wood frame**. O Lapin marca como *sugerido* o que o modelo pede: o galpão se o modelo tiver um, o wood frame se as paredes forem estruturadas em madeira, a alvenaria estrutural se não houver pilares, senão o concreto armado. Acima ficam os estilos do projeto (**Salvar como estilo…** guarda o que você configurou).
 
 À direita está a **prévia**: as tarefas que o gerador faria, como barras, cada uma com a quantidade que deu sua duração, e abaixo as contagens:
 
@@ -153,7 +153,7 @@ Uma cobertura também se constrói por camadas: a sua estrutura (a laje de uma c
 
 ![O cartão da seleção sobre o 3D, as duas tarefas de uma parede marcadas no Gantt](shots/planning-element-tasks.webp)
 
-Enquanto o Gantt está aberto, um cartão sobre a vista do modelo diz quantos elementos estão selecionados e em quais tarefas estão. Arraste-o pela alça para a linha de uma tarefa: os elementos entram nessa tarefa. Segure <kbd>Shift</kbd> ao soltar para retirá-los dela. **Adicionar à tarefa…** (<kbd>T</kbd> <kbd>A</kbd>, também na aba Planejamento) escolhe a tarefa numa lista.
+Enquanto o Gantt está aberto, um cartão sobre a vista do modelo diz quantos elementos estão selecionados e em quais tarefas estão. Arraste-o pela alça para a linha de uma tarefa: os elementos entram nessa tarefa. Segure <kbd>Shift</kbd> ao soltar para retirá-los dela. **Adicionar à tarefa…** (<kbd>T</kbd> <kbd>A</kbd>, também na aba Execução) escolhe a tarefa numa lista.
 
 ![Adicionar à tarefa](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ O que você adiciona ou retira à mão são as **exceções** da tarefa: a regra
 
 ### Elementos sem tarefa
 
-Assim que uma tarefa leva elementos, a barra do Gantt diz quantos elementos não têm tarefa ou têm camadas que nenhuma tarefa leva; um clique os seleciona, prontos para arrastar para uma tarefa. **Planejamento → Elementos sem tarefa** faz o mesmo. **Gerenciar → Verificar** também os lista, em *Elements with a task*: um aviso para cada um, um clique o seleciona. Elementos existentes que permanecem não precisam de tarefa.
+Assim que uma tarefa leva elementos, a barra do Gantt diz quantos elementos não têm tarefa ou têm camadas que nenhuma tarefa leva; um clique os seleciona, prontos para arrastar para uma tarefa. **Execução → Elementos sem tarefa** faz o mesmo. **Gerenciar → Verificar** também os lista, em *Elements with a task*: um aviso para cada um, um clique o seleciona. Elementos existentes que permanecem não precisam de tarefa.
 
 ### Em IFC e MS Project
 
@@ -171,7 +171,7 @@ A exportação IFC escreve o que cada tarefa constrói como IfcRelAssignsToProdu
 
 ![A casa em um dia do seu cronograma: a laje do pavimento superior em andamento na sua fôrma, as paredes acima não iniciadas](shots/planning-simulation.webp)
 
-**Planejamento → Simular** (também **Simular** na barra do Gantt) mostra o modelo como o cronograma o tem em um dia. O Gantt abre sob a vista se não estiver aberto, com o reprodutor no topo e o dia como uma faixa sobre o gráfico:
+**Execução → Simular** (também **Simular** na barra do Gantt) mostra o modelo como o cronograma o tem em um dia. O Gantt abre sob a vista se não estiver aberto, com o reprodutor no topo e o dia como uma faixa sobre o gráfico:
 
 - o que **não começou** fica oculto (ou mostrado como um fantasma pálido, nas configurações);
 - o que está **em andamento** é desenhado na sua cor (âmbar);
@@ -208,7 +208,7 @@ Uma planta, um corte, uma elevação ou uma vista 3D salva tem nas propriedades 
 
 ![Prancha de etapas: as datas dos fins de capítulo](shots/planning-stages-dialog.webp)
 
-**Planejamento → Prancha de etapas…** (também no reprodutor) põe o modelo em várias datas lado a lado em uma prancha nova. É desenhado a partir da **vista 3D, como está agora** (uma imagem em cada data) ou de uma planta, um corte ou uma elevação, que o motor desenha em cada data. As datas são **o fim de cada capítulo** (cada tarefa no topo da EAP), **o fim de cada mês**, ou datas **escolhidas**. Cada quadro leva a sua data e as tarefas em andamento.
+**Execução → Prancha de etapas…** (também no reprodutor) põe o modelo em várias datas lado a lado em uma prancha nova. É desenhado a partir da **vista 3D, como está agora** (uma imagem em cada data) ou de uma planta, um corte ou uma elevação, que o motor desenha em cada data. As datas são **o fim de cada capítulo** (cada tarefa no topo da EAP), **o fim de cada mês**, ou datas **escolhidas**. Cada quadro leva a sua data e as tarefas em andamento.
 
 ![Uma prancha de etapas](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ Uma planta, um corte, uma elevação ou uma vista 3D salva tem nas propriedades 
 
 ![O Gantt em uma prancha](shots/planning-gantt-sheet.webp)
 
-**Planejamento → Gantt na prancha** põe o cronograma em uma prancha nova: a tabela (linha, EAP e tarefa, dias, início, fim) e as barras em uma escala de tempo, as tarefas críticas em vermelho, os resumos como colchetes, os marcos como losangos, os vínculos. Um cronograma mais alto que a prancha vai em quantas pranchas precisar, com o cabeçalho em cada uma. É desenhado em vetores, como as vistas, e sai impresso no PDF.
+**Execução → Gantt na prancha** põe o cronograma em uma prancha nova: a tabela (linha, EAP e tarefa, dias, início, fim) e as barras em uma escala de tempo, as tarefas críticas em vermelho, os resumos como colchetes, os marcos como losangos, os vínculos. Um cronograma mais alto que a prancha vai em quantas pranchas precisar, com o cabeçalho em cada uma. É desenhado em vetores, como as vistas, e sai impresso no PDF.
 
 ### Exportar vídeo
 
 ![Exportar vídeo](shots/planning-video.webp)
 
-**Planejamento → Exportar vídeo…** (também no reprodutor) grava a vista 3D, de onde olha agora, de um dia a outro, um quadro por **um dia** ou por **uma semana**, com a data e as tarefas em andamento escritas embaixo. O arquivo é um vídeo WebM, ou MP4 onde o sistema só oferece isso (o app para macOS). Um navegador que não grava vídeo salva no lugar os quadros como arquivos PNG em um ZIP.
+**Execução → Exportar vídeo…** (também no reprodutor) grava a vista 3D, de onde olha agora, de um dia a outro, um quadro por **um dia** ou por **uma semana**, com a data e as tarefas em andamento escritas embaixo. O arquivo é um vídeo WebM, ou MP4 onde o sistema só oferece isso (o app para macOS). Um navegador que não grava vídeo salva no lugar os quadros como arquivos PNG em um ZIP.
 
 ## O progresso
 
@@ -241,7 +241,7 @@ As barras mostram a parte feita mais escura. As Propriedades dizem de onde vem u
 
 ### Marcar elementos em obra
 
-**Planejamento → Marcar concluído** (MD) e **Marcar iniciado** (MS) marcam os elementos selecionados em 3D ou em uma planta, na data de status (hoje, quando não há nenhuma), em cada tarefa que os inclui; **Marcar não iniciado** retira as marcas. As propriedades de um elemento selecionado mostram o seu estado em obra com os mesmos três botões e, em cada uma das suas tarefas, o dia em que foi concluído ou iniciado, com um botão que o marca concluído só nessa tarefa. Uma parede multicamada em uma tarefa de alvenaria e em outra de reboco é marcada em ambas, ou em uma a partir da sua linha.
+**Execução → Marcar concluído** (MD) e **Marcar iniciado** (MS) marcam os elementos selecionados em 3D ou em uma planta, na data de status (hoje, quando não há nenhuma), em cada tarefa que os inclui; **Marcar não iniciado** retira as marcas. As propriedades de um elemento selecionado mostram o seu estado em obra com os mesmos três botões e, em cada uma das suas tarefas, o dia em que foi concluído ou iniciado, com um botão que o marca concluído só nessa tarefa. Uma parede multicamada em uma tarefa de alvenaria e em outra de reboco é marcada em ambas, ou em uma a partir da sua linha.
 
 ![As marcas de uma parede nas suas propriedades](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ Em obra, a partir de um telefone: entre na sessão compartilhada do projeto pelo
 
 ### A linha de base
 
-**Planejamento → Salvar linha de base** salva as datas e a duração de cada tarefa tal como estão agora; salva de novo, é substituída (uma só linha de base: várias linhas de base e cenários são da edição premium). O Gantt a desenha então como uma barra cinza fina sob a barra de cada tarefa (**Linha de base** na barra de ferramentas a esconde), acrescenta a coluna **Variação** (os dias úteis que o fim se moveu: positivo é atraso, a linha marcada em vermelho) e diz na sua barra quantas tarefas estão atrasadas e quanto o fim se moveu. As Propriedades dão as datas da linha de base e as variações do início e do fim. **Limpar linha de base** a retira.
+**Execução → Salvar linha de base** salva as datas e a duração de cada tarefa tal como estão agora; salva de novo, é substituída (uma só linha de base: várias linhas de base e cenários são da edição premium). O Gantt a desenha então como uma barra cinza fina sob a barra de cada tarefa (**Linha de base** na barra de ferramentas a esconde), acrescenta a coluna **Variação** (os dias úteis que o fim se moveu: positivo é atraso, a linha marcada em vermelho) e diz na sua barra quantas tarefas estão atrasadas e quanto o fim se moveu. As Propriedades dão as datas da linha de base e as variações do início e do fim. **Limpar linha de base** a retira.
 
 ### Atrasado e adiantado na simulação
 
@@ -259,7 +259,7 @@ Com uma linha de base, a simulação compara: um elemento não construído (ou n
 
 ### O progresso nos arquivos
 
-- **Exportar XLSX** acrescenta as colunas **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** e **GlobalId** (a pasta está em inglês). Preencha-as em obra e leia-as de volta com **Planejamento → Importar progresso…**: as linhas são encontradas por GlobalId, EAP ou ID, e uma *Status date* escrita acima da tabela define a data de status. Um CSV também serve.
+- **Exportar XLSX** acrescenta as colunas **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** e **GlobalId** (a pasta está em inglês). Preencha-as em obra e leia-as de volta com **Execução → Importar progresso…**: as linhas são encontradas por GlobalId, EAP ou ID, e uma *Status date* escrita acima da tabela define a data de status. Um CSV também serve.
 - **MS Project XML** leva a data de status, a porcentagem de cada tarefa, o início e o fim reais, a duração restante e a linha de base (Baseline 0); as marcas dos elementos viajam com os elementos, em *Lapin elements*.
 - **IFC** escreve-os no IfcTaskTime de cada tarefa (a hora de status, o início e o fim reais, o tempo restante, o grau de conclusão), e a linha de base como um segundo IfcWorkSchedule do tipo BASELINE; os campos próprios do Lapin (a porcentagem escrita, as marcas) vão em `Lapin_Task`. Ambos voltam às mesmas datas.
 - **Gerenciar → Versões → Comparar** diz, além dos elementos, o que mudou no cronograma: o fim, os dias úteis, a data de status, e as tarefas acrescentadas, removidas, movidas (quantos dias úteis), com a duração ou o progresso alterados.
@@ -268,13 +268,13 @@ Com uma linha de base, a simulação compara: um elemento não construído (ou n
 
 ![O Gantt com a coluna Custo](shots/planning-cost.webp)
 
-Com um orçamento (**Custos → Orçamento…**), o Gantt ganha a coluna **Custo**: a parte do orçamento de cada tarefa, das linhas que orçam os seus elementos (a de um resumo é a das suas tarefas). A barra de ferramentas mostra o **orçamento** (os custos diretos) e o custo **até a data** (o custo de cada tarefa vezes o seu % concluído); Propriedades mostra o custo de uma tarefa e a parte feita. **Custos → Custo no tempo** desenha a curva S e a tabela mensal (veja [Orçamento](cost.md)).
+Com um orçamento (**Execução → Orçamento…**), o Gantt ganha a coluna **Custo**: a parte do orçamento de cada tarefa, das linhas que orçam os seus elementos (a de um resumo é a das suas tarefas). A barra de ferramentas mostra o **orçamento** (os custos diretos) e o custo **até a data** (o custo de cada tarefa vezes o seu % concluído); Propriedades mostra o custo de uma tarefa e a parte feita. **Execução → Custo no tempo** desenha a curva S e a tabela mensal (veja [Orçamento](cost.md)).
 
 ## O calendário
 
 ![O calendário de trabalho](shots/planning-calendar.webp)
 
-**Planejamento → Calendário…** define:
+**Execução → Calendário…** define:
 
 - os **dias úteis** da semana (de segunda a sexta por padrão) e as **horas** de um dia (8 a partir das 08:00);
 - os **feriados**: os feriados legais da Romênia, calculados para cada ano (incluindo a Sexta-feira Santa, a Páscoa e o Pentecostes ortodoxos), ou nenhum. A lista abaixo mostra os feriados de um ano para conferir;

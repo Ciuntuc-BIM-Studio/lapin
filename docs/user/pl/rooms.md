@@ -65,7 +65,7 @@ Kolory rysowane są pod ścianami, meblami i łukami otwierania drzwi, więc rzu
 
 ## Wykończenia pomieszczeń
 
-**Wykończenia → Wykończ pomieszczenie** (<kbd>FR</kbd>) układa wykończenie w klikniętym pomieszczeniu: jego posadzkę, wykończenie ścian i sufit, każde podążające za obrysem pomieszczenia tak jak samo pomieszczenie. Przesuń ścianę, a wykończenia przesuną się razem z nią. **Wykończenia → Wykończenia pomieszczeń** edytuje wykończenia; **Z biblioteki** dodaje gotowe: Salon, Sypialnia, Łazienka, Kuchnia, Parter na płycie i Pomieszczenie techniczne. Gdy narzędzie jest włączone, panel właściwości pokazuje wykończenie, które układa, aby można je było wybrać przed kliknięciem. **Wykończenie** pomieszczenia, w jego właściwościach, układa inne albo je usuwa.
+**Wnętrza → Wykończ pomieszczenie** (<kbd>FR</kbd>) układa wykończenie w klikniętym pomieszczeniu: jego posadzkę, wykończenie ścian i sufit, każde podążające za obrysem pomieszczenia tak jak samo pomieszczenie. Przesuń ścianę, a wykończenia przesuną się razem z nią. **Wnętrza → Wykończenia pomieszczeń** edytuje wykończenia; **Z biblioteki** dodaje gotowe: Salon, Sypialnia, Łazienka, Kuchnia, Parter na płycie i Pomieszczenie techniczne. Gdy narzędzie jest włączone, panel właściwości pokazuje wykończenie, które układa, aby można je było wybrać przed kliknięciem. **Wykończenie** pomieszczenia, w jego właściwościach, układa inne albo je usuwa.
 
 Wykończenie ma:
 
@@ -81,7 +81,7 @@ Wykończenie ma:
 
 ![Rzut z podłogą łazienki kreskowaną jak płytki i salonu jak deski](shots/room-finish-hatch.webp)
 
-Każde wykończenie liczy, według materiału, swoją powierzchnię **brutto** (obrys pomieszczenia, bez odliczeń: powierzchnia posadzki, obwód ścian razy wysokość każdego fragmentu) i **netto** (to, co zostaje wykonane: bez drzwi, okien i otworów w stropie, z ościeżami i posadzką pod drzwiami; udział ościeży jest w ilościach, jako RevealArea), a także swoją objętość. **Wykończenia → Zestawienie wykończeń** wymienia każde wykończone pomieszczenie według części i materiału, z sumami według materiału na końcu; jak każde zestawienie można je pokazać na wykresie, wyeksportować i umieścić na arkuszu. W IFC wykończenie jest elementem IfcCovering: FLOORING, CLADDING lub CEILING.
+Każde wykończenie liczy, według materiału, swoją powierzchnię **brutto** (obrys pomieszczenia, bez odliczeń: powierzchnia posadzki, obwód ścian razy wysokość każdego fragmentu) i **netto** (to, co zostaje wykonane: bez drzwi, okien i otworów w stropie, z ościeżami i posadzką pod drzwiami; udział ościeży jest w ilościach, jako RevealArea), a także swoją objętość. **Wnętrza → Zestawienie wykończeń** wymienia każde wykończone pomieszczenie według części i materiału, z sumami według materiału na końcu; jak każde zestawienie można je pokazać na wykresie, wyeksportować i umieścić na arkuszu. W IFC wykończenie jest elementem IfcCovering: FLOORING, CLADDING lub CEILING.
 
 Wykończenie okłada to, co ściany pomieszczenia już mają: jeśli typy ścian mają własny tynk, daj ścianom pomieszczenia tylko to, co idzie na niego (farba, płytki), albo użyj typów ścian z samym rdzeniem.
 

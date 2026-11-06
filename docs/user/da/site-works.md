@@ -4,9 +4,9 @@ order: 55
 summary: Facadestilladser og forskalling til dæk og bjælker, lagt ud fra modellen af deres konfiguratorer.
 ---
 
-Fanen **Byggepladsindretning** modellerer byggepladsens midlertidige arbejder: facadestilladser og forskallingen af dæk og bjælker. Lapin lægger dem ud fra modellen og tæller, hvad de kræver. Når modellen ændres, følger de med.
+Byggepladsindretningen, på fanen **Grund** efter terrænet, modellerer byggepladsens midlertidige arbejder: facadestilladser og forskallingen af dæk og bjælker. Lapin lægger dem ud fra modellen og tæller, hvad de kræver. Når modellen ændres, følger de med.
 
-![Fanen Byggepladsindretning](shots/ribbon-site-works.webp)
+![Byggepladsindretningen på fanen Grund](shots/ribbon-site-works.webp)
 
 Stilladser og forskalling er **Midlertidig**: de opstilles og nedtages i fasen **Udførelse**. Den første, du placerer, tilføjer den fase, hvis projektet ikke har den, og gør den til den aktive fase. Visninger af tidligere faser udelader dem. Se **Administrer → Faser**.
 

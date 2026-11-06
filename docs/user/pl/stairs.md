@@ -162,7 +162,7 @@ Rzut rysuje płytę, wykończenie i balustradę balkonu tak, jak je tnie lub wid
 
 ![Jego podparcia nad przekrojem przez balkon](shots/balcony-configurator-section.webp)
 
-**Apply** zmienia balkon w jednym kroku. **Save as style…** zachowuje go jako styl projektu (typ balkonu), oferowany na pasku narzędzia i we właściwościach; **Update style** zapisuje go ponownie w jego stylu i każdy balkon stylu go przejmuje; obok nazwy stylu zmienia się jego nazwę lub go usuwa (jego balkony zostają, jakie są). Styl jest typem: jego pozycje kosztorysowe (Cost → Map articles) mierzą jego balkony.
+**Apply** zmienia balkon w jednym kroku. **Save as style…** zachowuje go jako styl projektu (typ balkonu), oferowany na pasku narzędzia i we właściwościach; **Update style** zapisuje go ponownie w jego stylu i każdy balkon stylu go przejmuje; obok nazwy stylu zmienia się jego nazwę lub go usuwa (jego balkony zostają, jakie są). Styl jest typem: jego pozycje kosztorysowe (Realizacja → Map articles) mierzą jego balkony.
 
 ![Właściwości balkonu: jego styl i pola jego rodzaju](shots/balcony-properties.webp)
 

@@ -4,11 +4,11 @@ order: 98
 summary: Die Kostenberechnung aus dem Modell: Ihre Preislisten aus CSV oder Excel importiert, Positionen auf Typen und Regeln auf Materialien, Mengen aus der Mengenermittlung mal Einheitspreise, aufgeteilt in Material, Lohn, Geräte und Transport, Gemeinkosten, Gewinn und MwSt., in RON oder EUR; die rumänischen Formulare F3, F2 und C6 bis C9 auf Plänen, in Excel und als PDF; IFC-Kostenpläne.
 ---
 
-## Die Registerkarte Kosten
+## Die Registerkarte Ausführung
 
-![Die Registerkarte Kosten](shots/ribbon-cost.webp)
+![Die Registerkarte Ausführung](shots/ribbon-cost.webp)
 
-Die Registerkarte, die **Mengen** hieß, heißt jetzt **Kosten**. Sie behält die Mengen und fügt die Kostenberechnung hinzu:
+Die Kostengruppen liegen auf der Registerkarte **Ausführung**, nach denen der Terminplanung (die Registerkarte hieß **Mengen**, dann **Kosten**). Sie behalten die Mengen und fügen die Kostenberechnung hinzu:
 
 - **Mengenermittlung**, **Bauteillisten…** und **XLSX exportieren**: die Mengen des Modells (siehe [Bauteillisten und Diagramme](schedules.md)).
 - **Preislisten…**: Ihre Preise, aus einer CSV- oder Excel-Datei importiert (unten).
@@ -23,7 +23,7 @@ Die Kostenberechnung wird bei jeder Änderung neu aus dem Modell berechnet. Eine
 
 ![Eine Preisliste importieren: die Bedeutung jeder Spalte aus ihrer Überschrift erraten](shots/price-import.webp)
 
-Die Preise sind Ihre: Lapin liefert keinen Katalog mit Preisen oder Normen. **Kosten → Preislisten… → Importieren…** liest eine CSV- oder XLSX-Datei, zum Beispiel einen Export aus Ihrem Kalkulationsprogramm oder die Liste eines Lieferanten. Lapin zeigt die ersten Zeilen der Datei unter ihren Überschriften. Über jeder Spalte steht, was Lapin aus der Überschrift (englisch oder rumänisch) als ihren Inhalt erraten hat:
+Die Preise sind Ihre: Lapin liefert keinen Katalog mit Preisen oder Normen. **Ausführung → Preislisten… → Importieren…** liest eine CSV- oder XLSX-Datei, zum Beispiel einen Export aus Ihrem Kalkulationsprogramm oder die Liste eines Lieferanten. Lapin zeigt die ersten Zeilen der Datei unter ihren Überschriften. Über jeder Spalte steht, was Lapin aus der Überschrift (englisch oder rumänisch) als ihren Inhalt erraten hat:
 
 - **Code** und **Beschreibung** (*Cod*, *Simbol*, *Denumire*), **Einheit** (*U.M.*: m³ oder mc, m² oder mp, m, pcs oder buc, kg, t, 100 m²).
 - Der Einheitspreis, aufgeteilt in **Material**, **Lohn**, **Geräte** und **Transport** (*Material*, *Manoperă*, *Utilaj*, *Transport*), oder ein einziger **Einheitspreis (nicht aufgeteilt)**, der dann als Material zählt.
@@ -45,9 +45,9 @@ Eine Zeile der Kostenberechnung kommt aus einer **Position**: einem Code aus Ihr
 
 Die Position des Typs geht vor. Eine Schicht, die die Positionen ihres Typs schon messen, wird nicht noch einmal durch eine Regel bepreist. Eine Position auf dem ganzen Element bepreist alles daran, die Regeln treten also zurück. Geben Sie einer mehrschichtigen Wand eine Position auf ihrem **Kern** (das Mauerwerk nach Volumen) und Regeln für ihre Ausbauschichten (der Putz nach Fläche). Die Wand wird dann Schicht für Schicht bepreist: das Mauerwerk unter **Wände**, der Putz unter **Ausbau und Dämmung**.
 
-**Kosten → Positionen zuordnen…** listet die Typen des Projekts, die Elemente verwenden, und die Materialien ihrer Schichten. Jede Zeile beginnt mit der Position, die sie hat, oder der, die Sie in einem früheren Projekt für einen Typ oder ein Material desselben Namens gewählt haben, oder der, die Lapin vorschlägt: einem Code in ihrem Namen oder der Position, die die meisten Wörter mit ihm teilt (*zidărie*, *BCA*, *tencuială*, *C25/30*). Für einen mehrschichtigen Typ schlägt es den Kern vor. Tippen oder wählen Sie einen Code, wählen Sie den Teil und die Messgröße, haken Sie die gewünschten Zeilen an und klicken Sie auf **Anwenden**: ein Schritt zum Rückgängigmachen. Ihre Auswahl wird auf diesem Computer für Ihre nächsten Projekte gemerkt.
+**Ausführung → Positionen zuordnen…** listet die Typen des Projekts, die Elemente verwenden, und die Materialien ihrer Schichten. Jede Zeile beginnt mit der Position, die sie hat, oder der, die Sie in einem früheren Projekt für einen Typ oder ein Material desselben Namens gewählt haben, oder der, die Lapin vorschlägt: einem Code in ihrem Namen oder der Position, die die meisten Wörter mit ihm teilt (*zidărie*, *BCA*, *tencuială*, *C25/30*). Für einen mehrschichtigen Typ schlägt es den Kern vor. Tippen oder wählen Sie einen Code, wählen Sie den Teil und die Messgröße, haken Sie die gewünschten Zeilen an und klicken Sie auf **Anwenden**: ein Schritt zum Rückgängigmachen. Ihre Auswahl wird auf diesem Computer für Ihre nächsten Projekte gemerkt.
 
-Die Schalungs- und Gerüsttypen der Registerkarte **Baustelleneinrichtung** hatten schon einen Positionscode (Entscheidung 152): Er ist eine Position auf dem Typ, nach der Einheit des Preises gemessen.
+Die Schalungs- und Gerüsttypen der Baustelleneinrichtung (Registerkarte **Gelände**) hatten schon einen Positionscode (Entscheidung 152): Er ist eine Position auf dem Typ, nach der Einheit des Preises gemessen.
 
 Die Phasen zählen: ein Bauteil, das vor den Arbeiten schon da war (in einer *bestehenden* Phase erstellt), wird nicht bepreist. Ein abgebrochenes wird nur durch den Artikel seines Typs bepreist, dessen Teil **Sein Abbruch (nur wenn abgebrochen)** ist, im Kapitel **Abbruch**.
 
@@ -55,7 +55,7 @@ Die Phasen zählen: ein Bauteil, das vor den Arbeiten schon da war (in einer *be
 
 ![Die Kostenberechnung: Kapitel, Zeilen, die Sätze und die Summen](shots/estimate.webp)
 
-**Kosten → Kostenberechnung…** öffnet die Kostenberechnung unter der Ansicht, wie den Gantt. Ihre Zeilen sind nach Leistungsbereich in **Kapitel** gruppiert: Erdarbeiten, Gründung, Tragwerk, Wände, Dach, Türen und Fenster, Ausbau und Dämmung, Installationen, Baustelleneinrichtung, Sonstiges. Eine Position kann ein eigenes Kapitel nennen. **Nach Geschoss und Leistungsbereich** stellt das Geschoss vor jedes Kapitel.
+**Ausführung → Kostenberechnung…** öffnet die Kostenberechnung unter der Ansicht, wie den Gantt. Ihre Zeilen sind nach Leistungsbereich in **Kapitel** gruppiert: Erdarbeiten, Gründung, Tragwerk, Wände, Dach, Türen und Fenster, Ausbau und Dämmung, Installationen, Baustelleneinrichtung, Sonstiges. Eine Position kann ein eigenes Kapitel nennen. **Nach Geschoss und Leistungsbereich** stellt das Geschoss vor jedes Kapitel.
 
 Jede Zeile zeigt den Code, die Beschreibung und die Einheit aus der Preisliste, die **Menge** aus dem Modell (dieselbe wie in der Mengenermittlung), den Einheitspreis, aufgeteilt in **Material**, **Lohn**, **Geräte** und **Transport**, den Einheitspreis und den **Wert**. Klicken Sie auf eine Zeile, um ihre Elemente in den Ansichten zu wählen. Wählen Sie Elemente in einer Ansicht, werden ihre Zeilen in der Kostenberechnung markiert.
 
@@ -94,7 +94,7 @@ Die Formulare folgen der üblichen Praxis nach der Methodik des Erlasses 863/200
 
 Hat das Projekt einen Terminplan (Register **Terminplanung**), wird die Kostenberechnung ohne eigene Verknüpfung auf ihn gelegt. Der Wert jeder Position wird auf ihre Bauteile verteilt, und der Anteil jedes Bauteils geht an die Vorgänge, die den gemessenen Teil bauen: der Artikel des Mauerwerks an den Vorgang, der den Kern der Wände nimmt, der des Putzes an den, der ihre Bekleidungen nimmt. Ein Artikel auf dem ganzen Bauteil, das in zwei Vorgängen gebaut wird, wird zu gleichen Teilen geteilt. Eine eigene Position geht an den Vorgang, den Sie neben ihrer Beschreibung wählen (standardmäßig **In keinem Vorgang**). Die Kosten eines Vorgangs werden gleichmäßig auf seine Arbeitstage verteilt: an einem Wochenende, einem Feiertag oder, bei einem nassen Vorgang, in der Winterpause wird nichts ausgegeben.
 
-**Kosten → Kosten im Zeitverlauf** öffnet unter der Ansicht:
+**Ausführung → Kosten im Zeitverlauf** öffnet unter der Ansicht:
 
 - die **S-Kurve**: die geplanten kumulierten Kosten über den Terminplan, die des **Basisplans** (gestrichelt), wenn einer gespeichert ist, und die **erledigte Arbeit** (dick) bis zum Statusdatum: die Kosten jedes Vorgangs mal seinem Fertigstellungsgrad, ab seinem tatsächlichen Beginn verteilt;
 - die Balken der Monate, an der rechten Skala: geplant und erledigt;

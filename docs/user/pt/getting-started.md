@@ -18,7 +18,7 @@ Um projeto novo já tem três níveis: **Fundações** (−1.50), **Térreo** (�
 
 ![As partes da janela do Lapin](shots/workspace.webp)
 
-1. **As guias da faixa de opções.** Desenho, Arquitetura, Acabamentos, Estrutura, Implantação, Studio, Anotar, Gerenciar, Custos e Vista agrupam cada uma as suas ferramentas. **Arquivo** abre, salva, importa e exporta. **Desfazer** e **Refazer** ficam na ponta direita da mesma barra (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
+1. **As guias da faixa de opções.** Desenho, Arquitetura, Interiores, Estrutura, Implantação, Studio, Anotar, Gerenciar, Execução e Vista agrupam cada uma as suas ferramentas. **Arquivo** abre, salva, importa e exporta. **Desfazer** e **Refazer** ficam na ponta direita da mesma barra (<kbd>Ctrl</kbd> <kbd>Z</kbd>, <kbd>Ctrl</kbd> <kbd>Y</kbd>).
 2. **A faixa de opções.** Ela traz as ferramentas da guia atual. Passe o mouse sobre uma ferramenta para ver o nome e as letras de teclado dela.
 3. **O navegador de projeto.** Ele lista os níveis, plantas, cortes, elevações, vistas 3D, pranchas e tabelas. Dê um clique duplo em um item para abri-lo em uma guia. Um projeto abre na planta do térreo, com a vista 3D em uma guia ao lado.
 4. **A vista.** É onde você desenha: uma planta, um corte, uma vista 3D ou uma prancha. Você pode abrir várias vistas lado a lado com os dois botões no canto superior direito da vista.

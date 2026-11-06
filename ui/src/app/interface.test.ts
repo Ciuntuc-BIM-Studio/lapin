@@ -37,17 +37,17 @@ describe('the interface modes', () => {
   });
 
   // The tabs of the full edition, as the modules give them.
-  const TABS = [['draft', 10], ['architecture', 20], ['finishes', 25], ['structure', 30], ['wood', 33], ['steel', 34], ['rebar', 35], ['site', 40], ['mep', 45], ['sitework', 45], ['studio', 50], ['annotate', 60], ['manage', 80], ['quantities', 85], ['view', 90]].map(([id, order]) => ({ id: id as string, order: order as number }));
+  const TABS = [['draft', 10], ['architecture', 20], ['interior', 25], ['structure', 30], ['wood', 33], ['steel', 34], ['rebar', 35], ['site', 40], ['mep', 45], ['studio', 50], ['annotate', 60], ['manage', 80], ['construction', 84], ['view', 90]].map(([id, order]) => ({ id: id as string, order: order as number }));
   const shown = (s: Parameters<typeof visibleTabIds>[0], tabs = TABS) => visibleTabIds(s, tabs);
 
   it('shows a workspace\'s tabs in its order, every tab in All, View always, a tab the edition lacks left out', () => {
     const s = withPreset('compact');
     expect(s.workspace).toBe('all');
     expect(shown(s)).toEqual(TABS.map((t) => t.id));
-    expect(shown(withWorkspace(s, 'structure'))).toEqual(['draft', 'structure', 'rebar', 'wood', 'steel', 'annotate', 'manage', 'quantities', 'view']);
-    expect(shown(withWorkspace(s, 'mep'))).toEqual(['draft', 'mep', 'annotate', 'manage', 'quantities', 'view']);
+    expect(shown(withWorkspace(s, 'structure'))).toEqual(['draft', 'structure', 'rebar', 'wood', 'steel', 'annotate', 'manage', 'construction', 'view']);
+    expect(shown(withWorkspace(s, 'mep'))).toEqual(['draft', 'mep', 'annotate', 'manage', 'construction', 'view']);
     // An edition without Wood and Rebar (Architecture + Structure is lighter still): only what it has.
-    expect(shown(withWorkspace(s, 'structure'), TABS.filter((t) => !['wood', 'steel', 'rebar'].includes(t.id)))).toEqual(['draft', 'structure', 'annotate', 'manage', 'quantities', 'view']);
+    expect(shown(withWorkspace(s, 'structure'), TABS.filter((t) => !['wood', 'steel', 'rebar'].includes(t.id)))).toEqual(['draft', 'structure', 'annotate', 'manage', 'construction', 'view']);
     // A workspace and the interface's mode are apart.
     expect(withPart(withWorkspace(s, 'site'), 'ribbon', 'large').workspace).toBe('site');
     expect(withPreset('focus', withWorkspace(s, 'site')).workspace).toBe('site');
@@ -55,12 +55,12 @@ describe('the interface modes', () => {
 
   it('makes a workspace the user\'s own when a tab is shown, hidden or moved, and keeps it', () => {
     const arch = withWorkspace(withPreset('comfortable'), 'architecture');
-    // Rooms' schedules want Quantities, Finishes is not this office's: hidden, then Structure brought in, in its usual place.
-    let mine = withTab(arch, 'finishes', false, TABS);
+    // Interior is not this office's: hidden, then Structure brought in, in its usual place.
+    let mine = withTab(arch, 'interior', false, TABS);
     expect(mine.workspace).toBe('mine');
-    expect(shown(mine)).toEqual(['draft', 'architecture', 'studio', 'annotate', 'manage', 'quantities', 'view']);
+    expect(shown(mine)).toEqual(['draft', 'architecture', 'studio', 'annotate', 'manage', 'construction', 'view']);
     mine = withTab(mine, 'structure', true, TABS);
-    expect(shown(mine)).toEqual(['draft', 'architecture', 'structure', 'studio', 'annotate', 'manage', 'quantities', 'view']);
+    expect(shown(mine)).toEqual(['draft', 'architecture', 'structure', 'studio', 'annotate', 'manage', 'construction', 'view']);
     // Moved: Structure before Architecture; at an end it stays.
     mine = withTabMoved(mine, 'structure', -1, TABS);
     expect(shown(mine).slice(0, 3)).toEqual(['draft', 'structure', 'architecture']);
@@ -73,6 +73,11 @@ describe('the interface modes', () => {
     expect(back.workspace).toBe('mine');
     expect(shown(back)).toEqual(shown(mine));
     expect(initialSettings({ chosen: true, parts: PRESETS.compact, workspace: 'kitchen' }, { web: false, height: 900 }).workspace).toBe('all');
+  });
+
+  it('reads a workspace kept before tabs were merged with their new ids (decision 367)', () => {
+    const s = initialSettings({ chosen: true, parts: PRESETS.compact, workspace: 'mine', mine: ['draft', 'finishes', 'furniture', 'sitework', 'site', 'planning', 'cost', 'view'] }, { web: false, height: 900 });
+    expect(s.mine).toEqual(['draft', 'interior', 'site', 'construction', 'view']);
   });
 
   it('reads the tabs an older Lapin kept hidden as the user\'s own workspace', () => {

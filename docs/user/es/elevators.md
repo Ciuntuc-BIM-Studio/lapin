@@ -61,6 +61,6 @@ Seleccione un ascensor para cambiar su parada más baja y más alta, marcar los 
 
 **Arquitectura → Tabla de ascensores** lista cada ascensor con su tipo, accionamiento, carga nominal, personas, cabina, puertas, las paradas que sirve, los niveles entre los que va, su recorrido, su velocidad y su hueco.
 
-Cada ascensor tiene un tipo creado a partir de su clase, su carga y su cabina (Pasajeros mediano 630 kg, 1100 × 1400): los ascensores iguales lo comparten, de modo que una partida de precio puesta en el tipo (**Costes → Asignar partidas…**) da precio a todos, y la planificación los encuentra por su clase (IfcTransportElement).
+Cada ascensor tiene un tipo creado a partir de su clase, su carga y su cabina (Pasajeros mediano 630 kg, 1100 × 1400): los ascensores iguales lo comparten, de modo que una partida de precio puesta en el tipo (**Ejecución → Asignar partidas…**) da precio a todos, y la planificación los encuentra por su clase (IfcTransportElement).
 
 En IFC un ascensor es un **IfcTransportElement** con el tipo predefinido **ELEVATOR**, de un **IfcTransportElementType**, con los conjuntos propios de IFC **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) y **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). Lapin vuelve a leer su propio archivo como un ascensor nativo, con sus paradas y las aberturas de los forjados.

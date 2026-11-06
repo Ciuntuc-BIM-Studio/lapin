@@ -6,7 +6,7 @@ summary: Sofaer, hjørnesofaer, lænestole, stole, senge, garderobeskabe, kommod
 
 ## Placér møbler
 
-Fanen **Møbler** har et værktøj til hver slags møbel: **Sofa** (<kbd>SO</kbd>), **Hjørnesofa**, **Lænestol** (<kbd>AC</kbd>), **Stol**, **Seng** (<kbd>BD</kbd>), **Natbord**, **Garderobeskab** (<kbd>WD</kbd>), **Kommode**, **Reol**, **Skænk**, **Bord** (<kbd>TB</kbd>), **Sofabord** og **Skrivebord**. Vælg et, og klik i planen.
+Fanen **Interiør** har, efter overfladerne, et værktøj til hver slags møbel: **Sofa** (<kbd>SO</kbd>), **Hjørnesofa**, **Lænestol** (<kbd>AC</kbd>), **Stol**, **Seng** (<kbd>BD</kbd>), **Natbord**, **Garderobeskab** (<kbd>WD</kbd>), **Kommode**, **Reol**, **Skænk**, **Bord** (<kbd>TB</kbd>), **Sofabord** og **Skrivebord**. Vælg et, og klik i planen.
 
 Klik tæt på en væg, og møblet stilles op ad den. Dets bagside ligger på væggens flade (på pudsen, ikke på kernen), forsiden vender mod rummet, og det glider langs væggen, indtil det ikke længere går ind i væggen på tværs af et hjørne. Klik længere fra alle vægge, og møblet står, hvor du klikkede.
 
@@ -60,7 +60,7 @@ Træk i grebet midt på et møbel for at flytte det; træk i grebet foran det fo
 
 ## Møbeltyper
 
-**Møbler → Møbeltyper** viser projektets typer i grupper (siddemøbler, senge, opbevaring, borde, køkken), hver med antallet af møbler, der bruger den. Vælg en slags og **Ny type**, eller **Duplikér** en type for at ændre en kopi. En type har:
+**Interiør → Møbeltyper** viser projektets typer i grupper (siddemøbler, senge, opbevaring, borde, køkken), hver med antallet af møbler, der bruger den. Vælg en slags og **Ny type**, eller **Duplikér** en type for at ændre en kopi. En type har:
 
 - sit **navn**, sin **bredde**, **dybde** og **højde** (for en sofa ryglænets, for en seng sengegavlens, for et køkken bordpladens);
 - sin slags egne parametre:

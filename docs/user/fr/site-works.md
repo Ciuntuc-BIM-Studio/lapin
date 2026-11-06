@@ -4,9 +4,9 @@ order: 55
 summary: Échafaudages de façade et coffrages des dalles et des poutres, disposés à partir du modèle par leurs configurateurs.
 ---
 
-L’onglet **Installations de chantier** modélise les ouvrages provisoires du chantier : les échafaudages de façade et le coffrage des dalles et des poutres. Lapin les dispose à partir du modèle et compte ce qu’il leur faut. Quand le modèle change, ils le suivent.
+Les installations de chantier, dans l’onglet **Site** après le terrain, modélisent les ouvrages provisoires du chantier : les échafaudages de façade et le coffrage des dalles et des poutres. Lapin les dispose à partir du modèle et compte ce qu’il leur faut. Quand le modèle change, ils le suivent.
 
-![L’onglet Installations de chantier](shots/ribbon-site-works.webp)
+![Les installations de chantier dans l’onglet Site](shots/ribbon-site-works.webp)
 
 Les échafaudages et les coffrages sont **temporaires** : ils sont montés et démontés dans la phase **Exécution**. Le premier que vous placez ajoute cette phase si le projet n’en a pas, et en fait la phase active. Les vues des phases antérieures les omettent. Voir **Gérer → Phases**.
 

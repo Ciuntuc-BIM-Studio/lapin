@@ -191,7 +191,7 @@ export const rebarModule: LapinModule = {
   name: 'Rebar 2D',
   summary: 'Reinforcement drawn on views: bars bent at the Eurocode radius, stirrups along a path, marks and the bar bending schedule; sections across an element inset where you work.',
   tabs: [{
-    id: 'rebar', label: 'Rebar 2D', order: 35, include: ['modify'],
+    id: 'rebar', label: 'Simple rebar', order: 35, include: ['modify'],
     groups: [
       { label: 'Sections', tools: [sectionHere, sectionAcross, insetView] },
       { label: 'Bars', tools: [straight, lBar, uBar, stirrup, polylineBar], small: [tie, dot, asSection, splitBar] },

@@ -16,6 +16,7 @@ import { redo, undo, useSession } from '../engine/session';
 import { fileActions, GUEST_SECTIONS, HOST_SECTIONS, type FileSection } from './fileActions';
 import { isGuest } from '../engine/share';
 import { Participants } from './Sharing';
+import { TabStrip, WorkspaceSwitch } from './TabStrip';
 import { useInterface, visibleTabIds } from '../app/interface';
 import { TOOL_DRAG } from '../app/hotbar';
 import { bindingText, hint, useBindings } from '../app/commands';
@@ -168,10 +169,8 @@ export function Ribbon() {
       <div className="tabs-row">
         <button type="button" className="brand" onClick={() => !isGuest() && useUi.setState({ screen: 'start' })} title="Start screen"><BrandName /></button>
         <FileMenu />
-        {tabs.map((t) => (
-          <button type="button" key={t.id} className={`tab${t.id === tab?.id ? ' on' : ''}${mode === 'dropdown' && dropped && t.id === tab?.id ? ' open' : ''}`} onClick={() => pickTab(t.id)} data-i18n-ctx={t.i18nCtx}>{t.label}</button>
-        ))}
-        <span className="grow" />
+        <WorkspaceSwitch />
+        <TabStrip tabs={tabs} current={tab?.id} open={mode === 'dropdown' && dropped} onPick={pickTab} />
         <Participants />
         <button type="button" className="search" onClick={() => useUi.setState({ dialog: 'palette' })}><Search size={14} />Commands… {paletteKeys && <kbd data-no-i18n>{paletteKeys.split(', ')[0]}</kbd>}</button>
         <span className="undo-redo" role="group" aria-label="Undo and redo">

@@ -6,7 +6,7 @@ summary: Sofas, Ecksofas, Sessel, Stühle, Betten, Kleiderschränke, Kommoden, B
 
 ## Möbel platzieren
 
-Die Registerkarte **Möbel** hat ein Werkzeug für jede Art von Möbelstück: **Sofa** (<kbd>SO</kbd>), **Ecksofa**, **Sessel** (<kbd>AC</kbd>), **Stuhl**, **Bett** (<kbd>BD</kbd>), **Nachttisch**, **Kleiderschrank** (<kbd>WD</kbd>), **Kommode**, **Bücherregal**, **Sideboard**, **Tisch** (<kbd>TB</kbd>), **Couchtisch** und **Schreibtisch**. Wählen Sie eines und klicken Sie in den Grundriss.
+Die Registerkarte **Innenausbau** hat, nach dem Ausbau, ein Werkzeug für jede Art von Möbelstück: **Sofa** (<kbd>SO</kbd>), **Ecksofa**, **Sessel** (<kbd>AC</kbd>), **Stuhl**, **Bett** (<kbd>BD</kbd>), **Nachttisch**, **Kleiderschrank** (<kbd>WD</kbd>), **Kommode**, **Bücherregal**, **Sideboard**, **Tisch** (<kbd>TB</kbd>), **Couchtisch** und **Schreibtisch**. Wählen Sie eines und klicken Sie in den Grundriss.
 
 Klicken Sie nahe an einer Wand, und das Möbel stellt sich mit dem Rücken an sie. Seine Rückseite liegt an der Oberfläche der Wand (am Putz, nicht am Kern), seine Vorderseite zeigt in den Raum, und es rutscht an der Wand entlang, bis es nicht mehr in die Wand an einer Ecke hineinragt. Klicken Sie weiter weg von jeder Wand, und das Möbel steht dort, wo Sie geklickt haben.
 
@@ -60,7 +60,7 @@ Ziehen Sie den Griff in der Mitte eines Möbels, um es zu verschieben; ziehen Si
 
 ## Möbeltypen
 
-**Möbel → Möbeltypen** listet die Typen des Projekts nach Gruppen (Sitzmöbel, Betten, Stauraum, Tische, Küche), jeweils mit der Zahl der Möbel, die ihn verwenden. Wählen Sie eine Art und **Neuer Typ**, oder **Duplizieren** Sie einen Typ, um eine Kopie zu ändern. Ein Typ enthält:
+**Innenausbau → Möbeltypen** listet die Typen des Projekts nach Gruppen (Sitzmöbel, Betten, Stauraum, Tische, Küche), jeweils mit der Zahl der Möbel, die ihn verwenden. Wählen Sie eine Art und **Neuer Typ**, oder **Duplizieren** Sie einen Typ, um eine Kopie zu ändern. Ein Typ enthält:
 
 - seinen **Namen**, seine **Breite**, **Tiefe** und **Höhe** (bei einem Sofa die der Rückenlehne, bei einem Bett die des Kopfteils, bei einer Küche die der Arbeitsplatte);
 - die eigenen Parameter seiner Art:

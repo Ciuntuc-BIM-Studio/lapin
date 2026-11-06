@@ -65,7 +65,7 @@ Los colores se dibujan bajo los muros, el mobiliario y los giros de las puertas,
 
 ## Acabados de habitaciones
 
-**Acabados → Acabar habitación** (<kbd>FR</kbd>) coloca un acabado en la habitación en la que hace clic: su suelo, el acabado de sus paredes y su techo, cada uno siguiendo el contorno de la habitación como lo hace la habitación. Mueva un muro y los acabados lo siguen. **Acabados → Acabados de habitaciones** edita los acabados; **De la biblioteca** trae algunos ya hechos: Salón, Dormitorio, Baño, Cocina, Planta baja sobre losa y Cuarto técnico. Mientras la herramienta está activa, el panel de propiedades muestra el acabado que coloca, para elegirlo antes del clic. El **Acabado** de una habitación, en sus propiedades, coloca otro o lo quita.
+**Interiores → Acabar habitación** (<kbd>FR</kbd>) coloca un acabado en la habitación en la que hace clic: su suelo, el acabado de sus paredes y su techo, cada uno siguiendo el contorno de la habitación como lo hace la habitación. Mueva un muro y los acabados lo siguen. **Interiores → Acabados de habitaciones** edita los acabados; **De la biblioteca** trae algunos ya hechos: Salón, Dormitorio, Baño, Cocina, Planta baja sobre losa y Cuarto técnico. Mientras la herramienta está activa, el panel de propiedades muestra el acabado que coloca, para elegirlo antes del clic. El **Acabado** de una habitación, en sus propiedades, coloca otro o lo quita.
 
 Un acabado tiene:
 
@@ -81,7 +81,7 @@ Un acabado tiene:
 
 ![Una planta con el suelo del baño tramado como baldosas y el del salón como tablas](shots/room-finish-hatch.webp)
 
-Cada acabado mide, por material, su superficie **bruta** (el contorno de la habitación, sin descontar nada: el área del suelo, el perímetro de las paredes por la altura de cada pieza) y la **neta** (lo construido: puertas, ventanas y huecos de losa descontados, las mochetas y el suelo bajo las puertas añadidos; la parte de las mochetas está en las cantidades, como RevealArea), y su volumen. **Acabados → Tabla de acabados** lista cada habitación acabada por parte y material, con los totales por material al final; como cualquier tabla, hace gráficos, se exporta y va en una lámina. En IFC un acabado es un IfcCovering: FLOORING, CLADDING o CEILING.
+Cada acabado mide, por material, su superficie **bruta** (el contorno de la habitación, sin descontar nada: el área del suelo, el perímetro de las paredes por la altura de cada pieza) y la **neta** (lo construido: puertas, ventanas y huecos de losa descontados, las mochetas y el suelo bajo las puertas añadidos; la parte de las mochetas está en las cantidades, como RevealArea), y su volumen. **Interiores → Tabla de acabados** lista cada habitación acabada por parte y material, con los totales por material al final; como cualquier tabla, hace gráficos, se exporta y va en una lámina. En IFC un acabado es un IfcCovering: FLOORING, CLADDING o CEILING.
 
 Un acabado reviste lo que ya tienen los muros de la habitación: si los tipos de muro llevan su propio enlucido, dé a las paredes de la habitación solo lo que va encima (pintura, azulejos), o use tipos de muro solo con el núcleo.
 

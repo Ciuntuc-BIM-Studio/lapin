@@ -4,9 +4,9 @@ order: 55
 summary: Ponteggi di facciata e casseforme per solai e travi, disposti a partire dal modello dai loro configuratori.
 ---
 
-La scheda **Opere provvisionali** modella le opere temporanee del cantiere: i ponteggi di facciata e le casseforme di solai e travi. Lapin le dispone a partire dal modello e conta ciò che serve. Quando il modello cambia, lo seguono.
+Le opere provvisionali, nella scheda **Sito** dopo il terreno, modellano le opere temporanee del cantiere: i ponteggi di facciata e le casseforme di solai e travi. Lapin le dispone a partire dal modello e conta ciò che serve. Quando il modello cambia, lo seguono.
 
-![La scheda Opere provvisionali](shots/ribbon-site-works.webp)
+![Le opere provvisionali nella scheda Sito](shots/ribbon-site-works.webp)
 
 Ponteggi e casseforme sono **temporanei**: vengono montati e smontati nella fase **Esecuzione**. Il primo che posizioni aggiunge questa fase se il progetto non ce l’ha, e la rende la fase attiva. Le viste delle fasi precedenti li escludono. Vedi **Gestisci → Fasi**.
 

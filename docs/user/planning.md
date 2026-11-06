@@ -4,9 +4,9 @@ order: 97
 summary: The work schedule in a Gantt chart: generated from the model or made by hand, tasks in a WBS, milestones, links with lags, the critical path worked out on a calendar with Romania's legal holidays; the 4D simulation of the building growing day by day, on views and sheets and as a video; progress marked on site, from a phone too, against a baseline; to and from MS Project, IFC and Excel.
 ---
 
-## The Planning tab
+## The Construction tab
 
-![The Planning tab](shots/ribbon-planning.webp)
+![The Construction tab](shots/ribbon-planning.webp)
 
 - **Generate schedule…**: a whole schedule made from the model in one step (below).
 - **Gantt**: opens the schedule under the view. The screen splits into two rows, so you see the model above and the schedule below.
@@ -24,7 +24,7 @@ A project has one schedule. It is made the first time you add a task or generate
 
 ![Generate schedule: the templates, the Start tab and the preview](shots/planning-generate.webp)
 
-**Planning → Generate schedule…** (also in the Gantt's toolbar) makes a complete schedule from the model: a task for each step of the works, and for each storey where the step goes storey by storey, every task already holding its elements. On the left are the **templates**: **Concrete frame**, **Load-bearing masonry**, **Steel hall** and **Timber frame**. Lapin marks the one the model asks for as *suggested*: a steel hall when the model has one, a timber frame when its walls are framed, load-bearing masonry when it has no columns, else a concrete frame. Above them are the project's own styles (**Save as style…** keeps the spec you configured, for this project and the next you make from it).
+**Construction → Generate schedule…** (also in the Gantt's toolbar) makes a complete schedule from the model: a task for each step of the works, and for each storey where the step goes storey by storey, every task already holding its elements. On the left are the **templates**: **Concrete frame**, **Load-bearing masonry**, **Steel hall** and **Timber frame**. Lapin marks the one the model asks for as *suggested*: a steel hall when the model has one, a timber frame when its walls are framed, load-bearing masonry when it has no columns, else a concrete frame. Above them are the project's own styles (**Save as style…** keeps the spec you configured, for this project and the next you make from it).
 
 On the right is the **preview**: the tasks the generator would make, as bars, each with the quantity that timed it, and under them the counts:
 
@@ -153,7 +153,7 @@ A roof is built in layers too: its structure (the deck of a flat roof, a vault o
 
 ![The selection's card over the 3D, a wall's two tasks marked in the Gantt](shots/planning-element-tasks.webp)
 
-While the Gantt is open, a card over the model view says how many elements are selected and which tasks they are in. Drag it by its handle onto a task's row: the elements go into that task. Hold <kbd>Shift</kbd> when you drop to take them out of it. **Add to task…** (<kbd>T</kbd> <kbd>A</kbd>, also on the Planning tab) picks the task from a list.
+While the Gantt is open, a card over the model view says how many elements are selected and which tasks they are in. Drag it by its handle onto a task's row: the elements go into that task. Hold <kbd>Shift</kbd> when you drop to take them out of it. **Add to task…** (<kbd>T</kbd> <kbd>A</kbd>, also on the Construction tab) picks the task from a list.
 
 ![Add to task](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ What you add or take out by hand are the task's **exceptions**: the rule stays a
 
 ### Elements without a task
 
-Once a task takes elements, the Gantt's toolbar says how many elements have no task, or have layers no task takes; a click selects them, ready to drag onto a task. **Planning → Elements without a task** does the same. **Manage → Check** lists them too, under *Elements with a task*: a warning for each, a click selecting it. Existing elements that stay need no task.
+Once a task takes elements, the Gantt's toolbar says how many elements have no task, or have layers no task takes; a click selects them, ready to drag onto a task. **Construction → Elements without a task** does the same. **Manage → Check** lists them too, under *Elements with a task*: a warning for each, a click selecting it. Existing elements that stay need no task.
 
 ### In IFC and MS Project
 
@@ -171,7 +171,7 @@ The IFC export writes what each task builds as an IfcRelAssignsToProduct (the el
 
 ![The house on a day of its schedule: the first floor's slab under way in its formwork, the walls above not started](shots/planning-simulation.webp)
 
-**Planning → Simulate** (also **Simulate** in the Gantt's toolbar) shows the model as the schedule has it on a day. The Gantt opens under the view if it is not open, with the player at its top and the day as a band over its chart:
+**Construction → Simulate** (also **Simulate** in the Gantt's toolbar) shows the model as the schedule has it on a day. The Gantt opens under the view if it is not open, with the player at its top and the day as a band over its chart:
 
 - what is **not started** is hidden (or shown as a pale ghost, in the settings);
 - what is **under way** is drawn in its colour (amber);
@@ -208,7 +208,7 @@ A plan, a section, an elevation or a saved 3D view has **State at date** in its 
 
 ![Stages sheet: the dates from the chapters' ends](shots/planning-stages-dialog.webp)
 
-**Planning → Stages sheet…** (also in the player) puts the model at several dates side by side on a new sheet. It is drawn from **the 3D view, as it looks now** (a picture at each date) or from a plan, a section or an elevation, which the engine draws at each date. The dates are **the end of each chapter** (each task at the top of the WBS), **the end of each month**, or **chosen** ones. Each frame is labelled with its date and the tasks under way.
+**Construction → Stages sheet…** (also in the player) puts the model at several dates side by side on a new sheet. It is drawn from **the 3D view, as it looks now** (a picture at each date) or from a plan, a section or an elevation, which the engine draws at each date. The dates are **the end of each chapter** (each task at the top of the WBS), **the end of each month**, or **chosen** ones. Each frame is labelled with its date and the tasks under way.
 
 ![A stages sheet](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ A plan, a section, an elevation or a saved 3D view has **State at date** in its 
 
 ![The Gantt on a sheet](shots/planning-gantt-sheet.webp)
 
-**Planning → Gantt on sheet** puts the schedule on a new sheet: the table (row, WBS and task, days, start, finish) and the bars on a time scale, the critical tasks in red, the summaries as brackets, the milestones as diamonds, the links. A schedule taller than the sheet goes on as many sheets as it needs, its header on each. It is drawn as vectors, like the views, and prints in the PDF.
+**Construction → Gantt on sheet** puts the schedule on a new sheet: the table (row, WBS and task, days, start, finish) and the bars on a time scale, the critical tasks in red, the summaries as brackets, the milestones as diamonds, the links. A schedule taller than the sheet goes on as many sheets as it needs, its header on each. It is drawn as vectors, like the views, and prints in the PDF.
 
 ### Export video
 
 ![Export video](shots/planning-video.webp)
 
-**Planning → Export video…** (also in the player) records the 3D view, from where it looks now, from one day to another, **a day** or **a week** a frame, with the date and the tasks under way written under it. The file is a WebM video, or MP4 where the system offers only that (the macOS app). A browser that records no video saves the frames as PNG files in a ZIP instead.
+**Construction → Export video…** (also in the player) records the 3D view, from where it looks now, from one day to another, **a day** or **a week** a frame, with the date and the tasks under way written under it. The file is a WebM video, or MP4 where the system offers only that (the macOS app). A browser that records no video saves the frames as PNG files in a ZIP instead.
 
 ## Progress
 
@@ -241,7 +241,7 @@ The bars show the part done darker. Properties says where a percentage came from
 
 ### Marking elements on site
 
-**Planning → Mark done** (MD) and **Mark started** (MS) mark the elements selected in 3D or in a plan, on the status date (today when there is none), in every task that takes them; **Mark not started** takes the marks off. A selected element's properties show its state on site with the same three buttons, and in each of its tasks the day it was done or started, with a button to mark it done in that task alone. A layered wall in a masonry task and a plaster task is marked in both, or in one from its row.
+**Construction → Mark done** (MD) and **Mark started** (MS) mark the elements selected in 3D or in a plan, on the status date (today when there is none), in every task that takes them; **Mark not started** takes the marks off. A selected element's properties show its state on site with the same three buttons, and in each of its tasks the day it was done or started, with a button to mark it done in that task alone. A layered wall in a masonry task and a plaster task is marked in both, or in one from its row.
 
 ![A wall's marks in its properties](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ On site, from a phone: join the project's shared session from the browser (**Fil
 
 ### The baseline
 
-**Planning → Save baseline** keeps every task's dates and duration as they are now; saved again, it is replaced (one baseline: several baselines and scenarios are for the premium edition). The Gantt then draws it as a thin grey bar under each task's bar (**Baseline** in the toolbar hides it), adds the **Variance** column (the working days the finish moved: positive is late, the row marked in red), and says in its toolbar how many tasks are late and how far the finish moved. Properties gives the baseline's dates and the start and finish variances. **Clear baseline** takes it off.
+**Construction → Save baseline** keeps every task's dates and duration as they are now; saved again, it is replaced (one baseline: several baselines and scenarios are for the premium edition). The Gantt then draws it as a thin grey bar under each task's bar (**Baseline** in the toolbar hides it), adds the **Variance** column (the working days the finish moved: positive is late, the row marked in red), and says in its toolbar how many tasks are late and how far the finish moved. Properties gives the baseline's dates and the start and finish variances. **Clear baseline** takes it off.
 
 ### Late and ahead in the simulation
 
@@ -259,7 +259,7 @@ With a baseline, the simulation compares: an element not built (or not started) 
 
 ### Progress in the files
 
-- **Export XLSX** adds the columns **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** and **GlobalId**. Fill them in on site and read them back with **Planning → Import progress…**: the rows are found by GlobalId, WBS or ID, and a *Status date* written above the table sets the status date. A CSV works too.
+- **Export XLSX** adds the columns **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** and **GlobalId**. Fill them in on site and read them back with **Construction → Import progress…**: the rows are found by GlobalId, WBS or ID, and a *Status date* written above the table sets the status date. A CSV works too.
 - **MS Project XML** carries the status date, each task's percentage, actual start and finish, the duration left and the baseline (Baseline 0); the elements' marks travel with the elements in *Lapin elements*.
 - **IFC** writes them in each task's IfcTaskTime (the status time, the actual start and finish, the time left, the completion), and the baseline as a second IfcWorkSchedule of type BASELINE; Lapin's own fields (the percentage typed, the marks) go in `Lapin_Task`. Both come back to the same dates.
 - **Manage → Versions → Compare** says, beside the elements, what changed in the schedule: the finish, the working days, the status date, and the tasks added, removed, moved (by how many working days), whose duration changed or whose progress changed.
@@ -268,13 +268,13 @@ With a baseline, the simulation compares: an element not built (or not started) 
 
 ![The Gantt with the Cost column](shots/planning-cost.webp)
 
-With an estimate (**Cost → Estimate…**), the Gantt gets a **Cost** column: each task's share of the estimate, from the lines that price its elements (a summary's is its tasks'). The toolbar shows the **budget** (the estimate's direct costs) and the cost **to date** (each task's cost times its % complete); Properties shows a task's cost and the part done. **Cost → Cost over time** draws the S-curve and the month table (see [Cost estimate](cost.md)).
+With an estimate (**Construction → Estimate…**), the Gantt gets a **Cost** column: each task's share of the estimate, from the lines that price its elements (a summary's is its tasks'). The toolbar shows the **budget** (the estimate's direct costs) and the cost **to date** (each task's cost times its % complete); Properties shows a task's cost and the part done. **Construction → Cost over time** draws the S-curve and the month table (see [Cost estimate](cost.md)).
 
 ## The calendar
 
 ![The work calendar](shots/planning-calendar.webp)
 
-**Planning → Calendar…** sets:
+**Construction → Calendar…** sets:
 
 - the **working days** of the week (Monday to Friday by default) and the **hours** of a day (8 from 08:00);
 - the **holidays**: Romania's legal holidays, worked out for every year (Orthodox Good Friday, Easter and Pentecost included), or none. The list under them shows a year's holidays to check;

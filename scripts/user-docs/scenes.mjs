@@ -839,7 +839,7 @@ export const scenes = [
       const { storey } = await house(t, { roof: false });
       await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4 });
       await t.ui({ keyPlan: false });
-      await t.page.locator('button.tab', { hasText: /^Cost$/ }).first().click();
+      await t.button('Construction', { exact: true });
       await t.wait(300);
       await t.page.locator('.band button', { hasText: 'Quantity takeoff' }).first().click();
       await t.wait(1500);
@@ -884,7 +884,7 @@ export const scenes = [
       for (const [w, x, y] of [[0, 9.5, 0], [2, 3.5, 8], [2, 9.5, 8], [1, 12, 4]]) await t.cmd('architecture.addWindow', { wallId: walls[w], x, y });
       await t.cmd('architecture.addSlab', { storeyId: s, points: outline });
       await t.ui({ keyPlan: false });
-      await t.page.locator('button.tab', { hasText: /^Cost$/ }).first().click();
+      await t.button('Construction', { exact: true });
       await t.wait(400);
       await t.shot('ribbon-cost', { of: '.topbar', pad: 0 });
       // Cost → Price lists… → Import…: a CSV as an estimating program writes it, Romanian headings, decimal commas.
@@ -1009,7 +1009,7 @@ export const scenes = [
       await t.cmd('planning.updateSchedule', { dataDate: '2027-03-26' });
       // The Gantt: the Cost column, the budget and the cost to date.
       await open3d(t);
-      await t.button('Planning', { exact: true });
+      await t.button('Construction', { exact: true });
       await t.tool('planning.gantt');
       await t.wait(1500);
       const sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
@@ -1031,7 +1031,7 @@ export const scenes = [
       await t.page.evaluate(async () => { const { usePanels } = await import('/src/app/panels.ts'); usePanels.setState({ browserOpen: true }); });
       // Cost → Cost over time: the S-curve and the month table.
       await t.ui({ selection: null, selected: [] });
-      await t.page.locator('button.tab', { hasText: /^Cost$/ }).first().click();
+      await t.button('Construction', { exact: true });
       await t.wait(300);
       await t.tool('cost.overTime');
       await t.page.locator('[data-testid=cost-chart]').waitFor({ timeout: 10_000 });
@@ -1388,7 +1388,7 @@ export const scenes = [
       await link(plaster, paint, 'SS', 4);
       await link(paint, handover);
       await link(roof, handover);
-      await t.button('Planning', { exact: true });
+      await t.button('Construction', { exact: true });
       await t.shot('ribbon-planning', { of: '.topbar', pad: 0 });
       await t.tool('planning.gantt');
       await t.wait(1500);
@@ -1509,7 +1509,7 @@ export const scenes = [
       await t.cmd('planning.updateSchedule', { name: 'House', start: '2027-03-01' });
       await t.cmd('planning.useIndicativeNorms', {});
       await open3d(t);
-      await t.button('Planning', { exact: true });
+      await t.button('Construction', { exact: true });
       await t.tool('planning.generate');
       const dialog = t.page.locator('[data-dialog=planning-generate]');
       t.expect(await dialog.count() > 0, 'the generator opens');
@@ -1586,7 +1586,7 @@ export const scenes = [
         await s.execute('planning.generate', { spec: g.translateNames(o.spec, (x) => i.translate(x, lang) ?? x) });
       }, t.lang);
       await open3d(t);
-      await t.button('Planning', { exact: true });
+      await t.button('Construction', { exact: true });
       await t.tool('planning.simulate');
       await t.wait(2500);
       t.expect(await t.page.locator('[data-testid=sim-bar]').count() === 1, 'the player opens at the Gantt\'s top');
@@ -1697,7 +1697,7 @@ export const scenes = [
       await t.cmd('planning.markDone', { ids: [walls[0], walls[1]], date: '2027-03-17', task: masonry });
       await t.cmd('planning.markStarted', { ids: [walls[2]], date: '2027-03-18', task: masonry });
       await open3d(t);
-      await t.button('Planning', { exact: true });
+      await t.button('Construction', { exact: true });
       await t.tool('planning.gantt');
       await t.wait(1500);
       const sched = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('planning.schedule'));
@@ -2592,7 +2592,7 @@ export const scenes = [
       const ground = await t.storey();
       const slab = (await t.cmd('architecture.addSlab', { storeyId: first, points: [[0, 0], [12, 0], [12, 8], [0, 8]] })).id;
       const beam = (await t.cmd('structure.addBeam', { storeyId: ground, x1: 0, y1: 4, x2: 7, y2: 4 })).id;
-      await t.button('Site works', { exact: true });
+      await t.button('Site', { exact: true });
       await t.shot('ribbon-site-works', { of: '.topbar', pad: 0 });
       // A scaffold round the four outer walls, formwork under the first floor and its beam.
       await t.ui({ selection: walls[0], selected: [walls[0], walls[1], walls[2], walls[3]] });
@@ -3726,7 +3726,7 @@ export const scenes = [
       await t.fresh();
       const { storey: s } = await house(t, { roof: false });
       await t.fit();
-      await t.button('Furniture', { exact: true });
+      await t.button('Interior', { exact: true });
       // The sofa by a click near the south wall of the living room: its back on the wall, its front to the room.
       await t.tool('furniture.sofa');
       await t.wait(400);
@@ -4817,7 +4817,7 @@ export const scenes = [
       // A longitudinal section in front of the beam, looking at it; its x is the model's x + 1, its y the level.
       const host = (await t.cmd('view.create', { kind: 'section', start: [-1, -1.5], end: [7, -1.5], scale: 50, name: 'Beam B1' })).id;
       await t.ui({ view: 'drawing', drawingViewId: host, selection: null, selected: [], keyPlan: false });
-      await t.button('Rebar 2D', { exact: true });
+      await t.button('Simple rebar', { exact: true });
       await t.shot('ribbon-rebar', { of: '.topbar', pad: 0 });
       const top = (await t.nodes()).find((n) => n.id === s)?.props.elevation ?? 0;
       const z = (dz) => Number(top) + 3 + dz;

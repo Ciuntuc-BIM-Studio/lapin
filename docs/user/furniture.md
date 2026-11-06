@@ -6,7 +6,7 @@ summary: Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookca
 
 ## Placing furniture
 
-The **Furniture** tab has a tool for each kind of piece: **Sofa** (<kbd>SO</kbd>), **Corner sofa**, **Armchair** (<kbd>AC</kbd>), **Chair**, **Bed** (<kbd>BD</kbd>), **Bedside table**, **Wardrobe** (<kbd>WD</kbd>), **Chest of drawers**, **Bookcase**, **Sideboard**, **Table** (<kbd>TB</kbd>), **Coffee table** and **Desk**. Choose one and click in the plan.
+The **Interior** tab has, after the finishes, a tool for each kind of piece: **Sofa** (<kbd>SO</kbd>), **Corner sofa**, **Armchair** (<kbd>AC</kbd>), **Chair**, **Bed** (<kbd>BD</kbd>), **Bedside table**, **Wardrobe** (<kbd>WD</kbd>), **Chest of drawers**, **Bookcase**, **Sideboard**, **Table** (<kbd>TB</kbd>), **Coffee table** and **Desk**. Choose one and click in the plan.
 
 Click near a wall and the piece backs onto it. Its back sits on the face of the wall (on the plaster, not the core), its front faces the room, and it slides along the wall until it no longer runs into the wall across a corner. Click further from any wall and the piece stands where you clicked.
 
@@ -60,7 +60,7 @@ Drag the grip in the middle of a piece to move it; drag the grip in front of it 
 
 ## Furniture types
 
-**Furniture → Furniture types** lists the project's types by group (seating, beds, storage, tables, kitchen), each with how many pieces use it. Choose a kind and **New type**, or **Duplicate** a type to change a copy. A type holds:
+**Interior → Furniture types** lists the project's types by group (seating, beds, storage, tables, kitchen), each with how many pieces use it. Choose a kind and **New type**, or **Duplicate** a type to change a copy. A type holds:
 
 - its **name**, **width**, **depth** and **height** (a sofa's height is its back's, a bed's its headboard's, a kitchen's its worktop's);
 - its kind's own parameters:

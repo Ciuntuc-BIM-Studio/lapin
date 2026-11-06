@@ -161,7 +161,7 @@ Seleziona un aspiratore per cambiarne il tipo, l’**altezza dal pavimento**, la
 
 L’**Abaco ventilatori** elenca ogni aspiratore con locale, genere, dimensione, portata, montaggio, comando, altezza e sbocco, e la portata totale. La **Verifica dell’estrazione per locale** elenca ogni bagno, WC e cucina (e ogni locale con un aspiratore) con il volume, l’estrazione necessaria e quella data dai suoi aspiratori: un bagno 8 ricambi d’aria all’ora e almeno 54 m³/h, un WC 6 e 25 m³/h, una cucina 6 e 108 m³/h. Sono valori indicativi; verificali con la norma che segui.
 
-Un nuovo tipo ha la voce di costo `LAP-FAN`, contata per aspiratore (**Costi → Assegna voci…** la cambia).
+Un nuovo tipo ha la voce di costo `LAP-FAN`, contata per aspiratore (**Esecuzione → Assegna voci…** la cambia).
 
 IFC scrive un aspiratore come **IfcFan** di un **IfcFanType** con il suo tipo predefinito (PROPELLORAXIAL per uno a parete o da finestra, CENTRIFUGALRADIAL per uno a soffitto, TUBEAXIAL per uno in linea) e **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); il foro della parete come IfcOpeningElement. Lapin li rilegge come propri aspiratori.
 

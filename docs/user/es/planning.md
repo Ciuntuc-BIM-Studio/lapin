@@ -4,9 +4,9 @@ order: 97
 summary: El cronograma de obra en un diagrama de Gantt: tareas en una EDT, hitos, vínculos con desfases, la ruta crítica calculada sobre un calendario con los festivos legales de Rumanía; la simulación 4D del edificio creciendo día a día, en vistas, láminas y en vídeo; el avance marcado en obra, también desde un teléfono, frente a una línea base; de y hacia MS Project, IFC y Excel.
 ---
 
-## La pestaña Planificación
+## La pestaña Ejecución
 
-![La pestaña Planificación](shots/ribbon-planning.webp)
+![La pestaña Ejecución](shots/ribbon-planning.webp)
 
 - **Generar cronograma…**: un cronograma entero hecho desde el modelo en un solo paso (más abajo).
 - **Gantt**: abre el cronograma bajo la vista. La pantalla se divide en dos filas: el modelo arriba y el cronograma abajo.
@@ -24,7 +24,7 @@ Un proyecto tiene un solo cronograma. Se crea la primera vez que añades una tar
 
 ![Generar cronograma: las plantillas, la pestaña Inicio y la vista previa](shots/planning-generate.webp)
 
-**Planificación → Generar cronograma…** (también en la barra del Gantt) hace un cronograma completo desde el modelo: una tarea por cada paso de la obra y, donde el paso va planta a planta, una por planta, cada tarea ya con sus elementos. A la izquierda están las **plantillas**: **Estructura de hormigón armado**, **Muros de carga de fábrica**, **Nave de acero** y **Entramado de madera**. Lapin marca como *sugerida* la que pide el modelo: la nave de acero si el modelo tiene una, el entramado de madera si sus muros son entramados, los muros de carga si no tiene pilares y, si no, la estructura de hormigón. Encima están los estilos del proyecto (**Guardar como estilo…** guarda lo que configuraste).
+**Ejecución → Generar cronograma…** (también en la barra del Gantt) hace un cronograma completo desde el modelo: una tarea por cada paso de la obra y, donde el paso va planta a planta, una por planta, cada tarea ya con sus elementos. A la izquierda están las **plantillas**: **Estructura de hormigón armado**, **Muros de carga de fábrica**, **Nave de acero** y **Entramado de madera**. Lapin marca como *sugerida* la que pide el modelo: la nave de acero si el modelo tiene una, el entramado de madera si sus muros son entramados, los muros de carga si no tiene pilares y, si no, la estructura de hormigón. Encima están los estilos del proyecto (**Guardar como estilo…** guarda lo que configuraste).
 
 A la derecha está la **vista previa**: las tareas que haría el generador, como barras, cada una con la cantidad que le dio su duración, y debajo los recuentos:
 
@@ -153,7 +153,7 @@ Una cubierta también se construye por capas: su estructura (el forjado de una c
 
 ![La tarjeta de la selección sobre el 3D, las dos tareas de un muro marcadas en el Gantt](shots/planning-element-tasks.webp)
 
-Con el Gantt abierto, una tarjeta sobre la vista del modelo dice cuántos elementos hay seleccionados y en qué tareas están. Arrástrala por su asa a la fila de una tarea: los elementos entran en esa tarea. Mantén <kbd>Shift</kbd> al soltar para sacarlos de ella. **Añadir a la tarea…** (<kbd>T</kbd> <kbd>A</kbd>, también en la pestaña Planificación) elige la tarea de una lista.
+Con el Gantt abierto, una tarjeta sobre la vista del modelo dice cuántos elementos hay seleccionados y en qué tareas están. Arrástrala por su asa a la fila de una tarea: los elementos entran en esa tarea. Mantén <kbd>Shift</kbd> al soltar para sacarlos de ella. **Añadir a la tarea…** (<kbd>T</kbd> <kbd>A</kbd>, también en la pestaña Ejecución) elige la tarea de una lista.
 
 ![Añadir a la tarea](shots/planning-assign.webp)
 
@@ -161,7 +161,7 @@ Lo que añades o sacas a mano son las **excepciones** de la tarea: la regla qued
 
 ### Elementos sin tarea
 
-En cuanto una tarea toma elementos, la barra del Gantt dice cuántos elementos no tienen tarea o tienen capas que ninguna toma; un clic los selecciona, listos para arrastrarlos a una tarea. **Planificación → Elementos sin tarea** hace lo mismo. **Gestionar → Comprobación** también los lista, en *Elements with a task*: un aviso por cada uno, un clic lo selecciona. Los elementos existentes que se quedan no necesitan tarea.
+En cuanto una tarea toma elementos, la barra del Gantt dice cuántos elementos no tienen tarea o tienen capas que ninguna toma; un clic los selecciona, listos para arrastrarlos a una tarea. **Ejecución → Elementos sin tarea** hace lo mismo. **Gestionar → Comprobación** también los lista, en *Elements with a task*: un aviso por cada uno, un clic lo selecciona. Los elementos existentes que se quedan no necesitan tarea.
 
 ### En IFC y MS Project
 
@@ -171,7 +171,7 @@ La exportación IFC escribe lo que construye cada tarea como IfcRelAssignsToProd
 
 ![La casa en un día de su cronograma: la losa de la planta alta en curso en su encofrado, los muros de arriba sin empezar](shots/planning-simulation.webp)
 
-**Planificación → Simular** (también **Simular** en la barra del Gantt) muestra el modelo como lo tiene el cronograma en un día. El Gantt se abre bajo la vista si no está abierto, con el reproductor arriba y el día como una franja sobre el diagrama:
+**Ejecución → Simular** (también **Simular** en la barra del Gantt) muestra el modelo como lo tiene el cronograma en un día. El Gantt se abre bajo la vista si no está abierto, con el reproductor arriba y el día como una franja sobre el diagrama:
 
 - lo que **no ha empezado** está oculto (o se muestra como un fantasma pálido, en los ajustes);
 - lo que está **en curso** se dibuja en su color (ámbar);
@@ -208,7 +208,7 @@ Una planta, una sección, un alzado o una vista 3D guardada tiene en sus propied
 
 ![Lámina de etapas: las fechas de los finales de capítulo](shots/planning-stages-dialog.webp)
 
-**Planificación → Lámina de etapas…** (también en el reproductor) pone el modelo en varias fechas uno junto a otro en una lámina nueva. Se dibuja desde **la vista 3D, tal como se ve ahora** (una imagen en cada fecha) o desde una planta, una sección o un alzado, que el motor dibuja en cada fecha. Las fechas son **el final de cada capítulo** (cada tarea en lo alto de la EDT), **el final de cada mes**, o fechas **elegidas**. Cada cuadro lleva su fecha y las tareas en curso.
+**Ejecución → Lámina de etapas…** (también en el reproductor) pone el modelo en varias fechas uno junto a otro en una lámina nueva. Se dibuja desde **la vista 3D, tal como se ve ahora** (una imagen en cada fecha) o desde una planta, una sección o un alzado, que el motor dibuja en cada fecha. Las fechas son **el final de cada capítulo** (cada tarea en lo alto de la EDT), **el final de cada mes**, o fechas **elegidas**. Cada cuadro lleva su fecha y las tareas en curso.
 
 ![Una lámina de etapas](shots/planning-stages-sheet.webp)
 
@@ -216,13 +216,13 @@ Una planta, una sección, un alzado o una vista 3D guardada tiene en sus propied
 
 ![El Gantt en una lámina](shots/planning-gantt-sheet.webp)
 
-**Planificación → Gantt en lámina** pone el cronograma en una lámina nueva: la tabla (fila, EDT y tarea, días, inicio, fin) y las barras sobre una escala de tiempo, las tareas críticas en rojo, los resúmenes como corchetes, los hitos como rombos, los vínculos. Un cronograma más alto que la lámina va en tantas láminas como necesite, con su encabezado en cada una. Se dibuja en vectores, como las vistas, y se imprime en el PDF.
+**Ejecución → Gantt en lámina** pone el cronograma en una lámina nueva: la tabla (fila, EDT y tarea, días, inicio, fin) y las barras sobre una escala de tiempo, las tareas críticas en rojo, los resúmenes como corchetes, los hitos como rombos, los vínculos. Un cronograma más alto que la lámina va en tantas láminas como necesite, con su encabezado en cada una. Se dibuja en vectores, como las vistas, y se imprime en el PDF.
 
 ### Exportar vídeo
 
 ![Exportar vídeo](shots/planning-video.webp)
 
-**Planificación → Exportar vídeo…** (también en el reproductor) graba la vista 3D, desde donde mira ahora, de un día a otro, un fotograma por **un día** o por **una semana**, con la fecha y las tareas en curso escritas debajo. El archivo es un vídeo WebM, o MP4 donde el sistema solo ofrece eso (la aplicación de macOS). Un navegador que no graba vídeo guarda en su lugar los fotogramas como archivos PNG en un ZIP.
+**Ejecución → Exportar vídeo…** (también en el reproductor) graba la vista 3D, desde donde mira ahora, de un día a otro, un fotograma por **un día** o por **una semana**, con la fecha y las tareas en curso escritas debajo. El archivo es un vídeo WebM, o MP4 donde el sistema solo ofrece eso (la aplicación de macOS). Un navegador que no graba vídeo guarda en su lugar los fotogramas como archivos PNG en un ZIP.
 
 ## El avance
 
@@ -241,7 +241,7 @@ Las barras muestran la parte hecha más oscura. Propiedades dice de dónde viene
 
 ### Marcar elementos en obra
 
-**Planificación → Marcar terminado** (MD) y **Marcar iniciado** (MS) marcan los elementos seleccionados en 3D o en una planta, en la fecha de estado (hoy, si no hay ninguna), en cada tarea que los incluye; **Marcar no iniciado** quita las marcas. Las propiedades de un elemento seleccionado muestran su estado en obra con los mismos tres botones y, en cada una de sus tareas, el día en que se terminó o se inició, con un botón para marcarlo terminado solo en esa tarea. Un muro multicapa en una tarea de albañilería y otra de enlucido se marca en ambas, o en una desde su fila.
+**Ejecución → Marcar terminado** (MD) y **Marcar iniciado** (MS) marcan los elementos seleccionados en 3D o en una planta, en la fecha de estado (hoy, si no hay ninguna), en cada tarea que los incluye; **Marcar no iniciado** quita las marcas. Las propiedades de un elemento seleccionado muestran su estado en obra con los mismos tres botones y, en cada una de sus tareas, el día en que se terminó o se inició, con un botón para marcarlo terminado solo en esa tarea. Un muro multicapa en una tarea de albañilería y otra de enlucido se marca en ambas, o en una desde su fila.
 
 ![Las marcas de un muro en sus propiedades](shots/planning-element-marks.webp)
 
@@ -249,7 +249,7 @@ En obra, desde un teléfono: entra en la sesión compartida del proyecto desde e
 
 ### La línea base
 
-**Planificación → Guardar línea base** guarda las fechas y la duración de cada tarea tal como están ahora; guardada de nuevo, se sustituye (una sola línea base: varias líneas base y escenarios son de la edición premium). El Gantt la dibuja entonces como una barra gris fina bajo la barra de cada tarea (**Línea base**, en la barra de herramientas, la oculta), añade la columna **Desviación** (los días laborables que se movió el fin: positivo es retraso, la fila marcada en rojo) y dice en su barra cuántas tareas van retrasadas y cuánto se movió el fin. Propiedades da las fechas de la línea base y las desviaciones del comienzo y del fin. **Borrar línea base** la quita.
+**Ejecución → Guardar línea base** guarda las fechas y la duración de cada tarea tal como están ahora; guardada de nuevo, se sustituye (una sola línea base: varias líneas base y escenarios son de la edición premium). El Gantt la dibuja entonces como una barra gris fina bajo la barra de cada tarea (**Línea base**, en la barra de herramientas, la oculta), añade la columna **Desviación** (los días laborables que se movió el fin: positivo es retraso, la fila marcada en rojo) y dice en su barra cuántas tareas van retrasadas y cuánto se movió el fin. Propiedades da las fechas de la línea base y las desviaciones del comienzo y del fin. **Borrar línea base** la quita.
 
 ### Retrasado y adelantado en la simulación
 
@@ -259,7 +259,7 @@ Con una línea base, la simulación compara: un elemento sin construir (o sin em
 
 ### El avance en los archivos
 
-- **Exportar XLSX** añade las columnas **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** y **GlobalId** (el libro está en inglés). Rellénalas en obra y léelas de vuelta con **Planificación → Importar avance…**: las filas se encuentran por GlobalId, EDT o ID, y una *Status date* escrita encima de la tabla fija la fecha de estado. También sirve un CSV.
+- **Exportar XLSX** añade las columnas **% complete**, **Actual start**, **Actual finish**, **Baseline start**, **Baseline finish**, **Finish variance** y **GlobalId** (el libro está en inglés). Rellénalas en obra y léelas de vuelta con **Ejecución → Importar avance…**: las filas se encuentran por GlobalId, EDT o ID, y una *Status date* escrita encima de la tabla fija la fecha de estado. También sirve un CSV.
 - **MS Project XML** lleva la fecha de estado, el porcentaje de cada tarea, el comienzo y el fin reales, la duración restante y la línea base (Baseline 0); las marcas de los elementos viajan con los elementos, en *Lapin elements*.
 - **IFC** los escribe en el IfcTaskTime de cada tarea (la hora de estado, el comienzo y el fin reales, el tiempo restante, el grado de avance), y la línea base como un segundo IfcWorkSchedule de tipo BASELINE; los campos propios de Lapin (el porcentaje escrito, las marcas) van en `Lapin_Task`. Ambos vuelven a las mismas fechas.
 - **Gestionar → Versiones → Comparar** dice, además de los elementos, qué cambió en el cronograma: el fin, los días laborables, la fecha de estado, y las tareas añadidas, eliminadas, movidas (cuántos días laborables), con la duración o el avance cambiados.
@@ -268,13 +268,13 @@ Con una línea base, la simulación compara: un elemento sin construir (o sin em
 
 ![El Gantt con la columna Coste](shots/planning-cost.webp)
 
-Con un presupuesto (**Costes → Presupuesto…**), el Gantt recibe una columna **Coste**: la parte del presupuesto de cada tarea, de las partidas que valoran sus elementos (la de un resumen es la de sus tareas). La barra de herramientas muestra el **presupuesto** (los costes directos) y el coste **a la fecha** (el coste de cada tarea por su % completado); Propiedades muestra el coste de una tarea y la parte hecha. **Costes → Coste en el tiempo** dibuja la curva S y la tabla mensual (vea [Presupuesto](cost.md)).
+Con un presupuesto (**Ejecución → Presupuesto…**), el Gantt recibe una columna **Coste**: la parte del presupuesto de cada tarea, de las partidas que valoran sus elementos (la de un resumen es la de sus tareas). La barra de herramientas muestra el **presupuesto** (los costes directos) y el coste **a la fecha** (el coste de cada tarea por su % completado); Propiedades muestra el coste de una tarea y la parte hecha. **Ejecución → Coste en el tiempo** dibuja la curva S y la tabla mensual (vea [Presupuesto](cost.md)).
 
 ## El calendario
 
 ![El calendario de trabajo](shots/planning-calendar.webp)
 
-**Planificación → Calendario…** establece:
+**Ejecución → Calendario…** establece:
 
 - los **días laborables** de la semana (de lunes a viernes por defecto) y las **horas** de un día (8 desde las 08:00);
 - los **festivos**: los festivos legales de Rumanía, calculados para cada año (incluidos el Viernes Santo, la Pascua y Pentecostés ortodoxos), o ninguno. La lista de debajo muestra los festivos de un año para comprobarlos;

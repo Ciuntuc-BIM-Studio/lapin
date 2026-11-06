@@ -162,7 +162,7 @@ A plan draws a balcony's slab, finish and railing as it cuts or sees them, and t
 
 ![Its supports, over a section through the balcony](shots/balcony-configurator-section.webp)
 
-**Apply** changes the balcony in one step. **Save as style…** keeps it as one of the project's styles (a balcony type), which the tool's bar and the properties offer; **Update style** saves it again into its style, and every balcony of the style takes it; a style is renamed or deleted (its balconies keep how they are) beside its name. A style is a type: its cost articles (Cost → Map articles) measure its balconies.
+**Apply** changes the balcony in one step. **Save as style…** keeps it as one of the project's styles (a balcony type), which the tool's bar and the properties offer; **Update style** saves it again into its style, and every balcony of the style takes it; a style is renamed or deleted (its balconies keep how they are) beside its name. A style is a type: its cost articles (Construction → Map articles) measure its balconies.
 
 ![A balcony's properties: its style and every field of its kind](shots/balcony-properties.webp)
 

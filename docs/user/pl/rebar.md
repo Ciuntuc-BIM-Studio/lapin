@@ -1,12 +1,12 @@
 ---
-title: Zbrojenie 2D
+title: Zbrojenie proste
 order: 52
 summary: Zbrojenie rysowane na przekrojach i rzutach, przekroje poprzeczne wycinane tam, gdzie klikniesz, oraz wykaz stali.
 ---
 
-Karta **Zbrojenie 2D** rysuje zbrojenie tak, jak powstaje wykaz prętów: pręty jako kształty z wymiarami, strzemiona rozłożone wzdłuż belki, numery prętów w kółkach i zestawienie, które je sumuje. Działa w każdym widoku: na przekroju, rzucie, elewacji.
+Karta **Zbrojenie proste** rysuje zbrojenie tak, jak powstaje wykaz prętów: pręty jako kształty z wymiarami, strzemiona rozłożone wzdłuż belki, numery prętów w kółkach i zestawienie, które je sumuje. Działa w każdym widoku: na przekroju, rzucie, elewacji.
 
-![Karta Zbrojenie 2D](shots/ribbon-rebar.webp)
+![Karta Zbrojenie proste](shots/ribbon-rebar.webp)
 
 ## Przekrój tam, gdzie pracujesz
 

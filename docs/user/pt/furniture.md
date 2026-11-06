@@ -6,7 +6,7 @@ summary: Sofás, sofás de canto, poltronas, cadeiras, camas, guarda-roupas, cô
 
 ## Posicionar mobiliário
 
-A guia **Mobiliário** tem uma ferramenta para cada tipo de móvel: **Sofá** (<kbd>SO</kbd>), **Sofá de canto**, **Poltrona** (<kbd>AC</kbd>), **Cadeira**, **Cama** (<kbd>BD</kbd>), **Criado-mudo**, **Guarda-roupa** (<kbd>WD</kbd>), **Cômoda**, **Estante de livros**, **Aparador**, **Mesa** (<kbd>TB</kbd>), **Mesa de centro** e **Escrivaninha**. Escolha uma e clique na planta.
+A guia **Interiores** tem, depois dos acabamentos, uma ferramenta para cada tipo de móvel: **Sofá** (<kbd>SO</kbd>), **Sofá de canto**, **Poltrona** (<kbd>AC</kbd>), **Cadeira**, **Cama** (<kbd>BD</kbd>), **Criado-mudo**, **Guarda-roupa** (<kbd>WD</kbd>), **Cômoda**, **Estante de livros**, **Aparador**, **Mesa** (<kbd>TB</kbd>), **Mesa de centro** e **Escrivaninha**. Escolha uma e clique na planta.
 
 Clique perto de uma parede e o móvel se encosta nela. A parte de trás fica na face da parede (no reboco, não no núcleo), a frente fica voltada para o ambiente, e ele desliza ao longo da parede até não entrar mais na parede do canto. Clique mais longe das paredes e o móvel fica onde você clicou.
 
@@ -60,7 +60,7 @@ Arraste a alça no meio de um móvel para movê-lo; arraste a alça à frente de
 
 ## Tipos de mobiliário
 
-**Mobiliário → Tipos de mobiliário** lista os tipos do projeto por grupo (assentos, camas, armazenamento, mesas, cozinha), cada um com quantos móveis o usam. Escolha um gênero e **Novo tipo**, ou **Duplicar** um tipo para alterar uma cópia. Um tipo tem:
+**Interiores → Tipos de mobiliário** lista os tipos do projeto por grupo (assentos, camas, armazenamento, mesas, cozinha), cada um com quantos móveis o usam. Escolha um gênero e **Novo tipo**, ou **Duplicar** um tipo para alterar uma cópia. Um tipo tem:
 
 - o seu **nome**, **largura**, **profundidade** e **altura** (num sofá, a do encosto; numa cama, a da cabeceira; numa cozinha, a da bancada);
 - os parâmetros próprios do seu gênero:

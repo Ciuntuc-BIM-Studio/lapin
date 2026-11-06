@@ -65,7 +65,7 @@ Les couleurs sont dessinées sous les murs, le mobilier et les battements des po
 
 ## Finitions des pièces
 
-**Finitions → Revêtir la pièce** (<kbd>FR</kbd>) pose une finition dans la pièce où vous cliquez : son sol, la finition de ses murs et son plafond, chacun suivant le contour de la pièce comme la pièce le fait. Déplacez un mur et les finitions le suivent. **Finitions → Finitions des pièces** modifie les finitions ; **De la bibliothèque** en apporte de toutes faites : Séjour, Chambre, Salle de bains, Cuisine, Rez-de-chaussée sur dalle et Local technique. Tant que l’outil est actif, le panneau des propriétés montre la finition qu’il pose, à choisir avant le clic. La **Finition** d’une pièce, dans ses propriétés, en pose une autre ou l’enlève.
+**Intérieur → Revêtir la pièce** (<kbd>FR</kbd>) pose une finition dans la pièce où vous cliquez : son sol, la finition de ses murs et son plafond, chacun suivant le contour de la pièce comme la pièce le fait. Déplacez un mur et les finitions le suivent. **Intérieur → Finitions des pièces** modifie les finitions ; **De la bibliothèque** en apporte de toutes faites : Séjour, Chambre, Salle de bains, Cuisine, Rez-de-chaussée sur dalle et Local technique. Tant que l’outil est actif, le panneau des propriétés montre la finition qu’il pose, à choisir avant le clic. La **Finition** d’une pièce, dans ses propriétés, en pose une autre ou l’enlève.
 
 Une finition a :
 
@@ -81,7 +81,7 @@ Une finition a :
 
 ![Un plan avec le sol de la salle de bains hachuré en carreaux et celui du séjour en lames](shots/room-finish-hatch.webp)
 
-Chaque finition mesure, par matériau, sa surface **brute** (le contour de la pièce, rien de déduit : l’aire du sol, le périmètre des murs fois la hauteur de chaque morceau) et sa surface **nette** (ce qui est construit : portes, fenêtres et trémies déduites, les tableaux et le sol sous les portes ajoutés ; la part des tableaux figure dans les quantités, comme RevealArea), et son volume. **Finitions → Nomenclature des finitions** liste chaque pièce finie par partie et par matériau, avec les totaux par matériau à la fin ; comme toute nomenclature, elle fait des graphiques, s’exporte et se place sur une feuille. En IFC, une finition est un IfcCovering : FLOORING, CLADDING ou CEILING.
+Chaque finition mesure, par matériau, sa surface **brute** (le contour de la pièce, rien de déduit : l’aire du sol, le périmètre des murs fois la hauteur de chaque morceau) et sa surface **nette** (ce qui est construit : portes, fenêtres et trémies déduites, les tableaux et le sol sous les portes ajoutés ; la part des tableaux figure dans les quantités, comme RevealArea), et son volume. **Intérieur → Nomenclature des finitions** liste chaque pièce finie par partie et par matériau, avec les totaux par matériau à la fin ; comme toute nomenclature, elle fait des graphiques, s’exporte et se place sur une feuille. En IFC, une finition est un IfcCovering : FLOORING, CLADDING ou CEILING.
 
 Une finition revêt ce que les murs de la pièce ont déjà : si les types de murs portent leur propre enduit, ne donnez aux murs de la pièce que ce qui vient par-dessus (peinture, carrelage), ou utilisez des types de murs réduits au noyau.
 

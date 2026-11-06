@@ -4,9 +4,9 @@ order: 55
 summary: Facade scaffolding and formwork for floors and beams, laid out from the model by their configurators.
 ---
 
-The **Site works** tab models the temporary works of the site: facade scaffolding, and the formwork of floors and beams. Lapin lays them out from the model and counts what they need. When the model changes, they follow it.
+The site works, on the **Site** tab after the terrain, model the temporary works of the site: facade scaffolding, and the formwork of floors and beams. Lapin lays them out from the model and counts what they need. When the model changes, they follow it.
 
-![The Site works tab](shots/ribbon-site-works.webp)
+![The site works on the Site tab](shots/ribbon-site-works.webp)
 
 Scaffolds and formwork are **temporary**: they are built and taken down in the **Execution** phase. The first one you place adds that phase if the project has none, and makes it the active phase. Views of earlier phases leave them out. See **Manage → Phases**.
 

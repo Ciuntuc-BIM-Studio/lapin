@@ -4,11 +4,11 @@ order: 98
 summary: The estimate from the model: your price lists imported from CSV or Excel, articles on types and rules on materials, quantities from the takeoff times unit prices split into material, labour, equipment and transport, overheads, profit and VAT, RON or EUR; the Romanian forms F3, F2 and C6 to C9 on sheets, in Excel and PDF; IFC cost schedules.
 ---
 
-## The Cost tab
+## The Construction tab
 
-![The Cost tab](shots/ribbon-cost.webp)
+![The Construction tab](shots/ribbon-cost.webp)
 
-The tab that was called **Quantities** is now **Cost**. It keeps the quantities and adds the estimate:
+The cost groups are on the **Construction** tab, after the work schedule's (the tab was called **Quantities**, then **Cost**). They keep the quantities and add the estimate:
 
 - **Quantity takeoff**, **Schedules…** and **Export XLSX**: the model's quantities (see [Schedules and charts](schedules.md)).
 - **Price lists…**: your prices, imported from a CSV or Excel file (below).
@@ -23,7 +23,7 @@ The estimate is worked out from the model every time it changes. A wall you draw
 
 ![Importing a price list: each column's meaning guessed from its heading](shots/price-import.webp)
 
-Prices are yours: Lapin ships no catalogue of prices or norms. **Cost → Price lists… → Import…** reads a CSV or XLSX file, for example an export from your estimating program or a supplier's list. Lapin shows the file's first rows under their headings. Above each column is what Lapin guessed it holds, from the heading, in English or Romanian:
+Prices are yours: Lapin ships no catalogue of prices or norms. **Construction → Price lists… → Import…** reads a CSV or XLSX file, for example an export from your estimating program or a supplier's list. Lapin shows the file's first rows under their headings. Above each column is what Lapin guessed it holds, from the heading, in English or Romanian:
 
 - **Code** and **Description** (*Cod*, *Simbol*, *Denumire*), **Unit** (*U.M.*: m³ or mc, m² or mp, m, pcs or buc, kg, t, 100 m²).
 - The unit price split into **Material**, **Labour**, **Equipment** and **Transport** (*Material*, *Manoperă*, *Utilaj*, *Transport*), or a single **Unit price (not split)**, which then counts as material.
@@ -45,9 +45,9 @@ An estimate line comes from an **article**: a code from your price list. There a
 
 The type's article comes first. A layer its type's articles already measure is not priced again by a rule. An article on the whole element prices all of it, so the rules stand aside. For a layered wall, give the type an article on its **core** (the masonry by volume), and rules for its finishes (the plaster by area). The wall is then priced layer by layer: the masonry under **Walls**, the plaster under **Finishes and insulation**.
 
-**Cost → Map articles…** lists the project's types that elements use, and the materials of their layers. Each row starts with the article it has, or the one you chose for a type or material of the same name in an earlier project, or the one Lapin suggests: a code written in its name, or the article sharing the most words with it (*zidărie*, *BCA*, *tencuială*, *C25/30*). For a layered type it proposes the core. Type or pick a code, choose the part and the measure, tick the rows you want and click **Apply**: one step to undo. Your choices are remembered on this computer for your next projects.
+**Construction → Map articles…** lists the project's types that elements use, and the materials of their layers. Each row starts with the article it has, or the one you chose for a type or material of the same name in an earlier project, or the one Lapin suggests: a code written in its name, or the article sharing the most words with it (*zidărie*, *BCA*, *tencuială*, *C25/30*). For a layered type it proposes the core. Type or pick a code, choose the part and the measure, tick the rows you want and click **Apply**: one step to undo. Your choices are remembered on this computer for your next projects.
 
-The formwork and scaffolding types of the **Site works** tab already had an article code (decision 152): it is an article on the type, measured by the price's unit.
+The formwork and scaffolding types of the site works (the **Site** tab) already had an article code (decision 152): it is an article on the type, measured by the price's unit.
 
 The phases count: an element that was there before the works (made in an *existing* phase) is not priced. A demolished one is priced only by its type's article whose part is **Its demolition (only when demolished)**, under the chapter **Demolition**.
 
@@ -55,7 +55,7 @@ The phases count: an element that was there before the works (made in an *existi
 
 ![The estimate: chapters, lines, the rates and the totals](shots/estimate.webp)
 
-**Cost → Estimate…** opens the estimate under the view, like the Gantt. Its lines are grouped in **chapters** by kind of work: earthworks, foundations, structure, walls, roof, doors and windows, finishes and insulation, installations, site works, other. An article can name a chapter of its own. **By storey and kind of work** puts the storey before each chapter.
+**Construction → Estimate…** opens the estimate under the view, like the Gantt. Its lines are grouped in **chapters** by kind of work: earthworks, foundations, structure, walls, roof, doors and windows, finishes and insulation, installations, site works, other. An article can name a chapter of its own. **By storey and kind of work** puts the storey before each chapter.
 
 Each line shows the code, the description and unit from the price list, the **quantity** from the model (the same as the takeoff's), the unit price split into **Material**, **Labour**, **Equipment** and **Transport**, the unit price and the **value**. Click a line to select its elements in the views. Select elements in a view, and their lines are marked in the estimate.
 
@@ -92,9 +92,9 @@ The forms follow common practice under the methodology of Order 863/2008. Check 
 
 ![Cost over time: the S-curve over the months' bars, the month table under it](shots/cost-time.webp)
 
-With a work schedule in the project (the **Planning** tab), the estimate is laid on it with no linking of its own. Each line's value is shared by its elements, and each element's share goes to the tasks that build the part the line measures: the masonry's article to the task that takes the walls' core, the plaster's to the one that takes their finishes. An article on the whole element, built in two tasks, is shared between them alike. A line of your own goes to the task you choose beside its description (**In no task** by default). A task's cost is spread evenly over its working days, so nothing is spent on a weekend, a holiday or, for a wet task, in the winter break.
+With a work schedule in the project (the **Construction** tab), the estimate is laid on it with no linking of its own. Each line's value is shared by its elements, and each element's share goes to the tasks that build the part the line measures: the masonry's article to the task that takes the walls' core, the plaster's to the one that takes their finishes. An article on the whole element, built in two tasks, is shared between them alike. A line of your own goes to the task you choose beside its description (**In no task** by default). A task's cost is spread evenly over its working days, so nothing is spent on a weekend, a holiday or, for a wet task, in the winter break.
 
-**Cost → Cost over time** opens, under the view:
+**Construction → Cost over time** opens, under the view:
 
 - the **S-curve**: the planned cumulative cost over the schedule, the **baseline**'s (dashed) when one is saved, and the **work done** (thick) up to the status date: each task's cost times its % complete, spread from its actual start;
 - the months' bars, against the right-hand scale: planned and done;

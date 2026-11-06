@@ -24,7 +24,8 @@ const cost: LapinModule = {
   name: 'Cost',
   summary: 'Quantities and the estimate from the model: the quantity takeoff, every schedule, your price lists, articles on types, the estimate with its Romanian forms, XLSX, PDF and IFC.',
   tabs: [{
-    id: 'cost', label: 'Cost', order: 85,
+    // On the Construction tab, after the work schedule (decision 367).
+    id: 'construction', label: 'Construction', i18nCtx: 'schedule', order: 84,
     groups: [
       {
         label: 'Take-off', tools: [

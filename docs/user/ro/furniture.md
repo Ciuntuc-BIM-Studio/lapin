@@ -6,7 +6,7 @@ summary: Canapele, canapele de colț, fotolii, scaune, paturi, dulapuri, comode,
 
 ## Așezarea mobilierului
 
-Tabul **Furniture** are câte o unealtă pentru fiecare fel de piesă: **Sofa** (canapea, <kbd>SO</kbd>), **Corner sofa** (canapea de colț), **Armchair** (fotoliu, <kbd>AC</kbd>), **Chair** (scaun), **Bed** (pat, <kbd>BD</kbd>), **Bedside table** (noptieră), **Wardrobe** (dulap, <kbd>WD</kbd>), **Chest of drawers** (comodă), **Bookcase** (bibliotecă), **Sideboard** (bufet), **Table** (masă, <kbd>TB</kbd>), **Coffee table** (măsuță de cafea) și **Desk** (birou). Alegi una și dai clic în plan.
+Tabul **Interior** are, după finisaje, câte o unealtă pentru fiecare fel de piesă: **Sofa** (canapea, <kbd>SO</kbd>), **Corner sofa** (canapea de colț), **Armchair** (fotoliu, <kbd>AC</kbd>), **Chair** (scaun), **Bed** (pat, <kbd>BD</kbd>), **Bedside table** (noptieră), **Wardrobe** (dulap, <kbd>WD</kbd>), **Chest of drawers** (comodă), **Bookcase** (bibliotecă), **Sideboard** (bufet), **Table** (masă, <kbd>TB</kbd>), **Coffee table** (măsuță de cafea) și **Desk** (birou). Alegi una și dai clic în plan.
 
 Un clic lângă un perete lipește piesa de el. Spatele ei stă pe fața peretelui (pe tencuială, nu pe miez), fața ei privește spre încăpere și alunecă de-a lungul peretelui până nu mai intră în peretele din colț. Un clic mai departe de pereți pune piesa exact unde ai dat clic.
 
@@ -60,7 +60,7 @@ Mânerul din mijlocul piesei o mută; mânerul din fața ei o rotește, cu fața
 
 ## Tipurile de mobilier
 
-**Furniture → Furniture types** arată tipurile proiectului pe grupe (șezut, paturi, depozitare, mese, bucătărie), fiecare cu numărul de piese care îl folosesc. Alegi un fel și **New type** (tip nou), sau **Duplicate** (duplică) un tip ca să modifici o copie. Un tip are:
+**Interior → Tipuri de mobilier** arată tipurile proiectului pe grupe (șezut, paturi, depozitare, mese, bucătărie), fiecare cu numărul de piese care îl folosesc. Alegi un fel și **New type** (tip nou), sau **Duplicate** (duplică) un tip ca să modifici o copie. Un tip are:
 
 - **numele**, **lățimea**, **adâncimea** și **înălțimea** (la canapea, a spătarului; la pat, a tăbliei; la bucătărie, a blatului);
 - parametrii felului lui:

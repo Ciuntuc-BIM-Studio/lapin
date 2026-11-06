@@ -61,6 +61,6 @@ Wählen Sie einen Aufzug aus, um seine unterste und oberste Haltestelle zu ände
 
 **Architektur → Aufzugsliste** führt jeden Aufzug mit Art, Antrieb, Nennlast, Personen, Fahrkorb, Türen, den bedienten Haltestellen, den Geschossen, zwischen denen er fährt, Förderhöhe, Geschwindigkeit und Schacht auf.
 
-Jeder Aufzug hat einen Typ aus seiner Art, Last und seinem Fahrkorb (Personenaufzug mittel 630 kg, 1100 × 1400): gleiche Aufzüge teilen ihn, sodass eine Preisposition auf dem Typ (**Kosten → Positionen zuordnen…**) sie alle bepreist, und die Planung findet sie über ihre Klasse (IfcTransportElement).
+Jeder Aufzug hat einen Typ aus seiner Art, Last und seinem Fahrkorb (Personenaufzug mittel 630 kg, 1100 × 1400): gleiche Aufzüge teilen ihn, sodass eine Preisposition auf dem Typ (**Ausführung → Positionen zuordnen…**) sie alle bepreist, und die Planung findet sie über ihre Klasse (IfcTransportElement).
 
 In IFC ist ein Aufzug ein **IfcTransportElement** mit dem vordefinierten Typ **ELEVATOR**, eines **IfcTransportElementType**, mit den IFC-eigenen **Pset_TransportElementCommon** (CapacityPeople, CapacityWeight, FireExit) und **Pset_TransportElementElevator** (FireFightingLift, ClearWidth, ClearDepth, ClearHeight). Lapin liest seine eigene Datei als nativen Aufzug zurück, mit seinen Haltestellen und den Öffnungen der Decken.

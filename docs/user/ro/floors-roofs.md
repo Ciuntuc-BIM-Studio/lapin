@@ -60,9 +60,9 @@ Fiecare piesă e o parte a acoperișului: extrasul **Roof timber** le dă ca lis
 
 ## Tavane false
 
-**Finisaje → Tavan** (<kbd>CG</kbd>) desenează un tavan fals pe un contur pe care îl dai prin clicuri; **Tavan într-o cameră** umple camera pe care dai clic, după conturul ei. Un tavan stă la **Înălțimea** lui peste etaj (2700 mm, dacă nu o schimbi în proprietăți).
+**Interior → Tavan** (<kbd>CG</kbd>) desenează un tavan fals pe un contur pe care îl dai prin clicuri; **Tavan într-o cameră** umple camera pe care dai clic, după conturul ei. Un tavan stă la **Înălțimea** lui peste etaj (2700 mm, dacă nu o schimbi în proprietăți).
 
-Tipul lui, din **Finisaje → Tipuri de tavan**, alege **Sistemul**: **Plăci pe structură aparentă** (lățimea, lungimea și grosimea plăcii, lățimea vizibilă, adâncimea și rotirea structurii, tijele de suspendare până la structură și distanța dintre ele) sau **Gips-carton, continuu**. Structura e centrată pe tavan, așa că plăcile tăiate de la margini ies egale.
+Tipul lui, din **Interior → Tipuri de tavan**, alege **Sistemul**: **Plăci pe structură aparentă** (lățimea, lungimea și grosimea plăcii, lățimea vizibilă, adâncimea și rotirea structurii, tijele de suspendare până la structură și distanța dintre ele) sau **Gips-carton, continuu**. Structura e centrată pe tavan, așa că plăcile tăiate de la margini ies egale.
 
 **Corp de iluminat** și **Anemostat** pun unul în caseta pe care dai clic; un clic pe aceeași casetă cu cealaltă unealtă îl schimbă. În panoul de proprietăți, **Așază** pune corpuri de iluminat sau anemostate la fiecare câteva casete, iar **Golește** le scoate. Extrasele numără plăcile întregi, corpurile de iluminat și anemostatele, iar tavanul iese în IFC ca IfcCovering de tip CEILING.
 
@@ -72,9 +72,9 @@ Tipul lui, din **Finisaje → Tipuri de tavan**, alege **Sistemul**: **Plăci pe
 
 ## Plinte
 
-**Finisaje → Plintă în cameră** (<kbd>SK</kbd>) pune o plintă de jur împrejurul camerei pe care dai clic, pe fețele pereților, întreruptă la fiecare ușă (orice gol care coboară până la pardoseală); cu un clic între pereți fără cameră, îi urmează la fel. Plinta unei camere urmează camera: muți un perete sau o ușă și plinta merge după ei. **Plintă** desenează una de-a lungul unei linii pe care o dai prin clicuri pe fața unui perete (Enter termină); plinta se pune pe partea dinspre cameră, iar **Schimbă partea** din proprietăți o întoarce.
+**Interior → Plintă în cameră** (<kbd>SK</kbd>) pune o plintă de jur împrejurul camerei pe care dai clic, pe fețele pereților, întreruptă la fiecare ușă (orice gol care coboară până la pardoseală); cu un clic între pereți fără cameră, îi urmează la fel. Plinta unei camere urmează camera: muți un perete sau o ușă și plinta merge după ei. **Plintă** desenează una de-a lungul unei linii pe care o dai prin clicuri pe fața unui perete (Enter termină); plinta se pune pe partea dinspre cameră, iar **Schimbă partea** din proprietăți o întoarce.
 
-Tipul ei, din **Finisaje → Tipuri de plintă**, alege **Profilul** — **Dreaptă (pătrată)**, **Teșită (MDF)**, **Profilată (lemn)**, **Cu racord curb (metal)**, **Rotunjită sus (creion)** sau **Cu muchie rotunjită**, desenat alături la scară —, **Înălțimea** (40–300 mm), **Grosimea** (5–40 mm), **Materialul** și culoarea lui. **Din bibliotecă** aduce în proiect tipuri gata făcute: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 și Bullnose 70. Cât timp o unealtă de plintă e pornită, panoul de proprietăți arată tipul pe care îl pune, de ales înainte de clic.
+Tipul ei, din **Interior → Tipuri de plintă**, alege **Profilul** — **Dreaptă (pătrată)**, **Teșită (MDF)**, **Profilată (lemn)**, **Cu racord curb (metal)**, **Rotunjită sus (creion)** sau **Cu muchie rotunjită**, desenat alături la scară —, **Înălțimea** (40–300 mm), **Grosimea** (5–40 mm), **Materialul** și culoarea lui. **Din bibliotecă** aduce în proiect tipuri gata făcute: MDF 80 bevelled, Oak 70 moulded, Tile 80 flush, Aluminium 60 cove, Pencil 50 și Bullnose 70. Cât timp o unealtă de plintă e pornită, panoul de proprietăți arată tipul pe care îl pune, de ales înainte de clic.
 
 În proprietăți, o plintă are tipul, un **Decalaj la bază** peste pardoseală și **Întreruptă la uși** (debifat, trece peste ele). **Extras de plinte** (sau **Plinte** în lista de extrase noi din browserul proiectului) le listează pe tipuri, cu bucățile și lungimea, fără golurile ușilor. Plinta e îmbinată la 45° la colțuri; planul îi desenează muchia din față, iar în IFC o plintă iese ca IfcCovering de tip SKIRTINGBOARD, al unui IfcCoveringType de același tip.
 

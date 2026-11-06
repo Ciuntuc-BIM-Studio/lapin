@@ -1,12 +1,12 @@
 ---
-title: Armadura 2D
+title: Armadura simples
 order: 52
 summary: Armadura desenhada em cortes e plantas, cortes transversais feitos onde você clica, e a tabela de armação.
 ---
 
-A guia **Armadura 2D** desenha a armadura do jeito que se faz uma relação de barras: barras como formas com as suas dimensões, estribos distribuídos ao longo de uma viga, posições em balões e uma tabela que soma tudo. Ela funciona em qualquer vista: um corte, uma planta, uma elevação.
+A guia **Armadura simples** desenha a armadura do jeito que se faz uma relação de barras: barras como formas com as suas dimensões, estribos distribuídos ao longo de uma viga, posições em balões e uma tabela que soma tudo. Ela funciona em qualquer vista: um corte, uma planta, uma elevação.
 
-![A guia Armadura 2D](shots/ribbon-rebar.webp)
+![A guia Armadura simples](shots/ribbon-rebar.webp)
 
 ## Um corte onde você trabalha
 

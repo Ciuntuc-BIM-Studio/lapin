@@ -161,7 +161,7 @@ Selecione um exaustor para alterar o seu tipo, a sua **altura acima do piso**, a
 
 O **Quantitativo de ventiladores** lista cada exaustor com ambiente, gênero, tamanho, vazão, montagem, comando, altura e saída, e a vazão total. A **Verificação da exaustão por ambiente** lista cada banheiro, WC e cozinha (e cada ambiente com um exaustor) com o seu volume, a exaustão de que precisa e o que os seus exaustores dão: um banheiro 8 trocas de ar por hora e no mínimo 54 m³/h, um WC 6 e 25 m³/h, uma cozinha 6 e 108 m³/h. São valores indicativos; confira-os com a norma que você segue.
 
-Um tipo novo tem a composição de custo `LAP-FAN`, contada por exaustor (**Custos → Atribuir composições…** a altera).
+Um tipo novo tem a composição de custo `LAP-FAN`, contada por exaustor (**Execução → Atribuir composições…** a altera).
 
 O IFC escreve um exaustor como **IfcFan** de um **IfcFanType** com o seu tipo predefinido (PROPELLORAXIAL para um de parede ou de janela, CENTRIFUGALRADIAL para um de teto, TUBEAXIAL para um de duto) e **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); a abertura da parede como IfcOpeningElement. O Lapin os lê de volta como os seus próprios exaustores.
 

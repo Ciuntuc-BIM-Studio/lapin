@@ -161,7 +161,7 @@ Zaznacz wentylator, aby zmienić jego typ, **wysokość nad podłogą**, obrót 
 
 **Zestawienie wentylatorów** wymienia każdy wentylator z pomieszczeniem, rodzajem, rozmiarem, wydajnością, montażem, sterowaniem, wysokością i wylotem oraz łączną wydajność. **Kontrola wyciągu w pomieszczeniach** wymienia każdą łazienkę, WC i kuchnię (i każde pomieszczenie z wentylatorem) z kubaturą, potrzebnym wyciągiem i tym, co dają jego wentylatory: łazienka 8 wymian powietrza na godzinę i co najmniej 54 m³/h, WC 6 i 25 m³/h, kuchnia 6 i 108 m³/h. To wartości orientacyjne; sprawdź je z normą, według której projektujesz.
 
-Nowy typ ma pozycję kosztową `LAP-FAN`, liczoną na sztukę (**Koszty → Przypisz pozycje…** ją zmienia).
+Nowy typ ma pozycję kosztową `LAP-FAN`, liczoną na sztukę (**Realizacja → Przypisz pozycje…** ją zmienia).
 
 IFC zapisuje wentylator jako **IfcFan** typu **IfcFanType** z jego typem predefiniowanym (PROPELLORAXIAL dla ściennego lub okiennego, CENTRIFUGALRADIAL dla sufitowego, TUBEAXIAL dla kanałowego) i **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); otwór w ścianie jako IfcOpeningElement. Lapin wczytuje je z powrotem jako własne wentylatory.
 
