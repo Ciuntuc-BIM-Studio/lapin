@@ -4127,6 +4127,9 @@ export const scenes = [
       t.expect(report.counts.supports === 4, `the column and wall feet stand on footings (${report.counts.supports})`);
       t.expect(report.missing.some((m) => m.name === 'Steel' && m.fields.includes('elastic_modulus')), 'a steel without a grade has no E: said, not guessed');
       t.expect(await dialog.locator('.jg-warn').count() === 1, 'the report says the file is valid but analysis still needs values');
+      t.expect(await dialog.locator('[data-testid=jg-footings]').inputValue() === 'fixed', 'feet on footings are fixed by default');
+      const pinned = await t.call('doc.query', { name: 'jg.preview', args: { footings: 'pinned' } });
+      t.expect(pinned.errors.length === 0 && pinned.counts.supports === 4, 'pinned feet are still four supports');
       await t.shot('export-jg', { of: '[aria-label="Export JG Structures"]', pad: 0 });
       await dialog.getByRole('button', { name: 'Cancel' }).click();
     },

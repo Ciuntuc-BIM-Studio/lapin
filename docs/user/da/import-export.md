@@ -58,6 +58,8 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 
 Vælg etagerne, elementtyperne og enhederne: kontraktens centimeter og kilopond eller SI (meter og kilonewton). Materialer tager deres værdier fra deres data (Administrer → Materialer, Pset_MaterialMechanical i pascal) eller fra styrkeklassen i navnet, C25/30 eller S355, efter Eurocodes; et tværsnits areal, inertimomenter, modstandsmomenter og vridningskonstant beregnes ud fra dets geometri. Det, Lapin ikke ved, står tomt (null) i filen, aldrig nul. Før eksporten tæller rapporten, hvad der kommer med, kontrollerer filen efter kontraktens regler og viser, hvad en beregning stadig mangler: et materiale uden klasse, en søjle, der ikke står på noget.
 
+Hvor elementer ikke mødes på deres akser (en åse på en rigel, en vægrem på en søjle, et vindkryds på sin knudeplade, spær på en murrem), lægger Lapin knuden på det bærende element og beholder afstanden som stangens endeforskydning, så også en hals sekundære stålkonstruktion er forbundet. Vægge beholder deres døre, vinduer og åbninger, og dæk deres åbninger: da kontraktens skaller ikke har huller, deles de i stykker omkring dem, og et L-formet dæk i konvekse stykker langs bjælkerne under det. En væg under et tag går op til det, og taget eksporteres også: dets dæk som skaller, eller spær, åse og murremme i en tømmerkonstruktion som stænger i dens styrkeklasse (C24 efter EN 338). Vinkelprofiler og andre usymmetriske tværsnit angives om deres hovedakser. **Fødder på fundamenter** vælger, hvordan søjle- og vægfødder på et fundament holdes: indspændt (standard) eller charnier. En stålsøjlefod beholder sin egen samling.
+
 ![Eksportér JG Structures](shots/export-jg.webp)
 
 ## Optimér en IFC-fil

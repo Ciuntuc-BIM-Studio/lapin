@@ -21,12 +21,13 @@ public static class JgExchange
 
     public sealed record Options(Units Units, AnalyticalOptions Analytical);
 
-    /// <summary>The options a query sends: units ("contract" or "si"), storeys and kinds chosen (absent: all), allWalls.</summary>
+    /// <summary>The options a query sends: units ("contract" or "si"), storeys and kinds chosen (absent: all), allWalls, footings ("fixed", the default, or "pinned").</summary>
     public static Options OptionsFrom(JsonObject a)
     {
         static IReadOnlySet<string>? Set(JsonNode? n) => n is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToHashSet() : null;
         var all = a["allWalls"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
-        return new(Units.Of((string?)a["units"]), new AnalyticalOptions(Set(a["storeys"]), Set(a["kinds"]), all));
+        var footings = (string?)a["footings"] is "pinned" ? "pinned" : "fixed";
+        return new(Units.Of((string?)a["units"]), new AnalyticalOptions(Set(a["storeys"]), Set(a["kinds"]), all, footings));
     }
 
     public static void Register(IModuleRegistry r)
@@ -41,13 +42,16 @@ public static class JgExchange
                 [AnalyticalKinds.Beams] = model.Frames.Where(f => f.Source.Category == AnalyticalKinds.Beams).Select(f => f.Source.SourceId).Distinct().Count(),
                 [AnalyticalKinds.Members] = model.Frames.Where(f => f.Source.Category == AnalyticalKinds.Members).Select(f => f.Source.SourceId).Distinct().Count(),
                 [AnalyticalKinds.Walls] = model.Shells.Where(s => s.Source.Kind == "wall").Select(s => s.Source.SourceId).Distinct().Count(),
-                [AnalyticalKinds.Slabs] = model.Shells.Where(s => s.Source.Kind == "slab").Select(s => s.Source.SourceId).Distinct().Count(),
+                [AnalyticalKinds.Slabs] = model.Shells.Where(s => s.Source.Kind == "slab" && s.Source.IfcClass != "IfcRoof").Select(s => s.Source.SourceId).Distinct().Count(),
+                [AnalyticalKinds.Roofs] = model.Shells.Where(s => s.Source.IfcClass == "IfcRoof").Select(s => s.Source.SourceId).Concat(model.Frames.Where(f => f.Source.Category == AnalyticalKinds.Roofs).Select(f => f.Source.SourceId)).Distinct().Count(),
                 [AnalyticalKinds.Supports] = model.Nodes.Count(n => n.Restraints != null),
             };
             return new JsonObject
             {
                 ["storeys"] = new JsonArray(model.Storeys.Select(s => (JsonNode)new JsonObject { ["id"] = s.Id, ["name"] = s.Name, ["elevation"] = s.Num("elevation") }).ToArray()),
                 ["kinds"] = kinds,
+                // How feet on footings are held unless the export says otherwise (decision 357, confirmed): fixed.
+                ["footings"] = "fixed",
             };
         });
         r.Query("jg.preview", (q, a) => Export(q, OptionsFrom(a)).Report);
@@ -104,9 +108,19 @@ public static class JgExchange
         var materials = new JsonArray();
         var missing = new JsonArray();
         var materialIds = model.Frames.Select(f => f.Source.MaterialId).Concat(model.Shells.Select(s => s.Source.MaterialId)).Distinct().ToList();
-        foreach (var id in materialIds)
+        // A material named but not in the project (a roof's timber grade, a deck's default concrete) is read from its name alone.
+        var named = new Dictionary<string, Entity>();
+        Entity? Resolve(string? id)
         {
-            var e = id == null ? null : m.Get(id) ?? Materials.Find(m, id);
+            if (id == null) return null;
+            if ((m.Get(id) ?? Materials.Find(m, id)) is { } own) return own;
+            if (named.TryGetValue(id, out var had)) return had;
+            var pseudo = new Entity($"lapin-material-{new string(id.Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray())}", IfcClass.Material, id, new JsonObject());
+            return StructuralMaterials.Of(m, pseudo).Grade != null ? named[id] = pseudo : null;
+        }
+        foreach (var id in materialIds.Select(Resolve).Select(e => e?.Id).Distinct().Select(x => (string?)x).ToList())
+        {
+            var e = id == null ? null : m.Get(id) ?? named.Values.FirstOrDefault(x => x.Id == id);
             if (e == null)
             {
                 materials.Add((JsonNode)new JsonObject
@@ -128,6 +142,7 @@ public static class JgExchange
                 ["standard"] = sm.Standard, ["grade"] = sm.Grade, ["file"] = file, ["reference"] = $"Material „{e.Name}”", ["values"] = values,
             };
             if (sm.Sources.Count > 0) src["notes"] = new JsonArray(sm.Sources.Select(x => (JsonNode)x).ToArray());
+            if (named.ContainsValue(e)) src["note"] = $"„{e.Name}” is not a material of the project: its values are read from the class its name says.";
             materials.Add((JsonNode)new JsonObject
             {
                 ["id"] = e.Id, ["name"] = e.Name, ["kind"] = sm.Kind,
@@ -137,7 +152,7 @@ public static class JgExchange
                 ["compressive_strength"] = N(sm.Fc is { } fc ? u.Stress(fc.Value) : null),
                 ["weight_density"] = N(sm.Density is { } dv ? u.WeightDensity(dv.Value) : null),
                 ["source"] = src,
-                ["lapin"] = new JsonObject { ["materialId"] = e.Id },
+                ["lapin"] = new JsonObject { ["materialId"] = named.ContainsValue(e) ? null : e.Id },
             });
             var gaps = new List<string>();
             if (sm.E == null) gaps.Add("elastic_modulus");
@@ -147,14 +162,16 @@ public static class JgExchange
             if (sm.Density == null) gaps.Add("weight_density");
             if (gaps.Count > 0) missing.Add((JsonNode)Missing("materials", e.Id, e.Name, gaps));
         }
-        string MaterialOf(string? id) => id == null || (m.Get(id) ?? Materials.Find(m, id)) is not { } e ? UnknownMaterial : e.Id;
+        string MaterialOf(string? id) => Resolve(id) is { } e ? e.Id : UnknownMaterial;
 
         // ---------------------------------------------------------------- sections
         var sections = new JsonArray();
         var sectionIds = new Dictionary<string, string>();
+        var principal = new Dictionary<string, double>();
         foreach (var f in model.Frames.Select(f => f.Source).DistinctBy(f => f.Section.Key))
         {
             var (json, gaps) = FrameSectionJson(f.Section, u, file);
+            if (SectionProperties.Of(f.Section.Shape) is { Geometric: not null } pp) principal[f.Section.Key] = pp.PrincipalDeg;
             sections.Add((JsonNode)json);
             sectionIds[f.Section.Key] = f.Section.Key;
             if (gaps.Count > 0) missing.Add((JsonNode)Missing("sections", f.Section.Key, f.Section.Name, gaps));
@@ -201,10 +218,32 @@ public static class JgExchange
             if (Math.Abs(f.OffsetZ) > 1e-9) l["offset_z"] = N(u.L(f.OffsetZ));
             if (f.Source.Mirrored) l["mirrored"] = true;
             if (f.Source.Note != null) l["note"] = f.Source.Note;
+            // An unsymmetric section's properties are about its principal axes: local 2 turned onto them. The section's drawing
+            // has its x along −local 3 (+local 3 when the member is mirrored), so the drawing's angle φ turns local 2 by −φ (+φ).
+            var rotation = f.RotationDeg;
+            if (principal.TryGetValue(f.Source.Section.Key, out var phi) && Math.Abs(phi) > 1e-9)
+            {
+                var turn = f.Source.Mirrored ? phi : -phi;
+                rotation = AnalyticalModel.Normalize(rotation + turn);
+                l["geometric_rotation_deg"] = N(f.RotationDeg);
+                l["principal_turn_deg"] = N(turn);
+            }
+            JsonNode? offsets = null;
+            if (f.Eccentric)
+            {
+                offsets = new JsonObject
+                {
+                    ["system"] = "global", ["unit"] = u.Length,
+                    ["i"] = new JsonArray(N(u.L(f.OffI.X)), N(u.L(f.OffI.Y)), N(u.L(f.OffI.Z))),
+                    ["j"] = new JsonArray(N(u.L(f.OffJ.X)), N(u.L(f.OffJ.Y)), N(u.L(f.OffJ.Z))),
+                    ["rigid"] = true,
+                };
+                if (f.Connection != null) l["connection"] = f.Connection;
+            }
             frames.Add((JsonNode)new JsonObject
             {
                 ["id"] = f.Id, ["kind"] = f.Source.Kind, ["node_i"] = f.I.Id, ["node_j"] = f.J.Id, ["section_id"] = f.Source.Section.Key,
-                ["material_id"] = MaterialOf(f.Source.MaterialId), ["local_axis_rotation_deg"] = N(f.RotationDeg), ["end_offsets"] = null, ["lapin"] = l,
+                ["material_id"] = MaterialOf(f.Source.MaterialId), ["local_axis_rotation_deg"] = N(rotation), ["end_offsets"] = offsets, ["lapin"] = l,
             });
         }
         var shells = new JsonArray();
@@ -221,14 +260,14 @@ public static class JgExchange
 
         foreach (var n in model.FreeBases)
             warnings.Add($"Node {n.Id} at the foot of {string.Join(", ", model.Frames.Where(f => f.I == n || f.J == n).Select(f => $"„{f.Source.Name}”").Concat(model.Shells.Where(s => s.Nodes.Contains(n)).Select(s => $"„{s.Source.Name}”")).Distinct())} stands on nothing and has no support: its restraints are null.");
-        // Bar ends that meet nothing (a cantilever, or a member Lapin could not connect: secondary steel on top of a rafter).
-        var uses = new Dictionary<ANode, int>();
-        foreach (var f in model.Frames) { uses[f.I] = uses.GetValueOrDefault(f.I) + 1; uses[f.J] = uses.GetValueOrDefault(f.J) + 1; }
-        foreach (var s in model.Shells) foreach (var n in s.Nodes) uses[n] = uses.GetValueOrDefault(n) + 1;
-        var loose = model.Frames.Where(f => (uses[f.I] == 1 && f.I.Restraints == null && !model.FreeBases.Contains(f.I)) || (uses[f.J] == 1 && f.J.Restraints == null && !model.FreeBases.Contains(f.J)))
-            .Select(f => f.Source.Name).ToList();
-        if (loose.Count > 0)
-            warnings.Add($"{loose.Count} frame(s) have an end that meets no other member (a cantilever, or an eccentric connection Lapin does not link): {string.Join(", ", loose.Distinct().Take(8).Select(x => $"„{x}”"))}{(loose.Distinct().Count() > 8 ? "…" : "")}.");
+        // Bar ends that meet nothing: an end next to a member Lapin could not join it to is a warning; a cantilever's tip is said once.
+        var unjoined = model.FreeEnds.Where(x => !x.Cantilever).ToList();
+        if (unjoined.Count > 0)
+            warnings.Add($"{unjoined.Count} frame end(s) meet no other member though one passes within reach: {string.Join(", ", unjoined.Select(x => $"„{x.Frame.Source.Name}” (by „{x.Near}”)").Distinct().Take(8))}{(unjoined.Count > 8 ? "…" : "")}.");
+        var tips = model.FreeEnds.Count(x => x.Cantilever);
+        if (tips > 0) warnings.Add($"{tips} frame end(s) are free: cantilever tips (nothing is near them), {string.Join(", ", model.FreeEnds.Where(x => x.Cantilever).Select(x => $"„{x.Frame.Source.Name}”").Distinct().Take(6))}{(model.FreeEnds.Count(x => x.Cantilever) > 6 ? "…" : "")}.");
+        foreach (var part in model.Floating)
+            warnings.Add($"No support holds {(part.Count == 1 ? "" : $"{part.Count} elements joined together: ")}{string.Join(", ", part.Take(6).Select(x => $"„{x}”"))}{(part.Count > 6 ? "…" : "")}: they are not connected to the supported structure.");
         if (model.Nodes.Count > 0 && !model.Nodes.Any(n => n.Restraints != null)) warnings.Add("No node is restrained: add footings under the columns and walls, or steel column bases.");
 
         var leftOut = new JsonArray(model.LeftOut.Select(x => (JsonNode)new JsonObject { ["id"] = x.SourceId, ["name"] = x.Name, ["ifcClass"] = x.IfcClass, ["reason"] = x.Reason }).ToArray());
@@ -257,9 +296,10 @@ public static class JgExchange
             ["units_note"] = u.Name == "si"
                 ? "SI: lengths in m, forces in kN, stresses in kN/m2 (kPa), weight densities in kN/m3 (ρ·g, g = 9.80665 m/s2). SI is Lapin's proposal for the contract's 1.1."
                 : "Lapin works in SI (m, N, Pa, kg/m3). Converted with 1 kgf = 9.80665 N exactly: lengths ×100 (m → cm), stresses Pa / 98066.5 (kgf/cm2), weight densities kg/m3 × 1e-6 (kgf/cm3, a kilogram weighing one kilogram-force).",
-            ["analytical_model"] = "Columns, beams and steel members on their axes (the section's box centre); load-bearing walls on their core's centre plane, slabs on their core's mid-plane, finishes left out. A beam carrying a slab lies in the slab's mid-plane (its eccentricity in lapin.offset_z); column and wall ends meet the beam or slab at their foot and head; beam ends lie on column axes; slab corners on their supports' nodes (within 0.5 m); points within 1 cm are one node; convex slabs are split along the beams and walls crossing them, walls where walls and columns meet them; every node on a member's edge or span is one of its nodes. Curved members are chords (at most 1 mm off the arc). Supports: the lowest column and wall feet on a footing are fixed; a steel column base is pinned or fixed as its connection says.",
+            ["analytical_model"] = $"Columns, beams, steel members and a framed roof's timber members on their axes (the section's box centre); load-bearing walls on their core's centre plane up to their top (a wall under a roof or an attached slab follows it), slabs and roof decks on their core's mid-plane, finishes left out. A beam carrying a slab lies in the slab's mid-plane (its eccentricity in lapin.offset_z); column and wall ends meet the beam or slab at their foot and head; beam ends lie on column axes; slab corners on their supports' nodes (within 0.5 m); points within 1 cm are one node. Eccentric connections (a purlin on a rafter, a rail on a column, a brace on its gusset, a bar ending or crossing near another member's axis or a shell) have their node on the supporting member's axis or the shell's plane, the supporting member split there, and the eccentricity in the frame's end_offsets. Shells are convex and without holes: a non-convex outline is cut at its re-entrant corners (along a support line through the corner first), every piece is split along the beams and walls crossing it and at the nodes on it, and openings (doors, windows, floor and roof openings) are left out as the strips round them; the pieces of one element are GlobalId#n and share their nodes. Curved members are chords (at most 1 mm off the arc). Supports: the lowest column and wall feet on a footing are {(o.Analytical.Footings == "pinned" ? "pinned (as this export asked; fixed by default)" : "fixed (the default; an export may make them pinned)")}; a steel column base is pinned or fixed as its connection says.",
+            ["end_offsets"] = "A frame's end_offsets, when not null: {\"system\": \"global\", \"unit\": <the length unit>, \"i\": [dx, dy, dz], \"j\": [dx, dy, dz], \"rigid\": true}. i (j) is the vector from node_i (node_j) to the member's own end, in global axes: the flexible member runs between node_i + i and node_j + j, each end joined to its node by a rigid link. [0, 0, 0] at an end without one. The local axes are then those of the member between its own ends.",
             ["frame_local_axes"] = axes,
-            ["section_axes"] = "A section's depth h lies along local 2 and its width b along local 3: I33 = ∫ y2² dA (bending about local 3, a beam's strong axis), I22 = ∫ y3² dA, about the centroid; S = I / farthest fibre, Z = plastic modulus about the equal-area axis; J the torsion constant (its method in the section's source). Properties of L and other unsymmetric sections are about the geometric axes, not the principal ones.",
+            ["section_axes"] = "A section's depth h lies along local 2 and its width b along local 3: I33 = ∫ y2² dA (bending about local 3, a beam's strong axis), I22 = ∫ y3² dA, about the centroid; S = I / farthest fibre, Z = plastic modulus about the equal-area axis; J the torsion constant (its method in the section's source). An unsymmetric section (an angle, a Z, an outline with a product of inertia) is given about its principal axes: local 2 is the principal axis nearest the section's depth, its angle from the depth folded into local_axis_rotation_deg (lapin.principal_turn_deg on the frame, lapin.principal_axes on the section); the geometric axes' values are under the section's lapin.geometric_axes.",
             ["catalog_policy"] = "Lapin holds no tabulated profile data: a catalogue profile carries its exact designation and product standard, its properties derived from the nominal dimensions (property_status derived_user_geometry), never verified_tabulated.",
             ["lapin_namespace"] = "Items may carry a \"lapin\" object (the element's GlobalId, its piece of it, its name and IFC class, a support's source): Lapin's own, for a results file to find its elements again; an importer may ignore it.",
             ["analysis_notice"] = missing.Count > 0 ? "Some values needed for analysis are missing (documentation.missing): analyses that need them must stay disabled until they are given." : "Every material and section has the values a linear analysis needs.",
@@ -276,12 +316,13 @@ public static class JgExchange
             {
                 ["stories"] = stories.Count, ["grids"] = grids.Count, ["materials"] = materials.Count, ["sections"] = sections.Count,
                 ["nodes"] = nodes.Count, ["frames"] = frames.Count, ["shells"] = shells.Count, ["supports"] = model.Nodes.Count(n => n.Restraints != null),
+                ["eccentric"] = model.Frames.Count(f => f.Eccentric), ["freeEnds"] = model.FreeEnds.Count(x => !x.Cantilever), ["cantilevers"] = model.FreeEnds.Count(x => x.Cantilever),
             },
             ["errors"] = new JsonArray(errors.Select(x => (JsonNode)x).ToArray()),
             ["warnings"] = new JsonArray(warnings.Select(x => (JsonNode)x).ToArray()),
             ["missing"] = missing,
             ["leftOut"] = leftOut,
-            ["ready"] = errors.Count == 0 && missing.Count == 0 && model.FreeBases.Count == 0 && model.Nodes.Any(n => n.Restraints != null),
+            ["ready"] = errors.Count == 0 && missing.Count == 0 && model.FreeBases.Count == 0 && model.Floating.Count == 0 && model.Nodes.Any(n => n.Restraints != null),
         };
         return (doc, report);
     }
@@ -352,7 +393,27 @@ public static class JgExchange
             ["property_status"] = props != null ? "derived_user_geometry" : "pending",
             ["source"] = source,
         };
-        if (props is { } pc && pc.Centroid.Length > 1e-9) json["lapin"] = new JsonObject { ["centroid_offset"] = new JsonArray(N(u.L(pc.Centroid.X)), N(u.L(pc.Centroid.Y))) };
+        var lp = new JsonObject();
+        if (props is { } pc && pc.Centroid.Length > 1e-9) lp["centroid_offset"] = new JsonArray(N(u.L(pc.Centroid.X)), N(u.L(pc.Centroid.Y)));
+        if (props is { Geometric: { } g } pg)
+        {
+            lp["principal_axes"] = new JsonObject
+            {
+                ["angle_deg"] = N(pg.PrincipalDeg),
+                ["note"] = "The angle, in the section's drawing (x across, y up its depth h), from y to the principal axis taken as local 2, positive towards +x. The properties above are about the principal axes; each frame turns its local 2 onto it (lapin.principal_turn_deg).",
+            };
+            lp["geometric_axes"] = new JsonObject
+            {
+                ["I22"] = N(u.L4(g.I22)), ["I33"] = N(u.L4(g.I33)), ["I23_drawing"] = N(u.L4(g.Ixy)),
+                ["S22"] = N(u.L3(g.S22)), ["S33"] = N(u.L3(g.S33)), ["Z22"] = N(u.L3(g.Z22)), ["Z33"] = N(u.L3(g.Z33)),
+                ["note"] = "About the centroidal axes parallel to the section's width (I33) and depth (I22); I23_drawing = ∫x·y dA in the section's drawing.",
+            };
+        }
+        if (lp.Count > 0)
+        {
+            if (lp["centroid_offset"] != null) lp["centroid_note"] = "The centroid from the section's box centre, in its drawing (x across, y up the depth): x lies along −local 3 (+local 3 for a mirrored member), y along local 2.";
+            json["lapin"] = lp;
+        }
         var gaps = properties.Where(kv => kv.Value == null).Select(kv => kv.Key).ToList();
         return (json, gaps);
     }

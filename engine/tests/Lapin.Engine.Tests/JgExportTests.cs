@@ -32,17 +32,17 @@ public class JgExportTests
         public required string Slab1, Slab2, Wall, ColumnType, BeamType;
     }
 
-    static Frame Build()
+    static Frame Build(bool drafting = false, string concrete = "Concrete C25/30")
     {
-        var f = F();
+        var f = drafting ? new Fixture(new ArchitectureModule(), new StructureModule(), new Lapin.Drafting.DraftingModule()) : F();
         var ground = f.Storey;
         var first = (string)f.Run("storey.create", new JsonObject { ["name"] = "First floor", ["elevation"] = 3.0, ["height"] = 3.0 })!["id"]!;
-        var colType = (string)f.Run("structure.createColumnType", new JsonObject { ["name"] = "C30x30", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 }, ["material"] = "Concrete C25/30" })!["id"]!;
-        var beamType = (string)f.Run("structure.createBeamType", new JsonObject { ["name"] = "B30x50", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.5 }, ["material"] = "Concrete C25/30" })!["id"]!;
+        var colType = (string)f.Run("structure.createColumnType", new JsonObject { ["name"] = "C30x30", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 }, ["material"] = concrete })!["id"]!;
+        var beamType = (string)f.Run("structure.createBeamType", new JsonObject { ["name"] = "B30x50", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.5 }, ["material"] = concrete })!["id"]!;
         var slabType = (string)f.Run("architecture.createSlabType", new JsonObject
         {
             ["name"] = "Floor 20",
-            ["layers"] = new JsonArray(new JsonObject { ["material"] = "Screed", ["thickness"] = 0.05 }, new JsonObject { ["material"] = "Concrete C25/30", ["thickness"] = 0.2, ["core"] = true }),
+            ["layers"] = new JsonArray(new JsonObject { ["material"] = "Screed", ["thickness"] = 0.05 }, new JsonObject { ["material"] = concrete, ["thickness"] = 0.2, ["core"] = true }),
         })!["id"]!;
         var columns = new Dictionary<string, string>();
         var beams = new Dictionary<string, string>();
@@ -61,7 +61,7 @@ public class JgExportTests
         JsonArray Outline() => new(new JsonArray(-0.15, -0.15), new JsonArray(6.15, -0.15), new JsonArray(6.15, 5.15), new JsonArray(-0.15, 5.15));
         var slab1 = (string)f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = first, ["points"] = Outline(), ["typeId"] = slabType })!["id"]!;
         var slab2 = (string)f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = first, ["points"] = Outline(), ["typeId"] = slabType, ["offset"] = 3.0 })!["id"]!;
-        var wallType = f.Type("RC 25", ("Concrete C25/30", 0.25, true));
+        var wallType = f.Type("RC 25", (concrete, 0.25, true));
         var wall = f.Wall(0, 5, 6, 5, wallType);
         f.Run("element.setParam", new JsonObject { ["id"] = wall, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = true });
         foreach (var (x, y) in corners.Take(3)) f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = ground, ["x"] = x, ["y"] = y });
@@ -269,10 +269,10 @@ public class JgExportTests
         var cf = SectionProperties.Of(StructureAnalytical.Shape(Section.Catalogue["C 200×65×2"]))!;
         Assert.InRange(cf.Area * 1e4, 6.9, 7.5);
         Assert.True(cf.I33 > cf.I22);
-        // An L is about its geometric axes, its centroid off the box centre.
+        // An L is about its principal axes (below); about its geometric ones its two inertias are equal, its centroid off the box centre.
         var l = SectionProperties.Of(StructureAnalytical.Shape(Section.Catalogue["L 100×100×10"]))!;
         Assert.InRange(l.Area * 1e4, 19.0, 19.4); // 19.2 tabulated; its toes are left sharp
-        Assert.Equal(l.I22, l.I33, 12);
+        Assert.Equal(l.Geometric!.I22, l.Geometric.I33, 12);
         Assert.True(l.Centroid.X < 0 && l.Centroid.Y < 0);
     }
 
@@ -341,7 +341,10 @@ public class JgExportTests
         bad["nodes"]![0]!["coordinates"] = new JsonArray(1.0, 2.0);
         bad["frames"]![0]!["kind"] = "brace";
         bad["materials"]![0]!.AsObject().Remove("elastic_modulus");
+        bad["frames"]![1]!["end_offsets"] = new JsonObject { ["system"] = "local", ["unit"] = "cm", ["i"] = new JsonArray(0.0, 0.0), ["j"] = new JsonArray(0.0, 0.0, 0.0) };
         var errors = MiniJsonSchema.Validate(schema, bad);
+        Assert.Contains(errors, e => e.Contains("frames[1].end_offsets"));
+        Assert.Contains(JgValidator.Validate(bad), e => e.Contains("end_offsets.system") );
         Assert.Contains(errors, e => e.Contains("coordinates"));
         Assert.Contains(errors, e => e.Contains("frames[0].kind"));
         Assert.Contains(errors, e => e.Contains("elastic_modulus is required"));
@@ -425,6 +428,360 @@ public class JgExportTests
         // A beam along +X with its depth up: 0°; turned on its side (depth along +Y): local 2 from up to +Y is −90° about +X.
         Assert.Equal(0, AnalyticalModel.Rotation(new Vec3(0, 0, 0), new Vec3(5, 0, 0), Vec3.UnitZ), 9);
         Assert.Equal(-90, AnalyticalModel.Rotation(new Vec3(0, 0, 0), new Vec3(5, 0, 0), new Vec3(0, 1, 0)), 6);
+    }
+
+    // ------------------------------------------------------------ decision 362: what 357 left open
+
+    /// <summary>The document passes the contract's rules and the JSON Schema.</summary>
+    static void Valid(JsonObject doc)
+    {
+        Assert.Empty(JgValidator.Validate(doc));
+        var schema = JsonNode.Parse(File.ReadAllText(Path.Combine(Root(), "docs", "jg-structures", "schema-1.0.0.json")))!;
+        Assert.Empty(MiniJsonSchema.Validate(schema, doc));
+    }
+
+    static Vec3 P3(JsonObject doc, string node) { var c = At(NodeOf(doc, node)); return new Vec3(c[0], c[1], c[2]); }
+    static List<Vec3> Corners(JsonObject doc, JsonObject shell) => shell["node_ids"]!.AsArray().Select(n => P3(doc, (string)n!)).ToList();
+    static IEnumerable<JsonObject> ShellsOf(JsonObject doc, string id) => Items(doc, "shells").Where(x => (string?)x["lapin"]!["globalId"] == id);
+    static IEnumerable<JsonObject> FramesOf(JsonObject doc, string id) => Items(doc, "frames").Where(x => (string?)x["lapin"]!["globalId"] == id);
+
+    /// <summary>A planar polygon's area (Newell) and whether it is convex in its plane.</summary>
+    static (double Area, bool Convex) Shape(IReadOnlyList<Vec3> p)
+    {
+        var n = VecMath.NewellNormal(p.ToArray());
+        var area = n.Length;
+        var u = n.Normalized();
+        var convex = true;
+        for (var i = 0; i < p.Count; i++)
+        {
+            var (a, b, c) = (p[i], p[(i + 1) % p.Count], p[(i + 2) % p.Count]);
+            var turn = Vec3.Dot(Vec3.Cross(b - a, c - b), u);
+            if (turn < -1e-6 * (b - a).Length * (c - b).Length) convex = false;
+        }
+        return (area, convex);
+    }
+
+    static bool Inside(IReadOnlyList<Vec3> poly, Vec3 q, Func<Vec3, Vec2> plane) => Polygon2.Contains(poly.Select(plane).ToList(), plane(q));
+
+    [Fact]
+    public void Feet_on_footings_are_fixed_by_default_and_pinned_when_the_export_asks()
+    {
+        var t = Build();
+        Assert.Equal("fixed", (string?)t.F.Session.Query("jg.survey", [])!["footings"]);
+        bool[] Foot(JsonObject doc, string column) => NodeOf(doc, (string)FrameOf(doc, column)["node_i"]!)["restraints"]!.AsArray().Select(x => (bool)x!).ToArray();
+        var (fixedDoc, _) = Export(t.F);
+        Assert.Equal([true, true, true, true, true, true], Foot(fixedDoc, t.Columns["G0,0"]));
+        Assert.Contains("fixed (the default", (string?)fixedDoc["documentation"]!["analytical_model"]);
+        var (pinned, report) = Export(t.F, more: new JsonObject { ["footings"] = "pinned" });
+        Assert.Empty(report["errors"]!.AsArray());
+        foreach (var c in new[] { "G0,0", "G6,0", "G6,5", "G0,5" }) Assert.Equal([true, true, true, false, false, false], Foot(pinned, t.Columns[c]));
+        var node = NodeOf(pinned, (string)FrameOf(pinned, t.Columns["G0,0"])["node_i"]!);
+        Assert.Equal("pinned", (string?)node["lapin"]!["support"]);
+        Assert.Contains("as the export asks", (string?)node["lapin"]!["source"]);
+        Valid(pinned);
+    }
+
+    static Fixture Hall(bool secondary = true)
+    {
+        var f = new Fixture(new StructureModule(), new SteelModule(), new Lapin.Drafting.DraftingModule(), new Lapin.Studio.StudioModule());
+        f.Run("steel.addHall", new JsonObject { ["storeyId"] = f.Storey, ["attrs"] = new JsonObject { ["secondary"] = secondary } });
+        return f;
+    }
+
+    [Fact]
+    public void The_halls_secondary_steel_bears_on_its_hosts_eccentrically_with_end_offsets()
+    {
+        var f = Hall();
+        var (doc, report) = Export(f);
+        Assert.Empty(report["errors"]!.AsArray());
+        Valid(doc);
+        Valid(Export(f, "si").Doc);
+        // Before decision 362, 144 ends met nothing; now every end that has a member to bear on is joined, and nothing floats.
+        Assert.Equal(0, (int)report["counts"]!["freeEnds"]!);
+        Assert.DoesNotContain(report["warnings"]!.AsArray(), w => ((string)w!).Contains("No support holds") || ((string)w!).Contains("within reach"));
+        Assert.True((int)report["counts"]!["eccentric"]! > 100);
+        var frames = Items(doc, "frames").ToList();
+        // A purlin: its end offsets in global axes and the file's unit; the node it ends on is a rafter's, the rafter split there.
+        var purlin = frames.First(x => ((string?)x["lapin"]!["role"])?.StartsWith("pur:") == true && x["end_offsets"] is JsonObject);
+        var off = purlin["end_offsets"]!.AsObject();
+        Assert.Equal("global", (string?)off["system"]);
+        Assert.Equal("cm", (string?)off["unit"]);
+        Assert.Equal(3, off["i"]!.AsArray().Count);
+        var (endNode, vec) = off["j"]!.AsArray().Any(x => Math.Abs((double)x!) > 1e-9) ? ((string)purlin["node_j"]!, off["j"]!) : ((string)purlin["node_i"]!, off["i"]!);
+        var length = Math.Sqrt(vec.AsArray().Sum(x => (double)x! * (double)x!));
+        Assert.InRange(length, 10, 40);   // the purlin over the rafter: about half of each's depth
+        var rafters = frames.Where(x => ((string?)x["lapin"]!["role"])?.Contains(":raf:") == true).ToList();
+        Assert.Contains(rafters, r => (string?)r["node_i"] == endNode || (string?)r["node_j"] == endNode);
+        Assert.True(rafters.Count > 12);   // twelve rafters, now in pieces at the purlins
+        Assert.Equal("cleat", ((string?)purlin["lapin"]!["connection"])?.Split(' ')[0]);
+        // What is left free are the purlins' overhangs past the gables: cantilevers, said once.
+        var uses = frames.SelectMany(x => new[] { (string)x["node_i"]!, (string)x["node_j"]! }).GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count());
+        var tips = frames.SelectMany(x => new[] { (Frame: x, Node: (string)x["node_i"]!), (Frame: x, Node: (string)x["node_j"]!) })
+            .Where(x => uses[x.Node] == 1 && NodeOf(doc, x.Node)["restraints"] is null).ToList();
+        Assert.Equal((int)report["counts"]!["cantilevers"]!, tips.Count);
+        Assert.All(tips, x => Assert.StartsWith("pur:", (string?)x.Frame["lapin"]!["role"]));
+        Assert.All(tips, x => Assert.True(P3(doc, x.Node).Y < 0 || P3(doc, x.Node).Y > 29.9 * 100));
+        // Every node meets two members or is held.
+        var frameUses = uses;
+        Assert.All(Items(doc, "nodes"), n => Assert.True(frameUses[(string)n["id"]!] >= 2 || n["restraints"] is JsonArray || tips.Any(x => x.Node == (string)n["id"]!)));
+    }
+
+    /// <summary>A floor 6 × 5 m on four columns and edge beams, a storey up.</summary>
+    static (Fixture F, string Slab, string Storey) Floor(JsonArray? outline = null, (double X, double Y)[]? posts = null)
+    {
+        var f = F();
+        var colType = (string)f.Run("structure.createColumnType", new JsonObject { ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 }, ["material"] = "Reinforced concrete C25/30" })!["id"]!;
+        var beamType = (string)f.Run("structure.createBeamType", new JsonObject { ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.5 }, ["material"] = "Reinforced concrete C25/30" })!["id"]!;
+        posts ??= [(0, 0), (6, 0), (6, 5), (0, 5)];
+        foreach (var (x, y) in posts) f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = x, ["y"] = y, ["typeId"] = colType });
+        for (var i = 0; i < posts.Length; i++)
+        {
+            var (a, b) = (posts[i], posts[(i + 1) % posts.Length]);
+            f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = a.X, ["y1"] = a.Y, ["x2"] = b.X, ["y2"] = b.Y, ["typeId"] = beamType });
+        }
+        foreach (var (x, y) in posts) f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = x, ["y"] = y });
+        var slabType = (string)f.Run("architecture.createSlabType", new JsonObject { ["name"] = "Slab 20", ["layers"] = new JsonArray(new JsonObject { ["material"] = "Reinforced concrete C25/30", ["thickness"] = 0.2, ["core"] = true }) })!["id"]!;
+        var up = (string)f.Run("storey.create", new JsonObject { ["name"] = "First floor", ["elevation"] = 3.0, ["height"] = 3.0 })!["id"]!;
+        outline ??= new JsonArray(posts.Select(p => (JsonNode)new JsonArray(p.X, p.Y)).ToArray());
+        var slab = (string)f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = up, ["typeId"] = slabType, ["points"] = outline })!["id"]!;
+        return (f, slab, up);
+    }
+
+    [Fact]
+    public void A_floor_with_an_opening_is_strips_round_it_that_share_their_nodes()
+    {
+        var (f, slab, _) = Floor();
+        f.Run("architecture.addSlabOpening", new JsonObject { ["slabId"] = slab, ["points"] = new JsonArray(new JsonArray(2.5, 2.0), new JsonArray(3.5, 2.0), new JsonArray(3.5, 3.0), new JsonArray(2.5, 3.0)) });
+        var (doc, report) = Export(f);
+        Assert.Empty(report["errors"]!.AsArray());
+        Valid(doc);
+        var pieces = ShellsOf(doc, slab).ToList();
+        Assert.Equal(4, pieces.Count);
+        Assert.Equal(pieces.Select((_, k) => $"{slab}#{k + 1}"), pieces.Select(x => (string)x["id"]!));
+        var corners = pieces.Select(x => Corners(doc, x)).ToList();
+        // No hole in any piece, the opening left out: 30 m² less 1 m²; each piece convex.
+        Assert.Equal(29e4, corners.Sum(c => Shape(c).Area), 1);
+        Assert.All(corners, c => Assert.True(Shape(c).Convex));
+        Assert.DoesNotContain(corners, c => Inside(c, new Vec3(300, 250, 0), v => v.Xy));
+        // The opening's corners are nodes, each shared by the pieces round it.
+        foreach (var (x, y) in new[] { (250.0, 200.0), (350.0, 200.0), (350.0, 300.0), (250.0, 300.0) })
+        {
+            var node = Items(doc, "nodes").Single(n => Math.Abs(At(n)[0] - x) < 0.5 && Math.Abs(At(n)[1] - y) < 0.5);
+            Assert.True(pieces.Count(p => p["node_ids"]!.AsArray().Any(i => (string?)i == (string?)node["id"])) >= 2);
+        }
+        Assert.DoesNotContain(report["warnings"]!.AsArray(), w => ((string)w!).Contains("opening"));
+    }
+
+    [Fact]
+    public void A_wall_with_a_door_and_a_window_leaves_them_out_as_pieces_round_them()
+    {
+        var f = F();
+        var wt = f.Type("RC 25", ("Concrete C25/30", 0.25, true));
+        var wall = f.Wall(0, 0, 6, 0, wt);
+        f.Run("element.setParam", new JsonObject { ["id"] = wall, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = true });
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["along"] = 1.5 });
+        f.Run("architecture.addWindow", new JsonObject { ["wallId"] = wall, ["along"] = 4.5 });
+        f.Run("structure.addStripFooting", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0 });
+        var (doc, report) = Export(f);
+        Valid(doc);
+        var placed = Lapin.Architecture.Openings.PlacedOn(f.Model, wall);
+        var pieces = ShellsOf(doc, wall).Select(x => Corners(doc, x)).ToList();
+        Assert.True(pieces.Count >= 5);
+        Assert.All(pieces, c => Assert.True(Shape(c).Convex));
+        var height = f.Model.Get(wall)!.Num("height", Lapin.Architecture.Walls.DefaultHeight);
+        var expected = (6 * height - placed.Sum(o => o.Width * o.Height)) * 1e4;
+        Assert.Equal(expected, pieces.Sum(c => Shape(c).Area), 0);
+        foreach (var o in placed) Assert.DoesNotContain(pieces, c => Inside(c, new Vec3(o.Along * 100, 0, (o.Sill + o.Height / 2) * 100), v => new Vec2(v.X, v.Z)));
+        // The wall still stands on its footing along its whole foot (the door's sides reach it).
+        Assert.True((int)report["counts"]!["supports"]! >= 4);
+        Assert.DoesNotContain(Items(doc, "nodes"), n => At(n)[2] == 0 && n["restraints"] == null);
+    }
+
+    [Fact]
+    public void An_L_shaped_floor_is_cut_along_the_beam_at_its_inner_corner_then_into_convex_pieces()
+    {
+        (double, double)[] posts = [(0, 0), (8, 0), (8, 4), (4, 4), (4, 8), (0, 8)];
+        var (f, slab, _) = Floor(posts: posts);
+        // A beam from the inner corner across to the far edge: the floor is cut along it, not along the corner's other edge.
+        var inner = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 4, ["y1"] = 4, ["x2"] = 0, ["y2"] = 4 })!["id"]!;
+        var (doc, report) = Export(f);
+        Assert.Empty(report["errors"]!.AsArray());
+        Valid(doc);
+        Assert.DoesNotContain(report["warnings"]!.AsArray(), w => ((string)w!).Contains("not convex"));
+        var pieces = ShellsOf(doc, slab).ToList();
+        Assert.Equal(2, pieces.Count);
+        var shapes = pieces.Select(x => Shape(Corners(doc, x))).ToList();
+        Assert.All(shapes, s => Assert.True(s.Convex));
+        Assert.Equal(new[] { 16e4, 32e4 }, shapes.Select(s => Math.Round(s.Area)).OrderBy(x => x));
+        var beam = FrameOf(doc, inner);
+        var shared = pieces[0]["node_ids"]!.AsArray().Select(x => (string)x!).Intersect(pieces[1]["node_ids"]!.AsArray().Select(x => (string)x!)).ToHashSet();
+        Assert.Contains((string)beam["node_i"]!, shared);
+        Assert.Contains((string)beam["node_j"]!, shared);
+        // Without the beam the floor is still cut into convex pieces at its inner corner.
+        var (f2, slab2, _) = Floor(posts: posts);
+        var (doc2, _) = Export(f2);
+        var pieces2 = ShellsOf(doc2, slab2).Select(x => Shape(Corners(doc2, x))).ToList();
+        Assert.Equal(2, pieces2.Count);
+        Assert.All(pieces2, s => Assert.True(s.Convex));
+        Assert.Equal(48e4, pieces2.Sum(s => s.Area), 0);
+    }
+
+    [Fact]
+    public void A_column_standing_inside_a_floor_becomes_a_node_of_it()
+    {
+        var (f, slab, up) = Floor();
+        var post = (string)f.Run("structure.addColumn", new JsonObject { ["storeyId"] = up, ["x"] = 3, ["y"] = 2.5 })!["id"]!;
+        var (doc, _) = Export(f);
+        Valid(doc);
+        var foot = (string)FrameOf(doc, post)["node_i"]!;
+        Assert.Contains(ShellsOf(doc, slab), s => s["node_ids"]!.AsArray().Any(n => (string?)n == foot));
+        Assert.True(ShellsOf(doc, slab).Count() >= 2);
+    }
+
+    /// <summary>A house 10 × 6 m of load-bearing concrete walls on strip footings under a gable roof (ridge along x), its gables at x = 0 and 10.</summary>
+    static (Fixture F, string[] Walls, string Roof) Gable(string structure)
+    {
+        var f = F();
+        var wt = f.Type("RC 25", ("Reinforced concrete C25/30", 0.25, true));
+        (double, double, double, double)[] lines = [(0, 0, 10, 0), (10, 0, 10, 6), (10, 6, 0, 6), (0, 6, 0, 0)];
+        var walls = lines.Select(l => f.Wall(l.Item1, l.Item2, l.Item3, l.Item4, wt)).ToArray();
+        foreach (var w in walls) f.Run("element.setParam", new JsonObject { ["id"] = w, ["pset"] = "Pset_WallCommon", ["name"] = "LoadBearing", ["value"] = true });
+        foreach (var l in lines) f.Run("structure.addStripFooting", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = l.Item1, ["y1"] = l.Item2, ["x2"] = l.Item3, ["y2"] = l.Item4 });
+        var roof = (string)f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0), new JsonArray(10, 6), new JsonArray(0, 6)), ["style"] = "traditional_campie" })!["id"]!;
+        f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = new JsonObject { ["structure"] = structure, ["shape"] = "gable", ["ridgeDirection"] = "x" } });
+        return (f, walls, roof);
+    }
+
+    [Fact]
+    public void A_gable_wall_follows_the_roof_deck_over_it_and_shares_its_nodes()
+    {
+        var (f, walls, roof) = Gable("none");
+        var (doc, report) = Export(f);
+        Assert.Empty(report["errors"]!.AsArray());
+        Valid(doc);
+        Assert.Empty(report["warnings"]!.AsArray());
+        // The gable's top rises to the ridge: a node at the slope's change, over the wall's middle, on the deck's mid-plane.
+        var gable = ShellsOf(doc, walls[1]).Single();
+        var top = Corners(doc, gable).MaxBy(p => p.Z);
+        Assert.Equal(300, top.Y, 1);
+        var ridge = Items(doc, "nodes").Max(n => At(n)[2]);
+        Assert.Equal(ridge, top.Z, 3);
+        Assert.Equal(5, gable["node_ids"]!.AsArray().Count);
+        // The deck is cut along the walls' tops (its overhangs beyond them pieces of their own): every wall-top node is a deck node.
+        var deck = ShellsOf(doc, roof).ToList();
+        Assert.True(deck.Count >= 6);
+        Assert.All(deck, d => Assert.True(Shape(Corners(doc, d)).Convex));
+        var deckNodes = deck.SelectMany(d => d["node_ids"]!.AsArray().Select(x => (string)x!)).ToHashSet();
+        foreach (var w in walls)
+            foreach (var s in ShellsOf(doc, w))
+            {
+                var nodes = s["node_ids"]!.AsArray().Select(x => (string)x!).ToList();
+                var zTop = nodes.Where(n => P3(doc, n).Z > 1).ToList();
+                Assert.NotEmpty(zTop);
+                Assert.All(zTop, n => Assert.Contains(n, deckNodes));
+            }
+        Assert.Equal("slab", (string?)deck[0]["kind"]);
+        Assert.Equal("IfcRoof", (string?)deck[0]["lapin"]!["ifcClass"]);
+    }
+
+    [Fact]
+    public void A_framed_roof_is_its_timber_members_bearing_on_the_walls_and_the_gables()
+    {
+        var (f, walls, roof) = Gable("rafters");
+        var (doc, report) = Export(f);
+        Assert.Empty(report["errors"]!.AsArray());
+        Valid(doc);
+        Assert.Equal(0, (int)report["counts"]!["freeEnds"]!);
+        Assert.DoesNotContain(report["warnings"]!.AsArray(), w => ((string)w!).Contains("No support holds"));
+        var members = FramesOf(doc, roof).ToList();
+        Assert.NotEmpty(members);
+        Assert.Equal(members.Select((_, k) => $"{roof}#{k + 1}"), members.Select(x => (string)x["id"]!));
+        // The wall plates lie on the eaves walls' tops, their own axis 7 cm up kept as their offsets.
+        var plate = members.First(x => (string?)x["lapin"]!["role"] == "plate");
+        Assert.Equal(7, (double)plate["end_offsets"]!["i"]![2]!, 6);
+        // The purlins and the ridge beam bear on the gable walls: nodes of the gables' tops.
+        var gableNodes = ShellsOf(doc, walls[1]).Concat(ShellsOf(doc, walls[3])).SelectMany(s => s["node_ids"]!.AsArray().Select(x => (string)x!)).ToHashSet();
+        foreach (var role in new[] { "purlin", "ridge" })
+            Assert.Contains(members.Where(x => (string?)x["lapin"]!["role"] == role), x => gableNodes.Contains((string)x["node_i"]!) || gableNodes.Contains((string)x["node_j"]!));
+        // Their timber grade is a material read from its class: C24 by EN 338.
+        var c24 = Items(doc, "materials").Single(x => (string?)x["name"] == "C24");
+        Assert.Equal("timber", (string?)c24["kind"]);
+        Assert.Equal(11e9 / 98066.5, (double)c24["elastic_modulus"]!, 2);
+        Assert.Equal(420e-6, (double)c24["weight_density"]!, 9);
+        Assert.Null(c24["poisson_ratio"]);
+        Assert.Contains("EN 338", (string?)c24["source"]!["values"]!["elastic_modulus"]);
+        Assert.Contains(report["missing"]!.AsArray(), x => (string?)x!["name"] == "C24" && x["fields"]!.AsArray().Any(k => (string?)k == "poisson_ratio"));
+    }
+
+    [Fact]
+    public void Angles_are_given_about_their_principal_axes_as_EN_10056_1_tabulates_them()
+    {
+        static void Near(double expected, double actual, double rel) => Assert.InRange(actual, expected * (1 - rel), expected * (1 + rel));
+        // L 100×100×10 (EN 10056-1, r1 = 12 mm): Iy = Iz = 177 cm⁴, Iu = 280 cm⁴, Iv = 73.0 cm⁴; its toes are left sharp (r2 = 6 mm
+        // rounded in the table), which adds 2% to Iy, less to Iu and Iv.
+        var l = SectionProperties.Of(StructureAnalytical.Shape(Section.Catalogue["L 100×100×10"]))!;
+        Near(177, l.Geometric!.I33 * 1e8, 0.025);
+        Near(280, l.I33 * 1e8, 0.02);
+        Near(73.0, l.I22 * 1e8, 0.02);
+        Assert.Equal(-45, l.PrincipalDeg, 6);
+        Assert.Equal(l.Geometric.I22 + l.Geometric.I33, l.I22 + l.I33, 12);
+        // L 120×80×10 (r1 = 11 mm), the long leg up its depth: Iy = 276, Iz = 98.1, Iu = 317, Iv = 56.8 cm⁴, tan α = 0.434.
+        var u = SectionProperties.Of(new SectionShape("L", 0.08, 0.12, 0.01, 0.01, Designation: "L 120×80×10"))!;
+        Near(276, u.Geometric!.I33 * 1e8, 0.025);
+        Near(98.1, u.Geometric.I22 * 1e8, 0.025);
+        Near(317, u.I33 * 1e8, 0.02);
+        Near(56.8, u.I22 * 1e8, 0.03);
+        Assert.InRange(Math.Abs(Math.Tan(u.PrincipalDeg * Math.PI / 180)), 0.424, 0.444);
+        // In the file: the principal values, the angle folded into the frame's rotation, the geometric ones under lapin.
+        var f = F();
+        var type = (string)f.Run("structure.createBeamType", new JsonObject { ["section"] = "L 100×100×10", ["material"] = "S235" })!["id"]!;
+        var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 0, ["typeId"] = type })!["id"]!;
+        var (doc, _) = Export(f);
+        Valid(doc);
+        var s = Item(doc, "sections", type);
+        Near(280, (double)s["properties"]!["I33"]!, 0.02);
+        Near(177, (double)s["lapin"]!["geometric_axes"]!["I33"]!, 0.025);
+        Assert.Equal(-45, (double)s["lapin"]!["principal_axes"]!["angle_deg"]!, 6);
+        var frame = FrameOf(doc, beam);
+        Assert.Equal(45, (double)frame["local_axis_rotation_deg"]!, 6);
+        Assert.Equal(0, (double)frame["lapin"]!["geometric_rotation_deg"]!, 6);
+        // A mirrored beam turns the other way.
+        f.Run("structure.flip", new JsonObject { ["ids"] = new JsonArray(beam) });
+        Assert.Equal(-45, (double)FrameOf(Export(f).Doc, beam)["local_axis_rotation_deg"]!, 6);
+    }
+
+    /// <summary>
+    /// The sample files for the JG Structures developer (set LAPIN_JG_SAMPLES to a folder): the small building in both units,
+    /// the hall without and with its secondary steel, a house with gable walls under a roof deck and a floor with an opening.
+    /// </summary>
+    [Fact]
+    public void Samples_are_written_when_asked()
+    {
+        if (Environment.GetEnvironmentVariable("LAPIN_JG_SAMPLES") is not { Length: > 0 } dir) return;
+        Directory.CreateDirectory(dir);
+        void Write(string name, Fixture fx, string units = "contract", JsonObject? more = null)
+        {
+            var (doc, report) = Export(fx, units, more);
+            Valid(doc);
+            var o = new System.Text.Json.JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+            File.WriteAllText(Path.Combine(dir, $"{name}.jg.json"), doc.ToJsonString(o));
+            File.WriteAllText(Path.Combine(dir, $"{name}.report.json"), report.ToJsonString(o));
+        }
+        var small = Build(drafting: true, concrete: "Reinforced concrete C25/30");
+        // A steel beam across the first floor, S355, framing into the edge beams.
+        var ipe = (string)small.F.Run("structure.createBeamType", new JsonObject { ["section"] = "IPE 300", ["material"] = "S355" })!["id"]!;
+        small.F.Run("structure.addBeam", new JsonObject { ["storeyId"] = small.Ground, ["x1"] = 3, ["y1"] = 0, ["x2"] = 3, ["y2"] = 5, ["typeId"] = ipe });
+        small.F.Run("drafting.makeGrid", new JsonObject { ["x"] = new JsonArray(6.0), ["y"] = new JsonArray(5.0) });
+        Write("small-building", small.F);
+        Write("small-building.si", small.F, "si");
+        Write("small-building.pinned", small.F, more: new JsonObject { ["footings"] = "pinned" });
+        Write("hall", Hall(false));
+        Write("hall2", Hall(true));
+        Write("gable-house-deck", Gable("none").F);
+        Write("gable-house-framed", Gable("rafters").F);
+        var (floor, slab, _) = Floor();
+        floor.Run("architecture.addSlabOpening", new JsonObject { ["slabId"] = slab, ["points"] = new JsonArray(new JsonArray(2.5, 2.0), new JsonArray(3.5, 2.0), new JsonArray(3.5, 3.0), new JsonArray(2.5, 3.0)) });
+        Write("slab-with-opening", floor);
     }
 
     static string Root()

@@ -58,6 +58,8 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 
 Choose the storeys, the kinds of members and the units: the contract's centimetres and kilogram-force, or SI (metres and kilonewtons). Materials take their values from their data (Manage → Materials, Pset_MaterialMechanical in pascals) or from the strength class in their name, C25/30 or S355, by the Eurocodes; a section's area, inertias, moduli and torsion constant are worked out from its geometry. What Lapin does not know stays empty (null) in the file, never zero. Before you export, the report counts what goes in, checks the file against the contract's rules and lists what an analysis still needs: a material without a class, a column that stands on nothing.
 
+Where members do not meet on their axes (a purlin on a rafter, a rail on a column, a brace on its gusset plate, rafters on a wall plate), Lapin puts the node on the supporting member and keeps the distance as the member's end offset, so the secondary steel of a hall is connected too. Walls keep their doors, windows and openings, and floors their openings: since the contract's shells have no holes, they are cut into pieces round them, and an L-shaped floor into convex pieces along the beams under it. A wall under a roof rises to it, and the roof is exported too: its deck as shells, or the rafters, purlins and wall plates of a timber roof as frames of its timber class (C24 by EN 338). Angles and other unsymmetric sections are given about their principal axes. **Feet on footings** sets how the feet of columns and walls on a footing are held: fixed (the default) or pinned. A steel column base keeps its own connection.
+
 ![Export JG Structures](shots/export-jg.webp)
 
 ## Optimize an IFC file

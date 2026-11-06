@@ -9,7 +9,8 @@ namespace Lapin.Steel;
 /// <summary>
 /// Steel in the analytical model (docs/jg-structures.md): each steel member on its axis through its section's box centre (its
 /// insertion point's offset taken out), its depth along the member's own frame (so its rotation is the member's); a column
-/// base connection a support on its column's foot, pinned or fixed as the connection is.
+/// base connection a support on its column's foot, pinned or fixed as the connection is; a secondary connection (a cleat,
+/// a gusset, a fly brace's) the members it joins, each fixed to its host where their axes come closest (eccentric).
 /// </summary>
 public sealed class SteelAnalytical : IAnalyticalElements
 {
@@ -30,7 +31,17 @@ public sealed class SteelAnalytical : IAnalyticalElements
         }
         foreach (var node in m.OfClass(SteelNodes.Class))
         {
-            if (SteelNodes.KindOf(node) != "base" || SteelNodes.MembersOf(node).FirstOrDefault() is not { } column) continue;
+            var kind0 = SteelNodes.KindOf(node);
+            if (SteelNodes.SecondaryKinds.Contains(kind0))
+            {
+                var joined = SteelNodes.MembersOf(node).Select(j => j.Id).Distinct().ToList();
+                var linkSource = $"{SteelNodes.Label(kind0).ToLowerInvariant()} „{node.Name}”";
+                // A cleat or gusset fixes each member to its host (the first); a fly brace runs from the purlin or rail to the rafter's or column's flange.
+                for (var i = 1; i < joined.Count; i++) into.Links.Add(new AnalyticalLink(joined[0], joined[i], linkSource));
+                if (kind0 == "fly" && joined.Count >= 3) into.Links.Add(new AnalyticalLink(joined[1], joined[2], linkSource));
+                continue;
+            }
+            if (kind0 != "base" || SteelNodes.MembersOf(node).FirstOrDefault() is not { } column) continue;
             var spec = SteelNodes.Spec(m, node);
             var kind = spec.Base == "fixed" ? "fixed" : "pinned";
             var source = $"steel column base „{node.Name}”: {kind}";

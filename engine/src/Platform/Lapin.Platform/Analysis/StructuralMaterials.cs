@@ -36,6 +36,18 @@ public static partial class StructuralMaterials
     /// <summary>EN 1993-1-1 Table 3.1 (EN 10025-2, -4): fy (MPa) for a nominal thickness t ≤ 40 mm.</summary>
     static readonly Dictionary<string, double> Steel = new() { ["S235"] = 235, ["S275"] = 275, ["S355"] = 355, ["S420"] = 420, ["S450"] = 440, ["S460"] = 460 };
 
+    /// <summary>
+    /// Structural timber: EN 338:2016 Table 1 (softwood C classes) and EN 14080:2013 Table 5 (glued laminated GL): E0,mean (GPa)
+    /// and the mean density ρmean (kg/m³). Timber's Poisson ratio is not in either (an orthotropic material): it stays null.
+    /// </summary>
+    static readonly Dictionary<string, (double E, double Rho, string Standard)> Timber = new()
+    {
+        ["C14"] = (7.0, 350, "EN 338:2016"), ["C16"] = (8.0, 370, "EN 338:2016"), ["C18"] = (9.0, 380, "EN 338:2016"), ["C20"] = (9.5, 400, "EN 338:2016"),
+        ["C22"] = (10.0, 410, "EN 338:2016"), ["C24"] = (11.0, 420, "EN 338:2016"), ["C27"] = (11.5, 430, "EN 338:2016"), ["C30"] = (12.0, 460, "EN 338:2016"),
+        ["GL24h"] = (11.5, 420, "EN 14080:2013"), ["GL28h"] = (12.6, 460, "EN 14080:2013"), ["GL30c"] = (13.0, 430, "EN 14080:2013"),
+    };
+
+    [GeneratedRegex(@"\b(C(?:14|16|18|20|22|24|27|30)|GL(?:24h|28h|30c))\b(?!\s?/)", RegexOptions.IgnoreCase)] private static partial Regex TimberClass();
     [GeneratedRegex(@"\bC\s?(\d{2})\s?/\s?(\d{2,3})\b", RegexOptions.IgnoreCase)] private static partial Regex ConcreteClass();
     [GeneratedRegex(@"\bS\s?(235|275|355|420|450|460)", RegexOptions.IgnoreCase)] private static partial Regex SteelGrade();
 
@@ -82,6 +94,15 @@ public static partial class StructuralMaterials
             fy ??= new(f * 1e6, $"EN 1993-1-1:2005 Table 3.1, {grade}: fy = {f} MPa for t ≤ 40 mm");
             e ??= new(210e9, "EN 1993-1-1:2005 §3.2.6: E = 210 000 MPa");
             nu ??= new(0.3, "EN 1993-1-1:2005 §3.2.6: ν = 0.3");
+        }
+        else if (TimberClass().Match(name) is { Success: true } tm && Timber.FirstOrDefault(t => t.Key.Equals(tm.Groups[1].Value, StringComparison.OrdinalIgnoreCase)) is { Key: not null } tc)
+        {
+            kind = "timber";
+            grade = tc.Key;
+            standard = tc.Value.Standard;
+            var table = standard.StartsWith("EN 338") ? "Table 1" : "Table 5";
+            e ??= new(tc.Value.E * 1e9, $"{standard} {table}, {grade}: E0,mean = {tc.Value.E} GPa (parallel to the grain)");
+            density ??= new(tc.Value.Rho, $"{standard} {table}, {grade}: ρmean = {tc.Value.Rho} kg/m³");
         }
         else if (lower.Contains("concrete") || lower.Contains("beton")) kind = "concrete";
         else if (lower.Contains("steel") || lower.Contains("oțel") || lower.Contains("otel")) kind = "steel";

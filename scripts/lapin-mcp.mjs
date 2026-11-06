@@ -210,9 +210,9 @@ async function exportDocument({ id, format, path }) {
   return { path: file, bytes: bytes.length, name: r.name, missing: r.missing ?? [] };
 }
 
-async function exportJg({ path, units, storeys, kinds, allWalls }) {
+async function exportJg({ path, units, storeys, kinds, allWalls, footings }) {
   if (typeof path !== 'string' || !path || !isAbsolute(path)) throw new Error('path must be an absolute file path, e.g. /Users/me/Desktop/house.jg.json.');
-  const args = { units: units === 'si' ? 'si' : 'contract', ...(Array.isArray(storeys) ? { storeys } : {}), ...(Array.isArray(kinds) ? { kinds } : {}), ...(allWalls ? { allWalls: true } : {}) };
+  const args = { units: units === 'si' ? 'si' : 'contract', ...(Array.isArray(storeys) ? { storeys } : {}), ...(Array.isArray(kinds) ? { kinds } : {}), ...(allWalls ? { allWalls: true } : {}), ...(footings === 'pinned' ? { footings: 'pinned' } : {}) };
   const r = await call('doc.query', { name: 'jg.export', args });
   const bytes = Buffer.from(r.data, 'base64');
   const file = resolve(path);
@@ -298,8 +298,9 @@ const TOOLS = [
         path: { type: 'string', description: 'Absolute path of the file to write, e.g. /Users/me/Desktop/house.jg.json' },
         units: { type: 'string', enum: ['contract', 'si'] },
         storeys: { type: 'array', items: { type: 'string' }, description: 'Storey ids to export (all when absent)' },
-        kinds: { type: 'array', items: { type: 'string', enum: ['columns', 'beams', 'members', 'walls', 'slabs', 'supports'] } },
+        kinds: { type: 'array', items: { type: 'string', enum: ['columns', 'beams', 'members', 'walls', 'slabs', 'roofs', 'supports'] } },
         allWalls: { type: 'boolean', description: 'Every wall, not only the load-bearing ones' },
+        footings: { type: 'string', enum: ['fixed', 'pinned'], description: 'How column and wall feet on footings are held (fixed by default)' },
       },
       required: ['path'],
     },

@@ -2,7 +2,8 @@
  * File → Export JG Structures (JSON)… (docs/jg-structures.md): the analytical model of the project — columns, beams and
  * steel members as frames, load-bearing walls and floors as shells on shared nodes, the footings' supports — in the exchange
  * file of JG Structures, a structural analysis program (contract JG_Structures_v2_exchange 1.0.0). The storeys and kinds
- * chosen, the units (the contract's cm and kgf, or SI), every wall or only the load-bearing ones; the engine's preview
+ * chosen, the units (the contract's cm and kgf, or SI), every wall or only the load-bearing ones, how the feet on footings are
+ * held (fixed by default, or pinned); the engine's preview
  * counts what goes in and checks it against the contract's rules before it is written, and lists what analysis still needs.
  */
 
@@ -13,7 +14,7 @@ import { engine, query, useSession } from '../../engine/session';
 import { projectTitle, saveFile } from '../../engine/files';
 import { LONG_TIMEOUT_MS } from '../../engine/client';
 
-interface JgSurvey { storeys: { id: string; name: string; elevation: number }[]; kinds: Record<string, number> }
+interface JgSurvey { storeys: { id: string; name: string; elevation: number }[]; kinds: Record<string, number>; footings?: 'fixed' | 'pinned' }
 interface JgMissing { entity: string; id: string; name: string; fields: string[] }
 interface JgReport {
   units: string;
@@ -23,7 +24,7 @@ interface JgReport {
   ready: boolean;
 }
 
-const KINDS: [string, string][] = [['columns', 'Columns'], ['beams', 'Beams'], ['members', 'Steel members'], ['walls', 'Walls'], ['slabs', 'Floors'], ['supports', 'Supports (footings, column bases)']];
+const KINDS: [string, string][] = [['columns', 'Columns'], ['beams', 'Beams'], ['members', 'Steel members'], ['walls', 'Walls'], ['slabs', 'Floors'], ['roofs', 'Roofs (decks, timber framing)'], ['supports', 'Supports (footings, column bases)']];
 const COUNTS: [string, string][] = [['nodes', 'Nodes'], ['frames', 'Frame elements'], ['shells', 'Shell elements'], ['supports', 'Supported nodes'], ['sections', 'Sections'], ['materials', 'Materials'], ['stories', 'Storeys'], ['grids', 'Grids']];
 
 export function JgExportDialog() {
@@ -33,16 +34,18 @@ export function JgExportDialog() {
   const [offKinds, setOffKinds] = useState<Set<string>>(new Set());
   const [units, setUnits] = useState<'contract' | 'si'>('contract');
   const [allWalls, setAllWalls] = useState(false);
+  const [footings, setFootings] = useState<'fixed' | 'pinned'>('fixed');
   const [report, setReport] = useState<JgReport | null>(null);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
-  useEffect(() => { void query<JgSurvey>('jg.survey').then(setSurvey); }, []);
+  useEffect(() => { void query<JgSurvey>('jg.survey').then((s) => { setSurvey(s); if (s?.footings) setFootings(s.footings); }); }, []);
   const args = useMemo(() => ({
     units,
     ...(allWalls ? { allWalls: true } : {}),
+    ...(footings === 'pinned' ? { footings } : {}),
     ...(survey && offStoreys.size ? { storeys: survey.storeys.filter((s) => !offStoreys.has(s.id)).map((s) => s.id) } : {}),
     ...(offKinds.size ? { kinds: KINDS.map(([k]) => k).filter((k) => !offKinds.has(k)) } : {}),
-  }), [units, allWalls, survey, offStoreys, offKinds]);
+  }), [units, allWalls, footings, survey, offStoreys, offKinds]);
   useEffect(() => {
     if (!survey) return;
     let live = true;
@@ -102,6 +105,11 @@ export function JgExportDialog() {
             </select></dd>
             <dt title="Pset_WallCommon.LoadBearing on the wall or its type">Walls</dt>
             <dd><label><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={allWalls} onChange={(e) => setAllWalls(e.target.checked)} /> every wall, not only the load-bearing ones</label></dd>
+            <dt title="How the column and wall feet standing on a footing are held; a steel column base keeps its connection's own">Feet on footings</dt>
+            <dd><select data-testid="jg-footings" value={footings} onChange={(e) => setFootings(e.target.value as 'fixed' | 'pinned')}>
+              <option value="fixed">fixed (the default)</option>
+              <option value="pinned">pinned</option>
+            </select></dd>
           </dl>
         </div>
         <div className="dialog-body jg-report" data-testid="jg-report">

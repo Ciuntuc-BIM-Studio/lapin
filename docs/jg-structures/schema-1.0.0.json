@@ -170,7 +170,23 @@
         "section_id": { "$ref": "#/$defs/id" },
         "material_id": { "$ref": "#/$defs/id" },
         "local_axis_rotation_deg": { "type": "number" },
-        "end_offsets": { "type": ["object", "null"] }
+        "end_offsets": {
+          "description": "The contract's 'explicit end offsets' (object|null), its shape as Lapin writes it: from node_i (node_j) to the member's own end, global axes, in the declared length unit; the member runs between the two offset ends, joined to its nodes rigidly. Null: the member runs node to node.",
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["system", "unit", "i", "j"],
+              "properties": {
+                "system": { "const": "global" },
+                "unit": { "type": "string", "minLength": 1 },
+                "i": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+                "j": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+                "rigid": { "type": "boolean" }
+              }
+            }
+          ]
+        }
       }
     },
     "shell": {

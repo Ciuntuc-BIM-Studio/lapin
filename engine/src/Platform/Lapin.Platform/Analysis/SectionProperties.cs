@@ -9,7 +9,19 @@ namespace Lapin.Platform.Analysis;
 /// <see cref="Method"/> says how each was found; <see cref="Centroid"/> is the centroid from the box centre (local 3, local 2).
 /// </summary>
 public sealed record SectionProps(double Area, double I22, double I33, double S22, double S33, double Z22, double Z33, double J,
-    Vec2 Centroid, string Method, string? Standard, string? Family, double RootRadius);
+    Vec2 Centroid, string Method, string? Standard, string? Family, double RootRadius)
+{
+    /// <summary>
+    /// An unsymmetric section's (an angle, a Z, any outline with a product of inertia) principal axes: the angle (degrees, in
+    /// the section's drawing, from its y — the depth — towards its x) of the principal axis taken as local 2; the values above are
+    /// then about the principal axes, and <see cref="Geometric"/> keeps them about the geometric ones (with <see cref="Ixy"/>).
+    /// Zero and null for a section symmetric about an axis.
+    /// </summary>
+    public double PrincipalDeg { get; init; }
+    public SectionProps? Geometric { get; init; }
+    /// <summary>The product of inertia ∫x·y dA in the section's drawing (x across, y up its depth), about the centroid.</summary>
+    public double Ixy { get; init; }
+}
 
 /// <summary>
 /// The properties of a section from its geometry (docs/jg-structures.md, Section properties): closed forms for rectangles,
@@ -34,7 +46,7 @@ public static class SectionProperties
         ["HEB 200"] = ("EN 10365:2017", "HEB", 18), ["HEB 300"] = ("EN 10365:2017", "HEB", 27),
         ["UPN 200"] = ("EN 10365:2017", "UPN", 11.5), ["UPN 300"] = ("EN 10365:2017", "UPN", 16),
         ["L 50×50×5"] = ("EN 10056-1:2017", "L", 7), ["L 60×60×6"] = ("EN 10056-1:2017", "L", 8), ["L 70×70×7"] = ("EN 10056-1:2017", "L", 9),
-        ["L 80×80×8"] = ("EN 10056-1:2017", "L", 10), ["L 100×100×10"] = ("EN 10056-1:2017", "L", 12),
+        ["L 80×80×8"] = ("EN 10056-1:2017", "L", 10), ["L 100×100×10"] = ("EN 10056-1:2017", "L", 12), ["L 120×80×10"] = ("EN 10056-1:2017", "L", 11),
         ["RHS 100×100×5"] = ("EN 10210-2:2019", "RHS", 7.5), ["RHS 150×100×6"] = ("EN 10210-2:2019", "RHS", 9), ["RHS 200×100×8"] = ("EN 10210-2:2019", "RHS", 12),
         ["CHS 60.3×3.2"] = ("EN 10210-2:2019", "CHS", 0), ["CHS 88.9×4"] = ("EN 10210-2:2019", "CHS", 0), ["CHS 114.3×5"] = ("EN 10210-2:2019", "CHS", 0), ["CHS 168.3×6"] = ("EN 10210-2:2019", "CHS", 0),
     };
@@ -81,15 +93,43 @@ public static class SectionProperties
         if (!(area > 0)) return null;
         var (cx, cy) = (sy / area, sx / area);
         var moved = rings.Select(ring => ring.Select(p => new Vec2(p.X - cx, p.Y - cy)).ToList()).ToList();
-        var (_, _, _, ixx, iyy) = Integrals(moved);
-        double i33 = ixx, i22 = iyy;
-        var ymax = moved.SelectMany(x => x).Max(p => Math.Abs(p.Y));
-        var xmax = moved.SelectMany(x => x).Max(p => Math.Abs(p.X));
-        var z33 = Plastic(moved, area, true);
-        var z22 = Plastic(moved, area, false);
         var (jv, jm) = Torsion(s, r);
         var method = r > 0 ? $"polygon integrals of the nominal outline with root radius r = {r * 1000:0.#} mm ({standard}); J: {jm}" : $"polygon integrals of the outline (sharp corners); J: {jm}";
-        return new(area, i22, i33, i22 / xmax, i33 / ymax, z22, z33, jv, new Vec2(cx, cy), method, standard, family, r);
+        var geometric = About(moved, area, jv, new Vec2(cx, cy), method, standard, family, r);
+        var ixy = Product(moved);
+        if (Math.Abs(ixy) <= 1e-9 * (geometric.I22 + geometric.I33)) return geometric with { Ixy = 0 };
+        // The principal axis nearest the depth: ∫(p·v)² is extreme for v = (sin φ, cos φ) with tan 2φ = 2·Ixy / (Ixx − Iyy).
+        var phi = 0.5 * Math.Atan2(2 * ixy, geometric.I33 - geometric.I22);
+        if (phi > Math.PI / 4 + 1e-12) phi -= Math.PI / 2;
+        if (phi <= -Math.PI / 4 - 1e-12) phi += Math.PI / 2;
+        var (sn, cs) = (Math.Sin(phi), Math.Cos(phi));
+        // Coordinates along the principal axes: y' along v (the new local 2), x' across it.
+        var turned = moved.Select(ring => ring.Select(p => new Vec2(p.X * cs - p.Y * sn, p.X * sn + p.Y * cs)).ToList()).ToList();
+        var principal = About(turned, area, jv, new Vec2(cx, cy), method + "; about the principal axes", standard, family, r);
+        return principal with { PrincipalDeg = phi * 180 / Math.PI, Geometric = geometric with { Ixy = ixy }, Ixy = ixy };
+    }
+
+    /// <summary>The properties about the axes of the rings' coordinates (centred).</summary>
+    static SectionProps About(List<List<Vec2>> rings, double area, double j, Vec2 centroid, string method, string? standard, string? family, double r)
+    {
+        var (_, _, _, ixx, iyy) = Integrals(rings);
+        var ymax = rings.SelectMany(x => x).Max(p => Math.Abs(p.Y));
+        var xmax = rings.SelectMany(x => x).Max(p => Math.Abs(p.X));
+        return new(area, iyy, ixx, iyy / xmax, ixx / ymax, Plastic(rings, area, false), Plastic(rings, area, true), j, centroid, method, standard, family, r);
+    }
+
+    /// <summary>The rings' product of inertia ∫x·y dA (each ring by its orientation's sign).</summary>
+    static double Product(IEnumerable<IReadOnlyList<Vec2>> rings)
+    {
+        double ixy = 0;
+        foreach (var ring in rings)
+            for (var i = 0; i < ring.Count; i++)
+            {
+                var (p, q) = (ring[i], ring[(i + 1) % ring.Count]);
+                var c = p.X * q.Y - q.X * p.Y;
+                ixy += (p.X * q.Y + 2 * p.X * p.Y + 2 * q.X * q.Y + q.X * p.Y) * c;
+            }
+        return ixy / 24;
     }
 
     /// <summary>The section's rings, counter-clockwise outside and clockwise holes, its root fillets (and a hollow section's corners) rounded.</summary>
@@ -123,25 +163,37 @@ public static class SectionProperties
         }
         if (s.Kind is "I" or "U" or "T" or "L" && !(tw > 0 && tf > 0)) return null;
         outline = EnsureCcw(outline);
-        // The root fillets: the re-entrant corners (a clockwise turn in a counter-clockwise outline) rounded by r.
-        if (r > 0) outline = Round(outline, turn => turn < 0 ? r : 0);
+        // The root fillets: the re-entrant corners (a clockwise turn in a counter-clockwise outline) rounded by r; an angle's
+        // toes (the inner corners of its legs' tips) by r2 = r/2 (EN 10056-1).
+        if (r > 0) outline = s.Kind == "L" ? Round(outline, (i, turn) => turn < 0 ? r : i is 2 or 4 ? r / 2 : 0) : Round(outline, turn => turn < 0 ? r : 0);
         return [outline, .. holes];
     }
 
     /// <summary>A ring's corners rounded by the radius the turn there asks (0: left sharp), each by an arc in 16 steps a quarter.</summary>
-    static List<Vec2> Round(List<Vec2> ring, Func<double, double> radiusFor)
+    static List<Vec2> Round(List<Vec2> ring, Func<double, double> radiusFor) => Round(ring, (_, turn) => radiusFor(turn));
+
+    /// <summary>A ring's corners rounded by the radius each corner (its index, its turn) asks.</summary>
+    static List<Vec2> Round(List<Vec2> ring, Func<int, double, double> radiusFor)
     {
         var o = new List<Vec2>();
         var n = ring.Count;
+        double Turn(int i)
+        {
+            var (a, v, b) = (ring[(i - 1 + n) % n], ring[i], ring[(i + 1) % n]);
+            var (d1, d2) = ((v - a).Normalized(), (b - v).Normalized());
+            return Math.Atan2(Vec2.Cross(d1, d2), Vec2.Dot(d1, d2));
+        }
+        var radii = Enumerable.Range(0, n).Select(i => radiusFor(i, Turn(i))).ToArray();
         for (var i = 0; i < n; i++)
         {
             var (a, v, b) = (ring[(i - 1 + n) % n], ring[i], ring[(i + 1) % n]);
             var (d1, d2) = ((v - a).Normalized(), (b - v).Normalized());
-            var cross = Vec2.Cross(d1, d2);
-            var turn = Math.Atan2(cross, Vec2.Dot(d1, d2));
-            var r = radiusFor(turn);
+            var turn = Turn(i);
+            var r = radii[i];
             var tangent = r * Math.Tan(Math.Abs(turn) / 2);
-            if (r <= 0 || Math.Abs(turn) < 1e-9 || tangent > Math.Min((v - a).Length, (b - v).Length) / 2 + 1e-12) { o.Add(v); continue; }
+            // An edge shared with another rounded corner gives each half of it; an edge whose other end stays sharp, all of it.
+            var room = Math.Min((v - a).Length * (radii[(i - 1 + n) % n] > 0 ? 0.5 : 1), (b - v).Length * (radii[(i + 1) % n] > 0 ? 0.5 : 1));
+            if (r <= 0 || Math.Abs(turn) < 1e-9 || tangent > room + 1e-12) { o.Add(v); continue; }
             var t1 = v - d1 * tangent;
             var side = Math.Sign(turn);
             var centre = t1 + d1.Perp * (side * r);

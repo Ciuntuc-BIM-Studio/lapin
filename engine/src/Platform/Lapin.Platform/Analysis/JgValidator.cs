@@ -9,7 +9,8 @@ namespace Lapin.Platform.Analysis;
 /// section_id and material_id resolving; node_j unlike node_i, three nodes at least to a shell, each once; coordinates
 /// exactly [X, Y, Z]; restraints six booleans or null; every number finite; the units declared; property_status one of the
 /// three; a catalogue section with its standard, family, designation and source; verified_tabulated only with a table or a
-/// page. Each failure is a sentence naming what and where.
+/// page; a frame's end_offsets null or {system: global, unit: the length unit, i, j: [dx, dy, dz]}. Each failure is a
+/// sentence naming what and where.
 /// </summary>
 public static class JgValidator
 {
@@ -79,6 +80,15 @@ public static class JgValidator
             Ref("sections", f["section_id"], $"Frame {id} section_id");
             Ref("materials", f["material_id"], $"Frame {id} material_id");
             if ((string?)f["kind"] is not ("beam" or "column")) errors.Add($"Frame {id}: kind is neither beam nor column.");
+            // end_offsets (Lapin's shape of the contract's object): from each node to the member's own end, global, in the length unit.
+            if (f["end_offsets"] is JsonObject eo)
+            {
+                if ((string?)eo["system"] != "global") errors.Add($"Frame {id}: end_offsets.system is not global.");
+                if ((string?)eo["unit"] != (string?)doc["units"]?["length"]) errors.Add($"Frame {id}: end_offsets.unit is not the length unit.");
+                foreach (var k in new[] { "i", "j" })
+                    if (eo[k] is not JsonArray { Count: 3 } v || v.Any(x => x is not JsonValue)) errors.Add($"Frame {id}: end_offsets.{k} is not [dx, dy, dz].");
+            }
+            else if (f["end_offsets"] != null) errors.Add($"Frame {id}: end_offsets is neither an object nor null.");
         }
         foreach (var s in (doc["shells"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
