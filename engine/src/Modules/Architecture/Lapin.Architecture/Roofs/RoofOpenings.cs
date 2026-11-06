@@ -204,6 +204,13 @@ public static class RoofOpenings
         yield return new Quantity("DormerWallArea", parts.Sum(d => Area(d.Front) - (d.FrontWindow is { } fw ? Area(fw) : 0) + Area(d.CheekL) + Area(d.CheekR)), "AREA", "Dormer walls (front and cheeks)");
         yield return new Quantity("DormerRoofArea", parts.Sum(d => d.RoofPlanes.Sum(Area)), "AREA", "Dormer covering");
     }
+
+    /// <summary>The dormers' covering, sloped (decision 334): the area of each dormer's roof planes; none without dormers.</summary>
+    public static (int Count, double Area) DormerRoofs(IReadOnlyList<Placed> placed)
+    {
+        var dormers = placed.Where(p => p.Opening.Kind == RoofOpening.Dormer).Select(p => DormerShape(p.Opening, p.Host, p.Center)).OfType<DormerParts>().ToList();
+        return (dormers.Count, dormers.Sum(d => d.RoofPlanes.Sum(Area)));
+    }
 }
 
 /// <summary>

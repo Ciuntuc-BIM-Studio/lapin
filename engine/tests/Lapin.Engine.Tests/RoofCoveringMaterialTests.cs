@@ -226,6 +226,65 @@ public class RoofCoveringMaterialTests
         Assert.Equal(Q(whole, "NetArea"), (double)line["qty"]!, 2);
     }
 
+    /// <summary>
+    /// The dormers' covering measured on its own (decision 334): a part set of the covering's material beside the roof's, so
+    /// the takeoff by material and an article ruled by the material count the main slopes (less the dormers' notches) and the
+    /// dormers' roofs, each once; the roof's own areas stay its slopes'; a task on the covering measures both.
+    /// </summary>
+    [Fact]
+    public void A_dormers_covering_is_measured_with_the_roofs_once()
+    {
+        var f = new Fixture(new ArchitectureModule(), new CostModule(), new PhasesModule(), new PlanningModule());
+        var roof = AddRoof(f, "modern_barn");
+        var dormer = (string)f.Run("architecture.addRoofOpening", new JsonObject { ["x"] = 7, ["y"] = 0.6, ["kind"] = "dormer", ["width"] = 1.4, ["wallHeight"] = 0.9 })!["id"]!;
+        double Q(IReadOnlyList<Quantity> qs, string n) => qs.Single(q => q.Name == n).Value;
+        var sets = f.Session.Quantities(roof);
+        var whole = sets.Single(s => s.Name == "Qto_RoofBaseQuantities").Quantities;
+        var covering = sets.Single(s => s.Part == "covering").Quantities;
+        var dormers = sets.Single(s => s.Part == "dormer-roofs");
+        var opening = sets.Single(s => s.Part == "openings").Quantities;
+        var metal = Material(f, "Metal sheet")!.Id;
+        Assert.Equal("Lapin_RoofDormerCoveringQuantities", dormers.Name);
+        Assert.Equal(metal, dormers.Material);
+        Assert.Equal(1, Q(dormers.Quantities, "Count"));
+        Assert.Equal(0.03, Q(dormers.Quantities, "Width"), 9);
+        var area = Q(dormers.Quantities, "NetArea");
+        Assert.True(area > 1);
+        Assert.Equal(Q(opening, "DormerRoofArea"), area, 9);
+        // The roof's covering is its slopes less the dormer's notch, as the roof's own net area.
+        Assert.Equal(Q(whole, "NetArea"), Q(covering, "NetArea"), 9);
+
+        // The takeoff by material: one row of metal sheet, the slopes and the dormer together.
+        var id = (string)f.Run("architecture.createSchedule", new JsonObject { ["kind"] = "quantities" })!["id"]!;
+        f.Run("architecture.updateSchedule", new JsonObject { ["id"] = id, ["groupBy"] = new JsonArray("material"), ["classes"] = new JsonArray(IfcClass.Roof) });
+        var grid = new QuantityTakeoff().Grid(f.Session.Reader, f.Model.Get(id)!);
+        var row = grid.Rows.Single(r => r[0] == "Metal sheet");
+        Assert.Equal((Q(covering, "NetArea") + area).ToString("0.00", CultureInfo.InvariantCulture), row[grid.Columns.ToList().IndexOf("Net area (m²)")]);
+        Assert.Equal("1", row[grid.Columns.ToList().IndexOf("Count")]);
+
+        // An article ruled by the material: one line in the Roof chapter, the slopes and the dormer together.
+        var csv = "Cod;Denumire;U.M.;Material;Manoperă\nINV02;Învelitoare din tablă;mp;50;20\n";
+        f.Run("cost.importPrices", new JsonObject { ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(csv)), ["name"] = "Prețuri.csv" });
+        f.Run("cost.setRule", new JsonObject { ["material"] = metal, ["code"] = "INV02" });
+        f.Run("cost.createEstimate", new JsonObject());
+        var est = (JsonObject)f.Session.Query("cost.estimate", new JsonObject())!;
+        var lines = est["chapters"]!.AsArray().SelectMany(c => c!["lines"]!.AsArray().Select(l => ((string)c["name"]!, (JsonObject)l!))).Where(x => (string)x.Item2["code"]! == "INV02").ToList();
+        var (chapter, line) = Assert.Single(lines);
+        Assert.Equal("Roof", chapter);
+        Assert.Equal(Q(covering, "NetArea") + area, (double)line["qty"]!, 2);
+
+        // A task on the roofs' covering measures the dormer too.
+        f.Run("planning.createSchedule", new JsonObject { ["start"] = "2027-03-01" });
+        f.Run("planning.useIndicativeNorms", new JsonObject());
+        f.Run("planning.generate", new JsonObject { ["style"] = "masonry" });
+        var task = ((JsonObject)f.Session.Query("planning.schedule", new JsonObject())!)["tasks"]!.AsArray().OfType<JsonObject>().First(t => (string)t["name"]! == "Roof covering");
+        Assert.Equal(Q(covering, "NetArea") + area, (double)task["quantity"]!, 3);
+
+        // Without the dormer: no such set.
+        f.Run("architecture.removeRoofOpening", new JsonObject { ["roofId"] = roof, ["id"] = dormer });
+        Assert.DoesNotContain(f.Session.Quantities(roof), s => s.Part == "dormer-roofs");
+    }
+
     [Fact]
     public void A_planning_rule_by_the_covering_s_material_takes_the_roof()
     {

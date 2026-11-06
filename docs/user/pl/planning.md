@@ -147,6 +147,8 @@ W sekcji **Elementy** we Właściwościach zaznacz **Znajdź je regułą** i wyb
 
 **Część** mówi, co zadanie bierze z każdego elementu: **całe elementy**, ich **rdzeń** (warstwę konstrukcyjną), ich **wykończenia** (wszystkie warstwy poza rdzeniem), warstwy jednego materiału albo jednej kategorii materiału (Wykończenie, Izolacja…). Tak ściana warstwowa jest murowana w zadaniu Murowanie (rdzeń) i tynkowana w zadaniu Tynki (wykończenia). Element bez warstw jest swoim własnym rdzeniem i nie ma wykończeń.
 
+Dach też buduje się warstwami: jego konstrukcja (płyta dachu płaskiego, sklepienia lub dachu bez więźby; krokwie lub wiązary dachu z więźbą) to rdzeń, a pokrycie (z dachami lukarn) i łaty to wykończenia. Zadanie **Konstrukcja dachu** (rdzeń) i zadanie **Pokrycie dachu** (wykończenia) biorą każde swoją część, reguła według materiału znajduje płytę po jej betonie, a symulacja i widok na dzień pokazują pokrycie dopiero, gdy jest ułożone. Szablony generatora budują dach w tych dwóch krokach, każdy z czasem z pola swojej części, a rury spustowe w osobnym kroku (**Rynny i rury spustowe**); pokrycie hali stalowej pozostaje jednym krokiem.
+
 ### Ręcznie
 
 ![Karta zaznaczenia nad widokiem 3D, dwa zadania ściany oznaczone w Gantcie](shots/planning-element-tasks.webp)

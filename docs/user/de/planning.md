@@ -147,6 +147,8 @@ Unter **Elemente** in den Eigenschaften setze **Per Regel finden** und wähle, w
 
 **Teil** sagt, was der Vorgang von jedem Element nimmt: die **ganzen Elemente**, ihren **Kern** (die tragende Schicht), ihre **Beläge** (alle Schichten außer dem Kern), die Schichten eines Materials oder die einer Materialkategorie (Belag, Dämmung…). So wird eine geschichtete Wand in einem Vorgang Mauerwerk (ihr Kern) gemauert und in einem Vorgang Putz (ihre Beläge) verputzt. Ein Element ohne Schichten ist sein eigener Kern und hat keine Beläge.
 
+Auch ein Dach wird in Schichten gebaut: sein Tragwerk (die Tragschale eines Flachdachs, einer Tonne oder eines Dachs ohne Dachstuhl; die Sparren oder Binder eines Dachstuhls) ist der Kern, die Deckung (mit den Gaubendächern) und die Lattung die Bekleidungen. Ein Vorgang **Dachtragwerk** (Kern) und ein Vorgang **Dachdeckung** (Bekleidungen) nehmen jeder seinen Teil, eine Regel nach Material findet die Tragschale an ihrem Beton, und die Simulation und eine Ansicht zu einem Datum zeigen die Deckung erst, wenn sie liegt. Die Vorlagen des Generators bauen ein Dach in diesen zwei Schritten, jeder nach der Fläche seines Teils bemessen, und die Fallrohre in einem eigenen Schritt (**Dachrinnen und Fallrohre**); die Dachbekleidung einer Stahlhalle bleibt ein Schritt.
+
 ### Von Hand
 
 ![Die Karte der Auswahl über dem 3D, die zwei Vorgänge einer Wand im Gantt markiert](shots/planning-element-tasks.webp)

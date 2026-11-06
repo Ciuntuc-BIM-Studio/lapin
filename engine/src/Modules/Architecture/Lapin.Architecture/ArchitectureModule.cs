@@ -313,31 +313,33 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         [
             new("style", "Style", "choice", Choices: [.. RoofCatalog.Styles.Select(s => s.Id)], ReadOnly: true),
             new("shape", "Shape", "choice", Choices: RoofCatalog.Shapes),
-            new("pitch", "Pitch (eaves)", "angle", Min: 1, Max: 85),
+            new("pitch", "Pitch (eaves)", "angle", Min: 1, Max: 85, ShowIf: FieldDescriptor.When("shape", "!flat")),
             new("overhang", "Eave overhang", "length", Min: 0, Max: 5),
             new("gableOverhang", "Gable overhang", "length", Min: 0, Max: 5),
-            new("upperPitch", "Mansard: upper pitch", "angle", Min: 1, Max: 60),
-            new("mansardInset", "Mansard: break inset", "length", Min: 0.2, Max: 5),
-            new("rise", "Barrel: rise at the crown", "length", Min: 0.05, Max: 30),
+            new("upperPitch", "Mansard: upper pitch", "angle", Min: 1, Max: 60, ShowIf: Mansard),
+            new("mansardInset", "Mansard: break inset", "length", Min: 0.2, Max: 5, ShowIf: Mansard),
+            new("rise", "Barrel: rise at the crown", "length", Min: 0.05, Max: 30, ShowIf: FieldDescriptor.When("shape", "barrel")),
             new("ridgeDirection", "Ridge direction (gable, shed)", "choice", Choices: ["auto", "x", "y"]),
-            new("shedFlip", "Shed: flip the slope", "bool"),
+            new("shedFlip", "Shed: flip the slope", "bool", ShowIf: FieldDescriptor.When("shape", "shed")),
             new("eaveOffset", "Wall plate over the storey's top", "length"),
             new("covering", "Covering", "choice", Choices: [.. RoofCatalog.Coverings.Select(c => c.Id)]),
             // The covering's material (decision 328): the covering's own by default, any of the project's.
             new(RoofCoverings.Key, "Covering material", "material"),
-            new("structure", "Structure", "choice", Choices: Roof.Structures),
+            // Its own thickness (a foreign roof's, decision 333); empty: the covering's from the catalogue.
+            new("coveringThickness", "Covering thickness", "length", Min: 0.002, Max: 0.5),
+            new("structure", "Structure", "choice", Choices: Roof.Structures, ShowIf: FieldDescriptor.When("shape", "!flat", "!barrel")),
             // Without framing (flat, barrel, none): the deck under the covering, a part of its own (decision 329).
-            new(RoofCoverings.DeckKey, "Deck material", "material"),
-            new("deckThickness", "Deck thickness", "length", Min: 0.01, Max: 1),
+            new(RoofCoverings.DeckKey, "Deck material", "material", ShowIf: Unframed),
+            new("deckThickness", "Deck thickness", "length", Min: 0.01, Max: 1, ShowIf: Unframed),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
-            new("rafterSection", "Rafters and chords (cm, or mm)", "choice", Choices: Roof.RafterSections),
-            new("rafterSpacing", "Rafter spacing", "length", Min: 0.3, Max: 2),
-            new("webSection", "Truss webs", "choice", Choices: Roof.RafterSections),
-            new("timberGrade", "Timber grade", "choice", Choices: Roof.TimberGrades),
-            new("collarHeight", "Collar ties: share of the rise", "number", Min: 0.3, Max: 0.9),
-            new("rafterTail", "Rafter tails", "choice", Choices: ["plumb", "square"]),
-            new("rafterSeat", "Rafter seat on the wall plate", "choice", Choices: ["birdsmouth", "none"]),
-            new("purlins", "Purlins per slope", "number", Min: 0, Max: 3),
+            new("rafterSection", "Rafters and chords (cm, or mm)", "choice", Choices: Roof.RafterSections, ShowIf: Framed),
+            new("rafterSpacing", "Rafter spacing", "length", Min: 0.3, Max: 2, ShowIf: Framed),
+            new("webSection", "Truss webs", "choice", Choices: Roof.RafterSections, ShowIf: FramedAs("trusses")),
+            new("timberGrade", "Timber grade", "choice", Choices: Roof.TimberGrades, ShowIf: Framed),
+            new("collarHeight", "Collar ties: share of the rise", "number", Min: 0.3, Max: 0.9, ShowIf: FramedAs("collar")),
+            new("rafterTail", "Rafter tails", "choice", Choices: ["plumb", "square"], ShowIf: Framed),
+            new("rafterSeat", "Rafter seat on the wall plate", "choice", Choices: ["birdsmouth", "none"], ShowIf: Framed),
+            new("purlins", "Purlins per slope", "number", Min: 0, Max: 3, ShowIf: Framed),
             new("gutterProfile", "Gutters", "choice", Choices: RoofCatalog.GutterProfiles),
             new("gutterMaterial", "Gutter material", "choice", Choices: RoofCatalog.GutterMaterials),
             new("snowGuards", "Snow guards", "choice", Choices: ["True", "False"]),
@@ -718,6 +720,15 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
 
     /// <summary>A contour: <c>points</c> as [[x, y], …], or the rectangle between (x1, y1) and (x2, y2).</summary>
     static ClassDescriptor? RoofClass;
+
+    // When a roof's fields apply (decision 332): as Roof.Resolved.Framed reads it, rafters and the deck never both.
+    static readonly IReadOnlyList<IReadOnlyDictionary<string, string[]>> Mansard = FieldDescriptor.When("shape", "mansard");
+    static readonly IReadOnlyList<IReadOnlyDictionary<string, string[]>> Framed = FramedAs();
+    static readonly IReadOnlyList<IReadOnlyDictionary<string, string[]>> Unframed =
+        [new Dictionary<string, string[]> { ["shape"] = ["flat", "barrel"] }, new Dictionary<string, string[]> { ["structure"] = ["none"] }];
+
+    static IReadOnlyList<IReadOnlyDictionary<string, string[]>> FramedAs(string? structure = null) =>
+        [new Dictionary<string, string[]> { ["shape"] = ["!flat", "!barrel"], ["structure"] = structure == null ? ["!none"] : [structure] }];
 
     /// <summary>
     /// A roof as a change would make it, one step for the configurator: a <c>style</c> first (its fields replace the roof's, the

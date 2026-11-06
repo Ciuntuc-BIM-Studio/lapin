@@ -47,8 +47,16 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
         && (Demolished.Count == 0 || f.Demolished != null && Demolished.Contains(f.Demolished));
 }
 
-/// <summary>One layer of an element as a task may take it: its place, whether it is the core, its name and its materials (its own and those of its pieces up its height).</summary>
-public sealed record LayerFact(int Index, bool Core, string Name, IReadOnlyList<string> Materials);
+/// <summary>
+/// One layer of an element as a task may take it: its place, whether it is the core, its name and its materials (its own and
+/// those of its pieces up its height); <see cref="Keys"/> the element's parts it is drawn and measured as when they are not
+/// <c>layer:&lt;n&gt;</c> (a roof's deck and covering, decision 331; one ending in ":" a prefix).
+/// </summary>
+public sealed record LayerFact(int Index, bool Core, string Name, IReadOnlyList<string> Materials, IReadOnlyList<string>? Keys = null)
+{
+    /// <summary>The keys the simulation gives this layer's days by: its parts', else <c>layer:&lt;n&gt;</c>.</summary>
+    public IReadOnlyList<string> PartKeys => Keys ?? [$"layer:{Index}"];
+}
 
 /// <summary>
 /// What a rule reads of an element: its type, storey (a door's or window's that of the wall it is in), group, the phases it
@@ -101,6 +109,25 @@ public static class TaskParts
             if (takes) mask |= 1UL << l.Index;
         }
         return mask;
+    }
+
+    /// <summary>
+    /// The layer of an element a part key (of its geometry or of a quantity set) is of: <c>layer:2</c> or
+    /// <c>layer:2:&lt;material&gt;</c> its index, a zone (<c>zone:…</c>) the core, a key one of its layers is drawn as (a roof's
+    /// <c>deck</c>, <c>timber:rafter:3</c>) that layer; null when none.
+    /// </summary>
+    public static int? LayerOf(ElementFacts f, string key)
+    {
+        if (key.StartsWith("layer:", StringComparison.Ordinal))
+        {
+            var rest = key[6..];
+            var colon = rest.IndexOf(':');
+            return int.TryParse(colon < 0 ? rest : rest[..colon], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var i) ? i : null;
+        }
+        if (key.StartsWith("zone:", StringComparison.Ordinal)) return f.Layers.FirstOrDefault(l => l.Core)?.Index;
+        foreach (var l in f.Layers)
+            if (l.Keys is { } keys && BuildupLayer.KeyMatches(keys, key)) return l.Index;
+        return null;
     }
 
     /// <summary>Whether a material is of a category: its own, else (for Finish) one by its name, as view styles tell finishes.</summary>
@@ -227,8 +254,13 @@ public sealed class TaskElements
         Take(e.Str("material"));
         Take(m.RelatingOf(e.Id, IfcClass.RelAssociatesMaterial)?.Id);
         if (type != null) { Take(type.Str("material")); Take(m.RelatingOf(type.Id, IfcClass.RelAssociatesMaterial)?.Id); }
-        // And what a module says it is built of (a roof's covering, decision 328), still one layer: the element whole.
-        foreach (var l in BuildUps.Of(m, e, services)?.Layers ?? []) Take(l.Material);
+        // What a module says it is built of: layers of their own when it says which parts each is (a roof's deck or framing
+        // and its covering, decision 331), else one layer of every material in it (decision 328).
+        var built = BuildUps.Of(m, e, services);
+        if (built is { Layers.Count: > 1 } && built.Layers.All(l => l.Keys != null))
+            return built.Layers.OrderBy(l => l.Index).Select(l => new LayerFact(l.Index, l.Core, l.Name,
+                l.Material is { } lm && m.Get(lm) is { Class: IfcClass.Material } ? [lm, .. l.PartMaterials ?? []] : [], l.Keys)).ToList();
+        foreach (var l in built?.Layers ?? []) Take(l.Material);
         return [new LayerFact(0, true, materials.Count > 0 ? NameOf(materials[0]) : e.Name, materials)];
     }
 

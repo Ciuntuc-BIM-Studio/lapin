@@ -187,14 +187,21 @@ sealed class RoofCoveringUpdate : IElementUpdate
 /// </summary>
 public sealed class RoofBuildUps : IElementBuildUps
 {
+    /// <summary>The parts each layer is drawn as: the covering with the dormers' roofs; the framing's members; the deck (or the CLT panels in its place).</summary>
+    public static readonly IReadOnlyList<string> CoveringKeys = ["covering", "dormer-roofs"], FramingKeys = ["timber:", "truss:"], DeckKeys = ["deck", "clt:", "clt-spline:"];
+
     public BuildUp? Of(IModelView m, Entity e)
     {
         if (e.Class != IfcClass.Roof || Roof.Resolve(e, m) is not { } r) return null;
         var name = RoofCoverings.NameOf(e);
-        var covering = new BuildupLayer(0, name.Length == 0 ? null : Materials.Find(m, name)?.Id, r.Covering.Thickness, false, name.Length == 0 ? r.Covering.Id : name);
+        // Each layer with the parts it is drawn as, so a task builds the structure and another the covering (decision 331).
+        var covering = new BuildupLayer(0, name.Length == 0 ? null : Materials.Find(m, name)?.Id, r.Covering.Thickness, false, name.Length == 0 ? r.Covering.Id : name,
+            Keys: CoveringKeys);
         List<BuildupLayer> layers = r.Framed
-            ? [covering, new(1, null, Roof.Battens, false, "Battens and counter-battens"), new(2, null, r.Rafter.D, true, $"{RoofParts.RoleLabel(r.Scheme == "trusses" ? "topChord" : "rafter")}s {r.Roof.Str("rafterSection") ?? "8x16"}")]
-            : [covering, new(1, RoofCoverings.DeckNameOf(e) is { Length: > 0 } deck ? Materials.Find(m, deck)?.Id : null, r.StructureDepth, true, RoofCoverings.DeckNameOf(e) is { Length: > 0 } d ? d : "Deck")];
+            ? [covering, new(1, null, Roof.Battens, false, "Battens and counter-battens", Keys: []),
+                new(2, null, r.Rafter.D, true, $"{RoofParts.RoleLabel(r.Scheme == "trusses" ? "topChord" : "rafter")}s {r.Roof.Str("rafterSection") ?? "8x16"}", Keys: FramingKeys)]
+            : [covering, new(1, RoofCoverings.DeckNameOf(e) is { Length: > 0 } deck ? Materials.Find(m, deck)?.Id : null, r.StructureDepth, true,
+                RoofCoverings.DeckNameOf(e) is { Length: > 0 } d ? d : "Deck", Keys: DeckKeys)];
         return new BuildUp(layers, true);
     }
 }

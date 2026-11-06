@@ -10,9 +10,17 @@ namespace Lapin.Platform;
 /// One layer of a build-up as a build-up tag reads it (docs/plan-buildup-tags.md): its place in the layer set
 /// (<see cref="Index"/>, what its cut is keyed by: <c>layer:&lt;n&gt;</c>), its material (an IfcMaterial id), thickness
 /// (metres), whether it is the core, its name, the note the type gives it, and the materials of its pieces up its height
-/// (decision 264), each a line of its own after the layer's.
+/// (decision 264), each a line of its own after the layer's. <see cref="Keys"/>: the keys of the element's parts the layer
+/// is drawn as, when they are not <c>layer:&lt;n&gt;</c> (a roof's <c>deck</c>, <c>covering</c>; a key ending in ":" takes every
+/// part whose key starts so, <c>timber:</c> its rafters), so a task can build the layer apart and the 4D simulation show it.
 /// </summary>
-public sealed record BuildupLayer(int Index, string? Material, double Thickness, bool Core, string Name, string? Note = null, IReadOnlyList<string>? PartMaterials = null);
+public sealed record BuildupLayer(int Index, string? Material, double Thickness, bool Core, string Name, string? Note = null, IReadOnlyList<string>? PartMaterials = null,
+    IReadOnlyList<string>? Keys = null)
+{
+    /// <summary>Whether a part's key is one of <paramref name="keys"/> (one ending in ":" a prefix).</summary>
+    public static bool KeyMatches(IReadOnlyList<string> keys, string key) =>
+        keys.Any(k => k == key || k.EndsWith(':') && key.StartsWith(k, StringComparison.Ordinal));
+}
 
 /// <summary>
 /// An element's build-up: its layers in their natural order, exterior to interior across a wall (its first layer's side

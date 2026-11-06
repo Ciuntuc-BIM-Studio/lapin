@@ -304,5 +304,53 @@ public class RoofDeckTests
         Assert.Equal(3.18, ug.Parts.Max(p => Box(p.Solid).Max.Z), 6);
     }
 
+    /// <summary>
+    /// The properties panel shows a field only where it applies (decision 332): the deck's material and thickness on a roof
+    /// without framing, the rafters' fields on a framed one, the mansard's, the vault's and the shed's on their shapes; the
+    /// session tells the interface so (showIf).
+    /// </summary>
+    [Fact]
+    public void The_deck_fields_show_only_without_framing_and_the_framings_only_with_it()
+    {
+        var f = new Fixture();
+        var cls = f.Session.Reader.Describe(IfcClass.Roof)!;
+        FieldDescriptor Field(string k) => cls.Fields.Single(x => x.Key == k);
+        var flat = f.Model.Get(AddRoof(f, "modern_minimalist"))!;
+        var gable = f.Model.Get(AddRoof(f, "traditional_campie"))!;
+        Assert.True(Roof.Resolve(gable, f.Model)!.Framed);
+        foreach (var k in new[] { RoofCoverings.DeckKey, "deckThickness" })
+        {
+            Assert.True(Field(k).Shown(flat));
+            Assert.False(Field(k).Shown(gable));
+        }
+        foreach (var k in new[] { "rafterSection", "rafterSpacing", "timberGrade", "rafterTail", "rafterSeat", "purlins" })
+        {
+            Assert.False(Field(k).Shown(flat));
+            Assert.True(Field(k).Shown(gable));
+        }
+        // A gable roof with structure none is a deck again; the structure itself is no choice on a flat roof.
+        Set(f, gable.Id, new JsonObject { ["structure"] = "none" });
+        var none = f.Model.Get(gable.Id)!;
+        Assert.True(Field("deckThickness").Shown(none));
+        Assert.False(Field("rafterSpacing").Shown(none));
+        Assert.False(Field("structure").Shown(flat));
+        Assert.True(Field("structure").Shown(none));
+        // The trusses' webs only on trusses, the collar ties' height only on collar ties; the shapes' own fields on their shapes.
+        Set(f, gable.Id, new JsonObject { ["structure"] = "trusses" });
+        Assert.True(Field("webSection").Shown(f.Model.Get(gable.Id)!));
+        Assert.False(Field("collarHeight").Shown(f.Model.Get(gable.Id)!));
+        Assert.False(Field("upperPitch").Shown(gable));
+        Assert.False(Field("rise").Shown(gable));
+        Assert.False(Field("pitch").Shown(flat));
+        Assert.True(Field("pitch").Shown(gable));
+        Assert.True(Field("covering").Shown(flat));
+        // What the interface reads: the conditions with the class's fields.
+        var info = System.Text.Json.JsonSerializer.SerializeToNode(f.Session.Info(), Lapin.Protocol.ProtocolJson.Default.SessionInfo)!;
+        var roof = info["nodeTypes"]!.AsArray().First(t => (string)t!["type"]! == IfcClass.Roof)!;
+        var deck = roof["fields"]!.AsArray().First(x => (string)x!["key"]! == "deckThickness")!;
+        Assert.Equal("""[{"shape":["flat","barrel"]},{"structure":["none"]}]""", deck["showIf"]!.ToJsonString());
+        Assert.Null(roof["fields"]!.AsArray().First(x => (string)x!["key"]! == "covering")!["showIf"]);
+    }
+
     static JsonObject Without(JsonObject o, string key) { o.Remove(key); return o; }
 }

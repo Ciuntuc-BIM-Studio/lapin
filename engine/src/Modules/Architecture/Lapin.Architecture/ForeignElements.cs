@@ -24,6 +24,7 @@ public sealed class ForeignElements : IIfcRecognizer
         IfcClass.Wall or "IfcWallStandardCase" => Wall(edit, e, ctx),
         IfcClass.Slab => Slab(edit, e, ctx),
         IfcClass.Space => Room(edit, e, ctx),
+        IfcClass.Roof => Roofs.ForeignRoofs.Recognize(edit, e, ctx),
         _ => null,
     };
 
@@ -387,12 +388,15 @@ public sealed class ForeignElements : IIfcRecognizer
     }
 
     /// <summary>The element's one prism of the wanted kind, or null (several bodies, none of the kind, no prism).</summary>
-    static ShapePrism? OnePrismOrNull(ForeignElement e, Func<ShapePrism, bool> wanted)
+    static ShapePrism? OnePrismOrNull(ForeignElement e, Func<ShapePrism, bool> wanted) => OnePrismOrNull(e.Prisms, wanted);
+
+    /// <summary>The one prism of the wanted kind of a body (an element's, a part's), or null (several bodies, none of the kind, no prism).</summary>
+    internal static ShapePrism? OnePrismOrNull(IReadOnlyList<ShapePrism> prisms, Func<ShapePrism, bool> wanted)
     {
-        if (e.Prisms.Count == 0) return null;
-        var bodies = e.Prisms.GroupBy(p => p.Source == "brep" ? Key(p) : Guid.NewGuid().ToString()).Count();
+        if (prisms.Count == 0) return null;
+        var bodies = prisms.GroupBy(p => p.Source == "brep" ? Key(p) : Guid.NewGuid().ToString()).Count();
         if (bodies > 1) return null;
-        return e.Prisms.Where(wanted).OrderByDescending(p => Math.Abs(Polygon2.SignedArea(Footprints.Plan(p.Outer)))).FirstOrDefault();
+        return prisms.Where(wanted).OrderByDescending(p => Math.Abs(Polygon2.SignedArea(Footprints.Plan(p.Outer)))).FirstOrDefault();
     }
 
     static string Label(ForeignElement e) => e.IfcClass.Length > 3 ? "a " + e.IfcClass[3..].ToLowerInvariant() : e.IfcClass;
