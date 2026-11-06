@@ -129,3 +129,49 @@ In IFC a ramp is an IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_T
 ## Railings
 
 **Architecture → Railing** (<kbd>RL</kbd>) draws a railing of its own along a balcony's edge, a terrace or a gallery: click its points, Enter finishes. It takes the stair railings' designs (posts and a handrail, balusters, glass, cables or a solid panel), its height (1 m by default), base offset, handrail profile and sizes and post spacing in its properties; its points are dragged by their grips (Ctrl/⌘-click an edge's middle adds one). In IFC it is an IfcRailing (GUARDRAIL).
+
+## Balconies
+
+**Architecture → Balcony** (<kbd>BY</kbd>) hangs a balcony on a wall: choose its style in the command line's bar and click outside the wall's face, where it goes; it stands on that side of the wall at the storey's floor level. A **Juliet balcony** clicked by a door or window centres on it, 200 mm wider. Where no wall is near, the balcony stands where you click. **Balcony by outline** draws any shape: click its corners, the first edge lies against the building. **Gallery edge** draws a mezzanine's edge over a double-height space with two points (the void on the left, the gallery on the right).
+
+The built-in styles cover the kinds people ask for:
+
+- **Juliet balcony**: a railing of balusters in front of a French door over a small stone ledge on two brackets.
+- **Cantilevered slab, glass**: a concrete slab cantilevered from the floor through a thermal break, tiled to a fall, a drip under its edge, glass on three sides.
+- **Stacked, on posts**: a slab on steel posts at its front, which stand on the balcony below (or the ground); repeated storey over storey.
+- **On steel brackets**, **Hung from tie rods** (rods from the front corners up to the wall), **Rounded corners**, **Curved front** with a solid parapet.
+- **Loggia**: recessed into the facade. It cuts its recess through its wall (an opening as wide as the loggia and as high as its **Recess height**), builds its side walls and a ceiling slab behind the face, and stands its own **Back wall** (of the wall's type, as high) the loggia's depth inside, where the door goes. The railing is at the face.
+- **Corner balcony**: along the wall and round the building's corner, back along the side wall; clicked near a wall's end, it wraps that end.
+- **Mezzanine gallery edge**: the gallery's slab behind its edge, a fascia over the edge and a bar railing.
+
+![Balconies on the first floor: a Juliet balcony at the door, one on posts, a corner balcony, a loggia, a curved and a rounded one and one hung from rods; the second floor's balcony overhead, dashed](shots/balconies-plan.webp)
+
+A plan draws a balcony's slab, finish and railing as it cuts or sees them, and the balconies of the storey above dashed, overhead. Sections and elevations draw its slab, railing, posts and brackets.
+
+### The configurator
+
+**Architecture → Balcony configurator** (or the gear beside **Style** in a balcony's properties) works as the roof configurator does: the styles on the left (the project's own, then the built-in ones), the balcony's fields in tabs on the right, over its plan or a section through its middle as the draft would build:
+
+- **Shape**: the **Kind** (Juliet, cantilever, posts, brackets, loggia, corner, mezzanine), the **Outline** (rectangular, rounded corners with their **Corner radius**, a curved front with its **Front bulge**, or the polygon drawn), **Width** and **Depth**, a corner balcony's **Return along the side**, a gallery's slab and **Fascia height**.
+- **Slab and finish**: the **Slab thickness** and material, the **Edge** (square, a **drip** under it, a **nosing** of the finish past it, or **tapered** to its **Edge thickness**), the finish's thickness and material and its **Fall (%)** to the front (the finish thicker at the wall), the **Soffit**, and the **Thermal break** (80 mm between the slab and the floor inside; the schedule and IFC say so).
+- **Railing**: the railings' designs (posts and a handrail, balusters, glass, cables, a solid panel) or a **parapet** of its own thickness and material, or none; its height, on the front alone or the sides too, how far in from the edge, the handrail and posts, the colour.
+- **Supports**: **Carried by** none (a cantilever), **posts** (round or square, their size and spacing), **brackets** (their depth, height and spacing) or **hangers** (the height the tie rods are fixed at above the slab), and their material.
+- **Loggia**: the recess height, the side walls' thickness, the slab past the face, the ceiling slab and the back wall.
+
+![The balcony configurator: the styles, the shape and the plan](shots/balcony-configurator.webp)
+
+![Its supports, over a section through the balcony](shots/balcony-configurator-section.webp)
+
+**Apply** changes the balcony in one step. **Save as style…** keeps it as one of the project's styles (a balcony type), which the tool's bar and the properties offer; **Update style** saves it again into its style, and every balcony of the style takes it; a style is renamed or deleted (its balconies keep how they are) beside its name. A style is a type: its cost articles (Cost → Map articles) measure its balconies.
+
+![A balcony's properties: its style and every field of its kind](shots/balcony-properties.webp)
+
+In the properties panel a balcony shows only the fields its kind uses (a loggia's recess, a bracket's depth only on brackets). Its grips drag it along its wall, its front's middle sets the depth (a loggia's: how deep the recess goes), its sides' middles the width; a drawn one is dragged by its corners. A loggia's recess and back wall follow it, and go when it is deleted.
+
+**Stack on storeys above** (in the configurator, the properties or **Architecture → Stack on storeys above**) copies the balconies selected onto every storey above their own in one step, with Copy to storeys: a copy hangs on the wall of its storey that stands where its wall does, a stacked loggia cuts that storey's wall, posts stand on the balcony below.
+
+![The south front in 3D: the Juliet balcony, the balconies stacked on posts, the corner balcony and the one hung from tie rods](shots/balconies-3d.webp)
+
+![From the north: the loggia cut into the wall, the curved balcony with its parapet and the rounded one](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** lists each balcony with its storey, style, kind, width, depth, area, railing length and design, what carries it and its thermal break, with the totals. In IFC a balcony is an IfcElementAssembly (USERDEFINED, "Balcony") of an IfcElementAssemblyType, made of its parts: the slab an IfcSlab (FLOOR), the finish and soffit IfcCoverings (FLOORING, CEILING), the railing an IfcRailing (GUARDRAIL) or a parapet an IfcWall (PARAPET), posts IfcColumns, brackets IfcDiscreteAccessories (BRACKET), tie rods IfcMembers, the thermal break an IfcBuildingElementPart; a loggia's recess is an IfcOpeningElement in its wall. Lapin reads its own back as balconies.

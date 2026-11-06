@@ -129,3 +129,49 @@ En IFC una rampa es un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTE
 ## Barandillas
 
 **Architecture → Railing** (<kbd>RL</kbd>) dibuja una barandilla propia a lo largo del borde de un balcón, una terraza o una galería: haz clic en sus puntos, Enter termina. Toma los diseños de las barandillas de escalera (montantes y pasamanos, balaustres, vidrio, cables o un panel macizo), su altura (1 m por defecto), el desfase de la base, el perfil y los tamaños del pasamanos y la separación de montantes en sus propiedades; sus puntos se arrastran por sus tiradores (Ctrl/⌘-clic en el centro de un tramo añade uno). En IFC es un IfcRailing (GUARDRAIL).
+
+## Balcones
+
+**Architecture → Balcony** (<kbd>BY</kbd>) cuelga un balcón de un muro: elija su estilo en la barra de la línea de comandos y haga clic fuera de la cara del muro, donde va; queda en ese lado del muro, a la cota del suelo de la planta. Un **balcón francés** (Juliet) colocado junto a una puerta o ventana se centra en ella, 200 mm más ancho. Donde no hay ningún muro cerca, el balcón queda donde se hace clic. **Balcony by outline** dibuja cualquier forma: haga clic en sus esquinas; el primer lado queda contra el edificio. **Gallery edge** dibuja el borde de una entreplanta sobre un espacio de doble altura con dos puntos (el vacío a la izquierda, la galería a la derecha).
+
+Los estilos predefinidos cubren los tipos que se piden:
+
+- **Juliet balcony**: una barandilla de balaustres delante de una puerta balconera sobre una pequeña repisa de piedra con dos ménsulas.
+- **Cantilevered slab, glass**: una losa de hormigón en voladizo desde el forjado con rotura de puente térmico, embaldosada con pendiente, goterón bajo el borde, vidrio en tres lados.
+- **Stacked, on posts**: una losa sobre pilares de acero delante, que se apoyan en el balcón de abajo (o en el terreno); repetida planta sobre planta.
+- **On steel brackets**, **Hung from tie rods** (tirantes desde las esquinas delanteras hasta el muro), **Rounded corners**, **Curved front** con antepecho macizo.
+- **Loggia** (logia): hundida en la fachada. Corta su hueco en el muro (tan ancho como la logia y tan alto como su **Recess height**), levanta sus muros laterales y una losa de techo detrás de la cara, y su propio **Back wall** (del tipo del muro, igual de alto) a la profundidad de la logia, donde va la puerta. La barandilla está en la cara.
+- **Corner balcony**: a lo largo del muro y alrededor de la esquina del edificio, de vuelta por el muro lateral; colocado cerca del extremo de un muro, lo rodea.
+- **Mezzanine gallery edge**: la losa de la galería detrás de su borde, un frontal sobre el borde y una barandilla de barrotes.
+
+![Balcones en la primera planta: uno francés en la puerta, uno sobre pilares, uno en esquina, una logia, uno curvo, uno redondeado y uno colgado; el balcón de la planta superior, a trazos](shots/balconies-plan.webp)
+
+La planta dibuja la losa, el acabado y la barandilla como los corta o los ve, y los balcones de la planta superior a trazos, por encima. Secciones y alzados dibujan su losa, barandilla, pilares y ménsulas.
+
+### El configurador
+
+**Architecture → Balcony configurator** (o el engranaje junto a **Style** en las propiedades del balcón) funciona como el de cubiertas: los estilos a la izquierda (los del proyecto, luego los predefinidos), los campos del balcón en pestañas a la derecha, sobre su planta o una sección por su centro tal como se construiría el borrador:
+
+- **Shape**: **Kind**, **Outline** (rectángulo, esquinas redondeadas con **Corner radius**, frente curvo con **Front bulge** o el polígono dibujado), **Width** y **Depth**, el retorno del balcón en esquina, la losa y **Fascia height** de la galería.
+- **Slab and finish**: **Slab thickness** y material, **Edge** (recto, con **drip** —goterón—, con **nosing** del acabado o **tapered** hasta **Edge thickness**), espesor y material del acabado y su **Fall (%)** hacia el frente, el intradós y **Thermal break** (80 mm entre la losa y el forjado interior; lo indican la tabla y el IFC).
+- **Railing**: los diseños de barandilla (postes y pasamanos, balaustres, vidrio, cables, panel macizo) o un **parapet** con su espesor y material, o ninguno; altura, solo delante o también en los lados, retranqueo, pasamanos, postes y color.
+- **Supports**: **Carried by** nada (voladizo), **posts** (redondos o cuadrados, tamaño y separación), **brackets** (vuelo, altura y separación) o **hangers** (altura a la que se anclan los tirantes) y su material.
+- **Loggia**: altura del hueco, espesor de los muros laterales, losa más allá de la cara, losa de techo y muro trasero.
+
+![El configurador de balcones: los estilos, la forma y la planta](shots/balcony-configurator.webp)
+
+![Sus apoyos, sobre una sección del balcón](shots/balcony-configurator-section.webp)
+
+**Apply** cambia el balcón en un paso. **Save as style…** lo guarda como estilo del proyecto (un tipo de balcón), que ofrecen la barra de la herramienta y las propiedades; **Update style** lo vuelve a guardar en su estilo y todos los balcones del estilo lo toman; junto al nombre de un estilo se renombra o se elimina (sus balcones quedan como están). Un estilo es un tipo: sus artículos de coste (Cost → Map articles) miden sus balcones.
+
+![Las propiedades de un balcón: su estilo y los campos de su tipo](shots/balcony-properties.webp)
+
+En el panel de propiedades un balcón muestra solo los campos que usa su tipo. Sus pinzamientos lo deslizan a lo largo del muro, el centro del frente fija la profundidad (en una logia, la del hueco), los centros de los lados la anchura; uno dibujado se arrastra por sus esquinas. El hueco y el muro trasero de una logia la siguen y se van con ella al eliminarla.
+
+**Stack on storeys above** (en el configurador, en las propiedades o **Architecture → Stack on storeys above**) copia los balcones seleccionados en todas las plantas superiores en un paso, con Copy to storeys: la copia cuelga del muro de su planta que está donde su muro, una logia apilada corta el muro de esa planta, los pilares se apoyan en el balcón de abajo.
+
+![La fachada sur en 3D: el balcón francés, los balcones apilados sobre pilares, el de esquina y el colgado de tirantes](shots/balconies-3d.webp)
+
+![Desde el norte: la logia cortada en el muro, el balcón curvo con su antepecho y el redondeado](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** lista cada balcón con su planta, estilo, tipo, anchura, profundidad, superficie, longitud y diseño de barandilla, apoyo y rotura de puente térmico, con los totales. En IFC un balcón es un IfcElementAssembly (USERDEFINED, "Balcony") de un IfcElementAssemblyType, formado por sus partes: la losa un IfcSlab (FLOOR), acabado e intradós IfcCovering (FLOORING, CEILING), la barandilla un IfcRailing (GUARDRAIL) o el antepecho un IfcWall (PARAPET), pilares IfcColumn, ménsulas IfcDiscreteAccessory (BRACKET), tirantes IfcMember, la rotura de puente térmico un IfcBuildingElementPart; el hueco de una logia es un IfcOpeningElement en su muro. Lapin vuelve a leer sus balcones como balcones.

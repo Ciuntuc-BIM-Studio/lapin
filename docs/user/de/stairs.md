@@ -129,3 +129,49 @@ In IFC ist eine Rampe ein IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUA
 ## Geländer
 
 **Architecture → Railing** (<kbd>RL</kbd>) zeichnet ein eigenes Geländer an der Kante eines Balkons, einer Terrasse oder einer Galerie: klicken Sie seine Punkte, Enter beendet. Es hat die Formen der Treppengeländer (Pfosten und Handlauf, Stäbe, Glas, Seile oder eine geschlossene Brüstung), seine Höhe (1 m als Vorgabe), den Basisversatz, Profil und Größen des Handlaufs und den Pfostenabstand in den Eigenschaften; seine Punkte werden an ihren Griffen gezogen (Strg/⌘-Klick auf die Mitte eines Abschnitts fügt einen hinzu). In IFC ist es ein IfcRailing (GUARDRAIL).
+
+## Balkone
+
+**Architecture → Balcony** (<kbd>BY</kbd>) hängt einen Balkon an eine Wand: den Stil in der Leiste der Befehlszeile wählen und außerhalb der Wandfläche klicken, wo er hinkommt; er steht auf dieser Seite der Wand auf der Fußbodenhöhe des Geschosses. Ein **Französischer Balkon** (Juliet), neben eine Tür oder ein Fenster geklickt, wird darauf zentriert, 200 mm breiter. Wo keine Wand in der Nähe ist, steht der Balkon, wo geklickt wird. **Balcony by outline** zeichnet jede Form: die Ecken klicken, die erste Kante liegt am Gebäude. **Gallery edge** zeichnet die Kante einer Galerie über einem zweigeschossigen Raum mit zwei Punkten (der Luftraum links, die Galerie rechts).
+
+Die mitgelieferten Stile decken die gefragten Arten ab:
+
+- **Juliet balcony**: ein Stabgeländer vor einer Fenstertür über einer kleinen Steinplatte auf zwei Konsolen.
+- **Cantilevered slab, glass**: eine Betonplatte, über eine thermische Trennung aus der Decke auskragend, im Gefälle gefliest, mit Tropfkante, Glas auf drei Seiten.
+- **Stacked, on posts**: eine Platte auf Stahlstützen vorne, die auf dem Balkon darunter (oder dem Gelände) stehen; Geschoss über Geschoss wiederholt.
+- **On steel brackets**, **Hung from tie rods** (Zugstäbe von den vorderen Ecken zur Wand), **Rounded corners**, **Curved front** mit massiver Brüstung.
+- **Loggia**: in die Fassade eingeschnitten. Sie schneidet ihre Öffnung in die Wand (so breit wie die Loggia, so hoch wie ihre **Recess height**), baut Seitenwände und eine Deckenplatte hinter der Fläche und stellt ihre eigene **Back wall** (vom Typ der Wand, gleich hoch) in Loggiatiefe auf, wo die Tür hinkommt. Das Geländer steht an der Fläche.
+- **Corner balcony**: entlang der Wand und um die Gebäudeecke, zurück entlang der Seitenwand; nahe einem Wandende geklickt, umgreift er dieses Ende.
+- **Mezzanine gallery edge**: die Galerieplatte hinter ihrer Kante, eine Stirnblende über der Kante und ein Stabgeländer.
+
+![Balkone im Obergeschoss: ein französischer Balkon an der Tür, einer auf Stützen, ein Eckbalkon, eine Loggia, ein gewölbter, ein abgerundeter und ein abgehängter; der Balkon des Geschosses darüber gestrichelt](shots/balconies-plan.webp)
+
+Der Grundriss zeichnet Platte, Belag und Geländer eines Balkons, wie er sie schneidet oder sieht, und die Balkone des Geschosses darüber gestrichelt. Schnitte und Ansichten zeichnen Platte, Geländer, Stützen und Konsolen.
+
+### Der Konfigurator
+
+**Architecture → Balcony configurator** (oder das Zahnrad neben **Style** in den Eigenschaften eines Balkons) arbeitet wie der Dachkonfigurator: links die Stile (die des Projekts, dann die mitgelieferten), rechts die Felder des Balkons in Registern, über seinem Grundriss oder einem Schnitt durch die Mitte, wie der Entwurf sie bauen würde:
+
+- **Shape**: **Kind**, **Outline** (Rechteck, abgerundete Ecken mit **Corner radius**, gewölbte Front mit **Front bulge** oder das gezeichnete Polygon), **Width** und **Depth**, der Rücksprung des Eckbalkons, Platte und **Fascia height** der Galerie.
+- **Slab and finish**: **Slab thickness** und Material, **Edge** (gerade, mit **drip** — Tropfkante —, mit **nosing** des Belags oder **tapered** bis **Edge thickness**), Dicke und Material des Belags und sein **Fall (%)** nach vorne, die Untersicht und **Thermal break** (80 mm zwischen Platte und Decke innen; Liste und IFC sagen es).
+- **Railing**: die Geländerformen (Pfosten und Handlauf, Stäbe, Glas, Seile, geschlossene Füllung) oder eine **parapet** mit eigener Dicke und Material, oder keines; Höhe, nur vorne oder auch seitlich, Abstand vom Rand, Handlauf, Pfosten und Farbe.
+- **Supports**: **Carried by** nichts (auskragend), **posts** (rund oder eckig, Größe und Abstand), **brackets** (Tiefe, Höhe und Abstand) oder **hangers** (Höhe der Zugstabbefestigung über der Platte) und ihr Material.
+- **Loggia**: Höhe der Öffnung, Dicke der Seitenwände, Platte über die Fläche hinaus, Deckenplatte und Rückwand.
+
+![Der Balkonkonfigurator: die Stile, die Form und der Grundriss](shots/balcony-configurator.webp)
+
+![Seine Auflager über einem Schnitt durch den Balkon](shots/balcony-configurator-section.webp)
+
+**Apply** ändert den Balkon in einem Schritt. **Save as style…** behält ihn als Stil des Projekts (einen Balkontyp), den die Leiste des Werkzeugs und die Eigenschaften anbieten; **Update style** speichert ihn erneut in seinen Stil, und jeder Balkon des Stils übernimmt ihn; neben dem Namen eines Stils wird er umbenannt oder gelöscht (seine Balkone bleiben, wie sie sind). Ein Stil ist ein Typ: seine Kostenpositionen (Cost → Map articles) messen seine Balkone.
+
+![Die Eigenschaften eines Balkons: sein Stil und die Felder seiner Art](shots/balcony-properties.webp)
+
+In den Eigenschaften zeigt ein Balkon nur die Felder, die seine Art verwendet. Seine Griffe schieben ihn entlang der Wand, die Mitte der Front setzt die Tiefe (bei einer Loggia die der Öffnung), die Mitten der Seiten die Breite; ein gezeichneter wird an seinen Ecken gezogen. Öffnung und Rückwand einer Loggia folgen ihr und verschwinden mit ihr.
+
+**Stack on storeys above** (im Konfigurator, in den Eigenschaften oder **Architecture → Stack on storeys above**) kopiert die gewählten Balkone in einem Schritt auf jedes Geschoss darüber, mit Copy to storeys: die Kopie hängt an der Wand ihres Geschosses, die dort steht, wo ihre Wand steht, eine gestapelte Loggia schneidet die Wand dieses Geschosses, Stützen stehen auf dem Balkon darunter.
+
+![Die Südfront in 3D: der französische Balkon, die gestapelten Balkone auf Stützen, der Eckbalkon und der abgehängte](shots/balconies-3d.webp)
+
+![Von Norden: die in die Wand geschnittene Loggia, der gewölbte Balkon mit Brüstung und der abgerundete](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** listet jeden Balkon mit Geschoss, Stil, Art, Breite, Tiefe, Fläche, Geländerlänge und -form, Auflager und thermischer Trennung, mit den Summen. In IFC ist ein Balkon ein IfcElementAssembly (USERDEFINED, „Balcony“) eines IfcElementAssemblyType aus seinen Teilen: die Platte ein IfcSlab (FLOOR), Belag und Untersicht IfcCovering (FLOORING, CEILING), das Geländer ein IfcRailing (GUARDRAIL) oder die Brüstung eine IfcWall (PARAPET), Stützen IfcColumn, Konsolen IfcDiscreteAccessory (BRACKET), Zugstäbe IfcMember, die thermische Trennung ein IfcBuildingElementPart; die Öffnung einer Loggia ist ein IfcOpeningElement in ihrer Wand. Lapin liest seine Balkone als Balkone zurück.

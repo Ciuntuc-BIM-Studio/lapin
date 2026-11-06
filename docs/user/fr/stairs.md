@@ -129,3 +129,49 @@ En IFC, une rampe est un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUAR
 ## Garde-corps
 
 **Architecture → Railing** (<kbd>RL</kbd>) dessine un garde-corps à part le long du bord d’un balcon, d’une terrasse ou d’une galerie : cliquez ses points, Entrée termine. Il prend les modèles des garde-corps d’escalier (poteaux et main courante, barreaux, verre, câbles ou panneau plein), sa hauteur (1 m par défaut), le décalage de la base, le profil et les tailles de la main courante et l’entraxe des poteaux dans ses propriétés ; ses points se déplacent par leurs poignées (Ctrl/⌘-clic au milieu d’un tronçon en ajoute un). En IFC c’est un IfcRailing (GUARDRAIL).
+
+## Balcons
+
+**Architecture → Balcony** (<kbd>BY</kbd>) accroche un balcon à un mur : choisissez son style dans la barre de la ligne de commande et cliquez hors de la face du mur, là où il va ; il se place de ce côté du mur, au niveau du sol de l’étage. Un **balconnet** (Juliet) cliqué près d’une porte ou d’une fenêtre se centre dessus, 200 mm plus large. Là où aucun mur n’est proche, le balcon se place où vous cliquez. **Balcony by outline** dessine n’importe quelle forme : cliquez ses angles, le premier côté est contre le bâtiment. **Gallery edge** dessine le bord d’une mezzanine au-dessus d’un double volume avec deux points (le vide à gauche, la galerie à droite).
+
+Les styles prédéfinis couvrent les genres demandés :
+
+- **Juliet balcony** : un garde-corps à balustres devant une porte-fenêtre, sur une petite tablette de pierre portée par deux consoles.
+- **Cantilevered slab, glass** : une dalle béton en porte-à-faux depuis le plancher par un rupteur thermique, carrelée en pente, une goutte d’eau sous le bord, du verre sur trois côtés.
+- **Stacked, on posts** : une dalle sur poteaux acier à l’avant, posés sur le balcon du dessous (ou le terrain) ; répétée niveau sur niveau.
+- **On steel brackets**, **Hung from tie rods** (tirants des angles avant jusqu’au mur), **Rounded corners**, **Curved front** avec une allège pleine.
+- **Loggia** : en retrait dans la façade. Elle découpe son enfoncement dans le mur (aussi large que la loggia, aussi haut que sa **Recess height**), construit ses murs latéraux et une dalle de plafond derrière la face, et dresse son propre **Back wall** (du type du mur, aussi haut) à la profondeur de la loggia, là où va la porte. Le garde-corps est au nu de la façade.
+- **Corner balcony** : le long du mur et autour de l’angle du bâtiment, en retour sur le mur latéral ; cliqué près de l’extrémité d’un mur, il l’enveloppe.
+- **Mezzanine gallery edge** : la dalle de la galerie derrière son bord, un bandeau sur le bord et un garde-corps à barreaux.
+
+![Des balcons à l’étage : un balconnet à la porte, un sur poteaux, un d’angle, une loggia, un courbe, un arrondi et un suspendu ; le balcon de l’étage au-dessus, en pointillé](shots/balconies-plan.webp)
+
+Le plan dessine la dalle, le revêtement et le garde-corps d’un balcon comme il les coupe ou les voit, et les balcons de l’étage au-dessus en pointillé. Coupes et élévations dessinent sa dalle, son garde-corps, ses poteaux et ses consoles.
+
+### Le configurateur
+
+**Architecture → Balcony configurator** (ou la roue dentée près de **Style** dans les propriétés du balcon) fonctionne comme celui des toitures : les styles à gauche (ceux du projet, puis les prédéfinis), les champs du balcon en onglets à droite, au-dessus de son plan ou d’une coupe en son milieu, tels que le brouillon les construirait :
+
+- **Shape** : **Kind**, **Outline** (rectangle, angles arrondis avec **Corner radius**, façade courbe avec **Front bulge** ou le polygone dessiné), **Width** et **Depth**, le retour du balcon d’angle, la dalle et **Fascia height** de la galerie.
+- **Slab and finish** : **Slab thickness** et matériau, **Edge** (droit, avec **drip** — goutte d’eau —, avec **nosing** du revêtement ou **tapered** jusqu’à **Edge thickness**), épaisseur et matériau du revêtement et sa **Fall (%)** vers l’avant, la sous-face et **Thermal break** (80 mm entre la dalle et le plancher intérieur ; la nomenclature et l’IFC l’indiquent).
+- **Railing** : les modèles de garde-corps (poteaux et main courante, balustres, verre, câbles, panneau plein) ou une **parapet** de son épaisseur et de son matériau, ou aucun ; hauteur, à l’avant seul ou aussi sur les côtés, retrait du bord, main courante, poteaux et couleur.
+- **Supports** : **Carried by** rien (porte-à-faux), **posts** (ronds ou carrés, taille et espacement), **brackets** (profondeur, hauteur et espacement) ou **hangers** (hauteur de fixation des tirants au-dessus de la dalle) et leur matériau.
+- **Loggia** : hauteur de l’enfoncement, épaisseur des murs latéraux, dalle au-delà de la face, dalle de plafond et mur du fond.
+
+![Le configurateur de balcon : les styles, la forme et le plan](shots/balcony-configurator.webp)
+
+![Ses appuis, au-dessus d’une coupe du balcon](shots/balcony-configurator-section.webp)
+
+**Apply** modifie le balcon en une étape. **Save as style…** le garde comme style du projet (un type de balcon), que proposent la barre de l’outil et les propriétés ; **Update style** l’enregistre à nouveau dans son style, et chaque balcon du style le reprend ; près du nom d’un style, on le renomme ou on le supprime (ses balcons restent tels quels). Un style est un type : ses articles de coût (Cost → Map articles) métrent ses balcons.
+
+![Les propriétés d’un balcon : son style et les champs de son genre](shots/balcony-properties.webp)
+
+Dans les propriétés, un balcon ne montre que les champs que son genre utilise. Ses poignées le font glisser le long du mur, le milieu de l’avant règle la profondeur (pour une loggia, celle de l’enfoncement), les milieux des côtés la largeur ; un balcon dessiné se tire par ses angles. L’enfoncement et le mur du fond d’une loggia la suivent et partent avec elle.
+
+**Stack on storeys above** (dans le configurateur, les propriétés ou **Architecture → Stack on storeys above**) copie les balcons sélectionnés sur chaque étage au-dessus du leur en une étape, avec Copy to storeys : la copie s’accroche au mur de son étage placé comme son mur, une loggia empilée découpe le mur de cet étage, les poteaux se posent sur le balcon du dessous.
+
+![La façade sud en 3D : le balconnet, les balcons empilés sur poteaux, le balcon d’angle et celui suspendu à des tirants](shots/balconies-3d.webp)
+
+![Depuis le nord : la loggia découpée dans le mur, le balcon courbe avec son allège et le balcon arrondi](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** liste chaque balcon avec son étage, son style, son genre, sa largeur, sa profondeur, sa surface, la longueur et le modèle du garde-corps, ce qui le porte et son rupteur thermique, avec les totaux. En IFC, un balcon est un IfcElementAssembly (USERDEFINED, « Balcony ») d’un IfcElementAssemblyType, fait de ses parties : la dalle un IfcSlab (FLOOR), revêtement et sous-face des IfcCovering (FLOORING, CEILING), le garde-corps un IfcRailing (GUARDRAIL) ou l’allège un IfcWall (PARAPET), les poteaux des IfcColumn, les consoles des IfcDiscreteAccessory (BRACKET), les tirants des IfcMember, le rupteur thermique un IfcBuildingElementPart ; l’enfoncement d’une loggia est un IfcOpeningElement dans son mur. Lapin relit ses balcons comme des balcons.

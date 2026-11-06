@@ -121,6 +121,10 @@ export interface UiState extends Pane {
   roofId: string | null;
   /** The style a new roof takes (the catalogue's first when null). */
   roofStyle: string | null;
+  /** The balcony the balcony configurator is open on (a tester's report, #96). */
+  balconyId: string | null;
+  /** The style a new balcony takes: a built-in one's id or a project style's (a type's id); null: cantilevered. */
+  balconyStyle: string | null;
   dialog: Dialog;
   /** A message for the user (saved, recovered…), cleared by the next one. */
   notice: string | null;
@@ -141,7 +145,7 @@ export interface UiState extends Pane {
 
 const first = emptyPane('plan');
 export const useUi = create<UiState>(() => ({
-  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
+  screen: 'start', tab: null, tool: null, ...first, panes: [first], pane: 0, viewTabs: [], split: 'row', windowRole: 'main', planDrawing: true, refPlanes: true, rebar3d: false, openingVoids: false, storeyId: null, selection: null, selected: [], wallTypeId: null, doorTypeId: null, windowTypeId: null, stairTypeId: null, rampTypeId: null, memberTypeId: null, ceilingTypeId: null, skirtingTypeId: null, roomFinishTypeId: null, insetAt: null, curtainTypeId: null, openingSize: { width: 0.9, height: 2.1, sill: 0, shape: 'rect', rise: null }, roofId: null, slabTypeId: null, roofStyle: null, balconyId: null, balconyStyle: null, dialog: null, notice: null, theme: 'paper', visualStyle: 'edges', fog: false, keyPlan: true,
 }));
 
 /**

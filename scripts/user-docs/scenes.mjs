@@ -3442,6 +3442,84 @@ export const scenes = [
     },
   },
   {
+    // Balconies (a tester's report, #96): on the first floor of the house, a Juliet balcony clicked by its door with the
+    // Balcony tool, a balcony stacked on posts (and stacked again on the second floor), a corner balcony, a loggia cut into
+    // the north wall, a curved one with a parapet, one hung from tie rods and one with rounded corners; the plan (the
+    // second floor's balcony overhead, dashed), the configurator (its plan and section), a balcony's properties, 3D.
+    id: 'balconies',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      const ff = await t.storey('First floor');
+      const outline = [[0, 0], [12, 0], [12, 8], [0, 8]];
+      const walls = [];
+      for (let i = 0; i < 4; i++) {
+        const [a, b] = [outline[i], outline[(i + 1) % 4]];
+        walls.push((await t.cmd('architecture.addWall', { storeyId: ff, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      }
+      await t.cmd('architecture.addSlab', { storeyId: ff, points: outline });
+      await t.cmd('architecture.addDoor', { wallId: walls[0], x: 2.2, y: 0 });
+      await t.cmd('architecture.addDoor', { wallId: walls[0], x: 6.5, y: 0 });
+      await openFromBrowser(t, 'First floor');
+      await t.fit();
+      // A step back, so the south wall's face is clear of the quick tools.
+      { const box = await t.page.locator('[data-testid=plan]').boundingBox(); await t.page.mouse.move(box.x + box.width / 2, box.y + box.height / 3); await t.page.mouse.wheel(0, 500); await t.wait(600); }
+      // The Balcony tool: its style in the command line's bar, a click outside the south wall by the door — a Juliet balcony on it.
+      await t.tool('architecture.balcony');
+      t.expect(await t.page.locator('[data-testid=balcony-style]').count() === 1, 'the bar offers the balcony styles');
+      await t.page.locator('[data-testid=balcony-style]').selectOption('juliet');
+      await t.wait(300);
+      { const [px, py] = await t.planPoint(2.5, -0.5); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(900); }
+      await t.keys('Escape');
+      const balconies = async () => (await t.nodes()).filter((n) => n.type === 'LapinBalcony');
+      const juliet = (await balconies())[0];
+      t.expect(juliet && juliet.props.kind === 'juliet' && Math.abs(juliet.props.along - 2.2) < 1e-6, `the Juliet balcony is centred on the door (${juliet?.props.along})`);
+      const add = (style, x, y) => t.cmd('architecture.addBalcony', { storeyId: ff, style, x, y });
+      const stacked = (await add('stacked', 6.5, -0.5)).id;
+      await add('corner', 11.6, -0.5);
+      const loggia = (await add('loggia', 3.5, 8.5)).id;
+      await add('curved', 9, 8.5);
+      await add('hung', 12.5, 4);
+      await add('rounded', -0.5, 4);
+      const recess = (await t.nodes()).find((n) => n.type === 'IfcOpeningElement' && n.props.balconyId === loggia);
+      t.expect(recess && Math.abs(recess.props.width - 3) < 1e-6, 'the loggia cuts its recess into the north wall');
+      // Stacked on the storey above, in one step.
+      await t.cmd('storey.create', { name: 'Second floor', height: 3 });
+      await t.cmd('architecture.stackBalcony', { ids: [stacked] });
+      const all = await balconies();
+      t.expect(all.length === 8, `seven balconies on the first floor and the stacked one above (${all.length})`);
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.fit();
+      { const box = await t.page.locator('[data-testid=plan]').boundingBox(); await t.page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.4); await t.page.mouse.wheel(0, 500); }
+      await t.wait(1200);
+      await t.shot('balconies-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The configurator on the stacked balcony: its plan, then its section with the posts.
+      await select(t, stacked);
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-testid=balcony-section]').count() === 1, 'a balcony shows its style and the configurator in its properties');
+      await t.shot('balcony-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      await t.tool('architecture.balconyConfigurator');
+      await t.page.waitForSelector('[data-testid=balcony-dialog]', { timeout: 5000 });
+      await t.wait(1200);
+      t.expect(await t.page.locator('[data-testid=balcony-plan] path').count() >= 2, 'the configurator draws the balcony\'s plan');
+      await t.shot('balcony-configurator', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog [role=tab]').nth(3).click();
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=balcony-section-plot] polygon').count() >= 3, 'the configurator draws its section');
+      await t.shot('balcony-configurator-section', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.75, pitch: -0.45, distance: 26, target: { x: 6, y: 4, z: 4 } }, false));
+      await t.wait(1800);
+      await t.shot('balconies-3d-north', { of: 'canvas', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.4, pitch: -0.4, distance: 24, target: { x: 6, y: 4, z: 4 } }, false));
+      await t.wait(1800);
+      await t.shot('balconies-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'standards',
     async run(t) {
       await t.fresh();

@@ -62,6 +62,8 @@ export const RoofWindowIcon = icon('roofWindow');
 export const DormerIcon = icon('dormer');
 export const DownpipeIcon = icon('downpipe');
 export const RailingIcon = icon('railing');
+/** A balcony (a tester's report, #96): seen in section, its slab out of the wall on a bracket, its railing. */
+export const BalconyIcon = icon('balcony');
 export const WallTypesIcon = icon('wallTypes');
 export const AttachRoofIcon = icon('attachRoof');
 export const DetachRoofIcon = icon('detachRoof');

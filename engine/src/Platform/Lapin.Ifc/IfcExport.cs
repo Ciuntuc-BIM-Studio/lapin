@@ -1157,6 +1157,21 @@ public static class IfcExport
                 ("IfcElementAssembly", "steel-bolt") => new("IfcMechanicalFastener", "BOLT", null),
                 ("IfcElementAssembly", "steel-anchor") => new("IfcMechanicalFastener", "ANCHORBOLT", null),
                 ("IfcElementAssembly", "steel-anchorplate") => new("IfcDiscreteAccessory", "ANCHORPLATE", null),
+                // A balcony's parts (a tester's report, #96): its slab a floor slab, its finish and soffit coverings, its railing a guardrail
+                // (a parapet a wall), its posts columns, its brackets brackets, its tie rods members; a loggia's side walls walls.
+                ("IfcElementAssembly", "balcony-slab") => new(IfcClass.Slab, "FLOOR", null),
+                ("IfcElementAssembly", "balcony-ceiling") => new(IfcClass.Slab, "USERDEFINED", "Loggia ceiling"),
+                ("IfcElementAssembly", "balcony-finish") => new("IfcCovering", "FLOORING", null),
+                ("IfcElementAssembly", "balcony-soffit") => new("IfcCovering", "CEILING", null),
+                ("IfcElementAssembly", "balcony-fascia") => new("IfcCovering", "CLADDING", null),
+                ("IfcElementAssembly", "balcony-railing" or "balcony-glass") => new("IfcRailing", "GUARDRAIL", null),
+                ("IfcElementAssembly", "balcony-parapet") => new(IfcClass.Wall, "PARAPET", null),
+                ("IfcElementAssembly", "balcony-cheeks") => new(IfcClass.Wall, "NOTDEFINED", null),
+                ("IfcElementAssembly", "balcony-posts") => new("IfcColumn", "COLUMN", null),
+                ("IfcElementAssembly", "balcony-brackets") => new("IfcDiscreteAccessory", "BRACKET", null),
+                ("IfcElementAssembly", "balcony-hangers") => new("IfcMember", "USERDEFINED", "Tie rod"),
+                ("IfcElementAssembly", "balcony-break") => new("IfcBuildingElementPart", "USERDEFINED", "Thermal break"),
+                ("IfcElementAssembly", "balcony-drip") => new("IfcPlate", "USERDEFINED", "Drip"),
                 // The space under a stair (a tester's report, #71): its furniture, doors, boards, fittings and light.
                 ("IfcElementAssembly", "nook-door") => new(IfcClass.Door, "DOOR", p.Name),
                 ("IfcElementAssembly", "nook-panel" or "nook-trim") => new("IfcPlate", "USERDEFINED", p.Name),

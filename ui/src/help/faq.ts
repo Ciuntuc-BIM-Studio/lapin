@@ -447,6 +447,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Title blocks…', labelRo: 'Cartușe…', run: { kind: 'dialog', id: 'titleBlocks' } },
     source: 'report #76',
   },
+  {
+    id: 'balconies',
+    q: ['How do I make a balcony?', 'Can I make a Juliet balcony, a loggia or a mezzanine gallery?', 'How do I stack the same balcony on every floor?', 'How do I put a railing on a balcony?'],
+    qRo: ['Cum fac un balcon?', 'Pot face un balcon franțuzesc, o logie sau o galerie de mezanin?', 'Cum pun același balcon pe toate etajele?', 'Cum pun balustradă la balcon?'],
+    keywords: ['balcony', 'balconies', 'juliet', 'loggia', 'loggias', 'mezzanine', 'gallery', 'cantilever', 'cantilevered', 'stacked', 'balcon', 'balcoane', 'logie', 'logia', 'mezanin', 'galerie', 'consola', 'frantuzesc'],
+    a: 'Architecture → Balcony (BY): choose its style in the command line\'s bar — Juliet, cantilevered with glass, stacked on posts, on brackets, hung from tie rods, rounded, curved with a parapet, loggia, corner or mezzanine gallery — and click by a wall\'s face; a Juliet balcony centres on the door you click by, a loggia cuts its recess into the wall with its side walls, ceiling and back wall. Balcony by outline draws any shape (its first edge against the building), Gallery edge a mezzanine\'s edge over a double-height space. Balcony configurator (or the gear in its properties) changes everything — outline, slab, edge and drip, finish and fall, railing or parapet, posts, brackets or rods, the loggia\'s recess — over a plan and a section, and saves it as a project style; Stack on storeys above copies it onto every storey over its own in one step. Its schedule is Architecture → Balcony schedule.',
+    aRo: 'Architecture → Balcony (BY): alege stilul în bara liniei de comandă — franțuzesc (Juliet), în consolă cu sticlă, suprapus pe stâlpi, pe console metalice, suspendat în tiranți, cu colțuri rotunjite, cu front curb și parapet, logie, de colț sau galerie de mezanin — și dă clic lângă fața unui perete; balconul franțuzesc se centrează pe ușa lângă care dai clic, logia își taie golul în perete, cu pereții laterali, tavanul și peretele din spate. Balcony by outline desenează orice formă (prima latură lipită de clădire), Gallery edge marginea unui mezanin peste un spațiu dublu. Balcony configurator (sau rotița din proprietăți) schimbă tot — conturul, placa, muchia și lăcrimarul, finisajul și panta, balustrada sau parapetul, stâlpii, consolele sau tiranții, golul logiei — peste un plan și o secțiune, și îl salvează ca stil al proiectului; Stack on storeys above îl copiază pe toate etajele de deasupra într-un singur pas. Tabelul lui este Architecture → Balcony schedule.',
+    action: { label: 'Place a balcony', labelRo: 'Pune un balcon', run: { kind: 'tool', id: 'architecture.balcony' } },
+    source: 'report #96',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

@@ -129,3 +129,49 @@ Selectează o rampă ca să-i vezi tipul, **Lățime**, **Întoarcere**, **Decal
 ## Balustrade
 
 **Architecture → Railing** (<kbd>RL</kbd>) desenează o balustradă de sine stătătoare pe marginea unui balcon, a unei terase sau a unei galerii: dai clic pe punctele ei, Enter termină. Are modelele balustradelor de scară (stâlpișori și mână curentă, baluștri, sticlă, cabluri sau panou plin), înălțimea (implicit 1 m), decalajul bazei, profilul și mărimile mâinii curente și distanța între stâlpișori în proprietăți; punctele se trag de gripuri (Ctrl/⌘-clic pe mijlocul unei laturi adaugă unul). În IFC e un IfcRailing (GUARDRAIL).
+
+## Balcoane
+
+**Architecture → Balcony** (<kbd>BY</kbd>) prinde un balcon de un perete: alegi stilul în bara liniei de comandă și dai clic în afara feței peretelui, acolo unde vine; balconul stă pe acea parte a peretelui, la cota pardoselii etajului. Un **balcon franțuzesc** (Juliet) pus lângă o ușă sau o fereastră se centrează pe ea, cu 200 mm mai lat. Unde nu e niciun perete aproape, balconul stă unde dai clic. **Balcony by outline** desenează orice formă: dai clic pe colțuri, prima latură e lipită de clădire. **Gallery edge** desenează marginea unui mezanin peste un spațiu cu înălțime dublă, din două puncte (golul la stânga, galeria la dreapta).
+
+Stilurile predefinite acoperă felurile de balcoane cerute:
+
+- **Juliet balcony**: o balustradă cu baluștri în fața unei uși-fereastră, peste o mică placă de piatră pe două console.
+- **Cantilevered slab, glass**: o placă de beton în consolă din planșeu, printr-o întrerupere de punte termică, placată cu pantă, cu lăcrimar sub margine, sticlă pe trei laturi.
+- **Stacked, on posts**: o placă pe stâlpi de oțel în față, care stau pe balconul de dedesubt (sau pe teren); repetată etaj peste etaj.
+- **On steel brackets**, **Hung from tie rods** (tiranți de la colțurile din față până în perete), **Rounded corners**, **Curved front** cu parapet plin.
+- **Loggia** (logie): retrasă în fațadă. Își taie golul prin perete (un gol cât logia de lat și cât **Recess height** de înalt), își face pereții laterali și o placă de tavan în spatele feței și își ridică propriul **Back wall** (de tipul peretelui, la fel de înalt) la adâncimea logiei, acolo unde vine ușa. Balustrada e la față.
+- **Corner balcony**: de-a lungul peretelui și în jurul colțului clădirii, înapoi pe peretele lateral; pus lângă capătul unui perete, îl înconjoară.
+- **Mezzanine gallery edge**: placa galeriei în spatele marginii, o fascie peste margine și o balustradă cu bare.
+
+![Balcoane la etaj: un balcon franțuzesc la ușă, unul pe stâlpi, unul de colț, o logie, unul curb, unul rotunjit și unul suspendat; balconul etajului de deasupra, întrerupt](shots/balconies-plan.webp)
+
+Planul desenează placa, finisajul și balustrada unui balcon cum le taie sau le vede, iar balcoanele etajului de deasupra cu linie întreruptă, deasupra secțiunii. Secțiunile și fațadele desenează placa, balustrada, stâlpii și consolele.
+
+### Configuratorul
+
+**Architecture → Balcony configurator** (sau rotița de lângă **Style** în proprietățile balconului) lucrează ca acela al acoperișului: stilurile în stânga (întâi ale proiectului, apoi cele predefinite), câmpurile balconului pe file în dreapta, peste planul lui sau o secțiune prin mijloc, așa cum le-ar construi ciorna:
+
+- **Shape**: **Kind** (franțuzesc, consolă, stâlpi, console, logie, colț, mezanin), **Outline** (dreptunghi, colțuri rotunjite cu **Corner radius**, front curb cu **Front bulge** sau poligonul desenat), **Width** și **Depth**, întoarcerea pe latură a balconului de colț, placa și **Fascia height** ale galeriei.
+- **Slab and finish**: **Slab thickness** și materialul plăcii, **Edge** (dreaptă, cu **drip** — lăcrimar — sub ea, cu **nosing** — finisajul trecut peste — sau **tapered**, subțiată până la **Edge thickness**), grosimea și materialul finisajului și **Fall (%)** spre față (finisajul mai gros la perete), intradosul și **Thermal break** (80 mm între placă și planșeul din interior; o spun tabelul și IFC-ul).
+- **Railing**: modelele balustradelor (stâlpișori și mână curentă, baluștri, sticlă, cabluri, panou plin) sau un **parapet** cu grosimea și materialul lui, sau nimic; înălțimea, doar în față sau și pe laturi, cât e retrasă de la margine, mâna curentă și stâlpișorii, culoarea.
+- **Supports**: **Carried by** nimic (consolă), **posts** (rotunzi sau pătrați, mărimea și distanța), **brackets** (adâncimea, înălțimea și distanța) sau **hangers** (înălțimea peste placă la care se prind tiranții) și materialul lor.
+- **Loggia**: înălțimea golului, grosimea pereților laterali, placa peste fața peretelui, placa de tavan și peretele din spate.
+
+![Configuratorul de balcon: stilurile, forma și planul](shots/balcony-configurator.webp)
+
+![Susținerile, peste o secțiune prin balcon](shots/balcony-configurator-section.webp)
+
+**Apply** schimbă balconul într-un singur pas. **Save as style…** îl păstrează ca stil al proiectului (un tip de balcon), oferit în bara uneltei și în proprietăți; **Update style** îl salvează din nou în stilul lui și toate balcoanele stilului îl iau; lângă numele unui stil îl redenumești sau îl ștergi (balcoanele lui rămân cum sunt). Un stil e un tip: articolele de deviz de pe el (Cost → Map articles) măsoară balcoanele lui.
+
+![Proprietățile unui balcon: stilul și toate câmpurile felului lui](shots/balcony-properties.webp)
+
+În panoul de proprietăți un balcon arată doar câmpurile pe care felul lui le folosește (golul logiei, adâncimea consolei doar pe console). Gripurile îl trag de-a lungul peretelui, mijlocul frontului dă adâncimea (la logie, cât de adânc intră golul), mijloacele laturilor lățimea; unul desenat se trage de colțuri. Golul și peretele din spate ale logiei o urmează și pleacă odată cu ea când e ștearsă.
+
+**Stack on storeys above** (în configurator, în proprietăți sau **Architecture → Stack on storeys above**) copiază balcoanele selectate pe toate etajele de deasupra într-un singur pas, cu Copy to storeys: copia se prinde de peretele etajului ei care stă unde stă peretele original, o logie suprapusă taie peretele acelui etaj, stâlpii stau pe balconul de dedesubt.
+
+![Fațada de sud în 3D: balconul franțuzesc, balcoanele suprapuse pe stâlpi, cel de colț și cel suspendat în tiranți](shots/balconies-3d.webp)
+
+![Dinspre nord: logia tăiată în perete, balconul curb cu parapetul și cel rotunjit](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** listează fiecare balcon cu etajul, stilul, felul, lățimea, adâncimea, aria, lungimea și modelul balustradei, ce îl susține și întreruperea de punte termică, cu totalurile. În IFC un balcon e un IfcElementAssembly (USERDEFINED, „Balcony”) de tipul unui IfcElementAssemblyType, alcătuit din părțile lui: placa un IfcSlab (FLOOR), finisajul și intradosul IfcCovering (FLOORING, CEILING), balustrada un IfcRailing (GUARDRAIL) sau parapetul un IfcWall (PARAPET), stâlpii IfcColumn, consolele IfcDiscreteAccessory (BRACKET), tiranții IfcMember, întreruperea de punte termică un IfcBuildingElementPart; golul logiei e un IfcOpeningElement în peretele ei. Lapin își citește înapoi propriile balcoane ca balcoane.

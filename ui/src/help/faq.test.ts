@@ -20,6 +20,9 @@ describe('Ask Lapin', () => {
     expect(best("I can't figure out how to make Levels invisible in 3D view so that I can navigate around in 3D. At the moment I can only watch the whole building at once.")).toBe('storeys-3d');
     expect(best('hope in the next release we can easily copy elements to multiple levels at once')).toBe('copy-to-storeys');
     expect(best('copy elements to several storeys')).toBe('copy-to-storeys');
+    // Report #96, in the tester's words.
+    expect(best('Different types of balcony: Juliet balcony, loggia balcony, stacked balcony, mezzanine balcony')).toBe('balconies');
+    expect(best('how do I make a loggia')).toBe('balconies');
   });
 
   it('answers in Romanian, with or without diacritics', () => {
@@ -55,6 +58,8 @@ describe('Ask Lapin', () => {
     expect(best('cum arat inaltimea golului sub cota')).toBe('opening-height');
     expect(best('pot să-mi fac propriul cartuș?')).toBe('title-block');
     expect(best('can I make my own title block')).toBe('title-block');
+    expect(best('cum fac un balcon in consola')).toBe('balconies');
+    expect(best('cum pun o logie in perete')).toBe('balconies');
   });
 
   it('says nothing to what it does not know', () => {

@@ -129,3 +129,49 @@ W IFC pochylnia jest obiektem IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP,
 ## Balustrady
 
 **Architektura → Balustrada** (<kbd>RL</kbd>) rysuje samodzielną balustradę wzdłuż krawędzi balkonu, tarasu lub galerii: wskaż jej punkty, Enter kończy. Przyjmuje wzory balustrad schodowych (słupki i pochwyt, tralki, szkło, linki lub pełny panel), a w swoich właściwościach wysokość (domyślnie 1 m), odsunięcie podstawy, profil i wymiary pochwytu oraz rozstaw słupków; jej punkty przeciąga się za uchwyty (Ctrl/⌘-kliknięcie w środek krawędzi dodaje nowy). W IFC jest obiektem IfcRailing (GUARDRAIL).
+
+## Balkony
+
+**Architecture → Balcony** (<kbd>BY</kbd>) wiesza balkon na ścianie: wybierz styl na pasku wiersza poleceń i kliknij poza licem ściany, tam gdzie ma być; staje po tej stronie ściany na poziomie podłogi kondygnacji. **Balkon francuski** (Juliet) kliknięty przy drzwiach lub oknie centruje się na nich, 200 mm szerszy. Gdzie w pobliżu nie ma ściany, balkon staje tam, gdzie klikniesz. **Balcony by outline** rysuje dowolny kształt: kliknij narożniki, pierwsza krawędź przylega do budynku. **Gallery edge** rysuje krawędź antresoli nad przestrzenią o podwójnej wysokości dwoma punktami (pustka po lewej, antresola po prawej).
+
+Wbudowane style obejmują rodzaje, o które się pyta:
+
+- **Juliet balcony**: balustrada z tralek przed drzwiami balkonowymi nad małą kamienną półką na dwóch wspornikach.
+- **Cantilevered slab, glass**: płyta betonowa wysunięta ze stropu przez łącznik termoizolacyjny, wyłożona płytkami ze spadkiem, kapinos pod krawędzią, szkło z trzech stron.
+- **Stacked, on posts**: płyta na stalowych słupach z przodu, które stoją na balkonie poniżej (lub na terenie); powtarzana kondygnacja nad kondygnacją.
+- **On steel brackets**, **Hung from tie rods** (cięgna od przednich narożników do ściany), **Rounded corners**, **Curved front** z pełną attyką.
+- **Loggia**: wcięta w elewację. Wycina swoją wnękę w ścianie (szeroką jak loggia i wysoką jak jej **Recess height**), buduje ściany boczne i płytę sufitu za licem i stawia własną **Back wall** (typu ściany, tej samej wysokości) na głębokości loggii, tam gdzie idą drzwi. Balustrada jest w licu.
+- **Corner balcony**: wzdłuż ściany i wokół narożnika budynku, z powrotem wzdłuż ściany bocznej; kliknięty przy końcu ściany, obejmuje go.
+- **Mezzanine gallery edge**: płyta antresoli za krawędzią, czoło nad krawędzią i balustrada z prętów.
+
+![Balkony na piętrze: francuski przy drzwiach, na słupach, narożny, loggia, łukowy, zaokrąglony i podwieszony; balkon kondygnacji powyżej linią przerywaną](shots/balconies-plan.webp)
+
+Rzut rysuje płytę, wykończenie i balustradę balkonu tak, jak je tnie lub widzi, a balkony kondygnacji powyżej linią przerywaną. Przekroje i elewacje rysują płytę, balustradę, słupy i wsporniki.
+
+### Konfigurator
+
+**Architecture → Balcony configurator** (lub zębatka obok **Style** we właściwościach balkonu) działa jak konfigurator dachu: style po lewej (najpierw projektu, potem wbudowane), pola balkonu na kartach po prawej, nad jego rzutem lub przekrojem przez środek, tak jak zbudowałby je szkic:
+
+- **Shape**: **Kind**, **Outline** (prostokąt, zaokrąglone narożniki z **Corner radius**, łukowy front z **Front bulge** lub narysowany wielokąt), **Width** i **Depth**, powrót balkonu narożnego, płyta i **Fascia height** antresoli.
+- **Slab and finish**: **Slab thickness** i materiał, **Edge** (prosta, z **drip** — kapinosem —, z **nosing** wykończenia lub **tapered** do **Edge thickness**), grubość i materiał wykończenia oraz jego **Fall (%)** ku przodowi, podsufitka i **Thermal break** (80 mm między płytą a stropem wewnątrz; mówią o tym zestawienie i IFC).
+- **Railing**: wzory balustrad (słupki i pochwyt, tralki, szkło, linki, pełny panel) lub **parapet** o własnej grubości i materiale, albo brak; wysokość, tylko z przodu lub także po bokach, odsunięcie od krawędzi, pochwyt, słupki i kolor.
+- **Supports**: **Carried by** nic (wspornik), **posts** (okrągłe lub kwadratowe, rozmiar i rozstaw), **brackets** (głębokość, wysokość i rozstaw) lub **hangers** (wysokość zamocowania cięgien nad płytą) oraz ich materiał.
+- **Loggia**: wysokość wnęki, grubość ścian bocznych, płyta poza lico, płyta sufitu i ściana tylna.
+
+![Konfigurator balkonu: style, kształt i rzut](shots/balcony-configurator.webp)
+
+![Jego podparcia nad przekrojem przez balkon](shots/balcony-configurator-section.webp)
+
+**Apply** zmienia balkon w jednym kroku. **Save as style…** zachowuje go jako styl projektu (typ balkonu), oferowany na pasku narzędzia i we właściwościach; **Update style** zapisuje go ponownie w jego stylu i każdy balkon stylu go przejmuje; obok nazwy stylu zmienia się jego nazwę lub go usuwa (jego balkony zostają, jakie są). Styl jest typem: jego pozycje kosztorysowe (Cost → Map articles) mierzą jego balkony.
+
+![Właściwości balkonu: jego styl i pola jego rodzaju](shots/balcony-properties.webp)
+
+We właściwościach balkon pokazuje tylko pola, których używa jego rodzaj. Jego uchwyty przesuwają go wzdłuż ściany, środek frontu ustawia głębokość (w loggii — wnęki), środki boków szerokość; narysowany przeciąga się za narożniki. Wnęka i ściana tylna loggii podążają za nią i znikają razem z nią.
+
+**Stack on storeys above** (w konfiguratorze, we właściwościach lub **Architecture → Stack on storeys above**) kopiuje zaznaczone balkony na każdą kondygnację nad ich własną w jednym kroku, przez Copy to storeys: kopia wisi na ścianie swojej kondygnacji stojącej tam, gdzie jej ściana, powielona loggia przecina ścianę tej kondygnacji, słupy stoją na balkonie poniżej.
+
+![Elewacja południowa w 3D: balkon francuski, powielone balkony na słupach, narożny i podwieszony na cięgnach](shots/balconies-3d.webp)
+
+![Od północy: loggia wcięta w ścianę, łukowy balkon z attyką i zaokrąglony](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** wymienia każdy balkon z kondygnacją, stylem, rodzajem, szerokością, głębokością, powierzchnią, długością i wzorem balustrady, podparciem i łącznikiem termoizolacyjnym, z sumami. W IFC balkon to IfcElementAssembly (USERDEFINED, „Balcony”) typu IfcElementAssemblyType, złożony z części: płyta to IfcSlab (FLOOR), wykończenie i podsufitka IfcCovering (FLOORING, CEILING), balustrada IfcRailing (GUARDRAIL) lub attyka IfcWall (PARAPET), słupy IfcColumn, wsporniki IfcDiscreteAccessory (BRACKET), cięgna IfcMember, łącznik termoizolacyjny IfcBuildingElementPart; wnęka loggii to IfcOpeningElement w jej ścianie. Lapin wczytuje swoje balkony z powrotem jako balkony.

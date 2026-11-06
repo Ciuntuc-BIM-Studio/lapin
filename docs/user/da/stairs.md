@@ -129,3 +129,49 @@ I IFC er en rampe en IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTER_
 ## Rækværker
 
 **Architecture → Railing** (<kbd>RL</kbd>) tegner et rækværk for sig langs kanten af en altan, en terrasse eller et galleri: klik dets punkter, Enter afslutter. Det har trapperækværkernes udformninger (stolper og håndliste, balustre, glas, wirer eller et lukket panel), sin højde (1 m som standard), basisforskydning, håndlistens profil og størrelser og stolpeafstand i egenskaberne; dets punkter trækkes i deres håndtag (Ctrl/⌘-klik på et styks midte tilføjer ét). I IFC er det et IfcRailing (GUARDRAIL).
+
+## Altaner
+
+**Architecture → Balcony** (<kbd>BY</kbd>) hænger en altan på en væg: vælg stilen i kommandolinjens bjælke, og klik uden for vægfladen, hvor den skal være; den står på den side af væggen i etagens gulvhøjde. En **fransk altan** (Juliet), klikket ved en dør eller et vindue, centreres på den, 200 mm bredere. Hvor ingen væg er nær, står altanen, hvor du klikker. **Balcony by outline** tegner enhver form: klik hjørnerne, den første kant ligger mod bygningen. **Gallery edge** tegner kanten af en hems over et rum i dobbelt højde med to punkter (hulrummet til venstre, galleriet til højre).
+
+De indbyggede stilarter dækker de efterspurgte typer:
+
+- **Juliet balcony**: et rækværk med balustre foran en fransk dør over en lille stenhylde på to konsoller.
+- **Cantilevered slab, glass**: en betonplade udkraget fra dækket gennem en kuldebroafbryder, flisebelagt med fald, drypnæse under kanten, glas på tre sider.
+- **Stacked, on posts**: en plade på stålsøjler foran, der står på altanen nedenunder (eller terrænet); gentaget etage over etage.
+- **On steel brackets**, **Hung from tie rods** (trækstænger fra forhjørnerne op til væggen), **Rounded corners**, **Curved front** med massiv brystning.
+- **Loggia**: trukket ind i facaden. Den skærer sin niche gennem væggen (så bred som loggiaen og så høj som dens **Recess height**), bygger sidevægge og en loftsplade bag facaden og rejser sin egen **Back wall** (af væggens type, lige så høj) i loggiaens dybde, hvor døren skal sidde. Rækværket står ved facaden.
+- **Corner balcony**: langs væggen og rundt om bygningens hjørne, tilbage langs sidevæggen; klikket nær en vægs ende omslutter den enden.
+- **Mezzanine gallery edge**: galleriets dæk bag kanten, et sternbræt over kanten og et rækværk med tremmer.
+
+![Altaner på 1. sal: en fransk altan ved døren, en på søjler, en hjørnealtan, en loggia, en buet, en afrundet og en ophængt; altanen på etagen ovenover stiplet](shots/balconies-plan.webp)
+
+Planen tegner en altans plade, belægning og rækværk, som den skærer eller ser dem, og altanerne på etagen ovenover stiplet. Snit og facader tegner plade, rækværk, søjler og konsoller.
+
+### Konfiguratoren
+
+**Architecture → Balcony configurator** (eller tandhjulet ved **Style** i altanens egenskaber) virker som tagkonfiguratoren: stilarterne til venstre (projektets egne, så de indbyggede), altanens felter i faner til højre over dens plan eller et snit gennem midten, som udkastet ville bygge dem:
+
+- **Shape**: **Kind**, **Outline** (rektangel, afrundede hjørner med **Corner radius**, buet front med **Front bulge** eller den tegnede polygon), **Width** og **Depth**, hjørnealtanens retur, galleriets dæk og **Fascia height**.
+- **Slab and finish**: **Slab thickness** og materiale, **Edge** (lige, med **drip**, med **nosing** af belægningen eller **tapered** til **Edge thickness**), belægningens tykkelse og materiale og dens **Fall (%)** mod fronten, undersiden og **Thermal break** (80 mm mellem pladen og dækket indenfor; listen og IFC siger det).
+- **Railing**: rækværkernes udformninger (stolper og håndliste, balustre, glas, wirer, lukket panel) eller en **parapet** med egen tykkelse og materiale, eller intet; højde, kun foran eller også på siderne, afstand fra kanten, håndliste, stolper og farve.
+- **Supports**: **Carried by** intet (udkraget), **posts** (runde eller firkantede, størrelse og afstand), **brackets** (dybde, højde og afstand) eller **hangers** (højden over pladen, hvor trækstængerne fastgøres) og deres materiale.
+- **Loggia**: nichens højde, sidevæggenes tykkelse, pladen ud over facaden, loftspladen og bagvæggen.
+
+![Altankonfiguratoren: stilarterne, formen og planen](shots/balcony-configurator.webp)
+
+![Dens understøtninger over et snit gennem altanen](shots/balcony-configurator-section.webp)
+
+**Apply** ændrer altanen i ét trin. **Save as style…** gemmer den som en stil i projektet (en altantype), som værktøjets bjælke og egenskaberne tilbyder; **Update style** gemmer den igen i sin stil, og hver altan af stilen følger med; ved en stils navn omdøbes eller slettes den (dens altaner forbliver som de er). En stil er en type: dens prisposter (Cost → Map articles) måler dens altaner.
+
+![En altans egenskaber: dens stil og felterne for dens type](shots/balcony-properties.webp)
+
+I egenskaberne viser en altan kun de felter, dens type bruger. Dens greb trækker den langs væggen, frontens midte sætter dybden (for en loggia nichens), sidernes midter bredden; en tegnet trækkes i hjørnerne. En loggias niche og bagvæg følger den og forsvinder med den.
+
+**Stack on storeys above** (i konfiguratoren, egenskaberne eller **Architecture → Stack on storeys above**) kopierer de valgte altaner til hver etage over deres egen i ét trin med Copy to storeys: kopien hænger på den væg på sin etage, der står hvor dens væg står, en stablet loggia skærer etagens væg, søjler står på altanen nedenunder.
+
+![Sydfacaden i 3D: den franske altan, de stablede altaner på søjler, hjørnealtanen og den ophængte](shots/balconies-3d.webp)
+
+![Fra nord: loggiaen skåret ind i væggen, den buede altan med brystning og den afrundede](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** viser hver altan med etage, stil, type, bredde, dybde, areal, rækværkets længde og udformning, hvad der bærer den og kuldebroafbryderen, med totaler. I IFC er en altan en IfcElementAssembly (USERDEFINED, "Balcony") af en IfcElementAssemblyType, lavet af sine dele: pladen en IfcSlab (FLOOR), belægning og underside IfcCovering (FLOORING, CEILING), rækværket en IfcRailing (GUARDRAIL) eller brystningen en IfcWall (PARAPET), søjler IfcColumn, konsoller IfcDiscreteAccessory (BRACKET), trækstænger IfcMember, kuldebroafbryderen en IfcBuildingElementPart; en loggias niche er en IfcOpeningElement i dens væg. Lapin læser sine altaner tilbage som altaner.

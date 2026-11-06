@@ -129,3 +129,49 @@ No IFC uma rampa é um IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTE
 ## Guarda-corpos
 
 **Arquitetura → Guarda-corpo** (<kbd>RL</kbd>) desenha um guarda-corpo próprio ao longo da borda de uma sacada, de um terraço ou de uma galeria: clique nos seus pontos, Enter termina. Ele usa os desenhos dos guarda-corpos de escada (montantes e corrimão, balaústres, vidro, cabos ou um painel maciço), a sua altura (1 m por padrão), o deslocamento da base, o perfil e as dimensões do corrimão e o espaçamento dos montantes nas suas propriedades; os seus pontos são arrastados pelas suas alças (Ctrl/⌘-clique no meio de um trecho acrescenta um). No IFC ele é um IfcRailing (GUARDRAIL).
+
+## Varandas
+
+**Architecture → Balcony** (<kbd>BY</kbd>) prende uma varanda a uma parede: escolha o estilo na barra da linha de comandos e clique fora da face da parede, onde ela vai; fica desse lado da parede, à cota do piso do pavimento. Uma **varanda francesa** (Juliet) clicada junto a uma porta ou janela centra-se nela, 200 mm mais larga. Onde não há parede perto, a varanda fica onde clicar. **Balcony by outline** desenha qualquer forma: clique nos cantos, o primeiro lado fica encostado ao edifício. **Gallery edge** desenha a borda de um mezanino sobre um espaço de pé-direito duplo com dois pontos (o vazio à esquerda, a galeria à direita).
+
+Os estilos predefinidos cobrem os tipos pedidos:
+
+- **Juliet balcony**: uma guarda de balaústres em frente a uma porta-janela sobre uma pequena laje de pedra com duas consolas.
+- **Cantilevered slab, glass**: uma laje de betão em consola a partir do pavimento com corte térmico, revestida com pendente, pingadeira sob a borda, vidro em três lados.
+- **Stacked, on posts**: uma laje sobre pilares de aço à frente, apoiados na varanda de baixo (ou no terreno); repetida piso sobre piso.
+- **On steel brackets**, **Hung from tie rods** (tirantes dos cantos da frente até à parede), **Rounded corners**, **Curved front** com parapeito maciço.
+- **Loggia**: recuada na fachada. Corta o seu recuo na parede (tão largo como a loggia e tão alto como a sua **Recess height**), constrói as paredes laterais e uma laje de teto atrás da face e levanta a sua própria **Back wall** (do tipo da parede, da mesma altura) à profundidade da loggia, onde vai a porta. A guarda fica na face.
+- **Corner balcony**: ao longo da parede e à volta do canto do edifício, de volta pela parede lateral; clicada junto ao extremo de uma parede, envolve-o.
+- **Mezzanine gallery edge**: a laje da galeria atrás da borda, um friso sobre a borda e uma guarda de barras.
+
+![Varandas no primeiro piso: uma francesa na porta, uma sobre pilares, uma de canto, uma loggia, uma curva, uma arredondada e uma suspensa; a varanda do piso acima, a tracejado](shots/balconies-plan.webp)
+
+A planta desenha a laje, o acabamento e a guarda de uma varanda como os corta ou vê, e as varandas do piso acima a tracejado. Cortes e alçados desenham a laje, a guarda, os pilares e as consolas.
+
+### O configurador
+
+**Architecture → Balcony configurator** (ou a roda dentada junto a **Style** nas propriedades da varanda) funciona como o das coberturas: os estilos à esquerda (os do projeto, depois os predefinidos), os campos da varanda em separadores à direita, sobre a sua planta ou um corte pelo meio, tal como o rascunho os construiria:
+
+- **Shape**: **Kind**, **Outline** (retângulo, cantos arredondados com **Corner radius**, frente curva com **Front bulge** ou o polígono desenhado), **Width** e **Depth**, o retorno da varanda de canto, a laje e **Fascia height** da galeria.
+- **Slab and finish**: **Slab thickness** e material, **Edge** (direito, com **drip** — pingadeira —, com **nosing** do acabamento ou **tapered** até **Edge thickness**), espessura e material do acabamento e a sua **Fall (%)** para a frente, o teto e **Thermal break** (80 mm entre a laje e o pavimento interior; a mapa e o IFC dizem-no).
+- **Railing**: os modelos de guarda (prumos e corrimão, balaústres, vidro, cabos, painel cheio) ou um **parapet** com a sua espessura e material, ou nenhum; altura, só à frente ou também nos lados, recuo da borda, corrimão, prumos e cor.
+- **Supports**: **Carried by** nada (consola), **posts** (redondos ou quadrados, tamanho e espaçamento), **brackets** (profundidade, altura e espaçamento) ou **hangers** (altura a que os tirantes se fixam acima da laje) e o seu material.
+- **Loggia**: altura do recuo, espessura das paredes laterais, laje além da face, laje de teto e parede de fundo.
+
+![O configurador de varandas: os estilos, a forma e a planta](shots/balcony-configurator.webp)
+
+![Os seus apoios, sobre um corte da varanda](shots/balcony-configurator-section.webp)
+
+**Apply** altera a varanda num só passo. **Save as style…** guarda-a como estilo do projeto (um tipo de varanda), oferecido na barra da ferramenta e nas propriedades; **Update style** guarda-a de novo no seu estilo e todas as varandas do estilo a seguem; junto ao nome de um estilo, muda-se-lhe o nome ou elimina-se (as suas varandas ficam como estão). Um estilo é um tipo: os seus artigos de custo (Cost → Map articles) medem as suas varandas.
+
+![As propriedades de uma varanda: o seu estilo e os campos do seu tipo](shots/balcony-properties.webp)
+
+Nas propriedades uma varanda mostra só os campos que o seu tipo usa. As suas pegas deslizam-na ao longo da parede, o meio da frente define a profundidade (numa loggia, a do recuo), os meios dos lados a largura; uma desenhada arrasta-se pelos cantos. O recuo e a parede de fundo de uma loggia seguem-na e vão-se com ela.
+
+**Stack on storeys above** (no configurador, nas propriedades ou **Architecture → Stack on storeys above**) copia as varandas selecionadas para cada piso acima do seu num só passo, com Copy to storeys: a cópia prende-se à parede do seu piso que está onde está a sua parede, uma loggia empilhada corta a parede desse piso, os pilares apoiam na varanda de baixo.
+
+![A fachada sul em 3D: a varanda francesa, as varandas empilhadas sobre pilares, a de canto e a suspensa por tirantes](shots/balconies-3d.webp)
+
+![De norte: a loggia cortada na parede, a varanda curva com o parapeito e a arredondada](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** lista cada varanda com o piso, estilo, tipo, largura, profundidade, área, comprimento e modelo da guarda, apoio e corte térmico, com os totais. Em IFC uma varanda é um IfcElementAssembly (USERDEFINED, "Balcony") de um IfcElementAssemblyType, feito das suas partes: a laje um IfcSlab (FLOOR), acabamento e teto IfcCovering (FLOORING, CEILING), a guarda um IfcRailing (GUARDRAIL) ou o parapeito um IfcWall (PARAPET), pilares IfcColumn, consolas IfcDiscreteAccessory (BRACKET), tirantes IfcMember, o corte térmico um IfcBuildingElementPart; o recuo de uma loggia é um IfcOpeningElement na sua parede. O Lapin volta a ler as suas varandas como varandas.

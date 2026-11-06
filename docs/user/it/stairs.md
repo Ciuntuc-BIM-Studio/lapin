@@ -129,3 +129,49 @@ In IFC una rampa è un IfcRamp (STRAIGHT_RUN_RAMP, TWO_STRAIGHT_RUN_RAMP, QUARTE
 ## Parapetti
 
 **Architettura → Parapetto** (<kbd>RL</kbd>) disegna un parapetto a sé lungo il bordo di un balcone, una terrazza o un ballatoio: fai clic sui suoi punti, Enter termina. Nelle sue proprietà prende i disegni dei parapetti delle scale (montanti e corrimano, balaustri, vetro, cavi o un pannello pieno), la sua altezza (1 m per impostazione predefinita), l’offset di base, il profilo e le dimensioni del corrimano e l’interasse dei montanti; i suoi punti si trascinano con le loro maniglie (Ctrl/⌘-clic al centro di un lato ne aggiunge uno). In IFC è un IfcRailing (GUARDRAIL).
+
+## Balconi
+
+**Architecture → Balcony** (<kbd>BY</kbd>) appende un balcone a un muro: scegli lo stile nella barra della riga di comando e fai clic fuori dalla faccia del muro, dove va; si posa su quel lato del muro alla quota del pavimento del piano. Un **balcone alla francese** (Juliet) posato vicino a una porta o a una finestra si centra su di essa, 200 mm più largo. Dove non c’è un muro vicino, il balcone sta dove fai clic. **Balcony by outline** disegna qualsiasi forma: fai clic sugli angoli, il primo lato sta contro l’edificio. **Gallery edge** disegna il bordo di un soppalco su uno spazio a doppia altezza con due punti (il vuoto a sinistra, il soppalco a destra).
+
+Gli stili predefiniti coprono i tipi richiesti:
+
+- **Juliet balcony**: un parapetto a balaustri davanti a una portafinestra su una piccola lastra di pietra con due mensole.
+- **Cantilevered slab, glass**: una soletta in calcestruzzo a sbalzo dal solaio con taglio termico, piastrellata in pendenza, gocciolatoio sotto il bordo, vetro su tre lati.
+- **Stacked, on posts**: una soletta su pilastri in acciaio sul davanti, che poggiano sul balcone sotto (o sul terreno); ripetuta piano su piano.
+- **On steel brackets**, **Hung from tie rods** (tiranti dagli angoli anteriori fino al muro), **Rounded corners**, **Curved front** con parapetto pieno.
+- **Loggia**: rientrata nella facciata. Taglia il suo incasso nel muro (largo quanto la loggia e alto quanto la sua **Recess height**), costruisce le pareti laterali e una soletta di copertura dietro la faccia e alza il proprio **Back wall** (del tipo del muro, alto uguale) alla profondità della loggia, dove va la porta. Il parapetto è sul filo della facciata.
+- **Corner balcony**: lungo il muro e attorno all’angolo dell’edificio, indietro lungo il muro laterale; posato vicino all’estremità di un muro, la avvolge.
+- **Mezzanine gallery edge**: la soletta del soppalco dietro il bordo, una fascia sul bordo e un parapetto a bacchette.
+
+![Balconi al primo piano: uno alla francese alla porta, uno su pilastri, uno d’angolo, una loggia, uno curvo, uno arrotondato e uno appeso; il balcone del piano sopra, tratteggiato](shots/balconies-plan.webp)
+
+La pianta disegna soletta, finitura e parapetto di un balcone come li taglia o li vede, e i balconi del piano sopra tratteggiati. Sezioni e prospetti disegnano soletta, parapetto, pilastri e mensole.
+
+### Il configuratore
+
+**Architecture → Balcony configurator** (o l’ingranaggio accanto a **Style** nelle proprietà del balcone) funziona come quello delle coperture: gli stili a sinistra (quelli del progetto, poi i predefiniti), i campi del balcone in schede a destra, sopra la sua pianta o una sezione a metà come la bozza li costruirebbe:
+
+- **Shape**: **Kind**, **Outline** (rettangolo, angoli arrotondati con **Corner radius**, fronte curvo con **Front bulge** o il poligono disegnato), **Width** e **Depth**, il risvolto del balcone d’angolo, la soletta e **Fascia height** del soppalco.
+- **Slab and finish**: **Slab thickness** e materiale, **Edge** (dritto, con **drip** — gocciolatoio —, con **nosing** della finitura o **tapered** fino a **Edge thickness**), spessore e materiale della finitura e la sua **Fall (%)** verso il fronte, l’intradosso e **Thermal break** (80 mm tra la soletta e il solaio interno; l’abaco e l’IFC lo dicono).
+- **Railing**: i modelli di parapetto (montanti e corrimano, balaustri, vetro, cavi, pannello pieno) o un **parapet** del suo spessore e materiale, o nessuno; altezza, solo davanti o anche sui lati, arretramento dal bordo, corrimano, montanti e colore.
+- **Supports**: **Carried by** niente (sbalzo), **posts** (tondi o quadri, dimensione e interasse), **brackets** (profondità, altezza e interasse) o **hangers** (altezza di fissaggio dei tiranti sopra la soletta) e il loro materiale.
+- **Loggia**: altezza dell’incasso, spessore delle pareti laterali, soletta oltre la faccia, soletta di copertura e parete di fondo.
+
+![Il configuratore di balconi: gli stili, la forma e la pianta](shots/balcony-configurator.webp)
+
+![I suoi appoggi, sopra una sezione del balcone](shots/balcony-configurator-section.webp)
+
+**Apply** cambia il balcone in un passo. **Save as style…** lo tiene come stile del progetto (un tipo di balcone), offerto dalla barra dello strumento e dalle proprietà; **Update style** lo salva di nuovo nel suo stile e ogni balcone dello stile lo riprende; accanto al nome di uno stile lo si rinomina o lo si elimina (i suoi balconi restano come sono). Uno stile è un tipo: le sue voci di costo (Cost → Map articles) misurano i suoi balconi.
+
+![Le proprietà di un balcone: il suo stile e i campi del suo tipo](shots/balcony-properties.webp)
+
+Nelle proprietà un balcone mostra solo i campi che il suo tipo usa. Le sue maniglie lo fanno scorrere lungo il muro, il centro del fronte fissa la profondità (per una loggia quella dell’incasso), i centri dei lati la larghezza; uno disegnato si trascina dagli angoli. L’incasso e la parete di fondo di una loggia la seguono e se ne vanno con lei.
+
+**Stack on storeys above** (nel configuratore, nelle proprietà o **Architecture → Stack on storeys above**) copia i balconi selezionati su ogni piano sopra il loro in un passo, con Copy to storeys: la copia si appende al muro del suo piano che sta dove sta il suo muro, una loggia impilata taglia il muro di quel piano, i pilastri poggiano sul balcone sotto.
+
+![Il fronte sud in 3D: il balcone alla francese, i balconi impilati su pilastri, quello d’angolo e quello appeso ai tiranti](shots/balconies-3d.webp)
+
+![Da nord: la loggia tagliata nel muro, il balcone curvo con il parapetto e quello arrotondato](shots/balconies-3d-north.webp)
+
+**Architecture → Balcony schedule** elenca ogni balcone con piano, stile, tipo, larghezza, profondità, area, lunghezza e modello del parapetto, appoggio e taglio termico, con i totali. In IFC un balcone è un IfcElementAssembly (USERDEFINED, "Balcony") di un IfcElementAssemblyType, fatto delle sue parti: la soletta un IfcSlab (FLOOR), finitura e intradosso IfcCovering (FLOORING, CEILING), il parapetto un IfcRailing (GUARDRAIL) o il parapetto pieno un IfcWall (PARAPET), pilastri IfcColumn, mensole IfcDiscreteAccessory (BRACKET), tiranti IfcMember, il taglio termico un IfcBuildingElementPart; l’incasso di una loggia è un IfcOpeningElement nel suo muro. Lapin rilegge i suoi balconi come balconi.

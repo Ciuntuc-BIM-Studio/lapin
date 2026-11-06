@@ -25,6 +25,8 @@ import { RoofDialog } from './RoofDialog';
 import { roofOpeningGrips, roofOpeningRefs } from './roofOpeningGrips';
 import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
 import { railing, railingGrips } from './Railing';
+import { BALCONY, BalconySection, balcony, balconyConfigurator, balconyGrips, balconyOutline, balconySchedule, galleryEdge, stackBalconies, styleOf } from './Balconies';
+import { BalconyDialog } from './BalconyDialog';
 import { StairSection, type StairNumbers } from './StairSection';
 import { StairTypesDialog } from './StairTypesDialog';
 import { UnderStairDialog, openUnderStair } from './UnderStairDialog';
@@ -390,6 +392,8 @@ const architecture: LapinModule = {
       { label: 'Joins', tools: [join, mitre, butt, swap, mitreNew], small: [attachRoof, detachRoof] },
       { label: 'Room', tools: [room, roomColors], small: [roomOutline, updateRooms, roomTag] },
       { label: 'Circulation', tools: [stair, ramp, stairTypes], small: [entranceSteps, entranceRamp, underStair, underStairSchedule] },
+      // Balconies (a tester's report, #96): by a wall's face in a style, by outline, a gallery's edge; the configurator, stacking, the schedule.
+      { label: 'Balconies', tools: [balcony, balconyConfigurator], small: [balconyOutline, galleryEdge, stackBalconies, balconySchedule] },
     ],
   }, {
     // Finishes, after Architecture: what lines a room (its floor, walls and ceiling by a finish of its own, false ceilings, skirtings). Other modules add their groups by this id.
@@ -419,6 +423,7 @@ const architecture: LapinModule = {
     { id: 'downpipe', label: 'Downpipe', classes: ['LapinDownpipe'], component: DownpipeSection },
     { id: 'roof', label: 'Roof', classes: ['IfcRoof'], component: RoofSection },
     { id: 'stair', label: 'Stair', classes: ['IfcStair', 'IfcRamp'], component: StairSection },
+    { id: 'balcony', label: 'Balcony', classes: [BALCONY], component: BalconySection },
     { id: 'underStair', label: 'Under-stair space', classes: ['LapinUnderStair'], component: UnderStairSection },
     { id: 'ceiling', label: 'Ceiling', classes: ['LapinCeiling'], component: CeilingSection },
     { id: 'skirting', label: 'Skirting', classes: ['LapinSkirting'], component: SkirtingSection },
@@ -426,8 +431,8 @@ const architecture: LapinModule = {
     { id: 'room', label: 'Room', classes: ['IfcSpace'], component: RoomSection, replacesFields: () => true },
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
   ],
-  dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog },
-  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips },
+  dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, balcony: BalconyDialog },
+  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [BALCONY]: balconyGrips },
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
@@ -437,6 +442,7 @@ const architecture: LapinModule = {
     IfcRoof: (n) => { useUi.setState({ roofStyle: typeof n.props.style === 'string' ? n.props.style : null }); activate(roof); },
     IfcCurtainWall: (n) => { useUi.setState({ curtainTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(curtainWall); },
     IfcSpace: (n) => activate(n.props.auto === false ? roomOutline : room),
+    [BALCONY]: (n) => { useUi.setState({ balconyStyle: styleOf(n) || null }); activate(n.props.kind === 'mezzanine' ? galleryEdge : n.props.contour ? balconyOutline : balcony); },
   },
   setType: {
     IfcWall: (ids, typeId) => execute('architecture.setWallType', { ids, typeId }),

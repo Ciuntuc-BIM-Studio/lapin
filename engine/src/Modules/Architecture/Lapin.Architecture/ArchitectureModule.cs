@@ -32,7 +32,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     /// <c>openingSymbols</c> turns them off.
     /// </summary>
     public IEnumerable<ViewMark> Marks(ViewContext c) =>
-        (c.Kind == "plan" ? OpeningMarkers.Marks(c).Concat(Rooms.Marks(c)).Concat(Stairs.StairMarks.Marks(c)).Concat(Stairs.RampMarks.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c)))
+        (c.Kind == "plan" ? OpeningMarkers.Marks(c).Concat(Rooms.Marks(c)).Concat(Stairs.StairMarks.Marks(c)).Concat(Stairs.RampMarks.Marks(c)).Concat(Balconies.BalconyModule.Marks(c)).Concat(ColorSchemes.Legends(c)) : ElevationSymbols(c).Concat(ColorSchemes.Legends(c)))
             .Concat(c.Kind == "3d" ? [] : Drainage.Marks(c));
 
     IEnumerable<ViewMark> ElevationSymbols(ViewContext c)
@@ -361,6 +361,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Drainage.Register(r);
         // A railing of its own along a line in plan (decision 238), in the stair railings' designs.
         Stairs.Railings.Register(r);
+        // Balconies (a tester's report, #96): styles, the configurator, loggias cut into their wall.
+        Balconies.BalconyModule.Register(r);
         r.Catalog("roofStyles", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Styles, ArchitectureCatalogJson.Default.IReadOnlyListStyle)!);
         r.Catalog("roofCoverings", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Coverings, ArchitectureCatalogJson.Default.IReadOnlyListCovering)!);
 
