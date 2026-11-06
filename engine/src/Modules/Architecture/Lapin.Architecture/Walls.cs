@@ -331,6 +331,8 @@ public static class Walls
             var side = r.Relating == wall.Id ? join.A : join.B;
             var i = side.Connection switch { Connection.AtStart => 0, Connection.AtEnd => 1, _ => -1 };
             if (i < 0 || o[i] != null || m.Get(Joins.Other(r, wall.Id)) is not { } other) continue;
+            // A node of three walls or more: the layers follow the body's fan cut (Joins.Fan), not one corner of the pairs.
+            if (Joins.IsNode(m, wall, i)) continue;
             var elements = Math.Sign((ranked(wall) ?? 0) - (ranked(other) ?? 0));
             o[i] = LayerCorner(m, start, dir, length, i == 0, bands, other, join.Style, side.RunsThrough, join.Kind == JoinKind.T, elements);
         }

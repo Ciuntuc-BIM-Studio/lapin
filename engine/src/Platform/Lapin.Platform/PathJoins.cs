@@ -77,7 +77,82 @@ public static class Joins
             if (i < 0 || ends[i] != null) continue;
             ends[i] = i == 0 ? (side.Wall.Start, side.Wall.StartCut ?? EndCut.Square) : (side.Wall.End, side.Wall.EndCut ?? EndCut.Square);
         }
+        // An end where three or more meet (a tester's report: a V's corner with a third wall going on from it): cut as a fan.
+        for (var i = 0; i < 2; i++)
+            if (NodeAt(m, e, i, paths, frameFor) is { } fan) ends[i] = fan;
         return ends;
+    }
+
+    /// <summary>Whether an element's end is a node of three or more (joined there to two others or more): its layers then follow the fan cut.</summary>
+    public static bool IsNode(IModelView m, Entity e, int end)
+    {
+        var mine = end == 0 ? "ATSTART" : "ATEND";
+        return Of(m, e.Id).Count(r => (string?)r.Attrs?[r.Relating == e.Id ? "relatingConnection" : "relatedConnection"] == mine) >= 2;
+    }
+
+    /// <summary>
+    /// An element's end joined at one point to two others or more, each by its own end (a node of three walls or more):
+    /// all of them taken round the point by the direction each leaves it, every face of this one is cut where it meets
+    /// the face of its neighbour on that side, as a mitred corner is between two; null when the end is not such a node
+    /// (one join, a T on a run, an arc among them).
+    /// </summary>
+    static (Vec2 Point, EndCut Cut)? NodeAt(IModelView m, Entity e, int end, IPathElements paths, Func<Entity, JoinWall?>? frameFor)
+    {
+        var mine = end == 0 ? "ATSTART" : "ATEND";
+        var partners = new List<(Entity E, int End)>();
+        foreach (var r in Of(m, e.Id))
+        {
+            if ((string?)r.Attrs?[r.Relating == e.Id ? "relatingConnection" : "relatedConnection"] != mine) continue;
+            var theirs = (string?)r.Attrs?[r.Relating == e.Id ? "relatedConnection" : "relatingConnection"];
+            if (theirs is not ("ATSTART" or "ATEND") || m.Get(Other(r, e.Id)) is not { } o) return null;
+            partners.Add((o, theirs == "ATSTART" ? 0 : 1));
+        }
+        if (partners.Count < 2 || PathCurve.Of(e).IsArc || partners.Any(x => PathCurve.Of(x.E).IsArc)) return null;
+        if ((frameFor?.Invoke(e) ?? paths.FrameOf(e, m)) is not { } me) return null;
+        var others = new List<(JoinWall, int)>();
+        foreach (var (o, oe) in partners)
+            if ((frameFor?.Invoke(o) ?? paths.FrameOf(o, m)) is { } f) others.Add((f, oe)); else return null;
+        return Fan(me, end, others);
+    }
+
+    /// <summary>
+    /// The cut of one end of <paramref name="me"/> at a node it shares with <paramref name="others"/> (each by an end): its
+    /// face on each side runs to where it meets the facing face of its neighbour round the node on that side. Faces in
+    /// line (a straight angle between the two) stop square; a face that would run on past the node more than twice the
+    /// wall's thickness (walls all to one side, sharp) stops there.
+    /// </summary>
+    public static (Vec2 Point, EndCut Cut) Fan(JoinWall me, int myEnd, IReadOnlyList<(JoinWall Wall, int End)> others)
+    {
+        var all = others.Prepend((me, myEnd)).Select(x =>
+        {
+            var along = (x.Item1.End - x.Item1.Start).Normalized();
+            var into = x.Item2 == 0 ? along : -along;
+            return (Wall: x.Item1, End: x.Item2, At: x.Item2 == 0 ? x.Item1.Start : x.Item1.End, Along: along, Into: into, Angle: Math.Atan2(into.Y, into.X));
+        }).ToList();
+        var self = all[0];
+        var sorted = all.OrderBy(x => x.Angle).ToList();
+        var k = sorted.IndexOf(self);
+        var n = sorted.Count;
+        var (ccw, cw) = (sorted[(k + 1) % n], sorted[(k - 1 + n) % n]);
+        // The side of a wall facing its counter-clockwise neighbour: the left of the way it leaves the node.
+        double CcwSide(JoinWall w, int e) => e == 0 ? w.YMax : w.YMin;
+        double CwSide(JoinWall w, int e) => e == 0 ? w.YMin : w.YMax;
+        double Reach(double y, (JoinWall Wall, int End, Vec2 At, Vec2 Along, Vec2 Into, double Angle) other, double theirY)
+        {
+            var gap = Math.Abs(Vec2.Cross(self.Into, other.Into));
+            if (gap < 1e-4) return 0;
+            var a = self.At + self.Along.Perp * y;
+            var b = other.At + other.Along.Perp * theirY;
+            var sin = Vec2.Cross(self.Along, other.Along);
+            var hit = a + self.Along * (Vec2.Cross(b - a, other.Along) / sin);
+            var reach = Vec2.Dot(hit - a, -self.Into);
+            return Math.Min(reach, 2 * me.Thickness);
+        }
+        var toCcw = Reach(CcwSide(me, myEnd), ccw, CwSide(ccw.Wall, ccw.End));
+        var toCw = Reach(CwSide(me, myEnd), cw, CcwSide(cw.Wall, cw.End));
+        // EndCut: Left is the face at YMax.
+        var cut = myEnd == 0 ? new EndCut(toCcw, toCw) : new EndCut(toCw, toCcw);
+        return (self.At, cut);
     }
 
     /// <summary>The attributes an element's own end cuts are kept in: the angle of each free end from square, in degrees (docs/spec-ifc.md, Îmbinările).</summary>
@@ -236,6 +311,9 @@ public static class Joins
     /// corner, an in-line element, or another's path), and the free ends of
     /// others that end on its path. A corner already joined is left as it is.
     /// </summary>
+    /// <summary>How near ends must be to share a node of three or more.</summary>
+    public const double NodeTolerance = 0.01;
+
     public static void Auto(IEdit edit, IPathElements paths, string id, JoinStyle style = JoinStyle.Mitre)
     {
         var m = edit.Model;
@@ -248,6 +326,7 @@ public static class Joins
             e = m.Get(id)!;
             if (JoinedEnds(m, e)[end]) continue;
             var at = end == 0 ? Start(e) : End(e);
+            var joinedHere = false;
             foreach (var other in others.OrderBy(o => DistanceTo(o, at)))
             {
                 if (Between(m, id, other.Id) != null) continue;
@@ -257,10 +336,16 @@ public static class Joins
                 try { trial = WallJoins.Compute(fe, fo, new JoinOptions(Style: style)); }
                 catch (CommandException) { continue; }
                 if (trial.A.Connection != (end == 0 ? Connection.AtStart : Connection.AtEnd)) continue;
-                // The other's end must be free too (a corner of three is not joined automatically).
-                if (trial.B.Connection != Connection.AtPath && JoinedEnds(m, current)[trial.B.Connection == Connection.AtStart ? 0 : 1]) continue;
+                // An end already joined there: a node of three or more when the two ends are at the same point (each cut as a
+                // fan, NodeAt), else left alone.
+                var theirs = trial.B.Connection == Connection.AtStart ? 0 : 1;
+                var node = trial.B.Connection != Connection.AtPath && ((theirs == 0 ? Start(current) : End(current)) - at).Length <= NodeTolerance;
+                if (trial.B.Connection != Connection.AtPath && JoinedEnds(m, current)[theirs] && !node) continue;
+                if (joinedHere && !node) continue;
                 Join(edit, paths, e, current, trial.Kind == JoinKind.L ? style : JoinStyle.Butt);
-                break;
+                joinedHere = true;
+                // Only more ends at this very point join it after the first.
+                if (!node) break;
             }
         }
         // Others whose free end lies on this element's path: a T, this one through.
