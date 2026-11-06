@@ -35,6 +35,28 @@ public sealed class EngineHub
         _dispatcher = new(session, files, recovery, new SupportDesk());
         Sharing = new Sharing(this);
         session.History.AuthorName = id => Participant(id)?.Name;
+        // A module's background result (docs/overrides.md) waits for the calls' queue like a call, then goes out as a diff.
+        session.DeliveryWaiting += () => _ = Deliveries();
+    }
+
+    /// <summary>
+    /// The deliveries waiting, applied between calls (the session is single-threaded): each diff to every client, as a
+    /// command's goes, and what became of each to the computer's own interfaces (an event, "delivery").
+    /// </summary>
+    public async Task Deliveries()
+    {
+        await _gate.WaitAsync();
+        try
+        {
+            foreach (var o in _session.TakeDeliveries())
+            {
+                if (o.Diff != null) Broadcast(o.Diff);
+                if (o.Status == "failed") Console.Error.WriteLine($"[engine] Delivery „{o.Label}” failed: {o.Error}");
+                await TellLocal("delivery", new JsonObject { ["label"] = o.Label, ["status"] = o.Status, ["error"] = o.Error });
+            }
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"[engine] {ex}"); }
+        finally { _gate.Release(); }
     }
 
     public Session Session => _session;

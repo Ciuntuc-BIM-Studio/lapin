@@ -34,18 +34,37 @@ static partial class Engine
             (_, _) => throw new CommandException("Pick the project to open: in the browser a project is opened from a file you choose."),
             (_, _, _, _) => throw new CommandException("In the browser a project is saved as a download (or to the file you chose)."));
         _dispatcher = new EngineDispatcher(session, files, recovery, new BrowserSupportDesk());
+        // A module's background result (docs/overrides.md): applied at once between calls, else when the call running ends.
+        session.DeliveryWaiting += () => { if (!_inCall) Deliveries(); };
         return Product.Manifest.Id;
     }
+
+    static bool _inCall;
 
     /// <summary>One call of the protocol: its reply frame (its diff, if any, went to <c>frame</c> first).</summary>
     [JSExport]
     internal static byte[] Call(string message)
     {
         var d = _dispatcher ?? throw new InvalidOperationException("The engine has not started.");
-        var (reply, diff) = d.Handle(message);
-        foreach (var f in d.TakeCallerFrames()) Frame(f);
-        if (diff != null) foreach (var part in d.Parts(diff)) Frame(d.DiffFrame(part));
+        _inCall = true;
+        byte[] reply;
+        try
+        {
+            (reply, var diff) = d.Handle(message);
+            foreach (var f in d.TakeCallerFrames()) Frame(f);
+            if (diff != null) foreach (var part in d.Parts(diff)) Frame(d.DiffFrame(part));
+        }
+        finally { _inCall = false; }
+        if (d.Session.DeliveriesWaiting) Deliveries();
         return reply;
+    }
+
+    /// <summary>The deliveries waiting, each diff to the page as a call's goes (the worker has one thread: never inside a call).</summary>
+    static void Deliveries()
+    {
+        if (_dispatcher is not { } d) return;
+        foreach (var o in d.Session.TakeDeliveries())
+            if (o.Diff != null) foreach (var part in d.Parts(o.Diff)) Frame(d.DiffFrame(part));
     }
 }
 

@@ -74,7 +74,8 @@ public sealed class Session
         _catalog.Commands.Select(c => new CommandInfo(c.Name, c.Label)).ToList(),
         "m",
         AppVersion,
-        _catalog.Catalogs);
+        _catalog.Catalogs,
+        _catalog.Overrides.Count > 0 ? _catalog.Overrides : null);
 
     // ------------------------------------------------------------ project
 
@@ -148,6 +149,7 @@ public sealed class Session
         });
         _history.Reset();
         ForgetAll();
+        StartOver();
     }
 
     /// <summary>
@@ -172,6 +174,7 @@ public sealed class Session
             if (_catalog.OwnerOf(cls) == null) _foreignClasses[cls] = module;
         var (es, rs) = Upgraded(entities, relations);
         _history.Load(es, rs);
+        StartOver();
         ForgetAll();
         ForgetMeshes();
         Path = path;
@@ -274,7 +277,7 @@ public sealed class Session
         JsonNode? r = null;
         // What a link brought in is read-only, except to the link commands and to the imports that make links.
         var allowLinked = command.StartsWith("link.", StringComparison.Ordinal) || command.EndsWith(".importDxf", StringComparison.Ordinal);
-        var t = _history.Execute(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog, new QueryContext(this), allowLinked), args), author);
+        var t = Commit(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog, new QueryContext(this), allowLinked), args), author);
         result = r;
         if (t == null) return Empty();
         Emit("tx", t);
@@ -284,11 +287,108 @@ public sealed class Session
     /// <summary>One edit made outside a module's commands (an IFC import): one undo step, journalled and diffed like a command.</summary>
     public Diff Edit(string label, Action<IEdit> edit)
     {
-        var t = _history.Execute(label, edit, Author);
+        var t = Commit(label, edit, Author);
         if (t == null) return Empty();
         Emit("tx", t);
         // Being recovered (an import done again): the snapshot at the end draws everything once.
         return _quiet ? Empty() : DiffAfter(t);
+    }
+
+    /// <summary>
+    /// One transaction, counted for the deliveries when it changed something: a stamp taken inside it stands after it
+    /// (<see cref="IDeliveries.Stamp"/>), so the count moves on then even when it changed nothing.
+    /// </summary>
+    Transaction? Commit(string label, Action<IEdit> edit, string author)
+    {
+        Transaction? t = null;
+        _inEdit = true;
+        try { t = _history.Execute(label, edit, author); }
+        finally
+        {
+            if (t != null || _stampedInEdit) Interlocked.Increment(ref _changes);
+            _inEdit = _stampedInEdit = false;
+        }
+        if (t != null) Changed(t);
+        return t;
+    }
+
+    // ------------------------------------------------------------ deliveries
+
+    /// <summary>How many edits the session has made (a counter, never stored); the change count at which each id last changed; the last project started.</summary>
+    long _changes, _startedAt;
+    readonly Dictionary<string, long> _changedAt = [];
+    bool _inEdit, _stampedInEdit;
+    readonly System.Collections.Concurrent.ConcurrentQueue<(string Label, DeliveryStamp Since, Action<ICommandContext> Apply, IReadOnlyCollection<string>? Reads)> _deliveries = new();
+    DeliveriesOf? _deliveriesOf;
+
+    /// <summary>Where a module's background results go (<see cref="IDeliveries"/>), also through its commands' and queries' contexts.</summary>
+    public IDeliveries Deliveries => _deliveriesOf ??= new DeliveriesOf(this);
+
+    /// <summary>A delivery was queued (raised on the thread that delivered it): the host calls <see cref="TakeDeliveries"/> on the session's thread.</summary>
+    public event Action? DeliveryWaiting;
+
+    /// <summary>Whether deliveries wait to be applied.</summary>
+    public bool DeliveriesWaiting => !_deliveries.IsEmpty;
+
+    void Changed(Transaction t)
+    {
+        foreach (var id in t.TouchedIds()) _changedAt[id] = _changes;
+    }
+
+    /// <summary>A project opened or made: what was being worked out for the one before is stale.</summary>
+    void StartOver()
+    {
+        _startedAt = Interlocked.Increment(ref _changes);
+        _changedAt.Clear();
+    }
+
+    bool Stale(DeliveryStamp since, IReadOnlyCollection<string>? reads)
+    {
+        if (since.Value < _startedAt) return true;
+        if (reads == null) return _changes > since.Value;
+        foreach (var id in reads) if (_changedAt.TryGetValue(id, out var at) && at > since.Value) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// The deliveries waiting, applied in the order they came, on the session's thread (between calls): each an undo step of
+    /// its own, journalled; a stale one dropped, a failing one rolled back. What each became, with its diff to send.
+    /// </summary>
+    public IReadOnlyList<DeliveryOutcome> TakeDeliveries()
+    {
+        var o = new List<DeliveryOutcome>();
+        while (_deliveries.TryDequeue(out var d))
+        {
+            if (Stale(d.Since, d.Reads)) { o.Add(new(d.Label, "stale", d.Since.Author)); continue; }
+            Transaction? t;
+            try { t = Commit(d.Label, edit => d.Apply(new CommandContext(edit, _catalog, new QueryContext(this))), d.Since.Author); }
+            catch (Exception ex)
+            {
+                // A background result must not take the session down: the model is as it was, the host says why.
+                o.Add(new(d.Label, "failed", d.Since.Author, Error: ex.Message));
+                continue;
+            }
+            if (t == null) { o.Add(new(d.Label, "empty", d.Since.Author)); continue; }
+            Emit("tx", t);
+            o.Add(new(d.Label, "applied", d.Since.Author, DiffAfter(t)));
+        }
+        return o;
+    }
+
+    sealed class DeliveriesOf(Session s) : IDeliveries
+    {
+        public DeliveryStamp Stamp()
+        {
+            if (s._inEdit) s._stampedInEdit = true;
+            return new(Interlocked.Read(ref s._changes) + (s._inEdit ? 1 : 0), s.Author);
+        }
+
+        public void Deliver(string label, DeliveryStamp since, Action<ICommandContext> apply, IReadOnlyCollection<string>? reads = null)
+        {
+            ArgumentNullException.ThrowIfNull(apply);
+            s._deliveries.Enqueue((label, since, apply, reads is null ? null : [.. reads]));
+            s.DeliveryWaiting?.Invoke();
+        }
     }
 
     /// <summary>
@@ -300,6 +400,8 @@ public sealed class Session
     {
         author ??= Author;
         if (_history.Undo(author) is not { } t) return Empty();
+        Interlocked.Increment(ref _changes);
+        Changed(t);
         if (t.Reverts != null) Emit("tx", t); else Emit("undo", t, author);
         return DiffAfter(t);
     }
@@ -308,6 +410,8 @@ public sealed class Session
     {
         author ??= Author;
         if (_history.Redo(author) is not { } t) return Empty();
+        Interlocked.Increment(ref _changes);
+        Changed(t);
         if (t.Redoes != null) Emit("tx", t); else Emit("redo", t, author);
         return DiffAfter(t);
     }
@@ -1006,6 +1110,7 @@ public sealed class Session
         public IReadOnlyList<string> DependenciesOf(string id) => s.DependenciesOf(id);
         public IReadOnlyList<QuantitySet> Quantities(string id) => s.Quantities(id);
         public ClassDescriptor? Describe(string ifcClass) => s._catalog.Class(ifcClass);
+        public IDeliveries Deliveries => s.Deliveries;
     }
 }
 
@@ -1024,6 +1129,7 @@ sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext que
     public IServices Services => catalog;
     public string NewId() => edit.NewId();
     public ClassDescriptor? Describe(string ifcClass) => catalog.Class(ifcClass);
+    public IDeliveries? Deliveries => query.Deliveries;
 
     void EnsureEditable(Entity e)
     {

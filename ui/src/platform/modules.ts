@@ -11,11 +11,24 @@ import { parseSlot, setSlots, slotsOf, useHotbars, withSlot, withSlotType, withS
 import { useSession } from '../engine/session';
 import { useInterface } from '../app/interface';
 import { addSelectionExpander } from './groups';
+import { replacementsOf, replacesAny, through, withReplacedTools, type Replacement } from './replaces';
 
-export const modules: readonly LapinModule[] = loaded;
+/** The product's modules, with the tools some of them replace in place (docs/overrides.md); as loaded when none does. */
+export const modules: readonly LapinModule[] = withReplacedTools(loaded);
 export const productInfo = product;
+/** What the modules replace of each other's and the shell's (Help → About lists it): none in this repository's editions. */
+export const replacements: readonly Replacement[] = replacementsOf(loaded);
 for (const m of modules) if (m.expandSelection) addSelectionExpander(m.expandSelection);
-addModuleViews(modules.flatMap((m) => Object.keys(m.views ?? {})));
+addModuleViews([...modules.flatMap((m) => Object.keys(m.views ?? {})), ...replacements.filter((r) => r.kind === 'view').map((r) => r.id)]);
+
+/** A replaced dialog or view, made once (a component made anew on every render would be mounted anew). */
+const resolved = new Map<string, unknown>();
+function replacedOnce<T>(kind: 'dialogs' | 'views', id: string, original: () => T): T {
+  if (!replacesAny(loaded, kind, id)) return original();
+  const key = `${kind}:${id}`;
+  if (!resolved.has(key)) resolved.set(key, through(loaded, kind, id, original()));
+  return resolved.get(key) as T;
+}
 /** What the modules show over the active model view (the planning module's card to drag the selection onto a task). */
 export const overlays = (): ComponentType[] => modules.flatMap((m) => m.overlays ?? []);
 
@@ -24,9 +37,12 @@ export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules, product.tabs 
 export const defaultHotbar = (): ToolDef[] => modules.flatMap((m) => m.hotbar ?? []);
 export const propertySections = (ifcClass: string) => modules.flatMap((m) => m.propertySections ?? []).filter((s) => s.classes.includes(ifcClass) || s.classes.includes('*'));
 export const backgrounds = (): ComponentType[] => modules.map((m) => m.background).filter((b): b is ComponentType => Boolean(b));
-export const dialog = (id: string): ComponentType | null => modules.map((m) => m.dialogs?.[id]).find(Boolean) ?? null;
-/** A kind of view a module adds (the Gantt), null when no module of the product has it. */
-export const moduleView = (kind: string): ModuleViewDef | null => modules.map((m) => m.views?.[kind]).find(Boolean) ?? null;
+/** The dialog the store's `dialog` names: a module's, else the shell's (`shell`), as a module may replace it; null when none. */
+export const dialog = (id: string, shell?: Record<string, ComponentType>): ComponentType | null =>
+  replacedOnce<ComponentType | null>('dialogs', id, () => modules.map((m) => m.dialogs?.[id]).find(Boolean) ?? shell?.[id] ?? null);
+/** A kind of view a module adds (the Gantt), as a module may replace it; null when no module of the product has it. */
+export const moduleView = (kind: string): ModuleViewDef | null =>
+  replacedOnce<ModuleViewDef | null>('views', kind, () => modules.map((m) => m.views?.[kind]).find(Boolean) ?? null);
 
 export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => modules.flatMap((m) => m.grips?.[node.type]?.(node, view) ?? []).map((g) => ({ owner: node.id, ...g }));
 export const referencesOf = (node: NodeDto): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node) ?? []);

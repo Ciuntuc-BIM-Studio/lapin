@@ -16,7 +16,7 @@ import { effectiveBindings, formatBinding, resolveKeymap, useKeymap, type Bindin
 import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { redo, undo } from '../engine/session';
 import { deleteElements } from '../engine/dependents';
-import { newProject, openProject, saveProject } from '../engine/files';
+import { runFileAction } from '../shell/fileActions';
 import { COMMANDS, TOOL_WORDS, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
 import { takeHotRemove } from '../viewport/grips';
@@ -30,10 +30,10 @@ function appCommands(): CommandDef[] {
   return [
     { id: 'app.undo', label: 'Undo', category: general, defaults: ['Ctrl+Z'], run: () => void undo() },
     { id: 'app.redo', label: 'Redo', category: general, defaults: ['Ctrl+Y', 'Ctrl+Shift+Z'], run: () => void redo() },
-    { id: 'app.new', label: 'New project', category: general, defaults: ['Ctrl+N'], run: () => void newProject() },
-    { id: 'app.open', label: 'Open…', category: general, defaults: ['Ctrl+O'], run: () => void openProject() },
-    { id: 'app.save', label: 'Save', category: general, defaults: ['Ctrl+S'], run: () => void saveProject() },
-    { id: 'app.saveAs', label: 'Save as…', category: general, defaults: ['Ctrl+Shift+S'], run: () => void saveProject(true) },
+    { id: 'app.new', label: 'New project', category: general, defaults: ['Ctrl+N'], run: () => void runFileAction('file.new') },
+    { id: 'app.open', label: 'Open…', category: general, defaults: ['Ctrl+O'], run: () => void runFileAction('file.open') },
+    { id: 'app.save', label: 'Save', category: general, defaults: ['Ctrl+S'], run: () => void runFileAction('file.save') },
+    { id: 'app.saveAs', label: 'Save as…', category: general, defaults: ['Ctrl+Shift+S'], run: () => void runFileAction('file.saveAs') },
     { id: 'app.delete', label: 'Delete the selection', category: general, defaults: ['Delete', 'Backspace'], run: () => {
       // Over a roof window's grip on its selected roof: that window, not the roof (decision 280).
       if (takeHotRemove()) return;

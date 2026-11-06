@@ -13,15 +13,13 @@ import { BrandName } from './BrandMark';
 import { useUi } from '../app/store';
 import { activate, ribbonTabs } from '../platform/modules';
 import { redo, undo, useSession } from '../engine/session';
-import { importDxf, importIfc, newProject, openProject, saveProject, importFragments, importMesh } from '../engine/files';
-import { openOptimize } from '../engine/ifcOptimize';
-import { engineInBrowser } from '../engine/session';
-import { isGuest, leave } from '../engine/share';
+import { fileActions, GUEST_SECTIONS, HOST_SECTIONS, type FileSection } from './fileActions';
+import { isGuest } from '../engine/share';
 import { Participants } from './Sharing';
 import { useInterface, visibleTabIds } from '../app/interface';
 import { TOOL_DRAG } from '../app/hotbar';
 import { bindingText, hint, useBindings } from '../app/commands';
-import type { RibbonTabDef, ToolDef } from '../platform/module';
+import type { FileAction, RibbonTabDef, ToolDef } from '../platform/module';
 
 /** A command's first binding, as a menu shows it. */
 function Keys({ id }: { id: string }) {
@@ -47,52 +45,32 @@ function UndoItems({ run }: { run: (f: () => unknown) => () => void }) {
   );
 }
 
+/** One section of the File menu: its heading and its actions, as the product has them (shell/fileActions.ts). */
+function FileItems({ section, first, run }: { section: FileSection; first: boolean; run: (f: () => unknown) => () => void }) {
+  const actions = fileActions();
+  const shown = section.ids.map((id) => actions.get(id)).filter((a): a is FileAction => Boolean(a) && (a!.shown?.() ?? true));
+  return (
+    <>
+      {!first && <div className="menu-sep" role="separator" />}
+      {section.head && <div className="menu-head">{section.head}</div>}
+      {shown.map((a) => (
+        <button type="button" role="menuitem" key={a.id} data-menu={a.menu} onClick={run(a.run)}>{a.label}{a.keys && <Keys id={a.keys} />}</button>
+      ))}
+    </>
+  );
+}
+
 function FileMenu() {
   const [open, setOpen] = useState(false);
   const run = (f: () => unknown) => () => { setOpen(false); void f(); };
-  // A guest works in the host's project: the host opens and saves it; a guest exports what they need, or leaves.
-  if (isGuest()) return (
-    <span className="menu-host">
-      <button type="button" className={`tab${open ? ' on' : ''}`} onClick={() => setOpen(!open)}>File</button>
-      {open && (
-        <div className="menu" role="menu" onMouseLeave={() => setOpen(false)}>
-          <UndoItems run={run} />
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportExchange' }))}>Export IFC or Fragments…</button>
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D (glTF, USD, DAE)…</button>
-          <button type="button" role="menuitem" onClick={run(leave)}>Leave session</button>
-        </div>
-      )}
-    </span>
-  );
+  const sections = isGuest() ? GUEST_SECTIONS : HOST_SECTIONS;
   return (
     <span className="menu-host">
       <button type="button" className={`tab${open ? ' on' : ''}`} onClick={() => setOpen(!open)}>File</button>
       {open && (
         <div className="menu" role="menu" onMouseLeave={() => setOpen(false)}>
           <UndoItems run={run} />
-          <button type="button" role="menuitem" onClick={run(newProject)}>New project<Keys id="app.new" /></button>
-          <button type="button" role="menuitem" onClick={run(() => openProject())}>Open…<Keys id="app.open" /></button>
-          <button type="button" role="menuitem" onClick={run(() => saveProject())}>Save<Keys id="app.save" /></button>
-          <button type="button" role="menuitem" onClick={run(() => saveProject(true))}>Save as…<Keys id="app.saveAs" /></button>
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'versions' }))}>Save version…</button>
-          {/* The model exchanged (docs/fragments.md, Exchange): IFC and Fragments, chosen alike both ways. */}
-          <div className="menu-sep" role="separator" />
-          <div className="menu-head">IFC and Fragments</div>
-          <button type="button" role="menuitem" onClick={run(() => importIfc())}>Import IFC…</button>
-          <button type="button" role="menuitem" onClick={run(() => importFragments())}>Import Fragments…</button>
-          <button type="button" role="menuitem" onClick={run(() => importIfc('link'))}>Link IFC…</button>
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportExchange' }))}>Export IFC or Fragments…</button>
-          {/* A file cleaned and lightened into a copy, no project needed (docs/ifc-optimize.md). */}
-          <button type="button" role="menuitem" data-menu="optimize-ifc" onClick={run(() => openOptimize())}>Optimize IFC…</button>
-          <div className="menu-sep" role="separator" />
-          <div className="menu-head">Other formats</div>
-          <button type="button" role="menuitem" onClick={run(() => importDxf())}>Import DXF…</button>
-          <button type="button" role="menuitem" onClick={run(() => importMesh())}>Import mesh (OBJ, STL, glTF)…</button>
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'exportMesh' }))}>Export 3D (glTF, USD, DAE)…</button>
-          <div className="menu-sep" role="separator" />
-          {!engineInBrowser && <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'share' }))}>Share session…</button>}
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ dialog: 'join' }))}>Join session…</button>
-          <button type="button" role="menuitem" onClick={run(() => useUi.setState({ screen: 'start' }))}>Start screen</button>
+          {sections.map((sec, i) => <FileItems key={i} section={sec} first={i === 0} run={run} />)}
         </div>
       )}
     </span>

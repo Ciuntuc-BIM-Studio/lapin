@@ -138,4 +138,6 @@ export interface SessionInfo {
   units: string;
   engineVersion: string;
   catalogs: Record<string, Json>;
+  /** What the product's engine modules override of each other's (docs/overrides.md); absent when nothing is. */
+  overrides?: { kind: 'command' | 'query'; name: string; module: string }[];
 }

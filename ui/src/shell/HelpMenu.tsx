@@ -21,6 +21,7 @@ import { checkForUpdates } from '../app/updates';
 import { LANGUAGES, setLang, useLang } from '../i18n';
 import { AskDialog } from '../help/AskDialog';
 import { BunnyIcon } from '../icons';
+import { replacements } from '../platform/modules';
 
 
 /** An image shrunk to at most 1600 px on its longer side, as a JPEG data URL. */
@@ -153,7 +154,7 @@ export function HelpMenu() {
       {asking && <AskDialog onClose={() => setAsking(false)}
         onReport={(q) => { setAsking(false); setReport(q ? { kind: 'question', title: q.length > 80 ? `${q.slice(0, 77)}…` : q, description: q } : true); }} />}
       {messages && <MessagesDialog onClose={() => setMessages(false)} />}
-      {about && <AboutDialog version={info?.engineVersion} onClose={() => setAbout(false)} />}
+      {about && <AboutDialog version={info?.engineVersion} overrides={info?.overrides} onClose={() => setAbout(false)} />}
       {report && <ReportDialog onClose={() => setReport(false)} start={report === true ? undefined : report} />}
     </div>
     </>
@@ -165,7 +166,28 @@ export function HelpMenu() {
  * code, and helpware: if Lapin helps, we encourage (never require) helping
  * anyone who needs it, in any way; Lapin asks nothing and takes no donations.
  */
-function AboutDialog({ version, onClose }: { version?: string; onClose: () => void }) {
+/** What a replacement is, as About names it. */
+const REPLACED: Record<string, string> = { tool: 'Tool', dialog: 'Dialog', view: 'View', fileAction: 'File action', command: 'Command', query: 'Query' };
+
+/**
+ * What this edition's modules replace (docs/overrides.md): the interface's tools, dialogs, views and File actions, the
+ * engine's commands and queries, each with the module that replaces it. Nothing in Lapin's own editions: then not shown.
+ */
+function Replaced({ overrides }: { overrides?: { kind: string; name: string; module: string }[] }) {
+  const rows = [...replacements.map((r) => ({ kind: r.kind, id: r.id, module: r.module })), ...(overrides ?? []).map((o) => ({ kind: o.kind, id: o.name, module: o.module }))];
+  if (rows.length === 0) return null;
+  return (
+    <>
+      <h4>Replaced by modules</h4>
+      <p className="muted small">This edition's modules change what these do.</p>
+      <ul className="about-replaced">
+        {rows.map((r, i) => <li key={i}><span>{REPLACED[r.kind] ?? r.kind}</span> <code data-no-i18n>{r.id}</code> <span className="muted">by</span> <code data-no-i18n>{r.module}</code></li>)}
+      </ul>
+    </>
+  );
+}
+
+function AboutDialog({ version, overrides, onClose }: { version?: string; overrides?: { kind: string; name: string; module: string }[]; onClose: () => void }) {
   const focus = useDialogFocus<HTMLDivElement>();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -186,6 +208,7 @@ function AboutDialog({ version, onClose }: { version?: string; onClose: () => vo
           <h4>Helpware</h4>
           <p>If Lapin helps you in any way, we encourage you, without obliging you, to help anyone who needs help, in any way you can: your time, your skills, a hand to someone nearby, a gift to people or a cause you trust.</p>
           <p className="muted small">Lapin asks nothing for itself and takes no donations. This is a request, not a condition of the licence.</p>
+          <Replaced overrides={overrides} />
         </div>
       </div>
     </div>

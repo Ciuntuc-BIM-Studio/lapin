@@ -24,8 +24,12 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
     readonly Dictionary<string, JsonNode> _catalogs = [];
     readonly List<(Type Contract, object Implementation)> _services = [];
     readonly List<ILapinModule> _modules = [];
+    readonly List<(OverrideInfo Info, Delegate Handler)> _pending = [];
+    readonly List<OverrideInfo> _overrides = [];
 
     public IReadOnlyList<ILapinModule> Modules => _modules;
+    /// <summary>What the modules override of each other's (<see cref="IModuleRegistry.Override"/>), in load order: none in the editions of this repository.</summary>
+    public IReadOnlyList<OverrideInfo> Overrides => _overrides;
     public IEnumerable<(ClassDescriptor Descriptor, string Module)> Classes => _classes.Values;
     public IEnumerable<CommandEntry> Commands => _commands.Values;
     public IReadOnlyDictionary<string, JsonNode> Catalogs => _catalogs;
@@ -39,7 +43,30 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
             c._modules.Add(m);
             m.Register(new Registry(c, m.Id));
         }
+        // Overrides wrap what every module registered, whichever loaded first: each one round the one before it.
+        foreach (var (info, handler) in c._pending) c.Wrap(info, handler);
+        c._pending.Clear();
         return c;
+    }
+
+    void Wrap(OverrideInfo o, Delegate handler)
+    {
+        if (o.Kind == "command")
+        {
+            if (!_commands.TryGetValue(o.Name, out var entry))
+                throw new InvalidOperationException($"„{o.Module}” overrides the command {o.Name}, which no module of this product registers.");
+            var inner = entry.Handler;
+            var wrap = (CommandOverride)handler;
+            _commands[o.Name] = entry with { Handler = (ctx, args) => wrap(ctx, args, a => inner(ctx, a)) };
+        }
+        else
+        {
+            if (!_queries.TryGetValue(o.Name, out var inner))
+                throw new InvalidOperationException($"„{o.Module}” overrides the query {o.Name}, which no module of this product registers.");
+            var wrap = (QueryOverride)handler;
+            _queries[o.Name] = (ctx, args) => wrap(ctx, args, a => inner(ctx, a));
+        }
+        _overrides.Add(o);
     }
 
     /// <summary>The module that authors <paramref name="ifcClass"/>, or null: a class no module of this product knows (kept, shown, never edited).</summary>
@@ -168,5 +195,12 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         public void Catalog(string name, JsonNode data) => c._catalogs[Qualified(name)] = data;
 
         public void Service<T>(T implementation) where T : class => c._services.Add((typeof(T), implementation));
+
+        public void Override(string command, CommandOverride handler) => c._pending.Add((new OverrideInfo("command", Full(command, "command"), module), handler));
+
+        public void OverrideQuery(string query, QueryOverride handler) => c._pending.Add((new OverrideInfo("query", Full(query, "query"), module), handler));
+
+        string Full(string name, string kind) => name.Contains('.') ? name
+            : throw new InvalidOperationException($"„{module}” overrides the {kind} „{name}”: name it in full, with its module („architecture.addWall”).");
     }
 }

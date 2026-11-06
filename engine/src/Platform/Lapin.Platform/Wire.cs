@@ -96,6 +96,9 @@ public sealed record NodeTypeInfo(string Type, string Label, string Module, stri
 
 public sealed record CommandInfo(string Name, string Label);
 
+/// <summary>A command or query another module wraps (docs/overrides.md): its kind ("command", "query"), its full id and the module that wraps it.</summary>
+public sealed record OverrideInfo(string Kind, string Name, string Module);
+
 /// <summary>
 /// A product: an edition, the modules it is made of (UI and engine alike); what a new project of it starts with
 /// (its storeys; none said: foundations, ground and first floor) and the disciplines its browser groups views by
@@ -115,4 +118,6 @@ public sealed record SessionInfo(
     IReadOnlyList<CommandInfo> Commands,
     string Units,
     string EngineVersion,
-    IReadOnlyDictionary<string, JsonNode> Catalogs);
+    IReadOnlyDictionary<string, JsonNode> Catalogs,
+    /// <summary>What the product's modules override (docs/overrides.md); null, written as nothing, when none.</summary>
+    IReadOnlyList<OverrideInfo>? Overrides = null);

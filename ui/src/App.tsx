@@ -294,7 +294,7 @@ const shareDialogs: Record<string, () => React.JSX.Element | null> = { share: Sh
 
 function Workspace() {
   const open = useUi((s) => s.dialog);
-  const Dialog = open ? dialog(open) ?? shareDialogs[open] ?? null : null;
+  const Dialog = open ? dialog(open, shareDialogs) : null;
   const panels = usePanels();
   const ui = useInterface();
   return (

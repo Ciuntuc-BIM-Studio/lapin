@@ -63,11 +63,29 @@ public interface IModuleRegistry
 
     /// <summary>A service other modules may use through its contract; they must work without it.</summary>
     void Service<T>(T implementation) where T : class;
+
+    /// <summary>
+    /// Another module's command wrapped, by its full id ("architecture.addWall"), for an edition that replaces what Lapin does
+    /// (docs/overrides.md): <paramref name="handler"/> may change the args, the result, or do the work itself; its
+    /// <c>next</c> calls the command as it was (or the override loaded before this one). It runs inside the command's own
+    /// transaction (one undo step), under its name, label and owner, so who may call it is as before. A command no module of
+    /// the product registers is refused when the product loads.
+    /// </summary>
+    void Override(string command, CommandOverride handler);
+
+    /// <summary>Another module's query wrapped, by its full id ("core.faceAt"), as <see cref="Override"/> wraps a command.</summary>
+    void OverrideQuery(string query, QueryOverride handler);
 }
 
 public delegate JsonNode? CommandHandler(ICommandContext context, JsonObject args);
 
 public delegate JsonNode? QueryHandler(IQueryContext context, JsonObject args);
+
+/// <summary>A command's override: the context and args the command got, and <paramref name="next"/>, the command as it was.</summary>
+public delegate JsonNode? CommandOverride(ICommandContext context, JsonObject args, Func<JsonObject, JsonNode?> next);
+
+/// <summary>A query's override: the context and args the query got, and <paramref name="next"/>, the query as it was.</summary>
+public delegate JsonNode? QueryOverride(IQueryContext context, JsonObject args, Func<JsonObject, JsonNode?> next);
 
 /// <summary>An entity's geometry, read from the model (never stored in it).</summary>
 public delegate ElementGeometry? GeometryProducer(Entity entity, IModelView model, IServices services);
@@ -164,6 +182,8 @@ public interface ICommandContext : IEdit
     ClassDescriptor? Describe(string ifcClass);
     /// <summary>The model's geometry as it was when the command began (read before editing): what a view draws now.</summary>
     IQueryContext Query { get; }
+    /// <summary>Where a result worked out in the background goes once ready (<see cref="IDeliveries"/>); null where there is no session.</summary>
+    IDeliveries? Deliveries => null;
 }
 
 public interface IQueryContext
@@ -181,6 +201,8 @@ public interface IQueryContext
     IReadOnlyList<QuantitySet> Quantities(string id) => [];
     /// <summary>What a class is in this product (its label), whichever module owns it; null when none does.</summary>
     ClassDescriptor? Describe(string ifcClass) => null;
+    /// <summary>Where a result worked out in the background goes once ready (<see cref="IDeliveries"/>); null where there is no session.</summary>
+    IDeliveries? Deliveries => null;
 }
 
 /// <summary>

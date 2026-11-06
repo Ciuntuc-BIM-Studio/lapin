@@ -182,6 +182,35 @@ export interface PropertySectionDef {
   fieldKeys?: (node: NodeDto) => string[] | null;
 }
 
+/** One action of the File menu (shell/fileActions.ts), by its stable id ("file.save"): what a module may replace. */
+export interface FileAction {
+  id: string;
+  label: string;
+  run: () => unknown;
+  /** The keyboard command whose keys the menu shows beside it (app.save). */
+  keys?: string;
+  /** Shown only while this holds (Share session: not in the browser). */
+  shown?: () => boolean;
+  /** The item's data-menu attribute, what the user guide's scenes find it by. */
+  menu?: string;
+}
+
+/**
+ * What a module replaces of the others' (docs/overrides.md), by id: each gets what it replaces (the next module's
+ * replacement wraps this one's, in load order) and returns what stands in its place. A tool keeps its id; a dialog or
+ * a view may stand where nothing was (its original is null then). Nothing in the editions of this repository uses it.
+ */
+export interface Replaces {
+  /** By ToolDef id (architecture.wall): wherever the tool is, its tabs, shared groups and quick tools. */
+  tools?: Record<string, (original: ToolDef) => ToolDef>;
+  /** By the store's `dialog` key (a module's, or the shell's: share, palette…). */
+  dialogs?: Record<string, (original: ComponentType | null) => ComponentType>;
+  /** By a pane's module view kind (gantt). */
+  views?: Record<string, (original: ModuleViewDef | null) => ModuleViewDef>;
+  /** By the File menu's action id (file.save); the keyboard's New, Open, Save and Save as run the same. */
+  fileActions?: Record<string, (original: FileAction) => FileAction>;
+}
+
 export interface LapinModule {
   id: string;
   name: string;
@@ -214,4 +243,6 @@ export interface LapinModule {
   expandSelection?: (id: string, node: NodeDto | undefined) => readonly string[] | null;
   /** Shown over the active pane's model view (not over a module's own view): a card the selection is dragged from. */
   overlays?: ComponentType[];
+  /** What it replaces of the other modules' and the shell's (an edition of its own; docs/overrides.md). */
+  replaces?: Replaces;
 }
