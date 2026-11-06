@@ -37,7 +37,7 @@ public static class MeshRecognition
 
     /// <summary>
     /// The references among <paramref name="ids"/> made native where a recogniser takes them (walls first, so their doors and windows go with them),
-    /// each then measured against the triangles it was (<paramref name="fidelity"/>, docs/spec-ifc.md, Poarta de fidelitate; null: reported).
+    /// each then measured against the triangles it was (<paramref name="fidelity"/>, docs/spec-ifc.md, Poarta de fidelitate; null: enforced, what differs coming back the reference it was).
     /// </summary>
     public static MeshRecognitionReport Recognize(IEdit edit, IServices services, IEnumerable<string> ids, FidelityOptions? fidelity = null)
     {

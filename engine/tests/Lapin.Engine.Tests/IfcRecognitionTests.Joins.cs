@@ -28,10 +28,10 @@ public partial class IfcRecognitionTests
     }
 
     /// <summary>Imports the file; every wall's gate check (by key), the join between a and b if any.</summary>
-    (Fixture F, IfcImportResult R, Relation? Join) Imported(Foreign x, string name)
+    (Fixture F, IfcImportResult R, Relation? Join) Imported(Foreign x, string name, FidelityOptions? gate = null)
     {
         var f = Full();
-        var r = IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, name)), null, out _);
+        var r = IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, name)), new IfcImportOptions(Fidelity: gate), out _);
         return (f, r, Joins.Between(f.Model, Guid("foreign-test", "a"), Guid("foreign-test", "b")));
     }
 
@@ -140,8 +140,9 @@ public partial class IfcRecognitionTests
         var plane = f0.Add("IFCPLANE", f0.Add("IFCAXIS2PLACEMENT3D", f0.Add("IFCCARTESIANPOINT", "(0.,0.,2400.)"), f0.Add("IFCDIRECTION", $"({R(n.X)},{R(n.Y)},{R(n.Z)})"), Null));
         var clipped = f0.Add("IFCBOOLEANCLIPPINGRESULT", E("DIFFERENCE"), x.Box(2500, 0, 0, 5000, 300, 3000), f0.Add("IFCHALFSPACESOLID", plane, True));
         x.Material(x.Element("IFCWALL", "cut", "Cut", x.Place(0, 3000, 0), x.Shape(clipped, "Clipping"), E("STANDARD")), x.Brick);
+        var path = x.Write(Path.Combine(_dir, "under-roof.ifc"));
         var f = Full();
-        var r = IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, "under-roof.ifc")), null, out _);
+        var r = IfcImport.Run(f.Session, path, null, out _);
         var a = f.Model.Get(Guid("foreign-test", "a"))!;
         Assert.Equal(IfcClass.Wall, a.Class);
         Assert.Equal("none", a.Str("roofTop"));
@@ -150,10 +151,18 @@ public partial class IfcRecognitionTests
         // Flat all along: its volume the file's, 5 × 0.3 × 2.8.
         Assert.Equal(4.2, f.Session.Geometry(a.Id)!.Parts.Sum(q => Measure.Volume(q.Solid)), 3);
         Assert.True(CheckOf(r, a.Id).Pass, CheckOf(r, a.Id).Reason);
-        // The cut one follows what is over it (auto) but never above its own top.
-        var cut = f.Model.Get(Guid("foreign-test", "cut"))!;
+        // The cut one, read flat at 3 m where the file's top slopes from 2.4 to 2.8: not the file's, it stays the reference it is.
+        var kept = f.Model.Get(Guid("foreign-test", "cut"))!;
+        Assert.True(StoredBodies.Has(kept));
+        Assert.True(CheckOf(r, kept.Id).Reverted);
+        Assert.Equal(2.8, f.Bounds(kept.Id).Max.Z, 4);
+        // Reporting only, recognised: it follows what is over it (auto) but never above its own top.
+        var g = Full();
+        IfcImport.Run(g.Session, path, new IfcImportOptions(Fidelity: new FidelityOptions(FidelityOptions.Report)), out _);
+        var cut = g.Model.Get(Guid("foreign-test", "cut"))!;
+        Assert.False(StoredBodies.Has(cut));
         Assert.Null(cut.Str("roofTop"));
-        Assert.InRange(f.Bounds(cut.Id).Max.Z, 0, cut.Num("height") + 1e-6);
+        Assert.InRange(g.Bounds(cut.Id).Max.Z, 0, cut.Num("height") + 1e-6);
     }
 
     [Fact]
@@ -208,11 +217,21 @@ public partial class IfcRecognitionTests
     [Fact]
     public void An_end_the_file_notches_stays_square_halfway()
     {
-        // An end that is no one line (a step across the thickness): no angle, square where the faces' ends average.
+        // An end that is no one line (a step across the thickness): no angle, square where the faces' ends average. Not the
+        // file's wall (a native wall of one layer has no step): the gate, enforcing by default, keeps it the reference it is.
         var x = new Foreign();
         FootprintWall(x, "a", (0, -150), (5000, -150), (5000, 0), (4800, 0), (4800, 150), (0, 150));
-        var (f, _, _) = Imported(x, "notch.ifc");
+        var (g, enforced, _) = Imported(x, "notch.ifc");
+        var e = g.Model.Get(Guid("foreign-test", "a"))!;
+        Assert.True(StoredBodies.Has(e));
+        Assert.Equal("IfcWall", e.Str("ifcClass"));
+        var check = CheckOf(enforced, e.Id);
+        Assert.True(check.Reverted);
+        Assert.Contains("in plan", check.Cause);
+        // Reporting only, recognition's reading.
+        var (f, _, _) = Imported(x, "notch.ifc", new FidelityOptions(FidelityOptions.Report));
         var a = f.Model.Get(Guid("foreign-test", "a"))!;
+        Assert.False(StoredBodies.Has(a));
         Assert.Null(a.NumOrNull(Joins.EndAngle));
         Assert.Equal(4.9, Walls.End(a).X, 6);
     }

@@ -455,7 +455,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             Simplify = Math.Clamp(Json.Number(r["simplify"]) ?? 0, 0, 0.1),
             Numbers = B(r["numbers"], o.Numbers),
             SkipSets = r["skipSets"] is JsonArray skip ? skip.Select(x => (string?)x ?? "").Where(x => x.Length > 0).ToHashSet() : o.SkipSets,
-            // The fidelity gate (docs/spec-ifc.md, Poarta de fidelitate): "report" (the default), "enforce" or "off"; its tolerances in mm and percent.
+            // The fidelity gate (docs/spec-ifc.md, Poarta de fidelitate): "enforce" (the default), "report" or "off"; its tolerances in mm and percent.
             Fidelity = r["fidelity"] is null && r["fidelityMm"] is null && r["fidelityVolume"] is null ? o.Fidelity : new FidelityOptions(
                 FidelityOptions.ModeOf((string?)r["fidelity"] ?? o.Gate.Mode),
                 Json.Number(r["fidelityMm"]) is { } mm && mm > 0 ? mm : o.Gate.Mm,

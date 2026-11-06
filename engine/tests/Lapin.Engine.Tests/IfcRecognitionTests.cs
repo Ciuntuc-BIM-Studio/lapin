@@ -303,11 +303,21 @@ public partial class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(3.3, c1.Z, 6);
     }
 
+    /// <summary>
+    /// What the recognisers make of each kind, the gate reporting only: W1 differs from the file by +0.8 % (the precast lintels
+    /// Lapin lays over its door and window, which the column standing in its door does not cut), and enforcing (the default)
+    /// would bring it as a reference; the others are the file's either way.
+    /// </summary>
     [Fact]
     public void Walls_floors_columns_beams_and_footings_come_in_native_and_the_rest_as_references()
     {
         var f = Full();
-        var r = IfcImport.Run(f.Session, House(), null, out _);
+        var path = House();
+        var enforced = Full();
+        IfcImport.Run(enforced.Session, path, null, out _);
+        foreach (var key in new[] { "brep-wall", "slab", "column", "beam", "footing" })
+            Assert.False(StoredBodies.Has(enforced.Model.Get(Guid("foreign-test", key))!), key);
+        var r = IfcImport.Run(f.Session, path, new IfcImportOptions(Fidelity: new FidelityOptions(FidelityOptions.Report)), out _);
         output.WriteLine(r.ToJson().ToJsonString());
         var m = f.Session.Model;
         Assert.Equal(6, r.Recognized);
@@ -393,9 +403,9 @@ public partial class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(1, r.ReferencesByClass!["IfcRailing"]);
 
         // Exported again, the wall keeps the file's GlobalId.
-        var path = Path.Combine(_dir, "again.ifc");
-        IfcExport.Write(f.Session, path, null);
-        Assert.Contains($"IFCWALL('{Guid("foreign-test", "wall")}'", File.ReadAllText(path));
+        var again = Path.Combine(_dir, "again.ifc");
+        IfcExport.Write(f.Session, again, null);
+        Assert.Contains($"IFCWALL('{Guid("foreign-test", "wall")}'", File.ReadAllText(again));
     }
 
     [Fact]
@@ -448,6 +458,8 @@ public partial class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         // The plaster on the −y face, 15 mm, written the other way along.
         var inside = x.Element("IFCWALL", "plaster", "Finish — plaster", x.Place(6000, 2000 - 157.5, 0, 180), x.Shape(x.Box(2500, 0, 0, 5000, 15, 2800)), E("STANDARD"));
         x.Material(inside, plaster);
+        // Its own opening over the door's too, as a program that exports finishes writes it (one the file runs across the door stays a thin wall).
+        Opening(inside, "op-plaster", -157.5);
         // A wall 4 m at y = 8 with a render 25 mm away from its face, and another over only 2 m of it.
         var w2Pl = x.Place(0, 8000, 0);
         x.Material(x.Element("IFCWALL", "wall2", "W2", w2Pl, x.Shape(x.Box(2000, 0, 0, 4000, 250, 2800)), E("STANDARD")), x.Brick);
@@ -471,6 +483,13 @@ public partial class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         Assert.Equal(2.15, byName["Lime render"].Lo, 6); Assert.Equal(2.175, byName["Lime render"].Hi, 6);
         Assert.Equal(1.835, byName["Plaster"].Lo, 6); Assert.Equal(1.85, byName["Plaster"].Hi, 6);
         Assert.Single(bands, b => b.Core);
+        // The core's ends the file's (1 to 6), the render round the free corners 25 mm past each, as the file has it: the wall
+        // and the finishes it took, measured together, are the file's (the gate, enforcing by default, keeps them native).
+        Assert.Equal(1, Math.Min(Walls.Start(w).X, Walls.End(w).X), 6);
+        Assert.Equal(6, Math.Max(Walls.Start(w).X, Walls.End(w).X), 6);
+        var (lo, hi) = f.Bounds(w.Id);
+        Assert.Equal(0.975, lo.X, 6); Assert.Equal(6.025, hi.X, 6);
+        Assert.True(CheckOf(r, w.Id).Pass, CheckOf(r, w.Id).Reason);
         // One door opening still, through every layer; the finishes' ids kept in the wall's record.
         Assert.Single(Openings.PlacedOn(f.Model, w.Id));
         Assert.Contains(x.Gid("render"), w.Attrs["imported"]!["absorbed"]!.ToJsonString());
@@ -544,7 +563,11 @@ public partial class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         Assert.Contains(f.Model.OfClass(IfcClass.WallType), t => t.Name == "EXT-30");
     }
 
-    /// <summary>A column given as a B-rep cut at its top by a slope (no prism standing): a column of its bottom face, up to its highest point.</summary>
+    /// <summary>
+    /// A column given as a B-rep cut at its top by a slope (no prism standing): recognition reads a column of its bottom face, up
+    /// to its highest point; not the file's body (flat where the file's falls 200 mm), the gate enforcing by default keeps it the
+    /// reference it is.
+    /// </summary>
     [Fact]
     public void A_B_rep_column_cut_by_a_slope_is_a_column()
     {
@@ -556,8 +579,19 @@ public partial class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         var brep = f.Add("IFCFACETEDBREP", f.Add("IFCCLOSEDSHELL", L([Face(0, 3, 2, 1), Face(4, 5, 6, 7), Face(0, 1, 5, 4), Face(1, 2, 6, 5), Face(2, 3, 7, 6), Face(3, 0, 4, 7)])));
         x.Element("IFCCOLUMN", "column", "C1", x.Place(2000, 1000, 0), x.Shape(brep, "Brep"), E("COLUMN"));
         var path = x.Write(Path.Combine(_dir, "column.ifc"));
+        var e = Full();
+        var enforced = IfcImport.Run(e.Session, path, null, out _);
+        var kept = e.Model.Get(x.Gid("column"))!;
+        Assert.True(StoredBodies.Has(kept));
+        Assert.Equal("IfcColumn", kept.Str("ifcClass"));
+        // Its B-rep read from its triangles, after the file's representations (decision 214).
+        var check = enforced.Fidelity!.Checks.Single(c => c.Id == kept.Id);
+        Assert.Equal("triangles", check.Source);
+        Assert.True(check.Reverted);
+        Assert.StartsWith("volume +3.4", check.Reason);
+        // Reporting only, recognition's reading.
         var g = Full();
-        IfcImport.Run(g.Session, path, null, out _);
+        IfcImport.Run(g.Session, path, new IfcImportOptions(Fidelity: new FidelityOptions(FidelityOptions.Report)), out _);
         var c = g.Model.Get(x.Gid("column"))!;
         Assert.Equal(IfcClass.Column, c.Class);
         Assert.False(StoredBodies.Has(c));

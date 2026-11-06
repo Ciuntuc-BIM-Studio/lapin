@@ -28,12 +28,12 @@ namespace Lapin.Ifc;
 /// </para>
 /// </summary>
 /// <summary><paramref name="Group"/>: what the file places comes in as one group named after it (docs/groups.md); false for a link, and for an import the journal recorded before groups were.
-/// <paramref name="Fidelity"/>: the recognised elements measured against the file's bodies (docs/spec-ifc.md, Poarta de fidelitate); null, reported.</summary>
+/// <paramref name="Fidelity"/>: the recognised elements measured against the file's bodies (docs/spec-ifc.md, Poarta de fidelitate); null, enforced.</summary>
 public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Plan2d = true, bool Only2d = true,
     bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null, bool Group = false, bool Editable = false, string? Source = null,
     FidelityOptions? Fidelity = null)
 {
-    /// <summary>How recognised elements are checked against the file's bodies (<see cref="FidelityOptions"/>): reported by default.</summary>
+    /// <summary>How recognised elements are checked against the file's bodies (<see cref="FidelityOptions"/>): enforced by default.</summary>
     public FidelityOptions Gate => Fidelity ?? FidelityOptions.Default;
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
     public bool Filtered => Kinds != null || Storeys != null;
@@ -222,6 +222,7 @@ public static partial class IfcImport
             ProvisionOpenings(edit);
             WriteContainment(edit);
             Enforce(edit);
+            MapTypes(edit);
             if (ReadProcesses && !o.ReferenceOnly) Processes(edit);
             if (ReadProcesses && !o.ReferenceOnly) Controls(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));

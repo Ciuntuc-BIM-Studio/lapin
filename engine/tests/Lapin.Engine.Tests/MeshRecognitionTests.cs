@@ -29,13 +29,19 @@ public class MeshRecognitionTests
 
     static byte[] Frag(Fixture f) => FragWriter.Write(MeshScene.Build(f.Session, new MeshExportOptions("frag", Origin: "internal")));
 
+    static readonly FidelityOptions Report = new(FidelityOptions.Report);
+
+    /// <summary>
+    /// What the recognisers read from a Fragments file (the gate reporting only, docs/spec-ifc.md, Poarta de fidelitate):
+    /// the wall, its door and window, the slab.
+    /// </summary>
     [Fact]
     public void A_Fragments_file_comes_back_as_walls_with_their_doors_and_windows_and_slabs()
     {
         var (h, wall, door, window, slab) = House();
         var (lo, hi) = h.Bounds(wall);
         var g = new Fixture(new ArchitectureModule(), new StructureModule(), new StudioModule());
-        var r = FragImport.Run(g.Session, Frag(h), "house.frag", out _, new FragImportOptions(Recognize: true));
+        var r = FragImport.Run(g.Session, Frag(h), "house.frag", out _, new FragImportOptions(Recognize: true, Fidelity: Report));
         Assert.True(r.Recognition!.Recognized >= 2, $"recognized {r.Recognition.Recognized}: {r.Recognition.ToJson().ToJsonString()}");
         // The wall: a Lapin wall again, on its axis, as long and as high as it was, with its openings.
         var w = g.Model.Get(wall)!;
@@ -53,6 +59,29 @@ public class MeshRecognitionTests
         var group = Assert.Single(Groups.All(g.Model));
         Assert.Contains(wall, Groups.MembersOf(g.Model, group.Id));
         Assert.NotNull(g.Model.Get(wall)!.Attrs["imported"]);
+    }
+
+    /// <summary>
+    /// The same file with the gate enforcing (the default): the door's jambs are rebated in the file (the frame's 15 mm step in
+    /// the masonry), the recognised opening a rectangle, so the wall is not the file's and comes back the reference it was,
+    /// its door and window with it; the slab, the file's, stays native.
+    /// </summary>
+    [Fact]
+    public void Enforced_a_wall_whose_rebated_jambs_recognition_squares_stays_the_reference_it_was()
+    {
+        var (h, wall, door, window, slab) = House();
+        var g = new Fixture(new ArchitectureModule(), new StructureModule(), new StudioModule());
+        var r = FragImport.Run(g.Session, Frag(h), "house.frag", out _, new FragImportOptions(Recognize: true));
+        var gate = r.Recognition!.Fidelity!;
+        Assert.Equal(FidelityOptions.Enforce, gate.Options.Mode);
+        var check = gate.Checks.Single(c => c.Id == wall);
+        Assert.True(check.Reverted);
+        Assert.Contains("base outline 15 mm", check.Reason);
+        foreach (var id in new[] { wall, door, window }) Assert.True(StoredBodies.Has(g.Model.Get(id)!), id);
+        Assert.False(StoredBodies.Has(g.Model.Get(slab)!));
+        Assert.True(gate.Checks.Single(c => c.Id == slab).Pass);
+        // Still in the file's group, as it came.
+        Assert.Contains(wall, Groups.MembersOf(g.Model, Assert.Single(Groups.All(g.Model)).Id));
     }
 
     [Fact]
@@ -75,6 +104,7 @@ public class MeshRecognitionTests
         Assert.NotNull(Spatial.StoreyOf(g.Model, gem.Id));
     }
 
+    /// <summary>A slab with sloping edges: the recogniser reads it by its top face; not the file's body, the gate keeps it a reference.</summary>
     [Fact]
     public void A_slab_with_sloping_edges_is_read_by_its_top_face()
     {
@@ -92,7 +122,16 @@ public class MeshRecognitionTests
         // A mesh comes as a proxy: told it is a slab (as a Fragments or IFC file says), it is read as one.
         g.Session.Edit("As a slab", edit => edit.Replace(e.With(attrs: Set(e.CloneAttrs(), "exportAs", IfcClass.Slab))));
         MeshRecognitionReport report = MeshRecognitionReport.None;
+        // The gate enforcing (the default): its top swept down is not the file's sloping edges, it stays the reference it was.
         g.Session.Edit("Recognise", edit => report = MeshRecognition.Recognize(edit, g.Session.Catalog, [e.Id]));
+        Assert.Equal(0, report.Recognized);
+        Assert.True(StoredBodies.Has(g.Model.Get(e.Id)!));
+        var check = Assert.Single(report.Fidelity!.Checks);
+        Assert.True(check.Reverted);
+        // Its edges sloping in to the bottom, 200 mm each way: the bottom's outline 283 mm off at its corners, the volume 8.8 % more.
+        Assert.Equal("volume +8.83 %; base outline 282.8 mm", check.Reason);
+        // Reporting only, the recogniser's reading: the top's 6 × 4, 0.2 thick.
+        g.Session.Edit("Recognise", edit => report = MeshRecognition.Recognize(edit, g.Session.Catalog, [e.Id], Report));
         Assert.Equal(1, report.Recognized);
         var slab = g.Model.Get(e.Id)!;
         Assert.Equal(IfcClass.Slab, slab.Class);
@@ -116,6 +155,7 @@ public class MeshRecognitionTests
         return e;
     }
 
+    /// <summary>A column cut at its top by a slope: the recogniser reads it by its bottom face, flat at its highest point; not the file's body, the gate keeps it a reference.</summary>
     [Fact]
     public void A_column_cut_at_its_top_by_a_slope_is_read_by_its_bottom_face()
     {
@@ -125,7 +165,17 @@ public class MeshRecognitionTests
         // A tapered one, 400 × 300 at the foot and 200 × 200 at the head: another shape, it stays a reference.
         var tapered = Column(g, "tapered", [(6, 1), (6.4, 1), (6.4, 1.3), (6, 1.3)], [(6.1, 1.05, 3), (6.3, 1.05, 3), (6.3, 1.25, 3), (6.1, 1.25, 3)]);
         MeshRecognitionReport report = MeshRecognitionReport.None;
+        // The gate enforcing (the default): flat at 3 m where the file's top falls to 2.8, it stays the reference it was.
         g.Session.Edit("Recognise", edit => report = MeshRecognition.Recognize(edit, g.Session.Catalog, [cut.Id, tapered.Id]));
+        Assert.Equal(0, report.Recognized);
+        Assert.True(StoredBodies.Has(g.Model.Get(cut.Id)!));
+        var check = Assert.Single(report.Fidelity!.Checks);
+        Assert.True(check.Reverted);
+        // As high as the file's at its highest corner, the box the same: the volume says it (a wedge 0.4 × 0.3 × 0.2 more, +3.4 %).
+        Assert.Equal(0.012, check.NativeVolume!.Value - check.FileVolume!.Value, 4);
+        Assert.StartsWith("volume +3.4", check.Reason);
+        // Reporting only, the recogniser's reading.
+        g.Session.Edit("Recognise", edit => report = MeshRecognition.Recognize(edit, g.Session.Catalog, [cut.Id, tapered.Id], Report));
         Assert.Equal(1, report.Recognized);
         var column = g.Model.Get(cut.Id)!;
         Assert.Equal(IfcClass.Column, column.Class);

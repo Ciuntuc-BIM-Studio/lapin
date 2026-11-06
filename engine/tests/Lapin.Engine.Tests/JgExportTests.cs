@@ -430,7 +430,7 @@ public class JgExportTests
         Assert.Equal(-90, AnalyticalModel.Rotation(new Vec3(0, 0, 0), new Vec3(5, 0, 0), new Vec3(0, 1, 0)), 6);
     }
 
-    // ------------------------------------------------------------ decision 362: what 357 left open
+    // ------------------------------------------------------------ decision 364: what 357 left open
 
     /// <summary>The document passes the contract's rules and the JSON Schema.</summary>
     static void Valid(JsonObject doc)
@@ -496,7 +496,7 @@ public class JgExportTests
         Assert.Empty(report["errors"]!.AsArray());
         Valid(doc);
         Valid(Export(f, "si").Doc);
-        // Before decision 362, 144 ends met nothing; now every end that has a member to bear on is joined, and nothing floats.
+        // Before decision 364, 144 ends met nothing; now every end that has a member to bear on is joined, and nothing floats.
         Assert.Equal(0, (int)report["counts"]!["freeEnds"]!);
         Assert.DoesNotContain(report["warnings"]!.AsArray(), w => ((string)w!).Contains("No support holds") || ((string)w!).Contains("within reach"));
         Assert.True((int)report["counts"]!["eccentric"]! > 100);

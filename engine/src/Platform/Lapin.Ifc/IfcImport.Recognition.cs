@@ -113,14 +113,24 @@ public static partial class IfcImport
             if (recognition == null) return;
             foreach (var r in recognizers) r.Finish(edit, recognition);
             Gate(edit);
-            if (TypeMappings.AfterImport(edit, s.Catalog, recognition.CreatedTypes, FileName) is > 0 and var mapped)
-                notes.Add($"{mapped} imported type{(mapped == 1 ? "" : "s")} became the project's, as mapped before (Manage → Map imported types).");
-            if (TypeMappings.Mappable(edit.Model, recognition.CreatedTypes) is > 0 and var mappable)
-                notes.Add($"{mappable} type{(mappable == 1 ? "" : "s")} came with the file where the project has its own of the kind: Manage → Map imported types makes them the project's.");
             foreach (var (reason, n) in recognition.Skipped.OrderByDescending(kv => kv.Value).Take(6))
                 notes.Add($"{n} left as reference: {reason}.");
             foreach (var g in recognition.Notes.GroupBy(n => n).OrderByDescending(g => g.Count()).Take(6))
                 notes.Add(g.Count() > 1 ? $"{g.Count()} × {g.Key}" : g.Key);
+        }
+
+        /// <summary>
+        /// The types this import made mapped onto the project's as the user chose before (Manage → Map imported types), once the
+        /// gate has measured what recognition made against the file: a mapping is the user's choice, not recognition's, and the
+        /// elements it changes (another thickness) are the ones that passed.
+        /// </summary>
+        void MapTypes(IEdit edit)
+        {
+            if (recognition == null) return;
+            if (TypeMappings.AfterImport(edit, s.Catalog, recognition.CreatedTypes, FileName) is > 0 and var mapped)
+                notes.Add($"{mapped} imported type{(mapped == 1 ? "" : "s")} became the project's, as mapped before (Manage → Map imported types).");
+            if (TypeMappings.Mappable(edit.Model, recognition.CreatedTypes) is > 0 and var mappable)
+                notes.Add($"{mappable} type{(mappable == 1 ? "" : "s")} came with the file where the project has its own of the kind: Manage → Map imported types makes them the project's.");
         }
 
         // ─── The fidelity gate (docs/spec-ifc.md, Poarta de fidelitate) ─────────
@@ -290,6 +300,14 @@ public static partial class IfcImport
                 recognized--;
                 recognizedByClass[x.IfcClass] = recognizedByClass.GetValueOrDefault(x.IfcClass) - 1;
                 Reference(edit, x.E, booleans);
+                // The parts it was made of (a drywall's boards, ArchiCAD's layers): left out while it was native, its body as a
+                // reference, as a reference import brings them; not offered again to recognition from their triangles.
+                foreach (var part in partsOf?.GetValueOrDefault(x.E.Id) ?? [])
+                {
+                    if (Str(part[0]) is not { } pg || edit.Model.Get(pg) != null) continue;
+                    Reference(edit, part, booleans);
+                    Reverted.Add(pg);
+                }
                 foreach (var fid in x.Fills)
                 {
                     recognizedFills.Remove(fid);

@@ -127,12 +127,15 @@ public sealed class ForeignElements : IIfcRecognizer
         if (FinishLayers.Absorb(edit, ctx.Made, ctx).Count > 0) ctx.Made.RemoveAll(id => edit.Model.Get(id) == null);
         if (ctx.Services.Get<IPathElements>() is not { } paths) return;
         var walls = ctx.Made.Where(id => edit.Model.Get(id)?.Class == IfcClass.Wall).ToList();
-        // A wall that took finishes as layers: its footprint and theirs, as one (the outline round them all).
+        // A wall that took finishes as layers: its footprint and theirs, as one (the outline round them all); its core's own ends kept, for the free ones.
+        var cores = new Dictionary<string, (Vec2 Start, Vec2 End, IReadOnlyList<Vec2> Print)>();
         foreach (var id in walls)
         {
             if ((edit.Model.Get(id)!.Attrs["imported"] as JsonObject)?["absorbed"] is not JsonArray absorbed || absorbed.Count == 0) continue;
             var prints = absorbed.Select(a => (string?)a?["id"]).Prepend(id).Select(x => x != null && ctx.Footprints.TryGetValue(x, out var fp) ? fp : null).ToList();
             if (prints.Any(p => p == null)) { ctx.Footprints.Remove(id); continue; }
+            var w0 = edit.Model.Get(id)!;
+            cores[id] = (Walls.Start(w0), Walls.End(w0), prints[0]!);
             ctx.Footprints[id] = Polygon2.ConvexHull(prints.SelectMany(p => p!));
         }
         // Each opening's place in plan: a join moves its wall's start, which its place along the wall is measured from.
@@ -150,6 +153,7 @@ public sealed class ForeignElements : IIfcRecognizer
         // A wall whose layers end where the file's do, each its own way (Walls.LayerEndsKey), keeps those ends: no join takes them.
         try { FoundJoins.Make(edit, paths, [.. walls.Where(id => edit.Model.Get(id)!.Attrs[Walls.LayerEndsKey] == null)], ctx.Footprints, connections: ctx.Connections); }
         catch (CommandException ex) { ctx.Notes.Add($"Walls not joined: {ex.Message}"); }
+        foreach (var (id, core) in cores) FinishEnds(edit, id, core.Start, core.End, core.Print);
         foreach (var (wallId, was) in starts)
         {
             if (edit.Model.Get(wallId) is not { } w || w.Attrs[WallTops.TopProfileKey] is not JsonArray top) continue;
@@ -168,6 +172,70 @@ public sealed class ForeignElements : IIfcRecognizer
             attrs["along"] = along;
             edit.Replace(op.With(attrs: attrs));
         }
+    }
+
+    /// <summary>
+    /// A wall's free ends where it took finishes as layers: the core where the file's ends (square there), the finishes run on
+    /// past it, or stopping short of it, as far as the file's do (<see cref="Walls.LayerEndsKey"/>: a render round a free corner,
+    /// a plaster stopping before a reveal). Without this the outline round them all, stepped at that end, would square the
+    /// whole wall halfway between the core's end and the finish's. An end a join takes is the join's; a core whose own end is
+    /// not square is left to the joins' reading (the gate measures it).
+    /// </summary>
+    static void FinishEnds(IEdit edit, string id, Vec2 start, Vec2 end, IReadOnlyList<Vec2> corePrint)
+    {
+        const double tol = 1e-3;
+        if (edit.Model.Get(id) is not { } w || (w.Attrs["imported"] as JsonObject)?["absorbed"] is not JsonArray absorbed) return;
+        var length = (end - start).Length;
+        if (length < 1e-3) return;
+        var dir = (end - start).Normalized();
+        // The core's footprint square at an end of the axis it was read on: both its faces end there (not cut at an angle, not stepped).
+        var left = dir.Perp;
+        var uv = corePrint.Select(p => (U: Vec2.Dot(p - start, dir), V: Vec2.Dot(p - start, left))).ToList();
+        if (uv.Count < 3) return;
+        var (v0, v1) = (uv.Min(q => q.V), uv.Max(q => q.V));
+        bool Square(int i)
+        {
+            var at = i == 0 ? 0 : length;
+            foreach (var face in new[] { v0, v1 })
+            {
+                var on = uv.Where(q => Math.Abs(q.V - face) <= tol).Select(q => q.U).ToList();
+                if (on.Count == 0 || Math.Abs((i == 0 ? on.Min() : on.Max()) - at) > tol) return false;
+            }
+            // Nothing of it beyond that line, nor short of it between the faces (a notch).
+            var near = uv.Where(q => i == 0 ? q.U < length / 2 : q.U >= length / 2).ToList();
+            return near.All(q => i == 0 ? q.U >= -tol : q.U <= length + tol)
+                && near.Where(q => q.V > v0 + tol && q.V < v1 - tol).All(q => Math.Abs(q.U - at) <= tol || Math.Abs(q.U - at) > length / 4);
+        }
+        var bands = Walls.Section(edit.Model, w);
+        if (bands.Count < 2) return;
+        // Each face's finishes: how far they run past the core's ends (negative: short of them).
+        var runOn = new Dictionary<int, double[]>();
+        foreach (var side in new[] { true, false })
+        {
+            var pieces = absorbed.OfType<JsonObject>().Where(a => a["left"] is JsonValue l && l.TryGetValue<bool>(out var b) && b == side
+                && Json.Number(a["from"]) != null && Json.Number(a["to"]) != null).ToList();
+            if (pieces.Count == 0) continue;
+            var band = side ? bands.MaxBy(b => b.To)! : bands.MinBy(b => b.From)!;
+            runOn[band.Index] = [-pieces.Min(a => Json.Number(a["from"])!.Value), pieces.Max(a => Json.Number(a["to"])!.Value) - length];
+        }
+        var taken = Joins.Of(edit.Model, id).Select(r => (string?)r.Attrs?[r.Relating == id ? "relatingConnection" : "relatedConnection"]).ToHashSet();
+        var free = new[] { !taken.Contains("ATSTART") && Square(0), !taken.Contains("ATEND") && Square(1) };
+        if (!runOn.Values.Any(r => free[0] && Math.Abs(r[0]) > tol || free[1] && Math.Abs(r[1]) > tol)) return;
+        var attrs = w.CloneAttrs();
+        var (s, e) = (Walls.Start(w), Walls.End(w));
+        if (free[0]) { s = start; attrs.Remove(Joins.StartAngle); }
+        if (free[1]) { e = end; attrs.Remove(Joins.EndAngle); }
+        attrs["start"] = new JsonArray(Math.Round(s.X, 9), Math.Round(s.Y, 9));
+        attrs["end"] = new JsonArray(Math.Round(e.X, 9), Math.Round(e.Y, 9));
+        // Per layer, [start at its first face, start at its second, end at its first, end at its second]; a joined end's are the join's.
+        var count = bands.Max(b => b.Index) + 1;
+        attrs[Walls.LayerEndsKey] = new JsonArray([.. Enumerable.Range(0, count).Select(i =>
+        {
+            var r = runOn.GetValueOrDefault(i) ?? [0, 0];
+            double a = free[0] ? Math.Round(r[0], 6) : 0, b = free[1] ? Math.Round(r[1], 6) : 0;
+            return (JsonNode)new JsonArray(a, a, b, b);
+        })]);
+        edit.Replace(w.With(attrs: attrs));
     }
 
     // ─── Walls ────────────────────────────────────────────────────────────────

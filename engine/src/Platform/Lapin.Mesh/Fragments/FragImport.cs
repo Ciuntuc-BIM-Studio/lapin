@@ -70,7 +70,7 @@ public static class FragImport
             var before = edit.Model.Entities.Select(e => e.Id).ToHashSet();
             reader.Apply(edit);
             var brought = edit.Model.Entities.Where(e => !before.Contains(e.Id)).Select(e => e.Id).ToList();
-            if (o.Recognize) recognition = MeshRecognition.Recognize(edit, session.Catalog, brought);
+            if (o.Recognize) recognition = MeshRecognition.Recognize(edit, session.Catalog, brought, o.Fidelity);
             if (o.Editable) editable = EditableReferences.Make(edit, session.Catalog, brought);
         }
         diff = session.Edit($"Import {name}", edit =>
@@ -431,5 +431,7 @@ public static class FragImport
     }
 }
 
-/// <summary>What of a Fragments file comes in: its kinds and storeys as <see cref="FragSurvey"/> names them (null: all; "" the items on none), and whether as one group.</summary>
-public sealed record FragImportOptions(IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Group = true, bool Editable = false, bool Recognize = false);
+/// <summary>What of a Fragments file comes in: its kinds and storeys as <see cref="FragSurvey"/> names them (null: all; "" the items on none), and whether as one group.
+/// <paramref name="Fidelity"/>: how what is recognised is measured against the file's triangles (docs/spec-ifc.md, Poarta de fidelitate); null, enforced.</summary>
+public sealed record FragImportOptions(IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Group = true, bool Editable = false, bool Recognize = false,
+    FidelityOptions? Fidelity = null);

@@ -52,7 +52,8 @@ public static class FinishLayers
                 var attrs = h.CloneAttrs();
                 var imported = attrs["imported"] as JsonObject ?? new JsonObject();
                 var list = imported["absorbed"] as JsonArray ?? new JsonArray();
-                list.Add((JsonNode)new JsonObject { ["id"] = p.Finish.Id, ["name"] = p.Finish.Name });
+                // And where along the wall's axis it ran (from its start), on which face: its ends past the core's, or short of them, are the file's (ForeignElements.Finish).
+                list.Add((JsonNode)new JsonObject { ["id"] = p.Finish.Id, ["name"] = p.Finish.Name, ["from"] = Math.Round(p.From, 6), ["to"] = Math.Round(p.To, 6), ["left"] = left });
                 imported["absorbed"] = list;
                 attrs["imported"] = imported;
                 edit.Replace(h.With(attrs: attrs));
@@ -112,15 +113,15 @@ public static class FinishLayers
             var (from, to) = (Math.Min(t0, t1), Math.Max(t0, t1));
             // Within the wall, or past its end by a finish's thickness (wrapping the corner's).
             if (from < -(MaxThickness + Level) || to > length + MaxThickness + Level) continue;
-            // Its openings are the wall's: each over one of the wall's, as wide.
+            // Its openings are the wall's: each over one of the wall's, as wide; and each of the wall's it covers is one of its own
+            // (a finish the file runs across a door stays a thin wall: as a layer, the door would cut it).
             var own = Openings.PlacedOn(m, h.Id);
             var sense = Vec2.Dot(fDir, dir) > 0;
-            var match = Openings.PlacedOn(m, finish.Id).All(o =>
-            {
-                var along = sense ? t0 + o.Along : t0 - o.Along;
-                return own.Any(w => Math.Abs(w.Along - along) <= 0.05 && Math.Abs(w.Width - o.Width) <= 0.1 && Math.Abs(w.Sill - o.Sill) <= 0.1);
-            });
-            if (!match) continue;
+            var theirs = Openings.PlacedOn(m, finish.Id).Select(o => (Along: sense ? t0 + o.Along : t0 - o.Along, o.Width, o.Sill)).ToList();
+            static bool Same((double Along, double Width, double Sill) a, (double Along, double Width, double Sill) b) =>
+                Math.Abs(a.Along - b.Along) <= 0.05 && Math.Abs(a.Width - b.Width) <= 0.1 && Math.Abs(a.Sill - b.Sill) <= 0.1;
+            if (!theirs.All(o => own.Any(w => Same((w.Along, w.Width, w.Sill), o)))) continue;
+            if (!own.Where(w => w.Along - w.Width / 2 >= from - 1e-3 && w.Along + w.Width / 2 <= to + 1e-3).All(w => theirs.Any(o => Same((w.Along, w.Width, w.Sill), o)))) continue;
             return (h, left, from, to);
         }
         return null;

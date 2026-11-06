@@ -9,8 +9,8 @@ namespace Lapin.Engine.Tests;
 
 /// <summary>
 /// The fidelity gate (docs/spec-ifc.md, Poarta de fidelitate): every recognised element measured against the body the file
-/// gives it (volume, bounding box, base outline); reported by default, the import unchanged; under "enforce", one that
-/// differs comes in as the reference it would have been.
+/// gives it (volume, bounding box, base outline); enforced by default (since 06.11.2026), one that differs coming in as the
+/// reference it would have been; under "report", measured only, the import unchanged.
 /// </summary>
 public partial class IfcRecognitionTests
 {
@@ -52,7 +52,7 @@ public partial class IfcRecognitionTests
     {
         var path = GateWalls();
         var f = Full();
-        var r = IfcImport.Run(f.Session, path, null, out _);
+        var r = IfcImport.Run(f.Session, path, new IfcImportOptions(Fidelity: new FidelityOptions(FidelityOptions.Report)), out _);
         Assert.Equal(FidelityOptions.Report, r.Fidelity!.Options.Mode);
         var plain = CheckOf(r, Guid("foreign-test", "plain"));
         output.WriteLine(plain.ToJson().ToJsonString());
@@ -163,18 +163,39 @@ public partial class IfcRecognitionTests
         void Line(string s) { output.WriteLine(s); Console.WriteLine(s); }
         var bytes = File.ReadAllBytes(path);
         // The import without the gate, then with it, to see what it costs (twice each, the first warming up).
-        double Time(FidelityOptions o, out IfcImportResult result)
+        Fixture? last = null;
+        double Time(FidelityOptions? o, out IfcImportResult result)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            result = IfcImport.Run(Full().Session, bytes, Path.GetFileName(path), new IfcImportOptions(Fidelity: o), out _);
+            last = Full();
+            result = IfcImport.Run(last.Session, bytes, Path.GetFileName(path), new IfcImportOptions(Fidelity: o), out _);
             return sw.Elapsed.TotalMilliseconds;
         }
         Time(new FidelityOptions(FidelityOptions.Off), out _);
         var offMs = Time(new FidelityOptions(FidelityOptions.Off), out var off);
-        var onMs = Time(FidelityOptions.Default, out var r);
-        var enforceMs = Time(new FidelityOptions(FidelityOptions.Enforce), out var enforced);
+        var onMs = Time(new FidelityOptions(FidelityOptions.Report), out var r);
+        // The default, enforce: what differs comes in as the reference it was.
+        var enforceMs = Time(null, out var enforced);
         var rep = r.Fidelity!;
+        Assert.Equal(FidelityOptions.Enforce, enforced.Fidelity!.Options.Mode);
         Line($"enforce: {enforceMs:0} ms (its gate {enforced.Fidelity!.Milliseconds:0} ms), {enforced.Fidelity.Reverted} made references again, recognised {enforced.Recognized}, references {enforced.References} (report: {r.References})");
+        foreach (var g in enforced.Fidelity.Checks.Where(c => c.Reverted).GroupBy(c => (c.IfcClass, c.Source)).OrderByDescending(g => g.Count()))
+            Line($"  reverted {g.Key.IfcClass,-22} {g.Key.Source,-9} {g.Count(),5}");
+        // The enforced import whole: no type left without its elements, every reverted element a reference the views draw.
+        var em = last!.Model;
+        var empty = Full().Model.Entities.Select(e => e.Id).ToHashSet();
+        var orphans = em.Entities.Where(e => !empty.Contains(e.Id) && e.Class.EndsWith("Type") && e.Class.StartsWith("Ifc") && !em.RelatedOf(e.Id, IfcClass.RelDefinesByType).Any()).ToList();
+        Line($"  types the import made left without elements after enforce: {orphans.Count} ({string.Join(", ", orphans.GroupBy(t => t.Class).Select(g => $"{g.Key} {g.Count()}"))})");
+        var reverted = enforced.Fidelity.Checks.Where(c => c.Reverted).Select(c => (Check: c, E: em.Get(c.Id))).ToList();
+        // One the reference import leaves out too is as it would have been (a wall whose body is its parts: the parts come instead).
+        var asReferences = Full();
+        IfcImport.Run(asReferences.Session, bytes, Path.GetFileName(path), new IfcImportOptions("reference"), out _);
+        string Why((FidelityCheck Check, Entity? E) x) => x.E == null ? (asReferences.Model.Get(x.Check.Id) == null ? "" : "gone from the model") : !StoredBodies.Has(x.E) ? $"no stored body ({x.E.Class})"
+            : last.Session.Geometry(x.E.Id) is not { Parts.Count: > 0 } ? "no geometry" : "";
+        var undrawn = reverted.Count(x => Why(x) != "");
+        Line($"  reverted elements not drawn as references: {undrawn} of {reverted.Count}");
+        foreach (var g in reverted.Where(x => Why(x) != "").GroupBy(x => (Why(x), x.Check.IfcClass, x.Check.Source))) Line($"    {g.Count()} × {g.Key}: {string.Join(", ", g.Take(3).Select(x => x.Check.Name + " " + x.Check.Id))}");
+        Assert.Equal(0, undrawn);
         Line($"{Path.GetFileName(path)}: import {offMs:0} ms without the gate, {onMs:0} ms with it (the gate itself {rep.Milliseconds:0} ms); recognised {off.Recognized} / {r.Recognized}");
         Line($"checks {rep.Checks.Count}, measured {rep.Measured}, failed {rep.Failed} at {rep.Options.Mm} mm / {rep.Options.Volume * 100} %");
         foreach (var g in rep.Checks.GroupBy(c => (c.IfcClass, c.Source)).OrderByDescending(g => g.Count()))

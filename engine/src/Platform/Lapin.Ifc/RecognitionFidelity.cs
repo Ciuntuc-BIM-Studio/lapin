@@ -6,14 +6,14 @@ using Lapin.Platform;
 namespace Lapin.Ifc;
 
 /// <summary>
-/// How recognition is checked against the file (docs/spec-ifc.md, Poarta de fidelitate): <see cref="Mode"/> "report" (the
-/// default: every recognised element measured against the file's own body, the import unchanged), "enforce" (one that
-/// differs by more than the tolerances comes in as the reference it would have been) or "off". <see cref="Mm"/>: the most
+/// How recognition is checked against the file (docs/spec-ifc.md, Poarta de fidelitate): <see cref="Mode"/> "enforce" (the
+/// default since decision 364: every recognised element measured against the file's own body, one that differs by more than
+/// the tolerances comes in as the reference it would have been), "report" (measured, the import unchanged) or "off". <see cref="Mm"/>: the most
 /// the bounding box and the base outline may be off, in millimetres; <see cref="Volume"/>: the most the volume may be off,
 /// relative (0.005 is 0.5 %). <see cref="Joins"/>: an element that differs only in plan where it joins others (its end run on
 /// into the wall it meets, or mitred where the file butts) passes when it and the elements it joins keep their volume together.
 /// </summary>
-public sealed record FidelityOptions(string Mode = FidelityOptions.Report, double Mm = 1.0, double Volume = 0.005, bool Joins = true)
+public sealed record FidelityOptions(string Mode = FidelityOptions.Enforce, double Mm = 1.0, double Volume = 0.005, bool Joins = true)
 {
     public const string Off = "off", Report = "report", Enforce = "enforce";
     public static readonly FidelityOptions Default = new();
@@ -21,8 +21,8 @@ public sealed record FidelityOptions(string Mode = FidelityOptions.Report, doubl
     public bool On => Mode != Off;
     public bool Enforcing => Mode == Enforce;
 
-    /// <summary>A mode as the user typed it: "off" and "enforce" as such, anything else the default report.</summary>
-    public static string ModeOf(string? text) => text?.Trim().ToLowerInvariant() switch { Off => Off, Enforce => Enforce, _ => Report };
+    /// <summary>A mode as the user typed it: "off" and "report" as such, anything else the default enforce.</summary>
+    public static string ModeOf(string? text) => text?.Trim().ToLowerInvariant() switch { Off => Off, Report => Report, _ => Enforce };
 }
 
 /// <summary>
