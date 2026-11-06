@@ -487,8 +487,8 @@ public sealed partial class StudioModule
         return new JsonObject { ["ids"] = made };
     }
 
-    /// <summary>The attributes a body solid does not take from the element it is made of: its own body, the plan a file drew for it.</summary>
-    static readonly string[] NotCarried = [StoredBodies.Key, StoredBodies.BodyOf, StoredBodies.XfKey, "plan2d", "operation", "features", "at", "rotation"];
+    /// <summary>The attributes a body solid does not take from the element it is made of: its own body (and a reference's uncut body and its file's openings: the solid is its cut body), the plan a file drew for it.</summary>
+    static readonly string[] NotCarried = [StoredBodies.Key, StoredBodies.BodyOf, StoredBodies.XfKey, .. StoredBodies.ExportOnly, "plan2d", "operation", "features", "at", "rotation"];
 
     /// <summary>
     /// An element made a Studio solid of its body (<paramref name="parts"/>, world coordinates): its triangles kept in the solid's

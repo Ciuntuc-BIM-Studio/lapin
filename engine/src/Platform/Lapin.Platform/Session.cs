@@ -799,6 +799,8 @@ public sealed class Session
         // A stored body's triangles travel as its render; as props they were the biggest part of an imported model's diff.
         props.Remove(StoredBodies.Key);
         props.Remove(StoredBodies.SolidBodyKey);
+        // A reference's uncut body and its file's openings, kept for the IFC export alone.
+        foreach (var k in StoredBodies.ExportOnly) props.Remove(k);
         // An instance's mesh and placement travel as its render's (RenderItem.Instance).
         props.Remove(StoredBodies.BodyOf);
         props.Remove(StoredBodies.XfKey);

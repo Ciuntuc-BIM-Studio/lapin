@@ -55,20 +55,24 @@ public static partial class IfcImport
             var centre = new Vec3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
             var hash = o.Dedupe || o.Duplicates ? Hash(raw, lo) : null;
             var flat = o.Flat && IsFlat(raw);
-            var parts = raw;
-            if (o.Simplify > 0)
-            {
-                parts = new List<Part>(raw.Count);
-                foreach (var p in raw)
-                {
-                    if (p.Triangles.Count <= 24) { parts.Add(p); continue; }
-                    var (v, t) = Simplifier.Simplify(p.Vertices, p.Triangles, o.Simplify);
-                    parts.Add(t.Count > 0 ? (p.Name, p.Color, v, t) : p);
-                }
-            }
+            var parts = Simplified(raw);
             Interlocked.Add(ref trianglesRead, before);
             Interlocked.Add(ref trianglesKept, parts.Sum(p => (long)p.Triangles.Count));
             return new BodyRead(parts, hash, lo, centre, flat, before);
+        }
+
+        /// <summary>A body's parts simplified as the import's rules ask (<see cref="IfcImportOptions.Simplify"/>); as they are otherwise.</summary>
+        List<Part> Simplified(List<Part> raw)
+        {
+            if (o.Simplify <= 0) return raw;
+            var parts = new List<Part>(raw.Count);
+            foreach (var p in raw)
+            {
+                if (p.Triangles.Count <= 24) { parts.Add(p); continue; }
+                var (v, t) = Simplifier.Simplify(p.Vertices, p.Triangles, o.Simplify);
+                parts.Add(t.Count > 0 ? (p.Name, p.Color, v, t) : p);
+            }
+            return parts;
         }
 
         /// <summary>A shared body (a map, a shape many products use) read once, on whichever core asks first.</summary>

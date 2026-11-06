@@ -213,6 +213,8 @@ public static class IfcExport
         readonly Dictionary<string, List<string>> materialUses = [];
         readonly Dictionary<(string Element, string Key), string> partRefs = [];
         readonly List<Relation> pendingFills = [];
+        /// <summary>The fills of a reference's kept openings: the IfcRelFillsElement's GlobalId, the opening written, the filler's id.</summary>
+        readonly List<(string Gid, string Opening, string Filler)> pendingKeptFills = [];
         readonly List<(Relation Rel, string Host, string Void)> pendingVoids = [];
 
         Step f => File;
@@ -718,6 +720,7 @@ public static class IfcExport
             if (src?["material"] == null) MaterialsOf(e, entity, parts, grouped);
             if (grouped) Parts(e, kind, parts, place, fr, entity);
             Openings(e, entity, place, z0, voids);
+            KeptOpenings(e, entity, place, z0);
             if (swept != null) SweptOpenings(e, swept, entity, place, fr);
             if (swept is { Parts.Count: > 0 }) SweptParts(e, swept, entity, spatial, place, fr, parts);
             Properties(e, kind, entity, type, hostedBy != null ? [("LapinHost", hostedBy.Id)] : null);
@@ -1352,6 +1355,31 @@ public static class IfcExport
                 }
         }
 
+        /// <summary>
+        /// A reference's openings as its file gave them (docs/spec-ifc.md, Golurile referințelor; <see cref="StoredBodies.OpeningsKey"/>):
+        /// each an IfcOpeningElement (or IfcVoidingFeature) with its kept body, voiding the element (IfcRelVoidsElement), its fills
+        /// related at the end (IfcRelFillsElement), all under the file's GlobalIds. The element's body is then its uncut one
+        /// (<see cref="StoredBodies.UncutKey"/>); a project kept before (its body cut, no openings) writes none, as before.
+        /// </summary>
+        void KeptOpenings(Entity e, string entity, string place, double z0)
+        {
+            if (!StoredBodies.Has(e) || e.Attrs[StoredBodies.OpeningsKey] is not JsonArray openings) return;
+            foreach (var op in openings.OfType<JsonObject>())
+            {
+                if ((string?)op["id"] is not { } id || op[StoredBodies.Key] is not JsonObject stored) continue;
+                var breps = StoredBodies.PartsOf(stored).Where(p => p.Solid.Faces.Length > 0).Select(p => Brep(p.Solid, null, Frame.AtZ(z0))).ToList();
+                if (breps.Count == 0) continue;
+                var shape = f.Add("IFCPRODUCTDEFINITIONSHAPE", Null, Null, L(new[] { BodyOf(breps) }));
+                var feature = (string?)op["class"] == "IfcVoidingFeature";
+                var opening = f.Add(feature ? "IFCVOIDINGFEATURE" : "IFCOPENINGELEMENT", Gid(id), Null, S((string?)op["name"]), Null, S((string?)op["objectType"]), Place(place, 0), shape, Null,
+                    (string?)op["predefined"] is { Length: > 0 } pre ? E(pre) : Null);
+                f.Add("IFCRELVOIDSELEMENT", (string?)op["rel"] is { } rel && GlobalId.IsValid(rel) ? S(rel) : Gid(id, "voids"), Null, Null, Null, entity, opening);
+                foreach (var fill in (op["fills"] as JsonArray ?? []).OfType<JsonObject>())
+                    if ((string?)fill["id"] is { } filler)
+                        pendingKeptFills.Add(((string?)fill["rel"] is { } fr && GlobalId.IsValid(fr) ? S(fr) : Gid(id, "fills/" + filler), opening, filler));
+            }
+        }
+
         // ─── Properties and quantities ──────────────────────────────────────
 
         void Properties(Entity e, Kind kind, string entity, Entity? type, IReadOnlyList<(string Name, string Value)>? extra = null)
@@ -1548,7 +1576,7 @@ public static class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || key == Plan2d.Key || key == IfcSource.Key || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || (only != null && !only.Contains(key))) continue;
                 // A foreign element's properties go as the sets its file had, not as text.
                 if (key == "properties" && e.Attrs[IfcSource.Key] != null) continue;
                 var field = fields.GetValueOrDefault(key);
@@ -1925,6 +1953,8 @@ public static class IfcExport
             foreach (var fill in pendingFills)
                 if (written.TryGetValue(fill.Relating, out var opening) && fill.Related.Count > 0 && written.TryGetValue(fill.Related[0], out var filler))
                     f.Add("IFCRELFILLSELEMENT", Gid(fill.Id), Null, Null, Null, opening, filler);
+            foreach (var (gid, opening, fillerId) in pendingKeptFills)
+                if (written.TryGetValue(fillerId, out var filler)) f.Add("IFCRELFILLSELEMENT", gid, Null, Null, Null, opening, filler);
             // Joins: the element that runs through relates the other; the ends they meet at, the style as the description.
             foreach (var rel in m.Relations.Where(r => r.Class == IfcClass.RelConnectsPathElements))
                 if (rel.Related.Count > 0 && written.TryGetValue(rel.Relating, out var a) && written.TryGetValue(rel.Related[0], out var b))

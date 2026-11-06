@@ -27,6 +27,25 @@ public static class StoredBodies
     /// <summary>Where a Studio solid made from a body keeps its triangles (its own geometry, not a stored body's): like a stored body, never sent as props.</summary>
     public const string SolidBodyKey = "solidBody";
 
+    /// <summary>
+    /// A reference's body before its openings cut it (docs/spec-ifc.md, Golurile referințelor), as <see cref="Key"/> holds
+    /// it: kept only where the import cut <see cref="Key"/>, read only by a geometry asked for uncut (an IFC export,
+    /// <see cref="GeometryOptions"/>), so the views, the drawings and the quantities stay on the cut body.
+    /// </summary>
+    public const string UncutKey = "bodyUncut";
+
+    /// <summary>
+    /// The openings a reference's file voided it with, kept with the reference rather than as entities of their own (nothing
+    /// that lists, selects, schedules or plans elements ever meets them): each an object with the opening's GlobalId
+    /// (<c>id</c>), <c>name</c>, IFC <c>class</c>, <c>predefined</c> type, the IfcRelVoidsElement's GlobalId (<c>rel</c>), its
+    /// <c>body</c> (a stored body, world coordinates) and the elements filling it (<c>fills</c>: each <c>id</c>, the filler's
+    /// GlobalId, and <c>rel</c>, the IfcRelFillsElement's). Written back by the IFC export.
+    /// </summary>
+    public const string OpeningsKey = "ifcOpenings";
+
+    /// <summary>The attributes a stored body's element keeps for the export alone: never sent as props, never carried into a solid made of it.</summary>
+    public static readonly string[] ExportOnly = [UncutKey, OpeningsKey];
+
     /// <summary>An element drawn from a stored body: its own, or a shared one.</summary>
     public static bool Has(Entity e) => e.Class != SharedClass && (e.Attrs[Key] is JsonObject || e.Attrs[BodyOf] is JsonValue);
 
@@ -95,6 +114,10 @@ public static class StoredBodies
     /// <summary>The stored body as geometry: a solid of triangles per part; an instance's, the shared parts placed.</summary>
     public static ElementGeometry? Geometry(Entity e, IModelView model, IServices services)
     {
+        // Uncut when asked (an export writing the openings itself) and the import kept the body before the cut: its own, in
+        // world coordinates, even where the cut body is an instance of one shared by its content.
+        if (e.Attrs[UncutKey] is JsonObject uncut && services?.Get<GeometryOptions>()?.CutOpenings == false)
+            return new ElementGeometry(_shared.GetValue(uncut, b => Parts(b)), Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
         if (InstanceOf(e) is var (bodyId, xf))
         {
             if (model.Get(bodyId) is not { Class: SharedClass } shared) return new ElementGeometry([], null, null, [$"The shared body {bodyId} is missing."]);
@@ -116,6 +139,9 @@ public static class StoredBodies
     /// per triangle, no coplanar ones merged, which costs more than it gives on a curved mesh that big) made when asked for.
     /// </summary>
     const int MeshFrom = 100_000;
+
+    /// <summary>A stored body's parts (one an attribute holds: a reference's kept opening's, <see cref="OpeningsKey"/>), built once for as long as it is the same body.</summary>
+    public static IReadOnlyList<GeometryPart> PartsOf(JsonObject body) => _shared.GetValue(body, b => Parts(b));
 
     /// <summary>A shared body's parts in its own coordinates, built once for as long as the body is the same.</summary>
     public static IReadOnlyList<GeometryPart> SharedParts(Entity shared) =>

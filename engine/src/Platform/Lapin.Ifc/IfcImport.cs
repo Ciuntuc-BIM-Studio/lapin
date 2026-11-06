@@ -757,6 +757,7 @@ public static partial class IfcImport
             FinishRecognition(edit);
             RuleNotes();
             UnreadableNotes();
+            if (keptUncut > 0) notes.Add($"{keptUncut} reference(s) drawn whole: their openings could not be cut (no booleans, or a body that is not closed); the openings are kept, and an IFC export writes them back.");
             if (left2d > 0) notes.Add($"{left2d} element(s) drawn only in 2D left out, as chosen.");
             if (without2d > 0) notes.Add($"{without2d} element(s) brought without their own 2D, as chosen: plans draw their cut.");
             foreach (var (cls, n) in bodiless.OrderByDescending(kv => kv.Value))
@@ -886,7 +887,14 @@ public static partial class IfcImport
         /// </summary>
         /// <summary>What a reference needs from the file, read before it is put in the model: its 2D, its shared key or else its own body, its description and properties.</summary>
         sealed record Prepared((string Key, Xf At)? Shared, BodyRead Body, Vec3 Centre, bool Pseudo,
-            List<Plan2dItem> Plan2d, int Sections2d, int Elevations2d, JsonNode? Shape, JsonObject Properties, (JsonObject Own, List<IfcCarry.Shared> Shared) Carried);
+            List<Plan2dItem> Plan2d, int Sections2d, int Elevations2d, JsonNode? Shape, JsonObject Properties, (JsonObject Own, List<IfcCarry.Shared> Shared) Carried,
+            KeptOpenings? Openings = null);
+
+        /// <summary>
+        /// What a reference keeps of its file's openings (docs/spec-ifc.md, Golurile referințelor): its body before the cut,
+        /// where the cut changed it (null where it did not, or could not), and the openings with their bodies and fills.
+        /// </summary>
+        sealed record KeptOpenings(List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>? Uncut, JsonArray Openings);
 
         readonly System.Collections.Concurrent.ConcurrentDictionary<int, Prepared> prepared = [];
 
@@ -900,6 +908,8 @@ public static partial class IfcImport
         {
             if (references.Count < 8 && o.FarAway == null && !o.Dedupe) return;
             model.Warm();
+            // The indexes the references' openings are read through (Openings), built once before the cores share them.
+            _ = Rels.VoidsOf; _ = Rels.FillsOf;
             var done = 0;
             Parallel.ForEach(references, e =>
             {
@@ -939,11 +949,61 @@ public static partial class IfcImport
         {
             var (plan2d, sections2d, elevations2d) = model.Drawing2d(e.Id);
             var shared = model.SharedKey(e.Id);
-            var body = shared is var (key, _) ? SharedRead(key, booleans) : Read(OwnBody(e, booleans));
+            KeptOpenings? kept = null;
+            BodyRead body;
+            if (shared is var (key, _)) body = SharedRead(key, booleans);
+            else
+            {
+                var own = OwnBody(e, booleans, out var uncut);
+                body = Read(own);
+                // A body its file voids keeps its openings and its uncut body, for the export (an instance of a body shared by its
+                // content too: the cut body shared, these its own).
+                if (Openings(e, booleans) is { } openings)
+                {
+                    kept = new KeptOpenings(uncut is { Count: > 0 } ? Simplified(uncut) : null, openings);
+                    if (uncut == null && body.Parts.Count > 0) Interlocked.Increment(ref keptUncut);
+                }
+            }
             var centre = shared is var (_, at) ? at.Apply(body.Centre) : body.Centre;
             if (body.Hash != null && body.Parts.Count > 0) hashUses.AddOrUpdate(body.Hash, 1, (_, n) => n + 1);
             return new Prepared(shared, body, centre, o.Pseudo && IsPseudo(e), plan2d, sections2d, elevations2d, model.Describe(e.Id), PropertiesJson(e.Id),
-                IfcCarry.Capture(f, carryIndex.Value, e, Seed, o.Keeps, o.Numbers));
+                IfcCarry.Capture(f, carryIndex.Value, e, Seed, o.Keeps, o.Numbers), kept);
+        }
+
+        /// <summary>The references whose openings no boolean could cut (none at hand, or a body not closed): drawn whole, their openings kept for the export.</summary>
+        int keptUncut;
+
+        /// <summary>
+        /// The openings (IfcOpeningElement, IfcOpeningStandardCase, IfcVoidingFeature) the file voids a product with, as a
+        /// reference keeps them (<see cref="StoredBodies.OpeningsKey"/>): the opening's GlobalId, name, class and predefined
+        /// type, its IfcRelVoidsElement's GlobalId, its body in world coordinates, the elements filling it with their
+        /// IfcRelFillsElement's GlobalIds; null when it has none.
+        /// </summary>
+        JsonArray? Openings(StepEntity e, ISolidBooleans? booleans)
+        {
+            JsonArray? list = null;
+            foreach (var rel in Rels.VoidsOf[e.Id])
+            {
+                if (f.Get(rel[5]) is not { Type: "IFCOPENINGELEMENT" or "IFCOPENINGSTANDARDCASE" or "IFCVOIDINGFEATURE" } op || Str(op[0]) is not { Length: 22 } opGid) continue;
+                var parts = new List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>();
+                foreach (var mesh in model.OpeningBody(op.Id, booleans))
+                {
+                    var w = mesh.Welded();
+                    if (w.T.Count > 0) parts.Add(("Opening", "#c9ced6", w.V, w.T));
+                }
+                if (parts.Count == 0) continue;
+                var fills = new JsonArray();
+                foreach (var fill in Rels.FillsOf[op.Id])
+                    if (f.Get(fill[5]) is { } filler && Str(filler[0]) is { Length: 22 } fillGid)
+                        fills.Add((JsonNode)new JsonObject { ["id"] = fillGid, ["rel"] = Str(fill[0]) });
+                (list ??= []).Add((JsonNode)new JsonObject
+                {
+                    ["id"] = opGid, ["name"] = Str(op[2]), ["class"] = op.Type == "IFCVOIDINGFEATURE" ? "IfcVoidingFeature" : IfcClass.OpeningElement,
+                    ["objectType"] = Str(op[4]), ["predefined"] = op.Args.Count > 8 ? Enum(op[8]) : null, ["rel"] = Str(rel[0]),
+                    [StoredBodies.Key] = StoredBodies.Write(parts), ["fills"] = fills,
+                });
+            }
+            return list;
         }
 
         /// <summary>The relationships the carried IFC is read through, indexed once (on the first core that asks).</summary>
@@ -980,7 +1040,7 @@ public static partial class IfcImport
                 if (o.Dedupe && ContentBody(edit, e, p.Body, fromCorner: false) is var (byContent, kept))
                 {
                     // This map's body is the one kept moved by the difference of their corners.
-                    Referenced(edit, e, gid, Instance(byContent, at with { O = at.Apply(p.Body.Lo - kept) }), p);
+                    Referenced(edit, e, gid, WithOpenings(Instance(byContent, at with { O = at.Apply(p.Body.Lo - kept) }), p), p);
                     instancesByContent++;
                     return;
                 }
@@ -994,16 +1054,36 @@ public static partial class IfcImport
             }
             if (bodied && o.Dedupe && p.Body.Hash is { } hash && hashUses.GetValueOrDefault(hash) > 1 && ContentBody(edit, e, p.Body, fromCorner: true) is var (shared, keptLo))
             {
-                Referenced(edit, e, gid, Instance(shared, Xf.Identity with { O = p.Body.Lo - keptLo }), p);
+                Referenced(edit, e, gid, WithOpenings(Instance(shared, Xf.Identity with { O = p.Body.Lo - keptLo }), p), p);
                 instancesByContent++;
                 return;
             }
-            Referenced(edit, e, gid, new JsonObject { [StoredBodies.Key] = StoredBodies.Write(p.Body.Parts) }, p);
+            Referenced(edit, e, gid, WithOpenings(new JsonObject { [StoredBodies.Key] = StoredBodies.Write(p.Body.Parts) }, p), p);
+        }
+
+        /// <summary>A reference's attributes with what it keeps of its openings (<see cref="KeptOpenings"/>), if any: its uncut body and the openings.</summary>
+        static JsonObject WithOpenings(JsonObject attrs, Prepared p)
+        {
+            if (p.Openings is not { } kept) return attrs;
+            if (kept.Uncut != null) attrs[StoredBodies.UncutKey] = StoredBodies.Write(kept.Uncut);
+            attrs[StoredBodies.OpeningsKey] = kept.Openings;
+            return attrs;
         }
 
         /// <summary>A product's own body: its meshes welded, cut by its openings where the booleans are.</summary>
-        List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> OwnBody(StepEntity e, ISolidBooleans? booleans)
+        List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> OwnBody(StepEntity e, ISolidBooleans? booleans) =>
+            OwnBody(e, booleans, out _);
+
+        /// <summary>
+        /// A product's own body, and (<paramref name="uncut"/>) the same before its openings cut it, where they did; null where
+        /// nothing was cut (no openings, no booleans, or a cut that failed).
+        /// </summary>
+        List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)> OwnBody(StepEntity e, ISolidBooleans? booleans,
+            out List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>? uncut)
         {
+            uncut = null;
+            var whole = new List<(string Name, string Color, IReadOnlyList<Vec3> Vertices, IReadOnlyList<(int A, int B, int C)> Triangles)>();
+            var anyCut = false;
             var (body, openings) = model.Shape(e.Id, booleans);
             List<Solid>? cutters = null;
             if (openings.Count > 0 && booleans != null)
@@ -1012,16 +1092,18 @@ public static partial class IfcImport
             foreach (var (mesh, colour) in body)
             {
                 var m = mesh.Welded();
+                if (m.T.Count > 0) whole.Add(("Body", colour ?? "#c9ced6", m.V, m.T));
                 if (cutters is { Count: > 0 })
                 {
                     try
                     {
-                        if (SolidFromMesh.Build(m.V, m.T) is { } solid && booleans!.Difference(solid, cutters) is { } cut) m = MeshBuilder.FromSolid(cut);
+                        if (SolidFromMesh.Build(m.V, m.T) is { } solid && booleans!.Difference(solid, cutters) is { } cut) { m = MeshBuilder.FromSolid(cut); anyCut = true; }
                     }
                     catch (InvalidOperationException) { /* uncut, as it came */ }
                 }
                 if (m.T.Count > 0) parts.Add(("Body", colour ?? "#c9ced6", m.V, m.T));
             }
+            if (anyCut) uncut = whole;
             return parts;
         }
 

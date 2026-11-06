@@ -403,6 +403,14 @@ public sealed partial class IfcModel
         return (body, openings);
     }
 
+    /// <summary>
+    /// An opening's own body (an IfcOpeningElement voiding a product), as meshes in world coordinates: what
+    /// <see cref="Shape"/> cuts the product by, read alone so a reference can keep its openings (docs/spec-ifc.md,
+    /// Golurile referințelor).
+    /// </summary>
+    public List<MeshBuilder> OpeningBody(int opening, ISolidBooleans? booleans = null) =>
+        File.Entities.GetValueOrDefault(opening) is { } o ? [.. Body(o, booleans != null && HasBooleans(opening) ? booleans : null).Select(b => b.Mesh)] : [];
+
     List<(MeshBuilder Mesh, string? Colour)> Body(StepEntity e, ISolidBooleans? booleans)
     {
         var o = new List<(MeshBuilder Mesh, string? Colour)>();
