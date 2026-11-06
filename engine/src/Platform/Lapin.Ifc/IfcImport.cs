@@ -100,6 +100,7 @@ public static partial class IfcImport
             // Not what the gate has just made a reference again (enforce): its triangles would make the same element.
             if (o.Mode == "auto") fromTriangles = MeshRecognition.Recognize(edit, session.Catalog, brought.Where(id => !reader.Reverted.Contains(id)), o.Gate);
             if (o.Editable) editable = EditableReferences.Make(edit, session.Catalog, brought);
+            reader.KeepContainmentIds(edit);
         }
         diff = session.Edit($"Import {name}", edit =>
         {
@@ -476,6 +477,7 @@ public static partial class IfcImport
                 else edit.ReplaceRelation(own with { Related = [.. own.Related, .. group] });
             }
             contained.Clear();
+            KeepContainmentIds(edit);
         }
 
         string? StoreyFor(int product) => containedIn.TryGetValue(product, out var sp) && storeyOf.TryGetValue(sp, out var id) ? id : null;
@@ -521,7 +523,10 @@ public static partial class IfcImport
             if (info.Count > 0) attrs[Lapin.Platform.Documents.ProjectInfo.Key] = info;
         }
 
-        /// <summary>The file's storeys: the project's by id, else by name, else by elevation; new ones added under the building.</summary>
+        /// <summary>
+        /// The file's storeys: the project's by id, else by name, else by elevation; new ones added under the building with the
+        /// file's GlobalId. A project made from the file (<see cref="Open"/>) has them all by id already.
+        /// </summary>
         void Storeys(IEdit edit)
         {
             var building = Spatial.EnsureBuilding(edit);
@@ -543,6 +548,7 @@ public static partial class IfcImport
                     edit.Replace(match.With(name: name, attrs: attrs));
                     storeyOf[st.Id] = match.Id;
                     matched.Add(match.Id);
+                    KeepContainmentId(st, match.Id);
                     continue;
                 }
                 var made = new Entity(GlobalId.IsValid(gid) && edit.Model.Get(gid) == null ? gid : edit.NewId(), IfcClass.BuildingStorey, name, attrs);
@@ -550,6 +556,7 @@ public static partial class IfcImport
                 edit.Relate(IfcClass.RelAggregates, building.Id, made.Id);
                 storeyOf[st.Id] = made.Id;
                 matched.Add(made.Id);
+                KeepContainmentId(st, made.Id);
                 storeys++;
             }
         }

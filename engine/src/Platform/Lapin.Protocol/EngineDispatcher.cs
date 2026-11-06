@@ -799,6 +799,11 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 else { ReportProgress("Indexing the file", 0, 0); file = StepFile.Read(bytes); }
                 IfcImportResult result;
                 Diff imported;
+                // `asProject`: the file opened as a project (the start screen's IFC, a file the app was started for): a new project made from its
+                // spatial structure, its project, site, building and storeys under the file's GlobalIds, then the import into it (docs/spec-ifc.md, Structura spațială).
+                var asProject = modeName != "link" && p["asProject"] is JsonValue apv && apv.TryGetValue<bool>(out var ap) && ap;
+                Diff? start = null;
+                if (asProject) { files.Reset(); start = session.New(IfcImport.SeedOf(file)); }
                 if (path == null)
                     result = modeName == "link" ? IfcImport.Link(session, file, name, null, mode, out imported) : IfcImport.Run(session, file, name, mode, out imported);
                 else
@@ -819,7 +824,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     }
                     finally { session.EditSource = null; }
                 }
-                return (result.ToJson(), imported);
+                return (result.ToJson(), start?.Then(imported) ?? imported);
             }
             case "project.exportSurvey":
                 // The project's elements and storeys as an import survey shows a file's, for an export's choice.

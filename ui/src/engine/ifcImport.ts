@@ -84,10 +84,12 @@ interface ImportState {
   survey: Survey | null;
   mode: ImportMode;
   format: ExchangeFormat;
+  /** The IFC opened as a project (the start screen's IFC, a file the app was started for): the project made from the file, its GlobalIds kept (docs/spec-ifc.md). */
+  asProject: boolean;
   busy: Busy | null;
 }
 
-export const useIfcImport = create<ImportState>(() => ({ source: null, survey: null, mode: 'auto', format: 'ifc', busy: null }));
+export const useIfcImport = create<ImportState>(() => ({ source: null, survey: null, mode: 'auto', format: 'ifc', asProject: false, busy: null }));
 
 /** The engine's progress events, while a call is running: the overlay's stage and bar. Listened to from the first long call on. */
 export function onProgress(d: unknown): void {
@@ -106,12 +108,12 @@ export const end = () => useIfcImport.setState({ busy: null });
 
 const args = (s: IfcSource) => (s.data != null ? { name: s.name, data: s.data } : { path: s.path });
 
-/** Step one: the file looked at, then the dialog to choose what of it comes in. */
-export async function surveyIfc(source: IfcSource, mode: ImportMode, format: ExchangeFormat = 'ifc'): Promise<void> {
+/** Step one: the file looked at, then the dialog to choose what of it comes in; `asProject`: an IFC opened as a project. */
+export async function surveyIfc(source: IfcSource, mode: ImportMode, format: ExchangeFormat = 'ifc', asProject = false): Promise<void> {
   begin(`Reading ${source.name}`, format === 'frag' ? 'Reading the file' : 'Indexing the file');
   try {
     const survey = await engine.call<Survey>(format === 'frag' ? 'project.fragSurvey' : 'project.ifcSurvey', args(source), { timeoutMs: LONG_TIMEOUT_MS });
-    useIfcImport.setState({ source, survey, mode, format });
+    useIfcImport.setState({ source, survey, mode, format, asProject: asProject && format === 'ifc' });
     useUi.setState({ dialog: 'importIfc' });
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
@@ -148,7 +150,7 @@ export function fragOutcome(name: string, r: FragResult): string {
 
 /** Step two: what was chosen (null: everything) brought in, its stages shown; the outcome said. */
 export async function runIfcImport(choice: { kinds: string[] | null; storeys: string[] | null; mode: ImportMode; plan2d?: boolean; only2d?: boolean; rules?: ImportRules; group?: boolean; editable?: boolean }): Promise<void> {
-  const { source, format } = useIfcImport.getState();
+  const { source, format, asProject } = useIfcImport.getState();
   if (!source) return;
   useUi.setState({ dialog: null });
   useIfcImport.setState({ survey: null });
@@ -163,14 +165,21 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
       ...(choice.plan2d === false ? { plan2d: false } : {}),
       ...(choice.only2d === false ? { only2d: false } : {}),
       ...(choice.rules ? { rules: choice.rules } : {}),
+      // The project made from the file: its project, site, building and storeys under the file's GlobalIds (never for a link).
+      ...(asProject && choice.mode !== 'link' ? { asProject: true } : {}),
     };
     if (frag) notify(fragOutcome(source.name, await engine.call<FragResult>('project.importFragments', params, { timeoutMs: LONG_TIMEOUT_MS })));
-    else notify(outcome(source.name, choice.mode, await engine.call<ImportResult>('project.importIfc', params, { timeoutMs: LONG_TIMEOUT_MS })));
+    else {
+      const r = await engine.call<ImportResult>('project.importIfc', params, { timeoutMs: LONG_TIMEOUT_MS });
+      // The storeys are the file's now: the active one is chosen again (the ground floor).
+      if (params.asProject) useUi.setState({ storeyId: null });
+      notify(outcome(source.name, choice.mode, r));
+    }
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   } finally {
     end();
-    useIfcImport.setState({ source: null });
+    useIfcImport.setState({ source: null, asProject: false });
   }
 }
 

@@ -246,6 +246,14 @@ public static class IfcExport
         static string Gid(string parent, string key) => S(Guid(parent, key));
         static string GlobalIdOf(string id) => GlobalId.IsValid(id) ? id : Guid("lapin", id);
 
+        /// <summary>
+        /// A spatial aggregation's or containment's GlobalId: the one the IFC file it came from gave it (<see cref="Spatial.FileGlobalId"/>:
+        /// a project made from a file, a storey the file brought), else derived from its owner by <paramref name="key"/>.
+        /// </summary>
+        string SpatialGid(string relating, string relationClass, string? related, string owner, string key) =>
+            Spatial.FileGlobalIdOf(m.RelationsOf(relating, relationClass).FirstOrDefault(r => r.Relating == relating && (related == null || r.Related.Contains(related)))) is { } g
+                ? S(g) : Gid(owner, key);
+
         string Place(string? relTo, double z) =>
             f.Add("IFCLOCALPLACEMENT", relTo ?? Null, f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(0), R(0), R(z) })), Null, Null));
 
@@ -502,8 +510,8 @@ public static class IfcExport
             var buildingPlace = Place(sitePlace, 0);
             var buildingId = building?.Id ?? project.Id;
             buildingRef = f.Add("IFCBUILDING", building != null ? Gid(building.Id) : Gid(project.Id, "building"), Null, S(building?.Name ?? "Building"), Null, Null, buildingPlace, Null, Null, E("ELEMENT"), Null, Null, Null);
-            f.Add("IFCRELAGGREGATES", Gid(project.Id, "aggregates"), Null, Null, Null, projectRef, L(new[] { siteRef }));
-            f.Add("IFCRELAGGREGATES", Gid(siteId, "aggregates/building"), Null, Null, Null, siteRef, L(new[] { buildingRef }));
+            f.Add("IFCRELAGGREGATES", SpatialGid(project.Id, IfcClass.RelAggregates, site?.Id ?? "", project.Id, "aggregates"), Null, Null, Null, projectRef, L(new[] { siteRef }));
+            f.Add("IFCRELAGGREGATES", SpatialGid(siteId, IfcClass.RelAggregates, building?.Id ?? "", siteId, "aggregates/building"), Null, Null, Null, siteRef, L(new[] { buildingRef }));
 
             var storeys = Spatial.Storeys(m).ToList();
             foreach (var st in storeys)
@@ -517,7 +525,7 @@ public static class IfcExport
                 storeyRef[st.Id] = r;
                 refIdOf[r] = st.Id;
             }
-            if (storeys.Count > 0) f.Add("IFCRELAGGREGATES", Gid(buildingId, "aggregates/storeys"), Null, Null, Null, buildingRef, L(storeys.Select(st => storeyRef[st.Id])));
+            if (storeys.Count > 0) f.Add("IFCRELAGGREGATES", SpatialGid(buildingId, IfcClass.RelAggregates, storeys[0].Id, buildingId, "aggregates/storeys"), Null, Null, Null, buildingRef, L(storeys.Select(st => storeyRef[st.Id])));
             StoreyCount = storeys.Count;
             MapConversion();
         }
@@ -1941,7 +1949,7 @@ public static class IfcExport
                     if (m.Get(v)?.Class == IfcClass.EarthworksCut && written.TryGetValue(host, out var h) && written.TryGetValue(v, out var cut))
                         f.Add("IFCRELVOIDSELEMENT", Gid(rel.Id), Null, Null, Null, h, cut);
             foreach (var (spatial, list) in contained)
-                f.Add("IFCRELCONTAINEDINSPATIALSTRUCTURE", Gid(refIdOf[spatial], "contains"), Null, Null, Null, L(list), spatial);
+                f.Add("IFCRELCONTAINEDINSPATIALSTRUCTURE", SpatialGid(refIdOf[spatial], IfcClass.RelContainedInSpatialStructure, null, refIdOf[spatial], "contains"), Null, Null, Null, L(list), spatial);
             // Rooms are parts of their storey: aggregated, as IFC has spaces.
             foreach (var (spatial, list) in spaces)
                 f.Add("IFCRELAGGREGATES", Gid(refIdOf.GetValueOrDefault(spatial) ?? project.Id, "aggregates/spaces"), Null, Null, Null, spatial, L(list));

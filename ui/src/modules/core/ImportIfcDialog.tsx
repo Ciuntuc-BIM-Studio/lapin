@@ -41,7 +41,7 @@ export function ImportIfcDialog() {
   // What the file places comes in as one group named after it (docs/groups.md); a link is a unit of its own.
   const [group, setGroup] = useState(true);
 
-  const close = () => { useIfcImport.setState({ survey: null, source: null }); useUi.setState({ dialog: null }); };
+  const close = () => { useIfcImport.setState({ survey: null, source: null, asProject: false }); useUi.setState({ dialog: null }); };
   const count = useMemo(() => (survey ? chosenCount(survey, offKinds, offStoreys) : 0), [survey, offKinds, offStoreys]);
   if (!survey || !source) return <PendingDialog title={format === 'frag' ? 'Import Fragments' : 'Import IFC'} onClose={close} />;
   const frag = format === 'frag';

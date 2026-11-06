@@ -108,19 +108,37 @@ public sealed class Session
         return Snapshot();
     }
 
+    /// <summary>
+    /// A new project made from an IFC file (an IFC opened as a project, docs/spec-ifc.md, Structura spațială): the
+    /// project, site, building and storeys under the file's GlobalIds and names from the start, so nothing that refers
+    /// to them (a storey's plan, a site plan, an element's storey) ever needs another id; the template's storeys the
+    /// file has not are not made. A file with no storey gets the session's ground floor. Nothing to undo, nothing to save.
+    /// </summary>
+    public Diff New(SpatialSeed seed)
+    {
+        var first = _product.Storeys is { Length: > 0 } own ? own[0] : null;
+        IReadOnlyList<SpatialSeed.Level> storeys = seed.Storeys.Count > 0 ? seed.Storeys
+            : [new SpatialSeed.Level(null, first?.Name ?? "Ground floor", first?.Elevation ?? 0, first?.Height ?? 3)];
+        StartEmpty([.. storeys.Select(x => (x.Name, x.Elevation, x.Height))], fresh: true, seed with { Storeys = storeys });
+        Path = null;
+        Emit("start");
+        return Snapshot();
+    }
+
     /// <summary>The session as it starts, before a project is made or opened: one ground floor.</summary>
     void StartEmpty() => StartEmpty(_product.Storeys is { Length: > 0 } own ? [(own[0].Name, own[0].Elevation, own[0].Height)] : [("Ground floor", 0.0, 3.0)]);
 
     /// <param name="fresh">A new project the user starts (not one another file fills): it takes what new projects start with
     /// where an older project keeps what it had (an opening's height under a dimension, decision 338).</param>
-    void StartEmpty(IReadOnlyList<(string Name, double Elevation, double Height)> storeys, bool fresh = false)
+    /// <param name="seed">The spatial structure of an IFC file the project is made from: its GlobalIds and names (the storeys as <paramref name="storeys"/>, in the same order).</param>
+    void StartEmpty(IReadOnlyList<(string Name, double Elevation, double Height)> storeys, bool fresh = false, SpatialSeed? seed = null)
     {
         _foreignClasses.Clear();
         ForgetMeshes();
         _history.Load([], []);
         _history.Execute("New project", edit =>
         {
-            var building = Spatial.EnsureBuilding(edit);
+            var building = Spatial.EnsureBuilding(edit, seed);
             // A new project's dimensions write an opening's height under the line (report #92, decision 338); an older one's
             // styles say nothing of it, and stay off.
             if (fresh && Spatial.Project(edit.Model) is { } project)
@@ -129,11 +147,11 @@ public sealed class Session
                 attrs["drafting"] = new JsonObject { ["dimStyles"] = new JsonArray(new JsonObject { ["id"] = Standards.Standard, ["name"] = "Standard", ["openingHeight"] = Standards.NewProjectOpeningHeight }) };
                 edit.Replace(project.With(attrs: attrs));
             }
-            foreach (var (name, elevation, height) in storeys)
+            for (var i = 0; i < storeys.Count; i++)
             {
-                var storey = new Entity(edit.NewId(), IfcClass.BuildingStorey, name, new JsonObject { ["elevation"] = elevation, ["height"] = height });
-                edit.Add(storey);
-                edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
+                var (name, elevation, height) = storeys[i];
+                var level = seed != null && i < seed.Storeys.Count ? seed.Storeys[i] : null;
+                Spatial.AddStorey(edit, building, level?.Id, name, elevation, height, level?.Aggregation);
             }
             // A new project's MEP runs cut provision openings in the walls and floors they cross (decision 293), load-bearing ones
             // reported instead; a project opened from a file keeps what it has (none: off).

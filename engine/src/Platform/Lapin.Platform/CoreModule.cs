@@ -375,26 +375,67 @@ public static class Spatial
         id != null && m.Get(id) is { } e && e.Class == ifcClass ? e : throw new CommandException($"There is no {ifcClass} {id}.");
 
     /// <summary>The project, site and building, made when the model has none yet.</summary>
-    public static Entity EnsureBuilding(IEdit edit)
+    public static Entity EnsureBuilding(IEdit edit) => EnsureBuilding(edit, null);
+
+    /// <summary>
+    /// The project, site and building, made when the model has none yet; with <paramref name="seed"/> (a project made from
+    /// an IFC file) under the file's GlobalIds and names, their aggregations remembering the file's GlobalIds too.
+    /// </summary>
+    public static Entity EnsureBuilding(IEdit edit, SpatialSeed? seed)
     {
         if (Building(edit.Model) is { } b) return b;
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(edit.NewId(), IfcClass.Project, "Project", new JsonObject { ["lengthUnit"] = "METRE" });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE" });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();
         if (site == null)
         {
-            site = new Entity(edit.NewId(), IfcClass.Site, "Site", []);
+            site = new Entity(IdOf(edit, seed?.Site.Id), IfcClass.Site, seed?.Site.Name ?? "Site", []);
             edit.Add(site);
-            edit.Relate(IfcClass.RelAggregates, project.Id, site.Id);
+            Aggregate(edit, project.Id, site.Id, seed?.Site.Aggregation);
         }
-        var building = new Entity(edit.NewId(), IfcClass.Building, "Building", []);
+        var building = new Entity(IdOf(edit, seed?.Building.Id), IfcClass.Building, seed?.Building.Name ?? "Building", []);
         edit.Add(building);
-        edit.Relate(IfcClass.RelAggregates, site.Id, building.Id);
+        Aggregate(edit, site.Id, building.Id, seed?.Building.Aggregation);
         return building;
+    }
+
+    /// <summary>
+    /// The key of a relationship's attributes holding the GlobalId the IFC file gave it, which the export writes again
+    /// (a spatial aggregation or containment Lapin otherwise names after its owner).
+    /// </summary>
+    public const string FileGlobalId = "globalId";
+
+    /// <summary>The GlobalId a relationship came with from an IFC file (<see cref="FileGlobalId"/>), or null.</summary>
+    public static string? FileGlobalIdOf(Relation? r) =>
+        r?.Attrs?[FileGlobalId] is JsonValue v && v.TryGetValue<string>(out var g) && GlobalId.IsValid(g) ? g : null;
+
+    /// <summary>The file's id when it is a GlobalId the model does not hold yet, else a new one.</summary>
+    static string IdOf(IEdit edit, string? id) =>
+        id != null && GlobalId.IsValid(id) && edit.Model.Get(id) == null && edit.Model.GetRelation(id) == null ? id : edit.NewId();
+
+    /// <summary><paramref name="part"/> aggregated into <paramref name="whole"/>; a new aggregation remembers the file's GlobalId.</summary>
+    static void Aggregate(IEdit edit, string whole, string part, string? globalId)
+    {
+        var r = edit.Relate(IfcClass.RelAggregates, whole, part);
+        if (globalId != null && GlobalId.IsValid(globalId) && FileGlobalIdOf(r) == null)
+        {
+            var attrs = r.Attrs?.DeepClone() as JsonObject ?? [];
+            attrs[FileGlobalId] = globalId;
+            edit.ReplaceRelation(r with { Attrs = attrs });
+        }
+    }
+
+    /// <summary>A storey made under the building as a seed gives it (its GlobalId, name, base level and height).</summary>
+    public static Entity AddStorey(IEdit edit, Entity building, string? id, string name, double elevation, double height, string? aggregation = null)
+    {
+        var storey = new Entity(IdOf(edit, id), IfcClass.BuildingStorey, name, new JsonObject { ["elevation"] = elevation, ["height"] = height });
+        edit.Add(storey);
+        Aggregate(edit, building.Id, storey.Id, aggregation);
+        return storey;
     }
 
     /// <summary>
@@ -418,6 +459,17 @@ public static class Spatial
         Require(edit.Model, storeyId, IfcClass.BuildingStorey);
         edit.Relate(IfcClass.RelContainedInSpatialStructure, storeyId, elementId);
     }
+}
+
+/// <summary>
+/// A project's spatial structure as an IFC file gives it, for a new project made from the file (an IFC opened as a
+/// project): the project, site and building with their GlobalIds and names, and the storeys bottom up; each part's
+/// <c>Aggregation</c> is the GlobalId of the file's IfcRelAggregates that holds it (docs/spec-ifc.md, Structura spațială).
+/// </summary>
+public sealed record SpatialSeed(SpatialSeed.Part Project, SpatialSeed.Part Site, SpatialSeed.Part Building, IReadOnlyList<SpatialSeed.Level> Storeys)
+{
+    public sealed record Part(string? Id, string? Name, string? Aggregation = null);
+    public sealed record Level(string? Id, string Name, double Elevation, double Height, string? Aggregation = null);
 }
 
 /// <summary>The project's materials (IfcMaterial), found by name.</summary>

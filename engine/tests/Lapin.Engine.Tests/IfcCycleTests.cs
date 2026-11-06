@@ -67,8 +67,8 @@ public class IfcCycleTests(ITestOutputHelper output) : IDisposable
 
     /// <summary>
     /// A file read for comparison. The spatial structure is keyed by class, name and elevation besides its GlobalId: an
-    /// import into a project keeps the project's own project, site, building and matching storeys (see
-    /// <see cref="The_spatial_structure_keeps_its_GlobalIds"/>), so their GlobalIds are compared apart.
+    /// import into a project keeps the project's own project, site, building and matching storeys, so their GlobalIds are
+    /// compared apart; a file opened as a project keeps them all (<see cref="The_spatial_structure_keeps_its_GlobalIds"/>).
     /// </summary>
     sealed record FileShape(
         SortedDictionary<string, int> Counts,
@@ -201,8 +201,11 @@ public class IfcCycleTests(ITestOutputHelper output) : IDisposable
         foreach (var x in now.Except(first)) l.Add(cycle, kind, $"{x} new");
     }
 
-    /// <summary>The model through <paramref name="cycles"/> rounds of export and import, every round set against the first file and the model it started from.</summary>
-    Losses Run(Fixture start, Func<Fixture> make, int cycles)
+    /// <summary>
+    /// The model through <paramref name="cycles"/> rounds of export and import, every round set against the first file and the model it started from;
+    /// <paramref name="asProject"/>: each file opened as a project (<see cref="IfcImport.Open"/>), not imported into a new one.
+    /// </summary>
+    Losses Run(Fixture start, Func<Fixture> make, int cycles, bool asProject = false)
     {
         var l = new Losses();
         var startBodies = Bodies(start);
@@ -217,7 +220,7 @@ public class IfcCycleTests(ITestOutputHelper output) : IDisposable
         for (var cycle = 1; cycle <= cycles; cycle++)
         {
             var g = make();
-            var r = IfcImport.Run(g.Session, path, null, out _);
+            var r = asProject ? IfcImport.Open(g.Session, StepFile.Read(path), Path.GetFileName(path), null, out _) : IfcImport.Run(g.Session, path, null, out _);
             if (r.References > 0) l.Add(cycle, "references", $"{r.References} came in as references: {string.Join("; ", r.Notes)}");
             var next = Path.Combine(_dir, $"cycle-{cycle}.ifc");
             IfcExport.Write(g.Session, next);
@@ -264,7 +267,8 @@ public class IfcCycleTests(ITestOutputHelper output) : IDisposable
     }
 
     // The kinds that must not change, cycle after cycle. The GlobalIds of the spatial structure and of the
-    // relationships and sets Lapin derives from it are the known loss below, asserted apart.
+    // relationships and sets Lapin derives from it change when a file is imported into a project (the project's own
+    // stay); opened as a project they are kept, asserted apart below.
     static readonly string[] Invariants =
     [
         "references", "entity counts", "rooted counts", "objects (GlobalId → class, name)", "spatial structure (by name)", "storey containment",
@@ -282,18 +286,21 @@ public class IfcCycleTests(ITestOutputHelper output) : IDisposable
     }
 
     /// <summary>
-    /// Known loss, not papered over: the import keeps the receiving project's own IfcProject, IfcSite and IfcBuilding, and a storey of the
-    /// file it matches by name or elevation (the Ground floor every project, even an empty one, starts with) keeps the project's id. So
-    /// in every cycle those four GlobalIds are new, and with them the nine roots Lapin derives from them (four IfcRelAggregates, the
-    /// project's and the storey's Lapin_Intent with their IfcRelDefinesByProperties, the storey's IfcRelContainedInSpatialStructure).
-    /// The elements, types, openings and every other relationship keep theirs; containment and aggregation are the same by name.
+    /// A file opened as a project (docs/spec-ifc.md, Structura spațială) is the project it was: its IfcProject, IfcSite, IfcBuilding and
+    /// storeys keep their GlobalIds, and so do the roots Lapin derives from them (the IfcRelAggregates, the project's and the storeys'
+    /// Lapin_Intent with their IfcRelDefinesByProperties, the storeys' IfcRelContainedInSpatialStructure), cycle after cycle, with
+    /// everything else the cycles keep. Imported into a project instead, the project's own project, site, building and matching storeys
+    /// stay (<see cref="IfcSpatialIdentityTests"/>).
     /// </summary>
-    [Fact(Skip = "Known loss: an import keeps the receiving project's IfcProject, IfcSite, IfcBuilding and the storey it matches by name (Ground floor), so their 4 GlobalIds and the 9 roots derived from them are new in every cycle; elements keep theirs.")]
+    [Fact]
     public void The_spatial_structure_keeps_its_GlobalIds()
     {
-        var l = Run(House(), Make, 2);
-        Assert.Empty(l.Of("spatial GlobalIds"));
-        Assert.Empty(l.Of("root GlobalIds (relationships, sets)"));
+        var l = Run(House(), Make, Cycles, asProject: true);
+        Assert.True(l.Of("spatial GlobalIds").Count == 0, string.Join("\n", l.Of("spatial GlobalIds")));
+        Assert.True(l.Of("root GlobalIds (relationships, sets)").Count == 0, string.Join("\n", l.Of("root GlobalIds (relationships, sets)")));
+        foreach (var kind in Invariants) Assert.True(l.Of(kind).Count == 0, $"{kind}:\n{string.Join("\n", l.Of(kind))}");
+        Assert.Equal(0, l.MaxPointDrift);
+        Assert.Equal(0, l.MaxVolumeDrift);
     }
 
     /// <summary>The test model (or any .lapin) cycled the same way, when one is given: LAPIN_IFC_CYCLES_MODEL=/path/project.lapin.</summary>

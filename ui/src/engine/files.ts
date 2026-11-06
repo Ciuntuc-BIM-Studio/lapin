@@ -385,7 +385,7 @@ export async function openStartupFile(): Promise<void> {
     enter();
     if (/\.dxf$/i.test(name)) { dxfFile.current = { name, path }; useUi.setState({ dialog: 'importDxf' }); return; }
     // An IFC opened on its own: what of it comes in chosen first, as for an import.
-    await surveyIfc({ name, path }, 'auto');
+    await surveyIfc({ name, path }, 'auto', 'ifc', true);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }
@@ -453,14 +453,15 @@ export async function importMesh(): Promise<void> {
 /**
  * An IFC file into the open project, in two steps (ifcImport.ts): the file looked at, the Import IFC dialog to choose
  * what of it comes in (by discipline, kind and storey) and how (recognised, as references, linked), then the import
- * with its stages shown.
+ * with its stages shown. `asProject`: the IFC opened as a project (the start screen's IFC): the new project is made from the
+ * file, its project, site, building and storeys under the file's GlobalIds.
  */
-export async function importIfc(mode: 'auto' | 'editable' | 'reference' | 'link' = 'auto'): Promise<void> {
+export async function importIfc(mode: 'auto' | 'editable' | 'reference' | 'link' = 'auto', asProject = false): Promise<void> {
   // By path on the desktop (the native dialog); in a browser, the file's bytes from the browser's own
   // picker, whether the engine runs in the page or as the local process of pnpm dev: a page never knows a path.
   const picked = isDesktop() ? null : await pickFile('IFC', 'ifc');
   const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'IFC', extensions: ['ifc'] }]) : picked?.name ?? null;
   if (!path) return;
   const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
-  await surveyIfc(source, mode);
+  await surveyIfc(source, mode, 'ifc', asProject);
 }

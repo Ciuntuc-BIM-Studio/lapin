@@ -41,6 +41,12 @@ Biblioteca nouă e `engine/src/Platform/Lapin.Ifc`, folosită de `core` (orice e
 | `Location` (punct de bază, topografic) | `IFCMAPCONVERSION` + `IFCPROJECTEDCRS` pe contextul `Model` | doar când există punctul topografic; nordul adevărat ca `XAxisAbscissa/Ordinate` |
 | `drafting`, `hatchPatterns`, `graphicsSets`, vederi, planșe, extrase | nu se exportă | sunt ale Lapin-ului; rămân în `.lapin` |
 
+### Structura spațială (06.11.2026)
+
+Un IFC **deschis ca proiect** (ecranul de start → Start from an IFC, sau un fișier cu care e pornită aplicația; `project.importIfc` cu `asProject: true`, `IfcImport.Open`) face un proiect nou **din structura fișierului** (`IfcImport.SeedOf`, `Session.New(SpatialSeed)`): proiectul, situl, clădirea și etajele au de la început GlobalId-urile, numele și cotele fișierului (înălțimea unui etaj: până la următorul, 3 m pentru cel de sus), așa că vederile etajelor (`plan:{idEtaj}`), planurile de situație și conținerea elementelor nu au nevoie niciodată de alt id. Etajele șablonului pe care fișierul nu le are nu se fac; un fișier fără etaje primește parterul. Un etaj debifat în fereastra de import vine gol. Agregările (proiect → sit → clădire → etaje) și conținerea fiecărui etaj al fișierului țin GlobalId-ul relației din fișier în atributele relației (`globalId`, `Spatial.FileGlobalId`); exportul îl scrie înapoi, altfel îl derivă ca mai sus. Setul `Lapin_Intent` al proiectului și al etajelor rămâne derivat din id-ul lor, deci stabil. Exportat și deschis iar de 10 ori, niciun GlobalId spațial sau derivat nu se schimbă (`IfcCycleTests.The_spatial_structure_keeps_its_GlobalIds`, `IfcSpatialIdentityTests`). Undo întoarce proiectul făcut din fișier, gol.
+
+**Importat într-un proiect existent** (File → Import IFC…), proiectul își păstrează proiectul, situl, clădirea și etajele potrivite (după GlobalId, nume sau cotă); un etaj pe care fișierul îl aduce nou ia GlobalId-ul fișierului, iar conținerea lui GlobalId-ul relației din fișier. Seturile de proprietăți proprii ale etajelor unui fișier străin (`Pset_BuildingStoreyCommon` etc.) nu se citesc încă.
+
 ## Elementele
 
 Fiecare element: `GlobalId` = id-ul lui, `Name`, `ObjectType` = numele tipului (când are), `ObjectPlacement` relativ la etaj, `Representation` cu `Body` și, unde e cazul, `Axis`, `Tag` = id-ul Lapin. `PredefinedType` cel al entității.
@@ -99,7 +105,7 @@ Culoarea fiecărei piese se scrie și pe corp (`IFCSTYLEDITEM`), ca în BubbleBI
 | Ce | Cheie |
 |---|---|
 | piesă derivată | `{idElement}/{cheiaPiesei}` (`zone:masonry`, `lintel:D1:0`, `step:1`) |
-| relație | relațiile modelului își păstrează id-ul; cele pe care exportul le face el: `{idPărinte}/parts`, `{idTip}/defines`, `{idMaterial}/associates`, `{idEtaj}/contains`, `{idProiect}/aggregates`, `{idSit}/aggregates/building`, `{idClădire}/aggregates/storeys` |
+| relație | relațiile modelului își păstrează id-ul; cele pe care exportul le face el: `{idPărinte}/parts`, `{idTip}/defines`, `{idMaterial}/associates`, `{idEtaj}/contains`, `{idProiect}/aggregates`, `{idSit}/aggregates/building`, `{idClădire}/aggregates/storeys` (ultimele patru: GlobalId-ul din fișier când relația a venit dintr-un IFC, mai sus *Structura spațială*) |
 | pset, qto | `{idElement}/{numeleSetului}` (`…/common`, `…/Pset_Lapin_Intent`, `…/Pset_Lapin_Phase` — cheile vechi, păstrate după redenumirea seturilor, ca id-urile să rămână aceleași —, `…/qto/{set}` sau `…/qto/{set}/{piesă}`), relația `…-rel` |
 | plan de acoperiș, element de șarpantă | `{idAcoperiș}/{cheia piesei}/{index}` |
 

@@ -5,7 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('./session', () => ({ engine: { onEvent: () => () => undefined, call: vi.fn() } }));
 vi.mock('./client', () => ({ LONG_TIMEOUT_MS: 1 }));
 
-import { choiceOf, chosenCount, onProgress, outcome, useIfcImport, type Survey } from './ifcImport';
+import { engine } from './session';
+import { choiceOf, chosenCount, onProgress, outcome, runIfcImport, useIfcImport, type Survey } from './ifcImport';
 
 const survey: Survey = {
   name: 'plant.ifc', size: 1, schema: 'IFC2X3', products: 10, noStorey: 2,
@@ -42,5 +43,21 @@ describe('the IFC import', () => {
   it('says what came in', () => {
     expect(outcome('plant.ifc', 'auto', { elements: 0, updated: 0, references: 3, recognized: 2, recognizedByClass: { IfcBeam: 2 }, notes: [] }))
       .toBe('Imported plant.ifc: 2 recognised (2 beams), 3 as reference.');
+  });
+  it('opens an IFC as a project only when asked, never for a link', async () => {
+    const call = vi.mocked(engine.call);
+    call.mockResolvedValue({ elements: 1, updated: 0, references: 0, notes: [] });
+    const choice = { kinds: null, storeys: null, mode: 'auto' as const };
+    useIfcImport.setState({ source: { name: 'house.ifc', path: '/x/house.ifc' }, format: 'ifc', asProject: true });
+    await runIfcImport(choice);
+    expect(call.mock.calls.at(-1)?.[1]).toMatchObject({ path: '/x/house.ifc', asProject: true });
+    // Once done, the next import goes into the project.
+    expect(useIfcImport.getState().asProject).toBe(false);
+    useIfcImport.setState({ source: { name: 'house.ifc', path: '/x/house.ifc' }, format: 'ifc' });
+    await runIfcImport(choice);
+    expect(call.mock.calls.at(-1)?.[1]).not.toHaveProperty('asProject');
+    useIfcImport.setState({ source: { name: 'house.ifc', path: '/x/house.ifc' }, format: 'ifc', asProject: true });
+    await runIfcImport({ ...choice, mode: 'link' });
+    expect(call.mock.calls.at(-1)?.[1]).not.toHaveProperty('asProject');
   });
 });

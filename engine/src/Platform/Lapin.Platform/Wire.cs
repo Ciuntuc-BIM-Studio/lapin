@@ -88,7 +88,37 @@ public sealed record Diff(
     IReadOnlyList<RelationDto> Relations,
     IReadOnlyList<string> RemovedRelations,
     IReadOnlyList<SharedMesh>? Meshes = null,
-    IReadOnlyList<string>? MeshesRemoved = null);
+    IReadOnlyList<string>? MeshesRemoved = null)
+{
+    /// <summary>
+    /// This reset followed by <paramref name="next"/> as one reset (a new project made from a file, then the file
+    /// imported into it): what <paramref name="next"/> adds or changes over this, without what it removes.
+    /// </summary>
+    public Diff Then(Diff next)
+    {
+        if (!Reset || next.Reset) return next;
+        static List<T> Over<T>(IEnumerable<T> first, IEnumerable<T> then, IEnumerable<string> removed, Func<T, string> id)
+        {
+            var gone = removed.ToHashSet();
+            var o = new Dictionary<string, T>();
+            var order = new List<string>();
+            foreach (var x in first.Concat(then))
+            {
+                var k = id(x);
+                if (!o.ContainsKey(k)) order.Add(k);
+                o[k] = x;
+            }
+            return [.. order.Where(k => !gone.Contains(k)).Select(k => o[k])];
+        }
+        return new Diff(next.Version, true,
+            Over(Nodes, next.Nodes, next.RemovedNodes, n => n.Id), [],
+            Over(Edges, next.Edges, next.RemovedEdges, e => e.Id), [],
+            Over(Render, next.Render, next.RenderRemoved, r => r.NodeId), [],
+            next.State,
+            Over(Relations, next.Relations, next.RemovedRelations, r => r.Id), [],
+            Over(Meshes ?? [], next.Meshes ?? [], next.MeshesRemoved ?? [], m => m.Id), []);
+    }
+}
 
 public sealed record ModuleInfo(string Id, string Name, int SchemaVersion);
 

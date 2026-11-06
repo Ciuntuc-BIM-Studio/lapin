@@ -88,7 +88,7 @@ export const TEMPLATES: ProjectTemplate[] = [
   },
   {
     id: 'ifc', label: 'Start from an IFC', note: 'Another program’s model, recognised into elements you can edit',
-    workspace: null, storeys: null, after: () => importIfc(), needs: [],
+    workspace: null, storeys: null, after: () => importIfc('auto', true), needs: [],
     picture: <Pic>
       <path d="M100 14h48l22 22v70h-70z" fill={wall} stroke={ink} strokeWidth="2" />
       <path d="M148 14v22h22" fill="none" stroke={ink} strokeWidth="2" />
