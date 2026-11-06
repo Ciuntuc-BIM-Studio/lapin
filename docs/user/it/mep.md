@@ -87,6 +87,35 @@ Sotto **Strada**, **Condotta del gas lungo…** (<kbd>GM</kbd>) posa una condott
 
 Dimensionare i tubi dal consumo degli apparecchi e verificare la perdita di carico è ingegneria, nell’edizione **Lapin MEP**.
 
+## Protezione antincendio
+
+**Allarme incendio** e **Idranti** sono servizi a sé sotto **Nuovo sistema**, con i loro strumenti nei gruppi **Allarme incendio** e **Idranti**.
+
+**Nuovo sistema → Allarme incendio** mette la **centrale di rivelazione incendio** dove fai clic e un primo **rivelatore di fumo** accanto, collegati dal cavo del loop. Ogni dispositivo messo dopo (**Rivelatore di fumo** <kbd>SD</kbd>, **Rivelatore di calore** <kbd>HD</kbd>, **Pulsante manuale di allarme** <kbd>MC</kbd>, **Sirena**, **Sirena con lampeggiante**) si collega all’estremo aperto del loop, il dispositivo messo prima di lui. Il cavo va da un dispositivo al successivo nell’ordine in cui li metti. **Chiudi il loop** riporta il cavo dall’ultimo dispositivo al ritorno della centrale, così il loop è alimentato da entrambi gli estremi. Il cavo è un cavo resistente al fuoco, a soffitto.
+
+![Un loop di allarme incendio: la centrale vicino all’ingresso, i rivelatori con la loro copertura, un pulsante manuale e una sirena, il loop richiuso sulla centrale](shots/mep-fire-plan.webp)
+
+Ogni rivelatore mostra la sua **copertura** come un cerchio tratteggiato. Di default il raggio viene dalla tabella di progetto per un soffitto piano fino a 6 m: 5,8 m per un rivelatore di fumo, 3,6 m per un rivelatore di calore. Dai a un rivelatore il suo **Raggio di copertura** nelle sue proprietà quando il locale, la sua altezza o il suo soffitto chiedono un altro valore.
+
+**Nuovo sistema → Idranti** mette un **gruppo di pompaggio antincendio** e un primo **idrante interno** collegato a esso da un tubo in acciaio zincato (DN 50 di default). Ogni idrante messo dopo si innesta sulla rete con un raccordo a T. La **riserva idrica antincendio** alimenta la pompa dall’aspirazione della pompa stessa, e l’**attacco di mandata per autopompa** si collega a mano con **Tratto**. **Idrante esterno** e **Sprinkler** completano la rete. Un idrante interno disegna la sua portata come un cerchio tratteggiato: la sua **Lunghezza della tubazione flessibile** (20 m di default) più il suo **Getto pieno** (6 m). Imposta entrambi come la norma chiede per l’edificio.
+
+![Idranti interni alimentati dal gruppo di pompaggio, con la loro portata disegnata sulla pianta](shots/mep-fire-hydrants.webp)
+
+![Il loop di allarme incendio e gli idranti in 3D](shots/mep-fire-3d.webp)
+
+**Computo antincendio** sotto **Sistema** elenca, sistema per sistema:
+
+- le centrali, i rivelatori, i pulsanti manuali e le sirene;
+- il cavo del loop con la sua lunghezza, e se ogni loop è chiuso;
+- la riserva, i gruppi di pompaggio, gli idranti e gli sprinkler;
+- i tubi per materiale e diametro, con le loro curve e i raccordi a T.
+
+In IFC entrambi i sistemi sono di tipo FIREPROTECTION. La centrale è un IfcUnitaryControlElement ALARMPANEL, i rivelatori IfcSensor (SMOKESENSOR, HEATSENSOR), i pulsanti manuali e le sirene IfcAlarm, gli idranti e gli sprinkler IfcFireSuppressionTerminal, e il cavo del loop un IfcCableSegment.
+
+![Il computo antincendio](shots/mep-fire-list.webp)
+
+Disporre i rivelatori locale per locale dalla tabella di progetto e verificare che ogni locale sia coperto da rivelatori e idranti è ingegneria, nell’edizione **Lapin MEP**.
+
 ## Aspiratori
 
 Il gruppo **Ventilatori** nella scheda Impianti mette gli aspiratori di bagni e cucine come elementi propri, ciascuno di un tipo che configuri:

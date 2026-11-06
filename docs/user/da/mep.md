@@ -87,6 +87,35 @@ Under **Gade** lægger **Gasledning langs…** (<kbd>GM</kbd>) en gasledning lan
 
 At dimensionere rørene ud fra apparaternes forbrug og eftervise tryktabet er ingeniørarbejde, i udgaven **Lapin MEP**.
 
+## Brandsikring
+
+**Brandalarm** og **Brandhaner** er egne fag under **Nyt system**, med deres værktøjer i grupperne **Brandalarm** og **Brandhaner**.
+
+**Nyt system → Brandalarm** sætter **brandcentralen** hvor du klikker og en første **røgdetektor** ved siden af, forbundet af sløjfens kabel. Hver enhed du sætter derefter (**Røgdetektor** <kbd>SD</kbd>, **Varmedetektor** <kbd>HD</kbd>, **Brandtryk** <kbd>MC</kbd>, **Sirene**, **Sirene med blink**) forbindes med sløjfens åbne ende, enheden sat før den. Kablet løber fra én enhed til den næste i den rækkefølge, du sætter dem. **Luk sløjfen** fører kablet fra den sidste enhed tilbage til centralens retur, så sløjfen fødes fra begge ender. Kablet er et brandsikret kabel i loftet.
+
+![En brandalarmsløjfe: centralen ved indgangen, detektorer med deres dækning, et brandtryk og en sirene, sløjfen ført tilbage til centralen](shots/mep-fire-plan.webp)
+
+Hver detektor viser sin **dækning** som en stiplet cirkel. Som standard kommer radius fra projekteringstabellen for et plant loft op til 6 m: 5,8 m for en røgdetektor, 3,6 m for en varmedetektor. Giv en detektor sin egen **Dækningsradius** i dens egenskaber, når rummet, dets højde eller dets loft kræver en anden værdi.
+
+**Nyt system → Brandhaner** sætter et **brandpumpeanlæg** og en første **brandslangevinde** forbundet med det af et galvaniseret stålrør (DN 50 som standard). Hver slangevinde sat derefter tilsluttes nettet med et T-stykke. **Slukningsvandsreserven** føder pumpen gennem pumpens egen sugestuds, og **brandvæsenets indføding** forbindes i hånden med **Strækning**. **Brandhane** og **Sprinkler** fuldender nettet. En brandslangevinde tegner sin rækkevidde som en stiplet cirkel: sin **Slangelængde** (20 m som standard) plus sin **Kompakt stråle** (6 m). Indstil begge, som normen kræver for bygningen.
+
+![Brandslangevinder fødet fra pumpeanlægget, deres rækkevidde tegnet på planen](shots/mep-fire-hydrants.webp)
+
+![Brandalarmsløjfen og brandhanerne i 3D](shots/mep-fire-3d.webp)
+
+**Mængdeliste for brandsikring** under **System** viser system for system:
+
+- centralerne, detektorerne, brandtrykkene og sirenerne;
+- sløjfens kabel med dets længde, og om hver sløjfe er lukket;
+- reserven, pumpeanlæggene, brandhanerne og sprinklerne;
+- rørene efter materiale og diameter, med deres bøjninger og T-stykker.
+
+I IFC er begge systemer af typen FIREPROTECTION. Centralen er et IfcUnitaryControlElement ALARMPANEL, detektorerne IfcSensor (SMOKESENSOR, HEATSENSOR), brandtryk og sirener IfcAlarm, brandhaner og sprinklere IfcFireSuppressionTerminal, og sløjfens kabel et IfcCableSegment.
+
+![Mængdelisten for brandsikring](shots/mep-fire-list.webp)
+
+At placere detektorerne rum for rum ud fra projekteringstabellen og eftervise, at hvert rum er dækket af detektorer og brandhaner, er ingeniørarbejde, i udgaven **Lapin MEP**.
+
 ## Udsugningsventilatorer
 
 Gruppen **Ventilatorer** på fanen Installationer sætter udsugningsventilatorer til bad og køkken som selvstændige elementer, hver af en type, du konfigurerer:

@@ -87,6 +87,35 @@ Under **Street**, **Gas main along…** (<kbd>GM</kbd>) lays a gas main along wh
 
 Sizing the pipes from the appliances' consumption and checking the pressure drop are engineering, in the **Lapin MEP** edition.
 
+## Fire protection
+
+**Fire alarm** and **Fire hydrants** are services of their own under **New system**, with their tools in the **Fire alarm** and **Fire hydrants** groups.
+
+**New system → Fire alarm** places the **fire alarm control panel** where you click and a first **smoke detector** beside it, joined by the loop's cable. Every device you place after that (**Smoke detector** <kbd>SD</kbd>, **Heat detector** <kbd>HD</kbd>, **Manual call point** <kbd>MC</kbd>, **Sounder**, **Sounder beacon**) joins the loop's open end, the device placed before it. The cable runs from one device to the next in the order you place them. **Close the loop** brings the cable from the last device back to the panel's return, so the loop is fed from both ends. The cable is a fire-resistant cable on the ceiling.
+
+![A fire alarm loop: the panel by the entrance, detectors with their coverage, a call point and a sounder, the loop closed back to the panel](shots/mep-fire-plan.webp)
+
+Each detector shows its **coverage** as a dashed circle. By default the radius comes from the planning table for a flat ceiling up to 6 m: 5.8 m for a smoke detector, 3.6 m for a heat detector. Set a detector's own **Coverage radius** in its properties when the room, its height or its ceiling asks for another value.
+
+**New system → Fire hydrants** places a **fire pump set** and a first **internal hydrant** joined to it by a galvanised steel pipe (DN 50 by default). Each hydrant placed after it tees onto the network. The **fire water reserve** feeds the pump by the pump's own suction port, and the **fire brigade inlet** is joined by hand with **Run**. **External hydrant** and **Sprinkler** complete the network. An internal hydrant draws its reach as a dashed circle: its **Hose length** (20 m by default) plus its **Compact jet** (6 m). Set both as the norm asks for the building.
+
+![Internal hydrants fed from the pump set, their reach drawn on the plan](shots/mep-fire-hydrants.webp)
+
+![The fire alarm loop and the hydrants in 3D](shots/mep-fire-3d.webp)
+
+**Fire protection bill of materials** under **System** lists, system by system:
+
+- the panels, detectors, call points and sounders;
+- the loop's cable with its length, and whether each loop is closed;
+- the reserve, the pump sets, the hydrants and the sprinklers;
+- the pipes by material and size, with their bends and tees.
+
+In IFC both systems are of type FIREPROTECTION. The panel is an IfcUnitaryControlElement ALARMPANEL, the detectors IfcSensor (SMOKESENSOR, HEATSENSOR), the call points and sounders IfcAlarm, the hydrants and sprinklers IfcFireSuppressionTerminal, and the loop's cable IfcCableSegment.
+
+![The fire protection bill of materials](shots/mep-fire-list.webp)
+
+Placing the detectors room by room from the planning table and checking that every room is covered by detectors and hydrants are engineering, in the **Lapin MEP** edition.
+
 ## Exhaust fans
 
 The **Fans** group on the MEP tab places bathroom and kitchen extract fans as elements of their own, each of a type you configure:

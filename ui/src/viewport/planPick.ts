@@ -54,7 +54,8 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
     const e = nodes.get(r.nodeId);
     if (!e || !takes(e)) continue;
     for (const it of r.plan) {
-      if (it.kind === 'label' || it.kind === 'grid') continue;
+      // A device's reach (a detector's coverage, a hydrant's hose and jet) is drawn round it, never picked.
+      if (it.kind === 'label' || it.kind === 'grid' || it.kind === 'reach') continue;
       const poly = pairs(it.points);
       let hit = it.closed && pointInPolygon(p, poly);
       const n = it.closed ? poly.length : poly.length - 1;
@@ -102,7 +103,7 @@ export function regionIds(takes: RegionTest, items: RenderItem[], nodes: Map<str
   for (const r of items) {
     const segs: Seg[] = [];
     for (const it of r.plan) {
-      if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid') continue;
+      if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid' || it.kind === 'reach') continue;
       const ps = pairs(it.points);
       for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) segs.push([ps[i], ps[(i + 1) % ps.length]]);
     }

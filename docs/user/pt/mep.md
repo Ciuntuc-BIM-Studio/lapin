@@ -87,6 +87,35 @@ Em **Rua**, **Rede de gás ao longo de…** (<kbd>GM</kbd>) assenta uma rede de 
 
 Dimensionar os tubos pelo consumo dos aparelhos e verificar a perda de carga é engenharia, na edição **Lapin MEP**.
 
+## Proteção contra incêndio
+
+**Alarme de incêndio** e **Hidrantes** são serviços próprios em **Novo sistema**, com suas ferramentas nos grupos **Alarme de incêndio** e **Hidrantes**.
+
+**Novo sistema → Alarme de incêndio** coloca a **central de alarme de incêndio** onde você clica e um primeiro **detector de fumaça** ao lado, ligados pelo cabo do laço. Cada dispositivo colocado depois (**Detector de fumaça** <kbd>SD</kbd>, **Detector de temperatura** <kbd>HD</kbd>, **Acionador manual** <kbd>MC</kbd>, **Sirene**, **Sirene com sinalizador visual**) se liga à ponta aberta do laço, o dispositivo colocado antes dele. O cabo vai de um dispositivo ao seguinte na ordem em que você os coloca. **Fechar o laço** leva o cabo do último dispositivo de volta ao retorno da central, de modo que o laço é alimentado pelas duas pontas. O cabo é um cabo resistente ao fogo, no teto.
+
+![Um laço de alarme de incêndio: a central junto à entrada, os detectores com sua cobertura, um acionador manual e uma sirene, o laço fechado de volta na central](shots/mep-fire-plan.webp)
+
+Cada detector mostra sua **cobertura** como um círculo tracejado. Por padrão o raio vem da tabela de projeto para um teto plano de até 6 m: 5,8 m para um detector de fumaça, 3,6 m para um detector de temperatura. Dê a um detector seu próprio **Raio de cobertura** nas suas propriedades quando o ambiente, sua altura ou seu teto pedirem outro valor.
+
+**Novo sistema → Hidrantes** coloca um **conjunto de bombas de incêndio** e um primeiro **hidrante interno** ligado a ele por um tubo de aço galvanizado (DN 50 por padrão). Cada hidrante colocado depois se liga à rede por um tê. A **reserva técnica de incêndio** alimenta a bomba pela própria sucção da bomba, e o **registro de recalque** é ligado à mão com **Trecho**. **Hidrante externo** e **Sprinkler** completam a rede. Um hidrante interno desenha seu alcance como um círculo tracejado: seu **Comprimento da mangueira** (20 m por padrão) mais seu **Jato compacto** (6 m). Ajuste os dois como a norma pede para o edifício.
+
+![Hidrantes internos alimentados pelo conjunto de bombas, seu alcance desenhado na planta](shots/mep-fire-hydrants.webp)
+
+![O laço de alarme de incêndio e os hidrantes em 3D](shots/mep-fire-3d.webp)
+
+**Quantitativo de proteção contra incêndio** em **Sistema** lista, sistema por sistema:
+
+- as centrais, detectores, acionadores manuais e sirenes;
+- o cabo do laço com seu comprimento, e se cada laço está fechado;
+- a reserva, os conjuntos de bombas, os hidrantes e os sprinklers;
+- os tubos por material e diâmetro, com suas curvas e tês.
+
+Em IFC os dois sistemas são do tipo FIREPROTECTION. A central é um IfcUnitaryControlElement ALARMPANEL, os detectores IfcSensor (SMOKESENSOR, HEATSENSOR), os acionadores manuais e sirenes IfcAlarm, os hidrantes e sprinklers IfcFireSuppressionTerminal, e o cabo do laço um IfcCableSegment.
+
+![O quantitativo de proteção contra incêndio](shots/mep-fire-list.webp)
+
+Posicionar os detectores ambiente por ambiente pela tabela de projeto e verificar que cada ambiente está coberto por detectores e hidrantes é engenharia, na edição **Lapin MEP**.
+
 ## Exaustores
 
 O grupo **Ventiladores** na guia Instalações coloca exaustores de banheiro e cozinha como elementos próprios, cada um de um tipo que você configura:

@@ -87,6 +87,35 @@ Din **Stradă**, **Conductă de gaz de-a lungul…** (<kbd>GM</kbd>) pozează o 
 
 Dimensionarea țevilor după consumul aparatelor și verificarea căderii de presiune țin de inginerie, în ediția **Lapin MEP**.
 
+## Protecție la incendiu
+
+**Semnalizare incendiu** și **Hidranți** sunt servicii separate sub **Sistem nou**, cu uneltele lor în grupurile **Semnalizare incendiu** și **Hidranți**.
+
+**Sistem nou → Semnalizare incendiu** pune **centrala de detectare și semnalizare incendiu** unde dai clic și un prim **detector de fum** lângă ea, legate prin cablul buclei. Fiecare dispozitiv pus după aceea (**Detector de fum** <kbd>SD</kbd>, **Detector de temperatură** <kbd>HD</kbd>, **Declanșator manual de alarmă** <kbd>MC</kbd>, **Sirenă**, **Sirenă cu flash**) se leagă la capătul liber al buclei, adică la dispozitivul pus înaintea lui. Cablul merge de la un dispozitiv la următorul în ordinea în care le pui. **Închide bucla** aduce cablul de la ultimul dispozitiv înapoi la returul centralei, așa că bucla e alimentată de la ambele capete. Cablul este un cablu rezistent la foc, pe tavan.
+
+![O buclă de semnalizare incendiu: centrala lângă intrare, detectoarele cu acoperirea lor, un declanșator manual și o sirenă, bucla închisă înapoi la centrală](shots/mep-fire-plan.webp)
+
+Fiecare detector își arată **acoperirea** ca un cerc punctat. Implicit raza vine din tabelul de proiectare pentru un tavan plan de până la 6 m: 5,8 m pentru un detector de fum, 3,6 m pentru un detector de temperatură. Dă unui detector propria **Raza de acoperire** în proprietățile lui când încăperea, înălțimea ei sau tavanul cer altă valoare.
+
+**Sistem nou → Hidranți** pune un **grup de pompare pentru incendiu** și un prim **hidrant interior** legat de el printr-o țeavă din oțel zincat (implicit DN 50). Fiecare hidrant pus după el se leagă de rețea printr-un teu. **Rezerva intangibilă de apă** alimentează pompa prin racordul de aspirație al pompei, iar **racordul pentru autospecialele de pompieri** se leagă de mână cu **Traseu**. **Hidrant exterior** și **Sprinkler** completează rețeaua. Un hidrant interior își desenează raza de acțiune ca un cerc punctat: **Lungimea furtunului** (implicit 20 m) plus **Jet compact** (6 m). Pune-le pe amândouă cum cere normativul pentru clădire.
+
+![Hidranți interiori alimentați din grupul de pompare, cu raza lor de acțiune desenată pe plan](shots/mep-fire-hydrants.webp)
+
+![Bucla de semnalizare incendiu și hidranții în 3D](shots/mep-fire-3d.webp)
+
+**Antemăsurătoare protecție la incendiu** din **Sistem** listează, sistem cu sistem:
+
+- centralele, detectoarele, declanșatoarele manuale și sirenele;
+- cablul buclei cu lungimea lui și dacă fiecare buclă e închisă;
+- rezerva, grupurile de pompare, hidranții și sprinklerele;
+- țevile pe material și diametru, cu coturile și teurile lor.
+
+În IFC ambele sisteme sunt de tip FIREPROTECTION. Centrala este un IfcUnitaryControlElement ALARMPANEL, detectoarele IfcSensor (SMOKESENSOR, HEATSENSOR), declanșatoarele manuale și sirenele IfcAlarm, hidranții și sprinklerele IfcFireSuppressionTerminal, iar cablul buclei un IfcCableSegment.
+
+![Antemăsurătoarea instalațiilor de stingere și semnalizare incendiu](shots/mep-fire-list.webp)
+
+Amplasarea detectoarelor încăpere cu încăpere după tabelul de proiectare și verificarea că fiecare încăpere e acoperită de detectoare și hidranți țin de inginerie, în ediția **Lapin MEP**.
+
 ## Ventilatoare de evacuare
 
 Grupul **Ventilatoare** din fila Instalații pune ventilatoare de baie și de bucătărie ca elemente ale lor, fiecare de un tip pe care îl configurezi:

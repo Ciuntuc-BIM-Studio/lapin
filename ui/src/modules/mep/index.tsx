@@ -9,6 +9,7 @@
  */
 
 import { Box, Container, CookingPot, Cylinder, Filter, Fuel, GitBranchPlus, Heater, ShieldCheck, Waypoints } from 'lucide-react';
+import { AlarmSmoke, BellRing, CloudDrizzle, Cog, Droplet, FireExtinguisher, GitMerge, Hand, PanelTop, RefreshCw, Siren, ThermometerSun } from 'lucide-react';
 import { AirVent, ArrowDownToLine, Ban, Bath, CircleDot, Droplets, Fan, Flame, Gauge, GitFork, Lightbulb, Link2, Milestone, PencilLine, Route, SquarePen, Waves, MoveVertical, Plug, ScanSearch, ShowerHead, Spline, Thermometer, ToggleLeft, Toilet, Unlink, Utensils, Wind, Workflow, Wrench, Zap, Map as MapIcon } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -73,6 +74,19 @@ const ROLES: RoleTool[] = [
   { id: 'ventCap', label: 'Vent cap', icon: Wind, services: ['fuelOil'] },
   { id: 'oilFilter', label: 'Oil filter', icon: Filter, services: ['fuelOil'], inline: true },
   { id: 'oilBoiler', label: 'Oil boiler', icon: Container, services: ['fuelOil', 'heating'] },
+  // Fire protection (report #89): the detection loop's panel and devices, each placed joining the loop's open end; the hydrants' water.
+  { id: 'firePanel', label: 'Fire alarm control panel', icon: PanelTop, services: ['fireAlarm'] },
+  { id: 'smokeDetector', label: 'Smoke detector', icon: AlarmSmoke, services: ['fireAlarm'], shortcut: 'SD' },
+  { id: 'heatDetector', label: 'Heat detector', icon: ThermometerSun, services: ['fireAlarm'], shortcut: 'HD' },
+  { id: 'callPoint', label: 'Manual call point', icon: Hand, services: ['fireAlarm'], shortcut: 'MC' },
+  { id: 'sounder', label: 'Sounder', icon: BellRing, services: ['fireAlarm'] },
+  { id: 'sounderBeacon', label: 'Sounder beacon', icon: Siren, services: ['fireAlarm'] },
+  { id: 'fireTank', label: 'Fire water reserve', icon: Cylinder, services: ['fireWater'] },
+  { id: 'firePump', label: 'Fire pump set', icon: Cog, services: ['fireWater'] },
+  { id: 'hydrant', label: 'Internal hydrant', icon: FireExtinguisher, services: ['fireWater'], shortcut: 'HY' },
+  { id: 'externalHydrant', label: 'External hydrant', icon: Droplet, services: ['fireWater'] },
+  { id: 'breechingInlet', label: 'Fire brigade inlet', icon: GitMerge, services: ['fireWater'] },
+  { id: 'sprinkler', label: 'Sprinkler', icon: CloudDrizzle, services: ['fireWater'] },
 ];
 const role = (id: string) => ROLES.find((r) => r.id === id)!;
 
@@ -120,7 +134,7 @@ const run: ToolDef = {
 
 /** The class fields a run and a node have (one class may hold both: a stack is an IfcPipeSegment). */
 const RUN_FIELDS = ['size', 'height', 'elevation', 'plane', 'pair', 'separation', 'slope', 'material', 'cover', 'warningTape'];
-const NODE_FIELDS = ['role', 'x', 'y', 'rotation', 'elevation', 'width', 'depth', 'height', 'duty', 'toElevation', 'consumption', 'flue', 'placement', 'capacity'];
+const NODE_FIELDS = ['role', 'x', 'y', 'rotation', 'elevation', 'width', 'depth', 'height', 'duty', 'toElevation', 'consumption', 'flue', 'placement', 'capacity', 'coverage', 'hoseLength', 'jetLength'];
 
 /** Connect: a run (its end nearer the click), then the node or run it joins. */
 const connect: ToolDef = {
@@ -167,6 +181,7 @@ const newSystems: ToolDef[] = [
   newSystem('heating', 'Heating', Flame), newSystem('coldWater', 'Water', Droplets), newSystem('hotWater', 'Hot water', Waves),
   newSystem('drainage', 'Drainage', ArrowDownToLine), newSystem('electrical', 'Electrical', Zap), newSystem('supplyAir', 'Ventilation', Wind),
   newSystem('gas', 'Gas', Flame), newSystem('fuelOil', 'Fuel oil', Fuel),
+  newSystem('fireAlarm', 'Fire alarm', AlarmSmoke), newSystem('fireWater', 'Fire hydrants', FireExtinguisher),
 ];
 const edit: ToolDef = { id: 'mep.edit', label: 'Edit system', icon: SquarePen, shortcut: 'ES', run: () => toggleEdit(useMep.getState().systemId) };
 
@@ -323,6 +338,19 @@ const serviceConnection: ToolDef = {
 };
 
 const gasSchedule = schedule('mep.scheduleGas', 'Gas and fuel oil bill of materials', 'mep-gas');
+const fireSchedule = schedule('mep.scheduleFire', 'Fire protection bill of materials', 'mep-fire');
+
+/** The fire detection loop closed back to its panel's return: the system being edited or the current one when it is a fire alarm, else the only one. */
+const closeLoop: ToolDef = {
+  id: 'mep.closeLoop', label: 'Close the loop', icon: RefreshCw,
+  run: () => {
+    const nodes = useSession.getState().nodes;
+    const fire = [...nodes.values()].filter((n) => n.type === 'IfcDistributionSystem' && n.props.service === 'fireAlarm');
+    const pick = [editedSystem(), useMep.getState().systemId].find((id) => id && fire.some((s) => s.id === id)) ?? (fire.length === 1 ? fire[0].id : null);
+    if (!pick) { notify(fire.length ? 'Edit the fire alarm system whose loop to close (Edit system).' : 'Make a fire alarm system first (New system → Fire alarm).'); return; }
+    void execute('mep.closeLoop', { systemId: pick }).then((r) => { if (r) notify('The loop is closed back to the panel.'); });
+  },
+};
 const equipmentSchedule = schedule('mep.scheduleEquipment', 'Equipment list', 'mep-equipment');
 const runSchedule = schedule('mep.scheduleRuns', 'Run list', 'mep-runs');
 
@@ -367,12 +395,12 @@ const byClass = <T,>(f: (n: NodeDto) => T): Record<string, (n: NodeDto) => T> =>
 const mep: LapinModule = {
   id: 'mep',
   name: 'MEP',
-  summary: 'Heating, water, drainage, ventilation and electrical systems drawn as schematics on the plan.',
+  summary: 'Heating, water, drainage, ventilation, electrical, gas and fire protection systems drawn as schematics on the plan.',
   tabs: [{
     id: 'mep', label: 'MEP', order: 45,
     groups: [
       { label: 'New system', tools: [], small: newSystems },
-      { label: 'System', tools: [edit], small: [systems, mepPlan, openPorts, equipmentSchedule, runSchedule, gasSchedule] },
+      { label: 'System', tools: [edit], small: [systems, mepPlan, openPorts, equipmentSchedule, runSchedule, gasSchedule, fireSchedule] },
       { label: 'Runs', tools: [run], small: [connect, disconnect, addHandle, detour, redraw] },
       { label: 'Heating', tools: [], small: [nodeTool(role('boiler')), nodeTool(role('radiator')), nodeTool(role('manifold'))] },
       { label: 'Plumbing', tools: [], small: [nodeTool(role('basin')), nodeTool(role('wc')), nodeTool(role('sink')), nodeTool(role('shower')), nodeTool(role('bath')), nodeTool(role('waterMeter')), nodeTool(role('stack')), nodeTool(role('cleanout'))] },
@@ -384,6 +412,8 @@ const mep: LapinModule = {
       { label: 'Gas', tools: [], small: [nodeTool(role('meterBox')), nodeTool(role('regulator')), nodeTool(role('gasMeter')), nodeTool(role('gasShutoff')), nodeTool(role('gasTap')), nodeTool(role('flexConnector')), nodeTool(role('gasBoiler')), nodeTool(role('cooker')), nodeTool(role('waterHeater'))] },
       { label: 'Street', tools: [], small: [gasMain, gasMainDrawn, serviceConnection, nodeTool(role('tappingTee'))] },
       { label: 'Fuel oil', tools: [], small: [nodeTool(role('oilTank')), nodeTool(role('fillPoint')), nodeTool(role('ventCap')), nodeTool(role('oilFilter')), nodeTool(role('oilBoiler'))] },
+      { label: 'Fire alarm', tools: [], small: [nodeTool(role('firePanel')), nodeTool(role('smokeDetector')), nodeTool(role('heatDetector')), nodeTool(role('callPoint')), nodeTool(role('sounder')), nodeTool(role('sounderBeacon')), closeLoop] },
+      { label: 'Fire hydrants', tools: [], small: [nodeTool(role('fireTank')), nodeTool(role('firePump')), nodeTool(role('hydrant')), nodeTool(role('externalHydrant')), nodeTool(role('breechingInlet')), nodeTool(role('sprinkler'))] },
     ],
   }],
   hotbar: [run, nodeTool(role('radiator')), nodeTool(role('valve'))],

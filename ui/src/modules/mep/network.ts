@@ -13,7 +13,9 @@ import { setMep, useMep } from './prefs';
 const SYSTEM_CLASS = 'IfcDistributionSystem';
 export const RUN_CLASSES = ['IfcPipeSegment', 'IfcDuctSegment', 'IfcCableSegment'];
 /** Every class a node or a run may be, for the tools that pick one and the sections that show one. */
-export const PICKABLE = [...RUN_CLASSES, 'IfcBoiler', 'IfcSpaceHeater', 'IfcPipeFitting', 'IfcFlowMeter', 'IfcValve', 'IfcSanitaryTerminal', 'IfcElectricDistributionBoard', 'IfcOutlet', 'IfcLightFixture', 'IfcSwitchingDevice', 'IfcFan', 'IfcAirTerminal', 'IfcDistributionChamberElement', 'IfcBurner', 'IfcTank', 'IfcFilter'];
+export const PICKABLE = [...RUN_CLASSES, 'IfcBoiler', 'IfcSpaceHeater', 'IfcPipeFitting', 'IfcFlowMeter', 'IfcValve', 'IfcSanitaryTerminal', 'IfcElectricDistributionBoard', 'IfcOutlet', 'IfcLightFixture', 'IfcSwitchingDevice', 'IfcFan', 'IfcAirTerminal', 'IfcDistributionChamberElement', 'IfcBurner', 'IfcTank', 'IfcFilter',
+  // Fire protection (report #89).
+  'IfcUnitaryControlElement', 'IfcSensor', 'IfcAlarm', 'IfcFireSuppressionTerminal', 'IfcPump'];
 
 interface RoleInfo {
   id: string; label: string; ifcClass: string; kind: 'source' | 'endpoint' | 'inline' | 'rise'; symbol: string;

@@ -17,7 +17,7 @@ public static class Bodies
 {
     public sealed record Piece(string Key, string Label, string Color, Solid Solid);
 
-    const string Gas = "#e1b12c", Steel = "#9aa0a6", White = "#eceae6", Dark = "#4a4f55", Chrome = "#b8bec6", Accent = "#c0392b";
+    const string FireRed = "#c0392b", Gas = "#e1b12c", Steel = "#9aa0a6", White = "#eceae6", Dark = "#4a4f55", Chrome = "#b8bec6", Accent = "#c0392b";
 
     public static List<Piece> Of(IModelView m, Entity e, Role role, Vec3 size)
     {
@@ -213,6 +213,66 @@ public static class Bodies
             case "ventCap":
                 Tube(body, new(0, 0, 0), new(0, 0, h), Math.Min(w, d) / 2, 14);
                 color = Steel;
+                break;
+            // Fire protection (report #89).
+            case "firePanel":
+                // The cabinet, its display and keypad at the front.
+                Block(body, -w, w, -d, d, 0, h);
+                Block(detail, -w * 0.6, w * 0.6, -d - 0.01, -d, h * 0.55, h * 0.85);
+                color = FireRed;
+                break;
+            case "smokeDetector":
+            case "heatDetector":
+                // A round head under its base on the ceiling.
+                Tube(body, new(0, 0, h * 0.4), new(0, 0, h), Math.Min(w, d) / 2, 20);
+                Tube(detail, new(0, 0, 0), new(0, 0, h * 0.4), Math.Min(w, d) * 0.35, 16);
+                color = White; detailColor = role.Symbol == "heatDetector" ? Chrome : Dark;
+                break;
+            case "callPoint":
+                Block(body, -w, w, -d, d, 0, h);
+                Block(detail, -w * 0.6, w * 0.6, -d - 0.005, -d, h * 0.2, h * 0.8);
+                color = FireRed; detailColor = White;
+                break;
+            case "sounder":
+            case "sounderBeacon":
+                Tube(body, new(0, 0, 0), new(0, 0, h * 0.7), Math.Min(w, d) / 2, 20);
+                if (role.Symbol == "sounderBeacon") Tube(detail, new(0, 0, h * 0.7), new(0, 0, h), Math.Min(w, d) * 0.4, 16);
+                color = FireRed; detailColor = "#f39c12";
+                break;
+            case "fireTank":
+                Block(body, -w, w, -d, d, 0, h);
+                Tube(detail, new(w * 0.6, 0, h), new(w * 0.6, 0, h + 0.15), 0.3, 16);
+                color = "#7f8c8d";
+                break;
+            case "firePump":
+                // The base frame, the motor and the pump on it.
+                Block(body, -w, w, -d, d, 0, 0.12);
+                Tube(detail, new(-w * 0.8, 0, h * 0.45), new(0, 0, h * 0.45), d * 0.45, 18);
+                Tube(detail, new(0, 0, 0.12), new(0, 0, h * 0.8), d * 0.3, 18);
+                color = Dark; detailColor = FireRed;
+                break;
+            case "hydrant":
+                // The cabinet, its glazed door, the reel inside.
+                Block(body, -w, w, -d, d, 0, h);
+                Block(detail, -w * 0.85, w * 0.85, -d - 0.01, -d, h * 0.1, h * 0.9);
+                color = FireRed; detailColor = White;
+                break;
+            case "externalHydrant":
+                Tube(body, new(0, 0, 0), new(0, 0, h * 0.85), Math.Min(w, d) * 0.4, 18);
+                Tube(detail, new(0, 0, h * 0.85), new(0, 0, h), Math.Min(w, d) * 0.45, 18);
+                Tube(detail, new(-w, 0, h * 0.6), new(w, 0, h * 0.6), 0.04, 12);
+                color = FireRed; detailColor = Chrome;
+                break;
+            case "breechingInlet":
+                Block(body, -w, w, -d, d, 0, h);
+                Tube(detail, new(-w * 0.4, -d, h * 0.5), new(-w * 0.4, -d - 0.08, h * 0.5), 0.035, 12);
+                Tube(detail, new(w * 0.4, -d, h * 0.5), new(w * 0.4, -d - 0.08, h * 0.5), 0.035, 12);
+                color = FireRed; detailColor = Chrome;
+                break;
+            case "sprinkler":
+                Tube(body, new(0, 0, 0.02), new(0, 0, h), 0.012, 10);
+                Tube(detail, new(0, 0, 0), new(0, 0, 0.02), Math.Min(w, d) / 2, 14);
+                color = Chrome; detailColor = FireRed;
                 break;
             default:
                 Block(body, -w, w, -d, d, 0, h);

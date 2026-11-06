@@ -2175,6 +2175,57 @@ export const scenes = [
     },
   },
   {
+    // Fire protection (a tester's request, report #89): a fire alarm loop from the panel by the entrance through detectors in both
+    // rooms, a sounder and a call point, closed back to the panel; the detectors' coverage; hydrants fed from a pump set with
+    // their reach; 3D; the bill of materials.
+    id: 'mep-fire',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.button('MEP', { exact: true });
+      const alarm = await t.cmd('mep.placeSystem', { service: 'fireAlarm', storeyId: storey, x: 1.2, y: 0.35, to: [3.5, 4] });
+      const device = (role, x, y) => t.cmd('mep.placeNode', { systemId: alarm.id, role, storeyId: storey, x, y, connect: true });
+      await device('smokeDetector', 9.5, 4);
+      await device('heatDetector', 9.5, 1.2);
+      await device('sounder', 6.4, 1.2);
+      const call = await device('callPoint', 3.9, 0.35);
+      t.expect(!!call.runId, 'the call point joins the loop');
+      // Close the loop from the tab, with the fire alarm system current.
+      await t.page.evaluate(async (id) => (await import('/src/modules/mep/prefs.ts')).setMep({ systemId: id }), alarm.id);
+      await t.tool('mep.closeLoop');
+      await t.wait(800);
+      const net = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('mep.network', { systemId: id }), alarm.id);
+      const back = net[0].nodes.find((n) => n.id === alarm.sourceId).ports.find((p) => p.key === 'return');
+      t.expect(back?.taken, 'the loop comes back to the panel');
+      await t.ui({ keyPlan: false, view: 'plan', selection: null, selected: [] });
+      await t.wait(1000);
+      await t.fit();
+      const quiet = await t.page.addStyleTag({ content: '.hotbar { display: none !important }' });
+      await t.shot('mep-fire-plan', { of: '[data-testid=plan]', pad: 0 });
+
+      // Hydrants: the pump set in the corner, a hydrant cabinet against the north wall of each room (its back to the wall).
+      const water = await t.cmd('mep.placeSystem', { service: 'fireWater', storeyId: storey, x: 1.2, y: 7.3, to: [5.6, 7.72] });
+      const second = await t.cmd('mep.placeNode', { systemId: water.id, role: 'hydrant', storeyId: storey, x: 10.8, y: 7.72, connect: true });
+      t.expect(!!second.runId, 'the second hydrant tees onto the network');
+      await t.wait(1000);
+      await t.fit();
+      await t.shot('mep-fire-hydrants', { of: '[data-testid=plan]', pad: 0 });
+      await open3d(t);
+      await t.page.evaluate(async ([target, azimuth, pitch, distance]) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target, azimuth, pitch, distance }, false), [{ x: 6, y: 4, z: 1.2 }, -Math.PI * 0.62, -0.62, 17]);
+      await t.wait(1500);
+      await t.shot('mep-fire-3d', { of: '[data-testid=view3d]', pad: 0 });
+
+      // The bill of materials.
+      const list = await t.cmd('architecture.createSchedule', { kind: 'mep-fire' });
+      await t.ui({ view: 'schedule', scheduleId: list.id });
+      await t.wait(1500);
+      t.expect(await t.page.locator('.schedule-grid').count() > 0, 'the fire protection bill of materials');
+      await t.shot('mep-fire-list', { of: '.schedule-pane', pad: 0, maxHeight: 760 });
+      await quiet.evaluate((el) => el.remove());
+      await t.ui({ view: 'plan', keyPlan: true });
+    },
+  },
+  {
     // Openings vs MEP (decisions 289-293): the check run on demand as a report over three heating pipes through the inner wall —
     // one through an opening it fits, one through an opening too small, one where there is none — with a floor opening nothing goes
     // through; the voids listed; the clashes marked in the plan with red clouds; fixed from the report (an opening made, one enlarged),

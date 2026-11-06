@@ -87,6 +87,35 @@ Sous **Rue**, **Conduite de gaz le long de…** (<kbd>GM</kbd>) pose une conduit
 
 Dimensionner les tubes d’après la consommation des appareils et vérifier la perte de charge relèvent de l’ingénierie, dans l’édition **Lapin MEP**.
 
+## Protection incendie
+
+**Alarme incendie** et **Poteaux et RIA** sont des services à part sous **Nouveau système**, avec leurs outils dans les groupes **Alarme incendie** et **Poteaux et RIA**.
+
+**Nouveau système → Alarme incendie** pose la **centrale de détection incendie** où tu cliques et un premier **détecteur de fumée** à côté, reliés par le câble de la boucle. Chaque appareil posé ensuite (**Détecteur de fumée** <kbd>SD</kbd>, **Détecteur de chaleur** <kbd>HD</kbd>, **Déclencheur manuel** <kbd>MC</kbd>, **Sirène**, **Sirène à flash**) rejoint l’extrémité ouverte de la boucle, l’appareil posé juste avant. Le câble va d’un appareil au suivant dans l’ordre où tu les poses. **Fermer la boucle** ramène le câble du dernier appareil au retour de la centrale, pour que la boucle soit alimentée par ses deux bouts. Le câble est un câble résistant au feu, au plafond.
+
+![Une boucle d’alarme incendie : la centrale près de l’entrée, les détecteurs avec leur couverture, un déclencheur manuel et une sirène, la boucle refermée sur la centrale](shots/mep-fire-plan.webp)
+
+Chaque détecteur montre sa **couverture** en cercle pointillé. Par défaut le rayon vient du tableau de conception pour un plafond plat jusqu’à 6 m : 5,8 m pour un détecteur de fumée, 3,6 m pour un détecteur de chaleur. Donne à un détecteur son propre **Rayon de couverture** dans ses propriétés quand la pièce, sa hauteur ou son plafond demandent une autre valeur.
+
+**Nouveau système → Poteaux et RIA** pose un **groupe de pompage incendie** et un premier **robinet d’incendie armé** relié à lui par un tube en acier galvanisé (DN 50 par défaut). Chaque RIA posé ensuite se branche sur le réseau par un té. La **réserve d’eau incendie** alimente la pompe par l’aspiration de la pompe, et le **raccord pompiers** se relie à la main avec **Tronçon**. **Poteau d’incendie** et **Sprinkleur** complètent le réseau. Un RIA dessine sa portée en cercle pointillé : sa **Longueur du tuyau** (20 m par défaut) plus son **Jet compact** (6 m). Règle les deux comme la norme le demande pour le bâtiment.
+
+![Des RIA alimentés par le groupe de pompage, leur portée dessinée sur le plan](shots/mep-fire-hydrants.webp)
+
+![La boucle d’alarme incendie et les RIA en 3D](shots/mep-fire-3d.webp)
+
+**Métré protection incendie** sous **Système** liste, système par système :
+
+- les centrales, détecteurs, déclencheurs manuels et sirènes ;
+- le câble de la boucle avec sa longueur, et si chaque boucle est fermée ;
+- la réserve, les groupes de pompage, les poteaux, les RIA et les sprinkleurs ;
+- les tubes par matériau et diamètre, avec leurs coudes et tés.
+
+En IFC les deux systèmes sont de type FIREPROTECTION. La centrale est un IfcUnitaryControlElement ALARMPANEL, les détecteurs des IfcSensor (SMOKESENSOR, HEATSENSOR), les déclencheurs manuels et sirènes des IfcAlarm, les poteaux, RIA et sprinkleurs des IfcFireSuppressionTerminal, et le câble de la boucle un IfcCableSegment.
+
+![Le métré protection incendie](shots/mep-fire-list.webp)
+
+Placer les détecteurs pièce par pièce d’après le tableau de conception et vérifier que chaque pièce est couverte par des détecteurs et des RIA relèvent de l’ingénierie, dans l’édition **Lapin MEP**.
+
 ## Extracteurs
 
 Le groupe **Extracteurs** de l’onglet Fluides place les extracteurs de salle de bains et de cuisine comme éléments à part entière, chacun d’un type que vous configurez :

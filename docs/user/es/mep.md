@@ -87,6 +87,35 @@ En **Calle**, **Red de gas a lo largo de…** (<kbd>GM</kbd>) tiende una red de 
 
 Dimensionar las tuberías por el consumo de los aparatos y comprobar la pérdida de carga es ingeniería, en la edición **Lapin MEP**.
 
+## Protección contra incendios
+
+**Alarma de incendios** e **Hidrantes y BIE** son servicios propios en **Sistema nuevo**, con sus herramientas en los grupos **Alarma de incendios** e **Hidrantes y BIE**.
+
+**Sistema nuevo → Alarma de incendios** coloca la **central de detección de incendios** donde haces clic y un primer **detector de humo** a su lado, unidos por el cable del lazo. Cada dispositivo que colocas después (**Detector de humo** <kbd>SD</kbd>, **Detector térmico** <kbd>HD</kbd>, **Pulsador manual de alarma** <kbd>MC</kbd>, **Sirena**, **Sirena con flash**) se une al extremo abierto del lazo, el dispositivo colocado antes que él. El cable va de un dispositivo al siguiente en el orden en que los colocas. **Cerrar el lazo** lleva el cable del último dispositivo de vuelta al retorno de la central, de modo que el lazo se alimenta por ambos extremos. El cable es un cable resistente al fuego, por el techo.
+
+![Un lazo de alarma de incendios: la central junto a la entrada, los detectores con su cobertura, un pulsador y una sirena, el lazo cerrado de vuelta a la central](shots/mep-fire-plan.webp)
+
+Cada detector muestra su **cobertura** como un círculo discontinuo. Por defecto el radio sale de la tabla de diseño para un techo plano de hasta 6 m: 5,8 m para un detector de humo, 3,6 m para un detector térmico. Da a un detector su propio **Radio de cobertura** en sus propiedades cuando el recinto, su altura o su techo piden otro valor.
+
+**Sistema nuevo → Hidrantes y BIE** coloca un **grupo de presión contra incendios** y una primera **boca de incendio equipada** unida a él por un tubo de acero galvanizado (DN 50 por defecto). Cada BIE colocada después se conecta a la red con una te. La **reserva de agua contra incendios** alimenta la bomba por la aspiración de la propia bomba, y la **toma de alimentación para bomberos** se une a mano con **Tramo**. **Hidrante exterior** y **Rociador** completan la red. Una BIE dibuja su alcance como un círculo discontinuo: su **Longitud de la manguera** (20 m por defecto) más su **Chorro compacto** (6 m). Ajusta ambos como pide la norma para el edificio.
+
+![Bocas de incendio equipadas alimentadas desde el grupo de presión, su alcance dibujado en la planta](shots/mep-fire-hydrants.webp)
+
+![El lazo de alarma de incendios y las BIE en 3D](shots/mep-fire-3d.webp)
+
+**Mediciones de protección contra incendios** en **Sistema** lista, sistema por sistema:
+
+- las centrales, detectores, pulsadores y sirenas;
+- el cable del lazo con su longitud, y si cada lazo está cerrado;
+- la reserva, los grupos de presión, los hidrantes, las BIE y los rociadores;
+- las tuberías por material y diámetro, con sus codos y tes.
+
+En IFC ambos sistemas son de tipo FIREPROTECTION. La central es un IfcUnitaryControlElement ALARMPANEL, los detectores IfcSensor (SMOKESENSOR, HEATSENSOR), los pulsadores y sirenas IfcAlarm, los hidrantes, BIE y rociadores IfcFireSuppressionTerminal, y el cable del lazo un IfcCableSegment.
+
+![Las mediciones de protección contra incendios](shots/mep-fire-list.webp)
+
+Colocar los detectores recinto por recinto según la tabla de diseño y comprobar que cada recinto queda cubierto por detectores y BIE es ingeniería, en la edición **Lapin MEP**.
+
 ## Extractores
 
 El grupo **Extractores** de la pestaña Instalaciones coloca extractores de baño y de cocina como elementos propios, cada uno de un tipo que usted configura:

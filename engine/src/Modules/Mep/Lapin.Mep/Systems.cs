@@ -8,21 +8,22 @@ namespace Lapin.Mep;
 public static class Services
 {
     public const string Heating = "heating", ColdWater = "coldWater", HotWater = "hotWater", Drainage = "drainage",
-        SupplyAir = "supplyAir", ExtractAir = "extractAir", Electrical = "electrical", Gas = "gas", FuelOil = "fuelOil";
-    public static readonly string[] All = [Heating, ColdWater, HotWater, Drainage, SupplyAir, ExtractAir, Electrical, Gas, FuelOil];
+        SupplyAir = "supplyAir", ExtractAir = "extractAir", Electrical = "electrical", Gas = "gas", FuelOil = "fuelOil",
+        FireAlarm = "fireAlarm", FireWater = "fireWater";
+    public static readonly string[] All = [Heating, ColdWater, HotWater, Drainage, SupplyAir, ExtractAir, Electrical, Gas, FuelOil, FireAlarm, FireWater];
 
     public static string Label(string service) => service switch
     {
         Heating => "Heating", ColdWater => "Cold water", HotWater => "Hot water", Drainage => "Drainage",
         SupplyAir => "Supply air", ExtractAir => "Extract air", Electrical => "Electrical",
-        Gas => "Gas", FuelOil => "Fuel oil", _ => service,
+        Gas => "Gas", FuelOil => "Fuel oil", FireAlarm => "Fire detection and alarm", FireWater => "Fire hydrants", _ => service,
     };
 
     /// <summary>What a run of the service is in IFC: a pipe, a duct or a cable.</summary>
     public static string RunClass(string service) => service switch
     {
         SupplyAir or ExtractAir => "IfcDuctSegment",
-        Electrical => "IfcCableSegment",
+        Electrical or FireAlarm => "IfcCableSegment",
         _ => "IfcPipeSegment",
     };
 
@@ -30,6 +31,12 @@ public static class Services
 
     /// <summary>A fuel the building burns (gas, fuel oil): its pipes go through walls in sleeves, and its list is the gas and fuel oil bill of materials.</summary>
     public static bool IsFuel(string service) => service is Gas or FuelOil;
+
+    /// <summary>Fire protection (a tester's request, report #89): the detection and alarm loop, and the hydrants' water; their list is the fire protection bill of materials.</summary>
+    public static bool IsFire(string service) => service is FireAlarm or FireWater;
+
+    /// <summary>Whether the service's runs are cables (IfcCableSegment, ports of kind CABLE).</summary>
+    public static bool IsCable(string service) => service is Electrical or FireAlarm;
 
     /// <summary>What a gas system carries: natural gas or LPG (data for the list and for mep-pro's sizing).</summary>
     public static readonly string[] Gases = ["natural", "lpg"];
@@ -68,6 +75,10 @@ public sealed record SystemDefaults(double Size, string Plane, double FloorEleva
         Services.Gas => new(0.022, "wall", 0.2, 2.4, 2.1, 0, false, 0, "steel", 0, 1.5) { Gas = "natural", Pressure = "low" },
         // Fuel oil: one copper pipe to the burner's filter (a single-pipe system), on the floor.
         Services.FuelOil => new(0.012, "floor", 0.2, 2.4, 1.1, 0, false, 0.05, "copper", 0, 3),
+        // Fire detection: the loop's fire-resistant cable on the ceiling, by the detectors.
+        Services.FireAlarm => new(0.016, "ceiling", 0.05, 2.6, 1.4, 0, false, 0, "fire-cable", 0, 3),
+        // Fire hydrants: galvanised steel DN 50 under the ceiling, the hydrants fed from it.
+        Services.FireWater => new(0.05, "ceiling", 0.2, 2.5, 1.5, 0, false, 0, "galvanised-pipe", 0, 1.5),
         _ => new(0.02, "floor", 0.2, 2.4, 1.1, 0, false, 0.1, null, 0, 1.5),
     };
 

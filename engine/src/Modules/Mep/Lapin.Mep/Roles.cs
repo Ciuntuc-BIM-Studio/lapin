@@ -50,6 +50,22 @@ public sealed record Role(string Id, string Label, string IfcClass, string Prede
 
     /// <summary>A gas appliance's type by how it takes its air and gives its flue gas (EN 1749): A no flue, B open flue, C room-sealed; null for the rest.</summary>
     public string? Flue { get; init; }
+
+    /// <summary>
+    /// A device on a loop (a fire detector, a call point, a sounder): placed, it joins the loop's open end (the
+    /// last device's free "out"), else the panel's, so the cable runs from one device to the next as they are placed.
+    /// </summary>
+    public bool Chain { get; init; }
+
+    /// <summary>
+    /// What a device covers on the plan, a radius in metres drawn as a dashed circle (a detector's, from the planning
+    /// table; a hydrant's is its hose and jet, <see cref="HoseLength"/>); 0: none. The node may set its own.
+    /// </summary>
+    public double Coverage { get; init; }
+
+    /// <summary>A hydrant's hose and compact jet, metres: its reach is their sum (the node may set its own).</summary>
+    public double HoseLength { get; init; }
+    public double JetLength { get; init; }
 }
 
 /// <summary>
@@ -144,6 +160,43 @@ public static class Roles
         new("oilBoiler", "Oil boiler", "IfcBoiler", "WATER", new(0.6, 0.8, 0.9), 0,
             [.. HeatingPair(0, 0.4, 0.8, Back, source: true), new("oil", Services.FuelOil, Flow.In, new(-0.2, -0.4, 0.4), Front), new("oilReturn", Services.FuelOil, Flow.Out, new(-0.1, -0.4, 0.4), Front) { Link = "return" }],
             "boiler", "source", 25000, "W") { EndpointFor = Services.FuelOil, Consumption = 2.5, Flue = "B" },
+        // Fire detection and alarm (a tester's request, report #89): the panel, the detectors on the ceiling, the manual call points
+        // by the exits and the sounders, on one loop of fire-resistant cable that leaves the panel and comes back to it. A detector's
+        // coverage is the planning table's for a room over 80 m² (smoke) or 30 m² (heat) under a flat ceiling up to 6 m (P118/3-2015,
+        // after SR CEN/TS 54-14): 5.8 m and 3.6 m; each node may take its own.
+        new("firePanel", "Fire alarm control panel", "IfcUnitaryControlElement", "ALARMPANEL", new(0.45, 0.12, 0.55), 1.3,
+            [new("loop", Services.FireAlarm, Flow.Out, new(0.1, 0, 0.55), Up), new("return", Services.FireAlarm, Flow.In, new(-0.1, 0, 0.55), Up) { Link = "return" }], "firePanel", "source"),
+        new("smokeDetector", "Smoke detector", "IfcSensor", "SMOKESENSOR", new(0.11, 0.11, 0.06), 2.54,
+            [new("in", Services.FireAlarm, Flow.In, new(-0.02, 0, 0.06), Up), new("out", Services.FireAlarm, Flow.Out, new(0.02, 0, 0.06), Up)], "smokeDetector", "endpoint")
+            { Chain = true, Coverage = 5.8 },
+        new("heatDetector", "Heat detector", "IfcSensor", "HEATSENSOR", new(0.1, 0.1, 0.05), 2.55,
+            [new("in", Services.FireAlarm, Flow.In, new(-0.02, 0, 0.05), Up), new("out", Services.FireAlarm, Flow.Out, new(0.02, 0, 0.05), Up)], "heatDetector", "endpoint")
+            { Chain = true, Coverage = 3.6 },
+        new("callPoint", "Manual call point", "IfcAlarm", "BREAKGLASSBUTTON", new(0.09, 0.06, 0.09), 1.35,
+            [new("in", Services.FireAlarm, Flow.In, new(-0.02, 0, 0.09), Up), new("out", Services.FireAlarm, Flow.Out, new(0.02, 0, 0.09), Up)], "callPoint", "endpoint")
+            { Chain = true },
+        new("sounder", "Sounder", "IfcAlarm", "SIREN", new(0.11, 0.11, 0.08), 2.3,
+            [new("in", Services.FireAlarm, Flow.In, new(-0.02, 0, 0.08), Up), new("out", Services.FireAlarm, Flow.Out, new(0.02, 0, 0.08), Up)], "sounder", "endpoint")
+            { Chain = true },
+        new("sounderBeacon", "Sounder beacon", "IfcAlarm", "LIGHT", new(0.11, 0.11, 0.12), 2.3,
+            [new("in", Services.FireAlarm, Flow.In, new(-0.02, 0, 0.12), Up), new("out", Services.FireAlarm, Flow.Out, new(0.02, 0, 0.12), Up)], "sounderBeacon", "endpoint")
+            { Chain = true, ObjectType = "Sounder beacon" },
+        // Fire hydrants: the fire water reserve and the pump set that draws from it (their own "suction" ports), the internal hydrants
+        // (a hose reel cabinet: 20 m of hose and a 6 m compact jet by default, set as the norm asks for the building), the external
+        // hydrants, the fire brigade inlet (its own "inlet" port, joined by hand), sprinklers.
+        new("fireTank", "Fire water reserve", "IfcTank", "STORAGE", new(3.0, 2.0, 2.0), 0,
+            [new("out", Services.FireWater, Flow.Out, new(1.5, 0, 0.3), Right) { Link = "suction" }], "fireTank", "source") { ObjectType = "Fire water reserve" },
+        new("firePump", "Fire pump set", "IfcPump", "ENDSUCTION", new(1.2, 0.8, 1.0), 0,
+            [new("in", Services.FireWater, Flow.In, new(-0.6, 0, 0.3), Left) { Link = "suction" }, new("out", Services.FireWater, Flow.Out, new(0.6, 0, 0.6), Right)], "firePump", "source")
+            { ObjectType = "Fire pump set" },
+        new("hydrant", "Internal hydrant", "IfcFireSuppressionTerminal", "HOSEREEL", new(0.65, 0.25, 0.65), 0.85,
+            [new("in", Services.FireWater, Flow.In, new(0.2, 0.125, 0.55), Back)], "hydrant", "endpoint") { HoseLength = 20, JetLength = 6 },
+        new("externalHydrant", "External hydrant", "IfcFireSuppressionTerminal", "FIREHYDRANT", new(0.35, 0.35, 1.0), 0,
+            [new("in", Services.FireWater, Flow.In, new(0, 0, 0), Down)], "externalHydrant", "endpoint"),
+        new("breechingInlet", "Fire brigade inlet", "IfcFireSuppressionTerminal", "BREECHINGINLET", new(0.4, 0.2, 0.3), 0.8,
+            [new("out", Services.FireWater, Flow.Out, new(0, 0.1, 0.15), Back) { Link = "inlet" }], "breechingInlet", "source"),
+        new("sprinkler", "Sprinkler", "IfcFireSuppressionTerminal", "SPRINKLER", new(0.06, 0.06, 0.08), 2.42,
+            [new("in", Services.FireWater, Flow.In, new(0, 0, 0.08), Up, 0.025)], "sprinkler", "endpoint"),
         // Any service
         new("rise", "Rise / drop", "IfcPipeFitting", "USERDEFINED", new(0.1, 0.1, 0.1), 0,
             [new("bottom", "*", Flow.Both, new(0, 0, 0), Down), new("top", "*", Flow.Both, new(0, 0, 0), Up)], "rise", "rise"),

@@ -227,10 +227,70 @@ public static class Nodes
                 o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d))));
                 o.Add(new PlanItem("symbol", false, [P(-w, w), P(w, -w)]));
                 break;
+            // Fire protection (report #89): symbols drawn larger than the small devices they stand for, so the plan reads.
+            case "firePanel":
+                o.Add(new PlanItem("heavy", true, box));
+                o.Add(new PlanItem("symbol", true, [P(-w * 0.6, -d * 0.5), P(w * 0.6, -d * 0.5), P(w * 0.6, d * 0.5), P(-w * 0.6, d * 0.5)]));
+                o.Add(new PlanItem("symbol", false, [P(-w * 0.6, -d * 0.5), P(w * 0.6, d * 0.5)]));
+                break;
+            case "smokeDetector":
+                o.Add(new PlanItem("symbol", true, Circle(0.15)));
+                o.Add(new PlanItem("symbol", true, Circle(0.08, 16)));
+                o.Add(new PlanItem("heavy", true, Circle(0.025, 8)));
+                break;
+            case "heatDetector":
+                o.Add(new PlanItem("symbol", true, Circle(0.15)));
+                o.Add(new PlanItem("symbol", false, [P(0, -0.03), P(0, 0.1)]));
+                o.Add(new PlanItem("heavy", true, Enumerable.Range(0, 10).Select(k => P(0.035 * Math.Cos(2 * Math.PI * k / 10), -0.06 + 0.035 * Math.Sin(2 * Math.PI * k / 10))).ToList()));
+                break;
+            case "callPoint":
+                // A square with a dot: the manual call point.
+                o.Add(new PlanItem("symbol", true, [P(-0.1, -0.1), P(0.1, -0.1), P(0.1, 0.1), P(-0.1, 0.1)]));
+                o.Add(new PlanItem("heavy", true, Circle(0.035, 12)));
+                break;
+            case "sounder":
+            case "sounderBeacon":
+                // A horn: its body and its flare; a beacon's rays over it.
+                o.Add(new PlanItem("symbol", true, [P(-0.12, -0.05), P(-0.04, -0.05), P(0.1, -0.13), P(0.1, 0.13), P(-0.04, 0.05), P(-0.12, 0.05)]));
+                if (role.Symbol == "sounderBeacon")
+                    foreach (var a in new[] { -0.6, 0.0, 0.6 }) o.Add(new PlanItem("symbol", false, [P(0.14 * Math.Cos(a), 0.14 * Math.Sin(a)), P(0.2 * Math.Cos(a), 0.2 * Math.Sin(a))]));
+                break;
+            case "fireTank":
+                o.Add(new PlanItem("heavy", true, box));
+                o.Add(new PlanItem("symbol", false, [P(-w, -d * 0.4), P(w, -d * 0.4)]));
+                o.Add(new PlanItem("symbol", false, [P(-w * 0.2, d * 0.1), P(w * 0.2, d * 0.1)]));
+                break;
+            case "firePump":
+                o.Add(new PlanItem("symbol", true, box));
+                o.Add(new PlanItem("symbol", true, Circle(Math.Min(w, d) * 0.7)));
+                o.Add(new PlanItem("heavy", true, [P(-Math.Min(w, d) * 0.4, -Math.Min(w, d) * 0.5), P(Math.Min(w, d) * 0.7, 0), P(-Math.Min(w, d) * 0.4, Math.Min(w, d) * 0.5)]));
+                break;
+            case "hydrant":
+                // The cabinet and its hose reel.
+                o.Add(new PlanItem("heavy", true, box));
+                o.Add(new PlanItem("symbol", true, Enumerable.Range(0, 20).Select(k => P(Math.Min(w, d) * 0.7 * Math.Cos(2 * Math.PI * k / 20), Math.Min(w, d) * 0.7 * Math.Sin(2 * Math.PI * k / 20))).ToList()));
+                break;
+            case "externalHydrant":
+                o.Add(new PlanItem("heavy", true, Circle(Math.Min(w, d))));
+                o.Add(new PlanItem("symbol", false, [P(-w * 1.4, 0), P(w * 1.4, 0)]));
+                break;
+            case "breechingInlet":
+                // Two inlets meeting in one pipe.
+                o.Add(new PlanItem("symbol", true, box));
+                o.Add(new PlanItem("heavy", false, [P(-w * 0.7, -d), P(0, d * 0.2), P(w * 0.7, -d)]));
+                o.Add(new PlanItem("heavy", false, [P(0, d * 0.2), P(0, d)]));
+                break;
+            case "sprinkler":
+                o.Add(new PlanItem("symbol", true, Circle(0.06, 16)));
+                foreach (var a in new[] { 0.25, 0.75, 1.25, 1.75 })
+                    o.Add(new PlanItem("symbol", false, [P(0.06 * Math.Cos(a * Math.PI), 0.06 * Math.Sin(a * Math.PI)), P(0.11 * Math.Cos(a * Math.PI), 0.11 * Math.Sin(a * Math.PI))]));
+                break;
             default:
                 o.Add(new PlanItem("symbol", true, box));
                 break;
         }
+        // What a detector or a hydrant covers, a dashed circle round it: a "reach", drawn and printed but never picked, boxed or framed.
+        if (Coverage(e, role) is > 0 and var reach) o.Add(new PlanItem("reach", true, Circle(reach, 72)));
         // The ports, as short ticks, so a run finds them by eye.
         foreach (var p in Ports(m, e))
             if (Math.Abs(p.Dir.Z) < 0.9) o.Add(new PlanItem("symbol", false, [p.At.Xy, p.At.Xy + p.Dir.Xy * 0.06]));
@@ -246,6 +306,17 @@ public static class Nodes
         if (Consumption(e, role) is > 0 and var c) list.Add(new("Consumption", c, "COUNT", role.EndpointFor == Services.FuelOil || role.Ports.Any(p => p.Service == Services.FuelOil) ? "L/h" : "m³/h"));
         if (role.IsRise) list.Add(new("Length", Math.Abs(RiseTop(m, e) - (StoreyZ(m, e) + Elevation(e, role))), "LENGTH"));
         yield return new QuantitySet("Lapin_Mep", list);
+    }
+
+    /// <summary>
+    /// What a device covers, a radius in metres: the node's own <c>coverage</c>; a hydrant's hose and compact jet (its own or
+    /// its role's); else its role's (a detector's planning radius). 0: nothing drawn.
+    /// </summary>
+    public static double Coverage(Entity e, Role role)
+    {
+        if (e.NumOrNull("coverage") is { } own) return Math.Max(0, own);
+        if (role.HoseLength > 0) return Math.Max(0, (e.NumOrNull("hoseLength") ?? role.HoseLength) + (e.NumOrNull("jetLength") ?? role.JetLength));
+        return role.Coverage;
     }
 
     /// <summary>A gas or fuel oil appliance's consumption: its own, else its role's (0 for what burns nothing).</summary>
@@ -265,7 +336,7 @@ public static class Nodes
             ["x"] = Json.Number(a["x"]) ?? throw new CommandException("Where? (x, y)"), ["y"] = Json.Number(a["y"]) ?? throw new CommandException("Where? (x, y)"),
             ["rotation"] = Json.Number(a["rotation"]) ?? 0,
         };
-        foreach (var k in new[] { "elevation", "width", "depth", "height", "duty", "toElevation", "consumption", "capacity" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
+        foreach (var k in new[] { "elevation", "width", "depth", "height", "duty", "toElevation", "consumption", "capacity", "coverage", "hoseLength", "jetLength" }) if (Json.Number(a[k]) is { } v) attrs[k] = v;
         if ((string?)a["flue"] is "A" or "B" or "C") attrs["flue"] = (string)a["flue"]!;
         if ((string?)a["placement"] is "indoor" or "outdoor" or "buried") attrs["placement"] = (string)a["placement"]!;
         // A buried tank lies under the ground, its top 0.6 m down, unless an elevation is given.
@@ -289,6 +360,7 @@ public static class Nodes
         new("duty", "Duty", "number", Min: 0), new("toElevation", "Goes to (elevation)", "length"),
         new("consumption", "Consumption", "number", Min: 0), new("flue", "Appliance type (flue)", "choice", Choices: ["A", "B", "C"]),
         new("placement", "Placement", "choice", Choices: ["indoor", "outdoor", "buried"]), new("capacity", "Capacity (L)", "number", Min: 0),
+        new("coverage", "Coverage radius", "length", Min: 0), new("hoseLength", "Hose length", "length", Min: 0), new("jetLength", "Compact jet", "length", Min: 0),
     ];
 
     public static string Label(string cls) => Roles.All.First(x => x.IfcClass == cls).Label;

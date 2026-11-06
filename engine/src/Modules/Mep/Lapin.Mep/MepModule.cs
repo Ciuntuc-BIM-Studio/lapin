@@ -47,6 +47,7 @@ public sealed class MepModule : ILapinModule
         r.Service<IScheduleSource>(new MepEquipmentSchedule());
         r.Service<IScheduleSource>(new MepRunSchedule());
         r.Service<IScheduleSource>(new GasSchedule());
+        r.Service<IScheduleSource>(new FireSchedule());
         GasSupply.Register(r);
         // Exhaust fans and ventilators (report #55): their own elements and types, a wall fan's provision, a duct to an outlet.
         Fans.ExhaustFans.Register(r);
@@ -59,6 +60,7 @@ public sealed class MepModule : ILapinModule
             ["ports"] = new JsonArray(x.Ports.Select(p => (JsonNode)new JsonObject { ["key"] = p.Key, ["service"] = p.Service, ["flow"] = p.Flow.ToString().ToLowerInvariant(), ["pair"] = p.Pair }).ToArray()),
             ["size"] = new JsonArray(x.Size.X, x.Size.Y, x.Size.Z), ["elevation"] = x.Elevation, ["duty"] = x.Duty, ["dutyUnit"] = x.DutyUnit,
             ["endpointFor"] = x.EndpointFor, ["consumption"] = x.Consumption, ["flue"] = x.Flue,
+            ["chain"] = x.Chain, ["coverage"] = x.Coverage, ["hoseLength"] = x.HoseLength, ["jetLength"] = x.JetLength,
         }).ToArray()));
         r.Catalog("services", new JsonArray(Services.All.Select(s => (JsonNode)new JsonObject { ["id"] = s, ["label"] = Services.Label(s), ["defaults"] = SystemDefaults.For(s).ToJson() }).ToArray()));
         r.Catalog("materials", new JsonArray(RunMaterials.All.Select(x => (JsonNode)new JsonObject
@@ -163,6 +165,14 @@ public sealed class MepModule : ILapinModule
         {
             ["service"] = t.Service, ["source"] = t.Source, ["endpoint"] = t.Endpoint, ["endpoints"] = new JsonArray(t.Endpoints.Select(e => (JsonNode)e).ToArray()),
         }).ToArray()));
+        // A fire detection loop closed: from its open end back to the panel's return (report #89).
+        r.Command("closeLoop", "Close the loop", (ctx, a) =>
+        {
+            var system = Systems.Require(ctx.Model, (string?)a["systemId"]);
+            if (Systems.Service(system) != Services.FireAlarm) throw new CommandException("Only a fire detection system has a loop to close.");
+            var run = Layout.CloseLoop(ctx, system) ?? throw new CommandException("The loop has no open end to bring back to a panel whose return is free.");
+            return new JsonObject { ["id"] = run.Id };
+        });
         // A handle on a run, where a point falls nearest it.
         r.Command("addHandle", "Add handle", (ctx, a) =>
         {

@@ -87,6 +87,35 @@ W **Ulica** narzędzie **Gazociąg wzdłuż…** (<kbd>GM</kbd>) układa gazoci�
 
 Dobór średnic rur ze zużycia urządzeń i sprawdzenie spadku ciśnienia to inżynieria, w edycji **Lapin MEP**.
 
+## Ochrona przeciwpożarowa
+
+**Sygnalizacja pożaru** i **Hydranty** to osobne media w **Nowy system**, z narzędziami w grupach **Sygnalizacja pożaru** i **Hydranty**.
+
+**Nowy system → Sygnalizacja pożaru** stawia **centralę sygnalizacji pożarowej** tam, gdzie klikniesz, i pierwszą **czujkę dymu** obok, połączone kablem pętli. Każde urządzenie postawione potem (**Czujka dymu** <kbd>SD</kbd>, **Czujka ciepła** <kbd>HD</kbd>, **Ręczny ostrzegacz pożarowy** <kbd>MC</kbd>, **Sygnalizator akustyczny**, **Sygnalizator akustyczno-optyczny**) łączy się z otwartym końcem pętli, czyli z urządzeniem postawionym przed nim. Kabel biegnie od jednego urządzenia do następnego w kolejności, w jakiej je stawiasz. **Zamknij pętlę** prowadzi kabel od ostatniego urządzenia z powrotem do wejścia powrotnego centrali, tak że pętla jest zasilana z obu końców. Kabel to kabel ognioodporny na suficie.
+
+![Pętla sygnalizacji pożaru: centrala przy wejściu, czujki z ich zasięgiem, ręczny ostrzegacz i sygnalizator, pętla zamknięta z powrotem do centrali](shots/mep-fire-plan.webp)
+
+Każda czujka pokazuje swój **zasięg** jako przerywany okrąg. Domyślnie promień pochodzi z tabeli projektowej dla płaskiego stropu do 6 m: 5,8 m dla czujki dymu, 3,6 m dla czujki ciepła. Nadaj czujce własny **Promień pokrycia** w jej właściwościach, gdy pomieszczenie, jego wysokość lub strop wymagają innej wartości.
+
+**Nowy system → Hydranty** stawia **zestaw pompowy przeciwpożarowy** i pierwszy **hydrant wewnętrzny** połączony z nim rurą stalową ocynkowaną (domyślnie DN 50). Każdy hydrant postawiony potem włącza się do sieci trójnikiem. **Zbiornik wody przeciwpożarowej** zasila pompę przez jej własny króciec ssawny, a **nasadę dla straży pożarnej** łączy się ręcznie narzędziem **Odcinek**. **Hydrant zewnętrzny** i **Tryskacz** uzupełniają sieć. Hydrant wewnętrzny rysuje swój zasięg jako przerywany okrąg: **Długość węża** (domyślnie 20 m) plus **Prąd zwarty** (6 m). Ustaw obie wartości tak, jak wymaga norma dla budynku.
+
+![Hydranty wewnętrzne zasilane z zestawu pompowego, ich zasięg narysowany na rzucie](shots/mep-fire-hydrants.webp)
+
+![Pętla sygnalizacji pożaru i hydranty w 3D](shots/mep-fire-3d.webp)
+
+**Zestawienie materiałów ochrony przeciwpożarowej** w **System** wymienia, system po systemie:
+
+- centrale, czujki, ręczne ostrzegacze i sygnalizatory;
+- kabel pętli z jego długością i informacją, czy każda pętla jest zamknięta;
+- zbiornik, zestawy pompowe, hydranty i tryskacze;
+- rury według materiału i średnicy, z ich kolanami i trójnikami.
+
+W IFC oba systemy są typu FIREPROTECTION. Centrala to IfcUnitaryControlElement ALARMPANEL, czujki IfcSensor (SMOKESENSOR, HEATSENSOR), ręczne ostrzegacze i sygnalizatory IfcAlarm, hydranty i tryskacze IfcFireSuppressionTerminal, a kabel pętli IfcCableSegment.
+
+![Zestawienie materiałów ochrony przeciwpożarowej](shots/mep-fire-list.webp)
+
+Rozmieszczenie czujek pomieszczenie po pomieszczeniu według tabeli projektowej i sprawdzenie, że każde pomieszczenie jest pokryte przez czujki i hydranty, to inżynieria, w edycji **Lapin MEP**.
+
 ## Wentylatory wyciągowe
 
 Grupa **Wentylatory** na karcie Instalacje wstawia wentylatory wyciągowe łazienek i kuchni jako osobne elementy, każdy według typu, który konfigurujesz:

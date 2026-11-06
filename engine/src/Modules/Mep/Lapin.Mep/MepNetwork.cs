@@ -62,7 +62,7 @@ public sealed class MepNetwork : IIfcNetwork
     static string FlowOf(Flow flow) => flow switch { Flow.In => "SINK", Flow.Out => "SOURCE", _ => "SOURCEANDSINK" };
 
     /// <summary>What carries the service: a pipe, a duct or a cable (IfcDistributionPortTypeEnum).</summary>
-    public static string KindOf(string service) => service == Services.Electrical ? "CABLE" : Services.IsAir(service) ? "DUCT" : "PIPE";
+    public static string KindOf(string service) => Services.IsCable(service) ? "CABLE" : Services.IsAir(service) ? "DUCT" : "PIPE";
 
     /// <summary>The service as IfcDistributionSystemEnum names it.</summary>
     public static string SystemTypeOf(string service) => service switch
@@ -76,6 +76,7 @@ public sealed class MepNetwork : IIfcNetwork
         Services.Electrical => "ELECTRICAL",
         Services.Gas => "GAS",
         Services.FuelOil => "FUEL",
+        Services.FireAlarm or Services.FireWater => "FIREPROTECTION",
         _ => "USERDEFINED",
     };
 }

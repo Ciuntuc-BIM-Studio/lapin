@@ -27,6 +27,9 @@ public static class Layout
         new(Services.SupplyAir, "fan", "diffuser", ["diffuser"]),
         new(Services.Gas, "meterBox", "gasBoiler", ["gasBoiler", "cooker", "waterHeater"]),
         new(Services.FuelOil, "oilTank", "oilBoiler", ["oilBoiler", "fillPoint", "ventCap"]),
+        // Fire protection (report #89): the panel and a first detector on its loop; the pump set and a first hydrant.
+        new(Services.FireAlarm, "firePanel", "smokeDetector", ["smokeDetector", "heatDetector", "callPoint", "sounder", "sounderBeacon"]),
+        new(Services.FireWater, "firePump", "hydrant", ["hydrant", "externalHydrant", "sprinkler"]),
     ];
 
     public static SystemTemplate? TemplateOf(string service) => Templates.FirstOrDefault(t => t.Service == service);
@@ -75,6 +78,9 @@ public static class Layout
         var drain = (service == Services.Drainage) != against;
         var to = port.At.Xy;
         JsonObject? other = null; Vec2 from = default;
+        // A device on a loop goes on from the loop's open end: a device whose cable came in and has not gone on (the nearest, when there are several).
+        if (Nodes.RoleOf(node) is { Chain: true } && LoopEnd(m, system, node, storey, to) is { } end)
+            return Draw(ctx, system, storey, end.At.Xy, to, new JsonObject { ["nodeId"] = end.NodeId, ["port"] = end.Port.Key }, new JsonObject { ["nodeId"] = node.Id, ["port"] = port.Port.Key }, false);
         // A source's free port, or an inline fitting's (a meter where the supply enters), of the same tag (a tank's fill for a fill point).
         var source = Nodes.Of(m, system.Id).Where(n => n.Id != node.Id && Nodes.RoleOf(n)?.KindIn(service) is "source" or "inline" && Spatial.StoreyOf(m, n.Id)?.Id == storey)
             .SelectMany(n => Nodes.Ports(m, n).Where(p => Roles.Takes(p.Port, service) && !Runs.PortTaken(m, n, p.Port.Key) && p.Port.Link == port.Port.Link
@@ -91,11 +97,15 @@ public static class Layout
             from = Pipes.AtStation(Runs.Points(best.Run), best.Near.Station).At;
             other = new JsonObject { ["runId"] = best.Run.Id, ["at"] = new JsonArray(from.X, from.Y) };
         }
-        // Routed round the walls when a router is there (mep-pro); else an L.
-        var route = (from - to).Length < 1e-6 ? null : MepHooks.Router?.Route(m, storey, from, to);
+        return Draw(ctx, system, storey, from, to, other, new JsonObject { ["nodeId"] = node.Id, ["port"] = port.Port.Key }, drain);
+    }
+
+    /// <summary>A run from one point to another, routed round the walls when a router is there (mep-pro), else an L; reversed for drainage.</summary>
+    static Entity Draw(ICommandContext ctx, Entity system, string storey, Vec2 from, Vec2 to, JsonObject? other, JsonObject mine, bool drain)
+    {
+        var route = (from - to).Length < 1e-6 ? null : MepHooks.Router?.Route(ctx.Model, storey, from, to);
         var pts = route?.ToList() ?? [from, new Vec2(to.X, from.Y), to];
         if (pts.Count < 2 || Pipes.Length(pts) < 1e-6) pts = [from, from + new Vec2(0.3, 0), to];
-        var mine = new JsonObject { ["nodeId"] = node.Id, ["port"] = port.Port.Key };
         if (drain) pts.Reverse();
         return Runs.Draw(ctx, system, storey, new JsonObject
         {
@@ -103,6 +113,34 @@ public static class Layout
             ["start"] = drain ? mine : other,
             ["end"] = drain ? other : mine,
         });
+    }
+
+    /// <summary>
+    /// Where a loop goes on from, on a storey: the free "out" of a device whose "in" is taken (the cable came to it and has
+    /// not gone on), the nearest to <paramref name="near"/>; null when there is none (the panel's own loop port is the start).
+    /// </summary>
+    public static NodePort? LoopEnd(IModelView m, Entity system, Entity? except, string storey, Vec2 near) =>
+        Nodes.Of(m, system.Id).Where(n => n.Id != except?.Id && Nodes.RoleOf(n) is { Chain: true } && Spatial.StoreyOf(m, n.Id)?.Id == storey
+                && Runs.PortTaken(m, n, "in") && !Runs.PortTaken(m, n, "out"))
+            .Select(n => Nodes.Port(m, n, "out")).OfType<NodePort>()
+            .OrderBy(p => (p.At.Xy - near).Length).FirstOrDefault();
+
+    /// <summary>
+    /// The loop closed: a run from its open end back to the panel's free return (Class A wiring, a fault on the loop isolated
+    /// from both sides). Null when the loop has no open end on a storey with a panel whose return is free.
+    /// </summary>
+    public static Entity? CloseLoop(ICommandContext ctx, Entity system)
+    {
+        var m = ctx.Model;
+        foreach (var panel in Nodes.Of(m, system.Id).Where(n => Nodes.RoleOf(n)?.Id == "firePanel" && !Runs.PortTaken(m, n, "return")))
+        {
+            var storey = Spatial.StoreyOf(m, panel.Id)?.Id;
+            if (storey == null || Nodes.Port(m, panel, "return") is not { } back) continue;
+            if (LoopEnd(m, system, null, storey, back.At.Xy) is not { } end) continue;
+            return Draw(ctx, system, storey, end.At.Xy, back.At.Xy, new JsonObject { ["nodeId"] = end.NodeId, ["port"] = end.Port.Key },
+                new JsonObject { ["nodeId"] = panel.Id, ["port"] = "return" }, false);
+        }
+        return null;
     }
 
     /// <summary>A handle added to a run where a point falls nearest it.</summary>

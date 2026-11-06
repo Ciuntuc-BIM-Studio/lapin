@@ -335,7 +335,7 @@ public static partial class Runs
         var plan = new List<PlanItem>();
         var radius = s.Size / 2;
         var color = s.Service switch { Services.Heating => "#c0392b", Services.ColdWater => "#2e86de", Services.HotWater => "#e67e22", Services.Drainage => "#7f8c8d", Services.Electrical => "#f1c40f",
-            Services.Gas => "#e1b12c", Services.FuelOil => "#8e5b3a", _ => "#95a5a6" };
+            Services.Gas => "#e1b12c", Services.FuelOil => "#8e5b3a", Services.FireAlarm => "#d35400", Services.FireWater => "#c0392b", _ => "#95a5a6" };
         var lines = s.Pair ? new[] { ("supply", Shift(line, s.Separation / 2)), ("return", Shift(line, -s.Separation / 2)) } : [("pipe", line)];
         foreach (var (name, pts) in lines)
         {

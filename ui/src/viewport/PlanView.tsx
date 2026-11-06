@@ -153,7 +153,8 @@ export function PlanView() {
   /** What the elements and the drawing's annotations span; null when the plan is empty. */
   const extent = useCallback((only?: Set<string>): Bounds | null => {
     const pts: Vec2[] = [];
-    for (const r of items) if (!only || only.has(r.nodeId)) for (const it of r.plan) for (let i = 0; i + 1 < it.points.length; i += 2) pts.push({ x: it.points[i], y: it.points[i + 1] });
+    // A device's reach (a hydrant's 26 m) does not widen the frame.
+    for (const r of items) if (!only || only.has(r.nodeId)) for (const it of r.plan) if (it.kind !== 'reach') for (let i = 0; i + 1 < it.points.length; i += 2) pts.push({ x: it.points[i], y: it.points[i + 1] });
     for (const m of drawing?.marks ?? []) if (!only || only.has(m.id)) for (let k = 0; k + 1 < m.segments.length; k += 2) pts.push({ x: m.segments[k], y: m.segments[k + 1] });
     return boundsOf(pts);
   }, [items, drawing]);
@@ -210,7 +211,7 @@ export function PlanView() {
   const extra = useMemo(() => {
     const o: Shape[] = [];
     for (const r of items) for (const it of r.plan) {
-      if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid') continue;
+      if (it.kind === 'label' || it.kind === 'hit' || it.kind === 'grid' || it.kind === 'reach') continue;
       const ps = pairs(it.points);
       for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) o.push({ type: 'line', a: ps[i], b: ps[(i + 1) % ps.length] });
     }

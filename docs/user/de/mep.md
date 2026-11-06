@@ -87,6 +87,35 @@ Unter **Straße** verlegt **Gasleitung entlang…** (<kbd>GM</kbd>) eine Gasleit
 
 Die Rohrbemessung aus dem Verbrauch der Geräte und der Nachweis des Druckverlusts sind Ingenieurarbeit, in der Edition **Lapin MEP**.
 
+## Brandschutz
+
+**Brandmeldung** und **Hydranten** sind eigene Gewerke unter **Neues System**, mit ihren Werkzeugen in den Gruppen **Brandmeldung** und **Hydranten**.
+
+**Neues System → Brandmeldung** setzt die **Brandmelderzentrale** an den Klickpunkt und einen ersten **Rauchmelder** daneben, verbunden durch das Ringkabel. Jedes danach gesetzte Gerät (**Rauchmelder** <kbd>SD</kbd>, **Wärmemelder** <kbd>HD</kbd>, **Handfeuermelder** <kbd>MC</kbd>, **Signalgeber**, **Signalgeber mit Blitzleuchte**) schließt sich an das offene Ende des Rings an, das zuvor gesetzte Gerät. Das Kabel läuft von einem Gerät zum nächsten in der Reihenfolge, in der du sie setzt. **Ring schließen** führt das Kabel vom letzten Gerät zum Rückführungseingang der Zentrale zurück, sodass der Ring von beiden Enden gespeist wird. Das Kabel ist ein Brandschutzkabel an der Decke.
+
+![Ein Meldering: die Zentrale am Eingang, Melder mit ihrem Überwachungsbereich, ein Handfeuermelder und ein Signalgeber, der Ring zur Zentrale zurückgeführt](shots/mep-fire-plan.webp)
+
+Jeder Melder zeigt seinen **Überwachungsbereich** als gestrichelten Kreis. Standardmäßig stammt der Radius aus der Planungstabelle für eine ebene Decke bis 6 m: 5,8 m für einen Rauchmelder, 3,6 m für einen Wärmemelder. Gib einem Melder in seinen Eigenschaften einen eigenen **Überwachungsradius**, wenn der Raum, seine Höhe oder seine Decke einen anderen Wert verlangen.
+
+**Neues System → Hydranten** setzt eine **Feuerlöschpumpenanlage** und einen ersten **Wandhydranten**, mit ihr durch ein verzinktes Stahlrohr verbunden (standardmäßig DN 50). Jeder danach gesetzte Hydrant wird mit einem T-Stück an das Netz angeschlossen. Der **Löschwasservorrat** speist die Pumpe über deren eigenen Sauganschluss, und die **Feuerwehreinspeisung** wird von Hand mit **Leitung** angeschlossen. **Überflurhydrant** und **Sprinkler** vervollständigen das Netz. Ein Wandhydrant zeichnet seine Reichweite als gestrichelten Kreis: seine **Schlauchlänge** (standardmäßig 20 m) plus den Strahl (**Kompakter Strahl**, 6 m). Stelle beide so ein, wie die Norm es für das Gebäude verlangt.
+
+![Wandhydranten, gespeist von der Pumpenanlage, ihre Reichweite im Grundriss gezeichnet](shots/mep-fire-hydrants.webp)
+
+![Der Meldering und die Hydranten in 3D](shots/mep-fire-3d.webp)
+
+**Brandschutz-Materialliste** unter **System** listet System für System:
+
+- die Zentralen, Melder, Handfeuermelder und Signalgeber;
+- das Ringkabel mit seiner Länge und ob jeder Ring geschlossen ist;
+- den Vorrat, die Pumpenanlagen, die Hydranten und die Sprinkler;
+- die Rohre nach Material und Durchmesser, mit ihren Bögen und T-Stücken.
+
+In IFC sind beide Systeme vom Typ FIREPROTECTION. Die Zentrale ist ein IfcUnitaryControlElement ALARMPANEL, die Melder IfcSensor (SMOKESENSOR, HEATSENSOR), Handfeuermelder und Signalgeber IfcAlarm, Hydranten und Sprinkler IfcFireSuppressionTerminal und das Ringkabel ein IfcCableSegment.
+
+![Die Brandschutz-Materialliste](shots/mep-fire-list.webp)
+
+Die Melder Raum für Raum nach der Planungstabelle zu setzen und nachzuweisen, dass jeder Raum von Meldern und Hydranten abgedeckt ist, ist Ingenieurarbeit, in der Edition **Lapin MEP**.
+
 ## Abluftventilatoren
 
 Die Gruppe **Ventilatoren** im Register TGA setzt Abluftventilatoren für Bad und Küche als eigene Elemente, jeder von einem Typ, den Sie konfigurieren:
