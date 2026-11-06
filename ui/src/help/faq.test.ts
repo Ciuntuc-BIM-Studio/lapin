@@ -44,6 +44,14 @@ describe('Ask Lapin', () => {
     expect(best('how do I orbit the 3D view')).toBe('navigate');
     expect(best('cum cobor terenul')).toBe('terrain-height');
     expect(best('cum modific un tip de stalp')).toBe('edit-structure-type');
+    // Report #44, in the tester's words, and the question as the user put it.
+    expect(best('How to change the overlap 2D annotation objects')).toBe('draw-order');
+    expect(best('how do I change which drawing is on top')).toBe('draw-order');
+    expect(best('cum schimb ce desen e deasupra')).toBe('draw-order');
+    expect(best('cum trimit hasura in spate')).toBe('draw-order');
+    // Report #92.
+    expect(best('usually the opening height is displayed below the dimension line')).toBe('opening-height');
+    expect(best('cum arat inaltimea golului sub cota')).toBe('opening-height');
   });
 
   it('says nothing to what it does not know', () => {

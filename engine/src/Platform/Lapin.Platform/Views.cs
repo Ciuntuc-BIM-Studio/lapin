@@ -642,12 +642,12 @@ public static class Views
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
         marks.AddRange(PickMarks(drawing));
         // The marks' pens: those drawn under the model (rooms' fills) go first, the others over it; fills before lines in each.
+        // A drafted element given a place in the view's draw order (decision 339) draws in that order instead, in runs: a
+        // run takes the next element until one with a fill or a picture comes after lines, so a fill covers what is under it.
         var underPens = new Dictionary<string, Pen>();
         var markPens = new Dictionary<string, Pen>();
-        foreach (var mk in withMarks ? marks : [])
+        static void Into(Dictionary<string, Pen> into, ViewMark mk, string fillLayer, bool print)
         {
-            var into = mk.Under ? underPens : markPens;
-            var fillLayer = mk.Under ? "ROOM-FILL" : "DRAFT-FILL";
             foreach (var (loops, color) in mk.Fills)
             {
                 var key = "FILL:" + color;
@@ -668,15 +668,57 @@ public static class Views
                 pen.Texts.Add(t);
             }
         }
+        double OrderOf(ViewMark mk) => !mk.Under && !mk.Pick && mk.Owner != null && m.Get(mk.Owner) is { } owner && DrawOrder.OnView(owner, view.Id) ? DrawOrder.Of(owner) : 0;
+        var ordered = new List<(ViewMark Mark, double Order)>();
+        var free = new List<ViewMark>();
+        foreach (var mk in marks)
+        {
+            var o = OrderOf(mk);
+            if (o != 0) ordered.Add((mk, o)); else free.Add(mk);
+        }
+        ordered = [.. ordered.OrderBy(x => x.Order)];
+        var behindPens = new List<Pen>();
+        var overPens = new List<Pen>();
+        if (withMarks)
+        {
+            Dictionary<string, Pen>? run = null;
+            var (inked, runBehind) = (false, false);
+            void Close()
+            {
+                if (run == null) return;
+                (runBehind ? behindPens : overPens).AddRange(run.Values.OrderBy(p => p.Images.Count > 0 ? 0 : p.Fill != null ? 1 : 2));
+                run = null;
+            }
+            foreach (var (mk, order) in ordered)
+            {
+                var covers = mk.Fills.Count > 0 || mk.Images.Count > 0;
+                if (run == null || runBehind != order < 0 || covers && inked) { Close(); run = []; (inked, runBehind) = (false, order < 0); }
+                Into(run, mk, "DRAFT-FILL", print);
+                if (mk.Images.Count > 0)
+                {
+                    if (!run.TryGetValue("IMAGE", out var pic)) run["IMAGE"] = pic = new Pen("IMAGE", null, 0, null, null);
+                    pic.Images.AddRange(mk.Images);
+                }
+                inked |= mk.Lines.Any(l => l.Layer != "PICK") || mk.Texts.Count > 0;
+            }
+            Close();
+        }
+        foreach (var mk in withMarks ? free : [])
+            Into(mk.Under ? underPens : markPens, mk, mk.Under ? "ROOM-FILL" : "DRAFT-FILL", print);
         pens.InsertRange(0, underPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
+        // Drafting sent behind the model: over the rooms' fills, under the model's own pens.
+        pens.InsertRange(underPens.Count, behindPens);
         // Pictures (an orthophoto) under all of it.
-        if (withMarks && marks.SelectMany(mk => mk.Images).ToList() is { Count: > 0 } images)
+        if (withMarks && free.SelectMany(mk => mk.Images).ToList() is { Count: > 0 } images)
         {
             var pictures = new Pen("IMAGE", null, 0, null, null);
             pictures.Images.AddRange(images);
             pens.Insert(0, pictures);
         }
+        pens.AddRange(overPens);
         pens.AddRange(markPens.Values.OrderBy(p => p.Fill != null ? 0 : 1));
+        // What a click takes first: what is on top (the unnumbered marks, then the numbered ones from the top down, those behind the model last).
+        marks = [.. free, .. Enumerable.Reverse(ordered).Select(x => x.Mark)];
         // What the view shows: the drawing and its annotations (a text counted by its anchor and height).
         var pts = new List<Vec2>();
         if (drawing.Bounds is { } b) pts.AddRange([b.Min, b.Max]);
@@ -717,6 +759,8 @@ public static class Views
                 ["shapes"] = x.Shapes.Count > 0 ? new JsonArray(x.Shapes.Select(sh => (JsonNode)sh.DeepClone()).ToArray()) : null,
                 ["data"] = x.Data?.DeepClone(),
                 ["pick"] = x.Pick ? true : null,
+                // Drafting sent behind the model (decision 339): a click takes the model's element there first.
+                ["behind"] = x.Owner != null && q.Model.Get(x.Owner) is { } oe && DrawOrder.OnView(oe, view.Id) && DrawOrder.Of(oe) < 0 ? true : null,
             }).ToArray()),
         };
         if (r.Bounds is { } b) o["bounds"] = new JsonArray(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y);

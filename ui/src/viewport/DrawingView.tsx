@@ -21,6 +21,8 @@ import { drawsOnDark, useDrawing } from './drawing';
 import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { pickDrawing } from './drawingPick';
+import { openContextMenu } from '../shell/ContextMenu';
+import { drawOrderItems, isDrafted } from './drawOrder';
 import { CadOverlay } from './cad/canvas';
 import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
@@ -297,6 +299,14 @@ export function DrawingView() {
           const d = drag.current;
           drag.current = null;
           if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
+          // A right-click on drafting: its draw order (decision 339), what is under the cursor selected first.
+          if (d && !d.moved && e.button === 2 && !useCad.getState().step) {
+            const under = pickAny(at(e).raw);
+            let sel = useUi.getState().selected;
+            if (under && isDrafted(nodes.get(under)) && !sel.includes(under)) { select(under); sel = [under]; }
+            openContextMenu(e.clientX, e.clientY, drawOrderItems(sel, nodes));
+            return;
+          }
           if (!d || d.moved || e.button !== 0) return;
           const { raw, aimed } = at(e);
           const step = useCad.getState().step;
@@ -305,6 +315,7 @@ export function DrawingView() {
           select(pickAny(raw), e.shiftKey);
         }}
         onPointerLeave={() => { setHover(null); editor.onPointerLeave(); }}
+        onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (useCad.getState().step) return;
           const r = ref.current!.getBoundingClientRect();

@@ -446,6 +446,27 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // Draw order (report #44, decision 339): {ids, move: front|forward|backward|back|behind|above|under, refs? (for above and
+        // under)}: drafted elements on their views brought to the front, a step forward past what they overlap, a step back,
+        // to the back of the drafting (over the model) or behind the model; each view's stack numbered again, one undo step.
+        r.Command("drawOrder", "Draw order", (ctx, a) =>
+        {
+            var m = ctx.Model;
+            var move = (string?)a["move"] ?? throw new CommandException($"How? One of {string.Join(", ", DrawOrder.Moves)}.");
+            if (!DrawOrder.Moves.Contains(move)) throw new CommandException($"An order is one of {string.Join(", ", DrawOrder.Moves)}.");
+            var items = Args.Ids(a).Select(id => m.Get(id)).OfType<Entity>().Where(e => e.Class == IfcClass.Annotation && e.Str("viewId") != null).ToList();
+            if (items.Count == 0) throw new CommandException("Select drafted elements on a view: lines, hatches, texts, dimensions, tags.");
+            var refs = a["refs"] is JsonArray ra ? ra.Select(x => (string?)x).OfType<string>().ToList() : null;
+            var changed = 0;
+            foreach (var g in items.GroupBy(e => e.Str("viewId")!))
+            {
+                var view = Views.Find(m, g.Key) ?? throw new CommandException("A drafted element has lost its view.");
+                var boxes = move is "forward" or "backward" ? Boxes(ctx.Query, view) : null;
+                changed += DrawOrder.Apply(ctx, view.Id, g.Select(e => e.Id).ToList(), move, refs, boxes);
+            }
+            return new JsonObject { ["changed"] = changed };
+        });
+
         r.Command("addText", "Text", (ctx, a) =>
         {
             var viewId = (string?)a["viewId"] ?? throw new CommandException("A text is written on a view.");
@@ -461,6 +482,23 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
     }
 
     public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.Drafts.Marks(c).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(DimensionKinds.Marks(c)).Concat(Texts.Marks(c)).Concat(Tags.Marks(c));
+
+    /// <summary>What each drafted element covers in a view, from what it draws there (its lines, fills and texts' anchors).</summary>
+    static Dictionary<string, (Vec2 Min, Vec2 Max)> Boxes(IQueryContext q, Entity view)
+    {
+        var o = new Dictionary<string, (Vec2 Min, Vec2 Max)>();
+        void Add(string id, Vec2 p) => o[id] = o.TryGetValue(id, out var b) ? (new Vec2(Math.Min(b.Min.X, p.X), Math.Min(b.Min.Y, p.Y)), new Vec2(Math.Max(b.Max.X, p.X), Math.Max(b.Max.Y, p.Y))) : (p, p);
+        var mm = (view.NumOrNull("scale") ?? 100) / 1000;
+        foreach (var mk in Views.Render(q, view, withMarks: false).Marks)
+        {
+            if (mk.Owner is not { } id) continue;
+            foreach (var l in mk.Lines) { Add(id, l.A); Add(id, l.B); }
+            foreach (var (loops, _) in mk.Fills) foreach (var loop in loops) foreach (var p in loop) Add(id, p);
+            foreach (var (t, _) in mk.Texts) { var w = t.Text.Length * t.Height * 0.6 * mm; Add(id, t.At - new Vec2(w, 0)); Add(id, t.At + new Vec2(w, t.Height * mm)); }
+            foreach (var img in mk.Images) foreach (var p in img.Corners) Add(id, p);
+        }
+        return o;
+    }
 
     static void Write(ICommandContext ctx, Entity grid, List<Axis> axes)
     {

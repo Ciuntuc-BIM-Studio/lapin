@@ -92,7 +92,8 @@ export function commands(): CommandDef[] {
     seen.add(t.id);
     out.push({
       id: t.id, label: t.label, category, group,
-      defaults: t.shortcut && /^[A-Z]{1,3}$/.test(t.shortcut) ? [t.shortcut] : [],
+      // Letters (WA), or a chord a tool says (Ctrl+], the draw order's).
+      defaults: t.shortcut && (/^[A-Z]{1,3}$/.test(t.shortcut) || /^(Ctrl|Alt|Shift)\+./.test(t.shortcut)) ? [t.shortcut] : [],
       fixed: t.shortcut === 'Esc' ? ['Escape'] : undefined,
       same: SAME[t.id], run: () => activate(t),
     });

@@ -105,11 +105,14 @@ export function chordOf(e: { key: string; code?: string; ctrlKey: boolean; metaK
   let key = NAMED[e.key.toLowerCase()] ?? e.key;
   // With Alt (a Mac types ∫ for Alt+B) or Ctrl, the key's place says which letter or digit it is.
   const code = e.code ?? '';
+  // The brackets too (the draw order's Ctrl+] and Ctrl+Shift+[, decision 339): Shift makes them braces, and other layouts other characters.
+  const bracket = (alt || ctrl) && (code === 'BracketLeft' || code === 'BracketRight');
   if ((alt || ctrl) && /^Key[A-Z]$/.test(code)) key = code.slice(3);
   else if ((alt || ctrl) && /^Digit[0-9]$/.test(code)) key = code.slice(5);
+  else if (bracket) key = code === 'BracketLeft' ? '[' : ']';
   if (key.length === 1) key = key.toUpperCase();
-  // A character that Shift made (+, <, !) is that character: Shift stays only with letters, digits and named keys.
-  const shift = e.shiftKey && (key.length > 1 || /[A-Z0-9]/.test(key)) && key !== 'Plus';
+  // A character that Shift made (+, <, !) is that character: Shift stays only with letters, digits, the brackets and named keys.
+  const shift = e.shiftKey && (bracket || key.length > 1 || /[A-Z0-9]/.test(key)) && key !== 'Plus';
   const mods = [ctrl && 'Ctrl', alt && 'Alt', shift && 'Shift'].filter(Boolean) as string[];
   return [...mods, key].join('+');
 }

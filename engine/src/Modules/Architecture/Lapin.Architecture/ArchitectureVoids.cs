@@ -112,3 +112,35 @@ sealed class ArchitectureVoids : IOpeningVoids
         return radii.Max() - radii.Min() < Math.Max(0.002, radii.Average() * 0.01);
     }
 }
+
+/// <summary>
+/// The openings in walls as dimensions read them (report #92, decision 338): each door's, window's and bare opening's
+/// box from its place on its wall (its width and height, its fill's type's), through the wall's whole thickness, and
+/// its sill above its storey (the wall's base offset added to the opening's sill above the wall's base).
+/// </summary>
+sealed class ArchitectureWallOpenings : IWallOpenings
+{
+    public IEnumerable<WallOpening> Openings(IModelView m)
+    {
+        foreach (var wall in m.OfClass(IfcClass.Wall))
+        {
+            var openings = Lapin.Architecture.Openings.Of(m, wall.Id).ToList();
+            if (openings.Count == 0 || Walls.Section(m, wall).Count == 0) continue;
+            var storey = Spatial.StoreyOf(m, wall.Id)?.Id;
+            foreach (var opening in openings)
+            {
+                var p = Lapin.Architecture.Openings.Place(m, opening);
+                if (!(p.Width > 0 && p.Height > 0)) continue;
+                var f = Lapin.Architecture.Openings.FrameOf(m, wall, p.Along);
+                var (x0, x1) = (p.Along - p.Width / 2, p.Along + p.Width / 2);
+                var corners = new List<Vec3>(8);
+                foreach (var x in new[] { x0, x1 })
+                    foreach (var y in new[] { f.YMin, f.YMax })
+                        foreach (var z in new[] { p.Sill, p.Sill + p.Height })
+                            corners.Add(f.At(x, y, z));
+                yield return new WallOpening(opening.Id, p.Fill?.Id, wall.Id, storey, corners, f.At(x0, f.Centre, p.Sill), f.At(x1, f.Centre, p.Sill),
+                    p.Width, p.Height, wall.Num("baseOffset") + p.Sill);
+            }
+        }
+    }
+}

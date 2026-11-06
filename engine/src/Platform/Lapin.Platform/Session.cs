@@ -100,8 +100,8 @@ public sealed class Session
     public Diff New(bool plain = false, IReadOnlyList<(string Name, double Elevation, double Height)>? storeys = null)
     {
         if (plain) StartEmpty();
-        else if (storeys is { Count: > 0 }) StartEmpty(storeys);
-        else StartEmpty(_product.Storeys is { Length: > 0 } own ? [.. own.Select(x => (x.Name, x.Elevation, x.Height))] : NewProjectStoreys);
+        else if (storeys is { Count: > 0 }) StartEmpty(storeys, fresh: true);
+        else StartEmpty(_product.Storeys is { Length: > 0 } own ? [.. own.Select(x => (x.Name, x.Elevation, x.Height))] : NewProjectStoreys, fresh: true);
         Path = null;
         Emit("start");
         return Snapshot();
@@ -110,7 +110,9 @@ public sealed class Session
     /// <summary>The session as it starts, before a project is made or opened: one ground floor.</summary>
     void StartEmpty() => StartEmpty(_product.Storeys is { Length: > 0 } own ? [(own[0].Name, own[0].Elevation, own[0].Height)] : [("Ground floor", 0.0, 3.0)]);
 
-    void StartEmpty(IReadOnlyList<(string Name, double Elevation, double Height)> storeys)
+    /// <param name="fresh">A new project the user starts (not one another file fills): it takes what new projects start with
+    /// where an older project keeps what it had (an opening's height under a dimension, decision 338).</param>
+    void StartEmpty(IReadOnlyList<(string Name, double Elevation, double Height)> storeys, bool fresh = false)
     {
         _foreignClasses.Clear();
         ForgetMeshes();
@@ -118,6 +120,14 @@ public sealed class Session
         _history.Execute("New project", edit =>
         {
             var building = Spatial.EnsureBuilding(edit);
+            // A new project's dimensions write an opening's height under the line (report #92, decision 338); an older one's
+            // styles say nothing of it, and stay off.
+            if (fresh && Spatial.Project(edit.Model) is { } project)
+            {
+                var attrs = project.CloneAttrs();
+                attrs["drafting"] = new JsonObject { ["dimStyles"] = new JsonArray(new JsonObject { ["id"] = Standards.Standard, ["name"] = "Standard", ["openingHeight"] = Standards.NewProjectOpeningHeight }) };
+                edit.Replace(project.With(attrs: attrs));
+            }
             foreach (var (name, elevation, height) in storeys)
             {
                 var storey = new Entity(edit.NewId(), IfcClass.BuildingStorey, name, new JsonObject { ["elevation"] = elevation, ["height"] = height });

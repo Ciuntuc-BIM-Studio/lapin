@@ -322,6 +322,8 @@ public static class Dimensions
 
     public static IEnumerable<ViewMark> Marks(ViewContext c)
     {
+        // The walls' openings, read once a drawing when a dimension asks for their heights.
+        List<WallOpening>? openings = null;
         foreach (var dim in c.Model.OfClass(IfcClass.Annotation).Where(x => x.PredefinedType == "DIMENSION" && x.Str("viewId") == c.View.Id && !DimensionKinds.IsKind(x)))
         {
             var (pts, orphan) = Points(c.Model, c.Kind, dim, c.Drawing);
@@ -389,6 +391,15 @@ public static class Dimensions
                 }
                 mk.Text(new PenText(tat, value, text.Height, readable, "middle", baseline, text.Bold, text.Font, text.Italic), color);
                 textAt.Add((JsonNode)J(tat));
+                // A segment across a door, a window or a bare opening: its height under the line (decision 338), moved with the value.
+                if (style.OpeningHeight != "off" && texts[i] == null && OpeningHeights.Spanned(c, openings ??= OpeningHeights.Of(c), pts[i], pts[i + 1], u) is { } opening)
+                {
+                    var h = text.Height * mm;
+                    var top = style.Placement switch { "centered" => h * 0.5 + style.TextGap * mm, "below" => style.TextGap * mm + h * OpeningHeights.Pitch, _ => style.TextGap * mm };
+                    var rows = OpeningHeights.Rows(style.OpeningHeight, opening, style.Unit, style.Precision);
+                    for (var k = 0; k < rows.Count; k++)
+                        mk.Text(new PenText(mid - up * (top + h + k * h * OpeningHeights.Pitch) + (moved[i] ?? default), rows[k], text.Height, readable, "middle", "bottom", text.Bold, text.Font, text.Italic), color);
+                }
             }
             mk.Snaps.AddRange(line);
             // For the grips: the points as drawn now, and where each lands on the dimension line.

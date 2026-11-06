@@ -23,6 +23,7 @@ const area = (poly: Vec2[]): number => {
 export function pickDrawing(p: Vec2, tol: number, marks: MarkDto[] | undefined, nodes: Map<string, NodeDto>, accept?: (owner: NodeDto) => boolean): string | null {
   let inset: string | null = null;
   let near: { pick: string; d: number } | null = null;
+  let behind: string | null = null;
   for (const m of marks ?? []) {
     const s = m.segments;
     let d = Infinity;
@@ -31,6 +32,8 @@ export function pickDrawing(p: Vec2, tol: number, marks: MarkDto[] | undefined, 
     const hit = markOwner(m.id, nodes);
     if (!hit || (accept && !accept(hit.owner))) continue;
     if (hit.owner.type === 'LapinInset') inset ??= hit.pick;
+    // Drafting sent behind the model (decision 339): taken only when nothing over it is there.
+    else if (m.behind) behind ??= hit.pick;
     else near = { pick: hit.pick, d };
   }
   if (near) return near.pick;
@@ -48,5 +51,5 @@ export function pickDrawing(p: Vec2, tol: number, marks: MarkDto[] | undefined, 
       if (hit && (!accept || accept(hit.owner))) best = { pick: hit.pick, area: a };
     }
   }
-  return best?.pick ?? null;
+  return best?.pick ?? behind;
 }

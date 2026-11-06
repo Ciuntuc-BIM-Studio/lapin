@@ -412,7 +412,12 @@ public static class DraftingResources
                 foreach (var (k, v) in entry) merged[k] = v?.DeepClone();
                 list[at.i] = merged;
             }
-            else list.Add((JsonNode)entry);
+            else
+            {
+                // A new dimension style writes openings' heights as the project's Standard one does (decision 338).
+                if ((string?)a["kind"] == "dim" && entry["openingHeight"] == null) entry["openingHeight"] = Standards.DimOf(Book(ctx.Model), Standards.Standard).OpeningHeight;
+                list.Add((JsonNode)entry);
+            }
             raw[key] = list;
             if ((string?)a["kind"] == "axis" && a["default"] is JsonValue dv && dv.TryGetValue<bool>(out var isDefault) && isDefault) raw["defaultAxisStyle"] = id;
             Write(ctx, raw);

@@ -21,6 +21,7 @@ import { GridDialog, GridSection } from './GridDialog';
 import { openStandards } from '../core/standardsTab';
 import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
+import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
 const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG']);
@@ -525,6 +526,10 @@ const tagParameter: ToolDef = {
   },
 };
 
+/** The draw order of the selected drafting (report #44, decision 339): to the front and back as tools, a step either way and behind the model small. */
+const orderTools: ToolDef[] = DRAW_ORDER.map((d) => ({ id: `drafting.order.${d.move}`, label: d.label, icon: d.icon, shortcut: d.shortcut, run: () => void drawOrder(d.move) }));
+const orderGroup = { label: 'Order', tools: [orderTools[0], orderTools[3]], small: [orderTools[1], orderTools[2], orderTools[4]] };
+
 const drafting: LapinModule = {
   id: 'drafting',
   name: 'Drafting',
@@ -537,6 +542,7 @@ const drafting: LapinModule = {
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATE'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('erase', 'Erase', Eraser, 'ERASE')] },
         { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN')] },
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
+        orderGroup,
         { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
         { label: 'Layers', tools: [{ id: 'drafting.layers', label: 'Layers', icon: Layers, run: () => useUi.setState({ dialog: 'draftLayers' }) }] },
         { label: 'Import', tools: [{ id: 'drafting.importDxf', label: 'Import DXF', icon: FileInput, run: () => void importDxf() }] },
@@ -563,6 +569,7 @@ const drafting: LapinModule = {
           axis,
           { id: 'level', label: 'Level', icon: LevelIcon, shortcut: 'LL', run: () => void startCommand('DIMLEVEL') },
         ] },
+        orderGroup,
         { label: 'Sheets', tools: [{ id: 'sheet', label: 'Sheet', icon: FileText, run: () => void execute('sheet.create', { name: 'Sheet', paper: 'A3' }).then((r) => { const id = (r as { id?: string } | null)?.id; if (id) useUi.setState({ view: 'sheet', sheetId: id, selection: id, selected: [id] }); }) }, viewBoundary] },
       ],
     },

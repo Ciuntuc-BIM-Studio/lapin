@@ -151,7 +151,8 @@ export interface Grip {
 
 /** A mark the engine drew: an annotation's points as drawn now, and what it tells of itself in `data`. */
 /** A drawing's mark: an annotation, or (pick) an element's own pick lines from the drawing, never drawn. data.of: the element a tag marks. */
-export interface MarkDto { id: string; segments: number[]; snaps?: number[]; data?: Record<string, unknown>; pick?: boolean }
+/** behind: drafting sent behind the model (decision 339), picked only where the model has nothing under the point. */
+export interface MarkDto { id: string; segments: number[]; snaps?: number[]; data?: Record<string, unknown>; pick?: boolean; behind?: boolean }
 
 /**
  * What a 2D view lends an entity's grips: the mark the engine drew it with (its own id), every mark of its (the owner's id or

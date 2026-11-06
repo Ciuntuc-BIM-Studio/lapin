@@ -4341,6 +4341,75 @@ export const scenes = [
     },
   },
   {
+    // An opening's height under a dimension line (report #92, decision 338): a string along the south wall, its segments
+    // across the door and the window writing the width over the line and the height under it, read from the model; then
+    // Drafting standards → Dimensions with its Opening height column.
+    id: 'dimension-opening-height',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      // The door 0.90 × 2.10 at 3 m, the window 1.20 × 1.50 (sill 0.90) at 9.5 m: the string through their jambs on the wall's axis.
+      await t.cmd('drafting.addDimension', { viewId: `plan:${storey}`, pts: [[0, 0], [2.55, 0], [3.45, 0], [8.9, 0], [10.1, 0], [12, 0]], at: [6, -1.4], dir: [1, 0] });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -0.5, y: -2.4 }, { x: 12.5, y: 1.2 }));
+      await t.wait(800);
+      const plan = t.page.locator('[data-testid=plan]');
+      t.expect(await plan.locator('text', { hasText: /^1500$/ }).count() === 1, 'the window\'s height under its segment');
+      t.expect(await plan.locator('text', { hasText: /^2100$/ }).count() === 1, 'the door\'s height under its segment');
+      const [x0, y0] = await t.planPoint(-0.5, 1.0);
+      const [x1, y1] = await t.planPoint(12.5, -2.3);
+      await t.shot('dimension-opening-height', { clip: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+      // The rule in the dimension style.
+      await t.tool('manage.standards');
+      const dialog = t.page.locator('.dialog');
+      await dialog.getByText('Dimensions', { exact: true }).first().click();
+      await t.wait(400);
+      t.expect(await dialog.locator('th', { hasText: 'Opening height' }).count() === 1, 'the dimension styles have an Opening height column');
+      t.expect(await dialog.locator('select').filter({ has: t.page.locator('option[value=hp]') }).first().inputValue() === 'number', 'a new project writes the height alone');
+      await t.shot('dimension-opening-height-style', { of: '.standards-table', pad: 6 });
+      await t.keys('Escape');
+    },
+  },
+  {
+    // Draw order (report #44, decision 339): a text over a grey fill, the fill selected and right-clicked, Bring to front
+    // from the menu: the fill now covers the text, in the view and on paper.
+    id: 'draw-order',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const plan = `plan:${s}`;
+      await t.cmd('drafting.draw', { viewId: plan, shapes: [{ type: 'polyline', pts: [[0, 0], [4, 0], [4, 2], [0, 2]], closed: true }] });
+      const fill = await t.cmd('drafting.hatch', { viewId: plan, at: [1, 1], pattern: 'SOLID', color: '#c9c9c9' });
+      // A note half over the fill: drawn after it, it lies on top.
+      await t.cmd('drafting.addText', { viewId: plan, at: [2.2, 0.9], text: 'A note across the fill' });
+      await t.ui({ keyPlan: false });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -1, y: -1.5 }, { x: 9, y: 3.5 }));
+      await t.wait(800);
+      await select(t, fill.id);
+      await t.wait(500);
+      const [mx, my] = await t.planPoint(4.6, 2.6);
+      await t.page.mouse.click(mx, my, { button: 'right' });
+      await t.wait(400);
+      const menu = t.page.locator('.context-menu');
+      for (const label of ['Bring to front', 'Bring forward', 'Send backward', 'Send to back', 'Send behind the model'])
+        t.expect(await menu.getByRole('menuitem', { name: label }).count() === 1, `the menu has ${label}`);
+      const box = await menu.boundingBox();
+      const [x0, y0] = await t.planPoint(-0.6, 2.9);
+      const [, y1] = await t.planPoint(0, -0.6);
+      await t.shot('draw-order-menu', { clip: { x: x0, y: Math.min(y0, box.y - 10), width: box.x + box.width + 110 - x0, height: Math.max(y1, box.y + box.height + 10) - Math.min(y0, box.y - 10) } });
+      await menu.getByRole('menuitem', { name: 'Bring to front' }).click();
+      await t.wait(800);
+      const nodes = await t.nodes();
+      const text = nodes.find((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TEXT');
+      const order = (id) => Number(nodes.find((n) => n.id === id)?.props.drawOrder ?? 0);
+      t.expect(order(fill.id) > order(text.id), `the fill is drawn over the text (${order(fill.id)} over ${order(text.id)})`);
+      await t.ui({ selection: null, selected: [] });
+      await t.wait(400);
+      const [x2, y2] = await t.planPoint(8.2, -0.6);
+      await t.shot('draw-order-front', { clip: { x: x0, y: y0, width: x2 - x0, height: y2 - y0 } });
+    },
+  },
+  {
     // Labels edited part by part (decision 292): a door's marker selected shows a grip for each text (move, turn) and each
     // end of its line; the mark dragged and turned, the line drawn out by their grips; the texts along the tag line as the
     // tag type says; an opening void's label placed clear of the door's swing, then moved by its grip.

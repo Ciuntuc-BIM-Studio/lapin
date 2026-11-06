@@ -17,12 +17,14 @@ import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
 type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string };
-type Col = { key: string; label: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
+type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
 const LINE_TYPES = ['continuous', 'dashed', 'dotted', 'dashdot'];
 /** How a choice reads where its value alone would not say it. */
-const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line', buildup: 'build-up' };
+const CHOICE_LABELS: Record<string, string> = { project: 'as the project', across: 'perpendicular to the tag line', along: 'along the tag line', buildup: 'build-up',
+  // An opening's height under a dimension line across it (report #92, decision 338).
+  off: 'off', number: '150', h: 'h=150', hp: 'h=150, p=90', slash: '150/90' };
 const TABS: Tab[] = [
   { id: 'text', label: 'Text', list: 'textStyles', fresh: { name: 'Text', height: 2.5 }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'height', label: 'Height mm', kind: 'mm' }, { key: 'font', label: 'Font', kind: 'choice', choices: ['sans', 'serif', 'mono'] },
@@ -31,7 +33,9 @@ const TABS: Tab[] = [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'arrow', label: 'Arrow', kind: 'choice', choices: ['tick', 'arrow', 'dot', 'none'] },
     { key: 'arrowSize', label: 'Arrow mm', kind: 'mm' }, { key: 'extGap', label: 'Gap mm', kind: 'mm' }, { key: 'extOver', label: 'Over mm', kind: 'mm' },
     { key: 'placement', label: 'Value', kind: 'choice', choices: ['above', 'centered', 'below'] }, { key: 'unit', label: 'Unit', kind: 'choice', choices: ['project', 'm', 'cm', 'mm', 'ft-in', 'in'] },
-    { key: 'precision', label: 'Decimals', kind: 'decimals' }] },
+    { key: 'precision', label: 'Decimals', kind: 'decimals' },
+    // A segment across a door, a window or an opening writes its height under the line, and its sill in some forms (decision 338).
+    { key: 'openingHeight', label: 'Opening height', title: 'Under a dimension segment across a door, window or opening: its height (and its sill), read from the model', kind: 'choice', choices: ['off', 'number', 'h', 'hp', 'slash'] }] },
   { id: 'axis', label: 'Grid axes', list: 'axisStyles', fresh: { name: 'Axis' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'textStyle', label: 'Text', kind: 'style' }, { key: 'bubble', label: 'Bubble', kind: 'choice', choices: ['circle', 'square'] },
     { key: 'ends', label: 'Ends', kind: 'choice', choices: ['both', 'start', 'end', 'none'] }, { key: 'size', label: 'Size mm', kind: 'mm' },
@@ -138,7 +142,7 @@ export function StandardsDialog() {
             ? <LeaderEditor entry={rows.find((r) => r.id === editing) as unknown as LeaderEntry} onClose={() => setEditing(null)} />
             : <>
           <table className="standards-table">
-            <thead><tr>{tab.id === 'axis' && <th title="New axes and the BIM grids use it">Default</th>}{tab.cols.map((c) => <th key={c.key}>{c.label}</th>)}{tab.id === 'tag' && <th />}<th /></tr></thead>
+            <thead><tr>{tab.id === 'axis' && <th title="New axes and the BIM grids use it">Default</th>}{tab.cols.map((c) => <th key={c.key} title={c.title}>{c.label}</th>)}{tab.id === 'tag' && <th />}<th /></tr></thead>
             <tbody>
               {rows.map((e) => (
                 <tr key={e.id}>

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
+import { drawOrderItems, isDrafted } from './drawOrder';
 import { num } from '../engine/model';
 import { useWalk, walkInto } from './walk';
 import { select, setTool, useUi } from '../app/store';
@@ -450,18 +451,24 @@ export function PlanView() {
     const rect = svgRef.current!.getBoundingClientRect();
     click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);
   };
-  /** A right-click (not a drag): on a room, walk into it in 3D or select it; with a selection, copy it to storeys or move it to another. */
+  /**
+   * A right-click (not a drag): on drafting, its draw order (decision 339; what is under the cursor selected first when it
+   * is not already); on a room, walk into it in 3D or select it; with a selection, copy it to storeys or move it to another.
+   */
   const roomMenu = (x: number, y: number) => {
     const rect = svgRef.current!.getBoundingClientRect();
-    const room = pick(toWorld(x - rect.left, y - rect.top), ['IfcSpace']);
+    const at = toWorld(x - rect.left, y - rect.top);
+    const under = pick(at);
+    let selected = useUi.getState().selected;
+    if (isDrafted(under ?? undefined) && !selected.includes(under!.id)) { select(under!.id); selected = [under!.id]; }
+    const order = drawOrderItems(selected, nodes);
+    const room = pick(at, ['IfcSpace']);
     const item = room ? render.get(room.id) : undefined;
-    openContextMenu(x, y, [
-      ...(room && item ? [
-        { label: 'Walk in 3D', icon: <Footprints size={13} />, onSelect: () => walkIntoRoom(room, item, num(storey ?? undefined, 'elevation')) },
-        { label: 'Select', icon: <MousePointer2 size={13} />, onSelect: () => select(room.id) },
-      ] : []),
-      ...selectionItems(),
-    ]);
+    const rooms = room && item ? [
+      { label: 'Walk in 3D', icon: <Footprints size={13} />, onSelect: () => walkIntoRoom(room, item, num(storey ?? undefined, 'elevation')) },
+      { label: 'Select', icon: <MousePointer2 size={13} />, onSelect: () => select(room.id) },
+    ] : [];
+    openContextMenu(x, y, [...order, ...rooms, ...selectionItems()]);
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: SelectDrag, add: boolean) => {

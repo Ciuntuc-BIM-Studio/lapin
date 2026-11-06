@@ -40,6 +40,11 @@ describe('bindings', () => {
     expect(k('∫', { altKey: true, code: 'KeyB' })).toBe('Alt+B');
     expect(k('F8')).toBe('F8');
     expect(k('Shift', { shiftKey: true })).toBeNull();
+    // The draw order's brackets (decision 339): by the key's place, Shift kept though it typed a brace.
+    expect(k(']', { ctrlKey: true, code: 'BracketRight' })).toBe('Ctrl+]');
+    expect(k('}', { metaKey: true, shiftKey: true, code: 'BracketRight' })).toBe('Ctrl+Shift+]');
+    expect(k('ă', { ctrlKey: true, code: 'BracketLeft' })).toBe('Ctrl+[');
+    expect(normalizeBinding('ctrl+shift+[')).toBe('Ctrl+Shift+[');
     expect(formatBinding('Ctrl+Shift+S', false)).toBe('Ctrl ⇧ S');
     expect(formatBinding('Ctrl+Shift+S', true)).toBe('⌘⇧S');
     expect(formatBinding('WA', false)).toBe('WA');

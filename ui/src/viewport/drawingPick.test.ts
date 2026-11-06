@@ -42,3 +42,11 @@ describe('a section or elevation click', () => {
     expect(pickDrawing({ x: 2, y: 1.97 }, 0.05, stirrup, nodes, (n) => n.type === 'LapinRebar')).toBe('bar');
   });
 });
+
+describe('drafting sent behind the model (decision 339)', () => {
+  it('is taken only where nothing over it is', () => {
+    const behind = [{ id: 'dim', segments: [0, 0.5, 1, 0.5], behind: true }, marks[1], marks[2]];
+    expect(pickDrawing({ x: 0.5, y: 0.5 }, 0.05, behind, nodes)).toBe('beam');
+    expect(pickDrawing({ x: 0.5, y: 0.5 }, 0.05, [behind[0]], nodes)).toBe('dim');
+  });
+});

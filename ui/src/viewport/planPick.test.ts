@@ -100,3 +100,17 @@ describe('boxIds', () => {
     expect(boxIds(P(-1, -2), P(5, 5), true, [wall, slab], nodesOf(node('w'), node('s', 'IfcSlab')), marks).sort()).toEqual(['s', 'w']);
   });
 });
+
+describe('drafting sent behind the model (decision 339)', () => {
+  const draft = { ...node('h', 'IfcAnnotation'), props: { viewId: 'v' } } as unknown as NodeDto;
+  const all = nodesOf(node('w'), node('s', 'IfcSlab'), draft);
+  const over: Mark[] = [{ id: 'h', segments: [0, 0.1, 4, 0.1] }];
+  const behind: Mark[] = [{ id: 'h', segments: [0, 0.1, 4, 0.1], behind: true }];
+
+  it('gives way to the wall over it, and is taken where only an outline is', () => {
+    expect(pickAt(P(1, 0.1), 0.05, [wall, slab], all, over)?.id).toBe('h');
+    expect(pickAt(P(1, 0.1), 0.05, [wall, slab], all, behind)?.id).toBe('w');
+    const low: Mark[] = [{ id: 'h', segments: [0, 2, 4, 2], behind: true }];
+    expect(pickAt(P(1, 2), 0.05, [wall, slab], all, low)?.id).toBe('h');
+  });
+});

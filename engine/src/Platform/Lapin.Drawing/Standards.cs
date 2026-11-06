@@ -9,8 +9,15 @@ namespace Lapin.Drawing;
 /// <summary>A text style: paper height (mm), font, bold, italic, a colour (none: the layer's).</summary>
 public sealed record TextStyle(string Id, string Name, double Height, string Font, bool Bold, bool Italic, string? Color = null);
 
-/// <summary>A dimension style: its text style, arrow and size, extension-line gap and overshoot, where the value sits and its gap, precision and unit (paper mm).</summary>
-public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null);
+/// <summary>A dimension style: its text style, arrow and size, extension-line gap and overshoot, where the value sits and its gap, precision and unit (paper mm).
+/// <para>
+/// <see cref="OpeningHeight"/> (report #92, decision 338): a segment that spans a door, a window or a bare wall opening
+/// writes the opening's height under the dimension line, as Romanian and European drawings do (the width over it):
+/// "off", "number" (150), "h" (h=150), "hp" (h=150 and, under it, the sill p=90 when there is one) or "slash" (150/90).
+/// Off when a style does not say (older projects); a new project's Standard style says "number".
+/// </para>
+/// </summary>
+public sealed record DimStyle(string Id, string Name, string TextStyle, string Arrow, double ArrowSize, double ExtGap, double ExtOver, string Placement, double TextGap, int Precision, string Unit, string? Color = null, string OpeningHeight = "off");
 
 /// <summary>An axis (grid line) type: its label's text style, bubble and which ends carry it, size (paper mm), line type, colour and the label new axes start from.</summary>
 public sealed record AxisStyle(string Id, string Name, string TextStyle, string Bubble, string Ends, double Size, string LineType, string FirstLabel, string? Color = null);
@@ -100,6 +107,10 @@ public static class Standards
     public static readonly string[] Fonts = ["sans", "serif", "mono"];
     public static readonly string[] Arrows = ["tick", "arrow", "dot", "none"];
     public static readonly string[] Placements = ["above", "centered", "below"];
+    /// <summary>How a dimension writes an opening's height under its line (decision 338): not at all, 150, h=150, h=150 with p=90 under it, 150/90.</summary>
+    public static readonly string[] OpeningHeights = ["off", "number", "h", "hp", "slash"];
+    /// <summary>What a new project's Standard dimension style writes under a segment across an opening.</summary>
+    public const string NewProjectOpeningHeight = "number";
     /// <summary>A dimension's unit: metric, or feet and inches / inches (fractions of an inch).</summary>
     /// <summary>A dimension style's units: "project" is the project's, whatever they are.</summary>
     public static readonly string[] Units = ["project", "m", "cm", "mm", "ft-in", "in"];
@@ -113,7 +124,7 @@ public static class Standards
 
     /// <summary>The fields an annotation may override, by kind (an axis overrides its line colour as lineColor).</summary>
     public static readonly string[] TextOverrides = ["height", "font", "bold", "italic", "color"];
-    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color"];
+    public static readonly string[] DimOverrides = ["arrow", "arrowSize", "placement", "textGap", "precision", "unit", "color", "openingHeight"];
     public static readonly string[] AxisOverrides = ["bubble", "ends", "size", "lineType"];
 
     static string Str(JsonNode? v, string fallback) => v is JsonValue j && j.TryGetValue<string>(out var s) && s.Length > 0 ? s : fallback;
@@ -134,7 +145,7 @@ public static class Standards
         var d = DefaultDim;
         return new(Str(v["id"], d.Id), Str(v["name"], d.Name), Str(v["textStyle"], d.TextStyle), OneOf(v["arrow"], Arrows, d.Arrow), Num(v["arrowSize"], d.ArrowSize),
             Num(v["extGap"], d.ExtGap), Num(v["extOver"], d.ExtOver), OneOf(v["placement"], Placements, d.Placement), Num(v["textGap"], d.TextGap),
-            v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]));
+            v["precision"] is JsonValue pv && Lapin.Model.Json.Number(pv) is { } pn && double.IsFinite(pn) ? Math.Max(-1, (int)Math.Round(pn)) : d.Precision, OneOf(v["unit"], Units, d.Unit), Color(v["color"]), OneOf(v["openingHeight"], OpeningHeights, d.OpeningHeight));
     }
 
     static AxisStyle ReadAxis(JsonObject v)

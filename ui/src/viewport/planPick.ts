@@ -7,7 +7,7 @@
  * plan lines of its own (a room's finishes), after them: a wall's pick lines
  * never take a click from the door in it. A tag gives way to the element it
  * marks where that element is under the point (a door's marker across its
- * opening).
+ * opening). Drafting sent behind the model gives way to the element over it.
  */
 
 import { hitsLabel } from '../platform/labelParts';
@@ -17,7 +17,7 @@ import { boxTest, segsOf, type RegionTest, type Seg } from './selectBox';
 import { distToSegment, pairs, pointInPolygon } from './snap';
 
 /** A drawing's marks: their ids and segments (x1, y1, x2, y2, …); pick: an element's own pick lines from the drawing (never drawn); data.of: the element a tag marks. */
-export type Mark = { id: string; segments: number[]; pick?: boolean; data?: Record<string, unknown> };
+export type Mark = { id: string; segments: number[]; pick?: boolean; behind?: boolean; data?: Record<string, unknown> };
 
 /**
  * The element a mark belongs to when its id is not an element's: a grid's axis is `grid#tag` (selected on its own, as that id),
@@ -66,9 +66,11 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
   }
   // Annotations (dimensions, texts, grids, section lines) lie over the model: they are picked first, a tag but where its element is under the point.
   if (!types && marks) {
+    // Drafting sent behind the model (decision 339) only where the model has nothing but a room, an outline or overhead lines.
+    const under = !best || best.prio >= PICK_PRIORITY.room;
     for (const m of marks) {
       // A label's texts pick it too (a marker's, a void's: decision 292).
-      if (m.pick || !(near(p, m.segments, tol) || hitsLabel(p, m.data, tol))) continue;
+      if (m.pick || (m.behind && !under) || !(near(p, m.segments, tol) || hitsLabel(p, m.data, tol))) continue;
       const hit = markOwner(m.id, nodes);
       if (!hit) continue;
       if (typeof m.data?.of === 'string' && m.data.of === best?.e.id) continue;

@@ -97,6 +97,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.WindowType, "Window type", [], "#9cc8e8", Kind: "type"));
         r.Service<IVoidShapes>(new VoidShapes());
         r.Service<Lapin.Platform.Coordination.IOpeningVoids>(new ArchitectureVoids());
+        // The openings' boxes a dimension across one reads its height from (report #92, decision 338).
+        r.Service<IWallOpenings>(new ArchitectureWallOpenings());
         // Openings made from the clash report round an MEP element (decision 293).
         r.Service<Lapin.Platform.Coordination.IOpeningMaker>(new OpeningMaker());
         r.Service<IJoineryIfc>(new JoineryIfc());
