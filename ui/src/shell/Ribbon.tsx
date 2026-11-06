@@ -22,6 +22,17 @@ import { TOOL_DRAG } from '../app/hotbar';
 import { bindingText, hint, useBindings } from '../app/commands';
 import type { FileAction, RibbonTabDef, ToolDef } from '../platform/module';
 
+/**
+ * A band wider than the window scrolls across with the mouse wheel too, not only by its scrollbar (a tester's wish, #89): the
+ * wheel's turn (vertical) moves it sideways while it has somewhere to go; a trackpad's sideways swipe works as it did.
+ */
+export function wheelAcross(e: React.WheelEvent<HTMLElement>): void {
+  const el = e.currentTarget;
+  if (el.scrollWidth <= el.clientWidth + 1 || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+  // The band does not scroll up and down, so nothing else takes the wheel (React's wheel listener is passive: no preventDefault).
+  el.scrollLeft += e.deltaY;
+}
+
 /** A command's first binding, as a menu shows it. */
 function Keys({ id }: { id: string }) {
   useBindings();
@@ -90,7 +101,7 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
   useBindings();
   const press = (tl: ToolDef) => { activate(tl); onPicked?.(); };
   if (icons) return (
-    <div className={`band icons${drop ? ' drop' : ''}`} role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx}>
+    <div className={`band icons${drop ? ' drop' : ''}`} role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx} onWheel={wheelAcross}>
       {tab.groups.map((g, gi) => (
         <div className="group-inline" key={g.label} role="group" aria-label={g.label}>
           {gi > 0 && <span className="group-rule" aria-hidden />}
@@ -104,7 +115,7 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
     </div>
   );
   return (
-    <div className="band" role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx}>
+    <div className="band" role="toolbar" aria-label={tab.label} data-i18n-ctx={tab.i18nCtx} onWheel={wheelAcross}>
       {tab.groups.map((g) => (
         <div className="group" key={g.label}>
           <div className="group-tools">

@@ -12,6 +12,8 @@ Et arbejdsområde viser kun de faner i båndet, dit arbejde har brug for, i den 
 
 ![Arbejdsområderne i View → Interface…](shots/workspaces.webp)
 
+Når båndets værktøjer er bredere end vinduet, ruller musehjulet over dem dem sidelæns.
+
 Fanerne bliver på én linje. Når vinduet er for smalt til dem alle, flytter de sidste ind under **Mere** for enden af linjen, og fanen, du er på, bliver altid synlig.
 
 Fanerne er grupperet efter det arbejde, de tjener. **Interiør** samler overfladerne og møblerne. **Grund** samler terrænet, landskabet og byggepladsindretningen (stilladser og forskalling). **Udførelse** samler tidsplanen og overslaget (4D og 5D).

@@ -60,6 +60,17 @@ A guia **Desenho** desenha linhas, polilinhas, retângulos, círculos e arcos. E
 
 Todo comprimento que a linha de comando pede está na unidade do projeto, e a mensagem diz qual: `Depth (mm)`, `Height (ft-in)`. Ângulos, fatores e contagens são números simples: `90` depois de **Girar** é 90°, seja qual for a unidade.
 
+### Decalcar um PDF ou uma imagem
+
+**Arquivo → Importar PDF ou imagem…**, ou **Desenho → PDF ou imagem**, traz um desenho para decalcar: uma planta digitalizada, a foto de uma fachada, um PDF de outro escritório. Ele entra na planta, no corte ou na elevação à frente, sob o seu desenho.
+
+- **Um PDF**: escolha a **Página** e a escala em que o seu desenho foi feito (**Desenhado a 1:**). Um milímetro de papel mede então aqui tantos milímetros, assim uma planta em 1:100 entra no seu tamanho real. As linhas da página entram como desenho a que você pode se prender, que pode editar e decalcar, e as suas imagens (uma digitalização dentro do PDF) como imagens por baixo delas. Qualquer das duas pode ficar de fora. A página entra como um só grupo com o nome do arquivo, assim **Mover**, **Girar** e **Escala** a tomam inteira; clique duas vezes nela para trabalhar nas suas partes.
+- **Uma imagem** (PNG ou JPEG): dê a sua **Largura**; a altura segue os seus pixels. **Desenho → Escalar imagem** a define depois exatamente: selecione a imagem, clique em dois pontos dela a uma distância conhecida e digite essa distância.
+
+Uma imagem é transparente (a sua **Opacidade**, 0,5 por padrão, nas suas propriedades) e nunca faz parte do modelo: só sai impressa nas pranchas se você a deixar na vista.
+
+![Uma planta impressa em PDF, trazida para outro nível para decalcar](shots/trace-pdf.webp)
+
 ### Desenhar na vista 3D
 
 **Linha**, **Polilinha**, **Retângulo**, **Círculo**, **Arco** e as edições de Desenho funcionam também na vista 3D, com a linha de comando embaixo. Enquanto um comando roda, a etiqueta no alto diz onde você desenha: no nível do pavimento ativo ou no plano de referência selecionado. **Escolher uma face** na etiqueta, e depois um clique numa face do modelo, cria um plano de referência nessa face e desenha nele. Os pontos se prendem como numa planta: às linhas cortadas da planta (cantos e faces das paredes) e ao que está desenhado no mesmo plano, com orto e as linhas de rastreamento. O que você desenha é o mesmo elemento de desenho que um feito na planta, e aparece lá também.

@@ -12,7 +12,7 @@ Click **+** next to **Sheets** in the project browser. To place a view, drag it 
 
 ![An A3 sheet with a plan and a section](shots/sheet.webp)
 
-Select the sheet to fill in its **title block** in the properties panel: the project, the client, who drew it, who checked it, the date and the revision. Its number, paper and orientation are set there too. Left empty, the project field shows the project's name: the name given to the project, else its file's name.
+Select the sheet to fill in its **title block** in the properties panel: the project, the client, who drew it, who checked it, the date and the revision. Its number, paper and orientation are set there too. The paper is an A size (A0 to A4), one of ISO's long sheets (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), a North American size (Letter, Tabloid, ARCH D, ARCH E), or **custom**, with its **Paper width** and **Paper height** in millimetres. Left empty, the project field shows the project's name: the name given to the project, else its file's name.
 
 ## What a view shows
 

@@ -12,7 +12,7 @@ Clique em **+** ao lado de **Pranchas** no navegador de projeto. Para colocar um
 
 ![Uma prancha A3 com uma planta e um corte](shots/sheet.webp)
 
-Selecione a prancha para preencher o **carimbo** no painel Propriedades: o projeto, o cliente, quem desenhou, quem verificou, a data e a revisão. O número, o papel e a orientação também são definidos ali. Se ficar vazio, o campo do projeto mostra o nome do projeto: o nome dado ao projeto ou, se não houver, o nome do arquivo.
+Selecione a prancha para preencher o **carimbo** no painel Propriedades: o projeto, o cliente, quem desenhou, quem verificou, a data e a revisão. O número, o papel e a orientação também são definidos ali. O papel é um formato A (A0 a A4), uma das folhas alongadas ISO (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), um formato norte-americano (Letter, Tabloid, ARCH D, ARCH E) ou **personalizado**, com a sua **Largura do papel** e **Altura do papel** em milímetros. Se ficar vazio, o campo do projeto mostra o nome do projeto: o nome dado ao projeto ou, se não houver, o nome do arquivo.
 
 ## O que uma vista mostra
 

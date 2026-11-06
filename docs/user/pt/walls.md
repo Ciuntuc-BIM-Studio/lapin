@@ -45,6 +45,16 @@ Uma parede reconhecida de um IFC importado cuja extremidade o ficheiro corta em 
 
 **Alinhamento da hachura** define como as camadas desta parede são hachuradas em planta. **material** segue a configuração de cada material. **axis** assenta a hachura de cada camada ao longo do eixo da parede, a partir do início do eixo, de modo que uma parede de tijolos inclinada mostra suas fiadas ao longo dela, contínuas de uma camada à outra. **view** começa cada hachura na origem da vista, sem rotação.
 
+### Uma parede pelo seu perfil
+
+**Perfil…** nas propriedades de uma parede desenha o seu topo em elevação, visto do início ao fim: uma empena, uma inclinação, degraus, uma parede que acompanha uma escada. Arraste os pontos (**Shift** mantém a altura de um ponto), clique na linha de cima para acrescentar um, clique com o botão direito num ponto para tirá-lo, ou digite-os na tabela em milímetros. **Começar de** dá um **Empena**, uma **Inclinação** ou **Degraus** até a altura que você digitar. Um degrau são dois pontos um sobre o outro. **Aplicar** dá forma à parede; **Topo plano** a deixa plana de novo.
+
+A parede continua uma parede: a espessura, as camadas, as junções e as portas e janelas ficam como estavam, e ela é exportada para IFC com a sua forma.
+
+![Uma empena desenhada no editor de perfil](shots/wall-profile-editor.webp)
+
+![A parede oeste da casa como empena, com a janela mantida](shots/wall-profile-3d.webp)
+
 ## Tipos de parede
 
 Um tipo de parede é um conjunto de camadas, da face à direita do sentido em que a parede é desenhada (a externa, quando você desenha ao redor de um edifício no sentido anti-horário) à face à sua esquerda. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.

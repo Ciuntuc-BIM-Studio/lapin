@@ -45,6 +45,16 @@ Un muro riconosciuto da un IFC importato la cui estremità il file taglia in obl
 
 **Allineamento del retino** stabilisce come sono retinati in pianta gli strati di questo muro. **material** segue l’impostazione di ogni materiale. **axis** posa il retino di ogni strato lungo l’asse del muro, a partire dall’inizio dell’asse: un muro di mattoni inclinato mostra i suoi corsi lungo di sé, continui da uno strato all’altro. **view** fa partire ogni retino dall’origine della vista, senza rotazione.
 
+### Un muro secondo il suo profilo
+
+**Profilo…** nelle proprietà di un muro ne disegna la sommità in prospetto, vista dall’inizio alla fine: un timpano, una pendenza, gradini, un muro che segue una scala. Trascina i punti (**Shift** mantiene l’altezza di un punto), fai clic sulla linea in alto per aggiungerne uno, clic destro su un punto per toglierlo, oppure scrivili nella tabella in millimetri. **Parti da** dà un **Timpano**, una **Pendenza** o dei **Gradoni** fino all’altezza che scrivi. Un gradino è fatto di due punti uno sopra l’altro. **Applica** dà la forma al muro; **Sommità piana** lo rende di nuovo piano.
+
+Il muro resta un muro: spessore, strati, giunzioni, porte e finestre restano com’erano, ed è esportato in IFC con la sua forma.
+
+![Un timpano disegnato nell’editor del profilo](shots/wall-profile-editor.webp)
+
+![Il muro ovest della casa a timpano, con la finestra conservata](shots/wall-profile-3d.webp)
+
 ## Tipi di muro
 
 Un tipo di muro è un insieme di strati, dalla faccia a destra del verso in cui il muro è disegnato (l’esterno, se disegni intorno all’edificio in senso antiorario) alla faccia alla sua sinistra. Ogni strato ha un materiale e uno spessore, e uno strato è il **nucleo**. La linea del muro corre lungo il nucleo. Per modificare i tipi, scegli **Architettura → Tipi di muro**. Uno strato diverso dal nucleo può avere un’altezza propria: **Da** e **Fino a** stabiliscono fin dove arriva sopra la base del muro (uno zoccolo piastrellato fino a 1500, un rivestimento da 300 in su); se vuoti, lo strato corre per tutta l’altezza.

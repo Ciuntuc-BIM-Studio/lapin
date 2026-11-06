@@ -12,6 +12,8 @@ Un espacio de trabajo muestra solo las pestañas de la cinta que su trabajo nece
 
 ![Los espacios de trabajo en View → Interface…](shots/workspaces.webp)
 
+Cuando las herramientas de la cinta son más anchas que la ventana, la rueda del ratón sobre ellas las desplaza de lado.
+
 Las pestañas se quedan en una sola línea. Cuando la ventana es demasiado estrecha para todas, las últimas pasan a **Más**, al final de la fila, y la pestaña en la que está siempre queda a la vista.
 
 Las pestañas se agrupan por el trabajo al que sirven. **Interiores** reúne los acabados y el mobiliario. **Emplazamiento** reúne el terreno, el paisajismo y los medios auxiliares (andamios y encofrados). **Ejecución** reúne el programa de obra y el presupuesto (4D y 5D).

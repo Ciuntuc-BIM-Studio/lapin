@@ -12,6 +12,8 @@ Ein Arbeitsbereich zeigt nur die Registerkarten des Menübands, die Ihre Arbeit 
 
 ![Die Arbeitsbereiche in View → Interface…](shots/workspaces.webp)
 
+Sind die Werkzeuge des Menübands breiter als das Fenster, scrollt das Mausrad über ihnen sie seitwärts.
+
 Die Registerkarten bleiben in einer Zeile. Ist das Fenster für alle zu schmal, wandern die letzten unter **Mehr** am Ende der Zeile, und die Registerkarte, auf der Sie sind, bleibt immer sichtbar.
 
 Die Registerkarten sind nach der Arbeit gruppiert, der sie dienen. **Innenausbau** enthält den Ausbau und die Möbel. **Gelände** enthält das Gelände, die Außenanlagen und die Baustelleneinrichtung (Gerüste und Schalung). **Ausführung** enthält die Terminplanung und die Kostenberechnung (4D und 5D).

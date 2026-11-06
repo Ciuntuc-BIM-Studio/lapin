@@ -12,7 +12,7 @@ Haga clic en **+** junto a **Láminas** en el navegador del proyecto. Para coloc
 
 ![Una lámina A3 con una planta y una sección](shots/sheet.webp)
 
-Seleccione la lámina para rellenar su **cajetín** en el panel de propiedades: el proyecto, el cliente, quién la dibujó, quién la revisó, la fecha y la revisión. Allí se fijan también su número, el papel y la orientación. Si se deja vacío, el campo del proyecto muestra el nombre del proyecto: el nombre que se le dio, o si no, el nombre de su archivo.
+Seleccione la lámina para rellenar su **cajetín** en el panel de propiedades: el proyecto, el cliente, quién la dibujó, quién la revisó, la fecha y la revisión. Allí se fijan también su número, el papel y la orientación. El papel es un formato A (A0 a A4), uno de los formatos alargados ISO (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), un formato norteamericano (Letter, Tabloid, ARCH D, ARCH E) o **personalizado**, con su **Ancho del papel** y **Alto del papel** en milímetros. Si se deja vacío, el campo del proyecto muestra el nombre del proyecto: el nombre que se le dio, o si no, el nombre de su archivo.
 
 ## Lo que muestra una vista
 

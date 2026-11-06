@@ -12,7 +12,7 @@ Kliknij **+** obok **Arkusze** w przeglądarce projektu. Aby umieścić widok, p
 
 ![Arkusz A3 z rzutem i przekrojem](shots/sheet.webp)
 
-Zaznacz arkusz, aby wypełnić jego **tabliczkę rysunkową** w panelu Właściwości: projekt, inwestora, kto rysował, kto sprawdził, datę i rewizję. Tam ustawisz też jego numer, papier i orientację. Pozostawione puste pole projektu pokazuje nazwę projektu: nazwę nadaną projektowi, a w przeciwnym razie nazwę jego pliku.
+Zaznacz arkusz, aby wypełnić jego **tabliczkę rysunkową** w panelu Właściwości: projekt, inwestora, kto rysował, kto sprawdził, datę i rewizję. Tam ustawisz też jego numer, papier i orientację. Papier to format A (od A0 do A4), jeden z wydłużonych arkuszy ISO (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), format północnoamerykański (Letter, Tabloid, ARCH D, ARCH E) lub **własny**, z jego **Szerokością arkusza** i **Wysokością arkusza** w milimetrach. Pozostawione puste pole projektu pokazuje nazwę projektu: nazwę nadaną projektowi, a w przeciwnym razie nazwę jego pliku.
 
 ## Co pokazuje widok
 

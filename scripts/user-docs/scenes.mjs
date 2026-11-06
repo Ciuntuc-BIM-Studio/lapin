@@ -432,6 +432,54 @@ export const scenes = [
     },
   },
   {
+    // A wall by its profile (a tester's wish, #100, decision 372): the house's west wall made a gable in the profile editor,
+    // the window kept, then seen in 3D.
+    id: 'wall-profile',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      await t.cmd('architecture.addWindow', { wallId: walls[3], x: 0, y: 4 });
+      await t.ui({ view: 'plan', keyPlan: false, selection: walls[3], selected: [walls[3]] });
+      await t.wait(800);
+      await t.page.locator('[data-action=wall-profile]').first().click();
+      await t.page.waitForSelector('[data-testid=wall-profile]', { timeout: 10000 });
+      await t.page.locator('[data-field=profile-peak]').fill('5200');
+      await t.page.locator('[data-action=profile-gable]').click();
+      await t.wait(600);
+      await t.shot('wall-profile-editor', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-action=profile-apply]').click();
+      await t.wait(1200);
+      const wall = (await t.nodes()).find((n) => n.id === walls[3]);
+      t.expect(Array.isArray(wall.props.topProfile) && wall.props.topProfile.length === 3, 'the wall keeps its gable');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.3, pitch: -0.25, distance: 22, target: { x: 4, y: 4, z: 2 } }, false));
+      await t.wait(1500);
+      await t.shot('wall-profile-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Tracing over a PDF (a tester's wish, #89, decision 371): a page drawn by Lapin itself (a plan sheet as PDF) brought back
+    // into an empty plan at 1:100, its lines as drafting and as one group.
+    id: 'trace-pdf',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      // The house's plan on an A3 sheet, printed to PDF by Lapin, then traced on the first floor.
+      const sheet = await t.cmd('sheet.create', { paper: 'A3', name: 'Plan' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: `plan:${storey}`, x: 200, y: 140 });
+      const data = await t.page.evaluate(async (id) => (await (await import('/src/engine/session.ts')).engine.call('export.pdf', { sheets: [id] })).data, sheet.id);
+      t.expect(Boolean(data), 'the sheet as a PDF');
+      const upper = (await t.nodes()).find((n) => n.type === 'IfcBuildingStorey' && n.name === 'First floor');
+      const r = await t.cmd('drafting.importPdf', { viewId: `plan:${upper.id}`, name: 'plan.pdf', data, scale: 100, at: [-8, -6] });
+      t.expect(r.lines > 10, 'the plan comes in as drafting');
+      await t.ui({ view: 'plan', storeyId: upper.id, keyPlan: false, selected: [r.groupId], selection: r.groupId });
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(600);
+      await t.shot('trace-pdf', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Panes, mullions and profiles (decision 370, a tester's questions): a shop door made in the pane editor (four columns, a
     // transom split off each and merged across, two leaves, one solid side panel), then a PVC window in a wall, in 3D.
     id: 'joinery-panes',

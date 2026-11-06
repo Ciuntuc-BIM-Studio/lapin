@@ -3,7 +3,7 @@
  * layers as its own usage lays them, its length, and Flip.
  */
 
-import { FlipHorizontal2, Settings2 } from 'lucide-react';
+import { FlipHorizontal2, Mountain, Settings2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { materialColor, materialName, ofClass, typeLayers, typeOf, usageOf, wallLength } from '../../engine/model';
@@ -58,9 +58,14 @@ export function WallLayers({ node }: { node: NodeDto }) {
         <dt>Layers run</dt><dd>{usage ? (usage.negative ? 'flipped' : 'as drawn') : '—'}</dd>
       </dl>
       {node.editable && (
-        <button type="button" className="btn" title="Swap the wall's faces (its ends stay)" onClick={() => void execute('architecture.flipWall', { ids: sameKind(node) })}>
-          <FlipHorizontal2 size={14} />Flip
-        </button>
+        <span className="row" style={{ gap: 6 }}>
+          <button type="button" className="btn" title="Swap the wall's faces (its ends stay)" onClick={() => void execute('architecture.flipWall', { ids: sameKind(node) })}>
+            <FlipHorizontal2 size={14} />Flip
+          </button>
+          {!node.props.arc && <button type="button" className="btn" data-action="wall-profile" title="Its top drawn in elevation: a gable, a slope, steps (decision 372)" onClick={() => useUi.setState({ dialog: 'wallProfile', selection: node.id })}>
+            <Mountain size={14} />Profile…
+          </button>}
+        </span>
       )}
     </div>
   );

@@ -46,7 +46,7 @@ public static class Groups
     /// </summary>
     public static bool Groupable(IModelView m, Entity e) =>
         e.Class is not (Class or IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey or IfcClass.OpeningElement)
-        && (Spatial.StoreyOf(m, e.Id) != null || (e.Class == IfcClass.Annotation && e.Str("viewId") is { Length: > 0 }))
+        && (Spatial.StoreyOf(m, e.Id) != null || (e.Class != Views.Class && e.Str("viewId") is { Length: > 0 }))
         && e.Str(Links.Key) == null;
 
     /// <summary>A new group of <paramref name="ids"/> (those that may be in one; each leaves the group it was in, which goes when emptied). Null when none may.</summary>

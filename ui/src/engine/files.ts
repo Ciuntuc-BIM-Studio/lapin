@@ -394,6 +394,19 @@ export async function openStartupFile(): Promise<void> {
 /** The DXF the user picked, waiting for the import dialog: by path (the desktop), or its bytes (the browser). */
 export const dxfFile: { current: { name: string; path?: string; data?: string } | null } = { current: null };
 
+/** The PDF or picture the user picked to trace over, waiting for its dialog (decision 371): by path, or its bytes. */
+export const traceFile: { current: { name: string; path?: string; data?: string } | null } = { current: null };
+
+/** A PDF or a picture (PNG, JPEG) into the view in front, to trace over: picked here, placed from the import dialog. */
+export async function importTrace(): Promise<void> {
+  const exts = ['pdf', 'png', 'jpg', 'jpeg'];
+  const picked = isDesktop() ? null : await pickFile('PDF or image', exts);
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'PDF or image', extensions: exts }]) : picked?.name ?? null;
+  if (!path) return;
+  traceFile.current = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
+  useUi.setState({ dialog: 'importTrace' });
+}
+
 /** A DXF into the view in front, as Lapin's own drafting: the file is picked here, the rest is asked in the import dialog. */
 export async function importDxf(): Promise<void> {
   const picked = isDesktop() ? null : await pickFile('DXF', 'dxf');

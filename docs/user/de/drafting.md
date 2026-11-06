@@ -60,6 +60,17 @@ Die Registerkarte **Zeichnen** zeichnet Linien, Polylinien, Rechtecke, Kreise un
 
 Jede Länge, nach der die Befehlszeile fragt, ist in der Einheit des Projekts, und die Aufforderung nennt sie: `Depth (mm)`, `Height (ft-in)`. Winkel, Faktoren und Anzahlen sind einfache Zahlen: `90` nach **Drehen** sind 90°, gleich welche Einheit.
 
+### Über einem PDF oder einem Bild nachzeichnen
+
+**Datei → PDF oder Bild importieren…** oder **Zeichnen → PDF oder Bild** holt eine Zeichnung zum Nachzeichnen herein: einen gescannten Grundriss, das Foto einer Fassade, ein PDF aus einem anderen Büro. Sie kommt in den Grundriss, den Schnitt oder die Ansicht im Vordergrund, unter deren Zeichnung.
+
+- **Ein PDF**: Wählen Sie die **Seite** und den Maßstab, in dem seine Zeichnung erstellt wurde (**Gezeichnet in 1:**). Ein Papiermillimeter misst dann hier so viele Millimeter, sodass ein Grundriss 1:100 in seiner wahren Größe hereinkommt. Die Linien der Seite kommen als Zeichnung herein, an der Sie fangen, die Sie bearbeiten und nachzeichnen können, ihre Bilder (ein Scan im PDF) als Bilder darunter. Beides lässt sich weglassen. Die Seite kommt als eine Gruppe mit dem Namen der Datei, sodass **Verschieben**, **Drehen** und **Skalieren** sie ganz nehmen; doppelklicken Sie darauf, um an ihren Teilen zu arbeiten.
+- **Ein Bild** (PNG oder JPEG): Geben Sie seine **Breite** an; seine Höhe folgt seinen Pixeln. **Zeichnen → Bild skalieren** setzt sie danach genau: Wählen Sie das Bild, klicken Sie auf zwei Punkte darauf in bekanntem Abstand und tippen Sie diesen Abstand ein.
+
+Ein Bild ist durchscheinend (seine **Deckkraft**, standardmäßig 0,5, in seinen Eigenschaften) und gehört nie zum Modell: Auf Plänen wird es nur gedruckt, wenn Sie es in der Ansicht lassen.
+
+![Ein als PDF gedruckter Grundriss, in ein anderes Geschoss geholt, um darüber nachzuzeichnen](shots/trace-pdf.webp)
+
 ### Zeichnen in der 3D-Ansicht
 
 **Linie**, **Polylinie**, **Rechteck**, **Kreis**, **Bogen** und die Bearbeitungen aus Zeichnen gehen auch in der 3D-Ansicht, mit der Befehlszeile unten. Solange ein Befehl läuft, sagt das Schild oben, worauf Sie zeichnen: auf der Höhe des aktiven Geschosses oder auf der ausgewählten Referenzebene. **Fläche wählen** im Schild, dann ein Klick auf eine Fläche des Modells, legt auf dieser Fläche eine Referenzebene an und zeichnet darauf. Punkte fangen wie im Grundriss: an den geschnittenen Linien des Grundrisses (Ecken und Flächen der Wände) und an dem, was auf derselben Ebene gezeichnet ist, mit Ortho und den Spurlinien. Was Sie zeichnen, ist dasselbe Zeichenelement wie eines im Grundriss und erscheint auch dort.

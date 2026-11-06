@@ -12,7 +12,7 @@ Fai clic su **+** accanto a **Tavole** nel browser di progetto. Per posizionare 
 
 ![Una tavola A3 con una pianta e una sezione](shots/sheet.webp)
 
-Seleziona la tavola per compilare il suo **cartiglio** nel pannello Proprietà: il progetto, il committente, chi l’ha disegnata, chi l’ha controllata, la data e la revisione. Lì si impostano anche il numero, il formato e l’orientamento. Se lo lasci vuoto, il campo del progetto mostra il nome del progetto: il nome dato al progetto, altrimenti il nome del suo file.
+Seleziona la tavola per compilare il suo **cartiglio** nel pannello Proprietà: il progetto, il committente, chi l’ha disegnata, chi l’ha controllata, la data e la revisione. Lì si impostano anche il numero, il formato e l’orientamento. Il formato è un A (da A0 ad A4), uno dei fogli allungati ISO (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), un formato nordamericano (Letter, Tabloid, ARCH D, ARCH E) o **personalizzato**, con la sua **Larghezza del foglio** e **Altezza del foglio** in millimetri. Se lo lasci vuoto, il campo del progetto mostra il nome del progetto: il nome dato al progetto, altrimenti il nome del suo file.
 
 ## Cosa mostra una vista
 

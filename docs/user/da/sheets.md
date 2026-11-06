@@ -12,7 +12,7 @@ Klik på **+** ved siden af **Tegningsark** i projektbrowseren. Vil du placere e
 
 ![Et A3-ark med en plan og et snit](shots/sheet.webp)
 
-Markér arket for at udfylde dets **Tegningshoved** i egenskabspanelet: projektet, bygherren, hvem der har tegnet det, hvem der har kontrolleret det, datoen og revisionen. Dets nummer, papir og retning indstilles også der. Efterlades projektfeltet tomt, viser det projektets navn: det navn, projektet har fået, ellers dets filnavn.
+Markér arket for at udfylde dets **Tegningshoved** i egenskabspanelet: projektet, bygherren, hvem der har tegnet det, hvem der har kontrolleret det, datoen og revisionen. Dets nummer, papir og retning indstilles også der. Papiret er et A-format (A0 til A4), et af ISO’s lange ark (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), et nordamerikansk format (Letter, Tabloid, ARCH D, ARCH E) eller **brugerdefineret** med dets **Papirbredde** og **Papirhøjde** i millimeter. Efterlades projektfeltet tomt, viser det projektets navn: det navn, projektet har fået, ellers dets filnavn.
 
 ## Hvad en visning viser
 

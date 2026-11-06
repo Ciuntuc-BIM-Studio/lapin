@@ -12,6 +12,8 @@ A workspace shows only the ribbon tabs your work needs, in the order that work u
 
 ![The workspaces in View → Interface…](shots/workspaces.webp)
 
+When the ribbon's tools are wider than the window, the mouse wheel over them scrolls them sideways.
+
 The tabs stay on one line. When the window is too narrow for all of them, the last ones go under **More** at the end of the row, and the tab you are on always stays in sight.
 
 The tabs are grouped by the work they serve. **Interior** holds the finishes and the furniture. **Site** holds the terrain, the landscape and the site works (scaffolding and formwork). **Construction** holds the work schedule and the estimate (4D and 5D).

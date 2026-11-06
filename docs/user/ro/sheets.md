@@ -12,7 +12,7 @@ Apasă **+** lângă **Planșe** în navigatorul proiectului. Ca să pui o veder
 
 ![O planșă A3 cu un plan și o secțiune](shots/sheet.webp)
 
-Selectează planșa ca să-i completezi **cartușul** în panoul de proprietăți: proiectul, beneficiarul, cine a desenat, cine a verificat, data și revizia. Tot acolo se setează numărul, formatul și orientarea. Lăsat gol, câmpul proiectului arată numele proiectului: numele dat proiectului, altfel numele fișierului lui.
+Selectează planșa ca să-i completezi **cartușul** în panoul de proprietăți: proiectul, beneficiarul, cine a desenat, cine a verificat, data și revizia. Tot acolo se setează numărul, formatul și orientarea. Formatul e unul A (A0 până la A4), unul din formatele lungi ISO (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), unul nord-american (Letter, Tabloid, ARCH D, ARCH E) sau **personalizat**, cu **Lățimea hârtiei** și **Înălțimea hârtiei** în milimetri. Lăsat gol, câmpul proiectului arată numele proiectului: numele dat proiectului, altfel numele fișierului lui.
 
 ## Ce arată o vedere
 

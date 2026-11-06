@@ -12,6 +12,8 @@ Un espace de travail ne montre que les onglets du ruban dont votre travail a bes
 
 ![Les espaces de travail dans View → Interface…](shots/workspaces.webp)
 
+Quand les outils du ruban sont plus larges que la fenêtre, la molette de la souris au-dessus d’eux les fait défiler latéralement.
+
 Les onglets restent sur une seule ligne. Quand la fenêtre est trop étroite pour tous, les derniers passent sous **Plus**, au bout de la ligne, et l’onglet où vous êtes reste toujours visible.
 
 Les onglets sont regroupés selon le travail qu’ils servent. **Intérieur** réunit les finitions et le mobilier. **Site** réunit le terrain, l’aménagement paysager et les installations de chantier (échafaudages et coffrages). **Exécution** réunit le planning des travaux et le devis (4D et 5D).

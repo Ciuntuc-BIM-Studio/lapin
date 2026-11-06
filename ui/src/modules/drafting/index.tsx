@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2 } from 'lucide-react';
+import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -8,8 +8,9 @@ import type { NodeDto } from '../../engine/protocol';
 import { notify, select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { cadHost, cadLog, registerCommand, startCommand, withSelection, type Step } from '../../viewport/cad/session';
-import { importDxf } from '../../engine/files';
+import { importDxf, importTrace } from '../../engine/files';
 import { ImportDxfDialog } from './ImportDxfDialog';
+import { ImportTraceDialog } from './ImportTraceDialog';
 import { DimensionSection } from './DimensionSection';
 import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
@@ -530,6 +531,25 @@ const tagParameter: ToolDef = {
 const orderTools: ToolDef[] = DRAW_ORDER.map((d) => ({ id: `drafting.order.${d.move}`, label: d.label, icon: d.icon, shortcut: d.shortcut, run: () => void drawOrder(d.move) }));
 const orderGroup = { label: 'Order', tools: [orderTools[0], orderTools[3]], small: [orderTools[1], orderTools[2], orderTools[4]] };
 
+/**
+ * An image to trace scaled true (decision 371): with it selected, two points on it, then the distance they really are apart;
+ * it grows or shrinks about the first point.
+ */
+const scaleImage: ToolDef = {
+  id: 'drafting.scaleImage', label: 'Scale image', icon: Ruler,
+  gesture: { kind: 'twoPoints' },
+  complete: async ({ points: [a, b] }, ctx) => {
+    const nodes = useSession.getState().nodes;
+    const id = useUi.getState().selected.find((x) => nodes.get(x)?.type === 'LapinViewImage');
+    if (!id) { notify('Select the image to scale first.'); return; }
+    const answer = window.prompt('Their true distance apart (m)', (Math.hypot(b.x - a.x, b.y - a.y)).toFixed(3));
+    const length = Number((answer ?? '').replace(',', '.'));
+    if (!(length > 0)) return;
+    await ctx.execute('drafting.calibrateImage', { id, a: [a.x, a.y], b: [b.x, b.y], length });
+    useUi.setState({ tool: null });
+  },
+};
+
 const drafting: LapinModule = {
   id: 'drafting',
   name: 'Drafting',
@@ -545,7 +565,8 @@ const drafting: LapinModule = {
         orderGroup,
         { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
         { label: 'Layers', tools: [{ id: 'drafting.layers', label: 'Layers', icon: Layers, run: () => useUi.setState({ dialog: 'draftLayers' }) }] },
-        { label: 'Import', tools: [{ id: 'drafting.importDxf', label: 'Import DXF', icon: FileInput, run: () => void importDxf() }] },
+        { label: 'Import', tools: [{ id: 'drafting.importDxf', label: 'Import DXF', icon: FileInput, run: () => void importDxf() }],
+          small: [{ id: 'drafting.importTrace', label: 'PDF or image', icon: ImageIcon, run: () => void importTrace() }, scaleImage] },
       ],
     },
     {
@@ -575,7 +596,7 @@ const drafting: LapinModule = {
     },
   ],
   hotbar: [dimension],
-  dialogs: { draftLayers: LayersDialog, importDxf: ImportDxfDialog, grid: GridDialog },
+  dialogs: { draftLayers: LayersDialog, importDxf: ImportDxfDialog, importTrace: ImportTraceDialog, grid: GridDialog },
   propertySections: [
     // The drafted kinds show their own fields (a line its ends, a circle its radius), so the class's generic ones stay out.
     { id: 'draft', label: 'Drafting', classes: ['IfcAnnotation'], component: DraftSection, replacesFields: draftsFields },

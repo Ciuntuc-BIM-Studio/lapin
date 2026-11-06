@@ -12,6 +12,8 @@ Um espaço de trabalho mostra só as guias da faixa de opções de que o seu tra
 
 ![Os espaços de trabalho em Vista → Interface…](shots/workspaces.webp)
 
+Quando as ferramentas da faixa de opções são mais largas que a janela, a roda do mouse sobre elas as rola para o lado.
+
 As guias ficam numa só linha. Quando a janela é estreita demais para todas, as últimas passam para **Mais**, no fim da linha, e a guia em que você está fica sempre à vista.
 
 As guias são agrupadas pelo trabalho a que servem. **Interiores** reúne os acabamentos e o mobiliário. **Implantação** reúne o terreno, o paisagismo e o canteiro de obras (andaimes e fôrmas). **Execução** reúne o cronograma da obra e o orçamento (4D e 5D).

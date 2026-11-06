@@ -55,7 +55,26 @@ public static class Sheets
     public static readonly Dictionary<string, (double W, double H)> Papers = new()
     {
         ["A0"] = (1189, 841), ["A1"] = (841, 594), ["A2"] = (594, 420), ["A3"] = (420, 297), ["A4"] = (297, 210),
+        // ISO 216's long sheets (an A size several times its short side: a plan along a road, a facade) and the North American ones.
+        ["A0x2"] = (1682, 1189), ["A1x3"] = (1783, 841), ["A2x3"] = (1261, 594), ["A3x3"] = (891, 420), ["A3x4"] = (1189, 420), ["A4x3"] = (630, 297),
+        ["Letter"] = (279.4, 215.9), ["Tabloid"] = (431.8, 279.4), ["ARCH D"] = (914.4, 609.6), ["ARCH E"] = (1219.2, 914.4),
     };
+
+    /// <summary>A paper of the user's own size (a tester's wish, #89): <c>paperWidth</c> × <c>paperHeight</c> mm, as typed.</summary>
+    public const string Custom = "custom";
+    public static readonly string[] PaperChoices = [.. Papers.Keys, Custom];
+    const double MinPaper = 100, MaxPaper = 5000;
+
+    static string CheckPaper(string paper) => paper == Custom || Papers.ContainsKey(paper) ? paper
+        : throw new CommandException($"A sheet's paper is one of {string.Join(", ", PaperChoices)}.");
+
+    /// <summary>A custom paper's size from a command's arguments, kept on the sheet (mm, 100 to 5000).</summary>
+    static void CustomSize(JsonObject attrs, JsonObject a)
+    {
+        double Size(string k, double d) => Math.Clamp(Json.Number(a[k]) ?? d, MinPaper, MaxPaper);
+        attrs["paperWidth"] = Size("paperWidth", 1000);
+        attrs["paperHeight"] = Size("paperHeight", 700);
+    }
     public static readonly int[] Scales = [1, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
     public const double Margin = 10;
     public static readonly (double W, double H) TitleBlock = (180, 50);
@@ -64,6 +83,9 @@ public static class Sheets
 
     public static (double W, double H) PaperOf(Entity sheet)
     {
+        // A custom paper is as wide and tall as typed; the orientation turns only the standard ones.
+        if (sheet.Str("paper") == Custom)
+            return (Math.Clamp(sheet.NumOrNull("paperWidth") ?? 1000, MinPaper, MaxPaper), Math.Clamp(sheet.NumOrNull("paperHeight") ?? 700, MinPaper, MaxPaper));
         var (w, h) = Papers.GetValueOrDefault(sheet.Str("paper") ?? "A1", Papers["A1"]);
         return sheet.Str("orientation") == "portrait" ? (h, w) : (w, h);
     }
@@ -451,7 +473,7 @@ public static class Sheets
     /// </summary>
     public static Entity AddSheet(ICommandContext ctx, string name, string paper, bool portrait, IEnumerable<(string ViewId, double X, double Y, int Page)> views, string? discipline = null)
     {
-        if (!Papers.ContainsKey(paper)) throw new CommandException("A sheet is A0, A1, A2, A3 or A4.");
+        CheckPaper(paper);
         var id = ctx.NewId();
         var vps = views.Select(v => (JsonNode)new SheetViewport(ctx.NewId(), v.ViewId, v.X, v.Y, Page: v.Page).ToJson()).ToArray();
         var sheet = new Entity(id, Class, name, new JsonObject
@@ -478,15 +500,16 @@ public static class Sheets
         r.Class(new(Class, "Sheet",
         [
             new("number", "Number", "text"),
-            new("paper", "Paper", "choice", Choices: [.. Papers.Keys]),
-            new("orientation", "Orientation", "choice", Choices: ["landscape", "portrait"]),
+            new("paper", "Paper", "choice", Choices: PaperChoices),
+            new("paperWidth", "Paper width (mm)", "number", Min: MinPaper, Max: MaxPaper, ShowIf: FieldDescriptor.When("paper", Custom)),
+            new("paperHeight", "Paper height (mm)", "number", Min: MinPaper, Max: MaxPaper, ShowIf: FieldDescriptor.When("paper", Custom)),
+            new("orientation", "Orientation", "choice", Choices: ["landscape", "portrait"], ShowIf: FieldDescriptor.When("paper", "!" + Custom)),
             new("discipline", "Discipline", "text"),
         ], "#555555", Kind: "view"));
 
         r.Command("sheet.create", "New sheet", (ctx, a) =>
         {
-            var paper = (string?)a["paper"] ?? "A1";
-            if (!Papers.ContainsKey(paper)) throw new CommandException("A sheet is A0, A1, A2, A3 or A4.");
+            var paper = CheckPaper((string?)a["paper"] ?? "A1");
             var number = ((string?)a["number"])?.Trim() is { Length: > 0 } n ? n : NextNumber(ctx.Model);
             var sheet = new Entity(ctx.NewId(), Class, (string?)a["name"] ?? "Sheet", new JsonObject
             {
@@ -494,6 +517,7 @@ public static class Sheets
                 ["titleBlock"] = new JsonObject(), ["viewports"] = new JsonArray(),
             });
             if ((string?)a["discipline"] is { Length: > 0 } discipline) sheet.Attrs["discipline"] = discipline;
+            if (paper == Custom) CustomSize(sheet.Attrs, a);
             ctx.Add(sheet);
             return new JsonObject { ["id"] = sheet.Id };
         });

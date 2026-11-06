@@ -60,6 +60,17 @@ La ficha **Dibujo** dibuja líneas, polilíneas, rectángulos, círculos y arcos
 
 Toda longitud que pide la línea de comandos está en la unidad del proyecto, y el mensaje dice cuál: `Depth (mm)`, `Height (ft-in)`. Los ángulos, factores y recuentos son números simples: `90` tras **Girar** es 90°, sea cual sea la unidad.
 
+### Calcar sobre un PDF o una imagen
+
+**Archivo → Importar PDF o imagen…**, o **Dibujo → PDF o imagen**, trae un dibujo para calcar: un plano escaneado, la foto de una fachada, un PDF de otro estudio. Entra en la planta, la sección o el alzado al frente, bajo su dibujo.
+
+- **Un PDF**: elige la **Página** y la escala a la que se hizo su dibujo (**Dibujado a 1:**). Un milímetro de papel mide entonces aquí tantos milímetros, así que una planta a 1:100 entra a su tamaño real. Las líneas de la página entran como dibujo al que puedes engancharte, que puedes editar y calcar, y sus imágenes (un escaneo dentro del PDF) como imágenes debajo de ellas. Cualquiera de las dos puede quedar fuera. La página entra como un solo grupo con el nombre del archivo, así que **Desplazar**, **Girar** y **Escala** la toman entera; haz doble clic en ella para trabajar en sus partes.
+- **Una imagen** (PNG o JPEG): da su **Ancho**; su alto sigue sus píxeles. **Dibujo → Escalar imagen** lo fija después exactamente: selecciona la imagen, haz clic en dos puntos de ella a una distancia conocida y escribe esa distancia.
+
+Una imagen es translúcida (su **Opacidad**, 0,5 por defecto, en sus propiedades) y nunca forma parte del modelo: solo se imprime en las láminas si la dejas en la vista.
+
+![Una planta impresa en PDF, traída a otro nivel para calcarla](shots/trace-pdf.webp)
+
 ### Dibujar en la vista 3D
 
 **Línea**, **Polilínea**, **Rectángulo**, **Círculo**, **Arco** y las ediciones de Dibujo funcionan también en la vista 3D, con la línea de comandos abajo. Mientras corre un comando, la etiqueta de arriba dice dónde dibujas: en el nivel de la planta activa o en el plano de referencia seleccionado. **Elegir una cara** en la etiqueta, y luego un clic en una cara del modelo, crea un plano de referencia en esa cara y dibuja en él. Los puntos se enganchan como en una planta: a las líneas cortadas de la planta (esquinas y caras de los muros) y a lo dibujado en el mismo plano, con orto y las guías de rastreo. Lo que dibujas es el mismo elemento de dibujo que uno hecho en la planta, y se ve también allí.

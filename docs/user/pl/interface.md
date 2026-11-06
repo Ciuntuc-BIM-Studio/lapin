@@ -12,6 +12,8 @@ Obszar roboczy pokazuje tylko te karty wstążki, których potrzebuje twoja prac
 
 ![Obszary robocze w Widok → Interfejs…](shots/workspaces.webp)
 
+Gdy narzędzia wstążki są szersze niż okno, kółko myszy nad nimi przewija je w bok.
+
 Karty mieszczą się w jednym wierszu. Gdy okno jest za wąskie na wszystkie, ostatnie trafiają pod **Więcej** na końcu wiersza, a karta, na której jesteś, zawsze pozostaje widoczna.
 
 Karty są pogrupowane według pracy, której służą. **Wnętrza** obejmują wykończenia i meble. **Zagospodarowanie** obejmuje teren, zieleń i roboty pomocnicze (rusztowania i deskowania). **Realizacja** obejmuje harmonogram robót i kosztorys (4D i 5D).

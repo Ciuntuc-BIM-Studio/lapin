@@ -60,6 +60,17 @@ L’onglet **Dessin** trace des lignes, des polylignes, des rectangles, des cerc
 
 Toute longueur que demande la ligne de commande est dans l’unité du projet, et l’invite dit laquelle : `Depth (mm)`, `Height (ft-in)`. Les angles, facteurs et nombres sont de simples nombres : `90` après **Rotation** fait 90°, quelle que soit l’unité.
 
+### Décalquer un PDF ou une image
+
+**Fichier → Importer un PDF ou une image…**, ou **Dessin → PDF ou image**, fait entrer un dessin à décalquer : un plan scanné, la photo d’une façade, un PDF d’un autre bureau. Il va dans le plan, la coupe ou l’élévation au premier plan, sous son dessin.
+
+- **Un PDF** : choisissez la **Page** et l’échelle à laquelle son dessin a été fait (**Dessiné au 1:**). Un millimètre de papier mesure alors ici autant de millimètres, si bien qu’un plan au 1:100 arrive à sa vraie taille. Les lignes de la page arrivent en dessin auquel vous pouvez vous accrocher, que vous pouvez modifier et décalquer, et ses images (un scan dans le PDF) en images dessous. L’un ou l’autre peut être laissé de côté. La page arrive en un seul groupe nommé d’après le fichier, si bien que **Déplacer**, **Rotation** et **Échelle** la prennent entière ; double-cliquez dessus pour travailler sur ses parties.
+- **Une image** (PNG ou JPEG) : donnez sa **Largeur** ; sa hauteur suit ses pixels. **Dessin → Mettre l’image à l’échelle** la fixe ensuite exactement : sélectionnez l’image, cliquez deux points dessus à une distance connue l’un de l’autre, et tapez cette distance.
+
+Une image est transparente (son **Opacité**, 0,5 par défaut, dans ses propriétés) et ne fait jamais partie du modèle : elle ne s’imprime sur les feuilles que si vous la laissez dans la vue.
+
+![Un plan imprimé en PDF, amené dans un autre niveau pour être décalqué](shots/trace-pdf.webp)
+
 ### Dessiner dans la vue 3D
 
 **Ligne**, **Polyligne**, **Rectangle**, **Cercle**, **Arc** et les modifications de Dessin fonctionnent aussi dans la vue 3D, avec la ligne de commande en bas. Pendant une commande, l’étiquette du haut dit où vous dessinez : au niveau de l’étage actif, ou sur le plan de référence sélectionné. **Choisir une face** dans l’étiquette, puis un clic sur une face du modèle, crée un plan de référence sur cette face et dessine dessus. Les points s’accrochent comme sur un plan : aux lignes coupées du plan (angles et faces des murs) et à ce qui est dessiné sur le même plan, avec l’ortho et les lignes de repérage. Ce que vous dessinez est le même élément de dessin que sur le plan, et s’y voit aussi.

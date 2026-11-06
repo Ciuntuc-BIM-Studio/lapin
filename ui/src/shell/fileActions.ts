@@ -8,7 +8,7 @@ import type { FileAction } from '../platform/module';
 import { modules } from '../platform/modules';
 import { resolveFileActions } from '../platform/replaces';
 import { useUi } from '../app/store';
-import { importDxf, importIfc, newProject, openProject, saveProject, importFragments, importMesh } from '../engine/files';
+import { importDxf, importIfc, newProject, openProject, saveProject, importFragments, importMesh, importTrace } from '../engine/files';
 import { openOptimize } from '../engine/ifcOptimize';
 import { engineInBrowser } from '../engine/session';
 import { leave } from '../engine/share';
@@ -35,6 +35,7 @@ export function baseFileActions(): FileAction[] {
     // A file cleaned and lightened into a copy, no project needed (docs/ifc-optimize.md).
     { id: 'file.optimizeIfc', label: 'Optimize IFC…', menu: 'optimize-ifc', run: () => openOptimize() },
     { id: 'file.importDxf', label: 'Import DXF…', run: () => importDxf() },
+    { id: 'file.importTrace', label: 'Import PDF or image…', run: () => importTrace() },
     { id: 'file.importMesh', label: 'Import mesh (OBJ, STL, glTF)…', run: () => importMesh() },
     { id: 'file.exportMesh', label: 'Export 3D (glTF, USD, DAE)…', run: dialog('exportMesh') },
     { id: 'file.share', label: 'Share session…', shown: () => !engineInBrowser, run: dialog('share') },
@@ -48,7 +49,7 @@ export function baseFileActions(): FileAction[] {
 export const HOST_SECTIONS: FileSection[] = [
   { ids: ['file.new', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion'] },
   { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.linkIfc', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
-  { head: 'Other formats', ids: ['file.importDxf', 'file.importMesh', 'file.exportMesh'] },
+  { head: 'Other formats', ids: ['file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh'] },
   { ids: ['file.share', 'file.join', 'file.startScreen'] },
 ];
 

@@ -45,6 +45,16 @@ Un perete recunoscut dintr-un IFC importat al cărui capăt e tăiat oblic în f
 
 **Alinierea hașurii** stabilește cum se hașurează în plan straturile acestui perete. **material** urmează setarea fiecărui material. **axis** așază hașura fiecărui strat de-a lungul axului peretelui, pornind de la începutul axului, așa că un zid de cărămidă sub un unghi își arată rândurile de-a lungul lui, continuate de la un strat la altul. **view** pornește fiecare hașură de la originea vederii, fără rotire.
 
+### Un perete după profilul lui
+
+**Profil…** din proprietățile unui perete îi desenează vârful în fațadă, văzut de la început spre sfârșit: un fronton, o pantă, trepte, un perete care urmează o scară. Trage punctele (**Shift** păstrează înălțimea unui punct), fă clic pe linia de sus ca să adaugi unul, clic dreapta pe un punct ca să-l scoți, sau scrie-le în tabel, în milimetri. **Pornește de la** dă un **Fronton**, o **Pantă** sau **Trepte** până la înălțimea pe care o scrii. O treaptă înseamnă două puncte unul deasupra celuilalt. **Aplică** dă peretelui forma; **Vârf drept** îl face din nou drept sus.
+
+Peretele rămâne perete: grosimea, straturile, îmbinările, ușile și ferestrele lui sunt cum erau, iar în IFC se exportă cu forma lui.
+
+![Un fronton desenat în editorul de profil](shots/wall-profile-editor.webp)
+
+![Peretele de vest al casei ca fronton, cu fereastra păstrată](shots/wall-profile-3d.webp)
+
 ## Tipurile de pereți
 
 Un tip de perete e un set de straturi, de la fața din dreapta sensului în care e desenat peretele (exteriorul, când desenezi în jurul clădirii în sens trigonometric) la fața din stânga. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **De la** și **Până la** spun cât de sus merge peste baza peretelui (un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.

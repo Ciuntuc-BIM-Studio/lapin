@@ -60,6 +60,17 @@ La scheda **Disegno** disegna linee, polilinee, rettangoli, cerchi e archi. Li m
 
 Ogni lunghezza che la riga di comando chiede è nell’unità del progetto, e il messaggio dice quale: `Depth (mm)`, `Height (ft-in)`. Angoli, fattori e conteggi sono numeri semplici: `90` dopo **Ruota** è 90°, qualunque sia l’unità.
 
+### Ricalcare un PDF o un’immagine
+
+**File → Importa PDF o immagine…**, oppure **Disegno → PDF o immagine**, porta dentro un disegno da ricalcare: una pianta scansionata, la foto di una facciata, un PDF di un altro studio. Entra nella pianta, sezione o prospetto in primo piano, sotto il suo disegno.
+
+- **Un PDF**: scegli la **Pagina** e la scala in cui è stato fatto il suo disegno (**Disegnato in 1:**). Un millimetro di carta misura allora qui altrettanti millimetri, così una pianta in 1:100 entra alla sua vera grandezza. Le linee della pagina entrano come disegno a cui agganciarti, da modificare e ricalcare, e le sue immagini (una scansione nel PDF) come immagini sotto di esse. Si può lasciare fuori l’una o l’altra parte. La pagina entra come un unico gruppo con il nome del file, così **Sposta**, **Ruota** e **Scala** la prendono intera; fai doppio clic su di essa per lavorare sulle sue parti.
+- **Un’immagine** (PNG o JPEG): dalle la **Larghezza**; l’altezza segue i suoi pixel. **Disegno → Scala immagine** la fissa poi esattamente: seleziona l’immagine, fai clic su due suoi punti a distanza nota e scrivi quella distanza.
+
+Un’immagine è trasparente (la sua **Opacità**, 0,5 di default, nelle sue proprietà) e non fa mai parte del modello: si stampa sulle tavole solo se la lasci nella vista.
+
+![Una pianta stampata in PDF, portata in un altro livello per ricalcarla](shots/trace-pdf.webp)
+
 ### Disegnare nella vista 3D
 
 **Linea**, **Polilinea**, **Rettangolo**, **Cerchio**, **Arco** e le modifiche di Disegno funzionano anche nella vista 3D, con la riga di comando in basso. Mentre un comando è in corso, l’etichetta in alto dice dove disegni: alla quota del piano attivo o sul piano di riferimento selezionato. **Scegli una faccia** nell’etichetta, poi un clic su una faccia del modello, crea su quella faccia un piano di riferimento e disegna su di esso. I punti si agganciano come in pianta: alle linee tagliate della pianta (spigoli e facce dei muri) e a ciò che è disegnato sullo stesso piano, con l’orto e le linee di tracciamento. Ciò che disegni è lo stesso elemento di disegno di uno fatto in pianta, e si vede anche lì.

@@ -45,6 +45,16 @@ A wall recognised from an imported IFC whose end the file cuts at an angle keeps
 
 **Hatch alignment** sets how this wall's layers are hatched in plans. **material** follows each material's own setting. **axis** lays every layer's hatch along the wall's axis, starting from the axis's start, so a brick wall at an angle shows its courses along it and they run on from one layer to the next. **view** starts every hatch from the view's origin, unturned.
 
+### A wall by its profile
+
+**Profile…** in a wall's properties draws its top in elevation, seen from its start to its end: a gable, a slope, steps, a wall that follows a stair. Drag the points (**Shift** keeps a point's height), click the top line to add one, right-click a point to take it out, or type them in the table in millimetres. **Start from** gives a **Gable**, a **Slope** or **Steps** up to the height you type. A step is two points one over the other. **Apply** shapes the wall; **Flat top** makes it flat again.
+
+The wall stays a wall: its thickness, its layers, its joins and its doors and windows are as they were, and it exports to IFC with its shape.
+
+![A gable drawn in the profile editor](shots/wall-profile-editor.webp)
+
+![The house's west wall as a gable, its window kept](shots/wall-profile-3d.webp)
+
 ## Wall types
 
 A wall type is a set of layers, from the face on the right of the way the wall is drawn (the outside, when you draw round a building anticlockwise) to the face on its left. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **From** and **Up to** set how high it goes over the wall's base (a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.

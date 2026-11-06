@@ -12,6 +12,8 @@ Un’area di lavoro mostra solo le schede della barra multifunzione di cui il tu
 
 ![Le aree di lavoro in Vista → Interfaccia…](shots/workspaces.webp)
 
+Quando gli strumenti della barra multifunzione sono più larghi della finestra, la rotella del mouse sopra di essi li fa scorrere di lato.
+
 Le schede restano su una sola riga. Quando la finestra è troppo stretta per tutte, le ultime passano sotto **Altro**, in fondo alla riga, e la scheda in cui sei resta sempre in vista.
 
 Le schede sono raggruppate secondo il lavoro che servono. **Interni** riunisce le finiture e gli arredi. **Sito** riunisce il terreno, il paesaggio e le opere provvisionali (ponteggi e casseforme). **Esecuzione** riunisce il programma lavori e il preventivo (4D e 5D).

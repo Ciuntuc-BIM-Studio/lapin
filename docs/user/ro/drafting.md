@@ -64,6 +64,17 @@ Tabul **Desen** desenează linii, polilinii, dreptunghiuri, cercuri și arce. Le
 
 Orice lungime cerută de linia de comandă e în unitatea proiectului, iar mesajul spune care: `Depth (mm)`, `Height (ft-in)`. Unghiurile, factorii și numărătorile sunt numere simple: `90` după **Rotire** înseamnă 90°, oricare ar fi unitatea.
 
+### Calchiat peste un PDF sau o imagine
+
+**Fișier → Importă PDF sau imagine…** sau **Desen → PDF sau imagine** aduce un desen peste care să calchiezi: un plan scanat, o fotografie a unei fațade, un PDF de la alt birou. Intră în planul, secțiunea sau fațada din față, sub desenul ei.
+
+- **Un PDF**: alege **Pagina** și scara la care a fost făcut desenul lui (**Desenat la 1:**). Un milimetru de hârtie măsoară atunci atâția milimetri aici, așa că un plan la 1:100 intră la mărimea lui reală. Liniile paginii intră ca desen de care te poți prinde, pe care îl poți modifica și calchia, iar imaginile ei (o scanare din PDF) ca imagini sub ele. Oricare poate fi lăsată deoparte. Pagina intră ca un singur grup numit după fișier, așa că **Mută**, **Rotire** și **Scalează** o iau întreagă; dublu clic pe ea ca să lucrezi pe părțile ei.
+- **O imagine** (PNG sau JPEG): dă-i **Lățimea**; înălțimea urmează pixelii ei. **Desen → Scalează imaginea** o fixează apoi exact: selectează imaginea, fă clic pe două puncte de pe ea aflate la o distanță cunoscută și scrie distanța.
+
+O imagine e transparentă (**Opacitate**, 0,5 implicit, în proprietățile ei) și nu face niciodată parte din model: nu se tipărește pe planșe decât dacă o lași în vedere.
+
+![Un plan tipărit în PDF, adus pe alt nivel ca să fie calchiat](shots/trace-pdf.webp)
+
 ### Desen în vederea 3D
 
 **Linie**, **Polilinie**, **Dreptunghi**, **Cerc**, **Arc** și editările din Desen merg și în vederea 3D, cu linia de comandă jos. Cât timp rulează o comandă, eticheta de sus spune pe ce desenezi: la cota nivelului activ sau pe planul de referință selectat. **Alege o față** din etichetă, apoi un clic pe o față a modelului, face pe fața aceea un plan de referință și desenează pe el. Punctele se prind ca într-un plan: pe liniile tăiate ale planului (colțurile și fețele pereților) și pe ce e desenat pe același plan, cu orto și liniile de urmărire. Ce desenezi e același element desenat ca unul făcut pe plan și se vede și acolo.

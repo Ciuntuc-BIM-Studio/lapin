@@ -45,6 +45,16 @@ Un mur reconnu depuis un IFC importé dont le fichier coupe l’extrémité en b
 
 **Alignement des hachures** règle la façon dont les couches de ce mur sont hachurées en plan. **material** suit le réglage de chaque matériau. **axis** pose la hachure de chaque couche le long de l’axe du mur, depuis le début de l’axe : un mur de briques en biais montre ses assises dans son sens, et elles se suivent d’une couche à l’autre. **view** part de l’origine de la vue pour chaque hachure, sans rotation.
 
+### Un mur selon son profil
+
+**Profil…** dans les propriétés d’un mur dessine son sommet en élévation, vu de son début à sa fin : un pignon, une pente, des redans, un mur qui suit un escalier. Faites glisser les points (**Maj** garde la hauteur d’un point), cliquez sur la ligne du haut pour en ajouter un, faites un clic droit sur un point pour l’enlever, ou tapez-les dans le tableau en millimètres. **Partir de** donne un **Pignon**, une **Pente** ou des **Gradins** jusqu’à la hauteur que vous tapez. Un redan, c’est deux points l’un au-dessus de l’autre. **Appliquer** donne sa forme au mur ; **Sommet plat** le rend de nouveau plat.
+
+Le mur reste un mur : son épaisseur, ses couches, ses jonctions et ses portes et fenêtres sont comme avant, et il s’exporte en IFC avec sa forme.
+
+![Un pignon dessiné dans l’éditeur de profil](shots/wall-profile-editor.webp)
+
+![Le mur ouest de la maison en pignon, sa fenêtre gardée](shots/wall-profile-3d.webp)
+
 ## Types de murs
 
 Un type de mur est un ensemble de couches, de la face à droite du sens dans lequel le mur est tracé (l’extérieur, si vous tracez autour d’un bâtiment dans le sens inverse des aiguilles d’une montre) à la face à sa gauche. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.

@@ -60,6 +60,17 @@ Fanen **Tegn** tegner linjer, polylinjer, rektangler, cirkler og buer. Den redig
 
 Hver længde, kommandolinjen beder om, er i projektets enhed, og prompten siger hvilken: `Depth (mm)`, `Height (ft-in)`. Vinkler, faktorer og antal er almindelige tal: `90` efter **Rotér** er 90°, uanset enheden.
 
+### Tegn efter en PDF eller et billede
+
+**Filer → Importér PDF eller billede…** eller **Tegn → PDF eller billede** henter en tegning ind at tegne efter: en scannet plan, et foto af en facade, en PDF fra en anden tegnestue. Den kommer ind i planen, snittet eller facaden forrest, under dens tegning.
+
+- **En PDF**: Vælg **Side** og målestokken, dens tegning blev lavet i (**Tegnet i 1:**). En papirmillimeter måler så lige så mange millimeter her, så en plan i 1:100 kommer ind i sin sande størrelse. Sidens linjer kommer ind som tegning, du kan fange til, redigere og tegne efter, og dens billeder (en scanning i PDF’en) som billeder under dem. Begge kan udelades. Siden kommer ind som én gruppe opkaldt efter filen, så **Flyt**, **Rotér** og **Skalér** tager den hel; dobbeltklik på den for at arbejde med dens dele.
+- **Et billede** (PNG eller JPEG): Angiv dets **Bredde**; højden følger pixlerne. **Tegn → Skalér billede** sætter den derefter præcist: Markér billedet, klik på to punkter på det med en kendt afstand og skriv afstanden.
+
+Et billede er gennemsigtigt (dets **Uigennemsigtighed**, 0,5 som standard, i dets egenskaber) og er aldrig en del af modellen: Det udskrives kun på tegningsark, hvis du lader det blive i visningen.
+
+![En plan udskrevet til PDF, hentet ind på en anden etage for at tegne efter](shots/trace-pdf.webp)
+
 ### Tegning i 3D-visningen
 
 **Linje**, **Polylinje**, **Rektangel**, **Cirkel**, **Bue** og redigeringerne fra Tegning virker også i 3D-visningen, med kommandolinjen nederst. Mens en kommando kører, siger mærket øverst, hvor du tegner: i den aktive etages kote eller på det valgte referenceplan. **Vælg en flade** i mærket og så et klik på en flade i modellen laver et referenceplan på fladen og tegner på det. Punkter fanges som i en plan: til planens snitlinjer (væggenes hjørner og flader) og til det, der er tegnet på samme plan, med ortho og sporingslinjerne. Det, du tegner, er det samme tegneelement som et tegnet på planen og ses også der.

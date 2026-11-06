@@ -1,5 +1,6 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs, rooms and their colours. */
 
+import { WallProfileDialog } from './WallProfileDialog';
 import { Armchair, ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -469,7 +470,7 @@ const architecture: LapinModule = {
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
     { id: 'gate', label: 'Gate', classes: [GATE_CLASS], component: GateSection },
   ],
-  dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog },
+  dialogs: { wallProfile: WallProfileDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog },
   grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips,
     [GATE_CLASS]: (n: NodeDto) => {
       const { nodes, relations } = useSession.getState();

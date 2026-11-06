@@ -25,6 +25,8 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Service<ISectionPaths>(new ShapeSectionPaths());
         Cad.DraftCommands.Register(r);
         Cad.DxfImport.Register(r);
+        // Pictures and PDFs to trace over (decision 371).
+        Cad.ViewImages.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
         r.Service<IDeletion>(new AxisDeletion());
         r.Service<IPartPlacement>(new AxisPlacement());
@@ -481,7 +483,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         });
     }
 
-    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.Drafts.Marks(c).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(DimensionKinds.Marks(c)).Concat(Texts.Marks(c)).Concat(Tags.Marks(c));
+    public IEnumerable<ViewMark> Marks(ViewContext c) => Cad.ViewImages.Marks(c).Concat(Cad.Drafts.Marks(c)).Concat(Grids.Marks(c)).Concat(Dimensions.Marks(c)).Concat(DimensionKinds.Marks(c)).Concat(Texts.Marks(c)).Concat(Tags.Marks(c));
 
     /// <summary>What each drafted element covers in a view, from what it draws there (its lines, fills and texts' anchors).</summary>
     static Dictionary<string, (Vec2 Min, Vec2 Max)> Boxes(IQueryContext q, Entity view)

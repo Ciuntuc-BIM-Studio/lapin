@@ -775,6 +775,35 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             foreach (var id in Ids(a)) Walls.Flip(ctx, Spatial.Require(ctx.Model, id, IfcClass.Wall), axis);
             return null;
         });
+
+        // A wall by its profile (a tester's wish, #100, decision 372): its own top along its axis, [[u, v], …] with u from its
+        // start and v over its base, a step two points at one u; a gable, a slope, steps, a wall under a stair. Null: flat again.
+        r.Command("setWallProfile", "Wall profile", (ctx, a) =>
+        {
+            var ids = Ids(a);
+            if (!ids.Any()) throw new CommandException("Which wall?");
+            foreach (var id in ids)
+            {
+                var wall = Spatial.Require(ctx.Model, id, IfcClass.Wall);
+                if (PathCurve.Of(wall).IsArc) throw new CommandException("A curved wall keeps a flat top: its profile is for straight walls.");
+                var attrs = wall.CloneAttrs();
+                if (a["top"] is not JsonArray top || top.Count == 0) { attrs.Remove(WallTops.TopProfileKey); ctx.Replace(wall.With(attrs: attrs)); continue; }
+                var length = (Walls.End(wall) - Walls.Start(wall)).Length;
+                var pts = new List<(double U, double V)>();
+                foreach (var q in top)
+                {
+                    if (q is not JsonArray { Count: >= 2 } pa || Json.Number(pa[0]) is not { } u || Json.Number(pa[1]) is not { } v) throw new CommandException("A profile is a list of [u, v] points.");
+                    pts.Add((Math.Clamp(u, 0, length), v));
+                }
+                if (pts.Count < 2) throw new CommandException("A profile needs two points at least.");
+                for (var i = 1; i < pts.Count; i++) if (pts[i].U < pts[i - 1].U - 1e-9) throw new CommandException("A profile runs from the wall's start to its end: its points in order along it.");
+                if (pts.Any(q => q.V < 0.05)) throw new CommandException("A profile stays 50 mm over the wall's base at least.");
+                if (pts.Any(q => q.V > 100)) throw new CommandException("A profile stays under 100 m.");
+                attrs[WallTops.TopProfileKey] = WallTops.ProfileJson(pts);
+                ctx.Replace(wall.With(attrs: attrs));
+            }
+            return null;
+        });
     }
 
     /// <summary>A contour: <c>points</c> as [[x, y], …], or the rectangle between (x1, y1) and (x2, y2).</summary>

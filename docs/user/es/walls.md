@@ -45,6 +45,16 @@ Un muro reconocido de un IFC importado cuyo extremo el archivo corta en ángulo 
 
 **Alineación del sombreado** fija cómo se sombrean en planta las capas de este muro. **material** sigue el ajuste de cada material. **axis** coloca el sombreado de cada capa a lo largo del eje del muro, desde el inicio del eje, así un muro de ladrillo en ángulo muestra sus hiladas a lo largo de él, continuas de una capa a otra. **view** empieza cada sombreado en el origen de la vista, sin girar.
 
+### Un muro por su perfil
+
+**Perfil…** en las propiedades de un muro dibuja su coronación en alzado, vista de su inicio a su final: un hastial, una pendiente, escalones, un muro que sigue una escalera. Arrastra los puntos (**Mayús** mantiene la altura de un punto), haz clic en la línea superior para añadir uno, clic derecho en un punto para quitarlo, o escríbelos en la tabla en milímetros. **Empezar desde** da un **Hastial**, una **Pendiente** o **Escalones** hasta la altura que escribas. Un escalón son dos puntos uno sobre otro. **Aplicar** da la forma al muro; **Coronación plana** lo vuelve plano.
+
+El muro sigue siendo un muro: su espesor, sus capas, sus uniones y sus puertas y ventanas quedan como estaban, y se exporta a IFC con su forma.
+
+![Un hastial dibujado en el editor de perfil](shots/wall-profile-editor.webp)
+
+![El muro oeste de la casa como hastial, con su ventana conservada](shots/wall-profile-3d.webp)
+
 ## Tipos de muro
 
 Un tipo de muro es un conjunto de capas, desde la cara a la derecha del sentido en que se dibuja el muro (el exterior, si dibuja alrededor del edificio en sentido antihorario) hasta la cara de su izquierda. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.

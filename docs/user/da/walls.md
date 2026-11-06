@@ -45,6 +45,16 @@ En væg genkendt fra en importeret IFC, hvis ende filen skærer skråt, beholder
 
 **Skraveringsretning** bestemmer, hvordan denne vægs lag skraveres i plan. **material** følger hvert materiales egen indstilling. **axis** lægger hvert lags skravering langs væggens akse fra aksens start, så en skrå murstensvæg viser sine skifter langs væggen, og de fortsætter fra lag til lag. **view** starter hver skravering i visningens origo, uden drejning.
 
+### En væg efter sin profil
+
+**Profil…** i en vægs egenskaber tegner dens top i opstalt, set fra dens start til dens slutning: en gavl, en skråning, trin, en væg der følger en trappe. Træk punkterne (**Shift** beholder et punkts højde), klik på toplinjen for at tilføje et, højreklik på et punkt for at fjerne det, eller skriv dem i tabellen i millimeter. **Start fra** giver et **Gavl**, en **Hældning** eller **Trin** op til den højde, du skriver. Et trin er to punkter over hinanden. **Anvend** former væggen; **Plan top** gør den plan igen.
+
+Væggen forbliver en væg: dens tykkelse, dens lag, dens samlinger og dens døre og vinduer er som før, og den eksporteres til IFC med sin form.
+
+![En gavl tegnet i profileditoren](shots/wall-profile-editor.webp)
+
+![Husets vestvæg som gavl, med vinduet bevaret](shots/wall-profile-3d.webp)
+
 ## Vægtyper
 
 En vægtype er et sæt lag, fra siden til højre for den retning, væggen tegnes i (ydersiden, når du tegner rundt om en bygning mod uret), til siden til venstre. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.

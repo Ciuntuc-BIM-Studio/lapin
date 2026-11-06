@@ -12,7 +12,7 @@ Klicken Sie im Projektbrowser auf **+** neben **Pläne**. Um eine Ansicht zu pla
 
 ![Ein A3-Plan mit einem Grundriss und einem Schnitt](shots/sheet.webp)
 
-Wählen Sie den Plan aus, um im Eigenschaftenbereich seinen **Plankopf** auszufüllen: das Projekt, den Bauherrn, wer ihn gezeichnet hat, wer ihn geprüft hat, das Datum und den Revisionsstand. Seine Nummer, sein Papierformat und seine Ausrichtung werden dort ebenfalls festgelegt. Leer gelassen zeigt das Projektfeld den Namen des Projekts: den ihm gegebenen Namen, sonst den Namen seiner Datei.
+Wählen Sie den Plan aus, um im Eigenschaftenbereich seinen **Plankopf** auszufüllen: das Projekt, den Bauherrn, wer ihn gezeichnet hat, wer ihn geprüft hat, das Datum und den Revisionsstand. Seine Nummer, sein Papierformat und seine Ausrichtung werden dort ebenfalls festgelegt. Das Papier ist ein A-Format (A0 bis A4), eines der langen ISO-Formate (A0×2, A1×3, A2×3, A3×3, A3×4, A4×3), ein nordamerikanisches Format (Letter, Tabloid, ARCH D, ARCH E) oder **benutzerdefiniert**, mit seiner **Papierbreite** und **Papierhöhe** in Millimetern. Leer gelassen zeigt das Projektfeld den Namen des Projekts: den ihm gegebenen Namen, sonst den Namen seiner Datei.
 
 ## Was eine Ansicht zeigt
 

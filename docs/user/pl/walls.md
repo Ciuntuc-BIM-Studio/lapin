@@ -45,6 +45,16 @@ Niżej sekcja **Zależności** pokazuje, co jest zbudowane ze ściany i z czego 
 
 **Wyrównanie kreskowania** określa, jak warstwy tej ściany są kreskowane na rzucie. **material** przyjmuje ustawienie każdego materiału. **axis** układa kreskowanie każdej warstwy wzdłuż osi ściany, od początku osi, więc ukośny mur z cegły pokazuje warstwy cegieł wzdłuż siebie, ciągnące się z warstwy na warstwę. **view** zaczyna każde kreskowanie od początku układu widoku, bez obrotu.
 
+### Ściana według profilu
+
+**Profil…** we właściwościach ściany rysuje jej górę w widoku elewacji, widzianą od początku do końca: szczyt, spadek, uskoki, ścianę idącą za schodami. Przeciągaj punkty (**Shift** zachowuje wysokość punktu), kliknij górną linię, aby dodać punkt, kliknij punkt prawym przyciskiem, aby go usunąć, albo wpisz je w tabeli w milimetrach. **Zacznij od** daje **Szczyt**, **Nachylenie** lub **Schodki** do wysokości, którą wpiszesz. Uskok to dwa punkty jeden nad drugim. **Zastosuj** nadaje ścianie kształt; **Płaska góra** znów czyni ją płaską.
+
+Ściana pozostaje ścianą: jej grubość, warstwy, połączenia oraz drzwi i okna są jak były, a do IFC eksportuje się z kształtem.
+
+![Szczyt narysowany w edytorze profilu](shots/wall-profile-editor.webp)
+
+![Zachodnia ściana domu jako szczyt, z zachowanym oknem](shots/wall-profile-3d.webp)
+
 ## Typy ścian
 
 Typ ściany to zestaw warstw, od lica po prawej stronie kierunku, w którym rysowana jest ściana (zewnętrznego, gdy rysujesz wokół budynku przeciwnie do ruchu wskazówek zegara), do lica po jej lewej. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.

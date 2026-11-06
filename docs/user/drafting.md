@@ -64,6 +64,17 @@ The **Draft** tab draws lines, polylines, rectangles, circles and arcs. It edits
 
 Every length the command line asks for is in the project's unit, and the prompt says which: `Depth (mm)`, `Height (ft-in)`. Angles, factors and counts are plain numbers: `90` after **Rotate** is 90° whatever the unit.
 
+### Tracing over a PDF or an image
+
+**File → Import PDF or image…**, or **Draft → PDF or image**, brings a drawing in to trace over: a scanned plan, a photo of a facade, a PDF from another office. It goes into the plan, section or elevation in front, under its drawing.
+
+- **A PDF**: choose the **Page** and the scale its drawing was made to (**Drawn at 1:**). A paper millimetre then measures that many millimetres here, so a 1:100 plan comes in at its true size. The page's lines come in as drafting you can snap to, edit and trace, and its pictures (a scan inside the PDF) as images under them. Either can be left out. The page comes in as one group named after the file, so **Move**, **Rotate** and **Scale** take it whole; double-click it to work on its parts.
+- **An image** (PNG or JPEG): give its **Width**; its height follows its pixels. **Draft → Scale image** then sets it exactly: select the image, click two points on it a known distance apart, and type that distance.
+
+An image is see-through (its **Opacity**, 0.5 by default, in its properties) and is never part of the model: it does not print on sheets unless you leave it in the view.
+
+![A plan printed to PDF, brought into another level to trace over](shots/trace-pdf.webp)
+
 ### Drafting in the 3D view
 
 **Line**, **Polyline**, **Rectangle**, **Circle**, **Arc** and the Draft edits work in the 3D view too, with the command line at the bottom. While a command runs, the chip at the top says where you draw: on the active storey's level, or on the reference plane you selected. **Pick a face** in the chip, then a click on a face of the model, makes a reference plane on that face and draws on it. Points snap as on a plan: to the plan's cut lines (the walls' corners and faces) and to what is drafted on the same plane, with ortho and the tracking guides. What you draw is the same drafted element as one drawn on the plan, and shows there too.

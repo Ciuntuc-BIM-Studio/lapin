@@ -60,6 +60,17 @@ Karta **Rysunek** rysuje linie, polilinie, prostokąty, okręgi i łuki. Edytuje
 
 Każda długość, o którą pyta wiersz poleceń, jest w jednostce projektu, a monit mówi, w jakiej: `Depth (mm)`, `Height (ft-in)`. Kąty, współczynniki i liczności to zwykłe liczby: `90` po **Obróć** to 90°, bez względu na jednostkę.
 
+### Odrysowywanie PDF lub obrazu
+
+**Plik → Importuj PDF lub obraz…** albo **Rysunek → PDF lub obraz** wprowadza rysunek do odrysowania: zeskanowany rzut, zdjęcie elewacji, PDF z innego biura. Trafia do rzutu, przekroju lub elewacji na wierzchu, pod ich rysunek.
+
+- **PDF**: wybierz **Stronę** i skalę, w jakiej wykonano jego rysunek (**Narysowany w 1:**). Milimetr papieru mierzy wtedy tu tyle milimetrów, więc rzut 1:100 wchodzi w swojej rzeczywistej wielkości. Linie strony wchodzą jako rysunek, do którego możesz się przyciągać, który możesz edytować i odrysowywać, a jej obrazy (skan w PDF) jako obrazy pod nimi. Jedno i drugie można pominąć. Strona wchodzi jako jedna grupa nazwana od pliku, więc **Przesuń**, **Obróć** i **Skaluj** biorą ją całą; kliknij ją dwukrotnie, aby pracować na jej częściach.
+- **Obraz** (PNG lub JPEG): podaj jego **Szerokość**; wysokość wynika z pikseli. **Rysunek → Skaluj obraz** ustala ją potem dokładnie: zaznacz obraz, kliknij na nim dwa punkty o znanej odległości i wpisz tę odległość.
+
+Obraz jest przezroczysty (jego **Krycie**, domyślnie 0,5, w jego właściwościach) i nigdy nie należy do modelu: drukuje się na arkuszach tylko wtedy, gdy zostawisz go w widoku.
+
+![Rzut wydrukowany do PDF, wprowadzony na inną kondygnację do odrysowania](shots/trace-pdf.webp)
+
 ### Rysowanie w widoku 3D
 
 **Linia**, **Polilinia**, **Prostokąt**, **Okrąg**, **Łuk** i edycje z Rysunku działają też w widoku 3D, z wierszem poleceń na dole. Gdy polecenie trwa, etykieta u góry mówi, na czym rysujesz: na poziomie aktywnej kondygnacji lub na zaznaczonej płaszczyźnie odniesienia. **Wybierz ścianę bryły** w etykiecie, a potem kliknięcie ściany modelu, tworzy na niej płaszczyznę odniesienia i rysuje na niej. Punkty przyciągają się jak na rzucie: do linii przekroju rzutu (narożników i lic ścian) i do tego, co narysowano na tej samej płaszczyźnie, z orto i liniami śledzenia. To, co rysujesz, jest tym samym elementem rysunku co narysowany na rzucie i widać go też tam.

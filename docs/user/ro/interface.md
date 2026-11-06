@@ -12,6 +12,8 @@ Un spațiu de lucru arată doar taburile panglicii de care ai nevoie, în ordine
 
 ![Spațiile de lucru în View → Interface…](shots/workspaces.webp)
 
+Când uneltele panglicii sunt mai late decât fereastra, rotița mouse-ului deasupra lor le derulează în lateral.
+
 Taburile stau pe un singur rând. Când fereastra e prea îngustă pentru toate, ultimele trec sub **Mai multe**, la capătul rândului, iar tabul pe care ești rămâne mereu la vedere.
 
 Taburile sunt grupate după lucrul pe care îl servesc. **Interior** cuprinde finisajele și mobilierul. **Teren** cuprinde terenul, amenajarea peisagistică și organizarea de șantier (schele și cofraje). **Execuție** cuprinde programul lucrărilor și devizul (4D și 5D).

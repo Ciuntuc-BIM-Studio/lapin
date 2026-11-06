@@ -45,6 +45,16 @@ Eine aus einem importierten IFC erkannte Wand, deren Ende die Datei schräg schn
 
 **Schraffurausrichtung** legt fest, wie die Schichten dieser Wand im Grundriss schraffiert werden. **material** folgt der Einstellung jedes Materials. **axis** legt die Schraffur jeder Schicht entlang der Wandachse, vom Anfang der Achse aus, sodass eine schräge Ziegelwand ihre Lagen entlang der Wand zeigt und sie von Schicht zu Schicht durchlaufen. **view** beginnt jede Schraffur am Ursprung der Ansicht, ungedreht.
 
+### Eine Wand nach ihrem Profil
+
+**Profil…** in den Eigenschaften einer Wand zeichnet ihre Oberkante in der Ansicht, vom Anfang zum Ende gesehen: einen Giebel, eine Schräge, Stufen, eine Wand, die einer Treppe folgt. Ziehen Sie die Punkte (**Umschalt** behält die Höhe eines Punkts), klicken Sie auf die obere Linie, um einen hinzuzufügen, klicken Sie mit rechts auf einen Punkt, um ihn herauszunehmen, oder tippen Sie sie in Millimetern in die Tabelle. **Beginnen mit** gibt ein **Giebel**, eine **Neigung** oder **Stufen** bis zu der Höhe, die Sie eintippen. Eine Stufe sind zwei Punkte übereinander. **Anwenden** formt die Wand; **Gerade Oberkante** macht sie wieder gerade.
+
+Die Wand bleibt eine Wand: ihre Dicke, ihre Schichten, ihre Anschlüsse und ihre Türen und Fenster bleiben, wie sie waren, und sie wird mit ihrer Form nach IFC exportiert.
+
+![Ein Giebel, im Profileditor gezeichnet](shots/wall-profile-editor.webp)
+
+![Die Westwand des Hauses als Giebel, ihr Fenster erhalten](shots/wall-profile-3d.webp)
+
 ## Wandtypen
 
 Ein Wandtyp ist eine Folge von Schichten, von der Seite rechts der Richtung, in der die Wand gezeichnet wird (die Außenseite, wenn Sie gegen den Uhrzeigersinn um ein Gebäude zeichnen), zur Seite links davon. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.
