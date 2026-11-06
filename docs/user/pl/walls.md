@@ -43,6 +43,8 @@ Niżej sekcja **Zależności** pokazuje, co jest zbudowane ze ściany i z czego 
 
 Ściana rozpoznana z zaimportowanego IFC, której koniec plik tnie ukośnie, zachowuje to cięcie: **Kąt cięcia na początku** i **Kąt cięcia na końcu** w jej właściwościach, w stopniach od prostego. Połączenie na tym końcu zajmuje jego miejsce.
 
+**Wyrównanie kreskowania** określa, jak warstwy tej ściany są kreskowane na rzucie. **material** przyjmuje ustawienie każdego materiału. **axis** układa kreskowanie każdej warstwy wzdłuż osi ściany, od początku osi, więc ukośny mur z cegły pokazuje warstwy cegieł wzdłuż siebie, ciągnące się z warstwy na warstwę. **view** zaczyna każde kreskowanie od początku układu widoku, bez obrotu.
+
 ## Typy ścian
 
 Typ ściany to zestaw warstw, od lica po prawej stronie kierunku, w którym rysowana jest ściana (zewnętrznego, gdy rysujesz wokół budynku przeciwnie do ruchu wskazówek zegara), do lica po jej lewej. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.

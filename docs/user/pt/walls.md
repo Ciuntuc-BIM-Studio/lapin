@@ -43,6 +43,8 @@ Mais abaixo, **Dependências** mostra o que é construído a partir da parede e 
 
 Uma parede reconhecida de um IFC importado cuja extremidade o ficheiro corta em ângulo mantém esse corte: **Ângulo de corte inicial** e **Ângulo de corte final** nas suas propriedades, em graus a partir do esquadro. Uma junção nessa extremidade toma o seu lugar.
 
+**Alinhamento da hachura** define como as camadas desta parede são hachuradas em planta. **material** segue a configuração de cada material. **axis** assenta a hachura de cada camada ao longo do eixo da parede, a partir do início do eixo, de modo que uma parede de tijolos inclinada mostra suas fiadas ao longo dela, contínuas de uma camada à outra. **view** começa cada hachura na origem da vista, sem rotação.
+
 ## Tipos de parede
 
 Um tipo de parede é um conjunto de camadas, da face à direita do sentido em que a parede é desenhada (a externa, quando você desenha ao redor de um edifício no sentido anti-horário) à face à sua esquerda. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.

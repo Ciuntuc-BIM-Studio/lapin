@@ -595,8 +595,31 @@ public static class Views
         var layerSets = new Dictionary<string, IReadOnlyList<LayerRef>?>();
         IReadOnlyList<LayerRef>? LayersOf(string element) => layerSets.TryGetValue(element, out var ls) ? ls
             : layerSets[element] = LayerSets.BandsOf(m, element)?.Select(b => new LayerRef(b.Material, b.Name, Math.Abs(b.To - b.From))).ToList();
+        // An element's own hatch alignment over its materials' (decision 369): along its axis in a plan, or from the view's origin.
+        var ownHatch = new Dictionary<string, ElementHatch?>();
+        ElementHatch? OwnHatch(string element)
+        {
+            if (ownHatch.TryGetValue(element, out var h)) return h;
+            h = null;
+            if (m.Get(element) is { } e)
+                switch (e.Str("hatchAlign"))
+                {
+                    case HatchAlign.View: h = new ElementHatch(0, null); break;
+                    case HatchAlign.Axis when kind == "plan" && e.Attrs["start"] != null && e.Attrs["end"] != null:
+                    {
+                        var (a, b) = (Args.PointOf(e.Attrs["start"]), Args.PointOf(e.Attrs["end"]));
+                        if ((b - a).Length < 1e-9) break;
+                        var along = Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI;
+                        // The axis's direction, not its sense: a wall drawn either way hatches alike.
+                        if (along > 90 + 1e-9 || along <= -90 + 1e-9) along += along > 0 ? -180 : 180;
+                        h = new ElementHatch(along, along == Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI ? a : b);
+                        break;
+                    }
+                }
+            return ownHatch[element] = h;
+        }
         var materials = MaterialDrawing.Apply(drawing, p => Resolved(p.Material), LayersOf,
-            l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins);
+            l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins, elementHatch: OwnHatch);
         // A cut left without a fill: the fill a module gives its elements (a Studio solid's white), asked once per element.
         if (q.Services.All<ICutFill>() is { Count: > 0 } cutFills)
         {

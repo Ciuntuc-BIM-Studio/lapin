@@ -88,6 +88,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new(PathCurve.Key, "Arc rise", "length"),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
             new("roofTop", "Top under a roof", "choice", Choices: RoofTop.Modes),
+            // Its bands' hatch, over its materials' alignment (decision 369): along its axis, or from the view's origin.
+            new("hatchAlign", "Hatch alignment", "choice", Choices: Lapin.Drawing.HatchAlign.ElementChoices),
             // A free end cut at an angle (a wall recognised from a file that cuts it so): shown on a wall that has one.
             new(Joins.StartAngle, "Start cut angle", "angle", Min: -Joins.MaxEndAngle, Max: Joins.MaxEndAngle, ShowIf: FieldDescriptor.When(Joins.StartAngle, "!")),
             new(Joins.EndAngle, "End cut angle", "angle", Min: -Joins.MaxEndAngle, Max: Joins.MaxEndAngle, ShowIf: FieldDescriptor.When(Joins.EndAngle, "!")),

@@ -43,6 +43,8 @@ Plus bas, **Dépendances** montre ce qui est construit à partir du mur et ce à
 
 Un mur reconnu depuis un IFC importé dont le fichier coupe l’extrémité en biais garde cette coupe : **Angle de coupe au début** et **Angle de coupe à la fin** dans ses propriétés, en degrés par rapport à l’équerre. Une jonction à cette extrémité la remplace.
 
+**Alignement des hachures** règle la façon dont les couches de ce mur sont hachurées en plan. **material** suit le réglage de chaque matériau. **axis** pose la hachure de chaque couche le long de l’axe du mur, depuis le début de l’axe : un mur de briques en biais montre ses assises dans son sens, et elles se suivent d’une couche à l’autre. **view** part de l’origine de la vue pour chaque hachure, sans rotation.
+
 ## Types de murs
 
 Un type de mur est un ensemble de couches, de la face à droite du sens dans lequel le mur est tracé (l’extérieur, si vous tracez autour d’un bâtiment dans le sens inverse des aiguilles d’une montre) à la face à sa gauche. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.

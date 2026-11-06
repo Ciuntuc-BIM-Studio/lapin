@@ -187,7 +187,8 @@ public static class MaterialDrawing
     /// <param name="layers">An element's layers in order, when it has a layer set.</param>
     /// <param name="membrane">Whether a layer draws as a membrane.</param>
     /// <param name="joins">Whether one material goes on from one element into another without a line (a view style may turn it off).</param>
-    public static MaterialDrawingResult Apply(ViewDrawing d, Func<DPolygon, ResolvedMaterial?> graphics, Func<string, IReadOnlyList<LayerRef>?>? layers = null, Func<LayerRef, bool>? membrane = null, bool joins = true)
+    public static MaterialDrawingResult Apply(ViewDrawing d, Func<DPolygon, ResolvedMaterial?> graphics, Func<string, IReadOnlyList<LayerRef>?>? layers = null, Func<LayerRef, bool>? membrane = null, bool joins = true,
+        Func<string, ElementHatch?>? elementHatch = null)
     {
         // Without joins each element's bands join only its own: the key carries the element.
         string? Key(DPolygon p, ResolvedMaterial? g) => JoinKey(p, g) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null;
@@ -217,7 +218,11 @@ public static class MaterialDrawing
             }
             if (g == null) continue;
             o.Fills[i] = g.Fill;
-            if (g.Hatch != null) o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign));
+            if (g.Hatch == null) continue;
+            // The element's own alignment over its material's: along its axis (one angle and origin for all its bands), or the view's.
+            if (elementHatch?.Invoke(p.Element) is { } own)
+                o.Hatches.Add(new MaterialHatch(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, (own.Angle ?? 0) + g.HatchAngle, own.Origin));
+            else o.Hatches.Add(MaterialHatch.Aligned(p.Loops, g.Hatch, g.HatchScale, g.HatchPen, p.Class, g.HatchAngle, g.HatchAlign));
         }
 
         // Edges of every band, by join key.

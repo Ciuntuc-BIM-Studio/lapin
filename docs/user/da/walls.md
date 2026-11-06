@@ -43,6 +43,8 @@ Længere nede viser **Afhængigheder**, hvad der er bygget af væggen, og hvad v
 
 En væg genkendt fra en importeret IFC, hvis ende filen skærer skråt, beholder snittet: **Startsnitvinkel** og **Slutsnitvinkel** i dens egenskaber, i grader fra lige. En samling ved den ende træder i stedet.
 
+**Skraveringsretning** bestemmer, hvordan denne vægs lag skraveres i plan. **material** følger hvert materiales egen indstilling. **axis** lægger hvert lags skravering langs væggens akse fra aksens start, så en skrå murstensvæg viser sine skifter langs væggen, og de fortsætter fra lag til lag. **view** starter hver skravering i visningens origo, uden drejning.
+
 ## Vægtyper
 
 En vægtype er et sæt lag, fra siden til højre for den retning, væggen tegnes i (ydersiden, når du tegner rundt om en bygning mod uret), til siden til venstre. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.

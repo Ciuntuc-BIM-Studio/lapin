@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Lapin.Drawing.Hatch;
+using Lapin.Geometry;
 using Lapin.Model;
 
 namespace Lapin.Drawing;
@@ -20,7 +21,18 @@ public static class HatchAlign
 {
     public const string View = "view", Layer = "layer";
     public static readonly string[] All = [View, Layer];
+
+    /// <summary>
+    /// An element's own choice over its materials' (an attribute <c>hatchAlign</c>, decision 369): "material" (or none) as
+    /// the materials say; "axis", every band of it along its axis from the axis's start, so the courses run on from one
+    /// layer to the next; "view", from the view's origin, unturned.
+    /// </summary>
+    public const string Material = "material", Axis = "axis";
+    public static readonly string[] ElementChoices = [Material, Axis, View];
 }
+
+/// <summary>An element's hatch alignment in a drawing (<see cref="HatchAlign.ElementChoices"/>): along its axis (an angle and an origin), or from the view's origin.</summary>
+public sealed record ElementHatch(double? Angle, Vec2? Origin);
 
 /// <summary>A material's graphics in one kind of view, and where they came from: its own attributes ("own") or its name ("name").</summary>
 public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchScale, string? Fill, int? HatchPen, bool Membrane, bool DrawJoints, string? Color, string Source, double HatchAngle = 0, string HatchAlign = HatchAlign.View)
