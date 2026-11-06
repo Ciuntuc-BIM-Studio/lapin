@@ -207,12 +207,12 @@ public sealed partial class CdeTests
         // The browser: no file of its own; the package comes back with the reply, and opens with the issue's files in it.
         var b = F();
         var bs = Sheet(b);
-        var browser = new Protocol(b, new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _, _) => throw new InvalidOperationException("no files")));
+        var browser = new Protocol(b, new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _, _, _) => throw new InvalidOperationException("no files")));
         var br = browser.Issue(new JsonObject { ["sheets"] = new JsonArray(bs), ["bytes"] = true, ["toFolder"] = false });
         Assert.False(b.Session.StateFor(History.Me).Dirty);
         var bytes = Convert.FromBase64String((string)br["file"]!["data"]!);
         var c = F();
-        var other = new Protocol(c, new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _, _) => throw new InvalidOperationException("no files")));
+        var other = new Protocol(c, new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _, _, _) => throw new InvalidOperationException("no files")));
         other.Call("project.openBytes", new JsonObject { ["name"] = "house.lapin", ["data"] = Convert.ToBase64String(bytes) });
         var issue = CdeIssues.All(c.Model).Single();
         Assert.Equal(1, issue.Version);

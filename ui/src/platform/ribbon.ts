@@ -19,16 +19,6 @@ export function mergeTabs(modules: readonly LapinModule[], orders: Record<string
     for (const i of t.include ?? []) if (!had.include!.includes(i)) had.include!.push(i);
   }
   return [...byId.values()]
-    .map((t) => ({ ...t, order: orders[t.id] ?? t.order, groups: [...placed(t.groups), ...(t.include ?? []).map((i) => shared[i]).filter((g): g is RibbonGroupDef => !!g)] }))
+    .map((t) => ({ ...t, order: orders[t.id] ?? t.order, groups: [...t.groups, ...(t.include ?? []).map((i) => shared[i]).filter((g): g is RibbonGroupDef => !!g)] }))
     .sort((a, b) => a.order - b.order);
-}
-
-/** The groups with each that says so (`after`) moved right after the group it names, when the tab has it. */
-function placed(groups: RibbonGroupDef[]): RibbonGroupDef[] {
-  const out = groups.filter((g) => !g.after || !groups.some((x) => x.label === g.after));
-  for (const g of groups) {
-    if (!g.after || !out.some((x) => x.label === g.after) || out.includes(g)) continue;
-    out.splice(out.findIndex((x) => x.label === g.after) + 1, 0, g);
-  }
-  return out;
 }

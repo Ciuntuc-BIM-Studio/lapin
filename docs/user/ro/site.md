@@ -89,44 +89,6 @@ Dau desenelor și imaginilor scara, dar nu fac parte din clădire. Un export IFC
 
 Figurile urmează oamenii și mașinile din [BimGo](https://github.com/aussieBIMguru/BimGo) de Aussie BIM Guru (MIT-0): proporțiile, pozițiile și profilele lor.
 
-## Porți
-
-Grupul **Porți** din fila Teren pune porți cu stâlpii lor: **Poartă batantă**, **Poartă batantă dublă** (<kbd>GT</kbd>), **Poartă culisantă**, **Poartă autoportantă**, **Portiță**, **Poartă cu portiță alăturată** și **Poartă pliantă**. Lapin nu are gard propriu: desenează gardul ca perete (unul scund, de tipul dorit) sau lasă stâlpii porții să stea pe linia parcelei.
-
-Dă clic pe cele două capete ale porții. Cu **Pe linii** pornit în bară (implicit), mijlocul porții se pune pe axul celui mai apropiat perete sau pe linia desenată cea mai apropiată, până la 1,5 m (un perete, latura parcelei, o linie desenată), de-a lungul ei; oprit, poarta stă între cele două puncte. Bara alege și tipul pe care îl pune unealta, dintre stilurile proiectului sau cele incluse în Lapin.
-
-O poartă pusă pe un perete îl taie de la fețele exterioare ale stâlpilor, pe toată înălțimea, deci zidul gardului se oprește la stâlpi.
-
-![O poartă culisantă și o portiță într-un zid de gard, o poartă dublă pe latura parcelei](shots/gates-plan.webp)
-
-Planurile desenează stâlpii secționați, canatele deschise după unghiul lor de deschidere, cu arcul lor, panourile unei porți pliante împăturite; o poartă culisantă închisă, cu o săgeată în sensul în care se deschide, șina ei și zona în care parchează punctată, cât canatul de lungă (canatul unei porți autoportante e mai lung decât deschiderea cu coada de contragreutate, cam 45%). Fațadele, secțiunile și 3D-ul desenează corpurile.
-
-![Porțile în 3D](shots/gates-3d.webp)
-
-### Configuratorul
-
-**Tipuri de porți** deschide configuratorul: stilurile proiectului și cele incluse în Lapin, de adăugat cu un clic (o poartă dublă din fier forjat, una culisantă cu lamele orizontale, una pliantă din oțel, o portiță arcuită, o poartă de acces din lemn, una cu plasă de siguranță, una autoportantă automată, una dublă cu portiță, o poartă de fermă, una culisantă din tablă perforată, o portiță de grădină din lemn). Un tip stabilește, pe grupe, doar ce ia felul lui:
-
-- **Poarta:** lățimea liberă și înălțimea, distanța față de teren, lățimea portiței, panourile unei porți pliante pe fiecare parte, unghiul de deschidere;
-- **Canatele:** mărimea ramei, umplutura (bare verticale, lamele orizontale, panou plin, plasă sau tablă perforată), pasul barelor sau lamelelor, vârfuri de suliță pe bare, coronamentul (drept, arcuit sau ascuțit) și săgeata lui;
-- **Stâlpii:** din zidărie, din oțel sau fără, mărimea și înălțimea lor, căciula unui stâlp de zidărie (dreaptă sau piramidă);
-- **Feroneria:** un motor (un braț pe canatele unei porți batante, o cutie lângă șina unei porți culisante) și mâner cu broască;
-- **Materialele** pe roluri: ramă, umplutură, stâlpi, căciuli, feronerie și motor. Un material numit aici pe care proiectul nu-l are se creează.
-
-Previzualizarea e a motorului: planul cu arcul sau zona de parcare sus, fațada jos. Fiecare poartă de un tip urmează o schimbare.
-
-![Configuratorul de porți cu o poartă dublă din fier forjat](shots/gates-types.webp)
-
-Selectează o poartă ca să-i schimbi tipul, rotația, cât stă deasupra terenului, spre ce parte **se deschid** canatele, pe ce mână sunt balamalele (sau unde parchează o poartă culisantă) și cât e desenată deschisă (0: închisă). **Cealaltă parte** și **Cealaltă mână** din proprietăți, sau săgețile de lângă ea în plan, le întorc. **Modify → Mirror** îi dă cealaltă mână.
-
-![Proprietățile unei porți](shots/gates-properties.webp)
-
-### Extras, cost și IFC
-
-**Extrasul de porți** arată porțile pe tipuri: felul, deschiderea liberă, canatele, umplutura, coronamentul, stâlpii, motorul și câte sunt. Un tip nou are articolele de deviz `LAP-GATE` și, cu motor, `LAP-GATEMOT`, numărate pe bucată.
-
-IFC scrie o poartă ca **IfcDoor** cu PredefinedType **GATE**, a unui **IfcDoorType** cu felul ei de deschidere (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING…; una cu portiță USERDEFINED), lățimea și înălțimea liberă ca OverallWidth și OverallHeight și Pset_DoorCommon. Stâlpii fac parte din corpul porții, deci un singur element poartă poarta așa cum a fost configurată, iar Lapin o citește înapoi ca poarta lui.
-
 ## Reglementări urbanistice și însorire (Lapin Urban)
 
 Ediția **Lapin Urban** adaugă în această filă grupul **Urbanism**: reglementările parcelei (POT, CUT, înălțimile maxime, retragerile față de stradă, laterale, limita posterioară și axul drumului), **volumul construibil** pe care îl lasă, indicatorii pe care îi atinge modelul față de ele și **studiul de însorire**: soarele și umbrele lui în 3D pentru orice zi și oră în locul proiectului, și planuri de umbre pentru echinocțiu și solstiții.

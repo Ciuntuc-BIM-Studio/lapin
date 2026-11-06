@@ -89,44 +89,6 @@ Sie geben Zeichnungen und Bildern ihren Maßstab, gehören aber nicht zum Gebäu
 
 Die Figuren folgen den Personen und Autos von [BimGo](https://github.com/aussieBIMguru/BimGo) von Aussie BIM Guru (MIT-0): ihren Proportionen, Haltungen und Profilen.
 
-## Tore
-
-Die Gruppe **Tore** im Register Gelände setzt Tore mit ihren Pfeilern: ein **Drehtor**, ein **zweiflügeliges Drehtor** (<kbd>GT</kbd>), ein **Schiebetor**, ein **freitragendes Schiebetor**, eine **Gartentür**, ein **Tor mit seitlicher Gehtür** und ein **Falttor**. Lapin hat keinen eigenen Zaun: Zeichnen Sie den Zaun als Wand (eine niedrige, vom gewünschten Typ) oder lassen Sie die Pfeiler des Tors auf der Grundstücksgrenze stehen.
-
-Klicken Sie auf die beiden Enden des Tors. Mit **Auf Linien** in der Leiste (Standard) kommt die Mitte des Tors auf die Achse der nächsten Wand oder auf die nächste gezeichnete Linie innerhalb von 1,5 m (eine Wand, die Grundstücksgrenze, eine gezeichnete Linie), entlang dieser; ausgeschaltet steht es zwischen den beiden Punkten. Die Leiste wählt auch den Typ, den das Werkzeug setzt, aus den Stilen des Projekts oder den mitgelieferten von Lapin.
-
-Ein auf eine Wand gesetztes Tor schneidet sie ab den Außenflächen seiner Pfeiler, über die ganze Höhe, sodass die Zaunwand an den Pfeilern endet.
-
-![Ein Schiebetor und eine Gartentür in einer Zaunwand, ein zweiflügeliges Tor an der Grundstücksgrenze](shots/gates-plan.webp)
-
-Grundrisse zeichnen die Pfeiler geschnitten, die Flügel um ihren Öffnungswinkel geöffnet mit ihrem Schwenkbogen, die Paneele eines Falttors gefaltet; ein Schiebetor geschlossen, mit einem Pfeil in Öffnungsrichtung, seiner Laufschiene und der Zone, in die es fährt, gestrichelt und so lang wie sein Flügel (der Flügel eines freitragenden Tors ist um sein Gegengewichtsheck länger als die Öffnung, etwa 45 %). Ansichten, Schnitte und 3D zeichnen die Körper.
-
-![Die Tore in 3D](shots/gates-3d.webp)
-
-### Der Konfigurator
-
-**Tortypen** öffnet den Konfigurator: die Stile des Projekts und die mitgelieferten von Lapin, mit einem Klick hinzuzufügen (ein zweiflügeliges Schmiedeeisentor, ein Schiebetor mit waagerechten Lamellen, ein Stahl-Falttor, eine Gartentür mit Bogen, ein Holz-Einfahrtstor, ein Sicherheitstor mit Gitter, ein automatisches freitragendes Tor, ein zweiflügeliges Tor mit Gehtür, ein Weidetor, ein Schiebetor aus Lochblech, eine Gartentür aus Holz). Ein Typ legt, in Gruppen, nur fest, was seine Art zulässt:
-
-- **Tor:** lichte Breite und Höhe, Bodenabstand, Breite einer Gehtür, Paneele je Seite eines Falttors, Öffnungswinkel;
-- **Flügel:** Rahmengröße, Füllung (senkrechte Stäbe, waagerechte Lamellen, eine volle Platte, Gitter oder Lochblech), Abstand der Stäbe oder Lamellen, Speerspitzen auf den Stäben, Abschluss oben (gerade, gebogen oder spitz) und seine Stichhöhe;
-- **Pfeiler:** Mauerwerk, Stahlpfosten oder keine, ihre Größe und Höhe, die Abdeckung eines gemauerten Pfeilers (flach oder Pyramide);
-- **Beschläge:** ein Antrieb (ein Arm an den Flügeln eines Drehtors, ein Kasten neben der Schiene eines Schiebetors) und Griff und Schloss;
-- **Materialien** nach Rolle: Rahmen, Füllung, Pfeiler, Abdeckungen, Beschläge und Antrieb. Ein hier genanntes Material, das das Projekt nicht hat, wird angelegt.
-
-Die Vorschau stammt vom Kern: oben der Grundriss mit dem Schwenkbogen oder der Parkzone, unten die Ansicht. Jedes Tor eines Typs folgt einer Änderung.
-
-![Der Torkonfigurator mit einem zweiflügeligen Schmiedeeisentor](shots/gates-types.webp)
-
-Wählen Sie ein Tor, um seinen Typ, seine Drehung, seine Höhe über dem Gelände, die Seite, zu der seine Flügel **öffnen**, die Hand, auf der seine Bänder sitzen (oder ein Schiebetor parkt), und wie weit es geöffnet gezeichnet wird (0: geschlossen), zu ändern. **Andere Seite** und **Andere Hand** in seinen Eigenschaften oder die Pfeile daneben im Grundriss kehren sie um. **Ändern → Spiegeln** gibt ihm die andere Hand.
-
-![Die Eigenschaften eines Tors](shots/gates-properties.webp)
-
-### Liste, Kosten und IFC
-
-Die **Torliste** führt die Tore nach Typ: Art, lichte Größe, Flügel, Füllung, Abschluss, Pfeiler, Antrieb und Anzahl. Ein neuer Typ hat die Kostenpositionen `LAP-GATE` und, mit Antrieb, `LAP-GATEMOT`, je Tor gezählt.
-
-IFC schreibt ein Tor als **IfcDoor** mit PredefinedType **GATE**, eines **IfcDoorType** mit seiner Bedienung (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING…; ein Tor mit Gehtür USERDEFINED), seiner lichten Breite und Höhe als OverallWidth und OverallHeight und Pset_DoorCommon. Die Pfeiler gehören zum Körper des Tors, sodass ein Element das Tor so trägt, wie es konfiguriert wurde, und Lapin liest es als eigenes Tor zurück.
-
 ## Bauleitplanung und Sonne (Lapin Urban)
 
 Die Edition **Lapin Urban** fügt dieser Registerkarte eine Gruppe **Stadtplanung** hinzu: die Bebauungsvorschriften des Grundstücks (POT, CUT, die maximalen Höhen, die Abstände zur Straße, zu den Seiten, nach hinten und zur Straßenachse), das **zulässige Bauvolumen**, das sie übrig lassen, die Kennwerte, die das Modell im Vergleich dazu erreicht, und die **Besonnungsstudie**: die Sonne und ihre Schatten in 3D für jeden Tag und jede Stunde am Ort des Projekts, sowie Schattenpläne für die Tagundnachtgleiche und die Sonnenwenden.

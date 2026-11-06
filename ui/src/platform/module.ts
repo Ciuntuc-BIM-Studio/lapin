@@ -91,11 +91,7 @@ export interface TypedTool {
   about?: (type: NodeDto) => string | null;
 }
 
-export interface RibbonGroupDef {
-  label: string; tools: ToolDef[]; small?: ToolDef[];
-  /** Another module's group on the same tab this one goes after (the gates after the Site tab's Landscape); else in module order. */
-  after?: string;
-}
+export interface RibbonGroupDef { label: string; tools: ToolDef[]; small?: ToolDef[] }
 
 export interface RibbonTabDef {
   id: string;

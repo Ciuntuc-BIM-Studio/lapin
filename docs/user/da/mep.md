@@ -87,55 +87,6 @@ Under **Gade** lægger **Gasledning langs…** (<kbd>GM</kbd>) en gasledning lan
 
 At dimensionere rørene ud fra apparaternes forbrug og eftervise tryktabet er ingeniørarbejde, i udgaven **Lapin MEP**.
 
-## Udsugningsventilatorer
-
-Gruppen **Ventilatorer** på fanen Installationer sætter udsugningsventilatorer til bad og køkken som selvstændige elementer, hver af en type, du konfigurerer:
-
-- **Vægventilator** (<kbd>VF</kbd>): en aksialventilator på en væg, der blæser lige ud gennem den;
-- **Loftventilator**: en ventilator under loftet med en kanal ud af siden;
-- **Kanalventilator**: en rørventilator i loftsrummet, på kanalen;
-- **Vinduesventilator**: en ventilator sat i et vindues rude;
-- **Loftventilator med lys**: en loftventilator med en lampe i risten;
-- **Ventilator med lamelpanel**: et vægpanel med lameller ved siden af ventilatoren og en afdækning under den.
-
-Vælg et værktøj og klik. En væg-, vindues- eller lamelpanelventilator sættes på den vægflade, der er nærmest klikket (inden for 600 mm), med forsiden mod rummet og midten 2,1 m over gulvet (en vinduesventilator 1,9 m). En loftventilator sættes, hvor du klikker, under rummets loft; en kanalventilator 250 mm over det. Kommandolinjens bjælke vælger den type, værktøjet sætter, blandt projektets typer eller Lapins indbyggede (en vægventilator Ø100 med fugtføler, en loftventilator med lys og bevægelsesføler, en kanalventilator til to badeværelser…).
-
-En vægventilator skærer et rundt hul gennem sin væg, 20 mm bredere end dens kanal: væggens udsparing, som en installationsledning har (den vises som et åbningsvolumen i plantegninger og går i IFC som en åbning i væggen). Den findes ud fra, hvor ventilatoren står, så en ventilator, der flyttes langs væggen, tager sit hul med. En vinduesventilator sidder i ruden og skærer intet.
-
-![Et badeværelse med en vægventilator, en loftventilator med lys ført ud gennem væggen, og en ventilator med lamelpanel](shots/fans-plan.webp)
-
-Plantegninger tegner en ventilator med dens installationssymbol: en cirkel med vinger, dens front på væggen, dens bøsning stiplet gennem væggen og en pil i luftens retning; en loftventilators rist stiplet, da den er over snittet. Loftplaner, snit, opstalter og 3D tegner legemerne.
-
-**Kanal til udløb** fører en loft- eller kanalventilators luft ud: klik på ventilatoren og så der, hvor kanalen går ud. Kanalen er en ledning i projektets system **Udsugning bad** (oprettet med den første kanal; den skærer de vægge, den går igennem), lige så bred som ventilatorens kanal, i højde med dens studs. Den ender i en hætte på væggens yderside eller, med **Gennem taget** slået til i bjælken, i et rør, der stiger op til en hætte på taget. Flyttes eller hæves ventilatoren, følger kanalens start med.
-
-![Ventilatorerne i 3D: kanalen til hætten udenfor, vægventilatorens rist på facaden](shots/fans-3d.webp)
-
-### Ventilatortyper
-
-**Ventilatortyper** åbner typerne: projektets og de indbyggede, der tilføjes med et klik. En type fastlægger:
-
-- sin **montering** (dem, dens slags tillader) og sin **kanalstørrelse** (Ø100, 125, 150 eller 200 mm);
-- ristens **form** (rund eller firkantet), **størrelse**, **mønster** (lameller, slidser, ringe eller glat) og **finish** (hvid, sølv, sort, rustfri eller krom);
-- sin **luftmængde** (m³/h) og **effekt** (W);
-- sin **styring**: en afbryder, en fugtføler, en timer, begge eller en bevægelsesføler;
-- et **tilbageslagsspjæld**, og en loftventilators **lys**, en kanalventilators længde, et lamelpanels bredde og højde, kun vist hvor de gælder.
-
-Forhåndsvisningen ved siden af er motorens: plansymbolet øverst, fronten nederst. Alle ventilatorer af en type følger en ændring.
-
-![Ventilatortyperne med et lamelpanels forhåndsvisning](shots/fans-types.webp)
-
-Vælg en ventilator for at ændre dens type, dens **højde over gulvet**, dens drejning og, når den har en kanal, dens **udløb** (væg eller tag) og hvor højt udløbet rager over kanalen. Træk i grebet i midten for at flytte den, i grebet foran den for at dreje den.
-
-![En loftventilators egenskaber](shots/fans-properties.webp)
-
-### Lister, økonomi og IFC
-
-**Ventilatorliste** viser hver ventilator med rum, slags, størrelse, luftmængde, montering, styring, højde og udløb samt den samlede luftmængde. **Kontrol af udsugning pr. rum** viser hvert badeværelse, toilet og køkken (og hvert rum med en ventilator) med dets rumfang, den udsugning, det kræver, og hvad dets ventilatorer giver: et badeværelse 8 luftskifter i timen og mindst 54 m³/h, et toilet 6 og 25 m³/h, et køkken 6 og 108 m³/h. Det er vejledende værdier; kontrollér dem mod den norm, du projekterer efter.
-
-En ny type har økonomiposten `LAP-FAN`, talt pr. ventilator (**Økonomi → Tildel poster…** ændrer den).
-
-IFC skriver en ventilator som en **IfcFan** af en **IfcFanType** med dens foruddefinerede type (PROPELLORAXIAL for en væg- eller vinduesventilator, CENTRIFUGALRADIAL for en loftventilator, TUBEAXIAL for en kanalventilator) og **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); væggens hul som en IfcOpeningElement. Lapin læser dem tilbage som sine egne ventilatorer.
-
 ## Koordinering: åbningsvolumener og kollisionskontrol
 
 Hver åbning i en væg, et dæk eller et tag kan være et **åbningsvolumen** for sig: et legeme så stort som åbningen, gennem hele værtens tykkelse, beklædning medregnet. Kollisionsprogrammer (Navisworks, Solibri, BIMcollab) tester installationer mod sådanne volumener med "helt indeni": et rør, en kanal eller en kabelbakke helt inde i et volumen er i orden; en, der stikker ud, eller som krydser en væg uden åbning, er en kollision. Lapin kører selv den samme kontrol.

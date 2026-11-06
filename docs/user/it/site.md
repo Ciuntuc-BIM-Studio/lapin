@@ -89,44 +89,6 @@ Danno la scala ai disegni e alle immagini, ma non fanno parte dell’edificio. U
 
 Le figure seguono le persone e le auto di [BimGo](https://github.com/aussieBIMguru/BimGo) di Aussie BIM Guru (MIT-0): le loro proporzioni, pose e profili.
 
-## Cancelli
-
-Il gruppo **Cancelli** nella scheda Sito mette i cancelli con i loro pilastri: un **Cancello a battente**, un **Cancello a due battenti** (<kbd>GT</kbd>), un **Cancello scorrevole**, un **Cancello scorrevole autoportante**, un **Cancelletto pedonale**, un **Cancello con porta pedonale laterale** e un **Cancello a libro**. Lapin non ha una recinzione propria: disegna la recinzione come un muro (basso, del tipo che vuoi), oppure lascia che i pilastri del cancello stiano sulla linea del lotto.
-
-Fai clic sulle due estremità del cancello. Con **Sulle linee** attivo nella barra (predefinito), il centro del cancello va sull’asse del muro o sulla linea disegnata più vicina entro 1,5 m (un muro, il bordo del lotto, una linea disegnata), lungo di essa; disattivato, sta tra i due punti. La barra sceglie anche il tipo che mette, tra gli stili del progetto o quelli predefiniti di Lapin.
-
-Un cancello posto su un muro lo taglia dalle facce esterne dei pilastri, per tutta l’altezza, così il muro di recinzione si ferma ai pilastri.
-
-![Un cancello scorrevole e un cancelletto pedonale in un muro di recinzione, un cancello a due battenti sul bordo del lotto](shots/gates-plan.webp)
-
-Le piante disegnano i pilastri sezionati, le ante aperte del loro angolo di apertura con il loro arco, i pannelli di un cancello a libro piegati; un cancello scorrevole chiuso, con una freccia nel verso in cui apre, il binario e la zona in cui si ritira tratteggiata, lunga quanto la sua anta (l’anta di un cancello autoportante è più lunga dell’apertura della sua coda di contrappeso, circa il 45%). Prospetti, sezioni e 3D disegnano i corpi.
-
-![I cancelli in 3D](shots/gates-3d.webp)
-
-### Il configuratore
-
-**Tipi di cancello** apre il configuratore: gli stili del progetto e quelli predefiniti di Lapin da aggiungere con un clic (un cancello a due battenti in ferro battuto, uno scorrevole a doghe orizzontali, uno a libro in acciaio, un cancelletto pedonale ad arco, un cancello carraio in legno, uno di sicurezza in rete, uno autoportante automatico, uno a due battenti con porta pedonale, un cancello agricolo, uno scorrevole in lamiera forata, un cancelletto da giardino in legno). Un tipo imposta, per gruppi, solo ciò che il suo genere prevede:
-
-- **Cancello:** la larghezza netta e l’altezza, la distanza dal terreno, la larghezza di una porta pedonale, i pannelli per lato di un cancello a libro, l’angolo di apertura;
-- **Ante:** la dimensione del telaio, il riempimento (sbarre verticali, doghe orizzontali, un pannello pieno, rete o lamiera forata), il passo di sbarre o doghe, le punte a lancia sulle sbarre, la sommità (piana, ad arco o a punta) e la sua freccia;
-- **Pilastri:** in muratura, montanti in acciaio o nessuno, dimensione e altezza, il cappello di un pilastro in muratura (piano o a piramide);
-- **Ferramenta:** un motore (un braccio sulle ante di un cancello a battente, una scatola accanto al binario di uno scorrevole) e una maniglia con serratura;
-- **Materiali** per ruolo: telaio, riempimento, pilastri, cappelli, ferramenta e motore. Un materiale indicato qui che il progetto non ha viene creato.
-
-L’anteprima è quella del motore: la pianta con l’arco o la zona di ritiro sopra, il prospetto sotto. Ogni cancello di un tipo segue una modifica.
-
-![Il configuratore dei cancelli con un cancello a due battenti in ferro battuto](shots/gates-types.webp)
-
-Seleziona un cancello per cambiarne il tipo, la rotazione, quanto sta sopra il terreno, verso quale lato **si aprono** le ante, da quale mano sono le cerniere (o dove si ritira uno scorrevole) e quanto è disegnato aperto (0: chiuso). **Altro lato** e **Altra mano** nelle sue proprietà, o le frecce accanto in pianta, li invertono. **Modifica → Specchia** gli dà l’altra mano.
-
-![Le proprietà di un cancello](shots/gates-properties.webp)
-
-### Abaco, costi e IFC
-
-L’**Abaco cancelli** elenca i cancelli per tipo: genere, luce netta, ante, riempimento, sommità, pilastri, motore e quantità. Un nuovo tipo ha le voci di costo `LAP-GATE` e, con il motore, `LAP-GATEMOT`, contate per cancello.
-
-IFC scrive un cancello come **IfcDoor** con PredefinedType **GATE**, di un **IfcDoorType** con il suo funzionamento (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING…; un cancello con porta pedonale USERDEFINED), la larghezza netta e l’altezza come OverallWidth e OverallHeight e Pset_DoorCommon. I pilastri fanno parte del corpo del cancello, così un solo elemento porta il cancello come è stato configurato, e Lapin lo rilegge come proprio cancello.
-
 ## Regole urbanistiche e il sole (Lapin Urban)
 
 L’edizione **Lapin Urban** aggiunge a questa scheda un gruppo **Urbanistica**: le regole urbanistiche del lotto (POT, CUT, le altezze massime, le distanze dalla strada, dai lati, dal retro e dall’asse stradale), il **volume edificabile** che lasciano, gli indicatori che il modello raggiunge rispetto a esse, e lo **studio del soleggiamento**: il sole e le sue ombre in 3D per qualsiasi giorno e ora nel luogo del progetto, e le piante delle ombre per l’equinozio e i solstizi.

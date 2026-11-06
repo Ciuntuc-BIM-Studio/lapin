@@ -89,44 +89,6 @@ Nadają rysunkom i obrazom skalę, ale nie są częścią budynku. Eksport IFC l
 
 Postacie idą za ludźmi i samochodami z [BimGo](https://github.com/aussieBIMguru/BimGo) autorstwa Aussie BIM Guru (MIT-0): ich proporcjami, postawami i profilami.
 
-## Bramy
-
-Grupa **Bramy** na karcie Zagospodarowanie wstawia bramy z ich słupkami: **Bramę skrzydłową**, **Bramę dwuskrzydłową** (<kbd>GT</kbd>), **Bramę przesuwną**, **Bramę przesuwną samonośną**, **Furtkę**, **Bramę z furtką obok** i **Bramę składaną**. Lapin nie ma własnego ogrodzenia: narysuj ogrodzenie jako ścianę (niską, wybranego typu) albo pozwól, aby słupki bramy stanęły na granicy działki.
-
-Kliknij oba końce bramy. Gdy na pasku włączone jest **Na liniach** (domyślnie), środek bramy trafia na oś najbliższej ściany lub narysowanej linii w promieniu 1,5 m (ściana, granica działki, narysowana linia), wzdłuż niej; po wyłączeniu brama stoi między dwoma punktami. Pasek wybiera też typ, który wstawia, spośród stylów projektu lub wbudowanych stylów Lapin.
-
-Brama postawiona na ścianie przecina ją od zewnętrznych lic słupków, na całą wysokość, więc ściana ogrodzenia kończy się na słupkach.
-
-![Brama przesuwna i furtka w murze ogrodzenia, brama dwuskrzydłowa na granicy działki](shots/gates-plan.webp)
-
-Rzuty rysują słupki jako przecięte, skrzydła otwarte o kąt otwarcia z łukiem otwierania, panele bramy składanej złożone; bramę przesuwną zamkniętą, ze strzałką w kierunku otwierania, z prowadnicą i przerywaną strefą, w której się chowa, tak długą jak jej skrzydło (skrzydło bramy samonośnej jest dłuższe od otworu o ogon przeciwwagi, około 45%). Elewacje, przekroje i 3D rysują bryły.
-
-![Bramy w 3D](shots/gates-3d.webp)
-
-### Konfigurator
-
-**Typy bram** otwiera konfigurator: style projektu oraz wbudowane style Lapin, dodawane jednym kliknięciem (dwuskrzydłowa brama kuta, przesuwna z poziomych lameli, składana stalowa, łukowa furtka, drewniana brama wjazdowa, brama z siatki ochronnej, automatyczna brama samonośna, dwuskrzydłowa z furtką, brama gospodarska, przesuwna z blachy perforowanej, drewniana furtka ogrodowa). Typ ustala, w grupach, tylko to, co ma jego rodzaj:
-
-- **Brama:** szerokość w świetle i wysokość, prześwit nad terenem, szerokość furtki, panele po każdej stronie bramy składanej, kąt otwarcia;
-- **Skrzydła:** rozmiar ramy, wypełnienie (pręty pionowe, lamele poziome, pełny panel, siatka lub blacha perforowana), rozstaw prętów lub lameli, grotowe zakończenia prętów, górna krawędź (prosta, łukowa lub szpiczasta) i jej strzałka;
-- **Słupki:** murowane, stalowe lub brak, ich rozmiar i wysokość, czapa słupka murowanego (płaska lub ostrosłupowa);
-- **Okucia:** napęd (ramię na skrzydłach bramy skrzydłowej, skrzynka obok prowadnicy bramy przesuwnej) oraz klamka z zamkiem;
-- **Materiały** według roli: rama, wypełnienie, słupki, czapy, okucia i napęd. Materiał wymieniony tutaj, którego projekt nie ma, zostaje utworzony.
-
-Podgląd pochodzi z silnika: rzut z łukiem otwierania lub strefą chowania u góry, elewacja u dołu. Każda brama danego typu podąża za zmianą.
-
-![Konfigurator bram z dwuskrzydłową bramą kutą](shots/gates-types.webp)
-
-Zaznacz bramę, aby zmienić jej typ, obrót, wysokość nad terenem, stronę, na którą **otwierają się** skrzydła, rękę, po której są zawiasy (lub gdzie chowa się brama przesuwna), i to, jak szeroko jest narysowana otwarta (0: zamknięta). **Druga strona** i **Druga ręka** we właściwościach albo strzałki obok na rzucie odwracają je. **Modyfikuj → Lustro** daje jej drugą rękę.
-
-![Właściwości bramy](shots/gates-properties.webp)
-
-### Zestawienie, koszty i IFC
-
-**Zestawienie bram** wymienia bramy według typu: rodzaj, wymiar w świetle, skrzydła, wypełnienie, górną krawędź, słupki, napęd i liczbę. Nowy typ ma pozycje kosztowe `LAP-GATE` i, z napędem, `LAP-GATEMOT`, liczone na bramę.
-
-IFC zapisuje bramę jako **IfcDoor** o PredefinedType **GATE**, typu **IfcDoorType** z jej sposobem działania (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING…; brama z furtką USERDEFINED), szerokością w świetle i wysokością jako OverallWidth i OverallHeight oraz Pset_DoorCommon. Słupki są częścią bryły bramy, więc jeden element przenosi bramę tak, jak ją skonfigurowano, a Lapin wczytuje ją z powrotem jako własną bramę.
-
 ## Zasady zagospodarowania i słońce (Lapin Urban)
 
 Edycja **Lapin Urban** dodaje do tej karty grupę **Planowanie**: zasady zagospodarowania działki (POT, CUT, maksymalne wysokości, odsunięcia od ulicy, boków, tyłu i osi drogi), **dopuszczalną bryłę zabudowy**, którą one pozostawiają, wskaźniki, jakie model osiąga względem nich, oraz **analizę nasłonecznienia**: słońce i jego cienie w 3D dla dowolnego dnia i godziny w miejscu projektu oraz plany zacienienia dla równonocy i przesileń.

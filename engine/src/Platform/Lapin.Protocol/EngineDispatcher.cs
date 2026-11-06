@@ -37,9 +37,10 @@ public interface ISupportDesk
 /// which writes the file (a version lives in the project's file). And it
 /// holds the files the project's issues keep (docs/plan-cde.md): made by an
 /// issue, in memory until the next save, then in the file under
-/// <c>issues/blobs/</c>.
+/// <c>issues/blobs/</c>. And it holds the entries other tools put in the
+/// file (<see cref="PackageForeign"/>), written back as they were read.
 /// </summary>
-public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string, PackageVersions, IssueFiles?> write)
+public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Session, string, PackageVersions, IssueFiles?, PackageForeign> write)
 {
     PackageVersions _versions = PackageVersions.None;
     /// <summary>The session path the versions belong to: another path (a recovered project's) has them read from its file.</summary>
@@ -47,6 +48,9 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     PackageIssues _issues = PackageIssues.Empty();
     /// <summary>The session path the issues' files were read from (null: a project not saved yet, its issues' files in memory).</summary>
     string? _issuesOf;
+    PackageForeign _foreign = PackageForeign.None;
+    /// <summary>The session path the foreign entries were read from.</summary>
+    string? _foreignOf;
 
     /// <summary>
     /// A project from its bytes; <paramref name="name"/> is the file's name, its
@@ -67,6 +71,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var diff = session.Load(content.Entities, content.Relations, name, content.Classes);
         Keep(name, PackageVersions.Of(bytes));
         KeepIssues(name, PackageIssues.Of(bytes));
+        KeepForeign(name, PackageForeign.Of(bytes));
         return diff;
     }
 
@@ -75,10 +80,12 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     {
         var versions = Versions(session);
         var issues = IssueFilesOf(session);
+        var foreign = Foreign(session);
         using var ms = new MemoryStream();
-        ProjectPackage.Write(session, ms, versions, issues);
+        ProjectPackage.Write(session, ms, versions, issues, foreign);
         var bytes = ms.ToArray();
         var diff = session.Saved(name);
+        KeepForeign(name, foreign);
         Keep(name, versions.From(bytes));
         KeepIssues(name, issues.Store.From(bytes, issues.Written));
         return (bytes, diff);
@@ -92,6 +99,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var diff = open(session, path);
         Keep(path, PackageVersions.Of(path));
         KeepIssues(path, PackageIssues.Of(path));
+        KeepForeign(path, PackageForeign.Of(path));
         return diff;
     }
 
@@ -100,8 +108,10 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var target = path ?? session.Path ?? throw new CommandException("Where to save: the project has no file yet.");
         var versions = Versions(session);
         var issues = IssueFilesOf(session);
-        write(session, target, versions, issues);
+        var foreign = Foreign(session);
+        write(session, target, versions, issues, foreign);
         var diff = session.Saved(target);
+        KeepForeign(session.Path ?? target, foreign);
         Keep(session.Path ?? target, versions.From(session.Path ?? target));
         KeepIssues(session.Path ?? target, issues.Store.From(session.Path ?? target, issues.Written));
         return diff;
@@ -112,6 +122,22 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     {
         _issues = PackageIssues.Empty();
         _issuesOf = null;
+        _foreign = PackageForeign.None;
+        _foreignOf = null;
+    }
+
+    /// <summary>The entries other tools put in the open project's file: those read with it, else read from its file (a project recovered); none for a new project.</summary>
+    public PackageForeign Foreign(Session session)
+    {
+        if (session.Path is not { } path) return PackageForeign.None;
+        if (_foreignOf != path) KeepForeign(path, PackageForeign.Of(path));
+        return _foreign;
+    }
+
+    void KeepForeign(string path, PackageForeign foreign)
+    {
+        _foreign = foreign;
+        _foreignOf = path;
     }
 
     // ------------------------------------------------------------ issues' files
@@ -192,13 +218,15 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     (JsonObject Result, Diff Diff) Commit(Session session, PackageBuild build, PackageVersions versions, bool asBytes, JsonObject result)
     {
         var issues = IssueFilesOf(session);
+        var foreign = Foreign(session);
         if (asBytes)
         {
             var name = session.Path ?? "project.lapin";
             using var ms = new MemoryStream();
-            LapinPackage.Write(ms, build, versions, issues);
+            LapinPackage.Write(ms, build, versions, issues, foreign);
             var bytes = ms.ToArray();
             var diff = session.Saved(name);
+            KeepForeign(name, foreign);
             Keep(name, versions.From(bytes));
             KeepIssues(name, issues.Store.From(bytes, issues.Written));
             result["name"] = name;
@@ -206,8 +234,9 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
             return (result, diff);
         }
         var path = session.Path ?? throw new CommandException("Save the project first: its versions live in its file.");
-        LapinPackage.Write(path, build, versions, issues);
+        LapinPackage.Write(path, build, versions, issues, foreign);
         var saved = session.Saved(path);
+        KeepForeign(path, foreign);
         Keep(path, versions.From(path));
         KeepIssues(path, issues.Store.From(path, issues.Written));
         result["path"] = path;

@@ -87,55 +87,6 @@ Under **Street**, **Gas main along…** (<kbd>GM</kbd>) lays a gas main along wh
 
 Sizing the pipes from the appliances' consumption and checking the pressure drop are engineering, in the **Lapin MEP** edition.
 
-## Exhaust fans
-
-The **Fans** group on the MEP tab places bathroom and kitchen extract fans as elements of their own, each of a type you configure:
-
-- **Wall fan** (<kbd>VF</kbd>): an axial fan on a wall, blowing straight out through it;
-- **Ceiling fan**: a fan under the ceiling with a duct out of its side;
-- **Inline duct fan**: a tube fan in the ceiling void, on the duct;
-- **Window fan**: a fan set in a window's glazing;
-- **Ceiling fan with light**: a ceiling fan with a light in its grille;
-- **Fan with louvre panel**: a wall panel with louvres beside the fan and a cover under it.
-
-Choose a tool and click. A wall, window or louvre panel fan goes on the face of the wall nearest the click (within 600 mm), its front to the room, its middle 2.1 m above the floor (a window fan 1.9 m). A ceiling fan goes where you click, under the room's ceiling; an inline fan 250 mm above it. The command line's bar chooses the type the tool puts down, from the project's types or Lapin's built-in ones (a wall fan Ø100 with a humidity sensor, a ceiling fan with a light and a motion sensor, an inline fan for two bathrooms…).
-
-A wall fan cuts a round opening through its wall, 20 mm wider than its duct: the wall's provision, as an MEP run's (it shows as an opening void in plans and goes into IFC as an opening of the wall). It is found by where the fan stands, so a fan moved along the wall takes its opening with it. A window fan sits in the glazing and cuts nothing.
-
-![A bathroom with a wall fan, a ceiling fan with a light ducted out through the wall, and a fan with a louvre panel](shots/fans-plan.webp)
-
-Plans draw a fan by its MEP symbol: a circle with its blades, its face on the wall, its sleeve dashed through the wall and an arrow the way the air goes; a ceiling fan's grille dashed, as it is above the cut. Ceiling plans, sections, elevations and 3D draw the bodies.
-
-**Duct to outlet** takes a ceiling or inline fan's air out: click the fan, then where the duct goes out. The duct is a run of the project's **Bathroom extract** system (made with the first duct; it cuts the walls it goes through), as wide as the fan's duct, at the height of its spigot. It ends in a hood on the wall's outside, or, with **Through the roof** on in the bar, in a pipe rising to a cowl. Moved or raised, the fan takes the duct's start with it.
-
-![The fans in 3D: the duct to the hood outside, the wall fan's grille on the facade](shots/fans-3d.webp)
-
-### Fan types
-
-**Fan types** opens the types: the project's, and the built-in ones to add with a click. A type sets:
-
-- its **mounting** (the ones its kind takes) and its **duct size** (Ø100, 125, 150 or 200 mm);
-- its grille's **shape** (round or square), **size**, **pattern** (louvres, slots, rings or plain) and **finish** (white, silver, black, stainless or chrome);
-- its **airflow** (m³/h) and **power** (W);
-- its **control**: a switch, a humidity sensor, a timer, both, or a motion sensor;
-- a **backdraft shutter**, and a ceiling fan's **light**, an inline fan's body length, a louvre panel's width and height, shown only where they apply.
-
-The preview beside them is the engine's: the plan symbol above, the face below. Every fan of a type follows a change.
-
-![The fan types with a louvre panel's preview](shots/fans-types.webp)
-
-Select a fan to change its type, its **height above the floor**, its turn and, once it has a duct, its **outlet** (wall or roof) and how far the outlet rises above the duct. Drag the grip in its middle to move it, the one in front of it to turn it.
-
-![A ceiling fan's properties](shots/fans-properties.webp)
-
-### Schedules, cost and IFC
-
-The **Fan schedule** lists every fan with its room, kind, size, airflow, mounting, control, height and outlet, and the total airflow. The **Room extract check** lists every bathroom, WC and kitchen (and every room with a fan) with its volume, the extract it needs and what its fans give: a bathroom 8 air changes an hour and at least 54 m³/h, a WC 6 and 25 m³/h, a kitchen 6 and 108 m³/h. These are indicative values; check them against the norm you design to.
-
-A new type has the cost article `LAP-FAN`, counted per fan (Cost → Map articles… changes it).
-
-IFC writes a fan as an **IfcFan** of an **IfcFanType** with its predefined type (PROPELLORAXIAL for a wall or window fan, CENTRIFUGALRADIAL for a ceiling fan, TUBEAXIAL for an inline one) and **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); the wall's opening as an IfcOpeningElement. Lapin reads them back as its own fans.
-
 ## Coordination: opening voids and clash checks
 
 Every opening in a wall, floor or roof can be a **void** of its own: a solid as large as the opening, through the whole thickness of its host, finishes included. Clash programs (Navisworks, Solibri, BIMcollab) test MEP against such voids with "completely inside": a pipe, duct or cable tray wholly inside a void passes, one that sticks out of it, or crosses a wall where there is none, is a clash. Lapin runs the same check itself.

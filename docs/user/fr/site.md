@@ -89,44 +89,6 @@ Elles donnent l’échelle aux dessins et aux images, mais ne font pas partie du
 
 Les figures suivent les personnes et les voitures de [BimGo](https://github.com/aussieBIMguru/BimGo) par Aussie BIM Guru (MIT-0) : leurs proportions, attitudes et profils.
 
-## Portails
-
-Le groupe **Portails** de l’onglet Site place des portails avec leurs piliers : un **Portail battant**, un **Portail battant double** (<kbd>GT</kbd>), un **Portail coulissant**, un **Portail coulissant autoportant**, un **Portillon**, un **Portail avec portillon latéral** et un **Portail pliant**. Lapin n’a pas de clôture propre : dessinez la clôture comme un mur (un mur bas, du type voulu), ou laissez les piliers du portail se poser sur la limite de la parcelle.
-
-Cliquez sur les deux extrémités du portail. Avec **Sur les lignes** activé dans la barre (par défaut), le milieu du portail se pose sur l’axe du mur ou la ligne dessinée la plus proche à moins de 1,5 m (un mur, la limite de la parcelle, une ligne de dessin), le long de celle-ci ; désactivé, il se tient entre les deux points. La barre choisit aussi le type posé, parmi les styles du projet ou ceux livrés avec Lapin.
-
-Un portail posé sur un mur le coupe à partir des faces extérieures de ses piliers, sur toute sa hauteur : le mur de clôture s’arrête aux piliers.
-
-![Un portail coulissant et un portillon dans un mur de clôture, un portail double sur la limite de la parcelle](shots/gates-plan.webp)
-
-Les plans dessinent les piliers coupés, les vantaux ouverts selon leur angle d’ouverture avec leur débattement, les panneaux d’un portail pliant repliés ; un portail coulissant fermé, avec une flèche dans le sens d’ouverture, son rail et la zone où il se range en tirets, aussi longue que son vantail (le vantail d’un portail autoportant dépasse l’ouverture de sa queue de contrepoids, environ 45 %). Les façades, les coupes et la 3D dessinent les corps.
-
-![Les portails en 3D](shots/gates-3d.webp)
-
-### Le configurateur
-
-**Types de portails** ouvre le configurateur : les styles du projet, et ceux livrés avec Lapin, à ajouter d’un clic (un portail double en fer forgé, un coulissant à lames horizontales, un pliant en acier, un portillon cintré, un portail d’entrée en bois, un portail à grillage de sécurité, un autoportant automatique, un portail double avec portillon, une barrière de ferme, un coulissant en tôle perforée, un portillon de jardin en bois). Un type définit, par groupes, seulement ce que son genre admet :
-
-- **Portail :** la largeur libre et la hauteur, le jeu au sol, la largeur d’un portillon, les panneaux de chaque côté d’un portail pliant, l’angle d’ouverture ;
-- **Vantaux :** la taille du cadre, le remplissage (barreaux verticaux, lames horizontales, un panneau plein, grillage ou tôle perforée), l’espacement des barreaux ou des lames, des pointes de lance sur les barreaux, le couronnement (droit, cintré ou en pointe) et sa flèche ;
-- **Piliers :** maçonnés, poteaux en acier ou aucun, leur taille et leur hauteur, le chapeau d’un pilier maçonné (plat ou pyramidal) ;
-- **Quincaillerie :** une motorisation (un bras sur les vantaux d’un battant, un boîtier à côté du rail d’un coulissant) et poignée et serrure ;
-- **Matériaux** par rôle : cadre, remplissage, piliers, chapeaux, quincaillerie et moteur. Un matériau nommé ici que le projet n’a pas est créé.
-
-L’aperçu est celui du moteur : le plan avec son débattement ou sa zone de rangement en haut, l’élévation en bas. Tous les portails d’un type suivent une modification.
-
-![Le configurateur de portails avec un portail double en fer forgé](shots/gates-types.webp)
-
-Sélectionnez un portail pour changer son type, sa rotation, sa hauteur au-dessus du terrain, le côté vers lequel ses vantaux **s’ouvrent**, la main de ses gonds (ou le côté où se range un coulissant), et de combien il est dessiné ouvert (0 : fermé). **Autre côté** et **Autre main** dans ses propriétés, ou les flèches à côté de lui en plan, les inversent. **Modifier → Symétrie** lui donne l’autre main.
-
-![Les propriétés d’un portail](shots/gates-properties.webp)
-
-### Nomenclature, coûts et IFC
-
-La **Nomenclature des portails** liste les portails par type : genre, dimension libre, vantaux, remplissage, couronnement, piliers, motorisation et nombre. Un nouveau type porte les articles de coût `LAP-GATE` et, avec une motorisation, `LAP-GATEMOT`, comptés par portail.
-
-L’IFC écrit un portail comme **IfcDoor** de PredefinedType **GATE**, d’un **IfcDoorType** avec son fonctionnement (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING… ; un portail avec portillon USERDEFINED), sa largeur libre et sa hauteur comme OverallWidth et OverallHeight et Pset_DoorCommon. Les piliers font partie du corps du portail : un seul élément porte le portail tel qu’il a été configuré, et Lapin le relit comme son propre portail.
-
 ## Règles d’urbanisme et soleil (Lapin Urban)
 
 L’édition **Lapin Urban** ajoute un groupe **Urbanisme** à cet onglet : les règles d’urbanisme de la parcelle (POT, CUT, les hauteurs maximales, les reculs par rapport à la rue, aux limites latérales, au fond de parcelle et à l’axe de la voie), le **gabarit constructible** qu’elles laissent, les indicateurs que le modèle atteint par rapport à elles, et l’**étude d’ensoleillement** : le soleil et ses ombres en 3D pour n’importe quel jour et n’importe quelle heure à l’emplacement du projet, et des plans d’ombres pour l’équinoxe et les solstices.

@@ -87,55 +87,6 @@ En **Calle**, **Red de gas a lo largo de…** (<kbd>GM</kbd>) tiende una red de 
 
 Dimensionar las tuberías por el consumo de los aparatos y comprobar la pérdida de carga es ingeniería, en la edición **Lapin MEP**.
 
-## Extractores
-
-El grupo **Extractores** de la pestaña Instalaciones coloca extractores de baño y de cocina como elementos propios, cada uno de un tipo que usted configura:
-
-- **Extractor de pared** (<kbd>VF</kbd>): un ventilador axial en un muro, que expulsa el aire directamente a través de él;
-- **Extractor de techo**: un ventilador bajo el techo con un conducto que sale por su lateral;
-- **Extractor en línea**: un ventilador tubular en el falso techo, sobre el conducto;
-- **Extractor de ventana**: un ventilador montado en el acristalamiento de una ventana;
-- **Extractor de techo con luz**: un extractor de techo con una luz en su rejilla;
-- **Extractor con panel de lamas**: un panel de pared con lamas junto al ventilador y una tapa debajo.
-
-Elija una herramienta y haga clic. Un extractor de pared, de ventana o con panel de lamas va sobre la cara del muro más cercana al clic (a menos de 600 mm), con su frente hacia el local y su centro a 2,1 m sobre el suelo (uno de ventana a 1,9 m). Un extractor de techo va donde hace clic, bajo el techo del local; uno en línea 250 mm por encima. La barra de la línea de comandos elige el tipo que coloca la herramienta, entre los tipos del proyecto o los incluidos en Lapin (un extractor de pared Ø100 con sensor de humedad, un extractor de techo con luz y detector de movimiento, un extractor en línea para dos baños…).
-
-Un extractor de pared corta una abertura redonda en su muro, 20 mm más ancha que su conducto: el pasamuros del muro, como el de un tramo de instalaciones (se ve como volumen de hueco en las plantas y pasa al IFC como abertura del muro). Se encuentra por el lugar donde está el extractor, así que un extractor desplazado a lo largo del muro se lleva su abertura. Un extractor de ventana está en el acristalamiento y no corta nada.
-
-![Un baño con un extractor de pared, un extractor de techo con luz conducido al exterior a través del muro y un extractor con panel de lamas](shots/fans-plan.webp)
-
-Las plantas dibujan un extractor con su símbolo de instalaciones: un círculo con sus aspas, su frente sobre el muro, su manguito discontinuo a través del muro y una flecha en el sentido del aire; la rejilla de un extractor de techo discontinua, ya que está por encima del corte. Las plantas de techo, las secciones, los alzados y el 3D dibujan los cuerpos.
-
-**Conducto a la salida** lleva fuera el aire de un extractor de techo o en línea: haga clic en el extractor y luego donde sale el conducto. El conducto es un tramo del sistema **Bathroom extract** del proyecto (creado con el primer conducto; corta los muros que atraviesa), tan ancho como el conducto del extractor, a la altura de su boca. Termina en una rejilla en la cara exterior del muro o, con **Por la cubierta** activo en la barra, en un tubo que sube hasta un sombrerete. Desplazado o elevado, el extractor se lleva el inicio del conducto.
-
-![Los extractores en 3D: el conducto hasta la rejilla exterior, la rejilla del extractor de pared en la fachada](shots/fans-3d.webp)
-
-### Tipos de extractor
-
-**Tipos de extractor** abre los tipos: los del proyecto y los incluidos, que se añaden con un clic. Un tipo define:
-
-- su **montaje** (los que admite su clase) y su **diámetro de conducto** (Ø100, 125, 150 o 200 mm);
-- la **forma** de su rejilla (redonda o cuadrada), su **tamaño**, su **dibujo** (lamas, ranuras, anillos o lisa) y su **acabado** (blanco, plata, negro, inoxidable o cromo);
-- su **caudal** (m³/h) y su **potencia** (W);
-- su **control**: un interruptor, un sensor de humedad, un temporizador, ambos o un detector de movimiento;
-- una **compuerta antirretorno**, y la **luz** de un extractor de techo, la longitud del cuerpo de uno en línea, el ancho y el alto de un panel de lamas, mostrados solo donde aplican.
-
-La vista previa de al lado es del motor: el símbolo en planta arriba, el frente abajo. Todos los extractores de un tipo siguen un cambio.
-
-![Los tipos de extractor con la vista previa de un panel de lamas](shots/fans-types.webp)
-
-Seleccione un extractor para cambiar su tipo, su **altura sobre el suelo**, su giro y, cuando tiene conducto, su **salida** (muro o cubierta) y cuánto sube la salida sobre el conducto. Arrastre el pinzamiento del centro para moverlo y el de delante para girarlo.
-
-![Las propiedades de un extractor de techo](shots/fans-properties.webp)
-
-### Tablas, costes e IFC
-
-La **Tabla de extractores** lista cada extractor con su local, clase, tamaño, caudal, montaje, control, altura y salida, y el caudal total. La **Comprobación de extracción por local** lista cada baño, aseo y cocina (y cada local con un extractor) con su volumen, la extracción que necesita y la que dan sus extractores: un baño 8 renovaciones por hora y al menos 54 m³/h, un aseo 6 y 25 m³/h, una cocina 6 y 108 m³/h. Son valores orientativos; compruébelos con la norma con la que proyecta.
-
-Un tipo nuevo tiene la partida de coste `LAP-FAN`, contada por extractor (Costes → Asignar partidas… la cambia).
-
-El IFC escribe un extractor como **IfcFan** de un **IfcFanType** con su tipo predefinido (PROPELLORAXIAL para uno de pared o de ventana, CENTRIFUGALRADIAL para uno de techo, TUBEAXIAL para uno en línea) y **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); la abertura del muro como IfcOpeningElement. Lapin los vuelve a leer como sus propios extractores.
-
 ## Coordinación: volúmenes de hueco y comprobación de colisiones
 
 Cada hueco en un muro, losa o cubierta puede ser un **volumen** propio: un sólido del tamaño del hueco, a través de todo el espesor de su anfitrión, acabados incluidos. Los programas de colisiones (Navisworks, Solibri, BIMcollab) comprueban las instalaciones contra esos volúmenes con «completamente dentro»: una tubería, un conducto o una bandeja de cables entero dentro de un volumen pasa; uno que sobresale, o que atraviesa un muro donde no hay hueco, es una colisión. Lapin hace la misma comprobación.

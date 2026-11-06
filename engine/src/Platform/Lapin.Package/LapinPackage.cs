@@ -17,7 +17,9 @@ public sealed record PackageManifest(
     IReadOnlyList<PackageModule> Modules,
     IReadOnlyList<PackagePart> Parts,
     /// <summary>Which module wrote each class: what a product without that module keeps, untouched.</summary>
-    IReadOnlyDictionary<string, string> Classes);
+    IReadOnlyDictionary<string, string> Classes,
+    /// <summary>The entries of other tools kept with the project (<see cref="PackageForeign"/>); left out when there are none, so an older Lapin reads the manifest as before.</summary>
+    IReadOnlyList<PackagePart>? Foreign = null);
 
 public sealed record PackageModule(string Id, int SchemaVersion);
 
@@ -38,6 +40,7 @@ public sealed record PackageBuild(PackageManifest Manifest, IReadOnlyList<(Packa
 /// versions/blobs/&lt;sha256&gt;               a version's part the live project no longer has
 /// issues/index.json                      the project's issues and their files, for whoever opens the zip (the record is the model's)
 /// issues/blobs/&lt;sha256&gt;                 a file an issue made, kept in the project (docs/plan-cde.md), once however many issues share it
+/// &lt;anything else&gt;                        another tool's entries (dag/, source/…), kept byte for byte (<see cref="PackageForeign"/>)
 /// </code>
 /// A package without <c>issues/</c> (older, or a project never issued) reads as before; an older Lapin skips the folder it does not know.
 /// Writing goes to a temporary file first, then replaces the target: a crash
@@ -95,10 +98,10 @@ public static class LapinPackage
     }
 
     /// <summary>A built project written to a file, beside first, then moved over the old one.</summary>
-    public static void Write(string path, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null)
+    public static void Write(string path, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null)
     {
         var temp = path + ".saving";
-        using (var file = File.Create(temp)) Write(file, build, versions, issues);
+        using (var file = File.Create(temp)) Write(file, build, versions, issues, foreign);
         File.Move(temp, path, overwrite: true);
     }
 
@@ -106,10 +109,11 @@ public static class LapinPackage
     /// A built project written as a package, with its versions: each version's
     /// manifest in the index, and the bytes of every part a version names that
     /// the live project does not hold (by hash) under <c>versions/blobs/</c>,
-    /// once however many versions share it; and the files the project's issues
-    /// keep, under <c>issues/blobs/</c>, once each.
+    /// once however many versions share it; the files the project's issues
+    /// keep, under <c>issues/blobs/</c>, once each; and the entries of other
+    /// tools, as they were read, listed in the manifest's <c>foreign</c>.
     /// </summary>
-    public static void Write(Stream output, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null)
+    public static void Write(Stream output, PackageBuild build, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null)
     {
         using var zip = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true);
         void Entry(string name, byte[] bytes)
@@ -117,7 +121,9 @@ public static class LapinPackage
             using var s = zip.CreateEntry(name, CompressionLevel.Optimal).Open();
             s.Write(bytes);
         }
-        Entry(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(build.Manifest, PackageJson.Indented.PackageManifest));
+        var kept = foreign?.Parts.Where(p => PackageForeign.Keeps(p.Path)).ToList() ?? [];
+        var manifest = kept.Count > 0 ? build.Manifest with { Foreign = kept.Select(p => p.Part).ToList() } : build.Manifest;
+        Entry(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(manifest, PackageJson.Indented.PackageManifest));
         foreach (var (part, bytes) in build.Parts) Entry(part.Path, bytes);
         if (versions is { Versions.Count: > 0 })
         {
@@ -135,6 +141,14 @@ public static class LapinPackage
                 using var s = zip.CreateEntry(PackageIssues.Prefix + sha, CompressionLevel.Fastest).Open();
                 bytes.CopyTo(s);
             });
+        }
+        // Last, after everything Lapin owns: none of these can shadow a name of Lapin's (PackageForeign.Keeps).
+        foreach (var part in kept)
+        {
+            var entry = zip.CreateEntry(part.Path, CompressionLevel.Optimal);
+            entry.LastWriteTime = part.Modified;
+            using var s = entry.Open();
+            s.Write(part.Bytes);
         }
     }
 

@@ -87,55 +87,6 @@ Unter **Straße** verlegt **Gasleitung entlang…** (<kbd>GM</kbd>) eine Gasleit
 
 Die Rohrbemessung aus dem Verbrauch der Geräte und der Nachweis des Druckverlusts sind Ingenieurarbeit, in der Edition **Lapin MEP**.
 
-## Abluftventilatoren
-
-Die Gruppe **Ventilatoren** im Register TGA setzt Abluftventilatoren für Bad und Küche als eigene Elemente, jeder von einem Typ, den Sie konfigurieren:
-
-- **Wandventilator** (<kbd>VF</kbd>): ein Axialventilator an einer Wand, der direkt durch sie hinaus bläst;
-- **Deckenventilator**: ein Ventilator unter der Decke mit einem Rohr aus seiner Seite;
-- **Rohrventilator**: ein Rohreinschubventilator im Deckenhohlraum, im Rohr;
-- **Fensterventilator**: ein Ventilator in der Verglasung eines Fensters;
-- **Deckenventilator mit Licht**: ein Deckenventilator mit einer Leuchte im Gitter;
-- **Ventilator mit Lamellenpaneel**: ein Wandpaneel mit Lamellen neben dem Ventilator und einer Abdeckung darunter.
-
-Wählen Sie ein Werkzeug und klicken Sie. Ein Wand-, Fenster- oder Lamellenpaneel-Ventilator kommt auf die Wandfläche, die dem Klick am nächsten ist (innerhalb von 600 mm), mit der Vorderseite zum Raum, seine Mitte 2,1 m über dem Boden (ein Fensterventilator 1,9 m). Ein Deckenventilator kommt dorthin, wo Sie klicken, unter die Decke des Raums; ein Rohrventilator 250 mm darüber. Die Leiste der Befehlszeile wählt den Typ, den das Werkzeug setzt, aus den Typen des Projekts oder den mitgelieferten von Lapin (ein Wandventilator Ø100 mit Feuchtesensor, ein Deckenventilator mit Licht und Bewegungsmelder, ein Rohrventilator für zwei Bäder…).
-
-Ein Wandventilator schneidet eine runde Öffnung durch seine Wand, 20 mm weiter als sein Rohr: die Aussparung der Wand, wie die einer TGA-Leitung (sie erscheint in Grundrissen als Öffnungskörper und geht als Öffnung der Wand ins IFC). Sie wird über den Standort des Ventilators gefunden, ein entlang der Wand verschobener Ventilator nimmt seine Öffnung also mit. Ein Fensterventilator sitzt in der Verglasung und schneidet nichts.
-
-![Ein Bad mit einem Wandventilator, einem Deckenventilator mit Licht, durch die Wand nach außen geführt, und einem Ventilator mit Lamellenpaneel](shots/fans-plan.webp)
-
-Grundrisse zeichnen einen Ventilator mit seinem TGA-Symbol: ein Kreis mit seinen Flügeln, seine Front an der Wand, seine Hülse gestrichelt durch die Wand und ein Pfeil in Strömungsrichtung; das Gitter eines Deckenventilators gestrichelt, da es über dem Schnitt liegt. Deckenspiegel, Schnitte, Ansichten und 3D zeichnen die Körper.
-
-**Rohr zum Auslass** führt die Luft eines Decken- oder Rohrventilators hinaus: Klicken Sie auf den Ventilator, dann dorthin, wo das Rohr austritt. Das Rohr ist eine Leitung des Systems **Bathroom extract** des Projekts (mit dem ersten Rohr angelegt; es schneidet die Wände, die es durchquert), so weit wie das Rohr des Ventilators, auf der Höhe seines Stutzens. Es endet in einer Haube an der Außenseite der Wand oder, mit **Durch das Dach** in der Leiste, in einem Rohr, das zu einer Dachhaube aufsteigt. Verschoben oder angehoben nimmt der Ventilator den Anfang des Rohrs mit.
-
-![Die Ventilatoren in 3D: das Rohr zur Haube außen, das Gitter des Wandventilators an der Fassade](shots/fans-3d.webp)
-
-### Ventilatortypen
-
-**Ventilatortypen** öffnet die Typen: die des Projekts und die mitgelieferten, mit einem Klick hinzuzufügen. Ein Typ legt fest:
-
-- seine **Montage** (die seine Art zulässt) und seinen **Rohrdurchmesser** (Ø100, 125, 150 oder 200 mm);
-- die **Form** seines Gitters (rund oder quadratisch), seine **Größe**, sein **Muster** (Lamellen, Schlitze, Ringe oder glatt) und seine **Oberfläche** (weiß, silber, schwarz, Edelstahl oder Chrom);
-- seinen **Luftvolumenstrom** (m³/h) und seine **Leistung** (W);
-- seine **Steuerung**: ein Schalter, ein Feuchtesensor, ein Nachlauf-Timer, beides oder ein Bewegungsmelder;
-- eine **Rückstauklappe**, und das **Licht** eines Deckenventilators, die Körperlänge eines Rohrventilators, Breite und Höhe eines Lamellenpaneels, nur dort gezeigt, wo sie gelten.
-
-Die Vorschau daneben stammt vom Kern: oben das Grundrisssymbol, unten die Front. Jeder Ventilator eines Typs folgt einer Änderung.
-
-![Die Ventilatortypen mit der Vorschau eines Lamellenpaneels](shots/fans-types.webp)
-
-Wählen Sie einen Ventilator, um seinen Typ, seine **Höhe über dem Boden**, seine Drehung und, sobald er ein Rohr hat, seinen **Auslass** (Wand oder Dach) und wie weit der Auslass über das Rohr ragt zu ändern. Ziehen Sie den Griff in seiner Mitte, um ihn zu verschieben, den vor ihm, um ihn zu drehen.
-
-![Die Eigenschaften eines Deckenventilators](shots/fans-properties.webp)
-
-### Listen, Kosten und IFC
-
-Die **Ventilatorliste** führt jeden Ventilator mit Raum, Art, Größe, Luftvolumenstrom, Montage, Steuerung, Höhe und Auslass, und den gesamten Luftvolumenstrom. Die **Abluftprüfung der Räume** führt jedes Bad, WC und jede Küche (und jeden Raum mit einem Ventilator) mit seinem Volumen, der nötigen Abluft und dem, was seine Ventilatoren leisten: ein Bad 8 Luftwechsel pro Stunde und mindestens 54 m³/h, ein WC 6 und 25 m³/h, eine Küche 6 und 108 m³/h. Das sind Richtwerte; prüfen Sie sie an der Norm, nach der Sie planen.
-
-Ein neuer Typ hat die Kostenposition `LAP-FAN`, je Ventilator gezählt (Kosten → Positionen zuordnen… ändert sie).
-
-IFC schreibt einen Ventilator als **IfcFan** eines **IfcFanType** mit seinem vordefinierten Typ (PROPELLORAXIAL für einen Wand- oder Fensterventilator, CENTRIFUGALRADIAL für einen Deckenventilator, TUBEAXIAL für einen Rohrventilator) und **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); die Öffnung der Wand als IfcOpeningElement. Lapin liest sie als eigene Ventilatoren zurück.
-
 ## Koordination: Öffnungskörper und Kollisionsprüfung
 
 Jede Öffnung in Wand, Decke oder Dach kann ein eigener **Öffnungskörper** sein: ein Körper so groß wie die Öffnung, durch die ganze Dicke ihres Wirtsbauteils, Bekleidungen eingeschlossen. Kollisionsprogramme (Navisworks, Solibri, BIMcollab) prüfen die TGA mit „vollständig innerhalb“ gegen solche Körper: ein Rohr, ein Kanal oder eine Kabeltrasse ganz in einem Körper ist in Ordnung; eines, das herausragt oder eine Wand ohne Öffnung kreuzt, ist eine Kollision. Lapin führt dieselbe Prüfung selbst aus.

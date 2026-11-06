@@ -12,11 +12,12 @@ public static class ProjectPackage
             $"Lapin {typeof(ProjectPackage).Assembly.GetName().Version}", session.Product.Id,
             session.Catalog.Modules.Select(m => new PackageModule(m.Id, m.SchemaVersion)).ToList());
 
-    public static void Write(Session session, Stream output, PackageVersions? versions = null, IssueFiles? issues = null) => LapinPackage.Write(output, Build(session), versions, issues);
+    public static void Write(Session session, Stream output, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null) =>
+        LapinPackage.Write(output, Build(session), versions, issues, foreign);
 
-    public static void Write(Session session, string path, PackageVersions? versions = null, IssueFiles? issues = null)
+    public static void Write(Session session, string path, PackageVersions? versions = null, IssueFiles? issues = null, PackageForeign? foreign = null)
     {
         if (!path.EndsWith(LapinPackage.Suffix, StringComparison.OrdinalIgnoreCase)) path += LapinPackage.Suffix;
-        LapinPackage.Write(path, Build(session), versions, issues);
+        LapinPackage.Write(path, Build(session), versions, issues, foreign);
     }
 }

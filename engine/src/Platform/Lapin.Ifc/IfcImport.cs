@@ -419,13 +419,19 @@ public static partial class IfcImport
             return made;
         }
 
-        /// <summary>A relationship as the model keeps it: typing and material associations grouped by what relates (one relation per type), the others one each, with the file's id.</summary>
+        /// <summary>
+        /// A relationship as the model keeps it: typing and material associations grouped by what relates (one relation per type), the
+        /// first of them with the file's id, so an element's layer set usage is written back under the association's GlobalId it came
+        /// with; the others one each, with the file's id.
+        /// </summary>
         void Relate(IEdit edit, string? id, string cls, string relating, string related, JsonObject? attrs = null)
         {
             if (edit.Model.Get(relating) == null || edit.Model.Get(related) == null) return;
-            if (edit.Model.RelationsOf(relating, cls).Any(r => r.Relating == relating && r.Related.Contains(related))) return;
-            if (cls is IfcClass.RelDefinesByType or IfcClass.RelAssociatesMaterial) { edit.Relate(cls, relating, related); return; }
-            var rid = id != null && GlobalId.IsValid(id) && edit.Model.GetRelation(id) == null ? id : edit.NewId();
+            var existing = edit.Model.RelationsOf(relating, cls).Where(r => r.Relating == relating).ToList();
+            if (existing.Any(r => r.Related.Contains(related))) return;
+            var free = id != null && GlobalId.IsValid(id) && edit.Model.GetRelation(id) == null;
+            if ((cls is IfcClass.RelDefinesByType or IfcClass.RelAssociatesMaterial) && (existing.Count > 0 || !free)) { edit.Relate(cls, relating, related); return; }
+            var rid = free ? id! : edit.NewId();
             edit.AddRelation(new Relation(rid, cls, relating, [related], attrs));
         }
 

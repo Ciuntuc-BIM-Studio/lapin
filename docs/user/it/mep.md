@@ -87,55 +87,6 @@ Sotto **Strada**, **Condotta del gas lungo…** (<kbd>GM</kbd>) posa una condott
 
 Dimensionare i tubi dal consumo degli apparecchi e verificare la perdita di carico è ingegneria, nell’edizione **Lapin MEP**.
 
-## Aspiratori
-
-Il gruppo **Ventilatori** nella scheda Impianti mette gli aspiratori di bagni e cucine come elementi propri, ciascuno di un tipo che configuri:
-
-- **Aspiratore a parete** (<kbd>VF</kbd>): un ventilatore assiale su una parete, che soffia dritto attraverso di essa;
-- **Aspiratore a soffitto**: un ventilatore sotto il soffitto con un condotto che esce dal lato;
-- **Ventilatore in linea**: un ventilatore tubolare nel controsoffitto, sul condotto;
-- **Aspiratore da finestra**: un ventilatore montato nel vetro di una finestra;
-- **Aspiratore a soffitto con luce**: un aspiratore a soffitto con una luce nella griglia;
-- **Aspiratore con pannello a lamelle**: un pannello a parete con lamelle accanto al ventilatore e una copertura sotto.
-
-Scegli uno strumento e fai clic. Un aspiratore a parete, da finestra o con pannello a lamelle va sulla faccia della parete più vicina al clic (entro 600 mm), con il fronte verso il locale e il centro a 2,1 m dal pavimento (uno da finestra a 1,9 m). Un aspiratore a soffitto va dove fai clic, sotto il soffitto del locale; uno in linea 250 mm sopra. La barra della riga di comando sceglie il tipo che lo strumento mette, tra i tipi del progetto o quelli predefiniti di Lapin (un aspiratore a parete Ø100 con sensore di umidità, uno a soffitto con luce e sensore di movimento, uno in linea per due bagni…).
-
-Un aspiratore a parete taglia un foro tondo nella sua parete, 20 mm più largo del suo condotto: il foro predisposto della parete, come quello di una tubazione (appare come volume di foro nelle piante e va in IFC come apertura della parete). Viene trovato da dove sta l’aspiratore, così un aspiratore spostato lungo la parete porta con sé il suo foro. Un aspiratore da finestra sta nel vetro e non taglia nulla.
-
-![Un bagno con un aspiratore a parete, un aspiratore a soffitto con luce condotto fuori attraverso la parete e un aspiratore con pannello a lamelle](shots/fans-plan.webp)
-
-Le piante disegnano un aspiratore con il suo simbolo impiantistico: un cerchio con le pale, il fronte sulla parete, il manicotto tratteggiato attraverso la parete e una freccia nel verso dell’aria; la griglia di un aspiratore a soffitto tratteggiata, perché è sopra il taglio. Piante del soffitto, sezioni, prospetti e 3D disegnano i corpi.
-
-**Condotto allo sbocco** porta fuori l’aria di un aspiratore a soffitto o in linea: fai clic sull’aspiratore, poi dove esce il condotto. Il condotto è una tubazione del sistema **Estrazione bagni** del progetto (creato con il primo condotto; taglia le pareti che attraversa), largo quanto il condotto dell’aspiratore, all’altezza del suo raccordo. Finisce in una griglia sul lato esterno della parete o, con **Attraverso il tetto** attivo nella barra, in un tubo che sale a un comignolo. Spostato o alzato, l’aspiratore porta con sé l’inizio del condotto.
-
-![Gli aspiratori in 3D: il condotto fino alla griglia esterna, la griglia dell’aspiratore a parete sulla facciata](shots/fans-3d.webp)
-
-### Tipi di aspiratore
-
-**Tipi di ventilatore** apre i tipi: quelli del progetto e quelli predefiniti da aggiungere con un clic. Un tipo imposta:
-
-- il suo **montaggio** (quelli ammessi dal suo genere) e il **diametro del condotto** (Ø100, 125, 150 o 200 mm);
-- la **forma** della griglia (tonda o quadrata), la **dimensione**, il **disegno** (lamelle, fessure, anelli o liscia) e la **finitura** (bianco, argento, nero, inox o cromo);
-- la **portata d’aria** (m³/h) e la **potenza** (W);
-- il **comando**: un interruttore, un sensore di umidità, un temporizzatore, entrambi o un sensore di movimento;
-- una **serranda antiritorno**, e la **luce** di un aspiratore a soffitto, la lunghezza di uno in linea, la larghezza e l’altezza di un pannello a lamelle, mostrate solo dove servono.
-
-L’anteprima accanto è quella del motore: il simbolo in pianta sopra, il fronte sotto. Ogni aspiratore di un tipo segue una modifica.
-
-![I tipi di aspiratore con l’anteprima di un pannello a lamelle](shots/fans-types.webp)
-
-Seleziona un aspiratore per cambiarne il tipo, l’**altezza dal pavimento**, la rotazione e, quando ha un condotto, lo **sbocco** (parete o tetto) e quanto lo sbocco sale sopra il condotto. Trascina la maniglia al centro per spostarlo, quella davanti per ruotarlo.
-
-![Le proprietà di un aspiratore a soffitto](shots/fans-properties.webp)
-
-### Abachi, costi e IFC
-
-L’**Abaco ventilatori** elenca ogni aspiratore con locale, genere, dimensione, portata, montaggio, comando, altezza e sbocco, e la portata totale. La **Verifica dell’estrazione per locale** elenca ogni bagno, WC e cucina (e ogni locale con un aspiratore) con il volume, l’estrazione necessaria e quella data dai suoi aspiratori: un bagno 8 ricambi d’aria all’ora e almeno 54 m³/h, un WC 6 e 25 m³/h, una cucina 6 e 108 m³/h. Sono valori indicativi; verificali con la norma che segui.
-
-Un nuovo tipo ha la voce di costo `LAP-FAN`, contata per aspiratore (**Costi → Assegna voci…** la cambia).
-
-IFC scrive un aspiratore come **IfcFan** di un **IfcFanType** con il suo tipo predefinito (PROPELLORAXIAL per uno a parete o da finestra, CENTRIFUGALRADIAL per uno a soffitto, TUBEAXIAL per uno in linea) e **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); il foro della parete come IfcOpeningElement. Lapin li rilegge come propri aspiratori.
-
 ## Coordinamento: volumi di foro e verifica delle interferenze
 
 Ogni apertura in un muro, un solaio o un tetto può essere un **volume di foro** a sé: un solido grande quanto l'apertura, attraverso tutto lo spessore del suo ospite, finiture comprese. I programmi di interferenze (Navisworks, Solibri, BIMcollab) verificano gli impianti contro tali volumi con «completamente dentro»: un tubo, un canale o una passerella portacavi interamente dentro un volume passa; uno che sporge, o che attraversa un muro senza apertura, è un'interferenza. Lapin esegue la stessa verifica.
