@@ -217,7 +217,7 @@ export const LO: Record<string, string> = {
   'Surface area': 'ເນື້ອທີ່ຜິວ', 'Plan area': 'ເນື້ອທີ່ຮູບແຜນຜັງ', 'Lowest point': 'ຈຸດຕ່ຳສຸດ', 'Highest point': 'ຈຸດສູງສຸດ', 'Fill': 'ສີຖົມ',
   // Panes, zoom, the key plan
   'Profile on the path': 'ຮູບຕັດຕາມເສັ້ນທາງ', 'Gap from the path': 'ໄລຍະຫ່າງຈາກເສັ້ນທາງ', 'centre': 'ກາງ', 'right': 'ຂວາ', 'left': 'ຊ້າຍ',
-'Attach to roof': 'ຕິດໃສ່ຫຼັງຄາ', 'Detach from roof': 'ປົດອອກຈາກຫຼັງຄາ', 'Top under a roof': 'ຂອບເທິງໃຕ້ຫຼັງຄາ', 'attach': 'ຕິດໃສ່', 'none': 'ບໍ່ມີ',
+'Attach to roof': 'ຕິດໃສ່ຫຼັງຄາ', 'Detach from roof': 'ປົດອອກຈາກຫຼັງຄາ', 'Top under a roof': 'ຂອບເທິງໃຕ້ຫຼັງຄາ', 'Start cut angle': 'ມຸມຕັດຕົ້ນ', 'End cut angle': 'ມຸມຕັດປາຍ', 'attach': 'ຕິດໃສ່', 'none': 'ບໍ່ມີ',
   'Select the walls first, then click the roof, or any body over them, they go up to.': 'ເລືອກຝາກ່ອນ, ແລ້ວຄລິກຫຼັງຄາ ຫຼື ວັດຖຸໃດໆທີ່ຢູ່ເທິງພວກມັນ ທີ່ຝາຈະຂຶ້ນໄປຮອດ.', 'Select the walls to detach from the roof.': 'ເລືອກຝາທີ່ຈະປົດອອກຈາກຫຼັງຄາ.',
   'Cut order': 'ລຳດັບການຕັດ', 'Default order': 'ລຳດັບເລີ່ມຕົ້ນ', 'This project': 'ໂຄງການນີ້', 'Cuts': 'ຕັດ',
   'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'ບ່ອນທີ່ສອງອົງປະກອບມາຕຳກັນ, ອົງປະກອບທີ່ມີລຳດັບຄວາມສຳຄັນສູງກວ່າຈະຕັດອີກອັນໜຶ່ງ. ແຕ່ລະອົງປະກອບສາມາດກຳນົດລຳດັບຄວາມສຳຄັນຂອງຕົນເອງໄດ້ໃນຄຸນສົມບັດ.',

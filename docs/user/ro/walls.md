@@ -41,6 +41,8 @@ Mai jos, **Dependențe** arată ce e construit din perete și din ce e construit
 
 **Întoarce** mută straturile peretelui pe partea cealaltă. Poți da clic și pe săgețile mici de lângă un perete selectat în plan.
 
+Un perete recunoscut dintr-un IFC importat al cărui capăt e tăiat oblic în fișier păstrează tăietura: **Unghiul tăieturii la început** și **Unghiul tăieturii la sfârșit** în proprietățile lui, în grade față de capătul drept. O îmbinare la acel capăt ia locul tăieturii.
+
 ## Tipurile de pereți
 
 Un tip de perete e un set de straturi, de la fața din dreapta sensului în care e desenat peretele (exteriorul, când desenezi în jurul clădirii în sens trigonometric) la fața din stânga. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **De la** și **Până la** spun cât de sus merge peste baza peretelui (un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.

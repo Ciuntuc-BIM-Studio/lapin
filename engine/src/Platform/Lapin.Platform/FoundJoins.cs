@@ -8,8 +8,10 @@ namespace Lapin.Platform;
 /// elements meet, the join is the one that leaves both as the file has them. Each free end is tried against the elements
 /// it may meet (nearest first), as a mitre, a butt with either through, a T or in line, and a join is made only when the
 /// ends it shapes land on the file's footprints within <c>tolerance</c> (both corners of each end, and nothing more of the
-/// footprint there). Where none does (a corner the file overlaps, notches, a gap), the ends stay free and square where
-/// the file's body ends: a join never runs an element into a neighbour that stays whole, nor mitres what the file butts.
+/// footprint there). Where none does (a corner the file overlaps, notches, a gap, a corner the file mitres at 45° between
+/// elements of unequal thickness), the ends stay free where the file's body ends, cut at the file's angle there when the
+/// end is one straight line (<see cref="Joins.OwnEnd"/>), square otherwise: a join never runs an element into a neighbour
+/// that stays whole, nor mitres what the file butts.
 /// Crossings are not joined (the file's two bodies overlap there, and an X would take one out of the other). Elements
 /// drawn in Lapin keep <see cref="Joins.Auto"/>.
 /// </summary>
@@ -61,7 +63,7 @@ public static class FoundJoins
                 }
             }
         }
-        // The ends left free: square where the file's body ends.
+        // The ends left free: where the file's body ends, cut at its angle there (square when it is).
         var trimmed = 0;
         foreach (var id in set)
         {
@@ -70,18 +72,27 @@ public static class FoundJoins
             var dir = (end - start).Normalized();
             var length = (end - start).Length;
             var moved = false;
+            var angles = new double?[2];
             foreach (var at in new[] { Connection.AtStart, Connection.AtEnd })
             {
-                if (Taken(m, e, at) || FootprintEnd(f, at, fp, tolerance) is not { } s) continue;
-                var current = at == Connection.AtStart ? 0 : length;
+                if (Taken(m, e, at) || FootprintEnd(f, at, fp, tolerance) is not var (s, angle)) continue;
+                var i = at == Connection.AtStart ? 0 : 1;
+                if (Math.Abs(angle - (e.NumOrNull(i == 0 ? Joins.StartAngle : Joins.EndAngle) ?? 0)) > 1e-6) { angles[i] = angle; moved = true; }
+                var current = i == 0 ? 0 : length;
                 if (Math.Abs(s - current) <= tolerance) continue;
-                if (at == Connection.AtStart) start = f.Start + dir * s; else end = f.Start + dir * s;
+                if (i == 0) start = f.Start + dir * s; else end = f.Start + dir * s;
                 moved = true;
             }
             if (!moved || (end - start).Length < 1e-3 || Vec2.Dot(end - start, dir) <= 0) continue;
             var attrs = e.CloneAttrs();
             attrs["start"] = new System.Text.Json.Nodes.JsonArray(start.X, start.Y);
             attrs["end"] = new System.Text.Json.Nodes.JsonArray(end.X, end.Y);
+            for (var i = 0; i < 2; i++)
+                if (angles[i] is { } a)
+                {
+                    var key = i == 0 ? Joins.StartAngle : Joins.EndAngle;
+                    if (Math.Abs(a) < 1e-6) attrs.Remove(key); else attrs[key] = a;
+                }
             edit.Replace(e.With(attrs: attrs));
             trimmed++;
         }
@@ -136,10 +147,13 @@ public static class FoundJoins
     }
 
     /// <summary>
-    /// Where along the element (from its start) its footprint ends at <paramref name="end"/>: halfway between where its two
-    /// faces end there (the end itself when square). Null when the footprint's end is not two corners on the faces.
+    /// Where along the element (from its start) its footprint ends at <paramref name="end"/>, and at what angle: the end's
+    /// line between where its two faces end there, crossing the axis at <c>At</c>, turned <c>Angle</c> degrees from square
+    /// (as <see cref="Joins.OwnEnd"/> reads it; 0 when square within <paramref name="tolerance"/>, or when the end is more
+    /// than that line: a notch, a step, or steeper than <see cref="Joins.MaxEndAngle"/>, which stay square halfway between
+    /// the faces' ends). Null when the footprint's end is not two corners on the faces.
     /// </summary>
-    static double? FootprintEnd(JoinWall w, Connection end, IReadOnlyList<Vec2> footprint, double tolerance)
+    static (double At, double Angle)? FootprintEnd(JoinWall w, Connection end, IReadOnlyList<Vec2> footprint, double tolerance)
     {
         var dir = (w.End - w.Start).Normalized();
         var left = dir.Perp;
@@ -149,7 +163,21 @@ public static class FoundJoins
             var on = half.Where(p => Math.Abs(Vec2.Dot(p - w.Start, left) - y) <= 2 * tolerance).Select(p => Vec2.Dot(p - w.Start, dir)).ToList();
             return on.Count == 0 ? null : end == Connection.AtStart ? on.Min() : on.Max();
         }
-        return Face(w.YMin) is { } a && Face(w.YMax) is { } b ? (a + b) / 2 : null;
+        if (Face(w.YMin) is not { } a || Face(w.YMax) is not { } b) return null;
+        var t = w.YMax - w.YMin;
+        var square = ((a + b) / 2, 0d);
+        if (Math.Abs(b - a) <= tolerance || t < 1e-6) return square;
+        // An end that is one straight line from face to face: every vertex there on a face or on that line.
+        var sign = end == Connection.AtStart ? -1 : 1;
+        bool Off(Vec2 p)
+        {
+            var (x, y) = (Vec2.Dot(p - w.Start, dir), Vec2.Dot(p - w.Start, left));
+            if (Math.Abs(y - w.YMin) <= 2 * tolerance || Math.Abs(y - w.YMax) <= 2 * tolerance) return false;
+            return Math.Abs(x - (a + (b - a) * (y - w.YMin) / t)) > tolerance;
+        }
+        var angle = Math.Atan(sign * (b - a) / t) * 180 / Math.PI;
+        if (half.Any(Off) || Math.Abs(angle) > Joins.MaxEndAngle) return square;
+        return (a + (b - a) * (0 - w.YMin) / t, Math.Round(angle, 6));
     }
 
     /// <summary>An outline's corners in the plan (right-start, right-end, left-end, left-start).</summary>

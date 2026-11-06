@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Architecture;
 using Lapin.Ifc;
 using Lapin.Model;
 using Lapin.Platform;
@@ -16,7 +17,7 @@ public partial class IfcRecognitionTests
     /// <summary>
     /// Three walls 5 m long, 300 thick: a plain one with a window (as the file says), one whose top a sloping plane cuts
     /// (IfcBooleanClippingResult: recognition takes the uncut extrusion, flat at 3 m) and one with an end cut at 45° (its
-    /// footprint a trapezoid, read as a rectangle).
+    /// footprint a trapezoid: the wall's own end cut, <see cref="Joins.OwnEnd"/>).
     /// </summary>
     string GateWalls()
     {
@@ -69,10 +70,10 @@ public partial class IfcRecognitionTests
         }
         Assert.Equal(IfcClass.Window, f.Model.Get(Guid("foreign-test", "plain-win"))!.Class);
         Assert.Equal(0, r.Fidelity.Reverted);
-        Assert.Equal(2, r.Fidelity.Failed);
+        Assert.Equal(1, r.Fidelity.Failed);
         var json = r.ToJson()["fidelity"]!;
         Assert.Equal(3, (int)json["measured"]!);
-        Assert.Contains(r.Notes, n => n.StartsWith("Fidelity (report") && n.Contains("2 differ"));
+        Assert.Contains(r.Notes, n => n.StartsWith("Fidelity (report") && n.Contains("1 differ"));
         // The same import with the gate off is the same model.
         var g = Full();
         var off = IfcImport.Run(g.Session, path, new IfcImportOptions(Fidelity: new FidelityOptions(FidelityOptions.Off)), out _);
@@ -100,19 +101,22 @@ public partial class IfcRecognitionTests
     }
 
     [Fact]
-    public void A_wall_whose_end_cut_recognition_squares_fails_in_plan()
+    public void A_wall_whose_end_the_file_cuts_at_an_angle_comes_in_with_that_cut()
     {
         var f = Full();
         var r = IfcImport.Run(f.Session, GateWalls(), null, out _);
         var ended = CheckOf(r, Guid("foreign-test", "ended"));
         output.WriteLine(ended.ToJson().ToJsonString());
         Assert.True(ended.Measured);
-        Assert.False(ended.Pass);
-        // Squared halfway along the 45° cut (a free end ends where the file's does, FoundJoins):
-        // the volume the file's, the corners 150 mm off the cut's ends.
+        Assert.True(ended.Pass, ended.Reason);
+        // Free at its end (FoundJoins), which crosses the axis halfway along the 45° cut, cut at -45°: the left face 150 mm
+        // short of the axis's end, the right face 150 mm past it, as the file's trapezoid.
+        var w = f.Model.Get(Guid("foreign-test", "ended"))!;
+        Assert.Equal(-45, w.Num(Joins.EndAngle), 6);
+        Assert.Null(w.NumOrNull(Joins.StartAngle));
+        Assert.Equal(4.85, Walls.End(w).X, 6);
         Assert.InRange(Math.Abs(ended.Volume!.Value), 0, 1e-6);
-        Assert.Equal(150, ended.OutlineMm!.Value, 0);
-        Assert.StartsWith("in plan: an end cut", ended.Cause);
+        Assert.InRange(ended.OutlineMm!.Value, 0, 0.1);
     }
 
     [Fact]
@@ -124,7 +128,8 @@ public partial class IfcRecognitionTests
         var plain = m.Get(Guid("foreign-test", "plain"))!;
         Assert.False(StoredBodies.Has(plain));
         Assert.Equal(IfcClass.Window, m.Get(Guid("foreign-test", "plain-win"))!.Class);
-        foreach (var key in new[] { "sloped", "ended" })
+        Assert.False(StoredBodies.Has(m.Get(Guid("foreign-test", "ended"))!));
+        foreach (var key in new[] { "sloped" })
         {
             var w = m.Get(Guid("foreign-test", key))!;
             Assert.True(StoredBodies.Has(w), key);
@@ -136,9 +141,9 @@ public partial class IfcRecognitionTests
         }
         // The reference keeps the file's sloped top: its highest point 2.8 m.
         Assert.Equal(2.8, f.Bounds(Guid("foreign-test", "sloped")).Max.Z, 3);
-        Assert.Equal(2, r.Fidelity!.Reverted);
-        Assert.Equal(1, r.RecognizedByClass!.GetValueOrDefault("IfcWall"));
-        Assert.Equal(2, r.ReferencesByClass!.GetValueOrDefault("IfcWall"));
+        Assert.Equal(1, r.Fidelity!.Reverted);
+        Assert.Equal(2, r.RecognizedByClass!.GetValueOrDefault("IfcWall"));
+        Assert.Equal(1, r.ReferencesByClass!.GetValueOrDefault("IfcWall"));
         // No wall type left without its walls.
         Assert.All(m.OfClass(IfcClass.WallType), t => Assert.NotEmpty(m.RelatedOf(t.Id, IfcClass.RelDefinesByType)));
         // And the import's rules carry it as the dialog sends it.

@@ -121,7 +121,8 @@ public static class Walls
         if (PathCurve.Of(wall) is { IsArc: true } arc) return ArcGeometry(wall, arc, m, services);
         var problems = new List<string>();
         var paths = services?.Get<IPathElements>();
-        var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
+        // Its ends where its joins put them; a free end cut at its own angle (startAngle, endAngle).
+        var ends = Joins.WithOwnEnds(paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2], wall, Frame(wall, m));
         if (ends[0] is { } s) start = s.Point;
         if (ends[1] is { } e) end = e.Point;
         var startCut = ends[0]?.Cut ?? EndCut.Square;
@@ -725,9 +726,11 @@ public static class Walls
         if ((end - start).Length < MinLength || PathCurve.Of(wall).IsArc) return [];
         var paths = services?.Get<IPathElements>();
         var ends = paths != null ? Joins.EndsOf(m, wall, paths, []) : new (Vec2 Point, EndCut Cut)?[2];
-        if (ends[0] is { } s) start = s.Point;
-        if (ends[1] is { } e) end = e.Point;
-        var (startCut, endCut) = (ends[0]?.Cut ?? EndCut.Square, ends[1]?.Cut ?? EndCut.Square);
+        // A free end's own angle shapes the core's reach; only a joined end is a corner for the lintels.
+        var cuts = Joins.WithOwnEnds(ends, wall, Frame(wall, m));
+        if (cuts[0] is { } s) start = s.Point;
+        if (cuts[1] is { } e) end = e.Point;
+        var (startCut, endCut) = (cuts[0]?.Cut ?? EndCut.Square, cuts[1]?.Cut ?? EndCut.Square);
         var length = (end - start).Length;
         var dir = (end - start).Normalized();
         var bands = Section(m, wall);
@@ -739,7 +742,9 @@ public static class Walls
         var height = wall.Num("height", DefaultHeight);
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var shift = Vec2.Dot(start - Start(wall), dir);
-        var (x0, x1) = (-Math.Max(At(startCut, core.From), At(startCut, core.To)), length + Math.Max(At(endCut, core.From), At(endCut, core.To)));
+        // To the core's farther corner at a joint (the corner settles the rest), to its nearer at a free end cut at an angle (inside the wall).
+        double Reach(EndCut c, bool joint) => joint ? Math.Max(At(c, core.From), At(c, core.To)) : Math.Min(At(c, core.From), At(c, core.To));
+        var (x0, x1) = (-Reach(startCut, ends[0] != null), length + Reach(endCut, ends[1] != null));
         var lintels = Lintels.ForWall(
             Openings.PlacedOn(m, wall.Id).Select(o => new LintelOpening(o.Opening.Id, o.Along - o.Width / 2 - shift, o.Along + o.Width / 2 - shift, o.Sill, o.Sill + o.Height,
                 o.Spec?.Lintel is { Mode: not "none" } own ? own : null, o.Spec?.Lintel is { Mode: "none" })).ToList(),

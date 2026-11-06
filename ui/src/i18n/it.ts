@@ -222,7 +222,7 @@ export const IT: Record<string, string> = {
   'Surface area': 'Area della superficie', 'Plan area': 'Area in pianta', 'Lowest point': 'Punto più basso', 'Highest point': 'Punto più alto', 'Fill': 'Riempimento',
   // Panes, zoom, the key plan
   'Profile on the path': 'Profilo sul percorso', 'Gap from the path': 'Distanza dal percorso', 'centre': 'centrato', 'right': 'a destra', 'left': 'a sinistra',
-  'Attach to roof': 'Collega al tetto', 'Detach from roof': 'Scollega dal tetto', 'Top under a roof': 'Sommità sotto un tetto', 'attach': 'collega', 'none': 'nessuno',
+  'Attach to roof': 'Collega al tetto', 'Detach from roof': 'Scollega dal tetto', 'Top under a roof': 'Sommità sotto un tetto', 'Start cut angle': 'Angolo di taglio iniziale', 'End cut angle': 'Angolo di taglio finale', 'attach': 'collega', 'none': 'nessuno',
   'Select the walls first, then click the roof, or any body over them, they go up to.': 'Seleziona prima i muri, poi fai clic sul tetto, o su qualsiasi corpo sopra di essi, fino a cui devono salire.', 'Select the walls to detach from the roof.': 'Seleziona i muri da scollegare dal tetto.',
   'Cut order': 'Ordine di taglio', 'Default order': 'Ordine predefinito', 'This project': 'Questo progetto', 'Cuts': 'Taglia',
   'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'Dove due elementi si incontrano, quello con priorità maggiore taglia l’altro. Un elemento può impostare la propria priorità nelle sue proprietà.',

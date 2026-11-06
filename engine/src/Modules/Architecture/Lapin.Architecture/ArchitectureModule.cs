@@ -88,6 +88,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             new(PathCurve.Key, "Arc rise", "length"),
             new("cutPriority", "Cut priority", "number", Min: 0, Max: 100),
             new("roofTop", "Top under a roof", "choice", Choices: RoofTop.Modes),
+            // A free end cut at an angle (a wall recognised from a file that cuts it so): shown on a wall that has one.
+            new(Joins.StartAngle, "Start cut angle", "angle", Min: -Joins.MaxEndAngle, Max: Joins.MaxEndAngle, ShowIf: FieldDescriptor.When(Joins.StartAngle, "!")),
+            new(Joins.EndAngle, "End cut angle", "angle", Min: -Joins.MaxEndAngle, Max: Joins.MaxEndAngle, ShowIf: FieldDescriptor.When(Joins.EndAngle, "!")),
         ], "#b5654a"));
         r.Class(new(IfcClass.WallType, "Wall type", [new("mark", "Mark", "text")], "#b5654a", Kind: "type"));
         r.Class(new(IfcClass.OpeningElement, "Opening", [new("width", "Width", "length", Min: 0.01), new("height", "Height", "length", Min: 0.01)], Kind: "element"));

@@ -41,6 +41,8 @@ Mais abaixo, **Dependências** mostra o que é construído a partir da parede e 
 
 **Inverter** vira as camadas da parede para o outro lado. Você também pode clicar nas pequenas setas mostradas ao lado de uma parede selecionada na planta.
 
+Uma parede reconhecida de um IFC importado cuja extremidade o ficheiro corta em ângulo mantém esse corte: **Ângulo de corte inicial** e **Ângulo de corte final** nas suas propriedades, em graus a partir do esquadro. Uma junção nessa extremidade toma o seu lugar.
+
 ## Tipos de parede
 
 Um tipo de parede é um conjunto de camadas, da face à direita do sentido em que a parede é desenhada (a externa, quando você desenha ao redor de um edifício no sentido anti-horário) à face à sua esquerda. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.

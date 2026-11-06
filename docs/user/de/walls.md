@@ -41,6 +41,8 @@ Weiter unten zeigt **Abhängigkeiten**, was aus der Wand aufgebaut ist und worau
 
 **Umkehren** dreht die Schichten der Wand auf die andere Seite. Sie können auch auf die kleinen Pfeile klicken, die im Grundriss neben einer ausgewählten Wand angezeigt werden.
 
+Eine aus einem importierten IFC erkannte Wand, deren Ende die Datei schräg schneidet, behält diesen Schnitt: **Schnittwinkel am Anfang** und **Schnittwinkel am Ende** in ihren Eigenschaften, in Grad gegenüber dem rechten Winkel. Ein Anschluss an diesem Ende tritt an seine Stelle.
+
 ## Wandtypen
 
 Ein Wandtyp ist eine Folge von Schichten, von der Seite rechts der Richtung, in der die Wand gezeichnet wird (die Außenseite, wenn Sie gegen den Uhrzeigersinn um ein Gebäude zeichnen), zur Seite links davon. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.

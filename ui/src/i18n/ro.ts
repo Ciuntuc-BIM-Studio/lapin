@@ -220,7 +220,7 @@ export const RO: Record<string, string> = {
   'Surface area': 'Arie a suprafeței', 'Plan area': 'Arie în plan', 'Lowest point': 'Punctul cel mai jos', 'Highest point': 'Punctul cel mai înalt', 'Fill': 'Umplutură',
   // Panes, zoom, the key plan
   'Profile on the path': 'Profilul pe traseu', 'Gap from the path': 'Distanța de la traseu', 'centre': 'pe mijloc', 'right': 'la dreapta', 'left': 'la stânga',
-  'Attach to roof': 'Atașează la acoperiș', 'Detach from roof': 'Detașează de acoperiș', 'Top under a roof': 'Capătul sub acoperiș', 'attach': 'atașat', 'none': 'niciunul',
+  'Attach to roof': 'Atașează la acoperiș', 'Detach from roof': 'Detașează de acoperiș', 'Top under a roof': 'Capătul sub acoperiș', 'Start cut angle': 'Unghiul tăieturii la început', 'End cut angle': 'Unghiul tăieturii la sfârșit', 'attach': 'atașat', 'none': 'niciunul',
   'Select the walls first, then click the roof, or any body over them, they go up to.': 'Selectează întâi pereții, apoi dă clic pe acoperiș sau pe orice corp de deasupra lor, până la care urcă.', 'Select the walls to detach from the roof.': 'Selectează pereții de detașat de acoperiș.',
   'Cut order': 'Ordinea de tăiere', 'Default order': 'Ordinea implicită', 'This project': 'Acest proiect', 'Cuts': 'Taie',
   'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'Unde se întâlnesc două elemente, cel cu prioritatea mai mare îl taie pe celălalt. Un element își poate da propria prioritate din proprietăți.',

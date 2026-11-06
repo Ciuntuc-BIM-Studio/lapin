@@ -57,7 +57,7 @@ public static class RoomBounds
     public static IReadOnlyList<Vec2>? JoinedFootprint(Entity e, IModelView m, IPathElements paths)
     {
         if (!paths.IsPath(e.Class) || PathCurve.Of(e).IsArc || paths.FrameOf(e, m) is not { } f) return null;
-        var ends = Joins.EndsOf(m, e, paths, []);
+        var ends = Joins.WithOwnEnds(Joins.EndsOf(m, e, paths, []), e, f);
         var start = ends[0]?.Point ?? f.Start;
         var along = (ends[1]?.Point ?? f.End) - start;
         var length = along.Length;

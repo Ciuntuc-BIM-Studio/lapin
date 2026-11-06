@@ -175,4 +175,74 @@ public partial class IfcRecognitionTests
         Assert.True(a.Pass, a.Reason);
         Assert.True(CheckOf(r, Guid("foreign-test", "slab")).Pass);
     }
+
+    [Fact]
+    public void A_corner_the_file_mitres_at_45_between_walls_of_unequal_thickness_keeps_each_ends_cut()
+    {
+        // As another program mitres an L whatever the thicknesses (Bloc-P-4's balcony returns): a 350 wall along x and a
+        // 250 one along y, both cut by the plane y = x. No join of Lapin's leaves them so (its mitre runs corner to corner):
+        // each end stays free, cut at 45° where the file cuts it, so the two meet on the file's line.
+        var x = new Foreign();
+        FootprintWall(x, "a", (0, 0), (5000, 0), (5000, 350), (350, 350));
+        FootprintWall(x, "b", (50, 50), (300, 300), (300, 4000), (50, 4000));
+        var (f, r, join) = Imported(x, "corner-unequal.ifc");
+        Assert.Null(join);
+        var a = f.Model.Get(Guid("foreign-test", "a"))!;
+        var b = f.Model.Get(Guid("foreign-test", "b"))!;
+        Assert.Equal(45, Math.Abs(a.Num(Joins.StartAngle)), 6);
+        Assert.Null(a.NumOrNull(Joins.EndAngle));
+        // b runs whichever way its footprint reads: its end at the corner cut so, the other square.
+        var bAtStart = Walls.Start(b).Y < Walls.End(b).Y;
+        Assert.Equal(45, Math.Abs(b.Num(bAtStart ? Joins.StartAngle : Joins.EndAngle)), 6);
+        Assert.Null(b.NumOrNull(bAtStart ? Joins.EndAngle : Joins.StartAngle));
+        // The cut line crosses each axis where the file's does: a's axis (y = 175) at x = 175, b's (x = 175) at y = 175.
+        Assert.Equal(0.175, Walls.Start(a).X, 6);
+        Assert.Equal(0.175, (bAtStart ? Walls.Start(b) : Walls.End(b)).Y, 6);
+        AllFaithful(r);
+        // The plan outline the rooms see is the file's too: a's corners on the line, at its faces.
+        var fp = RoomBounds.JoinedFootprint(a, f.Model, f.Session.Catalog.Get<IPathElements>()!)!;
+        Assert.Contains(fp, p => (p - new Vec2(0, 0)).Length < 1e-6);
+        Assert.Contains(fp, p => (p - new Vec2(0.35, 0.35)).Length < 1e-6);
+    }
+
+    [Fact]
+    public void An_end_the_file_notches_stays_square_halfway()
+    {
+        // An end that is no one line (a step across the thickness): no angle, square where the faces' ends average.
+        var x = new Foreign();
+        FootprintWall(x, "a", (0, -150), (5000, -150), (5000, 0), (4800, 0), (4800, 150), (0, 150));
+        var (f, _, _) = Imported(x, "notch.ifc");
+        var a = f.Model.Get(Guid("foreign-test", "a"))!;
+        Assert.Null(a.NumOrNull(Joins.EndAngle));
+        Assert.Equal(4.9, Walls.End(a).X, 6);
+    }
+
+    [Fact]
+    public void A_window_in_a_rendered_facade_takes_no_reveal_the_file_has_not()
+    {
+        // A 300 facade with a window 1200 × 1500 and its render, 25 mm, exported as a wall of its own with the same opening
+        // (Bloc-P-4's „Finisaj exterior”): the render becomes the facade's layer, and the window's type no reveal finish of
+        // Lapin's, which would widen the hole by the render round the jambs and the head and take the masonry there.
+        var x = new Foreign();
+        var render = x.F.Add("IFCMATERIAL", S("Render"), Null, Null);
+        var wall = FootprintWall(x, "a", (0, -150), (5000, -150), (5000, 150), (0, 150));
+        var shell = x.Element("IFCWALL", "render", "Render", x.Place(0, 0, 0), x.Shape(x.Box(2500, -162.5, 0, 5000, 25, 2800)), E("NOTDEFINED"));
+        x.Material(shell, render);
+        var op = x.Element("IFCOPENINGELEMENT", "a-op", "Opening", x.Place(0, 0, 0), x.Shape(x.Box(2500, 0, 900, 1200, 500, 1500)), E("OPENING"));
+        var win = x.Element("IFCWINDOW", "a-win", "F1", x.Place(0, 0, 0), x.Shape(x.Box(2500, 0, 900, 1200, 100, 1500)), "1500.", "1200.", E("WINDOW"), E("SINGLE_PANEL"), Null);
+        x.F.Add("IFCRELVOIDSELEMENT", x.G("a-v"), Null, Null, Null, wall, op);
+        x.F.Add("IFCRELFILLSELEMENT", x.G("a-f"), Null, Null, Null, op, win);
+        var shellOp = x.Element("IFCOPENINGELEMENT", "render-op", "Opening", x.Place(0, 0, 0), x.Shape(x.Box(2500, -162.5, 900, 1200, 500, 1500)), E("OPENING"));
+        x.F.Add("IFCRELVOIDSELEMENT", x.G("render-v"), Null, Null, Null, shell, shellOp);
+        var (f, r, _) = Imported(x, "rendered-facade.ifc");
+        Assert.Null(f.Model.Get(Guid("foreign-test", "render")));
+        var check = CheckOf(r, Guid("foreign-test", "a"));
+        output.WriteLine(check.ToJson().ToJsonString());
+        Assert.True(check.Pass, check.Reason);
+        // The facade and its render as the file's: (5 × 2.8 − 1.2 × 1.5) × 0.325.
+        Assert.Equal((5 * 2.8 - 1.2 * 1.5) * 0.325, check.NativeVolume!.Value, 4);
+        Assert.InRange(Math.Abs(check.Volume!.Value), 0, 1e-4);
+        var type = f.Model.RelatingOf(Guid("foreign-test", "a-win"), IfcClass.RelDefinesByType)!;
+        Assert.Equal("none", JoinerySpec.From(type.Attrs["spec"])!.Details!.Reveal!.Mode);
+    }
 }

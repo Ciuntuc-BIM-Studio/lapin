@@ -222,7 +222,7 @@ export const ES: Record<string, string> = {
   'Surface area': 'Área de superficie', 'Plan area': 'Área en planta', 'Lowest point': 'Punto más bajo', 'Highest point': 'Punto más alto', 'Fill': 'Relleno',
   // Panes, zoom, the key plan
   'Profile on the path': 'Perfil en la trayectoria', 'Gap from the path': 'Separación de la trayectoria', 'centre': 'centrado', 'right': 'a la derecha', 'left': 'a la izquierda',
-  'Attach to roof': 'Enlazar a cubierta', 'Detach from roof': 'Desenlazar de la cubierta', 'Top under a roof': 'Parte superior bajo una cubierta', 'attach': 'enlazar', 'none': 'ninguno',
+  'Attach to roof': 'Enlazar a cubierta', 'Detach from roof': 'Desenlazar de la cubierta', 'Top under a roof': 'Parte superior bajo una cubierta', 'Start cut angle': 'Ángulo de corte inicial', 'End cut angle': 'Ángulo de corte final', 'attach': 'enlazar', 'none': 'ninguno',
   'Select the walls first, then click the roof, or any body over them, they go up to.': 'Selecciona primero los muros y luego haz clic en el tejado, o en cualquier cuerpo sobre ellos, hasta el que suben.', 'Select the walls to detach from the roof.': 'Seleccione los muros que se desenlazan de la cubierta.',
   'Cut order': 'Orden de corte', 'Default order': 'Orden predeterminado', 'This project': 'Este proyecto', 'Cuts': 'Corta',
   'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'Donde se encuentran dos elementos, el de mayor prioridad corta al otro. Un elemento puede definir su propia prioridad en sus propiedades.',

@@ -41,6 +41,8 @@ Further down, **Dependencies** shows what is built from the wall and what the wa
 
 **Flip** turns the wall's layers to the other side. You can also click the small arrows shown next to a selected wall in the plan.
 
+A wall recognised from an imported IFC whose end the file cuts at an angle keeps that cut: **Start cut angle** and **End cut angle** in its properties, in degrees from square. A join at that end takes its place.
+
 ## Wall types
 
 A wall type is a set of layers, from the face on the right of the way the wall is drawn (the outside, when you draw round a building anticlockwise) to the face on its left. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **From** and **Up to** set how high it goes over the wall's base (a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.

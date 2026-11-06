@@ -80,6 +80,34 @@ public static class Joins
         return ends;
     }
 
+    /// <summary>The attributes an element's own end cuts are kept in: the angle of each free end from square, in degrees (docs/spec-ifc.md, Îmbinările).</summary>
+    public const string StartAngle = "startAngle", EndAngle = "endAngle";
+
+    /// <summary>The steepest an end may be cut, in degrees from square.</summary>
+    public const double MaxEndAngle = 80;
+
+    /// <summary>
+    /// An element's own cut at an end no join takes: the end turned by the angle its attribute gives (degrees from square,
+    /// positive taking the left face, +Y, on past the end and the right face short of it), the cut line through the end's
+    /// point on the axis, so each layer takes its share of it. Null when the end is square, or the element an arc.
+    /// </summary>
+    public static (Vec2 Point, EndCut Cut)? OwnEnd(Entity e, JoinWall f, int end)
+    {
+        var deg = e.NumOrNull(end == 0 ? StartAngle : EndAngle) ?? 0;
+        if (Math.Abs(deg) < 1e-6 || PathCurve.Of(e).IsArc) return null;
+        var t = Math.Tan(Math.Clamp(deg, -MaxEndAngle, MaxEndAngle) * Math.PI / 180);
+        return (end == 0 ? f.Start : f.End, new EndCut(f.YMax * t, f.YMin * t));
+    }
+
+    /// <summary>The ends <see cref="EndsOf"/> gives, those no join takes cut as the element's own angles say (<see cref="OwnEnd"/>).</summary>
+    public static (Vec2 Point, EndCut Cut)?[] WithOwnEnds((Vec2 Point, EndCut Cut)?[] ends, Entity e, JoinWall? f)
+    {
+        if (f == null) return ends;
+        var o = ends.ToArray();
+        for (var i = 0; i < 2; i++) o[i] ??= OwnEnd(e, f, i);
+        return o;
+    }
+
     /// <summary>
     /// The frame an element joins by near a point: its own; an arc's, the
     /// tangent line through the arc's point nearest there, as long as the arc

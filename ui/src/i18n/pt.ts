@@ -220,7 +220,7 @@ export const PT: Record<string, string> = {
   'Surface area': 'Área de superfície', 'Plan area': 'Área em planta', 'Lowest point': 'Ponto mais baixo', 'Highest point': 'Ponto mais alto', 'Fill': 'Preenchimento',
   // Panes, zoom, the key plan
   'Profile on the path': 'Perfil na trajetória', 'Gap from the path': 'Distância da trajetória', 'centre': 'centralizado', 'right': 'à direita', 'left': 'à esquerda',
-  'Attach to roof': 'Anexar ao telhado', 'Detach from roof': 'Desanexar do telhado', 'Top under a roof': 'Topo sob um telhado', 'attach': 'anexar', 'none': 'nenhum',
+  'Attach to roof': 'Anexar ao telhado', 'Detach from roof': 'Desanexar do telhado', 'Top under a roof': 'Topo sob um telhado', 'Start cut angle': 'Ângulo de corte inicial', 'End cut angle': 'Ângulo de corte final', 'attach': 'anexar', 'none': 'nenhum',
   'Select the walls first, then click the roof, or any body over them, they go up to.': 'Selecione primeiro as paredes, depois clique no telhado, ou em qualquer corpo acima delas, até onde devem subir.', 'Select the walls to detach from the roof.': 'Selecione as paredes a desanexar do telhado.',
   'Cut order': 'Ordem de corte', 'Default order': 'Ordem padrão', 'This project': 'Este projeto', 'Cuts': 'Corta',
   'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'Onde dois elementos se encontram, o de maior prioridade corta o outro. Um elemento pode definir a própria prioridade nas suas propriedades.',

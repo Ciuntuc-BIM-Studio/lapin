@@ -369,7 +369,13 @@ public sealed class ForeignElements : IIfcRecognizer
         var cls = kind == "door" ? IfcClass.DoorType : IfcClass.WindowType;
         var existing = edit.Model.OfClass(cls).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase) && JoinerySpec.From(t.Attrs["spec"]) is { } s && Math.Abs(s.Width - w) < 1e-6 && Math.Abs(s.Height - h) < 1e-6);
         if (existing != null) { ctx.TypeIds[key] = existing.Id; return existing; }
-        var spec = (kind == "door" ? JoinerySpec.DefaultDoor(name) : JoinerySpec.DefaultWindow(name)) with { Width = Math.Round(w, 4), Height = Math.Round(h, 4), SillHeight = Math.Round(sill, 4) };
+        // No reveal finish of Lapin's: the file's opening is the hole through every layer as it draws it, its finishes cut
+        // flush there; a reveal would widen the wall's hole by the finish and take the jambs' masonry (docs/spec-ifc.md).
+        var spec = (kind == "door" ? JoinerySpec.DefaultDoor(name) : JoinerySpec.DefaultWindow(name)) with
+        {
+            Width = Math.Round(w, 4), Height = Math.Round(h, 4), SillHeight = Math.Round(sill, 4),
+            Details = new JoineryDetails(Reveal: new JoineryReveal("none")),
+        };
         if (JoineryIfc.FromIfc(spec, fill.Operation, fill.UserDefined, fill.Panels) is { } told && Joinery.Problem(told) == null) spec = told;
         var type = Openings.CreateType(edit, spec);
         ctx.CreatedTypes.Add(type.Id);

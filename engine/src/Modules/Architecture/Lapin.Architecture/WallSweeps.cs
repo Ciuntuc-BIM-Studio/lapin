@@ -306,7 +306,9 @@ public static class WallSweeps
         var bands = Walls.Section(m, wall);
         var (yMin, yMax) = (bands.Min(b => b.From), bands.Max(b => b.To));
         var paths = services?.Get<IPathElements>();
-        var ends = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
+        var joined = paths != null ? Joins.EndsOf(m, wall, paths, problems) : new (Vec2 Point, EndCut Cut)?[2];
+        // A free end cut at the wall's own angle: the face ends where the cut crosses it (the end stays free).
+        var ends = Joins.WithOwnEnds(joined, wall, Walls.Frame(wall, m));
         var c = PathCurve.Of(wall);
         var start = Walls.Start(wall);
         var dir = (Walls.End(wall) - start).Normalized();
@@ -333,7 +335,7 @@ public static class WallSweeps
         var (face0, face1) = (s0, s1);
         if (sweep.NumOrNull("start") is { } us) { s0 = Math.Max(s0, us); n0 = null; }
         if (sweep.NumOrNull("end") is { } ue) { s1 = Math.Min(s1, ue); n1 = null; }
-        return new Reach(s0, s1, n0, n1, ends[0] == null && n0 == null && Math.Abs(s0 - face0) < 1e-9, ends[1] == null && n1 == null && Math.Abs(s1 - face1) < 1e-9);
+        return new Reach(s0, s1, n0, n1, joined[0] == null && n0 == null && Math.Abs(s0 - face0) < 1e-9, joined[1] == null && n1 == null && Math.Abs(s1 - face1) < 1e-9);
     }
 
     /// <summary>Whether an added sweep returns at its wall's free start and end (by default at both; a reveal never).</summary>

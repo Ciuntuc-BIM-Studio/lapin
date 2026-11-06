@@ -222,7 +222,7 @@ export const DA: Record<string, string> = {
   'Surface area': 'Overfladeareal', 'Plan area': 'Planareal', 'Lowest point': 'Laveste punkt', 'Highest point': 'Højeste punkt', 'Fill': 'Fyld',
   // Panes, zoom, the key plan
   'Profile on the path': 'Profil på stien', 'Gap from the path': 'Afstand fra stien', 'centre': 'midte', 'right': 'højre', 'left': 'venstre',
-  'Attach to roof': 'Fastgør til tag', 'Detach from roof': 'Frigør fra tag', 'Top under a roof': 'Top under et tag', 'attach': 'fastgør', 'none': 'ingen',
+  'Attach to roof': 'Fastgør til tag', 'Detach from roof': 'Frigør fra tag', 'Top under a roof': 'Top under et tag', 'Start cut angle': 'Startsnitvinkel', 'End cut angle': 'Slutsnitvinkel', 'attach': 'fastgør', 'none': 'ingen',
   'Select the walls first, then click the roof, or any body over them, they go up to.': 'Markér først væggene, og klik så på taget eller et hvilket som helst legeme over dem, som de går op til.', 'Select the walls to detach from the roof.': 'Vælg de vægge, der skal frigøres fra taget.',
   'Cut order': 'Snitrækkefølge', 'Default order': 'Standardrækkefølge', 'This project': 'Dette projekt', 'Cuts': 'Skærer',
   'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'Hvor to elementer mødes, skærer det med højest prioritet det andet. Et element kan angive sin egen prioritet i sine egenskaber.',

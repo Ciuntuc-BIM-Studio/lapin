@@ -222,7 +222,7 @@ export const DE: Record<string, string> = {
   'Surface area': 'Oberfläche', 'Plan area': 'Grundfläche', 'Lowest point': 'Tiefster Punkt', 'Highest point': 'Höchster Punkt', 'Fill': 'Füllung',
   // Panes, zoom, the key plan
   'Profile on the path': 'Profil auf dem Pfad', 'Gap from the path': 'Abstand vom Pfad', 'centre': 'mittig', 'right': 'rechts', 'left': 'links',
-  'Attach to roof': 'An Dach anbinden', 'Detach from roof': 'Vom Dach lösen', 'Top under a roof': 'Oberkante unter einem Dach', 'attach': 'anbinden', 'none': 'keine',
+  'Attach to roof': 'An Dach anbinden', 'Detach from roof': 'Vom Dach lösen', 'Top under a roof': 'Oberkante unter einem Dach', 'Start cut angle': 'Schnittwinkel am Anfang', 'End cut angle': 'Schnittwinkel am Ende', 'attach': 'anbinden', 'none': 'keine',
   'Select the walls first, then click the roof, or any body over them, they go up to.': 'Wählen Sie zuerst die Wände, dann klicken Sie auf das Dach oder einen beliebigen Körper darüber, bis zu dem sie reichen.', 'Select the walls to detach from the roof.': 'Wählen Sie die Wände, die vom Dach gelöst werden sollen.',
   'Cut order': 'Schnittreihenfolge', 'Default order': 'Standardreihenfolge', 'This project': 'Dieses Projekt', 'Cuts': 'Schneidet',
   'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'Wo zwei Elemente aufeinandertreffen, schneidet das mit der höheren Priorität das andere. Ein Element kann seine eigene Priorität in seinen Eigenschaften festlegen.',

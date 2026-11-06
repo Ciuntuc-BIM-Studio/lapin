@@ -220,7 +220,7 @@ export const PL: Record<string, string> = {
   'Surface area': 'Pole powierzchni', 'Plan area': 'Powierzchnia w rzucie', 'Lowest point': 'Najniższy punkt', 'Highest point': 'Najwyższy punkt', 'Fill': 'Wypełnienie',
   // Panes, zoom, the key plan
   'Profile on the path': 'Profil na ścieżce', 'Gap from the path': 'Odstęp od ścieżki', 'centre': 'na środku', 'right': 'z prawej', 'left': 'z lewej',
-  'Attach to roof': 'Dołącz do dachu', 'Detach from roof': 'Odłącz od dachu', 'Top under a roof': 'Góra pod dachem', 'attach': 'dołącz', 'none': 'brak',
+  'Attach to roof': 'Dołącz do dachu', 'Detach from roof': 'Odłącz od dachu', 'Top under a roof': 'Góra pod dachem', 'Start cut angle': 'Kąt cięcia na początku', 'End cut angle': 'Kąt cięcia na końcu', 'attach': 'dołącz', 'none': 'brak',
   'Select the walls first, then click the roof, or any body over them, they go up to.': 'Najpierw zaznacz ściany, a potem kliknij dach lub dowolną bryłę nad nimi, do której mają sięgać.', 'Select the walls to detach from the roof.': 'Zaznacz ściany do odłączenia od dachu.',
   'Cut order': 'Kolejność cięcia', 'Default order': 'Domyślna kolejność', 'This project': 'Ten projekt', 'Cuts': 'Przecina',
   'Where two elements meet, the one with the higher priority cuts the other. An element can set its own priority in its properties.': 'Tam, gdzie spotykają się dwa elementy, ten o wyższym priorytecie przecina drugi. Element może ustawić własny priorytet w swoich właściwościach.',

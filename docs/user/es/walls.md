@@ -41,6 +41,8 @@ Más abajo, **Dependencias** muestra lo que se construye a partir del muro y a p
 
 **Voltear** pasa las capas del muro al otro lado. También puede hacer clic en las pequeñas flechas que aparecen junto a un muro seleccionado en la planta.
 
+Un muro reconocido de un IFC importado cuyo extremo el archivo corta en ángulo conserva ese corte: **Ángulo de corte inicial** y **Ángulo de corte final** en sus propiedades, en grados respecto al corte recto. Una unión en ese extremo lo sustituye.
+
 ## Tipos de muro
 
 Un tipo de muro es un conjunto de capas, desde la cara a la derecha del sentido en que se dibuja el muro (el exterior, si dibuja alrededor del edificio en sentido antihorario) hasta la cara de su izquierda. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.
