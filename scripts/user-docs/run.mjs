@@ -184,7 +184,7 @@ function tools(page, url, folder, lang) {
     /** The interface's state, changed as its buttons change it. */
     ui: (patch) => page.evaluate(async (p) => (await import('/src/app/store.ts')).useUi.setState(p), patch),
     /** The project's elements as the interface holds them: [{ id, type, name, props }]. */
-    nodes: () => page.evaluate(async () => [...(await import('/src/engine/session.ts')).useSession.getState().nodes.values()].map((n) => ({ id: n.id, type: n.type, name: n.name, parent: n.parent, props: n.props }))),
+    nodes: () => page.evaluate(async () => [...(await import('/src/engine/session.ts')).useSession.getState().nodes.values()].map((n) => ({ id: n.id, type: n.type, name: n.name, parent: n.parent, storeyId: n.storeyId, props: n.props }))),
     /** The start screen, fresh. */
     async start() {
       await page.goto(url);

@@ -27,3 +27,21 @@ Para ver outro nível enquanto desenha, escolha-o em **Subjacente** na barra da 
 ![O primeiro pavimento desenhado sobre o térreo, mostrado como subjacente](shots/underlay.webp)
 
 O subjacente só ajuda você a desenhar; ele não é impresso. Para imprimir elementos de outros níveis em uma planta, abra as propriedades da vista de planta e escolha-os em **Pavimentos exibidos**. Você pode mostrar alguns níveis ou todos, em meio-tom se quiser.
+
+## Copiar para outros pavimentos
+
+Para repetir paredes, lajes ou uma planta inteira em outros níveis, selecione-as (paredes com suas portas e janelas, lajes, ambientes, um grupo…) e escolha **Modificar → Copiar para pavimentos**. Você também pode digitar `COPYSTOREY` na linha de comando ou clicar com o botão direito na seleção numa planta ou na vista 3D. Marque os níveis de destino. **Todos acima** e **Todos abaixo** marcam todos os níveis acima ou abaixo do da seleção, e um Shift-clique marca todos os níveis entre o clicado e o último clicado. O nível em que a seleção está não pode ser marcado.
+
+![Copiar para pavimentos: dois níveis marcados e as opções](shots/copy-to-storeys.webp)
+
+- **Relativa** (padrão): cada cópia fica à mesma altura sobre o seu novo nível que o original sobre o seu. Uma parede desenhada no térreo fica no primeiro pavimento.
+- **Absoluta**: cada cópia fica onde o original está no espaço, no novo nível. O seu deslocamento de base compensa a diferença.
+- **Também os elementos hospedados**: portas e janelas vão com as suas paredes, e as aberturas com o que cortam. As etiquetas e cotas dos elementos copiados passam da planta do seu nível para a planta do novo nível. Um ambiente leva os seus acabamentos e uma escada o espaço sob ela. Desmarque a opção para copiar as paredes sem portas e janelas.
+- **Refazer as relações entre as cópias**: paredes unidas num canto ou em T são unidas da mesma forma em cada novo nível. Uma parede vinculada a uma laje ou a um telhado copiado com ela é vinculada à cópia. Um grupo torna-se um grupo das cópias, e um conjunto é copiado inteiro. Uma escada sobe até o nível acima do novo e abre ali a sua própria abertura na laje.
+- **Ignorar duplicados**: um nível que já tem o mesmo elemento no mesmo lugar não recebe outro. A mensagem embaixo diz quantos foram ignorados.
+
+As cópias usam os mesmos tipos que os originais e recebem novos GlobalIds IFC. Todas as cópias são um único passo de desfazer e continuam selecionadas depois, para movê-las ou alterá-las juntas. Numa sessão compartilhada, só o convidado desfaz as suas próprias cópias.
+
+![As paredes e a laje do térreo copiadas para os dois níveis acima, em 3D](shots/copy-to-storeys-3d.webp)
+
+Para mover a seleção para outro nível, escolha **Modificar → Mover para o pavimento**. Os elementos mantêm as suas alturas sobre o novo nível, ou ficam onde estão no espaço.

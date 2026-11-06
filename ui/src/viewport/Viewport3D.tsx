@@ -15,6 +15,8 @@ import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { X } from 'lucide-react';
+import { openContextMenu } from '../shell/ContextMenu';
+import { selectionItems } from '../shell/selectionMenu';
 import type { CapItem, NodeDto, RenderItem } from '../engine/protocol';
 import { activeStorey, engine, execute, useSession } from '../engine/session';
 import { num, storeys as storeysOf } from '../engine/model';
@@ -1239,6 +1241,17 @@ export function Viewport3D() {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPending(null); if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
+    // A right-click that did not turn or move the view: the selection's menu (copy to storeys, move to storey).
+    let rightAt: { x: number; y: number } | null = null;
+    const onRightDown = (e: PointerEvent) => { if (e.button === 2) rightAt = { x: e.clientX, y: e.clientY }; };
+    const onMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      const still = rightAt && Math.hypot(e.clientX - rightAt.x, e.clientY - rightAt.y) < 5;
+      rightAt = null;
+      if (still) openContextMenu(e.clientX, e.clientY, selectionItems());
+    };
+    renderer.domElement.addEventListener('pointerdown', onRightDown);
+    renderer.domElement.addEventListener('contextmenu', onMenu);
 
     // Selecting by a region (select3d.ts): with Select region on, a left drag draws it (Space: a lasso);
     // the right button turns the view, the middle one moves it.
@@ -1340,6 +1353,8 @@ export function Viewport3D() {
       controls.dispose();
       renderer.domElement.removeEventListener('pointerdown', onDown);
       renderer.domElement.removeEventListener('pointerup', onUp);
+      renderer.domElement.removeEventListener('pointerdown', onRightDown);
+      renderer.domElement.removeEventListener('contextmenu', onMenu);
       renderer.domElement.removeEventListener('dblclick', onDouble);
       el.removeEventListener('wheel', onNavWheel, { capture: true });
       el.removeEventListener('pointerdown', onNavDown, true);

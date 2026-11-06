@@ -1747,3 +1747,14 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .schedule-editor.folded .schedule-editor-head { border-bottom: 0; }
 .schedule-editor-head:hover { color: var(--accent); }
 .view-area:has(.schedule-editor:not(.folded)) .hotbar:not(.docked) { opacity: .92; }
+
+/* Copy to storeys: the storeys as a list of ticks, highest first. */
+.copy-storeys { width: min(460px, calc(100vw - 32px)); }
+.copy-storeys .row-buttons { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.copy-storeys .row-buttons .btn.small { padding: 1px 8px; font-size: 12px; }
+.storey-ticks { list-style: none; margin: 4px 0; padding: 4px; max-height: 240px; overflow-y: auto; border: 1px solid var(--rule); border-radius: 4px; }
+.storey-ticks label { display: flex; align-items: center; gap: 8px; padding: 2px 4px; font-size: 13px; cursor: pointer; }
+.storey-ticks label.muted { cursor: default; }
+.storey-ticks .grow { flex: 1; }
+.copy-storeys .copy-option { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; font-size: 13px; line-height: 1.35; }
+.copy-storeys .copy-option input { margin-top: 2px; flex: none; }

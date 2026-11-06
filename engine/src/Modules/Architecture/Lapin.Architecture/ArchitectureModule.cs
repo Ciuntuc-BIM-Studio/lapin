@@ -105,6 +105,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         // A roof window's and dormer's frame on its slope, for their grips (decision 280).
         r.Service<INodeProps>(new RoofOpeningFrames());
         r.Service<IStoreyLevels>(new Levels());
+        r.Service<IStoreyCopy>(new StoreyCopies());
         r.Service<IElementFaces>(new ArchitectureFaces());
         r.Service<IElementPlacement>(new Roofs.RoofPlacement());
         r.Service<IElementPlacement>(new WallPlacement());

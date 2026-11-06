@@ -68,6 +68,7 @@ public sealed class CoreModule : ILapinModule
         Sheets.Register(r);
         CutOrder.Register(r);
         StoreyMove.Register(r);
+        StoreyCopy.Register(r);
         Links.Register(r);
         // The project folder as a CDE: naming, checks, issues (docs/plan-cde.md); the remarks on the model exchanged as BCF.
         Cde.Cde.Register(r);
@@ -221,74 +222,7 @@ public sealed class CoreModule : ILapinModule
             return results;
         });
 
-        r.Command("element.transform", "Transform", (ctx, a) =>
-        {
-            static Lapin.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
-            // A group selected is its members (docs/groups.md).
-            var (ids, groups) = Groups.Expand(ctx.Model, Args.Ids(a));
-            var op = (string?)a["op"] ?? "move";
-            // A move's height (rise, or world's third value: an elevation's or a section's move in the model, decision 298).
-            var world = a["world"] is JsonArray { Count: >= 2 } wv ? wv : null;
-            var rise = Json.Number(a["rise"]) ?? (world is { Count: >= 3 } ? Json.Number(world[2]) : null) ?? 0;
-            var t = op switch
-            {
-                "move" or "copy" => Placement2D.Move(V(a["by"], "displacement"), rise),
-                "rotate" => Placement2D.Rotate(V(a["center"], "centre"), (Json.Number(a["angle"]) ?? 0) * Math.PI / 180),
-                "mirror" => (V(a["a"], "mirror line's start") - V(a["b"], "mirror line's end")).Length < 1e-9
-                    ? throw new CommandException("A mirror line needs two different points.") : Placement2D.Mirror(V(a["a"], "start"), V(a["b"], "end")),
-                _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
-            };
-            var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
-            var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
-                .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
-            if (all.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
-            // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.
-            string? HostOf(Entity e) => ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening
-                ? ctx.Model.RelatingOf(opening.Id, IfcClass.RelVoidsElement)?.Id ?? opening.Id
-                : ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement)?.Id;
-            var entities = all.Where(e => HostOf(e) == null).ToList();
-            var moving = entities.Select(e => e.Id).ToHashSet();
-            // One whose host moves too goes with it; one whose host stays is its module's to move in a host (report #82: MOVE
-            // and COPY on a window slide it along its wall), once: an opening selected with its door is the door's.
-            var hostedIds = all.Where(e => HostOf(e) is { } h && !moving.Contains(h)).Select(e => e.Id).ToHashSet();
-            var hosted = all.Where(e => hostedIds.Contains(e.Id) && !ctx.Model.RelatedOf(e.Id, IfcClass.RelFillsElement).Any(f => hostedIds.Contains(f.Id))).ToList();
-            var made = new JsonArray();
-            var copies = new Dictionary<string, string>();
-            // In a section or an elevation the view's move is given in the model too (world): what is placed in a host moves by it.
-            var inHost = world != null && op is "move" or "copy" ? Placement2D.Move(Args.PointOf(world), rise) : t;
-            // What follows the elements without being selected (their tags, report #93) is told before and after.
-            var selected = all.Select(e => e.Id).ToHashSet();
-            var followers = ctx.Services.All<ITransformFollowers>().Select(f => (f, State: f.Before(ctx, moving, selected))).ToList();
-            foreach (var e in entities)
-            {
-                if (ctx.Model.Get(e.Id) is not { } now) continue;
-                if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
-                else Placement.Transform(ctx, now, t, moving);
-            }
-            foreach (var own in ctx.Services.All<IHostedPlacement>())
-                if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
-                    foreach (var c in own.Transform(ctx, mine, inHost, copy)) made.Add((JsonNode)c);
-            foreach (var (f, state) in followers) f.After(ctx, state, t, inHost, moving, selected, copies);
-            // Elements copied together keep their joins: a corner or a T between two of them joins their copies the same way.
-            if (copy)
-                foreach (var r in copies.Keys.SelectMany(id => ctx.Model.RelationsOf(id, IfcClass.RelConnectsPathElements)).DistinctBy(r => r.Id).Where(r => copies.ContainsKey(r.Relating) && r.Related.All(copies.ContainsKey)).ToList())
-                    ctx.AddRelation(new Relation(ctx.NewId(), r.Class, copies[r.Relating], r.Related.Select(x => copies[x]).ToList(), r.Attrs?.DeepClone() as JsonObject));
-            // A group copied: its members' copies make a group of their own, with its name.
-            if (copy)
-                foreach (var g in groups)
-                    if (ctx.Model.Get(g) is { } group && Groups.Make(ctx, group.Name, Groups.MembersOf(ctx.Model, g).Where(copies.ContainsKey).Select(x => copies[x]).ToList()) is { } twin)
-                        made.Add((JsonNode)twin.Id);
-            // Parts selected on their own (a grid's axis): their module carries them.
-            // One whose element goes as a whole goes with it, once.
-            foreach (var id in ids.Distinct().Where(id => ctx.Model.Get(id) == null && !(id.IndexOf('#') is var h and > 0 && moving.Contains(id[..h]))))
-                foreach (var part in ctx.Services.All<IPartPlacement>())
-                    if (part.Transform(ctx, id, t, copy) is { } after)
-                    {
-                        if (copy) made.Add((JsonNode)after);
-                        break;
-                    }
-            return new JsonObject { ["ids"] = made };
-        });
+        r.Command("element.transform", "Transform", (ctx, a) => new JsonObject { ["ids"] = ElementTransform.Run(ctx, a).Made });
 
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
@@ -326,6 +260,88 @@ public sealed class CoreModule : ILapinModule
             Groups.DropEmpty(ctx, groupsTouched);
             return null;
         });
+    }
+}
+
+/// <summary>
+/// element.transform's work: elements moved, copied, turned or mirrored in plan, with what they host, their tags and
+/// their joins among themselves; Copy to storeys copies through it too (each copied id's copy, the groups' twins).
+/// </summary>
+public static class ElementTransform
+{
+    public sealed record Result(JsonArray Made, IReadOnlyDictionary<string, string> Copies, IReadOnlyDictionary<string, string> Groups);
+
+    public static Result Run(ICommandContext ctx, JsonObject a)
+    {
+        static Lapin.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
+        // A group selected is its members (docs/groups.md).
+        var (ids, groups) = Groups.Expand(ctx.Model, Args.Ids(a));
+        var op = (string?)a["op"] ?? "move";
+        // A move's height (rise, or world's third value: an elevation's or a section's move in the model, decision 298).
+        var world = a["world"] is JsonArray { Count: >= 2 } wv ? wv : null;
+        var rise = Json.Number(a["rise"]) ?? (world is { Count: >= 3 } ? Json.Number(world[2]) : null) ?? 0;
+        var t = op switch
+        {
+            "move" or "copy" => Placement2D.Move(V(a["by"], "displacement"), rise),
+            "rotate" => Placement2D.Rotate(V(a["center"], "centre"), (Json.Number(a["angle"]) ?? 0) * Math.PI / 180),
+            "mirror" => (V(a["a"], "mirror line's start") - V(a["b"], "mirror line's end")).Length < 1e-9
+                ? throw new CommandException("A mirror line needs two different points.") : Placement2D.Mirror(V(a["a"], "start"), V(a["b"], "end")),
+            _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
+        };
+        var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
+        var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
+            .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
+        if (all.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
+        // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.
+        string? HostOf(Entity e) => ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening
+            ? ctx.Model.RelatingOf(opening.Id, IfcClass.RelVoidsElement)?.Id ?? opening.Id
+            : ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement)?.Id;
+        var entities = all.Where(e => HostOf(e) == null).ToList();
+        var moving = entities.Select(e => e.Id).ToHashSet();
+        // One whose host moves too goes with it; one whose host stays is its module's to move in a host (report #82: MOVE
+        // and COPY on a window slide it along its wall), once: an opening selected with its door is the door's.
+        var hostedIds = all.Where(e => HostOf(e) is { } h && !moving.Contains(h)).Select(e => e.Id).ToHashSet();
+        var hosted = all.Where(e => hostedIds.Contains(e.Id) && !ctx.Model.RelatedOf(e.Id, IfcClass.RelFillsElement).Any(f => hostedIds.Contains(f.Id))).ToList();
+        var made = new JsonArray();
+        var copies = new Dictionary<string, string>();
+        var twins = new Dictionary<string, string>();
+        // In a section or an elevation the view's move is given in the model too (world): what is placed in a host moves by it.
+        var inHost = world != null && op is "move" or "copy" ? Placement2D.Move(Args.PointOf(world), rise) : t;
+        // What follows the elements without being selected (their tags, report #93) is told before and after.
+        var selected = all.Select(e => e.Id).ToHashSet();
+        var followers = ctx.Services.All<ITransformFollowers>().Select(f => (f, State: f.Before(ctx, moving, selected))).ToList();
+        foreach (var e in entities)
+        {
+            if (ctx.Model.Get(e.Id) is not { } now) continue;
+            if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
+            else Placement.Transform(ctx, now, t, moving);
+        }
+        foreach (var own in ctx.Services.All<IHostedPlacement>())
+            if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
+                foreach (var c in own.Transform(ctx, mine, inHost, copy)) made.Add((JsonNode)c);
+        foreach (var (f, state) in followers) f.After(ctx, state, t, inHost, moving, selected, copies);
+        // Elements copied together keep their joins: a corner or a T between two of them joins their copies the same way.
+        if (copy)
+            foreach (var r in copies.Keys.SelectMany(id => ctx.Model.RelationsOf(id, IfcClass.RelConnectsPathElements)).DistinctBy(r => r.Id).Where(r => copies.ContainsKey(r.Relating) && r.Related.All(copies.ContainsKey)).ToList())
+                ctx.AddRelation(new Relation(ctx.NewId(), r.Class, copies[r.Relating], r.Related.Select(x => copies[x]).ToList(), r.Attrs?.DeepClone() as JsonObject));
+        // A group copied: its members' copies make a group of their own, with its name.
+        if (copy)
+            foreach (var g in groups)
+                if (ctx.Model.Get(g) is { } group && Groups.Make(ctx, group.Name, Groups.MembersOf(ctx.Model, g).Where(copies.ContainsKey).Select(x => copies[x]).ToList()) is { } twin)
+                {
+                    made.Add((JsonNode)twin.Id);
+                    twins[g] = twin.Id;
+                }
+        // Parts selected on their own (a grid's axis): their module carries them.
+        // One whose element goes as a whole goes with it, once.
+        foreach (var id in ids.Distinct().Where(id => ctx.Model.Get(id) == null && !(id.IndexOf('#') is var h and > 0 && moving.Contains(id[..h]))))
+            foreach (var part in ctx.Services.All<IPartPlacement>())
+                if (part.Transform(ctx, id, t, copy) is { } after)
+                {
+                    if (copy) made.Add((JsonNode)after);
+                    break;
+                }
+        return new Result(made, copies, twins);
     }
 }
 

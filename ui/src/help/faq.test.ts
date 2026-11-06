@@ -17,6 +17,8 @@ describe('Ask Lapin', () => {
     expect(best('I expected to be able to edit the column type that I created. I typed a dimension wrong and wanted to corect the mistake.')).toBe('edit-structure-type');
     expect(best("is it possible to edit the text font and size and style of the tags ( matching the studio's styles). i have attached an online reference of what i expected.")).toBe('tag-text-style');
     expect(best("I can't figure out how to make Levels invisible in 3D view so that I can navigate around in 3D. At the moment I can only watch the whole building at once.")).toBe('storeys-3d');
+    expect(best('hope in the next release we can easily copy elements to multiple levels at once')).toBe('copy-to-storeys');
+    expect(best('copy elements to several storeys')).toBe('copy-to-storeys');
   });
 
   it('answers in Romanian, with or without diacritics', () => {
@@ -37,6 +39,8 @@ describe('Ask Lapin', () => {
     expect(best('how do I colour rooms by function')).toBe('rooms');
     expect(best('cum colorez încăperile pe plan')).toBe('rooms');
     expect(best('cum ascund etajele în 3D')).toBe('storeys-3d');
+    expect(best('cum copiez elemente pe mai multe etaje')).toBe('copy-to-storeys');
+    expect(best('copiere pe mai multe niveluri deodată')).toBe('copy-to-storeys');
     expect(best('how do I orbit the 3D view')).toBe('navigate');
     expect(best('cum cobor terenul')).toBe('terrain-height');
     expect(best('cum modific un tip de stalp')).toBe('edit-structure-type');

@@ -27,3 +27,21 @@ Per vedere un altro livello mentre disegni, sceglilo in **Sottostante** nella ba
 ![Il primo piano disegnato sopra il piano terra, mostrato come sottostante](shots/underlay.webp)
 
 Il sottostante serve solo ad aiutarti a disegnare; non viene stampato. Per stampare gli elementi di altri livelli su una pianta, apri le proprietà della vista in pianta e sceglili in **Piani mostrati**. Puoi mostrare alcuni livelli o tutti, in mezzatinta se vuoi.
+
+## Copiare su altri piani
+
+Per ripetere muri, solai o una pianta intera su altri livelli, selezionali (muri con le loro porte e finestre, solai, locali, un gruppo…) e scegli **Modifica → Copia ai piani**. Puoi anche digitare `COPYSTOREY` nella riga di comando, o fare clic destro sulla selezione in una pianta o nella vista 3D. Spunta i livelli su cui copiare. **Tutti sopra** e **Tutti sotto** spuntano tutti i livelli sopra o sotto quello della selezione, e un Maiusc-clic spunta tutti i livelli tra quello cliccato e l’ultimo cliccato. Il livello su cui sta la selezione non si può spuntare.
+
+![Copia ai piani: due livelli spuntati e le opzioni](shots/copy-to-storeys.webp)
+
+- **Relativa** (predefinita): ogni copia sta alla stessa altezza sopra il suo nuovo livello dell’originale sopra il proprio. Un muro disegnato al piano terra sta al primo piano.
+- **Assoluta**: ogni copia resta dove l’originale è nello spazio, sul nuovo livello. Il suo offset di base compensa la differenza.
+- **Anche gli elementi ospitati**: porte e finestre seguono i loro muri, le aperture ciò che tagliano. Le etichette e le quote degli elementi copiati passano dalla pianta del loro livello a quella del nuovo livello. Un locale porta con sé le sue finiture e una scala lo spazio sotto di essa. Togli la spunta per copiare i muri senza porte e finestre.
+- **Ricrea le relazioni tra le copie**: i muri uniti in un angolo o a T si uniscono allo stesso modo su ogni nuovo livello. Un muro collegato a un solaio o a una copertura copiati con esso si collega alla loro copia. Un gruppo diventa un gruppo delle copie, e un assieme si copia intero. Una scala sale fino al livello sopra il nuovo e taglia lì la propria apertura nel solaio.
+- **Salta i duplicati**: un livello che ha già lo stesso elemento nello stesso punto non ne riceve un secondo. Il messaggio in basso dice quanti sono stati saltati.
+
+Le copie usano gli stessi tipi degli originali e ricevono nuovi GlobalId IFC. Tutte le copie sono un solo passo di annullamento e restano selezionate dopo, così puoi spostarle o modificarle insieme. In una sessione condivisa, solo l’ospite annulla le proprie copie.
+
+![I muri e il solaio del piano terra copiati sui due livelli sopra, in 3D](shots/copy-to-storeys-3d.webp)
+
+Per spostare invece la selezione su un altro livello, scegli **Modifica → Sposta al piano**. Gli elementi mantengono le loro altezze sopra il nuovo livello, o restano dove sono nello spazio.

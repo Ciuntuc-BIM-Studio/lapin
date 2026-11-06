@@ -27,3 +27,21 @@ To see another level while you draw, choose it in **Underlay** in the plan's bar
 ![The first floor drawn over the ground floor, shown as an underlay](shots/underlay.webp)
 
 The underlay only helps you draw; it is not printed. To print other levels' elements on a plan, open the plan view's properties and choose them in **Storeys shown**. You can show some levels or all of them, in halftone if you want.
+
+## Copying to other levels
+
+To repeat walls, floors or a whole layout on other levels, select it (walls with their doors and windows, floors, rooms, a group…) and choose **Modify → Copy to storeys**. You can also type `COPYSTOREY` on the command line, or right-click the selection in a plan or in the 3D view. Tick the levels to copy to. **All above** and **All below** tick every level over or under the selection's, and a Shift-click ticks every level between it and the last one you clicked. The level the selection stands on cannot be ticked.
+
+![Copy to storeys: two levels ticked, and the options](shots/copy-to-storeys.webp)
+
+- **Relative** (the default): each copy stands at the same height over its new level as the original over its own. A wall drawn on the ground floor stands on the first floor.
+- **Absolute**: each copy stays where the original is in space, on the new level. Its base offset makes up the difference.
+- **Hosted elements too**: doors and windows go with their walls, and openings with what they cut. The tags and dimensions of the copied elements go from their level's plan to the new level's plan. A room takes its finishes and a stair the space under it. Untick it to copy the walls without their doors and windows.
+- **Rebuild relations among the copies**: walls joined at a corner or a T are joined the same way on each new level. A wall attached to a floor or a roof that is copied with it is attached to that copy. A group becomes a group of the copies, and an assembly is copied whole. A stair climbs to the level above its new one and cuts its own opening in the floor there.
+- **Skip duplicates**: a level that already has the same element in the same place does not get a second one. The message at the bottom says how many were skipped.
+
+The copies use the same types as the originals and get new IFC GlobalIds. All the copies are one step to undo, and they stay selected afterwards, so you can move or change them together. In a shared session, a guest's copies are undone only by that guest.
+
+![The ground floor's walls and floor copied to the two levels above, in 3D](shots/copy-to-storeys-3d.webp)
+
+To move the selection to another level instead, choose **Modify → Move to storey**. It keeps the elements' heights over the new level, or keeps them where they are in space.

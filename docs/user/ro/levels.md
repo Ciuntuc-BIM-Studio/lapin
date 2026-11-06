@@ -27,3 +27,21 @@ Ca să vezi alt nivel în timp ce desenezi, alege-l în lista **Fundal** din bar
 ![Etajul desenat peste parter, cu parterul ca fundal](shots/underlay.webp)
 
 Fundalul doar te ajută să desenezi; nu se tipărește. Ca să tipărești pe un plan elementele altor niveluri, deschide proprietățile vederii de plan și alege-le în **Etaje afișate**. Poți arăta câteva niveluri sau pe toate, în halftone dacă vrei.
+
+## Copierea pe alte niveluri
+
+Ca să repeți pereți, plăci sau un plan întreg pe alte niveluri, selectează-le (pereți cu ușile și ferestrele lor, plăci, încăperi, un grup…) și alege **Modifică → Copiază pe niveluri**. Poți și să scrii `COPYSTOREY` în linia de comandă sau să dai clic dreapta pe selecție într-un plan sau în vederea 3D. Bifează nivelurile pe care copiezi. **Toate deasupra** și **Toate dedesubt** bifează toate nivelurile de peste sau de sub nivelul selecției, iar Shift-clic bifează toate nivelurile dintre cel pe care dai clic și ultimul pe care ai dat clic. Nivelul pe care stă selecția nu se poate bifa.
+
+![Copiază pe niveluri: două niveluri bifate și opțiunile](shots/copy-to-storeys.webp)
+
+- **Relativ** (implicit): fiecare copie stă la aceeași înălțime peste nivelul ei nou ca originalul peste al lui. Un perete desenat la parter stă pe etaj.
+- **Absolut**: fiecare copie rămâne unde e originalul în spațiu, pe nivelul nou. Decalajul bazei ei compensează diferența.
+- **Și elementele găzduite**: ușile și ferestrele merg cu pereții lor, iar golurile cu ce taie. Etichetele și cotele elementelor copiate trec din planul nivelului lor în planul nivelului nou. O încăpere își ia finisajele, iar o scară spațiul de sub ea. Debifează opțiunea ca să copiezi pereții fără uși și ferestre.
+- **Refă relațiile dintre copii**: pereții îmbinați într-un colț sau într-un T se îmbină la fel pe fiecare nivel nou. Un perete atașat de o placă sau de un acoperiș copiat împreună cu el se atașează de copia lui. Un grup devine un grup al copiilor, iar un ansamblu se copiază întreg. O scară urcă până la nivelul de deasupra celui nou și își face golul ei în placa de acolo.
+- **Sari peste duplicate**: un nivel care are deja același element în același loc nu primește încă unul. Mesajul de jos spune câte au fost sărite.
+
+Copiile folosesc aceleași tipuri ca originalele și primesc GlobalId-uri IFC noi. Toate copiile sunt un singur pas de anulare și rămân selectate după aceea, ca să le poți muta sau schimba împreună. Într-o sesiune comună, copiile unui invitat le anulează doar invitatul.
+
+![Pereții și placa parterului copiate pe cele două niveluri de deasupra, în 3D](shots/copy-to-storeys-3d.webp)
+
+Ca să muți selecția pe alt nivel, alege **Modifică → Mută pe nivel**. Păstrează înălțimile elementelor peste nivelul nou sau le lasă unde sunt în spațiu.

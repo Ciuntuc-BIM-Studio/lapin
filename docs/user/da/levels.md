@@ -27,3 +27,21 @@ Vil du se et andet niveau, mens du tegner, så vælg det under **Underlag** i pl
 ![Første sal tegnet over stueetagen, vist som underlag](shots/underlay.webp)
 
 Underlaget hjælper dig kun med at tegne; det udskrives ikke. Vil du udskrive andre niveauers elementer på en plan, så åbn planvisningens egenskaber og vælg dem under **Viste etager**. Du kan vise nogle niveauer eller dem alle, i halvtone hvis du vil.
+
+## Kopiér til andre etager
+
+For at gentage vægge, dæk eller en hel plan på andre etager skal du markere dem (vægge med deres døre og vinduer, dæk, rum, en gruppe…) og vælge **Redigér → Kopiér til etager**. Du kan også skrive `COPYSTOREY` på kommandolinjen eller højreklikke på markeringen i en plan eller i 3D-visningen. Markér de etager, der skal kopieres til. **Alle ovenover** og **Alle nedenunder** markerer alle etager over eller under markeringens, og et Skift-klik markerer alle etager mellem den klikkede og den sidst klikkede. Den etage, markeringen står på, kan ikke markeres.
+
+![Kopiér til etager: to etager markeret og indstillingerne](shots/copy-to-storeys.webp)
+
+- **Relativ** (standard): hver kopi står i samme højde over sin nye etage som originalen over sin egen. En væg tegnet i stueetagen står på 1. sal.
+- **Absolut**: hver kopi bliver, hvor originalen er i rummet, på den nye etage. Dens baseforskydning udligner forskellen.
+- **Også værtsbårne elementer**: døre og vinduer følger deres vægge og åbninger det, de skærer i. Mærker og mål for de kopierede elementer flytter fra deres etages plan til den nye etages plan. Et rum tager sine overflader med og en trappe rummet under den. Fjern markeringen for at kopiere væggene uden døre og vinduer.
+- **Genopbyg relationerne mellem kopierne**: vægge samlet i et hjørne eller et T samles på samme måde på hver ny etage. En væg fastgjort til et dæk eller et tag, der kopieres med den, fastgøres til kopien. En gruppe bliver en gruppe af kopierne, og en samling kopieres hel. En trappe går op til etagen over sin nye og skærer sin egen åbning i dækket der.
+- **Spring dubletter over**: en etage, der allerede har det samme element samme sted, får ikke et til. Beskeden nederst siger, hvor mange der blev sprunget over.
+
+Kopierne bruger de samme typer som originalerne og får nye IFC-GlobalIds. Alle kopierne er ét fortryd-trin og forbliver markeret bagefter, så du kan flytte eller ændre dem samlet. I en delt session fortryder kun gæsten sine egne kopier.
+
+![Stueetagens vægge og dæk kopieret til de to etager ovenover, i 3D](shots/copy-to-storeys-3d.webp)
+
+For i stedet at flytte markeringen til en anden etage skal du vælge **Redigér → Flyt til etage**. Elementerne beholder deres højder over den nye etage eller bliver, hvor de er i rummet.

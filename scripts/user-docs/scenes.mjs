@@ -2402,6 +2402,41 @@ export const scenes = [
     },
   },
   {
+    // Copy to storeys (a tester's wish): the ground floor's walls, doors, windows and floor onto the two levels above, in one step.
+    id: 'copy-storeys',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('storey.create', { name: 'Second floor', height: 3 });
+      const placed = (await t.nodes()).filter((n) => n.storeyId === storey && ['IfcWall', 'IfcSlab'].includes(n.type)).map((n) => n.id);
+      t.expect(placed.length === 6, `the house's five walls and its floor (${placed.length})`);
+      await t.ui({ selected: placed, selection: placed[0] });
+      await t.tool('modify.copyToStoreys');
+      await t.page.waitForSelector('.dialog.copy-storeys', { timeout: 5000 });
+      await t.button('All above', { exact: true });
+      const ticked = await t.page.locator('.storey-ticks input:checked').count();
+      t.expect(ticked === 2, `All above ticks the first and second floors (${ticked})`);
+      await t.shot('copy-to-storeys', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog .btn.primary').click();
+      await t.wait(1500);
+      const nodes = await t.nodes();
+      for (const name of ['First floor', 'Second floor']) {
+        const s = await t.storey(name);
+        const walls = nodes.filter((n) => n.storeyId === s && n.type === 'IfcWall').length;
+        const windows = nodes.filter((n) => n.storeyId === s && n.type === 'IfcWindow').length;
+        t.expect(walls === 5 && windows === 4, `${name} has the five walls and four windows copied (${walls}, ${windows})`);
+      }
+      // Copied again: every element is already there, so nothing is added.
+      const before = nodes.length;
+      await t.cmd('element.copyToStoreys', { ids: placed, storeyIds: [await t.storey('First floor')] });
+      t.expect((await t.nodes()).length === before, 'a second copy onto the same level is skipped');
+      // The copies stay selected; the picture shows the building without the selection's grips.
+      await t.ui({ selected: [], selection: null });
+      await open3d(t);
+      await t.shot('copy-to-storeys-3d');
+    },
+  },
+  {
     id: 'views',
     async run(t) {
       await t.fresh();

@@ -122,29 +122,11 @@ public static class StoreyMove
                 foreach (var part in ctx.Model.RelatedOf(e.Id, IfcClass.RelAggregates)) Take(part);
             }
             foreach (var e in moving) Take(e);
-            var levels = ctx.Services.All<IStoreyLevels>();
             var moved = new JsonArray();
             foreach (var e in all)
             {
                 if (Spatial.StoreyOf(ctx.Model, e.Id) is not { } from || from.Id == target.Id) continue;
-                if (keep == "world")
-                {
-                    var attrs = e.CloneAttrs();
-                    var changed = false;
-                    foreach (var (key, fromTop) in levels.SelectMany(l => l.LevelsOf(e)).Distinct())
-                    {
-                        double Ref(Entity s) => s.Num("elevation") + (fromTop ? s.Num("height", 3) : 0);
-                        attrs[key] = e.Num(key) + Ref(from) - Ref(target);
-                        changed = true;
-                    }
-                    if (changed) ctx.Replace(e.With(attrs: attrs));
-                }
-                else if (ctx.Services.All<IStoreyDatum>().SelectMany(d => d.DatumsOf(e)).Distinct().ToList() is { Count: > 0 } datums)
-                {
-                    var attrs = e.CloneAttrs();
-                    foreach (var key in datums) attrs[key] = e.Num(key) + from.Num("elevation") - target.Num("elevation");
-                    ctx.Replace(e.With(attrs: attrs));
-                }
+                if (Rehomed(ctx, e, from, target, keep) is { } attrs) ctx.Replace(e.With(attrs: attrs));
                 Spatial.Contain(ctx, target.Id, e.Id);
                 moved.Add((JsonNode)e.Id);
             }
@@ -156,7 +138,34 @@ public static class StoreyMove
         }
     }
 
+    /// <summary>
+    /// The attributes an element takes on <paramref name="target"/> from <paramref name="from"/>: kept with the storey, its
+    /// heights stay (a datum follows the level); kept in place (world), they make up the difference. Null: they stay as they are.
+    /// </summary>
+    public static JsonObject? Rehomed(ICommandContext ctx, Entity e, Entity from, Entity target, string keep)
+    {
+        if (keep == "world")
+        {
+            var attrs = e.CloneAttrs();
+            var changed = false;
+            foreach (var (key, fromTop) in ctx.Services.All<IStoreyLevels>().SelectMany(l => l.LevelsOf(e)).Distinct())
+            {
+                double Ref(Entity s) => s.Num("elevation") + (fromTop ? s.Num("height", 3) : 0);
+                attrs[key] = e.Num(key) + Ref(from) - Ref(target);
+                changed = true;
+            }
+            return changed ? attrs : null;
+        }
+        if (ctx.Services.All<IStoreyDatum>().SelectMany(d => d.DatumsOf(e)).Distinct().ToList() is { Count: > 0 } datums)
+        {
+            var attrs = e.CloneAttrs();
+            foreach (var key in datums) attrs[key] = e.Num(key) + from.Num("elevation") - target.Num("elevation");
+            return attrs;
+        }
+        return null;
+    }
+
     /// <summary>The wall a door or window fills an opening of (null: it stands on its own).</summary>
-    static Entity? Host(IModelView m, Entity e) =>
+    public static Entity? Host(IModelView m, Entity e) =>
         m.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening ? m.RelatingOf(opening.Id, IfcClass.RelVoidsElement) : null;
 }

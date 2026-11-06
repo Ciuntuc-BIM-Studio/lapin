@@ -5,7 +5,7 @@ import { ImportIfcDialog } from './ImportIfcDialog';
 import { toggleDrafts3d, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
 import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn } from 'lucide-react';
-import { ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
+import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
 import { notify } from '../../app/store';
@@ -30,6 +30,7 @@ import { ObjectStylesDialog } from './ObjectStylesDialog';
 import { LocationDialog } from './LocationDialog';
 import { CutOrderDialog } from './CutOrderDialog';
 import { MoveToStoreyDialog } from './MoveToStoreyDialog';
+import { CopyToStoreysDialog } from './CopyToStoreysDialog';
 import { LinksDialog, LinksLook } from './LinksDialog';
 import { MapTypesDialog } from './MapTypesDialog';
 import { VersionsDialog } from './VersionsDialog';
@@ -99,6 +100,9 @@ function matchType(): Step {
   return sel ? withSource(sel) : pick();
 }
 registerCommand({ names: ['MATCHTYPE', 'MA'], label: 'Match type', start: matchType });
+// Copy to storeys and Move to storey from the command line: their dialogs, on the selection.
+registerCommand({ names: ['COPYSTOREY', 'COPYTOSTOREYS', 'COPYSTOREYS'], label: 'Copy to storeys', start: () => { useUi.setState({ dialog: 'copyToStoreys' }); } });
+registerCommand({ names: ['MOVESTOREY', 'MOVETOSTOREY'], label: 'Move to storey', start: () => { useUi.setState({ dialog: 'moveToStorey' }); } });
 
 /** The class's generic fields less the discipline, which the section shows as a choice of the known disciplines. */
 const butDiscipline = (cls: string) => () => (useSession.getState().info?.nodeTypes.find((t) => t.type === cls)?.fields ?? []).map((f) => f.key).filter((k) => k !== 'discipline');
@@ -122,6 +126,8 @@ const core: LapinModule = {
       { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
       { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
+      // ArchiCAD's copy to stories (a tester's wish): the selection onto several storeys at once; COPYSTOREY on the command line.
+      { id: 'modify.copyToStoreys', label: 'Copy to storeys', icon: CopyToStoreysIcon, run: () => useUi.setState({ dialog: 'copyToStoreys' }) },
       // Groups (docs/groups.md), with Revit's keys.
       { id: 'modify.group', label: 'Create group', icon: Group, shortcut: 'GP', run: () => void groupSelection() },
       { id: 'modify.ungroup', label: 'Ungroup', icon: Ungroup, shortcut: 'UG', run: () => void ungroupSelection() },
@@ -257,7 +263,7 @@ const core: LapinModule = {
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: { LapinView: sectionGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

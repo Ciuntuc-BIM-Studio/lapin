@@ -182,6 +182,16 @@ export const FAQ: Entry[] = [
     source: 'report #21',
   },
   {
+    id: 'copy-to-storeys',
+    q: ['How do I copy elements to several storeys at once?', 'Can I copy the selection to multiple levels?', 'Is there a copy to stories or paste aligned to levels?', 'How do I repeat a floor on the levels above?'],
+    qRo: ['Cum copiez elemente pe mai multe etaje deodată?', 'Pot copia selecția pe mai multe niveluri?', 'Există copiere pe niveluri, ca în ArchiCAD?', 'Cum repet un etaj pe nivelurile de deasupra?'],
+    keywords: ['storeys', 'storey', 'stories', 'story', 'levels', 'floors', 'multiple', 'several', 'many', 'aligned', 'copystorey', 'etaje', 'etajele', 'niveluri', 'nivelurile', 'multe', 'deodata', 'repet'],
+    a: 'Select what to copy (walls with their doors and windows, floors, rooms, a group…), then Modify → Copy to storeys (or type COPYSTOREY, or right-click the selection in a plan or the 3D view). Tick the storeys, or All above / All below; Shift-click ticks a range. Relative keeps each copy at the same height over its new storey (the default), Absolute keeps it where the original is in space. Hosted elements go along (doors, windows, openings, their tags and dimensions, a room\'s finishes), the copies are joined and grouped as the originals, and a storey that already has the same element in the same place is skipped. It is one undo step, and the copies stay selected.',
+    aRo: 'Selectează ce copiezi (pereți cu ușile și ferestrele lor, plăci, încăperi, un grup…), apoi Modify → Copy to storeys (sau scrie COPYSTOREY, sau clic dreapta pe selecție într-un plan sau în 3D). Bifează nivelurile, sau All above / All below; Shift-clic bifează un interval. Relative ține fiecare copie la aceeași înălțime peste nivelul ei nou (implicit), Absolute o lasă unde e originalul în spațiu. Elementele găzduite merg cu ele (uși, ferestre, goluri, etichetele și cotele lor, finisajele unei încăperi), copiile se îmbină și se grupează ca originalele, iar un nivel care are deja același element în același loc e sărit. E un singur pas de anulare, iar copiile rămân selectate.',
+    action: { label: 'Copy to storeys', labelRo: 'Copiază pe niveluri', run: { kind: 'tool', id: 'modify.copyToStoreys' } },
+    source: 'a tester\'s wish (decision 337)',
+  },
+  {
     id: 'material-joints',
     q: ['How do I show the joints between walls of the same material?', 'Why is there no line between two walls?'],
     qRo: ['Cum arăt rosturile dintre pereți din același material?', 'De ce nu e linie între doi pereți?'],
