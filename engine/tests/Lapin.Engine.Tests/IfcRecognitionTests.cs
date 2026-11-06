@@ -21,7 +21,7 @@ namespace Lapin.Engine.Tests;
 /// and windows from extrusions and B-rep boxes; floors with their holes;
 /// columns, beams and pad footings; what is not a prism stays a reference.
 /// </summary>
-public class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
+public partial class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
 {
     readonly string _dir = Directory.CreateTempSubdirectory("lapin-ifc-recognition").FullName;
     public void Dispose() => Directory.Delete(_dir, true);

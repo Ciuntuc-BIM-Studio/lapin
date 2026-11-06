@@ -86,10 +86,17 @@ public static partial class IfcImport
                 recognized++;
                 if (again) updated++;
                 recognizedByClass[foreign.IfcClass] = recognizedByClass.GetValueOrDefault(foreign.IfcClass) + 1;
+                var extra = new List<(string Id, string Class)>();
                 for (; madeSeen < recognition!.Made.Count; madeSeen++)
                     if (edit.Model.Get(recognition.Made[madeSeen]) is { } m && m.Id != id)
+                    {
                         recognizedByClass[m.Class] = recognizedByClass.GetValueOrDefault(m.Class) + 1;
-                foreach (var op in foreign.Openings) if (op.Fill != null && fillIdOf != null && fillIdOf.TryGetValue(op.Fill.GlobalId, out var fid)) recognizedFills.Add(fid);
+                        extra.Add((m.Id, m.Class));
+                    }
+                var fills = new List<int>();
+                foreach (var op in foreign.Openings) if (op.Fill != null && fillIdOf != null && fillIdOf.TryGetValue(op.Fill.GlobalId, out var fid)) { recognizedFills.Add(fid); fills.Add(fid); }
+                // A room is air: the gate measures bodies.
+                if (o.Gate.On && foreign.IfcClass != IfcClass.Space) gated.Add(new Gated(e, id, foreign.IfcClass, foreign.Prisms.Any(p => p.Clipped), extra, fills));
                 return true;
             }
             return false;
@@ -99,6 +106,7 @@ public static partial class IfcImport
         {
             if (recognition == null) return;
             foreach (var r in recognizers) r.Finish(edit, recognition);
+            Gate(edit);
             if (TypeMappings.AfterImport(edit, s.Catalog, recognition.CreatedTypes, FileName) is > 0 and var mapped)
                 notes.Add($"{mapped} imported type{(mapped == 1 ? "" : "s")} became the project's, as mapped before (Manage → Map imported types).");
             if (TypeMappings.Mappable(edit.Model, recognition.CreatedTypes) is > 0 and var mappable)
@@ -107,6 +115,171 @@ public static partial class IfcImport
                 notes.Add($"{n} left as reference: {reason}.");
             foreach (var g in recognition.Notes.GroupBy(n => n).OrderByDescending(g => g.Count()).Take(6))
                 notes.Add(g.Count() > 1 ? $"{g.Count()} × {g.Key}" : g.Key);
+        }
+
+        // ─── The fidelity gate (docs/spec-ifc.md, Poarta de fidelitate) ─────────
+
+        /// <summary>A recognised element waiting to be measured: the file's entity, the native id, what was made with it (its openings, doors and windows), the file's fills it took.</summary>
+        sealed record Gated(StepEntity E, string Id, string IfcClass, bool Clipped, List<(string Id, string Class)> Extra, List<int> Fills);
+
+        readonly List<Gated> gated = [];
+        FidelityReport? fidelity;
+        /// <summary>The elements the gate made references again (enforce), with the fills and finishes that went with them.</summary>
+        public HashSet<string> Reverted { get; } = [];
+
+        /// <summary>The file's bodies of the gated elements (by file id), read in <see cref="Gate"/>; kept for <see cref="Measure"/> when the gate only reports.</summary>
+        System.Collections.Concurrent.ConcurrentDictionary<int, List<MeshBuilder>>? gateBodies;
+        System.Diagnostics.Stopwatch? gateTime;
+
+        /// <summary>
+        /// The gate, once the recognisers have finished (walls joined, finishes absorbed): every element recognised this import
+        /// is to be measured against the body the file gives it, its openings cut, as the reference would have been. The file's
+        /// bodies are read now. Under "enforce" the native ones are measured at the end of the reading (<see cref="Enforce"/>), and
+        /// one that differs comes in as that reference, in the same step; reporting only, they are measured after the edit
+        /// (<see cref="Measure"/>), from the geometry the session builds for the views anyway, so the gate costs little more than
+        /// reading the file's bodies.
+        /// </summary>
+        void Gate(IEdit edit)
+        {
+            if (!o.Gate.On || gated.Count == 0) return;
+            gateTime = System.Diagnostics.Stopwatch.StartNew();
+            var booleans = s.Catalog.Get<ISolidBooleans>();
+            // The file's bodies, read on every core (the file only).
+            model.Warm();
+            gateBodies = [];
+            Parallel.ForEach(gated, g => gateBodies[g.E.Id] = Guarded(g.E, () => FileBody(g.E, booleans)) ?? []);
+            gateTime.Stop();
+        }
+
+        /// <summary>
+        /// The gate enforced, at the end of the reading (every relationship and containment written, so the native elements are
+        /// built as the views will build them): each recognised element measured against the file's body, and one that differs
+        /// brought as the reference it would have been, in the same step.
+        /// </summary>
+        void Enforce(IEdit edit)
+        {
+            if (!o.Gate.Enforcing || gateBodies == null || gateTime == null) return;
+            gateTime.Start();
+            var booleans = s.Catalog.Get<ISolidBooleans>();
+            // On every core: the native bodies built from the model as it stands, which nothing edits meanwhile.
+            var checks = Checks(edit.Model, native => RecognitionFidelity.NativeGeometry(native, edit.Model, s.Catalog), parallel: true);
+            var byGid = ByGid();
+            var reverted = 0;
+            var written = relations.Count;
+            for (var i = 0; i < checks.Count; i++)
+            {
+                if (!checks[i].Measured || checks[i].Pass || !byGid.TryGetValue(checks[i].Id, out var g)) continue;
+                Revert(edit, g, byGid, booleans);
+                checks[i] = checks[i] with { Reverted = true };
+                reverted++;
+            }
+            // The references' relationships (their storeys), and the types made for the elements alone, which go with them.
+            foreach (var r in relations.Skip(written).ToList()) r(edit);
+            WriteContainment(edit);
+            if (reverted > 0) RecognitionFidelity.DropUnusedTypes(edit, recognition!);
+            gateTime.Stop();
+            fidelity = new FidelityReport(o.Gate, checks, reverted, gateTime.Elapsed.TotalMilliseconds);
+            notes.Add(fidelity.Note());
+        }
+
+        /// <summary>
+        /// The gate's report, after the edit (reporting only): each recognised element's geometry as the session built it for the
+        /// views, against the file's body read in <see cref="Gate"/>.
+        /// </summary>
+        public void Measure(Session session)
+        {
+            if (gateBodies == null || gateTime == null || fidelity != null) return;
+            gateTime.Start();
+            // The session's own builds, one after the other (built already by the edit's diff: read from its cache).
+            var built = new Dictionary<string, ElementGeometry?>();
+            foreach (var g in gated) if (session.Model.Get(g.Id) != null) built[g.Id] = session.Geometry(g.Id);
+            var checks = Checks(session.Model, native => built.GetValueOrDefault(native.Id), parallel: true);
+            fidelity = new FidelityReport(o.Gate, checks, 0, gateTime.Elapsed.TotalMilliseconds);
+            notes.Add(fidelity.Note());
+        }
+
+        Dictionary<string, Gated> ByGid()
+        {
+            var byGid = new Dictionary<string, Gated>();
+            foreach (var g in gated) byGid.TryAdd(g.Id, g);
+            return byGid;
+        }
+
+        /// <summary>Every gated element measured: the native geometry <paramref name="geometry"/> gives against the file's body (a wall's with the finishes it took as layers), the joins settled.</summary>
+        List<FidelityCheck> Checks(IModelView m, Func<Entity, ElementGeometry?> geometry, bool parallel)
+        {
+            var byGid = ByGid();
+            var bodies = gateBodies!;
+            var measured = new FidelityCheck[gated.Count];
+            void One(int i)
+            {
+                var g = gated[i];
+                var name = Str(g.E[2]);
+                if (m.Get(g.Id) is not { } native)
+                {
+                    measured[i] = new(g.Id, g.IfcClass, "", name, false, true, null, null, null, null, "absorbed into another element (a finish made a layer of its wall)", null);
+                    return;
+                }
+                var file = bodies.GetValueOrDefault(g.E.Id) ?? [];
+                // A wall that took finishes as layers: their bodies are its own now.
+                foreach (var a in Absorbed(native))
+                    if (byGid.TryGetValue(a, out var fg)) file = [.. file, .. bodies.GetValueOrDefault(fg.E.Id) ?? []];
+                var mine = RecognitionFidelity.Meshes(geometry(native));
+                measured[i] = RecognitionFidelity.Check(g.Id, g.IfcClass, native.Class, name, file, mine, o.Gate, g.Clipped, joinedTo: RecognitionFidelity.JoinedTo(m, g.Id));
+            }
+            if (parallel) Parallel.For(0, gated.Count, One);
+            else for (var i = 0; i < gated.Count; i++) One(i);
+            return RecognitionFidelity.Settle(measured, o.Gate);
+        }
+
+        /// <summary>The file's GlobalIds of the finishes a recognised wall took as layers.</summary>
+        static IEnumerable<string> Absorbed(Entity native) =>
+            (native.Attrs["imported"] as JsonObject)?["absorbed"] is JsonArray list ? list.Select(a => (string?)a?["id"]).OfType<string>() : [];
+
+        /// <summary>The body the file gives an element, as its reference would have it (welded, its openings cut); its parts' when it has none of its own.</summary>
+        List<MeshBuilder> FileBody(StepEntity e, ISolidBooleans? booleans)
+        {
+            static MeshBuilder Mesh(IReadOnlyList<Vec3> v, IReadOnlyList<(int A, int B, int C)> t)
+            {
+                var m = new MeshBuilder();
+                m.V.AddRange(v); m.T.AddRange(t);
+                return m;
+            }
+            var own = OwnBody(e, booleans).Select(p => Mesh(p.Vertices, p.Triangles)).ToList();
+            if (own.Count > 0) return own;
+            return [.. (partsOf?.GetValueOrDefault(e.Id) ?? []).SelectMany(part => OwnBody(part, booleans)).Select(p => Mesh(p.Vertices, p.Triangles))];
+        }
+
+        /// <summary>
+        /// A recognised element that failed the gate made the reference it would have been (enforce): the native element goes with
+        /// what was made with it (its openings, doors and windows, its usage, its joins), then it, its fills and the finishes it
+        /// took come in as references from the file, as if no recogniser had taken them.
+        /// </summary>
+        void Revert(IEdit edit, Gated g, Dictionary<string, Gated> byGid, ISolidBooleans? booleans)
+        {
+            var absorbed = edit.Model.Get(g.Id) is { } native ? Absorbed(native).ToList() : [];
+            void Forget(Gated x)
+            {
+                Reverted.Add(x.Id);
+                edit.Remove(x.Id);
+                foreach (var (id, cls) in x.Extra)
+                {
+                    if (edit.Model.Get(id) != null) edit.Remove(id);
+                    recognizedByClass[cls] = recognizedByClass.GetValueOrDefault(cls) - 1;
+                }
+                seen.Remove(x.Id);
+                recognized--;
+                recognizedByClass[x.IfcClass] = recognizedByClass.GetValueOrDefault(x.IfcClass) - 1;
+                Reference(edit, x.E, booleans);
+                foreach (var fid in x.Fills)
+                {
+                    recognizedFills.Remove(fid);
+                    if (f.Entities.GetValueOrDefault(fid) is { } filler) { Reference(edit, filler, booleans); if (Str(filler[0]) is { } fg) Reverted.Add(fg); }
+                }
+            }
+            Forget(g);
+            foreach (var a in absorbed) if (byGid.TryGetValue(a, out var finish)) Forget(finish);
+            foreach (var k in recognizedByClass.Where(kv => kv.Value <= 0).Select(kv => kv.Key).ToList()) recognizedByClass.Remove(k);
         }
 
         readonly System.Collections.Concurrent.ConcurrentDictionary<int, ForeignElement> foreignReady = [];

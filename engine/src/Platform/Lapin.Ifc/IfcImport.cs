@@ -27,17 +27,21 @@ namespace Lapin.Ifc;
 /// (<see cref="IfcValueText"/>); <see cref="SkipSets"/> are the property and quantity sets left out by name.
 /// </para>
 /// </summary>
-/// <summary><paramref name="Group"/>: what the file places comes in as one group named after it (docs/groups.md); false for a link, and for an import the journal recorded before groups were.</summary>
+/// <summary><paramref name="Group"/>: what the file places comes in as one group named after it (docs/groups.md); false for a link, and for an import the journal recorded before groups were.
+/// <paramref name="Fidelity"/>: the recognised elements measured against the file's bodies (docs/spec-ifc.md, Poarta de fidelitate); null, reported.</summary>
 public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>? Kinds = null, IReadOnlySet<string>? Storeys = null, bool Plan2d = true, bool Only2d = true,
-    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null, bool Group = false, bool Editable = false, string? Source = null)
+    bool Dedupe = true, bool Flat = false, double? FarAway = null, bool Duplicates = false, bool Pseudo = false, double Simplify = 0, bool Numbers = false, IReadOnlySet<string>? SkipSets = null, bool Group = false, bool Editable = false, string? Source = null,
+    FidelityOptions? Fidelity = null)
 {
+    /// <summary>How recognised elements are checked against the file's bodies (<see cref="FidelityOptions"/>): reported by default.</summary>
+    public FidelityOptions Gate => Fidelity ?? FidelityOptions.Default;
     public bool ReferenceOnly => string.Equals(Mode, "reference", StringComparison.OrdinalIgnoreCase);
     public bool Filtered => Kinds != null || Storeys != null;
     /// <summary>Whether a set of this name comes in.</summary>
     public bool Keeps(string? set) => SkipSets == null || set == null || !SkipSets.Contains(set);
 }
 
-public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null, EditableReport? Editable = null)
+public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null, EditableReport? Editable = null, FidelityReport? Fidelity = null)
 {
     public JsonObject ToJson() => new()
     {
@@ -45,6 +49,7 @@ public sealed record IfcImportResult(int Elements, int Updated, int References, 
         ["recognizedByClass"] = Counts(RecognizedByClass), ["referencesByClass"] = Counts(ReferencesByClass), ["skipped"] = Counts(Skipped),
         ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
         ["editable"] = Editable?.ToJson(),
+        ["fidelity"] = Fidelity?.ToJson(),
     };
 
     static JsonObject Counts(IReadOnlyDictionary<string, int>? d)
@@ -92,7 +97,8 @@ public static partial class IfcImport
             var before = edit.Model.Entities.Select(e => e.Id).ToHashSet();
             reader.Apply(edit);
             var brought = edit.Model.Entities.Where(e => !before.Contains(e.Id)).Select(e => e.Id).ToList();
-            if (o.Mode == "auto") fromTriangles = MeshRecognition.Recognize(edit, session.Catalog, brought);
+            // Not what the gate has just made a reference again (enforce): its triangles would make the same element.
+            if (o.Mode == "auto") fromTriangles = MeshRecognition.Recognize(edit, session.Catalog, brought.Where(id => !reader.Reverted.Contains(id)), o.Gate);
             if (o.Editable) editable = EditableReferences.Make(edit, session.Catalog, brought);
         }
         diff = session.Edit($"Import {name}", edit =>
@@ -105,7 +111,16 @@ public static partial class IfcImport
             }
             else Apply(edit);
         });
+        // The gate's report, from the geometry the session has just built (docs/spec-ifc.md, Poarta de fidelitate).
+        reader.Measure(session);
         var result = reader.Result() with { Editable = editable };
+        // The gate's one note: the file's elements and those recognised from their triangles together.
+        if (fromTriangles?.Fidelity is { Checks.Count: > 0 } more)
+        {
+            var gate = result.Fidelity;
+            var both = gate?.Then(more) ?? more;
+            result = result with { Fidelity = both, Notes = [.. result.Notes.Where(n => gate == null || n != gate.Note()), both.Note()] };
+        }
         if (fromTriangles is { Recognized: > 0 } t)
             result = result with
             {
@@ -142,6 +157,7 @@ public static partial class IfcImport
             Links.Tag(edit, link.Id, edit.Model.Entities.Select(e => e.Id).Where(id => !before.Contains(id)).ToList());
             linkId = link.Id;
         });
+        reader.Measure(session);
         var r = reader.Result();
         return r with { Notes = [.. r.Notes, $"Linked as {linkId}."], LinkId = linkId };
     }
@@ -175,7 +191,7 @@ public static partial class IfcImport
 
         static readonly Dictionary<string, string> ProperNames = BuildNames();
 
-        public IfcImportResult Result() => new(elements, updated, references, storeys, notes, recognized, recognizedByClass, referencesByClass, recognition?.Skipped);
+        public IfcImportResult Result() => new(elements, updated, references, storeys, notes, recognized, recognizedByClass, referencesByClass, recognition?.Skipped, Fidelity: fidelity);
 
         public void Apply(IEdit edit)
         {
@@ -204,6 +220,7 @@ public static partial class IfcImport
             foreach (var r in relations) r(edit);
             ProvisionOpenings(edit);
             WriteContainment(edit);
+            Enforce(edit);
             if (ReadProcesses && !o.ReferenceOnly) Processes(edit);
             if (ReadProcesses && !o.ReferenceOnly) Controls(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));

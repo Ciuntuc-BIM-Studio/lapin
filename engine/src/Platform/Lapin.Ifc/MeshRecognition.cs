@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.Ifc;
 
 /// <summary>What recognition from triangles made native, and why the rest stayed references (reason → how many).</summary>
-public sealed record MeshRecognitionReport(int Recognized, IReadOnlyDictionary<string, int> ByClass, IReadOnlyDictionary<string, int> Skipped)
+public sealed record MeshRecognitionReport(int Recognized, IReadOnlyDictionary<string, int> ByClass, IReadOnlyDictionary<string, int> Skipped, FidelityReport? Fidelity = null)
 {
     public static readonly MeshRecognitionReport None = new(0, new Dictionary<string, int>(), new Dictionary<string, int>());
 
@@ -18,7 +18,7 @@ public sealed record MeshRecognitionReport(int Recognized, IReadOnlyDictionary<s
             foreach (var (k, v) in d.OrderByDescending(kv => kv.Value)) o[k] = v;
             return o;
         }
-        return new() { ["recognized"] = Recognized, ["byClass"] = Counts(ByClass), ["skipped"] = Counts(Skipped) };
+        return new() { ["recognized"] = Recognized, ["byClass"] = Counts(ByClass), ["skipped"] = Counts(Skipped), ["fidelity"] = Fidelity?.ToJson() };
     }
 }
 
@@ -35,9 +35,14 @@ public static class MeshRecognition
 {
     static readonly HashSet<string> Fillers = [IfcClass.Door, IfcClass.Window];
 
-    /// <summary>The references among <paramref name="ids"/> made native where a recogniser takes them (walls first, so their doors and windows go with them).</summary>
-    public static MeshRecognitionReport Recognize(IEdit edit, IServices services, IEnumerable<string> ids)
+    /// <summary>
+    /// The references among <paramref name="ids"/> made native where a recogniser takes them (walls first, so their doors and windows go with them),
+    /// each then measured against the triangles it was (<paramref name="fidelity"/>, docs/spec-ifc.md, Poarta de fidelitate; null: reported).
+    /// </summary>
+    public static MeshRecognitionReport Recognize(IEdit edit, IServices services, IEnumerable<string> ids, FidelityOptions? fidelity = null)
     {
+        var gate = fidelity ?? FidelityOptions.Default;
+        var gated = new List<(string Id, string Class, List<MeshBuilder> Body, List<(Entity E, List<(string Class, string Relating)> By)> Saved)>();
         var recognizers = services.All<IIfcRecognizer>();
         if (recognizers.Count == 0) return MeshRecognitionReport.None;
         var ctx = new RecognitionContext(services);
@@ -96,6 +101,8 @@ public static class MeshRecognition
                 catch (CommandException ex) { ctx.Skip(ex.Message); made = null; }
                 if (made != null) break;
             }
+            // Measured once every wall is joined; what came back native (it and the fills made with it) kept to undo under "enforce".
+            if (made != null && gate.On && edit.Model.Get(made) != null) gated.Add((made, cls, RecognitionFidelity.Meshes(g), [.. saved.Where(x => edit.Model.Get(x.E.Id) != null)]));
             foreach (var (x, by) in saved)
             {
                 if (edit.Model.Get(x.Id) is { } now)
@@ -117,8 +124,45 @@ public static class MeshRecognition
             }
         }
         foreach (var r in recognizers) r.Finish(edit, ctx);
+        FidelityReport? report = null;
+        if (gated.Count > 0)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var checks = new List<FidelityCheck>();
+            foreach (var (id, cls, body, _) in gated)
+            {
+                if (edit.Model.Get(id) is not { } native)
+                {
+                    checks.Add(new(id, cls, "", null, false, true, null, null, null, null, "absorbed into another element (a finish made a layer of its wall)", null, "triangles"));
+                    continue;
+                }
+                checks.Add(RecognitionFidelity.Check(id, cls, native.Class, native.Name, body, RecognitionFidelity.Meshes(RecognitionFidelity.NativeGeometry(native, edit.Model, services)), gate,
+                    source: "triangles", joinedTo: RecognitionFidelity.JoinedTo(edit.Model, id)));
+            }
+            checks = RecognitionFidelity.Settle(checks, gate);
+            var reverted = 0;
+            for (var i = 0; i < checks.Count && gate.Enforcing; i++)
+            {
+                if (!checks[i].Measured || checks[i].Pass) continue;
+                var (id, _, _, saved) = gated[i];
+                // The reference it was, back as it was: the native element goes with its openings, doors and windows.
+                edit.Remove(id);
+                foreach (var (x, by) in saved)
+                {
+                    edit.Remove(x.Id);
+                    edit.Add(x);
+                    foreach (var (c, r) in by) if (edit.Model.Get(r) != null) edit.RelateAll(c, r, [x.Id]);
+                    count--;
+                    if ((byClass[ClassOf(x)] = byClass.GetValueOrDefault(ClassOf(x)) - 1) <= 0) byClass.Remove(ClassOf(x));
+                }
+                checks[i] = checks[i] with { Reverted = true };
+                reverted++;
+            }
+            if (reverted > 0) RecognitionFidelity.DropUnusedTypes(edit, ctx);
+            report = new FidelityReport(gate, checks, reverted, sw.Elapsed.TotalMilliseconds);
+        }
         TypeMappings.AfterImport(edit, services, ctx.CreatedTypes, null);
-        return new(count, byClass, ctx.Skipped);
+        return new(count, byClass, ctx.Skipped, report);
     }
 
     /// <summary>The class a reference stands for: its own, or the one it exports as.</summary>
