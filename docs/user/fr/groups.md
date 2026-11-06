@@ -8,6 +8,10 @@ summary: Gardez des éléments ensemble dans un groupe, ouvrez un groupe pour le
 
 Un groupe garde des éléments ensemble. Sélectionnez-les et cliquez sur **Modifier → Créer un groupe** (<kbd>GP</kbd>). Un clic sur n’importe quel membre sélectionne alors tout le groupe, en plan et en 3D. Le groupe se déplace, se copie, pivote, se symétrise et se supprime d’un seul tenant, et une copie est un groupe à part entière. En IFC, un groupe est un IfcGroup : les autres logiciels le voient aussi.
 
+Le menu du clic droit dans un plan, une coupe ou une élévation propose les mêmes commandes : **Créer un groupe** pour la sélection, et sur un groupe **Dissocier** et **Modifier le groupe**. Les lignes, textes et hachures dessinés sur une vue se groupent aussi, dont les lignes d’un plan DXF importé : un dessin entier se déplace alors d’un seul tenant.
+
+![Des lignes dessinées sur le plan, groupées depuis le menu du clic droit](shots/group-drafting.webp)
+
 Les propriétés d’un groupe sélectionné donnent le nombre de ses éléments, avec trois boutons : **Modifier le groupe**, **Dissocier** et **Sélectionner les membres**.
 
 ![Un groupe sélectionné : ses membres en surbrillance, ses propriétés](shots/group-selected.webp)

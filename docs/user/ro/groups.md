@@ -8,6 +8,10 @@ summary: Ține elementele împreună într-un grup, deschide un grup ca să-l ed
 
 Un grup ține elementele împreună. Selectează-le și apasă **Modifică → Creează grup** (<kbd>GP</kbd>). Un clic pe oricare membru selectează apoi tot grupul, în planuri și în 3D. Grupul se mută, se copiază, se rotește, se oglindește și se șterge ca un întreg, iar o copie e un grup al ei. În IFC un grup e un IfcGroup, așa că îl văd și alte programe.
 
+Meniul de clic dreapta dintr-un plan, o secțiune sau o fațadă are aceleași comenzi: **Creează grup** pentru selecție, iar pe un grup **Degrupează** și **Editează grupul**. Se grupează și liniile, textele și hașurile desenate pe o vedere, printre ele liniile unui plan DXF importat, așa că un desen întreg se mută dintr-o bucată.
+
+![Linii desenate pe plan, grupate din meniul de clic dreapta](shots/group-drafting.webp)
+
 Proprietățile unui grup selectat arată câte elemente are, cu trei butoane: **Editează grupul**, **Degrupează** și **Selectează membrii**.
 
 ![Un grup selectat: membrii lui luminați, proprietățile lui](shots/group-selected.webp)

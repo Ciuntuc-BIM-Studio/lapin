@@ -8,6 +8,10 @@ summary: Keep elements together as a group, open a group to edit it, select by a
 
 A group keeps elements together. Select them and click **Modify → Create group** (<kbd>GP</kbd>). A click on any member then selects the whole group, in plans and in 3D. The group moves, copies, rotates, mirrors and deletes as one, and a copy is a group of its own. In IFC a group is an IfcGroup, so other programs see it too.
 
+The right-click menu on a plan, a section or an elevation has the same commands: **Create group** for the selection, and on a group **Ungroup** and **Edit group**. Lines, texts and hatches drawn on a view group too, an imported DXF plan's lines among them, so a whole drawing moves as one.
+
+![Lines drawn on the plan, grouped from the right-click menu](shots/group-drafting.webp)
+
 A selected group's properties give the number of elements it holds, with three buttons: **Edit group**, **Ungroup** and **Select members**.
 
 ![A group selected: its members lit, its properties](shots/group-selected.webp)

@@ -7,7 +7,7 @@
  * A tool with a gesture (a bar, a stirrup distribution, a section across an element) draws here as in a plan.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Maximize } from 'lucide-react';
 import { select, setTool, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
@@ -22,6 +22,9 @@ import { editDimension } from './dimensionEdit';
 import { openPickedView } from './openView';
 import { pickDrawing } from './drawingPick';
 import { openContextMenu } from '../shell/ContextMenu';
+import { groupItems } from '../shell/selectionMenu';
+import { membersOf, pickTarget, shownSelection } from '../platform/groups';
+import { pickClick, pickRegion } from '../platform/assemblies';
 import { drawOrderItems, isDrafted } from './drawOrder';
 import { CadOverlay } from './cad/canvas';
 import { useCadCanvas, type Aimed } from './cad/aim';
@@ -45,6 +48,9 @@ export function DrawingView() {
   const node = useSession((s) => (id ? s.nodes.get(id) : undefined));
   const nodes = useSession((s) => s.nodes);
   const selected = useUi((s) => s.selected);
+  const relations = useSession((s) => s.relations);
+  // A group selected draws its members selected (drafted lines grouped, report #98).
+  const shown = useMemo(() => [...shownSelection(selected, nodes, relations)], [selected, nodes, relations]);
   // The dark theme: the drawing on the theme's background, its black pens in the theme's ink, as a plan (report #90).
   const onDark = drawsOnDark(useUi((s) => s.theme));
   const drawing = useDrawing(id);
@@ -88,7 +94,7 @@ export function DrawingView() {
     fitAll: fit,
     fitSelection: () => {
       const pts: Vec2[] = [];
-      for (const m of drawing?.marks ?? []) if (selected.includes(m.id)) for (let k = 0; k + 1 < m.segments.length; k += 2) pts.push({ x: m.segments[k], y: m.segments[k + 1] });
+      for (const m of drawing?.marks ?? []) if (markSelected(m.id, shown)) for (let k = 0; k + 1 < m.segments.length; k += 2) pts.push({ x: m.segments[k], y: m.segments[k + 1] });
       const b = boundsOf(pts);
       if (!b || !size.w) return false;
       go(framing(b, size, 0.6, 2, 4000));
@@ -111,7 +117,7 @@ export function DrawingView() {
 
   /** The annotations and drafted shapes a box takes, added to the selection with shift (or while a command asks for a selection). */
   const selectBox = (b: SelectDrag, add: boolean) => {
-    const ids = markIds(regionTestOf(b, toWorld), nodes, drawing?.marks);
+    const ids = pickRegion(markIds(regionTestOf(b, toWorld), nodes, drawing?.marks));
     const before = add || useCad.getState().step ? useUi.getState().selected : [];
     const next = [...new Set([...before, ...ids])];
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
@@ -299,12 +305,14 @@ export function DrawingView() {
           const d = drag.current;
           drag.current = null;
           if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
-          // A right-click on drafting: its draw order (decision 339), what is under the cursor selected first.
+          // A right-click on drafting: its draw order (decision 339), what is under the cursor (its group when in one) selected
+          // first; then grouping the selection (report #98).
           if (d && !d.moved && e.button === 2 && !useCad.getState().step) {
             const under = pickAny(at(e).raw);
+            const target = under ? pickTarget(under) : null;
             let sel = useUi.getState().selected;
-            if (under && isDrafted(nodes.get(under)) && !sel.includes(under)) { select(under); sel = [under]; }
-            openContextMenu(e.clientX, e.clientY, drawOrderItems(sel, nodes));
+            if (under && target && isDrafted(nodes.get(under)) && !sel.includes(target)) { select(target); sel = [target]; }
+            openContextMenu(e.clientX, e.clientY, [...drawOrderItems(sel.flatMap((id) => [id, ...membersOf(id)]), nodes), ...groupItems()]);
             return;
           }
           if (!d || d.moved || e.button !== 0) return;
@@ -312,7 +320,7 @@ export function DrawingView() {
           const step = useCad.getState().step;
           if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : aimed.point); acquire(aimed.point); return; }
           if (gestureClick(aimed.point, raw)) return;
-          select(pickAny(raw), e.shiftKey);
+          pickClick(pickAny(raw), { add: e.shiftKey });
         }}
         onPointerLeave={() => { setHover(null); editor.onPointerLeave(); }}
         onContextMenu={(e) => e.preventDefault()}
@@ -325,7 +333,7 @@ export function DrawingView() {
         }}>
         <rect width="100%" height="100%" className="paper" />
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} onDark={onDark} />}
-        {(drawing?.marks ?? []).filter((m) => markSelected(m.id, selected)).map((m) => (
+        {(drawing?.marks ?? []).filter((m) => markSelected(m.id, shown)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;

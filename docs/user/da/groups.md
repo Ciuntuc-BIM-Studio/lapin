@@ -8,6 +8,10 @@ summary: Hold elementer sammen i en gruppe, åbn en gruppe for at redigere den, 
 
 En gruppe holder elementer sammen. Vælg dem og klik på **Redigér → Opret gruppe** (<kbd>GP</kbd>). Et klik på et hvilket som helst medlem vælger så hele gruppen, i planer og i 3D. Gruppen flyttes, kopieres, drejes, spejles og slettes som én, og en kopi er en gruppe for sig. I IFC er en gruppe en IfcGroup, så andre programmer ser den også.
 
+Højrekliksmenuen i en plan, et snit eller en facade har de samme kommandoer: **Opret gruppe** for markeringen, og på en gruppe **Opløs gruppe** og **Redigér gruppe**. Linjer, tekster og skraveringer tegnet på en visning kan også grupperes, blandt dem linjerne fra en importeret DXF-plan, så en hel tegning flyttes som én.
+
+![Linjer tegnet på planen, grupperet fra højrekliksmenuen](shots/group-drafting.webp)
+
 En valgt gruppes egenskaber viser, hvor mange elementer den har, med tre knapper: **Redigér gruppe**, **Opløs gruppe** og **Vælg medlemmer**.
 
 ![En valgt gruppe: dens medlemmer fremhævet, dens egenskaber](shots/group-selected.webp)

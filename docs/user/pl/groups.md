@@ -8,6 +8,10 @@ summary: Trzymaj elementy razem jako grupę, otwórz grupę, aby ją edytować, 
 
 Grupa trzyma elementy razem. Zaznacz je i kliknij **Modyfikuj → Utwórz grupę** (<kbd>GP</kbd>). Kliknięcie dowolnego członka zaznacza wtedy całą grupę, na rzutach i w widoku 3D. Grupa przesuwa się, kopiuje, obraca, odbija lustrzanie i usuwa jako całość, a kopia jest osobną grupą. W IFC grupa jest obiektem IfcGroup, więc inne programy też ją widzą.
 
+Menu prawego przycisku na rzucie, przekroju lub elewacji ma te same polecenia: **Utwórz grupę** dla zaznaczenia, a na grupie **Rozgrupuj** i **Edytuj grupę**. Grupować można też linie, teksty i kreskowania narysowane na widoku, w tym linie zaimportowanego planu DXF, więc cały rysunek przesuwa się jako całość.
+
+![Linie narysowane na rzucie, zgrupowane z menu prawego przycisku](shots/group-drafting.webp)
+
 Właściwości zaznaczonej grupy podają liczbę zawartych w niej elementów i mają trzy przyciski: **Edytuj grupę**, **Rozgrupuj** i **Zaznacz członków**.
 
 ![Zaznaczona grupa: jej członkowie podświetleni, jej właściwości](shots/group-selected.webp)

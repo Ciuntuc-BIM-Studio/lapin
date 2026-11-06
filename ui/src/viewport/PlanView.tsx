@@ -5,7 +5,7 @@
  * engine command. Hold Shift to square a line; Esc drops the gesture.
  */
 
-import { openGroupOf, shownSelection, useExpansion } from '../platform/groups';
+import { membersOf, openGroupOf, pickTarget, shownSelection, useExpansion } from '../platform/groups';
 import { drillInside, pickClick, pickRegion, useDrill } from '../platform/assemblies';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -195,6 +195,7 @@ export function PlanView() {
   const expansion = useExpansion((s) => s.version);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const shown = useMemo(() => shownSelection(selected, nodes, relations), [selected, nodes, relations, expansion]);
+  const shownList = useMemo(() => [...shown], [shown]);
   // Drilled into a whole (platform/assemblies.ts): what is outside it dimmed, as an edit scope's is (more lightly).
   const drillPath = useDrill((st) => st.path);
   const drillOn = useDisplay((st) => st.drillSelect);
@@ -458,15 +459,18 @@ export function PlanView() {
   };
   /**
    * A right-click (not a drag): on drafting, its draw order (decision 339; what is under the cursor selected first when it
-   * is not already); on a room, walk into it in 3D or select it; with a selection, copy it to storeys or move it to another.
+   * is not already); on a room, walk into it in 3D or select it; with a selection, group it (or a group: ungroup, edit) and
+   * copy it to storeys or move it to another.
    */
   const roomMenu = (x: number, y: number) => {
     const rect = svgRef.current!.getBoundingClientRect();
     const at = toWorld(x - rect.left, y - rect.top);
     const under = pick(at);
     let selected = useUi.getState().selected;
-    if (isDrafted(under ?? undefined) && !selected.includes(under!.id)) { select(under!.id); selected = [under!.id]; }
-    const order = drawOrderItems(selected, nodes);
+    // Under the cursor, its group when it is in one (as a left click picks it).
+    const target = under ? pickTarget(under.id) : null;
+    if (isDrafted(under ?? undefined) && target && !selected.includes(target)) { select(target); selected = [target]; }
+    const order = drawOrderItems(selected.flatMap((id) => [id, ...membersOf(id)]), nodes);
     const room = pick(at, ['IfcSpace']);
     const item = room ? render.get(room.id) : undefined;
     const rooms = room && item ? [
@@ -674,7 +678,7 @@ export function PlanView() {
             </g>
           );
         })}
-        {(drawing?.marks ?? []).filter((m) => markSelected(m.id, selected)).map((m) => (
+        {(drawing?.marks ?? []).filter((m) => markSelected(m.id, shownList)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
             return `M${a.x} ${a.y}L${b.x} ${b.y}`;

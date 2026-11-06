@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Drafts = Lapin.Drafting.Cad.Drafts;
+using Line = Lapin.Drafting.Cad.Line;
 using Lapin.Ifc;
 using Lapin.Mesh;
 using Lapin.Model;
@@ -115,5 +117,31 @@ public class GroupTests : IDisposable
         var group = Assert.Single(Groups.All(f.Model));
         Assert.Equal("pieces", group.Name);
         Assert.Equal(2, Groups.MembersOf(f.Model, group.Id).Count());
+    }
+
+    [Fact]
+    public void Lines_drawn_on_a_view_are_grouped_and_move_copy_and_go_as_one()
+    {
+        // A tester's report (#98): an imported DXF plan's lines put together to move it as one.
+        var f = F();
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var dxf = string.Join("\n", "0", "SECTION", "2", "ENTITIES", "0", "LINE", "8", "0", "10", "0", "20", "0", "11", "5", "21", "0",
+            "0", "LINE", "8", "0", "10", "0", "20", "0", "11", "0", "21", "5", "0", "ENDSEC", "0", "EOF");
+        f.Run("drafting.importDxf", new JsonObject { ["viewId"] = plan, ["name"] = "plan.dxf", ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(dxf)) });
+        var lines = Drafts.On(f.Model, plan).Select(e => e.Id).ToArray();
+        Assert.Equal(2, lines.Length);
+        var g = Id(f.Run("group.create", new JsonObject { ["ids"] = Ids(lines) }));
+        Assert.Equal(2, Groups.MembersOf(f.Model, g).Count());
+
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(g), ["op"] = "move", ["by"] = new JsonArray(10, 0) });
+        Assert.All(Drafts.On(f.Model, plan), e => Assert.Equal(10, ((Line)Drafts.ShapeOf(e)!).A.X, 6));
+
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(g), ["op"] = "copy", ["by"] = new JsonArray(0, 10) });
+        Assert.Equal(4, Drafts.On(f.Model, plan).Count());
+        Assert.Equal(2, Groups.All(f.Model).Count());
+
+        f.Run("element.delete", new JsonObject { ["ids"] = Ids(g) });
+        Assert.Equal(2, Drafts.On(f.Model, plan).Count());
+        Assert.Single(Groups.All(f.Model));
     }
 }

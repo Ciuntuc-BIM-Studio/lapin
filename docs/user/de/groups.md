@@ -8,6 +8,10 @@ summary: Halten Sie Elemente als Gruppe zusammen, öffnen Sie eine Gruppe zum Be
 
 Eine Gruppe hält Elemente zusammen. Wählen Sie sie aus und klicken Sie auf **Ändern → Gruppe erstellen** (<kbd>GP</kbd>). Ein Klick auf ein beliebiges Mitglied wählt dann die ganze Gruppe, in Grundrissen und in 3D. Die Gruppe wird als Ganzes verschoben, kopiert, gedreht, gespiegelt und gelöscht, und eine Kopie ist eine eigene Gruppe. In IFC ist eine Gruppe eine IfcGroup, sodass auch andere Programme sie sehen.
 
+Das Kontextmenü (Rechtsklick) in einem Grundriss, Schnitt oder einer Ansicht hat dieselben Befehle: **Gruppe erstellen** für die Auswahl, und auf einer Gruppe **Gruppierung aufheben** und **Gruppe bearbeiten**. Auch Linien, Texte und Schraffuren, die auf einer Ansicht gezeichnet sind, lassen sich gruppieren, darunter die Linien eines importierten DXF-Plans, sodass eine ganze Zeichnung als Ganzes verschoben wird.
+
+![Auf dem Grundriss gezeichnete Linien, über das Kontextmenü gruppiert](shots/group-drafting.webp)
+
 Die Eigenschaften einer gewählten Gruppe zeigen, wie viele Elemente sie hat, mit drei Schaltflächen: **Gruppe bearbeiten**, **Gruppierung aufheben** und **Mitglieder auswählen**.
 
 ![Eine gewählte Gruppe: ihre Mitglieder hervorgehoben, ihre Eigenschaften](shots/group-selected.webp)

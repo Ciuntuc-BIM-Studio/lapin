@@ -3158,6 +3158,32 @@ export const scenes = [
       await t.shot('group-edit', { clip: view });
       await page.keyboard.press('Escape');
       await t.wait(400);
+      // Lines drawn on the plan (as an imported DXF's are) grouped from the right-click menu (a tester's report, #98).
+      const plan = `plan:${await t.storey()}`;
+      const sketch = [[[16, 0], [22, 0]], [[22, 0], [22, 5]], [[22, 5], [16, 5]], [[16, 5], [16, 0]], [[16, 2.5], [22, 2.5]]];
+      const drawn = (await t.cmd('drafting.draw', { viewId: plan, shapes: sketch.map(([a, b]) => ({ type: 'line', a, b })) })).ids;
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false, selection: drawn[0], selected: drawn });
+      await t.wait(1200);
+      await t.fit();
+      await t.wait(600);
+      // The sketch's left line, so the menu opens over the plan.
+      const boxes = [];
+      for (const m of await page.locator('path.plan-mark.selected').all()) boxes.push(await m.boundingBox());
+      const line = boxes.filter(Boolean).sort((a, b) => a.x + a.width / 2 - (b.x + b.width / 2))[0];
+      await page.mouse.click(line.x + line.width / 2, line.y + line.height / 2, { button: 'right' });
+      await t.wait(400);
+      const item = page.locator('.context-menu button, .context-menu [role=menuitem]').filter({ hasText: /^Create group$/ }).first();
+      t.expect(await item.count() === 1, 'the right-click menu offers Create group for drafted lines');
+      await t.shot('group-drafting', { of: '[data-testid=plan]', pad: 0 });
+      await item.click();
+      await t.wait(800);
+      st = await state();
+      const made = st.groups.find((g) => g !== st.groups[0]) ?? st.groups[st.groups.length - 1];
+      t.expect(st.groups.length === 2 && st.selected.join() === made, 'the drafted lines made one group, selected');
+      await page.mouse.click(line.x + line.width / 2, line.y + line.height / 2, { button: 'right' });
+      await t.wait(400);
+      t.expect(await page.locator('.context-menu').getByText('Ungroup', { exact: true }).count() === 1, 'on a group the menu offers Ungroup');
+      await page.keyboard.press('Escape');
     },
   },
   {

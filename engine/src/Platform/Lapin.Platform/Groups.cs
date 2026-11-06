@@ -40,10 +40,14 @@ public static class Groups
         return (elements, groups);
     }
 
-    /// <summary>Whether an entity may be in a group: something placed (not the spatial structure, a type, a resource, a view or a link's).</summary>
+    /// <summary>
+    /// Whether an entity may be in a group: something placed on a storey, or drawn on a view (lines, texts, hatches, an
+    /// imported DXF: a tester's report, #98); not the spatial structure, a type, a resource, a view or a link's.
+    /// </summary>
     public static bool Groupable(IModelView m, Entity e) =>
         e.Class is not (Class or IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey or IfcClass.OpeningElement)
-        && Spatial.StoreyOf(m, e.Id) != null && e.Str(Links.Key) == null;
+        && (Spatial.StoreyOf(m, e.Id) != null || (e.Class == IfcClass.Annotation && e.Str("viewId") is { Length: > 0 }))
+        && e.Str(Links.Key) == null;
 
     /// <summary>A new group of <paramref name="ids"/> (those that may be in one; each leaves the group it was in, which goes when emptied). Null when none may.</summary>
     public static Entity? Make(IEdit edit, string name, IEnumerable<string> ids)
@@ -94,7 +98,7 @@ public static class Groups
             if (elements.Select(ctx.Model.Get).OfType<Entity>().FirstOrDefault(e => e.Str(Links.Key) != null) is { } linked)
                 throw new CommandException($"„{linked.Name}” belongs to a link: convert the link to native to group its elements.");
             var name = (string?)a["name"] is { Length: > 0 } n ? n : NextName(ctx.Model);
-            var group = Make(ctx, name, elements) ?? throw new CommandException("Select elements placed on a storey to group them.");
+            var group = Make(ctx, name, elements) ?? throw new CommandException("Select elements placed on a storey or drawn on a view to group them.");
             DropEmpty(ctx, groups);
             return new JsonObject { ["id"] = group.Id, ["members"] = MembersOf(ctx.Model, group.Id).Count() };
         });
@@ -132,7 +136,7 @@ public static class Groups
                 if (Of(ctx.Model, id) is { } was && was.Id != group.Id) left.Add(was.Id);
                 adding.Add(id);
             }
-            if (adding.Count == 0) throw new CommandException("Select elements placed on a storey to add them.");
+            if (adding.Count == 0) throw new CommandException("Select elements placed on a storey or drawn on a view to add them.");
             ctx.RelateAll(Rel, group.Id, adding);
             DropEmpty(ctx, left);
             return null;

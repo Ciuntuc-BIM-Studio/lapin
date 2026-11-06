@@ -8,6 +8,10 @@ summary: Mantenha elementos juntos como um grupo, abra um grupo para editá-lo, 
 
 Um grupo mantém elementos juntos. Selecione-os e clique em **Modificar → Criar grupo** (<kbd>GP</kbd>). Um clique em qualquer membro passa a selecionar o grupo inteiro, nas plantas e em 3D. O grupo é movido, copiado, girado, espelhado e excluído como um todo, e uma cópia é um grupo próprio. No IFC um grupo é um IfcGroup, então outros programas também o veem.
 
+O menu do clique direito numa planta, num corte ou numa elevação tem os mesmos comandos: **Criar grupo** para a seleção e, num grupo, **Desagrupar** e **Editar grupo**. Linhas, textos e hachuras desenhados numa vista também se agrupam, entre eles as linhas de uma planta DXF importada, de modo que um desenho inteiro se move como um todo.
+
+![Linhas desenhadas na planta, agrupadas pelo menu do clique direito](shots/group-drafting.webp)
+
 As propriedades de um grupo selecionado dão o número de elementos que ele contém, com três botões: **Editar grupo**, **Desagrupar** e **Selecionar membros**.
 
 ![Um grupo selecionado: os seus membros destacados, as suas propriedades](shots/group-selected.webp)
