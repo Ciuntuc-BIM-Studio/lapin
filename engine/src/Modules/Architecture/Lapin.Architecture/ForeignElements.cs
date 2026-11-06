@@ -118,16 +118,42 @@ public sealed class ForeignElements : IIfcRecognizer
 
     /// <summary>
     /// Finishes exported as walls of their own made layers of the walls they cover (<see cref="FinishLayers"/>), then
-    /// every wall made this import joined to its neighbours, as a drawn wall is.
+    /// the walls made this import joined where the file's walls meet the way a join of Lapin's would leave them
+    /// (<see cref="FoundJoins"/>: a mitre, a butt, a T, in line; their ends otherwise square where the file's end), their
+    /// openings kept where the file has them while their axes go to the joints.
     /// </summary>
     public void Finish(IEdit edit, RecognitionContext ctx)
     {
         if (FinishLayers.Absorb(edit, ctx.Made, ctx).Count > 0) ctx.Made.RemoveAll(id => edit.Model.Get(id) == null);
         if (ctx.Services.Get<IPathElements>() is not { } paths) return;
-        foreach (var id in ctx.Made.Where(id => edit.Model.Get(id)?.Class == IfcClass.Wall).ToList())
+        var walls = ctx.Made.Where(id => edit.Model.Get(id)?.Class == IfcClass.Wall).ToList();
+        // A wall that took finishes as layers: its footprint and theirs, as one (the outline round them all).
+        foreach (var id in walls)
         {
-            try { Joins.Auto(edit, paths, id); }
-            catch (CommandException ex) { ctx.Notes.Add($"Wall {id}: {ex.Message}"); }
+            if ((edit.Model.Get(id)!.Attrs["imported"] as JsonObject)?["absorbed"] is not JsonArray absorbed || absorbed.Count == 0) continue;
+            var prints = absorbed.Select(a => (string?)a?["id"]).Prepend(id).Select(x => x != null && ctx.Footprints.TryGetValue(x, out var fp) ? fp : null).ToList();
+            if (prints.Any(p => p == null)) { ctx.Footprints.Remove(id); continue; }
+            ctx.Footprints[id] = Polygon2.ConvexHull(prints.SelectMany(p => p!));
+        }
+        // Each opening's place in plan: a join moves its wall's start, which its place along the wall is measured from.
+        var placed = new List<(string Opening, string Wall, Vec2 At)>();
+        foreach (var id in walls)
+        {
+            var w = edit.Model.Get(id)!;
+            var (s, d) = (Walls.Start(w), (Walls.End(w) - Walls.Start(w)).Normalized());
+            foreach (var op in Openings.Of(edit.Model, id))
+                placed.Add((op.Id, id, s + d * op.Num("along")));
+        }
+        try { FoundJoins.Make(edit, paths, walls, ctx.Footprints); }
+        catch (CommandException ex) { ctx.Notes.Add($"Walls not joined: {ex.Message}"); }
+        foreach (var (opId, wallId, at) in placed)
+        {
+            if (edit.Model.Get(opId) is not { } op || edit.Model.Get(wallId) is not { } w) continue;
+            var along = Math.Round(Vec2.Dot(at - Walls.Start(w), (Walls.End(w) - Walls.Start(w)).Normalized()), 6);
+            if (Math.Abs(along - op.Num("along")) < 1e-6) continue;
+            var attrs = op.CloneAttrs();
+            attrs["along"] = along;
+            edit.Replace(op.With(attrs: attrs));
         }
     }
 
@@ -149,6 +175,9 @@ public sealed class ForeignElements : IIfcRecognizer
         if (storey == null) { ctx.Skip("a wall without a storey"); return null; }
         var axis = e.Axis is { Count: >= 2 } a && (P(a[^1]) - P(a[0])).Length > 1e-3 ? (A: P(a[0]), B: P(a[^1])) : ((Vec2 A, Vec2 B)?)null;
         Vec2 start, end; double thickness, baseZ, height;
+        // The file's footprint (for the joins, Finish) and whether its top is its own, flat (no boolean cuts it).
+        IReadOnlyList<Vec2>? footprint = null;
+        var flatTop = false;
         List<LayerSpec> layers;
         (bool Negative, double Offset) usage;
         if (OnePrismOrNull(e, p => p.Vertical) is { } prism)
@@ -172,6 +201,9 @@ public sealed class ForeignElements : IIfcRecognizer
                 usage = (false, -thickness / 2);
             }
             baseZ = prism.BaseZ; height = prism.Height;
+            // The file's footprint: its prism's, or as a boolean cuts it (ends trimmed at a corner).
+            footprint = prism.Clipped ? BodyFootprint(e) ?? Footprints.Plan(prism.Outer) : Footprints.Plan(prism.Outer);
+            flatTop = !prism.Clipped;
         }
         else if (e.Parts is { Count: > 0 } allParts && axis is { } axP && allParts.Where(pt => pt.Extents != null).ToList() is { Count: > 0 } parts)
         {
@@ -193,6 +225,12 @@ public sealed class ForeignElements : IIfcRecognizer
             layers = bands.Select(b => new LayerSpec(b.Material, Math.Round(b.To - b.From, 4), b == core)).ToList();
             usage = (false, bands[0].From);
             baseZ = bands.Min(b => b.Z0); height = bands.Max(b => b.Z1) - baseZ;
+            // Its footprint round its parts' (each a band along the axis); its top flat when every part is one plain prism as high as the rest.
+            var (ps0, pd) = (start, (end - start).Normalized());
+            footprint = Polygon2.ConvexHull(parts.SelectMany(pt => new[] { (pt.Extents!.Value.Along0, pt.Extents.Value.Across0), (pt.Extents.Value.Along1, pt.Extents.Value.Across0),
+                (pt.Extents.Value.Along1, pt.Extents.Value.Across1), (pt.Extents.Value.Along0, pt.Extents.Value.Across1) }).Select(q => ps0 + pd * q.Item1 + pd.Perp * q.Item2));
+            var top = baseZ + height;
+            flatTop = parts.All(pt => pt.Prisms.Count == 1 && pt.Prisms[0].Vertical && !pt.Prisms[0].Clipped && Math.Abs(pt.Extents!.Value.Z1 - top) < 1e-3);
         }
         else if (axis is { } ax5 && e.Extents is { } ext)
         {
@@ -203,6 +241,8 @@ public sealed class ForeignElements : IIfcRecognizer
             layers = Layers(e, thickness, e.Material ?? "Masonry");
             usage = e.Usage ?? (false, fromLayers > 0 ? -thickness / 2 : ext.Across0);
             baseZ = ext.Z0; height = ext.Z1 - ext.Z0;
+            var (es, ed) = (start, (end - start).Normalized());
+            footprint = BodyFootprint(e) ?? [.. new[] { (ext.Along0, ext.Across0), (ext.Along1, ext.Across0), (ext.Along1, ext.Across1), (ext.Along0, ext.Across1) }.Select(q => es + ed * q.Item1 + ed.Perp * q.Item2)];
             ctx.Notes.Add($"{(e.Prisms.Count > 0 ? "a wall whose body is not one vertical prism" : "a wall: " + (e.ShapeNote ?? "no prism"))}: made from its axis, its layers and its body's extents ({e.Name ?? e.GlobalId}).");
         }
         else
@@ -218,8 +258,12 @@ public sealed class ForeignElements : IIfcRecognizer
         if (!(height > 0)) { ctx.Skip("a wall without a height"); return null; }
         var type = WallType(edit, e, layers, thickness, ctx);
         var predefined = e.PredefinedType is "STANDARD" or "SOLIDWALL" or "PARTITIONING" or "ELEMENTEDWALL" or "PLUMBINGWALL" or "SHEAR" or "MOVABLE" or "PARAPET" or "POLYGONAL" ? e.PredefinedType : "STANDARD";
-        var wall = new Entity(e.GlobalId, IfcClass.Wall, e.Name ?? type.Name, Walls.Attrs(start, end, height, baseOffset), predefined);
+        var wallAttrs = Walls.Attrs(start, end, height, baseOffset);
+        // A top the file keeps flat stays so under whatever is over it (an imported roof, a slab): rising to it, or cut by it, is not the file's wall.
+        if (flatTop) wallAttrs["roofTop"] = "none";
+        var wall = new Entity(e.GlobalId, IfcClass.Wall, e.Name ?? type.Name, wallAttrs, predefined);
         edit.Add(wall);
+        if (footprint is { Count: >= 3 }) ctx.Footprints[wall.Id] = footprint;
         Spatial.Contain(edit, storey.Id, wall.Id);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, wall.Id);
         // The layers where the file has them: the usage's sense and offset against the reference line.
@@ -231,6 +275,10 @@ public sealed class ForeignElements : IIfcRecognizer
     }
 
     static Vec2 P(Vec3 v) => new(v.X, v.Y);
+
+    /// <summary>The outline round a wall's body as the file cuts it, at its base (its ends as a boolean trims them), when the file's body gave one.</summary>
+    static IReadOnlyList<Vec2>? BodyFootprint(ForeignElement e) =>
+        e.Footprint is { Count: > 0 } loops && loops.SelectMany(l => l).ToList() is { Count: >= 3 } pts && Polygon2.ConvexHull(pts) is { Length: >= 3 } hull ? hull : null;
 
     /// <summary>The polygon's extent across a line: the least and the greatest distance left of it (negative right).</summary>
     static (double Min, double Max) Across(IReadOnlyList<Vec2> plan, Vec2 origin, Vec2 dir)

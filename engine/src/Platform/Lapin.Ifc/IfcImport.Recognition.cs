@@ -205,11 +205,18 @@ public static partial class IfcImport
             return byGid;
         }
 
-        /// <summary>Every gated element measured: the native geometry <paramref name="geometry"/> gives against the file's body (a wall's with the finishes it took as layers), the joins settled.</summary>
+        /// <summary>
+        /// Every gated element measured: the native geometry <paramref name="geometry"/> gives against the file's body (a wall's
+        /// with the finishes it took as layers), the joins settled. One that differs is measured again with the file's body
+        /// losing what the project's cut order takes out of the native one (a slab over a wall's head: <see cref="ICutters"/>),
+        /// so both are compared after the same cuts; the booleans only where they can change the verdict.
+        /// </summary>
         List<FidelityCheck> Checks(IModelView m, Func<Entity, ElementGeometry?> geometry, bool parallel)
         {
             var byGid = ByGid();
             var bodies = gateBodies!;
+            var cutters = s.Catalog.Get<ICutters>();
+            var booleans = s.Catalog.Get<ISolidBooleans>();
             var measured = new FidelityCheck[gated.Count];
             void One(int i)
             {
@@ -225,7 +232,13 @@ public static partial class IfcImport
                 foreach (var a in Absorbed(native))
                     if (byGid.TryGetValue(a, out var fg)) file = [.. file, .. bodies.GetValueOrDefault(fg.E.Id) ?? []];
                 var mine = RecognitionFidelity.Meshes(geometry(native));
-                measured[i] = RecognitionFidelity.Check(g.Id, g.IfcClass, native.Class, name, file, mine, o.Gate, g.Clipped, joinedTo: RecognitionFidelity.JoinedTo(m, g.Id));
+                var joinedTo = RecognitionFidelity.JoinedTo(m, g.Id);
+                var check = RecognitionFidelity.Check(g.Id, g.IfcClass, native.Class, name, file, mine, o.Gate, g.Clipped, joinedTo: joinedTo);
+                // The cut order only for what differs as it is (the booleans are the gate's dearest part): measured again against the file's body cut so.
+                if (!check.Pass && check.Measured && cutters != null && booleans != null
+                    && RecognitionFidelity.CutAsNative(native, m, file, cutters, booleans) is var cut && !ReferenceEquals(cut, file))
+                    check = RecognitionFidelity.Check(g.Id, g.IfcClass, native.Class, name, cut, mine, o.Gate, g.Clipped, joinedTo: joinedTo);
+                measured[i] = check;
             }
             if (parallel) Parallel.For(0, gated.Count, One);
             else for (var i = 0; i < gated.Count; i++) One(i);
@@ -363,18 +376,21 @@ public static partial class IfcImport
                 Axis: axis, Box: prisms.Count == 0 || unswept ? model.Bounds(e.Id) : null, Usage: usage, Parts: parts,
                 Extents: origin is { } o2 && dir is { } d2 ? model.Extents(e.Id, o2, d2) : null,
                 LongName: space && e.Args.Count > 7 ? Str(e[7]) : null,
-                Footprint: unswept ? model.FootprintLoops(e.Id) ?? Footprint(e.Id) : null);
+                Footprint: unswept ? model.FootprintLoops(e.Id) ?? Footprint(e.Id)
+                    // A wall whose body is not one plain prism (a boolean cuts it, its ends trimmed or its top under a roof; several bodies, no prism): its footprint as cut, for its joins.
+                    : cls is IfcClass.Wall or "IfcWallStandardCase" && !(prisms.Count == 1 && prisms[0].Vertical && !prisms[0].Clipped) ? Footprint(e.Id, s.Catalog.Get<ISolidBooleans>()) : null);
         }
 
         /// <summary>
         /// A body's outline in plan from its triangles, when it is no prism: the
         /// edges of its triangles lying at its lowest level (its floor; slivers
         /// of nearly collinear points too, so their edges pair up) that only one
-        /// such triangle has, chained into loops (the outline and its holes).
+        /// such triangle has, chained into loops (the outline and its holes);
+        /// with <paramref name="booleans"/>, of the body as its booleans cut it.
         /// </summary>
-        List<List<Vec2>>? Footprint(int product)
+        List<List<Vec2>>? Footprint(int product, ISolidBooleans? booleans = null)
         {
-            var (body, _) = model.Shape(product);
+            var (body, _) = model.Shape(product, booleans);
             var edges = new Dictionary<(long, long, long, long), (Vec2 A, Vec2 B, int N)>();
             static (long, long) K(Vec2 p) => ((long)Math.Round(p.X * 1e5), (long)Math.Round(p.Y * 1e5));
             var low = double.MaxValue;

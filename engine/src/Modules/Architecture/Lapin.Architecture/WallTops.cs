@@ -14,7 +14,9 @@ namespace Lapin.Architecture;
 /// wall's base along its axis, the lowest face that looks down. In <c>auto</c>
 /// the storey's roofs count, imported ones with them; attached, the elements
 /// named (<c>roofIds</c>), else every roof. Where the two kinds overlap the
-/// lower one wins.
+/// lower one wins. A wall recognised from a file (its record kept under
+/// <c>imported</c>) never rises above the top the file gives it, its height:
+/// what is over it may only cut it (docs/spec-ifc.md, Recunoașterea).
 /// </summary>
 public static class WallTops
 {
@@ -23,9 +25,22 @@ public static class WallTops
     {
         var roofs = RoofTop.Profile(wall, w, m);
         var bodies = Bodies(wall, m, services);
-        if (bodies.Count == 0) return roofs;
-        var under = Underside(bodies, w);
-        return under == null ? roofs : roofs == null ? under : Merge(roofs, under);
+        var top = bodies.Count == 0 ? roofs : Underside(bodies, w) is { } under ? roofs == null ? under : Merge(roofs, under) : roofs;
+        return top != null && wall.Attrs["imported"] != null ? Capped(top, w.Height) : top;
+    }
+
+    /// <summary>A profile no higher than <paramref name="h"/> (where it crosses it, the crossing kept); null when nothing of it is left under.</summary>
+    static List<(double U, double V)>? Capped(List<(double U, double V)> p, double h)
+    {
+        if (p.All(q => q.V <= h + 1e-9)) return p;
+        var o = new List<(double U, double V)>();
+        for (var i = 0; i < p.Count; i++)
+        {
+            if (i > 0 && (p[i - 1].V - h) * (p[i].V - h) < 0 && p[i].U - p[i - 1].U > 1e-12)
+                o.Add((p[i - 1].U + (p[i].U - p[i - 1].U) * (h - p[i - 1].V) / (p[i].V - p[i - 1].V), h));
+            o.Add((p[i].U, Math.Min(p[i].V, h)));
+        }
+        return o.All(q => Math.Abs(q.V - h) < 1e-6) ? null : Simplify(o);
     }
 
     /// <summary>A triangle of a body with its plan box, and whether it looks down (an underside).</summary>

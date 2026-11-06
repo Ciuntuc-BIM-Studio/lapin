@@ -57,7 +57,10 @@ public sealed record ForeignElement(
     AxisExtents? Extents = null,
     /// <summary>A space's LongName (its name; its Name is its number).</summary>
     string? LongName = null,
-    /// <summary>A space's outline in plan from its triangles, when its body is no prism: the outline first, then its holes.</summary>
+    /// <summary>
+    /// A space's outline in plan from its triangles, when its body is no prism; a wall's, when a boolean cuts its prism (its
+    /// ends trimmed or mitred): the outline first, then its holes.
+    /// </summary>
     IReadOnlyList<IReadOnlyList<Vec2>>? Footprint = null);
 
 /// <summary>A part aggregated under a foreign element: its body as prisms, its material, its extents in the whole's axis frame.</summary>
@@ -80,6 +83,8 @@ public sealed class RecognitionContext(IServices services)
     /// <summary>The types this import made (not found in the project): a recogniser may take back one it leaves unused.</summary>
     public HashSet<string> CreatedTypes { get; } = [];
     public List<string> Notes { get; } = [];
+    /// <summary>The plan outline the file gives an element made (by its id), for the joins that keep it (<see cref="FoundJoins"/>).</summary>
+    public Dictionary<string, IReadOnlyList<Vec2>> Footprints { get; } = [];
     /// <summary>Why an element stays a reference, counted by reason.</summary>
     public Dictionary<string, int> Skipped { get; } = [];
 

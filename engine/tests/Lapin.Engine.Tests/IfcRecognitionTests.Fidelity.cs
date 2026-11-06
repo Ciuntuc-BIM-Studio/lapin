@@ -108,9 +108,10 @@ public partial class IfcRecognitionTests
         output.WriteLine(ended.ToJson().ToJsonString());
         Assert.True(ended.Measured);
         Assert.False(ended.Pass);
-        // The corner the 45° cut takes off is there in Lapin's: 0.3 × 0.3 / 2 over 1.455 m² of footprint, the corner 212 mm off the cut.
-        Assert.Equal(0.045 / 1.455, ended.Volume!.Value, 3);
-        Assert.Equal(300 / Math.Sqrt(2), ended.OutlineMm!.Value, 0);
+        // Squared halfway along the 45° cut (a free end ends where the file's does, FoundJoins):
+        // the volume the file's, the corners 150 mm off the cut's ends.
+        Assert.InRange(Math.Abs(ended.Volume!.Value), 0, 1e-6);
+        Assert.Equal(150, ended.OutlineMm!.Value, 0);
         Assert.StartsWith("in plan: an end cut", ended.Cause);
     }
 

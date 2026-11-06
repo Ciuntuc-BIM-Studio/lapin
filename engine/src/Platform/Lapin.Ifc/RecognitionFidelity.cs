@@ -100,7 +100,8 @@ public sealed record FidelityReport(FidelityOptions Options, IReadOnlyList<Fidel
 
 /// <summary>
 /// The fidelity gate's measures (docs/spec-ifc.md, Poarta de fidelitate): a recognised element's native solid against the
-/// body the file gives it, by volume, bounding box and base outline. Cheap: triangles only, no booleans of its own.
+/// body the file gives it, by volume, bounding box and base outline. Cheap: triangles only, booleans only where the cut
+/// order takes something out of the native element (<see cref="CutAsNative"/>).
 /// </summary>
 public static class RecognitionFidelity
 {
@@ -120,6 +121,36 @@ public static class RecognitionFidelity
     /// <summary>The elements one is joined to (IfcRelConnectsPathElements, either side).</summary>
     public static List<string> JoinedTo(IModelView model, string id) =>
         [.. model.RelationsOf(id, IfcClass.RelConnectsPathElements).SelectMany(r => r.Related.Prepend(r.Relating)).Where(x => x != id).Distinct()];
+
+    /// <summary>
+    /// The file's body cut as the native element is by the project's cut order (docs/spec-ifc.md, Poarta de fidelitate):
+    /// the envelopes of the elements ranked over it that reach into it (a slab over a wall's head, a column through it; never
+    /// one joined to it) taken out of each of its meshes. The model counts what two elements share once, in the one ranked
+    /// higher, where the file's own bodies count it in both: measured so, the two are compared like with like. The body as
+    /// it was when nothing reaches into it, or a mesh that cannot be made a solid.
+    /// </summary>
+    public static List<MeshBuilder> CutAsNative(Entity native, IModelView model, List<MeshBuilder> file, ICutters cutters, ISolidBooleans booleans)
+    {
+        var bodies = file.Where(x => x.T.Count > 0).ToList();
+        if (bodies.Count == 0) return file;
+        var (min, max) = Box(bodies);
+        IReadOnlyList<Solid> by;
+        try { by = cutters.For(native, model, (min, max)); }
+        catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException or CommandException) { return file; }
+        if (by.Count == 0) return file;
+        var o = new List<MeshBuilder>();
+        foreach (var mesh in bodies)
+        {
+            var w = mesh.Welded();
+            if (SolidFromMesh.Build(w.V, w.T) is not { } solid) return file;
+            try
+            {
+                if (booleans.Difference(solid, by) is { } cut) o.Add(MeshBuilder.FromSolid(cut));
+            }
+            catch (InvalidOperationException) { return file; }
+        }
+        return o;
+    }
 
     /// <summary>The types an import made that no element of the model is of any more (their elements made references again by the gate), gone with their layer sets.</summary>
     public static void DropUnusedTypes(IEdit edit, RecognitionContext ctx)
