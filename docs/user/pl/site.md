@@ -59,9 +59,13 @@ Zestawienie **Współrzędne działki** (Zestawienia → + → Współrzędne dz
 
 **Roślina** (PN) sadzi jedną roślinę jednym kliknięciem, **Strefa nasadzeń** (PZ) obsiewa obrys mieszanką gatunków z zadaną gęstością; zaznacz jedną z nich i wybierz jej gatunek we właściwościach. Lista gatunków to biblioteka roślin rodzimych lub tradycyjnych w Rumunii, w grupach: **drzewa owocowe** (jabłoń, grusza, śliwa, czereśnia i wiśnia, morela, pigwa), **iglaste** (jodła pospolita, świerk pospolity, sosna zwyczajna i czarna), **drzewa liściaste** (orzech włoski, lipa, brzoza, klon), **krzewy** (leszczyna, dereń jadalny, bez czarny, róża dzika, lilak, rokitnik, porzeczka czerwona, żywotnik, bukszpan) oraz **rośliny okrywowe**. Każdy ma swoją nazwę łacińską, zwykłą wysokość i koronę, a gdy interfejs jest po rumuńsku, jest pokazywany pod nazwą rumuńską. Zestawienie nasadzeń podaje obok każdego gatunku nazwę łacińską i rumuńską.
 
-Na rzucie każda roślina jest rysowana z góry tak, jak pokazuje ją rysunek architektury krajobrazu, na czarno, o szerokości swojej korony: drzewo owocowe jako klapowana korona z rozwidlonymi gałęziami, orzech lub lipa jako ząbkowana korona wokół ciemnego środka, jodła lub świerk jako gwiazda gałązek z igłami, sosna jako okrągła kępka igieł, krzew jako mała chmurka. Lapin sam rysuje każdy symbol, więc sąsiednie drzewa nieco się różnią, a strefa nigdy nie wygląda jak ostemplowana. W skali 1:1000 i mniejszej (plan orientacyjny) rysowane są tylko obrysy koron. W 3D drzewa iglaste są stożkami, pozostałe drzewa mają zaokrągloną koronę na pniu, a krzewy niską kopułę.
+Na rzucie każda roślina jest rysowana z góry cienką linią, tak szeroka jak jej korona, samym konturem: orzech lub lipa jako łagodnie klapowana korona, drzewo owocowe jako okrąg, jodła lub świerk jako gwiazda, sosna jako postrzępiony pierścień, krzew jako mała chmurka, strzyżona roślina żywopłotowa jako okrąg, z małym krzyżykiem przy pniu drzewa. Elewacje i przekroje rysują każdą roślinę jednym konturem: koronę drzewa na pniu, piętrowy stożek iglaka, kopułę krzewu. Po kilka linii, więc plan zagospodarowania z setkami drzew pozostaje lekki. W 3D iglaki są stożkami, inne drzewa mają zaokrągloną koronę na pniu, a krzewy niską kopułę.
 
 ![Mały sad na rzucie: drzewa owocowe, orzech, drzewa iglaste i krzewy](shots/planting-symbols.webp)
+
+Ustaw **Sztafaż w 2D** w stylu widoku na **szczegółowo**, by dostać symbole planu zieleni, na czarno: drzewo owocowe jako klapowana korona z rozwidlonymi gałęziami, orzech lub lipa jako ząbkowana korona wokół ciemnego rdzenia, jodła lub świerk jako gwiazda gałązek z igłami, sosna jako okrągła kępka igieł, krzew jako mała chmurka. Lapin sam rysuje każdy symbol, więc sąsiednie drzewa nieco się różnią, a strefa nigdy nie wygląda na odbitą pieczątką; w skali 1:1000 i mniejszej (plan orientacyjny) rysowane są tylko kontury koron.
+
+![Ten sam sad narysowany szczegółowo](shots/planting-symbols-detailed.webp)
 
 ## Ludzie i samochody
 
@@ -71,13 +75,15 @@ Na rzucie każda roślina jest rysowana z góry tak, jak pokazuje ją rysunek ar
 
 Zaznacz jeden, aby zmienić go we właściwościach: rodzaj, **obrót**, **wysokość** (domyślnie zwykły rozmiar rodzaju), jak wysoko stoi **nad terenem** (na tarasie lub balkonie) i **kolor** ubrania lub nadwozia. Przesuwasz, obracasz, odbijasz i kopiujesz go jak każdy element.
 
-W 3D to proste postacie: ludzie z kończynami, ubraniem, włosami i butami, samochody z szybami, kołami i światłami. Elewacje i przekroje rysują je z ich brył, z cieniami słońca widoku, gdy je ma. Rzuty i plany sytuacyjne rysują je z góry jako symbole: ramiona i głowę osoby, obrys samochodu i jego szyby.
+W 3D to proste figury: osoby z kończynami, ubraniem, włosami i butami, samochody z szybami, kołami i światłami. Rysunki zachowują je proste, tak jak architekt rysuje sztafaż, cienką linią: rzuty i plany zagospodarowania z góry, ramiona i głowa osoby, kontur samochodu z zaokrąglonymi narożnikami i jego przednia szyba; elewacje i przekroje jako sylwetki, po jednym konturze, postać osoby, bok lub przód samochodu tak, jak widzi go widok, nigdy linie ich brył.
 
 ![Na rzucie](shots/entourage-plan.webp)
 
 ![Na elewacji południowej](shots/entourage-elevation.webp)
 
 ![Właściwości samochodu](shots/entourage-properties.webp)
+
+To, jak osoby, samochody i rośliny rysują się w 2D, jest ustawieniem stylu widoku, **Sztafaż w 2D** (we właściwościach widoku lub **Widok → Ustawienia widoku**; dla całego stylu **Zarządzaj → Style widoku**): **kontury** (domyślnie), **abstrakcyjnie** (osoba jako okrąg na rzucie i głowa nad tułowiem na elewacji, samochód jako zaokrąglone pudełko, drzewo jako okrąg z pniem), **szczegółowo** (symbole zieleni roślin i każda linia brył, z cieniami słonecznymi widoku, tak jak Lapin rysował je wcześniej) albo **nierysowany**. **Wypełnienie sylwetek** wypełnia sylwetki na elewacjach i przekrojach jasnoszarym lub bladozielonym kolorem. Rysują się piórem 2 (0,13 mm w 1:100), chyba że **Zarządzaj → Style obiektów** nada kategorii **Sztafaż** inne, a **Widoczność / Grafika** ukrywa tę kategorię w widoku. Arkusze, PDF i DXF drukują je tak, jak rysuje je widok; ich bryły 3D nigdy się nie zmieniają. Projekty zrobione wcześniej też rysują je jako kontury.
 
 Nadają rysunkom i obrazom skalę, ale nie są częścią budynku. Eksport IFC lub Fragments (File → Export…) pomija je, chyba że zaznaczysz **Sztafaż** na jego liście rodzajów; IFC zapisuje je jako IfcBuildingElementProxy „Entourage”. Eksporty 3D (glTF, USD, COLLADA) je zabierają. Testy kolizji je pomijają.
 

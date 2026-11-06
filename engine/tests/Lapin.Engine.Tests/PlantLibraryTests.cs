@@ -113,6 +113,8 @@ public sealed class PlantLibraryTests
         var walnut = (string)f.Run("civil.addPlanting", new JsonObject { ["storeyId"] = ground, ["x"] = 0, ["y"] = 0, ["species"] = new JsonArray(new JsonObject { ["name"] = "Walnut" }) })!["id"]!;
         var fir = (string)f.Run("civil.addPlanting", new JsonObject { ["storeyId"] = ground, ["x"] = 15, ["y"] = 0, ["species"] = new JsonArray(new JsonObject { ["name"] = "Silver fir" }) })!["id"]!;
         Assert.Equal("Juglans regia", Plantings.SpeciesOf(f.Model.Get(walnut)!)[0].Latin);
+        // The detailed symbols (decision 234), drawn when the view style asks for them (decision 341: outlines by default, Entourage2dTests).
+        f.Run("viewStyle.update", new JsonObject { ["id"] = "architectural", ["entourage"] = "detailed" });
         var plan = Views.Find(f.Model, "plan:" + ground)!;
         var site = f.Model.OfClass(Views.Class).Single(v => SitePlans.Of(v) == SitePlans.Situation);
         foreach (var view in new[] { plan, site })

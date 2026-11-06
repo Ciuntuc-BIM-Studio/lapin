@@ -209,7 +209,8 @@ public static class Pens
                 styled = new ResolvedLine(ls.Pen is { } lsPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), lsPen, o.Scale) : styled?.WidthMm, ls.Color ?? styled?.Color, ls.Pattern != null ? LineStyles.DashOf(ls.Pattern) : styled?.Dash);
             // The element's own style (an IFC file's colour and pattern) under everything else.
             if (l.Own is { Empty: false } own)
-                styled = new ResolvedLine(styled?.WidthMm, styled?.Color ?? (g?.LineColor == null ? own.Color : null), styled?.Dash ?? (own.Pattern != null ? LineStyles.DashOf(own.Pattern) : null));
+                styled = new ResolvedLine(styled?.WidthMm ?? (g?.LineWeight == null && own.Pen is { } ownPen ? LineStyles.PenWidth(o.Table ?? LineStyles.DefaultPenTable(), ownPen, o.Scale) : null),
+                    styled?.Color ?? (g?.LineColor == null ? own.Color : null), styled?.Dash ?? (own.Pattern != null ? LineStyles.DashOf(own.Pattern) : null));
             var color = o.ElementColors?.GetValueOrDefault(l.Element) ?? styled?.Color ?? g?.LineColor;
             Pen pen;
             switch (l.Role)

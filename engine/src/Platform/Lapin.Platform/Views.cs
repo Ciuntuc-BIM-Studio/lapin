@@ -377,7 +377,11 @@ public static class Views
     /// Every element's parts, and in a plan the symbols of the doors, windows and roofs of its storey; an element with its
     /// own 2D from an IFC file (<see cref="Plan2d"/>) draws that in a plan instead of its parts, unless the view's style says not.
     /// </summary>
-    static (List<DrawPart> Parts, List<DrawSymbol> Symbols, List<DFill> Fills, List<DText> Texts) Gather(IQueryContext q, Entity view)
+    static (List<DrawPart> Parts, List<DrawSymbol> Symbols, List<DFill> Fills, List<DText> Texts) Gather(IQueryContext q, Entity view) =>
+        Gather(q, view, null);
+
+    /// <summary>As <see cref="Gather(IQueryContext, Entity)"/>, the silhouettes an elevation or a section draws added to <paramref name="silhouettes"/> (decision 341).</summary>
+    static (List<DrawPart> Parts, List<DrawSymbol> Symbols, List<DFill> Fills, List<DText> Texts) Gather(IQueryContext q, Entity view, List<DrawSilhouette>? silhouettes)
     {
         var m = q.Model;
         var parts = new List<DrawPart>();
@@ -398,6 +402,9 @@ public static class Views
         var detail = PlanDetail.Of(view.NumOrNull("scale") ?? 100);
         // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
         var style = ViewStyles.Of(m, view);
+        // People, cars and plants (decision 341): their symbols and silhouettes in the style's mode, thin.
+        var entourage = style.Entourage;
+        var thin = new LineStyleSpec(Pen: EntouragePen);
         var bandCache = new Dictionary<string, IReadOnlyList<LayerBand>?>();
         double? cutZ = plan && !site && style.Ifc2d && m.Get(storey ?? "") is { Class: IfcClass.BuildingStorey } ? Range(m, view).Cut : null;
         foreach (var e in m.Entities)
@@ -425,26 +432,35 @@ public static class Views
                 if (bySymbol)
                     foreach (var item in g.Plan!)
                     {
-                        if (!item.At(detail)) continue;
+                        if (!item.At(detail) || !item.In(entourage)) continue;
                         if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                         var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" or "heavy" => LineRole.Cut, _ => null };
-                        if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role));
+                        if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Mode != null ? item.Style ?? thin : null));
                     }
                 continue;
             }
+            // An element with silhouettes (decision 341) draws them in an elevation or a section, unless the style draws the
+            // entourage detailed (its body's edges, as before) or not at all; its parts still size the view.
+            var bySilhouette = !plan && !stored && g.Silhouettes != null && entourage != "detailed";
             foreach (var p in g.Parts)
-                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored));
+                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored) { BySilhouette = bySilhouette });
+            if (bySilhouette && silhouettes != null)
+                foreach (var sh in g.Silhouettes!)
+                    if (sh.Mode == null || sh.Mode == entourage) silhouettes.Add(new DrawSilhouette(sh, e.Id, e.Class, style.EntourageFill, thin));
             if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
                 foreach (var item in g.Plan)
                 {
-                    if (!item.At(detail)) continue;
+                    if (!item.At(detail) || !item.In(entourage)) continue;
                     if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                     var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
-                    if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Style));
+                    if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Mode != null ? item.Style ?? thin : item.Style));
                 }
         }
         return (parts, symbols, fills, texts);
     }
+
+    /// <summary>The pen people, cars and plants draw with unless the object styles say another (decision 341): pen 2, 0.13 mm at 1:100.</summary>
+    public const int EntouragePen = 2;
 
     /// <summary>A symbol's solid area (a plant's dark core, a trunk's dot): its plan item of kind <c>fill</c>, in its style's colour, black by default.</summary>
     static DFill? SymbolFill(PlanItem item, Entity e) =>
@@ -489,9 +505,12 @@ public static class Views
     /// <summary>As <see cref="Generate"/>, with the parts it drew and, laid in pieces (a developed section), each piece's spec, station and own drawing (before it was laid).</summary>
     static (ViewDrawing? Drawing, ViewSpec? Spec, string? Problem, List<DrawPart> Parts, List<(ViewSpec Spec, double Station, ViewDrawing Drawing)>? Pieces) GenerateWith(IQueryContext q, Entity view)
     {
-        var (parts, symbols, fills, texts) = Gather(q, view);
+        var silhouettes = new List<DrawSilhouette>();
+        var (parts, symbols, fills, texts) = Gather(q, view, silhouettes);
         var (spec, problem) = Spec(q.Model, view, parts, q.Services);
-        if (spec == null) return (null, null, problem, parts, null);
+        // What is drawn by its silhouettes only sizes the view: the surface hatches and shadows never see its body.
+        var drawn = parts.Any(p => p.BySilhouette) ? parts.Where(p => !p.BySilhouette).ToList() : parts;
+        if (spec == null) return (null, null, problem, drawn, null);
         var keys = new Dictionary<string, string?>();
         // Without the view style's joins, a surface goes on only within its own element.
         var joins = ViewStyles.Of(q.Model, view).Joins;
@@ -502,12 +521,12 @@ public static class Views
         {
             // A developed section: each piece a planar cut seen between its ends, laid at its station.
             laid = new(pieces.Count);
-            foreach (var (piece, station) in pieces) laid.Add((piece, station, Generator.Draw(parts, piece, symbols, Key)));
+            foreach (var (piece, station) in pieces) laid.Add((piece, station, Generator.Draw(parts, piece, symbols, Key, silhouettes)));
             drawing = ViewDrawing.Join(laid.Select(p => p.Item3.Shifted(p.Item2)).ToList());
         }
-        else drawing = Generator.Draw(parts, spec, symbols, Key);
+        else drawing = Generator.Draw(parts, spec, symbols, Key, silhouettes);
         if (spec.Kind == "plan" && (fills.Count > 0 || texts.Count > 0)) drawing = drawing with { Fills = fills, Texts = texts };
-        return (drawing, spec, null, parts, laid);
+        return (drawing, spec, null, drawn, laid);
     }
 
     /// <summary>A developed section's pieces: each straight piece's spec (seeing only between its ends) and the station it is laid at; one piece (or none) for a plain section.</summary>

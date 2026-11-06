@@ -59,9 +59,13 @@ Die Bauteilliste **Grundstückskoordinaten** (Bauteillisten → + → Grundstüc
 
 **Pflanze** (PN) setzt eine Pflanze per Klick, **Pflanzfläche** (PZ) besät einen Umriss mit einer Artenmischung in einer Dichte; wähle sie aus und bestimme die Arten in den Eigenschaften. Die Arten stammen aus einer Bibliothek der in Rumänien heimischen oder traditionellen Pflanzen, in Gruppen: **Obstbäume** (Apfel, Birne, Pflaume, Süß- und Sauerkirsche, Aprikose, Quitte), **Nadelbäume** (Weißtanne, Fichte, Wald- und Schwarzkiefer), **Laubbäume** (Walnuss, Linde, Birke, Ahorn), **Sträucher** (Hasel, Kornelkirsche, Holunder, Hundsrose, Flieder, Sanddorn, Johannisbeere, Thuja, Buchsbaum) und **Bodendecker**. Jede hat ihren lateinischen Namen, ihre übliche Höhe und Krone. Die Pflanzliste zeigt den lateinischen und den rumänischen Namen neben jeder Art.
 
-Im Grundriss wird jede Pflanze von oben gezeichnet, wie in einem Freiflächenplan, schwarz und so breit wie ihre Krone: ein Obstbaum als gelappte Krone mit gegabelten Ästen, ein Walnussbaum oder eine Linde als gewellte Krone um einen dunklen Kern, eine Tanne oder Fichte als Stern aus Nadelzweigen, eine Kiefer als runder Nadelbüschel, ein Strauch als kleine Wolke. Lapin zeichnet jedes Symbol selbst, sodass benachbarte Bäume leicht verschieden sind. Bei 1:1000 und kleiner (Übersichtslageplan) werden nur die Umrisse der Kronen gezeichnet. In 3D sind Nadelbäume Kegel, die übrigen Bäume haben eine runde Krone auf dem Stamm und Sträucher eine flache Kuppel.
+Im Grundriss wird jede Pflanze von oben mit einer dünnen Linie gezeichnet, so breit wie ihre Krone, nur als Umriss: ein Walnussbaum oder eine Linde als weich gelappte Krone, ein Obstbaum als Kreis, eine Tanne oder Fichte als Stern, eine Kiefer als gezackter Ring, ein Strauch als kleine Wolke, eine geschnittene Heckenpflanze als Kreis, mit einem kleinen Kreuz am Stamm eines Baumes. Ansichten und Schnitte zeichnen jede Pflanze als einen Umriss: die Krone eines Baumes auf seinem Stamm, den gestuften Kegel eines Nadelbaums, die Kuppel eines Strauchs. Nur wenige Linien je Pflanze, so bleibt ein Lageplan mit Hunderten von Bäumen leicht. In 3D sind Nadelbäume Kegel, die anderen Bäume haben eine runde Krone auf ihrem Stamm und Sträucher eine flache Kuppel.
 
 ![Ein kleiner Obstgarten im Grundriss: Obstbäume, ein Walnussbaum, Nadelbäume und Sträucher](shots/planting-symbols.webp)
+
+Stelle **Staffage in 2D** im Ansichtsstil auf **detailliert** für die Symbole eines Landschaftsplans, in Schwarz: ein Obstbaum als gelappte Krone mit gegabelten Ästen, ein Walnussbaum oder eine Linde als gewellte Krone um einen dunklen Kern, eine Tanne oder Fichte als Stern aus Nadelzweigen, eine Kiefer als runder Nadelbüschel, ein Strauch als kleine Wolke. Lapin zeichnet jedes Symbol selbst, sodass benachbarte Bäume sich etwas unterscheiden und eine Zone nie gestempelt aussieht; bei 1:1000 und kleiner (ein Übersichtsplan) werden nur die Umrisse der Kronen gezeichnet.
+
+![Derselbe Obstgarten detailliert gezeichnet](shots/planting-symbols-detailed.webp)
 
 ## Personen und Autos
 
@@ -71,13 +75,15 @@ Im Grundriss wird jede Pflanze von oben gezeichnet, wie in einem Freiflächenpla
 
 Wähle eines aus, um es in den Eigenschaften zu ändern: seine Art, seine **Drehung**, seine **Höhe** (standardmäßig die übliche Größe seiner Art), wie weit es **über dem Gelände** steht (auf einer Terrasse oder einem Balkon) und die **Farbe** seiner Kleidung oder Karosserie. Verschieben, drehen, spiegeln und kopieren wie jedes Element.
 
-In 3D sind es einfache Figuren: Personen mit Gliedern, Kleidung, Haaren und Schuhen, Autos mit Scheiben, Rädern und Lichtern. Ansichten und Schnitte zeichnen sie aus ihren Körpern, mit den Sonnenschatten der Ansicht, wenn sie welche hat. Grundrisse und Lagepläne zeichnen sie von oben als Symbole: Schultern und Kopf einer Person, den Umriss eines Autos und seine Scheiben.
+In 3D sind sie einfache Figuren: Personen mit Gliedmaßen, Kleidung, Haaren und Schuhen, Autos mit Scheiben, Rädern und Lichtern. Zeichnungen halten sie einfach, wie ein Architekt Staffage zeichnet, mit einer dünnen Linie: Grundrisse und Lagepläne von oben, die Schultern und der Kopf einer Person, der Umriss eines Autos mit gerundeten Ecken und seiner Windschutzscheibe; Ansichten und Schnitte als Silhouetten, je ein Umriss, die Figur einer Person, die Seite oder die Front eines Autos, wie die Ansicht es sieht, nie die Linien ihrer Körper.
 
 ![Im Grundriss](shots/entourage-plan.webp)
 
 ![In der Südansicht](shots/entourage-elevation.webp)
 
 ![Die Eigenschaften eines Autos](shots/entourage-properties.webp)
+
+Wie Personen, Autos und Pflanzen in 2D gezeichnet werden, ist eine Einstellung des Ansichtsstils, **Staffage in 2D** (in den Eigenschaften der Ansicht oder **Ansicht → Ansichtseinstellungen**; für einen ganzen Stil **Verwalten → Ansichtsstile**): **Umrisse** (Standard), **abstrakt** (eine Person ein Kreis im Grundriss und ein Kopf über einem Körper in einer Ansicht, ein Auto ein abgerundeter Kasten, ein Baum ein Kreis mit seinem Stamm), **detailliert** (die Landschaftssymbole der Pflanzen und jede Linie der Körper, mit den Sonnenschatten der Ansicht, wie Lapin sie vorher zeichnete) oder **nicht gezeichnet**. **Silhouettenfüllung** füllt die Silhouetten in Ansichten und Schnitten hellgrau oder blassgrün. Sie werden mit Stift 2 gezeichnet (0,13 mm bei 1:100), sofern **Verwalten → Objektstile** der Kategorie **Staffage** keinen anderen gibt, und **Sichtbarkeit / Grafiken** blendet die Kategorie in einer Ansicht aus. Pläne, das PDF und DXF drucken sie, wie die Ansicht sie zeichnet; ihre 3D-Körper ändern sich nie. Auch früher erstellte Projekte zeichnen sie als Umrisse.
 
 Sie geben Zeichnungen und Bildern ihren Maßstab, gehören aber nicht zum Gebäude. Ein IFC- oder Fragments-Export (File → Export…) lässt sie weg, außer du hakst **Staffage** in seiner Liste der Arten an; IFC schreibt sie als IfcBuildingElementProxy „Entourage“. Die 3D-Exporte (glTF, USD, COLLADA) nehmen sie mit. Kollisionsprüfungen lassen sie weg.
 

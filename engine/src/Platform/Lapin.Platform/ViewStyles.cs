@@ -28,7 +28,11 @@ namespace Lapin.Platform;
 /// 299); on in the Architectural style, off in the others;</item>
 /// <item><c>surfaceHatch</c>: whether elevations and sections hatch the faces they
 /// see with their materials' elevation graphics (decision 325,
-/// <see cref="SurfaceHatches"/>); on in the Architectural style, off in the others.</item>
+/// <see cref="SurfaceHatches"/>); on in the Architectural style, off in the others;</item>
+/// <item><c>entourage</c>: how people, cars and plants draw in 2D (decision 341): <c>outline</c> (the default, a style
+/// saved before it too: a plan's simple symbol, an elevation's or a section's silhouette, never their bodies' edges),
+/// <c>abstract</c> (circles and boxes), <c>detailed</c> (the symbols and projected bodies drawn before) or <c>none</c>;
+/// <c>entourageFill</c>: the silhouettes' fill in elevations and sections, a colour, none by default.</item>
 /// </list>
 /// A view takes its style (<c>viewStyle</c>, else its discipline's), and may
 /// set any of these itself: what it sets wins over the style.
@@ -37,15 +41,28 @@ public static class ViewStyles
 {
     public const string Key = "viewStyles";
     public static readonly string[] LayerModes = ["all", "noFinishes", "core"];
-    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch"];
+    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill"];
+    /// <summary>How people, cars and plants draw in 2D (decision 341).</summary>
+    public static readonly string[] EntourageModes = ["outline", "abstract", "detailed", "none"];
+
+    static string EntourageMode(JsonNode? n) =>
+        (string?)n is { } m ? EntourageModes.Contains(m) ? m : throw new CommandException($"„{m}” is not outline, abstract, detailed or none.") : "outline";
+
+    /// <summary>A silhouettes' fill: a colour (#rrggbb), or null for none.</summary>
+    static string? FillOf(JsonNode? n) =>
+        n is JsonValue v && v.TryGetValue<string>(out var c) && c.Length == 7 && c[0] == '#' ? c : null;
+
+    static string? CheckedFill(JsonNode? n) =>
+        n == null || (string?)n is "" or "none" ? null : FillOf(n) ?? throw new CommandException("A fill is a colour (#rrggbb) or none.");
 
     /// <summary>A style, or a view's settings as its style and its own choices make them.</summary>
-    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true)
+    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null)
     {
         public JsonObject ToJson() => new()
         {
             ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead, ["ifc2d"] = Ifc2d,
             ["voids"] = Voids, ["voidSizes"] = VoidSizes, ["finishHatch"] = FinishHatch, ["surfaceHatch"] = SurfaceHatch,
+            ["entourage"] = Entourage, ["entourageFill"] = EntourageFill,
         };
 
         public static Style From(JsonObject o) => new(
@@ -59,7 +76,10 @@ public static class ViewStyles
             // A style saved before floor finish hatches (decision 299): on unless it is a structural, MEP or coordination one.
             o["finishHatch"] is JsonValue fv && fv.TryGetValue<bool>(out var fh) ? fh : ArchitecturalByDefault(o),
             // The same for surface hatches (decision 325).
-            o["surfaceHatch"] is JsonValue shv && shv.TryGetValue<bool>(out var sh) ? sh : ArchitecturalByDefault(o));
+            o["surfaceHatch"] is JsonValue shv && shv.TryGetValue<bool>(out var sh) ? sh : ArchitecturalByDefault(o),
+            // A style saved before decision 341 draws the entourage as outlines too: the new simple look.
+            (string?)o["entourage"] is { } en && EntourageModes.Contains(en) ? en : "outline",
+            FillOf(o["entourageFill"]));
 
         /// <summary>Whether a style saved without a newer field takes it on: unless it is a structural, MEP or coordination one.</summary>
         static bool ArchitecturalByDefault(JsonObject o) =>
@@ -106,6 +126,8 @@ public static class ViewStyles
             VoidSizes = o["voidSizes"] is JsonValue sv && sv.TryGetValue<bool>(out var sz) ? sz : s.VoidSizes,
             FinishHatch = o["finishHatch"] is JsonValue fv && fv.TryGetValue<bool>(out var fh) ? fh : s.FinishHatch,
             SurfaceHatch = o["surfaceHatch"] is JsonValue shv && shv.TryGetValue<bool>(out var sh) ? sh : s.SurfaceHatch,
+            Entourage = (string?)o["entourage"] is { } en && EntourageModes.Contains(en) ? en : s.Entourage,
+            EntourageFill = o.ContainsKey("entourageFill") ? FillOf(o["entourageFill"]) : s.EntourageFill,
         };
     }
 
@@ -176,6 +198,8 @@ public static class ViewStyles
         if (a["voidSizes"] is JsonValue sv && sv.TryGetValue<bool>(out var sz)) s = s with { VoidSizes = sz };
         if (a["finishHatch"] is JsonValue fv && fv.TryGetValue<bool>(out var fh)) s = s with { FinishHatch = fh };
         if (a["surfaceHatch"] is JsonValue shv && shv.TryGetValue<bool>(out var sh)) s = s with { SurfaceHatch = sh };
+        if (a.ContainsKey("entourage")) s = s with { Entourage = EntourageMode(a["entourage"]) };
+        if (a.ContainsKey("entourageFill")) s = s with { EntourageFill = CheckedFill(a["entourageFill"]) };
         return s;
     }
 
@@ -262,6 +286,9 @@ public static class ViewStyles
                 var value = a[f];
                 if (value == null) { own.Remove(f); continue; }
                 if (f == "layers") own[f] = (string?)value is { } l && LayerModes.Contains(l) ? l : throw new CommandException($"„{value}” is not all, noFinishes or core.");
+                else if (f == "entourage") own[f] = EntourageMode(value);
+                // A fill set to none on the view, over a style's colour: kept as "none".
+                else if (f == "entourageFill") own[f] = CheckedFill(value) ?? "none";
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }
             if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");

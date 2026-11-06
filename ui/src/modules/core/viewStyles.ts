@@ -14,8 +14,16 @@ export type LayerMode = 'all' | 'noFinishes' | 'core';
  * voids: the openings' voids drawn, crossed and marked (decision 290); voidSizes: with their sizes and bottom levels.
  * finishHatch: plans hatch the rooms' floor finishes (decision 299; a reflected ceiling plan their ceilings).
  * surfaceHatch: elevations and sections hatch the faces they see with their materials' elevation hatch (decision 325).
+ * entourage: how people, cars and plants draw in 2D (decision 341): outlines (the default), abstract, detailed or none;
+ * entourageFill: the colour their silhouettes are filled with in elevations and sections, null for none.
  */
-export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean }
+export type EntourageMode = 'outline' | 'abstract' | 'detailed' | 'none';
+export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null }
+
+/** The entourage modes as the editors offer them. */
+export const ENTOURAGE_MODES: [EntourageMode, string][] = [['outline', 'outlines'], ['abstract', 'abstract'], ['detailed', 'detailed'], ['none', 'not drawn']];
+/** The silhouettes' fills offered: none, or a pale colour that prints light. */
+export const ENTOURAGE_FILLS: [string, string][] = [['', 'no fill'], ['#e8e8e8', 'light grey'], ['#e2ecd8', 'pale green']];
 
 /** The styles, and the model they were asked for (the session's nodes map, new with every diff). */
 const useStyles = create<{ styles: ViewStyle[]; asked: unknown }>(() => ({ styles: [], asked: null }));

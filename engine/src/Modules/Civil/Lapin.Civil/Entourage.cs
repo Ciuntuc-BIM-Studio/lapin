@@ -79,10 +79,22 @@ public static class Entourage
             p.Solids.Add(s);
         }
         var plan = new List<PlanItem>();
-        if (kind.Category == "car") Car(f, kind, HeightOf(e), color, Add, plan);
-        else Person(f, kind.Key, HeightOf(e), color, Skins[StableHash(e.Id) % Skins.Length], Add, plan);
+        var silhouettes = new List<Lapin.Drawing.Views.Silhouette>();
+        var foot = new Vec3(f.At.X, f.At.Y, f.Z);
+        if (kind.Category == "car")
+        {
+            var shape = Car(f, kind, HeightOf(e), color, Add, plan);
+            plan.AddRange(Entourage2d.CarPlan(shape, f.Q));
+            silhouettes.AddRange(Entourage2d.CarSilhouettes(shape, foot, new Vec2(f.Cos, f.Sin)));
+        }
+        else
+        {
+            Person(f, kind.Key, HeightOf(e), color, Skins[StableHash(e.Id) % Skins.Length], Add, plan);
+            plan.AddRange(Entourage2d.PersonPlan(kind.Key, HeightOf(e), f.Q));
+            silhouettes.AddRange(Entourage2d.PersonSilhouettes(kind.Key, HeightOf(e), foot));
+        }
         var list = parts.Select(p => new GeometryPart(p.Key, p.Value.Color, Paths.Combine(p.Value.Solids, "entourage"), null, p.Key)).ToList();
-        return new ElementGeometry(list, plan, [f.At]);
+        return new ElementGeometry(list, plan, [f.At], Silhouettes: silhouettes);
     }
 
     // ---- People ----
@@ -220,10 +232,10 @@ public static class Entourage
                 shoulder = 0.132; chest = 0.08;
                 break;
         }
-        // In plan: the shoulders seen from above and the head, the nose's side marked by a tick.
-        plan.Add(new PlanItem("symbol", true, Ellipse(f, 0, 0, shoulder * k, chest * k, 16)));
-        plan.Add(new PlanItem("symbol", true, Ellipse(f, 0, 0, 0.05 * k, 0.05 * k, 12)));
-        plan.Add(new PlanItem("symbol", false, [f.Q(0, -0.05 * k), f.Q(0, -(chest + 0.03) * k)]));
+        // In plan, detailed (decision 341: the views' simpler symbols are Entourage2d's): the shoulders seen from above and the head, the nose's side marked by a tick.
+        plan.Add(new PlanItem("symbol", true, Ellipse(f, 0, 0, shoulder * k, chest * k, 16), Mode: Entourage2d.Detailed));
+        plan.Add(new PlanItem("symbol", true, Ellipse(f, 0, 0, 0.05 * k, 0.05 * k, 12), Mode: Entourage2d.Detailed));
+        plan.Add(new PlanItem("symbol", false, [f.Q(0, -0.05 * k), f.Q(0, -(chest + 0.03) * k)], Mode: Entourage2d.Detailed));
     }
 
     static List<Vec2> Ellipse(Frame f, double x, double y, double rx, double ry, int n) =>
@@ -248,7 +260,7 @@ public static class Entourage
     static Solid? Across(Frame f, IReadOnlyList<(double X, double Z)> profile, double width, string tag) =>
         profile.Count < 3 ? null : Prism.Extrude([.. profile.Select(p => f.P(p.X, -width / 2, p.Z))], null, f.D(0, width, 0), tag);
 
-    static void Car(Frame f, Kind kind, double height, string body, Action<string, string, Solid?> add, List<PlanItem> plan)
+    static Entourage2d.CarShape Car(Frame f, Kind kind, double height, string body, Action<string, string, Solid?> add, List<PlanItem> plan)
     {
         var suv = kind.Key == "suv";
         // BimGo's side profiles (its canvas units), front to the right.
@@ -283,14 +295,17 @@ public static class Entourage
             add("lights", "#f2e6b0", Box(f, front - 0.05, side * (width / 2 - 0.3), 0.47 * scale, 0.12, 0.3, 0.07 * scale));
             add("lights", "#b03028", Box(f, back + 0.04, side * (width / 2 - 0.25), 0.48 * scale, 0.1, 0.25, 0.07 * scale));
         }
-        // In plan: its outline with the corners rounded off, and the cabin's glass.
+        // In plan, detailed: its outline with the corners rounded off, and the cabin's glass.
         double hw = width / 2, ch = Math.Min(0.3, hw * 0.35);
-        plan.Add(new PlanItem("symbol", true, [f.Q(back + ch, -hw), f.Q(front - ch, -hw), f.Q(front, -hw + ch), f.Q(front, hw - ch), f.Q(front - ch, hw), f.Q(back + ch, hw), f.Q(back, hw - ch), f.Q(back, -hw + ch)]));
+        const string detailed = Entourage2d.Detailed;
+        plan.Add(new PlanItem("symbol", true, [f.Q(back + ch, -hw), f.Q(front - ch, -hw), f.Q(front, -hw + ch), f.Q(front, hw - ch), f.Q(front - ch, hw), f.Q(back + ch, hw), f.Q(back, hw - ch), f.Q(back, -hw + ch)], Mode: detailed));
         var glass = cabin.Count >= 3 ? (cabin.Min(p => p.X), cabin.Max(p => p.X)) : (back * 0.5, front * 0.3);
         var gh = hw * 0.84;
-        plan.Add(new PlanItem("symbol", true, [f.Q(glass.Item1, -gh), f.Q(glass.Item2, -gh * 0.92), f.Q(glass.Item2, gh * 0.92), f.Q(glass.Item1, gh)]));
+        plan.Add(new PlanItem("symbol", true, [f.Q(glass.Item1, -gh), f.Q(glass.Item2, -gh * 0.92), f.Q(glass.Item2, gh * 0.92), f.Q(glass.Item1, gh)], Mode: detailed));
         var roof = Clip(cabin, (top - 0.05) * scale, false);
-        if (roof.Count >= 3) plan.Add(new PlanItem("symbol", true, [f.Q(roof.Min(p => p.X), -gh * 0.9), f.Q(roof.Max(p => p.X), -gh * 0.9), f.Q(roof.Max(p => p.X), gh * 0.9), f.Q(roof.Min(p => p.X), gh * 0.9)]));
+        if (roof.Count >= 3) plan.Add(new PlanItem("symbol", true, [f.Q(roof.Min(p => p.X), -gh * 0.9), f.Q(roof.Max(p => p.X), -gh * 0.9), f.Q(roof.Max(p => p.X), gh * 0.9), f.Q(roof.Min(p => p.X), gh * 0.9)], Mode: detailed));
+        // What the drawings' simple symbols are made from (decision 341).
+        return new Entourage2d.CarShape(back, front, hw, profile, profile.Min(p => p.Item2), belt * scale, height, wr, wx, glass.Item2);
     }
 
     // ---- Commands ----

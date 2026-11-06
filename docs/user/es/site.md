@@ -59,9 +59,13 @@ La tabla **Coordenadas de la parcela** (Tablas → + → Coordenadas de la parce
 
 **Planta** (PN) coloca una planta con un clic y **Zona de plantación** (PZ) siembra un contorno con una mezcla de especies a una densidad; selecciónalas y elige sus especies en las propiedades. Las especies vienen de una biblioteca de plantas nativas o tradicionales de Rumanía, por grupos: **frutales** (manzano, peral, ciruelo, cerezo, guindo, albaricoquero, membrillero), **coníferas** (abeto blanco, pícea, pino silvestre, pino negro), **árboles caducifolios** (nogal, tilo, abedul, arce), **arbustos** (avellano, cornejo macho, saúco, rosal silvestre, lila, espino amarillo, grosellero, tuya, boj) y **cubresuelos**. Cada una lleva su nombre latino, su altura y su copa habituales. El cuadro de plantación muestra los nombres latino y rumano junto a cada especie.
 
-En planta cada planta se dibuja vista desde arriba, como en un plano de paisajismo, en negro y del ancho de su copa: un frutal como una copa lobulada con ramas bifurcadas, un nogal o un tilo como una copa festoneada alrededor de un núcleo oscuro, un abeto o una pícea como una estrella de ramas con agujas, un pino como un penacho redondo de agujas y un arbusto como una pequeña nube. Lapin dibuja cada símbolo, de modo que los árboles vecinos difieren un poco. A 1:1000 y menos (un plano de emplazamiento) solo se dibujan los contornos de las copas. En 3D las coníferas son conos, los demás árboles tienen una copa redondeada sobre el tronco y los arbustos una cúpula baja.
+En planta cada planta se dibuja vista desde arriba con una línea fina, tan ancha como su copa, solo por su contorno: un nogal o un tilo una copa de lóbulos suaves, un frutal un círculo, un abeto o una pícea una estrella, un pino un anillo dentado, un arbusto una pequeña nube, una planta de seto recortada un círculo, con una crucecita en el tronco de un árbol. Alzados y secciones dibujan cada planta como un solo contorno: la copa de un árbol sobre su tronco, el cono escalonado de una conífera, la cúpula de un arbusto. Unas pocas líneas cada una, así que un plano de emplazamiento con cientos de árboles sigue siendo ligero. En 3D las coníferas son conos, los demás árboles tienen una copa redondeada sobre su tronco y los arbustos una cúpula baja.
 
 ![Un pequeño huerto en planta: frutales, un nogal, coníferas y arbustos](shots/planting-symbols.webp)
+
+Pon la **Ambientación en 2D** del estilo de vista en **detallado** para los símbolos de un plano de paisajismo, en negro: un frutal como una copa lobulada con ramas bifurcadas, un nogal o un tilo como una copa festoneada alrededor de un núcleo oscuro, un abeto o una pícea como una estrella de ramas con acículas, un pino como un penacho redondo de acículas, un arbusto como una pequeña nube. Lapin dibuja cada símbolo por sí mismo, así que los árboles vecinos difieren un poco y una zona nunca parece estampada; a 1:1000 y menos (un plano de situación) solo se dibujan los contornos de las copas.
+
+![El mismo huerto dibujado detallado](shots/planting-symbols-detailed.webp)
 
 ## Personas y coches
 
@@ -71,13 +75,15 @@ En planta cada planta se dibuja vista desde arriba, como en un plano de paisajis
 
 Selecciona uno para cambiarlo en las propiedades: su tipo, su **rotación**, su **altura** (por defecto la habitual de su tipo), cuánto está **sobre el terreno** (en una terraza o un balcón) y el **color** de su ropa o carrocería. Se mueve, gira, refleja y copia como cualquier elemento.
 
-En 3D son figuras sencillas: personas con sus miembros, ropa, pelo y zapatos, coches con sus cristales, ruedas y faros. Los alzados y las secciones los dibujan a partir de sus cuerpos, con las sombras del sol de la vista cuando las tiene. Las plantas y los planos de situación los dibujan desde arriba como símbolos: los hombros y la cabeza de una persona, el contorno de un coche y sus cristales.
+En 3D son figuras sencillas: personas con sus extremidades, ropa, pelo y zapatos, coches con sus cristales, ruedas y faros. Los dibujos los mantienen sencillos, como un arquitecto dibuja la ambientación, con una línea fina: plantas y planos de emplazamiento desde arriba, los hombros y la cabeza de una persona, el contorno de un coche con las esquinas redondeadas y su parabrisas; alzados y secciones como siluetas, un solo contorno cada uno, la figura de una persona, el lateral o el frente de un coche según lo ve la vista, nunca las líneas de sus cuerpos.
 
 ![En planta](shots/entourage-plan.webp)
 
 ![En el alzado sur](shots/entourage-elevation.webp)
 
 ![Las propiedades de un coche](shots/entourage-properties.webp)
+
+Cómo se dibujan en 2D las personas, los coches y las plantas es un ajuste del estilo de vista, **Ambientación en 2D** (en las propiedades de la vista o en **Vista → Configuración de vista**; para un estilo entero, **Gestionar → Estilos de vista**): **contornos** (por defecto), **abstracto** (una persona un círculo en planta y una cabeza sobre un cuerpo en un alzado, un coche una caja redondeada, un árbol un círculo con su tronco), **detallado** (los símbolos de paisajismo de las plantas y cada línea de los cuerpos, con las sombras solares de la vista, como Lapin los dibujaba antes) o **sin dibujar**. **Relleno de siluetas** rellena las siluetas de alzados y secciones de gris claro o verde pálido. Se dibujan con la pluma 2 (0,13 mm a 1:100) salvo que **Gestionar → Estilos de objeto** dé otra a la categoría **Ambientación**, y **Visibilidad / Gráficos** oculta esa categoría en una vista. Los planos, el PDF y el DXF los imprimen como los dibuja la vista; sus cuerpos 3D nunca cambian. Los proyectos hechos antes también los dibujan como contornos.
 
 Dan escala a los dibujos y a las imágenes, pero no forman parte del edificio. Una exportación IFC o Fragments (File → Export…) los deja fuera salvo que marques **Ambientación** en su lista de tipos; IFC los escribe como IfcBuildingElementProxy «Entourage». Las exportaciones 3D (glTF, USD, COLLADA) los incluyen. Las pruebas de colisiones los dejan fuera.
 

@@ -59,9 +59,13 @@ L’abaco **Coordinate del lotto** (Abachi → + → Coordinate del lotto) è l�
 
 **Pianta (vegetale)** (PN) mette una pianta con un clic, **Area di piantumazione** (PZ) semina un contorno con un insieme di specie a una certa densità; seleziona l’una o l’altra e scegli la specie nelle proprietà. L’elenco delle specie è una libreria di piante autoctone o tradizionali in Romania, in gruppi: **alberi da frutto** (melo, pero, susino, ciliegio e amarena, albicocco, cotogno), **conifere** (abete bianco, abete rosso, pino silvestre e pino nero), **alberi a foglia caduca** (noce, tiglio, betulla, acero), **arbusti** (nocciolo, corniolo, sambuco, rosa canina, lillà, olivello spinoso, ribes rosso, tuia, bosso) e **tappezzanti**. Ognuna ha il suo nome latino, la sua altezza e la sua chioma abituali, e viene mostrata con il nome rumeno quando l’interfaccia è in rumeno. L’abaco delle piantumazioni elenca i nomi latino e rumeno accanto a ogni specie.
 
-In pianta ogni pianta è disegnata dall’alto come la mostra un disegno di paesaggio, in nero, larga quanto la sua chioma: un albero da frutto come una chioma lobata con rami biforcati, un noce o un tiglio come una chioma smerlata attorno a un nucleo scuro, un abete come una stella di rametti di aghi, un pino come un ciuffo rotondo di aghi, un arbusto come una piccola nuvola. Lapin disegna ogni simbolo da sé, così gli alberi vicini differiscono un po’ e un’area non sembra mai stampata a timbro. A 1:1000 e a scale minori (un inquadramento territoriale) si disegnano solo i contorni delle chiome. In 3D le conifere sono coni, gli altri alberi hanno una chioma arrotondata sul tronco e gli arbusti una cupola bassa.
+In pianta ogni pianta è disegnata vista dall’alto con un tratto sottile, larga quanto la sua chioma, solo con il suo contorno: un noce o un tiglio una chioma a lobi morbidi, un albero da frutto un cerchio, un abete o un peccio una stella, un pino un anello frastagliato, un arbusto una piccola nuvola, una pianta da siepe potata un cerchio, con una crocetta sul tronco di un albero. Prospetti e sezioni disegnano ogni pianta con un solo contorno: la chioma di un albero sul suo tronco, il cono a palchi di una conifera, la cupola di un arbusto. Poche linee ciascuna, così una planimetria con centinaia di alberi resta leggera. In 3D le conifere sono coni, gli altri alberi hanno una chioma arrotondata sul tronco e gli arbusti una cupola bassa.
 
 ![Un piccolo frutteto in pianta: alberi da frutto, un noce, conifere e arbusti](shots/planting-symbols.webp)
+
+Imposta l’**Entourage in 2D** dello stile di vista su **dettagliato** per i simboli di un progetto del paesaggio, in nero: un albero da frutto come chioma lobata con rami biforcati, un noce o un tiglio come chioma smerlata attorno a un nucleo scuro, un abete o un peccio come stella di rametti di aghi, un pino come ciuffo rotondo di aghi, un arbusto come piccola nuvola. Lapin disegna da sé ogni simbolo, così alberi vicini differiscono un poco e una zona non sembra mai timbrata; a 1:1000 e meno (un inquadramento) si disegnano solo i contorni delle chiome.
+
+![Lo stesso frutteto disegnato dettagliato](shots/planting-symbols-detailed.webp)
 
 ## Persone e automobili
 
@@ -71,13 +75,15 @@ In pianta ogni pianta è disegnata dall’alto come la mostra un disegno di paes
 
 Selezionane una per cambiarla nelle proprietà: il tipo, la **rotazione**, l’**altezza** (di base la misura consueta del suo tipo), quanto sta **sopra il terreno** (su una terrazza o un balcone) e il **colore** dei vestiti o della carrozzeria. Si sposta, ruota, specchia e copia come ogni elemento.
 
-In 3D sono figure semplici: persone con arti, vestiti, capelli e scarpe, auto con vetri, ruote e fari. Prospetti e sezioni le disegnano dai loro corpi, con le ombre del sole della vista quando le ha. Piante e planimetrie le disegnano dall’alto come simboli: le spalle e la testa di una persona, il contorno di un’auto e i suoi vetri.
+In 3D sono figure semplici: persone con arti, vestiti, capelli e scarpe, auto con vetri, ruote e fari. I disegni le tengono semplici, come un architetto disegna l’entourage, con un tratto sottile: piante e planimetrie dall’alto, le spalle e la testa di una persona, il contorno di un’auto con gli angoli arrotondati e il suo parabrezza; prospetti e sezioni come sagome, un solo contorno ciascuna, la figura di una persona, il fianco o il fronte di un’auto come la vista lo vede, mai le linee dei loro corpi.
 
 ![In pianta](shots/entourage-plan.webp)
 
 ![Nel prospetto sud](shots/entourage-elevation.webp)
 
 ![Le proprietà di un’auto](shots/entourage-properties.webp)
+
+Come si disegnano in 2D persone, auto e piante è un’impostazione dello stile di vista, **Entourage in 2D** (nelle proprietà della vista o in **Vista → Impostazioni di vista**; per uno stile intero, **Gestisci → Stili di vista**): **contorni** (predefinito), **astratto** (una persona un cerchio in pianta e una testa sopra un corpo in un prospetto, un’auto una scatola arrotondata, un albero un cerchio con il suo tronco), **dettagliato** (i simboli del paesaggio delle piante e ogni linea dei corpi, con le ombre solari della vista, come Lapin li disegnava prima) o **non disegnato**. **Riempimento delle sagome** riempie le sagome di prospetti e sezioni di grigio chiaro o verde pallido. Si disegnano con la penna 2 (0,13 mm a 1:100), salvo che **Gestisci → Stili oggetto** ne dia un’altra alla categoria **Entourage**, e **Visibilità / Grafica** nasconde la categoria in una vista. Le tavole, il PDF e il DXF li stampano come li disegna la vista; i loro corpi 3D non cambiano mai. Anche i progetti fatti prima li disegnano come contorni.
 
 Danno la scala ai disegni e alle immagini, ma non fanno parte dell’edificio. Un’esportazione IFC o Fragments (File → Export…) le lascia fuori se non spunti **Entourage** nel suo elenco di tipi; IFC le scrive come IfcBuildingElementProxy «Entourage». Le esportazioni 3D (glTF, USD, COLLADA) le includono. I test di interferenza le lasciano fuori.
 

@@ -59,9 +59,13 @@ A tabela **Coordenadas do lote** (Tabelas → + → Coordenadas do lote) é o in
 
 **Planta (vegetação)** (PN) coloca uma planta com um clique, **Área de plantio** (PZ) semeia um contorno com uma mistura de espécies numa densidade; selecione qualquer um dos dois e escolha a sua espécie nas propriedades. A lista de espécies é uma biblioteca de plantas nativas ou tradicionais na Romênia, em grupos: **árvores frutíferas** (macieira, pereira, ameixeira, cerejeira e ginjeira, damasqueiro, marmeleiro), **coníferas** (abeto-branco, abeto-falso, pinheiro-silvestre e pinheiro-negro), **árvores caducifólias** (nogueira, tília, bétula, bordo), **arbustos** (aveleira, corniso, sabugueiro, roseira-brava, lilás, espinheiro-marítimo, groselheira-vermelha, tuia, buxo) e **forrações**. Cada uma vem com o seu nome latino, a sua altura e copa habituais, e é mostrada pelo seu nome romeno quando a interface está em romeno. A tabela de plantio lista os nomes latino e romeno ao lado de cada espécie.
 
-Na planta, cada planta é desenhada vista de cima como um desenho de paisagismo a mostra, em preto, tão larga quanto a sua copa: uma árvore frutífera como uma copa lobulada com galhos bifurcados, uma nogueira ou uma tília como uma copa recortada em volta de um núcleo escuro, um abeto como uma estrela de ramos de agulhas, um pinheiro como um tufo redondo de agulhas, um arbusto como uma pequena nuvem. O Lapin desenha cada símbolo por conta própria, então árvores vizinhas diferem um pouco e uma área nunca parece carimbada. Em 1:1000 e escalas menores (uma planta de localização) só os contornos das copas são desenhados. Em 3D as coníferas são cones, as outras árvores têm uma copa arredondada sobre o tronco e os arbustos uma cúpula baixa.
+Em planta cada planta é desenhada vista de cima com uma linha fina, tão larga como a sua copa, só pelo seu contorno: uma nogueira ou uma tília uma copa de lóbulos suaves, uma árvore de fruto um círculo, um abeto ou uma espruce uma estrela, um pinheiro um anel dentado, um arbusto uma pequena nuvem, uma planta de sebe aparada um círculo, com uma pequena cruz no tronco de uma árvore. Alçados e cortes desenham cada planta com um só contorno: a copa de uma árvore sobre o seu tronco, o cone em andares de uma conífera, a cúpula de um arbusto. Poucas linhas cada uma, por isso uma planta de implantação com centenas de árvores continua leve. Em 3D as coníferas são cones, as outras árvores têm uma copa arredondada sobre o tronco e os arbustos uma cúpula baixa.
 
 ![Um pequeno pomar na planta: árvores frutíferas, uma nogueira, coníferas e arbustos](shots/planting-symbols.webp)
+
+Ponha a **Ambientação em 2D** do estilo de vista em **detalhado** para os símbolos de um projeto de paisagismo, a preto: uma árvore de fruto como copa lobada com ramos bifurcados, uma nogueira ou uma tília como copa recortada em volta de um núcleo escuro, um abeto ou uma espruce como estrela de ramos com agulhas, um pinheiro como tufo redondo de agulhas, um arbusto como pequena nuvem. O Lapin desenha cada símbolo por si, por isso árvores vizinhas diferem um pouco e uma zona nunca parece carimbada; a 1:1000 e menos (uma planta de localização) só se desenham os contornos das copas.
+
+![O mesmo pomar desenhado detalhado](shots/planting-symbols-detailed.webp)
 
 ## Pessoas e carros
 
@@ -71,13 +75,15 @@ Na planta, cada planta é desenhada vista de cima como um desenho de paisagismo 
 
 Selecione um para o alterar nas propriedades: o tipo, a **rotação**, a **altura** (por omissão o tamanho habitual do seu tipo), quanto está **acima do terreno** (num terraço ou numa varanda) e a **cor** da roupa ou da carroçaria. Move-se, roda, espelha-se e copia-se como qualquer elemento.
 
-Em 3D são figuras simples: pessoas com membros, roupa, cabelo e sapatos, carros com vidros, rodas e faróis. Os alçados e os cortes desenham-nos a partir dos seus corpos, com as sombras do sol da vista quando as tem. As plantas e as plantas de implantação desenham-nos vistos de cima, como símbolos: os ombros e a cabeça de uma pessoa, o contorno de um carro e os seus vidros.
+Em 3D são figuras simples: pessoas com membros, roupa, cabelo e sapatos, carros com vidros, rodas e faróis. Os desenhos mantêm-nos simples, como um arquiteto desenha a ambientação, com uma linha fina: plantas e plantas de implantação de cima, os ombros e a cabeça de uma pessoa, o contorno de um carro com os cantos arredondados e o seu para-brisas; alçados e cortes como silhuetas, um só contorno cada, a figura de uma pessoa, o lado ou a frente de um carro como a vista o vê, nunca as linhas dos seus corpos.
 
 ![Em planta](shots/entourage-plan.webp)
 
 ![No alçado sul](shots/entourage-elevation.webp)
 
 ![As propriedades de um carro](shots/entourage-properties.webp)
+
+Como pessoas, carros e plantas se desenham em 2D é uma definição do estilo de vista, **Ambientação em 2D** (nas propriedades da vista ou em **Vista → Configurações da vista**; para um estilo inteiro, **Gerenciar → Estilos de vista**): **contornos** (por omissão), **abstrato** (uma pessoa um círculo em planta e uma cabeça sobre um corpo num alçado, um carro uma caixa arredondada, uma árvore um círculo com o seu tronco), **detalhado** (os símbolos de paisagismo das plantas e cada linha dos corpos, com as sombras solares da vista, como o Lapin os desenhava antes) ou **não desenhado**. **Preenchimento das silhuetas** preenche as silhuetas de alçados e cortes a cinzento claro ou verde pálido. Desenham-se com a pena 2 (0,13 mm a 1:100), a não ser que **Gerenciar → Estilos de objeto** dê outra à categoria **Ambientação**, e **Visibilidade / Gráficos** oculta essa categoria numa vista. As folhas, o PDF e o DXF imprimem-nos como a vista os desenha; os seus corpos 3D nunca mudam. Os projetos feitos antes também os desenham como contornos.
 
 Dão escala aos desenhos e às imagens, mas não fazem parte do edifício. Uma exportação IFC ou Fragments (File → Export…) deixa-os de fora, a menos que marque **Ambientação** na sua lista de tipos; o IFC escreve-os como IfcBuildingElementProxy «Entourage». As exportações 3D (glTF, USD, COLLADA) incluem-nos. Os testes de colisões deixam-nos de fora.
 

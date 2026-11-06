@@ -59,9 +59,13 @@ The **Parcel coordinates** schedule (Schedules → + → Parcel coordinates) is 
 
 **Plant** (PN) sets one plant at a click, **Planting zone** (PZ) sows an outline with a mix of species at a density; select either and choose its species in the properties. The species list is a library of plants native or traditional in Romania, in groups: **fruit trees** (apple, pear, plum, sweet and sour cherry, apricot, quince), **conifers** (silver fir, Norway spruce, Scots and black pine), **deciduous trees** (walnut, lime, birch, maple), **shrubs** (hazel, cornelian cherry, elder, dog rose, lilac, sea buckthorn, redcurrant, thuja, boxwood) and **ground cover**. Each comes with its Latin name, its usual height and crown, and is shown by its Romanian name when the interface is in Romanian. The planting schedule lists the Latin and Romanian names beside each species.
 
-In plan each plant is drawn from above as a landscape drawing shows it, in black, as wide as its crown: a fruit tree as a lobed crown with forked branches, a walnut or a lime as a scalloped crown round a dark core, a fir or a spruce as a star of needle sprays, a pine as a round tuft of needles, a shrub as a small cloud. Lapin draws each symbol itself, so neighbouring trees differ a little and a zone never looks stamped. At 1:1000 and smaller (a location plan) only the crowns' outlines are drawn. In 3D conifers are cones, the other trees have a rounded crown on their trunk and shrubs a low dome.
+In plan each plant is drawn from above with a thin line, as wide as its crown, by its outline alone: a walnut or a lime a softly lobed crown, a fruit tree a circle, a fir or a spruce a star, a pine a ragged ring, a shrub a small cloud, a clipped hedge plant a circle, with a small cross at a tree's trunk. Elevations and sections draw each plant as one outline: a tree's crown on its trunk, a conifer's cone in tiers, a shrub's dome. A few lines each, so a site plan of hundreds of trees stays light. In 3D conifers are cones, the other trees have a rounded crown on their trunk and shrubs a low dome.
 
 ![A small orchard in plan: fruit trees, a walnut, conifers and shrubs](shots/planting-symbols.webp)
+
+Set the view style's **Entourage in 2D** to **detailed** for the landscape drawing's symbols, in black: a fruit tree as a lobed crown with forked branches, a walnut or a lime as a scalloped crown round a dark core, a fir or a spruce as a star of needle sprays, a pine as a round tuft of needles, a shrub as a small cloud. Lapin draws each symbol itself, so neighbouring trees differ a little and a zone never looks stamped; at 1:1000 and smaller (a location plan) only the crowns' outlines are drawn.
+
+![The same orchard drawn detailed](shots/planting-symbols-detailed.webp)
 
 ## People and cars
 
@@ -71,13 +75,15 @@ In plan each plant is drawn from above as a landscape drawing shows it, in black
 
 Select one to change it in the properties: its kind, its **rotation**, its **height** (its kind's usual size by default), how far **above the ground** it stands (on a deck or a balcony) and the **colour** of its clothes or body. Move, rotate, mirror and copy it as any element.
 
-In 3D they are simple figures: people with their limbs, clothes, hair and shoes, cars with their glass, wheels and lights. Elevations and sections draw them from their bodies, with the view's sun shadows when it has them. Plans and site plans draw them from above as symbols: a person's shoulders and head, a car's outline and its glass.
+In 3D they are simple figures: people with their limbs, clothes, hair and shoes, cars with their glass, wheels and lights. Drawings keep them simple, as an architect draws entourage, with a thin line: plans and site plans from above, a person's shoulders and head, a car's outline with its corners rounded and its windscreen; elevations and sections as silhouettes, one outline each, a person's figure, a car's side or its front as the view sees it, never the lines of their bodies.
 
 ![In plan](shots/entourage-plan.webp)
 
 ![In the south elevation](shots/entourage-elevation.webp)
 
 ![A car's properties](shots/entourage-properties.webp)
+
+How people, cars and plants draw in 2D is a setting of the view style, **Entourage in 2D** (in the view's properties or **View → View settings**; for a whole style, **Manage → View styles**): **outlines** (the default), **abstract** (a person a circle in plan and a head over a body in an elevation, a car a rounded box, a tree a circle with its trunk), **detailed** (the plants' landscape symbols and every line of the bodies, with the view's sun shadows, as Lapin drew them before) or **not drawn**. **Silhouette fill** fills the silhouettes of elevations and sections light grey or pale green. They draw with pen 2 (0.13 mm at 1:100) unless **Manage → Object styles** gives the **Entourage** category another, and **Visibility / Graphics** hides that category in a view. Sheets, the PDF and DXF print them as the view draws them; their 3D bodies never change. Projects made before draw them as outlines too.
 
 They give drawings and pictures their scale but are no part of the building. An IFC or Fragments export (File → Export…) leaves them out unless you tick **Entourage** in its list of kinds; IFC writes them as IfcBuildingElementProxy "Entourage". The 3D exports (glTF, USD, COLLADA) take them. Clash tests leave them out.
 

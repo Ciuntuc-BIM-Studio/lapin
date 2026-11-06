@@ -86,10 +86,12 @@ public static class LineStyles
         "IFCANNOTATION" => "linework",
         // The openings' voids a coordination drawing shows (decision 290): no element of the model, a category of its own.
         "LAPINOPENINGVOID" => "voids",
+        // People, cars and plants (decision 341): drawn thin by default, styled and hidden as a category of their own.
+        "LAPINENTOURAGE" or "LAPINPLANTING" => "entourage",
         _ => null,
     };
 
-    public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "topography", "other", "linework", "voids"];
+    public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "topography", "other", "linework", "voids", "entourage"];
 
     public static LineStyleSpec Merge(LineStyleSpec into, LineStyleSpec? from) => from == null ? into
         : new(into.Pen ?? from.Pen, into.Color ?? from.Color, into.Pattern ?? from.Pattern);

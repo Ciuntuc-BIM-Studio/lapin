@@ -5,7 +5,7 @@
  * all but the finishes, the cores), whether one material goes on from
  * element to element without a line, whether a plan draws what is above its
  * cut, whether a plan draws the 2D an IFC file gave its elements instead of
- * their cut, whether the openings' voids are drawn (decision 290); with a plan's cut plane and range (View range) and the storeys it
+ * their cut, whether the openings' voids are drawn (decision 290), how people, cars and plants draw (decision 341); with a plan's cut plane and range (View range) and the storeys it
  * shows. A 3D view has its discipline, style and layers too (the walls and
  * floors without their finishes, or their cores alone) and the storeys it
  * shows. In the view's properties and as View → View settings for the view in
@@ -18,7 +18,7 @@ import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { DisciplinePicker } from './DisciplinePicker';
-import { useViewStyles, type LayerMode, type ViewStyle } from './viewStyles';
+import { ENTOURAGE_FILLS, ENTOURAGE_MODES, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
 import { frontView } from '../../viewport/frontView';
 import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
@@ -80,6 +80,27 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
           <>
             <dt title="One material goes on from one element into the next without a line (walls, beams, footings): on by default">Join materials</dt>
             <dd><input type="checkbox" checked={state.resolved.joins} onChange={(e) => set({ joins: e.target.checked })} /><Reset field="joins" /></dd>
+          </>
+        )}
+        {!threeD && (
+          <>
+            <dt title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</dt>
+            <dd>
+              <select data-testid="view-entourage" value={state.resolved.entourage ?? 'outline'} onChange={(e) => set({ entourage: e.target.value })}>
+                {ENTOURAGE_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+              </select><Reset field="entourage" />
+            </dd>
+          </>
+        )}
+        {(view.props.kind === 'elevation' || section) && (state.resolved.entourage ?? 'outline') !== 'none' && (state.resolved.entourage ?? 'outline') !== 'detailed' && (
+          <>
+            <dt title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</dt>
+            <dd>
+              <select data-testid="view-entourage-fill" value={state.resolved.entourageFill ?? ''} onChange={(e) => set({ entourageFill: e.target.value || 'none' })}>
+                {ENTOURAGE_FILLS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                {state.resolved.entourageFill && !ENTOURAGE_FILLS.some(([k]) => k === state.resolved.entourageFill) && <option value={state.resolved.entourageFill}>{state.resolved.entourageFill}</option>}
+              </select><Reset field="entourageFill" />
+            </dd>
           </>
         )}
         {(view.props.kind === 'elevation' || section) && (
@@ -195,7 +216,7 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th><th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>
@@ -209,6 +230,8 @@ export function ViewStylesDialog() {
                   <td><input type="checkbox" checked={s.voidSizes !== false} disabled={!s.voids} onChange={(e) => update(s.id, { voidSizes: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.finishHatch !== false} onChange={(e) => update(s.id, { finishHatch: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.surfaceHatch !== false} onChange={(e) => update(s.id, { surfaceHatch: e.target.checked })} /></td>
+                  <td><select value={s.entourage ?? 'outline'} onChange={(e) => update(s.id, { entourage: e.target.value as EntourageMode })}>{ENTOURAGE_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
+                  <td><select value={s.entourageFill ?? ''} onChange={(e) => update(s.id, { entourageFill: e.target.value || null })}>{ENTOURAGE_FILLS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Duplicate" onClick={() => void execute('viewStyle.create', { from: s.id })}><Copy size={12} /></button>
                     <button type="button" className="icon mini" title="Delete: its views take their discipline's style" disabled={styles.length < 2}

@@ -2233,7 +2233,8 @@ export const scenes = [
     },
   },
   {
-    // The planting library (decision 234): a small orchard with a walnut, conifers along the back and shrubs in front, drawn in plan by their families' symbols.
+    // The planting library (decision 234): a small orchard with a walnut, conifers along the back and shrubs in front, drawn in plan by
+    // their families' outlines (decision 341), then by the detailed symbols the view style's Entourage in 2D asks for.
     id: 'planting-symbols',
     async run(t) {
       await t.fresh();
@@ -2253,12 +2254,19 @@ export const scenes = [
       // The quick tools and the HUD's card would lie over the plants.
       const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
       await t.shot('planting-symbols', { of: '[data-testid=plan]', pad: 0 });
+      const styles = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('viewStyle.list'));
+      t.expect(styles.every((st) => st.entourage === 'outline'), 'the styles draw the entourage as outlines');
+      await t.cmd('viewStyle.update', { id: 'architectural', entourage: 'detailed' });
+      await t.wait(1200);
+      await t.shot('planting-symbols-detailed', { of: '[data-testid=plan]', pad: 0 });
+      await t.cmd('viewStyle.update', { id: 'architectural', entourage: 'outline' });
       await quiet.evaluate((el) => el.remove());
       await t.ui({ keyPlan: true });
     },
   },
   {
-    // Entourage (stage 4 of docs/plan-visualisation.md): people at the door and a row of parked cars, in 3D, in plan and in the south elevation.
+    // Entourage (stage 4 of docs/plan-visualisation.md): people at the door and a row of parked cars, in 3D, in plan and in the south
+    // elevation, drawn there as simple symbols and silhouettes (decision 341); the view's Entourage in 2D among its properties.
     id: 'entourage',
     async run(t) {
       await t.fresh();
@@ -2277,7 +2285,7 @@ export const scenes = [
       await orbit({ azimuth: 2.2, pitch: -0.22, distance: 22, target: { x: 9, y: 1.5, z: 1.2 } });
       await t.wait(1500);
       await t.shot('entourage-3d', { of: 'canvas', pad: 0 });
-      // In plan: the shoulders and heads, the cars' outlines and glass.
+      // In plan: the shoulders and heads, the cars' outlines and windscreens.
       await t.ui({ view: 'plan', storeyId: s });
       await t.wait(1500);
       await t.fit();
@@ -2287,10 +2295,11 @@ export const scenes = [
       await t.shot('entourage-plan', { of: '[data-testid=plan]', pad: 0 });
       await quiet.evaluate((el) => el.remove());
       await t.ui({ keyPlan: true });
-      // The south elevation draws them from their bodies.
+      // The south elevation draws them as silhouettes, one outline each; with nothing selected its properties offer Entourage in 2D.
       await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' });
       await openFromBrowser(t, 'South', 2500);
       await t.shot('entourage-elevation', { of: '[data-testid=drawing]', pad: 0 });
+      t.expect(await t.page.locator('aside.props [data-testid=view-entourage]').count() > 0, 'the elevation\'s Entourage in 2D');
       await select(t, row.ids[2]);
       await t.wait(600);
       t.expect(await t.page.locator('aside.props').getByText('Above the ground').count() > 0, 'the car\'s properties');

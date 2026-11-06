@@ -59,9 +59,13 @@ Extrasul **Inventar de coordonate** (Extrase → + → Inventar de coordonate) l
 
 **Plantă** (PN) pune o plantă la un clic, **Zonă de plantare** (PZ) însămânțează un contur cu un amestec de specii la o densitate; selectează-le și alege speciile în proprietăți. Speciile vin dintr-o bibliotecă de plante native sau tradiționale în România, pe grupe: **pomi fructiferi** (măr, păr, prun, cireș, vișin, cais, gutui), **conifere** (brad, molid, pin silvestru, pin negru), **foioase** (nuc, tei, mesteacăn, arțar), **arbuști** (alun, corn, soc, măceș, liliac, cătină, coacăz, tuia, cimișir) și **acoperire de sol**. Fiecare are denumirea latină, înălțimea și coroana obișnuite și apare cu numele românesc când interfața e în română. Extrasul de plantare arată denumirile latină și românească lângă fiecare specie.
 
-În plan fiecare plantă se desenează văzută de sus, ca într-un plan de peisagistică, în negru, cât coroana ei: pomul fructifer o coroană lobată cu ramuri bifurcate, nucul sau teiul o coroană festonată în jurul unui miez închis, bradul și molidul o stea de ramuri cu ace, pinul un smoc rotund de ace, arbustul un mic nor. Lapin desenează singur fiecare simbol, așa că arborii vecini diferă puțin și o zonă nu arată ștampilată. La 1:1000 și mai mic (planul de încadrare) se desenează doar contururile coroanelor. În 3D coniferele sunt conuri, ceilalți arbori au coroana rotunjită pe trunchi, iar arbuștii o cupolă joasă.
+În plan fiecare plantă se desenează văzută de sus, cu o linie subțire, cât coroana ei, doar prin conturul ei: nucul sau teiul o coroană lobată moale, pomul fructifer un cerc, bradul și molidul o stea, pinul un inel zimțat, arbustul un mic nor, planta de gard viu tunsă un cerc, cu o cruciuliță la trunchiul unui arbore. Fațadele și secțiunile desenează fiecare plantă ca un singur contur: coroana unui arbore pe trunchiul lui, conul în trepte al unui conifer, cupola unui arbust. Câteva linii fiecare, așa că un plan de situație cu sute de arbori rămâne ușor. În 3D coniferele sunt conuri, ceilalți arbori au coroana rotunjită pe trunchi, iar arbuștii o cupolă joasă.
 
 ![O livadă mică în plan: pomi fructiferi, un nuc, conifere și arbuști](shots/planting-symbols.webp)
+
+Pune **Anturajul în 2D** al stilului vederii pe **detaliat** pentru simbolurile unui plan de peisagistică, în negru: pomul fructifer o coroană lobată cu ramuri bifurcate, nucul sau teiul o coroană festonată în jurul unui miez închis, bradul și molidul o stea de ramuri cu ace, pinul un smoc rotund de ace, arbustul un mic nor. Lapin desenează singur fiecare simbol, așa că arborii vecini diferă puțin și o zonă nu arată ștampilată; la 1:1000 și mai mic (planul de încadrare) se desenează doar contururile coroanelor.
+
+![Aceeași livadă desenată detaliat](shots/planting-symbols-detailed.webp)
 
 ## Oameni și mașini
 
@@ -71,13 +75,15 @@ Extrasul **Inventar de coordonate** (Extrase → + → Inventar de coordonate) l
 
 Selectează unul ca să-l schimbi în proprietăți: felul, **rotația**, **înălțimea** (implicit mărimea obișnuită a felului său), cât stă **deasupra terenului** (pe o terasă sau un balcon) și **culoarea** hainelor sau a caroseriei. Îl muți, rotești, oglindești și copiezi ca pe orice element.
 
-În 3D sunt figuri simple: oameni cu membre, haine, păr și pantofi, mașini cu geamuri, roți și faruri. Fațadele și secțiunile îi desenează din corpurile lor, cu umbrele de soare ale vederii când le are. Planurile și planurile de situație îi desenează de sus, ca simboluri: umerii și capul unui om, conturul unei mașini și geamurile ei.
+În 3D sunt figuri simple: oameni cu membre, haine, păr și pantofi, mașini cu geamuri, roți și faruri. Desenele îi păstrează simpli, cum desenează un arhitect anturajul, cu o linie subțire: planurile și planurile de situație de sus, umerii și capul unui om, conturul unei mașini cu colțurile rotunjite și parbrizul ei; fațadele și secțiunile ca siluete, un singur contur fiecare, silueta unui om, latura sau fața unei mașini cum o vede vederea, niciodată liniile corpurilor lor.
 
 ![În plan](shots/entourage-plan.webp)
 
 ![În fațada sudică](shots/entourage-elevation.webp)
 
 ![Proprietățile unei mașini](shots/entourage-properties.webp)
+
+Cum se desenează în 2D oamenii, mașinile și plantele e o setare a stilului vederii, **Anturajul în 2D** (în proprietățile vederii sau **Vedere → Setările vederii**; pentru un stil întreg, **Gestionare → Stiluri de vedere**): **contururi** (implicit), **abstract** (un om un cerc în plan și un cap peste un corp într-o fațadă, o mașină o cutie rotunjită, un arbore un cerc cu trunchiul lui), **detaliat** (simbolurile de peisagistică ale plantelor și fiecare linie a corpurilor, cu umbrele de soare ale vederii, cum le desena Lapin înainte) sau **nedesenat**. **Umplerea siluetelor** umple siluetele din fațade și secțiuni cu gri deschis sau verde pal. Se desenează cu penița 2 (0,13 mm la 1:100), dacă **Gestionare → Stiluri de obiecte** nu dă alta categoriei **Anturaj**, iar **Vizibilitate / Grafică** ascunde categoria într-o vedere. Planșele, PDF-ul și DXF-ul îi tipăresc cum îi desenează vederea; corpurile lor 3D nu se schimbă niciodată. Proiectele făcute înainte îi desenează și ele ca contururi.
 
 Dau desenelor și imaginilor scara, dar nu fac parte din clădire. Un export IFC sau Fragments (File → Export…) îi lasă afară dacă nu bifezi **Anturaj** în lista de feluri; IFC îi scrie ca IfcBuildingElementProxy „Entourage”. Exporturile 3D (glTF, USD, COLLADA) îi iau. Testele de coliziuni îi lasă afară.
 

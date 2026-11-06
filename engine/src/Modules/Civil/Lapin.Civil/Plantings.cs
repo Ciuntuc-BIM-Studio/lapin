@@ -75,8 +75,9 @@ public static class Plantings
     public static Species? Parse(JsonNode? n)
     {
         if (n is not JsonObject o || ((string?)o["name"])?.Trim() is not { Length: > 0 } name) return null;
-        var type = (string?)o["type"] is "bush" or "grass" ? (string)o["type"]! : "tree";
         var known = Catalog.FirstOrDefault(c => c.Name == name);
+        // Its own type, else the library's by name (a species named alone: a hazel is a bush), else a tree.
+        var type = (string?)o["type"] is "tree" or "bush" or "grass" ? (string)o["type"]! : known?.Type ?? "tree";
         // The names and the family from the planting's own copy, else from the library by name (an old project's species).
         string? Own(string key) => ((string?)o[key])?.Trim() is { Length: > 0 } v ? v : null;
         return new Species(name, type, Math.Max(0.05, Json.Number(o["height"]) ?? known?.Height ?? 5), Math.Max(0.1, Json.Number(o["crown"]) ?? known?.Crown ?? 3),
@@ -142,6 +143,7 @@ public static class Plantings
         var plants = Plants(m, e);
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
+        var silhouettes = new List<Lapin.Drawing.Views.Silhouette>();
         var species = SpeciesOf(e);
         for (var i = 0; i < species.Count; i++)
         {
@@ -151,13 +153,15 @@ public static class Plantings
             {
                 var h = sp.Height * p.Scale; var r = sp.Crown / 2 * p.Scale;
                 solids.AddRange(Body(sp, p.At, p.Z, h, r));
-                plan.AddRange(Symbol(sp.DrawnAs, p.At, r, p.Seed));
+                // In drawings by the view style's entourage mode (decision 341): the simple symbols and silhouettes, or the detailed ones.
+                plan.AddRange(Entourage2d.PlantPlan(sp, p.At, r, p.Seed));
+                silhouettes.AddRange(Entourage2d.PlantSilhouettes(sp, new Vec3(p.At.X, p.At.Y, p.Z), h, r));
             }
             if (solids.Count > 0) parts.Add(new GeometryPart(sp.Name, sp.Color, Paths.Combine(solids, "planting"), null, $"species:{i}"));
         }
         if (IsZone(e)) plan.Add(new PlanItem("symbol", true, Terrains.Contour(e)));
         if (parts.Count == 0) return new ElementGeometry([], plan, null, ["No plant fits: enlarge the zone or raise the density."]);
-        return new ElementGeometry(parts, plan, IsZone(e) ? Terrains.Contour(e) : [plants[0].At]);
+        return new ElementGeometry(parts, plan, IsZone(e) ? Terrains.Contour(e) : [plants[0].At], Silhouettes: silhouettes);
     }
 
     /// <summary>

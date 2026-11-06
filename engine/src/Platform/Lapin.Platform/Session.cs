@@ -961,7 +961,7 @@ public sealed class Session
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
         if (g?.Instance is { } inst && MeshOf(inst.Body, e, read, bands) is { } mesh)
         {
-            var plan2d = (g.Plan ?? []).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();
+            var plan2d = (g.Plan ?? []).Where(i => i.In(ViewStyles.EntourageModes[0])).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();
             return new RenderItem(e.Id, e.Class, Spatial.ShownOn(_store, e)?.Id, _catalog.OwnerOf(e.Class) != null,
                 mesh.Parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan2d, [],
                 [.. problems, .. g.Diagnostics ?? []], [], new RenderInstance(inst.Body, [.. inst.Xf.Select(v => (float)v)]));
@@ -971,7 +971,8 @@ public sealed class Session
             var m = p.Tessellate();
             parts.Add(new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(read, e.Id, p, bands), RenderLod.Of(m), p.Key));
         }
-        var plan = (g?.Plan ?? []).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray(), null,
+        // The interface's plan lines (picking, snapping, the selection): an entourage's outline symbols, whatever a view draws.
+        var plan = (g?.Plan ?? []).Where(i => i.In(ViewStyles.EntourageModes[0])).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray(), null,
             i.MinDetail == PlanDetail.Coarse ? null : i.MinDetail, i.MaxDetail == PlanDetail.Fine ? null : i.MaxDetail, i.Style?.Pattern)).ToList();
         var snaps = (g?.Snaps ?? []).SelectMany(v => new[] { v.X, v.Y }).ToArray();
         // Lines in space (CAD linework with heights): each polyline as segments.

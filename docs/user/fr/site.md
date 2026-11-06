@@ -59,9 +59,13 @@ La nomenclature **Coordonnées de la parcelle** (Nomenclatures → + → Coordon
 
 **Plante** (PN) pose une plante d’un clic, **Zone de plantation** (PZ) sème un contour d’un mélange d’espèces à une densité ; sélectionnez-les et choisissez leurs espèces dans les propriétés. Les espèces viennent d’une bibliothèque de plantes indigènes ou traditionnelles en Roumanie, par groupes : **arbres fruitiers** (pommier, poirier, prunier, cerisier, griottier, abricotier, cognassier), **conifères** (sapin pectiné, épicéa, pin sylvestre, pin noir), **feuillus** (noyer, tilleul, bouleau, érable), **arbustes** (noisetier, cornouiller mâle, sureau, églantier, lilas, argousier, groseillier, thuya, buis) et **couvre-sol**. Chacune a son nom latin, sa hauteur et son houppier habituels. Le tableau de plantation montre les noms latin et roumain à côté de chaque espèce.
 
-En plan chaque plante est dessinée vue de dessus, comme dans un plan paysager, en noir et aussi large que son houppier : un fruitier en couronne lobée aux branches fourchues, un noyer ou un tilleul en couronne festonnée autour d’un cœur sombre, un sapin ou un épicéa en étoile de rameaux d’aiguilles, un pin en touffe ronde d’aiguilles, un arbuste en petit nuage. Lapin dessine lui-même chaque symbole : des arbres voisins diffèrent un peu. Au 1:1000 et moins (plan de situation) seuls les contours des houppiers sont dessinés. En 3D les conifères sont des cônes, les autres arbres ont une couronne arrondie sur leur tronc et les arbustes un dôme bas.
+En plan chaque plante est dessinée vue de dessus d’un trait fin, aussi large que sa couronne, par son seul contour : un noyer ou un tilleul une couronne aux lobes doux, un arbre fruitier un cercle, un sapin ou un épicéa une étoile, un pin un anneau dentelé, un arbuste un petit nuage, une plante de haie taillée un cercle, avec une petite croix au tronc d’un arbre. Les façades et les coupes dessinent chaque plante d’un seul contour : la couronne d’un arbre sur son tronc, le cône étagé d’un conifère, le dôme d’un arbuste. Quelques traits chacune, si bien qu’un plan de masse de centaines d’arbres reste léger. En 3D les conifères sont des cônes, les autres arbres ont une couronne arrondie sur leur tronc et les arbustes un dôme bas.
 
 ![Un petit verger en plan : fruitiers, un noyer, des conifères et des arbustes](shots/planting-symbols.webp)
+
+Réglez l’**Entourage en 2D** du style de vue sur **détaillé** pour les symboles d’un plan paysager, en noir : un arbre fruitier en couronne lobée aux branches fourchues, un noyer ou un tilleul en couronne festonnée autour d’un cœur sombre, un sapin ou un épicéa en étoile de rameaux d’aiguilles, un pin en touffe ronde d’aiguilles, un arbuste en petit nuage. Lapin dessine lui-même chaque symbole, si bien que des arbres voisins diffèrent un peu et qu’une zone n’a jamais l’air tamponnée ; au 1:1000 et moins (un plan de situation) seuls les contours des couronnes sont dessinés.
+
+![Le même verger dessiné détaillé](shots/planting-symbols-detailed.webp)
 
 ## Personnes et voitures
 
@@ -71,13 +75,15 @@ En plan chaque plante est dessinée vue de dessus, comme dans un plan paysager, 
 
 Sélectionnez-en une pour la modifier dans les propriétés : son type, sa **rotation**, sa **hauteur** (par défaut la taille habituelle de son type), sa hauteur **au-dessus du terrain** (sur une terrasse ou un balcon) et la **couleur** de ses vêtements ou de sa carrosserie. Elle se déplace, tourne, se reflète et se copie comme tout élément.
 
-En 3D ce sont des figures simples : des personnes avec leurs membres, vêtements, cheveux et chaussures, des voitures avec leurs vitres, roues et phares. Les façades et les coupes les dessinent d’après leurs corps, avec les ombres du soleil de la vue quand elle en a. Les plans et les plans de masse les dessinent vues de dessus, en symboles : les épaules et la tête d’une personne, le contour d’une voiture et ses vitres.
+En 3D ce sont des figures simples : des personnes avec leurs membres, vêtements, cheveux et chaussures, des voitures avec leurs vitres, roues et phares. Les dessins les gardent simples, comme un architecte dessine l’entourage, d’un trait fin : les plans et les plans de masse vus de dessus, les épaules et la tête d’une personne, le contour d’une voiture aux angles arrondis et son pare-brise ; les façades et les coupes en silhouettes, un seul contour chacune, la figure d’une personne, le côté ou l’avant d’une voiture selon ce que voit la vue, jamais les lignes de leurs corps.
 
 ![En plan](shots/entourage-plan.webp)
 
 ![Dans la façade sud](shots/entourage-elevation.webp)
 
 ![Les propriétés d’une voiture](shots/entourage-properties.webp)
+
+La façon dont les personnes, les voitures et les plantes se dessinent en 2D est un réglage du style de vue, **Entourage en 2D** (dans les propriétés de la vue ou **Vue → Paramètres de vue** ; pour tout un style, **Gérer → Styles de vue**) : **contours** (par défaut), **abstrait** (une personne un cercle en plan et une tête sur un corps en façade, une voiture une boîte arrondie, un arbre un cercle avec son tronc), **détaillé** (les symboles paysagers des plantes et chaque ligne des corps, avec les ombres solaires de la vue, comme Lapin les dessinait avant) ou **non dessiné**. **Remplissage des silhouettes** remplit les silhouettes des façades et des coupes de gris clair ou de vert pâle. Elles se dessinent avec la plume 2 (0,13 mm au 1:100), sauf si **Gérer → Styles d’objets** en donne une autre à la catégorie **Entourage**, et **Visibilité / Graphismes** masque cette catégorie dans une vue. Les feuilles, le PDF et le DXF les impriment comme la vue les dessine ; leurs corps 3D ne changent jamais. Les projets faits avant les dessinent aussi en contours.
 
 Elles donnent l’échelle aux dessins et aux images, mais ne font pas partie du bâtiment. Un export IFC ou Fragments (File → Export…) les laisse de côté sauf si vous cochez **Entourage** dans sa liste de types ; IFC les écrit en IfcBuildingElementProxy « Entourage ». Les exports 3D (glTF, USD, COLLADA) les prennent. Les tests de conflits les laissent de côté.
 

@@ -6,7 +6,28 @@ namespace Lapin.Drawing.Views;
 /// A solid to draw: its element, IFC class, part key and material (an IfcMaterial id). <see cref="CutInPlan"/>: a part of a
 /// class plans draw by its symbol (<see cref="Generator.SymbolicInPlan"/>) that has none (a door from an IFC file), cut as any other.
 /// </summary>
-public sealed record DrawPart(Solid Solid, string Element, string Class, string? Key = null, string? Material = null, bool CutInPlan = false);
+public sealed record DrawPart(Solid Solid, string Element, string Class, string? Key = null, string? Material = null, bool CutInPlan = false)
+{
+    /// <summary>A part an elevation or a section draws by its element's silhouettes (<see cref="Silhouette"/>) instead of its edges: it still sizes the view, never drawn.</summary>
+    public bool BySilhouette { get; init; }
+}
+
+/// <summary>One stroke of a silhouette, in its own (across, up) metres from the figure's foot: a closed contour or an open line.</summary>
+public sealed record SilhouetteStroke(IReadOnlyList<Vec2> Points, bool Closed = true);
+
+/// <summary>
+/// A figure as an elevation or a section draws it (decision 341): a flat outline standing at <see cref="At"/> (its foot),
+/// not its body's edges. <see cref="Facing"/>: always turned to the viewer (a person, a tree: <see cref="Side"/> alone); else
+/// <see cref="Side"/> (along <see cref="Axis"/>, a car's length) when the view sees it more from the side, <see cref="Front"/>
+/// (across) otherwise, mirrored as it faces. <see cref="Mode"/>: the entourage mode it belongs to (outline, abstract).
+/// </summary>
+public sealed record Silhouette(Vec3 At, IReadOnlyList<SilhouetteStroke> Side, IReadOnlyList<SilhouetteStroke>? Front = null, Vec2? Axis = null, string? Mode = null)
+{
+    public bool Facing => Front == null || Axis == null;
+}
+
+/// <summary>A silhouette to draw for an element: its fill (a colour, or none), its lines' own style (a thin pen).</summary>
+public sealed record DrawSilhouette(Silhouette Shape, string Element, string Class, string? Fill = null, LineStyleSpec? Own = null);
 
 /// <summary>A line an element draws in plan by itself (a door's swing, a roof's ridge): its role (projection, overhead…), and the style its file gave it.</summary>
 public sealed record DrawSymbol(IReadOnlyList<Vec2> Points, bool Closed, string Element, string Class, string Role, LineStyleSpec? Own = null);
@@ -129,7 +150,7 @@ public static class Generator
     /// What a part's surface joins by (<see cref="MaterialDrawing.SeamKey"/>): where it goes on in one plane into a part of the
     /// same key, the edge between them is no line. Default: parts of one material (or, without one, of one class) join.
     /// </param>
-    public static ViewDrawing Draw(IReadOnlyList<DrawPart> parts, ViewSpec v, IReadOnlyList<DrawSymbol>? symbols = null, Func<DrawPart, string?>? seamKey = null)
+    public static ViewDrawing Draw(IReadOnlyList<DrawPart> parts, ViewSpec v, IReadOnlyList<DrawSymbol>? symbols = null, Func<DrawPart, string?>? seamKey = null, IReadOnlyList<DrawSilhouette>? silhouettes = null)
     {
         seamKey ??= p => p.Material ?? " class:" + p.Class;
         if (v.Kind == "plan" && v.Up) return DrawUp(parts, v, seamKey);
@@ -149,7 +170,7 @@ public static class Generator
         }
 
         // The primary set: what the cut and the projection below it see.
-        var primary = parts.Where(p => !plan || p.CutInPlan || !SymbolicInPlan.Contains(p.Class)).Where(p =>
+        var primary = parts.Where(p => plan ? p.CutInPlan || !SymbolicInPlan.Contains(p.Class) : !p.BySilhouette).Where(p =>
         {
             if (!plan) return true;
             var (z0, z1) = Z(p.Solid);
@@ -202,7 +223,45 @@ public static class Generator
                 for (var i = 0; i + 1 < n + (sym.Closed ? 1 : 0); i++)
                     lines.Add(new DLine(sym.Points[i], sym.Points[(i + 1) % n], sym.Role, sym.Element, sym.Class, Own: sym.Own));
             }
-        return new ViewDrawing(cuts, lines);
+        List<DFill>? fills = null;
+        if (!plan && silhouettes is { Count: > 0 }) DrawSilhouettes(silhouettes, v, lines, ref fills);
+        return new ViewDrawing(cuts, lines, fills);
+    }
+
+    /// <summary>
+    /// The silhouettes an elevation or a section sees (decision 341): each figure in front of the view's depth (a section's
+    /// beyond its cut), within its span, laid flat at its foot's place as seen lines, with its fill under them.
+    /// </summary>
+    static void DrawSilhouettes(IReadOnlyList<DrawSilhouette> silhouettes, ViewSpec v, List<DLine> lines, ref List<DFill>? fills)
+    {
+        var f = v.Frame;
+        foreach (var s in silhouettes)
+        {
+            var depth = Vec3.Dot(s.Shape.At - f.Origin, f.Dir);
+            if (v.Cut ? depth < 0 || depth > v.Below : depth > v.Below) continue;
+            var c = f.Map(s.Shape.At);
+            if (v.Span is { } span && (c.X < span.Min || c.X > span.Max)) continue;
+            if (v.Rise is { } rise && (c.Y > rise.Max)) continue;
+            var strokes = s.Shape.Side;
+            var sign = 1.0;
+            if (!s.Shape.Facing)
+            {
+                var a = s.Shape.Axis!.Value;
+                var along = a.X * f.Right.X + a.Y * f.Right.Y;
+                var across = -a.Y * f.Right.X + a.X * f.Right.Y;
+                if (Math.Abs(along) >= Math.Abs(across)) sign = along < 0 ? -1 : 1;
+                else { strokes = s.Shape.Front!; sign = across < 0 ? -1 : 1; }
+            }
+            foreach (var st in strokes)
+            {
+                var n = st.Points.Count;
+                if (n < 2) continue;
+                var pts = new Vec2[n];
+                for (var i = 0; i < n; i++) pts[i] = new Vec2(c.X + sign * st.Points[i].X, c.Y + st.Points[i].Y);
+                for (var i = 0; i + 1 < n + (st.Closed ? 1 : 0); i++) lines.Add(new DLine(pts[i], pts[(i + 1) % n], LineRole.Projection, s.Element, s.Class, Own: s.Own));
+                if (st.Closed && n >= 3 && s.Fill != null) (fills ??= []).Add(new DFill([pts], s.Element, s.Class, s.Fill));
+            }
+        }
     }
 
     /// <summary>

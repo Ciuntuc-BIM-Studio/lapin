@@ -286,11 +286,14 @@ public sealed record PartInstance(Vec3 Origin, Vec3 X, Vec3 Y, Vec3 Z);
 /// <summary>
 /// Plan linework of an element: its cut outline, a symbol. It may be drawn only between two levels of detail
 /// (<see cref="PlanDetail"/>: a plan's scale says which — a track is a thick axis at 1:2000, its two rails at 1:500,
-/// every rail edge and sleeper at 1:100) and in a style of its own (a centre line's dash-dot).
+/// every rail edge and sleeper at 1:100) and in a style of its own (a centre line's dash-dot). <see cref="Mode"/>: the
+/// entourage mode it draws in (<see cref="ViewStyles.EntourageModes"/>: a person's, car's or plant's symbol); null, every one.
 /// </summary>
-public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points, int MinDetail = PlanDetail.Coarse, int MaxDetail = PlanDetail.Fine, Lapin.Drawing.LineStyleSpec? Style = null)
+public sealed record PlanItem(string Kind, bool Closed, IReadOnlyList<Vec2> Points, int MinDetail = PlanDetail.Coarse, int MaxDetail = PlanDetail.Fine, Lapin.Drawing.LineStyleSpec? Style = null, string? Mode = null)
 {
     public bool At(int detail) => detail >= MinDetail && detail <= MaxDetail;
+    /// <summary>Whether it draws in a view whose entourage mode is <paramref name="mode"/>.</summary>
+    public bool In(string mode) => Mode == null || Mode == mode;
 }
 
 /// <summary>
@@ -307,9 +310,10 @@ public static class PlanDetail
 }
 
 public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnlyList<PlanItem>? Plan = null, IReadOnlyList<Vec2>? Snaps = null, IReadOnlyList<string>? Diagnostics = null, SharedInstance? Instance = null,
-    IReadOnlyList<IReadOnlyList<Vec3>>? Lines = null, string? LineColor = null)
+    IReadOnlyList<IReadOnlyList<Vec3>>? Lines = null, string? LineColor = null, IReadOnlyList<Lapin.Drawing.Views.Silhouette>? Silhouettes = null)
 {
     // Lines: polylines in space with no body (CAD linework with heights), drawn as such in 3D, in LineColor.
+    // Silhouettes: what elevations and sections draw instead of the body's edges (people, cars, plants: decision 341).
 }
 
 /// <summary>

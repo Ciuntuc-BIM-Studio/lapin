@@ -59,9 +59,13 @@ Skemaet **Matrikelkoordinater** (Skemaer → + → Matrikelkoordinater) er matri
 
 **Plante** (PN) sætter en plante med et klik, **Beplantningszone** (PZ) tilsår en omrids med en blanding af arter i en tæthed; markér dem og vælg arterne i egenskaberne. Arterne kommer fra et bibliotek af planter, der er hjemmehørende eller traditionelle i Rumænien, i grupper: **frugttræer** (æble, pære, blomme, sød- og surkirsebær, abrikos, kvæde), **nåletræer** (ædelgran, rødgran, skovfyr, østrigsk fyr), **løvtræer** (valnød, lind, birk, ahorn), **buske** (hassel, kirsebærkornel, hyld, hunderose, syren, havtorn, ribs, thuja, buksbom) og **bunddække**. Hver har sit latinske navn, sin sædvanlige højde og krone. Beplantningslisten viser det latinske og det rumænske navn ved hver art.
 
-I plan tegnes hver plante set fra oven, som på en landskabsplan, i sort og så bred som kronen: et frugttræ som en fliget krone med gaflede grene, en valnød eller en lind som en bølget krone om en mørk kerne, en gran som en stjerne af nålekviste, en fyr som en rund nåletot, en busk som en lille sky. Lapin tegner selv hvert symbol, så nabotræer er lidt forskellige. Ved 1:1000 og mindre (oversigtskort) tegnes kun kronernes omrids. I 3D er nåletræer kegler, de andre træer har en rund krone på stammen og buske en lav kuppel.
+I plan tegnes hver plante oppefra med en tynd streg, så bred som sin krone, kun ved sin kontur: et valnøddetræ eller en lind som en blødt fliget krone, et frugttræ som en cirkel, en ædelgran eller en rødgran som en stjerne, en fyr som en takket ring, en busk som en lille sky, en klippet hækplante som en cirkel, med et lille kryds ved et træs stamme. Facader og snit tegner hver plante som én kontur: et træs krone på dens stamme, en nåletræs kegle i etager, en busks kuppel. Få streger hver, så en situationsplan med hundredvis af træer forbliver let. I 3D er nåletræer kegler, de andre træer har en rund krone på stammen og buske en lav kuppel.
 
 ![En lille frugthave i plan: frugttræer, en valnød, nåletræer og buske](shots/planting-symbols.webp)
+
+Sæt visningsstilens **Staffage i 2D** til **detaljeret** for en landskabsplans symboler, i sort: et frugttræ som en fliget krone med gaflede grene, et valnøddetræ eller en lind som en bølget krone om en mørk kerne, en ædelgran eller rødgran som en stjerne af nålegrene, en fyr som en rund dusk af nåle, en busk som en lille sky. Lapin tegner selv hvert symbol, så nabotræer er lidt forskellige og en zone aldrig ser stemplet ud; i 1:1000 og mindre (en oversigtsplan) tegnes kun kronernes konturer.
+
+![Den samme frugthave tegnet detaljeret](shots/planting-symbols-detailed.webp)
 
 ## Personer og biler
 
@@ -71,13 +75,15 @@ I plan tegnes hver plante set fra oven, som på en landskabsplan, i sort og så 
 
 Vælg en for at ændre den i egenskaberne: dens art, dens **rotation**, dens **højde** (som standard artens sædvanlige størrelse), hvor højt den står **over terrænet** (på en terrasse eller en altan) og **farven** på tøjet eller karosseriet. Flyt, drej, spejl og kopiér den som ethvert element.
 
-I 3D er de enkle figurer: personer med lemmer, tøj, hår og sko, biler med ruder, hjul og lygter. Facader og snit tegner dem ud fra deres kroppe, med visningens solskygger, når den har dem. Planer og situationsplaner tegner dem oppefra som symboler: en persons skuldre og hoved, en bils omrids og dens ruder.
+I 3D er de enkle figurer: personer med lemmer, tøj, hår og sko, biler med ruder, hjul og lygter. Tegningerne holder dem enkle, som en arkitekt tegner staffage, med en tynd streg: planer og situationsplaner oppefra, en persons skuldre og hoved, en bils kontur med afrundede hjørner og dens forrude; facader og snit som silhuetter, én kontur hver, en persons figur, en bils side eller front som visningen ser den, aldrig linjerne i deres legemer.
 
 ![I plan](shots/entourage-plan.webp)
 
 ![I sydfacaden](shots/entourage-elevation.webp)
 
 ![En bils egenskaber](shots/entourage-properties.webp)
+
+Hvordan personer, biler og planter tegnes i 2D, er en indstilling i visningsstilen, **Staffage i 2D** (i visningens egenskaber eller **Vis → Visningsindstillinger**; for en hel stil **Administrer → Visningsstile**): **konturer** (standard), **abstrakt** (en person en cirkel i plan og et hoved over en krop i en facade, en bil en afrundet kasse, et træ en cirkel med sin stamme), **detaljeret** (planternes landskabssymboler og hver linje i legemerne, med visningens solskygger, som Lapin tegnede dem før) eller **ikke tegnet**. **Silhuetfyld** fylder silhuetterne i facader og snit lysegrå eller blegrøn. De tegnes med pen 2 (0,13 mm i 1:100), medmindre **Administrer → Objektstile** giver kategorien **Staffage** en anden, og **Synlighed / Grafik** skjuler kategorien i en visning. Tegningsark, PDF og DXF udskriver dem, som visningen tegner dem; deres 3D-legemer ændres aldrig. Projekter lavet før tegner dem også som konturer.
 
 De giver tegninger og billeder deres målestok, men er ingen del af bygningen. En IFC- eller Fragments-eksport (File → Export…) udelader dem, medmindre du sætter flueben ved **Staffage** i dens liste over arter; IFC skriver dem som IfcBuildingElementProxy »Entourage«. 3D-eksporterne (glTF, USD, COLLADA) tager dem med. Kollisionstest udelader dem.
 
