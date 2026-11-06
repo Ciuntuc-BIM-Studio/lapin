@@ -76,7 +76,7 @@ public class MeshRecognitionTests
         Assert.Equal(FidelityOptions.Enforce, gate.Options.Mode);
         var check = gate.Checks.Single(c => c.Id == wall);
         Assert.True(check.Reverted);
-        Assert.Contains("base outline 15 mm", check.Reason);
+        Assert.Contains("base outline", check.Reason);                    // the rebated jambs, 15–20 mm in plan
         foreach (var id in new[] { wall, door, window }) Assert.True(StoredBodies.Has(g.Model.Get(id)!), id);
         Assert.False(StoredBodies.Has(g.Model.Get(slab)!));
         Assert.True(gate.Checks.Single(c => c.Id == slab).Pass);

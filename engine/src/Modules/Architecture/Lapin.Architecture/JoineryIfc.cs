@@ -60,8 +60,9 @@ public sealed class JoineryIfc : IJoineryIfc
         var y = f.Left * sy;
         var x = new Vec2(y.Y, -y.X);
         var face = sy > 0 ? f.YMin : f.YMax;
-        var mid = f.At(p.Along, face, p.Sill);
-        var origin = mid - new Vec3(x.X, x.Y, 0) * (p.Width / 2);
+        var mid = f.At(p.Along, face, p.FillSill);
+        // The fill's own width: its opening may be the file's, larger (Openings.HoleWidthKey).
+        var origin = mid - new Vec3(x.X, x.Y, 0) * ((p.Spec?.Width ?? p.Width) / 2);
         return new IfcJoineryPlace(origin, new Vec3(x.X, x.Y, 0), new Vec3(y.X, y.Y, 0), sx * sy < 0);
     }
 

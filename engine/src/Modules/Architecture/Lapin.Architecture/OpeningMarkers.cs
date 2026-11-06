@@ -66,9 +66,9 @@ public static class OpeningMarkers
 
         var values = new Dictionary<string, string>
         {
-            ["width"] = TagText.Length(p.Width, type.Unit, c.Book.Units),
-            ["height"] = TagText.Length(p.Height, type.Unit, c.Book.Units),
-            ["sill"] = TagText.Length(p.Sill, type.Unit, c.Book.Units),
+            ["width"] = TagText.Length(p.Spec?.Width ?? p.Width, type.Unit, c.Book.Units),
+            ["height"] = TagText.Length(p.Spec?.Height ?? p.Height, type.Unit, c.Book.Units),
+            ["sill"] = TagText.Length(p.FillSill, type.Unit, c.Book.Units),
         };
         var h = style.Height * mm;
         var data = new JsonArray();

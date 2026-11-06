@@ -113,6 +113,34 @@ public sealed class ForeignElements : IIfcRecognizer
         return null;
     }
 
+    /// <summary>No lintel: what recognised walls and doors and windows have, as the file has none of Lapin's (a lintel the file models is an element of its own).</summary>
+    internal static readonly LintelRule NoLintel = LintelRule.Default with { Mode = "none" };
+
+    /// <summary>A property of a set (by name, any case) as a number, from a number or a text in the invariant culture; null without one.</summary>
+    static double? Number(JsonObject properties, string set, string name)
+    {
+        if (Value(properties, set, name) is not JsonValue v) return null;
+        if (v.TryGetValue<double>(out var d)) return d;
+        return v.TryGetValue<string>(out var t) && double.TryParse(t, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x) ? x : null;
+    }
+
+    /// <summary>A property of a set as a yes or no, from a boolean or its text (True, .T., yes); null without one.</summary>
+    static bool? Flag(JsonObject properties, string set, string name)
+    {
+        if (Value(properties, set, name) is not JsonValue v) return null;
+        if (v.TryGetValue<bool>(out var b)) return b;
+        return v.TryGetValue<string>(out var t) ? t.Trim().Trim('.').ToUpperInvariant() switch { "T" or "TRUE" or "YES" or "1" => true, "F" or "FALSE" or "NO" or "0" => false, _ => null } : null;
+    }
+
+    static JsonNode? Value(JsonObject properties, string set, string name)
+    {
+        foreach (var (setName, props) in properties)
+            if (string.Equals(setName, set, StringComparison.OrdinalIgnoreCase) && props is JsonObject o)
+                foreach (var (k, v) in o)
+                    if (string.Equals(k, name, StringComparison.OrdinalIgnoreCase)) return v;
+        return null;
+    }
+
     /// <summary>A text that only stands for a value not filled in („&lt;Raumnummer&gt;”, as ArchiCAD writes an empty zone number).</summary>
     static bool Placeholder(string t) => t.Length > 2 && t[0] == '<' && t[^1] == '>';
 
@@ -263,6 +291,8 @@ public sealed class ForeignElements : IIfcRecognizer
         List<(double U, double V)>? topProfile = null;
         // How far each layer's faces run on past the wall's ends, when they end in steps or at a slant (ForeignWallParts).
         List<double[]>? layerEnds = null;
+        // Where the parts cut an opening's hole down further than its opening element goes (ForeignWallParts.HoleFloors).
+        IReadOnlyDictionary<ForeignOpening, double>? holeFloors = null;
         List<LayerSpec> layers;
         (bool Negative, double Offset) usage;
         if (OnePrismOrNull(e, p => p.Vertical) is { } prism)
@@ -297,6 +327,7 @@ public sealed class ForeignElements : IIfcRecognizer
             var ad = (axP.B - axP.A).Normalized();
             (start, end) = (axP.A + ad * read.Start, axP.A + ad * read.End);
             layerEnds = read.LayerEnds;
+            holeFloors = read.HoleFloors;
             // Its openings must fit it: one left out would leave the file's hole filled (Openings.CheckFits, its length and height).
             var (len, wallBase) = ((end - start).Length, read.BaseZ);
             foreach (var op in e.Openings.Where(o => o.Prisms.Count > 0))
@@ -350,7 +381,7 @@ public sealed class ForeignElements : IIfcRecognizer
         LayerSets.LayOut(edit, wall, type, "AXIS2", (_, _) => Math.Round(usage.Offset, 6), usage.Negative);
         ctx.Made.Add(wall.Id);
         var d = (end - start).Normalized();
-        foreach (var op in e.Openings) Opening(edit, wall, start, d, storey.Num("elevation") + baseOffset, height, op, ctx);
+        foreach (var op in e.Openings) Opening(edit, wall, start, d, storey.Num("elevation") + baseOffset, height, op, ctx, holeFloors?.GetValueOrDefault(op));
         return wall.Id;
     }
 
@@ -386,26 +417,42 @@ public sealed class ForeignElements : IIfcRecognizer
         var existing = edit.Model.OfClass(IfcClass.WallType).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase) && LayerSets.Of(edit.Model, t.Id) is { } set && Lapin.Model.Layers.Read(set) is var have && Math.Abs(have.Sum(l => l.Thickness) - thickness) < 1e-6
             // Layers of their own heights (a wall of parts): the type's the same.
             && (layers.All(l => l.From == null && l.To == null) && have.All(l => l.From == null && l.To == null) || have.Select(l => (l.From, l.To)).SequenceEqual(layers.Select(l => (l.From, l.To)))));
-        var type = existing ?? WallTypes.Create(edit, name, layers);
+        // No lintels of Lapin's over its openings (the file has none in this wall: a lintel it models is an element of its own);
+        // the type's rule, to be turned on afterwards.
+        var type = existing ?? WallTypes.Create(edit, name, layers, lintels: NoLintel.ToJson());
         if (existing == null) ctx.CreatedTypes.Add(type.Id);
         ctx.TypeIds[key] = type.Id;
         return type;
     }
 
     /// <summary>An opening from its box in the wall's frame; a door or a window in it when the file has one, a bare opening else.</summary>
-    void Opening(IEdit edit, Entity wall, Vec2 start, Vec2 dir, double baseZ, double wallHeight, ForeignOpening op, RecognitionContext ctx)
+    void Opening(IEdit edit, Entity wall, Vec2 start, Vec2 dir, double baseZ, double wallHeight, ForeignOpening op, RecognitionContext ctx, double? holeFloor = null)
     {
         if (op.Prisms.Count == 0) { ctx.Skip("an opening without a prism body"); return; }
         var (along, sill, w, h, kind) = Place(op, start, dir, baseZ, wallHeight);
+        // The hole down to where the wall's parts cut it (a door on the finished floor in a hole from the slab), its fill where the file's opening puts it.
+        var fillOffset = 0.0;
+        if (holeFloor is { } hf && Math.Round(Math.Max(0, hf - baseZ), 4) is var floorSill && floorSill < sill - 5e-4)
+            (fillOffset, h, sill) = (Math.Round(sill - floorSill, 4), Math.Round(h + sill - floorSill, 4), floorSill);
         if (!(w > 0 && h > 0)) { ctx.Skip($"a {kind} without a size"); return; }
         try { Openings.CheckFits(edit.Model, wall, along, sill, w, h); }
         catch (CommandException ex) { ctx.Skip($"a {kind} that does not fit its wall ({ex.Message.TrimEnd('.')})"); return; }
-        var opening = new Entity(op.GlobalId is { Length: 22 } og && edit.Model.Get(og) == null ? og : edit.NewId(), IfcClass.OpeningElement, op.Name ?? "Opening",
-            kind == "opening" ? new JsonObject { ["along"] = along, ["sill"] = sill, ["width"] = w, ["height"] = h } : new JsonObject { ["along"] = along, ["sill"] = sill }, "OPENING");
+        // The hole is the file's opening, its own size and sill; its door or window the fill's size (OverallWidth/Height),
+        // which may be smaller (a frame set in a larger structural opening) or larger (a door body running past the hole).
+        var (fw, fh) = (op.Fill?.Width is double fwv && fwv > 0 ? Math.Round(fwv, 4) : w, op.Fill?.Height is double fhv && fhv > 0 ? Math.Round(fhv, 4) : h);
+        var hole = new JsonObject { ["along"] = along, ["sill"] = sill };
+        if (kind == "opening") { hole["width"] = w; hole["height"] = h; }
+        else
+        {
+            if (Math.Abs(fw - w) > 5e-4) hole[Openings.HoleWidthKey] = w;
+            if (Math.Abs(fh - h) > 5e-4) hole[Openings.HoleHeightKey] = h;
+            if (fillOffset > 0) hole[Openings.FillOffsetKey] = fillOffset;
+        }
+        var opening = new Entity(op.GlobalId is { Length: 22 } og && edit.Model.Get(og) == null ? og : edit.NewId(), IfcClass.OpeningElement, op.Name ?? "Opening", hole, "OPENING");
         edit.Add(opening);
         edit.AddRelation(new Relation(edit.NewId(), IfcClass.RelVoidsElement, wall.Id, [opening.Id]));
         if (op.Fill is not { } fill) { ctx.Made.Add(opening.Id); return; }
-        var type = FillType(edit, fill, kind, w, h, kind == "window" ? sill : 0, ctx);
+        var type = FillType(edit, fill, kind, fw, fh, kind == "window" ? sill + fillOffset : 0, ctx);
         var cls = kind == "door" ? IfcClass.Door : IfcClass.Window;
         var spec = JoinerySpec.From(type.Attrs["spec"]);
         var marks = edit.Model.OfClass(cls).Count() + 1;
@@ -423,7 +470,7 @@ public sealed class ForeignElements : IIfcRecognizer
         ctx.Made.Add(made.Id);
     }
 
-    /// <summary>Where an opening goes in the wall's frame (along, sill), how big it is (its fill's size, else its box's) and its kind, from its prisms.</summary>
+    /// <summary>Where an opening goes in the wall's frame (along, sill), how big it is (its box's, inside the wall's height: the file's hole) and its kind, from its prisms.</summary>
     static (double Along, double Sill, double Width, double Height, string Kind) Place(ForeignOpening op, Vec2 start, Vec2 dir, double baseZ, double wallHeight)
     {
         double aMin = double.MaxValue, aMax = double.MinValue, zMin = double.MaxValue, zMax = double.MinValue;
@@ -438,8 +485,8 @@ public sealed class ForeignElements : IIfcRecognizer
         var along = Math.Round((aMin + aMax) / 2, 4);
         var sill = Math.Round(Math.Max(0, zMin - baseZ), 4);
         var kind = op.Fill is { } fl ? (fl.IfcClass.StartsWith("IfcDoor") ? "door" : "window") : "opening";
-        if (kind == "door") sill = 0;
-        return (along, sill, op.Fill?.Width ?? width, op.Fill?.Height ?? height, kind);
+        // A door's sill too is where the file's hole starts (a door on the finished floor over a wall standing on the slab).
+        return (along, sill, width, height, kind);
     }
 
     /// <summary>
@@ -459,10 +506,20 @@ public sealed class ForeignElements : IIfcRecognizer
         if (existing != null) { ctx.TypeIds[key] = existing.Id; return existing; }
         // No reveal finish of Lapin's: the file's opening is the hole through every layer as it draws it, its finishes cut
         // flush there; a reveal would widen the wall's hole by the finish and take the jambs' masonry (docs/spec-ifc.md).
-        var spec = (kind == "door" ? JoinerySpec.DefaultDoor(name) : JoinerySpec.DefaultWindow(name)) with
+        // Nor anything else of Lapin's the file does not have (the import brings the file as it is): no lintel over its
+        // opening, no window boards, no threshold; its U-value and whether it is external only as the file says. Each is
+        // the type's own setting, to be turned on afterwards.
+        var common = kind == "door" ? "Pset_DoorCommon" : "Pset_WindowCommon";
+        var basis = kind == "door" ? JoinerySpec.DefaultDoor(name) : JoinerySpec.DefaultWindow(name);
+        var spec = basis with
         {
             Width = Math.Round(w, 4), Height = Math.Round(h, 4), SillHeight = Math.Round(sill, 4),
             Details = new JoineryDetails(Reveal: new JoineryReveal("none")),
+            Lintel = NoLintel,
+            Board = new JoineryBoard(0, 0),
+            Threshold = 0,
+            ThermalTransmittance = Number(fill.Properties, common, "ThermalTransmittance") is > 0 and var u ? u : null,
+            IsExternal = Flag(fill.Properties, common, "IsExternal") ?? basis.IsExternal,
         };
         if (JoineryIfc.FromIfc(spec, fill.Operation, fill.UserDefined, fill.Panels) is { } told && Joinery.Problem(told) == null) spec = told;
         var type = Openings.CreateType(edit, spec);

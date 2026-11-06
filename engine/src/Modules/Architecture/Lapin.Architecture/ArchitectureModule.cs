@@ -55,7 +55,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var outward = f.Left * -sy;
             if (Vec3.Dot(new Vec3(outward.X, outward.Y, 0), c.Frame.Dir) > -0.5) continue;
             var yExt = sy > 0 ? f.YMin : f.YMax;
-            Vec3 W(double x, double z) => f.At(p.Along + sx * x, yExt, p.Sill + z);
+            Vec3 W(double x, double z) => f.At(p.Along + sx * x, yExt, p.FillSill + z);
             if (c.Occluded(W(0, spec.Height / 2), new HashSet<string> { fill.Id, wall.Id, opening.Id })) continue;
             var mark = new ViewMark(fill.Id);
             // A round window is one fixed light: no opening symbol.

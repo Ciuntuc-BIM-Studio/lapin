@@ -24,7 +24,16 @@ public static class Openings
     public const double PlanCut = 1.2;
 
     /// <summary>An opening's place and size on its wall; <paramref name="Shape"/>: its outline, the fill's type's or a bare opening's own (null: a rectangle).</summary>
-    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null);
+    /// <remarks>
+    /// Along, Sill, Width and Height are the hole's. A door's or window's is its type's size unless its opening is the file's own
+    /// (<see cref="HoleWidthKey"/>, <see cref="HoleHeightKey"/>); the fill stands centred on it, <see cref="FillOffset"/> over its
+    /// bottom (<see cref="FillOffsetKey"/>: a door on the finished floor in a hole the file cuts down to the slab), at <see cref="FillSill"/>.
+    /// </remarks>
+    public readonly record struct Placed(Entity Opening, Entity? Fill, JoinerySpec? Spec, double Along, double Sill, double Width, double Height, JoineryShape? Shape = null, double FillOffset = 0)
+    {
+        /// <summary>Where the door or window stands, over the wall's base: the hole's sill, raised by its offset.</summary>
+        public double FillSill => Sill + FillOffset;
+    }
 
     public static IEnumerable<Entity> Of(IModelView m, string wallId) => m.RelatedOf(wallId, IfcClass.RelVoidsElement).Where(o => o.Class == IfcClass.OpeningElement);
 
@@ -37,12 +46,22 @@ public static class Openings
     public static JoinerySpec? SpecOf(IModelView m, string fillId) =>
         m.RelatingOf(fillId, IfcClass.RelDefinesByType) is { } type ? JoinerySpec.From(type.Attrs["spec"]) : null;
 
+    /// <summary>
+    /// A door's or window's opening of its own size (<c>holeWidth</c>, <c>holeHeight</c> on the opening, metres): the hole
+    /// an imported file cuts round its fill, kept as the file has it where it differs from the fill's size (docs/spec-ifc.md,
+    /// Recunoașterea). The fill stays its type's size, centred on the opening at its sill. An opening drawn in Lapin has
+    /// neither and is its type's size; choosing another type clears them.
+    /// </summary>
+    public const string HoleWidthKey = "holeWidth", HoleHeightKey = "holeHeight", FillOffsetKey = "fillOffset";
+
     public static Placed Place(IModelView m, Entity opening)
     {
         var fill = FillOf(m, opening.Id);
         var spec = fill == null ? null : SpecOf(m, fill.Id);
-        return new Placed(opening, fill, spec, opening.Num("along"), opening.Num("sill"),
-            spec?.Width ?? opening.Num("width", 1), spec?.Height ?? opening.Num("height", 2), fill == null ? BareShape(opening) : spec?.Shape);
+        var (width, height) = spec == null ? (opening.Num("width", 1), opening.Num("height", 2))
+            : (opening.NumOrNull(HoleWidthKey) ?? spec.Width, opening.NumOrNull(HoleHeightKey) ?? spec.Height);
+        return new Placed(opening, fill, spec, opening.Num("along"), opening.Num("sill"), width, height, fill == null ? BareShape(opening) : spec?.Shape,
+            spec == null ? 0 : opening.Num(FillOffsetKey));
     }
 
     /// <summary>The head kinds a bare opening takes (decision 253): "round" is the semicircle.</summary>
@@ -214,7 +233,8 @@ public static class Openings
         var wall = WallOf(edit.Model, opening.Id) ?? throw new CommandException("The opening is in no wall.");
         var placed = Place(edit.Model, opening);
         var a = along ?? placed.Along;
-        var s = sill ?? placed.Sill;
+        // A door's or window's sill is its own: its opening's lies its offset under it (Openings.FillOffsetKey).
+        var s = sill is { } given ? given - (fillOrOpening.Class == IfcClass.OpeningElement ? 0 : placed.FillOffset) : placed.Sill;
         CheckFits(edit.Model, wall, a, s, placed.Width, placed.Height, opening.Id);
         var attrs = opening.CloneAttrs();
         attrs["along"] = a;
@@ -236,6 +256,17 @@ public static class Openings
         if ((fill.Class == IfcClass.Door) != spec.IsDoor) throw new CommandException("A door takes a door type, a window a window type.");
         if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
             CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height, opening.Id);
+        // Another type: its opening is the type's size again, the file's own hole (an imported one's) left behind.
+        if (OpeningOf(edit.Model, fill.Id) is { } own && (own.Attrs[HoleWidthKey] != null || own.Attrs[HoleHeightKey] != null || own.Attrs[FillOffsetKey] != null))
+        {
+            var attrs = own.CloneAttrs();
+            // The door or window stays where it stood: its sill becomes the opening's.
+            attrs["sill"] = own.Num("sill") + own.Num(FillOffsetKey);
+            attrs.Remove(HoleWidthKey);
+            attrs.Remove(HoleHeightKey);
+            attrs.Remove(FillOffsetKey);
+            edit.Replace(own.With(attrs: attrs));
+        }
         edit.Relate(IfcClass.RelDefinesByType, type.Id, fill.Id);
     }
 
@@ -380,7 +411,7 @@ public static class Openings
         var sx = fill.Bool("flipHand") ? -1 : 1;
         var sy = fill.Bool("flipSide") ? -1 : 1;
         // Type Y (+ to the exterior) is the wall's right: −left.
-        Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.Sill + z);
+        Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.FillSill + z);
 
         var parts = new List<GeometryPart>();
         var bay = BayWindows.Projecting(spec);
@@ -419,9 +450,9 @@ public static class Openings
     /// </summary>
     static ElementGeometry BayGeometry(Entity fill, IModelView m, JoinerySpec spec, Entity wall, WallFrame f, Placed p, int sx, int sy, Dressing? dressing)
     {
-        Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.Sill + z);
+        Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.FillSill + z);
         var t = f.YMax - f.YMin;
-        var zFloor = -(p.Sill + wall.Num("baseOffset"));
+        var zFloor = -(p.FillSill + wall.Num("baseOffset"));
         var faces = BayWindows.Faces(spec, t / 2);
         var parts = new List<GeometryPart>();
         foreach (var group in BayWindows.Pieces(spec, t, zFloor).GroupBy(x => x.Key))
@@ -450,7 +481,7 @@ public static class Openings
         o.Add(new PlanItem("hit", true, [.. line.Select(q => P(q.X, q.Y))]));
         o.Add(new PlanItem("symbol", false, [P(-half, -t / 2), P(-half, t / 2)]));
         o.Add(new PlanItem("symbol", false, [P(half, -t / 2), P(half, t / 2)]));
-        foreach (var (kind, closed, pts) in BayWindows.Plan(spec, t, zFloor, PlanCut - p.Sill))
+        foreach (var (kind, closed, pts) in BayWindows.Plan(spec, t, zFloor, PlanCut - p.FillSill))
             o.Add(new PlanItem(kind, closed, [.. pts.Select(q => P(q.X, q.Y))]));
         return new ElementGeometry(parts, o, [f.At(p.Along, f.Centre, 0).Xy, .. line.Select(q => P(q.X, q.Y))]);
     }
@@ -482,7 +513,7 @@ public static class Openings
             if (revealOnly) spec = spec with { Details = new JoineryDetails(Reveal: spec.Details?.Reveal) };
             _spec = spec;
             _d = spec.Details ?? new JoineryDetails();
-            _map = (x, y, z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.Sill + z);
+            _map = (x, y, z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.FillSill + z);
             _t = f.YMax - f.YMin;
             _yFE = spec.Frame.Offset + spec.Frame.Depth / 2;
             _yFI = spec.Frame.Offset - spec.Frame.Depth / 2;
@@ -629,7 +660,8 @@ public static class Openings
                 if (box != null) yield return (Reach(sill.Thickness + (YExt + sill.Projection + 0.05 - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180), 0), box);
             }
 
-            Placed Reach(double below, double above) => _placed with { Sill = _placed.Sill - below, Height = _placed.Height + below + above };
+            // Round the fill (its opening may be the file's, larger: Openings.HoleWidthKey).
+            Placed Reach(double below, double above) => _placed with { Sill = _placed.FillSill - below, Height = H + below + above, FillOffset = 0 };
         }
 
         Placed _placed;
@@ -785,7 +817,7 @@ public static class Openings
             o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList()));
         // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
         if (dressed)
-            foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, PlanCut - p.Sill))
+            foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, PlanCut - p.FillSill))
             o.Add(new PlanItem(kind, true, [P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1)]));
         return o;
     }

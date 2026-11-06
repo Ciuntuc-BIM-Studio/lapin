@@ -27,7 +27,8 @@ internal static class ForeignWallParts
     /// faces go on past them (<see cref="Walls.LayerEndsKey"/>): such a wall's ends are the file's, not a join's.
     /// </summary>
     internal sealed record Wall(List<LayerSpec> Layers, (bool Negative, double Offset) Usage, double BaseZ, double Height,
-        List<(double U, double V)>? Top, IReadOnlyList<Vec2> Footprint, double Start, double End, List<double[]>? LayerEnds);
+        List<(double U, double V)>? Top, IReadOnlyList<Vec2> Footprint, double Start, double End, List<double[]>? LayerEnds,
+        IReadOnlyDictionary<ForeignOpening, double>? HoleFloors = null);
 
     /// <summary>The wall the parts make on the axis from <paramref name="a"/> to <paramref name="b"/>, or null with the reason it stays a reference.</summary>
     internal static Wall? Read(ForeignElement e, Vec2 a, Vec2 b, out string? reason)
@@ -101,7 +102,7 @@ internal static class ForeignWallParts
         IReadOnlyList<Vec2> footprint = [P(r.Right.Start, r.V0), P(r.Right.End, r.V0), P(l.Left.End, l.V1), P(l.Left.Start, l.V1)];
         return new Wall(layers, (false, bands[0].Prof.V0), baseZ, high - baseZ,
             flat ? null : PartProfiles.Simplify([.. top.Select(q => new Vec2(Math.Round(q.X - u0, 6), Math.Round(q.Y - baseZ, 6)))]).Select(q => (q.X, q.Y)).ToList(),
-            footprint, u0, u1, ends);
+            footprint, u0, u1, ends, HoleFloors(e, a, dir, [.. bands.Select(x => x.Prof)], Floor));
     }
 
     /// <summary>Whether every layer's two faces end at one u (within the 1 mm).</summary>
@@ -118,9 +119,37 @@ internal static class ForeignWallParts
         foreach (var op in e.Openings)
         {
             if (op.Prisms.Count == 0) continue;
-            var pts = op.Prisms.SelectMany(q => q.Outer.Concat(q.Outer.Select(x => x + q.Sweep))).ToList();
-            var us = pts.Select(q => Vec2.Dot(new Vec2(q.X, q.Y) - a, dir)).ToList();
-            o.Add((us.Min(), us.Max(), pts.Min(q => q.Z), pts.Max(q => q.Z)));
+            o.Add(Box(op, a, dir));
+        }
+        return o;
+    }
+
+    static (double U0, double U1, double Z0, double Z1) Box(ForeignOpening op, Vec2 a, Vec2 dir)
+    {
+        var pts = op.Prisms.SelectMany(q => q.Outer.Concat(q.Outer.Select(x => x + q.Sweep))).ToList();
+        var us = pts.Select(q => Vec2.Dot(new Vec2(q.X, q.Y) - a, dir)).ToList();
+        return (us.Min(), us.Max(), pts.Min(q => q.Z), pts.Max(q => q.Z));
+    }
+
+    /// <summary>
+    /// The openings whose hole the parts cut down to their floor although the opening element starts higher (a door on the
+    /// finished floor, its parts cut from the slab up to its head, as ArchiCAD writes it): every part has nothing under the
+    /// head across the opening's width. The hole is the parts' (world z of its bottom), the door or window stays where the
+    /// opening element puts it.
+    /// </summary>
+    static Dictionary<ForeignOpening, double> HoleFloors(ForeignElement e, Vec2 a, Vec2 dir, IReadOnlyList<PartProfile> parts, Func<PartProfile, double> floor)
+    {
+        var o = new Dictionary<ForeignOpening, double>();
+        foreach (var op in e.Openings)
+        {
+            if (op.Prisms.Count == 0) continue;
+            var (u0, u1, z0, z1) = Box(op, a, dir);
+            if (u1 - u0 < 4 * Tol) continue;
+            var lowest = parts.Min(floor);
+            if (z0 - lowest <= Tol) continue;
+            var samples = new[] { u0 + Tol * 2, (u0 + u1) / 2, u1 - Tol * 2 };
+            if (parts.All(p => p.Bottom is { } bottom && floor(p) < z0 - Tol && samples.All(u => u > bottom[0].X && u < bottom[^1].X && PartProfiles.At(bottom, u) >= z1 - Tol)))
+                o[op] = lowest;
         }
         return o;
     }

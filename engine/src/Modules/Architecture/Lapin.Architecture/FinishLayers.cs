@@ -166,7 +166,7 @@ public static class FinishLayers
             var name = $"{type.Name} + {finish.Material}";
             finished = m.OfClass(IfcClass.WallType).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase)
                 && string.Join("|", LayerSets.LayersOf(m, t.Id).Select(l => Key(new LayerSpec(m.Get(l.Material)?.Name ?? "", l.Thickness, l.Core)))) == signature)
-                ?? WallTypes.Create(edit, name, layers);
+                ?? WallTypes.Create(edit, name, layers, lintels: type.Attrs["lintels"]?.DeepClone() ?? ForeignElements.NoLintel.ToJson());
             ctx.TypeIds[key] = finished.Id;
             ctx.CreatedTypes.Add(finished.Id);
         }
