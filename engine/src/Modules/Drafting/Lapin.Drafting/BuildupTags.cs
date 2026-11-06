@@ -16,6 +16,7 @@ namespace Lapin.Drafting;
 /// dragged along it): in a plan where the wall's layers lie across its axis there, in a section where the layers' cut
 /// crosses that line (a layer of no thickness on the line between its neighbours). Where a view cannot tell the layers
 /// apart (a floor in plan, an elevation) the tag keeps one leader. The tag follows its element (decision 320) as any tag.
+/// With an elbow leader (decision 331, <see cref="TagLeaders"/>) the tag's point is the knee and the block lies beside it.
 /// </summary>
 public static class BuildupTags
 {
@@ -131,12 +132,26 @@ public static class BuildupTags
         var content = e != null && buildUp != null ? BuildupText.Content(c.Model, e, type, c.Book.Units, c.Services, buildUp) : null;
         content ??= new BuildupContent(["?"], [], [], false);
         var lay = BuildupText.Lay(content, style.Height, style.Bold, type.BulletOrDefault, type.WidthOrDefault);
+        var leaderOn = t.Attrs["leader"] is not JsonValue lo || !lo.TryGetValue<bool>(out var isOn) || isOn;
+        // An elbow (decision 331): the tag's point is the knee, the block beside it, the leaders' knees one column.
+        if (TagLeaders.ShapeOf(t, type) == TagLeaders.Elbow)
+        {
+            var to = Followed(Pt(t.Attrs["end"])) ?? (e != null ? DefaultEnd(c, e) : null);
+            List<(int, Vec2)>? targets = null;
+            if (leaderOn && to is { } a && e != null && buildUp != null && type.LeaderPerLayer && content.Entries.Count > 0 && LayerPoints(c, e, buildUp, a) is { Count: > 0 } pts)
+                targets = content.Entries.Select((x, i) => (i, pts.TryGetValue(x.Layer, out var q) ? q : (Vec2?)null)).Where(x => x.Item2 != null).Select(x => (x.i, x.Item2!.Value)).ToList();
+            var (em, head, side) = TagLeaders.Buildup(t.Id, lay, type, style, mm, at, to, leaderOn, targets, color);
+            em.Data = Tags.ElbowData(at, head, side, leaderOn, e, to);
+            em.Data["buildup"] = true;
+            em.Snaps.Add(at);
+            return em;
+        }
         foreach (var x in lay.Texts)
             mk.Text(new PenText(new Vec2(at.X + x.X * mm, at.Y - x.Y * mm), x.Text, style.Height, 0, "start", "bottom", style.Bold, style.Font, style.Italic), color);
         var (left, right, top, bottom) = (at.X, at.X + lay.Width * mm, at.Y, at.Y - lay.Height * mm);
         // What a click on the tag hits: its block, never drawn.
         mk.Polyline([new(left, bottom), new(right, bottom), new(right, top), new(left, top)], true, "PICK", 0, color);
-        var data = new JsonObject { ["at"] = J(at), ["leader"] = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on, ["of"] = e?.Id, ["buildup"] = true };
+        var data = new JsonObject { ["at"] = J(at), ["leader"] = leaderOn, ["of"] = e?.Id, ["buildup"] = true, ["shape"] = TagLeaders.Straight };
         var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? DefaultEnd(c, e) : null);
         var elbow = Followed(Pt(t.Attrs["elbow"]));
         var dot = h / 5;

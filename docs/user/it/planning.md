@@ -147,8 +147,6 @@ In **Elementi** nelle Proprietà, spunta **Trovali con una regola** e scegli cos
 
 **Parte** dice cosa prende l'attività da ogni elemento: gli **elementi interi**, il loro **nucleo** (lo strato strutturale), le loro **finiture** (tutti gli strati tranne il nucleo), gli strati di un materiale o quelli di una categoria di materiale (Finitura, Isolamento…). Così un muro a strati si costruisce in un'attività Muratura (il nucleo) e si intonaca in un'attività Intonaci (le finiture). Un elemento senza strati è il proprio nucleo e non ha finiture.
 
-Anche un tetto si costruisce a strati: la sua struttura (il solaio di un tetto piano, di una volta o di un tetto senza orditura; i travetti o le capriate di uno con orditura) è il suo nucleo, il manto (con i tetti degli abbaini) e i listelli le sue finiture. Un'attività **Struttura del tetto** (nucleo) e una **Manto di copertura** (finiture) prendono ciascuna la sua parte, una regola per materiale trova il solaio dal suo calcestruzzo, e la simulazione e una vista a una data mostrano il manto solo quando è posato. I modelli del generatore costruiscono un tetto in questi due passi, ognuno con la durata dall'area della sua parte, e i pluviali in un passo a sé (**Grondaie e pluviali**); il manto di un capannone in acciaio resta un solo passo.
-
 ### A mano
 
 ![La scheda della selezione sopra il 3D, le due attività di un muro segnate nel Gantt](shots/planning-element-tasks.webp)

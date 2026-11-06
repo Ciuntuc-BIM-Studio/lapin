@@ -104,22 +104,6 @@ export interface FieldDescriptor {
   key: string; label: string;
   kind: 'number' | 'length' | 'angle' | 'text' | 'bool' | 'choice' | 'ref' | 'color' | 'table' | 'material';
   min?: number | null; max?: number | null; choices?: string[] | null; readOnly?: boolean;
-  /**
-   * When the field applies (decision 332): alternatives, any one holding shows it, each attributes and the values they may
-   * have, all holding ("!x" excludes x; a missing attribute is ""). None: always.
-   */
-  showIf?: Record<string, string[]>[] | null;
-}
-
-/** Whether a field applies to an entity of these attributes (a roof's deck only without framing). */
-export function fieldShown(field: Pick<FieldDescriptor, 'showIf'>, props: Record<string, unknown>): boolean {
-  if (!field.showIf?.length) return true;
-  return field.showIf.some((all) => Object.entries(all).every(([k, values]) => {
-    const raw = props[k];
-    const v = raw == null ? '' : String(raw);
-    const positives = values.filter((x) => !x.startsWith('!'));
-    return (positives.length === 0 || positives.includes(v)) && !values.some((x) => x.startsWith('!') && x.slice(1) === v);
-  }));
 }
 
 export interface ClassInfo {

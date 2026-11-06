@@ -109,6 +109,8 @@ public class BuildupTagTests
     public void The_default_build_up_tag_writes_a_wall_s_layers_exterior_to_interior_with_descriptions_and_lambda()
     {
         var (f, w, view) = Wall();
+        // Its straight leader: the block's top left at the tag's point (an elbow's is in TagLeaderTests).
+        Set(f, new JsonObject { ["leaderShape"] = "straight" });
         var t = Tag(f, view, w, 1, 3);
         var d = Draw(f, view);
         Assert.Equal(Written, Texts(d));

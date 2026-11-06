@@ -1,8 +1,9 @@
 /**
  * Tags (report #64): the TAG command with what it shows chosen in the command
  * line's bar (a field, any parameter, a tag type) and its leader; a tag's
- * grips (its head, the leader's elbow and end); and its properties: what it
- * shows, a template of its own, its type, the leader on or off.
+ * grips (its head, the leader's elbow and end; an elbow leader's knee, decision
+ * 330); and its properties: what it shows, a template of its own, its type, the
+ * leader on or off and its shape.
  */
 
 import { useEffect, useState } from 'react';
@@ -16,6 +17,7 @@ import { pt } from '../../viewport/gripKit';
 import { useUi } from '../../app/store';
 import { isPart, partGrips } from '../../platform/labelParts';
 import { formatLength, unitLabel } from '../../engine/unitsStore';
+import { leaderShapeOf, snapKnee, tagLeaderShape } from './tagLeader';
 
 /** What the TAG command puts down: the field it shows (a parameter's name too), a tag type (its template wins), a leader or none. */
 interface TagPrefs { field: string; tagType: string; leader: boolean }
@@ -27,7 +29,7 @@ export const QUICK_FIELDS: [string, string][] = [
   ['FireRating', 'Fire rating'], ['AcousticRating', 'Acoustic rating'], ['ThermalTransmittance', 'Thermal transmittance'],
 ];
 
-interface TagTypeDto { id: string; name: string; template: string; shape?: string; classes?: string[] }
+interface TagTypeDto { id: string; name: string; template: string; shape?: string; classes?: string[]; leaderShape?: string }
 /** The drafting standards' tag types a box can take, and the build-up tags (not a door's marker, not a room's stamp). */
 export function useTagTypes(): TagTypeDto[] {
   const nodes = useSession((s) => s.nodes);
@@ -116,9 +118,22 @@ export function tagCommand(): Step {
   const pick = (): Step => ({
     prompt: `Click the element to tag [${shows()}: MARK/NAME/CLASS/TYPE/FIELD/LEADER ${useTagPrefs.getState().leader ? 'on' : 'off'}]`, want: 'select',
     keywords: words(),
-    point: (p) => {
+    point: async (p) => {
       const id = cadHost()?.pickAny(p);
       if (!id || id.includes('#')) return pick();
+      // An elbow leader (decision 331): the click after the element is the knee, the text beside it.
+      const tagType = useTagPrefs.getState().tagType;
+      if (useTagPrefs.getState().leader && leaderShapeOf(tagType ? await tagTypeById(tagType) : null) === 'elbow') {
+        return {
+          prompt: 'Where the leader bends (the text goes beside it)', want: 'point', base: p,
+          preview: (c: Vec2) => {
+            const w = Math.max(Math.abs(c.x - p.x), Math.abs(c.y - p.y)) * 0.6 || 1;
+            const far = { x: c.x + (c.x >= p.x ? w : -w), y: c.y };
+            return [{ type: 'line' as const, a: p, b: c }, { type: 'line' as const, a: c, b: far }];
+          },
+          point: async (at: Vec2) => { await put(id, at); return pick(); },
+        };
+      }
       const head = (elbow?: Vec2): Step => ({
         prompt: elbow ? 'Where the tag goes' : 'Where the tag goes [Elbow]', want: 'point', base: elbow ?? p,
         preview: (c) => (elbow ? [{ type: 'line', a: p, b: elbow }, { type: 'line', a: elbow, b: c }] : [{ type: 'line', a: p, b: c }]),
@@ -149,6 +164,7 @@ export function tagGrips(node: NodeDto, view?: GripView): Grip[] {
   const at = pt(data?.at) ?? pt(node.props.at);
   if (!at) return [];
   const id = node.id;
+  if ((data as { shape?: string } | undefined)?.shape === 'elbow') return elbowGrips(node, data as ElbowData, at);
   const grips: Grip[] = [{
     key: 'at', kind: 'move', at, title: 'Drag: move the tag (the leader keeps pointing where it does)',
     step: (to: Vec2) => ({ command: 'drafting.updateTag', args: { id, at: [to.x, to.y] } }),
@@ -170,6 +186,34 @@ export function tagGrips(node: NodeDto, view?: GripView): Grip[] {
       step: (to: Vec2) => ({ command: 'drafting.updateTag', args: { id, elbow: [to.x, to.y] } }),
     });
   }
+  const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
+  return grips.map((g) => ({ ...g, view: viewId }));
+}
+
+interface ElbowData { knee?: unknown; head?: unknown; end?: unknown; side?: number }
+
+/**
+ * An elbow leader's grips (decision 331): the text (dragged: the tag moves, its knee with it, the leader's end stays), the
+ * knee (dragged: kept to 30°, 45°, 60° or 90° from the end, Shift frees it; past the end the text goes to that side; with
+ * leaders per layer the column of knees moves), and the leader's end as a straight leader's.
+ */
+function elbowGrips(node: NodeDto, data: ElbowData, at: Vec2): Grip[] {
+  const id = node.id;
+  const knee = pt(data.knee) ?? at, head = pt(data.head) ?? at, end = pt(data.end);
+  const grips: Grip[] = [{
+    key: 'at', kind: 'move', at: head, title: 'Drag: move the tag with its knee (the leader keeps pointing where it does)',
+    step: (to: Vec2) => ({ command: 'drafting.updateTag', args: { id, at: [knee.x + to.x - head.x, knee.y + to.y - head.y] } }),
+  }];
+  grips.push({
+    key: 'knee', kind: 'vertex', at: knee, title: 'Drag: the leader bends here, at 30°, 45°, 60° or 90° (Shift: any angle); past the end the text goes to that side',
+    ...(end ? { constrain: (to: Vec2, free: boolean) => snapKnee(end, to, free) } : {}),
+    step: (to: Vec2) => ({ command: 'drafting.updateTag', args: { id, at: [to.x, to.y] } }),
+  });
+  if (end) grips.push({
+    key: 'end', kind: 'end', at: end, title: 'Drag: the leader points here · Ctrl/⌘-click: back on the element\'s middle',
+    step: (to: Vec2) => ({ command: 'drafting.updateTag', args: { id, end: [to.x, to.y] } }),
+    remove: () => (node.props.end ? { command: 'drafting.updateTag', args: { id, end: null } } : null),
+  });
   const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
   return grips.map((g) => ({ ...g, view: viewId }));
 }
@@ -274,6 +318,9 @@ export function TagFields({ node }: { node: NodeDto }) {
   const known = fields.some((f) => f.field === field);
   // An opening's marker (a door's or window's tag type) is drawn across its wall: no box, no leader.
   const marker = !!tagType && !types.some((t) => t.id === tagType);
+  const type = types.find((t) => t.id === tagType);
+  const typeShape = leaderShapeOf(type);
+  const shape = tagLeaderShape(node.props, type);
   return (
     <dl className="fields" data-tag-fields>
       <dt>Tagged element</dt><dd><span className="num">{target ? `${target.name} (${target.type})` : '—'}</span></dd>
@@ -305,9 +352,16 @@ export function TagFields({ node }: { node: NodeDto }) {
         <dt title="A line from the tag to the element; drag its grips to bend it or point it elsewhere">Leader</dt>
         <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <input type="checkbox" checked={leader} data-tag-leader-on onChange={(e) => set({ leader: e.target.checked })} />
-          {!!node.props.elbow && <button type="button" className="btn mini" onClick={() => set({ elbow: null })}>Straighten</button>}
+          {!!node.props.elbow && shape === 'straight' && <button type="button" className="btn mini" onClick={() => set({ elbow: null })}>Straighten</button>}
           {!!node.props.end && <button type="button" className="btn mini" title="The leader points at the element's middle again" onClick={() => set({ end: null })}>On the element</button>}
         </dd>
+        <dt title="Straight from a box round the text, or an elbow: an oblique line to a knee, then along under the text (as the tag type says, unless the tag says its own)">Leader shape</dt>
+        <dd><select className="cell" data-tag-leader-shape value={typeof node.props.leaderShape === 'string' ? node.props.leaderShape : ''}
+          onChange={(e) => set({ leaderShape: e.target.value || null })}>
+          <option value="">{typeShape === 'straight' ? 'as its type (straight)' : 'as its type (elbow)'}</option>
+          <option value="elbow">elbow, under the text</option>
+          <option value="straight">straight, from a box</option>
+        </select></dd>
       </>}
       {marker && <MarkerParts node={node} tagType={tagType} />}
       {at && !marker && <><dt>Position</dt><dd className="pair"><Pair p={at} /></dd></>}

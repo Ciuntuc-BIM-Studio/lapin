@@ -469,11 +469,6 @@ export const scenes = [
       // The covering's material (decision 328): the covering's own, made in the project, picked in the properties.
       t.expect(roof.props?.coveringMaterial && (await t.nodes()).some((n) => n.type === 'IfcMaterial' && n.name === roof.props.coveringMaterial), `the covering is made of a project material (${roof.props?.coveringMaterial})`);
       t.expect(await t.page.locator('aside.props dt[title=coveringMaterial]').count() > 0, 'the properties show the covering material');
-      // Only the fields that apply (decision 332): a framed roof shows its rafters' fields, not the deck's.
-      const isFramed = !['flat', 'barrel'].includes(roof.props?.shape) && roof.props?.structure !== 'none';
-      t.expect(isFramed, `the house's roof is framed (${roof.props?.shape}, ${roof.props?.structure})`);
-      t.expect(await t.page.locator('aside.props dt[title=deckThickness]').count() === 0, 'a framed roof hides the deck fields');
-      t.expect(await t.page.locator('aside.props dt[title=rafterSpacing]').count() > 0, 'a framed roof shows its rafters');
       await t.shot('roof-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       t.expect((await t.nodes()).some((n) => n.type === 'IfcSlab'), 'a floor in the house');
       // The roof configurator (decision 231): the Swedish truss style picked, its framing seen in the section, applied.
@@ -568,10 +563,6 @@ export const scenes = [
       await t.wait(800);
       const node = (await t.nodes()).find((n) => n.id === roof.id);
       t.expect(node?.props?.deckMaterial === 'Reinforced concrete', `the flat roof has a deck of reinforced concrete (${node?.props?.deckMaterial})`);
-      await select(t, roof.id);
-      await t.wait(600);
-      t.expect(await t.page.locator('aside.props dt[title=deckThickness]').count() > 0, 'a flat roof shows its deck fields');
-      t.expect(await t.page.locator('aside.props dt[title=rafterSpacing]').count() === 0, 'a flat roof hides the rafters');
       await t.cmd('view.create', { kind: 'section', name: 'R-R', start: [10.5, -1], end: [10.5, 9], scale: 20 });
       await openFromBrowser(t, 'R-R', 1500);
       await t.fit();
@@ -3207,7 +3198,8 @@ export const scenes = [
       const tags = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG');
       t.expect(tags.length === 1 && tags[0].props.tagType === 'buildup', `TAG puts the build-up tag on the wall (${tags.map((x) => x.props.tagType).join(', ')})`);
       // Above the wall, its exterior side, the note's head where a drafter would put it.
-      await t.cmd('drafting.updateTag', { id: tags[0].id, at: [0.3, 5.3] });
+      // Its knee (decision 331) at 60° above the wall's middle, the note on its shoulder to the right.
+      await t.cmd('drafting.updateTag', { id: tags[0].id, at: [7.5, 5.2] });
       const second = await t.cmd('drafting.addTag', { viewId: `plan:${s}`, element: wall, tagType: 'buildup-layers', at: [10.4, 1.5] });
       await t.cmd('drafting.updateTag', { id: second.id, end: [8, 0] });
       await t.ui({ selection: null, selected: [], keyPlan: false });
@@ -3228,7 +3220,7 @@ export const scenes = [
       await dialog.locator('[data-field=tag-shape-buildup]').first().click();
       await t.wait(1200);
       t.expect(await dialog.locator('[data-buildup-editor] [data-field=tag-preview] text').count() >= 6, 'the editor shows its preview on the wall type');
-      for (const f of ['tag-header', 'tag-line', 'tag-footer', 'tag-order', 'tag-zero-layers', 'tag-leaders', 'tag-bullet', 'tag-width'])
+      for (const f of ['tag-header', 'tag-line', 'tag-footer', 'tag-order', 'tag-zero-layers', 'tag-leaders', 'tag-leader-shape', 'tag-underline', 'tag-extension', 'tag-bullet', 'tag-width'])
         t.expect(await dialog.locator(`[data-field=${f}]`).count() === 1, `the editor has its ${f}`);
       await t.shot('buildup-tag-type', { of: '[data-buildup-editor]', pad: 6 });
     },
@@ -4256,7 +4248,8 @@ export const scenes = [
   },
   {
     // Tags (report #64): what a tag shows chosen in the command line's bar (here the walls' fire rating, a parameter of the
-    // user's own), the leader bent at an elbow by its grips, and the tag's properties.
+    // user's own), its elbow leader (decision 331: an oblique line to the knee at 60°, the shoulder under the text) with
+    // its grips, and the tag's properties.
     id: 'tags',
     async run(t) {
       await t.fresh();
@@ -4273,11 +4266,12 @@ export const scenes = [
       await t.keys('Escape', 'Escape');
       const tag = (await t.nodes()).find((n) => n.type === 'IfcAnnotation' && n.props.predefinedType === 'TAG');
       t.expect(tag && tag.props.field === 'FireRating', `a tag of the fire rating (${tag?.props.field})`);
-      await t.cmd('drafting.updateTag', { id: tag.id, at: [3, 2.2], elbow: [4.5, 2.2] });
+      await t.cmd('drafting.updateTag', { id: tag.id, at: [6.2, 2.1] });
       await t.wait(800);
       t.expect(await t.page.locator('[data-testid=plan] text', { hasText: 'REI 120' }).count() > 0, 'the tag shows the wall\'s fire rating');
       await select(t, tag.id);
       await t.wait(600);
+      t.expect(await t.page.locator('[data-grip=knee]').count() === 1, 'an elbow leader has its knee\'s grip');
       const [cx, cy] = await t.planPoint(4, 1.2);
       await t.shot('tag-leader', { clip: { x: cx - 260, y: cy - 170, width: 520, height: 300 } });
       t.expect(await t.page.locator('[data-tag-fields]').count() > 0, 'a tag\'s properties say what it shows and its leader');

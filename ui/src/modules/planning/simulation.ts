@@ -27,7 +27,7 @@ export interface SimLookDto {
 export interface TimelineElementDto {
   id: string;
   build?: [string, string];
-  /** Each layer's days by its part key (layer:0, layer:1…; a roof's deck, covering, timber: for every rafter), when tasks take the layers apart. */
+  /** Each layer's days by its part key (layer:0, layer:1…), when tasks take the layers apart. */
   layers?: Record<string, [string, string]>;
   demolish?: [string, string];
   temporary?: string;

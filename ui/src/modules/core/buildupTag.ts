@@ -7,6 +7,7 @@
 export interface BuildupEntry {
   id: string; name: string; shape?: string; template?: string; header?: string; footer?: string; order?: string;
   zeroLayers?: boolean; leaders?: string; bullet?: string; width?: number; unit?: string; textStyle?: string;
+  leaderShape?: string; underline?: string; extension?: number;
 }
 
 /** What a tag type becomes when its shape is made a build-up: the tester's note (EXTERIOR, a line per layer, INTERIOR). */

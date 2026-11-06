@@ -147,8 +147,6 @@ Under **Elements** in Properties, tick **Find them by a rule** and pick what the
 
 **Part** says what the task takes of each element: the **whole elements**, their **core** (the structural layer), their **finishes** (every layer but the core), the layers of one material, or those of a material category (Finish, Insulation…). So a layered wall is built in a Masonry task (its core) and plastered in a Plaster task (its finishes). An element without layers is its own core and has no finishes.
 
-A roof is built in layers too: its structure (the deck of a flat roof, a vault or a roof without framing; the rafters or trusses of a framed one) is its core, its covering (with the dormers' roofs) and its battens its finishes. A **Roof structure** task (core) and a **Roof covering** task (finishes) each take their part, a rule by material finds the deck by its concrete, and the simulation and a view at a date show the covering only once it is laid. The generator's templates build a roof in these two steps, each timed by its own part's area, and the downpipes in a step of their own (**Gutters and downpipes**); a steel hall's **Roof cladding** stays one step.
-
 ### By hand
 
 ![The selection's card over the 3D, a wall's two tasks marked in the Gantt](shots/planning-element-tasks.webp)

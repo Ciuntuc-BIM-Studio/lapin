@@ -89,8 +89,6 @@ public sealed class Timeline
     public Dictionary<string, ElementTime> Elements { get; } = [];
     /// <summary>The number of layers of each layered element (those with more than one).</summary>
     public Dictionary<string, int> LayerCounts { get; } = [];
-    /// <summary>The layers of each layered element, with the parts each is drawn as (a wall's <c>layer:n</c>, a roof's deck and covering).</summary>
-    public Dictionary<string, ElementFacts> LayerFacts { get; } = [];
     public DateOnly Start { get; }
     public DateOnly Finish { get; }
 
@@ -140,11 +138,9 @@ public sealed class Timeline
                 if (down) { demolish[id] = demolish.TryGetValue(id, out var d) ? d.With(span) : span; continue; }
                 if (baseline != null) bases[id] = bases.TryGetValue(id, out var bb) ? bb.With(baseline) : baseline;
                 build[id] = build.TryGetValue(id, out var b) ? b.With(span) : span;
-                var facts = links.Facts(id);
-                var count = facts?.Layers.Count ?? 1;
+                var count = links.Facts(id)?.Layers.Count ?? 1;
                 if (count <= 1) continue;
                 t.LayerCounts[id] = count;
-                t.LayerFacts[id] = facts!;
                 var per = layers.TryGetValue(id, out var l) ? l : layers[id] = [];
                 for (var i = 0; i < Math.Min(64, count); i++)
                     if ((mask & (1UL << i)) != 0) per[i] = per.TryGetValue(i, out var s) ? s.With(span) : span;
@@ -253,10 +249,6 @@ public sealed class Timeline
         return o;
     }
 
-    /// <summary>The keys of the parts a layer of an element is drawn as (a key ending in ":" a prefix): <c>layer:&lt;n&gt;</c>, or a roof's own.</summary>
-    public IReadOnlyList<string> KeysOf(string id, int index) =>
-        LayerFacts.TryGetValue(id, out var f) && f.Layers.FirstOrDefault(l => l.Index == index) is { } l ? l.PartKeys : [$"layer:{index}"];
-
     /// <summary>What the interface gets once a change: the dates and every element's days (the interface works out each frame's state itself).</summary>
     public JsonObject ToJson()
     {
@@ -269,8 +261,7 @@ public sealed class Timeline
             {
                 var l = new JsonObject();
                 for (var i = 0; i < LayerCounts.GetValueOrDefault(e.Id); i++)
-                    if (e.LayerSpan(i) is { } s)
-                        foreach (var key in KeysOf(e.Id, i)) l[key] = s.ToJson();
+                    if (e.LayerSpan(i) is { } s) l[$"layer:{i}"] = s.ToJson();
                 o["layers"] = l;
             }
             if (e.Demolish is { } d) o["demolish"] = d.ToJson();
@@ -341,13 +332,10 @@ public sealed class StateAtDate : IViewElementFilter, IViewPartFilter
 
     public bool Hides(IQueryContext q, Entity view, Entity element, string? partKey)
     {
-        if (DateOf(view) is not { } d || partKey is null) return false;
+        if (DateOf(view) is not { } d || partKey is null || !partKey.StartsWith("layer:", StringComparison.Ordinal)) return false;
+        if (!int.TryParse(partKey.AsSpan(6), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var index)) return false;
         var t = Timeline.Of(q);
         if (!t.Look.Layers || !t.Elements.TryGetValue(element.Id, out var e) || e.Layers == null) return false;
-        // The layer the part is of: layer:<n>, or one a layer is drawn as (a roof's deck, its rafters, its covering).
-        if ((t.LayerFacts.TryGetValue(element.Id, out var facts) ? TaskParts.LayerOf(facts, partKey)
-            : partKey.StartsWith("layer:", StringComparison.Ordinal) && int.TryParse(partKey.AsSpan(6), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : null) is not { } index)
-            return false;
         // The element shown at all: its layers not yet laid left out (a ghost's layers all drawn).
         return Timeline.StateOf(e, d) is Status.Active or Status.Done && Timeline.LayerStateOf(e, index, d) == Status.Planned;
     }

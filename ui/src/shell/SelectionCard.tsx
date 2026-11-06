@@ -9,7 +9,6 @@ import { showOverlay, usePanels } from '../app/panels';
 import { useInterface } from '../app/interface';
 import { bindingText, useBindings } from '../app/commands';
 import { useSession } from '../engine/session';
-import { fieldShown } from '../engine/protocol';
 import { FieldRow } from './PropertiesPanel';
 
 export function SelectionCard() {
@@ -23,7 +22,7 @@ export function SelectionCard() {
   useBindings();
   if (!hidden || propsOpen || overlay?.side === 'props' || !node) return null;
   const cls = info?.nodeTypes.find((t) => t.type === node.type);
-  const fields = (cls?.fields ?? []).filter((f) => !f.readOnly && fieldShown(f, node.props)).slice(0, 3);
+  const fields = (cls?.fields ?? []).filter((f) => !f.readOnly).slice(0, 3);
   const keys = bindingText('app.propsOverlay').split(', ')[0];
   return (
     <div className="sel-card props" role="region" aria-label="Selection">

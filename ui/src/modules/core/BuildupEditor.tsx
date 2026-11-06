@@ -3,7 +3,8 @@
  * each layer writes (fields picked from the layer's, the materials' parameters found in the project and the element's;
  * [optional parts] dropped where a field in them is empty), its footer, the layers' order, layers of no thickness, its
  * leaders, bullets, the width its lines wrap at and its unit; beside them the engine's own layout of it on a sample
- * build-up (a wall or floor type of the project), so what is seen is what views and sheets draw.
+ * build-up (a wall or floor type of the project), its leader's shape and underline (decision 331), so what is seen is
+ * what views and sheets draw (drafting.tagPreview).
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -11,6 +12,7 @@ import { execute, query, useSession } from '../../engine/session';
 import {
   balanced, BUILDUP_DEFAULTS, ELEMENT_FIELDS, insertField, LAYER_FIELDS, materialFields, orderLabels, parseWidth, wrapOptional, type BuildupEntry,
 } from './buildupTag';
+import { LeaderFields, LeaderPreview } from './LeaderEditor';
 
 interface Preview {
   sample?: { id: string; name: string; class: string };
@@ -20,40 +22,6 @@ interface Preview {
 }
 
 const BULLETS: [string, string][] = [['bullet', '• bullet'], ['dash', '– dash'], ['number', '1. number'], ['none', 'nothing']];
-
-/** The sample's layers and the tag laid out as the engine lays it, with its leaders sketched to a strip of the layers. */
-function PreviewSvg({ p, perLayer }: { p: Preview; perLayer: boolean }) {
-  const h = p.textHeight ?? 2.5;
-  const w = Math.max(p.width, 20), H = Math.max(p.height, h * 2);
-  const layers = p.layers ?? [];
-  const total = layers.reduce((s, l) => s + l.thickness, 0) || 1;
-  const stripX = w + 14, stripW = 9;
-  // Each layer's band down the strip, as thick as it is (a layer of no thickness a line).
-  let at = 0;
-  const bands = layers.map((l) => { const y0 = at; at += (l.thickness / total) * H; return { ...l, y0, y1: at }; });
-  const mids = p.mids ?? [];
-  const leaders = perLayer
-    ? (p.entries ?? []).map((layer, i) => { const b = bands.find((x) => x.index === layer); return b && mids[i] != null ? { y: mids[i], to: (b.y0 + b.y1) / 2 } : null; }).filter((x): x is { y: number; to: number } => !!x)
-    : [{ y: H / 2, to: H / 2 }];
-  const fs = h / 0.718;
-  return (
-    <svg className="buildup-preview-svg" viewBox={`-3 -3 ${stripX + stripW + 6} ${H + 6}`} data-field="tag-preview" role="img" aria-label="Preview">
-      <rect x={-3} y={-3} width={stripX + stripW + 6} height={H + 6} className="paper" />
-      {bands.map((b) => b.y1 - b.y0 > 0.05
-        ? <rect key={b.index} x={stripX} y={b.y0} width={stripW} height={b.y1 - b.y0} fill={b.color} stroke="#222" strokeWidth={0.15} />
-        : <line key={b.index} x1={stripX} x2={stripX + stripW} y1={b.y0} y2={b.y0} stroke="#222" strokeWidth={0.35} />)}
-      {leaders.map((l, i) => (
-        <g key={i} stroke="#111" strokeWidth={0.18} fill="none">
-          <polyline points={`${w + h * 0.8},${l.y} ${w + h * 0.8 + 2.5},${l.y} ${stripX + stripW / 2},${l.to}`} />
-          <circle cx={stripX + stripW / 2} cy={l.to} r={h / 5} fill="#111" />
-        </g>
-      ))}
-      {p.texts.map((t, i) => (
-        <text key={i} x={t.x} y={t.y} fontSize={fs} fontFamily="Helvetica, Arial, sans-serif" fontWeight={p.bold ? 700 : 400} fill="#111" data-no-i18n>{t.text}</text>
-      ))}
-    </svg>
-  );
-}
 
 export function BuildupEditor({ entry, onClose }: { entry: BuildupEntry; onClose: () => void }) {
   const nodes = useSession((s) => s.nodes);
@@ -118,6 +86,7 @@ export function BuildupEditor({ entry, onClose }: { entry: BuildupEntry; onClose
           <dd><select data-field="tag-leaders" value={draft.leaders ?? 'one'} onChange={(e) => commit({ leaders: e.target.value })}>
             <option value="one">one, to the element</option><option value="per-layer">one per layer</option>
           </select></dd>
+          <LeaderFields draft={draft} commit={commit} />
           <dt>Lines start with</dt>
           <dd><select data-field="tag-bullet" value={draft.bullet ?? 'bullet'} onChange={(e) => commit({ bullet: e.target.value })}>
             {BULLETS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -136,7 +105,7 @@ export function BuildupEditor({ entry, onClose }: { entry: BuildupEntry; onClose
           </select></dd>
         </dl>
         <figure className="buildup-preview">
-          {preview && preview.texts.length > 0 ? <PreviewSvg p={preview} perLayer={draft.leaders === 'per-layer'} /> : <p className="muted small">The project has no wall or floor type with layers yet.</p>}
+          {preview && preview.texts.length > 0 ? <LeaderPreview entry={draft} sample={sample || preview.sample?.id} /> : <p className="muted small">The project has no wall or floor type with layers yet.</p>}
         </figure>
       </div>
     </section>

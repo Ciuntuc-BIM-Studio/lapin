@@ -8,17 +8,8 @@ import { create } from 'zustand';
 
 export interface Look {
   hidden?: boolean; color?: string; opacity?: number;
-  /** Looks of an element's parts by their keys (layer:0…, a roof's deck; one ending in ":" every part whose key starts so, timber:): a layer hidden or tinted apart (the 4D simulation); the rest take the element's. */
+  /** Looks of an element's parts by their keys (layer:0…): a layer hidden or tinted apart (the 4D simulation); the rest take the element's. */
   parts?: Record<string, Look>;
-}
-
-/** A part's own look among an element's part looks: by its key, else by the longest prefix (a key ending in ":") it starts with. */
-export function partLook(parts: Record<string, Look> | undefined, key: string): Look | undefined {
-  if (!parts) return undefined;
-  if (parts[key]) return parts[key];
-  let best: string | undefined;
-  for (const k of Object.keys(parts)) if (k.endsWith(':') && key.startsWith(k) && (!best || k.length > best.length)) best = k;
-  return best ? parts[best] : undefined;
 }
 
 interface LooksState { bySource: Record<string, Record<string, Look>>; looks: Record<string, Look> }

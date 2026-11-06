@@ -32,14 +32,20 @@ public sealed record AxisStyle(string Id, string Name, string TextStyle, string 
 /// stands, or the other way (<see cref="Order"/> "in-out"); layers of no thickness shown unless <see cref="ZeroLayers"/>
 /// is false; one leader to the element, or one per layer into its own (<see cref="Leaders"/>); each line after a
 /// <see cref="Bullet"/>, wrapped at <see cref="Width"/> paper mm. Each is null on other shapes (and then its default).
+/// A tag's leader (decision 331), as ArchiCAD's labels: <see cref="LeaderShape"/> "straight" (from its box's side, bent
+/// at a free elbow) or "elbow" (the default: an oblique segment to a knee, then a shoulder along the text, no box); the
+/// shoulder underlines the text's first row, each, the last or none (<see cref="Underline"/>), reaching
+/// <see cref="Extension"/> paper mm further out from the text towards the knee.
 /// </summary>
 public sealed record TagType(string Id, string Name, string Template, IReadOnlyList<string> Classes,
     string Shape = "box", string Inner = "", string Unit = "cm", double Reach = 6, string TextStyle = Standards.Standard, string TextOrientation = "across",
-    string? Header = null, string? Footer = null, string? Order = null, bool? ZeroLayers = null, string? Leaders = null, string? Bullet = null, double? Width = null)
+    string? Header = null, string? Footer = null, string? Order = null, bool? ZeroLayers = null, string? Leaders = null, string? Bullet = null, double? Width = null,
+    string? LeaderShape = null, string? Underline = null, double? Extension = null)
 {
     public bool Equals(TagType? o) => o is not null && Id == o.Id && Name == o.Name && Template == o.Template && Classes.SequenceEqual(o.Classes)
         && Shape == o.Shape && Inner == o.Inner && Unit == o.Unit && Reach == o.Reach && TextStyle == o.TextStyle && TextOrientation == o.TextOrientation
-        && Header == o.Header && Footer == o.Footer && Order == o.Order && ZeroLayers == o.ZeroLayers && Leaders == o.Leaders && Bullet == o.Bullet && Width == o.Width;
+        && Header == o.Header && Footer == o.Footer && Order == o.Order && ZeroLayers == o.ZeroLayers && Leaders == o.Leaders && Bullet == o.Bullet && Width == o.Width
+        && LeaderShape == o.LeaderShape && Underline == o.Underline && Extension == o.Extension;
     public override int GetHashCode() => HashCode.Combine(Id, Name, Template, Shape, Inner, Header, Footer, Order);
 
     /// <summary>A build-up tag's layers the other way: interior to exterior, bottom to top.</summary>
@@ -52,6 +58,12 @@ public sealed record TagType(string Id, string Name, string Template, IReadOnlyL
     [JsonIgnore] public string BulletOrDefault => Bullet ?? "bullet";
     /// <summary>The paper width (mm) a build-up tag's lines wrap at.</summary>
     [JsonIgnore] public double WidthOrDefault => Width is > 0 ? Width.Value : Standards.BuildupWidth;
+    /// <summary>How the type's leaders run: an elbow under the text unless it says straight.</summary>
+    [JsonIgnore] public string LeaderShapeOrDefault => LeaderShape ?? "elbow";
+    /// <summary>What an elbow leader's shoulder underlines: the first row unless the type says each, the last or none.</summary>
+    [JsonIgnore] public string UnderlineOrDefault => Underline ?? "first";
+    /// <summary>How much further (paper mm) an elbow leader's shoulder reaches out from the text towards its knee.</summary>
+    [JsonIgnore] public double ExtensionOrDefault => Extension is > 0 ? Extension.Value : 0;
 }
 
 /// <summary>Layers gathered under a group that shows and locks them together.</summary>
@@ -151,8 +163,15 @@ public static class Standards
             OneOf(v["unit"], TagUnits, "cm"), Positive(v["reach"], 6), Str(v["textStyle"], Standard), OneOf(v["textOrientation"], TagOrientations, "across"),
             Text("header"), Text("footer"), order, v["zeroLayers"] is JsonValue zv && zv.TryGetValue<bool>(out var zero) ? zero : null,
             Choice("leaders", BuildupLeaders), Choice("bullet", BuildupBullets),
-            Lapin.Model.Json.Number(v["width"]) is { } w && double.IsFinite(w) && w > 0 ? Math.Clamp(w, 10, 1000) : null);
+            Lapin.Model.Json.Number(v["width"]) is { } w && double.IsFinite(w) && w > 0 ? Math.Clamp(w, 10, 1000) : null,
+            Choice("leaderShape", LeaderShapes), Choice("underline", Underlines),
+            Lapin.Model.Json.Number(v["extension"]) is { } ext && double.IsFinite(ext) && ext >= 0 ? Math.Min(ext, 100) : null);
     }
+
+    /// <summary>A tag's leader (decision 331): straight from its box, or an elbow whose shoulder runs along the text.</summary>
+    public static readonly string[] LeaderShapes = ["straight", "elbow"];
+    /// <summary>What an elbow leader's shoulder underlines: the text's first row, each row, the last, or none (it stops at the text's side).</summary>
+    public static readonly string[] Underlines = ["first", "each", "last", "none"];
 
     /// <summary>A tag's shape: a box with a leader, a door's or window's marker across its wall in plan, or a room's stamp.</summary>
     public static readonly string[] TagShapes = ["box", "opening", "room", "buildup"];

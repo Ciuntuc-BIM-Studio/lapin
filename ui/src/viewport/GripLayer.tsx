@@ -204,8 +204,11 @@ export function useGripEditor(o: GripEditorOptions) {
     if (!drag) { setHover(hit(e)); return false; }
     const aimed = o.aim(e.clientX, e.clientY, drag.group.at, zOf(drag.group));
     liveCursor(aimed);
-    const at = livePoint({ ...useLive.getState(), cursor: aimed }) ?? aimed;
     const members = movers(drag.group, pickOf(drag.group), e.altKey);
+    // A grip that keeps its own angles (a tag's knee): on them unless Shift frees it.
+    const typed = livePoint({ ...useLive.getState(), cursor: aimed }) ?? aimed;
+    const keep = members.length === 1 ? members[0].constrain : undefined;
+    const at = keep ? keep(typed, e.shiftKey) : typed;
     setDrag({ ...drag, members, at, moved: drag.moved || Math.hypot(at.x - drag.group.at.x, at.y - drag.group.at.y) > 1e-6 });
     return true;
   };

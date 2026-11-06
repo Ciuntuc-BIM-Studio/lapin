@@ -147,8 +147,6 @@ En **Elementos** de Propiedades, marca **Encontrarlos por una regla** y elige qu
 
 **Parte** dice qué toma la tarea de cada elemento: los **elementos enteros**, su **núcleo** (la capa estructural), sus **acabados** (todas las capas salvo el núcleo), las capas de un material o las de una categoría de material (Acabado, Aislamiento…). Así, un muro por capas se levanta en una tarea de Albañilería (su núcleo) y se enluce en una de Enlucido (sus acabados). Un elemento sin capas es su propio núcleo y no tiene acabados.
 
-Una cubierta también se construye por capas: su estructura (el forjado de una cubierta plana, una bóveda o una cubierta sin armadura; los cabios o cerchas de una con armadura) es su núcleo, y su cubrición (con las cubiertas de las buhardillas) y sus rastreles sus acabados. Una tarea **Estructura de cubierta** (núcleo) y otra **Cubrición** (acabados) toman cada una su parte, una regla por material encuentra el forjado por su hormigón, y la simulación y una vista en una fecha muestran la cubrición solo cuando está puesta. Las plantillas del generador construyen una cubierta en estos dos pasos, cada uno con la duración del área de su parte, y las bajantes en un paso propio (**Canalones y bajantes**); la cubrición de una nave de acero sigue siendo un paso.
-
 ### A mano
 
 ![La tarjeta de la selección sobre el 3D, las dos tareas de un muro marcadas en el Gantt](shots/planning-element-tasks.webp)

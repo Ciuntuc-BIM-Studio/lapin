@@ -1,7 +1,7 @@
 /**
  * Drafting standards: the project's text styles, dimension styles, axis types
  * (and the default one), tag types (a box, or a door's or window's marker
- * across its wall in plan), layers and layer groups. Sizes are paper millimetres.
+ * across its wall in plan; their leaders, decision 331), layers and layer groups. Sizes are paper millimetres.
  * Each change is one engine command; Standard (and layer 0) always stay.
  */
 
@@ -12,6 +12,7 @@ import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { PendingDialog } from './PendingDialog';
 import { BuildupEditor } from './BuildupEditor';
+import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
@@ -36,7 +37,7 @@ const TABS: Tab[] = [
     { key: 'ends', label: 'Ends', kind: 'choice', choices: ['both', 'start', 'end', 'none'] }, { key: 'size', label: 'Size mm', kind: 'mm' },
     { key: 'lineType', label: 'Line', kind: 'choice', choices: LINE_TYPES }, { key: 'firstLabel', label: 'First', kind: 'text' }, { key: 'color', label: 'Colour', kind: 'color' }] },
   // A tag's template reads the element: {mark}, {name}, {type}, {class}, a door's or window's {width}, {height}, {sill} (in the unit given), a room's {number}, {area}, {perimeter}, {height}, {volume}, {function}; "|" starts a new line.
-  { id: 'tag', label: 'Tags', list: 'tagTypes', fresh: { name: 'Tag', template: '{mark}' }, cols: [
+  { id: 'tag', label: 'Tags', list: 'tagTypes', fresh: { name: 'Tag', template: '{mark}', leaderShape: 'elbow' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'shape', label: 'Shape', kind: 'choice', choices: ['box', 'opening', 'room', 'buildup'] },
     { key: 'template', label: 'Text (outside)', kind: 'text' }, { key: 'inner', label: 'Inside', kind: 'text' },
     { key: 'unit', label: 'Unit', kind: 'choice', choices: ['cm', 'mm', 'm', 'ft-in', 'in', 'project'] }, { key: 'reach', label: 'Past faces mm', kind: 'mm' },
@@ -133,6 +134,8 @@ export function StandardsDialog() {
           </div>
           {project ? options : tab.id === 'tag' && rows.some((r) => r.id === editing && r.shape === 'buildup')
             ? <BuildupEditor entry={rows.find((r) => r.id === editing) as unknown as BuildupEntry} onClose={() => setEditing(null)} />
+            : tab.id === 'tag' && rows.some((r) => r.id === editing)
+            ? <LeaderEditor entry={rows.find((r) => r.id === editing) as unknown as LeaderEntry} onClose={() => setEditing(null)} />
             : <>
           <table className="standards-table">
             <thead><tr>{tab.id === 'axis' && <th title="New axes and the BIM grids use it">Default</th>}{tab.cols.map((c) => <th key={c.key}>{c.label}</th>)}{tab.id === 'tag' && <th />}<th /></tr></thead>
@@ -141,7 +144,9 @@ export function StandardsDialog() {
                 <tr key={e.id}>
                   {tab.id === 'axis' && <td><input type="radio" name="default-axis" checked={book.defaultAxisStyle === e.id} onChange={() => set({ id: e.id }, { default: true })} /></td>}
                   {tab.cols.map((c) => <td key={c.key}>{cell(e, c)}</td>)}
-                  {tab.id === 'tag' && <td>{e.shape === 'buildup' && <button type="button" className={`btn mini${editing === e.id ? ' on' : ''}`} data-field="tag-shape-buildup" title="Its header, line per layer, footer, order, leaders and width, with a preview" onClick={() => setEditing(editing === e.id ? null : e.id)}>Build-up…</button>}</td>}
+                  {tab.id === 'tag' && <td>{e.shape === 'buildup'
+                    ? <button type="button" className={`btn mini${editing === e.id ? ' on' : ''}`} data-field="tag-shape-buildup" title="Its header, line per layer, footer, order, leaders and width, with a preview" onClick={() => setEditing(editing === e.id ? null : e.id)}>Build-up…</button>
+                    : <button type="button" className="btn mini" data-field="tag-leader" title="Its leader: straight from a box, or an elbow under the text, with a preview" onClick={() => setEditing(e.id)}>Leader…</button>}</td>}
                   <td className="row-tools">{!fixed(e) && <button type="button" className="icon mini" title="Remove" onClick={() => void execute('standards.remove', { kind: tab.id, id: e.id })}><Trash2 size={12} /></button>}</td>
                 </tr>
               ))}

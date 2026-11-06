@@ -147,8 +147,6 @@ La **Elemente** în Proprietăți, bifează **Găsește-le după o regulă** și
 
 **Parte** spune ce ia sarcina din fiecare element: **elementele întregi**, **miezul** lor (stratul structural), **finisajele** (toate straturile în afară de miez), straturile unui material sau ale unei categorii de material (Finisaj, Izolație…). Așa, un perete stratificat e zidit într-o sarcină Zidărie (miezul) și tencuit într-o sarcină Tencuieli (finisajele). Un element fără straturi e propriul lui miez și nu are finisaje.
 
-Și un acoperiș se construiește în straturi: structura lui (placa unui acoperiș plat, a unei bolți sau a unuia fără șarpantă; căpriorii sau fermele unuia cu șarpantă) e miezul, iar învelitoarea (cu acoperișurile lucarnelor) și șipcile sunt finisajele. O sarcină **Structura acoperișului** (miez) și una **Învelitoarea acoperișului** (finisaje) își iau fiecare partea, o regulă după material găsește placa după betonul ei, iar simularea și o vedere la o dată arată învelitoarea doar după ce e pusă. Șabloanele generatorului fac acoperișul în acești doi pași, fiecare cu durata din aria părții lui, iar burlanele într-un pas al lor (**Jgheaburi și burlane**); la hala metalică **Învelitoarea** rămâne un singur pas.
-
 ### De mână
 
 ![Cartea selecției peste 3D, cele două sarcini ale unui perete marcate în Gantt](shots/planning-element-tasks.webp)

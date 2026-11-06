@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
-using Lapin.Architecture.Roofs;
 using Lapin.Civil;
 using Lapin.Drafting;
 using Lapin.Geometry;
@@ -217,90 +216,6 @@ public class IfcRecognitionTests(ITestOutputHelper output) : IDisposable
         var c = Read("c");
         Assert.Equal("DOUBLE_PANEL_VERTICAL", c.Operation);
         Assert.Equal(["side-left", "tilt-turn-right"], c.Spec.Panels.OrderBy(p => p.Col).Select(p => p.Operation));
-    }
-
-    /// <summary>A slab of a roof 10 × 6 m from (0, 0), from <paramref name="z0"/> up <paramref name="h"/> (mm), aggregated under nothing yet, of a material.</summary>
-    static string RoofSlab(Foreign x, string key, double z0, double h, string material, double size = 1)
-    {
-        var slab = x.F.Add("IFCSLAB", x.G(key), Null, S(key), Null, Null, x.Place(0, 0, 0), x.Shape(x.Box(5000 * size, 3000 * size, z0, 10000 * size, 6000 * size, h)), Null, E("ROOF"));
-        x.Material(slab, x.F.Add("IFCMATERIAL", S(material), Null, Null));
-        return slab;
-    }
-
-    static (Vec3 Min, Vec3 Max) PartBox(Fixture f, string id, string key) => Measure.Bounds(f.Session.Geometry(id)!.Parts.Single(p => p.Key == key).Solid)!.Value;
-
-    /// <summary>
-    /// A foreign flat roof, two stacked slabs aggregated by an IfcRoof (decision 333): a native roof, its deck the lower slab
-    /// (its material, its thickness), its covering the top one (its material, its own thickness), the outline the deck's at
-    /// the deck's underside, no overhang; its slabs not brought on their own. A roof of one slab stays its slab (a floor).
-    /// </summary>
-    [Fact]
-    public void A_foreign_roof_of_two_stacked_slabs_comes_in_as_a_deck_under_its_covering()
-    {
-        var x = new Foreign();
-        var roof = x.Element("IFCROOF", "roof", "Main roof", x.Place(0, 0, 0), Null, E("FLAT_ROOF"));
-        var deck = RoofSlab(x, "deck", 3000, 200, "Concrete C25/30");
-        var cover = RoofSlab(x, "cover", 3200, 50, "Bitumen");
-        x.F.Add("IFCRELAGGREGATES", x.G("roof-agg"), Null, Null, Null, roof, L([deck, cover]));
-        // A roof of one slab: not a deck under a covering, its slab a floor of the kind ROOF as before.
-        var lone = x.Element("IFCROOF", "lone", "Canopy", x.Place(0, 0, 0), Null, E("FLAT_ROOF"));
-        var canopy = x.F.Add("IFCSLAB", x.G("canopy"), Null, S("Canopy slab"), Null, Null, x.Place(20000, 0, 0), x.Shape(x.Box(2000, 1000, 2500, 4000, 2000, 150)), Null, E("ROOF"));
-        x.F.Add("IFCRELAGGREGATES", x.G("lone-agg"), Null, Null, Null, lone, L([canopy]));
-        var f = Full();
-        var r = IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, "roof.ifc")), null, out _);
-        output.WriteLine(r.ToJson().ToJsonString());
-        var m = f.Session.Model;
-        var e = m.Get(Guid("foreign-test", "roof"))!;
-        Assert.Equal(IfcClass.Roof, e.Class);
-        Assert.Equal("Main roof", e.Name);
-        Assert.Equal("flat", e.Str("shape"));
-        Assert.Equal("Concrete C25/30", e.Str(RoofCoverings.DeckKey));
-        Assert.Equal("Bitumen", e.Str(RoofCoverings.Key));
-        Assert.Equal(0.2, e.Num("deckThickness"), 6);
-        Assert.Equal(0.05, e.Num("coveringThickness"), 6);
-        Assert.Equal(60, Math.Abs(Polygon2.SignedArea(Roof.Contour(e).ToList())), 6);
-        // Where the file has them: the deck 3,00–3,20, the covering 3,20–3,25, over the same 10 × 6.
-        var (d0, d1) = PartBox(f, e.Id, "deck");
-        var (c0, c1) = PartBox(f, e.Id, "covering");
-        Assert.Equal((3.0, 3.2), (Math.Round(d0.Z, 6), Math.Round(d1.Z, 6)));
-        Assert.Equal((3.2, 3.25), (Math.Round(c0.Z, 6), Math.Round(c1.Z, 6)));
-        Assert.Equal((0, 0, 10, 6), (Math.Round(d0.X, 6), Math.Round(d0.Y, 6), Math.Round(d1.X, 6), Math.Round(d1.Y, 6)));
-        // The materials made, each part of its own.
-        var concrete = Materials.Find(m, "Concrete C25/30")!;
-        Assert.Equal(concrete.Id, f.Session.Geometry(e.Id)!.Parts.Single(p => p.Key == "deck").Material);
-        Assert.Equal(Materials.Find(m, "Bitumen")!.Id, f.Session.Geometry(e.Id)!.Parts.Single(p => p.Key == "covering").Material);
-        // Its slabs are the roof's: not brought again, neither as floors nor as references.
-        Assert.Null(m.Get(Guid("foreign-test", "deck")));
-        Assert.Null(m.Get(Guid("foreign-test", "cover")));
-        // The canopy of one slab: no roof of its own, the slab a floor of the kind ROOF as before.
-        Assert.NotEqual(IfcClass.Roof, m.Get(Guid("foreign-test", "lone"))?.Class);
-        Assert.Equal(IfcClass.Slab, m.Get(Guid("foreign-test", "canopy"))!.Class);
-    }
-
-    /// <summary>A foreign roof of one body with a layer set (decision 333): its top layer the covering, the layers under it the deck.</summary>
-    [Fact]
-    public void A_foreign_roof_of_one_body_with_a_layer_set_comes_in_as_a_deck_under_its_covering()
-    {
-        var x = new Foreign();
-        var roof = x.Element("IFCROOF", "roof", "Roof", x.Place(0, 0, 0), x.Shape(x.Box(5000, 3000, 3000, 10000, 6000, 300)), E("FLAT_ROOF"));
-        string Layer(string name, double t) => x.F.Add("IFCMATERIALLAYER", x.F.Add("IFCMATERIAL", S(name), Null, Null), R(t), Null, S(name), Null, Null, Null);
-        var set = x.F.Add("IFCMATERIALLAYERSET", L([Layer("Concrete", 180), Layer("Mineral wool", 100), Layer("Green roof substrate", 20)]), S("Roof build-up"), Null);
-        x.Material(roof, x.F.Add("IFCMATERIALLAYERSETUSAGE", set, E("AXIS3"), E("POSITIVE"), "0.", Null));
-        var f = Full();
-        IfcImport.Run(f.Session, x.Write(Path.Combine(_dir, "roof-layers.ifc")), null, out _);
-        var e = f.Session.Model.Get(Guid("foreign-test", "roof"))!;
-        Assert.Equal(IfcClass.Roof, e.Class);
-        // The deck the concrete and the wool together (of the thickest's material), the covering the substrate on top, a green roof.
-        Assert.Equal("Concrete", e.Str(RoofCoverings.DeckKey));
-        Assert.Equal(0.28, e.Num("deckThickness"), 6);
-        Assert.Equal("Green roof substrate", e.Str(RoofCoverings.Key));
-        Assert.Equal("Green roof", e.Str("covering"));
-        Assert.Equal(0.02, e.Num("coveringThickness"), 6);
-        var (d0, d1) = PartBox(f, e.Id, "deck");
-        var (_, c1) = PartBox(f, e.Id, "covering");
-        Assert.Equal(3.0, d0.Z, 6);
-        Assert.Equal(3.28, d1.Z, 6);
-        Assert.Equal(3.3, c1.Z, 6);
     }
 
     [Fact]

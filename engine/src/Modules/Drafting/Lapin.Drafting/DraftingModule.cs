@@ -32,6 +32,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         // Tags follow their elements (report #93).
         r.Service<ITransformFollowers>(new TagFollowers());
         r.Service<IProjectUpgrade>(new TagHoldUpgrade());
+        r.Service<IProjectUpgrade>(new TagLeaderUpgrade());
         Tags.Register(r);
 
         // ------------------------------------------------------------ grids

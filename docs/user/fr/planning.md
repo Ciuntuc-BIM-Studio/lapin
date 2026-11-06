@@ -147,8 +147,6 @@ Sous **Éléments** dans Propriétés, cochez **Les trouver par une règle** et 
 
 **Partie** dit ce que la tâche prend de chaque élément : les **éléments entiers**, leur **âme** (la couche porteuse), leurs **finitions** (toutes les couches sauf l'âme), les couches d'un matériau ou celles d'une catégorie de matériau (Finition, Isolant…). Ainsi un mur multicouche est monté dans une tâche Maçonnerie (son âme) et enduit dans une tâche Enduits (ses finitions). Un élément sans couches est sa propre âme et n'a pas de finitions.
 
-Un toit se construit aussi en couches : sa structure (le support d’un toit plat, d’une voûte ou d’un toit sans charpente ; les chevrons ou fermettes d’un toit avec charpente) est son noyau, sa couverture (avec les toits des lucarnes) et ses liteaux ses finitions. Une tâche **Structure de toiture** (noyau) et une tâche **Couverture** (finitions) prennent chacune leur partie, une règle par matériau trouve le support par son béton, et la simulation et une vue à une date ne montrent la couverture qu’une fois posée. Les modèles du générateur construisent un toit en ces deux étapes, chacune minutée par l’aire de sa partie, et les descentes dans une étape à part (**Gouttières et descentes**) ; le bardage de toiture d’un hall en acier reste une seule étape.
-
 ### À la main
 
 ![La carte de la sélection sur la 3D, les deux tâches d'un mur marquées dans le Gantt](shots/planning-element-tasks.webp)

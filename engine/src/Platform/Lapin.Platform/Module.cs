@@ -170,40 +170,16 @@ public interface IQueryContext
     ClassDescriptor? Describe(string ifcClass) => null;
 }
 
-/// <summary>
-/// How the inspector shows and edits one attribute. Lengths are metres in the engine; the UI shows mm.
-/// <see cref="ShowIf"/> (decision 332): when the field applies, as alternatives (any one holding shows it), each a set of
-/// attributes and the values they may have (all must hold); a value written "!x" excludes x, a missing attribute is "".
-/// A roof's deck shows as <c>[{shape: [flat, barrel]}, {structure: [none]}]</c>, its rafters as
-/// <c>[{shape: [!flat, !barrel], structure: [!none]}]</c>. Null: always shown.
-/// </summary>
+/// <summary>How the inspector shows and edits one attribute. Lengths are metres in the engine; the UI shows mm.</summary>
 public sealed record FieldDescriptor(
     string Key,
     string Label,
-    string Kind = "number",          // number | length | angle | text | bool | choice | ref | color | table | material
+    string Kind = "number",          // number | length | angle | text | bool | choice | ref | color | table
     double? Min = null,
     double? Max = null,
     string[]? Choices = null,
     bool ReadOnly = false,
-    IReadOnlyList<FieldDescriptor>? Columns = null,
-    IReadOnlyList<IReadOnlyDictionary<string, string[]>>? ShowIf = null)
-{
-    /// <summary>Whether the field applies to an entity whose attributes read as <paramref name="value"/> (null or missing: "").</summary>
-    public bool Shown(Func<string, string?> value) => ShowIf is not { Count: > 0 } any || any.Any(all => all.All(c => Holds(c.Value, value(c.Key) ?? "")));
-
-    /// <summary>Whether the field applies to an entity, by its attributes (a string, a number or a bool, as the interface reads them).</summary>
-    public bool Shown(Lapin.Model.Entity e) => Shown(k => e.Attrs[k] is System.Text.Json.Nodes.JsonValue v
-        ? v.TryGetValue<string>(out var s) ? s : v.TryGetValue<bool>(out var b) ? (b ? "true" : "false") : v.ToJsonString() : null);
-
-    static bool Holds(string[] values, string v)
-    {
-        var positives = values.Where(x => !x.StartsWith('!')).ToList();
-        return (positives.Count == 0 || positives.Contains(v)) && !values.Any(x => x.StartsWith('!') && x[1..] == v);
-    }
-
-    /// <summary>A condition of one alternative: <paramref name="key"/> among <paramref name="values"/>.</summary>
-    public static IReadOnlyList<IReadOnlyDictionary<string, string[]>> When(string key, params string[] values) => [new Dictionary<string, string[]> { [key] = values }];
-}
+    IReadOnlyList<FieldDescriptor>? Columns = null);
 
 /// <summary>An IFC class a module authors: its label, inspector fields and what kind of thing it is.</summary>
 public sealed record ClassDescriptor(

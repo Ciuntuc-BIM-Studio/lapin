@@ -147,8 +147,6 @@ Em **Elementos** nas Propriedades, marque **Encontrá-los por uma regra** e esco
 
 **Parte** diz o que a tarefa leva de cada elemento: os **elementos inteiros**, seu **núcleo** (a camada estrutural), seus **acabamentos** (todas as camadas exceto o núcleo), as camadas de um material ou as de uma categoria de material (Acabamento, Isolamento…). Assim uma parede em camadas é erguida numa tarefa Alvenaria (o núcleo) e rebocada numa tarefa Reboco (os acabamentos). Um elemento sem camadas é seu próprio núcleo e não tem acabamentos.
 
-Uma cobertura também se constrói por camadas: a sua estrutura (a laje de uma cobertura plana, de uma abóbada ou de uma cobertura sem estrutura de madeira; as varas ou asnas de uma com estrutura) é o seu núcleo, o revestimento (com os telhados das águas-furtadas) e as ripas os seus acabamentos. Uma tarefa **Estrutura da cobertura** (núcleo) e uma **Revestimento da cobertura** (acabamentos) levam cada uma a sua parte, uma regra por material encontra a laje pelo seu betão, e a simulação e uma vista numa data só mostram o revestimento depois de colocado. Os modelos do gerador constroem a cobertura nestes dois passos, cada um com a duração da área da sua parte, e os tubos de queda num passo próprio (**Caleiras e tubos de queda**); o revestimento de um pavilhão de aço continua a ser um passo.
-
 ### À mão
 
 ![O cartão da seleção sobre o 3D, as duas tarefas de uma parede marcadas no Gantt](shots/planning-element-tasks.webp)

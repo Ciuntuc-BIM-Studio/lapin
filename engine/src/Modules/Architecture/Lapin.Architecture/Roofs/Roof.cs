@@ -60,8 +60,7 @@ public static class Roof
         public string Grade => Roof.Str("timberGrade") is { Length: > 0 } g ? g : "C24";
         /// <summary>The trusses' webs.</summary>
         public (double W, double D) Web => Section(Roof.Str("webSection"), (Rafter.W, 0.095));
-        /// <summary>The covering chosen, as thick as the roof says (<c>coveringThickness</c>, a foreign roof's, decision 333), else the catalogue's.</summary>
-        public RoofCatalog.Covering Covering => RoofCatalog.CoveringOf(Roof.Str("covering")) is var c && Roof.NumOrNull("coveringThickness") is { } t && t > 0.001 ? c with { Thickness = t } : c;
+        public RoofCatalog.Covering Covering => RoofCatalog.CoveringOf(Roof.Str("covering"));
         public (double W, double D) Rafter => Section(Roof.Str("rafterSection"), (0.08, 0.16));
         /// <summary>The planes' height over the wall line: on the plates when framed.</summary>
         public double BaseZ => PlateZ + (Framed ? WallPlate.D : 0);
@@ -412,7 +411,6 @@ public static class Roof
         yield return new QuantitySet("Qto_RoofBaseQuantities", q);
         if (CoveringSet(roof, r, m, q[0].Value, q[1].Value) is { } cs) yield return cs;
         if (!r.Framed && DeckSet(roof, r, m, q[0].Value, q[1].Value, geometry) is { } ds) yield return ds;
-        if (DormerSet(roof, r, m, holes) is { } dr) yield return dr;
         if (RoofOpenings.Quantities(holes).ToList() is { Count: > 0 } oq) yield return new QuantitySet("Lapin_RoofOpeningQuantities", oq, "openings", "Roof windows and dormers");
 
         var members = RoofParts.Framing(r, shape, holes);
@@ -475,24 +473,6 @@ public static class Roof
             new("GrossArea", gross, "AREA", "Gross area"),
             new("NetArea", net, "AREA", "Net area"),
         ], "covering", $"Covering ({RoofCoverings.NameOf(roof)})", material);
-    }
-
-    /// <summary>
-    /// The dormers' covering as a part of the covering's material (decision 334): its thickness, the dormers' roof planes'
-    /// sloped area and their count, so the takeoff by material and an article ruled by the material measure it beside the
-    /// roof's covering (the roof's covering set holds the main slopes only, less the dormers' notches: each once); none
-    /// without dormers or without a material.
-    /// </summary>
-    static QuantitySet? DormerSet(Entity roof, Resolved r, IModelView m, IReadOnlyList<RoofOpenings.Placed> holes)
-    {
-        if (RoofCoverings.MaterialOf(roof, m) is not { } material || RoofOpenings.DormerRoofs(holes) is not { Count: > 0 } d) return null;
-        return new QuantitySet("Lapin_RoofDormerCoveringQuantities",
-        [
-            new("Width", r.Covering.Thickness, "LENGTH", "Thickness"),
-            new("GrossArea", d.Area, "AREA", "Gross area"),
-            new("NetArea", d.Area, "AREA", "Net area"),
-            new("Count", d.Count, "COUNT", "Dormers"),
-        ], "dormer-roofs", $"Dormer covering ({RoofCoverings.NameOf(roof)})", material);
     }
 
     /// <summary>
