@@ -219,7 +219,9 @@ public static class MeshRecognition
     /// <summary>
     /// A body that is no prism but stands (a column cut at its top by a sloping beam or roof): its one bottom face swept up
     /// to its highest point, when every vertex stands over that face's edges (its sides rise straight; a tapered column or
-    /// one with a corbel is another shape) and no face looks down but the bottom.
+    /// one with a corbel is another shape), no face looks down but the bottom, and what looks up is one plane (the slope).
+    /// A top of several planes (a ridge, a pointed cap, a notch or step for a beam's seat) is no slope a native column is
+    /// cut by: the body stays a reference.
     /// </summary>
     static ShapePrism? StandingOutline(Solid s)
     {
@@ -231,6 +233,10 @@ public static class MeshRecognition
         var bottoms = s.Faces.Where(f => f.Normal.Z < -0.999 && Loop(f.Outer).All(p => Math.Abs(p.Z - z0) < tol)).ToList();
         if (bottoms.Count != 1 || bottoms[0].Holes.Length > 0) return null;
         if (s.Faces.Any(f => f != bottoms[0] && f.Normal.Z < -1e-3)) return null;
+        var tops = s.Faces.Where(f => f.Normal.Z > 1e-3).ToList();
+        if (tops.Count == 0) return null;
+        var (n, o) = (tops[0].Normal, v[tops[0].Outer[0]]);
+        if (tops.Any(f => f.Outer.Any(i => Math.Abs(Vec3.Dot(v[i] - o, n)) > tol))) return null;
         var outline = Footprints.Plan(Loop(bottoms[0].Outer));
         if (outline.Count < 3 || !v.All(p => OnOutline(outline, new Vec2(p.X, p.Y), tol))) return null;
         return new ShapePrism([.. outline.Select(q => new Vec3(q.X, q.Y, z0))], [], new Vec3(0, 0, z1 - z0), false, "mesh");

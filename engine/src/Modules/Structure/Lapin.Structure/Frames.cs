@@ -7,13 +7,13 @@ namespace Lapin.Structure;
 
 /// <summary>
 /// A section a column, a beam or a steel member carries, metres, centred on its box: a rectangle (width × depth), a circle
-/// (its diameter), a hot-rolled steel profile I (and H), U, T or L (its depth, its flanges' width, the web's and the flanges'
+/// (its diameter), a regular polygon (its diameter across the corners, <see cref="Sides"/> sides, a corner on +x), a hot-rolled steel profile I (and H), U, T or L (its depth, its flanges' width, the web's and the flanges'
 /// thickness), a hollow section RHS (width × depth, its wall <see cref="Web"/>) or CHS (its diameter, its wall), or a
 /// cold-formed C, Z or Σ (SIGMA): depth, flanges, the sheet's thickness <see cref="Web"/> and the lips <see cref="Lip"/>,
 /// bent sharp (decision 268: generic shapes with dimensions, no manufacturer's catalogue). A profile can come from the
 /// catalogue by its name (IPE 300, HEA 240, UPN 200, L 100×100×10, RHS 150×100×6, CHS 114.3×5, C 200×65×2).
 /// </summary>
-public sealed record Section(string Kind, double Width, double Depth, double Web = 0, double Flange = 0, string? Name = null, double Lip = 0)
+public sealed record Section(string Kind, double Width, double Depth, double Web = 0, double Flange = 0, string? Name = null, double Lip = 0, int Sides = 0)
 {
     public static readonly string[] Profiles = ["I", "U", "T", "L", "RHS", "CHS", "C", "Z", "SIGMA"];
     /// <summary>The thin-walled kinds: one sheet thickness (<see cref="Web"/>, <see cref="Flange"/> the same).</summary>
@@ -21,6 +21,8 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
 
     public static Section Rectangle(double width, double depth) => new("rectangle", width, depth);
     public static Section Circle(double diameter) => new("circle", diameter, diameter);
+    /// <summary>A regular polygon: <paramref name="sides"/> corners on a circle of <paramref name="diameter"/>, the first on +x.</summary>
+    public static Section Polygon(double diameter, int sides) => new("polygon", diameter, diameter, Sides: sides);
 
     public bool IsProfile => Profiles.Contains(Kind);
     public bool IsHollow => Kind is "RHS" or "CHS";
@@ -37,6 +39,7 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
         return Kind switch
         {
             "circle" or "CHS" => Ring(w),
+            "polygon" when Sides >= 3 => Enumerable.Range(0, Sides).Select(i => new Vec2(w * Math.Cos(2 * Math.PI * i / Sides), w * Math.Sin(2 * Math.PI * i / Sides))).ToList(),
             "I" => [new(-w, -d), new(w, -d), new(w, -d + tf), new(tw / 2, -d + tf), new(tw / 2, d - tf), new(w, d - tf), new(w, d), new(-w, d), new(-w, d - tf), new(-tw / 2, d - tf), new(-tw / 2, -d + tf), new(-w, -d + tf)],
             "U" => [new(-w, -d), new(w, -d), new(w, -d + tf), new(-w + tw, -d + tf), new(-w + tw, d - tf), new(w, d - tf), new(w, d), new(-w, d)],
             "T" => [new(-tw / 2, -d), new(tw / 2, -d), new(tw / 2, d - tf), new(w, d - tf), new(w, d), new(-w, d), new(-w, d - tf), new(-tw / 2, d - tf)],
@@ -119,6 +122,7 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
     public string Label => Name ?? Kind switch
     {
         "circle" => $"Ø{Width * 1000:0}",
+        "polygon" => $"{Sides}-gon {Width * 1000:0.#}",
         "rectangle" => $"{Width * 100:0}×{Depth * 100:0}",
         "I" => $"I/H {Depth * 1000:0}×{Width * 1000:0}",
         "L" => $"L {Width * 1000:0}×{Depth * 1000:0}×{Flange * 1000:0}",
@@ -133,6 +137,7 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
         var o = new JsonObject { ["kind"] = Kind, ["width"] = Width, ["depth"] = Depth };
         if (IsProfile) { o["web"] = Web; o["flange"] = Flange; }
         if (Lip > 0) o["lip"] = Lip;
+        if (Kind == "polygon") o["sides"] = Sides;
         if (Name != null) o["name"] = Name;
         return o;
     }
@@ -168,19 +173,20 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
         if (kind == "H") kind = "I";
         if (kind == "Σ") kind = "SIGMA";
         var w = Json.Number(o["width"]) ?? Json.Number(o["diameter"]) ?? 0;
-        var d = kind is "circle" or "CHS" ? w : Json.Number(o["depth"]) ?? 0;
+        var d = kind is "circle" or "CHS" or "polygon" ? w : Json.Number(o["depth"]) ?? 0;
         // A thin-walled section takes one thickness for its web and flanges.
         var t = Json.Number(o["thickness"]);
         var web = Json.Number(o["web"]) ?? t ?? 0;
         var flange = Json.Number(o["flange"]) ?? (ThinWalled.Contains(kind) ? web : t ?? 0);
-        return new Section(kind, w, d, web, flange, (string?)o["name"], Json.Number(o["lip"]) ?? 0);
+        return new Section(kind, w, d, web, flange, (string?)o["name"], Json.Number(o["lip"]) ?? 0, kind == "polygon" ? (int)(Json.Number(o["sides"]) ?? 0) : 0);
     }
 
     public static Section Parse(JsonNode? n)
     {
-        var s = From(n) ?? throw new CommandException("A section is a rectangle (width, depth), a circle (diameter), a profile I, U, T, L (depth, width, web, flange), RHS, CHS, C, Z or Σ (depth, width, thickness, lip), or a catalogue name (IPE 300).");
-        if (s.Kind is not ("rectangle" or "circle") && !s.IsProfile) throw new CommandException("A section is a rectangle, a circle, or a profile I, U, T, L, RHS, CHS, C, Z or Σ.");
+        var s = From(n) ?? throw new CommandException("A section is a rectangle (width, depth), a circle (diameter), a regular polygon (diameter, sides), a profile I, U, T, L (depth, width, web, flange), RHS, CHS, C, Z or Σ (depth, width, thickness, lip), or a catalogue name (IPE 300).");
+        if (s.Kind is not ("rectangle" or "circle" or "polygon") && !s.IsProfile) throw new CommandException("A section is a rectangle, a circle, a regular polygon, or a profile I, U, T, L, RHS, CHS, C, Z or Σ.");
         if (!(s.Width > 0 && s.Depth > 0)) throw new CommandException("A section needs a positive size.");
+        if (s.Kind == "polygon" && s.Sides is < 3 or > 64) throw new CommandException("A regular polygon has 3 to 64 sides.");
         if (s.Kind is "RHS" or "CHS" && !(s.Web > 0 && 2 * s.Web < Math.Min(s.Width, s.Depth))) throw new CommandException("A hollow section's wall must be thinner than half of it.");
         else if (s.Kind is "C" or "Z" or "SIGMA" && !(s.Web > 0 && 2 * s.Web < s.Width && s.Lip >= 0 && s.Lip < s.Depth / 2)) throw new CommandException("A cold-formed section's sheet must be thinner than its flanges, its lips shorter than half its depth.");
         else if (s.Kind is "I" or "U" or "T" or "L" && !(s.Web > 0 && s.Flange > 0 && s.Web < s.Width && 2 * s.Flange < s.Depth)) throw new CommandException("A profile's web and flanges must be thinner than it.");

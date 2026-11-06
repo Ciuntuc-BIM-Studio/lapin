@@ -26,7 +26,7 @@ Desenhe as fundações no nível **Fundações**, ou dê a elas uma planta próp
 
 ## Tipos e cantos
 
-**Tipos estruturais** define as seções de pilares, vigas e sapatas: seções de concreto e perfis de aço. Clique num tipo da lista para mudar o seu tamanho ou o seu nome e depois em **Salvar tipo**: todos os elementos desse tipo acompanham; **Novo tipo** volta a criar um.
+**Tipos estruturais** define as seções de pilares, vigas e sapatas: seções de concreto e perfis de aço. A seção de um pilar é um **Retângulo**, um **Círculo** ou um **Polígono**, regular, dado pelos seus **Lados** e pelo seu **Diâmetro** entre vértices (um poste octogonal, como um IFC importado pode tê-lo). Clique num tipo da lista para mudar o seu tamanho ou o seu nome e depois em **Salvar tipo**: todos os elementos desse tipo acompanham; **Novo tipo** volta a criar um.
 
 Vigas e sapatas se unem sozinhas onde se encontram, um canto em meia-esquadria. Uma viga desenhada de eixo de pilar a eixo de pilar para nas faces dos pilares; o seu comprimento, volume e estribos contam o vão livre entre eles. **Meia-esquadria**, **Topo** e **Inverter** mudam como duas vigas ou duas sapatas se encontram. **Corresponder tipo** (<kbd>MA</kbd>) copia o tipo de um elemento para outros, e **Criar similar** (<kbd>CS</kbd>) começa a desenhar outro elemento do mesmo tipo.
 

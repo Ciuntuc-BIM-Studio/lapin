@@ -26,7 +26,7 @@ Disegna le fondazioni sul livello **Foundations**, oppure dai loro una pianta pr
 
 ## Tipi e angoli
 
-**Tipi strutturali** imposta le sezioni di pilastri, travi e fondazioni: sezioni in calcestruzzo e profili in acciaio. Fai clic su un tipo nell’elenco per cambiarne la dimensione o il nome, poi **Salva tipo**: tutti gli elementi di quel tipo si adeguano; **Nuovo tipo** torna alla creazione di un tipo.
+**Tipi strutturali** imposta le sezioni di pilastri, travi e fondazioni: sezioni in calcestruzzo e profili in acciaio. La sezione di un pilastro è un **Rettangolo**, un **Cerchio** o un **Poligono**, regolare, dato dai **Lati** e dal **Diametro** tra i vertici (un montante ottagonale, come può averlo un IFC importato). Fai clic su un tipo nell’elenco per cambiarne la dimensione o il nome, poi **Salva tipo**: tutti gli elementi di quel tipo si adeguano; **Nuovo tipo** torna alla creazione di un tipo.
 
 Travi e fondazioni si uniscono da sole dove si incontrano, con un angolo a quartabuono. Una trave disegnata da asse di pilastro ad asse di pilastro si ferma alle facce dei pilastri; la sua lunghezza, il suo volume e le sue staffe contano la luce netta tra di essi. **A quartabuono**, **Di testa** e **Scambia** cambiano il modo in cui si incontrano due travi o due fondazioni. **Corrispondenza tipo** (<kbd>MA</kbd>) copia il tipo di un elemento su altri, e **Crea simile** (<kbd>CS</kbd>) avvia il disegno di un altro elemento dello stesso tipo.
 

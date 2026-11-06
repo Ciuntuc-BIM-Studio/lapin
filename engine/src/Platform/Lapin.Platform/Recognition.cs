@@ -188,6 +188,33 @@ public static class Footprints
         return (centre, e0.Length, e1.Length, Math.Atan2(e0.Y, e0.X) * 180 / Math.PI);
     }
 
+    /// <summary>
+    /// A regular polygon: its centre, the radius its corners stand on, its sides, and the angle (degrees, within one
+    /// side's turn from 0) of a corner seen from the centre. Null unless every corner stands at one radius (within 0.5 %)
+    /// and each turns from the last by one side's angle (within 0.5°).
+    /// </summary>
+    public static (Vec2 Centre, double Radius, int Sides, double RotationDeg)? RegularPolygon(IReadOnlyList<Vec2> poly)
+    {
+        var n = poly.Count;
+        if (n < 3) return null;
+        var c = new Vec2(poly.Average(p => p.X), poly.Average(p => p.Y));
+        var r = poly.Average(p => (p - c).Length);
+        if (!(r > 0) || poly.Any(p => Math.Abs((p - c).Length - r) > Math.Max(1e-5, 0.005 * r))) return null;
+        var step = 2 * Math.PI / n;
+        for (var i = 0; i < n; i++)
+        {
+            var (a, b) = (poly[i] - c, poly[(i + 1) % n] - c);
+            var turn = Math.Abs(Math.Atan2(a.X * b.Y - a.Y * b.X, Vec2.Dot(a, b)));
+            if (Math.Abs(turn - step) > 0.5 * Math.PI / 180) return null;
+        }
+        var first = poly[0] - c;
+        var side = 360.0 / n;
+        var angle = Math.Atan2(first.Y, first.X) * 180 / Math.PI;
+        angle = ((angle % side) + side) % side;
+        if (side - angle < 1e-6) angle = 0;
+        return (c, r, n, angle);
+    }
+
     /// <summary>A circle drawn as a polygon: its centre and diameter. Null unless eight or more vertices at one radius (within 2 %).</summary>
     public static (Vec2 Centre, double Diameter)? Circle(IReadOnlyList<Vec2> poly)
     {

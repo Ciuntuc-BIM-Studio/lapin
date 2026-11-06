@@ -5,8 +5,8 @@ import type { NodeDto } from '../../engine/protocol';
 
 export function describeType(t: NodeDto | null): string {
   if (!t) return '—';
-  const s = t.props.section as { kind?: string; width?: number; depth?: number } | undefined;
-  if (s) return s.kind === 'circle' ? `Ø ${mm(s.width ?? 0)}` : `${mm(s.width ?? 0)} × ${mm(s.depth ?? 0)}`;
+  const s = t.props.section as { kind?: string; width?: number; depth?: number; sides?: number } | undefined;
+  if (s) return s.kind === 'circle' ? `Ø ${mm(s.width ?? 0)}` : s.kind === 'polygon' ? `${s.sides ?? 0}-gon ${mm(s.width ?? 0)}` : `${mm(s.width ?? 0)} × ${mm(s.depth ?? 0)}`;
   if (t.props.kind === 'strip' && t.props.profile) return `profile ${(t.props.profile as { name?: string }).name ?? ''}, bottom ${mm(Number(t.props.bottom ?? 0))}`;
   if (t.props.kind === 'strip') return `stem ${mm(Number(t.props.stemHeight ?? 0))} on ${mm(Number(t.props.footingWidth ?? 0))} × ${mm(Number(t.props.footingHeight ?? 0))}, bottom ${mm(Number(t.props.bottom ?? 0))}`;
   if (t.props.kind === 'pad') return `${(t.props.steps as unknown[] | undefined)?.length ?? 0} steps, bottom ${mm(Number(t.props.bottom ?? 0))}`;

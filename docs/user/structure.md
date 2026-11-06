@@ -26,7 +26,7 @@ Draw foundations on the **Foundations** level, or give them a plan of their own.
 
 ## Types and corners
 
-**Structure types** sets the sections of columns, beams and footings: concrete sections and steel profiles. Click a type in the list to change its size or its name, then **Save type**: every element of that type follows; **New type** goes back to making one.
+**Structure types** sets the sections of columns, beams and footings: concrete sections and steel profiles. A column's **Section** is a **Rectangle**, a **Circle** or a **Polygon**, a regular one given by its **Sides** and its **Diameter** across the corners (an octagonal post, as an imported IFC may have it). Click a type in the list to change its size or its name, then **Save type**: every element of that type follows; **New type** goes back to making one.
 
 Beams and footings join by themselves where they meet, a corner as a mitre. A beam drawn from column axis to column axis stops at the columns' faces; its length, volume and stirrups count the clear span between them. **Mitre**, **Butt** and **Swap** change how two beams or two footings meet. **Match type** (<kbd>MA</kbd>) copies one element's type to others, and **Create similar** (<kbd>CS</kbd>) starts drawing another element of the same type.
 

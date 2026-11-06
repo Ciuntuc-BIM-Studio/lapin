@@ -26,7 +26,7 @@ Dibuje la cimentación en el nivel **Foundations**, o dele una planta propia.
 
 ## Tipos y esquinas
 
-**Tipos estructurales** define las secciones de pilares, vigas y zapatas: secciones de hormigón y perfiles de acero.
+**Tipos estructurales** define las secciones de pilares, vigas y zapatas: secciones de hormigón y perfiles de acero. La sección de un pilar es un **Rectángulo**, un **Círculo** o un **Polígono**, uno regular dado por sus **Lados** y su **Diámetro** entre vértices (un poste octogonal, como puede tenerlo un IFC importado).
 
 Una viga trazada de eje de pilar a eje de pilar se detiene en las caras de los pilares; su longitud, su volumen y sus estribos cuentan la luz libre entre ellas. **Inglete**, **A tope** e **Intercambiar** cambian cómo se encuentran dos vigas o dos zapatas. **Igualar tipo** (<kbd>MA</kbd>) copia el tipo de un elemento a otros, y **Crear similar** (<kbd>CS</kbd>) empieza a dibujar otro elemento del mismo tipo.
 

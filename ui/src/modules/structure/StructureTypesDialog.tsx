@@ -23,6 +23,7 @@ import { ProfilePicker, ProfilePreview } from '../core/ProfilesDialog';
 import type { ProfileJson } from '../core/profiles';
 
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
+type Shape = 'rectangle' | 'circle' | 'polygon';
 const num = (m: unknown, fallback: number) => (typeof m === 'number' ? m : fallback);
 
 /** A labelled length of the type (the shared field). */
@@ -39,7 +40,9 @@ export function StructureTypesDialog() {
   // The type being changed; null: a new one is made.
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [shape, setShape] = useState<'rectangle' | 'circle'>('rectangle');
+  // A section's shape; a regular polygon (an octagonal post, as recognised from an IFC) has its sides, its diameter across the corners.
+  const [shape, setShape] = useState<Shape>('rectangle');
+  const [sides, setSides] = useState(8);
   // Lengths in metres; the steps as typed.
   const units = useStandards((s) => s.units);
   const [w, setW] = useState(0.3);
@@ -62,8 +65,11 @@ export function StructureTypesDialog() {
   const pick = (t: NodeDto) => {
     setEditing(t.id);
     setName(t.name);
-    const sec = t.props.section as { kind?: string; width?: number; depth?: number } | undefined;
-    if (sec) { setShape(sec.kind === 'circle' ? 'circle' : 'rectangle'); setW(num(sec.width, 0.3)); setD(num(sec.depth, 0.3)); }
+    const sec = t.props.section as { kind?: string; width?: number; depth?: number; sides?: number } | undefined;
+    if (sec) {
+      setShape(sec.kind === 'circle' || sec.kind === 'polygon' ? sec.kind : 'rectangle'); setW(num(sec.width, 0.3)); setD(num(sec.depth, 0.3));
+      if (sec.kind === 'polygon') setSides(num(sec.sides, 8));
+    }
     if (t.props.kind === 'strip') {
       setStripShape(t.props.profile ? 'profile' : 'standard');
       setProfileId(typeof t.props.profileId === 'string' ? t.props.profileId : null);
@@ -80,9 +86,11 @@ export function StructureTypesDialog() {
   const fresh = () => { setEditing(null); setName(''); };
   const switchKind = (k: Kind) => { setKind(k); fresh(); };
 
+  const sectionOf = () => shape === 'polygon' ? { kind: shape, width: w, depth: w, sides } : { kind: shape, width: w, depth: shape === 'circle' ? w : d };
+
   const save = async () => {
     if (!edited) return;
-    const section = { kind: shape, width: w, depth: shape === 'circle' ? w : d };
+    const section = sectionOf();
     const args: Record<string, unknown> = { id: edited.id, name };
     if (kind === 'column' || kind === 'beam') args.section = section;
     else if (kind === 'strip' && stripShape === 'profile') Object.assign(args, { bottom, ...(profileId ? { profileId } : {}) });
@@ -94,7 +102,7 @@ export function StructureTypesDialog() {
   };
 
   const create = async () => {
-    const section = { kind: shape, width: w, depth: shape === 'circle' ? w : d };
+    const section = sectionOf();
     if (kind === 'column') await execute('structure.createColumnType', { name, section });
     else if (kind === 'beam') await execute('structure.createBeamType', { name, section });
     else if (kind === 'strip' && stripShape === 'profile') {
@@ -143,9 +151,12 @@ export function StructureTypesDialog() {
             <label className="field-line"><span className="eyebrow">Name</span><input value={name} placeholder="(from its size)" onChange={(e) => setName(e.target.value)} /></label>
             {(kind === 'column' || kind === 'beam') && <>
               <label className="field-line"><span className="eyebrow">Section</span>
-                <select value={shape} onChange={(e) => setShape(e.target.value as 'rectangle' | 'circle')}><option value="rectangle">Rectangle</option><option value="circle">Circle</option></select>
+                <select value={shape} onChange={(e) => setShape(e.target.value as Shape)}><option value="rectangle">Rectangle</option><option value="circle">Circle</option>
+                  {(kind === 'column' || shape === 'polygon') && <option value="polygon">Polygon</option>}</select>
               </label>
-              <Len label={shape === 'circle' ? 'Diameter' : 'Width'} value={w} min={0.01} onChange={setW} />
+              <Len label={shape === 'rectangle' ? 'Width' : 'Diameter'} value={w} min={0.01} onChange={setW} />
+              {shape === 'polygon' && <label className="field-line"><span className="eyebrow">Sides</span>
+                <input type="number" min={3} max={64} step={1} value={sides} onChange={(e) => setSides(Math.max(3, Math.min(64, Math.round(Number(e.target.value) || 3))))} /></label>}
               {shape === 'rectangle' && <Len label={kind === 'beam' ? 'Depth' : 'Length'} value={d} min={0.01} onChange={setD} />}
             </>}
             {edited && (kind === 'column' || kind === 'beam') && structureHooks.typeExtras.map((Extra, i) => <Extra key={i} type={edited} kind={kind} />)}

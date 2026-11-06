@@ -26,7 +26,7 @@ Rysuj fundamenty na poziomie **Fundamenty** albo daj im osobny rzut.
 
 ## Typy i narożniki
 
-**Typy konstrukcyjne** ustala przekroje słupów, belek i fundamentów: przekroje betonowe i profile stalowe. Kliknij typ na liście, aby zmienić jego wymiary lub nazwę, a następnie **Zapisz typ**: każdy element tego typu się dostosuje; **Nowy typ** wraca do tworzenia nowego.
+**Typy konstrukcyjne** ustala przekroje słupów, belek i fundamentów: przekroje betonowe i profile stalowe. Przekrój słupa to **Prostokąt**, **Okrąg** lub **Wielokąt** foremny, określony przez **Strony** i **Średnicę** po narożach (ośmiokątny słupek, jaki może mieć zaimportowany IFC). Kliknij typ na liście, aby zmienić jego wymiary lub nazwę, a następnie **Zapisz typ**: każdy element tego typu się dostosuje; **Nowy typ** wraca do tworzenia nowego.
 
 Belki i fundamenty łączą się same tam, gdzie się spotykają, narożniki na ucios. Belka narysowana od osi słupa do osi słupa kończy się na licach słupów; jej długość, objętość i strzemiona liczą się w świetle między nimi. **Na ukos**, **Na styk** i **Zamień** zmieniają sposób, w jaki spotykają się dwie belki lub dwa fundamenty. **Dopasuj typ** (<kbd>MA</kbd>) kopiuje typ jednego elementu na inne, a **Utwórz podobny** (<kbd>CS</kbd>) zaczyna rysowanie kolejnego elementu tego samego typu.
 

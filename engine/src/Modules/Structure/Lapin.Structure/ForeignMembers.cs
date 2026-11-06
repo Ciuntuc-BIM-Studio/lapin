@@ -8,13 +8,17 @@ namespace Lapin.Structure;
 /// <summary>
 /// Foreign IFC columns, beams and pad footings rebuilt natively
 /// (docs/spec-ifc.md, Recunoașterea). A column: a vertical prism with a
-/// rectangular or round base, its section and rotation from the base, its
-/// base offset from the storey and its height its own where its type's is
-/// another. A beam: a prism swept horizontally, its section from the profile
-/// (a rectangle in its plane, else a reference), its axis from the sweep; or
-/// swept vertically, its axis along the long side of the
-/// footprint. A footing: a vertical prism on a rectangle, one step. Each
-/// keeps the file's GlobalId as its id.
+/// rectangular, regular polygonal or round base, its section and rotation from
+/// the base, its base offset from the storey and its height its own where its
+/// type's is another. A beam: a prism swept horizontally, its section from the
+/// profile (a rectangle in its plane, else a reference), its axis from the
+/// sweep; or swept vertically, its axis along the long side of the footprint;
+/// of a box's prisms the one whose section is its file type's, else the
+/// longest. A footing: a vertical prism on a rectangle, one step. Each keeps
+/// the file's GlobalId as its id. The columns and beams of one file type share
+/// a native type while their sections are the same (a column's rectangle
+/// turned a quarter is the same); one of another section takes a type of its
+/// own, named after the file's with its section.
 /// </summary>
 public sealed class ForeignMembers : IIfcRecognizer
 {
@@ -26,29 +30,64 @@ public sealed class ForeignMembers : IIfcRecognizer
         _ => null,
     };
 
+    /// <summary>
+    /// The beams joined as the file has them (<see cref="FoundJoins"/>, as the walls are): a join only where it leaves both
+    /// on their footprints, the free ends square where the file's bodies end.
+    /// </summary>
     public void Finish(IEdit edit, RecognitionContext ctx)
     {
         if (ctx.Services.Get<IPathElements>() is not { } paths) return;
-        foreach (var id in ctx.Made.Where(id => edit.Model.Get(id)?.Class == IfcClass.Beam).ToList())
-        {
-            try { Joins.Auto(edit, paths, id); }
-            catch (CommandException ex) { ctx.Notes.Add($"Beam {id}: {ex.Message}"); }
-        }
+        var beams = ctx.Made.Where(id => edit.Model.Get(id)?.Class == IfcClass.Beam).ToList();
+        try { FoundJoins.Make(edit, paths, beams, ctx.Footprints); }
+        catch (CommandException ex) { ctx.Notes.Add($"Beams not joined: {ex.Message}"); }
     }
+
+    /// <summary>
+    /// How near a chorded circle's area (as Lapin draws it) must be to the file's polygon to be read as round: the fidelity
+    /// gate's default volume tolerance (docs/spec-ifc.md, Poarta de fidelitate), so a round column is never one it fails.
+    /// </summary>
+    const double RoundTolerance = 0.005;
+
+    /// <summary>A column's section in plan, where it stands and how it is turned; null when it is none Lapin has.</summary>
+    static (Section Section, Vec2 At, double Rotation)? ColumnSection(IReadOnlyList<Vec2> plan)
+    {
+        if (Footprints.Rectangle(plan) is { } r) return (Section.Rectangle(Round(r.Width), Round(r.Depth)), r.Centre, Math.Round(r.RotationDeg, 3));
+        var area = Math.Abs(Polygon2.SignedArea(plan));
+        bool Fits(Section c) => Math.Abs(Math.Abs(Polygon2.SignedArea(c.Outline())) - area) <= RoundTolerance * area;
+        // A regular polygon: a faceted round column when Lapin's circle has its area, else the polygon itself (an octagonal post).
+        if (Footprints.RegularPolygon(plan) is { } g)
+        {
+            var circle = Section.Circle(Round(2 * g.Radius));
+            if (g.Sides >= 8 && Fits(circle)) return (circle, g.Centre, 0);
+            if (g.Sides <= 64) return (Section.Polygon(Round(2 * g.Radius), g.Sides), g.Centre, Math.Round(g.RotationDeg, 3));
+        }
+        if (Footprints.Circle(plan) is { } c && Section.Circle(Round(c.Diameter)) is var round && Fits(round)) return (round, c.Centre, 0);
+        return null;
+    }
+
+    /// <summary>Whether two sections are one (to 0.1 mm).</summary>
+    static bool Same(Section? a, Section b) => a != null && a.Kind == b.Kind && a.Sides == b.Sides
+        && Math.Abs(a.Width - b.Width) < 1e-4 && Math.Abs(a.Depth - b.Depth) < 1e-4 && Math.Abs(a.Web - b.Web) < 1e-4 && Math.Abs(a.Flange - b.Flange) < 1e-4;
 
     string? Column(IEdit edit, ForeignElement e, RecognitionContext ctx)
     {
         if (!One(e, ctx, p => p.Vertical, "a column whose body is not one vertical prism", out var prism)) return null;
-        var plan = Footprints.Plan(prism.Outer);
-        Section section; Vec2 at; double rotation = 0;
-        if (Footprints.Rectangle(plan) is { } r) { section = Section.Rectangle(Round(r.Width), Round(r.Depth)); at = r.Centre; rotation = Math.Round(r.RotationDeg, 3); }
-        else if (Footprints.Circle(plan) is { } c) { section = Section.Circle(Round(c.Diameter)); at = c.Centre; }
-        else { ctx.Skip("a column whose section is not a rectangle or a circle"); return null; }
+        if (prism.Holes.Count > 0) { ctx.Skip("a column with holes in its section"); return null; }
+        if (ColumnSection(Footprints.Plan(prism.Outer)) is not { } read)
+        {
+            ctx.Skip("a column whose section is not a rectangle, a regular polygon or a circle");
+            return null;
+        }
+        var (section, at, rotation) = read;
         var storey = edit.Model.Get(e.StoreyId);
         if (storey == null) { ctx.Skip("a column without a storey"); return null; }
         var height = Round(prism.Height);
-        var type = Type(edit, ctx, IfcClass.ColumnType, e, $"column:{section.Label}:{height}:{e.Material}", $"Column {section.Label}",
-            name => Columns.CreateType(edit, name, section, height, e.Material ?? (section.IsProfile ? "Steel" : "Reinforced concrete")));
+        // Its file type's section, or that rectangle turned a quarter (the file's first edge the other side).
+        var turned = section.Kind == "rectangle" ? Section.Rectangle(section.Depth, section.Width) : null;
+        var type = Type(edit, ctx, IfcClass.ColumnType, e, $"column:{section.Label}:{height}:{e.Material}", $"Column {section.Label}", section.Label,
+            name => Columns.CreateType(edit, name, section, height, e.Material ?? (section.IsProfile ? "Steel" : "Reinforced concrete")),
+            t => Section.From(t.Attrs["section"]) is var ts && (Same(ts, section) || turned != null && Same(ts, turned)));
+        if (turned != null && !Same(Section.From(type.Attrs["section"]), section)) rotation = Math.Round(((rotation + 90) % 360 + 360) % 360, 3);
         // Where the file has it: its base as an offset from its storey, and its own height where its type's (the first of
         // its file type's columns) is another.
         var attrs = new JsonObject { ["at"] = Place.Json2(at), ["rotation"] = rotation };
@@ -65,10 +104,40 @@ public sealed class ForeignMembers : IIfcRecognizer
 
     string? Beam(IEdit edit, ForeignElement e, RecognitionContext ctx)
     {
-        if (!One(e, ctx, p => p.Horizontal || p.Vertical, "a beam whose body is not one prism", out var prism)) return null;
+        static bool Lying(ShapePrism p) => p.Horizontal || p.Vertical;
+        if (!One(e, ctx, Lying, "a beam whose body is not one prism", out var prism)) return null;
         var storey = edit.Model.Get(e.StoreyId);
         if (storey == null) { ctx.Skip("a beam without a storey"); return null; }
+        var key = TypeKey(IfcClass.BeamType, e);
+        // A box is three prisms: the one whose section is its file type's (a short stub of a long beam's type), else the longest.
+        if (key != null && ctx.TypeIds.TryGetValue(key, out var known) && Section.From(edit.Model.Get(known)?.Attrs["section"]) is { } typed)
+        {
+            foreach (var p in e.Prisms.Where(Lying).OrderByDescending(p => p.Height))
+                if (ReadBeam(p) is { } read && Same(typed, Section.Rectangle(read.Width, read.Depth))) { prism = p; break; }
+        }
+        if (ReadBeam(prism, ctx) is not { } beamRead) return null;
+        var (start, end, width, depth, top, footprint) = beamRead;
+        var section = Section.Rectangle(width, depth);
+        var type = Type(edit, ctx, IfcClass.BeamType, e, $"beam:{section.Label}:{e.Material}", $"Beam {section.Label}", section.Label,
+            name => Beams.CreateType(edit, name, section, e.Material ?? "Reinforced concrete"), t => Same(Section.From(t.Attrs["section"]), section));
+        var topOffset = Math.Round(top - storey.Num("elevation") - storey.Num("height", 3), 6);
+        var beam = new Entity(e.GlobalId, IfcClass.Beam, e.Name ?? type.Name, new JsonObject { ["start"] = Place.Json2(start), ["end"] = Place.Json2(end), ["topOffset"] = topOffset }, "BEAM");
+        edit.Add(beam);
+        Spatial.Contain(edit, storey.Id, beam.Id);
+        edit.Relate(IfcClass.RelDefinesByType, type.Id, beam.Id);
+        if (footprint.Count >= 3) ctx.Footprints[beam.Id] = footprint;
+        ctx.Made.Add(beam.Id);
+        return beam.Id;
+    }
+
+    /// <summary>
+    /// A beam read from one prism: its axis in plan, its section (width across, depth up), its top, and its footprint in plan
+    /// (for the joins); null, with the reason when <paramref name="ctx"/> is given, when it is no beam Lapin has.
+    /// </summary>
+    static (Vec2 Start, Vec2 End, double Width, double Depth, double Top, IReadOnlyList<Vec2> Footprint)? ReadBeam(ShapePrism prism, RecognitionContext? ctx = null)
+    {
         Vec2 start, end; double width, depth, top;
+        IReadOnlyList<Vec2> footprint;
         if (prism.Horizontal)
         {
             // The profile stands in a vertical plane: width across the sweep in plan, depth up it.
@@ -86,27 +155,22 @@ public sealed class ForeignMembers : IIfcRecognizer
             // a haunch, or a sloping beam's parallelogram or turned rectangle read across its sweep) would come in as its bounding box.
             Vec2 InPlane(Vec3 p) => new(Vec2.Dot(new Vec2(p.X, p.Y) - origin, across), p.Z);
             var area = Math.Abs(Polygon2.SignedArea([.. prism.Outer.Select(InPlane)])) - prism.Holes.Sum(h => Math.Abs(Polygon2.SignedArea([.. h.Select(InPlane)])));
-            if (area < 0.99 * (xMax - xMin) * (zMax - zMin)) { ctx.Skip("a beam whose profile is not a rectangle (a shaped section, or a sloping beam)"); return null; }
+            if (area < 0.99 * (xMax - xMin) * (zMax - zMin)) { ctx?.Skip("a beam whose profile is not a rectangle (a shaped section, or a sloping beam)"); return null; }
             var centre = origin + across * ((xMin + xMax) / 2);
             start = centre; end = centre + dir * prism.Height;
+            var (a0, a1) = (centre + across * ((xMin - xMax) / 2), centre + across * ((xMax - xMin) / 2));
+            footprint = [a0, a1, a1 + dir * prism.Height, a0 + dir * prism.Height];
         }
         else
         {
-            if (Footprints.Axis(Footprints.Plan(prism.Outer)) is not { } axis || axis.Coverage < 0.5 || axis.Thickness > (axis.End - axis.Start).Length) { ctx.Skip("a beam whose footprint has no axis"); return null; }
+            var plan = Footprints.Plan(prism.Outer);
+            if (Footprints.Axis(plan) is not { } axis || axis.Coverage < 0.5 || axis.Thickness > (axis.End - axis.Start).Length) { ctx?.Skip("a beam whose footprint has no axis"); return null; }
             (start, end) = (axis.Start, axis.End);
             width = Round(axis.Thickness); depth = Round(prism.Height); top = prism.TopZ;
+            footprint = plan;
         }
-        if (!(width > 0 && depth > 0) || (end - start).Length < 1e-3) { ctx.Skip("a beam without a section"); return null; }
-        var section = Section.Rectangle(width, depth);
-        var type = Type(edit, ctx, IfcClass.BeamType, e, $"beam:{section.Label}:{e.Material}", $"Beam {section.Label}",
-            name => Beams.CreateType(edit, name, section, e.Material ?? "Reinforced concrete"));
-        var topOffset = Math.Round(top - storey.Num("elevation") - storey.Num("height", 3), 6);
-        var beam = new Entity(e.GlobalId, IfcClass.Beam, e.Name ?? type.Name, new JsonObject { ["start"] = Place.Json2(start), ["end"] = Place.Json2(end), ["topOffset"] = topOffset }, "BEAM");
-        edit.Add(beam);
-        Spatial.Contain(edit, storey.Id, beam.Id);
-        edit.Relate(IfcClass.RelDefinesByType, type.Id, beam.Id);
-        ctx.Made.Add(beam.Id);
-        return beam.Id;
+        if (!(width > 0 && depth > 0) || (end - start).Length < 1e-3) { ctx?.Skip("a beam without a section"); return null; }
+        return (start, end, width, depth, top, footprint);
     }
 
     /// <summary>
@@ -154,16 +218,32 @@ public sealed class ForeignMembers : IIfcRecognizer
         return footing.Id;
     }
 
-    static Entity Type(IEdit edit, RecognitionContext ctx, string cls, ForeignElement e, string key, string fallbackName, Func<string, Entity> create)
+    /// <summary>The key of the element's file type among the types this import made, when it has one.</summary>
+    static string? TypeKey(string cls, ForeignElement e) => e.TypeName is { Length: > 0 } tn ? $"{cls}:type:{tn}" : null;
+
+    /// <summary>
+    /// The native type for the element: its file type's (the first made for it) when it <paramref name="fits"/>, else one
+    /// of the file type's for this element's section (<paramref name="label"/>, named after both); without a file type, one
+    /// by <paramref name="key"/> (what makes it).
+    /// </summary>
+    static Entity Type(IEdit edit, RecognitionContext ctx, string cls, ForeignElement e, string key, string fallbackName, string label, Func<string, Entity> create, Func<Entity, bool> fits)
     {
-        key = e.TypeName is { Length: > 0 } tn ? $"{cls}:type:{tn}" : key;
+        var name = fallbackName;
+        if (TypeKey(cls, e) is { } typed)
+        {
+            name = e.TypeName!;
+            key = typed;
+            if (ctx.TypeIds.TryGetValue(key, out var first) && edit.Model.Get(first) is { } t && !fits(t)) { key = $"{typed}:{label}"; name = $"{e.TypeName} {label}"; }
+        }
         if (ctx.TypeIds.TryGetValue(key, out var id) && edit.Model.Get(id) is { } known) return known;
-        var name = e.TypeName is { Length: > 0 } n ? n : fallbackName;
         var type = create(name);
         ctx.CreatedTypes.Add(type.Id);
         ctx.TypeIds[key] = type.Id;
         return type;
     }
+
+    static Entity Type(IEdit edit, RecognitionContext ctx, string cls, ForeignElement e, string key, string fallbackName, Func<string, Entity> create) =>
+        Type(edit, ctx, cls, e, key, fallbackName, "", create, _ => true);
 
     static double Round(double v) => Math.Round(v, 4);
 
