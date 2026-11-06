@@ -68,12 +68,12 @@ if (!uiOnly) {
   sh(dotnet, ['publish', host, '-c', 'Release', '-o', engineOut, '-nologo', '-v', 'q', `-p:LapinProDir=${root}/`, `-p:InformationalVersion=${version}`], { env: { DOTNET_ROOT: dotnetRoot } });
 } else if (!existsSync(join(engineOut, 'wwwroot'))) { console.error(`build-web: no engine built for ${id} yet (run without --ui-only once).`); process.exit(1); }
 
-/** The bytes a browser downloads for a folder (brotli), MB. */
+/** The bytes a browser downloads for a folder (brotli), MB: of the interface's languages (lang-*.js) only the largest, one being loaded. */
 const brotliMB = (dir) => {
-  let n = 0;
-  const walk = (d) => { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else if (!/\.(br|gz|pdb)$/.test(f)) n += brotliCompressSync(readFileSync(p), { params: { [constants.BROTLI_PARAM_QUALITY]: 9 } }).length; } };
+  let n = 0, lang = 0;
+  const walk = (d) => { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else if (!/\.(br|gz|pdb)$/.test(f)) { const b = brotliCompressSync(readFileSync(p), { params: { [constants.BROTLI_PARAM_QUALITY]: 9 } }).length; if (/^lang-.*\.js$/.test(f)) lang = Math.max(lang, b); else n += b; } } };
   walk(dir);
-  return n / 1048576;
+  return (n + lang) / 1048576;
 };
 const engineMB = brotliMB(join(engineOut, 'wwwroot'));
 console.log(`▸ engine for ${id}: ${engineMB.toFixed(1)} MB (brotli)`);

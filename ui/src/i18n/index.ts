@@ -1,12 +1,14 @@
 /**
  * The interface's language (English, Romanian, Spanish, German, French,
- * Danish, Italian, Polish, Brazilian Portuguese or Lao). The interface is
+ * Danish, Italian, Polish, Brazilian Portuguese, Lao or Simplified Chinese). The interface is
  * written in English; in another language a translator walks what it shows
  * (texts, titles, placeholders) and puts each phrase it knows into that
  * language, keeping the English to put back. Drawings (SVG) and what the user
  * types are left as they are. Each language is one file (`ro.ts`, `es.ts`,
- * `de.ts`, `fr.ts`, `da.ts`, `it.ts`, `pl.ts`, `pt.ts`, `lo.ts`):
- * its phrase list and its patterns; a phrase not in it stays English.
+ * `de.ts`, `fr.ts`, `da.ts`, `it.ts`, `pl.ts`, `pt.ts`, `lo.ts`, `zh.ts`):
+ * its phrase list and its patterns; a phrase not in it stays English. A
+ * language is loaded when it is chosen (`loadLanguage`), so the app carries
+ * only the one it shows; main.tsx loads the stored one before the first draw.
  *
  * One English word with two meanings (Join: a shared session or the wall-join
  * tool) gets a context: an element marked `data-i18n-ctx="session"` looks up
@@ -14,16 +16,6 @@
  */
 
 import { create } from 'zustand';
-import { DA, DA_PATTERNS } from './da';
-import { DE, DE_PATTERNS } from './de';
-import { ES, ES_PATTERNS } from './es';
-import { FR, FR_PATTERNS } from './fr';
-import { IT, IT_PATTERNS } from './it';
-import { LO, LO_PATTERNS } from './lo';
-import { PL, PL_PATTERNS } from './pl';
-import { PT, PT_PATTERNS } from './pt';
-import { RO, RO_PATTERNS } from './ro';
-import { ZH, ZH_PATTERNS } from './zh';
 import { rebrand } from '../platform/brand';
 
 /** A language's phrases: the exact ones, and those with a number or a name in them. */
@@ -32,20 +24,35 @@ export interface Language {
   patterns: [RegExp, (m: RegExpExecArray) => string][];
 }
 
-const TABLES = {
-  ro: { dict: RO, patterns: RO_PATTERNS },
-  es: { dict: ES, patterns: ES_PATTERNS },
-  de: { dict: DE, patterns: DE_PATTERNS },
-  fr: { dict: FR, patterns: FR_PATTERNS },
-  da: { dict: DA, patterns: DA_PATTERNS },
-  it: { dict: IT, patterns: IT_PATTERNS },
-  pl: { dict: PL, patterns: PL_PATTERNS },
-  pt: { dict: PT, patterns: PT_PATTERNS },
-  lo: { dict: LO, patterns: LO_PATTERNS },
-  zh: { dict: ZH, patterns: ZH_PATTERNS },
-} satisfies Record<string, Language>;
+/** Each language's file, fetched the first time it is wanted. */
+const LOADERS = {
+  ro: () => import('./ro').then((m) => ({ dict: m.RO, patterns: m.RO_PATTERNS })),
+  es: () => import('./es').then((m) => ({ dict: m.ES, patterns: m.ES_PATTERNS })),
+  de: () => import('./de').then((m) => ({ dict: m.DE, patterns: m.DE_PATTERNS })),
+  fr: () => import('./fr').then((m) => ({ dict: m.FR, patterns: m.FR_PATTERNS })),
+  da: () => import('./da').then((m) => ({ dict: m.DA, patterns: m.DA_PATTERNS })),
+  it: () => import('./it').then((m) => ({ dict: m.IT, patterns: m.IT_PATTERNS })),
+  pl: () => import('./pl').then((m) => ({ dict: m.PL, patterns: m.PL_PATTERNS })),
+  pt: () => import('./pt').then((m) => ({ dict: m.PT, patterns: m.PT_PATTERNS })),
+  lo: () => import('./lo').then((m) => ({ dict: m.LO, patterns: m.LO_PATTERNS })),
+  zh: () => import('./zh').then((m) => ({ dict: m.ZH, patterns: m.ZH_PATTERNS })),
+} satisfies Record<string, () => Promise<Language>>;
 
-export type Lang = 'en' | keyof typeof TABLES;
+export type Lang = 'en' | keyof typeof LOADERS;
+
+/** The languages loaded so far. */
+const TABLES: Partial<Record<Exclude<Lang, 'en'>, Language>> = {};
+
+/** Loads a language's phrases (at once for English or one already here). */
+export async function loadLanguage(lang: Lang): Promise<void> {
+  if (lang === 'en' || TABLES[lang]) return;
+  TABLES[lang] = await LOADERS[lang]();
+}
+
+/** Every language, for the tests that compare them. */
+export async function loadAllLanguages(): Promise<void> {
+  await Promise.all((Object.keys(LOADERS) as Lang[]).map(loadLanguage));
+}
 
 /** The languages offered, each named in itself. */
 export const LANGUAGES: { id: Lang; name: string }[] = [
@@ -70,14 +77,20 @@ function stored(): Lang {
 
 export const useLang = create<{ lang: Lang }>(() => ({ lang: stored() }));
 
+/** The stored language, loaded: main.tsx draws the interface once it is here (English if it cannot be fetched). */
+export const languageReady: Promise<void> = loadLanguage(useLang.getState().lang).catch(() => { useLang.setState({ lang: 'en' }); });
+
 /** The page says its language, so the browser hyphenates and reads it as such. */
 const mark = (lang: Lang) => { if (typeof document !== 'undefined') document.documentElement.lang = lang; };
 
-export function setLang(lang: Lang): void {
+/** Chooses the interface's language; done once its file is loaded and the interface redrawn in it. */
+export function setLang(lang: Lang): Promise<void> {
   try { localStorage.setItem('lapin.lang', lang); } catch { /* the choice lasts this session */ }
-  useLang.setState({ lang });
-  mark(lang);
-  retranslate();
+  return loadLanguage(lang).then(() => {
+    useLang.setState({ lang });
+    mark(lang);
+    retranslate();
+  });
 }
 
 /** A phrase in a language, the one chosen unless given (null: it stays as it is); `ctx` picks a meaning (`ctx|phrase`) first. */
@@ -85,7 +98,9 @@ export function translate(text: string, lang: Lang = useLang.getState().lang, ct
   if (lang === 'en') return null;
   const core = text.trim();
   if (!core) return null;
-  const { dict, patterns } = TABLES[lang];
+  const table = TABLES[lang];
+  if (!table) return null;
+  const { dict, patterns } = table;
   const exact = (ctx ? dict[`${ctx}|${core}`] : undefined) ?? dict[core];
   if (exact != null) return text.replace(core, exact);
   for (const [re, f] of patterns) {
@@ -107,9 +122,9 @@ let root: HTMLElement | null = null;
 let observer: MutationObserver | null = null;
 let busy = false;
 
-/** Whether `now` is `english` or its translation in a language (the one shown before a switch, too). */
-const shows = (now: string, english: string, ctx?: string | null) => now === english || now === rebrand(english) || LANGUAGES.some((l) => {
-  const x = translate(english, l.id, ctx);
+/** Whether `now` is `english` or its translation in a language loaded (the one shown before a switch, too). */
+const shows = (now: string, english: string, ctx?: string | null) => now === english || now === rebrand(english) || (Object.keys(TABLES) as Lang[]).some((l) => {
+  const x = translate(english, l, ctx);
   return x != null && (now === x || now === rebrand(x));
 });
 

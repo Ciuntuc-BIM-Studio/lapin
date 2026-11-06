@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { translate } from '../../i18n';
+import { loadAllLanguages, translate } from '../../i18n';
 import { draftArgs, emptyDraft, featureFields, fit, isDirty, partLines, specValue, type UnderStairSpec } from './underStair';
+
+// The languages are loaded on demand in the app; the tests compare them all.
+await loadAllLanguages();
 
 const spec: UnderStairSpec = {
   name: 'Storage cupboard', front: 'doors', doorWidth: 0.5, shelves: true, shelfSpacing: 0.35, bookcase: true, bookcaseWidth: 0.5, feature: 'none', featureWidth: 1.2,

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { dependentsNotice } from './dependents';
-import { translate } from '../i18n';
+import { loadAllLanguages, translate } from '../i18n';
+
+// The languages are loaded on demand in the app; the tests compare them all.
+await loadAllLanguages();
 
 describe('the notice after a deletion', () => {
   it('names what was rebuilt, five at most, and says nothing when nothing was', () => {

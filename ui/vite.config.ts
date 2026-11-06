@@ -51,5 +51,9 @@ export default defineConfig({
   clearScreen: false,
   // The sibling repositories too, for the modules that live there.
   server: { port: Number(process.env.LAPIN_UI_PORT ?? 5180), strictPort: true, fs: { allow: [resolve(__dirname, '../..')] } },
-  build: { outDir: process.env.LAPIN_UI_OUT ?? 'dist', emptyOutDir: true, chunkSizeWarningLimit: 1500 },
+  // Each interface language is a chunk of its own (lang-<id>), fetched when chosen; the web build's budget counts one.
+  build: {
+    outDir: process.env.LAPIN_UI_OUT ?? 'dist', emptyOutDir: true, chunkSizeWarningLimit: 1500,
+    rollupOptions: { output: { chunkFileNames: (c) => (/\/src\/i18n\/[a-z]{2}\.ts$/.test(c.facadeModuleId ?? '') ? 'assets/lang-[name]-[hash].js' : 'assets/[name]-[hash].js') } },
+  },
 });

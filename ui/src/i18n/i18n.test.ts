@@ -9,6 +9,10 @@ import { PT, PT_PATTERNS } from './pt';
 import { LANGUAGES, translate, type Lang, type Language } from './index';
 import { LO, LO_PATTERNS } from './lo';
 import { RO, RO_PATTERNS } from './ro';
+import { loadAllLanguages } from './index';
+
+// The languages are loaded on demand in the app; the tests compare them all.
+await loadAllLanguages();
 
 describe('the Romanian interface', () => {
   it('puts known phrases into Romanian, keeping their spaces, and leaves the others', () => {

@@ -6,7 +6,7 @@ import { App } from './App';
 import { connect } from './engine/session';
 import { guardWindowClose, openStartupFile } from './engine/files';
 import './theme.css';
-import { startTranslator } from './i18n';
+import { languageReady, startTranslator } from './i18n';
 import { useUi } from './app/store';
 import { paneFromUrl, syncWindows } from './app/windows';
 import { checkForUpdates } from './app/updates';
@@ -37,9 +37,12 @@ if (!detached) setTimeout(() => void checkForUpdates(), 8000);
 // Replies to the user's reports, asked for only once they opted in (docs/decisions-pending.md 177).
 if (!detached && !isGuest()) startReplies();
 void syncWindows();
-createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
-// The interface in the language chosen (English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese or Lao).
-startTranslator(document.getElementById('root')!);
+// The interface in the language chosen (English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao
+// or Simplified Chinese), drawn once that language's file is here.
+void languageReady.then(() => {
+  createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);
+  startTranslator(document.getElementById('root')!);
+});
 
 installRecentErrors();
 // The page stays still under the views: the wheel and a pinch zoom the view, not the page.
