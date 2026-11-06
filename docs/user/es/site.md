@@ -89,6 +89,44 @@ Dan escala a los dibujos y a las imágenes, pero no forman parte del edificio. U
 
 Las figuras siguen a las personas y los coches de [BimGo](https://github.com/aussieBIMguru/BimGo) de Aussie BIM Guru (MIT-0): sus proporciones, posturas y perfiles.
 
+## Puertas de cerramiento
+
+El grupo **Puertas** de la pestaña Emplazamiento coloca puertas de parcela con sus pilares: una **Puerta batiente**, una **Puerta batiente doble** (<kbd>GT</kbd>), una **Puerta corredera**, una **Puerta corredera autoportante**, una **Puerta peatonal**, una **Puerta con puerta peatonal lateral** y una **Puerta plegable**. Lapin no tiene valla propia: dibuje la valla como un muro (uno bajo, del tipo que quiera) o deje que los pilares de la puerta se apoyen en el lindero de la parcela.
+
+Haga clic en los dos extremos de la puerta. Con **En líneas** activo en la barra (por defecto), el centro de la puerta va sobre el eje del muro o la línea dibujada más cercana a menos de 1,5 m (un muro, el lindero de la parcela, una línea de dibujo), a lo largo de ella; desactivado, queda entre los dos puntos. La barra elige también el tipo que coloca, entre los estilos del proyecto o los incluidos en Lapin.
+
+Una puerta colocada sobre un muro lo corta desde las caras exteriores de sus pilares, en toda su altura, de modo que el muro de la valla termina en los pilares.
+
+![Una puerta corredera y una puerta peatonal en un muro de valla, una puerta doble en el lindero de la parcela](shots/gates-plan.webp)
+
+Las plantas dibujan los pilares cortados, las hojas abiertas según su ángulo de apertura con su barrido, los paneles de una puerta plegable plegados; una puerta corredera cerrada, con una flecha en el sentido de apertura, su carril y la zona donde se aparca en discontinua, tan larga como su hoja (la hoja de una puerta autoportante es más larga que el hueco por su cola de contrapeso, alrededor del 45 %). Los alzados, las secciones y el 3D dibujan los cuerpos.
+
+![Las puertas en 3D](shots/gates-3d.webp)
+
+### El configurador
+
+**Tipos de puerta** abre el configurador: los estilos del proyecto y los incluidos en Lapin, que se añaden con un clic (una puerta doble de forja, una corredera de lamas horizontales, una plegable de acero, una peatonal en arco, una puerta de acceso de madera, una puerta de malla de seguridad, una autoportante automática, una doble con puerta peatonal, una puerta de finca, una corredera de chapa perforada, una puerta de jardín de madera). Un tipo define, por grupos, solo lo que admite su clase:
+
+- **Puerta:** el ancho libre y la altura, la holgura al suelo, el ancho de una puerta peatonal, los paneles por lado de una plegable, el ángulo de apertura;
+- **Hojas:** el tamaño del bastidor, el relleno (barrotes verticales, lamas horizontales, un panel ciego, malla o chapa perforada), la separación de barrotes o lamas, puntas de lanza en los barrotes, el remate (recto, en arco o apuntado) y su flecha;
+- **Pilares:** de fábrica, postes de acero o ninguno, su tamaño y altura, la albardilla de un pilar de fábrica (plana o en pirámide);
+- **Herrajes:** un motor (un brazo en las hojas de una batiente, una caja junto al carril de una corredera) y manilla y cerradura;
+- **Materiales** por función: bastidor, relleno, pilares, albardillas, herrajes y motor. Un material nombrado aquí que el proyecto no tiene se crea.
+
+La vista previa es del motor: arriba la planta con su barrido o su zona de aparcamiento, abajo el alzado. Todas las puertas de un tipo siguen un cambio.
+
+![El configurador de puertas con una puerta doble de forja](shots/gates-types.webp)
+
+Seleccione una puerta para cambiar su tipo, su giro, su altura sobre el terreno, hacia qué lado **abren** sus hojas, en qué mano están sus bisagras (o hacia dónde se aparca una corredera) y cuánto se dibuja abierta (0: cerrada). **Otro lado** y **Otra mano** en sus propiedades, o las flechas junto a ella en planta, los invierten. **Modificar → Simetría** le da la otra mano.
+
+![Las propiedades de una puerta](shots/gates-properties.webp)
+
+### Tabla, costes e IFC
+
+La **Tabla de puertas** lista las puertas por tipo: clase, tamaño libre, hojas, relleno, remate, pilares, motor y cantidad. Un tipo nuevo tiene las partidas de coste `LAP-GATE` y, con motor, `LAP-GATEMOT`, contadas por puerta.
+
+El IFC escribe una puerta como **IfcDoor** de PredefinedType **GATE**, de un **IfcDoorType** con su operación (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING…; una puerta con puerta peatonal USERDEFINED), su ancho libre y su altura como OverallWidth y OverallHeight y Pset_DoorCommon. Los pilares forman parte del cuerpo de la puerta, así que un solo elemento lleva la puerta tal como se configuró, y Lapin la vuelve a leer como su propia puerta.
+
 ## Normas urbanísticas y el sol (Lapin Urban)
 
 La edición **Lapin Urban** añade a esta ficha un grupo **Urbanismo**: las normas urbanísticas de la parcela (POT, CUT, las alturas máximas, los retranqueos a la calle, a los linderos laterales, al fondo y al eje de la vía), el **volumen edificable** que dejan, los indicadores que alcanza el modelo frente a ellas, y el **estudio de soleamiento**: el sol y sus sombras en 3D para cualquier día y hora en el lugar del proyecto, y planos de sombras para el equinoccio y los solsticios.

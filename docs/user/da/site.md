@@ -89,6 +89,44 @@ De giver tegninger og billeder deres målestok, men er ingen del af bygningen. E
 
 Figurerne følger personerne og bilerne i [BimGo](https://github.com/aussieBIMguru/BimGo) af Aussie BIM Guru (MIT-0): deres proportioner, stillinger og profiler.
 
+## Låger og porte
+
+Gruppen **Porte** på fanen Grund sætter porte med deres piller: en **Fløjport**, en **Dobbelt fløjport** (<kbd>GT</kbd>), en **Skydeport**, en **Frithængende skydeport**, en **Ganglåge**, en **Port med gangdør ved siden af** og en **Foldeport**. Lapin har intet hegn i sig selv: tegn hegnet som en væg (en lav en, af den type du ønsker), eller lad portens piller stå på matriklens linje.
+
+Klik på portens to ender. Med **På linjer** slået til i bjælken (standard) sættes portens midte på aksen af den nærmeste væg eller tegnede linje inden for 1,5 m (en væg, matriklens kant, en tegnet linje), langs den; slået fra står den mellem de to punkter. Bjælken vælger også den type, den sætter, blandt projektets stilarter eller Lapins indbyggede.
+
+En port sat på en væg skærer den fra pillernes ydersider, hele vejen op, så hegnsvæggen stopper ved pillerne.
+
+![En skydeport og en ganglåge i en hegnsvæg, en dobbeltport på matriklens kant](shots/gates-plan.webp)
+
+Plantegninger tegner pillerne som snittede, fløjene åbne med deres åbningsvinkel og deres slag, en foldeports paneler foldet; en skydeport lukket, med en pil i åbningsretningen, dens skinne og den zone, den parkerer i, stiplet, lige så lang som dens fløj (en frithængende ports fløj er længere end åbningen med sin modvægtshale, omkring 45 %). Opstalter, snit og 3D tegner legemerne.
+
+![Portene i 3D](shots/gates-3d.webp)
+
+### Konfiguratoren
+
+**Porttyper** åbner konfiguratoren: projektets stilarter og Lapins indbyggede, der tilføjes med et klik (en dobbeltport i smedejern, en skydeport med vandrette lameller, en foldeport i stål, en buet ganglåge, en indkørselsport i træ, en sikkerhedsport med net, en automatisk frithængende port, en dobbeltport med gangdør, en markport, en skydeport i perforeret plade, en havelåge i træ). En type fastlægger, i grupper, kun det, dens slags har:
+
+- **Port:** den frie bredde og højde, afstanden til terræn, en gangdørs bredde, en foldeports paneler på hver side, åbningsvinklen;
+- **Fløje:** rammens størrelse, fyldningen (lodrette stænger, vandrette lameller, et massivt panel, net eller perforeret plade), stængernes eller lamellernes afstand, spydspidser på stængerne, toppen (lige, buet eller spids) og dens pilhøjde;
+- **Piller:** murede, stålstolper eller ingen, deres størrelse og højde, en muret pilles afdækning (flad eller pyramide);
+- **Beslag:** en motor (en arm på en fløjports fløje, en kasse ved en skydeports skinne) og et håndtag og en lås;
+- **Materialer** efter rolle: ramme, fyldning, piller, afdækninger, beslag og motor. Et materiale nævnt her, som projektet ikke har, oprettes.
+
+Forhåndsvisningen er motorens: planen med dens slag eller parkeringszone øverst, opstalten nederst. Alle porte af en type følger en ændring.
+
+![Portkonfiguratoren med en dobbeltport i smedejern](shots/gates-types.webp)
+
+Vælg en port for at ændre dens type, dens drejning, hvor højt over terræn den står, hvilken side fløjene **åbner mod**, i hvilken hånd hængslerne sidder (eller hvor en skydeport parkerer), og hvor meget den tegnes åben (0: lukket). **Anden side** og **Anden hånd** i dens egenskaber, eller pilene ved den i planen, vender dem. **Redigér → Spejl** giver den dens anden hånd.
+
+![En ports egenskaber](shots/gates-properties.webp)
+
+### Liste, økonomi og IFC
+
+**Portliste** viser portene efter type: slags, fri størrelse, fløje, fyldning, top, piller, motor og antal. En ny type har økonomiposterne `LAP-GATE` og, med motor, `LAP-GATEMOT`, talt pr. port.
+
+IFC skriver en port som en **IfcDoor** med PredefinedType **GATE**, af en **IfcDoorType** med dens funktionsmåde (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING…; en port med gangdør USERDEFINED), dens frie bredde og højde som OverallWidth og OverallHeight og Pset_DoorCommon. Pillerne er en del af portens legeme, så ét element bærer porten, som den blev konfigureret, og Lapin læser den tilbage som sin egen port.
+
 ## Planlægningsregler og solen (Lapin Urban)
 
 Udgaven **Lapin Urban** føjer en gruppe **Byplanlægning** til denne fane: matriklens planlægningsregler (POT, CUT, de maksimale højder, afstandene til vejen, siderne, bagskellet og vejens akse), det **tilladte bygningsvolumen** de efterlader, de nøgletal, modellen når op på i forhold til dem, og **solstudie**: solen og dens skygger i 3D for en hvilken som helst dag og time på projektets placering, og skyggeplaner for jævndøgn og solhverv.

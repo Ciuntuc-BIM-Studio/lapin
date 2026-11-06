@@ -89,6 +89,44 @@ They give drawings and pictures their scale but are no part of the building. An 
 
 The figures follow the people and cars of [BimGo](https://github.com/aussieBIMguru/BimGo) by Aussie BIM Guru (MIT-0): their proportions, stances and profiles.
 
+## Gates
+
+The **Gates** group on the Site tab places gates with their piers: a **Swing gate**, a **Double swing gate** (<kbd>GT</kbd>), a **Sliding gate**, a **Cantilever sliding gate**, a **Pedestrian gate**, a **Gate with side pedestrian door** and a **Folding gate**. Lapin has no fence of its own: draw the fence as a wall (a low one, of the type you want), or let the gate's piers stand on the parcel's line.
+
+Click the gate's two ends. With **On lines** on in the bar (the default), the gate's middle goes onto the nearest wall's axis or drawn line within 1.5 m (a wall, the parcel's edge, a drafted line), along it; off, it stands between the two points. The bar also chooses the type it puts down, from the project's styles or Lapin's built-in ones.
+
+A gate set on a wall cuts it from the outer faces of its piers, all the way up, so the fence wall stops at the piers.
+
+![A sliding gate and a pedestrian gate in a fence wall, a double gate on the parcel's edge](shots/gates-plan.webp)
+
+Plans draw the piers as cut, the leaves open by their opening angle with their swing, a folding gate's panels folded; a sliding gate closed, with an arrow the way it opens, its track, and the zone it parks in dashed, as long as its leaf (a cantilever gate's leaf is longer than the opening by its counterweight tail, about 45%). Elevations, sections and 3D draw the bodies.
+
+![The gates in 3D](shots/gates-3d.webp)
+
+### The configurator
+
+**Gate types** opens the configurator: the project's styles, and Lapin's built-in ones to add with a click (a wrought iron double gate, a horizontal slat sliding gate, a steel bi-fold gate, an arched pedestrian gate, a timber driveway gate, a security mesh gate, an automatic cantilever gate, a double gate with a pedestrian door, a farm gate, a perforated sheet sliding gate, a timber garden gate). A type sets, by groups, only what its kind takes:
+
+- **Gate:** the clear width and height, the gap to the ground, a pedestrian door's width, a folding gate's panels on each side, the opening angle;
+- **Leaves:** the frame's size, the infill (vertical bars, horizontal slats, a solid panel, mesh or perforated sheet), the bars' or slats' spacing, spear tips on the bars, the top (flat, arched or pointed) and its rise;
+- **Piers:** masonry, steel posts or none, their size and height, a masonry pier's cap (flat or pyramid);
+- **Hardware:** a motor (an arm on a swing gate's leaves, a box beside a sliding gate's track) and a handle and lock;
+- **Materials** by role: frame, infill, piers, caps, hardware and motor. A material named here that the project has not is made.
+
+The preview is the engine's: the plan with its swing or its parking zone above, the elevation below. Every gate of a type follows a change.
+
+![The gate configurator with a wrought iron double gate](shots/gates-types.webp)
+
+Select a gate to change its type, its turn, how far above the ground it stands, which side its leaves **open to**, on which hand its hinges are (or a sliding gate parks), and how far it is drawn open (0: closed). **Other side** and **Other hand** in its properties, or the arrows by it in plan, flip them. **Modify → Mirror** gives it its other hand.
+
+![A gate's properties](shots/gates-properties.webp)
+
+### Schedule, cost and IFC
+
+The **Gate schedule** lists the gates by type: kind, clear size, leaves, infill, top, piers, motor and how many. A new type has the cost articles `LAP-GATE` and, with a motor, `LAP-GATEMOT`, counted per gate.
+
+IFC writes a gate as an **IfcDoor** of PredefinedType **GATE**, of an **IfcDoorType** with its operation (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING…; a gate with a pedestrian door USERDEFINED), its clear width and height as OverallWidth and OverallHeight and Pset_DoorCommon. The piers are part of the gate's body, so one element carries the gate as it was configured, and Lapin reads it back as its own gate.
+
 ## Planning rules and the sun (Lapin Urban)
 
 The **Lapin Urban** edition adds a **Planning** group to this tab: the parcel's planning rules (POT, CUT, the maximum heights, the setbacks from the street, the sides, the rear and the road's axis), the **buildable volume** they leave, the indicators the model reaches against them, and the **sun study**: the sun and its shadows in 3D for any day and hour at the project's place, and shadow plans for the equinox and the solstices.

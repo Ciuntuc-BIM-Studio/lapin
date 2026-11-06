@@ -701,7 +701,7 @@ public static class IfcExport
             var terms = type != null && joinery != null ? joinery.Type(m, type, mirrored) : null;
             // A foreign element: its class and attributes as its file wrote them.
             var src = e.Attrs[IfcSource.Key] as JsonObject;
-            var entity = (src != null ? Carried(src, e, place, shape) : null) ?? Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, e.Id, height, width, terms);
+            var entity = (src != null ? Carried(src, e, place, shape) : null) ?? Product(kind, Gid(e.Id), e.Name, kind.ObjectType ?? type?.Name, place, shape, e.Id, height, width, terms, operationOfType: type?.Str("ifcOperation"));
             written[e.Id] = entity;
             if (at == null) placeOf[e.Id] = (place, z0);
             Contain(spatial, entity);
@@ -905,11 +905,12 @@ public static class IfcExport
         }
 
         /// <summary>The product entity with the attributes its class has: the eight every element shares, then what the class adds.</summary>
-        string Product(Kind k, string gid, string? name, string? objectType, string place, string shape, string tag, double? height = null, double? width = null, IfcJoineryType? terms = null, StairFlightNumbers? flight = null)
+        string Product(Kind k, string gid, string? name, string? objectType, string place, string shape, string tag, double? height = null, double? width = null, IfcJoineryType? terms = null, StairFlightNumbers? flight = null, string? operationOfType = null)
         {
             string[] common = [gid, Null, S(name), Null, S(objectType), place, shape, S(tag)];
             var up = k.Class.ToUpperInvariant();
-            var operation = E(terms?.Operation ?? "NOTDEFINED");
+            // A door's operation: the joinery's terms, else what its type says (a gate's, decision of report #57).
+            var operation = E(terms?.Operation ?? operationOfType ?? "NOTDEFINED");
             var userDefined = S(terms?.Operation == "USERDEFINED" ? terms.UserDefined : null);
             return k.Class switch
             {
@@ -926,7 +927,8 @@ public static class IfcExport
 
         (double? Height, double? Width) Overall(Entity e, Entity? type)
         {
-            if (e.Class is not (IfcClass.Door or IfcClass.Window)) return (null, null);
+            // A door or a window, or what is written as one (a gate: its type's clear width and height).
+            if (e.Class is not (IfcClass.Door or IfcClass.Window) && e.Str("exportAs") is not (IfcClass.Door or IfcClass.Window)) return (null, null);
             var spec = type?.Attrs["spec"] as JsonObject;
             var opening = m.RelatingOf(e.Id, IfcClass.RelFillsElement);
             return (Json.Number(spec?["height"]) ?? opening?.NumOrNull("height"), Json.Number(spec?["width"]) ?? opening?.NumOrNull("width"));
@@ -983,19 +985,30 @@ public static class IfcExport
                 var typeClass = type.Class.EndsWith("Type", StringComparison.Ordinal) && Classes.ContainsKey(type.Class[..^4]) ? type.Class : kind.Class + "Type";
                 var gid = mirrored ? Gid(type.Id, MirrorKey) : Gid(type.Id);
                 // The mirrored type carries the type's intent and says whose mirror it is, so Lapin reads it back as the type itself.
-                var intent = IntentOf(type, Gid(key, IntentKey), null, mirrored ? [("LapinMirrorOf", GlobalIdOf(type.Id))] : null);
+                // A type of Lapin's own class (an exhaust fan's, a gate's) says it, so it comes back as itself.
+                var own = new List<(string, string)>();
+                if (mirrored) own.Add(("LapinMirrorOf", GlobalIdOf(type.Id)));
+                if (typeClass != type.Class) own.Add(("LapinClass", type.Class));
+                var intent = IntentOf(type, Gid(key, IntentKey), null, own.Count > 0 ? own : null);
                 // The type's parameters, which every element of the type has.
                 var sets = new List<string> { intent };
                 if (ParamsOf(type, Gid(key, ParamsKey)) is { } ps) sets.Add(ps);
                 foreach (var (setName, props) in NamedParams(type))
                     sets.Add(f.Add("IFCPROPERTYSET", Gid(key, "params:" + setName), Null, S(setName), Null, L(props.Select(p => Single(p.Name, p.Value)).ToArray())));
                 if (terms != null) sets.AddRange(JoinerySets(key, terms));
+                // An exhaust fan's type (report #55): Pset_FanTypeCommon with the names IFC gives them, its airflow in m³/s.
+                if (kind.Class == "IfcFan" && type.Attrs["spec"] is JsonObject fan && Json.Number(fan["airflow"]) is { } flow)
+                {
+                    var fanProps = new List<string> { Single("NominalAirFlowRate", Typed("IFCVOLUMETRICFLOWRATEMEASURE", R(flow / 3600))) };
+                    if (Json.Number(fan["power"]) is { } power) fanProps.Add(Single("NominalPowerRate", Typed("IFCPOWERMEASURE", R(power))));
+                    sets.Add(f.Add("IFCPROPERTYSET", Gid(key, "fan-common"), Null, S("Pset_FanTypeCommon"), Null, L(fanProps)));
+                }
                 var pre = E(kind.Predefined.Length == 0 ? "NOTDEFINED" : kind.Predefined);
                 var name = mirrored ? $"{type.Name} (mirrored)" : type.Name;
                 string[] common = [gid, Null, S(name), Null, Null, L(sets), Null, S(type.Id), S(kind.Predefined == "USERDEFINED" ? kind.ObjectType : null)];
                 var up = typeClass.ToUpperInvariant();
-                var operation = E(terms?.Operation ?? "NOTDEFINED");
-                var userDefined = S(terms?.Operation == "USERDEFINED" ? terms.UserDefined : null);
+                var operation = E(terms?.Operation ?? type.Str("ifcOperation") ?? "NOTDEFINED");
+                var userDefined = S(terms?.Operation == "USERDEFINED" ? terms.UserDefined : type.Str("ifcOperation") == "USERDEFINED" ? type.Str("ifcUserOperation") : null);
                 var r = kind.Class switch
                 {
                     IfcClass.Door => f.Add(up, [.. common, pre, operation, False, userDefined]),

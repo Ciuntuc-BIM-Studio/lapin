@@ -288,6 +288,9 @@ public static class PriceLists
         new("LAP-DOOR", "Door, fitted", "pcs", 900, 120, 0, 15, 3, "Joiner"),
         new("LAP-STEEL", "Structural steel, erected", "kg", 6.5, 2.2, 0.6, 0.3, 0.03, "Steel erector"),
         new("LAP-SCAF", "Scaffolding, facade", "m2", 4, 6, 1, 1, 0.2, "Scaffolder"),
+        new("LAP-FAN", "Exhaust fan, fitted with its grille", "pcs", 260, 70, 0, 5, 1.5, "Electrician"),
+        new("LAP-GATE", "Gate with its piers and hardware, fitted", "pcs", 4200, 900, 150, 120, 16, "Locksmith"),
+        new("LAP-GATEMOT", "Gate operator (motor), fitted", "pcs", 1900, 350, 0, 20, 4, "Electrician"),
     ];
 
     /// <summary>The template: the columns and Lapin's indicative rows, as CSV (semicolons, a decimal point), each row saying it is indicative.</summary>

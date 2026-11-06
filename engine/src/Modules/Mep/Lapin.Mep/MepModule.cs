@@ -48,6 +48,8 @@ public sealed class MepModule : ILapinModule
         r.Service<IScheduleSource>(new MepRunSchedule());
         r.Service<IScheduleSource>(new GasSchedule());
         GasSupply.Register(r);
+        // Exhaust fans and ventilators (report #55): their own elements and types, a wall fan's provision, a duct to an outlet.
+        Fans.ExhaustFans.Register(r);
         // On the plan the schematic is drawn from symbols, not from the bodies' cut.
         foreach (var cls in Nodes.Classes.Concat(Runs.Classes)) Generator.SymbolicInPlan.Add(cls);
         r.Catalog("roles", new JsonArray(Roles.All.Select(x => (JsonNode)new JsonObject

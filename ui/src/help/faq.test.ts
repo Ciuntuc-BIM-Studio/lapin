@@ -67,6 +67,12 @@ describe('Ask Lapin', () => {
     expect(best('can I make my own title block')).toBe('title-block');
     expect(best('cum fac un balcon in consola')).toBe('balconies');
     expect(best('cum pun o logie in perete')).toBe('balconies');
+    // Reports #55 and #57.
+    expect(best('a provision for customizable bathroom ventilators and fan like in the reference')).toBe('exhaust-fans');
+    expect(best('cum pun un ventilator in baie')).toBe('exhaust-fans');
+    expect(best('basic building gate components customizable to the user')).toBe('gates');
+    expect(best('how do I draw a sliding gate')).toBe('gates');
+    expect(best('cum fac o poarta culisanta la gard')).toBe('gates');
   });
 
   it('says nothing to what it does not know', () => {

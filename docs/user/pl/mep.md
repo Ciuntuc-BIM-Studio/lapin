@@ -87,6 +87,55 @@ W **Ulica** narzędzie **Gazociąg wzdłuż…** (<kbd>GM</kbd>) układa gazoci�
 
 Dobór średnic rur ze zużycia urządzeń i sprawdzenie spadku ciśnienia to inżynieria, w edycji **Lapin MEP**.
 
+## Wentylatory wyciągowe
+
+Grupa **Wentylatory** na karcie Instalacje wstawia wentylatory wyciągowe łazienek i kuchni jako osobne elementy, każdy według typu, który konfigurujesz:
+
+- **Wentylator ścienny** (<kbd>VF</kbd>): wentylator osiowy na ścianie, wydmuchujący prosto przez nią;
+- **Wentylator sufitowy**: wentylator pod sufitem z kanałem wychodzącym z boku;
+- **Wentylator kanałowy**: wentylator rurowy w przestrzeni nad sufitem, na kanale;
+- **Wentylator okienny**: wentylator osadzony w szybie okna;
+- **Wentylator sufitowy z oświetleniem**: wentylator sufitowy z lampą w kratce;
+- **Wentylator z panelem żaluzjowym**: panel ścienny z żaluzją obok wentylatora i osłoną pod nim.
+
+Wybierz narzędzie i kliknij. Wentylator ścienny, okienny lub z panelem żaluzjowym trafia na lico ściany najbliższej kliknięciu (do 600 mm), przodem do pomieszczenia, środkiem 2,1 m nad podłogą (okienny 1,9 m). Wentylator sufitowy trafia tam, gdzie klikniesz, pod sufit pomieszczenia; kanałowy 250 mm nad nim. Pasek wiersza poleceń wybiera typ, który wstawia narzędzie, spośród typów projektu lub wbudowanych typów Lapin (wentylator ścienny Ø100 z czujnikiem wilgotności, sufitowy z oświetleniem i czujnikiem ruchu, kanałowy na dwie łazienki…).
+
+Wentylator ścienny wycina w swojej ścianie okrągły otwór, o 20 mm szerszy od swojego kanału: przepust ściany, jak przewód instalacji (na rzutach widać go jako bryłę otworu, a w IFC trafia jako otwór ściany). Jest wyznaczany z położenia wentylatora, więc wentylator przesunięty wzdłuż ściany zabiera otwór ze sobą. Wentylator okienny siedzi w szybie i niczego nie wycina.
+
+![Łazienka z wentylatorem ściennym, wentylatorem sufitowym z oświetleniem wyprowadzonym przez ścianę i wentylatorem z panelem żaluzjowym](shots/fans-plan.webp)
+
+Rzuty rysują wentylator jego symbolem instalacyjnym: okrąg z łopatkami, przód na ścianie, tuleję przerywaną przez ścianę i strzałkę w kierunku przepływu powietrza; kratkę wentylatora sufitowego przerywaną, bo jest nad przekrojem. Rzuty sufitu, przekroje, elewacje i 3D rysują bryły.
+
+**Kanał do wylotu** wyprowadza powietrze z wentylatora sufitowego lub kanałowego: kliknij wentylator, a potem miejsce, gdzie kanał wychodzi. Kanał jest przewodem systemu projektu **Wyciąg łazienkowy** (tworzonego z pierwszym kanałem; przecina ściany, przez które przechodzi), tak szerokim jak kanał wentylatora, na wysokości jego króćca. Kończy się kratką na zewnętrznym licu ściany albo, gdy na pasku włączono **Przez dach**, rurą wznoszącą się do wywiewki. Przesunięty lub podniesiony wentylator zabiera ze sobą początek kanału.
+
+![Wentylatory w 3D: kanał do kratki na zewnątrz, kratka wentylatora ściennego na elewacji](shots/fans-3d.webp)
+
+### Typy wentylatorów
+
+**Typy wentylatorów** otwiera typy: projektu oraz wbudowane, dodawane jednym kliknięciem. Typ określa:
+
+- swój **montaż** (taki, jaki dopuszcza jego rodzaj) i **średnicę kanału** (Ø100, 125, 150 lub 200 mm);
+- **kształt** kratki (okrągła lub kwadratowa), **rozmiar**, **wzór** (żaluzje, szczeliny, pierścienie lub gładka) i **wykończenie** (biały, srebrny, czarny, stal nierdzewna lub chrom);
+- **wydajność** (m³/h) i **moc** (W);
+- **sterowanie**: wyłącznik, czujnik wilgotności, wyłącznik czasowy, oba lub czujnik ruchu;
+- **klapę zwrotną**, a także **oświetlenie** wentylatora sufitowego, długość kanałowego, szerokość i wysokość panelu żaluzjowego, widoczne tylko tam, gdzie mają zastosowanie.
+
+Podgląd obok pochodzi z silnika: symbol na rzucie u góry, widok z przodu u dołu. Każdy wentylator danego typu podąża za zmianą.
+
+![Typy wentylatorów z podglądem panelu żaluzjowego](shots/fans-types.webp)
+
+Zaznacz wentylator, aby zmienić jego typ, **wysokość nad podłogą**, obrót oraz, gdy ma kanał, jego **wylot** (ściana lub dach) i to, jak wysoko wylot wznosi się nad kanałem. Przeciągnij uchwyt pośrodku, aby go przesunąć, a uchwyt przed nim, aby go obrócić.
+
+![Właściwości wentylatora sufitowego](shots/fans-properties.webp)
+
+### Zestawienia, koszty i IFC
+
+**Zestawienie wentylatorów** wymienia każdy wentylator z pomieszczeniem, rodzajem, rozmiarem, wydajnością, montażem, sterowaniem, wysokością i wylotem oraz łączną wydajność. **Kontrola wyciągu w pomieszczeniach** wymienia każdą łazienkę, WC i kuchnię (i każde pomieszczenie z wentylatorem) z kubaturą, potrzebnym wyciągiem i tym, co dają jego wentylatory: łazienka 8 wymian powietrza na godzinę i co najmniej 54 m³/h, WC 6 i 25 m³/h, kuchnia 6 i 108 m³/h. To wartości orientacyjne; sprawdź je z normą, według której projektujesz.
+
+Nowy typ ma pozycję kosztową `LAP-FAN`, liczoną na sztukę (**Koszty → Przypisz pozycje…** ją zmienia).
+
+IFC zapisuje wentylator jako **IfcFan** typu **IfcFanType** z jego typem predefiniowanym (PROPELLORAXIAL dla ściennego lub okiennego, CENTRIFUGALRADIAL dla sufitowego, TUBEAXIAL dla kanałowego) i **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); otwór w ścianie jako IfcOpeningElement. Lapin wczytuje je z powrotem jako własne wentylatory.
+
 ## Koordynacja: bryły otworów i sprawdzanie kolizji
 
 Każdy otwór w ścianie, stropie lub dachu może być osobną **bryłą otworu**: bryłą tak dużą jak otwór, przez całą grubość elementu nośnego, z wykończeniami. Programy wykrywania kolizji (Navisworks, Solibri, BIMcollab) sprawdzają instalacje względem takich brył regułą „całkowicie wewnątrz”: rura, kanał lub koryto kablowe w całości w bryle jest w porządku; element wystający z niej albo przechodzący przez ścianę bez otworu to kolizja. Lapin wykonuje to samo sprawdzenie.

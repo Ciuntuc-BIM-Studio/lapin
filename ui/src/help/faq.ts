@@ -487,6 +487,26 @@ export const FAQ: Entry[] = [
     action: { label: 'Sunshade types', labelRo: 'Sunshade types', run: { kind: 'tool', id: 'architecture.sunshadeTypes' } },
     source: 'report #56',
   },
+  {
+    id: 'exhaust-fans',
+    q: ['How do I add a bathroom fan or ventilator?', 'Can I place a customizable exhaust fan in the wall or ceiling?', 'Where are the bathroom ventilators?'],
+    qRo: ['Cum pun un ventilator de baie?', 'Pot pune un ventilator de evacuare în perete sau în tavan?', 'Unde găsesc ventilatoarele?'],
+    keywords: ['fan', 'fans', 'ventilator', 'ventilators', 'exhaust', 'extract', 'bathroom', 'airflow', 'humidity', 'ventilator', 'ventilatoare', 'ventilatorul', 'evacuare', 'baie', 'aerisire'],
+    a: 'MEP tab → Fans: Wall fan (VF), Ceiling fan, Inline duct fan, Window fan, Ceiling fan with light and Fan with louvre panel. Click near a wall\'s face (a wall or window fan sits on it, its round sleeve cut through the wall) or in the room (a ceiling fan under its ceiling). Fan types… configures the duct size, the grille\'s shape, size, pattern and finish, the airflow, power, mounting, control (switch, humidity, timer, motion) and the backdraft shutter, with a preview; Lapin\'s built-in types are added with a click. Duct to outlet takes a ceiling or inline fan\'s air out through a wall or the roof. The Fan schedule lists them; the Room extract check compares each bathroom\'s fans with the extract its volume needs. IFC: IfcFan of an IfcFanType with Pset_FanTypeCommon.',
+    aRo: 'Fila Instalații → Ventilatoare: Ventilator de perete (VF), Ventilator de tavan, Ventilator de tubulatură, Ventilator de geam, Ventilator de tavan cu lumină și Ventilator cu panou cu lamele. Dă clic lângă fața unui perete (unul de perete sau de geam stă pe ea, iar manșonul lui rotund taie peretele) sau în încăpere (unul de tavan, sub tavan). Tipuri de ventilatoare… configurează diametrul tubului, forma, mărimea, modelul și finisajul grilei, debitul, puterea, montajul, comanda (întrerupător, umiditate, temporizator, mișcare) și clapeta antiretur, cu previzualizare; tipurile incluse în Lapin se adaugă cu un clic. Tub spre gura de evacuare scoate aerul unui ventilator de tavan sau de tubulatură prin perete sau prin acoperiș. Extrasul de ventilatoare le listează; Verificarea evacuării compară ventilatoarele fiecărei băi cu debitul cerut de volumul ei. IFC: IfcFan al unui IfcFanType cu Pset_FanTypeCommon.',
+    action: { label: 'Fan types…', labelRo: 'Tipuri de ventilatoare…', run: { kind: 'tool', id: 'mep.fanTypes' } },
+    source: 'report #55',
+  },
+  {
+    id: 'gates',
+    q: ['How do I add a gate?', 'Can I design a sliding or swing gate for the fence?', 'Basic building gate components customizable to the user'],
+    qRo: ['Cum pun o poartă?', 'Pot face o poartă culisantă sau batantă la gard?', 'Unde găsesc porțile?'],
+    keywords: ['gate', 'gates', 'sliding', 'swing', 'cantilever', 'pedestrian', 'wicket', 'driveway', 'fence', 'pier', 'piers', 'poarta', 'porti', 'portita', 'culisanta', 'batanta', 'autoportanta', 'gard', 'stalpi'],
+    a: 'Site tab → Gates: Swing gate, Double swing gate (GT), Sliding gate, Cantilever sliding gate, Pedestrian gate, Gate with side pedestrian door and Folding gate. Click the gate\'s two ends: with On lines in the bar it goes onto the nearest wall\'s axis or the parcel\'s edge (a gate on a fence wall cuts it); off, between the two points. Gate types… is the configurator, with Lapin\'s built-in styles and the project\'s own: width, height, gap, leaves (frame, bars, slats, solid, mesh, perforated sheet; flat, arched or pointed top, spears), piers (masonry with caps, steel posts), motor, lock and materials, with the engine\'s preview. Plans show the swing, or a sliding gate\'s parking zone as long as its leaf. IFC: IfcDoor GATE of an IfcDoorType.',
+    aRo: 'Fila Teren → Porți: Poartă batantă, Poartă batantă dublă (GT), Poartă culisantă, Poartă autoportantă, Portiță, Poartă cu portiță alăturată și Poartă pliantă. Dă clic pe cele două capete ale porții: cu Pe linii pornit în bară se pune pe axul celui mai apropiat perete sau pe latura parcelei (o poartă pe un zid de gard îl taie); oprit, între cele două puncte. Tipuri de porți… e configuratorul, cu stilurile incluse în Lapin și cele ale proiectului: lățime, înălțime, distanța față de teren, canate (ramă, bare, lamele, plin, plasă, tablă perforată; coronament drept, arcuit sau ascuțit, sulițe), stâlpi (zidărie cu căciuli, oțel), motor, broască și materiale, cu previzualizarea motorului. Planurile arată arcul de deschidere sau zona de parcare a unei porți culisante, cât canatul. IFC: IfcDoor GATE al unui IfcDoorType.',
+    action: { label: 'Gate types…', labelRo: 'Tipuri de porți…', run: { kind: 'tool', id: 'architecture.gateTypes' } },
+    source: 'report #57',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

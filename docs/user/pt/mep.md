@@ -87,6 +87,55 @@ Em **Rua**, **Rede de gás ao longo de…** (<kbd>GM</kbd>) assenta uma rede de 
 
 Dimensionar os tubos pelo consumo dos aparelhos e verificar a perda de carga é engenharia, na edição **Lapin MEP**.
 
+## Exaustores
+
+O grupo **Ventiladores** na guia Instalações coloca exaustores de banheiro e cozinha como elementos próprios, cada um de um tipo que você configura:
+
+- **Exaustor de parede** (<kbd>VF</kbd>): um ventilador axial numa parede, soprando direto através dela;
+- **Exaustor de teto**: um ventilador sob o teto com um duto saindo pela lateral;
+- **Ventilador de duto**: um ventilador tubular no forro, sobre o duto;
+- **Exaustor de janela**: um ventilador montado no vidro de uma janela;
+- **Exaustor de teto com luz**: um exaustor de teto com uma luz na grelha;
+- **Exaustor com painel de venezianas**: um painel de parede com venezianas ao lado do ventilador e uma tampa embaixo.
+
+Escolha uma ferramenta e clique. Um exaustor de parede, de janela ou com painel de venezianas vai para a face da parede mais próxima do clique (até 600 mm), com a frente para o ambiente e o centro a 2,1 m do piso (um de janela a 1,9 m). Um exaustor de teto vai onde você clica, sob o teto do ambiente; um de duto 250 mm acima dele. A barra da linha de comandos escolhe o tipo que a ferramenta coloca, entre os tipos do projeto ou os incluídos no Lapin (um exaustor de parede Ø100 com sensor de umidade, um de teto com luz e sensor de presença, um de duto para dois banheiros…).
+
+Um exaustor de parede corta uma abertura redonda na sua parede, 20 mm mais larga que o seu duto: a passagem da parede, como a de uma tubulação (aparece como volume de abertura nas plantas e vai para o IFC como abertura da parede). Ela é encontrada pela posição do exaustor, então um exaustor movido ao longo da parede leva a sua abertura junto. Um exaustor de janela fica no vidro e não corta nada.
+
+![Um banheiro com um exaustor de parede, um exaustor de teto com luz levado para fora através da parede e um exaustor com painel de venezianas](shots/fans-plan.webp)
+
+As plantas desenham um exaustor pelo seu símbolo de instalações: um círculo com as pás, a frente na parede, a luva tracejada através da parede e uma seta no sentido do ar; a grelha de um exaustor de teto tracejada, pois está acima do corte. Plantas de forro, cortes, elevações e 3D desenham os corpos.
+
+**Duto até a saída** leva para fora o ar de um exaustor de teto ou de duto: clique no exaustor e depois onde o duto sai. O duto é uma tubulação do sistema **Exaustão de banheiros** do projeto (criado com o primeiro duto; corta as paredes que atravessa), da largura do duto do exaustor, na altura do seu bocal. Termina numa grelha na face externa da parede ou, com **Pelo telhado** ativo na barra, num tubo que sobe até um chapéu. Movido ou elevado, o exaustor leva junto o início do duto.
+
+![Os exaustores em 3D: o duto até a grelha externa, a grelha do exaustor de parede na fachada](shots/fans-3d.webp)
+
+### Tipos de exaustor
+
+**Tipos de ventilador** abre os tipos: os do projeto e os incluídos, para adicionar com um clique. Um tipo define:
+
+- a sua **montagem** (as que o seu gênero aceita) e o **diâmetro do duto** (Ø100, 125, 150 ou 200 mm);
+- a **forma** da grelha (redonda ou quadrada), o **tamanho**, o **padrão** (venezianas, fendas, anéis ou lisa) e o **acabamento** (branco, prata, preto, inox ou cromado);
+- a **vazão de ar** (m³/h) e a **potência** (W);
+- o **comando**: um interruptor, um sensor de umidade, um temporizador, ambos ou um sensor de presença;
+- um **registro antirretorno**, e a **luz** de um exaustor de teto, o comprimento de um de duto, a largura e a altura de um painel de venezianas, mostrados só onde se aplicam.
+
+A pré-visualização ao lado é a do motor: o símbolo em planta em cima, a frente embaixo. Todo exaustor de um tipo segue uma alteração.
+
+![Os tipos de exaustor com a pré-visualização de um painel de venezianas](shots/fans-types.webp)
+
+Selecione um exaustor para alterar o seu tipo, a sua **altura acima do piso**, a rotação e, quando tem duto, a sua **saída** (parede ou telhado) e quanto a saída sobe acima do duto. Arraste a alça no centro para movê-lo, a da frente para girá-lo.
+
+![As propriedades de um exaustor de teto](shots/fans-properties.webp)
+
+### Quantitativos, custos e IFC
+
+O **Quantitativo de ventiladores** lista cada exaustor com ambiente, gênero, tamanho, vazão, montagem, comando, altura e saída, e a vazão total. A **Verificação da exaustão por ambiente** lista cada banheiro, WC e cozinha (e cada ambiente com um exaustor) com o seu volume, a exaustão de que precisa e o que os seus exaustores dão: um banheiro 8 trocas de ar por hora e no mínimo 54 m³/h, um WC 6 e 25 m³/h, uma cozinha 6 e 108 m³/h. São valores indicativos; confira-os com a norma que você segue.
+
+Um tipo novo tem a composição de custo `LAP-FAN`, contada por exaustor (**Custos → Atribuir composições…** a altera).
+
+O IFC escreve um exaustor como **IfcFan** de um **IfcFanType** com o seu tipo predefinido (PROPELLORAXIAL para um de parede ou de janela, CENTRIFUGALRADIAL para um de teto, TUBEAXIAL para um de duto) e **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); a abertura da parede como IfcOpeningElement. O Lapin os lê de volta como os seus próprios exaustores.
+
 ## Coordenação: volumes de abertura e verificação de conflitos
 
 Cada abertura numa parede, laje ou telhado pode ser um **volume de abertura** próprio: um sólido do tamanho da abertura, por toda a espessura do seu hospedeiro, acabamentos incluídos. Os programas de conflitos (Navisworks, Solibri, BIMcollab) testam as instalações contra esses volumes com "completamente dentro": um tubo, duto ou eletrocalha inteiro dentro de um volume passa; um que sai dele, ou que atravessa uma parede sem abertura, é um conflito. O Lapin faz a mesma verificação.

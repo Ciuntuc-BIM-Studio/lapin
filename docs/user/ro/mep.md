@@ -87,6 +87,55 @@ Din **Stradă**, **Conductă de gaz de-a lungul…** (<kbd>GM</kbd>) pozează o 
 
 Dimensionarea țevilor după consumul aparatelor și verificarea căderii de presiune țin de inginerie, în ediția **Lapin MEP**.
 
+## Ventilatoare de evacuare
+
+Grupul **Ventilatoare** din fila Instalații pune ventilatoare de baie și de bucătărie ca elemente ale lor, fiecare de un tip pe care îl configurezi:
+
+- **Ventilator de perete** (<kbd>VF</kbd>): un ventilator axial pe perete, care suflă direct prin el;
+- **Ventilator de tavan**: un ventilator sub tavan, cu un tub care iese din lateral;
+- **Ventilator de tubulatură**: un ventilator în tub, în plenul tavanului, pe traseul tubului;
+- **Ventilator de geam**: un ventilator montat în geamul unei ferestre;
+- **Ventilator de tavan cu lumină**: un ventilator de tavan cu o lumină în grilă;
+- **Ventilator cu panou cu lamele**: un panou de perete cu lamele lângă ventilator și un capac sub el.
+
+Alege o unealtă și dă clic. Un ventilator de perete, de geam sau cu panou se pune pe fața peretelui cea mai apropiată de clic (până la 600 mm), cu fața spre încăpere și mijlocul la 2,1 m peste pardoseală (cel de geam la 1,9 m). Un ventilator de tavan se pune unde dai clic, sub tavanul încăperii; unul de tubulatură cu 250 mm deasupra lui. Bara liniei de comandă alege tipul pe care îl pune unealta, dintre tipurile proiectului sau cele incluse în Lapin (un ventilator de perete Ø100 cu senzor de umiditate, unul de tavan cu lumină și senzor de mișcare, unul de tubulatură pentru două băi…).
+
+Un ventilator de perete taie prin perete un gol rotund, cu 20 mm mai larg decât tubul lui: golul prevăzut al peretelui, ca al unui traseu de instalații (apare ca volum de gol în planuri și intră în IFC ca gol al peretelui). E găsit după locul în care stă ventilatorul, deci un ventilator mutat de-a lungul peretelui își ia golul cu el. Un ventilator de geam stă în geam și nu taie nimic.
+
+![O baie cu un ventilator de perete, un ventilator de tavan cu lumină scos prin perete și un ventilator cu panou cu lamele](shots/fans-plan.webp)
+
+Planurile desenează ventilatorul prin simbolul lui de instalații: un cerc cu palele, fața pe perete, manșonul punctat prin perete și o săgeată în sensul aerului; grila unui ventilator de tavan e punctată, fiind deasupra secționării. Planurile de tavan, secțiunile, fațadele și 3D-ul desenează corpurile.
+
+**Tub spre gura de evacuare** scoate aerul unui ventilator de tavan sau de tubulatură: dă clic pe ventilator, apoi unde iese tubul. Tubul e un traseu al sistemului **Bathroom extract** al proiectului (făcut odată cu primul tub; taie pereții prin care trece), cât tubul ventilatorului de larg, la înălțimea racordului. Se termină cu o gură pe fața exterioară a peretelui sau, cu **Prin acoperiș** pornit în bară, cu o țeavă care urcă la o căciulă. Mutat sau ridicat, ventilatorul ia începutul tubului cu el.
+
+![Ventilatoarele în 3D: tubul până la gura de afară, grila ventilatorului de perete pe fațadă](shots/fans-3d.webp)
+
+### Tipurile de ventilatoare
+
+**Tipuri de ventilatoare** deschide tipurile: ale proiectului și cele incluse, de adăugat cu un clic. Un tip stabilește:
+
+- **montajul** (cele pe care le ia felul lui) și **diametrul tubului** (Ø100, 125, 150 sau 200 mm);
+- **forma** grilei (rotundă sau pătrată), **mărimea**, **modelul** (lamele, fante, inele sau simplă) și **finisajul** (alb, argintiu, negru, inox sau crom);
+- **debitul de aer** (m³/h) și **puterea** (W);
+- **comanda**: întrerupător, senzor de umiditate, temporizator, amândouă sau senzor de mișcare;
+- o **clapetă antiretur**, iar **lumina** unui ventilator de tavan, lungimea corpului unuia de tubulatură, lățimea și înălțimea unui panou cu lamele apar doar unde se aplică.
+
+Previzualizarea de alături e a motorului: simbolul din plan sus, fața jos. Fiecare ventilator de un tip urmează o schimbare.
+
+![Tipurile de ventilatoare, cu previzualizarea unui panou cu lamele](shots/fans-types.webp)
+
+Selectează un ventilator ca să-i schimbi tipul, **înălțimea peste pardoseală**, rotația și, după ce are tub, **gura de evacuare** (perete sau acoperiș) și cât urcă ea deasupra tubului. Trage de mânerul din mijloc ca să-l muți, de cel din fața lui ca să-l rotești.
+
+![Proprietățile unui ventilator de tavan](shots/fans-properties.webp)
+
+### Extrase, cost și IFC
+
+**Extrasul de ventilatoare** arată fiecare ventilator cu încăperea, felul, mărimea, debitul, montajul, comanda, înălțimea și gura de evacuare, plus debitul total. **Verificarea evacuării pe încăperi** arată fiecare baie, WC și bucătărie (și fiecare încăpere cu ventilator) cu volumul, debitul necesar și cât dau ventilatoarele ei: o baie 8 schimburi de aer pe oră și cel puțin 54 m³/h, un WC 6 și 25 m³/h, o bucătărie 6 și 108 m³/h. Sunt valori orientative; verifică-le după normativul după care proiectezi.
+
+Un tip nou are articolul de deviz `LAP-FAN`, numărat pe bucată (Cost → Map articles… îl schimbă).
+
+IFC scrie un ventilator ca **IfcFan** al unui **IfcFanType**, cu felul lui predefinit (PROPELLORAXIAL pentru unul de perete sau de geam, CENTRIFUGALRADIAL pentru unul de tavan, TUBEAXIAL pentru unul de tubulatură) și **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate); golul din perete ca IfcOpeningElement. Lapin le citește înapoi ca ventilatoarele lui.
+
 ## Coordonare: volume de gol și verificarea coliziunilor
 
 Fiecare gol dintr-un perete, o placă sau un acoperiș poate fi un **volum de gol** al lui: un solid cât golul, prin toată grosimea elementului-gazdă, cu finisaje cu tot. Programele de coliziuni (Navisworks, Solibri, BIMcollab) verifică instalațiile față de astfel de volume cu „complet în interior”: o țeavă, o tubulatură sau un jgheab de cabluri aflat în întregime într-un volum trece; unul care iese din el, sau care trece printr-un perete unde nu e niciun gol, e o coliziune. Lapin face aceeași verificare singur.

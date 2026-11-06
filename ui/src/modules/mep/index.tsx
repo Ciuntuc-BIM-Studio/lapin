@@ -26,6 +26,10 @@ import { editSystem, editedSystem, toggleEdit } from './edit';
 import { Background } from './Background';
 import { mainArgs } from './gas';
 import { LengthField } from '../../shell/cells';
+import { fanGroup } from './fans/tools';
+import { FanSection } from './fans/FanSection';
+import { FanTypesDialog } from './fans/FanTypesDialog';
+import { CLASS as FAN_CLASS, fanGrips } from './fans/fans';
 
 /** A role as its tool places it: its id in the engine's catalogue, the services it takes ("*": any), whether it sits on a run. */
 interface RoleTool { id: string; label: string; icon: Icon; services: string[]; inline?: boolean; shortcut?: string }
@@ -374,6 +378,8 @@ const mep: LapinModule = {
       { label: 'Plumbing', tools: [], small: [nodeTool(role('basin')), nodeTool(role('wc')), nodeTool(role('sink')), nodeTool(role('shower')), nodeTool(role('bath')), nodeTool(role('waterMeter')), nodeTool(role('stack')), nodeTool(role('cleanout'))] },
       { label: 'Electrical', tools: [], small: [nodeTool(role('panel')), nodeTool(role('outlet')), nodeTool(role('light')), nodeTool(role('switch'))] },
       { label: 'Air', tools: [], small: [nodeTool(role('fan')), nodeTool(role('diffuser')), nodeTool(role('grille'))] },
+      // Exhaust fans and ventilators (report #55): elements of their own, configured by type.
+      fanGroup,
       { label: 'Fittings', tools: [], small: [nodeTool(role('valve')), nodeTool(role('rise')), nodeTool(role('cap'))] },
       { label: 'Gas', tools: [], small: [nodeTool(role('meterBox')), nodeTool(role('regulator')), nodeTool(role('gasMeter')), nodeTool(role('gasShutoff')), nodeTool(role('gasTap')), nodeTool(role('flexConnector')), nodeTool(role('gasBoiler')), nodeTool(role('cooker')), nodeTool(role('waterHeater'))] },
       { label: 'Street', tools: [], small: [gasMain, gasMainDrawn, serviceConnection, nodeTool(role('tappingTee'))] },
@@ -381,10 +387,14 @@ const mep: LapinModule = {
     ],
   }],
   hotbar: [run, nodeTool(role('radiator')), nodeTool(role('valve'))],
-  propertySections: [{ id: 'mep', label: 'MEP', classes: PICKABLE, component: MepSection, fieldKeys: (n) => (isRun(n) ? RUN_FIELDS : isNode(n) ? NODE_FIELDS : null) }],
-  dialogs: { mepSystems: SystemsDialog },
+  propertySections: [
+    { id: 'mep', label: 'MEP', classes: PICKABLE, component: MepSection, fieldKeys: (n) => (isRun(n) ? RUN_FIELDS : isNode(n) ? NODE_FIELDS : null) },
+    { id: 'fan', label: 'Exhaust fan', classes: [FAN_CLASS], component: FanSection },
+  ],
+  dialogs: { mepSystems: SystemsDialog, fanTypes: FanTypesDialog },
   background: Background,
-  grips: byClass(grips),
+  grips: { ...byClass(grips), [FAN_CLASS]: fanGrips },
+  setType: { [FAN_CLASS]: (ids, typeId) => execute('mep.setFanType', { ids, typeId }) },
   references: byClass(references),
 };
 
