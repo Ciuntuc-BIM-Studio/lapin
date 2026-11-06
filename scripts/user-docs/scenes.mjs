@@ -469,6 +469,11 @@ export const scenes = [
       // The covering's material (decision 328): the covering's own, made in the project, picked in the properties.
       t.expect(roof.props?.coveringMaterial && (await t.nodes()).some((n) => n.type === 'IfcMaterial' && n.name === roof.props.coveringMaterial), `the covering is made of a project material (${roof.props?.coveringMaterial})`);
       t.expect(await t.page.locator('aside.props dt[title=coveringMaterial]').count() > 0, 'the properties show the covering material');
+      // Only the fields that apply (decision 333): a framed roof shows its rafters' fields, not the deck's.
+      const isFramed = !['flat', 'barrel'].includes(roof.props?.shape) && roof.props?.structure !== 'none';
+      t.expect(isFramed, `the house's roof is framed (${roof.props?.shape}, ${roof.props?.structure})`);
+      t.expect(await t.page.locator('aside.props dt[title=deckThickness]').count() === 0, 'a framed roof hides the deck fields');
+      t.expect(await t.page.locator('aside.props dt[title=rafterSpacing]').count() > 0, 'a framed roof shows its rafters');
       await t.shot('roof-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
       t.expect((await t.nodes()).some((n) => n.type === 'IfcSlab'), 'a floor in the house');
       // The roof configurator (decision 231): the Swedish truss style picked, its framing seen in the section, applied.
@@ -563,6 +568,10 @@ export const scenes = [
       await t.wait(800);
       const node = (await t.nodes()).find((n) => n.id === roof.id);
       t.expect(node?.props?.deckMaterial === 'Reinforced concrete', `the flat roof has a deck of reinforced concrete (${node?.props?.deckMaterial})`);
+      await select(t, roof.id);
+      await t.wait(600);
+      t.expect(await t.page.locator('aside.props dt[title=deckThickness]').count() > 0, 'a flat roof shows its deck fields');
+      t.expect(await t.page.locator('aside.props dt[title=rafterSpacing]').count() === 0, 'a flat roof hides the rafters');
       await t.cmd('view.create', { kind: 'section', name: 'R-R', start: [10.5, -1], end: [10.5, 9], scale: 20 });
       await openFromBrowser(t, 'R-R', 1500);
       await t.fit();

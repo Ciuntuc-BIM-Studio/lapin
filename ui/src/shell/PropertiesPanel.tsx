@@ -15,7 +15,7 @@ import { activeStorey, execute, useSession } from '../engine/session';
 import { frontView } from '../viewport/frontView';
 import { view3dNode } from '../viewport/storeys3d';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
-import type { FieldDescriptor, NodeDto } from '../engine/protocol';
+import { fieldShown, type FieldDescriptor, type NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
 import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
@@ -42,10 +42,13 @@ function Commit({ value, onCommit, suffix, className }: { value: string; onCommi
 }
 
 
-/** The class's fields this node shows: all, unless a section names the keys its kind of entity has. */
-function fieldsShown(fields: FieldDescriptor[], sections: PropertySectionDef[], node: NodeDto): FieldDescriptor[] {
+/**
+ * The class's fields this node shows: all, unless a section names the keys its kind of entity has; of those, the ones that
+ * apply to it or to another of the selection (a roof's deck only without framing, decision 333).
+ */
+function fieldsShown(fields: FieldDescriptor[], sections: PropertySectionDef[], node: NodeDto, others: NodeDto[]): FieldDescriptor[] {
   const keys = sections.map((s) => s.fieldKeys?.(node)).find((k) => k != null);
-  return keys ? fields.filter((f) => keys.includes(f.key)) : fields;
+  return (keys ? fields.filter((f) => keys.includes(f.key)) : fields).filter((f) => [node, ...others].some((n) => fieldShown(f, n.props)));
 }
 
 export function FieldRow({ node, field }: { node: NodeDto; field: FieldDescriptor }) {
@@ -294,7 +297,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
       )}
       {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
         <Group id="dimensions" label="Dimensions">
-          <dl className="fields">{fieldsShown(cls.fields, sections, node).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
+          <dl className="fields">{fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
         </Group>
       )}
       {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}

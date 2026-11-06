@@ -379,8 +379,8 @@ public static class Costing
                     foreach (var ps in partSets)
                         if (RuleFor(m, rules, ps.Material) is { } rule)
                         {
-                            // A roof's covering (decision 328) and its deck (329) are the roof's own work, in its chapter.
-                            var isCore = Parts.LayerIndex(ps.Part) is { } li ? li == coreIndex : ps.Part!.StartsWith("zone:", StringComparison.Ordinal) || ps.Part is "covering" or "deck";
+                            // A roof's covering (decision 328), its deck (329) and its dormers' covering (335) are the roof's own work, in its chapter.
+                            var isCore = Parts.LayerIndex(ps.Part) is { } li ? li == coreIndex : ps.Part!.StartsWith("zone:", StringComparison.Ordinal) || ps.Part is "covering" or "deck" or "dormer-roofs";
                             Add(e, rule.Article, [ps], isCore, ps.Material);
                             priced = true;
                         }

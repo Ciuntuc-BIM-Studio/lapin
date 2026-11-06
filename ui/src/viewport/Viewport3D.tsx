@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useLooks, type Look } from '../platform/looks';
+import { partLook, useLooks, type Look } from '../platform/looks';
 import { useSunlight } from '../platform/sunlight';
 import { pickable } from '../platform/scope';
 import * as THREE from 'three';
@@ -320,7 +320,7 @@ function paint(group: THREE.Object3D, l: Look | undefined) {
   const base = l?.parts ? { ...l, parts: undefined } : l;
   const visit = (c: THREE.Object3D) => {
     if (c !== group && c.userData.part) {
-      const own = l?.parts?.[c.userData.part as string];
+      const own = partLook(l?.parts, c.userData.part as string);
       c.visible = !own?.hidden;
       paint(c, own ?? base);
       return;

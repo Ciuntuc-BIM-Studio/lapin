@@ -35,15 +35,8 @@ public sealed class ScheduleTimesOf : IWorkSchedules
         {
             var taking = leaves.Where(t => links.ByTask[t].ContainsKey(element)).ToList();
             if (taking.Count == 0 || part == null || links.Facts(element) is not { } f) return taking;
-            int? layer = null;
-            if (part.StartsWith("layer:", StringComparison.Ordinal))
-            {
-                var rest = part[6..];
-                var colon = rest.IndexOf(':');
-                if (int.TryParse(colon < 0 ? rest : rest[..colon], out var i)) layer = i;
-            }
-            else if (part.StartsWith("zone:", StringComparison.Ordinal)) layer = f.Layers.FirstOrDefault(l => l.Core)?.Index;
-            if (layer is not { } li || li >= 64) return taking;
+            // The layer the part is of (layer:<n>, a zone of the core, a roof's deck or covering).
+            if (TaskParts.LayerOf(f, part) is not { } li || li >= 64) return taking;
             return taking.Where(t => (links.ByTask[t][element] & (1UL << li)) != 0).ToList();
         }
         var finish = r.Times.Count > 0 ? r.Times.Values.Max(t => t.Finish) : p.Start;

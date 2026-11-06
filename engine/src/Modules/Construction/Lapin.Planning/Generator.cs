@@ -114,7 +114,10 @@ public static class Generator
     static readonly GenStep Site = S("site", "Site set-up", [], "once", 5, null);
     static readonly GenStep Earth = S("earthworks", "Earthworks", ["IfcEarthworksCut", "IfcEarthworksFill", IfcClass.GeographicElement], "once", 5, "LAP-EARTH");
     static readonly GenStep Found = S("foundations", "Foundations", [IfcClass.Footing, "IfcPile"], "once", 10, "LAP-FOUND", wet: true);
-    static readonly GenStep Roof = S("roof", "Roof", [IfcClass.Roof, "LapinDownpipe"], "once", 10, "LAP-ROOF");
+    // A roof in two steps (decision 332): its structure (the rafters, the trusses or the deck) then its covering; the downpipes with the covering.
+    static readonly GenStep Roof = S("roof", "Roof structure", [IfcClass.Roof], "once", 10, "LAP-ROOF", TaskParts.Core);
+    static readonly GenStep RoofCovering = S("roofCovering", "Roof covering", [IfcClass.Roof], "once", 5, "LAP-COVER", TaskParts.Finishes);
+    static readonly GenStep Downpipes = S("downpipes", "Gutters and downpipes", ["LapinDownpipe"], "once", 2, null, link: "SS", lag: 2);
     static readonly GenStep Openings = S("openings", "Doors and windows", [IfcClass.Door, IfcClass.Window, "IfcCurtainWall"], "storey", 5, "LAP-OPEN");
     static readonly GenStep Services = S("mep", "Installations", Mep, "storey", 10, "LAP-MEP");
     static readonly GenStep WallFinishes = S("wallFinishes", "Wall finishes", [IfcClass.Wall], "storey", 10, "LAP-PLAST", TaskParts.Finishes, wet: true);
@@ -135,14 +138,14 @@ public static class Generator
             DemolitionStep, Site, Earth, Found,
             S("structure", "Structure", Concrete, "storey", 10, "LAP-FRAME", wet: true, cycle: true),
             S("masonry", "Masonry", [IfcClass.Wall], "storey", 10, "LAP-MASON", TaskParts.Core),
-            Roof, Openings, Services, WallFinishes, Fittings, External,
+            Roof, RoofCovering, Downpipes, Openings, Services, WallFinishes, Fittings, External,
         ])),
         new("masonry", "Load-bearing masonry", "The walls of a storey, then its floor and ring beams over them", new("masonry",
         [
             DemolitionStep, Site, Earth, Found,
             S("walls", "Load-bearing walls", [IfcClass.Wall], "storey", 10, "LAP-MASON", TaskParts.Core, cycle: true),
             S("floors", "Floors and ring beams", Concrete, "storey", 10, "LAP-FLOOR", wet: true, cycle: true),
-            Roof, Openings, Services, WallFinishes, Fittings, External,
+            Roof, RoofCovering, Downpipes, Openings, Services, WallFinishes, Fittings, External,
         ])),
         new("steel", "Steel hall", "The frames and their bracing, the cladding, then the floor slab inside", new("steel",
         [
@@ -158,7 +161,7 @@ public static class Generator
             DemolitionStep, Site, Earth, Found,
             S("frame", "Timber frame walls", [IfcClass.Wall], "storey", 10, "LAP-TIMBER", TaskParts.Core, cycle: true),
             S("floors", "Floors", [IfcClass.Slab, IfcClass.Beam, IfcClass.Column, IfcClass.Stair, "IfcMember"], "storey", 5, "LAP-JOIST", cycle: true),
-            Roof, Openings, Services, WallFinishes with { Wet = false }, Fittings, External,
+            Roof, RoofCovering, Downpipes, Openings, Services, WallFinishes with { Wet = false }, Fittings, External,
         ])),
     ];
 
@@ -283,16 +286,19 @@ public static class Generator
         var found = new HashSet<int>();
         foreach (var s in sets)
         {
-            if (s.Part is not { } part || !part.StartsWith("layer:", StringComparison.Ordinal)) continue;
-            var rest = part[6..];
-            var colon = rest.IndexOf(':');
-            if (!int.TryParse(colon < 0 ? rest : rest[..colon], out var i) || i >= 64 || (mask & (1UL << i)) == 0) continue;
+            // A layer's own set: layer:<n>, or a part a layer is drawn as (a roof's deck or covering, decision 332).
+            if (s.Part is not { } part || part.StartsWith("zone:", StringComparison.Ordinal) || TaskParts.LayerOf(f, part) is not { } i || i >= 64 || (mask & (1UL << i)) == 0) continue;
             found.Add(i);
             sum += Pick(s.Quantities, names) ?? 0;
         }
         var core = f.Layers.FirstOrDefault(l => l.Core);
         if (core != null && core.Index < 64 && (mask & (1UL << core.Index)) != 0 && !found.Contains(core.Index))
             sum += sets.Where(s => s.Part?.StartsWith("zone:", StringComparison.Ordinal) == true).Sum(s => Pick(s.Quantities, names) ?? 0);
+        // A layer drawn as parts of its own but measured by no set (a roof's rafters, a covering of no material): the element's own measure.
+        double? whole = null;
+        foreach (var l in f.Layers)
+            if (l.Keys is { Count: > 0 } && l.Index < 64 && (mask & (1UL << l.Index)) != 0 && !found.Contains(l.Index))
+                sum += whole ??= sets.Where(s => s.Part == null).Select(s => Pick(s.Quantities, names)).FirstOrDefault(v => v != null) ?? 0;
         return sum;
     }
 

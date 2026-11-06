@@ -147,6 +147,8 @@ Under **Elementer** i Egenskaber sætter du flueben ved **Find dem med en regel*
 
 **Del** siger, hvad opgaven tager af hvert element: **hele elementer**, deres **kerne** (det bærende lag), deres **overflader** (alle lag undtagen kernen), lagene af ét materiale eller af en materialekategori (Overflade, Isolering…). Så en lagdelt væg mures i en opgave Murværk (kernen) og pudses i en opgave Puds (overfladerne). Et element uden lag er sin egen kerne og har ingen overflader.
 
+Også et tag bygges i lag: dets konstruktion (dækket på et fladt tag, en hvælving eller et tag uden tagkonstruktion; spærene eller tagstolene på et med) er kernen, tagdækningen (med kvistenes tage) og lægterne er overfladerne. En opgave **Tagkonstruktion** (kerne) og en **Tagdækning** (overflader) tager hver deres del, en regel efter materiale finder dækket ved dets beton, og simuleringen og en visning på en dato viser først tagdækningen, når den er lagt. Generatorens skabeloner bygger et tag i disse to trin, hvert med varighed efter sin egen dels areal, og nedløbsrørene i et trin for sig (**Tagrender og nedløbsrør**); en stålhals tagbeklædning forbliver ét trin.
+
 ### I hånden
 
 ![Markeringens kort over 3D, en vægs to opgaver markeret i Gantt](shots/planning-element-tasks.webp)
