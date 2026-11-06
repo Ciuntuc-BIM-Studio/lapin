@@ -3520,6 +3520,58 @@ export const scenes = [
     },
   },
   {
+    // Elevators (docs/plan-elevators.md, testers' reports #54 and #97): the Elevator tool clicked in a three-storey house,
+    // its configurator (the catalogue's kinds, the car, doors and stops, the shaft, EN 81's checks), the wheelchair-
+    // accessible style applied, the plan with the shaft cut and the car's cross, its properties with the stops, and 3D.
+    id: 'elevators',
+    async run(t) {
+      await t.fresh();
+      const { storey: s } = await house(t, { roof: false });
+      const first = await t.storey('First floor');
+      const second = (await t.cmd('storey.create', { name: 'Second floor', height: 3 })).id;
+      for (const st of [first, second]) await t.cmd('architecture.addSlab', { storeyId: st, points: [[0, 0], [12, 0], [12, 8], [0, 8]] });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.button('Architecture', { exact: true });
+      await t.tool('transport.elevator');
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=elevator-style]').count() === 1, 'the bar chooses the style it puts down');
+      { const [px, py] = await t.planPoint(9.6, 5.4); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(1200); }
+      const lifts = async () => (await t.nodes()).filter((n) => n.type === 'IfcTransportElement');
+      const lift = (await lifts())[0];
+      t.expect(lift, 'an elevator placed at the click');
+      t.expect(await t.page.locator('[aria-label="Elevator configurator"]').count() === 1, 'its configurator opens');
+      // The wheelchair-accessible style (EN 81-70 type 2), then a stop skipped by hand.
+      await t.page.locator('.dialog [data-style=accessible]').first().click();
+      await t.wait(1200);
+      t.expect(await t.page.locator('.dialog .elevator-plan path').count() > 6, 'the configurator draws the plan of the draft');
+      await t.shot('elevator-configurator', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog [role=tab]').nth(1).click();
+      await t.wait(1000);
+      t.expect(await t.page.locator('.dialog .elevator-section rect').count() > 6, 'and its section from the pit to the top');
+      await t.shot('elevator-section', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog [data-action=elevator-apply]').click();
+      await t.wait(1200);
+      const applied = (await lifts())[0];
+      t.expect(applied.props.accessible === 'type2' && applied.props.load === 630, `the style applied (${applied.props.accessible}, ${applied.props.load} kg)`);
+      const openings = (await t.nodes()).filter((n) => n.type === 'IfcOpeningElement' && n.props.elevatorId === lift.id);
+      t.expect(openings.length === 3, `the shaft opens the three floors (${openings.length})`);
+      await t.ui({ dialog: null, selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('elevator-plan', { of: '[data-testid=plan]', pad: 0 });
+      await select(t, lift.id);
+      await t.wait(1000);
+      t.expect(await t.page.locator('[data-testid=elevator-section]').count() === 1, 'an elevator shows its stops in Properties');
+      await t.shot('elevator-properties', { of: '[data-testid=elevator-section]', pad: 8 });
+      await t.ui({ selection: null, selected: [], storeyId: s });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.3, pitch: -0.55, distance: 24, target: { x: 9.6, y: 5.4, z: 3.5 } }, false));
+      await t.wait(1500);
+      await t.shot('elevator-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'standards',
     async run(t) {
       await t.fresh();

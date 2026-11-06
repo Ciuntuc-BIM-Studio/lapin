@@ -4,6 +4,7 @@
   "modules": [
     "architecture",
     "furniture",
+    "transport",
     "structure",
     "rebar",
     "wood",

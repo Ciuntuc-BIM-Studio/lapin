@@ -39,6 +39,7 @@ export const CurtainWallIcon = icon('curtainWall');
 export const CurvedBeamIcon = icon('curvedBeam');
 export const MoveToStoreyIcon = icon('moveToStorey');
 export const CopyToStoreysIcon = icon('copyToStoreys');
+export const ElevatorIcon = icon('elevator');
 export const DoorIcon = icon('door');
 export const WindowIcon = icon('window');
 export const SlabIcon = icon('slab');

@@ -138,6 +138,8 @@ public static class IfcExport
         ["IfcPipeFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
         ["IfcDuctFitting"] = ["BEND", "CONNECTOR", "ENTRY", "EXIT", "JUNCTION", "OBSTRUCTION", "TRANSITION"],
         ["IfcBoiler"] = ["WATER", "STEAM"],
+        // Lifts (docs/plan-elevators.md): IFC4's IfcTransportElementTypeEnum (IFC 4.3 adds HAULINGGEAR).
+        ["IfcTransportElement"] = ["ELEVATOR", "ESCALATOR", "MOVINGWALKWAY", "CRANEWAY", "LIFTINGGEAR"],
         ["IfcSpaceHeater"] = ["CONVECTOR", "RADIATOR"],
         ["IfcPump"] = ["CIRCULATOR", "ENDSUCTION", "SPLITCASE", "SUBMERSIBLEPUMP", "SUMPPUMP", "VERTICALINLINE", "VERTICALTURBINE"],
         ["IfcValve"] = ["AIRRELEASE", "ANTIVACUUM", "CHANGEOVER", "CHECK", "COMMISSIONING", "DIVERTING", "DRAWOFFCOCK", "DOUBLECHECK", "DOUBLEREGULATING", "FAUCET", "FLUSHING", "GASCOCK", "GASTAP", "ISOLATING", "MIXING", "PRESSUREREDUCING", "PRESSURERELIEF", "REGULATING", "SAFETYCUTOFF", "STEAMTRAP", "STOPCOCK"],
@@ -178,7 +180,7 @@ public static class IfcExport
     static readonly HashSet<string> CommonSets =
     [
         IfcClass.Wall, IfcClass.Slab, IfcClass.Roof, IfcClass.Column, IfcClass.Beam, IfcClass.Footing, IfcClass.Door, IfcClass.Window,
-        "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcStair", "IfcRamp", "IfcChimney", IfcClass.BuildingElementProxy,
+        "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcStair", "IfcRamp", "IfcChimney", IfcClass.BuildingElementProxy, "IfcTransportElement",
     ];
 
     sealed class Writer(Session s, IfcExportOptions o)
@@ -1350,6 +1352,16 @@ public static class IfcExport
             var carried = src != null ? IfcCarry.Writer.SetNames(src).ToHashSet() : [];
             // The common set: what Lapin knows, and what the user wrote into it (their value over Lapin's of the same name).
             var commonName = src == null && CommonSets.Contains(kind.Class) ? $"Pset_{kind.Class[3..]}Common" : null;
+            // The standard sets the element's module answers (a lift's capacity): into the common set, or sets of their own.
+            var moduleSets = src == null ? s.Catalog.All<IIfcElementSets>().SelectMany(x => x.Sets(m, e)).ToList() : [];
+            foreach (var set in moduleSets.Where(x => x.Name == commonName))
+                foreach (var p in set.Properties)
+                    if (!common.Any(c => c.Name == p.Name)) common.Add((p.Name, StandardValue(p)));
+            foreach (var set in moduleSets.Where(x => x.Name != commonName))
+            {
+                var props = set.Properties.Select(p => Single(p.Name, StandardValue(p))).ToList();
+                if (props.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "pset/" + set.Name), Null, S(set.Name), Null, L(props)), Gid(e.Id, "pset-rel/" + set.Name));
+            }
             var commonProps = commonName != null ? CommonWith(e, commonName, common) : [];
             if (commonProps.Count > 0)
                 Define(entity, f.Add("IFCPROPERTYSET", Gid(e.Id, "common"), Null, S(commonName), Null, L(commonProps)), Gid(e.Id, "common-rel"));
@@ -1373,6 +1385,15 @@ public static class IfcExport
             var user = NamedParams(e).Where(x => carried.Contains(x.Set)).ToDictionary(x => x.Set, x => x.Props);
             Carry.Element(m, src, entity, GlobalIdOf(e.Id), user, lapins, (n, v) => Single(n, v));
         }
+
+        /// <summary>A standard property's value, typed by its measure.</summary>
+        string StandardValue(IfcStandardProperty p) => p.Value switch
+        {
+            bool b => Typed(p.Measure, b ? True : False),
+            double d => Typed(p.Measure, R(d)),
+            int i => Typed(p.Measure, i.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+            _ => Typed(p.Measure, S(p.Value.ToString())),
+        };
 
         /// <summary>The standard sets the modules give an element or one of its parts (IFC 4.3), each written as it is named.</summary>
         void StandardSets(Entity e, GeometryPart? part, string entity, string seed)

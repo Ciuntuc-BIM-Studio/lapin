@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Transport (docs/plan-elevators.md): lifts as IfcTransportElement ELEVATOR of an IfcTransportElementType, from a
+    configurator of styles (EN 81-20 and EN 81-70 sizes): the shaft over the storeys it serves, its pit, headroom and
+    machine room, the cabin, the landing doors, the openings in the floors it passes through. It needs the
+    architecture module (the floors it cuts, the wall types of its shaft).
+  -->
+  <PropertyGroup>
+    <LapinModuleId>transport</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" Private="false" />
+    <ProjectReference Include="../../Architecture/Lapin.Architecture/Lapin.Architecture.csproj" Private="false" />
+  </ItemGroup>
+</Project>

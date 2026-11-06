@@ -192,6 +192,16 @@ export const FAQ: Entry[] = [
     source: 'a tester\'s wish (decision 337)',
   },
   {
+    id: 'elevators',
+    q: ['How do I add an elevator?', 'Is there a customizable elevator or lift with a configurator?', 'How do I size a lift by load and persons (EN 81)?', 'Can I make a wheelchair-accessible, hospital bed or goods lift?'],
+    qRo: ['Cum adaug un lift?', 'Există un ascensor configurabil?', 'Cum dimensionez liftul după sarcină și persoane (EN 81)?', 'Pot face un lift pentru scaun rulant, de spital sau de marfă?'],
+    keywords: ['elevator', 'elevators', 'lift', 'lifts', 'shaft', 'cabin', 'car', 'en81', 'wheelchair', 'accessible', 'hospital', 'bed', 'goods', 'hydraulic', 'mrl', 'panoramic', 'passenger', 'persons', 'load', 'ascensor', 'lifturi', 'put', 'cabina', 'marfa', 'spital'],
+    a: 'Architecture → Elevator (LF), then click in the plan where its shaft goes: it runs from that storey to the highest and its configurator opens. Pick one of twelve kinds (small residential, standard, medium and large passenger, heavy-duty, wheelchair-accessible EN 81-70, hospital bed, goods, hydraulic, machine-room-less, panoramic glass, home lift) and change anything by hand: the drive, rated load and persons, speed, the car, the doors, the stops it serves, the pit, the headroom, the machine room, the shaft walls. EN 81-20\'s table checks the car against its load (Load and persons from the car sets the least load). The shaft opens the floors it passes through; plans of every storey show it; Save as style keeps it for the project; Architecture → Elevator schedule lists them; IFC writes IfcTransportElement ELEVATOR.',
+    aRo: 'Architecture → Elevator (LF), apoi clic în plan unde vine puțul: liftul merge de la acel nivel la cel mai înalt și i se deschide configuratorul. Alegi unul din douăsprezece feluri (rezidențial mic, pentru persoane standard, mediu, mare, trafic intens, accesibil pentru scaun rulant EN 81-70, de spital pentru paturi, de marfă, hidraulic, fără cameră a mașinii, panoramic din sticlă, lift de casă) și schimbi orice de mână: acționarea, sarcina nominală și persoanele, viteza, cabina, ușile, opririle deservite, groapa, înălțimea de siguranță, camera mașinii, pereții puțului. Tabelul din EN 81-20 verifică cabina după sarcină (Load and persons from the car pune sarcina minimă). Puțul deschide plăcile prin care trece; planurile fiecărui nivel îl arată; Save as style îl păstrează în proiect; Architecture → Elevator schedule le listează; IFC scrie IfcTransportElement ELEVATOR.',
+    action: { label: 'Elevator', labelRo: 'Lift', run: { kind: 'tool', id: 'transport.elevator' } },
+    source: 'testers\' reports #54 and #97',
+  },
+  {
     id: 'material-joints',
     q: ['How do I show the joints between walls of the same material?', 'Why is there no line between two walls?'],
     qRo: ['Cum arăt rosturile dintre pereți din același material?', 'De ce nu e linie între doi pereți?'],

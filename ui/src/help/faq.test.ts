@@ -23,6 +23,9 @@ describe('Ask Lapin', () => {
     // Report #96, in the tester's words.
     expect(best('Different types of balcony: Juliet balcony, loggia balcony, stacked balcony, mezzanine balcony')).toBe('balconies');
     expect(best('how do I make a loggia')).toBe('balconies');
+    expect(best('Customizable elevator with a configurator: architects adjust the dimensions by building type, traffic and accessibility')).toBe('elevators');
+    expect(best('elevator kinds: small residential, standard passenger, hospital, goods, hydraulic, MRL, panoramic glass, home lift')).toBe('elevators');
+    expect(best('cum pun un lift pentru scaun rulant')).toBe('elevators');
   });
 
   it('answers in Romanian, with or without diacritics', () => {

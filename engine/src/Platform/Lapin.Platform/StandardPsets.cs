@@ -52,6 +52,9 @@ public static class StandardPsets
             ("IsExternal", B), ("ThermalTransmittance", N), ("LoadBearing", B), ("FireRating", T), ("FireExit", B))),
         new("Pset_ChimneyCommon", ["IfcChimney"], P(("Reference", T), ("Status", T), ("NumberOfDrafts", N), ("AcousticRating", T), ("FireRating", T), ("LoadBearing", B),
             ("IsExternal", B), ("ThermalTransmittance", N))),
+        // Lifts (docs/plan-elevators.md): IFC 4's sets of an IfcTransportElement and of one whose PredefinedType is ELEVATOR.
+        new("Pset_TransportElementCommon", ["IfcTransportElement"], P(("Reference", T), ("Status", T), ("CapacityPeople", N), ("CapacityWeight", N), ("FireExit", B))),
+        new("Pset_TransportElementElevator", ["IfcTransportElement"], P(("FireFightingLift", B), ("ClearWidth", L), ("ClearDepth", L), ("ClearHeight", L))),
         new("Pset_BuildingElementProxyCommon", [IfcClass.BuildingElementProxy], P(("Reference", T), ("Status", T), ("IsExternal", B), ("ThermalTransmittance", N), ("LoadBearing", B), ("FireRating", T))),
         new("Pset_SpaceCommon", [IfcClass.Space], P(("Reference", T), ("IsExternal", B), ("GrossPlannedArea", A), ("NetPlannedArea", A), ("PubliclyAccessible", B), ("HandicapAccessible", B))),
         // A material's own sets (IFC 4's Pset_Material…, docs/plan-buildup-tags.md): SI values, as IFC holds them (W/(m·K), kg/m³, Pa).

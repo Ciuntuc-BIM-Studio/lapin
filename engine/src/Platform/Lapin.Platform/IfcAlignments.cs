@@ -65,6 +65,16 @@ public interface IIfcAlignments
     IEnumerable<IfcStandardSet> StandardSets(IModelView model, Entity element, GeometryPart? part) => [];
 }
 
+/// <summary>
+/// The standard property sets (Pset_…, IFC 4 and 4.3 alike) a module's element carries in IFC with its own names only
+/// (a lift's Pset_TransportElementCommon: CapacityPeople, CapacityWeight, FireExit). A set named as the element's class's
+/// common set goes into that set beside what the export writes there itself.
+/// </summary>
+public interface IIfcElementSets
+{
+    IEnumerable<IfcStandardSet> Sets(IModelView model, Entity element);
+}
+
 /// <summary>One standard property: its name, its IFC measure type (IFCLABEL, IFCBOOLEAN, IFCLENGTHMEASURE…) and its value (a string, a bool or a number in SI units).</summary>
 public sealed record IfcStandardProperty(string Name, string Measure, object Value);
 

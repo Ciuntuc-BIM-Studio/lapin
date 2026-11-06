@@ -51,6 +51,9 @@
     <Project Path="src/Modules/Structure/Lapin.Structure/Lapin.Structure.csproj" />
     <Project Path="src/Modules/Structure/Lapin.Rebar/Lapin.Rebar.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Transport/">
+    <Project Path="src/Modules/Transport/Lapin.Transport/Lapin.Transport.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Wood/">
     <Project Path="src/Modules/Wood/Lapin.Wood/Lapin.Wood.csproj" />
   </Folder>

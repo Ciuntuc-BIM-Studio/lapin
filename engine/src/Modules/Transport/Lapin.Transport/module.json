@@ -1,0 +1,1 @@
+{ "id": "transport", "name": "Transport", "assembly": "Lapin.Transport.dll", "requires": ["core", "architecture"] }

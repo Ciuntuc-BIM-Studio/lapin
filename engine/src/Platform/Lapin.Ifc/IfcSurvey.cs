@@ -22,7 +22,7 @@ public static class IfcSurvey
         ["IfcDoor"] = "architecture", ["IfcDoorStandardCase"] = "architecture", ["IfcWindow"] = "architecture", ["IfcWindowStandardCase"] = "architecture",
         ["IfcSlab"] = "architecture", ["IfcSlabStandardCase"] = "architecture", ["IfcSlabElementedCase"] = "architecture", ["IfcRoof"] = "architecture", ["IfcCovering"] = "architecture",
         ["IfcStair"] = "architecture", ["IfcStairFlight"] = "architecture", ["IfcRamp"] = "architecture", ["IfcRampFlight"] = "architecture", ["IfcRailing"] = "architecture",
-        ["IfcSpace"] = "architecture", ["IfcShadingDevice"] = "architecture", ["IfcChimney"] = "architecture", ["IfcOpeningElement"] = "architecture", ["IfcBuildingElementPart"] = "architecture",
+        ["IfcSpace"] = "architecture", ["IfcTransportElement"] = "architecture", ["IfcShadingDevice"] = "architecture", ["IfcChimney"] = "architecture", ["IfcOpeningElement"] = "architecture", ["IfcBuildingElementPart"] = "architecture",
         ["IfcBeam"] = "structure", ["IfcBeamStandardCase"] = "structure", ["IfcColumn"] = "structure", ["IfcColumnStandardCase"] = "structure", ["IfcMember"] = "structure", ["IfcMemberStandardCase"] = "structure",
         ["IfcPlate"] = "structure", ["IfcPlateStandardCase"] = "structure", ["IfcFooting"] = "structure", ["IfcPile"] = "structure", ["IfcReinforcingBar"] = "structure", ["IfcReinforcingMesh"] = "structure",
         ["IfcTendon"] = "structure", ["IfcTendonAnchor"] = "structure", ["IfcDiscreteAccessory"] = "structure", ["IfcMechanicalFastener"] = "structure", ["IfcFastener"] = "structure",

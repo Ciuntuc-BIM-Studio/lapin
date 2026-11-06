@@ -407,12 +407,17 @@ public static class Views
         var thin = new LineStyleSpec(Pen: EntouragePen);
         var bandCache = new Dictionary<string, IReadOnlyList<LayerBand>?>();
         double? cutZ = plan && !site && style.Ifc2d && m.Get(storey ?? "") is { Class: IfcClass.BuildingStorey } ? Range(m, view).Cut : null;
+        // Elements standing on several storeys (a lift's shaft): drawn by the plans of each storey they reach.
+        IReadOnlyList<IStoreySpans> spans = plan ? q.Services.All<IStoreySpans>() : [];
+        var planStorey = plan && storey != null && m.Get(storey) is { Class: IfcClass.BuildingStorey } ps ? ps : null;
         foreach (var e in m.Entities)
         {
             // Rooms draw as their fills and stamps (their module's marks), never as a body cut or seen.
             if (e.Class is IfcClass.OpeningElement or IfcClass.Space || hiddenElements.Contains(e.Id)) continue;
+            var span = planStorey != null && spans.Count > 0 ? spans.FirstOrDefault(x => x.Handles(e)) : null;
+            var spanned = span != null && span.On(m, e, planStorey!);
             // A plan shows its own storey's elements, and the other storeys' only as it says (StoreyDisplay).
-            if (plan && display.Shows(storey, Spatial.StoreyOf(m, e.Id)?.Id) == null) continue;
+            if (plan && !spanned && display.Shows(storey, Spatial.StoreyOf(m, e.Id)?.Id) == null) continue;
             if (filters.Select(f => f.For(q, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             if (GraphicsSets.Hides(viewGraphics, e)) continue;
             if (q.Geometry(e.Id) is not { } g) continue;
@@ -443,12 +448,13 @@ public static class Views
             // entourage detailed (its body's edges, as before) or not at all; its parts still size the view.
             var bySilhouette = !plan && !stored && g.Silhouettes != null && entourage != "detailed";
             foreach (var p in g.Parts)
-                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored) { BySilhouette = bySilhouette });
+                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette });
             if (bySilhouette && silhouettes != null)
                 foreach (var sh in g.Silhouettes!)
                     if (sh.Mode == null || sh.Mode == entourage) silhouettes.Add(new DrawSilhouette(sh, e.Id, e.Class, style.EntourageFill, thin));
-            if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && g.Plan != null && Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey)
-                foreach (var item in g.Plan)
+            var symbolsHere = spanned ? span!.PlanOn(m, e, planStorey!) ?? g.Plan : Spatial.StoreyOf(m, e.Id)?.Id is { } s && s == storey ? g.Plan : null;
+            if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && symbolsHere != null)
+                foreach (var item in symbolsHere)
                 {
                     if (!item.At(detail) || !item.In(entourage)) continue;
                     if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }

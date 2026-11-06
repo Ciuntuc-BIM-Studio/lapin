@@ -1807,3 +1807,15 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .doc-info-params td { padding: 2px 4px; }
 .doc-info-params input, .doc-info-params select { width: 100%; box-sizing: border-box; font: inherit; }
 @media (max-width: 900px) { .tb-body { grid-template-columns: 40px 1fr; } .tb-side { grid-column: 1 / -1; } }
+
+/* Elevators (docs/plan-elevators.md): the stops ticked one under another, the styles with their numbers under their names, EN 81's warnings. */
+.props .fields dd.stops { flex-direction: column; align-items: flex-start; padding: 3px 6px; }
+.fields dd.stops label, .elevator-stops label { white-space: nowrap; }
+.elevator-stops { display: flex; flex-direction: column; gap: 2px; }
+.elevator-dialog .roof-styles .tree-item { flex-direction: column; align-items: flex-start; gap: 1px; }
+.elevator-dialog .roof-styles .roof-own .tree-item { flex-direction: column; }
+.elevator-checks { list-style: none; margin: 4px 0; padding: 0; color: var(--warn, #9a5b12); display: flex; flex-direction: column; gap: 3px; }
+.elevator-checks li { display: flex; gap: 5px; align-items: flex-start; }
+.elevator-plan, .elevator-section { background: var(--paper, #fff); }
+.fields dd.stops input[type=checkbox], .elevator-stops input[type=checkbox] { width: auto; flex: none; margin: 0; }
+.fields dd.stops label { justify-content: flex-start; }

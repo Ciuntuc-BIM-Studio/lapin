@@ -101,6 +101,19 @@ public interface INodeProps
     void Add(Entity entity, IModelView model, JsonObject props);
 }
 
+/// <summary>
+/// An element standing on several storeys (a lift's shaft, docs/plan-elevators.md): contained in one, drawn by the plans
+/// of the others it reaches too, with the symbols it has on each (its landing doors only where it stops).
+/// </summary>
+public interface IStoreySpans
+{
+    bool Handles(Entity e);
+    /// <summary>Whether a plan of <paramref name="storey"/> draws it.</summary>
+    bool On(IModelView m, Entity e, Entity storey);
+    /// <summary>Its plan symbols on <paramref name="storey"/>; null: its geometry's own.</summary>
+    IReadOnlyList<PlanItem>? PlanOn(IModelView m, Entity e, Entity storey) => null;
+}
+
 /// <summary>Deleting what is not an entity of its own (one axis of a grid, selected as grid#tag): true when it was handled.</summary>
 public interface IDeletion
 {
@@ -236,6 +249,8 @@ public sealed record GeometryPart
     /// <summary>The part's own properties (a roof timber member's role, section, grade and length), written to IFC as the set <see cref="PropertySet"/>.</summary>
     public IReadOnlyList<(string Name, string Value)>? Properties { get; init; }
     public string? PropertySet { get; init; }
+    /// <summary>A part plans cut as any other although its class draws by its symbols there (a lift's shaft walls round its car's symbol).</summary>
+    public bool CutInPlan { get; init; }
 
     Solid? _solid;
     Func<Solid>? _make;
