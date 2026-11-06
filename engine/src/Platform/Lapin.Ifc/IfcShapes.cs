@@ -90,6 +90,10 @@ public sealed partial class IfcModel
         return any ? new AxisExtents(a0, a1, c0, c1, z0, z1) : null;
     }
 
+    /// <summary>A wall part's profile in the frame of its wall's axis (<see cref="Platform.PartProfile"/>), from its triangles (as its booleans cut it, given them); null without a body.</summary>
+    public PartProfile? PartProfile(int product, Vec2 origin, Vec2 dir, ISolidBooleans? booleans = null) =>
+        PartProfiles.Of(Shape(product, booleans).Body.Select(b => ((IReadOnlyList<Vec3>)b.Mesh.V, (IReadOnlyList<(int A, int B, int C)>)b.Mesh.T)), origin, dir);
+
     /// <summary>The body's bounding box in world coordinates (from its triangles, booleans left aside), or null without a body.</summary>
     public (Vec3 Min, Vec3 Max)? Bounds(int product)
     {

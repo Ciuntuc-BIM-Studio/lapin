@@ -46,6 +46,12 @@ public static partial class IfcImport
             foreach (var r in f.OfType("IFCRELAGGREGATES"))
                 if (f.Get(r[4]) is { } whole && whole.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY"))
                     foreach (var part in Refs(r[5])) if (f.Entities.GetValueOrDefault(part) is { } pe) (partsOf.TryGetValue(whole.Id, out var l) ? l : partsOf[whole.Id] = []).Add(pe);
+            // The file's connections between walls (and other path elements): the joins of what is recognised try them first.
+            static Connection? At(string? c) => c switch { "ATSTART" => Connection.AtStart, "ATEND" => Connection.AtEnd, "ATPATH" => Connection.AtPath, _ => null };
+            foreach (var r in f.OfType("IFCRELCONNECTSPATHELEMENTS"))
+                if (f.Get(r[5]) is { } relating && f.Get(r[6]) is { } related && Str(relating[0]) is { } ga && Str(related[0]) is { } gb
+                    && At(r.Args.Count > 10 ? Enum(r[10]) : null) is { } atA && At(r.Args.Count > 9 ? Enum(r[9]) : null) is { } atB)
+                    recognition.Connections.Add(new ForeignConnection(ga, atA, gb, atB));
         }
 
         /// <summary>The element made natively by a module, with the file's name, class and property sets kept on it for the inspector.</summary>
@@ -369,7 +375,8 @@ public static partial class IfcImport
             {
                 var (pl, pm, _) = MaterialOf(part.Id, typeOf?.GetValueOrDefault(part.Id)?.Id);
                 (parts ??= []).Add(new ForeignPart(Str(part[0]) ?? "", Str(part[2]), model.Prisms(part.Id, out _), pm ?? pl?.FirstOrDefault().Material,
-                    origin is { } o1 && dir is { } d1 ? model.Extents(part.Id, o1, d1) : null));
+                    origin is { } o1 && dir is { } d1 ? model.Extents(part.Id, o1, d1) : null,
+                    origin is { } o3 && dir is { } d3 ? model.PartProfile(part.Id, o3, d3, s.Catalog.Get<ISolidBooleans>()) : null));
             }
             return new ForeignElement(Str(e[0]) ?? "", cls, predefined, Str(e[2]), Str(e[4]), storey, prisms, why, openings,
                 type == null ? null : Str(type[2]), type == null ? null : Str(type[0]), layers, material, PropertiesJson(e.Id),

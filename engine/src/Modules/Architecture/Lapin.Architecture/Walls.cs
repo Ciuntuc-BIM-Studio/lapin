@@ -148,7 +148,7 @@ public static class Walls
         var corners = paths != null ? LayerCorners(m, wall, paths, start, dir, length, bands, ranked) : new Func<Band, (double From, double To)>?[2];
         var crossings = paths != null ? LayerCrossings(m, wall, paths, start, dir, bands, ranked) : _ => [];
         double Reach(int end, Band b, bool atFrom) =>
-            corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To);
+            corners[end] is { } f ? (atFrom ? f(b).From : f(b).To) : At(end == 0 ? startCut : endCut, atFrom ? b.From : b.To) + (ends[end] == null ? LayerEnd(wall, b.Index, end, atFrom) : 0);
 
         var zones = TypeOf(m, wall.Id) is { } type ? WallZones.Bands(WallZones.Of(type), height) : [];
         var parts = new List<GeometryPart>();
@@ -263,6 +263,17 @@ public static class Walls
         }
         return new ElementGeometry(parts, plan, [start, end], problems.Count > 0 ? problems : null);
     }
+
+    /// <summary>
+    /// How far each layer's two faces run on past the wall's free ends (<c>layerEnds</c>: per layer, [start at its first face,
+    /// start at its second, end at its first, end at its second], metres beyond the end, negative short of it), as a file
+    /// gives a wall whose layers end in steps or at a slant (ArchiCAD's parts: <see cref="ForeignWallParts"/>). An end a join
+    /// takes is the join's.
+    /// </summary>
+    public const string LayerEndsKey = "layerEnds";
+
+    static double LayerEnd(Entity wall, int layer, int end, bool atFrom) =>
+        wall.Attrs[LayerEndsKey] is JsonArray all && layer < all.Count && all[layer] is JsonArray { Count: 4 } x && Json.Number(x[end * 2 + (atFrom ? 0 : 1)]) is { } v ? v : 0;
 
     /// <summary>
     /// A layer's pieces in its height between <paramref name="z0"/> and <paramref name="z1"/> (decision 264): its parts from

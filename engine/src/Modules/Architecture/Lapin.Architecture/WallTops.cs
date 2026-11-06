@@ -26,7 +26,28 @@ public static class WallTops
         var roofs = RoofTop.Profile(wall, w, m);
         var bodies = Bodies(wall, m, services);
         var top = bodies.Count == 0 ? roofs : Underside(bodies, w) is { } under ? roofs == null ? under : Merge(roofs, under) : roofs;
+        if (Own(wall, w) is { } own) top = top == null ? own : Merge(top, own);
         return top != null && wall.Attrs["imported"] != null ? Capped(top, w.Height) : top;
+    }
+
+    /// <summary>
+    /// A wall's own top along its axis (<c>topProfile</c>: [[u, v], …], u from its start, v over its base; a step is two
+    /// points at one u), as a file gives it (a gable a wall of parts has: <see cref="ForeignWallParts"/>); flat past its
+    /// ends. Lower than whatever else is over the wall, it wins; a curved wall has none.
+    /// </summary>
+    public const string TopProfileKey = "topProfile";
+
+    public static JsonArray ProfileJson(IEnumerable<(double U, double V)> p) => new([.. p.Select(q => (JsonNode)new JsonArray(Math.Round(q.U, 6), Math.Round(q.V, 6)))]);
+
+    /// <summary>The wall's own top (<see cref="TopProfileKey"/>) in the frame of <paramref name="w"/> (its u from w's start), or null.</summary>
+    static List<(double U, double V)>? Own(Entity wall, RoofTop.WallAxis w)
+    {
+        if (wall.Attrs[TopProfileKey] is not JsonArray pts || pts.Count < 2 || PathCurve.Of(wall).IsArc) return null;
+        var shift = Vec2.Dot(w.A - Walls.Start(wall), w.Dir);
+        var o = new List<(double U, double V)>();
+        foreach (var q in pts)
+            if (q is JsonArray { Count: >= 2 } a && (double?)a[0] is { } u && (double?)a[1] is { } v) o.Add((u - shift, v));
+        return o.Count >= 2 ? o : null;
     }
 
     /// <summary>A profile no higher than <paramref name="h"/> (where it crosses it, the crossing kept); null when nothing of it is left under.</summary>

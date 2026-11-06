@@ -137,15 +137,28 @@ public sealed class ForeignElements : IIfcRecognizer
         }
         // Each opening's place in plan: a join moves its wall's start, which its place along the wall is measured from.
         var placed = new List<(string Opening, string Wall, Vec2 At)>();
+        // And a wall's own top (a gable), measured from its start too.
+        var starts = new Dictionary<string, Vec2>();
         foreach (var id in walls)
         {
             var w = edit.Model.Get(id)!;
             var (s, d) = (Walls.Start(w), (Walls.End(w) - Walls.Start(w)).Normalized());
             foreach (var op in Openings.Of(edit.Model, id))
                 placed.Add((op.Id, id, s + d * op.Num("along")));
+            if (w.Attrs[WallTops.TopProfileKey] != null) starts[id] = s;
         }
-        try { FoundJoins.Make(edit, paths, walls, ctx.Footprints); }
+        // A wall whose layers end where the file's do, each its own way (Walls.LayerEndsKey), keeps those ends: no join takes them.
+        try { FoundJoins.Make(edit, paths, [.. walls.Where(id => edit.Model.Get(id)!.Attrs[Walls.LayerEndsKey] == null)], ctx.Footprints, connections: ctx.Connections); }
         catch (CommandException ex) { ctx.Notes.Add($"Walls not joined: {ex.Message}"); }
+        foreach (var (wallId, was) in starts)
+        {
+            if (edit.Model.Get(wallId) is not { } w || w.Attrs[WallTops.TopProfileKey] is not JsonArray top) continue;
+            var shift = Math.Round(Vec2.Dot(Walls.Start(w) - was, (Walls.End(w) - Walls.Start(w)).Normalized()), 6);
+            if (Math.Abs(shift) < 1e-6) continue;
+            var attrs = w.CloneAttrs();
+            attrs[WallTops.TopProfileKey] = WallTops.ProfileJson(top.OfType<JsonArray>().Select(q => ((double)q[0]! - shift, (double)q[1]!)));
+            edit.Replace(w.With(attrs: attrs));
+        }
         foreach (var (opId, wallId, at) in placed)
         {
             if (edit.Model.Get(opId) is not { } op || edit.Model.Get(wallId) is not { } w) continue;
@@ -178,6 +191,10 @@ public sealed class ForeignElements : IIfcRecognizer
         // The file's footprint (for the joins, Finish) and whether its top is its own, flat (no boolean cuts it).
         IReadOnlyList<Vec2>? footprint = null;
         var flatTop = false;
+        // The file's top along the axis, when it is its own and not flat (a gable: ForeignWallParts).
+        List<(double U, double V)>? topProfile = null;
+        // How far each layer's faces run on past the wall's ends, when they end in steps or at a slant (ForeignWallParts).
+        List<double[]>? layerEnds = null;
         List<LayerSpec> layers;
         (bool Negative, double Offset) usage;
         if (OnePrismOrNull(e, p => p.Vertical) is { } prism)
@@ -205,32 +222,25 @@ public sealed class ForeignElements : IIfcRecognizer
             footprint = prism.Clipped ? BodyFootprint(e) ?? Footprints.Plan(prism.Outer) : Footprints.Plan(prism.Outer);
             flatTop = !prism.Clipped;
         }
-        else if (e.Parts is { Count: > 0 } allParts && axis is { } axP && allParts.Where(pt => pt.Extents != null).ToList() is { Count: > 0 } parts)
+        else if (e.Parts is { Count: > 0 } allParts && axis is { } axP && allParts.Any(pt => pt.Extents != null))
         {
-            // A wall whose layers are parts: each part's extents across the axis is a band; side by side they are the layers.
-            (start, end) = (axP.A, axP.B);
-            var bands = parts.Select(pt => (From: pt.Extents!.Value.Across0, To: pt.Extents!.Value.Across1, Material: pt.Material ?? pt.Name ?? "Material", pt.Extents!.Value.Z0, pt.Extents!.Value.Z1)).OrderBy(b => b.From).ToList();
-            bands = bands.Where(b => b.To - b.From >= 0.003).ToList();
-            if (bands.Count == 0 || bands.Zip(bands.Skip(1)).Any(z => z.Second.From - z.First.To > 0.005 || z.First.To - z.Second.From > 0.6 * Math.Min(z.First.To - z.First.From, z.Second.To - z.Second.From)))
-            { ctx.Skip("a wall whose parts are not layers side by side"); return null; }
-            // Overlapping neighbours (studs within insulation) share: the thinner band yields.
-            for (var i = 0; i + 1 < bands.Count; i++)
-                if (bands[i].To > bands[i + 1].From)
-                {
-                    var cut = (bands[i].To + bands[i + 1].From) / 2;
-                    bands[i] = bands[i] with { To = cut }; bands[i + 1] = bands[i + 1] with { From = cut };
-                }
-            thickness = bands[^1].To - bands[0].From;
-            var core = bands.OrderByDescending(b => b.To - b.From).First();
-            layers = bands.Select(b => new LayerSpec(b.Material, Math.Round(b.To - b.From, 4), b == core)).ToList();
-            usage = (false, bands[0].From);
-            baseZ = bands.Min(b => b.Z0); height = bands.Max(b => b.Z1) - baseZ;
-            // Its footprint round its parts' (each a band along the axis); its top flat when every part is one plain prism as high as the rest.
-            var (ps0, pd) = (start, (end - start).Normalized());
-            footprint = Polygon2.ConvexHull(parts.SelectMany(pt => new[] { (pt.Extents!.Value.Along0, pt.Extents.Value.Across0), (pt.Extents.Value.Along1, pt.Extents.Value.Across0),
-                (pt.Extents.Value.Along1, pt.Extents.Value.Across1), (pt.Extents.Value.Along0, pt.Extents.Value.Across1) }).Select(q => ps0 + pd * q.Item1 + pd.Perp * q.Item2));
-            var top = baseZ + height;
-            flatTop = parts.All(pt => pt.Prisms.Count == 1 && pt.Prisms[0].Vertical && !pt.Prisms[0].Clipped && Math.Abs(pt.Extents!.Value.Z1 - top) < 1e-3);
+            // A wall whose layers are parts: each part a layer, read from its profile (ForeignWallParts), or the wall stays a reference.
+            if (ForeignWallParts.Read(e, axP.A, axP.B, out var why) is not { } read) { ctx.Skip(why!); return null; }
+            var ad = (axP.B - axP.A).Normalized();
+            (start, end) = (axP.A + ad * read.Start, axP.A + ad * read.End);
+            layerEnds = read.LayerEnds;
+            // Its openings must fit it: one left out would leave the file's hole filled (Openings.CheckFits, its length and height).
+            var (len, wallBase) = ((end - start).Length, read.BaseZ);
+            foreach (var op in e.Openings.Where(o => o.Prisms.Count > 0))
+                if (Place(op, start, ad, wallBase, read.Height) is var (al, si, ow, oh, _) && ow > 0 && oh > 0
+                    && (al - ow / 2 < -1e-9 || al + ow / 2 > len + 1e-9 || si + oh > read.Height + 1e-9))
+                { ctx.Skip("a wall of parts whose openings do not fit it (one at a layer's stepped end, or over its height)"); return null; }
+            layers = read.Layers; usage = read.Usage;
+            thickness = layers.Sum(l => l.Thickness);
+            baseZ = read.BaseZ; height = read.Height;
+            footprint = read.Footprint;
+            topProfile = read.Top;
+            flatTop = true;
         }
         else if (axis is { } ax5 && e.Extents is { } ext)
         {
@@ -261,6 +271,8 @@ public sealed class ForeignElements : IIfcRecognizer
         var wallAttrs = Walls.Attrs(start, end, height, baseOffset);
         // A top the file keeps flat stays so under whatever is over it (an imported roof, a slab): rising to it, or cut by it, is not the file's wall.
         if (flatTop) wallAttrs["roofTop"] = "none";
+        if (topProfile != null) wallAttrs[WallTops.TopProfileKey] = WallTops.ProfileJson(topProfile);
+        if (layerEnds != null) wallAttrs[Walls.LayerEndsKey] = new JsonArray([.. layerEnds.Select(x => (JsonNode)new JsonArray([.. x.Select(v => (JsonNode)v)]))]);
         var wall = new Entity(e.GlobalId, IfcClass.Wall, e.Name ?? type.Name, wallAttrs, predefined);
         edit.Add(wall);
         if (footprint is { Count: >= 3 }) ctx.Footprints[wall.Id] = footprint;
@@ -299,11 +311,13 @@ public sealed class ForeignElements : IIfcRecognizer
     Entity WallType(IEdit edit, ForeignElement e, List<LayerSpec> layers, double thickness, RecognitionContext ctx)
     {
         if (!layers.Any(l => l.Core)) layers = layers.Select((l, i) => i == layers.IndexOf(layers.OrderByDescending(x => x.Thickness).First()) ? l with { Core = true } : l).ToList();
-        var signature = string.Join("|", layers.Select(l => $"{l.Material}:{l.Thickness}"));
+        var signature = string.Join("|", layers.Select(l => $"{l.Material}:{l.Thickness}{(l.From != null || l.To != null ? $"@{l.From}-{l.To}" : "")}"));
         var key = e.TypeName is { Length: > 0 } tn ? "wall:type:" + tn + ":" + signature : "wall:" + signature;
         if (ctx.TypeIds.TryGetValue(key, out var id) && edit.Model.Get(id) is { } known) return known;
         var name = e.TypeName is { Length: > 0 } n ? n : layers.Count == 1 ? $"{layers[0].Material} {thickness * 1000:0}" : $"{string.Join(" + ", layers.Select(l => l.Material))} {thickness * 1000:0}";
-        var existing = edit.Model.OfClass(IfcClass.WallType).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase) && LayerSets.Of(edit.Model, t.Id) is { } set && Math.Abs(Lapin.Model.Layers.Read(set).Sum(l => l.Thickness) - thickness) < 1e-6);
+        var existing = edit.Model.OfClass(IfcClass.WallType).FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase) && LayerSets.Of(edit.Model, t.Id) is { } set && Lapin.Model.Layers.Read(set) is var have && Math.Abs(have.Sum(l => l.Thickness) - thickness) < 1e-6
+            // Layers of their own heights (a wall of parts): the type's the same.
+            && (layers.All(l => l.From == null && l.To == null) && have.All(l => l.From == null && l.To == null) || have.Select(l => (l.From, l.To)).SequenceEqual(layers.Select(l => (l.From, l.To)))));
         var type = existing ?? WallTypes.Create(edit, name, layers);
         if (existing == null) ctx.CreatedTypes.Add(type.Id);
         ctx.TypeIds[key] = type.Id;
@@ -314,20 +328,7 @@ public sealed class ForeignElements : IIfcRecognizer
     void Opening(IEdit edit, Entity wall, Vec2 start, Vec2 dir, double baseZ, double wallHeight, ForeignOpening op, RecognitionContext ctx)
     {
         if (op.Prisms.Count == 0) { ctx.Skip("an opening without a prism body"); return; }
-        double aMin = double.MaxValue, aMax = double.MinValue, zMin = double.MaxValue, zMax = double.MinValue;
-        foreach (var p in op.Prisms)
-            foreach (var v in p.Outer.Concat(p.Outer.Select(q => q + p.Sweep)))
-            {
-                var a = Vec2.Dot(new Vec2(v.X, v.Y) - start, dir);
-                aMin = Math.Min(aMin, a); aMax = Math.Max(aMax, a); zMin = Math.Min(zMin, v.Z); zMax = Math.Max(zMax, v.Z);
-            }
-        var width = Math.Round(aMax - aMin, 4);
-        var height = Math.Round(Math.Min(zMax, baseZ + wallHeight) - Math.Max(zMin, baseZ), 4);
-        var along = Math.Round((aMin + aMax) / 2, 4);
-        var sill = Math.Round(Math.Max(0, zMin - baseZ), 4);
-        var kind = op.Fill is { } fl ? (fl.IfcClass.StartsWith("IfcDoor") ? "door" : "window") : "opening";
-        if (kind == "door") sill = 0;
-        var w = op.Fill?.Width ?? width; var h = op.Fill?.Height ?? height;
+        var (along, sill, w, h, kind) = Place(op, start, dir, baseZ, wallHeight);
         if (!(w > 0 && h > 0)) { ctx.Skip($"a {kind} without a size"); return; }
         try { Openings.CheckFits(edit.Model, wall, along, sill, w, h); }
         catch (CommandException ex) { ctx.Skip($"a {kind} that does not fit its wall ({ex.Message.TrimEnd('.')})"); return; }
@@ -352,6 +353,25 @@ public sealed class ForeignElements : IIfcRecognizer
         attrs["imported"] = new JsonObject { ["ifcClass"] = fill.IfcClass, ["name"] = fill.Name, ["typeName"] = fill.TypeName, ["operation"] = fill.Operation, ["userDefinedOperation"] = fill.UserDefined, ["properties"] = fill.Properties.DeepClone() };
         edit.Replace(made.With(attrs: attrs));
         ctx.Made.Add(made.Id);
+    }
+
+    /// <summary>Where an opening goes in the wall's frame (along, sill), how big it is (its fill's size, else its box's) and its kind, from its prisms.</summary>
+    static (double Along, double Sill, double Width, double Height, string Kind) Place(ForeignOpening op, Vec2 start, Vec2 dir, double baseZ, double wallHeight)
+    {
+        double aMin = double.MaxValue, aMax = double.MinValue, zMin = double.MaxValue, zMax = double.MinValue;
+        foreach (var p in op.Prisms)
+            foreach (var v in p.Outer.Concat(p.Outer.Select(q => q + p.Sweep)))
+            {
+                var a = Vec2.Dot(new Vec2(v.X, v.Y) - start, dir);
+                aMin = Math.Min(aMin, a); aMax = Math.Max(aMax, a); zMin = Math.Min(zMin, v.Z); zMax = Math.Max(zMax, v.Z);
+            }
+        var width = Math.Round(aMax - aMin, 4);
+        var height = Math.Round(Math.Min(zMax, baseZ + wallHeight) - Math.Max(zMin, baseZ), 4);
+        var along = Math.Round((aMin + aMax) / 2, 4);
+        var sill = Math.Round(Math.Max(0, zMin - baseZ), 4);
+        var kind = op.Fill is { } fl ? (fl.IfcClass.StartsWith("IfcDoor") ? "door" : "window") : "opening";
+        if (kind == "door") sill = 0;
+        return (along, sill, op.Fill?.Width ?? width, op.Fill?.Height ?? height, kind);
     }
 
     /// <summary>

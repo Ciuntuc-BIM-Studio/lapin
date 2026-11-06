@@ -63,8 +63,14 @@ public sealed record ForeignElement(
     /// </summary>
     IReadOnlyList<IReadOnlyList<Vec2>>? Footprint = null);
 
-/// <summary>A part aggregated under a foreign element: its body as prisms, its material, its extents in the whole's axis frame.</summary>
-public sealed record ForeignPart(string GlobalId, string? Name, IReadOnlyList<ShapePrism> Prisms, string? Material, AxisExtents? Extents = null);
+/// <summary>A part aggregated under a foreign element: its body as prisms, its material, its extents and its profile (<see cref="PartProfile"/>) in the whole's axis frame.</summary>
+public sealed record ForeignPart(string GlobalId, string? Name, IReadOnlyList<ShapePrism> Prisms, string? Material, AxisExtents? Extents = null, PartProfile? Profile = null);
+
+/// <summary>
+/// A connection the file makes between two path elements (IfcRelConnectsPathElements): the relating element and where
+/// it is taken (its start, its end, along its path), the related one and where (by their GlobalIds).
+/// </summary>
+public sealed record ForeignConnection(string Relating, Connection RelatingAt, string Related, Connection RelatedAt);
 
 /// <summary>A body's extents in a wall's axis frame: along the axis from its start, across it (left positive), and up.</summary>
 public readonly record struct AxisExtents(double Along0, double Along1, double Across0, double Across1, double Z0, double Z1);
@@ -85,6 +91,8 @@ public sealed class RecognitionContext(IServices services)
     public List<string> Notes { get; } = [];
     /// <summary>The plan outline the file gives an element made (by its id), for the joins that keep it (<see cref="FoundJoins"/>).</summary>
     public Dictionary<string, IReadOnlyList<Vec2>> Footprints { get; } = [];
+    /// <summary>The file's connections between path elements (<see cref="ForeignConnection"/>), for the joins of what is made.</summary>
+    public List<ForeignConnection> Connections { get; } = [];
     /// <summary>Why an element stays a reference, counted by reason.</summary>
     public Dictionary<string, int> Skipped { get; } = [];
 

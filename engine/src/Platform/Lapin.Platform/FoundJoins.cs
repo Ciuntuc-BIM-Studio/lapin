@@ -26,8 +26,20 @@ public static class FoundJoins
     /// Joins the elements <paramref name="ids"/> among themselves as their footprints say (an element without one keeps
     /// its own outline as it came), then brings each end left free to the end of its footprint.
     /// </summary>
-    public static Result Make(IEdit edit, IPathElements paths, IReadOnlyList<string> ids, IReadOnlyDictionary<string, IReadOnlyList<Vec2>> footprints, double tolerance = 1e-3)
+    /// <remarks>
+    /// <paramref name="connections"/>: the file's own (IfcRelConnectsPathElements); an end the file connects to an element
+    /// tries that element first, whatever its distance, and is still made only when the footprints say so.
+    /// </remarks>
+    public static Result Make(IEdit edit, IPathElements paths, IReadOnlyList<string> ids, IReadOnlyDictionary<string, IReadOnlyList<Vec2>> footprints, double tolerance = 1e-3,
+        IReadOnlyList<ForeignConnection>? connections = null)
     {
+        // Each end the file connects, and to what.
+        var told = new HashSet<(string, Connection, string)>();
+        foreach (var c in connections ?? [])
+        {
+            told.Add((c.Relating, c.RelatingAt, c.Related));
+            told.Add((c.Related, c.RelatedAt, c.Relating));
+        }
         var m = edit.Model;
         var set = ids.Where(id => m.Get(id) is { } e && paths.IsPath(e.Class) && !PathCurve.Of(e).IsArc).ToList();
         if (set.Count == 0) return new(0, 0);
@@ -55,8 +67,8 @@ public static class FoundJoins
                 var others = byStorey[storeyOf[id] ?? ""]
                     .Where(o => o != id && m.Get(o) is { } x && x.Class == e.Class && Joins.Between(m, id, o) == null)
                     .Select(o => (Id: o, Frame: paths.FrameOf(m.Get(o)!, m)))
-                    .Where(o => o.Frame != null && Distance(o.Frame!, tip) <= 2 * Math.Max(fe.Thickness, o.Frame!.Thickness) + tolerance)
-                    .OrderBy(o => Distance(o.Frame!, tip));
+                    .Where(o => o.Frame != null && (told.Contains((id, end, o.Id)) || Distance(o.Frame!, tip) <= 2 * Math.Max(fe.Thickness, o.Frame!.Thickness) + tolerance))
+                    .OrderBy(o => told.Contains((id, end, o.Id)) ? 0 : 1).ThenBy(o => Distance(o.Frame!, tip));
                 foreach (var (oid, fo) in others)
                 {
                     if (Try(edit, paths, e, fe, end, m.Get(oid)!, fo!, prints, tolerance)) { joined++; break; }
