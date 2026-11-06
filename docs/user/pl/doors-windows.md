@@ -40,15 +40,36 @@ Zaznaczony otwór ma uchwyty jak okno: przeciągnij jego środek, aby przesuną�
 
 Rysunki po prawej pokazują typ tak, jak zostanie narysowany na elewacji, rzucie i przekroju, na bieżąco podczas zmian.
 
-**Lewe i prawe.** Kierunek otwierania drzwi nazywa się tak, jak nazywają go architekci: patrz od klamki w stronę zawiasów; skrzydło, które otwiera się na lewo od tej linii, jest lewe, a które otwiera się na prawo, prawe. Wybory konfiguratora dla skrzydła mówią to tak samo, ze stroną zawiasów w siatce **Kwatery**, widzianej od zewnątrz, od strony, z której pcha się skrzydła: *Otwierane w prawo (zawiasy po lewej)*. Plik IFC nazywa stronę po swojemu (zawiasy widziane w kierunku, w którym otwiera się skrzydło), więc te same drzwi są tam zapisane jako SINGLE_SWING_LEFT; Lapin przekłada jedno na drugie przy zapisie i odczycie IFC. Lewe i prawe okna ocenia się od wewnątrz, od strony, w którą otwierają się skrzydła: *Rozwierne w prawo (zawiasy po lewej)* w konfiguratorze, którego siatka jest widziana od zewnątrz. IFC zapisuje to samo okno jako lewe. Widok jest od wewnątrz, od strony, w którą otwierają się skrzydła, chyba że zaznaczone jest **Od zewnątrz**; tak jak rzut pokazuje drzwi takie, jakie stoją w modelu. Drzwi odwrócone na drugą stronę (**Strona zawiasów** albo strzałka odwracania wzdłuż ściany) są lustrzanym odbiciem swojego typu; zestawienia pokazują je na osobnej karcie (zobacz [Zestawienia](schedules.md)).
+**Lewe i prawe.** Kierunek otwierania drzwi nazywa się tak, jak nazywają go architekci: patrz od klamki w stronę zawiasów; skrzydło, które otwiera się na lewo od tej linii, jest lewe, a które otwiera się na prawo, prawe. Wybory konfiguratora dla skrzydła mówią to tak samo, ze stroną zawiasów w polu **Otwieranie** kwatery, widzianej od zewnątrz, od strony, z której pcha się skrzydła: *Otwierane w prawo (zawiasy po lewej)*. Plik IFC nazywa stronę po swojemu (zawiasy widziane w kierunku, w którym otwiera się skrzydło), więc te same drzwi są tam zapisane jako SINGLE_SWING_LEFT; Lapin przekłada jedno na drugie przy zapisie i odczycie IFC. Lewe i prawe okna ocenia się od wewnątrz, od strony, w którą otwierają się skrzydła: *Rozwierne w prawo (zawiasy po lewej)* w konfiguratorze, którego kwatery są widziane od zewnątrz. IFC zapisuje to samo okno jako lewe. Widok jest od wewnątrz, od strony, w którą otwierają się skrzydła, chyba że zaznaczone jest **Od zewnątrz**; tak jak rzut pokazuje drzwi takie, jakie stoją w modelu. Drzwi odwrócone na drugą stronę (**Strona zawiasów** albo strzałka odwracania wzdłuż ściany) są lustrzanym odbiciem swojego typu; zestawienia pokazują je na osobnej karcie (zobacz [Zestawienia](schedules.md)).
 
 ![Konfigurator drzwi i okien](shots/joinery-configurator.webp)
 
 **Zapisz typ** zachowuje zmiany. Wszystkie drzwi lub okna tego typu się do nich stosują. **Umieść tym typem** zamyka konfigurator i zaczyna wstawianie tego typu.
 
-### Okna z większą liczbą kwater
+### Kwatery, słupki i profile
 
-**Kolumny kwater** przyjmuje względne szerokości kwater, jedną liczbę na każdą: `1 1` to dwie równe kwatery, `1 1 1` trzy, `1 2 1` szeroka między dwiema wąskimi. **Rzędy kwater** dzieli okno na wysokość w ten sam sposób, od dołu: `1 1` daje dwa rzędy. Sześć kwater to `1 1 1` w Kolumnach kwater i `1 1` w Rzędach kwater. Następnie w polu **Panele** wybierz, jak otwiera się każda kwatera: stała, rozwierana, rozwierno-uchylna, uchylna, odchylana górą, obrotowa lub przesuwna.
+Drzwi lub okno to siatka kwater. Każda kwatera wybiera, jak się otwiera i czym jest wypełniona, więc jeden typ może mieć dwa skrzydła z doświetlami bocznymi i naświetlem nad nimi albo okno z pełnym panelem pod skrzydłem.
+
+**Kolumny (względne)** i **Rzędy (względne)** szybko dzielą otwór: `1 1` to dwie równe kwatery, `1 1 1` trzy, `2 1` szeroka obok wąskiej. Rzędy liczy się od dołu.
+
+**Szerokości kolumn** i **Wysokości rzędów** podają te same wymiary w milimetrach. Wpisz je, a ostatnia weźmie resztę. W widoku możesz też przeciągnąć słupek lub rygiel; odległość widać podczas przeciągania.
+
+**Szerokość słupka** i **Szerokość rygla** to osobne wymiary, niezależne od pola **Szerokość ramy**. Rama 50 mm ze słupkami 50 mm wygląda wszędzie na 50 mm.
+
+**Kwatery** wymienia każdą kwaterę. Kliknij jedną, na liście lub w widoku, aby ją edytować:
+
+- **Otwieranie**: stała, skrzydło (rozwierne, rozwierno-uchylne, uchylne, odchylane górą, obrotowe, przesuwne) albo, w drzwiach, skrzydło drzwiowe.
+- **Wypełnienie**: **Szkło** lub **Panel pełny**. Skrzydła i doświetla boczne drzwi mogą być pełne, tak samo kwatera okna (panel pod skrzydłem, nieprzezroczyste pole).
+- **Podziel**: **Na kolumny** lub **Na rzędy**, w odległości w milimetrach od lewej lub dolnej krawędzi kwatery (domyślnie w połowie). Podzielone w poprzek skrzydło drzwi zachowuje dolną część, a górna staje się stałym przeszklonym naświetlem.
+- **Scal**: z kwaterą obok, powyżej lub poniżej, gdy mają wspólną całą krawędź. Słupki i rygle, których żadna kwatera już nie potrzebuje, znikają.
+
+![Drzwi sklepowe w jednym typie: dwa skrzydła, doświetla boczne i naświetle na całą szerokość](shots/joinery-panes.webp)
+
+**System profili** zaczyna typ od profilu **PVC**, **Aluminium**, **Tarcica** (drewno) lub **Stal (smukła)**: ustala wymiary ościeżnicy, słupków, rygli i skrzydeł i nadaje profilom dokładniejsze kształty. Ościeżnica ma przylgę (**Przylga**), do której domyka się skrzydło, skrzydło zachodzi na ościeżnicę o **Zakład skrzydła**, **listwy przyszybowe** trzymają szybę, a okno ma okapnik pod dolnym ramiakiem. Każdy wymiar pozostaje edytowalny. **Prosty (gładkie profile)** zachowuje proste prostokątne elementy, jak dotąd.
+
+![Okno PVC: skrzydła zachodzące na ościeżnicę, listwy przyszybowe, pełny panel pod stałą kwaterą](shots/joinery-profiles-3d.webp)
+
+W sekcji **Szczegóły** pola **Parapet wewnętrzny** i **Parapet zewnętrzny** włączają i wyłączają parapety, a **Obróbka ościeży** włącza wykończenie ościeża po bokach i u góry. Gdzie parapety i obróbki nie są potrzebne, odznacz je.
 
 ### Okiennice, kraty, skrzynki kwiatowe i daszki
 
@@ -85,7 +106,7 @@ Na elewacji, oprócz opaski, okno może mieć **Zwornik**, **Zwieńczenie nad ot
 
 Typ okna może wystawać ze ściany. W konfiguratorze **Projects** czyni go **Bay** (środek i dwa skośne boki), **Bow** (równe pola na łuku) lub **Box** (boki prostopadłe do ściany), a **New bay window** zaczyna nowy typ jako wykusz 45°. Okno wciąż wypełnia jeden otwór w ścianie, tak szeroki i wysoki jak typ: wstawia się je, przesuwa, kopiuje, odwraca, numeruje i zestawia jak każde okno. **Architecture → Bay window** (<kbd>BW</kbd>) wstawia je w klikniętą ścianę: typ wybrany w konfiguratorze, gdy wystaje, inaczej pierwszy wykusz projektu, inaczej wykusz 45°.
 
-Kolumny siatki to jego ściany. W wykuszu i skrzynce pierwsza i ostatnia kolumna to boki, kolumny pomiędzy to środek; okno łukowe ma jedną ścianę na kolumnę, ich szerokości dzielą łuk. Każde skrzydło otwiera się tak, jak mówi **Panels**, więc boki mogą się otwierać, a środek być stały. Dalej:
+Kolumny siatki to jego ściany. W wykuszu i skrzynce pierwsza i ostatnia kolumna to boki, kolumny pomiędzy to środek; okno łukowe ma jedną ścianę na kolumnę, ich szerokości dzielą łuk. Każda kwatera otwiera się tak, jak mówi jej **Otwieranie**, więc boki mogą się otwierać, a środek być stały. Dalej:
 
 - **Projection**, od zewnętrznego lica ściany do zewnętrznego lica ościeżnic, a w wykuszu kąt **Sides to the wall** (od 15° do 90°);
 - **Sides**: boki skrzynki przeszklone lub pełne, z materiałem;

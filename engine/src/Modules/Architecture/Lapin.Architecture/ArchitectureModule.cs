@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -13,6 +14,15 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     public string Name => "Architecture";
 
     static JoinerySpec? JsonSpec(JsonNode? n) => JoinerySpec.From(n);
+
+    /// <summary>A type's grid for the pane editor: its inner rectangle, each column's and row's extent (X along, Z up).</summary>
+    static JsonObject GridJson(JoinerySpec s)
+    {
+        var (cols, rows) = Joinery.Grid(s);
+        var inner = Joinery.InnerRect(s);
+        static JsonArray Pairs(List<(double A, double B)> l) => new(l.Select(x => (JsonNode)new JsonArray(x.A, x.B)).ToArray());
+        return new JsonObject { ["inner"] = new JsonArray(inner.X0, inner.X1, inner.Z0, inner.Z1), ["cols"] = Pairs(cols), ["rows"] = Pairs(rows) };
+    }
 
     /// <summary>A drawing's strokes as the interface draws them: points, weight (cut, outline, thin), closed, dashed.</summary>
     static JsonObject Strokes(IEnumerable<JStroke> strokes) => new()
@@ -128,6 +138,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         {
             ["windowOperations"] = new JsonArray(Joinery.WindowOperations.Select(x => (JsonNode)x).ToArray()),
             ["doorOperations"] = new JsonArray(Joinery.DoorOperations.Select(x => (JsonNode)x).ToArray()),
+            // The profile systems a type starts from, and what may fill a pane (decision 370).
+            ["profileSystems"] = new JsonObject(Joinery.ProfileSystems.Select(kv => new KeyValuePair<string, JsonNode?>(kv.Key, new JsonObject
+            {
+                ["frame"] = JsonSerializer.SerializeToNode(kv.Value.Frame, ArchitectureJson.Default.JoineryFrame),
+                ["sash"] = JsonSerializer.SerializeToNode(kv.Value.Sash, ArchitectureJson.Default.JoinerySash),
+                ["profile"] = JsonSerializer.SerializeToNode(kv.Value.Profile, ArchitectureJson.Default.JoineryProfile),
+            }))),
+            ["infills"] = new JsonArray(Joinery.Infills.Select(x => (JsonNode)x).ToArray()),
             ["defaultDoor"] = JoinerySpecs.Door.ToJson(),
             ["defaultWindow"] = JoinerySpecs.Window.ToJson(),
             ["shapes"] = new JsonArray(JoineryShapes.Kinds.Select(x => (JsonNode)x).ToArray()),
@@ -160,8 +178,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
                 ["panels"] = new JsonArray(Joinery.Normalised(spec).Select(p =>
                 {
                     var r = Joinery.PanelRect(spec, p);
-                    return (JsonNode)new JsonObject { ["operation"] = p.Operation, ["x0"] = r.X0, ["x1"] = r.X1, ["z0"] = r.Z0, ["z1"] = r.Z1 };
+                    return (JsonNode)new JsonObject
+                    {
+                        ["operation"] = p.Operation, ["x0"] = r.X0, ["x1"] = r.X1, ["z0"] = r.Z0, ["z1"] = r.Z1,
+                        ["col"] = p.Col, ["row"] = p.Row, ["colSpan"] = p.ColSpan, ["rowSpan"] = p.RowSpan, ["infill"] = Joinery.InfillOf(p),
+                    };
                 }).ToArray()),
+                // The grid (decision 370): the columns' and rows' extents, mullions and transoms between them, for the pane editor.
+                ["grid"] = problem != null || bay ? null : GridJson(spec),
                 ["ifcType"] = spec.IsDoor ? Joinery.DoorOperation(spec).Type : Joinery.WindowPartitioning(spec).Type,
                 // The drawings (the symbol engine's): the elevation from inside and from outside, the plan, the section.
                 ["drawings"] = problem != null ? null : bay ? new JsonObject

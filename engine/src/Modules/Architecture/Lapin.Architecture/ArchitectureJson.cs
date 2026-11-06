@@ -13,6 +13,9 @@ namespace Lapin.Architecture;
 /// </summary>
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, NumberHandling = JsonNumberHandling.AllowReadingFromString, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(JoinerySpec))]
+[JsonSerializable(typeof(JoineryFrame))]
+[JsonSerializable(typeof(JoinerySash))]
+[JsonSerializable(typeof(JoineryProfile))]
 [JsonSerializable(typeof(LintelRule))]
 [JsonSerializable(typeof(LintelProduct))]
 [JsonSerializable(typeof(StairSpec))]

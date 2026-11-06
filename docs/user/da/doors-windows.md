@@ -40,15 +40,36 @@ Valgt har en åbning greb som et vindue: træk i midten for at skubbe den langs 
 
 Tegningerne til højre viser typen, som den vil blive tegnet i opstalt, plan og snit, mens du ændrer den.
 
-**Venstre og højre.** En dørs slagretning navngives, som arkitekter navngiver den: se fra håndtaget mod hængslerne; et dørblad, der åbner til venstre for den linje, har venstre slag, et, der åbner til højre, højre slag. Konfiguratorens valg for et dørblad siger det sådan, med hængslernes side i gitteret **Rammer**, som er set udefra, fra den side rammerne skubbes fra: *Slag højre (hængsler til venstre)*. En IFC-fil navngiver hængslingen på sin egen måde (hængslerne set i den retning, dørbladet åbner), så den samme dør skrives der som SINGLE_SWING_LEFT; Lapin oversætter mellem de to, når den skriver og læser IFC. Et vindues venstre og højre ses indefra, fra den side rammerne åbner mod: *Sidehængt højre (hængsler til venstre)* i konfiguratoren, hvis gitter ses udefra. IFC skriver det samme vindue som venstre. Facaden er set indefra, fra den side rammerne åbner mod, medmindre **Udefra** er slået til; ligesom planen viser den døren, som den står i modellen. En dør vendt til den anden hængsling (**Hængsling** eller en vendepil langs væggen) er spejlbilledet af sin type; skemaerne viser den på sit eget kort (se [Skemaer](schedules.md)).
+**Venstre og højre.** En dørs slagretning navngives, som arkitekter navngiver den: se fra håndtaget mod hængslerne; et dørblad, der åbner til venstre for den linje, har venstre slag, et, der åbner til højre, højre slag. Konfiguratorens valg for et dørblad siger det sådan, med hængslernes side i et felts **Åbningsmåde**, set udefra, fra den side rammerne skubbes fra: *Slag højre (hængsler til venstre)*. En IFC-fil navngiver hængslingen på sin egen måde (hængslerne set i den retning, dørbladet åbner), så den samme dør skrives der som SINGLE_SWING_LEFT; Lapin oversætter mellem de to, når den skriver og læser IFC. Et vindues venstre og højre ses indefra, fra den side rammerne åbner mod: *Sidehængt højre (hængsler til venstre)* i konfiguratoren, hvis felter ses udefra. IFC skriver det samme vindue som venstre. Facaden er set indefra, fra den side rammerne åbner mod, medmindre **Udefra** er slået til; ligesom planen viser den døren, som den står i modellen. En dør vendt til den anden hængsling (**Hængsling** eller en vendepil langs væggen) er spejlbilledet af sin type; skemaerne viser den på sit eget kort (se [Skemaer](schedules.md)).
 
 ![Konfiguratoren til døre og vinduer](shots/joinery-configurator.webp)
 
 **Gem type** gemmer dine ændringer. Alle døre eller vinduer af den type følger dem. **Placér med den** lukker konfiguratoren og begynder at placere den type.
 
-### Vinduer med flere rammer
+### Felter, sprosser og profiler
 
-**Kolonner af rammer** tager rammernes relative bredder, ét tal for hver: `1 1` er to lige store rammer, `1 1 1` tre, `1 2 1` en bred mellem to smalle. **Rækker af rammer** deler vinduet i højden på samme måde, nedefra og op: `1 1` giver to rækker. Seks rammer er `1 1 1` i Kolonner af rammer og `1 1` i Rækker af rammer. Vælg derefter under **Rammer**, hvordan hver ramme åbner: fast, sidehængt, dreje-kip, bundhængt, tophængt, drejeramme eller skydeparti.
+En dør eller et vindue er et gitter af felter. Hvert felt vælger, hvordan det åbner, og hvad det fyldes med, så én type kan rumme to dørblade med sidepartier og et overlys over dem, eller et vindue med et tæt panel under en ramme.
+
+**Kolonner (relative)** og **Rækker (relative)** deler åbningen hurtigt: `1 1` er to lige store felter, `1 1 1` tre, `2 1` et bredt ved siden af et smalt. Rækker tælles nedefra og op.
+
+**Kolonnebredder** og **Rækkehøjder** giver de samme mål i millimeter. Skriv dem, og den sidste tager resten. I facaden kan du også trække i en sprosse eller en tværpost; afstanden vises, mens du trækker.
+
+**Sprossebredde** og **Tværpostbredde** er deres egne mål, adskilt fra **Rammebredde**. En karm på 50 mm med sprosser på 50 mm ser ud som 50 mm overalt.
+
+**Felter** viser alle felter. Klik på et, i listen eller i facaden, for at redigere det:
+
+- **Åbningsmåde**: fast, en ramme (sidehængt, dreje-kip, bundhængt, tophængt, drejeramme, skydeparti) eller, i en dør, et dørblad.
+- **Fyldning**: **Glas** eller **Tæt panel**. En dørs blade og sidepartier kan være tætte, og det kan et vinduesfelt også (et panel under en ramme, et uigennemsigtigt felt).
+- **Opdel**: **I kolonner** eller **I rækker**, i en afstand i millimeter fra feltets venstre kant eller underkant (halvdelen som standard). Delt på tværs beholder et dørblad sin nederste del, og den øverste bliver et fast glaseret overlys.
+- **Sammenføj**: med feltet ved siden af, over eller under, når de deler en hel kant. Sprosser og tværposter, som intet felt længere har brug for, forsvinder.
+
+![En butiksdør i én type: to dørblade, sidepartier og et gennemgående overlys](shots/joinery-panes.webp)
+
+**Profilsystem** starter typen fra en profil i **PVC**, **Aluminium**, **Træ** eller **Stål (slank)**: det sætter karm-, sprosse-, tværpost- og rammemål og giver profilerne deres finere former. Karmen har en **Fals**, som rammen lukker mod, rammen dækker karmen med sit **Rammeoverlap**, **glaslister** holder glasset, og et vindue har en drypnæse under bundstykket. Hvert mål kan stadig redigeres. **Enkel (glatte profiler)** beholder enkle rektangulære dele som før.
+
+![Et PVC-vindue: rammerne over karmen, glaslisterne, et tæt panel under et fast felt](shots/joinery-profiles-3d.webp)
+
+Under **Detaljer** slår **Indvendig sålbænk** og **Udvendig sålbænk** sålbænkene til og fra, og **Lysningsbeklædning** slår lysningens afslutning til på siderne og foroven. Hvor sålbænke og beklædninger ikke bruges, så fjern fluebenet.
 
 ### Skodder, gitre, blomsterkasser og baldakiner
 
@@ -85,7 +106,7 @@ På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone 
 
 En vinduestype kan springe frem fra væggen. I konfiguratoren gør **Projects** den til en **Bay** (en midte og to skrå sider), en **Bow** (ens felter på en bue) eller en **Box** (sider vinkelret på væggen), og **New bay window** starter en ny type som en 45°-karnap. Vinduet udfylder stadig én åbning i væggen, så bred og høj som typen: det placeres, flyttes, kopieres, vendes, nummereres og listes som ethvert vindue. **Architecture → Bay window** (<kbd>BW</kbd>) sætter et i den væg, du klikker på: typen valgt i konfiguratoren, når den springer frem, ellers projektets første karnap, ellers en 45°-karnap.
 
-Gitterets kolonner er dens flader. I en karnap og en kasse er første og sidste kolonne dens sider og kolonnerne imellem dens midte; et buevindue har én flade pr. kolonne, hvis bredder deler buen. Hver rude åbner, som **Panels** siger, så siderne kan åbne og midten være fast. Derefter:
+Gitterets kolonner er dens flader. I en karnap og en kasse er første og sidste kolonne dens sider og kolonnerne imellem dens midte; et buevindue har én flade pr. kolonne, hvis bredder deler buen. Hvert felt åbner, som dets **Åbningsmåde** siger, så siderne kan åbne og midten være fast. Derefter:
 
 - **Projection**, fra væggens yderside til karmenes yderside, og for en karnap vinklen **Sides to the wall** (15° til 90°);
 - **Sides**: kassens sider glasede eller massive, med deres materiale;

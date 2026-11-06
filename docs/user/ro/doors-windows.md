@@ -40,15 +40,36 @@ Selectat, un gol are mânere ca o fereastră: trage de mijlocul lui ca să-l mu�
 
 Desenele din dreapta arată tipul așa cum va fi desenat în fațadă, plan și secțiune, chiar în timp ce îl schimbi.
 
-**Stânga și dreapta.** Deschiderea unei uși se numește cum o numesc arhitecții: privești de la mâner spre balamale; o foaie care se deschide la stânga acestei direcții are deschidere stânga, una care se deschide la dreapta, deschidere dreapta. Alegerile configuratorului pentru o foaie o spun la fel, cu partea balamalelor în grila **Canate**, văzută din exterior, partea dinspre care se împing canatele: *Deschidere dreapta (balamale în stânga)*. Un fișier IFC numește mâna în felul lui (balamalele văzute privind în direcția în care se deschide foaia), așa că aceeași ușă e scrisă acolo SINGLE_SWING_LEFT; Lapin le traduce una în alta când scrie și citește IFC. Stânga și dreapta unei ferestre se văd din interior, partea spre care se deschid canatele: *Batant dreapta (balamale în stânga)* în configurator, a cărui grilă se vede din exterior. IFC scrie aceeași fereastră ca stânga. Vederea e din interior, partea spre care se deschid canatele, dacă nu e bifat **Din exterior**; ca și planul, arată ușa așa cum stă în model. O ușă întoarsă pe cealaltă mână (**Balamale** sau o săgeată de întoarcere de-a lungul peretelui) e imaginea în oglindă a tipului ei; extrasele o pun pe o fișă a ei (vezi [Extrase](schedules.md)).
+**Stânga și dreapta.** Deschiderea unei uși se numește cum o numesc arhitecții: privești de la mâner spre balamale; o foaie care se deschide la stânga acestei direcții are deschidere stânga, una care se deschide la dreapta, deschidere dreapta. Alegerile configuratorului pentru o foaie o spun la fel, cu partea balamalelor în câmpul **Deschidere** al unui ochi, văzut din exterior, partea dinspre care se împing canatele: *Deschidere dreapta (balamale în stânga)*. Un fișier IFC numește mâna în felul lui (balamalele văzute privind în direcția în care se deschide foaia), așa că aceeași ușă e scrisă acolo SINGLE_SWING_LEFT; Lapin le traduce una în alta când scrie și citește IFC. Stânga și dreapta unei ferestre se văd din interior, partea spre care se deschid canatele: *Batant dreapta (balamale în stânga)* în configurator, ale cărui ochiuri se văd din exterior. IFC scrie aceeași fereastră ca stânga. Vederea e din interior, partea spre care se deschid canatele, dacă nu e bifat **Din exterior**; ca și planul, arată ușa așa cum stă în model. O ușă întoarsă pe cealaltă mână (**Balamale** sau o săgeată de întoarcere de-a lungul peretelui) e imaginea în oglindă a tipului ei; extrasele o pun pe o fișă a ei (vezi [Extrase](schedules.md)).
 
 ![Configuratorul de uși și ferestre](shots/joinery-configurator.webp)
 
 **Salvează tipul** păstrează schimbările. Toate ușile și ferestrele de acel tip le urmează. **Pune cu el** închide configuratorul și începe plasarea acelui tip.
 
-### Ferestre cu mai multe canate
+### Ochiuri, montanți și profile
 
-**Coloane de canate** primește lățimile relative ale canatelor, câte un număr pentru fiecare: `1 1` înseamnă două canate egale, `1 1 1` trei, `1 2 1` unul lat între două înguste. **Rânduri de canate** împarte fereastra la fel pe înălțime, de jos în sus: `1 1` dă două rânduri. Șase canate înseamnă `1 1 1` la Coloane de canate și `1 1` la Rânduri de canate. Apoi, în **Canate**, alege cum se deschide fiecare canat: fix, batant, oscilobatant, rabatabil, pe sus, pivotant sau culisant.
+O ușă sau o fereastră e o grilă de ochiuri. Fiecare ochi alege cum se deschide și ce îl umple, așa că un singur tip poate avea două foi cu ochiuri laterale și o supralumină deasupra lor, sau o fereastră cu un panou plin sub un canat.
+
+**Coloane (relativ)** și **Rânduri (relativ)** împart golul repede: `1 1` înseamnă două ochiuri egale, `1 1 1` trei, `2 1` unul lat lângă unul îngust. Rândurile se numără de jos în sus.
+
+**Lățimile coloanelor** și **Înălțimile rândurilor** dau aceleași dimensiuni în milimetri. Scrie-le, iar ultima ia restul. În vedere poți și trage de un montant sau de o traversă; distanța se afișează cât tragi.
+
+**Lățime montant** și **Lățime traversă** au dimensiunile lor, separat de **Lățimea ramei**. O ramă de 50 mm cu montanți de 50 mm se citește 50 mm peste tot.
+
+**Ochiuri** listează toate ochiurile. Clic pe unul, în listă sau în vedere, ca să-l editezi:
+
+- **Deschidere**: fix, un canat (batant, oscilobatant, rabatabil, pe sus, pivotant, culisant) sau, la o ușă, o foaie.
+- **Umplutură**: **Sticlă** sau **Panou plin**. Foile și panourile laterale ale unei uși pot fi pline, la fel un ochi de fereastră (un panou sub un canat, un ochi opac).
+- **Împarte**: **În coloane** sau **În rânduri**, la o distanță în milimetri de marginea stângă sau de jos a ochiului (implicit la jumătate). Împărțită pe orizontală, foaia unei uși își păstrează partea de jos, iar partea de sus devine o supralumină fixă vitrată.
+- **Unește**: cu ochiul de lângă, de deasupra sau de dedesubt, când au o latură întreagă comună. Montanții și traversele de care nu mai are nevoie niciun ochi dispar.
+
+![O ușă de magazin într-un singur tip: două foi, ochiuri laterale și o supralumină pe toată lățimea](shots/joinery-panes.webp)
+
+**Sistem de profile** pornește tipul de la un profil **PVC**, **Aluminiu**, **Lemn** sau **Oțel (profile subțiri)**: stabilește dimensiunile tocului, montanților, traverselor și cercevelelor și dă profilelor formele lor fine. Tocul are un **Falț** pe care se închide cerceveaua, cerceveaua se suprapune peste toc cu **Suprapunerea cercevelei**, **baghetele de fixare a geamului** țin sticla, iar o fereastră are un lăcrimar sub traversa de jos. Fiecare dimensiune rămâne editabilă. **Simplu (profile drepte)** păstrează profile dreptunghiulare simple, ca până acum.
+
+![O fereastră din PVC: cercevelele suprapuse peste toc, baghetele, un panou plin sub un ochi fix](shots/joinery-profiles-3d.webp)
+
+La **Detalii**, **Glaf interior** și **Solbanc** pornesc și opresc glafurile, iar **Căptușeala glafurilor laterale** pornește finisajul șpaleților pe laterale și sus. Unde nu folosești glafuri și căptușeli, debifează-le.
 
 ### Obloane, grilaje, jardiniere și copertine
 
@@ -85,7 +106,7 @@ Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**
 
 Un tip de fereastră poate ieși din perete. În configurator, **Projects** o face **Bay** (un mijloc și două laturi oblice față de perete), **Bow** (panouri egale pe un arc) sau **Box** (laturi în unghi drept cu peretele), iar **New bay window** începe un tip nou ca bovindou la 45°. Fereastra umple tot un singur gol în perete, cât tipul de lată și de înaltă: se pune, se mută, se copiază, se întoarce, se numerotează și intră în extrase ca orice fereastră. **Architecture → Bay window** (<kbd>BW</kbd>) pune una în peretele pe care dai clic: tipul ales în configurator când iese din perete, altfel primul bovindou al proiectului, altfel un bovindou la 45°.
 
-Coloanele grilei sunt fețele ei. La bovindou și la cutie prima și ultima coloană sunt laturile, coloanele dintre ele mijlocul; o fereastră în arc are o față pe coloană, lățimile lor împărțind arcul. Fiecare ochi se deschide cum spune **Panels**, deci laturile se pot deschide și mijlocul rămâne fix. Apoi:
+Coloanele grilei sunt fețele ei. La bovindou și la cutie prima și ultima coloană sunt laturile, coloanele dintre ele mijlocul; o fereastră în arc are o față pe coloană, lățimile lor împărțind arcul. Fiecare ochi se deschide cum spune câmpul lui **Deschidere**, deci laturile se pot deschide și mijlocul rămâne fix. Apoi:
 
 - **Projection**, de la fața exterioară a peretelui la fața exterioară a tocurilor, iar la bovindou unghiul **Sides to the wall** (15° la 90°);
 - **Sides**: laturile cutiei vitrate sau pline, cu materialul lor;

@@ -40,15 +40,36 @@ Selecionada, uma abertura tem alças como uma janela: arraste o meio para desliz
 
 Os desenhos à direita mostram o tipo como ele será desenhado em elevação, planta e corte, enquanto você o muda.
 
-**Esquerda e direita.** A abertura de uma porta é nomeada como os arquitetos a nomeiam: olhe da maçaneta para as dobradiças; uma folha que abre à esquerda dessa linha abre à esquerda, uma que abre à direita, à direita. As opções do configurador para uma folha dizem assim, com o lado das dobradiças na grade **Folhas**, vista pelo lado de fora, o lado de onde se empurram as folhas: *Abertura à direita (dobradiças à esquerda)*. Um arquivo IFC nomeia a mão do seu jeito (as dobradiças vistas olhando para onde a folha abre), então a mesma porta é escrita lá como SINGLE_SWING_LEFT; o Lapin converte uma na outra ao escrever e ler IFC. A esquerda e a direita de uma janela são vistas pelo lado de dentro, o lado para onde abrem as folhas: *De abrir à direita (dobradiças à esquerda)* no configurador, cuja grade é vista pelo lado de fora. O IFC escreve a mesma janela como esquerda. A elevação é vista pelo lado de dentro, o lado para onde as folhas abrem, a menos que **Pelo lado externo** esteja marcado; como a planta, ela mostra a porta como está no modelo. Uma porta invertida para a outra mão (**Mão**, ou uma seta de inversão ao longo da parede) é a imagem espelhada do seu tipo; as tabelas a mostram num cartão próprio (veja [Tabelas](schedules.md)).
+**Esquerda e direita.** A abertura de uma porta é nomeada como os arquitetos a nomeiam: olhe da maçaneta para as dobradiças; uma folha que abre à esquerda dessa linha abre à esquerda, uma que abre à direita, à direita. As opções do configurador para uma folha dizem assim, com o lado das dobradiças na **Abertura** de um módulo, vista pelo lado de fora, o lado de onde se empurram as folhas: *Abertura à direita (dobradiças à esquerda)*. Um arquivo IFC nomeia a mão do seu jeito (as dobradiças vistas olhando para onde a folha abre), então a mesma porta é escrita lá como SINGLE_SWING_LEFT; o Lapin converte uma na outra ao escrever e ler IFC. A esquerda e a direita de uma janela são vistas pelo lado de dentro, o lado para onde abrem as folhas: *De abrir à direita (dobradiças à esquerda)* no configurador, cujos módulos são vistos pelo lado de fora. O IFC escreve a mesma janela como esquerda. A elevação é vista pelo lado de dentro, o lado para onde as folhas abrem, a menos que **Pelo lado externo** esteja marcado; como a planta, ela mostra a porta como está no modelo. Uma porta invertida para a outra mão (**Mão**, ou uma seta de inversão ao longo da parede) é a imagem espelhada do seu tipo; as tabelas a mostram num cartão próprio (veja [Tabelas](schedules.md)).
 
 ![O configurador de portas e janelas](shots/joinery-configurator.webp)
 
 **Salvar tipo** guarda as suas mudanças. Todas as portas ou janelas desse tipo as acompanham. **Posicionar com ele** fecha o configurador e começa a colocar esse tipo.
 
-### Janelas com mais vidros
+### Módulos, montantes e perfis
 
-**Colunas de folhas** recebe as larguras relativas dos vidros, um número para cada: `1 1` são dois vidros iguais, `1 1 1` três, `1 2 1` um largo entre dois estreitos. **Linhas de folhas** divide a janela na altura do mesmo jeito, de baixo para cima: `1 1` dá duas linhas. Seis vidros são `1 1 1` em Colunas de vidros e `1 1` em Linhas de vidros. Depois, em **Painéis**, escolha como cada vidro abre: fixo, de abrir lateral, oscilobatente, basculante para dentro, maxim-ar, pivotante ou de correr.
+Uma porta ou uma janela é uma grade de módulos. Cada módulo escolhe como abre e o que o preenche, então um só tipo pode ter duas folhas com laterais fixas e uma bandeira em cima, ou uma janela com um painel cego sob uma folha.
+
+**Colunas (relativas)** e **Linhas (relativas)** dividem o vão rapidamente: `1 1` são dois módulos iguais, `1 1 1` três, `2 1` um largo ao lado de um estreito. As linhas contam de baixo para cima.
+
+**Larguras das colunas** e **Alturas das linhas** dão as mesmas medidas em milímetros. Digite-as e a última fica com o resto. Na elevação você também pode arrastar um montante ou uma travessa; a distância aparece enquanto arrasta.
+
+**Largura do montante** e **Largura da travessa** têm medidas próprias, à parte da **Largura do quadro**. Um quadro de 50 mm com montantes de 50 mm aparece com 50 mm em toda parte.
+
+**Módulos** lista todos os módulos. Clique em um, na lista ou na elevação, para editá-lo:
+
+- **Abertura**: fixo, uma folha (de abrir lateral, oscilobatente, basculante para dentro, maxim-ar, pivotante, de correr) ou, numa porta, uma folha de porta.
+- **Enchimento**: **Vidro** ou **Painel cego**. As folhas e laterais de uma porta podem ser cegas, e também um módulo de janela (um painel sob uma folha, um vão opaco).
+- **Dividir**: **Em colunas** ou **Em linhas**, a uma distância em milímetros da borda esquerda ou inferior do módulo (metade por padrão). Dividida na horizontal, uma folha de porta mantém a parte de baixo e a de cima vira uma bandeira envidraçada fixa.
+- **Unir**: com o módulo ao lado, acima ou abaixo, quando têm uma borda inteira em comum. Os montantes e travessas de que nenhum módulo precisa mais somem.
+
+![Uma porta de loja num só tipo: duas folhas, laterais e uma bandeira em toda a largura](shots/joinery-panes.webp)
+
+**Sistema de perfis** começa o tipo de um perfil de **PVC**, **Alumínio**, **Madeira** ou **Aço (esbelto)**: define as medidas do marco, dos montantes, das travessas e das folhas e dá aos perfis as suas formas finas. O marco tem um **Rebaixo** onde a folha fecha, a folha se sobrepõe ao marco pela **Sobreposição da folha**, **baguetes** prendem o vidro, e uma janela tem uma pingadeira sob a travessa inferior. Cada medida continua editável. **Simples (perfis retos)** mantém peças retangulares simples, como antes.
+
+![Uma janela de PVC: as folhas sobrepostas ao marco, as baguetes, um painel cego sob um módulo fixo](shots/joinery-profiles-3d.webp)
+
+Em **Detalhes**, **Peitoril interno** e **Peitoril externo** ligam e desligam os peitoris, e **Revestimento das ombreiras** liga o acabamento do vão nas ombreiras e na verga. Onde peitoris e revestimentos não são usados, desmarque-os.
 
 ### Venezianas, grades, floreiras e marquises
 
@@ -85,7 +106,7 @@ Na fachada, além da moldura, uma janela pode ter uma **Fecho de arco**, um **Co
 
 Um tipo de janela pode sair da parede. No configurador, **Projects** torna-o um **Bay** (um centro e dois lados em ângulo), um **Bow** (painéis iguais num arco) ou um **Box** (lados em esquadria com a parede), e **New bay window** começa um tipo novo como sacada a 45°. A janela continua a preencher uma só abertura na parede, tão larga e alta como o tipo: coloca-se, move-se, copia-se, vira-se, numera-se e entra nos mapas como qualquer janela. **Architecture → Bay window** (<kbd>BW</kbd>) põe uma na parede clicada: o tipo escolhido no configurador quando sai da parede, senão a primeira sacada do projeto, senão uma sacada a 45°.
 
-As colunas da grelha são as suas faces. Numa sacada e numa caixa a primeira e a última coluna são os lados e as do meio o centro; uma janela em arco tem uma face por coluna, as larguras repartindo o arco. Cada folha abre como diz **Panels**, por isso os lados podem abrir e o centro ficar fixo. Depois:
+As colunas da grelha são as suas faces. Numa sacada e numa caixa a primeira e a última coluna são os lados e as do meio o centro; uma janela em arco tem uma face por coluna, as larguras repartindo o arco. Cada módulo abre como diz a sua **Abertura**, por isso os lados podem abrir e o centro ficar fixo. Depois:
 
 - **Projection**, da face exterior da parede à face exterior dos caixilhos, e numa sacada o ângulo **Sides to the wall** (15° a 90°);
 - **Sides**: os lados da caixa envidraçados ou cheios, com o seu material;

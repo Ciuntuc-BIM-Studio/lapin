@@ -40,15 +40,36 @@ Ausgewählt hat eine Öffnung Griffe wie ein Fenster: ziehen Sie ihre Mitte, um 
 
 Die Zeichnungen rechts zeigen den Typ so, wie er in Ansicht, Grundriss und Schnitt gezeichnet wird, während Sie ihn ändern.
 
-**Links und rechts.** Der Anschlag einer Tür wird so benannt, wie Architekten ihn benennen: Man blickt vom Drücker zu den Bändern; ein Flügel, der links dieser Linie aufgeht, schlägt links an, einer, der rechts aufgeht, rechts. Die Auswahl des Konfigurators für einen Flügel sagt es so, mit der Seite seiner Bänder im Raster **Flügel**, das von außen gesehen ist, von der Seite, von der die Flügel aufgedrückt werden: *Drehflügel rechts (Bänder links)*. Eine IFC-Datei benennt den Anschlag auf ihre eigene Weise (die Bänder gesehen in die Richtung, in die der Flügel aufgeht), daher wird dieselbe Tür dort als SINGLE_SWING_LEFT geschrieben; Lapin übersetzt beim Schreiben und Lesen von IFC das eine in das andere. (DIN benennt wieder anders.) Links und rechts eines Fensters werden von innen gesehen, von der Seite, zu der die Flügel aufgehen: *Drehflügel rechts (Bänder links)* im Konfigurator, dessen Raster von außen gesehen ist. IFC schreibt dasselbe Fenster als links. Die Ansicht ist von innen gesehen, von der Seite, zu der die Flügel aufgehen, sofern **Von außen** nicht angehakt ist; wie der Grundriss zeigt sie die Tür so, wie sie im Modell steht. Eine auf den anderen Anschlag umgekehrte Tür (**Anschlag** oder ein Umkehrpfeil entlang der Wand) ist das Spiegelbild ihres Typs; die Bauteillisten führen sie auf einer eigenen Karte (siehe [Bauteillisten](schedules.md)).
+**Links und rechts.** Der Anschlag einer Tür wird so benannt, wie Architekten ihn benennen: Man blickt vom Drücker zu den Bändern; ein Flügel, der links dieser Linie aufgeht, schlägt links an, einer, der rechts aufgeht, rechts. Die Auswahl des Konfigurators für einen Flügel sagt es so, mit der Seite seiner Bänder unter **Öffnungsart** eines Feldes, von außen gesehen, von der Seite, von der die Flügel aufgedrückt werden: *Drehflügel rechts (Bänder links)*. Eine IFC-Datei benennt den Anschlag auf ihre eigene Weise (die Bänder gesehen in die Richtung, in die der Flügel aufgeht), daher wird dieselbe Tür dort als SINGLE_SWING_LEFT geschrieben; Lapin übersetzt beim Schreiben und Lesen von IFC das eine in das andere. (DIN benennt wieder anders.) Links und rechts eines Fensters werden von innen gesehen, von der Seite, zu der die Flügel aufgehen: *Drehflügel rechts (Bänder links)* im Konfigurator, dessen Felder von außen gesehen sind. IFC schreibt dasselbe Fenster als links. Die Ansicht ist von innen gesehen, von der Seite, zu der die Flügel aufgehen, sofern **Von außen** nicht angehakt ist; wie der Grundriss zeigt sie die Tür so, wie sie im Modell steht. Eine auf den anderen Anschlag umgekehrte Tür (**Anschlag** oder ein Umkehrpfeil entlang der Wand) ist das Spiegelbild ihres Typs; die Bauteillisten führen sie auf einer eigenen Karte (siehe [Bauteillisten](schedules.md)).
 
 ![Der Konfigurator für Türen und Fenster](shots/joinery-configurator.webp)
 
 **Typ speichern** übernimmt Ihre Änderungen. Jede Tür und jedes Fenster dieses Typs folgt ihnen. **Damit platzieren** schließt den Konfigurator und beginnt, diesen Typ zu platzieren.
 
-### Fenster mit mehreren Flügeln
+### Felder, Pfosten und Profile
 
-**Flügelspalten** nimmt die relativen Breiten der Flügel auf, eine Zahl für jeden: `1 1` sind zwei gleiche Flügel, `1 1 1` drei, `1 2 1` ein breiter zwischen zwei schmalen. **Flügelreihen** teilt das Fenster auf dieselbe Weise in der Höhe, von unten nach oben: `1 1` ergibt zwei Reihen. Sechs Flügel sind `1 1 1` in Flügelspalten und `1 1` in Flügelreihen. Wählen Sie dann unter **Flügel**, wie sich jeder Flügel öffnet: fest, Dreh, Dreh-Kipp, Kipp, Klapp, Schwing oder Schiebe.
+Eine Tür oder ein Fenster ist ein Raster aus Feldern. Jedes Feld wählt, wie es sich öffnet und was es füllt, sodass ein Typ zwei Flügel mit Seitenteilen und einem Oberlicht darüber aufnehmen kann oder ein Fenster mit einem Vollpaneel unter einem Flügel.
+
+**Spalten (relativ)** und **Reihen (relativ)** teilen die Öffnung schnell: `1 1` sind zwei gleiche Felder, `1 1 1` drei, `2 1` ein breites neben einem schmalen. Reihen zählen von unten nach oben.
+
+**Spaltenbreiten** und **Reihenhöhen** geben dieselben Maße in Millimetern. Geben Sie sie ein, das letzte nimmt den Rest. In der Ansicht können Sie auch einen Pfosten oder einen Riegel ziehen; der Abstand wird beim Ziehen angezeigt.
+
+**Pfostenbreite** und **Riegelbreite** sind eigene Maße, getrennt von der **Rahmenbreite**. Ein Rahmen von 50 mm mit Pfosten von 50 mm wirkt überall 50 mm breit.
+
+**Felder** listet jedes Feld auf. Klicken Sie eines an, in der Liste oder in der Ansicht, um es zu bearbeiten:
+
+- **Öffnungsart**: fest, ein Flügel (Dreh, Dreh-Kipp, Kipp, Klapp, Schwing, Schiebe) oder, bei einer Tür, ein Türflügel.
+- **Füllung**: **Glas** oder **Vollpaneel**. Die Flügel und Seitenteile einer Tür können geschlossen sein, ebenso ein Fensterfeld (ein Paneel unter einem Flügel, ein undurchsichtiges Feld).
+- **Teilen**: **In Spalten** oder **In Reihen**, in einem Abstand in Millimetern von der linken oder unteren Kante des Feldes (standardmäßig die Hälfte). Quer geteilt behält ein Türflügel seinen unteren Teil, und der obere wird ein festes verglastes Oberlicht.
+- **Zusammenführen**: mit dem Feld daneben, darüber oder darunter, wenn sie eine ganze Kante teilen. Pfosten und Riegel, die kein Feld mehr braucht, entfallen.
+
+![Eine Ladentür in einem Typ: zwei Flügel, Seitenteile und ein durchgehendes Oberlicht](shots/joinery-panes.webp)
+
+**Profilsystem** beginnt den Typ mit einem Profil aus **PVC**, **Aluminium**, **Holz** oder **Stahl (schlank)**: Es setzt die Maße von Rahmen, Pfosten, Riegeln und Flügeln und gibt den Profilen ihre feineren Formen. Der Rahmen hat einen **Falz**, auf den der Flügel schließt, der Flügel überdeckt den Rahmen um seinen **Flügelüberschlag**, **Glasleisten** halten das Glas, und ein Fenster hat eine Tropfkante unter dem unteren Holz. Jedes Maß bleibt bearbeitbar. **Einfach (glatte Profile)** behält schlichte rechteckige Teile wie bisher.
+
+![Ein PVC-Fenster: die Flügel über dem Rahmen, die Glasleisten, ein Vollpaneel unter einem festen Feld](shots/joinery-profiles-3d.webp)
+
+Unter **Details** schalten **Fensterbank innen** und **Fensterbank außen** die Fensterbänke ein und aus, und **Laibungsverkleidung** schaltet den Abschluss der Laibung an den Seiten und am Sturz ein. Wo Fensterbänke und Verkleidungen nicht gebraucht werden, entfernen Sie die Haken.
 
 ### Fensterläden, Gitter, Blumenkästen und Vordächer
 
@@ -85,7 +106,7 @@ An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **
 
 Ein Fenstertyp kann aus der Wand vorspringen. Im Konfigurator macht **Projects** ihn zu einem **Bay** (eine Mitte und zwei schräge Seiten), einem **Bow** (gleiche Felder auf einem Bogen) oder einem **Box** (Seiten rechtwinklig zur Wand), und **New bay window** beginnt einen neuen Typ als 45°-Erker. Das Fenster füllt weiterhin eine Öffnung in der Wand, so breit und hoch wie der Typ: es wird gesetzt, verschoben, kopiert, gespiegelt, nummeriert und gelistet wie jedes Fenster. **Architecture → Bay window** (<kbd>BW</kbd>) setzt eines in die angeklickte Wand: den im Konfigurator gewählten Typ, wenn er vorspringt, sonst den ersten Erker des Projekts, sonst einen 45°-Erker.
 
-Die Spalten des Rasters sind seine Flächen. Beim Erker und Kasten sind die erste und letzte Spalte seine Seiten, die dazwischen seine Mitte; ein Rundfenster hat eine Fläche je Spalte, deren Breiten sich den Bogen teilen. Jedes Feld öffnet, wie **Panels** sagt, die Seiten können also öffnen und die Mitte fest sein. Dann:
+Die Spalten des Rasters sind seine Flächen. Beim Erker und Kasten sind die erste und letzte Spalte seine Seiten, die dazwischen seine Mitte; ein Rundfenster hat eine Fläche je Spalte, deren Breiten sich den Bogen teilen. Jedes Feld öffnet, wie seine **Öffnungsart** sagt, die Seiten können also öffnen und die Mitte fest sein. Dann:
 
 - **Projection**, von der Außenfläche der Wand bis zur Außenfläche der Rahmen, beim Erker der Winkel **Sides to the wall** (15° bis 90°);
 - **Sides**: die Seiten des Kastens verglast oder massiv, mit ihrem Material;

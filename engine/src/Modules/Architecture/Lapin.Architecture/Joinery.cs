@@ -6,8 +6,20 @@ using Lapin.Platform;
 
 namespace Lapin.Architecture;
 
-/// <summary>A panel of a door or window: the grid cell of its bottom-left corner, how many it spans, how it opens.</summary>
-public sealed record JoineryPanel(int Col, int Row, string Operation, int ColSpan = 1, int RowSpan = 1, bool Glazed = false);
+/// <summary>
+/// A panel of a door or window: the grid cell of its bottom-left corner, how many it spans, how it opens, and what fills it
+/// (decision 370): <see cref="Infill"/> "glass" or "solid" (an opaque panel), on a fixed pane, a sash or a door leaf alike;
+/// null keeps the old rule (a door leaf solid unless <see cref="Glazed"/>, everything else glass).
+/// </summary>
+public sealed record JoineryPanel(int Col, int Row, string Operation, int ColSpan = 1, int RowSpan = 1, bool Glazed = false, string? Infill = null);
+
+/// <summary>
+/// A profile system's finer shapes (decision 370): the frame's rebate (the stop the sash closes on, standing <see cref="Rebate"/>
+/// into the opening on the exterior half), the sash's lip lapping over the frame and mullions by <see cref="Overlap"/> on the
+/// interior face, glazing beads <see cref="Bead"/> wide holding the glass, a drip under the bottom rail. <see cref="System"/>
+/// names the preset it came from (pvc, aluminium, timber, steel). Null on a type: plain boxes, as before.
+/// </summary>
+public sealed record JoineryProfile(string System = "custom", double Rebate = 0.015, double Overlap = 0.008, double Bead = 0.018, bool Drip = true);
 
 /// <summary>The frame (lining): across the wall, its face width, the mullions' and transoms', its centre across the wall (+ to the exterior).</summary>
 public sealed record JoineryFrame(double Depth, double Width, double Mullion, double Transom, double Offset);
@@ -111,7 +123,9 @@ public sealed record JoinerySpec(
     /// <summary>The parts' materials by name; null: their colours only (a type made before report #76).</summary>
     JoineryMaterials? Materials = null,
     /// <summary>A window that projects from its wall (report #60): a bay, a bow or a box, its faces the grid's columns; null: flat in the wall.</summary>
-    JoineryBay? Bay = null)
+    JoineryBay? Bay = null,
+    /// <summary>The profile system's finer shapes (rebate, lapped sash, beads, drip; decision 370); null: plain boxes.</summary>
+    JoineryProfile? Profile = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -198,6 +212,24 @@ public static class Joinery
     }
 
     public static bool IsDoorLeaf(string operation) => DoorOperations.Contains(operation);
+
+    /// <summary>What fills a panel: its own infill, else a door leaf is solid unless glazed and everything else glass.</summary>
+    public static string InfillOf(JoineryPanel p) => p.Infill is "glass" or "solid" ? p.Infill : IsDoorLeaf(p.Operation) ? (p.Glazed ? "glass" : "solid") : "glass";
+
+    public static readonly string[] Infills = ["glass", "solid"];
+
+    /// <summary>
+    /// The profile systems a type starts from (decision 370): frame, mullion, transom and sash sizes with their finer shapes, in
+    /// metres. A type keeps the numbers, so each stays editable.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, (JoineryFrame Frame, JoinerySash Sash, JoineryProfile Profile)> ProfileSystems =
+        new Dictionary<string, (JoineryFrame, JoinerySash, JoineryProfile)>
+        {
+            ["pvc"] = (new(0.07, 0.06, 0.08, 0.08, 0), new(0.075, 0.07, 0.04, 0.024), new("pvc", 0.018, 0.008, 0.02, true)),
+            ["aluminium"] = (new(0.065, 0.05, 0.06, 0.06, 0), new(0.06, 0.065, 0.04, 0.024), new("aluminium", 0.012, 0.006, 0.015, true)),
+            ["timber"] = (new(0.078, 0.068, 0.09, 0.09, 0), new(0.078, 0.068, 0.044, 0.024), new("timber", 0.02, 0.012, 0.018, true)),
+            ["steel"] = (new(0.06, 0.04, 0.05, 0.05, 0), new(0.045, 0.055, 0.04, 0.02), new("steel", 0.01, 0.005, 0.012, false)),
+        };
 
     /// <summary>Hinged on a vertical side: the panel swings open in plan.</summary>
     public static bool SwingsInPlan(string operation) =>
@@ -455,6 +487,21 @@ public static class Joinery
         yield return new(role, new(r.X0 + w, y0, r.Z1 - w), new(r.X1 - w, y1, r.Z1));
     }
 
+    /// <summary>An opaque panel filling a pane (decision 370), in the leaf's material.</summary>
+    static JoineryBox Panel(CellRect r, double inset, double y, double t) =>
+        new("leaf", new(r.X0 + inset, y - t / 2, r.Z0 + inset), new(r.X1 - inset, y + t / 2, r.Z1 - inset));
+
+    static CellRect Inset(CellRect r, double d) => new(r.X0 + d, r.X1 - d, r.Z0 + d, r.Z1 - d);
+    static CellRect Grow(CellRect r, double d) => new(r.X0 - d, r.X1 + d, r.Z0 - d, r.Z1 + d);
+
+    /// <summary>The frame's stop: a ring <paramref name="w"/> into the pane between two depths (the exterior half the sash or glass closes on).</summary>
+    static IEnumerable<JoineryBox> Stop(CellRect r, double w, double ya, double yb) =>
+        w <= 1e-6 || yb - ya <= 1e-6 ? [] : Ring(r, w, ya, yb, "frame");
+
+    /// <summary>Glazing beads inside a pane, on the interior side of the glass (or panel) of thickness <paramref name="t"/> centred on <paramref name="y"/>.</summary>
+    static IEnumerable<JoineryBox> Beads(CellRect r, double w, double y, double t, string role) =>
+        w <= 1e-6 ? [] : Ring(r, w, y - t / 2 - 0.018, y - t / 2, role);
+
     static JoineryBox Glass(CellRect r, double inset, double y, double t) =>
         new("glass", new(r.X0 + inset, y - t / 2, r.Z0 + inset), new(r.X1 - inset, y + t / 2, r.Z1 - inset));
 
@@ -562,33 +609,64 @@ public static class Joinery
         boxes.AddRange(Bars(s, panels, y0, y1));
 
         var sh = s.Sash;
+        var pr = s.Profile;
         foreach (var p in panels)
         {
             var r = PanelRect(s, p);
+            var solid = InfillOf(p) == "solid";
             double sy0 = f.Offset - sh.Depth / 2, sy1 = f.Offset + sh.Depth / 2;
             if (IsDoorLeaf(p.Operation))
             {
                 var t = sh.LeafThickness;
                 double ly0 = f.Offset - t / 2, ly1 = f.Offset + t / 2;
-                if (p.Glazed)
+                if (!solid)
                 {
                     boxes.AddRange(Ring(r, sh.Width, ly0, ly1, "leaf"));
                     boxes.Add(Glass(r, sh.Width, f.Offset, sh.GlassThickness));
+                    if (pr != null) boxes.AddRange(Beads(Inset(r, sh.Width), pr.Bead, f.Offset, sh.GlassThickness, "leaf"));
                 }
                 else boxes.Add(new("leaf", new(r.X0, ly0, r.Z0), new(r.X1, ly1, r.Z1)));
                 // A door has its handle on both faces.
                 boxes.AddRange(HandleBoxes(s, r, p.Operation, ly0, -1, true));
                 boxes.AddRange(HandleBoxes(s, r, p.Operation, ly1, +1, true));
             }
-            else if (p.Operation == "fixed") { boxes.Add(Glass(r, 0, f.Offset, sh.GlassThickness)); boxes.AddRange(Muntins(s, r, f.Offset, sh.Depth)); }
+            else if (p.Operation == "fixed")
+            {
+                // Glazed straight into the frame (a rebate holds it, beads inside), or an opaque panel.
+                if (solid) boxes.Add(Panel(r, 0, f.Offset, Math.Max(sh.LeafThickness, sh.GlassThickness)));
+                else
+                {
+                    boxes.Add(Glass(r, 0, f.Offset, sh.GlassThickness));
+                    boxes.AddRange(Muntins(s, r, f.Offset, sh.Depth));
+                }
+                if (pr != null)
+                {
+                    boxes.AddRange(Stop(r, pr.Rebate, f.Offset + (solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness) / 2, y1));
+                    boxes.AddRange(Beads(r, pr.Bead, f.Offset, solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness, "frame"));
+                }
+            }
             else
             {
                 boxes.AddRange(Ring(r, sh.Width, sy0, sy1, "sash"));
-                boxes.Add(Glass(r, sh.Width, f.Offset, sh.GlassThickness));
-                boxes.AddRange(Muntins(s, new CellRect(r.X0 + sh.Width, r.X1 - sh.Width, r.Z0 + sh.Width, r.Z1 - sh.Width), f.Offset, sh.Depth));
-                boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0, -1, false));
+                if (solid) boxes.Add(Panel(r, sh.Width, f.Offset, Math.Max(sh.LeafThickness, sh.GlassThickness)));
+                else
+                {
+                    boxes.Add(Glass(r, sh.Width, f.Offset, sh.GlassThickness));
+                    boxes.AddRange(Muntins(s, new CellRect(r.X0 + sh.Width, r.X1 - sh.Width, r.Z0 + sh.Width, r.Z1 - sh.Width), f.Offset, sh.Depth));
+                }
+                if (pr != null)
+                {
+                    // The frame's stop on the exterior half, the sash's lip lapping over the frame inside, its beads, its drip.
+                    boxes.AddRange(Stop(r, pr.Rebate, sy1, y1));
+                    if (pr.Overlap > 0) boxes.AddRange(Ring(Grow(r, pr.Overlap), pr.Overlap + Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
+                    boxes.AddRange(Beads(Inset(r, sh.Width), pr.Bead, f.Offset, solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness, "sash"));
+                    if (pr.Drip && !s.IsDoor) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
+                }
+                boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && pr.Overlap > 0 ? 0.006 : 0), -1, false));
             }
         }
+        // A drip on the frame's bottom member outside.
+        if (pr is { Drip: true } && !s.IsDoor && inner.Z0 > 1e-6) boxes.Add(new("frame", new(inner.X0, y1, inner.Z0 - 0.012), new(inner.X1, y1 + 0.015, inner.Z0)));
 
         if (!s.IsDoor)
         {

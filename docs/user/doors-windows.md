@@ -40,15 +40,36 @@ Selected, an opening has grips like a window: drag its middle to slide it along 
 
 The drawings on the right show the type as it will be drawn in elevation, plan and section, while you change it.
 
-**Left and right.** A door's swing is named the way architects name it: look from the handle towards the hinges; a leaf that opens to the left of that line is a left swing, one that opens to the right a right swing. The configurator's choices for a leaf say it so, with the side of its hinges in the **Panels** grid, which is seen from outside, the side the panels are pushed from: *Swing right (hinges at left)*. An IFC file names the hand its own way (the hinges as seen looking the way the leaf opens), so the same door is written there as SINGLE_SWING_LEFT; Lapin turns one into the other when it writes and reads IFC. A window's left and right are seen from inside, the side its sashes open to: *Side hung right (hinges at left)* in the configurator, whose grid is seen from outside. IFC writes the same window as left-handed. The elevation is seen from inside, the side the panels open to, unless **From outside** is ticked; like the plan, it shows the door as it stands in the model. A door flipped to the other hand (**Hand**, or a flip arrow along the wall) is the mirror image of its type; the schedules list it on its own card (see [Schedules](schedules.md)).
+**Left and right.** A door's swing is named the way architects name it: look from the handle towards the hinges; a leaf that opens to the left of that line is a left swing, one that opens to the right a right swing. The configurator's choices for a leaf say it so, with the side of its hinges in a pane's **Opens**, seen from outside, the side the panels are pushed from: *Swing right (hinges at left)*. An IFC file names the hand its own way (the hinges as seen looking the way the leaf opens), so the same door is written there as SINGLE_SWING_LEFT; Lapin turns one into the other when it writes and reads IFC. A window's left and right are seen from inside, the side its sashes open to: *Side hung right (hinges at left)* in the configurator, whose panes are seen from outside. IFC writes the same window as left-handed. The elevation is seen from inside, the side the panels open to, unless **From outside** is ticked; like the plan, it shows the door as it stands in the model. A door flipped to the other hand (**Hand**, or a flip arrow along the wall) is the mirror image of its type; the schedules list it on its own card (see [Schedules](schedules.md)).
 
 ![The configurator for doors and windows](shots/joinery-configurator.webp)
 
 **Save type** keeps your changes. Every door or window of that type follows them. **Place with it** closes the configurator and starts placing that type.
 
-### Windows with more panes
+### Panes, mullions and profiles
 
-**Columns of panes** takes the panes' relative widths, one number for each: `1 1` is two equal panes, `1 1 1` three, `1 2 1` a wide one between two narrow ones. **Rows of panes** splits the window in height the same way, from the bottom up: `1 1` gives two rows. Six panes are `1 1 1` in Columns of panes and `1 1` in Rows of panes. Then, in **Panels**, choose how each pane opens: fixed, side-hung, tilt-and-turn, bottom-hung, top-hung, pivoting or sliding.
+A door or a window is a grid of panes. Every pane chooses how it opens and what fills it, so one type can hold a pair of leaves with side lights and a transom over them, or a window with a solid panel under a sash.
+
+**Columns (relative)** and **Rows (relative)** divide the opening quickly: `1 1` is two equal panes, `1 1 1` three, `2 1` a wide one beside a narrow one. Rows count from the bottom up.
+
+**Column widths** and **Row heights** give the same sizes in millimetres. Type one and the last takes up the rest. In the elevation you can also drag a mullion or a transom; the distance shows as you drag.
+
+**Mullion width** and **Transom width** are their own sizes, apart from **Frame width**. A frame of 50 mm with mullions of 50 mm reads as 50 mm everywhere.
+
+**Panes** lists every pane. Click one, in the list or in the elevation, to edit it:
+
+- **Opens**: fixed, a sash (side-hung, tilt-and-turn, bottom-hung, top-hung, pivoting, sliding) or, on a door, a leaf.
+- **Infill**: **Glass** or **Solid panel**. A door's leaves and side panels can be solid, and so can a window's pane (a panel under a sash, an opaque light).
+- **Split**: **Into columns** or **Into rows**, at a distance in millimetres from the pane's left or bottom edge (half by default). Split across, a door leaf keeps its lower part and the upper part becomes a fixed glazed fanlight.
+- **Merge**: with the pane beside it, above it or below it, when they share a whole edge. Mullions and transoms no pane needs any more go.
+
+![A shop door in one type: two leaves, side lights and a transom across](shots/joinery-panes.webp)
+
+**Profile system** starts the type from a **PVC**, **Aluminium**, **Timber** or **Steel (slim)** profile: it sets the frame, mullion, transom and sash sizes and gives the profiles their finer shapes. The frame has a **Rebate** the sash closes on, the sash laps over the frame by its **Sash overlap**, **Glazing beads** hold the glass, and a window has a drip under its bottom rail. Every size stays editable. **Simple (plain profiles)** keeps plain rectangular members, as before.
+
+![A PVC window: the sashes lapping over the frame, the beads, a solid panel under a fixed light](shots/joinery-profiles-3d.webp)
+
+Under **Details**, **Interior sill** and **Exterior sill** switch the sills on and off, and **Jamb linings** switches the reveal's finish on the jambs and head. Where sills and linings are not used, untick them.
 
 ### Shutters, grilles, window boxes and canopies
 
@@ -85,7 +106,7 @@ On the facade, besides the surround, a window can have a **Keystone**, a **Crown
 
 A window type can project from its wall. In the configurator, **Projects** makes it a **Bay** (a centre and two sides at an angle to the wall), a **Bow** (equal panels on an arc) or a **Box** (sides square to the wall), and **New bay window** starts a new type as a 45° bay. The window still fills one opening in the wall, as wide and high as the type: it is placed, moved, copied, flipped, numbered and scheduled like any window. **Architecture → Bay window** (<kbd>BW</kbd>) puts one in the wall you click: the type picked in the configurator when it projects, else the project's first bay, else a 45° bay.
 
-The grid's columns are its faces. A bay's and a box's first and last columns are its sides and the columns between them its centre; a bow has one face per column, their widths sharing the arc. Each pane opens as **Panels** says, so a bay can have its sides opening and its centre fixed. Then:
+The grid's columns are its faces. A bay's and a box's first and last columns are its sides and the columns between them its centre; a bow has one face per column, their widths sharing the arc. Each pane opens as its **Opens** says, so a bay can have its sides opening and its centre fixed. Then:
 
 - **Projection**, from the wall's exterior face to the frames' outer face, and for a bay the **Sides to the wall** angle (15° to 90°);
 - **Sides**: a box's sides glazed or solid, with their material;

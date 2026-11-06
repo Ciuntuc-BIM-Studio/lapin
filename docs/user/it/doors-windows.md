@@ -40,15 +40,36 @@ Selezionata, un’apertura ha maniglie come una finestra: trascina il suo centro
 
 I disegni a destra mostrano il tipo come verrà disegnato in prospetto, in pianta e in sezione, mentre lo modifichi.
 
-**Sinistra e destra.** Il verso di apertura di una porta si chiama come lo chiamano gli architetti: guarda dalla maniglia verso le cerniere; un’anta che si apre alla sinistra di questa linea apre a sinistra, una che si apre alla destra apre a destra. Le scelte del configuratore per un’anta lo dicono così, con il lato delle cerniere nella griglia **Ante**, vista dall’esterno, il lato da cui si spingono le ante: *Apertura a destra (cerniere a sinistra)*. Un file IFC chiama il verso a modo suo (le cerniere viste guardando dove si apre l’anta), così la stessa porta vi è scritta SINGLE_SWING_LEFT; Lapin passa dall’uno all’altro quando scrive e legge IFC. Sinistra e destra di una finestra si guardano dall’interno, il lato verso cui si aprono le ante: *Battente a destra (cerniere a sinistra)* nel configuratore, la cui griglia è vista dall’esterno. IFC scrive la stessa finestra come sinistra. Il prospetto è visto dall’interno, il lato verso cui si aprono le ante, a meno che non sia spuntato **Dall’esterno**; come la pianta, mostra la porta com’è nel modello. Una porta invertita sull’altro verso (**Verso**, o una freccia di inversione lungo il muro) è l’immagine speculare del suo tipo; gli abachi la mettono su una scheda a sé (vedi [Abachi](schedules.md)).
+**Sinistra e destra.** Il verso di apertura di una porta si chiama come lo chiamano gli architetti: guarda dalla maniglia verso le cerniere; un’anta che si apre alla sinistra di questa linea apre a sinistra, una che si apre alla destra apre a destra. Le scelte del configuratore per un’anta lo dicono così, con il lato delle cerniere nell’**Apertura** di una specchiatura, vista dall’esterno, il lato da cui si spingono le ante: *Apertura a destra (cerniere a sinistra)*. Un file IFC chiama il verso a modo suo (le cerniere viste guardando dove si apre l’anta), così la stessa porta vi è scritta SINGLE_SWING_LEFT; Lapin passa dall’uno all’altro quando scrive e legge IFC. Sinistra e destra di una finestra si guardano dall’interno, il lato verso cui si aprono le ante: *Battente a destra (cerniere a sinistra)* nel configuratore, le cui specchiature sono viste dall’esterno. IFC scrive la stessa finestra come sinistra. Il prospetto è visto dall’interno, il lato verso cui si aprono le ante, a meno che non sia spuntato **Dall’esterno**; come la pianta, mostra la porta com’è nel modello. Una porta invertita sull’altro verso (**Verso**, o una freccia di inversione lungo il muro) è l’immagine speculare del suo tipo; gli abachi la mettono su una scheda a sé (vedi [Abachi](schedules.md)).
 
 ![Il configuratore di porte e finestre](shots/joinery-configurator.webp)
 
 **Salva tipo** conserva le tue modifiche. Tutte le porte o finestre di quel tipo le seguono. **Posiziona con questo** chiude il configuratore e avvia il posizionamento di quel tipo.
 
-### Finestre con più ante
+### Specchiature, montanti e profili
 
-**Colonne di ante** accetta le larghezze relative delle ante, un numero per ciascuna: `1 1` sono due ante uguali, `1 1 1` tre, `1 2 1` una larga tra due strette. **Righe di ante** divide la finestra in altezza nello stesso modo, dal basso verso l’alto: `1 1` dà due righe. Sei ante sono `1 1 1` in Colonne di ante e `1 1` in Righe di ante. Poi, in **Pannelli**, scegli come si apre ogni anta: fissa, a battente, ad anta e ribalta, a vasistas, a sporgere, a bilico o scorrevole.
+Una porta o una finestra è una griglia di specchiature. Ogni specchiatura sceglie come si apre e che cosa la riempie, così un solo tipo può avere due ante con fiancoluce e un sopraluce sopra, o una finestra con un pannello cieco sotto un’anta.
+
+**Colonne (relative)** e **Righe (relative)** dividono il vano in fretta: `1 1` sono due specchiature uguali, `1 1 1` tre, `2 1` una larga accanto a una stretta. Le righe si contano dal basso verso l’alto.
+
+**Larghezze delle colonne** e **Altezze delle righe** danno le stesse misure in millimetri. Scrivile e l’ultima prende il resto. Nel prospetto puoi anche trascinare un montante o un traverso; la distanza si vede mentre trascini.
+
+**Larghezza del montante** e **Larghezza del traverso** hanno misure proprie, a parte la **Larghezza del telaio**. Un telaio di 50 mm con montanti di 50 mm si legge 50 mm ovunque.
+
+**Specchiature** elenca ogni specchiatura. Fai clic su una, nell’elenco o nel prospetto, per modificarla:
+
+- **Apertura**: fissa, un’anta (a battente, ad anta e ribalta, a vasistas, a sporgere, a bilico, scorrevole) o, in una porta, un’anta di porta.
+- **Tamponamento**: **Vetro** o **Pannello cieco**. Le ante e i fiancoluce di una porta possono essere ciechi, e così una specchiatura di finestra (un pannello sotto un’anta, una luce opaca).
+- **Dividi**: **In colonne** o **In righe**, a una distanza in millimetri dal bordo sinistro o inferiore della specchiatura (a metà, se non indicato). Divisa di traverso, un’anta di porta tiene la parte bassa e quella alta diventa un sopraluce vetrato fisso.
+- **Unisci**: con la specchiatura accanto, sopra o sotto, quando hanno in comune un intero lato. I montanti e i traversi che non servono più a nessuna specchiatura spariscono.
+
+![Una porta di negozio in un solo tipo: due ante, fiancoluce e un sopraluce per tutta la larghezza](shots/joinery-panes.webp)
+
+**Sistema di profili** parte da un profilo in **PVC**, **Alluminio**, **Legname** o **Acciaio (sottile)**: imposta le misure di telaio, montanti, traversi e ante e dà ai profili le loro forme fini. Il telaio ha una **Battuta** su cui l’anta chiude, l’anta si sovrappone al telaio per il suo **Sormonto dell’anta**, i **fermavetri** tengono il vetro e una finestra ha un gocciolatoio sotto il traverso inferiore. Ogni misura resta modificabile. **Semplice (profili lisci)** mantiene elementi rettangolari semplici, come prima.
+
+![Una finestra in PVC: le ante che si sovrappongono al telaio, i fermavetri, un pannello cieco sotto una luce fissa](shots/joinery-profiles-3d.webp)
+
+In **Dettagli**, **Davanzale interno** e **Davanzale esterno** attivano e disattivano i davanzali, e **Rivestimento delle spallette** attiva la finitura della mazzetta sulle spalle e sull’architrave. Dove davanzali e rivestimenti non servono, togli la spunta.
 
 ### Scuri, grate, fioriere e pensiline
 
@@ -85,7 +106,7 @@ Sulla facciata, oltre alla cornice, una finestra può avere una **Chiave di volt
 
 Un tipo di finestra può sporgere dal muro. Nel configuratore, **Projects** la rende un **Bay** (un centro e due lati inclinati), un **Bow** (pannelli uguali su un arco) o un **Box** (lati a squadra con il muro), e **New bay window** inizia un nuovo tipo come bow-window a 45°. La finestra riempie sempre una sola apertura del muro, larga e alta quanto il tipo: si posa, sposta, copia, ribalta, numera e compare negli abachi come ogni finestra. **Architecture → Bay window** (<kbd>BW</kbd>) ne mette una nel muro cliccato: il tipo scelto nel configuratore se sporge, altrimenti il primo bow-window del progetto, altrimenti un bow-window a 45°.
 
-Le colonne della griglia sono le sue facce. In un bow-window e in una scatola la prima e l'ultima colonna sono i lati, quelle in mezzo il centro; una finestra ad arco ha una faccia per colonna, le loro larghezze che si dividono l'arco. Ogni anta si apre come dice **Panels**, quindi i lati possono aprirsi e il centro restare fisso. Poi:
+Le colonne della griglia sono le sue facce. In un bow-window e in una scatola la prima e l'ultima colonna sono i lati, quelle in mezzo il centro; una finestra ad arco ha una faccia per colonna, le loro larghezze che si dividono l'arco. Ogni specchiatura si apre come dice la sua **Apertura**, quindi i lati possono aprirsi e il centro restare fisso. Poi:
 
 - **Projection**, dalla faccia esterna del muro alla faccia esterna dei telai, e per un bow-window l'angolo **Sides to the wall** (da 15° a 90°);
 - **Sides**: i lati della scatola vetrati o pieni, con il loro materiale;

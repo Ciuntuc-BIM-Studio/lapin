@@ -224,9 +224,15 @@ public static class JoinerySymbols
         {
             var r = Joinery.PanelRect(s, p);
             o.Add(Rect(r.X0, r.Z0, r.X1, r.Z1, "outline"));
-            var sash = p.Operation != "fixed" && (!Joinery.IsDoorLeaf(p.Operation) || p.Glazed);
+            var sash = p.Operation != "fixed" && (!Joinery.IsDoorLeaf(p.Operation) || Joinery.InfillOf(p) == "glass");
             var inner = sash ? new CellRect(r.X0 + s.Sash.Width, r.X1 - s.Sash.Width, r.Z0 + s.Sash.Width, r.Z1 - s.Sash.Width) : r;
             if (sash) o.Add(Rect(inner.X0, inner.Z0, inner.X1, inner.Z1, "thin"));
+            // An opaque panel in a window's pane or a fixed side panel (decision 370): its moulding, a rectangle inside.
+            if (Joinery.InfillOf(p) == "solid" && !Joinery.IsDoorLeaf(p.Operation))
+            {
+                var g = Math.Min(0.06, Math.Min(inner.X1 - inner.X0, inner.Z1 - inner.Z0) / 6);
+                o.Add(Rect(inner.X0 + g, inner.Z0 + g, inner.X1 - g, inner.Z1 - g, "thin"));
+            }
             o.AddRange(OpeningMarks(p.Operation, r, exterior, convention));
             if (hardware) o.AddRange(Hardware(s, p, r));
         }

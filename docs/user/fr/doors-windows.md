@@ -40,15 +40,36 @@ Sélectionnée, une baie a des poignées comme une fenêtre : faites glisser son
 
 Les dessins à droite montrent le type tel qu’il sera dessiné en élévation, en plan et en coupe, pendant que vous le modifiez.
 
-**Gauche et droite.** Le sens d’ouverture d’une porte est nommé comme le nomment les architectes : regardez de la poignée vers les paumelles ; un vantail qui s’ouvre à gauche de cette ligne s’ouvre à gauche, un qui s’ouvre à droite, à droite. Les choix du configurateur pour un vantail le disent ainsi, avec le côté de ses paumelles dans la grille **Vantaux**, vue de l’extérieur, du côté d’où l’on pousse les vantaux : *Ouverture à droite (paumelles à gauche)*. Un fichier IFC nomme la main à sa façon (les paumelles vues en regardant dans le sens où s’ouvre le vantail), si bien que la même porte y est écrite SINGLE_SWING_LEFT ; Lapin passe de l’une à l’autre en écrivant et en lisant l’IFC. La gauche et la droite d’une fenêtre se voient de l’intérieur, du côté vers lequel s’ouvrent ses ouvrants : *Battant à droite (paumelles à gauche)* dans le configurateur, dont la grille est vue de l’extérieur. IFC écrit la même fenêtre comme gauche. L’élévation est vue de l’intérieur, du côté vers lequel s’ouvrent les vantaux, sauf si **Depuis l’extérieur** est coché ; comme le plan, elle montre la porte telle qu’elle est dans le modèle. Une porte retournée sur l’autre main (**Main**, ou une flèche de retournement le long du mur) est l’image en miroir de son type ; les nomenclatures la mettent sur une fiche à part (voir [Nomenclatures](schedules.md)).
+**Gauche et droite.** Le sens d’ouverture d’une porte est nommé comme le nomment les architectes : regardez de la poignée vers les paumelles ; un vantail qui s’ouvre à gauche de cette ligne s’ouvre à gauche, un qui s’ouvre à droite, à droite. Les choix du configurateur pour un vantail le disent ainsi, avec le côté de ses paumelles dans l’**Ouverture** d’un compartiment, vue de l’extérieur, du côté d’où l’on pousse les vantaux : *Ouverture à droite (paumelles à gauche)*. Un fichier IFC nomme la main à sa façon (les paumelles vues en regardant dans le sens où s’ouvre le vantail), si bien que la même porte y est écrite SINGLE_SWING_LEFT ; Lapin passe de l’une à l’autre en écrivant et en lisant l’IFC. La gauche et la droite d’une fenêtre se voient de l’intérieur, du côté vers lequel s’ouvrent ses ouvrants : *Battant à droite (paumelles à gauche)* dans le configurateur, dont les compartiments sont vus de l’extérieur. IFC écrit la même fenêtre comme gauche. L’élévation est vue de l’intérieur, du côté vers lequel s’ouvrent les vantaux, sauf si **Depuis l’extérieur** est coché ; comme le plan, elle montre la porte telle qu’elle est dans le modèle. Une porte retournée sur l’autre main (**Main**, ou une flèche de retournement le long du mur) est l’image en miroir de son type ; les nomenclatures la mettent sur une fiche à part (voir [Nomenclatures](schedules.md)).
 
 ![Le configurateur des portes et fenêtres](shots/joinery-configurator.webp)
 
 **Enregistrer le type** conserve vos modifications. Chaque porte ou fenêtre de ce type les suit. **Placer avec** ferme le configurateur et commence à placer ce type.
 
-### Fenêtres à plusieurs vantaux
+### Compartiments, meneaux et profilés
 
-**Colonnes de vantaux** reçoit les largeurs relatives des vantaux, un nombre pour chacun : `1 1` donne deux vantaux égaux, `1 1 1` trois, `1 2 1` un large entre deux étroits. **Rangées de vantaux** divise la fenêtre en hauteur de la même façon, de bas en haut : `1 1` donne deux rangées. Six vantaux, c’est `1 1 1` dans Colonnes de vantaux et `1 1` dans Rangées de vantaux. Ensuite, dans **Vantaux**, choisissez comment s’ouvre chaque vantail : fixe, à la française, oscillo-battant, à soufflet, à l’italienne, pivotant ou coulissant.
+Une porte ou une fenêtre est une grille de compartiments. Chaque compartiment choisit comment il s’ouvre et ce qui le remplit : un même type peut ainsi réunir deux vantaux avec des parties latérales et une imposte au-dessus, ou une fenêtre avec un panneau plein sous un ouvrant.
+
+**Colonnes (relatives)** et **Rangées (relatives)** divisent vite la baie : `1 1` donne deux compartiments égaux, `1 1 1` trois, `2 1` un large à côté d’un étroit. Les rangées se comptent de bas en haut.
+
+**Largeurs des colonnes** et **Hauteurs des rangées** donnent les mêmes tailles en millimètres. Saisissez-les, la dernière prend le reste. Dans l’élévation, vous pouvez aussi faire glisser un meneau ou une traverse ; la distance s’affiche pendant le glissement.
+
+**Largeur du meneau** et **Largeur de la traverse** ont leurs propres tailles, à part de la **Largeur du cadre**. Un cadre de 50 mm avec des meneaux de 50 mm se lit partout comme 50 mm.
+
+**Compartiments** liste chaque compartiment. Cliquez sur l’un d’eux, dans la liste ou dans l’élévation, pour le modifier :
+
+- **Ouverture** : fixe, un ouvrant (à la française, oscillo-battant, à soufflet, à l’italienne, pivotant, coulissant) ou, sur une porte, un vantail.
+- **Remplissage** : **Verre** ou **Panneau plein**. Les vantaux et les parties latérales d’une porte peuvent être pleins, tout comme un compartiment de fenêtre (un panneau sous un ouvrant, un jour opaque).
+- **Scinder** : **En colonnes** ou **En rangées**, à une distance en millimètres du bord gauche ou bas du compartiment (la moitié par défaut). Scindé en travers, un vantail de porte garde sa partie basse et la partie haute devient une imposte vitrée fixe.
+- **Fusionner** : avec le compartiment voisin, au-dessus ou en dessous, quand ils partagent un bord entier. Les meneaux et traverses dont plus aucun compartiment n’a besoin disparaissent.
+
+![Une porte de magasin en un seul type : deux vantaux, des parties latérales et une imposte sur toute la largeur](shots/joinery-panes.webp)
+
+**Système de profilés** part d’un profilé **PVC**, **Aluminium**, **Bois** ou **Acier (fin)** : il fixe les tailles du dormant, des meneaux, des traverses et des ouvrants et donne aux profilés leurs formes fines. Le dormant a une **Feuillure** sur laquelle l’ouvrant se ferme, l’ouvrant recouvre le dormant de son **Recouvrement de l’ouvrant**, des **parcloses** tiennent le verre, et une fenêtre a un jet d’eau sous sa traverse basse. Chaque taille reste modifiable. **Simple (profilés droits)** garde des pièces rectangulaires simples, comme avant.
+
+![Une fenêtre PVC : les ouvrants qui recouvrent le dormant, les parcloses, un panneau plein sous un fixe](shots/joinery-profiles-3d.webp)
+
+Sous **Détails**, **Tablette intérieure** et **Appui extérieur** activent ou désactivent les appuis, et **Habillage des tableaux** active la finition de l’embrasure sur les tableaux et le linteau. Là où appuis et habillages ne servent pas, décochez-les.
 
 ### Volets, grilles, jardinières et auvents
 
@@ -85,7 +106,7 @@ Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé d
 
 Un type de fenêtre peut faire saillie sur son mur. Dans le configurateur, **Projects** en fait un **Bay** (un centre et deux côtés en biais), un **Bow** (des panneaux égaux sur un arc) ou un **Box** (côtés d'équerre avec le mur), et **New bay window** commence un nouveau type en bow-window à 45°. La fenêtre remplit toujours une seule ouverture du mur, aussi large et haute que le type : elle se pose, se déplace, se copie, se retourne, se numérote et se liste comme toute fenêtre. **Architecture → Bay window** (<kbd>BW</kbd>) en pose une dans le mur cliqué : le type choisi dans le configurateur s'il fait saillie, sinon le premier bow-window du projet, sinon un bow-window à 45°.
 
-Les colonnes de la grille sont ses faces. Pour un bow-window et une boîte, la première et la dernière colonne sont ses côtés, celles d'entre elles son centre ; une fenêtre arrondie a une face par colonne, leurs largeurs se partageant l'arc. Chaque vantail s'ouvre comme le dit **Panels** : les côtés peuvent s'ouvrir et le centre rester fixe. Puis :
+Les colonnes de la grille sont ses faces. Pour un bow-window et une boîte, la première et la dernière colonne sont ses côtés, celles d'entre elles son centre ; une fenêtre arrondie a une face par colonne, leurs largeurs se partageant l'arc. Chaque compartiment s'ouvre comme le dit son **Ouverture** : les côtés peuvent s'ouvrir et le centre rester fixe. Puis :
 
 - **Projection**, de la face extérieure du mur à la face extérieure des cadres, et pour un bow-window l'angle **Sides to the wall** (15° à 90°) ;
 - **Sides** : les côtés de la boîte vitrés ou pleins, avec leur matériau ;

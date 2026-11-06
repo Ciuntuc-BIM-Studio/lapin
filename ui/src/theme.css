@@ -1866,3 +1866,8 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .dialog[data-dialog=fan-types] .type-list .tree-item, .dialog[data-dialog=gate-types] .type-list .tree-item { white-space: normal; align-items: flex-start; line-height: 1.3; padding-top: 3px; padding-bottom: 3px; }
 .dialog[data-dialog=fan-types] .type-list .tree-item > span:first-of-type, .dialog[data-dialog=gate-types] .type-list .tree-item > span:first-of-type { flex: 1; min-width: 0; }
 @media (max-width: 760px) { .configurator-grid { grid-template-columns: 1fr; } }
+/* The doors' and windows' pane editor (decision 370): the panes as chips, the one picked lit; sizes typed in a row. */
+.pane-editor { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 3px; }
+.pane-chips .chip { margin: 0; cursor: pointer; background: none; border-color: var(--rule-strong); color: var(--ink-muted); text-transform: none; letter-spacing: 0; font-size: 11px; padding: 1px 8px; }
+.pane-chips .chip.on { border-color: var(--accent); color: var(--accent); font-weight: 600; background: var(--accent-wash); }
+.size-row input.mini { padding: 2px 4px; }

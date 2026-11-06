@@ -432,6 +432,54 @@ export const scenes = [
     },
   },
   {
+    // Panes, mullions and profiles (decision 370, a tester's questions): a shop door made in the pane editor (four columns, a
+    // transom split off each and merged across, two leaves, one solid side panel), then a PVC window in a wall, in 3D.
+    id: 'joinery-panes',
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const d = page.locator('.dialog');
+      await t.tool('architecture.joineryTypes');
+      await page.waitForSelector('.dialog [data-testid=pane-editor]', { timeout: 15000 });
+      await d.getByRole('button', { name: /New door/ }).first().click();
+      await t.wait(800);
+      const field = async (label, value) => { const i = d.locator('.field-line', { hasText: new RegExp(`^${label}`) }).locator('input').first(); await i.fill(value); await i.press('Enter'); await t.wait(300); };
+      await field('Width', '2400');
+      await field('Height', '2700');
+      await d.locator('input[data-field=columns]').fill('1 1.5 1.5 1');
+      await d.locator('input[data-field=columns]').press('Tab');
+      await t.wait(800);
+      for (const c of [0, 1, 2, 3]) {
+        await d.locator(`[data-pane="${c}:0"]`).click(); await t.wait(300);
+        await d.locator('[data-field=split-row-at]').fill('2150'); await d.locator('[data-action=split-row]').click(); await t.wait(500);
+      }
+      await d.locator('[data-pane="1:0"]').click(); await t.wait(200); await d.locator('select[data-field=pane-operation]').selectOption('swing-left'); await t.wait(300);
+      await d.locator('[data-pane="2:0"]').click(); await t.wait(200); await d.locator('select[data-field=pane-operation]').selectOption('swing-right'); await t.wait(300);
+      await d.locator('select[data-field=pane-infill]').selectOption('glass'); await t.wait(300);
+      await d.locator('[data-pane="0:0"]').click(); await t.wait(200); await d.locator('select[data-field=pane-infill]').selectOption('solid'); await t.wait(300);
+      await d.locator('[data-pane="0:1"]').click(); await t.wait(300);
+      for (let i = 0; i < 3; i++) { await d.locator('[data-action=merge-right]').click(); await t.wait(700); }
+      t.expect(await d.locator('[data-pane]').count() === 5, 'two leaves, two side lights and a transom across');
+      await d.locator('[data-testid=pane-editor]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(800);
+      await t.shot('joinery-panes', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // A PVC window: a solid panel under a fixed light, two sashes over them.
+      const s = await t.storey();
+      const info = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().info.catalogs['architecture.joinery']);
+      const sys = info.profileSystems.pvc;
+      const spec = { ...info.defaultWindow, name: 'PVC 1200', frame: { ...sys.frame, offset: 0 }, sash: sys.sash, profile: sys.profile, columns: [1, 1], rows: [400, 1000],
+        panels: [{ col: 0, row: 0, operation: 'fixed', infill: 'solid' }, { col: 1, row: 0, operation: 'fixed' }, { col: 0, row: 1, operation: 'tilt-turn-left' }, { col: 1, row: 1, operation: 'side-right' }] };
+      const type = (await t.cmd('architecture.createJoineryType', { spec })).id;
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 4, y2: 0 })).id;
+      await t.cmd('architecture.addWindow', { wallId: wall, x: 2, y: 0, typeId: type });
+      await open3d(t);
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.2, pitch: -0.15, distance: 2.6, target: { x: 2, y: 0, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('joinery-profiles-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     id: 'window-dressings',
     async run(t) {
       await t.fresh();

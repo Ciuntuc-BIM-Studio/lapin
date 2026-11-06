@@ -22,8 +22,11 @@ import { deleteType } from '../core/deleteType';
 import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
+import { merge, neighbour, normalised, resized, shifted, split, type GridSpec } from './joineryGrid';
 
-interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean }
+interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
+/** A profile system's finer shapes (decision 370): the frame's rebate, the sash lapping over it, glazing beads, a drip. */
+interface Profile { system: string; rebate: number; overlap: number; bead: number; drip: boolean }
 
 /**
  * A hinged door leaf's operation as the schedules name its hand (report #91) and a window's: looking from the handle towards the
@@ -54,6 +57,7 @@ interface Spec {
   materials?: Materials | null;
   /** A window that projects from its wall (report #60): a bay, a bow or a box. */
   bay?: Bay | null;
+  profile?: Profile | null;
 }
 /** The parts' materials by name (report #76); a part without one keeps its colour. */
 interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
@@ -124,7 +128,7 @@ function styleDetails(key: string, d: Details): Details {
     default: return bare;
   }
 }
-export interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number }[]; ifcType: string }
+export interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number; col?: number; row?: number; colSpan?: number; rowSpan?: number; infill?: string }[]; ifcType: string; grid?: { inner: number[]; cols: [number, number][]; rows: [number, number][] } | null }
 export interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 export interface Drawing { strokes: Stroke[] }
 export interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
@@ -391,12 +395,13 @@ function HardwareFields({ spec, onChange }: { spec: Spec; onChange: (patch: Part
 }
 
 /** A sill's fields: on or off, then its sizes (mm), slope (°, the exterior one) and material. */
-function SillFields({ label, sill, fallback, slope = false, onChange }: { label: string; sill: Sill | null; fallback: Sill; slope?: boolean; onChange: (s: Sill) => void }) {
-  const on = sill?.on ?? false;
+function SillFields({ label, sill, fallback, slope = false, board = 0, onChange, onBoard }: { label: string; sill: Sill | null; fallback: Sill; slope?: boolean; board?: number; onChange: (s: Sill) => void; onBoard?: (m: number) => void }) {
+  // On when the detailed sill is, or (none set) when the type's plain board is drawn; off takes both away (a tester's wish: no sills).
+  const on = sill ? sill.on : board > 0;
   const cur = sill ?? fallback;
   return (
     <>
-      <label className="field-line check"><input type="checkbox" checked={on} onChange={(e) => onChange({ ...cur, on: e.target.checked })} /><span>{label}</span></label>
+      <label className="field-line check"><input type="checkbox" data-sill={label} checked={on} onChange={(e) => { onChange({ ...cur, on: e.target.checked }); if (!e.target.checked) onBoard?.(0); }} /><span>{label}</span></label>
       {on && <>
         <Mm label="Projection" value={cur.projection} onChange={(v) => onChange({ ...cur, projection: v })} />
         <Mm label="Thickness" value={cur.thickness} onChange={(v) => onChange({ ...cur, thickness: v })} />
@@ -408,6 +413,149 @@ function SillFields({ label, sill, fallback, slope = false, onChange }: { label:
   );
 }
 
+const PROFILE_LABELS: Record<string, string> = { pvc: 'PVC', aluminium: 'Aluminium', timber: 'Timber', steel: 'Steel (slim)' };
+/** A size kept as a relative weight: millimetres to a tenth. */
+const roundW = (v: number) => Math.round(v * 10) / 10;
+
+/** The columns' widths or the rows' heights in mm, each typed in; the last takes up the difference. */
+function SizeRow({ label, sizes, field, onCommit }: { label: string; sizes: number[]; field: string; onCommit: (i: number, mm: number) => void }) {
+  return (
+    <div className="field-line size-row"><span className="eyebrow">{label}</span>
+      <span className="row wrap" style={{ gap: 4 }}>
+        {sizes.map((v, i) => (
+          <input key={`${i}:${v}`} data-field={`${field}-${i}`} className="num mini" defaultValue={String(v)} title={i === sizes.length - 1 ? 'The last one takes up the rest' : 'mm'} style={{ width: 64 }}
+            onBlur={(e) => { const n = Number(e.target.value.replace(',', '.')); if (n > 0 && Math.abs(n - v) > 0.05) onCommit(i, n); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+        ))}
+        <span className="muted small">mm</span>
+      </span>
+    </div>
+  );
+}
+
+const INFILL_LABELS: Record<string, string> = { glass: 'Glass', solid: 'Solid panel' };
+
+/**
+ * The pane picked (decision 370): how it opens, what fills it (glass, or a solid panel: a door's lower panel, a window's
+ * opaque infill), split in two at a distance from its left or bottom edge, merged with the pane beside it.
+ */
+function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid, colSizes, rowSizes, at, setAt }: {
+  spec: Spec; preview: Preview2 | null; pane: { col: number; row: number } | null; operations: string[];
+  at: { col: string; row: string }; setAt: (a: { col: string; row: string }) => void;
+  onPick: (p: { col: number; row: number } | null) => void; onPanels: (p: Panel[]) => void; onGrid: (g: GridSpec) => void; colSizes: number[]; rowSizes: number[];
+}) {
+  const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame };
+  const panes = normalised(g) as Panel[];
+  const cur = panes.find((p) => pane && p.col === pane.col && p.row === pane.row) ?? panes[0];
+  const rect = preview?.panels.find((p) => p.col === cur?.col && p.row === cur?.row);
+  if (!cur) return null;
+  const width = rect ? Math.round((rect.x1 - rect.x0) * 1000) : 0, height = rect ? Math.round((rect.z1 - rect.z0) * 1000) : 0;
+  const patch = (x: Partial<Panel>) => onPanels(panes.map((p) => (p.col === cur.col && p.row === cur.row ? { ...p, ...x } : p)));
+  const infill = cur.infill ?? (spec.kind === 'door' && !['fixed'].includes(cur.operation) && !(catalogWindowOps.has(cur.operation)) ? (cur.glazed ? 'glass' : 'solid') : 'glass');
+  const doSplit = (axis: 'col' | 'row') => {
+    const total = axis === 'col' ? width : height;
+    const value = Number((axis === 'col' ? at.col : at.row).replace(',', '.')) || total / 2;
+    const r = split(g, axis === 'col' ? colSizes : rowSizes, cur, axis, value);
+    if (!r) { notify('Each part must keep 50 mm at least.'); return; }
+    onGrid(r.spec as unknown as GridSpec);
+  };
+  const doMerge = (side: 'left' | 'right' | 'below' | 'above') => {
+    const r = merge(g, { cols: colSizes, rows: rowSizes }, cur, side);
+    if (!r) return;
+    onGrid(r.spec);
+    // The merged pane picked: the one covering the merged pane's corner (grid lines may have gone, so it is looked up again).
+    const corner = { col: Math.min(cur.col, side === 'left' ? cur.col - 1 : cur.col), row: Math.min(cur.row, side === 'below' ? cur.row - 1 : cur.row) };
+    const merged = (normalised(r.spec) as Panel[]).find((p) => p.col <= corner.col && corner.col < p.col + (p.colSpan ?? 1) && p.row <= corner.row && corner.row < p.row + (p.rowSpan ?? 1));
+    onPick(merged ? { col: merged.col, row: merged.row } : null);
+  };
+  // A side to merge with is shown as it is seen from inside (the elevation's view): left and right swap.
+  const sides: { side: 'left' | 'right' | 'below' | 'above'; label: string }[] = [
+    { side: 'right', label: '← Merge left' }, { side: 'left', label: 'Merge right →' }, { side: 'above', label: '↑ Merge up' }, { side: 'below', label: '↓ Merge down' }];
+  return (
+    <div className="pane-editor" data-testid="pane-editor">
+      <p className="eyebrow"><span>Panes</span> · <span data-no-i18n>{panes.length}</span> · <span>Click one in the elevation</span></p>
+      <div className="row wrap pane-chips">
+        {panes.map((p) => (
+          <button key={`${p.col}:${p.row}`} type="button" className={`chip${p === cur ? ' on' : ''}`} data-pane={`${p.col}:${p.row}`} onClick={() => onPick({ col: p.col, row: p.row })}>
+            {p.col + 1}·{p.row + 1}{(p.colSpan ?? 1) > 1 || (p.rowSpan ?? 1) > 1 ? ` (${p.colSpan ?? 1}×${p.rowSpan ?? 1})` : ''}
+          </button>
+        ))}
+      </div>
+      <p className="muted small"><span>Pane</span> <span data-no-i18n>{cur.col + 1}·{cur.row + 1}: {width} × {height} mm</span></p>
+      <label className="field-line"><span className="eyebrow">Opens</span>
+        <select data-field="pane-operation" value={cur.operation} onChange={(e) => patch({ operation: e.target.value })}>
+          {operations.map((o) => <option key={o} value={o}>{HAND_LABELS[o] ?? o}</option>)}
+        </select></label>
+      <label className="field-line"><span className="eyebrow">Infill</span>
+        <select data-field="pane-infill" value={infill} onChange={(e) => patch({ infill: e.target.value, glazed: e.target.value === 'glass' })}>
+          {Object.entries(INFILL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select></label>
+      <div className="field-line"><span className="eyebrow">Split</span>
+        <span className="row wrap" style={{ gap: 4 }}>
+          <input className="num mini" style={{ width: 64 }} data-field="split-col-at" placeholder={String(Math.round(width / 2))} value={at.col} onChange={(e) => setAt({ ...at, col: e.target.value })} title="mm from the pane's left edge (seen from outside)" />
+          <button type="button" className="btn small" data-action="split-col" onClick={() => doSplit('col')}>Into columns</button>
+          <input className="num mini" style={{ width: 64 }} data-field="split-row-at" placeholder={String(Math.round(height / 2))} value={at.row} onChange={(e) => setAt({ ...at, row: e.target.value })} title="mm from the pane's bottom edge" />
+          <button type="button" className="btn small" data-action="split-row" onClick={() => doSplit('row')}>Into rows</button>
+        </span></div>
+      <div className="field-line"><span className="eyebrow">Merge</span>
+        <span className="row wrap" style={{ gap: 4 }}>
+          {sides.map(({ side, label }) => (
+            <button key={side} type="button" className="btn small" data-action={`merge-${side}`} disabled={!neighbour(g, cur, side)} onClick={() => doMerge(side)}>{label}</button>
+          ))}
+        </span></div>
+    </div>
+  );
+}
+/** The window operations: a pane of a door that opens as one is a sash, glass unless asked. */
+const catalogWindowOps = new Set(['side-left', 'side-right', 'tilt-turn-left', 'tilt-turn-right', 'bottom-hung', 'top-hung', 'pivot-horizontal', 'pivot-vertical', 'sliding-left', 'sliding-right', 'sliding-vertical']);
+
+/** Over the elevation: each pane to pick, outlined when picked; each mullion and transom to drag. */
+function PaneOverlay({ preview, pane, drag, sx, sy, kk, onPick, onDrag, onDrop }: {
+  preview: Preview2 | null; pane: { col: number; row: number } | null; drag: { axis: 'col' | 'row'; i: number; from: number; at: number } | null;
+  sx: (x: number) => number; sy: (y: number) => number; kk: number;
+  onPick: (p: { col: number; row: number }) => void; onDrag: (d: { axis: 'col' | 'row'; i: number; from: number; at: number } | null) => void; onDrop: (d: { axis: 'col' | 'row'; i: number; from: number; at: number }) => void;
+}) {
+  const grid = preview?.grid;
+  if (!grid || !preview) return null;
+  const [ix0, ix1, iz0, iz1] = grid.inner;
+  // Back from the drawing's coordinates to the type's (its scale is linear, X perhaps mirrored).
+  const toX = (svgX: number) => (svgX - sx(0)) / (sx(1) - sx(0));
+  const toZ = (svgY: number) => (svgY - sy(0)) / (sy(1) - sy(0));
+  const svgPoint = (e: React.PointerEvent<SVGElement>) => {
+    const svg = (e.currentTarget as SVGElement).ownerSVGElement!;
+    const m = svg.getScreenCTM()!.inverse();
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m);
+    return p;
+  };
+  const lines: { axis: 'col' | 'row'; i: number; at: number }[] = [
+    ...grid.cols.slice(0, -1).map((c, i) => ({ axis: 'col' as const, i, at: (c[1] + grid.cols[i + 1][0]) / 2 })),
+    ...grid.rows.slice(0, -1).map((r, i) => ({ axis: 'row' as const, i, at: (r[1] + grid.rows[i + 1][0]) / 2 })),
+  ];
+  return (
+    <g className="pane-overlay">
+      {preview.panels.map((p) => {
+        const on = pane ? p.col === pane.col && p.row === pane.row : false;
+        return <rect key={`${p.col}:${p.row}`} data-pane-rect={`${p.col}:${p.row}`} x={Math.min(sx(p.x0), sx(p.x1))} y={sy(p.z1)} width={(p.x1 - p.x0) * kk} height={(p.z1 - p.z0) * kk}
+          fill={on ? 'rgba(197, 90, 46, 0.12)' : 'transparent'} stroke={on ? '#c55a2e' : 'none'} strokeWidth={1.5} style={{ cursor: 'pointer' }}
+          onClick={() => p.col != null && p.row != null && onPick({ col: p.col, row: p.row })} />;
+      })}
+      {lines.map((l) => {
+        const live = drag && drag.axis === l.axis && drag.i === l.i ? drag.at : l.at;
+        const common = {
+          style: { cursor: l.axis === 'col' ? 'col-resize' : 'row-resize' } as React.CSSProperties,
+          onPointerDown: (e: React.PointerEvent<SVGElement>) => { (e.currentTarget as SVGElement).setPointerCapture(e.pointerId); onDrag({ axis: l.axis, i: l.i, from: l.at, at: l.at }); },
+          onPointerMove: (e: React.PointerEvent<SVGElement>) => { if (!drag || drag.axis !== l.axis || drag.i !== l.i) return; const q = svgPoint(e); onDrag({ ...drag, at: l.axis === 'col' ? toX(q.x) : toZ(q.y) }); },
+          onPointerUp: () => { if (drag && drag.axis === l.axis && drag.i === l.i) onDrop(drag); },
+        };
+        return l.axis === 'col'
+          ? <rect key={`c${l.i}`} data-divider={`col-${l.i}`} x={sx(live) - 4} y={sy(iz1)} width={8} height={(iz1 - iz0) * kk} fill={drag?.axis === 'col' && drag.i === l.i ? 'rgba(197,90,46,0.35)' : 'transparent'} {...common} />
+          : <rect key={`r${l.i}`} data-divider={`row-${l.i}`} x={Math.min(sx(ix0), sx(ix1))} y={sy(live) - 4} width={(ix1 - ix0) * kk} height={8} fill={drag?.axis === 'row' && drag.i === l.i ? 'rgba(197,90,46,0.35)' : 'transparent'} {...common} />;
+      })}
+      {drag && <text x={8} y={14} fontSize={11} fill="#c55a2e">{Math.round((drag.at - drag.from) * 1000)} mm</text>}
+    </g>
+  );
+}
+
 export function JoineryDialog() {
   const nodes = useSession((s) => s.nodes);
   const relations = useSession((s) => s.relations);
@@ -415,7 +563,8 @@ export function JoineryDialog() {
   const error = useSession((s) => s.error);
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = [...ofClass(model, 'IfcDoorType'), ...ofClass(model, 'IfcWindowType')];
-  const catalog = info?.catalogs['architecture.joinery'] as unknown as { windowOperations: string[]; doorOperations: string[]; defaultDoor: Spec; defaultWindow: Spec } | undefined;
+  const catalog = info?.catalogs['architecture.joinery'] as unknown as { windowOperations: string[]; doorOperations: string[]; defaultDoor: Spec; defaultWindow: Spec;
+    profileSystems?: Record<string, { frame: Spec['frame']; sash: Spec['sash']; profile: Profile }> } | undefined;
   const bayStyles = info?.catalogs['architecture.bayStyles'] as unknown as { spec: Spec }[] | undefined;
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
   // What a new type starts from (a new object each time New door or New window is clicked, so the editor reloads).
@@ -425,6 +574,11 @@ export function JoineryDialog() {
   const [rows, setRows] = useState('1');
   const [preview, setPreview] = useState<Preview2 | null>(null);
   const [outside, setOutside] = useState(false);
+  // The pane picked in the pane editor (its first cell), and a grid line being dragged in the elevation.
+  const [pane, setPane] = useState<{ col: number; row: number } | null>(null);
+  const [splitAt, setSplitAt] = useState<{ col: string; row: string }>({ col: '', row: '' });
+  const pickPane = (p: { col: number; row: number } | null) => { setPane(p); setSplitAt({ col: '', row: '' }); };
+  const [drag, setDrag] = useState<{ axis: 'col' | 'row'; i: number; from: number; at: number } | null>(null);
 
   // The editor loads when the picked type changes, not on every diff (which
   // would throw away what is being typed): it reads the model through a ref.
@@ -465,9 +619,24 @@ export function JoineryDialog() {
     const cw = weights(c), rw = weights(r);
     if (cw.length && rw.length) set({ columns: cw, rows: rw, panels: spec.panels.filter((p) => p.col < cw.length && p.row < rw.length) });
   };
-  const cellOp = (col: number, row: number) => spec.panels.find((p) => p.col === col && p.row === row)?.operation ?? 'fixed';
-  const setCell = (col: number, row: number, operation: string) =>
-    set({ panels: [...spec.panels.filter((p) => !(p.col === col && p.row === row)), { col, row, operation }] });
+  // The grid's sizes in mm, from the engine's preview (decision 370); set one, the last takes the rest.
+  // Worked out from the spec's own weights over the inner span (which only the size and frame change), never from a preview
+  // that may still be on its way: quick splits one after another each see the grid as it now is.
+  const sizesOf = (weights: number[], span: number | undefined, bar: number) => {
+    if (span == null || weights.length === 0) return [];
+    const total = weights.reduce((a, b) => a + Math.max(b, 0), 0) || 1;
+    const usable = span * 1000 - bar * 1000 * (weights.length - 1);
+    return weights.map((w) => Math.round((usable * Math.max(w, 0)) / total * 10) / 10);
+  };
+  const inner = preview?.grid?.inner;
+  const colSizes = sizesOf(spec.columns, inner ? inner[1] - inner[0] : undefined, spec.frame.mullion);
+  const rowSizes = sizesOf(spec.rows, inner ? inner[3] - inner[2] : undefined, spec.frame.transom);
+  const setSizes = (axis: 'col' | 'row', i: number, value: number) => {
+    const next = resized(axis === 'col' ? colSizes : rowSizes, i, value);
+    if (!next) { notify('That leaves too little for the others (50 mm at least).'); return; }
+    if (axis === 'col') { set({ columns: next }); setCols(next.map(roundW).join(' ')); }
+    else { set({ rows: next }); setRows(next.map(roundW).join(' ')); }
+  };
 
   const save = async () => {
     if (editing) await execute('architecture.updateJoineryType', { id: editing, spec });
@@ -533,24 +702,32 @@ export function JoineryDialog() {
               {spec.kind === 'window' && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v } })} />
               <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v } })} />
-              <label className="field-line"><span className="eyebrow">Columns of panes</span><input data-field="columns" value={cols} title="Relative widths, e.g. 1 1 or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
-              <label className="field-line"><span className="eyebrow">Rows of panes</span><input value={rows} title="Relative heights, bottom to top" onChange={(e) => setGrid(cols, e.target.value)} /></label>
-              <p className="eyebrow">Panels · seen from outside</p>
-              <table className="panel-grid">
-                <tbody>
-                  {[...spec.rows.keys()].reverse().map((row) => (
-                    <tr key={row}>
-                      {spec.columns.map((_, col) => (
-                        <td key={col}>
-                          <select value={cellOp(col, row)} onChange={(e) => setCell(col, row, e.target.value)}>
-                            {operations.map((o) => <option key={o} value={o}>{HAND_LABELS[o] ?? o}</option>)}
-                          </select>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Mm label="Mullion width" value={spec.frame.mullion} onChange={(v) => set({ frame: { ...spec.frame, mullion: v } })} />
+              <Mm label="Transom width" value={spec.frame.transom} onChange={(v) => set({ frame: { ...spec.frame, transom: v } })} />
+              <label className="field-line"><span className="eyebrow">Profile system</span>
+                <select data-field="profile-system" data-i18n-ctx="profiles" value={spec.profile?.system ?? ''} title="Sets the frame, mullion and sash sizes and the profile's finer shapes; each stays editable" onChange={(e) => {
+                  const sys = catalog.profileSystems?.[e.target.value];
+                  if (!e.target.value) set({ profile: null });
+                  else if (sys) set({ frame: { ...sys.frame, offset: spec.frame.offset }, sash: sys.sash, profile: sys.profile });
+                }}>
+                  <option value="">Simple (plain profiles)</option>
+                  {Object.keys(catalog.profileSystems ?? {}).map((k) => <option key={k} value={k}>{PROFILE_LABELS[k] ?? k}</option>)}
+                  {spec.profile && !catalog.profileSystems?.[spec.profile.system] && <option value={spec.profile.system}>{spec.profile.system}</option>}
+                </select></label>
+              {spec.profile && <>
+                <Mm label="Rebate" value={spec.profile.rebate} onChange={(v) => set({ profile: { ...spec.profile!, rebate: v } })} />
+                <Mm label="Sash overlap" value={spec.profile.overlap} onChange={(v) => set({ profile: { ...spec.profile!, overlap: v } })} />
+                <Mm label="Glazing bead" value={spec.profile.bead} onChange={(v) => set({ profile: { ...spec.profile!, bead: v } })} />
+                {spec.kind === 'window' && <label className="field-line check"><input type="checkbox" checked={spec.profile.drip} onChange={(e) => set({ profile: { ...spec.profile!, drip: e.target.checked } })} /><span>Drip under the bottom rail</span></label>}
+              </>}
+              <label className="field-line"><span className="eyebrow">Columns (relative)</span><input data-field="columns" value={cols} title="Divide into columns by relative widths, e.g. 1 1 for two equal ones or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
+              <label className="field-line"><span className="eyebrow">Rows (relative)</span><input value={rows} title="Divide into rows by relative heights, bottom to top" onChange={(e) => setGrid(cols, e.target.value)} /></label>
+              {colSizes.length > 1 && <SizeRow label="Column widths" sizes={colSizes} field="col-size" onCommit={(i, mm) => setSizes('col', i, mm)} />}
+              {rowSizes.length > 1 && <SizeRow label="Row heights · bottom to top" sizes={rowSizes} field="row-size" onCommit={(i, mm) => setSizes('row', i, mm)} />}
+              <PaneEditor spec={spec} preview={preview} pane={pane} operations={operations}
+                onPick={pickPane} onPanels={(panels) => set({ panels })} at={splitAt} setAt={setSplitAt}
+                onGrid={(g) => { set({ columns: g.columns, rows: g.rows, panels: g.panels }); setCols(g.columns.map(roundW).join(' ')); setRows(g.rows.map(roundW).join(' ')); }}
+                colSizes={colSizes} rowSizes={rowSizes} />
               <PartMaterials spec={spec} onChange={(materials) => set({ materials })} />
               {!spec.materials?.frame && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
               <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
@@ -565,8 +742,12 @@ export function JoineryDialog() {
                 <Material label="Reveal material" value={details.reveal.material} onChange={(material) => setDetails({ reveal: { ...details.reveal!, material } })} />
                 <Mm label="Reveal thickness" value={details.reveal.thickness} onChange={(v) => setDetails({ reveal: { ...details.reveal!, thickness: v } })} />
               </>}
-              {spec.kind === 'window' && <SillFields label="Interior sill" sill={details.sillInside ?? null} fallback={{ ...SILL_IN, projection: spec.board.interior || SILL_IN.projection }} onChange={(v) => setDetails({ sillInside: v })} />}
-              {spec.kind === 'window' && <SillFields label="Exterior sill" sill={details.sillOutside ?? null} fallback={{ ...SILL_OUT, projection: spec.board.exterior || SILL_OUT.projection }} slope onChange={(v) => setDetails({ sillOutside: v })} />}
+              {spec.kind === 'window' && <SillFields label="Interior sill" sill={details.sillInside ?? null} board={spec.board.interior} fallback={{ ...SILL_IN, projection: spec.board.interior || SILL_IN.projection }}
+                onChange={(v) => setDetails({ sillInside: v })} onBoard={(m) => set({ board: { ...spec.board, interior: m }, details: { ...details, sillInside: { ...(details.sillInside ?? SILL_IN), on: false } } })} />}
+              {spec.kind === 'window' && <SillFields label="Exterior sill" sill={details.sillOutside ?? null} board={spec.board.exterior} fallback={{ ...SILL_OUT, projection: spec.board.exterior || SILL_OUT.projection }} slope
+                onChange={(v) => setDetails({ sillOutside: v })} onBoard={(m) => set({ board: { ...spec.board, exterior: m }, details: { ...details, sillOutside: { ...(details.sillOutside ?? SILL_OUT), on: false } } })} />}
+              <label className="field-line check"><input type="checkbox" data-field="jamb-linings" checked={(details.reveal?.mode ?? 'wall') !== 'none'}
+                onChange={(e) => setDetails({ reveal: { ...(details.reveal ?? { thickness: 0.015 }), mode: e.target.checked ? 'wall' : 'none' } })} /><span>Jamb linings (the reveal's finish)</span></label>
               <label className="field-line check"><input type="checkbox" checked={details.surround?.on ?? false} onChange={(e) => setDetails({ surround: { ...(details.surround ?? SURROUND), on: e.target.checked } })} /><span>Surround on the facade</span></label>
               {details.surround?.on && <>
                 <Mm label="Surround width" value={details.surround.width} onChange={(v) => setDetails({ surround: { ...details.surround!, width: v } })} />
@@ -586,9 +767,19 @@ export function JoineryDialog() {
             </div>
             <div className="joinery-preview">
               <Strokes drawing={outside ? preview?.drawings?.exterior : preview?.drawings?.elevation} w={W} h={H} flipX label={outside ? 'Elevation from outside' : 'Elevation from inside'}>
-                {(sx, sy, kk) => !outside && boxes.map((b, i) => b.profile
-                  ? <path key={i} d={[b.profile, ...(b.holes ?? [])].map((l) => loopPath(l, sx, sy)).join(' ')} fillRule="evenodd" fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />
-                  : <rect key={i} x={Math.min(sx(b.x0), sx(b.x1))} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
+                {(sx, sy, kk) => <>
+                  {!outside && boxes.map((b, i) => b.profile
+                    ? <path key={i} d={[b.profile, ...(b.holes ?? [])].map((l) => loopPath(l, sx, sy)).join(' ')} fillRule="evenodd" fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />
+                    : <rect key={i} x={Math.min(sx(b.x0), sx(b.x1))} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
+                  {!outside && !spec.bay && <PaneOverlay preview={preview} pane={pane} drag={drag} sx={sx} sy={sy} kk={kk} onPick={pickPane} onDrag={setDrag}
+                    onDrop={(d) => {
+                      const sizes = d.axis === 'col' ? colSizes : rowSizes;
+                      const next = shifted(sizes, d.i, Math.round((d.at - d.from) * 1000));
+                      setDrag(null);
+                      if (!next) return;
+                      if (d.axis === 'col') { set({ columns: next }); setCols(next.map(roundW).join(' ')); } else { set({ rows: next }); setRows(next.map(roundW).join(' ')); }
+                    }} />}
+                </>}
               </Strokes>
               <div className="joinery-small">
                 <figure><Strokes drawing={preview?.drawings?.plan} w={150} h={90} flipX label="Plan" /><figcaption className="muted small">Plan</figcaption></figure>

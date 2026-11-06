@@ -1,0 +1,158 @@
+/**
+ * The pane editor's rules (decision 370): a door's or window's grid as sizes in millimetres, a pane split in two (a column or
+ * a row added where the cut falls, the panes across it spanning it), two panes merged into one, grid lines no pane needs any
+ * more taken out. A type keeps its grid as relative sizes (columns, rows) and its panes as cells with spans; these work on that.
+ */
+
+export interface GridPanel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
+export interface GridSpec { columns: number[]; rows: number[]; panels: GridPanel[]; frame: { mullion: number; transom: number } }
+
+const DOOR_LEAVES = new Set(['swing-left', 'swing-right', 'double-acting-left', 'double-acting-right', 'door-sliding-left', 'door-sliding-right', 'folding-left', 'folding-right']);
+
+/** The part over a door leaf split across: a fixed glazed light (a fanlight), as a leaf is never in two pieces. */
+const upper = (p: GridPanel, axis: 'col' | 'row'): GridPanel => (axis === 'row' && DOOR_LEAVES.has(p.operation) ? { ...p, operation: 'fixed', infill: 'glass', glazed: false } : p);
+
+const span = (p: GridPanel, axis: 'col' | 'row') => Math.max(1, (axis === 'col' ? p.colSpan : p.rowSpan) ?? 1);
+
+/** Every cell covered by one panel (overlaps dropped, empty cells fixed glass), as the engine reads them. */
+export function normalised(s: GridSpec): GridPanel[] {
+  const nc = s.columns.length, nr = s.rows.length;
+  const taken = Array.from({ length: nc }, () => Array<boolean>(nr).fill(false));
+  const o: GridPanel[] = [];
+  for (const p of s.panels) {
+    if (p.col < 0 || p.row < 0 || p.col >= nc || p.row >= nr) continue;
+    const cs = Math.min(span(p, 'col'), nc - p.col), rs = Math.min(span(p, 'row'), nr - p.row);
+    let free = true;
+    for (let c = p.col; c < p.col + cs; c++) for (let r = p.row; r < p.row + rs; r++) if (taken[c][r]) free = false;
+    if (!free) continue;
+    for (let c = p.col; c < p.col + cs; c++) for (let r = p.row; r < p.row + rs; r++) taken[c][r] = true;
+    o.push({ ...p, colSpan: cs, rowSpan: rs });
+  }
+  for (let c = 0; c < nc; c++) for (let r = 0; r < nr; r++) if (!taken[c][r]) o.push({ col: c, row: r, operation: 'fixed', colSpan: 1, rowSpan: 1 });
+  return o;
+}
+
+/** Sizes (mm) set one at a time: the one given takes its new size, the last (or, when it is the last, the one before) takes up the difference. Null when that leaves under 50 mm. */
+export function resized(sizes: number[], index: number, mm: number): number[] | null {
+  if (index < 0 || index >= sizes.length || !(mm > 0)) return null;
+  if (sizes.length === 1) return null;
+  const other = index === sizes.length - 1 ? index - 1 : sizes.length - 1;
+  const next = [...sizes];
+  next[other] = sizes[other] + sizes[index] - mm;
+  next[index] = mm;
+  return next[other] >= 50 ? next.map((v) => Math.round(v * 10) / 10) : null;
+}
+
+/** A grid line dragged: the sizes either side of boundary <paramref name="i"/> (between i and i+1) moved by <paramref name="by"/> mm; null under 50 mm. */
+export function shifted(sizes: number[], i: number, by: number): number[] | null {
+  if (i < 0 || i + 1 >= sizes.length) return null;
+  const next = [...sizes];
+  next[i] += by; next[i + 1] -= by;
+  return next[i] >= 50 && next[i + 1] >= 50 ? next.map((v) => Math.round(v * 10) / 10) : null;
+}
+
+/**
+ * A pane split in two at <paramref name="at"/> mm from its left (vertical cut, 'col') or bottom (horizontal, 'row') edge.
+ * Where the cut falls on a grid line inside the pane, the pane is only divided there; else the column (row) it falls in
+ * is cut in two, the bar between them taking its width from the left part, and every other pane across that column spans
+ * both. Sizes are the columns' (rows') in mm; the bar is the mullion's (transom's). Null when either part would be under 50 mm.
+ */
+export function split(s: GridSpec, sizes: number[], pane: GridPanel, axis: 'col' | 'row', at: number): { spec: GridSpec; sizes: number[] } | null {
+  const panels = normalised(s);
+  const p = panels.find((x) => x.col === pane.col && x.row === pane.row);
+  if (!p) return null;
+  const bar = (axis === 'col' ? s.frame.mullion : s.frame.transom) * 1000;
+  const start = axis === 'col' ? p.col : p.row, n = span(p, axis);
+  // The pane's extent along the axis, from its first cell's start: each cell and the bars between them.
+  let pos = 0;
+  for (let k = start; k < start + n; k++) {
+    const a = pos, b = pos + sizes[k];
+    if (k > start && Math.abs(at - (a - bar / 2)) < 1) {
+      // On a grid line already inside the pane: two panes, no new line.
+      const left = { ...p, [axis === 'col' ? 'colSpan' : 'rowSpan']: k - start };
+      const right = upper({ ...p, [axis]: k, [axis === 'col' ? 'colSpan' : 'rowSpan']: start + n - k }, axis);
+      return { spec: { ...s, panels: [...panels.filter((x) => x !== p), left, right] }, sizes: [...sizes] };
+    }
+    if (at > a && at < b) {
+      const first = at - a - bar / 2, second = b - at - bar / 2;
+      if (first < 50 || second < 50) return null;
+      const nextSizes = [...sizes.slice(0, k), first, second, ...sizes.slice(k + 1)];
+      const key = axis === 'col' ? 'colSpan' : 'rowSpan';
+      const moved = panels.map((x) => {
+        if (x === p) return x;
+        const xs = x[axis], xn = span(x, axis);
+        if (xs > k) return { ...x, [axis]: xs + 1 };
+        if (xs <= k && xs + xn - 1 >= k) return { ...x, [key]: xn + 1 };
+        return x;
+      });
+      const left = { ...p, [key]: k - start + 1 };
+      const right = upper({ ...p, [axis]: k + 1, [key]: start + n - k }, axis);
+      const columns = axis === 'col' ? nextSizes : s.columns;
+      const rows = axis === 'row' ? nextSizes : s.rows;
+      return { spec: { ...s, columns, rows, panels: [...moved.filter((x) => x !== p), left, right] }, sizes: nextSizes };
+    }
+    pos = b + bar;
+  }
+  return null;
+}
+
+/** The pane beside another on one side ('left', 'right', 'below', 'above') sharing that whole edge with it; null when none does. */
+export function neighbour(s: GridSpec, pane: GridPanel, side: 'left' | 'right' | 'below' | 'above'): GridPanel | null {
+  const panels = normalised(s);
+  const p = panels.find((x) => x.col === pane.col && x.row === pane.row);
+  if (!p) return null;
+  const cs = span(p, 'col'), rs = span(p, 'row');
+  return panels.find((x) => {
+    const xc = span(x, 'col'), xr = span(x, 'row');
+    if (side === 'left') return x.col + xc === p.col && x.row === p.row && xr === rs;
+    if (side === 'right') return x.col === p.col + cs && x.row === p.row && xr === rs;
+    if (side === 'below') return x.row + xr === p.row && x.col === p.col && xc === cs;
+    return x.row === p.row + rs && x.col === p.col && xc === cs;
+  }) ?? null;
+}
+
+/** Two panes merged into one (the first's operation and infill), then the grid lines no pane needs taken out. */
+export function merge(s: GridSpec, sizes: { cols: number[]; rows: number[] }, pane: GridPanel, side: 'left' | 'right' | 'below' | 'above'): { spec: GridSpec; sizes: { cols: number[]; rows: number[] } } | null {
+  const other = neighbour(s, pane, side);
+  if (!other) return null;
+  const panels = normalised(s);
+  const p = panels.find((x) => x.col === pane.col && x.row === pane.row)!;
+  const col = Math.min(p.col, other.col), row = Math.min(p.row, other.row);
+  const horizontal = side === 'left' || side === 'right';
+  const merged: GridPanel = {
+    ...p, col, row,
+    colSpan: horizontal ? span(p, 'col') + span(other, 'col') : span(p, 'col'),
+    rowSpan: horizontal ? span(p, 'row') : span(p, 'row') + span(other, 'row'),
+  };
+  const same = (a: GridPanel, b: GridPanel) => a.col === b.col && a.row === b.row;
+  return tidy({ ...s, panels: [...panels.filter((x) => !same(x, p) && !same(x, other)), merged] }, sizes);
+}
+
+/** The grid lines every pane spans across taken out: the two sizes either side and the bar between become one. */
+export function tidy(s: GridSpec, sizes: { cols: number[]; rows: number[] }): { spec: GridSpec; sizes: { cols: number[]; rows: number[] } } {
+  let spec = s, cur = { cols: [...sizes.cols], rows: [...sizes.rows] };
+  for (const axis of ['col', 'row'] as const) {
+    const key = axis === 'col' ? 'colSpan' : 'rowSpan';
+    const bar = (axis === 'col' ? s.frame.mullion : s.frame.transom) * 1000;
+    for (let i = (axis === 'col' ? cur.cols : cur.rows).length - 2; i >= 0; i--) {
+      // Boundary i, between i and i+1: needed when a pane starts at i+1 or ends at i.
+      const needed = spec.panels.some((x) => x[axis] === i + 1 || x[axis] + span(x, axis) - 1 === i);
+      if (needed) continue;
+      const list = axis === 'col' ? cur.cols : cur.rows;
+      const joined = [...list.slice(0, i), list[i] + bar + list[i + 1], ...list.slice(i + 2)];
+      cur = axis === 'col' ? { ...cur, cols: joined } : { ...cur, rows: joined };
+      spec = {
+        ...spec,
+        columns: axis === 'col' ? joined : spec.columns,
+        rows: axis === 'row' ? joined : spec.rows,
+        panels: spec.panels.map((x) => {
+          const xs = x[axis], xn = span(x, axis);
+          if (xs > i) return { ...x, [axis]: xs - 1 };
+          if (xs + xn - 1 > i) return { ...x, [key]: xn - 1 };
+          return x;
+        }),
+      };
+    }
+  }
+  return { spec, sizes: cur };
+}

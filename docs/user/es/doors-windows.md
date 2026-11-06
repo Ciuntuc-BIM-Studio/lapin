@@ -40,15 +40,36 @@ Seleccionado, un hueco tiene pinzamientos como una ventana: arrastra su centro p
 
 Los dibujos de la derecha muestran el tipo tal como se dibujará en alzado, planta y sección, mientras lo cambia.
 
-**Izquierda y derecha.** La apertura de una puerta se nombra como la nombran los arquitectos: mire desde la manilla hacia las bisagras; una hoja que abre a la izquierda de esa línea abre a la izquierda, una que abre a la derecha, a la derecha. Las opciones del configurador para una hoja lo dicen así, con el lado de sus bisagras en la cuadrícula **Hojas**, que se ve desde el exterior, el lado desde el que se empujan las hojas: *Batiente derecha (bisagras a la izquierda)*. Un archivo IFC nombra la mano a su manera (las bisagras vistas mirando hacia donde abre la hoja), así que la misma puerta se escribe allí como SINGLE_SWING_LEFT; Lapin convierte una en otra al escribir y leer IFC. La izquierda y la derecha de una ventana se ven desde el interior, el lado hacia el que abren sus hojas: *Practicable derecha (bisagras a la izquierda)* en el configurador, cuya cuadrícula se ve desde el exterior. IFC escribe la misma ventana como izquierda. El alzado se ve desde el interior, el lado hacia el que abren las hojas, salvo que marque **Desde el exterior**; como la planta, muestra la puerta tal como está en el modelo. Una puerta volteada a la otra mano (**Mano**, o una flecha de giro a lo largo del muro) es la imagen en espejo de su tipo; las tablas la muestran en una ficha propia (consulte [Tablas](schedules.md)).
+**Izquierda y derecha.** La apertura de una puerta se nombra como la nombran los arquitectos: mire desde la manilla hacia las bisagras; una hoja que abre a la izquierda de esa línea abre a la izquierda, una que abre a la derecha, a la derecha. Las opciones del configurador para una hoja lo dicen así, con el lado de sus bisagras en la **Apertura** de un paño, vista desde el exterior, el lado desde el que se empujan las hojas: *Batiente derecha (bisagras a la izquierda)*. Un archivo IFC nombra la mano a su manera (las bisagras vistas mirando hacia donde abre la hoja), así que la misma puerta se escribe allí como SINGLE_SWING_LEFT; Lapin convierte una en otra al escribir y leer IFC. La izquierda y la derecha de una ventana se ven desde el interior, el lado hacia el que abren sus hojas: *Practicable derecha (bisagras a la izquierda)* en el configurador, cuyos paños se ven desde el exterior. IFC escribe la misma ventana como izquierda. El alzado se ve desde el interior, el lado hacia el que abren las hojas, salvo que marque **Desde el exterior**; como la planta, muestra la puerta tal como está en el modelo. Una puerta volteada a la otra mano (**Mano**, o una flecha de giro a lo largo del muro) es la imagen en espejo de su tipo; las tablas la muestran en una ficha propia (consulte [Tablas](schedules.md)).
 
 ![El configurador de puertas y ventanas](shots/joinery-configurator.webp)
 
 **Guardar tipo** conserva sus cambios. Todas las puertas o ventanas de ese tipo los siguen. **Colocar con él** cierra el configurador y empieza a colocar ese tipo.
 
-### Ventanas con más hojas
+### Paños, montantes y perfiles
 
-**Columnas de hojas** recibe las anchuras relativas de las hojas, un número para cada una: `1 1` son dos hojas iguales, `1 1 1` tres, `1 2 1` una ancha entre dos estrechas. **Filas de hojas** divide la ventana en altura de la misma manera, de abajo arriba: `1 1` da dos filas. Seis hojas son `1 1 1` en Columnas de hojas y `1 1` en Filas de hojas. Después, en **Hojas**, elija cómo abre cada hoja: fija, practicable, oscilobatiente, abatible, proyectante, pivotante o corredera.
+Una puerta o una ventana es una cuadrícula de paños. Cada paño elige cómo abre y qué lo rellena, así que un solo tipo puede tener dos hojas con fijos laterales y un fijo superior encima, o una ventana con un panel ciego bajo una hoja.
+
+**Columnas (relativas)** y **Filas (relativas)** dividen el hueco rápidamente: `1 1` son dos paños iguales, `1 1 1` tres, `2 1` uno ancho junto a uno estrecho. Las filas se cuentan de abajo arriba.
+
+**Anchos de columna** y **Altos de fila** dan las mismas medidas en milímetros. Escríbalas y la última ocupa el resto. En el alzado también puede arrastrar un montante o un travesaño; la distancia se ve mientras arrastra.
+
+**Ancho del montante** y **Ancho del travesaño** son medidas propias, aparte del **Ancho del marco**. Un marco de 50 mm con montantes de 50 mm se lee 50 mm en todas partes.
+
+**Paños** lista todos los paños. Haga clic en uno, en la lista o en el alzado, para editarlo:
+
+- **Apertura**: fijo, una hoja (practicable, oscilobatiente, abatible, proyectante, pivotante, corredera) o, en una puerta, una hoja de puerta.
+- **Relleno**: **Vidrio** o **Panel ciego**. Las hojas y los fijos laterales de una puerta pueden ser ciegos, y también un paño de ventana (un panel bajo una hoja, un paño opaco).
+- **Dividir**: **En columnas** o **En filas**, a una distancia en milímetros del borde izquierdo o inferior del paño (la mitad por defecto). Dividida en horizontal, una hoja de puerta conserva su parte inferior y la superior pasa a ser un fijo superior acristalado.
+- **Unir**: con el paño de al lado, de arriba o de abajo, cuando comparten un borde entero. Los montantes y travesaños que ya no necesita ningún paño desaparecen.
+
+![Una puerta de tienda en un solo tipo: dos hojas, fijos laterales y un fijo superior corrido](shots/joinery-panes.webp)
+
+**Sistema de perfiles** empieza el tipo con un perfil de **PVC**, **Aluminio**, **Madera** o **Acero (esbelto)**: fija las medidas del marco, los montantes, los travesaños y las hojas y da a los perfiles sus formas finas. El marco tiene un **Galce** contra el que cierra la hoja, la hoja solapa el marco en su **Solape de la hoja**, los **junquillos** sujetan el vidrio, y una ventana tiene un goterón bajo su travesaño inferior. Cada medida sigue editable. **Simple (perfiles lisos)** mantiene piezas rectangulares sencillas, como antes.
+
+![Una ventana de PVC: las hojas solapando el marco, los junquillos, un panel ciego bajo un paño fijo](shots/joinery-profiles-3d.webp)
+
+En **Detalles**, **Vierteaguas interior** y **Vierteaguas exterior** activan y desactivan los vierteaguas, y **Revestimiento de jambas** activa el acabado del vano en las jambas y el dintel. Donde no se usen vierteaguas ni revestimientos, desmárquelos.
 
 ### Contraventanas, rejas, jardineras y marquesinas
 
@@ -85,7 +106,7 @@ En la fachada, además del recercado, una ventana puede tener **Clave**, **Remat
 
 Un tipo de ventana puede sobresalir del muro. En el configurador, **Projects** la convierte en **Bay** (un centro y dos lados en ángulo con el muro), **Bow** (paneles iguales en un arco) o **Box** (lados en escuadra con el muro), y **New bay window** empieza un tipo nuevo como mirador a 45°. La ventana sigue llenando un solo hueco en el muro, tan ancho y alto como el tipo: se coloca, mueve, copia, voltea, numera y lista como cualquier ventana. **Architecture → Bay window** (<kbd>BW</kbd>) pone una en el muro en que haces clic: el tipo elegido en el configurador si sobresale, si no el primer mirador del proyecto, si no un mirador a 45°.
 
-Las columnas de la cuadrícula son sus caras. En un mirador y en una caja, la primera y la última columna son sus lados y las de en medio su centro; una ventana curva tiene una cara por columna, sus anchos repartiéndose el arco. Cada hoja abre como dice **Panels**, así que los lados pueden abrir y el centro quedar fijo. Después:
+Las columnas de la cuadrícula son sus caras. En un mirador y en una caja, la primera y la última columna son sus lados y las de en medio su centro; una ventana curva tiene una cara por columna, sus anchos repartiéndose el arco. Cada paño abre como dice su **Apertura**, así que los lados pueden abrir y el centro quedar fijo. Después:
 
 - **Projection**, desde la cara exterior del muro hasta la cara exterior de los marcos, y en un mirador el ángulo **Sides to the wall** (15° a 90°);
 - **Sides**: los lados de la caja acristalados o macizos, con su material;
