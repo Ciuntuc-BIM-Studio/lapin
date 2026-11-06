@@ -55,7 +55,7 @@ describe('the Spanish interface', () => {
 
 describe('the languages', () => {
   it('are offered each named in itself, English first', () => {
-    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk', 'Italiano', 'Polski', 'Português', 'ພາສາລາວ']);
+    expect(LANGUAGES.map((l) => l.name)).toEqual(['English', 'Română', 'Español', 'Deutsch', 'Français', 'Dansk', 'Italiano', 'Polski', 'Português', 'ພາສາລາວ', '简体中文']);
   });
 
   it('English is the interface as written', () => {

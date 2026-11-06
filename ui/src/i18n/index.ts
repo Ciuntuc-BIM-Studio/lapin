@@ -23,6 +23,7 @@ import { LO, LO_PATTERNS } from './lo';
 import { PL, PL_PATTERNS } from './pl';
 import { PT, PT_PATTERNS } from './pt';
 import { RO, RO_PATTERNS } from './ro';
+import { ZH, ZH_PATTERNS } from './zh';
 import { rebrand } from '../platform/brand';
 
 /** A language's phrases: the exact ones, and those with a number or a name in them. */
@@ -41,6 +42,7 @@ const TABLES = {
   pl: { dict: PL, patterns: PL_PATTERNS },
   pt: { dict: PT, patterns: PT_PATTERNS },
   lo: { dict: LO, patterns: LO_PATTERNS },
+  zh: { dict: ZH, patterns: ZH_PATTERNS },
 } satisfies Record<string, Language>;
 
 export type Lang = 'en' | keyof typeof TABLES;
@@ -57,6 +59,7 @@ export const LANGUAGES: { id: Lang; name: string }[] = [
   { id: 'pl', name: 'Polski' },
   { id: 'pt', name: 'Português' },
   { id: 'lo', name: 'ພາສາລາວ' },
+  { id: 'zh', name: '简体中文' },
 ];
 
 const isLang = (x: unknown): x is Lang => LANGUAGES.some((l) => l.id === x);
