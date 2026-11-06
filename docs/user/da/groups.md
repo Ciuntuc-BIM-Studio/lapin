@@ -18,6 +18,12 @@ Dobbeltklik på et medlem, eller klik på **Redigér gruppe** (<kbd>EG</kbd>). R
 
 ![En gruppe åben for redigering: havemuren uden for den nedtonet](shots/group-edit.webp)
 
+## Bor ned i samlinger
+
+Nogle elementer er dele af en helhed: en stålhals søjler, spær og åse, delene af en samling (en Studio-kasse, en samling læst fra en IFC-fil) og medlemmerne af en gruppe. **Vis → Bor ned i samlinger**, slået fra i starten, vælger dem, som helheden er bygget. Det første klik på en del vælger helheden øverst: gruppen eller hallen. Mens den er valgt, vælger et klik inden i den delen ét niveau nede på vejen mod det, du klikkede på, og hvert næste klik går ét niveau dybere, helt ned til selve elementet. Et klik på en anden del af samme helhed vælger den på samme niveau. <kbd>Esc</kbd> går ét niveau op og slipper øverst markeringen; et klik på tom plads slipper den også. <kbd>Ctrl</kbd>+klik (<kbd>Cmd</kbd>+klik på en Mac) vælger selve elementet med det samme, og <kbd>Skift</kbd> føjer helheden øverst til markeringen. En brødkrummesti over visningen navngiver niveauerne, fra etagen til markeringen: klik på et for at vælge det. Mens en del inden i en helhed er valgt, tegnes resten af modellen let nedtonet. Det virker ens i 3D, planer, snit og opstalter. En markeringsramme eller en lasso tager helhederne øverst. Et dobbeltklik åbner stadig en gruppe til redigering; inden i den begynder nedboringen under gruppen. Valget gemmes på denne computer og findes også i **Vis → Visningsindstillinger**.
+
+![Boret ned i en stålhal: spæret valgt, brødkrummestien over 3D](shots/drill-select.webp)
+
 ## Importerede filer
 
 Hver IFC-, Fragments- eller mesh-fil, du importerer, kommer ind som én gruppe opkaldt efter filen. Fjern fluebenet ved **Som én gruppe** i IFC-importen for at hente elementerne løse. En linket fil grupperes ikke: den er allerede ét link, skrivebeskyttet (se [Import og eksport](import-export.md)). Elementer læst fra en IFC-fil som referencer bliver, hvor filen satte dem: en gruppe af dem kan ryddes op og slettes, ikke flyttes.

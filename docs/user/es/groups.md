@@ -18,6 +18,12 @@ Haga doble clic en un miembro, o haga clic en **Editar grupo** (<kbd>EG</kbd>). 
 
 ![Un grupo abierto para editar: el muro del jardín, fuera de él, atenuado](shots/group-edit.webp)
 
+## Profundizar en conjuntos
+
+Algunos elementos son partes de un todo: los pilares, dinteles y correas de una nave de acero, las partes de un ensamblaje (una caja de Studio, un ensamblaje leído de un archivo IFC) y los miembros de un grupo. **Vista → Profundizar en conjuntos**, desactivado al principio, los elige tal como está construido el todo. El primer clic en una parte selecciona el todo superior: el grupo o la nave. Mientras está seleccionado, un clic dentro de él selecciona la parte un nivel más abajo, camino de lo que ha pulsado, y cada clic siguiente baja otro nivel, hasta el propio elemento. Un clic en otra parte del mismo todo la selecciona en el mismo nivel. <kbd>Esc</kbd> sube un nivel y, arriba, suelta la selección; un clic en el vacío también la suelta. <kbd>Ctrl</kbd>+clic (<kbd>Cmd</kbd>+clic en un Mac) selecciona el elemento directamente, y <kbd>Mayús</kbd> añade el todo superior a la selección. Una ruta sobre la vista nombra los niveles, de la planta a la selección: haga clic en uno para seleccionarlo. Mientras está seleccionada una parte dentro de un todo, el resto del modelo se dibuja algo atenuado. Funciona igual en 3D, plantas, secciones y alzados. Un cuadro o un lazo de selección toma los todos superiores. Un doble clic sigue abriendo un grupo para editarlo; dentro de él, la profundización empieza bajo el grupo. La elección se guarda en este ordenador y también está en **Vista → Configuración de vista**.
+
+![Dentro de una nave de acero: el dintel seleccionado, la ruta sobre el 3D](shots/drill-select.webp)
+
 ## Archivos importados
 
 Cada archivo IFC, Fragments o de malla que importe entra como un solo grupo con el nombre del archivo. Desmarque **Como un solo grupo** en la importación IFC para traer los elementos sueltos. Un archivo vinculado no se agrupa: ya es un vínculo, de solo lectura (vea [Importar y exportar](import-export.md)). Los elementos leídos de un archivo IFC como referencias se quedan donde los puso el archivo: un grupo de ellos se puede limpiar y borrar, no desplazar.

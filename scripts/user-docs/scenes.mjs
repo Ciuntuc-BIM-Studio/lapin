@@ -3161,6 +3161,41 @@ export const scenes = [
     },
   },
   {
+    // Drill-down picking (platform/assemblies.ts), off by default: View → Drill into assemblies; a pick of a hall's rafter
+    // takes the hall, the next the rafter, the breadcrumb names both, Esc steps back up to the hall.
+    id: 'drill-select',
+    async run(t) {
+      await t.fresh();
+      await t.cmd('steel.addHall', { storeyId: await t.storey(), attrs: { secondary: false } });
+      await t.wait(2500);
+      const nodes = await t.nodes();
+      const hall = nodes.find((n) => n.type === 'LapinSteelHall');
+      const rafter = nodes.find((n) => n.props?.hallRole === 'f1:raf:a');
+      t.expect(hall && rafter, 'the hall and its rafters are made');
+      await t.ui({ dialog: null, keyPlan: false, selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.3, pitch: -0.45, distance: 52, target: { x: 10, y: 15, z: 3 } }, false));
+      await t.wait(1500);
+      await t.tool('view.drillSelect');
+      // What a click on the rafter does (the views call the same pickClick).
+      const pick = (id) => t.page.evaluate(async (id) => {
+        (await import('/src/platform/assemblies.ts')).pickClick(id);
+        return (await import('/src/app/store.ts')).useUi.getState().selected;
+      }, id);
+      t.expect((await pick(rafter.id)).join() === hall.id, 'the first click on a rafter picks its hall');
+      t.expect((await pick(rafter.id)).join() === rafter.id, 'the next picks the rafter');
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=drill-crumbs] button').count() === 3, 'the breadcrumb names the storey, the hall and the rafter');
+      await t.shot('drill-select', { of: '[data-testid=view3d]', pad: 0 });
+      await t.page.keyboard.press('Escape');
+      await t.wait(400);
+      const selected = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().selected);
+      t.expect(selected.join() === hall.id, 'Esc steps back up to the hall');
+      // Off again, as it is by default (kept on this computer).
+      await t.tool('view.drillSelect');
+    },
+  },
+  {
     id: 'views-3d-layers',
     async run(t) {
       await t.fresh();

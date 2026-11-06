@@ -18,6 +18,12 @@ Clique duas vezes num membro, ou clique em **Editar grupo** (<kbd>EG</kbd>). O r
 
 ![Um grupo aberto para edição: o muro do jardim fora dele esmaecido](shots/group-edit.webp)
 
+## Selecionar por níveis de conjunto
+
+Alguns elementos são partes de um todo: os pilares, as vigas e as terças de um galpão de aço, as partes de uma montagem (uma caixa do Studio, uma montagem lida de um arquivo IFC) e os membros de um grupo. **Vista → Selecionar por níveis de conjunto**, desligado de início, escolhe-os do jeito que o todo é construído. O primeiro clique numa parte seleciona o todo do topo: o grupo ou o galpão. Enquanto ele está selecionado, um clique dentro dele seleciona a parte um nível abaixo, no caminho até o que você clicou, e cada clique seguinte desce mais um nível, até o próprio elemento. Um clique em outra parte do mesmo todo a seleciona no mesmo nível. <kbd>Esc</kbd> sobe um nível e, no topo, larga a seleção; um clique no vazio também a larga. <kbd>Ctrl</kbd>+clique (<kbd>Cmd</kbd>+clique no Mac) seleciona o próprio elemento de imediato, e <kbd>Shift</kbd> acrescenta à seleção o todo do topo. Uma trilha sobre a vista nomeia os níveis, do pavimento até a seleção: clique num deles para selecioná-lo. Enquanto uma parte dentro de um todo está selecionada, o resto do modelo é desenhado levemente esmaecido. Funciona igual em 3D, plantas, cortes e elevações. Uma caixa ou um laço de seleção pega os todos do topo. Um clique duplo continua a abrir um grupo para edição; dentro dele, a descida começa abaixo do grupo. A escolha fica guardada neste computador e também está em **Vista → Configurações da vista**.
+
+![Dentro de um galpão de aço: a viga selecionada, a trilha sobre o 3D](shots/drill-select.webp)
+
 ## Arquivos importados
 
 Todo arquivo IFC, Fragments ou de malha que você importa entra como um grupo com o nome do arquivo. Desmarque **Como um grupo** na importação de IFC para trazer os elementos soltos. Um arquivo vinculado não é agrupado: ele já é um vínculo, somente leitura (veja [Importação e exportação](import-export.md)). Elementos lidos de um arquivo IFC como referências ficam onde o arquivo os colocou: um grupo deles pode ser limpo e excluído, não movido.

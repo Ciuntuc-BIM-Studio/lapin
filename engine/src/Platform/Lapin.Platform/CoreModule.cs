@@ -64,6 +64,8 @@ public sealed class CoreModule : ILapinModule
         // A view's sun shadows, drawn as filled areas under elevations, sections and site plans.
         ViewShadows.Register(r);
         Groups.Register(r);
+        // The wholes an element is a part of, for drill-down picking.
+        Assemblies.Register(r);
         TypeMappings.Register(r);
         Sheets.Register(r);
         TitleBlocks.Register(r);

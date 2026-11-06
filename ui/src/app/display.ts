@@ -5,12 +5,13 @@
  * grid stays as it is. The grid shows in the 3D view too, on the active storey (a tester's report, decision 312),
  * and so do the shapes drafted on plans, sections and reference planes, as lines on their view's plane (Drafts in
  * 3D, on by default). In 3D the wheel zooms to the point under the cursor and a drag orbits round the selection
- * (else the point under the cursor), both on by default (report #89, viewport/navigate3d.ts).
+ * (else the point under the cursor), both on by default (report #89, viewport/navigate3d.ts). Picking can drill into
+ * assemblies (a whole first, then its parts click by click; platform/assemblies.ts), off by default.
  */
 
 import { create } from 'zustand';
 
-export interface Display { grid: boolean; thinLines: boolean; drafts3d: boolean; zoomToCursor: boolean; orbitSelection: boolean }
+export interface Display { grid: boolean; thinLines: boolean; drafts3d: boolean; zoomToCursor: boolean; orbitSelection: boolean; drillSelect: boolean }
 
 const KEY = 'lapin.display';
 
@@ -19,7 +20,8 @@ export function readDisplay(stored: unknown): Display {
   const o = stored as Partial<Display> | null;
   const obj = !!o && typeof o === 'object';
   return { grid: !(obj && o.grid === false), thinLines: !!(obj && o.thinLines === true), drafts3d: !(obj && o.drafts3d === false),
-    zoomToCursor: !(obj && o.zoomToCursor === false), orbitSelection: !(obj && o.orbitSelection === false) };
+    zoomToCursor: !(obj && o.zoomToCursor === false), orbitSelection: !(obj && o.orbitSelection === false),
+    drillSelect: !!(obj && o.drillSelect === true) };
 }
 
 function read(): Display {
@@ -38,6 +40,7 @@ export const toggleThinLines = () => setDisplay({ thinLines: !useDisplay.getStat
 export const toggleDrafts3d = () => setDisplay({ drafts3d: !useDisplay.getState().drafts3d });
 export const toggleZoomToCursor = () => setDisplay({ zoomToCursor: !useDisplay.getState().zoomToCursor });
 export const toggleOrbitSelection = () => setDisplay({ orbitSelection: !useDisplay.getState().orbitSelection });
+export const toggleDrillSelect = () => setDisplay({ drillSelect: !useDisplay.getState().drillSelect });
 
 /** A pen's width on screen (px): its paper width at the view's scale, within what a screen shows well; one pixel with thin lines. */
 export const screenWidth = (paperMm: number, pxPerMm: number, thin: boolean): number => (thin ? 1 : Math.min(4, Math.max(0.5, paperMm * pxPerMm)));

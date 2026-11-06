@@ -18,6 +18,12 @@ Doppelklicken Sie auf ein Mitglied oder klicken Sie auf **Gruppe bearbeiten** (<
 
 ![Eine zum Bearbeiten geöffnete Gruppe: die Gartenmauer außerhalb blass](shots/group-edit.webp)
 
+## In Baugruppen eintauchen
+
+Manche Elemente sind Teile eines Ganzen: die Stützen, Riegel und Pfetten einer Stahlhalle, die Teile einer Baugruppe (eine Studio-Box, eine aus einer IFC-Datei gelesene Baugruppe) und die Mitglieder einer Gruppe. **Ansicht → In Baugruppen eintauchen**, anfangs aus, wählt sie so, wie das Ganze aufgebaut ist. Der erste Klick auf ein Teil wählt das oberste Ganze: die Gruppe oder die Halle. Solange es gewählt ist, wählt ein Klick darin das Teil eine Ebene tiefer auf dem Weg zum angeklickten, und jeder weitere Klick geht eine Ebene tiefer, bis zum Element selbst. Ein Klick auf ein anderes Teil desselben Ganzen wählt dieses auf derselben Ebene. <kbd>Esc</kbd> geht eine Ebene hinauf und gibt oben die Auswahl frei; ein Klick ins Leere gibt sie ebenfalls frei. <kbd>Strg</kbd>+Klick (<kbd>Cmd</kbd>+Klick auf dem Mac) wählt das Element sofort selbst, und <kbd>Umschalt</kbd> fügt das oberste Ganze der Auswahl hinzu. Eine Pfadleiste über der Ansicht nennt die Ebenen, vom Geschoss bis zur Auswahl: ein Klick auf eine wählt sie. Solange ein Teil innerhalb eines Ganzen gewählt ist, wird der Rest des Modells leicht blass gezeichnet. Es wirkt gleich in 3D, Grundrissen, Schnitten und Ansichten. Ein Auswahlrahmen oder ein Lasso nimmt die obersten Ganzen. Ein Doppelklick öffnet weiterhin eine Gruppe zum Bearbeiten; darin beginnt das Eintauchen unterhalb der Gruppe. Die Wahl bleibt auf diesem Computer und steht auch in **Ansicht → Ansichtseinstellungen**.
+
+![In eine Stahlhalle eingetaucht: der Riegel gewählt, die Pfadleiste über dem 3D](shots/drill-select.webp)
+
 ## Importierte Dateien
 
 Jede IFC-, Fragments- oder Netzdatei, die Sie importieren, kommt als eine Gruppe mit dem Namen der Datei. Entfernen Sie beim IFC-Import das Häkchen bei **Als eine Gruppe**, um die Elemente lose zu holen. Eine verknüpfte Datei wird nicht gruppiert: Sie ist bereits eine Verknüpfung, schreibgeschützt (siehe [Import und Export](import-export.md)). Elemente, die als Referenzen aus einer IFC-Datei gelesen werden, bleiben, wo die Datei sie hingesetzt hat: Eine Gruppe davon lässt sich aufräumen und löschen, nicht verschieben.

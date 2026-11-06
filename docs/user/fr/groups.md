@@ -18,6 +18,12 @@ Double-cliquez sur un membre, ou cliquez sur **Modifier le groupe** (<kbd>EG</kb
 
 ![Un groupe ouvert pour modification : le mur du jardin, hors du groupe, estompé](shots/group-edit.webp)
 
+## Sélection par niveaux d'assemblage
+
+Certains éléments sont les parties d'un tout : les poteaux, traverses et pannes d'une halle métallique, les parties d'un assemblage (une boîte Studio, un assemblage lu dans un fichier IFC) et les membres d'un groupe. **Vue → Sélection par niveaux d'assemblage**, désactivée au départ, les choisit comme le tout est construit. Le premier clic sur une partie sélectionne le tout du haut : le groupe ou la halle. Tant qu'il est sélectionné, un clic à l'intérieur sélectionne la partie un niveau plus bas, sur le chemin de ce que vous avez cliqué, et chaque clic suivant descend d'un niveau, jusqu'à l'élément lui-même. Un clic sur une autre partie du même tout la sélectionne au même niveau. <kbd>Échap</kbd> remonte d'un niveau et, en haut, abandonne la sélection ; un clic dans le vide l'abandonne aussi. <kbd>Ctrl</kbd>+clic (<kbd>Cmd</kbd>+clic sur Mac) sélectionne directement l'élément, et <kbd>Maj</kbd> ajoute le tout du haut à la sélection. Un fil d'Ariane au-dessus de la vue nomme les niveaux, de l'étage à la sélection : cliquez sur l'un pour le sélectionner. Tant qu'une partie d'un tout est sélectionnée, le reste du modèle est dessiné légèrement estompé. Cela fonctionne de même en 3D, en plans, coupes et élévations. Un rectangle ou un lasso de sélection prend les touts du haut. Un double-clic ouvre toujours un groupe pour l'éditer ; à l'intérieur, la descente commence sous le groupe. Le choix est gardé sur cet ordinateur et se trouve aussi dans **Vue → Paramètres de vue**.
+
+![Dans une halle métallique : la traverse sélectionnée, le fil d'Ariane au-dessus de la 3D](shots/drill-select.webp)
+
 ## Fichiers importés
 
 Chaque fichier IFC, Fragments ou maillage que vous importez arrive en un seul groupe au nom du fichier. Décochez **En un seul groupe** à l’import IFC pour apporter les éléments séparément. Un fichier lié n’est pas groupé : c’est déjà un lien, en lecture seule (voir [Import et export](import-export.md)). Les éléments lus d’un fichier IFC comme références restent où le fichier les a mis : un groupe de ces éléments peut être nettoyé et supprimé, pas déplacé.

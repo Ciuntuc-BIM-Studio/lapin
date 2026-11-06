@@ -18,6 +18,12 @@ Fai doppio clic su un membro, oppure fai clic su **Modifica gruppo** (<kbd>EG</k
 
 ![Un gruppo aperto per la modifica: il muro del giardino fuori dal gruppo è sbiadito](shots/group-edit.webp)
 
+## Selezione per livelli di assieme
+
+Alcuni elementi sono parti di un insieme: i pilastri, i traversi e gli arcarecci di un capannone in acciaio, le parti di un assieme (una scatola di Studio, un assieme letto da un file IFC) e i membri di un gruppo. **Vista → Selezione per livelli di assieme**, spenta all'inizio, li sceglie come l'insieme è costruito. Il primo clic su una parte seleziona l'insieme in cima: il gruppo o il capannone. Finché è selezionato, un clic al suo interno seleziona la parte un livello più in basso, sulla strada verso ciò che hai cliccato, e ogni clic successivo scende di un livello, fino all'elemento stesso. Un clic su un'altra parte dello stesso insieme la seleziona allo stesso livello. <kbd>Esc</kbd> risale di un livello e, in cima, lascia la selezione; anche un clic nel vuoto la lascia. <kbd>Ctrl</kbd>+clic (<kbd>Cmd</kbd>+clic su Mac) seleziona subito l'elemento stesso, e <kbd>Maiusc</kbd> aggiunge alla selezione l'insieme in cima. Un percorso sopra la vista nomina i livelli, dal piano alla selezione: fai clic su uno per selezionarlo. Finché è selezionata una parte dentro un insieme, il resto del modello è disegnato leggermente attenuato. Funziona allo stesso modo in 3D, piante, sezioni e prospetti. Un riquadro o un lazo di selezione prende gli insiemi in cima. Un doppio clic apre ancora un gruppo per modificarlo; al suo interno, la discesa parte sotto il gruppo. La scelta resta su questo computer ed è anche in **Vista → Impostazioni di vista**.
+
+![Dentro un capannone in acciaio: il traverso selezionato, il percorso sopra il 3D](shots/drill-select.webp)
+
 ## File importati
 
 Ogni file IFC, Fragments o mesh che importi entra come un unico gruppo con il nome del file. Togli la spunta da **Come un unico gruppo** nell’importazione IFC per portare dentro gli elementi sciolti. Un file collegato non viene raggruppato: è già un unico collegamento, in sola lettura (vedi [Importazione ed esportazione](import-export.md)). Gli elementi letti da un file IFC come riferimenti restano dove li ha messi il file: un loro gruppo si può ripulire ed eliminare, non spostare.

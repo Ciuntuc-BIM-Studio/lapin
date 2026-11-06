@@ -5,7 +5,8 @@
  * engine command. Hold Shift to square a line; Esc drops the gesture.
  */
 
-import { openGroupOf, pickTarget, pickTargets, shownSelection, useExpansion } from '../platform/groups';
+import { openGroupOf, shownSelection, useExpansion } from '../platform/groups';
+import { drillInside, pickClick, pickRegion, useDrill } from '../platform/assemblies';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
@@ -194,6 +195,10 @@ export function PlanView() {
   const expansion = useExpansion((s) => s.version);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const shown = useMemo(() => shownSelection(selected, nodes, relations), [selected, nodes, relations, expansion]);
+  // Drilled into a whole (platform/assemblies.ts): what is outside it dimmed, as an edit scope's is (more lightly).
+  const drillPath = useDrill((st) => st.path);
+  const drillOn = useDisplay((st) => st.drillSelect);
+  const inside = useMemo(() => (drillOn && !scope ? drillInside(drillPath, selected, nodes, relations) : null), [drillOn, scope, drillPath, selected, nodes, relations]);
   const pickItems = useMemo(() => (scope ? items.filter((r) => pickable(nodes.get(r.nodeId))) : items), [scope, items, nodes]);
   const pick = useCallback((p: Vec2, types?: string[]): NodeDto | null =>
     pickAt(p, 6 / view.scale, pickItems, nodes, scope ? undefined : drawing?.marks, types), [pickItems, nodes, view.scale, drawing, scope]);
@@ -262,14 +267,14 @@ export function PlanView() {
     else setPts([]);
   }, [tool]);
 
-  const click = useCallback((p: Vec2, raw: Vec2, add: boolean, typed?: number) => {
+  const click = useCallback((p: Vec2, raw: Vec2, add: boolean, typed?: number, leaf = false) => {
     // A drafting command takes the click: a snapped point, or what lies under the cursor.
     const step = useCad.getState().step;
     if (step) { void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : p); acquire(p); return; }
     if (tool?.gesture) acquire(p);
     if (!tool?.gesture) {
-      // A member of a group picks the group (docs/groups.md).
-      select(pickTarget(pick(raw)?.id), add);
+      // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
+      pickClick(pick(raw)?.id, { add, leaf });
       return;
     }
     const g = tool.gesture;
@@ -449,7 +454,7 @@ export function PlanView() {
     if (d && !d.moved && e.button === 2 && !tool?.gesture && !useCad.getState().step) { if (!editor.onContextMenu(e)) roomMenu(e.clientX, e.clientY); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
-    click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey);
+    click(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)).point, toWorld(e.clientX - rect.left, e.clientY - rect.top), e.shiftKey, undefined, e.ctrlKey || e.metaKey);
   };
   /**
    * A right-click (not a drag): on drafting, its draw order (decision 339; what is under the cursor selected first when it
@@ -472,7 +477,7 @@ export function PlanView() {
   };
   /** What a selection box or lasso takes: inside it wholly (a window, dragged to the right) or touching it (crossing, to the left). */
   const selectBox = (b: SelectDrag, add: boolean) => {
-    const ids = pickTargets(regionIds(regionTestOf(b, toWorld), pickItems, nodes, scope ? undefined : drawing?.marks));
+    const ids = pickRegion(regionIds(regionTestOf(b, toWorld), pickItems, nodes, scope ? undefined : drawing?.marks));
     const before = add || useCad.getState().step ? useUi.getState().selected : [];
     const next = [...new Set([...before, ...ids])];
     useUi.setState({ selected: next, selection: next[next.length - 1] ?? null });
@@ -643,13 +648,13 @@ export function PlanView() {
             transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
         })}
         {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
-        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
-        <g className={`plan-items${drawing && (planDrawing || siteView) ? ' ghost' : ''}${scope ? ' scoped' : ''}`}>
+        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : inside ? 'drill-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
+        <g className={`plan-items${drawing && (planDrawing || siteView) ? ' ghost' : ''}${scope ? ' scoped' : ''}${inside ? ' drilled' : ''}`}>
           {drawn.map(({ key, r, kind, d, closed, text, at, pattern }) => kind === 'hit' && !shown.has(r.nodeId) ? null : kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (
             <path key={key} d={d} strokeDasharray={pattern && DASHES[pattern] ? DASHES[pattern].map((mm) => mm * (drawing?.scale ?? 100) / 1000 * view.scale).join(' ') : undefined}
-              className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}`} />
+              className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}${inside?.has(r.nodeId) ? ' in-drill' : ''}`} />
           ))}
         </g>
         {peers.map((p) => {

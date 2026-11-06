@@ -493,9 +493,19 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 /* An edit scope: the drawing faded, the scope's own elements drawn over it. */
 .scoped-out { opacity: 0.28; }
 .plan-items.ghost.scoped .plan-item.in-scope:not(.selected) { stroke: var(--ink); fill: none; }
+.drill-out { opacity: 0.5; }
+.plan-items.ghost.drilled .plan-item.in-drill:not(.selected) { stroke: var(--ink); fill: none; }
+.plan-items:not(.ghost).drilled .plan-item:not(.in-drill):not(.selected) { opacity: 0.45; }
 .scope-bar { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 5px 6px 5px 14px; background: var(--accent); color: var(--accent-ink); border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; z-index: 5; }
 .scope-bar button { background: var(--accent-ink); color: var(--accent); border: 0; border-radius: 2px; padding: 3px 10px; font-weight: 600; cursor: pointer; }
 .scope-bar + .hud-hint { top: 50px; }
+.drill-crumbs { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; max-width: calc(100% - 32px); overflow: hidden; padding: 3px 6px; background: var(--hud); color: var(--ink); border: 1px solid var(--rule-strong); border-radius: 999px; font-size: 12px; z-index: 5; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
+.drill-crumbs button { background: none; border: 0; color: inherit; padding: 2px 6px; border-radius: 999px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 18em; }
+.drill-crumbs button:hover { background: var(--wash); }
+.drill-crumbs button.current { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.drill-crumbs .drill-sep { opacity: 0.5; }
+.scope-bar ~ .drill-crumbs, .hud-hint ~ .drill-crumbs { top: 50px; }
+.scope-bar ~ .hud-hint ~ .drill-crumbs { top: 88px; }
 .scope-bar .scope-what { display: flex; gap: 0.4em; text-transform: uppercase; }
 .drawing-svg .paper { fill: var(--paper, #fbfaf7); }
 /* A section or an elevation in the dark theme lies on the theme's background like a plan (report #90); its black pens in the theme's ink (DrawingLayer's onDark). */

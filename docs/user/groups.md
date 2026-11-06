@@ -18,6 +18,12 @@ Double-click a member, or click **Edit group** (<kbd>EG</kbd>). The rest of the 
 
 ![A group open for editing: the garden wall outside it faded](shots/group-edit.webp)
 
+## Drilling into assemblies
+
+Some elements are parts of a whole: a steel hall's columns, rafters and purlins, the parts of an assembly (a Studio box, an assembly read from an IFC file), and the members of a group. **View → Drill into assemblies**, off at first, picks them the way the whole is built. The first click on a part selects the whole at the top: the group, or the hall. While it is selected, a click inside it selects the part one level down on the way to what you clicked, and each further click goes one level deeper, down to the element itself. A click on another part of the same whole selects that part at the same level. <kbd>Esc</kbd> steps one level up, and at the top lets go of the selection; a click on empty space lets go too. <kbd>Ctrl</kbd>+click (<kbd>Cmd</kbd>+click on a Mac) selects the element itself straight away, and <kbd>Shift</kbd> adds the whole at the top to the selection. A breadcrumb over the view names the levels, from the storey to the selection: click one to select it. While a part inside a whole is selected, the rest of the model is drawn lightly faded. It works the same in 3D, plans, sections and elevations. A selection box or a lasso takes the wholes at the top. A double-click still opens a group for editing; inside it, the drilling starts below the group. The choice is kept on this computer, and is also in **View → View settings**.
+
+![Drilled into a steel hall: the rafter selected, the breadcrumb over the 3D](shots/drill-select.webp)
+
 ## Imported files
 
 Every IFC, Fragments or mesh file you import comes in as one group named after the file. Untick **As one group** in the IFC import to bring the elements in loose. A linked file is not grouped: it is already one link, read-only (see [Import and export](import-export.md)). Elements read from an IFC file as references stay where the file put them: a group of them can be cleared up and deleted, not moved.

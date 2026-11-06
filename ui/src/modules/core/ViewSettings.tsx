@@ -151,6 +151,7 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
         )}
         {threeD && <Drafts3dField />}
         {threeD && <Navigation3dFields />}
+        <DrillField />
         {site && <SitePlanFields view={view} />}
         {shadowsAllowed(view) && <ViewShadowFields view={view} />}
         {section && <SectionFields view={view} />}
@@ -260,6 +261,17 @@ function Drafts3dField() {
     <>
       <dt title="The lines, polylines, rectangles, circles and arcs drafted on plans and reference planes, on their planes in 3D (View → Drafts in 3D)">Drafts in 3D</dt>
       <dd><input type="checkbox" data-testid="view-drafts3d" checked={on} onChange={(e) => setDisplay({ drafts3d: e.target.checked })} /></dd>
+    </>
+  );
+}
+
+/** Drill-down picking (platform/assemblies.ts), in every view; for this computer (View → Drill into assemblies). */
+function DrillField() {
+  const drill = useDisplay((s) => s.drillSelect);
+  return (
+    <>
+      <dt title="A click on a part picks the whole it belongs to first (a group, a steel hall, an assembly), each further click one level deeper; Esc steps back up, Ctrl/Cmd+click picks the part itself (View → Drill into assemblies)">Drill into assemblies</dt>
+      <dd><input type="checkbox" data-testid="view-drill-select" checked={drill} onChange={(e) => setDisplay({ drillSelect: e.target.checked })} /></dd>
     </>
   );
 }

@@ -17,6 +17,7 @@ import { useState, type DragEvent, type MouseEvent } from 'react';
 import { activeStorey, useSession } from '../engine/session';
 import { num } from '../engine/model';
 import { ScopeBar } from './ScopeBar';
+import { DrillCrumbs } from './DrillCrumbs';
 import { formatLevel, lengthText, useStandards } from '../engine/unitsStore';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { scopeOf, setQuickToolsHidden, useBars } from '../app/bars';
@@ -104,6 +105,7 @@ export function ViewportHud() {
       )}
       <ScopeBar />
       {hintText && parts.prompt === 'banner' && <div className="hud-hint">{hintText}</div>}
+      <DrillCrumbs />
       {parts.quickTools !== 'off' && hidden && (
         <button type="button" className={`hotbar-handle${docked ? ' docked' : ''}`} data-testid="quick-tools-show" title="Show the quick tools" onClick={() => setQuickToolsHidden(scope, false)}>
           {docked ? <ChevronRight size={14} /> : <><ChevronUp size={14} /><span className="small">Quick tools</span></>}

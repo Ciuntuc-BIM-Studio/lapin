@@ -18,6 +18,12 @@ Dă dublu-clic pe un membru sau apasă **Editează grupul** (<kbd>EG</kbd>). Res
 
 ![Un grup deschis pentru editare: zidul grădinii, din afara lui, estompat](shots/group-edit.webp)
 
+## Selecția pe niveluri de ansamblu
+
+Unele elemente sunt părți ale unui întreg: stâlpii, riglele și panele unei hale metalice, părțile unui ansamblu (o cutie din Studio, un ansamblu citit dintr-un fișier IFC) și membrii unui grup. **Vedere → Selecție pe niveluri de ansamblu**, oprită la început, le alege așa cum e construit întregul. Primul clic pe o parte selectează întregul de sus: grupul sau hala. Cât timp e selectat, un clic în interiorul lui selectează partea cu un nivel mai jos, pe drumul spre ce ai atins, iar fiecare clic următor coboară încă un nivel, până la elementul însuși. Un clic pe altă parte a aceluiași întreg o selectează la același nivel. <kbd>Esc</kbd> urcă un nivel, iar sus renunță la selecție; și un clic în gol renunță. <kbd>Ctrl</kbd>+clic (<kbd>Cmd</kbd>+clic pe Mac) selectează direct elementul, iar <kbd>Shift</kbd> adaugă la selecție întregul de sus. Deasupra vederii, un șir de niveluri le numește, de la etaj la selecție: un clic pe unul îl selectează. Cât timp e selectată o parte dintr-un întreg, restul modelului se desenează ușor estompat. Funcționează la fel în 3D, în planuri, secțiuni și fațade. Un dreptunghi sau un lasou de selecție ia întregurile de sus. Dublu-clicul deschide în continuare un grup pentru editare; în interiorul lui, coborârea pornește de sub grup. Alegerea se păstrează pe acest calculator și se află și în **Vedere → Setările vederii**.
+
+![Coborât într-o hală metalică: rigla selectată, șirul de niveluri deasupra vederii 3D](shots/drill-select.webp)
+
 ## Fișierele importate
 
 Fiecare fișier IFC, Fragments sau rețea pe care îl imporți intră ca un singur grup, cu numele fișierului. Debifează **Ca un singur grup** la importul IFC ca să aduci elementele libere. Un fișier legat nu se grupează: e deja o legătură, doar pentru citire (vezi [Import și export](import-export.md)). Elementele citite dintr-un IFC ca referințe rămân unde le-a pus fișierul: un grup de astfel de elemente se poate curăța și șterge, nu muta.

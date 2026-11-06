@@ -23,7 +23,7 @@ import { num, storeys as storeysOf } from '../engine/model';
 import { chipText, cutZ, settingOf } from './storeys3d';
 import { showAllStoreys3d } from './storeys3dActions';
 import { everyLayerPatch, layers3dOf, layersChip, shownIn } from './layers3d';
-import { select, setTool, useUi } from '../app/store';
+import { setTool, useUi } from '../app/store';
 import { useDisplay } from '../app/display';
 import { usePaneField } from '../app/pane';
 import { findTool } from '../platform/modules';
@@ -53,7 +53,8 @@ import { CUT_LAYERS, cssColor, dashSegments, drawingPoint, penPixels, evenOddSha
 import { clampPitch, easeEye, exitWalk, lookVector, toggleFly, useWalk, walkStep, walkWish, EYE_HEIGHT, WALK_KEYS, type WalkStart } from './walk';
 import { TICK, Walker, worldOf } from './walkPhysics';
 import { InstanceLayer } from './instancing';
-import { openGroupOf, pickTarget, pickTargets, shownSelection, useExpansion } from '../platform/groups';
+import { openGroupOf, shownSelection, useExpansion } from '../platform/groups';
+import { pickClick, pickRegion } from '../platform/assemblies';
 import { boxEdges, boxOf, projectSegments, takes, toggleRegion3d, useRegion3d, type Project } from './select3d';
 import { dragTo, isWindow, regionTestOf, SelectRegion, toggleLasso, type SelectDrag } from './selectDrag';
 import type { Seg } from './selectBox';
@@ -543,7 +544,7 @@ export function Viewport3D() {
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // What a click does, kept current for the listeners set up once.
-  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; add: boolean; face?: FaceHit }) => void>(() => undefined);
+  const clickRef = useRef<(hit: { nodeId: string | null; ground: Vec2 | null; add: boolean; leaf?: boolean; face?: FaceHit }) => void>(() => undefined);
   /** The classes a face tool works on (null: no face tool on), for the hover that lights up the face under the cursor. */
   const faceTypes = useRef<string[] | null>(null);
   /** The query that names the face under the cursor for the face tool on. */
@@ -583,10 +584,10 @@ export function Viewport3D() {
   faceTypes.current = tool?.gesture?.kind === 'face' ? tool.gesture.types : null;
   faceQuery.current = tool?.gesture?.kind === 'face' ? tool.gesture.query ?? 'core.faceAt' : 'core.faceAt';
 
-  clickRef.current = ({ nodeId, ground, add, face }) => {
+  clickRef.current = ({ nodeId, ground, add, leaf, face }) => {
     const g = tool?.gesture;
-    // A member of a group picks the group (docs/groups.md).
-    if (!g) { select(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? pickTarget(nodeId) : null, add); return; }
+    // A member of a group picks the group (docs/groups.md); drilling, a part its wholes first (platform/assemblies.ts).
+    if (!g) { pickClick(nodeId && pickable(useSession.getState().nodes.get(nodeId)) ? nodeId : null, { add, leaf }); return; }
     // In 3D a pick-then-point tool completes with its pick alone (the tool's default for the second point).
     if (g.kind === 'face' || g.kind === 'pick' || g.kind === 'pickThenPoint') {
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
@@ -927,6 +928,7 @@ export function Viewport3D() {
         nodeId: nodeOfHit(hit) ?? null,
         ground: g ? { x: Math.round(g.x * 20) / 20, y: Math.round(g.y * 20) / 20 } : null,
         add: e.shiftKey,
+        leaf: e.ctrlKey || e.metaKey,
         face: hit ? faceHit(hit) : undefined,
       });
     };
@@ -1303,7 +1305,7 @@ export function Viewport3D() {
         const seen = projectSegments(boxEdges(mesh.box, (x, y, z) => place(m, x, y, z)), project);
         if (takes(test, win, seen)) ids.push(id);
       }
-      return pickTargets(ids);
+      return pickRegion(ids);
     };
     const onRegionDown = (e: PointerEvent) => {
       if (e.button !== 0 || !useRegion3d.getState().on || useUi.getState().tool || faceTypes.current) return;

@@ -2,9 +2,9 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { toggleDrafts3d, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
+import { toggleDrafts3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn } from 'lucide-react';
+import { AppWindow, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -220,6 +220,8 @@ const core: LapinModule = {
         // Navigating in 3D (report #89, viewport/navigate3d.ts): the wheel zooms to the point under the cursor, a drag orbits round the selection; kept on this computer.
         { id: 'view.zoomToCursor', label: 'Zoom to cursor', icon: ZoomIn, run: () => { toggleZoomToCursor(); notify(useDisplay.getState().zoomToCursor ? 'The wheel zooms to the point under the cursor.' : 'The wheel zooms to the middle of the 3D view.'); } },
         { id: 'view.orbitSelection', label: 'Orbit around selection', icon: Orbit, run: () => { toggleOrbitSelection(); notify(useDisplay.getState().orbitSelection ? 'The 3D view orbits round the selection, or the point under the cursor.' : 'The 3D view orbits round its middle.'); } },
+        // Drill-down picking (platform/assemblies.ts): a part picks its whole first, then a level deeper each click; off by default, kept on this computer.
+        { id: 'view.drillSelect', label: 'Drill into assemblies', icon: ListTree, run: () => { toggleDrillSelect(); notify(useDisplay.getState().drillSelect ? 'A click picks the whole first, then its parts one level at a time; Esc steps back up.' : 'A click picks the element under the cursor (a group\'s member, its group).'); } },
         // The reference planes' quads in 3D (docs/plan-studio-thick.md); their marks in plans and sections stay.
         { id: 'view.refPlanes', label: 'Reference planes', icon: Frame, run: () => useUi.setState((s) => ({ refPlanes: !s.refPlanes })) },
         // Which sections are marked in the view in front, by layer (docs/sections.md, decision 223).
