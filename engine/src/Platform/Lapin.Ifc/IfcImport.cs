@@ -464,7 +464,38 @@ public static partial class IfcImport
             if (project == null) { Spatial.EnsureBuilding(edit); project = Spatial.Project(edit.Model)!; }
             var attrs = project.CloneAttrs();
             foreach (var (k, v) in intent.Attrs) attrs[k] = v?.DeepClone();
+            ProjectInformation(p.Id, attrs);
             edit.Replace(project.With(name: Str(p[2]) ?? project.Name, attrs: attrs));
+        }
+
+        /// <summary>
+        /// The project's information read back from Lapin_ProjectInformation (decision 340): a field by its key, any other
+        /// property as a parameter of the user's (its description the label, a date or a number as such); what the project
+        /// has already is kept.
+        /// </summary>
+        void ProjectInformation(int project, System.Text.Json.Nodes.JsonObject attrs)
+        {
+            var props = PropertiesOf(project, IfcExport.ProjectInfoSetName);
+            if (props.Count == 0) return;
+            var info = (attrs[Lapin.Platform.Documents.ProjectInfo.Key] as System.Text.Json.Nodes.JsonObject)?.DeepClone() as System.Text.Json.Nodes.JsonObject ?? [];
+            var custom = info[Lapin.Platform.Documents.ProjectInfo.CustomKey] as System.Text.Json.Nodes.JsonArray ?? [];
+            var labels = new Dictionary<string, (string? Label, string Type)>();
+            foreach (var sid in definitions.GetValueOrDefault(project) ?? [])
+                if (f.Entities.GetValueOrDefault(sid) is { Type: "IFCPROPERTYSET" } set && Str(set[2]) == IfcExport.ProjectInfoSetName)
+                    foreach (var pv in Items(set[4]))
+                        if (pv.Type == "IFCPROPERTYSINGLEVALUE" && Str(pv[0]) is { } pname)
+                            labels[pname] = (Str(pv[1]), pv[2] switch { StepTyped { Type: "IFCDATE" } => "date", StepTyped { Type: "IFCREAL" or "IFCINTEGER" } => "number", _ => "text" });
+            foreach (var (name, value) in props)
+            {
+                if (value.Length == 0) continue;
+                if (Lapin.Platform.Documents.ProjectInfo.Fields.Any(x => x.Key == name)) { if (info[name] is null) info[name] = value; continue; }
+                if (custom.OfType<System.Text.Json.Nodes.JsonObject>().Any(c => string.Equals((string?)c["key"], name, StringComparison.OrdinalIgnoreCase))) continue;
+                if (!System.Text.RegularExpressions.Regex.IsMatch(name, "^[A-Za-z][A-Za-z0-9_]{0,39}$")) continue;
+                var (label, type) = labels.GetValueOrDefault(name, (null, "text"));
+                custom.Add((System.Text.Json.Nodes.JsonNode)new System.Text.Json.Nodes.JsonObject { ["key"] = name, ["label"] = label ?? name, ["type"] = type, ["group"] = "other", ["value"] = value });
+            }
+            if (custom.Count > 0) info[Lapin.Platform.Documents.ProjectInfo.CustomKey] = custom;
+            if (info.Count > 0) attrs[Lapin.Platform.Documents.ProjectInfo.Key] = info;
         }
 
         /// <summary>The file's storeys: the project's by id, else by name, else by elevation; new ones added under the building.</summary>

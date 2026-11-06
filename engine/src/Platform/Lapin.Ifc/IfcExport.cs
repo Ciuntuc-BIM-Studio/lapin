@@ -62,6 +62,8 @@ public static class IfcExport
     public const string ProvisionSetName = "Lapin_ProvisionOpening";
     public const string PhaseSetName = "Lapin_Phase";
     public const string ParamsSetName = "Lapin_Parameters";
+    /// <summary>The project's information on IfcProject (decision 340).</summary>
+    public const string ProjectInfoSetName = "Lapin_ProjectInformation";
     /// <summary>An opening void's own set (decision 289): its mark, kind, host, opening, fill and offset.</summary>
     public const string VoidSetName = "Lapin_OpeningVoid";
     /// <summary>The intent set's name until 25.10.2026: files written before still carry it.</summary>
@@ -481,6 +483,9 @@ public static class IfcExport
             projectRef = f.Add("IFCPROJECT", Gid(project.Id), Null, S(project.Name), Null, Null, S(project.Str("longName")), S(project.Str("phase")), L(new[] { model }), units);
             // What the project itself holds that an import rebuilds: its location and its phases (the drafting standards and views stay in .lapin).
             Define(projectRef, IntentOf(project, Gid(project.Id, IntentKey), null, only: ProjectIntent), Gid(project.Id, "intent-rel"));
+            // The project's information and the user's own parameters of it (decision 340): Lapin's own set, never a Pset_.
+            if (ProjectInformation() is { Count: > 0 } info)
+                Define(projectRef, f.Add("IFCPROPERTYSET", Gid(project.Id, ProjectInfoSetName), Null, S(ProjectInfoSetName), Null, L(info)), Gid(project.Id, ProjectInfoSetName + "-rel"));
 
             var site = m.OfClass(IfcClass.Site).FirstOrDefault();
             var building = Spatial.Building(m);
@@ -1370,6 +1375,26 @@ public static class IfcExport
                     })).ToList();
                     if (props.Count > 0) Define(entity, f.Add("IFCPROPERTYSET", Gid(seed, "pset/" + set.Name), Null, S(set.Name), Null, L(props)), Gid(seed, "pset-rel/" + set.Name));
                 }
+        }
+
+        /// <summary>The project's information as properties: each field by its key (a text over lines as IfcText), each parameter of the user's as its type (IfcReal, IfcDate, IfcLabel).</summary>
+        List<string> ProjectInformation()
+        {
+            var o = new List<string>();
+            foreach (var (key, _) in Lapin.Platform.Documents.ProjectInfo.Fields)
+                if (Lapin.Platform.Documents.ProjectInfo.Get(m, key) is { } v) o.Add(Single(key, Typed(v.Contains('\n') ? "IFCTEXT" : "IFCLABEL", S(v))));
+            foreach (var c in Lapin.Platform.Documents.ProjectInfo.Customs(m))
+            {
+                if (c.Value is not { } v) continue;
+                var value = c.Type switch
+                {
+                    "number" when double.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var n) => Typed("IFCREAL", R(n)),
+                    "date" => Typed("IFCDATE", S(v)),
+                    _ => Typed("IFCLABEL", S(v)),
+                };
+                o.Add(Single(c.Key, value, c.Label));
+            }
+            return o;
         }
 
         /// <summary>An entity's own parameters (those in no named set) as a typed property set; null when it has none.</summary>

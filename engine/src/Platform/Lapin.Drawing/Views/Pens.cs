@@ -27,6 +27,8 @@ public sealed class Pen(string layer, string? stroke, double width, string? fill
     public (double X0, double Y0, double X1, double Y1)? Clip { get; set; }
     /// <summary>On a sheet, the viewport the pen draws for (its id), so the interface moves that view's pens alone while it is dragged; null: the page's own (frame, title block).</summary>
     public string? Viewport { get; set; }
+    /// <summary>On a sheet, the DXF block the pen belongs to (a title block's, decision 340); null: none. Only DXF reads it.</summary>
+    public string? Block { get; set; }
 
     public JsonObject ToJson()
     {
@@ -58,6 +60,9 @@ public sealed record PenImage(string ImageId, Vec2[] Corners, double Opacity = 1
 /// <summary>A text on a drawing: where (view coordinates, m), its height (paper mm), angle (°, counter-clockwise), anchor (start, middle, end) and baseline (bottom, middle).</summary>
 public sealed record PenText(Vec2 At, string Text, double Height, double Angle = 0, string Anchor = "middle", string Baseline = "bottom", bool Bold = false, string Font = "sans", bool Italic = false)
 {
+    /// <summary>A live text's attribute tag in its pen's DXF block (PROJECT_NAME); null: a plain text.</summary>
+    public string? Tag { get; init; }
+
     public JsonObject ToJson()
     {
         var o = new JsonObject

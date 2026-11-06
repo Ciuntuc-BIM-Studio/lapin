@@ -66,6 +66,7 @@ public sealed class CoreModule : ILapinModule
         Groups.Register(r);
         TypeMappings.Register(r);
         Sheets.Register(r);
+        TitleBlocks.Register(r);
         CutOrder.Register(r);
         StoreyMove.Register(r);
         StoreyCopy.Register(r);

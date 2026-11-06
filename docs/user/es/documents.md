@@ -18,6 +18,10 @@ Lapin escribe los archivos él mismo, en DOCX, ODT y PDF, sin Word ni LibreOffic
 
 Los mismos campos están en la pestaña **Información del proyecto** del diálogo Documentos.
 
+Como un cajetín pide más que un documento, los campos están agrupados: el proyecto, el cliente, el emplazamiento y su licencia de obra, el proyectista (empresa, dirección, número de registro, teléfono, correo) y las personas que firman (director del proyecto, arquitecto jefe, ingenieros de estructuras e instalaciones, dibujado, revisado y aprobado por). Lo que aún falte va en **Parámetros propios del proyecto**: una clave única, una etiqueta, un tipo (texto, número o fecha), un grupo y un valor. Un cajetín lo lee como `{project.clave}`, un documento como `{{project.clave}}`, y el IFC lo exporta todo con el proyecto en su conjunto de propiedades `Lapin_ProjectInformation` (y lo vuelve a leer).
+
+![Parámetros propios del proyecto: clave, etiqueta, tipo, grupo y valor](shots/project-info-parameters.webp)
+
 ## Hacer un documento
 
 **Gestionar → Documentos…** (o el **+** junto a **Documentos** en el navegador del proyecto) abre los documentos del proyecto. A la izquierda están los documentos ya hechos y, bajo **Nuevo desde plantilla**, las plantillas; haga clic en una y el nuevo documento se crea y se rellena al instante.

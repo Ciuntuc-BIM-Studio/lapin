@@ -1758,3 +1758,52 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .storey-ticks .grow { flex: 1; }
 .copy-storeys .copy-option { display: flex; align-items: flex-start; gap: 8px; margin: 4px 0; font-size: 13px; line-height: 1.35; }
 .copy-storeys .copy-option input { margin-top: 2px; flex: none; }
+/* Title blocks (decision 340): the list's preview, the designer, the project's information by group and its parameters. */
+.tb-preview { background: #fff; border: 1px solid var(--rule-strong); padding: 8px; max-width: 100%; box-sizing: border-box; }
+.tb-preview svg { width: 100%; height: auto; display: block; }
+.dialog.tb-designer { width: min(1400px, calc(100vw - 24px)); height: min(860px, calc(100vh - 32px)); display: flex; flex-direction: column; }
+.tb-designer .dialog-head { gap: 10px; }
+.tb-designer .tb-name { font: inherit; font-weight: 600; min-width: 220px; }
+.tb-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 40px 1fr 320px; gap: 10px; padding: 8px 12px; }
+.tb-tools { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.tb-tool.active { background: var(--wash); box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+.tb-sep { height: 1px; width: 24px; background: var(--rule); margin: 4px 0; }
+.tb-canvas-wrap { display: flex; flex-direction: column; min-width: 0; min-height: 0; gap: 6px; }
+.tb-statusbar { display: flex; gap: 12px; align-items: center; }
+.tb-statusbar .row { gap: 4px; }
+.tb-canvas { flex: 1; overflow: auto; background: #e9ecef; border: 1px solid var(--rule); display: flex; align-items: center; justify-content: center; padding: 12px; }
+.tb-canvas svg { max-width: none; height: auto; background: transparent; touch-action: none; user-select: none; }
+.tb-canvas svg.tool-select { cursor: default; }
+.tb-canvas svg:not(.tool-select) { cursor: crosshair; }
+.tb-paper { fill: #fff; stroke: #9aa3ad; stroke-width: 0.15; stroke-dasharray: 1 0.6; }
+.tb-grid line { stroke: #e3e7eb; stroke-width: 0.08; }
+.tb-anchor { fill: var(--accent); opacity: .55; }
+.tb-selection rect { stroke: var(--accent); stroke-width: 0.2; stroke-dasharray: 0.8 0.5; fill: none; }
+.tb-selection .tb-handle { fill: #fff; stroke: var(--accent); stroke-width: 0.25; stroke-dasharray: none; }
+.tb-draft { stroke: var(--accent); stroke-width: 0.25; stroke-dasharray: 1 0.6; fill: none; }
+.tb-snap { fill: none; stroke: #e67e22; stroke-width: 0.25; }
+.tb-snap-point { stroke: #27ae60; }
+.tb-run-empty { fill: #8a8f98; font-style: italic; }
+.tb-run-unknown { fill: #c0392b; }
+.tb-side { overflow: auto; display: flex; flex-direction: column; gap: 12px; min-height: 0; padding-right: 2px; }
+.tb-props { display: flex; flex-direction: column; gap: 6px; }
+.tb-props textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 12px; }
+.tb-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+.tb-num { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tb-num input[type=number], .tb-num select, .tb-num input:not([type]) { width: 100%; box-sizing: border-box; }
+.tb-fields .row { gap: 6px; }
+.tb-fields .row input[type=search] { flex: 1; min-width: 0; }
+.tb-fields h5 { margin: 8px 0 2px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+.tb-field-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.tb-field-list button { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 3px 6px; border: 0; background: none; color: inherit; font: inherit; font-size: 12px; cursor: pointer; border-radius: 4px; }
+.tb-field-list button:hover { background: var(--wash); }
+.tb-field-list button span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
+.dialog.project-info { width: 620px; }
+.doc-info-group { display: flex; flex-direction: column; gap: 6px; }
+.doc-info-group > .eyebrow { margin: 8px 0 0; }
+.doc-info-token { margin-left: 6px; font-size: 10.5px; color: var(--ink-muted); }
+.doc-info-params { width: 100%; border-collapse: collapse; font-size: 12px; }
+.doc-info-params th { text-align: left; font-weight: 500; color: var(--ink-muted); padding: 2px 4px; }
+.doc-info-params td { padding: 2px 4px; }
+.doc-info-params input, .doc-info-params select { width: 100%; box-sizing: border-box; font: inherit; }
+@media (max-width: 900px) { .tb-body { grid-template-columns: 40px 1fr; } .tb-side { grid-column: 1 / -1; } }

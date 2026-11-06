@@ -99,6 +99,14 @@ public static class Sheets
         return (w - 2 * Margin - 4, h - 2 * Margin - TitleBlock.H - 4);
     }
 
+    /// <summary>As <see cref="FrameSize(Entity)"/> with the sheet's own title block (decision 340): its frame's margins and its block's height.</summary>
+    public static (double W, double H) FrameSize(IModelView m, Entity sheet)
+    {
+        if (TitleBlocks.TemplateOf(m, sheet) == null) return FrameSize(sheet);
+        var l = TitleBlocks.Layout(m, sheet);
+        return (l.Frame.X1 - l.Frame.X0 - 4, l.Frame.Y1 - l.Frame.Y0 - (l.Block.Y1 - l.Block.Y0) - 4);
+    }
+
     public static List<Placement> Place(IQueryContext q, Entity sheet)
     {
         var o = new List<Placement>();
@@ -107,7 +115,7 @@ public static class Sheets
             // A schedule (or any module's sheet content): its page, laid out in paper mm, centred on the viewport.
             if (q.Model.Get(vp.ViewId) is { } other && q.Services.All<ISheetContent>().FirstOrDefault(c => c.Handles(other)) is { } content)
             {
-                var (fw, fh) = FrameSize(sheet);
+                var (fw, fh) = FrameSize(q.Model, sheet);
                 var wrap = vp.Width > 0 ? Math.Max(60, Math.Min(vp.Width, fw)) : fw;
                 var pages = content.Pages(q, other, wrap, fh);
                 var (pw, ph, pp) = vp.Page - 1 < pages.Count ? pages[vp.Page - 1] : (40, 10, new List<Pen>());
@@ -234,7 +242,9 @@ public static class Sheets
         var text = new Pen("TEXT", "#000000", 0, null, null);
         void Rect(Pen p, double x0, double y0, double x1, double y1) =>
             p.Segments.AddRange([(new(x0, y0), new(x1, y0)), (new(x1, y0), new(x1, y1)), (new(x1, y1), new(x0, y1)), (new(x0, y1), new(x0, y0))]);
-        Rect(frame, Margin, Margin, W - Margin, H - Margin);
+        // A title block of the user's (decision 340): its own frame and block; none, Lapin standard's as it always was.
+        var template = TitleBlocks.TemplateOf(q.Model, sheet);
+        if (template == null) Rect(frame, Margin, Margin, W - Margin, H - Margin);
 
         // View titles: the view's name over a rule, its scale beside, under the box's lower-left corner; the view's own pens, so they move with it.
         foreach (var pl in placements.Where(p => !p.Content))
@@ -250,6 +260,11 @@ public static class Sheets
             pens.AddRange([rule, title]);
         }
 
+        if (template != null)
+        {
+            TitleBlocks.Draw(q, sheet, template, TitleBlocks.Layout((W, H), template), placements, issuing, pens);
+            return new PaperPage(W, H, pens, sheet.Name, DraftingResources.Book(q.Model).LineCap);
+        }
         // The title block: project; sheet with its revision and status; then number, scale, date, drawn by and checked by.
         var (bw, bh) = TitleBlock;
         double bx0 = W - Margin - bw, by0 = H - Margin - bh, bx1 = W - Margin, by1 = H - Margin;
@@ -289,9 +304,19 @@ public static class Sheets
             text.Texts.Add(new PenText(new Vec2(x, by0 + 39.5), cells[i].Item1, 1.8, Anchor: "start"));
             text.Texts.Add(new PenText(new Vec2(x, by0 + 46.5), cells[i].Item2, i == 0 ? 4 : 3, Anchor: "start", Bold: i == 0));
         }
-        RevisionTable(q, sheet, frame, rules, text, bx0, by0, bw, issuing);
+        RevisionTable(RevisionRows(q.Model, sheet, issuing), frame, rules, text, bx0, by0, bw);
         pens.AddRange([frame, rules, text]);
         return new PaperPage(W, H, pens, sheet.Name, DraftingResources.Book(q.Model).LineCap);
+    }
+
+    /// <summary>The issues a sheet went out in, oldest first, with the one being made: revision, date (dd.MM.yyyy), status, the issue's name.</summary>
+    public static List<(string Revision, string Date, string Status, string Name)> RevisionRows(IModelView m, Entity sheet, Issuing? issuing)
+    {
+        var issues = Cde.CdeIssues.OfSheet(m, sheet.Id).Select(i => (i.Revision, i.At, i.Status, i.Name)).ToList();
+        if (issuing != null) issues.Add((issuing.Revision, issuing.At, issuing.Status, issuing.Name));
+        return [.. issues.Select(it => (it.Revision,
+            DateTime.TryParse(it.At, CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out var d) ? d.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture) : it.At,
+            it.Status, it.Name))];
     }
 
     /// <summary>
@@ -299,10 +324,8 @@ public static class Sheets
     /// in), over the title block, newest last: revision, date, status, the
     /// issue's name. Nothing when the sheet was never issued.
     /// </summary>
-    static void RevisionTable(IQueryContext q, Entity sheet, Pen frame, Pen rules, Pen text, double bx0, double by0, double bw, Issuing? issuing)
+    internal static void RevisionTable(IReadOnlyList<(string Revision, string Date, string Status, string Name)> issues, Pen frame, Pen rules, Pen text, double bx0, double by0, double bw)
     {
-        var issues = Cde.CdeIssues.OfSheet(q.Model, sheet.Id).Select(i => (i.Revision, i.At, i.Status, i.Name)).ToList();
-        if (issuing != null) issues.Add((issuing.Revision, issuing.At, issuing.Status, issuing.Name));
         if (issues.Count == 0) return;
         const double row = 5;
         var top = by0 - (issues.Count + 1) * row;
@@ -320,19 +343,22 @@ public static class Sheets
         for (var i = 0; i < issues.Count; i++)
         {
             var it = issues[i];
-            var date = DateTime.TryParse(it.At, CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out var d) ? d.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture) : it.At;
-            Row(top + (i + 2) * row - 1.3, it.Revision, date, it.Status, it.Name, false);
+            Row(top + (i + 2) * row - 1.3, it.Revision, it.Date, it.Status, it.Name, false);
         }
     }
 
     /// <summary>What a placed view breaks on the paper: "outside" (past the frame), "titleBlock" (over it); empty when it sits well (a little slack).</summary>
-    public static List<string> Problems(Entity sheet, Placement p)
+    public static List<string> Problems(Entity sheet, Placement p) => Problems(TitleBlocks.Layout(PaperOf(sheet), null), p);
+
+    /// <summary>As <see cref="Problems(Entity, Placement)"/> with the sheet's own title block's frame and box (decision 340).</summary>
+    public static List<string> Problems(IModelView m, Entity sheet, Placement p) => Problems(TitleBlocks.Layout(m, sheet), p);
+
+    static List<string> Problems(TitleBlocks.SheetLayout l, Placement p)
     {
-        var (W, H) = PaperOf(sheet);
-        var (bw, bh) = TitleBlock;
-        double bx0 = W - Margin - bw, by0 = H - Margin - bh, bx1 = W - Margin, by1 = H - Margin;
+        var (fx0, fy0, fx1, fy1) = l.Frame;
+        var (bx0, by0, bx1, by1) = l.Block;
         var o = new List<string>();
-        if (p.X0 < Margin - 0.5 || p.Y0 < Margin - 0.5 || p.X1 > W - Margin + 0.5 || p.Y1 > H - Margin + 0.5) o.Add("outside");
+        if (p.X0 < fx0 - 0.5 || p.Y0 < fy0 - 0.5 || p.X1 > fx1 + 0.5 || p.Y1 > fy1 + 0.5) o.Add("outside");
         if (p.X1 > bx0 + 0.5 && p.X0 < bx1 - 0.5 && p.Y1 > by0 + 0.5 && p.Y0 < by1 - 0.5) o.Add("titleBlock");
         return o;
     }
@@ -361,16 +387,16 @@ public static class Sheets
         return Cde.CdeTransmittal.Sha256(sb.ToString());
     }
 
-    static JsonObject PageJson(PaperPage page, Entity sheet, List<Placement> placements)
+    static JsonObject PageJson(IModelView m, PaperPage page, Entity sheet, List<Placement> placements)
     {
         var (W, H) = (page.W, page.H);
-        var (bw, bh) = TitleBlock;
-        double bx0 = W - Margin - bw, by0 = H - Margin - bh, bx1 = W - Margin, by1 = H - Margin;
+        var l = TitleBlocks.Layout(m, sheet);
         return new JsonObject
         {
             ["w"] = W, ["h"] = H,
-            ["frame"] = new JsonArray(Margin, Margin, W - Margin, H - Margin),
-            ["titleBlock"] = new JsonArray(bx0, by0, bx1, by1),
+            ["frame"] = new JsonArray(l.Frame.X0, l.Frame.Y0, l.Frame.X1, l.Frame.Y1),
+            ["titleBlock"] = new JsonArray(l.Block.X0, l.Block.Y0, l.Block.X1, l.Block.Y1),
+            ["titleBlockId"] = TitleBlocks.AssignedId(m, sheet), ["titleBlockName"] = TitleBlocks.NameOf(m, TitleBlocks.AssignedId(m, sheet)),
             ["pens"] = new JsonArray(page.Pens.Select(p => (JsonNode)p.ToJson()).ToArray()),
             ["viewports"] = new JsonArray(placements.Select(p => (JsonNode)new JsonObject
             {
@@ -378,7 +404,7 @@ public static class Sheets
                 ["content"] = p.Content, ["page"] = p.Viewport.Page, ["pages"] = p.Pages, ["width"] = p.Viewport.Width,
                 ["pinned"] = p.Viewport.Pinned, ["boundary"] = p.Boundary?.Id, ["boundaryName"] = p.Boundary?.Name, ["name"] = p.View.Name,
                 ["cx"] = p.Middle.X, ["cy"] = p.Middle.Y,
-                ["warnings"] = new JsonArray(Problems(sheet, p).Select(w => (JsonNode)w).ToArray()),
+                ["warnings"] = new JsonArray(Problems(m, sheet, p).Select(w => (JsonNode)w).ToArray()),
             }).ToArray()),
         };
     }
@@ -513,12 +539,13 @@ public static class Sheets
                 throw new CommandException(boundary != null ? $"That boundary of the view is on sheet {on.Str("number")} already." : $"The view is on sheet {on.Str("number")} already.");
             var (W, H) = PaperOf(sheet);
             var vps = Viewports(sheet);
-            var (x, y) = (Json.Number(a["x"]) ?? (W - TitleBlock.W) / 2, Json.Number(a["y"]) ?? H / 2);
+            var block = TitleBlocks.Layout(ctx.Model, sheet).Block;
+            var (x, y) = (Json.Number(a["x"]) ?? (W - (block.X1 - block.X0)) / 2, Json.Number(a["y"]) ?? H / 2);
             // A schedule placed with no point (decision 287): its top-left corner in the frame's, where a table is read from, not
             // its middle in the paper's (a wide table ran past the frame on the left).
             if (isContent && a["x"] is null && a["y"] is null && ctx.Services.All<ISheetContent>().First(c => c.Handles(ctx.Model.Get(viewId)!)) is var content
-                && content.Pages(ctx.Query, ctx.Model.Get(viewId)!, FrameSize(sheet).W, FrameSize(sheet).H) is { } pages && page - 1 < pages.Count)
-                (x, y) = (Margin + 4 + pages[page - 1].W / 2, Margin + 4 + pages[page - 1].H / 2);
+                && content.Pages(ctx.Query, ctx.Model.Get(viewId)!, FrameSize(ctx.Model, sheet).W, FrameSize(ctx.Model, sheet).H) is { } pages && page - 1 < pages.Count)
+                (x, y) = (TitleBlocks.Layout(ctx.Model, sheet).Frame.X0 + 4 + pages[page - 1].W / 2, TitleBlocks.Layout(ctx.Model, sheet).Frame.Y0 + 4 + pages[page - 1].H / 2);
             var vp = new SheetViewport(ctx.NewId(), viewId, x, y, Page: page, Boundary: boundary);
             vps.Add(vp);
             Write(ctx, sheet, vps);
@@ -616,7 +643,7 @@ public static class Sheets
             var sheet = Require(q.Model, (string?)a["id"]);
             // Every view rendered once, for the page and its viewports both.
             var placements = Place(q, sheet);
-            return PageJson(Compose(q, sheet, placements), sheet, placements);
+            return PageJson(q.Model, Compose(q, sheet, placements), sheet, placements);
         });
     }
 }

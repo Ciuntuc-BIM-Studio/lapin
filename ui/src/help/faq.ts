@@ -437,6 +437,16 @@ export const FAQ: Entry[] = [
     aRo: 'Fișier → Importă rețea (OBJ, STL, glTF)… îl aduce ca referințe pe nivelul activ (din SketchUp sau Blender exportă-l într-unul din formatele acestea). Un OBJ sau STL nu spune unitatea și ce axă e în sus, așa că Lapin întreabă. Selectează o referință și folosește Studio → Fă solid Studio ca s-o editezi cu împinge/trage, racordări și booleene.',
     source: 'faq',
   },
+  {
+    id: 'title-block',
+    q: ['Can I make my own title block?', 'I want a custom title block, like the official Finnish one', 'How do I put my logo and company in the title block?'],
+    qRo: ['Pot să-mi fac propriul cartuș?', 'Cum fac un cartuș personalizat?', 'Cum pun sigla și firma în cartuș?'],
+    keywords: ['titleblock', 'title', 'block', 'custom', 'logo', 'stamp', 'border', 'company', 'finnish', 'nimio', 'cartus', 'indicator', 'sigla', 'firma', 'personalizat', 'propriul'],
+    a: 'Yes. Manage → Title blocks… lists Lapin\'s (Lapin standard, the Romanian cartuș, ISO 7200), the project\'s and this computer\'s. Duplicate one or start a New one and Edit it in the designer: draw lines, rectangles, fills, texts and your logo, and click fields (project name, client, sheet number, scale, date, revision…) to insert them as live text that fills itself on every sheet. Set it as the project\'s default, or choose it per sheet in its properties. Anything missing goes in Manage → Project information… as a parameter of your own. Export… saves it as a .json for another computer; PDF, Print and DXF (a block with attributes) draw it.',
+    aRo: 'Da. Gestionare → Cartușe… arată cartușele lui Lapin (Lapin standard, cartușul românesc, ISO 7200), ale proiectului și ale acestui calculator. Duplică unul sau pornește unul Nou și editează-l în editor: desenezi linii, dreptunghiuri, umpluturi, texte și sigla, iar câmpurile (numele proiectului, beneficiarul, numărul planșei, scara, data, revizia…) le inserezi cu un clic ca text viu, completat singur pe fiecare planșă. Fă-l implicit pentru proiect sau alege-l pe fiecare planșă din proprietățile ei. Ce lipsește adaugi în Gestionare → Datele proiectului… ca parametru propriu. Exportă… îl salvează ca .json pentru alt calculator; PDF, Tipărire și DXF (un bloc cu atribute) îl desenează.',
+    action: { label: 'Title blocks…', labelRo: 'Cartușe…', run: { kind: 'dialog', id: 'titleBlocks' } },
+    source: 'report #76',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

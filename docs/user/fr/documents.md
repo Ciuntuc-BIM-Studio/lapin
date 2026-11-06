@@ -18,6 +18,10 @@ Lapin écrit lui-même les fichiers, en DOCX, ODT et PDF, sans Word ni LibreOffi
 
 Les mêmes champs se trouvent dans l'onglet **Informations du projet** de la boîte de dialogue Documents.
 
+Comme un cartouche demande plus qu’un document, les champs sont groupés : le projet, le client, le terrain et son permis de construire, le concepteur (agence, adresse, numéro d’immatriculation, téléphone, courriel) et les personnes qui signent (chef de projet, architecte en chef, ingénieurs structure et fluides, dessiné, vérifié et approuvé par). Ce qui manque encore va sous **Paramètres propres du projet** : une clé unique, un libellé, un type (texte, nombre ou date), un groupe et une valeur. Un cartouche le lit comme `{project.clé}`, un document comme `{{project.clé}}`, et l’IFC exporte le tout avec le projet dans son jeu de propriétés `Lapin_ProjectInformation` (et le relit).
+
+![Paramètres propres du projet : clé, libellé, type, groupe et valeur](shots/project-info-parameters.webp)
+
 ## Faire un document
 
 **Gérer → Documents…** (ou le **+** à côté de **Documents** dans le navigateur du projet) ouvre les documents du projet. À gauche, les documents déjà faits et, sous **Nouveau à partir d'un modèle**, les modèles ; cliquez sur l'un d'eux et le nouveau document est créé et rempli aussitôt.

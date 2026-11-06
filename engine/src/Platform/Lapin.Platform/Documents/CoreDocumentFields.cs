@@ -18,6 +18,8 @@ public sealed class CoreDocumentFields : IDocumentFields
         var m = q.Model;
         yield return new("project.name", "Project name", Sheets.ProjectName(q));
         foreach (var (key, label) in ProjectInfo.Fields) yield return new("project." + key, label, ProjectInfo.Get(m, key));
+        // The user's own parameters of the project (decision 340), by their keys.
+        foreach (var c in ProjectInfo.Customs(m)) yield return new("project." + c.Key, c.Label, c.Printed);
         foreach (var p in Spatial.Project(m)?.Attrs["params"] as JsonArray ?? [])
             if (p is JsonObject o && (string?)o["name"] is { Length: > 0 } name && Params.SetOf(o) == null)
                 yield return new("param." + name, name, Param(o, f));

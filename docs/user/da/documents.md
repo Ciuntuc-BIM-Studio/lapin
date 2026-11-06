@@ -18,6 +18,10 @@ Lapin skriver selv filerne, i DOCX, ODT og PDF, uden Word eller LibreOffice på 
 
 De samme felter findes på fanen **Projektoplysninger** i dialogen Dokumenter.
 
+Fordi et tegningshoved spørger om mere end et dokument, er felterne grupperet: projektet, bygherren, grunden og dens byggetilladelse, den projekterende (firma, adresse, registreringsnummer, telefon, e-mail) og dem, der skriver under (projektleder, chefarkitekt, konstruktions- og installationsingeniør, tegnet, kontrolleret og godkendt af). Hvad der stadig mangler, kommer under **Projektets egne parametre**: en entydig nøgle, en etiket, en type (tekst, tal eller dato), en gruppe og en værdi. Et tegningshoved læser den som `{project.nøgle}`, et dokument som `{{project.nøgle}}`, og IFC eksporterer det hele med projektet i egenskabssættet `Lapin_ProjectInformation` (og læser det tilbage).
+
+![Projektets egne parametre: nøgle, etiket, type, gruppe og værdi](shots/project-info-parameters.webp)
+
 ## Lav et dokument
 
 **Administrer → Dokumenter…** (eller **+** ved **Dokumenter** i projektbrowseren) åbner projektets dokumenter. Til venstre er de dokumenter, der allerede er lavet, og under **Ny fra skabelon** skabelonerne; klik på en, og det nye dokument laves og udfyldes med det samme.

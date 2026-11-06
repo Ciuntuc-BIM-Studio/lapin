@@ -16,6 +16,7 @@ describe('Ask Lapin', () => {
     expect(best("I can't seem to move the ground from one level to another, even though I changed it's placement in the properties menu. I also tried to move it manually, and didn't work")).toBe('terrain-height');
     expect(best('I expected to be able to edit the column type that I created. I typed a dimension wrong and wanted to corect the mistake.')).toBe('edit-structure-type');
     expect(best("is it possible to edit the text font and size and style of the tags ( matching the studio's styles). i have attached an online reference of what i expected.")).toBe('tag-text-style');
+    expect(best('I want to make a custom title block. To look like the official Finnish title block. I cannot do it?')).toBe('title-block');
     expect(best("I can't figure out how to make Levels invisible in 3D view so that I can navigate around in 3D. At the moment I can only watch the whole building at once.")).toBe('storeys-3d');
     expect(best('hope in the next release we can easily copy elements to multiple levels at once')).toBe('copy-to-storeys');
     expect(best('copy elements to several storeys')).toBe('copy-to-storeys');
@@ -52,6 +53,8 @@ describe('Ask Lapin', () => {
     // Report #92.
     expect(best('usually the opening height is displayed below the dimension line')).toBe('opening-height');
     expect(best('cum arat inaltimea golului sub cota')).toBe('opening-height');
+    expect(best('pot să-mi fac propriul cartuș?')).toBe('title-block');
+    expect(best('can I make my own title block')).toBe('title-block');
   });
 
   it('says nothing to what it does not know', () => {

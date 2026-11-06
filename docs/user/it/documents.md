@@ -18,6 +18,10 @@ Lapin scrive da sé i file, in DOCX, ODT e PDF, senza Word né LibreOffice sul c
 
 Gli stessi campi sono nella scheda **Informazioni sul progetto** della finestra Documenti.
 
+Poiché un cartiglio chiede più di un documento, i campi sono raggruppati: il progetto, il committente, il sito e il suo permesso di costruire, il progettista (studio, indirizzo, numero di iscrizione, telefono, e-mail) e le persone che firmano (capo progetto, architetto capo, ingegneri strutturista e impiantista, disegnato, verificato e approvato da). Ciò che manca ancora va in **Parametri propri del progetto**: una chiave unica, un’etichetta, un tipo (testo, numero o data), un gruppo e un valore. Un cartiglio la legge come `{project.chiave}`, un documento come `{{project.chiave}}`, e l’IFC esporta tutto con il progetto nel set di proprietà `Lapin_ProjectInformation` (e lo rilegge).
+
+![Parametri propri del progetto: chiave, etichetta, tipo, gruppo e valore](shots/project-info-parameters.webp)
+
 ## Creare un documento
 
 **Gestisci → Documenti…** (o il **+** accanto a **Documenti** nel browser di progetto) apre i documenti del progetto. A sinistra ci sono i documenti già fatti e, sotto **Nuovo da modello**, i modelli; fai clic su uno e il nuovo documento viene creato e compilato subito.

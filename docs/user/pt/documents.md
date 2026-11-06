@@ -18,6 +18,10 @@ O Lapin grava os arquivos ele mesmo, em DOCX, ODT e PDF, sem Word nem LibreOffic
 
 Os mesmos campos estão na aba **Informações do projeto** da caixa de diálogo Documentos.
 
+Como um carimbo pede mais que um documento, os campos estão agrupados: o projeto, o cliente, o terreno e seu alvará de construção, o projetista (escritório, endereço, número de registro, telefone, e-mail) e as pessoas que assinam (gerente do projeto, arquiteto-chefe, engenheiros de estruturas e de instalações, desenhado, verificado e aprovado por). O que ainda faltar vai em **Parâmetros próprios do projeto**: uma chave única, um rótulo, um tipo (texto, número ou data), um grupo e um valor. Um carimbo a lê como `{project.chave}`, um documento como `{{project.chave}}`, e o IFC exporta tudo com o projeto no conjunto de propriedades `Lapin_ProjectInformation` (e o lê de volta).
+
+![Parâmetros próprios do projeto: chave, rótulo, tipo, grupo e valor](shots/project-info-parameters.webp)
+
 ## Criar um documento
 
 **Gerenciar → Documentos…** (ou o **+** ao lado de **Documentos** no navegador do projeto) abre os documentos do projeto. À esquerda estão os documentos já criados e, em **Novo a partir de modelo**, os modelos; clique num e o novo documento é criado e preenchido na hora.

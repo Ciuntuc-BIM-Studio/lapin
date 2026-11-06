@@ -18,6 +18,10 @@ Lapin scrie singur fișierele, în DOCX, ODT și PDF, fără Word sau LibreOffic
 
 Aceleași câmpuri sunt în tabul **Datele proiectului** al dialogului Documente.
 
+Pentru că un cartuș cere mai mult decât un document, câmpurile sunt grupate — proiectul, beneficiarul, amplasamentul și autorizația de construire, proiectantul (firma, adresa, numărul de înregistrare, telefonul, e-mailul) și persoanele care semnează (șeful de proiect, arhitectul șef, inginerii de structură și de instalații, desenat, verificat și aprobat). Ce mai lipsește intră la **Parametrii proprii ai proiectului**: o cheie unică, o etichetă, un tip (text, număr sau dată), un grup și o valoare. Un cartuș îl citește ca `{project.cheie}`, un document ca `{{project.cheie}}`, iar IFC-ul le exportă pe toate cu proiectul, în setul de proprietăți `Lapin_ProjectInformation` (și le citește înapoi).
+
+![Parametrii proprii ai proiectului: cheie, etichetă, tip, grup și valoare](shots/project-info-parameters.webp)
+
 ## Un document nou
 
 **Gestionare → Documente…** (sau **+** de lângă **Documente** în browserul proiectului) deschide documentele proiectului. În stânga sunt documentele făcute deja și, sub **Nou din șablon**, șabloanele; un clic pe unul face documentul nou și îl completează pe loc.

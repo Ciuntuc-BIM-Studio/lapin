@@ -1653,7 +1653,7 @@ BLOCK_RECORD
 100
 AcDbSymbolTable
  70
-2
+{{BLOCKRECORDCOUNT}}
   0
 BLOCK_RECORD
   5
@@ -1682,6 +1682,7 @@ AcDbBlockTableRecord
 *Paper_Space
 340
 1E
+{{BLOCKRECORDS}}
   0
 ENDTAB
   0
@@ -1766,6 +1767,7 @@ AcDbEntity
 0
 100
 AcDbBlockEnd
+{{BLOCKS}}
   0
 ENDSEC
   0

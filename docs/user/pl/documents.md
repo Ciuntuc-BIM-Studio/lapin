@@ -18,6 +18,10 @@ Lapin sam zapisuje pliki, w DOCX, ODT i PDF, bez Worda ani LibreOffice na komput
 
 Te same pola są na karcie **Informacje o projekcie** w oknie Dokumenty.
 
+Ponieważ tabliczka potrzebuje więcej niż dokument, pola są pogrupowane: projekt, inwestor, działka i pozwolenie na budowę, projektant (biuro, adres, numer rejestracyjny, telefon, e-mail) i osoby podpisujące (kierownik projektu, główny architekt, konstruktor i inżynier instalacji, rysował, sprawdził i zatwierdził). Czego jeszcze brakuje, trafia do **Własnych parametrów projektu**: unikalny klucz, etykieta, typ (tekst, liczba lub data), grupa i wartość. Tabliczka czyta go jako `{project.klucz}`, dokument jako `{{project.klucz}}`, a IFC eksportuje wszystko z projektem w zestawie właściwości `Lapin_ProjectInformation` (i wczytuje z powrotem).
+
+![Własne parametry projektu: klucz, etykieta, typ, grupa i wartość](shots/project-info-parameters.webp)
+
 ## Tworzenie dokumentu
 
 **Zarządzaj → Dokumenty…** (albo **+** obok **Dokumenty** w przeglądarce projektu) otwiera dokumenty projektu. Po lewej są dokumenty już utworzone, a pod **Nowy z szablonu** szablony; kliknij jeden, a nowy dokument zostanie od razu utworzony i wypełniony.

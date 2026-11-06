@@ -26,6 +26,22 @@ The frame and the title block belong to the paper. They are never picked or move
 
 ![A view picked on a sheet: its crop handles, its boundary, the pin](shots/sheet-view-boundary.webp)
 
+## Your own title block
+
+**Manage → Title blocks…** lists the title blocks: Lapin's own (**Lapin standard**, the one every sheet had so far, the Romanian **cartuș** and an **ISO 7200** block), this project's, and this computer's library, which every project on this computer offers. Click one to see it with the project's values. **Duplicate into the project** makes an editable copy, **New** an empty one; **Set as project default** gives it to every sheet that does not choose its own, and a sheet chooses its own under **Title block** in its properties.
+
+![Title blocks: Lapin's, the project's and this computer's, the chosen one with the project's values](shots/title-blocks.webp)
+
+**Edit…** opens the designer. The block is a box in paper millimetres that sits in a corner of the frame (bottom right by default), so the same block fits A4 to A0, portrait or landscape; the frame's margins are set with it. Draw with **Line**, **Rectangle**, **Polyline**, **Text**, **Image** (your logo, PNG or JPEG) and **Revision table**; a rectangle or a closed polyline takes a fill or a hatch, a text a height or one of the text styles of Drafting standards. Clicks snap to the items' ends, corners and middles and to the grid; **Shift** keeps a line straight. Drag an item to move it, its handles to reshape it; the arrows nudge it, **Delete** removes it, **Ctrl+Z** undoes.
+
+The **Fields** list holds the live text: the project's (name, number, client, site, permit, designer, people, and your own parameters), the sheet's (number, name, scale, paper, revision, status, date, drawn, checked and approved by, phase, sheet x of y) and the system's (date of print, file name). A click puts a field into the selected text, or places it as a new one; a text can mix words and fields, `Project: {project.name}`. The designer shows each field's value on a sample sheet; a field with no value shows as its name, greyed, and one Lapin does not know in red (it prints as `<field>` and **Manage → Check** reports it). **Save** keeps the block as one step to undo.
+
+![The designer: a Finnish-style title block, its fields with their values, a field added under the drawing number](shots/title-block-designer.webp)
+
+The sheets, their PDF, Print and the issue draw it with each sheet's values. In DXF it is a block with attributes, one for each live text (`PROJECT_NAME`, `SHEET_NUMBER`…), as AutoCAD's own title blocks are. **Export…** saves a title block as a `.json` file, its images inside, and **Import…** reads one into the project or the library, so an office passes its title blocks from one computer to the next. Old projects keep Lapin standard and draw exactly as before.
+
+![The sheet with its own title block](shots/sheet-title-block.webp)
+
 ## Printing
 
 The **PDF** and **DXF** buttons in the sheet's bar export the sheet. A PDF is ready to print or send. A DXF opens in AutoCAD and other CAD programs with its layers, lines and hatches. **Print** sends the sheet to a printer or plotter at its own paper size, at 1:1, as vector lines: choose the plotter and the paper in the print dialog. On a smaller printer, choose fit to page.

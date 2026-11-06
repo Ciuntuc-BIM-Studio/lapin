@@ -104,6 +104,8 @@ public static class CdeChecks
                 if (Documents.ProjectInfo.TitleField(c.Model, s, "phase") == null) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: the phase is empty."));
                 if (c.Revision == null && CdeCheckContext.Field(s, "revision") == null) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: the revision is empty (an issue sets it)."));
                 if (!Sheets.Place(c.Query, s).Any(p => !p.Content)) o.Add(Warn(s, $"Sheet {SheetLabel(s)} has no view on it, so no scale."));
+                // A title block of the user's (decision 340) naming a field no source has: printed as <key>.
+                if (TitleBlocks.Unknown(c.Query, s) is { Count: > 0 } unknown) o.Add(Warn(s, $"Sheet {SheetLabel(s)}: the title block has fields Lapin does not know: {string.Join(", ", unknown)}."));
             }
             return o;
         }),
@@ -112,7 +114,7 @@ public static class CdeChecks
             .Where(v => v != null && !(v.NumOrNull("scale") is { } sc && sc > 0))
             .Select(v => new CdeFinding("viewScale", CdeFinding.Block, $"View „{v!.Name}” on sheet {SheetLabel(s)} has no scale.", SheetId: s.Id, ViewId: v.Id)))),
         new Rule("viewOutside", "View on the paper", true, c => c.Sheets.SelectMany(s => Sheets.Place(c.Query, s)
-            .Select(p => (p, problems: Sheets.Problems(s, p)))
+            .Select(p => (p, problems: Sheets.Problems(c.Model, s, p)))
             .Where(x => x.problems.Count > 0)
             .Select(x => new CdeFinding("viewOutside", CdeFinding.Block,
                 $"„{x.p.View.Name}” on sheet {SheetLabel(s)} {(x.problems.Contains("outside") ? "runs past the frame" : "")}{(x.problems.Count == 2 ? " and " : "")}{(x.problems.Contains("titleBlock") ? "lies over the title block" : "")}.",

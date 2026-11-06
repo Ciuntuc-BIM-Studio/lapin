@@ -41,9 +41,14 @@ export interface DocPreview {
 /** A template as listed: where it is kept (Lapin's own, the project's, this computer's library). */
 export interface DocTemplate { id: string; title: string; description: string; lang: string; isoType: string; inputs: DocInput[]; origin?: 'builtin' | 'project' | 'library' }
 
+/** A parameter of the project's own (decision 340): a unique key, its label, type, group and value. */
+export interface ProjectParameter { key: string; label: string; type: 'text' | 'number' | 'date'; group: string; value?: string }
+
 export interface ProjectInfo {
   name: string; projectId?: string | null;
-  fields: { key: string; label: string }[]; phases: string[];
+  fields: { key: string; label: string; group?: string }[]; phases: string[];
+  groups?: { key: string; label: string }[];
+  custom?: ProjectParameter[];
   [key: string]: unknown;
 }
 

@@ -12,11 +12,15 @@ Lapin schreibt die Dateien selbst, als DOCX, ODT und PDF, ohne Word oder LibreOf
 
 ## Projektinformationen
 
-**Verwalten → Projektinformationen…** enthält, was die Dokumente vom Projekt brauchen: Name, Nummer und Bauphase, den Bauherrn und seine Adresse, die Adresse des Grundstücks, die Flurstücksnummer und das Grundbuch, den Planer und seine Adresse, den leitenden Architekten, wer gezeichnet und wer geprüft hat. Schreiben Sie sie einmal: Jedes Dokument liest sie, und die Schriftfelder der Pläne nehmen von hier, wer gezeichnet und geprüft hat, wenn ein Plan es nicht selbst angibt. Jedes Feld wird gespeichert, wenn Sie es verlassen.
+**Verwalten → Projektinformationen…** enthält, was die Dokumente vom Projekt brauchen: Name, Nummer und Bauphase, den Bauherrn und seine Adresse, die Adresse des Grundstücks, die Flurstücksnummer und das Grundbuch, den Planer und seine Adresse, den leitenden Architekten, wer gezeichnet und wer geprüft hat. Schreiben Sie sie einmal: Jedes Dokument liest sie, und die Planköpfe der Pläne nehmen von hier, wer gezeichnet und geprüft hat, wenn ein Plan es nicht selbst angibt. Jedes Feld wird gespeichert, wenn Sie es verlassen.
 
 ![Projektinformationen: Nummer, Bauphase, Bauherr, Grundstück und Planer](shots/project-info.webp)
 
 Dieselben Felder stehen im Reiter **Projektinformationen** des Dialogs Dokumente.
+
+Da ein Plankopf mehr fragt als ein Dokument, sind die Felder gruppiert: das Projekt, der Bauherr, das Grundstück und seine Baugenehmigung, der Planer (Büro, Adresse, Registernummer, Telefon, E-Mail) und die Unterzeichnenden (Projektleiter, Chefarchitekt, Tragwerks- und TGA-Planer, gezeichnet, geprüft und freigegeben von). Was noch fehlt, kommt unter **Eigene Parameter des Projekts**: ein eindeutiger Schlüssel, eine Bezeichnung, ein Typ (Text, Zahl oder Datum), eine Gruppe und ein Wert. Ein Plankopf liest ihn als `{project.schlüssel}`, ein Dokument als `{{project.schlüssel}}`, und IFC exportiert alles mit dem Projekt im Eigenschaftssatz `Lapin_ProjectInformation` (und liest es zurück).
+
+![Eigene Parameter des Projekts: Schlüssel, Bezeichnung, Typ, Gruppe und Wert](shots/project-info-parameters.webp)
 
 ## Ein Dokument erstellen
 
@@ -34,7 +38,7 @@ Der Reiter **Eingaben** enthält die Texte, die nur der Planer schreiben kann, g
 
 ## Zu ergänzen
 
-**Zu ergänzen** listet, was dem Dokument noch fehlt: ein leeres Projektfeld, ein Wert, den das Modell nicht hat. Ein Klick zeigt, wo es im Dokument steht, und führt zu dem Feld, das es füllt (ein Projektfeld öffnet den Reiter **Projektinformationen**). Die Liste leert sich, während Sie sie abarbeiten.
+**Zu ergänzen** listet, was dem Dokument noch fehlt: einen leeren Projektfeld, ein Wert, den das Modell nicht hat. Ein Klick zeigt, wo es im Dokument steht, und führt zu dem Feld, das es füllt (ein Projektfeld öffnet den Reiter **Projektinformationen**). Die Liste leert sich, während Sie sie abarbeiten.
 
 ![Zu ergänzen: die Felder, die dem Dokument noch fehlen](shots/documents-missing.webp)
 

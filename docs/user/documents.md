@@ -18,6 +18,10 @@ Lapin writes the files itself, in DOCX, ODT and PDF, with no Word or LibreOffice
 
 The same fields are in the Documents dialog's **Project information** tab.
 
+Since a title block asks more than a document, the fields are grouped — the project, the client, the site and its building permit, the designer (company, address, registration number, phone, e-mail) and the people who sign (project manager, chief architect, structural and MEP engineers, drawn, checked and approved by). What is still missing goes under **The project's own parameters**: a unique key, a label, a type (text, number or date), a group and a value. A title block reads it as `{project.key}`, a document as `{{project.key}}`, and IFC exports all of it with the project in its `Lapin_ProjectInformation` property set (and reads it back).
+
+![The project's own parameters: a key, a label, a type, a group and a value](shots/project-info-parameters.webp)
+
 ## Making a document
 
 **Manage → Documents…** (or the **+** beside **Documents** in the project browser) opens the project's documents. On the left are the documents already made and, under **New from template**, the templates; click one and the new document is made and filled at once.

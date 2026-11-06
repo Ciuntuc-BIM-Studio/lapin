@@ -26,6 +26,22 @@ El marco y el cajetín son del papel. Nunca se seleccionan ni se mueven, y un cl
 
 ![Una vista seleccionada en la lámina: sus tiradores de recorte, su límite, la chincheta](shots/sheet-view-boundary.webp)
 
+## Tu propio cajetín
+
+**Gestionar → Cajetines…** muestra los cajetines: los de Lapin (**Lapin standard**, el que tenían todos los planos hasta ahora, el **cartuș** rumano y uno **ISO 7200**), los del proyecto y los de la biblioteca de este equipo, que se ofrecen en todos sus proyectos. Haz clic en uno para verlo con los valores del proyecto. **Duplicar en el proyecto** crea una copia editable y **Nuevo** uno vacío; **Hacer predeterminado del proyecto** lo da a todos los planos que no eligen el suyo, y un plano elige el suyo en **Cajetín** de sus propiedades.
+
+![Cajetines: los de Lapin, los del proyecto y los de este equipo, el elegido con los valores del proyecto](shots/title-blocks.webp)
+
+**Editar…** abre el diseñador. El cajetín es un recuadro en milímetros de papel que se sitúa en una esquina del marco (abajo a la derecha por defecto), así que el mismo cajetín sirve de A4 a A0, vertical u horizontal; los márgenes del marco se ajustan aquí. Dibuja con **Línea**, **Rectángulo**, **Polilínea**, **Texto**, **Imagen** (tu logotipo, PNG o JPEG) y **Tabla de revisiones**; un rectángulo o una polilínea cerrada admite relleno o sombreado, y un texto una altura o un estilo de texto de los Estándares de dibujo. Los clics se ajustan a los extremos, esquinas y puntos medios y a la rejilla; **Mayús** mantiene la línea recta. Arrastra un elemento para moverlo, sus tiradores para cambiar su forma; las flechas lo desplazan, **Supr** lo elimina y **Ctrl+Z** deshace.
+
+La lista **Campos** contiene el texto vivo: del proyecto (nombre, número, cliente, emplazamiento, licencia, proyectista, personas y tus propios parámetros), del plano (número, nombre, escala, papel, revisión, estado, fecha, dibujado, revisado y aprobado por, fase, plano x de y) y del sistema (fecha de impresión, nombre del archivo). Un clic pone el campo en el texto seleccionado o lo coloca como texto nuevo; un texto puede mezclar palabras y campos, `Proyecto: {project.name}`. El diseñador muestra el valor de cada campo en un plano de muestra; un campo sin valor aparece con su nombre, en gris, y uno que Lapin no conoce, en rojo (se imprime como `<campo>` y **Gestionar → Comprobar** lo indica). **Guardar** conserva el cajetín como un solo paso de deshacer.
+
+![El diseñador: un cajetín de estilo finlandés, sus campos con sus valores, un campo añadido bajo el número del plano](shots/title-block-designer.webp)
+
+Los planos, su PDF, Imprimir y la emisión lo dibujan con los valores de cada plano. En DXF es un bloque con atributos, uno por texto vivo (`PROJECT_NAME`, `SHEET_NUMBER`…), como los cajetines de AutoCAD. **Exportar…** guarda un cajetín como archivo `.json`, con sus imágenes, e **Importar…** lo lee en el proyecto o en la biblioteca, para que una oficina lleve sus cajetines de un equipo a otro. Los proyectos antiguos conservan Lapin standard y se dibujan igual que antes.
+
+![El plano con su propio cajetín](shots/sheet-title-block.webp)
+
 ## Imprimir
 
 Los botones **PDF** y **DXF** de la barra de la lámina exportan la lámina. Un PDF está listo para imprimir o enviar. Un DXF se abre en AutoCAD y en otros programas de CAD con sus capas, líneas y sombreados. **Imprimir** envía la lámina a una impresora o plóter a su propio tamaño de papel, a 1:1, en líneas vectoriales: elige el plóter y el papel en el diálogo de impresión. En una impresora más pequeña, elige ajustar a la página.

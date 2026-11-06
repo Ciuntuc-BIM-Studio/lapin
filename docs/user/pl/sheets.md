@@ -26,6 +26,22 @@ Ramka i tabliczka rysunkowa należą do papieru. Nigdy nie są zaznaczane ani pr
 
 ![Widok zaznaczony na arkuszu: jego uchwyty przycinania, granica i pinezka](shots/sheet-view-boundary.webp)
 
+## Własna tabliczka
+
+**Zarządzaj → Tabliczki…** pokazuje tabliczki: Lapin (**Lapin standard**, którą dotąd miały wszystkie arkusze, rumuński **cartuș** i tabliczkę **ISO 7200**), projektu i z biblioteki tego komputera, dostępne w każdym jego projekcie. Kliknij jedną, aby zobaczyć ją z wartościami projektu. **Duplikuj do projektu** tworzy kopię do edycji, **Nowa** pustą; **Ustaw jako domyślną projektu** daje ją każdemu arkuszowi, który nie wybiera własnej, a arkusz wybiera własną w polu **Tabliczka** we właściwościach.
+
+![Tabliczki: Lapin, projektu i tego komputera, wybrana z wartościami projektu](shots/title-blocks.webp)
+
+**Edytuj…** otwiera projektanta. Tabliczka to prostokąt w milimetrach papieru, umieszczony w rogu ramki (domyślnie w prawym dolnym), więc ta sama tabliczka pasuje od A4 do A0, pionowo lub poziomo; marginesy ramki ustawia się tutaj. Rysuj narzędziami **Linia**, **Prostokąt**, **Polilinia**, **Tekst**, **Obraz** (logo, PNG lub JPEG) i **Tabela rewizji**; prostokąt lub zamknięta polilinia może mieć wypełnienie lub kreskowanie, tekst wysokość lub styl tekstu ze Standardów rysunku. Kliknięcia przyciągają do końców, rogów i środków elementów oraz do siatki; **Shift** trzyma linię prosto. Przeciągnij element, aby go przesunąć, jego uchwyty, aby zmienić kształt; strzałki go przesuwają, **Delete** usuwa, **Ctrl+Z** cofa.
+
+Lista **Pola** zawiera żywy tekst: projektu (nazwa, numer, inwestor, działka, pozwolenie, projektant, osoby i własne parametry), arkusza (numer, nazwa, skala, format, rewizja, status, data, rysował, sprawdził i zatwierdził, faza, arkusz x z y) i systemu (data wydruku, nazwa pliku). Kliknięcie wstawia pole do zaznaczonego tekstu lub jako nowy tekst; tekst może łączyć słowa i pola, `Projekt: {project.name}`. Projektant pokazuje wartość każdego pola na arkuszu przykładowym; pole bez wartości jest szare z nazwą, a nieznane Lapin czerwone (drukuje się jako `<pole>`, a **Zarządzaj → Sprawdź** je zgłasza). **Zapisz** zachowuje tabliczkę jako jeden krok do cofnięcia.
+
+![Projektant: tabliczka w stylu fińskim, jej pola z wartościami, pole dodane pod numerem arkusza](shots/title-block-designer.webp)
+
+Arkusze, ich PDF, Drukuj i wydanie rysują ją z wartościami każdego arkusza. W DXF jest blokiem z atrybutami, po jednym na żywy tekst (`PROJECT_NAME`, `SHEET_NUMBER`…), jak tabliczki w AutoCAD. **Eksportuj…** zapisuje tabliczkę jako plik `.json` z obrazami, a **Importuj…** wczytuje ją do projektu lub biblioteki, więc biuro przenosi swoje tabliczki z komputera na komputer. Stare projekty zachowują Lapin standard i rysują się dokładnie jak dotąd.
+
+![Arkusz z własną tabliczką](shots/sheet-title-block.webp)
+
 ## Drukowanie
 
 Przyciski **PDF** i **DXF** na pasku arkusza eksportują arkusz. PDF jest gotowy do druku lub wysłania. DXF otwiera się w AutoCAD i innych programach CAD z warstwami, liniami i kreskowaniami. **Drukuj** wysyła arkusz do drukarki lub plotera w jego własnym rozmiarze papieru, w skali 1:1, jako linie wektorowe: wybierz ploter i papier w oknie drukowania. Na mniejszej drukarce wybierz dopasowanie do strony.

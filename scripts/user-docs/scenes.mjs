@@ -110,6 +110,43 @@ async function house(t, { roof = true } = {}) {
   return { storey: s, walls };
 }
 
+/**
+ * A Finnish-style title block (nimiö) for the title blocks' scene (decision 340, a tester's report #76): 180 × 56 mm in the
+ * frame's bottom-right corner, the labels in Finnish, the values live fields of the project and the sheet.
+ */
+function finnishTitleBlock() {
+  const items = [{ type: 'rect', x: 0, y: 0, w: 180, h: 56, stroke: 0.5 }];
+  const line = (x0, y0, x1, y1, w = 0.25) => items.push({ type: 'line', a: [x0, y0], b: [x1, y1], w });
+  const cell = (x, y, label, value, h = 2.5, bold = false) => {
+    items.push({ type: 'text', at: [x + 1.2, y + 6.4], text: label, h: 1.6 });
+    items.push({ type: 'text', at: [x + 1.2, y + 1.8], text: value, h, bold });
+  };
+  for (const y of [46, 38, 28, 18]) line(0, y, 180, y);
+  line(120, 38, 120, 56); line(90, 28, 90, 38); line(60, 0, 60, 28); line(120, 0, 120, 28); line(150, 18, 150, 28); line(100, 0, 100, 18);
+  cell(0, 46, 'Rakennuskohde', '{project.name}', 3.5, true);
+  cell(120, 46, 'Rakennuslupatunnus', '{project.permit}');
+  cell(0, 38, 'Rakennuskohteen osoite', '{project.address}');
+  cell(120, 38, 'Kiinteistötunnus', '{project.cadastral}');
+  cell(0, 28, 'Rakennuttaja', '{project.client}');
+  cell(90, 28, 'Piirustuksen sisältö', '{sheet.name}', 3, true);
+  cell(0, 18, 'Pääsuunnittelija', '{project.chiefArchitect}');
+  cell(60, 18, 'Suunnittelija', '{sheet.drawnBy}');
+  cell(120, 18, 'Suunnitteluala', '{project.suunnitteluala}');
+  cell(150, 18, 'Mittakaava', '{sheet.scale}');
+  items.push({ type: 'rect', x: 0, y: 0, w: 60, h: 18, stroke: 0, fill: '#eef2f5' });
+  items.push({ type: 'text', at: [3, 10], text: '{project.designer}', h: 3, bold: true });
+  items.push({ type: 'text', at: [3, 5.5], text: '{project.designerAddress}', h: 1.8 });
+  items.push({ type: 'text', at: [3, 2], text: '{project.designerEmail}', h: 1.8 });
+  line(0, 18, 60, 18);
+  cell(60, 9, 'Päiväys', '{sheet.date}');
+  cell(60, 0, 'Muutos', '{sheet.revision}');
+  line(60, 9, 120, 9);
+  cell(100, 9, 'Työnumero', '{project.number}');
+  items.push({ type: 'text', at: [121.2, 14.4], text: 'Piirustusnumero', h: 1.6 });
+  items.push({ type: 'text', at: [150, 6], text: '{sheet.number}', h: 6, bold: true, align: 'middle' });
+  return { w: 180, h: 56, anchor: 'bottomRight', frame: { show: true, left: 20, top: 10, right: 10, bottom: 10 }, revisions: 'above', items };
+}
+
 /** Opens a view, a sheet or a level's plan from the project browser, by its name there. */
 async function openFromBrowser(t, name, wait = 2000) {
   await t.page.locator('nav.browser').getByText(name, { exact: true }).first().dblclick({ timeout: 5000 });
@@ -3440,6 +3477,79 @@ export const scenes = [
       await t.page.locator('[data-testid=sheet-print]').click();
       await t.wait(600);
       t.expect(await t.page.evaluate(() => window.__printed === true && document.querySelectorAll('#lapin-print svg path').length > 0), 'Print draws the sheet for the print dialog');
+    },
+  },
+  {
+    id: 'title-blocks',
+    async run(t) {
+      // A title block of one's own (decision 340, report #76): the project's data and a parameter of its own, a Finnish-style
+      // block made in the designer with live fields, the sheet that uses it.
+      await t.fresh();
+      await house(t);
+      const plan = await t.cmd('view.create', { kind: 'plan', storeyId: await t.storey(), name: 'Pohjapiirustus', scale: 100 });
+      const sheet = await t.cmd('sheet.create', { name: 'Pohjapiirustus 1. krs', number: 'ARK-101', paper: 'A3' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: plan.id, x: 150, y: 120 });
+      await t.cmd('sheet.titleBlock', { id: sheet.id, fields: { drawnBy: 'A. Virtanen', date: '06.11.2026', revision: 'A' } });
+      await t.cmd('project.setInfo', { name: 'Kesämökki Virtanen', number: '2026-014', client: 'Matti Virtanen', address: 'Rantatie 12, 52100 Anttola',
+        cadastral: '491-404-3-12', permit: '26-0123-R', designer: 'Arkkitehtitoimisto Lapin Oy', designerAddress: 'Aleksanterinkatu 1, Helsinki',
+        designerEmail: 'toimisto@example.fi', chiefArchitect: 'Arkkitehti SAFA L. Laine' });
+      // The project's own parameter, typed in Project information: the discipline's code the Finnish block asks.
+      await t.tool('manage.projectInfo');
+      await t.page.waitForSelector('[data-dialog=project-info]', { timeout: 10_000 });
+      await t.page.locator('[data-field=param-new-key]').fill('suunnitteluala');
+      await t.page.locator('[data-field=param-new-label]').fill('Suunnitteluala');
+      await t.page.locator('[data-field=param-add]').click();
+      await t.page.waitForSelector('[data-field=param-suunnitteluala]', { timeout: 10_000 });
+      await t.page.locator('[data-field=param-suunnitteluala]').fill('ARK');
+      await t.page.locator('[data-field=param-suunnitteluala]').press('Enter');
+      await t.wait(500);
+      t.expect((await t.nodes()).some((n) => n.type === 'IfcProject' && (n.props.info?.custom ?? []).some((c) => c.key === 'suunnitteluala' && c.value === 'ARK')), 'the parameter is kept on the project');
+      await t.page.locator('[data-field=info-parameters]').scrollIntoViewIfNeeded();
+      await t.shot('project-info-parameters', { of: '[data-dialog=project-info] [data-field=info-parameters]', pad: 6 });
+      await t.page.locator('[data-dialog=project-info] .dialog-head button[title=Close]').click(); await t.wait(300);
+
+      // The title block, made the project's default; Manage → Title blocks… lists it with a preview.
+      const tb = await t.cmd('titleBlock.create', { name: 'Nimiö (FI)', template: finnishTitleBlock() });
+      await t.cmd('titleBlock.setDefault', { id: tb.id });
+      await t.tool('manage.titleBlocks');
+      await t.page.waitForSelector('[data-dialog=title-blocks]', { timeout: 10_000 });
+      await t.page.locator(`[data-field="tb-item-${tb.id}"]`).click();
+      await t.page.waitForFunction(() => (document.querySelector('[data-field=tb-preview]')?.textContent ?? '').includes('Kesämökki Virtanen'), null, { timeout: 10_000 })
+        .catch(() => { throw new Error('expected: the preview shows the project\'s name'); });
+      await t.shot('title-blocks', { of: '[data-dialog=title-blocks]', pad: 0 });
+
+      // The designer: a field from the list placed as a new text, its value shown at once.
+      await t.page.locator('[data-field=tb-edit]').click();
+      await t.page.waitForSelector('[data-dialog=title-block-designer] [data-testid=tb-canvas]', { timeout: 10_000 });
+      await t.wait(500);
+      await t.page.locator('[data-field="tb-field-system.file"]').click();
+      const canvas = await t.page.locator('[data-testid=tb-canvas]').boundingBox();
+      // 122 mm across, 2 mm up the block (the canvas shows 8 mm round it): under the drawing's number.
+      const k = canvas.width / (180 + 16);
+      await t.page.mouse.click(canvas.x + (8 + 122) * k, canvas.y + (8 + 56 - 2) * k);
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-field=tb-text]').inputValue() === '{system.file}', 'the field went in as a new text');
+      await t.page.locator('[data-dialog=title-block-designer] [data-field="tb-prop-height-mm-"]').fill('1.6');
+      await t.page.locator('[data-field=tb-text]').focus();
+      await t.wait(300);
+      t.expect((await t.page.locator('[data-testid=tb-canvas]').textContent()).includes('Arkkitehtitoimisto Lapin Oy'), 'the designer shows the fields\' values');
+      await t.shot('title-block-designer', { of: '[data-dialog=title-block-designer]', pad: 0 });
+      await t.page.locator('[data-field=tb-save]').click();
+      await t.wait(600);
+      await t.page.locator('[data-dialog=title-block-designer] .dialog-head button[title=Close]').click(); await t.wait(300);
+      await t.page.locator('[data-dialog=title-blocks] .dialog-head button[title=Close]').click(); await t.wait(300);
+
+      // The sheet draws it, with its values; its properties say which title block it uses.
+      const label = await t.page.locator('nav.browser').getByText(/Pohjapiirustus 1\. krs/).first().textContent();
+      await openFromBrowser(t, label?.trim() || 'Pohjapiirustus 1. krs', 3000);
+      await t.fit();
+      const drawing = await t.page.locator('[data-testid=sheet]').textContent();
+      t.expect(drawing.includes('Kesämökki Virtanen') && drawing.includes('ARK-101') && drawing.includes('Rakennuttaja'), 'the sheet draws the title block with its values');
+      // The quick tools out of the picture, the sheet's corner framed with its title block (Z W, the corner's window).
+      const quiet = await t.page.addStyleTag({ content: '.hotbar, .hud-card { display: none !important }' });
+      const box = await t.page.locator('[data-testid=sheet]').boundingBox();
+      await t.shot('sheet-title-block', { clip: { x: box.x + box.width * 0.4, y: box.y + box.height * 0.5, width: box.width * 0.6, height: box.height * 0.5 } });
+      await quiet.evaluate((e) => e.remove());
     },
   },
   {

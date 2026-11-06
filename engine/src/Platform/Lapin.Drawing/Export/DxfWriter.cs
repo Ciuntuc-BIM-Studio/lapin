@@ -15,10 +15,10 @@ namespace Lapin.Drawing.Export;
 /// its LAYER table and entities to ENTITIES, with handles above the
 /// skeleton's, and sets $HANDSEED. Text is windows-1252.
 /// </summary>
-public sealed class DxfWriter(double patternScale = 1)
+public sealed class DxfWriter(double patternScale)
 {
     // The skeleton's handles: the LTYPE and LAYER tables, model space's block record, the plot-style placeholder.
-    const string LtypeTable = "2", LayerTable = "1", ModelSpace = "17", PlotStyle = "13";
+    const string LtypeTable = "2", LayerTable = "1", ModelSpace = "17", PlotStyle = "13", BlockRecordTable = "9";
     static readonly int[] Weights = [0, 5, 9, 13, 15, 18, 20, 25, 30, 35, 40, 50, 53, 60, 70, 80, 90, 100, 106, 120, 140, 158, 200, 211];
     static readonly (int Index, int R, int G, int B)[] Aci =
         [(1, 255, 0, 0), (2, 255, 255, 0), (3, 0, 255, 0), (4, 0, 255, 255), (5, 0, 0, 255), (6, 255, 0, 255), (7, 0, 0, 0), (8, 128, 128, 128), (9, 192, 192, 192)];
@@ -28,7 +28,15 @@ public sealed class DxfWriter(double patternScale = 1)
     readonly Dictionary<string, double[]> _lineTypes = [];
     readonly Dictionary<string, string> _lineTypeOf = []; // a pattern (its dashes as text) → its line type's name
     readonly List<string> _out = [];
+    // Blocks of the user's (a title block, decision 340): their records and definitions; entities go to the target with its owner.
+    readonly List<string> _blockRecords = [];
+    readonly List<string> _blocks = [];
+    int _blockCount;
+    List<string>? _target;
+    string _owner = ModelSpace;
     int _handle = 0x100;
+
+    public DxfWriter() : this(1) { }
 
     string Next() => (_handle++).ToString("X");
 
@@ -86,27 +94,85 @@ public sealed class DxfWriter(double patternScale = 1)
     }
 
     void Head(string kind, string layer, string? color = null, double? width = null, double[]? dash = null) =>
-        _out.AddRange(["0", kind, "5", Next(), "330", ModelSpace, "100", "AcDbEntity", "8", layer, .. Own(layer, color, width, dash)]);
+        Target.AddRange(["0", kind, "5", Next(), "330", _owner, "100", "AcDbEntity", "8", layer, .. Own(layer, color, width, dash)]);
+
+    List<string> Target => _target ?? _out;
+
+    /// <summary>
+    /// A block of the user's: its entities written by <paramref name="body"/> (as model space's would be), its attributes'
+    /// definitions after them (tag, default value, where, height, alignment); the block's base point is 0,0.
+    /// </summary>
+    public void Block(string rawName, Action body, IReadOnlyList<(string Tag, string Value, Vec2 At, double Height, double Rotation, string Align, string Layer)> attributes)
+    {
+        var name = Safe(rawName);
+        var record = Next();
+        _blockCount++;
+        _blockRecords.AddRange(["0", "BLOCK_RECORD", "5", record, "330", BlockRecordTable, "100", "AcDbSymbolTableRecord", "100", "AcDbBlockTableRecord", "2", name, "340", "0"]);
+        var list = new List<string>();
+        list.AddRange(["0", "BLOCK", "5", Next(), "330", record, "100", "AcDbEntity", "8", "0", "100", "AcDbBlockBegin", "2", name,
+            "70", attributes.Count > 0 ? "2" : "0", "10", "0", "20", "0", "30", "0", "3", name, "1", ""]);
+        (_target, _owner) = (list, record);
+        try
+        {
+            body();
+            foreach (var at in attributes)
+            {
+                Head("ATTDEF", at.Layer);
+                list.AddRange(TextBody(at.At, Cp1252(at.Value), at.Height, at.Rotation, at.Align));
+                list.AddRange(["100", "AcDbAttributeDefinition", "3", at.Tag, "2", at.Tag, "70", "0"]);
+            }
+        }
+        finally { (_target, _owner) = (null, ModelSpace); }
+        list.AddRange(["0", "ENDBLK", "5", Next(), "330", record, "100", "AcDbEntity", "8", "0", "100", "AcDbBlockEnd"]);
+        _blocks.AddRange(list);
+    }
+
+    /// <summary>A block inserted at 0,0 in model space with its attributes' values (as its definitions place them).</summary>
+    public void Insert(string rawName, string layer, IReadOnlyList<(string Tag, string Value, Vec2 At, double Height, double Rotation, string Align, string Layer)> attributes)
+    {
+        var name = Safe(rawName);
+        var insert = Next();
+        _out.AddRange(["0", "INSERT", "5", insert, "330", ModelSpace, "100", "AcDbEntity", "8", layer, "100", "AcDbBlockReference"]);
+        if (attributes.Count > 0) _out.AddRange(["66", "1"]);
+        _out.AddRange(["2", name, "10", "0", "20", "0", "30", "0"]);
+        if (attributes.Count == 0) return;
+        foreach (var at in attributes)
+        {
+            _out.AddRange(["0", "ATTRIB", "5", Next(), "330", insert, "100", "AcDbEntity", "8", at.Layer]);
+            _out.AddRange(TextBody(at.At, Cp1252(at.Value), at.Height, at.Rotation, at.Align));
+            _out.AddRange(["100", "AcDbAttribute", "2", at.Tag, "70", "0"]);
+        }
+        _out.AddRange(["0", "SEQEND", "5", Next(), "330", insert, "100", "AcDbEntity", "8", layer]);
+    }
+
+    /// <summary>A text's AcDbText part (an attribute's too): where, height, value, rotation, style, alignment.</summary>
+    static List<string> TextBody(Vec2 at, string value, double height, double rotation, string align)
+    {
+        var o = new List<string> { "100", "AcDbText", "10", Fmt(at.X), "20", Fmt(at.Y), "30", "0", "40", Fmt(height), "1", value, "50", Fmt(rotation), "7", "Standard" };
+        var h = align == "center" ? 1 : align == "right" ? 2 : 0;
+        if (h != 0) o.AddRange(["72", h.ToString(CultureInfo.InvariantCulture), "11", Fmt(at.X), "21", Fmt(at.Y), "31", "0"]);
+        return o;
+    }
 
     public void Line(Vec2 a, Vec2 b, string layer, string? color = null, double? width = null, double[]? dash = null)
     {
         Head("LINE", layer, color, width, dash);
-        _out.AddRange(["100", "AcDbLine", "10", Fmt(a.X), "20", Fmt(a.Y), "30", "0", "11", Fmt(b.X), "21", Fmt(b.Y), "31", "0"]);
+        Target.AddRange(["100", "AcDbLine", "10", Fmt(a.X), "20", Fmt(a.Y), "30", "0", "11", Fmt(b.X), "21", Fmt(b.Y), "31", "0"]);
     }
 
     public void Polyline(IReadOnlyList<Vec2> pts, string layer, bool closed, string? color = null, double? width = null)
     {
         if (pts.Count < 2) return;
         Head("LWPOLYLINE", layer, color, width);
-        _out.AddRange(["100", "AcDbPolyline", "90", pts.Count.ToString(CultureInfo.InvariantCulture), "70", closed ? "1" : "0"]);
-        foreach (var p in pts) _out.AddRange(["10", Fmt(p.X), "20", Fmt(p.Y)]);
+        Target.AddRange(["100", "AcDbPolyline", "90", pts.Count.ToString(CultureInfo.InvariantCulture), "70", closed ? "1" : "0"]);
+        foreach (var p in pts) Target.AddRange(["10", Fmt(p.X), "20", Fmt(p.Y)]);
     }
 
     /// <summary>A filled triangle (SOLID takes its corners 1, 2, 4, 3; a triangle repeats its last).</summary>
     public void Solid(Vec2 a, Vec2 b, Vec2 c, string layer, string? color = null)
     {
         Head("SOLID", layer, color);
-        _out.AddRange(["100", "AcDbTrace", "10", Fmt(a.X), "20", Fmt(a.Y), "30", "0", "11", Fmt(b.X), "21", Fmt(b.Y), "31", "0",
+        Target.AddRange(["100", "AcDbTrace", "10", Fmt(a.X), "20", Fmt(a.Y), "30", "0", "11", Fmt(b.X), "21", Fmt(b.Y), "31", "0",
             "12", Fmt(c.X), "22", Fmt(c.Y), "32", "0", "13", Fmt(c.X), "23", Fmt(c.Y), "33", "0"]);
     }
 
@@ -116,11 +182,11 @@ public sealed class DxfWriter(double patternScale = 1)
         var clean = Cp1252(value.Replace("\r", " ").Replace("\n", " ").Trim());
         if (clean.Length == 0 || !(height > 0)) return;
         Head("TEXT", layer, color);
-        _out.AddRange(["100", "AcDbText", "10", Fmt(at.X), "20", Fmt(at.Y), "30", "0", "40", Fmt(height), "1", clean, "50", Fmt(rotation), "7", "Standard"]);
-        if (oblique != 0) _out.AddRange(["51", Fmt(oblique)]);
+        Target.AddRange(["100", "AcDbText", "10", Fmt(at.X), "20", Fmt(at.Y), "30", "0", "40", Fmt(height), "1", clean, "50", Fmt(rotation), "7", "Standard"]);
+        if (oblique != 0) Target.AddRange(["51", Fmt(oblique)]);
         var h = align == "center" ? 1 : align == "right" ? 2 : 0;
-        if (h != 0) _out.AddRange(["72", h.ToString(CultureInfo.InvariantCulture), "11", Fmt(at.X), "21", Fmt(at.Y), "31", "0"]);
-        _out.AddRange(["100", "AcDbText"]);
+        if (h != 0) Target.AddRange(["72", h.ToString(CultureInfo.InvariantCulture), "11", Fmt(at.X), "21", Fmt(at.Y), "31", "0"]);
+        Target.AddRange(["100", "AcDbText"]);
     }
 
     /// <summary>The characters windows-1252 has beyond Latin-1's (its 0x80–0x9F: €, „, …, Š, ž), for <see cref="Cp1252"/>.</summary>
@@ -190,18 +256,23 @@ public sealed class DxfWriter(double patternScale = 1)
         var text = Skeleton();
         var nl = text.IndexOf('\n', 4);
         text = "999\n" + comment.Replace("\n", " ") + text[nl..];
+        text = text.Replace("{{BLOCKRECORDS}}\n", Pairs(_blockRecords)).Replace("{{BLOCKS}}\n", Pairs(_blocks))
+            .Replace("{{BLOCKRECORDCOUNT}}", (2 + _blockCount).ToString(CultureInfo.InvariantCulture));
         text = text.Replace("{{LTYPES}}\n", Pairs(lt)).Replace("{{LAYERS}}\n", Pairs(layers)).Replace("{{ENTITIES}}\n", Pairs(_out)).Replace("{{HANDSEED}}", _handle.ToString("X"))
             .Replace("{{LTYPECOUNT}}", (SkeletonLineTypes + _lineTypes.Count).ToString(CultureInfo.InvariantCulture)).Replace("{{LAYERCOUNT}}", layerCount.ToString(CultureInfo.InvariantCulture));
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         return Encoding.GetEncoding(1252).GetBytes(text);
     }
 
-    /// <summary>Pages of pens (paper mm, y down) as one DXF each, y up, at 1:1 in mm.</summary>
+    /// <summary>
+    /// Pages of pens (paper mm, y down) as one DXF each, y up, at 1:1 in mm. Pens of a block (a title block, decision 340) are
+    /// written as that block's definition, inserted at 0,0, their live texts (a tag) as its attributes.
+    /// </summary>
     public static byte[] Page(PaperPage page, string comment)
     {
         var w = new DxfWriter();
         Vec2 P(Vec2 p) => new(p.X, page.H - p.Y);
-        foreach (var pen in page.Pens)
+        void Draw(Pen pen, Func<PenText, bool> keep)
         {
             if (pen.Fill != null && pen.Loops.Count > 0)
             {
@@ -216,15 +287,38 @@ public sealed class DxfWriter(double patternScale = 1)
             if (pen.Texts.Count > 0)
             {
                 var layer = w.Layer("TEXT", pen.Stroke ?? "#000000", 0.18, null);
-                foreach (var t in pen.Texts)
+                foreach (var t in pen.Texts.Where(keep))
                 {
-                    // DXF texts sit on their baseline; a middle one comes down half its height.
-                    var rad = t.Angle * Math.PI / 180;
-                    var at = P(t.At) - (t.Baseline == "middle" ? new Vec2(-Math.Sin(rad), Math.Cos(rad)) * (t.Height / 2) : new Vec2(0, 0));
-                    w.Text(at, t.Text, t.Height, layer, t.Angle, t.Anchor switch { "middle" => "center", "end" => "right", _ => "left" }, pen.Stroke, t.Italic ? 12 : 0);
+                    var (at, align) = Placed(t);
+                    w.Text(at, t.Text, t.Height, layer, t.Angle, align, pen.Stroke, t.Italic ? 12 : 0);
                 }
             }
         }
+        // DXF texts sit on their baseline; a middle one comes down half its height.
+        (Vec2 At, string Align) Placed(PenText t)
+        {
+            var rad = t.Angle * Math.PI / 180;
+            var at = P(t.At) - (t.Baseline == "middle" ? new Vec2(-Math.Sin(rad), Math.Cos(rad)) * (t.Height / 2) : new Vec2(0, 0));
+            return (at, t.Anchor switch { "middle" => "center", "end" => "right", _ => "left" });
+        }
+        var inserts = new List<(string Name, List<(string, string, Vec2, double, double, string, string)> Attributes)>();
+        foreach (var group in page.Pens.Where(p => p.Block != null).GroupBy(p => p.Block!))
+        {
+            var attributes = new List<(string Tag, string Value, Vec2 At, double Height, double Rotation, string Align, string Layer)>();
+            var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var pen in group)
+                foreach (var t in pen.Texts.Where(t => t.Tag != null))
+                {
+                    var tag = Safe(t.Tag!).ToUpperInvariant().Replace(' ', '_');
+                    for (var n = 2; !tags.Add(tag); n++) tag = $"{Safe(t.Tag!).ToUpperInvariant()}_{n}";
+                    var (at, align) = Placed(t);
+                    attributes.Add((tag, t.Text.Replace("\r", " ").Replace("\n", " ").Trim(), at, t.Height, t.Angle, align, w.Layer("TEXT", pen.Stroke ?? "#000000", 0.18, null)));
+                }
+            w.Block(group.Key, () => { foreach (var pen in group) Draw(pen, t => t.Tag == null); }, attributes);
+            inserts.Add((group.Key, attributes));
+        }
+        foreach (var pen in page.Pens.Where(p => p.Block == null)) Draw(pen, _ => true);
+        foreach (var (name, attributes) in inserts) w.Insert(name, w.Layer("TITLE", "#000000", 0.25, null), attributes);
         return w.Bytes(comment);
     }
 

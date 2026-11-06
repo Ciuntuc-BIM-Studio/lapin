@@ -13,7 +13,7 @@ import { LengthField } from '../../shell/cells';
 const MAX = 2048;
 
 /** The file as base64, its longer side at most 2048 px (a PNG stays a PNG, so its transparency stays). */
-async function prepare(file: File): Promise<{ mime: string; data: string; aspect: number }> {
+export async function prepareImage(file: File): Promise<{ mime: string; data: string; aspect: number }> {
   const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
   const bitmap = await createImageBitmap(file);
   const aspect = bitmap.height / Math.max(1, bitmap.width);
@@ -48,7 +48,7 @@ export function OwnImage({ materialId }: { materialId: string }) {
       const file = input.files?.[0];
       if (!file) return;
       try {
-        const { mime, data, aspect } = await prepare(file);
+        const { mime, data, aspect } = await prepareImage(file);
         const r = await execute('image.add', { name: file.name, mime, data }) as { id?: string } | null;
         if (!r?.id) return;
         // Its width as before (1 m for a first image), its height as the picture's proportion.

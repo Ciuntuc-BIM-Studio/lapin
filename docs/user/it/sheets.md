@@ -26,6 +26,22 @@ La cornice e il cartiglio appartengono al foglio. Non vengono mai selezionati n�
 
 ![Una vista selezionata su una tavola: le maniglie di ritaglio, il suo limite, la puntina](shots/sheet-view-boundary.webp)
 
+## Il tuo cartiglio
+
+**Gestisci → Cartigli…** elenca i cartigli: quelli di Lapin (**Lapin standard**, quello che avevano finora tutte le tavole, il **cartuș** rumeno e uno **ISO 7200**), quelli del progetto e quelli della libreria di questo computer, offerti in ogni suo progetto. Clic su uno per vederlo con i valori del progetto. **Duplica nel progetto** ne fa una copia modificabile, **Nuovo** uno vuoto; **Imposta come predefinito del progetto** lo dà a ogni tavola che non ne sceglie uno, e una tavola sceglie il suo in **Cartiglio** nelle proprietà.
+
+![Cartigli: quelli di Lapin, del progetto e di questo computer, quello scelto con i valori del progetto](shots/title-blocks.webp)
+
+**Modifica…** apre l’editor. Il cartiglio è un riquadro in millimetri di carta posto in un angolo della cornice (in basso a destra per impostazione), così lo stesso cartiglio va bene dall’A4 all’A0, verticale o orizzontale; i margini della cornice si impostano qui. Disegna con **Linea**, **Rettangolo**, **Polilinea**, **Testo**, **Immagine** (il tuo logo, PNG o JPEG) e **Tabella delle revisioni**; un rettangolo o una polilinea chiusa prende un riempimento o un tratteggio, un testo un’altezza o uno stile di testo degli Standard di disegno. I clic si agganciano a estremi, angoli e punti medi degli elementi e alla griglia; **Maiusc** tiene dritta la linea. Trascina un elemento per spostarlo, le sue maniglie per rimodellarlo; le frecce lo spostano, **Canc** lo elimina, **Ctrl+Z** annulla.
+
+L’elenco **Campi** contiene il testo vivo: del progetto (nome, numero, committente, sito, permesso, progettista, persone e i tuoi parametri), della tavola (numero, nome, scala, formato, revisione, stato, data, disegnato, verificato e approvato da, fase, tavola x di y) e del sistema (data di stampa, nome del file). Un clic mette il campo nel testo selezionato o lo colloca come nuovo testo; un testo può mescolare parole e campi, `Progetto: {project.name}`. L’editor mostra il valore di ogni campo su una tavola di esempio; un campo senza valore appare grigio con il suo nome, uno che Lapin non conosce in rosso (stampato come `<campo>`, e **Gestisci → Verifica** lo segnala). **Salva** conserva il cartiglio come un solo passo da annullare.
+
+![L’editor: un cartiglio in stile finlandese, i suoi campi con i valori, un campo aggiunto sotto il numero della tavola](shots/title-block-designer.webp)
+
+Le tavole, il loro PDF, Stampa e l’emissione lo disegnano con i valori di ogni tavola. In DXF è un blocco con attributi, uno per testo vivo (`PROJECT_NAME`, `SHEET_NUMBER`…), come i cartigli di AutoCAD. **Esporta…** salva un cartiglio come file `.json`, con le sue immagini, e **Importa…** lo legge nel progetto o nella libreria, così uno studio porta i suoi cartigli da un computer all’altro. I progetti vecchi mantengono Lapin standard e si disegnano esattamente come prima.
+
+![La tavola con il suo cartiglio](shots/sheet-title-block.webp)
+
 ## Stampare
 
 I pulsanti **PDF** e **DXF** nella barra della tavola esportano la tavola. Un PDF è pronto da stampare o da inviare. Un DXF si apre in AutoCAD e in altri programmi CAD con i suoi layer, le sue linee e i suoi retini. **Stampa** invia la tavola a una stampante o a un plotter nel suo formato, in scala 1:1, come linee vettoriali: scegli il plotter e il formato nella finestra di stampa. Su una stampante più piccola, scegli l’adattamento alla pagina.
