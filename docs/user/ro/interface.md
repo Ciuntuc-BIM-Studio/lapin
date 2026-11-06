@@ -55,6 +55,8 @@ Uneltele rapide sunt locurile numerotate de jos din vedere (pe marginea ei din s
 
 Plutind jos, fiecare loc arată numele uneltei, iar un loc gol după ultimul așteaptă o unealtă. Lapin îți păstrează uneltele rapide pe acest calculator, pentru tine.
 
+Săgeata de la capătul barei ascunde uneltele rapide; în locul lor rămâne un mâner mic, **Unelte rapide**, care le readuce. Se ascund separat în vederile modelului (planuri, 3D, secțiuni) și în planșe și extrase, așa că le poți ține ascunse pe documente și vizibile pe desene.
+
 ![Uneltele rapide: un tip de perete pe locul 3, scara pe locul 7, locul 2 gol](shots/quick-tools.webp)
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)

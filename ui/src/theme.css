@@ -1730,3 +1730,20 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .furniture-edit dl.fields dd input:not([type=checkbox]), .furniture-edit dl.fields dd select { width: 100%; }
 .dialog[data-dialog=furniture-types] .type-list .tree-item { white-space: nowrap; }
 .furniture-edit dl.fields dd input:not([type=checkbox]):not(.num) { text-align: left; }
+
+/* The quick tools hidden by their own button: a small handle where they were brings them back (app/bars.ts). */
+.hotbar-hide { align-self: stretch; display: grid; place-items: center; width: 18px; border: 0; border-left: 1px solid var(--rule); background: transparent; color: var(--ink-muted); cursor: pointer; padding: 0; margin-left: 2px; }
+.hotbar-hide:hover { color: var(--accent); }
+.hotbar.docked .hotbar-hide { width: auto; height: 18px; border-left: 0; border-top: 1px solid var(--rule); margin: 2px 0 0; }
+.hotbar-handle { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); z-index: 3; display: flex; align-items: center; gap: 4px; padding: 2px 10px 3px; background: var(--hud); border: 1px solid var(--rule); border-bottom: 0; border-radius: 4px 4px 0 0; color: var(--ink-muted); cursor: pointer; backdrop-filter: blur(4px); }
+.hotbar-handle:hover { color: var(--accent); }
+.hotbar-handle.docked { left: 0; top: 50%; bottom: auto; transform: translateY(-50%); padding: 10px 2px; border: 1px solid var(--rule); border-left: 0; border-radius: 0 4px 4px 0; }
+.view-area:has(.cad-line) .hotbar-handle:not(.docked) { bottom: 60px; }
+/* A schedule's table editor, folded into a strip at the bottom: only the result shows. */
+.schedule-editor { display: flex; flex-direction: column; flex: 0 1 40%; min-height: 0; border-top: 1px solid var(--rule); background: var(--panel); }
+.schedule-editor .schedule-grid { flex: 1 1 auto; border-top: 0; }
+.schedule-editor.folded { flex: 0 0 auto; }
+.schedule-editor-head { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border: 0; border-bottom: 1px solid var(--rule); background: var(--panel); color: var(--ink-muted); cursor: pointer; text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.schedule-editor.folded .schedule-editor-head { border-bottom: 0; }
+.schedule-editor-head:hover { color: var(--accent); }
+.view-area:has(.schedule-editor:not(.folded)) .hotbar:not(.docked) { opacity: .92; }

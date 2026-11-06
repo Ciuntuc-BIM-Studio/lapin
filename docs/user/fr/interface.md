@@ -55,6 +55,8 @@ Les outils rapides sont les emplacements numérotés en bas de la vue (sur son b
 
 Flottant en bas, chaque emplacement montre le nom de son outil, et un emplacement vide après le dernier attend un outil. Lapin garde vos outils rapides sur cet ordinateur, pour vous.
 
+La flèche au bout de la barre masque les outils rapides ; une petite poignée **Outils rapides** reste à leur place et les fait revenir. Ils se masquent séparément dans les vues du modèle (plans, 3D, coupes) et dans les feuilles et les nomenclatures : vous pouvez les cacher sur les documents et les garder sur les dessins.
+
 ![Les outils rapides, l’escalier à l’emplacement 7 et le 2 vide](shots/quick-tools.webp)
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)

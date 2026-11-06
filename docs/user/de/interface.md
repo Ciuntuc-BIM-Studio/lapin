@@ -55,6 +55,8 @@ Die Schnellwerkzeuge sind die nummerierten Plätze unten in der Ansicht (in Komp
 
 Unten schwebend zeigt jeder Platz den Namen seines Werkzeugs, und ein leerer Platz nach dem letzten wartet auf ein Werkzeug. Lapin speichert Ihre Schnellwerkzeuge auf diesem Computer, für Sie.
 
+Der Pfeil am Ende der Leiste blendet die Schnellwerkzeuge aus; an ihrer Stelle bleibt ein kleiner Griff **Schnellwerkzeuge**, der sie zurückholt. Sie werden in den Modellansichten (Grundrisse, 3D, Schnitte) und in Plänen und Listen getrennt ausgeblendet, sodass sie bei den Dokumenten aus und bei den Zeichnungen an bleiben können.
+
 ![Die Schnellwerkzeuge, die Treppe auf Platz 7 und Platz 2 leer](shots/quick-tools.webp)
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)

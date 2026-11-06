@@ -55,6 +55,8 @@ Las herramientas rápidas son las casillas numeradas al pie de la vista (en su b
 
 Flotando al pie, cada casilla muestra el nombre de su herramienta, y una casilla vacía tras la última espera una herramienta. Lapin guarda sus herramientas rápidas en este ordenador, para usted.
 
+La flecha al final de la barra oculta las herramientas rápidas; en su lugar queda un pequeño tirador **Herramientas rápidas** que las devuelve. Se ocultan por separado en las vistas del modelo (plantas, 3D, secciones) y en los planos y las tablas, así que puedes tenerlas ocultas en los documentos y visibles en los dibujos.
+
 ![Las herramientas rápidas, la escalera en la casilla 7 y la 2 vacía](shots/quick-tools.webp)
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)

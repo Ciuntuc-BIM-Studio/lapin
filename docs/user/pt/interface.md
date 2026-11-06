@@ -55,6 +55,8 @@ As ferramentas rápidas são os espaços numerados no pé da vista (na borda esq
 
 No pé da vista, cada espaço mostra o nome da sua ferramenta, e um espaço vazio depois do último espera uma ferramenta. O Lapin guarda suas ferramentas rápidas neste computador, para você.
 
+A seta no fim da barra oculta as ferramentas rápidas; fica no lugar delas uma pequena pega **Ferramentas rápidas** que as traz de volta. Ocultam-se à parte nas vistas do modelo (plantas, 3D, cortes) e nas folhas e mapas, por isso pode tê-las escondidas nos documentos e visíveis nos desenhos.
+
 ![As ferramentas rápidas: um tipo de parede no espaço 3, a escada no 7, o espaço 2 vazio](shots/quick-tools.webp)
 
 ![Vista → Ferramentas rápidas…](shots/quick-tools-dialog.webp)

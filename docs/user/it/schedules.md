@@ -88,6 +88,10 @@ I disegni **Su ogni scheda** (vista interna, vista esterna, pianta, sezione), ne
 
 ![L'abaco delle stratigrafie dei tipi con la stratigrafia di ogni tipo](shots/type-assemblies.webp)
 
+Quando serve solo il risultato, fai clic su **Editor della tabella** sopra la tabella di modifica sotto l’abaco: si riduce a una barra in fondo alla vista e l’abaco occupa tutta la vista. Un clic sulla barra lo riapre. Lapin ricorda la scelta su questo computer. La freccia in fondo agli strumenti rapidi li nasconde anche sulle tavole e sugli abachi (vedi [L’interfaccia](interface.md)).
+
+![Solo l’abaco: l’editor della tabella ridotto nella sua barra, gli strumenti rapidi nascosti](shots/schedule-result-only.webp)
+
 ## Modanature di muro
 
 L'abaco **Modanature di muro** (**Architettura → Abaco delle modanature di muro**, oppure **Costi → Abachi…** → **Modanature di muro**) somma le modanature e le scanalature di muro del progetto per profilo, genere e materiale: quante sono, i loro pezzi (una modanatura interrotta dalle aperture è più pezzi), la loro lunghezza lungo le facce e il loro volume; per una scanalatura, il volume che toglie al muro. Un totale per le modanature e uno per le scanalature chiudono la tabella. La sua barra le somma prima **per profilo**, **per piano** o **per tipo di muro**. I risvolti contano nel volume, non nella lunghezza.

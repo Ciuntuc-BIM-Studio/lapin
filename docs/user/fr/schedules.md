@@ -88,6 +88,10 @@ Les dessins **Sur chaque fiche** (vue intérieure, vue extérieure, plan, coupe)
 
 ![La nomenclature des compositions des types avec la composition de chaque type](shots/type-assemblies.webp)
 
+Quand seul le résultat compte, cliquez sur **Éditeur du tableau** au-dessus du tableau d’édition sous la nomenclature : il se replie dans une barre en bas de la vue, et la nomenclature occupe toute la vue. Un clic sur la barre le rouvre. Lapin retient ce choix sur cet ordinateur. La flèche au bout des outils rapides les masque aussi sur les feuilles et les nomenclatures (voir [L’interface](interface.md)).
+
+![La nomenclature seule : l’éditeur du tableau replié dans sa barre, les outils rapides masqués](shots/schedule-result-only.webp)
+
 ## Moulures de mur
 
 La nomenclature **Moulures de mur** (**Architecture → Nomenclature des moulures de mur**, ou **Coûts → Nomenclatures…** → **Moulures de mur**) additionne les moulures et engravures de mur du projet par profil, genre et matériau : combien il y en a, leurs pièces (une moulure coupée par des ouvertures en fait plusieurs), leur longueur le long des faces et leur volume ; pour une engravure, le volume qu'elle retire au mur. Un total pour les moulures et un pour les engravures terminent le tableau. Sa barre les additionne d'abord **par profil**, **par niveau** ou **par type de mur**. Les retours comptent dans le volume, pas dans la longueur.

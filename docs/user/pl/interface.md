@@ -55,6 +55,8 @@ Szybkie narzędzia to ponumerowane miejsca na dole widoku (w trybach Kompaktowy 
 
 Na dole każde miejsce pokazuje nazwę swojego narzędzia, a puste miejsce za ostatnim czeka na narzędzie. Lapin zapamiętuje Twoje szybkie narzędzia na tym komputerze.
 
+Strzałka na końcu paska ukrywa szybkie narzędzia; w ich miejscu zostaje mały uchwyt **Szybkie narzędzia**, który je przywraca. Ukrywają się osobno w widokach modelu (rzuty, 3D, przekroje) oraz na arkuszach i w zestawieniach, więc możesz je schować na dokumentach i zostawić na rysunkach.
+
 ![Szybkie narzędzia: typ ściany na miejscu 3, schody na 7, miejsce 2 puste](shots/quick-tools.webp)
 
 ![Widok → Szybkie narzędzia…](shots/quick-tools-dialog.webp)

@@ -88,6 +88,10 @@ Desenele **Pe fiecare fișă** (vedere din interior, vedere din exterior, plan, 
 
 ![Extrasul alcătuirilor tipurilor cu alcătuirea fiecărui tip](shots/type-assemblies.webp)
 
+Când vrei doar rezultatul, apasă **Editorul tabelului** deasupra tabelului de editare de sub extras: se strânge într-o bară subțire jos, iar extrasul ocupă toată vederea. Un clic pe bară îl deschide din nou. Lapin ține minte alegerea pe acest calculator. Săgeata de la capătul uneltelor rapide le ascunde și peste planșe și extrase (vezi [Interfața](interface.md)).
+
+![Doar extrasul: editorul tabelului strâns în bara lui, uneltele rapide ascunse](shots/schedule-result-only.webp)
+
 ## Profile de perete
 
 Extrasul **Profile de perete** (**Arhitectură → Extras de profile de perete**, sau **Cost → Extrase…** → **Profile de perete**) adună profilele și canalele din pereții proiectului pe profil, fel și material: câte sunt, bucățile lor (un profil tăiat de goluri e mai multe), lungimea de-a lungul fețelor și volumul; la un canal, volumul scos din perete. Un total pentru profile și unul pentru canale încheie tabelul. Bara lui le adună întâi **pe profil**, **pe nivel** sau **pe tip de perete**. Întoarcerile intră în volum, nu în lungime.

@@ -88,6 +88,10 @@ The drawings **On each card** (interior view, exterior view, plan, section), in 
 
 ![The type assemblies schedule with each type's build-up](shots/type-assemblies.webp)
 
+When only the result is wanted, click **Table editor** over the editing table under the schedule: it folds into a strip at the bottom of the view, and the schedule takes the whole view. Click the strip to open it again. Lapin remembers the choice on this computer. The arrow at the end of the quick tools hides them over sheets and schedules too (see [The interface](interface.md)).
+
+![The schedule alone: the table editor folded into its strip, the quick tools hidden](shots/schedule-result-only.webp)
+
 ## Wall sweeps
 
 The **Wall sweeps** schedule (**Architecture → Wall sweeps schedule**, or **Cost → Schedules…** → **Wall sweeps**) adds up the project's wall sweeps and reveals by profile, kind and material: how many there are, their pieces (a sweep the openings cut is several), their length along the faces and their volume; for a reveal, the volume it takes out of the wall. A total for the sweeps and one for the reveals close the table. Its toolbar adds them up **by profile**, **by storey** or **by wall type** first. Returns count in the volume, not in the length.

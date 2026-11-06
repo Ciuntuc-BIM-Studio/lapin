@@ -55,6 +55,8 @@ The quick tools are the numbered slots at the bottom of the view (on its left ed
 
 Floating at the bottom, each slot shows its tool's name, and an empty slot after the last waits for a tool. Lapin keeps your quick tools on this computer, for you.
 
+The arrow at the bar's end hides the quick tools; a small **Quick tools** handle stays where they were and brings them back. They are hidden apart in the model's views (plans, 3D, sections) and in sheets and schedules, so you can keep them off the documents and on the drawings.
+
 ![The quick tools: a wall type in slot 3, the stair in slot 7, slot 2 empty](shots/quick-tools.webp)
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)

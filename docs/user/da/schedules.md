@@ -88,6 +88,10 @@ Tegningerne **På hvert kort** (indvendig visning, udvendig visning, plan, snit)
 
 ![Skemaet over typeopbygninger med hver types opbygning](shots/type-assemblies.webp)
 
+Når du kun vil se resultatet, så klik på **Tabeleditor** over redigeringstabellen under skemaet: den foldes sammen til en smal bjælke nederst, og skemaet fylder hele visningen. Et klik på bjælken åbner den igen. Lapin husker valget på denne computer. Pilen for enden af hurtigværktøjerne skjuler dem også over tegningsark og skemaer (se [Brugerfladen](interface.md)).
+
+![Kun skemaet: tabeleditoren foldet sammen i sin bjælke, hurtigværktøjerne skjult](shots/schedule-result-only.webp)
+
 ## Vægprofiler
 
 Skemaet **Vægprofiler** (**Arkitektur → Vægprofilskema**, eller **Økonomi → Skemaer…** → **Vægprofiler**) lægger projektets vægprofiler og vægnoter sammen efter profil, art og materiale: hvor mange der er, deres stykker (en profil, som åbninger afbryder, er flere), deres længde langs siderne og deres volumen; for en not det volumen, den tager ud af væggen. En sum for profilerne og en for noterne afslutter tabellen. Dens bjælke lægger dem først sammen **efter profil**, **efter etage** eller **efter vægtype**. Returer tæller med i volumen, ikke i længden.

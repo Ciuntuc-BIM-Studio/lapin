@@ -55,6 +55,8 @@ Gli strumenti rapidi sono i posti numerati in fondo alla vista (sul suo bordo si
 
 Mobili in fondo, ogni posto mostra il nome del suo strumento, e un posto vuoto dopo l’ultimo aspetta uno strumento. Lapin conserva i tuoi strumenti rapidi su questo computer, per te.
 
+La freccia in fondo alla barra nasconde gli strumenti rapidi; al loro posto resta una piccola maniglia **Strumenti rapidi** che li riporta. Si nascondono separatamente nelle viste del modello (piante, 3D, sezioni) e nelle tavole e negli abachi, così puoi tenerli nascosti sui documenti e visibili sui disegni.
+
 ![Gli strumenti rapidi, la scala nel posto 7 e il posto 2 vuoto](shots/quick-tools.webp)
 
 ![Vista → Strumenti rapidi…](shots/quick-tools-dialog.webp)

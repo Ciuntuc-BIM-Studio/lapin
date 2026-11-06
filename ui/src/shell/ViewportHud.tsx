@@ -18,6 +18,8 @@ import { activeStorey, useSession } from '../engine/session';
 import { num } from '../engine/model';
 import { ScopeBar } from './ScopeBar';
 import { formatLevel, lengthText, useStandards } from '../engine/unitsStore';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { scopeOf, setQuickToolsHidden, useBars } from '../app/bars';
 
 const level = (e: number) => formatLevel(e);
 
@@ -62,6 +64,9 @@ export function ViewportHud() {
   useUi((s) => [s.wallTypeId, s.doorTypeId, s.windowTypeId, s.slabTypeId, s.stairTypeId, s.rampTypeId, s.ceilingTypeId, s.skirtingTypeId, s.curtainTypeId, s.memberTypeId].join());
   useSession((s) => s.nodes);
   const docked = parts.quickTools === 'docked';
+  // Hidden by its own button, apart in the model's views and in the documents (app/bars.ts).
+  const scope = scopeOf(useUi((s) => s.view));
+  const hidden = useBars((s) => s.quickToolsHidden[scope]);
   const drop = (i: number, e: DragEvent) => {
     e.preventDefault();
     setOver(null);
@@ -99,7 +104,12 @@ export function ViewportHud() {
       )}
       <ScopeBar />
       {hintText && parts.prompt === 'banner' && <div className="hud-hint">{hintText}</div>}
-      {parts.quickTools !== 'off' && (
+      {parts.quickTools !== 'off' && hidden && (
+        <button type="button" className={`hotbar-handle${docked ? ' docked' : ''}`} data-testid="quick-tools-show" title="Show the quick tools" onClick={() => setQuickToolsHidden(scope, false)}>
+          {docked ? <ChevronRight size={14} /> : <><ChevronUp size={14} /><span className="small">Quick tools</span></>}
+        </button>
+      )}
+      {parts.quickTools !== 'off' && !hidden && (
         <div className={`hotbar${docked ? ' docked' : ' named'}`} role="toolbar" aria-label="Quick tools">
           {shown.map((id, i) => {
             const q = quickSlot(id);
@@ -122,6 +132,9 @@ export function ViewportHud() {
               </button>
             );
           })}
+          <button type="button" className="hotbar-hide" data-testid="quick-tools-hide" title={scope === 'docs' ? 'Hide the quick tools in sheets and schedules' : 'Hide the quick tools'} onClick={() => setQuickToolsHidden(scope, true)}>
+            {docked ? <ChevronLeft size={13} /> : <ChevronDown size={13} />}
+          </button>
         </div>
       )}
     </>

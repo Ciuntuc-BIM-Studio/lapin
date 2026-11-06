@@ -88,6 +88,10 @@ Los dibujos **En cada ficha** (vista interior, vista exterior, planta, sección)
 
 ![La tabla de composición de los tipos con la composición de cada tipo](shots/type-assemblies.webp)
 
+Cuando solo interesa el resultado, haz clic en **Editor de la tabla** encima de la tabla de edición bajo la tabla de planificación: se pliega en una barra estrecha al pie de la vista y la tabla ocupa toda la vista. Un clic en la barra lo vuelve a abrir. Lapin recuerda la elección en este ordenador. La flecha al final de las herramientas rápidas las oculta también en los planos y las tablas (consulta [La interfaz](interface.md)).
+
+![Solo la tabla: el editor de la tabla plegado en su barra, las herramientas rápidas ocultas](shots/schedule-result-only.webp)
+
 ## Molduras de muro
 
 La tabla **Molduras de muro** (**Arquitectura → Tabla de molduras de muro**, o **Costes → Tablas…** → **Molduras de muro**) suma las molduras y ranuras de muro del proyecto por perfil, clase y material: cuántas hay, sus piezas (una moldura cortada por huecos son varias), su longitud a lo largo de las caras y su volumen; en una ranura, el volumen que quita al muro. Un total para las molduras y otro para las ranuras cierran la tabla. Su barra las suma primero **por perfil**, **por planta** o **por tipo de muro**. Los retornos cuentan en el volumen, no en la longitud.

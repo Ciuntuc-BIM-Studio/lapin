@@ -88,6 +88,10 @@ Os desenhos **Em cada ficha** (vista interior, vista exterior, planta, corte), n
 
 ![A tabela das composições dos tipos com a composição de cada tipo](shots/type-assemblies.webp)
 
+Quando só interessa o resultado, clique em **Editor da tabela** por cima da tabela de edição sob o mapa: recolhe-se numa barra estreita no fundo da vista e o mapa ocupa a vista toda. Um clique na barra volta a abri-lo. O Lapin lembra-se da escolha neste computador. A seta no fim das ferramentas rápidas também as oculta nas folhas e nos mapas (ver [A interface](interface.md)).
+
+![Só o mapa: o editor da tabela recolhido na sua barra, as ferramentas rápidas ocultas](shots/schedule-result-only.webp)
+
 ## Molduras de parede
 
 A tabela **Molduras de parede** (**Arquitetura → Tabela de molduras de parede**, ou **Custos → Tabelas…** → **Molduras de parede**) soma as molduras e frisos de parede do projeto por perfil, tipo de peça e material: quantas há, as suas peças (uma moldura cortada por vãos são várias), o seu comprimento ao longo das faces e o seu volume; num friso, o volume que tira à parede. Um total para as molduras e outro para os frisos fecham a tabela. A sua barra soma-as primeiro **por perfil**, **por piso** ou **por tipo de parede**. Os retornos contam no volume, não no comprimento.

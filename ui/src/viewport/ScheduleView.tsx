@@ -7,7 +7,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ChartColumn, FileDown, Maximize, Plus, Settings2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChartColumn, ChevronDown, ChevronUp, FileDown, Maximize, Plus, Settings2 } from 'lucide-react';
+import { setScheduleEditor, useBars } from '../app/bars';
 import { ScheduleSettings, type Settings } from './ScheduleSettings';
 import { ScheduleChartsPanel, type ChartDto } from './ScheduleChartsPanel';
 import { setTypeParam } from './scheduleParams';
@@ -49,6 +50,8 @@ function CellInput({ value, onCommit, title, testId }: { value: string; onCommit
 }
 
 export function ScheduleView() {
+  // The table editor folded into a strip at the bottom when only the result is wanted (app/bars.ts).
+  const editorOpen = useBars((b) => b.scheduleEditor);
   const id = usePaneField('scheduleId');
   const active = usePaneActive();
   const nodes = useSession((s) => s.nodes);
@@ -197,75 +200,85 @@ export function ScheduleView() {
       {side === 'settings' && d && joinery && <ScheduleSettings id={node.id} s={d} kind={kind} />}
       {side === 'charts' && d && <ScheduleChartsPanel id={node.id} charts={d.charts ?? []} columns={d.chartColumns ?? []} />}
       </div>
-      {d && joinery && d.entries.length > 0 && (
-        <div className="schedule-grid">
-          <table>
-            <thead><tr><th>Mark</th>{d.entries.map((e) => (
-              <th key={e.key}>
-                {e.manual
-                  ? <><CellInput value={e.mark} title="The column's mark" onCommit={(t) => { if (t.trim()) void execute('architecture.renameScheduleColumn', { id: node.id, column: e.key, label: t }); }} />
-                    <button type="button" className="icon mini" title="Remove the column" onClick={() => void execute('architecture.removeScheduleColumn', { id: node.id, column: e.key })}>×</button></>
-                  : e.mark}
-              </th>
-            ))}</tr></thead>
-            <tbody>
-              {d.rows.map((r) => (
-                <tr key={r.id}>
-                  <th title={r.param ? 'A parameter of the types: what is typed here goes into the type' : undefined}>{r.label}{!r.fromModel && <button type="button" className="icon mini" title="Remove the row" onClick={() => void execute('architecture.removeScheduleRow', { id: node.id, rowId: r.id })}>×</button>}</th>
-                  {d.entries.map((e) => {
-                    const over = d.overridden?.[e.key]?.includes(r.id);
-                    const shown = e.rows[r.id] ?? '';
-                    if (r.param && !e.manual) {
+      {d && ((joinery && d.entries.length > 0) || d.grid) && (
+        <div className={`schedule-editor${editorOpen ? '' : ' folded'}`} data-testid="schedule-editor">
+          <button type="button" className="schedule-editor-head" data-testid="schedule-editor-toggle" aria-expanded={editorOpen}
+            title={editorOpen ? 'Fold the table editor into this strip: only the result shows' : 'Open the table editor'} onClick={() => setScheduleEditor(!editorOpen)}>
+            {editorOpen ? <ChevronDown size={13} /> : <ChevronUp size={13} />}<span>Table editor</span>
+          </button>
+          {editorOpen && <>
+        {d && joinery && d.entries.length > 0 && (
+          <div className="schedule-grid">
+            <table>
+              <thead><tr><th>Mark</th>{d.entries.map((e) => (
+                <th key={e.key}>
+                  {e.manual
+                    ? <><CellInput value={e.mark} title="The column's mark" onCommit={(t) => { if (t.trim()) void execute('architecture.renameScheduleColumn', { id: node.id, column: e.key, label: t }); }} />
+                      <button type="button" className="icon mini" title="Remove the column" onClick={() => void execute('architecture.removeScheduleColumn', { id: node.id, column: e.key })}>×</button></>
+                    : e.mark}
+                </th>
+              ))}</tr></thead>
+              <tbody>
+                {d.rows.map((r) => (
+                  <tr key={r.id}>
+                    <th title={r.param ? 'A parameter of the types: what is typed here goes into the type' : undefined}>{r.label}{!r.fromModel && <button type="button" className="icon mini" title="Remove the row" onClick={() => void execute('architecture.removeScheduleRow', { id: node.id, rowId: r.id })}>×</button>}</th>
+                    {d.entries.map((e) => {
+                      const over = d.overridden?.[e.key]?.includes(r.id);
+                      const shown = e.rows[r.id] ?? '';
+                      if (r.param && !e.manual) {
+                        return (
+                          <td key={e.key} className="param" title={`${r.param} of ${e.name}: typed into the type (its elements' own values stay theirs)`}>
+                            <CellInput value={shown === '—' ? '' : shown} onCommit={(t) => void setTypeParam(e.type ?? e.key, r.param!, t)} testId={`param-${r.param}-${e.mark}`} />
+                          </td>
+                        );
+                      }
                       return (
-                        <td key={e.key} className="param" title={`${r.param} of ${e.name}: typed into the type (its elements' own values stay theirs)`}>
-                          <CellInput value={shown === '—' ? '' : shown} onCommit={(t) => void setTypeParam(e.type ?? e.key, r.param!, t)} testId={`param-${r.param}-${e.mark}`} />
+                        <td key={e.key} className={over ? 'overridden' : ''} title={over ? 'Typed over the model\'s value' : undefined}>
+                          {over && <button type="button" className="icon mini" title="Back to the model's value" onClick={() => void execute('architecture.scheduleCell', { id: node.id, entry: e.key, row: r.id, text: null })}>↺</button>}
+                          <CellInput value={shown} onCommit={(t) => void execute('architecture.scheduleCell', { id: node.id, entry: e.key, row: r.id, text: t })} />
                         </td>
                       );
-                    }
-                    return (
-                      <td key={e.key} className={over ? 'overridden' : ''} title={over ? 'Typed over the model\'s value' : undefined}>
-                        {over && <button type="button" className="icon mini" title="Back to the model's value" onClick={() => void execute('architecture.scheduleCell', { id: node.id, entry: e.key, row: r.id, text: null })}>↺</button>}
-                        <CellInput value={shown} onCommit={(t) => void execute('architecture.scheduleCell', { id: node.id, entry: e.key, row: r.id, text: t })} />
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {d?.grid && (
-        <div className="schedule-grid" data-testid="schedule-grid">
-          <table>
-            <thead><tr><th />{d.grid.columns.map((c) => (
-              <th key={c.key}>
-                {c.custom
-                  ? <><CellInput value={c.label} title="The column's name" onCommit={(t) => { if (t.trim()) void execute('architecture.renameScheduleColumn', { id: node.id, column: c.key, label: t }); }} />
-                    <button type="button" className="icon mini" title="Remove the column" onClick={() => void execute('architecture.removeScheduleColumn', { id: node.id, column: c.key })}>×</button></>
-                  : c.label}
-                <button type="button" className={`icon mini${node.props.sortBy === c.key ? ' on' : ''}`} title="Sort by this column (again: the other way, then as the model lists)" onClick={() => sortBy(c.key)}>
-                  {node.props.sortBy === c.key && node.props.sortDesc === true ? <ArrowDown size={10} /> : <ArrowUp size={10} />}
-                </button>
-              </th>
-            ))}</tr></thead>
-            <tbody>
-              {d.grid.rows.map((r) => (
-                <tr key={r.key} className={r.manual ? 'manual' : ''}>
-                  <th>{r.manual && <button type="button" className="icon mini" title="Remove the row" onClick={() => void execute('architecture.removeScheduleManualRow', { id: node.id, row: r.key })}>×</button>}</th>
-                  {d.grid!.columns.map((c, i) => {
-                    const over = r.typed.includes(c.key);
-                    return (
-                      <td key={c.key} className={over ? 'overridden' : ''} title={over ? 'Typed over the model\'s value' : undefined}>
-                        {over && <button type="button" className="icon mini" title="Back to the model's value" onClick={() => void execute('architecture.scheduleCell', { id: node.id, entry: r.key, row: c.key, text: null })}>↺</button>}
-                        <CellInput value={r.cells[i] ?? ''} onCommit={(t) => void execute('architecture.scheduleCell', { id: node.id, entry: r.key, row: c.key, text: t })} />
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {d?.grid && (
+          <div className="schedule-grid" data-testid="schedule-grid">
+            <table>
+              <thead><tr><th />{d.grid.columns.map((c) => (
+                <th key={c.key}>
+                  {c.custom
+                    ? <><CellInput value={c.label} title="The column's name" onCommit={(t) => { if (t.trim()) void execute('architecture.renameScheduleColumn', { id: node.id, column: c.key, label: t }); }} />
+                      <button type="button" className="icon mini" title="Remove the column" onClick={() => void execute('architecture.removeScheduleColumn', { id: node.id, column: c.key })}>×</button></>
+                    : c.label}
+                  <button type="button" className={`icon mini${node.props.sortBy === c.key ? ' on' : ''}`} title="Sort by this column (again: the other way, then as the model lists)" onClick={() => sortBy(c.key)}>
+                    {node.props.sortBy === c.key && node.props.sortDesc === true ? <ArrowDown size={10} /> : <ArrowUp size={10} />}
+                  </button>
+                </th>
+              ))}</tr></thead>
+              <tbody>
+                {d.grid.rows.map((r) => (
+                  <tr key={r.key} className={r.manual ? 'manual' : ''}>
+                    <th>{r.manual && <button type="button" className="icon mini" title="Remove the row" onClick={() => void execute('architecture.removeScheduleManualRow', { id: node.id, row: r.key })}>×</button>}</th>
+                    {d.grid!.columns.map((c, i) => {
+                      const over = r.typed.includes(c.key);
+                      return (
+                        <td key={c.key} className={over ? 'overridden' : ''} title={over ? 'Typed over the model\'s value' : undefined}>
+                          {over && <button type="button" className="icon mini" title="Back to the model's value" onClick={() => void execute('architecture.scheduleCell', { id: node.id, entry: r.key, row: c.key, text: null })}>↺</button>}
+                          <CellInput value={r.cells[i] ?? ''} onCommit={(t) => void execute('architecture.scheduleCell', { id: node.id, entry: r.key, row: c.key, text: t })} />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+          </>}
         </div>
       )}
     </div>

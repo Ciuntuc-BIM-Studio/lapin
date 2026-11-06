@@ -55,6 +55,8 @@ Hurtigværktøjerne er de nummererede pladser nederst i visningen (på dens vens
 
 Svævende nederst viser hver plads værktøjets navn, og en tom plads efter den sidste venter på et værktøj. Lapin gemmer dine hurtigværktøjer på denne computer, for dig.
 
+Pilen for enden af bjælken skjuler hurtigværktøjerne; et lille **Hurtigværktøjer**-håndtag bliver tilbage og henter dem frem igen. De skjules hver for sig i modellens visninger (planer, 3D, snit) og i tegningsark og skemaer, så du kan have dem skjult på dokumenterne og fremme på tegningerne.
+
 ![Hurtigværktøjerne, trappen på plads 7 og plads 2 tom](shots/quick-tools.webp)
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)

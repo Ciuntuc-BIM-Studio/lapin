@@ -88,6 +88,10 @@ Die Zeichnungen **Auf jeder Karte** (Innenansicht, Außenansicht, Grundriss, Sch
 
 ![Die Liste der Typenaufbauten mit dem Aufbau jedes Typs](shots/type-assemblies.webp)
 
+Wenn nur das Ergebnis gebraucht wird, klicken Sie über der Bearbeitungstabelle unter der Liste auf **Tabelleneditor**: Er klappt sich zu einer schmalen Leiste am unteren Rand ein, und die Liste füllt die ganze Ansicht. Ein Klick auf die Leiste öffnet ihn wieder. Lapin merkt sich die Wahl auf diesem Computer. Der Pfeil am Ende der Schnellwerkzeuge blendet sie auch über Plänen und Listen aus (siehe [Die Oberfläche](interface.md)).
+
+![Nur die Liste: der Tabelleneditor in seine Leiste eingeklappt, die Schnellwerkzeuge ausgeblendet](shots/schedule-result-only.webp)
+
 ## Wandprofile
 
 Die Liste **Wandprofile** (**Architektur → Wandprofilliste** oder **Kosten → Bauteillisten…** → **Wandprofile**) fasst die Wandprofile und Wandnuten des Projekts nach Profil, Art und Material zusammen: wie viele es sind, ihre Stücke (ein Profil, das Öffnungen unterbrechen, sind mehrere), ihre Länge entlang der Wandseiten und ihr Volumen; bei einer Nut das Volumen, das sie der Wand nimmt. Eine Summe für die Profile und eine für die Nuten schließen die Tabelle ab. Ihre Leiste fasst sie zuerst **nach Profil**, **nach Geschoss** oder **nach Wandtyp** zusammen. Rückläufe zählen im Volumen, nicht in der Länge.

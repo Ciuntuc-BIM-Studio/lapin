@@ -651,6 +651,24 @@ export const scenes = [
       t.expect(await toolbarClear(t), 'the type assemblies toolbar lays out without its controls overlapping (report #65)');
       await t.fit();
       await t.shot('type-assemblies', { of: '.schedule-pane', pad: 0 });
+      // Only the result: the table editor folded into its strip, the quick tools hidden in the documents (app/bars.ts).
+      await t.page.locator('[data-testid=schedule-editor-toggle]').click();
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=schedule-editor].folded').count() === 1 && await t.page.locator('[data-testid=schedule-grid]').count() === 0, 'the table editor folds into its strip');
+      await t.page.locator('[data-testid=quick-tools-hide]').click();
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=quick-tools-show]').count() === 1 && await t.page.locator('.hotbar').count() === 0, 'the quick tools hide, a handle left to bring them back');
+      await t.fit();
+      await t.shot('schedule-result-only', { of: '.schedule-pane', pad: 0 });
+      await t.ui({ view: 'plan' });
+      await t.wait(800);
+      t.expect(await t.page.locator('.hotbar').count() === 1, 'hidden over the documents, the quick tools stay on the plan');
+      await t.ui({ view: 'schedule', scheduleId: types.id });
+      await t.wait(800);
+      await t.page.locator('[data-testid=quick-tools-show]').click();
+      await t.page.locator('[data-testid=schedule-editor-toggle]').click();
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-testid=schedule-grid]').count() === 1 && await t.page.locator('.hotbar').count() === 1, 'the editor and the quick tools come back');
       await t.ui({ keyPlan: true });
     },
   },
