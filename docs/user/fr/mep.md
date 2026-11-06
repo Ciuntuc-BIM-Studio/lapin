@@ -87,6 +87,55 @@ Sous **Rue**, **Conduite de gaz le long de…** (<kbd>GM</kbd>) pose une conduit
 
 Dimensionner les tubes d’après la consommation des appareils et vérifier la perte de charge relèvent de l’ingénierie, dans l’édition **Lapin MEP**.
 
+## Extracteurs
+
+Le groupe **Extracteurs** de l’onglet Fluides place les extracteurs de salle de bains et de cuisine comme éléments à part entière, chacun d’un type que vous configurez :
+
+- **Extracteur mural** (<kbd>VF</kbd>) : un ventilateur hélicoïde sur un mur, qui souffle directement à travers lui ;
+- **Extracteur de plafond** : un ventilateur sous le plafond avec une gaine sortant de son côté ;
+- **Extracteur en ligne** : un ventilateur tubulaire dans le plénum, sur la gaine ;
+- **Extracteur de fenêtre** : un ventilateur posé dans le vitrage d’une fenêtre ;
+- **Extracteur de plafond avec éclairage** : un extracteur de plafond avec une lumière dans sa grille ;
+- **Extracteur avec panneau à lames** : un panneau mural avec des lames à côté du ventilateur et un cache dessous.
+
+Choisissez un outil et cliquez. Un extracteur mural, de fenêtre ou à panneau à lames se pose sur la face du mur la plus proche du clic (à moins de 600 mm), sa face avant vers la pièce, son centre à 2,1 m du sol (un extracteur de fenêtre à 1,9 m). Un extracteur de plafond se pose où vous cliquez, sous le plafond de la pièce ; un extracteur en ligne 250 mm au-dessus. La barre de la ligne de commande choisit le type que l’outil pose, parmi les types du projet ou ceux livrés avec Lapin (un extracteur mural Ø100 avec sonde d’humidité, un extracteur de plafond avec éclairage et détecteur de mouvement, un extracteur en ligne pour deux salles de bains…).
+
+Un extracteur mural perce une ouverture ronde dans son mur, 20 mm plus large que sa gaine : la réservation du mur, comme celle d’un tronçon de fluides (elle apparaît en plan comme un volume de réservation et passe dans l’IFC comme ouverture du mur). Elle est trouvée d’après l’emplacement de l’extracteur : un extracteur déplacé le long du mur emporte son ouverture. Un extracteur de fenêtre est dans le vitrage et ne perce rien.
+
+![Une salle de bains avec un extracteur mural, un extracteur de plafond avec éclairage gainé vers l’extérieur à travers le mur, et un extracteur avec panneau à lames](shots/fans-plan.webp)
+
+Les plans dessinent un extracteur par son symbole fluides : un cercle avec ses pales, sa face sur le mur, son fourreau en tirets à travers le mur et une flèche dans le sens de l’air ; la grille d’un extracteur de plafond en tirets, puisqu’elle est au-dessus de la coupe. Les plans de plafond, les coupes, les façades et la 3D dessinent les corps.
+
+**Gaine vers la sortie** évacue l’air d’un extracteur de plafond ou en ligne : cliquez sur l’extracteur, puis là où la gaine sort. La gaine est un tronçon du réseau **Bathroom extract** du projet (créé avec la première gaine ; il perce les murs qu’il traverse), aussi large que la gaine de l’extracteur, à la hauteur de son piquage. Elle se termine par une grille sur la face extérieure du mur ou, avec **Par la toiture** activé dans la barre, par un conduit montant jusqu’à un chapeau. Déplacé ou relevé, l’extracteur emporte le début de la gaine.
+
+![Les extracteurs en 3D : la gaine jusqu’à la grille extérieure, la grille de l’extracteur mural en façade](shots/fans-3d.webp)
+
+### Types d’extracteurs
+
+**Types d’extracteurs** ouvre les types : ceux du projet, et ceux livrés avec Lapin, à ajouter d’un clic. Un type définit :
+
+- son **montage** (ceux que son genre admet) et son **diamètre de gaine** (Ø100, 125, 150 ou 200 mm) ;
+- la **forme** de sa grille (ronde ou carrée), sa **taille**, son **motif** (lames, fentes, anneaux ou lisse) et sa **finition** (blanc, argent, noir, inox ou chrome) ;
+- son **débit** (m³/h) et sa **puissance** (W) ;
+- sa **commande** : un interrupteur, une sonde d’humidité, une temporisation, les deux, ou un détecteur de mouvement ;
+- un **clapet anti-retour**, et l’**éclairage** d’un extracteur de plafond, la longueur du corps d’un extracteur en ligne, la largeur et la hauteur d’un panneau à lames, affichés seulement là où ils s’appliquent.
+
+L’aperçu à côté est celui du moteur : le symbole en plan en haut, la face en bas. Tous les extracteurs d’un type suivent une modification.
+
+![Les types d’extracteurs avec l’aperçu d’un panneau à lames](shots/fans-types.webp)
+
+Sélectionnez un extracteur pour changer son type, sa **hauteur au-dessus du sol**, sa rotation et, dès qu’il a une gaine, sa **sortie** (mur ou toiture) et de combien la sortie dépasse la gaine. Faites glisser la poignée en son centre pour le déplacer, celle devant lui pour le tourner.
+
+![Les propriétés d’un extracteur de plafond](shots/fans-properties.webp)
+
+### Nomenclatures, coûts et IFC
+
+La **Nomenclature des extracteurs** liste chaque extracteur avec sa pièce, son genre, sa taille, son débit, son montage, sa commande, sa hauteur et sa sortie, et le débit total. La **Vérification de l’extraction par pièce** liste chaque salle de bains, WC et cuisine (et chaque pièce avec un extracteur) avec son volume, l’extraction nécessaire et ce que donnent ses extracteurs : une salle de bains 8 renouvellements d’air par heure et au moins 54 m³/h, un WC 6 et 25 m³/h, une cuisine 6 et 108 m³/h. Ce sont des valeurs indicatives ; vérifiez-les avec la norme suivie par votre projet.
+
+Un nouveau type porte l’article de coût `LAP-FAN`, compté par extracteur (Coûts → Affecter les articles… le change).
+
+L’IFC écrit un extracteur comme **IfcFan** d’un **IfcFanType** avec son type prédéfini (PROPELLORAXIAL pour un extracteur mural ou de fenêtre, CENTRIFUGALRADIAL pour un extracteur de plafond, TUBEAXIAL pour un extracteur en ligne) et **Pset_FanTypeCommon** (NominalAirFlowRate, NominalPowerRate) ; l’ouverture du mur comme IfcOpeningElement. Lapin les relit comme ses propres extracteurs.
+
 ## Coordination : volumes de réservation et contrôle des conflits
 
 Chaque ouverture dans un mur, une dalle ou un toit peut devenir un **volume de réservation** : un solide aussi grand que l'ouverture, sur toute l'épaisseur de son hôte, revêtements compris. Les outils de détection de conflits (Navisworks, Solibri, BIMcollab) testent les réseaux contre ces volumes avec « entièrement à l'intérieur » : un tuyau, une gaine ou un chemin de câbles entièrement dans un volume passe ; celui qui en dépasse, ou qui traverse un mur sans ouverture, est un conflit. Lapin fait lui-même le même contrôle.

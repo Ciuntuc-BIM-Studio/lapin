@@ -89,6 +89,44 @@ Dão escala aos desenhos e às imagens, mas não fazem parte do edifício. Uma e
 
 As figuras seguem as pessoas e os carros do [BimGo](https://github.com/aussieBIMguru/BimGo) de Aussie BIM Guru (MIT-0): as suas proporções, posturas e perfis.
 
+## Portões
+
+O grupo **Portões** na guia Implantação coloca portões com os seus pilares: um **Portão de giro**, um **Portão de duas folhas** (<kbd>GT</kbd>), um **Portão de correr**, um **Portão de correr em balanço**, um **Portão de pedestres**, um **Portão com porta de pedestres ao lado** e um **Portão sanfonado**. O Lapin não tem muro de divisa próprio: desenhe a cerca como uma parede (baixa, do tipo que quiser) ou deixe os pilares do portão na linha do lote.
+
+Clique nas duas extremidades do portão. Com **Nas linhas** ativo na barra (o padrão), o centro do portão vai para o eixo da parede ou linha desenhada mais próxima dentro de 1,5 m (uma parede, a divisa do lote, uma linha desenhada), ao longo dela; desativado, fica entre os dois pontos. A barra também escolhe o tipo que coloca, entre os estilos do projeto ou os incluídos no Lapin.
+
+Um portão colocado numa parede a corta a partir das faces externas dos pilares, em toda a altura, de modo que o muro termina nos pilares.
+
+![Um portão de correr e um portão de pedestres num muro, um portão de duas folhas na divisa do lote](shots/gates-plan.webp)
+
+As plantas desenham os pilares cortados, as folhas abertas pelo ângulo de abertura com o seu arco, os painéis de um portão sanfonado dobrados; um portão de correr fechado, com uma seta no sentido em que abre, o trilho e a zona onde se recolhe tracejada, tão longa quanto a sua folha (a folha de um portão em balanço é mais longa que o vão pelo seu rabo de contrapeso, cerca de 45%). Elevações, cortes e 3D desenham os corpos.
+
+![Os portões em 3D](shots/gates-3d.webp)
+
+### O configurador
+
+**Tipos de portão** abre o configurador: os estilos do projeto e os incluídos no Lapin, para adicionar com um clique (um portão de duas folhas de ferro forjado, um de correr com lâminas horizontais, um sanfonado de aço, um portão de pedestres em arco, um portão de garagem de madeira, um de tela de segurança, um em balanço automático, um de duas folhas com porta de pedestres, uma porteira, um de correr de chapa perfurada, um portão de jardim de madeira). Um tipo define, por grupos, só o que o seu gênero tem:
+
+- **Portão:** a largura livre e a altura, a folga até o chão, a largura de uma porta de pedestres, os painéis de cada lado de um portão sanfonado, o ângulo de abertura;
+- **Folhas:** o tamanho do quadro, o preenchimento (barras verticais, lâminas horizontais, um painel cheio, tela ou chapa perfurada), o espaçamento das barras ou lâminas, pontas de lança nas barras, o topo (reto, em arco ou em ponta) e a sua flecha;
+- **Pilares:** de alvenaria, montantes de aço ou nenhum, o seu tamanho e altura, o capitel de um pilar de alvenaria (plano ou em pirâmide);
+- **Ferragens:** um motor (um braço nas folhas de um portão de giro, uma caixa ao lado do trilho de um portão de correr) e uma maçaneta com fechadura;
+- **Materiais** por função: quadro, preenchimento, pilares, capitéis, ferragens e motor. Um material indicado aqui que o projeto não tem é criado.
+
+A pré-visualização é a do motor: a planta com o seu arco ou zona de recolhimento em cima, a elevação embaixo. Todo portão de um tipo segue uma alteração.
+
+![O configurador de portões com um portão de duas folhas de ferro forjado](shots/gates-types.webp)
+
+Selecione um portão para alterar o seu tipo, a rotação, quanto fica acima do chão, para que lado as folhas **abrem**, de que mão estão as dobradiças (ou onde se recolhe um portão de correr) e quanto é desenhado aberto (0: fechado). **Outro lado** e **Outra mão** nas suas propriedades, ou as setas ao lado na planta, os invertem. **Modificar → Espelhar** lhe dá a outra mão.
+
+![As propriedades de um portão](shots/gates-properties.webp)
+
+### Quantitativo, custos e IFC
+
+O **Quantitativo de portões** lista os portões por tipo: gênero, vão livre, folhas, preenchimento, topo, pilares, motor e quantidade. Um tipo novo tem as composições de custo `LAP-GATE` e, com motor, `LAP-GATEMOT`, contadas por portão.
+
+O IFC escreve um portão como **IfcDoor** de PredefinedType **GATE**, de um **IfcDoorType** com o seu funcionamento (DOUBLE_DOOR_SINGLE_SWING, SLIDING_TO_LEFT, DOUBLE_DOOR_FOLDING…; um portão com porta de pedestres USERDEFINED), a largura livre e a altura como OverallWidth e OverallHeight e Pset_DoorCommon. Os pilares fazem parte do corpo do portão, de modo que um único elemento leva o portão como foi configurado, e o Lapin o lê de volta como o seu próprio portão.
+
 ## Regras urbanísticas e o sol (Lapin Urban)
 
 A edição **Lapin Urban** acrescenta um grupo **Urbanismo** a esta guia: as regras urbanísticas do lote (POT, CUT, as alturas máximas, os recuos da rua, das laterais, do fundo e do eixo da via), o **volume edificável** que elas deixam, os indicadores que o modelo alcança frente a elas, e o **estudo de insolação**: o sol e as suas sombras em 3D para qualquer dia e hora no local do projeto, e plantas de sombras para o equinócio e os solstícios.

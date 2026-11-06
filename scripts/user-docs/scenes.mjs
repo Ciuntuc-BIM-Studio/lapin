@@ -2157,6 +2157,56 @@ export const scenes = [
     },
   },
   {
+    // Exhaust fans (report #55): a bathroom in the house with a wall fan on its outer wall (a round sleeve through the wall), a
+    // ceiling fan with a light ducted out through the wall, a fan in a louvre panel as in the report's picture; the types with
+    // their preview; a fan's properties; the fans in 3D; the rooms' extract check.
+    id: 'mep-fans',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bathroom', function: 'Bath' });
+      await t.button('MEP', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(600);
+      // The wall fan by the tool: a click near the east wall's inside face.
+      await t.tool('mep.fan.wallAxial');
+      await t.wait(400);
+      { const [px, py] = await t.planPoint(11.6, 6); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(800); }
+      await t.keys('Escape');
+      const fans = async () => (await t.nodes()).filter((n) => n.type === 'LapinExhaustFan');
+      const wall = (await fans())[0];
+      t.expect(wall && Math.abs(wall.props.rotation - 270) < 1e-6, `the wall fan faces the room (${wall?.props.rotation})`);
+      const light = await t.cmd('mep.placeFan', { storeyId: storey, preset: 'ceilingLight', x: 9.5, y: 2.2 });
+      await t.cmd('mep.fanDuct', { id: light.id, x: 12.5, y: 2.2, outlet: 'wall' });
+      await t.cmd('mep.placeFan', { storeyId: storey, kind: 'louvrePanel', x: 5, y: 0.3 });
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('fans-plan', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('mep.fanTypes');
+      await t.wait(400);
+      await t.page.locator('.dialog [data-fan-type]').filter({ hasText: 'louvre' }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-testid=fan-preview] path').count() > 6, 'the dialog previews the fan');
+      t.expect(await t.page.locator('.dialog [data-param=panelWidth]').count() === 1, 'a louvre panel shows its panel\'s size');
+      await t.shot('fans-types', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      await select(t, light.id);
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=fan-section]').count() === 1, 'a fan shows its fan properties');
+      await t.shot('fans-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+      const check = await t.cmd('architecture.createSchedule', { kind: 'fanRooms' });
+      t.expect(!!check, 'the rooms\' extract check is made');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.4, pitch: -0.55, distance: 9, target: { x: 10, y: 3.5, z: 1.8 } }, false));
+      await t.wait(1500);
+      await t.shot('fans-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     id: 'structure',
     async run(t) {
       await t.fresh();
@@ -2230,6 +2280,61 @@ export const scenes = [
       await t.shot('site-location-plan', { of: '[data-testid=plan]', pad: 0 });
       await quiet2.evaluate((el) => el.remove());
       await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // Gates (report #57): a fence wall along the street with a sliding gate drawn on it by the tool (its middle on the wall's
+    // axis, the wall cut, the zone it parks in dashed) and a pedestrian gate beside it; a wrought iron double gate on the parcel's
+    // side edge from the built-in styles; the configurator with its preview; a gate's properties; the gates in 3D.
+    id: 'gates',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const fence = (await t.cmd('architecture.addWall', { storeyId: s, x1: -2, y1: 0, x2: 22, y2: 0, height: 1.4 })).id;
+      await t.cmd('civil.addFlatTerrain', { storeyId: s, x1: -8, y1: -8, x2: 28, y2: 24, elevation: 0 });
+      await t.cmd('civil.setParcel', { points: [[-2, 0], [22, 0], [22, 18], [-2, 18]], storeyId: s });
+      await t.button('Site', { exact: true });
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(600);
+      // The sliding gate by the tool: two clicks near the fence, its middle put on the wall's axis.
+      await t.tool('architecture.gate.sliding');
+      await t.wait(400);
+      t.expect(await t.page.locator('[data-testid=gate-on-line].on').count() === 1, 'the bar puts gates on lines');
+      for (const [x, y] of [[4, 0.5], [9, 0.5]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(400); }
+      await t.keys('Escape');
+      await t.wait(800);
+      const gates = async () => (await t.nodes()).filter((n) => n.type === 'LapinGate');
+      const sliding = (await gates())[0];
+      t.expect(sliding && Math.abs(sliding.props.at[1]) < 1e-6, `the sliding gate stands on the fence's axis (${sliding?.props.at})`);
+      await t.cmd('architecture.placeGate', { storeyId: s, kind: 'pedestrian', x: 14, y: 0.3 });
+      const iron = await t.cmd('architecture.placeGate', { storeyId: s, style: 'wroughtIron', x: 22.4, y: 9 });
+      t.expect(!!iron?.on, 'the double gate stands on the parcel\'s edge');
+      await t.ui({ selection: null, selected: [] });
+      await t.fit();
+      await t.wait(1200);
+      await t.shot('gates-plan', { of: '[data-testid=plan]', pad: 0 });
+      // The configurator: the wrought iron style, its arched top and spears, the plan with its swing and its elevation.
+      await t.tool('architecture.gateTypes');
+      await t.wait(400);
+      await t.page.locator('.dialog [data-gate-type]').filter({ hasText: 'Wrought iron' }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-testid=gate-preview] path').count() > 10, 'the configurator previews the gate');
+      t.expect(await t.page.locator('.dialog [data-param=rise]').count() === 1, 'an arched top shows its rise');
+      await t.shot('gates-types', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      await select(t, sliding.id);
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=gate-section]').count() === 1, 'a gate shows its gate properties');
+      await t.shot('gates-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      await t.ui({ selection: null, selected: [], keyPlan: true });
+      t.expect((await gates()).length === 3, 'three gates');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 4.2, pitch: -0.42, distance: 22, target: { x: 12, y: 2, z: 0.8 } }, false));
+      await t.wait(1500);
+      await t.shot('gates-3d', { of: 'canvas', pad: 0 });
+      t.expect(!!fence, 'the fence wall');
     },
   },
   {

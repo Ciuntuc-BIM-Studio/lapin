@@ -363,6 +363,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Stairs.Railings.Register(r);
         // Balconies (a tester's report, #96): styles, the configurator, loggias cut into their wall.
         Balconies.BalconyModule.Register(r);
+        // Gates with their piers on a line (report #57).
+        Gates.Gates.Register(r);
         r.Catalog("roofStyles", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Styles, ArchitectureCatalogJson.Default.IReadOnlyListStyle)!);
         r.Catalog("roofCoverings", System.Text.Json.JsonSerializer.SerializeToNode(RoofCatalog.Coverings, ArchitectureCatalogJson.Default.IReadOnlyListCovering)!);
 

@@ -13,6 +13,10 @@ import { registerCommand, startCommand, type Step } from '../../viewport/cad/ses
 import type { Shape } from '../../viewport/cad/shapes';
 import { num, relatingOf, typeOf, usageOf } from '../../engine/model';
 import { activate } from '../../platform/modules';
+import { gateGroup } from './gates/tools';
+import { GateSection } from './gates/GateSection';
+import { GateTypesDialog } from './gates/GateTypesDialog';
+import { CLASS as GATE_CLASS, gateGrips, overallOf } from './gates/gates';
 import { setJoinStyle, setWallLine, useWallPrefs, type WallLine } from './prefs';
 import { WallLayers } from './WallLayers';
 import { WallTypesDialog } from './WallTypesDialog';
@@ -404,6 +408,10 @@ const architecture: LapinModule = {
       { label: 'Skirtings', tools: [skirtingInRoom, skirting], small: [skirtingTypes, skirtingSchedule] },
     ],
   }, {
+    // Into Site: gates with their piers on a line (report #57), after the landscape.
+    id: 'site', label: 'Site', order: 40,
+    groups: [gateGroup],
+  }, {
     // Into View: the room colours by the other graphics.
     id: 'view', label: 'View', order: 90,
     groups: [{ label: 'Rooms', tools: [roomColors] }],
@@ -430,9 +438,16 @@ const architecture: LapinModule = {
     { id: 'curtainWall', label: 'Curtain wall', classes: ['IfcCurtainWall'], component: CurtainWallSection },
     { id: 'room', label: 'Room', classes: ['IfcSpace'], component: RoomSection, replacesFields: () => true },
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
+    { id: 'gate', label: 'Gate', classes: [GATE_CLASS], component: GateSection },
   ],
-  dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, balcony: BalconyDialog },
-  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [BALCONY]: balconyGrips },
+  dialogs: { roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog },
+  grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [BALCONY]: balconyGrips,
+    [GATE_CLASS]: (n: NodeDto) => {
+      const { nodes, relations } = useSession.getState();
+      const kinds = (useSession.getState().info?.catalogs['architecture.gateKinds'] ?? []) as unknown as Parameters<typeof overallOf>[1];
+      return gateGrips(n, overallOf(relatingOf({ nodes, relations }, n.id, 'IfcRelDefinesByType') ?? undefined, kinds));
+    },
+  },
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },
@@ -450,6 +465,7 @@ const architecture: LapinModule = {
     IfcDoor: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
     IfcWindow: (ids, typeId) => execute('architecture.setJoineryType', { ids, typeId }),
     IfcCurtainWall: (ids, typeId) => execute('architecture.setCurtainWallType', { ids, typeId }),
+    [GATE_CLASS]: (ids, typeId) => execute('architecture.setGateType', { ids, typeId }),
   },
 };
 

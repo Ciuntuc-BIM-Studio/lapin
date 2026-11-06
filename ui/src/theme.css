@@ -1819,3 +1819,15 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .elevator-plan, .elevator-section { background: var(--paper, #fff); }
 .fields dd.stops input[type=checkbox], .elevator-stops input[type=checkbox] { width: auto; flex: none; margin: 0; }
 .fields dd.stops label { justify-content: flex-start; }
+/* Type configurators (exhaust fans, report #55; gates, report #57): the fields beside the engine's preview, the plan above the front. */
+.configurator-grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 14px; align-items: start; }
+.type-preview { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line, #d8d2c6); border-radius: 6px; background: var(--paper, #fff); }
+.type-preview svg { width: 100%; height: auto; max-height: 200px; color: var(--ink, #1e2a3a); }
+.type-preview .type-preview-front { max-height: 170px; }
+.configurator-edit dl.fields .section-dt { margin-top: 8px; font-weight: 600; }
+.configurator-edit dl.fields dd input:not([type=checkbox]), .configurator-edit dl.fields dd select { width: 100%; }
+.configurator-edit dl.fields dd input:not([type=checkbox]):not(.num) { text-align: left; }
+.dialog[data-dialog=fan-types] .dialog-body.split, .dialog[data-dialog=gate-types] .dialog-body.split { grid-template-columns: 280px minmax(0, 1fr); }
+.dialog[data-dialog=fan-types] .type-list .tree-item, .dialog[data-dialog=gate-types] .type-list .tree-item { white-space: normal; align-items: flex-start; line-height: 1.3; padding-top: 3px; padding-bottom: 3px; }
+.dialog[data-dialog=fan-types] .type-list .tree-item > span:first-of-type, .dialog[data-dialog=gate-types] .type-list .tree-item > span:first-of-type { flex: 1; min-width: 0; }
+@media (max-width: 760px) { .configurator-grid { grid-template-columns: 1fr; } }
