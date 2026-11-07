@@ -12,6 +12,7 @@ import { useState, type DragEvent } from 'react';
 import { Box, Camera, ChevronDown, ChevronRight, Copy, CopyPlus, FileText, Frame, Layers, Map as MapIcon, Plus, Scissors, Settings2, Square, SquareStack, Table2, Trash2 } from 'lucide-react';
 import { notify, useUi } from '../app/store';
 import { execute, activeStorey, useSession } from '../engine/session';
+import { ownPlanOf, storeyPlanView } from '../viewport/storeyPlan';
 import { num, storeys } from '../engine/model';
 import { projectTitle } from '../engine/files';
 import { useCamera } from '../viewport/camera';
@@ -73,7 +74,7 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
   const documents = [...nodes.values()].filter((n) => n.type === 'LapinDocument').sort((a, b) => a.name.localeCompare(b.name));
   const docOpen = useDocumentsDialog((s) => s.id);
   // A level's default plan stands in until the level has a plan view of its own (made by the first drafting on it, or by hand): then that one is the level's plan, and the default is not listed beside it under the same name.
-  const ownPlan = new Set([...nodes.values()].filter((n) => n.type === 'LapinView' && n.props.kind === 'plan' && !n.props.foundation && n.props.storeyId).map((n) => String(n.props.storeyId)));
+  const ownPlan = new Set(levels.filter((s) => storeyPlanView(nodes, s.id)).map((s) => s.id));
   const items: BrowserItem[] = [...levels.filter((s) => !ownPlan.has(s.id)).map(implicitPlan), THREE_D, ...[...nodes.values()].map(itemOf).filter((i): i is BrowserItem => i !== null)];
   // The site's drawings are the Site's, not the sets'.
   const siteItems = items.filter((i) => i.kind === 'site');
@@ -115,7 +116,8 @@ export function ProjectBrowser({ show }: { show?: 'project' | 'levels' | 'ifc' }
     for (const direction of ['south', 'east', 'north', 'west']) await execute('view.create', { kind: 'elevation', direction, discipline });
   };
 
-  const isPlanOn = (item: BrowserItem) => view === 'plan' && active?.id === item.storeyId && (item.node ? ui.planViewId === item.id : !ui.planViewId);
+  // The level's own plan view is on while its plan is shown with none chosen (decision 386).
+  const isPlanOn = (item: BrowserItem) => view === 'plan' && active?.id === item.storeyId && (active ? (ownPlanOf(nodes, active.id, ui.planViewId) ?? `plan:${active.id}`) === item.id : false);
   // A section's or an elevation's right-click: open it, or show it in 3D (the model cut by it, its drawing on the cut; again: stop).
   const drawingMenu = (item: BrowserItem) => (e: React.MouseEvent) => {
     e.preventDefault();

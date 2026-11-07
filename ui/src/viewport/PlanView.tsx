@@ -18,6 +18,7 @@ import { useWalk, walkInto } from './walk';
 import { select, setTool, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { activeStorey, execute, useSession } from '../engine/session';
+import { ownPlanOf } from './storeyPlan';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { findTool } from '../platform/modules';
@@ -104,7 +105,8 @@ export function PlanView() {
   const active = usePaneActive();
   const planDrawing = useUi((s) => s.planDrawing);
   const onDark = drawsOnDark(useUi((s) => s.theme));
-  const ownPlan = planViewId && nodes.get(planViewId)?.props.storeyId === storey?.id ? planViewId : null;
+  // The plan view open, else the level's own (its imported DXF and drafting are on it: a tester's report #113), else its default plan.
+  const ownPlan = storey ? ownPlanOf(nodes, storey.id, planViewId) : null;
   const drawing = useDrawing(storey ? ownPlan ?? `plan:${storey.id}` : null, planDrawing);
   // A site plan or a location plan (docs/site-plans.md): the whole model from above, so no reference level or view range of its own.
   const siteView = ownPlan && typeof nodes.get(ownPlan)?.props.site === 'string' ? nodes.get(ownPlan)! : null;

@@ -80,6 +80,8 @@ Le dessin se trouve aussi dans la **vue 3D**, sur le plan de la vue où il est a
 
 ![Un DXF de plan de masse dans la vue 3D, au niveau du rez-de-chaussée](shots/dxf-3d.webp)
 
+Un DXF importé fait partie du projet : **File → Save** le garde dans le fichier `.lapin` avec ses calques, hachures, textes et tout groupe que vous en avez fait, et il est là quand le projet s'ouvre de nouveau, sur le plan du niveau. La vue en plan où il est entré est désormais le plan du niveau, celle que liste le navigateur du projet, et ce qui était dessiné avant sur le niveau passe sur elle. Lapin demande d'enregistrer avant de se fermer s'il reste des modifications non enregistrées. Pour garder le dessin comme un fichier à part, cochez **As a link** dans la boîte d'import : il reste lié, en lecture seule, et **Manage → Links** le recharge quand le fichier change.
+
 ## Liens
 
 **Lier IFC…** garde un autre fichier lié au lieu de l’importer. Il est en lecture seule et rechargé quand il change. Cela fonctionne aussi pour un DXF. **Gérer → Liens** affiche, recharge, convertit ou supprime les liens. Un DXF lié se trouve en 3D comme un DXF importé ; sa case **3D** dans **Gérer → Liens** l’en retire.

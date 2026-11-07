@@ -80,6 +80,8 @@ The drawing also lies in the **3D view**, on the plane of the view it came into:
 
 ![A site DXF in the 3D view, on the ground floor's level](shots/dxf-3d.webp)
 
+An imported DXF is part of the project: **File → Save** keeps it in the `.lapin` file with its layers, hatches, texts and any group you made of it, and it is there when the project opens again, on the level's plan. The plan view it came into is the level's plan from then on, the one the project browser lists, and what was drawn on the level before goes onto it. Lapin asks to save before it closes on unsaved changes. To keep the drawing as a file of its own instead, tick **As a link** in the import dialog: it stays linked, read-only, and **Manage → Links** reloads it when the file changes.
+
 ## Links
 
 **Link IFC…** keeps another file linked instead of importing it. It is read-only and reloaded when it changes. This works for a DXF too. **Manage → Links** shows, reloads, converts or removes the links. A linked DXF lies in 3D as an imported one does; its **3D** box in **Manage → Links** turns that off.

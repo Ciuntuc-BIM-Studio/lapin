@@ -80,6 +80,8 @@ Rysunek leży też w **widoku 3D**, na płaszczyźnie widoku, do którego trafi�
 
 ![DXF zagospodarowania w widoku 3D, na poziomie parteru](shots/dxf-3d.webp)
 
+Zaimportowany DXF jest częścią projektu: **File → Save** zapisuje go w pliku `.lapin` z warstwami, kreskowaniami, tekstami i każdą grupą, którą z niego utworzono, a po ponownym otwarciu projektu jest na miejscu, na rzucie kondygnacji. Widok rzutu, do którego trafił, jest odtąd rzutem kondygnacji, tym, który pokazuje przeglądarka projektu, a to, co wcześniej narysowano na kondygnacji, przechodzi na niego. Lapin pyta o zapis przed zamknięciem, gdy są niezapisane zmiany. Aby rysunek pozostał osobnym plikiem, zaznacz **As a link** w oknie importu: pozostaje połączony, tylko do odczytu, a **Manage → Links** wczytuje go ponownie, gdy plik się zmieni.
+
 ## Łącza
 
 **Połącz IFC…** utrzymuje inny plik jako połączony zamiast go importować. Jest tylko do odczytu i jest ponownie wczytywany, gdy się zmieni. Działa to także dla DXF. **Zarządzaj → Łącza** pokazuje, ponownie wczytuje, konwertuje lub usuwa łącza. Połączony DXF leży w 3D tak jak zaimportowany; jego pole **3D** w **Zarządzaj → Łącza** to wyłącza.

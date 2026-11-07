@@ -101,7 +101,7 @@ const openPlane = (r: unknown) => {
 
 /** REFPLANE: a plane parallel to the view in front, a distance toward you (away when negative). */
 function refPlane(): Step | null {
-  const viewId = frontViewId(useUi.getState(), activeStorey()?.id ?? null);
+  const viewId = frontViewId(useUi.getState(), activeStorey()?.id ?? null, useSession.getState().nodes);
   if (!viewId) { cadLog('Open a plan, a section, an elevation or a reference plane first.'); return null; }
   const make = async (offset: number) => { openPlane(await execute('view.create', { kind: 'plane', fromView: viewId, offset })); return null; };
   return { prompt: `Offset from this view's plane (${unitName()}; negative: away from you) <0>`, want: 'none', value: make, enter: () => make(0) };

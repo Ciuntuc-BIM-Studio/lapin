@@ -46,10 +46,12 @@ describe('drafting in the 3D view', () => {
     expect(frameOfView('sec', nodes)).toBeNull();
   });
 
-  it('works on the reference plane selected, else the active storey\'s plan (its own when open)', () => {
+  it('works on the reference plane selected, else the active storey\'s plan (its own plan view when it has one: report #113)', () => {
     expect(workPlaneView({ selection: 'rp', planViewId: null, storeyId: 's1' }, nodes)).toEqual({ id: 'rp', name: 'Plane A' });
     expect(workPlaneView({ selection: null, planViewId: 'p1', storeyId: 's1' }, nodes)).toEqual({ id: 'p1', name: 'Plan 1' });
-    expect(workPlaneView({ selection: 'sec', planViewId: null, storeyId: 's1' }, nodes)).toEqual({ id: 'plan:s1', name: 'First floor' });
+    expect(workPlaneView({ selection: 'sec', planViewId: null, storeyId: 's1' }, nodes)).toEqual({ id: 'p1', name: 'Plan 1' });
+    const bare = new Map([...nodes].filter(([k]) => k !== 'p1'));
+    expect(workPlaneView({ selection: 'sec', planViewId: null, storeyId: 's1' }, bare)).toEqual({ id: 'plan:s1', name: 'First floor' });
     expect(workPlaneView({ selection: null, planViewId: null, storeyId: null }, nodes)).toBeNull();
   });
 });

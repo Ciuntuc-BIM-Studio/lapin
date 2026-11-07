@@ -6,6 +6,7 @@
  */
 
 import type { NodeDto } from '../../engine/protocol';
+import { planViewIdOf } from '../../viewport/storeyPlan';
 
 export type ThickOp = 'ring' | 'box' | 'wall';
 
@@ -83,8 +84,12 @@ export function threePoints(pts: number[][]): string | null {
 }
 
 /** The view in front: the plan (its own, or the storey's), the section, elevation or reference plane; none in 3D. */
-export function frontViewId(ui: { view: string; planViewId?: string | null; drawingViewId?: string | null; storeyId?: string | null }, storeyId: string | null): string | null {
-  if (ui.view === 'plan') return ui.planViewId ?? ((ui.storeyId ?? storeyId) ? `plan:${ui.storeyId ?? storeyId}` : null);
+export function frontViewId(ui: { view: string; planViewId?: string | null; drawingViewId?: string | null; storeyId?: string | null }, storeyId: string | null, nodes: ReadonlyMap<string, NodeDto> = new Map()): string | null {
+  if (ui.view === 'plan') {
+    const st = ui.storeyId ?? storeyId;
+    if (ui.planViewId && (!st || !nodes.get(ui.planViewId) || nodes.get(ui.planViewId)?.props.storeyId === st)) return ui.planViewId;
+    return st ? planViewIdOf(nodes, st, null) : null;
+  }
   if (ui.view === 'drawing') return ui.drawingViewId ?? null;
   return null;
 }

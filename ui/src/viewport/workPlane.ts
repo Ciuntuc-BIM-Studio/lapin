@@ -13,6 +13,7 @@ import type { NodeDto } from '../engine/protocol';
 import type { Vec2 } from '../platform/module';
 import type { Vec3 } from './camera';
 import { planeOf } from './refPlanes';
+import { planViewIdOf } from './storeyPlan';
 
 /** A work plane: a point (x, y) on it is origin + right·x + up·y; normal faces the side it is seen from. */
 export interface WorkFrame { origin: Vec3; right: Vec3; up: Vec3; normal: Vec3 }
@@ -47,9 +48,9 @@ export function workPlaneView(o: { selection: string | null; planViewId: string 
   const sel = o.selection ? nodes.get(o.selection) : undefined;
   if (sel?.type === 'LapinView' && sel.props.kind === 'plane') return { id: sel.id, name: sel.name };
   if (!o.storeyId) return null;
-  const own = o.planViewId ? nodes.get(o.planViewId) : undefined;
-  if (own && own.props.storeyId === o.storeyId) return { id: own.id, name: own.name };
-  return { id: `plan:${o.storeyId}`, name: nodes.get(o.storeyId)?.name ?? 'Level' };
+  const id = planViewIdOf(nodes, o.storeyId, o.planViewId);
+  const own = nodes.get(id);
+  return own ? { id: own.id, name: own.name } : { id, name: nodes.get(o.storeyId)?.name ?? 'Level' };
 }
 
 /** A point of the plane in the model. */

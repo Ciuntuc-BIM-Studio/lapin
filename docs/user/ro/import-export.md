@@ -80,6 +80,8 @@ Desenul stă și în **vederea 3D**, pe planul vederii în care a intrat: pe un 
 
 ![Un DXF de amplasament în vederea 3D, la cota parterului](shots/dxf-3d.webp)
 
+Un DXF importat face parte din proiect: **File → Save** îl păstrează în fișierul `.lapin` cu straturile, hașurile, textele și orice grup făcut din el, iar la redeschiderea proiectului e acolo, pe planul nivelului. Vederea de plan în care a intrat e de atunci planul nivelului, cea listată în browserul proiectului, iar ce era desenat înainte pe nivel trece pe ea. Lapin întreabă dacă salvezi înainte să se închidă cu modificări nesalvate. Ca desenul să rămână un fișier separat, bifează **As a link** în dialogul de import: rămâne legat, needitabil, iar **Manage → Links** îl reîncarcă atunci când fișierul se schimbă.
+
 ## Legături
 
 **Leagă IFC…** ține alt fișier legat în loc să-l importe. E doar pentru citire și se reîncarcă atunci când se schimbă. Merge și pentru un DXF. **Gestionare → Legături** arată, reîncarcă, convertește sau scoate legăturile. Un DXF legat stă în 3D ca unul importat; bifa **3D** din **Gestionare → Legături** îl scoate de acolo.

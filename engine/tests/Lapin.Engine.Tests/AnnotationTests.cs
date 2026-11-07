@@ -208,7 +208,9 @@ public class AnnotationTests
         var segs = Mark(Draw(f, "plan:" + f.Storey), id)!["segments"]!.AsArray().Select(x => (double)x!).ToList();
         Assert.Contains(-2.0, segs);
         Assert.Contains("1000", Texts(Draw(f, "plan:" + f.Storey)));
-        // Only on its own view.
+        // Only on its own view: the level's first plan view takes what its default plan had (decision 386), a second one nothing.
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        Assert.NotNull(Mark(Draw(f, plan), id));
         var other = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
         Assert.Null(Mark(Draw(f, other), id));
     }

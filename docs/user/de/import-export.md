@@ -80,6 +80,8 @@ Die Zeichnung liegt auch in der **3D-Ansicht**, auf der Ebene der Ansicht, in di
 
 ![Ein Lageplan-DXF in der 3D-Ansicht, auf der Höhe des Erdgeschosses](shots/dxf-3d.webp)
 
+Eine importierte DXF gehört zum Projekt: **File → Save** speichert sie in der `.lapin`-Datei mit ihren Layern, Schraffuren, Texten und jeder Gruppe, die Sie daraus gemacht haben, und beim erneuten Öffnen des Projekts ist sie da, auf dem Grundriss des Geschosses. Die Grundrissansicht, in die sie kam, ist von da an der Grundriss des Geschosses, den der Projektbrowser zeigt, und was vorher auf dem Geschoss gezeichnet war, kommt auf sie. Lapin fragt vor dem Schließen nach, wenn ungespeicherte Änderungen vorliegen. Soll die Zeichnung eine eigene Datei bleiben, aktivieren Sie im Importdialog **As a link**: Sie bleibt verknüpft, schreibgeschützt, und **Manage → Links** lädt sie neu, wenn sich die Datei ändert.
+
 ## Verknüpfungen
 
 **IFC verknüpfen…** hält eine andere Datei verknüpft, statt sie zu importieren. Sie ist schreibgeschützt und wird neu geladen, wenn sie sich ändert. Das funktioniert auch für eine DXF-Datei. **Verwalten → Verknüpfungen** zeigt die Verknüpfungen an, lädt sie neu, wandelt sie um oder entfernt sie. Ein verknüpftes DXF liegt in 3D wie ein importiertes; sein Feld **3D** in **Verwalten → Verknüpfungen** schaltet das aus.

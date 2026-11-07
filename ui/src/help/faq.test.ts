@@ -80,6 +80,11 @@ describe('Ask Lapin', () => {
     // Report #108.
     expect(best('3D preview of the window in the configurator')).toBe('joinery-3d-preview');
     expect(best('previzualizare 3D a ferestrei in configurator')).toBe('joinery-3d-preview');
+    // Report #113, in the tester's words.
+    expect(best('Can we retain the imported DXF?')).toBe('dxf-kept');
+    expect(best('instead of continuously reimporting the dxf whenever opening the program, is it possible to leave the dxf alone')).toBe('dxf-kept');
+    expect(best('every time when I close and reopen Lapin I have to import and group the floor plans')).toBe('dxf-kept');
+    expect(best('de ce dispare dxf-ul cand redeschid proiectul')).toBe('dxf-kept');
     // Report #107, in the tester's words.
     expect(best('not able to edit wall dimensions individually')).toBe('wall-thickness');
     expect(best('how do I change the thickness of one wall')).toBe('wall-thickness');

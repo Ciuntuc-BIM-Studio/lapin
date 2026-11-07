@@ -80,6 +80,8 @@ O desenho fica também na **vista 3D**, no plano da vista em que entrou: numa pl
 
 ![Um DXF de implantação na vista 3D, no nível do térreo](shots/dxf-3d.webp)
 
+Um DXF importado faz parte do projeto: **File → Save** guarda-o no arquivo `.lapin` com suas camadas, hachuras, textos e qualquer grupo que você tenha feito dele, e ele está lá quando o projeto é aberto de novo, na planta do nível. A vista em planta em que entrou passa a ser a planta do nível, a que o navegador do projeto lista, e o que estava desenhado antes no nível passa para ela. O Lapin pergunta se quer salvar antes de fechar com alterações não salvas. Para manter o desenho como um arquivo próprio, marque **As a link** na caixa de importação: fica vinculado, somente leitura, e **Manage → Links** o recarrega quando o arquivo muda.
+
 ## Vínculos
 
 **Vincular IFC…** mantém outro arquivo vinculado em vez de importá-lo. Ele é somente leitura e é recarregado quando muda. Isso também funciona para um DXF. **Gerenciar → Vínculos** mostra, recarrega, converte ou remove os vínculos. Um DXF vinculado fica em 3D como um importado; a sua caixa **3D** em **Gerenciar → Vínculos** desliga isso.

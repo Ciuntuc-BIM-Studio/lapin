@@ -80,6 +80,8 @@ Tegningen ligger også i **3D-visningen**, på planet af den visning, den kom in
 
 ![En situations-DXF i 3D-visningen, i stueetagens kote](shots/dxf-3d.webp)
 
+En importeret DXF er en del af projektet: **File → Save** gemmer den i `.lapin`-filen med lag, skraveringer, tekster og enhver gruppe, du har lavet af den, og den er der, når projektet åbnes igen, på etagens plan. Den planvisning, den kom ind i, er etagens plan fra da af, den som projektbrowseren viser, og det, der var tegnet på etagen før, flyttes over på den. Lapin spørger, om du vil gemme, før programmet lukker med ugemte ændringer. Vil du hellere have tegningen som sin egen fil, så sæt flueben i **As a link** i importdialogen: den forbliver linket, skrivebeskyttet, og **Manage → Links** genindlæser den, når filen ændres.
+
 ## Links
 
 **Tilknyt IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene. En linket DXF ligger i 3D, som en importeret gør; dens **3D**-felt i **Administrer → Links** slår det fra.

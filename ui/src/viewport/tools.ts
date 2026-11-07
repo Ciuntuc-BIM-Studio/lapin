@@ -3,6 +3,7 @@
 import type { ToolDef, ToolInput } from '../platform/module';
 import { ensureStorey, execute, useSession } from '../engine/session';
 import { useUi } from '../app/store';
+import { planViewIdOf } from './storeyPlan';
 
 /**
  * <paramref name="onView"/>: the view the tool draws on instead of the one shown (a view inset in another: what is drawn on the
@@ -14,7 +15,6 @@ export async function completeTool(tool: ToolDef, input: ToolInput, onView?: str
   const storeyId = onStorey && useSession.getState().nodes.get(onStorey) ? onStorey : await ensureStorey();
   if (!storeyId) return;
   const ui = useUi.getState();
-  const own = ui.planViewId && useSession.getState().nodes.get(ui.planViewId)?.props.storeyId === storeyId ? ui.planViewId : null;
-  const viewId = onView ?? (ui.view === 'drawing' && ui.drawingViewId ? ui.drawingViewId : own ?? `plan:${storeyId}`);
+  const viewId = onView ?? (ui.view === 'drawing' && ui.drawingViewId ? ui.drawingViewId : planViewIdOf(useSession.getState().nodes, storeyId, ui.planViewId));
   await tool.complete(input, { storeyId, viewId, execute });
 }

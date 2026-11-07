@@ -88,6 +88,15 @@ export const FAQ: Entry[] = [
     source: 'report #35',
   },
   {
+    id: 'dxf-kept',
+    q: ['Can we retain the imported DXF?', 'Do I have to import the DXF again every time I open Lapin?', 'Why is my DXF gone when I reopen the project?'],
+    qRo: ['Pot păstra DXF-ul importat?', 'Trebuie să import DXF-ul din nou de fiecare dată când deschid Lapin?', 'De ce dispare DXF-ul când redeschid proiectul?'],
+    keywords: ['retain', 'keep', 'kept', 'reimport', 'reimporting', 'again', 'reopen', 'reopening', 'close', 'closing', 'save', 'saved', 'gone', 'lost', 'dxf', 'pastrez', 'pastrat', 'pastra', 'reimport', 'redeschid', 'inchid', 'salvez', 'dispare', 'pierdut', 'iar', 'nou'],
+    a: 'An imported DXF is part of the project: File → Save keeps it in the .lapin file with its layers, hatches, texts and any group you made of it, and it is there when the project opens again, on the level\'s plan (the plan view it came into is the level\'s plan from then on, the one the project browser lists). Lapin asks to save before it closes on unsaved changes. To keep the drawing as its own file instead, tick „As a link” in File → Import DXF…: it stays linked, read-only, and Manage → Links reloads it when the file changes.',
+    aRo: 'Un DXF importat face parte din proiect: File → Save îl păstrează în fișierul .lapin cu straturile, hașurile, textele și orice grup făcut din el, iar la redeschiderea proiectului e acolo, pe planul nivelului (vederea de plan în care a intrat e de atunci planul nivelului, cel listat în browserul proiectului). Lapin întreabă dacă salvezi înainte să se închidă cu modificări nesalvate. Ca desenul să rămână un fișier separat, bifează „As a link” în File → Import DXF…: rămâne legat, needitabil, iar Manage → Links îl reîncarcă atunci când fișierul se schimbă.',
+    source: 'report #113',
+  },
+  {
     id: 'dxf-in-3d',
     q: ['Why is my imported DXF not in the 3D view?', 'How do I see the DXF in 3D?', 'Can I trace walls over a DXF in 3D?'],
     qRo: ['De ce nu se vede DXF-ul importat în vederea 3D?', 'Cum văd DXF-ul în 3D?', 'Pot desena pereți peste un DXF în 3D?'],

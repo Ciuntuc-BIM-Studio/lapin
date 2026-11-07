@@ -1148,6 +1148,7 @@ public static class Views
                     // A foundation plan: cut 0.5 m under its level, seeing 2.5 m down.
                     if (a["foundation"] is JsonValue fv && fv.TryGetValue<bool>(out var f) && f)
                     {
+                        attrs["foundation"] = true;
                         attrs["cutHeight"] = -0.5;
                         attrs["viewRange"] = new ViewRange(new("self", 0), new("self", -3.0), new("self", -3.0)).ToJson();
                     }
@@ -1180,8 +1181,11 @@ public static class Views
                     break;
                 default: throw new CommandException("A view is a plan, a section, an elevation, a reference plane or a 3D view.");
             }
+            // The level's first floor plan view becomes its plan: what was drawn on its default plan goes onto it (decision 386).
+            var first = kind == "plan" && attrs["site"] == null && !attrs.ContainsKey("foundation") && (string?)attrs["storeyId"] is { } onStorey && StoreyPlans.Of(ctx.Model, onStorey) == null ? onStorey : null;
             var v = new Entity(ctx.NewId(), Class, name, attrs);
             ctx.Add(v);
+            if (first != null) StoreyPlans.Rehome(ctx, first, v.Id);
             return new JsonObject { ["id"] = v.Id };
         });
 

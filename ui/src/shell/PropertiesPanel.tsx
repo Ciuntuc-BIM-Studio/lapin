@@ -12,6 +12,7 @@ import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
 import { setPanelWidth, usePanels } from '../app/panels';
 import { activeStorey, execute, useSession } from '../engine/session';
+import { ownPlanOf } from '../viewport/storeyPlan';
 import { frontView } from '../viewport/frontView';
 import { view3dNode } from '../viewport/storeys3d';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
@@ -223,7 +224,7 @@ function FrontViewPanel() {
   const ui = useUi();
   const nodes = useSession((s) => s.nodes);
   const storey = activeStorey();
-  const id = ui.view === 'plan' ? (ui.planViewId && nodes.get(ui.planViewId)?.props.storeyId === storey?.id ? ui.planViewId : null)
+  const id = ui.view === 'plan' ? (storey ? ownPlanOf(nodes, storey.id, ui.planViewId) : null)
     : ui.view === 'drawing' ? ui.drawingViewId : ui.view === 'sheet' ? ui.sheetId : ui.view === '3d' ? ui.view3dId : null;
   const front = id ? nodes.get(id) : undefined;
   if (front) return <ElementPanel node={front} inFront />;
