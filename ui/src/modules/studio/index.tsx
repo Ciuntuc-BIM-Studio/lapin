@@ -9,7 +9,7 @@
  */
 
 import {
-  ArrowUpDown, ArrowUpToLine, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
+  ArrowUpDown, ArrowUpToLine, ArrowRightToLine, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
 } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
@@ -428,6 +428,12 @@ const sketchTool = (direct: DirectTool, command: string, label: string, icon: To
   },
 });
 
+/** A command line edit on the sketch's work plane in 3D (or the storey's level when none is active): TRIM, EXTEND, FILLET. */
+const sketchCad = (id: string, command: string, label: string, icon: ToolDef['icon']): ToolDef => ({
+  id: `studio.sketch.${id}`, label, icon,
+  run: () => { useUi.setState({ view: '3d', tool: null }); void startCommand(command); },
+});
+
 /** Sketch on face: the face's plane (the same one the direct tools store on) made the active work plane, lit. */
 const sketchOnFace: ToolDef = {
   id: 'studio.sketchOnFace', label: 'Sketch on face', icon: SquarePen, shortcut: 'KF',
@@ -662,8 +668,8 @@ const studio: LapinModule = {
       {
         label: 'Sketch',
         tools: [sketchTool('line', 'LINE', 'Line', Slash, 'KL'), sketchTool('rect', 'RECTANGLE', 'Rectangle', RectangleHorizontal, 'KR'), sketchTool('circle', 'CIRCLE', 'Circle', Circle, 'KC'),
-          { id: 'studio.sketch.arc', label: 'Arc', icon: Redo2, shortcut: 'KA', run: () => { useUi.setState({ view: '3d' }); void startCommand('ARC'); } }],
-        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool],
+          sketchTool('arc', 'ARC', 'Arc', Redo2, 'KA'), sketchTool('offset', 'OFFSET', 'Offset', CopyPlus, 'KO')],
+        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool, sketchCad('trim', 'TRIM', 'Trim', Scissors), sketchCad('extend', 'EXTEND', 'Extend', ArrowRightToLine), sketchCad('fillet', 'FILLET', 'Fillet', CornerUpRight)],
       },
       { label: 'On face', tools: [onFace('rect', 'Rectangle on face', RectangleHorizontal, 'FRE'), onFace('circle', 'Circle on face', Circle, 'FCI'), onFace('polygon', 'Polygon on face', Hexagon, 'FPL')] },
       { label: 'Work planes', tools: [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3] },

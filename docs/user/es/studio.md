@@ -125,6 +125,16 @@ El grupo **Boceto** de la ficha **Studio** dibuja líneas y formas directamente 
 
 ![Boceto en cara: la parte superior de un bloque iluminada como plano de trabajo, un rectángulo dibujado en ella con la línea de comandos](shots/studio-sketch-plane.webp)
 
+**Las líneas dividen las caras.** Una línea trazada a través de una cara, de arista a arista (o un lazo cerrado de líneas y arcos dentro de ella), la divide en regiones. La cara se ilumina región por región bajo el cursor, y **Empujar/Tirar** sobre una región empuja o tira solo de esa región: un sólido propio sobre la cara o un corte en ella. Las líneas que se quedan cortas de una arista no dividen nada.
+
+- **Arco** (KA), sin ningún boceto abierto, dibuja también sobre la cara, a la manera de SketchUp: haga clic en el inicio, en el final y luego en cuánto se curva (o escriba la longitud de la cuerda y después la flecha).
+- **Desfase** (KO) hace clic en una cara, o en una región de ella, y dibuja su contorno de nuevo hacia dentro o hacia fuera por el cursor, o con la distancia que escriba; la forma cerrada recibe enseguida la flecha de empujar/tirar.
+- Con un boceto abierto, **Desfase**, **Recortar**, **Alargar** y **Empalme** ejecutan sobre el plano de trabajo los OFFSET, TRIM, EXTEND y FILLET de la línea de comandos.
+- Una forma dibujada en un plano de referencia y seleccionada en la vista 3D muestra allí sus puntos. Arrastre uno: se mueve sobre el plano, con las referencias de las herramientas de boceto, y el sólido hecho con el boceto lo sigue.
+- Ambas maneras también se ajustan a las aristas de otros elementos que están en el plano, como el lateral de un bloque vecino a ras de la cara.
+
+![Una línea a través del lateral de un bloque lo divide: la región bajo ella se saca por sí sola](shots/studio-sketch-region.webp)
+
 ## Los pasos
 
 Las propiedades de un sólido Studio enumeran sus pasos en orden. Cada paso se puede desactivar, adelantar o retrasar, cambiar o quitar. Cambie el croquis, y cada paso se rehace sobre el cuerpo nuevo. Un paso que ya no encuentra su cara o su arista lo dice en **Problemas**.

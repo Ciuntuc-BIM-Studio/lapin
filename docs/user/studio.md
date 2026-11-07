@@ -125,6 +125,16 @@ The **Sketch** group of the **Studio** tab draws lines and shapes right in the 3
 
 ![Sketch on face: the top of a block lit as the work plane, a rectangle drawn on it with the command line](shots/studio-sketch-plane.webp)
 
+**Lines split faces.** A line drawn across a face, from edge to edge (or a closed loop of lines and arcs inside it), splits it into regions. The face lights up region by region under the cursor, and **Push/Pull** on a region pushes or pulls that region alone: a solid of its own on the face, or a cut into it. Lines that stop short of an edge split nothing.
+
+- **Arc** (KA), with no sketch open, draws on the face too, SketchUp's way: click the start, the end, then how far it bulges (or type the chord's length, then the bulge).
+- **Offset** (KO) clicks a face, or a region of it, and draws its outline again inward or outward through the cursor, or by the distance you type; the closed shape gets the push/pull arrow at once.
+- With a sketch open, **Offset**, **Trim**, **Extend** and **Fillet** run the command line's own OFFSET, TRIM, EXTEND and FILLET on the work plane.
+- A shape drafted on a reference plane, selected in the 3D view, shows its points there. Drag one: it moves on the plane, snapping as the sketch tools do, and the solid made from the sketch follows.
+- Both ways also snap to the edges of other elements lying in the plane, such as a neighbouring block's side flush with the face.
+
+![A line across the side of a block splits it: the region below it is pulled out on its own](shots/studio-sketch-region.webp)
+
 ## The steps
 
 The properties of a Studio solid list its steps in order. Each step can be switched off, moved earlier or later, changed or removed. Change the sketch, and each step is done again on the new body. A step that can no longer find its face or edge says so under **Problems**.

@@ -125,6 +125,16 @@ Grupul **Schiță** din fila **Studio** desenează linii și forme direct în ve
 
 ![Schiță pe față: fața de sus a unui bloc luminată ca plan de lucru, cu un dreptunghi desenat pe ea din linia de comandă](shots/studio-sketch-plane.webp)
 
+**Liniile împart fețele.** O linie trasă peste o față, de la o muchie la alta (sau o buclă închisă de linii și arce în interiorul ei), o împarte în regiuni. Fața se luminează regiune cu regiune sub cursor, iar **Împinge/Trage** pe o regiune o împinge sau o trage doar pe ea: un solid separat pe față, sau o tăietură în ea. Liniile care se opresc înainte de o muchie nu împart nimic.
+
+- **Arc** (KA), fără nicio schiță deschisă, desenează și el pe față, ca în SketchUp: dai clic pe început, pe sfârșit, apoi cât se curbează (sau scrii lungimea coardei, apoi curbura).
+- **Paralelă** (KO) dă clic pe o față sau pe o regiune a ei și îi desenează din nou conturul spre interior sau spre exterior prin cursor, sau cu distanța scrisă; forma închisă primește imediat săgeata de împinge/trage.
+- Cu o schiță deschisă, **Paralelă**, **Taie**, **Prelungește** și **Racordare** rulează pe planul de lucru comenzile OFFSET, TRIM, EXTEND și FILLET ale liniei de comandă.
+- O formă desenată pe un plan de referință și selectată în vederea 3D își arată punctele acolo. Trage unul: se mută pe plan, cu prinderile uneltelor de schiță, iar solidul făcut din schiță îl urmează.
+- Ambele variante prind și de muchiile altor elemente aflate în plan, cum e latura unui bloc vecin la același nivel cu fața.
+
+![O linie peste latura unui bloc o împarte: regiunea de sub ea e trasă singură](shots/studio-sketch-region.webp)
+
 ## Pașii
 
 Proprietățile unui solid Studio îi arată pașii în ordine. Fiecare pas poate fi oprit, mutat mai devreme sau mai târziu, schimbat sau scos. Schimbă schița, și fiecare pas se face din nou pe corpul nou. Un pas care nu-și mai găsește fața sau muchia spune asta la **Probleme**.

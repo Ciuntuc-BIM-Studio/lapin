@@ -125,6 +125,16 @@ Gruppen **Skitse** på fanen **Studio** tegner linjer og former direkte i 3D-vis
 
 ![Skitse på flade: oversiden af en blok oplyst som arbejdsplan, et rektangel tegnet på den med kommandolinjen](shots/studio-sketch-plane.webp)
 
+**Linjer deler flader.** En linje tegnet på tværs af en flade, fra kant til kant (eller en lukket løkke af linjer og buer inden i den), deler den i områder. Fladen lyser op område for område under markøren, og **Skub/Træk** på et område skubber eller trækker kun det område: et legeme for sig selv på fladen eller en udskæring i den. Linjer, der stopper før en kant, deler intet.
+
+- **Bue** (KA) tegner uden en åben skitse også på fladen, som i SketchUp: klik på start, på slut og derefter på, hvor meget den buer (eller skriv korden, derefter buen).
+- **Forskyd** (KO) klikker på en flade eller et område af den og tegner dens kontur igen indad eller udad gennem markøren eller med den afstand, du skriver; den lukkede form får straks skub/træk-pilen.
+- Med en åben skitse kører **Forskyd**, **Trim**, **Forlæng** og **Afrunding** kommandolinjens egne OFFSET, TRIM, EXTEND og FILLET på arbejdsplanet.
+- En form tegnet på et referenceplan og valgt i 3D-visningen viser sine punkter dér. Træk i et: det flytter sig på planet med skitseværktøjernes fangst, og legemet lavet af skitsen følger med.
+- Begge måder fanger også kanterne på andre elementer, der ligger i planet, f.eks. siden af en nabobloks side i flugt med fladen.
+
+![En linje på tværs af siden af en blok deler den: området under den trækkes ud for sig](shots/studio-sketch-region.webp)
+
 ## Trinene
 
 Et Studio-legemes egenskaber viser dets trin i rækkefølge. Hvert trin kan slås fra, flyttes tidligere eller senere, ændres eller fjernes. Ændr skitsen, og hvert trin udføres igen på det nye legeme. Et trin, der ikke længere finder sin flade eller kant, siger det under **Problemer**.

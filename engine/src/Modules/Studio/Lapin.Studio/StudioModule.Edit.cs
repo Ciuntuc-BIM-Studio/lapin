@@ -12,7 +12,7 @@ public sealed partial class StudioModule
     {
         // The face of an element under a pick in 3D, as its body is built now: what Studio's face tools light up and work on.
         r.Query("studio.faceAt", (q, a) =>
-            Pick(q, a) is var (_, solids, p, n) && BrepPick.Face(solids, p, n) is { } f ? f.ToJson() : null);
+            Pick(q, a) is var (_, solids, p, n) && BrepPick.Face(solids, p, n) is { } f ? FaceJson(q.Model, f, p) : null);
 
         r.Command("pushPull", "Push/pull", PushPull);
         r.Command("setPush", "Push/pull distance", SetPush);
@@ -64,6 +64,19 @@ public sealed partial class StudioModule
         r.Command("fromElement", "Make a Studio solid", FromElement);
     }
 
+    /// <summary>A face as the 3D view lights it: its outline, or the region of it round the pick when sketched lines split it.</summary>
+    static JsonNode FaceJson(IModelView m, BrepFace f, Vec3 p)
+    {
+        var o = f.ToJson().AsObject();
+        if (RegionOnFace(m, f, p) is { } region)
+        {
+            o["outline"] = new JsonArray(region.Select(q => (JsonNode)new JsonArray(q.X, q.Y, q.Z)).ToArray());
+            o["holes"] = new JsonArray();
+            o["region"] = true;
+        }
+        return o;
+    }
+
     /// <summary>An element's built body and a pick on it: {id, point, normal}.</summary>
     static (Entity E, List<Solid> Solids, Vec3 Point, Vec3 Normal)? Pick(IQueryContext q, JsonObject a)
     {
@@ -91,6 +104,15 @@ public sealed partial class StudioModule
         var face = BrepPick.Face(solids, p, n) ?? throw new CommandException("There is no flat face there.");
         // A pocket's floor or side (a shape drawn on the face and cut in): the cut is pushed or pulled, seen from inside.
         if (CutFaceAt(ctx, e, p, n) is var (cut, inside)) return PushStudio(ctx, cut, inside, p, -d);
+        // A face split by lines sketched on it (decision 375): the region round the pick, as a shape drawn on the face.
+        if (RegionOnFace(ctx.Model, face, p) is { } region)
+        {
+            var args = new JsonObject { ["id"] = e.Id, ["point"] = a["point"]?.DeepClone(), ["normal"] = a["normal"]?.DeepClone(), ["distance"] = d,
+                ["outline"] = new JsonArray(region.Select(q => (JsonNode)Features.J(q)).ToArray()) };
+            var r = OnFace(ctx, args)!.AsObject();
+            r["region"] = true;
+            return r;
+        }
         if (e.Str("operation") != null) return PushStudio(ctx, e, face, p, d);
         // Another element: a solid on its face, or a cut into it.
         var storey = Spatial.StoreyOf(ctx.Model, e.Id) ?? throw new CommandException($"„{e.Name}” is not an element.");

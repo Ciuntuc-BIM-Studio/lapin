@@ -5124,6 +5124,26 @@ export const scenes = [
       await t.keys('Enter');
       await t.wait(1000);
       t.expect((await t.nodes()).some((n) => n.props.operation === 'extrude' && Array.isArray(n.props.cut) && n.props.cut.includes(block)) || (await solids()).length === 2, 'pushed in, a cut into the block');
+
+      // Stage B (decision 375): a line across the block's west side splits it; the region below it, pulled on its own.
+      await t.keys('Escape');
+      await t.cmd('studio.onFace', { id: block, point: [0, 1, 0.6], normal: [-1, 0, 0], open: true, outline: [[0, 0, 0.4], [0, 2, 0.4]] });
+      await look({ x: 0, y: 1, z: 0.4 }, 0, -0.3, 6);
+      const before = (await solids()).length;
+      await t.tool('studio.pushPull');
+      const [wx, wy] = await middle();
+      await page.mouse.move(wx, wy + 40, { steps: 6 });
+      await t.wait(900);
+      await page.mouse.click(wx, wy + 40);
+      await t.wait(600);
+      t.expect(await page.locator('.axis-drag-value input').count() === 1, 'push/pull stands on the region below the line');
+      await page.mouse.move(wx - 60, wy + 30, { steps: 6 });
+      await page.locator('.axis-drag-value input').fill(await length(0.3));
+      await t.shot('studio-sketch-region', { of: '[data-testid=view3d]', pad: 0 });
+      await t.keys('Enter');
+      await t.wait(1000);
+      t.expect((await solids()).length === before + 1, 'the region pulled out is a solid of its own');
+      await t.keys('Escape');
     },
   },
   {

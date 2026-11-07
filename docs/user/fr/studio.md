@@ -125,6 +125,16 @@ Le groupe **Esquisse** de l’onglet **Studio** dessine des lignes et des formes
 
 ![Esquisse sur face : le dessus d’un bloc éclairé comme plan de travail, un rectangle dessiné dessus avec la ligne de commande](shots/studio-sketch-plane.webp)
 
+**Les lignes divisent les faces.** Une ligne tracée en travers d’une face, d’arête à arête (ou une boucle fermée de lignes et d’arcs à l’intérieur), la divise en régions. La face s’éclaire région par région sous le curseur, et **Pousser/Tirer** sur une région pousse ou tire cette région seule : un solide à part sur la face, ou une découpe dans celle-ci. Les lignes qui s’arrêtent avant une arête ne divisent rien.
+
+- **Arc** (KA), sans esquisse ouverte, dessine lui aussi sur la face, à la manière de SketchUp : cliquez sur le début, sur la fin, puis sur la hauteur de la flèche (ou saisissez la longueur de la corde, puis la flèche).
+- **Décaler** (KO) clique sur une face, ou sur une région de celle-ci, et redessine son contour vers l’intérieur ou l’extérieur par le curseur, ou selon la distance saisie ; la forme fermée reçoit aussitôt la flèche de pousser/tirer.
+- Avec une esquisse ouverte, **Décaler**, **Ajuster**, **Prolonger** et **Raccord** exécutent sur le plan de travail les OFFSET, TRIM, EXTEND et FILLET de la ligne de commande.
+- Une forme dessinée sur un plan de référence et sélectionnée dans la vue 3D y montre ses points. Faites-en glisser un : il se déplace sur le plan, avec les accrochages des outils d’esquisse, et le solide issu de l’esquisse suit.
+- Les deux façons s’accrochent aussi aux arêtes des autres éléments situés dans le plan, comme le côté d’un bloc voisin à fleur de la face.
+
+![Une ligne en travers du côté d’un bloc le divise : la région en dessous est tirée seule](shots/studio-sketch-region.webp)
+
 ## Les étapes
 
 Les propriétés d’un solide Studio listent ses étapes dans l’ordre. Chaque étape peut être désactivée, avancée ou reculée, modifiée ou retirée. Modifiez l’esquisse, et chaque étape est refaite sur le nouveau corps. Une étape qui ne retrouve plus sa face ou son arête le dit sous **Problèmes**.

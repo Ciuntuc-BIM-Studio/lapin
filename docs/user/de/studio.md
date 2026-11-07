@@ -125,6 +125,16 @@ Die Gruppe **Skizze** der Registerkarte **Studio** zeichnet Linien und Formen di
 
 ![Skizze auf Fläche: die Oberseite eines Blocks als Arbeitsebene beleuchtet, ein Rechteck darauf mit der Befehlszeile gezeichnet](shots/studio-sketch-plane.webp)
 
+**Linien teilen Flächen.** Eine Linie, die quer über eine Fläche gezogen wird, von Kante zu Kante (oder ein geschlossener Zug aus Linien und Bögen in ihr), teilt sie in Bereiche. Die Fläche leuchtet bereichsweise unter dem Mauszeiger auf, und **Drücken/Ziehen** auf einem Bereich drückt oder zieht nur diesen Bereich: ein eigener Körper auf der Fläche oder ein Ausschnitt in ihr. Linien, die vor einer Kante enden, teilen nichts.
+
+- **Bogen** (KA) zeichnet ohne offene Skizze ebenfalls auf der Fläche, wie in SketchUp: Klicken Sie auf den Anfang, das Ende und dann darauf, wie weit er sich wölbt (oder geben Sie die Länge der Sehne ein, dann die Wölbung).
+- **Versatz** (KO) klickt eine Fläche oder einen Bereich von ihr an und zeichnet ihren Umriss nach innen oder außen durch den Mauszeiger oder um den eingegebenen Abstand erneut; die geschlossene Form erhält sofort den Drücken/Ziehen-Pfeil.
+- Bei offener Skizze führen **Versatz**, **Stutzen**, **Dehnen** und **Abrunden** die Befehle OFFSET, TRIM, EXTEND und FILLET der Befehlszeile auf der Arbeitsebene aus.
+- Eine auf einer Referenzebene gezeichnete Form, die in der 3D-Ansicht ausgewählt ist, zeigt dort ihre Punkte. Ziehen Sie einen: Er bewegt sich auf der Ebene und rastet wie bei den Skizzenwerkzeugen ein, und der aus der Skizze erzeugte Körper folgt.
+- Beide Wege rasten auch an den Kanten anderer Elemente ein, die in der Ebene liegen, etwa an der bündigen Seite eines benachbarten Blocks.
+
+![Eine Linie quer über die Seite eines Blocks teilt sie: der Bereich darunter wird für sich herausgezogen](shots/studio-sketch-region.webp)
+
 ## Die Schritte
 
 Die Eigenschaften eines Studio-Körpers listen seine Schritte der Reihe nach. Jeder Schritt lässt sich ausschalten, früher oder später setzen, ändern oder entfernen. Ändern Sie die Skizze, wird jeder Schritt am neuen Körper neu ausgeführt. Ein Schritt, der seine Fläche oder Kante nicht mehr findet, sagt das unter **Probleme**.

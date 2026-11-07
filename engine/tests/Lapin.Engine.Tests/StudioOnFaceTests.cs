@@ -165,4 +165,60 @@ public class StudioOnFaceTests
         Assert.Equal("cut", (string)f.Run("studio.onFace", pull)!["how"]!);
         Assert.True(Vol(f, cube) < 8 - 1e-4);
     }
+
+    /// <summary>Faces split by sketched lines (decision 375): a square crossed both ways is four regions, a dangling line splits nothing.</summary>
+    [Fact]
+    public void Lines_across_a_square_split_it_into_regions()
+    {
+        var sq = new List<(Vec2, Vec2)> { (new(0, 0), new(4, 0)), (new(4, 0), new(4, 4)), (new(4, 4), new(0, 4)), (new(0, 4), new(0, 0)) };
+        var cross = new List<(Vec2, Vec2)>(sq) { (new(2, 0), new(2, 4)), (new(0, 1), new(4, 1)) };
+        Assert.Equal(4, SketchRegions.Regions(cross).Count);
+        var r = SketchRegions.RegionAt(cross, new Vec2(3, 3))!;
+        Assert.Equal(2 * 3, Polygon2.SignedArea(r), 9);
+        Assert.Equal(2 * 1, Polygon2.SignedArea(SketchRegions.RegionAt(cross, new Vec2(0.5, 0.5))!), 9);
+        // A line from an edge that stops inside: no region but the square.
+        var dangling = new List<(Vec2, Vec2)>(sq) { (new(2, 0), new(2, 3)) };
+        Assert.Single(SketchRegions.Regions(dangling));
+        Assert.Equal(16, Polygon2.SignedArea(SketchRegions.RegionAt(dangling, new Vec2(1, 1))!), 9);
+    }
+
+    [Fact]
+    public void A_line_across_a_face_splits_it_and_push_pull_takes_the_region_clicked()
+    {
+        var (f, cube) = Cube();
+        var east = new Vec3(1, 0, 0);
+        var line = new JsonObject { ["id"] = cube, ["point"] = J3(new Vec3(2, 1, 1)), ["normal"] = J3(east), ["open"] = true,
+            ["outline"] = new JsonArray(J3(new(2, 0, 0.5)), J3(new(2, 2, 0.5))) };
+        f.Run("studio.onFace", line);
+        // The face lights up as the region below the line: 2 × 0.5.
+        var face = f.Session.Query("studio.faceAt", new JsonObject { ["id"] = cube, ["point"] = J3(new(2, 1, 0.2)), ["normal"] = J3(east) })!;
+        Assert.True((bool)face["region"]!);
+        Assert.Equal(4, face["outline"]!.AsArray().Count);
+        // Pulled 0.3: a solid of that region only.
+        var r = f.Run("studio.pushPull", new JsonObject { ["id"] = cube, ["point"] = J3(new(2, 1, 0.2)), ["normal"] = J3(east), ["distance"] = 0.3 })!;
+        Assert.Equal("solid", (string)r["how"]!);
+        Assert.True((bool)r["region"]!);
+        Assert.Equal(2 * 0.5 * 0.3, Vol(f, Id(r)), 6);
+        var b = f.Bounds(Id(r));
+        Assert.Equal(0, b.Min.Z, 6); Assert.Equal(0.5, b.Max.Z, 6);
+        // The region above, pushed in 0.1: a cut of 2 × 1.5 × 0.1.
+        var c = f.Run("studio.pushPull", new JsonObject { ["id"] = cube, ["point"] = J3(new(2, 1, 1.5)), ["normal"] = J3(east), ["distance"] = -0.1 })!;
+        Assert.Equal("cut", (string)c["how"]!);
+        Assert.Equal(8 - 2 * 1.5 * 0.1, Vol(f, cube), 6);
+    }
+
+    [Fact]
+    public void An_arc_drawn_on_a_face_is_an_arc_through_its_three_points()
+    {
+        var (f, cube) = Cube();
+        var r = f.Run("studio.onFace", new JsonObject
+        {
+            ["id"] = cube, ["point"] = J3(new Vec3(2, 1, 1)), ["normal"] = J3(new Vec3(1, 0, 0)),
+            ["arc"] = new JsonObject { ["start"] = J3(new(2, 0.5, 1)), ["through"] = J3(new(2, 1, 1.5)), ["end"] = J3(new(2, 1.5, 1)) },
+        })!;
+        var arc = Assert.IsType<Arc>(Drafts.ShapeOf(f.Model.Get(Id(r, "sketchId"))!));
+        Assert.Equal(0.5, arc.R, 9);
+        Assert.Equal(Math.PI, arc.Sweep, 9);
+        Assert.Null(StudioModule.ArcThrough(new(0, 0), new(1, 1), new(2, 2)));
+    }
 }

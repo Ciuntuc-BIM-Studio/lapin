@@ -125,6 +125,16 @@ Il gruppo **Schizzo** della scheda **Studio** disegna linee e forme direttamente
 
 ![Schizzo su faccia: il lato superiore di un blocco illuminato come piano di lavoro, un rettangolo disegnato su di esso con la riga di comando](shots/studio-sketch-plane.webp)
 
+**Le linee dividono le facce.** Una linea tracciata attraverso una faccia, da spigolo a spigolo (o un anello chiuso di linee e archi al suo interno), la divide in regioni. La faccia si illumina regione per regione sotto il cursore, e **Spingi/Tira** su una regione spinge o tira solo quella regione: un solido a sé sulla faccia, oppure un taglio in essa. Le linee che si fermano prima di uno spigolo non dividono nulla.
+
+- **Arco** (KA), senza uno schizzo aperto, disegna anch’esso sulla faccia, alla maniera di SketchUp: fai clic sull’inizio, sulla fine e poi su quanto si incurva (oppure digita la lunghezza della corda, poi la freccia).
+- **Offset** (KO) fa clic su una faccia, o su una regione di essa, e ne ridisegna il contorno verso l’interno o l’esterno attraverso il cursore, o della distanza digitata; la forma chiusa riceve subito la freccia di spingi/tira.
+- Con uno schizzo aperto, **Offset**, **Taglia**, **Estendi** e **Raccordo** eseguono sul piano di lavoro gli OFFSET, TRIM, EXTEND e FILLET della riga di comando.
+- Una forma disegnata su un piano di riferimento e selezionata nella vista 3D mostra lì i suoi punti. Trascinane uno: si sposta sul piano, con gli snap degli strumenti di schizzo, e il solido creato dallo schizzo lo segue.
+- Entrambi i modi fanno snap anche agli spigoli di altri elementi che giacciono nel piano, come il lato di un blocco vicino a filo con la faccia.
+
+![Una linea attraverso il fianco di un blocco lo divide: la regione sotto di essa viene tirata fuori da sola](shots/studio-sketch-region.webp)
+
 ## I passi
 
 Le proprietà di un solido Studio elencano i suoi passi in ordine. Ogni passo può essere disattivato, spostato prima o dopo, modificato o rimosso. Cambia lo schizzo, e ogni passo viene rifatto sul nuovo corpo. Un passo che non trova più la sua faccia o il suo spigolo lo segnala in **Problemi**.

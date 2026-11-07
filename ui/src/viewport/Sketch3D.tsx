@@ -22,24 +22,34 @@ import { frameOf } from './faceSketch';
 import { formatLength, parseLength } from './liveInput';
 import { levelFrame, rayOnPlane, toPlane, toWorld, workPlaneView, type WorkFrame } from './workPlane';
 import { useCad } from './cad/session';
-import { toJson, type Shape } from './cad/shapes';
-import { click, endDirect, finishOpen, preview, resetDirect, typed, useDirect, type DirectPlane, type Outcome } from './sketch/direct';
+import { arcThrough, toJson, type Shape } from './cad/shapes';
+import { arcPts, click, insideDistance, endDirect, finishOpen, offsetOutcome, preview, resetDirect, typed, useDirect, type DirectPlane, type Outcome } from './sketch/direct';
+import { edgesInPlane, sceneSegments } from './sketch/edges';
 import { arrowLock, axesInPlane, holdLock, infer, segsOf, type Seg2 } from './sketch/inference';
 import { parseVcb } from './sketch/vcb';
 import { pushPullShape, type FacePick } from './sketch/sketch3d';
 
 type Pt = { x: number; y: number };
 const SNAP_PX = 10;
-const TOOL_NAME = { line: 'Line', rect: 'Rectangle', circle: 'Circle' } as const;
+const TOOL_NAME = { line: 'Line', rect: 'Rectangle', circle: 'Circle', arc: 'Arc', offset: 'Offset' } as const;
 const HINT = {
   line: 'Click the points · back on the first closes it · Enter or Esc leaves it open',
   rect: 'Click the opposite corner, or type width,height',
   circle: 'Click the radius, or type it (300 or r300)',
+  arc: 'Click the start, the end, then the bulge (or type the chord, then the bulge)',
+  offset: 'Click a face (or a region of it), then the offset, or type it',
 } as const;
 
-/** The flat faces' outlines the engine gave, by element and plane (asked once each; null: no flat face there). */
-const faces = new Map<string, Vec3[] | null>();
-const asked = new Set<string>();
+/**
+ * The flat faces' outlines the engine gave, by element and plane: the face, or each region of it that sketched lines
+ * split off (decision 375), asked again when the cursor is in none known yet; a face with no flat face there is `flatless`.
+ */
+const faces = new Map<string, Vec3[][]>();
+const asking = new Set<string>();
+const flatless = new Set<string>();
+/** The known outline of a face holding a point. */
+const outlineAt = (key: string, normal: Vec3, at: Vec3): Vec3[] | undefined =>
+  faces.get(key)?.find((o) => { const f = frameOf(normal, o); return insideDistance(o.map((q) => toPlane(f, q)), toPlane(f, at)) >= -1e-6; });
 const faceKey = (id: string, n: Vec3, p: Vec3) => `${id}|${n.x.toFixed(3)},${n.y.toFixed(3)},${n.z.toFixed(3)}|${(n.x * p.x + n.y * p.y + n.z * p.z).toFixed(3)}`;
 
 export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null>; scene: React.RefObject<THREE.Scene | null> }) {
@@ -56,7 +66,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
   useEffect(() => { if (st.tool && tool) endDirect(); }, [tool, st.tool]);
   useEffect(() => { if (st.tool && command) endDirect(); }, [command, st.tool]);
   useEffect(() => () => endDirect(), []);
-  useEffect(() => { faces.clear(); asked.clear(); }, [nodes]);
+  useEffect(() => { faces.clear(); asking.clear(); flatless.clear(); }, [nodes]);
 
   const rectOf = () => canvas.current?.getBoundingClientRect() ?? null;
   const toScreen = (p: Vec3): Pt | null => {
@@ -101,13 +111,18 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       const id = String(hit.object.userData.nodeId);
       const pick: FacePick = { id, point: [at.x, at.y, at.z], normal: [normal.x, normal.y, normal.z] };
       const key = faceKey(id, normal, at);
-      if (!asked.has(key)) {
-        asked.add(key);
+      const outline = outlineAt(key, normal, at);
+      if (!outline && !asking.has(key) && !flatless.has(key)) {
+        asking.add(key);
         void query<{ normal: number[]; outline: number[][] }>('studio.faceAt', { ...pick })
-          .then((f) => { faces.set(key, f && f.outline.length >= 3 ? f.outline.map((q) => ({ x: q[0], y: q[1], z: q[2] })) : null); bump((k) => k + 1); })
-          .catch(() => faces.set(key, null));
+          .then((f) => {
+            if (f && f.outline.length >= 3) faces.set(key, [...(faces.get(key) ?? []), f.outline.map((q) => ({ x: q[0], y: q[1], z: q[2] }))]);
+            else flatless.add(key);
+            bump((k) => k + 1);
+          })
+          .catch(() => flatless.add(key))
+          .finally(() => asking.delete(key));
       }
-      const outline = faces.get(key) ?? undefined;
       const name = useSession.getState().nodes.get(id)?.name ?? 'Face';
       const f = frameOf(normal, outline ?? []);
       // Origin on the face's plane through the point hit (the outline's first corner when known).
@@ -121,9 +136,15 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       if (!a || !b || !c) return 50;
       return Math.max(1e-3, Math.max(Math.hypot(b.x - a.x, b.y - a.y), Math.hypot(c.x - a.x, c.y - a.y)));
     };
-    const edgesOf = (plane: DirectPlane, pts: Vec2[]): Seg2[] => {
+    /** Other bodies' edges in the locked plane (and the points where edges pass through it), found once per plane. */
+    let near: { frame: WorkFrame; edges: Seg2[]; points: Vec2[] } | null = null;
+    const others = (plane: DirectPlane) => {
+      if (!near || near.frame !== plane.frame) near = { frame: plane.frame, ...edgesInPlane(sceneSegments(scene.current, plane.frame), plane.frame) };
+      return near;
+    };
+    const edgesOf = (plane: DirectPlane, pts: Vec2[], locked: boolean): Seg2[] => {
       const face = plane.outline ? segsOf(plane.outline.map((q) => toPlane(plane.frame, q)), true) : [];
-      return [...face, ...segsOf(pts, false)];
+      return [...face, ...segsOf(pts, false), ...(locked ? others(plane).edges : [])];
     };
     const aimAt = (e: PointerEvent | { clientX: number; clientY: number; shiftKey: boolean }) => {
       const ray = rayAt(e);
@@ -131,12 +152,16 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       const s0 = useDirect.getState();
       let plane = s0.locked && s0.plane ? s0.plane : planeUnder(ray);
       // Locked before the engine gave the face's outline: lit (and snapped to) once it has.
-      if (s0.locked && plane.key && !plane.outline && faces.get(plane.key)) plane = { ...plane, outline: faces.get(plane.key)! };
+      if (s0.locked && plane.key && !plane.outline && plane.pick) {
+        const pp = plane.pick.point, nn = plane.pick.normal;
+        const o = outlineAt(plane.key, { x: nn[0], y: nn[1], z: nn[2] }, { x: pp[0], y: pp[1], z: pp[2] });
+        if (o) plane = { ...plane, outline: o };
+      }
       const raw = rayOnPlane(plane.frame, ray.ray.origin, ray.ray.direction);
       if (!raw) { useDirect.setState({ plane, inferred: null }); return; }
       const base = s0.pts.length ? s0.pts[s0.pts.length - 1] : null;
       const inferred = infer({
-        raw, base, edges: edgesOf(plane, s0.pts), points: s0.pts.slice(0, 1),
+        raw, base, edges: edgesOf(plane, s0.pts, s0.locked), points: [...s0.pts.slice(0, 1), ...(s0.locked ? others(plane).points : [])],
         axes: axesInPlane(plane.frame.right, plane.frame.up), lock: s0.lock, tol: SNAP_PX / ppm(plane.frame, raw),
       });
       useDirect.setState({ plane, inferred });
@@ -153,6 +178,17 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       aimAt(e);
       const s0 = useDirect.getState();
       if (!s0.tool || !s0.inferred || !s0.plane) return;
+      if (s0.tool === 'offset') {
+        // The first click takes the face (or its region) under it; the second places the offset.
+        if (!s0.loop) {
+          const o = s0.plane.outline;
+          if (!s0.plane.pick || !o) { notify('Offset works on a face: click one.'); return; }
+          useDirect.setState({ loop: o.map((q) => toPlane(s0.plane!.frame, q)), locked: true });
+          return;
+        }
+        apply(offsetOutcome(s0.loop, s0.inferred.point, null));
+        return;
+      }
       apply(click(s0.tool, s0.pts, s0.inferred.point));
     };
     const onUp = (e: PointerEvent) => { if (inside(e) && e.button === 0) e.stopPropagation(); };
@@ -173,12 +209,13 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); enter(); }
       else if (e.key === 'Escape') {
         e.preventDefault(); e.stopPropagation();
-        if (!s0.pts.length) { endDirect(); return; }
+        if (!s0.pts.length && !s0.loop) { endDirect(); return; }
+        if (s0.loop) { resetDirect(); return; }
         apply(finishOpen(s0.tool, s0.pts));
       } else if (e.key === 'Backspace' && !s0.text) {
         e.preventDefault(); e.stopPropagation();
         if (s0.pts.length <= 1) resetDirect(); else useDirect.setState({ pts: s0.pts.slice(0, -1) });
-      } else if (el !== input.current && /^[0-9.,+\-'"<r ]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && s0.pts.length) input.current?.focus();
+      } else if (el !== input.current && /^[0-9.,+\-'"<r ]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && (s0.pts.length || s0.loop)) input.current?.focus();
     };
     const onKeyUp = (e: KeyboardEvent) => { if (e.key === 'Shift' && useDirect.getState().shiftLock) useDirect.setState({ lock: null, shiftLock: false }); };
     window.addEventListener('pointermove', onMove, true);
@@ -200,10 +237,12 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
   const f = plane?.frame;
   const cursor = st.inferred?.point ?? null;
   const vcb = parseVcb(st.text, (s) => parseLength(s));
-  const typedShape = vcb && st.pts.length ? typed(st.tool, st.pts, vcb, cursor) : null;
+  const typedShape = st.tool === 'offset' ? (st.loop ? offsetOutcome(st.loop, cursor, vcb?.kind === 'length' ? vcb.value : null) : null)
+    : vcb && st.pts.length ? typed(st.tool, st.pts, vcb, cursor) : null;
   const shown = typedShape?.kind === 'closed' ? { pts: typedShape.outline, closed: true }
     : typedShape?.kind === 'more' ? { pts: typedShape.pts, closed: false }
-      : preview(st.tool, st.pts, cursor);
+      : typedShape?.kind === 'arc' ? { pts: arcPts(typedShape.start, typedShape.through, typedShape.end), closed: false }
+        : st.tool === 'offset' ? { pts: [], closed: false } : preview(st.tool, st.pts, cursor);
   const w = (p: Vec2) => (f ? toWorld(f, p) : { x: 0, y: 0, z: 0 });
   const pathOf = (list: Vec3[], close: boolean) => {
     const s = list.map(toScreen);
@@ -236,7 +275,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
         {cur && <circle cx={cur.x} cy={cur.y} r={kind && kind !== 'On face' ? 5 : 3} className={markClass} />}
       </svg>
       {cur && what && <div className={`face-sketch-snap-name ${color}`} style={{ left: cur.x + 10, top: cur.y + 8 }} data-sketch3d="inference">{what}</div>}
-      {cur && st.pts.length > 0 && (
+      {cur && (st.pts.length > 0 || !!st.loop) && (
         <div className="axis-drag-value" style={{ left: cur.x + 18, top: cur.y - 30 }}>
           <input ref={input} value={st.text} placeholder={label || '…'} aria-label="Measurements" spellCheck={false} data-sketch3d="vcb"
             onChange={(e) => useDirect.setState({ text: e.target.value })}
@@ -260,6 +299,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
     const s0 = useDirect.getState();
     if (!s0.tool) return;
     const v = parseVcb(s0.text, (s) => parseLength(s));
+    if (s0.tool === 'offset') { if (s0.loop && v?.kind === 'length') apply(offsetOutcome(s0.loop, s0.inferred?.point ?? null, v.value)); return; }
     if (v && s0.pts.length) { apply(typed(s0.tool, s0.pts, v, s0.inferred?.point ?? null)); return; }
     if (!s0.text.trim()) apply(finishOpen(s0.tool, s0.pts));
   }
@@ -280,6 +320,13 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
 async function store(p: DirectPlane, o: Exclude<Outcome, { kind: 'none' } | { kind: 'more' }>): Promise<void> {
   const f = p.frame;
   const w = (q: Vec2) => toWorld(f, q);
+  if (o.kind === 'arc') {
+    const p3 = (q: Vec2) => { const v = w(q); return [v.x, v.y, v.z]; };
+    if (p.pick) { if (await execute('studio.onFace', { ...p.pick, arc: { start: p3(o.start), through: p3(o.through), end: p3(o.end) } })) notify('The arc stays on the face as a sketch: with lines it can close a region to push or pull.'); return; }
+    const a = arcThrough(o.start, o.through, o.end);
+    if (a) await drawOnLevel(p, a);
+    return;
+  }
   if (o.kind === 'open') {
     const outline = o.pts.map(w);
     if (p.pick) { if (await execute('studio.onFace', { ...p.pick, open: true, outline: outline.map((q) => [q.x, q.y, q.z]) })) notify('The line stays on the face as a sketch.'); return; }

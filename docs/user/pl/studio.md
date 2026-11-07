@@ -125,6 +125,16 @@ Grupa **Szkic** na karcie **Studio** rysuje linie i kształty bezpośrednio w wi
 
 ![Szkic na ścianie: górna ściana bloku rozświetlona jako płaszczyzna robocza, prostokąt narysowany na niej wierszem poleceń](shots/studio-sketch-plane.webp)
 
+**Linie dzielą ściany.** Linia poprowadzona w poprzek ściany, od krawędzi do krawędzi (albo zamknięta pętla z linii i łuków wewnątrz niej), dzieli ją na obszary. Ściana rozświetla się obszar po obszarze pod kursorem, a **Wypchnij/Wciągnij** na obszarze wypycha lub wciąga tylko ten obszar: osobną bryłę na ścianie albo wycięcie w niej. Linie, które kończą się przed krawędzią, niczego nie dzielą.
+
+- **Łuk** (KA), przy braku otwartego szkicu, rysuje także na ścianie, na wzór SketchUp: kliknij początek, koniec, a potem to, jak bardzo się wygina (albo wpisz długość cięciwy, potem strzałkę łuku).
+- **Odsuń** (KO) klika ścianę lub jej obszar i rysuje jej kontur jeszcze raz do wewnątrz lub na zewnątrz przez kursor albo o wpisaną odległość; zamknięty kształt od razu dostaje strzałkę wypchnij/wciągnij.
+- Przy otwartym szkicu **Odsuń**, **Utnij**, **Wydłuż** i **Zaokrąglij** uruchamiają na płaszczyźnie roboczej polecenia OFFSET, TRIM, EXTEND i FILLET wiersza poleceń.
+- Kształt narysowany na płaszczyźnie odniesienia i zaznaczony w widoku 3D pokazuje tam swoje punkty. Przeciągnij jeden: przesuwa się po płaszczyźnie, z przyciąganiem jak w narzędziach szkicu, a bryła zrobiona ze szkicu podąża za nim.
+- Oba sposoby przyciągają też do krawędzi innych elementów leżących w tej płaszczyźnie, na przykład do boku sąsiedniego bloku zlicowanego ze ścianą.
+
+![Linia w poprzek boku bloku dzieli go: obszar pod nią zostaje wyciągnięty osobno](shots/studio-sketch-region.webp)
+
 ## Kroki
 
 Właściwości bryły Studio wymieniają jej kroki po kolei. Każdy krok można wyłączyć, przesunąć wcześniej lub później, zmienić lub usunąć. Zmień szkic, a każdy krok zostanie wykonany ponownie na nowej bryle. Krok, który nie może już znaleźć swojej ściany lub krawędzi, mówi o tym w **Problemy**.

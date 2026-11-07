@@ -45,7 +45,7 @@ public sealed partial class StudioModule
         else
         {
             view = PlaneOnFace(ctx, e, on, normal);
-            if (a["outline"] is null && a["circle"] is null) return new JsonObject { ["planeId"] = view.Id, ["name"] = view.Name };
+            if (a["outline"] is null && a["circle"] is null && a["arc"] is null) return new JsonObject { ["planeId"] = view.Id, ["name"] = view.Name };
             sketch = Drafts.Add(ctx, view.Id, null, ShapeOnPlane(view, a));
         }
         var result = new JsonObject { ["planeId"] = view.Id, ["sketchId"] = sketch.Id };
@@ -79,6 +79,11 @@ public sealed partial class StudioModule
         var plane = RefPlanes.Of(view);
         Vec2 L(Vec3 q) => plane.Local(q).At;
         Shape shape;
+        if (a["arc"] is JsonObject arc)
+        {
+            Vec2 A(string k) => L(Features.P(arc[k]) ?? throw new CommandException("An arc needs its start, its end and a point on it."));
+            return ArcThrough(A("start"), A("through"), A("end")) ?? throw new CommandException("The three points of the arc lie on a line.");
+        }
         if (a["circle"] is JsonObject c)
         {
             var centre = Features.P(c["center"]) ?? throw new CommandException("A circle needs its centre.");
@@ -109,17 +114,68 @@ public sealed partial class StudioModule
     /// </summary>
     static Entity PlaneOnFace(ICommandContext ctx, Entity element, Vec3 at, Vec3 normal)
     {
-        foreach (var v in ctx.Model.OfClass(Views.Class))
-        {
-            if (v.Str("kind") != RefPlanes.Kind) continue;
-            var pl = RefPlanes.Of(v);
-            if (Vec3.Dot(pl.Normal, normal) > 1 - 1e-7 && Math.Abs(Vec3.Dot(at - pl.Origin, pl.Normal)) < 1e-5) return v;
-        }
+        if (FacePlane(ctx.Model, at, normal) is { } found) return found;
         var attrs = new JsonObject { ["kind"] = RefPlanes.Kind, ["scale"] = 50, [OnFaceKey] = element.Id };
         foreach (var (k, val) in RefPlanes.OnFace(at, normal)) attrs[k] = val?.DeepClone();
         var view = new Entity(ctx.NewId(), Views.Class, $"{element.Name}, {SideOf(normal)}", attrs);
         ctx.Add(view);
         return view;
+    }
+
+    /// <summary>The reference plane lying on a face's plane and facing its way, if one was made (by a shape drawn on it, or Sketch on face).</summary>
+    static Entity? FacePlane(IModelView m, Vec3 at, Vec3 normal)
+    {
+        foreach (var v in m.OfClass(Views.Class))
+        {
+            if (v.Str("kind") != RefPlanes.Kind) continue;
+            var pl = RefPlanes.Of(v);
+            if (Vec3.Dot(pl.Normal, normal) > 1 - 1e-7 && Math.Abs(Vec3.Dot(at - pl.Origin, pl.Normal)) < 1e-5) return v;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// A face split by the lines sketched on its plane (stage B, decision 375): the region round the point picked, in the
+    /// model, or null when the lines split nothing there (no sketch on the face, or the region is the whole face).
+    /// </summary>
+    internal static List<Vec3>? RegionOnFace(IModelView m, BrepFace face, Vec3 p)
+    {
+        var n = face.Normal;
+        if (FacePlane(m, face.Outer[0], n) is not { } view) return null;
+        var plane = RefPlanes.Of(view);
+        var segs = new List<(Vec2, Vec2)>();
+        void Loop(IReadOnlyList<Vec2> pts, bool closed)
+        {
+            for (var i = 0; i + 1 < pts.Count; i++) segs.Add((pts[i], pts[i + 1]));
+            if (closed && pts.Count > 2) segs.Add((pts[^1], pts[0]));
+        }
+        var drawn = 0;
+        foreach (var d in Drafts.On(m, view.Id))
+            if (Drafts.ShapeOf(d) is { } sh && d.Attrs["hatch"] == null)
+                foreach (var pl in Drafts.Flatten(sh)) { Loop(pl, false); drawn++; }
+        if (drawn == 0) return null;
+        Vec2 L(Vec3 q) => plane.Local(q).At;
+        Loop(face.Outer.Select(L).ToList(), true);
+        foreach (var h in face.Holes) Loop(h.Select(L).ToList(), true);
+        var region = SketchRegions.RegionAt(segs, L(p));
+        if (region == null) return null;
+        var whole = Math.Abs(Polygon2.SignedArea(face.Outer.Select(L).ToList()));
+        if (Math.Abs(Polygon2.SignedArea(region)) >= whole - 1e-9) return null;
+        return region.Select(plane.World).ToList();
+    }
+
+    /// <summary>The arc from a start through a point to an end, counter-clockwise as Lapin keeps arcs; null when the three lie on a line.</summary>
+    public static Arc? ArcThrough(Vec2 a, Vec2 m, Vec2 b)
+    {
+        var d = 2 * (a.X * (m.Y - b.Y) + m.X * (b.Y - a.Y) + b.X * (a.Y - m.Y));
+        if (Math.Abs(d) < 1e-12) return null;
+        double S(Vec2 q) => q.X * q.X + q.Y * q.Y;
+        var c = new Vec2((S(a) * (m.Y - b.Y) + S(m) * (b.Y - a.Y) + S(b) * (a.Y - m.Y)) / d, (S(a) * (b.X - m.X) + S(m) * (a.X - b.X) + S(b) * (m.X - a.X)) / d);
+        double Ang(Vec2 q) => Math.Atan2(q.Y - c.Y, q.X - c.X);
+        var (sa, ma, ea) = (Ang(a), Ang(m), Ang(b));
+        // Counter-clockwise from a to b passes m, or else the arc runs from b to a.
+        var ccw = Geo.AngleInArc(ma, sa, ea);
+        return ccw ? new Arc(c, (a - c).Length, sa, ea) : new Arc(c, (a - c).Length, ea, sa);
     }
 
     /// <summary>Which face a normal is, in words: the top, the underside, or the compass way it faces (sloping when it leans).</summary>

@@ -49,13 +49,15 @@ Studio → **Sketch** → Line, Rectangle, Circle while no work plane is active 
 - The **Sketch** group in Studio's ribbon: Line, Rectangle, Circle, Arc; Sketch on face, Sketch on plane, Finish sketch, Look at plane.
 - Engine: `studio.onFace` plane only, `open`, `sketchId` (`StudioOnFaceTests`). UI tests: `inference.test.ts`, `vcb.test.ts`, `direct.test.ts`, `sketch3d.test.ts`.
 
-### B: faces split by lines, arcs and offsets, CAD edits in 3D
+### B: faces split by lines, arcs and offsets, CAD edits in 3D (done, 07.11.2026, decision 375)
 
 - A line drawn across a face (from edge to edge, or a closed loop of lines inside it) **splits it into regions**: Push/Pull on a region of a face with sketch lines takes the region round the point clicked (the smallest loop made by the face's outline and the sketch lines, the engine's `HatchRegion.At` over the plane's loops), pushed or pulled on its own as an `onFace` shape.
 - **Arc** (two-point arc with its bulge, SketchUp's) and **Offset** (of a face's outline or a closed sketch, by a distance typed or dragged) in the direct way.
 - The CAD edits on the work plane in 3D: OFFSET, TRIM, EXTEND, FILLET, MOVE, COPY, picked on the plane (the 3D host's pick of drafts by the plane's x, y).
 - **Grips on sketch lines in 3D**: a sketch on the active work plane shows its points, dragged on the plane.
 - **Snapping to other elements' edges**: the edges of the element under the cursor that lie in the plane (and the points of edges that meet it) as inference lines.
+
+As built: `SketchRegions` (Studio) makes the planar graph of the face's outline and the plane's drafted shapes (split where they cross or touch, dangling ends pruned, faces traced by the sharpest left turn) and takes the smallest region holding the pick; `studio.faceAt` returns that region (so both ways light it), `studio.pushPull` pushes or pulls it through `studio.onFace` (`region: true` in the result). `studio.onFace {arc: {start, through, end}}` stores a three-point arc. The direct Arc and Offset (`direct.ts`: `bulgeOf`, `arcMiddle`, `offsetLoop`, `insideDistance`); TRIM, EXTEND, FILLET (and OFFSET with a sketch open) in the Sketch group run the command line's commands on the work plane; `SketchGrips3D.tsx` and `sketch/grips.ts` drag a drafted shape's points on its plane; `sketch/edges.ts` gives the bodies' sharp edges (20°) lying in the plane, and the points where edges pass through it, to both ways. Islands (a loop inside a region touching nothing) are regions of their own, not left out of the region round them.
 
 ### C: tape measure, Follow Me, the shortcut set
 

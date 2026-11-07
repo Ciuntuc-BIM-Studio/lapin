@@ -125,6 +125,16 @@ O grupo **Esboço** da guia **Studio** desenha linhas e formas diretamente na vi
 
 ![Esboço na face: o topo de um bloco iluminado como plano de trabalho, um retângulo desenhado nele com a linha de comando](shots/studio-sketch-plane.webp)
 
+**As linhas dividem as faces.** Uma linha traçada atravessando uma face, de aresta a aresta (ou um laço fechado de linhas e arcos dentro dela), divide-a em regiões. A face se ilumina região a região sob o cursor, e **Empurrar/Puxar** numa região empurra ou puxa só essa região: um sólido próprio sobre a face, ou um corte nela. Linhas que param antes de uma aresta não dividem nada.
+
+- **Arco** (KA), sem nenhum esboço aberto, desenha também na face, ao modo do SketchUp: clique no início, no fim e depois em quanto ele se curva (ou digite o comprimento da corda e depois a flecha).
+- **Deslocamento** (KO) clica numa face, ou numa região dela, e desenha o seu contorno de novo para dentro ou para fora pelo cursor, ou pela distância digitada; a forma fechada recebe logo a seta de empurrar/puxar.
+- Com um esboço aberto, **Deslocamento**, **Aparar**, **Estender** e **Concordância** executam no plano de trabalho os OFFSET, TRIM, EXTEND e FILLET da linha de comando.
+- Uma forma desenhada num plano de referência e selecionada na vista 3D mostra ali os seus pontos. Arraste um: ele se move no plano, com os snaps das ferramentas de esboço, e o sólido feito do esboço o acompanha.
+- Os dois modos também se ajustam às arestas de outros elementos que estão no plano, como a lateral de um bloco vizinho rente à face.
+
+![Uma linha atravessando a lateral de um bloco a divide: a região abaixo dela é puxada sozinha](shots/studio-sketch-region.webp)
+
 ## Os passos
 
 As propriedades de um sólido do Studio listam os seus passos em ordem. Cada passo pode ser desativado, movido para antes ou para depois, alterado ou removido. Altere o esboço, e cada passo é refeito sobre o novo corpo. Um passo que não consegue mais encontrar a sua face ou aresta avisa em **Problemas**.
