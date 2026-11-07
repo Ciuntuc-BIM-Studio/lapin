@@ -33,7 +33,7 @@ Haga clic en un muro para seleccionarlo. Aparecen sus pinzamientos. Arrastre los
 
 ![Un muro seleccionado con sus pinzamientos](shots/wall-selected.webp)
 
-El panel de propiedades muestra el muro seleccionado. La parte superior del panel contiene su tipo y sus capas. Debajo están su longitud, altura, desfase de base, planta y fase. Cambie cualquier valor y el modelo lo sigue.
+El panel de propiedades muestra el muro seleccionado. La parte superior del panel contiene su tipo y sus capas. Debajo están su longitud, altura, desfase de base, planta y fase. Cambie cualquier valor y el modelo lo sigue. Los valores de cada muro son suyos. Su **grosor** (Thickness) viene de las capas de su tipo: escriba uno nuevo y los muros seleccionados toman el tipo con la misma composición y ese grosor, con el núcleo redimensionado y los acabados conservados. Lapin usa el tipo del proyecto si alguno tiene exactamente esa composición; si no, crea uno con el nombre del suyo (*Partition wall 130mm* pasa a *Partition wall 150mm*). Los demás muros del tipo anterior quedan como están, y <kbd>Ctrl</kbd> <kbd>Z</kbd> lo deshace en un solo paso.
 
 ![Las propiedades de un muro](shots/wall-properties.webp)
 

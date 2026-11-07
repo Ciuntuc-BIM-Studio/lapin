@@ -159,7 +159,7 @@ export const ZH: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': '所填的每个字段都必须满足；未填任何字段的集会收纳全部内容。', 'Apply': '应用',
   'Discipline': '专业',
 
-  'Elevation from inside': '内立面', 'Elevation from outside': '外立面', 'From outside': '从外侧', '3D preview': '3D 预览', '3D: drag to turn, wheel to zoom': '3D：拖动旋转，滚轮缩放', 'Opening symbols in elevation': '立面中的开启符号',
+  'Elevation from inside': '内立面', 'Elevation from outside': '外立面', 'From outside': '从外侧', 'The wall\'s thickness comes from its type\'s layers. Type a new one and the selected walls take the type with the same build-up and that thickness (the core resized, the finishes kept): the project\'s, or a new one named after their type, e.g. Partition wall 150mm.': '墙的厚度来自其类型的层。输入新的厚度，所选墙将采用构造相同、厚度为该值的类型（调整核心层，保留饰面层）：项目中已有的，或以其类型命名的新类型，例如 Partition wall 150mm。', '3D preview': '3D 预览', '3D: drag to turn, wheel to zoom': '3D：拖动旋转，滚轮缩放', 'Opening symbols in elevation': '立面中的开启符号',
   'Apex at the handle (makers)': '顶点位于把手处（厂商惯例）', 'Apex at the hinges (DIN 1356)': '顶点位于铰链处（DIN 1356）', 'Hardware': '五金件', 'Opening symbols': '开启符号',
 
   'Details': '细部', 'Reveal finish': '洞口侧面饰面', 'The wall\'s finish layers': '墙的饰面层', 'A material': '指定材料', 'None': '无', 'Reveal material': '洞口侧面材料',

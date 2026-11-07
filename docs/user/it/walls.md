@@ -33,7 +33,7 @@ Fai clic su un muro per selezionarlo. Compaiono le sue maniglie. Trascina le est
 
 ![Un muro selezionato con le sue maniglie](shots/wall-selected.webp)
 
-Il pannello Proprietà mostra il muro selezionato. La parte superiore del pannello contiene il suo tipo e i suoi strati. Sotto ci sono la lunghezza, l’altezza, l’offset di base, il piano e la fase. Modifica un valore qualsiasi e il modello si aggiorna.
+Il pannello Proprietà mostra il muro selezionato. La parte superiore del pannello contiene il suo tipo e i suoi strati. Sotto ci sono la lunghezza, l’altezza, l’offset di base, il piano e la fase. Modifica un valore qualsiasi e il modello si aggiorna. I valori di ogni muro sono suoi. Il suo **spessore** (Thickness) viene dagli strati del suo tipo: scrivine uno nuovo e i muri selezionati prendono il tipo con la stessa stratigrafia e quello spessore, il nucleo ridimensionato e le finiture mantenute. Lapin usa il tipo del progetto se uno ha esattamente quella stratigrafia, altrimenti ne crea uno con il nome del loro (*Partition wall 130mm* diventa *Partition wall 150mm*). Gli altri muri del vecchio tipo restano come sono, e <kbd>Ctrl</kbd> <kbd>Z</kbd> annulla tutto in un passo.
 
 ![Le proprietà di un muro](shots/wall-properties.webp)
 

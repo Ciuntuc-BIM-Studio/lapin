@@ -33,7 +33,7 @@ Kliknij ścianę, aby ją zaznaczyć. Pojawią się jej uchwyty. Przeciągnij ko
 
 ![Zaznaczona ściana z uchwytami](shots/wall-selected.webp)
 
-Panel Właściwości pokazuje zaznaczoną ścianę. U góry panelu są jej typ i warstwy. Poniżej znajdują się jej długość, wysokość, odsunięcie podstawy, kondygnacja i faza. Zmień dowolną wartość, a model podąży za nią.
+Panel Właściwości pokazuje zaznaczoną ścianę. U góry panelu są jej typ i warstwy. Poniżej znajdują się jej długość, wysokość, odsunięcie podstawy, kondygnacja i faza. Zmień dowolną wartość, a model podąży za nią. Wartości każdej ściany są jej własne. Jej **grubość** (Thickness) wynika z warstw jej typu: wpisz nową, a zaznaczone ściany otrzymają typ o tym samym układzie i tej grubości, z rdzeniem zmienionym i wykończeniami zachowanymi. Lapin użyje typu projektu, jeśli któryś ma dokładnie taki układ, a w przeciwnym razie utworzy nowy, nazwany od ich typu (*Partition wall 130mm* staje się *Partition wall 150mm*). Pozostałe ściany starego typu zostają bez zmian, a <kbd>Ctrl</kbd> <kbd>Z</kbd> cofa wszystko jednym krokiem.
 
 ![Właściwości ściany](shots/wall-properties.webp)
 

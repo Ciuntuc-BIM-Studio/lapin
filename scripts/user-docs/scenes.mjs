@@ -410,6 +410,8 @@ export const scenes = [
       // Its drawn direction and faces (R, L), the marks the Wall types legend uses (report #79).
       t.expect(await t.page.locator('[data-testid=wall-faces]').count() >= 1, 'the selected wall shows its faces');
       await t.shot('wall-selected', { clip: { x: 250, y: 120, width: 1190, height: 700 } });
+      // Each wall's own length and thickness (report #107).
+      t.expect(await t.page.locator('[data-field=wall-length]').count() === 1 && await t.page.locator('[data-field=wall-thickness]').count() === 1, 'the wall\'s length and thickness are fields');
       await t.shot('wall-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
       await t.tool('architecture.wallTypes');
       t.expect(await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1, 'the wall types show their legend');

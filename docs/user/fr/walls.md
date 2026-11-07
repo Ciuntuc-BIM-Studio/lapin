@@ -33,7 +33,7 @@ Cliquez sur un mur pour le sélectionner. Ses poignées apparaissent. Faites gli
 
 ![Un mur sélectionné avec ses poignées](shots/wall-selected.webp)
 
-Le panneau des propriétés affiche le mur sélectionné. Le haut du panneau contient son type et ses couches. En dessous se trouvent sa longueur, sa hauteur, son décalage de base, son niveau et sa phase. Changez une valeur et le modèle suit.
+Le panneau des propriétés affiche le mur sélectionné. Le haut du panneau contient son type et ses couches. En dessous se trouvent sa longueur, sa hauteur, son décalage de base, son niveau et sa phase. Changez une valeur et le modèle suit. Les valeurs de chaque mur sont les siennes. Son **épaisseur** (Thickness) vient des couches de son type : saisissez-en une nouvelle et les murs sélectionnés prennent le type de même composition et de cette épaisseur, le noyau redimensionné et les finitions conservées. Lapin prend le type du projet s’il en a un avec exactement cette composition, sinon il en crée un nommé d’après le leur (*Partition wall 130mm* devient *Partition wall 150mm*). Les autres murs de l’ancien type restent tels quels, et <kbd>Ctrl</kbd> <kbd>Z</kbd> annule le tout en une étape.
 
 ![Les propriétés d’un mur](shots/wall-properties.webp)
 

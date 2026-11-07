@@ -492,6 +492,15 @@ export const FAQ: Entry[] = [
     source: 'report #108',
   },
   {
+    id: 'wall-thickness',
+    q: ['How do I change the thickness of one wall?', 'Can I edit a wall\'s dimensions on its own?', 'How do I change a wall\'s length?'],
+    qRo: ['Cum schimb grosimea unui singur perete?', 'Pot modifica dimensiunile unui perete separat?', 'Cum schimb lungimea unui perete?'],
+    keywords: ['wall', 'walls', 'perete', 'peretelui', 'thickness', 'thick', 'thicker', 'thinner', 'dimension', 'dimensions', 'individually', 'individual', 'length', 'grosime', 'grosimea', 'gros', 'dimensiuni', 'dimensiunile', 'separat', 'lungime', 'lungimea', 'espesor', 'epaisseur', 'spessore', 'dicke', 'grubosc', 'espessura', 'tykkelse'],
+    a: 'Select the wall: in Properties, Length, Height and Base offset are the wall\'s own. Its thickness comes from its type\'s layers, so typing a new Thickness there gives the selected walls the type with the same build-up and that thickness (the core resized, the finishes kept): the project\'s if it has one, else a new type named after theirs, e.g. Partition wall 150mm. The other walls of the old type stay as they are. One undo step.',
+    aRo: 'Selectează peretele: în Properties, Length, Height și Base offset sunt ale peretelui. Grosimea vine din straturile tipului său, așa că o Thickness nouă scrisă acolo dă pereților selectați tipul cu aceeași alcătuire și acea grosime (miezul redimensionat, finisajele păstrate): al proiectului, dacă există, altfel un tip nou numit după al lor, de ex. Partition wall 150mm. Ceilalți pereți ai tipului vechi rămân cum sunt. Un singur pas de anulare.',
+    source: 'report #107',
+  },
+  {
     id: 'bay-windows',
     q: ['How do I make a bay window?', 'Can I make bow and box windows?', 'How do I make a window that projects from the wall, with a seat and a roof?'],
     qRo: ['Cum fac un bovindou?', 'Pot face ferestre în arc sau în cutie?', 'Cum fac o fereastră ieșită din perete, cu banchetă și acoperiș?'],

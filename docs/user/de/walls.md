@@ -33,7 +33,7 @@ Klicken Sie auf eine Wand, um sie auszuwählen. Ihre Griffe erscheinen. Ziehen S
 
 ![Eine ausgewählte Wand mit ihren Griffen](shots/wall-selected.webp)
 
-Der Eigenschaftenbereich zeigt die ausgewählte Wand. Oben im Bereich stehen ihr Typ und ihre Schichten. Darunter folgen Länge, Höhe, Versatz unten, Geschoss und Bauphase. Ändern Sie einen beliebigen Wert, und das Modell folgt.
+Der Eigenschaftenbereich zeigt die ausgewählte Wand. Oben im Bereich stehen ihr Typ und ihre Schichten. Darunter folgen Länge, Höhe, Versatz unten, Geschoss und Bauphase. Ändern Sie einen beliebigen Wert, und das Modell folgt. Die Werte jeder Wand sind ihre eigenen. Ihre **Dicke** (Thickness) ergibt sich aus den Schichten ihres Typs: Geben Sie eine neue ein, und die gewählten Wände erhalten den Typ mit demselben Aufbau und dieser Dicke, der Kern angepasst und die Bekleidungen beibehalten. Lapin nimmt den Typ des Projekts, wenn einer genau diesen Aufbau hat, sonst legt es einen an, nach ihrem benannt (*Partition wall 130mm* wird *Partition wall 150mm*). Die anderen Wände des alten Typs bleiben, wie sie sind, und <kbd>Ctrl</kbd> <kbd>Z</kbd> macht es in einem Schritt rückgängig.
 
 ![Die Eigenschaften einer Wand](shots/wall-properties.webp)
 

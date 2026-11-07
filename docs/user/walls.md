@@ -33,7 +33,7 @@ Click a wall to select it. Its grips appear. Drag the ends to lengthen or shorte
 
 ![A selected wall with its grips](shots/wall-selected.webp)
 
-The properties panel shows the selected wall. The top of the panel holds its type and layers. Below that are its length, height, base offset, storey and phase. Change any value and the model follows.
+The properties panel shows the selected wall. The top of the panel holds its type and layers. Below that are its length, height, base offset, storey and phase. Change any value and the model follows. Each wall's values are its own. Its **Thickness** comes from its type's layers: type a new one and the selected walls take the type with the same build-up and that thickness, the core resized and the finishes kept. Lapin uses the project's type if one has exactly that build-up, else it makes one named after theirs (*Partition wall 130mm* becomes *Partition wall 150mm*). The other walls of the old type stay as they are, and <kbd>Ctrl</kbd> <kbd>Z</kbd> undoes it in one step.
 
 ![A wall's properties](shots/wall-properties.webp)
 

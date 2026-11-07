@@ -73,6 +73,10 @@ describe('Ask Lapin', () => {
     // Report #108.
     expect(best('3D preview of the window in the configurator')).toBe('joinery-3d-preview');
     expect(best('previzualizare 3D a ferestrei in configurator')).toBe('joinery-3d-preview');
+    // Report #107, in the tester's words.
+    expect(best('not able to edit wall dimensions individually')).toBe('wall-thickness');
+    expect(best('how do I change the thickness of one wall')).toBe('wall-thickness');
+    expect(best('cum schimb grosimea unui singur perete')).toBe('wall-thickness');
     // Reports #55 and #57.
     expect(best('a provision for customizable bathroom ventilators and fan like in the reference')).toBe('exhaust-fans');
     expect(best('cum pun un ventilator in baie')).toBe('exhaust-fans');

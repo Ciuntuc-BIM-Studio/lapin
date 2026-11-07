@@ -156,7 +156,7 @@ export const LO: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': 'ທຸກໆ ຊ່ອງຂໍ້ມູນທີ່ລະບຸຕ້ອງຖືກຕ້ອງກົງກັນ; ຊຸດທີ່ບໍ່ໄດ້ກຳນົດເງື່ອນໄຂຈະລວມເອົາທຸກຢ່າງ.', 'Apply': 'ນຳໃຊ້',
   'Discipline': 'ສາຂາວຽກ',
 
-  'Elevation from inside': 'ຮູບດ້ານຈາກດ້ານໃນ', 'Elevation from outside': 'ຮູບດ້ານຈາກດ້ານນອກ', 'From outside': 'ຈາກດ້ານນອກ', '3D preview': 'ຕົວຢ່າງ 3D', '3D: drag to turn, wheel to zoom': '3D: ລາກເພື່ອໝຸນ, ລໍ້ເມົາສ໌ເພື່ອຊູມ', 'Opening symbols in elevation': 'ສັນຍະລັກການເປີດໃນຮູບດ້ານ',
+  'Elevation from inside': 'ຮູບດ້ານຈາກດ້ານໃນ', 'Elevation from outside': 'ຮູບດ້ານຈາກດ້ານນອກ', 'From outside': 'ຈາກດ້ານນອກ', 'The wall\'s thickness comes from its type\'s layers. Type a new one and the selected walls take the type with the same build-up and that thickness (the core resized, the finishes kept): the project\'s, or a new one named after their type, e.g. Partition wall 150mm.': 'ຄວາມໜາຂອງຝາມາຈາກຊັ້ນຂອງປະເພດມັນ. ພິມຄ່າໃໝ່ ແລ້ວຝາທີ່ເລືອກຈະໄດ້ປະເພດທີ່ມີໂຄງສ້າງດຽວກັນ ແລະ ຄວາມໜານັ້ນ (ປັບຂະໜາດແກນ, ຮັກສາຊັ້ນສຳເລັດ): ຂອງໂຄງການ ຫຼື ປະເພດໃໝ່ທີ່ຕັ້ງຊື່ຕາມປະເພດຂອງມັນ, ເຊັ່ນ Partition wall 150mm.', '3D preview': 'ຕົວຢ່າງ 3D', '3D: drag to turn, wheel to zoom': '3D: ລາກເພື່ອໝຸນ, ລໍ້ເມົາສ໌ເພື່ອຊູມ', 'Opening symbols in elevation': 'ສັນຍະລັກການເປີດໃນຮູບດ້ານ',
   'Apex at the handle (makers)': 'ປາຍແຫຼມຊີ້ໄປຫາມືຈັບ (ມາດຕະຖານຜູ້ຜະລິດ)', 'Apex at the hinges (DIN 1356)': 'ປາຍແຫຼມຊີ້ໄປຫາບານພັບ (DIN 1356)', 'Hardware': 'ອຸປະກອນປະກອບ', 'Opening symbols': 'ສັນຍະລັກການເປີດ',
 
   'Details': 'ລາຍລະອຽດ', 'Reveal finish': 'ຜິວຕົບແຕ່ງວົງກົບ', 'The wall\'s finish layers': 'ຊັ້ນຜິວຕົບແຕ່ງຂອງຝາ', 'A material': 'ວັດສະດຸ', 'None': 'ບໍ່ມີ', 'Reveal material': 'ວັດສະດຸວົງກົບ',

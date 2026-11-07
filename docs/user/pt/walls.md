@@ -33,7 +33,7 @@ Clique em uma parede para selecioná-la. As alças dela aparecem. Arraste as pon
 
 ![Uma parede selecionada com as suas alças](shots/wall-selected.webp)
 
-O painel Propriedades mostra a parede selecionada. O alto do painel traz o tipo e as camadas. Abaixo ficam o comprimento, a altura, o deslocamento da base, o pavimento e a fase. Mude qualquer valor e o modelo acompanha.
+O painel Propriedades mostra a parede selecionada. O alto do painel traz o tipo e as camadas. Abaixo ficam o comprimento, a altura, o deslocamento da base, o pavimento e a fase. Mude qualquer valor e o modelo acompanha. Os valores de cada parede são dela. A sua **espessura** (Thickness) vem das camadas do seu tipo: digite uma nova e as paredes selecionadas recebem o tipo com a mesma composição e essa espessura, com o núcleo redimensionado e os acabamentos mantidos. O Lapin usa o tipo do projeto se algum tiver exatamente essa composição; senão, cria um com o nome do delas (*Partition wall 130mm* passa a *Partition wall 150mm*). As outras paredes do tipo antigo ficam como estão, e <kbd>Ctrl</kbd> <kbd>Z</kbd> desfaz tudo num só passo.
 
 ![As propriedades de uma parede](shots/wall-properties.webp)
 

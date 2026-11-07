@@ -774,6 +774,14 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             return null;
         });
 
+        // A wall's thickness typed on the wall (report #107): {ids, thickness}; the type with the same build-up and that
+        // thickness (its core resized, its finishes kept), the project's or made from the wall's type (WallThickness).
+        r.Command("setWallThickness", "Change wall thickness", (ctx, a) =>
+        {
+            WallThickness.Set(ctx, Ids(a), Json.Number(a["thickness"]) ?? throw new CommandException("Give the wall's thickness."));
+            return null;
+        });
+
         r.Command("flipWall", "Flip", (ctx, a) =>
         {
             var axis = (string?)a["axis"] ?? "y";
