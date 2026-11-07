@@ -135,33 +135,51 @@ public sealed partial class StudioModule
     }
 
     /// <summary>
-    /// A face split by the lines sketched on its plane (stage B, decision 375): the region round the point picked, in the
-    /// model, or null when the lines split nothing there (no sketch on the face, or the region is the whole face).
+    /// A region of a face (decisions 375, 377): its outline in the model, its holes (the closed loops sketched inside it that
+    /// touch nothing, as SketchUp's, and the face's own holes inside it), and whether some of those holes are the face's
+    /// own (not sketched, so a sketch of the outline alone would not leave them out).
     /// </summary>
-    internal static List<Vec3>? RegionOnFace(IModelView m, BrepFace face, Vec3 p)
+    internal sealed record FaceRegion(List<Vec3> Outline, List<List<Vec3>> Holes, bool FaceHoles);
+
+    /// <summary>
+    /// A face split by the lines sketched on its plane (stage B, decision 375): the region round the point picked, or null
+    /// when the lines split nothing there (no sketch on the face, or the region is the whole face with no loop inside it).
+    /// A closed loop sketched inside a region is a hole of it (decision 377): the region round it leaves it out, and the
+    /// loop is a region of its own.
+    /// </summary>
+    internal static FaceRegion? RegionOnFace(IModelView m, BrepFace face, Vec3 p)
     {
         var n = face.Normal;
         if (FacePlane(m, face.Outer[0], n) is not { } view) return null;
         var plane = RefPlanes.Of(view);
         var segs = new List<(Vec2, Vec2)>();
-        void Loop(IReadOnlyList<Vec2> pts, bool closed)
+        void Loop(List<(Vec2, Vec2)> into, IReadOnlyList<Vec2> pts, bool closed)
         {
-            for (var i = 0; i + 1 < pts.Count; i++) segs.Add((pts[i], pts[i + 1]));
-            if (closed && pts.Count > 2) segs.Add((pts[^1], pts[0]));
+            for (var i = 0; i + 1 < pts.Count; i++) into.Add((pts[i], pts[i + 1]));
+            if (closed && pts.Count > 2) into.Add((pts[^1], pts[0]));
         }
-        var drawn = 0;
         foreach (var d in Drafts.On(m, view.Id))
             if (Drafts.ShapeOf(d) is { } sh && d.Attrs["hatch"] == null)
-                foreach (var pl in Drafts.Flatten(sh)) { Loop(pl, false); drawn++; }
-        if (drawn == 0) return null;
+                foreach (var pl in Drafts.Flatten(sh)) Loop(segs, pl, false);
+        if (segs.Count == 0) return null;
+        var drawn = segs.ToList();
         Vec2 L(Vec3 q) => plane.Local(q).At;
-        Loop(face.Outer.Select(L).ToList(), true);
-        foreach (var h in face.Holes) Loop(h.Select(L).ToList(), true);
+        Loop(segs, face.Outer.Select(L).ToList(), true);
+        var holes2 = face.Holes.Select(h => h.Select(L).ToList()).ToList();
+        foreach (var h in holes2) Loop(segs, h, true);
         var region = SketchRegions.RegionAt(segs, L(p));
         if (region == null) return null;
+        // Strictly inside the region: every point inside it, and none on its outline.
+        bool Within(IReadOnlyList<Vec2> loop) => loop.All(q => Polygon2.Contains(region, q) && region.Select((a, i) => Geo.NearestOnSegment(q, a, region[(i + 1) % region.Count]).Dist).Min() > 1e-6);
+        var loops = SketchRegions.Regions(drawn);
+        var islands = loops.Where(Within).ToList();
+        // The outermost islands only (a loop inside an island is the island's business).
+        islands = islands.Where(c => !islands.Any(o => o != c && Math.Abs(Polygon2.SignedArea(o)) > Math.Abs(Polygon2.SignedArea(c)) && c.All(q => Polygon2.Contains(o, q)))).ToList();
+        var faceHoles = holes2.Where(Within).ToList();
         var whole = Math.Abs(Polygon2.SignedArea(face.Outer.Select(L).ToList()));
-        if (Math.Abs(Polygon2.SignedArea(region)) >= whole - 1e-9) return null;
-        return region.Select(plane.World).ToList();
+        if (Math.Abs(Polygon2.SignedArea(region)) >= whole - 1e-9 && islands.Count == 0) return null;
+        List<Vec3> W(IEnumerable<Vec2> l) => l.Select(plane.World).ToList();
+        return new FaceRegion(W(region), [.. islands.Select(W), .. faceHoles.Select(W)], faceHoles.Count > 0);
     }
 
     /// <summary>The arc from a start through a point to an end, counter-clockwise as Lapin keeps arcs; null when the three lie on a line.</summary>

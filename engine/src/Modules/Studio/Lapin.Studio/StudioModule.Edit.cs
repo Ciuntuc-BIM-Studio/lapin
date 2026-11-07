@@ -70,8 +70,9 @@ public sealed partial class StudioModule
         var o = f.ToJson().AsObject();
         if (RegionOnFace(m, f, p) is { } region)
         {
-            o["outline"] = new JsonArray(region.Select(q => (JsonNode)new JsonArray(q.X, q.Y, q.Z)).ToArray());
-            o["holes"] = new JsonArray();
+            static JsonArray Pts(IEnumerable<Vec3> l) => new(l.Select(q => (JsonNode)new JsonArray(q.X, q.Y, q.Z)).ToArray());
+            o["outline"] = Pts(region.Outline);
+            o["holes"] = new JsonArray(region.Holes.Select(h => (JsonNode)Pts(h)).ToArray());
             o["region"] = true;
         }
         return o;
@@ -107,8 +108,10 @@ public sealed partial class StudioModule
         // A face split by lines sketched on it (decision 375): the region round the pick, as a shape drawn on the face.
         if (RegionOnFace(ctx.Model, face, p) is { } region)
         {
+            // Round the face's own holes (an opening), not sketched: a prism of the region with its holes, as any face pushed.
+            if (region.FaceHoles) return PushRegionPrism(ctx, e, face, region, d);
             var args = new JsonObject { ["id"] = e.Id, ["point"] = a["point"]?.DeepClone(), ["normal"] = a["normal"]?.DeepClone(), ["distance"] = d,
-                ["outline"] = new JsonArray(region.Select(q => (JsonNode)Features.J(q)).ToArray()) };
+                ["outline"] = new JsonArray(region.Outline.Select(q => (JsonNode)Features.J(q)).ToArray()) };
             var r = OnFace(ctx, args)!.AsObject();
             r["region"] = true;
             return r;
@@ -148,6 +151,24 @@ public sealed partial class StudioModule
         list.Add(new JsonObject { ["op"] = "pushPull", ["point"] = Features.J(on), ["normal"] = Features.J(face.Normal), ["distance"] = d });
         WriteFeatures(ctx, e, list);
         return new JsonObject { ["how"] = "step", ["id"] = e.Id };
+    }
+
+    /// <summary>A face region with holes not sketched (the face's own), pushed or pulled as a prism of its own (decision 377).</summary>
+    static JsonNode PushRegionPrism(ICommandContext ctx, Entity e, BrepFace face, FaceRegion region, double d)
+    {
+        var storey = Spatial.StoreyOf(ctx.Model, e.Id) ?? throw new CommandException($"„{e.Name}” is not an element.");
+        var attrs = new JsonObject
+        {
+            ["operation"] = "prism", ["depth"] = d, ["normal"] = Features.J(face.Normal), ["host"] = e.Id,
+            ["outline"] = new JsonArray(region.Outline.Select(q => (JsonNode)Features.J(q)).ToArray()),
+            ["holes"] = new JsonArray(region.Holes.Select(h => (JsonNode)new JsonArray(h.Select(q => (JsonNode)Features.J(q)).ToArray())).ToArray()),
+        };
+        if (d < 0) attrs["void"] = true;
+        var prism = new Entity(ctx.NewId(), IfcClass.BuildingElementProxy, d > 0 ? $"Pulled from {e.Name}" : $"Pushed into {e.Name}", attrs);
+        ctx.Add(prism);
+        Spatial.Contain(ctx, storey.Id, prism.Id);
+        if (d < 0) ctx.AddRelation(new Relation(ctx.NewId(), IfcClass.RelInterferesElements, e.Id, [prism.Id], new JsonObject { ["interferenceType"] = "Subtract", ["name"] = "Lapin push" }));
+        return new JsonObject { ["how"] = d > 0 ? "solid" : "cut", ["id"] = prism.Id, ["region"] = true };
     }
 
     /// <summary>A pushed or pulled face's distance changed (<c>{id, distance}</c>): pulled out it is a solid of its own, pushed in a cut into its element.</summary>

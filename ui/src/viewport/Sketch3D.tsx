@@ -39,7 +39,7 @@ export const SKETCHUP_KEYS: Record<string, string> = {
   F: 'studio.sketch.offset', T: 'studio.sketch.tape', M: 'studio.move3d', E: 'cad:ERASE', ' ': 'select',
 };
 const SNAP_PX = 10;
-const TOOL_NAME = { line: 'Line', rect: 'Rectangle', circle: 'Circle', arc: 'Arc', offset: 'Offset', tape: 'Tape measure' } as const;
+const TOOL_NAME = { line: 'Line', rect: 'Rectangle', circle: 'Circle', arc: '2-point arc', offset: 'Offset', tape: 'Tape measure' } as const;
 const HINT = {
   line: 'Click the points · back on the first closes it · Enter or Esc leaves it open',
   rect: 'Click the opposite corner, or type width,height',

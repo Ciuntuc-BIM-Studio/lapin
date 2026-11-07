@@ -9,7 +9,7 @@
  */
 
 import {
-  ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
+  ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Rainbow, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
 } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
@@ -714,7 +714,10 @@ const studio: LapinModule = {
       {
         label: 'Sketch',
         tools: [sketchTool('line', 'LINE', 'Line', Slash, 'KL'), sketchTool('rect', 'RECTANGLE', 'Rectangle', RectangleHorizontal, 'KR'), sketchTool('circle', 'CIRCLE', 'Circle', Circle, 'KC'),
-          sketchTool('arc', 'ARC', 'Arc', Redo2, 'KA'), sketchTool('offset', 'OFFSET', 'Offset', CopyPlus, 'KO')],
+          // Two arcs, each one thing whatever the work plane (decision 377): SketchUp's by its chord and bulge, CAD's ARC through three points.
+          directTool('arc', '2-point arc', Rainbow, 'KA'),
+          { id: 'studio.sketch.arc3', label: '3-point arc', icon: Redo2, run: () => { useUi.setState({ view: '3d', tool: null }); void startCommand('ARC'); } },
+          sketchTool('offset', 'OFFSET', 'Offset', CopyPlus, 'KO')],
         small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool, sketchCad('trim', 'TRIM', 'Trim', Scissors), sketchCad('extend', 'EXTEND', 'Extend', ArrowRightToLine), sketchCad('fillet', 'FILLET', 'Fillet', CornerUpRight),
           directTool('tape', 'Tape measure', Ruler, 'KM'), eraseGuides, followMe, sketchupKeys],
       },

@@ -53,7 +53,7 @@ public sealed partial class StudioModule
         var pr = a["profile"] as JsonObject ?? throw new CommandException("Pick the face to sweep.");
         var (e, solids, p, n) = RequirePick(ctx, pr, "the face to sweep");
         var face = BrepPick.Face(solids, p, n) ?? throw new CommandException("There is no flat face there: Follow Me sweeps a flat face.");
-        var outline = RegionOnFace(ctx.Model, face, p) ?? face.Outer.ToList();
+        var outline = RegionOnFace(ctx.Model, face, p)?.Outline ?? face.Outer.ToList();
         var profile = Sketch(ctx, e, face, outline);
         string pathId;
         if (a["path"] is JsonObject path && (string?)path["id"] is { } pid && path["face"] == null)
@@ -66,7 +66,7 @@ public sealed partial class StudioModule
         {
             var (pe, ps, pp, pn) = RequirePick(ctx, pf, "the face whose edges are the path");
             var f2 = BrepPick.Face(ps, pp, pn) ?? throw new CommandException("There is no flat face there for the path.");
-            pathId = Sketch(ctx, pe, f2, RegionOnFace(ctx.Model, f2, pp) ?? f2.Outer.ToList()).Id;
+            pathId = Sketch(ctx, pe, f2, RegionOnFace(ctx.Model, f2, pp)?.Outline ?? f2.Outer.ToList()).Id;
         }
         else throw new CommandException("Pick the path: a drafted line or a face whose edges it follows.");
         var args = new JsonObject { ["profileId"] = profile.Id, ["pathId"] = pathId, ["name"] = a["name"]?.DeepClone(), ["class"] = a["class"]?.DeepClone() };

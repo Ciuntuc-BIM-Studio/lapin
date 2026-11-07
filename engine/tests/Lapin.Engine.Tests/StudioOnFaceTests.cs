@@ -278,4 +278,25 @@ public class StudioOnFaceTests
         Assert.Equal(2, (int)f.Run("studio.clearGuides", new JsonObject())!["removed"]!);
         Assert.Empty(f.Model.OfClass(StudioModule.GuideClass));
     }
+
+    /// <summary>Islands as SketchUp's (decision 377): a loop drawn inside a face is a hole of the face round it, and a region of its own.</summary>
+    [Fact]
+    public void A_loop_drawn_inside_a_face_is_left_out_of_the_face_round_it_and_pushed_on_its_own()
+    {
+        var (f, cube) = Cube();
+        var east = new Vec3(1, 0, 0);
+        // A 1 × 1 square kept as a sketch in the middle of the 2 × 2 east side.
+        f.Run("studio.onFace", EastSquare(cube, 0));
+        var face = f.Session.Query("studio.faceAt", new JsonObject { ["id"] = cube, ["point"] = J3(new(2, 0.2, 0.2)), ["normal"] = J3(east) })!;
+        Assert.True((bool)face["region"]!);
+        Assert.Single(face["holes"]!.AsArray());
+        // The face round it pulled 0.3: a frame, the square left out.
+        var outer = f.Run("studio.pushPull", new JsonObject { ["id"] = cube, ["point"] = J3(new(2, 0.2, 0.2)), ["normal"] = J3(east), ["distance"] = 0.3 })!;
+        Assert.Equal("solid", (string)outer["how"]!);
+        Assert.Equal((4 - 1) * 0.3, Vol(f, Id(outer)), 6);
+        // The square pushed in on its own.
+        var inner = f.Run("studio.pushPull", new JsonObject { ["id"] = cube, ["point"] = J3(new(2, 1, 1)), ["normal"] = J3(east), ["distance"] = -0.2 })!;
+        Assert.Equal("cut", (string)inner["how"]!);
+        Assert.Equal(8 - 0.2, Vol(f, cube), 6);
+    }
 }
