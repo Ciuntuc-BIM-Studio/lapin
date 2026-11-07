@@ -22,8 +22,11 @@ namespace Lapin.Architecture;
 /// spring line (null: the kind's own). <see cref="Bars"/>: the fanlight's or round window's
 /// bars, "none", "sunburst" (spokes from the spring line's middle, or the centre), "mullions"
 /// (the grid's mullions carried up), "cross"; <see cref="Spokes"/>: how many sunburst spokes.
+/// <see cref="Transom"/> (a tester's report #112): false, no transom at the spring line: the grid's top row reaches into the
+/// head, its panes (a casement, a fixed light, a door leaf) following the arch all round (an arched casement opening
+/// side-hung, no bar under the arch); null or true, the transom and a fixed fanlight over it, as before.
 /// </summary>
-public sealed record JoineryShape(string Kind = "rect", double? Rise = null, string Bars = "none", int Spokes = 5);
+public sealed record JoineryShape(string Kind = "rect", double? Rise = null, string Bars = "none", int Spokes = 5, bool? Transom = null);
 
 /// <summary>
 /// Glazing bars dividing every rectangular pane: <see cref="Pattern"/> "none", "grid" (colonial:
@@ -42,6 +45,47 @@ public static class JoineryShapes
     public static bool Headed(JoinerySpec s) => KindOf(s) is "round" or "segmental" or "elliptical" or "radiused" or "pointed" or "gable";
     public static bool Round(JoinerySpec s) => KindOf(s) == "circle";
     public static bool Shaped(JoinerySpec s) => KindOf(s) != "rect";
+
+    /// <summary>A headed type without the transom at the spring line (report #112): its top row of panes follows the head.</summary>
+    public static bool ArchedPanes(JoinerySpec s) => Headed(s) && s.Shape?.Transom == false;
+
+    /// <summary>
+    /// A pane's outline when it reaches into the head (<see cref="ArchedPanes"/>, a panel of the grid's top row), taken
+    /// <paramref name="inset"/> in from the panel's rectangle <paramref name="r"/> (negative: out, a sash's lip): its sides
+    /// and bottom the rectangle's, its top the head's inner curve as far in, counter-clockwise from the bottom right; null
+    /// for a pane that stays a rectangle.
+    /// </summary>
+    public static List<Vec2>? PaneOutline(JoinerySpec s, CellRect r, double inset)
+    {
+        if (!ArchedPanes(s) || r.Z1 < Joinery.InnerRect(s).Z1 - 1e-6) return null;
+        var (x0, x1, z0, d) = (r.X0 + inset, r.X1 - inset, r.Z0 + inset, s.Frame.Width + inset);
+        var head = Head(s, d).Where(p => p.X < x1 - 1e-9 && p.X > x0 + 1e-9);
+        return Clean([new(x1, z0), new(x1, Top(s, x1, d)), .. head, new(x0, Top(s, x0, d)), new(x0, z0)]);
+    }
+
+    /// <summary>The top of a pane that reaches into the head, at x (the head's inner curve), for its opening symbol; null for a rectangle's.</summary>
+    public static Func<double, double>? PaneTop(JoinerySpec s, CellRect r) =>
+        PaneOutline(s, r, 0) is null ? null : x => Math.Min(r.Z1, Top(s, x, s.Frame.Width));
+
+    /// <summary>The part of the segment a..b inside a convex loop running counter-clockwise (Cyrus–Beck); null when it misses.</summary>
+    public static (Vec2 A, Vec2 B)? ClipConvex(Vec2 a, Vec2 b, IReadOnlyList<Vec2> loop)
+    {
+        double t0 = 0, t1 = 1;
+        var d = b - a;
+        for (var i = 0; i < loop.Count; i++)
+        {
+            var (p, q) = (loop[i], loop[(i + 1) % loop.Count]);
+            var e = q - p;
+            // Inside is to the left of each edge: cross(e, x − p) ≥ 0.
+            var num = Vec2.Cross(e, a - p);
+            var den = Vec2.Cross(e, d);
+            if (Math.Abs(den) < 1e-12) { if (num < 0) return null; continue; }
+            var t = -num / den;
+            if (den > 0) t0 = Math.Max(t0, t); else t1 = Math.Min(t1, t);
+            if (t1 - t0 < 1e-9) return null;
+        }
+        return (a + d * t0, a + d * t1);
+    }
 
     /// <summary>The head's height over the spring line: a semicircle's half width, a segment's rise (a sixth of the width unless asked), a half ellipse's (a quarter of the width unless asked), a radiused head's corner radius (150 mm unless asked, never more than half the width), an equilateral pointed arch's, a gable's quarter width; never more than leaves 150 mm of rectangle under it.</summary>
     public static double Rise(JoinerySpec s)
@@ -304,7 +348,7 @@ public static class JoineryShapes
 
     /// <summary>
     /// The head over the spring line of a headed type, in the type's frame: the frame's arch (on the
-    /// jambs), the transom at the spring line, the fanlight's glass and its bars.
+    /// jambs), the transom at the spring line, the fanlight's glass and its bars; the arch alone when the panes follow it.
     /// </summary>
     public static IEnumerable<JoineryBox> HeadBoxes(JoinerySpec s, double y0, double y1)
     {
@@ -314,6 +358,8 @@ public static class JoineryShapes
         var inner = Head(s, fw);
         // The arch: from the outer curve down the jambs' insides and back along the inner curve.
         yield return Prism("frame", [new(half, zs), .. outer, new(-half, zs), new(-half + fw, zs), new(-half + fw, inner[^1].Y), .. Enumerable.Reverse<Vec2>(inner), new(half - fw, inner[0].Y), new(half - fw, zs)], y0, y1);
+        // Without its transom the panes below follow the arch (report #112): no fanlight of its own.
+        if (ArchedPanes(s)) yield break;
         // The transom on the spring line, under the fanlight.
         var t = Math.Max(f.Transom, 0.02);
         yield return new JoineryBox("frame", new Vec3(-half + fw, y0, zs - t), new Vec3(half - fw, y1, zs));

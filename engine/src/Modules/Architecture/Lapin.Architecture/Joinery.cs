@@ -242,8 +242,10 @@ public static class Joinery
     {
         var f = s.Frame.Width;
         var bottom = s.IsDoor ? Math.Max(0, s.Threshold) : f;
-        // A headed type's grid stops under the transom on the spring line; a round window's is the square inside its ring.
-        var top = JoineryShapes.Headed(s) ? JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) : s.Height - f;
+        // A headed type's grid stops under the transom on the spring line, or without it reaches the head's inner apex (report #112);
+        // a round window's is the square inside its ring.
+        var top = JoineryShapes.ArchedPanes(s) ? JoineryShapes.Top(s, 0, f)
+            : JoineryShapes.Headed(s) ? JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) : s.Height - f;
         if (JoineryShapes.Round(s)) { var (a, b) = ((s.Width / 2 - f) / Math.Sqrt(2), (s.Height / 2 - f) / Math.Sqrt(2)); return new CellRect(-a, a, s.Height / 2 - b, s.Height / 2 + b); }
         return new CellRect(-s.Width / 2 + f, s.Width / 2 - f, bottom, top);
     }
@@ -337,10 +339,13 @@ public static class Joinery
         if (!s.Columns.Concat(s.Rows).All(Positive)) return "Column widths and row heights must be positive.";
         if (JoineryShapes.Round(s))
             return s.Width < 2 * s.Frame.Width + 0.1 || s.Height < 2 * s.Frame.Width + 0.1 ? "A round window needs room inside its frame." : null;
-        if (JoineryShapes.Headed(s) && JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) - InnerRect(s).Z0 < 0.1)
+        if (JoineryShapes.Headed(s) && !JoineryShapes.ArchedPanes(s) && JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) - InnerRect(s).Z0 < 0.1)
             return "The head leaves no room for the panels under it: make it taller or lower the rise.";
         var (cols, rows) = Grid(s);
         const double minCell = 0.05;
+        // Panes that follow the head (report #112): the arch may not come down onto the top row's bottom beside a jamb or mullion.
+        if (JoineryShapes.ArchedPanes(s) && cols.SelectMany(c => new[] { c.A, c.B }).Any(x => JoineryShapes.Top(s, x, s.Frame.Width) - rows[^1].A < 0.1))
+            return "The head comes down onto the top row of panes: lower that row, add the transom at the spring line or lower the rise.";
         if (cols.Any(c => c.B - c.A < minCell) || rows.Any(r => r.B - r.A < minCell)) return "The frame, mullions and transoms leave no room for the panels.";
         foreach (var p in Normalised(s))
         {
@@ -467,9 +472,17 @@ public static class Joinery
         bool SpansCol(int boundary, int row) => panels.Any(p => p.Col <= boundary && p.Col + p.ColSpan - 1 > boundary && p.Row <= row && p.Row + p.RowSpan - 1 >= row);
         bool SpansRow(int boundary, int col) => panels.Any(p => p.Row <= boundary && p.Row + p.RowSpan - 1 > boundary && p.Col <= col && p.Col + p.ColSpan - 1 >= col);
         JoineryBox Box(double x0, double x1, double z0, double z1) => new("frame", new Vec3(x0, y0, z0), new Vec3(x1, y1, z1));
+        var arched = JoineryShapes.ArchedPanes(s);
         for (var i = 0; i < cols.Count - 1; i++)
             for (var r = 0; r < rows.Count; r++)
-                if (!SpansCol(i, r)) yield return Box(cols[i].B, cols[i + 1].A, rows[r].A, rows[r].B);
+                if (SpansCol(i, r)) continue;
+                // A mullion in a top row that follows the head runs up to the arch (report #112).
+                else if (arched && r == rows.Count - 1)
+                {
+                    var (x0, x1) = (cols[i].B, cols[i + 1].A);
+                    yield return JoineryShapes.Prism("frame", [new(x0, rows[r].A), new(x1, rows[r].A), new(x1, JoineryShapes.Top(s, x1, s.Frame.Width)), new(x0, JoineryShapes.Top(s, x0, s.Frame.Width))], y0, y1);
+                }
+                else yield return Box(cols[i].B, cols[i + 1].A, rows[r].A, rows[r].B);
         for (var j = 0; j < rows.Count - 1; j++)
             for (var c = 0; c < cols.Count; c++)
                 if (!SpansRow(j, c)) yield return Box(cols[c].A, cols[c].B, rows[j].B, rows[j + 1].A);
@@ -489,23 +502,8 @@ public static class Joinery
         yield return new(role, new(r.X0 + w, y0, r.Z1 - w), new(r.X1 - w, y1, r.Z1));
     }
 
-    /// <summary>An opaque panel filling a pane (decision 370), in the leaf's material.</summary>
-    static JoineryBox Panel(CellRect r, double inset, double y, double t) =>
-        new("leaf", new(r.X0 + inset, y - t / 2, r.Z0 + inset), new(r.X1 - inset, y + t / 2, r.Z1 - inset));
-
+    /// <summary>A pane's rectangle taken <paramref name="d"/> in (negative: out). Bands of it are the sash's members, the frame's stop, the glazing beads.</summary>
     static CellRect Inset(CellRect r, double d) => new(r.X0 + d, r.X1 - d, r.Z0 + d, r.Z1 - d);
-    static CellRect Grow(CellRect r, double d) => new(r.X0 - d, r.X1 + d, r.Z0 - d, r.Z1 + d);
-
-    /// <summary>The frame's stop: a ring <paramref name="w"/> into the pane between two depths (the exterior half the sash or glass closes on).</summary>
-    static IEnumerable<JoineryBox> Stop(CellRect r, double w, double ya, double yb) =>
-        w <= 1e-6 || yb - ya <= 1e-6 ? [] : Ring(r, w, ya, yb, "frame");
-
-    /// <summary>Glazing beads inside a pane, on the interior side of the glass (or panel) of thickness <paramref name="t"/> centred on <paramref name="y"/>.</summary>
-    static IEnumerable<JoineryBox> Beads(CellRect r, double w, double y, double t, string role) =>
-        w <= 1e-6 ? [] : Ring(r, w, y - t / 2 - 0.018, y - t / 2, role);
-
-    static JoineryBox Glass(CellRect r, double inset, double y, double t) =>
-        new("glass", new(r.X0 + inset, y - t / 2, r.Z0 + inset), new(r.X1 - inset, y + t / 2, r.Z1 - inset));
 
     public static readonly string[] HandleStyles = ["auto", "lever", "knob", "pull", "window", "none"];
 
@@ -615,19 +613,31 @@ public static class Joinery
         foreach (var p in panels)
         {
             var r = PanelRect(s, p);
+            // A pane in the top row of a type without its spring-line transom follows the head (report #112): its members,
+            // glass and beads are bands of its outline instead of rectangles.
+            List<Vec2>? Out(double inset) => JoineryShapes.PaneOutline(s, r, inset);
+            // A band between two insets of the pane (a sash's members, the frame's stop, beads), from ya to yb.
+            IEnumerable<JoineryBox> Band(double outer, double inner, double ya, double yb, string role) =>
+                inner - outer <= 1e-6 || yb - ya <= 1e-6 ? []
+                : Out(outer) is { } o && Out(inner) is { } i ? [JoineryShapes.Prism(role, o, ya, yb) with { Holes = [i] }]
+                : Ring(Inset(r, outer), inner - outer, ya, yb, role);
+            // A sheet filling the pane inside an inset (glass, an opaque panel, a solid leaf), centred on y.
+            JoineryBox Sheet(string role, double inset, double y, double t) =>
+                Out(inset) is { } o ? JoineryShapes.Prism(role, o, y - t / 2, y + t / 2) : new(role, new(r.X0 + inset, y - t / 2, r.Z0 + inset), new(r.X1 - inset, y + t / 2, r.Z1 - inset));
             var solid = InfillOf(p) == "solid";
             double sy0 = f.Offset - sh.Depth / 2, sy1 = f.Offset + sh.Depth / 2;
+            var infillT = solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness;
             if (IsDoorLeaf(p.Operation))
             {
                 var t = sh.LeafThickness;
                 double ly0 = f.Offset - t / 2, ly1 = f.Offset + t / 2;
                 if (!solid)
                 {
-                    boxes.AddRange(Ring(r, sh.Width, ly0, ly1, "leaf"));
-                    boxes.Add(Glass(r, sh.Width, f.Offset, sh.GlassThickness));
-                    if (pr != null) boxes.AddRange(Beads(Inset(r, sh.Width), pr.Bead, f.Offset, sh.GlassThickness, "leaf"));
+                    boxes.AddRange(Band(0, sh.Width, ly0, ly1, "leaf"));
+                    boxes.Add(Sheet("glass", sh.Width, f.Offset, sh.GlassThickness));
+                    if (pr != null) boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - sh.GlassThickness / 2 - 0.018, f.Offset - sh.GlassThickness / 2, "leaf"));
                 }
-                else boxes.Add(new("leaf", new(r.X0, ly0, r.Z0), new(r.X1, ly1, r.Z1)));
+                else boxes.Add(Sheet("leaf", 0, f.Offset, t));
                 // A door has its handle on both faces.
                 boxes.AddRange(HandleBoxes(s, r, p.Operation, ly0, -1, true));
                 boxes.AddRange(HandleBoxes(s, r, p.Operation, ly1, +1, true));
@@ -635,33 +645,33 @@ public static class Joinery
             else if (p.Operation == "fixed")
             {
                 // Glazed straight into the frame (a rebate holds it, beads inside), or an opaque panel.
-                if (solid) boxes.Add(Panel(r, 0, f.Offset, Math.Max(sh.LeafThickness, sh.GlassThickness)));
+                if (solid) boxes.Add(Sheet("leaf", 0, f.Offset, infillT));
                 else
                 {
-                    boxes.Add(Glass(r, 0, f.Offset, sh.GlassThickness));
-                    boxes.AddRange(Muntins(s, r, f.Offset, sh.Depth));
+                    boxes.Add(Sheet("glass", 0, f.Offset, sh.GlassThickness));
+                    boxes.AddRange(Muntins(s, r, f.Offset, sh.Depth, Out(0)));
                 }
                 if (pr != null)
                 {
-                    boxes.AddRange(Stop(r, pr.Rebate, f.Offset + (solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness) / 2, y1));
-                    boxes.AddRange(Beads(r, pr.Bead, f.Offset, solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness, "frame"));
+                    boxes.AddRange(Band(0, pr.Rebate, f.Offset + infillT / 2, y1, "frame"));
+                    boxes.AddRange(Band(0, pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "frame"));
                 }
             }
             else
             {
-                boxes.AddRange(Ring(r, sh.Width, sy0, sy1, "sash"));
-                if (solid) boxes.Add(Panel(r, sh.Width, f.Offset, Math.Max(sh.LeafThickness, sh.GlassThickness)));
+                boxes.AddRange(Band(0, sh.Width, sy0, sy1, "sash"));
+                if (solid) boxes.Add(Sheet("leaf", sh.Width, f.Offset, infillT));
                 else
                 {
-                    boxes.Add(Glass(r, sh.Width, f.Offset, sh.GlassThickness));
-                    boxes.AddRange(Muntins(s, new CellRect(r.X0 + sh.Width, r.X1 - sh.Width, r.Z0 + sh.Width, r.Z1 - sh.Width), f.Offset, sh.Depth));
+                    boxes.Add(Sheet("glass", sh.Width, f.Offset, sh.GlassThickness));
+                    boxes.AddRange(Muntins(s, Inset(r, sh.Width), f.Offset, sh.Depth, Out(sh.Width)));
                 }
                 if (pr != null)
                 {
                     // The frame's stop on the exterior half, the sash's lip lapping over the frame inside, its beads, its drip.
-                    boxes.AddRange(Stop(r, pr.Rebate, sy1, y1));
-                    if (pr.Overlap > 0) boxes.AddRange(Ring(Grow(r, pr.Overlap), pr.Overlap + Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
-                    boxes.AddRange(Beads(Inset(r, sh.Width), pr.Bead, f.Offset, solid ? Math.Max(sh.LeafThickness, sh.GlassThickness) : sh.GlassThickness, "sash"));
+                    boxes.AddRange(Band(0, pr.Rebate, sy1, y1, "frame"));
+                    if (pr.Overlap > 0) boxes.AddRange(Band(-pr.Overlap, Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
+                    boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "sash"));
                     if (pr.Drip && !s.IsDoor) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
                 }
                 boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && pr.Overlap > 0 ? 0.006 : 0), -1, false));
@@ -680,12 +690,16 @@ public static class Joinery
     }
 
     /// <summary>The glazing bars of one pane (its glass's rectangle), each across the glass, standing proud of it both sides.</summary>
-    static IEnumerable<JoineryBox> Muntins(JoinerySpec s, CellRect pane, double y, double depth)
+    static IEnumerable<JoineryBox> Muntins(JoinerySpec s, CellRect pane, double y, double depth, IReadOnlyList<Vec2>? outline = null)
     {
         if (s.Muntins is not { Pattern: not "none" } m) yield break;
         var d = Math.Max(s.Sash.GlassThickness + 0.01, depth * 0.5);
         var w = Math.Clamp(m.Width, 0.008, 0.1);
-        foreach (var (a, b) in JoineryShapes.MuntinLines(m, pane))
+        foreach (var (a0, b0) in JoineryShapes.MuntinLines(m, pane))
+        {
+            // On a pane following the head (report #112), each bar stops at the arch.
+            if ((outline == null ? (a0, b0) : JoineryShapes.ClipConvex(a0, b0, outline)) is not var (a, b)) continue;
             if (JoineryShapes.Bar("muntin", a, b, w, y - d / 2, y + d / 2) is { } bar) yield return bar;
+        }
     }
 }

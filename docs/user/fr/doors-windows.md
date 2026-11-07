@@ -92,6 +92,10 @@ Chacun se place d’après les faces réelles du mur à l’endroit de la fenêt
 
 **Forme** donne à une porte ou une fenêtre une tête cintrée (**Arc en plein cintre**, **Arc segmentaire**, **Arc elliptique**, **Angles arrondis**, **Arc brisé**, **Tête triangulaire**) ou la rend **Ronde ou ovale** (ronde quand la largeur et la hauteur sont égales). Un type cintré garde ses vantaux sous une traverse à la naissance de l’arc, et au-dessus une imposte fixe qui suit l’arc, avec des petits-bois si on le souhaite : **Éventail**, **Les meneaux prolongés** ou **Croix**. **Flèche de l’arc** règle la montée d’un arc segmentaire, elliptique, brisé ou triangulaire, **Rayon des angles** l’arrondi des angles d’une tête aux angles arrondis. La baie dans le mur, le cadre, le vitrage, l’encadrement et les dessins suivent le contour.
 
+**Traverse à la naissance de l’arc**, cochée par défaut, garde cette traverse et l’imposte fixe au-dessus. Décochez-la pour une fenêtre battante cintrée : la rangée supérieure de vitrages monte dans l’arc, et le dormant, l’ouvrant, le vitrage, les petits-bois et le symbole d’ouverture suivent l’arc tout autour, sans barre dessous. Le vitrage s’ouvre comme vous le choisissez (à la française, oscillo-battant, fixe), les meneaux montent jusqu’à l’arc, et les plans, coupes, élévations, l’aperçu 3D et l’IFC le montrent ainsi. Le style **Fenêtre battante cintrée** pose d’un coup un arc segmentaire avec un seul ouvrant à la française.
+
+![Une fenêtre battante cintrée : un seul ouvrant à la française qui suit un arc segmentaire, sans traverse dessous](shots/joinery-arched-casement.webp)
+
 **Petits-bois** divisent les vitrages : **Grille (colonial)** avec ses carreaux en largeur et en hauteur, **Prairie** avec des barres près des bords, ou des **Losanges**.
 
 Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé de voûte**, un **Couronnement au-dessus de la baie** (une **Corniche**, un **Fronton**, un **Fronton cintré** ou un **Larmier** qui suit une tête cintrée) et une **Allège sous l’appui** avec ses consoles.

@@ -92,6 +92,10 @@ Każdy z nich przylega do rzeczywistych lic ściany w miejscu okna, wyznaczonych
 
 **Kształt** nadaje drzwiom lub oknu łukowe zwieńczenie (**Łuk półkolisty**, **Łuk odcinkowy**, **Łuk eliptyczny**, **Zaokrąglone narożniki**, **Łuk ostry**, **Zwieńczenie trójkątne**) albo robi z niego **Okrągłe lub owalne** (okrągłe, gdy szerokość i wysokość są równe). Typ łukowy ma kwatery pod ślemieniem na wysokości wezgłowia łuku, a nad nim stały naświetlnik, który podąża za łukiem, ze szprosami, jeśli chcesz: **Promieniste**, **Słupki przedłużone w górę** lub **Krzyż**. **Strzałka zwieńczenia** ustala, jak wysoko wznosi się łuk odcinkowy, eliptyczny, ostry lub trójkątny, a **Promień narożników**, jak bardzo zaokrąglone są narożniki zaokrąglonego zwieńczenia. Otwór w ścianie, ościeżnica, szyba, opaska i rysunki podążają za obrysem.
 
+**Ślemię u nasady łuku**, zaznaczone domyślnie, zostawia to ślemię i stały naświetlnik nad nim. Odznacz je dla okna rozwiernego łukowego: górny rząd kwater wchodzi w łuk, a ościeżnica, skrzydło, szyba, szprosy i symbol otwierania biegną wzdłuż łuku dookoła, bez poprzeczki pod nim. Kwatera otwiera się tak, jak wybierzesz (rozwierne, rozwierno-uchylne, stałe), słupki dochodzą do łuku, a rzuty, przekroje, elewacje, podgląd 3D i IFC pokazują to w ten sposób. Styl **Okno rozwierne łukowe** ustawia od razu łuk odcinkowy z jednym skrzydłem rozwiernym.
+
+![Okno rozwierne łukowe: jedno skrzydło rozwierne biegnące wzdłuż łuku odcinkowego, bez ślemienia pod nim](shots/joinery-arched-casement.webp)
+
 **Szprosy** dzielą kwatery: **Siatka (kolonialna)** z polami w poziomie i pionie, **Prairie** ze szprosami przy krawędziach lub **Romby**.
 
 Na elewacji, oprócz opaski, okno może mieć **Zwornik**, **Zwieńczenie nad otworem** (**Gzyms**, **Naczółek**, **Naczółek łukowy** lub **Kapinos**, który podąża za łukiem) oraz **Płycina pod parapetem** z konsolami.

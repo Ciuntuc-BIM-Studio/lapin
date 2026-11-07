@@ -92,6 +92,10 @@ Jedes Teil richtet sich nach den tatsächlichen Flächen der Wand dort, wo das F
 
 **Form** gibt einer Tür oder einem Fenster einen Bogenabschluss (**Rundbogen**, **Segmentbogen**, **Ellipsenbogen**, **Abgerundete Ecken**, **Spitzbogen**, **Dreiecksabschluss**) oder macht es **Rund oder oval** (rund bei gleicher Breite und Höhe). Ein Bogentyp behält seine Flügel unter einem Kämpfer am Bogenansatz, darüber ein festes Oberlicht, das dem Bogen folgt, auf Wunsch mit Sprossen: **Strahlen**, **Die Pfosten weitergeführt** oder **Kreuz**. **Stichhöhe** legt fest, wie hoch ein Segment-, Ellipsen-, Spitz- oder Dreiecksabschluss steigt, **Eckradius**, wie rund die Ecken eines Abschlusses mit abgerundeten Ecken sind. Die Wandöffnung, der Rahmen, das Glas, die Faschen und die Zeichnungen folgen dem Umriss.
 
+**Kämpfer am Bogenansatz**, standardmäßig angehakt, behält diesen Kämpfer und das feste Oberlicht darüber. Ohne Haken wird es ein Rundbogen-Drehflügel: die oberste Reihe der Scheiben reicht in den Bogen, und Rahmen, Flügel, Glas, Sprossen und Öffnungssymbol folgen dem Bogen ringsum, ohne Sprosse darunter. Die Scheibe öffnet, wie Sie es wählen (Dreh, Dreh-Kipp, fest), Pfosten laufen bis zum Bogen, und Grundrisse, Schnitte, Ansichten, die 3D-Vorschau und IFC zeigen es so. Der Stil **Rundbogen-Drehflügel** setzt auf einmal einen Segmentbogen mit einem Drehflügel.
+
+![Ein Rundbogen-Drehflügel: ein Drehflügel, der einem Segmentbogen folgt, ohne Kämpfer darunter](shots/joinery-arched-casement.webp)
+
 **Sprossen** teilen die Scheiben: **Raster (Kolonial)** mit Feldern in der Breite und Höhe, **Prairie** mit Sprossen nahe den Rändern, oder ein **Rautenmuster**.
 
 An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **Bekrönung über der Öffnung** (ein **Gesims**, eine **Giebelverdachung**, einen **Segmentgiebel** oder ein **Überschlagsgesims**, das einem Bogen folgt) und ein **Brüstungsfeld unter der Sohlbank** mit Konsolen haben.

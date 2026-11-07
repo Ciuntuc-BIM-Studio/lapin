@@ -1258,6 +1258,8 @@ export const ZH: Record<string, string> = {
   "Click the base point: a corner, an edge, a face": "点击基点：角点、边或面", "Click where it goes, or type a length or dx,dy,dz · Esc cancels": "点击目标位置，或输入长度或 dx,dy,dz · Esc 取消", "Click where each copy goes, or type a length or dx,dy,dz · Enter or Esc ends": "点击每个副本的位置，或输入长度或 dx,dy,dz · Enter 或 Esc 结束", "Let go where it goes · → ← ↑ lock an axis · Esc cancels": "在目标位置松开 · → ← ↑ 锁定轴 · Esc 取消", "→ red · ← green · ↑ blue · Shift holds": "→ 红 · ← 绿 · ↑ 蓝 · Shift 保持", "Moved in plan only: what has no height of its own keeps it.": "仅在平面中移动：没有自身高度的对象保持原高度。", "Drag to move in 3D": "在 3D 中拖动以移动", "A selected element dragged in 3D moves, snapped to the others.": "在 3D 中拖动选中的元素即可移动，并捕捉到其他元素。", "A drag in 3D orbits, even on the selection.": "在 3D 中拖动将环绕视图，即使在选择集上。",
   // Modelling in 3D, stage B: the placing tools in 3D (testers' report #105)
   "Placing on": "放置于", "Locked: the arrow again lets go": "已锁定：再按同一方向键解除", "→ red · ← green": "→ 红 · ← 绿", "Click a point: on the level, or a corner or an edge of the model": "点击一个点：在标高上，或模型的角点或边上", "Click the start, then the end, or type a length": "点击起点，再点击终点，或输入长度", "Click a corner, then the opposite one, or type width,height": "点击一个角，再点击对角，或输入 宽,高", "Click the start, the end, then a point the arc passes through": "点击起点、终点，再点击圆弧经过的一点", "Click the corners · back on the first, or Enter, closes it · Backspace takes one back": "点击各角点 · 回到第一点或按 Enter 闭合 · Backspace 撤回一点", "Click the points · Enter ends it · Backspace takes one back": "点击各点 · Enter 结束 · Backspace 撤回一点",
+  // An arched casement: no transom at the spring line (tester's report #112)
+  "Transom at the springing": "起拱处的横档", "Arched casement": "拱形平开窗",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

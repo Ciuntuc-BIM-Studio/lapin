@@ -72,7 +72,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             foreach (var panel in JoineryShapes.Round(spec) ? [] : Joinery.Normalised(spec))
             {
                 var r = Joinery.PanelRect(spec, panel);
-                foreach (var st in JoinerySymbols.OpeningMarks(panel.Operation, r, true, convention))
+                foreach (var st in JoinerySymbols.OpeningMarks(panel.Operation, r, true, convention, JoineryShapes.PaneTop(spec, r)))
                     mark.Polyline(st.Pts.Select(q => c.Map(W(q.X, q.Y))).ToList(), st.Closed, "JOINERY", 0.18, dash: st.Dashed ? [2, 1.5] : null);
             }
             if (mark.Lines.Count > 0) yield return mark;

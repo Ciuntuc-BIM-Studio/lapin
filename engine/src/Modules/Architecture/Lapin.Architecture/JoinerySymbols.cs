@@ -124,11 +124,15 @@ public static class JoinerySymbols
 
     // ─── Elevation ─────────────────────────────────────────────────────────
 
-    /// <summary>One panel's opening symbol in its rectangle (seen from the interior).</summary>
-    public static List<JStroke> OpeningMarks(string op, CellRect r, bool dashed, string convention = "handle")
+    /// <summary>
+    /// One panel's opening symbol in its rectangle (seen from the interior); <paramref name="top"/>, a pane following an arched
+    /// head (report #112): its top at x, so the lines meet the arch where the rectangle's top corners would stand.
+    /// </summary>
+    public static List<JStroke> OpeningMarks(string op, CellRect r, bool dashed, string convention = "handle", Func<double, double>? top = null)
     {
         var (xm, zm) = ((r.X0 + r.X1) / 2, (r.Z0 + r.Z1) / 2);
-        static Vec2 P(double x, double y) => new(x, y);
+        // A point on the pane's top edge lands on the arch.
+        Vec2 P(double x, double y) => top != null && Math.Abs(y - r.Z1) < 1e-9 ? new(x, top(x)) : new(x, y);
         var toHandle = convention == "handle";
         JStroke ApexSide(bool atLeft) => atLeft
             ? new([P(r.X1, r.Z1), P(r.X0, zm), P(r.X1, r.Z0)], "thin", false, dashed)
@@ -138,7 +142,7 @@ public static class JoinerySymbols
         // Hinged on the left: the apex at the hinges (DIN), or across at the handle.
         JStroke TriangleSide(bool hingeAtLeft) => ApexSide(toHandle ? !hingeAtLeft : hingeAtLeft);
         var bottom = toHandle ? apexUp : apexDown;
-        var top = toHandle ? apexDown : apexUp;
+        var topHung = toHandle ? apexDown : apexUp;
         var (w, h) = (r.X1 - r.X0, r.Z1 - r.Z0);
         return op switch
         {
@@ -148,14 +152,14 @@ public static class JoinerySymbols
             "tilt-turn-left" => [TriangleSide(true), bottom],
             "tilt-turn-right" => [TriangleSide(false), bottom],
             "bottom-hung" => [bottom],
-            "top-hung" => [top],
-            "pivot-vertical" => [new([P(xm, r.Z0 - 0.02), P(xm, r.Z1 + 0.02)], "thin", false, true), new([P(r.X0, r.Z1), P(xm, zm), P(r.X0, r.Z0)], "thin", false, dashed), new([P(r.X1, r.Z1), P(xm, zm), P(r.X1, r.Z0)], "thin", false, dashed)],
+            "top-hung" => [topHung],
+            "pivot-vertical" => [new([P(xm, r.Z0 - 0.02), new(xm, (top?.Invoke(xm) ?? r.Z1) + 0.02)], "thin", false, true), new([P(r.X0, r.Z1), P(xm, zm), P(r.X0, r.Z0)], "thin", false, dashed), new([P(r.X1, r.Z1), P(xm, zm), P(r.X1, r.Z0)], "thin", false, dashed)],
             "pivot-horizontal" => [new([P(r.X0 - 0.02, zm), P(r.X1 + 0.02, zm)], "thin", false, true), new([P(r.X0, r.Z0), P(xm, zm), P(r.X1, r.Z0)], "thin", false, dashed), new([P(r.X0, r.Z1), P(xm, zm), P(r.X1, r.Z1)], "thin", false, dashed)],
             "sliding-left" or "door-sliding-left" => Arrow(P(xm + w / 4, zm), P(xm - w / 4, zm), "thin"),
             "sliding-right" or "door-sliding-right" => Arrow(P(xm - w / 4, zm), P(xm + w / 4, zm), "thin"),
             "sliding-vertical" => Arrow(P(xm, zm - h / 4), P(xm, zm + h / 4), "thin"),
-            "folding-left" => toHandle ? OpeningMarks("folding-right", r, dashed, "hinge") : [new([P(r.X1, r.Z1), P(xm, zm), P(r.X1, r.Z0)], "thin", false, dashed), new([P(xm, r.Z1), P(r.X0, zm), P(xm, r.Z0)], "thin", false, dashed)],
-            "folding-right" => toHandle ? OpeningMarks("folding-left", r, dashed, "hinge") : [new([P(r.X0, r.Z1), P(xm, zm), P(r.X0, r.Z0)], "thin", false, dashed), new([P(xm, r.Z1), P(r.X1, zm), P(xm, r.Z0)], "thin", false, dashed)],
+            "folding-left" => toHandle ? OpeningMarks("folding-right", r, dashed, "hinge", top) : [new([P(r.X1, r.Z1), P(xm, zm), P(r.X1, r.Z0)], "thin", false, dashed), new([P(xm, r.Z1), P(r.X0, zm), P(xm, r.Z0)], "thin", false, dashed)],
+            "folding-right" => toHandle ? OpeningMarks("folding-left", r, dashed, "hinge", top) : [new([P(r.X0, r.Z1), P(xm, zm), P(r.X0, r.Z0)], "thin", false, dashed), new([P(xm, r.Z1), P(r.X1, zm), P(xm, r.Z0)], "thin", false, dashed)],
             _ => [],
         };
     }
@@ -203,7 +207,8 @@ public static class JoinerySymbols
         yield return new(JoineryShapes.Outline(s, 0, 0), "outline", true);
         var fw = s.Frame.Width;
         if (JoineryShapes.Round(s)) yield return new(JoineryShapes.Ellipse(s, fw), "outline", true);
-        else if (JoineryShapes.Headed(s))
+        // Without the transom the panes draw their own outlines under the arch (report #112).
+        else if (JoineryShapes.Headed(s) && !JoineryShapes.ArchedPanes(s))
         {
             var zs = JoineryShapes.Spring(s);
             var t = Math.Max(s.Frame.Transom, 0.02);
@@ -211,7 +216,7 @@ public static class JoinerySymbols
             yield return new(fan, "outline", true);
             yield return Line(new(-s.Width / 2 + fw, zs - t), new(s.Width / 2 - fw, zs - t), "outline");
         }
-        foreach (var b in Joinery.Boxes(s).Where(b => b.Profile != null && b.Role is "frame" or "muntin" && (b.Max.X - b.Min.X < s.Width * 0.9 || b.Role == "muntin")))
+        foreach (var b in Joinery.Boxes(s).Where(b => b.Profile != null && b.Holes == null && b.Role is "frame" or "muntin" && (b.Max.X - b.Min.X < s.Width * 0.9 || b.Role == "muntin")))
             yield return new(b.Profile!, "thin", true);
     }
 
@@ -223,17 +228,19 @@ public static class JoinerySymbols
         foreach (var p in Joinery.Normalised(s))
         {
             var r = Joinery.PanelRect(s, p);
-            o.Add(Rect(r.X0, r.Z0, r.X1, r.Z1, "outline"));
+            // A pane following an arched head (report #112) is drawn by its outline, each inset of it too.
+            JStroke Loop(double inset, string w) => JoineryShapes.PaneOutline(s, r, inset) is { } loop ? new(loop, w, true) : Rect(r.X0 + inset, r.Z0 + inset, r.X1 - inset, r.Z1 - inset, w);
+            o.Add(Loop(0, "outline"));
             var sash = p.Operation != "fixed" && (!Joinery.IsDoorLeaf(p.Operation) || Joinery.InfillOf(p) == "glass");
-            var inner = sash ? new CellRect(r.X0 + s.Sash.Width, r.X1 - s.Sash.Width, r.Z0 + s.Sash.Width, r.Z1 - s.Sash.Width) : r;
-            if (sash) o.Add(Rect(inner.X0, inner.Z0, inner.X1, inner.Z1, "thin"));
+            var sw = sash ? s.Sash.Width : 0;
+            if (sash) o.Add(Loop(sw, "thin"));
             // An opaque panel in a window's pane or a fixed side panel (decision 370): its moulding, a rectangle inside.
             if (Joinery.InfillOf(p) == "solid" && !Joinery.IsDoorLeaf(p.Operation))
             {
-                var g = Math.Min(0.06, Math.Min(inner.X1 - inner.X0, inner.Z1 - inner.Z0) / 6);
-                o.Add(Rect(inner.X0 + g, inner.Z0 + g, inner.X1 - g, inner.Z1 - g, "thin"));
+                var g = Math.Min(0.06, Math.Min(r.X1 - r.X0 - 2 * sw, r.Z1 - r.Z0 - 2 * sw) / 6);
+                o.Add(Loop(sw + g, "thin"));
             }
-            o.AddRange(OpeningMarks(p.Operation, r, exterior, convention));
+            o.AddRange(OpeningMarks(p.Operation, r, exterior, convention, JoineryShapes.PaneTop(s, r)));
             if (hardware) o.AddRange(Hardware(s, p, r));
         }
         if (s.Kind == "window" && s.Board.Exterior > 0 && exterior) o.Add(Rect(-s.Width / 2 - 0.03, -0.04, s.Width / 2 + 0.03, 0, "outline"));

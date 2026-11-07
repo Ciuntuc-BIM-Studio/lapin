@@ -66,7 +66,8 @@ interface Spec {
 /** The parts' materials by name (report #76); a part without one keeps its colour. */
 interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
 type MaterialPart = keyof Materials;
-interface Shape { kind: 'rect' | 'round' | 'segmental' | 'elliptical' | 'radiused' | 'pointed' | 'gable' | 'circle'; rise?: number | null; bars: 'none' | 'sunburst' | 'mullions' | 'cross'; spokes: number }
+/** `transom: false` (report #112): no transom at the spring line, the top row of panes following the arch. */
+interface Shape { kind: 'rect' | 'round' | 'segmental' | 'elliptical' | 'radiused' | 'pointed' | 'gable' | 'circle'; rise?: number | null; bars: 'none' | 'sunburst' | 'mullions' | 'cross'; spokes: number; transom?: boolean | null }
 interface Muntins { pattern: 'none' | 'grid' | 'prairie' | 'diamond'; across: number; up: number; width: number; margin: number }
 interface Hardware { handle: 'auto' | 'lever' | 'knob' | 'pull' | 'window' | 'none'; height: number; color?: string | null }
 interface Keystone { on: boolean; width: number; height: number; projection: number; material?: string | null; color: string }
@@ -106,6 +107,8 @@ const JOINERY_STYLES: Record<string, { label: string; apply: (s: Spec) => Partia
   georgian: { label: 'Georgian', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'grid', across: 3, up: 3 } }) },
   victorian: { label: 'Victorian', apply: (s) => ({ shape: { ...SHAPE, kind: 'segmental', rise: Math.round(s.width / 6 * 1000) / 1000 }, muntins: { ...MUNTINS, pattern: 'grid', across: 1, up: 2 } }) },
   romanesque: { label: 'Romanesque', apply: () => ({ shape: { ...SHAPE, kind: 'round', bars: 'none' }, muntins: null }) },
+  // Report #112: one glazed sash following the arch all round, side-hung, no bar under the arch.
+  'arched-casement': { label: 'Arched casement', apply: (s) => ({ shape: { ...SHAPE, kind: 'segmental', rise: Math.round(s.width / 4 * 1000) / 1000, transom: false }, muntins: null, columns: [1], rows: [1], panels: [{ col: 0, row: 0, operation: s.kind === 'door' ? 'swing-left' : 'side-left' }] }) },
   baroque: { label: 'Baroque', apply: () => ({ shape: { ...SHAPE, kind: 'round', bars: 'sunburst', spokes: 5 }, muntins: { ...MUNTINS, pattern: 'grid', across: 2, up: 3 } }) },
   gothic: { label: 'Gothic', apply: () => ({ shape: { ...SHAPE, kind: 'pointed', rise: null, bars: 'mullions' }, muntins: null }) },
   tudor: { label: 'Tudor', apply: (s) => ({ shape: { ...SHAPE, kind: 'pointed', rise: Math.round(s.width * 0.3 * 1000) / 1000, bars: 'mullions' }, muntins: { ...MUNTINS, pattern: 'diamond', across: 4 } }) },
@@ -371,11 +374,12 @@ function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial
         </select></label>
       {(sh.kind === 'segmental' || sh.kind === 'elliptical' || sh.kind === 'pointed' || sh.kind === 'gable') && <Mm label="Rise of the head" value={sh.rise ?? (sh.kind === 'segmental' ? spec.width / 6 : sh.kind === 'pointed' ? spec.width * 0.866 : spec.width / 4)} onChange={(v) => setShape({ rise: v })} />}
       {sh.kind === 'radiused' && <Mm label="Corner radius" value={sh.rise ?? 0.15} onChange={(v) => setShape({ rise: v })} />}
-      {sh.kind !== 'rect' && <label className="field-line"><span className="eyebrow">{sh.kind === 'circle' ? 'Bars' : 'Bars in the head'}</span>
+      {sh.kind !== 'rect' && sh.kind !== 'circle' && <label className="field-line check"><input type="checkbox" data-field="shape-transom" checked={sh.transom !== false} onChange={(e) => setShape({ transom: e.target.checked ? null : false })} /><span>Transom at the springing</span></label>}
+      {sh.kind !== 'rect' && (sh.kind === 'circle' || sh.transom !== false) && <label className="field-line"><span className="eyebrow">{sh.kind === 'circle' ? 'Bars' : 'Bars in the head'}</span>
         <select data-field="shape-bars" value={sh.bars} onChange={(e) => setShape({ bars: e.target.value as Shape['bars'] })}>
           <option value="none">None</option><option value="sunburst">Sunburst</option><option value="mullions">{sh.kind === 'circle' ? 'Upright' : 'The mullions carried up'}</option><option value="cross">Cross</option>
         </select></label>}
-      {sh.kind !== 'rect' && sh.bars === 'sunburst' && <Num label="Spokes" value={sh.spokes} integer min={1} onChange={(v) => setShape({ spokes: v })} />}
+      {sh.kind !== 'rect' && (sh.kind === 'circle' || sh.transom !== false) && sh.bars === 'sunburst' && <Num label="Spokes" value={sh.spokes} integer min={1} onChange={(v) => setShape({ spokes: v })} />}
       {sh.kind !== 'circle' && <label className="field-line"><span className="eyebrow">Glazing bars</span>
         <select data-field="muntins" value={mu.pattern} onChange={(e) => setMuntins({ pattern: e.target.value as Muntins['pattern'] })}>
           <option value="none">None</option><option value="grid">Grid (colonial)</option><option value="prairie">Prairie</option><option value="diamond">Diamond lattice</option>

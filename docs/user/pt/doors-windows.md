@@ -92,6 +92,10 @@ Cada uma se posiciona pelas faces reais da parede onde a janela está, a partir 
 
 **Forma** dá a uma porta ou janela um topo em arco (**Arco pleno**, **Arco abatido**, **Arco elíptico**, **Cantos arredondados**, **Arco ogival**, **Topo triangular**) ou a torna uma janela **Redonda ou oval** (redonda quando a largura e a altura são iguais). Um tipo em arco mantém os seus vidros sob uma travessa na linha de nascença, e acima dela uma bandeira fixa que segue o topo, com barras se você quiser: um **Em leque**, **Os montantes prolongados** ou uma **Cruz**. **Flecha do arco** define quanto sobe um topo segmentado, elíptico, ogival ou triangular, **Raio dos cantos** quanto os cantos de um topo arredondado são redondos. A abertura da parede, o marco, o vidro, a moldura e os desenhos seguem todos o contorno.
 
+**Travessa no arranque do arco**, marcada por omissão, mantém essa travessa e a bandeira fixa por cima. Desmarque-a para uma janela de batente em arco: a fila de cima dos vidros sobe dentro do arco, e o aro, a folha, o vidro, as travessas de vidro e o símbolo de abertura seguem o arco a toda a volta, sem barra por baixo. O vidro abre como escolher (batente, oscilobatente, fixo), os montantes sobem até ao arco, e as plantas, cortes, alçados, a pré-visualização 3D e o IFC mostram-no assim. O estilo **Janela de batente em arco** põe de uma vez um arco abatido com uma só folha de batente.
+
+![Uma janela de batente em arco: uma só folha de batente que segue um arco abatido, sem travessa por baixo](shots/joinery-arched-casement.webp)
+
 **Travessas de vidro** dividem os vidros: **Quadriculado (colonial)** com os seus quadros na largura e na altura, **Prairie** com barras perto das bordas, ou uma **Losangos**.
 
 Na fachada, além da moldura, uma janela pode ter uma **Fecho de arco**, um **Coroamento sobre a abertura** (uma **Cornija**, um **Frontão**, um **Frontão curvo** ou uma **Pingadeira** que segue um topo em arco) e um **Painel sob o peitoril** com os seus consoles.

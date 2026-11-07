@@ -92,6 +92,10 @@ Hver af dem sidder efter væggens virkelige flader, hvor vinduet er, ud fra væg
 
 **Form** giver en dør eller et vindue en buet top (**Rundbue**, **Segmentbue**, **Elliptisk bue**, **Afrundede hjørner**, **Spidsbue**, **Trekantet top**) eller gør det **Rund eller oval** (rund når bredde og højde er ens). En buet type beholder sine rammer under en losholt ved buens vederlag, og derover et fast overvindue, der følger buen, med sprosser hvis du vil: **Vifte**, **Posterne ført op** eller **Kors**. **Buens pilhøjde** angiver, hvor højt en segment-, elliptisk, spids- eller trekantet top rejser sig, **Hjørneradius**, hvor runde hjørnerne på en top med afrundede hjørner er. Hullet i væggen, karmen, glasset, indfatningen og tegningerne følger omridset.
 
+**Tværpost ved buens vederlag**, sat til som standard, beholder tværposten og det faste overvindue over den. Fjern fluebenet for et buet sidehængt vindue: den øverste række ruder går op i buen, og karmen, rammen, glasset, sprosserne og åbningssymbolet følger buen hele vejen rundt, uden nogen post under den. Ruden åbner, som du vælger (sidehængt, dreje-kip, fast), poster går op til buen, og planer, snit, opstalter, 3D-forhåndsvisningen og IFC viser det sådan. Stilen **Buet sidehængt vindue** sætter en segmentbue med én sidehængt ramme på én gang.
+
+![Et buet sidehængt vindue: én sidehængt ramme der følger en segmentbue, uden tværpost under den](shots/joinery-arched-casement.webp)
+
 **Sprosser** deler ruderne: **Gitter (kolonial)** med ruder i bredden og højden, **Prairie** med sprosser nær kanterne, eller et **Rudemønster**.
 
 På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone over åbningen** (et **Gesims**, en **Fronton**, en **Buet fronton** eller en **Vandnæse**, der følger en buet top) og et **Brystningsfelt under sålbænken** med konsoller.

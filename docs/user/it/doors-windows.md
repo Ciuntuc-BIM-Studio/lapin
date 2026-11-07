@@ -92,6 +92,10 @@ Ciascuno si posiziona rispetto alle facce reali del muro dove si trova la finest
 
 **Forma** dà a una porta o a una finestra una testa ad arco (**Arco a tutto sesto**, **Arco ribassato**, **Arco ellittico**, **Angoli arrotondati**, **Arco a sesto acuto**, **Coronamento triangolare**) oppure la rende una finestra **Tonda o ovale** (tonda quando larghezza e altezza sono uguali). Un tipo ad arco tiene le sue ante sotto un traverso alla linea d’imposta, e sopra di esso un sopraluce fisso che segue la testa, con barre se le vuoi: **A raggiera**, **I montanti prolungati** o una **Croce**. **Freccia dell’arco** stabilisce quanto sale una testa ribassata, ellittica, a sesto acuto o triangolare, **Raggio degli angoli** quanto sono arrotondati gli angoli di una testa ad angoli arrotondati. L’apertura nel muro, il telaio, il vetro, la cornice e i disegni seguono tutti il contorno.
 
+**Traverso all’imposta dell’arco**, spuntato di serie, tiene quel traverso e il sopraluce fisso sopra di esso. Togli la spunta per una finestra a battente ad arco: la fila superiore delle ante sale nell’arco, e il telaio, l’anta, il vetro, le inglesine e il simbolo d’apertura seguono l’arco tutto intorno, senza barra sotto. L’anta si apre come scegli (a battente, anta-ribalta, fissa), i montanti salgono fino all’arco, e piante, sezioni, prospetti, l’anteprima 3D e l’IFC la mostrano così. Lo stile **Finestra a battente ad arco** mette in una volta un arco ribassato con una sola anta a battente.
+
+![Una finestra a battente ad arco: una sola anta a battente che segue un arco ribassato, senza traverso sotto](shots/joinery-arched-casement.webp)
+
 Le **Inglesine** dividono le ante: **Griglia (coloniale)** con i suoi riquadri in larghezza e in altezza, **Prairie** con barre vicino ai bordi, oppure **Losanghe**.
 
 Sulla facciata, oltre alla cornice, una finestra può avere una **Chiave di volta**, un **Coronamento sull’apertura** (una **Cornice**, un **Timpano**, un **Timpano curvo**, oppure un **Gocciolatoio** che segue una testa ad arco) e un **Pannello sotto il davanzale** con le sue mensole.

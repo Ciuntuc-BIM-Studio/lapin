@@ -92,6 +92,10 @@ Fiecare se așază după fețele reale ale peretelui unde e fereastra, din strat
 
 **Formă** dă unei uși sau ferestre un cap în arc (**Arc în plin cintru**, **Arc de segment**, **Arc eliptic**, **Colțuri rotunjite**, **Arc frânt**, **Cap triunghiular**) sau o face **Rotundă sau ovală** (rotundă când lățimea și înălțimea sunt egale). Un tip cu arc își păstrează ochiurile sub un montant orizontal la nașterea arcului, iar deasupra are un ochi fix care urmează arcul, cu bare dacă vrei: **Evantai**, **Montanții continuați în sus** sau **Cruce**. **Înălțimea arcului** spune cât se ridică un arc de segment, eliptic, frânt sau triunghiular, **Raza colțurilor** cât de rotunde sunt colțurile unui cap cu colțuri rotunjite. Golul din perete, rama, sticla, ancadramentul și desenele urmează conturul.
 
+**Traversă la nașterea arcului**, bifată implicit, păstrează traversa și ochiul fix de deasupra ei. Debifată, fereastra devine o cercevea în arc: rândul de sus al ochiurilor urcă în arc, iar tocul, cerceveaua, sticla, baghetele și simbolul de deschidere urmează arcul de jur împrejur, fără bară sub el. Ochiul se deschide cum îl alegi (batant, oscilobatant, fix), montanții urcă până în arc, iar planurile, secțiunile, fațadele, previzualizarea 3D și IFC-ul îl arată așa. Stilul **Cercevea în arc** pune deodată un arc de segment cu un singur canat batant.
+
+![O cercevea în arc: un singur canat batant care urmează un arc de segment, fără traversă sub el](shots/joinery-arched-casement.webp)
+
 **Baghete** împart ochiurile: **Grilă (colonial)** cu ochiurile pe lățime și pe înălțime, **Prairie** cu bare lângă margini, sau **Romburi**.
 
 Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**, **Coronament peste gol** (**Cornișă**, **Fronton**, **Fronton în arc** sau **Ancadrament de ploaie**, care urmează un cap în arc) și **Panou sub glaf** cu consolele lui.

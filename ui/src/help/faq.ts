@@ -605,6 +605,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Doors and windows…', labelRo: 'Uși și ferestre…', run: { kind: 'tool', id: 'architecture.joineryTypes' } },
     source: 'report #111',
   },
+  {
+    id: 'arched-casement',
+    q: ['Is it possible to create an arched window with no bars in between?', 'How do I make an arched casement that opens?', 'Can the sash follow the arch, with no transom under it?'],
+    qRo: ['Pot face o fereastră în arc fără bare la mijloc?', 'Cum fac o fereastră în arc care se deschide cu totul?', 'Poate canatul să urmeze arcul, fără traversă sub el?'],
+    keywords: ['arched', 'arch', 'arches', 'semicircular', 'segmental', 'casement', 'springing', 'transom', 'fanlight', 'curved', 'arc', 'arcada', 'boltita', 'semicerc', 'semicirculara', 'traversa', 'cercevea', 'nasterea', 'curba'],
+    a: 'Architecture → Doors & windows, the window type, then Shape: Round, Segmental, Elliptical, Pointed, Radiused or Triangular. Untick Transom at the springing and the panes under the head reach into it: the frame, the sash, its glass and the opening symbol follow the arch all round, with no bar across under it, and Panels says how it opens (side-hung, tilt-and-turn, fixed). Style → Arched casement does it at once: a segmental head and one side-hung sash. Mullions and glazing bars stop at the arch. Ticked (the default, as before) the arch is a fixed fanlight over a transom.',
+    aRo: 'Architecture → Doors & windows, tipul ferestrei, apoi Shape: arc în plin cintru, de segment, eliptic, frânt, cu colțuri rotunjite sau cap triunghiular. Debifează Transom at the springing (Traversă la nașterea arcului) și ochiurile de sub arc urcă în el: tocul, cerceveaua, sticla și simbolul de deschidere urmează arcul de jur împrejur, fără bară sub el, iar Panels spune cum se deschide (batant, oscilobatant, fix). Style → Arched casement (Cercevea în arc) le pune deodată: arc de segment și un singur canat batant. Montanții și baghetele se opresc în arc. Bifată (implicit, ca până acum), arcul e un ochi fix deasupra unei traverse.',
+    action: { label: 'Open Doors & windows', labelRo: 'Deschide Doors & windows', run: { kind: 'tool', id: 'architecture.joineryTypes' } },
+    source: 'report #112',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

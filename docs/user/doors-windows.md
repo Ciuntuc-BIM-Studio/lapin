@@ -92,6 +92,10 @@ Each one sits by the wall's real faces where the window is, from the wall's laye
 
 **Shape** gives a door or window an arched head (**Round arch**, **Segmental arch**, **Elliptical arch**, **Radiused corners**, **Pointed arch**, **Triangular head**) or makes it a **Round or oval** window (round when the width and height are equal). An arched type keeps its panes under a transom at the spring line, and above it a fixed fanlight that follows the head, with bars if you want them: a **Sunburst**, **The mullions carried up** or a **Cross**. **Rise of the head** sets how high a segmental, elliptical, pointed or triangular head rises, **Corner radius** how round a radiused head's corners are. The wall's opening, the frame, the glass, the surround and the drawings all follow the outline.
 
+**Transom at the springing**, ticked by default, keeps that transom and the fixed fanlight over it. Untick it for an arched casement: the top row of panes reaches into the head, and the frame, the sash, its glass, the glazing bars and the opening symbol follow the arch all round, with no bar across under it. The pane opens as you set it (side-hung, tilt-and-turn, fixed), mullions run up to the arch, and plans, sections, elevations, the 3D preview and IFC show it so. The **Arched casement** style sets a segmental head with one side-hung sash at once.
+
+![An arched casement: one side-hung sash following a segmental arch, no transom under it](shots/joinery-arched-casement.webp)
+
 **Glazing bars** divide the panes: **Grid (colonial)** with its lites across and up, **Prairie** with bars near the edges, or a **Diamond lattice**.
 
 On the facade, besides the surround, a window can have a **Keystone**, a **Crown over the opening** (a **Cornice**, a **Pediment**, a **Segmental pediment**, or a **Hood mould** that follows an arched head) and an **Apron under the sill** with its consoles.

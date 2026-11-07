@@ -92,6 +92,10 @@ Cada una se sitúa según las caras reales del muro donde está la ventana, a pa
 
 **Forma** da a una puerta o ventana un remate en arco (**Arco de medio punto**, **Arco rebajado**, **Arco elíptico**, **Esquinas redondeadas**, **Arco apuntado**, **Remate triangular**) o la hace **Redonda u oval** (redonda cuando el ancho y el alto son iguales). Un tipo con arco conserva sus hojas bajo un travesaño en el arranque del arco, y encima un fijo que sigue el arco, con barrotillos si se quiere: **Abanico**, **Los montantes prolongados** o **Cruz**. **Flecha del arco** fija cuánto sube un arco rebajado, elíptico, apuntado o triangular, **Radio de las esquinas** cuán redondas son las esquinas de un remate con esquinas redondeadas. El hueco del muro, el marco, el vidrio, el recercado y los dibujos siguen el contorno.
 
+**Travesaño en el arranque del arco**, marcado por defecto, conserva ese travesaño y el fijo de arriba. Desmárquelo para una ventana batiente en arco: la fila superior de vidrios sube dentro del arco, y el marco, la hoja, el vidrio, los junquillos y el símbolo de apertura siguen el arco por todo su contorno, sin barra debajo. El vidrio abre como usted elija (batiente, oscilobatiente, fijo), los montantes suben hasta el arco, y las plantas, secciones, alzados, la vista previa 3D y el IFC lo muestran así. El estilo **Ventana batiente en arco** pone de una vez un arco rebajado con una sola hoja batiente.
+
+![Una ventana batiente en arco: una sola hoja batiente que sigue un arco rebajado, sin travesaño debajo](shots/joinery-arched-casement.webp)
+
 **Junquillos** dividen los vidrios: **Cuadrícula (colonial)** con sus vidrios a lo ancho y a lo alto, **Prairie** con barras cerca de los bordes, o **Rombos**.
 
 En la fachada, además del recercado, una ventana puede tener **Clave**, **Remate sobre el hueco** (**Cornisa**, **Frontón**, **Frontón curvo** o un **Guardapolvo** que sigue un remate en arco) y un **Antepecho bajo el vierteaguas** con sus ménsulas.

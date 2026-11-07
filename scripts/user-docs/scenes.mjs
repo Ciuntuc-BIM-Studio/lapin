@@ -610,6 +610,30 @@ export const scenes = [
     },
   },
   {
+    // An arched casement (a tester's report #112): no transom at the spring line, one sash following the arch.
+    id: 'window-arched-casement',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.tree-item').filter({ hasText: /^Window/ }).first().click();
+      await t.wait(300);
+      await dialog.locator('select[data-field=style]').selectOption('arched-casement');
+      await t.wait(800);
+      t.expect(await dialog.locator('select[data-field=shape]').inputValue() === 'segmental', 'the style gives the window a segmental arch');
+      t.expect(!(await dialog.locator('input[data-field=shape-transom]').isChecked()), 'no transom at the springing');
+      await dialog.locator('select[data-field=shape]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await t.wait(500);
+      await t.shot('joinery-arched-casement', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      await t.keys('Escape');
+      const type = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.transom === false);
+      t.expect(type, 'the window type keeps its sash following the arch');
+    },
+  },
+  {
     // Bay, bow and box windows (report #60): a bay window type from the configurator (New bay window, a bow style), placed
     // with the Bay window tool and by command, in plan (the projection, the roof dashed over it) and in 3D.
     id: 'bay-windows',

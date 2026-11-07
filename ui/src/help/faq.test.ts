@@ -102,6 +102,9 @@ describe('Ask Lapin', () => {
     expect(best('PUT THE IMPORTED DXF FILE INTO PLAN AND 3D VIEWPORTS')).toBe('dxf-in-3d');
     expect(best('nu vad dxf-ul importat in vederea 3D')).toBe('dxf-in-3d');
     expect(best('can I trace walls over a dxf in 3d')).toBe('dxf-in-3d');
+    // Report #112, in the tester's words.
+    expect(best('Is it possible to create an arched window with no bars in between?')).toBe('arched-casement');
+    expect(best('fereastra in arc fara traversa, canatul sa urmeze arcul')).toBe('arched-casement');
   });
 
   it('finds the most asked entries in the interface\'s other languages', () => {
