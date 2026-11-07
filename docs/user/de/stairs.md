@@ -22,6 +22,14 @@ Eine Treppe verlangt von der Decke darüber eine Öffnung über sich. Entfernen 
 
 In **Architektur → Treppentypen** bietet die Registerkarte **Form**: **Gerade**, **Gerade mit Podest**, **L-Form** und **U-Form** (jeweils mit Podest oder mit **gewendelten Stufen**; eine U-Form ohne Auge ist eine gegenläufige Treppe), **Wendeltreppe** (um eine Spindel, mit ihrem **Spindelradius**), **Gebogen** (mit ihrem **Innenradius**) und **Zweiarmig (geteilt)**: ein Hauptlauf in der Mitte bis zu einem Podest, dann zwei Rückläufe zu beiden Seiten. Bei einer Wendel- oder gebogenen Treppe legt **Dreht sich um (°)** fest, wie weit sie dreht; leer entscheiden Steigungen und Auftritt, angegeben folgt der Auftritt daraus. Jede Treppe kann es auch in ihren Eigenschaften ändern.
 
+Eine **U-Form**, die mit **gewendelten Stufen** wendet, wählt jede Ecke: **Gewendelte Stufen an der ersten Ecke**, **Gewendelte Stufen an der zweiten Ecke** und **Gerade Stufen zwischen den Ecken**, die Stufen an der kurzen Seite dazwischen. Mit Stufen dazwischen, oder einer anderen Anzahl an jeder Ecke, wendet jede Ecke für sich, und das Treppenauge zwischen den Läufen ist so breit wie diese Stufen: gewendelt, dann eine oder zwei Stufen, dann wieder gewendelt. Die **Halbgewendelte U-Treppe** der Bibliothek hat zwei in jeder Ecke und eine Stufe dazwischen. Ausgewählt ändert eine gewendelte Treppe dieselben Zahlen in ihren Eigenschaften (**Wendelstufen, Ecke 1**, **Wendelstufen, Ecke 2**, **Stufen dazwischen**; leer: die des Typs). Der Grundriss zeichnet jede Setzstufe, die gewendelten Stufen und die Lauflinie um beide Ecken; 3D, Mengen und IFC folgen, eine IfcStairFlight für jeden geraden Lauf und die gewendelten Stufen als ein WINDER-Lauf.
+
+![Eine U-Treppe mit zwei gewendelten Stufen in jeder Ecke und einer geraden Stufe dazwischen](shots/stair-winder-u.webp)
+
+![Die gewendelte U-Treppe im Grundriss: gewendelte Stufen, die Stufe dazwischen, gewendelte Stufen, die Lauflinie um beide Ecken](shots/stair-winder-u-plan.webp)
+
+![Die Eigenschaften einer gewendelten Treppe: die gewendelten Stufen an jeder Ecke und die Stufen dazwischen](shots/stair-winder-u-properties.webp)
+
 Die Bibliothek fügt dem Projekt fertige Typen hinzu: gegenläufige, viertelgewendelte, Wendel-, gebogene, Kragstufen- und zweiarmige Treppe.
 
 In der Registerkarte **Konstruktion** wählt **Ausführung** eine Laufplatte, massive Stufen auf dem Boden, **Freitragende Stufen (schwebend)** (jede Stufe eine in die Wand eingespannte Platte) oder **Stufen auf Wangen**.

@@ -22,6 +22,14 @@ Schody żądają od stropu powyżej otworu nad sobą. Odznacz **Otwór w stropie
 
 W **Architektura → Typy schodów** karta **Kształt** oferuje: **Proste**, **Proste ze spocznikiem**, **Kształt L** i **Kształt U** (każde skręcające na spoczniku lub ze **stopniami zabiegowymi**; U bez prześwitu to schody dwubiegowe zwrotne), **Kręcone** (wokół słupa, z polem **Promień słupa**), **Zakrzywione** (z polem **Promień wewnętrzny**) i **Rozdzielone (dwuramienne)**: bieg główny środkiem do spocznika, a potem dwa biegi powrotne po obu stronach. Dla schodów kręconych lub zakrzywionych **Obrót o (°)** określa, jak daleko się obracają; pozostawiony pusty wynika z podstopni i stopnia, a podany wyznacza głębokość stopnia. Każde schody mogą go też zmienić w swoich właściwościach.
 
+Schody **w kształcie U** skręcające **stopniami zabiegowymi** ustawiają każdy narożnik: **Stopnie zabiegowe w pierwszym narożniku**, **Stopnie zabiegowe w drugim narożniku** i **Proste stopnie między narożnikami**, stopnie na krótszym boku między nimi. Ze stopniami pomiędzy, albo z inną liczbą w każdym narożniku, każdy narożnik skręca osobno, a dusza między biegami jest tak szeroka jak te stopnie: zabiegowe, potem jeden lub dwa stopnie, potem zabiegowe. **Schody w kształcie U zabiegowe** z biblioteki mają po dwa w każdym narożniku i jeden prosty stopień pomiędzy. Zaznaczone schody zabiegowe zmieniają te same liczby we właściwościach (**Zabiegowe, narożnik 1**, **Zabiegowe, narożnik 2**, **Stopnie pomiędzy**; puste: typu). Rzut rysuje każdy podstopień, stopnie zabiegowe i linię ruchu przez oba narożniki; 3D, ilości i IFC idą za tym, IfcStairFlight dla każdego prostego biegu i stopnie zabiegowe jako jeden bieg WINDER.
+
+![Schody w kształcie U z dwoma stopniami zabiegowymi w każdym narożniku i prostym stopniem pomiędzy](shots/stair-winder-u.webp)
+
+![Schody U zabiegowe w rzucie: zabiegowe, stopień pomiędzy, zabiegowe, linia ruchu przez oba narożniki](shots/stair-winder-u-plan.webp)
+
+![Właściwości schodów zabiegowych: stopnie zabiegowe w każdym narożniku i stopnie pomiędzy](shots/stair-winder-u-properties.webp)
+
 Biblioteka dodaje do projektu gotowe typy: schody dwubiegowe zwrotne, schody zabiegowe, schody kręcone, schody zakrzywione, schody wspornikowe i schody rozdzielone.
 
 Na karcie **Budowa** pole **Wykonane jako** wybiera płytę biegową, pełne stopnie na gruncie, **Stopnie wspornikowe (wiszące)** (każdy stopień to płyta utwierdzona w ścianie) lub **Stopnie na policzkach**.

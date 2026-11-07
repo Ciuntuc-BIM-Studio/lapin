@@ -1316,6 +1316,8 @@ export const LO: Record<string, string> = {
   "Placing on": "ກຳລັງວາງເທິງ", "Locked: the arrow again lets go": "ລັອກແລ້ວ: ລູກສອນເດີມປົດລັອກ", "→ red · ← green": "→ ແດງ · ← ຂຽວ", "Click a point: on the level, or a corner or an edge of the model": "ຄລິກຈຸດ: ເທິງຊັ້ນ, ຫຼື ມຸມ ຫຼື ຂອບຂອງໂມເດວ", "Click the start, then the end, or type a length": "ຄລິກຈຸດເລີ່ມ, ແລ້ວຈຸດສຸດທ້າຍ, ຫຼື ພິມຄວາມຍາວ", "Click a corner, then the opposite one, or type width,height": "ຄລິກມຸມໜຶ່ງ, ແລ້ວມຸມກົງກັນຂ້າມ, ຫຼື ພິມ ກວ້າງ,ສູງ", "Click the start, the end, then a point the arc passes through": "ຄລິກຈຸດເລີ່ມ, ຈຸດສຸດທ້າຍ, ແລ້ວຈຸດທີ່ເສັ້ນໂຄ້ງຜ່ານ", "Click the corners · back on the first, or Enter, closes it · Backspace takes one back": "ຄລິກມຸມ · ກັບໄປຈຸດທຳອິດ ຫຼື Enter ປິດ · Backspace ຍົກເລີກຈຸດສຸດທ້າຍ", "Click the points · Enter ends it · Backspace takes one back": "ຄລິກຈຸດ · Enter ສິ້ນສຸດ · Backspace ຍົກເລີກຈຸດສຸດທ້າຍ",
   // An arched casement: no transom at the spring line (tester's report #112)
   "Transom at the springing": "ໄມ້ຂວາງທີ່ຕີນໂຄ້ງ", "Arched casement": "ປ່ອງຢ້ຽມບານພັບໂຄ້ງ",
+  // A U stair with winders at each corner and straight treads between (tester's report #109)
+  "Winders at the first corner": "ຂັ້ນວຽນຢູ່ມຸມທຳອິດ", "Winders at the second corner": "ຂັ້ນວຽນຢູ່ມຸມທີສອງ", "Straight treads between the corners": "ຂັ້ນຊື່ລະຫວ່າງມຸມ", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "ແຕ່ລະມຸມລ້ຽວເອງ; ຊ່ອງລະຫວ່າງແຂນຂັ້ນໄດກວ້າງເທົ່າຂັ້ນຊື່.", "Winders": "ຂັ້ນວຽນ", "Winders, corner 1": "ຂັ້ນວຽນ, ມຸມ 1", "Winders, corner 2": "ຂັ້ນວຽນ, ມຸມ 2", "Treads between": "ຂັ້ນລະຫວ່າງ", "U stair with winders": "ຂັ້ນໄດຮູບ U ມີຂັ້ນວຽນ",
 };
 
 /** Phrases with a number or a name in them. */

@@ -35,7 +35,10 @@ public sealed record Winder(Vec2[] Outline, double Z, int Riser);
 /// What the instance's inputs fix (the width, the risers, the riser, the
 /// tread, the landing), each null for "as the type and the rules say".
 /// </summary>
-public sealed record StairInputs(double? Width = null, int? Risers = null, double? RiserHeight = null, double? Tread = null, double? Landing = null, double? Sweep = null);
+/// <para>A U or L turned by winders (report #109) may change its corners on the instance too: <see cref="Winders"/> at the first
+/// corner, <see cref="WindersEnd"/> at a U's second, <see cref="Between"/> straight treads between a U's corners.</para>
+public sealed record StairInputs(double? Width = null, int? Risers = null, double? RiserHeight = null, double? Tread = null, double? Landing = null, double? Sweep = null,
+    int? Winders = null, int? WindersEnd = null, int? Between = null);
 
 /// <summary>
 /// A stair worked out: the risers n, the riser h and the tread b, the flights,
@@ -45,8 +48,10 @@ public sealed record StairInputs(double? Width = null, int? Risers = null, doubl
 /// </summary>
 public sealed record Resolved(
     StairSpec Spec, double Height, int Risers, double RiserHeight, double Tread, double Width, double LandingLength,
-    IReadOnlyList<Flight> Flights, IReadOnlyList<Landing> Landings, IReadOnlyList<Winder> Winders, IReadOnlyList<StairCheck> Checks, ArcRun? Arc = null)
+    IReadOnlyList<Flight> Flights, IReadOnlyList<Landing> Landings, IReadOnlyList<Winder> Winders, IReadOnlyList<StairCheck> Checks, ArcRun? Arc = null,
+    IReadOnlyList<int>? Corners = null, int Between = 0)
 {
+    // Corners: a turn by winders (report #109), the winders asked at each corner (an L's one, a U's two); Between: the straight treads between a U's.
     public double Step => 2 * RiserHeight + Tread;
     public bool Ok => Checks.All(c => c.Ok);
     /// <summary>The top of the stair: where the last riser lands (the centre of its line) and the direction of the last flight.</summary>
@@ -114,9 +119,18 @@ public static class StairSolver
         if (spec.Round) return ResolveRound(spec, height, n, h, b, width, inputs.Sweep ?? spec.Sweep, turnLeft);
 
         // The flights: the risers split by the shape; winders take theirs from the middle.
-        var winders = spec.Turns_ && spec.Turn == "winders" ? Math.Min(spec.Winders * (spec.Shape == "u" ? 2 : 1), Math.Max(0, n - 2)) : 0;
-        // The first flight's last riser lands on the first winder and the second flight leaves from the last: the winders add one riser fewer than their count.
-        var inFlights = winders > 0 ? n - winders + 1 : n;
+        var winding = spec.Turns_ && spec.Turn == "winders";
+        var w1 = Math.Clamp(inputs.Winders ?? spec.Winders, 1, 6);
+        var w2 = spec.Shape == "u" ? Math.Clamp(inputs.WindersEnd ?? spec.WindersEnd ?? w1, 1, 6) : 0;
+        // A U whose corners turn each on its own (report #109): winders at the first corner, straight treads along the short
+        // side, winders at the second; as many treads between as the risers leave room for (each flight keeps one).
+        var between = winding && spec.Shape == "u" ? Math.Clamp(inputs.Between ?? spec.Between, 0, 12) : 0;
+        if (between > 0) between = Math.Max(0, Math.Min(between, n - w1 - w2 - 1));
+        var corners = winding && spec.Shape == "u" && (between > 0 || w1 != w2) && n - w1 - w2 - between + 1 >= 2;
+        var winders = !winding ? 0 : corners ? w1 + w2 : Math.Min(w1 + w2, Math.Max(0, n - 2));
+        // The first flight's last riser lands on the first winder and the second flight leaves from the last: the winders add one
+        // riser fewer than their count; turning at two corners, the straight treads between them add their own and one more.
+        var inFlights = winders == 0 ? n : corners ? n - w1 - w2 - between + 1 : n - winders + 1;
         var split = spec.Shape == "straight" ? [inFlights] : new[] { (int)Math.Ceiling(inFlights / 2.0), (int)Math.Floor(inFlights / 2.0) };
         if (spec.Shape == "split" && split.Length == 2 && split[1] > 0) return ResolveSplit(spec, height, n, h, b, width, landing, split, turnLeft);
         if (split.Length == 2 && split[1] == 0) split = [inFlights];
@@ -159,6 +173,23 @@ public static class StairSolver
                 default: // u
                 {
                     var across = 2 * w + spec.Gap;
+                    if (corners)
+                    {
+                        // The first corner as an L's, a flight of the straight treads along the short side (its last riser landing
+                        // on the second corner's first winder), the second corner the same way round; the well as wide as the treads.
+                        Vec2[] outer1 = [pos - left * (w / 2), pos + dir * w - left * (w / 2), pos + dir * w + left * (w / 2)];
+                        winderSteps.AddRange(Fan(pos + left * (w / 2), outer1, w1, z, h, split[0]));
+                        z += (w1 - 1) * h;
+                        var mid = new Flight(between + 1, pos + dir * (w / 2) + left * (w / 2), left, z);
+                        flights.Add(mid);
+                        z += (between + 1) * h;
+                        var pivot2 = pos + left * (w / 2 + between * b);
+                        Vec2[] outer2 = [pivot2 + dir * w, pivot2 + dir * w + left * w, pivot2 + left * w];
+                        winderSteps.AddRange(Fan(pivot2, outer2, w2, z, h, split[0] + w1 + between));
+                        z += (w2 - 1) * h;
+                        start2 = pos + left * (w + between * b); dir2 = -dir;
+                        break;
+                    }
                     if (winders > 0)
                     {
                         var pivot = pos + left * (w / 2 + spec.Gap / 2);
@@ -175,16 +206,19 @@ public static class StairSolver
             z += split[1] * h;
         }
 
+        // The straight treads between a U's two winding corners belong to the turn: the risers' bounds are the main flights'.
+        IEnumerable<Flight> Runs() => corners ? [flights[0], flights[^1]] : flights;
         var checks = new List<StairCheck>
         {
             new("riser", "Riser", h, r.RiserMin, r.RiserMax, h >= r.RiserMin - 1e-6 && h <= r.RiserMax + 1e-6),
             new("tread", "Tread", b, r.TreadMin, r.TreadMax, b >= r.TreadMin - 1e-6 && b <= r.TreadMax + 1e-6),
             new("step", "2h + b", 2 * h + b, r.StepMin, r.StepMax, 2 * h + b >= r.StepMin - 1e-6 && 2 * h + b <= r.StepMax + 1e-6),
             new("width", "Width", width, r.MinWidth, null, width >= r.MinWidth - 1e-6),
-            new("flight", "Risers in a flight", flights.Max(f => f.Risers), r.MinRisers, r.MaxRisers, flights.All(f => f.Risers >= r.MinRisers && f.Risers <= r.MaxRisers)),
+            new("flight", "Risers in a flight", Runs().Max(f => f.Risers), r.MinRisers, r.MaxRisers, Runs().All(f => f.Risers >= r.MinRisers && f.Risers <= r.MaxRisers)),
         };
         if (landings.Count > 0) checks.Add(new("landing", "Landing", landing, width, null, landing >= width - 1e-6));
-        return new Resolved(spec, height, n, h, b, width, landing, flights, landings, winderSteps, checks);
+        return new Resolved(spec, height, n, h, b, width, landing, flights, landings, winderSteps, checks, null,
+            winders > 0 ? (spec.Shape == "u" ? [w1, w2] : [w1]) : null, corners ? between : 0);
     }
 
     static List<StairCheck> Checks(StairRules r, double h, double b, double width, IEnumerable<int> flights)

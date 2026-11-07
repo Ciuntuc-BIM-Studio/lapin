@@ -1260,6 +1260,8 @@ export const ZH: Record<string, string> = {
   "Placing on": "放置于", "Locked: the arrow again lets go": "已锁定：再按同一方向键解除", "→ red · ← green": "→ 红 · ← 绿", "Click a point: on the level, or a corner or an edge of the model": "点击一个点：在标高上，或模型的角点或边上", "Click the start, then the end, or type a length": "点击起点，再点击终点，或输入长度", "Click a corner, then the opposite one, or type width,height": "点击一个角，再点击对角，或输入 宽,高", "Click the start, the end, then a point the arc passes through": "点击起点、终点，再点击圆弧经过的一点", "Click the corners · back on the first, or Enter, closes it · Backspace takes one back": "点击各角点 · 回到第一点或按 Enter 闭合 · Backspace 撤回一点", "Click the points · Enter ends it · Backspace takes one back": "点击各点 · Enter 结束 · Backspace 撤回一点",
   // An arched casement: no transom at the spring line (tester's report #112)
   "Transom at the springing": "起拱处的横档", "Arched casement": "拱形平开窗",
+  // A U stair with winders at each corner and straight treads between (tester's report #109)
+  "Winders at the first corner": "第一个转角的扇形踏步", "Winders at the second corner": "第二个转角的扇形踏步", "Straight treads between the corners": "两转角之间的直踏步", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "每个转角各自转向；梯段之间的梯井与直踏步同宽。", "Winders": "扇形踏步", "Winders, corner 1": "扇形踏步，转角 1", "Winders, corner 2": "扇形踏步，转角 2", "Treads between": "之间的踏步", "U stair with winders": "带扇形踏步的 U 形楼梯",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

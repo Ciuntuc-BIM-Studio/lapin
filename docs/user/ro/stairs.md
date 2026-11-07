@@ -22,6 +22,14 @@ Scara cere un gol în placa de deasupra ei. Debifează **Gol în placa de deasup
 
 În **Arhitectură → Tipuri de scări**, fila **Formă** oferă: **Dreaptă**, **Dreaptă cu podest**, **În L** și **În U** (fiecare cu podest sau cu **trepte balansate**; o scară în U fără gol între rampe e scara „dog-leg”), **În spirală** (în jurul unui stâlp, cu **Raza stâlpului**), **Curbă** (cu **Raza interioară**) și **Bifurcată**: o rampă principală pe mijloc până la un podest, apoi două rampe care se întorc, câte una de fiecare parte. La o scară în spirală sau curbă, **Se rotește cu (°)** spune cât se întoarce; gol, hotărăsc contratreptele și treapta, iar dat, treapta rezultă din el. Fiecare scară îl poate schimba și în proprietățile ei.
 
+O **În U** întoarsă cu **trepte balansate** își alege fiecare colț: **Trepte balansate la primul colț**, **Trepte balansate la al doilea colț** și **Trepte drepte între colțuri**, treptele de pe latura scurtă dintre ele. Cu trepte între ele sau cu alt număr la fiecare colț, fiecare colț se întoarce singur, iar ochiul scării e cât acele trepte: balansate, apoi o treaptă sau două, apoi iar balansate. **Scară în U cu trepte balansate** din bibliotecă are două în fiecare colț și o treaptă dreaptă între ele. Selectată, o scară cu trepte balansate își schimbă aceleași numere din proprietăți (**Balansate, colțul 1**, **Balansate, colțul 2**, **Trepte între**; gol: ale tipului). Planul desenează fiecare contratreaptă, treptele balansate și linia de pas prin ambele colțuri; 3D-ul, cantitățile și IFC-ul urmează, câte un IfcStairFlight pentru fiecare rampă dreaptă și treptele balansate ca o rampă WINDER.
+
+![O scară în U cu două trepte balansate în fiecare colț și o treaptă dreaptă între ele](shots/stair-winder-u.webp)
+
+![U-ul cu trepte balansate în plan: balansate, treapta dintre ele, balansate, linia de pas prin ambele colțuri](shots/stair-winder-u-plan.webp)
+
+![Proprietățile unei scări cu trepte balansate: balansatele de la fiecare colț și treptele dintre ele](shots/stair-winder-u-properties.webp)
+
 Biblioteca adaugă în proiect tipuri gata făcute: scară în U fără gol, scară cu trepte balansate, scară în spirală, scară curbă, scară cu trepte în consolă și scară bifurcată.
 
 În fila **Construcție**, **Alcătuire** alege placa sub trepte, treptele pline pe teren, **Trepte libere (în consolă, „plutitoare”)** (fiecare treaptă o placă prinsă în perete) sau **Trepte pe vange**.

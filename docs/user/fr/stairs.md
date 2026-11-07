@@ -22,6 +22,14 @@ Un escalier demande à la dalle du dessus une trémie au-dessus de lui. Décoche
 
 Dans **Architecture → Types d’escaliers**, l’onglet **Forme** propose : **Droit**, **Droit avec palier**, **En L** et **En U** (chacun avec palier ou avec **marches balancées** ; un U sans jour est un escalier à retour), **Hélicoïdal** (autour d’un noyau, avec son **Rayon du noyau**), **Courbe** (avec son **Rayon intérieur**) et **Impériale (à deux volées)** : une volée centrale jusqu’à un palier, puis deux volées de retour de part et d’autre. Pour un escalier hélicoïdal ou courbe, **Tourne de (°)** règle jusqu’où il tourne ; vide, les contremarches et le giron décident, et indiqué, le giron en découle. Chaque escalier peut aussi le changer dans ses propriétés.
 
+Un **en U** qui tourne par des **marches balancées** règle chaque angle : **Marches balancées au premier angle**, **Marches balancées au second angle** et **Marches droites entre les angles**, les marches du petit côté entre eux. Avec des marches entre eux, ou un nombre différent à chaque angle, chaque angle tourne seul et le jour entre les volées est aussi large que ces marches : balancées, puis une ou deux marches, puis balancées. L’**Escalier en U balancé** de la bibliothèque en a deux à chaque angle et une marche droite entre eux. Sélectionné, un escalier balancé change les mêmes nombres dans ses propriétés (**Balancées, angle 1**, **Balancées, angle 2**, **Marches entre** ; vide : ceux du type). Le plan dessine chaque contremarche, les marches balancées et la ligne de foulée autour des deux angles ; la 3D, les quantités et l’IFC suivent, un IfcStairFlight pour chaque volée droite et les balancées comme une volée WINDER.
+
+![Un escalier en U avec deux marches balancées à chaque angle et une marche droite entre eux](shots/stair-winder-u.webp)
+
+![Le U balancé en plan : balancées, la marche entre elles, balancées, la ligne de foulée autour des deux angles](shots/stair-winder-u-plan.webp)
+
+![Les propriétés d’un escalier balancé : les balancées de chaque angle et les marches entre eux](shots/stair-winder-u-properties.webp)
+
 La bibliothèque ajoute au projet des types tout faits : escalier à retour, balancé, hélicoïdal, courbe, en console et impérial.
 
 Dans l’onglet **Construction**, **Construit en** choisit une paillasse, des marches pleines sur le sol, des **Marches en console (flottantes)** (chaque marche une plaque scellée dans le mur) ou des **Marches sur limons**.

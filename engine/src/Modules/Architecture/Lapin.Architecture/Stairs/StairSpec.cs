@@ -86,7 +86,15 @@ public sealed record StairSpec(
     /// <summary>Where a rise of its own starts: "below" the storey's level, ending at it, or at the "level", climbing from it.</summary>
     string RiseFrom = "below",
     /// <summary>A ramp's longest flight in plan, metres, before a landing; 0: no limit.</summary>
-    double MaxRun = 9.0)
+    double MaxRun = 9.0,
+    /// <summary>A U turned by winders (report #109): the winders at its second corner; null, as many as at the first (<see cref="Winders"/>).</summary>
+    int? WindersEnd = null,
+    /// <summary>
+    /// A U turned by winders (report #109): the straight treads along its short side between the two corners' winders. With
+    /// some (or a different count at each corner) each corner turns on its own, the well between the flights as wide as these
+    /// treads; 0 with the same count at both, the winders fan round the whole half turn, as before.
+    /// </summary>
+    int Between = 0)
 {
     public static readonly string[] Shapes = ["straight", "straight-landing", "l", "u", "spiral", "curved", "split"];
     /// <summary>The shapes a ramp takes: straight, straight with landings, an L, a switchback.</summary>
@@ -137,6 +145,8 @@ public sealed record StairSpec(
         // Report #45: the shapes asked for, each a type to start from.
         ["dogleg"] = () => Default("Dog-leg stair") with { Shape = "u", Gap = 0 },
         ["winder"] = () => Default("Winder stair") with { Shape = "l", Turn = "winders", Winders = 3 },
+        // Report #109: a U with two winders in each corner and a straight tread between them.
+        ["winder-u"] = () => Default("U stair with winders") with { Shape = "u", Turn = "winders", Winders = 2, WindersEnd = 2, Between = 1, Width = 0.9 },
         ["spiral"] = () => Default("Spiral stair") with
         {
             Shape = "spiral", Width = 0.8, InnerRadius = 0.12,
@@ -213,6 +223,8 @@ public sealed record StairSpec(
                 MaxRun = Math.Clamp(s.MaxRun, 0, 100),
                 Slope = Math.Clamp(s.Slope, 0.005, 0.5),
                 Winders = Math.Clamp(s.Winders, 1, 6),
+                WindersEnd = s.WindersEnd is { } we ? Math.Clamp(we, 1, 6) : null,
+                Between = Math.Clamp(s.Between, 0, 12),
                 Width = Math.Clamp(s.Width, 0.5, 5),
                 Gap = Math.Clamp(s.Gap, 0, 2),
                 LandingLength = Math.Max(0, s.LandingLength),

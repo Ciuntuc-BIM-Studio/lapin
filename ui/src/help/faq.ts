@@ -615,6 +615,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Open Doors & windows', labelRo: 'Deschide Doors & windows', run: { kind: 'tool', id: 'architecture.joineryTypes' } },
     source: 'report #112',
   },
+  {
+    id: 'winder-stair',
+    q: ['Winder step, then step and then winder', 'How do I make a U stair with winders in both corners and straight steps between?', 'Can I set how many winders each corner of the stair has?'],
+    qRo: ['Trepte balansate, apoi trepte drepte, apoi iar balansate', 'Cum fac o scară în U cu trepte balansate în ambele colțuri și trepte drepte între ele?', 'Pot alege câte trepte balansate are fiecare colț al scării?'],
+    keywords: ['winder', 'winders', 'winding', 'kite', 'corner', 'corners', 'turn', 'u', 'l', 'dogleg', 'between', 'straight', 'steps', 'step', 'balansate', 'balansata', 'colt', 'colturi', 'intoarcere', 'trepte', 'treapta', 'drepte'],
+    a: 'Architecture → Stair types, the type, Shape U shape (or L shape), Turn made as winders. For a U: Winders at the first corner, Winders at the second corner and Straight treads between the corners (one or two steps along the short side); with treads between, or a different count at each corner, each corner turns on its own and the well between the flights is as wide as those treads. The library\'s U stair with winders has two in each corner and one tread between. Selected, a winder stair changes the same counts in its properties (Winders, corner 1 and 2, Treads between), its own over the type\'s. The plan draws every riser, the winders and the walking line round both corners; the 3D, the quantities and IFC (an IfcStairFlight for each straight flight, the winders as a WINDER flight) follow.',
+    aRo: 'Architecture → Stair types, tipul, Shape U shape (sau L shape), Turn made as winders. La un U: Winders at the first corner, Winders at the second corner și Straight treads between the corners (una sau două trepte pe latura scurtă); cu trepte între ele sau cu alt număr la fiecare colț, fiecare colț se întoarce singur, iar ochiul scării e cât acele trepte. Scara U stair with winders din bibliotecă are două trepte balansate în fiecare colț și o treaptă dreaptă între ele. Selectată, o scară cu trepte balansate își schimbă aceleași numere din proprietăți (Winders, corner 1 and 2, Treads between), ale ei peste ale tipului. Planul desenează fiecare contratreaptă, treptele balansate și linia de pas prin ambele colțuri; 3D-ul, cantitățile și IFC-ul (câte un IfcStairFlight pentru fiecare rampă dreaptă, treptele balansate ca o rampă WINDER) urmează.',
+    action: { label: 'Open Stair types', labelRo: 'Deschide Stair types', run: { kind: 'tool', id: 'architecture.stairTypes' } },
+    source: 'report #109',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

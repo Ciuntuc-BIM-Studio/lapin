@@ -22,6 +22,14 @@ En trappe beder dækket ovenover om en åbning over sig selv. Fjern fluebenet ve
 
 I **Arkitektur → Trappetyper** tilbyder fanen **Form**: **Lige**, **Lige med repos**, **L-form** og **U-form** (hver med repos eller med **spiraltrin**; en U uden lysning er en trappe med vending), **Spiraltrappe** (om en spindel, med dens **Spindelradius**), **Buet** (med dens **Indre radius**) og **Delt (to arme)**: et hovedløb op ad midten til en repos, derefter to løb tilbage på hver side. For en spiral- eller buet trappe angiver **Drejer (°)**, hvor langt den drejer; tomt bestemmer stigninger og grund, og angivet følger grunden heraf. Hver trappe kan også ændre det i sine egenskaber.
 
+En **U-form** der drejer med **spiraltrin** vælger hvert hjørne: **Spiraltrin ved første hjørne**, **Spiraltrin ved andet hjørne** og **Lige trin mellem hjørnerne**, trinene langs den korte side imellem dem. Med trin imellem, eller et andet antal ved hvert hjørne, drejer hvert hjørne for sig, og trappeøjet mellem løbene er så bredt som de trin: spiraltrin, så et eller to trin, så spiraltrin. Bibliotekets **U-trappe med spiraltrin** har to i hvert hjørne og ét trin imellem. Valgt ændrer en trappe med spiraltrin de samme tal i sine egenskaber (**Spiraltrin, hjørne 1**, **Spiraltrin, hjørne 2**, **Trin imellem**; tomt: typens). Planen tegner hver stødflade, spiraltrinene og ganglinjen rundt om begge hjørner; 3D, mængderne og IFC følger med, en IfcStairFlight for hvert lige løb og spiraltrinene som ét WINDER-løb.
+
+![En U-trappe med to spiraltrin i hvert hjørne og et lige trin imellem](shots/stair-winder-u.webp)
+
+![U-trappen med spiraltrin i plan: spiraltrin, trinet imellem, spiraltrin, ganglinjen rundt om begge hjørner](shots/stair-winder-u-plan.webp)
+
+![En trappe med spiraltrins egenskaber: spiraltrinene ved hvert hjørne og trinene imellem](shots/stair-winder-u-properties.webp)
+
 Biblioteket tilføjer færdige typer til projektet: trappe med vending, trappe med spiraltrin, spiraltrappe, buet trappe, frithængende trappe og delt trappe.
 
 På fanen **Konstruktion** vælger **Bygget som** en trappeplade, massive trin på jorden, **Frithængende trin (svævende)** (hvert trin en plade fastgjort i væggen) eller **Trin på vanger**.

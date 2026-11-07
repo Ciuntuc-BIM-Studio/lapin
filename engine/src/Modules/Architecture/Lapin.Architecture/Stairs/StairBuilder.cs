@@ -29,8 +29,13 @@ public static class StairBuilder
     public static StairSpec SpecOf(IModelView m, Entity stair) =>
         (m.RelatingOf(stair.Id, IfcClass.RelDefinesByType) is { } type ? StairSpec.From(type.Attrs["spec"]) : null) ?? StairSpec.Default();
 
-    public static StairInputs InputsOf(Entity e) => new(
-        e.NumOrNull("width"), e.NumOrNull("risers") is { } n ? (int)Math.Round(n) : null, e.NumOrNull("riserHeight"), e.NumOrNull("tread"), e.NumOrNull("landing"), e.NumOrNull("sweep"));
+    public static StairInputs InputsOf(Entity e)
+    {
+        static int? Whole(double? v) => v is { } x ? (int)Math.Round(x) : null;
+        // A winding turn's corners (report #109): the winders at each and the straight treads between a U's.
+        return new(e.NumOrNull("width"), Whole(e.NumOrNull("risers")), e.NumOrNull("riserHeight"), e.NumOrNull("tread"), e.NumOrNull("landing"), e.NumOrNull("sweep"),
+            Whole(e.NumOrNull("winders")), Whole(e.NumOrNull("windersEnd")), Whole(e.NumOrNull("treadsBetween")));
+    }
 
     /// <summary>The railing's sides for an instance: its own (<c>railingSides</c>), else the type's.</summary>
     public static StairRailing RailingOf(Entity stair, StairSpec spec) =>
@@ -282,30 +287,34 @@ public static class StairBuilder
             }).Where(x => (x[1].Item1 - x[0].Item1).Length > 1e-6).ToList();
         var w = r.Width;
         var path = new List<(Vec2 P, double Surface)>();
+        // A point on the path, once (a U's corners with no tread between them meet on one riser line).
+        void Add(Vec2 p, double surface) { if (path.Count == 0 || (path[^1].P - p).Length > 1e-6) path.Add((p, surface)); }
+        // A U turning at two corners of its own (report #109) turns twice as an L does, the short side's treads between.
+        var quarter = r.Spec.Shape == "l" || (r.Spec.Shape == "u" && r.Flights.Count == 3);
         for (var i = 0; i < r.Flights.Count; i++)
         {
             var fl = r.Flights[i];
             var side = fl.Left * (sign * (w / 2 - inset));
             var run = (fl.Risers - 1) * r.Tread;
             var zTop = fl.Z0 + fl.Risers * r.RiserHeight;
-            path.Add((fl.Start + side, fl.Z0 + r.RiserHeight));
+            Add(fl.Start + side, fl.Z0 + r.RiserHeight);
             var end = fl.Start + fl.Dir * run + side;
-            path.Add((end, zTop));
-            if (i == 0 && r.Flights.Count == 2)
+            Add(end, zTop);
+            if (i + 1 < r.Flights.Count)
             {
-                var next = r.Flights[1];
+                var next = r.Flights[i + 1];
                 var start2 = next.Start + next.Left * (sign * (w / 2 - inset));
                 var zTurn = next.Z0;
                 // The turn's depth along the first flight: a landing's length, or the width when it turns in a square (winders too).
-                var depth = r.Spec.Shape == "straight-landing" || (r.Spec.Shape == "u" && r.Winders.Count == 0) ? r.LandingLength : w;
+                var depth = !quarter && (r.Spec.Shape == "straight-landing" || (r.Spec.Shape == "u" && r.Winders.Count == 0)) ? r.LandingLength : w;
                 var outer = r.Spec.Turns_ && left != place.TurnLeft;
-                if (r.Spec.Shape == "l" && outer) path.Add((end + fl.Dir * (depth - inset), (zTop + zTurn) / 2));
+                if (quarter && outer) Add(end + fl.Dir * (depth - inset), (zTop + zTurn) / 2);
                 else if (r.Spec.Shape == "u" && outer)
                 {
-                    path.Add((end + fl.Dir * (depth - inset), zTop + (zTurn - zTop) / 3));
-                    path.Add((start2 + fl.Dir * (depth - inset), zTop + (zTurn - zTop) * 2 / 3));
+                    Add(end + fl.Dir * (depth - inset), zTop + (zTurn - zTop) / 3);
+                    Add(start2 + fl.Dir * (depth - inset), zTop + (zTurn - zTop) * 2 / 3);
                 }
-                path.Add((start2, zTurn + r.RiserHeight));
+                Add(start2, zTurn + r.RiserHeight);
             }
         }
         // The handrail runs on level past the first and the last step when asked.
@@ -419,7 +428,8 @@ public static class StairBuilder
                 var u = (i - 1) * r.Tread;
                 items.Add(new PlanItem("symbol", false, [place.World(fl.Start + fl.Dir * u - l), place.World(fl.Start + fl.Dir * u + l)]));
             }
-            if (run < 1e-9) continue;
+            // A flight with no tread (a riser between two winding corners): the walking line passes over its riser.
+            if (run < 1e-9) { if (arrow.Count > 0) arrow.Add(place.World(fl.Start)); continue; }
             items.Add(new PlanItem("symbol", false, [place.World(fl.Start - l), place.World(fl.Start + fl.Dir * run - l)]));
             items.Add(new PlanItem("symbol", false, [place.World(fl.Start + l), place.World(fl.Start + fl.Dir * run + l)]));
             arrow.Add(place.World(arrow.Count == 0 ? fl.Start + fl.Dir * Math.Min(r.Tread / 2, run / 2) : fl.Start));
@@ -638,8 +648,8 @@ public static class StairMarks
         for (var f = 0; f < r.Flights.Count; f++)
         {
             var fl = r.Flights[f];
-            // Before winders the flight's last riser lands on the first winder: its number is the winder's.
-            var last = r.Winders.Count > 0 && f == 0 ? fl.Risers - 1 : fl.Risers;
+            // Before winders the flight's last riser lands on the first winder: its number is the winder's (a U's short side too, report #109).
+            var last = r.Winders.Count > 0 && f < r.Flights.Count - 1 ? fl.Risers - 1 : fl.Risers;
             for (var i = 1; i <= last; i++) o.Add((fl.Start + fl.Dir * ((i - 0.5) * r.Tread), N(fl.Z0) + i));
         }
         foreach (var wd in r.Winders) o.Add((Centroid(wd.Outline), N(wd.Z)));

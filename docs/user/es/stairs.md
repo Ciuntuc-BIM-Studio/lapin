@@ -22,6 +22,14 @@ Una escalera pide a la losa superior un hueco sobre sí misma. Desmarque **Hueco
 
 En **Arquitectura → Tipos de escalera**, la pestaña **Forma** ofrece: **Recta**, **Recta con descansillo**, **En L** y **En U** (cada una con descansillo o con **peldaños compensados**; una U sin ojo es una escalera de ida y vuelta), **De caracol** (alrededor de un mástil, con su **Radio del mástil**), **Curva** (con su **Radio interior**) e **Imperial (bifurcada)**: un tramo central hasta un descansillo y luego dos tramos de vuelta, uno a cada lado. En una escalera de caracol o curva, **Gira (°)** fija cuánto gira; vacío, deciden las tabicas y la huella, e indicado, la huella sale de él. Cada escalera también puede cambiarlo en sus propiedades.
 
+Una **en U** que gira con **peldaños compensados** elige cada esquina: **Peldaños compensados en la primera esquina**, **Peldaños compensados en la segunda esquina** y **Peldaños rectos entre las esquinas**, los peldaños del lado corto entre ellas. Con peldaños entre ellas, o un número distinto en cada esquina, cada esquina gira por su cuenta y el ojo entre los tramos es tan ancho como esos peldaños: compensados, luego uno o dos peldaños, luego compensados. La **Escalera en U compensada** de la biblioteca tiene dos en cada esquina y un peldaño recto entre ellas. Seleccionada, una escalera compensada cambia los mismos números en sus propiedades (**Compensados, esquina 1**, **Compensados, esquina 2**, **Peldaños entre**; vacío: los del tipo). La planta dibuja cada contrahuella, los peldaños compensados y la línea de huella por ambas esquinas; el 3D, las cantidades y el IFC lo siguen, un IfcStairFlight por cada tramo recto y los compensados como un tramo WINDER.
+
+![Una escalera en U con dos peldaños compensados en cada esquina y un peldaño recto entre ellas](shots/stair-winder-u.webp)
+
+![La U compensada en planta: compensados, el peldaño entre ellos, compensados, la línea de huella por ambas esquinas](shots/stair-winder-u-plan.webp)
+
+![Las propiedades de una escalera compensada: los compensados de cada esquina y los peldaños entre ellas](shots/stair-winder-u-properties.webp)
+
 La biblioteca añade al proyecto tipos ya hechos: escalera de ida y vuelta, escalera compensada, de caracol, curva, volada e imperial.
 
 En la pestaña **Construcción**, **Tipo de construcción** elige losa bajo los peldaños, peldaños macizos sobre el terreno, **Peldaños volados (flotantes)** (cada peldaño una placa empotrada en el muro) o **Peldaños sobre zancas**.

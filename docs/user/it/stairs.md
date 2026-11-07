@@ -22,6 +22,14 @@ Una scala chiede al solaio superiore un’apertura sopra di sé. Togli la spunta
 
 In **Architettura → Tipi di scala**, la scheda **Forma** offre: **Rettilinea**, **Rettilinea con pianerottolo**, **A L** e **A U** (ognuna con svolta su un pianerottolo o con **gradini a ventaglio**; una U senza pozzo è una scala a due rampe), **A chiocciola** (attorno a un palo, con il suo **Raggio del palo**), **Curva** (con il suo **Raggio interno**) e **Imperiale (biforcata)**: una rampa principale al centro fino a un pianerottolo, poi due rampe di ritorno ai due lati. Per una scala a chiocciola o curva, **Rotazione (°)** stabilisce di quanto gira; lasciata vuota, decidono le alzate e la pedata, mentre se indicata la pedata ne deriva. Ogni scala può anche modificarla nelle sue proprietà.
 
+Una **a U** che gira con **gradini a ventaglio** sceglie ogni angolo: **Gradini a ventaglio al primo angolo**, **Gradini a ventaglio al secondo angolo** e **Gradini dritti tra gli angoli**, i gradini del lato corto fra di essi. Con gradini in mezzo, o un numero diverso a ogni angolo, ogni angolo gira da sé e il pozzo tra le rampe è largo quanto quei gradini: ventaglio, poi uno o due gradini, poi ventaglio. La **Scala a U a ventaglio** della libreria ne ha due in ogni angolo e un gradino dritto in mezzo. Selezionata, una scala a ventaglio cambia gli stessi numeri nelle sue proprietà (**Ventaglio, angolo 1**, **Ventaglio, angolo 2**, **Gradini in mezzo**; vuoto: quelli del tipo). La pianta disegna ogni alzata, i gradini a ventaglio e la linea di passo attorno a entrambi gli angoli; il 3D, le quantità e l’IFC la seguono, un IfcStairFlight per ogni rampa dritta e il ventaglio come una rampa WINDER.
+
+![Una scala a U con due gradini a ventaglio in ogni angolo e un gradino dritto in mezzo](shots/stair-winder-u.webp)
+
+![La U a ventaglio in pianta: ventaglio, il gradino in mezzo, ventaglio, la linea di passo attorno a entrambi gli angoli](shots/stair-winder-u-plan.webp)
+
+![Le proprietà di una scala a ventaglio: i ventagli di ogni angolo e i gradini in mezzo](shots/stair-winder-u-properties.webp)
+
 La libreria aggiunge al progetto dei tipi pronti: una scala a due rampe, una scala con gradini a ventaglio, una scala a chiocciola, una scala curva, una scala a sbalzo e una scala imperiale.
 
 Nella scheda **Costruzione**, **Costruita come** sceglie una soletta rampante, gradini pieni sul terreno, **Gradini a sbalzo (sospesi)** (ogni gradino una lastra incastrata nel muro) o **Gradini su cosciali**.

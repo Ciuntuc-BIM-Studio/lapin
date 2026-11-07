@@ -22,6 +22,14 @@ A stair asks the floor above for an opening over itself. Untick **Opening in the
 
 In **Architecture → Stair types**, the **Shape** tab offers: **Straight**, **Straight with landing**, **L shape** and **U shape** (each turning on a landing or with **winders**; a U with no gap is a dog-leg stair), **Spiral** (round a pole, with its **Pole radius**), **Curved** (with its **Inner radius**) and **Split (bifurcated)**: a main flight up the middle to a landing, then two return flights on either side. For a spiral or curved stair, **Turns through (°)** sets how far round it goes; left empty, the risers and the tread decide, and given, the tread follows from it. Each stair can change it too in its properties.
 
+A **U shape** turned by **winders** sets each corner: **Winders at the first corner**, **Winders at the second corner** and **Straight treads between the corners**, the steps along the short side between them. With treads between, or a different count at each corner, each corner turns on its own and the well between the flights is as wide as those treads: winders, then a step or two, then winders. The library's **U stair with winders** has two in each corner and one tread between. Selected, a winder stair changes the same counts in its properties (**Winders, corner 1**, **Winders, corner 2**, **Treads between**; empty: the type's). The plan draws every riser, the winders and the walking line round both corners; the 3D, the quantities and IFC follow, an IfcStairFlight for each straight flight and the winders as one WINDER flight.
+
+![A U stair with two winders in each corner and a straight tread between them](shots/stair-winder-u.webp)
+
+![The winder U in plan: winders, the tread between, winders, the walking line round both corners](shots/stair-winder-u-plan.webp)
+
+![A winder stair's properties: the winders at each corner and the treads between](shots/stair-winder-u-properties.webp)
+
 The library adds ready-made types to the project: a dog-leg stair, a winder stair, a spiral stair, a curved stair, a cantilever stair and a split stair.
 
 On the **Construction** tab, **Built as** chooses a waist slab, solid steps on the ground, **Open treads (cantilevered, floating)** (each step a plate fixed into the wall) or **Treads on stringers**.

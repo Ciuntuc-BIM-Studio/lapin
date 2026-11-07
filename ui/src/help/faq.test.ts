@@ -105,6 +105,9 @@ describe('Ask Lapin', () => {
     // Report #112, in the tester's words.
     expect(best('Is it possible to create an arched window with no bars in between?')).toBe('arched-casement');
     expect(best('fereastra in arc fara traversa, canatul sa urmeze arcul')).toBe('arched-casement');
+    // Report #109, in the tester's words.
+    expect(best('Winder step, then step and then winder')).toBe('winder-stair');
+    expect(best('scara in U cu trepte balansate in ambele colturi')).toBe('winder-stair');
   });
 
   it('finds the most asked entries in the interface\'s other languages', () => {

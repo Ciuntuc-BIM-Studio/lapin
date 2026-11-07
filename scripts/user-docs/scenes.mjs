@@ -1920,6 +1920,30 @@ export const scenes = [
     },
   },
   {
+    // A U stair with winders at both corners and a straight tread between them (a tester's report #109).
+    id: 'stair-winder-u',
+    async run(t) {
+      await t.fresh();
+      const storey = (await t.nodes()).filter((n) => n.type === 'IfcBuildingStorey').find((n) => Math.abs(n.props.elevation ?? 0) < 1e-6) ?? (await t.nodes()).find((n) => n.type === 'IfcBuildingStorey');
+      const stair = await t.cmd('architecture.addStair', { storeyId: storey.id, library: 'winder-u', x: 0, y: 0, x2: 1, y2: 0 });
+      const check = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.stairCheck', { id }), stair.id);
+      t.expect(check.flights.length === 3 && check.winders === 4 && check.between === 1, `two winders at each corner and a tread between (${check.flights.join(' + ')} + ${check.winders} winders)`);
+      await t.tool('architecture.stairTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.type-list').getByText('U stair with winders', { exact: false }).first().click();
+      await t.wait(1500);
+      t.expect(await dialog.locator('[data-field]').count() > 0, 'the configurator shows the stair type');
+      await t.shot('stair-winder-u', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      await t.fit();
+      await select(t, stair.id);
+      await t.wait(1000);
+      t.expect(await t.page.locator('aside.props [data-field=stair-treads-between]').count() > 0, 'the stair\'s properties change the treads between its corners');
+      await t.shot('stair-winder-u-properties', { of: 'aside.props', pad: 0, maxHeight: 640 });
+      await t.shot('stair-winder-u-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     id: 'stair-shapes',
     async run(t) {
       await t.fresh();

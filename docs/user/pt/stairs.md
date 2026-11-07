@@ -22,6 +22,14 @@ Uma escada pede à laje de cima uma abertura sobre ela. Desmarque **Abertura no 
 
 Em **Arquitetura → Tipos de escada**, a guia **Forma** oferece: **Reta**, **Reta com patamar**, **Em L** e **Em U** (cada uma virando num patamar ou com **degraus em leque**; uma U sem vão entre os lances é uma escada de lances paralelos), **Caracol** (em volta de um pilar central, com o seu **Raio do pilar central**), **Curva** (com o seu **Raio interno**) e **Bifurcada**: um lance principal subindo pelo meio até um patamar, depois dois lances de retorno, um de cada lado. Para uma escada helicoidal ou curva, **Giro (°)** define quanto ela dá a volta; em branco, os espelhos e o piso decidem, e informado, o piso decorre dele. Cada escada também pode alterá-lo nas suas propriedades.
 
+Uma **em U** que vira com **degraus em leque** escolhe cada canto: **Degraus em leque no primeiro canto**, **Degraus em leque no segundo canto** e **Degraus retos entre os cantos**, os degraus do lado curto entre eles. Com degraus entre eles, ou um número diferente em cada canto, cada canto vira por si e a bomba entre os lanços é tão larga como esses degraus: leque, depois um ou dois degraus, depois leque. A **Escada em U em leque** da biblioteca tem dois em cada canto e um degrau reto entre eles. Selecionada, uma escada em leque muda os mesmos números nas suas propriedades (**Leque, canto 1**, **Leque, canto 2**, **Degraus entre**; vazio: os do tipo). A planta desenha cada espelho, os degraus em leque e a linha de piso pelos dois cantos; o 3D, as quantidades e o IFC acompanham, um IfcStairFlight por cada lanço reto e os degraus em leque como um lanço WINDER.
+
+![Uma escada em U com dois degraus em leque em cada canto e um degrau reto entre eles](shots/stair-winder-u.webp)
+
+![A U em leque em planta: leque, o degrau entre eles, leque, a linha de piso pelos dois cantos](shots/stair-winder-u-plan.webp)
+
+![As propriedades de uma escada em leque: os degraus em leque de cada canto e os degraus entre eles](shots/stair-winder-u-properties.webp)
+
 A biblioteca acrescenta tipos prontos ao projeto: uma escada de lances paralelos, uma escada com degraus em leque, uma escada helicoidal, uma escada curva, uma escada em balanço e uma escada bifurcada.
 
 Na guia **Construção**, **Construída como** escolhe uma laje inclinada, degraus maciços sobre o terreno, **Degraus em balanço (flutuantes)** (cada degrau uma placa engastada na parede) ou **Degraus sobre longarinas**.

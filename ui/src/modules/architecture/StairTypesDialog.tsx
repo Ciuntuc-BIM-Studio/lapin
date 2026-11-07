@@ -24,6 +24,8 @@ import { deleteType } from '../core/deleteType';
 interface Rules { set: string; riserMin: number; riserMax: number; riserTarget: number; treadMin: number; treadMax: number; treadTarget: number; stepMin: number; stepMax: number; minWidth: number; maxRisers: number; headroom: number; maxSlope: number; minRisers?: number }
 interface Spec {
   kind: string; name: string; shape: string; turn: string; winders: number; width: number; gap: number; landingLength: number;
+  /** A U turned by winders (report #109): the second corner's winders (null: as the first's) and the straight treads between the corners. */
+  windersEnd?: number | null; between?: number;
   rules: Rules;
   construction: { kind: string; waist: number; landingThickness: number; concrete: string; landingBeamWidth?: number | null; landingBeamDepth?: number | null };
   finish: { treadThickness: number; treadMaterial: string; nosing: number };
@@ -190,9 +192,15 @@ export function StairTypesDialog() {
                   <label className="field-line"><span className="eyebrow">Turn made as</span>
                     <select value={spec.turn} onChange={(e) => set({ turn: e.target.value })}>{defaults.turns.map((t) => <option key={t} value={t}>{t}</option>)}</select>
                   </label>
-                  {spec.turn === 'winders' && <Count label="Winders per quarter turn" min={1} max={6} value={spec.winders} onChange={(winders) => set({ winders })} />}
+                  {spec.turn === 'winders' && spec.shape === 'l' && <Count label="Winders per quarter turn" min={1} max={6} value={spec.winders} onChange={(winders) => set({ winders })} />}
+                  {spec.turn === 'winders' && spec.shape === 'u' && <>
+                    <Count label="Winders at the first corner" min={1} max={6} value={spec.winders} onChange={(winders) => set({ winders })} />
+                    <Count label="Winders at the second corner" min={1} max={6} value={spec.windersEnd ?? spec.winders} onChange={(windersEnd) => set({ windersEnd })} />
+                    <Count label="Straight treads between the corners" min={0} max={12} value={spec.between ?? 0} onChange={(between) => set({ between })} />
+                    {((spec.between ?? 0) > 0 || (spec.windersEnd ?? spec.winders) !== spec.winders) && <p className="muted small">Each corner turns on its own; the well between the flights is as wide as the straight treads.</p>}
+                  </>}
                 </>}
-                {(spec.shape === 'u' || spec.shape === 'split') && <Mm label="Gap between flights" value={spec.gap} onChange={(v) => set({ gap: Math.max(0, v) })} />}
+                {(spec.shape === 'split' || (spec.shape === 'u' && !(spec.turn === 'winders' && ((spec.between ?? 0) > 0 || (spec.windersEnd ?? spec.winders) !== spec.winders)))) && <Mm label="Gap between flights" value={spec.gap} onChange={(v) => set({ gap: Math.max(0, v) })} />}
                 <Mm label={spec.shape === 'split' ? 'Width of the main flight' : 'Width'} value={spec.width} onChange={(v) => set({ width: Math.max(0.5, v) })} />
                 {spec.shape === 'split' && <Mm label="Width of the side flights" value={spec.sideWidth ?? Math.max(spec.rules.minWidth, Math.round(spec.width * 0.6 / 0.05) * 0.05)} onChange={(v) => set({ sideWidth: Math.max(0.5, v) })} />}
                 {(spec.shape === 'spiral' || spec.shape === 'curved') && <>

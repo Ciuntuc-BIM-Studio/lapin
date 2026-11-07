@@ -23,6 +23,8 @@ export interface StairNumbers {
   opening?: string | null; topStorey?: string | null; ownRise?: number | null; fromLevel?: number; toLevel?: number;
   /** "ramp" for a ramp (its slope and its flights' lengths in place of risers), else "stair". */
   kind?: string; slope?: number;
+  /** A turn by winders (report #109): how the type turns, the winders at each corner, the straight treads between a U's corners. */
+  turn?: string; corners?: number[] | null; between?: number;
 }
 
 /** A slope as per cent: 0.06 → 6 %. */
@@ -100,7 +102,17 @@ export function StairSection({ node }: { node: NodeDto }) {
         <dd><NumberField value={num('risers')} placeholder={n ? String(n.risers) : ''} blank integer min={1} max={60} onCommit={(v) => set({ risers: v })} /> <span className="muted small">{n ? `${n.flights.join(' + ')}${n.winders ? ` + ${n.winders} winders` : ''}` : ''}</span></dd>
         <dt>Riser</dt><dd><MmInput value={num('riserHeight')} placeholder={n ? mm(n.riserHeight) : ''} onCommit={(v) => set({ riserHeight: v })} /></dd>
         <dt>Tread</dt><dd><MmInput value={num('tread')} placeholder={n ? mm(n.tread) : ''} onCommit={(v) => set({ tread: v })} /></dd>
-        {n?.sweep == null && <><dt>Landing length</dt><dd><MmInput value={num('landing')} placeholder={n ? mm(n.landing) : ''} onCommit={(v) => set({ landing: v })} /></dd></>}
+        {n?.sweep == null && !(n?.turn === 'winders' && (n.shape === 'l' || n.shape === 'u')) && <><dt>Landing length</dt><dd><MmInput value={num('landing')} placeholder={n ? mm(n.landing) : ''} onCommit={(v) => set({ landing: v })} /></dd></>}
+        {n?.turn === 'winders' && n.corners && <>
+          <dt>{n.shape === 'u' ? 'Winders, corner 1' : 'Winders'}</dt>
+          <dd><NumberField testId="stair-winders" value={num('winders')} placeholder={String(n.corners[0])} blank integer min={1} max={6} onCommit={(v) => set({ winders: v })} /></dd>
+          {n.shape === 'u' && <>
+            <dt>Winders, corner 2</dt>
+            <dd><NumberField testId="stair-winders-end" value={num('windersEnd')} placeholder={String(n.corners[1] ?? n.corners[0])} blank integer min={1} max={6} onCommit={(v) => set({ windersEnd: v })} /></dd>
+            <dt>Treads between</dt>
+            <dd><NumberField testId="stair-treads-between" value={num('treadsBetween')} placeholder={String(n.between ?? 0)} blank integer min={0} max={12} onCommit={(v) => set({ treadsBetween: v })} /></dd>
+          </>}
+        </>}
         {n?.sweep != null && <><dt>Turns through</dt>
           <dd><NumberField testId="sweep" value={num('sweep')} placeholder={String(Math.round(n.sweep))} blank min={1} suffix="°" onCommit={(v) => set({ sweep: v })} /></dd></>}
         {n && <><dt>Run in plan</dt><dd><span className="num">{fmtMm(n.run)}</span></dd></>}

@@ -411,4 +411,130 @@ public class StairTests
             Assert.True(top - bottom >= rail.Height - (turn == "winders" ? 0.1 : 1e-3), $"a post at {at} {top - bottom:0.000} high");
         }
     }
+
+    // ─── A U with winders at both corners and straight treads between (tester's report #109) ─────────
+
+    static StairSpec WinderU(int w1 = 2, int? w2 = 2, int between = 1) =>
+        StairSpec.Default("Winder U") with { Shape = "u", Turn = "winders", Winders = w1, WindersEnd = w2, Between = between, Width = 0.9 };
+
+    /// <summary>How far the walking line (the centre of the width, round the corners through the squares' middles) runs over a polygon.</summary>
+    static double GoingOn(Resolved r, IReadOnlyList<Vec2> outline)
+    {
+        var line = new List<Vec2>();
+        foreach (var fl in r.Flights) { line.Add(fl.Start); line.Add(fl.Start + fl.Dir * ((fl.Risers - 1) * r.Tread)); }
+        // Into each corner square's middle and out of it: the walking line turns a right angle there.
+        var path = new List<Vec2> { line[0] };
+        for (var i = 1; i < line.Count; i++)
+        {
+            if (i % 2 == 0)
+            {
+                path.Add(line[i - 1] + r.Flights[i / 2 - 1].Dir * (r.Width / 2));
+            }
+            path.Add(line[i]);
+        }
+        var length = 0.0;
+        const int steps = 4000;
+        for (var i = 0; i + 1 < path.Count; i++)
+        {
+            var (a, b) = (path[i], path[i + 1]);
+            for (var k = 0; k < steps; k++)
+                if (Polygon2.Contains(outline, a + (b - a) * ((k + 0.5) / steps))) length += (b - a).Length / steps;
+        }
+        return length;
+    }
+
+    [Fact]
+    public void A_U_stair_turns_with_winders_at_each_corner_and_straight_treads_between()
+    {
+        var r = StairSolver.Resolve(WinderU(), 3.0);
+        var (h, b, w) = (r.RiserHeight, r.Tread, r.Width);
+        // Three flights: up, the short side's tread, back; two winders in each corner.
+        Assert.Equal(3, r.Flights.Count);
+        Assert.Equal(4, r.Winders.Count);
+        Assert.Equal([2, 2], r.Corners);
+        Assert.Equal(1, r.Between);
+        Assert.Equal(2, r.Flights[1].Risers);
+        Assert.Equal(new Vec2(0, 1), r.Flights[1].Dir);
+        Assert.Equal(new Vec2(-1, 0), r.Flights[2].Dir);
+        // Every riser counted once: the flights' risers and the winders less the two the corners share with the flights.
+        Assert.Equal(r.Risers, r.Flights.Sum(f => f.Risers) + r.Winders.Count - 2);
+        // Each step a riser up from the one before: flight, winders, the tread between, winders, flight, to the floor above.
+        Assert.Equal(r.Flights[0].Risers * h, r.Winders[0].Z, 9);
+        Assert.Equal(r.Winders[1].Z, r.Flights[1].Z0, 9);
+        Assert.Equal(r.Flights[1].Z0 + 2 * h, r.Winders[2].Z, 9);
+        Assert.Equal(r.Winders[3].Z, r.Flights[2].Z0, 9);
+        Assert.Equal(3.0, r.Flights[2].Z0 + r.Flights[2].Risers * h, 9);
+        Assert.Equal(Enumerable.Range(r.Flights[0].Risers, 2).Concat(Enumerable.Range(r.Flights[0].Risers + 3, 2)), r.Winders.Select(x => x.Riser));
+        // Each corner a square of the width; the well between the flights as wide as the tread between the corners.
+        Assert.Equal(w * w, Math.Abs(Polygon2.SignedArea(r.Winders[0].Outline)) + Math.Abs(Polygon2.SignedArea(r.Winders[1].Outline)), 9);
+        Assert.Equal(w * w, Math.Abs(Polygon2.SignedArea(r.Winders[2].Outline)) + Math.Abs(Polygon2.SignedArea(r.Winders[3].Outline)), 9);
+        Assert.Equal(w + b, Vec2.Dot(r.Flights[2].Start - r.Flights[0].Start, new Vec2(0, 1)), 9);
+        // On the walking line each of two winders in a quarter turn goes half the width; the tread between goes a tread.
+        foreach (var wd in r.Winders) Assert.Equal(w / 2, GoingOn(r, wd.Outline), 0.005);
+        Assert.Equal(b, GoingOn(r, r.FlightOutline(r.Flights[1])), 0.005);
+        // Three IfcStairFlights' worth of straight flights; the short one belongs to the turn, not to the risers' bounds.
+        Assert.True(r.Ok, string.Join("; ", r.Checks.Where(c => !c.Ok).Select(c => $"{c.Label} {c.Value}")));
+        // The step numbers run 1 … n, one each.
+        Assert.Equal(Enumerable.Range(1, r.Risers), StairMarks.StepCentres(r).Select(x => x.Number).OrderBy(x => x));
+    }
+
+    [Fact]
+    public void A_U_stair_with_the_same_winders_at_each_corner_and_none_between_fans_round_the_half_turn_as_before()
+    {
+        var before = StairSolver.Resolve(StairSpec.Default() with { Shape = "u", Turn = "winders", Winders = 3 }, 3.0);
+        Assert.Equal(2, before.Flights.Count);
+        Assert.Equal(6, before.Winders.Count);
+        Assert.Equal(0, before.Between);
+        // A different count at each corner turns at each on its own, the corners side by side.
+        var uneven = StairSolver.Resolve(WinderU(2, 3, 0), 3.0);
+        Assert.Equal(3, uneven.Flights.Count);
+        Assert.Equal(1, uneven.Flights[1].Risers);
+        Assert.Equal(5, uneven.Winders.Count);
+        Assert.Equal(uneven.Risers, uneven.Flights.Sum(f => f.Risers) + uneven.Winders.Count - 2);
+        // The instance's own counts come before its type's.
+        var own = StairSolver.Resolve(WinderU(), 3.0, new StairInputs(Winders: 3, WindersEnd: 1, Between: 2));
+        Assert.Equal([3, 1], own.Corners);
+        Assert.Equal(2, own.Between);
+        Assert.Equal(3, own.Flights[1].Risers);
+        // An L takes its corner's count from the stair too.
+        var l = StairSolver.Resolve(StairSpec.Default() with { Shape = "l", Turn = "winders", Winders = 3 }, 3.0, new StairInputs(Winders: 2));
+        Assert.Equal(2, l.Winders.Count);
+    }
+
+    [Fact]
+    public void A_placed_winder_U_builds_its_three_flights_and_winders_is_changed_on_the_stair_and_exports_each_flight()
+    {
+        var f = TwoStoreys(out _);
+        var type = (string)f.Run("architecture.stairTypeFromLibrary", new JsonObject { ["key"] = "winder-u" })!["id"]!;
+        var id = (string)f.Run("architecture.addStair", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = type, ["x"] = 0, ["y"] = 0, ["x2"] = 1, ["y2"] = 0 })!["id"]!;
+        Assert.Equal("HALF_WINDING_STAIR", f.Model.Get(id)!.PredefinedType);
+        var g = f.Session.Geometry(id)!;
+        Assert.Equal(3, g.Parts.Count(p => p.Key!.StartsWith("flight:", StringComparison.Ordinal)));
+        Assert.Contains(g.Parts, p => p.Key == "winders");
+        Assert.Null(g.Diagnostics);
+        // The tread finish: the flights' treads, the tread between and both corners.
+        var q = f.Session.Quantities(id).Single(s => s.Name == "Lapin_StairQuantities");
+        var r = StairSolver.Resolve(StairSpec.Library["winder-u"](), 3.0);
+        var treads = r.Flights.Sum(x => (x.Risers - 1) * r.Tread * r.Width) + 2 * r.Width * r.Width;
+        Assert.Equal(treads, q.Quantities.Single(x => x.Name == "FinishArea").Value, 6);
+        // The railing's posts stand on its treads and winders, both sides.
+        foreach (var (at, bottom, _) in Posts(g).Where(p => Math.Abs(p.Bottom - 3.0) >= 1e-6))
+            Assert.True(StairTopUnder(g, at, 0.015) is { } under && Math.Abs(under - bottom) < 1e-3, $"a post at {at} off the stair");
+        // Changed on the stair: two treads between, three winders at the second corner.
+        f.Run("architecture.updateStair", new JsonObject { ["id"] = id, ["treadsBetween"] = 2, ["windersEnd"] = 3 });
+        var check = (JsonObject)f.Session.Query("architecture.stairCheck", new JsonObject { ["id"] = id })!;
+        Assert.Equal(2, (int)check["between"]!);
+        Assert.Equal(3, (int)((JsonArray)check["corners"]!)[1]!);
+        Assert.Equal(5, (int)check["winders"]!);
+        var path = Path.Combine(Path.GetTempPath(), $"lapin-winder-u-{Guid.NewGuid():N}.ifc");
+        try
+        {
+            IfcExport.Write(f.Session, path);
+            var step = StepFile.Read(path);
+            var flights = step.OfType("IFCSTAIRFLIGHT").ToList();
+            Assert.Equal(3, flights.Count(x => Equals(x[12], new StepEnum("STRAIGHT"))));
+            Assert.Single(flights, x => Equals(x[12], new StepEnum("WINDER")));
+        }
+        finally { File.Delete(path); }
+    }
 }
