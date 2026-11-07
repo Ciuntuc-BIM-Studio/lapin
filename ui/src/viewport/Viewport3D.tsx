@@ -40,6 +40,8 @@ import { AxisDrag3D } from './AxisDrag3D';
 import { FaceSketch3D } from './FaceSketch3D';
 import { Draft3D } from './Draft3D';
 import { Move3D } from './Move3D';
+import { Place3D } from './Place3D';
+import { isPointGesture } from './gesture3d';
 import { Sketch3D } from './Sketch3D';
 import { SketchGrips3D } from './SketchGrips3D';
 import { Guides3D } from './Guides3D';
@@ -546,7 +548,6 @@ export function Viewport3D() {
   /** The caps' meshes as the engine sent them, for the walker to collide with. */
   const capItems = useRef<CapItem[]>([]);
   const [capsShown, setCapsShown] = useState(0);
-  const [pending, setPending] = useState<Vec2 | null>(null);
   const toolId = useUi((s) => s.tool);
   const tool = findTool(toolId);
   // What a click does, kept current for the listeners set up once.
@@ -587,7 +588,7 @@ export function Viewport3D() {
   const storey = activeStorey();
   elevationRef.current = num(storey ?? undefined, 'elevation');
 
-  useEffect(() => { setPending(null); clearFace.current(); setFaceLabel(null); }, [toolId]);
+  useEffect(() => { clearFace.current(); setFaceLabel(null); }, [toolId]);
   faceTypes.current = tool?.gesture?.kind === 'face' ? tool.gesture.types : null;
   faceQuery.current = tool?.gesture?.kind === 'face' ? tool.gesture.query ?? 'core.faceAt' : 'core.faceAt';
 
@@ -599,16 +600,13 @@ export function Viewport3D() {
     if (g.kind === 'face' || g.kind === 'pick' || g.kind === 'pickThenPoint') {
       const node = nodeId ? useSession.getState().nodes.get(nodeId) : undefined;
       if (!node || !takesType(g.types, node.type)) { useSession.setState({ error: 'Pick an element this tool works on.' }); return; }
-      void completeTool(tool!, { points: ground ? [ground] : [], entity: node, face });
+      // The point where the face was clicked (a door at the height clicked on its wall), not where the ray meets the level behind it.
+      const at = face?.point?.length && face.point.length >= 2 ? { x: face.point[0], y: face.point[1] } : ground;
+      void completeTool(tool!, { points: at ? [at] : [], entity: node, face });
       return;
     }
-    if (!ground) return;
-    if (g.kind === 'point') { void completeTool(tool!, { points: [ground] }); return; }
-    if (g.kind === 'twoPoints' || g.kind === 'rectangle') {
-      if (!pending) { setPending(ground); return; }
-      void completeTool(tool!, { points: [pending, ground] });
-      setPending(g.kind === 'twoPoints' && g.repeat ? ground : null);
-    }
+    // Tools that take points: the 3D placement host's (Place3D.tsx, snapped).
+    if (isPointGesture(g)) return;
   };
 
   useEffect(() => {
@@ -1254,7 +1252,7 @@ export function Viewport3D() {
     window.addEventListener('keyup', onWalkKey, true);
     window.addEventListener('blur', onWalkBlur);
 
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setPending(null); if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (!(e.target as HTMLElement)?.closest('input, select, textarea')) setTool(null); } };
     renderer.domElement.addEventListener('pointerdown', onDown);
     renderer.domElement.addEventListener('pointerup', onUp);
     // A right-click that did not turn or move the view: the selection's menu (copy to storeys, move to storey).
@@ -1783,6 +1781,7 @@ export function Viewport3D() {
       {!walkStart && <FaceSketch3D camera={camRef} canvas={host} />}
       {!walkStart && <Draft3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <Move3D camera={camRef} canvas={host} scene={scene} invalidate={invalidate} />}
+      {!walkStart && <Place3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <Sketch3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <Guides3D camera={camRef} canvas={host} />}
       {!walkStart && <SketchGrips3D camera={camRef} canvas={host} scene={scene} />}

@@ -461,6 +461,15 @@ export const FAQ: Entry[] = [
     source: 'report #104',
   },
   {
+    id: 'place-3d',
+    q: ['Can I draw walls and floors in the 3D view?', 'How do I add architecture components in 3D, not only in plan?', 'Can I work fully in 3D?'],
+    qRo: ['Pot desena pereți și plăci în vederea 3D?', 'Cum adaug elemente de arhitectură în 3D, nu doar în plan?', 'Pot lucra doar în 3D?'],
+    keywords: ['3d', 'viewport', 'add', 'addable', 'editable', 'place', 'draw', 'wall', 'walls', 'floor', 'slab', 'column', 'beam', 'roof', 'component', 'components', 'fully', 'adaug', 'desenez', 'perete', 'pereti', 'placa', 'stalp', 'grinda', 'acoperis', 'componente', 'complet'],
+    a: 'Yes: with the 3D view in front, start the tool as in plan (Wall, Floor, Column, Railing, Roof…) and click its points. They go on the active level, snapped to the model (a floor\'s corner, a beam\'s end, an edge\'s middle, a DXF\'s lines), the outline drawn as you go; the red and green axes are inferred from the last point. Type a length (3000, 3000<30) or a rectangle\'s width,height and press Enter; Enter also closes a floor or ends a railing, Backspace takes a point back, Esc drops the points. A drag still turns the view. Doors and windows go where you click a wall\'s face. Move and Copy work in 3D too, snapped.',
+    aRo: 'Da: cu vederea 3D în față, pornește unealta ca în plan (Wall, Floor, Column, Railing, Roof…) și dă clic pe punctele ei. Ele merg pe nivelul activ, prinse de model (colțul unei plăci, capătul unei grinzi, mijlocul unei muchii, liniile unui DXF), cu conturul desenat pe măsură ce lucrezi; din ultimul punct se deduc axele roșie și verde. Scrie o lungime (3000, 3000<30) sau lățime,înălțime pentru un dreptunghi și apasă Enter; Enter închide și o placă sau termină o balustradă, Backspace ia un punct înapoi, Esc renunță la puncte. O tragere rotește în continuare vederea. Ușile și ferestrele se pun unde dai clic pe fața unui perete. Move și Copy merg și ele în 3D, cu prinderi.',
+    source: 'report #105',
+  },
+  {
     id: 'studio-sketch-3d',
     q: ['How do I draw lines on a face in 3D like in SketchUp?', 'Can I use the Line and Rectangle tools in the 3D view?', 'How do I draw on a work plane in 3D with the command line?'],
     qRo: ['Cum desenez linii pe o față în 3D ca în SketchUp?', 'Pot folosi Linie și Dreptunghi în vederea 3D?', 'Cum desenez pe un plan de lucru în 3D cu linia de comandă?'],

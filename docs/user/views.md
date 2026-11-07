@@ -175,6 +175,16 @@ You can also press on a selected element and drag it: it moves the same way, fro
 
 ![A stair moved in 3D by its top step's corner onto the floor's corner](shots/model-3d-move.webp)
 
+### Placing elements in 3D
+
+Every tool that takes points in a plan works in the 3D view too: walls, curtain walls, floors, roofs, ceilings, floor openings, rooms, columns, beams, footings, railings, skirtings, furniture, elevators, roads, plants and the rest. The points go on the active level: the cursor snaps to the model as a move does (a floor's corner, a beam's end, the middle of an edge, a DXF's lines) and the point is taken straight below it on the level, a dashed line showing where when it snaps above or below. The points and the outline they make are drawn on the level as you go: a wall's line, a floor's outline closing back to its first point, an arc through its third point. From the last point the red and green axes are inferred; → and ← lock them.
+
+Type a value at any time: a length goes from the last point the way the cursor points (3000, or 3000<30 with an angle), a rectangle's width,height from its first corner. Enter applies it, closes a floor or ends a railing; Backspace takes the last point back; Esc drops the points, and again ends the tool. A drag still turns the view, so you can turn round the model between two clicks. The chip at the bottom says which level the points go on.
+
+Doors and windows go where you click a wall's face in 3D, at the place along the wall you clicked.
+
+![A wall started on the floor's corner in 3D, the green axis inferred from its start](shots/model-3d-wall.webp)
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.

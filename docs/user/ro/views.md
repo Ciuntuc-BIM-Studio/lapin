@@ -175,6 +175,16 @@ Poți și să apeși pe un element selectat și să-l tragi: se mută la fel, di
 
 ![O scară mutată în 3D de colțul treptei de sus pe colțul plăcii](shots/model-3d-move.webp)
 
+### Elemente puse în 3D
+
+Orice unealtă care ia puncte în plan merge și în vederea 3D: pereți, pereți cortină, plăci, acoperișuri, tavane, goluri în placă, camere, stâlpi, grinzi, fundații, balustrade, plinte, mobilier, lifturi, drumuri, plante și celelalte. Punctele merg pe nivelul activ: cursorul se prinde de model ca la mutare (colțul unei plăci, capătul unei grinzi, mijlocul unei muchii, liniile unui DXF), iar punctul e luat drept dedesubt, pe nivel; o linie punctată arată unde, când prinderea e mai sus sau mai jos. Punctele și conturul lor se desenează pe nivel pe măsură ce lucrezi: linia unui perete, conturul unei plăci care se închide înapoi pe primul punct, un arc prin al treilea punct. Din ultimul punct se deduc axele roșie și verde; → și ← le blochează.
+
+Scrie o valoare oricând: o lungime pleacă din ultimul punct pe direcția cursorului (3000, sau 3000<30 cu un unghi), lățime,înălțime a unui dreptunghi din primul colț. Enter o aplică, închide o placă sau termină o balustradă; Backspace ia ultimul punct înapoi; Esc renunță la puncte, iar a doua oară oprește unealta. O tragere rotește în continuare vederea, deci poți să te învârți în jurul modelului între două clicuri. Cipul de jos spune pe ce nivel merg punctele.
+
+Ușile și ferestrele se pun unde dai clic pe fața unui perete în 3D, în locul de-a lungul peretelui pe care l-ai ales.
+
+![Un perete început pe colțul plăcii în 3D, cu axa verde dedusă din început](shots/model-3d-wall.webp)
+
 ## Ce arată o vedere
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.

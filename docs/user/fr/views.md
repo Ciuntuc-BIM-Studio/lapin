@@ -175,6 +175,16 @@ Vous pouvez aussi appuyer sur un élément sélectionné et le faire glisser : i
 
 ![Un escalier déplacé en 3D par le coin de sa marche haute sur le coin de la dalle](shots/model-3d-move.webp)
 
+### Poser des éléments en 3D
+
+Tout outil qui prend des points en plan fonctionne aussi dans la vue 3D : murs, murs-rideaux, dalles, toits, plafonds, trémies, pièces, poteaux, poutres, fondations, garde-corps, plinthes, mobilier, ascenseurs, routes, plantes et les autres. Les points vont sur le niveau actif : le curseur s'accroche au modèle comme pour un déplacement (le coin d'une dalle, le bout d'une poutre, le milieu d'une arête, les lignes d'un DXF) et le point est pris juste en dessous, sur le niveau ; une ligne pointillée montre où, quand l'accroche est au-dessus ou en dessous. Les points et le contour qu'ils forment sont dessinés sur le niveau au fur et à mesure : la ligne d'un mur, le contour d'une dalle qui se referme sur son premier point, un arc par son troisième point. Depuis le dernier point, les axes rouge et vert sont déduits ; → et ← les verrouillent.
+
+Tapez une valeur à tout moment : une longueur part du dernier point dans la direction du curseur (3000, ou 3000<30 avec un angle), largeur,hauteur d'un rectangle depuis son premier coin. Entrée l'applique, ferme une dalle ou termine un garde-corps ; Retour arrière retire le dernier point ; Échap abandonne les points et, la seconde fois, l'outil. Un glisser fait toujours tourner la vue, pour tourner autour du modèle entre deux clics. La puce du bas indique le niveau où vont les points.
+
+Les portes et fenêtres se posent là où vous cliquez la face d'un mur en 3D, à l'endroit cliqué le long du mur.
+
+![Un mur commencé au coin de la dalle en 3D, l'axe vert déduit depuis son début](shots/model-3d-wall.webp)
+
 ## Ce que montre une vue
 
 L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.

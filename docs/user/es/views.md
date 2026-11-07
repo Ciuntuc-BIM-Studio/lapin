@@ -171,6 +171,16 @@ También puedes pulsar sobre un elemento seleccionado y arrastrarlo: se mueve ig
 
 ![Una escalera movida en 3D por la esquina del peldaño superior hasta la esquina del forjado](shots/model-3d-move.webp)
 
+### Colocar elementos en 3D
+
+Toda herramienta que toma puntos en planta funciona también en la vista 3D: muros, muros cortina, forjados, cubiertas, techos, huecos de forjado, habitaciones, pilares, vigas, cimentaciones, barandillas, rodapiés, mobiliario, ascensores, caminos, plantas y las demás. Los puntos van al nivel activo: el cursor se ajusta al modelo como al mover (la esquina de un forjado, el extremo de una viga, el centro de una arista, las líneas de un DXF) y el punto se toma justo debajo, en el nivel; una línea discontinua muestra dónde cuando el ajuste queda por encima o por debajo. Los puntos y el contorno que forman se dibujan en el nivel mientras trabajas: la línea de un muro, el contorno de un forjado que se cierra en su primer punto, un arco por su tercer punto. Desde el último punto se infieren los ejes rojo y verde; → y ← los bloquean.
+
+Escribe un valor en cualquier momento: una longitud va desde el último punto en la dirección del cursor (3000, o 3000<30 con un ángulo), ancho,alto de un rectángulo desde su primera esquina. Intro lo aplica, cierra un forjado o termina una barandilla; Retroceso quita el último punto; Esc descarta los puntos y, la segunda vez, termina la herramienta. Arrastrar sigue girando la vista, así que puedes girar alrededor del modelo entre dos clics. La etiqueta inferior dice en qué nivel van los puntos.
+
+Las puertas y ventanas van donde haces clic en la cara de un muro en 3D, en el lugar del muro donde hiciste clic.
+
+![Un muro empezado en la esquina del forjado en 3D, con el eje verde inferido desde su inicio](shots/model-3d-wall.webp)
+
 ## Qué muestra una vista
 
 La ficha **Vista** configura qué muestra la vista que está delante y cómo se ve.

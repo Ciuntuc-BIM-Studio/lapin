@@ -62,7 +62,7 @@ The inferred kind is named beside the cursor in its colour, the guide is drawn f
 - **The engine**: `element.transform` takes `up` (m), the move's vertical part. What has a height of its own goes up or down by it: a wall's, column's or furniture's base offset, a stair's base and top offsets, a beam's top offset, a floor's top offset, a roof's wall plate, an object's height above the floor (`IElementRise` for a module's own: Studio solids take a move step, `op: move`). What has none keeps its height and is named in the answer (`kept`), and the interface says so. A door or a window slides in its wall as before.
 - **Studio's Move 3D** stays (moving along one axis by arrows); SketchUp's M starts the new move.
 
-### Stage B: the placing tools in 3D
+### Stage B: the placing tools in 3D (#105; done, 07.11.2026, decision 384)
 
 A **3D placement host** (`Place3D.tsx`, the gestures' logic in `gesture3d.ts`, shared rules with the plan's): while a tool with a gesture of points is on in the 3D view,
 

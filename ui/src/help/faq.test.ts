@@ -29,6 +29,9 @@ describe('Ask Lapin', () => {
     // Report #104, in the tester's words.
     expect(best('Moving 3D object and make it snap to the area desired: move the object smoothly on the desired area')).toBe('move-3d');
     expect(best('cum mut o scara in 3D pe coltul placii')).toBe('move-3d');
+    // Report #105, in the tester's words.
+    expect(best('Make the architecture components addable and editable in the 3D viewport. Sometimes the user may have to work fully in 3D, not just in plan.')).toBe('place-3d');
+    expect(best('cum desenez pereti in 3D')).toBe('place-3d');
     expect(best('Include Bay, Bow and Box windows for better window design customization. Make every component customizable.')).toBe('bay-windows');
     expect(best('various sunshade design types, with customizable shapes, dimensions, materials and projection lengths, to improve façade aesthetics, control sunlight, and energy efficiency')).toBe('sunshades');
   });

@@ -175,6 +175,16 @@ Możesz też nacisnąć zaznaczony element i go przeciągnąć: przesuwa się ta
 
 ![Schody przesunięte w 3D narożnikiem najwyższego stopnia na narożnik stropu](shots/model-3d-move.webp)
 
+### Umieszczanie elementów w 3D
+
+Każde narzędzie, które w rzucie przyjmuje punkty, działa też w widoku 3D: ściany, ściany osłonowe, stropy, dachy, sufity, otwory w stropie, pomieszczenia, słupy, belki, fundamenty, balustrady, listwy przypodłogowe, meble, windy, drogi, rośliny i pozostałe. Punkty trafiają na aktywny poziom: kursor przyciąga się do modelu jak przy przesuwaniu (narożnik stropu, koniec belki, środek krawędzi, linie DXF), a punkt brany jest dokładnie pod nim, na poziomie; przerywana linia pokazuje gdzie, gdy przyciągnięcie jest wyżej lub niżej. Punkty i kontur, który tworzą, rysują się na poziomie na bieżąco: linia ściany, kontur stropu zamykający się na pierwszym punkcie, łuk przez trzeci punkt. Od ostatniego punktu rozpoznawane są osie czerwona i zielona; → i ← je blokują.
+
+Wpisz wartość w dowolnej chwili: długość idzie od ostatniego punktu w kierunku kursora (3000 lub 3000<30 z kątem), szerokość,wysokość prostokąta od jego pierwszego narożnika. Enter ją stosuje, zamyka strop lub kończy balustradę; Backspace cofa ostatni punkt; Esc porzuca punkty, a za drugim razem kończy narzędzie. Przeciąganie nadal obraca widok, więc między dwoma kliknięciami można obrócić model. Etykieta na dole mówi, na jaki poziom idą punkty.
+
+Drzwi i okna trafiają tam, gdzie klikniesz ścianę ściany w 3D, w klikniętym miejscu wzdłuż ściany.
+
+![Ściana zaczęta w 3D na narożniku stropu, z osią zieloną rozpoznaną od początku](shots/model-3d-wall.webp)
+
 ## Co pokazuje widok
 
 Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.

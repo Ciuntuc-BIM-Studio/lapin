@@ -175,6 +175,16 @@ Sie können auch auf ein ausgewähltes Element drücken und es ziehen: Es wird e
 
 ![Eine Treppe in 3D an der Ecke der obersten Stufe auf die Ecke der Decke verschoben](shots/model-3d-move.webp)
 
+### Elemente in 3D platzieren
+
+Jedes Werkzeug, das im Grundriss Punkte nimmt, funktioniert auch in der 3D-Ansicht: Wände, Vorhangfassaden, Decken, Dächer, abgehängte Decken, Deckenöffnungen, Räume, Stützen, Träger, Fundamente, Geländer, Sockelleisten, Möbel, Aufzüge, Straßen, Pflanzen und die übrigen. Die Punkte liegen auf der aktiven Ebene: Der Cursor rastet am Modell ein wie beim Verschieben (Ecke einer Decke, Ende eines Trägers, Mitte einer Kante, Linien einer DXF), und der Punkt wird senkrecht darunter auf der Ebene genommen; eine gestrichelte Linie zeigt wo, wenn der Fang darüber oder darunter liegt. Die Punkte und ihr Umriss werden beim Zeichnen auf der Ebene dargestellt: die Linie einer Wand, der Umriss einer Decke, der sich zum ersten Punkt schließt, ein Bogen durch seinen dritten Punkt. Vom letzten Punkt aus werden die rote und grüne Achse erkannt; → und ← sperren sie.
+
+Geben Sie jederzeit einen Wert ein: Eine Länge geht vom letzten Punkt in Richtung des Cursors (3000, oder 3000<30 mit Winkel), Breite,Höhe eines Rechtecks von seiner ersten Ecke. Enter wendet sie an, schließt eine Decke oder beendet ein Geländer; die Rücktaste nimmt den letzten Punkt zurück; Esc verwirft die Punkte und beendet beim zweiten Mal das Werkzeug. Ziehen dreht weiterhin die Ansicht, sodass Sie zwischen zwei Klicks um das Modell drehen können. Der Chip unten zeigt, auf welche Ebene die Punkte gehen.
+
+Türen und Fenster kommen dorthin, wo Sie in 3D auf die Fläche einer Wand klicken, an die angeklickte Stelle entlang der Wand.
+
+![Eine Wand in 3D an der Ecke der Decke begonnen, die grüne Achse vom Anfang erkannt](shots/model-3d-wall.webp)
+
 ## Was eine Ansicht zeigt
 
 Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt und wie sie aussieht.

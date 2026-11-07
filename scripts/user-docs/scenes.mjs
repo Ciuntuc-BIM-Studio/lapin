@@ -5288,6 +5288,38 @@ export const scenes = [
       await t.wait(1200);
       const b2 = await box();
       t.expect(Math.hypot(b2.min.x - b1.min.x, b2.min.y - b1.min.y) > 0.3, 'let go, the stair stays where it was dragged');
+
+      // Stage B (report #105): a wall drawn in 3D from the floor's corner, along the green axis, its length typed; a door clicked on its face.
+      await t.ui({ selection: null, selected: [] });
+      const length = (m) => page.evaluate(async (m) => (await import('/src/engine/unitsStore.ts')).formatLength(m), m);
+      await t.tool('architecture.wall');
+      t.expect(await page.locator('[data-place3d=chip]').count() === 1, 'the wall tool works in 3D');
+      await look({ x: 1.5, y: 1.5, z: 0.5 }, -Math.PI * 0.7, -0.6, 10);
+      const c0 = await screen({ x: 0, y: 0, z: 0 });
+      await page.mouse.move(c0.x + 3, c0.y - 2, { steps: 6 });
+      await t.wait(500);
+      t.expect((await page.locator('[data-place3d=inference]').innerText()) === 'Endpoint', 'the wall starts on the floor\'s corner');
+      await page.mouse.click(c0.x + 3, c0.y - 2);
+      await t.wait(300);
+      const c1 = await screen({ x: 0, y: 2.6, z: 0 });
+      await page.mouse.move(c1.x, c1.y, { steps: 10 });
+      await t.wait(500);
+      t.expect((await page.locator('[data-place3d=inference]').innerText()) === 'On green axis', 'from its start the cursor infers the green axis');
+      await t.shot('model-3d-wall', { of: '[data-testid=view3d]', pad: 0 });
+      await page.evaluate(() => document.activeElement?.blur?.());
+      await page.keyboard.type(await length(3));
+      await page.keyboard.press('Enter');
+      await t.wait(1200);
+      await t.keys('Escape', 'Escape');
+      const wall = (await t.nodes()).find((n) => n.type === 'IfcWall');
+      t.expect(!!wall && Math.hypot(wall.props.start[0], wall.props.start[1]) < 0.01 && Math.abs(wall.props.end[1] - 3) < 0.01 && Math.abs(wall.props.end[0]) < 0.01, `the wall runs 3 m from the corner (${JSON.stringify(wall?.props.start)} → ${JSON.stringify(wall?.props.end)})`);
+      await t.tool('architecture.door');
+      const d = await screen({ x: 0, y: 1.5, z: 1.4 });
+      await page.mouse.move(d.x, d.y, { steps: 4 });
+      await page.mouse.click(d.x, d.y);
+      await t.wait(1500);
+      t.expect((await t.nodes()).some((n) => n.type === 'IfcDoor'), 'a door clicked on the wall\'s face in 3D goes into it');
+      await t.keys('Escape');
     },
   },
   {

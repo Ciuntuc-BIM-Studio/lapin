@@ -175,6 +175,16 @@ Du kan også trykke på et markeret element og trække det: det flyttes på samm
 
 ![En trappe flyttet i 3D ved det øverste trins hjørne hen på dækkets hjørne](shots/model-3d-move.webp)
 
+### Placering af elementer i 3D
+
+Alle værktøjer, der tager punkter i en plan, virker også i 3D-visningen: vægge, glasfacader, dæk, tage, lofter, dækhuller, rum, søjler, bjælker, fundamenter, rækværker, fodlister, møbler, elevatorer, veje, planter og resten. Punkterne lægges på den aktive etage: markøren fanger modellen som ved en flytning (et dæks hjørne, en bjælkes ende, midten af en kant, linjerne i en DXF), og punktet tages lodret under den på etagen; en stiplet linje viser hvor, når fangningen ligger over eller under. Punkterne og omridset, de danner, tegnes på etagen undervejs: en vægs linje, et dæks omrids, der lukker tilbage til første punkt, en bue gennem sit tredje punkt. Fra det sidste punkt udledes den røde og grønne akse; → og ← låser dem.
+
+Skriv en værdi når som helst: en længde går fra det sidste punkt i markørens retning (3000, eller 3000<30 med en vinkel), et rektangels bredde,højde fra dets første hjørne. Enter anvender den, lukker et dæk eller afslutter et rækværk; Backspace tager det sidste punkt tilbage; Esc kasserer punkterne og afslutter værktøjet anden gang. Et træk drejer stadig visningen, så du kan dreje rundt om modellen mellem to klik. Chippen nederst siger, hvilken etage punkterne lægges på.
+
+Døre og vinduer placeres, hvor du klikker på en vægs flade i 3D, på det sted langs væggen, du klikkede.
+
+![En væg startet på dækkets hjørne i 3D, den grønne akse udledt fra starten](shots/model-3d-wall.webp)
+
 ## Hvad en visning viser
 
 Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.

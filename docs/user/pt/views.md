@@ -175,6 +175,16 @@ Também pode premir um elemento selecionado e arrastá-lo: move-se da mesma form
 
 ![Uma escada movida em 3D pelo canto do degrau de cima até ao canto da laje](shots/model-3d-move.webp)
 
+### Colocar elementos em 3D
+
+Todas as ferramentas que tomam pontos em planta funcionam também na vista 3D: paredes, fachadas-cortina, lajes, telhados, tetos, aberturas na laje, compartimentos, pilares, vigas, fundações, guardas, rodapés, mobiliário, elevadores, estradas, plantas e as restantes. Os pontos vão para o nível ativo: o cursor ajusta-se ao modelo como ao mover (o canto de uma laje, a ponta de uma viga, o meio de uma aresta, as linhas de um DXF) e o ponto é tomado mesmo por baixo, no nível; uma linha tracejada mostra onde, quando o ajuste fica acima ou abaixo. Os pontos e o contorno que formam desenham-se no nível à medida: a linha de uma parede, o contorno de uma laje que fecha no primeiro ponto, um arco pelo terceiro ponto. A partir do último ponto inferem-se os eixos vermelho e verde; → e ← travam-nos.
+
+Digite um valor a qualquer momento: um comprimento parte do último ponto na direção do cursor (3000, ou 3000<30 com um ângulo), largura,altura de um retângulo a partir do primeiro canto. Enter aplica, fecha uma laje ou termina uma guarda; Backspace retira o último ponto; Esc descarta os pontos e, na segunda vez, a ferramenta. Arrastar continua a rodar a vista, para girar à volta do modelo entre dois cliques. A etiqueta em baixo diz em que nível vão os pontos.
+
+Portas e janelas ficam onde clica na face de uma parede em 3D, no sítio da parede onde clicou.
+
+![Uma parede começada no canto da laje em 3D, com o eixo verde inferido desde o início](shots/model-3d-wall.webp)
+
 ## O que uma vista mostra
 
 A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua aparência.

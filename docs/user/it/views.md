@@ -175,6 +175,16 @@ Puoi anche premere su un elemento selezionato e trascinarlo: si sposta allo stes
 
 ![Una scala spostata in 3D dallo spigolo del gradino più alto sullo spigolo del solaio](shots/model-3d-move.webp)
 
+### Posare elementi in 3D
+
+Ogni strumento che prende punti in pianta funziona anche nella vista 3D: muri, facciate continue, solai, tetti, controsoffitti, fori nel solaio, locali, pilastri, travi, fondazioni, parapetti, battiscopa, arredi, ascensori, strade, piante e gli altri. I punti vanno sul livello attivo: il cursore si aggancia al modello come nello spostamento (lo spigolo di un solaio, l'estremo di una trave, il centro di un bordo, le linee di un DXF) e il punto è preso subito sotto, sul livello; una linea tratteggiata mostra dove, quando l'aggancio è sopra o sotto. I punti e il contorno che formano sono disegnati sul livello man mano: la linea di un muro, il contorno di un solaio che si chiude sul primo punto, un arco per il suo terzo punto. Dall'ultimo punto si deducono gli assi rosso e verde; → e ← li bloccano.
+
+Scrivi un valore in qualsiasi momento: una lunghezza parte dall'ultimo punto nella direzione del cursore (3000, o 3000<30 con un angolo), larghezza,altezza di un rettangolo dal primo angolo. Invio lo applica, chiude un solaio o termina un parapetto; Backspace toglie l'ultimo punto; Esc scarta i punti e, la seconda volta, lo strumento. Un trascinamento continua a ruotare la vista, così puoi girare attorno al modello tra due clic. Il chip in basso dice su quale livello vanno i punti.
+
+Porte e finestre vanno dove fai clic sulla faccia di un muro in 3D, nel punto del muro dove hai fatto clic.
+
+![Un muro iniziato sullo spigolo del solaio in 3D, con l'asse verde dedotto dal suo inizio](shots/model-3d-wall.webp)
+
 ## Che cosa mostra una vista
 
 La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appare.
