@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // A view style's graphics set (decision 391)
+  "Graphics set": "ຊຸດກຣາຟິກ", "The Visibility / Graphics set its views take when they have none of their own, as a view template": "ຊຸດການເບິ່ງເຫັນ / ກຣາຟິກ ທີ່ມຸມມອງຂອງມັນໃຊ້ເມື່ອບໍ່ມີຂອງຕົນເອງ, ຄືແມ່ແບບມຸມມອງ",
+  // Visibility / Graphics as in Revit: subcategories, links per view (decision 391)
+  "Coverings": "ວັດສະດຸປົກຫຸ້ມ", "Rebar": "ເຫຼັກເສີມ", "Steel connections": "ຂໍ້ຕໍ່ເຫຼັກ", "Shading": "ອຸປະກອນບັງແດດ", "Membranes": "ແຜ່ນກັນຊຶມ", "Other layers": "ຊັ້ນອື່ນ", "Reveals": "ຂອບຊ່ອງເປີດ", "Subcategories": "ໝວດຍ່ອຍ", "Make them this view's own": "ເຮັດໃຫ້ເປັນຂອງມຸມມອງນີ້", "Graphics of this view's own, starting from the style's set": "ກຣາຟິກຂອງມຸມມອງນີ້ເອງ, ເລີ່ມຈາກຊຸດຂອງຮູບແບບ", "the style's set": "ຊຸດຂອງຮູບແບບ", "Display": "ການສະແດງ", "By host view": "ຕາມມຸມມອງຫຼັກ", "Categories…": "ໝວດໝູ່…", "The project has no links: File → Link IFC…, or Import DXF… as a link.": "ໂຄງການບໍ່ມີລິ້ງ: ໄຟລ໌ → ລິ້ງ IFC…, ຫຼື ນຳເຂົ້າ DXF… ເປັນລິ້ງ.", "By host view, a link takes this view's categories and classes. Custom gives it its own here: hide the rebar of a structural link, or the finishes of an architectural one, in this view alone.": "ຕາມມຸມມອງຫຼັກ, ລິ້ງໃຊ້ໝວດໝູ່ ແລະ ຄລາສຂອງມຸມມອງນີ້. ກຳນົດເອງ ໃຫ້ມັນມີຂອງຕົນເອງຢູ່ນີ້: ເຊື່ອງເຫຼັກເສີມຂອງລິ້ງໂຄງສ້າງ, ຫຼື ວັດສະດຸຕົບແຕ່ງຂອງລິ້ງສະຖາປັດຕະຍະກຳ, ສະເພາະໃນມຸມມອງນີ້.", "· its categories in this view": "· ໝວດໝູ່ຂອງມັນໃນມຸມມອງນີ້", "· its IFC classes": "· ຄລາສ IFC ຂອງມັນ", "· hidden everywhere (Manage → Links)": "· ເຊື່ອງທຸກບ່ອນ (ຈັດການ → ລິ້ງ)", "Halftone everywhere (Manage → Links)": "ສີອ່ອນທຸກບ່ອນ (ຈັດການ → ລິ້ງ)",
   // Interface modes, folding panels, keyboard shortcuts, the command palette
   'Interface': 'ສ່ວນຕິດຕໍ່ຜູ້ໃຊ້', 'Interface…': 'ສ່ວນຕິດຕໍ່ຜູ້ໃຊ້…', 'Comfortable': 'ສະບາຍຕາ', 'Compact': 'ກະທັດຮັດ', 'Focus': 'ໂຟກັສ', 'Custom: the parts below as you set them.': 'ກຳນົດເອງ: ສ່ວນຕ່າງໆ ດ້ານລຸ່ມຕາມທີ່ທ່ານຕັ້ງໄວ້.',
   'The ribbon with names, a command line under each drawing, the HUD over the view.': 'ແຖບເຄື່ອງມືພ້ອມຊື່, ແຖວຄຳສັ່ງກ້ອງແຕ່ລະຮູບແຕ້ມ, HUD ເທິງມຸມມອງ.',

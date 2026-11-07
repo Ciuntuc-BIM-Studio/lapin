@@ -315,11 +315,11 @@ public static class RampMarks
         var m = c.Model;
         var storeyId = c.View.Str("storeyId");
         var hidden = (c.View.Attrs["hiddenElements"] as System.Text.Json.Nodes.JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
-        var graphics = GraphicsSets.Of(m, c.View);
+        var graphics = VisibilityGraphics.Of(m, c.View);
         var style = Standards.TextOf(c.Book, Standards.DefaultRoomTag.TextStyle);
         foreach (var ramp in m.OfClass(IfcClass.Ramp))
         {
-            if (hidden.Contains(ramp.Id) || GraphicsSets.Hides(graphics, ramp) || Spatial.StoreyOf(m, ramp.Id)?.Id != storeyId) continue;
+            if (hidden.Contains(ramp.Id) || graphics.Hides(ramp) || Spatial.StoreyOf(m, ramp.Id)?.Id != storeyId) continue;
             if (RampBuilder.Resolve(m, ramp) is not var (r, place, _)) continue;
             var mark = new ViewMark(ramp.Id);
             var color = style.Color ?? "#000000";

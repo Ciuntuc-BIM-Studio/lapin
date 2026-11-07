@@ -56,14 +56,21 @@ public static class ViewStyles
         n == null || (string?)n is "" or "none" ? null : FillOf(n) ?? throw new CommandException("A fill is a colour (#rrggbb) or none.");
 
     /// <summary>A style, or a view's settings as its style and its own choices make them.</summary>
-    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null)
+    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null)
     {
-        public JsonObject ToJson() => new()
+        public JsonObject ToJson() => WithSet(new()
         {
             ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead, ["ifc2d"] = Ifc2d,
             ["voids"] = Voids, ["voidSizes"] = VoidSizes, ["finishHatch"] = FinishHatch, ["surfaceHatch"] = SurfaceHatch,
             ["entourage"] = Entourage, ["entourageFill"] = EntourageFill,
-        };
+        });
+
+        /// <summary>The graphics set its views take when they have none of their own (decision 391), written only when it names one.</summary>
+        JsonObject WithSet(JsonObject o)
+        {
+            if (GraphicsSet != null) o["graphicsSet"] = GraphicsSet;
+            return o;
+        }
 
         public static Style From(JsonObject o) => new(
             (string?)o["id"] ?? "", (string?)o["name"] ?? "Style", (string?)o["discipline"],
@@ -79,7 +86,8 @@ public static class ViewStyles
             o["surfaceHatch"] is JsonValue shv && shv.TryGetValue<bool>(out var sh) ? sh : ArchitecturalByDefault(o),
             // A style saved before decision 341 draws the entourage as outlines too: the new simple look.
             (string?)o["entourage"] is { } en && EntourageModes.Contains(en) ? en : "outline",
-            FillOf(o["entourageFill"]));
+            FillOf(o["entourageFill"]),
+            (string?)o["graphicsSet"] is { Length: > 0 } gs ? gs : null);
 
         /// <summary>Whether a style saved without a newer field takes it on: unless it is a structural, MEP or coordination one.</summary>
         static bool ArchitecturalByDefault(JsonObject o) =>
@@ -200,7 +208,15 @@ public static class ViewStyles
         if (a["surfaceHatch"] is JsonValue shv && shv.TryGetValue<bool>(out var sh)) s = s with { SurfaceHatch = sh };
         if (a.ContainsKey("entourage")) s = s with { Entourage = EntourageMode(a["entourage"]) };
         if (a.ContainsKey("entourageFill")) s = s with { EntourageFill = CheckedFill(a["entourageFill"]) };
+        if (a.ContainsKey("graphicsSet")) s = s with { GraphicsSet = (string?)a["graphicsSet"] is { Length: > 0 } gs ? gs : null };
         return s;
+    }
+
+    /// <summary>A graphics set removed: the styles that named it name none.</summary>
+    internal static void ForgetSet(ICommandContext ctx, string setId)
+    {
+        var all = All(ctx.Model).ToList();
+        if (all.Any(s => s.GraphicsSet == setId)) Save(ctx, all.Select(s => s.GraphicsSet == setId ? s with { GraphicsSet = null } : s));
     }
 
     public static void Register(IModuleRegistry r)

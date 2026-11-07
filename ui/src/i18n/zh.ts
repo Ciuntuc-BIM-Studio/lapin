@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // A view style's graphics set (decision 391)
+  "Graphics set": "图形集", "The Visibility / Graphics set its views take when they have none of their own, as a view template": "其视图在没有自己的设置时采用的可见性 / 图形集，相当于视图样板",
+  // Visibility / Graphics as in Revit: subcategories, links per view (decision 391)
+  "Coverings": "饰面", "Rebar": "钢筋", "Steel connections": "钢结构节点", "Shading": "遮阳", "Membranes": "防水膜", "Other layers": "其他层", "Reveals": "洞口侧面", "Subcategories": "子类别", "Make them this view's own": "设为此视图自有", "Graphics of this view's own, starting from the style's set": "此视图自有的图形，从样式的集合开始", "the style's set": "样式的集合", "Display": "显示", "By host view": "按主体视图", "Categories…": "类别…", "The project has no links: File → Link IFC…, or Import DXF… as a link.": "项目没有链接：文件 → 链接 IFC…，或将 DXF 导入…为链接。", "By host view, a link takes this view's categories and classes. Custom gives it its own here: hide the rebar of a structural link, or the finishes of an architectural one, in this view alone.": "按主体视图时，链接采用此视图的类别和类。自定义则在此给它自己的设置：仅在此视图中隐藏结构链接的钢筋，或建筑链接的饰面。", "· its categories in this view": "· 其在此视图中的类别", "· its IFC classes": "· 其 IFC 类", "· hidden everywhere (Manage → Links)": "· 处处隐藏（管理 → 链接）", "Halftone everywhere (Manage → Links)": "处处半色调（管理 → 链接）",
   // Interface modes, folding panels, keyboard shortcuts, the command palette
   'Interface': '界面', 'Interface…': '界面…', 'Comfortable': '舒适', 'Compact': '紧凑', 'Focus': '专注', 'Custom: the parts below as you set them.': '自定义：下列各部分按您的设置显示。',
   'The ribbon with names, a command line under each drawing, the HUD over the view.': '带名称的功能区，每个绘图下方有命令行，视图上方有 HUD。',

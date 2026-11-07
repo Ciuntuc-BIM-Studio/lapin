@@ -84,7 +84,7 @@ An imported DXF is part of the project: **File → Save** keeps it in the `.lapi
 
 ## Links
 
-**Link IFC…** keeps another file linked instead of importing it. It is read-only and reloaded when it changes. This works for a DXF too. **Manage → Links** shows, reloads, converts or removes the links. A linked DXF lies in 3D as an imported one does; its **3D** box in **Manage → Links** turns that off.
+**Link IFC…** keeps another file linked instead of importing it. It is read-only and reloaded when it changes. This works for a DXF too. **Manage → Links** shows, reloads, converts or removes the links. A linked DXF lies in 3D as an imported one does; its **3D** box in **Manage → Links** turns that off. **Visibility / Graphics** (<kbd>VV</kbd>) hides a link, halftones it or gives it its own categories in one view alone (*Sections, elevations and 3D*, Visibility / Graphics).
 
 ## 3D models
 

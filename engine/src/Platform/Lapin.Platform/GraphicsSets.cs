@@ -18,12 +18,19 @@ public static class GraphicsSets
 
     static JsonArray Sets(Entity? project) => project?.Attrs["graphicsSets"] as JsonArray ?? [];
 
-    /// <summary>What a view's graphics are: its set's, else its own.</summary>
-    public static JsonObject? Of(IModelView m, Entity view)
+    static JsonObject? FindSet(IModelView m, string? setId) =>
+        setId == null ? null : Sets(Spatial.Project(m)).OfType<JsonObject>().FirstOrDefault(s => (string?)s["id"] == setId);
+
+    /// <summary>What a view's graphics are: its set's, else its own, else its view style's set (decision 391: the style as Revit's view template).</summary>
+    public static JsonObject? Of(IModelView m, Entity view) =>
+        EffectiveSet(m, view) is { } setId && FindSet(m, setId) is { } set ? set["graphics"] as JsonObject : view.Attrs["graphics"] as JsonObject;
+
+    /// <summary>The set a view's graphics come from: the one it takes, else, with no graphics of its own, its style's; null: its own.</summary>
+    public static string? EffectiveSet(IModelView m, Entity view)
     {
-        if (view.Str("graphicsSet") is { } setId && Sets(Spatial.Project(m)).OfType<JsonObject>().FirstOrDefault(s => (string?)s["id"] == setId) is { } set)
-            return set["graphics"] as JsonObject;
-        return view.Attrs["graphics"] as JsonObject;
+        if (view.Str("graphicsSet") is { } setId && FindSet(m, setId) != null) return setId;
+        if (view.Attrs["graphics"] is JsonObject) return null;
+        return ViewStyles.StyleOf(m, view).GraphicsSet is { } styleSet && FindSet(m, styleSet) != null ? styleSet : null;
     }
 
     /// <summary>The 3D view's own settings (its set, its graphics).</summary>
@@ -88,30 +95,80 @@ public static class GraphicsSets
     {
         // One row of a view's graphics: a category, an IFC class or an element ({hidden, lineColor, lineWeight, fillColor, cutHatch}; null clears it).
         // A view that takes a set changes the set, for all its views.
+        // A category's subcategory (sub: core, finishes…) is a row of its own under the category's (its sub). A link's row
+        // (link alone: {display: host | custom, hidden, halftone}) is in links; with a category, a subcategory or a class too,
+        // the row is the link's own, which rules its elements when the link is displayed custom (decision 391).
+        // A view that takes a set, or none and its style's, changes the set, for all its views.
         r.Command("view.graphics", "View graphics", (ctx, a) =>
         {
             var (v, write) = Target(ctx, (string?)a["id"]);
-            var setId = v.Str("graphicsSet");
+            var setId = EffectiveSet(ctx.Model, v);
             var sets = Sets(Spatial.Project(ctx.Model)).DeepClone().AsArray();
             var set = setId == null ? null : sets.OfType<JsonObject>().FirstOrDefault(s => (string?)s["id"] == setId);
             var g = (set?["graphics"] ?? v.Attrs["graphics"]) is JsonObject cur ? (JsonObject)cur.DeepClone() : new JsonObject();
-            void Set(string bucket, string? key)
+            var value = a["value"] as JsonObject;
+            // Where the rows go: the view's graphics, or a link's row in them.
+            var linkId = (string?)a["link"];
+            if (linkId != null && ctx.Model.Get(linkId) is not { Class: Links.Class }) throw new CommandException("There is no such link.");
+            var links = g["links"]?.DeepClone() as JsonObject ?? new JsonObject();
+            var into = linkId == null ? g : links[linkId]?.DeepClone() as JsonObject ?? new JsonObject();
+            static void Put(JsonObject o, string key, JsonObject? val)
             {
-                if (key == null) return;
-                var b = g[bucket] as JsonObject ?? new JsonObject();
-                if (a["value"] is JsonObject val) b[key] = val.DeepClone(); else b.Remove(key);
-                if (b.Count > 0) g[bucket] = b; else g.Remove(bucket);
+                if (val != null) o[key] = val.DeepClone(); else o.Remove(key);
             }
-            if ((string?)a["category"] is { } cat)
+            static void SetIn(JsonObject o, string bucket, string key, JsonObject? val)
+            {
+                var b = o[bucket] as JsonObject ?? new JsonObject();
+                Put(b, key, val);
+                if (b.Count > 0) o[bucket] = b; else o.Remove(bucket);
+            }
+            var cat = (string?)a["category"];
+            var cls = (string?)a["class"];
+            if (cat != null)
             {
                 if (!LineStyles.Categories.Contains(cat)) throw new CommandException($"„{cat}” is not a category.");
-                Set("categories", cat);
+                if ((string?)a["sub"] is { } sub)
+                {
+                    if (!VisibilityGraphics.Subcategories.Contains(sub)) throw new CommandException($"„{sub}” is not a subcategory.");
+                    var cats = into["categories"] as JsonObject ?? new JsonObject();
+                    var row = cats[cat] as JsonObject ?? new JsonObject();
+                    SetIn(row, "sub", sub, value);
+                    Put(cats, cat, row.Count > 0 ? row : null);
+                    if (cats.Count > 0) into["categories"] = cats; else into.Remove("categories");
+                }
+                else
+                {
+                    // The category's own row keeps its subcategories.
+                    var keep = into["categories"]?[cat]?["sub"]?.DeepClone();
+                    var row = value?.DeepClone() as JsonObject;
+                    if (keep != null) { row ??= new JsonObject(); row["sub"] = keep; }
+                    SetIn(into, "categories", cat, row);
+                }
             }
-            if ((string?)a["class"] is { } cls) Set("classes", cls);
-            Set("elements", (string?)a["element"]);
+            if (cls != null) SetIn(into, "classes", cls, value);
+            if (linkId == null) { if ((string?)a["element"] is { } el) SetIn(g, "elements", el, value); }
+            else
+            {
+                if (cat == null && cls == null)
+                {
+                    // The link's own row: its display, shown and halftone in this view; its categories and classes stay.
+                    var keep = new JsonObject();
+                    foreach (var k in new[] { "categories", "classes", "filters" }) if (into[k] is { } kv) keep[k] = kv.DeepClone();
+                    if (value != null)
+                        foreach (var (k, val) in value)
+                        {
+                            if (k == "display" && (string?)val is { } d && !VisibilityGraphics.LinkDisplays.Contains(d)) throw new CommandException($"„{d}” is not host or custom.");
+                            if (k is "display" or "hidden" or "halftone") keep[k] = val?.DeepClone();
+                        }
+                    into = keep;
+                }
+                if (into.Count > 0) links[linkId] = into; else links.Remove(linkId);
+                if (links.Count > 0) g["links"] = links; else g.Remove("links");
+            }
             if (set != null) { set["graphics"] = g; WriteSets(ctx, sets); return null; }
             var attrs = v.CloneAttrs();
-            if (g.Count > 0) attrs["graphics"] = g; else attrs.Remove("graphics");
+            // A view whose style names a set keeps graphics of its own, even empty, so it does not fall back to the style's.
+            if (g.Count > 0 || ViewStyles.StyleOf(ctx.Model, v).GraphicsSet != null) attrs["graphics"] = g; else attrs.Remove("graphics");
             write(attrs);
             return null;
         });
@@ -143,7 +200,9 @@ public static class GraphicsSets
             if (setId != null) { attrs["graphicsSet"] = setId; attrs.Remove("graphics"); }
             else
             {
+                // Its own again, starting from what it showed (its set's, or its style's set's); empty when the style names a set.
                 if (Of(ctx.Model, v) is { } g) attrs["graphics"] = g.DeepClone();
+                else if (ViewStyles.StyleOf(ctx.Model, v).GraphicsSet != null) attrs["graphics"] = new JsonObject();
                 attrs.Remove("graphicsSet");
             }
             write(attrs);
@@ -171,6 +230,18 @@ public static class GraphicsSets
                 if (set["graphics"] is JsonObject g) attrs["graphics"] = g.DeepClone();
                 write(attrs);
             }
+            // Views that took it through their style keep its settings as their own; the styles forget it.
+            var styled = ViewStyles.All(ctx.Model).Where(s => s.GraphicsSet == setId).Select(s => s.Id).ToHashSet();
+            if (styled.Count > 0)
+            {
+                foreach (var v in ctx.Model.OfClass(Views.Class).Where(v => v.Str("graphicsSet") == null && v.Attrs["graphics"] == null && styled.Contains(ViewStyles.StyleOf(ctx.Model, v).Id)).ToList())
+                {
+                    var attrs = v.CloneAttrs();
+                    attrs["graphics"] = set["graphics"]?.DeepClone() ?? new JsonObject();
+                    ctx.Replace(v.With(attrs: attrs));
+                }
+                ViewStyles.ForgetSet(ctx, setId!);
+            }
             sets.Remove(set);
             WriteSets(ctx, sets);
             return null;
@@ -181,10 +252,21 @@ public static class GraphicsSets
         {
             var id = (string?)a["id"];
             var v = id == View3d ? As3dView(q.Model) : Views.Find(q.Model, id ?? "") ?? throw new CommandException("Not a view.");
+            var setId = EffectiveSet(q.Model, v);
             return new JsonObject
             {
                 ["graphics"] = Of(q.Model, v)?.DeepClone(),
-                ["graphicsSet"] = v.Str("graphicsSet"),
+                ["graphicsSet"] = setId,
+                // The set comes from the view's style (its template), not chosen on the view.
+                ["fromStyle"] = setId != null && v.Str("graphicsSet") != setId,
+                ["style"] = ViewStyles.StyleOf(q.Model, v).Name,
+                ["subcategories"] = new JsonObject(VisibilityGraphics.SubcategoriesOf.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)new JsonArray(kv.Value.Select(x => (JsonNode)x).ToArray())))),
+                ["links"] = new JsonArray(Links.All(q.Model).Select(l => (JsonNode)new JsonObject
+                {
+                    ["id"] = l.Id, ["name"] = l.Name, ["kind"] = l.Str("kind"), ["visible"] = Links.Visible(l), ["halftone"] = Links.IsHalftone(l),
+                    // The IFC classes its elements have, for its own classes tab.
+                    ["classes"] = new JsonArray(Links.ElementsOf(q.Model, l.Id).Where(e => Spatial.StoreyOf(q.Model, e.Id) != null).Select(e => e.Class).Distinct().Order().Select(c => (JsonNode)c).ToArray()),
+                }).ToArray()),
                 ["sets"] = new JsonArray(Sets(Spatial.Project(q.Model)).OfType<JsonObject>().Select(s => (JsonNode)new JsonObject { ["id"] = s["id"]?.DeepClone(), ["name"] = s["name"]?.DeepClone() }).ToArray()),
                 ["categories"] = new JsonArray(LineStyles.Categories.Select(c => (JsonNode)c).ToArray()),
                 // Hidden until the view's graphics show them (rooms, in 3D).
@@ -198,8 +280,40 @@ public static class GraphicsSets
         {
             var id = (string?)a["id"];
             var view = id == null || id == View3d ? As3dView(q.Model) : q.Model.Get(id) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("Not a 3D view.");
-            var g = Of(q.Model, view);
-            return new JsonArray(q.Model.Entities.Where(e => Spatial.StoreyOf(q.Model, e.Id) != null && Hides3d(g, e)).Select(e => (JsonNode)e.Id).ToArray());
+            var vg = VisibilityGraphics.Of(q.Model, view);
+            return new JsonArray(q.Model.Entities.Where(e => Spatial.StoreyOf(q.Model, e.Id) != null && vg.Hides(e)).Select(e => (JsonNode)e.Id).ToArray());
         });
+
+        // How the 3D view shows its elements by its Visibility / Graphics (decision 391), as looks: {id: {hidden} | {opacity} | {parts: {key: {hidden}}}}.
+        r.Query("view.looks3d", (q, a) =>
+        {
+            var id = (string?)a["id"];
+            var view = id == null || id == View3d ? As3dView(q.Model) : q.Model.Get(id) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("Not a 3D view.");
+            return Looks3d(q, view);
+        });
+    }
+
+    /// <summary>A 3D view's looks: what it hides, a link halftone in it, the parts its subcategories hide.</summary>
+    public static JsonObject Looks3d(IQueryContext q, Entity view)
+    {
+        var m = q.Model;
+        var vg = VisibilityGraphics.Of(m, view);
+        var o = new JsonObject();
+        foreach (var e in m.Entities)
+        {
+            if (Spatial.StoreyOf(m, e.Id) == null) continue;
+            if (vg.Hides(e)) { o[e.Id] = new JsonObject { ["hidden"] = true }; continue; }
+            JsonObject? look = null;
+            if (vg.Halftone(e)) look = new JsonObject { ["opacity"] = 0.35 };
+            if (vg.HiddenSubs(e) != null && q.Geometry(e.Id) is { } geo)
+            {
+                var parts = new JsonObject();
+                foreach (var p in geo.Parts)
+                    if (p.Key is { } k && !parts.ContainsKey(k) && vg.HidesPart(e, k)) parts[k] = new JsonObject { ["hidden"] = true };
+                if (parts.Count > 0) (look ??= new JsonObject())["parts"] = parts;
+            }
+            if (look != null) o[e.Id] = look;
+        }
+        return o;
     }
 }

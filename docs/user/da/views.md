@@ -208,3 +208,17 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 - **Sol og skygger.** Projektets sol en dag på et klokkeslæt, der lyser 3D-visningen op med sine skygger (se *Realistisk, med solen*).
 
 ![Visningskvalitet](shots/display-quality.webp)
+
+### Synlighed / grafik
+
+**Synlighed** (<kbd>VV</kbd>) eller **Grafik** (<kbd>VG</kbd>) åbner synlighed / grafik for visningen forrest: en plan, et snit, en facade eller en 3D-visning. Det, den skjuler, er også skjult på visningens tegningsark, i dens PDF og DXF og i en 3D-eksport.
+
+- **Modelkategorier.** Hver kategori vises eller skjules, med linjefarve, linjetykkelse, fyld og snitskravering. Pilen ved en kategori åbner dens underkategorier: **Kerne**, **Overflader**, **Isolering**, **Membraner** og **Andre lag** for en væg, et dæk eller et tag (efter hvert lags materiale og dets kategori i Administrer → Materialer), **Lysninger** for en dør eller et vindue. Fjern fluebenet ved **Overflader** under **Vægge**, og pudsen forsvinder, murstenen bliver. Armering, rumoverflader, forskalling, stilladser, installationer, stålsamlinger, elevatorer og solafskærmning er kategorier for sig.
+- **Links.** Hver linket fil, med **Vist** og **Halvtone** kun for denne visning. **Visning** er **Som værtsvisningen** (linket tager denne visnings kategorier) eller **Brugerdefineret**: så giver **Kategorier…** linket sine egne kategorier, underkategorier og IFC-klasser i denne visning. Arkitektens plan skjuler konstruktionslinkets armering; ingeniørens skjuler arkitektlinkets overflader.
+- **IFC-klasser.** Klasserne for projektets egne elementer, vist eller skjult.
+
+Indstillingerne tilhører visningen eller et navngivet sæt, som flere visninger deler (**Gem som et sæt…**). En visningsstil kan navngive et sæt (Administrer → Visningsstile): en visning uden egne indstillinger tager sin stils sæt, som Revits visningsskabeloner; **Gør dem til denne visnings egne** starter dens egne derfra.
+
+![Synlighed / grafik: en vægs overflader slået fra](shots/vg-categories.webp)
+
+![En linket konstruktion, brugerdefineret i én visning](shots/vg-links.webp)

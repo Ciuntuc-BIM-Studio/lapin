@@ -84,7 +84,7 @@ Eine importierte DXF gehört zum Projekt: **File → Save** speichert sie in der
 
 ## Verknüpfungen
 
-**IFC verknüpfen…** hält eine andere Datei verknüpft, statt sie zu importieren. Sie ist schreibgeschützt und wird neu geladen, wenn sie sich ändert. Das funktioniert auch für eine DXF-Datei. **Verwalten → Verknüpfungen** zeigt die Verknüpfungen an, lädt sie neu, wandelt sie um oder entfernt sie. Ein verknüpftes DXF liegt in 3D wie ein importiertes; sein Feld **3D** in **Verwalten → Verknüpfungen** schaltet das aus.
+**IFC verknüpfen…** hält eine andere Datei verknüpft, statt sie zu importieren. Sie ist schreibgeschützt und wird neu geladen, wenn sie sich ändert. Das funktioniert auch für eine DXF-Datei. **Verwalten → Verknüpfungen** zeigt die Verknüpfungen an, lädt sie neu, wandelt sie um oder entfernt sie. Ein verknüpftes DXF liegt in 3D wie ein importiertes; sein Feld **3D** in **Verwalten → Verknüpfungen** schaltet das aus. **Sichtbarkeit / Grafiken** (<kbd>VV</kbd>) blendet eine Verknüpfung aus, zeigt sie halbtonig oder gibt ihr eigene Kategorien, in nur einer Ansicht (*Schnitte, Ansichten und 3D*, Sichtbarkeit / Grafiken).
 
 ## 3D-Modelle
 

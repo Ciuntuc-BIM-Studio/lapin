@@ -208,3 +208,17 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 - **Sonne und Schatten.** Die Sonne des Projekts an einem Tag zu einer Uhrzeit, die die 3D-Ansicht mit ihren Schatten beleuchtet (siehe *Realistisch, mit der Sonne*).
 
 ![Anzeigequalität](shots/display-quality.webp)
+
+### Sichtbarkeit / Grafiken
+
+**Sichtbarkeit** (<kbd>VV</kbd>) oder **Grafiken** (<kbd>VG</kbd>) öffnet Sichtbarkeit / Grafiken der vorderen Ansicht: ein Grundriss, ein Schnitt, eine Ansicht oder eine 3D-Ansicht. Was sie ausblendet, ist auch auf den Plänen der Ansicht, in ihrem PDF und DXF und in einem 3D-Export ausgeblendet.
+
+- **Modellkategorien.** Jede Kategorie wird ein- oder ausgeblendet, mit Linienfarbe, Linienstärke, Füllung und Schnittschraffur. Der Pfeil neben einer Kategorie öffnet ihre Unterkategorien: **Kern**, **Ausbau**, **Dämmung**, **Bahnen** und **Andere Schichten** einer Wand, einer Decke oder eines Dachs (nach dem Material jeder Schicht und seiner Kategorie unter Verwalten → Materialien), die **Laibungen** einer Tür oder eines Fensters. Entfernen Sie **Ausbau** unter **Wände**, und der Putz verschwindet, das Mauerwerk bleibt. Bewehrung, Raumbekleidungen, Schalung, Gerüste, TGA, Stahlanschlüsse, Aufzüge und Sonnenschutz sind eigene Kategorien.
+- **Verknüpfungen.** Jede verknüpfte Datei, mit **Sichtbar** und **Halbton** nur für diese Ansicht. **Anzeige** ist **Wie Hostansicht** (die Verknüpfung übernimmt die Kategorien dieser Ansicht) oder **Benutzerdefiniert**: dann gibt **Kategorien…** der Verknüpfung in dieser Ansicht eigene Kategorien, Unterkategorien und IFC-Klassen. Der Grundriss der Architektin blendet die Bewehrung der Tragwerksverknüpfung aus; der des Ingenieurs den Ausbau der Architekturverknüpfung.
+- **IFC-Klassen.** Die Klassen der eigenen Elemente des Projekts, ein- oder ausgeblendet.
+
+Die Einstellungen gehören der Ansicht oder einem benannten Satz, den mehrere Ansichten teilen (**Als Satz speichern…**). Ein Ansichtsstil kann einen Satz nennen (Verwalten → Ansichtsstile): eine Ansicht ohne eigene Einstellungen übernimmt den Satz ihres Stils, wie Revits Ansichtsvorlagen; **Zu eigenen dieser Ansicht machen** beginnt ihre eigenen daraus.
+
+![Sichtbarkeit / Grafiken: der Ausbau einer Wand ausgeblendet](shots/vg-categories.webp)
+
+![Ein verknüpftes Tragwerk, benutzerdefiniert in einer Ansicht](shots/vg-links.webp)

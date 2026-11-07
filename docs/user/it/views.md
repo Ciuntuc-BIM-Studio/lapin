@@ -208,3 +208,17 @@ La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appar
 - **Sole e ombre.** Il sole del progetto in un giorno a un’ora, che illumina la vista 3D con le sue ombre (vedi *Realistica, con il sole*).
 
 ![Qualità di visualizzazione](shots/display-quality.webp)
+
+### Visibilità / Grafica
+
+**Visibilità** (<kbd>VV</kbd>) o **Grafica** (<kbd>VG</kbd>) apre visibilità / grafica della vista in primo piano: una pianta, una sezione, un prospetto o una vista 3D. Ciò che nasconde è nascosto anche sulle tavole della vista, nel suo PDF e DXF, e in un'esportazione 3D.
+
+- **Categorie di modello.** Ogni categoria si mostra o si nasconde, con colore e spessore della linea, riempimento e retino di sezione. La freccia accanto a una categoria apre le sue sottocategorie: **Nucleo**, **Finiture**, **Isolamento**, **Membrane** e **Altri strati** di un muro, un solaio o un tetto (secondo il materiale di ogni strato e la sua categoria in Gestisci → Materiali), le **Spallette** di una porta o di una finestra. Togli la spunta a **Finiture** sotto **Muri** e l'intonaco sparisce, il mattone resta. Le armature, i rivestimenti, le casseforme, i ponteggi, gli impianti, i giunti in acciaio, gli ascensori e le schermature solari sono categorie a sé.
+- **Collegamenti.** Ogni file collegato, con **Visibile** e **Mezzitoni** solo per questa vista. **Visualizzazione** è **Come la vista ospite** (il collegamento prende le categorie di questa vista) o **Personalizzato**: allora **Categorie…** dà al collegamento le sue categorie, sottocategorie e classi IFC in questa vista. La pianta dell'architetto nasconde le armature del collegamento strutturale; quella dell'ingegnere le finiture del collegamento architettonico.
+- **Classi IFC.** Le classi degli elementi propri del progetto, mostrate o nascoste.
+
+Le impostazioni sono della vista, o di un insieme con nome condiviso da più viste (**Salva come insieme…**). Uno stile di vista può nominare un insieme (Gestisci → Stili di vista): una vista senza impostazioni proprie prende l'insieme del suo stile, come i modelli di vista di Revit; **Rendili propri di questa vista** parte da esso per le sue.
+
+![Visibilità / Grafica: le finiture di un muro nascoste](shots/vg-categories.webp)
+
+![Una struttura collegata, personalizzata in una vista](shots/vg-links.webp)

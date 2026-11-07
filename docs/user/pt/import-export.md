@@ -84,7 +84,7 @@ Um DXF importado faz parte do projeto: **File → Save** guarda-o no arquivo `.l
 
 ## Vínculos
 
-**Vincular IFC…** mantém outro arquivo vinculado em vez de importá-lo. Ele é somente leitura e é recarregado quando muda. Isso também funciona para um DXF. **Gerenciar → Vínculos** mostra, recarrega, converte ou remove os vínculos. Um DXF vinculado fica em 3D como um importado; a sua caixa **3D** em **Gerenciar → Vínculos** desliga isso.
+**Vincular IFC…** mantém outro arquivo vinculado em vez de importá-lo. Ele é somente leitura e é recarregado quando muda. Isso também funciona para um DXF. **Gerenciar → Vínculos** mostra, recarrega, converte ou remove os vínculos. Um DXF vinculado fica em 3D como um importado; a sua caixa **3D** em **Gerenciar → Vínculos** desliga isso. **Visibilidade / Gráficos** (<kbd>VV</kbd>) oculta um vínculo, mostra-o em meio-tom ou dá-lhe suas próprias categorias numa só vista (*Cortes, elevações e 3D*, Visibilidade / Gráficos).
 
 ## Modelos 3D
 

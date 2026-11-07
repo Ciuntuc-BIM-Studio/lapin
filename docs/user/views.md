@@ -208,3 +208,17 @@ The **View** tab sets what the view in front shows and how it looks.
 - **Sun and shadows.** The project’s sun on a day at an hour, lighting the 3D view with its shadows (see *Realistic, with the sun*).
 
 ![Display quality](shots/display-quality.webp)
+
+### Visibility / Graphics
+
+**Visibility** (<kbd>VV</kbd>) or **Graphics** (<kbd>VG</kbd>) opens the view in front's Visibility / Graphics, for a plan, a section, an elevation or a 3D view. What it hides is hidden on the view's sheets, in its PDF and DXF, and in a 3D export too.
+
+- **Model categories.** Each category is shown or hidden, with its line colour, line weight, fill and cut hatch. The arrow beside a category opens its subcategories: a wall's, a floor's or a roof's **Core**, **Finishes**, **Insulation**, **Membranes** and **Other layers** (by each layer's material and its category in Manage → Materials), a door's or a window's **Reveals**. Untick **Finishes** under **Walls** and the plaster goes, the brick stays. Rebar, room finishes (Coverings), formwork, scaffolds, MEP, steel connections, elevators and sunshades are categories of their own.
+- **Links.** Every linked file, with **Shown** and **Halftone** for this view alone. **Display** is **By host view** (the link takes this view's categories) or **Custom**: then **Categories…** gives the link its own categories, subcategories and IFC classes in this view. An architect's plan hides the structural link's rebar; an engineer's hides the architectural link's finishes.
+- **IFC classes.** The classes of the project's own elements, shown or hidden.
+
+The settings belong to the view, or to a named set that several views share (**Save as a set…**). A view style can name a set (Manage → View styles): a view with no settings of its own takes its style's set, as Revit's view templates do; **Make them this view's own** starts its own from it.
+
+![Visibility / Graphics: a wall's finishes off](shots/vg-categories.webp)
+
+![A linked structure displayed custom in one view](shots/vg-links.webp)

@@ -84,7 +84,7 @@ Un DXF importat face parte din proiect: **File → Save** îl păstrează în fi
 
 ## Legături
 
-**Leagă IFC…** ține alt fișier legat în loc să-l importe. E doar pentru citire și se reîncarcă atunci când se schimbă. Merge și pentru un DXF. **Gestionare → Legături** arată, reîncarcă, convertește sau scoate legăturile. Un DXF legat stă în 3D ca unul importat; bifa **3D** din **Gestionare → Legături** îl scoate de acolo.
+**Leagă IFC…** ține alt fișier legat în loc să-l importe. E doar pentru citire și se reîncarcă atunci când se schimbă. Merge și pentru un DXF. **Gestionare → Legături** arată, reîncarcă, convertește sau scoate legăturile. Un DXF legat stă în 3D ca unul importat; bifa **3D** din **Gestionare → Legături** îl scoate de acolo. **Vizibilitate / Grafică** (<kbd>VV</kbd>) ascunde o legătură, o estompează sau îi dă categoriile ei doar într-o vedere (*Secțiuni, fațade și 3D*, Vizibilitate / Grafică).
 
 ## Modele 3D
 

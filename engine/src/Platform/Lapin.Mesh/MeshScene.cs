@@ -119,7 +119,7 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
         var view = o.ViewId == null ? null
             : o.ViewId == GraphicsSets.View3d ? GraphicsSets.As3dView(m)
             : m.Get(o.ViewId) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("A 3D export takes a 3D view, or the whole model.");
-        var graphics = view == null ? null : GraphicsSets.Of(m, view);
+        var vg = view == null ? null : VisibilityGraphics.Of(m, view);
         var hidden = (view?.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         if (o.Hidden != null) hidden.UnionWith(o.Hidden);
         var planes = MeshClip.Unit(o.Planes ?? []);
@@ -181,13 +181,13 @@ public sealed record MeshScene(string Project, string Building, List<MeshGroup> 
             if (view == null && e.Class == IfcClass.Space) continue;
             if (view != null)
             {
-                if (GraphicsSets.Hides3d(graphics, e)) continue;
+                if (vg!.Hides(e)) continue;
                 if (filters.Select(f => f.For(reader, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             }
             ElementGeometry? geo;
             try { geo = session.Geometry(e.Id); }
             catch (Exception ex) when (ex is ModelException or InvalidOperationException or ArgumentException) { notes.Add($"„{e.Name}” was left out: {ex.Message}"); continue; }
-            var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0 && ViewStyles.Shows3d(m, layers, e.Id, p, bands) && !partFilters.Any(f => f.Hides(reader, view!, e, p.Key))).ToList() ?? [];
+            var parts = geo?.Parts.Where(p => p.Solid.Faces.Length > 0 && ViewStyles.Shows3d(m, layers, e.Id, p, bands) && !partFilters.Any(f => f.Hides(reader, view!, e, p.Key)) && !(vg?.HidesPart(e, p.Key) ?? false)).ToList() ?? [];
             if (parts.Count == 0) continue;
             // Cut as the view cuts it: each part's cap (in its material) closes what the planes open.
             var caps = planes.Length > 0 && o.Caps ? SectionCaps.Make(parts.Select(p => p.Solid).ToList(), planes) : null;

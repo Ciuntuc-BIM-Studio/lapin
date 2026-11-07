@@ -208,3 +208,17 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 - **Soleil et ombres.** Le soleil du projet un jour à une heure, qui éclaire la vue 3D avec ses ombres (voir *Réaliste, avec le soleil*).
 
 ![Qualité d’affichage](shots/display-quality.webp)
+
+### Visibilité / Graphismes
+
+**Visibilité** (<kbd>VV</kbd>) ou **Graphismes** (<kbd>VG</kbd>) ouvre la visibilité / les graphismes de la vue au premier plan : un plan, une coupe, une élévation ou une vue 3D. Ce qu’elle masque l’est aussi sur les feuilles de la vue, dans son PDF et son DXF, et dans un export 3D.
+
+- **Catégories de modèle.** Chaque catégorie est affichée ou masquée, avec sa couleur et son épaisseur de ligne, son remplissage et sa hachure de coupe. La flèche à côté d’une catégorie ouvre ses sous-catégories : le **Noyau**, les **Finitions**, l’**Isolation**, les **Membranes** et les **Autres couches** d’un mur, d’un plancher ou d’une toiture (selon le matériau de chaque couche et sa catégorie dans Gérer → Matériaux), les **Tableaux** d’une porte ou d’une fenêtre. Décochez **Finitions** sous **Murs** : l’enduit disparaît, la brique reste. Les armatures, les revêtements, les coffrages, les échafaudages, les fluides, les assemblages acier, les ascenseurs et les protections solaires sont des catégories à part.
+- **Liens.** Chaque fichier lié, avec **Visible** et **Demi-teinte** pour cette seule vue. **Affichage** est **Selon la vue hôte** (le lien prend les catégories de cette vue) ou **Personnalisé** : **Catégories…** donne alors au lien ses propres catégories, sous-catégories et classes IFC dans cette vue. Le plan de l’architecte masque les armatures du lien de structure ; celui de l’ingénieur, les finitions du lien d’architecture.
+- **Classes IFC.** Les classes des éléments propres au projet, affichées ou masquées.
+
+Les réglages appartiennent à la vue, ou à un jeu nommé que plusieurs vues partagent (**Enregistrer comme jeu…**). Un style de vue peut nommer un jeu (Gérer → Styles de vue) : une vue sans réglages propres prend le jeu de son style, comme les gabarits de vue de Revit ; **En faire ceux de cette vue** part de lui pour les siens.
+
+![Visibilité / Graphismes : les finitions d’un mur masquées](shots/vg-categories.webp)
+
+![Une structure liée, personnalisée dans une vue](shots/vg-links.webp)

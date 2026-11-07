@@ -106,6 +106,17 @@ export const FAQ: Entry[] = [
     source: 'report #106',
   },
   {
+    id: 'visibility-graphics',
+    q: ['How do I hide the rebar or the finishes of a linked model?', 'How do I hide a category in one view, like Visibility/Graphics in Revit?', 'How do I hide the plaster of the walls in a plan?'],
+    qRo: ['Cum ascund armăturile sau finisajele unui model legat?', 'Cum ascund o categorie într-o singură vedere, ca Visibility/Graphics din Revit?', 'Cum ascund tencuiala pereților într-un plan?'],
+    keywords: ['visibility', 'graphics', 'vv', 'vg', 'hide', 'category', 'categories', 'subcategory', 'link', 'linked', 'rebar', 'finishes', 'finish', 'plaster', 'layer', 'core', 'revit', 'template',
+      'vizibilitate', 'grafica', 'ascund', 'categorie', 'categorii', 'subcategorie', 'legatura', 'legat', 'armaturi', 'armatura', 'finisaje', 'tencuiala', 'strat', 'miez', 'sablon'],
+    a: 'View → Visibility (VV) or Graphics (VG) on the view in front. Model categories: untick a category, or open it with its arrow and untick a subcategory (a wall\'s Finishes, Insulation, Core…); rebar, room finishes (Coverings), formwork and MEP are categories of their own. Links: set a link\'s Display to Custom, then Categories… gives it its own categories in this view alone: an architect hides the structural link\'s rebar, an engineer the architectural link\'s finishes. Save the settings as a set and name it in a view style (Manage → View styles) to use it as a view template. Sheets, PDF and DXF print what the view shows.',
+    aRo: 'Vedere → Vizibilitate (VV) sau Grafică (VG) pe vederea din față. Categorii de model: debifează o categorie, sau deschide-o cu săgeata ei și debifează o subcategorie (Finisajele, Izolația, Miezul unui perete…); armăturile, finisajele de încăpere, cofrajele și instalațiile sunt categorii proprii. Legături: pune Afișarea unei legături pe Personalizat, apoi Categorii… îi dă categoriile ei doar în această vedere: arhitectul ascunde armăturile legăturii de structură, inginerul finisajele legăturii de arhitectură. Salvează setările ca set și numește-l într-un stil de vedere (Gestionare → Stiluri de vedere) ca să-l folosești ca șablon de vedere. Planșele, PDF-ul și DXF-ul tipăresc ce arată vederea.',
+    action: { label: 'Open Visibility / Graphics', labelRo: 'Deschide Vizibilitate / Grafică', run: { kind: 'tool', id: 'view.layers' } },
+    source: 'faq',
+  },
+  {
     id: 'window-panels',
     q: ['How do I make a window with 2, 3, 4 or 6 panes?', 'How do I make a window with more sashes that open?', 'How do I edit a 2 pane window?'],
     qRo: ['Cum fac o fereastră cu 2, 3, 4 sau 6 canate?', 'Cum fac o fereastră cu mai multe canate care se deschid?', 'Cum modific o fereastră cu două canate?'],

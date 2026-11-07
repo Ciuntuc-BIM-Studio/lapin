@@ -208,3 +208,17 @@ A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua a
 - **Sol e sombras.** O sol do projeto num dia a uma hora, iluminando a vista 3D com as suas sombras (ver *Realista, com o sol*).
 
 ![Qualidade de exibição](shots/display-quality.webp)
+
+### Visibilidade / Gráficos
+
+**Visibilidade** (<kbd>VV</kbd>) ou **Gráficos** (<kbd>VG</kbd>) abre a visibilidade / gráficos da vista à frente: uma planta, um corte, uma elevação ou uma vista 3D. O que ela oculta fica oculto também nas pranchas da vista, no seu PDF e DXF, e numa exportação 3D.
+
+- **Categorias de modelo.** Cada categoria é mostrada ou oculta, com cor e espessura de linha, preenchimento e hachura de corte. A seta ao lado de uma categoria abre suas subcategorias: o **Núcleo**, os **Acabamentos**, o **Isolamento**, as **Membranas** e as **Outras camadas** de uma parede, uma laje ou um telhado (pelo material de cada camada e sua categoria em Gerenciar → Materiais), as **Ombreiras** de uma porta ou janela. Desmarque **Acabamentos** em **Paredes** e o reboco some, o tijolo fica. As armaduras, os revestimentos, as fôrmas, os andaimes, as instalações, as ligações de aço, os elevadores e o sombreamento são categorias próprias.
+- **Vínculos.** Cada arquivo vinculado, com **Visível** e **Meio-tom** só para esta vista. **Exibição** é **Pela vista anfitriã** (o vínculo usa as categorias desta vista) ou **Personalizado**: então **Categorias…** dá ao vínculo suas próprias categorias, subcategorias e classes IFC nesta vista. A planta do arquiteto oculta as armaduras do vínculo estrutural; a do engenheiro, os acabamentos do vínculo de arquitetura.
+- **Classes IFC.** As classes dos elementos próprios do projeto, mostradas ou ocultas.
+
+As configurações são da vista, ou de um conjunto com nome que várias vistas compartilham (**Salvar como conjunto…**). Um estilo de vista pode nomear um conjunto (Gerenciar → Estilos de vista): uma vista sem configurações próprias usa o conjunto do seu estilo, como os modelos de vista do Revit; **Torná-los próprios desta vista** começa os seus a partir dele.
+
+![Visibilidade / Gráficos: os acabamentos de uma parede ocultos](shots/vg-categories.webp)
+
+![Uma estrutura vinculada, personalizada numa vista](shots/vg-links.webp)

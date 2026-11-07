@@ -389,11 +389,11 @@ public static class Views
         var fills = new List<DFill>();
         var texts = new List<DText>();
         var storey = view.Str("storeyId");
-        var viewGraphics = GraphicsSets.Of(m, view);
+        var vg = VisibilityGraphics.Of(m, view);
         var hiddenElements = (view.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
         var filters = q.Services.All<IViewElementFilter>();
         var partFilters = q.Services.All<IViewPartFilter>();
-        bool PartShown(Entity e, string? key) => partFilters.Count == 0 || !partFilters.Any(f => f.Hides(q, view, e, key));
+        bool PartShown(Entity e, string? key) => (partFilters.Count == 0 || !partFilters.Any(f => f.Hides(q, view, e, key))) && !vg.HidesPart(e, key);
         var plan = view.Str("kind") is "plan" or null;
         // A site plan: the model from above, what lies under the ground left out, the site's own symbols from every storey.
         var site = plan && SitePlans.Of(view) != null;
@@ -419,7 +419,7 @@ public static class Views
             // A plan shows its own storey's elements, and the other storeys' only as it says (StoreyDisplay).
             if (plan && !spanned && display.Shows(storey, Spatial.StoreyOf(m, e.Id)?.Id) == null) continue;
             if (filters.Select(f => f.For(q, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
-            if (GraphicsSets.Hides(viewGraphics, e)) continue;
+            if (vg.Hides(e)) continue;
             if (q.Geometry(e.Id) is not { } g) continue;
             var stored = StoredBodies.Has(e);
             if (cutZ is { } cz && stored && Plan2d.Read(e) is { Count: > 0 } own)
@@ -642,11 +642,14 @@ public static class Views
         var colors = new Dictionary<string, string>();
         var filters = q.Services.All<IViewElementFilter>();
         var halftoneOthers = spec.Kind == "plan" && StoreyDisplay.Of(view).Halftone;
-        if (filters.Count > 0 || halftoneOthers)
+        var vg = VisibilityGraphics.Of(m, view);
+        if (filters.Count > 0 || halftoneOthers || vg.HasLinks)
             foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Concat((drawing.Fills ?? []).Select(f => f.Element)).Concat((drawing.Texts ?? []).Select(t => t.Element)).Distinct())
             {
                 if (m.Get(id) is not { } el) continue;
                 if (filters.Select(f => f.For(q, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
+                // A link drawn halftone in this view (decision 391), as one halftone everywhere.
+                else if (vg.Halftone(el)) colors[id] = Links.Halftone;
                 // Another storey's element in a plan that shows it halftone: grey, as a halftone link.
                 else if (halftoneOthers && ShowsByStorey(m, view, el) == true) colors[id] = Links.Halftone;
             }
@@ -689,6 +692,8 @@ public static class Views
         // Every element the drawing shows can be picked by what it drew: its cut outlines and its seen lines, as a
         // mark on the PICK layer (never drawn, only hit and highlighted). Hidden and overhead lines pick nothing.
         marks.AddRange(PickMarks(drawing));
+        // What the view's Visibility / Graphics hides goes with its marks (decision 391): a hidden category's tags and bars, a link hidden here.
+        marks.RemoveAll(vg.HidesMark);
         // The marks' pens: those drawn under the model (rooms' fills) go first, the others over it; fills before lines in each.
         // A drafted element given a place in the view's draw order (decision 339) draws in that order instead, in runs: a
         // run takes the next element until one with a fill or a picture comes after lines, so a fill covers what is under it.

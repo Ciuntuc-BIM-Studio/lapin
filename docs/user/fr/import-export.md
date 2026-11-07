@@ -84,7 +84,7 @@ Un DXF importé fait partie du projet : **File → Save** le garde dans le fichi
 
 ## Liens
 
-**Lier IFC…** garde un autre fichier lié au lieu de l’importer. Il est en lecture seule et rechargé quand il change. Cela fonctionne aussi pour un DXF. **Gérer → Liens** affiche, recharge, convertit ou supprime les liens. Un DXF lié se trouve en 3D comme un DXF importé ; sa case **3D** dans **Gérer → Liens** l’en retire.
+**Lier IFC…** garde un autre fichier lié au lieu de l’importer. Il est en lecture seule et rechargé quand il change. Cela fonctionne aussi pour un DXF. **Gérer → Liens** affiche, recharge, convertit ou supprime les liens. Un DXF lié se trouve en 3D comme un DXF importé ; sa case **3D** dans **Gérer → Liens** l’en retire. **Visibilité / Graphismes** (<kbd>VV</kbd>) masque un lien, l’affiche en demi-teinte ou lui donne ses propres catégories dans une seule vue (*Coupes, élévations et 3D*, Visibilité / Graphismes).
 
 ## Modèles 3D
 

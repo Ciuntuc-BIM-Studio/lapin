@@ -82,7 +82,20 @@ public static class LineStyles
         "IFCSPACE" => "spaces",
         "IFCGEOGRAPHICELEMENT" or "IFCEARTHWORKSCUT" or "IFCEARTHWORKSFILL" => "topography",
         "IFCFURNISHINGELEMENT" or "IFCFURNITURE" => "furniture",
-        "IFCBUILDINGELEMENTPROXY" or "IFCCOVERING" or "IFCPLATE" or "IFCFOOTING" => "other",
+        "IFCBUILDINGELEMENTPROXY" or "IFCPLATE" or "IFCFOOTING" => "other",
+        // The categories Visibility / Graphics added (decision 391): what had none, hidden only by its IFC class before.
+        "IFCCOVERING" or "LAPINROOMFINISH" or "LAPINSKIRTING" or "LAPINCEILING" => "coverings",
+        "LAPINREBAR" or "LAPINREBARRUN" or "IFCREINFORCINGBAR" or "IFCREINFORCINGMESH" or "IFCTENDON" => "rebar",
+        "LAPINFORMWORK" => "formwork",
+        "LAPINSCAFFOLD" => "scaffolds",
+        "IFCPIPESEGMENT" or "IFCPIPEFITTING" or "IFCDUCTSEGMENT" or "IFCDUCTFITTING" or "IFCCABLESEGMENT" or "IFCCABLECARRIERSEGMENT"
+            or "IFCAIRTERMINAL" or "IFCSANITARYTERMINAL" or "IFCFIRESUPPRESSIONTERMINAL" or "IFCLIGHTFIXTURE" or "IFCOUTLET" or "IFCVALVE"
+            or "IFCPUMP" or "IFCFAN" or "IFCBOILER" or "IFCTANK" or "IFCSPACEHEATER" or "IFCFLOWMETER" or "IFCELECTRICDISTRIBUTIONBOARD"
+            or "IFCUNITARYCONTROLELEMENT" or "IFCDISTRIBUTIONCHAMBERELEMENT" or "IFCFLOWTERMINAL" or "IFCFLOWSEGMENT" or "IFCFLOWFITTING"
+            or "LAPINEXHAUSTFAN" => "mep",
+        "LAPINSTEELNODE" or "IFCMECHANICALFASTENER" or "IFCFASTENER" => "steelConnections",
+        "IFCTRANSPORTELEMENT" => "transport",
+        "IFCSHADINGDEVICE" => "shading",
         "IFCANNOTATION" => "linework",
         // The openings' voids a coordination drawing shows (decision 290): no element of the model, a category of its own.
         "LAPINOPENINGVOID" => "voids",
@@ -91,7 +104,8 @@ public static class LineStyles
         _ => null,
     };
 
-    public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "topography", "other", "linework", "voids", "entourage"];
+    public static readonly string[] Categories = ["walls", "slabs", "roofs", "columns", "beams", "doors", "windows", "stairs", "railings", "spaces", "furniture", "topography", "other", "linework", "voids", "entourage",
+        "coverings", "rebar", "formwork", "scaffolds", "mep", "steelConnections", "transport", "shading"];
 
     public static LineStyleSpec Merge(LineStyleSpec into, LineStyleSpec? from) => from == null ? into
         : new(into.Pen ?? from.Pen, into.Color ?? from.Color, into.Pattern ?? from.Pattern);

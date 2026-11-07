@@ -51,7 +51,7 @@ public static class VoidDrawings
         var voids = OpeningVoids.Of(q, VoidOptions.From(m, null));
         if (voids.Count == 0) return o;
         var hidden = (view.Attrs["hiddenElements"] as System.Text.Json.Nodes.JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
-        var viewGraphics = GraphicsSets.Of(m, view);
+        var viewGraphics = VisibilityGraphics.Of(m, view);
         var display = Views.StoreyDisplay.Of(view);
         var storey = view.Str("storeyId");
         var list = pieces.Count > 1 ? pieces : [(spec, 0.0)];
@@ -59,7 +59,7 @@ public static class VoidDrawings
         var obstacles = new Obstacles(c, others);
         foreach (var v in voids)
         {
-            if (m.Get(v.HostId) is not { } host || hidden.Contains(host.Id) || GraphicsSets.Hides(viewGraphics, host)) continue;
+            if (m.Get(v.HostId) is not { } host || hidden.Contains(host.Id) || viewGraphics.Hides(host)) continue;
             if (v.OpeningId != null && hidden.Contains(v.OpeningId)) continue;
             if (spec.Kind == "plan" && display.Shows(storey, Spatial.StoreyOf(m, host.Id)?.Id) == null) continue;
             foreach (var (s, station) in list)

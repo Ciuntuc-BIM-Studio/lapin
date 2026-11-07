@@ -207,3 +207,17 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 - **Soare și umbre.** Soarele proiectului într-o zi, la o oră, luminând vederea 3D cu umbrele lui (vezi *Realist, cu soarele*).
 
 ![Calitate afișare](shots/display-quality.webp)
+
+### Vizibilitate / Grafică
+
+**Vizibilitate** (<kbd>VV</kbd>) sau **Grafică** (<kbd>VG</kbd>) deschide Vizibilitate / Grafică pentru vederea din față: un plan, o secțiune, o fațadă sau o vedere 3D. Ce ascunde se ascunde și pe planșele vederii, în PDF și DXF, și la exportul 3D.
+
+- **Categorii de model.** Fiecare categorie se arată sau se ascunde, cu culoarea și grosimea liniei, umplutura și hașura de secțiune. Săgeata de lângă o categorie îi deschide subcategoriile: **Miez**, **Finisaje**, **Izolație**, **Membrane** și **Alte straturi** ale unui perete, planșeu sau acoperiș (după materialul fiecărui strat și categoria lui din Gestionare → Materiale), **Șpaleții** unei uși sau ferestre. Debifează **Finisaje** sub **Pereți** și tencuiala dispare, cărămida rămâne. Armăturile, finisajele de încăpere, cofrajele, schelele, instalațiile, îmbinările metalice, lifturile și parasolarele sunt categorii proprii.
+- **Legături.** Fiecare fișier legat, cu **Vizibil** și **Halftone** doar pentru această vedere. **Afișare** e **Ca vederea gazdă** (legătura ia categoriile vederii) sau **Personalizat**: atunci **Categorii…** îi dă legăturii categoriile, subcategoriile și clasele IFC ale ei în această vedere. Planul arhitectului ascunde armăturile legăturii de structură; al inginerului, finisajele legăturii de arhitectură.
+- **Clase IFC.** Clasele elementelor proiectului, arătate sau ascunse.
+
+Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**Salvează ca set…**). Un stil de vedere poate numi un set (Gestionare → Stiluri de vedere): o vedere fără setări proprii ia setul stilului ei, ca șabloanele de vedere din Revit; **Fă-le ale acestei vederi** pornește setările ei de la el.
+
+![Vizibilitate / Grafică: finisajele unui perete ascunse](shots/vg-categories.webp)
+
+![O structură legată, personalizată într-o vedere](shots/vg-links.webp)

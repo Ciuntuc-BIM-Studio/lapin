@@ -84,7 +84,7 @@ Zaimportowany DXF jest częścią projektu: **File → Save** zapisuje go w plik
 
 ## Łącza
 
-**Połącz IFC…** utrzymuje inny plik jako połączony zamiast go importować. Jest tylko do odczytu i jest ponownie wczytywany, gdy się zmieni. Działa to także dla DXF. **Zarządzaj → Łącza** pokazuje, ponownie wczytuje, konwertuje lub usuwa łącza. Połączony DXF leży w 3D tak jak zaimportowany; jego pole **3D** w **Zarządzaj → Łącza** to wyłącza.
+**Połącz IFC…** utrzymuje inny plik jako połączony zamiast go importować. Jest tylko do odczytu i jest ponownie wczytywany, gdy się zmieni. Działa to także dla DXF. **Zarządzaj → Łącza** pokazuje, ponownie wczytuje, konwertuje lub usuwa łącza. Połączony DXF leży w 3D tak jak zaimportowany; jego pole **3D** w **Zarządzaj → Łącza** to wyłącza. **Widoczność / Grafika** (<kbd>VV</kbd>) ukrywa łącze, wyszarza je lub daje mu własne kategorie tylko w jednym widoku (*Przekroje, elewacje i 3D*, Widoczność / Grafika).
 
 ## Modele 3D
 

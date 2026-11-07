@@ -2967,6 +2967,53 @@ export const scenes = [
     },
   },
   {
+    // Visibility / Graphics as in Revit (docs/plan-visibility-graphics.md, decision 391): a wall's finishes off as a
+    // subcategory, and a linked structure displayed custom in the plan, its columns off in this view alone.
+    id: 'views-vg',
+    async run(t) {
+      await t.fresh();
+      const first = await house(t, { roof: false });
+      for (const [x, y] of [[0, 0], [12, 0], [12, 8], [0, 8]]) await t.cmd('structure.addColumn', { storeyId: first.storey, x, y });
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const file = join(tmpdir(), 'Structure.ifc');
+      await t.call('project.exportIfc', { path: file });
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.call('project.importIfc', { path: file, mode: 'link' });
+      await t.wait(800);
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor V/G' })).id;
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false });
+      await t.wait(1500);
+      await t.tool('view.layers');
+      const dialog = t.page.locator('[data-testid=vv-dialog]');
+      await dialog.waitFor({ timeout: 10_000 });
+      // Walls ▸ Finishes off.
+      await dialog.locator('tr[data-category=walls] button.icon').click();
+      // A click (the box follows the engine's answer, so Playwright's uncheck would not see it change at once).
+      await dialog.locator('tr[data-sub="walls.finishes"] input[type=checkbox]').click();
+      await t.wait(800);
+      const vis = () => t.call('doc.query', { name: 'view.visibility', args: { id: plan } });
+      t.expect((await vis()).graphics?.categories?.walls?.sub?.finishes?.hidden === true, 'the walls\' finishes hidden as a subcategory');
+      await t.shot('vg-categories', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 640 });
+      // Links: the structure custom, its columns off here.
+      await dialog.locator('.tabs-inline button').nth(1).click();
+      const row = dialog.locator('tr[data-link=Structure]');
+      t.expect(await row.count() === 1, 'the linked structure listed on the Links tab');
+      await row.locator('select').selectOption('custom');
+      await t.wait(800);
+      const custom = dialog.locator('[data-testid=vv-link-custom]');
+      await custom.waitFor({ timeout: 5000 });
+      await custom.locator('tr[data-category=columns] input[type=checkbox]').click();
+      await t.wait(1000);
+      const links = (await vis()).graphics?.links ?? {};
+      const own = Object.values(links)[0];
+      t.expect(own?.display === 'custom' && own?.categories?.columns?.hidden === true, 'the link displayed custom, its columns hidden in this view');
+      await t.shot('vg-links', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 720 });
+      await t.keys('Escape');
+    },
+  },
+  {
     // A section seen in 3D (the browser's right-click), and a walk into a room (the plan's right-click).
     id: 'views-3d',
     async run(t) {

@@ -84,7 +84,7 @@ En importeret DXF er en del af projektet: **File → Save** gemmer den i `.lapin
 
 ## Links
 
-**Tilknyt IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene. En linket DXF ligger i 3D, som en importeret gør; dens **3D**-felt i **Administrer → Links** slår det fra.
+**Tilknyt IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene. En linket DXF ligger i 3D, som en importeret gør; dens **3D**-felt i **Administrer → Links** slår det fra. **Synlighed / grafik** (<kbd>VV</kbd>) skjuler et link, viser det i halvtone eller giver det sine egne kategorier i én visning alene (*Snit, facader og 3D*, Synlighed / grafik).
 
 ## 3D-modeller
 

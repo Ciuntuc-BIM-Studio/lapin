@@ -594,11 +594,11 @@ public static class StairMarks
         var m = c.Model;
         var storeyId = c.View.Str("storeyId");
         var hidden = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
-        var graphics = GraphicsSets.Of(m, c.View);
+        var graphics = VisibilityGraphics.Of(m, c.View);
         var style = Standards.TextOf(c.Book, Standards.DefaultRoomTag.TextStyle);
         foreach (var stair in m.OfClass(IfcClass.Stair))
         {
-            if (hidden.Contains(stair.Id) || GraphicsSets.Hides(graphics, stair) || Spatial.StoreyOf(m, stair.Id)?.Id != storeyId) continue;
+            if (hidden.Contains(stair.Id) || graphics.Hides(stair) || Spatial.StoreyOf(m, stair.Id)?.Id != storeyId) continue;
             if (StairBuilder.Resolve(m, stair) is not var (r, place, spec)) continue;
             var symbols = spec.Symbols ?? new StairPlanSymbols();
             if (!symbols.Numbers && !symbols.Label && !symbols.Up) continue;

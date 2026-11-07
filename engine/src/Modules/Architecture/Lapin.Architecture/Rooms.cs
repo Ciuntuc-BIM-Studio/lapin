@@ -363,7 +363,7 @@ public static class Rooms
         var m = c.Model;
         var storeyId = c.View.Str("storeyId");
         var hiddenElements = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
-        var graphics = GraphicsSets.Of(m, c.View);
+        var graphics = VisibilityGraphics.Of(m, c.View);
         var scheme = ColorSchemes.OfView(m, c.View);
         var patterns = DraftingResources.Patterns(m);
         var type = Standards.TagTypeOf(c.Book, null, Class) is { Shape: "room" } t ? t : Standards.DefaultRoomTag;
@@ -373,7 +373,7 @@ public static class Rooms
         var finishes = ViewStyles.Of(m, c.View).FinishHatch && c.View.Str("site") == null;
         foreach (var room in m.OfClass(Class))
         {
-            if (hiddenElements.Contains(room.Id) || GraphicsSets.Hides(graphics, room) || Spatial.StoreyOf(m, room.Id)?.Id != storeyId) continue;
+            if (hiddenElements.Contains(room.Id) || graphics.Hides(room) || Spatial.StoreyOf(m, room.Id)?.Id != storeyId) continue;
             if (Of(room, m, c.Geometry) is not { } o) continue;
             if (scheme != null && ColorSchemes.LookOf(scheme, room) is { } look && Fill(c, o, look, patterns) is { } fill) yield return fill;
             if (finishes && FinishHatchMark(c, room, o, finishPart, patterns, hiddenElements, graphics) is { } fh) yield return fh;
@@ -403,12 +403,12 @@ public static class Rooms
     /// A room's finish hatched over its floor (or its ceiling) in plan, lines only, under the model's pens and over the room's
     /// fill; null when the room has no such finish, says not (<c>finishHatch</c> false), or its finish element is hidden.
     /// </summary>
-    static ViewMark? FinishHatchMark(ViewContext c, Entity room, Outline o, string part, IReadOnlyList<HatchPattern> patterns, HashSet<string> hidden, JsonObject? graphics)
+    static ViewMark? FinishHatchMark(ViewContext c, Entity room, Outline o, string part, IReadOnlyList<HatchPattern> patterns, HashSet<string> hidden, VisibilityGraphics graphics)
     {
         if (room.Attrs["finishHatch"] is JsonValue on && on.TryGetValue<bool>(out var shows) && !shows) return null;
         var m = c.Model;
         if (m.OfClass(RoomFinishes.Class).FirstOrDefault(e => e.Str("roomId") == room.Id && e.Str("part") == part) is not { } finish
-            || hidden.Contains(finish.Id) || GraphicsSets.Hides(graphics, finish)) return null;
+            || hidden.Contains(finish.Id) || graphics.Hides(finish)) return null;
         if (RoomFinishes.SpecOf(m, finish) is not { } spec || RoomFinishes.HatchOf(m, spec, part) is not { } h
             || HatchLibrary.Find(h.Pattern, patterns) is not { Solid: false } pattern) return null;
         var mark = new ViewMark(null) { Under = true };

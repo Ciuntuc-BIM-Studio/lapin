@@ -84,7 +84,7 @@ Un DXF importato fa parte del progetto: **File → Save** lo conserva nel file `
 
 ## Collegamenti
 
-**Collega IFC…** mantiene un altro file collegato invece di importarlo. È in sola lettura e viene ricaricato quando cambia. Funziona anche per un DXF. **Gestisci → Collegamenti** mostra, ricarica, converte o rimuove i collegamenti. Un DXF collegato sta in 3D come uno importato; la sua casella **3D** in **Gestisci → Collegamenti** lo toglie.
+**Collega IFC…** mantiene un altro file collegato invece di importarlo. È in sola lettura e viene ricaricato quando cambia. Funziona anche per un DXF. **Gestisci → Collegamenti** mostra, ricarica, converte o rimuove i collegamenti. Un DXF collegato sta in 3D come uno importato; la sua casella **3D** in **Gestisci → Collegamenti** lo toglie. **Visibilità / Grafica** (<kbd>VV</kbd>) nasconde un collegamento, lo mostra a mezzitoni o gli dà le sue categorie in una sola vista (*Sezioni, prospetti e 3D*, Visibilità / Grafica).
 
 ## Modelli 3D
 

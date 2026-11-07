@@ -195,6 +195,7 @@ public static class Drafts
         var layers = Layers(c.Model).ToDictionary(l => l.Name);
         var hidden = (c.View.Attrs["hiddenLayers"] as JsonArray)?.Select(x => (string?)x).ToHashSet() ?? [];
         var patterns = DraftingResources.Patterns(c.Model);
+        var vg = VisibilityGraphics.Of(c.Model, c.View);
         foreach (var e in On(c.Model, c.View.Id))
         {
             var layer = layers.GetValueOrDefault(e.Str("layer") ?? "0") ?? layers["0"];
@@ -205,7 +206,7 @@ public static class Drafts
             {
                 var link = c.Model.Get(linkId);
                 if (link is not { Class: Links.Class } || !Links.Visible(link)) continue;
-                if (Links.IsHalftone(link)) color = Links.Halftone;
+                if (Links.IsHalftone(link) || vg.Halftone(e)) color = Links.Halftone;
             }
             var mk = new ViewMark(e.Id);
             if (e.Attrs["hatch"] is JsonObject h)

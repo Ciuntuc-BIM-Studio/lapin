@@ -204,3 +204,17 @@ La ficha **Vista** configura qué muestra la vista que está delante y cómo se 
 - **Sol y sombras.** El sol del proyecto un día a una hora, iluminando la vista 3D con sus sombras (ver *Realista, con el sol*).
 
 ![Calidad de visualización](shots/display-quality.webp)
+
+### Visibilidad / Gráficos
+
+**Visibilidad** (<kbd>VV</kbd>) o **Gráficos** (<kbd>VG</kbd>) abre la visibilidad / gráficos de la vista al frente: una planta, una sección, un alzado o una vista 3D. Lo que oculta queda oculto también en los planos de la vista, en su PDF y DXF, y en una exportación 3D.
+
+- **Categorías de modelo.** Cada categoría se muestra u oculta, con su color y grosor de línea, relleno y trama de corte. La flecha junto a una categoría abre sus subcategorías: el **Núcleo**, los **Acabados**, el **Aislamiento**, las **Membranas** y las **Otras capas** de un muro, un forjado o una cubierta (por el material de cada capa y su categoría en Gestionar → Materiales), las **Mochetas** de una puerta o una ventana. Desmarca **Acabados** bajo **Muros** y el enlucido desaparece, el ladrillo queda. Las armaduras, los revestimientos, los encofrados, los andamios, las instalaciones, las uniones de acero, los ascensores y la protección solar son categorías propias.
+- **Vínculos.** Cada archivo vinculado, con **Visible** y **Semitono** solo para esta vista. **Visualización** es **Según la vista anfitriona** (el vínculo toma las categorías de esta vista) o **Personalizado**: entonces **Categorías…** da al vínculo sus propias categorías, subcategorías y clases IFC en esta vista. La planta del arquitecto oculta las armaduras del vínculo estructural; la del ingeniero, los acabados del vínculo arquitectónico.
+- **Clases IFC.** Las clases de los elementos propios del proyecto, mostradas u ocultas.
+
+Los ajustes son de la vista, o de un conjunto con nombre que comparten varias vistas (**Guardar como conjunto…**). Un estilo de vista puede nombrar un conjunto (Gestionar → Estilos de vista): una vista sin ajustes propios toma el conjunto de su estilo, como las plantillas de vista de Revit; **Hacerlos propios de esta vista** empieza los suyos a partir de él.
+
+![Visibilidad / Gráficos: los acabados de un muro ocultos](shots/vg-categories.webp)
+
+![Una estructura vinculada, personalizada en una vista](shots/vg-links.webp)

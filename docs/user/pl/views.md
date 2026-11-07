@@ -208,3 +208,17 @@ Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 - **Słońce i cienie.** Słońce projektu w danym dniu o danej godzinie, oświetlające widok 3D z jego cieniami (zob. *Realistyczny, ze słońcem*).
 
 ![Jakość wyświetlania](shots/display-quality.webp)
+
+### Widoczność / Grafika
+
+**Widoczność** (<kbd>VV</kbd>) lub **Grafika** (<kbd>VG</kbd>) otwiera widoczność / grafikę widoku na wierzchu: rzutu, przekroju, elewacji lub widoku 3D. To, co ukrywa, jest ukryte także na arkuszach widoku, w jego PDF i DXF oraz w eksporcie 3D.
+
+- **Kategorie modelu.** Każdą kategorię można pokazać lub ukryć, z kolorem i grubością linii, wypełnieniem i kreskowaniem przekroju. Strzałka obok kategorii otwiera jej podkategorie: **Rdzeń**, **Wykończenia**, **Izolację**, **Membrany** i **Inne warstwy** ściany, stropu lub dachu (według materiału każdej warstwy i jego kategorii w Zarządzaj → Materiały), **Ościeża** drzwi lub okna. Odznacz **Wykończenia** pod **Ściany**, a tynk znika, cegła zostaje. Zbrojenie, okładziny, deskowania, rusztowania, instalacje, połączenia stalowe, windy i osłony przeciwsłoneczne to osobne kategorie.
+- **Łącza.** Każdy połączony plik, z **Widoczne** i **Wyszarzenie** tylko dla tego widoku. **Wyświetlanie** to **Jak widok główny** (łącze bierze kategorie tego widoku) lub **Niestandardowe**: wtedy **Kategorie…** daje łączu własne kategorie, podkategorie i klasy IFC w tym widoku. Rzut architekta ukrywa zbrojenie łącza konstrukcyjnego; rzut inżyniera wykończenia łącza architektonicznego.
+- **Klasy IFC.** Klasy własnych elementów projektu, pokazane lub ukryte.
+
+Ustawienia należą do widoku albo do nazwanego zbioru, który dzieli kilka widoków (**Zapisz jako zbiór…**). Styl widoku może wskazać zbiór (Zarządzaj → Style widoków): widok bez własnych ustawień bierze zbiór swojego stylu, jak szablony widoków w Revit; **Uczyń je własnymi tego widoku** zaczyna od niego własne.
+
+![Widoczność / Grafika: wykończenia ściany ukryte](shots/vg-categories.webp)
+
+![Połączona konstrukcja, niestandardowa w jednym widoku](shots/vg-links.webp)

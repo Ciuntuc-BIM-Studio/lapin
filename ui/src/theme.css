@@ -656,6 +656,13 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 /* Over a 2D view the command line takes the bottom: the hotbar sits above it. */
 .view-area:has(.cad-line) .hotbar { bottom: 74px; }
 .vv-set { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.vv-name { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.vv-name .icon.mini { flex: none; }
+.vv-indent { display: inline-block; width: 19px; flex: none; }
+.vv-sub td { border-bottom-style: dashed; }
+.vv-sub-name { padding-left: 30px !important; color: var(--ink-muted); }
+.vv-link-custom { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.vv-link-custom h4 { margin: 8px 0 4px; font-size: 12px; font-weight: 600; }
 .tabs-inline { display: flex; gap: 4px; margin-bottom: 8px; border-bottom: 1px solid var(--rule); }
 .tabs-inline button { border: none; background: none; padding: 6px 10px; cursor: pointer; color: var(--ink-muted); border-bottom: 2px solid transparent; }
 .tabs-inline button.on { color: var(--ink); border-bottom-color: var(--accent); }

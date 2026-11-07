@@ -51,10 +51,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var m = c.Model;
         var (convention, _) = Joinery.SymbolSettings(m);
         var hiddenElements = (c.View.Attrs["hiddenElements"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet() ?? [];
-        var graphics = GraphicsSets.Of(m, c.View);
+        var graphics = VisibilityGraphics.Of(m, c.View);
         foreach (var fill in m.OfClass(IfcClass.Door).Concat(m.OfClass(IfcClass.Window)))
         {
-            if (hiddenElements.Contains(fill.Id) || GraphicsSets.Hides(graphics, fill)) continue;
+            if (hiddenElements.Contains(fill.Id) || graphics.Hides(fill)) continue;
             if (Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { } wall || Openings.SpecOf(m, fill.Id) is not { } spec) continue;
             if (hiddenElements.Contains(wall.Id)) continue;
             var p = Openings.Place(m, opening);
