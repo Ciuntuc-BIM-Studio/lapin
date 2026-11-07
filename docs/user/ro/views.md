@@ -218,6 +218,7 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 - **Filtre.** Pe reguli, ca în Revit: **Filtru nou**, apoi regulile lui (clasa IFC, categoria, tipul, numele, materialul, nivelul, grupul, legătura, faza creării, tipul predefinit sau un parametru, ca *Rezistență la foc* sau *Pset_WallCommon.IsExternal*; este egal cu, conține, începe cu, mai mare, mai mic, are valoare…), toate sau oricare. Vederea folosește filtrele din lista ei, în ordine; primul care ia un element decide dacă e arătat. **Gestionare → Filtre de vedere** deschide această filă.
 - **Legături.** Fiecare fișier legat, cu **Vizibil** și **Halftone** doar pentru această vedere. **Afișare** e **Ca vederea gazdă** (legătura ia categoriile vederii) sau **Personalizat**: atunci **Categorii…** îi dă legăturii categoriile, subcategoriile și clasele IFC ale ei în această vedere. Planul arhitectului ascunde armăturile legăturii de structură; al inginerului, finisajele legăturii de arhitectură.
 - **Clase IFC.** Clasele elementelor proiectului, arătate sau ascunse.
+- **Suprascrieri grafice.** O categorie ia și un **Model** de linie pentru liniile ei secționate și văzute, **Halftone** și o **Transparență** (în 3D, de la 0 opac la 95); o categorie de adnotări o **Culoare** și **Halftone**; un filtru o **Culoare**, un **Model**, **Halftone** și o **Transparență** pentru ce ia, primul filtru din listă dând fiecare câmp. **Nivel de detaliu** (grosier, mediu, fin) spune cât desenează simbolurile unui plan, altfel după scară.
 
 Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**Salvează ca set…**). Un stil de vedere poate numi un set (Gestionare → Stiluri de vedere): o vedere fără setări proprii ia setul stilului ei, ca șabloanele de vedere din Revit; **Fă-le ale acestei vederi** pornește setările ei de la el.
 
@@ -230,3 +231,7 @@ Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**
 ![Categorii de adnotări](shots/vg-annotations.webp)
 
 ![Un import DXF pe straturi](shots/vg-imports.webp)
+
+![Culoarea și modelul unui filtru în plan](shots/vg-overrides.webp)
+
+![Planul cu filtrul lui](shots/vg-plan.webp)

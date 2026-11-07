@@ -282,4 +282,55 @@ public class VisibilityGraphicsTests
         G(f, new JsonObject { ["id"] = "3d", ["filters"] = new JsonArray(new JsonObject { ["id"] = bricks, ["hidden"] = true }) });
         Assert.True((bool)f.Session.Query("view.looks3d", new JsonObject())![a]!["hidden"]!);
     }
+    static List<JsonObject> CutPens(Fixture f, string view) =>
+        ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = view })!)["pens"]!.AsArray().OfType<JsonObject>().Where(p => (string?)p["layer"] == "CUT").ToList();
+
+    [Fact]
+    public void A_filter_s_colour_and_lines_and_a_category_s_halftone_draw_in_the_plan_and_the_3D()
+    {
+        var f = F();
+        var a = f.Wall(0, 0, 5, 0);
+        var b = f.Wall(0, 3, 5, 3);
+        f.Run("element.setParam", new JsonObject { ["id"] = b, ["name"] = "Fire rating", ["kind"] = "text", ["value"] = "REI 120" });
+        var plan = Plan(f);
+        var fire = (string)f.Run("viewFilter.create", new JsonObject { ["name"] = "Fire walls", ["rules"] = new JsonArray(new JsonObject { ["field"] = "param", ["name"] = "Fire rating", ["op"] = "beginsWith", ["value"] = "REI" }) })!["id"]!;
+        G(f, new JsonObject { ["id"] = plan, ["filters"] = new JsonArray(new JsonObject { ["id"] = fire, ["color"] = "#ff0000", ["pattern"] = "dashed" }) });
+        var pens = CutPens(f, plan);
+        var red = pens.Where(p => (string?)p["stroke"] == "#ff0000").ToList();
+        Assert.NotEmpty(red);
+        Assert.All(red, p => Assert.NotNull(p["dash"]));
+        Assert.Contains(pens, p => (string?)p["stroke"] != "#ff0000");
+        // The category halftone: every wall grey but the one the filter colours first.
+        G(f, new JsonObject { ["id"] = plan, ["category"] = "walls", ["value"] = new JsonObject { ["halftone"] = true } });
+        pens = CutPens(f, plan);
+        Assert.Contains(pens, p => (string?)p["stroke"] == Links.Halftone);
+        Assert.Contains(pens, p => (string?)p["stroke"] == "#ff0000");
+        // In 3D: the colour, a transparency as opacity, the halftone at 35 %.
+        G(f, new JsonObject { ["id"] = "3d", ["filters"] = new JsonArray(new JsonObject { ["id"] = fire, ["color"] = "#ff0000", ["transparency"] = 60 }) });
+        G(f, new JsonObject { ["id"] = "3d", ["category"] = "walls", ["value"] = new JsonObject { ["halftone"] = true } });
+        var looks = (JsonObject)f.Session.Query("view.looks3d", new JsonObject())!;
+        Assert.Equal("#ff0000", (string)looks[b]!["color"]!);
+        Assert.Equal(0.4, (double)looks[b]!["opacity"]!, 6);
+        Assert.Equal(0.35, (double)looks[a]!["opacity"]!, 6);
+    }
+
+    [Fact]
+    public void An_annotation_category_s_colour_and_the_view_s_detail_level()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var dim = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = plan, ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(5, 0), ["at"] = new JsonArray(0, 1) })!["id"]!;
+        G(f, new JsonObject { ["id"] = plan, ["annotation"] = "dimensions", ["value"] = new JsonObject { ["color"] = "#0000ff" } });
+        var mk = Views.Render(new Q(f), Views.Find(f.Model, plan)!).Marks.First(x => x.Owner == dim);
+        Assert.All(mk.Lines, l => Assert.Equal("#0000ff", l.Color));
+        G(f, new JsonObject { ["id"] = plan, ["annotation"] = "dimensions", ["value"] = new JsonObject { ["halftone"] = true } });
+        mk = Views.Render(new Q(f), Views.Find(f.Model, plan)!).Marks.First(x => x.Owner == dim);
+        Assert.All(mk.Lines, l => Assert.Equal(Links.Halftone, l.Color));
+        // Detail level: kept, read back, refused when it is not one.
+        G(f, new JsonObject { ["id"] = plan, ["detailLevel"] = "coarse" });
+        Assert.Equal(PlanDetail.Coarse, VisibilityGraphics.Of(f.Model, f.Model.Get(plan)!).DetailLevel);
+        G(f, new JsonObject { ["id"] = plan, ["detailLevel"] = null });
+        Assert.Null(VisibilityGraphics.Of(f.Model, f.Model.Get(plan)!).DetailLevel);
+        Assert.Throws<CommandException>(() => G(f, new JsonObject { ["id"] = plan, ["detailLevel"] = "rough" }));
+    }
 }

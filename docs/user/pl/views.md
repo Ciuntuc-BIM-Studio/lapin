@@ -219,6 +219,7 @@ Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 - **Filtry.** Oparte na regułach, jak w Revit: **Nowy filtr**, potem jego reguły (klasa IFC, kategoria, typ, nazwa, materiał, kondygnacja, grupa, łącze, faza utworzenia, typ predefiniowany lub parametr, jak *Odporność ogniowa* czy *Pset_WallCommon.IsExternal*; jest równe, zawiera, zaczyna się od, większe, mniejsze, ma wartość…), wszystkie lub dowolna. Widok używa filtrów ze swojej listy, po kolei; pierwszy, który obejmuje element, decyduje, czy jest pokazany. **Zarządzaj → Filtry widoku** otwiera tę kartę.
 - **Łącza.** Każdy połączony plik, z **Widoczne** i **Wyszarzenie** tylko dla tego widoku. **Wyświetlanie** to **Jak widok główny** (łącze bierze kategorie tego widoku) lub **Niestandardowe**: wtedy **Kategorie…** daje łączu własne kategorie, podkategorie i klasy IFC w tym widoku. Rzut architekta ukrywa zbrojenie łącza konstrukcyjnego; rzut inżyniera wykończenia łącza architektonicznego.
 - **Klasy IFC.** Klasy własnych elementów projektu, pokazane lub ukryte.
+- **Nadpisania grafiki.** Kategoria przyjmuje też **Wzór** dla swoich linii przekroju i rzutu, **Wyszarzenie** i **Przezroczystość** (w 3D, od 0 nieprzezroczyste do 95); kategoria opisów **Kolor** i **Wyszarzenie**; filtr **Kolor**, **Wzór**, **Wyszarzenie** i **Przezroczystość** dla tego, co obejmuje, a pierwszy filtr na liście ustala każde pole. **Poziom szczegółowości** (zgrubny, średni, dokładny) określa, ile rysują symbole rzutu, inaczej według skali.
 
 Ustawienia należą do widoku albo do nazwanego zbioru, który dzieli kilka widoków (**Zapisz jako zbiór…**). Styl widoku może wskazać zbiór (Zarządzaj → Style widoków): widok bez własnych ustawień bierze zbiór swojego stylu, jak szablony widoków w Revit; **Uczyń je własnymi tego widoku** zaczyna od niego własne.
 
@@ -231,3 +232,7 @@ Ustawienia należą do widoku albo do nazwanego zbioru, który dzieli kilka wido
 ![Kategorie opisów](shots/vg-annotations.webp)
 
 ![Import DXF według warstw](shots/vg-imports.webp)
+
+![Kolor i wzór filtra na rzucie](shots/vg-overrides.webp)
+
+![Rzut z filtrem](shots/vg-plan.webp)

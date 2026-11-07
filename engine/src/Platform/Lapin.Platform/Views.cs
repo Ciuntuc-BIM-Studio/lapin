@@ -399,7 +399,7 @@ public static class Views
         var site = plan && SitePlans.Of(view) != null;
         var display = StoreyDisplay.Of(view);
         // How much the plan's symbols draw, by its scale.
-        var detail = PlanDetail.Of(view.NumOrNull("scale") ?? 100);
+        var detail = vg.DetailLevel ?? PlanDetail.Of(view.NumOrNull("scale") ?? 100);
         // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
         var style = ViewStyles.Of(m, view);
         // People, cars and plants (decision 341): their symbols and silhouettes in the style's mode, thin.
@@ -637,22 +637,25 @@ public static class Views
         var graphics = GraphicsSets.Of(m, view);
         var categories = (graphics?["categories"] as JsonObject)?.Select(c => (c.Key, G: CategoryGraphics.From(c.Value))).Where(x => x.G != null).ToDictionary(x => x.Key, x => x.G!);
         var table = LineStyles.ReadTable(project?.Attrs["penTable"]);
-        var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, graphics?["elements"] as JsonObject, table, scale);
         // Elements a module draws in another colour (a phase's override): their lines and fills.
         var colors = new Dictionary<string, string>();
         var filters = q.Services.All<IViewElementFilter>();
         var halftoneOthers = spec.Kind == "plan" && StoreyDisplay.Of(view).Halftone;
         var vg = VisibilityGraphics.Of(m, view);
-        if (filters.Count > 0 || halftoneOthers || vg.HasLinks)
+        // The view's filters' line styles (decision 394), per element, under the elements' own overrides.
+        var elementLines = graphics?["elements"]?.DeepClone() as JsonObject;
+        if (filters.Count > 0 || halftoneOthers || vg.HasOverrides)
             foreach (var id in drawing.Cuts.Select(c => c.Element).Concat(drawing.Lines.Select(l => l.Element)).Concat((drawing.Fills ?? []).Select(f => f.Element)).Concat((drawing.Texts ?? []).Select(t => t.Element)).Distinct())
             {
                 if (m.Get(id) is not { } el) continue;
                 if (filters.Select(f => f.For(q, view, el)).FirstOrDefault(x => x != null) is { Color: { } c }) colors[id] = c;
-                // A link drawn halftone in this view (decision 391), as one halftone everywhere.
-                else if (vg.Halftone(el)) colors[id] = Links.Halftone;
+                // A filter's colour or halftone, a category's halftone, a link halftone in this view (decisions 391, 394).
+                else if (vg.ColorOf(el) is { } vc) colors[id] = vc;
                 // Another storey's element in a plan that shows it halftone: grey, as a halftone link.
                 else if (halftoneOthers && ShowsByStorey(m, view, el) == true) colors[id] = Links.Halftone;
+                if (vg.LinesOf(el) is { } lines && !(elementLines?.ContainsKey(id) ?? false)) (elementLines ??= [])[id] = lines;
             }
+        var styles = LineStyles.For(project?.Attrs["objectStyles"] as JsonObject, graphics?["categories"] as JsonObject, elementLines, table, scale);
         var penOptions = new Pens.Options(scale, spec.Hidden, styles, categories, DraftingResources.Patterns(m), ElementColors: colors, Table: table);
         var pens = Pens.Of(drawing, materials, penOptions);
         // The faces the drawing sees, worked out once for its shadows and its surface hatches: a developed section's on each
@@ -694,6 +697,8 @@ public static class Views
         marks.AddRange(PickMarks(drawing));
         // What the view's Visibility / Graphics hides goes with its marks (decision 391): a hidden category's tags and bars, a link hidden here.
         marks.RemoveAll(vg.HidesMark);
+        // An annotation category's colour or halftone (decision 394).
+        if (vg.Graphics?["annotations"] is JsonObject { Count: > 0 }) foreach (var mk in marks) vg.Recolor(mk);
         // The marks' pens: those drawn under the model (rooms' fills) go first, the others over it; fills before lines in each.
         // A drafted element given a place in the view's draw order (decision 339) draws in that order instead, in runs: a
         // run takes the next element until one with a fill or a picture comes after lines, so a fill covers what is under it.

@@ -219,6 +219,7 @@ A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua a
 - **Filtros.** Por regras, como no Revit: **Novo filtro**, depois suas regras (classe IFC, categoria, tipo, nome, material, pavimento, grupo, vínculo, fase de criação, tipo predefinido ou um parâmetro, como *Resistência ao fogo* ou *Pset_WallCommon.IsExternal*; é igual a, contém, começa com, maior, menor, tem valor…), todas ou qualquer uma. A vista usa os filtros da sua lista, em ordem; o primeiro que pega um elemento decide se ele é mostrado. **Gerenciar → Filtros de vista** abre esta aba.
 - **Vínculos.** Cada arquivo vinculado, com **Visível** e **Meio-tom** só para esta vista. **Exibição** é **Pela vista anfitriã** (o vínculo usa as categorias desta vista) ou **Personalizado**: então **Categorias…** dá ao vínculo suas próprias categorias, subcategorias e classes IFC nesta vista. A planta do arquiteto oculta as armaduras do vínculo estrutural; a do engenheiro, os acabamentos do vínculo de arquitetura.
 - **Classes IFC.** As classes dos elementos próprios do projeto, mostradas ou ocultas.
+- **Substituições gráficas.** Uma categoria recebe também um **Padrão** para as suas linhas de corte e de projeção, **Meio-tom** e uma **Transparência** (em 3D, de 0 opaco a 95); uma categoria de anotação uma **Cor** e **Meio-tom**; um filtro uma **Cor**, um **Padrão**, **Meio-tom** e uma **Transparência** para o que pega, o primeiro filtro da lista dando cada campo. **Nível de detalhe** (baixo, médio, alto) define quanto desenham os símbolos de uma planta; senão, pela escala.
 
 As configurações são da vista, ou de um conjunto com nome que várias vistas compartilham (**Salvar como conjunto…**). Um estilo de vista pode nomear um conjunto (Gerenciar → Estilos de vista): uma vista sem configurações próprias usa o conjunto do seu estilo, como os modelos de vista do Revit; **Torná-los próprios desta vista** começa os seus a partir dele.
 
@@ -231,3 +232,7 @@ As configurações são da vista, ou de um conjunto com nome que várias vistas 
 ![Categorias de anotação](shots/vg-annotations.webp)
 
 ![Uma importação DXF por camadas](shots/vg-imports.webp)
+
+![A cor e o padrão de um filtro na planta](shots/vg-overrides.webp)
+
+![A planta com o seu filtro](shots/vg-plan.webp)

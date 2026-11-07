@@ -147,6 +147,13 @@ public static class GraphicsSets
             }
             if (cls != null) SetIn(into, "classes", cls, value);
             // Stage B: an annotation category's row; an import's ({hidden, halftone}) or one of its layers'; the view's (or a link's) filters, in order.
+            // The view's detail level (coarse, medium, fine; null: by its scale).
+            if (a.ContainsKey("detailLevel"))
+            {
+                if ((string?)a["detailLevel"] is { Length: > 0 } dl)
+                    g["detailLevel"] = dl is "coarse" or "medium" or "fine" ? dl : throw new CommandException($"„{dl}” is not coarse, medium or fine.");
+                else g.Remove("detailLevel");
+            }
             if ((string?)a["annotation"] is { } ann)
             {
                 if (!VisibilityGraphics.AnnotationCategories.Contains(ann)) throw new CommandException($"„{ann}” is not an annotation category.");
@@ -366,7 +373,9 @@ public static class GraphicsSets
             if (Spatial.StoreyOf(m, e.Id) == null) continue;
             if (vg.Hides(e)) { o[e.Id] = new JsonObject { ["hidden"] = true }; continue; }
             JsonObject? look = null;
-            if (vg.Halftone(e)) look = new JsonObject { ["opacity"] = 0.35 };
+            // A halftone, a transparency (opacity), a filter's colour (decision 394).
+            if (vg.OpacityOf(e) is { } op) look = new JsonObject { ["opacity"] = Math.Round(op, 3) };
+            if (vg.ColorOf(e) is { } color && color != Links.Halftone) (look ??= new JsonObject())["color"] = color;
             if (vg.HiddenSubs(e) != null && q.Geometry(e.Id) is { } geo)
             {
                 var parts = new JsonObject();

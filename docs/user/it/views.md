@@ -219,6 +219,7 @@ La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appar
 - **Filtri.** A regole, come in Revit: **Nuovo filtro**, poi le sue regole (classe IFC, categoria, tipo, nome, materiale, piano, gruppo, collegamento, fase di creazione, tipo predefinito o un parametro, come *Resistenza al fuoco* o *Pset_WallCommon.IsExternal*; è uguale a, contiene, inizia con, maggiore, minore, ha un valore…), tutte o una qualsiasi. La vista usa i filtri della sua lista, in ordine; il primo che prende un elemento decide se viene mostrato. **Gestisci → Filtri di vista** apre questa scheda.
 - **Collegamenti.** Ogni file collegato, con **Visibile** e **Mezzitoni** solo per questa vista. **Visualizzazione** è **Come la vista ospite** (il collegamento prende le categorie di questa vista) o **Personalizzato**: allora **Categorie…** dà al collegamento le sue categorie, sottocategorie e classi IFC in questa vista. La pianta dell'architetto nasconde le armature del collegamento strutturale; quella dell'ingegnere le finiture del collegamento architettonico.
 - **Classi IFC.** Le classi degli elementi propri del progetto, mostrate o nascoste.
+- **Sostituzioni grafiche.** Una categoria prende anche un **Motivo** per le sue linee di taglio e di proiezione, **Mezzitoni** e una **Trasparenza** (in 3D, da 0 opaco a 95); una categoria di annotazione un **Colore** e **Mezzitoni**; un filtro un **Colore**, un **Motivo**, **Mezzitoni** e una **Trasparenza** per ciò che prende, il primo filtro della lista dando ogni campo. **Livello di dettaglio** (basso, medio, alto) stabilisce quanto disegnano i simboli di una pianta, altrimenti secondo la scala.
 
 Le impostazioni sono della vista, o di un insieme con nome condiviso da più viste (**Salva come insieme…**). Uno stile di vista può nominare un insieme (Gestisci → Stili di vista): una vista senza impostazioni proprie prende l'insieme del suo stile, come i modelli di vista di Revit; **Rendili propri di questa vista** parte da esso per le sue.
 
@@ -231,3 +232,7 @@ Le impostazioni sono della vista, o di un insieme con nome condiviso da più vis
 ![Categorie di annotazione](shots/vg-annotations.webp)
 
 ![Un DXF importato per layer](shots/vg-imports.webp)
+
+![Il colore e il motivo di un filtro in pianta](shots/vg-overrides.webp)
+
+![La pianta con il suo filtro](shots/vg-plan.webp)

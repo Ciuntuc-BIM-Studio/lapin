@@ -114,6 +114,70 @@ public sealed class VisibilityGraphics
         _ => null,
     };
 
+    // Stage C: graphic overrides (decision 394).
+
+    /// <summary>The first value a field has in the rows of the filters that take an element (the view's order: the first that says gives it).</summary>
+    JsonNode? FromFilters(Entity e, string field) => FilterRows(e).Select(r => r[field]).FirstOrDefault(x => x != null);
+
+    JsonObject? CategoryRow(Entity e) => LineStyles.CategoryOf(e.Class) is { } c ? RulesFor(e)?["categories"]?[c] as JsonObject : null;
+
+    /// <summary>Whether anything in the view's graphics draws an element otherwise than its styles (a filter's colour or lines, a halftone, a transparency).</summary>
+    public bool HasOverrides =>
+        HasLinks || (Graphics?["filters"] as JsonArray)?.OfType<JsonObject>().Any(r => r.Count > 2 || r.Any(kv => kv.Key is not ("id" or "hidden"))) == true
+        || (Graphics?["categories"] as JsonObject)?.Any(c => c.Value?["halftone"] != null || c.Value?["transparency"] != null) == true;
+
+    /// <summary>The colour an element's lines (and its fills, paled) draw in: a filter's colour or halftone, else its category's halftone, else its link's; null: its own.</summary>
+    public string? ColorOf(Entity e)
+    {
+        foreach (var r in FilterRows(e))
+        {
+            if ((string?)r["color"] is { Length: 7 } c) return c;
+            if (True(r["halftone"])) return Links.Halftone;
+        }
+        if (True(CategoryRow(e)?["halftone"])) return Links.Halftone;
+        return Halftone(e) ? Links.Halftone : null;
+    }
+
+    /// <summary>The line styles a filter gives an element ({role: {pen, pattern}} for cut and projection), as the per-element overrides read them; null: none.</summary>
+    public JsonObject? LinesOf(Entity e)
+    {
+        var pen = Json.Number(FromFilters(e, "pen"));
+        var pattern = (string?)FromFilters(e, "pattern");
+        if (pen == null && pattern == null) return null;
+        JsonObject Spec()
+        {
+            var o = new JsonObject();
+            if (pen != null) o["pen"] = (int)pen.Value;
+            if (pattern != null) o["pattern"] = pattern;
+            return o;
+        }
+        return new JsonObject { [LineRole.Cut] = Spec(), [LineRole.Projection] = Spec() };
+    }
+
+    /// <summary>How opaque an element draws in 3D: a filter's transparency (0–100), else its category's; a halftone 35 %; null: as it is.</summary>
+    public double? OpacityOf(Entity e)
+    {
+        var t = Json.Number(FromFilters(e, "transparency")) ?? Json.Number(CategoryRow(e)?["transparency"]);
+        if (t is { } pct && pct > 0) return Math.Clamp(1 - pct / 100, 0.05, 1);
+        return ColorOf(e) == Links.Halftone ? 0.35 : null;
+    }
+
+    /// <summary>The colour an annotation category draws in this view (its own, or halftone grey); null: as it is.</summary>
+    public string? AnnotationColor(string category) =>
+        Graphics?["annotations"]?[category] is JsonObject row ? (string?)row["color"] is { Length: 7 } c ? c : True(row["halftone"]) ? Links.Halftone : null : null;
+
+    /// <summary>The view's detail level (coarse, medium, fine) as <see cref="PlanDetail"/> reads it; null: by its scale.</summary>
+    public int? DetailLevel => (string?)Graphics?["detailLevel"] switch { "coarse" => PlanDetail.Coarse, "medium" => PlanDetail.Medium, "fine" => PlanDetail.Fine, _ => null };
+
+    /// <summary>A mark recoloured as its annotation category says (lines, texts and fills); unchanged otherwise.</summary>
+    public void Recolor(ViewMark mk)
+    {
+        if (OwnerOf(m, mk.Owner) is not { } e || AnnotationOf(e, mk) is not { } ac || AnnotationColor(ac) is not { } color) return;
+        for (var i = 0; i < mk.Lines.Count; i++) mk.Lines[i] = mk.Lines[i] with { Color = color };
+        for (var i = 0; i < mk.Texts.Count; i++) mk.Texts[i] = mk.Texts[i] with { Color = color };
+        for (var i = 0; i < mk.Fills.Count; i++) mk.Fills[i] = mk.Fills[i] with { Color = color };
+    }
+
     /// <summary>Whether the view hides an annotation category.</summary>
     public bool HidesAnnotation(string category) => True(Graphics?["annotations"]?[category]?["hidden"]);
 

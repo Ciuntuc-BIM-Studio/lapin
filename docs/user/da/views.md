@@ -219,6 +219,7 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 - **Filtre.** Regelbaserede, som i Revit: **Nyt filter**, derefter dets regler (IFC-klasse, kategori, type, navn, materiale, etage, gruppe, link, oprettelsesfase, foruddefineret type eller en parameter, som *Brandmodstand* eller *Pset_WallCommon.IsExternal*; er lig med, indeholder, begynder med, større, mindre, har en værdi…), alle eller en af dem. Visningen bruger filtrene på sin liste, i rækkefølge; det første, der tager et element, afgør, om det vises. **Administrer → Visningsfiltre** åbner denne fane.
 - **Links.** Hver linket fil, med **Vist** og **Halvtone** kun for denne visning. **Visning** er **Som værtsvisningen** (linket tager denne visnings kategorier) eller **Brugerdefineret**: så giver **Kategorier…** linket sine egne kategorier, underkategorier og IFC-klasser i denne visning. Arkitektens plan skjuler konstruktionslinkets armering; ingeniørens skjuler arkitektlinkets overflader.
 - **IFC-klasser.** Klasserne for projektets egne elementer, vist eller skjult.
+- **Grafiske tilsidesættelser.** En kategori får også et **Mønster** for sine snit- og projektionslinjer, **Halvtone** og en **Gennemsigtighed** (i 3D, fra 0 uigennemsigtig til 95); en annoteringskategori en **Farve** og **Halvtone**; et filter en **Farve**, et **Mønster**, **Halvtone** og en **Gennemsigtighed** for det, det tager, hvor det første filter på listen giver hvert felt. **Detaljeniveau** (groft, middel, fint) bestemmer, hvor meget en plans symboler tegner, ellers efter målestokken.
 
 Indstillingerne tilhører visningen eller et navngivet sæt, som flere visninger deler (**Gem som et sæt…**). En visningsstil kan navngive et sæt (Administrer → Visningsstile): en visning uden egne indstillinger tager sin stils sæt, som Revits visningsskabeloner; **Gør dem til denne visnings egne** starter dens egne derfra.
 
@@ -231,3 +232,7 @@ Indstillingerne tilhører visningen eller et navngivet sæt, som flere visninger
 ![Annoteringskategorier](shots/vg-annotations.webp)
 
 ![En DXF-import efter lag](shots/vg-imports.webp)
+
+![Et filters farve og mønster i planen](shots/vg-overrides.webp)
+
+![Planen med sit filter](shots/vg-plan.webp)

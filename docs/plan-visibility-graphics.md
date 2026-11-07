@@ -2,7 +2,7 @@
 
 Asked by a user and approved by the user (the developer of Lapin) on 07.11.2026: "Please expand the support for Visibility/Graphics like in Revit: with tabs for Annotative Objects, File Links, Imports, even Point Cloud (if possible). We need to be able to turn off Categories from links, like architects don't want to see rebars, engineers don't want to see wall and floor finishings, etc. The V/G is the most powerful tool in any BIM software."
 
-Decisions 391– in `docs/decisions-pending.md`, one per stage. Stage A done (decision 391), stage B done (decision 393).
+Decisions 391– in `docs/decisions-pending.md`, one per stage. Stage A done (decision 391), stage B done (decision 393), stage C done (decision 394); stage D (point clouds) left for the user to decide.
 
 ## What there is today
 
@@ -98,6 +98,8 @@ Lapin has no analytical model of its own (the JG export writes one from the phys
 - **B. Annotation categories, imported categories, filters.** The mark filter by owner; DXF imports by file and layer, traced PDFs and images; the project's filters with their rules, Manage → View filters, the Filters tab; visibility only.
 - **C. Graphic overrides.** Halftone, colour, transparency, cut and projection lines (pen, pattern) for categories, subcategories, filters, links and annotation categories, in drawings and in 3D; the view's detail level.
 - **D. Point clouds** (below).
+
+What stage C left: a subcategory's own graphics (colour, pattern; a subcategory is shown or hidden only), a filter's or a category's line weight as a pen for every role, overrides inside a custom link (it hides, shows and halftones), a traced image's halftone, the 3D underlays of a DXF following a 3D view's imported categories, a link drawn as an underlay.
 
 Each stage: engine tests (`VisibilityGraphicsTests`), interface tests, the user guide (views.md, import-export.md, in the 8 translations), the dialog's scene, the strings in every language, an Ask Lapin entry, a decision row.
 

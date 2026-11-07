@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryName, clean, moveRow } from './VisibilityDialog';
+import { categoryName, clean, moveRow, withPattern } from './VisibilityDialog';
 
 describe('Visibility / Graphics rows', () => {
   it('drop what says nothing, keeping a shown that is not the default', () => {
@@ -21,5 +21,12 @@ describe('Visibility / Graphics rows', () => {
     expect(moveRow(['a', 'b', 'c'], 0, -1)).toEqual(['a', 'b', 'c']);
     expect(moveRow(['a', 'b', 'c'], 2, 1)).toEqual(['a', 'b', 'c']);
     expect(categoryName('roomTags')).toBe('Room tags');
+  });
+
+  it('draw a category\'s cut and projection lines in a pattern, and as styled again', () => {
+    const dashed = withPattern({ cut: { pen: 7 } }, 'dashed');
+    expect(dashed).toEqual({ cut: { pen: 7, pattern: 'dashed' }, projection: { pattern: 'dashed' } });
+    expect(withPattern(dashed, '')).toEqual({ cut: { pen: 7 } });
+    expect(clean({ lines: {}, transparency: 0, halftone: true }, false)).toEqual({ halftone: true });
   });
 });

@@ -15,12 +15,12 @@ import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { PendingDialog } from './PendingDialog';
 
-export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; sub?: Record<string, Row> }
+export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; halftone?: boolean; transparency?: number; lines?: Record<string, { pattern?: string; pen?: number }>; sub?: Record<string, Row> }
 interface Rules { categories?: Record<string, Row>; classes?: Record<string, Row> }
 export interface LinkRow extends Rules { display?: 'host' | 'custom'; hidden?: boolean; halftone?: boolean }
-export interface FilterRow { id: string; hidden?: boolean }
+export interface FilterRow { id: string; hidden?: boolean; color?: string; halftone?: boolean; transparency?: number; pattern?: string }
 interface Graphics extends Rules {
-  links?: Record<string, LinkRow>; annotations?: Record<string, { hidden?: boolean }>;
+  links?: Record<string, LinkRow>; annotations?: Record<string, { hidden?: boolean; color?: string; halftone?: boolean }>; detailLevel?: string;
   imports?: Record<string, { hidden?: boolean; halftone?: boolean; layers?: Record<string, { hidden?: boolean }> }>; filters?: FilterRow[];
 }
 interface ImportInfo { id: string; kind: 'dxf' | 'image'; name: string; layers: string[] }
@@ -37,6 +37,20 @@ export interface Visibility {
 /** The ISO 128 pen series (mm), as the engine reads a category's weight; the older names still show when a project has them. */
 const WEIGHTS = ['', '0.13', '0.18', '0.25', '0.35', '0.5', '0.7', '1.0'];
 const LEGACY: Record<string, string> = { heavy: '0.7', medium: '0.5', light: '0.25', hairline: '0.13' };
+
+/** The line patterns a category or a filter can draw its cut and projection lines in. */
+export const PATTERNS: [string, string][] = [['', 'as styled'], ['solid', 'solid'], ['dashed', 'dashed'], ['hidden', 'hidden'], ['center', 'center'], ['dotted', 'dotted']];
+
+/** A category's lines drawn in a pattern (cut and projection), or as styled again. */
+export function withPattern(lines: Row['lines'], pattern: string): Row['lines'] {
+  const next = { ...(lines ?? {}) };
+  for (const role of ['cut', 'projection']) {
+    const spec = { ...(next[role] ?? {}) };
+    if (pattern) spec.pattern = pattern; else delete spec.pattern;
+    if (Object.keys(spec).length) next[role] = spec; else delete next[role];
+  }
+  return next;
+}
 
 /** A category's or a subcategory's name as the dialog shows it. */
 export const CATEGORY_NAMES: Record<string, string> = {
@@ -72,7 +86,7 @@ type Tab = 'categories' | 'annotations' | 'imports' | 'filters' | 'links' | 'cla
 /** A row cleared of what says nothing (an empty field, shown when shown is the default). */
 export function clean(next: Row, keepsShown: boolean): Row {
   for (const k of Object.keys(next) as (keyof Row)[])
-    if (next[k] === '' || (next[k] === false && !(k === 'hidden' && keepsShown)) || next[k] == null || (k === 'sub' && !Object.keys(next.sub ?? {}).length)) delete next[k];
+    if (next[k] === '' || next[k] === 0 || (next[k] === false && !(k === 'hidden' && keepsShown)) || next[k] == null || ((k === 'sub' || k === 'lines') && !Object.keys((next[k] as object | undefined) ?? {}).length)) delete next[k];
   return next;
 }
 
@@ -143,7 +157,7 @@ export function VisibilityDialog() {
   /** The categories, each unfolding into its subcategories; full columns for the view's own, Shown alone inside a link. */
   const categoryTable = (link?: string) => (
     <table className="layer-table vv-categories">
-      <thead><tr><th>Shown</th><th>Category</th>{!link && <><th>Line colour</th><th>Line weight</th><th>Fill</th><th>Cut hatch</th></>}</tr></thead>
+      <thead><tr><th>Shown</th><th>Category</th>{!link && <><th>Line colour</th><th>Line weight</th><th>Pattern</th><th>Fill</th><th>Cut hatch</th><th>Halftone</th><th title="In 3D: 0 opaque, 100 clear">Transparency</th></>}</tr></thead>
       <tbody>
         {v.categories.map((c) => {
           const r = rulesOf(link).categories?.[c] ?? {};
@@ -166,8 +180,11 @@ export function VisibilityDialog() {
                   <>
                     <td><input type="color" value={r.lineColor ?? '#000000'} onChange={(e) => setCategory(c, { lineColor: e.target.value })} />{r.lineColor && <button type="button" className="icon mini" title="As the object styles" onClick={() => setCategory(c, { lineColor: '' })}><X size={10} /></button>}</td>
                     <td><select value={r.lineWeight ?? ''} onChange={(e) => setCategory(c, { lineWeight: e.target.value })}>{(r.lineWeight && !WEIGHTS.includes(r.lineWeight) ? [...WEIGHTS, r.lineWeight] : WEIGHTS).map((w) => <option key={w} value={w}>{w === '' ? 'as styled' : LEGACY[w] ? `${w} (${LEGACY[w]} mm)` : `${w} mm`}</option>)}</select></td>
+                    <td><select aria-label="Pattern" value={r.lines?.projection?.pattern ?? r.lines?.cut?.pattern ?? ''} onChange={(e) => setCategory(c, { lines: withPattern(r.lines, e.target.value) })}>{PATTERNS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                     <td><input type="color" value={r.fillColor ?? '#ffffff'} onChange={(e) => setCategory(c, { fillColor: e.target.value })} />{r.fillColor && <button type="button" className="icon mini" title="No fill of its own" onClick={() => setCategory(c, { fillColor: '' })}><X size={10} /></button>}</td>
                     <td><select value={r.cutHatch ?? ''} onChange={(e) => setCategory(c, { cutHatch: e.target.value })}><option value="">the materials'</option>{hatches.map((h) => <option key={h} value={h}>{h}</option>)}</select></td>
+                    <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => setCategory(c, { halftone: e.target.checked })} /></td>
+                    <td><input type="number" className="vv-number" aria-label="Transparency" min={0} max={95} step={5} value={r.transparency ?? 0} onChange={(e) => setCategory(c, { transparency: Math.max(0, Math.min(95, Number(e.target.value) || 0)) })} /></td>
                   </>
                 )}
               </tr>
@@ -177,7 +194,7 @@ export function VisibilityDialog() {
                   <tr key={s} className="vv-sub" data-sub={`${c}.${s}`}>
                     <td><input type="checkbox" aria-label={`${categoryName(c)} ▸ ${categoryName(s)}`} checked={shown && !sr.hidden} disabled={!shown} onChange={(e) => setCategory(c, { hidden: !e.target.checked }, link, s)} /></td>
                     <td className="vv-sub-name">{categoryName(s)}</td>
-                    {!link && <td colSpan={4} />}
+                    {!link && <td colSpan={7} />}
                   </tr>
                 );
               })}
@@ -223,6 +240,13 @@ export function VisibilityDialog() {
             {v.fromStyle && <button type="button" className="btn" title="Graphics of this view's own, starting from the style's set" onClick={() => void execute('view.useGraphicsSet', { id: target, setId: null })}>Make them this view's own</button>}
             {setName && <span className="muted small">Changes here change „{setName}” in every view that takes it.</span>}
             {view && (
+              <label className="row"><span className="muted small">Detail level</span>
+                <select data-testid="vv-detail" value={v.graphics?.detailLevel ?? ''} onChange={(e) => void execute('view.graphics', { id: target, detailLevel: e.target.value || null })}>
+                  <option value="">by the scale</option><option value="coarse">coarse</option><option value="medium">medium</option><option value="fine">fine</option>
+                </select>
+              </label>
+            )}
+            {view && (
               <label className="row"><span className="muted small">Hidden lines</span>
                 <select value={String(view.props.hiddenLines ?? 'auto')} onChange={(e) => void execute('element.update', { id: target, attrs: { hiddenLines: e.target.value } })}>
                   <option value="auto">by the view's kind</option><option value="show">shown</option><option value="hide">hidden</option>
@@ -242,14 +266,24 @@ export function VisibilityDialog() {
           {tab === 'classes' && classTable(classes)}
           {tab === 'annotations' && (
             <table className="layer-table vv-annotations">
-              <thead><tr><th>Shown</th><th>Category</th></tr></thead>
+              <thead><tr><th>Shown</th><th>Category</th><th>Colour</th><th>Halftone</th></tr></thead>
               <tbody>
-                {(v.annotations ?? []).map((c) => (
-                  <tr key={c} data-annotation={c}>
-                    <td><input type="checkbox" aria-label={categoryName(c)} checked={!v.graphics?.annotations?.[c]?.hidden} onChange={(e) => void execute('view.graphics', { id: target, annotation: c, value: e.target.checked ? null : { hidden: true } })} /></td>
-                    <td>{categoryName(c)}</td>
-                  </tr>
-                ))}
+                {(v.annotations ?? []).map((c) => {
+                  const r = v.graphics?.annotations?.[c] ?? {};
+                  const put = (patch: { hidden?: boolean; color?: string; halftone?: boolean }) => {
+                    const next: Record<string, unknown> = { ...r, ...patch };
+                    for (const k of Object.keys(next)) if (!next[k]) delete next[k];
+                    void execute('view.graphics', { id: target, annotation: c, value: Object.keys(next).length ? next : null });
+                  };
+                  return (
+                    <tr key={c} data-annotation={c}>
+                      <td><input type="checkbox" aria-label={categoryName(c)} checked={!r.hidden} onChange={(e) => put({ hidden: !e.target.checked })} /></td>
+                      <td>{categoryName(c)}</td>
+                      <td><input type="color" aria-label="Colour" value={r.color ?? '#000000'} onChange={(e) => put({ color: e.target.value })} />{r.color && <button type="button" className="icon mini" title="Its own colour" onClick={() => put({ color: '' })}><X size={10} /></button>}</td>
+                      <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => put({ halftone: e.target.checked })} /></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -335,8 +369,9 @@ export function VisibilityDialog() {
 
 /** The Filters tab: the view's filters in order (shown or hidden), and the project's filters with their rules. */
 function FiltersTab({ target, categories, rows, defs, counts, editing, setEditing }: { target: string; categories: string[]; rows: FilterRow[]; defs: ViewFilter[]; counts: Record<string, number>; editing: string | null; setEditing: (id: string | null) => void }) {
-  const save = (next: FilterRow[]) => void execute('view.graphics', { id: target, filters: next });
+  const save = (next: FilterRow[]) => void execute('view.graphics', { id: target, filters: next.map((r) => Object.fromEntries(Object.entries(r).filter(([, x]) => x !== undefined))) });
   const used = rows.filter((r) => defs.some((d) => d.id === r.id));
+  const put = (id: string, patch: Partial<FilterRow>) => save(used.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   const unused = defs.filter((d) => !used.some((r) => r.id === d.id));
   const edited = defs.find((d) => d.id === editing);
   const setRules = (f: ViewFilter, rules: FilterRule[]) => void execute('viewFilter.update', { id: f.id, rules });
@@ -344,7 +379,7 @@ function FiltersTab({ target, categories, rows, defs, counts, editing, setEditin
     <div className="vv-filters">
       {used.length === 0 ? <p className="muted small">This view uses no filter. Add one of the project's below, or make a new one.</p> : (
         <table className="layer-table">
-          <thead><tr><th>Shown</th><th>Filter</th><th>Elements</th><th /></tr></thead>
+          <thead><tr><th>Shown</th><th>Filter</th><th>Elements</th><th>Colour</th><th>Pattern</th><th>Halftone</th><th title="In 3D: 0 opaque, 100 clear">Transparency</th><th /></tr></thead>
           <tbody>
             {used.map((r, i) => {
               const d = defs.find((x) => x.id === r.id)!;
@@ -353,6 +388,10 @@ function FiltersTab({ target, categories, rows, defs, counts, editing, setEditin
                   <td><input type="checkbox" aria-label={d.name} checked={!r.hidden} onChange={(e) => save(used.map((x) => (x.id === r.id ? { ...x, hidden: !e.target.checked } : x)))} /></td>
                   <td><button type="button" className="link-button" onClick={() => setEditing(editing === d.id ? null : d.id)}>{d.name}</button></td>
                   <td className="muted small">{counts[d.id] ?? '…'}</td>
+                  <td><input type="color" aria-label="Colour" value={r.color ?? '#000000'} onChange={(e) => put(r.id, { color: e.target.value })} />{r.color && <button type="button" className="icon mini" title="Its own colour" onClick={() => put(r.id, { color: undefined })}><X size={10} /></button>}</td>
+                  <td><select aria-label="Pattern" value={r.pattern ?? ''} onChange={(e) => put(r.id, { pattern: e.target.value || undefined })}>{PATTERNS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
+                  <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => put(r.id, { halftone: e.target.checked || undefined })} /></td>
+                  <td><input type="number" className="vv-number" aria-label="Transparency" min={0} max={95} step={5} value={r.transparency ?? 0} onChange={(e) => put(r.id, { transparency: Math.max(0, Math.min(95, Number(e.target.value) || 0)) || undefined })} /></td>
                   <td className="row-tools">
                     <button type="button" className="icon mini" title="Up: before the others" disabled={i === 0} onClick={() => save(moveRow(used, i, -1))}><ArrowUp size={12} /></button>
                     <button type="button" className="icon mini" title="Down" disabled={i === used.length - 1} onClick={() => save(moveRow(used, i, 1))}><ArrowDown size={12} /></button>

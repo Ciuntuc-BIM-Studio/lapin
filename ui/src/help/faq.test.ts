@@ -107,6 +107,8 @@ describe('Ask Lapin', () => {
     expect(best('how do I hide rebar in a linked model')).toBe('visibility-graphics');
     expect(best('cum ascund finisajele peretilor in plan')).toBe('visibility-graphics');
     expect(best('visibility graphics like revit')).toBe('visibility-graphics');
+    // Decision 394: graphic overrides.
+    expect(best('how do I make the walls halftone in one view')).toBe('visibility-graphics');
     // Decision 393: annotation and imported categories, view filters.
     expect(best('how do I hide the dimensions in one view')).toBe('view-filters');
     expect(best('filtru dupa parametru')).toBe('view-filters');

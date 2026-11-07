@@ -219,6 +219,7 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 - **Filter.** Regelbasiert, wie in Revit: **Neuer Filter**, dann seine Regeln (IFC-Klasse, Kategorie, Typ, Name, Material, Geschoss, Gruppe, Verknüpfung, Erstellungsphase, vordefinierter Typ oder ein Parameter wie *Feuerwiderstand* oder *Pset_WallCommon.IsExternal*; ist gleich, enthält, beginnt mit, größer, kleiner, hat einen Wert…), alle oder eine davon. Die Ansicht verwendet die Filter ihrer Liste der Reihe nach; der erste, der ein Element erfasst, entscheidet, ob es angezeigt wird. **Verwalten → Ansichtsfilter** öffnet diese Registerkarte.
 - **Verknüpfungen.** Jede verknüpfte Datei, mit **Sichtbar** und **Halbton** nur für diese Ansicht. **Anzeige** ist **Wie Hostansicht** (die Verknüpfung übernimmt die Kategorien dieser Ansicht) oder **Benutzerdefiniert**: dann gibt **Kategorien…** der Verknüpfung in dieser Ansicht eigene Kategorien, Unterkategorien und IFC-Klassen. Der Grundriss der Architektin blendet die Bewehrung der Tragwerksverknüpfung aus; der des Ingenieurs den Ausbau der Architekturverknüpfung.
 - **IFC-Klassen.** Die Klassen der eigenen Elemente des Projekts, ein- oder ausgeblendet.
+- **Grafiküberschreibungen.** Eine Kategorie erhält außerdem ein **Muster** für ihre Schnitt- und Projektionslinien, **Halbton** und eine **Transparenz** (in 3D, von 0 deckend bis 95); eine Beschriftungskategorie eine **Farbe** und **Halbton**; ein Filter eine **Farbe**, ein **Muster**, **Halbton** und eine **Transparenz** für das, was er erfasst, wobei der erste Filter der Liste jedes Feld vorgibt. **Detaillierungsgrad** (grob, mittel, fein) legt fest, wie viel die Symbole eines Grundrisses zeichnen, sonst nach dem Maßstab.
 
 Die Einstellungen gehören der Ansicht oder einem benannten Satz, den mehrere Ansichten teilen (**Als Satz speichern…**). Ein Ansichtsstil kann einen Satz nennen (Verwalten → Ansichtsstile): eine Ansicht ohne eigene Einstellungen übernimmt den Satz ihres Stils, wie Revits Ansichtsvorlagen; **Zu eigenen dieser Ansicht machen** beginnt ihre eigenen daraus.
 
@@ -231,3 +232,7 @@ Die Einstellungen gehören der Ansicht oder einem benannten Satz, den mehrere An
 ![Beschriftungskategorien](shots/vg-annotations.webp)
 
 ![Ein DXF-Import nach Layern](shots/vg-imports.webp)
+
+![Farbe und Muster eines Filters im Grundriss](shots/vg-overrides.webp)
+
+![Der Grundriss mit seinem Filter](shots/vg-plan.webp)

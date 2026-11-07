@@ -3054,7 +3054,7 @@ export const scenes = [
     },
   },
   {
-    // Visibility / Graphics, stage B (decision 393): annotation categories, a DXF import by its layers, a rule-based filter.
+    // Visibility / Graphics, stages B and C (decisions 393, 394): annotation categories, a DXF import by its layers, a rule-based filter drawn in its colour.
     id: 'views-vg-filters',
     async run(t) {
       await t.fresh();
@@ -3085,12 +3085,21 @@ export const scenes = [
       const after = await cut();
       t.expect(after < before, `the walls the filter takes are not cut in the plan (${after} of ${before} cut segments left)`);
       await t.shot('vg-filters', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 720 });
-      // Shown again: the box beside the filter.
+      // Shown again: the box beside the filter; then drawn in red and dashed (stage C, decision 394).
       await dialog.locator('.vv-filters tbody tr input[type=checkbox]').first().click();
       await t.wait(800);
+      await dialog.locator('.vv-filters tbody tr input[type=color]').first().fill('#d62828');
+      await t.wait(600);
+      await dialog.locator('.vv-filters tbody tr select[aria-label=Pattern]').first().selectOption('dashed');
+      await t.wait(800);
+      g = (await vis()).graphics;
+      t.expect(!g.filters[0].hidden && g.filters[0].color === '#d62828' && g.filters[0].pattern === 'dashed', 'the filter shows what it takes, red and dashed');
+      const red = (await t.call('doc.query', { name: 'view.drawing', args: { id: plan } })).pens.some((p) => p.layer === 'CUT' && p.stroke === '#d62828');
+      t.expect(red, 'the walls the filter takes are cut in red in the plan');
+      await t.shot('vg-overrides', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 520 });
       // Annotation categories: the dimensions off.
       await dialog.locator('[data-tab=annotations]').click();
-      await dialog.locator('tr[data-annotation=dimensions] input[type=checkbox]').click();
+      await dialog.locator('tr[data-annotation=dimensions] input[type=checkbox]').first().click();
       await t.wait(800);
       g = (await vis()).graphics;
       t.expect(g?.annotations?.dimensions?.hidden === true, 'the dimensions hidden as an annotation category');
@@ -3100,14 +3109,17 @@ export const scenes = [
       const row = dialog.locator('tr[data-import="survey.dxf"]');
       t.expect(await row.count() === 1, 'the DXF import listed by its file');
       await row.locator('button.icon').click();
-      await dialog.locator('tr[data-layer=TREES] input[type=checkbox]').click();
+      await dialog.locator('tr[data-layer=TREES] input[type=checkbox]').first().click();
       await t.wait(600);
       await row.locator('input[aria-label=Halftone]').click();
       await t.wait(800);
       const imports = Object.values((await vis()).graphics?.imports ?? {});
       t.expect(imports[0]?.halftone === true && imports[0]?.layers?.TREES?.hidden === true, 'the import halftone, its TREES layer hidden');
       await t.shot('vg-imports', { of: '[data-testid=vv-dialog]', pad: 0 });
-      await t.keys('Escape');
+      await dialog.locator('.dialog-foot .btn.primary').click();
+      await t.wait(800);
+      await t.fit();
+      await t.shot('vg-plan', { of: '[data-testid=plan]', pad: 0 });
     },
   },
   {

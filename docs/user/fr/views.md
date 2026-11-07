@@ -219,6 +219,7 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 - **Filtres.** Par règles, comme dans Revit : **Nouveau filtre**, puis ses règles (classe IFC, catégorie, type, nom, matériau, niveau, groupe, lien, phase de création, type prédéfini ou un paramètre, comme *Résistance au feu* ou *Pset_WallCommon.IsExternal* ; est égal à, contient, commence par, supérieur, inférieur, a une valeur…), toutes ou l’une d’elles. La vue utilise les filtres de sa liste, dans l’ordre ; le premier qui prend un élément décide s’il est affiché. **Gérer → Filtres de vue** ouvre cet onglet.
 - **Liens.** Chaque fichier lié, avec **Visible** et **Demi-teinte** pour cette seule vue. **Affichage** est **Selon la vue hôte** (le lien prend les catégories de cette vue) ou **Personnalisé** : **Catégories…** donne alors au lien ses propres catégories, sous-catégories et classes IFC dans cette vue. Le plan de l’architecte masque les armatures du lien de structure ; celui de l’ingénieur, les finitions du lien d’architecture.
 - **Classes IFC.** Les classes des éléments propres au projet, affichées ou masquées.
+- **Remplacements graphiques.** Une catégorie prend aussi un **Motif** pour ses lignes de coupe et de projection, **Demi-teinte** et une **Transparence** (en 3D, de 0 opaque à 95) ; une catégorie d’annotation une **Couleur** et **Demi-teinte** ; un filtre une **Couleur**, un **Motif**, **Demi-teinte** et une **Transparence** pour ce qu’il prend, le premier filtre de la liste donnant chaque champ. **Niveau de détail** (grossier, moyen, fin) règle ce que dessinent les symboles d’un plan, sinon selon l’échelle.
 
 Les réglages appartiennent à la vue, ou à un jeu nommé que plusieurs vues partagent (**Enregistrer comme jeu…**). Un style de vue peut nommer un jeu (Gérer → Styles de vue) : une vue sans réglages propres prend le jeu de son style, comme les gabarits de vue de Revit ; **En faire ceux de cette vue** part de lui pour les siens.
 
@@ -231,3 +232,7 @@ Les réglages appartiennent à la vue, ou à un jeu nommé que plusieurs vues pa
 ![Catégories d’annotation](shots/vg-annotations.webp)
 
 ![Un import DXF par calques](shots/vg-imports.webp)
+
+![La couleur et le motif d’un filtre dans le plan](shots/vg-overrides.webp)
+
+![Le plan avec son filtre](shots/vg-plan.webp)

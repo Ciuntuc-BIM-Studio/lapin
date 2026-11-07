@@ -219,6 +219,7 @@ The **View** tab sets what the view in front shows and how it looks.
 - **Filters.** Rule-based, as in Revit: **New filter**, then its rules (IFC class, category, type, name, material, storey, group, link, phase created, predefined type or a parameter, such as *Fire rating* or *Pset_WallCommon.IsExternal*; equals, contains, begins with, greater, less, has a value…), all of them or any. The view uses the filters in its list, in order; the first that takes an element decides whether it is shown. **Manage → View filters** opens this tab.
 - **Links.** Every linked file, with **Shown** and **Halftone** for this view alone. **Display** is **By host view** (the link takes this view's categories) or **Custom**: then **Categories…** gives the link its own categories, subcategories and IFC classes in this view. An architect's plan hides the structural link's rebar; an engineer's hides the architectural link's finishes.
 - **IFC classes.** The classes of the project's own elements, shown or hidden.
+- **Graphic overrides.** A category also takes a **Pattern** for its cut and projection lines, **Halftone** and a **Transparency** (in 3D, 0 opaque to 95); an annotation category a **Colour** and **Halftone**; a filter a **Colour**, a **Pattern**, **Halftone** and a **Transparency** for what it takes, the first filter in the list giving each. **Detail level** (coarse, medium, fine) sets how much a plan's symbols draw, otherwise taken from the scale.
 
 The settings belong to the view, or to a named set that several views share (**Save as a set…**). A view style can name a set (Manage → View styles): a view with no settings of its own takes its style's set, as Revit's view templates do; **Make them this view's own** starts its own from it.
 
@@ -231,3 +232,7 @@ The settings belong to the view, or to a named set that several views share (**S
 ![Annotation categories](shots/vg-annotations.webp)
 
 ![A DXF import by its layers](shots/vg-imports.webp)
+
+![A filter's colour and pattern in the plan](shots/vg-overrides.webp)
+
+![The plan with its filter](shots/vg-plan.webp)

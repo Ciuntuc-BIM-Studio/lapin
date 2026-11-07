@@ -3,6 +3,8 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Visibility / Graphics: graphic overrides, detail level (decision 394)
+  "In 3D: 0 opaque, 100 clear": "3D 中：0 不透明，100 透明", "Its own colour": "其自身颜色", "dashed": "虚线", "dotted": "点线", "Detail level": "详细程度", "by the scale": "按比例", "coarse": "粗略", "medium": "中等", "fine": "精细",
   // Visibility / Graphics: annotation and imported categories, filters (decision 393)
   "Texts": "文字", "Room tags": "房间标记", "Section marks": "剖切标记", "Elevation marks": "立面标记", "Callouts": "详图索引", "View boundaries": "视图边界", "Legends": "图例", "Phase created": "创建阶段", "equals": "等于", "does not equal": "不等于", "begins with": "开头是", "is greater than": "大于", "is less than": "小于", "has no value": "无值", "Annotation categories": "注释类别", "Imported categories": "导入的类别", "Filters": "过滤器", "View filters": "视图过滤器", "Nothing is imported into this view: Import DXF…, or a PDF or an image to trace over (Insert).": "此视图未导入任何内容：导入 DXF…，或用于描图的 PDF 或图像（插入）。", "DXF": "DXF", "PDF / image": "PDF / 图像", "This view uses no filter. Add one of the project's below, or make a new one.": "此视图未使用过滤器。在下方添加项目中的过滤器，或新建一个。", "Filter": "过滤器", "Up: before the others": "上移：排在其他之前", "Remove from this view": "从此视图移除", "Add a filter": "添加过滤器", "Add a filter…": "添加过滤器…", "New filter": "新建过滤器", "The first filter in the list that takes an element decides whether it is shown.": "列表中第一个选中某元素的过滤器决定其是否显示。", "Filter name": "过滤器名称", "Match": "匹配", "all the rules": "所有规则", "any of the rules": "任一规则", "Delete: the views that use it forget it": "删除：使用它的视图将不再引用它", "Fire rating, Pset_WallCommon.IsExternal…": "耐火等级, Pset_WallCommon.IsExternal…", "Add a rule": "添加规则",
   // A view style's graphics set (decision 391)
