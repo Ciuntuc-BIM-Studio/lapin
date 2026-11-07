@@ -3037,7 +3037,7 @@ export const scenes = [
       t.expect((await vis()).graphics?.categories?.walls?.sub?.finishes?.hidden === true, 'the walls\' finishes hidden as a subcategory');
       await t.shot('vg-categories', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 640 });
       // Links: the structure custom, its columns off here.
-      await dialog.locator('.tabs-inline button').nth(1).click();
+      await dialog.locator('[data-tab=links]').click();
       const row = dialog.locator('tr[data-link=Structure]');
       t.expect(await row.count() === 1, 'the linked structure listed on the Links tab');
       await row.locator('select').selectOption('custom');
@@ -3050,6 +3050,63 @@ export const scenes = [
       const own = Object.values(links)[0];
       t.expect(own?.display === 'custom' && own?.categories?.columns?.hidden === true, 'the link displayed custom, its columns hidden in this view');
       await t.shot('vg-links', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 720 });
+      await t.keys('Escape');
+    },
+  },
+  {
+    // Visibility / Graphics, stage B (decision 393): annotation categories, a DXF import by its layers, a rule-based filter.
+    id: 'views-vg-filters',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: storey, name: 'Ground floor V/G' })).id;
+      await t.cmd('drafting.addDimension', { viewId: plan, a: [0, 0], b: [12, 0], at: [0, -1.5] });
+      const dxf = ['0', 'SECTION', '2', 'ENTITIES', '0', 'LINE', '8', 'SURVEY', '10', '-2000', '20', '-3000', '11', '14000', '21', '-3000',
+        '0', 'LINE', '8', 'TREES', '10', '14000', '20', '-3000', '11', '14000', '21', '11000', '0', 'ENDSEC', '0', 'EOF'].join('\n');
+      await t.cmd('drafting.importDxf', { viewId: plan, name: 'survey.dxf', data: Buffer.from(dxf).toString('base64'), units: 'mm' });
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false });
+      await t.wait(1500);
+      const vis = () => t.call('doc.query', { name: 'view.visibility', args: { id: plan } });
+      const cut = async () => (await t.call('doc.query', { name: 'view.drawing', args: { id: plan } })).pens.filter((p) => p.layer === 'CUT').reduce((n, p) => n + p.segments.length, 0);
+      const before = await cut();
+      await t.tool('manage.viewFilters');
+      const dialog = t.page.locator('[data-testid=vv-dialog]');
+      await dialog.waitFor({ timeout: 10_000 });
+      // Filters: a new one (walls, as it starts) hides the walls in this view; its rule says partitions only.
+      await dialog.locator('[data-testid=vv-new-filter]').click();
+      await t.wait(1200);
+      const editor = dialog.locator('[data-testid=vv-filter-editor]');
+      await editor.waitFor({ timeout: 5000 });
+      await editor.locator('input[aria-label="Filter name"]').fill('Exterior walls');
+      await editor.locator('input[aria-label="Filter name"]').press('Tab');
+      await t.wait(800);
+      let g = (await vis()).graphics;
+      t.expect(g?.filters?.length === 1 && g.filters[0].hidden === true, 'the new filter used by the view, hiding what it takes');
+      const after = await cut();
+      t.expect(after < before, `the walls the filter takes are not cut in the plan (${after} of ${before} cut segments left)`);
+      await t.shot('vg-filters', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 720 });
+      // Shown again: the box beside the filter.
+      await dialog.locator('.vv-filters tbody tr input[type=checkbox]').first().click();
+      await t.wait(800);
+      // Annotation categories: the dimensions off.
+      await dialog.locator('[data-tab=annotations]').click();
+      await dialog.locator('tr[data-annotation=dimensions] input[type=checkbox]').click();
+      await t.wait(800);
+      g = (await vis()).graphics;
+      t.expect(g?.annotations?.dimensions?.hidden === true, 'the dimensions hidden as an annotation category');
+      await t.shot('vg-annotations', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 640 });
+      // Imported categories: the survey's TREES layer off, the import halftone.
+      await dialog.locator('[data-tab=imports]').click();
+      const row = dialog.locator('tr[data-import="survey.dxf"]');
+      t.expect(await row.count() === 1, 'the DXF import listed by its file');
+      await row.locator('button.icon').click();
+      await dialog.locator('tr[data-layer=TREES] input[type=checkbox]').click();
+      await t.wait(600);
+      await row.locator('input[aria-label=Halftone]').click();
+      await t.wait(800);
+      const imports = Object.values((await vis()).graphics?.imports ?? {});
+      t.expect(imports[0]?.halftone === true && imports[0]?.layers?.TREES?.hidden === true, 'the import halftone, its TREES layer hidden');
+      await t.shot('vg-imports', { of: '[data-testid=vv-dialog]', pad: 0 });
       await t.keys('Escape');
     },
   },

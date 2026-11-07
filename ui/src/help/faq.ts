@@ -106,6 +106,17 @@ export const FAQ: Entry[] = [
     source: 'report #106',
   },
   {
+    id: 'view-filters',
+    q: ['How do I make a view filter by a parameter, like in Revit?', 'How do I hide the dimensions or the grids in one view?', 'How do I turn off a layer of an imported DXF in one view?'],
+    qRo: ['Cum fac un filtru de vedere după un parametru, ca în Revit?', 'Cum ascund cotele sau axele într-o singură vedere?', 'Cum opresc un strat al unui DXF importat într-o singură vedere?'],
+    keywords: ['filter', 'filters', 'rule', 'rules', 'parameter', 'annotation', 'dimensions', 'grids', 'tags', 'levels', 'imported', 'dxf', 'layer', 'layers',
+      'filtru', 'filtre', 'regula', 'reguli', 'parametru', 'adnotari', 'cote', 'axe', 'etichete', 'niveluri', 'importat', 'strat', 'straturi'],
+    a: 'View → Visibility (VV) on the view in front. Annotation categories shows or hides dimensions, texts, tags, room tags, grids, levels, section and elevation marks in this view alone. Imported categories lists each DXF imported into the view by its file: shown, halftone, and its layers one by one; a PDF or image traced over the view too. Filters (also Manage → View filters): New filter, then its rules (class, category, type, material, storey, a parameter such as Fire rating…), and untick it to hide what it takes; the first filter in the list that takes an element decides.',
+    aRo: 'Vedere → Vizibilitate (VV) pe vederea din față. Categorii de adnotări arată sau ascunde cotele, textele, etichetele, etichetele de încăpere, axele, nivelurile, marcajele de secțiune și fațadă doar în această vedere. Categorii importate listează fiecare DXF importat în vedere după fișierul lui: vizibil, halftone și straturile lui unul câte unul; la fel un PDF sau o imagine de calchiat. Filtre (și Gestionare → Filtre de vedere): Filtru nou, apoi regulile lui (clasa, categoria, tipul, materialul, nivelul, un parametru ca Rezistență la foc…) și debifează-l ca să ascunzi ce ia; primul filtru din listă care ia un element decide.',
+    action: { label: 'Open View filters', labelRo: 'Deschide Filtre de vedere', run: { kind: 'tool', id: 'manage.viewFilters' } },
+    source: 'faq',
+  },
+  {
     id: 'visibility-graphics',
     q: ['How do I hide the rebar or the finishes of a linked model?', 'How do I hide a category in one view, like Visibility/Graphics in Revit?', 'How do I hide the plaster of the walls in a plan?'],
     qRo: ['Cum ascund armăturile sau finisajele unui model legat?', 'Cum ascund o categorie într-o singură vedere, ca Visibility/Graphics din Revit?', 'Cum ascund tencuiala pereților într-un plan?'],

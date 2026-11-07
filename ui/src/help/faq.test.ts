@@ -107,6 +107,10 @@ describe('Ask Lapin', () => {
     expect(best('how do I hide rebar in a linked model')).toBe('visibility-graphics');
     expect(best('cum ascund finisajele peretilor in plan')).toBe('visibility-graphics');
     expect(best('visibility graphics like revit')).toBe('visibility-graphics');
+    // Decision 393: annotation and imported categories, view filters.
+    expect(best('how do I hide the dimensions in one view')).toBe('view-filters');
+    expect(best('filtru dupa parametru')).toBe('view-filters');
+    expect(best('turn off a dxf layer in one view')).toBe('view-filters');
     // Report #106.
     expect(best('PUT THE IMPORTED DXF FILE INTO PLAN AND 3D VIEWPORTS')).toBe('dxf-in-3d');
     expect(best('nu vad dxf-ul importat in vederea 3D')).toBe('dxf-in-3d');

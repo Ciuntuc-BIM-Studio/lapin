@@ -214,6 +214,9 @@ Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 **Widoczność** (<kbd>VV</kbd>) lub **Grafika** (<kbd>VG</kbd>) otwiera widoczność / grafikę widoku na wierzchu: rzutu, przekroju, elewacji lub widoku 3D. To, co ukrywa, jest ukryte także na arkuszach widoku, w jego PDF i DXF oraz w eksporcie 3D.
 
 - **Kategorie modelu.** Każdą kategorię można pokazać lub ukryć, z kolorem i grubością linii, wypełnieniem i kreskowaniem przekroju. Strzałka obok kategorii otwiera jej podkategorie: **Rdzeń**, **Wykończenia**, **Izolację**, **Membrany** i **Inne warstwy** ściany, stropu lub dachu (według materiału każdej warstwy i jego kategorii w Zarządzaj → Materiały), **Ościeża** drzwi lub okna. Odznacz **Wykończenia** pod **Ściany**, a tynk znika, cegła zostaje. Zbrojenie, okładziny, deskowania, rusztowania, instalacje, połączenia stalowe, windy i osłony przeciwsłoneczne to osobne kategorie.
+- **Kategorie opisów.** Wymiary, teksty, etykiety, etykiety pomieszczeń, osie, poziomy, znaczniki przekrojów i elewacji, wywołania, płaszczyzny odniesienia, granice widoku i legendy, każda pokazana lub ukryta w tym widoku.
+- **Kategorie importowane.** Każdy DXF zaimportowany do widoku, według pliku: widoczny, wyszarzony i jego warstwy jedna po drugiej (strzałka obok). PDF lub obraz do odrysowania pokazuje się lub ukrywa również tutaj.
+- **Filtry.** Oparte na regułach, jak w Revit: **Nowy filtr**, potem jego reguły (klasa IFC, kategoria, typ, nazwa, materiał, kondygnacja, grupa, łącze, faza utworzenia, typ predefiniowany lub parametr, jak *Odporność ogniowa* czy *Pset_WallCommon.IsExternal*; jest równe, zawiera, zaczyna się od, większe, mniejsze, ma wartość…), wszystkie lub dowolna. Widok używa filtrów ze swojej listy, po kolei; pierwszy, który obejmuje element, decyduje, czy jest pokazany. **Zarządzaj → Filtry widoku** otwiera tę kartę.
 - **Łącza.** Każdy połączony plik, z **Widoczne** i **Wyszarzenie** tylko dla tego widoku. **Wyświetlanie** to **Jak widok główny** (łącze bierze kategorie tego widoku) lub **Niestandardowe**: wtedy **Kategorie…** daje łączu własne kategorie, podkategorie i klasy IFC w tym widoku. Rzut architekta ukrywa zbrojenie łącza konstrukcyjnego; rzut inżyniera wykończenia łącza architektonicznego.
 - **Klasy IFC.** Klasy własnych elementów projektu, pokazane lub ukryte.
 
@@ -222,3 +225,9 @@ Ustawienia należą do widoku albo do nazwanego zbioru, który dzieli kilka wido
 ![Widoczność / Grafika: wykończenia ściany ukryte](shots/vg-categories.webp)
 
 ![Połączona konstrukcja, niestandardowa w jednym widoku](shots/vg-links.webp)
+
+![Filtr ukrywający to, co obejmują jego reguły](shots/vg-filters.webp)
+
+![Kategorie opisów](shots/vg-annotations.webp)
+
+![Import DXF według warstw](shots/vg-imports.webp)

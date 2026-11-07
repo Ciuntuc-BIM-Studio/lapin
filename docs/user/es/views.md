@@ -210,6 +210,9 @@ La ficha **Vista** configura qué muestra la vista que está delante y cómo se 
 **Visibilidad** (<kbd>VV</kbd>) o **Gráficos** (<kbd>VG</kbd>) abre la visibilidad / gráficos de la vista al frente: una planta, una sección, un alzado o una vista 3D. Lo que oculta queda oculto también en los planos de la vista, en su PDF y DXF, y en una exportación 3D.
 
 - **Categorías de modelo.** Cada categoría se muestra u oculta, con su color y grosor de línea, relleno y trama de corte. La flecha junto a una categoría abre sus subcategorías: el **Núcleo**, los **Acabados**, el **Aislamiento**, las **Membranas** y las **Otras capas** de un muro, un forjado o una cubierta (por el material de cada capa y su categoría en Gestionar → Materiales), las **Mochetas** de una puerta o una ventana. Desmarca **Acabados** bajo **Muros** y el enlucido desaparece, el ladrillo queda. Las armaduras, los revestimientos, los encofrados, los andamios, las instalaciones, las uniones de acero, los ascensores y la protección solar son categorías propias.
+- **Categorías de anotación.** Cotas, textos, etiquetas, etiquetas de habitación, rejillas, niveles, marcas de sección y de alzado, llamadas, planos de referencia, límites de vista y leyendas, cada una mostrada u oculta en esta vista.
+- **Categorías importadas.** Cada DXF importado en la vista, por su archivo: mostrado, en semitono y sus capas una a una (la flecha a su lado). Un PDF o una imagen para calcar se muestra u oculta también aquí.
+- **Filtros.** Por reglas, como en Revit: **Filtro nuevo**, luego sus reglas (clase IFC, categoría, tipo, nombre, material, planta, grupo, vínculo, fase de creación, tipo predefinido o un parámetro, como *Resistencia al fuego* o *Pset_WallCommon.IsExternal*; es igual a, contiene, empieza por, mayor, menor, tiene valor…), todas o cualquiera. La vista usa los filtros de su lista, en orden; el primero que toma un elemento decide si se muestra. **Gestionar → Filtros de vista** abre esta pestaña.
 - **Vínculos.** Cada archivo vinculado, con **Visible** y **Semitono** solo para esta vista. **Visualización** es **Según la vista anfitriona** (el vínculo toma las categorías de esta vista) o **Personalizado**: entonces **Categorías…** da al vínculo sus propias categorías, subcategorías y clases IFC en esta vista. La planta del arquitecto oculta las armaduras del vínculo estructural; la del ingeniero, los acabados del vínculo arquitectónico.
 - **Clases IFC.** Las clases de los elementos propios del proyecto, mostradas u ocultas.
 
@@ -218,3 +221,9 @@ Los ajustes son de la vista, o de un conjunto con nombre que comparten varias vi
 ![Visibilidad / Gráficos: los acabados de un muro ocultos](shots/vg-categories.webp)
 
 ![Una estructura vinculada, personalizada en una vista](shots/vg-links.webp)
+
+![Un filtro que oculta lo que toman sus reglas](shots/vg-filters.webp)
+
+![Categorías de anotación](shots/vg-annotations.webp)
+
+![Una importación DXF por capas](shots/vg-imports.webp)

@@ -214,6 +214,9 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 **Visibilité** (<kbd>VV</kbd>) ou **Graphismes** (<kbd>VG</kbd>) ouvre la visibilité / les graphismes de la vue au premier plan : un plan, une coupe, une élévation ou une vue 3D. Ce qu’elle masque l’est aussi sur les feuilles de la vue, dans son PDF et son DXF, et dans un export 3D.
 
 - **Catégories de modèle.** Chaque catégorie est affichée ou masquée, avec sa couleur et son épaisseur de ligne, son remplissage et sa hachure de coupe. La flèche à côté d’une catégorie ouvre ses sous-catégories : le **Noyau**, les **Finitions**, l’**Isolation**, les **Membranes** et les **Autres couches** d’un mur, d’un plancher ou d’une toiture (selon le matériau de chaque couche et sa catégorie dans Gérer → Matériaux), les **Tableaux** d’une porte ou d’une fenêtre. Décochez **Finitions** sous **Murs** : l’enduit disparaît, la brique reste. Les armatures, les revêtements, les coffrages, les échafaudages, les fluides, les assemblages acier, les ascenseurs et les protections solaires sont des catégories à part.
+- **Catégories d’annotation.** Cotes, textes, étiquettes, étiquettes de pièce, quadrillages, niveaux, repères de coupe et d’élévation, bulles de détail, plans de référence, limites de vue et légendes, chacune affichée ou masquée dans cette vue.
+- **Catégories importées.** Chaque DXF importé dans la vue, par son fichier : affiché, en demi-teinte, et ses calques un par un (la flèche à côté). Un PDF ou une image à décalquer s’affiche ou se masque ici aussi.
+- **Filtres.** Par règles, comme dans Revit : **Nouveau filtre**, puis ses règles (classe IFC, catégorie, type, nom, matériau, niveau, groupe, lien, phase de création, type prédéfini ou un paramètre, comme *Résistance au feu* ou *Pset_WallCommon.IsExternal* ; est égal à, contient, commence par, supérieur, inférieur, a une valeur…), toutes ou l’une d’elles. La vue utilise les filtres de sa liste, dans l’ordre ; le premier qui prend un élément décide s’il est affiché. **Gérer → Filtres de vue** ouvre cet onglet.
 - **Liens.** Chaque fichier lié, avec **Visible** et **Demi-teinte** pour cette seule vue. **Affichage** est **Selon la vue hôte** (le lien prend les catégories de cette vue) ou **Personnalisé** : **Catégories…** donne alors au lien ses propres catégories, sous-catégories et classes IFC dans cette vue. Le plan de l’architecte masque les armatures du lien de structure ; celui de l’ingénieur, les finitions du lien d’architecture.
 - **Classes IFC.** Les classes des éléments propres au projet, affichées ou masquées.
 
@@ -222,3 +225,9 @@ Les réglages appartiennent à la vue, ou à un jeu nommé que plusieurs vues pa
 ![Visibilité / Graphismes : les finitions d’un mur masquées](shots/vg-categories.webp)
 
 ![Une structure liée, personnalisée dans une vue](shots/vg-links.webp)
+
+![Un filtre masquant ce que prennent ses règles](shots/vg-filters.webp)
+
+![Catégories d’annotation](shots/vg-annotations.webp)
+
+![Un import DXF par calques](shots/vg-imports.webp)

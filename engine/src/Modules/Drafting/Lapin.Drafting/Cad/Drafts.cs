@@ -206,8 +206,10 @@ public static class Drafts
             {
                 var link = c.Model.Get(linkId);
                 if (link is not { Class: Links.Class } || !Links.Visible(link)) continue;
-                if (Links.IsHalftone(link) || vg.Halftone(e)) color = Links.Halftone;
+                if (Links.IsHalftone(link)) color = Links.Halftone;
             }
+            // Halftone in this view: its link's row, or its DXF import's (Visibility / Graphics, decision 391).
+            if (vg.Halftone(e)) color = Links.Halftone;
             var mk = new ViewMark(e.Id);
             if (e.Attrs["hatch"] is JsonObject h)
             {

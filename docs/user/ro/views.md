@@ -213,6 +213,9 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 **Vizibilitate** (<kbd>VV</kbd>) sau **Grafică** (<kbd>VG</kbd>) deschide Vizibilitate / Grafică pentru vederea din față: un plan, o secțiune, o fațadă sau o vedere 3D. Ce ascunde se ascunde și pe planșele vederii, în PDF și DXF, și la exportul 3D.
 
 - **Categorii de model.** Fiecare categorie se arată sau se ascunde, cu culoarea și grosimea liniei, umplutura și hașura de secțiune. Săgeata de lângă o categorie îi deschide subcategoriile: **Miez**, **Finisaje**, **Izolație**, **Membrane** și **Alte straturi** ale unui perete, planșeu sau acoperiș (după materialul fiecărui strat și categoria lui din Gestionare → Materiale), **Șpaleții** unei uși sau ferestre. Debifează **Finisaje** sub **Pereți** și tencuiala dispare, cărămida rămâne. Armăturile, finisajele de încăpere, cofrajele, schelele, instalațiile, îmbinările metalice, lifturile și parasolarele sunt categorii proprii.
+- **Categorii de adnotări.** Cotele, textele, etichetele, etichetele de încăpere, axele, nivelurile, marcajele de secțiune și de fațadă, detaliile, planurile de referință, limitele vederii și legendele, fiecare arătată sau ascunsă în această vedere.
+- **Categorii importate.** Fiecare DXF importat în vedere, după fișierul lui: vizibil, halftone, și straturile lui unul câte unul (săgeata de lângă el). Un PDF sau o imagine de calchiat peste vedere se arată sau se ascunde tot aici.
+- **Filtre.** Pe reguli, ca în Revit: **Filtru nou**, apoi regulile lui (clasa IFC, categoria, tipul, numele, materialul, nivelul, grupul, legătura, faza creării, tipul predefinit sau un parametru, ca *Rezistență la foc* sau *Pset_WallCommon.IsExternal*; este egal cu, conține, începe cu, mai mare, mai mic, are valoare…), toate sau oricare. Vederea folosește filtrele din lista ei, în ordine; primul care ia un element decide dacă e arătat. **Gestionare → Filtre de vedere** deschide această filă.
 - **Legături.** Fiecare fișier legat, cu **Vizibil** și **Halftone** doar pentru această vedere. **Afișare** e **Ca vederea gazdă** (legătura ia categoriile vederii) sau **Personalizat**: atunci **Categorii…** îi dă legăturii categoriile, subcategoriile și clasele IFC ale ei în această vedere. Planul arhitectului ascunde armăturile legăturii de structură; al inginerului, finisajele legăturii de arhitectură.
 - **Clase IFC.** Clasele elementelor proiectului, arătate sau ascunse.
 
@@ -221,3 +224,9 @@ Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**
 ![Vizibilitate / Grafică: finisajele unui perete ascunse](shots/vg-categories.webp)
 
 ![O structură legată, personalizată într-o vedere](shots/vg-links.webp)
+
+![Un filtru care ascunde ce iau regulile lui](shots/vg-filters.webp)
+
+![Categorii de adnotări](shots/vg-annotations.webp)
+
+![Un import DXF pe straturi](shots/vg-imports.webp)

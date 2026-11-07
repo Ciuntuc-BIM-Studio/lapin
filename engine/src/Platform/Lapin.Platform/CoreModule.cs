@@ -56,6 +56,7 @@ public sealed class CoreModule : ILapinModule
         Views.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
         GraphicsSets.Register(r);
+        ViewFilters.Register(r);
         BrowserSets.Register(r);
         ViewLinework.Register(r);
         Location.Register(r);

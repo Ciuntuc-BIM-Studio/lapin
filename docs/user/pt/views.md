@@ -214,6 +214,9 @@ A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua a
 **Visibilidade** (<kbd>VV</kbd>) ou **Gráficos** (<kbd>VG</kbd>) abre a visibilidade / gráficos da vista à frente: uma planta, um corte, uma elevação ou uma vista 3D. O que ela oculta fica oculto também nas pranchas da vista, no seu PDF e DXF, e numa exportação 3D.
 
 - **Categorias de modelo.** Cada categoria é mostrada ou oculta, com cor e espessura de linha, preenchimento e hachura de corte. A seta ao lado de uma categoria abre suas subcategorias: o **Núcleo**, os **Acabamentos**, o **Isolamento**, as **Membranas** e as **Outras camadas** de uma parede, uma laje ou um telhado (pelo material de cada camada e sua categoria em Gerenciar → Materiais), as **Ombreiras** de uma porta ou janela. Desmarque **Acabamentos** em **Paredes** e o reboco some, o tijolo fica. As armaduras, os revestimentos, as fôrmas, os andaimes, as instalações, as ligações de aço, os elevadores e o sombreamento são categorias próprias.
+- **Categorias de anotação.** Cotas, textos, etiquetas, etiquetas de ambiente, eixos, níveis, marcas de corte e de elevação, chamadas, planos de referência, limites da vista e legendas, cada uma mostrada ou oculta nesta vista.
+- **Categorias importadas.** Cada DXF importado na vista, pelo seu arquivo: mostrado, em meio-tom, e suas camadas uma a uma (a seta ao lado). Um PDF ou uma imagem para decalcar é mostrado ou oculto aqui também.
+- **Filtros.** Por regras, como no Revit: **Novo filtro**, depois suas regras (classe IFC, categoria, tipo, nome, material, pavimento, grupo, vínculo, fase de criação, tipo predefinido ou um parâmetro, como *Resistência ao fogo* ou *Pset_WallCommon.IsExternal*; é igual a, contém, começa com, maior, menor, tem valor…), todas ou qualquer uma. A vista usa os filtros da sua lista, em ordem; o primeiro que pega um elemento decide se ele é mostrado. **Gerenciar → Filtros de vista** abre esta aba.
 - **Vínculos.** Cada arquivo vinculado, com **Visível** e **Meio-tom** só para esta vista. **Exibição** é **Pela vista anfitriã** (o vínculo usa as categorias desta vista) ou **Personalizado**: então **Categorias…** dá ao vínculo suas próprias categorias, subcategorias e classes IFC nesta vista. A planta do arquiteto oculta as armaduras do vínculo estrutural; a do engenheiro, os acabamentos do vínculo de arquitetura.
 - **Classes IFC.** As classes dos elementos próprios do projeto, mostradas ou ocultas.
 
@@ -222,3 +225,9 @@ As configurações são da vista, ou de um conjunto com nome que várias vistas 
 ![Visibilidade / Gráficos: os acabamentos de uma parede ocultos](shots/vg-categories.webp)
 
 ![Uma estrutura vinculada, personalizada numa vista](shots/vg-links.webp)
+
+![Um filtro que oculta o que suas regras pegam](shots/vg-filters.webp)
+
+![Categorias de anotação](shots/vg-annotations.webp)
+
+![Uma importação DXF por camadas](shots/vg-imports.webp)

@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
@@ -195,5 +196,90 @@ public class VisibilityGraphicsTests
         Assert.Equal("""{"categories":{"walls":{"hidden":true,"lineColor":"#ff0000"}}}""", f.Model.Get(plan)!.Attrs["graphics"]!.ToJsonString());
         Assert.False(Cuts(f, plan).ContainsKey(wall));
         Assert.Null(GraphicsSets.EffectiveSet(f.Model, f.Model.Get(plan)!));
+    }
+    static HashSet<string> Owners(Fixture f, string view) =>
+        Views.Render(new Q(f), Views.Find(f.Model, view)!).Marks.Select(mk => mk.Owner).OfType<string>().ToHashSet();
+
+    [Fact]
+    public void Annotation_categories_hide_dimensions_grids_and_texts_by_their_kind()
+    {
+        var f = F();
+        f.Wall(0, 0, 5, 0);
+        var plan = Plan(f);
+        var dim = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = plan, ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(5, 0), ["at"] = new JsonArray(0, 1) })!["id"]!;
+        Assert.Contains(dim, Owners(f, plan));
+        G(f, new JsonObject { ["id"] = plan, ["annotation"] = "dimensions", ["value"] = Hidden });
+        Assert.DoesNotContain(dim, Owners(f, plan));
+        // The wall stays; the dialog lists the annotation categories.
+        Assert.NotEmpty(Cuts(f, plan));
+        var vis = (JsonObject)f.Session.Query("view.visibility", new JsonObject { ["id"] = plan })!;
+        Assert.Contains("grids", vis["annotations"]!.AsArray().Select(x => (string)x!));
+        G(f, new JsonObject { ["id"] = plan, ["annotation"] = "dimensions", ["value"] = null });
+        Assert.Contains(dim, Owners(f, plan));
+        Assert.Throws<CommandException>(() => G(f, new JsonObject { ["id"] = plan, ["annotation"] = "clouds", ["value"] = Hidden }));
+        Assert.Equal("roomTags", VisibilityGraphics.AnnotationOf(new Entity("r", IfcClass.Space, "Room", []), new ViewMark("r")));
+        Assert.Null(VisibilityGraphics.AnnotationOf(new Entity("r", IfcClass.Space, "Room", []), new ViewMark("r") { Under = true }));
+    }
+
+    [Fact]
+    public void A_dxf_import_is_hidden_halftone_or_hidden_by_layer_in_one_view()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var dxf = string.Join("\n", ["0", "SECTION", "2", "ENTITIES", "0", "LINE", "8", "A-WALL", "10", "0", "20", "0", "11", "1000", "21", "0", "0", "LINE", "8", "A-TEXT", "10", "0", "20", "500", "11", "1000", "21", "500", "0", "ENDSEC", "0", "EOF"]);
+        f.Run("drafting.importDxf", new JsonObject { ["viewId"] = plan, ["name"] = "survey.dxf", ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes(dxf)), ["units"] = "mm" });
+        var shapes = Lapin.Drafting.Cad.Drafts.On(f.Model, plan).ToList();
+        Assert.Equal(2, shapes.Count);
+        var import = shapes[0].Str(VisibilityGraphics.DxfImportKey)!;
+        var listed = f.Session.Query("view.visibility", new JsonObject { ["id"] = plan })!["imports"]!.AsArray().OfType<JsonObject>().Single();
+        Assert.Equal("survey.dxf", (string)listed["name"]!);
+        Assert.Equal(["A-TEXT", "A-WALL"], listed["layers"]!.AsArray().Select(x => (string)x!));
+        var wallLine = shapes.Single(e => e.Str("layer") == "A-WALL").Id;
+        G(f, new JsonObject { ["id"] = plan, ["import"] = import, ["layer"] = "A-TEXT", ["value"] = Hidden });
+        Assert.Equal([wallLine], Owners(f, plan).Intersect(shapes.Select(e => e.Id)));
+        // The import's own row keeps its layers; hidden, nothing of it is drawn.
+        G(f, new JsonObject { ["id"] = plan, ["import"] = import, ["value"] = new JsonObject { ["halftone"] = true } });
+        var pens = ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!)["pens"]!.AsArray().OfType<JsonObject>();
+        Assert.Equal(Links.Halftone, (string?)pens.Single(p => (string?)p["layer"] == "A-WALL")["stroke"]);
+        Assert.True((bool)f.Session.Query("view.visibility", new JsonObject { ["id"] = plan })!["graphics"]!["imports"]![import]!["layers"]!["A-TEXT"]!["hidden"]!);
+        G(f, new JsonObject { ["id"] = plan, ["import"] = import, ["value"] = Hidden });
+        Assert.Empty(Owners(f, plan).Intersect(shapes.Select(e => e.Id)));
+    }
+
+    [Fact]
+    public void A_filter_hides_what_its_rules_take_in_the_views_that_use_it()
+    {
+        var f = F();
+        var thick = f.Type("Brick 300", ("Brick", 0.3, true));
+        var thin = f.Type("Partition", ("Gypsum board", 0.1, true));
+        var a = f.Wall(0, 0, 5, 0, thick);
+        var b = f.Wall(0, 3, 5, 3, thin);
+        f.Run("element.setParam", new JsonObject { ["id"] = b, ["name"] = "Fire rating", ["kind"] = "text", ["value"] = "EI 60" });
+        var plan = Plan(f);
+        var other = Plan(f);
+        var partitions = (string)f.Run("viewFilter.create", new JsonObject { ["name"] = "Partitions", ["rules"] = new JsonArray(new JsonObject { ["field"] = "type", ["op"] = "contains", ["value"] = "partition" }) })!["id"]!;
+        Assert.Equal(1, (int)f.Session.Query("viewFilter.count", new JsonObject { ["id"] = partitions })!);
+        // Not used by the view: nothing changes.
+        Assert.Equal(2, Cuts(f, plan).Count);
+        G(f, new JsonObject { ["id"] = plan, ["filters"] = new JsonArray(new JsonObject { ["id"] = partitions, ["hidden"] = true }) });
+        Assert.Equal([a], Cuts(f, plan).Keys);
+        Assert.Equal(2, Cuts(f, other).Count);
+        // Rules by material and by a parameter; any of them.
+        f.Run("viewFilter.update", new JsonObject { ["id"] = partitions, ["match"] = "any", ["rules"] = new JsonArray(
+            new JsonObject { ["field"] = "material", ["op"] = "equals", ["value"] = "Brick" },
+            new JsonObject { ["field"] = "param", ["name"] = "Fire rating", ["op"] = "hasValue" }) });
+        Assert.Empty(Cuts(f, plan));
+        // The first filter in the view's order that says gives it: one that shows, then the hiding one.
+        var bricks = (string)f.Run("viewFilter.create", new JsonObject { ["name"] = "Brick", ["rules"] = new JsonArray(new JsonObject { ["field"] = "material", ["op"] = "equals", ["value"] = "brick" }) })!["id"]!;
+        G(f, new JsonObject { ["id"] = plan, ["filters"] = new JsonArray(new JsonObject { ["id"] = bricks, ["hidden"] = false }, new JsonObject { ["id"] = partitions, ["hidden"] = true }) });
+        Assert.Equal([a], Cuts(f, plan).Keys);
+        // A filter gone is left out; one never made is refused.
+        f.Run("viewFilter.delete", new JsonObject { ["id"] = partitions });
+        Assert.Equal(2, Cuts(f, plan).Count);
+        Assert.Throws<CommandException>(() => G(f, new JsonObject { ["id"] = plan, ["filters"] = new JsonArray(new JsonObject { ["id"] = partitions }) }));
+        Assert.Throws<CommandException>(() => f.Run("viewFilter.create", new JsonObject { ["rules"] = new JsonArray(new JsonObject { ["field"] = "colour" }) }));
+        // In 3D too.
+        G(f, new JsonObject { ["id"] = "3d", ["filters"] = new JsonArray(new JsonObject { ["id"] = bricks, ["hidden"] = true }) });
+        Assert.True((bool)f.Session.Query("view.looks3d", new JsonObject())![a]!["hidden"]!);
     }
 }

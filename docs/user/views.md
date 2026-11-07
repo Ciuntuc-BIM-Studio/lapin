@@ -214,6 +214,9 @@ The **View** tab sets what the view in front shows and how it looks.
 **Visibility** (<kbd>VV</kbd>) or **Graphics** (<kbd>VG</kbd>) opens the view in front's Visibility / Graphics, for a plan, a section, an elevation or a 3D view. What it hides is hidden on the view's sheets, in its PDF and DXF, and in a 3D export too.
 
 - **Model categories.** Each category is shown or hidden, with its line colour, line weight, fill and cut hatch. The arrow beside a category opens its subcategories: a wall's, a floor's or a roof's **Core**, **Finishes**, **Insulation**, **Membranes** and **Other layers** (by each layer's material and its category in Manage → Materials), a door's or a window's **Reveals**. Untick **Finishes** under **Walls** and the plaster goes, the brick stays. Rebar, room finishes (Coverings), formwork, scaffolds, MEP, steel connections, elevators and sunshades are categories of their own.
+- **Annotation categories.** Dimensions, texts, tags, room tags, grids, levels, section and elevation marks, callouts, reference planes, view boundaries and legends, each shown or hidden in this view.
+- **Imported categories.** Each DXF imported into the view, by its file: shown, halftone, and its layers one by one (the arrow beside it). A PDF or an image traced over the view is shown or hidden here too.
+- **Filters.** Rule-based, as in Revit: **New filter**, then its rules (IFC class, category, type, name, material, storey, group, link, phase created, predefined type or a parameter, such as *Fire rating* or *Pset_WallCommon.IsExternal*; equals, contains, begins with, greater, less, has a value…), all of them or any. The view uses the filters in its list, in order; the first that takes an element decides whether it is shown. **Manage → View filters** opens this tab.
 - **Links.** Every linked file, with **Shown** and **Halftone** for this view alone. **Display** is **By host view** (the link takes this view's categories) or **Custom**: then **Categories…** gives the link its own categories, subcategories and IFC classes in this view. An architect's plan hides the structural link's rebar; an engineer's hides the architectural link's finishes.
 - **IFC classes.** The classes of the project's own elements, shown or hidden.
 
@@ -222,3 +225,9 @@ The settings belong to the view, or to a named set that several views share (**S
 ![Visibility / Graphics: a wall's finishes off](shots/vg-categories.webp)
 
 ![A linked structure displayed custom in one view](shots/vg-links.webp)
+
+![A filter hiding what its rules take](shots/vg-filters.webp)
+
+![Annotation categories](shots/vg-annotations.webp)
+
+![A DXF import by its layers](shots/vg-imports.webp)

@@ -29,9 +29,14 @@ public sealed class VisibilityGraphics
     /// <summary>A link's display in a view: its elements ruled by the view's graphics (the default) or by the link's own.</summary>
     public static readonly string[] LinkDisplays = ["host", "custom"];
 
+    /// <summary>The annotation categories, by what owns a mark (stage B).</summary>
+    public static readonly string[] AnnotationCategories = ["dimensions", "texts", "tags", "roomTags", "grids", "levels", "sections", "elevations", "callouts", "refPlanes", "viewBoundaries", "legends"];
+
     readonly IModelView m;
     readonly bool in3d;
     readonly Dictionary<string, IReadOnlyList<LayerBand>?> bands = [];
+    readonly IReadOnlyDictionary<string, ViewFilters.Filter> filters;
+    readonly Dictionary<(string, string), bool> matched = [];
 
     /// <summary>The view's graphics as they rule it (null: none).</summary>
     public JsonObject? Graphics { get; }
@@ -41,7 +46,22 @@ public sealed class VisibilityGraphics
         m = model;
         Graphics = graphics;
         this.in3d = in3d;
+        filters = graphics == null ? new Dictionary<string, ViewFilters.Filter>() : ViewFilters.All(model).ToDictionary(f => f.Id);
     }
+
+    /// <summary>The filters a set of rules uses, in order, with their rows ({id, hidden, …}), those the project no longer has left out.</summary>
+    IEnumerable<(ViewFilters.Filter Filter, JsonObject Row)> FiltersOf(JsonObject? rules) =>
+        (rules?["filters"] as JsonArray)?.OfType<JsonObject>().Select(r => ((string?)r["id"] is { } id && filters.TryGetValue(id, out var f) ? f : null, r))
+            .Where(x => x.Item1 != null).Select(x => (x.Item1!, x.r)) ?? [];
+
+    bool Takes(ViewFilters.Filter f, Entity e)
+    {
+        if (!matched.TryGetValue((f.Id, e.Id), out var hit)) matched[(f.Id, e.Id)] = hit = ViewFilters.Matches(m, e, f);
+        return hit;
+    }
+
+    /// <summary>The rows of the filters that take an element, in the view's order (the first gives each field, as Revit's).</summary>
+    public IEnumerable<JsonObject> FilterRows(Entity e) => FiltersOf(RulesFor(e)).Where(x => Takes(x.Filter, e)).Select(x => x.Row);
 
     /// <summary>A view's (a 2D view, a 3D view, or {3D} as <see cref="GraphicsSets.As3dView"/> gives it).</summary>
     public static VisibilityGraphics Of(IModelView m, Entity view) => new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d");
@@ -66,11 +86,36 @@ public sealed class VisibilityGraphics
     {
         if (LinkRow(e.Str(Links.Key)) is { } row && True(row["hidden"])) return true;
         var g = RulesFor(e);
-        return in3d ? GraphicsSets.Hides3d(g, e) : GraphicsSets.Hides(g, e);
+        if (in3d ? GraphicsSets.Hides3d(g, e) : GraphicsSets.Hides(g, e)) return true;
+        // A filter that takes it and hides what it takes (the first that says, in the view's order).
+        return FilterRows(e).Select(r => r["hidden"]).FirstOrDefault(h => h is JsonValue) is { } hv && True(hv);
     }
 
     /// <summary>Whether a linked element draws halftone in this view (its link's row; Manage → Links halftones it everywhere).</summary>
-    public bool Halftone(Entity e) => LinkRow(e.Str(Links.Key)) is { } row && True(row["halftone"]);
+    public bool Halftone(Entity e) => LinkRow(e.Str(Links.Key)) is { } row && True(row["halftone"])
+        || (e.Str(DxfImportKey) is { } imp && ImportRow(imp) is { } ir && True(ir["halftone"]));
+
+    /// <summary>What a DXF import's shapes carry, and the project's list of the imports (the drafting module's <c>dxfImport</c>, <c>dxfImports</c>).</summary>
+    public const string DxfImportKey = "dxfImport", DxfImportsKey = "dxfImports";
+
+    /// <summary>The row a view gives an import (a DXF import by its id, a traced PDF or image by its own): {hidden, halftone, layers: {name: {hidden}}}.</summary>
+    public JsonObject? ImportRow(string? id) => id == null ? null : Graphics?["imports"]?[id] as JsonObject;
+
+    /// <summary>The annotation category of a mark's owner (a dimension, a grid, a level, a room's stamp…), or null when it is not an annotation.</summary>
+    public static string? AnnotationOf(Entity e, ViewMark? mk = null) => e.Class switch
+    {
+        IfcClass.Annotation => e.PredefinedType switch { "DIMENSION" => "dimensions", "TEXT" => "texts", "TAG" => "tags", "LEGEND" => "legends", _ => null },
+        IfcClass.Grid => "grids",
+        IfcClass.BuildingStorey => "levels",
+        IfcClass.Space => mk is { Under: false, Pick: false } ? "roomTags" : null,
+        Views.Class => e.Str("kind") switch { "section" => "sections", "elevation" => "elevations", "plane" => "refPlanes", _ => null },
+        "LapinInset" => "callouts",
+        ViewBoundaries.Class => "viewBoundaries",
+        _ => null,
+    };
+
+    /// <summary>Whether the view hides an annotation category.</summary>
+    public bool HidesAnnotation(string category) => True(Graphics?["annotations"]?[category]?["hidden"]);
 
     /// <summary>The subcategories an element's category hides in this view (null: none, so its parts need not be asked).</summary>
     public JsonObject? HiddenSubs(Entity e)
@@ -128,8 +173,14 @@ public sealed class VisibilityGraphics
     public bool HidesMark(ViewMark mk)
     {
         if (OwnerOf(m, mk.Owner) is not { } e) return false;
+        // Annotation categories (stage B): a dimension, a grid, a section's mark, a room's stamp…
+        if (AnnotationOf(e, mk) is { } ac && HidesAnnotation(ac)) return true;
+        // Imported categories: a DXF import by its file and its layers, a traced PDF or image.
+        if (e.Str(DxfImportKey) is { } imp && ImportRow(imp) is { } ir && (True(ir["hidden"]) || (e.Str("layer") is { } layer && True(ir["layers"]?[layer]?["hidden"])))) return true;
+        if (e.Class == "LapinViewImage" && True(ImportRow(e.Id)?["hidden"])) return true;
         if (e.Class == IfcClass.Annotation && e.PredefinedType != "DRAFT")
             return LinkRow(e.Str(Links.Key)) is { } row && True(row["hidden"]);
+        // A room's stamp goes with its room only in the rooms' own marks (they ask the graphics themselves).
         return Hides(e);
     }
 }

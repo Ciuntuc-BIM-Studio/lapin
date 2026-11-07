@@ -214,6 +214,9 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 **Sichtbarkeit** (<kbd>VV</kbd>) oder **Grafiken** (<kbd>VG</kbd>) öffnet Sichtbarkeit / Grafiken der vorderen Ansicht: ein Grundriss, ein Schnitt, eine Ansicht oder eine 3D-Ansicht. Was sie ausblendet, ist auch auf den Plänen der Ansicht, in ihrem PDF und DXF und in einem 3D-Export ausgeblendet.
 
 - **Modellkategorien.** Jede Kategorie wird ein- oder ausgeblendet, mit Linienfarbe, Linienstärke, Füllung und Schnittschraffur. Der Pfeil neben einer Kategorie öffnet ihre Unterkategorien: **Kern**, **Ausbau**, **Dämmung**, **Bahnen** und **Andere Schichten** einer Wand, einer Decke oder eines Dachs (nach dem Material jeder Schicht und seiner Kategorie unter Verwalten → Materialien), die **Laibungen** einer Tür oder eines Fensters. Entfernen Sie **Ausbau** unter **Wände**, und der Putz verschwindet, das Mauerwerk bleibt. Bewehrung, Raumbekleidungen, Schalung, Gerüste, TGA, Stahlanschlüsse, Aufzüge und Sonnenschutz sind eigene Kategorien.
+- **Beschriftungskategorien.** Bemaßungen, Texte, Beschriftungen, Raumbeschriftungen, Raster, Ebenen, Schnitt- und Ansichtsmarken, Detailausschnitte, Referenzebenen, Ansichtsgrenzen und Legenden, jeweils in dieser Ansicht ein- oder ausgeblendet.
+- **Importierte Kategorien.** Jede in die Ansicht importierte DXF, nach ihrer Datei: angezeigt, halbtonig und ihre Layer einzeln (der Pfeil daneben). Ein PDF oder Bild zum Nachzeichnen wird hier ebenfalls ein- oder ausgeblendet.
+- **Filter.** Regelbasiert, wie in Revit: **Neuer Filter**, dann seine Regeln (IFC-Klasse, Kategorie, Typ, Name, Material, Geschoss, Gruppe, Verknüpfung, Erstellungsphase, vordefinierter Typ oder ein Parameter wie *Feuerwiderstand* oder *Pset_WallCommon.IsExternal*; ist gleich, enthält, beginnt mit, größer, kleiner, hat einen Wert…), alle oder eine davon. Die Ansicht verwendet die Filter ihrer Liste der Reihe nach; der erste, der ein Element erfasst, entscheidet, ob es angezeigt wird. **Verwalten → Ansichtsfilter** öffnet diese Registerkarte.
 - **Verknüpfungen.** Jede verknüpfte Datei, mit **Sichtbar** und **Halbton** nur für diese Ansicht. **Anzeige** ist **Wie Hostansicht** (die Verknüpfung übernimmt die Kategorien dieser Ansicht) oder **Benutzerdefiniert**: dann gibt **Kategorien…** der Verknüpfung in dieser Ansicht eigene Kategorien, Unterkategorien und IFC-Klassen. Der Grundriss der Architektin blendet die Bewehrung der Tragwerksverknüpfung aus; der des Ingenieurs den Ausbau der Architekturverknüpfung.
 - **IFC-Klassen.** Die Klassen der eigenen Elemente des Projekts, ein- oder ausgeblendet.
 
@@ -222,3 +225,9 @@ Die Einstellungen gehören der Ansicht oder einem benannten Satz, den mehrere An
 ![Sichtbarkeit / Grafiken: der Ausbau einer Wand ausgeblendet](shots/vg-categories.webp)
 
 ![Ein verknüpftes Tragwerk, benutzerdefiniert in einer Ansicht](shots/vg-links.webp)
+
+![Ein Filter, der ausblendet, was seine Regeln erfassen](shots/vg-filters.webp)
+
+![Beschriftungskategorien](shots/vg-annotations.webp)
+
+![Ein DXF-Import nach Layern](shots/vg-imports.webp)

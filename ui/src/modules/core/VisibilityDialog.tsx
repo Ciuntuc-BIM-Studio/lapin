@@ -9,7 +9,7 @@
  */
 
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Trash2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Plus, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
@@ -18,13 +18,20 @@ import { PendingDialog } from './PendingDialog';
 export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; sub?: Record<string, Row> }
 interface Rules { categories?: Record<string, Row>; classes?: Record<string, Row> }
 export interface LinkRow extends Rules { display?: 'host' | 'custom'; hidden?: boolean; halftone?: boolean }
-interface Graphics extends Rules { links?: Record<string, LinkRow> }
+export interface FilterRow { id: string; hidden?: boolean }
+interface Graphics extends Rules {
+  links?: Record<string, LinkRow>; annotations?: Record<string, { hidden?: boolean }>;
+  imports?: Record<string, { hidden?: boolean; halftone?: boolean; layers?: Record<string, { hidden?: boolean }> }>; filters?: FilterRow[];
+}
+interface ImportInfo { id: string; kind: 'dxf' | 'image'; name: string; layers: string[] }
+export interface ViewFilter { id: string; name: string; match: 'all' | 'any'; rules: FilterRule[] }
+export interface FilterRule { field: string; op: string; value?: string; name?: string }
 interface LinkInfo { id: string; name: string; kind: string; visible: boolean; halftone: boolean; classes: string[] }
 export interface Visibility {
   graphics?: Graphics | null; graphicsSet?: string | null; fromStyle?: boolean; style?: string;
   sets: { id: string; name: string }[]; categories: string[]; subcategories?: Record<string, string[]>;
   /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[];
-  links?: LinkInfo[];
+  links?: LinkInfo[]; annotations?: string[]; imports?: ImportInfo[]; filters?: { id: string; name: string }[];
 }
 
 /** The ISO 128 pen series (mm), as the engine reads a category's weight; the older names still show when a project has them. */
@@ -38,10 +45,29 @@ export const CATEGORY_NAMES: Record<string, string> = {
   entourage: 'Entourage', coverings: 'Coverings', rebar: 'Rebar', formwork: 'Formwork', scaffolds: 'Scaffolds', mep: 'MEP',
   steelConnections: 'Steel connections', transport: 'Transport', shading: 'Shading',
   core: 'Core', finishes: 'Finishes', insulation: 'Insulation', membranes: 'Membranes', otherLayers: 'Other layers', reveals: 'Reveals',
+  dimensions: 'Dimensions', texts: 'Texts', tags: 'Tags', roomTags: 'Room tags', grids: 'Grids', levels: 'Levels', sections: 'Section marks',
+  elevations: 'Elevation marks', callouts: 'Callouts', refPlanes: 'Reference planes', viewBoundaries: 'View boundaries', legends: 'Legends',
 };
+
+/** What a filter's rule can read, and how it compares, as the editor names them. */
+export const FILTER_FIELDS: [string, string][] = [['class', 'IFC class'], ['category', 'Category'], ['type', 'Type'], ['name', 'Name'], ['material', 'Material'], ['storey', 'Storey'], ['group', 'Group'], ['link', 'Link'], ['phase', 'Phase created'], ['predefinedType', 'Predefined type'], ['param', 'Parameter']];
+export const FILTER_OPS: [string, string][] = [['equals', 'equals'], ['notEquals', 'does not equal'], ['contains', 'contains'], ['notContains', 'does not contain'], ['beginsWith', 'begins with'], ['greater', 'is greater than'], ['less', 'is less than'], ['hasValue', 'has a value'], ['hasNoValue', 'has no value']];
+
+/** The tab the dialog opens on next (Manage → View filters opens it on Filters). */
+let nextTab: Tab | null = null;
+export function openVisibility(tab?: Tab) { nextTab = tab ?? null; useUi.setState({ dialog: 'visibility' }); }
+
+/** A view's filters reordered: the row at <i>i</i> moved by <i>by</i> (−1 up, +1 down), the list as it was when it cannot move. */
+export function moveRow<T>(list: T[], i: number, by: number): T[] {
+  const j = i + by;
+  if (j < 0 || j >= list.length) return list;
+  const next = [...list];
+  [next[i], next[j]] = [next[j], next[i]];
+  return next;
+}
 export const categoryName = (c: string) => CATEGORY_NAMES[c] ?? (c ? c[0].toUpperCase() + c.slice(1) : c);
 
-type Tab = 'categories' | 'links' | 'classes';
+type Tab = 'categories' | 'annotations' | 'imports' | 'filters' | 'links' | 'classes';
 
 /** A row cleared of what says nothing (an empty field, shown when shown is the default). */
 export function clean(next: Row, keepsShown: boolean): Row {
@@ -56,7 +82,13 @@ export function VisibilityDialog() {
   const [target, setTarget] = useState<string | null>(null);
   const [v, setV] = useState<Visibility | null>(null);
   const [hatches, setHatches] = useState<string[]>([]);
-  const [tab, setTab] = useState<Tab>('categories');
+  // Read once (an initializer may run twice in development), forgotten once the dialog is up.
+  const [tab, setTab] = useState<Tab>(() => nextTab ?? 'categories');
+  useEffect(() => { nextTab = null; }, []);
+  const [importOpen, setImportOpen] = useState<Record<string, boolean>>({});
+  const [defs, setDefs] = useState<ViewFilter[]>([]);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [linkOpen, setLinkOpen] = useState<string | null>(null);
   const close = () => useUi.setState({ dialog: null });
@@ -69,6 +101,18 @@ export function VisibilityDialog() {
     return () => { live = false; };
   }, [target, nodes]);
   useEffect(() => { void query<{ name: string }[]>('hatch.list').then((r) => r && setHatches(r.map((h) => h.name))); }, []);
+  // The project's filters with their rules, and how many elements each takes now.
+  useEffect(() => {
+    let live = true;
+    void query<ViewFilter[]>('viewFilter.list').then(async (list) => {
+      if (!live || !list) return;
+      setDefs(list);
+      const n: Record<string, number> = {};
+      for (const f of list) n[f.id] = (await query<number>('viewFilter.count', { id: f.id })) ?? 0;
+      if (live) setCounts(n);
+    });
+    return () => { live = false; };
+  }, [nodes]);
 
   // The IFC classes of the host's elements on storeys (a link's are on its own row).
   const classes = useMemo(() => [...new Set([...nodes.values()].filter((n) => n.storeyId && typeof n.props.linkId !== 'string').map((n) => n.type))].sort(), [nodes]);
@@ -187,12 +231,66 @@ export function VisibilityDialog() {
             )}
           </div>
           <div className="tabs-inline" role="tablist">
-            <button type="button" role="tab" className={tab === 'categories' ? 'on' : ''} onClick={() => setTab('categories')}>Model categories</button>
-            <button type="button" role="tab" className={tab === 'links' ? 'on' : ''} onClick={() => setTab('links')}>Links</button>
-            <button type="button" role="tab" className={tab === 'classes' ? 'on' : ''} onClick={() => setTab('classes')}>IFC classes</button>
+            <button type="button" role="tab" data-tab="categories" className={tab === 'categories' ? 'on' : ''} onClick={() => setTab('categories')}>Model categories</button>
+            <button type="button" role="tab" data-tab="annotations" className={tab === 'annotations' ? 'on' : ''} onClick={() => setTab('annotations')}>Annotation categories</button>
+            <button type="button" role="tab" data-tab="imports" className={tab === 'imports' ? 'on' : ''} onClick={() => setTab('imports')}>Imported categories</button>
+            <button type="button" role="tab" data-tab="filters" className={tab === 'filters' ? 'on' : ''} onClick={() => setTab('filters')}>Filters</button>
+            <button type="button" role="tab" data-tab="links" className={tab === 'links' ? 'on' : ''} onClick={() => setTab('links')}>Links</button>
+            <button type="button" role="tab" data-tab="classes" className={tab === 'classes' ? 'on' : ''} onClick={() => setTab('classes')}>IFC classes</button>
           </div>
           {tab === 'categories' && categoryTable()}
           {tab === 'classes' && classTable(classes)}
+          {tab === 'annotations' && (
+            <table className="layer-table vv-annotations">
+              <thead><tr><th>Shown</th><th>Category</th></tr></thead>
+              <tbody>
+                {(v.annotations ?? []).map((c) => (
+                  <tr key={c} data-annotation={c}>
+                    <td><input type="checkbox" aria-label={categoryName(c)} checked={!v.graphics?.annotations?.[c]?.hidden} onChange={(e) => void execute('view.graphics', { id: target, annotation: c, value: e.target.checked ? null : { hidden: true } })} /></td>
+                    <td>{categoryName(c)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {tab === 'imports' && (
+            !(v.imports ?? []).length ? <p className="muted small">Nothing is imported into this view: Import DXF…, or a PDF or an image to trace over (Insert).</p> : (
+              <table className="layer-table vv-imports">
+                <thead><tr><th>Shown</th><th>Import</th><th>Halftone</th></tr></thead>
+                <tbody>
+                  {(v.imports ?? []).map((im) => {
+                    const r = v.graphics?.imports?.[im.id] ?? {};
+                    const set = (patch: { hidden?: boolean; halftone?: boolean }) => {
+                      const next: Record<string, boolean> = {};
+                      for (const [k, x] of Object.entries({ hidden: r.hidden, halftone: r.halftone, ...patch })) if (x) next[k] = true;
+                      void execute('view.graphics', { id: target, import: im.id, value: Object.keys(next).length ? next : null });
+                    };
+                    return (
+                      <Fragment key={im.id}>
+                        <tr data-import={im.name}>
+                          <td><input type="checkbox" aria-label={im.name} checked={!r.hidden} onChange={(e) => set({ hidden: !e.target.checked })} /></td>
+                          <td><span className="vv-name">
+                            {im.layers.length > 0
+                              ? <button type="button" className="icon mini" aria-label="Layers" title="Layers" onClick={() => setImportOpen((o) => ({ ...o, [im.id]: !o[im.id] }))}>{importOpen[im.id] ? <ChevronDown size={11} /> : <ChevronRight size={11} />}</button>
+                              : <span className="vv-indent" />}
+                            {im.name} <span className="muted small">{im.kind === 'dxf' ? 'DXF' : 'PDF / image'}</span>
+                          </span></td>
+                          <td>{im.kind === 'dxf' && <input type="checkbox" aria-label="Halftone" checked={!!r.halftone} onChange={(e) => set({ halftone: e.target.checked })} />}</td>
+                        </tr>
+                        {importOpen[im.id] && im.layers.map((l) => (
+                          <tr key={l} className="vv-sub" data-layer={l}>
+                            <td><input type="checkbox" aria-label={l} checked={!r.hidden && !r.layers?.[l]?.hidden} disabled={!!r.hidden} onChange={(e) => void execute('view.graphics', { id: target, import: im.id, layer: l, value: e.target.checked ? null : { hidden: true } })} /></td>
+                            <td className="vv-sub-name">{l}</td><td />
+                          </tr>
+                        ))}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )
+          )}
+          {tab === 'filters' && <FiltersTab target={target} categories={v.categories} rows={v.graphics?.filters ?? []} defs={defs} counts={counts} editing={editing} setEditing={setEditing} />}
           {tab === 'links' && (
             links.length === 0 ? <p className="muted small">The project has no links: File → Link IFC…, or Import DXF… as a link.</p> : (
               <>
@@ -231,6 +329,84 @@ export function VisibilityDialog() {
         </div>
         <footer className="dialog-foot">{error && <p className="error-text" role="alert">{error}</p>}<span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>
       </div>
+    </div>
+  );
+}
+
+/** The Filters tab: the view's filters in order (shown or hidden), and the project's filters with their rules. */
+function FiltersTab({ target, categories, rows, defs, counts, editing, setEditing }: { target: string; categories: string[]; rows: FilterRow[]; defs: ViewFilter[]; counts: Record<string, number>; editing: string | null; setEditing: (id: string | null) => void }) {
+  const save = (next: FilterRow[]) => void execute('view.graphics', { id: target, filters: next });
+  const used = rows.filter((r) => defs.some((d) => d.id === r.id));
+  const unused = defs.filter((d) => !used.some((r) => r.id === d.id));
+  const edited = defs.find((d) => d.id === editing);
+  const setRules = (f: ViewFilter, rules: FilterRule[]) => void execute('viewFilter.update', { id: f.id, rules });
+  return (
+    <div className="vv-filters">
+      {used.length === 0 ? <p className="muted small">This view uses no filter. Add one of the project's below, or make a new one.</p> : (
+        <table className="layer-table">
+          <thead><tr><th>Shown</th><th>Filter</th><th>Elements</th><th /></tr></thead>
+          <tbody>
+            {used.map((r, i) => {
+              const d = defs.find((x) => x.id === r.id)!;
+              return (
+                <tr key={r.id} data-filter={d.name}>
+                  <td><input type="checkbox" aria-label={d.name} checked={!r.hidden} onChange={(e) => save(used.map((x) => (x.id === r.id ? { ...x, hidden: !e.target.checked } : x)))} /></td>
+                  <td><button type="button" className="link-button" onClick={() => setEditing(editing === d.id ? null : d.id)}>{d.name}</button></td>
+                  <td className="muted small">{counts[d.id] ?? '…'}</td>
+                  <td className="row-tools">
+                    <button type="button" className="icon mini" title="Up: before the others" disabled={i === 0} onClick={() => save(moveRow(used, i, -1))}><ArrowUp size={12} /></button>
+                    <button type="button" className="icon mini" title="Down" disabled={i === used.length - 1} onClick={() => save(moveRow(used, i, 1))}><ArrowDown size={12} /></button>
+                    <button type="button" className="icon mini" title="Remove from this view" onClick={() => save(used.filter((x) => x.id !== r.id))}><X size={12} /></button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+      <div className="row vv-set">
+        {unused.length > 0 && (
+          <select aria-label="Add a filter" value="" onChange={(e) => { if (e.target.value) save([...used, { id: e.target.value, hidden: true }]); }}>
+            <option value="">Add a filter…</option>
+            {unused.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        )}
+        <button type="button" className="btn" data-testid="vv-new-filter" onClick={() => void execute('viewFilter.create', { name: 'New filter', rules: [{ field: 'category', op: 'equals', value: 'walls' }] }).then((x) => { const r = x as { id?: string } | null; if (r?.id) { setEditing(r.id); save([...used, { id: r.id, hidden: true }]); } })}><Plus size={13} />New filter</button>
+        <span className="muted small">The first filter in the list that takes an element decides whether it is shown.</span>
+      </div>
+      {edited && (
+        <div className="vv-link-custom" data-testid="vv-filter-editor">
+          <div className="row vv-set">
+            <input aria-label="Filter name" key={edited.name} defaultValue={edited.name} onBlur={(e) => { const n = e.target.value.trim(); if (n && n !== edited.name) void execute('viewFilter.update', { id: edited.id, name: n }); }} />
+            <select aria-label="Match" value={edited.match} onChange={(e) => void execute('viewFilter.update', { id: edited.id, match: e.target.value })}>
+              <option value="all">all the rules</option><option value="any">any of the rules</option>
+            </select>
+            <span className="muted small">{counts[edited.id] ?? '…'} elements</span>
+            <span className="grow" />
+            <button type="button" className="btn" title="Delete: the views that use it forget it" onClick={() => { if (window.confirm(`Delete the filter ${edited.name}?`)) { void execute('viewFilter.delete', { id: edited.id }); setEditing(null); } }}><Trash2 size={13} />Delete</button>
+          </div>
+          <table className="layer-table vv-rules">
+            <thead><tr><th>Field</th><th>Parameter</th><th>Operator</th><th>Value</th><th /></tr></thead>
+            <tbody>
+              {edited.rules.map((rule, i) => {
+                const put = (patch: Partial<FilterRule>) => setRules(edited, edited.rules.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+                return (
+                  <tr key={i}>
+                    <td><select value={rule.field} onChange={(e) => put({ field: e.target.value, ...(e.target.value === 'param' ? { name: rule.name ?? 'Mark' } : { name: undefined }) })}>{FILTER_FIELDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
+                    <td>{rule.field === 'param' && <input aria-label="Parameter" key={rule.name} defaultValue={rule.name ?? ''} placeholder="Fire rating, Pset_WallCommon.IsExternal…" onBlur={(e) => { const n = e.target.value.trim(); if (n && n !== rule.name) put({ name: n }); }} />}</td>
+                    <td><select value={rule.op} onChange={(e) => put({ op: e.target.value })}>{FILTER_OPS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
+                    <td>{rule.op !== 'hasValue' && rule.op !== 'hasNoValue' && (rule.field === 'category'
+                      ? <select aria-label="Value" value={rule.value ?? ''} onChange={(e) => put({ value: e.target.value })}>{categories.map((c) => <option key={c} value={c}>{categoryName(c)}</option>)}</select>
+                      : <input aria-label="Value" key={rule.value} defaultValue={rule.value ?? ''} onBlur={(e) => { if (e.target.value !== (rule.value ?? '')) put({ value: e.target.value }); }} />)}</td>
+                    <td><button type="button" className="icon mini" title="Remove the rule" onClick={() => setRules(edited, edited.rules.filter((_, j) => j !== i))}><X size={12} /></button></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <button type="button" className="btn small" onClick={() => setRules(edited, [...edited.rules, { field: 'type', op: 'contains', value: '' }])}><Plus size={12} />Add a rule</button>
+        </div>
+      )}
     </div>
   );
 }

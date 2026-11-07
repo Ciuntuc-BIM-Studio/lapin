@@ -2,7 +2,7 @@
 
 Asked by a user and approved by the user (the developer of Lapin) on 07.11.2026: "Please expand the support for Visibility/Graphics like in Revit: with tabs for Annotative Objects, File Links, Imports, even Point Cloud (if possible). We need to be able to turn off Categories from links, like architects don't want to see rebars, engineers don't want to see wall and floor finishings, etc. The V/G is the most powerful tool in any BIM software."
 
-Decisions 391– in `docs/decisions-pending.md`, one per stage.
+Decisions 391– in `docs/decisions-pending.md`, one per stage. Stage A done (decision 391), stage B done (decision 393).
 
 ## What there is today
 

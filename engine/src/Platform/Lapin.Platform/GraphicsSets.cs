@@ -146,10 +146,42 @@ public static class GraphicsSets
                 }
             }
             if (cls != null) SetIn(into, "classes", cls, value);
+            // Stage B: an annotation category's row; an import's ({hidden, halftone}) or one of its layers'; the view's (or a link's) filters, in order.
+            if ((string?)a["annotation"] is { } ann)
+            {
+                if (!VisibilityGraphics.AnnotationCategories.Contains(ann)) throw new CommandException($"„{ann}” is not an annotation category.");
+                SetIn(g, "annotations", ann, value);
+            }
+            if ((string?)a["import"] is { } imp)
+            {
+                var imports = g["imports"]?.DeepClone() as JsonObject ?? new JsonObject();
+                var row = imports[imp]?.DeepClone() as JsonObject ?? new JsonObject();
+                if ((string?)a["layer"] is { } layer) SetIn(row, "layers", layer, value);
+                else
+                {
+                    var layers = row["layers"]?.DeepClone();
+                    row = value?.DeepClone() as JsonObject ?? new JsonObject();
+                    row.Remove("layers");
+                    if (layers != null) row["layers"] = layers;
+                }
+                Put(imports, imp, row.Count > 0 ? row : null);
+                if (imports.Count > 0) g["imports"] = imports; else g.Remove("imports");
+            }
+            if (a["filters"] is JsonArray fl)
+            {
+                var known = ViewFilters.All(ctx.Model).Select(f => f.Id).ToHashSet();
+                var rows = new JsonArray();
+                foreach (var row in fl.OfType<JsonObject>())
+                {
+                    if ((string?)row["id"] is not { } fid || !known.Contains(fid)) throw new CommandException("There is no such filter.");
+                    rows.Add((JsonNode)row.DeepClone());
+                }
+                if (rows.Count > 0) into["filters"] = rows; else into.Remove("filters");
+            }
             if (linkId == null) { if ((string?)a["element"] is { } el) SetIn(g, "elements", el, value); }
             else
             {
-                if (cat == null && cls == null)
+                if (cat == null && cls == null && a["filters"] == null)
                 {
                     // The link's own row: its display, shown and halftone in this view; its categories and classes stay.
                     var keep = new JsonObject();
@@ -261,6 +293,9 @@ public static class GraphicsSets
                 ["fromStyle"] = setId != null && v.Str("graphicsSet") != setId,
                 ["style"] = ViewStyles.StyleOf(q.Model, v).Name,
                 ["subcategories"] = new JsonObject(VisibilityGraphics.SubcategoriesOf.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)new JsonArray(kv.Value.Select(x => (JsonNode)x).ToArray())))),
+                ["annotations"] = new JsonArray(VisibilityGraphics.AnnotationCategories.Select(c => (JsonNode)c).ToArray()),
+                ["filters"] = new JsonArray(ViewFilters.All(q.Model).Select(f => (JsonNode)new JsonObject { ["id"] = f.Id, ["name"] = f.Name }).ToArray()),
+                ["imports"] = Imports(q.Model, v),
                 ["links"] = new JsonArray(Links.All(q.Model).Select(l => (JsonNode)new JsonObject
                 {
                     ["id"] = l.Id, ["name"] = l.Name, ["kind"] = l.Str("kind"), ["visible"] = Links.Visible(l), ["halftone"] = Links.IsHalftone(l),
@@ -291,6 +326,33 @@ public static class GraphicsSets
             var view = id == null || id == View3d ? As3dView(q.Model) : q.Model.Get(id) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("Not a 3D view.");
             return Looks3d(q, view);
         });
+    }
+
+    /// <summary>
+    /// What a view's Imported categories tab lists: the project's DXF imports (a 2D view's own first; the 3D shows them
+    /// all), each with the layers its shapes are on, and the PDFs and images traced over the view.
+    /// </summary>
+    static JsonArray Imports(IModelView m, Entity view)
+    {
+        var o = new JsonArray();
+        var recorded = Spatial.Project(m)?.Attrs[VisibilityGraphics.DxfImportsKey] as JsonObject ?? [];
+        var layersOf = new Dictionary<string, SortedSet<string>>();
+        foreach (var e in m.OfClass(IfcClass.Annotation))
+            if (e.Str(VisibilityGraphics.DxfImportKey) is { } imp)
+                (layersOf.TryGetValue(imp, out var set) ? set : layersOf[imp] = []).Add(e.Str("layer") ?? "0");
+        foreach (var (id, rec) in recorded)
+        {
+            var viewId = (string?)rec?["viewId"];
+            if (view.Str("kind") != "3d" && viewId != view.Id) continue;
+            o.Add((JsonNode)new JsonObject
+            {
+                ["id"] = id, ["kind"] = "dxf", ["name"] = (string?)rec?["file"] ?? "DXF", ["viewId"] = viewId,
+                ["layers"] = new JsonArray((layersOf.GetValueOrDefault(id) ?? []).Select(l => (JsonNode)l).ToArray()),
+            });
+        }
+        foreach (var img in m.OfClass("LapinViewImage").Where(e => e.Str("viewId") == view.Id))
+            o.Add((JsonNode)new JsonObject { ["id"] = img.Id, ["kind"] = "image", ["name"] = img.Name, ["layers"] = new JsonArray() });
+        return o;
     }
 
     /// <summary>A 3D view's looks: what it hides, a link halftone in it, the parts its subcategories hide.</summary>
