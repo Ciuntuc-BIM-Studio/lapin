@@ -22,6 +22,7 @@ import { deleteType } from '../core/deleteType';
 import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
+import { JoineryPreview3D } from './JoineryPreview3D';
 import { merge, neighbour, normalised, resized, shifted, split, type GridSpec } from './joineryGrid';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
@@ -794,6 +795,7 @@ export function JoineryDialog() {
               </div>
               <p className="muted small">IFC: {preview?.ifcType ?? '—'}</p>
               {preview?.problem && <p className="error-text">{preview.problem}</p>}
+              <JoineryPreview3D spec={spec} width={W} height={190} />
             </div>
             <div className="row joinery-actions">
               <span className="grow" />

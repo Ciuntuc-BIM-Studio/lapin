@@ -159,7 +159,7 @@ export const PL: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': 'Każde wypełnione pole musi być spełnione; zbiór bez pól obejmuje wszystko.', 'Apply': 'Zastosuj',
   'Discipline': 'Branża',
 
-  'Elevation from inside': 'Elewacja od wewnątrz', 'Elevation from outside': 'Elewacja od zewnątrz', 'From outside': 'Od zewnątrz', 'Opening symbols in elevation': 'Symbole otwierania na elewacji',
+  'Elevation from inside': 'Elewacja od wewnątrz', 'Elevation from outside': 'Elewacja od zewnątrz', 'From outside': 'Od zewnątrz', '3D preview': 'Podgląd 3D', '3D: drag to turn, wheel to zoom': '3D: przeciągnij, aby obrócić, kółko, aby powiększyć', 'Opening symbols in elevation': 'Symbole otwierania na elewacji',
   'Apex at the handle (makers)': 'Wierzchołek przy klamce (producenci)', 'Apex at the hinges (DIN 1356)': 'Wierzchołek przy zawiasach (DIN 1356)', 'Hardware': 'Okucia', 'Opening symbols': 'Symbole otwierania',
 
   'Details': 'Szczegóły', 'Reveal finish': 'Wykończenie ościeża', 'The wall\'s finish layers': 'Warstwy wykończeniowe ściany', 'A material': 'Materiał', 'None': 'Brak', 'Reveal material': 'Materiał ościeża',

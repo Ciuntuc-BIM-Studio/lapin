@@ -159,7 +159,7 @@ export const RO: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': 'Fiecare câmp completat trebuie să se potrivească; un set fără niciunul ia tot.', 'Apply': 'Aplică',
   'Discipline': 'Disciplină',
 
-  'Elevation from inside': 'Vedere din interior', 'Elevation from outside': 'Vedere din exterior', 'From outside': 'Din exterior', 'Opening symbols in elevation': 'Simbolurile de deschidere în vedere',
+  'Elevation from inside': 'Vedere din interior', 'Elevation from outside': 'Vedere din exterior', 'From outside': 'Din exterior', '3D preview': 'Previzualizare 3D', '3D: drag to turn, wheel to zoom': '3D: trage ca să rotești, rotița pentru zoom', 'Opening symbols in elevation': 'Simbolurile de deschidere în vedere',
   'Apex at the handle (makers)': 'Vârful la mâner (fabricanți)', 'Apex at the hinges (DIN 1356)': 'Vârful la balamale (DIN 1356)', 'Hardware': 'Feronerie', 'Opening symbols': 'Simboluri de deschidere',
 
   'Details': 'Detalii', 'Reveal finish': 'Finisajul șpaleților', "The wall's finish layers": 'Straturile de finisaj ale peretelui', 'A material': 'Un material', 'None': 'Niciunul', 'Reveal material': 'Materialul șpaleților',

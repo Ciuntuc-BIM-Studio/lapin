@@ -161,7 +161,7 @@ export const DA: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': 'Hvert angivet felt skal være opfyldt; et sæt uden nogen tager alt.', 'Apply': 'Anvend',
   'Discipline': 'Fagområde',
 
-  'Elevation from inside': 'Facade indefra', 'Elevation from outside': 'Facade udefra', 'From outside': 'Udefra', 'Opening symbols in elevation': 'Åbningssymboler i facade',
+  'Elevation from inside': 'Facade indefra', 'Elevation from outside': 'Facade udefra', 'From outside': 'Udefra', '3D preview': '3D-forhåndsvisning', '3D: drag to turn, wheel to zoom': '3D: træk for at dreje, hjulet for at zoome', 'Opening symbols in elevation': 'Åbningssymboler i facade',
   'Apex at the handle (makers)': 'Spids ved grebet (producenter)', 'Apex at the hinges (DIN 1356)': 'Spids ved hængslerne (DIN 1356)', 'Hardware': 'Beslag', 'Opening symbols': 'Åbningssymboler',
 
   'Details': 'Detaljer', 'Reveal finish': 'Lysningsoverflade', 'The wall\'s finish layers': 'Væggens overfladelag', 'A material': 'Et materiale', 'None': 'Ingen', 'Reveal material': 'Lysningsmateriale',

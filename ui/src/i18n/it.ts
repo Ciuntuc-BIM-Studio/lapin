@@ -161,7 +161,7 @@ export const IT: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': 'Ogni campo compilato deve essere soddisfatto; un insieme senza campi prende tutto.', 'Apply': 'Applica',
   'Discipline': 'Disciplina',
 
-  'Elevation from inside': 'Prospetto dall’interno', 'Elevation from outside': 'Prospetto dall’esterno', 'From outside': 'Dall’esterno', 'Opening symbols in elevation': 'Simboli di apertura in prospetto',
+  'Elevation from inside': 'Prospetto dall’interno', 'Elevation from outside': 'Prospetto dall’esterno', 'From outside': 'Dall’esterno', '3D preview': 'Anteprima 3D', '3D: drag to turn, wheel to zoom': '3D: trascina per ruotare, rotella per lo zoom', 'Opening symbols in elevation': 'Simboli di apertura in prospetto',
   'Apex at the handle (makers)': 'Vertice alla maniglia (produttori)', 'Apex at the hinges (DIN 1356)': 'Vertice alle cerniere (DIN 1356)', 'Hardware': 'Ferramenta', 'Opening symbols': 'Simboli di apertura',
 
   'Details': 'Dettagli', 'Reveal finish': 'Finitura della mazzetta', 'The wall\'s finish layers': 'Gli strati di finitura del muro', 'A material': 'Un materiale', 'None': 'Nessuno', 'Reveal material': 'Materiale della mazzetta',

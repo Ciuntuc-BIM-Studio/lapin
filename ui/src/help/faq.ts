@@ -482,6 +482,16 @@ export const FAQ: Entry[] = [
     source: 'report #96',
   },
   {
+    id: 'joinery-3d-preview',
+    q: ['Can I see the window or door in 3D while I configure it?', 'Is there a 3D preview in the Doors and windows configurator?'],
+    qRo: ['Pot vedea fereastra sau ușa în 3D cât o configurez?', 'Există o previzualizare 3D în configuratorul de uși și ferestre?'],
+    keywords: ['preview', 'previews', 'configurator', 'configure', 'configuring', 'orbit', 'previzualizare', 'configuratorul', 'configurez', 'vista', 'previa', 'apercu', 'anteprima', 'vorschau', 'podglad'],
+    a: 'Yes: in Architecture → Doors & windows, under the drawings on the right, a 3D preview shows the type as it is now, before you save it, standing in a piece of wall of the project\'s first wall type with its reveal, sills, lining and materials. Drag to turn it, use the wheel to zoom, right-drag to pan.',
+    aRo: 'Da: în Architecture → Doors & windows, sub desenele din dreapta, o previzualizare 3D arată tipul așa cum e acum, înainte să-l salvezi, într-o bucată de perete de primul tip de perete al proiectului, cu glaful, solbancurile, căptușeala și materialele lui. Trage ca să-l rotești, rotița pentru zoom, butonul drept ca să-l muți.',
+    action: { label: 'Open Doors & windows', labelRo: 'Deschide Doors & windows', run: { kind: 'tool', id: 'architecture.joineryTypes' } },
+    source: 'report #108',
+  },
+  {
     id: 'bay-windows',
     q: ['How do I make a bay window?', 'Can I make bow and box windows?', 'How do I make a window that projects from the wall, with a seat and a roof?'],
     qRo: ['Cum fac un bovindou?', 'Pot face ferestre în arc sau în cutie?', 'Cum fac o fereastră ieșită din perete, cu banchetă și acoperiș?'],

@@ -161,7 +161,7 @@ export const FR: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': 'Chaque champ renseigné doit être satisfait ; un ensemble sans aucun prend tout.', 'Apply': 'Appliquer',
   'Discipline': 'Discipline',
 
-  'Elevation from inside': 'Élévation depuis l’intérieur', 'Elevation from outside': 'Élévation depuis l’extérieur', 'From outside': 'Depuis l’extérieur', 'Opening symbols in elevation': 'Symboles d’ouverture en élévation',
+  'Elevation from inside': 'Élévation depuis l’intérieur', 'Elevation from outside': 'Élévation depuis l’extérieur', 'From outside': 'Depuis l’extérieur', '3D preview': 'Aperçu 3D', '3D: drag to turn, wheel to zoom': '3D : faites glisser pour tourner, molette pour zoomer', 'Opening symbols in elevation': 'Symboles d’ouverture en élévation',
   'Apex at the handle (makers)': 'Sommet côté poignée (fabricants)', 'Apex at the hinges (DIN 1356)': 'Sommet côté paumelles (DIN 1356)', 'Hardware': 'Quincaillerie', 'Opening symbols': 'Symboles d’ouverture',
 
   'Details': 'Détails', 'Reveal finish': 'Finition de l’embrasure', 'The wall\'s finish layers': 'Les couches de finition du mur', 'A material': 'Un matériau', 'None': 'Aucun', 'Reveal material': 'Matériau de l’embrasure',

@@ -428,6 +428,9 @@ export const scenes = [
       await select(t, door.id);
       await t.shot('door-properties', { of: 'aside.props', pad: 0, maxHeight: 560 });
       await t.tool('architecture.joineryTypes');
+      // The 3D preview under the drawings (report #108), drawn once the engine's meshes come.
+      t.expect(await t.page.locator('[data-testid=joinery-preview-3d] canvas').count() === 1, 'the configurator shows its 3D preview');
+      await t.wait(900);
       await t.shot('joinery-configurator', { of: '.dialog', pad: 0 });
     },
   },

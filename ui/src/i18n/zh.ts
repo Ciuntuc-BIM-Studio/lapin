@@ -159,7 +159,7 @@ export const ZH: Record<string, string> = {
   'Every field given must hold; a set with none takes everything.': '所填的每个字段都必须满足；未填任何字段的集会收纳全部内容。', 'Apply': '应用',
   'Discipline': '专业',
 
-  'Elevation from inside': '内立面', 'Elevation from outside': '外立面', 'From outside': '从外侧', 'Opening symbols in elevation': '立面中的开启符号',
+  'Elevation from inside': '内立面', 'Elevation from outside': '外立面', 'From outside': '从外侧', '3D preview': '3D 预览', '3D: drag to turn, wheel to zoom': '3D：拖动旋转，滚轮缩放', 'Opening symbols in elevation': '立面中的开启符号',
   'Apex at the handle (makers)': '顶点位于把手处（厂商惯例）', 'Apex at the hinges (DIN 1356)': '顶点位于铰链处（DIN 1356）', 'Hardware': '五金件', 'Opening symbols': '开启符号',
 
   'Details': '细部', 'Reveal finish': '洞口侧面饰面', 'The wall\'s finish layers': '墙的饰面层', 'A material': '指定材料', 'None': '无', 'Reveal material': '洞口侧面材料',

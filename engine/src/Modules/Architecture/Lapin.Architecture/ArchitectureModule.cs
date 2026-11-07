@@ -205,6 +205,11 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             };
         });
 
+        // The configurator's 3D preview (report #108): the draft in a piece of wall of the project's first wall type, as meshes.
+        r.Query("joineryPreview3d", (q, a) => JsonSpec(a["spec"]) is { } spec
+            ? JoineryPreview3D.Of(spec, q.Model, q.Services)
+            : new JsonObject { ["problem"] = "The configuration is unreadable." });
+
         // Bay, bow and box windows (report #60): the built-in styles, and the project's own (bayStyles on the project), saved from the configurator.
         r.Catalog("bayStyles", BayWindows.Catalog());
         r.Command("saveBayStyle", "Save bay window style", (ctx, a) =>
