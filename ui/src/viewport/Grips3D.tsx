@@ -16,6 +16,7 @@ import { findTool } from '../platform/modules';
 import type { Vec2 } from '../platform/module';
 import { useGripEditor } from './GripLayer';
 import { useCamera } from './camera';
+import { snapAt } from './scene3d';
 
 /** The height an element's grips stand at: its base (a floor's top, a beam's top, a roof's wall plate). */
 function gripHeight(n: NodeDto | undefined, nodes: Map<string, NodeDto>): number {
@@ -30,7 +31,7 @@ function gripHeight(n: NodeDto | undefined, nodes: Map<string, NodeDto>): number
   }
 }
 
-export function Grips3D({ camera, canvas }: { camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null> }) {
+export function Grips3D({ camera, canvas, scene }: { camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null>; scene: React.RefObject<THREE.Scene | null> }) {
   const svg = useRef<SVGSVGElement>(null);
   const cam = useCamera();
   const nodes = useSession((s) => s.nodes);
@@ -47,6 +48,9 @@ export function Grips3D({ camera, canvas }: { camera: React.RefObject<THREE.Came
   const aim = (clientX: number, clientY: number, from: Vec2, z = 0): Vec2 => {
     const c = camera.current;
     if (!c) return from;
+    // Onto the other elements' corners, middles and edges (docs/plan-3d-modelling.md, stage C): the point under them on the grip's plane.
+    const snapped = snapAt({ camera, canvas, scene }, clientX, clientY, { level: z, skip: new Set(useUi.getState().selected) });
+    if (snapped && (snapped.kind === 'Endpoint' || snapped.kind === 'Midpoint' || snapped.kind === 'On edge')) return { x: snapped.point.x, y: snapped.point.y };
     const { w, h, left, top } = size();
     const ray = new THREE.Raycaster();
     ray.setFromCamera(new THREE.Vector2(((clientX - left) / w) * 2 - 1, -((clientY - top) / h) * 2 + 1), c);

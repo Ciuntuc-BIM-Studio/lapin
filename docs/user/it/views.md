@@ -185,6 +185,12 @@ Porte e finestre vanno dove fai clic sulla faccia di un muro in 3D, nel punto de
 
 ![Un muro iniziato sullo spigolo del solaio in 3D, con l'asse verde dedotto dal suo inizio](shots/model-3d-wall.webp)
 
+### Maniglie e componenti in 3D
+
+Le maniglie di un elemento selezionato (gli estremi di un muro, gli angoli di un solaio) si trascinano in 3D come in pianta e si agganciano a spigoli, punti medi e bordi degli altri elementi, con il punto preso all'altezza della maniglia.
+
+Trascina una scheda dal **Catalog** o uno strumento dalla barra multifunzione sulla vista 3D: il suo strumento parte con quel tipo. Uno strumento che posa con un clic (un pilastro, un plinto, un arredo, un ascensore, una pianta) viene posato subito dove lo rilasci, agganciato al modello. Rilasciato, o con un clic, sul solaio di un altro piano, l'elemento va su quel piano: un tavolo posato sul solaio del primo piano appartiene al primo piano, qualunque sia il livello attivo.
+
 ## Che cosa mostra una vista
 
 La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appare.

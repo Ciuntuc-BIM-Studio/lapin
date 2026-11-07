@@ -84,3 +84,13 @@ export function previewOf(g: PointGesture, pts: readonly Vec2[], cursor: Vec2 | 
   }
   return { pts: all, closed: g.kind === 'polygon' && all.length >= 3 };
 }
+
+/**
+ * The storey a point in space stands on (a floor's top clicked in 3D): the highest whose level is at or under it (5 cm
+ * spare, a finish's thickness); null under every storey.
+ */
+export function storeyAt(z: number, storeys: readonly { id: string; elevation: number }[]): string | null {
+  let best: { id: string; elevation: number } | null = null;
+  for (const s of storeys) if (s.elevation <= z + 0.05 && (!best || s.elevation > best.elevation)) best = s;
+  return best?.id ?? null;
+}

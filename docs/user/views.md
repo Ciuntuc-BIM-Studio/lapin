@@ -185,6 +185,12 @@ Doors and windows go where you click a wall's face in 3D, at the place along the
 
 ![A wall started on the floor's corner in 3D, the green axis inferred from its start](shots/model-3d-wall.webp)
 
+### Grips and components in 3D
+
+A selected element's grips (a wall's ends, a floor's corners) are dragged in 3D as in a plan, and snap to the other elements' corners, middles and edges, the point taken at the grip's own height.
+
+Drag a card from the **Catalog** or a tool from the ribbon onto the 3D view: its tool starts with that type. A tool placed by one click (a column, a pad footing, furniture, an elevator, a plant) is placed at once where you drop it, snapped to the model. Dropped, or clicked, on a floor of another storey, the element goes on that storey: a table set on the first floor's slab belongs to the first floor, whatever level is active.
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.

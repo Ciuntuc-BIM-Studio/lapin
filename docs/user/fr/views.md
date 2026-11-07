@@ -185,6 +185,12 @@ Les portes et fenêtres se posent là où vous cliquez la face d'un mur en 3D, �
 
 ![Un mur commencé au coin de la dalle en 3D, l'axe vert déduit depuis son début](shots/model-3d-wall.webp)
 
+### Poignées et composants en 3D
+
+Les poignées d'un élément sélectionné (les extrémités d'un mur, les coins d'une dalle) se tirent en 3D comme en plan et s'accrochent aux coins, milieux et arêtes des autres éléments, le point pris à la hauteur de la poignée.
+
+Faites glisser une carte du **Catalog** ou un outil du ruban sur la vue 3D : son outil démarre avec ce type. Un outil qui pose d'un clic (un poteau, une semelle isolée, un meuble, un ascenseur, une plante) est posé aussitôt là où vous le lâchez, accroché au modèle. Lâché, ou cliqué, sur la dalle d'un autre niveau, l'élément va sur ce niveau : une table posée sur la dalle du premier étage appartient au premier étage, quel que soit le niveau actif.
+
 ## Ce que montre une vue
 
 L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.

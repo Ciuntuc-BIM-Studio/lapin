@@ -185,6 +185,12 @@ Ușile și ferestrele se pun unde dai clic pe fața unui perete în 3D, în locu
 
 ![Un perete început pe colțul plăcii în 3D, cu axa verde dedusă din început](shots/model-3d-wall.webp)
 
+### Mânere și componente în 3D
+
+Mânerele unui element selectat (capetele unui perete, colțurile unei plăci) se trag în 3D ca în plan și se prind de colțurile, mijloacele și muchiile celorlalte elemente, punctul fiind luat la înălțimea mânerului.
+
+Trage o carte din **Catalog** sau o unealtă din ribbon pe vederea 3D: unealta pornește cu acel tip. O unealtă pusă printr-un clic (un stâlp, o fundație izolată, mobilier, un lift, o plantă) e pusă imediat unde o lași, prinsă de model. Lăsată, sau pusă cu un clic, pe placa altui nivel, elementul merge pe acel nivel: o masă pusă pe placa etajului ține de etaj, oricare ar fi nivelul activ.
+
 ## Ce arată o vedere
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.

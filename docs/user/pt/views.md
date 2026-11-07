@@ -185,6 +185,12 @@ Portas e janelas ficam onde clica na face de uma parede em 3D, no sítio da pare
 
 ![Uma parede começada no canto da laje em 3D, com o eixo verde inferido desde o início](shots/model-3d-wall.webp)
 
+### Pegas e componentes em 3D
+
+As pegas de um elemento selecionado (as pontas de uma parede, os cantos de uma laje) arrastam-se em 3D como em planta e ajustam-se aos cantos, pontos médios e arestas dos outros elementos, com o ponto tomado à altura da pega.
+
+Arraste um cartão do **Catalog** ou uma ferramenta da faixa para a vista 3D: a ferramenta começa com esse tipo. Uma ferramenta que coloca com um clique (um pilar, uma sapata, mobiliário, um elevador, uma planta) é colocada logo onde a larga, ajustada ao modelo. Largada, ou clicada, sobre a laje de outro piso, o elemento vai para esse piso: uma mesa posta na laje do primeiro andar pertence ao primeiro andar, seja qual for o nível ativo.
+
 ## O que uma vista mostra
 
 A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua aparência.

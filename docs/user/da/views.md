@@ -185,6 +185,12 @@ Døre og vinduer placeres, hvor du klikker på en vægs flade i 3D, på det sted
 
 ![En væg startet på dækkets hjørne i 3D, den grønne akse udledt fra starten](shots/model-3d-wall.webp)
 
+### Greb og komponenter i 3D
+
+Et markeret elements greb (en vægs ender, et dæks hjørner) trækkes i 3D som i en plan og fanger de andre elementers hjørner, midtpunkter og kanter; punktet tages i grebets egen højde.
+
+Træk et kort fra **Catalog** eller et værktøj fra båndet hen på 3D-visningen: værktøjet starter med den type. Et værktøj, der placeres med ét klik (en søjle, et punktfundament, møbler, en elevator, en plante), placeres straks, hvor du slipper det, fanget af modellen. Sluppet, eller klikket, på et dæk på en anden etage, kommer elementet på den etage: et bord på første sals dæk hører til første sal, uanset hvilken etage der er aktiv.
+
 ## Hvad en visning viser
 
 Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.

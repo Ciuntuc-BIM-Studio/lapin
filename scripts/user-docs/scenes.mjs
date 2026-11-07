@@ -5320,6 +5320,34 @@ export const scenes = [
       await t.wait(1500);
       t.expect((await t.nodes()).some((n) => n.type === 'IfcDoor'), 'a door clicked on the wall\'s face in 3D goes into it');
       await t.keys('Escape');
+
+      // Stage C: the wall's end grip dragged in 3D onto the floor's far corner, snapped; a column dropped from the ribbon onto the
+      // first floor's slab goes on the first floor.
+      await t.ui({ selection: wall.id, selected: [wall.id] });
+      await t.wait(600);
+      const g0 = await screen({ x: 0, y: 3, z: 0 }), g1 = await screen({ x: 4, y: 3, z: 0 });
+      await page.mouse.move(g0.x, g0.y, { steps: 2 });
+      await page.mouse.down();
+      await page.mouse.move(g1.x + 4, g1.y + 3, { steps: 14 });
+      await page.mouse.up();
+      await t.wait(1200);
+      const moved = (await t.nodes()).find((n) => n.id === wall.id);
+      t.expect(Math.abs(moved.props.end[0] - 4) < 1e-6 && Math.abs(moved.props.end[1] - 3) < 1e-6, `the wall's end grip snaps onto the floor's corner (${JSON.stringify(moved.props.end)})`);
+      await t.ui({ selection: null, selected: [] });
+      const first = await t.storey('First floor');
+      await t.cmd('architecture.addSlab', { storeyId: first, points: [[0, 0], [4, 0], [4, 3], [0, 3]] });
+      await t.wait(1000);
+      const top = await screen({ x: 2.5, y: 1.2, z: 3 });
+      await page.evaluate(([x, y]) => {
+        const el = document.querySelector('[data-testid=view3d]');
+        const dt = new DataTransfer();
+        dt.setData('application/x-lapin-tool', 'structure.column');
+        for (const type of ['dragover', 'drop']) el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, dataTransfer: dt }));
+      }, [top.x, top.y]);
+      await t.wait(1500);
+      const column = (await t.nodes()).find((n) => n.type === 'IfcColumn');
+      t.expect(!!column && column.storeyId === first, `a column dropped on the first floor's slab goes on the first floor (${column?.storeyId} vs ${first})`);
+      await t.keys('Escape');
     },
   },
   {

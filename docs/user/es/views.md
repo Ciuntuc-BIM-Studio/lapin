@@ -181,6 +181,12 @@ Las puertas y ventanas van donde haces clic en la cara de un muro en 3D, en el l
 
 ![Un muro empezado en la esquina del forjado en 3D, con el eje verde inferido desde su inicio](shots/model-3d-wall.webp)
 
+### Pinzamientos y componentes en 3D
+
+Los pinzamientos de un elemento seleccionado (los extremos de un muro, las esquinas de un forjado) se arrastran en 3D como en planta y se ajustan a las esquinas, puntos medios y aristas de los demás elementos, con el punto tomado a la altura del pinzamiento.
+
+Arrastra una tarjeta del **Catalog** o una herramienta de la cinta a la vista 3D: su herramienta empieza con ese tipo. Una herramienta que coloca con un clic (un pilar, una zapata, mobiliario, un ascensor, una planta) se coloca enseguida donde la sueltas, ajustada al modelo. Soltada, o con clic, sobre un forjado de otra planta, el elemento va a esa planta: una mesa puesta sobre el forjado de la primera planta pertenece a la primera planta, sea cual sea el nivel activo.
+
 ## Qué muestra una vista
 
 La ficha **Vista** configura qué muestra la vista que está delante y cómo se ve.

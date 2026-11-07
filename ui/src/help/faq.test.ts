@@ -32,6 +32,7 @@ describe('Ask Lapin', () => {
     // Report #105, in the tester's words.
     expect(best('Make the architecture components addable and editable in the 3D viewport. Sometimes the user may have to work fully in 3D, not just in plan.')).toBe('place-3d');
     expect(best('cum desenez pereti in 3D')).toBe('place-3d');
+    expect(best('I was expecting the same dragging and dropping of components like in the plan viewport into the 3D viewport as well')).toBe('place-3d');
     expect(best('Include Bay, Bow and Box windows for better window design customization. Make every component customizable.')).toBe('bay-windows');
     expect(best('various sunshade design types, with customizable shapes, dimensions, materials and projection lengths, to improve façade aesthetics, control sunlight, and energy efficiency')).toBe('sunshades');
   });

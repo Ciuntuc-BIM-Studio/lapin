@@ -16,15 +16,15 @@ import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { setTool, useUi } from '../app/store';
 import { claimValue } from '../app/valueOwner';
-import { activeStorey } from '../engine/session';
-import { num } from '../engine/model';
+import { activeStorey, useSession } from '../engine/session';
+import { num, storeys } from '../engine/model';
 import { findTool } from '../platform/modules';
 import type { Vec2 } from '../platform/module';
 import { useCamera, type Vec3 } from './camera';
 import { useCad } from './cad/session';
 import { formatLength, parseLength } from './liveInput';
 import { completeTool } from './tools';
-import { clickStep, constrained, enterStep, isPointGesture, previewOf, typedPoint, type PointGesture } from './gesture3d';
+import { clickStep, constrained, enterStep, isPointGesture, previewOf, storeyAt, typedPoint, type PointGesture } from './gesture3d';
 import { insideView, projector, snapAt, type ViewRefs } from './scene3d';
 import { arrowLock3, type Lock3, type Snapped3 } from './snap3d';
 import { parseVcb } from './sketch/vcb';
@@ -38,6 +38,10 @@ const HINT: Record<PointGesture['kind'], string> = {
   polygon: 'Click the corners · back on the first, or Enter, closes it · Backspace takes one back',
   polyline: 'Click the points · Enter ends it · Backspace takes one back',
 };
+
+/** The storey a point in space stands on (gesture3d.ts's rule over the project's storeys). */
+export const storeyOf = (z: number): string | null =>
+  storeyAt(z, storeys(useSession.getState()).map((n) => ({ id: n.id, elevation: num(n, 'elevation') })));
 
 export function Place3D({ camera, canvas, scene }: ViewRefs) {
   useCamera();
@@ -62,13 +66,15 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
   useEffect(() => { setPts([]); setText(''); setLock(null); setAt(null); }, [toolId]);
 
   const cursor2 = (s: Snapped3 | null): Vec2 | null => (s ? { x: s.point.x, y: s.point.y } : null);
-  const placeAt = (p: Vec2, typed?: number) => {
+  const placeAt = (p: Vec2, typed?: number, hit?: Snapped3 | null) => {
     if (!g || !tool) return;
     const step = clickStep(g, state.current.pts, constrained(g, state.current.pts, p), 8 / pxPerM());
     setPts(step.pts);
     setText('');
     setLock(null);
-    if (step.done) void completeTool(tool, { points: step.done, ...(typed != null ? { typed } : {}) });
+    // One click on a floor of another storey (a chair on the first floor's slab): the element goes on that storey.
+    const on = g.kind === 'point' && hit && hit.kind !== 'On level' ? storeyOf(hit.point.z) : null;
+    if (step.done) void completeTool(tool, { points: step.done, ...(typed != null ? { typed } : {}) }, undefined, on);
   };
   /** Pixels a metre where the cursor is (how near closes a polygon). */
   const pxPerM = () => {
@@ -128,7 +134,7 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
       // A click (not a drag, which turns the view): the point snapped where it is. The release goes on to the orbit
       // controls, which saw the press (the view's own click handling leaves point tools to this host).
       const s = snapAt(refsRef.current, e.clientX, e.clientY, { level: level(), base: base(), lock: state.current.lock, axes: ['red', 'green'] });
-      if (s) placeRef.current({ x: s.point.x, y: s.point.y });
+      if (s) placeRef.current({ x: s.point.x, y: s.point.y }, undefined, s);
     };
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]') && !(e.target as HTMLElement).closest('[data-place3d]')) return;

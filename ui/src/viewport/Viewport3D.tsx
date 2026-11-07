@@ -41,6 +41,7 @@ import { FaceSketch3D } from './FaceSketch3D';
 import { Draft3D } from './Draft3D';
 import { Move3D } from './Move3D';
 import { Place3D } from './Place3D';
+import { Drop3D } from './Drop3D';
 import { isPointGesture } from './gesture3d';
 import { Sketch3D } from './Sketch3D';
 import { SketchGrips3D } from './SketchGrips3D';
@@ -1775,13 +1776,14 @@ export function Viewport3D() {
         </div>
       )}
       {faceLabel && !onCanvasEdit && <div className="face-label" style={{ left: faceLabel.x + 14, top: faceLabel.y + 14 }}>{faceLabel.text}</div>}
-      <Grips3D camera={camRef} canvas={host} />
+      <Grips3D camera={camRef} canvas={host} scene={scene} />
       {!walkStart && <SectionBox3D camera={camRef} canvas={host} />}
       {!walkStart && <AxisDrag3D camera={camRef} canvas={host} />}
       {!walkStart && <FaceSketch3D camera={camRef} canvas={host} />}
       {!walkStart && <Draft3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <Move3D camera={camRef} canvas={host} scene={scene} invalidate={invalidate} />}
       {!walkStart && <Place3D camera={camRef} canvas={host} scene={scene} />}
+      {!walkStart && <Drop3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <Sketch3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <Guides3D camera={camRef} canvas={host} />}
       {!walkStart && <SketchGrips3D camera={camRef} canvas={host} scene={scene} />}

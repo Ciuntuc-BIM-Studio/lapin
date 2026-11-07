@@ -185,6 +185,12 @@ Türen und Fenster kommen dorthin, wo Sie in 3D auf die Fläche einer Wand klick
 
 ![Eine Wand in 3D an der Ecke der Decke begonnen, die grüne Achse vom Anfang erkannt](shots/model-3d-wall.webp)
 
+### Griffe und Bauteile in 3D
+
+Die Griffe eines ausgewählten Elements (die Enden einer Wand, die Ecken einer Decke) werden in 3D wie im Grundriss gezogen und rasten an Ecken, Mitten und Kanten der anderen Elemente ein; der Punkt wird in der Höhe des Griffs genommen.
+
+Ziehen Sie eine Karte aus dem **Catalog** oder ein Werkzeug aus dem Menüband auf die 3D-Ansicht: Sein Werkzeug startet mit diesem Typ. Ein Werkzeug, das mit einem Klick platziert (eine Stütze, ein Einzelfundament, Möbel, ein Aufzug, eine Pflanze), wird sofort dort abgesetzt, wo Sie es loslassen, am Modell eingerastet. Auf eine Decke eines anderen Geschosses gezogen oder geklickt, kommt das Element auf dieses Geschoss: Ein Tisch auf der Decke des Obergeschosses gehört zum Obergeschoss, welche Ebene auch aktiv ist.
+
 ## Was eine Ansicht zeigt
 
 Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt und wie sie aussieht.

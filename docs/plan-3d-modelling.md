@@ -71,7 +71,7 @@ A **3D placement host** (`Place3D.tsx`, the gestures' logic in `gesture3d.ts`, s
 - a **length typed** goes along the way the cursor points from the last point (`1200`, `1000<30`, as in the sketch), Backspace takes the last point back, Esc drops the gesture, again the tool;
 - **doors, windows** and other `pick` tools take the point where the face was clicked (its x, y on the wall), not where the ray meets the floor; `face` tools are as they were.
 
-### Stage C: grips with snaps, components dropped on faces
+### Stage C: grips with snaps, components dropped on faces (#105; done, 07.11.2026, decision 385)
 
 - **Grips in 3D** snap with the core: a wall's end dragged onto another wall's corner, a slab's vertex onto a column's corner; the point kept on the grip's own height, as now.
 - **Dropped on a face**: a catalog card or a ribbon tool dragged onto the 3D view (or a plan) starts its tool with that type there; a tool placed by one click (furniture, a column, a pad, an elevator, a plant…) is placed at once where it was dropped, on the face under the cursor; dropped on a floor of another storey, the element goes on that storey (`completeTool` on the storey of the element under the drop).
@@ -85,5 +85,5 @@ A first (the report #104 is the sharpest: a move that cannot snap), then B (most
 
 - `snap3d.test.ts`: endpoint over midpoint over edge, hidden points left, axes from a base, a lock and the point projected onto it, face and level last.
 - `move3d.test.ts`: the typed value (a length along the cursor, `dx,dy,dz`, `dx,dy`), the displacement and the command it makes (`by`, `up`).
-- `gesture3d.test.ts`: each gesture's clicks as in plan (chained walls, a polygon closed on its first point, a polyline ended), a typed length, Backspace.
+- `gesture3d.test.ts`: the storey a point stands on; each gesture's clicks as in plan (chained walls, a polygon closed on its first point, a polyline ended), a typed length, Backspace.
 - Engine: `ElementTransformUpTests` (a stair, a wall, a column, a floor, a beam, furniture and a Studio solid raised; a drafted shape kept and named).

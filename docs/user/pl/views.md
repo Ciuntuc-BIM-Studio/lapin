@@ -185,6 +185,12 @@ Drzwi i okna trafiają tam, gdzie klikniesz ścianę ściany w 3D, w klikniętym
 
 ![Ściana zaczęta w 3D na narożniku stropu, z osią zieloną rozpoznaną od początku](shots/model-3d-wall.webp)
 
+### Uchwyty i komponenty w 3D
+
+Uchwyty zaznaczonego elementu (końce ściany, narożniki stropu) przeciąga się w 3D jak w rzucie i przyciągają się do narożników, środków i krawędzi innych elementów, a punkt brany jest na wysokości uchwytu.
+
+Przeciągnij kartę z **Catalog** lub narzędzie ze wstążki na widok 3D: jego narzędzie startuje z tym typem. Narzędzie, które umieszcza jednym kliknięciem (słup, stopa fundamentowa, mebel, winda, roślina), umieszcza element od razu tam, gdzie go upuścisz, przyciągnięty do modelu. Upuszczony lub kliknięty na stropie innej kondygnacji, element trafia na tę kondygnację: stół postawiony na stropie piętra należy do piętra, niezależnie od aktywnego poziomu.
+
 ## Co pokazuje widok
 
 Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.

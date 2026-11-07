@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clickStep, constrained, enterStep, isPointGesture, previewOf, typedPoint } from './gesture3d';
+import { clickStep, constrained, enterStep, isPointGesture, previewOf, storeyAt, typedPoint } from './gesture3d';
 
 const p = (x: number, y: number) => ({ x, y });
 
@@ -62,5 +62,15 @@ describe('the placing tools in 3D', () => {
     const pipe = { kind: 'polyline', constrain: (_: unknown, a: { x: number; y: number }) => ({ x: Math.round(a.x), y: Math.round(a.y) }) } as const;
     expect(constrained(pipe, [p(0, 0)], p(1.4, 2.6))).toEqual(p(1, 3));
     expect(constrained(pipe, [], p(1.4, 2.6))).toEqual(p(1.4, 2.6));
+  });
+
+  it('put a one-click element on the storey of the floor clicked', () => {
+    const storeys = [{ id: 'f', elevation: -1.5 }, { id: 'g', elevation: 0 }, { id: 'one', elevation: 3 }];
+    expect(storeyAt(3.02, storeys)).toBe('one');
+    // A floor's top a finish under the level still counts as that storey's.
+    expect(storeyAt(2.97, storeys)).toBe('one');
+    expect(storeyAt(1.2, storeys)).toBe('g');
+    expect(storeyAt(-0.4, storeys)).toBe('f');
+    expect(storeyAt(-9, storeys)).toBeNull();
   });
 });
