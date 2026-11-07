@@ -159,6 +159,22 @@ Słońce jest słońcem projektu: gdzie stoi dla miejsca projektu (Zarządzaj �
 
 Widok realistyczny bierze część liczb (cień w narożnikach, jakość cieni, kolor słońca) z [BimGo](https://github.com/aussieBIMguru/BimGo) autorstwa Aussie BIM Guru (MIT-0).
 
+## Modelowanie w 3D
+
+Widok 3D to miejsce do modelowania, nie tylko do oglądania: elementy przesuwa się i kopiuje w nim tak jak w rzucie, przyciągane do narożników, krawędzi i ścian innych elementów.
+
+### Przesuwanie i kopiowanie w 3D
+
+Zaznacz elementy, potem **Move** (M) lub **Copy** (CO) z widokiem 3D na wierzchu. Kliknij punkt bazowy: narożnik, krawędź lub ścianę tego, co przesuwasz. Kursor mówi, do czego się przyciąga: **Endpoint** (punkt końcowy), **Midpoint** (środek), **On edge** (na krawędzi), **On face** (na ścianie) lub **On level** (na poziomie) w pustej przestrzeni; to, co leży za ścianą pod kursorem, nie jest brane. Linie zaimportowanego DXF, pokazanego w 3D, także przyciągają. Potem kliknij, dokąd ma trafić, na przykład narożnik stropu: zaznaczenie podąża za kursorem w 3D, także w górę i w dół, i zostaje tam umieszczone. Od punktu bazowego rozpoznawane są osie czerwona, zielona i niebieska, gdy kursor biegnie wzdłuż jednej; → ← ↑ blokują oś czerwoną, zieloną lub niebieską (ten sam klawisz zwalnia), a Shift trzyma rozpoznaną oś. Przy zablokowanej osi narożnik pod kursorem zostaje sprowadzony na oś, aby wyrównać przesunięcie do niego, nie idąc tam.
+
+Wpisz wartość w dowolnej chwili, bez klikania w pole: długość idzie w kierunku kursora (1200), a dx,dy lub dx,dy,dz to samo przesunięcie (0,0,450 podnosi o 450 mm). Enter ją stosuje, Esc anuluje. Copy kopiuje dalej z tego samego punktu bazowego aż do Enter lub Esc.
+
+To, co ma własną wysokość, idzie w górę lub w dół z przesunięciem: podstawa ściany, słupa lub obiektu, podstawa i szczyt schodów (ich wysokość zostaje), wierzch belki, górne odsunięcie stropu, murłata dachu; bryła Studio dostaje krok przesunięcia. Drzwi lub okno przesuwają się wzdłuż swojej ściany.
+
+Możesz też nacisnąć zaznaczony element i go przeciągnąć: przesuwa się tak samo, od naciśniętego punktu, przyciągnięty, i zostaje tam, gdzie go puścisz. **View → Drag to move in 3D** to wyłącza, aby przeciąganie po zaznaczeniu obracało widok.
+
+![Schody przesunięte w 3D narożnikiem najwyższego stopnia na narożnik stropu](shots/model-3d-move.webp)
+
 ## Co pokazuje widok
 
 Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.

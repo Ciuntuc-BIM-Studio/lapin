@@ -12,7 +12,7 @@
 
 import { create } from 'zustand';
 
-export interface Display { grid: boolean; thinLines: boolean; drafts3d: boolean; dxf3d: boolean; zoomToCursor: boolean; orbitSelection: boolean; drillSelect: boolean; sketchupKeys: boolean }
+export interface Display { grid: boolean; thinLines: boolean; drafts3d: boolean; dxf3d: boolean; zoomToCursor: boolean; orbitSelection: boolean; drillSelect: boolean; sketchupKeys: boolean; dragMove3d: boolean }
 
 const KEY = 'lapin.display';
 
@@ -22,7 +22,8 @@ export function readDisplay(stored: unknown): Display {
   const obj = !!o && typeof o === 'object';
   return { grid: !(obj && o.grid === false), thinLines: !!(obj && o.thinLines === true), drafts3d: !(obj && o.drafts3d === false), dxf3d: !(obj && o.dxf3d === false),
     zoomToCursor: !(obj && o.zoomToCursor === false), orbitSelection: !(obj && o.orbitSelection === false),
-    drillSelect: !!(obj && o.drillSelect === true), sketchupKeys: !!(obj && o.sketchupKeys === true) };
+    drillSelect: !!(obj && o.drillSelect === true), sketchupKeys: !!(obj && o.sketchupKeys === true),
+    dragMove3d: !(obj && o.dragMove3d === false) };
 }
 
 function read(): Display {
@@ -46,6 +47,9 @@ export const toggleOrbitSelection = () => setDisplay({ orbitSelection: !useDispl
 export const toggleDrillSelect = () => setDisplay({ drillSelect: !useDisplay.getState().drillSelect });
 /** SketchUp's one-letter shortcuts in the 3D view (decision 376), off by default: they would shadow Lapin's two-letter ones. */
 export const toggleSketchupKeys = () => setDisplay({ sketchupKeys: !useDisplay.getState().sketchupKeys });
+
+/** Pressing on a selected element in 3D and dragging moves it (docs/plan-3d-modelling.md), on by default; off, the drag orbits. */
+export const toggleDragMove3d = () => setDisplay({ dragMove3d: !useDisplay.getState().dragMove3d });
 
 /** A pen's width on screen (px): its paper width at the view's scale, within what a screen shows well; one pixel with thin lines. */
 export const screenWidth = (paperMm: number, pxPerMm: number, thin: boolean): number => (thin ? 1 : Math.min(4, Math.max(0.5, paperMm * pxPerMm)));

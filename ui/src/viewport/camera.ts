@@ -41,6 +41,8 @@ export interface CameraApi {
   canvas?(): HTMLCanvasElement | null;
   /** The box round the elements given as they are drawn now (what a move's handles stand on); null when none is shown. */
   boxOf?(ids: string[]): { min: Vec3; max: Vec3 } | null;
+  /** Where a model point is on the screen (client px), as drawn now; null behind the camera (the guide's scenes aim by it). */
+  screenOf?(p: Vec3): { x: number; y: number } | null;
 }
 
 export const useCamera = create<CameraState & { api: CameraApi | null }>(() => ({

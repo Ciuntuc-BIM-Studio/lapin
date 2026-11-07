@@ -159,6 +159,22 @@ O sol é o do projeto: onde está para o local do projeto (Gerenciar → **Local
 
 A vista realista toma alguns números (a sombra nos cantos, a qualidade das sombras, a cor do sol) do [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0).
 
+## Modelar em 3D
+
+A vista 3D é um lugar para modelar, não só para olhar: os elementos movem-se e copiam-se lá como em planta, ajustados aos cantos, arestas e faces dos outros elementos.
+
+### Mover e copiar em 3D
+
+Selecione os elementos e depois **Move** (M) ou **Copy** (CO) com a vista 3D à frente. Clique no ponto base: um canto, uma aresta ou uma face do que move. O cursor diz a que se ajusta: **Endpoint** (extremidade), **Midpoint** (ponto médio), **On edge** (na aresta), **On face** (na face) ou **On level** (no nível) no vazio; o que está atrás da face sob o cursor não é tomado. As linhas de um DXF importado, mostrado em 3D, também atraem o cursor. Depois clique onde vai, por exemplo o canto de uma laje: a seleção segue o cursor em 3D, também para cima e para baixo, e é colocada lá. A partir do ponto base inferem-se os eixos vermelho, verde e azul quando o cursor segue um; → ← ↑ travam o eixo vermelho, verde ou azul (a mesma tecla solta) e Shift mantém o eixo inferido. Com um eixo travado, um canto sobre o qual passa é trazido para o eixo, para alinhar o movimento com ele sem lá ir.
+
+Digite um valor a qualquer momento, sem clicar numa caixa: um comprimento vai na direção do cursor (1200), e dx,dy ou dx,dy,dz é o próprio deslocamento (0,0,450 sobe 450 mm). Enter aplica, Esc cancela. Copy continua a copiar do mesmo ponto base até Enter ou Esc.
+
+O que tem altura própria sobe ou desce com o movimento: a base de uma parede, de um pilar ou de um objeto, a base e o topo de uma escada (a sua altura mantém-se), o topo de uma viga, o desvio superior de uma laje, o frechal de um telhado; um sólido Studio recebe um passo de movimento. Uma porta ou janela desliza ao longo da sua parede.
+
+Também pode premir um elemento selecionado e arrastá-lo: move-se da mesma forma, a partir do ponto premido, ajustado, e fica onde o solta. **View → Drag to move in 3D** desliga isto, para que arrastar sobre a seleção faça orbitar a vista.
+
+![Uma escada movida em 3D pelo canto do degrau de cima até ao canto da laje](shots/model-3d-move.webp)
+
 ## O que uma vista mostra
 
 A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua aparência.

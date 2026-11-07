@@ -155,6 +155,22 @@ El sol es el del proyecto: dónde está para el lugar del proyecto (Gestionar �
 
 La vista realista toma algunas de sus cifras (la sombra en las esquinas, la calidad de las sombras, el color del sol) de [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0).
 
+## Modelar en 3D
+
+La vista 3D es un lugar para modelar, no solo para mirar: los elementos se mueven y copian allí como en planta, ajustados a las esquinas, aristas y caras de los demás elementos.
+
+### Mover y copiar en 3D
+
+Selecciona los elementos y luego **Move** (M) o **Copy** (CO) con la vista 3D delante. Haz clic en el punto base: una esquina, una arista o una cara de lo que mueves. El cursor dice a qué se ajusta: **Endpoint** (extremo), **Midpoint** (punto medio), **On edge** (en arista), **On face** (en cara) u **On level** (en el nivel) en el vacío; lo que queda detrás de la cara bajo el cursor no se toma. Las líneas de un DXF importado mostrado en 3D también atraen el cursor. Después haz clic donde va, por ejemplo la esquina de un forjado: la selección sigue al cursor en 3D, también hacia arriba y abajo, y se coloca allí. Desde el punto base se infieren los ejes rojo, verde y azul cuando el cursor sigue uno; → ← ↑ bloquean el eje rojo, verde o azul (la misma tecla lo suelta) y Mayús mantiene el eje inferido. Con un eje bloqueado, una esquina sobre la que pasas se lleva al eje, para alinear el movimiento con ella sin ir allí.
+
+Escribe un valor en cualquier momento, sin hacer clic en una casilla: una longitud va en la dirección del cursor (1200), y dx,dy o dx,dy,dz es el desplazamiento mismo (0,0,450 sube 450 mm). Intro lo aplica, Esc cancela. Copy sigue copiando desde el mismo punto base hasta Intro o Esc.
+
+Lo que tiene altura propia sube o baja con el movimiento: la base de un muro, un pilar o un objeto, la base y la parte superior de una escalera (se conserva su altura), la parte superior de una viga, el desfase superior de un forjado, la solera de una cubierta; un sólido de Studio recibe un paso de movimiento. Una puerta o una ventana se desliza a lo largo de su muro.
+
+También puedes pulsar sobre un elemento seleccionado y arrastrarlo: se mueve igual, desde el punto pulsado, ajustado, y se coloca donde lo sueltas. **View → Drag to move in 3D** lo desactiva, para que arrastrar sobre la selección haga orbitar la vista.
+
+![Una escalera movida en 3D por la esquina del peldaño superior hasta la esquina del forjado](shots/model-3d-move.webp)
+
 ## Qué muestra una vista
 
 La ficha **Vista** configura qué muestra la vista que está delante y cómo se ve.

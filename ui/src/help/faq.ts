@@ -452,6 +452,15 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'move-3d',
+    q: ['How do I move an object in 3D and snap it to another one?', 'Can I move a stair onto the corner of a floor in the 3D view?', 'How do I move something up or down in 3D?'],
+    qRo: ['Cum mut un obiect în 3D și îl prind de altul?', 'Pot muta o scară pe colțul unei plăci în vederea 3D?', 'Cum mut ceva în sus sau în jos în 3D?'],
+    keywords: ['3d', 'snap', 'snaps', 'corner', 'endpoint', 'edge', 'face', 'area', 'desired', 'smoothly', 'object', 'stair', 'slab', 'up', 'down', 'height', 'axis', 'sketchup', 'prind', 'colt', 'muchie', 'fata', 'obiect', 'scara', 'placa', 'sus', 'jos', 'inaltime', 'cota', 'axa'],
+    a: 'Select it, then Move (M) or Copy (CO) with the 3D view in front: click the base point (a corner, an edge or a face of the element: the cursor names what it snaps to, Endpoint, Midpoint, On edge, On face), then where it goes, a corner or an edge of another element. The selection follows the cursor in 3D, up and down too; from the base the red, green and blue axes are inferred, → ← ↑ lock one and Shift holds it. Type a length (along the way the cursor points) or dx,dy,dz and press Enter. You can also press on a selected element and drag it: it moves the same way (View → Drag to move in 3D turns that off).',
+    aRo: 'Selectează-l, apoi Move (M) sau Copy (CO) cu vederea 3D în față: dă clic pe punctul de bază (un colț, o muchie sau o față a elementului; cursorul spune de ce se prinde: Endpoint, Midpoint, On edge, On face), apoi unde ajunge, un colț sau o muchie a altui element. Selecția urmează cursorul în 3D, și în sus și în jos; din punctul de bază se deduc axele roșie, verde și albastră, → ← ↑ blochează una, Shift o ține. Scrie o lungime (pe direcția cursorului) sau dx,dy,dz și apasă Enter. Poți și să apeși pe un element selectat și să-l tragi: se mută la fel (View → Drag to move in 3D oprește asta).',
+    source: 'report #104',
+  },
+  {
     id: 'studio-sketch-3d',
     q: ['How do I draw lines on a face in 3D like in SketchUp?', 'Can I use the Line and Rectangle tools in the 3D view?', 'How do I draw on a work plane in 3D with the command line?'],
     qRo: ['Cum desenez linii pe o față în 3D ca în SketchUp?', 'Pot folosi Linie și Dreptunghi în vederea 3D?', 'Cum desenez pe un plan de lucru în 3D cu linia de comandă?'],

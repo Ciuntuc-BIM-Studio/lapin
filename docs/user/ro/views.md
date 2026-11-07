@@ -159,6 +159,22 @@ Soarele e al proiectului: unde stă pentru locul proiectului (Gestionare → **A
 
 Vederea realistă își ia câteva cifre (umbra din colțuri, calitatea umbrelor, culoarea soarelui) din [BimGo](https://github.com/aussieBIMguru/BimGo), de Aussie BIM Guru (MIT-0).
 
+## Modelare în 3D
+
+Vederea 3D e un loc în care modelezi, nu doar privești: elementele se mută și se copiază acolo ca în plan, prinse de colțurile, muchiile și fețele celorlalte elemente.
+
+### Mutare și copiere în 3D
+
+Selectează elementele, apoi **Move** (M) sau **Copy** (CO) cu vederea 3D în față. Dă clic pe punctul de bază: un colț, o muchie sau o față a ceea ce muți. Cursorul spune de ce se prinde: **Endpoint** (capăt), **Midpoint** (mijloc), **On edge** (pe muchie), **On face** (pe față), sau **On level** (pe nivel) în gol; ce stă în spatele feței de sub cursor nu e luat. Liniile unui DXF importat, arătate în 3D, prind și ele. Apoi dă clic unde ajunge, de exemplu pe colțul unei plăci: selecția urmează cursorul în 3D, și în sus și în jos, și e pusă acolo. Din punctul de bază se deduc axele roșie, verde și albastră când cursorul merge de-a lungul uneia; → ← ↑ blochează axa roșie, verde sau albastră (aceeași tastă eliberează), iar Shift ține axa dedusă. Cu o axă blocată, un colț peste care treci e adus pe axă, ca mutarea să se alinieze cu el fără să ajungă acolo.
+
+Scrie o valoare oricând, fără să dai clic într-o căsuță: o lungime merge pe direcția cursorului (1200), iar dx,dy sau dx,dy,dz e chiar deplasarea (0,0,450 ridică cu 450 mm). Enter o aplică, Esc anulează. Copy copiază mai departe din același punct de bază până la Enter sau Esc.
+
+Ce are o cotă proprie urcă sau coboară cu mutarea: baza unui perete, a unui stâlp sau a unui obiect, baza și vârful unei scări (urcarea ei rămâne), vârful unei grinzi, decalajul de sus al unei plăci, cosoroaba unui acoperiș; un solid Studio primește un pas de mutare. O ușă sau o fereastră alunecă de-a lungul peretelui ei.
+
+Poți și să apeși pe un element selectat și să-l tragi: se mută la fel, din punctul apăsat, prins, și rămâne unde îl eliberezi. **View → Drag to move in 3D** oprește asta, ca o tragere pe selecție să rotească vederea.
+
+![O scară mutată în 3D de colțul treptei de sus pe colțul plăcii](shots/model-3d-move.webp)
+
 ## Ce arată o vedere
 
 Tabul **Vedere** setează ce arată vederea din față și cum arată.

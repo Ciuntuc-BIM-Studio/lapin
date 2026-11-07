@@ -33,7 +33,7 @@ export function edgesInPlane(segs: readonly [Vec3, Vec3][], f: WorkFrame, tol = 
 
 /** A mesh's sharp edges (20°), once per geometry. */
 const cache = new WeakMap<THREE.BufferGeometry, Float32Array>();
-function edgesOf(g: THREE.BufferGeometry): Float32Array {
+export function edgesOf(g: THREE.BufferGeometry): Float32Array {
   let e = cache.get(g);
   if (!e) { const eg = new THREE.EdgesGeometry(g, 20); e = eg.getAttribute('position').array as Float32Array; eg.dispose(); cache.set(g, e); }
   return e;

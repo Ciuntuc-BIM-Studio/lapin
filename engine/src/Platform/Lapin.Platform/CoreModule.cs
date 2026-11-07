@@ -226,7 +226,14 @@ public sealed class CoreModule : ILapinModule
             return results;
         });
 
-        r.Command("element.transform", "Transform", (ctx, a) => new JsonObject { ["ids"] = ElementTransform.Run(ctx, a).Made });
+        r.Command("element.transform", "Transform", (ctx, a) =>
+        {
+            var t = ElementTransform.Run(ctx, a);
+            var o = new JsonObject { ["ids"] = t.Made };
+            // A 3D move's vertical part left out on what has no height of its own (docs/plan-3d-modelling.md).
+            if (t.Kept.Count > 0) o["kept"] = new JsonArray(t.Kept.Select(x => (JsonNode)x).ToArray());
+            return o;
+        });
 
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
@@ -273,7 +280,11 @@ public sealed class CoreModule : ILapinModule
 /// </summary>
 public static class ElementTransform
 {
-    public sealed record Result(JsonArray Made, IReadOnlyDictionary<string, string> Copies, IReadOnlyDictionary<string, string> Groups);
+    public sealed record Result(JsonArray Made, IReadOnlyDictionary<string, string> Copies, IReadOnlyDictionary<string, string> Groups)
+    {
+        /// <summary>What a move's <c>up</c> could not raise (it has no height of its own): the ids moved or copied.</summary>
+        public IReadOnlyList<string> Kept { get; init; } = [];
+    }
 
     public static Result Run(ICommandContext ctx, JsonObject a)
     {
@@ -283,7 +294,9 @@ public static class ElementTransform
         var op = (string?)a["op"] ?? "move";
         // A move's height (rise, or world's third value: an elevation's or a section's move in the model, decision 298).
         var world = a["world"] is JsonArray { Count: >= 2 } wv ? wv : null;
-        var rise = Json.Number(a["rise"]) ?? (world is { Count: >= 3 } ? Json.Number(world[2]) : null) ?? 0;
+        // A 3D move's vertical part (docs/plan-3d-modelling.md): what has a height of its own goes up or down by it.
+        var up = op is "move" or "copy" ? Json.Number(a["up"]) ?? 0 : 0;
+        var rise = Json.Number(a["rise"]) ?? (world is { Count: >= 3 } ? Json.Number(world[2]) : null) ?? up;
         var t = op switch
         {
             "move" or "copy" => Placement2D.Move(V(a["by"], "displacement"), rise),
@@ -345,7 +358,15 @@ public static class ElementTransform
                     if (copy) made.Add((JsonNode)after);
                     break;
                 }
-        return new Result(made, copies, twins);
+        var kept = new List<string>();
+        if (Math.Abs(up) > 1e-9)
+            foreach (var e in entities)
+            {
+                var id = copy ? copies.GetValueOrDefault(e.Id) : e.Id;
+                if (id == null || ctx.Model.Get(id) is not { } now) continue;
+                if (!ElementRise.Lift(ctx, now, up)) kept.Add(id);
+            }
+        return new Result(made, copies, twins) { Kept = kept };
     }
 }
 

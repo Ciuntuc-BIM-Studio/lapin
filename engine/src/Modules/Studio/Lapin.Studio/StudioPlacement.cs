@@ -110,3 +110,30 @@ public sealed class StudioPlacement : IElementPlacement
         return copy.Id;
     }
 }
+
+/// <summary>
+/// A Studio solid raised or lowered by a 3D move (docs/plan-3d-modelling.md): a move step up or down, merged into the
+/// last step when that is already an upright move, so a solid moved up twice keeps one step.
+/// </summary>
+public sealed class StudioRise : IElementRise
+{
+    public bool Handles(Entity e) => e.Str("operation") != null && StudioModule.Classes.Contains(e.Class);
+
+    public bool Lift(ICommandContext ctx, Entity e, double dz)
+    {
+        var list = (e.Attrs["features"] as JsonArray)?.OfType<JsonObject>().Select(f => (JsonObject)f.DeepClone()).ToList() ?? [];
+        var last = list.Count > 0 ? list[^1] : null;
+        if (last != null && (string?)last["op"] == "move" && !Features.Off(last) && Features.P(last["by"]) is { } by && Math.Abs(by.X) < 1e-12 && Math.Abs(by.Y) < 1e-12)
+        {
+            var z = Math.Round((by.Z + dz) * 1e6) / 1e6;
+            if (Math.Abs(z) < 1e-9) list.RemoveAt(list.Count - 1);
+            else last["by"] = new JsonArray(0.0, 0.0, z);
+        }
+        else list.Add(new JsonObject { ["op"] = "move", ["by"] = new JsonArray(0.0, 0.0, dz) });
+        var attrs = e.CloneAttrs();
+        if (list.Count == 0) attrs.Remove("features");
+        else attrs["features"] = new JsonArray(list.Select(f => (JsonNode)f).ToArray());
+        ctx.Replace(e.With(attrs: attrs));
+        return true;
+    }
+}

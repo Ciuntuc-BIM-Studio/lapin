@@ -2,7 +2,7 @@
 
 import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
-import { toggleDrafts3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
+import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
 import { AppWindow, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
@@ -223,6 +223,8 @@ const core: LapinModule = {
         // Navigating in 3D (report #89, viewport/navigate3d.ts): the wheel zooms to the point under the cursor, a drag orbits round the selection; kept on this computer.
         { id: 'view.zoomToCursor', label: 'Zoom to cursor', icon: ZoomIn, run: () => { toggleZoomToCursor(); notify(useDisplay.getState().zoomToCursor ? 'The wheel zooms to the point under the cursor.' : 'The wheel zooms to the middle of the 3D view.'); } },
         { id: 'view.orbitSelection', label: 'Orbit around selection', icon: Orbit, run: () => { toggleOrbitSelection(); notify(useDisplay.getState().orbitSelection ? 'The 3D view orbits round the selection, or the point under the cursor.' : 'The 3D view orbits round its middle.'); } },
+        // A selected element pressed and dragged in 3D moves, snapped (docs/plan-3d-modelling.md, report #104); off, the drag orbits.
+        { id: 'view.dragMove3d', label: 'Drag to move in 3D', icon: Move, run: () => { toggleDragMove3d(); notify(useDisplay.getState().dragMove3d ? 'A selected element dragged in 3D moves, snapped to the others.' : 'A drag in 3D orbits, even on the selection.'); } },
         // Drill-down picking (platform/assemblies.ts): a part picks its whole first, then a level deeper each click; off by default, kept on this computer.
         { id: 'view.drillSelect', label: 'Drill into assemblies', icon: ListTree, run: () => { toggleDrillSelect(); notify(useDisplay.getState().drillSelect ? 'A click picks the whole first, then its parts one level at a time; Esc steps back up.' : 'A click picks the element under the cursor (a group\'s member, its group).'); } },
         // The reference planes' quads in 3D (docs/plan-studio-thick.md); their marks in plans and sections stay.

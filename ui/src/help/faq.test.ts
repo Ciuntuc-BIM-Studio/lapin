@@ -26,6 +26,9 @@ describe('Ask Lapin', () => {
     expect(best('Customizable elevator with a configurator: architects adjust the dimensions by building type, traffic and accessibility')).toBe('elevators');
     expect(best('elevator kinds: small residential, standard passenger, hospital, goods, hydraulic, MRL, panoramic glass, home lift')).toBe('elevators');
     expect(best('cum pun un lift pentru scaun rulant')).toBe('elevators');
+    // Report #104, in the tester's words.
+    expect(best('Moving 3D object and make it snap to the area desired: move the object smoothly on the desired area')).toBe('move-3d');
+    expect(best('cum mut o scara in 3D pe coltul placii')).toBe('move-3d');
     expect(best('Include Bay, Bow and Box windows for better window design customization. Make every component customizable.')).toBe('bay-windows');
     expect(best('various sunshade design types, with customizable shapes, dimensions, materials and projection lengths, to improve façade aesthetics, control sunlight, and energy efficiency')).toBe('sunshades');
   });

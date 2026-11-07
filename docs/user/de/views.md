@@ -159,6 +159,22 @@ Die Sonne ist die des Projekts: wo sie für den Ort des Projekts (Verwalten → 
 
 Die realistische Ansicht übernimmt einige Zahlen (den Schatten in Ecken, die Schattenqualität, die Farbe der Sonne) von [BimGo](https://github.com/aussieBIMguru/BimGo) von Aussie BIM Guru (MIT-0).
 
+## Modellieren in 3D
+
+Die 3D-Ansicht ist ein Ort zum Modellieren, nicht nur zum Ansehen: Elemente werden dort wie im Grundriss verschoben und kopiert und rasten an Ecken, Kanten und Flächen der anderen Elemente ein.
+
+### Verschieben und Kopieren in 3D
+
+Wählen Sie die Elemente aus, dann **Move** (M) oder **Copy** (CO), während die 3D-Ansicht vorne ist. Klicken Sie den Basispunkt an: eine Ecke, eine Kante oder eine Fläche dessen, was Sie verschieben. Der Cursor zeigt, woran er einrastet: **Endpoint** (Endpunkt), **Midpoint** (Mittelpunkt), **On edge** (auf Kante), **On face** (auf Fläche) oder **On level** (auf der Ebene) im leeren Raum; was hinter der Fläche unter dem Cursor liegt, wird nicht genommen. Auch die Linien einer importierten DXF, die in 3D gezeigt wird, fangen. Klicken Sie dann, wohin es geht, etwa auf die Ecke einer Decke: Die Auswahl folgt dem Cursor in 3D, auch nach oben und unten, und wird dort abgesetzt. Vom Basispunkt aus werden die rote, grüne und blaue Achse erkannt, wenn der Cursor einer folgt; → ← ↑ sperren die rote, grüne oder blaue Achse (dieselbe Taste löst sie), Umschalt hält die erkannte Achse. Bei gesperrter Achse wird eine Ecke unter dem Cursor auf die Achse gebracht, damit die Verschiebung mit ihr fluchtet, ohne dorthin zu gehen.
+
+Geben Sie jederzeit einen Wert ein, ohne in ein Feld zu klicken: Eine Länge geht in Richtung des Cursors (1200), dx,dy oder dx,dy,dz ist die Verschiebung selbst (0,0,450 hebt um 450 mm). Enter wendet sie an, Esc bricht ab. Copy kopiert vom selben Basispunkt weiter bis Enter oder Esc.
+
+Was eine eigene Höhe hat, geht mit der Verschiebung hoch oder runter: der Fuß einer Wand, einer Stütze oder eines Objekts, Fuß und Kopf einer Treppe (ihre Steigung bleibt), die Oberkante eines Trägers, der obere Versatz einer Decke, die Fußpfette eines Dachs; ein Studio-Körper erhält einen Verschiebeschritt. Eine Tür oder ein Fenster gleitet entlang seiner Wand.
+
+Sie können auch auf ein ausgewähltes Element drücken und es ziehen: Es wird ebenso verschoben, vom gedrückten Punkt aus, eingerastet, und dort abgesetzt, wo Sie loslassen. **View → Drag to move in 3D** schaltet das aus, sodass Ziehen auf der Auswahl die Ansicht dreht.
+
+![Eine Treppe in 3D an der Ecke der obersten Stufe auf die Ecke der Decke verschoben](shots/model-3d-move.webp)
+
 ## Was eine Ansicht zeigt
 
 Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt und wie sie aussieht.

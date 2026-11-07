@@ -159,6 +159,22 @@ Le soleil est celui du projet : où il se trouve pour le lieu du projet (Gérer 
 
 La vue réaliste reprend certains chiffres (l’ombre dans les angles, la qualité des ombres, la couleur du soleil) de [BimGo](https://github.com/aussieBIMguru/BimGo), d’Aussie BIM Guru (MIT-0).
 
+## Modéliser en 3D
+
+La vue 3D est un lieu où l'on modélise, pas seulement où l'on regarde : les éléments s'y déplacent et s'y copient comme en plan, accrochés aux coins, arêtes et faces des autres éléments.
+
+### Déplacer et copier en 3D
+
+Sélectionnez les éléments, puis **Move** (M) ou **Copy** (CO), la vue 3D devant. Cliquez le point de base : un coin, une arête ou une face de ce que vous déplacez. Le curseur dit à quoi il s'accroche : **Endpoint** (extrémité), **Midpoint** (milieu), **On edge** (sur l'arête), **On face** (sur la face) ou **On level** (sur le niveau) dans le vide ; ce qui est derrière la face sous le curseur n'est pas pris. Les lignes d'un DXF importé, affiché en 3D, accrochent aussi. Cliquez ensuite où il va, par exemple le coin d'une dalle : la sélection suit le curseur en 3D, vers le haut et le bas aussi, et y est posée. Depuis le point de base, les axes rouge, vert et bleu sont déduits quand le curseur en suit un ; → ← ↑ verrouillent l'axe rouge, vert ou bleu (la même touche le libère), Maj maintient l'axe déduit. Un axe verrouillé, un coin survolé est ramené sur l'axe, pour aligner le déplacement sur lui sans y aller.
+
+Tapez une valeur à tout moment, sans cliquer dans une case : une longueur va dans la direction du curseur (1200), et dx,dy ou dx,dy,dz est le déplacement lui-même (0,0,450 monte de 450 mm). Entrée l'applique, Échap annule. Copy continue de copier depuis le même point de base jusqu'à Entrée ou Échap.
+
+Ce qui a une hauteur propre monte ou descend avec le déplacement : la base d'un mur, d'un poteau ou d'un objet, la base et le haut d'un escalier (sa hauteur gardée), le dessus d'une poutre, le décalage haut d'une dalle, la sablière d'un toit ; un solide Studio reçoit une étape de déplacement. Une porte ou une fenêtre glisse le long de son mur.
+
+Vous pouvez aussi appuyer sur un élément sélectionné et le faire glisser : il se déplace de la même façon, depuis le point appuyé, accroché, et se pose où vous relâchez. **View → Drag to move in 3D** désactive cela, pour qu'un glisser sur la sélection fasse orbiter la vue.
+
+![Un escalier déplacé en 3D par le coin de sa marche haute sur le coin de la dalle](shots/model-3d-move.webp)
+
 ## Ce que montre une vue
 
 L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.

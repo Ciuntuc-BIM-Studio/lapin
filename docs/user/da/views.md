@@ -159,6 +159,22 @@ Solen er projektets: hvor den står for projektets sted (Administrer → **Place
 
 Den realistiske visning tager nogle af sine tal (skyggen i hjørner, skyggernes kvalitet, solens farve) fra [BimGo](https://github.com/aussieBIMguru/BimGo) af Aussie BIM Guru (MIT-0).
 
+## Modellering i 3D
+
+3D-visningen er et sted at modellere, ikke kun at se: elementer flyttes og kopieres der som i en plan, fanget af de andre elementers hjørner, kanter og flader.
+
+### Flyt og kopiér i 3D
+
+Markér elementerne, og vælg så **Move** (M) eller **Copy** (CO) med 3D-visningen forrest. Klik på basispunktet: et hjørne, en kant eller en flade af det, du flytter. Markøren siger, hvad den fanger: **Endpoint** (endepunkt), **Midpoint** (midtpunkt), **On edge** (på kant), **On face** (på flade) eller **On level** (på etagen) i det tomme rum; det, der ligger bag fladen under markøren, tages ikke. Linjerne i en importeret DXF, vist i 3D, fanges også. Klik så, hvor det skal hen, for eksempel et dæks hjørne: markeringen følger markøren i 3D, også op og ned, og placeres der. Fra basispunktet udledes den røde, grønne og blå akse, når markøren følger en af dem; → ← ↑ låser den røde, grønne eller blå akse (samme tast slipper), og Skift holder den udledte akse. Med en låst akse bringes et hjørne, du holder over, ind på aksen, så flytningen flugter med det uden at gå derhen.
+
+Skriv en værdi når som helst uden at klikke i et felt: en længde går i markørens retning (1200), og dx,dy eller dx,dy,dz er selve forskydningen (0,0,450 løfter 450 mm). Enter anvender den, Esc annullerer. Copy bliver ved med at kopiere fra samme basispunkt indtil Enter eller Esc.
+
+Det, der har sin egen højde, går op eller ned med flytningen: bunden af en væg, en søjle eller en genstand, en trappes bund og top (dens stigning bevares), en bjælkes top, et dæks topforskydning, et tags murrem; et Studio-legeme får et flyttetrin. En dør eller et vindue glider langs sin væg.
+
+Du kan også trykke på et markeret element og trække det: det flyttes på samme måde fra det punkt, du trykkede på, fanget, og placeres, hvor du slipper. **View → Drag to move in 3D** slår det fra, så et træk på markeringen drejer visningen.
+
+![En trappe flyttet i 3D ved det øverste trins hjørne hen på dækkets hjørne](shots/model-3d-move.webp)
+
 ## Hvad en visning viser
 
 Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.

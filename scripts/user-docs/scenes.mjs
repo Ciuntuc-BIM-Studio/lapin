@@ -5228,6 +5228,69 @@ export const scenes = [
     },
   },
   {
+    // Modelling in 3D (docs/plan-3d-modelling.md), stage A (testers' report #104): a small stair beside a floor, moved in the
+    // 3D view by its first step's corner onto the floor's corner, both snapped as endpoints; then dragged by its body.
+    id: 'model-3d',
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      await t.cmd('architecture.addSlab', { storeyId: storey, points: [[0, 0], [4, 0], [4, 3], [0, 3]] });
+      const stair = (await t.cmd('architecture.addStair', { storeyId: storey, library: 'entrance', x: 5.6, y: 1.4, x2: 6.6, y2: 1.4 })).id;
+      const look = async (target, azimuth, pitch, distance) => {
+        await page.evaluate(async ([target, azimuth, pitch, distance]) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target, azimuth, pitch, distance }, false), [target, azimuth, pitch, distance]);
+        await t.wait(700);
+      };
+      const screen = (p) => page.evaluate(async (p) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.screenOf?.(p) ?? null, p);
+      const box = () => page.evaluate(async (ids) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.boxOf?.(ids) ?? null, [stair]);
+      await t.ui({ view: '3d', selection: stair, selected: [stair] });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(1500);
+      await look({ x: 4.6, y: 1.2, z: 0.3 }, -Math.PI * 0.62, -0.55, 9);
+      const b0 = await box();
+      t.expect(!!b0, 'the stair is drawn in 3D');
+      // MOVE in the 3D view: the base point on the stair's corner, then the floor's corner; both inferred as endpoints.
+      await page.evaluate(async () => (await import('/src/viewport/cad/session.ts')).startCommand('MOVE'));
+      await t.wait(500);
+      t.expect(await page.locator('[data-move3d=chip]').count() === 1, 'MOVE in 3D is the 3D move');
+      // The top step's corner nearest the camera, and the floor's top corner nearest it on the screen.
+      const cam = await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().position);
+      const tops = [[b0.min.x, b0.min.y], [b0.max.x, b0.min.y], [b0.max.x, b0.max.y], [b0.min.x, b0.max.y]].map(([x, y]) => ({ x, y, z: b0.max.z }));
+      const corner = tops.sort((a, b) => Math.hypot(a.x - cam.x, a.y - cam.y, a.z - cam.z) - Math.hypot(b.x - cam.x, b.y - cam.y, b.z - cam.z))[0];
+      const s0 = await screen(corner);
+      const floor = [];
+      for (const [x, y] of [[0, 0], [4, 0], [4, 3], [0, 3]]) floor.push({ p: { x, y, z: 0 }, s: await screen({ x, y, z: 0 }) });
+      const target = floor.sort((a, b) => Math.hypot(a.s.x - s0.x, a.s.y - s0.y) - Math.hypot(b.s.x - s0.x, b.s.y - s0.y))[0];
+      await page.mouse.move(s0.x + 3, s0.y - 2, { steps: 4 });
+      await t.wait(500);
+      t.expect((await page.locator('[data-move3d=inference]').innerText()) === 'Endpoint', 'the stair\'s corner snaps as an endpoint');
+      await page.mouse.click(s0.x + 3, s0.y - 2);
+      await t.wait(300);
+      await page.mouse.move(target.s.x + 3, target.s.y - 2, { steps: 12 });
+      await t.wait(600);
+      t.expect((await page.locator('[data-move3d=inference]').innerText()) === 'Endpoint', 'the floor\'s corner snaps as an endpoint');
+      await t.shot('model-3d-move', { of: '[data-testid=view3d]', pad: 0 });
+      await page.mouse.click(target.s.x + 3, target.s.y - 2);
+      await t.wait(1200);
+      const b1 = await box();
+      const dx = target.p.x - corner.x, dy = target.p.y - corner.y;
+      t.expect(Math.abs(b1.min.x - b0.min.x - dx) < 0.01 && Math.abs(b1.min.y - b0.min.y - dy) < 0.01, `the stair's corner is on the floor's corner (moved ${(b1.min.x - b0.min.x).toFixed(3)}, ${(b1.min.y - b0.min.y).toFixed(3)}; asked ${dx.toFixed(3)}, ${dy.toFixed(3)})`);
+
+      // Dragged by its body: pressed on the selected stair and moved, it follows; letting go puts it there.
+      const mid = await screen({ x: (b1.min.x + b1.max.x) / 2, y: (b1.min.y + b1.max.y) / 2, z: b1.max.z * 0.5 });
+      await page.mouse.move(mid.x, mid.y, { steps: 2 });
+      await page.mouse.down();
+      const away = await screen({ x: (b1.min.x + b1.max.x) / 2 + 0.6, y: (b1.min.y + b1.max.y) / 2 + 1, z: b1.max.z * 0.5 });
+      await page.mouse.move(away.x, away.y, { steps: 12 });
+      await t.wait(400);
+      t.expect(await page.locator('[data-move3d=chip]').count() === 1, 'dragging the selected stair moves it');
+      await page.mouse.up();
+      await t.wait(1200);
+      const b2 = await box();
+      t.expect(Math.hypot(b2.min.x - b1.min.x, b2.min.y - b1.min.y) > 0.3, 'let go, the stair stays where it was dragged');
+    },
+  },
+  {
     // Tags (report #64): what a tag shows chosen in the command line's bar (here the walls' fire rating, a parameter of the
     // user's own), its elbow leader (decision 331: an oblique line to the knee at 60°, the shoulder under the text) with
     // its grips, and the tag's properties.

@@ -39,6 +39,7 @@ import { Grips3D } from './Grips3D';
 import { AxisDrag3D } from './AxisDrag3D';
 import { FaceSketch3D } from './FaceSketch3D';
 import { Draft3D } from './Draft3D';
+import { Move3D } from './Move3D';
 import { Sketch3D } from './Sketch3D';
 import { SketchGrips3D } from './SketchGrips3D';
 import { Guides3D } from './Guides3D';
@@ -695,6 +696,13 @@ export function Viewport3D() {
         applyPose(p);
         publish();
         invalidate.current();
+      },
+      screenOf: (p) => {
+        cam.updateMatrixWorld();
+        const v = new THREE.Vector3(p.x, p.y, p.z).project(cam);
+        if (v.z > 1 || v.z < -1) return null;
+        const r = renderer.domElement.getBoundingClientRect();
+        return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
       },
       boxOf: (ids) => {
         const box = new THREE.Box3();
@@ -1774,6 +1782,7 @@ export function Viewport3D() {
       {!walkStart && <AxisDrag3D camera={camRef} canvas={host} />}
       {!walkStart && <FaceSketch3D camera={camRef} canvas={host} />}
       {!walkStart && <Draft3D camera={camRef} canvas={host} scene={scene} />}
+      {!walkStart && <Move3D camera={camRef} canvas={host} scene={scene} invalidate={invalidate} />}
       {!walkStart && <Sketch3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <Guides3D camera={camRef} canvas={host} />}
       {!walkStart && <SketchGrips3D camera={camRef} canvas={host} scene={scene} />}

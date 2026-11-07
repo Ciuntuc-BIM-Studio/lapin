@@ -10,7 +10,9 @@ import type { ComponentType } from 'react';
 import { create } from 'zustand';
 import type { Vec2 } from '../../platform/module';
 import { select, useUi } from '../../app/store';
-import { execute, undo } from '../../engine/session';
+import { execute, undo, useSession } from '../../engine/session';
+import { beginMove3d } from '../moveIn3d';
+import { useWorkPlane } from '../sketch/sketch3d';
 import { deleteElements } from '../../engine/dependents';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
@@ -248,7 +250,19 @@ const moved = (s: Shape, d: Vec2): Shape => {
 };
 
 function moveOrCopy(copy: boolean): Step | null | void | Promise<Step | null | void> {
-  return withSelection((ids) => ({
+  // In the 3D view, a move in 3D snapped to the bodies (docs/plan-3d-modelling.md, report #104): Move3D.tsx takes it.
+  // A sketch's work plane open, or only drafted shapes selected: the plane's own move (decision 375).
+  if (in3dModel()) return withSelection((ids) => { if (!draftsOnly(ids)) { beginMove3d(ids, copy); return null; } return moveOnPlane(copy, ids); });
+  return withSelection((ids) => moveOnPlane(copy, ids));
+}
+
+/** Whether a move is the 3D view's own: in 3D, no sketch's work plane open. */
+const in3dModel = () => useUi.getState().view === '3d' && !useWorkPlane.getState().plane;
+/** Drafted shapes and annotations only: they lie on their view's plane. */
+const draftsOnly = (ids: readonly string[]) => { const nodes = useSession.getState().nodes; return ids.every((id) => nodes.get(id)?.type === 'IfcAnnotation'); };
+
+function moveOnPlane(copy: boolean, ids: string[]): Step {
+  return {
     prompt: 'Base point', want: 'point',
     point: (base) => {
       // What is moved, where it is now: the ghost left at the start, and what the preview carries.
@@ -265,7 +279,7 @@ function moveOrCopy(copy: boolean): Step | null | void | Promise<Step | null | v
       });
       return second();
     },
-  }));
+  };
 }
 
 function rotate(): Step | null | void | Promise<Step | null | void> {

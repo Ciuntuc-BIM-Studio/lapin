@@ -159,6 +159,22 @@ Il sole è quello del progetto: dove si trova per il luogo del progetto (Gestisc
 
 La vista realistica prende alcuni numeri (l’ombra negli angoli, la qualità delle ombre, il colore del sole) da [BimGo](https://github.com/aussieBIMguru/BimGo), di Aussie BIM Guru (MIT-0).
 
+## Modellare in 3D
+
+La vista 3D è un luogo in cui modellare, non solo da guardare: gli elementi vi si spostano e copiano come in pianta, agganciati a spigoli, bordi e facce degli altri elementi.
+
+### Spostare e copiare in 3D
+
+Seleziona gli elementi, poi **Move** (M) o **Copy** (CO) con la vista 3D davanti. Fai clic sul punto base: uno spigolo, un bordo o una faccia di ciò che sposti. Il cursore dice a cosa si aggancia: **Endpoint** (estremo), **Midpoint** (punto medio), **On edge** (sul bordo), **On face** (sulla faccia) o **On level** (sul livello) nel vuoto; ciò che sta dietro la faccia sotto il cursore non viene preso. Anche le linee di un DXF importato, mostrato in 3D, agganciano. Poi fai clic dove va, per esempio lo spigolo di un solaio: la selezione segue il cursore in 3D, anche in su e in giù, e vi viene posata. Dal punto base si deducono gli assi rosso, verde e blu quando il cursore ne segue uno; → ← ↑ bloccano l'asse rosso, verde o blu (lo stesso tasto lo rilascia), Maiusc mantiene l'asse dedotto. Con un asse bloccato, uno spigolo sorvolato viene portato sull'asse, per allineare lo spostamento con esso senza andarci.
+
+Scrivi un valore in qualsiasi momento, senza fare clic in una casella: una lunghezza va nella direzione del cursore (1200), e dx,dy o dx,dy,dz è lo spostamento stesso (0,0,450 alza di 450 mm). Invio lo applica, Esc annulla. Copy continua a copiare dallo stesso punto base fino a Invio o Esc.
+
+Ciò che ha una quota propria sale o scende con lo spostamento: la base di un muro, di un pilastro o di un oggetto, la base e la sommità di una scala (la sua alzata resta), la sommità di una trave, lo scostamento superiore di un solaio, il dormiente di un tetto; un solido Studio riceve un passo di spostamento. Una porta o una finestra scorre lungo il suo muro.
+
+Puoi anche premere su un elemento selezionato e trascinarlo: si sposta allo stesso modo, dal punto premuto, agganciato, e si posa dove lo rilasci. **View → Drag to move in 3D** lo disattiva, perché un trascinamento sulla selezione faccia orbitare la vista.
+
+![Una scala spostata in 3D dallo spigolo del gradino più alto sullo spigolo del solaio](shots/model-3d-move.webp)
+
 ## Che cosa mostra una vista
 
 La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appare.

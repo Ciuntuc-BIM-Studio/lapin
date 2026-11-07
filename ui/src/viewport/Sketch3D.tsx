@@ -44,7 +44,7 @@ export function sketchupKeyFor(key: string, valueText: string | null): string | 
 
 export const SKETCHUP_KEYS: Record<string, string> = {
   L: 'studio.sketch.line', R: 'studio.sketch.rect', C: 'studio.sketch.circle', A: 'studio.sketch.arc', P: 'studio.pushPull',
-  F: 'studio.sketch.offset', T: 'studio.sketch.tape', M: 'studio.move3d', E: 'cad:ERASE', ' ': 'select',
+  F: 'studio.sketch.offset', T: 'studio.sketch.tape', M: 'cad:MOVE', E: 'cad:ERASE', ' ': 'select',
 };
 const SNAP_PX = 10;
 const TOOL_NAME = { line: 'Line', rect: 'Rectangle', circle: 'Circle', arc: '2-point arc', offset: 'Offset', tape: 'Tape measure' } as const;

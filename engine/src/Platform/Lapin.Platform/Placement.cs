@@ -79,6 +79,50 @@ public interface ITransformFollowers
     void After(ICommandContext ctx, object? state, Placement2D t, Placement2D plan, IReadOnlySet<string> moving, IReadOnlySet<string> selected, IReadOnlyDictionary<string, string> copies);
 }
 
+/// <summary>
+/// How a module raises or lowers its own element by a 3D move's vertical part (docs/plan-3d-modelling.md), when its
+/// height is not one of the attributes <see cref="ElementRise"/> knows (a Studio solid takes a move step).
+/// </summary>
+public interface IElementRise
+{
+    bool Handles(Entity e);
+    /// <summary>The element raised by <paramref name="dz"/> (m, down when negative); false when it has no height to change.</summary>
+    bool Lift(ICommandContext ctx, Entity e, double dz);
+}
+
+/// <summary>
+/// A 3D move's vertical part on an element: its own height attributes changed by it. A wall's, a column's or a
+/// railing's base offset, a stair's base and top offsets (its rise kept), a beam's top offset, a roof's wall plate, a
+/// floor's top offset or an object's height above the floor; a module's own through <see cref="IElementRise"/>.
+/// </summary>
+public static class ElementRise
+{
+    public static bool Lift(ICommandContext ctx, Entity e, double dz)
+    {
+        if (ctx.Services.All<IElementRise>().FirstOrDefault(r => r.Handles(e)) is { } own) return own.Lift(ctx, e, dz);
+        // A drafted shape or an annotation lies on its view: a dimension's offset is not a height.
+        if (e.Class == IfcClass.Annotation) return false;
+        var keys = KeysOf(e, ctx.Describe(e.Class));
+        if (keys.Count == 0) return false;
+        var attrs = e.CloneAttrs();
+        foreach (var k in keys) attrs[k] = Math.Round(((Json.Number(attrs[k]) ?? 0) + dz) * 1e6) / 1e6;
+        ctx.Replace(e.With(attrs: attrs));
+        return true;
+    }
+
+    /// <summary>The attributes that place the element up or down, by what its class declares (or it holds).</summary>
+    public static IReadOnlyList<string> KeysOf(Entity e, ClassDescriptor? c)
+    {
+        var fields = c?.Fields.Where(f => f.Kind == "length" && !f.ReadOnly).Select(f => f.Key).ToHashSet() ?? [];
+        bool Has(string k) => fields.Contains(k) || Json.Number(e.Attrs[k]) != null;
+        var keys = new[] { "baseOffset", "topOffset" }.Where(Has).ToList();
+        if (keys.Count > 0) return keys;
+        foreach (var k in new[] { "eaveOffset", "offset" })
+            if (Has(k)) return [k];
+        return [];
+    }
+}
+
 /// <summary>What a module does when element.update has changed an element (a node moved by its x, y or rotation: the runs on its ports follow it), in the same undo step.</summary>
 public interface IElementUpdate
 {

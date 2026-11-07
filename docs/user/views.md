@@ -159,6 +159,22 @@ The sun is the project’s: where it stands for the project’s place (Manage �
 
 The realistic view takes some of its numbers (the shade in corners, the shadows' quality, the sun's colour) from [BimGo](https://github.com/aussieBIMguru/BimGo), by Aussie BIM Guru (MIT-0).
 
+## Modelling in 3D
+
+The 3D view is a place to model in, not only to look: elements are moved and copied there as in a plan, snapped to the other elements' corners, edges and faces.
+
+### Moving and copying in 3D
+
+Select the elements, then **Move** (M) or **Copy** (CO) with the 3D view in front. Click the base point: a corner, an edge or a face of what you move. The cursor says what it snaps to: **Endpoint**, **Midpoint**, **On edge**, **On face**, or **On level** in empty space; what lies behind the face under the cursor is not taken. The lines of an imported DXF shown in 3D are snapped to as well. Then click where it goes, for example the corner of a floor: the selection follows the cursor in 3D, up and down too, and is placed there. From the base point the red, green and blue axes are inferred when the cursor runs along one; → ← ↑ lock the red, green or blue axis (the same key lets go), and Shift holds the axis inferred. With an axis locked, a corner hovered is brought onto the axis, to line the move up with it without going there.
+
+Type a value at any time, without clicking a box: a length goes along the way the cursor points (1200), and dx,dy or dx,dy,dz is the displacement itself (0,0,450 lifts by 450 mm). Enter applies it, Esc cancels. Copy goes on copying from the same base point until Enter or Esc.
+
+What has a height of its own goes up or down with the move: a wall's, a column's or an object's base, a stair's base and top (its rise kept), a beam's top, a floor's top offset, a roof's wall plate; a Studio solid takes a move step. A door or a window slides along its wall.
+
+You can also press on a selected element and drag it: it moves the same way, from the point you pressed, snapped, and is placed where you let go. **View → Drag to move in 3D** turns this off, so that a drag on the selection orbits the view.
+
+![A stair moved in 3D by its top step's corner onto the floor's corner](shots/model-3d-move.webp)
+
 ## What a view shows
 
 The **View** tab sets what the view in front shows and how it looks.
