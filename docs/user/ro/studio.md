@@ -135,6 +135,14 @@ Grupul **Schiță** din fila **Studio** desenează linii și forme direct în ve
 
 ![O linie peste latura unui bloc o împarte: regiunea de sub ea e trasă singură](shots/studio-sketch-region.webp)
 
+**Ruleta, ghidajele și Urmează calea.**
+
+- **Ruletă** (KM) măsoară și lasă ghidaje, ca în SketchUp. Dă clic pe o muchie, depărtează-te de ea și dă clic: o linie de ghidaj trece paralel cu muchia prin acel punct, sau la distanța pe care o scrii. Dă clic pe un punct în schimb, iar al doilea clic arată distanța și lasă acolo un punct de ghidaj. Ghidajele sunt punctate, ambele feluri de a schița le prind (și unde se încrucișează cu fața), se păstrează în proiect și nu se exportă și nu se tipăresc niciodată. **Șterge ghidajele** le ia pe toate.
+- **Urmează calea** (FM) trage o față de-a lungul unei căi chiar unde stă: dă clic pe față (sau pe o regiune a ei împărțită de linii), apoi pe cale, fie o linie desenată, o polilinie, un arc sau un cerc, fie o altă față ale cărei muchii le urmează de jur împrejur, cum e o față de sus pentru o cornișă. Colțurile sunt în unghi. Fața devine o schiță pe planul ei, iar rezultatul e un singur solid Studio care urmează ambele schițe.
+- **Scurtături SketchUp** pornește în vederea 3D tastele de o literă ale SketchUp, pentru acest calculator: <kbd>L</kbd> linie, <kbd>R</kbd> dreptunghi, <kbd>C</kbd> cerc, <kbd>A</kbd> arc, <kbd>P</kbd> împinge/trage, <kbd>F</kbd> paralelă, <kbd>T</kbd> ruletă, <kbd>M</kbd> mută, <kbd>E</kbd> șterge, <kbd>Spațiu</kbd> selectează. Sunt oprite implicit, fiindcă ar lua locul scurtăturilor de două litere ale Lapin care încep cu acele litere în vederea 3D; scurtăturile de două litere și linia de comandă merg ca înainte oriunde în alt loc.
+
+![Un ghidaj la o distanță scrisă de muchia blocului și o cornișă trasă pe sus cu Urmează calea](shots/studio-sketch-follow.webp)
+
 ## Pașii
 
 Proprietățile unui solid Studio îi arată pașii în ordine. Fiecare pas poate fi oprit, mutat mai devreme sau mai târziu, schimbat sau scos. Schimbă schița, și fiecare pas se face din nou pe corpul nou. Un pas care nu-și mai găsește fața sau muchia spune asta la **Probleme**.

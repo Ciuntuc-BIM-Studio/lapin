@@ -6,12 +6,13 @@
  * and so do the shapes drafted on plans, sections and reference planes, as lines on their view's plane (Drafts in
  * 3D, on by default). In 3D the wheel zooms to the point under the cursor and a drag orbits round the selection
  * (else the point under the cursor), both on by default (report #89, viewport/navigate3d.ts). Picking can drill into
- * assemblies (a whole first, then its parts click by click; platform/assemblies.ts), off by default.
+ * assemblies (a whole first, then its parts click by click; platform/assemblies.ts), off by default. SketchUp's
+ * one-letter shortcuts in the 3D view (L line, R rectangle, P push/pull…; viewport/Sketch3D.tsx) are off by default too.
  */
 
 import { create } from 'zustand';
 
-export interface Display { grid: boolean; thinLines: boolean; drafts3d: boolean; zoomToCursor: boolean; orbitSelection: boolean; drillSelect: boolean }
+export interface Display { grid: boolean; thinLines: boolean; drafts3d: boolean; zoomToCursor: boolean; orbitSelection: boolean; drillSelect: boolean; sketchupKeys: boolean }
 
 const KEY = 'lapin.display';
 
@@ -21,7 +22,7 @@ export function readDisplay(stored: unknown): Display {
   const obj = !!o && typeof o === 'object';
   return { grid: !(obj && o.grid === false), thinLines: !!(obj && o.thinLines === true), drafts3d: !(obj && o.drafts3d === false),
     zoomToCursor: !(obj && o.zoomToCursor === false), orbitSelection: !(obj && o.orbitSelection === false),
-    drillSelect: !!(obj && o.drillSelect === true) };
+    drillSelect: !!(obj && o.drillSelect === true), sketchupKeys: !!(obj && o.sketchupKeys === true) };
 }
 
 function read(): Display {
@@ -41,6 +42,8 @@ export const toggleDrafts3d = () => setDisplay({ drafts3d: !useDisplay.getState(
 export const toggleZoomToCursor = () => setDisplay({ zoomToCursor: !useDisplay.getState().zoomToCursor });
 export const toggleOrbitSelection = () => setDisplay({ orbitSelection: !useDisplay.getState().orbitSelection });
 export const toggleDrillSelect = () => setDisplay({ drillSelect: !useDisplay.getState().drillSelect });
+/** SketchUp's one-letter shortcuts in the 3D view (decision 376), off by default: they would shadow Lapin's two-letter ones. */
+export const toggleSketchupKeys = () => setDisplay({ sketchupKeys: !useDisplay.getState().sketchupKeys });
 
 /** A pen's width on screen (px): its paper width at the view's scale, within what a screen shows well; one pixel with thin lines. */
 export const screenWidth = (paperMm: number, pxPerMm: number, thin: boolean): number => (thin ? 1 : Math.min(4, Math.max(0.5, paperMm * pxPerMm)));

@@ -23,7 +23,7 @@ import { cancel, feedPoint, useCad } from './cad/session';
 import { nearestOnShape, type Shape } from './cad/shapes';
 import { frameOfView, rayOnPlane, toPlane, toWorld, workPlaneView } from './workPlane';
 import { axesInPlane, infer, type Inferred } from './sketch/inference';
-import { edgesInPlane, sceneSegments } from './sketch/edges';
+import { edgesInPlane, guidesInPlane, guidesOf, sceneSegments } from './sketch/edges';
 import { clearWorkPlane, finishSketch, lookAtPlane, useWorkPlane } from './sketch/sketch3d';
 import { middleOf, useAxisDrag } from './axisDrag';
 
@@ -46,9 +46,9 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     const o = sketch.outline ?? [];
     const pts = o.map((q) => toPlane(frame, q));
     // The face's outline, and the other bodies' edges lying in the plane (decision 375).
-    const others = edgesInPlane(sceneSegments(scene.current, frame), frame).edges;
+    const others = [...edgesInPlane(sceneSegments(scene.current, frame), frame).edges, ...guidesInPlane(guidesOf(nodes), frame).edges];
     return [...pts.map((a, i) => ({ type: 'line' as const, a, b: pts[(i + 1) % pts.length] })), ...others.map((e) => ({ type: 'line' as const, a: e.a, b: e.b }))];
-  }, [sketch, frame, work, scene]);
+  }, [sketch, frame, work, scene, nodes]);
   const [inferred, setInferred] = useState<Inferred | null>(null);
   // The plane gone (undone, another project): the sketch with it.
   useEffect(() => { if (sketch && !nodes.has(sketch.planeId)) clearWorkPlane(); }, [sketch, nodes]);

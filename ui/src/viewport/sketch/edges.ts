@@ -61,3 +61,39 @@ export function sceneSegments(scene: THREE.Scene | null, f: WorkFrame, max = 600
   });
   return out;
 }
+
+/** A guide as the engine keeps it (`LapinGuide`): a line through a and b (endless), or a point at a. */
+export interface Guide { a: Vec3; b?: Vec3 }
+
+const v3 = (x: unknown): Vec3 | undefined => (Array.isArray(x) && x.length >= 3 && x.every((n) => typeof n === 'number') ? { x: x[0], y: x[1], z: x[2] } : undefined);
+
+/** The project's guides (stage C, decision 376). */
+export function guidesOf(nodes: ReadonlyMap<string, { type: string; props: Record<string, unknown> }>): Guide[] {
+  const o: Guide[] = [];
+  for (const n of nodes.values()) {
+    if (n.type !== 'LapinGuide') continue;
+    const a = v3(n.props.a);
+    if (a) o.push({ a, b: v3(n.props.b) });
+  }
+  return o;
+}
+
+/** How far an endless guide line is drawn and snapped to either way (m). */
+export const GUIDE_REACH = 500;
+
+/** A guide line as a long segment. */
+export function guideSegment(g: Guide): [Vec3, Vec3] | null {
+  if (!g.b) return null;
+  const d = { x: g.b.x - g.a.x, y: g.b.y - g.a.y, z: g.b.z - g.a.z };
+  const l = Math.hypot(d.x, d.y, d.z) || 1;
+  const u = { x: d.x / l, y: d.y / l, z: d.z / l };
+  return [{ x: g.a.x - u.x * GUIDE_REACH, y: g.a.y - u.y * GUIDE_REACH, z: g.a.z - u.z * GUIDE_REACH }, { x: g.a.x + u.x * GUIDE_REACH, y: g.a.y + u.y * GUIDE_REACH, z: g.a.z + u.z * GUIDE_REACH }];
+}
+
+/** The guides as inference on a plane: the lines lying in it, and the points on it (guide points, and where guide lines pass through). */
+export function guidesInPlane(guides: readonly Guide[], f: WorkFrame, tol = 1e-3): { edges: Seg2[]; points: Vec2[] } {
+  const lines = guides.map(guideSegment).filter((s): s is [Vec3, Vec3] => !!s);
+  const r = edgesInPlane(lines, f, tol);
+  for (const g of guides) if (!g.b && Math.abs(off(f, g.a)) <= tol) r.points.push(toPlane(f, g.a));
+  return r;
+}

@@ -14,7 +14,7 @@ import type { FacePick } from './sketch3d';
 import type { Inferred, Lock } from './inference';
 import type { Vcb } from './vcb';
 
-export type DirectTool = 'line' | 'rect' | 'circle' | 'arc' | 'offset';
+export type DirectTool = 'line' | 'rect' | 'circle' | 'arc' | 'offset' | 'tape';
 
 /** The plane drawn on: a face's (its pick and outline) or the storey's level (no pick). */
 export interface DirectPlane { frame: WorkFrame; pick?: FacePick; outline?: Vec3[]; storeyId?: string | null; name: string; /** The face's key in the overlay's cache. */ key?: string }
@@ -32,9 +32,11 @@ export interface DirectState {
   shiftLock: boolean;
   /** Offset: the loop clicked (the face's outline, or the region of it), on the plane. */
   loop: Vec2[] | null;
+  /** Tape measure: the edge its first click was on (a guide line parallel to it follows), else null (a point measured from). */
+  tapeEdge: { a: Vec2; b: Vec2 } | null;
 }
 
-const idle = { plane: null, locked: false, pts: [], inferred: null, text: '', lock: null, shiftLock: false, loop: null };
+const idle = { plane: null, locked: false, pts: [], inferred: null, text: '', lock: null, shiftLock: false, loop: null, tapeEdge: null };
 export const useDirect = create<DirectState>(() => ({ tool: null, ...idle }));
 
 export const startDirect = (tool: DirectTool) => useDirect.setState({ tool, ...idle });
@@ -45,6 +47,8 @@ export const resetDirect = () => useDirect.setState({ ...idle });
 export type Outcome =
   | { kind: 'more'; pts: Vec2[] }
   | { kind: 'arc'; start: Vec2; end: Vec2; through: Vec2 }
+  | { kind: 'guideLine'; a: Vec2; b: Vec2; distance: number }
+  | { kind: 'guidePoint'; from: Vec2; at: Vec2; distance: number }
   | { kind: 'closed'; outline: Vec2[]; circle?: { c: Vec2; r: number } }
   | { kind: 'open'; pts: Vec2[] }
   | { kind: 'none' };
@@ -198,6 +202,26 @@ export function offsetOutcome(loop: readonly Vec2[], cursor: Vec2 | null, typedD
   if (Math.abs(d) < 1e-4) return { kind: 'none' };
   const o = offsetLoop(loop, d);
   return o ? { kind: 'closed', outline: o } : { kind: 'none' };
+}
+
+/**
+ * The tape measure (stage C, decision 376): from an edge, a guide line parallel to it through the cursor (or at the typed
+ * distance, on the cursor's side); from a point, the distance to the cursor and a guide point there (or at the typed
+ * distance the way the cursor points).
+ */
+export function tapeOutcome(start: Vec2, edge: { a: Vec2; b: Vec2 } | null, cursor: Vec2 | null, typedD: number | null): Outcome {
+  if (edge) {
+    const len = dist(edge.a, edge.b);
+    if (len < 1e-9 || (!cursor && typedD == null)) return { kind: 'none' };
+    const n = { x: -(edge.b.y - edge.a.y) / len, y: (edge.b.x - edge.a.x) / len };
+    const at = cursor ? (cursor.x - edge.a.x) * n.x + (cursor.y - edge.a.y) * n.y : 1;
+    const d = typedD != null ? (at < 0 ? -Math.abs(typedD) : Math.abs(typedD)) : at;
+    if (Math.abs(d) < 1e-6) return { kind: 'none' };
+    return { kind: 'guideLine', a: { x: edge.a.x + n.x * d, y: edge.a.y + n.y * d }, b: { x: edge.b.x + n.x * d, y: edge.b.y + n.y * d }, distance: Math.abs(d) };
+  }
+  const at = typedD != null ? along(start, cursor, Math.abs(typedD)) : cursor;
+  if (!at || dist(start, at) < 1e-6) return { kind: 'none' };
+  return { kind: 'guidePoint', from: start, at, distance: dist(start, at) };
 }
 
 /** The shape as it stands with the cursor (for the preview), and whether it is closed. */

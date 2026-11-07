@@ -21,23 +21,32 @@ import { useAxisDrag } from './axisDrag';
 import { frameOf } from './faceSketch';
 import { formatLength, parseLength } from './liveInput';
 import { levelFrame, rayOnPlane, toPlane, toWorld, workPlaneView, type WorkFrame } from './workPlane';
-import { useCad } from './cad/session';
+import { startCommand, useCad } from './cad/session';
+import { useDisplay } from '../app/display';
+import { activate, findTool } from '../platform/modules';
 import { arcThrough, toJson, type Shape } from './cad/shapes';
-import { arcPts, click, insideDistance, endDirect, finishOpen, offsetOutcome, preview, resetDirect, typed, useDirect, type DirectPlane, type Outcome } from './sketch/direct';
-import { edgesInPlane, sceneSegments } from './sketch/edges';
+import { arcPts, click, insideDistance, tapeOutcome, endDirect, finishOpen, offsetOutcome, preview, resetDirect, typed, useDirect, type DirectPlane, type Outcome } from './sketch/direct';
+import { edgesInPlane, guidesInPlane, guidesOf, sceneSegments } from './sketch/edges';
 import { arrowLock, axesInPlane, holdLock, infer, segsOf, type Seg2 } from './sketch/inference';
 import { parseVcb } from './sketch/vcb';
 import { pushPullShape, type FacePick } from './sketch/sketch3d';
 
 type Pt = { x: number; y: number };
+
+/** SketchUp's one-letter shortcuts (View → the Studio tab's SketchUp shortcuts): the tool each starts in the 3D view. */
+export const SKETCHUP_KEYS: Record<string, string> = {
+  L: 'studio.sketch.line', R: 'studio.sketch.rect', C: 'studio.sketch.circle', A: 'studio.sketch.arc', P: 'studio.pushPull',
+  F: 'studio.sketch.offset', T: 'studio.sketch.tape', M: 'studio.move3d', E: 'cad:ERASE', ' ': 'select',
+};
 const SNAP_PX = 10;
-const TOOL_NAME = { line: 'Line', rect: 'Rectangle', circle: 'Circle', arc: 'Arc', offset: 'Offset' } as const;
+const TOOL_NAME = { line: 'Line', rect: 'Rectangle', circle: 'Circle', arc: 'Arc', offset: 'Offset', tape: 'Tape measure' } as const;
 const HINT = {
   line: 'Click the points · back on the first closes it · Enter or Esc leaves it open',
   rect: 'Click the opposite corner, or type width,height',
   circle: 'Click the radius, or type it (300 or r300)',
   arc: 'Click the start, the end, then the bulge (or type the chord, then the bulge)',
   offset: 'Click a face (or a region of it), then the offset, or type it',
+  tape: 'From an edge: a guide line parallel to it · from a point: the distance and a guide point · or type it',
 } as const;
 
 /**
@@ -67,6 +76,26 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
   useEffect(() => { if (st.tool && command) endDirect(); }, [command, st.tool]);
   useEffect(() => () => endDirect(), []);
   useEffect(() => { faces.clear(); asking.clear(); flatless.clear(); }, [nodes]);
+  // SketchUp's one-letter shortcuts in the 3D view, when switched on (decision 376).
+  const sketchupKeys = useDisplay((d) => d.sketchupKeys);
+  useEffect(() => {
+    if (!sketchupKeys) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+      if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]')) return;
+      const cad = useCad.getState();
+      if (cad.command || cad.buffer) return;
+      const id = SKETCHUP_KEYS[e.key === ' ' ? ' ' : e.key.toUpperCase()];
+      if (!id) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (id === 'select') { endDirect(); useUi.setState({ tool: null }); return; }
+      if (id.startsWith('cad:')) { endDirect(); void startCommand(id.slice(4)); return; }
+      const t = findTool(id);
+      if (t) activate(t);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [sketchupKeys]);
 
   const rectOf = () => canvas.current?.getBoundingClientRect() ?? null;
   const toScreen = (p: Vec3): Pt | null => {
@@ -139,7 +168,11 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
     /** Other bodies' edges in the locked plane (and the points where edges pass through it), found once per plane. */
     let near: { frame: WorkFrame; edges: Seg2[]; points: Vec2[] } | null = null;
     const others = (plane: DirectPlane) => {
-      if (!near || near.frame !== plane.frame) near = { frame: plane.frame, ...edgesInPlane(sceneSegments(scene.current, plane.frame), plane.frame) };
+      if (!near || near.frame !== plane.frame) {
+        const bodies = edgesInPlane(sceneSegments(scene.current, plane.frame), plane.frame);
+        const guides = guidesInPlane(guidesOf(useSession.getState().nodes), plane.frame);
+        near = { frame: plane.frame, edges: [...bodies.edges, ...guides.edges], points: [...bodies.points, ...guides.points] };
+      }
       return near;
     };
     const edgesOf = (plane: DirectPlane, pts: Vec2[], locked: boolean): Seg2[] => {
@@ -178,6 +211,16 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       aimAt(e);
       const s0 = useDirect.getState();
       if (!s0.tool || !s0.inferred || !s0.plane) return;
+      if (s0.tool === 'tape') {
+        // The first click: on an edge a guide line parallel to it follows, elsewhere a measure from the point.
+        if (!s0.pts.length) {
+          const e2 = s0.inferred.kind === 'On edge' ? s0.inferred.edge ?? null : null;
+          useDirect.setState({ pts: [s0.inferred.point], tapeEdge: e2, locked: true, text: '' });
+          return;
+        }
+        apply(tapeOutcome(s0.pts[0], s0.tapeEdge, s0.inferred.point, null));
+        return;
+      }
       if (s0.tool === 'offset') {
         // The first click takes the face (or its region) under it; the second places the offset.
         if (!s0.loop) {
@@ -237,12 +280,15 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
   const f = plane?.frame;
   const cursor = st.inferred?.point ?? null;
   const vcb = parseVcb(st.text, (s) => parseLength(s));
-  const typedShape = st.tool === 'offset' ? (st.loop ? offsetOutcome(st.loop, cursor, vcb?.kind === 'length' ? vcb.value : null) : null)
+  const tape = st.tool === 'tape' && st.pts.length ? tapeOutcome(st.pts[0], st.tapeEdge, cursor, vcb?.kind === 'length' ? vcb.value : null) : null;
+  const typedShape = st.tool === 'tape' ? null : st.tool === 'offset' ? (st.loop ? offsetOutcome(st.loop, cursor, vcb?.kind === 'length' ? vcb.value : null) : null)
     : vcb && st.pts.length ? typed(st.tool, st.pts, vcb, cursor) : null;
   const shown = typedShape?.kind === 'closed' ? { pts: typedShape.outline, closed: true }
     : typedShape?.kind === 'more' ? { pts: typedShape.pts, closed: false }
       : typedShape?.kind === 'arc' ? { pts: arcPts(typedShape.start, typedShape.through, typedShape.end), closed: false }
-        : st.tool === 'offset' ? { pts: [], closed: false } : preview(st.tool, st.pts, cursor);
+        : tape?.kind === 'guideLine' ? { pts: [tape.a, tape.b], closed: false }
+          : tape?.kind === 'guidePoint' ? { pts: [tape.from, tape.at], closed: false }
+            : st.tool === 'offset' || st.tool === 'tape' ? { pts: [], closed: false } : preview(st.tool, st.pts, cursor);
   const w = (p: Vec2) => (f ? toWorld(f, p) : { x: 0, y: 0, z: 0 });
   const pathOf = (list: Vec3[], close: boolean) => {
     const s = list.map(toScreen);
@@ -257,7 +303,8 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
   const last = st.pts[st.pts.length - 1];
   let label = '';
   if (cursor && st.pts.length) {
-    if (st.tool === 'rect') label = `${formatLength(Math.abs(cursor.x - st.pts[0].x))}, ${formatLength(Math.abs(cursor.y - st.pts[0].y))}`;
+    if (tape && (tape.kind === 'guideLine' || tape.kind === 'guidePoint')) label = formatLength(tape.distance);
+    else if (st.tool === 'rect') label = `${formatLength(Math.abs(cursor.x - st.pts[0].x))}, ${formatLength(Math.abs(cursor.y - st.pts[0].y))}`;
     else label = formatLength(Math.hypot(cursor.x - last.x, cursor.y - last.y));
   }
   const kind = st.inferred?.kind;
@@ -299,6 +346,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
     const s0 = useDirect.getState();
     if (!s0.tool) return;
     const v = parseVcb(s0.text, (s) => parseLength(s));
+    if (s0.tool === 'tape') { if (s0.pts.length && v?.kind === 'length') apply(tapeOutcome(s0.pts[0], s0.tapeEdge, s0.inferred?.point ?? null, v.value)); return; }
     if (s0.tool === 'offset') { if (s0.loop && v?.kind === 'length') apply(offsetOutcome(s0.loop, s0.inferred?.point ?? null, v.value)); return; }
     if (v && s0.pts.length) { apply(typed(s0.tool, s0.pts, v, s0.inferred?.point ?? null)); return; }
     if (!s0.text.trim()) apply(finishOpen(s0.tool, s0.pts));
@@ -320,6 +368,12 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
 async function store(p: DirectPlane, o: Exclude<Outcome, { kind: 'none' } | { kind: 'more' }>): Promise<void> {
   const f = p.frame;
   const w = (q: Vec2) => toWorld(f, q);
+  if (o.kind === 'guideLine' || o.kind === 'guidePoint') {
+    const p3 = (q: Vec2) => { const v = w(q); return [v.x, v.y, v.z]; };
+    const r = await execute('studio.addGuide', o.kind === 'guideLine' ? { a: p3(o.a), b: p3(o.b) } : { a: p3(o.at) });
+    if (r) notify(o.kind === 'guideLine' ? `Guide line at ${formatLength(o.distance)}.` : `Distance: ${formatLength(o.distance)}.`);
+    return;
+  }
   if (o.kind === 'arc') {
     const p3 = (q: Vec2) => { const v = w(q); return [v.x, v.y, v.z]; };
     if (p.pick) { if (await execute('studio.onFace', { ...p.pick, arc: { start: p3(o.start), through: p3(o.through), end: p3(o.end) } })) notify('The arc stays on the face as a sketch: with lines it can close a region to push or pull.'); return; }

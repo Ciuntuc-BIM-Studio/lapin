@@ -135,6 +135,14 @@ Die Gruppe **Skizze** der Registerkarte **Studio** zeichnet Linien und Formen di
 
 ![Eine Linie quer über die Seite eines Blocks teilt sie: der Bereich darunter wird für sich herausgezogen](shots/studio-sketch-region.webp)
 
+**Maßband, Hilfslinien und Folge mir.**
+
+- **Maßband** (KM) misst und hinterlässt Hilfslinien, wie in SketchUp. Klicken Sie auf eine Kante, bewegen Sie sich von ihr weg und klicken Sie: Eine Hilfslinie verläuft parallel zur Kante durch diesen Punkt oder im eingegebenen Abstand. Klicken Sie stattdessen auf einen Punkt, zeigt der zweite Klick den Abstand und hinterlässt dort einen Hilfspunkt. Hilfslinien sind gestrichelt, beide Arten zu skizzieren rasten an ihnen ein (und dort, wo sie die Fläche kreuzen), sie werden mit dem Projekt gespeichert und nie exportiert oder gedruckt. **Hilfslinien löschen** entfernt sie alle.
+- **Folge mir** (FM) zieht eine Fläche entlang eines Pfads, dort wo sie steht: Klicken Sie die Fläche an (oder einen durch Linien geteilten Bereich von ihr), dann den Pfad, entweder eine gezeichnete Linie, Polylinie, einen Bogen oder Kreis, oder eine andere Fläche, deren Kanten sie rundum folgt, etwa eine Oberseite für ein Gesims. Ecken werden auf Gehrung geschnitten. Die Fläche wird zu einer Skizze auf ihrer Ebene, und das Ergebnis ist ein Studio-Körper, der beiden Skizzen folgt.
+- **SketchUp-Tastenkürzel** schaltet die Ein-Buchstaben-Tasten von SketchUp in der 3D-Ansicht ein, für diesen Computer: <kbd>L</kbd> Linie, <kbd>R</kbd> Rechteck, <kbd>C</kbd> Kreis, <kbd>A</kbd> Bogen, <kbd>P</kbd> Drücken/Ziehen, <kbd>F</kbd> Versatz, <kbd>T</kbd> Maßband, <kbd>M</kbd> Verschieben, <kbd>E</kbd> Löschen, <kbd>Leertaste</kbd> Auswählen. Sie sind standardmäßig aus, weil sie in der 3D-Ansicht den Platz der Zwei-Buchstaben-Kürzel von Lapin einnehmen würden, die mit diesen Buchstaben beginnen; die Zwei-Buchstaben-Kürzel und die Befehlszeile funktionieren überall sonst wie bisher.
+
+![Eine Hilfslinie im eingegebenen Abstand von der Kante des Blocks und ein mit Folge mir um die Oberseite gezogenes Gesims](shots/studio-sketch-follow.webp)
+
 ## Die Schritte
 
 Die Eigenschaften eines Studio-Körpers listen seine Schritte der Reihe nach. Jeder Schritt lässt sich ausschalten, früher oder später setzen, ändern oder entfernen. Ändern Sie die Skizze, wird jeder Schritt am neuen Körper neu ausgeführt. Ein Schritt, der seine Fläche oder Kante nicht mehr findet, sagt das unter **Probleme**.

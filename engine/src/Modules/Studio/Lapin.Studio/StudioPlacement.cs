@@ -39,7 +39,7 @@ public sealed class StudioPlacement : IElementPlacement
         return view?.Str("kind") is null or "plan";
     }
 
-    static bool FromSketch(Entity e) => e.Str("operation") is "extrude" or "sweep" or "revolve" or "loft" or Thick.Ring or Thick.Box or Thick.Wall;
+    static bool FromSketch(Entity e) => e.Str("operation") is "extrude" or "sweep" or "revolve" or "loft" or "followMe" or Thick.Ring or Thick.Box or Thick.Wall;
 
     /// <summary>A thick solid (docs/plan-studio-thick.md) is drawn from its shape where it lies: one off a plan moves with its plane.</summary>
     static void ThickOnPlan(IModelView m, Entity e)

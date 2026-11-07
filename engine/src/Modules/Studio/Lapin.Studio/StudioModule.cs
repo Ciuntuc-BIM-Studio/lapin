@@ -64,7 +64,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
     /// a prism, a face pushed or pulled on an element Studio does not build; a body, an element's or a mesh file's
     /// triangles made into a Studio solid).
     /// </summary>
-    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft", "primitive", "prism", "body"];
+    public static readonly string[] Operations = ["extrude", "sweep", "revolve", "loft", "primitive", "prism", "body", "followMe"];
 
     public void Register(IModuleRegistry r)
     {
@@ -130,6 +130,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Command("primitive", "Primitive", Primitive);
         RegisterEdits(r);
         RegisterOnFace(r);
+        RegisterFollowMe(r);
 
         // A solid's class (and its predefined type) changed: written again under the new class, same id, same sketch, same type and booleans.
         r.Command("setClass", "Change class", (ctx, a) =>

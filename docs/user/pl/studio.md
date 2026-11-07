@@ -135,6 +135,14 @@ Grupa **Szkic** na karcie **Studio** rysuje linie i kształty bezpośrednio w wi
 
 ![Linia w poprzek boku bloku dzieli go: obszar pod nią zostaje wyciągnięty osobno](shots/studio-sketch-region.webp)
 
+**Taśma miernicza, linie pomocnicze i Podążaj.**
+
+- **Taśma miernicza** (KM) mierzy i zostawia linie pomocnicze, jak w SketchUp. Kliknij krawędź, odsuń się od niej i kliknij: linia pomocnicza biegnie równolegle do krawędzi przez ten punkt albo w odległości, którą wpiszesz. Kliknij zamiast tego punkt, a drugie kliknięcie pokaże odległość i zostawi tam punkt pomocniczy. Linie pomocnicze są przerywane, oba sposoby szkicowania przyciągają do nich (i do miejsc, gdzie przecinają ścianę), są zapisywane w projekcie i nigdy nie są eksportowane ani drukowane. **Usuń linie pomocnicze** zabiera wszystkie.
+- **Podążaj** (FM) przeciąga ścianę wzdłuż ścieżki tam, gdzie stoi: kliknij ścianę (albo jej obszar podzielony liniami), potem ścieżkę, czyli narysowaną linię, polilinię, łuk lub okrąg, albo inną ścianę, której krawędzie śledzi dookoła, jak górna ściana dla gzymsu. Narożniki są ścięte na ukos. Ściana staje się szkicem na swojej płaszczyźnie, a wynikiem jest jedna bryła Studio podążająca za obydwoma szkicami.
+- **Skróty SketchUp** włącza w widoku 3D jednoliterowe klawisze SketchUp, dla tego komputera: <kbd>L</kbd> linia, <kbd>R</kbd> prostokąt, <kbd>C</kbd> okrąg, <kbd>A</kbd> łuk, <kbd>P</kbd> wypchnij/wciągnij, <kbd>F</kbd> odsuń, <kbd>T</kbd> taśma miernicza, <kbd>M</kbd> przesuń, <kbd>E</kbd> usuń, <kbd>Spacja</kbd> zaznacz. Są domyślnie wyłączone, bo zajęłyby miejsce dwuliterowych skrótów Lapin zaczynających się od tych liter w widoku 3D; skróty dwuliterowe i wiersz poleceń działają jak dotąd wszędzie indziej.
+
+![Linia pomocnicza w wpisanej odległości od krawędzi bloku i gzyms poprowadzony dookoła góry za pomocą Podążaj](shots/studio-sketch-follow.webp)
+
 ## Kroki
 
 Właściwości bryły Studio wymieniają jej kroki po kolei. Każdy krok można wyłączyć, przesunąć wcześniej lub później, zmienić lub usunąć. Zmień szkic, a każdy krok zostanie wykonany ponownie na nowej bryle. Krok, który nie może już znaleźć swojej ściany lub krawędzi, mówi o tym w **Problemy**.

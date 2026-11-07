@@ -9,7 +9,7 @@
  */
 
 import {
-  ArrowUpDown, ArrowUpToLine, ArrowRightToLine, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
+  ArrowUpDown, ArrowUpToLine, ArrowRightToLine, Eraser, Keyboard, Ruler, Spline, CopyPlus, CornerUpRight, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
 } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
@@ -33,6 +33,7 @@ import { startDirect, type DirectTool } from '../../viewport/sketch/direct';
 import { finishSketch, lookAtPlane, setWorkPlane, useWorkPlane } from '../../viewport/sketch/sketch3d';
 import { frameOfView } from '../../viewport/workPlane';
 import { cancel as cancelCommand } from '../../viewport/cad/session';
+import { toggleSketchupKeys, useDisplay } from '../../app/display';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
@@ -428,6 +429,51 @@ const sketchTool = (direct: DirectTool, command: string, label: string, icon: To
   },
 });
 
+/** A direct tool with no command line twin: the tape measure. */
+const directTool = (direct: DirectTool, label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
+  id: `studio.sketch.${direct}`, label, icon, shortcut,
+  run: () => { useUi.setState({ view: '3d', tool: null }); cancelCommand(true); startDirect(direct); },
+});
+
+/** Erase guides: the tape measure's guide lines and points, all at once (one step). */
+const eraseGuides: ToolDef = {
+  id: 'studio.eraseGuides', label: 'Erase guides', icon: Eraser,
+  run: () => { void execute('studio.clearGuides', {}).then((r) => { const n = (r as { removed?: number } | null)?.removed ?? 0; notify(n ? `${n} guide(s) erased.` : 'There are no guides.'); }); },
+};
+
+/**
+ * Follow Me (stage C, decision 376): click the face to sweep (or a region of it), then the path: a drafted line, polyline,
+ * arc or circle, or a face whose edges it follows round. One Studio solid, following both sketches.
+ */
+let followFrom: { id: string; point: number[]; normal: number[] } | null = null;
+const followMe: ToolDef = {
+  id: 'studio.followMe', label: 'Follow Me', icon: Spline, shortcut: 'FM',
+  gesture: { kind: 'face', types: ['*'], query: 'studio.faceAt' },
+  complete: async (input) => {
+    const { entity, face } = input;
+    if (!followFrom) {
+      const p = picked(input);
+      if (!p) return;
+      followFrom = p;
+      notify('Now the path: a drafted line (or polyline, arc, circle), or a face whose edges it follows round.');
+      return;
+    }
+    const profile = followFrom;
+    followFrom = null;
+    const path = entity?.type === 'IfcAnnotation' ? { id: entity.id }
+      : entity && face?.normal ? { face: { id: entity.id, point: face.point, normal: face.normal } } : null;
+    if (!path) { notify('Pick the path in the 3D view: a drafted line or a face.'); return; }
+    const r = await execute('studio.followMe', { profile, path });
+    if (r) { selectMade(r); notify('Swept along the path: change the face\'s sketch or the path, and it follows.'); }
+  },
+};
+
+/** SketchUp's one-letter shortcuts in the 3D view, switched on or off (kept for this computer). */
+const sketchupKeys: ToolDef = {
+  id: 'studio.sketchupKeys', label: 'SketchUp shortcuts', icon: Keyboard,
+  run: () => { toggleSketchupKeys(); notify(useDisplay.getState().sketchupKeys ? 'SketchUp shortcuts on in the 3D view: L line, R rectangle, C circle, A arc, P push/pull, F offset, T tape, M move, E erase, Space select.' : 'SketchUp shortcuts off: the two-letter shortcuts only.'); },
+};
+
 /** A command line edit on the sketch's work plane in 3D (or the storey's level when none is active): TRIM, EXTEND, FILLET. */
 const sketchCad = (id: string, command: string, label: string, icon: ToolDef['icon']): ToolDef => ({
   id: `studio.sketch.${id}`, label, icon,
@@ -669,7 +715,8 @@ const studio: LapinModule = {
         label: 'Sketch',
         tools: [sketchTool('line', 'LINE', 'Line', Slash, 'KL'), sketchTool('rect', 'RECTANGLE', 'Rectangle', RectangleHorizontal, 'KR'), sketchTool('circle', 'CIRCLE', 'Circle', Circle, 'KC'),
           sketchTool('arc', 'ARC', 'Arc', Redo2, 'KA'), sketchTool('offset', 'OFFSET', 'Offset', CopyPlus, 'KO')],
-        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool, sketchCad('trim', 'TRIM', 'Trim', Scissors), sketchCad('extend', 'EXTEND', 'Extend', ArrowRightToLine), sketchCad('fillet', 'FILLET', 'Fillet', CornerUpRight)],
+        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool, sketchCad('trim', 'TRIM', 'Trim', Scissors), sketchCad('extend', 'EXTEND', 'Extend', ArrowRightToLine), sketchCad('fillet', 'FILLET', 'Fillet', CornerUpRight),
+          directTool('tape', 'Tape measure', Ruler, 'KM'), eraseGuides, followMe, sketchupKeys],
       },
       { label: 'On face', tools: [onFace('rect', 'Rectangle on face', RectangleHorizontal, 'FRE'), onFace('circle', 'Circle on face', Circle, 'FCI'), onFace('polygon', 'Polygon on face', Hexagon, 'FPL')] },
       { label: 'Work planes', tools: [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3] },

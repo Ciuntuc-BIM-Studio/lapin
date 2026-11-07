@@ -221,4 +221,61 @@ public class StudioOnFaceTests
         Assert.Equal(Math.PI, arc.Sweep, 9);
         Assert.Null(StudioModule.ArcThrough(new(0, 0), new(1, 1), new(2, 2)));
     }
+
+    /// <summary>Follow Me (decision 376): a profile carried along a path where it stands, mitred at the corners.</summary>
+    [Fact]
+    public void Follow_me_carries_a_profile_along_a_path_with_mitred_corners()
+    {
+        // A 0.2 square standing across x at the path's start, beside it (left of the path, as an L turns).
+        var sq = new List<Vec3> { new(0, 0, 0), new(0, 0.2, 0), new(0, 0.2, 0.2), new(0, 0, 0.2) };
+        var straight = Solids.FollowMe(sq, [], [new(0, 0, 0), new(3, 0, 0)]);
+        Assert.Equal(0.04 * 3, Measure.Volume(straight.Solid!), 9);
+        // An L turning left: the profile's middle runs 2.9 + 2.9 (Pappus, piecewise).
+        var l = Solids.FollowMe(sq, [], [new(0, 0, 0), new(3, 0, 0), new(3, 3, 0)]);
+        Assert.Equal(0.04 * 5.8, Measure.Volume(l.Solid!), 9);
+        // Round a closed 2 × 2 square path from a corner (the profile at its west side's north end): a ring, started where the profile stands.
+        var ringProfile = new List<Vec3> { new(-0.1, 2, 0), new(0.1, 2, 0), new(0.1, 2, 0.2), new(-0.1, 2, 0.2) };
+        var ring = Solids.FollowMe(ringProfile, [], [new(0, 0, 0), new(2, 0, 0), new(2, 2, 0), new(0, 2, 0), new(0, 0, 0)]);
+        Assert.NotNull(ring.Solid);
+        Assert.Equal(0.04 * 8, Measure.Volume(ring.Solid!), 9);
+        // A path lying in the face's plane sweeps nothing.
+        Assert.Null(Solids.FollowMe(sq, [], [new(0, 0, 0), new(0, 3, 0)]).Solid);
+    }
+
+    [Fact]
+    public void Follow_me_sweeps_a_face_region_along_a_drafted_line_and_guides_are_never_exported()
+    {
+        var (f, cube) = Cube();
+        var south = new Vec3(0, -1, 0);
+        // A line across the south side 0.2 below its top: the strip above it is the profile.
+        f.Run("studio.onFace", new JsonObject { ["id"] = cube, ["point"] = J3(new(1, 0, 1)), ["normal"] = J3(south), ["open"] = true,
+            ["outline"] = new JsonArray(J3(new(0, 0, 1.8)), J3(new(2, 0, 1.8))) });
+        var plan = Id(f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey }));
+        var path = (string)f.Run("drafting.draw", new JsonObject { ["viewId"] = plan, ["shape"] = new JsonObject { ["type"] = "line", ["a"] = J(1, 0), ["b"] = J(1, -1) } })!["ids"]![0]!;
+        var r = f.Run("studio.followMe", new JsonObject
+        {
+            ["profile"] = new JsonObject { ["id"] = cube, ["point"] = J3(new(1, 0, 1.9)), ["normal"] = J3(south) },
+            ["path"] = new JsonObject { ["id"] = path },
+        })!;
+        Assert.Equal("followMe", f.Model.Get(Id(r))!.Str("operation"));
+        Assert.Equal(2 * 0.2 * 1, Vol(f, Id(r)), 6);
+        var b = f.Bounds(Id(r));
+        Assert.Equal(-1, b.Min.Y, 6); Assert.Equal(1.8, b.Min.Z, 6);
+
+        // Guides: a line and a point, kept in the project, erased together, never in the IFC file.
+        f.Run("studio.addGuide", new JsonObject { ["a"] = J3(new(0, 0, 1)), ["b"] = J3(new(2, 0, 1)) });
+        f.Run("studio.addGuide", new JsonObject { ["a"] = J3(new(1, 1, 1)) });
+        Assert.Equal(2, f.Model.OfClass(StudioModule.GuideClass).Count());
+        var file = Path.Combine(Path.GetTempPath(), $"guides-{Guid.NewGuid():N}.ifc");
+        try
+        {
+            Lapin.Ifc.IfcExport.Write(f.Session, file);
+            var text = File.ReadAllText(file);
+            Assert.DoesNotContain("Guide", text);
+            Assert.DoesNotContain(StudioModule.GuideClass, text);
+        }
+        finally { File.Delete(file); }
+        Assert.Equal(2, (int)f.Run("studio.clearGuides", new JsonObject())!["removed"]!);
+        Assert.Empty(f.Model.OfClass(StudioModule.GuideClass));
+    }
 }

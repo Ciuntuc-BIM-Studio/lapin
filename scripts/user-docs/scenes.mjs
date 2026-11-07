@@ -5144,6 +5144,29 @@ export const scenes = [
       await t.wait(1000);
       t.expect((await solids()).length === before + 1, 'the region pulled out is a solid of its own');
       await t.keys('Escape');
+
+      // Stage C (decision 376): the tape measure from a point on the east side, 500 typed: a guide point; a guide line along the top's
+      // east edge; Follow Me sweeps the east side's top strip along a path drafted on the plan, out and round to the north.
+      await look({ x: 3, y: 1, z: 0.6 }, Math.PI, -0.35, 7);
+      const [ex, ey] = await middle();
+      await t.tool('studio.sketch.tape');
+      await page.mouse.move(ex, ey, { steps: 4 });
+      await t.wait(900);
+      await page.mouse.click(ex, ey);
+      await t.wait(300);
+      await page.mouse.move(ex + 80, ey, { steps: 6 });
+      await vcb(await length(0.5));
+      const guides = async () => (await t.nodes()).filter((n) => n.type === 'LapinGuide').length;
+      t.expect(await guides() === 1, 'the tape measure typed 500 leaves a guide point');
+      await t.keys('Escape');
+      await t.cmd('studio.addGuide', { a: [3, 0, 1.0], b: [3, 2, 1.0] });
+      await t.cmd('studio.onFace', { id: block, point: [3, 1, 0.6], normal: [1, 0, 0], open: true, outline: [[3, 0, 1.0], [3, 2, 1.0]] });
+      const route = await draw(plan, { type: 'polyline', pts: [[3, 1], [4.2, 1], [4.2, 3.5]], closed: false });
+      const swept = await t.cmd('studio.followMe', { profile: { id: block, point: [3, 1, 1.1], normal: [1, 0, 0] }, path: { id: route } });
+      t.expect(!!swept?.id, 'Follow Me sweeps the strip along the path');
+      await t.ui({ selection: null, selected: [] });
+      await look({ x: 3.6, y: 1.8, z: 0.8 }, Math.PI * 1.2, -0.5, 9);
+      await t.shot('studio-sketch-follow', { of: '[data-testid=view3d]', pad: 0 });
     },
   },
   {

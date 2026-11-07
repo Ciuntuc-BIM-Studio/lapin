@@ -135,6 +135,14 @@ Il gruppo **Schizzo** della scheda **Studio** disegna linee e forme direttamente
 
 ![Una linea attraverso il fianco di un blocco lo divide: la regione sotto di essa viene tirata fuori da sola](shots/studio-sketch-region.webp)
 
+**Metro, guide e Seguimi.**
+
+- **Metro** (KM) misura e lascia guide, come quello di SketchUp. Fai clic su uno spigolo, allontanati e fai clic: una linea guida corre parallela allo spigolo attraverso quel punto, oppure alla distanza che digiti. Fai clic invece su un punto, e il secondo clic mostra la distanza e lascia lì un punto guida. Le guide sono tratteggiate, entrambi i modi di schizzare fanno snap su di esse (e dove incrociano la faccia), sono salvate con il progetto e non vengono mai esportate né stampate. **Cancella guide** le toglie tutte.
+- **Seguimi** (FM) fa scorrere una faccia lungo un percorso dove si trova: fai clic sulla faccia (o su una regione di essa divisa da linee), poi sul percorso, che sia una linea disegnata, una polilinea, un arco o un cerchio, oppure un’altra faccia di cui segue tutti gli spigoli, come una faccia superiore per una cornice. Gli angoli sono a sbieco. La faccia diventa uno schizzo sul suo piano e il risultato è un unico solido Studio che segue entrambi gli schizzi.
+- **Scorciatoie SketchUp** attiva nella vista 3D i tasti a una lettera di SketchUp, per questo computer: <kbd>L</kbd> linea, <kbd>R</kbd> rettangolo, <kbd>C</kbd> cerchio, <kbd>A</kbd> arco, <kbd>P</kbd> spingi/tira, <kbd>F</kbd> offset, <kbd>T</kbd> metro, <kbd>M</kbd> sposta, <kbd>E</kbd> cancella, <kbd>Spazio</kbd> seleziona. Sono disattivati per impostazione predefinita perché prenderebbero il posto delle scorciatoie a due lettere di Lapin che iniziano con quelle lettere nella vista 3D; le scorciatoie a due lettere e la riga di comando funzionano come prima ovunque altrove.
+
+![Una guida a una distanza digitata dallo spigolo del blocco e una cornice fatta scorrere attorno alla parte superiore con Seguimi](shots/studio-sketch-follow.webp)
+
 ## I passi
 
 Le proprietà di un solido Studio elencano i suoi passi in ordine. Ogni passo può essere disattivato, spostato prima o dopo, modificato o rimosso. Cambia lo schizzo, e ogni passo viene rifatto sul nuovo corpo. Un passo che non trova più la sua faccia o il suo spigolo lo segnala in **Problemi**.

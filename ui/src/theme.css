@@ -1276,6 +1276,7 @@ button.mode-chip:hover { color: var(--accent); }
 .face-sketch .sketch-guide.green { stroke: #2b9a3b; }
 .face-sketch .sketch-guide.blue { stroke: #2f62d8; }
 .face-sketch .sketch-guide.magenta { stroke: #c23cc2; }
+.face-sketch .sketch-guide.guide { stroke: #7a5cc2; stroke-width: 1; stroke-dasharray: 2 4; }
 .face-sketch .sketch-end { fill: #2f9e6a; }
 .face-sketch .sketch-mid { fill: #19a4c9; }
 .face-sketch .sketch-edge { fill: #d33a2c; }

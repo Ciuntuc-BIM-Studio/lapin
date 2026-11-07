@@ -213,6 +213,16 @@ public sealed partial class StudioModule
                     new Solids.SweepShape(e.Num("twist"), e.NumOrNull("scaleEnd") ?? 1, e.Num("rise"), e.NumOrNull("turns") ?? 1, box));
                 return (swept.Solid, null, swept.Problem);
             }
+            case "followMe":
+            {
+                if (inner != null) return (null, null, "a Follow Me solid is not hollowed.");
+                if (m.Get(e.Str("guide") ?? "") is not { } g || Drafts.ShapeOf(g) is not { } gs) return (null, null, "The path is missing: draw it again to rebuild.");
+                var (gp, gProblem) = PlaneOfSketch(m, services, g);
+                if (gp == null) return (null, null, gProblem);
+                var path = Geo.Polylines(gs)[0].Select(gp.World).ToList();
+                var fm = Solids.FollowMe(W(outer2), holes2.Select(h => (IReadOnlyList<Vec3>)W(h)).ToList(), path);
+                return (fm.Solid, null, fm.Problem);
+            }
             case "loft":
             {
                 var loops = new List<IReadOnlyList<Vec2>>();

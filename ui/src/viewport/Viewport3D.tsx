@@ -41,6 +41,7 @@ import { FaceSketch3D } from './FaceSketch3D';
 import { Draft3D } from './Draft3D';
 import { Sketch3D } from './Sketch3D';
 import { SketchGrips3D } from './SketchGrips3D';
+import { Guides3D } from './Guides3D';
 import { useDirect } from './sketch/direct';
 import { useFaceSketch } from './faceSketch';
 import { useAxisDrag } from './axisDrag';
@@ -1738,6 +1739,7 @@ export function Viewport3D() {
       {!walkStart && <FaceSketch3D camera={camRef} canvas={host} />}
       {!walkStart && <Draft3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <Sketch3D camera={camRef} canvas={host} scene={scene} />}
+      {!walkStart && <Guides3D camera={camRef} canvas={host} />}
       {!walkStart && <SketchGrips3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
       <KeyPlan mode="3d" />

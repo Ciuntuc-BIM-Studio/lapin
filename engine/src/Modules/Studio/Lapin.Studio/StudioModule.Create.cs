@@ -84,6 +84,15 @@ public sealed partial class StudioModule
                 if (Json.Number(a["scaleEnd"]) is <= 0) throw new CommandException("The scale at the end is more than 0.");
                 break;
             }
+            case "followMe":
+            {
+                // Follow Me (decision 376): the path on any view (a plan's line, a face's outline), the profile swept where it stands.
+                var path = Drafts.Require(ctx.Model, (string?)a["pathId"], editable: false);
+                if (Drafts.ShapeOf(path) is not (Line or Polyline or Arc or Circle)) throw new CommandException("A path is a line, a polyline, an arc or a circle.");
+                PlaneFor(ctx, path);
+                attrs["guide"] = path.Id;
+                break;
+            }
             case "loft":
             {
                 // The profiles in order, each on its own view (a plan of another level, a section further on).

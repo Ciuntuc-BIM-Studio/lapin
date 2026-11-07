@@ -161,6 +161,9 @@ describe('the languages', () => {
     '12 line(s)',
     '3 type(s) unpriced, 7 element(s)',
     'Price list imported: 15 article(s), 2 row(s) skipped.',
+    '3 guide(s) erased.',
+    'Guide line at 750 mm.',
+    'Distance: 1250 mm.',
   ];
   const first = (patterns: [RegExp, unknown][], s: string) => patterns.findIndex(([re]) => re.test(s));
 

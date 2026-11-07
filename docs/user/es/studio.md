@@ -135,6 +135,14 @@ El grupo **Boceto** de la ficha **Studio** dibuja líneas y formas directamente 
 
 ![Una línea a través del lateral de un bloque lo divide: la región bajo ella se saca por sí sola](shots/studio-sketch-region.webp)
 
+**Cinta métrica, guías y Sígueme.**
+
+- **Cinta métrica** (KM) mide y deja guías, como la de SketchUp. Haga clic en una arista, aléjese de ella y haga clic: una línea guía corre paralela a la arista por ese punto, o a la distancia que escriba. Haga clic en un punto en cambio, y el segundo clic muestra la distancia y deja allí un punto guía. Las guías son discontinuas, ambas maneras de bocetar se ajustan a ellas (y a donde cruzan la cara), se guardan con el proyecto y nunca se exportan ni se imprimen. **Borrar guías** las quita todas.
+- **Sígueme** (FM) barre una cara a lo largo de una trayectoria donde está: haga clic en la cara (o en una región suya dividida por líneas), luego en la trayectoria, ya sea una línea dibujada, polilínea, arco o círculo, o bien otra cara cuyas aristas sigue alrededor, como una cara superior para una cornisa. Las esquinas se cortan a inglete. La cara se convierte en un boceto en su plano y el resultado es un único sólido de Studio que sigue ambos bocetos.
+- **Atajos de SketchUp** activa las teclas de una letra de SketchUp en la vista 3D, para este equipo: <kbd>L</kbd> línea, <kbd>R</kbd> rectángulo, <kbd>C</kbd> círculo, <kbd>A</kbd> arco, <kbd>P</kbd> empujar/tirar, <kbd>F</kbd> desfase, <kbd>T</kbd> cinta métrica, <kbd>M</kbd> mover, <kbd>E</kbd> borrar, <kbd>Espacio</kbd> seleccionar. Están desactivados de forma predeterminada porque ocuparían el lugar de los atajos de dos letras de Lapin que empiezan por esas letras en la vista 3D; los atajos de dos letras y la línea de comandos funcionan como antes en todos los demás sitios.
+
+![Una guía a una distancia escrita de la arista del bloque y una cornisa barrida alrededor de la parte superior con Sígueme](shots/studio-sketch-follow.webp)
+
 ## Los pasos
 
 Las propiedades de un sólido Studio enumeran sus pasos en orden. Cada paso se puede desactivar, adelantar o retrasar, cambiar o quitar. Cambie el croquis, y cada paso se rehace sobre el cuerpo nuevo. Un paso que ya no encuentra su cara o su arista lo dice en **Problemas**.

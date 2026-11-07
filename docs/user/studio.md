@@ -135,6 +135,14 @@ The **Sketch** group of the **Studio** tab draws lines and shapes right in the 3
 
 ![A line across the side of a block splits it: the region below it is pulled out on its own](shots/studio-sketch-region.webp)
 
+**Tape measure, guides and Follow Me.**
+
+- **Tape measure** (KM) measures and leaves guides, as SketchUp's. Click an edge, move away from it and click: a guide line runs parallel to the edge through that point, or at the distance you type. Click a point instead, and the second click shows the distance and leaves a guide point there. Guides are dashed, both ways of sketching snap to them (and to where they cross the face), they are kept with the project, and they are never exported or printed. **Erase guides** takes them all away.
+- **Follow Me** (FM) sweeps a face along a path where it stands: click the face (or a region of it split by lines), then the path, either a drafted line, polyline, arc or circle, or another face whose edges it follows round, such as a top face for a cornice. Corners are mitred. The face becomes a sketch on its plane and the result is one Studio solid that follows both sketches.
+- **SketchUp shortcuts** switches SketchUp's one-letter keys on in the 3D view, for this computer: <kbd>L</kbd> line, <kbd>R</kbd> rectangle, <kbd>C</kbd> circle, <kbd>A</kbd> arc, <kbd>P</kbd> push/pull, <kbd>F</kbd> offset, <kbd>T</kbd> tape measure, <kbd>M</kbd> move, <kbd>E</kbd> erase, <kbd>Space</kbd> select. They are off by default because they would take the place of Lapin's two-letter shortcuts that start with those letters in the 3D view; the two-letter shortcuts and the command line work as before everywhere else.
+
+![A guide line at a typed distance from the block's edge, and a cornice swept round the top with Follow Me](shots/studio-sketch-follow.webp)
+
 ## The steps
 
 The properties of a Studio solid list its steps in order. Each step can be switched off, moved earlier or later, changed or removed. Change the sketch, and each step is done again on the new body. A step that can no longer find its face or edge says so under **Problems**.

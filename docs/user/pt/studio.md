@@ -135,6 +135,14 @@ O grupo **Esboço** da guia **Studio** desenha linhas e formas diretamente na vi
 
 ![Uma linha atravessando a lateral de um bloco a divide: a região abaixo dela é puxada sozinha](shots/studio-sketch-region.webp)
 
+**Fita métrica, guias e Siga-me.**
+
+- **Fita métrica** (KM) mede e deixa guias, como a do SketchUp. Clique numa aresta, afaste-se dela e clique: uma linha guia corre paralela à aresta por esse ponto, ou à distância que você digitar. Clique num ponto em vez disso, e o segundo clique mostra a distância e deixa ali um ponto guia. As guias são tracejadas, as duas maneiras de esboçar se prendem a elas (e a onde elas cruzam a face), ficam guardadas com o projeto e nunca são exportadas nem impressas. **Apagar guias** tira todas.
+- **Siga-me** (FM) varre uma face ao longo de um caminho onde ela está: clique na face (ou numa região dela dividida por linhas), depois no caminho, seja uma linha desenhada, polilinha, arco ou círculo, seja outra face cujas arestas ela segue ao redor, como uma face superior para uma cornija. Os cantos são em esquadria. A face vira um esboço no seu plano e o resultado é um único sólido do Studio que segue os dois esboços.
+- **Atalhos do SketchUp** liga na vista 3D as teclas de uma letra do SketchUp, para este computador: <kbd>L</kbd> linha, <kbd>R</kbd> retângulo, <kbd>C</kbd> círculo, <kbd>A</kbd> arco, <kbd>P</kbd> empurrar/puxar, <kbd>F</kbd> deslocamento, <kbd>T</kbd> fita métrica, <kbd>M</kbd> mover, <kbd>E</kbd> apagar, <kbd>Espaço</kbd> selecionar. Vêm desligados por padrão porque tomariam o lugar dos atalhos de duas letras do Lapin que começam por essas letras na vista 3D; os atalhos de duas letras e a linha de comando funcionam como antes em todos os outros lugares.
+
+![Uma guia a uma distância digitada da aresta do bloco e uma cornija varrida ao redor do topo com Siga-me](shots/studio-sketch-follow.webp)
+
 ## Os passos
 
 As propriedades de um sólido do Studio listam os seus passos em ordem. Cada passo pode ser desativado, movido para antes ou para depois, alterado ou removido. Altere o esboço, e cada passo é refeito sobre o novo corpo. Um passo que não consegue mais encontrar a sua face ou aresta avisa em **Problemas**.

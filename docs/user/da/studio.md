@@ -135,6 +135,14 @@ Gruppen **Skitse** på fanen **Studio** tegner linjer og former direkte i 3D-vis
 
 ![En linje på tværs af siden af en blok deler den: området under den trækkes ud for sig](shots/studio-sketch-region.webp)
 
+**Målebånd, hjælpelinjer og Følg mig.**
+
+- **Målebånd** (KM) måler og efterlader hjælpelinjer, som i SketchUp. Klik på en kant, flyt væk fra den og klik: en hjælpelinje løber parallelt med kanten gennem det punkt eller i den afstand, du skriver. Klik i stedet på et punkt, og det andet klik viser afstanden og efterlader et hjælpepunkt der. Hjælpelinjer er stiplede, begge måder at skitsere på fanger til dem (og til, hvor de krydser fladen), de gemmes med projektet, og de eksporteres eller udskrives aldrig. **Slet hjælpelinjer** fjerner dem alle.
+- **Følg mig** (FM) fører en flade langs en bane, hvor den står: klik på fladen (eller på et område af den delt af linjer), derefter på banen, enten en tegnet linje, polylinje, bue eller cirkel, eller en anden flade, hvis kanter den følger rundt, f.eks. en overside til en gesims. Hjørner gæres. Fladen bliver en skitse på sit plan, og resultatet er ét Studio-legeme, der følger begge skitser.
+- **SketchUp-genveje** slår SketchUps enkeltbogstavstaster til i 3D-visningen, for denne computer: <kbd>L</kbd> linje, <kbd>R</kbd> rektangel, <kbd>C</kbd> cirkel, <kbd>A</kbd> bue, <kbd>P</kbd> skub/træk, <kbd>F</kbd> forskyd, <kbd>T</kbd> målebånd, <kbd>M</kbd> flyt, <kbd>E</kbd> slet, <kbd>Mellemrum</kbd> markér. De er slået fra som standard, fordi de ville tage pladsen fra Lapins tobogstavsgenveje, der begynder med de bogstaver i 3D-visningen; tobogstavsgenvejene og kommandolinjen virker som før alle andre steder.
+
+![En hjælpelinje i en skrevet afstand fra blokkens kant og en gesims ført rundt om oversiden med Følg mig](shots/studio-sketch-follow.webp)
+
 ## Trinene
 
 Et Studio-legemes egenskaber viser dets trin i rækkefølge. Hvert trin kan slås fra, flyttes tidligere eller senere, ændres eller fjernes. Ændr skitsen, og hvert trin udføres igen på det nye legeme. Et trin, der ikke længere finder sin flade eller kant, siger det under **Problemer**.

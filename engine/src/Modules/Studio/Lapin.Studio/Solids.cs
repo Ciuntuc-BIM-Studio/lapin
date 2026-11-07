@@ -80,6 +80,58 @@ public static class Solids
         return mesh.Build();
     }
 
+    /// <summary>
+    /// Follow Me (docs/plan-studio-sketch.md, stage C, decision 376): a face's outline (and holes) in the model swept along a
+    /// path where it stands, SketchUp's way: the profile is not moved onto the path; each corner of the path is a mitre
+    /// the rings are carried to along the segment before it. A closed path makes a ring (the profile carried to the mitre
+    /// at the path's first corner first).
+    /// </summary>
+    public static SweepResult FollowMe(IReadOnlyList<Vec3> outer, IReadOnlyList<IReadOnlyList<Vec3>> holes, IReadOnlyList<Vec3> path)
+    {
+        if (outer.Count < 3) return new(null, "The profile needs three points at least.");
+        var pts = new List<Vec3>();
+        foreach (var p in path) if (pts.Count == 0 || (p - pts[^1]).Length > 1e-9) pts.Add(p);
+        var closed = pts.Count >= 4 && (pts[^1] - pts[0]).Length < 1e-6;
+        if (closed) pts.RemoveAt(pts.Count - 1);
+        if (pts.Count < 2 || (closed && pts.Count < 3)) return new(null, "The path needs two points at least.");
+        if (closed)
+        {
+            // A ring starts where the profile stands (the corner nearest it), and goes the way that leaves the face most squarely.
+            var mid = outer.Aggregate(Vec3.Zero, (acc, q) => acc + q) * (1.0 / outer.Count);
+            var fn = VecMath.NewellNormal(outer).Normalized();
+            var k0 = Enumerable.Range(0, pts.Count).OrderBy(k => (pts[k] - mid).Length).First();
+            pts = [.. pts.Skip(k0), .. pts.Take(k0)];
+            var fwd = Math.Abs(Vec3.Dot((pts[1] - pts[0]).Normalized(), fn));
+            var back = Math.Abs(Vec3.Dot((pts[^1] - pts[0]).Normalized(), fn));
+            if (back > fwd + 1e-9) pts = [pts[0], .. pts.Skip(1).Reverse()];
+        }
+        var n = pts.Count;
+        var segs = closed ? n : n - 1;
+        var dirs = Enumerable.Range(0, segs).Select(k => (pts[(k + 1) % n] - pts[k]).Normalized()).ToList();
+        Vec3 Mitre(int k) => closed ? (dirs[(k - 1 + segs) % segs] + dirs[k % segs]).Normalized()
+            : k == 0 ? dirs[0] : k == n - 1 ? dirs[^1] : (dirs[k - 1] + dirs[k]).Normalized();
+        List<Vec3> Carry(IReadOnlyList<Vec3> ring, Vec3 dir, Vec3 at, Vec3 normal)
+        {
+            var den = Vec3.Dot(dir, normal);
+            return ring.Select(q => q + dir * (Vec3.Dot(at - q, normal) / (Math.Abs(den) < 1e-9 ? 1 : den))).ToList();
+        }
+        // The rings turned with the path's first way (holes against it).
+        List<Vec3> Turned(IReadOnlyList<Vec3> r, bool hole) { var along = Vec3.Dot(VecMath.NewellNormal(r), dirs[0]) >= 0; return along != hole ? r.ToList() : r.Reverse().ToList(); }
+        var first = new List<List<Vec3>> { Turned(outer, false) };
+        first.AddRange(holes.Select(h => Turned(h, true)));
+        if (Math.Abs(Vec3.Dot(VecMath.NewellNormal(first[0]).Normalized(), dirs[0])) < 1e-3) return new(null, "The path runs along the face: start it across the face (an edge leaving it).");
+        var stations = new List<List<IReadOnlyList<Vec3>>>();
+        var cur = closed ? first.Select(r => Carry(r, dirs[0], pts[0], Mitre(0))).ToList() : first;
+        stations.Add(cur.Select(r => (IReadOnlyList<Vec3>)r).ToList());
+        for (var k = 1; k < n; k++)
+        {
+            cur = cur.Select(r => Carry(r, dirs[k - 1], pts[k], Mitre(k))).ToList();
+            stations.Add(cur.Select(r => (IReadOnlyList<Vec3>)r).ToList());
+        }
+        var solid = Loft(stations, closed, dirs[0], dirs[^1]);
+        return new(solid, solid == null ? "The solid could not be built along the path." : null);
+    }
+
     /// <summary>Where a sweep's profile sits on its path, looking along the path.</summary>
     public static readonly string[] Places = ["centre", "right", "left", "outside", "inside"];
 

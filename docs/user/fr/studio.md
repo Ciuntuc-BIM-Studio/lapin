@@ -135,6 +135,14 @@ Le groupe **Esquisse** de l’onglet **Studio** dessine des lignes et des formes
 
 ![Une ligne en travers du côté d’un bloc le divise : la région en dessous est tirée seule](shots/studio-sketch-region.webp)
 
+**Mètre, guides et Suivez-moi.**
+
+- **Mètre** (KM) mesure et laisse des guides, comme celui de SketchUp. Cliquez sur une arête, éloignez-vous-en et cliquez : une ligne guide court parallèlement à l’arête par ce point, ou à la distance que vous saisissez. Cliquez plutôt sur un point, et le second clic montre la distance et laisse là un point guide. Les guides sont en pointillés, les deux façons d’esquisser s’y accrochent (et là où ils croisent la face), ils sont conservés avec le projet et jamais exportés ni imprimés. **Effacer les guides** les enlève tous.
+- **Suivez-moi** (FM) balaie une face le long d’un chemin là où elle se trouve : cliquez sur la face (ou sur une région de celle-ci divisée par des lignes), puis sur le chemin, soit une ligne dessinée, une polyligne, un arc ou un cercle, soit une autre face dont elle suit les arêtes tout autour, comme une face supérieure pour une corniche. Les angles sont en onglet. La face devient une esquisse sur son plan et le résultat est un seul solide Studio qui suit les deux esquisses.
+- **Raccourcis SketchUp** active dans la vue 3D les touches d’une lettre de SketchUp, pour cet ordinateur : <kbd>L</kbd> ligne, <kbd>R</kbd> rectangle, <kbd>C</kbd> cercle, <kbd>A</kbd> arc, <kbd>P</kbd> pousser/tirer, <kbd>F</kbd> décaler, <kbd>T</kbd> mètre, <kbd>M</kbd> déplacer, <kbd>E</kbd> effacer, <kbd>Espace</kbd> sélectionner. Elles sont désactivées par défaut, car elles prendraient la place des raccourcis de deux lettres de Lapin qui commencent par ces lettres dans la vue 3D ; les raccourcis de deux lettres et la ligne de commande fonctionnent comme avant partout ailleurs.
+
+![Un guide à une distance saisie de l’arête du bloc, et une corniche balayée autour du dessus avec Suivez-moi](shots/studio-sketch-follow.webp)
+
 ## Les étapes
 
 Les propriétés d’un solide Studio listent ses étapes dans l’ordre. Chaque étape peut être désactivée, avancée ou reculée, modifiée ou retirée. Modifiez l’esquisse, et chaque étape est refaite sur le nouveau corps. Une étape qui ne retrouve plus sa face ou son arête le dit sous **Problèmes**.
