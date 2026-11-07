@@ -23,6 +23,8 @@ public static class Links
     /// <summary>The link an entity belongs to, if any.</summary>
     public static Entity? Of(IModelView m, Entity e) => e.Str(Key) is { } id ? m.Get(id) is { Class: Class } l ? l : null : null;
     public static bool Visible(Entity link) => link.Attrs["visible"] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
+    /// <summary>A DXF link's drawing shown in 3D on its view's plane (decision 382; on unless turned off).</summary>
+    public static bool In3d(Entity link) => link.Attrs["in3d"] is not JsonValue v || !v.TryGetValue<bool>(out var b) || b;
     public static bool IsHalftone(Entity link) => link.Attrs["halftone"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
 
     public static Entity Require(IModelView m, string? id) =>
@@ -69,7 +71,7 @@ public static class Links
     public static JsonObject ToJson(IModelView m, Entity link) => new()
     {
         ["id"] = link.Id, ["name"] = link.Name, ["kind"] = link.Str("kind"), ["file"] = link.Str("file"), ["path"] = link.Str("path"),
-        ["visible"] = Visible(link), ["halftone"] = IsHalftone(link), ["viewId"] = link.Str("viewId"), ["linkedAt"] = link.Str("linkedAt"),
+        ["visible"] = Visible(link), ["halftone"] = IsHalftone(link), ["in3d"] = In3d(link), ["viewId"] = link.Str("viewId"), ["linkedAt"] = link.Str("linkedAt"),
         // Its elements: what stands on a storey (types, materials and layer sets it brought are not counted).
         ["elements"] = ElementsOf(m, link.Id).Count(e => Spatial.StoreyOf(m, e.Id) != null), ["storeys"] = ElementsOf(m, link.Id).Count(e => e.Class == IfcClass.BuildingStorey),
     };
@@ -100,6 +102,7 @@ public static class Links
             var attrs = link.CloneAttrs();
             if (a["visible"] is JsonValue vv && vv.TryGetValue<bool>(out var visible)) attrs["visible"] = visible;
             if (a["halftone"] is JsonValue hv && hv.TryGetValue<bool>(out var halftone)) attrs["halftone"] = halftone;
+            if (a["in3d"] is JsonValue dv && dv.TryGetValue<bool>(out var in3d)) attrs["in3d"] = in3d;
             ctx.Replace(link.With(name: ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : null, attrs: attrs));
             return null;
         });

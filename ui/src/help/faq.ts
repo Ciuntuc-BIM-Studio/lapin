@@ -88,6 +88,15 @@ export const FAQ: Entry[] = [
     source: 'report #35',
   },
   {
+    id: 'dxf-in-3d',
+    q: ['Why is my imported DXF not in the 3D view?', 'How do I see the DXF in 3D?', 'Can I trace walls over a DXF in 3D?'],
+    qRo: ['De ce nu se vede DXF-ul importat în vederea 3D?', 'Cum văd DXF-ul în 3D?', 'Pot desena pereți peste un DXF în 3D?'],
+    keywords: ['dxf', 'cad', 'underlay', 'imported', '3d', 'viewport', 'trace', 'lines', 'plane', 'level', 'vedere', 'importat', 'linii', 'fundal', 'nivel', 'cota'],
+    a: 'An imported DXF lies in the 3D view on its view\'s plane: one brought into a plan at its storey\'s level, one brought into a section or an elevation on that view\'s plane, in its layers\' colours, its hatches faint. View → DXF in 3D shows or hides them all; a layer turned off in Draft → Layers stays off in 3D; one import is switched in the properties of any of its shapes (In 3D), a linked DXF in Manage → Links (3D). Drawing in 3D on that level (Draft\'s tools, or Studio\'s Sketch) snaps to its lines.',
+    aRo: 'Un DXF importat stă în vederea 3D pe planul vederii lui: cel adus într-un plan la cota nivelului, cel adus într-o secțiune sau fațadă pe planul acelei vederi, în culorile straturilor lui, cu hașurile estompate. View → DXF in 3D le arată sau le ascunde pe toate; un strat stins în Draft → Layers rămâne stins și în 3D; un import anume se comută din proprietățile oricărei forme a lui (In 3D), un DXF legat din Manage → Links (3D). Desenul în 3D pe acel nivel (uneltele din Draft sau Schița din Studio) face snap pe liniile lui.',
+    source: 'report #106',
+  },
+  {
     id: 'window-panels',
     q: ['How do I make a window with 2, 3, 4 or 6 panes?', 'How do I make a window with more sashes that open?', 'How do I edit a 2 pane window?'],
     qRo: ['Cum fac o fereastră cu 2, 3, 4 sau 6 canate?', 'Cum fac o fereastră cu mai multe canate care se deschid?', 'Cum modific o fereastră cu două canate?'],

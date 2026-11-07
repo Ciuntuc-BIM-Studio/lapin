@@ -76,9 +76,13 @@ La copia viene scritta accanto all’originale, o in una cartella scelta da te, 
 
 **Importa DXF…** porta un disegno CAD nella vista in primo piano, con i suoi layer, retini, testi e quote. Entra come disegno 2D su cui puoi fare snap e che puoi modificare. Per usare un DWG, salvalo prima come DXF dal tuo programma CAD (AutoCAD, BricsCAD o DraftSight: **Save As → DXF**). L’importazione di PDF non è ancora disponibile. In una pianta, **Posizionato: dalle coordinate della mappa** posa un disegno in coordinate reali (una mappa catastale in Stereo 70) dove lo mette la mappa (vedi [Il sito e i suoi dati](site.md)).
 
+Il disegno sta anche nella **vista 3D**, sul piano della vista in cui è arrivato: su una pianta alla quota del suo piano, su una sezione o un prospetto sul piano di quella vista, nei colori dei suoi layer, i retini tenui, come linee sottili che non nascondono mai il modello. Un layer spento in **Disegno → Layer** resta spento in 3D. **Vista → DXF in 3D** (anche in **Vista → Impostazioni di vista** di una vista 3D) mostra o nasconde tutte le importazioni; un'importazione si attiva e disattiva con **In 3D** nelle proprietà di una qualsiasi delle sue forme, un DXF collegato con **3D** in **Gestisci → Collegamenti**. Disegnando in 3D a quella quota, con gli strumenti di Disegno o lo Schizzo di Studio, ci si aggancia alle sue linee, così puoi ricalcarlo in 3D come in pianta. Le linee a cui il file ha dato quote stanno nello spazio a quelle quote, come prima.
+
+![Un DXF di inquadramento nella vista 3D, alla quota del piano terra](shots/dxf-3d.webp)
+
 ## Collegamenti
 
-**Collega IFC…** mantiene un altro file collegato invece di importarlo. È in sola lettura e viene ricaricato quando cambia. Funziona anche per un DXF. **Gestisci → Collegamenti** mostra, ricarica, converte o rimuove i collegamenti.
+**Collega IFC…** mantiene un altro file collegato invece di importarlo. È in sola lettura e viene ricaricato quando cambia. Funziona anche per un DXF. **Gestisci → Collegamenti** mostra, ricarica, converte o rimuove i collegamenti. Un DXF collegato sta in 3D come uno importato; la sua casella **3D** in **Gestisci → Collegamenti** lo toglie.
 
 ## Modelli 3D
 

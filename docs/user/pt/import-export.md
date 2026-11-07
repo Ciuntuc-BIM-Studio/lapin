@@ -76,9 +76,13 @@ A cópia é escrita ao lado do original, ou numa pasta que você escolher, com o
 
 **Importar DXF…** traz um desenho CAD para a vista em primeiro plano, com as suas camadas, hachuras, textos e cotas. Ele entra como desenho no qual você pode usar o snap e que pode editar. Para usar um DWG, primeiro salve-o como DXF no seu programa CAD (AutoCAD, BricsCAD ou DraftSight: **Salvar como → DXF**). A importação de PDF ainda não está disponível. Em uma planta, **Posicionado: pelas coordenadas do mapa** coloca um desenho em coordenadas reais (uma planta cadastral em Stereo 70) onde o mapa o coloca (veja [Terreno](site.md)).
 
+O desenho fica também na **vista 3D**, no plano da vista em que entrou: numa planta no nível do seu pavimento, num corte ou fachada no plano dessa vista, nas cores das suas camadas, com as hachuras esmaecidas, como linhas finas que nunca escondem o modelo. Uma camada desligada em **Desenho → Layers** continua desligada em 3D. **Vista → DXF em 3D** (também em **Vista → Configurações da vista** de uma vista 3D) mostra ou oculta todas as importações; uma importação liga e desliga com **Em 3D** nas propriedades de qualquer uma das suas formas, um DXF vinculado com **3D** em **Gerenciar → Vínculos**. Ao desenhar em 3D nesse nível, com as ferramentas de Desenho ou o Esboço do Studio, o snap pega as suas linhas, então você pode decalcá-lo em 3D como na planta. As linhas a que o arquivo deu cotas ficam no espaço nessas cotas, como antes.
+
+![Um DXF de implantação na vista 3D, no nível do térreo](shots/dxf-3d.webp)
+
 ## Vínculos
 
-**Vincular IFC…** mantém outro arquivo vinculado em vez de importá-lo. Ele é somente leitura e é recarregado quando muda. Isso também funciona para um DXF. **Gerenciar → Vínculos** mostra, recarrega, converte ou remove os vínculos.
+**Vincular IFC…** mantém outro arquivo vinculado em vez de importá-lo. Ele é somente leitura e é recarregado quando muda. Isso também funciona para um DXF. **Gerenciar → Vínculos** mostra, recarrega, converte ou remove os vínculos. Um DXF vinculado fica em 3D como um importado; a sua caixa **3D** em **Gerenciar → Vínculos** desliga isso.
 
 ## Modelos 3D
 

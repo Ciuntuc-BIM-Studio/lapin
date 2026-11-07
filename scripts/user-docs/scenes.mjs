@@ -211,6 +211,19 @@ const PAT = `*LAPIN_HERRINGBONE, Herringbone 45°
 
 /** A small survey in Stereo 70 for the site scenes: a DXF of points on a gentle slope, a parcel as GeoJSON, a neighbour as CityJSON, an aerial photo drawn on a canvas. */
 const E0 = 587900, N0 = 325820;
+/** A site drawing as a CAD program writes one (mm): the parcel, the setbacks, the axes and a paved terrace, each on its layer and colour. */
+function siteDxf() {
+  const layer = (name, aci) => `0\nLAYER\n2\n${name}\n70\n0\n62\n${aci}\n`;
+  const tables = `0\nTABLE\n2\nLAYER\n${layer('PARCEL', 1)}${layer('SETBACK', 3)}${layer('AXES', 5)}${layer('TERRACE', 8)}0\nENDTAB\n`;
+  const poly = (l, pts) => `0\nLWPOLYLINE\n8\n${l}\n90\n${pts.length}\n70\n1\n${pts.map(([x, y]) => `10\n${x}\n20\n${y}\n`).join('')}`;
+  const line = (l, a, b) => `0\nLINE\n8\n${l}\n10\n${a[0]}\n20\n${a[1]}\n11\n${b[0]}\n21\n${b[1]}\n`;
+  let body = poly('PARCEL', [[-6000, -7000], [20000, -6000], [21000, 15000], [-5000, 14000]]);
+  body += poly('SETBACK', [[-3000, -4000], [17000, -3500], [17800, 11500], [-2500, 11000]]);
+  for (let x = 0; x <= 12000; x += 3500) body += line('AXES', [x, -5000], [x, 13000]);
+  for (let y = 0; y <= 8000; y += 4000) body += line('AXES', [-4000, y], [16000, y]);
+  body += `0\nSOLID\n8\nTERRACE\n10\n1000\n20\n-3000\n11\n6500\n21\n-3000\n12\n1000\n22\n-200\n13\n6500\n23\n-200\n`;
+  return `0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n${tables}0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${body}0\nENDSEC\n0\nEOF\n`;
+}
 function surveyDxf() {
   let body = '';
   for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
@@ -3506,6 +3519,39 @@ export const scenes = [
       await t.shot('ribbon-draft', { of: '.topbar', pad: 0 });
       await t.button('Annotate', { exact: true });
       await t.shot('ribbon-annotate', { of: '.topbar', pad: 0 });
+    },
+  },
+  {
+    // A tester's report (#106, decision 382): a DXF imported into a plan lies in the 3D view on its storey's level, in its
+    // layers' colours, its hatch faint; one import is switched off and on, and View → DXF in 3D hides them all.
+    id: 'dxf-3d',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      const s = await t.storey();
+      const nodes = await t.nodes();
+      const plan = nodes.find((n) => n.type === 'LapinView' && (n.props.kind ?? 'plan') === 'plan' && n.props.storeyId === s && !n.props.site)?.id ?? `plan:${s}`;
+      const r = await t.cmd('drafting.importDxf', { viewId: plan, name: 'site.dxf', data: Buffer.from(siteDxf()).toString('base64') });
+      t.expect(typeof r?.importId === 'string', 'the import is recorded, to be shown in 3D as one');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.2, pitch: -0.55, distance: 34, target: { x: 6, y: 4, z: 0 } }, false));
+      await t.wait(1200);
+      const drawn = async () => Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-underlays') ?? 0);
+      t.expect(await drawn() >= 4, `the DXF's layers are drawn in 3D (${await drawn()} batches)`);
+      await t.shot('dxf-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // The import off in 3D (its shapes' properties, In 3D), then on again.
+      await t.cmd('drafting.setUnderlay3d', { id: r.importId, shown: false });
+      await t.wait(800);
+      t.expect(await drawn() === 0, 'an import switched off is not drawn in 3D');
+      await t.cmd('drafting.setUnderlay3d', { id: r.importId, shown: true });
+      await t.wait(800);
+      t.expect(await drawn() >= 4, 'switched on again, it is back');
+      // View → DXF in 3D: every import hidden, and shown again.
+      const on = () => t.page.evaluate(async () => (await import('/src/app/display.ts')).useDisplay.getState().dxf3d);
+      await t.tool('view.dxf3d');
+      t.expect(!(await on()), 'View → DXF in 3D hides them');
+      await t.tool('view.dxf3d');
+      t.expect(await on(), 'and shows them again');
     },
   },
   {

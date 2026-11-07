@@ -64,6 +64,7 @@ import { dragTo, isWindow, regionTestOf, SelectRegion, toggleLasso, type SelectD
 import type { Seg } from './selectBox';
 import { resetTemporary, temporaryOn, useTemporary } from './temporary';
 import { place } from '../engine/instances';
+import { disposeUnderlays, sameSources, underlayGroup, underlaySources, type UnderlayBatch } from './underlays3d';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
 import { clampWheel, wheelZoom } from './zoom';
@@ -1577,6 +1578,41 @@ export function Viewport3D() {
 
   // The storeys the 3D view shows: where they are cut (capped with the section's caps below).
   const nodes = useSession((st) => st.nodes);
+
+  // An imported DXF's drawing on its view's plane (decision 382): asked of the engine again only when what it is made of changes.
+  const dxf3d = useDisplay((st) => st.dxf3d);
+  const underlaySrc = useRef<{ refs: NodeDto[]; any: boolean }>({ refs: [], any: false });
+  const [underlayRev, setUnderlayRev] = useState(0);
+  useEffect(() => {
+    const now = underlaySources(nodes);
+    if (sameSources(now.refs, underlaySrc.current.refs)) return;
+    underlaySrc.current = now;
+    setUnderlayRev((v) => v + 1);
+  }, [nodes]);
+  useEffect(() => {
+    const s = scene.current;
+    if (!s) return;
+    let stale = false;
+    const put = (batches: UnderlayBatch[]) => {
+      const old = s.getObjectByName('cad-underlays');
+      if (old) { s.remove(old); disposeUnderlays(old as THREE.Group); }
+      if (batches.length) { const g = underlayGroup(batches, theme === 'graphite'); g.visible = useDisplay.getState().dxf3d; s.add(g); }
+      invalidate.current();
+      // How many batches are drawn, for the guide's scenes to see.
+      if (host.current) host.current.dataset.underlays = String(batches.length);
+    };
+    if (!underlaySrc.current.any) { put([]); return; }
+    // A moment after the last change (an import, a layer turned off), the newest answer kept.
+    const timer = setTimeout(() => {
+      void engine.call<UnderlayBatch[]>('doc.query', { name: 'drafting.underlays3d', args: {} }).then((b) => { if (!stale) put(Array.isArray(b) ? b : []); }).catch(() => undefined);
+    }, 60);
+    return () => { stale = true; clearTimeout(timer); };
+  }, [underlayRev, theme]);
+  useEffect(() => {
+    const g = scene.current?.getObjectByName('cad-underlays');
+    if (g) { g.visible = dxf3d; invalidate.current(); }
+  }, [dxf3d]);
+
   const storeySetting = settingOf(nodes, view3dId);
   const storeyList = storeysOf({ nodes, relations: useSession.getState().relations });
   const activeId = storey?.id ?? null;

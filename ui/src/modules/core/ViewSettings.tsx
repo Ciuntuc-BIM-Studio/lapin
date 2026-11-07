@@ -150,6 +150,7 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
           </>
         )}
         {threeD && <Drafts3dField />}
+        {threeD && <Dxf3dField />}
         {threeD && <Navigation3dFields />}
         <DrillField />
         {site && <SitePlanFields view={view} />}
@@ -261,6 +262,17 @@ function Drafts3dField() {
     <>
       <dt title="The lines, polylines, rectangles, circles and arcs drafted on plans and reference planes, on their planes in 3D (View → Drafts in 3D)">Drafts in 3D</dt>
       <dd><input type="checkbox" data-testid="view-drafts3d" checked={on} onChange={(e) => setDisplay({ drafts3d: e.target.checked })} /></dd>
+    </>
+  );
+}
+
+/** An imported DXF's drawing on its view's plane in 3D (View → DXF in 3D; decision 382). */
+function Dxf3dField() {
+  const on = useDisplay((s) => s.dxf3d);
+  return (
+    <>
+      <dt title="The drawing a DXF brought into a plan, section or elevation, on that view's plane in 3D, in its layers' colours (View → DXF in 3D)">DXF in 3D</dt>
+      <dd><input type="checkbox" data-testid="view-dxf3d" checked={on} onChange={(e) => setDisplay({ dxf3d: e.target.checked })} /></dd>
     </>
   );
 }

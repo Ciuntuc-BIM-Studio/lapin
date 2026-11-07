@@ -76,9 +76,13 @@ Kopien skrives ved siden af originalen eller i en mappe, du vælger, under origi
 
 **Importér DXF…** henter en CAD-tegning ind i visningen forrest, med dens lag, skraveringer, tekster og mål. Den kommer ind som tegning, du kan fange til og redigere. Vil du bruge en DWG, så gem den først som DXF fra dit CAD-program (AutoCAD, BricsCAD eller DraftSight: **Save As → DXF**). Import af PDF er endnu ikke tilgængelig. I en plan lægger **Placeret: efter kortets koordinater** en tegning i rigtige koordinater (en matrikelplan i Stereo 70) der, hvor kortet placerer den (se [Grunden og dens data](site.md)).
 
+Tegningen ligger også i **3D-visningen**, på planet af den visning, den kom ind i: på en plan i etagens kote, på et snit eller en facade på visningens plan, i dens lags farver, dens skraveringer svage, som tynde linjer, der aldrig skjuler modellen. Et lag slået fra i **Tegn → Lag** forbliver slået fra i 3D. **Vis → DXF i 3D** (også i **Vis → Visningsindstillinger** for en 3D-visning) viser eller skjuler alle importer; én import slås til og fra med **I 3D** i egenskaberne for en hvilken som helst af dens former, en linket DXF med **3D** i **Administrer → Links**. Når du tegner i 3D i den kote, med Tegns værktøjer eller Studios Skitse, fanger du dens linjer, så du kan tegne over den i 3D som på planen. Linjer, som filen gav koter, står i rummet i de koter, som før.
+
+![En situations-DXF i 3D-visningen, i stueetagens kote](shots/dxf-3d.webp)
+
 ## Links
 
-**Tilknyt IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene.
+**Tilknyt IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene. En linket DXF ligger i 3D, som en importeret gør; dens **3D**-felt i **Administrer → Links** slår det fra.
 
 ## 3D-modeller
 

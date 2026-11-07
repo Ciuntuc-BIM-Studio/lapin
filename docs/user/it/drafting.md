@@ -79,7 +79,7 @@ Un’immagine è trasparente (la sua **Opacità**, 0,5 di default, nelle sue pro
 
 ### I disegni nella vista 3D
 
-Ciò che disegni in una pianta (linee, polilinee, rettangoli, cerchi, archi) compare anche nella vista 3D, come linee alla quota del suo piano (la quota stessa, non l’altezza di taglio); ciò che disegni su un piano di riferimento, una sezione o un prospetto sta su quel piano. Fai clic su uno in 3D per selezionarlo, poi spostalo, copialo, fanne l’offset o cancellalo. **Vista → Disegni in 3D**, anche in **Vista → Impostazioni di vista** di una vista 3D, li mostra o li nasconde tutti; è attivo finché non lo spegni. Quote, testi, etichette, retini e linee di costruzione (il ruolo draft) restano nelle loro viste, e un DXF portato su una pianta resta un disegno 2D, tranne le sue linee con quote.
+Ciò che disegni in una pianta (linee, polilinee, rettangoli, cerchi, archi) compare anche nella vista 3D, come linee alla quota del suo piano (la quota stessa, non l’altezza di taglio); ciò che disegni su un piano di riferimento, una sezione o un prospetto sta su quel piano. Fai clic su uno in 3D per selezionarlo, poi spostalo, copialo, fanne l’offset o cancellalo. **Vista → Disegni in 3D**, anche in **Vista → Impostazioni di vista** di una vista 3D, li mostra o li nasconde tutti; è attivo finché non lo spegni. Quote, testi, etichette, retini e linee di costruzione (il ruolo draft) restano nelle loro viste. Un DXF portato su una vista sta anche in 3D, sul piano di quella vista, con un interruttore suo (vedi [Importazione ed esportazione](import-export.md)).
 
 ### Ordine di disegno
 

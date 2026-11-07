@@ -83,7 +83,7 @@ O imagine e transparentă (**Opacitate**, 0,5 implicit, în proprietățile ei) 
 
 ### Desenele în vederea 3D
 
-Ce desenezi pe un plan (linii, polilinii, dreptunghiuri, cercuri, arce) apare și în vederea 3D, ca linii la cota nivelului (cota nivelului, nu înălțimea de tăiere a planului); ce desenezi pe un plan de referință, o secțiune sau o fațadă stă pe acel plan. Fă clic pe una în 3D ca s-o selectezi, apoi mut-o, copiaz-o, fă-i o paralelă sau șterge-o. **Vedere → Desene în 3D**, și în **Vedere → Setările vederii** ale unei vederi 3D, le arată sau le ascunde pe toate; e pornit până îl oprești. Cotele, textele, etichetele, hașurile și liniile ajutătoare (rolul draft) rămân pe vederile lor, iar un DXF adus pe un plan rămâne desen 2D, în afară de liniile lui cu cote.
+Ce desenezi pe un plan (linii, polilinii, dreptunghiuri, cercuri, arce) apare și în vederea 3D, ca linii la cota nivelului (cota nivelului, nu înălțimea de tăiere a planului); ce desenezi pe un plan de referință, o secțiune sau o fațadă stă pe acel plan. Fă clic pe una în 3D ca s-o selectezi, apoi mut-o, copiaz-o, fă-i o paralelă sau șterge-o. **Vedere → Desene în 3D**, și în **Vedere → Setările vederii** ale unei vederi 3D, le arată sau le ascunde pe toate; e pornit până îl oprești. Cotele, textele, etichetele, hașurile și liniile ajutătoare (rolul draft) rămân pe vederile lor. Un DXF adus pe o vedere stă și în 3D, pe planul acelei vederi, cu un comutator al lui (vezi [Import și export](import-export.md)).
 
 ### Ordinea desenării
 

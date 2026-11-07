@@ -263,12 +263,13 @@ public static class DxfImport
         }
     }
 
-    sealed class Run(ICommandContext ctx, Entity view, DxfDocument doc, DxfImportOptions o, double factor, string? linkId = null)
+    sealed class Run(ICommandContext ctx, Entity view, DxfDocument doc, DxfImportOptions o, double factor, string? linkId = null, string? importId = null)
     {
-        /// <summary>A new entity, the link's when importing as one.</summary>
+        /// <summary>A new entity, the link's when importing as one, else the import's (<see cref="Underlays3d"/>: shown in 3D by it).</summary>
         void Put(Entity e)
         {
             if (linkId != null) { var attrs = e.CloneAttrs(); attrs[Links.Key] = linkId; e = e.With(attrs: attrs); }
+            else if (importId != null) { var attrs = e.CloneAttrs(); attrs[Underlays3d.ImportKey] = importId; e = e.With(attrs: attrs); }
             ctx.Add(e);
         }
         public readonly Dictionary<string, CadLayer> NewLayers = new(StringComparer.OrdinalIgnoreCase);
@@ -334,7 +335,8 @@ public static class DxfImport
                 ["pattern"] = pattern, ["scale"] = Math.Round(scale, 6), ["angle"] = Math.Round(angle, 4),
                 ["loops"] = new JsonArray(loops.Select(l => (JsonNode)new JsonArray(l.Select(q => (JsonNode)new JsonArray(Math.Round(q.X, 9), Math.Round(q.Y, 9))).ToArray())).ToArray()),
             };
-            var attrs = new JsonObject { ["viewId"] = view.Id, ["layer"] = layer, ["hatch"] = hatch };
+            // dxf: the file's drawing, its hatches too (drawn faint in 3D on the view's plane: Underlays3d).
+            var attrs = new JsonObject { ["viewId"] = view.Id, ["layer"] = layer, ["hatch"] = hatch, ["dxf"] = true };
             if (color != null) attrs["color"] = color;
             Put(new Entity(ctx.NewId(), IfcClass.Annotation, $"Hatch {pattern}", attrs, Drafts.Predefined));
             Hatches++;
@@ -506,7 +508,9 @@ public static class DxfImport
             if (o.LinkId != null) { link = Links.Require(ctx.Model, o.LinkId); Links.RemoveElements(ctx, link.Id); }
             else link = Links.Create(ctx, "dxf", fileName, o.Path, o.Raw, view.Id);
         }
-        var run = new Run(ctx, view, doc, o, factor, link?.Id) { ZScale = factor * o.Scale };
+        // Not a link: the import is recorded, so its drawing is shown in 3D or not as one (decision 382).
+        var importId = link == null ? Underlays3d.Record(ctx, fileName, view.Id) : null;
+        var run = new Run(ctx, view, doc, o, factor, link?.Id, importId) { ZScale = factor * o.Scale };
         var scaleMm = (view.NumOrNull("scale") ?? 100) / 1000; // metres per paper mm
         var total = 0;
         foreach (var p in Walk(doc, root))
@@ -612,7 +616,7 @@ public static class DxfImport
             ["layers"] = new JsonArray(run.NewLayers.Keys.Select(x => (JsonNode)x).ToArray()),
             ["patterns"] = new JsonArray(run.NewPatterns.Select(x => (JsonNode)x.Name).ToArray()),
             ["skipped"] = new JsonObject(run.Skipped.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))),
-            ["units"] = DxfUnits.Name(factor), ["unitsGuessed"] = guessed, ["flipped"] = flip, ["linkId"] = link?.Id,
+            ["units"] = DxfUnits.Name(factor), ["unitsGuessed"] = guessed, ["flipped"] = flip, ["linkId"] = link?.Id, ["importId"] = importId,
         };
     }
 

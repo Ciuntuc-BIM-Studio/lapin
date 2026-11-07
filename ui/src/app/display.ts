@@ -4,7 +4,7 @@
  * its pen. Kept per user; the drawings themselves, sheets, PDF and DXF keep their pens, and snapping to the
  * grid stays as it is. The grid shows in the 3D view too, on the active storey (a tester's report, decision 312),
  * and so do the shapes drafted on plans, sections and reference planes, as lines on their view's plane (Drafts in
- * 3D, on by default). In 3D the wheel zooms to the point under the cursor and a drag orbits round the selection
+ * 3D, on by default), and an imported DXF's drawing on its view's plane (DXF in 3D, on by default: decision 382). In 3D the wheel zooms to the point under the cursor and a drag orbits round the selection
  * (else the point under the cursor), both on by default (report #89, viewport/navigate3d.ts). Picking can drill into
  * assemblies (a whole first, then its parts click by click; platform/assemblies.ts), off by default. SketchUp's
  * one-letter shortcuts in the 3D view (L line, R rectangle, P push/pull…; viewport/Sketch3D.tsx) are off by default too.
@@ -12,7 +12,7 @@
 
 import { create } from 'zustand';
 
-export interface Display { grid: boolean; thinLines: boolean; drafts3d: boolean; zoomToCursor: boolean; orbitSelection: boolean; drillSelect: boolean; sketchupKeys: boolean }
+export interface Display { grid: boolean; thinLines: boolean; drafts3d: boolean; dxf3d: boolean; zoomToCursor: boolean; orbitSelection: boolean; drillSelect: boolean; sketchupKeys: boolean }
 
 const KEY = 'lapin.display';
 
@@ -20,7 +20,7 @@ const KEY = 'lapin.display';
 export function readDisplay(stored: unknown): Display {
   const o = stored as Partial<Display> | null;
   const obj = !!o && typeof o === 'object';
-  return { grid: !(obj && o.grid === false), thinLines: !!(obj && o.thinLines === true), drafts3d: !(obj && o.drafts3d === false),
+  return { grid: !(obj && o.grid === false), thinLines: !!(obj && o.thinLines === true), drafts3d: !(obj && o.drafts3d === false), dxf3d: !(obj && o.dxf3d === false),
     zoomToCursor: !(obj && o.zoomToCursor === false), orbitSelection: !(obj && o.orbitSelection === false),
     drillSelect: !!(obj && o.drillSelect === true), sketchupKeys: !!(obj && o.sketchupKeys === true) };
 }
@@ -39,6 +39,8 @@ export function setDisplay(patch: Partial<Display>): void {
 export const toggleGrid = () => setDisplay({ grid: !useDisplay.getState().grid });
 export const toggleThinLines = () => setDisplay({ thinLines: !useDisplay.getState().thinLines });
 export const toggleDrafts3d = () => setDisplay({ drafts3d: !useDisplay.getState().drafts3d });
+/** An imported DXF's drawing in the 3D view (decision 382), on by default. */
+export const toggleDxf3d = () => setDisplay({ dxf3d: !useDisplay.getState().dxf3d });
 export const toggleZoomToCursor = () => setDisplay({ zoomToCursor: !useDisplay.getState().zoomToCursor });
 export const toggleOrbitSelection = () => setDisplay({ orbitSelection: !useDisplay.getState().orbitSelection });
 export const toggleDrillSelect = () => setDisplay({ drillSelect: !useDisplay.getState().drillSelect });

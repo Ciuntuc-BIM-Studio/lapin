@@ -246,6 +246,27 @@ function ViewFields({ node }: { node: NodeDto }) {
   );
 }
 
+/**
+ * The DXF import a drafted entity came in with (decision 382): its file, and whether its drawing is shown in 3D on the
+ * view's plane, the whole import at once (a link's is in Manage → Links).
+ */
+function DxfImportFields({ node }: { node: NodeDto }) {
+  const id = typeof node.props.dxfImport === 'string' ? node.props.dxfImport : null;
+  const record = useSession((s) => {
+    if (!id) return null;
+    for (const n of s.nodes.values()) if (n.type === 'IfcProject') { const all = n.props.dxfImports as Record<string, { file?: string; in3d?: boolean }> | undefined; return all?.[id] ?? null; }
+    return null;
+  });
+  if (!id || !record) return null;
+  return (
+    <dl className="fields">
+      <dt title="The DXF file this came in with">DXF import</dt><dd><span data-no-i18n>{record.file ?? ''}</span></dd>
+      <dt title="The import's whole drawing on its view's plane in the 3D view (View → DXF in 3D shows or hides every import)">In 3D</dt>
+      <dd><input type="checkbox" data-testid="dxf-import-in3d" checked={record.in3d !== false} onChange={(e) => void execute('drafting.setUnderlay3d', { id, shown: e.target.checked })} /></dd>
+    </dl>
+  );
+}
+
 function Fields({ node }: { node: NodeDto }) {
   switch (node.props.predefinedType) {
     case 'DRAFT': return <Drafted node={node} />;
@@ -257,5 +278,5 @@ function Fields({ node }: { node: NodeDto }) {
 }
 
 export function DraftSection({ node }: { node: NodeDto }) {
-  return <><Fields node={node} /><ViewFields node={node} /></>;
+  return <><Fields node={node} /><DxfImportFields node={node} /><ViewFields node={node} /></>;
 }

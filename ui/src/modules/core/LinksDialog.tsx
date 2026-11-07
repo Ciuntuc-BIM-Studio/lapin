@@ -44,7 +44,7 @@ export function LinksDialog() {
           {links.length === 0 && <p className="muted">Nothing is linked. File → Link IFC…, or Import DXF… with „As a link”, brings a file in read-only; it is listed here.</p>}
           {links.length > 0 && (
             <table className="layer-table">
-              <thead><tr><th>Name</th><th>Kind</th><th>File</th><th>Elements</th><th title="Drawn in every view">Shown</th><th title="Drawn grey, faded in 3D">Halftone</th><th /></tr></thead>
+              <thead><tr><th>Name</th><th>Kind</th><th>File</th><th>Elements</th><th title="Drawn in every view">Shown</th><th title="Drawn grey, faded in 3D">Halftone</th><th title="A linked DXF's drawing on its view's plane in the 3D view">3D</th><th /></tr></thead>
               <tbody>
                 {links.map((l) => {
                   const path = typeof l.props.path === 'string' ? l.props.path : null;
@@ -57,6 +57,7 @@ export function LinksDialog() {
                       <td className="num">{counts.get(l.id) ?? 0}</td>
                       <td><input type="checkbox" checked={l.props.visible !== false} onChange={(e) => void execute('link.update', { id: l.id, visible: e.target.checked })} /></td>
                       <td><input type="checkbox" checked={l.props.halftone === true} onChange={(e) => void execute('link.update', { id: l.id, halftone: e.target.checked })} /></td>
+                      <td>{l.props.kind === 'dxf' && <input type="checkbox" data-link="in3d" title="Its drawing on its view's plane in the 3D view" checked={l.props.in3d !== false} onChange={(e) => void execute('link.update', { id: l.id, in3d: e.target.checked })} />}</td>
                       <td className="row-tools">
                         {path && <button type="button" className="icon mini" title="Read the file again (what the link holds is replaced)" disabled={busy != null} onClick={() => void run(l.id, () => engine.call('project.reloadLink', { id: l.id }, { timeoutMs: 600_000 }).then(() => notify(`${l.name} read again.`)))}><RefreshCw size={12} /></button>}
                         <button type="button" className="icon mini" title="Convert to native: what it brought stays, editable, as the project's own" disabled={busy != null} onClick={() => void run(l.id, () => execute('link.convert', { id: l.id }))}><Wand2 size={12} /></button>

@@ -83,7 +83,7 @@ An image is see-through (its **Opacity**, 0.5 by default, in its properties) and
 
 ### Drafts in the 3D view
 
-What you draft on a plan (lines, polylines, rectangles, circles, arcs) also stands in the 3D view, as lines at its storey's level (the level itself, not the plan's cut height); what you draft on a reference plane, a section or an elevation stands on that plane. Click one in 3D to select it, then move, copy, offset or delete it. **View → Drafts in 3D**, also in **View → View settings** of a 3D view, shows or hides them all; it is on unless you turn it off. Dimensions, texts, tags, hatches and construction lines (the role draft) stay on their views, and a DXF brought onto a plan stays a 2D drawing, but for its lines with heights.
+What you draft on a plan (lines, polylines, rectangles, circles, arcs) also stands in the 3D view, as lines at its storey's level (the level itself, not the plan's cut height); what you draft on a reference plane, a section or an elevation stands on that plane. Click one in 3D to select it, then move, copy, offset or delete it. **View → Drafts in 3D**, also in **View → View settings** of a 3D view, shows or hides them all; it is on unless you turn it off. Dimensions, texts, tags, hatches and construction lines (the role draft) stay on their views. A DXF brought onto a view lies in 3D too, on that view's plane, with a switch of its own (see [Import and export](import-export.md)).
 
 ### Draw order
 

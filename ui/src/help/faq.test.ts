@@ -83,6 +83,10 @@ describe('Ask Lapin', () => {
     expect(best('basic building gate components customizable to the user')).toBe('gates');
     expect(best('how do I draw a sliding gate')).toBe('gates');
     expect(best('cum fac o poarta culisanta la gard')).toBe('gates');
+    // Report #106.
+    expect(best('PUT THE IMPORTED DXF FILE INTO PLAN AND 3D VIEWPORTS')).toBe('dxf-in-3d');
+    expect(best('nu vad dxf-ul importat in vederea 3D')).toBe('dxf-in-3d');
+    expect(best('can I trace walls over a dxf in 3d')).toBe('dxf-in-3d');
   });
 
   it('finds the most asked entries in the interface\'s other languages', () => {

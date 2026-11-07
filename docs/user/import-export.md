@@ -76,9 +76,13 @@ The copy is written next to the original, or in a folder you choose, under the o
 
 **Import DXF…** brings a CAD drawing into the view in front, with its layers, hatches, texts and dimensions. It comes in as drafting you can snap to and edit. To use a DWG, first save it as DXF from your CAD program (AutoCAD, BricsCAD or DraftSight: **Save As → DXF**). PDF import is not available yet. Into a plan, **Placed: by the map's coordinates** lays a drawing in real coordinates (a cadastral plan in Stereo 70) where the map puts it (see [Site](site.md)).
 
+The drawing also lies in the **3D view**, on the plane of the view it came into: on a plan at its storey's level, on a section or an elevation on that view's plane, in its layers' colours, its hatches faint, as thin lines that never hide the model. A layer turned off in **Draft → Layers** stays off in 3D. **View → DXF in 3D** (also in **View → View settings** of a 3D view) shows or hides every import; one import is switched by **In 3D** in the properties of any of its shapes, a linked DXF by **3D** in **Manage → Links**. Drawing in 3D on that level, with Draft's tools or Studio's Sketch, snaps to its lines, so you can trace over it in 3D as on the plan. Lines the file gave heights stand in space at those heights, as before.
+
+![A site DXF in the 3D view, on the ground floor's level](shots/dxf-3d.webp)
+
 ## Links
 
-**Link IFC…** keeps another file linked instead of importing it. It is read-only and reloaded when it changes. This works for a DXF too. **Manage → Links** shows, reloads, converts or removes the links.
+**Link IFC…** keeps another file linked instead of importing it. It is read-only and reloaded when it changes. This works for a DXF too. **Manage → Links** shows, reloads, converts or removes the links. A linked DXF lies in 3D as an imported one does; its **3D** box in **Manage → Links** turns that off.
 
 ## 3D models
 

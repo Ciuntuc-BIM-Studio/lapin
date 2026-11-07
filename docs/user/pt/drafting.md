@@ -79,7 +79,7 @@ Uma imagem é transparente (a sua **Opacidade**, 0,5 por padrão, nas suas propr
 
 ### Os desenhos na vista 3D
 
-O que você desenha numa planta (linhas, polilinhas, retângulos, círculos, arcos) aparece também na vista 3D, como linhas no nível do seu pavimento (o próprio nível, não a altura de corte); o que você desenha num plano de referência, num corte ou numa elevação fica nesse plano. Clique num deles em 3D para selecioná-lo e depois mova, copie, desloque ou apague. **Vista → Desenhos em 3D**, também em **Vista → Configurações da vista** de uma vista 3D, mostra ou oculta todos; fica ligado até você desligar. Cotas, textos, etiquetas, hachuras e linhas de construção (o papel draft) ficam nas suas vistas, e um DXF trazido para uma planta continua um desenho 2D, menos as linhas com cotas.
+O que você desenha numa planta (linhas, polilinhas, retângulos, círculos, arcos) aparece também na vista 3D, como linhas no nível do seu pavimento (o próprio nível, não a altura de corte); o que você desenha num plano de referência, num corte ou numa elevação fica nesse plano. Clique num deles em 3D para selecioná-lo e depois mova, copie, desloque ou apague. **Vista → Desenhos em 3D**, também em **Vista → Configurações da vista** de uma vista 3D, mostra ou oculta todos; fica ligado até você desligar. Cotas, textos, etiquetas, hachuras e linhas de construção (o papel draft) ficam nas suas vistas. Um DXF trazido para uma vista fica também em 3D, no plano dessa vista, com um interruptor próprio (veja [Importar e exportar](import-export.md)).
 
 ### Ordem de desenho
 

@@ -79,7 +79,7 @@ Obraz jest przezroczysty (jego **Krycie**, domyślnie 0,5, w jego właściwości
 
 ### Rysunki w widoku 3D
 
-To, co narysujesz na rzucie (linie, polilinie, prostokąty, okręgi, łuki), stoi też w widoku 3D jako linie na poziomie kondygnacji (na samym poziomie, nie na wysokości cięcia); to, co narysujesz na płaszczyźnie odniesienia, przekroju lub elewacji, stoi na tej płaszczyźnie. Kliknij jeden w 3D, aby go zaznaczyć, a potem przesuń, skopiuj, odsuń lub usuń. **Widok → Rysunki w 3D**, także w **Widok → Ustawienia widoku** widoku 3D, pokazuje lub ukrywa je wszystkie; jest włączone, dopóki go nie wyłączysz. Wymiary, teksty, etykiety, kreskowania i linie pomocnicze (rola draft) zostają w swoich widokach, a DXF wczytany na rzut pozostaje rysunkiem 2D, poza liniami z wysokościami.
+To, co narysujesz na rzucie (linie, polilinie, prostokąty, okręgi, łuki), stoi też w widoku 3D jako linie na poziomie kondygnacji (na samym poziomie, nie na wysokości cięcia); to, co narysujesz na płaszczyźnie odniesienia, przekroju lub elewacji, stoi na tej płaszczyźnie. Kliknij jeden w 3D, aby go zaznaczyć, a potem przesuń, skopiuj, odsuń lub usuń. **Widok → Rysunki w 3D**, także w **Widok → Ustawienia widoku** widoku 3D, pokazuje lub ukrywa je wszystkie; jest włączone, dopóki go nie wyłączysz. Wymiary, teksty, etykiety, kreskowania i linie pomocnicze (rola draft) zostają w swoich widokach. DXF wczytany do widoku leży też w 3D, na płaszczyźnie tego widoku, z własnym przełącznikiem (zob. [Import i eksport](import-export.md)).
 
 ### Kolejność rysowania
 

@@ -79,7 +79,7 @@ Ein Bild ist durchscheinend (seine **Deckkraft**, standardmäßig 0,5, in seinen
 
 ### Zeichnungen in der 3D-Ansicht
 
-Was Sie in einem Grundriss zeichnen (Linien, Polylinien, Rechtecke, Kreise, Bögen), steht auch in der 3D-Ansicht, als Linien auf der Höhe seines Geschosses (die Geschosshöhe selbst, nicht die Schnitthöhe); was Sie auf einer Referenzebene, in einem Schnitt oder einer Ansicht zeichnen, steht auf dieser Ebene. Klicken Sie eines in 3D an, um es auszuwählen, und verschieben, kopieren, versetzen oder löschen Sie es. **Ansicht → Zeichnungen in 3D**, auch in **Ansicht → Ansichtseinstellungen** einer 3D-Ansicht, zeigt oder verbirgt alle; es ist an, solange Sie es nicht ausschalten. Bemaßungen, Texte, Beschriftungen, Schraffuren und Hilfslinien (die Rolle draft) bleiben in ihren Ansichten, und ein DXF in einem Grundriss bleibt eine 2D-Zeichnung, außer seinen Linien mit Höhen.
+Was Sie in einem Grundriss zeichnen (Linien, Polylinien, Rechtecke, Kreise, Bögen), steht auch in der 3D-Ansicht, als Linien auf der Höhe seines Geschosses (die Geschosshöhe selbst, nicht die Schnitthöhe); was Sie auf einer Referenzebene, in einem Schnitt oder einer Ansicht zeichnen, steht auf dieser Ebene. Klicken Sie eines in 3D an, um es auszuwählen, und verschieben, kopieren, versetzen oder löschen Sie es. **Ansicht → Zeichnungen in 3D**, auch in **Ansicht → Ansichtseinstellungen** einer 3D-Ansicht, zeigt oder verbirgt alle; es ist an, solange Sie es nicht ausschalten. Bemaßungen, Texte, Beschriftungen, Schraffuren und Hilfslinien (die Rolle draft) bleiben in ihren Ansichten. Ein DXF in einer Ansicht liegt auch in 3D, auf der Ebene dieser Ansicht, mit einem eigenen Schalter (siehe [Import und Export](import-export.md)).
 
 ### Zeichenreihenfolge
 

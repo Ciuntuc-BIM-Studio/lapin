@@ -79,7 +79,7 @@ Una imagen es translúcida (su **Opacidad**, 0,5 por defecto, en sus propiedades
 
 ### Los dibujos en la vista 3D
 
-Lo que dibujas en una planta (líneas, polilíneas, rectángulos, círculos, arcos) aparece también en la vista 3D, como líneas en el nivel de su planta (el nivel mismo, no la altura de corte); lo dibujado en un plano de referencia, una sección o un alzado queda en ese plano. Haz clic en uno en 3D para seleccionarlo y luego muévelo, cópialo, desfásalo o bórralo. **Vista → Dibujos en 3D**, también en **Vista → Configuración de vista** de una vista 3D, los muestra u oculta todos; está activado mientras no lo apagues. Las cotas, textos, etiquetas, sombreados y líneas auxiliares (el rol draft) quedan en sus vistas, y un DXF traído a una planta sigue siendo un dibujo 2D, salvo sus líneas con cotas.
+Lo que dibujas en una planta (líneas, polilíneas, rectángulos, círculos, arcos) aparece también en la vista 3D, como líneas en el nivel de su planta (el nivel mismo, no la altura de corte); lo dibujado en un plano de referencia, una sección o un alzado queda en ese plano. Haz clic en uno en 3D para seleccionarlo y luego muévelo, cópialo, desfásalo o bórralo. **Vista → Dibujos en 3D**, también en **Vista → Configuración de vista** de una vista 3D, los muestra u oculta todos; está activado mientras no lo apagues. Las cotas, textos, etiquetas, sombreados y líneas auxiliares (el rol draft) quedan en sus vistas. Un DXF traído a una vista está también en 3D, sobre el plano de esa vista, con un interruptor propio (ver [Importar y exportar](import-export.md)).
 
 ### Orden de dibujo
 

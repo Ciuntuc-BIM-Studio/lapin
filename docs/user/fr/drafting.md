@@ -79,7 +79,7 @@ Une image est transparente (son **Opacité**, 0,5 par défaut, dans ses proprié
 
 ### Les dessins dans la vue 3D
 
-Ce que vous dessinez sur un plan (lignes, polylignes, rectangles, cercles, arcs) figure aussi dans la vue 3D, en lignes au niveau de son étage (le niveau lui-même, pas la hauteur de coupe) ; ce que vous dessinez sur un plan de référence, une coupe ou une élévation se tient sur ce plan. Cliquez-en un en 3D pour le sélectionner, puis déplacez-le, copiez-le, décalez-le ou supprimez-le. **Vue → Dessins en 3D**, aussi dans **Vue → Paramètres de vue** d’une vue 3D, les montre ou les cache tous ; c’est activé tant que vous ne l’éteignez pas. Cotes, textes, étiquettes, hachures et lignes de construction (le rôle draft) restent sur leurs vues, et un DXF apporté sur un plan reste un dessin 2D, sauf ses lignes avec des altitudes.
+Ce que vous dessinez sur un plan (lignes, polylignes, rectangles, cercles, arcs) figure aussi dans la vue 3D, en lignes au niveau de son étage (le niveau lui-même, pas la hauteur de coupe) ; ce que vous dessinez sur un plan de référence, une coupe ou une élévation se tient sur ce plan. Cliquez-en un en 3D pour le sélectionner, puis déplacez-le, copiez-le, décalez-le ou supprimez-le. **Vue → Dessins en 3D**, aussi dans **Vue → Paramètres de vue** d’une vue 3D, les montre ou les cache tous ; c’est activé tant que vous ne l’éteignez pas. Cotes, textes, étiquettes, hachures et lignes de construction (le rôle draft) restent sur leurs vues. Un DXF apporté sur une vue est aussi en 3D, sur le plan de cette vue, avec son propre interrupteur (voir [Import et export](import-export.md)).
 
 ### Ordre de tracé
 

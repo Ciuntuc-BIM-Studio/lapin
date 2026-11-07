@@ -11,6 +11,7 @@ import type { Vec2 } from '../../platform/module';
 import type { Vec3 } from '../camera';
 import { toPlane, type WorkFrame } from '../workPlane';
 import type { Seg2 } from './inference';
+import { underlaySegmentsInPlane } from '../underlays3d';
 
 const off = (f: WorkFrame, p: Vec3) => (p.x - f.origin.x) * f.normal.x + (p.y - f.origin.y) * f.normal.y + (p.z - f.origin.z) * f.normal.z;
 
@@ -38,7 +39,7 @@ function edgesOf(g: THREE.BufferGeometry): Float32Array {
   return e;
 }
 
-/** The edges of the bodies drawn whose bounds reach the plane, as model segments (at most `max`). */
+/** The edges of the bodies drawn whose bounds reach the plane, as model segments (at most `max`), and a DXF's lines in it shown in 3D. */
 export function sceneSegments(scene: THREE.Scene | null, f: WorkFrame, max = 6000): [Vec3, Vec3][] {
   const out: [Vec3, Vec3][] = [];
   if (!scene) return out;
@@ -59,6 +60,8 @@ export function sceneSegments(scene: THREE.Scene | null, f: WorkFrame, max = 600
       out.push([{ x: a.x, y: a.y, z: a.z }, { x: b.x, y: b.y, z: b.z }]);
     }
   });
+  // An imported DXF's lines lying in the plane (decision 382): traced over in 3D as on its plan.
+  out.push(...underlaySegmentsInPlane(scene, f));
   return out;
 }
 

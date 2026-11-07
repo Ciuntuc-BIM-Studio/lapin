@@ -79,7 +79,7 @@ Et billede er gennemsigtigt (dets **Uigennemsigtighed**, 0,5 som standard, i det
 
 ### Tegninger i 3D-visningen
 
-Det, du tegner på en plan (linjer, polylinjer, rektangler, cirkler, buer), står også i 3D-visningen som linjer i etagens kote (selve koten, ikke planens snithøjde); det, du tegner på et referenceplan, et snit eller en facade, står på det plan. Klik på en i 3D for at vælge den, og flyt, kopiér, forskyd eller slet den. **Vis → Tegninger i 3D**, også i **Vis → Visningsindstillinger** for en 3D-visning, viser eller skjuler dem alle; den er slået til, til du slår den fra. Mål, tekster, mærker, skraveringer og hjælpelinjer (rollen draft) bliver på deres visninger, og en DXF bragt ind på en plan forbliver en 2D-tegning, bortset fra dens linjer med koter.
+Det, du tegner på en plan (linjer, polylinjer, rektangler, cirkler, buer), står også i 3D-visningen som linjer i etagens kote (selve koten, ikke planens snithøjde); det, du tegner på et referenceplan, et snit eller en facade, står på det plan. Klik på en i 3D for at vælge den, og flyt, kopiér, forskyd eller slet den. **Vis → Tegninger i 3D**, også i **Vis → Visningsindstillinger** for en 3D-visning, viser eller skjuler dem alle; den er slået til, til du slår den fra. Mål, tekster, mærker, skraveringer og hjælpelinjer (rollen draft) bliver på deres visninger. En DXF bragt ind på en visning ligger også i 3D, på visningens plan, med sin egen kontakt (se [Import og eksport](import-export.md)).
 
 ### Tegnerækkefølge
 

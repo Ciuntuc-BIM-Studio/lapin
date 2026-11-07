@@ -76,9 +76,13 @@ Copia se scrie lângă original, sau într-un folder ales de tine, cu numele ori
 
 **Importă DXF…** aduce un desen CAD în vederea din față, cu layerele, hașurile, textele și cotele lui. Intră ca desen de care te poți prinde și pe care îl poți edita. Ca să folosești un DWG, salvează-l întâi ca DXF din programul tău CAD (AutoCAD, BricsCAD sau DraftSight: **Save As → DXF**). Importul de PDF nu există încă. Într-un plan, **Așezat: după coordonatele hărții** pune un desen în coordonate reale (un plan cadastral în Stereo 70) unde îl pune harta (vezi [Amplasamentul și datele lui](site.md)).
 
+Desenul stă și în **vederea 3D**, pe planul vederii în care a intrat: pe un plan la cota nivelului, pe o secțiune sau fațadă pe planul acelei vederi, în culorile layerelor lui, cu hașurile estompate, ca linii subțiri care nu ascund niciodată modelul. Un layer stins în **Desen → Layere** rămâne stins și în 3D. **Vedere → DXF în 3D** (și în **Vedere → Setările vederii** ale unei vederi 3D) arată sau ascunde toate importurile; un import anume se comută din **În 3D** în proprietățile oricărei forme a lui, un DXF legat din coloana **3D** din **Gestionare → Legături**. Desenul în 3D pe acel nivel, cu uneltele din Desen sau cu Schița din Studio, face snap pe liniile lui, așa că îl poți calchia în 3D ca pe plan. Liniile cărora fișierul le-a dat cote stau în spațiu la acele cote, ca înainte.
+
+![Un DXF de amplasament în vederea 3D, la cota parterului](shots/dxf-3d.webp)
+
 ## Legături
 
-**Leagă IFC…** ține alt fișier legat în loc să-l importe. E doar pentru citire și se reîncarcă atunci când se schimbă. Merge și pentru un DXF. **Gestionare → Legături** arată, reîncarcă, convertește sau scoate legăturile.
+**Leagă IFC…** ține alt fișier legat în loc să-l importe. E doar pentru citire și se reîncarcă atunci când se schimbă. Merge și pentru un DXF. **Gestionare → Legături** arată, reîncarcă, convertește sau scoate legăturile. Un DXF legat stă în 3D ca unul importat; bifa **3D** din **Gestionare → Legături** îl scoate de acolo.
 
 ## Modele 3D
 

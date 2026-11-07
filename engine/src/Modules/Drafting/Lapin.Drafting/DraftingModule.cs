@@ -25,6 +25,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Service<ISectionPaths>(new ShapeSectionPaths());
         Cad.DraftCommands.Register(r);
         Cad.DxfImport.Register(r);
+        Cad.Underlays3d.Register(r);
         // Pictures and PDFs to trace over (decision 371).
         Cad.ViewImages.Register(r);
         r.Service<IElementPlacement>(new Cad.AnnotationPlacement());
