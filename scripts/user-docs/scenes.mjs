@@ -5037,6 +5037,96 @@ export const scenes = [
     },
   },
   {
+    // Sketching in 3D (docs/plan-studio-sketch.md, decision 374): SketchUp's way (Line on the face under the cursor, the red axis
+    // inferred, a typed length; a rectangle typed and pulled at once) and CAD's (Sketch on face, RECTANGLE on it, Finish sketch).
+    id: 'studio-sketch-3d',
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = 'plan:' + storey;
+      const rect = (x0, y0, x1, y1) => ({ type: 'polyline', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], closed: true });
+      const draw = async (viewId, shape) => (await t.cmd('drafting.draw', { viewId, shape })).ids[0];
+      const block = (await t.cmd('studio.extrude', { profileId: await draw(plan, rect(0, 0, 3, 2)), depth: 1.2 })).id;
+      const length = (m) => page.evaluate(async (m) => (await import('/src/engine/unitsStore.ts')).formatLength(m), m);
+      const look = async (target, azimuth, pitch, distance) => {
+        await page.evaluate(async ([target, azimuth, pitch, distance]) => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target, azimuth, pitch, distance }, false), [target, azimuth, pitch, distance]);
+        await t.wait(700);
+      };
+      const middle = async () => { const b = await page.locator('[data-testid=view3d]').boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+      const solids = async () => (await t.nodes()).filter((n) => n.props.operation === 'extrude' && n.id !== block);
+      const vcb = async (text) => { await page.locator('[data-sketch3d=vcb]').fill(text); await page.locator('[data-sketch3d=vcb]').press('Enter'); await t.wait(500); };
+      await t.ui({ view: '3d', selection: null, selected: [] });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(1500);
+      // The block's north side, seen from the north (looking south).
+      await look({ x: 1.5, y: 2, z: 0.6 }, -Math.PI / 2, -0.25, 6);
+      const [x, y] = await middle();
+
+      // The direct way: Line on the face under the cursor; the first click fixes the face, the cursor then runs along red.
+      await t.tool('studio.sketch.line');
+      await page.mouse.move(x - 100, y + 30, { steps: 4 });
+      await t.wait(900);
+      t.expect(await page.locator('[data-sketch3d=overlay] .face-sketch-face').count() === 1, 'the face under the cursor lights up');
+      await page.mouse.click(x - 100, y + 30);
+      await t.wait(400);
+      await page.mouse.move(x + 60, y + 32, { steps: 8 });
+      await t.wait(400);
+      t.expect(await page.locator('.face-sketch-snap-name.red').count() === 1, 'from the first point the cursor infers the red axis');
+      await t.shot('studio-sketch-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await vcb(await length(1));
+      await page.mouse.move(x + 60, y - 60, { steps: 6 });
+      await t.wait(300);
+      await vcb(await length(0.4));
+      await t.keys('Escape');
+      await t.wait(800);
+      const open = (await t.nodes()).find((n) => n.type === 'IfcAnnotation' && n.props.shape?.type === 'polyline' && n.props.shape.closed === false);
+      t.expect(!!open, 'the line left open stays a sketch on the face');
+
+      // A rectangle typed as its size: closed, the push/pull arrow at once; 0.2 m pulled is a solid on the face.
+      await t.tool('studio.sketch.rect');
+      await page.mouse.move(x + 20, y + 20, { steps: 4 });
+      await t.wait(900);
+      await page.mouse.click(x + 20, y + 20);
+      await t.wait(300);
+      await page.mouse.move(x + 80, y - 20, { steps: 4 });
+      await vcb(`${await length(0.6)},${await length(0.3)}`);
+      t.expect(await page.locator('.axis-drag-value input').count() === 1, 'the rectangle closed, push/pull stands on it');
+      await page.locator('.axis-drag-value input').fill(await length(0.2));
+      await t.keys('Enter');
+      await t.wait(1000);
+      t.expect((await solids()).length === 1, 'the rectangle pulled out is a solid on the face');
+      await t.keys('Escape');
+      await t.wait(300);
+
+      // The CAD way: Sketch on face makes the top the work plane; RECTANGLE on it, then Finish sketch pushes it in.
+      await look({ x: 1.5, y: 1, z: 1.2 }, Math.PI / 4, -0.9, 7);
+      const [cx, cy] = await middle();
+      await t.tool('studio.sketchOnFace');
+      await page.mouse.move(cx, cy, { steps: 4 });
+      await t.wait(900);
+      await page.mouse.click(cx, cy);
+      await t.wait(800);
+      t.expect(await page.locator('[data-draft3d=sketch]').count() === 1, 'Sketch on face: the chip says the face sketched on');
+      await t.tool('studio.sketch.rect');
+      await page.mouse.move(cx - 40, cy - 20, { steps: 4 });
+      await page.mouse.click(cx - 40, cy - 20);
+      await t.wait(400);
+      await page.mouse.move(cx + 40, cy + 20, { steps: 4 });
+      await t.wait(400);
+      await t.shot('studio-sketch-plane', { of: '[data-testid=view3d]', pad: 0 });
+      await page.mouse.click(cx + 40, cy + 20);
+      await t.wait(600);
+      await t.tool('studio.finishSketch');
+      await t.wait(600);
+      t.expect(await page.locator('.axis-drag-value input').count() === 1, 'Finish sketch puts the push/pull arrow on the rectangle');
+      await page.locator('.axis-drag-value input').fill(await length(-0.1));
+      await t.keys('Enter');
+      await t.wait(1000);
+      t.expect((await t.nodes()).some((n) => n.props.operation === 'extrude' && Array.isArray(n.props.cut) && n.props.cut.includes(block)) || (await solids()).length === 2, 'pushed in, a cut into the block');
+    },
+  },
+  {
     // Tags (report #64): what a tag shows chosen in the command line's bar (here the walls' fire rating, a parameter of the
     // user's own), its elbow leader (decision 331: an oblique line to the knee at 60°, the shoulder under the text) with
     // its grips, and the tag's properties.

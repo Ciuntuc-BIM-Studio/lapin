@@ -24,6 +24,9 @@ public sealed partial class StudioModule
     /// <c>{id, point, normal, outline: [[x, y, z]…] | circle: {center, radius}, distance?}</c>: the shape on the face of
     /// element <c>id</c> picked at <c>point</c>; with a distance, extruded out of the face (positive) or cut into it
     /// (negative). Returns the plane, the sketch and the solid made.
+    /// The 3D sketch (docs/plan-studio-sketch.md, decision 374): with no shape at all, only the face's plane (made or
+    /// found), to draft on with the command line; with <c>open: true</c>, the outline is an open line on the face (a
+    /// sketch, never extruded); with <c>sketchId</c>, a closed shape already drafted on a plane is the one pushed or pulled.
     /// </summary>
     static JsonNode? OnFace(ICommandContext ctx, JsonObject a)
     {
@@ -31,28 +34,24 @@ public sealed partial class StudioModule
         var face = BrepPick.Face(solids, p, n) ?? throw new CommandException("There is no flat face there: shapes are drawn on flat faces.");
         var normal = face.Normal;
         var on = p - normal * Vec3.Dot(p - face.Outer[0], normal);
-        var view = PlaneOnFace(ctx, e, on, normal);
-        var plane = RefPlanes.Of(view);
-        Vec2 L(Vec3 q) => plane.Local(q).At;
-        Shape shape;
-        if (a["circle"] is JsonObject c)
+        Entity sketch;
+        Entity view;
+        if (a["sketchId"] is JsonValue sv && (string?)sv is { } sid)
         {
-            var centre = Features.P(c["center"]) ?? throw new CommandException("A circle needs its centre.");
-            var radius = Json.Number(c["radius"]) ?? 0;
-            if (radius < 1e-4) throw new CommandException("A circle needs a radius.");
-            shape = new Circle(L(centre), radius);
+            sketch = Drafts.Require(ctx.Model, sid);
+            if (Drafts.ShapeOf(sketch) is not (Circle or Polyline { Closed: true })) throw new CommandException("Only a closed shape is pushed or pulled: close the outline first.");
+            view = ctx.Model.Get(sketch.Str("viewId") ?? "") ?? throw new CommandException("The sketch lies on no view.");
         }
         else
         {
-            var pts = (a["outline"] as JsonArray)?.Select(Features.P).Where(x => x != null).Select(x => L(x!.Value)).ToList() ?? [];
-            if (pts.Count > 1 && (pts[0] - pts[^1]).Length < 1e-6) pts.RemoveAt(pts.Count - 1);
-            if (pts.Count < 3 || Math.Abs(Polygon2.SignedArea(pts)) < 1e-6) throw new CommandException("A shape on a face needs three corners at least, not in a line.");
-            shape = new Polyline(pts, true);
+            view = PlaneOnFace(ctx, e, on, normal);
+            if (a["outline"] is null && a["circle"] is null) return new JsonObject { ["planeId"] = view.Id, ["name"] = view.Name };
+            sketch = Drafts.Add(ctx, view.Id, null, ShapeOnPlane(view, a));
         }
-        var sketch = Drafts.Add(ctx, view.Id, null, shape);
         var result = new JsonObject { ["planeId"] = view.Id, ["sketchId"] = sketch.Id };
         var d = Json.Number(a["distance"]) ?? 0;
         if (Math.Abs(d) < 1e-6) return result;
+        if (Drafts.ShapeOf(sketch) is Polyline { Closed: false } or Line) throw new CommandException("An open line stays a sketch: only a closed shape is pushed or pulled.");
         var storey = Spatial.StoreyOf(ctx.Model, e.Id)?.Id;
         var args = new JsonObject { ["profileId"] = sketch.Id, ["depth"] = d };
         if (storey != null) args["storeyId"] = storey;
@@ -72,6 +71,36 @@ public sealed partial class StudioModule
         result["id"] = made;
         result["how"] = d > 0 ? "solid" : "cut";
         return result;
+    }
+
+    /// <summary>The shape given in the model (a circle, a closed outline, or an open line with <c>open</c>) on the plane's own (x, y).</summary>
+    static Shape ShapeOnPlane(Entity view, JsonObject a)
+    {
+        var plane = RefPlanes.Of(view);
+        Vec2 L(Vec3 q) => plane.Local(q).At;
+        Shape shape;
+        if (a["circle"] is JsonObject c)
+        {
+            var centre = Features.P(c["center"]) ?? throw new CommandException("A circle needs its centre.");
+            var radius = Json.Number(c["radius"]) ?? 0;
+            if (radius < 1e-4) throw new CommandException("A circle needs a radius.");
+            shape = new Circle(L(centre), radius);
+        }
+        else
+        {
+            var pts = (a["outline"] as JsonArray)?.Select(Features.P).Where(x => x != null).Select(x => L(x!.Value)).ToList() ?? [];
+            var open = a["open"] is JsonValue ov && ov.TryGetValue<bool>(out var o) && o;
+            if (open)
+            {
+                for (var i = pts.Count - 1; i > 0; i--) if ((pts[i] - pts[i - 1]).Length < 1e-6) pts.RemoveAt(i);
+                if (pts.Count < 2) throw new CommandException("A line on a face needs two points at least.");
+                return pts.Count == 2 ? new Line(pts[0], pts[1]) : new Polyline(pts, false);
+            }
+            if (pts.Count > 1 && (pts[0] - pts[^1]).Length < 1e-6) pts.RemoveAt(pts.Count - 1);
+            if (pts.Count < 3 || Math.Abs(Polygon2.SignedArea(pts)) < 1e-6) throw new CommandException("A shape on a face needs three corners at least, not in a line.");
+            shape = new Polyline(pts, true);
+        }
+        return shape;
     }
 
     /// <summary>

@@ -108,6 +108,23 @@ La forme est une esquisse sur un plan de référence posé sur la face. Le plan 
 
 ![Un rectangle dessiné sur le côté d’un bloc, sa taille près du curseur](shots/studio-on-face.webp)
 
+## Esquisser en 3D
+
+Le groupe **Esquisse** de l’onglet **Studio** dessine des lignes et des formes directement dans la vue 3D, de deux façons qui enregistrent la même chose : une esquisse sur le plan de référence de la face, comme ci-dessus.
+
+**Droit sur la face, comme dans SketchUp.** Sans esquisse ouverte, **Ligne** (KL), **Rectangle** (KR) et **Cercle** (KC) dessinent sur la face sous le curseur. La face s’éclaire quand vous la survolez ; dans le vide, vous dessinez au niveau de l’étage actif. Le premier clic fixe le plan.
+
+- Le curseur déduit ce sur quoi il se trouve et le dit à côté de lui : **Extrémité**, **Milieu**, **Sur l’arête**, **Intersection**, **Sur face**. Depuis le dernier point, il suit les axes du modèle qui se trouvent sur la face, tracés dans leurs couleurs (rouge x, vert y, bleu z), et va **Parallèle à l’arête** ou **Perpendiculaire à l’arête** en magenta.
+- <kbd>→</kbd> verrouille le rouge, <kbd>←</kbd> le vert, <kbd>↑</kbd> le bleu, <kbd>↓</kbd> la direction de l’arête déduite en dernier ; la même touche le relâche. Maintenez <kbd>Maj</kbd> pour garder la direction déduite à cet instant.
+- Saisissez une valeur à tout moment, sans cliquer dans une case, et appuyez sur <kbd>Entrée</kbd> : `1200` est la longueur du segment suivant dans la direction que montre la souris (`1000<30` à 30°), `1200,600` la largeur et la hauteur d’un rectangle, `300` ou `r300` le rayon d’un cercle.
+- Une ligne se poursuit point par point. De retour sur son premier point, la boucle se ferme et la flèche de pousser/tirer se dresse aussitôt dessus ; <kbd>Échap</kbd> la garde comme esquisse. <kbd>Entrée</kbd> ou <kbd>Échap</kbd> avant cela laisse la ligne ouverte, comme esquisse sur la face. <kbd>Retour arrière</kbd> reprend le dernier point. L’outil reste actif pour la forme suivante ; <kbd>Échap</kbd> sans rien de dessiné y met fin.
+
+![Une ligne dessinée sur le côté d’un bloc, l’axe rouge déduit de son dernier point](shots/studio-sketch-3d.webp)
+
+**Sur un plan de travail, comme en CAO.** **Esquisse sur face** (KF) et un clic sur une face font de cette face le plan de travail actif : elle s’éclaire et une pastille indique *Esquisse sur* la face. **Esquisse sur plan** fait de même avec le plan de référence sélectionné. Tant qu’il est actif, **Ligne**, **Rectangle**, **Cercle** et **Arc** (KA) lancent dessus les LINE, RECTANGLE, CIRCLE et ARC propres à la ligne de commande, et chaque commande de **Dessin** que vous saisissez agit dessus dans les coordonnées propres du plan, avec les accrochages aux objets, l’orthogonal et le repérage d’un plan, dont les arêtes de la face. **Terminer l’esquisse** (KE, ou <kbd>Entrée</kbd> quand aucune commande n’est en cours) soude les lignes dessinées et pose la flèche de pousser/tirer sur la dernière forme fermée dessinée ; <kbd>Échap</kbd> quitte l’esquisse et ce que vous avez dessiné reste. **Regarder le plan** (KP) tourne la vue perpendiculairement au plan.
+
+![Esquisse sur face : le dessus d’un bloc éclairé comme plan de travail, un rectangle dessiné dessus avec la ligne de commande](shots/studio-sketch-plane.webp)
+
 ## Les étapes
 
 Les propriétés d’un solide Studio listent ses étapes dans l’ordre. Chaque étape peut être désactivée, avancée ou reculée, modifiée ou retirée. Modifiez l’esquisse, et chaque étape est refaite sur le nouveau corps. Une étape qui ne retrouve plus sa face ou son arête le dit sous **Problèmes**.

@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Lapin.Drafting.Cad;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
@@ -110,5 +111,58 @@ public class StudioOnFaceTests
         pick["distance"] = -0.1;
         Assert.Equal("cut", (string)f.Run("studio.onFace", pick)!["how"]!);
         Assert.Equal(before - 0.1, Vol(f, wall), 6);
+    }
+
+    /// <summary>
+    /// The 3D sketch (decision 374): the face's plane alone for the command line, the same one the shapes then go on;
+    /// an open line kept as a sketch on it and refused a push; a closed shape drafted there pulled out by its id.
+    /// </summary>
+    [Fact]
+    public void A_sketch_on_a_face_gives_its_plane_keeps_open_lines_and_pulls_a_drafted_shape()
+    {
+        var (f, cube) = Cube();
+        var pick = new JsonObject { ["id"] = cube, ["point"] = J3(new Vec3(2, 1, 1)), ["normal"] = J3(new Vec3(1, 0, 0)) };
+        var only = f.Run("studio.onFace", (JsonObject)pick.DeepClone())!;
+        Assert.Null(only["sketchId"]);
+        var planeId = Id(only, "planeId");
+        Assert.EndsWith(", east face", (string)only["name"]!);
+        // Asked again, the same plane.
+        Assert.Equal(planeId, Id(f.Run("studio.onFace", (JsonObject)pick.DeepClone()), "planeId"));
+
+        // An open line across the face: a sketch on that plane, never pushed.
+        var line = (JsonObject)pick.DeepClone();
+        line["open"] = true;
+        line["outline"] = new JsonArray(J3(new(2, 0, 1)), J3(new(2, 2, 1)));
+        var l = f.Run("studio.onFace", line)!;
+        Assert.Equal(planeId, Id(l, "planeId"));
+        Assert.IsType<Line>(Drafts.ShapeOf(f.Model.Get(Id(l, "sketchId"))!));
+        line["distance"] = 0.2;
+        Assert.ThrowsAny<Exception>(() => f.Run("studio.onFace", line));
+
+        // A square drafted on the plane with the command line (its own x, y), then pulled 0.5 by its id: 1 × 1 × 0.5.
+        var sq = (string)f.Run("drafting.draw", new JsonObject
+        {
+            ["viewId"] = planeId,
+            ["shape"] = new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(1, 0), J(1, 1), J(0, 1)), ["closed"] = true },
+        })!["ids"]![0]!;
+        var pull = (JsonObject)pick.DeepClone();
+        pull["sketchId"] = sq;
+        pull["distance"] = 0.5;
+        var r = f.Run("studio.onFace", pull)!;
+        Assert.Equal("solid", (string)r["how"]!);
+        Assert.Equal(sq, Id(r, "sketchId"));
+        Assert.Equal(0.5, Vol(f, Id(r)), 6);
+        var b = f.Bounds(Id(r));
+        Assert.Equal(2, b.Min.X, 6); Assert.Equal(2.5, b.Max.X, 6);
+        // Pushed in instead: a cut into the cube.
+        var sq2 = (string)f.Run("drafting.draw", new JsonObject
+        {
+            ["viewId"] = planeId,
+            ["shape"] = new JsonObject { ["type"] = "circle", ["c"] = J(-0.5, -0.5), ["r"] = 0.1 },
+        })!["ids"]![0]!;
+        pull["sketchId"] = sq2;
+        pull["distance"] = -0.3;
+        Assert.Equal("cut", (string)f.Run("studio.onFace", pull)!["how"]!);
+        Assert.True(Vol(f, cube) < 8 - 1e-4);
     }
 }

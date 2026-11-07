@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import * as THREE from 'three';
 import type { Vec2 } from '../platform/module';
 import { useUi } from '../app/store';
@@ -18,9 +19,12 @@ import { useDrawing } from './drawing';
 import { useCadCanvas, snapShapes, type Aimed } from './cad/aim';
 import { CadOverlay } from './cad/canvas';
 import { CommandLine } from './cad/CommandLine';
-import { feedPoint, useCad } from './cad/session';
-import { nearestOnShape } from './cad/shapes';
-import { frameOfView, rayOnPlane, toWorld, workPlaneView } from './workPlane';
+import { cancel, feedPoint, useCad } from './cad/session';
+import { nearestOnShape, type Shape } from './cad/shapes';
+import { frameOfView, rayOnPlane, toPlane, toWorld, workPlaneView } from './workPlane';
+import { axesInPlane, infer, type Inferred } from './sketch/inference';
+import { clearWorkPlane, finishSketch, lookAtPlane, useWorkPlane } from './sketch/sketch3d';
+import { middleOf, useAxisDrag } from './axisDrag';
 
 export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THREE.Camera | null>; canvas: React.RefObject<HTMLElement | null>; scene: React.RefObject<THREE.Scene | null> }) {
   useCamera();
@@ -29,10 +33,22 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   const selection = useUi((s) => s.selection);
   const planViewId = useUi((s) => s.planViewId);
   const storeyId = useUi((s) => s.storeyId) ?? activeStorey()?.id ?? null;
-  const work = useMemo(() => workPlaneView({ selection, planViewId, storeyId }, nodes), [selection, planViewId, storeyId, nodes]);
+  const sketch = useWorkPlane((s) => s.plane);
+  const dragging = useAxisDrag((s) => !!s.spec);
+  const work = useMemo(() => workPlaneView({ selection, planViewId, storeyId, sketch: sketch?.planeId }, nodes), [selection, planViewId, storeyId, sketch, nodes]);
   const frame = useMemo(() => (work ? frameOfView(work.id, nodes) : null), [work, nodes]);
   const active = !!command && !!frame && !!work;
   const drawing = useDrawing(active ? work!.id : null);
+  // The sketch's face, lit and snapped to (its edges as the plane's own lines: the shared core of decision 374).
+  const faceLines = useMemo((): Shape[] => {
+    const o = sketch?.outline;
+    if (!o || !frame || sketch?.planeId !== work?.id) return [];
+    const pts = o.map((q) => toPlane(frame, q));
+    return pts.map((a, i) => ({ type: 'line' as const, a, b: pts[(i + 1) % pts.length] }));
+  }, [sketch, frame, work]);
+  const [inferred, setInferred] = useState<Inferred | null>(null);
+  // The plane gone (undone, another project): the sketch with it.
+  useEffect(() => { if (sketch && !nodes.has(sketch.planeId)) clearWorkPlane(); }, [sketch, nodes]);
   const [aimed, setAimed] = useState<Aimed | null>(null);
   const [scale, setScale] = useState(50);
   const [facePick, setFacePick] = useState(false);
@@ -40,7 +56,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   const scaleRef = useRef(scale);
   scaleRef.current = scale;
   const { aim, acquire } = useCadCanvas({
-    viewId: active ? work!.id : null, drawing, scale,
+    viewId: active ? work!.id : null, drawing, scale, extra: faceLines,
     pickAny: (p) => {
       const tol = 8 / scaleRef.current;
       let best: { id: string; d: number } | null = null;
@@ -52,7 +68,9 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   aimRef.current = aim;
   const facePickRef = useRef(facePick);
   facePickRef.current = facePick;
-  useEffect(() => { if (!command) { setAimed(null); setFacePick(false); } }, [command]);
+  useEffect(() => { if (!command) { setAimed(null); setFacePick(false); setInferred(null); } }, [command]);
+  const faceLinesRef = useRef(faceLines);
+  faceLinesRef.current = faceLines;
 
   const rectOf = () => canvas.current?.getBoundingClientRect() ?? null;
   const project = (p: THREE.Vector3): { x: number; y: number } | null => {
@@ -99,9 +117,21 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
       const raw = rawAt(e);
       if (!raw) return;
       const step = useCad.getState().step;
-      const a = aimRef.current(raw, step?.base ?? null, { orthoHeld: e.shiftKey });
+      const a = inferOver(aimRef.current(raw, step?.base ?? null, { orthoHeld: e.shiftKey }), raw, step?.base ?? null);
       setAimed(a);
       useCad.setState({ cursor: a.point });
+    };
+    /**
+     * Where the CAD aim found nothing (no object snap, no guide, no ortho), the 3D sketch's inference: the model's axes
+     * in the plane from the base (red, green, blue), and the edges' ways (magenta), as the direct tools infer them.
+     */
+    const inferOver = (a: Aimed, raw: Vec2, base: Vec2 | null): Aimed => {
+      if (a.kind === 'point' || a.lock) { setInferred(null); return a; }
+      const edges = faceLinesRef.current.map((l) => (l.type === 'line' ? { a: l.a, b: l.b } : null)).filter((x): x is { a: Vec2; b: Vec2 } => !!x);
+      const i = infer({ raw, base, edges, axes: axesInPlane(frame.right, frame.up), tol: 10 / scaleRef.current });
+      if (i.kind === 'On face') { setInferred(null); return a; }
+      setInferred(i);
+      return { ...a, point: i.point, kind: 'point' };
     };
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0 || !inside(e)) return;
@@ -111,7 +141,7 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
       const step = useCad.getState().step;
       const raw = rawAt(e);
       if (!step || !raw) return;
-      const a = aimRef.current(raw, step.base ?? null, { orthoHeld: e.shiftKey });
+      const a = inferOver(aimRef.current(raw, step.base ?? null, { orthoHeld: e.shiftKey }), raw, step.base ?? null);
       void feedPoint(step.want === 'pick' || step.want === 'select' ? raw : a.point);
       acquire(a.point);
     };
@@ -143,8 +173,48 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
     };
   }, [active, frame, camera, canvas, scene, acquire]);
 
+  // The sketch's work plane with no command running: Enter finishes it, Esc lets it go (the lines stay).
+  useEffect(() => {
+    if (!sketch || command || dragging) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]')) return;
+      if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); void finish(); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); clearWorkPlane(); }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  });
+  const finish = () => finishSketch(frame, sketch?.pick ? null : storeyId, () => cancel(true));
+  const lookAt = () => { if (frame) lookAtPlane(frame.normal, sketch?.outline?.length ? middleOf(sketch.outline) : frame.origin); };
+  const sketchFace = (() => {
+    const o = sketch?.planeId === work?.id ? sketch?.outline : undefined;
+    if (!o || dragging) return null;
+    const s = o.map((q) => project(new THREE.Vector3(q.x, q.y, q.z)));
+    return s.some((p) => !p) ? null : s.map((p, i) => `${i ? 'L' : 'M'}${p!.x.toFixed(1)} ${p!.y.toFixed(1)}`).join('') + 'Z';
+  })();
+  const sketchChip = sketch && !dragging ? (
+    <div className="axis-drag-chip mode-chip sketch-chip" data-draft3d="sketch">
+      <span>Sketching on</span><span data-no-i18n>{sketch.name}</span>
+      {!command && <span className="mode-hint">Draw with Line, Rectangle, Circle or Arc (or the command line); Enter finishes, Esc leaves</span>}
+      <button type="button" className="toggle" data-draft3d="finish" title="Finish sketch: the closed shape drawn gets the push/pull arrow (Enter)" onClick={() => void finish()}>Finish sketch</button>
+      <button type="button" className="toggle" data-draft3d="look" title="Look at plane: the view square to it" onClick={lookAt}>Look at plane</button>
+      <button type="button" className="mode-close" title="Leave the sketch (Esc): what is drawn stays" aria-label="Leave the sketch" onClick={() => { cancel(true); clearWorkPlane(); }}><X size={12} /></button>
+    </div>
+  ) : null;
+  const facePathEl = sketchFace ? <svg className="grip-overlay face-sketch" data-draft3d="face"><path d={sketchFace} className="face-sketch-face" /></svg> : null;
+  const inferPt = inferred && frame ? toScreen(inferred.point) : null;
+  const inferGuide = inferred?.guide && frame ? [toScreen(inferred.guide.from), toScreen(inferred.guide.to)] : null;
+  const inferEl = inferred && inferPt ? (
+    <>
+      <svg className="grip-overlay face-sketch">
+        {inferGuide && <line x1={inferGuide[0].x} y1={inferGuide[0].y} x2={inferGuide[1].x} y2={inferGuide[1].y} className={`sketch-guide ${inferred.guide!.color}`} />}
+      </svg>
+      <div className={`face-sketch-snap-name ${inferred.color ?? ''}`} style={{ left: inferPt.x + 10, top: inferPt.y + 8 }}>{inferred.kind}</div>
+    </>
+  ) : null;
+
   // The command line in 3D too, as on a plan: what is typed, the prompt.
-  if (!command) return <CommandLine />;
+  if (!command) return <>{facePathEl}{sketchChip}<CommandLine /></>;
   if (!active) {
     return (
       <>
@@ -157,15 +227,17 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   }
   return (
     <>
+      {facePathEl}
       <svg className="grip-overlay draft-3d" data-draft3d="overlay">
         <CadOverlay aimed={aimed} toScreen={toScreen} />
       </svg>
-      <div className="axis-drag-chip mode-chip" data-draft3d="plane">
+      {inferEl}
+      {sketchChip ?? <div className="axis-drag-chip mode-chip" data-draft3d="plane">
         <span>Drafting on</span><span data-no-i18n>{work!.name}</span>
         <span className="mode-hint">{work!.id.startsWith('plan:') || nodes.get(work!.id)?.props.kind === 'plan' ? 'Select a reference plane to draw on it instead' : 'Deselect it to draw on the storey\'s level'}</span>
         <button type="button" className={`toggle${facePick ? ' active' : ''}`} aria-pressed={facePick} data-draft3d="face"
           title="Click a face of the model: a reference plane is made on it, and the shapes go on it" onClick={() => setFacePick((v) => !v)}>Pick a face</button>
-      </div>
+      </div>}
       <CommandLine />
     </>
   );

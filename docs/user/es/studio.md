@@ -108,6 +108,23 @@ La forma es un croquis sobre un plano de referencia que descansa en la cara. El 
 
 ![Un rectángulo dibujado en el lateral de un bloque, con su tamaño junto al cursor](shots/studio-on-face.webp)
 
+## Bocetar en 3D
+
+El grupo **Boceto** de la ficha **Studio** dibuja líneas y formas directamente en la vista 3D, de dos maneras que guardan lo mismo: un boceto en el plano de referencia de la cara, como arriba.
+
+**Directo sobre la cara, como en SketchUp.** Sin ningún boceto abierto, **Línea** (KL), **Rectángulo** (KR) y **Círculo** (KC) dibujan sobre la cara bajo el cursor. La cara se ilumina al pasar sobre ella; en el espacio vacío dibuja en el nivel de la planta activa. El primer clic fija el plano.
+
+- El cursor infiere sobre qué está y lo dice a su lado: **Extremo**, **Punto medio**, **En arista**, **Intersección**, **En cara**. Desde el último punto sigue los ejes del modelo que están sobre la cara, dibujados en sus colores (rojo x, verde y, azul z), y va **Paralelo a la arista** o **Perpendicular a la arista** en magenta.
+- <kbd>→</kbd> fija el rojo, <kbd>←</kbd> el verde, <kbd>↑</kbd> el azul, <kbd>↓</kbd> la dirección de la arista inferida por última vez; la misma tecla lo suelta. Mantenga <kbd>Mayús</kbd> para conservar la dirección inferida ahora.
+- Escriba un valor en cualquier momento, sin hacer clic en un cuadro, y pulse <kbd>Intro</kbd>: `1200` es la longitud del siguiente segmento en la dirección que señala el ratón (`1000<30` a 30°), `1200,600` el ancho y el alto de un rectángulo, `300` o `r300` el radio de un círculo.
+- Una línea sigue punto a punto. De vuelta en su primer punto el lazo se cierra y la flecha de empujar/tirar queda enseguida sobre él; <kbd>Esc</kbd> lo mantiene como boceto. <kbd>Intro</kbd> o <kbd>Esc</kbd> antes de eso dejan la línea abierta, como un boceto en la cara. <kbd>Retroceso</kbd> quita el último punto. La herramienta sigue activa para la forma siguiente; <kbd>Esc</kbd> sin nada dibujado la termina.
+
+![Una línea dibujada en el lateral de un bloque, el eje rojo inferido desde su último punto](shots/studio-sketch-3d.webp)
+
+**En un plano de trabajo, como en CAD.** **Boceto en cara** (KF) y un clic en una cara hacen de esa cara el plano de trabajo activo: se ilumina y una etiqueta dice *Boceto en* la cara. **Boceto en plano** hace lo mismo con el plano de referencia seleccionado. Mientras está activo, **Línea**, **Rectángulo**, **Círculo** y **Arco** (KA) inician sobre él los propios LINE, RECTANGLE, CIRCLE y ARC de la línea de comandos, y cada comando de **Dibujo** que escriba funciona sobre él en las coordenadas propias del plano, con las referencias a objetos, el modo ortogonal y el rastreo de una planta, entre ellas las aristas de la cara. **Terminar boceto** (KE, o <kbd>Intro</kbd> sin ningún comando en marcha) suelda las líneas dibujadas y pone la flecha de empujar/tirar en la última forma cerrada dibujada; <kbd>Esc</kbd> sale del boceto y lo dibujado se queda. **Mirar al plano** (KP) gira la vista perpendicular al plano.
+
+![Boceto en cara: la parte superior de un bloque iluminada como plano de trabajo, un rectángulo dibujado en ella con la línea de comandos](shots/studio-sketch-plane.webp)
+
 ## Los pasos
 
 Las propiedades de un sólido Studio enumeran sus pasos en orden. Cada paso se puede desactivar, adelantar o retrasar, cambiar o quitar. Cambie el croquis, y cada paso se rehace sobre el cuerpo nuevo. Un paso que ya no encuentra su cara o su arista lo dice en **Problemas**.

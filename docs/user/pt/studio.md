@@ -108,6 +108,23 @@ A forma é um esboço sobre um plano de referência apoiado na face. O plano lev
 
 ![Um retângulo desenhado na lateral de um bloco, com o seu tamanho ao lado do cursor](shots/studio-on-face.webp)
 
+## Esboçar em 3D
+
+O grupo **Esboço** da guia **Studio** desenha linhas e formas diretamente na vista 3D, de duas maneiras que guardam a mesma coisa: um esboço no plano de referência da face, como acima.
+
+**Direto na face, como no SketchUp.** Sem nenhum esboço aberto, **Linha** (KL), **Retângulo** (KR) e **Círculo** (KC) desenham na face sob o cursor. A face se ilumina quando você passa sobre ela; no espaço vazio você desenha no nível do pavimento ativo. O primeiro clique fixa o plano.
+
+- O cursor infere em que está e diz isso ao lado dele: **Extremidade**, **Ponto médio**, **Na aresta**, **Interseção**, **Na face**. A partir do último ponto, ele segue os eixos do modelo que estão sobre a face, desenhados nas suas cores (vermelho x, verde y, azul z), e vai **Paralelo à aresta** ou **Perpendicular à aresta** em magenta.
+- <kbd>→</kbd> trava o vermelho, <kbd>←</kbd> o verde, <kbd>↑</kbd> o azul, <kbd>↓</kbd> a direção da aresta inferida por último; a mesma tecla solta. Mantenha <kbd>Shift</kbd> para guardar a direção inferida agora.
+- Digite um valor a qualquer momento, sem clicar numa caixa, e pressione <kbd>Enter</kbd>: `1200` é o comprimento do próximo segmento na direção que o mouse aponta (`1000<30` a 30°), `1200,600` a largura e a altura de um retângulo, `300` ou `r300` o raio de um círculo.
+- Uma linha segue ponto a ponto. De volta ao primeiro ponto, o laço se fecha e a seta de empurrar/puxar fica logo sobre ele; <kbd>Esc</kbd> o mantém como esboço. <kbd>Enter</kbd> ou <kbd>Esc</kbd> antes disso deixa a linha aberta, como um esboço na face. <kbd>Backspace</kbd> desfaz o último ponto. A ferramenta continua ativa para a próxima forma; <kbd>Esc</kbd> sem nada desenhado a encerra.
+
+![Uma linha desenhada na lateral de um bloco, o eixo vermelho inferido a partir do seu último ponto](shots/studio-sketch-3d.webp)
+
+**Num plano de trabalho, como no CAD.** **Esboço na face** (KF) e um clique numa face fazem dessa face o plano de trabalho ativo: ela se ilumina e uma etiqueta diz *Esboço em* essa face. **Esboço no plano** faz o mesmo com o plano de referência selecionado. Enquanto está ativo, **Linha**, **Retângulo**, **Círculo** e **Arco** (KA) iniciam nele os próprios LINE, RECTANGLE, CIRCLE e ARC da linha de comando, e todo comando de **Desenho** que você digitar funciona nele nas coordenadas do próprio plano, com os snaps de objeto, o modo ortogonal e o rastreamento de uma planta, entre eles as arestas da face. **Terminar esboço** (KE, ou <kbd>Enter</kbd> sem nenhum comando em andamento) solda as linhas desenhadas e põe a seta de empurrar/puxar na última forma fechada desenhada; <kbd>Esc</kbd> sai do esboço e o que você desenhou fica. **Olhar para o plano** (KP) gira a vista perpendicularmente ao plano.
+
+![Esboço na face: o topo de um bloco iluminado como plano de trabalho, um retângulo desenhado nele com a linha de comando](shots/studio-sketch-plane.webp)
+
 ## Os passos
 
 As propriedades de um sólido do Studio listam os seus passos em ordem. Cada passo pode ser desativado, movido para antes ou para depois, alterado ou removido. Altere o esboço, e cada passo é refeito sobre o novo corpo. Um passo que não consegue mais encontrar a sua face ou aresta avisa em **Problemas**.

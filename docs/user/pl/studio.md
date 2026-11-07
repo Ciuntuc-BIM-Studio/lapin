@@ -108,6 +108,23 @@ Kształt jest szkicem na płaszczyźnie odniesienia leżącej na ścianie. Płas
 
 ![Prostokąt narysowany na boku bloku, z wymiarem obok kursora](shots/studio-on-face.webp)
 
+## Szkicowanie w 3D
+
+Grupa **Szkic** na karcie **Studio** rysuje linie i kształty bezpośrednio w widoku 3D, na dwa sposoby, które zapisują to samo: szkic na płaszczyźnie odniesienia ściany, jak wyżej.
+
+**Prosto na ścianie, jak w SketchUp.** Bez otwartego szkicu **Linia** (KL), **Prostokąt** (KR) i **Okrąg** (KC) rysują na ścianie pod kursorem. Ściana rozświetla się, gdy nad nią przesuwasz kursor; w pustej przestrzeni rysujesz na poziomie aktywnej kondygnacji. Pierwsze kliknięcie ustala płaszczyznę.
+
+- Kursor wnioskuje, na czym stoi, i mówi to obok siebie: **Punkt końcowy**, **Punkt środkowy**, **Na krawędzi**, **Przecięcie**, **Na ścianie**. Od ostatniego punktu podąża za osiami modelu leżącymi na ścianie, narysowanymi w ich kolorach (czerwona x, zielona y, niebieska z), i biegnie **Równolegle do krawędzi** lub **Prostopadle do krawędzi** w kolorze magenta.
+- <kbd>→</kbd> blokuje czerwoną, <kbd>←</kbd> zieloną, <kbd>↑</kbd> niebieską, <kbd>↓</kbd> kierunek krawędzi wywnioskowanej jako ostatniej; ten sam klawisz zwalnia blokadę. Przytrzymaj <kbd>Shift</kbd>, aby zachować kierunek wywnioskowany teraz.
+- Wpisz wartość w dowolnej chwili, bez klikania w pole, i naciśnij <kbd>Enter</kbd>: `1200` to długość następnego odcinka w kierunku, w którym wskazuje mysz (`1000<30` pod kątem 30°), `1200,600` szerokość i wysokość prostokąta, `300` lub `r300` promień okręgu.
+- Linię prowadzi się punkt po punkcie. Po powrocie do pierwszego punktu pętla się zamyka i strzałka wypchnij/wciągnij staje na niej od razu; <kbd>Esc</kbd> zostawia ją jako szkic. <kbd>Enter</kbd> lub <kbd>Esc</kbd> wcześniej zostawia linię otwartą, jako szkic na ścianie. <kbd>Backspace</kbd> cofa ostatni punkt. Narzędzie pozostaje włączone dla następnego kształtu; <kbd>Esc</kbd> przy niczym nienarysowanym je kończy.
+
+![Linia narysowana na boku bloku, czerwona oś wywnioskowana z jej ostatniego punktu](shots/studio-sketch-3d.webp)
+
+**Na płaszczyźnie roboczej, jak w CAD.** **Szkic na ścianie** (KF) i kliknięcie ściany czynią tę ścianę aktywną płaszczyzną roboczą: rozświetla się, a znacznik mówi *Szkic na* tej ścianie. **Szkic na płaszczyźnie** robi to samo z zaznaczoną płaszczyzną odniesienia. Gdy jest aktywna, **Linia**, **Prostokąt**, **Okrąg** i **Łuk** (KA) uruchamiają na niej własne LINE, RECTANGLE, CIRCLE i ARC wiersza poleceń, a każde polecenie z grupy **Rysunek**, które wpiszesz, działa na niej we współrzędnych samej płaszczyzny, z przyciąganiem do obiektów, trybem ortogonalnym i śledzeniem jak w rzucie, w tym z krawędziami ściany. **Zakończ szkic** (KE, lub <kbd>Enter</kbd>, gdy nie działa żadne polecenie) zespawa narysowane linie i stawia strzałkę wypchnij/wciągnij na ostatnim narysowanym zamkniętym kształcie; <kbd>Esc</kbd> opuszcza szkic, a to, co narysowałeś, zostaje. **Spójrz na płaszczyznę** (KP) obraca widok prostopadle do płaszczyzny.
+
+![Szkic na ścianie: górna ściana bloku rozświetlona jako płaszczyzna robocza, prostokąt narysowany na niej wierszem poleceń](shots/studio-sketch-plane.webp)
+
 ## Kroki
 
 Właściwości bryły Studio wymieniają jej kroki po kolei. Każdy krok można wyłączyć, przesunąć wcześniej lub później, zmienić lub usunąć. Zmień szkic, a każdy krok zostanie wykonany ponownie na nowej bryle. Krok, który nie może już znaleźć swojej ściany lub krawędzi, mówi o tym w **Problemy**.

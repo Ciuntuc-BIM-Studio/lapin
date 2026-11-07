@@ -108,6 +108,23 @@ Formen er en skitse på et referenceplan, der ligger på fladen. Planet er opkal
 
 ![Et rektangel tegnet på siden af en blok, med størrelsen ved markøren](shots/studio-on-face.webp)
 
+## Skitsér i 3D
+
+Gruppen **Skitse** på fanen **Studio** tegner linjer og former direkte i 3D-visningen, på to måder, der gemmer det samme: en skitse på fladens referenceplan, som ovenfor.
+
+**Direkte på fladen, som i SketchUp.** Uden en åben skitse tegner **Linje** (KL), **Rektangel** (KR) og **Cirkel** (KC) på fladen under markøren. Fladen lyser op, når du passerer den; i tomt rum tegner du i det aktive plans niveau. Det første klik fastlægger planet.
+
+- Markøren aflæser, hvad den er på, og siger det ved siden af sig: **Endepunkt**, **Midtpunkt**, **På kant**, **Skæring**, **På flade**. Fra det sidste punkt følger den modellens akser, der ligger på fladen, tegnet i deres farver (rød x, grøn y, blå z), og går **Parallel med kanten** eller **Vinkelret på kanten** i magenta.
+- <kbd>→</kbd> låser rød, <kbd>←</kbd> grøn, <kbd>↑</kbd> blå, <kbd>↓</kbd> retningen af den kant, der sidst blev aflæst; den samme tast slipper igen. Hold <kbd>Shift</kbd> nede for at beholde den retning, der aflæses nu.
+- Skriv en værdi når som helst, uden at klikke i et felt, og tryk på <kbd>Enter</kbd>: `1200` er det næste segments længde i den retning, musen peger (`1000<30` ved 30°), `1200,600` et rektangels bredde og højde, `300` eller `r300` en cirkels radius.
+- En linje fortsættes punkt for punkt. Tilbage på det første punkt lukker løkken, og skub/træk-pilen står straks på den; <kbd>Esc</kbd> beholder den som skitse. <kbd>Enter</kbd> eller <kbd>Esc</kbd> før da lader linjen stå åben, som en skitse på fladen. <kbd>Backspace</kbd> tager det sidste punkt tilbage. Værktøjet bliver slået til til den næste form; <kbd>Esc</kbd> uden noget tegnet afslutter det.
+
+![En linje tegnet på siden af en blok, den røde akse aflæst fra dens sidste punkt](shots/studio-sketch-3d.webp)
+
+**På et arbejdsplan, som i CAD.** **Skitse på flade** (KF) og et klik på en flade gør fladen til det aktive arbejdsplan: den lyser, og en chip siger *Skitse på* fladen. **Skitse på plan** gør det samme med det referenceplan, du har valgt. Mens det er aktivt, starter **Linje**, **Rektangel**, **Cirkel** og **Bue** (KA) kommandolinjens egne LINE, RECTANGLE, CIRCLE og ARC på det, og hver **Tegn**-kommando, du skriver, virker på det i planets egne koordinater, med objektfangst, ortho og sporing som i en plan, fladens kanter iblandt. **Afslut skitse** (KE, eller <kbd>Enter</kbd>, når ingen kommando kører) svejser de tegnede linjer sammen og sætter skub/træk-pilen på den lukkede form, der blev tegnet sidst; <kbd>Esc</kbd> forlader skitsen, og det, du tegnede, bliver. **Se på planet** (KP) drejer visningen vinkelret på planet.
+
+![Skitse på flade: oversiden af en blok oplyst som arbejdsplan, et rektangel tegnet på den med kommandolinjen](shots/studio-sketch-plane.webp)
+
 ## Trinene
 
 Et Studio-legemes egenskaber viser dets trin i rækkefølge. Hvert trin kan slås fra, flyttes tidligere eller senere, ændres eller fjernes. Ændr skitsen, og hvert trin udføres igen på det nye legeme. Et trin, der ikke længere finder sin flade eller kant, siger det under **Problemer**.

@@ -108,6 +108,23 @@ The shape is a sketch on a reference plane lying on the face. The plane is named
 
 ![A rectangle drawn on the side of a block, its size beside the cursor](shots/studio-on-face.webp)
 
+## Sketching in 3D
+
+The **Sketch** group of the **Studio** tab draws lines and shapes right in the 3D view, in two ways that store the same thing: a sketch on the face's reference plane, as above.
+
+**Straight on the face, as in SketchUp.** With no sketch open, **Line** (KL), **Rectangle** (KR) and **Circle** (KC) draw on the face under the cursor. The face lights up as you pass over it; in empty space you draw on the active storey's level. The first click fixes the plane.
+
+- The cursor infers what it is on, and says so beside it: **Endpoint**, **Midpoint**, **On edge**, **Intersection**, **On face**. From the last point it follows the model's axes that lie on the face, drawn in their colours (red x, green y, blue z), and runs **Parallel to edge** or **Perpendicular to edge** in magenta.
+- <kbd>→</kbd> locks red, <kbd>←</kbd> green, <kbd>↑</kbd> blue, <kbd>↓</kbd> the way of the edge last inferred; the same key lets go. Hold <kbd>Shift</kbd> to keep the direction inferred now.
+- Type a value at any time, without clicking a box, and press <kbd>Enter</kbd>: `1200` is the next segment's length along the way the mouse points (`1000<30` at 30°), `1200,600` a rectangle's width and height, `300` or `r300` a circle's radius.
+- A line goes on point by point. Back on its first point the loop closes and the push/pull arrow stands on it at once; <kbd>Esc</kbd> keeps it a sketch. <kbd>Enter</kbd> or <kbd>Esc</kbd> before that leaves the line open, as a sketch on the face. <kbd>Backspace</kbd> takes the last point back. The tool stays on for the next shape; <kbd>Esc</kbd> with nothing drawn ends it.
+
+![A line drawn on the side of a block, the red axis inferred from its last point](shots/studio-sketch-3d.webp)
+
+**On a work plane, as in CAD.** **Sketch on face** (KF) and a click on a face make that face the active work plane: it is lit, and a chip says *Sketching on* the face. **Sketch on plane** does the same with the reference plane you selected. While it is active, **Line**, **Rectangle**, **Circle** and **Arc** (KA) start the command line's own LINE, RECTANGLE, CIRCLE and ARC on it, and every Draft command you type works on it in the plane's own coordinates, with the object snaps, ortho and tracking of a plan, the face's edges among them. **Finish sketch** (KE, or <kbd>Enter</kbd> with no command running) welds the lines drawn and puts the push/pull arrow on the closed shape drawn last; <kbd>Esc</kbd> leaves the sketch, and what you drew stays. **Look at plane** (KP) turns the view square to the plane.
+
+![Sketch on face: the top of a block lit as the work plane, a rectangle drawn on it with the command line](shots/studio-sketch-plane.webp)
+
 ## The steps
 
 The properties of a Studio solid list its steps in order. Each step can be switched off, moved earlier or later, changed or removed. Change the sketch, and each step is done again on the new body. A step that can no longer find its face or edge says so under **Problems**.

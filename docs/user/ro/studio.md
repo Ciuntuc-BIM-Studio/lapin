@@ -108,6 +108,23 @@ Forma e o schiță pe un plan de referință care stă pe față. Planul poartă
 
 ![Un dreptunghi desenat pe latura unui bloc, cu dimensiunea lângă cursor](shots/studio-on-face.webp)
 
+## Schițare în 3D
+
+Grupul **Schiță** din fila **Studio** desenează linii și forme direct în vederea 3D, în două feluri care păstrează același lucru: o schiță pe planul de referință al feței, ca mai sus.
+
+**Direct pe față, ca în SketchUp.** Fără nicio schiță deschisă, **Linie** (KL), **Dreptunghi** (KR) și **Cerc** (KC) desenează pe fața de sub cursor. Fața se luminează când treci peste ea; în spațiul gol desenezi la cota etajului activ. Primul clic fixează planul.
+
+- Cursorul deduce pe ce se află și spune asta lângă el: **Capăt**, **Mijloc**, **Pe muchie**, **Intersecție**, **Pe față**. De la ultimul punct urmărește axele modelului care stau pe față, desenate în culorile lor (roșu x, verde y, albastru z), și merge **Paralel cu muchia** sau **Perpendicular pe muchie** în magenta.
+- <kbd>→</kbd> blochează roșu, <kbd>←</kbd> verde, <kbd>↑</kbd> albastru, <kbd>↓</kbd> direcția muchiei dedusă ultima oară; aceeași tastă îl eliberează. Ține apăsat <kbd>Shift</kbd> ca să păstrezi direcția dedusă acum.
+- Scrie o valoare oricând, fără să dai clic într-o casetă, și apasă <kbd>Enter</kbd>: `1200` e lungimea segmentului următor pe direcția în care arată mouse-ul (`1000<30` la 30°), `1200,600` lățimea și înălțimea unui dreptunghi, `300` sau `r300` raza unui cerc.
+- O linie merge punct cu punct. Înapoi pe primul punct, bucla se închide și săgeata de împinge/trage stă imediat pe ea; <kbd>Esc</kbd> o păstrează schiță. <kbd>Enter</kbd> sau <kbd>Esc</kbd> înainte de asta lasă linia deschisă, ca schiță pe față. <kbd>Backspace</kbd> ia înapoi ultimul punct. Unealta rămâne pornită pentru forma următoare; <kbd>Esc</kbd> fără nimic desenat o oprește.
+
+![O linie desenată pe latura unui bloc, axa roșie dedusă din ultimul ei punct](shots/studio-sketch-3d.webp)
+
+**Pe un plan de lucru, ca în CAD.** **Schiță pe față** (KF) și un clic pe o față fac din acea față planul de lucru activ: se luminează, iar o etichetă spune *Schiță pe* fața respectivă. **Schiță pe plan** face la fel cu planul de referință selectat. Cât e activ, **Linie**, **Dreptunghi**, **Cerc** și **Arc** (KA) pornesc pe el LINE, RECTANGLE, CIRCLE și ARC ale liniei de comandă, iar orice comandă din **Desen** pe care o scrii merge pe el, în coordonatele proprii ale planului, cu prinderile la obiecte, ortogonalul și urmărirea dintr-un plan, între ele și muchiile feței. **Termină schița** (KE, sau <kbd>Enter</kbd> fără nicio comandă în curs) sudează liniile desenate și pune săgeata de împinge/trage pe ultima formă închisă desenată; <kbd>Esc</kbd> iese din schiță, iar ce ai desenat rămâne. **Privește planul** (KP) întoarce vederea drept spre plan.
+
+![Schiță pe față: fața de sus a unui bloc luminată ca plan de lucru, cu un dreptunghi desenat pe ea din linia de comandă](shots/studio-sketch-plane.webp)
+
 ## Pașii
 
 Proprietățile unui solid Studio îi arată pașii în ordine. Fiecare pas poate fi oprit, mutat mai devreme sau mai târziu, schimbat sau scos. Schimbă schița, și fiecare pas se face din nou pe corpul nou. Un pas care nu-și mai găsește fața sau muchia spune asta la **Probleme**.

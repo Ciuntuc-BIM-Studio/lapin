@@ -51,6 +51,8 @@ describe('Ask Lapin', () => {
     expect(best('cum copiez elemente pe mai multe etaje')).toBe('copy-to-storeys');
     expect(best('copiere pe mai multe niveluri deodată')).toBe('copy-to-storeys');
     expect(best('cum fac un bovindou')).toBe('bay-windows');
+    expect(best('how do I draw a line on a face in 3D like sketchup')).toBe('studio-sketch-3d');
+    expect(best('cum desenez o linie pe fata in 3D')).toBe('studio-sketch-3d');
     expect(best('parasolar cu lamele peste fereastra')).toBe('sunshades');
     expect(best('how do I orbit the 3D view')).toBe('navigate');
     expect(best('cum cobor terenul')).toBe('terrain-height');

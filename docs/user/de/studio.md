@@ -108,6 +108,23 @@ Die Form ist eine Skizze auf einer Referenzebene, die auf der Fläche liegt. Die
 
 ![Ein Rechteck auf der Seite eines Blocks gezeichnet, seine Größe neben dem Mauszeiger](shots/studio-on-face.webp)
 
+## In 3D skizzieren
+
+Die Gruppe **Skizze** der Registerkarte **Studio** zeichnet Linien und Formen direkt in der 3D-Ansicht, auf zwei Arten, die dasselbe speichern: eine Skizze auf der Referenzebene der Fläche, wie oben.
+
+**Direkt auf der Fläche, wie in SketchUp.** Ohne offene Skizze zeichnen **Linie** (KL), **Rechteck** (KR) und **Kreis** (KC) auf der Fläche unter dem Mauszeiger. Die Fläche leuchtet auf, wenn Sie darüberfahren; im leeren Raum zeichnen Sie auf der Höhe des aktiven Geschosses. Der erste Klick legt die Ebene fest.
+
+- Der Mauszeiger erkennt, worauf er steht, und sagt es neben sich: **Endpunkt**, **Mittelpunkt**, **Auf Kante**, **Schnittpunkt**, **Auf Fläche**. Vom letzten Punkt aus folgt er den Achsen des Modells, die auf der Fläche liegen, in ihren Farben gezeichnet (rot x, grün y, blau z), und läuft **Parallel zur Kante** oder **Senkrecht zur Kante** in Magenta.
+- <kbd>→</kbd> sperrt Rot, <kbd>←</kbd> Grün, <kbd>↑</kbd> Blau, <kbd>↓</kbd> die Richtung der zuletzt erkannten Kante; dieselbe Taste löst die Sperre. Halten Sie <kbd>Umschalt</kbd>, um die jetzt erkannte Richtung zu behalten.
+- Geben Sie jederzeit einen Wert ein, ohne in ein Feld zu klicken, und drücken Sie <kbd>Enter</kbd>: `1200` ist die Länge des nächsten Segments in der Richtung, in die die Maus zeigt (`1000<30` bei 30°), `1200,600` Breite und Höhe eines Rechtecks, `300` oder `r300` der Radius eines Kreises.
+- Eine Linie wird Punkt für Punkt fortgesetzt. Zurück auf dem ersten Punkt schließt sich der Zug, und der Drücken/Ziehen-Pfeil steht sofort darauf; <kbd>Esc</kbd> behält sie als Skizze. <kbd>Enter</kbd> oder <kbd>Esc</kbd> davor lässt die Linie offen, als Skizze auf der Fläche. <kbd>Rücktaste</kbd> nimmt den letzten Punkt zurück. Das Werkzeug bleibt für die nächste Form aktiv; <kbd>Esc</kbd> ohne Gezeichnetes beendet es.
+
+![Eine Linie auf der Seite eines Blocks gezeichnet, die rote Achse von ihrem letzten Punkt aus erkannt](shots/studio-sketch-3d.webp)
+
+**Auf einer Arbeitsebene, wie in CAD.** **Skizze auf Fläche** (KF) und ein Klick auf eine Fläche machen diese Fläche zur aktiven Arbeitsebene: Sie leuchtet, und ein Chip sagt *Skizze auf* der Fläche. **Skizze auf Ebene** macht dasselbe mit der ausgewählten Referenzebene. Solange sie aktiv ist, starten **Linie**, **Rechteck**, **Kreis** und **Bogen** (KA) die eigenen Befehle LINE, RECTANGLE, CIRCLE und ARC der Befehlszeile darauf, und jeder **Zeichnen**-Befehl, den Sie eingeben, arbeitet darauf in den eigenen Koordinaten der Ebene, mit den Objektfängen, Ortho und Spurverfolgung eines Grundrisses, darunter die Kanten der Fläche. **Skizze beenden** (KE, oder <kbd>Enter</kbd>, wenn kein Befehl läuft) verschweißt die gezeichneten Linien und setzt den Drücken/Ziehen-Pfeil auf die zuletzt gezeichnete geschlossene Form; <kbd>Esc</kbd> verlässt die Skizze, und das Gezeichnete bleibt. **Ebene ansehen** (KP) dreht die Ansicht rechtwinklig auf die Ebene.
+
+![Skizze auf Fläche: die Oberseite eines Blocks als Arbeitsebene beleuchtet, ein Rechteck darauf mit der Befehlszeile gezeichnet](shots/studio-sketch-plane.webp)
+
 ## Die Schritte
 
 Die Eigenschaften eines Studio-Körpers listen seine Schritte der Reihe nach. Jeder Schritt lässt sich ausschalten, früher oder später setzen, ändern oder entfernen. Ändern Sie die Skizze, wird jeder Schritt am neuen Körper neu ausgeführt. Ein Schritt, der seine Fläche oder Kante nicht mehr findet, sagt das unter **Probleme**.

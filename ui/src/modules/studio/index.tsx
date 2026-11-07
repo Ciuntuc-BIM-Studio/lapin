@@ -9,7 +9,7 @@
  */
 
 import {
-  ArrowUpDown, ArrowUpToLine, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
+  ArrowUpDown, ArrowUpToLine, Slash, Redo2, ScanEye, SquarePen, CircleCheckBig, Circle, Hexagon, RectangleHorizontal, Blocks, Box, BrickWall, CircleDot, Cone, Container, Cylinder, Eye, FlipHorizontal2, Frame, Grid3x3, Layers2, Move3d, Octagon, PackageOpen, PenTool, Pyramid,
   RefreshCcw, Rotate3d, RotateCw, Scissors, Slice, SquareMinus, SquarePlus, SquareRoundCorner, SquareSplitHorizontal, SquareSquare, SquareStack, Torus, TriangleRight, Unlink, Waypoints,
 } from 'lucide-react';
 import type { Grip, LapinModule, RefLine, ToolDef, ToolInput } from '../../platform/module';
@@ -29,6 +29,10 @@ import { cadLog, registerCommand, startCommand, type Step } from '../../viewport
 import { useCamera, type Vec3 } from '../../viewport/camera';
 import { XYZ, beginAxisDrag, middleOf } from '../../viewport/axisDrag';
 import { beginFaceSketch, frameOf, roundOnFace, snapPoints, type FaceShape } from '../../viewport/faceSketch';
+import { startDirect, type DirectTool } from '../../viewport/sketch/direct';
+import { finishSketch, lookAtPlane, setWorkPlane, useWorkPlane } from '../../viewport/sketch/sketch3d';
+import { frameOfView } from '../../viewport/workPlane';
+import { cancel as cancelCommand } from '../../viewport/cad/session';
 
 /** The thickness and height last used, the next command's defaults. */
 const last = { thickness: 0.2, height: 3 };
@@ -408,6 +412,81 @@ const onFace = (shape: FaceShape, label: string, icon: ToolDef['icon'], shortcut
   },
 });
 
+// ─── The 3D sketch (docs/plan-studio-sketch.md, decision 374) ──────────────
+
+/**
+ * Line, Rectangle, Circle: with a work plane active (Sketch on face), the command line's own command on it (the CAD
+ * way); otherwise the direct tool, SketchUp's, drawing right on the face under the cursor (in the 3D view).
+ */
+const sketchTool = (direct: DirectTool, command: string, label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
+  id: `studio.sketch.${direct}`, label, icon, shortcut,
+  run: () => {
+    if (useWorkPlane.getState().plane) { void startCommand(command); return; }
+    useUi.setState({ view: '3d', tool: null });
+    cancelCommand(true);
+    startDirect(direct);
+  },
+});
+
+/** Sketch on face: the face's plane (the same one the direct tools store on) made the active work plane, lit. */
+const sketchOnFace: ToolDef = {
+  id: 'studio.sketchOnFace', label: 'Sketch on face', icon: SquarePen, shortcut: 'KF',
+  gesture: faceGesture(),
+  complete: async (input) => {
+    const p = picked(input);
+    if (!p) return;
+    const face = await flatFace(p);
+    if (!face) return;
+    const r = await execute('studio.onFace', p) as { planeId?: string; name?: string } | null;
+    if (!r?.planeId) return;
+    useUi.setState({ tool: null });
+    setWorkPlane({ planeId: r.planeId, name: r.name ?? 'Face', pick: p, outline: face.outline });
+    notify('Sketching on the face: draw with Line, Rectangle, Circle or Arc (or the command line), then Finish sketch.');
+  },
+};
+
+/** The reference plane selected made the active work plane (a plane of its own, not a face's). */
+const sketchOnPlane: ToolDef = {
+  id: 'studio.sketchOnPlane', label: 'Sketch on plane', icon: SquareSquare,
+  run: () => {
+    const sel = useUi.getState().selection;
+    const n = sel ? useSession.getState().nodes.get(sel) : undefined;
+    if (n?.type !== 'LapinView' || n.props.kind !== 'plane') { notify('Select a reference plane first (in the 3D view or the browser), or use Sketch on face.'); return; }
+    useUi.setState({ view: '3d' });
+    setWorkPlane({ planeId: n.id, name: n.name });
+  },
+};
+
+/** The active work plane's frame, or the selected reference plane's. */
+const activePlane = () => {
+  const nodes = useSession.getState().nodes;
+  const wp = useWorkPlane.getState().plane;
+  const sel = useUi.getState().selection;
+  const id = wp?.planeId ?? (sel && nodes.get(sel)?.props.kind === 'plane' ? sel : null);
+  return id ? { frame: frameOfView(id, nodes), outline: wp?.outline } : null;
+};
+
+const finishSketchTool: ToolDef = {
+  id: 'studio.finishSketch', label: 'Finish sketch', icon: CircleCheckBig, shortcut: 'KE',
+  run: () => {
+    const wp = useWorkPlane.getState().plane;
+    if (!wp) { notify('No sketch is open: Sketch on face starts one.'); return; }
+    const frame = frameOfView(wp.planeId, useSession.getState().nodes);
+    void finishSketch(frame, wp.pick ? null : activeStorey()?.id ?? null, () => cancelCommand(true));
+  },
+};
+
+const lookAtPlaneTool: ToolDef = {
+  id: 'studio.lookAtPlane', label: 'Look at plane', icon: ScanEye, shortcut: 'KP',
+  run: () => {
+    const a = activePlane();
+    if (!a?.frame) { notify('Sketch on a face, or select a reference plane, to look at it.'); return; }
+    useUi.setState({ view: '3d' });
+    lookAtPlane(a.frame.normal, a.outline?.length ? middleOf(a.outline) : a.frame.origin);
+  },
+};
+
+
 /** Chamfer or fillet: the edge nearest the pick on the face picked (Shift: every edge round that face). */
 const roundTool = (op: 'chamfer' | 'fillet'): ToolDef => ({
   id: `studio.${op}`, label: op === 'chamfer' ? 'Chamfer edge' : 'Fillet edge', icon: op === 'chamfer' ? Octagon : SquareRoundCorner, shortcut: op === 'chamfer' ? 'CE' : 'FE',
@@ -580,6 +659,12 @@ const studio: LapinModule = {
     groups: [
       { label: 'Solids', tools: [cmd('extrude', 'Extrude', Box, 'EXTRUDE'), cmd('sweep', 'Sweep', Waypoints, 'SWEEP'), cmd('revolve', 'Revolve', RefreshCcw, 'REVOLVE'), cmd('loft', 'Loft', Layers2, 'LOFT'), { id: 'studio.editSketch', label: 'Edit sketch', icon: PenTool, run: () => void editSketch() }] },
       { label: 'Thick', tools: [cmd('ring', 'Ring', Cylinder, 'RING'), cmd('box', 'Box', Container, 'BOX'), cmd('wallStrip', 'Wall strip', BrickWall, 'TWALL')] },
+      {
+        label: 'Sketch',
+        tools: [sketchTool('line', 'LINE', 'Line', Slash, 'KL'), sketchTool('rect', 'RECTANGLE', 'Rectangle', RectangleHorizontal, 'KR'), sketchTool('circle', 'CIRCLE', 'Circle', Circle, 'KC'),
+          { id: 'studio.sketch.arc', label: 'Arc', icon: Redo2, shortcut: 'KA', run: () => { useUi.setState({ view: '3d' }); void startCommand('ARC'); } }],
+        small: [sketchOnFace, sketchOnPlane, finishSketchTool, lookAtPlaneTool],
+      },
       { label: 'On face', tools: [onFace('rect', 'Rectangle on face', RectangleHorizontal, 'FRE'), onFace('circle', 'Circle on face', Circle, 'FCI'), onFace('polygon', 'Polygon on face', Hexagon, 'FPL')] },
       { label: 'Work planes', tools: [cmd('refPlane', 'Plane from view', SquareStack, 'REFPLANE'), planeOnFace, planeBy3] },
       {

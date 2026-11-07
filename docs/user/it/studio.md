@@ -108,6 +108,23 @@ La forma è uno schizzo su un piano di riferimento che giace sulla faccia. Il pi
 
 ![Un rettangolo disegnato sul fianco di un blocco, con la sua misura accanto al cursore](shots/studio-on-face.webp)
 
+## Schizzare in 3D
+
+Il gruppo **Schizzo** della scheda **Studio** disegna linee e forme direttamente nella vista 3D, in due modi che memorizzano la stessa cosa: uno schizzo sul piano di riferimento della faccia, come sopra.
+
+**Dritto sulla faccia, come in SketchUp.** Senza uno schizzo aperto, **Linea** (KL), **Rettangolo** (KR) e **Cerchio** (KC) disegnano sulla faccia sotto il cursore. La faccia si illumina quando ci passi sopra; nello spazio vuoto disegni alla quota del piano attivo. Il primo clic fissa il piano.
+
+- Il cursore deduce su cosa si trova e lo dice accanto a sé: **Estremo**, **Punto medio**, **Sullo spigolo**, **Intersezione**, **Su faccia**. Dall’ultimo punto segue gli assi del modello che giacciono sulla faccia, disegnati nei loro colori (rosso x, verde y, blu z), e va **Parallelo allo spigolo** o **Perpendicolare allo spigolo** in magenta.
+- <kbd>→</kbd> blocca il rosso, <kbd>←</kbd> il verde, <kbd>↑</kbd> il blu, <kbd>↓</kbd> la direzione dello spigolo dedotto per ultimo; lo stesso tasto lo rilascia. Tieni premuto <kbd>Shift</kbd> per mantenere la direzione dedotta ora.
+- Digita un valore in qualsiasi momento, senza fare clic in una casella, e premi <kbd>Enter</kbd>: `1200` è la lunghezza del segmento successivo nella direzione in cui punta il mouse (`1000<30` a 30°), `1200,600` la larghezza e l’altezza di un rettangolo, `300` o `r300` il raggio di un cerchio.
+- Una linea prosegue punto per punto. Tornando sul primo punto il giro si chiude e la freccia di spingi/tira si posa subito su di esso; <kbd>Esc</kbd> lo tiene come schizzo. <kbd>Enter</kbd> o <kbd>Esc</kbd> prima di allora lasciano la linea aperta, come schizzo sulla faccia. <kbd>Backspace</kbd> riprende l’ultimo punto. Lo strumento resta attivo per la forma successiva; <kbd>Esc</kbd> senza nulla di disegnato lo termina.
+
+![Una linea disegnata sul fianco di un blocco, l’asse rosso dedotto dal suo ultimo punto](shots/studio-sketch-3d.webp)
+
+**Su un piano di lavoro, come in CAD.** **Schizzo su faccia** (KF) e un clic su una faccia fanno di quella faccia il piano di lavoro attivo: si illumina e un’etichetta dice *Schizzo su* quella faccia. **Schizzo su piano** fa lo stesso con il piano di riferimento selezionato. Finché è attivo, **Linea**, **Rettangolo**, **Cerchio** e **Arco** (KA) avviano su di esso i LINE, RECTANGLE, CIRCLE e ARC propri della riga di comando, e ogni comando di **Disegno** che digiti funziona su di esso nelle coordinate proprie del piano, con gli snap agli oggetti, l’ortogonale e il tracciamento di una pianta, compresi gli spigoli della faccia. **Termina schizzo** (KE, oppure <kbd>Enter</kbd> senza alcun comando in corso) salda le linee disegnate e mette la freccia di spingi/tira sull’ultima forma chiusa disegnata; <kbd>Esc</kbd> esce dallo schizzo e ciò che hai disegnato resta. **Guarda il piano** (KP) ruota la vista perpendicolarmente al piano.
+
+![Schizzo su faccia: il lato superiore di un blocco illuminato come piano di lavoro, un rettangolo disegnato su di esso con la riga di comando](shots/studio-sketch-plane.webp)
+
 ## I passi
 
 Le proprietà di un solido Studio elencano i suoi passi in ordine. Ogni passo può essere disattivato, spostato prima o dopo, modificato o rimosso. Cambia lo schizzo, e ogni passo viene rifatto sul nuovo corpo. Un passo che non trova più la sua faccia o il suo spigolo lo segnala in **Problemi**.

@@ -39,6 +39,8 @@ import { Grips3D } from './Grips3D';
 import { AxisDrag3D } from './AxisDrag3D';
 import { FaceSketch3D } from './FaceSketch3D';
 import { Draft3D } from './Draft3D';
+import { Sketch3D } from './Sketch3D';
+import { useDirect } from './sketch/direct';
 import { useFaceSketch } from './faceSketch';
 import { useAxisDrag } from './axisDrag';
 import { SectionBox3D } from './SectionBox3D';
@@ -575,7 +577,8 @@ export function Viewport3D() {
   qualityRef.current = quality;
   useEffect(() => { invalidate.current(); }, [quality]);
   // While a shape is drawn on a face or a distance set on the canvas, the face's name is put away: it would cover them.
-  const sketching = useFaceSketch((st) => !!st.spec), dragging = useAxisDrag((st) => !!st.spec);
+  const faceSketching = useFaceSketch((st) => !!st.spec), directSketching = useDirect((st) => !!st.tool);
+  const sketching = faceSketching || directSketching, dragging = useAxisDrag((st) => !!st.spec);
   const onCanvasEdit = sketching || dragging;
   const storey = activeStorey();
   elevationRef.current = num(storey ?? undefined, 'elevation');
@@ -1733,6 +1736,7 @@ export function Viewport3D() {
       {!walkStart && <AxisDrag3D camera={camRef} canvas={host} />}
       {!walkStart && <FaceSketch3D camera={camRef} canvas={host} />}
       {!walkStart && <Draft3D camera={camRef} canvas={host} scene={scene} />}
+      {!walkStart && <Sketch3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
       <KeyPlan mode="3d" />
     </>

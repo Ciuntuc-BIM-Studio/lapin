@@ -37,10 +37,13 @@ export function frameOfView(viewId: string, nodes: ReadonlyMap<string, NodeDto>)
 }
 
 /**
- * Which view a command in 3D draws on: the reference plane selected, else the active storey's plan (its own plan
+ * Which view a command in 3D draws on: the sketch's active work plane, else the reference plane selected, else the active storey's plan (its own plan
  * view when that one is open, as the plan draws on it, else the storey's).
  */
-export function workPlaneView(o: { selection: string | null; planViewId: string | null; storeyId: string | null }, nodes: ReadonlyMap<string, NodeDto>): { id: string; name: string } | null {
+export function workPlaneView(o: { selection: string | null; planViewId: string | null; storeyId: string | null; sketch?: string | null }, nodes: ReadonlyMap<string, NodeDto>): { id: string; name: string } | null {
+  // The active work plane of a sketch (Studio's Sketch on face: decision 374) first, whatever is selected meanwhile.
+  const active = o.sketch ? nodes.get(o.sketch) : undefined;
+  if (active?.type === 'LapinView' && active.props.kind === 'plane') return { id: active.id, name: active.name };
   const sel = o.selection ? nodes.get(o.selection) : undefined;
   if (sel?.type === 'LapinView' && sel.props.kind === 'plane') return { id: sel.id, name: sel.name };
   if (!o.storeyId) return null;

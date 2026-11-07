@@ -1269,6 +1269,17 @@ button.mode-chip:hover { color: var(--accent); }
 .face-sketch .face-sketch-cursor { fill: var(--accent, #b5532d); }
 .face-sketch .face-sketch-snap { fill: none; stroke: #2f9e6a; stroke-width: 2; }
 .face-sketch-snap-name { position: absolute; z-index: 7; pointer-events: none; font-size: 11px; padding: 1px 5px; border-radius: 4px; background: var(--hud); color: var(--text); border: 1px solid #2f9e6a; white-space: nowrap; }
+/* The 3D sketch (decision 374): open lines, the inference guides in the axes' colours, the endpoint marks. */
+.face-sketch .face-sketch-line { fill: none; stroke: #2f9e6a; stroke-width: 2; }
+.face-sketch .sketch-guide { stroke-width: 1.5; stroke-dasharray: 6 4; fill: none; }
+.face-sketch .sketch-guide.red { stroke: #d33a2c; }
+.face-sketch .sketch-guide.green { stroke: #2b9a3b; }
+.face-sketch .sketch-guide.blue { stroke: #2f62d8; }
+.face-sketch .sketch-guide.magenta { stroke: #c23cc2; }
+.face-sketch .sketch-end { fill: #2f9e6a; }
+.face-sketch .sketch-mid { fill: #19a4c9; }
+.face-sketch .sketch-edge { fill: #d33a2c; }
+.face-sketch-snap-name.red { border-color: #d33a2c; } .face-sketch-snap-name.green { border-color: #2b9a3b; } .face-sketch-snap-name.blue { border-color: #2f62d8; } .face-sketch-snap-name.magenta { border-color: #c23cc2; }
 .axis-drag-options { display: inline-flex; gap: 4px; }
 
 /* Quantities → Schedules… (decision 287): the kinds of schedule as buttons, the project's schedules as links. */
