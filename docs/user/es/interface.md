@@ -91,6 +91,10 @@ Haga clic en un icono del carril de un panel plegado para abrir el panel sobre l
 
 ![Un explorador plegado abierto sobre la vista desde su carril](shots/browser-overlay.webp)
 
+## Claro y oscuro
+
+La luna en el extremo derecho de la cinta vuelve oscura la interfaz (grafito); el sol la vuelve clara otra vez (papel). En el tema oscuro las plantas, secciones y alzados quedan sobre el fondo oscuro, con sus plumas negras en tinta clara; las láminas siguen siendo papel. Los dibujos pequeños de los configuradores (la planta, la sección y el alzado de una puerta o ventana, de una cubierta, un balcón, un ascensor, una nave, una escalera…) y las vistas previas de etiquetas, cajetines y materiales se dibujan sobre una tarjeta de papel clara en ambos temas, para que sus líneas, textos y cotas se lean como en un plano impreso.
+
 ## Métodos abreviados de teclado
 
 **Vista → Métodos abreviados de teclado…** (<kbd>KS</kbd>) enumera todos los comandos a los que llega el teclado, por ficha. Cada fila muestra los métodos abreviados del comando.

@@ -19,6 +19,19 @@
   --trace-snap: #4cc27e; --trace-locked: #79aef0; --trace-tracking: var(--accent); --trace-free: #b3ab9c;
   color-scheme: dark;
 }
+/*
+ * Previews are drawings on paper (report #110, decision 387): a configurator's plan, section, elevation or profile, a tag's
+ * or a title block's preview, in both themes on a light card with the paper theme's ink and rules, as the engine draws them
+ * (its strokes and the parts' colours stay legible); the theme's own tokens are put back to paper inside, so a preview drawn
+ * with var(--ink) and one drawn in fixed dark pens read the same. Small swatches in lists follow the theme's ink.
+ */
+.paper-card,
+.joinery-preview svg, .stair-preview svg, .elevator-plan, .elevator-section, .type-preview, .furniture-preview,
+.tb-preview, .material-preview, .buildup-preview-svg, .corridor-plot, .wall-profile-svg, .profile-preview, .skirting-preview, .grid-preview {
+  --bg: #f6f3ec; --panel: #fdfbf7; --raised: #ffffff; --wash: #efeae0; --rule: #e2dccf; --rule-strong: #d6cebf;
+  --ink: #1e2a3a; --ink-muted: #6b6357; --accent-wash: #f1e3d9; --paper: #fdfbf7; --line: #d8d2c6;
+  background-color: var(--paper); color: var(--ink); color-scheme: light;
+}
 /* An edition under its own brand (products/<id>.json "brand"): its square mark before its name. */
 .brand-lockup { display: inline-flex; align-items: center; gap: 7px; }
 .brand-mark { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; background: var(--accent); color: var(--accent-ink); font-weight: 900; font-size: 13px; letter-spacing: 0; }

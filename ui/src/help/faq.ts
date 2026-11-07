@@ -586,6 +586,25 @@ export const FAQ: Entry[] = [
     action: { label: 'Export JG Structures (JSON)…', labelRo: 'Exportă JG Structures (JSON)…', run: { kind: 'dialog', id: 'exportJg' } },
     source: 'faq',
   },
+  {
+    id: 'dark-theme',
+    q: ['How do I switch to the dark theme?', 'The lines are invisible in the dark theme', 'Can I use a dark interface?'],
+    qRo: ['Cum trec la tema întunecată?', 'Liniile nu se văd în tema întunecată', 'Pot folosi o interfață întunecată?'],
+    keywords: ['dark', 'theme', 'night', 'graphite', 'invisible', 'contrast', 'tema', 'intunecata', 'intunecat', 'noapte', 'grafit', 'invizibile', 'oscuro', 'sombre', 'scuro', 'dunkel', 'ciemny', 'mork', 'escuro', '深色'],
+    a: 'The moon at the right of the tab row turns the interface dark (graphite); the sun turns it light again (paper). In the dark theme plans, sections and elevations lie on the dark background, their black pens in light ink; sheets stay paper. The configurators\' small plans, sections and elevations and the previews of tags, title blocks and materials are drawn on a light paper card in both themes, so their lines, texts and dimensions always read.',
+    aRo: 'Luna din dreapta rândului de file face interfața întunecată (grafit); soarele o face din nou luminoasă (hârtie). În tema întunecată planurile, secțiunile și fațadele stau pe fundalul întunecat, cu penițele negre în cerneală deschisă; planșele rămân hârtie. Planurile, secțiunile și fațadele mici din configuratoare și previzualizările etichetelor, cartușelor și materialelor se desenează pe un card de hârtie deschis în ambele teme, deci liniile, textele și cotele lor se citesc mereu.',
+    source: 'report #110',
+  },
+  {
+    id: 'style-select',
+    q: ['Apply a style does not change when I select a style', 'Which style does this door or window have?', 'The style I applied to a window is not shown'],
+    qRo: ['Aplică un stil nu se schimbă când aleg un stil', 'Ce stil are această ușă sau fereastră?', 'Stilul aplicat ferestrei nu se vede'],
+    keywords: ['style', 'styles', 'apply', 'modified', 'georgian', 'baroque', 'stil', 'stilul', 'aplica', 'aplicat', 'modificat'],
+    a: 'In Doors and windows, Style shows the style the type was given (Apply a style… only while it has none). Once you change a field the style set, it reads "<Style> (modified)"; picking the style again applies it again. Bay style does the same for bay, bow and box windows.',
+    aRo: 'În Uși și ferestre, Stil arată stilul pe care l-a primit tipul (Aplică un stil… doar cât nu are niciunul). După ce schimbi un câmp pus de stil, scrie „<Stil> (modificat)”; alegerea stilului din nou îl aplică din nou. Stilul de bovindou face la fel pentru bovindouri, ferestre în arc și ferestre-cutie.',
+    action: { label: 'Doors and windows…', labelRo: 'Uși și ferestre…', run: { kind: 'tool', id: 'architecture.joineryTypes' } },
+    source: 'report #111',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

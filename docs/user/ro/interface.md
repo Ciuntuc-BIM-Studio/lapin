@@ -91,6 +91,10 @@ Apasă o pictogramă de pe bara unui panou pliat ca să-l deschizi peste vedere 
 
 ![Un browser pliat, deschis peste vedere de pe bara lui](shots/browser-overlay.webp)
 
+## Luminos și întunecat
+
+Luna din capătul din dreapta al panglicii face interfața întunecată (grafit); soarele o face din nou luminoasă (hârtie). În tema întunecată planurile, secțiunile și fațadele stau pe fundalul întunecat, cu penițele negre în cerneală deschisă; planșele rămân hârtie. Desenele mici ale configuratoarelor (planul, secțiunea și fațada unei uși sau ferestre, ale unui acoperiș, balcon, lift, hale, scări…) și previzualizările etichetelor, cartușelor și materialelor se desenează pe un card de hârtie deschis în ambele teme, ca liniile, textele și cotele să se citească la fel ca pe un desen tipărit.
+
 ## Scurtăturile de tastatură
 
 **Vedere → Scurtături de tastatură…** (<kbd>KS</kbd>) arată fiecare comandă la care ajunge tastatura, pe file. Fiecare rând arată scurtăturile comenzii.

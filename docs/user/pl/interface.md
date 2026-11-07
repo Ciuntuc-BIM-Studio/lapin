@@ -91,6 +91,10 @@ Kliknij ikonę na pasku zwiniętego panelu, aby otworzyć panel nad widokiem bez
 
 ![Zwinięta przeglądarka otwarta nad widokiem z jej paska](shots/browser-overlay.webp)
 
+## Jasny i ciemny
+
+Księżyc na prawym końcu wstążki przełącza interfejs na ciemny (grafit); słońce z powrotem na jasny (papier). W ciemnym motywie rzuty, przekroje i elewacje leżą na ciemnym tle, a ich czarne pióra rysują jasnym tuszem; arkusze pozostają papierem. Małe rysunki konfiguratorów (rzut, przekrój i elewacja drzwi lub okna, dachu, balkonu, windy, hali, schodów…) oraz podglądy etykiet, tabliczek rysunkowych i materiałów są rysowane na jasnej karcie papieru w obu motywach, aby ich linie, teksty i wymiary czytały się jak na wydrukowanym rysunku.
+
 ## Skróty klawiszowe
 
 **Widok → Skróty klawiszowe…** (<kbd>KS</kbd>) wyświetla, według kart, każde polecenie dostępne z klawiatury. Każdy wiersz pokazuje skróty polecenia.

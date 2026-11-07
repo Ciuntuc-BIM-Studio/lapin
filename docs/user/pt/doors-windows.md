@@ -96,7 +96,7 @@ Cada uma se posiciona pelas faces reais da parede onde a janela está, a partir 
 
 Na fachada, além da moldura, uma janela pode ter uma **Fecho de arco**, um **Coroamento sobre a abertura** (uma **Cornija**, um **Frontão**, um **Frontão curvo** ou uma **Pingadeira** que segue um topo em arco) e um **Painel sob o peitoril** com os seus consoles.
 
-**Aplicar um estilo…** define a forma, as barras de vidro e os ornamentos de uma vez: Moderno, Clássico, Georgiano, Vitoriano, Românico, Barroco, Gótico, Tudor, Prairie, Tradicional ou uma janela redonda. Tudo o que ele define continua editável.
+**Aplicar um estilo…** define a forma, as barras de vidro e os ornamentos de uma vez: Moderno, Clássico, Georgiano, Vitoriano, Românico, Barroco, Gótico, Tudor, Prairie, Tradicional ou uma janela redonda. Tudo o que ele define continua editável. A lista mostra depois o estilo que o tipo tem; assim que muda algo que o estilo definiu, indica *Georgiano (modificado)*, e escolher o estilo de novo aplica-o de novo.
 
 ![Uma janela barroca: um arco pleno com leque de raios, uma pedra de fecho e um frontão segmentado](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ As colunas da grelha são as suas faces. Numa sacada e numa caixa a primeira e a
 - **Base**: nenhuma (suspensa na parede), **paredes até ao chão**, **uma laje em consola** ou **uma laje sobre consolas**, com espessura, avanço e material;
 - **Head**: um telhado **de quatro águas**, **de uma água** ou **plano**, ou uma **laje**, a espessura no beirado, o avanço, a inclinação e o material, e um **rufo contra a parede**.
 
-Caixilhos, folhas, vidros e puxadores são os do tipo, por isso os seus materiais e puxadores valem para todas as faces. **Bay style** define tudo de uma vez: sacada a 45° ou pouco funda a 30°, sacada assente no chão, janela em arco de cinco ou quatro painéis, caixa com lados envidraçados ou cheios, sacada sobre consolas. **Save as bay style…** guarda a configurada como estilo do projeto, junto aos do Lapin; renomeia-se ou elimina-se na lista sob os campos.
+Caixilhos, folhas, vidros e puxadores são os do tipo, por isso os seus materiais e puxadores valem para todas as faces. **Bay style** define tudo de uma vez: sacada a 45° ou pouco funda a 30°, sacada assente no chão, janela em arco de cinco ou quatro painéis, caixa com lados envidraçados ou cheios, sacada sobre consolas. Como em **Aplicar um estilo…**, a lista mostra o estilo de sacada que a janela tem, com *(modificado)* assim que muda o que ele definiu. **Save as bay style…** guarda a configurada como estilo do projeto, junto aos do Lapin; renomeia-se ou elimina-se na lista sob os campos.
 
 Em planta as faces são cortadas, o assento, o peitoril e a base desenhados sob o corte e o telhado a tracejado por cima; alçados, cortes e 3D mostram o corpo todo. O mapa de janelas tem uma ficha para o tipo, as faces desdobradas, com uma linha **Projecting** (tipo, saliência, faces); a sua área é a das faces envidraçadas e os detalhes medem o telhado, o assento e a base. Em IFC é um único IfcWindow de partição definida pelo utilizador (*Bay 45°, projection 600, 3 faces, 4 panels*) cujo corpo é toda a sacada, os painéis face a face; o Lapin lê a sacada de volta.
 

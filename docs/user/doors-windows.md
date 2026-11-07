@@ -96,7 +96,7 @@ Each one sits by the wall's real faces where the window is, from the wall's laye
 
 On the facade, besides the surround, a window can have a **Keystone**, a **Crown over the opening** (a **Cornice**, a **Pediment**, a **Segmental pediment**, or a **Hood mould** that follows an arched head) and an **Apron under the sill** with its consoles.
 
-**Apply a style…** sets the shape, the glazing bars and the ornaments at once: Modern, Classical, Georgian, Victorian, Romanesque, Baroque, Gothic, Tudor, Prairie, Traditional, or a round window. Everything it sets stays editable.
+**Apply a style…** sets the shape, the glazing bars and the ornaments at once: Modern, Classical, Georgian, Victorian, Romanesque, Baroque, Gothic, Tudor, Prairie, Traditional, or a round window. Everything it sets stays editable. The select then shows the style the type has; once you change something the style set it reads *Georgian (modified)*, and picking the style again applies it again.
 
 ![A baroque window: a round arch with a sunburst, a keystone and a segmental pediment](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ The grid's columns are its faces. A bay's and a box's first and last columns are
 - **Base**: none (hung on the wall), **walls down to the floor**, **a projecting slab**, or **a slab on corbels**, with its thickness, how far it runs past the faces and its material;
 - **Head**: a **hipped**, **lean-to** or **flat roof**, or a **slab**, its thickness at the eaves, its overhang, its pitch and material, and a **flashing against the wall**.
 
-The frames, sashes, glass and handles are the type's, so its materials and handles apply to every face. **Bay style** sets everything at once: a 45° or shallow 30° bay, a canted bay on the floor, a bow of five or four panels, a box with glazed or solid sides, an oriel on corbels. **Save as bay style…** keeps the one you configured as a style of the project, offered next to Lapin's; rename or delete it in the list under the fields.
+The frames, sashes, glass and handles are the type's, so its materials and handles apply to every face. **Bay style** sets everything at once: a 45° or shallow 30° bay, a canted bay on the floor, a bow of five or four panels, a box with glazed or solid sides, an oriel on corbels. Like **Apply a style…**, the select shows the bay style the window has, *(modified)* once you change what it set. **Save as bay style…** keeps the one you configured as a style of the project, offered next to Lapin's; rename or delete it in the list under the fields.
 
 In a plan the faces are cut, the seat, sill and base are drawn below the cut and the roof dashed over them; elevations, sections and 3D show the whole body. The windows schedule has one card for the type, its faces unfolded, with a **Projecting** row (kind, projection, faces); its area is the glazed faces' and its details measure the roof, the seat and the base. In IFC it is one IfcWindow of a user-defined partitioning (*Bay 45°, projection 600, 3 faces, 4 panels*) whose body is the whole bay, its panels listed face by face; Lapin reads the bay back from it.
 

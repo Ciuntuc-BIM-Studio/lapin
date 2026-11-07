@@ -124,6 +124,13 @@ describe('Ask Lapin', () => {
     expect(best('如何打印图纸')).toBe('sheets-pdf');
   });
 
+  it('answers the testers\' reports #110 and #111', () => {
+    expect(best('the lines are invisible in the dark theme')).toBe('dark-theme');
+    expect(best('cum trec la tema intunecata')).toBe('dark-theme');
+    expect(best('Apply a style not changing when I select a style')).toBe('style-select');
+    expect(best('ce stil are fereastra')).toBe('style-select');
+  });
+
   it('says nothing to what it does not know', () => {
     expect(ask('weather tomorrow in Paris')).toEqual([]);
     expect(ask('can I render photorealistic images with ray tracing?')).toEqual([]);

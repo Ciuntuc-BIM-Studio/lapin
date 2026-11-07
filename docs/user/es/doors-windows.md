@@ -96,7 +96,7 @@ Cada una se sitúa según las caras reales del muro donde está la ventana, a pa
 
 En la fachada, además del recercado, una ventana puede tener **Clave**, **Remate sobre el hueco** (**Cornisa**, **Frontón**, **Frontón curvo** o un **Guardapolvo** que sigue un remate en arco) y un **Antepecho bajo el vierteaguas** con sus ménsulas.
 
-**Aplicar un estilo…** pone a la vez la forma, los junquillos y los ornamentos: Moderno, Clásico, Georgiano, Victoriano, Románico, Barroco, Gótico, Tudor, Prairie, Tradicional o una ventana redonda. Todo lo que pone sigue editable.
+**Aplicar un estilo…** pone a la vez la forma, los junquillos y los ornamentos: Moderno, Clásico, Georgiano, Victoriano, Románico, Barroco, Gótico, Tudor, Prairie, Tradicional o una ventana redonda. Todo lo que pone sigue editable. La lista muestra después el estilo que tiene el tipo; en cuanto cambias algo que puso el estilo, dice *Georgiano (modificado)*, y elegir el estilo otra vez lo vuelve a aplicar.
 
 ![Una ventana barroca: arco de medio punto con abanico, clave y frontón curvo](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ Las columnas de la cuadrícula son sus caras. En un mirador y en una caja, la pr
 - **Base**: ninguna (colgado del muro), **muros hasta el suelo**, **una losa en voladizo** o **una losa sobre ménsulas**, con su espesor, cuánto pasa de las caras y su material;
 - **Head**: una cubierta **a cuatro aguas**, **a un agua** o **plana**, o una **losa**, su espesor en el alero, su vuelo, su pendiente y material, y un **babero contra el muro**.
 
-Los marcos, hojas, vidrios y manillas son los del tipo, así que sus materiales y manillas valen para todas las caras. **Bay style** lo fija todo a la vez: mirador a 45° o poco profundo a 30°, mirador apoyado en el suelo, ventana curva de cinco o cuatro paneles, caja con lados acristalados o macizos, mirador sobre ménsulas. **Save as bay style…** guarda el configurado como estilo del proyecto, junto a los de Lapin; se renombra o elimina en la lista bajo los campos.
+Los marcos, hojas, vidrios y manillas son los del tipo, así que sus materiales y manillas valen para todas las caras. **Bay style** lo fija todo a la vez: mirador a 45° o poco profundo a 30°, mirador apoyado en el suelo, ventana curva de cinco o cuatro paneles, caja con lados acristalados o macizos, mirador sobre ménsulas. Como en **Aplicar un estilo…**, la lista muestra el estilo de mirador que tiene la ventana, con *(modificado)* en cuanto cambias lo que puso. **Save as bay style…** guarda el configurado como estilo del proyecto, junto a los de Lapin; se renombra o elimina en la lista bajo los campos.
 
 En planta las caras se cortan, el asiento, el vierteaguas y la base se dibujan bajo el corte y la cubierta a trazos encima; alzados, secciones y 3D muestran todo el cuerpo. La tabla de ventanas tiene una ficha para el tipo, con sus caras desplegadas y una fila **Projecting** (tipo, vuelo, caras); su área es la de las caras acristaladas y sus detalles miden la cubierta, el asiento y la base. En IFC es un único IfcWindow de particionado definido por el usuario (*Bay 45°, projection 600, 3 faces, 4 panels*) cuyo cuerpo es todo el mirador, con sus paneles cara a cara; Lapin lee el mirador de vuelta.
 

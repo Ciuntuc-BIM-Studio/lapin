@@ -91,6 +91,10 @@ Cliquez une icône sur la barre d’un panneau replié pour ouvrir le panneau su
 
 ![Une arborescence repliée ouverte sur la vue depuis sa barre](shots/browser-overlay.webp)
 
+## Clair et sombre
+
+La lune au bout droit du ruban rend l’interface sombre (graphite) ; le soleil la rend de nouveau claire (papier). Dans le thème sombre, les plans, coupes et élévations reposent sur le fond sombre, leurs plumes noires en encre claire ; les feuilles restent du papier. Les petits dessins des configurateurs (le plan, la coupe et l’élévation d’une porte ou d’une fenêtre, d’un toit, d’un balcon, d’un ascenseur, d’une halle, d’un escalier…) et les aperçus des étiquettes, des cartouches et des matériaux sont dessinés sur une carte de papier claire dans les deux thèmes, pour que leurs lignes, textes et cotes se lisent comme sur un dessin imprimé.
+
 ## Raccourcis clavier
 
 **Vue → Raccourcis clavier…** (<kbd>KS</kbd>) liste, par onglet, toutes les commandes accessibles au clavier. Chaque ligne affiche les raccourcis de la commande.

@@ -96,7 +96,7 @@ Chacun se place d’après les faces réelles du mur à l’endroit de la fenêt
 
 Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé de voûte**, un **Couronnement au-dessus de la baie** (une **Corniche**, un **Fronton**, un **Fronton cintré** ou un **Larmier** qui suit une tête cintrée) et une **Allège sous l’appui** avec ses consoles.
 
-**Appliquer un style…** règle d’un coup la forme, les petits-bois et les ornements : Moderne, Classique, Géorgien, Victorien, Roman, Baroque, Gothique, Tudor, Prairie, Traditionnel ou une fenêtre ronde. Tout reste modifiable.
+**Appliquer un style…** règle d’un coup la forme, les petits-bois et les ornements : Moderne, Classique, Géorgien, Victorien, Roman, Baroque, Gothique, Tudor, Prairie, Traditionnel ou une fenêtre ronde. Tout reste modifiable. La liste montre ensuite le style du type ; dès que vous changez quelque chose que le style a réglé, elle indique *Géorgien (modifié)*, et choisir le style à nouveau l’applique à nouveau.
 
 ![Une fenêtre baroque : plein cintre avec éventail, clé de voûte et fronton cintré](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ Les colonnes de la grille sont ses faces. Pour un bow-window et une boîte, la p
 - **Base** : aucune (accroché au mur), **murs jusqu'au sol**, **une dalle en saillie** ou **une dalle sur consoles**, avec épaisseur, débord et matériau ;
 - **Head** : un toit **à quatre pans**, **en appentis** ou **plat**, ou une **dalle**, son épaisseur à l'égout, son débord, sa pente et son matériau, et un **solin contre le mur**.
 
-Cadres, ouvrants, vitrages et poignées sont ceux du type : ses matériaux et poignées valent pour toutes les faces. **Bay style** règle tout à la fois : bow-window à 45° ou peu profond à 30°, bow-window posé au sol, fenêtre arrondie de cinq ou quatre panneaux, boîte à côtés vitrés ou pleins, oriel sur consoles. **Save as bay style…** garde celui configuré comme style du projet, à côté de ceux de Lapin ; renommez-le ou supprimez-le dans la liste sous les champs.
+Cadres, ouvrants, vitrages et poignées sont ceux du type : ses matériaux et poignées valent pour toutes les faces. **Bay style** règle tout à la fois : bow-window à 45° ou peu profond à 30°, bow-window posé au sol, fenêtre arrondie de cinq ou quatre panneaux, boîte à côtés vitrés ou pleins, oriel sur consoles. Comme pour **Appliquer un style…**, la liste montre le style de bow-window de la fenêtre, avec *(modifié)* dès que vous changez ce qu’il a réglé. **Save as bay style…** garde celui configuré comme style du projet, à côté de ceux de Lapin ; renommez-le ou supprimez-le dans la liste sous les champs.
 
 En plan, les faces sont coupées, l'assise, l'appui et la base dessinés sous la coupe et le toit en tirets au-dessus ; élévations, coupes et 3D montrent tout le corps. La nomenclature des fenêtres a une fiche pour le type, ses faces dépliées, avec une ligne **Projecting** (genre, saillie, faces) ; sa surface est celle des faces vitrées et ses détails mesurent le toit, l'assise et la base. En IFC c'est un seul IfcWindow à partitionnement défini par l'utilisateur (*Bay 45°, projection 600, 3 faces, 4 panels*) dont le corps est tout le bow-window, ses panneaux face par face ; Lapin relit le bow-window.
 

@@ -96,7 +96,7 @@ Jedes Teil richtet sich nach den tatsächlichen Flächen der Wand dort, wo das F
 
 An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **Bekrönung über der Öffnung** (ein **Gesims**, eine **Giebelverdachung**, einen **Segmentgiebel** oder ein **Überschlagsgesims**, das einem Bogen folgt) und ein **Brüstungsfeld unter der Sohlbank** mit Konsolen haben.
 
-**Einen Stil anwenden…** setzt Form, Sprossen und Schmuck auf einmal: Modern, Klassisch, Georgianisch, Viktorianisch, Romanisch, Barock, Gotisch, Tudor, Prairie, Traditionell oder ein Rundfenster. Alles bleibt änderbar.
+**Einen Stil anwenden…** setzt Form, Sprossen und Schmuck auf einmal: Modern, Klassisch, Georgianisch, Viktorianisch, Romanisch, Barock, Gotisch, Tudor, Prairie, Traditionell oder ein Rundfenster. Alles bleibt änderbar. Die Auswahl zeigt danach den Stil des Typs; sobald Sie etwas ändern, das der Stil gesetzt hat, steht dort *Georgianisch (geändert)*, und den Stil erneut zu wählen wendet ihn erneut an.
 
 ![Ein barockes Fenster: Rundbogen mit Strahlen, Schlussstein und Segmentgiebel](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ Die Spalten des Rasters sind seine Flächen. Beim Erker und Kasten sind die erst
 - **Base**: keiner (an der Wand hängend), **Wände bis zum Boden**, **eine auskragende Platte** oder **eine Platte auf Konsolen**, mit Dicke, Überstand und Material;
 - **Head**: ein **Walm**-, **Pult**- oder **Flachdach** oder eine **Platte**, die Dicke an der Traufe, Überstand, Neigung und Material, und ein **Anschlussblech an der Wand**.
 
-Rahmen, Flügel, Glas und Griffe sind die des Typs, seine Materialien und Griffe gelten also für alle Flächen. **Bay style** setzt alles auf einmal: 45°- oder flacher 30°-Erker, Erker auf dem Boden, Rundfenster mit fünf oder vier Feldern, Kasten mit verglasten oder massiven Seiten, Erker auf Konsolen. **Save as bay style…** behält den konfigurierten als Stil des Projekts, neben Lapins; umbenennen oder löschen in der Liste unter den Feldern.
+Rahmen, Flügel, Glas und Griffe sind die des Typs, seine Materialien und Griffe gelten also für alle Flächen. **Bay style** setzt alles auf einmal: 45°- oder flacher 30°-Erker, Erker auf dem Boden, Rundfenster mit fünf oder vier Feldern, Kasten mit verglasten oder massiven Seiten, Erker auf Konsolen. Wie bei **Einen Stil anwenden…** zeigt die Auswahl den Erkerstil des Fensters, mit *(geändert)*, sobald Sie ändern, was er gesetzt hat. **Save as bay style…** behält den konfigurierten als Stil des Projekts, neben Lapins; umbenennen oder löschen in der Liste unter den Feldern.
 
 Im Grundriss sind die Flächen geschnitten, Sitzbank, Fensterbank und Unterbau unter dem Schnitt gezeichnet und das Dach gestrichelt darüber; Ansichten, Schnitte und 3D zeigen den ganzen Körper. Die Fensterliste hat eine Karte für den Typ, die Flächen abgewickelt, mit einer Zeile **Projecting** (Art, Auskragung, Flächen); seine Fläche ist die der verglasten Flächen, seine Details messen Dach, Sitzbank und Unterbau. In IFC ist es ein IfcWindow mit benutzerdefinierter Teilung (*Bay 45°, projection 600, 3 faces, 4 panels*), dessen Körper der ganze Erker ist, die Felder Fläche für Fläche; Lapin liest den Erker daraus zurück.
 

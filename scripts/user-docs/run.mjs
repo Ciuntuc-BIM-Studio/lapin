@@ -10,9 +10,10 @@
 // rendered from English, with English pictures, and the run says which.
 //
 //   pnpm docs:user                 the engine and the UI started for the run, every scene, then the pages → build/user-docs
-//   pnpm docs:user --only walls    the scenes whose id starts with "walls" (the other pictures stay as they were)
+//   pnpm docs:user --only walls    the scenes whose id starts with "walls" (or one of several: --only walls,roofs; the other pictures stay as they were)
 //   pnpm docs:user --lang ro       one language's pictures (or several: --lang ro,de; the others' stay as they were)
 //   pnpm docs:user --pages         the pages alone, from the pictures already taken
+//   pnpm docs:user --theme graphite the pictures in the dark theme, for a look only (build/user-docs/shots-graphite; no pages)
 //
 // CHROME: the browser to drive (default: the installed Google Chrome).
 import { spawn, spawnSync } from 'node:child_process';
@@ -31,7 +32,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const out = join(root, 'build', 'user-docs');
 const shots = join(out, 'shots');
 const args = process.argv.slice(2);
-const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
+const only = args.includes('--only') ? String(args[args.indexOf('--only') + 1]).split(',') : null;
 checkInterfaceLanguages(root);
 // Another edition (a premium module's pictures, taken with its own scenes from its repository): --product lapin-urban --scenes ../lapin-urban/docs/scenes.mjs
 // (and its pages: --docs ../lapin-planning/docs/user)
@@ -42,8 +43,11 @@ const scenes = [...ownScenes, ...extra];
 const extraDocs = args.includes('--docs') ? resolvePath(args[args.indexOf('--docs') + 1]) : null;
 const langs = args.includes('--lang') ? String(args[args.indexOf('--lang') + 1]).split(',') : LANGS;
 if (!langs.every((l) => LANGS.includes(l))) { console.error(`✗ --lang: one or more of ${LANGS.join(', ')}`); process.exit(1); }
-/** A language's pictures: shots/ for English, shots/<id>/ for the others. */
-const shotsOf = (lang) => (lang === 'en' ? shots : join(shots, lang));
+// Another theme (report #110): its pictures beside the guide's, never in it, to look at.
+const theme = args.includes('--theme') ? args[args.indexOf('--theme') + 1] : null;
+if (theme && !['paper', 'graphite'].includes(theme)) { console.error('✗ --theme: paper or graphite'); process.exit(1); }
+/** A language's pictures: shots/ for English, shots/<id>/ for the others (shots-<theme>/ for another theme's). */
+const shotsOf = (lang) => { const base = theme ? join(out, `shots-${theme}`) : shots; return lang === 'en' ? base : join(base, lang); };
 // Every scene again: the pictures start from nothing, so none outlives the scene that took it.
 for (const lang of langs) {
   if (!only && !args.includes('--pages')) for (const f of existsSync(shotsOf(lang)) ? readdirSync(shotsOf(lang)) : []) if (f.endsWith('.webp')) rmSync(join(shotsOf(lang), f));
@@ -51,6 +55,7 @@ for (const lang of langs) {
 }
 
 if (!args.includes('--pages')) await takePictures();
+if (theme) { console.log(`✓ the pictures in the ${theme} theme → build/user-docs/shots-${theme}`); process.exit(0); }
 let failed = false;
 const docs = extraDocs ? mergedDocs(extraDocs) : join(root, 'docs/user');
 for (const lang of LANGS) {
@@ -111,7 +116,7 @@ async function takePictures() {
   const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' });
   const failures = [];
   try {
-    for (const lang of langs) for (const scene of scenes.filter((s) => !only || s.id.startsWith(only))) {
+    for (const lang of langs) for (const scene of scenes.filter((s) => !only || only.some((o) => s.id.startsWith(o)))) {
       const t0 = Date.now();
       const id = lang === 'en' ? scene.id : `${scene.id} (${lang})`;
       const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
@@ -189,6 +194,7 @@ function tools(page, url, folder, lang) {
     async start() {
       await page.goto(url);
       await page.waitForFunction(() => { const b = [...document.querySelectorAll('button')].find((x) => /new project/i.test(x.textContent ?? '')); return b && !b.disabled; }, null, { timeout: 60_000 });
+      if (theme) await t.ui({ theme });
     },
     /** A new project, on its ground floor's plan. */
     async fresh() {

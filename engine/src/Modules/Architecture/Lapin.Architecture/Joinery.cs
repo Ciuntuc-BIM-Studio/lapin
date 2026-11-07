@@ -125,7 +125,9 @@ public sealed record JoinerySpec(
     /// <summary>A window that projects from its wall (report #60): a bay, a bow or a box, its faces the grid's columns; null: flat in the wall.</summary>
     JoineryBay? Bay = null,
     /// <summary>The profile system's finer shapes (rebate, lapped sash, beads, drip; decision 370); null: plain boxes.</summary>
-    JoineryProfile? Profile = null)
+    JoineryProfile? Profile = null,
+    /// <summary>The configurator's style last applied (modern, georgian…; reports #110–111), shown in its select; null: none applied.</summary>
+    string? Style = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,

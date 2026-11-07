@@ -233,4 +233,20 @@ public sealed class BayWindowTests
         f.Run("architecture.deleteBayStyle", new JsonObject { ["styleId"] = id });
         Assert.Empty(ProjectStyles.All(f.Model, "bayStyles"));
     }
+
+    [Fact]
+    public void A_type_keeps_the_styles_applied_to_it_so_the_configurator_shows_them()
+    {
+        // Report #111: the configurator's style and bay style stay on the type's spec, read back as they were written.
+        var (f, _) = Setup();
+        var spec = StyleSpec("oriel") with { Style = "georgian", Bay = StyleSpec("oriel").Bay! with { Style = "oriel" } };
+        var type = (string)f.Run("architecture.createJoineryType", new JsonObject { ["spec"] = spec.ToJson() })!["id"]!;
+        var stored = JoinerySpec.From(f.Model.Get(type)!.Attrs["spec"])!;
+        Assert.Equal("georgian", stored.Style);
+        Assert.Equal("oriel", stored.Bay!.Style);
+        f.Run("architecture.updateJoineryType", new JsonObject { ["id"] = type, ["spec"] = (stored with { Style = null, Bay = stored.Bay with { Style = null } }).ToJson() });
+        stored = JoinerySpec.From(f.Model.Get(type)!.Attrs["spec"])!;
+        Assert.Null(stored.Style);
+        Assert.Null(stored.Bay!.Style);
+    }
 }

@@ -91,6 +91,10 @@ Klicken Sie auf ein Symbol auf der Leiste eines eingeklappten Bereichs, um den B
 
 ![Ein eingeklappter Browser, von seiner Leiste aus über der Ansicht geöffnet](shots/browser-overlay.webp)
 
+## Hell und dunkel
+
+Der Mond am rechten Ende des Menübands schaltet die Oberfläche dunkel (Graphit), die Sonne wieder hell (Papier). Im dunklen Thema liegen Grundrisse, Schnitte und Ansichten auf dem dunklen Hintergrund, ihre schwarzen Stifte in heller Tinte; Pläne bleiben Papier. Die kleinen Zeichnungen der Konfiguratoren (Grundriss, Schnitt und Ansicht einer Tür oder eines Fensters, eines Dachs, eines Balkons, eines Aufzugs, einer Halle, einer Treppe…) und die Vorschauen von Beschriftungen, Schriftfeldern und Materialien werden in beiden Themen auf einer hellen Papierkarte gezeichnet, sodass ihre Linien, Texte und Maße wie auf einer gedruckten Zeichnung lesbar sind.
+
 ## Tastenkürzel
 
 **Ansicht → Tastenkürzel…** (<kbd>KS</kbd>) listet jeden Befehl, den die Tastatur erreichen kann, nach Registerkarte. Jede Zeile zeigt die Tastenkürzel des Befehls.

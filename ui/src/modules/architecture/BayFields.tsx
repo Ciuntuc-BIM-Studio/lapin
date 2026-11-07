@@ -12,6 +12,7 @@ import { execute, useSession } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { t } from '../../i18n';
+import { StyleSelect, sameAs } from '../../shell/StyleSelect';
 
 export interface BaySeat { on: boolean; thickness: number; overhang: number; material?: string | null }
 export interface BayBase { kind: 'none' | 'floor' | 'slab' | 'corbel'; thickness: number; overhang: number; brackets: number; material?: string | null }
@@ -20,6 +21,8 @@ export interface BaySill { on: boolean; projection: number; thickness: number; m
 export interface Bay {
   kind: 'bay' | 'bow' | 'box'; projection: number; angle: number; sides: 'glass' | 'solid'; sideMaterial?: string | null;
   seat?: BaySeat | null; base?: BayBase | null; head?: BayHead | null; sill?: BaySill | null;
+  /** The bay style last applied (Lapin's or the project's id; report #111), shown in its select. */
+  style?: string | null;
 }
 /** What of a window's spec a bay changes. */
 export interface BaySpec { width: number; height: number; sillHeight: number; columns: number[]; rows: number[]; panels: { col: number; row: number; operation: string }[]; bay?: Bay | null }
@@ -41,6 +44,13 @@ function Num({ label, value, onChange, integer }: { label: string; value: number
 }
 function Mat({ label, value, onChange }: { label: string; value?: string | null; onChange: (m: string | null) => void }) {
   return <label className="field-line"><span className="eyebrow">{label}</span><MaterialPicker value={value ?? ''} allowEmpty onChange={(m) => onChange(m || null)} /></label>;
+}
+
+/** Whether a window still is what a bay style makes of it (report #111): its size, grid and bay, the style's id aside. */
+export function bayMatches(style: BaySpec, spec: BaySpec): boolean {
+  const { style: _, ...bay } = style.bay ?? ({} as Bay);
+  return sameAs({ width: style.width, height: style.height, sillHeight: style.sillHeight, columns: style.columns, rows: style.rows, panels: style.panels }, spec)
+    && (style.bay ? sameAs(bay, spec.bay) : spec.bay == null);
 }
 
 /** A bay's faces: three or more columns, each with a panel (the sides open, the centre fixed). */
@@ -65,14 +75,19 @@ export function BayFields({ spec, onChange, onGrid }: { spec: BaySpec; onChange:
     const s = catalog.find((x) => x.id === id)?.spec ?? own.find((x) => x.id === id)?.spec;
     if (!s) return;
     onGrid(s.columns);
-    onChange({ width: s.width, height: s.height, sillHeight: s.sillHeight, columns: s.columns, rows: s.rows, panels: s.panels, bay: s.bay ?? null });
+    onChange({ width: s.width, height: s.height, sillHeight: s.sillHeight, columns: s.columns, rows: s.rows, panels: s.panels, bay: s.bay ? { ...s.bay, style: id } : null });
   };
   const save = async () => {
     const name = window.prompt(t('Name of the bay window style'), '');
     if (!name?.trim()) return;
-    const r = await execute('architecture.saveBayStyle', { name, spec: { ...spec } });
+    const r = await execute('architecture.saveBayStyle', { name, spec: { ...spec, bay: bay ? { ...bay, style: null } : bay } }) as { styleId?: string } | null;
     if (r) notify(t('Saved as a style of the project.'));
+    // The type is now what the style it was saved as makes of it.
+    if (r?.styleId && bay) onChange({ bay: { ...bay, style: r.styleId } });
   };
+  const styleId = bay?.style ?? null;
+  const applied = styleId ? catalog.find((x) => x.id === styleId) ?? own.find((x) => x.id === styleId) : undefined;
+  const modified = applied != null && !bayMatches(applied.spec, spec);
   const seat = bay?.seat ?? { ...SEAT, on: false };
   const sill = bay?.sill ?? { ...SILL, on: false };
   const base = bay?.base ?? BASE;
@@ -85,11 +100,9 @@ export function BayFields({ spec, onChange, onGrid }: { spec: BaySpec; onChange:
           <option value="none">No: flat in the wall</option><option value="bay">Bay (angled sides)</option><option value="bow">Bow (on an arc)</option><option value="box">Box (square sides)</option>
         </select></label>
       <label className="field-line"><span className="eyebrow">Bay style</span>
-        <select data-field="bay-style" value="" title="Sets the faces, the projection, the seat, the base and the roof at once; each stays editable" onChange={(e) => apply(e.target.value)}>
-          <option value="">Apply a bay style…</option>
-          <optgroup label={t('Lapin')}>{catalog.map((s) => <option key={s.id} value={s.id} title={s.description}>{s.label}</option>)}</optgroup>
-          {own.length > 0 && <optgroup label={t('This project')}>{own.map((s) => <option key={s.id} value={s.id} data-no-i18n>{s.label}</option>)}</optgroup>}
-        </select></label>
+        <StyleSelect field="bay-style" placeholder="Apply a bay style…" title="Sets the faces, the projection, the seat, the base and the roof at once; each stays editable"
+          value={applied ? styleId : null} modified={modified} onApply={apply}
+          groups={[{ label: 'Lapin', items: catalog.map((s) => ({ id: s.id, label: s.label, title: s.description })) }, { label: 'This project', items: own.map((s) => ({ id: s.id, label: s.label, own: true })) }]} /></label>
       {bay && <>
         <p className="muted small">{bay.kind === 'bow' ? 'The columns are its faces: one face each, their widths sharing the arc.' : 'The columns are its faces: the first and last its sides, those between them its centre.'}</p>
         <Len label="Projection" title="From the wall's exterior face to the frames' outer face" value={bay.projection} onChange={(v) => set({ projection: v })} />

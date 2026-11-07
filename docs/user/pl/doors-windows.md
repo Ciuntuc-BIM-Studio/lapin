@@ -96,7 +96,7 @@ Każdy z nich przylega do rzeczywistych lic ściany w miejscu okna, wyznaczonych
 
 Na elewacji, oprócz opaski, okno może mieć **Zwornik**, **Zwieńczenie nad otworem** (**Gzyms**, **Naczółek**, **Naczółek łukowy** lub **Kapinos**, który podąża za łukiem) oraz **Płycina pod parapetem** z konsolami.
 
-**Zastosuj styl…** ustawia naraz kształt, szprosy i ornamenty: nowoczesny, klasyczny, georgiański, wiktoriański, romański, barokowy, gotycki, Tudor, Prairie, tradycyjny lub okno okrągłe. Wszystko, co ustawia, pozostaje edytowalne.
+**Zastosuj styl…** ustawia naraz kształt, szprosy i ornamenty: nowoczesny, klasyczny, georgiański, wiktoriański, romański, barokowy, gotycki, Tudor, Prairie, tradycyjny lub okno okrągłe. Wszystko, co ustawia, pozostaje edytowalne. Lista pokazuje potem styl, który ma typ; gdy zmienisz coś, co ustawił styl, widać *Georgiański (zmieniony)*, a ponowny wybór stylu stosuje go ponownie.
 
 ![Okno barokowe: łuk pełny ze szprosami promienistymi, zwornik i naczółek odcinkowy](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ Kolumny siatki to jego ściany. W wykuszu i skrzynce pierwsza i ostatnia kolumna
 - **Base**: brak (zawieszony na ścianie), **ściany do podłogi**, **płyta wspornikowa** lub **płyta na wspornikach**, z grubością, wysięgiem i materiałem;
 - **Head**: dach **czterospadowy**, **jednospadowy** lub **płaski** albo **płyta**, grubość przy okapie, wysięg, spadek i materiał, oraz **obróbka blacharska przy ścianie**.
 
-Ościeżnice, skrzydła, szkło i klamki są typu, więc jego materiały i klamki działają na wszystkich ścianach. **Bay style** ustawia wszystko naraz: wykusz 45° lub płytki 30°, wykusz od podłogi, okno łukowe z pięciu lub czterech pól, skrzynkę z bokami przeszklonymi lub pełnymi, wykusz na wspornikach. **Save as bay style…** zachowuje skonfigurowany jako styl projektu, obok stylów Lapina; zmienia się nazwę lub usuwa go na liście pod polami.
+Ościeżnice, skrzydła, szkło i klamki są typu, więc jego materiały i klamki działają na wszystkich ścianach. **Bay style** ustawia wszystko naraz: wykusz 45° lub płytki 30°, wykusz od podłogi, okno łukowe z pięciu lub czterech pól, skrzynkę z bokami przeszklonymi lub pełnymi, wykusz na wspornikach. Jak przy **Zastosuj styl…**, lista pokazuje styl wykuszu, który ma okno, z *(zmieniony)*, gdy zmienisz to, co ustawił. **Save as bay style…** zachowuje skonfigurowany jako styl projektu, obok stylów Lapina; zmienia się nazwę lub usuwa go na liście pod polami.
 
 W rzucie ściany są przecięte, siedzisko, parapet i podstawa rysowane poniżej cięcia, a dach przerywaną linią nad nimi; widoki, przekroje i 3D pokazują całe ciało. Zestawienie okien ma kartę typu z rozwiniętymi ścianami i wierszem **Projecting** (rodzaj, wysięg, ściany); jego powierzchnia to powierzchnia przeszklonych ścian, a szczegóły mierzą dach, siedzisko i podstawę. W IFC to jedno IfcWindow z podziałem zdefiniowanym przez użytkownika (*Bay 45°, projection 600, 3 faces, 4 panels*), którego ciałem jest cały wykusz, pola ściana po ścianie; Lapin odczytuje wykusz z powrotem.
 

@@ -44,7 +44,9 @@ public sealed record BaySill(bool On = true, double Projection = 0.04, double Th
 /// solid by <see cref="Sides"/>); <see cref="Projection"/> from the wall's exterior face to the frames' outer face.
 /// </summary>
 public sealed record JoineryBay(string Kind = "bay", double Projection = 0.6, double Angle = 45, string Sides = "glass", string? SideMaterial = null,
-    BaySeat? Seat = null, BayBase? Base = null, BayHead? Head = null, BaySill? Sill = null);
+    BaySeat? Seat = null, BayBase? Base = null, BayHead? Head = null, BaySill? Sill = null,
+    /// <summary>The bay style last applied (Lapin's or the project's id; report #111), shown in the configurator's select; null: none.</summary>
+    string? Style = null);
 
 /// <summary>
 /// One piece of a bay's body in the type's frame (X along the wall, Y to the exterior, Z up from the opening's bottom):

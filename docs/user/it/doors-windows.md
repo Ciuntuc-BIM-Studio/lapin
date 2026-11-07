@@ -96,7 +96,7 @@ Le **Inglesine** dividono le ante: **Griglia (coloniale)** con i suoi riquadri i
 
 Sulla facciata, oltre alla cornice, una finestra può avere una **Chiave di volta**, un **Coronamento sull’apertura** (una **Cornice**, un **Timpano**, un **Timpano curvo**, oppure un **Gocciolatoio** che segue una testa ad arco) e un **Pannello sotto il davanzale** con le sue mensole.
 
-**Applica uno stile…** imposta in un colpo solo la forma, le inglesine e gli ornamenti: Moderno, Classico, Georgiano, Vittoriano, Romanico, Barocco, Gotico, Tudor, Prairie, Tradizionale, oppure una finestra tonda. Tutto ciò che imposta resta modificabile.
+**Applica uno stile…** imposta in un colpo solo la forma, le inglesine e gli ornamenti: Moderno, Classico, Georgiano, Vittoriano, Romanico, Barocco, Gotico, Tudor, Prairie, Tradizionale, oppure una finestra tonda. Tutto ciò che imposta resta modificabile. Il menu mostra poi lo stile che ha il tipo; appena cambi qualcosa che lo stile ha impostato, indica *Georgiano (modificato)*, e scegliere di nuovo lo stile lo applica di nuovo.
 
 ![Una finestra barocca: un arco a tutto sesto con raggiera, una chiave di volta e un timpano curvo](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ Le colonne della griglia sono le sue facce. In un bow-window e in una scatola la
 - **Base**: nessuna (appeso al muro), **muri fino al pavimento**, **una soletta sporgente** o **una soletta su mensole**, con spessore, sporto e materiale;
 - **Head**: un tetto **a padiglione**, **a una falda** o **piano**, o una **soletta**, il suo spessore alla gronda, lo sporto, la pendenza e il materiale, e una **scossalina contro il muro**.
 
-Telai, ante, vetri e maniglie sono quelli del tipo: i suoi materiali e le maniglie valgono per tutte le facce. **Bay style** imposta tutto insieme: bow-window a 45° o poco profondo a 30°, bow-window a terra, finestra ad arco di cinque o quattro pannelli, scatola con lati vetrati o pieni, bovindo su mensole. **Save as bay style…** tiene quello configurato come stile del progetto, accanto a quelli di Lapin; si rinomina o elimina nell'elenco sotto i campi.
+Telai, ante, vetri e maniglie sono quelli del tipo: i suoi materiali e le maniglie valgono per tutte le facce. **Bay style** imposta tutto insieme: bow-window a 45° o poco profondo a 30°, bow-window a terra, finestra ad arco di cinque o quattro pannelli, scatola con lati vetrati o pieni, bovindo su mensole. Come per **Applica uno stile…**, il menu mostra lo stile di bow-window della finestra, con *(modificato)* appena cambi ciò che ha impostato. **Save as bay style…** tiene quello configurato come stile del progetto, accanto a quelli di Lapin; si rinomina o elimina nell'elenco sotto i campi.
 
 In pianta le facce sono tagliate, seduta, davanzale e base disegnati sotto il taglio e il tetto tratteggiato sopra; prospetti, sezioni e 3D mostrano tutto il corpo. L'abaco delle finestre ha una scheda per il tipo, le facce sviluppate, con una riga **Projecting** (genere, sporgenza, facce); la sua area è quella delle facce vetrate e i dettagli misurano tetto, seduta e base. In IFC è un solo IfcWindow a partizione definita dall'utente (*Bay 45°, projection 600, 3 faces, 4 panels*) il cui corpo è tutto il bow-window, i pannelli faccia per faccia; Lapin rilegge il bow-window.
 

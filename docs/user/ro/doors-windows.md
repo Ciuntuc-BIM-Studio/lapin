@@ -96,7 +96,7 @@ Fiecare se așază după fețele reale ale peretelui unde e fereastra, din strat
 
 Pe fațadă, pe lângă ancadrament, o fereastră poate avea **Cheie de boltă**, **Coronament peste gol** (**Cornișă**, **Fronton**, **Fronton în arc** sau **Ancadrament de ploaie**, care urmează un cap în arc) și **Panou sub glaf** cu consolele lui.
 
-**Aplică un stil…** pune deodată forma, baghetele și ornamentele: Modern, Clasic, Georgian, Victorian, Romanic, Baroc, Gotic, Tudor, Prairie, Tradițional sau o fereastră rotundă. Tot ce pune rămâne de modificat.
+**Aplică un stil…** pune deodată forma, baghetele și ornamentele: Modern, Clasic, Georgian, Victorian, Romanic, Baroc, Gotic, Tudor, Prairie, Tradițional sau o fereastră rotundă. Tot ce pune rămâne de modificat. Lista arată apoi stilul pe care îl are tipul; după ce schimbi ceva din ce a pus stilul scrie *Georgian (modificat)*, iar alegerea stilului din nou îl aplică din nou.
 
 ![O fereastră barocă: arc în plin cintru cu evantai, cheie de boltă și fronton în arc](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ Coloanele grilei sunt fețele ei. La bovindou și la cutie prima și ultima colo
 - **Base**: fără (atârnă pe perete), **pereți până la pardoseală**, **o placă în consolă** sau **o placă pe console**, cu grosimea, cât trece de fețe și materialul;
 - **Head**: un acoperiș **în patru ape**, **într-o apă** sau **plat**, ori o **placă**, grosimea la streașină, cât iese, panta și materialul, și un **șorț de tablă la perete**.
 
-Tocurile, cercevelele, sticla și mânerele sunt ale tipului, deci materialele și mânerele lui merg pe toate fețele. **Bay style** le pune pe toate deodată: bovindou la 45° sau puțin adânc la 30°, bovindou pe pardoseală, arc de cinci sau patru panouri, cutie cu laturi vitrate sau pline, erker pe console. **Save as bay style…** păstrează ce ai configurat ca stil al proiectului, oferit lângă ale lui Lapin; îl redenumești sau îl ștergi în lista de sub câmpuri.
+Tocurile, cercevelele, sticla și mânerele sunt ale tipului, deci materialele și mânerele lui merg pe toate fețele. **Bay style** le pune pe toate deodată: bovindou la 45° sau puțin adânc la 30°, bovindou pe pardoseală, arc de cinci sau patru panouri, cutie cu laturi vitrate sau pline, erker pe console. Ca la **Aplică un stil…**, lista arată stilul de bovindou pe care îl are fereastra, cu *(modificat)* după ce schimbi ce a pus. **Save as bay style…** păstrează ce ai configurat ca stil al proiectului, oferit lângă ale lui Lapin; îl redenumești sau îl ștergi în lista de sub câmpuri.
 
 În plan fețele sunt secționate, bancheta, glaful și baza se desenează sub secțiune, iar acoperișul punctat deasupra; fațadele, secțiunile și 3D arată tot corpul. Extrasul de ferestre are o fișă pentru tip, cu fețele desfășurate și rândul **Projecting** (felul, ieșirea, fețele); aria lui e a fețelor vitrate, iar detaliile măsoară acoperișul, bancheta și baza. În IFC e un singur IfcWindow cu partiționare definită de utilizator (*Bay 45°, projection 600, 3 faces, 4 panels*), al cărui corp e tot bovindoul, cu panourile enumerate față cu față; Lapin citește bovindoul înapoi din el.
 

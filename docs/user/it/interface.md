@@ -91,6 +91,10 @@ Fai clic su un’icona sulla barra di un pannello ridotto per aprire il pannello
 
 ![Un browser ridotto aperto sopra la vista dalla sua barra](shots/browser-overlay.webp)
 
+## Chiaro e scuro
+
+La luna all’estremità destra della barra multifunzione rende scura l’interfaccia (grafite); il sole la rende di nuovo chiara (carta). Nel tema scuro piante, sezioni e prospetti stanno sullo sfondo scuro, con le penne nere in inchiostro chiaro; le tavole restano carta. I piccoli disegni dei configuratori (pianta, sezione e prospetto di una porta o finestra, di un tetto, un balcone, un ascensore, un capannone, una scala…) e le anteprime di etichette, cartigli e materiali sono disegnati su una scheda di carta chiara in entrambi i temi, così linee, testi e quote si leggono come su un disegno stampato.
+
 ## Scorciatoie da tastiera
 
 **Vista → Scorciatoie da tastiera…** (<kbd>KS</kbd>) elenca ogni comando raggiungibile dalla tastiera, per scheda. Ogni riga mostra le scorciatoie del comando.

@@ -91,6 +91,10 @@ Click an icon on a folded panel's rail to open the panel over the view without u
 
 ![A folded browser opened over the view from its rail](shots/browser-overlay.webp)
 
+## Light and dark
+
+The moon at the right end of the ribbon turns the interface dark (graphite); the sun turns it light again (paper). In the dark theme plans, sections and elevations lie on the dark background, their black pens in light ink; sheets stay paper. The configurators' small drawings (a door's or window's plan, section and elevation, a roof's, a balcony's, an elevator's, a hall's, a stair's…) and the previews of tags, title blocks and materials are drawn on a light paper card in both themes, so their lines, texts and dimensions read as on a printed drawing.
+
 ## Keyboard shortcuts
 
 **View → Keyboard shortcuts…** (<kbd>KS</kbd>) lists every command the keyboard can reach, by tab. Each row shows the command's shortcuts.

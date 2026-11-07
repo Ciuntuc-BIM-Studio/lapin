@@ -96,7 +96,7 @@ Hver af dem sidder efter væggens virkelige flader, hvor vinduet er, ud fra væg
 
 På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone over åbningen** (et **Gesims**, en **Fronton**, en **Buet fronton** eller en **Vandnæse**, der følger en buet top) og et **Brystningsfelt under sålbænken** med konsoller.
 
-**Anvend en stil…** sætter form, sprosser og udsmykning på én gang: Moderne, Klassisk, Georgiansk, Victoriansk, Romansk, Barok, Gotisk, Tudor, Prairie, Traditionel eller et rundt vindue. Alt kan stadig ændres.
+**Anvend en stil…** sætter form, sprosser og udsmykning på én gang: Moderne, Klassisk, Georgiansk, Victoriansk, Romansk, Barok, Gotisk, Tudor, Prairie, Traditionel eller et rundt vindue. Alt kan stadig ændres. Listen viser derefter typens stil; når du ændrer noget, stilen satte, står der *Georgiansk (ændret)*, og vælger du stilen igen, anvendes den igen.
 
 ![Et barokvindue: rundbue med vifte, slutsten og buet fronton](shots/joinery-styles.webp)
 
@@ -115,7 +115,7 @@ Gitterets kolonner er dens flader. I en karnap og en kasse er første og sidste 
 - **Base**: ingen (hænger på væggen), **vægge ned til gulvet**, **en fremspringende plade** eller **en plade på konsoller**, med tykkelse, udhæng og materiale;
 - **Head**: et **valm**-, **halv**- eller **fladt tag** eller en **plade**, tykkelsen ved tagfoden, udhæng, hældning og materiale, og en **inddækning mod væggen**.
 
-Karme, rammer, glas og greb er typens, så dens materialer og greb gælder for alle flader. **Bay style** sætter alt på én gang: 45°- eller lav 30°-karnap, karnap på gulvet, buevindue med fem eller fire felter, kasse med glasede eller massive sider, karnap på konsoller. **Save as bay style…** gemmer den konfigurerede som projektets stil ved siden af Lapins; omdøb eller slet den i listen under felterne.
+Karme, rammer, glas og greb er typens, så dens materialer og greb gælder for alle flader. **Bay style** sætter alt på én gang: 45°- eller lav 30°-karnap, karnap på gulvet, buevindue med fem eller fire felter, kasse med glasede eller massive sider, karnap på konsoller. Som ved **Anvend en stil…** viser listen vinduets karnapstil, med *(ændret)* når du ændrer det, den satte. **Save as bay style…** gemmer den konfigurerede som projektets stil ved siden af Lapins; omdøb eller slet den i listen under felterne.
 
 I plan er fladerne snittet, sæde, sålbænk og sokkel tegnet under snittet og taget stiplet over dem; opstalter, snit og 3D viser hele kroppen. Vindueslisten har et kort for typen med fladerne foldet ud og en række **Projecting** (art, fremspring, flader); arealet er de glasede fladers, og detaljerne måler tag, sæde og sokkel. I IFC er det ét IfcWindow med brugerdefineret opdeling (*Bay 45°, projection 600, 3 faces, 4 panels*), hvis krop er hele karnappen, felterne flade for flade; Lapin læser karnappen tilbage.
 

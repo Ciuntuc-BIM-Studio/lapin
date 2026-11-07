@@ -91,6 +91,10 @@ Klik på et ikon på et indfoldet panels skinne for at åbne panelet over visnin
 
 ![En indfoldet browser åbnet over visningen fra sin skinne](shots/browser-overlay.webp)
 
+## Lys og mørk
+
+Månen yderst til højre på båndet gør brugerfladen mørk (grafit); solen gør den lys igen (papir). I det mørke tema ligger planer, snit og facader på den mørke baggrund med de sorte penne i lyst blæk; ark forbliver papir. Konfiguratorernes små tegninger (en dørs eller et vindues plan, snit og facade, et tags, en altans, en elevators, en hals, en trappes…) og forhåndsvisningerne af mærker, tegningshoveder og materialer tegnes på et lyst papirkort i begge temaer, så deres linjer, tekster og mål læses som på en udskrevet tegning.
+
 ## Tastaturgenveje
 
 **Vis → Tastaturgenveje…** (<kbd>KS</kbd>) viser alle de kommandoer, tastaturet kan nå, fane for fane. Hver række viser kommandoens genveje.

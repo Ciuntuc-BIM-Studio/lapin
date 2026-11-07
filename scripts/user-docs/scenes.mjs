@@ -586,6 +586,8 @@ export const scenes = [
       await dialog.locator('select[data-field=style]').selectOption('baroque');
       await dialog.locator('input[data-field=outside]').check();
       await t.wait(800);
+      // The select keeps the style the type was given (report #111).
+      t.expect(await dialog.locator('select[data-field=style]').inputValue() === 'baroque', 'the style select shows the style applied');
       t.expect(await dialog.locator('select[data-field=shape]').inputValue() === 'round', 'the style gives the window a round arch');
       t.expect(await dialog.locator('input[data-dressing=keystone]').isChecked(), 'the style puts a keystone on it');
       await dialog.locator('select[data-field=shape]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
@@ -602,6 +604,7 @@ export const scenes = [
       await t.keys('Escape');
       const type = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.kind === 'round');
       t.expect(type, 'the window type keeps its arch');
+      t.expect(type.props.spec.style === 'baroque', 'the window type remembers its style');
       await open3d(t);
       await t.shot('window-styles-3d', { of: '[data-testid=view3d]', pad: 0 });
     },
@@ -630,6 +633,7 @@ export const scenes = [
       await dialog.locator('select[data-field=bay-style]').selectOption('bow-5');
       await t.wait(800);
       t.expect(await dialog.locator('select[data-field=bay-kind]').inputValue() === 'bow', 'the style makes it a bow');
+      t.expect(await dialog.locator('select[data-field=bay-style]').inputValue() === 'bow-5', 'the bay style select shows the style applied');
       await dialog.locator('[data-testid=bay-fields]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
       await t.wait(400);
       await t.shot('bay-configurator', { of: '.dialog', pad: 0 });

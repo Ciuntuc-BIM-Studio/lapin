@@ -18,6 +18,7 @@ import { LengthField, NumberField } from '../../shell/cells';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { PendingDialog } from '../core/PendingDialog';
 import { ParamsSection } from '../../shell/ParamsSection';
+import { StyleSelect, sameAs } from '../../shell/StyleSelect';
 import { deleteType } from '../core/deleteType';
 import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
@@ -59,6 +60,8 @@ interface Spec {
   /** A window that projects from its wall (report #60): a bay, a bow or a box. */
   bay?: Bay | null;
   profile?: Profile | null;
+  /** The style last applied (a key of JOINERY_STYLES; report #111): its select shows it, "(modified)" once a field differs. */
+  style?: string | null;
 }
 /** The parts' materials by name (report #76); a part without one keeps its colour. */
 interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
@@ -129,6 +132,12 @@ function styleDetails(key: string, d: Details): Details {
     default: return bare;
   }
 }
+/** Whether a type no longer is what its style makes of it (report #111): a field the style sets changed since. */
+export function styleModified(spec: Spec): boolean {
+  const st = spec.style ? JOINERY_STYLES[spec.style] : undefined;
+  return st != null && !sameAs({ ...st.apply(spec), details: styleDetails(spec.style!, spec.details ?? {}) }, spec);
+}
+
 export interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number; col?: number; row?: number; colSpan?: number; rowSpan?: number; infill?: string }[]; ifcType: string; grid?: { inner: number[]; cols: [number, number][]; rows: [number, number][] } | null }
 export interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 export interface Drawing { strokes: Stroke[] }
@@ -688,17 +697,17 @@ export function JoineryDialog() {
               <Mm label="Height" value={spec.height} onChange={(v) => set({ height: v })} />
               {spec.kind === 'window' && <Mm label="Sill" value={spec.sillHeight} onChange={(v) => set({ sillHeight: v })} />}
               <label className="field-line"><span className="eyebrow">Style</span>
-                <select data-field="style" value="" title="Sets the shape, the glazing bars and the ornaments at once; each stays editable" onChange={(e) => {
-                  const st = JOINERY_STYLES[e.target.value];
-                  if (!st) return;
-                  const patch = st.apply(spec);
-                  set({ ...patch, details: styleDetails(e.target.value, spec.details ?? {}) });
-                  if (patch.columns) setCols(patch.columns.join(' '));
-                  if (patch.rows) setRows(patch.rows.join(' '));
-                }}>
-                  <option value="">Apply a style…</option>
-                  {Object.entries(JOINERY_STYLES).filter(([k]) => spec.kind === 'window' || k !== 'oculus').map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select></label>
+                <StyleSelect field="style" title="Sets the shape, the glazing bars and the ornaments at once; each stays editable"
+                  value={spec.style && JOINERY_STYLES[spec.style] ? spec.style : null} modified={styleModified(spec)}
+                  groups={[{ items: Object.entries(JOINERY_STYLES).filter(([k]) => spec.kind === 'window' || k !== 'oculus').map(([k, v]) => ({ id: k, label: v.label })) }]}
+                  onApply={(key) => {
+                    const st = JOINERY_STYLES[key];
+                    if (!st) return;
+                    const patch = st.apply(spec);
+                    set({ ...patch, details: styleDetails(key, spec.details ?? {}), style: key });
+                    if (patch.columns) setCols(patch.columns.join(' '));
+                    if (patch.rows) setRows(patch.rows.join(' '));
+                  }} /></label>
               {!spec.bay && <ShapeFields spec={spec} onChange={set} />}
               {spec.kind === 'window' && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v } })} />
