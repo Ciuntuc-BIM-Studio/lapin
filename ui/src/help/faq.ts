@@ -265,6 +265,15 @@ export const FAQ: Entry[] = [
     source: 'report #44',
   },
   {
+    id: 'wall-opening-edit',
+    q: ['How do I edit a wall opening like a door or a window?', 'Can I change a wall opening into a door or a window?', 'How do I change an opening to another type?'],
+    qRo: ['Cum editez un gol în perete ca pe o ușă sau o fereastră?', 'Pot transforma un gol în perete în ușă sau fereastră?', 'Cum schimb un gol în alt tip?'],
+    keywords: ['opening', 'openings', 'edit', 'editing', 'window', 'type', 'fixed', 'chosen', 'change', 'convert', 'reveal', 'lining', 'plaster', 'lintel', 'head', 'arch', 'gol', 'golul', 'goluri', 'editez', 'schimb', 'transform', 'tip', 'glaf', 'glafuri', 'tencuiala', 'captuseala', 'buiandrug', 'abertura', 'hueco', 'ouverture', 'apertura', 'offnung', 'otwor', 'abning'],
+    a: 'Select the opening (a click in its gap in the plan or its hole in 3D): in Properties its width, height, sill, place along the wall and head (rectangle, segmental or elliptical arch, semicircle, radiused corners) are its own, and so are its Reveal finish (none, plaster or a lining, with its thickness and material, round the jambs and the head) and its Lintel (the wall\'s rule, or none). Several openings selected change together. Edit the opening… opens its configurator with a picture. Change to door… or Change to window… fills it with a door or window of a type where it is, keeping its place, sill and GlobalId (Fit the type to the opening makes a type of its size); a door or window\'s Change to opening takes it out again, the hole left as it was. Each is one undo step; in IFC an opening stays an opening voiding the wall, with nothing filling it.',
+    aRo: 'Selectează golul (un clic în spațiul lui din plan sau în gaura lui în 3D): în Properties lățimea, înălțimea, parapetul, locul de-a lungul peretelui și forma de sus (dreptunghi, arc segmentat sau eliptic, semicerc, colțuri rotunjite) sunt ale lui, la fel finisajul glafurilor (Reveal finish: niciunul, tencuială sau o căptușeală, cu grosimea și materialul ei, pe glafuri și pe partea de sus) și buiandrugul (Lintel: regula peretelui sau niciunul). Mai multe goluri selectate se schimbă împreună. Edit the opening… deschide configuratorul lui, cu un desen. Change to door… sau Change to window… îl umple cu o ușă sau o fereastră de un tip acolo unde e, păstrându-i locul, parapetul și GlobalId-ul (Fit the type to the opening face un tip de mărimea lui); Change to opening, la o ușă sau fereastră, o scoate din nou, golul rămânând cum era. Fiecare e un singur pas de anulare; în IFC un gol rămâne un gol care străpunge peretele, fără nimic în el.',
+    source: 'report #114',
+  },
+  {
     id: 'opening-height',
     q: ['How do I show the opening height under the dimension line?', 'How do I write the window height below the dimension?', 'Can a dimension show a door\'s height and the sill?'],
     qRo: ['Cum arăt înălțimea golului sub linia de cotă?', 'Cum scriu înălțimea ferestrei sub cotă?', 'Poate o cotă să arate înălțimea ușii și parapetul?'],

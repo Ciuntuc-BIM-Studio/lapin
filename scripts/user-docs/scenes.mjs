@@ -450,6 +450,46 @@ export const scenes = [
     },
   },
   {
+    // A wall opening edited like a door or a window (a tester's report #114, decision 392): its reveal finished and its head
+    // arched in its configurator, then made a window where it is, and an opening again.
+    id: 'wall-opening',
+    async run(t) {
+      await t.fresh();
+      const { walls } = await house(t, { roof: false });
+      const id = (await t.cmd('architecture.addWallOpening', { wallId: walls[3], along: 4, width: 1.2, height: 2.1 })).id;
+      await t.ui({ view: 'plan', keyPlan: false });
+      await select(t, id);
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-field=opening-reveal]').count() === 1, 'a selected opening offers its reveal finish');
+      await t.page.locator('[data-field=opening-reveal]').selectOption('plaster');
+      await t.wait(700);
+      t.expect((await t.nodes()).find((n) => n.id === id)?.props.reveal === 'plaster', 'the reveal is plastered');
+      await t.page.locator('[data-action=opening-edit]').click();
+      await t.page.waitForSelector('[data-dialog=wall-opening]', { timeout: 10000 });
+      await t.page.locator('[data-field=opening-dialog-head]').selectOption('round');
+      await t.wait(400);
+      await t.shot('wall-opening-dialog', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-action=opening-apply]').click();
+      await t.wait(800);
+      t.expect((await t.nodes()).find((n) => n.id === id)?.props.shape === 'round', 'the head is a semicircle');
+      // Made a window where it is, of a type fitted to it; its GlobalId kept.
+      await t.page.locator('[data-action=opening-to-window]').click();
+      await t.page.waitForSelector('[data-dialog=wall-opening]', { timeout: 10000 });
+      const windows = async () => (await t.nodes()).filter((n) => n.type === 'IfcWindow').map((n) => n.id);
+      const before = await windows();
+      await t.page.locator('[data-action=opening-change]').click();
+      await t.wait(1000);
+      const window = (await windows()).find((w) => !before.includes(w));
+      t.expect(window && (await t.nodes()).some((n) => n.id === id), 'a window fills the opening, which stays');
+      // And an opening again, from the window's properties.
+      await select(t, window);
+      await t.wait(600);
+      await t.page.locator('[data-action=fill-to-opening]').click();
+      await t.wait(800);
+      t.expect(!(await windows()).includes(window) && (await t.nodes()).find((n) => n.id === id)?.props.width === 1.2, 'the window goes, the opening of its size stays');
+    },
+  },
+  {
     // A wall by its profile (a tester's wish, #100, decision 372): the house's west wall made a gable in the profile editor,
     // the window kept, then seen in 3D.
     id: 'wall-profile',

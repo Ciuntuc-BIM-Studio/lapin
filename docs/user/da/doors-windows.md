@@ -28,6 +28,12 @@ Valgt har en åbning greb som et vindue: træk i midten for at skubbe den langs 
 
 **Topform** former dens top: **Rektangel**, **Segmentbue** (en flad bue), **Elliptisk bue** (en halv ellipse, en fjerdedel af bredden høj, medmindre du angiver andet), **Halvcirkel** eller **Afrundede hjørner** (en lige top med afrundede øverste hjørner). **Buens pilhøjde** angiver, hvor højt en segment- eller elliptisk bue rejser sig, **Hjørneradius**, hvor runde hjørnerne er (150 mm, medmindre du angiver andet, aldrig mere end halvdelen af bredden); tom gælder formens egen. Hullet i væggen følger omridset i 3D, i facader og snit og i IFC; planen viser lysningerne som før.
 
+**Lysningsoverflade** beklæder dens sider og top inde i hullet: **Puds** (15 mm, medmindre du angiver andet) eller en **Foring** (20 mm træ), med **Belægningens tykkelse** og **Belægningens materiale**; en åbning over gulvet beklædes også forneden. Overfladen er en del af væggens krop, i 3D, facader, snit og mængder, og den fri åbning er det, der er tilbage. **Overligger** er **Væggens regel** (den overligger, vægtypen kræver, som over en dør) eller **Ingen**. Flere valgte åbninger ændres sammen, i ét fortrydelsestrin.
+
+**Rediger åbningen…** åbner dens konfigurator: de samme felter over en tegning af åbningen i væggen, anvendt samlet. **Skift til dør…** og **Skift til vindue…** fylder den med en dør eller et vindue af en valgt type, hvor den er: placering, brystning og GlobalId bliver, og **Tilpas typen til åbningen** giver den en type i dens størrelse og topform (projektets i den størrelse, ellers en lavet ud fra den valgte type og navngivet efter størrelsen). Den anden vej tager **Skift til åbning** på en valgt dør eller et valgt vindue det ud og efterlader hullet som en åbning af samme størrelse og form. Hvert er ét fortrydelsestrin.
+
+![En vægåbning i dens konfigurator: halvcirkelformet top, lysningerne pudset](shots/wall-opening-dialog.webp)
+
 ## Konfiguratoren
 
 **Arkitektur → Døre og vinduer** åbner konfiguratoren. Alle projektets dør- og vinduestyper står til venstre. Du kan ændre:

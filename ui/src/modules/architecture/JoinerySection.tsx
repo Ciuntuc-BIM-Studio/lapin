@@ -4,8 +4,8 @@
  * or the side (interior ↔ exterior).
  */
 
-import { FlipHorizontal2, FlipVertical2, Settings2 } from 'lucide-react';
-import { useUi } from '../../app/store';
+import { FlipHorizontal2, FlipVertical2, Settings2, SquareDashed } from 'lucide-react';
+import { select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { mm, num, ofClass, relatedOf, relatingOf, typeOf } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
@@ -14,6 +14,12 @@ import { sameKind } from '../../shell/params';
 
 /** Doors and windows flip together. */
 const JOINERY = ['IfcDoor', 'IfcWindow'];
+
+/** The doors and windows selected made wall openings of their holes, one step; the first opening selected. */
+async function toOpening(node: NodeDto): Promise<void> {
+  const r = await execute('architecture.fillToOpening', { ids: sameKind(node, JOINERY) }) as { ids?: string[] } | null;
+  if (r?.ids?.[0]) select(r.ids[0]);
+}
 
 export function JoinerySection({ node }: { node: NodeDto }) {
   const nodes = useSession((s) => s.nodes);
@@ -48,6 +54,8 @@ export function JoinerySection({ node }: { node: NodeDto }) {
         <div className="row">
           <button type="button" className="btn" title="Hinges on the other side" onClick={() => void execute('architecture.flipJoinery', { ids: sameKind(node, JOINERY), axis: 'x' })}><FlipHorizontal2 size={14} />Hand</button>
           <button type="button" className="btn" title="Opens to the other side of the wall" onClick={() => void execute('architecture.flipJoinery', { ids: sameKind(node, JOINERY), axis: 'y' })}><FlipVertical2 size={14} />Side</button>
+          {/* The door or window goes, its opening stays in the wall with its size and head (report #114, decision 392). */}
+          {wall?.type === 'IfcWall' && <button type="button" className="btn" data-action="fill-to-opening" onClick={() => void toOpening(node)}><SquareDashed size={14} />Change to opening</button>}
         </div>
       )}
     </div>

@@ -28,6 +28,12 @@ Zaznaczony otwór ma uchwyty jak okno: przeciągnij jego środek, aby przesuną�
 
 **Zwieńczenie** kształtuje jego górę: **Prostokąt**, **Łuk odcinkowy** (płaski łuk), **Łuk eliptyczny** (połowa elipsy, o wysokości jednej czwartej szerokości, chyba że podasz inaczej), **Półkole** lub **Zaokrąglone narożniki** (płaskie nadproże z zaokrąglonymi górnymi narożnikami). **Strzałka zwieńczenia** ustala, jak wysoko wznosi się łuk odcinkowy lub eliptyczny, a **Promień narożników**, jak bardzo zaokrąglone są narożniki (150 mm, chyba że podasz inaczej, nigdy więcej niż połowa szerokości); puste pole oznacza wartość domyślną danego rodzaju. Otwór w ścianie podąża za tym obrysem w 3D, na elewacjach i przekrojach oraz w IFC; rzut pokazuje jego ościeża jak dotąd.
 
+**Wykończenie ościeża** okłada ościeża i górę wewnątrz otworu: **Tynk** (15 mm, jeśli nie podasz inaczej) lub **Obicie** (20 mm drewna), z **Grubością wykończenia** i **Materiałem wykończenia**; otwór nad podłogą jest wykończony także od dołu. Wykończenie jest częścią bryły ściany, w 3D, elewacjach, przekrojach i ilościach, a światło otworu to to, co zostaje. **Nadproże** to **Reguła ściany** (nadproże, którego wymaga typ ściany, jak nad drzwiami) lub **Brak**. Kilka zaznaczonych otworów zmienia się razem, w jednym kroku cofania.
+
+**Edytuj otwór…** otwiera jego konfigurator: te same pola nad rysunkiem otworu w ścianie, stosowane razem. **Zmień na drzwi…** i **Zmień na okno…** wypełniają go drzwiami lub oknem wybranego typu tam, gdzie jest: położenie, parapet i GlobalId zostają, a **Dopasuj typ do otworu** daje mu typ jego rozmiaru i zwieńczenia (projektu w tym rozmiarze, w przeciwnym razie zrobiony z wybranego typu i nazwany od rozmiaru). W drugą stronę **Zmień na otwór** przy zaznaczonych drzwiach lub oknie usuwa je i zostawia dziurę jako otwór tego samego rozmiaru i kształtu. Każde to jeden krok cofania.
+
+![Otwór w ścianie w swoim konfiguratorze: półkoliste zwieńczenie, otynkowane ościeża](shots/wall-opening-dialog.webp)
+
 ## Konfigurator
 
 **Architektura → Drzwi i okna** otwiera konfigurator. Po lewej wymienione są wszystkie typy drzwi i okien projektu. Możesz zmienić:

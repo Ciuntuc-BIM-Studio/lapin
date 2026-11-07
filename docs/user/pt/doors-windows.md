@@ -28,6 +28,12 @@ Selecionada, uma abertura tem alças como uma janela: arraste o meio para desliz
 
 **Forma superior** dá a forma da parte de cima: **Retângulo**, **Arco abatido** (um arco abatido), **Arco elíptico** (meia elipse, com um quarto da largura de altura, a menos que você diga outra coisa), **Semicírculo** ou **Cantos arredondados** (um topo reto com os cantos superiores arredondados). **Flecha do arco** define quanto sobe um topo segmentado ou elíptico, **Raio dos cantos** quanto os cantos são arredondados (150 mm, a menos que você diga outra coisa, nunca mais que metade da largura); vazio, o do próprio tipo. A abertura da parede segue o contorno em 3D, nas elevações e nos cortes e no IFC; uma planta mostra os batentes como antes.
 
+**Acabamento do requadro** reveste suas ombreiras e a parte de cima dentro do vão: **Reboco** (15 mm, se não disser outra coisa) ou uma **Guarnição** (20 mm de madeira), com **Espessura do acabamento** e **Material do acabamento**; um vão acima do piso é revestido também por baixo. O acabamento faz parte do corpo da parede, em 3D, fachadas, cortes e quantidades, e o vão livre é o que ele deixa. **Verga** é **A regra da parede** (a verga que o tipo de parede pede, como sobre uma porta) ou **Nenhum**. Vários vãos selecionados mudam juntos, em um só passo de desfazer.
+
+**Editar o vão…** abre o seu configurador: os mesmos campos sobre um desenho do vão na parede, aplicados juntos. **Mudar para porta…** e **Mudar para janela…** o preenchem com uma porta ou janela do tipo escolhido, onde ele está: posição, peitoril e GlobalId ficam, e **Ajustar o tipo ao vão** lhe dá um tipo do seu tamanho e forma (o do projeto nesse tamanho, senão um feito a partir do tipo escolhido e nomeado pelo tamanho). Ao contrário, **Mudar para vão** em uma porta ou janela selecionada a retira e deixa o furo como um vão do mesmo tamanho e forma. Cada um é um só passo de desfazer.
+
+![Um vão na parede no seu configurador: topo semicircular, requadros rebocados](shots/wall-opening-dialog.webp)
+
 ## O configurador
 
 **Arquitetura → Portas e janelas** abre o configurador. Todos os tipos de porta e de janela do projeto estão listados à esquerda. Você pode mudar:

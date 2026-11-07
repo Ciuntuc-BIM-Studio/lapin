@@ -28,6 +28,12 @@ Ausgewählt hat eine Öffnung Griffe wie ein Fenster: ziehen Sie ihre Mitte, um 
 
 **Sturzform** formt ihren oberen Abschluss: **Rechteck**, **Segmentbogen** (ein flacher Bogen), **Ellipsenbogen** (eine halbe Ellipse, ohne Angabe ein Viertel der Breite hoch), **Halbkreis** oder **Abgerundete Ecken** (ein gerader Sturz mit gerundeten oberen Ecken). **Stichhöhe** legt fest, wie hoch ein Segment- oder Ellipsenbogen steigt, **Eckradius**, wie rund die Ecken sind (ohne Angabe 150 mm, nie mehr als die halbe Breite); leer gilt der Wert der Form. Die Wandöffnung folgt dem Umriss in 3D, in Ansichten und Schnitten und im IFC; der Grundriss zeigt ihre Laibungen wie bisher.
 
+**Laibungsbekleidung** bekleidet ihre Laibungen und den Sturz im Loch: **Putz** (15 mm, wenn nicht anders angegeben) oder ein **Futter** (20 mm Holz), mit **Belagsdicke** und **Belagsmaterial**; eine Öffnung über dem Boden wird auch unten bekleidet. Die Bekleidung gehört zum Körper der Wand, in 3D, Ansichten, Schnitten und Mengen, und die lichte Öffnung ist, was sie übrig lässt. **Sturz** ist **Regel der Wand** (der Sturz, den der Wandtyp verlangt, wie über einer Tür) oder **Keine**. Mehrere ausgewählte Öffnungen ändern sich zusammen, in einem Rückgängig-Schritt.
+
+**Öffnung bearbeiten…** öffnet ihren Konfigurator: dieselben Felder über einem Bild der Öffnung in ihrer Wand, zusammen angewendet. **In Tür ändern…** und **In Fenster ändern…** füllen sie mit einer Tür oder einem Fenster eines gewählten Typs, wo sie ist: Lage, Brüstung und GlobalId bleiben, und **Typ an die Öffnung anpassen** gibt ihr einen Typ ihrer Größe und Sturzform (den des Projekts in dieser Größe, sonst einen aus dem gewählten Typ, nach der Größe benannt). Umgekehrt nimmt **In Öffnung ändern** bei einer ausgewählten Tür oder einem Fenster diese heraus und lässt das Loch als Öffnung gleicher Größe und Form. Jedes ist ein Rückgängig-Schritt.
+
+![Eine Wandöffnung in ihrem Konfigurator: halbrunder Sturz, die Laibungen verputzt](shots/wall-opening-dialog.webp)
+
 ## Der Konfigurator
 
 **Architektur → Türen und Fenster** öffnet den Konfigurator. Jeder Tür- und Fenstertyp des Projekts ist links aufgelistet. Sie können ändern:

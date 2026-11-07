@@ -28,6 +28,12 @@ Sélectionnée, une baie a des poignées comme une fenêtre : faites glisser son
 
 **Couvrement** donne la forme de son haut : **Rectangle**, **Arc segmentaire** (un arc surbaissé), **Arc elliptique** (une demi-ellipse, haute d’un quart de la largeur sauf indication contraire), **Plein cintre** ou **Angles arrondis** (un haut droit aux angles supérieurs arrondis). **Flèche de l’arc** règle la montée d’un arc segmentaire ou elliptique, **Rayon des angles** l’arrondi des angles (150 mm sauf indication contraire, jamais plus de la moitié de la largeur) ; vide, celui de la forme. La baie dans le mur suit le contour en 3D, dans les élévations et les coupes et dans l’IFC ; le plan montre ses tableaux comme avant.
 
+**Finition de l’embrasure** habille ses tableaux et son couvrement dans le trou : **Enduit** (15 mm sauf indication) ou un **Habillage** (20 mm de bois), avec son **Épaisseur du revêtement** et son **Matériau du revêtement** ; une baie au-dessus du sol est habillée aussi en dessous. La finition fait partie du corps du mur, en 3D, en façades, en coupes et dans les quantités, et la baie libre est ce qu’elle laisse. **Linteau** est **La règle du mur** (le linteau que demande le type de mur, comme au-dessus d’une porte) ou **Aucun**. Plusieurs baies sélectionnées changent ensemble, en une seule étape d’annulation.
+
+**Modifier la baie…** ouvre son configurateur : les mêmes champs au-dessus d’un dessin de la baie dans son mur, appliqués ensemble. **Changer en porte…** et **Changer en fenêtre…** la remplissent d’une porte ou d’une fenêtre du type choisi, là où elle est : sa place, son allège et son GlobalId restent, et **Ajuster le type à la baie** lui donne un type de sa taille et de son couvrement (celui du projet à cette taille, sinon un fait du type choisi et nommé d’après sa taille). Dans l’autre sens, **Changer en baie** sur une porte ou une fenêtre sélectionnée l’enlève et laisse son trou comme une baie de même taille et de même forme. Chacun est une seule étape d’annulation.
+
+![Une baie dans son configurateur : couvrement en plein cintre, embrasures enduites](shots/wall-opening-dialog.webp)
+
 ## Le configurateur
 
 **Architecture → Portes et fenêtres** ouvre le configurateur. Chaque type de porte et de fenêtre du projet est listé à gauche. Vous pouvez modifier :

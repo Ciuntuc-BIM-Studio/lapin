@@ -28,6 +28,12 @@ Selected, an opening has grips like a window: drag its middle to slide it along 
 
 **Head** shapes its top: **Rectangle**, **Segmental arch** (a shallow arc), **Elliptical arch** (a half ellipse, a quarter of the width high unless you say), **Semicircle**, or **Radiused corners** (a flat head with its top corners rounded). **Rise of the head** sets how high a segmental or elliptical head rises, **Corner radius** how round the corners are (150 mm unless you say, never more than half the width); empty, the kind's own. The wall's opening follows the outline in 3D, in elevations and sections and in IFC; a plan shows its jambs as before.
 
+**Reveal finish** lines its jambs and head inside the hole: **Plaster** (15 mm unless you say) or a **Lining** (20 mm of timber), with its **Finish thickness** and **Finish material**; an opening above the floor is finished under it too. The finish is part of the wall's body, in 3D, elevations, sections and quantities, and the clear opening is what it leaves. **Lintel** is **The wall’s rule** (the lintel the wall type asks for, as over a door) or **None**. Several openings selected change together, in one undo step.
+
+**Edit the opening…** opens its configurator: the same fields over a picture of the opening in its wall, applied together. **Change to door…** and **Change to window…** fill it with a door or window of a type you choose, where it is: its place, its sill and its GlobalId stay, and **Fit the type to the opening** gives it a type of its size and head (the project's of that size, else one made from the type chosen and named by its size). The other way, a selected door's or window's **Change to opening** takes it out and leaves its hole as an opening of the same size and head. Each is one undo step.
+
+![A wall opening in its configurator: a semicircular head, the reveal plastered](shots/wall-opening-dialog.webp)
+
 ## The configurator
 
 **Architecture → Doors & windows** opens the configurator. Every door and window type of the project is listed on the left. You can change:

@@ -28,6 +28,12 @@ Selectat, un gol are mânere ca o fereastră: trage de mijlocul lui ca să-l mu�
 
 **Forma de sus** dă forma capului: **Dreptunghi**, **Arc de segment** (un arc turtit), **Arc eliptic** (o jumătate de elipsă, înaltă cât un sfert din lățime dacă nu spui altfel), **Semicerc** sau **Colțuri rotunjite** (un cap drept cu colțurile de sus rotunjite). **Înălțimea arcului** spune cât se ridică un arc de segment sau eliptic, **Raza colțurilor** cât de rotunde sunt colțurile (150 mm dacă nu spui altfel, niciodată mai mult de jumătate din lățime); goală, cea a formei. Golul din perete urmează conturul în 3D, în fațade și secțiuni și în IFC; planul îi arată spaletele ca înainte.
 
+**Finisajul șpaleților** îmbracă glafurile și partea de sus în interiorul golului: **Tencuială** (15 mm dacă nu spui altfel) sau o **Căptușeală** (20 mm de lemn), cu **Grosimea finisajului** și **Materialul finisajului**; un gol deasupra pardoselii e finisat și dedesubt. Finisajul face parte din corpul peretelui, în 3D, fațade, secțiuni și cantități, iar golul liber e ce rămâne. **Buiandrug** e **Regula peretelui** (buiandrugul cerut de tipul peretelui, ca deasupra unei uși) sau **Niciunul**. Mai multe goluri selectate se schimbă împreună, într-un singur pas de anulare.
+
+**Editează golul…** deschide configuratorul lui: aceleași câmpuri peste un desen al golului în perete, aplicate împreună. **Schimbă în ușă…** și **Schimbă în fereastră…** îl umplu cu o ușă sau o fereastră de tipul ales, acolo unde e: locul, parapetul și GlobalId-ul lui rămân, iar **Potrivește tipul la gol** îi dă un tip de mărimea și forma lui (al proiectului de acea mărime, altfel unul făcut din tipul ales și numit după mărime). Invers, **Schimbă în gol** la o ușă sau fereastră selectată o scoate și lasă gaura ca gol de aceeași mărime și formă. Fiecare e un singur pas de anulare.
+
+![Un gol în perete în configuratorul lui: cap semicircular, glafurile tencuite](shots/wall-opening-dialog.webp)
+
 ## Configuratorul
 
 **Arhitectură → Uși și ferestre** deschide configuratorul. În stânga sunt toate tipurile de uși și ferestre din proiect. Poți schimba:

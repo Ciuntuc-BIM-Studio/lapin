@@ -5,13 +5,15 @@
  * Its head may be shaped (decision 253): a segmental or elliptical arch, a semicircle, rounded top corners.
  */
 
-import { SquareDashed } from 'lucide-react';
+import { AppWindow, DoorOpen, Settings2, SquareDashed } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import type { ToolDef } from '../../platform/module';
 import { useUi, type OpeningHead } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { relatedOf, relatingOf } from '../../engine/model';
 import { LengthField } from '../../shell/cells';
+import { sameKind } from '../../shell/params';
+import { draftOf, openOpeningDialog, revealMaterial, revealThickness, REVEALS } from './OpeningDialog';
 
 const HEADS: { kind: OpeningHead; label: string }[] = [
   { kind: 'rect', label: 'Rectangle' }, { kind: 'segmental', label: 'Segmental arch' }, { kind: 'elliptical', label: 'Elliptical arch' },
@@ -76,16 +78,55 @@ const headOf = (n: NodeDto): OpeningHead => {
   return k === 'segmental' || k === 'elliptical' || k === 'round' || k === 'radiused' ? k : 'rect';
 };
 
-/** A selected opening alone: its size, its place along the wall, its sill and its head, each checked against the wall and its other openings. */
+/** The wall openings selected with this one (they change together, as doors and windows of a type do). */
+const openingsWith = (node: NodeDto): string[] => {
+  const nodes = useSession.getState().nodes;
+  const ids = sameKind(node).filter((id) => { const n = nodes.get(id); return !!n && isWallOpening(n); });
+  return ids.length ? ids : [node.id];
+};
+
+/**
+ * A selected opening alone: its size, its place along the wall, its sill and its head, each checked against the wall and its
+ * other openings; its reveal's finish and its lintel (decision 392); the configurator, and Change to door or window (report #114).
+ */
 export function WallOpeningSection({ node }: { node: NodeDto }) {
-  const set = (patch: Record<string, number | string | null>) => void execute('architecture.updateWallOpening', { id: node.id, ...patch });
+  const nodes = useSession((s) => s.nodes);
+  const set = (patch: Record<string, number | string | null>) => void execute('architecture.updateWallOpening', { ids: openingsWith(node), ...patch });
+  const d = draftOf(node);
+  const t = d.reveal === 'none' ? 0 : d.revealThickness ?? revealThickness(d.reveal);
+  const materials = [...nodes.values()].filter((m) => m.type === 'IfcMaterial').map((m) => m.name).sort((a, b) => a.localeCompare(b));
+  const material = d.revealMaterial ?? revealMaterial(d.reveal);
   return (
-    <dl className="fields pad" data-field="wall-opening">
-      <dt>Width</dt><dd><LengthField metres={num(node, 'width', 1)} min={0.05} onCommit={(m) => m != null && set({ width: m })} /></dd>
-      <dt>Height</dt><dd><LengthField metres={num(node, 'height', 2)} min={0.05} onCommit={(m) => m != null && set({ height: m })} /></dd>
-      <dt>Along the wall</dt><dd><LengthField metres={num(node, 'along', 0)} min={0} onCommit={(m) => m != null && set({ along: m })} /></dd>
-      <dt>Sill</dt><dd><LengthField metres={num(node, 'sill', 0)} min={0} onCommit={(m) => m != null && set({ sill: m })} /></dd>
-      <HeadFields kind={headOf(node)} rise={typeof node.props.rise === 'number' ? node.props.rise : null} width={num(node, 'width', 1)} onChange={set} />
-    </dl>
+    <>
+      <dl className="fields pad" data-field="wall-opening">
+        <dt>Width</dt><dd><LengthField metres={num(node, 'width', 1)} min={0.05} onCommit={(m) => m != null && set({ width: m })} /></dd>
+        <dt>Height</dt><dd><LengthField metres={num(node, 'height', 2)} min={0.05} onCommit={(m) => m != null && set({ height: m })} /></dd>
+        <dt>Along the wall</dt><dd><LengthField metres={num(node, 'along', 0)} min={0} onCommit={(m) => m != null && execute('architecture.updateWallOpening', { id: node.id, along: m })} /></dd>
+        <dt>Sill</dt><dd><LengthField metres={num(node, 'sill', 0)} min={0} onCommit={(m) => m != null && set({ sill: m })} /></dd>
+        <HeadFields kind={headOf(node)} rise={typeof node.props.rise === 'number' ? node.props.rise : null} width={num(node, 'width', 1)} onChange={set} />
+        <dt>Reveal finish</dt>
+        <dd><select data-field="opening-reveal" value={d.reveal} onChange={(e) => set({ reveal: e.target.value })}>
+          {REVEALS.map((r) => <option key={r.kind} value={r.kind}>{r.label}</option>)}
+        </select></dd>
+        {d.reveal !== 'none' && <>
+          <dt>Finish thickness</dt><dd><LengthField metres={t} min={0.001} testId="opening-reveal-thickness" onCommit={(m) => set({ revealThickness: m })} /></dd>
+          <dt>Finish material</dt>
+          <dd><select value={material} onChange={(e) => set({ revealMaterial: e.target.value })}>
+            {[...new Set([material, ...materials])].map((m) => <option key={m} value={m}>{m}</option>)}
+          </select></dd>
+        </>}
+        <dt>Lintel</dt>
+        <dd><select data-field="opening-lintel" value={d.lintel} onChange={(e) => set({ lintel: e.target.value })}>
+          <option value="wall">The wall’s rule</option><option value="none">None</option>
+        </select></dd>
+      </dl>
+      {node.editable !== false && (
+        <div className="row pad">
+          <button type="button" className="btn" data-action="opening-edit" onClick={() => openOpeningDialog(node.id, openingsWith(node))}><Settings2 size={14} />Edit the opening…</button>
+          <button type="button" className="btn" data-action="opening-to-door" onClick={() => openOpeningDialog(node.id, [node.id], 'door')}><DoorOpen size={14} />Change to door…</button>
+          <button type="button" className="btn" data-action="opening-to-window" onClick={() => openOpeningDialog(node.id, [node.id], 'window')}><AppWindow size={14} />Change to window…</button>
+        </div>
+      )}
+    </>
   );
 }

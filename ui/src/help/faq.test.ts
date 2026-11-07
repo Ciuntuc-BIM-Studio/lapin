@@ -80,6 +80,11 @@ describe('Ask Lapin', () => {
     // Report #108.
     expect(best('3D preview of the window in the configurator')).toBe('joinery-3d-preview');
     expect(best('previzualizare 3D a ferestrei in configurator')).toBe('joinery-3d-preview');
+    // Report #114, in the tester's words.
+    expect(best('Please add wall opening edit window')).toBe('wall-opening-edit');
+    expect(best('I am not able to edit other elements once I select the type of wall opening, once that is chosen it is fixed')).toBe('wall-opening-edit');
+    expect(best('If I want to change that opening to another type I must be able to edit it like how we edit doors and windows')).toBe('wall-opening-edit');
+    expect(best('cum transform un gol in fereastra')).toBe('wall-opening-edit');
     // Report #113, in the tester's words.
     expect(best('Can we retain the imported DXF?')).toBe('dxf-kept');
     expect(best('instead of continuously reimporting the dxf whenever opening the program, is it possible to leave the dxf alone')).toBe('dxf-kept');

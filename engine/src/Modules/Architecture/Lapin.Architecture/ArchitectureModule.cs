@@ -550,15 +550,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var opening = Openings.AddBare(ctx, wall, along, Json.Number(a["sill"]) ?? 0, Json.Number(a["width"]) ?? 0.9, Json.Number(a["height"]) ?? 2.1, (string?)a["shape"], Json.Number(a["rise"]));
             return new JsonObject { ["id"] = opening.Id };
         });
-        // Its size, place along the wall, sill and head: {id, width?, height?, along?, sill?, shape?, rise? (null: the kind's own)}.
-        r.Command("updateWallOpening", "Change opening", (ctx, a) =>
-        {
-            var opening = Spatial.Require(ctx.Model, (string?)a["id"], IfcClass.OpeningElement);
-            if (a["width"] != null || a["height"] != null) Openings.Resize(ctx, opening, Json.Number(a["width"]), Json.Number(a["height"]));
-            if (a["along"] != null || a["sill"] != null) Openings.Move(ctx, ctx.Model.Get(opening.Id)!, Json.Number(a["along"]), Json.Number(a["sill"]));
-            if (a["shape"] != null || a.ContainsKey("rise")) Openings.Reshape(ctx, ctx.Model.Get(opening.Id)!, (string?)a["shape"], Json.Number(a["rise"]), a.ContainsKey("rise") && a["rise"] == null);
-            return null;
-        });
+        // Its size, place along the wall, sill and head, its reveal's finish and its lintel (decision 392), for one or several:
+        // {id | ids, width?, height?, along?, sill?, shape?, rise? (null: the kind's own), reveal?, revealThickness?, revealMaterial?, lintel?}.
+        r.Command("updateWallOpening", "Change opening", (ctx, a) => { BareOpenings.Update(ctx, a); return null; });
+        BareOpenings.Register(r);
 
         r.Command("moveOpening", "Move opening", (ctx, a) =>
         {

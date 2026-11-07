@@ -28,6 +28,12 @@ Seleccionado, un hueco tiene pinzamientos como una ventana: arrastra su centro p
 
 **Forma superior** da forma a su remate: **Rectángulo**, **Arco rebajado** (un arco poco peraltado), **Arco elíptico** (media elipse, de una cuarta parte del ancho de alto salvo que se indique otra cosa), **Semicírculo** o **Esquinas redondeadas** (un remate recto con las esquinas superiores redondeadas). **Flecha del arco** fija cuánto sube un remate rebajado o elíptico, **Radio de las esquinas** cuán redondas son las esquinas (150 mm salvo que se indique otra cosa, nunca más de la mitad del ancho); vacío, el propio de la forma. El hueco del muro sigue el contorno en 3D, en alzados y secciones y en IFC; la planta muestra sus jambas como antes.
 
+**Acabado de la mocheta** reviste sus jambas y su remate dentro del hueco: **Enlucido** (15 mm si no dices otra cosa) o un **Forro** (20 mm de madera), con su **Espesor del acabado** y su **Material del acabado**; un hueco por encima del suelo se reviste también por debajo. El acabado es parte del cuerpo del muro, en 3D, alzados, secciones y cantidades, y el hueco libre es lo que deja. **Dintel** es **La regla del muro** (el dintel que pide el tipo de muro, como sobre una puerta) o **Ninguno**. Varios huecos seleccionados cambian juntos, en un solo paso de deshacer.
+
+**Editar el hueco…** abre su configurador: los mismos campos sobre un dibujo del hueco en su muro, aplicados juntos. **Cambiar a puerta…** y **Cambiar a ventana…** lo llenan con una puerta o una ventana del tipo que elijas, donde está: su posición, su antepecho y su GlobalId se mantienen, y **Ajustar el tipo al hueco** le da un tipo de su tamaño y remate (el del proyecto de ese tamaño, o uno hecho del tipo elegido y nombrado por su tamaño). Al revés, **Cambiar a hueco** en una puerta o ventana seleccionada la quita y deja su hueco del mismo tamaño y forma. Cada uno es un solo paso de deshacer.
+
+![Un hueco en el muro en su configurador: remate semicircular, las mochetas enlucidas](shots/wall-opening-dialog.webp)
+
 ## El configurador
 
 **Arquitectura → Puertas y ventanas** abre el configurador. Todos los tipos de puerta y ventana del proyecto aparecen a la izquierda. Puede cambiar:

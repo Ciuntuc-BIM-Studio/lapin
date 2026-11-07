@@ -28,6 +28,12 @@ Selezionata, un’apertura ha maniglie come una finestra: trascina il suo centro
 
 **Forma superiore** dà la forma della sua testa: **Rettangolo**, **Arco ribassato** (un arco poco rialzato), **Arco ellittico** (mezza ellisse, alta un quarto della larghezza se non dici altrimenti), **Semicerchio** o **Angoli arrotondati** (una testa piana con gli angoli superiori arrotondati). **Freccia dell’arco** stabilisce quanto sale una testa ribassata o ellittica, **Raggio degli angoli** quanto sono arrotondati gli angoli (150 mm se non dici altrimenti, mai più di metà della larghezza); vuoto, quello della forma. L’apertura nel muro segue il contorno in 3D, nei prospetti e nelle sezioni e nell’IFC; la pianta ne mostra le spalle come prima.
 
+**Finitura della mazzetta** riveste gli stipiti e la parte superiore dentro il foro: **Intonaco** (15 mm salvo indicazione) o un **Rivestimento** (20 mm di legno), con **Spessore della finitura** e **Materiale della finitura**; un’apertura sopra il pavimento è rivestita anche sotto. La finitura fa parte del corpo del muro, in 3D, prospetti, sezioni e quantità, e la luce netta è ciò che lascia. **Architrave** è **La regola del muro** (l’architrave che il tipo di muro chiede, come sopra una porta) o **Nessuno**. Più aperture selezionate cambiano insieme, in un solo passo di annullamento.
+
+**Modifica l’apertura…** apre il suo configuratore: gli stessi campi sopra un disegno dell’apertura nel suo muro, applicati insieme. **Cambia in porta…** e **Cambia in finestra…** la riempiono con una porta o una finestra del tipo scelto, dov’è: posizione, davanzale e GlobalId restano, e **Adatta il tipo all’apertura** le dà un tipo della sua misura e forma (quello del progetto di quella misura, altrimenti uno fatto dal tipo scelto e chiamato con la misura). Al contrario, **Cambia in apertura** su una porta o finestra selezionata la toglie e lascia il foro come apertura della stessa misura e forma. Ognuno è un solo passo di annullamento.
+
+![Un’apertura nel muro nel suo configuratore: arco a tutto sesto, mazzette intonacate](shots/wall-opening-dialog.webp)
+
 ## Il configuratore
 
 **Architettura → Porte e finestre** apre il configuratore. Tutti i tipi di porta e finestra del progetto sono elencati a sinistra. Puoi modificare:
