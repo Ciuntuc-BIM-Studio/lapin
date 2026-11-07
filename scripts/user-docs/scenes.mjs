@@ -3694,6 +3694,33 @@ export const scenes = [
     },
   },
   {
+    // An imported DXF kept by the project (a tester's report #113, decision 386): imported as File → Import DXF… does (into the
+    // level's own plan view, made then), grouped, saved, the project opened again: the plan shows it without importing it again.
+    id: 'dxf-kept',
+    async run(t) {
+      await t.fresh();
+      const view = await t.page.evaluate(async () => (await import('/src/viewport/frontView.ts')).frontView());
+      t.expect(typeof view === 'string' && !view.startsWith('plan:'), 'the import goes into the level\'s own plan view');
+      await t.cmd('drafting.importDxf', { viewId: view, name: 'plan.dxf', data: Buffer.from(siteDxf()).toString('base64') });
+      const drafted = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.viewId === view).map((n) => n.id);
+      await t.cmd('group.create', { ids: drafted, name: 'Ground floor DXF' });
+      const path = join(mkdtempSync(join(tmpdir(), 'lapin-guide-dxf-')), 'house.lapin');
+      await t.call('project.save', { path });
+      await t.page.evaluate(async (p) => (await import('/src/engine/files.ts')).openProject(p), path);
+      await t.wait(1500);
+      const kept = (await t.nodes()).filter((n) => n.type === 'IfcAnnotation' && n.props.viewId === view).length;
+      t.expect(kept === drafted.length && (await t.nodes()).some((n) => n.type === 'IfcGroup'), `the DXF and its group come back (${kept} of ${drafted.length})`);
+      // The plan in front is the level's own: its drawing holds the DXF's lines.
+      const shown = await t.page.evaluate(async () => {
+        const ui = (await import('/src/app/store.ts')).useUi.getState();
+        const { useSession, activeStorey } = await import('/src/engine/session.ts');
+        const st = activeStorey();
+        return st ? (await import('/src/viewport/storeyPlan.ts')).planViewIdOf(useSession.getState().nodes, st.id, ui.planViewId) : null;
+      });
+      t.expect(shown === view, `the plan shown after opening is the one the DXF is on (${shown})`);
+    },
+  },
+  {
     // A tester's report (decision 312): a wall opening edited by its grips as a window is, OFFSET read in the project's
     // millimetres, then a line drafted in the 3D view on the storey's level, standing there in 3D as the plan's drafts do.
     id: 'draft-3d',
