@@ -6,7 +6,7 @@ summary: Ask Me, întrebările la care răspunde, cum raportezi o problemă, lim
 
 ## Ask Me
 
-Apasă **Ask Me**, iepurașul din dreapta sus, sau tasta <kbd>F1</kbd> oriunde. Scrie întrebarea cu cuvintele tale, în română sau în engleză. Ask Me răspunde din întrebările puse înainte de utilizatori, iar un buton te duce direct în locul potrivit din aplicație.
+Apasă **Ask Me**, iepurașul din dreapta sus, sau tasta <kbd>F1</kbd> oriunde. Scrie întrebarea cu cuvintele tale, în română sau în engleză; întrebările puse cel mai des (unitățile, salvarea, pereții, nivelurile, secțiunile, tipărirea, ghidul) sunt găsite și în celelalte limbi ale interfeței, cu răspunsul în engleză. Ask Me răspunde din întrebările puse înainte de utilizatori, iar un buton te duce direct în locul potrivit din aplicație.
 
 ![Ask Me răspunde cum copiezi un perete](shots/ask-me.webp)
 

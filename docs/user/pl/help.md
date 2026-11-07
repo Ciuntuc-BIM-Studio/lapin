@@ -6,7 +6,7 @@ summary: Zapytaj mnie, pytania, na które odpowiada, zgłaszanie problemu, języ
 
 ## Zapytaj mnie
 
-Kliknij **Zapytaj mnie**, królika w prawym górnym rogu, albo naciśnij <kbd>F1</kbd> w dowolnym miejscu. Wpisz pytanie własnymi słowami, po angielsku lub po rumuńsku. Zapytaj mnie odpowiada na podstawie pytań, które użytkownicy zadali wcześniej, a przycisk zabiera cię prosto we właściwe miejsce w aplikacji.
+Kliknij **Zapytaj mnie**, królika w prawym górnym rogu, albo naciśnij <kbd>F1</kbd> w dowolnym miejscu. Wpisz pytanie własnymi słowami, po angielsku lub po rumuńsku; najczęstsze pytania (jednostki, zapisywanie, ściany, poziomy, przekroje, drukowanie, przewodnik) są rozpoznawane także w pozostałych językach interfejsu, a odpowiedź jest po angielsku. Zapytaj mnie odpowiada na podstawie pytań, które użytkownicy zadali wcześniej, a przycisk zabiera cię prosto we właściwe miejsce w aplikacji.
 
 ![Zapytaj mnie wyjaśnia, jak skopiować ścianę](shots/ask-me.webp)
 

@@ -6,7 +6,7 @@ summary: Ask Me, die Fragen, die es beantwortet, ein Problem melden, die Sprache
 
 ## Ask Me
 
-Klicken Sie auf **Ask Me**, den Hasen oben rechts, oder drücken Sie an beliebiger Stelle <kbd>F1</kbd>. Stellen Sie Ihre Frage in eigenen Worten, auf Englisch oder Rumänisch. Ask Me antwortet anhand der Fragen, die Benutzer zuvor gestellt haben, und eine Schaltfläche bringt Sie direkt an die richtige Stelle in der App.
+Klicken Sie auf **Ask Me**, den Hasen oben rechts, oder drücken Sie an beliebiger Stelle <kbd>F1</kbd>. Stellen Sie Ihre Frage in eigenen Worten, auf Englisch oder Rumänisch; die häufigsten Fragen (Einheiten, Speichern, Wände, Geschosse, Schnitte, Drucken, die Anleitung) werden auch in den anderen Sprachen der Oberfläche gefunden und auf Englisch beantwortet. Ask Me antwortet anhand der Fragen, die Benutzer zuvor gestellt haben, und eine Schaltfläche bringt Sie direkt an die richtige Stelle in der App.
 
 ![Ask Me beantwortet, wie man eine Wand kopiert](shots/ask-me.webp)
 

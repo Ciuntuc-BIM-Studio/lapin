@@ -6,7 +6,7 @@ summary: Ask Me, de spørgsmål den besvarer, at rapportere et problem, sproget 
 
 ## Ask Me
 
-Klik på **Ask Me**, kaninen øverst til højre, eller tryk på <kbd>F1</kbd> hvor som helst. Skriv dit spørgsmål med dine egne ord, på engelsk eller rumænsk. Ask Me svarer ud fra de spørgsmål, brugerne har stillet før, og en knap fører dig direkte til det rigtige sted i programmet.
+Klik på **Ask Me**, kaninen øverst til højre, eller tryk på <kbd>F1</kbd> hvor som helst. Skriv dit spørgsmål med dine egne ord, på engelsk eller rumænsk; de oftest stillede spørgsmål (enheder, gemme, vægge, niveauer, snit, udskrivning, vejledningen) findes også på grænsefladens andre sprog og besvares på engelsk. Ask Me svarer ud fra de spørgsmål, brugerne har stillet før, og en knap fører dig direkte til det rigtige sted i programmet.
 
 ![Ask Me der svarer på, hvordan man kopierer en væg](shots/ask-me.webp)
 

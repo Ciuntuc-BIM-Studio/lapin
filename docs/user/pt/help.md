@@ -6,7 +6,7 @@ summary: O Pergunte-me, as perguntas que ele responde, como relatar um problema,
 
 ## Pergunte-me
 
-Clique em **Pergunte-me**, o coelho no canto superior direito, ou pressione <kbd>F1</kbd> em qualquer lugar. Digite a sua pergunta com as suas próprias palavras, em inglês ou romeno. O Pergunte-me responde a partir das perguntas que os usuários já fizeram, e um botão leva você direto ao lugar certo no aplicativo.
+Clique em **Pergunte-me**, o coelho no canto superior direito, ou pressione <kbd>F1</kbd> em qualquer lugar. Digite a sua pergunta com as suas próprias palavras, em inglês ou romeno; as perguntas mais frequentes (unidades, salvar, paredes, níveis, cortes, impressão, o guia) também são encontradas nos outros idiomas da interface, com a resposta em inglês. O Pergunte-me responde a partir das perguntas que os usuários já fizeram, e um botão leva você direto ao lugar certo no aplicativo.
 
 ![O Pergunte-me respondendo como copiar uma parede](shots/ask-me.webp)
 

@@ -6,7 +6,7 @@ summary: Ask Me, les questions auxquelles il répond, signaler un problème, la 
 
 ## Ask Me
 
-Cliquez sur **Ask Me**, le lapin en haut à droite, ou appuyez sur <kbd>F1</kbd> n’importe où. Tapez votre question avec vos propres mots, en anglais ou en roumain. Ask Me répond à partir des questions que les utilisateurs ont déjà posées, et un bouton vous emmène directement au bon endroit dans l’application.
+Cliquez sur **Ask Me**, le lapin en haut à droite, ou appuyez sur <kbd>F1</kbd> n’importe où. Tapez votre question avec vos propres mots, en anglais ou en roumain ; les questions les plus posées (unités, enregistrement, murs, niveaux, coupes, impression, le guide) sont aussi trouvées dans les autres langues de l’interface, avec la réponse en anglais. Ask Me répond à partir des questions que les utilisateurs ont déjà posées, et un bouton vous emmène directement au bon endroit dans l’application.
 
 ![Ask Me expliquant comment copier un mur](shots/ask-me.webp)
 

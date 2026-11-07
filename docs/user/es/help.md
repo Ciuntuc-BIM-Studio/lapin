@@ -6,7 +6,7 @@ summary: Ask Me, las preguntas que responde, cómo informar de un problema, el i
 
 ## Ask Me
 
-Haga clic en **Ask Me**, el conejo de arriba a la derecha, o pulse <kbd>F1</kbd> en cualquier lugar. Escriba su pregunta con sus propias palabras, en inglés o en rumano. Ask Me responde a partir de las preguntas que los usuarios han hecho antes, y un botón le lleva directamente al lugar adecuado de la aplicación.
+Haga clic en **Ask Me**, el conejo de arriba a la derecha, o pulse <kbd>F1</kbd> en cualquier lugar. Escriba su pregunta con sus propias palabras, en inglés o en rumano; las preguntas más frecuentes (unidades, guardar, muros, niveles, secciones, imprimir, la guía) se encuentran también en los demás idiomas de la interfaz y se responden en inglés. Ask Me responde a partir de las preguntas que los usuarios han hecho antes, y un botón le lleva directamente al lugar adecuado de la aplicación.
 
 ![Ask Me responde cómo copiar un muro](shots/ask-me.webp)
 

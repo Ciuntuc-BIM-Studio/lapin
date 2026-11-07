@@ -6,7 +6,7 @@ summary: Ask Me, the questions it answers, reporting a problem, the language and
 
 ## Ask Me
 
-Click **Ask Me**, the rabbit at the top right, or press <kbd>F1</kbd> anywhere. Type your question in your own words, in English or Romanian. Ask Me answers from the questions users have asked before, and a button takes you straight to the right place in the app.
+Click **Ask Me**, the rabbit at the top right, or press <kbd>F1</kbd> anywhere. Type your question in your own words, in English or Romanian; the most asked questions (units, saving, walls, levels, sections, printing, the guide) are found in the interface's other languages too, and answered in English. Ask Me answers from the questions users have asked before, and a button takes you straight to the right place in the app.
 
 ![Ask Me answering how to copy a wall](shots/ask-me.webp)
 

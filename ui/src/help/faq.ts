@@ -5,7 +5,9 @@
  * place in the interface, a button that opens it.
  *
  * Adding an entry: write the questions the way a user would type them, the
- * keywords (and their Romanian, without diacritics), the answer, and `source`:
+ * keywords (and their Romanian, without diacritics; for an entry many ask, its
+ * nouns in Spanish, Portuguese, French, Italian, German, Polish, Danish and
+ * Chinese too), the answer, and `source`:
  * "faq", or the tester's report it answers ("report #23"). A report closed as
  * "hard to find in the interface" gets its entry here.
  */
@@ -24,7 +26,7 @@ export interface Entry {
   /** The questions as people ask them; the first is shown as the title. */
   q: string[];
   qRo: string[];
-  /** Words that point to this entry, in English and Romanian (without diacritics). */
+  /** Words that point to this entry, in English and Romanian (without diacritics); the most asked entries also in the interface's other languages (Chinese as written). */
   keywords: string[];
   a: string;
   aRo: string;
@@ -37,7 +39,9 @@ export const FAQ: Entry[] = [
     id: 'units',
     q: ['How do I change the units to metres, centimetres or feet?', 'Can I work in feet and inches?', 'Where is the unit setting?'],
     qRo: ['Cum schimb unitățile în metri, centimetri sau picioare?', 'Pot lucra în inch?', 'Unde se schimbă unitatea de măsură?'],
-    keywords: ['unit', 'units', 'metre', 'meter', 'metres', 'meters', 'feet', 'foot', 'ft', 'inch', 'inches', 'imperial', 'metric', 'mm', 'cm', 'millimetres', 'unitate', 'unitati', 'masura', 'metri', 'centimetri', 'milimetri', 'picioare', 'toli'],
+    keywords: ['unit', 'units', 'metre', 'meter', 'metres', 'meters', 'feet', 'foot', 'ft', 'inch', 'inches', 'imperial', 'metric', 'mm', 'cm', 'millimetres', 'unitate', 'unitati', 'masura', 'metri', 'centimetri', 'milimetri', 'picioare', 'toli',
+      // Spanish, Portuguese, French, Italian, German, Polish, Danish, Chinese
+      'unidad', 'unidades', 'metros', 'metro', 'centimetros', 'milimetros', 'pies', 'pulgada', 'pulgadas', 'polegada', 'polegadas', 'pes', 'unite', 'unites', 'metres', 'pieds', 'pouces', 'unita', 'piedi', 'pollici', 'einheit', 'einheiten', 'meter', 'zoll', 'fuss', 'jednostka', 'jednostki', 'metry', 'stopy', 'cale', 'enhed', 'enheder', 'tommer', 'fod', '单位', '米', '英尺', '英寸', '毫米', '厘米'],
     a: 'Manage → Drafting standards → Project → Units (or click Units at the bottom of the window): millimetres, centimetres, metres, feet and inches, or inches. Every length in the panels, the live input, the command line and the dimensions follows it; the project keeps metres inside, so changing it never changes the model. A dimension style can also have a unit of its own.',
     aRo: 'Manage → Drafting standards → Project → Units (sau clic pe Units în bara de jos a ferestrei): milimetri, centimetri, metri, picioare și inch sau inch. Toate lungimile din panouri, din introducerea directă, din linia de comandă și din cote o urmează; proiectul ține intern metri, deci schimbarea nu modifică modelul. Un stil de cotă poate avea și o unitate proprie.',
     action: { label: 'Open Drafting standards', labelRo: 'Deschide Drafting standards', run: { kind: 'standards' } },
@@ -67,7 +71,7 @@ export const FAQ: Entry[] = [
     id: 'import-dwg-pdf',
     q: ['Can I import a DWG or a PDF?', 'How do I bring in a CAD drawing?', 'Can I trace over a plan from AutoCAD?'],
     qRo: ['Pot importa un DWG sau un PDF?', 'Cum aduc un desen din AutoCAD?', 'Cum pun un plan CAD ca fundal?'],
-    keywords: ['import', 'dwg', 'dxf', 'pdf', 'autocad', 'cad', 'drawing', 'trace', 'underlay', 'background', 'link', 'importa', 'desen', 'fundal', 'plan'],
+    keywords: ['import', 'dwg', 'dxf', 'pdf', 'autocad', 'cad', 'drawing', 'trace', 'underlay', 'background', 'link', 'importa', 'desen', 'fundal', 'plan', 'importar', 'importer', 'importare', 'importieren', 'importuj', '导入'],
     a: 'DXF, yes: Draft → Import DXF brings its lines into the plan as drafting you can snap to and edit, and ticking „As a link” in its dialog keeps the DXF linked read-only (File → Link IFC does the same for an IFC). DWG: save it as DXF from your CAD program (AutoCAD, BricsCAD, DraftSight: Save As → DXF), then import that. PDF import is not there yet.',
     aRo: 'DXF, da: Draft → Import DXF aduce liniile în plan, ca desen pe care faci snap și pe care îl poți edita, iar bifa „As a link” din dialogul lui păstrează DXF-ul legat, needitabil (File → Link IFC face la fel pentru un IFC). DWG: salvează-l ca DXF din programul CAD (AutoCAD, BricsCAD, DraftSight: Save As → DXF), apoi importă-l. Importul de PDF nu există încă.',
     action: { label: 'Import DXF', labelRo: 'Importă DXF', run: { kind: 'tool', id: 'drafting.importDxf' } },
@@ -175,7 +179,7 @@ export const FAQ: Entry[] = [
     id: 'copy-move',
     q: ['How do I copy a wall?', 'How do I move an element?', 'I drag a wall and nothing happens'],
     qRo: ['Cum copiez un perete?', 'Cum mut un element?', 'Trag de un perete și nu se întâmplă nimic'],
-    keywords: ['copy', 'copies', 'duplicate', 'move', 'drag', 'paste', 'clone', 'copiez', 'copiere', 'copie', 'mut', 'mutare', 'muta', 'trag', 'duplic', 'copiar', 'copio', 'kopieren', 'kopiere', 'copier', 'kopier', 'kopierer', 'copiare', 'copia'],
+    keywords: ['copy', 'copies', 'duplicate', 'move', 'drag', 'paste', 'clone', 'copiez', 'copiere', 'copie', 'mut', 'mutare', 'muta', 'trag', 'duplic', 'copiar', 'copio', 'kopieren', 'kopiere', 'copier', 'kopier', 'kopierer', 'copiare', 'copia', 'mover', 'deplacer', 'spostare', 'verschieben', 'kopiuj', 'przesun', 'flyt', 'copiar', '复制', '移动'],
     a: 'Select the element, then Copy (or type CO and Enter): click a base point and a second point; it keeps copying until Enter or Esc. Move (M) works the same. Or drag: drag the cross in the middle of a selected element to move it, hold Ctrl (⌘ on a Mac) while dragging it to drop a copy. A press and a release also give a command its two points.',
     aRo: 'Selectează elementul, apoi Copy (sau scrie CO și Enter): un clic pentru punctul de bază și unul pentru al doilea punct; copiază până la Enter sau Esc. Move (M) merge la fel. Sau trage: crucea din mijlocul unui element selectat îl mută, iar cu Ctrl (⌘ pe Mac) ținut lasă o copie. Apăsarea și eliberarea mouse-ului dau și ele cele două puncte ale unei comenzi.',
     action: { label: 'Start Copy', labelRo: 'Pornește Copy', run: { kind: 'tool', id: 'modify.copy' } },
@@ -265,7 +269,7 @@ export const FAQ: Entry[] = [
     id: 'walls',
     q: ['How do I draw walls?', 'How do I change a wall type?'],
     qRo: ['Cum desenez pereți?', 'Cum schimb tipul unui perete?'],
-    keywords: ['wall', 'walls', 'draw', 'type', 'layers', 'thickness', 'perete', 'pereti', 'desenez', 'tip', 'straturi', 'grosime'],
+    keywords: ['wall', 'walls', 'draw', 'type', 'layers', 'thickness', 'perete', 'pereti', 'desenez', 'tip', 'straturi', 'grosime', 'muro', 'muros', 'pared', 'paredes', 'espesor', 'mur', 'murs', 'paroi', 'epaisseur', 'parete', 'pareti', 'spessore', 'wand', 'waende', 'wande', 'mauer', 'dicke', 'sciana', 'sciany', 'grubosc', 'vaeg', 'vaegge', 'tykkelse', 'parede', 'espessura', '墙', '墙体', '厚度'],
     a: 'Architecture → Wall (or type WA): click the start, then each corner; Enter or Esc ends. Corners join on their own. The type (its layers and thickness) is chosen in the bar while drawing, or changed for a selected wall in the inspector; Architecture → Wall types edits the types.',
     aRo: 'Architecture → Wall (sau scrie WA): un clic la început, apoi la fiecare colț; Enter sau Esc termină. Colțurile se îmbină singure. Tipul (straturile, grosimea) se alege din bară în timp ce desenezi sau se schimbă în inspector pentru peretele selectat; Architecture → Wall types editează tipurile.',
     action: { label: 'Draw a wall', labelRo: 'Desenează un perete', run: { kind: 'tool', id: 'architecture.wall' } },
@@ -275,7 +279,7 @@ export const FAQ: Entry[] = [
     id: 'levels',
     q: ['How do I add a level?', 'How do I set the height of a storey?', 'Can a level be below zero?'],
     qRo: ['Cum adaug un nivel?', 'Cum setez înălțimea unui etaj?', 'Poate fi un nivel sub cota zero?'],
-    keywords: ['level', 'levels', 'storey', 'storeys', 'story', 'floor', 'height', 'elevation', 'basement', 'top', 'base', 'nivel', 'niveluri', 'etaj', 'etaje', 'inaltime', 'cota', 'subsol', 'baza', 'varf'],
+    keywords: ['level', 'levels', 'storey', 'storeys', 'story', 'floor', 'height', 'elevation', 'basement', 'top', 'base', 'nivel', 'niveluri', 'etaj', 'etaje', 'inaltime', 'cota', 'subsol', 'baza', 'varf', 'nivel', 'niveles', 'planta', 'plantas', 'piso', 'pisos', 'niveau', 'niveaux', 'etage', 'etages', 'livello', 'livelli', 'piano', 'geschoss', 'ebene', 'stockwerk', 'poziom', 'kondygnacja', 'pietro', 'niveauer', 'pavimento', 'andar', 'andares', '楼层', '标高'],
     a: 'In the project browser, Levels → + adds a level above. Select a level to see its base level and top level in the inspector, either above or below ±0.00; its height is what lies between. Moving the base keeps the top where it is.',
     aRo: 'În arborele proiectului, Levels → + adaugă un nivel deasupra. Selectează un nivel ca să-i vezi în inspector cota de bază și cota de sus, oricare peste sau sub ±0,00; înălțimea e diferența. Mutarea bazei ține vârful pe loc.',
     source: 'faq',
@@ -293,7 +297,7 @@ export const FAQ: Entry[] = [
     id: 'sections',
     q: ['How do I make a section?', 'How do I make the elevations?'],
     qRo: ['Cum fac o secțiune?', 'Cum fac fațadele?'],
-    keywords: ['section', 'sections', 'cut', 'elevation', 'elevations', 'facade', 'view', 'sectiune', 'sectiuni', 'fatada', 'fatade', 'vedere'],
+    keywords: ['section', 'sections', 'cut', 'elevation', 'elevations', 'facade', 'view', 'sectiune', 'sectiuni', 'fatada', 'fatade', 'vedere', 'seccion', 'secciones', 'corte', 'alzado', 'fachada', 'coupe', 'facade', 'sezione', 'prospetto', 'facciata', 'schnitt', 'ansicht', 'fassade', 'przekroj', 'elewacja', 'snit', 'facade', 'secao', '剖面', '立面'],
     a: 'In the project browser, Sections → + then draw the cut line in a plan (two clicks, then the side it looks to); Elevations → + makes the four elevations. Each opens as a tab and is drawn from the model, kept up to date.',
     aRo: 'În arborele proiectului, Sections → +, apoi desenezi linia de secțiune în plan (două clicuri, apoi partea în care privește); Elevations → + face cele patru fațade. Fiecare se deschide într-un tab și se desenează din model, mereu la zi.',
     source: 'faq',
@@ -302,7 +306,7 @@ export const FAQ: Entry[] = [
     id: 'sheets-pdf',
     q: ['How do I print or export a PDF?', 'How do I make a sheet?', 'Can I export DXF?'],
     qRo: ['Cum tipăresc sau export un PDF?', 'Cum fac o planșă?', 'Pot exporta DXF?'],
-    keywords: ['print', 'pdf', 'export', 'sheet', 'sheets', 'layout', 'paper', 'dxf', 'tipar', 'tiparesc', 'export', 'plansa', 'planse', 'hartie'],
+    keywords: ['print', 'pdf', 'export', 'sheet', 'sheets', 'layout', 'paper', 'dxf', 'tipar', 'tiparesc', 'export', 'plansa', 'planse', 'hartie', 'imprimir', 'imprimer', 'stampare', 'stampa', 'drucken', 'drukuj', 'drukowanie', 'udskriv', 'plano', 'planos', 'lamina', 'feuille', 'tavola', 'arkusz', 'blatt', '打印', '图纸', '导出'],
     a: 'In the project browser, Sheets → + makes a sheet; drag views onto it. In a sheet\'s bar, PDF and DXF export it. Views keep their scale and stay linked to the model.',
     aRo: 'În arborele proiectului, Sheets → + face o planșă; tragi vederile pe ea. Din bara planșei, PDF și DXF o exportă. Vederile își păstrează scara și rămân legate de model.',
     source: 'faq',
@@ -311,7 +315,7 @@ export const FAQ: Entry[] = [
     id: 'save-open',
     q: ['How do I save my project?', 'Where is my file?', 'How do I open a project?'],
     qRo: ['Cum salvez proiectul?', 'Unde e fișierul meu?', 'Cum deschid un proiect?'],
-    keywords: ['save', 'open', 'file', 'project', 'lapin', 'download', 'lost', 'recover', 'salvez', 'deschid', 'fisier', 'proiect', 'pierdut', 'recuperez'],
+    keywords: ['save', 'open', 'file', 'project', 'lapin', 'download', 'lost', 'recover', 'salvez', 'deschid', 'fisier', 'proiect', 'pierdut', 'recuperez', 'guardar', 'abrir', 'archivo', 'proyecto', 'enregistrer', 'ouvrir', 'fichier', 'projet', 'salvare', 'aprire', 'progetto', 'speichern', 'offnen', 'oeffnen', 'datei', 'projekt', 'zapisz', 'otworz', 'plik', 'gem', 'aabn', 'fil', 'salvar', 'arquivo', 'projeto', '保存', '打开', '文件', '项目'],
     a: 'File → Save (Ctrl S) writes a .lapin file. On the desktop it saves next to where you chose; in the browser Chrome and Edge save to the same file, Safari and Firefox download it. Unsaved work is kept as you go: after a crash the start screen offers to recover it.',
     aRo: 'File → Save (Ctrl S) scrie un fișier .lapin. Pe desktop îl salvează unde ai ales; în browser, Chrome și Edge salvează în același fișier, Safari și Firefox îl descarcă. Lucrul nesalvat e păstrat pe parcurs: după o cădere, ecranul de start oferă recuperarea lui.',
     source: 'faq',
@@ -320,7 +324,7 @@ export const FAQ: Entry[] = [
     id: 'language',
     q: ['How do I switch to Romanian or Spanish?', 'How do I switch to German, French or Danish?', 'How do I switch to Italian?', 'How do I switch to Polish or Portuguese?', 'Can I change the language?'],
     qRo: ['Cum trec interfața în engleză?', 'Pot schimba limba?'],
-    keywords: ['language', 'romanian', 'english', 'spanish', 'translate', 'limba', 'romana', 'engleza', 'spaniola', 'traducere', 'espanol', 'idioma', 'german', 'deutsch', 'french', 'francais', 'danish', 'dansk', 'germana', 'franceza', 'daneza', 'sprache', 'langue', 'sprog', 'lao', 'laotian', 'laotiana', 'italian', 'italiano', 'italiana', 'lingua', 'polish', 'polski', 'polska', 'poloneza', 'jezyk', 'portuguese', 'portugues', 'portugheza', 'brasil'],
+    keywords: ['language', 'romanian', 'english', 'spanish', 'translate', 'limba', 'romana', 'engleza', 'spaniola', 'traducere', 'espanol', 'idioma', 'german', 'deutsch', 'french', 'francais', 'danish', 'dansk', 'germana', 'franceza', 'daneza', 'sprache', 'langue', 'sprog', 'lao', 'laotian', 'laotiana', 'italian', 'italiano', 'italiana', 'lingua', 'polish', 'polski', 'polska', 'poloneza', 'jezyk', 'portuguese', 'portugues', 'portugheza', 'brasil', '中文', '语言', '汉语', 'chinese', 'chineza', 'lengua', 'idioma', 'sprak'],
     a: 'Help (?) → English · Română · Español · Deutsch · Français · Dansk · Italiano · Polski · Português · ພາສາລາວ switches the interface; it is remembered on this computer. ? → User guide opens the user guide in the same language (in English for Lao).',
     aRo: 'Help (?) → English · Română · Español · Deutsch · Français · Dansk · Italiano · Polski · Português · ພາສາລາວ schimbă limba interfeței; alegerea se ține minte pe acest calculator. ? → User guide deschide ghidul utilizatorului în aceeași limbă (în engleză pentru laoțiană).',
     source: 'faq',
@@ -366,7 +370,7 @@ export const FAQ: Entry[] = [
     id: 'guide',
     q: ['Is there a manual or a user guide?', 'Where is the documentation?', 'Are there tutorials?'],
     qRo: ['Există un manual sau un ghid?', 'Unde e documentația?', 'Sunt tutoriale?'],
-    keywords: ['manual', 'guide', 'documentation', 'docs', 'tutorial', 'tutorials', 'help', 'learn', 'ghid', 'documentatie', 'tutoriale', 'invat'],
+    keywords: ['manual', 'guide', 'documentation', 'docs', 'tutorial', 'tutorials', 'help', 'learn', 'ghid', 'documentatie', 'tutoriale', 'invat', 'manual', 'guia', 'ayuda', 'tutorial', 'documentacion', 'aide', 'guida', 'aiuto', 'anleitung', 'handbuch', 'hilfe', 'podrecznik', 'pomoc', 'vejledning', 'hjaelp', 'ajuda', '手册', '帮助', '教程', '指南'],
     a: 'The user guide at lapin.ciuntucbimstudio.ro/docs shows, page by page with pictures from the app, how to model walls, doors and windows, floors and roofs, structure, views, sheets and exports, in English, Romanian, Spanish, German, French, Danish, Italian, Polish and Brazilian Portuguese. It is also on ? → User guide, in the language of the interface.',
     aRo: 'Ghidul utilizatorului, la lapin.ciuntucbimstudio.ro/docs, arată pagină cu pagină, cu imagini din aplicație, cum modelezi pereți, uși și ferestre, planșee și acoperișuri, structura, vederile, planșele și exporturile, în engleză, română, spaniolă, germană, franceză, daneză, italiană, poloneză și portugheză (Brazilia). Îl găsești și la ? → User guide, în limba interfeței.',
     action: { label: 'Open the user guide', labelRo: 'Deschide ghidul', run: { kind: 'guide' } },
@@ -531,12 +535,24 @@ export const FAQ: Entry[] = [
 
 /** Lower case, without diacritics, punctuation as spaces. */
 export function normalise(text: string): string {
-  return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9#+]+/g, ' ').trim();
+  return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l').replace(/ø/g, 'o').replace(/æ/g, 'ae').replace(/å/g, 'a').replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9#+\p{Script=Han}]+/gu, ' ').trim();
 }
+
+/** Chinese is written without spaces: a Chinese keyword counts when the question contains it. */
+const HAN = /\p{Script=Han}/u;
 
 const STOP = new Set([
   'a', 'an', 'the', 'i', 'my', 'me', 'do', 'does', 'how', 'can', 'is', 'are', 'to', 'of', 'in', 'on', 'it', 'and', 'or', 'what', 'where', 'why', 'there', 'be', 'for', 'with', 'from', 'this', 'that', 'not', 'no',
   'cum', 'se', 'sa', 'si', 'in', 'la', 'de', 'un', 'o', 'pe', 'cu', 'ce', 'unde', 'de ce', 'este', 'e', 'pot', 'am', 'mi', 'imi', 'nu', 'din', 'care', 'fac',
+  // The other interface languages' small words, so a question in Spanish, French… is read by its nouns.
+  'como', 'las', 'los', 'el', 'en', 'una', 'uno', 'que', 'por', 'para', 'mis', 'del', 'al', 'es', 'puedo', 'donde', 'cambio', 'cambiar',
+  'le', 'les', 'des', 'du', 'et', 'est', 'ou', 'comment', 'je', 'il', 'une', 'mon', 'ma', 'mes', 'peux', 'changer',
+  'di', 'per', 'che', 'posso', 'dove', 'cambiare', 'nel', 'della', 'il',
+  'die', 'der', 'das', 'und', 'wie', 'ich', 'ein', 'eine', 'kann', 'wo', 'mit', 'auf', 'zu', 'den', 'andern',
+  'jak', 'ja', 'nie', 'czy', 'na', 'sie', 'gdzie', 'zmienic', 'moge',
+  'hvordan', 'jeg', 'og', 'er', 'det', 'kan', 'hvor', 'til', 'af', 'en', 'et', 'aendre',
+  'mudar', 'alterar', 'onde', 'os', 'as', 'um', 'uma', 'meu', 'minha', 'no', 'na',
 ]);
 
 /** The words of a text that carry meaning. */
@@ -557,11 +573,13 @@ export interface Hit { entry: Entry; score: number }
 export function ask(question: string, faq: Entry[] = FAQ): Hit[] {
   const ws = words(question);
   if (ws.length === 0) return [];
+  const plain = normalise(question);
   return faq
     .map((entry) => {
       const keys = entry.keywords.map(normalise);
       const asked = new Set([...entry.q, ...entry.qRo].flatMap(words));
       let score = 0;
+      if (HAN.test(plain)) for (const k of keys) if (HAN.test(k) && plain.includes(k)) score += 2;
       for (const w of ws) {
         if (keys.some((k) => near(w, k))) score += 2;
         else if ([...asked].some((k) => near(w, k))) score += 1;

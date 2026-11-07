@@ -78,6 +78,26 @@ describe('Ask Lapin', () => {
     expect(best('cum fac o poarta culisanta la gard')).toBe('gates');
   });
 
+  it('finds the most asked entries in the interface\'s other languages', () => {
+    // Three testers' questions, in their own words.
+    expect(best('como cambio las unidades')).toBe('units');
+    expect(best('como cambio  a unidades en metros')).toBe('units');
+    expect(best('¿cómo cambio las unidades?')).toBe('units');
+    expect(best('puedo trabajar en pies y pulgadas')).toBe('units');
+    expect(best('como mudar as unidades para metros')).toBe('units');
+    expect(best('comment changer les unités')).toBe('units');
+    expect(best('come cambiare le unità di misura')).toBe('units');
+    expect(best('wie ändere ich die Einheiten')).toBe('units');
+    expect(best('jak zmienić jednostki')).toBe('units');
+    expect(best('hvordan ændrer jeg enheder')).toBe('units');
+    expect(best('如何更改单位')).toBe('units');
+    expect(best('¿dónde está el manual?')).toBe('guide');
+    expect(best('como dibujo un muro')).toBe('walls');
+    expect(best('como guardar el proyecto')).toBe('save-open');
+    expect(best('cómo hago una sección')).toBe('sections');
+    expect(best('如何打印图纸')).toBe('sheets-pdf');
+  });
+
   it('says nothing to what it does not know', () => {
     expect(ask('weather tomorrow in Paris')).toEqual([]);
     expect(ask('can I render photorealistic images with ray tracing?')).toEqual([]);

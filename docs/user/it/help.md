@@ -6,7 +6,7 @@ summary: Chiedimi, le domande a cui risponde, come segnalare un problema, la lin
 
 ## Chiedimi
 
-Fai clic su **Chiedimi**, il coniglio in alto a destra, oppure premi <kbd>F1</kbd> in qualsiasi punto. Scrivi la tua domanda con parole tue, in inglese o in rumeno. Chiedimi risponde a partire dalle domande che gli utenti hanno già posto, e un pulsante ti porta direttamente al punto giusto dell’applicazione.
+Fai clic su **Chiedimi**, il coniglio in alto a destra, oppure premi <kbd>F1</kbd> in qualsiasi punto. Scrivi la tua domanda con parole tue, in inglese o in rumeno; le domande più frequenti (unità, salvataggio, muri, livelli, sezioni, stampa, la guida) si trovano anche nelle altre lingue dell’interfaccia, con la risposta in inglese. Chiedimi risponde a partire dalle domande che gli utenti hanno già posto, e un pulsante ti porta direttamente al punto giusto dell’applicazione.
 
 ![Chiedimi che spiega come copiare un muro](shots/ask-me.webp)
 
