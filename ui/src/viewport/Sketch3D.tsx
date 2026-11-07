@@ -23,6 +23,8 @@ import { formatLength, parseLength } from './liveInput';
 import { levelFrame, rayOnPlane, toPlane, toWorld, workPlaneView, type WorkFrame } from './workPlane';
 import { startCommand, useCad } from './cad/session';
 import { useDisplay } from '../app/display';
+import { claimValue, valueOwner } from '../app/valueOwner';
+import { valueKey } from '../app/keys';
 import { activate, findTool } from '../platform/modules';
 import { arcThrough, toJson, type Shape } from './cad/shapes';
 import { arcPts, click, insideDistance, tapeOutcome, endDirect, finishOpen, offsetOutcome, preview, resetDirect, typed, useDirect, type DirectPlane, type Outcome } from './sketch/direct';
@@ -34,6 +36,12 @@ import { pushPullShape, type FacePick } from './sketch/sketch3d';
 type Pt = { x: number; y: number };
 
 /** SketchUp's one-letter shortcuts (View → the Studio tab's SketchUp shortcuts): the tool each starts in the 3D view. */
+/** The tool a SketchUp key starts, unless a value waits for that key (a digit, 'r' to begin a radius, a unit's letter): decision 378. */
+export function sketchupKeyFor(key: string, valueText: string | null): string | undefined {
+  if (valueText != null && valueKey(valueText, key)) return undefined;
+  return SKETCHUP_KEYS[key === ' ' ? ' ' : key.toUpperCase()];
+}
+
 export const SKETCHUP_KEYS: Record<string, string> = {
   L: 'studio.sketch.line', R: 'studio.sketch.rect', C: 'studio.sketch.circle', A: 'studio.sketch.arc', P: 'studio.pushPull',
   F: 'studio.sketch.offset', T: 'studio.sketch.tape', M: 'studio.move3d', E: 'cad:ERASE', ' ': 'select',
@@ -75,6 +83,13 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
   useEffect(() => { if (st.tool && tool) endDirect(); }, [tool, st.tool]);
   useEffect(() => { if (st.tool && command) endDirect(); }, [command, st.tool]);
   useEffect(() => () => endDirect(), []);
+  // While a shape waits for a value, the value's keys are its (decision 378): typed with no box clicked, none lost to a quick tool.
+  const waiting = !!st.tool && !dragging && (st.pts.length > 0 || !!st.loop);
+  const enterRef = useRef<() => void>(() => undefined);
+  useEffect(() => {
+    if (!waiting) return;
+    return claimValue({ text: () => useDirect.getState().text, set: (text) => useDirect.setState({ text }), enter: () => enterRef.current() });
+  }, [waiting]);
   useEffect(() => { faces.clear(); asking.clear(); flatless.clear(); }, [nodes]);
   // SketchUp's one-letter shortcuts in the 3D view, when switched on (decision 376).
   const sketchupKeys = useDisplay((d) => d.sketchupKeys);
@@ -85,7 +100,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       if ((e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]')) return;
       const cad = useCad.getState();
       if (cad.command || cad.buffer) return;
-      const id = SKETCHUP_KEYS[e.key === ' ' ? ' ' : e.key.toUpperCase()];
+      const id = sketchupKeyFor(e.key, valueOwner()?.text() ?? null);
       if (!id) return;
       e.preventDefault(); e.stopImmediatePropagation();
       if (id === 'select') { endDirect(); useUi.setState({ tool: null }); return; }
@@ -258,7 +273,8 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
       } else if (e.key === 'Backspace' && !s0.text) {
         e.preventDefault(); e.stopPropagation();
         if (s0.pts.length <= 1) resetDirect(); else useDirect.setState({ pts: s0.pts.slice(0, -1) });
-      } else if (el !== input.current && /^[0-9.,+\-'"<r ]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && (s0.pts.length || s0.loop)) input.current?.focus();
+      }
+      // A value's characters are not taken here: keys.ts gives them to the value this overlay owns (valueOwner.ts).
     };
     const onKeyUp = (e: KeyboardEvent) => { if (e.key === 'Shift' && useDirect.getState().shiftLock) useDirect.setState({ lock: null, shiftLock: false }); };
     window.addEventListener('pointermove', onMove, true);
@@ -312,6 +328,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
   const color = st.inferred?.color ?? '';
   const markClass = kind === 'Endpoint' ? 'sketch-end' : kind === 'Midpoint' ? 'sketch-mid' : kind === 'On edge' || kind === 'Intersection' ? 'sketch-edge' : 'face-sketch-cursor';
 
+  enterRef.current = enter;
   return (
     <>
       <svg className="grip-overlay axis-drag face-sketch" data-sketch3d="overlay">
@@ -344,6 +361,7 @@ export function Sketch3D({ camera, canvas, scene }: { camera: React.RefObject<TH
 
   function enter() {
     const s0 = useDirect.getState();
+    if (!s0.tool) return;
     if (!s0.tool) return;
     const v = parseVcb(s0.text, (s) => parseLength(s));
     if (s0.tool === 'tape') { if (s0.pts.length && v?.kind === 'length') apply(tapeOutcome(s0.pts[0], s0.tapeEdge, s0.inferred?.point ?? null, v.value)); return; }

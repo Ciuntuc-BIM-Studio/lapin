@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { keyIntent, openDialog, type KeyPress, type KeySnapshot } from './keys';
+import { carryOut, handleKeydown, keyIntent, openDialog, valueKey, type KeyIntent, type KeyPress, type KeySnapshot } from './keys';
+import { claimValue, valueOwner } from './valueOwner';
 import { resolveKeymap, type CommandDef } from './shortcuts';
 
 const cmd = (id: string, defaults: string[], same?: string): CommandDef => ({ id, label: id, category: 'test', defaults, same, run: () => undefined });
@@ -144,5 +145,56 @@ describe('keyIntent', () => {
     expect(keyIntent(press('3'), state())).toEqual({ kind: 'command', id: 'hotbar.3' });
     expect(keyIntent(press('9'), state())).toBeNull();
     expect(keyIntent(press('3'), state({ buffer: '1' }))).toEqual({ kind: 'type', buffer: '13' });
+  });
+});
+
+describe('a value a 3D tool waits for (decision 378)', () => {
+  /** A keydown on the window with no field focused (target: the page), through the real handler. */
+  const keydown = (key: string, did: KeyIntent[]) => {
+    let prevented = false;
+    handleKeydown({ key, code: '', ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, defaultPrevented: false, target: null, preventDefault: () => { prevented = true; } },
+      () => state({ hotbar: 9, value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })() }),
+      (i) => { did.push(i); if (i.kind.startsWith('value')) carryOut(i); });
+    return prevented;
+  };
+
+  it('takes "600" after a Line\'s first point: the value has it, no quick tool starts, no character is lost', () => {
+    let text = '';
+    let entered = 0;
+    const release = claimValue({ text: () => text, set: (t) => { text = t; }, enter: () => { entered++; } });
+    const did: KeyIntent[] = [];
+    for (const k of ['6', '0', '0']) expect(keydown(k, did)).toBe(true);
+    expect(text).toBe('600');
+    expect(did.some((i) => i.kind === 'command')).toBe(false);
+    // A length with its unit, a pair, an angle, a CAD point, a radius; Backspace and Enter.
+    for (const k of ['m', 'm', ',', '3', '0', '0']) keydown(k, did);
+    expect(text).toBe('600mm,300');
+    keydown('Backspace', did);
+    expect(text).toBe('600mm,30');
+    keydown('Enter', did);
+    expect(entered).toBe(1);
+    release();
+    // Let go: the digit is a quick tool again.
+    const after: KeyIntent[] = [];
+    keydown('6', after);
+    expect(after).toEqual([{ kind: 'command', id: 'hotbar.6' }]);
+  });
+
+  it('knows a value\'s keys', () => {
+    for (const k of ['0', '9', '.', ',', '-', '+', '<', '@', ';']) expect(valueKey('', k), k).toBe(true);
+    expect(valueKey('', 'r')).toBe(true);
+    expect(valueKey('300', 'r')).toBe(false);
+    expect(valueKey('1200', 'x')).toBe(true);
+    expect(valueKey('', 'x')).toBe(false);
+    expect(valueKey('25', 'c')).toBe(true);
+    expect(valueKey('', 'l')).toBe(false);
+    expect(valueKey('', 'Enter')).toBe(false);
+  });
+
+  it('leaves a focused box its own keys, and the command line its typed text', () => {
+    const release = claimValue({ text: () => '', set: () => undefined, enter: () => undefined });
+    expect(keyIntent(press('6', { inField: true }), state({ value: { text: '' } }))).toBeNull();
+    expect(keyIntent(press('6'), state({ value: { text: '' }, buffer: 'L' }))).toEqual({ kind: 'type', buffer: 'L6' });
+    release();
   });
 });

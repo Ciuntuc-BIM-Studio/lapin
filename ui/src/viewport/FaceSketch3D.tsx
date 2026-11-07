@@ -17,6 +17,7 @@ import {
   circleOnFace, distance3, endFaceSketch, local, onPlane, parsePair, rectOnFace, rectTyped, roundOnFace, snapPoints, useFaceSketch, world,
 } from './faceSketch';
 import { formatLength, parseLength } from './liveInput';
+import { claimValue } from '../app/valueOwner';
 
 type Pt = { x: number; y: number };
 const SNAP_PX = 10;
@@ -32,6 +33,11 @@ export function FaceSketch3D({ camera, canvas }: { camera: React.RefObject<THREE
   useEffect(() => { if (spec && tool !== startTool.current) endFaceSketch(); }, [tool, spec]);
   useEffect(() => () => endFaceSketch(), []);
   useEffect(() => { if (spec) requestAnimationFrame(() => input.current?.focus()); }, [spec, pts.length]);
+  const enterRef = useRef<() => void>(() => undefined);
+  useEffect(() => {
+    if (!spec) return;
+    return claimValue({ text: () => useFaceSketch.getState().text, set: (text) => useFaceSketch.setState({ text }), enter: () => enterRef.current() });
+  }, [spec]);
 
   const rectOf = () => canvas.current?.getBoundingClientRect() ?? null;
   const toScreen = (p: Vec3): Pt | null => {
@@ -86,7 +92,7 @@ export function FaceSketch3D({ camera, canvas }: { camera: React.RefObject<THREE
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); enter(); }
       else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endFaceSketch(); }
       else if (e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); back(); }
-      else if (/^[0-9.,+\-'"a-z ]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) input.current?.focus();
+      // A value's characters go to the value this overlay owns, through keys.ts (decision 378).
     };
     window.addEventListener('pointermove', onMove, true);
     window.addEventListener('pointerdown', onDown, true);
@@ -100,6 +106,7 @@ export function FaceSketch3D({ camera, canvas }: { camera: React.RefObject<THREE
     };
   }, [spec, camera, canvas]);
 
+  enterRef.current = enter;
   if (!spec) return null;
   const f = spec.frame;
   const typed = text.trim();

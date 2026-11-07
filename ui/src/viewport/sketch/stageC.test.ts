@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { tapeOutcome } from './direct';
 import { guideSegment, guidesInPlane, guidesOf, GUIDE_REACH } from './edges';
 import { levelFrame } from '../workPlane';
-import { SKETCHUP_KEYS } from '../Sketch3D';
+import { SKETCHUP_KEYS, sketchupKeyFor } from '../Sketch3D';
 import studio from '../../modules/studio';
 import { readDisplay } from '../../app/display';
 
@@ -43,6 +43,11 @@ describe('stage C of the 3D sketch (decision 376)', () => {
       expect(ids.has(id), `${key} → ${id}`).toBe(true);
     }
     expect(readDisplay(null).sketchupKeys).toBe(false);
+    // While a value waits, its keys are not shortcuts (decision 378): R begins a radius, a digit is a digit, L still a line.
+    expect(sketchupKeyFor('r', null)).toBe('studio.sketch.rect');
+    expect(sketchupKeyFor('r', '')).toBeUndefined();
+    expect(sketchupKeyFor('m', '600')).toBeUndefined();
+    expect(sketchupKeyFor('l', '600')).toBe('studio.sketch.line');
     expect(readDisplay({ sketchupKeys: true }).sketchupKeys).toBe(true);
   });
 });

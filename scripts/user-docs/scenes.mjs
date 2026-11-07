@@ -5055,7 +5055,14 @@ export const scenes = [
       };
       const middle = async () => { const b = await page.locator('[data-testid=view3d]').boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
       const solids = async () => (await t.nodes()).filter((n) => n.props.operation === 'extrude' && n.id !== block);
-      const vcb = async (text) => { await page.locator('[data-sketch3d=vcb]').fill(text); await page.locator('[data-sketch3d=vcb]').press('Enter'); await t.wait(500); };
+      // Typed as SketchUp's Measurements, no box clicked (decision 378): the keys go to the value, never to a quick tool.
+      const vcb = async (text) => {
+        await page.evaluate(() => document.activeElement?.blur?.());
+        await page.keyboard.type(text);
+        t.expect(await page.locator('[data-sketch3d=vcb]').inputValue() === text, `typed ${text} goes to the value`);
+        await page.keyboard.press('Enter');
+        await t.wait(500);
+      };
       await t.ui({ view: '3d', selection: null, selected: [] });
       await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
       await t.wait(1500);

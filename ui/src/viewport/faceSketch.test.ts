@@ -4,11 +4,23 @@ import { circleOnFace, frameOf, local, onPlane, parsePair, rectOnFace, rectTyped
 const east = [{ x: 2, y: 0, z: 0 }, { x: 2, y: 2, z: 0 }, { x: 2, y: 2, z: 3 }, { x: 2, y: 0, z: 3 }];
 
 describe('drawing on a face', () => {
-  it('lays the face\'s x along its longest edge, on the face', () => {
+  it('reads a face as seen from outside: x left to right and level, y up (decision 378)', () => {
+    // The east side, tall and narrow: x still level (north, the right hand looking west at it), y up.
     const f = frameOf({ x: 1, y: 0, z: 0 }, east);
-    expect(Math.abs(f.right.z)).toBeCloseTo(1);
-    expect(f.right.x).toBeCloseTo(0);
-    expect(f.up.x).toBeCloseTo(0);
+    expect(f.right).toEqual({ x: 0, y: 1, z: 0 });
+    expect(f.up.z).toBeCloseTo(1);
+    // A north face seen from the north: its right is west; a top face: the model's x and y.
+    const north = frameOf({ x: 0, y: 1, z: 0 }, []);
+    expect(north.right.x).toBeCloseTo(-1);
+    expect(north.up.z).toBeCloseTo(1);
+    const top = frameOf({ x: 0, y: 0, z: 1 }, []);
+    expect(top.right).toEqual({ x: 1, y: 0, z: 0 });
+    expect(top.up.y).toBeCloseTo(1);
+    // A roof sloping down to the south: x along the eaves, y up the slope.
+    const c = Math.cos(Math.PI / 6), sn = Math.sin(Math.PI / 6);
+    const roof = frameOf({ x: 0, y: -sn, z: c }, []);
+    expect(roof.right.x).toBeCloseTo(1);
+    expect(roof.up.z).toBeGreaterThan(0);
   });
 
   it('meets the face\'s plane along a ray, not behind it', () => {

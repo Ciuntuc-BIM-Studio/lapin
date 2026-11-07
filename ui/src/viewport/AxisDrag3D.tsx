@@ -17,6 +17,7 @@ import * as THREE from 'three';
 import { Check, X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { useCamera, type Vec3 } from './camera';
+import { claimValue } from '../app/valueOwner';
 import { add, alongLine, boxEdges3, cancelAxisDrag, commitAxisDrag, endAxisDrag, snapDistance, useAxisDrag } from './axisDrag';
 import { formatLength, parseLength } from './liveInput';
 
@@ -37,6 +38,10 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
   useEffect(() => { if (spec && tool !== startTool.current) endAxisDrag(); }, [tool, spec]);
   useEffect(() => () => endAxisDrag(), []);
   useEffect(() => { if (spec) requestAnimationFrame(() => input.current?.focus()); }, [spec, axis]);
+  useEffect(() => {
+    if (!spec) return;
+    return claimValue({ text: () => useAxisDrag.getState().text, set: (text) => useAxisDrag.setState({ text }), enter: () => void commitAxisDrag(typed()) });
+  }, [spec]);
 
   useEffect(() => {
     if (!spec) return;
@@ -100,7 +105,7 @@ export function AxisDrag3D({ camera, canvas }: { camera: React.RefObject<THREE.C
       if (el === input.current || (el?.closest?.('input, textarea, select, [contenteditable]') && !el.closest('.axis-drag-chip'))) return;
       if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); void commitAxisDrag(typed()); }
       else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelAxisDrag(); }
-      else if (/^[0-9.,+\-'"a-z]$/i.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) input.current?.focus();
+      // A value's characters go to the value this overlay owns, through keys.ts (decision 378).
     };
     window.addEventListener('pointermove', onMove, true);
     window.addEventListener('pointerdown', onDown, true);

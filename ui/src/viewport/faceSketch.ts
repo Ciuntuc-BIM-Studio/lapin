@@ -54,21 +54,16 @@ const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - 
 const cross = (a: Vec3, b: Vec3): Vec3 => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
 const unit = (a: Vec3): Vec3 => { const l = Math.hypot(a.x, a.y, a.z) || 1; return { x: a.x / l, y: a.y / l, z: a.z / l }; };
 
-/** The face's plane: x along its longest edge (so a rectangle lies square to the face), y across it, both on the face. */
+/**
+ * The face's plane, read as one stands outside it looking at it (decision 378): x from left to right, level (along a
+ * wall's face, a roof's eaves), y up the face; a level face's x is the model's x (y north on a top face). The same frame
+ * as the engine's reference plane on the face (RefPlanes.Attrs), so both ways of sketching agree, and `@1500` typed on a
+ * work plane goes to the right as one sees the face.
+ */
 export function frameOf(normal: Vec3, outline: Vec3[]): FaceFrame {
   const n = unit(normal);
-  let right: Vec3 | null = null, best = 0;
-  outline.forEach((p, i) => {
-    const d = sub(outline[(i + 1) % outline.length], p);
-    const l = Math.hypot(d.x, d.y, d.z);
-    if (l > best + 1e-9) { best = l; right = d; }
-  });
-  if (!right || best < 1e-9) right = Math.abs(n.z) > 0.999 ? { x: 1, y: 0, z: 0 } : { x: -n.y, y: n.x, z: 0 };
-  // Kept on the plane, and pointing the plane's usual way (+x on a level face, rising to the right on a standing one).
-  let r = unit(sub(right, add({ x: 0, y: 0, z: 0 }, n, dot(right, n))));
-  const usual = Math.abs(n.z) > 0.999 ? { x: 1, y: 0, z: 0 } : { x: -n.y, y: n.x, z: 0 };
-  if (dot(r, usual) < -1e-9) r = { x: -r.x, y: -r.y, z: -r.z };
-  return { origin: outline[0] ?? { x: 0, y: 0, z: 0 }, normal: n, right: r, up: unit(cross(n, r)) };
+  const right = Math.abs(n.z) > 0.999 ? { x: 1, y: 0, z: 0 } : unit({ x: 0 - n.y, y: n.x + 0, z: 0 });
+  return { origin: outline[0] ?? { x: 0, y: 0, z: 0 }, normal: n, right, up: unit(cross(n, right)) };
 }
 
 /** A point's place on the face's plane (x, y), and back. */

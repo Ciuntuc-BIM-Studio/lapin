@@ -22,6 +22,7 @@ import { cancel, submit, useCad } from '../viewport/cad/session';
 import { liveCommit, useLive } from '../viewport/liveInput';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
 import { keymap, runCommand } from './commands';
+import { valueOwner } from './valueOwner';
 
 /** What `keyIntent` needs to know about the key press. */
 export interface KeyPress {
@@ -57,6 +58,8 @@ export interface KeySnapshot {
   keymap: Keymap;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
   live?: { active: boolean; text: string; typed: boolean };
+  /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
+  value?: { text: string } | null;
 }
 
 export type KeyIntent =
@@ -65,6 +68,7 @@ export type KeyIntent =
   | { kind: 'pending'; id: string; buffer: string }
   | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
+  | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
   | { kind: 'liveType'; key: string } | { kind: 'liveBack' } | { kind: 'liveFocus'; field?: 'len' | 'ang' } | { kind: 'liveClear' } | { kind: 'liveCommit' };
 
 /** The units a typed length may end in (parseLength reads them). */
@@ -77,6 +81,18 @@ export function unitKey(text: string, key: string): boolean {
   if (!m) return false;
   const suffix = (m[1] + key).toLowerCase();
   return UNIT_SUFFIXES.some((u) => u.startsWith(suffix));
+}
+
+/**
+ * Whether a key goes on a value a 3D tool waits for (decision 378): digits, the decimal marks, '+', '-', the angle's '<',
+ * CAD's '@', a pair's ';' or 'x' after a number, 'r' (a radius) to begin with, and a unit's letters after a number.
+ */
+export function valueKey(text: string, key: string): boolean {
+  if (key.length !== 1) return false;
+  if (/^[0-9.,+\-<@;*×'"]$/.test(key)) return true;
+  if ((key === 'r' || key === 'R') && !text.trim()) return true;
+  if ((key === 'x' || key === 'X') && /\d\s*$/.test(text)) return true;
+  return unitKey(text, key);
 }
 
 /** The open dialog's id when one is on the screen: an id with nothing rendered (a dialog that drew nothing) does not hold the keys. */
@@ -100,6 +116,12 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   }
   // Chords with Ctrl, Alt or Cmd, and the function keys: whatever is typed.
   if (mod || /^(Shift\+)?F\d+$/.test(chord)) return bound ? { kind: 'command', id: bound } : null;
+  // A 3D tool waiting for a value takes the value's keys, before the quick tools (1–9) and the shortcuts.
+  if (s.value && !s.buffer) {
+    if (e.key === 'Enter') return { kind: 'valueEnter' };
+    if (e.key === 'Backspace' && s.value.text) return { kind: 'valueBack' };
+    if (valueKey(s.value.text, e.key)) return { kind: 'valueType', key: e.key };
+  }
   // Drawing a segment, nothing on the command line: its length and angle are typed at the cursor.
   if (s.live?.active && !s.buffer) {
     if (e.key === 'Tab') return { kind: 'liveFocus' };
@@ -148,12 +170,13 @@ function snapshot(): KeySnapshot {
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(),
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
+    value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
   };
 }
 
 const pending = new PendingSequence();
 
-function carryOut(intent: KeyIntent): void {
+export function carryOut(intent: KeyIntent): void {
   if (intent.kind !== 'pending') pending.clear();
   switch (intent.kind) {
     case 'command': useCad.setState({ buffer: '' }); runCommand(intent.id); break;
@@ -172,6 +195,9 @@ function carryOut(intent: KeyIntent): void {
     case 'submit': void submit(useCad.getState().buffer); break;
     case 'backspace': useCad.setState((s) => ({ buffer: s.buffer.slice(0, -1) })); break;
     case 'type': useCad.setState({ buffer: intent.buffer }); break;
+    case 'valueType': { const o = valueOwner(); if (o) o.set(o.text() + intent.key); break; }
+    case 'valueBack': { const o = valueOwner(); if (o) o.set(o.text().slice(0, -1)); break; }
+    case 'valueEnter': valueOwner()?.enter(); break;
     case 'liveType': useLive.setState((l) => ({ [l.focus]: l[l.focus] + intent.key })); break;
     case 'liveBack': useLive.setState((l) => ({ [l.focus]: l[l.focus].slice(0, -1) })); break;
     case 'liveFocus': useLive.setState((l) => ({ focus: intent.field ?? (l.focus === 'len' ? 'ang' : 'len') })); break;
@@ -180,22 +206,28 @@ function carryOut(intent: KeyIntent): void {
   }
 }
 
+/** A key event as the window listener gets it (the fields read). */
+export type KeyEventLike = Pick<KeyboardEvent, 'key' | 'code' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey' | 'defaultPrevented' | 'target' | 'preventDefault'>;
+
+/** The window's keydown: what the key means here, carried out (the state and the doing given for tests). */
+export function handleKeydown(e: KeyEventLike, snap: () => KeySnapshot = snapshot, act: (i: KeyIntent) => void = carryOut): void {
+  // A view or a panel that took the key first (Tab over a shared grip) keeps it.
+  if (e.defaultPrevented) return;
+  const target = e.target as HTMLElement | null;
+  const press: KeyPress = {
+    key: e.key, code: e.code, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, altKey: e.altKey,
+    inField: !!target?.closest?.('input, select, textarea'),
+    inDialog: !!target?.closest?.('[role="dialog"]'),
+  };
+  const intent = keyIntent(press, snap());
+  if (!intent) return;
+  e.preventDefault();
+  act(intent);
+}
+
 export function useShortcuts(): void {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      // A view or a panel that took the key first (Tab over a shared grip) keeps it.
-      if (e.defaultPrevented) return;
-      const target = e.target as HTMLElement | null;
-      const press: KeyPress = {
-        key: e.key, code: e.code, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey, altKey: e.altKey,
-        inField: !!target?.closest?.('input, select, textarea'),
-        inDialog: !!target?.closest?.('[role="dialog"]'),
-      };
-      const intent = keyIntent(press, snapshot());
-      if (!intent) return;
-      e.preventDefault();
-      carryOut(intent);
-    };
+    const onKey = (e: KeyboardEvent) => handleKeydown(e);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
