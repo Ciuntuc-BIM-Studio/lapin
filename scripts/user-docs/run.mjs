@@ -10,16 +10,29 @@
 // rendered from English, with English pictures, and the run says which.
 //
 //   pnpm docs:user                 the engine and the UI started for the run, every scene, then the pages → build/user-docs
-//   pnpm docs:user --only walls    the scenes whose id starts with "walls" (or one of several: --only walls,roofs; the other pictures stay as they were)
+//   pnpm docs:user --only walls    the scenes whose id starts with "walls" (or one of several: --only walls,roofs; the other pictures stay as they were), those whose inputs changed (with --full: whatever changed)
 //   pnpm docs:user --lang ro       one language's pictures (or several: --lang ro,de; the others' stay as they were)
 //   pnpm docs:user --pages         the pages alone, from the pictures already taken
 //   pnpm docs:user --theme graphite the pictures in the dark theme, for a look only (build/user-docs/shots-graphite; no pages)
+//   pnpm docs:user --full          every scene again, whatever changed (else only the scenes whose inputs changed: below)
+//   pnpm docs:user --jobs 4        how many scenes run at once (default: by this computer's cores and memory, at most 4)
+//
+// Incremental by default (incremental.mjs): a scene × language is taken again only when its code, the
+// pages showing its pictures, the modules it drives or the shared code (ui/ and engine/ outside the
+// modules, this runner) changed since its last good run; the others keep their pictures. The run says
+// which scenes it takes and why. A language is taken whole by itself when it has no state yet
+// (build/user-docs-cache/<product>.json) and when its last full run is older than a week (not with --only).
+// A failing scene fails the run and is taken again next time.
+//
+// In parallel: each of the --jobs workers starts its own engine, relay, Vite (its dependency cache in
+// ui/node_modules/.vite-docs-<n>) and Chrome on free ports, and takes the next scene × language from one
+// queue, the longest first (by last run's times).
 //
 // CHROME: the browser to drive (default: the installed Google Chrome).
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
-import { tmpdir } from 'node:os';
+import { availableParallelism, freemem, tmpdir, totalmem } from 'node:os';
 import { dirname, join, resolve as resolvePath } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright-core';
@@ -27,6 +40,7 @@ import { resolveProduct } from '../product.mjs';
 import { scenes as ownScenes } from './scenes.mjs';
 import { render } from './render.mjs';
 import { LANGS, checkInterfaceLanguages } from './languages.mjs';
+import { FULL_EVERY_DAYS, dependencies, reasonToRun, stateStore } from './incremental.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const out = join(root, 'build', 'user-docs');
@@ -37,8 +51,12 @@ checkInterfaceLanguages(root);
 // Another edition (a premium module's pictures, taken with its own scenes from its repository): --product lapin-urban --scenes ../lapin-urban/docs/scenes.mjs
 // (and its pages: --docs ../lapin-planning/docs/user)
 const productId = args.includes('--product') ? args[args.indexOf('--product') + 1] : 'lapin';
-const extra = args.includes('--scenes') ? (await import(pathToFileURL(resolvePath(args[args.indexOf('--scenes') + 1])).href)).scenes ?? [] : [];
+const extraFile = args.includes('--scenes') ? resolvePath(args[args.indexOf('--scenes') + 1]) : null;
+const extra = extraFile ? (await import(pathToFileURL(extraFile).href)).scenes ?? [] : [];
 const scenes = [...ownScenes, ...extra];
+// How many at once: a worker (an engine, Vite and Chrome) takes about two cores and a few GB while a scene runs.
+const jobs = args.includes('--jobs') ? Math.max(1, Number(args[args.indexOf('--jobs') + 1]) || 1)
+  : Math.max(1, Math.min(4, Math.floor(availableParallelism() / 2.5), Math.floor(totalmem() / 2 ** 30 / 6)));
 // Its pages too (--docs ../lapin-planning/docs/user: English *.md and <lang>/*.md), rendered with the guide's from a merged copy.
 const extraDocs = args.includes('--docs') ? resolvePath(args[args.indexOf('--docs') + 1]) : null;
 const langs = args.includes('--lang') ? String(args[args.indexOf('--lang') + 1]).split(',') : LANGS;
@@ -48,9 +66,13 @@ const theme = args.includes('--theme') ? args[args.indexOf('--theme') + 1] : nul
 if (theme && !['paper', 'graphite'].includes(theme)) { console.error('✗ --theme: paper or graphite'); process.exit(1); }
 /** A language's pictures: shots/ for English, shots/<id>/ for the others (shots-<theme>/ for another theme's). */
 const shotsOf = (lang) => { const base = theme ? join(out, `shots-${theme}`) : shots; return lang === 'en' ? base : join(base, lang); };
-// Every scene again: the pictures start from nothing, so none outlives the scene that took it.
+const store = theme ? null : stateStore(root, productId.endsWith('.json') ? resolveProduct(root, productId).id : productId);
+// The languages taken whole: all with --full (and another theme), else each whose last full run is missing or over a week old (not with --only).
+const fullLangs = new Set(args.includes('--pages') ? [] : langs.filter((l) => theme || args.includes('--full') || (!only && store.ageDays(l) > FULL_EVERY_DAYS)));
+if (fullLangs.size) console.log(`▸ a full run of ${[...fullLangs].join(', ')}: ${theme ? 'another theme' : args.includes('--full') ? '--full' : [...fullLangs].map((l) => (store.ageDays(l) === Infinity ? `${l} never ran whole here (build/user-docs-cache)` : `${l} last ran whole ${store.ageDays(l).toFixed(1)} days ago`)).join('; ')}`);
+// A full run takes every scene again: the pictures start from nothing, so none outlives the scene that took it.
 for (const lang of langs) {
-  if (!only && !args.includes('--pages')) for (const f of existsSync(shotsOf(lang)) ? readdirSync(shotsOf(lang)) : []) if (f.endsWith('.webp')) rmSync(join(shotsOf(lang), f));
+  if (fullLangs.has(lang) && !only) for (const f of existsSync(shotsOf(lang)) ? readdirSync(shotsOf(lang)) : []) if (f.endsWith('.webp')) rmSync(join(shotsOf(lang), f));
   mkdirSync(shotsOf(lang), { recursive: true });
 }
 
@@ -78,72 +100,136 @@ function mergedDocs(extra) {
 }
 
 async function takePictures() {
+  const product = resolveProduct(root, productId);
+  // What runs: every scene × language, or (incremental) those whose inputs changed, each with its reason.
+  const chosen = scenes.filter((s) => !only || only.some((o) => s.id.startsWith(o)));
+  const productFile = productId.endsWith('.json') ? resolvePath(root, productId) : join(root, 'products', `${productId}.json`);
+  const deps = store && dependencies(root, product, productFile,
+    [{ file: join(root, 'scripts/user-docs/scenes.mjs'), scenes: ownScenes }, ...(extraFile ? [{ file: extraFile, scenes: extra }] : [])],
+    [join(root, 'docs/user'), ...(extraDocs ? [extraDocs] : [])]);
+  const queue = [];
+  const kept = [];
+  for (const lang of langs) for (const scene of chosen) {
+    const entry = store?.state.scenes[store.key(scene.id, lang)];
+    const full = fullLangs.has(lang);
+    const why = full ? null : reasonToRun(entry, deps.inputs(scene, lang, entry?.files), () => shotsOf(lang));
+    if (full || why) queue.push({ scene, lang, why: why ?? 'full run', secs: entry?.secs ?? 30 });
+    else kept.push(`${scene.id}${lang === 'en' ? '' : ` (${lang})`}`);
+  }
+  // A scene gone from the list takes its pictures with it.
+  if (store && !theme) for (const [key, entry] of Object.entries(store.state.scenes)) {
+    const [id, lang] = key.split('|');
+    if (scenes.some((s) => s.id === id) || !langs.includes(lang)) continue;
+    for (const f of entry.files ?? []) rmSync(join(shotsOf(lang), f), { force: true });
+    delete store.state.scenes[key];
+    console.log(`▸ ${id} (${lang}) is no longer a scene: its pictures removed`);
+  }
+  if (queue.some((q) => q.why !== 'full run') || kept.length) {
+    for (const q of queue) console.log(`  ▸ ${q.scene.id}${q.lang === 'en' ? '' : ` (${q.lang})`}: ${q.why}`);
+    console.log(`▸ ${queue.length} scene(s) to take, ${kept.length} unchanged kept their pictures`);
+  }
+  if (!queue.length) { store?.save(); return; }
+  // The longest first (last run's times), so the workers finish together.
+  queue.sort((a, b) => b.secs - a.secs);
+
   const free = () => new Promise((r) => { const s = createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => r(p)); }); });
   console.log('▸ building the engine…');
   if (spawnSync('dotnet', ['build', join(root, 'engine/Lapin.slnx'), '-v', 'q', '-nologo'], { stdio: 'inherit' }).status !== 0) process.exit(1);
-  const product = resolveProduct(root, productId);
   // A module outside this repository is not in the solution: built on its own.
   for (const csproj of product.engineProjects ?? []) if (spawnSync('dotnet', ['build', csproj, '-v', 'q', '-nologo', `-p:LapinProDir=${root}/`], { stdio: 'inherit' }).status !== 0) process.exit(1);
   const temp = mkdtempSync(join(tmpdir(), 'lapin-user-docs-'));
   const manifest = join(temp, 'product.json');
   writeFileSync(manifest, JSON.stringify(product, null, 2));
-  const [enginePort, uiPort, relayPort] = [await free(), await free(), await free()];
   const children = [];
-  const stop = () => { for (const c of children) c.kill('SIGTERM'); };
+  // Vite runs under pnpm in a process group of its own: the whole group goes.
+  const stop = () => { for (const c of children) { try { if (c.group) process.kill(-c.pid, 'SIGTERM'); else c.kill('SIGTERM'); } catch { /* gone already */ } } };
   process.on('exit', stop);
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { stop(); process.exit(130); });
   const ready = (child, text, name) => new Promise((resolve, reject) => {
     let seen = '';
     const look = (d) => { seen += d; if (seen.includes(text)) resolve(); };
     child.stdout.on('data', look); child.stderr.on('data', look);
     child.on('exit', (code) => reject(new Error(`${name} stopped (${code}): ${seen.slice(-800)}`)));
-    setTimeout(() => reject(new Error(`${name} did not start: ${seen.slice(-800)}`)), 90_000);
+    setTimeout(() => reject(new Error(`${name} did not start: ${seen.slice(-800)}`)), 120_000);
   });
   const hostDll = join(root, 'engine/src/Host/Lapin.Host/bin/Debug/net10.0/Lapin.Host.dll');
-  // A relay of its own for the shared session's pictures (docs/plan-multiplayer.md): the engine shares through it, the invitation opens this UI.
-  const relay = spawn('dotnet', [join(root, 'engine/src/Relay/Lapin.Relay/bin/Debug/net10.0/Lapin.Relay.dll'), '--urls', `http://127.0.0.1:${relayPort}`]);
-  children.push(relay);
-  const engine = spawn('dotnet', [hostDll, '--product', manifest, '--modules-dir', join(root, 'engine/artifacts/modules'), '--user-dir', join(temp, 'user'), '--port', String(enginePort), '--parent-pid', String(process.pid)], {
-    env: { ...process.env, LAPIN_RELAY: `ws://127.0.0.1:${relayPort}/relay`, LAPIN_JOIN_PAGE: `http://localhost:${uiPort}/` },
-  });
-  children.push(engine);
-  const ui = spawn('pnpm', ['--filter', 'ui', 'exec', 'vite', '--port', String(uiPort), '--strictPort'], {
-    cwd: root, env: { ...process.env, VITE_ENGINE_URL: `ws://127.0.0.1:${enginePort}/ws`, LAPIN_PRODUCT_FILE: manifest },
-  });
-  children.push(ui);
-  await Promise.all([ready(engine, 'LAPIN_HOST_READY', 'the engine'), ready(ui, 'Local:', 'the UI')]);
-  console.log(`▸ engine on ${enginePort}, UI on ${uiPort}`);
-
-  const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' });
+  const n = Math.min(jobs, queue.length);
+  console.log(`▸ ${queue.length} scene(s) in ${n} worker(s) (${availableParallelism()} cores, ${(freemem() / 2 ** 30).toFixed(0)} of ${(totalmem() / 2 ** 30).toFixed(0)} GB free)`);
   const failures = [];
-  try {
-    for (const lang of langs) for (const scene of scenes.filter((s) => !only || only.some((o) => s.id.startsWith(o)))) {
-      const t0 = Date.now();
-      const id = lang === 'en' ? scene.id : `${scene.id} (${lang})`;
-      const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
-      const errors = [];
-      page.on('pageerror', (e) => errors.push(e.message));
-      page.on('dialog', (d) => void d.accept());
-      // Reports a scene might open never leave the machine.
-      await page.route('**/api/feedback**', (r) => r.abort());
-      try {
-        const t = tools(page, `http://localhost:${uiPort}/`, shotsOf(lang), lang);
-        await scene.run(t);
-        if (errors.length) throw new Error(`errors in the page: ${errors.join(' | ')}`);
-        console.log(`  ✓ ${id} (${t.taken.join(', ')}) ${((Date.now() - t0) / 1000).toFixed(1)} s`);
-      } catch (e) {
-        failures.push(id);
-        const where = join(temp, `${scene.id}-${lang}-failed.png`);
-        await page.screenshot({ path: where }).catch(() => {});
-        console.error(`  ✗ ${id}: ${e instanceof Error ? e.message : e}\n    the page as it was: ${where}`);
-      } finally {
-        await page.close();
+  const t0all = Date.now();
+
+  /** One worker: its own relay, engine, Vite and Chrome, taking scenes from the queue until it is empty. */
+  async function worker(w) {
+    const [enginePort, uiPort, relayPort] = [await free(), await free(), await free()];
+    // A relay of its own for the shared session's pictures (docs/plan-multiplayer.md): the engine shares through it, the invitation opens this UI.
+    const relay = spawn('dotnet', [join(root, 'engine/src/Relay/Lapin.Relay/bin/Debug/net10.0/Lapin.Relay.dll'), '--urls', `http://127.0.0.1:${relayPort}`]);
+    children.push(relay);
+    const engine = spawn('dotnet', [hostDll, '--product', manifest, '--modules-dir', join(root, 'engine/artifacts/modules'), '--user-dir', join(temp, `user-${w}`), '--port', String(enginePort), '--parent-pid', String(process.pid)], {
+      env: { ...process.env, LAPIN_RELAY: `ws://127.0.0.1:${relayPort}/relay`, LAPIN_JOIN_PAGE: `http://localhost:${uiPort}/` },
+    });
+    children.push(engine);
+    const ui = spawn('pnpm', ['--filter', 'ui', 'exec', 'vite', '--port', String(uiPort), '--strictPort'], {
+      cwd: root, detached: true,
+      env: { ...process.env, VITE_ENGINE_URL: `ws://127.0.0.1:${enginePort}/ws`, LAPIN_PRODUCT_FILE: manifest, LAPIN_VITE_CACHE_DIR: join(root, 'ui', 'node_modules', `.vite-docs-${w}`) },
+    });
+    ui.group = true;
+    children.push(ui);
+    await Promise.all([ready(engine, 'LAPIN_HOST_READY', `the engine (worker ${w})`), ready(ui, 'Local:', `the UI (worker ${w})`)]);
+    console.log(`▸ worker ${w}: engine on ${enginePort}, UI on ${uiPort} (ready after ${((Date.now() - t0all) / 1000).toFixed(0)} s)`);
+    const browser = await chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : { channel: 'chrome' });
+    try {
+      for (let job = queue.shift(); job; job = queue.shift()) {
+        const { scene, lang } = job;
+        const t0 = Date.now();
+        const id = lang === 'en' ? scene.id : `${scene.id} (${lang})`;
+        const key = store?.key(scene.id, lang);
+        // What it wrote last time goes first: a picture it no longer takes does not outlive it.
+        for (const f of store?.state.scenes[key]?.files ?? []) rmSync(join(shotsOf(lang), f), { force: true });
+        const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
+        const errors = [];
+        page.on('pageerror', (e) => errors.push(e.message));
+        page.on('dialog', (d) => void d.accept());
+        // Reports a scene might open never leave the machine.
+        await page.route('**/api/feedback**', (r) => r.abort());
+        try {
+          const t = tools(page, `http://localhost:${uiPort}/`, shotsOf(lang), lang);
+          await scene.run(t);
+          if (errors.length) throw new Error(`errors in the page: ${errors.join(' | ')}`);
+          const secs = (Date.now() - t0) / 1000;
+          console.log(`  ✓ ${id} (${t.taken.join(', ')}) ${secs.toFixed(1)} s${n > 1 ? ` [${w}]` : ''}${process.env.LAPIN_DOCS_DEBUG ? ` at ${((Date.now() - t0all) / 1000).toFixed(0)} s` : ''}`);
+          if (store) {
+            // Its inputs as they were when the run began (deps hashes the tree once), and the files it wrote this time.
+            store.state.scenes[key] = { parts: deps.inputs(scene, lang, t.files), files: t.files, secs: Math.round(secs * 10) / 10, at: new Date().toISOString() };
+            store.save();
+          }
+        } catch (e) {
+          failures.push(id);
+          if (store) { delete store.state.scenes[key]; store.save(); }
+          const where = join(temp, `${scene.id}-${lang}-failed.png`);
+          await page.screenshot({ path: where }).catch(() => {});
+          console.error(`  ✗ ${id}: ${e instanceof Error ? e.message : e}\n    the page as it was: ${where}`);
+        } finally {
+          await page.close();
+        }
       }
+    } finally {
+      // Several Chromes closing at once may take minutes to say so: not waited for beyond a few seconds (Playwright ends them with the run).
+      await Promise.race([browser.close().catch(() => {}), new Promise((r) => setTimeout(r, 5000).unref())]);
     }
+  }
+
+  try {
+    await Promise.all(Array.from({ length: n }, (_, w) => worker(w + 1)));
+  } catch (e) {
+    console.error(`✗ ${e instanceof Error ? e.message : e}`);
+    stop();
+    process.exit(1);
   } finally {
-    await browser.close();
     stop();
   }
+  console.log(`▸ the pictures took ${((Date.now() - t0all) / 1000).toFixed(0)} s`);
   if (failures.length) { console.error(`✗ ${failures.length} scene(s) failed: ${failures.join(', ')}`); process.exit(1); }
+  if (store && !only && fullLangs.size) { for (const l of fullLangs) store.state.lastFull[l] = new Date().toISOString(); store.save(); }
   rmSync(temp, { recursive: true, force: true });
 }
 
@@ -154,6 +240,8 @@ async function takePictures() {
  */
 function tools(page, url, folder, lang) {
   const taken = [];
+  /** Every file it writes (pictures and data), for the incremental runs. */
+  const files = [];
   let marks = [];
   const setLang = (l) => page.evaluate(async (l) => (await import('/src/i18n/index.ts')).setLang(l), l);
   const unplace = () => page.evaluate(() => document.querySelectorAll('.user-docs-mark').forEach((d) => d.remove()));
@@ -181,7 +269,7 @@ function tools(page, url, folder, lang) {
     if (marks.length) { await unplace(); await place(marks); }
   }
   const t = {
-    page, taken, lang,
+    page, taken, files, lang,
     /** A command of the engine, as the interface sends it. */
     cmd: (command, args = {}) => page.evaluate(async ([c, a]) => (await import('/src/engine/session.ts')).execute(c, a), [command, args]),
     /** A call of the engine's protocol (doc.snapshot, session.info…). */
@@ -254,7 +342,12 @@ function tools(page, url, folder, lang) {
     /** Shows everything in the view on the screen. */
     async fit() { await page.locator('button[title^="Fit"]').first().click().catch(() => t.keys('z', 'e', 'Enter')); await t.wait(500); },
     /** Data a page shows (shots/<name>.json, in the scene's language): the default shortcuts' table. */
-    data(name, value) { writeFileSync(join(folder, `${name}.json`), JSON.stringify(value, null, 2)); },
+    data(name, value) { writeFileSync(join(folder, `${name}.json`), JSON.stringify(value, null, 2)); files.push(`${name}.json`); },
+    /** Waits for something the engine sends in its own time (a preview), failing the scene as expect does if it never comes: a fixed wait is too short when several scenes run at once. */
+    async until(ok, what, ms = 20_000) {
+      const end = Date.now() + ms;
+      for (;;) { if (await ok()) return; if (Date.now() > end) throw new Error(`expected: ${what}`); await page.waitForTimeout(200); }
+    },
     /** Fails the scene when something is not as the guide says. */
     expect(ok, what) { if (!ok) throw new Error(`expected: ${what}`); },
     /**
@@ -300,6 +393,7 @@ function tools(page, url, folder, lang) {
     }, png.toString('base64'));
     writeFileSync(join(folder, `${name}.webp`), Buffer.from(webp, 'base64'));
     taken.push(name);
+    files.push(`${name}.webp`);
   }
   return t;
 }

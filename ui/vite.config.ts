@@ -49,6 +49,8 @@ export default defineConfig({
   // The engine's worker (src/engine/worker) is an ES module: it imports the engine's runtime from engine/.
   worker: { format: 'es' },
   clearScreen: false,
+  // The guide's parallel runs (scripts/user-docs/run.mjs --jobs) give each of their dev servers a dependency cache of its own.
+  ...(process.env.LAPIN_VITE_CACHE_DIR ? { cacheDir: process.env.LAPIN_VITE_CACHE_DIR } : {}),
   // The sibling repositories too, for the modules that live there.
   server: { port: Number(process.env.LAPIN_UI_PORT ?? 5180), strictPort: true, fs: { allow: [resolve(__dirname, '../..')] } },
   // Each interface language is a chunk of its own (lang-<id>), fetched when chosen; the web build's budget counts one.

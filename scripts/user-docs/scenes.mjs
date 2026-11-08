@@ -1452,14 +1452,16 @@ export const scenes = [
       await t.wait(1000);
       t.expect(await dialog.count() > 0, 'Edit hall opens the configurator on the hall');
       const span = dialog.locator('input[data-field=hall-span]');
+      await t.until(async () => await span.inputValue() === '20000' && await dialog.locator('[data-field=hall-summary] dt').count() > 0, 'the hall\'s own spec in the configurator');
       await span.fill('24000');
       await span.press('Enter');
-      await t.wait(1200);
+      await t.until(() => dialog.locator('[data-field=hall-apply]').isEnabled(), 'Apply offered for the changed span');
       await dialog.locator('[data-field=hall-apply]').click();
-      await t.wait(2500);
-      nodes = await t.nodes();
-      const again = nodes.find((n) => n.id === rafter.id);
-      t.expect(again && Math.abs((again.props.end?.[0] ?? 0) - 12) < 1e-6, 'the hall is built again over the same members, 24 m wide');
+      await t.until(async () => {
+        nodes = await t.nodes();
+        const again = nodes.find((n) => n.id === rafter.id);
+        return again && Math.abs((again.props.end?.[0] ?? 0) - 12) < 1e-6;
+      }, 'the hall is built again over the same members, 24 m wide');
       await t.ui({ dialog: null, selection: null, selected: [], keyPlan: true });
     },
   },
@@ -1479,7 +1481,7 @@ export const scenes = [
       await dialog.locator('select[data-field=hall-base]').selectOption('fixed');
       await dialog.locator('select[data-field=hall-anchor]').selectOption('hooked');
       await t.wait(1500);
-      t.expect(await dialog.locator('svg[data-field=hall-elevation] polygon[data-role=node]').count() > 20, 'the preview draws the frame\'s connections');
+      await t.until(async () => await dialog.locator('svg[data-field=hall-elevation] polygon[data-role=node]').count() > 20, 'the preview draws the frame\'s connections');
       t.expect(await dialog.locator('[data-field=hall-summary] dt').count() >= 12, 'the summary counts the connections, their bolts and anchors');
       await t.shot('steel-nodes-hall', { of: '.dialog', pad: 0 });
       await dialog.locator('[data-field=hall-apply]').click();
@@ -1532,7 +1534,7 @@ export const scenes = [
       await bracing.press('Tab');
       await dialog.locator('select[data-field=hall-brace]').selectOption('L 60×60×6');
       await t.wait(2500);
-      t.expect(await dialog.locator('svg[data-field=hall-plan] polygon[data-role=brace]').count() >= 16, 'the plan shows the roof bracing of both braced bays');
+      await t.until(async () => await dialog.locator('svg[data-field=hall-plan] polygon[data-role=brace]').count() >= 16, 'the plan shows the roof bracing of both braced bays');
       t.expect(await dialog.locator('svg[data-field=hall-plan] polygon[data-role=purlin]').count() >= 80, 'and the purlins');
       t.expect(await dialog.locator('[data-field=hall-summary] dt').count() >= 15, 'the summary weighs the purlins, rails, eaves beam, bracing and fly braces');
       await t.shot('steel-secondary-hall', { of: '.dialog', pad: 0 });
