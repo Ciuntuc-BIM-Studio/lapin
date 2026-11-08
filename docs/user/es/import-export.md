@@ -105,7 +105,7 @@ En **Manage → Links** una nube tiene su propia fila: sus puntos, cuánto lleva
 
 ![Manage → Links con una nube de puntos](shots/point-cloud-links.webp)
 
-Una nube nunca se exporta: IFC, Fragments y las exportaciones 3D llevan el modelo, no el escaneo. En el navegador se puede vincular una nube de hasta 160 MB; se indexa en la página y hay que vincularla de nuevo tras recargar la página. Las nubes mayores necesitan la aplicación de escritorio.
+Una nube no se exporta con el modelo: IFC y Fragments llevan el modelo, no el escaneo, y **Export 3D…** toma una muestra como puntos en GLB y glTF solo si se pide. Plantas, secciones y alzados también la dibujan (*Secciones, alzados y 3D*, Nubes de puntos en las vistas). En el navegador se puede vincular una nube de hasta 160 MB; se indexa en la página y hay que vincularla de nuevo tras recargar la página. Las nubes mayores necesitan la aplicación de escritorio.
 
 ## Modelos 3D
 

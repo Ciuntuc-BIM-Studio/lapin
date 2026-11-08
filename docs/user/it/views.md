@@ -236,3 +236,13 @@ Le impostazioni sono della vista, o di un insieme con nome condiviso da più vis
 ![Il colore e il motivo di un filtro in pianta](shots/vg-overrides.webp)
 
 ![La pianta con il suo filtro](shots/vg-plan.webp)
+
+### Nuvole di punti nelle viste
+
+Una nuvola di punti collegata (*Importa ed esporta*, Nuvole di punti) si vede in tutte le viste. Una **pianta** disegna la fetta presa dal suo taglio, 10 cm attorno al piano di taglio, come punti sotto i muri; una **sezione** la fetta subito dietro il suo piano; un **prospetto** ogni punto che guarda, il più vicino davanti. I punti hanno i colori della scansione, scuriti per leggersi su carta, e si stampano sulle tavole e nel PDF come li mostra lo schermo. I loro punti sono snap: i muri disegnati sulla fetta di una scansione cadono sulle sue facce. Nella **vista 3D** gli strumenti di posizionamento e Move si agganciano ai punti della nuvola come agli spigoli.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) ha una scheda **Point clouds**: per ogni nuvola, solo in questa vista, **Shown**, **Halftone**, i suoi **Colours** (come il suo collegamento, RGB, intensità, quota o classificazione), la **Slice** che disegna una pianta o una sezione (cm) e **Classes…**: le classi ASPRS dei suoi punti (terreno, vegetazione, edificio, rumore…), ciascuna visibile o nascosta. La scheda di una vista 3D decide cosa disegna il 3D. **Export 3D…** prende un campione delle nuvole visibili (al massimo 5 milioni di punti) come punti in GLB e glTF quando **Point clouds** è spuntato; nessun'altra esportazione le porta.
+
+![La fetta di una scansione in pianta, un muro disegnato sopra](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics: la vegetazione di una nuvola nascosta in una vista](shots/point-cloud-vg.webp)

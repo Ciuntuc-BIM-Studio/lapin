@@ -305,4 +305,79 @@ public class PointCloudTests
         f.Session.Undo();
         Assert.NotNull(f.Model.Get(id));
     }
+
+    // ─── Stage D2: the view's row, plans and sections, exports ───
+
+    static JsonArray Pens(Fixture f, string view) => ((JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = view })!)["pens"]!.AsArray();
+    static List<JsonObject> CloudImages(Fixture f, string view) => Pens(f, view).OfType<JsonObject>()
+        .SelectMany(p => (p["images"] as JsonArray ?? []).OfType<JsonObject>()).Where(i => ((string?)i["id"])?.StartsWith("pointcloud:") == true).ToList();
+
+    /// <summary>A room 5 × 4 m scanned (floor, the walls along x = 0 and y = 0, 3 m high), linked origin to origin, indexed.</summary>
+    static (Fixture F, string Id) Scanned()
+    {
+        var (f, id, _) = Linked(Las(Room(60)), "room.las");
+        return (f, id);
+    }
+
+    [Fact]
+    public void A_plan_draws_the_slice_its_cut_takes_as_dots_with_snaps_and_a_section_the_slice_behind_its_plane()
+    {
+        var (f, id) = Scanned();
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        var img = Assert.Single(CloudImages(f, plan));
+        Assert.StartsWith("iVBOR", (string)img["data"]!);
+        // The slice round the cut: the two walls' lines, not the floor (5 × 4 m): the picture spans the walls' 5 m and 4 m.
+        var c = img["corners"]!.AsArray().Select(v => (double)v!).ToArray();
+        Assert.InRange(c[2] - c[0], 4.9, 5.2);
+        Assert.InRange(c[1] - c[5], 3.9, 4.2);
+        // Its points to snap to, on the walls' lines (x = 0 or y = 0).
+        var drawing = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!;
+        var mark = drawing["marks"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["id"] == id);
+        var snaps = mark["snaps"]!.AsArray().Select(v => (double)v!).ToArray();
+        Assert.True(snaps.Length > 40);
+        for (var k = 0; k + 1 < snaps.Length; k += 2) Assert.True(Math.Abs(snaps[k]) < 0.03 || Math.Abs(snaps[k + 1]) < 0.03, $"a snap off the walls: {snaps[k]}, {snaps[k + 1]}");
+        // Hidden in this view, or its walls' class hidden: nothing drawn; the link's other views keep it.
+        f.Run("view.graphics", new JsonObject { ["id"] = plan, ["pointCloud"] = id, ["value"] = new JsonObject { ["hiddenClasses"] = new JsonArray(6) } });
+        Assert.Empty(CloudImages(f, plan));
+        f.Run("view.graphics", new JsonObject { ["id"] = plan, ["pointCloud"] = id, ["value"] = new JsonObject { ["hidden"] = true } });
+        Assert.Empty(CloudImages(f, plan));
+        Assert.Throws<CommandException>(() => f.Run("view.graphics", new JsonObject { ["id"] = plan, ["pointCloud"] = id, ["value"] = new JsonObject { ["colorMode"] = "rainbow" } }));
+        var vis = (JsonObject)f.Session.Query("view.visibility", new JsonObject { ["id"] = plan })!;
+        Assert.Equal(id, (string?)vis["pointClouds"]![0]!["id"]);
+        Assert.Contains(6, vis["pointClouds"]![0]!["classes"]!.AsArray().Select(x => (int)x!));
+        Assert.DoesNotContain(vis["links"]!.AsArray(), l => (string?)l!["id"] == id);
+        Assert.True((bool)vis["graphics"]!["pointClouds"]![id]!["hidden"]!);
+        // A section across the room at x = 2.5 looking along +y: the floor and the wall along y = 0 behind its plane… cut just behind.
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(2.5, -1), ["end"] = new JsonArray(2.5, 5), ["name"] = "S" })!["id"]!;
+        Assert.Single(CloudImages(f, section));
+    }
+
+    [Fact]
+    public void A_sheet_prints_the_slice_as_a_picture_in_its_pdf()
+    {
+        var pen = new Lapin.Drawing.Views.Pen("CLOUD", null, 0, null, null);
+        var rgba = new byte[4 * 4 * 4];
+        for (var i = 0; i < 16; i++) { rgba[4 * i] = 200; rgba[4 * i + 3] = (byte)(i % 2 == 0 ? 255 : 0); }
+        pen.Images.Add(new Lapin.Drawing.Views.PenImage("pointcloud:x", [new(10, 20), new(20, 20), new(20, 10), new(10, 10)], 1, Lapin.Drawing.Documents.DocPng.EncodeRgba(4, 4, rgba), "image/png"));
+        var pdf = System.Text.Encoding.Latin1.GetString(Lapin.Drawing.Export.PdfWriter.Write([new Lapin.Drawing.Export.PaperPage(100, 100, [pen])]));
+        Assert.Contains("/Subtype /Image", pdf);
+        Assert.Contains("/SMask", pdf);
+    }
+
+    [Fact]
+    public void A_mesh_export_carries_the_clouds_only_when_asked_and_only_as_gltf()
+    {
+        var (f, _) = Scanned();
+        f.Run("architecture.addWall", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 5, ["y2"] = 0 });
+        var (plain, _) = Lapin.Mesh.MeshExport.Write(f.Session, new Lapin.Mesh.MeshExportOptions("glb"));
+        Assert.DoesNotContain("pointCloud", Lapin.Mesh.GltfWriter.ReadGlb(plain).Json.RootElement.GetRawText());
+        var (glb, r) = Lapin.Mesh.MeshExport.Write(f.Session, new Lapin.Mesh.MeshExportOptions("glb", PointClouds: true));
+        var json = Lapin.Mesh.GltfWriter.ReadGlb(glb).Json.RootElement;
+        var points = json.GetProperty("meshes").EnumerateArray().SelectMany(m => m.GetProperty("primitives").EnumerateArray()).Where(p => p.TryGetProperty("mode", out var mode) && mode.GetInt32() == 0).ToList();
+        var prim = Assert.Single(points);
+        Assert.True(prim.GetProperty("attributes").TryGetProperty("COLOR_0", out _));
+        Assert.Contains(r.Notes, n => n.StartsWith("Point clouds:"));
+        var (_, dae) = Lapin.Mesh.MeshExport.Write(f.Session, new Lapin.Mesh.MeshExportOptions("dae", PointClouds: true));
+        Assert.Contains(dae.Notes, n => n.Contains("GLB and glTF only"));
+    }
 }

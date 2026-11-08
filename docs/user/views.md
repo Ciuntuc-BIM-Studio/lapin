@@ -236,3 +236,13 @@ The settings belong to the view, or to a named set that several views share (**S
 ![A filter's colour and pattern in the plan](shots/vg-overrides.webp)
 
 ![The plan with its filter](shots/vg-plan.webp)
+
+### Point clouds in views
+
+A linked point cloud (*Import and export*, Point clouds) shows in every view. A **plan** draws the slice its cut takes, 10 cm round the cut plane, as dots under the walls; a **section** the slice just behind its plane; an **elevation** every point it faces, the nearest in front. The dots are the scan's own colours, darkened to read on paper, and they print on sheets and in the PDF as the screen shows them. Their points are snaps: draw walls over a scan's slice and they land on its faces. In the **3D view** the placing tools and Move snap to the cloud's points as they do to corners.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) has a **Point clouds** tab: per cloud, for this view alone, **Shown**, **Halftone**, its **Colours** (as its link, RGB, intensity, elevation or classification), the **Slice** a plan or a section draws (cm), and **Classes…**: the ASPRS classes its points have (ground, vegetation, building, noise…), each shown or hidden. A 3D view's tab rules what the 3D draws. **Export 3D…** takes a sample of the clouds shown (at most 5 million points) as points in GLB and glTF when **Point clouds** is ticked; no other export carries them.
+
+![A scan's slice in the plan, one wall traced over it](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics: a cloud's vegetation hidden in one view](shots/point-cloud-vg.webp)

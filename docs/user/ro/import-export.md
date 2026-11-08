@@ -105,7 +105,7 @@ Norul rămâne în fișierul lui. Nu se copiază în proiect: proiectul păstrea
 
 ![Manage → Links cu un nor de puncte](shots/point-cloud-links.webp)
 
-Un nor nu se exportă niciodată: IFC, Fragments și exporturile 3D duc modelul, nu scanarea. În browser se poate lega un nor de cel mult 160 MB; e indexat în pagină și trebuie legat din nou după reîncărcarea paginii. Norii mai mari cer aplicația desktop.
+Un nor nu se exportă cu modelul: IFC și Fragments duc modelul, nu scanarea, iar **Export 3D…** ia un eșantion din el ca puncte în GLB și glTF doar la cerere. Planurile, secțiunile și fațadele îl desenează și ele (*Secțiuni, fațade și 3D*, Norii de puncte în vederi). În browser se poate lega un nor de cel mult 160 MB; e indexat în pagină și trebuie legat din nou după reîncărcarea paginii. Norii mai mari cer aplicația desktop.
 
 ## Modele 3D
 

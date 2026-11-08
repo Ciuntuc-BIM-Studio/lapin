@@ -78,12 +78,13 @@ function PenImages({ pen, toScreen }: { pen: PenDto; toScreen: ToScreen }) {
         </clipPath>
       )}
       {(pen.images ?? []).map((img, k) => {
-        const n = nodes.get(img.id);
-        const data = n?.props.data, mime = n?.props.mime;
+        // A point cloud's slice carries its own picture (decision 396); an orthophoto or a traced image is a LapinImage of the model.
+        const n = img.data ? undefined : nodes.get(img.id);
+        const data = img.data ?? n?.props.data, mime = img.mime ?? n?.props.mime;
         if (typeof data !== 'string' || typeof mime !== 'string' || img.corners.length < 8) return null;
         const c = img.corners;
         const [tl, tr, bl] = [toScreen({ x: c[0], y: c[1] }), toScreen({ x: c[2], y: c[3] }), toScreen({ x: c[6], y: c[7] })];
-        return <image key={k} href={`data:${mime};base64,${data}`} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={img.opacity} className="plan-orthophoto"
+        return <image key={k} href={`data:${mime};base64,${data}`} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={img.opacity} className="plan-orthophoto" style={img.data ? { imageRendering: 'pixelated' } : undefined}
           transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
       })}
     </g>

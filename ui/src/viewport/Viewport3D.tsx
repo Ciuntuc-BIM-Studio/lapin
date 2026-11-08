@@ -70,7 +70,7 @@ import { resetTemporary, temporaryOn, useTemporary } from './temporary';
 import { place } from '../engine/instances';
 import { disposeUnderlays, sameSources, underlayGroup, underlaySources, type UnderlayBatch } from './underlays3d';
 import { PointCloudLayer, type Hierarchy, type Tile } from './pointClouds3d';
-import { cloudSpecs, setCloudStatus, viewClouds } from './pointClouds';
+import { cloudSpecs, isCloudLink, setCloudStatus, type ViewCloud } from './pointClouds';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
 import { clampWheel, wheelZoom } from './zoom';
@@ -861,6 +861,8 @@ export function Viewport3D() {
     }, () => invalidate.current());
     clouds.onStatus = (id, st) => setCloudStatus(id, st);
     s.add(clouds.group);
+    // The snaps in 3D find the clouds' points through the scene (scene3d.ts, cloudPointsNear).
+    s.userData.pointClouds = clouds;
     cloudLayer.current = clouds;
     clouds.sync(JSON.parse(cloudKeyRef.current));
 
@@ -1639,8 +1641,17 @@ export function Viewport3D() {
     if (g) { g.visible = dxf3d; invalidate.current(); }
   }, [dxf3d]);
 
-  // The clouds as their links and the 3D view's graphics say (its Point clouds tab).
-  const cloudKey = JSON.stringify(cloudSpecs(nodes, viewClouds(view3dId ? nodes.get(view3dId) : undefined)));
+  // The clouds as their links and the 3D view's graphics say (its Point clouds tab, its set's or its style's: the engine resolves them).
+  const [cloudRows, setCloudRows] = useState<Record<string, ViewCloud>>({});
+  const hasClouds = [...nodes.values()].some(isCloudLink);
+  useEffect(() => {
+    if (!hasClouds) { setCloudRows({}); return; }
+    let live = true;
+    const timer = setTimeout(() => void query<{ graphics?: { pointClouds?: Record<string, ViewCloud> } | null }>('view.visibility', { id: view3dId ?? '3d' })
+      .then((v) => { if (live) setCloudRows(v?.graphics?.pointClouds ?? {}); }), 80);
+    return () => { live = false; clearTimeout(timer); };
+  }, [nodes, view3dId, hasClouds]);
+  const cloudKey = JSON.stringify(cloudSpecs(nodes, cloudRows));
   cloudKeyRef.current = cloudKey;
   useEffect(() => { cloudLayer.current?.sync(JSON.parse(cloudKey)); }, [cloudKey]);
 

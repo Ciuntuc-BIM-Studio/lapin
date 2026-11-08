@@ -105,7 +105,7 @@ In **Manage → Links** a cloud has its own row: its points, how far its index i
 
 ![Manage → Links with a point cloud](shots/point-cloud-links.webp)
 
-A cloud is never exported: IFC, Fragments and the 3D exports carry the model, not the scan. In the browser a cloud of up to 160 MB can be linked; it is indexed in the page and has to be linked again after the page is reloaded. Larger clouds need the desktop app.
+A cloud is never exported with the model: IFC and Fragments carry the model, not the scan, and **Export 3D…** takes a sample of it as points in GLB and glTF only when asked. Plans, sections and elevations draw it too (*Sections, elevations and 3D*, Point clouds in views). In the browser a cloud of up to 160 MB can be linked; it is indexed in the page and has to be linked again after the page is reloaded. Larger clouds need the desktop app.
 
 ## 3D models
 

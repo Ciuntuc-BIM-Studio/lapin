@@ -19,6 +19,7 @@
  */
 
 import { useState } from 'react';
+import { isCloudLink } from '../../viewport/pointClouds';
 import { X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { useSession } from '../../engine/session';
@@ -60,12 +61,15 @@ export function ExportMeshDialog() {
   const [edges, setEdges] = useState(false);
   const [origin, setOrigin] = useState('base');
   const [voids, setVoids] = useState(false);
+  // The point clouds linked go out only when ticked, and only in GLB and glTF (decision 396).
+  const hasClouds = useSession((s) => [...s.nodes.values()].some(isCloudLink));
+  const [clouds, setClouds] = useState(false);
   const [busy, setBusy] = useState(false);
   const close = () => useUi.setState({ dialog: null });
   const run = async () => {
     setBusy(true);
     const view = what === 'view' ? { viewId: view3dId ?? '3d', hidden, ...(cuts && planes.length ? { planes } : {}) } : {};
-    await exportFile('project.exportMesh', { format, edges, origin, ...view, ...(phase ? { phase } : {}), ...(voids ? { voids: true } : {}) }, `${projectTitle(path)}.${extOf(format)}`, extOf(format));
+    await exportFile('project.exportMesh', { format, edges, origin, ...view, ...(phase ? { phase } : {}), ...(voids ? { voids: true } : {}), ...(clouds && hasClouds ? { pointClouds: true } : {}) }, `${projectTitle(path)}.${extOf(format)}`, extOf(format));
     setBusy(false);
     close();
   };
@@ -101,6 +105,10 @@ export function ExportMeshDialog() {
             <dd><input type="checkbox" checked={edges} onChange={(e) => setEdges(e.target.checked)} /></dd>
             <dt title="Each opening in a wall, floor or roof also as a solid of its own, in a group named Opening voids, for clash tools; the kinds and offset of Manage → Openings vs MEP">Opening voids</dt>
             <dd><input type="checkbox" data-testid="export-mesh-voids" checked={voids} onChange={(e) => setVoids(e.target.checked)} /></dd>
+            {hasClouds && <>
+              <dt title="A sample of each point cloud shown (at most 5 million points in all), as points with their colours; GLB and glTF only">Point clouds</dt>
+              <dd><label><input type="checkbox" data-testid="export-mesh-clouds" style={{ width: 'auto', marginRight: 6 }} checked={clouds} disabled={format !== 'glb' && format !== 'gltf'} onChange={(e) => setClouds(e.target.checked)} />{format === 'glb' || format === 'gltf' ? 'a sample, as points' : 'GLB and glTF only'}</label></dd>
+            </>}
           </dl>
           <p className="muted small">Surfaces for rendering, visualisation and AR: each element a node with its GlobalId, IFC class and type, a mesh per material. To exchange the model itself, use Export IFC.</p>
           <p className="muted small">Each material goes out once under its name, with its colour, texture, roughness, metalness and glass, so a renderer such as Twinmotion can swap it by name (Manage → Materials).</p>

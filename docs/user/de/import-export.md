@@ -105,7 +105,7 @@ In **Manage → Links** hat eine Wolke ihre eigene Zeile: ihre Punkte, wie weit 
 
 ![Manage → Links mit einer Punktwolke](shots/point-cloud-links.webp)
 
-Eine Wolke wird nie exportiert: IFC, Fragments und die 3D-Exporte tragen das Modell, nicht den Scan. Im Browser kann eine Wolke von bis zu 160 MB verknüpft werden; sie wird in der Seite indiziert und muss nach dem Neuladen der Seite erneut verknüpft werden. Größere Wolken brauchen die Desktop-App.
+Eine Wolke wird nicht mit dem Modell exportiert: IFC und Fragments tragen das Modell, nicht den Scan, und **Export 3D…** nimmt nur auf Wunsch eine Stichprobe als Punkte in GLB und glTF. Grundrisse, Schnitte und Ansichten zeichnen sie auch (*Schnitte, Ansichten und 3D*, Punktwolken in Ansichten). Im Browser kann eine Wolke von bis zu 160 MB verknüpft werden; sie wird in der Seite indiziert und muss nach dem Neuladen der Seite erneut verknüpft werden. Größere Wolken brauchen die Desktop-App.
 
 ## 3D-Modelle
 

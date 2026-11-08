@@ -3875,6 +3875,44 @@ export const scenes = [
     },
   },
   {
+    // A point cloud in a plan and in Visibility / Graphics (decision 396): the scan's slice at the plan's cut drawn as dots under
+    // the walls being traced over it, its points snapped to; the view's Point clouds tab hides its vegetation and halftones it.
+    id: 'point-cloud-plan',
+    async run(t) {
+      await t.fresh();
+      const r = await t.cmd('pointcloud.link', { name: 'house-scan.las', data: scanLas().toString('base64') });
+      let st = null;
+      for (let k = 0; k < 120 && st?.state !== 'ready'; k++) { st = await t.call('doc.query', { name: 'pointcloud.status', args: { id: r.id } }); await t.wait(250); }
+      t.expect(st?.state === 'ready', `the scan is indexed (${st?.state})`);
+      const s = await t.storey();
+      // A wall traced over the scan, as a user does it: its outer face on the scan's south face; the other three still to trace.
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0.15, x2: 12, y2: 0.15 });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: s, name: 'Ground floor scan' })).id;
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false });
+      await t.wait(1500);
+      await t.fit();
+      await t.wait(1200);
+      const pictures = await t.page.locator('image.plan-orthophoto').count();
+      t.expect(pictures >= 1, `the scan's slice is drawn in the plan (${pictures})`);
+      const drawing = await t.call('doc.query', { name: 'view.drawing', args: { id: plan } });
+      const snaps = (drawing.marks ?? []).find((m) => m.id === r.id)?.snaps?.length ?? 0;
+      t.expect(snaps > 100, `its points are snaps (${snaps / 2})`);
+      await t.shot('point-cloud-plan', { of: '.plan-svg', pad: 0 });
+      // Visibility / Graphics → Point clouds: its classes, vegetation hidden, halftone in this view.
+      await t.tool('view.layers');
+      const dialog = t.page.locator('[data-testid=vv-dialog]');
+      await dialog.waitFor({ timeout: 10_000 });
+      await dialog.locator('[data-tab=pointClouds]').click();
+      await dialog.locator('button[data-cloud-classes]').click();
+      await dialog.locator('tr[data-class="5"] input[type=checkbox]').click();
+      await t.wait(800);
+      const vis = await t.call('doc.query', { name: 'view.visibility', args: { id: plan } });
+      t.expect(JSON.stringify(vis.graphics?.pointClouds?.[r.id]?.hiddenClasses) === '[5]', 'the vegetation hidden in this view');
+      await t.shot('point-cloud-vg', { of: '[data-testid=vv-dialog]', pad: 0, maxHeight: 640 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // A tester's report (decision 312): a wall opening edited by its grips as a window is, OFFSET read in the project's
     // millimetres, then a line drafted in the 3D view on the storey's level, standing there in 3D as the plan's drafts do.
     id: 'draft-3d',

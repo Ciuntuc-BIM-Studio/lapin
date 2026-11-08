@@ -27,11 +27,14 @@ public static class PdfWriter
         var pictures = new List<Raster>();
         var index = new Dictionary<string, int>();
         var alphas = new List<double>();
+        // Pictures that carry their own bytes (a point cloud's slice) are read from them.
+        var inline = new Dictionary<string, byte[]>();
+        foreach (var img in pages.SelectMany(p => p.Pens).SelectMany(pen => pen.Images)) if (img.Data != null) inline.TryAdd(img.ImageId, img.Data);
         int? Picture(string id)
         {
             if (!index.TryGetValue(id, out var k))
             {
-                var r = image?.Invoke(id) is { } bytes ? Raster.Read(bytes) : null;
+                var r = inline.TryGetValue(id, out var own) ? Raster.Read(own) : image?.Invoke(id) is { } bytes ? Raster.Read(bytes) : null;
                 k = r != null ? pictures.Count : -1;
                 if (r != null) pictures.Add(r);
                 index[id] = k;

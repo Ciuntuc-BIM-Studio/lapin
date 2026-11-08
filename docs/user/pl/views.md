@@ -236,3 +236,13 @@ Ustawienia należą do widoku albo do nazwanego zbioru, który dzieli kilka wido
 ![Kolor i wzór filtra na rzucie](shots/vg-overrides.webp)
 
 ![Rzut z filtrem](shots/vg-plan.webp)
+
+### Chmury punktów w widokach
+
+Połączona chmura punktów (*Import i eksport*, Chmury punktów) jest widoczna we wszystkich widokach. **Rzut** rysuje plaster, który bierze jego przekrój, 10 cm wokół płaszczyzny cięcia, jako kropki pod ścianami; **przekrój** plaster tuż za swoją płaszczyzną; **elewacja** każdy punkt, na który patrzy, najbliższy z przodu. Kropki mają kolory skanu, przyciemnione, by były czytelne na papierze, i drukują się na arkuszach i w PDF tak, jak pokazuje je ekran. Ich punkty są punktami przyciągania: ściany narysowane na plastrze skanu trafiają na jego powierzchnie. W **widoku 3D** narzędzia wstawiania i Move przyciągają do punktów chmury jak do narożników.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) ma kartę **Point clouds**: dla każdej chmury, tylko w tym widoku, **Shown**, **Halftone**, jej **Colours** (jak jej połączenie, RGB, intensywność, wysokość lub klasyfikacja), **Slice**, który rysuje rzut lub przekrój (cm), oraz **Classes…**: klasy ASPRS jej punktów (grunt, roślinność, budynek, szum…), każda widoczna lub ukryta. Karta widoku 3D decyduje, co rysuje 3D. **Export 3D…** bierze próbkę widocznych chmur (najwyżej 5 milionów punktów) jako punkty w GLB i glTF, gdy zaznaczone jest **Point clouds**; żaden inny eksport ich nie zawiera.
+
+![Plaster skanu w rzucie, ściana narysowana na nim](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics: roślinność chmury ukryta w jednym widoku](shots/point-cloud-vg.webp)

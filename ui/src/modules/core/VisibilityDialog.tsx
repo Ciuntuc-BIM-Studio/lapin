@@ -14,6 +14,7 @@ import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { PendingDialog } from './PendingDialog';
+import { CLASS_COLORS, CLASS_NAMES } from '../../viewport/pointClouds3d';
 
 export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; halftone?: boolean; transparency?: number; lines?: Record<string, { pattern?: string; pen?: number }>; sub?: Record<string, Row> }
 interface Rules { categories?: Record<string, Row>; classes?: Record<string, Row> }
@@ -22,16 +23,21 @@ export interface FilterRow { id: string; hidden?: boolean; color?: string; halft
 interface Graphics extends Rules {
   links?: Record<string, LinkRow>; annotations?: Record<string, { hidden?: boolean; color?: string; halftone?: boolean }>; detailLevel?: string;
   imports?: Record<string, { hidden?: boolean; halftone?: boolean; layers?: Record<string, { hidden?: boolean }> }>; filters?: FilterRow[];
+  pointClouds?: Record<string, CloudRow>;
 }
 interface ImportInfo { id: string; kind: 'dxf' | 'image'; name: string; layers: string[] }
 export interface ViewFilter { id: string; name: string; match: 'all' | 'any'; rules: FilterRule[] }
 export interface FilterRule { field: string; op: string; value?: string; name?: string }
 interface LinkInfo { id: string; name: string; kind: string; visible: boolean; halftone: boolean; classes: string[] }
+/** A point cloud as the tab lists it (decision 396): its link's own settings, what its points carry, the ASPRS classes they have. */
+interface CloudInfo { id: string; name: string; visible: boolean; halftone: boolean; colorMode: string; color: boolean; intensity: boolean; classification: boolean; classes: number[] }
+export interface CloudRow { hidden?: boolean; halftone?: boolean; colorMode?: string; hiddenClasses?: number[]; slice?: number }
 export interface Visibility {
   graphics?: Graphics | null; graphicsSet?: string | null; fromStyle?: boolean; style?: string;
   sets: { id: string; name: string }[]; categories: string[]; subcategories?: Record<string, string[]>;
   /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[];
   links?: LinkInfo[]; annotations?: string[]; imports?: ImportInfo[]; filters?: { id: string; name: string }[];
+  pointClouds?: CloudInfo[];
 }
 
 /** The ISO 128 pen series (mm), as the engine reads a category's weight; the older names still show when a project has them. */
@@ -81,7 +87,7 @@ export function moveRow<T>(list: T[], i: number, by: number): T[] {
 }
 export const categoryName = (c: string) => CATEGORY_NAMES[c] ?? (c ? c[0].toUpperCase() + c.slice(1) : c);
 
-type Tab = 'categories' | 'annotations' | 'imports' | 'filters' | 'links' | 'classes';
+type Tab = 'categories' | 'annotations' | 'imports' | 'filters' | 'links' | 'pointClouds' | 'classes';
 
 /** A row cleared of what says nothing (an empty field, shown when shown is the default). */
 export function clean(next: Row, keepsShown: boolean): Row {
@@ -260,6 +266,7 @@ export function VisibilityDialog() {
             <button type="button" role="tab" data-tab="imports" className={tab === 'imports' ? 'on' : ''} onClick={() => setTab('imports')}>Imported categories</button>
             <button type="button" role="tab" data-tab="filters" className={tab === 'filters' ? 'on' : ''} onClick={() => setTab('filters')}>Filters</button>
             <button type="button" role="tab" data-tab="links" className={tab === 'links' ? 'on' : ''} onClick={() => setTab('links')}>Links</button>
+            <button type="button" role="tab" data-tab="pointClouds" className={tab === 'pointClouds' ? 'on' : ''} onClick={() => setTab('pointClouds')}>Point clouds</button>
             <button type="button" role="tab" data-tab="classes" className={tab === 'classes' ? 'on' : ''} onClick={() => setTab('classes')}>IFC classes</button>
           </div>
           {tab === 'categories' && categoryTable()}
@@ -324,6 +331,7 @@ export function VisibilityDialog() {
               </table>
             )
           )}
+          {tab === 'pointClouds' && <PointCloudsTab target={target} clouds={v.pointClouds ?? []} rows={v.graphics?.pointClouds ?? {}} in3d={!view} />}
           {tab === 'filters' && <FiltersTab target={target} categories={v.categories} rows={v.graphics?.filters ?? []} defs={defs} counts={counts} editing={editing} setEditing={setEditing} />}
           {tab === 'links' && (
             links.length === 0 ? <p className="muted small">The project has no links: File → Link IFC…, or Import DXF… as a link.</p> : (
@@ -461,4 +469,74 @@ export function Visibility3D() {
     return () => { live = false; };
   }, [nodes, view3dId]);
   return null;
+}
+
+/** The colour modes a cloud offers, as the tab names them. */
+const CLOUD_COLORS: [string, string][] = [['', 'as its link'], ['rgb', 'RGB'], ['intensity', 'Intensity'], ['elevation', 'Elevation'], ['classification', 'Classification']];
+
+/** A row for a cloud cleared of what says nothing. */
+export function cloudRow(cur: CloudRow, patch: Partial<CloudRow>): CloudRow | null {
+  const next: CloudRow = { ...cur, ...patch };
+  if (!next.hidden) delete next.hidden;
+  if (!next.halftone) delete next.halftone;
+  if (!next.colorMode) delete next.colorMode;
+  if (!next.hiddenClasses?.length) delete next.hiddenClasses;
+  if (!next.slice) delete next.slice;
+  return Object.keys(next).length ? next : null;
+}
+
+/**
+ * The Point clouds tab (decision 396): each cloud in this view, shown, halftone, its colours, the slice a plan or a section
+ * draws (cm), and its ASPRS classes, each shown or hidden (ground, vegetation, building, noise…).
+ */
+function PointCloudsTab({ target, clouds, rows, in3d }: { target: string; clouds: CloudInfo[]; rows: Record<string, CloudRow>; in3d: boolean }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const put = (id: string, patch: Partial<CloudRow>) => void execute('view.graphics', { id: target, pointCloud: id, value: cloudRow(rows[id] ?? {}, patch) });
+  if (clouds.length === 0) return <p className="muted small">The project has no point cloud: File → Link point cloud….</p>;
+  const shown = clouds.find((c) => c.id === open);
+  return (
+    <div className="vv-clouds" data-testid="vv-clouds">
+      <table className="layer-table">
+        <thead><tr><th>Shown</th><th>Point cloud</th><th>Halftone</th><th>Colours</th>{!in3d && <th title="How thick a slice a plan or a section draws round its cut">Slice (cm)</th>}<th /></tr></thead>
+        <tbody>
+          {clouds.map((c) => {
+            const r = rows[c.id] ?? {};
+            return (
+              <tr key={c.id} data-cloud={c.name}>
+                <td><input type="checkbox" aria-label={c.name} checked={!r.hidden} onChange={(e) => put(c.id, { hidden: !e.target.checked })} /></td>
+                <td>{c.name}{!c.visible && <span className="muted small"> · hidden everywhere (Manage → Links)</span>}</td>
+                <td><input type="checkbox" aria-label="Halftone" checked={!!r.halftone || c.halftone} disabled={c.halftone} title={c.halftone ? 'Halftone everywhere (Manage → Links)' : undefined} onChange={(e) => put(c.id, { halftone: e.target.checked })} /></td>
+                <td>
+                  <select aria-label="Colours" value={r.colorMode ?? ''} onChange={(e) => put(c.id, { colorMode: e.target.value || undefined })}>
+                    {CLOUD_COLORS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </td>
+                {!in3d && <td><input type="number" className="num" min={1} max={500} step={1} style={{ width: 64 }} value={Math.round((r.slice ?? 0.1) * 100)} onChange={(e) => { const cm = Number(e.target.value); if (cm > 0) put(c.id, { slice: cm === 10 ? undefined : cm / 100 }); }} /></td>}
+                <td>{c.classes.length > 1 && <button type="button" className="btn small" data-cloud-classes={c.name} onClick={() => setOpen(open === c.id ? null : c.id)}>{open === c.id ? 'Close' : 'Classes…'}</button>}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {shown && (
+        <table className="layer-table vv-cloud-classes" data-testid="vv-cloud-classes">
+          <thead><tr><th>Shown</th><th>Class</th><th /></tr></thead>
+          <tbody>
+            {shown.classes.map((k) => {
+              const hidden = rows[shown.id]?.hiddenClasses ?? [];
+              return (
+                <tr key={k} data-class={k}>
+                  <td><input type="checkbox" aria-label={CLASS_NAMES[k] ?? `Class ${k}`} checked={!hidden.includes(k)}
+                    onChange={(e) => put(shown.id, { hiddenClasses: e.target.checked ? hidden.filter((x) => x !== k) : [...hidden, k].sort((a, b) => a - b) })} /></td>
+                  <td>{CLASS_NAMES[k] ?? `Class ${k}`} <span className="muted small">({k})</span></td>
+                  <td><span className="swatch" style={{ background: CLASS_COLORS[k] ?? '#9e9e9e', display: 'inline-block', width: 14, height: 14, borderRadius: 3 }} /></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+      <p className="muted small">A plan draws the slice round its cut, a section the slice just behind its plane, an elevation every point it faces, as dots you can trace over and snap to. Manage → Links hides a cloud everywhere.</p>
+    </div>
+  );
 }

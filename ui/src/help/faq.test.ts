@@ -90,6 +90,9 @@ describe('Ask Lapin', () => {
     expect(best('can I open a LAZ or E57 laser scan')).toBe('point-clouds');
     expect(best('cum import un nor de puncte')).toBe('point-clouds');
     expect(best('ReCap RCP scan')).toBe('point-clouds');
+    expect(best('how do I trace walls over a point cloud in plan')).toBe('point-cloud-views');
+    expect(best('hide the vegetation of the scan')).toBe('point-cloud-views');
+    expect(best('cum ascund vegetatia scanarii')).toBe('point-cloud-views');
     // Report #113, in the tester's words.
     expect(best('Can we retain the imported DXF?')).toBe('dxf-kept');
     expect(best('instead of continuously reimporting the dxf whenever opening the program, is it possible to leave the dxf alone')).toBe('dxf-kept');

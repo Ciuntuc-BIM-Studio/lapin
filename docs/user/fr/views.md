@@ -236,3 +236,13 @@ Les réglages appartiennent à la vue, ou à un jeu nommé que plusieurs vues pa
 ![La couleur et le motif d’un filtre dans le plan](shots/vg-overrides.webp)
 
 ![Le plan avec son filtre](shots/vg-plan.webp)
+
+### Nuages de points dans les vues
+
+Un nuage de points lié (*Import et export*, Nuages de points) apparaît dans toutes les vues. Un **plan** dessine la tranche que prend sa coupe, 10 cm autour du plan de coupe, en points sous les murs ; une **coupe** la tranche juste derrière son plan ; une **élévation** tous les points qu'elle regarde, le plus proche devant. Les points ont les couleurs du scan, assombries pour se lire sur papier, et s'impriment sur les planches et dans le PDF comme l'écran les montre. Leurs points sont des accrochages : des murs dessinés sur la tranche d'un scan tombent sur ses faces. Dans la **vue 3D** les outils de placement et Move s'accrochent aux points du nuage comme aux coins.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) a un onglet **Point clouds** : par nuage, pour cette vue seule, **Shown**, **Halftone**, ses **Colours** (comme son lien, RVB, intensité, altitude ou classification), la **Slice** que dessine un plan ou une coupe (cm), et **Classes…** : les classes ASPRS de ses points (sol, végétation, bâtiment, bruit…), chacune visible ou masquée. L'onglet d'une vue 3D règle ce que dessine la 3D. **Export 3D…** prend un échantillon des nuages visibles (au plus 5 millions de points) en points dans GLB et glTF quand **Point clouds** est coché ; aucun autre export ne les porte.
+
+![La tranche d'un scan en plan, un mur dessiné dessus](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics : la végétation d'un nuage masquée dans une vue](shots/point-cloud-vg.webp)

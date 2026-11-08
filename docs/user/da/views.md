@@ -236,3 +236,13 @@ Indstillingerne tilhører visningen eller et navngivet sæt, som flere visninger
 ![Et filters farve og mønster i planen](shots/vg-overrides.webp)
 
 ![Planen med sit filter](shots/vg-plan.webp)
+
+### Punktskyer i visninger
+
+En sammenkædet punktsky (*Import og eksport*, Punktskyer) vises i alle visninger. En **plan** tegner den skive, dens snit tager, 10 cm omkring snitplanet, som prikker under væggene; et **snit** skiven lige bag dets plan; en **facade** alle punkter, den vender mod, det nærmeste forrest. Prikkerne har scanningens egne farver, gjort mørkere så de kan læses på papir, og de udskrives på tegningsark og i PDF, som skærmen viser dem. Deres punkter er fangpunkter: vægge tegnet over en scannings skive lander på dens flader. I **3D-visningen** fanger placeringsværktøjerne og Move skyens punkter som hjørner.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) har en fane **Point clouds**: for hver sky, kun i denne visning, **Shown**, **Halftone**, dens **Colours** (som dens sammenkædning, RGB, intensitet, kote eller klassifikation), den **Slice**, en plan eller et snit tegner (cm), og **Classes…**: dens punkters ASPRS-klasser (terræn, vegetation, bygning, støj…), hver vist eller skjult. En 3D-visnings fane styrer, hvad 3D tegner. **Export 3D…** tager et udsnit af de viste skyer (højst 5 millioner punkter) som punkter i GLB og glTF, når **Point clouds** er afkrydset; ingen anden eksport tager dem med.
+
+![En scannings skive i planen, en væg tegnet over den](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics: en skys vegetation skjult i én visning](shots/point-cloud-vg.webp)

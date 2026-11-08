@@ -158,6 +158,8 @@ export function PlanView() {
     // A device's reach (a hydrant's 26 m) does not widen the frame.
     for (const r of items) if (!only || only.has(r.nodeId)) for (const it of r.plan) if (it.kind !== 'reach') for (let i = 0; i + 1 < it.points.length; i += 2) pts.push({ x: it.points[i], y: it.points[i + 1] });
     for (const m of drawing?.marks ?? []) if (!only || only.has(m.id)) for (let k = 0; k + 1 < m.segments.length; k += 2) pts.push({ x: m.segments[k], y: m.segments[k + 1] });
+    // A point cloud's slice (decision 396) is what the plan shows of it.
+    if (!only) for (const p of drawing?.pens ?? []) for (const img of p.images ?? []) if (img.id.startsWith('pointcloud:')) for (let k = 0; k + 1 < img.corners.length; k += 2) pts.push({ x: img.corners[k], y: img.corners[k + 1] });
     return boundsOf(pts);
   }, [items, drawing]);
   const fit = useCallback(() => {

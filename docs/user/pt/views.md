@@ -236,3 +236,13 @@ As configurações são da vista, ou de um conjunto com nome que várias vistas 
 ![A cor e o padrão de um filtro na planta](shots/vg-overrides.webp)
 
 ![A planta com o seu filtro](shots/vg-plan.webp)
+
+### Nuvens de pontos nas vistas
+
+Uma nuvem de pontos vinculada (*Importar e exportar*, Nuvens de pontos) aparece em todas as vistas. Uma **planta** desenha a fatia que o seu corte toma, 10 cm em volta do plano de corte, como pontos sob as paredes; um **corte** a fatia logo atrás do seu plano; uma **elevação** todos os pontos para os quais olha, o mais próximo à frente. Os pontos têm as cores da varredura, escurecidas para se lerem no papel, e imprimem-se nas pranchas e no PDF como a tela os mostra. Os seus pontos são pontos de snap: paredes desenhadas sobre a fatia de uma varredura caem nas suas faces. Na **vista 3D** as ferramentas de colocação e Move fazem snap nos pontos da nuvem como nos cantos.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) tem uma aba **Point clouds**: por nuvem, só nesta vista, **Shown**, **Halftone**, as suas **Colours** (como o seu vínculo, RGB, intensidade, cota ou classificação), a **Slice** que uma planta ou um corte desenha (cm) e **Classes…**: as classes ASPRS dos seus pontos (terreno, vegetação, edifício, ruído…), cada uma visível ou oculta. A aba de uma vista 3D decide o que o 3D desenha. **Export 3D…** leva uma amostra das nuvens visíveis (no máximo 5 milhões de pontos) como pontos em GLB e glTF quando **Point clouds** está marcado; nenhuma outra exportação as leva.
+
+![A fatia de uma varredura na planta, uma parede desenhada por cima](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics: a vegetação de uma nuvem oculta numa vista](shots/point-cloud-vg.webp)

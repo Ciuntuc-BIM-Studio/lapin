@@ -105,7 +105,7 @@ I **Manage → Links** har en sky sin egen række: dens punkter, hvor langt dens
 
 ![Manage → Links med en punktsky](shots/point-cloud-links.webp)
 
-En sky eksporteres aldrig: IFC, Fragments og 3D-eksporterne bærer modellen, ikke scanningen. I browseren kan en sky på op til 160 MB sammenkædes; den indekseres i siden og skal sammenkædes igen, når siden genindlæses. Større skyer kræver desktop-appen.
+En sky eksporteres ikke med modellen: IFC og Fragments bærer modellen, ikke scanningen, og **Export 3D…** tager kun et udsnit som punkter i GLB og glTF, når man beder om det. Planer, snit og facader tegner den også (*Snit, facader og 3D*, Punktskyer i visninger). I browseren kan en sky på op til 160 MB sammenkædes; den indekseres i siden og skal sammenkædes igen, når siden genindlæses. Større skyer kræver desktop-appen.
 
 ## 3D-modeller
 

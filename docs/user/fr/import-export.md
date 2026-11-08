@@ -105,7 +105,7 @@ Dans **Manage → Links** un nuage a sa propre ligne : ses points, où en est so
 
 ![Manage → Links avec un nuage de points](shots/point-cloud-links.webp)
 
-Un nuage n'est jamais exporté : IFC, Fragments et les exports 3D portent le modèle, pas le scan. Dans le navigateur on peut lier un nuage jusqu'à 160 Mo ; il est indexé dans la page et doit être lié de nouveau après le rechargement de la page. Les nuages plus grands demandent l'application de bureau.
+Un nuage n'est pas exporté avec le modèle : IFC et Fragments portent le modèle, pas le scan, et **Export 3D…** n'en prend un échantillon en points dans GLB et glTF que sur demande. Plans, coupes et élévations le dessinent aussi (*Coupes, élévations et 3D*, Nuages de points dans les vues). Dans le navigateur on peut lier un nuage jusqu'à 160 Mo ; il est indexé dans la page et doit être lié de nouveau après le rechargement de la page. Les nuages plus grands demandent l'application de bureau.
 
 ## Modèles 3D
 

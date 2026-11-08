@@ -381,6 +381,96 @@ public static class PointCloudLinks
 
     public static readonly string[] ColorModes = ["rgb", "intensity", "elevation", "classification"];
 
+    /// <summary>The slice a plan or a section draws of a cloud when the view does not say (m): 10 cm round the cut.</summary>
+    public const double DefaultSlice = 0.10;
+
+    /// <summary>How a cloud is drawn in one view: its link's settings, then the view's row over them (decision 396).</summary>
+    public sealed record Look(bool Shown, bool Halftone, string ColorMode, IReadOnlySet<int> HiddenClasses, double Slice, double PointSize);
+
+    public static Look LookIn(JsonObject? graphics, Entity link)
+    {
+        var row = graphics?["pointClouds"]?[link.Id] as JsonObject;
+        static bool T(JsonNode? n) => n is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+        var mode = (string?)row?["colorMode"] is { } m && ColorModes.Contains(m) ? m : link.Str("colorMode") is { } lm && ColorModes.Contains(lm) ? lm : "rgb";
+        var hidden = (row?["hiddenClasses"] as JsonArray)?.Select(x => (int?)Json.Number(x)).OfType<int>().ToHashSet() ?? [];
+        var slice = Json.Number(row?["slice"]) is { } sl && sl > 0 ? sl : DefaultSlice;
+        return new Look(Links.Visible(link) && !T(row?["hidden"]), Links.IsHalftone(link) || T(row?["halftone"]), mode, hidden, slice, link.NumOrNull("pointSize") ?? 2);
+    }
+
+    /// <summary>A view's row for a cloud, checked: {hidden, halftone, colorMode, hiddenClasses: [0–255…], slice: m}; null when it says nothing.</summary>
+    public static JsonObject? CheckViewRow(JsonObject? v)
+    {
+        if (v == null) return null;
+        var o = new JsonObject();
+        foreach (var (k, val) in v)
+            switch (k)
+            {
+                case "hidden" or "halftone":
+                    if (val is JsonValue b && b.TryGetValue<bool>(out var flag) && flag) o[k] = true;
+                    break;
+                case "colorMode":
+                    if ((string?)val is { } m) o[k] = ColorModes.Contains(m) ? m : throw new CommandException($"A cloud is coloured by {string.Join(", ", ColorModes)}.");
+                    break;
+                case "hiddenClasses":
+                    if (val is JsonArray a)
+                    {
+                        var list = a.Select(x => Json.Number(x)).Select(x => x is { } n && n >= 0 && n <= 255 && n == Math.Floor(n) ? (int)n : throw new CommandException("A class is a number from 0 to 255.")).Distinct().Order().ToList();
+                        if (list.Count > 0) o[k] = new JsonArray(list.Select(x => (JsonNode)x).ToArray());
+                    }
+                    break;
+                case "slice":
+                    if (Json.Number(val) is { } t) o[k] = t is > 0.001 and <= 10 ? t : throw new CommandException("A cloud's slice is between 1 mm and 10 m thick.");
+                    break;
+                default: throw new CommandException($"„{k}” is not a point cloud's setting.");
+            }
+        return o.Count > 0 ? o : null;
+    }
+
+    /// <summary>What Visibility / Graphics lists of a cloud: its name, whether it is shown and halftone everywhere, its colours, the classes its points have.</summary>
+    public static JsonObject VisibilityInfo(Entity link)
+    {
+        var cloud = link.Attrs["cloud"] as JsonObject;
+        // The classes from the index when it is here (the link's summary may not have been delivered yet), else the summary's.
+        var classes = StoreOf(link) is { } store ? Enumerable.Range(0, 256).Where(c => store.Classes[c] > 0).ToList()
+            : (cloud?["classes"] as JsonObject)?.Select(kv => int.TryParse(kv.Key, out var c) ? c : -1).Where(c => c >= 0).Order().ToList() ?? [];
+        return new JsonObject
+        {
+            ["id"] = link.Id, ["name"] = link.Name, ["visible"] = Links.Visible(link), ["halftone"] = Links.IsHalftone(link), ["colorMode"] = link.Str("colorMode") ?? "rgb",
+            ["color"] = (bool?)cloud?["color"] ?? false, ["intensity"] = (bool?)cloud?["intensity"] ?? false, ["classification"] = (bool?)cloud?["classification"] ?? false,
+            ["classes"] = new JsonArray(classes.Select(c => (JsonNode)c).ToArray()),
+        };
+    }
+
+    /// <summary>
+    /// A cloud's points for an export, in the project's coordinates: its octree read from the root down, level by level,
+    /// until <paramref name="max"/> points (a coarser sample of the whole, never a corner of it); classes hidden left out.
+    /// </summary>
+    public static (float[] Positions, byte[] Colors) Sample(IModelView m, Entity link, Look look, int max)
+    {
+        if (StoreOf(link) is not { } s) return ([], []);
+        var t = TransformOf(m, link);
+        var byDepth = s.Nodes.GroupBy(n => n.Name.Length).OrderBy(g => g.Key);
+        var pos = new List<float>();
+        var col = new List<byte>();
+        foreach (var level in byDepth)
+        {
+            if (col.Count / 3 + level.Sum(n => (long)n.Count) > max && col.Count > 0) break;
+            foreach (var n in level)
+            {
+                var p = s.Read(n.Name);
+                for (var i = 0; i < p.Count; i++)
+                {
+                    if (look.HiddenClasses.Contains(p.Class(i))) continue;
+                    var (x, y, z) = Apply(t, p.X(i), p.Y(i), p.Z(i));
+                    pos.Add((float)x); pos.Add((float)y); pos.Add((float)z);
+                    var c = s.HasColor ? (p.R(i), p.G(i), p.B(i)) : ((byte)200, (byte)200, (byte)200);
+                    col.Add(c.Item1); col.Add(c.Item2); col.Add(c.Item3);
+                }
+            }
+        }
+        return ([.. pos], [.. col]);
+    }
+
     public static void Register(IModuleRegistry r)
     {
         r.Command("pointcloud.link", "Link point cloud", (ctx, a) => Link(ctx, a));

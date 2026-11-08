@@ -697,6 +697,10 @@ public static class Views
         marks.AddRange(PickMarks(drawing));
         // What the view's Visibility / Graphics hides goes with its marks (decision 391): a hidden category's tags and bars, a link hidden here.
         marks.RemoveAll(vg.HidesMark);
+        // The point clouds the view's cut takes, as dots under the drawing (decision 396; the view's Point clouds tab hides them, not its categories): a plan's or a section's slice, an elevation's front.
+        if (laid == null)
+            try { marks.AddRange(PointCloudSlices.Marks(ctx, spec, vg)); }
+            catch (CommandException) { }
         // An annotation category's colour or halftone (decision 394).
         if (vg.Graphics?["annotations"] is JsonObject { Count: > 0 }) foreach (var mk in marks) vg.Recolor(mk);
         // The marks' pens: those drawn under the model (rooms' fills) go first, the others over it; fills before lines in each.
@@ -784,6 +788,8 @@ public static class Views
         {
             foreach (var l in mk.Lines) pts.AddRange([l.A, l.B]);
             foreach (var (t, _) in mk.Texts) pts.AddRange([t.At, t.At + new Vec2(0, t.Height * scale / 1000)]);
+            // A point cloud's slice is what the view shows of it (an orthophoto is not counted: it reaches far past the model).
+            foreach (var img in mk.Images) if (img.ImageId.StartsWith("pointcloud:", StringComparison.Ordinal)) pts.AddRange(img.Corners);
         }
         (Vec2, Vec2)? bounds = pts.Count > 0 ? (new Vec2(pts.Min(p => p.X), pts.Min(p => p.Y)), new Vec2(pts.Max(p => p.X), pts.Max(p => p.Y))) : null;
         double? depth = spec.Kind == "section" && spec.Below < ViewRanges.Unlimited ? spec.Below : null;

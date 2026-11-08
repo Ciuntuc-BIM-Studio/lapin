@@ -123,6 +123,13 @@ public static class GltfWriter
                 meshOf[e] = meshes.Count - 1;
             }
         var anyEdges = meshes.Any(x => x.EdgePositions != null);
+        // Point clouds (decision 396): a mesh of points each, with its colours (linear, as glTF's COLOR_0 is).
+        var clouds = scene.Clouds.Where(c => c.Positions.Length >= 3).Select(c =>
+        {
+            var lin = new float[c.Colors.Length];
+            for (var i = 0; i < lin.Length; i++) lin[i] = Linear(c.Colors[i] / 255f);
+            return (c.Name, Position: buffers.Vec3(c.Positions, true), Color: buffers.Vec3(lin, false));
+        }).ToList();
         // The materials' own images: one each, in the buffer (GLB) or as data URIs (.gltf); a texture per image, all on one repeating sampler.
         var textured = scene.Materials.Select((m, i) => (m.Texture, i)).Where(x => x.Texture != null).ToList();
         var textureOf = new Dictionary<int, int>();
@@ -178,13 +185,14 @@ public static class GltfWriter
                     w.WriteEndObject();
                 };
             }
+            var cloudNodes = new List<int>();
             nodes[0] = w =>
             {
                 w.WriteStartObject();
                 w.WriteString("name", scene.Project);
                 var (rx, ry, rz) = MeshMath.ToYUp(scene.RootOffset.X, scene.RootOffset.Y, scene.RootOffset.Z);
                 if (rx != 0 || ry != 0 || rz != 0) { w.WriteStartArray("translation"); w.WriteNumberValue(rx); w.WriteNumberValue(ry); w.WriteNumberValue(rz); w.WriteEndArray(); }
-                w.WriteStartArray("children"); w.WriteNumberValue(1); w.WriteEndArray();
+                w.WriteStartArray("children"); w.WriteNumberValue(1); foreach (var n in cloudNodes) w.WriteNumberValue(n); w.WriteEndArray();
                 w.WriteEndObject();
             };
             nodes[1] = w =>
@@ -194,6 +202,13 @@ public static class GltfWriter
                 w.WriteStartObject("extras"); w.WriteString("ifcClass", "IfcBuilding"); w.WriteEndObject();
                 w.WriteEndObject();
             };
+            // The clouds' nodes, under the project beside the building.
+            for (var ci = 0; ci < clouds.Count; ci++)
+            {
+                var (name, mesh) = (clouds[ci].Name, meshes.Count + ci);
+                cloudNodes.Add(nodes.Count);
+                nodes.Add(w => { w.WriteStartObject(); w.WriteString("name", name); w.WriteNumber("mesh", mesh); w.WriteStartObject("extras"); w.WriteString("kind", "pointCloud"); w.WriteEndObject(); w.WriteEndObject(); });
+            }
             w.WriteStartArray("nodes");
             foreach (var node in nodes) node(w);
             w.WriteEndArray();
@@ -217,6 +232,17 @@ public static class GltfWriter
                     w.WriteNumber("material", edgeMaterial); w.WriteNumber("mode", Lines);
                     w.WriteEndObject();
                 }
+                w.WriteEndArray();
+                w.WriteEndObject();
+            }
+            foreach (var (name, position, color) in clouds)
+            {
+                w.WriteStartObject(); w.WriteString("name", name);
+                w.WriteStartArray("primitives");
+                w.WriteStartObject();
+                w.WriteStartObject("attributes"); w.WriteNumber("POSITION", position); w.WriteNumber("COLOR_0", color); w.WriteEndObject();
+                w.WriteNumber("mode", 0);
+                w.WriteEndObject();
                 w.WriteEndArray();
                 w.WriteEndObject();
             }

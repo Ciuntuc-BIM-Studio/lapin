@@ -12,6 +12,7 @@ import type { Vec3 } from './camera';
 import { useClip3d } from './section3d';
 import { edgesOf } from './sketch/edges';
 import { snap3, type Axis3, type Lock3, type Pt, type Ray3, type Seg3, type Snapped3 } from './snap3d';
+import type { PointCloudLayer } from './pointClouds3d';
 
 export interface ViewRefs {
   camera: React.RefObject<THREE.Camera | null>;
@@ -140,7 +141,23 @@ export function underlaysNear(v: ViewRefs, cursor: Pt, tol = 12, max = 4000): Se
   return out;
 }
 
-/** The cursor in the 3D view, snapped (snap3d.ts): the edges near it, the body under it, the active level. */
+/**
+ * The points of the clouds drawn near the cursor's ray (decision 396): within `tol` px of it on the screen, nearest the eye
+ * first, kept by the view's cuts. The 3D's point snaps take them as they take an edge's ends.
+ */
+export function cloudPointsNear(v: ViewRefs, ray: Ray3, tol = 10, max = 6): Vec3[] {
+  const layer = v.scene.current?.userData.pointClouds as PointCloudLayer | undefined;
+  const c = v.camera.current, r = v.canvas.current?.getBoundingClientRect();
+  if (!layer || !c || !r) return [];
+  const persp = c as THREE.PerspectiveCamera, ortho = c as THREE.OrthographicCamera;
+  // A pixel at a distance t along the ray, in metres.
+  const reach = persp.isPerspectiveCamera
+    ? ((k: number) => (t: number) => t * k)((2 * Math.tan((persp.fov * Math.PI) / 360) / r.height) * tol)
+    : ((m: number) => () => m)(((ortho.top - ortho.bottom) / ortho.zoom / r.height) * tol);
+  return layer.pointsNear(ray, reach, max, (p) => kept(new THREE.Vector3(p.x, p.y, p.z)));
+}
+
+/** The cursor in the 3D view, snapped (snap3d.ts): the edges near it, the body under it, the active level, the clouds' points. */
 export function snapAt(v: ViewRefs, clientX: number, clientY: number, o: { level: number; base?: Vec3 | null; lock?: Lock3; skip?: ReadonlySet<string>; points?: Vec3[]; axes?: readonly Axis3[] }): Snapped3 | null {
   const r = v.canvas.current?.getBoundingClientRect();
   const ray = rayAt(v, clientX, clientY);
@@ -148,7 +165,7 @@ export function snapAt(v: ViewRefs, clientX: number, clientY: number, o: { level
   const cursor = { x: clientX - r.left, y: clientY - r.top };
   const hit = hitAt(v.scene.current, ray, o.skip);
   return snap3({
-    cursor, ray, project: projector(v), segs: segmentsNear(v, cursor, o.skip), points: o.points,
+    cursor, ray, project: projector(v), segs: segmentsNear(v, cursor, o.skip), points: [...(o.points ?? []), ...cloudPointsNear(v, ray)],
     face: hit?.point ?? null, level: onLevel(ray, o.level), base: o.base ?? null, lock: o.lock ?? null, axes: o.axes,
   });
 }

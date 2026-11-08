@@ -117,6 +117,17 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'point-cloud-views',
+    q: ['How do I trace walls over a point cloud in a plan?', 'Why is my point cloud not in the plan?', 'How do I hide the vegetation or the noise of a scan?', 'Can I snap to the points of a scan?'],
+    qRo: ['Cum desenez pereți peste un nor de puncte în plan?', 'De ce nu apare norul de puncte în plan?', 'Cum ascund vegetația sau zgomotul unei scanări?', 'Pot face snap pe punctele unei scanări?'],
+    keywords: ['point', 'cloud', 'scan', 'slice', 'trace', 'classification', 'vegetation', 'noise',
+      'nor', 'puncte', 'scanare', 'felie', 'calchiez', 'vegetatie', 'zgomot', 'clasa', 'nube', 'nuvem', 'nuage', 'nuvola', 'punktwolke', 'chmura', '点云'],
+    a: 'A plan draws the slice of the cloud round its cut plane (10 cm by default), a section the slice just behind its plane, an elevation every point it faces, as dots under the walls; its points are snaps, so walls drawn over the slice land on the scan\'s faces, and in 3D the placing tools and Move snap to the points. Visibility / Graphics (VV) → Point clouds sets, for one view, whether a cloud is shown, halftone, its colours, the slice\'s thickness, and which ASPRS classes it shows (hide the vegetation, the noise…). Nothing in the plan? The cut may miss the scan: check its placement and unit in Manage → Links, or make the slice thicker.',
+    aRo: 'Un plan desenează felia norului din jurul planului de tăiere (10 cm implicit), o secțiune felia de imediat din spatele planului ei, o fațadă toate punctele spre care privește, ca puncte sub pereți; punctele lui sunt puncte de snap, așa că pereții desenați peste felie ajung pe fețele scanării, iar în 3D uneltele de așezare și Move fac snap pe puncte. Visibility / Graphics (VV) → Point clouds stabilește, pentru o vedere, dacă norul se vede, halftone, culorile, grosimea feliei și ce clase ASPRS arată (ascunde vegetația, zgomotul…). Nu apare nimic în plan? Tăietura poate rata scanarea: verifică așezarea și unitatea în Manage → Links sau îngroașă felia.',
+    action: { label: 'Open Visibility / Graphics', labelRo: 'Deschide Visibility / Graphics', run: { kind: 'tool', id: 'view.layers' } },
+    source: 'faq',
+  },
+  {
     id: 'view-filters',
     q: ['How do I make a view filter by a parameter, like in Revit?', 'How do I hide the dimensions or the grids in one view?', 'How do I turn off a layer of an imported DXF in one view?'],
     qRo: ['Cum fac un filtru de vedere după un parametru, ca în Revit?', 'Cum ascund cotele sau axele într-o singură vedere?', 'Cum opresc un strat al unui DXF importat într-o singură vedere?'],

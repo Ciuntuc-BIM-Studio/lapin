@@ -2,7 +2,7 @@
 
 Asked by a user and approved by the user (the developer of Lapin) on 07.11.2026: "Please expand the support for Visibility/Graphics like in Revit: with tabs for Annotative Objects, File Links, Imports, even Point Cloud (if possible). We need to be able to turn off Categories from links, like architects don't want to see rebars, engineers don't want to see wall and floor finishings, etc. The V/G is the most powerful tool in any BIM software."
 
-Decisions 391– in `docs/decisions-pending.md`, one per stage. Stage A done (decision 391), stage B done (decision 393), stage C done (decision 394); stage D (point clouds) approved by the user on 08.11.2026 in the open formats only, D1 done (decision 395).
+Decisions 391– in `docs/decisions-pending.md`, one per stage. Stage A done (decision 391), stage B done (decision 393), stage C done (decision 394); stage D (point clouds) approved by the user on 08.11.2026 in the open formats only, D1 done (decision 395), D2 done (decision 396).
 
 ## What there is today
 
@@ -118,6 +118,8 @@ A point cloud is a link like any other (`LapinLink` of kind `pointcloud`), with 
 ### Stages
 
 - **D1** (decision 395): the readers, the index, the link with its placement and unit check, the 3D display, Manage → Links (status, colours, size, place, reload), File → Link point cloud…, the user guide (import-export.md), the scene `point-cloud`, Ask Lapin.
-- **D2**: the Point clouds tab of Visibility / Graphics (per view: shown, halftone, colour mode, ASPRS classes); plans and sections drawing the slice their cut takes as dots (a raster on a pen of its own, printed on sheets and in the PDF), usable to trace over, its points snapped to; snapping to points in 3D (the inference engine of decisions 374–383); the mesh exports carrying a cloud only when ticked.
+- **D2** (decision 396, done): the Point clouds tab of Visibility / Graphics (per view: shown, halftone, colour mode, ASPRS classes); plans and sections drawing the slice their cut takes as dots (a raster on a pen of its own, printed on sheets and in the PDF), usable to trace over, its points snapped to; snapping to points in 3D (the inference engine of decisions 374–383); the mesh exports carrying a cloud only when ticked.
 
-Later: the index made in fewer passes for LAS/LAZ (the header's box trusted), chunks indexed in parallel, LAZ waveforms, E57 images, an index kept beside a project to carry it to another computer.
+Measured with D2 (the development engine, Chrome): 20 million points indexed in 11.7 s, 100 million in 55 s; the 3D at 60 fps (16.7 ms a frame, the screen's limit) with about 3 million points drawn, 165 MB of JS heap.
+
+Later: a developed section's pieces drawing the cloud, the slice in DXF exports, snapping to clouds in the 3D sketch's plane, the index made in fewer passes for LAS/LAZ (the header's box trusted), chunks indexed in parallel, LAZ waveforms, E57 images, an index kept beside a project to carry it to another computer.

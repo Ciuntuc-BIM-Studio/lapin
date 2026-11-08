@@ -22,7 +22,7 @@ namespace Lapin.Mesh;
 /// view's export takes the view's own layers mode, and the whole model every layer.
 /// </summary>
 public sealed record MeshExportOptions(string Format = "glb", string? ViewId = null, string? Phase = null, bool Edges = false, string Origin = "base",
-    IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true, string? Layers = null, bool Voids = false)
+    IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true, string? Layers = null, bool Voids = false, bool PointClouds = false)
 {
     public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae", "obj", "frag"];
     public static readonly string[] Origins = ["base", "internal", "survey"];
@@ -39,7 +39,8 @@ public sealed record MeshExportOptions(string Format = "glb", string? ViewId = n
             hidden is { Count: > 0 } ? hidden : null, PlanesOf(p["planes"]) is { Count: > 0 } planes ? planes : null,
             !(p["caps"] is JsonValue cv && cv.TryGetValue<bool>(out var c) && !c),
             p["layers"] is { } l ? ViewStyles.LayersOf(l) : null,
-            p["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var voids) && voids);
+            p["voids"] is JsonValue vv && vv.TryGetValue<bool>(out var voids) && voids,
+            p["pointClouds"] is JsonValue pv && pv.TryGetValue<bool>(out var clouds) && clouds);
     }
 
     /// <summary>Clipping planes as the 3D view gives them: [{normal: [x, y, z], constant}] (at most twelve; a malformed one is skipped).</summary>
@@ -78,6 +79,9 @@ public sealed record MeshMaterial(string Name, float R, float G, float B, float 
 /// One material's triangles of an element: flat shaded (vertices per face), positions and normals Z up, metres, from the export's origin;
 /// texture coordinates (u, v per vertex) when its material has an image.
 /// </summary>
+/// <summary>A point cloud in an export: its points (x y z each, metres, Z up) and their colours (r g b bytes).</summary>
+public sealed record MeshCloud(string Name, float[] Positions, byte[] Colors);
+
 public sealed record MeshPart(int Material, float[] Positions, float[] Normals, int[] Indices, float[]? Uvs = null);
 
 /// <summary>
@@ -106,6 +110,9 @@ public sealed record MeshGroup(string GlobalId, string Name, string IfcClass, do
 /// </summary>
 public sealed record MeshScene(string Project, string Building, List<MeshGroup> Groups, List<MeshMaterial> Materials, (double X, double Y, double Z) RootOffset, List<string> Notes, (double X, double Y, double Z) Origin = default)
 {
+    /// <summary>The point clouds taken along when the export asks (decision 396): a sample of each, in the export's coordinates.</summary>
+    public List<MeshCloud> Clouds { get; init; } = [];
+
     /// <summary>The elements with a body (an assembly counts its parts, not itself).</summary>
     public int ElementCount => Groups.Sum(g => g.Elements.SelectMany(e => e.Flatten()).Count(e => e.Parts.Count > 0));
     public int TriangleCount => Groups.Sum(g => g.Elements.SelectMany(e => e.Flatten()).Sum(e => e.Parts.Sum(p => p.Indices.Length / 3)));

@@ -29,6 +29,26 @@ public static class DocPng
         return f.ToArray();
     }
 
+    /// <summary>The image from its rows of RGBA bytes, top first (<paramref name="rgba"/>: W × H × 4), see-through where alpha is 0.</summary>
+    public static byte[] EncodeRgba(int w, int h, byte[] rgba)
+    {
+        if (w < 1 || h < 1 || rgba.Length < w * h * 4) throw new ArgumentException("rgba holds fewer than w × h pixels");
+        var raw = new byte[h * (w * 4 + 1)];
+        for (var y = 0; y < h; y++) Buffer.BlockCopy(rgba, y * w * 4, raw, y * (w * 4 + 1) + 1, w * 4);
+        using var z = new MemoryStream();
+        using (var d = new ZLibStream(z, CompressionLevel.Fastest)) d.Write(raw);
+        using var f = new MemoryStream();
+        f.Write([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+        var ihdr = new byte[13];
+        BigEndian(ihdr, 0, (uint)w);
+        BigEndian(ihdr, 4, (uint)h);
+        ihdr[8] = 8; ihdr[9] = 6;   // 8 bits, truecolour with alpha
+        Chunk(f, "IHDR", ihdr);
+        Chunk(f, "IDAT", z.ToArray());
+        Chunk(f, "IEND", []);
+        return f.ToArray();
+    }
+
     /// <summary>One white pixel.</summary>
     public static byte[] White() => Encode(1, 1, [255, 255, 255]);
 

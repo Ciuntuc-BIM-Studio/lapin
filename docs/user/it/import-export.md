@@ -105,7 +105,7 @@ In **Manage → Links** una nuvola ha la sua riga: i suoi punti, a che punto è 
 
 ![Manage → Links con una nuvola di punti](shots/point-cloud-links.webp)
 
-Una nuvola non viene mai esportata: IFC, Fragments e le esportazioni 3D portano il modello, non la scansione. Nel browser si può collegare una nuvola fino a 160 MB; viene indicizzata nella pagina e va ricollegata dopo aver ricaricato la pagina. Le nuvole più grandi richiedono l'app desktop.
+Una nuvola non viene esportata con il modello: IFC e Fragments portano il modello, non la scansione, ed **Export 3D…** ne prende un campione come punti in GLB e glTF solo se richiesto. Piante, sezioni e prospetti la disegnano anche (*Sezioni, prospetti e 3D*, Nuvole di punti nelle viste). Nel browser si può collegare una nuvola fino a 160 MB; viene indicizzata nella pagina e va ricollegata dopo aver ricaricato la pagina. Le nuvole più grandi richiedono l'app desktop.
 
 ## Modelli 3D
 

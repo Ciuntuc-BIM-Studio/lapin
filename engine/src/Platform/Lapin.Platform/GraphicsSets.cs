@@ -174,6 +174,12 @@ public static class GraphicsSets
                 Put(imports, imp, row.Count > 0 ? row : null);
                 if (imports.Count > 0) g["imports"] = imports; else g.Remove("imports");
             }
+            // A point cloud's row (decision 396): shown, halftone, its colours and the ASPRS classes it hides in this view, the slice a plan or a section draws.
+            if ((string?)a["pointCloud"] is { } pc)
+            {
+                if (ctx.Model.Get(pc) is not { } cloud || !PointCloudLinks.Is(cloud)) throw new CommandException("There is no such point cloud.");
+                SetIn(g, "pointClouds", pc, PointCloudLinks.CheckViewRow(value));
+            }
             if (a["filters"] is JsonArray fl)
             {
                 var known = ViewFilters.All(ctx.Model).Select(f => f.Id).ToHashSet();
@@ -303,7 +309,8 @@ public static class GraphicsSets
                 ["annotations"] = new JsonArray(VisibilityGraphics.AnnotationCategories.Select(c => (JsonNode)c).ToArray()),
                 ["filters"] = new JsonArray(ViewFilters.All(q.Model).Select(f => (JsonNode)new JsonObject { ["id"] = f.Id, ["name"] = f.Name }).ToArray()),
                 ["imports"] = Imports(q.Model, v),
-                ["links"] = new JsonArray(Links.All(q.Model).Select(l => (JsonNode)new JsonObject
+                ["pointClouds"] = new JsonArray(PointCloudLinks.All(q.Model).Select(l => (JsonNode)PointCloudLinks.VisibilityInfo(l)).ToArray()),
+                ["links"] = new JsonArray(Links.All(q.Model).Where(l => !PointCloudLinks.Is(l)).Select(l => (JsonNode)new JsonObject
                 {
                     ["id"] = l.Id, ["name"] = l.Name, ["kind"] = l.Str("kind"), ["visible"] = Links.Visible(l), ["halftone"] = Links.IsHalftone(l),
                     // The IFC classes its elements have, for its own classes tab.

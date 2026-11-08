@@ -74,3 +74,12 @@ describe('how each cloud is drawn', () => {
     expect(statusText({ state: 'missing', error: 'The file is gone: x.' })).toBe('The file is gone: x.');
   });
 });
+
+import { cloudRow } from '../modules/core/VisibilityDialog';
+describe('a view\'s row for a cloud', () => {
+  it('keeps what it says and drops what says nothing', () => {
+    expect(cloudRow({}, { hidden: false, halftone: true })).toEqual({ halftone: true });
+    expect(cloudRow({ hiddenClasses: [5] }, { hiddenClasses: [] })).toBeNull();
+    expect(cloudRow({ slice: 0.2 }, { colorMode: 'classification' })).toEqual({ slice: 0.2, colorMode: 'classification' });
+  });
+});

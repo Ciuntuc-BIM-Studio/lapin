@@ -236,3 +236,13 @@ Die Einstellungen gehören der Ansicht oder einem benannten Satz, den mehrere An
 ![Farbe und Muster eines Filters im Grundriss](shots/vg-overrides.webp)
 
 ![Der Grundriss mit seinem Filter](shots/vg-plan.webp)
+
+### Punktwolken in Ansichten
+
+Eine verknüpfte Punktwolke (*Import und Export*, Punktwolken) erscheint in jeder Ansicht. Ein **Grundriss** zeichnet die Scheibe, die sein Schnitt nimmt, 10 cm um die Schnittebene, als Punkte unter den Wänden; ein **Schnitt** die Scheibe direkt hinter seiner Ebene; eine **Ansicht** jeden Punkt, auf den sie blickt, den nächsten vorn. Die Punkte tragen die Farben des Scans, abgedunkelt, damit sie auf Papier lesbar sind, und werden auf Plänen und im PDF so gedruckt, wie der Bildschirm sie zeigt. Ihre Punkte sind Fangpunkte: Wände über der Scheibe eines Scans gezeichnet landen auf seinen Flächen. In der **3D-Ansicht** fangen die Platzierwerkzeuge und Move die Punkte der Wolke wie Ecken.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) hat einen Reiter **Point clouds**: je Wolke, nur für diese Ansicht, **Shown**, **Halftone**, ihre **Colours** (wie ihre Verknüpfung, RGB, Intensität, Höhe oder Klassifizierung), die **Slice**, die ein Grundriss oder ein Schnitt zeichnet (cm), und **Classes…**: die ASPRS-Klassen ihrer Punkte (Boden, Vegetation, Gebäude, Rauschen…), jede sichtbar oder ausgeblendet. Der Reiter einer 3D-Ansicht bestimmt, was das 3D zeichnet. **Export 3D…** nimmt eine Stichprobe der sichtbaren Wolken (höchstens 5 Millionen Punkte) als Punkte in GLB und glTF, wenn **Point clouds** angehakt ist; kein anderer Export trägt sie.
+
+![Die Scheibe eines Scans im Grundriss, eine Wand darüber gezeichnet](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics: die Vegetation einer Wolke in einer Ansicht ausgeblendet](shots/point-cloud-vg.webp)

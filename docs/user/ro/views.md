@@ -235,3 +235,13 @@ Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**
 ![Culoarea și modelul unui filtru în plan](shots/vg-overrides.webp)
 
 ![Planul cu filtrul lui](shots/vg-plan.webp)
+
+### Norii de puncte în vederi
+
+Un nor de puncte legat (*Import și export*, Nori de puncte) se vede în toate vederile. Un **plan** desenează felia pe care o ia tăietura lui, 10 cm în jurul planului de tăiere, ca puncte sub pereți; o **secțiune** felia de imediat din spatele planului ei; o **fațadă** toate punctele spre care privește, cele mai apropiate în față. Punctele au culorile scanării, întunecate ca să se citească pe hârtie, și se tipăresc pe planșe și în PDF cum le arată ecranul. Punctele lor sunt puncte de snap: pereții desenați peste felia unei scanări ajung pe fețele ei. În **vederea 3D** uneltele de așezare și Move fac snap pe punctele norului ca pe colțuri.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) are o filă **Point clouds**: pentru fiecare nor, doar în această vedere, **Shown**, **Halftone**, **Colours** (ca legătura, RGB, intensitate, cotă sau clasificare), **Slice**, felia pe care o desenează un plan sau o secțiune (cm), și **Classes…**: clasele ASPRS pe care le au punctele (teren, vegetație, clădire, zgomot…), fiecare vizibilă sau ascunsă. Fila unei vederi 3D hotărăște ce desenează 3D-ul. **Export 3D…** ia un eșantion din norii vizibili (cel mult 5 milioane de puncte) ca puncte în GLB și glTF când e bifat **Point clouds**; niciun alt export nu îi duce.
+
+![Felia unei scanări în plan, un perete desenat peste ea](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics: vegetația unui nor ascunsă într-o vedere](shots/point-cloud-vg.webp)

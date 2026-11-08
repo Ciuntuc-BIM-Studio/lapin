@@ -105,7 +105,7 @@ Em **Manage → Links** uma nuvem tem sua própria linha: seus pontos, o andamen
 
 ![Manage → Links com uma nuvem de pontos](shots/point-cloud-links.webp)
 
-Uma nuvem nunca é exportada: IFC, Fragments e as exportações 3D levam o modelo, não a varredura. No navegador pode-se vincular uma nuvem de até 160 MB; ela é indexada na página e precisa ser vinculada de novo depois de recarregar a página. Nuvens maiores precisam do aplicativo para desktop.
+Uma nuvem não é exportada com o modelo: IFC e Fragments levam o modelo, não a varredura, e **Export 3D…** leva uma amostra como pontos em GLB e glTF só quando pedido. Plantas, cortes e elevações também a desenham (*Cortes, elevações e 3D*, Nuvens de pontos nas vistas). No navegador pode-se vincular uma nuvem de até 160 MB; ela é indexada na página e precisa ser vinculada de novo depois de recarregar a página. Nuvens maiores precisam do aplicativo para desktop.
 
 ## Modelos 3D
 

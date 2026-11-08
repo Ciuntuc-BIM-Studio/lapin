@@ -232,3 +232,13 @@ Los ajustes son de la vista, o de un conjunto con nombre que comparten varias vi
 ![El color y el patrón de un filtro en la planta](shots/vg-overrides.webp)
 
 ![La planta con su filtro](shots/vg-plan.webp)
+
+### Nubes de puntos en las vistas
+
+Una nube de puntos vinculada (*Importar y exportar*, Nubes de puntos) se ve en todas las vistas. Una **planta** dibuja la rebanada que toma su corte, 10 cm alrededor del plano de corte, como puntos bajo los muros; una **sección** la rebanada justo detrás de su plano; un **alzado** todos los puntos hacia los que mira, el más cercano delante. Los puntos tienen los colores del escaneo, oscurecidos para leerse en papel, y se imprimen en láminas y en el PDF como los muestra la pantalla. Sus puntos son referencias de forzado: los muros dibujados sobre la rebanada de un escaneo caen en sus caras. En la **vista 3D** las herramientas de colocación y Move fuerzan a los puntos de la nube como a esquinas.
+
+**Visibility / Graphics** (<kbd>VV</kbd>) tiene una pestaña **Point clouds**: por nube, solo en esta vista, **Shown**, **Halftone**, sus **Colours** (como su vínculo, RGB, intensidad, cota o clasificación), la **Slice** que dibuja una planta o una sección (cm) y **Classes…**: las clases ASPRS de sus puntos (terreno, vegetación, edificio, ruido…), cada una visible u oculta. La pestaña de una vista 3D decide lo que dibuja el 3D. **Export 3D…** toma una muestra de las nubes visibles (como máximo 5 millones de puntos) como puntos en GLB y glTF cuando **Point clouds** está marcado; ninguna otra exportación las lleva.
+
+![La rebanada de un escaneo en la planta, un muro dibujado encima](shots/point-cloud-plan.webp)
+
+![Visibility / Graphics: la vegetación de una nube oculta en una vista](shots/point-cloud-vg.webp)

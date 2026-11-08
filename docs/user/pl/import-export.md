@@ -105,7 +105,7 @@ W **Manage → Links** chmura ma własny wiersz: jej punkty, postęp indeksu, **
 
 ![Manage → Links z chmurą punktów](shots/point-cloud-links.webp)
 
-Chmura nigdy nie jest eksportowana: IFC, Fragments i eksporty 3D niosą model, nie skan. W przeglądarce można połączyć chmurę do 160 MB; jest indeksowana na stronie i trzeba ją połączyć ponownie po przeładowaniu strony. Większe chmury wymagają aplikacji desktopowej.
+Chmura nie jest eksportowana z modelem: IFC i Fragments niosą model, nie skan, a **Export 3D…** bierze jej próbkę jako punkty w GLB i glTF tylko na życzenie. Rzuty, przekroje i elewacje też ją rysują (*Przekroje, elewacje i 3D*, Chmury punktów w widokach). W przeglądarce można połączyć chmurę do 160 MB; jest indeksowana na stronie i trzeba ją połączyć ponownie po przeładowaniu strony. Większe chmury wymagają aplikacji desktopowej.
 
 ## Modele 3D
 

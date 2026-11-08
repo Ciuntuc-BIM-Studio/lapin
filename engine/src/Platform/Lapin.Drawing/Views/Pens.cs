@@ -49,12 +49,15 @@ public sealed class Pen(string layer, string? stroke, double width, string? fill
 /// fall (top left, top right, bottom right, bottom left; view m, or paper mm on
 /// a sheet), how opaque it is.
 /// </summary>
-public sealed record PenImage(string ImageId, Vec2[] Corners, double Opacity = 1)
+public sealed record PenImage(string ImageId, Vec2[] Corners, double Opacity = 1, byte[]? Data = null, string? Mime = null)
 {
-    public JsonObject ToJson() => new()
+    /// <summary>The picture carried with it (<see cref="Data"/>: a point cloud's slice, drawn for this view) rather than a LapinImage of the model.</summary>
+    public JsonObject ToJson()
     {
-        ["id"] = ImageId, ["corners"] = new JsonArray(Corners.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()), ["opacity"] = Opacity,
-    };
+        var o = new JsonObject { ["id"] = ImageId, ["corners"] = new JsonArray(Corners.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()), ["opacity"] = Opacity };
+        if (Data != null) { o["data"] = Convert.ToBase64String(Data); o["mime"] = Mime ?? "image/png"; }
+        return o;
+    }
 }
 
 /// <summary>A text on a drawing: where (view coordinates, m), its height (paper mm), angle (°, counter-clockwise), anchor (start, middle, end) and baseline (bottom, middle).</summary>
