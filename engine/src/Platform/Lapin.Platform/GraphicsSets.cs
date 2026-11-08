@@ -395,13 +395,13 @@ public static class GraphicsSets
             // A halftone, a transparency (opacity), a filter's colour (decision 394).
             if (vg.OpacityOf(e) is { } op) look = new JsonObject { ["opacity"] = Math.Round(op, 3) };
             if (vg.ColorOf(e) is { } color && color != Links.Halftone) (look ??= new JsonObject())["color"] = color;
-            // A 3D view set to coarse or medium (decision 401) leaves out the details of doors and windows (sills, boards, hardware) and the openings' linings.
+            // A 3D view under LOD 300 (decisions 401, 404, 405) leaves out the details of doors and windows (sills, boards, hardware), their glazing bars and handles (and at LOD 100 their sashes) and the openings' linings.
             var details = lessDetail && e.Class is IfcClass.Door or IfcClass.Window or IfcClass.Wall;
             if ((vg.HiddenSubs(e) != null || details) && q.Geometry(e.Id) is { } geo)
             {
                 var parts = new JsonObject();
                 foreach (var p in geo.Parts)
-                    if (p.Key is { } k && !parts.ContainsKey(k) && (vg.HidesPart(e, k) || details && PlanDetail.IsDetailPart(e.Class, k))) parts[k] = new JsonObject { ["hidden"] = true };
+                    if (p.Key is { } k && !parts.ContainsKey(k) && (vg.HidesPart(e, k) || details && !PlanDetail.Shows(e.Class, k, lod))) parts[k] = new JsonObject { ["hidden"] = true };
                 if (parts.Count > 0) (look ??= new JsonObject())["parts"] = parts;
             }
             if (look != null) o[e.Id] = look;

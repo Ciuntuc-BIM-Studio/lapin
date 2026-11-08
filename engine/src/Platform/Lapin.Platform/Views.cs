@@ -411,7 +411,12 @@ public static class Views
             building <= PlanDetail.Lod100 && p.Key is { } k && k.StartsWith("layer:", StringComparison.Ordinal)
                 ? (coreMaterials.TryGetValue(e.Id, out var cm) ? cm : coreMaterials[e.Id] = CoreMaterial(m, e)) ?? p.Material
                 : p.Material;
-        bool Detailed(Entity e, GeometryPart p) => building >= PlanDetail.Lod300 || !PlanDetail.IsDetailPart(e.Class, p.Key);
+        bool Detailed(Entity e, GeometryPart p) => PlanDetail.Shows(e.Class, p.Key, building);
+        // At LOD 100 a steel member is a single line on its axis (decision 405), where the view sees it along its length.
+        var sticks = building <= PlanDetail.Lod100 ? q.Services.All<IStickAxes>() : [];
+        // Doors' and windows' plan symbols at the view's level (frame and sashes simplified at 200, the opening and swing at 100).
+        var joinerySymbols = PlanDetail.SymbolsOf(building);
+        ViewFrame? frame = null;
         // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
         var style = ViewStyles.Of(m, view);
         // People, cars and plants (decision 341): their symbols and silhouettes in the style's mode, thin.
@@ -463,6 +468,11 @@ public static class Views
             // An element with silhouettes (decision 341) draws them in an elevation or a section, unless the style draws the
             // entourage detailed (its body's edges, as before) or not at all; its parts still size the view.
             var bySilhouette = !plan && !stored && g.Silhouettes != null && entourage != "detailed";
+            if (sticks.Count > 0 && sticks.Select(s => s.StickOf(m, e)).FirstOrDefault(x => x != null) is var (sa, sb) && Stick(e, sa, sb) is { } stick)
+            {
+                symbols.Add(stick);
+                continue;
+            }
             foreach (var p in g.Parts)
                 if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette });
             if (bySilhouette && silhouettes != null)
@@ -472,15 +482,31 @@ public static class Views
             if (view.Str("kind") == "plan" && !stored && Generator.SymbolicInPlan.Contains(e.Class) && symbolsHere != null)
                 foreach (var item in symbolsHere)
                 {
-                    if (!item.At(detail) || !item.In(entourage)) continue;
+                    if (!item.At(e.Class is IfcClass.Door or IfcClass.Window ? joinerySymbols : detail) || !item.In(entourage)) continue;
                     if (SymbolFill(item, e) is { } sf) { fills.Add(sf); continue; }
                     var role = item.Kind switch { "symbol" or "contour" or "terrainEdge" => LineRole.Projection, "contourMajor" => LineRole.Cut, "heavy" => LineRole.Cut, "dashed" or "reach" => LineRole.Hidden, "overhead" or "ridge" or "hip" or "valley" or "break" => LineRole.Overhead, _ => null };
                     if (role != null) symbols.Add(new DrawSymbol(item.Points, item.Closed, e.Id, e.Class, role, item.Mode != null ? item.Style ?? thin : item.Style));
                 }
         }
         return (parts, symbols, fills, texts);
+
+        // A member's axis as the view sees it (its role worked out by the drawing: cut, seen or overhead); none when it is seen end
+        // on (a column in plan, a beam across a section), its body drawing then.
+        DrawSymbol? Stick(Entity e, Vec3 a, Vec3 b)
+        {
+            frame ??= StickFrame(q, view);
+            if (frame == null || (frame.Map(b) - frame.Map(a)).Length < 0.05) return null;
+            return new DrawSymbol([], false, e.Id, e.Class, Generator.StickRole) { Points3 = [a, b] };
+        }
     }
 
+
+    /// <summary>Which way a view looks, for a stick seen end on: its spec's frame (an elevation with nothing yet, along its look).</summary>
+    static ViewFrame? StickFrame(IQueryContext q, Entity view)
+    {
+        if (Spec(q.Model, view, [], q.Services).Spec is { } s) return s.Frame;
+        return view.Str("kind") == "elevation" ? ViewSpec.Elevation(LookOf(view), (new Vec3(-1, -1, 0), new Vec3(1, 1, 1)), false, null).Frame : null;
+    }
 
     /// <summary>The material a layered element's core is of (a native one's band, a reference's layer by its material's name), for a coarse view's one hatch.</summary>
     static string? CoreMaterial(IModelView m, Entity e)

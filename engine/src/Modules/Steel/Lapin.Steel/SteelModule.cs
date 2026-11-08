@@ -28,7 +28,7 @@ namespace Lapin.Steel;
 /// and anchors derived from their parameters; the Steel parts schedule.
 /// </para>
 /// </summary>
-public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies, IIfcSystems, IIfcConnections
+public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies, IIfcSystems, IIfcConnections, IStickAxes
 {
     public string Id => "steel";
     public string Name => "Steel";
@@ -50,6 +50,7 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         r.Geometry(Member, (e, m, s) => Geometry(e, m, s));
         r.Quantities(Member, Quantities);
         r.Service<IGeometryFilter>(this);
+        r.Service<IStickAxes>(this);
         r.Service<IIfcSweptBodies>(this);
         r.Service<IIfcSystems>(this);
         r.Service<IIfcConnections>(this);
@@ -317,6 +318,14 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         if (built.Parts.Count == 0) return geometry with { Diagnostics = [.. geometry.Diagnostics ?? [], .. built.Diagnostics ?? []] };
         // The structure's own snaps (a beam's column centres) stay.
         return built with { Snaps = [.. geometry.Snaps ?? [], .. built.Snaps ?? []] };
+    }
+
+    /// <summary>A steel member's axis, as a view at LOD 100 draws it (decision 405): a steel member, or a beam or column of a steel profile.</summary>
+    public (Vec3 A, Vec3 B)? StickOf(IModelView model, Entity element)
+    {
+        if (element.Class is not (Member or IfcClass.Beam or IfcClass.Column)) return null;
+        if (MemberAxes.Of(model, element) is not { } ax || element.Class != Member && !ax.Section.IsProfile) return null;
+        return (ax.Start, ax.End);
     }
 
     public IfcSweptBody? BodyOf(IModelView model, Entity element)

@@ -1,9 +1,12 @@
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drafting;
+using Lapin.Drawing;
 using Lapin.Drawing.Views;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Steel;
+using Lapin.Structure;
 
 namespace Lapin.Engine.Tests;
 
@@ -126,5 +129,60 @@ public class DetailLevelTests
         Assert.Same(up.Single(e => e.Id == p100), again.Single(e => e.Id == p100));
         // A new project has the mark: its views take their style's level.
         Assert.NotNull(Spatial.Project(f.Model)!.Attrs[ViewDetail.RevKey]);
+    }
+
+    [Fact]
+    public void At_LOD_100_a_steel_member_is_a_single_line_on_its_axis()
+    {
+        // Decision 405.
+        var f = new Fixture(new ArchitectureModule(), new StructureModule(), new SteelModule(), new DraftingModule());
+        var member = (string)f.Run("steel.addMember", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 5, ["z1"] = 0.5, ["x2"] = 6, ["y2"] = 5, ["z2"] = 0.5 })!["id"]!;
+        var plan = Plan(f, 100);
+        List<DLine> Lines() => [.. Drawing(f, plan).Lines.Where(l => l.Element == member)];
+        int Cuts() => Drawing(f, plan).Cuts.Count(c => c.Element == member);
+        // As its style draws it (LOD 350): its body, its outline.
+        Assert.True(Lines().Count > 2);
+        Lod(f, plan, 100);
+        var line = Assert.Single(Lines());
+        Assert.Equal(0, Cuts());
+        Assert.Equal(6, (line.B - line.A).Length, 3);
+        Assert.Equal(5, line.A.Y, 3);
+        // Below the plan's cut: seen; in a section along it, one line too.
+        Assert.Equal(LineRole.Projection, line.Role);
+        var section = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(-1, 4), ["end"] = new JsonArray(7, 4), ["scale"] = 100 })!["id"]!;
+        Lod(f, section, 100);
+        Assert.Single(Drawing(f, section).Lines, l => l.Element == member);
+        // Seen end on (a section across it), its body draws.
+        var across = (string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(3, 3), ["end"] = new JsonArray(3, 7), ["scale"] = 100 })!["id"]!;
+        Lod(f, across, 100);
+        Assert.Contains(Drawing(f, across).Cuts, c => c.Element == member);
+    }
+
+    [Fact]
+    public void A_door_and_a_window_draw_their_opening_and_swing_at_LOD_100_simplified_at_200_whole_from_300()
+    {
+        // Decision 405.
+        var (f, wall, window, _) = House();
+        var door = (string)f.Run("architecture.addDoor", new JsonObject { ["wallId"] = wall, ["along"] = 1 })!["id"]!;
+        var plan = Plan(f, 50);
+        int Count(string id) => Drawing(f, plan).Lines.Count(l => l.Element == id);
+        var (w300, d300) = (Count(window), Count(door));
+        Lod(f, plan, 200);
+        var (w200, d200) = (Count(window), Count(door));
+        Lod(f, plan, 100);
+        var (w100, d100) = (Count(window), Count(door));
+        Assert.True(w100 < w200 && w200 < w300, $"window {w100} < {w200} < {w300}");
+        Assert.True(d100 < d200 && d200 <= d300, $"door {d100} < {d200} <= {d300}");
+        // The door's swing stays at LOD 100: an arc of many points.
+        var symbols = f.Session.Geometry(door)!.Plan!.Where(i => i.At(PlanDetail.Coarse)).ToList();
+        Assert.Contains(symbols, i => !i.Closed && i.Points.Count > 4);
+        // In 3D at LOD 100 a window keeps its frame and glass, its sashes go; at 200 its sashes come back.
+        Lod(f, "3d", 100);
+        var looks = (JsonObject)f.Session.Query("view.looks3d", new JsonObject())!;
+        Assert.True((bool)looks[window]!["parts"]!["sash"]!["hidden"]!);
+        Assert.Null(looks[window]!["parts"]!["frame"]);
+        Lod(f, "3d", 200);
+        looks = (JsonObject)f.Session.Query("view.looks3d", new JsonObject())!;
+        Assert.Null(looks[window]!["parts"]!["sash"]);
     }
 }

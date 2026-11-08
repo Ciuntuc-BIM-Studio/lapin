@@ -213,7 +213,7 @@ public sealed class DoorReportsTests
     /// </summary>
     static (string Architects, string Ifc, Vec2 Opens) HandInPlan(Fixture f, string door)
     {
-        var arc = f.Session.Geometry(door)!.Plan!.Single(i => i.Kind == "symbol" && !i.Closed && i.Points.Count > 4).Points;
+        var arc = f.Session.Geometry(door)!.Plan!.Single(i => i.At(PlanDetail.Fine) && i.Kind == "symbol" && !i.Closed && i.Points.Count > 4).Points;
         var (a, b, c) = (arc[0], arc[arc.Count / 2], arc[^1]);
         // The circle through three points of the arc.
         var d = 2 * (a.X * (b.Y - c.Y) + b.X * (c.Y - a.Y) + c.X * (a.Y - b.Y));

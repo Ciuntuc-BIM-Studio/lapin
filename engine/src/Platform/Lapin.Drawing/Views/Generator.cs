@@ -30,7 +30,11 @@ public sealed record Silhouette(Vec3 At, IReadOnlyList<SilhouetteStroke> Side, I
 public sealed record DrawSilhouette(Silhouette Shape, string Element, string Class, string? Fill = null, LineStyleSpec? Own = null);
 
 /// <summary>A line an element draws in plan by itself (a door's swing, a roof's ridge): its role (projection, overhead…), and the style its file gave it.</summary>
-public sealed record DrawSymbol(IReadOnlyList<Vec2> Points, bool Closed, string Element, string Class, string Role, LineStyleSpec? Own = null);
+public sealed record DrawSymbol(IReadOnlyList<Vec2> Points, bool Closed, string Element, string Class, string Role, LineStyleSpec? Own = null)
+{
+    /// <summary>A line in space (a steel member's axis at LOD 100, decision 405): drawn in every kind of view, mapped by its frame, where it lies within its depth.</summary>
+    public IReadOnlyList<Vec3>? Points3 { get; init; }
+}
 
 /// <summary>
 /// A drawn line: its role (cut, projection, hidden, overhead, beyond), its element and class, a style a line edit gave it,
@@ -143,6 +147,9 @@ public sealed record ViewSpec(string Kind, ViewFrame Frame, bool Cut, double Bel
 /// </summary>
 public static class Generator
 {
+    /// <summary>A line in space whose role the drawing works out (a steel member's axis at LOD 100, decision 405).</summary>
+    public const string StickRole = "stick";
+
     /// <summary>Classes drawn in plan by their own symbols instead of their cut.</summary>
     public static readonly HashSet<string> SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair", "IfcRamp", "IfcPavement", "LapinPlanting", "LapinEntourage", "IfcFurniture", "IfcShadingDevice", "IfcTransportElement", "LapinTrack", "LapinPlatform", "LapinTurnout", "LapinCrossing", "LapinLevelCrossing"];
 
@@ -216,8 +223,26 @@ public static class Generator
         var modelBox = Box(primary.SelectMany(p => p.Solid.Vertices).Select(v.Frame.Map));
         if (modelBox is { } mb && v.Span is { } span) modelBox = (new Vec2(Math.Max(mb.Item1.X, span.Min), mb.Item1.Y), new Vec2(Math.Min(mb.Item2.X, span.Max), mb.Item2.Y));
         lines = DropStray(lines, cutBox, modelBox);
+        if (symbols != null)
+            foreach (var sym in symbols.Where(s => s.Points3 != null))
+            {
+                // In front of the view and within its depth (a plan's: under its cut, above its range's bottom).
+                var pts = sym.Points3!;
+                if (plan ? pts.All(q => q.Z > cutZ + v.Above + 1e-9) || pts.All(q => q.Z < cutZ - v.Below - 1e-9)
+                    : pts.All(q => Vec3.Dot(q - v.Frame.Origin, v.Frame.Dir) < -1e-6) || pts.All(q => Vec3.Dot(q - v.Frame.Origin, v.Frame.Dir) > v.Below + 1e-6)) continue;
+                var mapped = pts.Select(v.Frame.Map).ToList();
+                var role = sym.Role;
+                if (role == StickRole)
+                {
+                    // Cut where the plane runs through it, overhead above a plan's cut, seen otherwise.
+                    var d = pts.Select(q => Vec3.Dot(q - v.Frame.Origin, v.Frame.Dir)).ToList();
+                    role = v.Cut && d.Min() <= 1e-9 && d.Max() >= -1e-9 ? LineRole.Cut : plan && pts.Min(q => q.Z) > cutZ ? LineRole.Overhead : LineRole.Projection;
+                }
+                for (var i = 0; i + 1 < mapped.Count; i++)
+                    lines.Add(new DLine(mapped[i], mapped[i + 1], role, sym.Element, sym.Class, Own: sym.Own));
+            }
         if (plan && symbols != null)
-            foreach (var sym in symbols)
+            foreach (var sym in symbols.Where(s => s.Points3 == null))
             {
                 var n = sym.Points.Count;
                 for (var i = 0; i + 1 < n + (sym.Closed ? 1 : 0); i++)

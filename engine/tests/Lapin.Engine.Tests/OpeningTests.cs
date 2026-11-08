@@ -207,7 +207,7 @@ public class OpeningTests
         // The handles' middle (a door has one on each face, so across the wall it stays put).
         Vec3 Handle() { var b = Measure.Bounds(f.Session.Geometry(door)!.Parts.Single(p => p.Name == "handle").Solid)!.Value; return (b.Min + b.Max) * 0.5; }
         // The leaf open at 90° and its swing lie on the side it opens to.
-        double Swing() => f.Session.Geometry(door)!.Plan!.Where(i => i.Kind is "symbol" or "dashed").SelectMany(i => i.Points).Average(q => q.Y);
+        double Swing() => f.Session.Geometry(door)!.Plan!.Where(i => i.At(PlanDetail.Fine) && i.Kind is "symbol" or "dashed").SelectMany(i => i.Points).Average(q => q.Y);
         var h = Handle();
         var swing = Swing();
         f.Run("architecture.flipJoinery", new JsonObject { ["id"] = door, ["axis"] = "x" });
@@ -264,7 +264,7 @@ public class OpeningTests
 
     // ------------------------------------------------------------ plan symbols (opening-symbols.test.ts)
 
-    static List<PlanItem> Symbols(Fixture f, string id) => f.Session.Geometry(id)!.Plan!.ToList();
+    static List<PlanItem> Symbols(Fixture f, string id) => f.Session.Geometry(id)!.Plan!.Where(i => i.At(PlanDetail.Fine)).ToList();
 
     /// <summary>A door's leaves in plan: the heavy rectangles as thick as the leaf (the frame's cut is heavy too, but as deep as the frame).</summary>
     static List<PlanItem> Leaves(Fixture f, string door, JoinerySpec spec) =>

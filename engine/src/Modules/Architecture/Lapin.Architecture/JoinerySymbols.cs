@@ -1,3 +1,4 @@
+using Lapin.Platform;
 using Lapin.Geometry;
 
 namespace Lapin.Architecture;
@@ -48,7 +49,7 @@ public static class JoinerySymbols
 
     // ─── Plan ──────────────────────────────────────────────────────────────
 
-    static List<JStroke> DoorLeafPlan(JinerySpecView s, JoineryPanel p, CellRect r)
+    static List<JStroke> DoorLeafPlan(JinerySpecView s, JoineryPanel p, CellRect r, int level = PlanDetail.Fine)
     {
         var f = s.Spec.Frame;
         var t = s.Spec.Sash.LeafThickness;
@@ -74,8 +75,9 @@ public static class JoinerySymbols
         var sgn = left ? 1 : -1;
         var o = new List<JStroke>
         {
-            // The leaf open at 90° to the interior: a rectangle from the hinge, cut by the plan (heavy, as the old Lapin drew it).
-            Rect(hinge.X, hinge.Y - w, hinge.X + sgn * t, hinge.Y, "cut"),
+            // The leaf open at 90° to the interior: a rectangle from the hinge, cut by the plan (heavy, as the old Lapin drew it);
+            // at LOD 100 a line, the swing alone (decision 405).
+            level <= PlanDetail.Coarse ? Line(hinge, new(hinge.X, hinge.Y - w), "cut") : Rect(hinge.X, hinge.Y - w, hinge.X + sgn * t, hinge.Y, "cut"),
             left ? Arc(hinge, w, -Math.PI / 2, 0, "thin") : Arc(hinge, w, Math.PI, 1.5 * Math.PI, "thin"),
         };
         if (op.StartsWith("double-acting"))
@@ -97,26 +99,41 @@ public static class JoinerySymbols
         return [Line(hinge, new(hinge.X, yIn - w), "thin"), left ? Arc(hinge, w, -Math.PI / 2, 0, "thin", true) : Arc(hinge, w, Math.PI, 1.5 * Math.PI, "thin", true)];
     }
 
-    /// <summary>The plan at <paramref name="cutZ"/> over the bottom (default: half the height).</summary>
-    public static List<JStroke> Plan(JoinerySpec s, double? cutZ = null, bool windowSwings = false)
+    /// <summary>
+    /// The plan at <paramref name="cutZ"/> over the bottom (default: half the height), at a level (decision 405, a view's
+    /// LOD as <see cref="PlanDetail.SymbolsOf"/> gives it): fine, every frame, sash and glass cut and the board; medium (LOD
+    /// 200), the frame and a line for the glass, no sashes or board; coarse (LOD 100), the opening and its swing: a line
+    /// across it on the frame's plane, a door's leaf as a line with its arc.
+    /// </summary>
+    public static List<JStroke> Plan(JoinerySpec s, double? cutZ = null, bool windowSwings = false, int level = PlanDetail.Fine)
     {
         var z = cutZ ?? s.Height / 2;
         var boxes = Joinery.Boxes(s);
         var o = new List<JStroke>();
-        foreach (var b in boxes.Where(b => b.Min.Z <= z && b.Max.Z >= z))
+        if (level <= PlanDetail.Coarse)
         {
-            if (b.Role is "leaf" or "handle" or "hardware" or "muntin") continue;
-            // An outline (an arch, a round frame) is cut where the plane crosses it.
-            foreach (var (x0, x1) in JoineryShapes.Spans(b, z))
-                o.Add(Rect(x0, b.Min.Y, x1, b.Max.Y, b.Role == "glass" ? "thin" : "cut"));
+            var frame = boxes.Where(b => b.Role == "frame" && b.Min.Z <= z && b.Max.Z >= z).ToList();
+            var (fx0, fx1) = frame.Count > 0 ? (frame.Min(b => b.Min.X), frame.Max(b => b.Max.X)) : (-s.Width / 2, s.Width / 2);
+            if (!Joinery.Normalised(s).Any(p => Joinery.IsDoorLeaf(p.Operation))) o.Add(Line(new(fx0, s.Frame.Offset), new(fx1, s.Frame.Offset), "thin"));
         }
-        foreach (var b in boxes.Where(b => b.Role == "board" && b.Max.Z < z)) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "outline"));
+        else
+            foreach (var b in boxes.Where(b => b.Min.Z <= z && b.Max.Z >= z))
+            {
+                if (b.Role is "leaf" or "handle" or "hardware" or "muntin") continue;
+                if (level <= PlanDetail.Medium && b.Role is "sash" or "board") continue;
+                // An outline (an arch, a round frame) is cut where the plane crosses it; the glass a line at medium.
+                foreach (var (x0, x1) in JoineryShapes.Spans(b, z))
+                    o.Add(level <= PlanDetail.Medium && b.Role == "glass" ? Line(new(x0, (b.Min.Y + b.Max.Y) / 2), new(x1, (b.Min.Y + b.Max.Y) / 2), "thin")
+                        : Rect(x0, b.Min.Y, x1, b.Max.Y, b.Role == "glass" ? "thin" : "cut"));
+            }
+        if (level >= PlanDetail.Fine)
+            foreach (var b in boxes.Where(b => b.Role == "board" && b.Max.Z < z)) o.Add(Rect(b.Min.X, b.Min.Y, b.Max.X, b.Max.Y, "outline"));
         var view = new JinerySpecView(s);
         foreach (var p in Joinery.Normalised(s))
         {
             var r = Joinery.PanelRect(s, p);
             if (r.Z0 > z || r.Z1 < z) continue;
-            if (Joinery.IsDoorLeaf(p.Operation)) o.AddRange(DoorLeafPlan(view, p, r));
+            if (Joinery.IsDoorLeaf(p.Operation)) o.AddRange(DoorLeafPlan(view, p, r, level));
             else if (windowSwings && Joinery.SwingsInPlan(p.Operation)) o.AddRange(WindowSwingPlan(s, p, r));
         }
         return o;

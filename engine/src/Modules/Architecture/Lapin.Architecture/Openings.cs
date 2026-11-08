@@ -812,13 +812,15 @@ public static class Openings
         // The jambs across the wall.
         o.Add(new PlanItem("symbol", false, [P(-half, -depth / 2), P(-half, depth / 2)]));
         o.Add(new PlanItem("symbol", false, [P(half, -depth / 2), P(half, depth / 2)]));
-        // The symbol engine's plan (docs/simboluri-tamplarie.md): the frame cut, the glass, a door's leaves and their arcs.
-        foreach (var st in JoinerySymbols.Plan(spec))
-            o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList()));
+        // The symbol engine's plan (docs/simboluri-tamplarie.md): the frame cut, the glass, a door's leaves and their arcs; once
+        // for each level a view may draw it at (decision 405: LOD 100 the opening and its swing, 200 simplified, 300 and up whole).
+        foreach (var level in new[] { PlanDetail.Coarse, PlanDetail.Medium, PlanDetail.Fine })
+            foreach (var st in JoinerySymbols.Plan(spec, level: level))
+                o.Add(new PlanItem(st.Weight == "cut" ? "heavy" : st.Dashed ? "dashed" : "symbol", st.Closed, st.Pts.Select(q => P(q.X, q.Y)).ToList(), level, level));
         // The dressings seen in plan: what crosses the cut (shutters, a grille) cut, a window box below it seen, a canopy above it overhead.
         if (dressed)
             foreach (var (kind, x0, x1, y0, y1) in DressingPlan(spec, depth, PlanCut - p.FillSill))
-            o.Add(new PlanItem(kind, true, [P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1)]));
+            o.Add(new PlanItem(kind, true, [P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1)], PlanDetail.Fine));
         return o;
     }
 }

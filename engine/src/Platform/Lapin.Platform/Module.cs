@@ -383,6 +383,20 @@ public static class PlanDetail
     /// Whether a part is a detail a view under LOD 300 leaves out (decisions 401, 404): a door's or a window's reveals and the
     /// pieces round it (<see cref="JoineryDetails"/>), an opening's lining.
     /// </summary>
+    /// <summary>
+    /// Whether a view at a level draws a part (decisions 401, 404, 405): the details from LOD 300 (<see cref="IsDetailPart"/>);
+    /// a door's or a window's glazing bars and handles from LOD 300 too, its sashes from LOD 200 (at LOD 100 a door or a
+    /// window is its frame, its leaf and its glass: the opening); any other part at every level.
+    /// </summary>
+    public static bool Shows(string ifcClass, string? key, int lod)
+    {
+        if (lod >= Lod300 || key == null) return true;
+        if (IsDetailPart(ifcClass, key)) return false;
+        if (ifcClass is not ("IfcDoor" or "IfcWindow")) return true;
+        if (key is "muntin" or "handle") return false;
+        return !(lod <= Lod100 && key == "sash");
+    }
+
     public static bool IsDetailPart(string ifcClass, string? key)
     {
         if (key == null) return false;
@@ -441,4 +455,13 @@ public interface IScheduleSource
     ScheduleGrid Grid(IQueryContext query, Entity schedule) => Grid(query);
     /// <summary>A value typed in a row's cell written into what the row lists (<paramref name="key"/>, from the grid's keys) under <paramref name="column"/>; false when that column is not the model's to write (the value is then kept on the schedule).</summary>
     bool Write(ICommandContext ctx, string key, string column, string? text) => false;
+}
+
+/// <summary>
+/// What a module draws as a single line at LOD 100 instead of its body (decision 405): a steel member's axis, from its start
+/// to its end, world metres; null when the element is none of its.
+/// </summary>
+public interface IStickAxes
+{
+    (Vec3 A, Vec3 B)? StickOf(IModelView model, Entity element);
 }
