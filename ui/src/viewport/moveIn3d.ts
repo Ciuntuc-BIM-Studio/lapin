@@ -59,6 +59,41 @@ export function typedTarget(text: string, base: Vec3, toward: Vec3 | null, parse
   return { x: base.x + v[0]!, y: base.y + v[1]!, z: base.z + (v[2] ?? 0) };
 }
 
+/**
+ * The elements whose height is their level's (decision 399): a wall, a stair, a column, a floor… stand on their storey
+ * by their offsets, so a move snapped from one point to another (a stair's top corner at 2.97, under its 3 cm finish, to a
+ * floor's corner at 3.00) would lift them by what lies between the two points' heights. Moved, they keep their level
+ * unless the move says it goes up or down: the blue axis held or inferred, or a dz typed.
+ */
+const ON_LEVEL = new Set([
+  'IfcWall', 'IfcWallStandardCase', 'IfcCurtainWall', 'IfcStair', 'IfcRamp', 'IfcColumn', 'IfcSlab', 'IfcBeam', 'IfcRailing', 'IfcRoof',
+  'IfcFooting', 'IfcCovering', 'IfcFurniture', 'IfcDoor', 'IfcWindow', 'IfcSpace', 'IfcTransportElement', 'IfcShadingDevice', 'IfcPlate',
+]);
+
+export function staysOnLevel(types: Iterable<string | undefined>): boolean {
+  let any = false;
+  for (const t of types) { if (!t || !ON_LEVEL.has(t)) return false; any = true; }
+  return any;
+}
+
+/** Whether a move goes up or down on purpose: the blue axis held or inferred from the base, or three values typed (dx,dy,dz). */
+export function vertical(lock: Lock3, at: Snapped3 | null, text: string): boolean {
+  return lock?.axis === 'blue' || at?.color === 'blue' || text.trim().split(/\s*[,;]\s*/).filter((x) => x.length > 0).length === 3;
+}
+
+/**
+ * Where the move goes: the typed value, else the point inferred; an element kept on its level (`flat`) goes there in plan
+ * only, a length typed along the cursor's way measured in plan.
+ */
+export function moveTarget(base: Vec3, at: Snapped3 | null, text: string, lock: Lock3, flat: boolean, parse: (s: string) => number | null): Vec3 | null {
+  const keep = flat && !vertical(lock, at, text);
+  const toward = at ? (keep ? { ...at.point, z: base.z } : at.point) : null;
+  const typed = text ? typedTarget(text, base, toward, parse) : null;
+  if (typed) return typed;
+  if (!at) return null;
+  return keep ? { ...at.point, z: base.z } : at.point;
+}
+
 /** The engine command a displacement makes: element.transform in plan, its vertical part as `up`. */
 export function moveArgs(ids: readonly string[], copy: boolean, by: Vec3): Record<string, unknown> {
   const o: Record<string, unknown> = { ids: [...ids], op: copy ? 'copy' : 'move', by: [r6(by.x), r6(by.y)] };

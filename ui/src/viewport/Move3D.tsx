@@ -23,7 +23,7 @@ import { shownSelection } from '../platform/groups';
 import { useCamera, type Vec3 } from './camera';
 import { useCad } from './cad/session';
 import { formatLength, parseLength } from './liveInput';
-import { beginMove3d, carriedWith, endMove3d, moveArgs, moves, typedTarget, useMove3d } from './moveIn3d';
+import { beginMove3d, carriedWith, endMove3d, moveArgs, moves, moveTarget, staysOnLevel, typedTarget, useMove3d, vertical } from './moveIn3d';
 import { hitAt, insideView, projector, rayAt, snapAt, type ViewRefs } from './scene3d';
 import { arrowLock3 } from './snap3d';
 
@@ -46,6 +46,8 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
   // What is carried on the screen: the elements moved, their openings and fills, with where they stood.
   const carried = useRef(new Map<THREE.Object3D, THREE.Vector3>());
   const carriedIds = useRef<Set<string>>(new Set());
+  /** What moves keeps its level unless the move goes up or down on purpose (decision 399). */
+  const onLevel = useRef(false);
   const restore = () => {
     for (const [o, p] of carried.current) o.position.copy(p);
     carried.current.clear();
@@ -71,6 +73,7 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
     if (!active) { restore(); return; }
     const { nodes, relations } = useSession.getState();
     carriedIds.current = carriedWith(shownSelection(st.ids, nodes, relations), relations.values());
+    onLevel.current = staysOnLevel(st.ids.map((id) => nodes.get(id)?.type));
     return () => restore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, st.ids]);
@@ -85,8 +88,7 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
   const target = (): Vec3 | null => {
     const s = useMove3d.getState();
     if (!s.base) return null;
-    const typed = s.text ? typedTarget(s.text, s.base, s.at?.point ?? null, (x) => parseLength(x)) : null;
-    return typed ?? s.at?.point ?? null;
+    return moveTarget(s.base, s.at, s.text, s.lock, onLevel.current, (x) => parseLength(x));
   };
   const apply = async (to: Vec3 | null) => {
     const s = useMove3d.getState();
@@ -268,6 +270,7 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
         <span>{title}</span>
         <span className="mode-hint">{hint}</span>
         {st.base && <span className="mode-hint">{st.lock ? 'Locked: the arrow again or Shift lets go' : '→ red · ← green · ↑ blue · Shift holds'}</span>}
+        {st.base && onLevel.current && !vertical(st.lock, at, st.text) && <span className="mode-hint" data-move3d="level">Kept on its level: ↑ (blue) or dx,dy,dz moves it up or down</span>}
         <button type="button" className="mode-close" title="Cancel (Esc)" aria-label="Cancel" onClick={endMove3d}><X size={12} /></button>
       </div>
     </>
