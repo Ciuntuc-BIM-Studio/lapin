@@ -138,14 +138,14 @@ try {
       else if (!MAGIC[format](bytes)) fail(`Export 3D as ${format.toUpperCase()} is not a ${format} file.`);
       else console.log(`▸ Export 3D as ${format.toUpperCase()}: ${file}, ${bytes.length} bytes`);
     }
-    // File → Export IFC or Fragments…, IFC chosen as it is by default.
+    // File → Export IFC, Fragments or BOS…, IFC chosen as it is by default.
     if (!failed) {
       await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
       await sleep(200);
       await ev(`[...document.querySelectorAll('[role=menuitem]')].find(x => /Export IFC/.test(x.textContent))?.click()`);
       await sleep(600);
-      const clicked = await ev(`(() => { const b = [...document.querySelectorAll('[aria-label="Export IFC or Fragments"] button')].find(x => x.textContent.trim() === 'Export'); if (!b || b.disabled) return false; b.click(); return true; })()`);
-      if (!clicked) fail('File → Export IFC or Fragments… did not open its dialog, or it has nothing to export.');
+      const clicked = await ev(`(() => { const b = [...document.querySelectorAll('[aria-label^="Export IFC"] button')].find(x => x.textContent.trim() === 'Export'); if (!b || b.disabled) return false; b.click(); return true; })()`);
+      if (!clicked) fail('File → Export IFC, Fragments or BOS… did not open its dialog, or it has nothing to export.');
       else {
         let file = null;
         for (let k = 0; k < 120 && !file; k++) { await sleep(250); file = readdirSync(downloads).find((f) => f.endsWith('.ifc')) ?? null; }
