@@ -283,6 +283,16 @@ public sealed partial class IfcModel
         {
             var n = normals[i];
             if (n.Length == 0) continue;
+            // A cap's normal is a prism's only if every other face is a side (perpendicular) or in a cap (opposite): one look over
+            // the faces before the pairs, else a curved body read from triangles (thousands of faces) took cubic time and never ended.
+            var sides = true;
+            for (var k = 0; k < faces.Count && sides; k++)
+            {
+                if (k == i || normals[k].Length == 0) continue;
+                var dot = Vec3.Dot(normals[k], n);
+                if (dot > 0.9999 || dot >= -0.9999 && Math.Abs(dot) > 1e-3) sides = false;
+            }
+            if (!sides) continue;
             for (var j = i + 1; j < faces.Count; j++)
             {
                 if (normals[j].Length == 0 || Vec3.Dot(n, normals[j]) > -0.9999) continue;

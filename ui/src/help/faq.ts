@@ -574,6 +574,15 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'import-storeys',
+    q: ['Why did my storeys change after importing an IFC?', 'Where did the Ground floor go after the import?', 'Why does a storey of the imported file show the wrong level?', 'Can the imported storeys merge with mine?'],
+    qRo: ['De ce s-au schimbat etajele după importul unui IFC?', 'Unde a dispărut Parterul după import?', 'De ce are un etaj importat cota greșită?', 'Se pot contopi etajele importate cu ale mele?'],
+    keywords: ['import', 'imported', 'storey', 'storeys', 'level', 'levels', 'merge', 'replace', 'ifc', 'fragments', 'bos', 'elevation', 'wrong', 'gone', 'importat', 'etaj', 'etaje', 'etajele', 'nivel', 'niveluri', 'contopi', 'inlocuiesc', 'cota', 'gresita', 'disparut', 'parter'],
+    a: 'An import\'s storeys are the file\'s (IFC, Fragments, BIM Open Schema): they replace your project\'s. Each comes with the file\'s name, GlobalId and level, read in the file\'s unit. A storey of yours at the level of one of the file\'s (within 5 cm) is merged into it, its elements kept where they are and its views and drafting moved to it; one at no level of the file\'s goes when it is empty, its views moving to the nearest; one that holds elements stays, and the import\'s message says which. It is one undo step with the import (Ctrl+Z brings yours back). A link keeps its storeys apart. When the import ends, the 3D view frames the model.',
+    aRo: 'Etajele unui import sunt ale fișierului (IFC, Fragments, BIM Open Schema): ele le înlocuiesc pe ale proiectului tău. Fiecare vine cu numele, GlobalId-ul și cota din fișier, citită în unitatea fișierului. Un etaj al tău aflat la cota unui etaj al fișierului (cu cel mult 5 cm abatere) se contopește cu acesta: elementele lui rămân unde sunt, iar vederile și desenele lui trec pe el; unul care nu e la nicio cotă a fișierului dispare când e gol, iar vederile lui trec pe cel mai apropiat; unul care conține elemente rămâne, iar mesajul importului spune care. Totul e un singur pas de anulare, împreună cu importul (Ctrl+Z le aduce înapoi pe ale tale). Un fișier legat își ține etajele separat. La sfârșitul importului, vederea 3D încadrează modelul.',
+    source: 'faq',
+  },
+  {
     id: 'title-block',
     q: ['Can I make my own title block?', 'I want a custom title block, like the official Finnish one', 'How do I put my logo and company in the title block?'],
     qRo: ['Pot să-mi fac propriul cartuș?', 'Cum fac un cartuș personalizat?', 'Cum pun sigla și firma în cartuș?'],

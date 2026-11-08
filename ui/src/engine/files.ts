@@ -11,6 +11,7 @@ import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { editableText, surveyIfc, type EditableReport } from './ifcImport';
 import { emptyPane, notify, select, useUi } from '../app/store';
+import { fitAfterImport, poseKey } from '../viewport/camera';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
 
@@ -464,11 +465,14 @@ export async function importMesh(): Promise<void> {
   const options: Record<string, unknown> = { ...(units ? { scale: Number(r.scale), up: r.up } : {}), ...(r.as === 'editable' ? { editable: true } : {}) };
   const storeyId = activeStorey()?.id;
   const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path };
+  // The model framed when it is in, unless the camera is moved meanwhile.
+  const pose = poseKey();
   try {
     const res = await engine.call<{ elements: number; triangles: number; editable?: EditableReport | null; notes: string[] }>('project.importMesh', { ...source, ...options, ...(storeyId ? { storeyId } : {}) }, { timeoutMs: LONG_TIMEOUT_MS });
     notify(res.editable
       ? `Imported ${name}: ${res.elements} piece${res.elements === 1 ? '' : 's'}, ${res.triangles} triangles.${editableText(res.editable)}${res.notes.length ? ' ' + res.notes.join(' ') : ''}`
       : `Imported ${name}: ${res.elements} reference${res.elements === 1 ? '' : 's'}, ${res.triangles} triangles. Select one and use Studio → Make Studio solid to edit it.${res.notes.length ? ' ' + res.notes.join(' ') : ''}`);
+    fitAfterImport(pose);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }

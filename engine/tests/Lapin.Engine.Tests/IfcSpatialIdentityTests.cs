@@ -162,7 +162,7 @@ public class IfcSpatialIdentityTests : IDisposable
     }
 
     [Fact]
-    public void Imported_into_a_project_the_projects_ids_stay_and_a_new_storey_takes_the_files()
+    public void Imported_into_a_project_the_projects_ids_stay_and_the_files_storeys_replace_its_own()
     {
         var path = Write("other.ifc", Foreign(("Ground floor", 0), ("Mansarda", 5600)));
         var f = Make();
@@ -170,31 +170,35 @@ public class IfcSpatialIdentityTests : IDisposable
         var project = Lapin.Platform.Spatial.Project(f.Model)!.Id;
         var site = f.Model.OfClass(IfcClass.Site).Single().Id;
         var building = Lapin.Platform.Spatial.Building(f.Model)!.Id;
-        var ground = Lapin.Platform.Spatial.Storeys(f.Model).Single(s => s.Name == "Ground floor").Id;
-        IfcImport.Run(f.Session, path, null, out _);
+        var r = IfcImport.Run(f.Session, path, null, out _);
 
         var m = f.Model;
         Assert.Equal(project, Lapin.Platform.Spatial.Project(m)!.Id);
         Assert.Equal(site, m.OfClass(IfcClass.Site).Single().Id);
         Assert.Equal(building, Lapin.Platform.Spatial.Building(m)!.Id);
-        // The template's storeys stay; the file's Ground floor is the project's; Mansarda is new, under the file's GlobalId.
-        Assert.Equal(["Foundations", "Ground floor", "First floor", "Mansarda"], Lapin.Platform.Spatial.Storeys(m).Select(s => s.Name));
-        Assert.Equal(ground, Lapin.Platform.Spatial.StoreyOf(m, G("Box0"))?.Id);
+        // The file's storeys replace the template's (decision 406): its Ground floor, at the level of the project's, takes it in
+        // under the file's GlobalId; Foundations and First floor, empty and at no level of the file's, go; Mansarda is new.
+        Assert.Equal(["Ground floor", "Mansarda"], Lapin.Platform.Spatial.Storeys(m).Select(s => s.Name));
+        Assert.Equal([G("Storey0"), G("Storey1")], Lapin.Platform.Spatial.Storeys(m).Select(s => s.Id));
+        Assert.Equal(["Ground floor"], r.Replaced!.Merged.Select(x => x.Storey));
+        Assert.Equal(["Foundations", "First floor"], r.Replaced.Removed);
+        Assert.Equal(G("Storey0"), Lapin.Platform.Spatial.StoreyOf(m, G("Box0"))?.Id);
         Assert.Equal(G("Storey1"), Lapin.Platform.Spatial.StoreyOf(m, G("Box1"))?.Id);
         Assert.Contains(Views.Generate(f.Session.Reader, Views.Find(m, "plan:" + G("Storey1"))!).Drawing!.Lines, l => l.Element == G("Box1"));
+        // The site plans the template made on its ground floor stand on the file's.
+        Assert.All(m.OfClass(Views.Class).Where(v => v.Str("storeyId") != null), v => Assert.Contains(v.Str("storeyId"), new[] { G("Storey0"), G("Storey1") }));
 
         var out1 = Path.Combine(_dir, "out.ifc");
         IfcExport.Write(f.Session, out1);
         var ids = Spatial(out1);
         Assert.DoesNotContain(G("Project"), ids.Keys);
-        Assert.DoesNotContain(G("Storey0"), ids.Keys);
-        Assert.DoesNotContain(G("Contains0"), ids.Keys);
-        // The new storey and its containment as the file had them.
+        // The storeys and their containment as the file had them.
         Assert.Equal("IFCBUILDINGSTOREY:Mansarda@5.6", ids[G("Storey1")]);
         Assert.Equal("contains in IFCBUILDINGSTOREY:Mansarda", ids[G("Contains1")]);
-        // Imported again, nothing new: the same storey by its id.
+        Assert.StartsWith("IFCBUILDINGSTOREY:Ground floor@", ids[G("Storey0")]);
+        // Imported again, nothing new: the same storeys by their ids.
         IfcImport.Run(f.Session, path, null, out _);
-        Assert.Equal(4, Lapin.Platform.Spatial.Storeys(f.Model).Count());
+        Assert.Equal(2, Lapin.Platform.Spatial.Storeys(f.Model).Count());
     }
 
     [Fact]

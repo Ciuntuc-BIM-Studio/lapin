@@ -19,6 +19,8 @@ public sealed class ForeignElements : IIfcRecognizer
 {
     const double MinThickness = 0.01, MaxThickness = 1.2, MinSlabThickness = 0.03, MaxSlabThickness = 1.5;
 
+    public bool Takes(string ifcClass) => ifcClass is IfcClass.Wall or "IfcWallStandardCase" or IfcClass.Slab or IfcClass.Space or IfcClass.Roof;
+
     public string? Recognize(IEdit edit, ForeignElement e, RecognitionContext ctx) => e.IfcClass switch
     {
         IfcClass.Wall or "IfcWallStandardCase" => Wall(edit, e, ctx),

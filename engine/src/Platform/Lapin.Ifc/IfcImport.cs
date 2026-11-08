@@ -41,7 +41,7 @@ public sealed record IfcImportOptions(string Mode = "auto", IReadOnlySet<string>
     public bool Keeps(string? set) => SkipSets == null || set == null || !SkipSets.Contains(set);
 }
 
-public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null, EditableReport? Editable = null, FidelityReport? Fidelity = null)
+public sealed record IfcImportResult(int Elements, int Updated, int References, int Storeys, IReadOnlyList<string> Notes, int Recognized = 0, IReadOnlyDictionary<string, int>? RecognizedByClass = null, IReadOnlyDictionary<string, int>? ReferencesByClass = null, IReadOnlyDictionary<string, int>? Skipped = null, string? LinkId = null, EditableReport? Editable = null, FidelityReport? Fidelity = null, StoreyReplacement? Replaced = null)
 {
     public JsonObject ToJson() => new()
     {
@@ -50,6 +50,7 @@ public sealed record IfcImportResult(int Elements, int Updated, int References, 
         ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
         ["editable"] = Editable?.ToJson(),
         ["fidelity"] = Fidelity?.ToJson(),
+        ["replaced"] = Replaced?.ToJson(),
     };
 
     static JsonObject Counts(IReadOnlyDictionary<string, int>? d)
@@ -86,12 +87,13 @@ public static partial class IfcImport
     public static IfcImportResult Run(Session session, StepFile file, string name, IfcImportOptions? options, out Diff diff)
     {
         var o = options ?? new IfcImportOptions();
-        var reader = new Reader(session, file, o) { FileName = name };
+        var reader = new Reader(session, file, o) { FileName = name, ReplaceStoreys = true };
         // Everything editable (the import's third way): what stays a reference after recognition made a Studio solid where it can be.
         EditableReport? editable = null;
         // And what recognition could not read from the file's representations tried again from its triangles (a wall whose
         // openings are cut into its body, a slab given as a B-rep): decision 214.
         MeshRecognitionReport? fromTriangles = null;
+        var replaced = StoreyReplacement.None;
         void Apply(IEdit edit)
         {
             var before = edit.Model.Entities.Select(e => e.Id).ToHashSet();
@@ -111,10 +113,13 @@ public static partial class IfcImport
                 if (g != null && o.Source != null) { var a = g.CloneAttrs(); a["source"] = o.Source; edit.Replace(g.With(attrs: a)); }
             }
             else Apply(edit);
+            // The file's storeys replace the project's (ImportStoreys), in the same undo step.
+            replaced = ImportStoreys.Replace(edit, session.Catalog, reader.FileStoreys);
         });
         // The gate's report, from the geometry the session has just built (docs/spec-ifc.md, Poarta de fidelitate).
         reader.Measure(session);
-        var result = reader.Result() with { Editable = editable };
+        var result = reader.Result() with { Editable = editable, Replaced = replaced };
+        result = result with { Notes = [.. result.Notes, .. replaced.Notes()] };
         // The gate's one note: the file's elements and those recognised from their triangles together.
         if (fromTriangles?.Fidelity is { Checks.Count: > 0 } more)
         {
@@ -180,6 +185,13 @@ public static partial class IfcImport
         public string? FileName;
         /// <summary>Whether the file's work schedule comes in (not for a link: a linked file brings its elements only).</summary>
         public bool ReadProcesses = true;
+        /// <summary>
+        /// Whether the file's storeys replace the project's (an import, not a link: <see cref="ImportStoreys"/>): a file's storey is
+        /// the project's only by its GlobalId, else made under it, and the project's own are merged or removed after.
+        /// </summary>
+        public bool ReplaceStoreys;
+        /// <summary>The model's storeys the file's became.</summary>
+        public IReadOnlyList<string> FileStoreys => [.. storeyOf.Values.Distinct()];
         int elements, updated, references, storeys;
         readonly Dictionary<int, List<int>> definitions = [];     // product → its property sets
         readonly Dictionary<int, int> containedIn = [];            // product → its spatial structure
@@ -456,7 +468,7 @@ public static partial class IfcImport
 
         void Contain(IEdit edit, string elementId, string? storeyId)
         {
-            storeyId ??= Spatial.Storeys(edit.Model).FirstOrDefault()?.Id;
+            storeyId ??= ReplaceStoreys && storeyOf.Count > 0 ? DefaultStorey(edit) : Spatial.Storeys(edit.Model).FirstOrDefault()?.Id;
             if (storeyId == null) return;
             var now = Spatial.StoreyOf(edit.Model, elementId);
             if (now?.Id == storeyId) return;
@@ -539,6 +551,7 @@ public static partial class IfcImport
                 var z = Length(st[9]);
                 var existing = Spatial.Storeys(edit.Model).Where(x => !matched.Contains(x.Id)).ToList();
                 var match = edit.Model.Get(gid) is { Class: IfcClass.BuildingStorey } byId ? byId
+                    : ReplaceStoreys ? null
                     : existing.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase))
                     ?? existing.FirstOrDefault(x => Math.Abs(x.Num("elevation") - z) < 1e-6);
                 var attrs = (o.ReferenceOnly ? null : IntentOf(st.Id)?.Attrs) ?? match?.CloneAttrs() ?? new JsonObject();
@@ -816,9 +829,10 @@ public static partial class IfcImport
         }
 
         /// <summary>Where what has no storey of its own goes: the storey at ±0.00 or the lowest above it, else the lowest.</summary>
-        static string? DefaultStorey(IEdit edit)
+        string? DefaultStorey(IEdit edit)
         {
-            var all = Spatial.Storeys(edit.Model).ToList();
+            // An import's: the file's storeys only (the project's own give way to them, ImportStoreys).
+            var all = ReplaceStoreys && storeyOf.Count > 0 ? [.. storeyOf.Values.Distinct().Select(edit.Model.Get).OfType<Entity>().OrderBy(x => x.Num("elevation"))] : Spatial.Storeys(edit.Model).ToList();
             return (all.Where(x => x.Num("elevation") >= -1e-6).OrderBy(x => x.Num("elevation")).FirstOrDefault() ?? all.FirstOrDefault())?.Id;
         }
 

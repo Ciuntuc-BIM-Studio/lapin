@@ -9,7 +9,7 @@ namespace Lapin.Mesh.Fragments;
 
 /// <summary>What a Fragments import brought: elements (references), shared bodies, storeys made, what it left out, and its notes.</summary>
 /// <summary><paramref name="Native"/>: items already in the project as Lapin elements (the file came from it), left as they are; <paramref name="LeftOut"/>: items the choice left out.</summary>
-public sealed record FragImportResult(int Elements, int Shared, int Storeys, int Skipped, IReadOnlyList<string> Notes, IReadOnlyDictionary<string, int> ByClass, int Native = 0, int LeftOut = 0, EditableReport? Editable = null, MeshRecognitionReport? Recognition = null)
+public sealed record FragImportResult(int Elements, int Shared, int Storeys, int Skipped, IReadOnlyList<string> Notes, IReadOnlyDictionary<string, int> ByClass, int Native = 0, int LeftOut = 0, EditableReport? Editable = null, MeshRecognitionReport? Recognition = null, StoreyReplacement? Replaced = null)
 {
     public JsonObject ToJson()
     {
@@ -17,7 +17,7 @@ public sealed record FragImportResult(int Elements, int Shared, int Storeys, int
         foreach (var (k, v) in ByClass.OrderByDescending(kv => kv.Value)) by[k] = v;
         return new JsonObject
         {
-            ["elements"] = Elements, ["shared"] = Shared, ["storeys"] = Storeys, ["skipped"] = Skipped, ["byClass"] = by, ["native"] = Native, ["leftOut"] = LeftOut, ["editable"] = Editable?.ToJson(), ["recognition"] = Recognition?.ToJson(),
+            ["elements"] = Elements, ["shared"] = Shared, ["storeys"] = Storeys, ["skipped"] = Skipped, ["byClass"] = by, ["native"] = Native, ["leftOut"] = LeftOut, ["editable"] = Editable?.ToJson(), ["recognition"] = Recognition?.ToJson(), ["replaced"] = Replaced?.ToJson(),
             ["notes"] = new JsonArray(Notes.Select(n => (JsonNode)n).ToArray()),
         };
     }
@@ -73,12 +73,16 @@ public static class FragImport
             if (o.Recognize) recognition = MeshRecognition.Recognize(edit, session.Catalog, brought, o.Fidelity);
             if (o.Editable) editable = EditableReferences.Make(edit, session.Catalog, brought);
         }
+        // The file's storeys replace the project's (ImportStoreys), in the same undo step.
+        var replaced = StoreyReplacement.None;
         diff = session.Edit($"Import {name}", edit =>
         {
             if (o.Group) Groups.Around(edit, Path.GetFileNameWithoutExtension(name), Apply);
             else Apply(edit);
+            replaced = ImportStoreys.Replace(edit, session.Catalog, reader.FileStoreys);
         });
-        return reader.Result with { Editable = editable, Recognition = recognition };
+        var r = reader.Result;
+        return r with { Editable = editable, Recognition = recognition, Replaced = replaced, Notes = [.. r.Notes, .. replaced.Notes()] };
     }
 
     /// <summary>Fragments' frame (Y up) to the model's (Z up): (x, y, z) → (x, −z, y).</summary>
@@ -92,6 +96,8 @@ public static class FragImport
         readonly Dictionary<string, int> byClass = [];
         int elements, shared, storeysMade, skipped, native, leftOut;
         public FragImportResult Result => new(elements, shared, storeysMade, skipped, notes, byClass, native, leftOut);
+        /// <summary>The model's storeys the file's became (made or found again).</summary>
+        public IReadOnlyList<string> FileStoreys { get; private set; } = [];
         /// <summary>The file's coordinates transform (null: the identity), undone on every point.</summary>
         FragTransform? coordinates;
 
@@ -144,7 +150,7 @@ public static class FragImport
             var meshOfLocal = new Dictionary<uint, uint>();
             for (uint k = 0; k < m.MeshesItems.Length; k++) if (m.MeshesItems[k] < model.LocalIds.Length) meshOfLocal[model.LocalIds[m.MeshesItems[k]]] = k;
             var storeyOfElement = new Dictionary<uint, uint>();
-            var lowest = new Dictionary<uint, double>();
+            var heights = new Dictionary<uint, List<double>>();
             foreach (var (local, mesh) in meshOfLocal)
             {
                 if (!pieces.ContainsKey(mesh)) continue;
@@ -153,25 +159,52 @@ public static class FragImport
                 if (storeyOfElement.TryGetValue(local, out var sid) && mesh < m.GlobalTransforms.Length)
                 {
                     var z = Place(m.GlobalTransforms[mesh], 0, 0, 0).Z;
-                    lowest[sid] = Math.Min(lowest.GetValueOrDefault(sid, double.MaxValue), z);
+                    (heights.TryGetValue(sid, out var hl) ? hl : heights[sid] = []).Add(z);
                 }
             }
-            var storeysUsed = storeyOfElement.Values.ToHashSet();
-            foreach (var (local, storeyName, elevation) in storeyItems)
+            // The file's storeys, at the file's levels: the project's at the same id (an import again), else made under the file's
+            // GlobalIds; then they replace the project's own (ImportStoreys, at the end of the import). A level is in the file's
+            // unit (an IFC in millimetres) and the geometry in metres: one scale for the file (StoreyUnits, as a BIM Open Schema file's).
+            // The typical height of each storey's items (the median of their placements).
+            var typical = heights.ToDictionary(kv => kv.Key, kv => StoreyUnits.Median(kv.Value)!.Value);
+            var scale = StoreyUnits.Scale([.. storeyItems.Where(x => x.Elevation != null).Select(x => (x.Elevation!.Value, typical.TryGetValue(x.LocalId, out var t) ? t : (double?)null))]);
+            var fileStoreys = new List<string>();
+            foreach (var (local, storeyName, elevation) in storeyItems.OrderBy(x => x.Elevation ?? 0))
             {
-                if (!storeysUsed.Contains(local)) continue;
                 if (o.Storeys != null && !o.Storeys.Contains(FragSurvey.KeyOf(model, local))) continue;
-                var existing = Spatial.Storeys(edit.Model).FirstOrDefault(s => string.Equals(s.Name, storeyName, StringComparison.OrdinalIgnoreCase));
-                if (existing != null) { storeyOfLocal[local] = existing.Id; continue; }
-                var z = elevation ?? (lowest.TryGetValue(local, out var lo) && lo < double.MaxValue ? Math.Round(lo, 2) : 0);
-                var storey = new Entity(edit.NewId(), IfcClass.BuildingStorey, storeyName, new JsonObject { ["elevation"] = z, ["height"] = 3.0 });
+                var z = elevation is { } raw ? Math.Round(raw * scale, 4) : (typical.TryGetValue(local, out var lo) ? Math.Round(lo, 2) : 0);
+                // The same storey named twice (a federated model's): one storey of the project, by its name and level.
+                if (fileStoreys.Select(edit.Model.Get).FirstOrDefault(x => x != null && string.Equals(x.Name, storeyName, StringComparison.OrdinalIgnoreCase) && Math.Abs(x.Num("elevation") - z) <= ImportStoreys.Tolerance) is { } twin)
+                {
+                    storeyOfLocal[local] = twin.Id;
+                    continue;
+                }
+                var sid = GuidOf(local) ?? DerivedId($"storey\n{local}");
+                if (edit.Model.Get(sid) is { } again)
+                {
+                    if (again.Class != IfcClass.BuildingStorey) sid = edit.NewId();
+                    else
+                    {
+                        var a = again.CloneAttrs();
+                        a["elevation"] = z;
+                        edit.Replace(again.With(name: storeyName, attrs: a));
+                        storeyOfLocal[local] = again.Id;
+                        fileStoreys.Add(again.Id);
+                        continue;
+                    }
+                }
+                var storey = new Entity(sid, IfcClass.BuildingStorey, storeyName, new JsonObject { ["elevation"] = z, ["height"] = 3.0 });
                 edit.Add(storey);
                 edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
                 storeyOfLocal[local] = storey.Id;
+                fileStoreys.Add(storey.Id);
                 storeysMade++;
             }
+            FileStoreys = fileStoreys;
             if (!Spatial.Storeys(edit.Model).Any()) storeysMade++;
-            var fallback = Spatial.EnsureStorey(edit, session.Product).Id;
+            // An item on no storey of the file's: on the file's storey nearest ±0.00, else the project's lowest.
+            var fallback = fileStoreys.Select(edit.Model.Get).OfType<Entity>().OrderBy(x => Math.Abs(x.Num("elevation"))).FirstOrDefault()?.Id
+                ?? Spatial.EnsureStorey(edit, session.Product).Id;
 
             // Items whose pieces are the same share a body: the key names the shells, materials and local placements.
             var keyOfMesh = new Dictionary<uint, string>();

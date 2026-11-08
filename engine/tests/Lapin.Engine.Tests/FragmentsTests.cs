@@ -144,7 +144,10 @@ public class FragmentsTests
         var r = FragImport.Run(g.Session, bytes, "house.frag", out var diff);
         Assert.Equal(4, r.Elements);
         Assert.Equal(1, r.Shared);
-        Assert.Equal(0, r.Storeys);       // the storey has the same name as the project's
+        // The file's storey replaces the project's at its level: made under the file's id, the project's merged into it.
+        Assert.Equal(1, r.Storeys);
+        Assert.Equal(f.Storey, Assert.Single(Spatial.Storeys(g.Model)).Id);
+        Assert.Single(r.Replaced!.Merged);
         Assert.Equal(0, r.Skipped);
         Assert.Equal(1, r.ByClass["IfcWall"]);
         Assert.Equal(3, r.ByClass["IfcColumn"]);

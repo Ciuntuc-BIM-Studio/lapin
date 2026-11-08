@@ -11,6 +11,7 @@ import { create } from 'zustand';
 import { engine } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { notify, useUi } from '../app/store';
+import { fitAfterImport, poseKey } from '../viewport/camera';
 
 export interface SurveyKind { key: string; class: string; category?: string | null; label: string; count: number; /** Left out unless ticked (entourage). */ off?: boolean }
 export interface SurveyGroup { discipline: string; label: string; count: number; kinds: SurveyKind[] }
@@ -125,8 +126,10 @@ export async function surveyIfc(source: IfcSource, mode: ImportMode, format: Exc
 
 /** What an import made editable (Studio solids of its references) and why the rest stayed references. */
 export interface EditableReport { made: number; kept: Record<string, number> }
-export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; editable?: EditableReport | null; notes: string[] }
-export interface FragResult { elements: number; shared: number; storeys: number; skipped: number; native?: number; leftOut?: number; editable?: EditableReport | null; recognition?: { recognized: number; byClass: Record<string, number> } | null; notes: string[] }
+/** What the import did to the project's own storeys (the file's replace them): merged into the file's at the same level, removed empty, kept with what they hold. */
+export interface StoreyReplacement { merged: { storey: string; into: string }[]; removed: string[]; kept: string[] }
+export interface ImportResult { elements: number; updated: number; references: number; recognized?: number; recognizedByClass?: Record<string, number>; editable?: EditableReport | null; replaced?: StoreyReplacement | null; notes: string[] }
+export interface FragResult { elements: number; shared: number; storeys: number; skipped: number; native?: number; leftOut?: number; editable?: EditableReport | null; recognition?: { recognized: number; byClass: Record<string, number> } | null; replaced?: StoreyReplacement | null; notes: string[] }
 
 /** The editable part of an import's outcome: how many were made Studio solids, and why the others stayed references. */
 export function editableText(e: EditableReport | null | undefined): string {
@@ -146,7 +149,19 @@ export function fragOutcome(name: string, r: FragResult): string {
   if (r.storeys) parts.push(`${r.storeys} storey${r.storeys === 1 ? '' : 's'} made`);
   if (r.native) parts.push(`${r.native} already in this project`);
   if (r.skipped) parts.push(`${r.skipped} without a body Lapin reads`);
-  return `Imported ${name}: ${parts.join(', ')}.${editableText(r.editable)}`;
+  return `Imported ${name}: ${parts.join(', ')}.${editableText(r.editable)}${storeysText(r.replaced)}`;
+}
+
+/** What the import did to the project's storeys, said after the rest: the file's replace them (docs/user/import-export.md). */
+export function storeysText(r: StoreyReplacement | null | undefined): string {
+  if (!r || !(r.merged.length || r.removed.length || r.kept.length)) return '';
+  const q = (n: string) => `„${n}”`;
+  const out = [" The file's storeys replace the project's"];
+  if (r.merged.length) out[0] += `: ${r.merged.map((m) => `${q(m.storey)} merged into ${q(m.into)}`).join(', ')}`;
+  out[0] += '.';
+  if (r.removed.length) out.push(`Empty storeys removed: ${r.removed.map(q).join(', ')}.`);
+  if (r.kept.length) out.push(`Kept, since they hold elements: ${r.kept.map(q).join(', ')}.`);
+  return out.join(' ');
 }
 
 /** Step two: what was chosen (null: everything) brought in, its stages shown; the outcome said. */
@@ -158,6 +173,8 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
   // A Fragments or BIM Open Schema file: triangles with their data, brought in the same way.
   const frag = format === 'frag' || format === 'bos';
   begin(`${choice.mode === 'link' ? 'Linking' : 'Importing'} ${source.name}`, 'Reading the file');
+  // The model framed when it is in, unless the camera is moved meanwhile.
+  const pose = poseKey();
   try {
     const params = {
       ...args(source), group: choice.group ?? true,
@@ -170,13 +187,18 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
       // The project made from the file: its project, site, building and storeys under the file's GlobalIds (never for a link).
       ...(asProject && choice.mode !== 'link' ? { asProject: true } : {}),
     };
-    if (frag) notify(fragOutcome(source.name, await engine.call<FragResult>(format === 'bos' ? 'project.importBos' : 'project.importFragments', params, { timeoutMs: LONG_TIMEOUT_MS })));
-    else {
+    if (frag) {
+      const r = await engine.call<FragResult>(format === 'bos' ? 'project.importBos' : 'project.importFragments', params, { timeoutMs: LONG_TIMEOUT_MS });
+      // The file's storeys replace the project's (docs/user/import-export.md): the active one is chosen again when it went.
+      if (r.replaced?.merged.length || r.replaced?.removed.length) useUi.setState({ storeyId: null });
+      notify(fragOutcome(source.name, r));
+    } else {
       const r = await engine.call<ImportResult>('project.importIfc', params, { timeoutMs: LONG_TIMEOUT_MS });
       // The storeys are the file's now: the active one is chosen again (the ground floor).
-      if (params.asProject) useUi.setState({ storeyId: null });
+      if (params.asProject || r.replaced?.merged.length || r.replaced?.removed.length) useUi.setState({ storeyId: null });
       notify(outcome(source.name, choice.mode, r));
     }
+    fitAfterImport(pose);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   } finally {

@@ -72,3 +72,25 @@ export const STANDARD = {
   NE: { azimuth: (-3 * Math.PI) / 4, pitch: -Math.PI / 6 }, SE: { azimuth: (3 * Math.PI) / 4, pitch: -Math.PI / 6 }, SW: { azimuth: Math.PI / 4, pitch: -Math.PI / 6 }, NW: { azimuth: -Math.PI / 4, pitch: -Math.PI / 6 },
   plan: { azimuth: Math.PI / 2, pitch: -Math.PI / 2 + 0.01 },
 } as const;
+
+/** The camera's pose as a key (millimetre, milliradian), to tell whether it moved. */
+export function poseKey(s: CameraPose = useCamera.getState()): string {
+  return [s.azimuth, s.pitch, s.distance, s.target.x, s.target.y, s.target.z].map((v) => v.toFixed(3)).join(',');
+}
+
+/**
+ * After an import (IFC, Fragments, BIM Open Schema, a mesh): the model framed once its elements are drawn, so the camera
+ * does not start very close to a part of it; never when the user moved the camera while it came in (`before`: the pose
+ * when it began). Framed once the new elements are on screen (two frames), and again a moment later for those drawn after
+ * (a big diff arrives in parts), unless the camera was moved in between.
+ */
+export function fitAfterImport(before: string, later = 900): void {
+  const raf = (f: () => void) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(() => requestAnimationFrame(f)) : setTimeout(f, 32));
+  raf(() => {
+    const api = useCamera.getState().api;
+    if (!api || poseKey() !== before) return;
+    api.fit(false);
+    const framed = poseKey();
+    setTimeout(() => { if (poseKey() === framed) useCamera.getState().api?.fit(false); }, later);
+  });
+}

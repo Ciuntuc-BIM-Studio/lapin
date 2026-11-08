@@ -174,6 +174,12 @@ describe('Ask Lapin', () => {
     expect(best('how do I make the point cloud slice thicker for facades?')).toBe('point-cloud-views');
   });
 
+  it('says why the storeys changed after an import (decision 406)', () => {
+    expect(best('why did my storeys change after importing an IFC?')).toBe('import-storeys');
+    expect(best('unde a disparut parterul dupa import')).toBe('import-storeys');
+    expect(best('the imported storey has the wrong level')).toBe('import-storeys');
+  });
+
   it('says nothing to what it does not know', () => {
     expect(ask('weather tomorrow in Paris')).toEqual([]);
     expect(ask('can I render photorealistic images with ray tracing?')).toEqual([]);

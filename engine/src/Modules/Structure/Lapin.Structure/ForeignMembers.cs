@@ -22,6 +22,8 @@ namespace Lapin.Structure;
 /// </summary>
 public sealed class ForeignMembers : IIfcRecognizer
 {
+    public bool Takes(string ifcClass) => ifcClass is IfcClass.Column or IfcClass.Beam or "IfcMember" or IfcClass.Footing;
+
     public string? Recognize(IEdit edit, ForeignElement e, RecognitionContext ctx) => e.IfcClass switch
     {
         IfcClass.Column => Column(edit, e, ctx),

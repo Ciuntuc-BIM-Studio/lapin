@@ -109,23 +109,96 @@ public sealed class BosView
 
     Dictionary<int, List<int>>? paramsOf;
 
-    /// <summary>A storey's elevation (metres) from its own parameter, scaled by what its elements' lowest point says (an IFC file in millimetres, Revit in feet).</summary>
-    public double? Elevation(int s, double? lowest)
+    /// <summary>A storey's level as the file writes it (in the file's unit), null when it has none.</summary>
+    public (double Value, string? Units)? RawElevation(int s)
     {
         foreach (var (name, _, type, v, units) in Params(s))
-        {
-            if (type != BosParameterType.Number || name is not ("Ifc:Elevation" or "Rvt:Level:Elevation" or "Elevation") || v < 0 || v >= Data.Numbers.Count) continue;
-            double e = Data.Numbers[v];
-            if (units is { } u && (u.Contains("ft", StringComparison.OrdinalIgnoreCase) || u.Contains("feet", StringComparison.OrdinalIgnoreCase))) return Math.Round(e * 0.3048, 4);
-            if (lowest is { } lo && Math.Abs(e) > 1e-6)
-            {
-                var best = new[] { 1, 0.001, 0.3048 }.OrderBy(k => Math.Abs(e * k - lo)).First();
-                return Math.Round(e * best, 4);
-            }
-            return Math.Round(Math.Abs(e) > 500 ? e / 1000 : e, 4);
-        }
+            if (type == BosParameterType.Number && name is "Ifc:Elevation" or "Rvt:Level:Elevation" or "Elevation" && v >= 0 && v < Data.Numbers.Count && float.IsFinite(Data.Numbers[v]))
+                return (Data.Numbers[v], units);
         return null;
     }
+
+    /// <summary>
+    /// The storeys' levels in metres. A level is written in its model's unit (an IFC file's own: metres or millimetres; Revit's
+    /// feet) while the vertices are in metres, so one scale per source document (a federated file joins models written in
+    /// different units), found by <see cref="StoreyUnits"/> from the levels' spacing and the typical height of their storeys'
+    /// elements (a storey alone misled: an upper floor whose lowest element hung below it read 3.75 m as 3.75 mm, so +0.00).
+    /// A storey without a level of its own stands at the typical height of its elements.
+    /// </summary>
+    public IReadOnlyDictionary<int, double> Elevations()
+    {
+        if (elevations != null) return elevations;
+        var typical = Typical();
+        var raw = Storeys.Select(s => (S: s, R: RawElevation(s))).Where(x => x.R != null).Select(x => (x.S, x.R!.Value.Value, x.R.Value.Units)).ToList();
+        elevations = [];
+        foreach (var doc in raw.GroupBy(x => Data.Entities[x.S].Document))
+        {
+            var feet = doc.Any(x => x.Units is { } u && (u.Contains("ft", StringComparison.OrdinalIgnoreCase) || u.Contains("feet", StringComparison.OrdinalIgnoreCase)));
+            var scale = feet ? 0.3048 : StoreyUnits.Scale([.. doc.Select(x => (x.Value, typical.TryGetValue(x.S, out var t) ? t : (double?)null))]);
+            foreach (var x in doc) elevations[x.S] = Math.Round(x.Value * scale, 4);
+        }
+        foreach (var s in Storeys) if (!elevations.ContainsKey(s) && typical.TryGetValue(s, out var t)) elevations[s] = Math.Round(t, 2);
+        return elevations;
+    }
+
+    Dictionary<int, double>? elevations;
+
+    /// <summary>A storey's level in metres (<see cref="Elevations"/>), null when the file gives none and nothing stands on it.</summary>
+    public double? Elevation(int s) => Elevations().TryGetValue(s, out var z) ? z : null;
+
+    /// <summary>The typical height of each storey's elements: the median of their lowest points (sampled), in metres.</summary>
+    public IReadOnlyDictionary<int, double> Typical()
+    {
+        if (typical != null) return typical;
+        var lows = new Dictionary<int, List<double>>();
+        foreach (var (e, list) in InstancesOf)
+            if (StoreyOf.TryGetValue(e, out var s) && list.Count > 0)
+                (lows.TryGetValue(s, out var l) ? l : lows[s] = []).Add(list.Min(MinZ));
+        typical = lows.ToDictionary(kv => kv.Key, kv => StoreyUnits.Median(kv.Value)!.Value);
+        return typical;
+    }
+
+    Dictionary<int, double>? typical;
+
+        public double MinZ(int k)
+        {
+            var inst = Data.Instances[k];
+            var (v0, v1, _, _) = Data.MeshRange(inst.Mesh);
+            var t = Transform(inst.Transform);
+            var min = double.MaxValue;
+            for (var i = v0; i < v1; i += Math.Max(1, (v1 - v0) / 64)) min = Math.Min(min, t(Vertex(i)).Z);
+            return min;
+        }
+
+        public Vec3 Vertex(int i) => new(Data.VertexX[i] / (double)BosData.VertexScale, Data.VertexY[i] / (double)BosData.VertexScale, Data.VertexZ[i] / (double)BosData.VertexScale);
+
+        /// <summary>A transform as a function: scaled, rotated by its quaternion, moved (the schema's Scaling · Rotation · Translation, row vectors).</summary>
+        public Func<Vec3, Vec3> Transform(int t)
+        {
+            if (t < 0 || t >= Data.Transforms.Count) return p => p;
+            var x = Data.Transforms[t];
+            var q = Normalize(x.QX, x.QY, x.QZ, x.QW);
+            return p =>
+            {
+                var s = new Vec3(p.X * x.SX, p.Y * x.SY, p.Z * x.SZ);
+                return Rotate(q, s) + new Vec3(x.TX, x.TY, x.TZ);
+            };
+        }
+
+        static (double X, double Y, double Z, double W) Normalize(double x, double y, double z, double w)
+        {
+            var n = Math.Sqrt(x * x + y * y + z * z + w * w);
+            return n < 1e-12 ? (0, 0, 0, 1) : (x / n, y / n, z / n, w / n);
+        }
+
+        static Vec3 Rotate((double X, double Y, double Z, double W) q, Vec3 v)
+        {
+            var u = new Vec3(q.X, q.Y, q.Z);
+            var t = 2 * Cross(u, v);
+            return v + q.W * t + Cross(u, t);
+        }
+
+        static Vec3 Cross(Vec3 a, Vec3 b) => new(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
 
     /// <summary>An IFC class from a category: an IFC entity name as it is ("IFCWALLSTANDARDCASE" → IfcWallStandardCase), a Revit category by what it holds.</summary>
     public static string ClassOf(string? category)
@@ -175,7 +248,7 @@ public static class BosSurvey
             kinds[kind] = kinds.GetValueOrDefault(kind) + 1;
             if (v.StoreyOf.TryGetValue(e, out var s)) per[s] = per.GetValueOrDefault(s) + 1; else none++;
         }
-        var storeys = per.Keys.Select(s => (v.StoreyKey(s), v.Name(s) ?? $"Storey {s}", v.Elevation(s, null) ?? 0, per[s])).OrderBy(s => s.Item3);
+        var storeys = per.Keys.Select(s => (v.StoreyKey(s), v.Name(s) ?? $"Storey {s}", v.Elevation(s) ?? 0, per[s])).OrderBy(s => s.Item3);
         return IfcSurvey.Shape(name, size, "BIM Open Schema", v.Data.Generator, kinds, storeys, none);
     }
 }
@@ -213,12 +286,16 @@ public static class BosImport
             if (o.Recognize) recognition = MeshRecognition.Recognize(edit, session.Catalog, brought, o.Fidelity);
             if (o.Editable) editable = EditableReferences.Make(edit, session.Catalog, brought);
         }
+        // The file's storeys replace the project's (ImportStoreys), in the same undo step.
+        var replaced = StoreyReplacement.None;
         diff = session.Edit($"Import {name}", edit =>
         {
             if (o.Group) Groups.Around(edit, Path.GetFileNameWithoutExtension(name), Apply);
             else Apply(edit);
+            replaced = ImportStoreys.Replace(edit, session.Catalog, reader.FileStoreys);
         });
-        return reader.Result with { Editable = editable, Recognition = recognition };
+        var r = reader.Result;
+        return r with { Editable = editable, Recognition = recognition, Replaced = replaced, Notes = [.. r.Notes, .. replaced.Notes()] };
     }
 
     sealed class Reader(Session session, BosView v, string name, FragImportOptions o)
@@ -229,32 +306,51 @@ public static class BosImport
         readonly Dictionary<string, string> glassIds = [];
         int elements, shared, storeysMade, skipped, native, leftOut;
         public FragImportResult Result => new(elements, shared, storeysMade, skipped, notes, byClass, native, leftOut);
+        /// <summary>The model's storeys the file's became (made or found again).</summary>
+        public IReadOnlyList<string> FileStoreys { get; private set; } = [];
 
         public void Apply(IEdit edit)
         {
-            // The storeys the elements stand on, matched to the project's by name, made when missing.
-            var lowest = new Dictionary<int, double>();
-            foreach (var (e, list) in v.InstancesOf)
-                if (v.StoreyOf.TryGetValue(e, out var s))
-                    foreach (var k in list) lowest[s] = Math.Min(lowest.GetValueOrDefault(s, double.MaxValue), MinZ(k));
+            // The file's storeys, at the file's levels: the project's at the same id (an import again), else made under the file's
+            // GlobalIds; then they replace the project's own (ImportStoreys, at the end of the import).
             var building = Spatial.EnsureBuilding(edit);
             var storeyOf = new Dictionary<int, string>();
-            foreach (var s in v.InstancesOf.Keys.Where(v.StoreyOf.ContainsKey).Select(e => v.StoreyOf[e]).Distinct())
+            var used = v.InstancesOf.Keys.Where(v.StoreyOf.ContainsKey).Select(e => v.StoreyOf[e]).ToHashSet();
+            foreach (var s in v.Storeys.Where(s => used.Contains(s) || v.Class[s] == IfcClass.BuildingStorey).OrderBy(s => v.Elevation(s) ?? 0))
             {
                 if (o.Storeys != null && !o.Storeys.Contains(v.StoreyKey(s))) continue;
                 var storeyName = v.Name(s) ?? $"Storey {s}";
-                var existing = Spatial.Storeys(edit.Model).FirstOrDefault(x => string.Equals(x.Name, storeyName, StringComparison.OrdinalIgnoreCase));
-                if (existing != null) { storeyOf[s] = existing.Id; continue; }
-                var lo = lowest.TryGetValue(s, out var l) && l < double.MaxValue ? Math.Round(l, 2) : (double?)null;
-                var z = v.Elevation(s, lo) ?? lo ?? 0;
-                var storey = new Entity(v.Guid(s) is { } g && edit.Model.Get(g) == null ? g : edit.NewId(), IfcClass.BuildingStorey, storeyName, new JsonObject { ["elevation"] = z, ["height"] = 3.0 });
+                var z = v.Elevation(s) ?? 0;
+                // A federated file's models each name the same storey: one storey of the project, by its name and level.
+                if (storeyOf.Values.Distinct().Select(edit.Model.Get).FirstOrDefault(x => x != null && string.Equals(x.Name, storeyName, StringComparison.OrdinalIgnoreCase) && Math.Abs(x.Num("elevation") - z) <= ImportStoreys.Tolerance) is { } twin)
+                {
+                    storeyOf[s] = twin.Id;
+                    continue;
+                }
+                var sid = v.Guid(s) ?? DerivedId(v.SourceId(s) is { } u ? $"uid\n{u}" : $"storey\n{s}");
+                if (edit.Model.Get(sid) is { } again)
+                {
+                    if (again.Class != IfcClass.BuildingStorey) sid = edit.NewId();
+                    else
+                    {
+                        var a = again.CloneAttrs();
+                        a["elevation"] = z;
+                        edit.Replace(again.With(name: storeyName, attrs: a));
+                        storeyOf[s] = again.Id;
+                        continue;
+                    }
+                }
+                var storey = new Entity(sid, IfcClass.BuildingStorey, storeyName, new JsonObject { ["elevation"] = z, ["height"] = 3.0 });
                 edit.Add(storey);
                 edit.Relate(IfcClass.RelAggregates, building.Id, storey.Id);
                 storeyOf[s] = storey.Id;
                 storeysMade++;
             }
+            FileStoreys = [.. storeyOf.Values.Distinct()];
             if (!Spatial.Storeys(edit.Model).Any()) storeysMade++;
-            var fallback = Spatial.EnsureStorey(edit, session.Product).Id;
+            // An element on no storey of the file's: on the file's storey nearest ±0.00, else the project's lowest.
+            var fallback = storeyOf.Values.Select(edit.Model.Get).OfType<Entity>().OrderBy(x => Math.Abs(x.Num("elevation"))).FirstOrDefault()?.Id
+                ?? Spatial.EnsureStorey(edit, session.Product).Id;
 
             // A mesh in one material used by more than one entity (each with that one instance) is a shared body.
             var uses = new Dictionary<(int Mesh, int Material), int>();
@@ -317,45 +413,9 @@ public static class BosImport
             if (v.Hidden > 0) notes.Add($"{v.Hidden} hidden instance(s) (spaces and the like, hidden in the file) were left out.");
         }
 
-        double MinZ(int k)
-        {
-            var inst = d.Instances[k];
-            var (v0, v1, _, _) = d.MeshRange(inst.Mesh);
-            var t = Transform(inst.Transform);
-            var min = double.MaxValue;
-            for (var i = v0; i < v1; i += Math.Max(1, (v1 - v0) / 64)) min = Math.Min(min, t(Vertex(i)).Z);
-            return min;
-        }
-
-        Vec3 Vertex(int i) => new(d.VertexX[i] / (double)BosData.VertexScale, d.VertexY[i] / (double)BosData.VertexScale, d.VertexZ[i] / (double)BosData.VertexScale);
-
-        /// <summary>A transform as a function: scaled, rotated by its quaternion, moved (the schema's Scaling · Rotation · Translation, row vectors).</summary>
-        Func<Vec3, Vec3> Transform(int t)
-        {
-            if (t < 0 || t >= d.Transforms.Count) return p => p;
-            var x = d.Transforms[t];
-            var q = Normalize(x.QX, x.QY, x.QZ, x.QW);
-            return p =>
-            {
-                var s = new Vec3(p.X * x.SX, p.Y * x.SY, p.Z * x.SZ);
-                return Rotate(q, s) + new Vec3(x.TX, x.TY, x.TZ);
-            };
-        }
-
-        static (double X, double Y, double Z, double W) Normalize(double x, double y, double z, double w)
-        {
-            var n = Math.Sqrt(x * x + y * y + z * z + w * w);
-            return n < 1e-12 ? (0, 0, 0, 1) : (x / n, y / n, z / n, w / n);
-        }
-
-        static Vec3 Rotate((double X, double Y, double Z, double W) q, Vec3 v)
-        {
-            var u = new Vec3(q.X, q.Y, q.Z);
-            var t = 2 * Cross(u, v);
-            return v + q.W * t + Cross(u, t);
-        }
-
-        static Vec3 Cross(Vec3 a, Vec3 b) => new(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
+        double MinZ(int k) => v.MinZ(k);
+        Vec3 Vertex(int i) => v.Vertex(i);
+        Func<Vec3, Vec3> Transform(int t) => v.Transform(t);
 
         bool Mirrors(int t) => t >= 0 && t < d.Transforms.Count && d.Transforms[t].SX * d.Transforms[t].SY * d.Transforms[t].SZ < 0;
 

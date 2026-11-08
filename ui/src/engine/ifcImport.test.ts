@@ -6,7 +6,8 @@ vi.mock('./session', () => ({ engine: { onEvent: () => () => undefined, call: vi
 vi.mock('./client', () => ({ LONG_TIMEOUT_MS: 1 }));
 
 import { engine } from './session';
-import { choiceOf, chosenCount, onProgress, outcome, runIfcImport, useIfcImport, type Survey } from './ifcImport';
+import { choiceOf, chosenCount, fragOutcome, onProgress, outcome, runIfcImport, storeysText, useIfcImport, type Survey } from './ifcImport';
+import { useCamera, type CameraApi } from '../viewport/camera';
 
 const survey: Survey = {
   name: 'plant.ifc', size: 1, schema: 'IFC2X3', products: 10, noStorey: 2,
@@ -59,5 +60,32 @@ describe('the IFC import', () => {
     useIfcImport.setState({ source: { name: 'house.ifc', path: '/x/house.ifc' }, format: 'ifc', asProject: true });
     await runIfcImport({ ...choice, mode: 'link' });
     expect(call.mock.calls.at(-1)?.[1]).not.toHaveProperty('asProject');
+  });
+
+  it('says what the file\'s storeys did to the project\'s', () => {
+    expect(storeysText({ merged: [{ storey: 'Ground floor', into: 'E00' }], removed: ['Foundations', 'First floor'], kept: ['Mezzanine'] }))
+      .toBe(" The file's storeys replace the project's: „Ground floor” merged into „E00”. Empty storeys removed: „Foundations”, „First floor”. Kept, since they hold elements: „Mezzanine”.");
+    expect(storeysText({ merged: [], removed: [], kept: [] })).toBe('');
+    expect(fragOutcome('hub.bos', { elements: 2, shared: 0, storeys: 3, skipped: 0, notes: [], replaced: { merged: [], removed: ['Ground floor'], kept: [] } }))
+      .toBe("Imported hub.bos: 2 elements, 3 storeys made. The file's storeys replace the project's. Empty storeys removed: „Ground floor”.");
+  });
+
+  it('frames the imported model when it is in, unless the camera was moved meanwhile', async () => {
+    const fit = vi.fn();
+    useCamera.setState({ api: { fit } as unknown as CameraApi, azimuth: 0, pitch: -0.5, distance: 30, target: { x: 0, y: 0, z: 0 } });
+    const call = vi.mocked(engine.call);
+    call.mockResolvedValue({ elements: 2, shared: 0, storeys: 0, skipped: 0, notes: [] });
+    useIfcImport.setState({ source: { name: 'hub.bos', path: '/x/hub.bos' }, format: 'bos' });
+    await runIfcImport({ kinds: null, storeys: null, mode: 'auto' });
+    await new Promise((r) => setTimeout(r, 80));
+    expect(fit).toHaveBeenCalledWith(false);
+    // Moved while it came in: left where the user put it.
+    fit.mockClear();
+    call.mockImplementation(async () => { useCamera.setState({ distance: 12 }); return { elements: 2, shared: 0, storeys: 0, skipped: 0, notes: [] }; });
+    useIfcImport.setState({ source: { name: 'hub.bos', path: '/x/hub.bos' }, format: 'bos' });
+    await runIfcImport({ kinds: null, storeys: null, mode: 'auto' });
+    await new Promise((r) => setTimeout(r, 80));
+    expect(fit).not.toHaveBeenCalled();
+    useCamera.setState({ api: null });
   });
 });

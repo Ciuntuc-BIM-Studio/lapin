@@ -109,6 +109,9 @@ public interface IIfcRecognizer
     /// <summary>The native element made for <paramref name="element"/> (its id, the file's GlobalId when it can be kept), or null with a reason in <see cref="RecognitionContext.Skip"/>.</summary>
     string? Recognize(IEdit edit, ForeignElement element, RecognitionContext ctx);
 
+    /// <summary>Whether it may make anything of an element of this class (a door or window comes with its wall): what none takes is not read at all.</summary>
+    bool Takes(string ifcClass) => true;
+
     /// <summary>After every element: what needs them all (joins between walls).</summary>
     void Finish(IEdit edit, RecognitionContext ctx) { }
 }

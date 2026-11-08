@@ -48,23 +48,26 @@ public static class MeshRecognition
         var ctx = new RecognitionContext(services);
         var byClass = new Dictionary<string, int>();
         var count = 0;
-        var refs = ids.Select(edit.Model.Get).OfType<Entity>().Where(e => StoredBodies.Has(e) && e.Str(Links.Key) == null && Spatial.StoreyOf(edit.Model, e.Id) != null).ToList();
+        // Only what a recogniser takes (a wall, a slab, a column…) and the doors and windows the walls take with them: a federated
+        // file's pipes and fittings are no prism a module makes anything of, and reading them was most of the import.
+        var refs = ids.Select(edit.Model.Get).OfType<Entity>().Where(e => StoredBodies.Has(e) && e.Str(Links.Key) == null && Spatial.StoreyOf(edit.Model, e.Id) != null
+            && (Fillers.Contains(ClassOf(e)) || recognizers.Any(r => r.Takes(ClassOf(e))))).ToList();
+        // Each body read first, in parallel (its triangles' solid and the shapes of its layers): the model is not written meanwhile, and
+        // what is read is kept by the body (StoredBodies), so the session builds the references left from it without reading them again.
+        // One at a time, a federated file's 4,820 elements took most of the import here.
+        var prepared = new System.Collections.Concurrent.ConcurrentDictionary<string, Prepared>();
+        Parallel.ForEach(refs, e => prepared[e.Id] = Prepare(e, edit.Model, services));
         // The doors and windows, by their boxes, for the walls' openings; walls first.
-        var fillers = refs.Where(e => Fillers.Contains(ClassOf(e))).Select(e => (E: e, Box: BoxOf(edit.Model, services, e))).Where(x => x.Box != null).ToList();
+        var fillers = refs.Where(e => Fillers.Contains(ClassOf(e))).Select(e => (E: e, Box: prepared[e.Id].Box)).Where(x => x.Box != null).ToList();
         var taken = new HashSet<string>();
         foreach (var e in refs.OrderBy(e => ClassOf(e) is IfcClass.Wall or "IfcWallStandardCase" ? 0 : Fillers.Contains(ClassOf(e)) ? 2 : 1))
         {
             if (taken.Contains(e.Id) || edit.Model.Get(e.Id) is not { } current || !StoredBodies.Has(current)) continue;
-            if (StoredBodies.Geometry(current, edit.Model, services) is not { Parts.Count: > 0 } g) { ctx.Skip("no body"); continue; }
-            // Each part (a layer) read on its own, a prism or a wall's envelope with its openings; the layers then joined: stacked
-            // (a slab's) into one taller prism, side by side (a wall's) into one wider, when they tile its outline exactly.
+            var pre = ReferenceEquals(current, e) && prepared.TryGetValue(e.Id, out var ready) ? ready : Prepare(current, edit.Model, services);
+            if (pre.Geometry is not { Parts.Count: > 0 } g) { ctx.Skip("no body"); continue; }
             var storey = Spatial.StoreyOf(edit.Model, current.Id)!.Id;
             var cls = ClassOf(current);
-            var wallLike = cls is IfcClass.Wall or "IfcWallStandardCase";
-            // A wall's layers are the parts standing its whole height; a piece inside it (a lintel over an opening) is left to the wall.
-            var (pz0, pz1) = (g.Parts.Min(p => p.Solid.Vertices.Min(q => q.Z)), g.Parts.Max(p => p.Solid.Vertices.Max(q => q.Z)));
-            var layers = wallLike ? [.. g.Parts.Where(p => p.Solid.Vertices.Min(q => q.Z) < pz0 + 2e-3 && p.Solid.Vertices.Max(q => q.Z) > pz1 - 2e-3)] : g.Parts.ToList();
-            var read = layers.Select(p => PartShape(p.Solid, wallLike, cls == IfcClass.Slab, cls == IfcClass.Column)).ToList();
+            var (layers, read) = (pre.Layers, pre.Read);
             var prisms = new List<ShapePrism>();
             var openings = new List<ForeignOpening>();
             var fills = new List<Entity>();
@@ -182,11 +185,23 @@ public static class MeshRecognition
         return o;
     }
 
-    static (Vec3 Min, Vec3 Max)? BoxOf(IModelView m, IServices services, Entity e)
+    /// <summary>A reference's body as recognition reads it: its geometry, its box, its layers and each layer's shape.</summary>
+    sealed record Prepared(ElementGeometry? Geometry, (Vec3 Min, Vec3 Max)? Box, List<GeometryPart> Layers, List<(ShapePrism Prism, List<Hole> Holes)?> Read);
+
+    static Prepared Prepare(Entity e, IModelView m, IServices services)
     {
-        if (StoredBodies.Geometry(e, m, services) is not { Parts.Count: > 0 } g) return null;
+        if (StoredBodies.Geometry(e, m, services) is not { Parts.Count: > 0 } g) return new(null, null, [], []);
         var v = g.Parts.SelectMany(p => p.Solid.Vertices).ToList();
-        return (new Vec3(v.Min(p => p.X), v.Min(p => p.Y), v.Min(p => p.Z)), new Vec3(v.Max(p => p.X), v.Max(p => p.Y), v.Max(p => p.Z)));
+        var box = (new Vec3(v.Min(p => p.X), v.Min(p => p.Y), v.Min(p => p.Z)), new Vec3(v.Max(p => p.X), v.Max(p => p.Y), v.Max(p => p.Z)));
+        // Each part (a layer) read on its own, a prism or a wall's envelope with its openings; the layers then joined: stacked
+        // (a slab's) into one taller prism, side by side (a wall's) into one wider, when they tile its outline exactly.
+        var cls = ClassOf(e);
+        var wallLike = cls is IfcClass.Wall or "IfcWallStandardCase";
+        // A wall's layers are the parts standing its whole height; a piece inside it (a lintel over an opening) is left to the wall.
+        var (pz0, pz1) = (g.Parts.Min(p => p.Solid.Vertices.Min(q => q.Z)), g.Parts.Max(p => p.Solid.Vertices.Max(q => q.Z)));
+        var layers = wallLike ? [.. g.Parts.Where(p => p.Solid.Vertices.Min(q => q.Z) < pz0 + 2e-3 && p.Solid.Vertices.Max(q => q.Z) > pz1 - 2e-3)] : g.Parts.ToList();
+        var read = layers.Select(p => PartShape(p.Solid, wallLike, cls == IfcClass.Slab, cls == IfcClass.Column)).ToList();
+        return new(g, box, layers, read);
     }
 
     /// <summary>Whether a door's or window's box stands in an opening's: its middle inside, give or take a frame.</summary>

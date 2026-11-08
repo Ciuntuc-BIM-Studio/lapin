@@ -142,7 +142,7 @@ public class BosTests
         // Their type is an entity; the storey's elevation an Ifc: parameter grouped by its class.
         Assert.All(Enumerable.Range(0, d.Entities.Count).Where(e => v.Class[e] == IfcClass.Column), c => Assert.Equal("C30", v.Name(d.Entities[c].Type)));
         var first = Enumerable.Range(0, d.Entities.Count).First(e => v.Name(e) == "First floor" && v.Class[e] == IfcClass.BuildingStorey);
-        Assert.Equal(3.0, v.Elevation(first, null)!.Value, 6);
+        Assert.Equal(3.0, v.Elevation(first)!.Value, 6);
 
         // The door's and the window's openings: IFCOPENINGELEMENT entities that void their wall, filled by them, sized, hidden in a viewer.
         var openings = Enumerable.Range(0, d.Entities.Count).Where(e => v.Category[e] == "IFCOPENINGELEMENT").ToList();
