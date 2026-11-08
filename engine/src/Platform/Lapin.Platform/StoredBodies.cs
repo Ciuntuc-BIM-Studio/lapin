@@ -112,21 +112,40 @@ public static class StoredBodies
     }
 
     /// <summary>The stored body as geometry: a solid of triangles per part; an instance's, the shared parts placed.</summary>
-    public static ElementGeometry? Geometry(Entity e, IModelView model, IServices services)
+    public static ElementGeometry? Geometry(Entity e, IModelView model, IServices services) => Geometry(e, model, services, split: false);
+
+    /// <summary>
+    /// The stored body as the session builds it for the views (decision 400): split by the layers its file gave it
+    /// (<see cref="ReferenceLayers"/>), never for an export (the file's body goes back as it came); what reads the file's
+    /// triangles themselves (recognition, a Studio solid made of it) asks <see cref="Geometry(Entity, IModelView, IServices)"/>.
+    /// </summary>
+    public static ElementGeometry? ViewGeometry(Entity e, IModelView model, IServices services) => Geometry(e, model, services, split: true);
+
+    static ElementGeometry? Geometry(Entity e, IModelView model, IServices services, bool split)
     {
         // Uncut when asked (an export writing the openings itself) and the import kept the body before the cut: its own, in
         // world coordinates, even where the cut body is an instance of one shared by its content.
         if (e.Attrs[UncutKey] is JsonObject uncut && services?.Get<GeometryOptions>()?.CutOpenings == false)
             return new ElementGeometry(_shared.GetValue(uncut, b => Parts(b)), Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
+        var layered = split && services?.Get<GeometryOptions>()?.CutOpenings != false && ReferenceLayers.Of(model, e) is { Layers.Count: > 1 };
         if (InstanceOf(e) is var (bodyId, xf))
         {
             if (model.Get(bodyId) is not { Class: SharedClass } shared) return new ElementGeometry([], null, null, [$"The shared body {bodyId} is missing."]);
             var placed = SharedParts(shared).Select(p => p with { Solid = Place(p.Solid, xf) }).ToList();
+            if (layered && ReferenceLayers.Split(model, e, placed, services) is var layers && !ReferenceEquals(layers, placed))
+                return new ElementGeometry(layers, Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
             return new ElementGeometry(placed, Plan2d.Has(e) ? Plan2d.PlanItems(e) : null, Instance: new SharedInstance(bodyId, xf));
         }
         if (e.Attrs[Key] is not JsonObject body) return null;
-        return new ElementGeometry(_shared.GetValue(body, b => Parts(b)), Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
+        IReadOnlyList<GeometryPart> parts = _shared.GetValue(body, b => Parts(b));
+        if (layered) parts = _layered.GetValue(body, _ => new LayeredParts(ReferenceLayers.Split(model, e, parts, services))).Parts;
+        return new ElementGeometry(parts, Plan2d.Has(e) ? Plan2d.PlanItems(e) : null);
     }
+
+    sealed record LayeredParts(IReadOnlyList<GeometryPart> Parts);
+
+    /// <summary>A reference's body split by its layers, once for as long as it is the same body (on opening a project, every snapshot).</summary>
+    static readonly ConditionalWeakTable<JsonObject, LayeredParts> _layered = [];
 
     /// <summary>
     /// The parts of every stored body, built once for as long as it is the same body: a snapshot, an opened

@@ -821,7 +821,7 @@ public sealed class Session
     // ------------------------------------------------------------ geometry
 
     /// <summary>What builds an entity's geometry: a body that came with it (a reference from IFC), else its class's producer.</summary>
-    GeometryProducer? ProducerOf(Entity e) => StoredBodies.Has(e) ? StoredBodies.Geometry : _catalog.Geometry(e.Class);
+    GeometryProducer? ProducerOf(Entity e) => StoredBodies.Has(e) ? StoredBodies.ViewGeometry : _catalog.Geometry(e.Class);
 
     Built? Build(Entity e) => Compute(e) is { } b ? Register(e, b) : null;
 

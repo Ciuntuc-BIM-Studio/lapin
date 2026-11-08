@@ -87,6 +87,8 @@ public sealed class VisibilityGraphics
         if (LinkRow(e.Str(Links.Key)) is { } row && True(row["hidden"])) return true;
         var g = RulesFor(e);
         if (in3d ? GraphicsSets.Hides3d(g, e) : GraphicsSets.Hides(g, e)) return true;
+        // A reference all of one finish, insulation or membrane (a plaster part of a wall, a covering): hidden with its subcategory (decision 400).
+        if (HiddenSubs(e) is { } sub && ReferenceLayers.WholeSub(m, e) is { } whole && True(sub[whole]?["hidden"])) return true;
         // A filter that takes it and hides what it takes (the first that says, in the view's order).
         return FilterRows(e).Select(r => r["hidden"]).FirstOrDefault(h => h is JsonValue) is { } hv && True(hv);
     }
@@ -119,7 +121,7 @@ public sealed class VisibilityGraphics
     /// <summary>The first value a field has in the rows of the filters that take an element (the view's order: the first that says gives it).</summary>
     JsonNode? FromFilters(Entity e, string field) => FilterRows(e).Select(r => r[field]).FirstOrDefault(x => x != null);
 
-    JsonObject? CategoryRow(Entity e) => LineStyles.CategoryOf(e.Class) is { } c ? RulesFor(e)?["categories"]?[c] as JsonObject : null;
+    JsonObject? CategoryRow(Entity e) => ReferenceLayers.CategoryOf(e) is { } c ? RulesFor(e)?["categories"]?[c] as JsonObject : null;
 
     /// <summary>Whether anything in the view's graphics draws an element otherwise than its styles (a filter's colour or lines, a halftone, a transparency).</summary>
     public bool HasOverrides =>
@@ -184,7 +186,7 @@ public sealed class VisibilityGraphics
     /// <summary>The subcategories an element's category hides in this view (null: none, so its parts need not be asked).</summary>
     public JsonObject? HiddenSubs(Entity e)
     {
-        if (LineStyles.CategoryOf(e.Class) is not { } c || RulesFor(e)?["categories"]?[c]?["sub"] is not JsonObject sub) return null;
+        if (ReferenceLayers.CategoryOf(e) is not { } c || RulesFor(e)?["categories"]?[c]?["sub"] is not JsonObject sub) return null;
         return sub.Any(s => True(s.Value?["hidden"])) ? sub : null;
     }
 
@@ -207,7 +209,9 @@ public sealed class VisibilityGraphics
         if (!partKey.StartsWith("layer:", StringComparison.Ordinal)
             || !int.TryParse(partKey.AsSpan(6), System.Globalization.CultureInfo.InvariantCulture, out var index)) return null;
         if (!bands.TryGetValue(e.Id, out var list)) bands[e.Id] = list = LayerSets.BandsOf(m, e.Id);
-        if (list == null || index < 0 || index >= list.Count) return null;
+        // A reference's layers, from its file's material (decision 400).
+        if (list == null) return ReferenceLayers.SubOfPart(m, e, partKey);
+        if (index < 0 || index >= list.Count) return null;
         var band = list[index];
         if (band.Core) return "core";
         var mat = m.Get(band.Material);

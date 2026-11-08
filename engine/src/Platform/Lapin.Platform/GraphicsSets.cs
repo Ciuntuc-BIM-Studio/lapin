@@ -54,7 +54,7 @@ public static class GraphicsSets
     public static bool Hides(JsonObject? g, Entity e)
     {
         var (cats, classes) = Hidden(g);
-        return classes.Contains(e.Class) || (LineStyles.CategoryOf(e.Class) is { } c && cats.Contains(c));
+        return classes.Contains(e.Class) || (ReferenceLayers.CategoryOf(e) is { } c && cats.Contains(c));
     }
 
     /// <summary>The categories a 3D view leaves out until its graphics show them: rooms, whose volumes would hide the building; CAD linework (a DXF's 3D lines), a drawing over the model.</summary>
@@ -64,7 +64,7 @@ public static class GraphicsSets
     public static bool Hides3d(JsonObject? g, Entity e)
     {
         if (Hides(g, e)) return true;
-        if (LineStyles.CategoryOf(e.Class) is not { } c || !HiddenIn3d.Contains(c)) return false;
+        if (ReferenceLayers.CategoryOf(e) is not { } c || !HiddenIn3d.Contains(c)) return false;
         return !(g?["categories"]?[c]?["hidden"] is JsonValue h && h.TryGetValue<bool>(out var hidden) && !hidden);
     }
 

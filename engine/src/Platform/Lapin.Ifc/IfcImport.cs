@@ -698,7 +698,7 @@ public static partial class IfcImport
         void Elements(IEdit edit)
         {
             // Parts aggregated under an element that is rebuilt natively are its own again; under a foreign one they are what carries the body.
-            var parentOf = new Dictionary<int, int>();
+            var parentOf = partParents;
             foreach (var r in f.OfType("IFCRELAGGREGATES"))
                 if (f.Get(r[4]) is { } whole && whole.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY"))
                     foreach (var part in Refs(r[5])) parentOf[part] = whole.Id;
@@ -1108,10 +1108,39 @@ public static partial class IfcImport
             return parts;
         }
 
+        /// <summary>What each part aggregated under an element (not the spatial structure) belongs to, by the file's ids.</summary>
+        readonly Dictionary<int, int> partParents = [];
+
+        /// <summary>
+        /// The direction an element's layer set is laid in, world (decision 400): its placement's Y for AXIS2 (a wall), Z for
+        /// AXIS3 (a slab, a roof), X for AXIS1; null when the file gives it no layer set.
+        /// </summary>
+        Vec3? LayerAxis(StepEntity e)
+        {
+            if (!carryIndex.Value.MaterialOf.TryGetValue(e.Id, out var mat) || f.Entities.GetValueOrDefault(mat.Material) is not { } m) return null;
+            string? direction = m.Type switch
+            {
+                "IFCMATERIALLAYERSETUSAGE" => Enum(m[1]),
+                "IFCMATERIALLAYERSET" => e.Type is "IFCWALL" or "IFCWALLSTANDARDCASE" or "IFCCURTAINWALL" ? "AXIS2" : "AXIS3",
+                _ => null,
+            };
+            if (direction == null) return null;
+            // A wall's layers lie to the left of its axis (IFC's positive sense), whatever its placement: the Axis curve's chord turned a quarter.
+            if (direction == "AXIS2" && model.AxisCurve(e.Id) is { Count: >= 2 } curve && curve[^1] - curve[0] is var d && Math.Sqrt(d.X * d.X + d.Y * d.Y) > 1e-6)
+                return new Vec3(-d.Y, d.X, 0).Normalized();
+            var xf = model.Placement(e[5]);
+            return direction switch { "AXIS1" => xf.X, "AXIS2" => xf.Y, _ => xf.Z };
+        }
+
         /// <summary>A reference put in the model: its body (its own, or an instance's) in <paramref name="attrs"/>, what the file says of it added.</summary>
         void Referenced(IEdit edit, StepEntity e, string gid, JsonObject attrs, Prepared p)
         {
             var cls = ClassName(e.Type);
+            // Its layers' direction, so the views split its body by them (ReferenceLayers); the element it is a part of, for its category.
+            if (LayerAxis(e) is { } axis && axis.Length > 1e-9)
+                attrs[ReferenceLayers.AxisKey] = new JsonArray(Math.Round(axis.X, 9), Math.Round(axis.Y, 9), Math.Round(axis.Z, 9));
+            if (e.Type == "IFCBUILDINGELEMENTPART" && partParents.TryGetValue(e.Id, out var whole) && f.Entities.GetValueOrDefault(whole) is { } host)
+                attrs[ReferenceLayers.PartOfKey] = ClassName(host.Type);
             attrs["reference"] = true;
             attrs["ifcClass"] = cls;
             attrs["objectType"] = Str(e[4]);

@@ -149,6 +149,13 @@ public static class ViewStyles
         if (layers == "all" || partKey is not { } k || !k.StartsWith("layer:", StringComparison.Ordinal)
             || !int.TryParse(k.AsSpan(6), System.Globalization.CultureInfo.InvariantCulture, out var index)) return true;
         if (!cache.TryGetValue(element, out var bands)) cache[element] = bands = LayerSets.BandsOf(m, element);
+        // A reference's layers, from its file's material (decision 400): the same modes.
+        if (bands == null && m.Get(element) is { } refEl && ReferenceLayers.Of(m, refEl) is { } rs)
+        {
+            if (index < 0 || index >= rs.Layers.Count) return true;
+            if (layers == "core") return rs.Layers[index].Core || !rs.Layers.Any(l => l.Core);
+            return rs.Layers[index].Sub != "finishes";
+        }
         if (bands == null || index < 0 || index >= bands.Count) return true;
         var band = bands[index];
         // An element without a marked core keeps all its layers: there is nothing to tell its structure by.
