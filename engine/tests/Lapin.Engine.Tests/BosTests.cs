@@ -144,6 +144,18 @@ public class BosTests
         var first = Enumerable.Range(0, d.Entities.Count).First(e => v.Name(e) == "First floor" && v.Class[e] == IfcClass.BuildingStorey);
         Assert.Equal(3.0, v.Elevation(first, null)!.Value, 6);
 
+        // The door's and the window's openings: IFCOPENINGELEMENT entities that void their wall, filled by them, sized, hidden in a viewer.
+        var openings = Enumerable.Range(0, d.Entities.Count).Where(e => v.Category[e] == "IFCOPENINGELEMENT").ToList();
+        Assert.Equal(2, openings.Count);
+        foreach (var o in openings)
+        {
+            Assert.Contains(d.Relations, r => r.A == o && r.Type == BosRelation.Voids && walls.Contains(r.B));
+            Assert.Contains(d.Relations, r => r.B == o && r.Type == BosRelation.Fills && v.Class[r.A] is "IfcDoor" or "IfcWindow");
+            Assert.Contains(v.Params(o), p => p.Name == "Width" && p.Group == "Qto_OpeningElementBaseQuantities");
+            Assert.All(d.Instances.Where(i => i.Entity == o), i => Assert.Equal(1, i.Flags));
+            Assert.False(v.InstancesOf.ContainsKey(o));
+        }
+
         // Imported into an empty project: every element with a body, the storeys made, the columns instances of one shared body.
         var g = new Fixture(new ArchitectureModule(), new StructureModule());
         var r = BosImport.Run(g.Session, v, "house.bos", out _);

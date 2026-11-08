@@ -1,7 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lapin.Geometry;
 using Lapin.Mesh.Fragments;
 using Lapin.Platform;
+using Lapin.Platform.Coordination;
 
 namespace Lapin.Mesh.Bos;
 
@@ -11,11 +13,12 @@ namespace Lapin.Mesh.Bos;
 /// GlobalId, its type, its materials and parameters (its IFC attributes as <c>Ifc:</c> parameters grouped by its class,
 /// its property and quantity sets by their names); relations (ContainedIn its storey, PartOf the spatial structure,
 /// MemberOf its assembly, HasMaterial); and its triangles, welded, as meshes of tenths of a millimetre placed by a
-/// translation, identical meshes stored once.
+/// translation, identical meshes stored once. The openings (<see cref="OpeningVoids"/>) as IFCOPENINGELEMENT entities, each
+/// <c>Voids</c> its host and filled (<c>Fills</c>) by its door or window, with its sizes and its body as a hidden instance.
 /// </summary>
 public static class BosWriter
 {
-    public static byte[] Write(MeshScene scene, FragContext? context = null)
+    public static byte[] Write(MeshScene scene, FragContext? context = null, IReadOnlyList<OpeningVoid>? openings = null)
     {
         var d = new BosData();
         d.Documents.Add((d.Intern(scene.Project), -1));
@@ -59,6 +62,9 @@ public static class BosWriter
         var typeEntities = new Dictionary<string, int>();
         var meshIndex = new Dictionary<string, List<int>>();
         var transformIndex = new Dictionary<(float, float, float), int>();
+        // Each exported element's entity and the storey it stands in, by its GlobalId: what the openings relate to.
+        var entityOf = new Dictionary<string, int>();
+        var storeyOf = new Dictionary<int, int>();
 
         foreach (var g in scene.Groups)
         {
@@ -72,12 +78,15 @@ public static class BosWriter
             }
             foreach (var root in g.Elements) Element(root, container, -1);
         }
+        Openings();
         if (scene.Clouds.Count > 0) scene.Notes.Add("BIM Open Schema has no point clouds: they were left out.");
         return d.Write(Session.AppVersion);
 
         void Element(MeshElement el, int container, int assembly)
         {
             var e = d.Entity(el.Name, Category(el.IfcClass), el.GlobalId is { Length: 22 } gid ? gid : null);
+            entityOf.TryAdd(el.GlobalId, e);
+            storeyOf[e] = container;
             if (assembly >= 0) d.Relations.Add((e, assembly, BosRelation.MemberOf));
             else d.Relations.Add((e, container, BosRelation.ContainedIn));
             var group = el.IfcClass.ToUpperInvariant();
@@ -106,6 +115,44 @@ public static class BosWriter
             byte flags = el.IfcClass == "IfcSpace" ? (byte)1 : (byte)0;
             foreach (var part in el.Parts) Geometry(e, part, flags);
             foreach (var child in el.Children ?? []) Element(child, container, e);
+        }
+
+        /// <summary>
+        /// The openings of the elements exported, as the IFC converter writes them: an IFCOPENINGELEMENT that Voids its host, filled
+        /// by its door or window, in the host's storey; its kind, shape and sizes as parameters; its body a hidden instance (a viewer
+        /// leaves it out, a clash tool finds it).
+        /// </summary>
+        void Openings()
+        {
+            if (openings == null || openings.Count == 0) return;
+            int? material = null;
+            var written = 0;
+            foreach (var v in openings)
+            {
+                if (!entityOf.TryGetValue(v.HostId, out var host)) continue;
+                var id = v.OpeningId is { Length: 22 } own ? own : v.GlobalId;
+                var o = d.Entity($"Opening {v.Mark}".Trim(), Category("IfcOpeningElement"), id);
+                d.Relations.Add((o, host, BosRelation.Voids));
+                if (v.FillId != null && entityOf.TryGetValue(v.FillId, out var fill)) d.Relations.Add((fill, o, BosRelation.Fills));
+                if (storeyOf.TryGetValue(host, out var storey)) d.Relations.Add((o, storey, BosRelation.ContainedIn));
+                Param(o, "Ifc:PredefinedType", "IFCOPENINGELEMENT", "OPENING");
+                Param(o, "Ifc:ObjectType", "IFCOPENINGELEMENT", v.Kind);
+                Param(o, "Shape", "Pset_ProvisionForVoid", v.Shape);
+                Param(o, "Width", "Qto_OpeningElementBaseQuantities", Math.Round(v.Width, 6), "m");
+                Param(o, "Height", "Qto_OpeningElementBaseQuantities", Math.Round(v.Height, 6), "m");
+                Param(o, "Depth", "Qto_OpeningElementBaseQuantities", Math.Round(v.Depth, 6), "m");
+                var mesh = Tessellator.Tessellate(v.Solid);
+                if (mesh.Indices.Length >= 3)
+                {
+                    if (material == null) { material = d.Materials.Count; d.Materials.Add((176, 92, 255, 90, 128, 0)); }
+                    var (ox, oy, oz) = scene.Origin;
+                    var p = new float[mesh.Positions.Length];
+                    for (var i = 0; i + 2 < p.Length; i += 3) { p[i] = (float)(mesh.Positions[i] - ox); p[i + 1] = (float)(mesh.Positions[i + 1] - oy); p[i + 2] = (float)(mesh.Positions[i + 2] - oz); }
+                    Geometry(o, new MeshPart(material.Value, p, mesh.Normals, mesh.Indices), 1);
+                }
+                written++;
+            }
+            if (written > 0) scene.Notes.Add($"{written} opening{(written == 1 ? "" : "s")} written as IFCOPENINGELEMENT, voiding their hosts and filled by their doors and windows.");
         }
 
         /// <summary>Whether mesh <paramref name="m"/> holds exactly these vertices and indices.</summary>

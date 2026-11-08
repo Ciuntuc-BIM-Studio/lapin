@@ -31,7 +31,8 @@ public static class MeshExport
             "dae" => ColladaWriter.Dae(scene),
             "obj" => ObjWriter.Zip(scene),
             "frag" => Fragments.FragWriter.Write(scene, context: Fragments.FragContext.Of(session, scene, o)),
-            "bos" => Bos.BosWriter.Write(scene, Fragments.FragContext.Of(session, scene, o)),
+            "bos" => Bos.BosWriter.Write(scene, Fragments.FragContext.Of(session, scene, o),
+                Lapin.Platform.Coordination.OpeningVoids.Of(session.Model, session.Catalog, Lapin.Platform.Coordination.VoidOptions.All)),
             _ => throw new CommandException($"„{o.Format}” is not a 3D format."),
         };
         // One file with no room for an image: the materials' own textures go out in GLB, glTF and USDZ.
