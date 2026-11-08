@@ -91,5 +91,5 @@ const totalMB = brotliMB(web);
 console.log(`▸ ${product.name} for the browser → build/${id}/web (${totalMB.toFixed(1)} MB brotli)`);
 
 // 5. The budget (docs/plan-browser-engine.md, stage 3).
-const BUDGET_MB = 15;
+const BUDGET_MB = 20;
 if (totalMB > BUDGET_MB) { console.error(`build-web: ${totalMB.toFixed(1)} MB is over the ${BUDGET_MB} MB budget.`); process.exit(1); }

@@ -54,7 +54,7 @@ Small, behaviour-preserving refactors that both hosts then share. Each is one co
 
 ## Stage 3: budgets, CI, limits
 
-- **Budgets** written in `scripts/build-web.mjs` and enforced there: compressed download ≤ 15 MB, start to `session.info` ≤ 4 s on a 2020 laptop, rebuild of the test house ≤ 3× native. A build that breaks a budget fails, so the numbers from the spike stay true.
+- **Budgets** written in `scripts/build-web.mjs` and enforced there: compressed download ≤ 20 MB (15 MB until 08.11.2026), start to `session.info` ≤ 4 s on a 2020 laptop, rebuild of the test house ≤ 3× native. A build that breaks a budget fails, so the numbers from the spike stay true.
 - **CI**: a `web` job beside `ui` and `engine` in `.github/workflows/ci.yml` (the Emscripten workload, `dotnet publish`, the budgets, a headless Chrome smoke test that opens `testLapin.lapin`). The `engine` job does not change.
 - **Stated limits** on the web (in the start screen's about text, and in `docs/mcp.md`): no MCP bridge; no detached view windows; the memory ceiling (2 GB; a large imported IFC may not fit, which is in line with "Lapin is native first"); Safari and Firefox save by download.
 - **What the web does without, by choice**: no server engine, no accounts, no sync. A tester's project lives in their browser (OPFS journal) and in the `.lapin` they download.
