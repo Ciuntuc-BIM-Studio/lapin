@@ -384,6 +384,9 @@ public static class PointCloudLinks
     /// <summary>The slice a plan or a section draws of a cloud when the view does not say (m): 10 cm round the cut.</summary>
     public const double DefaultSlice = 0.10;
 
+    /// <summary>The thickest slice (m): an airborne scan's facades need metres of it, a whole building's height (decision 399).</summary>
+    public const double MaxSlice = 100;
+
     /// <summary>How a cloud is drawn in one view: its link's settings, then the view's row over them (decision 396).</summary>
     public sealed record Look(bool Shown, bool Halftone, string ColorMode, IReadOnlySet<int> HiddenClasses, double Slice, double PointSize);
 
@@ -419,7 +422,7 @@ public static class PointCloudLinks
                     }
                     break;
                 case "slice":
-                    if (Json.Number(val) is { } t) o[k] = t is > 0.001 and <= 10 ? t : throw new CommandException("A cloud's slice is between 1 mm and 10 m thick.");
+                    if (Json.Number(val) is { } t) o[k] = t is > 0.001 and <= MaxSlice ? t : throw new CommandException("A cloud's slice is between 1 mm and 100 m thick.");
                     break;
                 default: throw new CommandException($"„{k}” is not a point cloud's setting.");
             }

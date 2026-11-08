@@ -304,7 +304,7 @@ export function SheetView() {
                   </g></g>
                 </>
               );
-            })() : <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} />}
+            })() : <DrawingLayer drawing={{ pens: d.pens, scale: 1000 }} toScreen={toScreen} pxPerMetre={v.k} minText={1} screen={size} />}
             {d.viewports.map((b) => {
               const box = cropped?.id === b.id ? cropped : b;
               const a = toScreen({ x: box.x0, y: box.y0 });

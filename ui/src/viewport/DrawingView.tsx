@@ -332,7 +332,7 @@ export function DrawingView() {
           if (id && !openPickedView(id)) void editDimension(id, w);
         }}>
         <rect width="100%" height="100%" className="paper" />
-        {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} onDark={onDark} />}
+        {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} onDark={onDark} screen={size} />}
         {(drawing?.marks ?? []).filter((m) => markSelected(m.id, shown)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });

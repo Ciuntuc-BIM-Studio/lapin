@@ -352,6 +352,44 @@ public class PointCloudTests
         Assert.Single(CloudImages(f, section));
     }
 
+    /// <summary>
+    /// An airborne tile (decision 399, the film's hang): 500 × 450 m of ground and roofs, linked by its bytes and centred,
+    /// a new plan of a few metres' building: the slice's picture stays within 4096 pixels a side, its snaps within 20 000, the
+    /// octree read only down to the picture's own pixel, the drawing quick; a thick slice (facades) is allowed up to 100 m.
+    /// </summary>
+    [Fact]
+    public void An_airborne_tile_in_a_plan_is_one_bounded_picture_read_down_to_its_own_pixel()
+    {
+        var pts = new List<P>();
+        var rnd = new Random(7);
+        for (var i = 0; i < 300_000; i++)
+        {
+            var (x, y) = (rnd.NextDouble() * 500, rnd.NextDouble() * 450);
+            // Ground round 1 m, a block of houses 6 m high with walls every 25 m (roofs and facades).
+            var house = (x % 25) < 15 && (y % 25) < 15;
+            var z = house ? (rnd.NextDouble() < 0.5 ? 6 : rnd.NextDouble() * 6) : 1 + 0.2 * Math.Sin(x / 40);
+            pts.Add(new P(x, y, z, I: (ushort)rnd.Next(4000), C: (byte)(house ? 6 : 2)));
+        }
+        var (f, id, _) = Linked(Las(pts, format: 1, scale: 0.01), "tile.laz", new JsonObject { ["mode"] = "center" });
+        var plan = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = f.Storey })!["id"]!;
+        f.Run("view.graphics", new JsonObject { ["id"] = plan, ["pointCloud"] = id, ["value"] = new JsonObject { ["slice"] = 50 } });
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var img = Assert.Single(CloudImages(f, plan));
+        var ms = clock.ElapsedMilliseconds;
+        var png = Convert.FromBase64String((string)img["data"]!);
+        var (w, h) = (System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(16)), System.Buffers.Binary.BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(20)));
+        Assert.InRange(w, 1, 4096);
+        Assert.InRange(h, 1, 4096);
+        // The picture spans the tile (500 × 450 m), its pixel the tile over 4096, not the paper's 2 cm.
+        var c = img["corners"]!.AsArray().Select(v => (double)v!).ToArray();
+        Assert.InRange(c[2] - c[0], 490, 510);
+        var drawing = (JsonObject)f.Session.Query("view.drawing", new JsonObject { ["id"] = plan })!;
+        var snaps = drawing["marks"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["id"] == id)["snaps"]!.AsArray().Count / 2;
+        Assert.InRange(snaps, 100, 20_000);
+        Assert.True(ms < 20_000, $"the slice took {ms} ms");
+        Assert.Throws<CommandException>(() => f.Run("view.graphics", new JsonObject { ["id"] = plan, ["pointCloud"] = id, ["value"] = new JsonObject { ["slice"] = 101 } }));
+    }
+
     [Fact]
     public void A_sheet_prints_the_slice_as_a_picture_in_its_pdf()
     {

@@ -511,7 +511,7 @@ function PointCloudsTab({ target, clouds, rows, in3d }: { target: string; clouds
                     {CLOUD_COLORS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select>
                 </td>
-                {!in3d && <td><input type="number" className="num" min={1} max={500} step={1} style={{ width: 64 }} value={Math.round((r.slice ?? 0.1) * 100)} onChange={(e) => { const cm = Number(e.target.value); if (cm > 0) put(c.id, { slice: cm === 10 ? undefined : cm / 100 }); }} /></td>}
+                {!in3d && <td><input type="number" className="num" min={1} max={10000} step={1} style={{ width: 64 }} value={Math.round((r.slice ?? 0.1) * 100)} onChange={(e) => { const cm = Number(e.target.value); if (cm > 0) put(c.id, { slice: cm === 10 ? undefined : cm / 100 }); }} /></td>}
                 <td>{c.classes.length > 1 && <button type="button" className="btn small" data-cloud-classes={c.name} onClick={() => setOpen(open === c.id ? null : c.id)}>{open === c.id ? 'Close' : 'Classes…'}</button>}</td>
               </tr>
             );

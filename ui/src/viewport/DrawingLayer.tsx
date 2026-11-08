@@ -8,6 +8,7 @@ import { memo, useId, useMemo } from 'react';
 import { useSession } from '../engine/session';
 import { screenWidth, useDisplay } from '../app/display';
 import { screenFill, screenInk, type DrawingDto, type PenDto } from './drawing';
+import { imageUrl, visibleCrop } from './imageCrop';
 
 type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
 
@@ -16,7 +17,7 @@ type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
  * `minText`: texts smaller on screen (px) are left out; a sheet or schedule keeps its tables' words down to a pixel, so a
  * table seen whole still shows it is filled (report #75: a takeoff on an A1 sheet looked empty at fit).
  */
-export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre, onDark = false, minText = 3 }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number; onDark?: boolean; minText?: number }) {
+export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre, onDark = false, minText = 3, screen }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number; onDark?: boolean; minText?: number; screen?: { w: number; h: number } }) {
   // Pixels per paper millimetre: a paper mm is scale/1000 m of the model.
   const pxPerMm = pxPerMetre * (drawing.scale ?? 100) / 1000;
   // Thin lines (TL): every pen one pixel on screen, sheets and PDFs keeping theirs.
@@ -37,7 +38,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
     }
     // True to paper, within what a screen shows well when zoomed far in or out.
     const width = p.stroke ? screenWidth(p.width, pxPerMm, thin) : 0;
-    if (p.images?.length) return <PenImages key={i} pen={p} toScreen={toScreen} />;
+    if (p.images?.length) return <PenImages key={i} pen={p} toScreen={toScreen} screen={screen} />;
     if (p.texts?.length) {
       return (
         <g key={i} className="pen-text" fill={stroke ?? '#000'}>
@@ -61,12 +62,15 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
         stroke={stroke ?? 'none'} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
         strokeDasharray={p.dash ? p.dash.map((v) => Math.max(1, Math.min(v * pxPerMm, v * 8)).toFixed(1)).join(' ') : undefined} />
     );
-  }), [drawing, cap, toScreen, pxPerMm, onDark, minText]);
+  }), [drawing, cap, toScreen, pxPerMm, onDark, minText, screen]);
   return <g className="drawing-layer">{paths}</g>;
 });
 
-/** A pen's pictures, each its image's unit square laid onto its corners, clipped to the pen's box when it has one. */
-function PenImages({ pen, toScreen }: { pen: PenDto; toScreen: ToScreen }) {
+/**
+ * A pen's pictures, each its image's unit square laid onto its corners, clipped to the pen's box when it has one. On a
+ * view that says its screen, a picture far larger than it is cut to what the screen sees (imageCrop.ts, decision 399).
+ */
+function PenImages({ pen, toScreen, screen }: { pen: PenDto; toScreen: ToScreen; screen?: { w: number; h: number } }) {
   const nodes = useSession((s) => s.nodes);
   const clipId = `pen-clip${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const clip = pen.clip && pen.clip.length === 4 ? [toScreen({ x: pen.clip[0], y: pen.clip[1] }), toScreen({ x: pen.clip[2], y: pen.clip[3] })] : null;
@@ -84,8 +88,19 @@ function PenImages({ pen, toScreen }: { pen: PenDto; toScreen: ToScreen }) {
         if (typeof data !== 'string' || typeof mime !== 'string' || img.corners.length < 8) return null;
         const c = img.corners;
         const [tl, tr, bl] = [toScreen({ x: c[0], y: c[1] }), toScreen({ x: c[2], y: c[3] }), toScreen({ x: c[6], y: c[7] })];
-        return <image key={k} href={`data:${mime};base64,${data}`} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={img.opacity} className="plan-orthophoto" style={img.data ? { imageRendering: 'pixelated' } : undefined}
-          transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
+        const crop = screen ? visibleCrop(tl, tr, bl, screen.w, screen.h) : 'all';
+        if (!crop) return null;
+        const matrix = `matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`;
+        const href = imageUrl(img.id, data, mime);
+        const picture = <image href={href} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={img.opacity === 1 ? undefined : img.opacity} className="plan-orthophoto" style={img.data ? { imageRendering: 'pixelated' } : undefined} />;
+        if (crop === 'all') return <g key={k} transform={matrix}>{picture}</g>;
+        // Only what the screen sees: a viewport over the part, in the picture's own square.
+        const { u0, v0, u1, v1 } = crop;
+        return (
+          <g key={k} transform={matrix} data-cropped="1">
+            <svg x={u0} y={v0} width={u1 - u0} height={v1 - v0} viewBox={`${u0} ${v0} ${u1 - u0} ${v1 - v0}`} preserveAspectRatio="none" overflow="hidden">{picture}</svg>
+          </g>
+        );
       })}
     </g>
   );

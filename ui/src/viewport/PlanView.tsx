@@ -120,7 +120,10 @@ export function PlanView() {
   // The view (centre, zoom) is remembered per plan for the session, so the tab comes back as it was left.
   const key = ownPlan ?? (storey ? `plan:${storey.id}` : 'plan:none');
   const [view, setView] = useState<View>(() => recall<View>(key) ?? { cx: 4, cy: 2, scale: 60 });
-  useEffect(() => { remember(key, view); }, [key, view]);
+  // The view held is the key's only once it was recalled or framed for it: another plan's framing (a new plan view
+  // opened from one zoomed in, 318 %) is never remembered as this one's (decision 399).
+  const viewKey = useRef<string | null>(recall<View>(key) ? key : null);
+  useEffect(() => { if (viewKey.current === key) remember(key, view); }, [key, view]);
   /** A zoom the user can come back from (ZP). */
   const go = useCallback((v: View) => { setView((old) => { pushHistory(key, old); return v; }); }, [key]);
 
@@ -153,13 +156,13 @@ export function PlanView() {
   const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
 
   /** What the elements and the drawing's annotations span; null when the plan is empty. */
-  const extent = useCallback((only?: Set<string>): Bounds | null => {
+  const extent = useCallback((only?: Set<string>, clouds = true): Bounds | null => {
     const pts: Vec2[] = [];
     // A device's reach (a hydrant's 26 m) does not widen the frame.
     for (const r of items) if (!only || only.has(r.nodeId)) for (const it of r.plan) if (it.kind !== 'reach') for (let i = 0; i + 1 < it.points.length; i += 2) pts.push({ x: it.points[i], y: it.points[i + 1] });
     for (const m of drawing?.marks ?? []) if (!only || only.has(m.id)) for (let k = 0; k + 1 < m.segments.length; k += 2) pts.push({ x: m.segments[k], y: m.segments[k + 1] });
     // A point cloud's slice (decision 396) is what the plan shows of it.
-    if (!only) for (const p of drawing?.pens ?? []) for (const img of p.images ?? []) if (img.id.startsWith('pointcloud:')) for (let k = 0; k + 1 < img.corners.length; k += 2) pts.push({ x: img.corners[k], y: img.corners[k + 1] });
+    if (!only && clouds) for (const p of drawing?.pens ?? []) for (const img of p.images ?? []) if (img.id.startsWith('pointcloud:')) for (let k = 0; k + 1 < img.corners.length; k += 2) pts.push({ x: img.corners[k], y: img.corners[k + 1] });
     return boundsOf(pts);
   }, [items, drawing]);
   const fit = useCallback(() => {
@@ -172,11 +175,37 @@ export function PlanView() {
   const measured = size.w > 0 && size.h > 0;
   const fitRef = useRef(fit);
   fitRef.current = fit;
+  /** The framing made by opening the plan, while the user has not moved it: framed again when the drawing comes. */
+  const autoFit = useRef<{ key: string; view: View; drawn: boolean } | null>(null);
+  const extentRef = useRef(extent);
+  extentRef.current = extent;
+  const frameNow = useCallback((): View => {
+    // The model first; a point cloud's slice only on a plan with nothing else (an airborne scan is a whole district).
+    const b = extentRef.current(undefined, false) ?? extentRef.current();
+    return b ? framing(b, size, 0.8, 0.02, 400) : { cx: 4, cy: 2, scale: 60 };
+  }, [drawing, size]);
+  const frameRef = useRef(frameNow);
+  frameRef.current = frameNow;
+  const drawingRef = useRef(drawing);
+  drawingRef.current = drawing;
   useEffect(() => {
     if (!measured) return;
     const r = recall<View>(key);
-    if (r) setView(r); else fitRef.current();
+    viewKey.current = key;
+    if (r) { autoFit.current = null; setView(r); return; }
+    const v = frameRef.current();
+    autoFit.current = { key, view: v, drawn: !!drawingRef.current };
+    setView(v);
   }, [key, measured]);
+  // The plan's drawing come after it was framed (a point cloud's slice, the annotations): framed again, unless moved since.
+  useEffect(() => {
+    const a = autoFit.current;
+    if (!a || a.key !== key || a.drawn || !drawing || !measured) return;
+    if (view !== a.view) { autoFit.current = null; return; }
+    const v = frameRef.current();
+    autoFit.current = { key, view: v, drawn: true };
+    setView(v);
+  }, [drawing, key, measured, view]);
 
   // The zoom commands and keys, while this pane is in front.
   const host: ZoomHost = {
@@ -656,8 +685,8 @@ export function PlanView() {
           return <image key={`ortho:${o.id}`} href={o.image.url} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={o.opacity} className="plan-orthophoto"
             transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
         })}
-        {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
-        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : inside ? 'drill-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} /></g>}
+        {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} screen={size} /></g>}
+        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : inside ? 'drill-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} screen={size} /></g>}
         <g className={`plan-items${drawing && (planDrawing || siteView) ? ' ghost' : ''}${scope ? ' scoped' : ''}${inside ? ' drilled' : ''}`}>
           {drawn.map(({ key, r, kind, d, closed, text, at, pattern }) => kind === 'hit' && !shown.has(r.nodeId) ? null : kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>

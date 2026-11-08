@@ -90,6 +90,20 @@ public static class PointCloudSlices
         var (dmin, dmax) = Range(spec, look.Slice);
         var scale = Math.Sqrt(t[0] * t[0] + t[1] * t[1] + t[2] * t[2]);
         // The nodes the slice reaches, from the root, a node's children while its sample is coarser than a pixel.
+        // The picture's pixel can be no finer than the cloud's breadth in the view over MaxSide (an airborne scan 450 m
+        // wide at 1:100 is 11 cm a pixel, not 2 cm): the octree is read down to that, not to the paper's pixel (decision 399).
+        var sb = store.Bounds;
+        double bl = double.MaxValue, bh = double.MinValue, bu = double.MaxValue, buh = double.MinValue;
+        for (var k = 0; k < 8; k++)
+        {
+            var (wx, wy, wz) = PointCloudLinks.Apply(t, (k & 1) != 0 ? sb[3] : sb[0], (k & 2) != 0 ? sb[4] : sb[1], (k & 4) != 0 ? sb[5] : sb[2]);
+            var at = f.Map(new Vec3(wx, wy, wz));
+            (bl, bh) = (Math.Min(bl, at.X), Math.Max(bh, at.X));
+            (bu, buh) = (Math.Min(bu, at.Y), Math.Max(buh, at.Y));
+        }
+        if (spec.Span is { } sw) (bl, bh) = (Math.Max(bl, sw.Min), Math.Min(bh, sw.Max));
+        if (spec.Rise is { } rw) (bu, buh) = (Math.Max(bu, rw.Min), Math.Min(buh, rw.Max));
+        var reach = Math.Max(px, Math.Max(bh - bl, buh - bu) / (MaxSide - 2));
         var children = new Dictionary<string, List<PointStore.Node>>();
         foreach (var n in store.Nodes) if (n.Name.Length > 1) { var p = n.Name[..^1]; if (!children.TryGetValue(p, out var l)) children[p] = l = []; l.Add(n); }
         var take = new List<PointStore.Node>();
@@ -115,7 +129,7 @@ public static class PointCloudSlices
             if (dh < dmin || dl > dmax || !Inside((rl, rh), spec.Span) || !Inside((ul, uh), spec.Rise)) continue;
             take.Add(n);
             total += n.Count;
-            if (e / PointStore.Resolution * scale > px && children.TryGetValue(n.Name, out var kids)) foreach (var k in kids) stack.Push(k);
+            if (e / PointStore.Resolution * scale > reach && children.TryGetValue(n.Name, out var kids)) foreach (var k in kids) stack.Push(k);
         }
         // The points in the slice, mapped into the view.
         var pts = new List<(Vec2 At, double Depth, byte R, byte G, byte B)>();
