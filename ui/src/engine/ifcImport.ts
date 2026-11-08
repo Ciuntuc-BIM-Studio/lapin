@@ -1,5 +1,6 @@
 /**
- * An IFC or Fragments import in two steps (docs/fragments.md, Exchange): the file looked at first (project.ifcSurvey or project.fragSurvey: its
+ * An IFC, Fragments or BIM Open Schema import in two steps (docs/fragments.md, Exchange; docs/bos.md): the file looked at first (project.ifcSurvey,
+ * project.fragSurvey or project.bosSurvey: its
  * storeys and its elements by kind and discipline), for the user to choose what
  * to bring in the Import IFC dialog; then the import of what was chosen, its
  * stages shown as it goes (the engine's progress events). The engine keeps the
@@ -77,7 +78,7 @@ export interface IfcSource { name: string; path?: string; data?: string }
 export interface Busy { title: string; stage: string; done: number; total: number; started: number }
 
 /** The exchange format: IFC, or That Open's Fragments. */
-export type ExchangeFormat = 'ifc' | 'frag';
+export type ExchangeFormat = 'ifc' | 'frag' | 'bos';
 
 interface ImportState {
   source: IfcSource | null;
@@ -110,9 +111,9 @@ const args = (s: IfcSource) => (s.data != null ? { name: s.name, data: s.data } 
 
 /** Step one: the file looked at, then the dialog to choose what of it comes in; `asProject`: an IFC opened as a project. */
 export async function surveyIfc(source: IfcSource, mode: ImportMode, format: ExchangeFormat = 'ifc', asProject = false): Promise<void> {
-  begin(`Reading ${source.name}`, format === 'frag' ? 'Reading the file' : 'Indexing the file');
+  begin(`Reading ${source.name}`, format !== 'ifc' ? 'Reading the file' : 'Indexing the file');
   try {
-    const survey = await engine.call<Survey>(format === 'frag' ? 'project.fragSurvey' : 'project.ifcSurvey', args(source), { timeoutMs: LONG_TIMEOUT_MS });
+    const survey = await engine.call<Survey>(format === 'frag' ? 'project.fragSurvey' : format === 'bos' ? 'project.bosSurvey' : 'project.ifcSurvey', args(source), { timeoutMs: LONG_TIMEOUT_MS });
     useIfcImport.setState({ source, survey, mode, format, asProject: asProject && format === 'ifc' });
     useUi.setState({ dialog: 'importIfc' });
   } catch (e) {
@@ -154,7 +155,8 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
   if (!source) return;
   useUi.setState({ dialog: null });
   useIfcImport.setState({ survey: null });
-  const frag = format === 'frag';
+  // A Fragments or BIM Open Schema file: triangles with their data, brought in the same way.
+  const frag = format === 'frag' || format === 'bos';
   begin(`${choice.mode === 'link' ? 'Linking' : 'Importing'} ${source.name}`, 'Reading the file');
   try {
     const params = {
@@ -168,7 +170,7 @@ export async function runIfcImport(choice: { kinds: string[] | null; storeys: st
       // The project made from the file: its project, site, building and storeys under the file's GlobalIds (never for a link).
       ...(asProject && choice.mode !== 'link' ? { asProject: true } : {}),
     };
-    if (frag) notify(fragOutcome(source.name, await engine.call<FragResult>('project.importFragments', params, { timeoutMs: LONG_TIMEOUT_MS })));
+    if (frag) notify(fragOutcome(source.name, await engine.call<FragResult>(format === 'bos' ? 'project.importBos' : 'project.importFragments', params, { timeoutMs: LONG_TIMEOUT_MS })));
     else {
       const r = await engine.call<ImportResult>('project.importIfc', params, { timeoutMs: LONG_TIMEOUT_MS });
       // The storeys are the file's now: the active one is chosen again (the ground floor).

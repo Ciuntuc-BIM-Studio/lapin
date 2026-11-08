@@ -404,6 +404,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
     /// <summary>The last file surveyed (project.ifcSurvey), read and indexed, for the import that follows to take as it is.</summary>
     (string Key, byte[] Bytes, StepFile File, string Hash)? _surveyed;
     (string Key, Lapin.Mesh.Fragments.FragModel Model)? _fragSurveyed;
+    (string Key, Lapin.Mesh.Bos.BosView View)? _bosSurveyed;
 
     /// <summary>An IFC file as a call gives it: by path (the desktop) or as base64 in data (the browser); its name and a key that tells the same file again.</summary>
     (byte[] Bytes, string Name, string? Path, string Key) IfcBytes(JsonObject p)
@@ -558,7 +559,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return editor ? null : "You joined to look: ask the host to let you edit.";
             case "doc.undo" or "doc.redo" or "project.convertToNative":
                 return editor ? null : "You joined to look: ask the host to let you edit.";
-            case "project.importIfc" or "project.importFragments" or "project.importBcf" or "project.importMesh":
+            case "project.importIfc" or "project.importFragments" or "project.importBos" or "project.importBcf" or "project.importMesh":
                 if (!editor) return "You joined to look: ask the host to let you edit.";
                 return p["data"] is JsonValue ? null : "A guest imports a file from their own computer.";
             case "project.exportBcf":
@@ -602,7 +603,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
     (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
     {
         // Another project: a file surveyed for this one (its bytes, its index) is not kept for it.
-        if (method is "project.new" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; }
+        if (method is "project.new" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; _bosSurveyed = null; }
         // A file written where asked (the desktop's save dialog), else handed back to download (a browser).
         JsonObject Deliver(byte[] bytes, string name)
         {
@@ -854,6 +855,29 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var model = _fragSurveyed is { } fs && fs.Key == key ? fs.Model : Lapin.Mesh.Fragments.FragImport.Read(bytes, name);
                 _fragSurveyed = null;
                 var r = Lapin.Mesh.Fragments.FragImport.Run(session, model, name, out var imported, options);
+                return (r.ToJson(), imported);
+            }
+            case "project.bosSurvey":
+            {
+                // What a BIM Open Schema file holds (docs/bos.md), in the IFC survey's shape, kept read for the import that follows.
+                var (bytes, name, _, key) = IfcBytes(p);
+                ReportProgress("Reading the file", 0, 0);
+                var view = Lapin.Mesh.Bos.BosImport.Read(bytes, name);
+                _bosSurveyed = (key, view);
+                return (Lapin.Mesh.Bos.BosSurvey.Of(view, name, bytes.Length), null);
+            }
+            case "project.importBos":
+            {
+                // A BIM Open Schema file (.bos, docs/bos.md) into the open project, as a Fragments file comes in: references with their bodies,
+                // the kinds and storeys chosen, as one group unless asked otherwise; recognised or made editable on request.
+                ReportProgress("Reading the file", 0, 0);
+                var (bytes, name, _, key) = IfcBytes(p);
+                var options = new Lapin.Mesh.Fragments.FragImportOptions(Chosen(p["kinds"]), Chosen(p["storeys"]), p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb,
+                    Editable: (string?)p["mode"] == "editable" || p["editable"] is JsonValue ev && ev.TryGetValue<bool>(out var eb) && eb,
+                    Recognize: (string?)p["mode"] is "auto" or "editable");
+                var view = _bosSurveyed is { } bs && bs.Key == key ? bs.View : Lapin.Mesh.Bos.BosImport.Read(bytes, name);
+                _bosSurveyed = null;
+                var r = Lapin.Mesh.Bos.BosImport.Run(session, view, name, out var imported, options);
                 return (r.ToJson(), imported);
             }
             case "project.importBcf":

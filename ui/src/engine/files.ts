@@ -429,6 +429,17 @@ export async function importFragments(): Promise<void> {
 }
 
 /**
+ * A BIM Open Schema file (.bos, docs/bos.md: Parquet tables in a zip) into the open project, looked at first and chosen
+ * from as a Fragments file is: its elements as references with their bodies, on their storeys, identical meshes shared.
+ */
+export async function importBos(): Promise<void> {
+  const picked = isDesktop() ? null : await pickFile('BIM Open Schema', 'bos');
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'BIM Open Schema', extensions: ['bos'] }]) : picked?.name ?? null;
+  if (!path) return;
+  await surveyIfc(picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path }, 'auto', 'bos');
+}
+
+/**
  * A mesh from another program into the open project as references (OBJ, STL, glTF, GLB: docs/plan-studio-editor.md);
  * Studio's Make Studio solid makes one editable. OBJ and STL say neither their unit nor which way is up: asked for.
  */

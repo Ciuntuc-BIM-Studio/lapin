@@ -10,7 +10,7 @@ Tot ce intră sau iese e în meniul **Fișier**.
 
 ## IFC și Fragments
 
-**Exportă IFC sau Fragments…** scrie modelul ca IFC. Fiecare perete, placă, ușă și acoperiș e un element IFC adevărat, cu straturile, tipul și proprietățile lui, așa că fișierul se deschide ca model în alte programe BIM. Ușile și ferestrele spun cum se deschid: mâna fiecărei foi și cercevele, în ce parte se deschid și panourile, cum le definește IFC, așa că alte programe desenează aceleași deschideri.
+**Exportă IFC, Fragments sau BOS…** scrie modelul ca IFC. Fiecare perete, placă, ușă și acoperiș e un element IFC adevărat, cu straturile, tipul și proprietățile lui, așa că fișierul se deschide ca model în alte programe BIM. Ușile și ferestrele spun cum se deschid: mâna fiecărei foi și cercevele, în ce parte se deschid și panourile, cum le definește IFC, așa că alte programe desenează aceleași deschideri.
 
 Exportul întreabă schema (**IFC4**, citit peste tot, sau **IFC4X3**), detaliul (piesele ca elemente de sine stătătoare sau un corp pe element), faza și cum se scriu corpurile. **Geometrie** e **B-rep fațetat** (exact, ce așteaptă cel mai des alte programe) sau **seturi de fețe**: aceleași fețe, într-un fișier mult mai mic. **Simplifică** scrie mai puține triunghiuri unde un corp e o rețea fină, cum sunt tubulaturile și țevile din fișierul altui program, niciodată mai departe de el decât **toleranța** pe care o scrii (2 mm la început). Corpurile pe care le construiește Lapin (pereți, plăci, uși) își păstrează fețele exacte, iar simplificarea schimbă doar forma corpului, niciodată proprietățile lui.
 
@@ -48,9 +48,21 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 **Importă Fragments…** aduce un fișier `.frag`: fiecare element cu geometrie devine o referință desenată din corpul lui, în clasa pe care o spune fișierul, pe nivelul pe care îl pune fișierul (potrivit după nume cu ale tale, creat când lipsește), cu atributele fișierului la **Proprietăți IFC**. Elementele cu același corp (aceeași formă, așezată în mai multe locuri) îl împart. Importat din nou, același fișier actualizează ce a adus înainte. Ce se recunoaște din triunghiurile lui alegi la **Cum**, ca mai sus. Seturile de proprietăți și de cantități, tipul și materialele vin împreună cu atributele; sticla rămâne transparentă; un fișier făcut de convertorul That Open ajunge unde l-ar pune IFC-ul lui, iar fețele cu goluri (un perete în jurul ferestrei) le păstrează.
 
-**Exportă IFC sau Fragments…** scrie modelul ca IFC sau ca Fragments, ales la fel ca un import: elementele pe discipline și tipuri, etajele, faza și doar ce arată vederea 3D. IFC iese în IFC4 sau IFC4X3, cu părțile unui element stratificat sub el sau câte un corp fiecare; Fragments de la punctul de bază al proiectului, de la originea internă sau de la punctul de topografie. Un fișier Fragments poartă ce arată un vizualizator IFC: tipul fiecărui element, cantitățile, parametrii tăi, materialele și coordonatele pe hartă, cum le scrie convertorul That Open.
+**Exportă IFC, Fragments sau BOS…** scrie modelul ca IFC, ca Fragments sau ca BIM Open Schema, ales la fel ca un import: elementele pe discipline și tipuri, etajele, faza și doar ce arată vederea 3D. IFC iese în IFC4 sau IFC4X3, cu părțile unui element stratificat sub el sau câte un corp fiecare; Fragments de la punctul de bază al proiectului, de la originea internă sau de la punctul de topografie. Un fișier Fragments poartă ce arată un vizualizator IFC: tipul fiecărui element, cantitățile, parametrii tăi, materialele și coordonatele pe hartă, cum le scrie convertorul That Open.
 
-![Exportă IFC sau Fragments](shots/export-exchange.webp)
+![Exportă IFC, Fragments sau BOS](shots/export-exchange.webp)
+
+### BIM Open Schema
+
+[BIM Open Schema](https://github.com/ara3d/bim-open-schema) (`.bos`) e un format deschis al Ara 3D: o arhivă zip cu tabele Apache Parquet (entitățile, parametrii și relațiile lor, plus triunghiurile așezate prin instanțe), ușor de interogat cu instrumente de date precum DuckDB, pandas sau Power BI și citit de vizualizatoarele web ale Ara 3D.
+
+**Importă BIM Open Schema…** deschide același panou ca importul IFC sau Fragments: elementele pe discipline și tipuri, etajele, **Cum** și **Ca un singur grup**. Fiecare element cu geometrie vizibilă devine o referință desenată din corpul lui, în clasa IFC pe care o numește categoria lui (o categorie Revit precum *Walls* sau *Doors* se citește drept clasa ei IFC), pe etajul lui (cel în care e conținut sau, pentru un fișier din Revit, nivelul lui), potrivit după nume cu ale tale și creat când lipsește. Parametrii lui vin ca seturi de proprietăți (atributele IFC la **Attributes**, tipul și materialele împreună cu ele); elementele cu aceeași formă împart un corp; sticla rămâne transparentă. Încăperile și tot ce fișierul marchează ascuns rămân pe dinafară. Importat din nou, același fișier actualizează ce a adus înainte.
+
+![Importă BIM Open Schema](shots/import-bos.webp)
+
+![Casa importată, în 3D](shots/import-bos-3d.webp)
+
+**Exportă IFC, Fragments sau BOS…** cu **BIM Open Schema** bifat scrie modelul cum scrie un fișier convertorul IFC al Ara 3D: proiectul, situl, clădirea și etajele, fiecare element sub clasa lui IFC, cu GlobalId-ul, tipul, materialele, atributele IFC, seturile de proprietăți și de cantități și parametrii tăi, conținut în etajul lui; triunghiurile în zecimi de milimetru, o formă folosită de mai multe ori (un tip de stâlp, o fereastră) păstrată o singură dată. Norii de puncte nu fac parte din format și rămân pe dinafară.
 
 ## JG Structures (calcul structural)
 

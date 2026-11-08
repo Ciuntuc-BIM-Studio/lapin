@@ -1,5 +1,5 @@
 /**
- * File → Export IFC or Fragments… (docs/fragments.md, Exchange): the model itself, IFC or That Open's Fragments,
+ * File → Export IFC, Fragments or BOS… (docs/fragments.md, Exchange; docs/bos.md): the model itself, IFC, That Open's Fragments or BIM Open Schema,
  * chosen as an import is (SurveyChoice: the project's elements by discipline and kind, its storeys), at the end of
  * a phase, everything or only what the 3D view shows. IFC in IFC4 or IFC4X3, its parts grouped under their element
  * or one body each, its bodies as faceted B-reps (exact) or face sets (a much smaller file), simplified on request
@@ -58,21 +58,22 @@ export function ExchangeExportDialog() {
     };
     // The kinds ticked decide; all of them ticked takes the entourage too (the engine leaves it out when not told).
     if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
-    else await exportFile('project.exportMesh', { ...common, format: 'frag', origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.frag`, 'frag');
+    else await exportFile('project.exportMesh', { ...common, format, origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.${format}`, format);
     setBusy(false);
     close();
   };
   return (
     <div className="dialog-backdrop" onClick={close}>
-      <div className="dialog import-ifc" role="dialog" aria-label="Export IFC or Fragments" onClick={(e) => e.stopPropagation()}>
+      <div className="dialog import-ifc" role="dialog" aria-label="Export IFC, Fragments or BOS" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head">
-          <span className="panel-title">Export IFC or Fragments</span>
+          <span className="panel-title">Export IFC, Fragments or BOS</span>
           <button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button>
         </header>
         <div className="dialog-body exchange-options">
           <div className="row">
             <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'ifc'} onChange={() => setFormat('ifc')} /> <strong>IFC</strong> <span className="muted small">the model for every BIM program</span></label>
             <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'frag'} onChange={() => setFormat('frag')} /> <strong>Fragments</strong> <span className="muted small">That Open's format, for BIM web viewers</span></label>
+            <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'bos'} onChange={() => setFormat('bos')} /> <strong>BIM Open Schema</strong> <span className="muted small">Parquet tables, for data analysis and viewers</span></label>
           </div>
         </div>
         <div className="dialog-body split">

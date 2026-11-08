@@ -10,7 +10,7 @@ Everything that goes in or out is in the **File** menu.
 
 ## IFC and Fragments
 
-**Export IFC or Fragments…** writes the model as IFC. Every wall, floor, door and roof is a real IFC element with its layers, its type and its properties, so the file opens as a model in other BIM tools. Doors and windows say how they open: the hand of each leaf and sash, which way it swings, and the panels, the way IFC defines them, so other programs draw the same swings.
+**Export IFC, Fragments or BOS…** writes the model as IFC. Every wall, floor, door and roof is a real IFC element with its layers, its type and its properties, so the file opens as a model in other BIM tools. Doors and windows say how they open: the hand of each leaf and sash, which way it swings, and the panels, the way IFC defines them, so other programs draw the same swings.
 
 The export asks for the schema (**IFC4**, read everywhere, or **IFC4X3**), the detail (parts as elements of their own, or one body per element), the phase, and how the bodies are written. **Geometry** is a **faceted B-rep** (exact, what other programs expect most often) or **face sets**: the same faces in a much smaller file. **Simplify** writes fewer triangles where a body is a fine mesh, such as the ducts and pipes of another program's file, never further from it than the **tolerance** you type (2 mm to start with). Bodies Lapin builds itself (walls, floors, doors) keep their exact faces, and simplifying changes only the shape of a body, never its properties.
 
@@ -48,9 +48,21 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 
 **Import Fragments…** brings a `.frag` file in: every item with geometry becomes a reference drawn from its body, in the class the file names, on the storey the file puts it (matched by name to yours, made when missing), with the file's attributes under **IFC properties**. Items with the same body (the same shape, placed in many places) share it. Importing the same file again updates what it brought before. What is recognised from its triangles is up to **How**, as above. Its property and quantity sets, its type and its materials come in with the attributes; glass stays see-through; a file made by That Open's own converter lands where its IFC would, and its faces with holes (a wall around its window) keep them.
 
-**Export IFC or Fragments…** writes the model as IFC or as Fragments, chosen as an import is: the elements by discipline and kind, the storeys, the phase, and only what the 3D view shows. IFC goes out in IFC4 or IFC4X3, a layered element's parts under it or one body each; Fragments from the project base point, the internal origin or the survey point. A Fragments file carries what an IFC viewer shows: each element's type, its quantities, your parameters, its materials and the map coordinates, as That Open's converter writes them.
+**Export IFC, Fragments or BOS…** writes the model as IFC, as Fragments or as BIM Open Schema, chosen as an import is: the elements by discipline and kind, the storeys, the phase, and only what the 3D view shows. IFC goes out in IFC4 or IFC4X3, a layered element's parts under it or one body each; Fragments from the project base point, the internal origin or the survey point. A Fragments file carries what an IFC viewer shows: each element's type, its quantities, your parameters, its materials and the map coordinates, as That Open's converter writes them.
 
-![Export IFC or Fragments](shots/export-exchange.webp)
+![Export IFC, Fragments or BOS](shots/export-exchange.webp)
+
+### BIM Open Schema
+
+[BIM Open Schema](https://github.com/ara3d/bim-open-schema) (`.bos`) is an open format by Ara 3D: a zip of Apache Parquet tables (entities, their parameters and relations, and the triangles placed by instances), easy to query with data tools such as DuckDB, pandas or Power BI, and read by Ara 3D's web viewers.
+
+**Import BIM Open Schema…** opens the same panel as an IFC or Fragments import: the elements by discipline and kind, the storeys, **How** and **As one group**. Every element with visible geometry becomes a reference drawn from its body, in the IFC class its category names (a Revit category such as *Walls* or *Doors* is read as its IFC class), on its storey (the one it is contained in, or for a file from Revit its level), matched by name to yours and made when missing. Its parameters come in as property sets (its IFC attributes under **Attributes**, its type and materials with them); elements that share a shape share one body; glass stays see-through. Spaces and whatever else the file marks hidden are left out. Importing the same file again updates what it brought before.
+
+![Import BIM Open Schema](shots/import-bos.webp)
+
+![The imported house in 3D](shots/import-bos-3d.webp)
+
+**Export IFC, Fragments or BOS…** with **BIM Open Schema** ticked writes the model as Ara 3D's IFC converter writes a file: the project, site, building and storeys, each element under its IFC class with its GlobalId, type, materials, IFC attributes, property and quantity sets and your parameters, contained in its storey; its triangles in tenths of a millimetre, a shape used many times (a column type, a window) stored once. Point clouds are not part of the format and stay out.
 
 ## JG Structures (structural analysis)
 

@@ -818,7 +818,7 @@ export const LO: Record<string, string> = {
   'Editing': 'ກຳລັງແກ້ໄຂ',
   'IFC and Fragments': 'IFC ແລະ Fragments',
   'Other formats': 'ຮູບແບບອື່ນໆ',
-  'Import Fragments': 'ນຳເຂົ້າ Fragments',
+  'Import Fragments': 'ນຳເຂົ້າ Fragments', 'Import BIM Open Schema…': 'ນຳເຂົ້າ BIM Open Schema…', 'Import BIM Open Schema': 'ນຳເຂົ້າ BIM Open Schema', 'Export IFC, Fragments or BOS…': 'ສົ່ງອອກ IFC, Fragments ຫຼື BOS…', 'Export IFC, Fragments or BOS': 'ສົ່ງອອກ IFC, Fragments ຫຼື BOS', 'Parquet tables, for data analysis and viewers': 'ຕາຕະລາງ Parquet ສຳລັບການວິເຄາະຂໍ້ມູນ ແລະ ໂປຣແກຣມເບິ່ງ',
   'Export IFC or Fragments…': 'ສົ່ງອອກ IFC ຫຼື Fragments…',
   'Export IFC or Fragments': 'ສົ່ງອອກ IFC ຫຼື Fragments',
   'Export 3D (glTF, USD, DAE)…': 'ສົ່ງອອກ 3D (glTF, USD, DAE)…',

@@ -24,7 +24,7 @@ namespace Lapin.Mesh;
 public sealed record MeshExportOptions(string Format = "glb", string? ViewId = null, string? Phase = null, bool Edges = false, string Origin = "base",
     IReadOnlySet<string>? Hidden = null, IReadOnlyList<ClipPlane>? Planes = null, bool Caps = true, string? Layers = null, bool Voids = false, bool PointClouds = false)
 {
-    public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae", "obj", "frag"];
+    public static readonly string[] Formats = ["glb", "gltf", "usdz", "usda", "dae", "obj", "frag", "bos"];
     public static readonly string[] Origins = ["base", "internal", "survey"];
 
     public static MeshExportOptions From(JsonObject p)

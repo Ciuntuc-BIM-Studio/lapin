@@ -43,10 +43,11 @@ export function ImportIfcDialog() {
 
   const close = () => { useIfcImport.setState({ survey: null, source: null, asProject: false }); useUi.setState({ dialog: null }); };
   const count = useMemo(() => (survey ? chosenCount(survey, offKinds, offStoreys) : 0), [survey, offKinds, offStoreys]);
-  if (!survey || !source) return <PendingDialog title={format === 'frag' ? 'Import Fragments' : 'Import IFC'} onClose={close} />;
-  const frag = format === 'frag';
+  if (!survey || !source) return <PendingDialog title={format === 'bos' ? 'Import BIM Open Schema' : format === 'frag' ? 'Import Fragments' : 'Import IFC'} onClose={close} />;
+  // Fragments and BIM Open Schema: triangles with their data, chosen and brought in the same way.
+  const frag = format === 'frag' || format === 'bos';
   const nothing = count === 0 || nothingChosen(survey, offKinds, offStoreys);
-  const title = frag ? 'Import Fragments' : 'Import IFC';
+  const title = format === 'bos' ? 'Import BIM Open Schema' : frag ? 'Import Fragments' : 'Import IFC';
   const run = () => {
     if (frag) { void runIfcImport({ ...choiceOf(survey, offKinds, offStoreys), mode, group }); return; }
     rememberRules(rules);

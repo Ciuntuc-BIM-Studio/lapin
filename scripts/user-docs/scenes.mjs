@@ -4632,6 +4632,41 @@ export const scenes = [
     },
   },
   {
+    // BIM Open Schema (docs/bos.md): a house written as a .bos (Parquet tables in a zip) and brought back as a Fragments file is,
+    // chosen in the same panel; the columns left out stay out, the file comes in as one group.
+    id: 'import-bos',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: true });
+      for (const x of [0, 12]) await t.cmd('structure.addColumn', { storeyId: storey, x, y: 0 });
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const file = join(tmpdir(), 'lapin-guide-house.bos');
+      await t.call('project.exportMesh', { format: 'bos', path: file });
+      await t.fresh();
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      await t.button('File', { exact: true });
+      const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await t.page.getByRole('menuitem', { name: 'Import BIM Open Schema…' }).click();
+      await (await chooser).setFiles(file);
+      const dialog = t.page.locator('[aria-label="Import BIM Open Schema"]');
+      await dialog.waitFor({ timeout: 60_000 });
+      const disciplines = await dialog.locator('[data-discipline]').evaluateAll((els) => els.map((e) => e.getAttribute('data-discipline')));
+      t.expect(disciplines.includes('architecture') && disciplines.includes('structure'), 'the BIM Open Schema file\'s elements by discipline');
+      await t.shot('import-bos', { of: '[aria-label="Import BIM Open Schema"]', pad: 0 });
+      await dialog.locator('[data-discipline=structure] input[type=checkbox]').first().uncheck();
+      await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+      await t.page.waitForSelector('[data-testid=busy]', { state: 'detached', timeout: 120_000 });
+      await t.wait(800);
+      const kinds = (await t.nodes()).map((n) => n.type);
+      t.expect(kinds.includes('IfcWall') && kinds.includes('IfcRoof') && !kinds.includes('IfcColumn'), 'the walls and the roof came in, the columns left out stayed out');
+      t.expect(kinds.includes('IfcGroup'), 'the file came in as one group');
+      await t.ui({ selected: [], selection: null });
+      await open3d(t);
+      await t.shot('import-bos-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     id: 'export',
     async run(t) {
       await t.fresh();
@@ -4643,10 +4678,10 @@ export const scenes = [
       await t.button('File', { exact: true });
       await t.shot('file-menu', { of: '[role=menu]', pad: 6 });
       // IFC and Fragments exported alike, chosen as an import is.
-      await t.page.getByRole('menuitem', { name: 'Export IFC or Fragments…' }).click();
-      const exchange = t.page.locator('[aria-label="Export IFC or Fragments"]');
+      await t.page.getByRole('menuitem', { name: 'Export IFC, Fragments or BOS…' }).click();
+      const exchange = t.page.locator('[aria-label="Export IFC, Fragments or BOS"]');
       await exchange.locator('[data-discipline]').first().waitFor({ timeout: 20_000 });
-      await t.shot('export-exchange', { of: '[aria-label="Export IFC or Fragments"]', pad: 0 });
+      await t.shot('export-exchange', { of: '[aria-label="Export IFC, Fragments or BOS"]', pad: 0 });
       await exchange.getByRole('button', { name: 'Cancel' }).click();
       await t.wait(300);
       await t.button('File', { exact: true });
@@ -4662,14 +4697,14 @@ export const scenes = [
       await dialog.getByRole('button', { name: 'Cancel' }).click();
       // Export IFC: face sets, simplified within 2 mm.
       await t.button('File', { exact: true });
-      await t.page.getByRole('menuitem', { name: 'Export IFC or Fragments…' }).click();
-      const ifc = t.page.locator('[aria-label="Export IFC or Fragments"]');
+      await t.page.getByRole('menuitem', { name: 'Export IFC, Fragments or BOS…' }).click();
+      const ifc = t.page.locator('[aria-label="Export IFC, Fragments or BOS"]');
       await ifc.locator('[data-discipline]').first().waitFor({ timeout: 20_000 });
       t.expect(await ifc.locator('select.export-geometry').inputValue() === 'brep', 'the IFC export writes B-reps unless asked otherwise');
       await ifc.locator('select.export-geometry').selectOption('faceset');
       await ifc.locator('input.export-simplify').check();
       t.expect(await ifc.locator('input.export-tolerance').inputValue() === '2', 'the tolerance starts at 2 mm');
-      await t.shot('export-ifc', { of: '[aria-label="Export IFC or Fragments"]', pad: 0 });
+      await t.shot('export-ifc', { of: '[aria-label="Export IFC, Fragments or BOS"]', pad: 0 });
       const written = await t.call('project.exportIfc', { geometry: 'faceset', tolerance: 0.002 });
       t.expect(typeof written?.data === 'string' && atob(written.data).includes('IFCPOLYGONALFACESET'), 'the IFC export writes face sets when asked');
       await ifc.getByRole('button', { name: 'Cancel' }).click();
