@@ -108,15 +108,15 @@ public class RebarBodiesTests
     }
 
     [Fact]
-    public void The_3D_shows_the_bars_by_its_rebar_category_off_in_an_architectural_view_on_in_a_structural_one()
+    public void The_3D_shows_the_bars_by_its_rebar_category_off_until_shown_in_every_3D_view()
     {
-        // Decision 402: "architects don't want to see rebars".
+        // Decisions 402, 403: "architects don't want to see rebars"; no 3D view shows them until asked.
         var f = F();
         var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0 })!["id"]!;
         f.Run("rebar.setTypeStirrups", new JsonObject { ["id"] = f.Model.RelatingOf(beam, IfcClass.RelDefinesByType)!.Id, ["enabled"] = true });
         var all = (int)Bodies(f)["triangles"]!;
         Assert.True(all > 0);
-        // {3D} is architectural by default: no bars until its Rebar category is shown.
+        // No bars until the 3D view's Rebar category is shown.
         var b = Bodies(f, new JsonObject { ["view"] = "3d" });
         Assert.True((bool)b["hidden"]!);
         Assert.Empty((JsonArray)b["groups"]!);
@@ -125,11 +125,11 @@ public class RebarBodiesTests
         // The beam hidden takes its stirrups with it.
         f.Run("view.graphics", new JsonObject { ["id"] = "3d", ["category"] = "beams", ["value"] = new JsonObject { ["hidden"] = true } });
         Assert.Equal(0, (int)Bodies(f, new JsonObject { ["view"] = "3d" })["triangles"]!);
-        // A structural 3D view shows them without being asked.
+        // A structural 3D view no more than an architectural one.
         f.Run("view.graphics", new JsonObject { ["id"] = "3d", ["category"] = "beams", ["value"] = null });
         f.Run("view.graphics", new JsonObject { ["id"] = "3d", ["category"] = "rebar", ["value"] = null });
         f.Run("view.setStyle", new JsonObject { ["id"] = "3d", ["discipline"] = "Structure" });
-        Assert.Equal(all, (int)Bodies(f, new JsonObject { ["view"] = "3d" })["triangles"]!);
+        Assert.True((bool)Bodies(f, new JsonObject { ["view"] = "3d" })["hidden"]!);
     }
 
     [Fact]

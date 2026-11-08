@@ -11,8 +11,8 @@ namespace Lapin.Engine.Tests;
 
 /// <summary>
 /// A linked structural IFC's IfcReinforcingBar (swept disk solids along their directrix) seen in 3D and hidden by the
-/// Rebar category (decision 402): "architects don't want to see rebars" — an architectural 3D view leaves them out until
-/// its Visibility / Graphics shows them, a structural one shows them; plans draw them only at a fine detail level.
+/// Rebar category (decisions 402, 403): "architects don't want to see rebars" — every 3D view leaves them out until its
+/// Visibility / Graphics shows them; plans and sections draw them only at the detail level that shows them.
 /// </summary>
 public class LinkRebarTests
 {
@@ -140,12 +140,9 @@ public class LinkRebarTests
         f.Run("view.graphics", new JsonObject { ["id"] = "3d", ["category"] = "rebar", ["value"] = new JsonObject { ["hidden"] = false } });
         looks = (JsonObject)f.Session.Query("view.looks3d", new JsonObject())!;
         Assert.DoesNotContain(bars, b => looks.ContainsKey(b.Id));
-        // A structural 3D view shows them by default; its own row hides them again.
+        // A structural 3D view hides them too until shown (decision 403).
         f.Run("view.graphics", new JsonObject { ["id"] = "3d", ["category"] = "rebar", ["value"] = null });
         f.Run("view.setStyle", new JsonObject { ["id"] = "3d", ["discipline"] = "Structure" });
-        looks = (JsonObject)f.Session.Query("view.looks3d", new JsonObject())!;
-        Assert.DoesNotContain(bars, b => looks.ContainsKey(b.Id));
-        f.Run("view.graphics", new JsonObject { ["id"] = "3d", ["category"] = "rebar", ["value"] = new JsonObject { ["hidden"] = true } });
         looks = (JsonObject)f.Session.Query("view.looks3d", new JsonObject())!;
         Assert.All(bars, b => Assert.True((bool)looks[b.Id]!["hidden"]!));
     }

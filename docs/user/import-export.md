@@ -98,7 +98,7 @@ An imported DXF is part of the project: **File → Save** keeps it in the `.lapi
 
 **Link IFC…** keeps another file linked instead of importing it (a scan: **Link point cloud…**, below). It is read-only and reloaded when it changes. This works for a DXF too. **Manage → Links** shows, reloads, converts or removes the links. A linked DXF lies in 3D as an imported one does; its **3D** box in **Manage → Links** turns that off. **Visibility / Graphics** (<kbd>VV</kbd>) hides a link, halftones it or gives it its own categories in one view alone (*Sections, elevations and 3D*, Visibility / Graphics).
 
-A linked IFC keeps what its file says of its elements' materials. Walls, floors and roofs with layer sets are drawn in their layers even as references, so an engineer hides the architectural link's finishes (**Walls ▸ Finishes**, **Slabs ▸ Finishes**) and a structural view style draws only their cores; a linked structural model's bars are in the **Rebar** category, which an architectural 3D view leaves out until it is shown. A link made with an older version gets its walls' layers when it is reloaded (its floors' at once).
+A linked IFC keeps what its file says of its elements' materials. Walls, floors and roofs with layer sets are drawn in their layers even as references, so an engineer hides the architectural link's finishes (**Walls ▸ Finishes**, **Slabs ▸ Finishes**) and a structural view style draws only their cores; a linked structural model's bars are in the **Rebar** category, which every 3D view leaves out until it is shown. A link made with an older version gets its walls' layers when it is reloaded (its floors' at once).
 
 ## Point clouds
 

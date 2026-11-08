@@ -86,7 +86,7 @@ En importeret DXF er en del af projektet: **File → Save** gemmer den i `.lapin
 
 **Tilknyt IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene. En linket DXF ligger i 3D, som en importeret gør; dens **3D**-felt i **Administrer → Links** slår det fra. **Synlighed / grafik** (<kbd>VV</kbd>) skjuler et link, viser det i halvtone eller giver det sine egne kategorier i én visning alene (*Snit, facader og 3D*, Synlighed / grafik).
 
-En linket IFC beholder, hvad filen siger om elementernes materialer. Vægge, dæk og tage med lagsæt tegnes i deres lag, også som referencer, så en ingeniør skjuler det arkitektoniske links overflader (**Vægge ▸ Overflader**, **Dæk ▸ Overflader**), og en konstruktionsstil tegner kun deres kerner; en linket konstruktionsmodels stænger er i kategorien **Armering**, som en arkitektonisk 3D-visning udelader, indtil den vises. Et link lavet med en ældre version får sine vægges lag, når det genindlæses (dækkenes med det samme).
+En linket IFC beholder, hvad filen siger om elementernes materialer. Vægge, dæk og tage med lagsæt tegnes i deres lag, også som referencer, så en ingeniør skjuler det arkitektoniske links overflader (**Vægge ▸ Overflader**, **Dæk ▸ Overflader**), og en konstruktionsstil tegner kun deres kerner; en linket konstruktionsmodels stænger er i kategorien **Armering**, som hver 3D-visning udelader, indtil den vises. Et link lavet med en ældre version får sine vægges lag, når det genindlæses (dækkenes med det samme).
 
 ## Punktskyer
 

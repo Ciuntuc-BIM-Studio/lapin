@@ -11,8 +11,8 @@ namespace Lapin.Rebar;
 /// The open module's bars in 3D (decisions 221, 402): every bar laid in space (a bar drawn by hand with its copies, a type's
 /// stirrups at their stations, a column's bars) as a hexagonal tube of its diameter swept along its bent shape, the bends
 /// as a few segments on the real arc, the triangles grouped by colour (the diameter's), asked by the interface with
-/// <c>rebar.bodies</c> and shown under the 3D view's Rebar category (off in an architectural view until shown, on in a
-/// structural one). They are a drawing, not bodies in the model: they are not cut, picked or exported. A linked or imported
+/// <c>rebar.bodies</c> and shown under the 3D view's Rebar category (off in every 3D view until
+/// shown, decision 403). They are a drawing, not bodies in the model: they are not cut, picked or exported. A linked or imported
 /// structural model's IfcReinforcingBar are references with their own bodies, shown and hidden by the same category. The
 /// premium <c>rebar-pro</c> keeps the bars as IfcReinforcingBar of their own, generated from the types, with its optimisers
 /// and configurators. The arrays go out as the protocol's binary buffers, not JSON numbers. Over <see cref="MaxTriangles"/>
@@ -53,7 +53,7 @@ public static class RebarBodies
     public static void Register(IModuleRegistry r) =>
         // {ids?: [element ids], view?: a 3D view's id or "3d"}: the bars of these elements (a bar, a beam, a column) alone; all
         // of them otherwise. With a view (decision 402), as its Visibility / Graphics shows them: none while it hides the
-        // Rebar category (an architectural 3D does until shown), none of an element it hides (a beam, a bar).
+        // Rebar category (every 3D view does until shown), none of an element it hides (a beam, a bar).
         r.Query("bodies", (q, a) =>
         {
             var ids = (a["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet();

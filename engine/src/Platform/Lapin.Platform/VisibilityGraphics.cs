@@ -41,9 +41,6 @@ public sealed class VisibilityGraphics
     /// <summary>The view's graphics as they rule it (null: none).</summary>
     public JsonObject? Graphics { get; }
 
-    /// <summary>The discipline of the view's style (Architecture, Structure…): what a 3D view leaves out until shown (rebar in an architectural one).</summary>
-    public string? Discipline { get; init; }
-
     VisibilityGraphics(IModelView model, JsonObject? graphics, bool in3d)
     {
         m = model;
@@ -67,7 +64,7 @@ public sealed class VisibilityGraphics
     public IEnumerable<JsonObject> FilterRows(Entity e) => FiltersOf(RulesFor(e)).Where(x => Takes(x.Filter, e)).Select(x => x.Row);
 
     /// <summary>A view's (a 2D view, a 3D view, or {3D} as <see cref="GraphicsSets.As3dView"/> gives it).</summary>
-    public static VisibilityGraphics Of(IModelView m, Entity view) => new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d") { Discipline = ViewStyles.StyleOf(m, view).Discipline ?? view.Str("discipline") ?? "Architecture" };
+    public static VisibilityGraphics Of(IModelView m, Entity view) => new(m, GraphicsSets.Of(m, view), view.Str("kind") == "3d");
 
     /// <summary>A view's graphics read as given (a test, an export with graphics of its own).</summary>
     public static VisibilityGraphics From(IModelView m, JsonObject? graphics, bool in3d) => new(m, graphics, in3d);
@@ -89,7 +86,7 @@ public sealed class VisibilityGraphics
     {
         if (LinkRow(e.Str(Links.Key)) is { } row && True(row["hidden"])) return true;
         var g = RulesFor(e);
-        if (in3d ? GraphicsSets.Hides3d(g, e, Discipline) : GraphicsSets.Hides(g, e)) return true;
+        if (in3d ? GraphicsSets.Hides3d(g, e) : GraphicsSets.Hides(g, e)) return true;
         // A reference all of one finish, insulation or membrane (a plaster part of a wall, a covering): hidden with its subcategory (decision 400).
         if (HiddenSubs(e) is { } sub && ReferenceLayers.WholeSub(m, e) is { } whole && True(sub[whole]?["hidden"])) return true;
         // A filter that takes it and hides what it takes (the first that says, in the view's order).

@@ -4,8 +4,8 @@
  * space, grouped by colour) after it mounts and after every diff that touches
  * beams, columns, bars, their types or the view's graphics, a pause of 300 ms
  * after the last, and draws one mesh per colour in the group `rebar-3d`. They
- * show under the view's Rebar category (Visibility / Graphics): off in an
- * architectural 3D until shown, on in a structural one; View → Bars in 3D and
+ * show under the view's Rebar category (Visibility / Graphics): off in every
+ * 3D view until shown (decision 403); View → Bars in 3D and
  * the Rebar 2D tab's button switch that category. They are a drawing for the
  * screen only: not picked, not selected, not cut, never exported (the exports
  * read the engine's scene); the group is taken out and its GPU memory freed

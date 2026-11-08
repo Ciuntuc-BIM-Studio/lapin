@@ -34,9 +34,9 @@ describe('the bars in 3D under the Rebar category (decision 402: "architects don
     expect(engine.execute).toHaveBeenLastCalledWith('view.graphics', { id: '3d', category: 'rebar', value: { halftone: true } });
   });
 
-  it('hides them in a structural 3D, where they show by default', async () => {
-    engine.query.mockResolvedValueOnce({ graphics: null, hiddenByDefault: ['spaces'] });
+  it('hides them where the view shows them, its row saying so', async () => {
+    engine.query.mockResolvedValueOnce({ graphics: { categories: { rebar: { hidden: false } } }, hiddenByDefault: ['spaces', 'rebar'] });
     expect(await toggleRebar3d('v1')).toBe(false);
-    expect(engine.execute).toHaveBeenLastCalledWith('view.graphics', { id: 'v1', category: 'rebar', value: { hidden: true } });
+    expect(engine.execute).toHaveBeenLastCalledWith('view.graphics', { id: 'v1', category: 'rebar', value: null });
   });
 });

@@ -86,7 +86,7 @@ Zaimportowany DXF jest częścią projektu: **File → Save** zapisuje go w plik
 
 **Połącz IFC…** utrzymuje inny plik jako połączony zamiast go importować. Jest tylko do odczytu i jest ponownie wczytywany, gdy się zmieni. Działa to także dla DXF. **Zarządzaj → Łącza** pokazuje, ponownie wczytuje, konwertuje lub usuwa łącza. Połączony DXF leży w 3D tak jak zaimportowany; jego pole **3D** w **Zarządzaj → Łącza** to wyłącza. **Widoczność / Grafika** (<kbd>VV</kbd>) ukrywa łącze, wyszarza je lub daje mu własne kategorie tylko w jednym widoku (*Przekroje, elewacje i 3D*, Widoczność / Grafika).
 
-Podłączony IFC zachowuje to, co jego plik mówi o materiałach elementów. Ściany, stropy i dachy z zestawami warstw rysują się w swoich warstwach nawet jako odniesienia, więc inżynier ukrywa wykończenia połączenia architektury (**Ściany ▸ Wykończenia**, **Stropy ▸ Wykończenia**), a styl widoku konstrukcji rysuje tylko ich rdzenie; pręty podłączonego modelu konstrukcji należą do kategorii **Zbrojenie**, którą widok 3D architektury pomija, dopóki jej nie pokażesz. Połączenie utworzone starszą wersją otrzymuje warstwy ścian po ponownym wczytaniu (stropów od razu).
+Podłączony IFC zachowuje to, co jego plik mówi o materiałach elementów. Ściany, stropy i dachy z zestawami warstw rysują się w swoich warstwach nawet jako odniesienia, więc inżynier ukrywa wykończenia połączenia architektury (**Ściany ▸ Wykończenia**, **Stropy ▸ Wykończenia**), a styl widoku konstrukcji rysuje tylko ich rdzenie; pręty podłączonego modelu konstrukcji należą do kategorii **Zbrojenie**, którą każdy widok 3D pomija, dopóki jej nie pokażesz. Połączenie utworzone starszą wersją otrzymuje warstwy ścian po ponownym wczytaniu (stropów od razu).
 
 ## Chmury punktów
 
