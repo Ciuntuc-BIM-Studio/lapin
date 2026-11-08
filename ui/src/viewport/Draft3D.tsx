@@ -12,7 +12,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import * as THREE from 'three';
 import type { Vec2 } from '../platform/module';
-import { useUi } from '../app/store';
+import { select, useUi } from '../app/store';
+import { pickTarget } from '../platform/groups';
+import { hitAt, rayAt as rayAt3 } from './scene3d';
 import { activeStorey, execute, useSession } from '../engine/session';
 import { useCamera } from './camera';
 import { useDrawing } from './drawing';
@@ -72,6 +74,8 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
   const facePickRef = useRef(facePick);
   facePickRef.current = facePick;
   useEffect(() => { if (!command) { setAimed(null); setFacePick(false); setInferred(null); } }, [command]);
+  const sketchRef = useRef(sketch);
+  sketchRef.current = sketch;
   const faceLinesRef = useRef(faceLines);
   faceLinesRef.current = faceLines;
 
@@ -142,6 +146,14 @@ export function Draft3D({ camera, canvas, scene }: { camera: React.RefObject<THR
       e.stopPropagation(); e.preventDefault();
       if (facePickRef.current) { void planeOnFace(e); return; }
       const step = useCad.getState().step;
+      // Selecting for a command typed in 3D (M, CO, RO, MI with nothing selected; decision 399): the body under the click,
+      // as a click selects it in 3D, added to the selection; Enter goes on. What lies on the plane only (a draft) as before.
+      if (step?.want === 'select' && !sketchRef.current) {
+        const ray = rayAt3({ camera, canvas, scene }, e.clientX, e.clientY);
+        const hit = ray ? hitAt(scene.current, ray) : null;
+        const id = pickTarget(hit?.nodeId);
+        if (id) { if (!useUi.getState().selected.includes(id)) select(id, true); return; }
+      }
       const raw = rawAt(e);
       if (!step || !raw) return;
       const a = inferOver(aimRef.current(raw, step.base ?? null, { orthoHeld: e.shiftKey }), raw, step.base ?? null);
