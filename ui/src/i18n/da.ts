@@ -1268,6 +1268,8 @@ export const DA: Record<string, string> = {
   "Transom at the springing": "Tværpost ved buens vederlag", "Arched casement": "Buet sidehængt vindue",
   // A U stair with winders at each corner and straight treads between (tester's report #109)
   "Winders at the first corner": "Spiraltrin ved første hjørne", "Winders at the second corner": "Spiraltrin ved andet hjørne", "Straight treads between the corners": "Lige trin mellem hjørnerne", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "Hvert hjørne drejer for sig; trappeøjet mellem løbene er så bredt som de lige trin.", "Winders": "Spiraltrin", "Winders, corner 1": "Spiraltrin, hjørne 1", "Winders, corner 2": "Spiraltrin, hjørne 2", "Treads between": "Trin imellem", "U stair with winders": "U-trappe med spiraltrin",
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  "Link point cloud…": "Sammenkæd punktsky…", "Point cloud": "Punktsky", "Colours": "Farver", "What colours its points": "Hvad der farver dens punkter", "RGB": "RGB", "Intensity": "Intensitet", "Classification": "Klassifikation", "Point size (px)": "Punktstørrelse (px)", "Where it stands: by the map, origin to origin or centred, its unit, moved and turned": "Hvor den står: efter kortet, origo på origo eller centreret, dens enhed, flyttet og drejet", "Read the file again (indexed again if it changed)": "Læs filen igen (indekseret igen hvis den er ændret)", "points": "punkter", "Waiting…": "Venter…", "Ready": "Klar", "Not available": "Ikke tilgængelig", "Moved x": "Flyttet x", "Moved y": "Flyttet y", "Moved z": "Flyttet z", "Turned (°)": "Drejet (°)", "as Lapin suggests": "som Lapin foreslår", "by the project's map coordinates": "efter projektets kortkoordinater", "origin to origin": "origo på origo", "centred on the project's origin": "centreret på projektets origo", "as the file says (else metres)": "som filen siger (ellers meter)", "feet": "fod", "US survey feet": "amerikanske landmålerfod",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -1414,4 +1416,11 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(\d+) guide\(s\) erased\.$/, (m) => `${m[1]} hjælpelinje(r) slettet.`],
   [/^Guide line at (.+)\.$/, (m) => `Hjælpelinje ved ${m[1]}.`],
   [/^Distance: (.+)\.$/, (m) => `Afstand: ${m[1]}.`],
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  [/^Indexing: (\w+) (\d+)%$/, (m) => `Indeksering: ${({ Starting: 'start', Reading: 'læsning', Counting: 'optælling', Sorting: 'sortering', Indexing: 'indeksering', Done: 'færdig' } as Record<string, string>)[m[1]] ?? m[1]} ${m[2]}%`],
+  [/^([\d.,  ]+) points drawn$/, (m) => `${m[1]} punkter tegnet`],
+  [/^Link the point cloud (.+)$/, (m) => `Sammenkæd punktskyen ${m[1]}`],
+  [/^Place the point cloud (.+)$/, (m) => `Placér punktskyen ${m[1]}`],
+  [/^Linked (.+): indexed in the background; Manage → Links shows how far\.(.*)$/, (m) => `${m[1]} sammenkædet: indekseres i baggrunden; Administrer → Sammenkædninger viser hvor langt.${m[2]}`],
+  [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} er ${m[2]} MB: i en browser er en punktsky højst ${m[3]} MB. Sammenkæd den i desktop-appen.`],
 ];

@@ -11,6 +11,8 @@ with its own B-rep kernel (`engine/src/Geometry`) and manifold for the booleans.
 > The geometry kernel was taken from BubbleBIM Pro (the author's own engine) on
 > 25.10.2026 and is Lapin's own code since, under the same licence. manifold
 > (Apache-2.0) and Clipper2 (BSL-1.0) are described in `engine/native/README.md`.
+> The LAZ decoder is a C# port of laz-rs (Apache-2.0): its notice is in
+> `engine/src/Platform/Lapin.PointClouds/Laz/NOTICE.md`.
 
 ## Layout
 

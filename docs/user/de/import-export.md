@@ -86,6 +86,27 @@ Eine importierte DXF gehört zum Projekt: **File → Save** speichert sie in der
 
 **IFC verknüpfen…** hält eine andere Datei verknüpft, statt sie zu importieren. Sie ist schreibgeschützt und wird neu geladen, wenn sie sich ändert. Das funktioniert auch für eine DXF-Datei. **Verwalten → Verknüpfungen** zeigt die Verknüpfungen an, lädt sie neu, wandelt sie um oder entfernt sie. Ein verknüpftes DXF liegt in 3D wie ein importiertes; sein Feld **3D** in **Verwalten → Verknüpfungen** schaltet das aus. **Sichtbarkeit / Grafiken** (<kbd>VV</kbd>) blendet eine Verknüpfung aus, zeigt sie halbtonig oder gibt ihr eigene Kategorien, in nur einer Ansicht (*Schnitte, Ansichten und 3D*, Sichtbarkeit / Grafiken).
 
+## Punktwolken
+
+**File → Link point cloud…** verknüpft einen Laserscan oder eine Photogrammetrie-Wolke, nur in offenen Formaten: **LAS** (1.0–1.4, alle Punktformate), **LAZ** (komprimiertes LAS), **E57**, **PLY** (ASCII und binär) und Punkte als Text, **XYZ**, **PTS** und **CSV**. Proprietäre Formate (RCP und RCS von Autodesk ReCap, FLS von FARO, LGS von Leica) werden nicht gelesen: den Scan zuerst aus seinem Programm als E57 oder LAS exportieren.
+
+Lapin fragt, wo die Wolke steht und in welcher Einheit:
+
+- **nach den Kartenkoordinaten des Projekts**: x und y der Datei sind Rechts- und Hochwert, über den Vermessungspunkt und den Winkel nach Norden aus **Manage → Location** platziert, ihre Höhen über der Höhe des Vermessungspunkts. Lapin schlägt es vor, wenn die Datei ein Koordinatensystem nennt oder ihre Koordinaten weit von null liegen und das Projekt einen Standort hat;
+- **Ursprung auf Ursprung**: der Ursprung der Datei auf dem des Projekts;
+- **zentriert auf den Projektursprung**: ihre Mitte auf dem Ursprung, ihr tiefster Punkt auf ±0.00;
+- **ihre Einheit**: wie die Datei sagt (LAS und E57 sagen es), sonst Meter; Zentimeter, Millimeter, Fuß, US-Vermessungsfuß und Zoll werden angeboten. Ist die Wolke für ein Gebäude oder ein Gelände unwahrscheinlich groß (unter 20 cm oder über 50 km) oder nennt die Datei eine andere Einheit, warnt Lapin.
+
+Die Wolke bleibt in ihrer Datei. Sie wird nicht ins Projekt kopiert: das Projekt behält nur die Verknüpfung (den Pfad der Datei, wo die Wolke steht, wie sie gezeichnet wird). Lapin indiziert sie einmal, im Hintergrund, in einen Octree aus Kacheln in seinem eigenen Ordner auf diesem Computer (nicht neben dem Projekt), und **Manage → Links** zeigt, wie weit es ist. Danach lädt die 3D-Ansicht die Kacheln, die die Kamera braucht, die nahen zuerst und feiner, je näher man kommt, innerhalb eines Punktebudgets nach **View → Display quality** (1,5, 3 oder 6 Millionen gleichzeitig gezeichnete Punkte), sodass ein Scan von hundert Millionen Punkten so flüssig dreht wie ein kleiner.
+
+![Ein Scan des Hauses als Punktwolke verknüpft, in der 3D-Ansicht](shots/point-cloud-3d.webp)
+
+In **Manage → Links** hat eine Wolke ihre eigene Zeile: ihre Punkte, wie weit ihr Index ist, **Shown**, **Halftone**, **3D**, was ihre Punkte färbt (**RGB**, **Intensity**, **Elevation** oder **Classification**, nach den ASPRS-Klassen: Boden, Vegetation, Gebäude, Wasser…) und die **Size** eines Punkts in Pixeln. Der Pin-Knopf platziert sie neu (nach der Karte, Ursprung auf Ursprung oder zentriert, ihre Einheit, entlang x, y und z verschoben, gedreht); der Knopf zum Neuladen liest ihre Datei erneut und indiziert sie nur dann neu, wenn sie sich geändert hat. **Unlink** entfernt die Verknüpfung; der Index bleibt in Lapins Ordner und dient der Wolke wieder, wenn sie erneut verknüpft wird.
+
+![Manage → Links mit einer Punktwolke](shots/point-cloud-links.webp)
+
+Eine Wolke wird nie exportiert: IFC, Fragments und die 3D-Exporte tragen das Modell, nicht den Scan. Im Browser kann eine Wolke von bis zu 160 MB verknüpft werden; sie wird in der Seite indiziert und muss nach dem Neuladen der Seite erneut verknüpft werden. Größere Wolken brauchen die Desktop-App.
+
 ## 3D-Modelle
 
 **3D-Export (glTF, USD, DAE)…** schreibt das Modell als Oberflächen für Rendering, Visualisierung und Augmented Reality (AR):

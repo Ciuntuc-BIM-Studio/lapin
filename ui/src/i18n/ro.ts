@@ -1272,6 +1272,8 @@ export const RO: Record<string, string> = {
   "Transom at the springing": "Traversă la nașterea arcului", "Arched casement": "Cercevea în arc",
   // A U stair with winders at each corner and straight treads between (tester's report #109)
   "Winders at the first corner": "Trepte balansate la primul colț", "Winders at the second corner": "Trepte balansate la al doilea colț", "Straight treads between the corners": "Trepte drepte între colțuri", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "Fiecare colț se întoarce singur; ochiul scării e cât treptele drepte dintre ele.", "Winders": "Trepte balansate", "Winders, corner 1": "Balansate, colțul 1", "Winders, corner 2": "Balansate, colțul 2", "Treads between": "Trepte între", "U stair with winders": "Scară în U cu trepte balansate",
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  "Link point cloud…": "Leagă nor de puncte…", "Point cloud": "Nor de puncte", "Colours": "Culori", "What colours its points": "Ce colorează punctele", "RGB": "RGB", "Intensity": "Intensitate", "Classification": "Clasificare", "Point size (px)": "Mărimea punctului (px)", "Where it stands: by the map, origin to origin or centred, its unit, moved and turned": "Unde stă: după hartă, origine pe origine sau centrat, unitatea lui, mutat și rotit", "Read the file again (indexed again if it changed)": "Citește fișierul din nou (reindexat dacă s-a schimbat)", "points": "puncte", "Waiting…": "Se așteaptă…", "Ready": "Gata", "Not available": "Indisponibil", "Moved x": "Mutat x", "Moved y": "Mutat y", "Moved z": "Mutat z", "Turned (°)": "Rotit (°)", "as Lapin suggests": "cum propune Lapin", "by the project's map coordinates": "după coordonatele de hartă ale proiectului", "origin to origin": "origine pe origine", "centred on the project's origin": "centrat pe originea proiectului", "as the file says (else metres)": "cum spune fișierul (altfel metri)", "feet": "picioare", "US survey feet": "picioare US survey",
 };
 
 /** Phrases with a number or a name in them. */
@@ -1416,4 +1418,11 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(\d+) guide\(s\) erased\.$/, (m) => `${m[1]} ghidaj(e) șterse.`],
   [/^Guide line at (.+)\.$/, (m) => `Linie de ghidaj la ${m[1]}.`],
   [/^Distance: (.+)\.$/, (m) => `Distanță: ${m[1]}.`],
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  [/^Indexing: (\w+) (\d+)%$/, (m) => `Indexare: ${({ Starting: 'pornire', Reading: 'citire', Counting: 'numărare', Sorting: 'sortare', Indexing: 'indexare', Done: 'gata' } as Record<string, string>)[m[1]] ?? m[1]} ${m[2]}%`],
+  [/^([\d.,  ]+) points drawn$/, (m) => `${m[1]} puncte desenate`],
+  [/^Link the point cloud (.+)$/, (m) => `Leagă norul de puncte ${m[1]}`],
+  [/^Place the point cloud (.+)$/, (m) => `Așază norul de puncte ${m[1]}`],
+  [/^Linked (.+): indexed in the background; Manage → Links shows how far\.(.*)$/, (m) => `${m[1]} legat: se indexează în fundal; Gestionare → Legături arată cât a avansat.${m[2]}`],
+  [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} are ${m[2]} MB: în browser un nor de puncte are cel mult ${m[3]} MB. Leagă-l în aplicația desktop.`],
 ];

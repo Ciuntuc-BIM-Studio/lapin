@@ -86,6 +86,27 @@ Un DXF importato fa parte del progetto: **File → Save** lo conserva nel file `
 
 **Collega IFC…** mantiene un altro file collegato invece di importarlo. È in sola lettura e viene ricaricato quando cambia. Funziona anche per un DXF. **Gestisci → Collegamenti** mostra, ricarica, converte o rimuove i collegamenti. Un DXF collegato sta in 3D come uno importato; la sua casella **3D** in **Gestisci → Collegamenti** lo toglie. **Visibilità / Grafica** (<kbd>VV</kbd>) nasconde un collegamento, lo mostra a mezzitoni o gli dà le sue categorie in una sola vista (*Sezioni, prospetti e 3D*, Visibilità / Grafica).
 
+## Nuvole di punti
+
+**File → Link point cloud…** collega una scansione laser o una nuvola da fotogrammetria, solo nei formati aperti: **LAS** (1.0–1.4, tutti i formati di punto), **LAZ** (LAS compresso), **E57**, **PLY** (ASCII e binario) e punti come testo, **XYZ**, **PTS** e **CSV**. I formati proprietari (RCP e RCS di Autodesk ReCap, FLS di FARO, LGS di Leica) non vengono letti: esporta prima la scansione dal suo programma come E57 o LAS.
+
+Lapin chiede dove si trova la nuvola e in quale unità:
+
+- **secondo le coordinate cartografiche del progetto**: la x e la y del file sono est e nord, posizionate tramite il punto di rilievo e l'angolo rispetto al nord di **Manage → Location**, le quote sopra la quota del punto di rilievo. Lapin lo propone quando il file nomina un sistema di coordinate o le sue coordinate sono lontane da zero e il progetto ha una localizzazione;
+- **origine su origine**: l'origine del file su quella del progetto;
+- **centrata sull'origine del progetto**: il suo centro sull'origine, il suo punto più basso a ±0.00;
+- **la sua unità**: come dice il file (LAS ed E57 la dicono), altrimenti metri; si offrono centimetri, millimetri, piedi, piedi topografici USA e pollici. Quando la nuvola risulta improbabile per un edificio o un terreno (sotto 20 cm o oltre 50 km), o il file indica un'altra unità, Lapin avvisa.
+
+La nuvola resta nel suo file. Non viene copiata nel progetto: il progetto tiene solo il collegamento (il percorso del file, dove si trova la nuvola, come si disegna). Lapin la indicizza una volta, in background, in un octree di tasselli nella sua cartella su questo computer (non accanto al progetto), e **Manage → Links** mostra a che punto è. Poi la vista 3D carica i tasselli che servono alla camera, prima i vicini e più fini man mano che ti avvicini, entro un budget di punti dato da **View → Display quality** (1,5, 3 o 6 milioni di punti disegnati insieme), così una scansione di cento milioni di punti ruota fluida come una piccola.
+
+![Una scansione della casa collegata come nuvola di punti, nella vista 3D](shots/point-cloud-3d.webp)
+
+In **Manage → Links** una nuvola ha la sua riga: i suoi punti, a che punto è il suo indice, **Shown**, **Halftone**, **3D**, cosa colora i suoi punti (**RGB**, **Intensity**, **Elevation** o **Classification**, secondo le classi ASPRS: terreno, vegetazione, edificio, acqua…) e la **Size** di un punto in pixel. Il pulsante con lo spillo la riposiziona (secondo la mappa, origine su origine o centrata, la sua unità, spostata lungo x, y e z, ruotata); il pulsante di ricarica rilegge il suo file e la reindicizza solo se è cambiato. **Unlink** rimuove il collegamento; l'indice resta nella cartella di Lapin e serve di nuovo la nuvola se viene ricollegata.
+
+![Manage → Links con una nuvola di punti](shots/point-cloud-links.webp)
+
+Una nuvola non viene mai esportata: IFC, Fragments e le esportazioni 3D portano il modello, non la scansione. Nel browser si può collegare una nuvola fino a 160 MB; viene indicizzata nella pagina e va ricollegata dopo aver ricaricato la pagina. Le nuvole più grandi richiedono l'app desktop.
+
 ## Modelli 3D
 
 **Esporta 3D (glTF, USD, DAE)…** scrive il modello come superfici per il rendering, la visualizzazione e la realtà aumentata (RA):

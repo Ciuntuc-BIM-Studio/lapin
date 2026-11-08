@@ -1271,6 +1271,8 @@ export const ZH: Record<string, string> = {
   "Transom at the springing": "起拱处的横档", "Arched casement": "拱形平开窗",
   // A U stair with winders at each corner and straight treads between (tester's report #109)
   "Winders at the first corner": "第一个转角的扇形踏步", "Winders at the second corner": "第二个转角的扇形踏步", "Straight treads between the corners": "两转角之间的直踏步", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "每个转角各自转向；梯段之间的梯井与直踏步同宽。", "Winders": "扇形踏步", "Winders, corner 1": "扇形踏步，转角 1", "Winders, corner 2": "扇形踏步，转角 2", "Treads between": "之间的踏步", "U stair with winders": "带扇形踏步的 U 形楼梯",
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  "Link point cloud…": "链接点云…", "Point cloud": "点云", "Colours": "颜色", "What colours its points": "点的着色方式", "RGB": "RGB", "Intensity": "强度", "Classification": "分类", "Point size (px)": "点大小（px）", "Where it stands: by the map, origin to origin or centred, its unit, moved and turned": "放置方式：按地图、原点对原点或居中，单位，移动和旋转", "Read the file again (indexed again if it changed)": "重新读取文件（如有更改则重新索引）", "points": "个点", "Waiting…": "等待中…", "Ready": "就绪", "Not available": "不可用", "Moved x": "移动 x", "Moved y": "移动 y", "Moved z": "移动 z", "Turned (°)": "旋转（°）", "as Lapin suggests": "按 Lapin 的建议", "by the project's map coordinates": "按项目的地图坐标", "origin to origin": "原点对原点", "centred on the project's origin": "以项目原点为中心", "as the file says (else metres)": "按文件所述（否则为米）", "feet": "英尺", "US survey feet": "美国测量英尺",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -1414,4 +1416,11 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) guide\(s\) erased\.$/, (m) => `已清除 ${m[1]} 条参考线。`],
   [/^Guide line at (.+)\.$/, (m) => `参考线位于 ${m[1]}。`],
   [/^Distance: (.+)\.$/, (m) => `距离：${m[1]}。`],
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  [/^Indexing: (\w+) (\d+)%$/, (m) => `正在索引：${({ Starting: '开始', Reading: '读取', Counting: '计数', Sorting: '排序', Indexing: '建立索引', Done: '完成' } as Record<string, string>)[m[1]] ?? m[1]} ${m[2]}%`],
+  [/^([\d.,  ]+) points drawn$/, (m) => `已绘制 ${m[1]} 个点`],
+  [/^Link the point cloud (.+)$/, (m) => `链接点云 ${m[1]}`],
+  [/^Place the point cloud (.+)$/, (m) => `放置点云 ${m[1]}`],
+  [/^Linked (.+): indexed in the background; Manage → Links shows how far\.(.*)$/, (m) => `已链接 ${m[1]}：正在后台索引；管理 → 链接 显示进度。${m[2]}`],
+  [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} 为 ${m[2]} MB：在浏览器中点云最多 ${m[3]} MB。请在桌面应用中链接。`],
 ];

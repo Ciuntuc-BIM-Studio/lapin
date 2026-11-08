@@ -1277,6 +1277,8 @@ export const FR: Record<string, string> = {
   "Transom at the springing": "Traverse à la naissance de l’arc", "Arched casement": "Fenêtre battante cintrée",
   // A U stair with winders at each corner and straight treads between (tester's report #109)
   "Winders at the first corner": "Marches balancées au premier angle", "Winders at the second corner": "Marches balancées au second angle", "Straight treads between the corners": "Marches droites entre les angles", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "Chaque angle tourne seul ; le jour entre les volées est aussi large que les marches droites.", "Winders": "Marches balancées", "Winders, corner 1": "Balancées, angle 1", "Winders, corner 2": "Balancées, angle 2", "Treads between": "Marches entre", "U stair with winders": "Escalier en U balancé",
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  "Link point cloud…": "Lier un nuage de points…", "Point cloud": "Nuage de points", "Colours": "Couleurs", "What colours its points": "Ce qui colore ses points", "RGB": "RVB", "Intensity": "Intensité", "Classification": "Classification", "Point size (px)": "Taille du point (px)", "Where it stands: by the map, origin to origin or centred, its unit, moved and turned": "Où il se trouve : par la carte, origine sur origine ou centré, son unité, déplacé et tourné", "Read the file again (indexed again if it changed)": "Relire le fichier (réindexé s'il a changé)", "points": "points", "Waiting…": "En attente…", "Ready": "Prêt", "Not available": "Indisponible", "Moved x": "Déplacé x", "Moved y": "Déplacé y", "Moved z": "Déplacé z", "Turned (°)": "Tourné (°)", "as Lapin suggests": "comme Lapin le propose", "by the project's map coordinates": "par les coordonnées cartographiques du projet", "origin to origin": "origine sur origine", "centred on the project's origin": "centré sur l'origine du projet", "as the file says (else metres)": "comme le dit le fichier (sinon mètres)", "feet": "pieds", "US survey feet": "pieds d'arpentage US",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -1423,4 +1425,11 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(\d+) guide\(s\) erased\.$/, (m) => `${m[1]} guide(s) effacé(s).`],
   [/^Guide line at (.+)\.$/, (m) => `Ligne guide à ${m[1]}.`],
   [/^Distance: (.+)\.$/, (m) => `Distance : ${m[1]}.`],
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  [/^Indexing: (\w+) (\d+)%$/, (m) => `Indexation : ${({ Starting: 'démarrage', Reading: 'lecture', Counting: 'comptage', Sorting: 'tri', Indexing: 'indexation', Done: 'terminé' } as Record<string, string>)[m[1]] ?? m[1]} ${m[2]} %`],
+  [/^([\d.,  ]+) points drawn$/, (m) => `${m[1]} points dessinés`],
+  [/^Link the point cloud (.+)$/, (m) => `Lier le nuage de points ${m[1]}`],
+  [/^Place the point cloud (.+)$/, (m) => `Placer le nuage de points ${m[1]}`],
+  [/^Linked (.+): indexed in the background; Manage → Links shows how far\.(.*)$/, (m) => `${m[1]} lié : indexé en arrière-plan ; Gérer → Liens montre où il en est.${m[2]}`],
+  [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} fait ${m[2]} Mo : dans un navigateur un nuage de points fait au plus ${m[3]} Mo. Liez-le dans l'application de bureau.`],
 ];

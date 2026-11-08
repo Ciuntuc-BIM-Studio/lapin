@@ -86,6 +86,27 @@ En importeret DXF er en del af projektet: **File → Save** gemmer den i `.lapin
 
 **Tilknyt IFC…** holder en anden fil linket i stedet for at importere den. Den er skrivebeskyttet og genindlæses, når den ændres. Det virker også for en DXF. **Administrer → Links** viser, genindlæser, konverterer eller fjerner linkene. En linket DXF ligger i 3D, som en importeret gør; dens **3D**-felt i **Administrer → Links** slår det fra. **Synlighed / grafik** (<kbd>VV</kbd>) skjuler et link, viser det i halvtone eller giver det sine egne kategorier i én visning alene (*Snit, facader og 3D*, Synlighed / grafik).
 
+## Punktskyer
+
+**File → Link point cloud…** sammenkæder en laserscanning eller en fotogrammetri-sky, kun i åbne formater: **LAS** (1.0–1.4, alle punktformater), **LAZ** (komprimeret LAS), **E57**, **PLY** (ASCII og binær) og punkter som tekst, **XYZ**, **PTS** og **CSV**. Proprietære formater (RCP og RCS fra Autodesk ReCap, FLS fra FARO, LGS fra Leica) læses ikke: eksportér først scanningen fra dens program som E57 eller LAS.
+
+Lapin spørger, hvor skyen står, og i hvilken enhed:
+
+- **efter projektets kortkoordinater**: filens x og y er øst- og nordkoordinater, placeret via opmålingspunktet og vinklen til nord fra **Manage → Location**, dens højder over opmålingspunktets kote. Lapin foreslår det, når filen nævner et koordinatsystem eller dens koordinater ligger langt fra nul, og projektet har en placering;
+- **origo på origo**: filens origo på projektets;
+- **centreret på projektets origo**: dens midte på origo, dens laveste punkt på ±0.00;
+- **dens enhed**: som filen siger (LAS og E57 siger det), ellers meter; centimeter, millimeter, fod, amerikanske landmålerfod og tommer tilbydes. Når skyen bliver usandsynlig for en bygning eller en grund (under 20 cm eller over 50 km), eller filen siger en anden enhed, advarer Lapin.
+
+Skyen bliver i sin fil. Den kopieres ikke ind i projektet: projektet gemmer kun sammenkædningen (filens sti, hvor skyen står, hvordan den tegnes). Lapin indekserer den én gang, i baggrunden, til et octree af fliser i sin egen mappe på denne computer (ikke ved siden af projektet), og **Manage → Links** viser, hvor langt den er. Derefter henter 3D-visningen de fliser, kameraet har brug for, de nære først og finere, jo tættere man kommer, inden for et punktbudget sat af **View → Display quality** (1,5, 3 eller 6 millioner punkter tegnet ad gangen), så en scanning på hundrede millioner punkter drejer lige så jævnt som en lille.
+
+![En scanning af huset sammenkædet som punktsky, i 3D-visningen](shots/point-cloud-3d.webp)
+
+I **Manage → Links** har en sky sin egen række: dens punkter, hvor langt dens indeks er, **Shown**, **Halftone**, **3D**, hvad der farver dens punkter (**RGB**, **Intensity**, **Elevation** eller **Classification**, efter ASPRS-klasserne: terræn, vegetation, bygning, vand…) og et punkts **Size** i pixels. Knappenålsknappen placerer den igen (efter kortet, origo på origo eller centreret, dens enhed, flyttet langs x, y og z, drejet); genindlæsningsknappen læser dens fil igen og indekserer kun igen, hvis den er ændret. **Unlink** fjerner sammenkædningen; indekset bliver i Lapins mappe og tjener skyen igen, hvis den sammenkædes igen.
+
+![Manage → Links med en punktsky](shots/point-cloud-links.webp)
+
+En sky eksporteres aldrig: IFC, Fragments og 3D-eksporterne bærer modellen, ikke scanningen. I browseren kan en sky på op til 160 MB sammenkædes; den indekseres i siden og skal sammenkædes igen, når siden genindlæses. Større skyer kræver desktop-appen.
+
 ## 3D-modeller
 
 **3D-eksport (glTF, USD, DAE)…** skriver modellen som flader til rendering, visualisering og udvidet virkelighed (AR):

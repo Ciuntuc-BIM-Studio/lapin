@@ -86,6 +86,27 @@ Un DXF importat face parte din proiect: **File → Save** îl păstrează în fi
 
 **Leagă IFC…** ține alt fișier legat în loc să-l importe. E doar pentru citire și se reîncarcă atunci când se schimbă. Merge și pentru un DXF. **Gestionare → Legături** arată, reîncarcă, convertește sau scoate legăturile. Un DXF legat stă în 3D ca unul importat; bifa **3D** din **Gestionare → Legături** îl scoate de acolo. **Vizibilitate / Grafică** (<kbd>VV</kbd>) ascunde o legătură, o estompează sau îi dă categoriile ei doar într-o vedere (*Secțiuni, fațade și 3D*, Vizibilitate / Grafică).
 
+## Nori de puncte
+
+**File → Link point cloud…** leagă o scanare laser sau un nor din fotogrammetrie, numai în formate deschise: **LAS** (1.0–1.4, toate formatele de punct), **LAZ** (LAS comprimat), **E57**, **PLY** (ASCII și binar) și puncte ca text, **XYZ**, **PTS** și **CSV**. Formatele proprietare (RCP și RCS din Autodesk ReCap, FLS de la FARO, LGS de la Leica) nu se citesc: exportă întâi scanarea din programul ei ca E57 sau LAS.
+
+Lapin întreabă unde stă norul și în ce unitate:
+
+- **după coordonatele de hartă ale proiectului**: x și y din fișier sunt est și nord, așezate prin punctul de survey și unghiul față de nord din **Manage → Location**, cotele peste cota punctului de survey. Lapin îl propune când fișierul își numește sistemul de coordonate sau coordonatele lui sunt departe de zero și proiectul are o localizare;
+- **origine pe origine**: originea fișierului pe a proiectului;
+- **centrat pe originea proiectului**: mijlocul lui pe origine, punctul cel mai de jos la ±0.00;
+- **unitatea lui**: cum spune fișierul (LAS și E57 o spun), altfel metri; se oferă și centimetri, milimetri, picioare, picioare US survey și inci. Când norul iese nepotrivit pentru o clădire sau un teren (sub 20 cm sau peste 50 km), ori fișierul spune altă unitate, Lapin avertizează.
+
+Norul rămâne în fișierul lui. Nu se copiază în proiect: proiectul păstrează doar legătura (calea fișierului, unde stă norul, cum se desenează). Lapin îl indexează o dată, în fundal, într-un octree de bucăți în folderul lui de pe acest calculator (nu lângă proiect), iar **Manage → Links** arată cât a avansat. Apoi vederea 3D aduce bucățile de care camera are nevoie, întâi pe cele apropiate și tot mai fine pe măsură ce te apropii, într-un buget de puncte dat de **View → Display quality** (1,5, 3 sau 6 milioane de puncte desenate deodată), așa că o scanare de o sută de milioane de puncte se rotește la fel de lin ca una mică.
+
+![O scanare a casei legată ca nor de puncte, în vederea 3D](shots/point-cloud-3d.webp)
+
+În **Manage → Links** un nor are rândul lui: punctele, cât a avansat indexul, **Shown**, **Halftone**, **3D**, ce colorează punctele (**RGB**, **Intensity**, **Elevation** sau **Classification**, după clasele ASPRS: teren, vegetație, clădire, apă…) și **Size**, mărimea unui punct în pixeli. Butonul cu pin îl reașază (după hartă, origine pe origine sau centrat, unitatea, mutat pe x, y și z, rotit); butonul de reîncărcare recitește fișierul și îl reindexează doar dacă s-a schimbat. **Unlink** scoate legătura; indexul rămâne în folderul lui Lapin și servește norul din nou dacă e legat din nou.
+
+![Manage → Links cu un nor de puncte](shots/point-cloud-links.webp)
+
+Un nor nu se exportă niciodată: IFC, Fragments și exporturile 3D duc modelul, nu scanarea. În browser se poate lega un nor de cel mult 160 MB; e indexat în pagină și trebuie legat din nou după reîncărcarea paginii. Norii mai mari cer aplicația desktop.
+
 ## Modele 3D
 
 **Export 3D (glTF, USD, DAE)…** scrie modelul ca suprafețe pentru randare, vizualizare și realitate augmentată (AR):

@@ -86,6 +86,27 @@ Um DXF importado faz parte do projeto: **File → Save** guarda-o no arquivo `.l
 
 **Vincular IFC…** mantém outro arquivo vinculado em vez de importá-lo. Ele é somente leitura e é recarregado quando muda. Isso também funciona para um DXF. **Gerenciar → Vínculos** mostra, recarrega, converte ou remove os vínculos. Um DXF vinculado fica em 3D como um importado; a sua caixa **3D** em **Gerenciar → Vínculos** desliga isso. **Visibilidade / Gráficos** (<kbd>VV</kbd>) oculta um vínculo, mostra-o em meio-tom ou dá-lhe suas próprias categorias numa só vista (*Cortes, elevações e 3D*, Visibilidade / Gráficos).
 
+## Nuvens de pontos
+
+**File → Link point cloud…** vincula uma varredura a laser ou uma nuvem de fotogrametria, só em formatos abertos: **LAS** (1.0–1.4, todos os formatos de ponto), **LAZ** (LAS comprimido), **E57**, **PLY** (ASCII e binário) e pontos como texto, **XYZ**, **PTS** e **CSV**. Formatos proprietários (RCP e RCS do Autodesk ReCap, FLS da FARO, LGS da Leica) não são lidos: exporte antes a varredura do seu programa como E57 ou LAS.
+
+O Lapin pergunta onde a nuvem fica e em qual unidade:
+
+- **pelas coordenadas de mapa do projeto**: o x e o y do arquivo são leste e norte, posicionados pelo ponto de levantamento e o ângulo ao norte de **Manage → Location**, suas alturas acima da cota do ponto de levantamento. O Lapin sugere isso quando o arquivo nomeia um sistema de coordenadas ou suas coordenadas estão longe de zero e o projeto tem uma localização;
+- **origem com origem**: a origem do arquivo sobre a do projeto;
+- **centralizada na origem do projeto**: seu meio na origem, seu ponto mais baixo em ±0.00;
+- **sua unidade**: como o arquivo diz (LAS e E57 dizem), senão metros; são oferecidos centímetros, milímetros, pés, pés topográficos dos EUA e polegadas. Quando a nuvem fica improvável para um edifício ou um terreno (menos de 20 cm ou mais de 50 km), ou o arquivo diz outra unidade, o Lapin avisa.
+
+A nuvem fica no seu arquivo. Ela não é copiada para o projeto: o projeto guarda só o vínculo (o caminho do arquivo, onde a nuvem fica, como é desenhada). O Lapin a indexa uma vez, em segundo plano, num octree de blocos na sua própria pasta neste computador (não ao lado do projeto), e **Manage → Links** mostra o andamento. Depois a vista 3D traz os blocos de que a câmera precisa, primeiro os próximos e mais finos à medida que você se aproxima, dentro de um orçamento de pontos definido por **View → Display quality** (1,5, 3 ou 6 milhões de pontos desenhados de uma vez), de modo que uma varredura de cem milhões de pontos gira tão suave quanto uma pequena.
+
+![Uma varredura da casa vinculada como nuvem de pontos, na vista 3D](shots/point-cloud-3d.webp)
+
+Em **Manage → Links** uma nuvem tem sua própria linha: seus pontos, o andamento do índice, **Shown**, **Halftone**, **3D**, o que colore seus pontos (**RGB**, **Intensity**, **Elevation** ou **Classification**, pelas classes ASPRS: terreno, vegetação, edifício, água…) e o **Size** de um ponto em pixels. O botão do alfinete a posiciona de novo (pelo mapa, origem com origem ou centralizada, sua unidade, movida em x, y e z, girada); o botão de recarregar lê o arquivo de novo e só o indexa de novo se ele mudou. **Unlink** remove o vínculo; o índice fica na pasta do Lapin e serve a nuvem de novo se ela for vinculada outra vez.
+
+![Manage → Links com uma nuvem de pontos](shots/point-cloud-links.webp)
+
+Uma nuvem nunca é exportada: IFC, Fragments e as exportações 3D levam o modelo, não a varredura. No navegador pode-se vincular uma nuvem de até 160 MB; ela é indexada na página e precisa ser vinculada de novo depois de recarregar a página. Nuvens maiores precisam do aplicativo para desktop.
+
 ## Modelos 3D
 
 **Exportar 3D (glTF, USD, DAE)…** grava o modelo como superfícies para renderização, visualização e realidade aumentada (RA):

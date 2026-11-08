@@ -86,6 +86,27 @@ Un DXF importé fait partie du projet : **File → Save** le garde dans le fichi
 
 **Lier IFC…** garde un autre fichier lié au lieu de l’importer. Il est en lecture seule et rechargé quand il change. Cela fonctionne aussi pour un DXF. **Gérer → Liens** affiche, recharge, convertit ou supprime les liens. Un DXF lié se trouve en 3D comme un DXF importé ; sa case **3D** dans **Gérer → Liens** l’en retire. **Visibilité / Graphismes** (<kbd>VV</kbd>) masque un lien, l’affiche en demi-teinte ou lui donne ses propres catégories dans une seule vue (*Coupes, élévations et 3D*, Visibilité / Graphismes).
 
+## Nuages de points
+
+**File → Link point cloud…** lie un scan laser ou un nuage de photogrammétrie, dans les formats ouverts uniquement : **LAS** (1.0–1.4, tous les formats de point), **LAZ** (LAS compressé), **E57**, **PLY** (ASCII et binaire) et des points en texte, **XYZ**, **PTS** et **CSV**. Les formats propriétaires (RCP et RCS d'Autodesk ReCap, FLS de FARO, LGS de Leica) ne sont pas lus : exportez d'abord le scan depuis son programme en E57 ou en LAS.
+
+Lapin demande où se trouve le nuage et dans quelle unité :
+
+- **par les coordonnées cartographiques du projet** : le x et le y du fichier sont des coordonnées est et nord, placées par le point de levé et l'angle au nord de **Manage → Location**, ses hauteurs au-dessus de l'altitude du point de levé. Lapin le propose quand le fichier nomme un système de coordonnées ou que ses coordonnées sont loin de zéro et que le projet a une localisation ;
+- **origine sur origine** : l'origine du fichier sur celle du projet ;
+- **centré sur l'origine du projet** : son milieu sur l'origine, son point le plus bas à ±0.00 ;
+- **son unité** : comme le dit le fichier (LAS et E57 la disent), sinon mètres ; centimètres, millimètres, pieds, pieds d'arpentage US et pouces sont proposés. Quand le nuage paraît invraisemblable pour un bâtiment ou un terrain (moins de 20 cm ou plus de 50 km), ou que le fichier indique une autre unité, Lapin prévient.
+
+Le nuage reste dans son fichier. Il n'est pas copié dans le projet : le projet ne garde que le lien (le chemin du fichier, où se trouve le nuage, comment il est dessiné). Lapin l'indexe une fois, en arrière-plan, en un octree de tuiles dans son propre dossier sur cet ordinateur (pas à côté du projet), et **Manage → Links** montre où il en est. Ensuite la vue 3D charge les tuiles dont la caméra a besoin, les plus proches d'abord et plus fines à mesure qu'on s'approche, dans un budget de points fixé par **View → Display quality** (1,5, 3 ou 6 millions de points dessinés à la fois), si bien qu'un scan de cent millions de points tourne aussi souplement qu'un petit.
+
+![Un scan de la maison lié comme nuage de points, dans la vue 3D](shots/point-cloud-3d.webp)
+
+Dans **Manage → Links** un nuage a sa propre ligne : ses points, où en est son index, **Shown**, **Halftone**, **3D**, ce qui colore ses points (**RGB**, **Intensity**, **Elevation** ou **Classification**, selon les classes ASPRS : sol, végétation, bâtiment, eau…) et la **Size** d'un point en pixels. Le bouton à épingle le replace (par la carte, origine sur origine ou centré, son unité, déplacé en x, y et z, tourné) ; le bouton de rechargement relit son fichier et ne le réindexe que s'il a changé. **Unlink** retire le lien ; l'index reste dans le dossier de Lapin et sert de nouveau le nuage s'il est lié de nouveau.
+
+![Manage → Links avec un nuage de points](shots/point-cloud-links.webp)
+
+Un nuage n'est jamais exporté : IFC, Fragments et les exports 3D portent le modèle, pas le scan. Dans le navigateur on peut lier un nuage jusqu'à 160 Mo ; il est indexé dans la page et doit être lié de nouveau après le rechargement de la page. Les nuages plus grands demandent l'application de bureau.
+
 ## Modèles 3D
 
 **Export 3D (glTF, USD, DAE)…** écrit le modèle sous forme de surfaces pour le rendu, la visualisation et la réalité augmentée (RA) :

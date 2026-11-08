@@ -85,6 +85,11 @@ describe('Ask Lapin', () => {
     expect(best('I am not able to edit other elements once I select the type of wall opening, once that is chosen it is fixed')).toBe('wall-opening-edit');
     expect(best('If I want to change that opening to another type I must be able to edit it like how we edit doors and windows')).toBe('wall-opening-edit');
     expect(best('cum transform un gol in fereastra')).toBe('wall-opening-edit');
+    // Point clouds (decision 395).
+    expect(best('how do I import a point cloud')).toBe('point-clouds');
+    expect(best('can I open a LAZ or E57 laser scan')).toBe('point-clouds');
+    expect(best('cum import un nor de puncte')).toBe('point-clouds');
+    expect(best('ReCap RCP scan')).toBe('point-clouds');
     // Report #113, in the tester's words.
     expect(best('Can we retain the imported DXF?')).toBe('dxf-kept');
     expect(best('instead of continuously reimporting the dxf whenever opening the program, is it possible to leave the dxf alone')).toBe('dxf-kept');

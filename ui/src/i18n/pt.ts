@@ -1271,6 +1271,8 @@ export const PT: Record<string, string> = {
   "Transom at the springing": "Travessa no arranque do arco", "Arched casement": "Janela de batente em arco",
   // A U stair with winders at each corner and straight treads between (tester's report #109)
   "Winders at the first corner": "Degraus em leque no primeiro canto", "Winders at the second corner": "Degraus em leque no segundo canto", "Straight treads between the corners": "Degraus retos entre os cantos", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "Cada canto vira por si; a bomba entre os lanços é tão larga como os degraus retos.", "Winders": "Degraus em leque", "Winders, corner 1": "Leque, canto 1", "Winders, corner 2": "Leque, canto 2", "Treads between": "Degraus entre", "U stair with winders": "Escada em U em leque",
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  "Link point cloud…": "Vincular nuvem de pontos…", "Point cloud": "Nuvem de pontos", "Colours": "Cores", "What colours its points": "O que colore seus pontos", "RGB": "RGB", "Intensity": "Intensidade", "Classification": "Classificação", "Point size (px)": "Tamanho do ponto (px)", "Where it stands: by the map, origin to origin or centred, its unit, moved and turned": "Onde fica: pelo mapa, origem com origem ou centralizada, sua unidade, movida e girada", "Read the file again (indexed again if it changed)": "Ler o arquivo de novo (indexado de novo se mudou)", "points": "pontos", "Waiting…": "Aguardando…", "Ready": "Pronta", "Not available": "Indisponível", "Moved x": "Movida x", "Moved y": "Movida y", "Moved z": "Movida z", "Turned (°)": "Girada (°)", "as Lapin suggests": "como o Lapin sugere", "by the project's map coordinates": "pelas coordenadas de mapa do projeto", "origin to origin": "origem com origem", "centred on the project's origin": "centralizada na origem do projeto", "as the file says (else metres)": "como o arquivo diz (senão metros)", "feet": "pés", "US survey feet": "pés topográficos dos EUA",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -1416,4 +1418,11 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^(\d+) guide\(s\) erased\.$/, (m) => `${m[1]} guia(s) apagada(s).`],
   [/^Guide line at (.+)\.$/, (m) => `Linha guia a ${m[1]}.`],
   [/^Distance: (.+)\.$/, (m) => `Distância: ${m[1]}.`],
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  [/^Indexing: (\w+) (\d+)%$/, (m) => `Indexando: ${({ Starting: 'início', Reading: 'leitura', Counting: 'contagem', Sorting: 'ordenação', Indexing: 'indexação', Done: 'pronto' } as Record<string, string>)[m[1]] ?? m[1]} ${m[2]}%`],
+  [/^([\d.,  ]+) points drawn$/, (m) => `${m[1]} pontos desenhados`],
+  [/^Link the point cloud (.+)$/, (m) => `Vincular a nuvem de pontos ${m[1]}`],
+  [/^Place the point cloud (.+)$/, (m) => `Posicionar a nuvem de pontos ${m[1]}`],
+  [/^Linked (.+): indexed in the background; Manage → Links shows how far\.(.*)$/, (m) => `${m[1]} vinculada: indexada em segundo plano; Gerenciar → Vínculos mostra o andamento.${m[2]}`],
+  [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} tem ${m[2]} MB: no navegador uma nuvem de pontos tem no máximo ${m[3]} MB. Vincule-a no aplicativo para desktop.`],
 ];

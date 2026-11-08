@@ -63,6 +63,7 @@
     <Project Path="src/Platform/Lapin.Mesh/Lapin.Mesh.csproj" />
     <Project Path="src/Platform/Lapin.Package/Lapin.Package.csproj" />
     <Project Path="src/Platform/Lapin.Platform/Lapin.Platform.csproj" />
+    <Project Path="src/Platform/Lapin.PointClouds/Lapin.PointClouds.csproj" />
     <Project Path="src/Platform/Lapin.Protocol/Lapin.Protocol.csproj" />
   </Folder>
   <Folder Name="/tests/">

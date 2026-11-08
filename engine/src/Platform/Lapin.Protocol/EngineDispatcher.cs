@@ -548,7 +548,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
         var editor = role is "editor" or "owner";
         switch (method)
         {
-            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps"
+            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "pointcloud.tiles"
                 or "project.versions" or "project.compareVersions"
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey":
                 return null;
@@ -632,6 +632,9 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "doc.query":
                 return (session.Query((string?)p["name"] ?? throw new CommandException("The query is missing."), p["args"] as JsonObject ?? [])?.DeepClone(), null);
             case "view.caps": return (session.Caps(ClipPlanes(p["planes"]), drawing: (string?)p["style"] == "drawing", scale: Json.Number(p["scale"]) is { } sc && sc > 0 ? sc : 50, layers: ViewStyles.LayersOf(p["layers"])), null);
+            // A point cloud's tiles for the 3D view, by name, as raw arrays (docs/point-clouds.md).
+            case "pointcloud.tiles":
+                return (PointCloudLinks.Tiles(session.Model, Links.Require(session.Model, (string?)p["id"]), (p["nodes"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>()), null);
             case "quantities.of": return (session.Quantities((string?)p["id"] ?? throw new CommandException("Which element?")), null);
             // Several elements' quantity sets in one call (the model assistant's lists and sums): id → sets; an id the model lacks is left out.
             case "quantities.many":

@@ -84,7 +84,28 @@ An imported DXF is part of the project: **File → Save** keeps it in the `.lapi
 
 ## Links
 
-**Link IFC…** keeps another file linked instead of importing it. It is read-only and reloaded when it changes. This works for a DXF too. **Manage → Links** shows, reloads, converts or removes the links. A linked DXF lies in 3D as an imported one does; its **3D** box in **Manage → Links** turns that off. **Visibility / Graphics** (<kbd>VV</kbd>) hides a link, halftones it or gives it its own categories in one view alone (*Sections, elevations and 3D*, Visibility / Graphics).
+**Link IFC…** keeps another file linked instead of importing it (a scan: **Link point cloud…**, below). It is read-only and reloaded when it changes. This works for a DXF too. **Manage → Links** shows, reloads, converts or removes the links. A linked DXF lies in 3D as an imported one does; its **3D** box in **Manage → Links** turns that off. **Visibility / Graphics** (<kbd>VV</kbd>) hides a link, halftones it or gives it its own categories in one view alone (*Sections, elevations and 3D*, Visibility / Graphics).
+
+## Point clouds
+
+**File → Link point cloud…** links a laser scan or a photogrammetry cloud, in the open formats only: **LAS** (1.0–1.4, every point format), **LAZ** (compressed LAS), **E57**, **PLY** (ASCII and binary) and points as text, **XYZ**, **PTS** and **CSV**. Proprietary formats (Autodesk ReCap's RCP and RCS, FARO's FLS, Leica's LGS) are not read: export the scan from its program as E57 or LAS first.
+
+Lapin asks where the cloud stands and in what unit:
+
+- **by the project's map coordinates**: the file's x and y are eastings and northings, placed through the survey point and the angle to north of **Manage → Location**, its heights above the survey point's elevation. Lapin suggests it when the file names a coordinate system or its coordinates are far from zero and the project has a location;
+- **origin to origin**: the file's origin on the project's;
+- **centred on the project's origin**: its middle on the origin, its lowest point at ±0.00;
+- **its unit**: as the file says (LAS and E57 say it), else metres; centimetres, millimetres, feet, US survey feet and inches are offered. When the cloud comes out unlikely for a building or a site (under 20 cm across or over 50 km), or the file says another unit, Lapin warns.
+
+The cloud stays in its file. It is not copied into the project: the project keeps only the link (the file's path, where the cloud stands, how it is drawn). Lapin indexes it once, in the background, into an octree of tiles in its own folder on this computer (not beside the project), and **Manage → Links** shows how far it is. Then the 3D view streams the tiles the camera needs, nearest first and finer as you come closer, within a budget of points set by **View → Display quality** (1.5, 3 or 6 million points drawn at once), so a scan of a hundred million points turns as smoothly as a small one.
+
+![A scan of the house linked as a point cloud, in the 3D view](shots/point-cloud-3d.webp)
+
+In **Manage → Links** a cloud has its own row: its points, how far its index is, **Shown**, **Halftone**, **3D**, what colours its points (**RGB**, **Intensity**, **Elevation** or **Classification**, by the ASPRS classes: ground, vegetation, building, water…) and the **Size** of a point in pixels. The pin button places it again (by the map, origin to origin or centred, its unit, moved along x, y and z, turned); the reload button reads its file again and indexes it again only if it changed. **Unlink** removes the link; the index stays in Lapin's folder and serves the cloud again if it is linked again.
+
+![Manage → Links with a point cloud](shots/point-cloud-links.webp)
+
+A cloud is never exported: IFC, Fragments and the 3D exports carry the model, not the scan. In the browser a cloud of up to 160 MB can be linked; it is indexed in the page and has to be linked again after the page is reloaded. Larger clouds need the desktop app.
 
 ## 3D models
 

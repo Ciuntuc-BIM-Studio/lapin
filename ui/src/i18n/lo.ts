@@ -1327,6 +1327,8 @@ export const LO: Record<string, string> = {
   "Transom at the springing": "ໄມ້ຂວາງທີ່ຕີນໂຄ້ງ", "Arched casement": "ປ່ອງຢ້ຽມບານພັບໂຄ້ງ",
   // A U stair with winders at each corner and straight treads between (tester's report #109)
   "Winders at the first corner": "ຂັ້ນວຽນຢູ່ມຸມທຳອິດ", "Winders at the second corner": "ຂັ້ນວຽນຢູ່ມຸມທີສອງ", "Straight treads between the corners": "ຂັ້ນຊື່ລະຫວ່າງມຸມ", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "ແຕ່ລະມຸມລ້ຽວເອງ; ຊ່ອງລະຫວ່າງແຂນຂັ້ນໄດກວ້າງເທົ່າຂັ້ນຊື່.", "Winders": "ຂັ້ນວຽນ", "Winders, corner 1": "ຂັ້ນວຽນ, ມຸມ 1", "Winders, corner 2": "ຂັ້ນວຽນ, ມຸມ 2", "Treads between": "ຂັ້ນລະຫວ່າງ", "U stair with winders": "ຂັ້ນໄດຮູບ U ມີຂັ້ນວຽນ",
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  "Link point cloud…": "ເຊື່ອມຕໍ່ກຸ່ມຈຸດ…", "Point cloud": "ກຸ່ມຈຸດ", "Colours": "ສີ", "What colours its points": "ສິ່ງທີ່ໃຫ້ສີແກ່ຈຸດ", "RGB": "RGB", "Intensity": "ຄວາມເຂັ້ມ", "Classification": "ການຈັດປະເພດ", "Point size (px)": "ຂະໜາດຈຸດ (px)", "Where it stands: by the map, origin to origin or centred, its unit, moved and turned": "ບ່ອນທີ່ມັນຢູ່: ຕາມແຜນທີ່, ຈຸດເລີ່ມຕົ້ນຫາຈຸດເລີ່ມຕົ້ນ ຫຼື ກາງ, ຫົວໜ່ວຍຂອງມັນ, ຍ້າຍ ແລະ ໝຸນ", "Read the file again (indexed again if it changed)": "ອ່ານໄຟລ໌ຄືນໃໝ່ (ຈັດດັດສະນີຄືນຖ້າມີການປ່ຽນແປງ)", "points": "ຈຸດ", "Waiting…": "ກຳລັງລໍຖ້າ…", "Ready": "ພ້ອມແລ້ວ", "Not available": "ບໍ່ມີ", "Moved x": "ຍ້າຍ x", "Moved y": "ຍ້າຍ y", "Moved z": "ຍ້າຍ z", "Turned (°)": "ໝຸນ (°)", "as Lapin suggests": "ຕາມທີ່ Lapin ແນະນຳ", "by the project's map coordinates": "ຕາມພິກັດແຜນທີ່ຂອງໂຄງການ", "origin to origin": "ຈຸດເລີ່ມຕົ້ນຫາຈຸດເລີ່ມຕົ້ນ", "centred on the project's origin": "ຢູ່ກາງຈຸດເລີ່ມຕົ້ນຂອງໂຄງການ", "as the file says (else metres)": "ຕາມທີ່ໄຟລ໌ບອກ (ຖ້າບໍ່ດັ່ງນັ້ນ ແມັດ)", "feet": "ຟຸດ", "US survey feet": "ຟຸດສຳຫຼວດສະຫະລັດ",
 };
 
 /** Phrases with a number or a name in them. */
@@ -1471,4 +1473,11 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(\d+) guide\(s\) erased\.$/, (m) => `ລຶບເສັ້ນນຳ ${m[1]} ເສັ້ນແລ້ວ.`],
   [/^Guide line at (.+)\.$/, (m) => `ເສັ້ນນຳທີ່ ${m[1]}.`],
   [/^Distance: (.+)\.$/, (m) => `ໄລຍະ: ${m[1]}.`],
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  [/^Indexing: (\w+) (\d+)%$/, (m) => `ກຳລັງຈັດດັດສະນີ: ${m[1]} ${m[2]}%`],
+  [/^([\d.,  ]+) points drawn$/, (m) => `ແຕ້ມແລ້ວ ${m[1]} ຈຸດ`],
+  [/^Link the point cloud (.+)$/, (m) => `ເຊື່ອມຕໍ່ກຸ່ມຈຸດ ${m[1]}`],
+  [/^Place the point cloud (.+)$/, (m) => `ວາງກຸ່ມຈຸດ ${m[1]}`],
+  [/^Linked (.+): indexed in the background; Manage → Links shows how far\.(.*)$/, (m) => `ເຊື່ອມຕໍ່ ${m[1]} ແລ້ວ: ກຳລັງຈັດດັດສະນີຢູ່ເບື້ອງຫຼັງ; ຈັດການ → ການເຊື່ອມຕໍ່ ສະແດງຄວາມຄືບໜ້າ.${m[2]}`],
+  [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} ມີ ${m[2]} MB: ໃນບຣາວເຊີ ກຸ່ມຈຸດມີໄດ້ສູງສຸດ ${m[3]} MB. ເຊື່ອມຕໍ່ມັນໃນແອັບເດັສທັອບ.`],
 ];

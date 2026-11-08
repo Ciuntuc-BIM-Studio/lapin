@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Point clouds (docs/point-clouds.md): readers of the open formats written by Lapin after their public specifications
+    (LAS 1.2–1.4, LAZ, E57, PLY, XYZ/PTS/CSV), and the octree of tiles a cloud is indexed into once, kept outside the
+    model. No dependency, managed only, so it runs in the browser's engine too.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lapin.Engine.Tests" />
+  </ItemGroup>
+</Project>

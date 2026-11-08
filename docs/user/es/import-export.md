@@ -86,6 +86,27 @@ Un DXF importado forma parte del proyecto: **File → Save** lo guarda en el arc
 
 **Vincular IFC…** mantiene otro archivo vinculado en lugar de importarlo. Es de solo lectura y se vuelve a cargar cuando cambia. Esto también funciona con un DXF. **Gestionar → Vínculos** muestra, recarga, convierte o elimina los vínculos. Un DXF vinculado está en 3D como uno importado; su casilla **3D** en **Gestionar → Vínculos** lo quita. **Visibilidad / Gráficos** (<kbd>VV</kbd>) oculta un vínculo, lo muestra en semitono o le da sus propias categorías en una sola vista (*Secciones, alzados y 3D*, Visibilidad / Gráficos).
 
+## Nubes de puntos
+
+**File → Link point cloud…** vincula un escaneo láser o una nube de fotogrametría, solo en formatos abiertos: **LAS** (1.0–1.4, todos los formatos de punto), **LAZ** (LAS comprimido), **E57**, **PLY** (ASCII y binario) y puntos como texto, **XYZ**, **PTS** y **CSV**. Los formatos propietarios (RCP y RCS de Autodesk ReCap, FLS de FARO, LGS de Leica) no se leen: exporta primero el escaneo desde su programa como E57 o LAS.
+
+Lapin pregunta dónde está la nube y en qué unidad:
+
+- **por las coordenadas de mapa del proyecto**: la x y la y del archivo son este y norte, colocadas mediante el punto topográfico y el ángulo al norte de **Manage → Location**, sus alturas sobre la cota del punto topográfico. Lapin lo sugiere cuando el archivo nombra un sistema de coordenadas o sus coordenadas están lejos de cero y el proyecto tiene una ubicación;
+- **origen con origen**: el origen del archivo sobre el del proyecto;
+- **centrada en el origen del proyecto**: su centro en el origen, su punto más bajo en ±0.00;
+- **su unidad**: como dice el archivo (LAS y E57 la dicen), si no, metros; se ofrecen centímetros, milímetros, pies, pies topográficos de EE. UU. y pulgadas. Cuando la nube resulta poco probable para un edificio o un terreno (menos de 20 cm o más de 50 km), o el archivo dice otra unidad, Lapin avisa.
+
+La nube se queda en su archivo. No se copia en el proyecto: el proyecto guarda solo el vínculo (la ruta del archivo, dónde está la nube, cómo se dibuja). Lapin la indexa una vez, en segundo plano, en un octree de teselas en su propia carpeta de este ordenador (no junto al proyecto), y **Manage → Links** muestra cuánto falta. Después la vista 3D trae las teselas que la cámara necesita, primero las cercanas y más finas a medida que te acercas, dentro de un presupuesto de puntos fijado por **View → Display quality** (1,5, 3 o 6 millones de puntos dibujados a la vez), así que un escaneo de cien millones de puntos gira con la misma fluidez que uno pequeño.
+
+![Un escaneo de la casa vinculado como nube de puntos, en la vista 3D](shots/point-cloud-3d.webp)
+
+En **Manage → Links** una nube tiene su propia fila: sus puntos, cuánto lleva su índice, **Shown**, **Halftone**, **3D**, qué colorea sus puntos (**RGB**, **Intensity**, **Elevation** o **Classification**, según las clases ASPRS: terreno, vegetación, edificio, agua…) y el **Size** de un punto en píxeles. El botón del alfiler la vuelve a colocar (por el mapa, origen con origen o centrada, su unidad, movida en x, y y z, girada); el botón de recarga vuelve a leer su archivo y la indexa de nuevo solo si cambió. **Unlink** quita el vínculo; el índice queda en la carpeta de Lapin y sirve la nube otra vez si se vuelve a vincular.
+
+![Manage → Links con una nube de puntos](shots/point-cloud-links.webp)
+
+Una nube nunca se exporta: IFC, Fragments y las exportaciones 3D llevan el modelo, no el escaneo. En el navegador se puede vincular una nube de hasta 160 MB; se indexa en la página y hay que vincularla de nuevo tras recargar la página. Las nubes mayores necesitan la aplicación de escritorio.
+
 ## Modelos 3D
 
 **Exportar 3D (glTF, USD, DAE)…** escribe el modelo como superficies para renderizado, visualización y realidad aumentada (RA):

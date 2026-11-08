@@ -1274,6 +1274,8 @@ export const PL: Record<string, string> = {
   "Transom at the springing": "Ślemię u nasady łuku", "Arched casement": "Okno rozwierne łukowe",
   // A U stair with winders at each corner and straight treads between (tester's report #109)
   "Winders at the first corner": "Stopnie zabiegowe w pierwszym narożniku", "Winders at the second corner": "Stopnie zabiegowe w drugim narożniku", "Straight treads between the corners": "Proste stopnie między narożnikami", "Each corner turns on its own; the well between the flights is as wide as the straight treads.": "Każdy narożnik skręca osobno; dusza między biegami jest tak szeroka jak proste stopnie.", "Winders": "Stopnie zabiegowe", "Winders, corner 1": "Zabiegowe, narożnik 1", "Winders, corner 2": "Zabiegowe, narożnik 2", "Treads between": "Stopnie pomiędzy", "U stair with winders": "Schody w kształcie U zabiegowe",
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  "Link point cloud…": "Połącz chmurę punktów…", "Point cloud": "Chmura punktów", "Colours": "Kolory", "What colours its points": "Co koloruje jej punkty", "RGB": "RGB", "Intensity": "Intensywność", "Classification": "Klasyfikacja", "Point size (px)": "Rozmiar punktu (px)", "Where it stands: by the map, origin to origin or centred, its unit, moved and turned": "Gdzie stoi: według mapy, początek na początek lub wyśrodkowana, jej jednostka, przesunięta i obrócona", "Read the file again (indexed again if it changed)": "Wczytaj plik ponownie (ponownie indeksowany, jeśli się zmienił)", "points": "punktów", "Waiting…": "Oczekiwanie…", "Ready": "Gotowa", "Not available": "Niedostępna", "Moved x": "Przesunięta x", "Moved y": "Przesunięta y", "Moved z": "Przesunięta z", "Turned (°)": "Obrócona (°)", "as Lapin suggests": "jak proponuje Lapin", "by the project's map coordinates": "według współrzędnych mapy projektu", "origin to origin": "początek na początek", "centred on the project's origin": "wyśrodkowana na początku projektu", "as the file says (else metres)": "jak podaje plik (inaczej metry)", "feet": "stopy", "US survey feet": "stopy geodezyjne USA",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -1425,4 +1427,11 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^(\d+) guide\(s\) erased\.$/, (m) => `Usunięto linie pomocnicze: ${m[1]}.`],
   [/^Guide line at (.+)\.$/, (m) => `Linia pomocnicza w odległości ${m[1]}.`],
   [/^Distance: (.+)\.$/, (m) => `Odległość: ${m[1]}.`],
+  // Point clouds linked, indexed and streamed in 3D (decision 395)
+  [/^Indexing: (\w+) (\d+)%$/, (m) => `Indeksowanie: ${({ Starting: 'start', Reading: 'odczyt', Counting: 'liczenie', Sorting: 'sortowanie', Indexing: 'indeksowanie', Done: 'gotowe' } as Record<string, string>)[m[1]] ?? m[1]} ${m[2]}%`],
+  [/^([\d.,  ]+) points drawn$/, (m) => `Narysowano punktów: ${m[1]}`],
+  [/^Link the point cloud (.+)$/, (m) => `Połącz chmurę punktów ${m[1]}`],
+  [/^Place the point cloud (.+)$/, (m) => `Umieść chmurę punktów ${m[1]}`],
+  [/^Linked (.+): indexed in the background; Manage → Links shows how far\.(.*)$/, (m) => `Połączono ${m[1]}: indeksowanie w tle; Zarządzaj → Połączenia pokazuje postęp.${m[2]}`],
+  [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} ma ${m[2]} MB: w przeglądarce chmura punktów ma najwyżej ${m[3]} MB. Połącz ją w aplikacji desktopowej.`],
 ];

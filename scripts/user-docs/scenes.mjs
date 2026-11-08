@@ -224,6 +224,68 @@ function siteDxf() {
   body += `0\nSOLID\n8\nTERRACE\n10\n1000\n20\n-3000\n11\n6500\n21\n-3000\n12\n1000\n22\n-200\n13\n6500\n23\n-200\n`;
   return `0\nSECTION\n2\nHEADER\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n${tables}0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${body}0\nENDSEC\n0\nEOF\n`;
 }
+/**
+ * A scan of a house standing on the site (docs/point-clouds.md), as a terrestrial scanner would give it: LAS 1.4, point
+ * format 7 (colour), in metres, its points classed ground (2), building (6) and vegetation (5): the ground round it, its
+ * four walls with their openings to the eaves at 2.9 m, two gables, a tree. Written here, a few hundred thousand points.
+ */
+function scanLas() {
+  const pts = [];
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const add = (x, y, z, r, g, b, c) => pts.push([x, y, z, r, g, b, c]);
+  // Ground: grass, a gravel path to the door.
+  for (let i = 0; i < 360000; i++) {
+    const x = -8 + rnd() * 28, y = -9 + rnd() * 25, z = 0.02 * Math.sin(x / 3) + 0.015 * Math.cos(y / 4) - 0.02;
+    if (x > 0 && x < 12 && y > 0 && y < 8) continue;
+    const path = x > 2.3 && x < 3.7 && y < 0;
+    const k = 0.85 + rnd() * 0.3;
+    if (path) add(x, y, z, 170 * k, 160 * k, 140 * k, 2); else add(x, y, z, 90 * k, 130 * k, 60 * k, 2);
+  }
+  // The walls' outer faces, rendered, a plinth; openings left empty.
+  const openings = [[0, 2.55, 3.45, 0, 2.1], [0, 8.9, 10.1, 0.9, 2.1], [2, 2.9, 4.1, 0.9, 2.1], [2, 8.9, 10.1, 0.9, 2.1], [1, 3.4, 4.6, 0.9, 2.1]];
+  const faces = [[0, 0, 12, 0, 0, -1], [12, 0, 12, 8, 1, 0], [12, 8, 0, 8, 0, 1], [0, 8, 0, 0, -1, 0]];
+  faces.forEach(([ax, ay, bx, by], f) => {
+    const len = Math.hypot(bx - ax, by - ay);
+    for (let i = 0; i < 26000 * len / 10; i++) {
+      const u = rnd() * len, z = rnd() * 2.9;
+      if (openings.some(([w, s0, s1, z0, z1]) => w === f && u > s0 && u < s1 && z > z0 && z < z1)) continue;
+      const x = ax + (bx - ax) * u / len, y = ay + (by - ay) * u / len;
+      const k = 0.9 + rnd() * 0.15;
+      if (z < 0.4) add(x, y, z, 120 * k, 115 * k, 110 * k, 6); else add(x, y, z, 236 * k, 224 * k, 200 * k, 6);
+    }
+  });
+  // Gables on the short walls, up to the ridge at 5.4 m.
+  for (const x of [0, 12]) for (let i = 0; i < 18000; i++) {
+    const y = rnd() * 8, z = 2.9 + rnd() * 2.5;
+    if (z - 2.9 > 2.5 * (1 - Math.abs(y - 4) / 4)) continue;
+    add(x, y, z, 230, 218, 196, 6);
+  }
+  // A tree: a trunk and a crown.
+  for (let i = 0; i < 30000; i++) {
+    const a = rnd() * Math.PI * 2, e = Math.acos(2 * rnd() - 1), r = 2.2 * Math.cbrt(rnd());
+    const trunk = i < 3000;
+    const [x, y, z] = trunk ? [16 + 0.18 * Math.cos(a), 12 + 0.18 * Math.sin(a), rnd() * 2.6] : [16 + r * Math.sin(e) * Math.cos(a), 12 + r * Math.sin(e) * Math.sin(a), 4.2 + r * Math.cos(e)];
+    if (trunk) add(x, y, z, 95, 70, 50, 5); else add(x, y, z, 50 + rnd() * 40, 110 + rnd() * 50, 40, 5);
+  }
+  const n = pts.length, len = 36, head = 375;
+  const buf = Buffer.alloc(head + n * len);
+  buf.write('LASF', 0, 'ascii');
+  buf[24] = 1; buf[25] = 4;
+  buf.writeUInt16LE(head, 94); buf.writeUInt32LE(head, 96); buf[104] = 7; buf.writeUInt16LE(len, 105);
+  for (let k = 0; k < 3; k++) { buf.writeDoubleLE(0.001, 131 + 8 * k); buf.writeDoubleLE(0, 155 + 8 * k); }
+  const ext = [0, 1, 2].map((k) => pts.reduce(([lo, hi], p) => [Math.min(lo, p[k]), Math.max(hi, p[k])], [Infinity, -Infinity]));
+  buf.writeDoubleLE(ext[0][1], 179); buf.writeDoubleLE(ext[0][0], 187); buf.writeDoubleLE(ext[1][1], 195); buf.writeDoubleLE(ext[1][0], 203); buf.writeDoubleLE(ext[2][1], 211); buf.writeDoubleLE(ext[2][0], 219);
+  buf.writeBigUInt64LE(BigInt(n), 247);
+  pts.forEach(([x, y, z, r, g, b, c], i) => {
+    const o = head + i * len;
+    buf.writeInt32LE(Math.round(x * 1000), o); buf.writeInt32LE(Math.round(y * 1000), o + 4); buf.writeInt32LE(Math.round(z * 1000), o + 8);
+    buf.writeUInt16LE(Math.round(20000 + 30000 * (z / 6)), o + 12);
+    buf[14 + o] = 0x11; buf[16 + o] = c;
+    buf.writeUInt16LE(Math.min(255, Math.round(r)) * 257, o + 30); buf.writeUInt16LE(Math.min(255, Math.round(g)) * 257, o + 32); buf.writeUInt16LE(Math.min(255, Math.round(b)) * 257, o + 34);
+  });
+  return buf;
+}
 function surveyDxf() {
   let body = '';
   for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
@@ -3787,6 +3849,29 @@ export const scenes = [
         return st ? (await import('/src/viewport/storeyPlan.ts')).planViewIdOf(useSession.getState().nodes, st.id, ui.planViewId) : null;
       });
       t.expect(shown === view, `the plan shown after opening is the one the DXF is on (${shown})`);
+    },
+  },
+  {
+    // Point clouds linked (docs/point-clouds.md, decision 395): a scan of the house linked as a LAS, indexed in the background,
+    // streamed into the 3D view in its own colours; Manage → Links lists it with its points and how it is drawn.
+    id: 'point-cloud',
+    async run(t) {
+      await t.fresh();
+      const r = await t.cmd('pointcloud.link', { name: 'house-scan.las', data: scanLas().toString('base64') });
+      t.expect(typeof r?.id === 'string' && r.placement?.mode === 'origin', 'the scan is linked, origin to origin (it is in local coordinates)');
+      let st = null;
+      for (let k = 0; k < 120 && st?.state !== 'ready'; k++) { st = await t.call('doc.query', { name: 'pointcloud.status', args: { id: r.id } }); await t.wait(250); }
+      t.expect(st?.state === 'ready', `the scan is indexed (${st?.state})`);
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.25, pitch: -0.42, distance: 30, target: { x: 6, y: 4, z: 1.5 } }, false));
+      await t.wait(2500);
+      const drawn = async () => Number(await t.page.locator('[data-testid=view3d]').getAttribute('data-cloud-points') ?? 0);
+      t.expect(await drawn() > 100000, `its points are drawn in 3D (${await drawn()})`);
+      await t.shot('point-cloud-3d', { of: '[data-testid=view3d]', pad: 0 });
+      await t.ui({ dialog: 'links' });
+      await t.page.waitForSelector('[data-cloud-status=ready]', { timeout: 20_000 });
+      await t.shot('point-cloud-links', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
     },
   },
   {

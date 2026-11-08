@@ -478,3 +478,48 @@ export async function importIfc(mode: 'auto' | 'editable' | 'reference' | 'link'
   const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name: path.split(/[\\/]/).pop() ?? path, path };
   await surveyIfc(source, mode, 'ifc', asProject);
 }
+
+/** The point cloud formats Lapin reads (docs/point-clouds.md): the open ones only. */
+export const POINT_CLOUD_EXTENSIONS = ['las', 'laz', 'e57', 'ply', 'xyz', 'pts', 'csv', 'txt'];
+
+/** The largest cloud a browser links (its bytes are held in the page's engine): larger ones need the desktop app. */
+export const BROWSER_CLOUD_MAX = 160 * 1024 * 1024;
+
+/** The ways a cloud can stand, and its units, for the link's dialogs. */
+export const CLOUD_MODES = [
+  { value: 'auto', label: 'as Lapin suggests' },
+  { value: 'shared', label: 'by the project\'s map coordinates' },
+  { value: 'origin', label: 'origin to origin' },
+  { value: 'center', label: 'centred on the project\'s origin' },
+];
+export const CLOUD_UNITS = [
+  { value: 'auto', label: 'as the file says (else metres)' },
+  { value: 'm', label: 'metres' }, { value: 'cm', label: 'centimetres' }, { value: 'mm', label: 'millimetres' },
+  { value: 'ft', label: 'feet' }, { value: 'usft', label: 'US survey feet' }, { value: 'in', label: 'inches' },
+];
+
+/**
+ * A point cloud linked (LAS, LAZ, E57, PLY, XYZ, PTS, CSV): kept outside the project, indexed in the background,
+ * listed in Manage → Links. Where it stands and its unit asked first; the engine says what it found.
+ */
+export async function linkPointCloud(): Promise<void> {
+  const picked = isDesktop() ? null : await pickFile('Point cloud', POINT_CLOUD_EXTENSIONS);
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Point cloud (LAS, LAZ, E57, PLY, XYZ, PTS, CSV)', extensions: POINT_CLOUD_EXTENSIONS }]) : picked?.name ?? null;
+  if (!path) return;
+  if (picked && picked.bytes.length > BROWSER_CLOUD_MAX) { notify(`${picked.name} is ${Math.round(picked.bytes.length / 1048576)} MB: in a browser a point cloud is at most ${BROWSER_CLOUD_MAX / 1048576} MB. Link it in the desktop app.`); return; }
+  const name = path.split(/[\\/]/).pop() ?? path;
+  const { ask, choiceField } = await import('../shell/AskBox');
+  const r = await ask(`Link the point cloud ${name}`, [choiceField('mode', 'Placed', 'auto', CLOUD_MODES), choiceField('units', 'Its unit', 'auto', CLOUD_UNITS)]);
+  if (!r) return;
+  const placement: Record<string, unknown> = {};
+  if (r.mode !== 'auto') placement.mode = r.mode;
+  if (r.units !== 'auto') placement.units = r.units;
+  const source = picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path };
+  try {
+    const res = await engine.call<{ id: string; notes: string[] }>('doc.execute',
+      { command: 'pointcloud.link', args: { ...source, placement } }, { timeoutMs: LONG_TIMEOUT_MS });
+    notify(`Linked ${name}: indexed in the background; Manage → Links shows how far.${res.notes.length ? ' ' + res.notes.join(' ') : ''}`);
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
+}

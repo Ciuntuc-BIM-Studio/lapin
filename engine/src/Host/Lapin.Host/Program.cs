@@ -21,6 +21,8 @@ var parentPid = int.Parse(Arg("--parent-pid", "0"));
 // The user's own data on this computer: the recovery journals. The shell passes its app data folder.
 var userDir = Arg("--user-dir", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lapin"));
 Views.UseProduct(product);
+// Point clouds' indexes (docs/point-clouds.md) in the user's folder too, never in a project.
+PointCloudLinks.CacheDir ??= Path.Combine(userDir, "PointClouds");
 var session = new Session(ModuleCatalog.Create(modules), product);
 using var recovery = new Recovery(userDir, session);
 

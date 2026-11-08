@@ -29,6 +29,10 @@ Un fișier legat (IFC sau DXF) intră în model ca orice import, dar aparține l
 - 2D-ul din IFC (amprente, simboluri, umpleri, texte; docs/spec-ifc.md, Reprezentările 2D) vine și cu o legătură: planurile îl desenează în locul tăieturii, în halftone când legătura e în halftone.
 - Un DXF legat stă în 3D pe planul vederii lui, ca unul importat (decizia 382, docs/dxf-import.md, În vederea 3D): gri când legătura e în halftone, deloc când e ascunsă sau are coloana **3D** debifată (`in3d`).
 
+## Nori de puncte
+
+Un nor de puncte e o legătură de tip `pointcloud` (decizia 395, `docs/plan-visibility-graphics.md`, etapa D): File → Link point cloud… (`pointcloud.link`, după cale sau octeți). Formate deschise doar: LAS 1.0–1.4, LAZ, E57, PLY, XYZ/PTS/CSV. Punctele nu intră în model: indexul (octree de dale, `Lapin.PointClouds`) stă în folderul utilizatorului (`PointClouds/<cheie>`), cheia pe legătură (`key`), iar vederea 3D aduce dalele după cameră (`pointcloud.tiles`). Legătura ține și `placement` (`mode` shared/origin/center, `units`, `offset`, `rotation`), `colorMode` (rgb, intensity, elevation, classification), `pointSize`, `cloud` (rezumatul indexului). Shown, Halftone și 3D ca la celelalte legături; Convert to native și Open separately nu se aplică; Reload recitește fișierul și reindexează doar dacă s-a schimbat (`pointcloud.reload`). Nu se exportă în IFC.
+
 ## Rămase
 
 - Poziționarea unei legături (translație/rotație a unui IFC legat) și legături imbricate.

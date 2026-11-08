@@ -5,14 +5,16 @@
 // open, a wall drawn with WA must show in the plan, File → Export 3D… must
 // download that wall as GLB, USDZ and DAE (docs/plan-mesh-export.md), and File →
 // Export IFC or Fragments… as IFC (the browser's .NET lacks some of the
-// platform's, MD5 among them: decision 258).
+// platform's, MD5 among them: decision 258), and File → Link point cloud… must
+// link a LAS picked as a user picks it, index it in the page and draw it in 3D
+// (docs/point-clouds.md, decision 395).
 //
 //   node scripts/check-web.mjs [id]       (default: lapin)
 // CHROME: the browser to drive (default: Chrome where it is usually installed).
 // LAPIN_WEB_START_BUDGET_MS: the start budget (default 4000; slow CI machines set more).
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +25,24 @@ const web = join(root, 'build', id, 'web');
 const budget = Number(process.env.LAPIN_WEB_START_BUDGET_MS ?? 4000);
 if (!existsSync(join(web, 'index.html'))) { console.error(`check-web: no build/${id}/web (run pnpm build:web ${id}).`); process.exit(1); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** A LAS 1.2 of 5 000 points (format 2, coloured): a floor 10 × 10 m and a wall on it. */
+function smallLas() {
+  const n = 5000, len = 26, head = 227;
+  const b = Buffer.alloc(head + n * len);
+  b.write('LASF', 0, 'ascii'); b[24] = 1; b[25] = 2;
+  b.writeUInt16LE(head, 94); b.writeUInt32LE(head, 96); b[104] = 2; b.writeUInt16LE(len, 105); b.writeUInt32LE(n, 107);
+  for (let k = 0; k < 3; k++) { b.writeDoubleLE(0.001, 131 + 8 * k); b.writeDoubleLE(0, 155 + 8 * k); }
+  b.writeDoubleLE(10, 179); b.writeDoubleLE(0, 187); b.writeDoubleLE(10, 195); b.writeDoubleLE(0, 203); b.writeDoubleLE(3, 211); b.writeDoubleLE(0, 219);
+  for (let i = 0; i < n; i++) {
+    const o = head + i * len, wall = i % 3 === 0;
+    const x = (i * 7919 % 10000) / 1000, y = wall ? 0 : (i * 104729 % 10000) / 1000, z = wall ? (i * 31 % 3000) / 1000 : 0;
+    b.writeInt32LE(Math.round(x * 1000), o); b.writeInt32LE(Math.round(y * 1000), o + 4); b.writeInt32LE(Math.round(z * 1000), o + 8);
+    b[o + 15] = wall ? 6 : 2;
+    b.writeUInt16LE(wall ? 200 * 257 : 90 * 257, o + 20); b.writeUInt16LE(wall ? 190 * 257 : 140 * 257, o + 22); b.writeUInt16LE(wall ? 180 * 257 : 60 * 257, o + 24);
+  }
+  return b;
+}
 
 // The folder, served as a static host would (wasm with its type).
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
@@ -136,6 +156,40 @@ try {
       }
     }
     rmSync(downloads, { recursive: true, force: true });
+  }
+  // 4. File → Link point cloud…: a small LAS picked through the browser's file input, indexed in the worker, drawn in 3D.
+  if (started && !failed) {
+    const dir = mkdtempSync(join(tmpdir(), 'lapin-check-web-cloud-'));
+    const las = join(dir, 'scan.las');
+    writeFileSync(las, smallLas());
+    await send('Page.enable');
+    await send('Page.setInterceptFileChooserDialog', { enabled: true });
+    const chosen = new Promise((r) => { const old = ws.onmessage; ws.onmessage = (e) => { old(e); const m = JSON.parse(e.data); if (m.method === 'Page.fileChooserOpened') r(m.params.backendNodeId); }; });
+    // The page's own picker is put aside so the file input (which the test can fill) is used, as in browsers without one.
+    await ev(`Object.defineProperty(window, "showOpenFilePicker", { value: undefined, configurable: true })`);
+    await key('Escape'); await key('Escape');
+    await sleep(300);
+    for (let k = 0; k < 10 && !(await ev(`!![...document.querySelectorAll('[role=menuitem]')].find(x => /Link point cloud/.test(x.textContent))`)); k++) {
+      await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
+      await sleep(300);
+    }
+    // Clicked as a user does (a file input opens only on a real click).
+    const item = JSON.parse(await ev(`JSON.stringify([...document.querySelectorAll('[role=menuitem]')].find(x => /Link point cloud/.test(x.textContent))?.getBoundingClientRect() ?? null)`) ?? 'null');
+    if (item) await click(item.x + item.width / 2, item.y + item.height / 2);
+    const node = await Promise.race([chosen, sleep(5000).then(() => null)]);
+    if (!node) fail(`File → Link point cloud… did not ask for a file (dialogs: ${await ev(`[...document.querySelectorAll("[role=dialog]")].map(x => x.getAttribute("aria-label")).join(", ")`)}; buttons: ${await ev(`[...document.querySelectorAll("button")].slice(0, 12).map(x => x.textContent.trim()).join(", ")`)}).`);
+    else {
+      await send('DOM.setFileInputFiles', { files: [las], backendNodeId: node });
+      let asked = false;
+      for (let k = 0; k < 40 && !asked; k++) { await sleep(150); asked = Boolean(await ev(`!!document.querySelector('.ask-box')`)); }
+      await ev(`[...document.querySelectorAll('.ask-box button')].find(x => x.textContent.trim() === 'OK')?.click()`);
+      await ev(`[...document.querySelectorAll('.view-tab')].find(x => /^3D/.test(x.textContent))?.click()`);
+      let drawn = 0;
+      for (let k = 0; k < 80 && !(drawn > 0); k++) { await sleep(250); drawn = Number(await ev(`document.querySelector('[data-testid=view3d]')?.dataset.cloudPoints ?? 0`)); }
+      if (!(drawn > 0)) fail(`the point cloud linked in the browser is not drawn in 3D. ${errors.join(' | ')}`);
+      else console.log(`▸ File → Link point cloud…: a LAS of 5 000 points indexed in the page, ${drawn} drawn in 3D`);
+    }
+    rmSync(dir, { recursive: true, force: true });
   }
   if (errors.length) fail(`exceptions in the page: ${errors.join(' | ')}`);
   ws.close();

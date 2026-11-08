@@ -75,6 +75,8 @@ public sealed class CoreModule : ILapinModule
         StoreyMove.Register(r);
         StoreyCopy.Register(r);
         Links.Register(r);
+        // Point clouds linked, indexed outside the model, streamed to the views (docs/point-clouds.md).
+        PointCloudLinks.Register(r);
         // The project folder as a CDE: naming, checks, issues (docs/plan-cde.md); the remarks on the model exchanged as BCF.
         Cde.Cde.Register(r);
         Cde.Remarks.Remarks.Register(r);

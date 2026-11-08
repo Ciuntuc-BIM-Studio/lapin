@@ -18,7 +18,7 @@ import { X } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
 import type { CapItem, NodeDto, RenderItem } from '../engine/protocol';
-import { activeStorey, engine, execute, useSession } from '../engine/session';
+import { activeStorey, engine, engineInBrowser, execute, query, useSession } from '../engine/session';
 import { num, storeys as storeysOf } from '../engine/model';
 import { chipText, cutZ, settingOf } from './storeys3d';
 import { showAllStoreys3d } from './storeys3dActions';
@@ -69,6 +69,8 @@ import type { Seg } from './selectBox';
 import { resetTemporary, temporaryOn, useTemporary } from './temporary';
 import { place } from '../engine/instances';
 import { disposeUnderlays, sameSources, underlayGroup, underlaySources, type UnderlayBatch } from './underlays3d';
+import { PointCloudLayer, type Hierarchy, type Tile } from './pointClouds3d';
+import { cloudSpecs, setCloudStatus, viewClouds } from './pointClouds';
 import { copyArrays, displayQualityOf, levelFor, pixelsPerMetre, type DisplayQuality, type LodCamera } from './lod';
 import { inWorld } from '../engine/instances';
 import { clampWheel, wheelZoom } from './zoom';
@@ -542,6 +544,9 @@ export function Viewport3D() {
   const items = useRef(new Map<string, { item: RenderItem; object: THREE.Group }>());
   /** The elements drawn as instances of shared meshes (instancing.ts). */
   const instances = useRef<InstanceLayer | null>(null);
+  /** The point clouds linked, streamed by the camera (pointClouds3d.ts). */
+  const cloudLayer = useRef<PointCloudLayer | null>(null);
+  const cloudKeyRef = useRef('[]');
   /** The model's box (the sun's shadows are fitted in it) forgotten: the elements changed. */
   const boxDirty = useRef<() => void>(() => undefined);
   /** The cut elements' caps, by element (a section or the section box shown). */
@@ -680,6 +685,8 @@ export function Viewport3D() {
         const box = new THREE.Box3();
         for (const { object } of live.values()) if (object.visible) box.expandByObject(object);
         layer.expand(box, useLooks.getState().looks);
+        const cloudBox = cloudLayer.current?.box();
+        if (cloudBox) box.union(cloudBox);
         if (box.isEmpty()) box.set(new THREE.Vector3(-5, -5, 0), new THREE.Vector3(5, 5, 3));
         const centre = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
         const radius = Math.max(size.length() / 2, 1);
@@ -846,6 +853,16 @@ export function Viewport3D() {
     const layer = new InstanceLayer(EDGES);
     s.add(layer.group);
     instances.current = layer;
+    // The point clouds linked (docs/point-clouds.md): their tiles streamed by the camera every frame.
+    const clouds = new PointCloudLayer({
+      status: (id) => query('pointcloud.status', { id }),
+      hierarchy: (id) => query<Hierarchy>('pointcloud.hierarchy', { id }),
+      tiles: (id, nodes) => engine.call<Tile[]>('pointcloud.tiles', { id, nodes }, { timeoutMs: 60_000 }),
+    }, () => invalidate.current());
+    clouds.onStatus = (id, st) => setCloudStatus(id, st);
+    s.add(clouds.group);
+    cloudLayer.current = clouds;
+    clouds.sync(JSON.parse(cloudKeyRef.current));
 
     // Each frame draws every heavy part's copy its distance chooses (lod.ts); the instances' choice, at most every
     // LOD_EVERY ms while the camera moves (a pass goes through every instance), and once more when it stops.
@@ -872,7 +889,7 @@ export function Viewport3D() {
     };
     let frame = 0;
     invalidate.current = () => {
-      if (!frame) frame = requestAnimationFrame(() => { frame = 0; relevel(); fitShadow(); realism.render(cam); });
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; relevel(); clouds.update(cam, lodCamera(), qualityRef.current, engineInBrowser); fitShadow(); realism.render(cam); if (host.current) host.current.dataset.cloudPoints = String(clouds.drawn()); });
     };
     controls.addEventListener('change', invalidate.current);
     controls.addEventListener('change', publish);
@@ -1399,6 +1416,8 @@ export function Viewport3D() {
       window.removeEventListener('keydown', onWalkKey, true);
       window.removeEventListener('keyup', onWalkKey, true);
       window.removeEventListener('blur', onWalkBlur);
+      clouds.dispose();
+      cloudLayer.current = null;
       // The elements, the lights, the ground grid and the grid's axes.
       shadowOnly.dispose();
       meadow.dispose();
@@ -1619,6 +1638,11 @@ export function Viewport3D() {
     const g = scene.current?.getObjectByName('cad-underlays');
     if (g) { g.visible = dxf3d; invalidate.current(); }
   }, [dxf3d]);
+
+  // The clouds as their links and the 3D view's graphics say (its Point clouds tab).
+  const cloudKey = JSON.stringify(cloudSpecs(nodes, viewClouds(view3dId ? nodes.get(view3dId) : undefined)));
+  cloudKeyRef.current = cloudKey;
+  useEffect(() => { cloudLayer.current?.sync(JSON.parse(cloudKey)); }, [cloudKey]);
 
   const storeySetting = settingOf(nodes, view3dId);
   const storeyList = storeysOf({ nodes, relations: useSession.getState().relations });

@@ -86,6 +86,27 @@ Zaimportowany DXF jest częścią projektu: **File → Save** zapisuje go w plik
 
 **Połącz IFC…** utrzymuje inny plik jako połączony zamiast go importować. Jest tylko do odczytu i jest ponownie wczytywany, gdy się zmieni. Działa to także dla DXF. **Zarządzaj → Łącza** pokazuje, ponownie wczytuje, konwertuje lub usuwa łącza. Połączony DXF leży w 3D tak jak zaimportowany; jego pole **3D** w **Zarządzaj → Łącza** to wyłącza. **Widoczność / Grafika** (<kbd>VV</kbd>) ukrywa łącze, wyszarza je lub daje mu własne kategorie tylko w jednym widoku (*Przekroje, elewacje i 3D*, Widoczność / Grafika).
 
+## Chmury punktów
+
+**File → Link point cloud…** łączy skan laserowy lub chmurę z fotogrametrii, tylko w formatach otwartych: **LAS** (1.0–1.4, wszystkie formaty punktów), **LAZ** (skompresowany LAS), **E57**, **PLY** (ASCII i binarny) oraz punkty jako tekst, **XYZ**, **PTS** i **CSV**. Formaty zamknięte (RCP i RCS z Autodesk ReCap, FLS z FARO, LGS z Leica) nie są czytane: najpierw wyeksportuj skan ze swojego programu jako E57 lub LAS.
+
+Lapin pyta, gdzie stoi chmura i w jakiej jednostce:
+
+- **według współrzędnych mapy projektu**: x i y pliku to współrzędne wschodnia i północna, umieszczone przez punkt pomiarowy i kąt do północy z **Manage → Location**, ich wysokości nad rzędną punktu pomiarowego. Lapin proponuje to, gdy plik podaje układ współrzędnych lub jego współrzędne są daleko od zera, a projekt ma lokalizację;
+- **początek na początek**: początek pliku na początku projektu;
+- **wyśrodkowana na początku projektu**: jej środek na początku, jej najniższy punkt na ±0.00;
+- **jej jednostka**: jak podaje plik (LAS i E57 ją podają), inaczej metry; dostępne są centymetry, milimetry, stopy, stopy geodezyjne USA i cale. Gdy chmura wychodzi nieprawdopodobna dla budynku lub terenu (poniżej 20 cm lub ponad 50 km) albo plik podaje inną jednostkę, Lapin ostrzega.
+
+Chmura zostaje w swoim pliku. Nie jest kopiowana do projektu: projekt przechowuje tylko połączenie (ścieżkę pliku, gdzie stoi chmura, jak jest rysowana). Lapin indeksuje ją raz, w tle, w octree kafli we własnym folderze na tym komputerze (nie obok projektu), a **Manage → Links** pokazuje postęp. Potem widok 3D pobiera kafle potrzebne kamerze, najpierw bliskie i coraz dokładniejsze w miarę zbliżania się, w budżecie punktów wyznaczonym przez **View → Display quality** (1,5, 3 lub 6 milionów punktów rysowanych naraz), więc skan stu milionów punktów obraca się tak płynnie jak mały.
+
+![Skan domu połączony jako chmura punktów, w widoku 3D](shots/point-cloud-3d.webp)
+
+W **Manage → Links** chmura ma własny wiersz: jej punkty, postęp indeksu, **Shown**, **Halftone**, **3D**, co koloruje jej punkty (**RGB**, **Intensity**, **Elevation** lub **Classification**, według klas ASPRS: grunt, roślinność, budynek, woda…) i **Size** punktu w pikselach. Przycisk pinezki umieszcza ją ponownie (według mapy, początek na początek lub wyśrodkowana, jej jednostka, przesunięta wzdłuż x, y i z, obrócona); przycisk przeładowania czyta plik ponownie i indeksuje go od nowa tylko wtedy, gdy się zmienił. **Unlink** usuwa połączenie; indeks zostaje w folderze Lapina i znowu służy chmurze, jeśli zostanie ponownie połączona.
+
+![Manage → Links z chmurą punktów](shots/point-cloud-links.webp)
+
+Chmura nigdy nie jest eksportowana: IFC, Fragments i eksporty 3D niosą model, nie skan. W przeglądarce można połączyć chmurę do 160 MB; jest indeksowana na stronie i trzeba ją połączyć ponownie po przeładowaniu strony. Większe chmury wymagają aplikacji desktopowej.
+
 ## Modele 3D
 
 **Eksportuj 3D (glTF, USD, DAE)…** zapisuje model jako powierzchnie do renderingu, wizualizacji i rzeczywistości rozszerzonej (AR):

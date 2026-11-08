@@ -106,6 +106,17 @@ export const FAQ: Entry[] = [
     source: 'report #106',
   },
   {
+    id: 'point-clouds',
+    q: ['How do I import a point cloud or a laser scan?', 'Can Lapin open LAS, LAZ or E57 files?', 'Can I link a ReCap (RCP) scan?', 'How do I place a scan by its coordinates?'],
+    qRo: ['Cum import un nor de puncte sau o scanare laser?', 'Poate Lapin deschide fișiere LAS, LAZ sau E57?', 'Pot lega o scanare ReCap (RCP)?', 'Cum așez o scanare după coordonatele ei?'],
+    keywords: ['point', 'cloud', 'pointcloud', 'scan', 'scanner', 'laser', 'lidar', 'las', 'laz', 'e57', 'ply', 'pts', 'xyz', 'recap', 'rcp', 'rcs', 'faro', 'leica', 'photogrammetry',
+      'nor', 'puncte', 'scanare', 'nube', 'puntos', 'nuvem', 'pontos', 'nuage', 'nuvola', 'punti', 'punktwolke', 'chmura', 'punktsky', '点云'],
+    a: 'File → Link point cloud… links a scan in an open format: LAS (1.0–1.4), LAZ, E57, PLY, or points as text (XYZ, PTS, CSV). Proprietary formats (ReCap RCP/RCS, FARO FLS, Leica LGS) are not read: export the scan from its program as E57 or LAS. Lapin asks where it stands (by the project\'s map coordinates through Manage → Location, origin to origin, or centred) and its unit, warns when the size looks wrong, then indexes it in the background into its own folder (never the project) and streams it into the 3D view; Manage → Links shows its progress, its colours (RGB, intensity, elevation, classification), its point size, and places it again.',
+    aRo: 'File → Link point cloud… leagă o scanare într-un format deschis: LAS (1.0–1.4), LAZ, E57, PLY sau puncte ca text (XYZ, PTS, CSV). Formatele proprietare (ReCap RCP/RCS, FARO FLS, Leica LGS) nu se citesc: exportă scanarea din programul ei ca E57 sau LAS. Lapin întreabă unde stă (după coordonatele de hartă ale proiectului din Manage → Location, origine pe origine sau centrat) și în ce unitate, avertizează când mărimea pare greșită, apoi o indexează în fundal în folderul lui (niciodată în proiect) și o aduce în vederea 3D pe bucăți; Manage → Links arată cât a avansat, culorile (RGB, intensitate, cotă, clasificare), mărimea punctului și o poate reașeza.',
+    action: { label: 'Open Links', labelRo: 'Deschide Links', run: { kind: 'dialog', id: 'links' } },
+    source: 'faq',
+  },
+  {
     id: 'view-filters',
     q: ['How do I make a view filter by a parameter, like in Revit?', 'How do I hide the dimensions or the grids in one view?', 'How do I turn off a layer of an imported DXF in one view?'],
     qRo: ['Cum fac un filtru de vedere după un parametru, ca în Revit?', 'Cum ascund cotele sau axele într-o singură vedere?', 'Cum opresc un strat al unui DXF importat într-o singură vedere?'],
