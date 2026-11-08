@@ -187,8 +187,9 @@ public static class MaterialDrawing
     /// <param name="layers">An element's layers in order, when it has a layer set.</param>
     /// <param name="membrane">Whether a layer draws as a membrane.</param>
     /// <param name="joins">Whether one material goes on from one element into another without a line (a view style may turn it off).</param>
+    /// <param name="mergeOwn">Whether one element's bands of one material join each other too (a coarse view: a layered wall one area, decision 401).</param>
     public static MaterialDrawingResult Apply(ViewDrawing d, Func<DPolygon, ResolvedMaterial?> graphics, Func<string, IReadOnlyList<LayerRef>?>? layers = null, Func<LayerRef, bool>? membrane = null, bool joins = true,
-        Func<string, ElementHatch?>? elementHatch = null)
+        Func<string, ElementHatch?>? elementHatch = null, bool mergeOwn = false)
     {
         // Without joins each element's bands join only its own: the key carries the element.
         string? Key(DPolygon p, ResolvedMaterial? g) => JoinKey(p, g) is { } k ? (joins ? k : k + "\u0000" + p.Element) : null;
@@ -243,7 +244,7 @@ public static class MaterialDrawing
             for (var s = 0; s < es.Count; s++)
                 foreach (var c in index.Near(es[s]))
                 {
-                    if (c.Item.Key != key || d.Cuts[c.Item.Poly].Element == p.Element) continue;
+                    if (c.Item.Key != key || c.Item.Poly == i || (!mergeOwn && d.Cuts[c.Item.Poly].Element == p.Element)) continue;
                     if (Coincide(es[s], c.Seg) || Coincide(c.Seg, es[s]))
                     {
                         if (!o.Seams.TryGetValue(i, out var set)) o.Seams[i] = set = [];
@@ -265,7 +266,7 @@ public static class MaterialDrawing
             var seg = (d.Lines[li].A, d.Lines[li].B);
             // Two elements' bands of one material meet along this line: it is inside the material.
             var byKey = index.Near(seg).Where(c => Covers(c.Seg, seg))
-                .GroupBy(c => c.Item.Key).Select(g => g.Select(c => d.Cuts[c.Item.Poly].Element).Distinct().Count());
+                .GroupBy(c => c.Item.Key).Select(g => mergeOwn ? g.Select(c => c.Item.Poly).Distinct().Count() : g.Select(c => d.Cuts[c.Item.Poly].Element).Distinct().Count());
             if (byKey.Any(n => n > 1)) o.DropLines.Add(li);
         }
 

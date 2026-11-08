@@ -222,6 +222,7 @@ L’onglet **Vue** règle ce que montre la vue au premier plan et son aspect.
 - **Liens.** Chaque fichier lié, avec **Visible** et **Demi-teinte** pour cette seule vue. **Affichage** est **Selon la vue hôte** (le lien prend les catégories de cette vue) ou **Personnalisé** : **Catégories…** donne alors au lien ses propres catégories, sous-catégories et classes IFC dans cette vue. Le plan de l’architecte masque les armatures du lien de structure ; celui de l’ingénieur, les finitions du lien d’architecture.
 - **Classes IFC.** Les classes des éléments propres au projet, affichées ou masquées.
 - **Remplacements graphiques.** Une catégorie prend aussi un **Motif** pour ses lignes de coupe et de projection, **Demi-teinte** et une **Transparence** (en 3D, de 0 opaque à 95) ; une catégorie d’annotation une **Couleur** et **Demi-teinte** ; un filtre une **Couleur**, un **Motif**, **Demi-teinte** et une **Transparence** pour ce qu’il prend, le premier filtre de la liste donnant chaque champ. **Niveau de détail** (grossier, moyen, fin) règle ce que dessinent les symboles d’un plan, sinon selon l’échelle.
+- **Niveau de détail.** Par vue, en tête du dialogue (celui d’une vue 3D aussi) : **Faible** dessine murs, planchers et toitures comme un seul contour hachuré comme leur âme, sans ligne entre leurs couches ni détails des portes et fenêtres ; **Moyen** dessine leurs couches ; **Élevé** ajoute les détails des portes et fenêtres (tableaux, appuis, encadrements, seuils, tablettes, quincaillerie, volets, grilles), les habillages des baies et les armatures d’une maquette liée. Laissée à l’échelle, une vue est en détail élevé au 1:50 et plus grand, moyen jusqu’au 1:100 et faible à partir du 1:200 (les symboles du site gardent leurs échelles) ; un plan au 1:50 est déjà en détail élevé : passez-le en moyen ou faible pour voir ce qui change. Les murs et planchers d’un IFC lié ou importé sont découpés selon les compositions que leur donne leur fichier, si bien que leurs **Finitions**, leur **Isolation** et leur **Âme** se masquent comme celles d’un mur natif et que le dessin des seules âmes du style Structure les atteint ; l’enduit d’un mur apporté comme pièce à part, ou un revêtement d’une seule finition, va avec **Finitions**. Une vue 3D d’architecture laisse de côté les **Armatures** jusqu’à ce qu’on les affiche ; une vue de structure les montre.
 
 Les réglages appartiennent à la vue, ou à un jeu nommé que plusieurs vues partagent (**Enregistrer comme jeu…**). Un style de vue peut nommer un jeu (Gérer → Styles de vue) : une vue sans réglages propres prend le jeu de son style, comme les gabarits de vue de Revit ; **En faire ceux de cette vue** part de lui pour les siens.
 
@@ -238,6 +239,10 @@ Les réglages appartiennent à la vue, ou à un jeu nommé que plusieurs vues pa
 ![La couleur et le motif d’un filtre dans le plan](shots/vg-overrides.webp)
 
 ![Le plan avec son filtre](shots/vg-plan.webp)
+
+![Un plan au 1:50 en détail élevé : les couches des murs](shots/detail-fine.webp)
+
+![Le même plan en détail faible : un seul contour hachuré comme l’âme](shots/detail-coarse.webp)
 
 ### Nuages de points dans les vues
 

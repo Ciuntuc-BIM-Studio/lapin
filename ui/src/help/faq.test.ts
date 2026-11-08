@@ -115,6 +115,9 @@ describe('Ask Lapin', () => {
     expect(best('how do I hide rebar in a linked model')).toBe('visibility-graphics');
     expect(best('cum ascund finisajele peretilor in plan')).toBe('visibility-graphics');
     expect(best('visibility graphics like revit')).toBe('visibility-graphics');
+    // Decision 401: the detail level.
+    expect(best('what does the detail level change')).toBe('detail-level');
+    expect(best('planul 1:50 arata la fel la detaliu fin')).toBe('detail-level');
     // Decision 394: graphic overrides.
     expect(best('how do I make the walls halftone in one view')).toBe('visibility-graphics');
     // Decision 393: annotation and imported categories, view filters.

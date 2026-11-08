@@ -3187,6 +3187,32 @@ export const scenes = [
     },
   },
   {
+    // A view's detail level as in Revit (decision 401): a 1:50 plan fine, then coarse (one outline hatched as the core).
+    id: 'views-detail',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const typeId = (await t.cmd('architecture.createWallType', { name: 'Brick 250 insulated', layers: [
+        { material: 'Lime plaster', thickness: 0.015 }, { material: 'Brick', thickness: 0.25, core: true },
+        { material: 'Mineral wool', thickness: 0.1 }, { material: 'Silicate render', thickness: 0.01 }] })).id;
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 0, x2: 4, y2: 0, typeId })).id;
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 4, y1: 0, x2: 4, y2: 3, typeId });
+      await t.cmd('architecture.addWindow', { wallId: wall, x: 2, y: 0 });
+      const plan = (await t.cmd('view.create', { kind: 'plan', storeyId: s, name: 'Corner 1:50', scale: 50 })).id;
+      await t.ui({ view: 'plan', planViewId: plan, keyPlan: false });
+      await t.wait(1500);
+      await t.fit();
+      const cuts = async () => (await t.call('doc.query', { name: 'view.drawing', args: { id: plan } })).pens.filter((p) => p.layer === 'CUT').reduce((n, p) => n + p.segments.length, 0);
+      const fine = await cuts();
+      await t.shot('detail-fine', { of: '[data-testid=plan]', pad: 0 });
+      await t.cmd('view.graphics', { id: plan, detailLevel: 'coarse' });
+      await t.wait(1200);
+      const coarse = await cuts();
+      t.expect(coarse < fine, `a coarse plan draws no line between the walls' layers (${coarse} cut segments, ${fine} at fine)`);
+      await t.shot('detail-coarse', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // A section seen in 3D (the browser's right-click), and a walk into a room (the plan's right-click).
     id: 'views-3d',
     async run(t) {

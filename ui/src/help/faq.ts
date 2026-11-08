@@ -151,6 +151,17 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'detail-level',
+    q: ['What does the detail level change in a view?', 'Why does a 1:50 plan look the same at fine detail?', 'How do I draw a wall as one outline without its layers?'],
+    qRo: ['Ce schimbă nivelul de detaliu într-o vedere?', 'De ce arată la fel un plan 1:50 la detaliu fin?', 'Cum desenez un perete ca un singur contur, fără straturi?'],
+    keywords: ['detail', 'level', 'coarse', 'medium', 'fine', 'scale', 'outline', 'layers', 'sills', 'reveals',
+      'detaliu', 'nivel', 'grosier', 'mediu', 'fin', 'scara', 'contur', 'straturi', 'glafuri', 'solbanc', 'pervaz'],
+    a: 'Visibility / Graphics (VV) → Detail level, per view: Coarse draws walls, floors and roofs as one outline hatched as their core, no lines between their layers and no door or window details; Medium draws their layers; Fine adds the details of doors and windows (reveals, sills, surrounds, thresholds, window boards, hardware, shutters), the openings\' linings and a linked model\'s bars. Left to the scale, a view is fine at 1:50 and larger, medium to 1:100, coarse from 1:200, so a 1:50 plan is already fine: set it to medium or coarse to see the difference. A 3D view set to coarse or medium leaves the door and window details out too.',
+    aRo: 'Visibility / Graphics (VV) → Detail level, pe vedere: Coarse (grosier) desenează pereții, planșeele și acoperișurile ca un singur contur hașurat ca miezul lor, fără linii între straturi și fără detaliile ușilor și ferestrelor; Medium (mediu) le desenează straturile; Fine (fin) adaugă detaliile ușilor și ferestrelor (glafuri, solbancuri, ancadramente, praguri, pervazuri, feronerie, obloane), căptușelile golurilor și barele unui model legat. Lăsată după scară, o vedere e fină la 1:50 și mai mare, medie până la 1:100, grosieră de la 1:200, deci un plan 1:50 e deja fin: pune-l pe mediu sau grosier ca să vezi diferența. O vedere 3D pusă pe grosier sau mediu lasă și ea deoparte detaliile ușilor și ferestrelor.',
+    action: { label: 'Open Visibility / Graphics', labelRo: 'Deschide Vizibilitate / Grafică', run: { kind: 'tool', id: 'view.layers' } },
+    source: 'decision 401',
+  },
+  {
     id: 'window-panels',
     q: ['How do I make a window with 2, 3, 4 or 6 panes?', 'How do I make a window with more sashes that open?', 'How do I edit a 2 pane window?'],
     qRo: ['Cum fac o fereastră cu 2, 3, 4 sau 6 canate?', 'Cum fac o fereastră cu mai multe canate care se deschid?', 'Cum modific o fereastră cu două canate?'],

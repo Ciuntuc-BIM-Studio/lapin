@@ -245,8 +245,8 @@ export function VisibilityDialog() {
             {v.graphicsSet && !v.fromStyle && <button type="button" className="btn" title="Its views keep its settings as their own" onClick={() => void execute('view.removeGraphicsSet', { setId: v.graphicsSet })}><Trash2 size={13} />Remove the set</button>}
             {v.fromStyle && <button type="button" className="btn" title="Graphics of this view's own, starting from the style's set" onClick={() => void execute('view.useGraphicsSet', { id: target, setId: null })}>Make them this view's own</button>}
             {setName && <span className="muted small">Changes here change „{setName}” in every view that takes it.</span>}
-            {view && (
-              <label className="row"><span className="muted small">Detail level</span>
+            {(view || target === '3d') && (
+              <label className="row" title="Coarse: walls and floors one outline, hatched as their core. Medium: their layers. Fine: the layers, the details of doors and windows and a linked model's bars. By the scale: fine to 1:50, medium to 1:100, coarse from 1:200."><span className="muted small">Detail level</span>
                 <select data-testid="vv-detail" value={v.graphics?.detailLevel ?? ''} onChange={(e) => void execute('view.graphics', { id: target, detailLevel: e.target.value || null })}>
                   <option value="">by the scale</option><option value="coarse">coarse</option><option value="medium">medium</option><option value="fine">fine</option>
                 </select>

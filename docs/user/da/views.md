@@ -222,6 +222,7 @@ Fanen **Vis** indstiller, hvad visningen forrest viser, og hvordan den ser ud.
 - **Links.** Hver linket fil, med **Vist** og **Halvtone** kun for denne visning. **Visning** er **Som værtsvisningen** (linket tager denne visnings kategorier) eller **Brugerdefineret**: så giver **Kategorier…** linket sine egne kategorier, underkategorier og IFC-klasser i denne visning. Arkitektens plan skjuler konstruktionslinkets armering; ingeniørens skjuler arkitektlinkets overflader.
 - **IFC-klasser.** Klasserne for projektets egne elementer, vist eller skjult.
 - **Grafiske tilsidesættelser.** En kategori får også et **Mønster** for sine snit- og projektionslinjer, **Halvtone** og en **Gennemsigtighed** (i 3D, fra 0 uigennemsigtig til 95); en annoteringskategori en **Farve** og **Halvtone**; et filter en **Farve**, et **Mønster**, **Halvtone** og en **Gennemsigtighed** for det, det tager, hvor det første filter på listen giver hvert felt. **Detaljeniveau** (groft, middel, fint) bestemmer, hvor meget en plans symboler tegner, ellers efter målestokken.
+- **Detaljeniveau.** Pr. visning, øverst i dialogen (også for en 3D-visning): **Groft** tegner vægge, dæk og tage som én kontur skraveret som deres kerne, uden linjer mellem lagene og uden detaljer i døre og vinduer; **Mellem** tegner deres lag; **Fint** tilføjer detaljerne i døre og vinduer (lysninger, sålbænke, indfatninger, dørtrin, vinduesplader, beslag, skodder, gitre), åbningernes beklædning og en linket models armering. Overladt til målestokken er en visning fin ved 1:50 og større, mellem til 1:100 og grov fra 1:200 (grundens symboler beholder deres egne målestokke); en 1:50-plan er allerede fin, så sæt den til mellem eller groft for at se forskellen. Vægge og dæk i en linket eller importeret IFC deles efter de lagsæt, filen giver dem, så deres **Overflader**, **Isolering** og **Kerne** skjules som i en native væg, og Konstruktion-stilens tegning med kun kerner når også dem; en vægs puds bragt som en del for sig, eller en beklædning af ét overflademateriale, følger **Overflader**. En arkitektonisk 3D-visning udelader **Armering**, indtil den vises; en konstruktionsvisning viser den.
 
 Indstillingerne tilhører visningen eller et navngivet sæt, som flere visninger deler (**Gem som et sæt…**). En visningsstil kan navngive et sæt (Administrer → Visningsstile): en visning uden egne indstillinger tager sin stils sæt, som Revits visningsskabeloner; **Gør dem til denne visnings egne** starter dens egne derfra.
 
@@ -238,6 +239,10 @@ Indstillingerne tilhører visningen eller et navngivet sæt, som flere visninger
 ![Et filters farve og mønster i planen](shots/vg-overrides.webp)
 
 ![Planen med sit filter](shots/vg-plan.webp)
+
+![En plan 1:50 med fint detaljeniveau: væggenes lag](shots/detail-fine.webp)
+
+![Samme plan groft: én kontur skraveret som kernen](shots/detail-coarse.webp)
 
 ### Punktskyer i visninger
 

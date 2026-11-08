@@ -221,6 +221,7 @@ Tabul **Vedere** setează ce arată vederea din față și cum arată.
 - **Legături.** Fiecare fișier legat, cu **Vizibil** și **Halftone** doar pentru această vedere. **Afișare** e **Ca vederea gazdă** (legătura ia categoriile vederii) sau **Personalizat**: atunci **Categorii…** îi dă legăturii categoriile, subcategoriile și clasele IFC ale ei în această vedere. Planul arhitectului ascunde armăturile legăturii de structură; al inginerului, finisajele legăturii de arhitectură.
 - **Clase IFC.** Clasele elementelor proiectului, arătate sau ascunse.
 - **Suprascrieri grafice.** O categorie ia și un **Model** de linie pentru liniile ei secționate și văzute, **Halftone** și o **Transparență** (în 3D, de la 0 opac la 95); o categorie de adnotări o **Culoare** și **Halftone**; un filtru o **Culoare**, un **Model**, **Halftone** și o **Transparență** pentru ce ia, primul filtru din listă dând fiecare câmp. **Nivel de detaliu** (grosier, mediu, fin) spune cât desenează simbolurile unui plan, altfel după scară.
+- **Nivelul de detaliu.** Pe vedere, în capul dialogului (și al unei vederi 3D): **Grosier** desenează pereții, planșeele și acoperișurile ca un singur contur hașurat ca miezul lor, fără linii între straturi și fără detaliile ușilor și ferestrelor; **Mediu** le desenează straturile; **Fin** adaugă detaliile ușilor și ferestrelor (glafuri, solbancuri, ancadramente, praguri, pervazuri, feronerie, obloane, grilaje), căptușelile golurilor și barele unui model legat. Lăsată după scară, o vedere e fină la 1:50 și mai mare, medie până la 1:100 și grosieră de la 1:200 (simbolurile amplasamentului își păstrează scările lor); un plan 1:50 e deja fin, deci pune-l pe mediu sau grosier ca să vezi ce se schimbă. Pereții și planșeele unui IFC legat sau importat se împart după seturile de straturi pe care i le dă fișierul, așa că **Finisajele**, **Izolația** și **Miezul** lor se ascund ca la un perete nativ, iar desenul doar cu miezuri al stilului Structural ajunge și la ele; tencuiala unui perete adusă ca piesă separată sau un finisaj dintr-un singur material merge cu **Finisajele**. O vedere 3D de arhitectură lasă deoparte **Armăturile** până le arăți, una de structură le arată.
 
 Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**Salvează ca set…**). Un stil de vedere poate numi un set (Gestionare → Stiluri de vedere): o vedere fără setări proprii ia setul stilului ei, ca șabloanele de vedere din Revit; **Fă-le ale acestei vederi** pornește setările ei de la el.
 
@@ -237,6 +238,10 @@ Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**
 ![Culoarea și modelul unui filtru în plan](shots/vg-overrides.webp)
 
 ![Planul cu filtrul lui](shots/vg-plan.webp)
+
+![Un plan 1:50 la nivelul de detaliu fin: straturile pereților](shots/detail-fine.webp)
+
+![Același plan grosier: un singur contur hașurat ca miezul](shots/detail-coarse.webp)
 
 ### Norii de puncte în vederi
 

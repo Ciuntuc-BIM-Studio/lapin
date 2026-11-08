@@ -222,6 +222,7 @@ A guia **Vista** define o que a vista em primeiro plano mostra e qual é a sua a
 - **Vínculos.** Cada arquivo vinculado, com **Visível** e **Meio-tom** só para esta vista. **Exibição** é **Pela vista anfitriã** (o vínculo usa as categorias desta vista) ou **Personalizado**: então **Categorias…** dá ao vínculo suas próprias categorias, subcategorias e classes IFC nesta vista. A planta do arquiteto oculta as armaduras do vínculo estrutural; a do engenheiro, os acabamentos do vínculo de arquitetura.
 - **Classes IFC.** As classes dos elementos próprios do projeto, mostradas ou ocultas.
 - **Substituições gráficas.** Uma categoria recebe também um **Padrão** para as suas linhas de corte e de projeção, **Meio-tom** e uma **Transparência** (em 3D, de 0 opaco a 95); uma categoria de anotação uma **Cor** e **Meio-tom**; um filtro uma **Cor**, um **Padrão**, **Meio-tom** e uma **Transparência** para o que pega, o primeiro filtro da lista dando cada campo. **Nível de detalhe** (baixo, médio, alto) define quanto desenham os símbolos de uma planta; senão, pela escala.
+- **Nível de detalhe.** Por vista, no topo do diálogo (também de uma vista 3D): **Baixo** desenha paredes, lajes e coberturas como um só contorno hachurado como o seu núcleo, sem linhas entre as camadas nem detalhes de portas e janelas; **Médio** desenha as suas camadas; **Alto** acrescenta os detalhes de portas e janelas (ombreiras, peitoris, guarnições, soleiras, peitoris internos, ferragens, venezianas, grades), os revestimentos dos vãos e as armaduras de um modelo vinculado. Deixada à escala, uma vista é de detalhe alto a 1:50 e maiores, médio até 1:100 e baixo a partir de 1:200 (os símbolos do terreno mantêm as suas escalas); uma planta 1:50 já é alta, então passe-a para médio ou baixo para ver o que muda. As paredes e lajes de um IFC vinculado ou importado dividem-se pelos conjuntos de camadas que o arquivo lhes dá, de modo que os seus **Acabamentos**, **Isolamento** e **Núcleo** se ocultam como numa parede nativa e o desenho só de núcleos do estilo Estrutural chega a elas; o reboco de uma parede trazido como peça própria, ou um revestimento de um só acabamento, vai com **Acabamentos**. Uma vista 3D de arquitetura deixa de fora as **Armaduras** até que sejam mostradas; uma de estrutura mostra-as.
 
 As configurações são da vista, ou de um conjunto com nome que várias vistas compartilham (**Salvar como conjunto…**). Um estilo de vista pode nomear um conjunto (Gerenciar → Estilos de vista): uma vista sem configurações próprias usa o conjunto do seu estilo, como os modelos de vista do Revit; **Torná-los próprios desta vista** começa os seus a partir dele.
 
@@ -238,6 +239,10 @@ As configurações são da vista, ou de um conjunto com nome que várias vistas 
 ![A cor e o padrão de um filtro na planta](shots/vg-overrides.webp)
 
 ![A planta com o seu filtro](shots/vg-plan.webp)
+
+![Uma planta 1:50 em detalhe alto: as camadas das paredes](shots/detail-fine.webp)
+
+![A mesma planta em detalhe baixo: um só contorno hachurado como o núcleo](shots/detail-coarse.webp)
 
 ### Nuvens de pontos nas vistas
 

@@ -221,7 +221,8 @@ The **View** tab sets what the view in front shows and how it looks.
 - **Filters.** Rule-based, as in Revit: **New filter**, then its rules (IFC class, category, type, name, material, storey, group, link, phase created, predefined type or a parameter, such as *Fire rating* or *Pset_WallCommon.IsExternal*; equals, contains, begins with, greater, less, has a value…), all of them or any. The view uses the filters in its list, in order; the first that takes an element decides whether it is shown. **Manage → View filters** opens this tab.
 - **Links.** Every linked file, with **Shown** and **Halftone** for this view alone. **Display** is **By host view** (the link takes this view's categories) or **Custom**: then **Categories…** gives the link its own categories, subcategories and IFC classes in this view. An architect's plan hides the structural link's rebar; an engineer's hides the architectural link's finishes.
 - **IFC classes.** The classes of the project's own elements, shown or hidden.
-- **Graphic overrides.** A category also takes a **Pattern** for its cut and projection lines, **Halftone** and a **Transparency** (in 3D, 0 opaque to 95); an annotation category a **Colour** and **Halftone**; a filter a **Colour**, a **Pattern**, **Halftone** and a **Transparency** for what it takes, the first filter in the list giving each. **Detail level** (coarse, medium, fine) sets how much a plan's symbols draw, otherwise taken from the scale.
+- **Graphic overrides.** A category also takes a **Pattern** for its cut and projection lines, **Halftone** and a **Transparency** (in 3D, 0 opaque to 95); an annotation category a **Colour** and **Halftone**; a filter a **Colour**, a **Pattern**, **Halftone** and a **Transparency** for what it takes, the first filter in the list giving each. **Detail level** is the next item.
+- **Detail level.** Per view, in the dialog's head (a 3D view's too): **Coarse** draws walls, floors and roofs as one outline hatched as their core, with no line between their layers and no door or window details; **Medium** draws their layers; **Fine** adds the details of doors and windows (reveals, sills, surrounds, thresholds, window boards, hardware, shutters, grilles), the openings' linings and a linked model's bars. Left to the scale, a view is fine at 1:50 and larger, medium to 1:100 and coarse from 1:200 (the site's symbols keep their own scales); a 1:50 plan is fine already, so set it to medium or coarse to see what changes. A linked or imported IFC's walls and floors split by the layer sets their file gives them, so their **Finishes**, **Insulation** and **Core** hide as a native wall's and the Structural style's cores-only drawing reaches them; a wall's plaster brought as a part of its own, or a covering of one finish, goes with **Finishes**. An architectural 3D view leaves **Rebar** out until it is shown, a structural one shows it.
 
 The settings belong to the view, or to a named set that several views share (**Save as a set…**). A view style can name a set (Manage → View styles): a view with no settings of its own takes its style's set, as Revit's view templates do; **Make them this view's own** starts its own from it.
 
@@ -238,6 +239,10 @@ The settings belong to the view, or to a named set that several views share (**S
 ![A filter's colour and pattern in the plan](shots/vg-overrides.webp)
 
 ![The plan with its filter](shots/vg-plan.webp)
+
+![A 1:50 plan at a fine detail level: the walls' layers](shots/detail-fine.webp)
+
+![The same plan coarse: one outline hatched as the core](shots/detail-coarse.webp)
 
 ### Point clouds in views
 

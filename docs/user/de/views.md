@@ -222,6 +222,7 @@ Die Registerkarte **Ansicht** legt fest, was die vorne liegende Ansicht zeigt un
 - **Verknüpfungen.** Jede verknüpfte Datei, mit **Sichtbar** und **Halbton** nur für diese Ansicht. **Anzeige** ist **Wie Hostansicht** (die Verknüpfung übernimmt die Kategorien dieser Ansicht) oder **Benutzerdefiniert**: dann gibt **Kategorien…** der Verknüpfung in dieser Ansicht eigene Kategorien, Unterkategorien und IFC-Klassen. Der Grundriss der Architektin blendet die Bewehrung der Tragwerksverknüpfung aus; der des Ingenieurs den Ausbau der Architekturverknüpfung.
 - **IFC-Klassen.** Die Klassen der eigenen Elemente des Projekts, ein- oder ausgeblendet.
 - **Grafiküberschreibungen.** Eine Kategorie erhält außerdem ein **Muster** für ihre Schnitt- und Projektionslinien, **Halbton** und eine **Transparenz** (in 3D, von 0 deckend bis 95); eine Beschriftungskategorie eine **Farbe** und **Halbton**; ein Filter eine **Farbe**, ein **Muster**, **Halbton** und eine **Transparenz** für das, was er erfasst, wobei der erste Filter der Liste jedes Feld vorgibt. **Detaillierungsgrad** (grob, mittel, fein) legt fest, wie viel die Symbole eines Grundrisses zeichnen, sonst nach dem Maßstab.
+- **Detaillierungsgrad.** Je Ansicht, oben im Dialog (auch für eine 3D-Ansicht): **Grob** zeichnet Wände, Decken und Dächer als einen Umriss, schraffiert wie ihr Kern, ohne Linien zwischen den Schichten und ohne Details von Türen und Fenstern; **Mittel** zeichnet ihre Schichten; **Fein** fügt die Details von Türen und Fenstern (Laibungen, Fensterbänke, Faschen, Schwellen, Innenfensterbänke, Beschläge, Fensterläden, Gitter), die Auskleidung der Öffnungen und die Bewehrung eines verknüpften Modells hinzu. Dem Maßstab überlassen ist eine Ansicht fein ab 1:50, mittel bis 1:100 und grob ab 1:200 (die Symbole des Geländes behalten ihre eigenen Maßstäbe); ein Grundriss 1:50 ist schon fein, also stellen Sie ihn auf mittel oder grob, um den Unterschied zu sehen. Wände und Decken einer verknüpften oder importierten IFC werden nach den Schichtaufbauten geteilt, die ihre Datei ihnen gibt, sodass ihre **Bekleidungen**, **Dämmung** und ihr **Kern** wie bei einer nativen Wand ausgeblendet werden und die Nur-Kern-Darstellung des Tragwerk-Stils sie erreicht; der Putz einer Wand als eigenes Bauteil oder eine Bekleidung aus einem Material gehört zu **Bekleidungen**. Eine 3D-Ansicht der Architektur lässt die **Bewehrung** weg, bis sie eingeblendet wird; eine des Tragwerks zeigt sie.
 
 Die Einstellungen gehören der Ansicht oder einem benannten Satz, den mehrere Ansichten teilen (**Als Satz speichern…**). Ein Ansichtsstil kann einen Satz nennen (Verwalten → Ansichtsstile): eine Ansicht ohne eigene Einstellungen übernimmt den Satz ihres Stils, wie Revits Ansichtsvorlagen; **Zu eigenen dieser Ansicht machen** beginnt ihre eigenen daraus.
 
@@ -238,6 +239,10 @@ Die Einstellungen gehören der Ansicht oder einem benannten Satz, den mehrere An
 ![Farbe und Muster eines Filters im Grundriss](shots/vg-overrides.webp)
 
 ![Der Grundriss mit seinem Filter](shots/vg-plan.webp)
+
+![Ein Grundriss 1:50 mit feinem Detaillierungsgrad: die Schichten der Wände](shots/detail-fine.webp)
+
+![Derselbe Grundriss grob: ein Umriss, schraffiert wie der Kern](shots/detail-coarse.webp)
 
 ### Punktwolken in Ansichten
 

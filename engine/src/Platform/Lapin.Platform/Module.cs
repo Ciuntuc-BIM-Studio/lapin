@@ -344,6 +344,32 @@ public static class PlanDetail
     public const double CoarseFrom = 1000, FineTo = 200;
 
     public static int Of(double scale) => scale >= CoarseFrom - 1e-9 ? Coarse : scale <= FineTo + 1e-9 ? Fine : Medium;
+
+    /// <summary>
+    /// How much a view draws of the building's elements by its scale when its Visibility / Graphics sets no detail level
+    /// (decision 401, Revit's correspondence): fine at 1:50 and larger, medium to 1:100, coarse at 1:200 and smaller.
+    /// </summary>
+    public const double BuildingFineTo = 50, BuildingMediumTo = 100;
+
+    public static int OfBuilding(double scale) => scale <= BuildingFineTo + 1e-9 ? Fine : scale <= BuildingMediumTo + 1e-9 ? Medium : Coarse;
+
+    /// <summary>The parts of doors and windows only a fine view draws: sills, surrounds, thresholds, window boards, hardware, shutters, grilles, boxes, canopies.</summary>
+    static readonly string[] JoineryDetails = ["sill", "surround", "threshold", "board", "hardware", "shutters", "grille", "windowbox", "canopy"];
+
+    /// <summary>
+    /// Whether a part is a detail a coarse or medium view leaves out (decision 401): a door's or a window's reveals and the
+    /// pieces round it (<see cref="JoineryDetails"/>), an opening's lining; a fine view draws them all.
+    /// </summary>
+    public static bool IsDetailPart(string ifcClass, string? key)
+    {
+        if (key == null) return false;
+        if (key.StartsWith("lining:", StringComparison.Ordinal)) return true;
+        if (ifcClass is not ("IfcDoor" or "IfcWindow")) return false;
+        if (key.StartsWith("reveal", StringComparison.Ordinal)) return true;
+        foreach (var d in JoineryDetails)
+            if (key == d || key.StartsWith(d + ":", StringComparison.Ordinal)) return true;
+        return false;
+    }
 }
 
 public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnlyList<PlanItem>? Plan = null, IReadOnlyList<Vec2>? Snaps = null, IReadOnlyList<string>? Diagnostics = null, SharedInstance? Instance = null,

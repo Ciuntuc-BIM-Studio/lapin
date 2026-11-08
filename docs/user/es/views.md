@@ -218,6 +218,7 @@ La ficha **Vista** configura qué muestra la vista que está delante y cómo se 
 - **Vínculos.** Cada archivo vinculado, con **Visible** y **Semitono** solo para esta vista. **Visualización** es **Según la vista anfitriona** (el vínculo toma las categorías de esta vista) o **Personalizado**: entonces **Categorías…** da al vínculo sus propias categorías, subcategorías y clases IFC en esta vista. La planta del arquitecto oculta las armaduras del vínculo estructural; la del ingeniero, los acabados del vínculo arquitectónico.
 - **Clases IFC.** Las clases de los elementos propios del proyecto, mostradas u ocultas.
 - **Modificaciones gráficas.** Una categoría toma también un **Patrón** para sus líneas de corte y proyección, **Semitono** y una **Transparencia** (en 3D, de 0 opaco a 95); una categoría de anotación un **Color** y **Semitono**; un filtro un **Color**, un **Patrón**, **Semitono** y una **Transparencia** para lo que toma, y el primer filtro de la lista da cada campo. **Nivel de detalle** (bajo, medio, alto) fija cuánto dibujan los símbolos de una planta; si no, según la escala.
+- **Nivel de detalle.** Por vista, en la cabecera del diálogo (también en una vista 3D): **Bajo** dibuja muros, forjados y cubiertas como un solo contorno rayado como su núcleo, sin líneas entre sus capas ni detalles de puertas y ventanas; **Medio** dibuja sus capas; **Alto** añade los detalles de puertas y ventanas (mochetas, vierteaguas, recercados, umbrales, alféizares interiores, herrajes, contraventanas, rejas), los revestimientos de los huecos y las barras de un modelo vinculado. Según la escala, una vista es alta a 1:50 y mayores, media hasta 1:100 y baja desde 1:200 (los símbolos del emplazamiento conservan sus escalas); un plano 1:50 ya es alto, así que póngalo en medio o bajo para ver qué cambia. Los muros y forjados de un IFC vinculado o importado se dividen según los conjuntos de capas que les da su archivo, de modo que sus **Acabados**, **Aislamiento** y **Núcleo** se ocultan como en un muro nativo y el dibujo solo de núcleos del estilo Estructural también los alcanza; el enlucido de un muro traído como pieza propia, o un revestimiento de un solo acabado, va con **Acabados**. Una vista 3D arquitectónica deja fuera las **Armaduras** hasta que se muestran; una estructural las muestra.
 
 Los ajustes son de la vista, o de un conjunto con nombre que comparten varias vistas (**Guardar como conjunto…**). Un estilo de vista puede nombrar un conjunto (Gestionar → Estilos de vista): una vista sin ajustes propios toma el conjunto de su estilo, como las plantillas de vista de Revit; **Hacerlos propios de esta vista** empieza los suyos a partir de él.
 
@@ -234,6 +235,10 @@ Los ajustes son de la vista, o de un conjunto con nombre que comparten varias vi
 ![El color y el patrón de un filtro en la planta](shots/vg-overrides.webp)
 
 ![La planta con su filtro](shots/vg-plan.webp)
+
+![Un plano 1:50 con nivel de detalle alto: las capas de los muros](shots/detail-fine.webp)
+
+![El mismo plano en bajo: un solo contorno rayado como el núcleo](shots/detail-coarse.webp)
 
 ### Nubes de puntos en las vistas
 

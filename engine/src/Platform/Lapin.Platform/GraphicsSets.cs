@@ -374,6 +374,7 @@ public static class GraphicsSets
     {
         var m = q.Model;
         var vg = VisibilityGraphics.Of(m, view);
+        var lessDetail = vg.DetailLevel is { } dl && dl < PlanDetail.Fine;
         var o = new JsonObject();
         foreach (var e in m.Entities)
         {
@@ -383,11 +384,13 @@ public static class GraphicsSets
             // A halftone, a transparency (opacity), a filter's colour (decision 394).
             if (vg.OpacityOf(e) is { } op) look = new JsonObject { ["opacity"] = Math.Round(op, 3) };
             if (vg.ColorOf(e) is { } color && color != Links.Halftone) (look ??= new JsonObject())["color"] = color;
-            if (vg.HiddenSubs(e) != null && q.Geometry(e.Id) is { } geo)
+            // A 3D view set to coarse or medium (decision 401) leaves out the details of doors and windows (sills, boards, hardware) and the openings' linings.
+            var details = lessDetail && e.Class is IfcClass.Door or IfcClass.Window or IfcClass.Wall;
+            if ((vg.HiddenSubs(e) != null || details) && q.Geometry(e.Id) is { } geo)
             {
                 var parts = new JsonObject();
                 foreach (var p in geo.Parts)
-                    if (p.Key is { } k && !parts.ContainsKey(k) && vg.HidesPart(e, k)) parts[k] = new JsonObject { ["hidden"] = true };
+                    if (p.Key is { } k && !parts.ContainsKey(k) && (vg.HidesPart(e, k) || details && PlanDetail.IsDetailPart(e.Class, k))) parts[k] = new JsonObject { ["hidden"] = true };
                 if (parts.Count > 0) (look ??= new JsonObject())["parts"] = parts;
             }
             if (look != null) o[e.Id] = look;

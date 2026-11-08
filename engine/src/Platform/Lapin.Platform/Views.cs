@@ -400,6 +400,15 @@ public static class Views
         var display = StoreyDisplay.Of(view);
         // How much the plan's symbols draw, by its scale.
         var detail = vg.DetailLevel ?? PlanDetail.Of(view.NumOrNull("scale") ?? 100);
+        // How much of the building's elements draws (decision 401): coarse, one outline hatched as the core; medium, the
+        // layers; fine, the layers with the details of doors and windows, and the bars a linked structural model brings.
+        var building = BuildingDetail(vg, view);
+        var coreMaterials = new Dictionary<string, string?>();
+        string? MaterialOf(Entity e, GeometryPart p) =>
+            building == PlanDetail.Coarse && p.Key is { } k && k.StartsWith("layer:", StringComparison.Ordinal)
+                ? (coreMaterials.TryGetValue(e.Id, out var cm) ? cm : coreMaterials[e.Id] = CoreMaterial(m, e)) ?? p.Material
+                : p.Material;
+        bool Detailed(Entity e, GeometryPart p) => building == PlanDetail.Fine || !PlanDetail.IsDetailPart(e.Class, p.Key);
         // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
         var style = ViewStyles.Of(m, view);
         // People, cars and plants (decision 341): their symbols and silhouettes in the style's mode, thin.
@@ -420,8 +429,10 @@ public static class Views
             if (plan && !spanned && display.Shows(storey, Spatial.StoreyOf(m, e.Id)?.Id) == null) continue;
             if (filters.Select(f => f.For(q, view, e)).FirstOrDefault(x => x != null) is { Hide: true }) continue;
             if (vg.Hides(e)) continue;
-            if (q.Geometry(e.Id) is not { } g) continue;
             var stored = StoredBodies.Has(e);
+            // A linked or imported model's bars: thousands of small cuts, drawn only in a fine view.
+            if (stored && building < PlanDetail.Fine && ReferenceLayers.CategoryOf(e) == "rebar") continue;
+            if (q.Geometry(e.Id) is not { } g) continue;
             if (cutZ is { } cz && stored && Plan2d.Read(e) is { Count: > 0 } own)
             {
                 OwnPlan(e, g, own, cz, symbols, fills, texts);
@@ -432,8 +443,8 @@ public static class Views
                 // By its symbols when it has them (a stored terrain from an IFC file has only its body).
                 var bySymbol = SiteSymbols.Contains(e.Class) && g.Plan is { Count: > 0 };
                 foreach (var p in g.Parts)
-                    if (!bySymbol && Measure.Bounds(p.Solid) is { } b && b.Max.Z > SitePlans.Underground && ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key))
-                        parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: true));
+                    if (!bySymbol && Measure.Bounds(p.Solid) is { } b && b.Max.Z > SitePlans.Underground && ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p))
+                        parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: true));
                 if (bySymbol)
                     foreach (var item in g.Plan!)
                     {
@@ -448,7 +459,7 @@ public static class Views
             // entourage detailed (its body's edges, as before) or not at all; its parts still size the view.
             var bySilhouette = !plan && !stored && g.Silhouettes != null && entourage != "detailed";
             foreach (var p in g.Parts)
-                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, p.Material, CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette });
+                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette });
             if (bySilhouette && silhouettes != null)
                 foreach (var sh in g.Silhouettes!)
                     if (sh.Mode == null || sh.Mode == entourage) silhouettes.Add(new DrawSilhouette(sh, e.Id, e.Class, style.EntourageFill, thin));
@@ -463,6 +474,16 @@ public static class Views
                 }
         }
         return (parts, symbols, fills, texts);
+    }
+
+    /// <summary>A view's detail level for the building's elements: its Visibility / Graphics', else by its scale (<see cref="PlanDetail.OfBuilding"/>).</summary>
+    public static int BuildingDetail(VisibilityGraphics vg, Entity view) => vg.DetailLevel ?? PlanDetail.OfBuilding(view.NumOrNull("scale") ?? 100);
+
+    /// <summary>The material a layered element's core is of (a native one's band, a reference's layer by its material's name), for a coarse view's one hatch.</summary>
+    static string? CoreMaterial(IModelView m, Entity e)
+    {
+        if (LayerSets.BandsOf(m, e.Id) is { Count: > 0 } bands) return (bands.FirstOrDefault(b => b.Core) is { Core: true } c ? c : bands.OrderByDescending(b => Math.Abs(b.To - b.From)).First()).Material;
+        return ReferenceLayers.Of(m, e) is { Layers.Count: > 0 } rs ? (rs.Layers.FirstOrDefault(l => l.Core) ?? rs.Layers.OrderByDescending(l => l.Thickness).First()).Material : null;
     }
 
     /// <summary>The pen people, cars and plants draw with unless the object styles say another (decision 341): pen 2, 0.13 mm at 1:100.</summary>
@@ -618,8 +639,10 @@ public static class Views
                 }
             return ownHatch[element] = h;
         }
-        var materials = MaterialDrawing.Apply(drawing, p => Resolved(p.Material), LayersOf,
-            l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins, elementHatch: OwnHatch);
+        // A coarse view (decision 401): a layered element's layers one area, no membranes drawn between them.
+        var coarse = BuildingDetail(VisibilityGraphics.Of(m, view), view) == PlanDetail.Coarse;
+        var materials = MaterialDrawing.Apply(drawing, p => Resolved(p.Material), coarse ? null : LayersOf,
+            l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins, elementHatch: OwnHatch, mergeOwn: coarse);
         // A cut left without a fill: the fill a module gives its elements (a Studio solid's white), asked once per element.
         if (q.Services.All<ICutFill>() is { Count: > 0 } cutFills)
         {

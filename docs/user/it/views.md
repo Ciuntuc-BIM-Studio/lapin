@@ -222,6 +222,7 @@ La scheda **Vista** imposta che cosa mostra la vista in primo piano e come appar
 - **Collegamenti.** Ogni file collegato, con **Visibile** e **Mezzitoni** solo per questa vista. **Visualizzazione** è **Come la vista ospite** (il collegamento prende le categorie di questa vista) o **Personalizzato**: allora **Categorie…** dà al collegamento le sue categorie, sottocategorie e classi IFC in questa vista. La pianta dell'architetto nasconde le armature del collegamento strutturale; quella dell'ingegnere le finiture del collegamento architettonico.
 - **Classi IFC.** Le classi degli elementi propri del progetto, mostrate o nascoste.
 - **Sostituzioni grafiche.** Una categoria prende anche un **Motivo** per le sue linee di taglio e di proiezione, **Mezzitoni** e una **Trasparenza** (in 3D, da 0 opaco a 95); una categoria di annotazione un **Colore** e **Mezzitoni**; un filtro un **Colore**, un **Motivo**, **Mezzitoni** e una **Trasparenza** per ciò che prende, il primo filtro della lista dando ogni campo. **Livello di dettaglio** (basso, medio, alto) stabilisce quanto disegnano i simboli di una pianta, altrimenti secondo la scala.
+- **Livello di dettaglio.** Per vista, in testa alla finestra di dialogo (anche per una vista 3D): **Basso** disegna muri, solai e coperture come un solo contorno campito come il loro nucleo, senza linee tra gli strati né dettagli di porte e finestre; **Medio** ne disegna gli strati; **Alto** aggiunge i dettagli di porte e finestre (spallette, davanzali, cornici, soglie, davanzali interni, ferramenta, persiane, grate), i rivestimenti delle aperture e i ferri di un modello collegato. Lasciata alla scala, una vista è di dettaglio alto a 1:50 e più grande, medio fino a 1:100 e basso da 1:200 (i simboli del sito mantengono le loro scale); una pianta 1:50 è già di dettaglio alto, quindi impostala su medio o basso per vedere cosa cambia. Muri e solai di un IFC collegato o importato vengono divisi secondo le stratigrafie che il file assegna loro, così le **Finiture**, l’**Isolamento** e il **Nucleo** si nascondono come in un muro nativo e il disegno dei soli nuclei dello stile Strutturale li raggiunge; l’intonaco di un muro portato come elemento a sé, o un rivestimento di una sola finitura, va con **Finiture**. Una vista 3D architettonica lascia fuori le **Armature** finché non le mostri; una strutturale le mostra.
 
 Le impostazioni sono della vista, o di un insieme con nome condiviso da più viste (**Salva come insieme…**). Uno stile di vista può nominare un insieme (Gestisci → Stili di vista): una vista senza impostazioni proprie prende l'insieme del suo stile, come i modelli di vista di Revit; **Rendili propri di questa vista** parte da esso per le sue.
 
@@ -238,6 +239,10 @@ Le impostazioni sono della vista, o di un insieme con nome condiviso da più vis
 ![Il colore e il motivo di un filtro in pianta](shots/vg-overrides.webp)
 
 ![La pianta con il suo filtro](shots/vg-plan.webp)
+
+![Una pianta 1:50 a dettaglio alto: gli strati dei muri](shots/detail-fine.webp)
+
+![La stessa pianta a dettaglio basso: un solo contorno campito come il nucleo](shots/detail-coarse.webp)
 
 ### Nuvole di punti nelle viste
 

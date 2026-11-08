@@ -222,6 +222,7 @@ Karta **Widok** ustala, co pokazuje widok na pierwszym planie i jak wygląda.
 - **Łącza.** Każdy połączony plik, z **Widoczne** i **Wyszarzenie** tylko dla tego widoku. **Wyświetlanie** to **Jak widok główny** (łącze bierze kategorie tego widoku) lub **Niestandardowe**: wtedy **Kategorie…** daje łączu własne kategorie, podkategorie i klasy IFC w tym widoku. Rzut architekta ukrywa zbrojenie łącza konstrukcyjnego; rzut inżyniera wykończenia łącza architektonicznego.
 - **Klasy IFC.** Klasy własnych elementów projektu, pokazane lub ukryte.
 - **Nadpisania grafiki.** Kategoria przyjmuje też **Wzór** dla swoich linii przekroju i rzutu, **Wyszarzenie** i **Przezroczystość** (w 3D, od 0 nieprzezroczyste do 95); kategoria opisów **Kolor** i **Wyszarzenie**; filtr **Kolor**, **Wzór**, **Wyszarzenie** i **Przezroczystość** dla tego, co obejmuje, a pierwszy filtr na liście ustala każde pole. **Poziom szczegółowości** (zgrubny, średni, dokładny) określa, ile rysują symbole rzutu, inaczej według skali.
+- **Poziom szczegółowości.** Dla każdego widoku, w nagłówku okna (także widoku 3D): **Niski** rysuje ściany, stropy i dachy jednym obrysem kreskowanym jak ich rdzeń, bez linii między warstwami i bez detali drzwi i okien; **Średni** rysuje ich warstwy; **Wysoki** dodaje detale drzwi i okien (ościeża, parapety, opaski, progi, parapety wewnętrzne, okucia, okiennice, kraty), okładziny otworów i zbrojenie podłączonego modelu. Pozostawiony skali widok ma wysoki poziom przy 1:50 i większych, średni do 1:100 i niski od 1:200 (symbole terenu zachowują swoje skale); rzut 1:50 jest już wysoki, więc ustaw średni lub niski, aby zobaczyć różnicę. Ściany i stropy podłączonego lub zaimportowanego IFC dzielą się według zestawów warstw, które nadaje im plik, więc ich **Wykończenia**, **Izolacja** i **Rdzeń** ukrywają się jak w natywnej ścianie, a rysunek samych rdzeni stylu Konstrukcja obejmuje i je; tynk ściany przyniesiony jako osobna część albo okładzina z jednego materiału wykończeniowego idzie z **Wykończeniami**. Widok 3D architektury pomija **Zbrojenie**, dopóki go nie pokażesz; widok konstrukcji je pokazuje.
 
 Ustawienia należą do widoku albo do nazwanego zbioru, który dzieli kilka widoków (**Zapisz jako zbiór…**). Styl widoku może wskazać zbiór (Zarządzaj → Style widoków): widok bez własnych ustawień bierze zbiór swojego stylu, jak szablony widoków w Revit; **Uczyń je własnymi tego widoku** zaczyna od niego własne.
 
@@ -238,6 +239,10 @@ Ustawienia należą do widoku albo do nazwanego zbioru, który dzieli kilka wido
 ![Kolor i wzór filtra na rzucie](shots/vg-overrides.webp)
 
 ![Rzut z filtrem](shots/vg-plan.webp)
+
+![Rzut 1:50 przy wysokim poziomie szczegółowości: warstwy ścian](shots/detail-fine.webp)
+
+![Ten sam rzut na niskim poziomie: jeden obrys kreskowany jak rdzeń](shots/detail-coarse.webp)
 
 ### Chmury punktów w widokach
 
