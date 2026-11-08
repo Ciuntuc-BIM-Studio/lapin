@@ -36,7 +36,9 @@ const productId = process.argv[2];
 if (!productId) { console.error('Usage: pnpm build:product <product>'); process.exit(1); }
 let product;
 try { product = resolveProduct(root, productId); } catch (e) { console.error(e.message); process.exit(1); }
-const out = join(root, 'build', productId);
+// The product's own id (a product given by its file's path names itself).
+const id = product.id;
+const out = join(root, 'build', id);
 const tauriDir = join(root, 'desktop/src-tauri');
 
 // pnpm is pnpm.cmd on Windows, which Node starts only through the shell; there
@@ -117,8 +119,8 @@ if (mac) console.log(identity ? `▸ signing as ${identity}` : '▸ no Developer
 writeFileSync(join(tauriDir, 'tauri.product.json'), JSON.stringify({
   productName: product.name,
   version,
-  identifier: product.brand?.identifier ?? `ro.ciuntucbimstudio.${productId}`,
-  plugins: { updater: { endpoints: [`https://ciuntucbimstudio.ro/downloads/${productId}-update/{{target}}-{{arch}}-{{bundle_type}}.json`] } },
+  identifier: product.brand?.identifier ?? `ro.ciuntucbimstudio.${id}`,
+  plugins: { updater: { endpoints: [`https://ciuntucbimstudio.ro/downloads/${id}-update/{{target}}-{{arch}}-{{bundle_type}}.json`] } },
   // Relative to desktop/src-tauri, with forward slashes: Tauri reads an absolute Windows path ("D:\\a\\…") as a URL with the
   // scheme "d:", embeds nothing and the installed app opens on "File not found".
   build: { frontendDist: relative(tauriDir, join(out, 'ui')).split(sep).join('/') },

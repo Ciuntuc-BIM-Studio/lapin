@@ -8,7 +8,7 @@
 // (ui/src/modules/<id>/index.tsx, with an optional module.json beside it), or
 // both. "core" is the platform's and comes with every product.
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const readJson = (f) => JSON.parse(readFileSync(f, 'utf8'));
@@ -59,9 +59,12 @@ export function knownModules(root, externals = {}) {
  * the repository does not have.
  */
 export function resolveProduct(root, productId) {
-  const file = join(root, 'products', `${productId}.json`);
-  if (!existsSync(file)) throw new Error(`No product "${productId}" in products/.`);
+  // A product of this repository by its id, or a product file of its own given by path (a private edition kept in its
+  // sibling repository: LAPIN_PRODUCT=../lapin-x/products/lapin-x.json); "external" folders are this repository's siblings either way.
+  const file = productId.endsWith('.json') ? resolve(root, productId) : join(root, 'products', `${productId}.json`);
+  if (!existsSync(file)) throw new Error(productId.endsWith('.json') ? `No product file ${file}.` : `No product "${productId}" in products/.`);
   const product = readJson(file);
+  productId = product.id;
   const known = knownModules(root, product.external ?? {});
   const order = [];
   const visit = (id, via) => {
