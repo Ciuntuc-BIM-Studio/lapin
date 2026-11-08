@@ -78,10 +78,10 @@ The reference reader takes columns by position; Lapin takes them by name, and by
 - **Entities.** The project, site, building and storeys (`PartOf` relations). Each element under its class's category entity, with its GlobalId, `ContainedIn` its storey; an assembly's parts are `MemberOf` it. Types and materials are entities too (`Entity.Type`, `HasMaterial`).
 - **Parameters.** The IFC attributes, the property and quantity sets (quantities with their units) and the user's parameters, as the Fragments export collects them (`FragContext`). An imported reference's *Attributes* go back as `Ifc:` parameters.
 - **Geometry.** Each part is welded at a tenth of a millimetre around its middle, which becomes the instance's translation. Identical meshes are stored once: a column type or a window appears once with many instances.
+- **Openings.** Every opening (`OpeningVoids`: a wall's bare openings, doors, windows, floor and roof openings) becomes an IFCOPENINGELEMENT entity, as the converter writes them. It `Voids` its host, is `Fills`-ed by its door or window, and is `ContainedIn` the host's storey. Its kind, shape and sizes are parameters (`Ifc:ObjectType`, `Pset_ProvisionForVoid.Shape`, `Qto_OpeningElementBaseQuantities` Width/Height/Depth). Its body is an instance flagged hidden: a viewer leaves it out, a clash tool finds it. The import skips hidden instances, so openings never come in as elements.
 - **Left out.** Point clouds are not part of the format.
 
 ## Not done
 
-- Openings as entities (`Voids`/`Fills`) on export. Lapin's own doors and windows carry no opening entity.
 - The `Diagnostics` and `Points` tables are written empty.
 - Ara 3D's own viewer has not yet been checked against Lapin's file. pyarrow reads it with the same schema as the reference files.

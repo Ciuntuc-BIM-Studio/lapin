@@ -62,7 +62,7 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 
 ![The imported house in 3D](shots/import-bos-3d.webp)
 
-**Export IFC, Fragments or BOS…** with **BIM Open Schema** ticked writes the model as Ara 3D's IFC converter writes a file: the project, site, building and storeys, each element under its IFC class with its GlobalId, type, materials, IFC attributes, property and quantity sets and your parameters, contained in its storey; its triangles in tenths of a millimetre, a shape used many times (a column type, a window) stored once. Point clouds are not part of the format and stay out.
+**Export IFC, Fragments or BOS…** with **BIM Open Schema** ticked writes the model as Ara 3D's IFC converter writes a file: the project, site, building and storeys, each element under its IFC class with its GlobalId, type, materials, IFC attributes, property and quantity sets and your parameters, contained in its storey; its triangles in tenths of a millimetre, a shape used many times (a column type, a window) stored once. Openings go out as the converter writes them: an opening element for each door, window and bare opening, cutting its wall and filled by its door or window, with its sizes. Its body is hidden in viewers but kept for clash tools. Point clouds are not part of the format and stay out.
 
 ## JG Structures (structural analysis)
 

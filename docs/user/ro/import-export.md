@@ -62,7 +62,7 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 ![Casa importată, în 3D](shots/import-bos-3d.webp)
 
-**Exportă IFC, Fragments sau BOS…** cu **BIM Open Schema** bifat scrie modelul cum scrie un fișier convertorul IFC al Ara 3D: proiectul, situl, clădirea și etajele, fiecare element sub clasa lui IFC, cu GlobalId-ul, tipul, materialele, atributele IFC, seturile de proprietăți și de cantități și parametrii tăi, conținut în etajul lui; triunghiurile în zecimi de milimetru, o formă folosită de mai multe ori (un tip de stâlp, o fereastră) păstrată o singură dată. Norii de puncte nu fac parte din format și rămân pe dinafară.
+**Exportă IFC, Fragments sau BOS…** cu **BIM Open Schema** bifat scrie modelul cum scrie un fișier convertorul IFC al Ara 3D: proiectul, situl, clădirea și etajele, fiecare element sub clasa lui IFC, cu GlobalId-ul, tipul, materialele, atributele IFC, seturile de proprietăți și de cantități și parametrii tăi, conținut în etajul lui; triunghiurile în zecimi de milimetru, o formă folosită de mai multe ori (un tip de stâlp, o fereastră) păstrată o singură dată. Golurile ies cum le scrie convertorul: câte un element gol pentru fiecare ușă, fereastră și gol simplu, care taie peretele și e umplut de ușa sau fereastra lui, cu dimensiunile lui. Corpul lui e ascuns în vizualizatoare, dar rămâne pentru verificarea coliziunilor. Norii de puncte nu fac parte din format și rămân pe dinafară.
 
 ## JG Structures (calcul structural)
 
