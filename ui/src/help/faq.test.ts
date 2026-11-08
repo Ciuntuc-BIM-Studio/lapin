@@ -121,6 +121,10 @@ describe('Ask Lapin', () => {
     expect(best('arhitectii nu vor sa vada armaturile')).toBe('link-rebar-finishes');
     expect(best('what does the detail level change')).toBe('detail-level');
     expect(best('planul 1:50 arata la fel la detaliu fin')).toBe('detail-level');
+    // Decision 404: the level of development, never by the scale; steel as lines.
+    expect(best('what is LOD 300 in a view')).toBe('detail-level');
+    expect(best('nivelul de dezvoltare al vederii')).toBe('detail-level');
+    expect(best('draw steel members as single lines')).toBe('detail-level');
     // Decision 394: graphic overrides.
     expect(best('how do I make the walls halftone in one view')).toBe('visibility-graphics');
     // Decision 393: annotation and imported categories, view filters.

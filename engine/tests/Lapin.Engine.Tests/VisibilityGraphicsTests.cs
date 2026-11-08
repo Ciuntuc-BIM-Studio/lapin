@@ -328,7 +328,7 @@ public class VisibilityGraphicsTests
         Assert.All(mk.Lines, l => Assert.Equal(Links.Halftone, l.Color));
         // Detail level: kept, read back, refused when it is not one.
         G(f, new JsonObject { ["id"] = plan, ["detailLevel"] = "coarse" });
-        Assert.Equal(PlanDetail.Coarse, VisibilityGraphics.Of(f.Model, f.Model.Get(plan)!).DetailLevel);
+        Assert.Equal(PlanDetail.Lod100, VisibilityGraphics.Of(f.Model, f.Model.Get(plan)!).DetailLevel);
         G(f, new JsonObject { ["id"] = plan, ["detailLevel"] = null });
         Assert.Null(VisibilityGraphics.Of(f.Model, f.Model.Get(plan)!).DetailLevel);
         Assert.Throws<CommandException>(() => G(f, new JsonObject { ["id"] = plan, ["detailLevel"] = "rough" }));

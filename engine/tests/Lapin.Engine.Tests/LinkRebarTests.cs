@@ -148,7 +148,7 @@ public class LinkRebarTests
     }
 
     [Fact]
-    public void A_section_draws_the_linked_bars_only_at_a_fine_detail_level()
+    public void A_section_draws_the_linked_bars_only_at_LOD_400()
     {
         var f = F();
         var r = IfcImport.Link(f.Session, Encoding.ASCII.GetBytes(StructuralIfc()), "structure.ifc", null, null, out _);
@@ -161,11 +161,13 @@ public class LinkRebarTests
             Assert.True(d != null, problem);
             return d!.Cuts.Select(c => f.Model.Get(c.Element)).Count(e => e?.Class == "IfcReinforcingBar");
         }
-        Assert.True(BarCuts() >= 4);
-        f.Run("view.graphics", new JsonObject { ["id"] = view, ["detailLevel"] = "medium" });
+        // The architectural style's LOD 350 leaves them out (decision 404); LOD 400 (a structural style's) draws them.
         Assert.Equal(0, BarCuts());
-        // At fine again, the rebar category hides them in this view alone.
-        f.Run("view.graphics", new JsonObject { ["id"] = view, ["detailLevel"] = "fine" });
+        f.Run("view.setStyle", new JsonObject { ["id"] = view, ["detail"] = 400 });
+        Assert.True(BarCuts() >= 4);
+        f.Run("view.setStyle", new JsonObject { ["id"] = view, ["style"] = "structural", ["detail"] = null });
+        Assert.True(BarCuts() >= 4);
+        // The rebar category hides them in this view alone.
         f.Run("view.graphics", new JsonObject { ["id"] = view, ["category"] = "rebar", ["value"] = new JsonObject { ["hidden"] = true } });
         Assert.Equal(0, BarCuts());
     }

@@ -168,8 +168,8 @@ public sealed class VisibilityGraphics
     public string? AnnotationColor(string category) =>
         Graphics?["annotations"]?[category] is JsonObject row ? (string?)row["color"] is { Length: 7 } c ? c : True(row["halftone"]) ? Links.Halftone : null : null;
 
-    /// <summary>The view's detail level (coarse, medium, fine) as <see cref="PlanDetail"/> reads it; null: by its scale.</summary>
-    public int? DetailLevel => (string?)Graphics?["detailLevel"] switch { "coarse" => PlanDetail.Coarse, "medium" => PlanDetail.Medium, "fine" => PlanDetail.Fine, _ => null };
+    /// <summary>The level of development the view's graphics keep (decision 394's coarse, medium, fine read as LOD 100, 200, 400; decision 404's), or null; <see cref="ViewDetail.Of"/> says the view's.</summary>
+    public int? DetailLevel => PlanDetail.LodOf(Graphics?["detailLevel"]);
 
     /// <summary>A mark recoloured as its annotation category says (lines, texts and fills); unchanged otherwise.</summary>
     public void Recolor(ViewMark mk)

@@ -155,11 +155,11 @@ public static class GraphicsSets
             }
             if (cls != null) SetIn(into, "classes", cls, value);
             // Stage B: an annotation category's row; an import's ({hidden, halftone}) or one of its layers'; the view's (or a link's) filters, in order.
-            // The view's detail level (coarse, medium, fine; null: by its scale).
+            // A set's level of development (decision 404: 100…400; the old coarse, medium, fine read as 100, 200, 400; null: the view's or its style's).
             if (a.ContainsKey("detailLevel"))
             {
-                if ((string?)a["detailLevel"] is { Length: > 0 } dl)
-                    g["detailLevel"] = dl is "coarse" or "medium" or "fine" ? dl : throw new CommandException($"„{dl}” is not coarse, medium or fine.");
+                if (a["detailLevel"] is JsonValue dv && (dv.TryGetValue<string>(out var ds) ? ds.Length > 0 : true))
+                    g["detailLevel"] = PlanDetail.LodOf(dv) ?? throw new CommandException(PlanDetail.LodProblem);
                 else g.Remove("detailLevel");
             }
             if ((string?)a["annotation"] is { } ann)
@@ -313,6 +313,8 @@ public static class GraphicsSets
                 // The set comes from the view's style (its template), not chosen on the view.
                 ["fromStyle"] = setId != null && v.Str("graphicsSet") != setId,
                 ["style"] = ViewStyles.StyleOf(q.Model, v).Name,
+                // Its level of development (decision 404): the one it draws at, the one it sets itself (null: its style's), its style's.
+                ["detail"] = ViewDetail.Of(q.Model, v), ["ownDetail"] = ViewDetail.Own(v, VisibilityGraphics.Of(q.Model, v)), ["styleDetail"] = ViewStyles.StyleOf(q.Model, v).Detail,
                 ["subcategories"] = new JsonObject(VisibilityGraphics.SubcategoriesOf.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)new JsonArray(kv.Value.Select(x => (JsonNode)x).ToArray())))),
                 ["annotations"] = new JsonArray(VisibilityGraphics.AnnotationCategories.Select(c => (JsonNode)c).ToArray()),
                 ["filters"] = new JsonArray(ViewFilters.All(q.Model).Select(f => (JsonNode)new JsonObject { ["id"] = f.Id, ["name"] = f.Name }).ToArray()),
@@ -382,12 +384,13 @@ public static class GraphicsSets
     {
         var m = q.Model;
         var vg = VisibilityGraphics.Of(m, view);
-        var lessDetail = vg.DetailLevel is { } dl && dl < PlanDetail.Fine;
+        var lod = ViewDetail.Of(m, view, vg);
+        var lessDetail = lod < PlanDetail.Lod300;
         var o = new JsonObject();
         foreach (var e in m.Entities)
         {
             if (Spatial.StoreyOf(m, e.Id) == null) continue;
-            if (vg.Hides(e)) { o[e.Id] = new JsonObject { ["hidden"] = true }; continue; }
+            if (vg.Hides(e) || lod < PlanDetail.Lod350 && ReferenceLayers.CategoryOf(e) == "steelConnections") { o[e.Id] = new JsonObject { ["hidden"] = true }; continue; }
             JsonObject? look = null;
             // A halftone, a transparency (opacity), a filter's colour (decision 394).
             if (vg.OpacityOf(e) is { } op) look = new JsonObject { ["opacity"] = Math.Round(op, 3) };

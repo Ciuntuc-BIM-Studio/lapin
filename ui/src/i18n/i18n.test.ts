@@ -285,3 +285,14 @@ describe('a word with two meanings', () => {
     expect(translate('Built as', 'es')).not.toBe(translate('Construction', 'es'));
   });
 });
+
+describe('a view\'s level of development (decision 404)', () => {
+  it('names each level and what it adds in every language, the style\'s level too', async () => {
+    const { LOD_HELP, LODS } = await import('../modules/core/viewStyles');
+    for (const lang of ['ro', 'es', 'de', 'fr', 'da', 'it', 'pl', 'pt', 'lo', 'zh'] as Lang[]) {
+      expect(translate(LOD_HELP, lang)).not.toBeNull();
+      for (const [, label] of LODS) expect(translate(label, lang)).not.toBeNull();
+    }
+    expect(translate('as its style: LOD 350 · connections', 'ro')).toBe('ca stilul: LOD 350 · îmbinări');
+  });
+});

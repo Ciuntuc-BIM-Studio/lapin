@@ -18,7 +18,7 @@ export type LayerMode = 'all' | 'noFinishes' | 'core';
  * entourageFill: the colour their silhouettes are filled with in elevations and sections, null for none.
  */
 export type EntourageMode = 'outline' | 'abstract' | 'detailed' | 'none';
-export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null }
+export interface ViewStyle { id: string; name: string; discipline: string | null; layers: LayerMode; joins: boolean; overhead: boolean; ifc2d: boolean; voids?: boolean; voidSizes?: boolean; finishHatch?: boolean; surfaceHatch?: boolean; entourage?: EntourageMode; entourageFill?: string | null; /** The graphics set its views take when they have none of their own (decision 391). */ graphicsSet?: string | null; /** Its views' level of development (decision 404). */ detail?: number }
 
 /** The entourage modes as the editors offer them. */
 export const ENTOURAGE_MODES: [EntourageMode, string][] = [['outline', 'outlines'], ['abstract', 'abstract'], ['detailed', 'detailed'], ['none', 'not drawn']];
@@ -38,3 +38,18 @@ export function useViewStyles(): ViewStyle[] {
   }, [nodes]);
   return useStyles((s) => s.styles);
 }
+
+/**
+ * The levels of development a view draws at (decision 404), after the LOD Specification: never taken from the scale. Each
+ * with what it adds over the one before, as the views' settings and Visibility / Graphics name them.
+ */
+export const LODS: [number, string, string][] = [
+  [100, 'LOD 100 · massing', 'Walls, floors and roofs one outline hatched as their core; steel members as their axes; doors and windows as their opening and swing'],
+  [200, 'LOD 200 · layers', 'The layers of walls, floors and roofs; doors\' and windows\' frames and sashes, simplified'],
+  [300, 'LOD 300 · details', 'The details of doors and windows (reveals, sills, surrounds, thresholds, boards, hardware, shutters) and the openings\' linings'],
+  [350, 'LOD 350 · connections', 'Steel connections: plates, bolts, anchors'],
+  [400, 'LOD 400 · fabrication', 'A linked structural model\'s reinforcing bars'],
+];
+export const lodLabel = (n: number | undefined) => LODS.find(([k]) => k === n)?.[1] ?? (n ? `LOD ${n}` : '');
+/** What a level shows, each level's addition in turn: the title of its choice. */
+export const LOD_HELP = 'How much of the model the view draws, never by its scale: ' + LODS.map(([, l, d]) => `${l}: ${d}`).join('. ') + '.';

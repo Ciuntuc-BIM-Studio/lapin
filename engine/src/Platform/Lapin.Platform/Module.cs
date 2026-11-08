@@ -346,19 +346,42 @@ public static class PlanDetail
     public static int Of(double scale) => scale >= CoarseFrom - 1e-9 ? Coarse : scale <= FineTo + 1e-9 ? Fine : Medium;
 
     /// <summary>
-    /// How much a view draws of the building's elements by its scale when its Visibility / Graphics sets no detail level
-    /// (decision 401, Revit's correspondence): fine at 1:50 and larger, medium to 1:100, coarse at 1:200 and smaller.
+    /// The levels of development a view draws the building at (decision 404, after the LOD Specification's meaning; never by
+    /// its scale): 100 the massing (an element one outline hatched as its core, steel members as their axes, a door or a
+    /// window as its opening and swing); 200 the layers and the doors' and windows' frames and sashes, simplified; 300 the
+    /// details of doors and windows (reveals, sills, surrounds, thresholds, boards, hardware, shutters) and the openings'
+    /// linings; 350 the connections (steel nodes, fasteners); 400 the fabrication: a linked model's reinforcing bars. A view
+    /// style gives its views theirs (350; a structural one 400), a view may set its own (<c>styleOverrides.detail</c>).
     /// </summary>
-    public const double BuildingFineTo = 50, BuildingMediumTo = 100;
+    public const int Lod100 = 100, Lod200 = 200, Lod300 = 300, Lod350 = 350, Lod400 = 400;
 
-    public static int OfBuilding(double scale) => scale <= BuildingFineTo + 1e-9 ? Fine : scale <= BuildingMediumTo + 1e-9 ? Medium : Coarse;
+    public static readonly int[] Lods = [Lod100, Lod200, Lod300, Lod350, Lod400];
 
-    /// <summary>The parts of doors and windows only a fine view draws: sills, surrounds, thresholds, window boards, hardware, shutters, grilles, boxes, canopies.</summary>
+    public const string LodProblem = "A level of development is 100, 200, 300, 350 or 400.";
+
+    /// <summary>A level as stored or given (100…400, "lod300", "300"; the old coarse, medium and fine of decision 394 as 100, 200, 400); null when it is none of them.</summary>
+    public static int? LodOf(System.Text.Json.Nodes.JsonNode? n)
+    {
+        if (n is not System.Text.Json.Nodes.JsonValue v) return null;
+        if (v.TryGetValue<string>(out var s))
+        {
+            s = s.Trim().ToLowerInvariant();
+            switch (s) { case "coarse": return Lod100; case "medium": return Lod200; case "fine": return Lod400; }
+            if (s.StartsWith("lod", StringComparison.Ordinal)) s = s[3..].Trim();
+            return int.TryParse(s, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var i) && Lods.Contains(i) ? i : null;
+        }
+        return Json.Number(v) is { } d && d == Math.Floor(d) && Lods.Contains((int)d) ? (int)d : null;
+    }
+
+    /// <summary>How much of a plan's drawn symbols a level draws (their <see cref="PlanItem.MinDetail"/>): 100 coarse, 200 medium, 300 and up fine.</summary>
+    public static int SymbolsOf(int lod) => lod <= Lod100 ? Coarse : lod <= Lod200 ? Medium : Fine;
+
+    /// <summary>The parts of doors and windows only a view at LOD 300 or more draws: sills, surrounds, thresholds, window boards, hardware, shutters, grilles, boxes, canopies.</summary>
     static readonly string[] JoineryDetails = ["sill", "surround", "threshold", "board", "hardware", "shutters", "grille", "windowbox", "canopy"];
 
     /// <summary>
-    /// Whether a part is a detail a coarse or medium view leaves out (decision 401): a door's or a window's reveals and the
-    /// pieces round it (<see cref="JoineryDetails"/>), an opening's lining; a fine view draws them all.
+    /// Whether a part is a detail a view under LOD 300 leaves out (decisions 401, 404): a door's or a window's reveals and the
+    /// pieces round it (<see cref="JoineryDetails"/>), an opening's lining.
     /// </summary>
     public static bool IsDetailPart(string ifcClass, string? key)
     {

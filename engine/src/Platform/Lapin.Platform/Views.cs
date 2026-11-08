@@ -398,17 +398,20 @@ public static class Views
         // A site plan: the model from above, what lies under the ground left out, the site's own symbols from every storey.
         var site = plan && SitePlans.Of(view) != null;
         var display = StoreyDisplay.Of(view);
-        // How much the plan's symbols draw, by its scale.
-        var detail = vg.DetailLevel ?? PlanDetail.Of(view.NumOrNull("scale") ?? 100);
+        // The view's level of development (decision 404), never by its scale.
+        var lod = ViewDetail.Of(m, view, vg);
+        // How much a plan's drawn symbols draw (a track's sleepers, a plant's leaves): by the view's own level when it sets one,
+        // else by the scale, as their legibility on paper asks.
+        var detail = ViewDetail.Own(view, vg) is { } ownLod ? PlanDetail.SymbolsOf(ownLod) : PlanDetail.Of(view.NumOrNull("scale") ?? 100);
         // How much of the building's elements draws (decision 401): coarse, one outline hatched as the core; medium, the
         // layers; fine, the layers with the details of doors and windows, and the bars a linked structural model brings.
-        var building = BuildingDetail(vg, view);
+        var building = lod;
         var coreMaterials = new Dictionary<string, string?>();
         string? MaterialOf(Entity e, GeometryPart p) =>
-            building == PlanDetail.Coarse && p.Key is { } k && k.StartsWith("layer:", StringComparison.Ordinal)
+            building <= PlanDetail.Lod100 && p.Key is { } k && k.StartsWith("layer:", StringComparison.Ordinal)
                 ? (coreMaterials.TryGetValue(e.Id, out var cm) ? cm : coreMaterials[e.Id] = CoreMaterial(m, e)) ?? p.Material
                 : p.Material;
-        bool Detailed(Entity e, GeometryPart p) => building == PlanDetail.Fine || !PlanDetail.IsDetailPart(e.Class, p.Key);
+        bool Detailed(Entity e, GeometryPart p) => building >= PlanDetail.Lod300 || !PlanDetail.IsDetailPart(e.Class, p.Key);
         // The view's style: which layers of layered elements draw (all, all but the finishes, the cores).
         var style = ViewStyles.Of(m, view);
         // People, cars and plants (decision 341): their symbols and silhouettes in the style's mode, thin.
@@ -431,7 +434,9 @@ public static class Views
             if (vg.Hides(e)) continue;
             var stored = StoredBodies.Has(e);
             // A linked or imported model's bars: thousands of small cuts, drawn only in a fine view.
-            if (stored && building < PlanDetail.Fine && ReferenceLayers.CategoryOf(e) == "rebar") continue;
+            if (stored && building < PlanDetail.Lod400 && ReferenceLayers.CategoryOf(e) == "rebar") continue;
+            // Connections (steel nodes, fasteners) from LOD 350.
+            if (building < PlanDetail.Lod350 && ReferenceLayers.CategoryOf(e) == "steelConnections") continue;
             if (q.Geometry(e.Id) is not { } g) continue;
             if (cutZ is { } cz && stored && Plan2d.Read(e) is { Count: > 0 } own)
             {
@@ -476,8 +481,6 @@ public static class Views
         return (parts, symbols, fills, texts);
     }
 
-    /// <summary>A view's detail level for the building's elements: its Visibility / Graphics', else by its scale (<see cref="PlanDetail.OfBuilding"/>).</summary>
-    public static int BuildingDetail(VisibilityGraphics vg, Entity view) => vg.DetailLevel ?? PlanDetail.OfBuilding(view.NumOrNull("scale") ?? 100);
 
     /// <summary>The material a layered element's core is of (a native one's band, a reference's layer by its material's name), for a coarse view's one hatch.</summary>
     static string? CoreMaterial(IModelView m, Entity e)
@@ -640,7 +643,7 @@ public static class Views
             return ownHatch[element] = h;
         }
         // A coarse view (decision 401): a layered element's layers one area, no membranes drawn between them.
-        var coarse = BuildingDetail(VisibilityGraphics.Of(m, view), view) == PlanDetail.Coarse;
+        var coarse = ViewDetail.Of(m, view) <= PlanDetail.Lod100;
         var materials = MaterialDrawing.Apply(drawing, p => Resolved(p.Material), coarse ? null : LayersOf,
             l => l.Thickness < MaterialGraphics.MembraneThickness || Resolved(l.Material)?.Membrane == true, joins: ViewStyles.Of(m, view).Joins, elementHatch: OwnHatch, mergeOwn: coarse);
         // A cut left without a fill: the fill a module gives its elements (a Studio solid's white), asked once per element.

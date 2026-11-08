@@ -41,7 +41,7 @@ public static class ViewStyles
 {
     public const string Key = "viewStyles";
     public static readonly string[] LayerModes = ["all", "noFinishes", "core"];
-    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill"];
+    public static readonly string[] Fields = ["layers", "joins", "overhead", "ifc2d", "voids", "voidSizes", "finishHatch", "surfaceHatch", "entourage", "entourageFill", "detail"];
     /// <summary>How people, cars and plants draw in 2D (decision 341).</summary>
     public static readonly string[] EntourageModes = ["outline", "abstract", "detailed", "none"];
 
@@ -56,13 +56,13 @@ public static class ViewStyles
         n == null || (string?)n is "" or "none" ? null : FillOf(n) ?? throw new CommandException("A fill is a colour (#rrggbb) or none.");
 
     /// <summary>A style, or a view's settings as its style and its own choices make them.</summary>
-    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null)
+    public sealed record Style(string Id, string Name, string? Discipline, string Layers, bool Joins, bool Overhead, bool Ifc2d = true, bool Voids = false, bool VoidSizes = true, bool FinishHatch = true, bool SurfaceHatch = true, string Entourage = "outline", string? EntourageFill = null, string? GraphicsSet = null, int Detail = PlanDetail.Lod350)
     {
         public JsonObject ToJson() => WithSet(new()
         {
             ["id"] = Id, ["name"] = Name, ["discipline"] = Discipline, ["layers"] = Layers, ["joins"] = Joins, ["overhead"] = Overhead, ["ifc2d"] = Ifc2d,
             ["voids"] = Voids, ["voidSizes"] = VoidSizes, ["finishHatch"] = FinishHatch, ["surfaceHatch"] = SurfaceHatch,
-            ["entourage"] = Entourage, ["entourageFill"] = EntourageFill,
+            ["entourage"] = Entourage, ["entourageFill"] = EntourageFill, ["detail"] = Detail,
         });
 
         /// <summary>The graphics set its views take when they have none of their own (decision 391), written only when it names one.</summary>
@@ -87,7 +87,9 @@ public static class ViewStyles
             // A style saved before decision 341 draws the entourage as outlines too: the new simple look.
             (string?)o["entourage"] is { } en && EntourageModes.Contains(en) ? en : "outline",
             FillOf(o["entourageFill"]),
-            (string?)o["graphicsSet"] is { Length: > 0 } gs ? gs : null);
+            (string?)o["graphicsSet"] is { Length: > 0 } gs ? gs : null,
+            // A style saved before the views' LOD (decision 404): LOD 400 for a structural one (a link's rebar too), else 350.
+            PlanDetail.LodOf(o["detail"]) ?? ((string?)o["discipline"] == "Structure" || (string?)o["id"] == "structural" ? PlanDetail.Lod400 : PlanDetail.Lod350));
 
         /// <summary>Whether a style saved without a newer field takes it on: unless it is a structural, MEP or coordination one.</summary>
         static bool ArchitecturalByDefault(JsonObject o) =>
@@ -98,7 +100,7 @@ public static class ViewStyles
     public static readonly IReadOnlyList<Style> Defaults =
     [
         new("architectural", "Architectural", "Architecture", "all", true, true),
-        new("structural", "Structural", "Structure", "core", true, true, FinishHatch: false, SurfaceHatch: false),
+        new("structural", "Structural", "Structure", "core", true, true, FinishHatch: false, SurfaceHatch: false, Detail: PlanDetail.Lod400),
         new("mep", "MEP", "MEP", "all", true, true, FinishHatch: false, SurfaceHatch: false),
         // For coordination drawings (decision 290): the openings' voids drawn, marked and sized; taken by name, no discipline's.
         new("coordination", "Coordination", null, "all", true, true, Voids: true, FinishHatch: false, SurfaceHatch: false),
@@ -136,6 +138,7 @@ public static class ViewStyles
             SurfaceHatch = o["surfaceHatch"] is JsonValue shv && shv.TryGetValue<bool>(out var sh) ? sh : s.SurfaceHatch,
             Entourage = (string?)o["entourage"] is { } en && EntourageModes.Contains(en) ? en : s.Entourage,
             EntourageFill = o.ContainsKey("entourageFill") ? FillOf(o["entourageFill"]) : s.EntourageFill,
+            Detail = PlanDetail.LodOf(o["detail"]) ?? s.Detail,
         };
     }
 
@@ -215,6 +218,7 @@ public static class ViewStyles
         if (a["surfaceHatch"] is JsonValue shv && shv.TryGetValue<bool>(out var sh)) s = s with { SurfaceHatch = sh };
         if (a.ContainsKey("entourage")) s = s with { Entourage = EntourageMode(a["entourage"]) };
         if (a.ContainsKey("entourageFill")) s = s with { EntourageFill = CheckedFill(a["entourageFill"]) };
+        if (a.ContainsKey("detail")) s = s with { Detail = PlanDetail.LodOf(a["detail"]) ?? throw new CommandException(PlanDetail.LodProblem) };
         if (a.ContainsKey("graphicsSet")) s = s with { GraphicsSet = (string?)a["graphicsSet"] is { Length: > 0 } gs ? gs : null };
         return s;
     }
@@ -312,6 +316,8 @@ public static class ViewStyles
                 else if (f == "entourage") own[f] = EntourageMode(value);
                 // A fill set to none on the view, over a style's colour: kept as "none".
                 else if (f == "entourageFill") own[f] = CheckedFill(value) ?? "none";
+                // The view's level of development (decision 404): 100, 200, 300, 350 or 400.
+                else if (f == "detail") own[f] = PlanDetail.LodOf(value) ?? throw new CommandException(PlanDetail.LodProblem);
                 else own[f] = value is JsonValue bv && bv.TryGetValue<bool>(out var b) ? b : throw new CommandException($"{f} is true or false.");
             }
             if (own.Count > 0) attrs["styleOverrides"] = own; else attrs.Remove("styleOverrides");

@@ -3187,7 +3187,7 @@ export const scenes = [
     },
   },
   {
-    // A view's detail level as in Revit (decision 401): a 1:50 plan fine, then coarse (one outline hatched as the core).
+    // A view's level of development (decisions 401, 404): the style's LOD 350, then LOD 100 (one outline hatched as the core), never by the scale.
     id: 'views-detail',
     async run(t) {
       await t.fresh();
@@ -3205,10 +3205,10 @@ export const scenes = [
       const cuts = async () => (await t.call('doc.query', { name: 'view.drawing', args: { id: plan } })).pens.filter((p) => p.layer === 'CUT').reduce((n, p) => n + p.segments.length, 0);
       const fine = await cuts();
       await t.shot('detail-fine', { of: '[data-testid=plan]', pad: 0 });
-      await t.cmd('view.graphics', { id: plan, detailLevel: 'coarse' });
+      await t.cmd('view.setStyle', { id: plan, detail: 100 });
       await t.wait(1200);
       const coarse = await cuts();
-      t.expect(coarse < fine, `a coarse plan draws no line between the walls' layers (${coarse} cut segments, ${fine} at fine)`);
+      t.expect(coarse < fine, `a plan at LOD 100 draws no line between the walls' layers (${coarse} cut segments, ${fine} at LOD 350)`);
       await t.shot('detail-coarse', { of: '[data-testid=plan]', pad: 0 });
     },
   },

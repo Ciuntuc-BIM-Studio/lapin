@@ -18,7 +18,7 @@ import { Copy, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { DisciplinePicker } from './DisciplinePicker';
-import { ENTOURAGE_FILLS, ENTOURAGE_MODES, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
+import { ENTOURAGE_FILLS, ENTOURAGE_MODES, LOD_HELP, LODS, useViewStyles, type EntourageMode, type LayerMode, type ViewStyle } from './viewStyles';
 import { frontView } from '../../viewport/frontView';
 import { storeys } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
@@ -69,6 +69,12 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
             {styles.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
           <button type="button" className="link small" onClick={() => useUi.setState({ dialog: 'viewStyles' })}>Edit styles…</button>
+        </dd>
+        <dt title={LOD_HELP}>Level of development</dt>
+        <dd>
+          <select data-testid="view-detail" value={state.resolved.detail ?? 350} onChange={(e) => set({ detail: Number(e.target.value) })}>
+            {LODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select><Reset field="detail" />
         </dd>
         <dt title={threeD ? 'Which layers of walls, floors and footings the 3D view shows (each kept layer a solid of its own); the finishes are the layers of materials whose category is Finish' : 'Which layers of walls, floors and footings draw: the finishes are the layers of materials whose category is Finish'} data-i18n-ctx="element">Layers</dt>
         <dd>
@@ -222,12 +228,13 @@ export function ViewStylesDialog() {
         <header className="dialog-head"><span className="panel-title">View styles</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
           <table className="layer-table view-styles">
-            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th><th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th title="The Visibility / Graphics set its views take when they have none of their own, as a view template">Graphics set</th><th /></tr></thead>
+            <thead><tr><th>Name</th><th title="The views of this discipline take this style unless they name another">Discipline</th><th title={LOD_HELP}>Level of development</th><th data-i18n-ctx="element">Layers</th><th title="One material goes on from element to element without a line">Join materials</th><th title="Plans draw what lies above their cut">Overhead</th><th title="Plans draw the 2D an IFC file gave its elements instead of their cut">IFC 2D symbols</th><th title="Plans, sections and elevations draw the openings' voids, crossed, with their marks">Opening voids</th><th title="Under each void's mark its width × height (a round one's diameter) and a wall opening's bottom level">Void sizes</th><th title="Plans hatch the rooms' floor finishes as their types say (a plan seen from below, their ceilings)">Floor finish hatches</th><th title="Elevations and sections hatch the faces they see with their materials' elevation hatch (Manage → Materials), where nothing nearer hides them">Surface hatches</th><th title="How people, cars and plants draw in plans, elevations and sections: outlines (simple symbols and silhouettes), abstract (circles and boxes), detailed (every line of their symbols and bodies) or not at all; their bodies stay in 3D">Entourage in 2D</th><th title="The fill of the silhouettes elevations and sections draw for people, cars and plants">Silhouette fill</th><th title="The Visibility / Graphics set its views take when they have none of their own, as a view template">Graphics set</th><th /></tr></thead>
             <tbody>
               {styles.map((s) => (
                 <tr key={s.id}>
                   <td><input key={s.name} defaultValue={s.name} onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== s.name) update(s.id, { name: v }); }} /></td>
                   <td><input key={s.discipline ?? ''} defaultValue={s.discipline ?? ''} placeholder="none" onBlur={(e) => { const v = e.target.value.trim(); if (v !== (s.discipline ?? '')) update(s.id, { discipline: v || null }); }} /></td>
+                  <td><select data-testid="style-detail" value={s.detail ?? 350} onChange={(e) => update(s.id, { detail: Number(e.target.value) })}>{LODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td><select value={s.layers} onChange={(e) => update(s.id, { layers: e.target.value as LayerMode })}>{LAYER_MODES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></td>
                   <td><input type="checkbox" checked={s.joins} onChange={(e) => update(s.id, { joins: e.target.checked })} /></td>
                   <td><input type="checkbox" checked={s.overhead} onChange={(e) => update(s.id, { overhead: e.target.checked })} /></td>

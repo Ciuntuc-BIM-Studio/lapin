@@ -14,6 +14,7 @@ import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import { frontView } from '../../viewport/frontView';
 import { PendingDialog } from './PendingDialog';
+import { LOD_HELP, LODS, lodLabel } from './viewStyles';
 import { CLASS_COLORS, CLASS_NAMES } from '../../viewport/pointClouds3d';
 
 export interface Row { hidden?: boolean; lineColor?: string; lineWeight?: string; fillColor?: string; cutHatch?: string; halftone?: boolean; transparency?: number; lines?: Record<string, { pattern?: string; pen?: number }>; sub?: Record<string, Row> }
@@ -34,6 +35,7 @@ interface CloudInfo { id: string; name: string; visible: boolean; halftone: bool
 export interface CloudRow { hidden?: boolean; halftone?: boolean; colorMode?: string; hiddenClasses?: number[]; slice?: number }
 export interface Visibility {
   graphics?: Graphics | null; graphicsSet?: string | null; fromStyle?: boolean; style?: string;
+  /** Its level of development (decision 404): drawn at, its own (null: its style's), its style's. */ detail?: number; ownDetail?: number | null; styleDetail?: number;
   sets: { id: string; name: string }[]; categories: string[]; subcategories?: Record<string, string[]>;
   /** Hidden until the graphics show them (rooms, in 3D). */ hiddenByDefault?: string[];
   links?: LinkInfo[]; annotations?: string[]; imports?: ImportInfo[]; filters?: { id: string; name: string }[];
@@ -246,9 +248,14 @@ export function VisibilityDialog() {
             {v.fromStyle && <button type="button" className="btn" title="Graphics of this view's own, starting from the style's set" onClick={() => void execute('view.useGraphicsSet', { id: target, setId: null })}>Make them this view's own</button>}
             {setName && <span className="muted small">Changes here change „{setName}” in every view that takes it.</span>}
             {(view || target === '3d') && (
-              <label className="row" title="Coarse: walls and floors one outline, hatched as their core. Medium: their layers. Fine: the layers, the details of doors and windows and a linked model's bars. By the scale: fine to 1:50, medium to 1:100, coarse from 1:200."><span className="muted small">Detail level</span>
-                <select data-testid="vv-detail" value={v.graphics?.detailLevel ?? ''} onChange={(e) => void execute('view.graphics', { id: target, detailLevel: e.target.value || null })}>
-                  <option value="">by the scale</option><option value="coarse">coarse</option><option value="medium">medium</option><option value="fine">fine</option>
+              <label className="row" title={LOD_HELP}><span className="muted small">Level of development</span>
+                <select data-testid="vv-detail" value={v.ownDetail != null ? String(v.ownDetail) : ''} onChange={(e) => {
+                  // The view's own level (a set's old coarse, medium or fine taken out, so the choice rules).
+                  if (v.graphics?.detailLevel != null) void execute('view.graphics', { id: target, detailLevel: null });
+                  void execute('view.setStyle', { id: target, detail: e.target.value ? Number(e.target.value) : null });
+                }}>
+                  <option value="">as its style: {lodLabel(v.styleDetail)}</option>
+                  {LODS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
                 </select>
               </label>
             )}

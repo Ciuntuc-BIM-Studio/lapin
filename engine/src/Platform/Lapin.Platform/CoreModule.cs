@@ -55,6 +55,7 @@ public sealed class CoreModule : ILapinModule
         Images.Register(r);
         Views.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
+        r.Service<IProjectUpgrade>(new ViewDetail.LevelUpgrade());
         GraphicsSets.Register(r);
         ViewFilters.Register(r);
         BrowserSets.Register(r);
@@ -413,7 +414,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE" });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1 });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();
