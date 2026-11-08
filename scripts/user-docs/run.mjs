@@ -16,6 +16,8 @@
 //   pnpm docs:user --theme graphite the pictures in the dark theme, for a look only (build/user-docs/shots-graphite; no pages)
 //   pnpm docs:user --full          every scene again, whatever changed (else only the scenes whose inputs changed: below)
 //   pnpm docs:user --jobs 4        how many scenes run at once (default: by this computer's cores and memory, at most 4)
+//   pnpm docs:user --seed-from <ref> --seed-log <log>[,<log>…]
+//                                  no pictures: the state seeded from those already taken by a run at <ref> (its logs say which), so the next run takes only what changed since (incremental.mjs, seedState)
 //
 // Incremental by default (incremental.mjs): a scene × language is taken again only when its code, the
 // pages showing its pictures, the modules it drives or the shared code (ui/ and engine/ outside the
@@ -40,7 +42,7 @@ import { resolveProduct } from '../product.mjs';
 import { scenes as ownScenes } from './scenes.mjs';
 import { render } from './render.mjs';
 import { LANGS, checkInterfaceLanguages } from './languages.mjs';
-import { FULL_EVERY_DAYS, dependencies, reasonToRun, stateStore } from './incremental.mjs';
+import { FULL_EVERY_DAYS, dependencies, reasonToRun, seedState, stateStore } from './incremental.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const out = join(root, 'build', 'user-docs');
@@ -67,6 +69,17 @@ if (theme && !['paper', 'graphite'].includes(theme)) { console.error('✗ --them
 /** A language's pictures: shots/ for English, shots/<id>/ for the others (shots-<theme>/ for another theme's). */
 const shotsOf = (lang) => { const base = theme ? join(out, `shots-${theme}`) : shots; return lang === 'en' ? base : join(base, lang); };
 const store = theme ? null : stateStore(root, productId.endsWith('.json') ? resolveProduct(root, productId).id : productId);
+// A seed (--seed-from): the state of pictures taken before it existed, then nothing else.
+if (args.includes('--seed-from')) {
+  if (!store || extraFile || extraDocs || !args.includes('--seed-log')) { console.error('✗ --seed-from <ref> takes --seed-log <log>[,<log>…], for this repository\'s scenes in the paper theme'); process.exit(1); }
+  const product = resolveProduct(root, productId);
+  const productFile = productId.endsWith('.json') ? resolvePath(root, productId) : join(root, 'products', `${productId}.json`);
+  const sharedNow = dependencies(root, product, productFile, [{ file: join(root, 'scripts/user-docs/scenes.mjs'), scenes: ownScenes }], [join(root, 'docs/user')]).inputs(ownScenes[0], 'en').shared;
+  const r = await seedState({ root, ref: args[args.indexOf('--seed-from') + 1], logs: String(args[args.indexOf('--seed-log') + 1]).split(',').map((l) => resolvePath(l)),
+    product, productId: product.id ?? productId, langs, shotsOf, store, sharedNow });
+  console.log(`✓ seeded ${r.seeded} scene(s) × language from ${args[args.indexOf('--seed-from') + 1]} (${r.langs.join(', ')}); ${r.skipped} not seeded (pictures missing or no such scene), taken next time`);
+  process.exit(0);
+}
 // The languages taken whole: all with --full (and another theme), else each whose last full run is missing or over a week old (not with --only).
 const fullLangs = new Set(args.includes('--pages') ? [] : langs.filter((l) => theme || args.includes('--full') || (!only && store.ageDays(l) > FULL_EVERY_DAYS)));
 if (fullLangs.size) console.log(`▸ a full run of ${[...fullLangs].join(', ')}: ${theme ? 'another theme' : args.includes('--full') ? '--full' : [...fullLangs].map((l) => (store.ageDays(l) === Infinity ? `${l} never ran whole here (build/user-docs-cache)` : `${l} last ran whole ${store.ageDays(l).toFixed(1)} days ago`)).join('; ')}`);

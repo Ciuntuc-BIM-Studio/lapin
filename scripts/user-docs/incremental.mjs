@@ -14,8 +14,10 @@
 // pictures stay where they are taken (build/user-docs/shots).
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, relative, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { knownModules } from '../product.mjs';
 
 /** A full run at least this often, whatever changed: what the coarse dependencies miss is caught within a week. */
@@ -173,4 +175,53 @@ export function stateStore(root, productId) {
     /** Days since a language's last full run (Infinity when none). */
     ageDays(lang) { const at = fresh.lastFull[lang]; return at ? (Date.now() - Date.parse(at)) / 86_400_000 : Infinity; },
   };
+}
+
+/** The scenes a run's log says were taken: its `✓ <id>[ (<lang>)] (<pictures>) <secs> s` lines (English has no language). */
+export function takenInLog(text) {
+  const taken = [];
+  for (const line of text.split('\n')) {
+    const m = line.match(/^\s*✓ (\S+) (?:\(([a-z]{2})\) )?\(([^()]*)\) ([\d.]+) s\s*$/);
+    if (m) taken.push({ id: m[1], lang: m[2] ?? 'en', names: m[3].split(', ').filter(Boolean), secs: Number(m[4]) });
+  }
+  return taken;
+}
+
+/**
+ * The state seeded from pictures already in build/user-docs/shots, taken by a run at `ref` before this
+ * state existed (run.mjs --seed-from <ref> --seed-log <log>[,<log>…]): each scene × language its logs
+ * say was taken is recorded with the inputs it had at `ref` (its scene, modules and pages, worked out
+ * from a checkout of `ref`), so the next run takes again only what changed since. The shared code is
+ * counted as it is now: a seed starts the incremental runs from those pictures, and the weekly full run
+ * catches what a change there alters. Pictures missing, scenes not in the logs or failed, are not
+ * seeded and are taken next time; the languages the logs cover count as run whole when the log was written.
+ */
+export async function seedState({ root, ref, logs, product, productId, langs, shotsOf, store, sharedNow }) {
+  // Its real path: git names the checkout's files by it (macOS's temporary folder is a link).
+  const at = realpathSync(mkdtempSync(join(tmpdir(), 'lapin-user-docs-seed-')));
+  execFileSync('git', ['-C', root, 'worktree', 'add', '-q', '--detach', at, ref]);
+  try {
+    const old = (await import(pathToFileURL(join(at, 'scripts/user-docs/scenes.mjs')).href)).scenes;
+    const deps = dependencies(at, product, join(at, 'products', `${productId}.json`),
+      [{ file: join(at, 'scripts/user-docs/scenes.mjs'), scenes: old }], [join(at, 'docs/user')]);
+    const date = new Date(Number(execFileSync('git', ['-C', root, 'log', '-1', '--format=%ct', ref], { encoding: 'utf8' })) * 1000).toISOString();
+    let seeded = 0, skipped = 0;
+    const covered = new Map();
+    for (const log of logs) {
+      const written = statSync(log).mtime.toISOString();
+      for (const t of takenInLog(readFileSync(log, 'utf8'))) {
+        const scene = old.find((s) => s.id === t.id);
+        const files = t.names.map((n) => `${n}.webp`);
+        if (!scene || !langs.includes(t.lang) || !files.every((f) => existsSync(join(shotsOf(t.lang), f)))) { skipped++; continue; }
+        store.state.scenes[store.key(t.id, t.lang)] = { parts: { ...deps.inputs(scene, t.lang, files), shared: sharedNow }, files, secs: t.secs, at: date, seeded: ref };
+        seeded++;
+        if (!covered.has(t.lang) || covered.get(t.lang) < written) covered.set(t.lang, written);
+      }
+    }
+    for (const [lang, when] of covered) store.state.lastFull[lang] = when;
+    store.save();
+    return { seeded, skipped, langs: [...covered.keys()] };
+  } finally {
+    execFileSync('git', ['-C', root, 'worktree', 'remove', '--force', at]);
+  }
 }
