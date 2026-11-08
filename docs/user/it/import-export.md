@@ -86,6 +86,8 @@ Un DXF importato fa parte del progetto: **File → Save** lo conserva nel file `
 
 **Collega IFC…** mantiene un altro file collegato invece di importarlo. È in sola lettura e viene ricaricato quando cambia. Funziona anche per un DXF. **Gestisci → Collegamenti** mostra, ricarica, converte o rimuove i collegamenti. Un DXF collegato sta in 3D come uno importato; la sua casella **3D** in **Gestisci → Collegamenti** lo toglie. **Visibilità / Grafica** (<kbd>VV</kbd>) nasconde un collegamento, lo mostra a mezzitoni o gli dà le sue categorie in una sola vista (*Sezioni, prospetti e 3D*, Visibilità / Grafica).
 
+Un IFC collegato conserva ciò che il suo file dice dei materiali dei suoi elementi. Muri, solai e coperture con stratigrafie si disegnano nei loro strati anche come riferimenti, così un ingegnere nasconde le finiture del collegamento architettonico (**Muri ▸ Finiture**, **Solai ▸ Finiture**) e uno stile di vista strutturale ne disegna solo i nuclei; le barre di un modello strutturale collegato sono nella categoria **Armature**, che una vista 3D architettonica lascia fuori finché non la mostri. Un collegamento fatto con una versione precedente riceve gli strati dei muri quando viene ricaricato (quelli dei solai subito).
+
 ## Nuvole di punti
 
 **File → Link point cloud…** collega una scansione laser o una nuvola da fotogrammetria, solo nei formati aperti: **LAS** (1.0–1.4, tutti i formati di punto), **LAZ** (LAS compresso), **E57**, **PLY** (ASCII e binario) e punti come testo, **XYZ**, **PTS** e **CSV**. I formati proprietari (RCP e RCS di Autodesk ReCap, FLS di FARO, LGS di Leica) non vengono letti: esporta prima la scansione dal suo programma come E57 o LAS.

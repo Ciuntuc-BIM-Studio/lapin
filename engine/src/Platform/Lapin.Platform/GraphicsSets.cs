@@ -60,11 +60,25 @@ public static class GraphicsSets
     /// <summary>The categories a 3D view leaves out until its graphics show them: rooms, whose volumes would hide the building; CAD linework (a DXF's 3D lines), a drawing over the model.</summary>
     public static readonly string[] HiddenIn3d = ["spaces", "linework"];
 
-    /// <summary>What a 3D view hides: what its graphics hide, and the categories hidden in 3D unless its graphics show them.</summary>
-    public static bool Hides3d(JsonObject? g, Entity e)
+    /// <summary>What an architectural 3D view also leaves out until its graphics show it (decision 402): the reinforcement, a linked structural model's bars and the bars drawn in the rebar module.</summary>
+    public static readonly string[] HiddenIn3dArchitectural = ["rebar"];
+
+    /// <summary>Whether a 3D view of a discipline leaves a category out until its graphics show it.</summary>
+    public static bool HiddenByDefault3d(string category, string? discipline) =>
+        HiddenIn3d.Contains(category) || (HiddenIn3dArchitectural.Contains(category) && string.Equals(discipline ?? "Architecture", "Architecture", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Whether a 3D view's graphics hide a category, the categories it leaves out by default counted (<see cref="HiddenByDefault3d"/>).</summary>
+    public static bool HidesCategory3d(JsonObject? g, string category, string? discipline)
+    {
+        if (g?["categories"]?[category]?["hidden"] is JsonValue h && h.TryGetValue<bool>(out var hidden)) return hidden;
+        return HiddenByDefault3d(category, discipline);
+    }
+
+    /// <summary>What a 3D view hides: what its graphics hide, and the categories hidden in 3D unless its graphics show them (rebar too in an architectural view).</summary>
+    public static bool Hides3d(JsonObject? g, Entity e, string? discipline = null)
     {
         if (Hides(g, e)) return true;
-        if (ReferenceLayers.CategoryOf(e) is not { } c || !HiddenIn3d.Contains(c)) return false;
+        if (ReferenceLayers.CategoryOf(e) is not { } c || !HiddenByDefault3d(c, discipline)) return false;
         return !(g?["categories"]?[c]?["hidden"] is JsonValue h && h.TryGetValue<bool>(out var hidden) && !hidden);
     }
 
@@ -319,7 +333,7 @@ public static class GraphicsSets
                 ["sets"] = new JsonArray(Sets(Spatial.Project(q.Model)).OfType<JsonObject>().Select(s => (JsonNode)new JsonObject { ["id"] = s["id"]?.DeepClone(), ["name"] = s["name"]?.DeepClone() }).ToArray()),
                 ["categories"] = new JsonArray(LineStyles.Categories.Select(c => (JsonNode)c).ToArray()),
                 // Hidden until the view's graphics show them (rooms, in 3D).
-                ["hiddenByDefault"] = new JsonArray((v.Str("kind") == "3d" ? HiddenIn3d : []).Select(c => (JsonNode)c).ToArray()),
+                ["hiddenByDefault"] = new JsonArray((v.Str("kind") == "3d" ? LineStyles.Categories.Where(c => HiddenByDefault3d(c, VisibilityGraphics.Of(q.Model, v).Discipline)) : []).Select(c => (JsonNode)c).ToArray()),
             };
         });
 

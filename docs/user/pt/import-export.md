@@ -86,6 +86,8 @@ Um DXF importado faz parte do projeto: **File → Save** guarda-o no arquivo `.l
 
 **Vincular IFC…** mantém outro arquivo vinculado em vez de importá-lo. Ele é somente leitura e é recarregado quando muda. Isso também funciona para um DXF. **Gerenciar → Vínculos** mostra, recarrega, converte ou remove os vínculos. Um DXF vinculado fica em 3D como um importado; a sua caixa **3D** em **Gerenciar → Vínculos** desliga isso. **Visibilidade / Gráficos** (<kbd>VV</kbd>) oculta um vínculo, mostra-o em meio-tom ou dá-lhe suas próprias categorias numa só vista (*Cortes, elevações e 3D*, Visibilidade / Gráficos).
 
+Um IFC vinculado mantém o que o seu arquivo diz dos materiais dos seus elementos. Paredes, lajes e coberturas com conjuntos de camadas são desenhadas nas suas camadas mesmo como referências, de modo que um engenheiro oculta os acabamentos do vínculo de arquitetura (**Paredes ▸ Acabamentos**, **Lajes ▸ Acabamentos**) e um estilo de vista estrutural desenha só os seus núcleos; as barras de um modelo estrutural vinculado estão na categoria **Armaduras**, que uma vista 3D de arquitetura deixa de fora até ser mostrada. Um vínculo feito com uma versão anterior recebe as camadas das paredes quando é recarregado (as das lajes de imediato).
+
 ## Nuvens de pontos
 
 **File → Link point cloud…** vincula uma varredura a laser ou uma nuvem de fotogrametria, só em formatos abertos: **LAS** (1.0–1.4, todos os formatos de ponto), **LAZ** (LAS comprimido), **E57**, **PLY** (ASCII e binário) e pontos como texto, **XYZ**, **PTS** e **CSV**. Formatos proprietários (RCP e RCS do Autodesk ReCap, FLS da FARO, LGS da Leica) não são lidos: exporte antes a varredura do seu programa como E57 ou LAS.

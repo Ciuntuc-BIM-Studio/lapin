@@ -115,7 +115,10 @@ describe('Ask Lapin', () => {
     expect(best('how do I hide rebar in a linked model')).toBe('visibility-graphics');
     expect(best('cum ascund finisajele peretilor in plan')).toBe('visibility-graphics');
     expect(best('visibility graphics like revit')).toBe('visibility-graphics');
-    // Decision 401: the detail level.
+    // Decisions 400–402, in the requester's words: links' rebar and finishes, the detail level.
+    expect(best("architects don't want to see rebars")).toBe('link-rebar-finishes');
+    expect(best("engineers don't want to see wall and floor finishings")).toBe('link-rebar-finishes');
+    expect(best('arhitectii nu vor sa vada armaturile')).toBe('link-rebar-finishes');
     expect(best('what does the detail level change')).toBe('detail-level');
     expect(best('planul 1:50 arata la fel la detaliu fin')).toBe('detail-level');
     // Decision 394: graphic overrides.

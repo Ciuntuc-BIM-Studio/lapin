@@ -8,12 +8,15 @@ using Lapin.Platform;
 namespace Lapin.Rebar;
 
 /// <summary>
-/// The bars in space drawn for the 3D view on request (decision 221): not bodies in the model (those are the premium's
-/// IfcReinforcingBar), but a drawing the interface asks for with <c>rebar.bodies</c> — every bar laid in space (a bar drawn
-/// by hand with its copies, a type's stirrups at their stations, a column's bars) as a hexagonal tube of its diameter along
-/// its axis, the bends as a few segments on the real arc, the triangles grouped by colour (the diameter's). The arrays go
-/// out as the protocol's binary buffers, not JSON numbers. Over <see cref="MaxTriangles"/> the rest is left out and the
-/// reply says so.
+/// The open module's bars in 3D (decisions 221, 402): every bar laid in space (a bar drawn by hand with its copies, a type's
+/// stirrups at their stations, a column's bars) as a hexagonal tube of its diameter swept along its bent shape, the bends
+/// as a few segments on the real arc, the triangles grouped by colour (the diameter's), asked by the interface with
+/// <c>rebar.bodies</c> and shown under the 3D view's Rebar category (off in an architectural view until shown, on in a
+/// structural one). They are a drawing, not bodies in the model: they are not cut, picked or exported. A linked or imported
+/// structural model's IfcReinforcingBar are references with their own bodies, shown and hidden by the same category. The
+/// premium <c>rebar-pro</c> keeps the bars as IfcReinforcingBar of their own, generated from the types, with its optimisers
+/// and configurators. The arrays go out as the protocol's binary buffers, not JSON numbers. Over <see cref="MaxTriangles"/>
+/// the rest is left out and the reply says so.
 /// </summary>
 public static class RebarBodies
 {
@@ -48,31 +51,41 @@ public static class RebarBodies
     public sealed record Chain(IReadOnlyList<Vec3> Points, double Diameter, string Color);
 
     public static void Register(IModuleRegistry r) =>
-        // {ids?: [element ids]}: the bars of these elements (a bar, a beam, a column) alone; all of them otherwise.
+        // {ids?: [element ids], view?: a 3D view's id or "3d"}: the bars of these elements (a bar, a beam, a column) alone; all
+        // of them otherwise. With a view (decision 402), as its Visibility / Graphics shows them: none while it hides the
+        // Rebar category (an architectural 3D does until shown), none of an element it hides (a beam, a bar).
         r.Query("bodies", (q, a) =>
         {
             var ids = (a["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet();
-            return Build(Chains(q.Model, q.Services, q.Geometry, RebarSettings.Of(q.Model), ids)).ToJson();
+            Func<Entity, bool>? hides = null;
+            if ((string?)a["view"] is { } viewId)
+            {
+                var view = viewId == GraphicsSets.View3d ? GraphicsSets.As3dView(q.Model) : q.Model.Get(viewId) is { Class: Views.Class } v ? v : throw new CommandException("Not a view.");
+                var vg = VisibilityGraphics.Of(q.Model, view);
+                if (vg.Hides(new Entity("", Rebars.Class, "Bar", new JsonObject()))) { var none = new Result([], 0, false).ToJson(); none["hidden"] = true; return none; }
+                hides = vg.Hides;
+            }
+            return Build(Chains(q.Model, q.Services, q.Geometry, RebarSettings.Of(q.Model), ids, hides)).ToJson();
         });
 
     /// <summary>
     /// Every bar in space as a chain on its axis: the hand-drawn bars' copies (as <see cref="Rebar3D.Bars"/> lays them,
     /// but the arcs sampled coarser), each type's stirrups bent at every station, each column's bars.
     /// </summary>
-    public static IEnumerable<Chain> Chains(IModelView m, IServices? services, Func<string, ElementGeometry?>? geometry, RebarSettings st, ISet<string>? ids = null)
+    public static IEnumerable<Chain> Chains(IModelView m, IServices? services, Func<string, ElementGeometry?>? geometry, RebarSettings st, ISet<string>? ids = null, Func<Entity, bool>? hides = null)
     {
         string Color(double d) => st.ColorByDiameter ? RebarShapes.ColorOf(d) : "#000000";
         foreach (var e in m.OfClass(Rebars.Class))
         {
             // A bar put in section elsewhere stands for one already drawn.
-            if (Rebar3D.IsCopy(e) || (ids != null && !ids.Contains(e.Id))) continue;
+            if (Rebar3D.IsCopy(e) || (ids != null && !ids.Contains(e.Id)) || hides?.Invoke(e) == true) continue;
             var s = Rebars.SpecOf(e);
             foreach (var chain in Rebar3D.Bars(m, services, geometry, e, st, Sample, dotsAlong: true)) yield return new Chain(chain, s.Diameter, Color(s.Diameter));
         }
         var bases = new ColumnBars.Bases(m);
         foreach (var e in TypeStirrups.Members(m))
         {
-            if (ids != null && !ids.Contains(e.Id)) continue;
+            if ((ids != null && !ids.Contains(e.Id)) || hides?.Invoke(e) == true) continue;
             if (TypeStirrups.Of(m, e) is { } laid)
             {
                 var d = laid.Spec.Diameter;

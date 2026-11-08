@@ -86,6 +86,8 @@ Un DXF importé fait partie du projet : **File → Save** le garde dans le fichi
 
 **Lier IFC…** garde un autre fichier lié au lieu de l’importer. Il est en lecture seule et rechargé quand il change. Cela fonctionne aussi pour un DXF. **Gérer → Liens** affiche, recharge, convertit ou supprime les liens. Un DXF lié se trouve en 3D comme un DXF importé ; sa case **3D** dans **Gérer → Liens** l’en retire. **Visibilité / Graphismes** (<kbd>VV</kbd>) masque un lien, l’affiche en demi-teinte ou lui donne ses propres catégories dans une seule vue (*Coupes, élévations et 3D*, Visibilité / Graphismes).
 
+Un IFC lié garde ce que son fichier dit des matériaux de ses éléments. Murs, planchers et toitures avec compositions sont dessinés dans leurs couches même en tant que références, si bien qu’un ingénieur masque les finitions du lien d’architecture (**Murs ▸ Finitions**, **Dalles ▸ Finitions**) et qu’un style de vue de structure ne dessine que leurs âmes ; les barres d’une maquette de structure liée sont dans la catégorie **Armatures**, qu’une vue 3D d’architecture laisse de côté jusqu’à ce qu’on l’affiche. Un lien fait avec une version antérieure reçoit les couches de ses murs quand il est rechargé (celles des planchers tout de suite).
+
 ## Nuages de points
 
 **File → Link point cloud…** lie un scan laser ou un nuage de photogrammétrie, dans les formats ouverts uniquement : **LAS** (1.0–1.4, tous les formats de point), **LAZ** (LAS compressé), **E57**, **PLY** (ASCII et binaire) et des points en texte, **XYZ**, **PTS** et **CSV**. Les formats propriétaires (RCP et RCS d'Autodesk ReCap, FLS de FARO, LGS de Leica) ne sont pas lus : exportez d'abord le scan depuis son programme en E57 ou en LAS.

@@ -151,6 +151,17 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'link-rebar-finishes',
+    q: ["Architects don't want to see rebars: how do I turn off a structural link's bars?", "Engineers don't want to see wall and floor finishings: how do I hide a linked model's finishes?", 'Why are the bars of a linked IFC not in the 3D view?', 'How do I see the rebar in 3D?'],
+    qRo: ['Arhitecții nu vor să vadă armăturile: cum opresc barele unei legături de structură?', 'Inginerii nu vor să vadă finisajele pereților și planșeelor: cum ascund finisajele unui model legat?', 'De ce nu se văd barele unui IFC legat în 3D?', 'Cum văd armătura în 3D?'],
+    keywords: ['architects', 'architect', 'engineers', 'engineer', 'rebar', 'rebars', 'bars', 'reinforcement', 'reinforcing', 'finishings', 'finishes', 'finishing', 'linked', 'link', 'structural',
+      'arhitectii', 'arhitect', 'inginerii', 'inginer', 'armaturi', 'armatura', 'bare', 'finisaje', 'finisajele', 'planseelor', 'legat', 'legatura'],
+    a: "A 3D view in the Architectural style leaves the Rebar category out until you show it; a Structural one shows it. That covers a linked or imported structural IFC's IfcReinforcingBar (their swept bodies, shared where they repeat) and the bars of the Rebar 2D tab, swept along their bent shape: View → Bars in 3D (or the tab's Bars in 3D) switches the 3D view's Rebar category, VV → Model categories → Rebar does the same per view. Plans and sections draw a link's bars only at a fine detail level. The finishes of a linked model's walls and floors come from the layer sets its file gives them, even when they stay references: VV → Model categories → Walls (or Slabs) ▸ Finishes, or for one link alone Links → Display Custom → Categories…; insulation, membranes and the core are subcategories too, and a wall's plaster brought as a separate part or a plaster covering goes with Finishes.",
+    aRo: 'O vedere 3D în stilul Arhitectură lasă deoparte categoria Rebar până o arăți; una în stilul Structură o arată. Asta cuprinde IfcReinforcingBar-urile unui IFC de structură legat sau importat (corpurile lor măturate, comune unde se repetă) și barele din fila Rebar 2D, măturate pe forma lor îndoită: View → Bars in 3D (sau Bars in 3D din filă) comută categoria Rebar a vederii 3D, VV → Model categories → Rebar face același lucru pe vedere. Planurile și secțiunile desenează barele unei legături doar la nivelul de detaliu fin. Finisajele pereților și planșeelor unui model legat vin din seturile de straturi pe care i le dă fișierul, chiar dacă rămân referințe: VV → Model categories → Walls (sau Slabs) ▸ Finishes, sau pentru o singură legătură Links → Display Custom → Categories…; izolația, membranele și miezul sunt și ele subcategorii, iar tencuiala adusă ca piesă separată sau un finisaj de tencuială merge cu Finishes.',
+    action: { label: 'Open Visibility / Graphics', labelRo: 'Deschide Vizibilitate / Grafică', run: { kind: 'tool', id: 'view.layers' } },
+    source: 'decisions 400, 402',
+  },
+  {
     id: 'detail-level',
     q: ['What does the detail level change in a view?', 'Why does a 1:50 plan look the same at fine detail?', 'How do I draw a wall as one outline without its layers?'],
     qRo: ['Ce schimbă nivelul de detaliu într-o vedere?', 'De ce arată la fel un plan 1:50 la detaliu fin?', 'Cum desenez un perete ca un singur contur, fără straturi?'],

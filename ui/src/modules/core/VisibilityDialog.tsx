@@ -145,7 +145,7 @@ export function VisibilityDialog() {
   const rulesOf = (link?: string): Rules => (link ? v.graphics?.links?.[link] : v.graphics) ?? {};
   const setCategory = (c: string, patch: Row, link?: string, sub?: string) => {
     const cur = rulesOf(link).categories?.[c] ?? {};
-    const keepsShown = !sub && !link && (v.hiddenByDefault ?? []).includes(c);
+    const keepsShown = !sub && (v.hiddenByDefault ?? []).includes(c);
     const base = sub ? { ...(cur.sub?.[sub] ?? {}) } : { ...cur };
     delete base.sub;
     const next = clean({ ...base, ...patch }, keepsShown);
@@ -169,7 +169,7 @@ export function VisibilityDialog() {
           const r = rulesOf(link).categories?.[c] ?? {};
           const subs = v.subcategories?.[c] ?? [];
           const key = `${link ?? ''}:${c}`;
-          const shown = !(r.hidden ?? (!link && (v.hiddenByDefault ?? []).includes(c)));
+          const shown = !(r.hidden ?? (v.hiddenByDefault ?? []).includes(c));
           return (
             <Fragment key={c}>
               <tr data-category={c}>

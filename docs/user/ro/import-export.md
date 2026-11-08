@@ -98,6 +98,8 @@ Un DXF importat face parte din proiect: **File → Save** îl păstrează în fi
 
 **Leagă IFC…** ține alt fișier legat în loc să-l importe. E doar pentru citire și se reîncarcă atunci când se schimbă. Merge și pentru un DXF. **Gestionare → Legături** arată, reîncarcă, convertește sau scoate legăturile. Un DXF legat stă în 3D ca unul importat; bifa **3D** din **Gestionare → Legături** îl scoate de acolo. **Vizibilitate / Grafică** (<kbd>VV</kbd>) ascunde o legătură, o estompează sau îi dă categoriile ei doar într-o vedere (*Secțiuni, fațade și 3D*, Vizibilitate / Grafică).
 
+Un IFC legat păstrează ce spune fișierul despre materialele elementelor lui. Pereții, planșeele și acoperișurile cu seturi de straturi se desenează în straturile lor chiar ca referințe, așa că un inginer ascunde finisajele legăturii de arhitectură (**Pereți ▸ Finisaje**, **Plăci ▸ Finisaje**), iar un stil de vedere de structură le desenează doar miezurile; barele unui model de structură legat sunt în categoria **Armături**, pe care o vedere 3D de arhitectură o lasă deoparte până o arăți. O legătură făcută cu o versiune mai veche își primește straturile pereților când e reîncărcată (ale planșeelor imediat).
+
 ## Nori de puncte
 
 **File → Link point cloud…** leagă o scanare laser sau un nor din fotogrammetrie, numai în formate deschise: **LAS** (1.0–1.4, toate formatele de punct), **LAZ** (LAS comprimat), **E57**, **PLY** (ASCII și binar) și puncte ca text, **XYZ**, **PTS** și **CSV**. Formatele proprietare (RCP și RCS din Autodesk ReCap, FLS de la FARO, LGS de la Leica) nu se citesc: exportă întâi scanarea din programul ei ca E57 sau LAS.

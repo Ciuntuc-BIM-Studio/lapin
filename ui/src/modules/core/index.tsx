@@ -233,7 +233,7 @@ const core: LapinModule = {
         // Which sections are marked in the view in front, by layer (docs/sections.md, decision 223).
         { id: 'view.sections', label: 'Sections…', icon: SectionIcon, run: () => useUi.setState({ dialog: 'sections' }) },
         // The reinforcement as tubes in 3D (docs/plan-rebar.md, decision 221): asked of the engine while on, freed when off.
-        { id: 'view.rebar3d', label: 'Bars in 3D', icon: Cable, run: () => useUi.setState((s) => ({ rebar3d: !s.rebar3d })) },
+        { id: 'view.rebar3d', label: 'Bars in 3D', icon: Cable, run: () => { void import('../../viewport/rebar3d').then(({ toggleRebar3d }) => toggleRebar3d()); } },
         // The openings as translucent voids in 3D (decision 289): asked of the engine while on. In a plan, section or
         // elevation the view in front draws them itself, crossed and marked, as it prints them (decision 290).
         { id: 'view.openingVoids', label: 'Opening voids', icon: SquareDashed, run: () => {
