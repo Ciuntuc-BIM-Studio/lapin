@@ -171,6 +171,8 @@ Wpisz wartość w dowolnej chwili, bez klikania w pole: długość idzie w kieru
 
 To, co ma własną wysokość, idzie w górę lub w dół z przesunięciem: podstawa ściany, słupa lub obiektu, podstawa i szczyt schodów (ich wysokość zostaje), wierzch belki, górne odsunięcie stropu, murłata dachu; bryła Studio dostaje krok przesunięcia. Drzwi lub okno przesuwają się wzdłuż swojej ściany.
 
+To, co stoi na swoim poziomie (ściana, schody, słup, strop, belka, balustrada, dach, mebel, drzwi lub okno), zachowuje swój poziom, gdy przesunięcie przyciąga się od punktu do punktu: trafia tam tylko w rzucie, więc schody przesunięte za górny narożnik na narożnik stropu nie podnoszą się o kilka centymetrów między konstrukcją schodów a wykończeniem stropu (góra schodów już wypada w licu wykończenia poziomu, na który prowadzą). Aby przesunąć je w górę lub w dół, podążaj za niebieską osią albo ją zablokuj (↑), albo wpisz dx,dy,dz; etykieta mówi, kiedy poziom jest zachowany. Gdy nic nie jest zaznaczone, Move i Copy pytają o elementy: kliknij je w 3D, potem Enter.
+
 Możesz też nacisnąć zaznaczony element i go przeciągnąć: przesuwa się tak samo, od naciśniętego punktu, przyciągnięty, i zostaje tam, gdzie go puścisz. **View → Drag to move in 3D** to wyłącza, aby przeciąganie po zaznaczeniu obracało widok.
 
 ![Schody przesunięte w 3D narożnikiem najwyższego stopnia na narożnik stropu](shots/model-3d-move.webp)
@@ -187,7 +189,7 @@ Drzwi i okna trafiają tam, gdzie klikniesz ścianę ściany w 3D, w klikniętym
 
 ### Uchwyty i komponenty w 3D
 
-Uchwyty zaznaczonego elementu (końce ściany, narożniki stropu) przeciąga się w 3D jak w rzucie i przyciągają się do narożników, środków i krawędzi innych elementów, a punkt brany jest na wysokości uchwytu.
+Uchwyty zaznaczonego elementu (końce ściany, narożniki stropu) przeciąga się w 3D jak w rzucie i przyciągają się jak przy Move: najpierw narożnik, potem środek, potem krawędź w zasięgu, potem osie czerwona i zielona przez punkt startu uchwytu, potem ściana bryły. Punkt jest zaznaczony i nazwany przy kursorze i brany na wysokości uchwytu. Wpisz długość lub kąt podczas przeciągania, jak w rzucie; Enter stawia tam uchwyt.
 
 Przeciągnij kartę z **Catalog** lub narzędzie ze wstążki na widok 3D: jego narzędzie startuje z tym typem. Narzędzie, które umieszcza jednym kliknięciem (słup, stopa fundamentowa, mebel, winda, roślina), umieszcza element od razu tam, gdzie go upuścisz, przyciągnięty do modelu. Upuszczony lub kliknięty na stropie innej kondygnacji, element trafia na tę kondygnację: stół postawiony na stropie piętra należy do piętra, niezależnie od aktywnego poziomu.
 
@@ -239,9 +241,9 @@ Ustawienia należą do widoku albo do nazwanego zbioru, który dzieli kilka wido
 
 ### Chmury punktów w widokach
 
-Połączona chmura punktów (*Import i eksport*, Chmury punktów) jest widoczna we wszystkich widokach. **Rzut** rysuje plaster, który bierze jego przekrój, 10 cm wokół płaszczyzny cięcia, jako kropki pod ścianami; **przekrój** plaster tuż za swoją płaszczyzną; **elewacja** każdy punkt, na który patrzy, najbliższy z przodu. Kropki mają kolory skanu, przyciemnione, by były czytelne na papierze, i drukują się na arkuszach i w PDF tak, jak pokazuje je ekran. Ich punkty są punktami przyciągania: ściany narysowane na plastrze skanu trafiają na jego powierzchnie. W **widoku 3D** narzędzia wstawiania i Move przyciągają do punktów chmury jak do narożników.
+Połączona chmura punktów (*Import i eksport*, Chmury punktów) jest widoczna we wszystkich widokach. **Rzut** rysuje plaster, który bierze jego przekrój, 10 cm wokół płaszczyzny cięcia, jako kropki pod ścianami; **przekrój** plaster tuż za swoją płaszczyzną; **elewacja** każdy punkt, na który patrzy, najbliższy z przodu. Kropki mają kolory skanu, przyciemnione, by były czytelne na papierze, i drukują się na arkuszach i w PDF tak, jak pokazuje je ekran. Ich punkty są punktami przyciągania: ściany narysowane na plastrze skanu trafiają na jego powierzchnie. W **widoku 3D** narzędzia wstawiania i Move przyciągają do punktów chmury jak do narożników. Nowy rzut otwiera się dopasowany do modelu albo do przekroju chmury, gdy nie ma nic innego; rysowana jest tylko część przekroju widoczna na ekranie, więc skan całej dzielnicy pozostaje szybki przy powiększeniu na jeden budynek.
 
-**Visibility / Graphics** (<kbd>VV</kbd>) ma kartę **Point clouds**: dla każdej chmury, tylko w tym widoku, **Shown**, **Halftone**, jej **Colours** (jak jej połączenie, RGB, intensywność, wysokość lub klasyfikacja), **Slice**, który rysuje rzut lub przekrój (cm), oraz **Classes…**: klasy ASPRS jej punktów (grunt, roślinność, budynek, szum…), każda widoczna lub ukryta. Karta widoku 3D decyduje, co rysuje 3D. **Export 3D…** bierze próbkę widocznych chmur (najwyżej 5 milionów punktów) jako punkty w GLB i glTF, gdy zaznaczone jest **Point clouds**; żaden inny eksport ich nie zawiera.
+**Visibility / Graphics** (<kbd>VV</kbd>) ma kartę **Point clouds**: dla każdej chmury, tylko w tym widoku, **Shown**, **Halftone**, jej **Colours** (jak jej połączenie, RGB, intensywność, wysokość lub klasyfikacja), **Slice**, który rysuje rzut lub przekrój (cm, do 100 m: elewacje ze skanowania lotniczego wymagają grubego przekroju), oraz **Classes…**: klasy ASPRS jej punktów (grunt, roślinność, budynek, szum…), każda widoczna lub ukryta. Karta widoku 3D decyduje, co rysuje 3D. **Export 3D…** bierze próbkę widocznych chmur (najwyżej 5 milionów punktów) jako punkty w GLB i glTF, gdy zaznaczone jest **Point clouds**; żaden inny eksport ich nie zawiera.
 
 ![Plaster skanu w rzucie, ściana narysowana na nim](shots/point-cloud-plan.webp)
 

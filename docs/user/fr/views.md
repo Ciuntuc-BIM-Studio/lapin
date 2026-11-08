@@ -171,6 +171,8 @@ Tapez une valeur à tout moment, sans cliquer dans une case : une longueur va da
 
 Ce qui a une hauteur propre monte ou descend avec le déplacement : la base d'un mur, d'un poteau ou d'un objet, la base et le haut d'un escalier (sa hauteur gardée), le dessus d'une poutre, le décalage haut d'une dalle, la sablière d'un toit ; un solide Studio reçoit une étape de déplacement. Une porte ou une fenêtre glisse le long de son mur.
 
+Ce qui repose sur son niveau (un mur, un escalier, un poteau, une dalle, une poutre, un garde-corps, un toit, un meuble, une porte ou une fenêtre) garde son niveau quand le déplacement s'accroche d'un point à un autre : il y va en plan seulement, de sorte qu'un escalier déplacé par son coin haut sur le coin d'une dalle ne monte pas des quelques centimètres entre la structure de l'escalier et le revêtement de la dalle (le haut d'un escalier arrive déjà au nu du revêtement du niveau qu'il dessert). Pour le monter ou le descendre, suivez ou verrouillez l'axe bleu (↑), ou tapez dx,dy,dz ; l'étiquette indique quand le niveau est gardé. Sans rien de sélectionné, Move et Copy demandent les éléments : cliquez-les en 3D, puis Entrée.
+
 Vous pouvez aussi appuyer sur un élément sélectionné et le faire glisser : il se déplace de la même façon, depuis le point appuyé, accroché, et se pose où vous relâchez. **View → Drag to move in 3D** désactive cela, pour qu'un glisser sur la sélection fasse orbiter la vue.
 
 ![Un escalier déplacé en 3D par le coin de sa marche haute sur le coin de la dalle](shots/model-3d-move.webp)
@@ -187,7 +189,7 @@ Les portes et fenêtres se posent là où vous cliquez la face d'un mur en 3D, �
 
 ### Poignées et composants en 3D
 
-Les poignées d'un élément sélectionné (les extrémités d'un mur, les coins d'une dalle) se tirent en 3D comme en plan et s'accrochent aux coins, milieux et arêtes des autres éléments, le point pris à la hauteur de la poignée.
+Les poignées d'un élément sélectionné (les extrémités d'un mur, les coins d'une dalle) se tirent en 3D comme en plan et s'accrochent comme avec Move : d'abord un coin, puis un milieu, puis une arête à portée, puis les axes rouge et vert par le point de départ de la poignée, puis une face. Le point est marqué et nommé au curseur et pris à la hauteur de la poignée. Tapez une longueur ou un angle pendant le glisser, comme en plan ; Entrée y pose la poignée.
 
 Faites glisser une carte du **Catalog** ou un outil du ruban sur la vue 3D : son outil démarre avec ce type. Un outil qui pose d'un clic (un poteau, une semelle isolée, un meuble, un ascenseur, une plante) est posé aussitôt là où vous le lâchez, accroché au modèle. Lâché, ou cliqué, sur la dalle d'un autre niveau, l'élément va sur ce niveau : une table posée sur la dalle du premier étage appartient au premier étage, quel que soit le niveau actif.
 
@@ -239,9 +241,9 @@ Les réglages appartiennent à la vue, ou à un jeu nommé que plusieurs vues pa
 
 ### Nuages de points dans les vues
 
-Un nuage de points lié (*Import et export*, Nuages de points) apparaît dans toutes les vues. Un **plan** dessine la tranche que prend sa coupe, 10 cm autour du plan de coupe, en points sous les murs ; une **coupe** la tranche juste derrière son plan ; une **élévation** tous les points qu'elle regarde, le plus proche devant. Les points ont les couleurs du scan, assombries pour se lire sur papier, et s'impriment sur les planches et dans le PDF comme l'écran les montre. Leurs points sont des accrochages : des murs dessinés sur la tranche d'un scan tombent sur ses faces. Dans la **vue 3D** les outils de placement et Move s'accrochent aux points du nuage comme aux coins.
+Un nuage de points lié (*Import et export*, Nuages de points) apparaît dans toutes les vues. Un **plan** dessine la tranche que prend sa coupe, 10 cm autour du plan de coupe, en points sous les murs ; une **coupe** la tranche juste derrière son plan ; une **élévation** tous les points qu'elle regarde, le plus proche devant. Les points ont les couleurs du scan, assombries pour se lire sur papier, et s'impriment sur les planches et dans le PDF comme l'écran les montre. Leurs points sont des accrochages : des murs dessinés sur la tranche d'un scan tombent sur ses faces. Dans la **vue 3D** les outils de placement et Move s'accrochent aux points du nuage comme aux coins. Un nouveau plan s'ouvre cadré sur le modèle, ou sur la tranche du nuage quand il n'a rien d'autre ; seule la partie de la tranche à l'écran est dessinée, si bien que le relevé d'un quartier entier reste rapide en zoomant sur un bâtiment.
 
-**Visibility / Graphics** (<kbd>VV</kbd>) a un onglet **Point clouds** : par nuage, pour cette vue seule, **Shown**, **Halftone**, ses **Colours** (comme son lien, RVB, intensité, altitude ou classification), la **Slice** que dessine un plan ou une coupe (cm), et **Classes…** : les classes ASPRS de ses points (sol, végétation, bâtiment, bruit…), chacune visible ou masquée. L'onglet d'une vue 3D règle ce que dessine la 3D. **Export 3D…** prend un échantillon des nuages visibles (au plus 5 millions de points) en points dans GLB et glTF quand **Point clouds** est coché ; aucun autre export ne les porte.
+**Visibility / Graphics** (<kbd>VV</kbd>) a un onglet **Point clouds** : par nuage, pour cette vue seule, **Shown**, **Halftone**, ses **Colours** (comme son lien, RVB, intensité, altitude ou classification), la **Slice** que dessine un plan ou une coupe (cm, jusqu'à 100 m : les façades d'un relevé aérien demandent une tranche épaisse), et **Classes…** : les classes ASPRS de ses points (sol, végétation, bâtiment, bruit…), chacune visible ou masquée. L'onglet d'une vue 3D règle ce que dessine la 3D. **Export 3D…** prend un échantillon des nuages visibles (au plus 5 millions de points) en points dans GLB et glTF quand **Point clouds** est coché ; aucun autre export ne les porte.
 
 ![La tranche d'un scan en plan, un mur dessiné dessus](shots/point-cloud-plan.webp)
 

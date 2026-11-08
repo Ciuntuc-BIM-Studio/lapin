@@ -158,6 +158,10 @@ describe('Ask Lapin', () => {
     expect(best('cum trec la tema intunecata')).toBe('dark-theme');
     expect(best('Apply a style not changing when I select a style')).toBe('style-select');
     expect(best('ce stil are fereastra')).toBe('style-select');
+    // Decision 399: a stair snapped onto a floor's corner in 3D, lifted by the finish; a point cloud's slice for facades.
+    expect(best('why is my stair lifted a few centimetres when I move it onto the floor corner in 3D?')).toBe('move-3d');
+    expect(best('de ce urcă scara când o mut pe colțul plăcii în 3D?')).toBe('move-3d');
+    expect(best('how do I make the point cloud slice thicker for facades?')).toBe('point-cloud-views');
   });
 
   it('says nothing to what it does not know', () => {

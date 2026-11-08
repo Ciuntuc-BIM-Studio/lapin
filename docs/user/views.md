@@ -171,6 +171,8 @@ Type a value at any time, without clicking a box: a length goes along the way th
 
 What has a height of its own goes up or down with the move: a wall's, a column's or an object's base, a stair's base and top (its rise kept), a beam's top, a floor's top offset, a roof's wall plate; a Studio solid takes a move step. A door or a window slides along its wall.
 
+What stands on its level (a wall, a stair, a column, a floor, a beam, a railing, a roof, furniture, a door or a window) keeps its level when the move snaps from one point to another: it goes there in plan only, so a stair moved by its top corner onto a floor's corner does not climb the few centimetres between the stair's structure and the floor's finish (a stair's top already lands flush with the finish of the level it climbs to). To move it up or down, follow or lock the blue axis (↑), or type dx,dy,dz; the chip says when the level is kept. With nothing selected, Move and Copy ask for the elements: click them in 3D, then press Enter.
+
 You can also press on a selected element and drag it: it moves the same way, from the point you pressed, snapped, and is placed where you let go. **View → Drag to move in 3D** turns this off, so that a drag on the selection orbits the view.
 
 ![A stair moved in 3D by its top step's corner onto the floor's corner](shots/model-3d-move.webp)
@@ -187,7 +189,7 @@ Doors and windows go where you click a wall's face in 3D, at the place along the
 
 ### Grips and components in 3D
 
-A selected element's grips (a wall's ends, a floor's corners) are dragged in 3D as in a plan, and snap to the other elements' corners, middles and edges, the point taken at the grip's own height.
+A selected element's grips (a wall's ends, a floor's corners) are dragged in 3D as in a plan, and snap as Move does: a corner first, then a middle, then an edge within reach, then the red and green axes through the grip's start, then a face. The point is marked and named at the cursor and taken at the grip's own height. Type a length or an angle while dragging, as in a plan; Enter puts the grip there.
 
 Drag a card from the **Catalog** or a tool from the ribbon onto the 3D view: its tool starts with that type. A tool placed by one click (a column, a pad footing, furniture, an elevator, a plant) is placed at once where you drop it, snapped to the model. Dropped, or clicked, on a floor of another storey, the element goes on that storey: a table set on the first floor's slab belongs to the first floor, whatever level is active.
 
@@ -239,9 +241,9 @@ The settings belong to the view, or to a named set that several views share (**S
 
 ### Point clouds in views
 
-A linked point cloud (*Import and export*, Point clouds) shows in every view. A **plan** draws the slice its cut takes, 10 cm round the cut plane, as dots under the walls; a **section** the slice just behind its plane; an **elevation** every point it faces, the nearest in front. The dots are the scan's own colours, darkened to read on paper, and they print on sheets and in the PDF as the screen shows them. Their points are snaps: draw walls over a scan's slice and they land on its faces. In the **3D view** the placing tools and Move snap to the cloud's points as they do to corners.
+A linked point cloud (*Import and export*, Point clouds) shows in every view. A **plan** draws the slice its cut takes, 10 cm round the cut plane, as dots under the walls; a **section** the slice just behind its plane; an **elevation** every point it faces, the nearest in front. The dots are the scan's own colours, darkened to read on paper, and they print on sheets and in the PDF as the screen shows them. Their points are snaps: draw walls over a scan's slice and they land on its faces. In the **3D view** the placing tools and Move snap to the cloud's points as they do to corners. A new plan opens framed on the model, or on the cloud's slice when it has nothing else; only the part of the slice on the screen is drawn, so a scan of a whole district stays quick zoomed in on one building.
 
-**Visibility / Graphics** (<kbd>VV</kbd>) has a **Point clouds** tab: per cloud, for this view alone, **Shown**, **Halftone**, its **Colours** (as its link, RGB, intensity, elevation or classification), the **Slice** a plan or a section draws (cm), and **Classes…**: the ASPRS classes its points have (ground, vegetation, building, noise…), each shown or hidden. A 3D view's tab rules what the 3D draws. **Export 3D…** takes a sample of the clouds shown (at most 5 million points) as points in GLB and glTF when **Point clouds** is ticked; no other export carries them.
+**Visibility / Graphics** (<kbd>VV</kbd>) has a **Point clouds** tab: per cloud, for this view alone, **Shown**, **Halftone**, its **Colours** (as its link, RGB, intensity, elevation or classification), the **Slice** a plan or a section draws (cm, up to 100 m: an airborne scan's facades need a thick slice), and **Classes…**: the ASPRS classes its points have (ground, vegetation, building, noise…), each shown or hidden. A 3D view's tab rules what the 3D draws. **Export 3D…** takes a sample of the clouds shown (at most 5 million points) as points in GLB and glTF when **Point clouds** is ticked; no other export carries them.
 
 ![A scan's slice in the plan, one wall traced over it](shots/point-cloud-plan.webp)
 

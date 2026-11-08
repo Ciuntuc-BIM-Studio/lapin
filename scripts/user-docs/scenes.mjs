@@ -5644,8 +5644,16 @@ export const scenes = [
       await look({ x: 4.6, y: 1.2, z: 0.3 }, -Math.PI * 0.62, -0.55, 9);
       const b0 = await box();
       t.expect(!!b0, 'the stair is drawn in 3D');
-      // MOVE in the 3D view: the base point on the stair's corner, then the floor's corner; both inferred as endpoints.
-      await page.evaluate(async () => (await import('/src/viewport/cad/session.ts')).startCommand('MOVE'));
+      // MOVE in the 3D view, typed (M, Space) with nothing selected (decision 399): the stair clicked in 3D, Enter; then the
+      // base point on the stair's corner and the floor's corner, both inferred as endpoints.
+      await t.ui({ selection: null, selected: [] });
+      await page.evaluate(() => document.activeElement?.blur?.());
+      await t.keys('m', ' ');
+      await t.wait(300);
+      const body = await screen({ x: (b0.min.x + b0.max.x) / 2, y: (b0.min.y + b0.max.y) / 2, z: b0.max.z * 0.4 });
+      await page.mouse.click(body.x, body.y);
+      await t.wait(300);
+      await t.keys('Enter');
       await t.wait(500);
       t.expect(await page.locator('[data-move3d=chip]').count() === 1, 'MOVE in 3D is the 3D move');
       // The top step's corner nearest the camera, and the floor's top corner nearest it on the screen.
@@ -5670,6 +5678,8 @@ export const scenes = [
       const b1 = await box();
       const dx = target.p.x - corner.x, dy = target.p.y - corner.y;
       t.expect(Math.abs(b1.min.x - b0.min.x - dx) < 0.01 && Math.abs(b1.min.y - b0.min.y - dy) < 0.01, `the stair's corner is on the floor's corner (moved ${(b1.min.x - b0.min.x).toFixed(3)}, ${(b1.min.y - b0.min.y).toFixed(3)}; asked ${dx.toFixed(3)}, ${dy.toFixed(3)})`);
+      // Decision 399: snapped from its top corner to the floor's, the stair keeps its level (it went there in plan only).
+      t.expect(Math.abs(b1.min.z - b0.min.z) < 0.005, `the stair keeps its level (its foot ${b0.min.z.toFixed(3)} → ${b1.min.z.toFixed(3)})`);
 
       // Dragged by its body: pressed on the selected stair and moved, it follows; letting go puts it there.
       const mid = await screen({ x: (b1.min.x + b1.max.x) / 2, y: (b1.min.y + b1.max.y) / 2, z: b1.max.z * 0.5 });
@@ -5724,6 +5734,10 @@ export const scenes = [
       await page.mouse.move(g0.x, g0.y, { steps: 2 });
       await page.mouse.down();
       await page.mouse.move(g1.x + 4, g1.y + 3, { steps: 14 });
+      await t.wait(300);
+      // Decision 399: the grip infers as Move does, the snap named at the cursor.
+      const named = await page.locator('[data-grip3d=inference]').allInnerTexts();
+      t.expect(named[0] === 'Endpoint', `the grip names its snap at the cursor (${named.join(', ') || 'none'})`);
       await page.mouse.up();
       await t.wait(1200);
       const moved = (await t.nodes()).find((n) => n.id === wall.id);

@@ -171,6 +171,8 @@ Skriv en værdi når som helst uden at klikke i et felt: en længde går i mark�
 
 Det, der har sin egen højde, går op eller ned med flytningen: bunden af en væg, en søjle eller en genstand, en trappes bund og top (dens stigning bevares), en bjælkes top, et dæks topforskydning, et tags murrem; et Studio-legeme får et flyttetrin. En dør eller et vindue glider langs sin væg.
 
+Det, der står på sit niveau (en væg, en trappe, en søjle, et dæk, en bjælke, et rækværk, et tag, et møbel, en dør eller et vindue), beholder sit niveau, når flytningen fanger fra et punkt til et andet: det kommer kun dertil i plan, så en trappe flyttet i sit øverste hjørne hen på et dæks hjørne ikke stiger de få centimeter mellem trappens konstruktion og dækkets belægning (trappens top ligger allerede i flugt med belægningen på det niveau, den fører til). For at flytte den op eller ned skal du følge eller låse den blå akse (↑) eller skrive dx,dy,dz; mærket siger, når niveauet holdes. Når intet er markeret, beder Move og Copy om elementerne: klik på dem i 3D, og tryk Enter.
+
 Du kan også trykke på et markeret element og trække det: det flyttes på samme måde fra det punkt, du trykkede på, fanget, og placeres, hvor du slipper. **View → Drag to move in 3D** slår det fra, så et træk på markeringen drejer visningen.
 
 ![En trappe flyttet i 3D ved det øverste trins hjørne hen på dækkets hjørne](shots/model-3d-move.webp)
@@ -187,7 +189,7 @@ Døre og vinduer placeres, hvor du klikker på en vægs flade i 3D, på det sted
 
 ### Greb og komponenter i 3D
 
-Et markeret elements greb (en vægs ender, et dæks hjørner) trækkes i 3D som i en plan og fanger de andre elementers hjørner, midtpunkter og kanter; punktet tages i grebets egen højde.
+Et markeret elements greb (en vægs ender, et dæks hjørner) trækkes i 3D som i en plan og fanger som med Move: først et hjørne, så et midtpunkt, så en kant inden for rækkevidde, så den røde og grønne akse gennem grebets udgangspunkt, så en flade. Punktet markeres og navngives ved markøren og tages i grebets egen højde. Skriv en længde eller en vinkel, mens du trækker, som i en plan; Enter sætter grebet der.
 
 Træk et kort fra **Catalog** eller et værktøj fra båndet hen på 3D-visningen: værktøjet starter med den type. Et værktøj, der placeres med ét klik (en søjle, et punktfundament, møbler, en elevator, en plante), placeres straks, hvor du slipper det, fanget af modellen. Sluppet, eller klikket, på et dæk på en anden etage, kommer elementet på den etage: et bord på første sals dæk hører til første sal, uanset hvilken etage der er aktiv.
 
@@ -239,9 +241,9 @@ Indstillingerne tilhører visningen eller et navngivet sæt, som flere visninger
 
 ### Punktskyer i visninger
 
-En sammenkædet punktsky (*Import og eksport*, Punktskyer) vises i alle visninger. En **plan** tegner den skive, dens snit tager, 10 cm omkring snitplanet, som prikker under væggene; et **snit** skiven lige bag dets plan; en **facade** alle punkter, den vender mod, det nærmeste forrest. Prikkerne har scanningens egne farver, gjort mørkere så de kan læses på papir, og de udskrives på tegningsark og i PDF, som skærmen viser dem. Deres punkter er fangpunkter: vægge tegnet over en scannings skive lander på dens flader. I **3D-visningen** fanger placeringsværktøjerne og Move skyens punkter som hjørner.
+En sammenkædet punktsky (*Import og eksport*, Punktskyer) vises i alle visninger. En **plan** tegner den skive, dens snit tager, 10 cm omkring snitplanet, som prikker under væggene; et **snit** skiven lige bag dets plan; en **facade** alle punkter, den vender mod, det nærmeste forrest. Prikkerne har scanningens egne farver, gjort mørkere så de kan læses på papir, og de udskrives på tegningsark og i PDF, som skærmen viser dem. Deres punkter er fangpunkter: vægge tegnet over en scannings skive lander på dens flader. I **3D-visningen** fanger placeringsværktøjerne og Move skyens punkter som hjørner. En ny plan åbner tilpasset modellen, eller skyens snit, når den intet andet har; kun den del af snittet, der er på skærmen, tegnes, så en scanning af et helt kvarter forbliver hurtig, når der zoomes ind på én bygning.
 
-**Visibility / Graphics** (<kbd>VV</kbd>) har en fane **Point clouds**: for hver sky, kun i denne visning, **Shown**, **Halftone**, dens **Colours** (som dens sammenkædning, RGB, intensitet, kote eller klassifikation), den **Slice**, en plan eller et snit tegner (cm), og **Classes…**: dens punkters ASPRS-klasser (terræn, vegetation, bygning, støj…), hver vist eller skjult. En 3D-visnings fane styrer, hvad 3D tegner. **Export 3D…** tager et udsnit af de viste skyer (højst 5 millioner punkter) som punkter i GLB og glTF, når **Point clouds** er afkrydset; ingen anden eksport tager dem med.
+**Visibility / Graphics** (<kbd>VV</kbd>) har en fane **Point clouds**: for hver sky, kun i denne visning, **Shown**, **Halftone**, dens **Colours** (som dens sammenkædning, RGB, intensitet, kote eller klassifikation), den **Slice**, en plan eller et snit tegner (cm, op til 100 m: facaderne i en luftbåren scanning kræver et tykt snit), og **Classes…**: dens punkters ASPRS-klasser (terræn, vegetation, bygning, støj…), hver vist eller skjult. En 3D-visnings fane styrer, hvad 3D tegner. **Export 3D…** tager et udsnit af de viste skyer (højst 5 millioner punkter) som punkter i GLB og glTF, når **Point clouds** er afkrydset; ingen anden eksport tager dem med.
 
 ![En scannings skive i planen, en væg tegnet over den](shots/point-cloud-plan.webp)
 

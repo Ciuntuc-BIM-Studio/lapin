@@ -171,6 +171,8 @@ Scrie o valoare oricând, fără să dai clic într-o căsuță: o lungime merge
 
 Ce are o cotă proprie urcă sau coboară cu mutarea: baza unui perete, a unui stâlp sau a unui obiect, baza și vârful unei scări (urcarea ei rămâne), vârful unei grinzi, decalajul de sus al unei plăci, cosoroaba unui acoperiș; un solid Studio primește un pas de mutare. O ușă sau o fereastră alunecă de-a lungul peretelui ei.
 
+Ce stă pe nivelul lui (un perete, o scară, un stâlp, o placă, o grindă, o balustradă, un acoperiș, o piesă de mobilier, o ușă sau o fereastră) își păstrează nivelul când mutarea se prinde de la un punct la altul: ajunge acolo doar în plan, așa că o scară mutată de colțul ei de sus pe colțul unei plăci nu urcă cei câțiva centimetri dintre structura scării și finisajul plăcii (vârful scării ajunge deja la fața finisajului nivelului la care urcă). Ca s-o muți în sus sau în jos, urmează sau blochează axa albastră (↑), ori scrie dx,dy,dz; eticheta spune când nivelul e păstrat. Fără nimic selectat, Move și Copy cer elementele: dă clic pe ele în 3D, apoi Enter.
+
 Poți și să apeși pe un element selectat și să-l tragi: se mută la fel, din punctul apăsat, prins, și rămâne unde îl eliberezi. **View → Drag to move in 3D** oprește asta, ca o tragere pe selecție să rotească vederea.
 
 ![O scară mutată în 3D de colțul treptei de sus pe colțul plăcii](shots/model-3d-move.webp)
@@ -187,7 +189,7 @@ Ușile și ferestrele se pun unde dai clic pe fața unui perete în 3D, în locu
 
 ### Mânere și componente în 3D
 
-Mânerele unui element selectat (capetele unui perete, colțurile unei plăci) se trag în 3D ca în plan și se prind de colțurile, mijloacele și muchiile celorlalte elemente, punctul fiind luat la înălțimea mânerului.
+Mânerele unui element selectat (capetele unui perete, colțurile unei plăci) se trag în 3D ca în plan și se prind ca la Move: întâi un colț, apoi un mijloc, apoi o muchie la îndemână, apoi axele roșie și verde prin punctul de unde pleacă mânerul, apoi o față. Punctul e marcat și numit lângă cursor și luat la înălțimea mânerului. Scrie o lungime sau un unghi în timp ce tragi, ca în plan; Enter pune mânerul acolo.
 
 Trage o carte din **Catalog** sau o unealtă din ribbon pe vederea 3D: unealta pornește cu acel tip. O unealtă pusă printr-un clic (un stâlp, o fundație izolată, mobilier, un lift, o plantă) e pusă imediat unde o lași, prinsă de model. Lăsată, sau pusă cu un clic, pe placa altui nivel, elementul merge pe acel nivel: o masă pusă pe placa etajului ține de etaj, oricare ar fi nivelul activ.
 
@@ -238,9 +240,9 @@ Setările sunt ale vederii sau ale unui set cu nume, comun mai multor vederi (**
 
 ### Norii de puncte în vederi
 
-Un nor de puncte legat (*Import și export*, Nori de puncte) se vede în toate vederile. Un **plan** desenează felia pe care o ia tăietura lui, 10 cm în jurul planului de tăiere, ca puncte sub pereți; o **secțiune** felia de imediat din spatele planului ei; o **fațadă** toate punctele spre care privește, cele mai apropiate în față. Punctele au culorile scanării, întunecate ca să se citească pe hârtie, și se tipăresc pe planșe și în PDF cum le arată ecranul. Punctele lor sunt puncte de snap: pereții desenați peste felia unei scanări ajung pe fețele ei. În **vederea 3D** uneltele de așezare și Move fac snap pe punctele norului ca pe colțuri.
+Un nor de puncte legat (*Import și export*, Nori de puncte) se vede în toate vederile. Un **plan** desenează felia pe care o ia tăietura lui, 10 cm în jurul planului de tăiere, ca puncte sub pereți; o **secțiune** felia de imediat din spatele planului ei; o **fațadă** toate punctele spre care privește, cele mai apropiate în față. Punctele au culorile scanării, întunecate ca să se citească pe hârtie, și se tipăresc pe planșe și în PDF cum le arată ecranul. Punctele lor sunt puncte de snap: pereții desenați peste felia unei scanări ajung pe fețele ei. În **vederea 3D** uneltele de așezare și Move fac snap pe punctele norului ca pe colțuri. Un plan nou se deschide încadrat pe model, sau pe felia norului când nu are altceva; se desenează doar partea feliei aflată pe ecran, așa că scanarea unui cartier întreg rămâne rapidă cu zoom pe o singură clădire.
 
-**Visibility / Graphics** (<kbd>VV</kbd>) are o filă **Point clouds**: pentru fiecare nor, doar în această vedere, **Shown**, **Halftone**, **Colours** (ca legătura, RGB, intensitate, cotă sau clasificare), **Slice**, felia pe care o desenează un plan sau o secțiune (cm), și **Classes…**: clasele ASPRS pe care le au punctele (teren, vegetație, clădire, zgomot…), fiecare vizibilă sau ascunsă. Fila unei vederi 3D hotărăște ce desenează 3D-ul. **Export 3D…** ia un eșantion din norii vizibili (cel mult 5 milioane de puncte) ca puncte în GLB și glTF când e bifat **Point clouds**; niciun alt export nu îi duce.
+**Visibility / Graphics** (<kbd>VV</kbd>) are o filă **Point clouds**: pentru fiecare nor, doar în această vedere, **Shown**, **Halftone**, **Colours** (ca legătura, RGB, intensitate, cotă sau clasificare), **Slice**, felia pe care o desenează un plan sau o secțiune (cm, până la 100 m: fațadele dintr-o scanare aeriană cer o felie groasă), și **Classes…**: clasele ASPRS pe care le au punctele (teren, vegetație, clădire, zgomot…), fiecare vizibilă sau ascunsă. Fila unei vederi 3D hotărăște ce desenează 3D-ul. **Export 3D…** ia un eșantion din norii vizibili (cel mult 5 milioane de puncte) ca puncte în GLB și glTF când e bifat **Point clouds**; niciun alt export nu îi duce.
 
 ![Felia unei scanări în plan, un perete desenat peste ea](shots/point-cloud-plan.webp)
 

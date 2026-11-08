@@ -171,6 +171,8 @@ Digite um valor a qualquer momento, sem clicar numa caixa: um comprimento vai na
 
 O que tem altura própria sobe ou desce com o movimento: a base de uma parede, de um pilar ou de um objeto, a base e o topo de uma escada (a sua altura mantém-se), o topo de uma viga, o desvio superior de uma laje, o frechal de um telhado; um sólido Studio recebe um passo de movimento. Uma porta ou janela desliza ao longo da sua parede.
 
+O que assenta no seu nível (uma parede, uma escada, um pilar, uma laje, uma viga, uma guarda, uma cobertura, um móvel, uma porta ou uma janela) mantém o seu nível quando a deslocação se prende de um ponto a outro: vai para lá só em planta, pelo que uma escada movida pelo seu canto de cima para o canto de uma laje não sobe os poucos centímetros entre a estrutura da escada e o acabamento da laje (o topo de uma escada já fica à face do acabamento do nível a que sobe). Para a subir ou descer, siga ou bloqueie o eixo azul (↑), ou escreva dx,dy,dz; a etiqueta diz quando o nível é mantido. Sem nada selecionado, Move e Copy pedem os elementos: clique neles em 3D e prima Enter.
+
 Também pode premir um elemento selecionado e arrastá-lo: move-se da mesma forma, a partir do ponto premido, ajustado, e fica onde o solta. **View → Drag to move in 3D** desliga isto, para que arrastar sobre a seleção faça orbitar a vista.
 
 ![Uma escada movida em 3D pelo canto do degrau de cima até ao canto da laje](shots/model-3d-move.webp)
@@ -187,7 +189,7 @@ Portas e janelas ficam onde clica na face de uma parede em 3D, no sítio da pare
 
 ### Pegas e componentes em 3D
 
-As pegas de um elemento selecionado (as pontas de uma parede, os cantos de uma laje) arrastam-se em 3D como em planta e ajustam-se aos cantos, pontos médios e arestas dos outros elementos, com o ponto tomado à altura da pega.
+As pegas de um elemento selecionado (as pontas de uma parede, os cantos de uma laje) arrastam-se em 3D como em planta e prendem-se como com Move: primeiro um canto, depois um ponto médio, depois uma aresta ao alcance, depois os eixos vermelho e verde pelo ponto de partida da pega, depois uma face. O ponto é marcado e nomeado junto ao cursor e tomado à altura da pega. Escreva um comprimento ou um ângulo enquanto arrasta, como em planta; Enter põe a pega lá.
 
 Arraste um cartão do **Catalog** ou uma ferramenta da faixa para a vista 3D: a ferramenta começa com esse tipo. Uma ferramenta que coloca com um clique (um pilar, uma sapata, mobiliário, um elevador, uma planta) é colocada logo onde a larga, ajustada ao modelo. Largada, ou clicada, sobre a laje de outro piso, o elemento vai para esse piso: uma mesa posta na laje do primeiro andar pertence ao primeiro andar, seja qual for o nível ativo.
 
@@ -239,9 +241,9 @@ As configurações são da vista, ou de um conjunto com nome que várias vistas 
 
 ### Nuvens de pontos nas vistas
 
-Uma nuvem de pontos vinculada (*Importar e exportar*, Nuvens de pontos) aparece em todas as vistas. Uma **planta** desenha a fatia que o seu corte toma, 10 cm em volta do plano de corte, como pontos sob as paredes; um **corte** a fatia logo atrás do seu plano; uma **elevação** todos os pontos para os quais olha, o mais próximo à frente. Os pontos têm as cores da varredura, escurecidas para se lerem no papel, e imprimem-se nas pranchas e no PDF como a tela os mostra. Os seus pontos são pontos de snap: paredes desenhadas sobre a fatia de uma varredura caem nas suas faces. Na **vista 3D** as ferramentas de colocação e Move fazem snap nos pontos da nuvem como nos cantos.
+Uma nuvem de pontos vinculada (*Importar e exportar*, Nuvens de pontos) aparece em todas as vistas. Uma **planta** desenha a fatia que o seu corte toma, 10 cm em volta do plano de corte, como pontos sob as paredes; um **corte** a fatia logo atrás do seu plano; uma **elevação** todos os pontos para os quais olha, o mais próximo à frente. Os pontos têm as cores da varredura, escurecidas para se lerem no papel, e imprimem-se nas pranchas e no PDF como a tela os mostra. Os seus pontos são pontos de snap: paredes desenhadas sobre a fatia de uma varredura caem nas suas faces. Na **vista 3D** as ferramentas de colocação e Move fazem snap nos pontos da nuvem como nos cantos. Uma planta nova abre enquadrada no modelo, ou na fatia da nuvem quando não tem mais nada; só se desenha a parte da fatia que está no ecrã, pelo que o levantamento de um bairro inteiro continua rápido com zoom num edifício.
 
-**Visibility / Graphics** (<kbd>VV</kbd>) tem uma aba **Point clouds**: por nuvem, só nesta vista, **Shown**, **Halftone**, as suas **Colours** (como o seu vínculo, RGB, intensidade, cota ou classificação), a **Slice** que uma planta ou um corte desenha (cm) e **Classes…**: as classes ASPRS dos seus pontos (terreno, vegetação, edifício, ruído…), cada uma visível ou oculta. A aba de uma vista 3D decide o que o 3D desenha. **Export 3D…** leva uma amostra das nuvens visíveis (no máximo 5 milhões de pontos) como pontos em GLB e glTF quando **Point clouds** está marcado; nenhuma outra exportação as leva.
+**Visibility / Graphics** (<kbd>VV</kbd>) tem uma aba **Point clouds**: por nuvem, só nesta vista, **Shown**, **Halftone**, as suas **Colours** (como o seu vínculo, RGB, intensidade, cota ou classificação), a **Slice** que uma planta ou um corte desenha (cm, até 100 m: as fachadas de um levantamento aéreo pedem uma fatia grossa) e **Classes…**: as classes ASPRS dos seus pontos (terreno, vegetação, edifício, ruído…), cada uma visível ou oculta. A aba de uma vista 3D decide o que o 3D desenha. **Export 3D…** leva uma amostra das nuvens visíveis (no máximo 5 milhões de pontos) como pontos em GLB e glTF quando **Point clouds** está marcado; nenhuma outra exportação as leva.
 
 ![A fatia de uma varredura na planta, uma parede desenhada por cima](shots/point-cloud-plan.webp)
 
