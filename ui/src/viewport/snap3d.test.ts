@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arrowLock3, lineNearRay, snap3, type Ray3, type Seg3, type Snap3Input } from './snap3d';
+import { arrowLock3, gripTarget, lineNearRay, snap3, type Ray3, type Seg3, type Snap3Input } from './snap3d';
 import type { Vec3 } from './camera';
 
 // Seen from above, 100 px a metre: x right, y up the model is down the screen.
@@ -81,5 +81,23 @@ describe('the 3D snaps', () => {
     const t = lineNearRay({ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, { origin: { x: 3, y: 1, z: 10 }, dir: { x: 0, y: 0, z: -1 } });
     expect(t).toBeCloseTo(3, 9);
     expect(lineNearRay({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }, { origin: { x: 0, y: 0, z: 10 }, dir: { x: 0, y: 0, z: -1 } })).toBeNull();
+  });
+});
+
+describe('a grip dragged in 3D (decision 399)', () => {
+  // A tread's corner at (2, 0, 1.5) and its nosing edge: the grip's start at (0, 0.4) on its plane z = 0.
+  const tread: Seg3 = { a: { x: 2, y: 0, z: 1.5 }, b: { x: 2, y: 1, z: 1.5 } };
+  const base = { x: 0, y: 0.4, z: 0 };
+  it('takes the corner within the reach before the edge it ends', () => {
+    const s = at(top, 2.06, 0.05, { segs: [tread], base, axes: ['red', 'green'] });
+    expect(s?.kind).toBe('Endpoint');
+    expect(gripTarget(s)).toEqual({ x: 2, y: 0 });
+  });
+  it('infers the red and green axes from its start, never the level under the cursor', () => {
+    const s = at(top, 3, 0.43, { base, axes: ['red', 'green'], level: { x: 3, y: 0.43, z: 0 } });
+    expect(s?.kind).toBe('On red axis');
+    expect(gripTarget(s)?.y).toBeCloseTo(0.4, 6);
+    expect(gripTarget(at(top, 3, 2, { base, axes: ['red', 'green'], level: { x: 3, y: 2, z: 0 } }))).toBeNull();
+    expect(gripTarget({ point: { x: 1, y: 2, z: 0.3 }, kind: 'On face' })).toEqual({ x: 1, y: 2 });
   });
 });

@@ -164,3 +164,11 @@ export function arrowLock3(key: string, current: Lock3): Lock3 | undefined {
   if (!axis) return undefined;
   return current?.axis === axis ? null : { axis };
 }
+
+/** The inferences a grip dragged in 3D takes (decision 399): the level under the cursor is not one (the grip's own plane is). */
+const GRIP_TAKES = new Set<Snap3Kind>(['Endpoint', 'Midpoint', 'On edge', 'On red axis', 'On green axis', 'On face']);
+
+/** Where a grip goes from what the cursor infers: the point's place in plan, or null when it infers nothing a grip takes. */
+export function gripTarget(s: Snapped3 | null): Pt | null {
+  return s && GRIP_TAKES.has(s.kind) ? { x: s.point.x, y: s.point.y } : null;
+}
