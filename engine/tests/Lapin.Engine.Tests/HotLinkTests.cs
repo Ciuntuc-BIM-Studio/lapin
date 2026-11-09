@@ -101,6 +101,78 @@ public class HotLinkTests
     }
 
     [Fact]
+    public void Placed_anew_it_keeps_its_ids_and_moves()
+    {
+        var (path, bytes, _) = Source();
+        var host = new Fixture(new ArchitectureModule());
+        var r = HotLinks.Link(host.Session, bytes, "module.lapin", path, new HotLinks.Placing(10, 0, 0), out _);
+        var before = host.Model.OfClass(IfcClass.Wall).Select(w => w.Id).ToHashSet();
+        HotLinks.Link(host.Session, bytes, "module.lapin", path, new HotLinks.Placing(30, 0, 0), out _, r.LinkId);
+        var walls = host.Model.OfClass(IfcClass.Wall).ToList();
+        Assert.Equal(before, walls.Select(w => w.Id).ToHashSet());
+        Assert.All(walls, w => Assert.True(Start(w)[0] >= 30 - 1e-6));
+        Assert.Equal(30, HotLinks.Placing.Of(host.Model.Get(r.LinkId!)!.Attrs["options"] as JsonObject).X, 6);
+        File.Delete(path);
+    }
+
+    [Fact]
+    public void What_the_source_links_comes_along_and_moves_unless_hidden_there()
+    {
+        // The inner project, linked into the source; the source placed in the host.
+        var (innerPath, innerBytes, _) = Source();
+        var middle = new Fixture(new ArchitectureModule());
+        middle.Wall(0, 10, 4, 10);
+        var inner = HotLinks.Link(middle.Session, innerBytes, "inner.lapin", innerPath, new HotLinks.Placing(0, 20, 0), out _);
+        var path = Path.Combine(Path.GetTempPath(), $"hotlink-{Guid.NewGuid():N}.lapin");
+        PackageFiles.Save(middle.Session, path);
+        var host = new Fixture(new ArchitectureModule());
+        HotLinks.Link(host.Session, File.ReadAllBytes(path), "middle.lapin", path, new HotLinks.Placing(100, 0, 0), out _);
+        var walls = host.Model.OfClass(IfcClass.Wall).ToList();
+        Assert.Equal(3, walls.Count);
+        Assert.All(walls, w => Assert.True(Start(w)[0] >= 100 - 1e-6));
+        Assert.Contains(walls, w => Math.Abs(Start(w)[1] - 20) < 1e-6);
+
+        // Hidden in the source, it stays out.
+        middle.Run("link.update", new JsonObject { ["id"] = inner.LinkId, ["visible"] = false });
+        PackageFiles.Save(middle.Session, path);
+        var other = new Fixture(new ArchitectureModule());
+        HotLinks.Link(other.Session, File.ReadAllBytes(path), "middle.lapin", path, new HotLinks.Placing(100, 0, 0), out _);
+        Assert.Single(other.Model.OfClass(IfcClass.Wall));
+        File.Delete(path); File.Delete(innerPath);
+    }
+
+    [Fact]
+    public void A_reference_in_the_source_moves_with_the_rest()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        f.Wall(0, 0, 4, 0);
+        var storey = f.Storey;
+        f.Session.Edit("A reference", edit =>
+        {
+            var e = new Entity(edit.NewId(), IfcClass.BuildingElementProxy, "Imported chair", new JsonObject
+            {
+                [StoredBodies.Key] = StoredBodies.Write([("Body", "#884422", new List<Lapin.Geometry.Vec3> { new(1, 1, 0), new(2, 1, 0), new(1, 2, 0), new(1, 1, 1) }, new List<(int, int, int)> { (0, 2, 1), (0, 1, 3), (1, 2, 3), (2, 0, 3) })]),
+            });
+            edit.Add(e);
+            Spatial.Contain(edit, storey, e.Id);
+        });
+        var path = Path.Combine(Path.GetTempPath(), $"hotlink-{Guid.NewGuid():N}.lapin");
+        PackageFiles.Save(f.Session, path);
+        var host = new Fixture(new ArchitectureModule());
+        HotLinks.Link(host.Session, File.ReadAllBytes(path), "m.lapin", path, new HotLinks.Placing(50, 0, 0), out _);
+        var chair = host.Model.Entities.Single(e => e.Name == "Imported chair");
+        // As it came in, on its own or an instance of a shared body: every corner where it was asked to go.
+        var shared = StoredBodies.InstanceOf(chair);
+        var holder = shared is { } s ? host.Model.Get(s.Body)! : chair;
+        var (v, _) = StoredBodies.ReadPart(holder.Attrs[StoredBodies.Key]!["parts"]!.AsArray()[0]!.AsObject());
+        var xs = Enumerable.Range(0, v.Length / 3).Select(i => new Lapin.Geometry.Vec3(v[i * 3], v[i * 3 + 1], v[i * 3 + 2]))
+            .Select(c => shared is { } t ? StoredBodies.Apply(t.Xf, c).X : c.X).ToList();
+        Assert.Equal(51, xs.Min(), 3);
+        Assert.Equal(52, xs.Max(), 3);
+        File.Delete(path);
+    }
+
+    [Fact]
     public void What_is_not_a_project_says_so()
     {
         var host = new Fixture(new ArchitectureModule());

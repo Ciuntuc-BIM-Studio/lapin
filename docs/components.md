@@ -5,7 +5,7 @@ Asked for by a tester (09.11.2026, "work efficiently with instances … how Sket
 ## The model
 
 - `LapinComponent` (`Lapin.Platform/Components.cs`): the component, a name. It goes when its last instance goes.
-- An **instance** is a group (`docs/groups.md`) with `component` and `componentXf` (`[x, y, z, degrees]`). It is therefore picked, moved, copied, turned and opened (double-click) as a group is.
+- An **instance** is a group (`docs/groups.md`) with `component` and `componentXf` (`[x, y, z, degrees, mirrored]`: mirrored first, about its own x axis, then turned; the older four numbers read as not mirrored). It is therefore picked, moved, copied, turned and opened (double-click) as a group is.
 - Its **members** stay real elements, each with `componentKey`, the same in every instance. Plans, sections, quantities, schedules and every export read them like any other element, and each keeps its own GlobalId.
 - Only `Components.Takes` may be a member: Studio solids (`operation`), `IfcSlab`, `IfcSpace`. References from files and native walls are refused, with a message.
 
@@ -23,7 +23,7 @@ Undo takes the whole step back. Only the commands go through `Settle`; imports a
 ## What an instance can do
 
 - Move, turn and copy on its own, also to other storeys (Copy to storeys).
-- Mirror: refused until it is made unique, since a mirrored instance would no longer be the same thing.
+- Mirror: it stays an instance, of the other hand. An edit in either reaches the other mirrored (`Between` gives a reflection when one of the two is mirrored and the other not, a turn otherwise), with a test on an asymmetric outline.
 - `component.makeUnique`: a component of its own, with this one instance.
 - Ungroup: its members become plain elements, the others stay instances.
 
@@ -33,7 +33,7 @@ Undo takes the whole step back. Only the commands go through `Settle`; imports a
 
 ## Not done
 
-- Nested components (groups do not nest).
-- Scaled instances. An instance is moved and turned only.
-- Sharing one body between instances on the screen or in IFC (each instance is drawn and exported as real elements). If big repeated components prove slow, the shared-body mechanism of `docs/plan-instancing.md` is the next step.
+- Nested components, on purpose: an element belongs to one group, and selection and the edit scope rest on that (`docs/groups.md`). Letting groups nest changes both everywhere, for every group, not only for components.
+- Scaled instances, on purpose: `Placement2D` is rigid, and only drafting knows a scale. A scaled floor or solid would have to say what becomes of its thickness, its height and its sketch's numbers.
+- Sharing one body between instances on the screen or in IFC. Measured (`Many_instances_follow_an_edit_in_reasonable_time`, 09.11.2026): an edit carried to 200 instances of two members takes about 0.5 s in a Debug build, so it is not needed yet. If big repeated components prove slow, the shared-body mechanism of `docs/plan-instancing.md` is the next step.
 - A solid sketched on a section, an elevation or a reference plane keeps sharing that sketch between its copies: it follows when the solid changes, while a move of the sketch itself moves them all.

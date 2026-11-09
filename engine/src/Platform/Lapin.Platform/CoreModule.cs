@@ -313,8 +313,6 @@ public static class ElementTransform
             _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
         };
         var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
-        // A component's instance turns and moves as a whole (docs/components.md); mirrored it would no longer be the same thing.
-        if (t.Mirrored) Components.RefuseMirror(ctx.Model, groups);
         var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
             .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
         if (all.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");

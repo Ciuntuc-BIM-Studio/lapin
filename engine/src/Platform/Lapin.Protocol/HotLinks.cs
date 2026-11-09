@@ -14,7 +14,8 @@ namespace Lapin.Protocol;
 /// source is read into a session of its own, placed, written as IFC with Lapin's intent and brought in as an IFC link is,
 /// its walls, doors and floors coming back native. Each link has its own GlobalIds, made from a seed it keeps (so reading it
 /// again finds the same ids), so one project can be placed many times, and a source copied from this very project never
-/// touches its elements.
+/// touches its elements. What the source links itself comes along as its own, unless hidden there; references drawn from
+/// files move with the rest.
 /// </summary>
 public static class HotLinks
 {
@@ -35,11 +36,10 @@ public static class HotLinks
         var old = existing == null ? null : Links.Require(session.Model, existing).Attrs["options"] as JsonObject;
         var seed = (string?)old?["seed"] is { Length: > 0 } kept ? kept : Guid.NewGuid().ToString("N");
         session.Progress?.Invoke("Reading the project", 0, 0);
-        var ifc = Seeded(Placed(session, bytes, place, out var left), seed);
+        var ifc = Seeded(Placed(session, bytes, place), seed);
         session.Progress?.Invoke("Indexing the file", 0, 0);
         var options = place.ToJson(seed, path != null && File.Exists(path) ? File.GetLastWriteTimeUtc(path) : null);
-        var r = IfcImport.Link(session, StepFile.Read(ifc), name, path, new IfcImportOptions("auto"), out diff, existing, Kind, options);
-        return left > 0 ? r with { Notes = [.. r.Notes, $"{left} reference(s) from files stay where their file put them."] } : r;
+        return IfcImport.Link(session, StepFile.Read(ifc), name, path, new IfcImportOptions("auto"), out diff, existing, Kind, options);
     }
 
     /// <summary>Whether the file a link was read from has changed since (desktop): false when it cannot tell.</summary>
@@ -49,10 +49,9 @@ public static class HotLinks
         return (string?)(link.Attrs["options"] as JsonObject)?["modified"] is { } was && File.GetLastWriteTimeUtc(path).ToString("O") != was;
     }
 
-    /// <summary>The source written as IFC, moved and turned as asked; <paramref name="left"/>: what could not move (references drawn from a file).</summary>
-    static byte[] Placed(Session host, byte[] bytes, Placing place, out int left)
+    /// <summary>The source written as IFC, moved and turned as asked.</summary>
+    static byte[] Placed(Session host, byte[] bytes, Placing place)
     {
-        left = 0;
         using var input = new MemoryStream(bytes, writable: false);
         if (LegacyPackage.Is(input)) throw new CommandException("This is an old Lapin project: open it and save it again before linking it.");
         input.Position = 0;
@@ -60,11 +59,12 @@ public static class HotLinks
         try { content = LapinPackage.Read(input); }
         catch (Exception e) when (e is InvalidDataException or System.Text.Json.JsonException or KeyNotFoundException) { throw new CommandException($"This is not a Lapin project: {e.Message}"); }
         var source = new Session(host.Catalog, host.Product);
-        source.Load(content.Entities, content.Relations, null, content.Classes);
+        var (entities, relations) = OwnAll(content);
+        source.Load(entities, relations, null, content.Classes);
         if (place.X != 0 || place.Y != 0 || place.Degrees != 0)
         {
             var placed = Spatial.Storeys(source.Model).SelectMany(s => source.Model.RelatedOf(s.Id, IfcClass.RelContainedInSpatialStructure)).ToList();
-            left = placed.Count(StoredBodies.Has);
+            Carry(source, placed.Where(StoredBodies.Has).Select(e => e.Id).ToHashSet(), place);
             var ids = new JsonArray([.. placed.Where(e => !StoredBodies.Has(e)).Select(e => (JsonNode)e.Id)]);
             if (ids.Count > 0)
             {
@@ -75,6 +75,105 @@ public static class HotLinks
         using var output = new MemoryStream();
         IfcExport.Write(source, output, "link.ifc");
         return output.ToArray();
+    }
+
+    /// <summary>
+    /// The source's own links made part of it, read here as its own: their tags gone, what a hidden link holds left out
+    /// with its relationships, so all of it moves and goes on to the file.
+    /// </summary>
+    static (List<Entity> Entities, List<Relation> Relations) OwnAll(PackageContent content)
+    {
+        var hidden = content.Entities.Where(e => e.Class == Links.Class && e.Attrs["visible"] is JsonValue v && v.TryGetValue<bool>(out var shown) && !shown).Select(e => e.Id).ToHashSet();
+        var gone = content.Entities.Where(e => e.Class == Links.Class || (e.Str(Links.Key) is { } l && hidden.Contains(l))).Select(e => e.Id).ToHashSet();
+        var entities = new List<Entity>();
+        foreach (var e in content.Entities)
+        {
+            if (gone.Contains(e.Id)) continue;
+            if (e.Str(Links.Key) == null) { entities.Add(e); continue; }
+            var attrs = e.CloneAttrs();
+            attrs.Remove(Links.Key);
+            entities.Add(e.With(attrs: attrs));
+        }
+        var relations = new List<Relation>();
+        foreach (var r in content.Relations)
+        {
+            if (gone.Contains(r.Relating)) continue;
+            var related = r.Related.Where(x => !gone.Contains(x)).ToList();
+            if (related.Count > 0) relations.Add(r with { Related = related });
+        }
+        return (entities, relations);
+    }
+
+    /// <summary>References drawn from files carried as they are: their bodies (uncut, the openings' too), their placements as instances, their own 2D.</summary>
+    static void Carry(Session source, IReadOnlySet<string> ids, Placing place)
+    {
+        if (ids.Count == 0) return;
+        var a = place.Degrees * Math.PI / 180;
+        var (c, s) = (Math.Cos(a), Math.Sin(a));
+        (double X, double Y) At(double x, double y) => (x * c - y * s + place.X, x * s + y * c + place.Y);
+        void Body(JsonNode? n)
+        {
+            switch (n)
+            {
+                case JsonArray list:
+                    foreach (var x in list) Body(x);
+                    break;
+                case JsonObject o when o["parts"] is JsonArray parts:
+                    foreach (var part in parts.OfType<JsonObject>())
+                    {
+                        var (v, t) = StoredBodies.ReadPart(part);
+                        for (var i = 0; i + 2 < v.Length; i += 3) (v[i], v[i + 1]) = At(v[i], v[i + 1]);
+                        var written = StoredBodies.WritePart((string?)part["name"] ?? "Body", (string?)part["color"] ?? "#cccccc", v, t);
+                        part.Remove("v"); part.Remove("t");
+                        part["v64"] = written["v64"]!.DeepClone();
+                        part["t64"] = written["t64"]!.DeepClone();
+                    }
+                    break;
+                case JsonObject o:
+                    foreach (var (_, x) in o) Body(x);
+                    break;
+            }
+        }
+        void Flat(JsonArray? pts)
+        {
+            if (pts == null) return;
+            for (var i = 0; i + 1 < pts.Count; i += 2)
+            {
+                var (x, y) = At(Json.Number(pts[i]) ?? 0, Json.Number(pts[i + 1]) ?? 0);
+                pts[i] = Math.Round(x, 4);
+                pts[i + 1] = Math.Round(y, 4);
+            }
+        }
+        source.Edit("Place", edit =>
+        {
+            foreach (var id in ids)
+            {
+                var e = edit.Model.Get(id)!;
+                var attrs = e.CloneAttrs();
+                Body(attrs[StoredBodies.Key]);
+                Body(attrs[StoredBodies.UncutKey]);
+                Body(attrs[StoredBodies.OpeningsKey]);
+                if (StoredBodies.InstanceOf(e) is var (_, xf))
+                {
+                    // Its axes turned, its origin carried; the shared body stays in its own frame.
+                    var m = xf.ToArray();
+                    for (var k = 0; k < 4; k++)
+                    {
+                        var (x, y) = (xf[k * 3], xf[k * 3 + 1]);
+                        (m[k * 3], m[k * 3 + 1]) = k == 3 ? At(x, y) : (x * c - y * s, x * s + y * c);
+                    }
+                    attrs[StoredBodies.XfKey] = StoredBodies.WriteXf(m);
+                }
+                if (attrs[Plan2d.Key] is JsonObject plan && plan["plan"] is JsonArray items)
+                    foreach (var item in items.OfType<JsonObject>())
+                    {
+                        Flat(item["pts"] as JsonArray);
+                        foreach (var loop in (item["loops"] as JsonArray)?.OfType<JsonArray>() ?? []) Flat(loop);
+                        if (Json.Number(item["angle"]) is { } angle) item["angle"] = Math.Round(angle + place.Degrees, 3);
+                    }
+                edit.Replace(e.With(attrs: attrs));
+            }
+        });
     }
 
     static readonly Regex RootId = new(@"=\s*IFC[A-Z0-9]+\('([0-9A-Za-z_$]{22})'", RegexOptions.Compiled);

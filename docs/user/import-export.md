@@ -106,7 +106,7 @@ A linked IFC keeps what its file says of its elements' materials. Walls, floors 
 
 **File → Link Lapin project…** places another `.lapin` file in this project as a read-only module, as a hotlink does in ArchiCAD. Say where it goes (**Placed at x**, **Placed at y**, **Turned**). Its walls, doors and floors come in as Lapin elements, with their plan symbols, and you can link the same project as many times as you want, each placement apart: a typical apartment or a repeated block, drawn in one file.
 
-To change it, edit its own file. When that file changes, **Manage → Links** says **The source changed: read it again**; a click brings in the new version, in the same places. The link's other tools work as for any link: show, halftone, convert to native, unlink. In the browser a link cannot be read again, since the page has no path to the file: link the new file instead. References the source brought from other files stay where those files put them, whatever the placement.
+To change it, edit its own file: **Open separately** in **Manage → Links** opens it in another window. When that file changes, Lapin tells you as you come back, and **Manage → Links** says **The source changed: read it again**; a click brings in the new version, in the same places. The move button there places a link somewhere else, with no need to link it again. The link's other tools work as for any link: show, halftone, convert to native, unlink. In the browser the page has no path to the file, so reading it again or placing it elsewhere asks you for the file. What the source links itself comes along and moves with it, unless it is hidden there, and so do the references it brought from other files.
 
 ![The same project linked twice, the second turned](shots/hotlink-plan.webp)
 

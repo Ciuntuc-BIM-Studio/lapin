@@ -8,11 +8,11 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, Feather, MapPin, RefreshCw, Trash2, Unlink, Wand2, X } from 'lucide-react';
+import { ExternalLink, Feather, FolderOpen, MapPin, Move, RefreshCw, Trash2, Unlink, Wand2, X } from 'lucide-react';
 import { fileName, openOptimize } from '../../engine/ifcOptimize';
 import { notify, useUi } from '../../app/store';
 import { engine, execute, useSession } from '../../engine/session';
-import { isDesktop } from '../../engine/files';
+import { isDesktop, pickFile, toBase64 } from '../../engine/files';
 import { setLooks } from '../../platform/looks';
 import type { NodeDto } from '../../engine/protocol';
 import { Cell } from '../../shell/cells';
@@ -41,7 +41,45 @@ export async function placeCloud(l: NodeDto): Promise<void> {
   if (check?.warning) notify(check.warning);
 }
 
+/** A linked project placed elsewhere (docs/links.md, Hotlinks); in a browser its file is asked for, the page having kept no path. */
+async function placeProject(l: NodeDto): Promise<void> {
+  const o = (l.props.options ?? {}) as { x?: number; y?: number; rotation?: number };
+  const { ask, lengthField, numberField } = await import('../../shell/AskBox');
+  const r = await ask('Place the linked project', [lengthField('x', 'Placed at x', o.x ?? 0), lengthField('y', 'Placed at y', o.y ?? 0), numberField('rotation', 'Turned (°)', o.rotation ?? 0)]);
+  if (!r) return;
+  const data = typeof l.props.path === 'string' ? null : await pickFile('Lapin project', 'lapin');
+  if (typeof l.props.path !== 'string' && !data) return;
+  await engine.call('project.reloadLink', { id: l.id, x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation), ...(data ? { data: toBase64(data.bytes) } : {}) }, { timeoutMs: 600_000 });
+}
+
+/** A project linked in a browser read again, from its file chosen again. */
+async function readPicked(l: NodeDto): Promise<void> {
+  const f = await pickFile('Lapin project', 'lapin');
+  if (!f) return;
+  await engine.call('project.reloadLink', { id: l.id, data: toBase64(f.bytes) }, { timeoutMs: 600_000 });
+  notify('Linked project read again.');
+}
+
 const isLink = (n: NodeDto) => n.type === 'LapinLink';
+
+/** Coming back to Lapin (from the window a linked project is edited in): says once which linked projects changed. Mounted with the core module. */
+export function LinkedProjectsWatch() {
+  useEffect(() => {
+    const told = new Set<string>();
+    const look = () => {
+      const links = [...useSession.getState().nodes.values()].filter((n) => isLink(n) && n.props.kind === 'lapin' && typeof n.props.path === 'string');
+      if (!links.length) return;
+      void engine.call<string[]>('project.linksChanged', {}).then((ids) => {
+        const fresh = links.filter((l) => ids.includes(l.id) && !told.has(`${l.id}:${String((l.props.options as { modified?: string } | undefined)?.modified)}`));
+        for (const l of fresh) told.add(`${l.id}:${String((l.props.options as { modified?: string } | undefined)?.modified)}`);
+        if (fresh.length) notify('A linked project changed: Manage → Links reads it again.');
+      }).catch(() => undefined);
+    };
+    window.addEventListener('focus', look);
+    return () => window.removeEventListener('focus', look);
+  }, []);
+  return null;
+}
 
 export function LinksDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -118,6 +156,8 @@ export function LinksDialog() {
                       <td>{(l.props.kind === 'dxf' || cloud) && <input type="checkbox" data-link="in3d" title="Its drawing on its view's plane in the 3D view" checked={l.props.in3d !== false} onChange={(e) => void execute('link.update', { id: l.id, in3d: e.target.checked })} />}</td>
                       <td className="row-tools">
                         {changed.includes(l.id) && <button type="button" className="btn small" data-link="changed" disabled={busy != null} onClick={() => void run(l.id, () => engine.call('project.reloadLink', { id: l.id }, { timeoutMs: 600_000 }))}>The source changed: read it again</button>}
+                        {l.props.kind === 'lapin' && <button type="button" className="icon mini" data-link="place-project" title="Place it elsewhere: its own ids stay" disabled={busy != null} onClick={() => void run(l.id, () => placeProject(l))}><Move size={13} /></button>}
+                        {l.props.kind === 'lapin' && !path && <button type="button" className="icon mini" data-link="read-picked" title="Choose its file again and read it" disabled={busy != null} onClick={() => void run(l.id, () => readPicked(l))}><FolderOpen size={13} /></button>}
                         {cloud && <button type="button" className="icon mini" data-link="place" title="Where it stands: by the map, origin to origin or centred, its unit, moved and turned" disabled={busy != null} onClick={() => void run(l.id, () => placeCloud(l))}><MapPin size={12} /></button>}
                         {path && cloud && <button type="button" className="icon mini" title="Read the file again (indexed again if it changed)" disabled={busy != null} onClick={() => void run(l.id, () => execute('pointcloud.reload', { id: l.id }))}><RefreshCw size={12} /></button>}
                         {path && !cloud && <button type="button" className="icon mini" title="Read the file again (what the link holds is replaced)" disabled={busy != null} onClick={() => void run(l.id, () => engine.call('project.reloadLink', { id: l.id }, { timeoutMs: 600_000 }).then(() => notify(`${l.name} read again.`)))}><RefreshCw size={12} /></button>}

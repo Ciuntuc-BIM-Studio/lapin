@@ -381,6 +381,13 @@ export async function openStartupFile(): Promise<void> {
     const path = await invoke<string | null>('startup_file');
     if (!path) return;
     const name = path.split(/[\\/]/).pop() ?? path;
+    // A Lapin project (a linked one opened on its own, to edit there): opened as it is.
+    if (/\.lapin$/i.test(name)) {
+      await engine.call('project.open', { path }, { timeoutMs: LONG_TIMEOUT_MS });
+      remember(path);
+      enter();
+      return;
+    }
     // An IFC brings its own storeys: the new project starts with a ground floor only.
     await engine.call('project.new', { plain: !/\.dxf$/i.test(name) });
     enter();

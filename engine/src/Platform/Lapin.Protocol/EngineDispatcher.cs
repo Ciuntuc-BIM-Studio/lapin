@@ -937,6 +937,17 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             {
                 // A link read again from its file (the desktop: a link made from a path): what it held goes, what the file holds now comes in its place.
                 var link = Links.Require(session.Model, (string?)p["id"]);
+                // A linked project: read again, or placed anew (x, y, rotation); from its file, or from the bytes given (a browser keeps no path).
+                if (link.Str("kind") == HotLinks.Kind && (p["data"] != null || p["x"] != null || p["y"] != null || p["rotation"] != null))
+                {
+                    var was = HotLinks.Placing.Of(link.Attrs["options"] as JsonObject);
+                    var place = new HotLinks.Placing(Json.Number(p["x"]) ?? was.X, Json.Number(p["y"]) ?? was.Y, Json.Number(p["rotation"]) ?? was.Degrees);
+                    var from = (string?)p["data"] is { } data ? Convert.FromBase64String(data)
+                        : link.Str("path") is { } known && File.Exists(HostFiles.Check(known)) ? File.ReadAllBytes(known)
+                        : throw new CommandException("This link's file cannot be read here: choose it again.");
+                    var moved = HotLinks.Link(session, from, link.Str("file") ?? link.Name, link.Str("path"), place, out var movedDiff, link.Id);
+                    return (moved.ToJson(), movedDiff);
+                }
                 var path = HostFiles.Check(link.Str("path") ?? throw new CommandException("This link has no file to read again (it was linked from the browser)."));
                 if (!File.Exists(path)) throw new CommandException($"The file is gone: {path}.");
                 if (link.Str("kind") == "dxf")

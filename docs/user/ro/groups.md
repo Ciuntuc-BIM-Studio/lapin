@@ -31,7 +31,7 @@ Selectează elementele și alege **Modifică → Fă componentă** (<kbd>CK</kbd
 - **Dublu clic** pe o instanță o deschide, ca pe un grup. Ce schimbi înăuntru (un contur, o înălțime, un push/pull, un element nou sau șters) se schimbă în toate instanțele, într-un singur pas de undo.
 - **Muți și rotești** o instanță separat: celelalte rămân unde sunt, iar o modificare ajunge rotită la o instanță rotită.
 - **Fă unică**, din proprietăți, lasă o instanță să o ia pe drumul ei. **Selectează instanțele** le selectează pe toate.
-- **Mirror** îți cere să faci întâi instanța unică.
+- **Mirror** o păstrează instanță, cu mâna schimbată: ce modifici în oricare ajunge oglindit în cealaltă.
 
 **Gestionare → Componente** listează componentele proiectului și câte instanțe are fiecare. Acolo le redenumești sau le selectezi instanțele. Instanțele sunt elemente obișnuite în planuri, secțiuni, liste, cantități și exporturi, fiecare cu GlobalId-ul ei.
 

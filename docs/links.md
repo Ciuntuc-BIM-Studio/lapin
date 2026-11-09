@@ -37,10 +37,12 @@ Un nor de puncte e o legătură de tip `pointcloud` (decizia 395, `docs/plan-vis
 
 File → Link Lapin project… (`project.linkLapin`, `Lapin.Protocol/HotLinks.cs`, cerut de un tester, 09.11.2026, ca hotlink-ul din ArchiCAD): un alt `.lapin` legat, doar pentru citire, ca un modul așezat unde spui (x, y, rotație). Se repetă astfel clădiri sau apartamente întregi cu pereți, ceea ce componentele nu fac (`docs/components.md`).
 
-- **Cum intră.** Sursa se citește într-o sesiune separată, se mută și se rotește acolo (`element.transform`), se scrie ca IFC cu intenția Lapin și intră prin `IfcImport.Link`, cu `kind: "lapin"`. Pereții, ușile și plăcile vin astfel native, cu simbolurile lor în plan. Referințele din fișiere rămân unde le-a pus fișierul; mesajul spune câte.
+- **Cum intră.** Sursa se citește într-o sesiune separată, se mută și se rotește acolo (`element.transform`), se scrie ca IFC cu intenția Lapin și intră prin `IfcImport.Link`, cu `kind: "lapin"`. Pereții, ușile și plăcile vin astfel native, cu simbolurile lor în plan. Ce leagă sursa la rândul ei intră ca al ei, în afară de ce e ascuns acolo (`HotLinks.OwnAll`), iar referințele din fișiere se mută odată cu restul: corpurile, și cele netăiate și ale golurilor, instanțele corpurilor partajate și 2D-ul lor (`HotLinks.Carry`).
 - **GlobalId-uri proprii.** Fiecare legătură are un `seed` în `options`, iar `HotLinks.Seeded` derivă din el toate GlobalId-urile fișierului, oriunde sunt numite. Același proiect se poate lega de câte ori vrei, iar o copie a chiar proiectului deschis nu îi atinge elementele. La recitire, același `seed` dă aceleași id-uri.
-- **Când se schimbă sursa.** `options.modified` ține data fișierului citit; `project.linksChanged` listează legăturile a căror sursă s-a schimbat, iar Manage → Links arată „The source changed: read it again”. Recitirea nu se face singură.
-- **Rămase:** editarea sursei din proiectul gazdă, un hotlink în interiorul altui hotlink (ce e legat în sursă nu intră), repoziționarea unei legături fără s-o refaci.
+- **Când se schimbă sursa.** `options.modified` ține data fișierului citit; `project.linksChanged` listează legăturile a căror sursă s-a schimbat, iar Manage → Links arată „The source changed: read it again”. Recitirea nu se face singură, dar la întoarcerea în fereastră un mesaj anunță schimbarea (`LinkedProjectsWatch`).
+- **Reașezare.** `project.reloadLink {id, x?, y?, rotation?, data?}`: același `seed`, deci aceleași id-uri, iar ce e cotat sau legat de ele rămâne. Butonul Place din Manage → Links.
+- **În browser.** Pagina nu ține calea fișierului: recitirea și reașezarea cer fișierul din nou (`data`).
+- **Editarea sursei.** Open separately o deschide ca proiect în altă fereastră (`openStartupFile`, care înainte o trata ca IFC); editarea din interiorul gazdei nu se face, pentru că ar însemna două proiecte deschise într-o sesiune.
 
 ## Rămase
 

@@ -36,6 +36,20 @@ public class ComponentTests
     static double MaxX(Entity slab) => Corners(slab).Max(c => c.X);
 
     [Fact]
+    public void Many_instances_follow_an_edit_in_reasonable_time()
+    {
+        var (f, group, _, slab, _, component) = Two();
+        for (var i = 2; i <= 200; i++) f.Run("element.transform", new JsonObject { ["ids"] = Ids(group), ["op"] = "copy", ["by"] = P(10 * i, 0) });
+        Assert.Equal(201, Components.Instances(f.Model, component).Count());
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        f.Run("architecture.updateSlab", new JsonObject { ["id"] = slab, ["points"] = Ring(0, 0, 3, 1) });
+        clock.Stop();
+        Console.WriteLine($"An edit carried to 200 instances of two members: {clock.ElapsedMilliseconds} ms");
+        Assert.True(clock.ElapsedMilliseconds < 20_000, $"{clock.ElapsedMilliseconds} ms");
+        Assert.All(Components.Instances(f.Model, component), g => Assert.Equal(3, MaxX(MemberOf(f, g.Id, IfcClass.Slab)) - MinX(MemberOf(f, g.Id, IfcClass.Slab)), 6));
+    }
+
+    [Fact]
     public void Walls_cannot_be_part_of_a_component()
     {
         var f = F();
@@ -172,9 +186,40 @@ public class ComponentTests
     }
 
     [Fact]
-    public void An_instance_is_not_mirrored_until_it_is_unique()
+    public void A_mirrored_instance_stays_an_instance_and_follows_mirrored()
     {
-        var (f, group, _, _, _, _) = Two();
-        Assert.Throws<CommandException>(() => f.Run("element.transform", new JsonObject { ["ids"] = Ids(group), ["op"] = "mirror", ["a"] = P(0, 0), ["b"] = P(0, 1) }));
+        var (f, group, _, slab, _, component) = Two();
+        // A mirrored copy about the line x = -1: from x in 0..2 to x in -4..-2.
+        var made = f.Run("element.transform", new JsonObject { ["ids"] = Ids(group), ["op"] = "mirror", ["a"] = P(-1, 0), ["b"] = P(-1, 1), ["copy"] = true })!;
+        var twin = made["ids"]!.AsArray().Select(x => (string)x!).First(x => f.Model.Get(x)!.Class == Groups.Class);
+        Assert.Equal(component, f.Model.Get(twin)!.Str(Components.Key));
+        var floor = () => MemberOf(f, twin, IfcClass.Slab);
+        Assert.Equal(-2, MaxX(floor()), 6);
+        Assert.Equal(-4, MinX(floor()), 6);
+        // The first made wider, away from the mirror line: the mirrored one grows the other way.
+        f.Run("architecture.updateSlab", new JsonObject { ["id"] = slab, ["points"] = Ring(0, 0, 5, 3) });
+        Assert.Equal(-2, MaxX(floor()), 6);
+        Assert.Equal(-7, MinX(floor()), 6);
+        Assert.Equal(3, Corners(floor()).Max(c => c.Y), 6);
+        // Edited from the mirrored one, back to the first, the right way round.
+        f.Run("architecture.updateSlab", new JsonObject { ["id"] = floor().Id, ["points"] = Ring(-4, 0, 2, 2) });
+        Assert.Equal(2, MaxX(f.Model.Get(slab)!), 6);
+        Assert.Equal(0, MinX(f.Model.Get(slab)!), 6);
+        Assert.Equal(2, Corners(f.Model.Get(slab)!).Max(c => c.Y), 6);
+    }
+
+    [Fact]
+    public void An_instance_mirrored_in_place_then_turned_still_follows()
+    {
+        var (f, group, twin, slab, _, _) = Two();
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(twin), ["op"] = "mirror", ["a"] = P(11, 0), ["b"] = P(11, 1) });
+        f.Run("element.transform", new JsonObject { ["ids"] = Ids(twin), ["op"] = "rotate", ["center"] = P(11, 0), ["angle"] = 90 });
+        var size = (Entity e) => (Corners(e).Max(c => c.X) - Corners(e).Min(c => c.X), Corners(e).Max(c => c.Y) - Corners(e).Min(c => c.Y));
+        Assert.Equal(1, size(MemberOf(f, twin, IfcClass.Slab)).Item1, 6);
+        Assert.Equal(2, size(MemberOf(f, twin, IfcClass.Slab)).Item2, 6);
+        f.Run("architecture.updateSlab", new JsonObject { ["id"] = slab, ["points"] = Ring(0, 0, 6, 1) });
+        Assert.Equal(1, size(MemberOf(f, twin, IfcClass.Slab)).Item1, 6);
+        Assert.Equal(6, size(MemberOf(f, twin, IfcClass.Slab)).Item2, 6);
+        Assert.Equal(group, Groups.Of(f.Model, slab)!.Id);
     }
 }

@@ -1596,6 +1596,8 @@ public static class IfcExport
                 };
                 props.Add(Single(key, value, field == "angle" ? "degrees" : null));
             }
+            // Whatever holds a stored body (a mesh's piece too, which never said so) comes back from the body the file gives it, not as a native element without one.
+            if (StoredBodies.Has(e) && e.Attrs["reference"] == null) props.Add(Single("reference", Typed("IFCBOOLEAN", True)));
             if (kind != null && kind.Class != e.Class) props.Add(Single("LapinClass", Typed("IFCLABEL", S(e.Class))));
             if (e.PredefinedType != null) props.Add(Single("LapinPredefinedType", Typed("IFCLABEL", S(e.PredefinedType))));
             foreach (var (name, value) in extra ?? []) props.Add(Single(name, Typed("IFCLABEL", S(value))));

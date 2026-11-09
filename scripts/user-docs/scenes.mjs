@@ -4911,6 +4911,18 @@ export const scenes = [
       await t.tool('manage.links');
       await t.wait(500);
       await t.shot('hotlink-links', { of: '.dialog', pad: 0 });
+      // Placed elsewhere from the dialog, without linking it again: the same ids (in the browser its file is asked for).
+      const before = new Set((await t.nodes()).filter((n) => n.type === 'IfcWall').map((w) => w.id));
+      await t.page.locator('[data-link=place-project]').first().click();
+      const place = t.page.locator('.ask-box');
+      await place.waitFor({ timeout: 5000 });
+      await place.locator('input').nth(1).fill('30000');
+      const again = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await place.locator('.btn.primary').click();
+      await (await again).setFiles(file);
+      await t.wait(2500);
+      const after = (await t.nodes()).filter((n) => n.type === 'IfcWall');
+      t.expect(after.length === 10 && after.every((w) => before.has(w.id)), `placed elsewhere under the same ids (${after.length})`);
       await t.ui({ dialog: null });
     },
   },

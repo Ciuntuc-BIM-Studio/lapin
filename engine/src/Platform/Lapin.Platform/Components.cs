@@ -17,7 +17,7 @@ public static class Components
     public const string Class = "LapinComponent";
     /// <summary>On an instance's group: its component.</summary>
     public const string Key = "component";
-    /// <summary>On an instance's group: where it stands, [x, y, z, degrees].</summary>
+    /// <summary>On an instance's group: where it stands, [x, y, z, degrees, mirrored (0 or 1)]; mirrored first, about its own x axis, then turned.</summary>
     public const string XfKey = "componentXf";
     /// <summary>On a member: which member it is, the same in every instance.</summary>
     public const string MemberKey = "componentKey";
@@ -30,28 +30,30 @@ public static class Components
     public static bool Takes(Entity e) =>
         !StoredBodies.Has(e) && (e.Class is IfcClass.Slab or IfcClass.Space || e.Str("operation") != null);
 
-    static double[] Xf(Entity g) => g.Attrs[XfKey] is JsonArray { Count: 4 } a ? [.. a.Select(v => Json.Number(v) ?? 0)] : [0, 0, 0, 0];
-    static JsonArray Write(double x, double y, double z, double deg) => new(Math.Round(x, 9), Math.Round(y, 9), Math.Round(z, 9), Math.Round(deg, 9));
-
-    public static void RefuseMirror(IModelView m, IEnumerable<string> groups)
+    static double[] Xf(Entity g)
     {
-        if (groups.Select(m.Get).OfType<Entity>().FirstOrDefault(g => Of(g) != null) is { } g)
-            throw new CommandException($"„{g.Name}” is an instance of a component: make it unique before mirroring it.");
+        if (g.Attrs[XfKey] is not JsonArray { Count: >= 4 } a) return [0, 0, 0, 0, 0];
+        var x = a.Select(v => Json.Number(v) ?? 0).ToList();
+        return [x[0], x[1], x[2], x[3], x.Count > 4 ? x[4] : 0];
     }
 
+    static JsonArray Write(double[] x) => new(Math.Round(x[0], 9), Math.Round(x[1], 9), Math.Round(x[2], 9), Math.Round(x[3], 9), x[4]);
+
+    /// <summary>Where an instance stands once carried by a placement; a mirror turns its handedness over.</summary>
     static double[] Carry(double[] xf, Placement2D t, double up)
     {
         var p = t.Point(new Vec2(xf[0], xf[1]));
-        return [p.X, p.Y, xf[2] + up, xf[3] + t.Turn * 180 / Math.PI];
+        return t.Mirrored
+            ? [p.X, p.Y, xf[2] + up, 2 * t.Axis * 180 / Math.PI - xf[3], xf[4] == 0 ? 1 : 0]
+            : [p.X, p.Y, xf[2] + up, xf[3] + t.Turn * 180 / Math.PI, xf[4]];
     }
 
     /// <summary>An instance moved or turned as a whole: where it stands now. Its members are as they were, seen from it, so nothing follows.</summary>
     public static void MovedInstance(ICommandContext ctx, string groupId, Placement2D t, double up)
     {
         if (ctx.Model.Get(groupId) is not { } g || Of(g) == null) return;
-        var x = Carry(Xf(g), t, up);
         var attrs = g.CloneAttrs();
-        attrs[XfKey] = Write(x[0], x[1], x[2], x[3]);
+        attrs[XfKey] = Write(Carry(Xf(g), t, up));
         ctx.Replace(g.With(attrs: attrs));
     }
 
@@ -59,16 +61,26 @@ public static class Components
     public static void CopiedInstance(ICommandContext ctx, Entity group, Entity twin, Placement2D t, double up)
     {
         if (Of(group) is not { } c) return;
-        var x = Carry(Xf(group), t, up);
         var attrs = twin.CloneAttrs();
         attrs[Key] = c;
-        attrs[XfKey] = Write(x[0], x[1], x[2], x[3]);
+        attrs[XfKey] = Write(Carry(Xf(group), t, up));
         ctx.Replace(twin.With(attrs: attrs));
     }
 
     /// <summary>The placement that takes what is in one instance to where it is in another.</summary>
     static Placement2D Between(double[] from, double[] to)
     {
+        // One mirrored and the other not: a reflection about the line halfway between their turns; else a turn.
+        if ((from[4] != 0) != (to[4] != 0))
+        {
+            var axis = (to[3] + from[3]) * Math.PI / 360;
+            var (c2, s2) = (Math.Cos(2 * axis), Math.Sin(2 * axis));
+            return new Placement2D(p =>
+            {
+                var (dx, dy) = (p.X - from[0], p.Y - from[1]);
+                return new Vec2(to[0] + dx * c2 + dy * s2, to[1] + dx * s2 - dy * c2);
+            }, 0, true, axis);
+        }
         var turn = (to[3] - from[3]) * Math.PI / 180;
         var (c, s) = (Math.Cos(turn), Math.Sin(turn));
         return new Placement2D(p =>
@@ -197,7 +209,7 @@ public static class Components
             var at = Middle(ctx, entities);
             var g = group.CloneAttrs();
             g[Key] = component.Id;
-            g[XfKey] = Write(at.X, at.Y, 0, 0);
+            g[XfKey] = Write([at.X, at.Y, 0, 0, 0]);
             ctx.Replace(group.With(attrs: g));
             return new JsonObject { ["id"] = group.Id, ["component"] = component.Id };
         });

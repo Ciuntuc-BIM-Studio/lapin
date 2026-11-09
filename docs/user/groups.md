@@ -31,7 +31,7 @@ Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Th
 - **Double-click** an instance to open it, as a group. What you change inside (an outline, a height, a push/pull, a new or deleted member) changes in every instance, in one undo step.
 - **Move and turn** an instance on its own: the others stay where they are, and an edit reaches a turned instance turned.
 - **Make unique**, in its properties, lets one instance go its own way. **Select instances** selects them all.
-- **Mirror** asks you to make the instance unique first.
+- **Mirror** keeps it an instance, of the other hand: what you change in either reaches the other mirrored.
 
 **Manage → Components** lists the project's components, with how many instances each has. Rename them there, or select all the instances of one. The instances are ordinary elements in plans, sections, schedules, quantities and exports, each with its own GlobalId.
 

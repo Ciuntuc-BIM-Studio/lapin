@@ -21,7 +21,7 @@ import { assistantAvailable } from '../../assistant/available';
 import { showPropsTab } from '../../app/panels';
 import { SheetSection } from './SheetSection';
 import { Visibility3D, VisibilityDialog, openVisibility } from './VisibilityDialog';
-import { LinksDialog, LinksLook } from './LinksDialog';
+import { LinkedProjectsWatch, LinksDialog, LinksLook } from './LinksDialog';
 import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { openDocuments } from './documents/documents';
 import { convertToNative } from './convertTools';
@@ -116,7 +116,7 @@ const butDiscipline = (cls: string) => () => (useSession.getState().info?.nodeTy
 const viewFields = (node: NodeDto) => butDiscipline('LapinView')().filter((k) => viewShowsField(node.props.kind, k));
 
 /** What the core keeps running while the workspace is open: the 3D's visibility and storeys shown, the links' looks. */
-function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /></>; }
+function CoreBackground() { return <><Visibility3D /><Storeys3DLooks /><LinksLook /><LinkedProjectsWatch /></>; }
 
 const core: LapinModule = {
   id: 'core',
