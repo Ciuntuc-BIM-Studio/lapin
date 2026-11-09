@@ -10,6 +10,8 @@ Work asked for or left open, not started yet. When an item is done, it moves to 
 
   Both are configured like doors and windows (a type, a configurator with its pictures, styles), drawn in plan, elevation, section and 3D, scheduled and measured, and written to IFC. Fit them in with wall openings (decision 392) and the exhaust fans' wall provisions (decision 349).
 
+- **BIM Open Schema in the browser** (found 09.11.2026). A `.bos` whose Parquet pages are Brotli-compressed (the `digitalhub-*.bos` samples) cannot be read in the web build, before or after the lazy parts of decision 413; the desktop reads them. Fix it, or say so in the guide's BOS section.
+
 ## Left open by earlier work
 
 - Point clouds:
