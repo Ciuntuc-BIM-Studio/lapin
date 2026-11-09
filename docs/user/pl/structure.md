@@ -22,6 +22,10 @@ Karta **Konstrukcja** zawiera szkielet i fundamenty.
 
 Rysuj fundamenty na poziomie **Fundamenty** albo daj im osobny rzut.
 
+**Ława fundamentowa to sam beton**, chyba że poprosisz o ścianę. Gdy włączona jest **Ława fundamentowa** lub **Ława fundamentowa łukowa**, pasek wiersza poleceń oferuje **Sama ława** (domyślnie: betonowa ława 600 × 400 mm, typ z profilem tworzony za pierwszym razem) lub **Ze ścianą** (cokół typu ławy fundamentowej na niej, z jego warstwami) oraz który typ ze ścianą użyć. Wybór jest zapamiętywany. Już narysowana ława zmienia się wraz ze swoim typem w **Typy konstrukcyjne**.
+
+![Opcja narzędzia ławy fundamentowej w wierszu poleceń: sama ława lub ze ścianą](shots/structure-strip-option.webp)
+
 **W rzutach.** Ława leży pod stropem, więc rzut rysuje ją linią przerywaną w rzucie poziomu, na którym stoi, jak rzut budynku pokazuje to, co jest pod nim. Aby zobaczyć ją przeciętą i widzianą, użyj **rzutu fundamentów**: w przeglądarce projektu **+** obok **Rzuty** tworzy go dla aktywnego poziomu (cięcie 0,50 m pod nim, widok 2,50 m w dół).
 
 ![Słupy, belki i stopy fundamentowe w 3D](shots/structure-3d.webp)

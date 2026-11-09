@@ -112,6 +112,33 @@ public class FootingProfileTests : IDisposable
     }
 
     [Fact]
+    public void A_strip_footing_can_be_the_concrete_alone_without_the_wall_on_it()
+    {
+        // A tester's report #116: "only model the concrete element, not the wall".
+        var f = Make();
+        string Add(JsonObject extra, double y)
+        {
+            var a = new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = y, ["x2"] = 5, ["y2"] = y };
+            foreach (var (k, v) in extra) a[k] = v?.DeepClone();
+            return (string)f.Run("structure.addStripFooting", a)!["id"]!;
+        }
+        var alone = Add(new JsonObject { ["stem"] = false }, 0);
+        Assert.Equal(0.6 * 0.4 * 5, Volume(f, alone), 9);
+        Assert.InRange(f.Bounds(alone).Max.Z - f.Bounds(alone).Min.Z, 0.399, 0.401);
+        // The next ones take the same footing type, not a new one each.
+        var again = Add(new JsonObject { ["stem"] = false }, 3);
+        Assert.Equal(f.Model.RelatingOf(alone, IfcClass.RelDefinesByType)!.Id, f.Model.RelatingOf(again, IfcClass.RelDefinesByType)!.Id);
+        // With the wall: the standard type, its stem 1.4 m on the footing, as before.
+        var walled = Add(new JsonObject { ["stem"] = true }, 6);
+        Assert.InRange(f.Bounds(walled).Max.Z - f.Bounds(walled).Min.Z, 1.799, 1.801);
+        Assert.NotEqual(f.Model.RelatingOf(alone, IfcClass.RelDefinesByType)!.Id, f.Model.RelatingOf(walled, IfcClass.RelDefinesByType)!.Id);
+        // A type named wins, whatever "stem" says.
+        var named = f.Model.RelatingOf(walled, IfcClass.RelDefinesByType)!.Id;
+        var chosen = Add(new JsonObject { ["stem"] = false, ["typeId"] = named }, 9);
+        Assert.Equal(named, f.Model.RelatingOf(chosen, IfcClass.RelDefinesByType)!.Id);
+    }
+
+    [Fact]
     public void A_type_turns_from_its_stem_to_a_profile_and_back()
     {
         var f = Make();

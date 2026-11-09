@@ -22,6 +22,10 @@ Tabul **Structură** are cadrele și fundațiile.
 
 Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
+**O fundație continuă e doar betonul**, dacă nu ceri peretele. Cât timp **Fundație continuă** sau **Fundație continuă curbă** e pornită, bara liniei de comandă oferă **Doar fundația** (implicit: o talpă de beton de 600 × 400 mm, un tip cu profil făcut prima dată) sau **Cu perete** (soclul unui tip de fundație continuă deasupra, cu straturile lui) și tipul cu perete de folosit. Alegerea se ține minte. O fundație deja desenată se schimbă cu tipul ei în **Tipuri structurale**.
+
+![Opțiunea uneltei fundație continuă în linia de comandă: doar fundația sau cu perete](shots/structure-strip-option.webp)
+
 **În planuri.** O fundație stă sub planșeu, deci planul o desenează întrerupt în planul nivelului pe care stă, cum arată planul unei clădiri ce e dedesubt. Ca s-o vezi tăiată și văzută, folosește un **plan de fundații**: în browserul proiectului, **+** de lângă **Planuri** face unul pentru nivelul activ (tăiat la 0,50 m sub el, privind 2,50 m în jos).
 
 ![Stâlpi, grinzi și fundații izolate în 3D](shots/structure-3d.webp)

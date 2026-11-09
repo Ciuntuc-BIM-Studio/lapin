@@ -22,6 +22,10 @@ Die Registerkarte **Tragwerk** enthält das Skelett und die Gründung.
 
 Zeichnen Sie die Gründung auf der Ebene **Foundations**, oder geben Sie ihr einen eigenen Grundriss.
 
+**Ein Streifenfundament ist nur der Beton**, solange Sie die Wand nicht verlangen. Ist **Streifenfundament** oder **Gebogenes Streifenfundament** aktiv, bietet die Leiste der Befehlszeile **Nur das Fundament** (Standard: ein Betonfundament 600 × 400 mm, ein Profiltyp, der beim ersten Mal angelegt wird) oder **Mit Wand** (der Sockel eines Streifenfundament-Typs darauf, mit seinen Schichten) und welchen Streifenfundament-Typ mit Wand es nimmt. Die Wahl bleibt erhalten. Ein schon gezeichnetes Fundament ändert sich mit seinem Typ in **Tragwerkstypen**.
+
+![Die Option des Streifenfundament-Werkzeugs in der Befehlszeile: nur das Fundament oder mit Wand](shots/structure-strip-option.webp)
+
 **In den Grundrissen.** Ein Fundament liegt unter der Decke, darum zeichnet ein Grundriss es gestrichelt im Grundriss der Ebene, auf der es steht, wie ein Gebäudegrundriss zeigt, was darunter liegt. Um es geschnitten und gesehen zu sehen, nehmen Sie einen **Fundamentgrundriss**: im Projektbrowser legt das **+** neben **Grundrisse** einen für die aktive Ebene an (0,50 m darunter geschnitten, 2,50 m tief gesehen).
 
 ![Stützen, Träger und Einzelfundamente in 3D](shots/structure-3d.webp)

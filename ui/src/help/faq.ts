@@ -839,6 +839,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Open Structure', labelRo: 'Deschide Structure', run: { kind: 'tab', id: 'structure' } },
     source: 'report #115',
   },
+  {
+    id: 'strip-footing-alone',
+    q: ['Strip footing with wall: only model the concrete element, not the wall', 'How do I draw a strip footing without a wall on it?', 'Can I choose the wall before drawing the strip footing?'],
+    qRo: ['Fundație continuă cu perete: vreau doar betonul, fără perete', 'Cum desenez o fundație continuă fără perete deasupra?', 'Pot alege peretele înainte să desenez fundația continuă?'],
+    keywords: ['strip', 'footing', 'footings', 'wall', 'stem', 'concrete', 'alone', 'only', 'foundation', 'continuous', 'fundatie', 'continua', 'perete', 'beton', 'soclu', 'doar', 'banda', 'sf'],
+    a: 'Structure → Strip footing (SF), and its option in the command line\'s bar: Footing alone (the default: the concrete footing, 600 × 400, as a profile type) or With wall (the stem of a strip type on it, with its layers); next to it, the type with a wall to use. The choice is kept. Curved strip footing has the same option. A footing already drawn changes with its type in Structure types.',
+    aRo: 'Structure → Strip footing (SF) și opțiunea lui din bara liniei de comandă: Footing alone (implicit: talpa de beton, 600 × 400, ca tip cu profil) sau With wall (soclul unui tip de fundație continuă deasupra, cu straturile lui); alături, tipul cu perete de folosit. Alegerea se ține minte. Curved strip footing are aceeași opțiune. O fundație deja desenată se schimbă cu tipul ei în Structure types.',
+    action: { label: 'Open Structure types', labelRo: 'Deschide Structure types', run: { kind: 'tool', id: 'structure.types' } },
+    source: 'report #116',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

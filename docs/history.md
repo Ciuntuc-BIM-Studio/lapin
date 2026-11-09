@@ -217,3 +217,5 @@ Then (#432, testers' report #76) doors and windows carry data as free text (U-va
 Then (#434, a tester's report #118) a DXF's survey points in the browser answered `Unknown command "civil.dxfPointLayers"`: the interface asked a query as a command (also on the desktop); `scripts/check-commands.mjs` (in `check-web.mjs` and the UI tests) checks that every command and query the interface names exists as the kind it is called as; Lambert-93 (EPSG:2154) in `GeoRef`, tested against PROJ, and numbers of an unknown map system are kept and said so.
 
 Then (#435, a tester's report #115) footings under a plan's range (pad and strip, `Generator.HiddenBelowInPlan`) are drawn dashed in the plan of their storey; a foundation plan cuts and sees them.
+
+Then (#436, a tester's report #116) a strip footing is the concrete alone by default, the wall (its stem) optional: `addStripFooting {stem}`, the tool's option in the command line's bar (`stripOptions.tsx`), `StripFootings.FootingAloneType`.

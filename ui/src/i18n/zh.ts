@@ -1342,6 +1342,13 @@ export const ZH: Record<string, string> = {
   // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
   'The drawing could not be read as DXF.': '无法将该图纸读取为 DXF。',
   'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': '已按文件自身的数值导入测量点：它们看起来像地图坐标，但其坐标系不是 Lapin 已知的（Stereo 70、Lambert-93、UTM、Web Mercator、WGS 84）。请在“管理 → 位置”中指定，或先转换图纸。',
+  // Report #116: a strip footing alone or with its wall (decision 427+)
+  'Footing alone': '仅基础',
+  'With wall': '带墙',
+  'Wall on the footing': '基础上的墙',
+  'Strip type with a wall': '带墙的条形基础类型',
+  'First type with a wall': '第一个带墙的类型',
+  'Draw the concrete footing alone, or with the wall (the stem) of a strip type on it': '只绘制混凝土基础，或在其上带条形基础类型的墙（基座）',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

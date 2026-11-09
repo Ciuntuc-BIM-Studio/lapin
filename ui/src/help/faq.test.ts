@@ -182,6 +182,8 @@ describe('Ask Lapin', () => {
   });
 
   it('answers the testers\' reports #115 to #118', () => {
+    expect(best('strip footing with wall. when modeling it is sometimes useful to only model the concrete element, not the wall')).toBe('strip-footing-alone');
+    expect(best('cum desenez o fundatie continua fara perete')).toBe('strip-footing-alone');
     expect(best('Pad footing elements added show only in 3D, not in the plan')).toBe('footings-in-plan');
     expect(best('pad footings not showing in 2D')).toBe('footings-in-plan');
     expect(best('de ce nu apar fundatiile izolate in plan')).toBe('footings-in-plan');

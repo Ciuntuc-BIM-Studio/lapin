@@ -1344,6 +1344,13 @@ export const DE: Record<string, string> = {
   // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
   'The drawing could not be read as DXF.': 'Die Zeichnung konnte nicht als DXF gelesen werden.',
   'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'Vermessungspunkte mit den eigenen Zahlen der Datei importiert: sie sehen wie Kartenkoordinaten aus, ihr System kennt Lapin aber nicht (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Benennen Sie es unter Verwalten → Standort oder konvertieren Sie die Zeichnung zuerst.',
+  // Report #116: a strip footing alone or with its wall (decision 427+)
+  'Footing alone': 'Nur das Fundament',
+  'With wall': 'Mit Wand',
+  'Wall on the footing': 'Wand auf dem Fundament',
+  'Strip type with a wall': 'Streifenfundament-Typ mit Wand',
+  'First type with a wall': 'Erster Typ mit Wand',
+  'Draw the concrete footing alone, or with the wall (the stem) of a strip type on it': 'Nur das Betonfundament zeichnen oder mit der Wand (dem Sockel) eines Streifenfundament-Typs darauf',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

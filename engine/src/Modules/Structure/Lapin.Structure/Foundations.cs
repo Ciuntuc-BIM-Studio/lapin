@@ -123,6 +123,19 @@ public static class StripFootings
     public static Entity DefaultType(IEdit edit) => CreateType(edit, null, DefaultLayers);
 
     /// <summary>
+    /// A strip footing without a wall on it (decision 436, a tester's report #116): the concrete footing alone, a profile type
+    /// (the catalogue's rectangular footing, 600 × 400 at the bottom level of the standard one). The project's first such
+    /// type, else one made.
+    /// </summary>
+    public static Entity FootingAloneType(ICommandContext ctx)
+    {
+        foreach (var t in ctx.Model.OfClass(IfcClass.FootingType))
+            if (IsStrip(t) && ProfileOf(ctx.Model, t) != null) return t;
+        var profile = Profiles.Ensure(ctx, "footingRect", null);
+        return CreateProfileType(ctx, "Strip footing 600×400", Profiles.Read(profile)!, profile.Id);
+    }
+
+    /// <summary>
     /// A strip foundation type of a profile (decision 297): the profile (its id and its copy) swept along the axis, its
     /// insertion point on the axis at the bottom level; no stem layers.
     /// </summary>

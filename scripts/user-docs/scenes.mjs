@@ -2908,6 +2908,14 @@ export const scenes = [
       await open3d(t);
       await t.shot('structure-3d', { of: 'canvas', pad: 0 });
       t.expect((await t.nodes()).filter((n) => n.type === 'IfcColumn').length === 6, 'six columns');
+      // Decision 427 (report #116): the strip footing is the concrete alone unless the wall is asked for, in the command line's bar.
+      await t.tool('structure.strip');
+      t.expect(await t.page.locator('[data-testid=strip-wall]').count() === 1, 'the strip footing tool offers its wall');
+      t.expect(await t.page.locator('[data-testid=strip-wall]').inputValue() === 'alone', 'a footing alone by default');
+      await t.ui({ view: 'plan' });
+      await t.wait(500);
+      await t.shot('structure-strip-option', { of: '.cad-prompt', pad: 4 });
+      await t.keys('Escape');
     },
   },
   {

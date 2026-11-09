@@ -1343,6 +1343,13 @@ export const RO: Record<string, string> = {
   // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
   'The drawing could not be read as DXF.': 'Desenul nu a putut fi citit ca DXF.',
   'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'Punctele de teren au fost importate cu numerele fișierului: par coordonate de hartă, dar sistemul lor nu e unul pe care Lapin îl cunoaște (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Numește-l în Gestionare → Amplasament sau convertește mai întâi desenul.',
+  // Report #116: a strip footing alone or with its wall (decision 427+)
+  'Footing alone': 'Doar fundația',
+  'With wall': 'Cu perete',
+  'Wall on the footing': 'Perete pe fundație',
+  'Strip type with a wall': 'Tip de fundație continuă cu perete',
+  'First type with a wall': 'Primul tip cu perete',
+  'Draw the concrete footing alone, or with the wall (the stem) of a strip type on it': 'Desenează doar fundația de beton sau cu peretele (soclul) unui tip de fundație continuă deasupra',
 };
 
 /** Phrases with a number or a name in them. */
