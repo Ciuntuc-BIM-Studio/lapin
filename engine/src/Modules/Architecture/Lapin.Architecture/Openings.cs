@@ -43,8 +43,18 @@ public static class Openings
 
     public static Entity? OpeningOf(IModelView m, string fillId) => m.RelatingOf(fillId, IfcClass.RelFillsElement);
 
-    public static JoinerySpec? SpecOf(IModelView m, string fillId) =>
-        m.RelatingOf(fillId, IfcClass.RelDefinesByType) is { } type ? JoinerySpec.From(type.Attrs["spec"]) : null;
+    public static JoinerySpec? SpecOf(IModelView m, string fillId)
+    {
+        if (m.RelatingOf(fillId, IfcClass.RelDefinesByType) is not { } type || JoinerySpec.From(type.Attrs["spec"]) is not { } spec) return null;
+        // The frame's place in the wall (report #76): the element's own value over the type's, worked out from the wall's build-up.
+        var fill = m.Get(fillId);
+        var own = JoineryPosition.From_(fill?.Attrs["position"]);
+        if (own == null && spec.Position == null) return spec;
+        return OpeningOf(m, fillId) is { } opening && WallOf(m, opening.Id) is { } wall ? spec.Positioned(m, wall, own, fill?.Bool("flipSide") == true) : spec;
+    }
+
+    /// <summary>The spec a type keeps, without any element's position worked in.</summary>
+    public static JoinerySpec? TypeSpecOf(Entity type) => JoinerySpec.From(type.Attrs["spec"]);
 
     /// <summary>
     /// A door's or window's opening of its own size (<c>holeWidth</c>, <c>holeHeight</c> on the opening, metres): the hole
@@ -569,10 +579,13 @@ public static class Openings
             || ThresholdOn && b.Role == "frame" && b.Min.Z < 1e-9 && b.Max.Z <= _spec.Threshold + 1e-9 && b.Max.X - b.Min.X > W - _spec.Frame.Width * 2 - 1e-9;
 
         /// <summary>The exterior sill's section (Y, Z): from under the frame, out past the face, sloping down.</summary>
-        IReadOnlyList<(double, double)> OutsideSillProfile(JoinerySill sill, double past)
+        IReadOnlyList<(double, double)> OutsideSillProfile(JoinerySill sill, double past, bool cutter = false)
         {
             var yOut = YExt + Math.Max(0, sill.Projection) + past;
             var drop = (yOut - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180);
+            // What the wall gives up is the sill and the wedge over it, up to the opening's bottom: a sloped sill falls away from the
+            // frame, and the wall above its top face (report #76) would stand proud of it.
+            if (cutter && drop > 1e-9) return [(_yFE, 0), (yOut, 0), (yOut, -drop - sill.Thickness), (_yFE, -sill.Thickness)];
             return [(_yFE, 0), (yOut, -drop), (yOut, -drop - sill.Thickness), (_yFE, -sill.Thickness)];
         }
 
@@ -656,7 +669,7 @@ public static class Openings
             if (SillOutsideOn)
             {
                 var sill = _d.SillOutside!;
-                var box = Swept(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, OutsideSillProfile(sill, 0.05), "opening");
+                var box = Swept(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, OutsideSillProfile(sill, 0.05, true), "opening");
                 if (box != null) yield return (Reach(sill.Thickness + (YExt + sill.Projection + 0.05 - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180), 0), box);
             }
 
