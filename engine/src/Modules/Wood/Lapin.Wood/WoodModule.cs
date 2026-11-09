@@ -324,9 +324,17 @@ public sealed class WoodModule : ILapinModule, IGeometryFilter, IViewAnnotations
         var o = new List<Framing.Junction>();
         var storey = Spatial.StoreyOf(m, wall.Id)?.Id;
         var reach = Math.Max(Math.Abs(bands.Min(b => b.From)), Math.Abs(bands.Max(b => b.To))) + 0.02;
-        foreach (var other in m.OfClass(IfcClass.Wall))
+        // Only the walls near this one are read (report #125): a wall added elsewhere does not frame this one again. Sorted by the
+        // place in their attributes, a core's half thickness allowed for at most a metre, then read through the model.
+        const double Beyond = 1.05;
+        var end = start + dir * length;
+        var round = new Vec3(reach + Beyond, reach + Beyond, 0);
+        var box = (new Vec3(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y), 0) - round, new Vec3(Math.Max(start.X, end.X), Math.Max(start.Y, end.Y), 0) + round);
+        bool Near(Vec2 p) { var s = Vec2.Dot(p - start, dir); return Math.Abs(Vec2.Cross(dir, p - start)) <= reach && s >= -Beyond && s <= length + Beyond; }
+        foreach (var found in NearReads.Candidates(m, IfcClass.Wall, box))
         {
-            if (other.Id == wall.Id || Spatial.StoreyOf(m, other.Id)?.Id != storey || PathCurve.Of(other) is { IsArc: true }) continue;
+            if (found.Id == wall.Id || (!Near(Walls.Start(found)) && !Near(Walls.End(found)))) continue;
+            if (m.Get(found.Id) is not { } other || Spatial.StoreyOf(m, other.Id)?.Id != storey || PathCurve.Of(other) is { IsArc: true }) continue;
             var (a, b) = (Walls.Start(other), Walls.End(other));
             var od = b - a;
             if (od.Length < 1e-6 || Math.Abs(Vec2.Cross(dir, od.Normalized())) < 0.3) continue;

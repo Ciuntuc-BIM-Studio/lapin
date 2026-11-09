@@ -800,12 +800,22 @@ public sealed class Session
                 }
                 else if (hadItems.Contains(id)) renderRemoved.Add(id);
                 var cls = ClassOf(id);
-                if (cls == null || !_catalog.CutsByProvisions(cls)) continue;
+                if (cls == null) continue;
+                // What reads this class only near it (NearReads, the same second round as a run's hosts).
+                var near = _readers.ContainsKey(NearReads.Any(cls));
+                var cuts = _catalog.CutsByProvisions(cls);
+                if (!near && !cuts) continue;
                 var (before, after) = (was.GetValueOrDefault(id), built?.Bounds);
-                if (before == null && after == null) { cells.Add(Coordination.ProvisionCells.Any); anyCell = true; }
+                if (before == null && after == null)
+                {
+                    if (cuts) cells.Add(Coordination.ProvisionCells.Any);
+                    if (near) cells.Add(NearReads.Any(cls));
+                    anyCell = true;
+                }
                 foreach (var b in new[] { before, after }.OfType<(Vec3 Min, Vec3 Max)>())
                 {
-                    cells.UnionWith(Coordination.ProvisionCells.Of(b));
+                    if (cuts) cells.UnionWith(Coordination.ProvisionCells.Of(b));
+                    if (near) cells.UnionWith(NearReads.Cells(cls, b));
                     runBoxes.Add(b);
                 }
             }
