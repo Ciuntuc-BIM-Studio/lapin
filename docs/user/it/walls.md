@@ -55,6 +55,20 @@ Il muro resta un muro: spessore, strati, giunzioni, porte e finestre restano com
 
 ![Il muro ovest della casa a timpano, con la finestra conservata](shots/wall-profile-3d.webp)
 
+### Il contorno e le aste di una facciata continua
+
+**Profilo…** nelle proprietà di una facciata continua ne disegna il contorno in prospetto, come per un muro: un timpano, una pendenza, gradini o un contorno qualsiasi, con punti da trascinare, aggiungere o togliere e una tabella in millimetri. La facciata sale fino al suo punto più alto. La sua griglia guadagna una linea dove il contorno si spezza (una spezzata a meno di un montante e mezzo da una linea della griglia viene portata su di essa); ogni campo conserva i traversi che stanno sotto il suo punto più basso; il pannello sopra l'ultimo riempie fino al contorno e un'asta di bordo lo segue, inclinata; i montanti sono tagliati a esso. Le impostazioni del tipo restano, e **Profilo…** riapre il contorno per cambiarlo, senza ricostruire; **Sommità piana** restituisce il rettangolo. Si vede in 3D, prospetti e sezioni, i computi misurano pannelli e aste come disegnati, e l'IFC li porta come parti.
+
+![Un timpano disegnato come contorno di una facciata continua](shots/curtain-boundary-editor.webp)
+
+![La facciata continua sotto il suo timpano, in 3D](shots/curtain-boundary-3d.webp)
+
+**Aste…** dà a montanti e traversi scelti un profilo proprio. Il prospetto della facciata mostra ogni asta: clicca su una (<kbd>Maiusc</kbd> o <kbd>Ctrl</kbd>/<kbd>⌘</kbd> ne aggiunge, o prendi tutti i montanti o tutti i traversi), scegli un profilo dalle [librerie di profili](profiles.md) o una scatola semplice, la sua **Rotazione** e il suo **Specchio**, il suo allineamento trasversale all'asta (faccia anteriore o posteriore sul suo piano) e lungo (bordo iniziale o finale sulla linea della griglia o sul livello) e i suoi spostamenti trasversale e verso l'esterno dell'edificio; l'immagine accanto mostra la sezione come sta. **Applica a quelli scelti** dà loro lo stile, **Torna a quello del tipo** lo toglie. Il profilo proprio di un tipo ha gli stessi campi di posizione in **Facciate continue…**, per ogni facciata del tipo. Il profilo resta una copia nel progetto: **Aggiorna dalla libreria** cambia ogni asta che ne è fatta, in questa facciata e in altre.
+
+![Aste: un profilo posato sui montanti scelti](shots/curtain-members-dialog.webp)
+
+![Due montanti con un profilo proprio, in 3D](shots/curtain-members-3d.webp)
+
 ## Tipi di muro
 
 Un tipo di muro è un insieme di strati, dalla faccia a destra del verso in cui il muro è disegnato (l’esterno, se disegni intorno all’edificio in senso antiorario) alla faccia alla sua sinistra. Ogni strato ha un materiale e uno spessore, e uno strato è il **nucleo**. La linea del muro corre lungo il nucleo. Per modificare i tipi, scegli **Architettura → Tipi di muro**. Uno strato diverso dal nucleo può avere un’altezza propria: **Da** e **Fino a** stabiliscono fin dove arriva sopra la base del muro (uno zoccolo piastrellato fino a 1500, un rivestimento da 300 in su); se vuoti, lo strato corre per tutta l’altezza.

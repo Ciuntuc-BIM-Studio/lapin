@@ -55,6 +55,20 @@ A parede continua uma parede: a espessura, as camadas, as junções e as portas 
 
 ![A parede oeste da casa como empena, com a janela mantida](shots/wall-profile-3d.webp)
 
+### O contorno e as barras de uma parede-cortina
+
+**Perfil…** nas propriedades de uma parede-cortina desenha o seu contorno em alçado, como numa parede: um frontão, uma inclinação, degraus ou qualquer contorno, com pontos para arrastar, acrescentar ou retirar e uma tabela em milímetros. A parede sobe até ao seu ponto mais alto. A sua malha ganha uma linha onde o contorno quebra (uma quebra a menos de um montante e meio de uma linha da malha é levada para ela); cada vão mantém as travessas que cabem sob o seu ponto mais baixo; o painel acima da última enche até ao contorno e uma barra de bordo segue-o, inclinada; os montantes são cortados por ele. As definições do tipo mantêm-se, e **Perfil…** volta a abrir o contorno para o mudar, sem reconstruir; **Topo plano** devolve o retângulo. Vê-se em 3D, alçados e cortes, os mapas medem painéis e barras como desenhados, e o IFC leva-os como peças.
+
+![Um frontão desenhado como contorno de uma parede-cortina](shots/curtain-boundary-editor.webp)
+
+![A parede-cortina sob o seu frontão, em 3D](shots/curtain-boundary-3d.webp)
+
+**Barras…** dá a montantes e travessas escolhidos um perfil próprio. O alçado da parede mostra cada barra: clique numa (<kbd>Shift</kbd> ou <kbd>Ctrl</kbd>/<kbd>⌘</kbd> acrescenta mais, ou tome todos os montantes ou todas as travessas), escolha um perfil das [bibliotecas de perfis](profiles.md) ou uma caixa simples, a sua **Rotação** e o seu **Espelhamento**, o seu alinhamento na transversal da barra (face da frente ou de trás no seu plano) e ao longo (aresta inicial ou final na linha da malha ou no nível) e os seus deslocamentos na transversal e para o exterior do edifício; a imagem ao lado mostra a secção como assenta. **Aplicar aos escolhidos** dá-lhes o estilo, **Voltar ao do tipo** tira-o. O perfil próprio de um tipo tem os mesmos campos de posição em **Paredes-cortina…**, para cada parede do tipo. O perfil continua uma cópia no projeto: **Atualizar da biblioteca** muda cada barra feita com ele, nesta parede e noutras.
+
+![Barras: um perfil colocado nos montantes escolhidos](shots/curtain-members-dialog.webp)
+
+![Dois montantes com perfil próprio, em 3D](shots/curtain-members-3d.webp)
+
 ## Tipos de parede
 
 Um tipo de parede é um conjunto de camadas, da face à direita do sentido em que a parede é desenhada (a externa, quando você desenha ao redor de um edifício no sentido anti-horário) à face à sua esquerda. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.

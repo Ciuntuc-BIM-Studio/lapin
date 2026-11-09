@@ -55,6 +55,20 @@ Væggen forbliver en væg: dens tykkelse, dens lag, dens samlinger og dens døre
 
 ![Husets vestvæg som gavl, med vinduet bevaret](shots/wall-profile-3d.webp)
 
+### En facadeglasvægs kant og stænger
+
+**Profil…** i en facadeglasvægs egenskaber tegner dens kant i opstalt, som for en væg: en gavl, en hældning, trin eller et vilkårligt omrids, med punkter, der kan trækkes, tilføjes eller fjernes, og en tabel i millimeter. Væggen går op til sit højeste punkt. Dens raster får en linje, hvor kanten knækker (et knæk inden for halvanden sprosse fra en rasterlinje flyttes ind på den); hvert felt beholder de tværposte, der er plads til under dets laveste punkt; panelet over den sidste fylder op til kanten, og en kantstang følger den, skrå; sprosserne skæres til den. Typens indstillinger bliver, og **Profil…** åbner kanten igen, så du kan ændre den, uden genopbygning; **Plan top** giver rektanglet tilbage. Den ses i 3D, opstalter og snit, lister måler paneler og stænger, som de er tegnet, og IFC bærer dem som dele.
+
+![En gavl tegnet som kant på en facadeglasvæg](shots/curtain-boundary-editor.webp)
+
+![Facadeglasvæggen under sin gavl, i 3D](shots/curtain-boundary-3d.webp)
+
+**Stænger…** giver valgte sprosser og tværposte en egen profil. Væggens opstalt viser hver stang: klik på en (<kbd>Shift</kbd> eller <kbd>Ctrl</kbd>/<kbd>⌘</kbd> tilføjer flere, eller tag alle sprosser eller alle tværposte), vælg en profil fra [profilbibliotekerne](profiles.md) eller en enkel kasse, dens **Rotation** og **Spejl**, dens justering på tværs af stangen (for- eller bagside på dens plan) og langs den (start- eller slutkant på rasterlinjen eller niveauet) og dens forskydninger på tværs og ud af bygningen; billedet ved siden af viser tværsnittet, som det sidder. **Anvend på de valgte** giver dem stilen, **Tilbage til typens** fjerner den. En types egen profil har de samme placeringsfelter i **Facadeglasvægge…**, for hver væg af typen. Profilen forbliver en kopi i projektet: **Opdatér fra biblioteket** ændrer hver stang lavet af den, i denne væg og i andre.
+
+![Stænger: en profil placeret på de valgte sprosser](shots/curtain-members-dialog.webp)
+
+![To sprosser med egen profil, i 3D](shots/curtain-members-3d.webp)
+
 ## Vægtyper
 
 En vægtype er et sæt lag, fra siden til højre for den retning, væggen tegnes i (ydersiden, når du tegner rundt om en bygning mod uret), til siden til venstre. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.

@@ -55,6 +55,20 @@ The wall stays a wall: its thickness, its layers, its joins and its doors and wi
 
 ![The house's west wall as a gable, its window kept](shots/wall-profile-3d.webp)
 
+### A curtain wall's boundary and members
+
+**Profile…** in a curtain wall's properties draws its boundary in elevation, as for a wall: a gable, a slope, steps, or any outline, with points to drag, add or take out and a table in millimetres. The wall rises to its highest point. Its grid gains a line where the boundary bends (a bend within a mullion and a half of a grid line is moved onto it); each bay keeps the transoms that fit under its lowest point; the panel above the last one fills up to the boundary, and an edge member follows it, sloped; the mullions are cut to it. The type's settings stay, and **Profile…** opens the boundary again to change it, with no rebuilding; **Flat top** gives the rectangle back. It shows in 3D, elevations and sections, the schedules measure the panels and members as drawn, and the IFC carries them as parts.
+
+![A gable drawn as a curtain wall's boundary](shots/curtain-boundary-editor.webp)
+
+![The curtain wall under its gable, in 3D](shots/curtain-boundary-3d.webp)
+
+**Members…** gives chosen mullions and transoms a profile of their own. The wall's elevation shows every member: click one (<kbd>Shift</kbd> or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> adds more, or take all the mullions or all the transoms), choose a profile from the [profile libraries](profiles.md) or a plain box, its **Rotation** and **Mirror**, its alignment across the member (front or back face on its plane) and along it (start or end edge on the grid line or level), and its offsets across and out of the building; the picture beside shows the section as it sits. **Apply to the chosen** gives them the style, **Back to the type's** takes it off. A type's own profile has the same place fields in **Curtain walls…**, for every wall of the type. The profile stays a copy in the project: **Update from the library** changes every member made of it, in this wall and in others.
+
+![Members: a profile placed on the mullions chosen](shots/curtain-members-dialog.webp)
+
+![Two mullions with a profile of their own, in 3D](shots/curtain-members-3d.webp)
+
 ## Wall types
 
 A wall type is a set of layers, from the face on the right of the way the wall is drawn (the outside, when you draw round a building anticlockwise) to the face on its left. Each layer has a material and a thickness, and one layer is the **core**. The wall's line runs along the core. To edit the types, choose **Architecture → Wall types**. A layer other than the core may have a height of its own: **From** and **Up to** set how high it goes over the wall's base (a tiled dado up to 1500, a cladding from 300 up); empty, it runs the whole height.

@@ -51,6 +51,10 @@ Draw the section with Drafting as closed polylines and circles (those inside ano
 
 **Draw its outline** does the opposite: the chosen profile's outline as closed polylines in the view in front, for Studio to extrude or sweep.
 
+**Draw a profile…** opens the section editor: the outside and its chambers as points in millimetres. Drag the points (1 mm; <kbd>Shift</kbd> 5 mm), click an outline to add a point, right-click a point to take it out, or type them in the table; start from a rectangle, a hollow box, a T, an angle or a channel with the sizes you give, and add chambers in the middle. Name it, choose aluminium, make it and keep it like any outline. **Edit its outline…** opens a profile you have in the editor: kept again under its name, the project's copy is marked newer and **Update from the library** brings it to every type and every curtain wall member made of it. Chosen mullions and transoms take a profile of their own, turned, aligned and offset: see [Walls](walls.md).
+
+![The section editor: a hollow box with its chamber](shots/profile-editor.webp)
+
 ## Using a profile
 
 In **Steel → Steel types**, **Structure → Structure types** (columns and beams) and the portal frame hall's profiles, choose **From a profile library…** and type to search.

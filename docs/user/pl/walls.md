@@ -55,6 +55,20 @@ Niżej sekcja **Zależności** pokazuje, co jest zbudowane ze ściany i z czego 
 
 ![Zachodnia ściana domu jako szczyt, z zachowanym oknem](shots/wall-profile-3d.webp)
 
+### Obrys i pręty ściany osłonowej
+
+**Profil…** we właściwościach ściany osłonowej rysuje jej obrys na elewacji, jak dla ściany: szczyt, spadek, stopnie lub dowolny kontur, z punktami do przeciągania, dodawania lub usuwania i tabelą w milimetrach. Ściana sięga swojego najwyższego punktu. Jej siatka zyskuje linię tam, gdzie obrys się załamuje (załamanie bliżej niż półtora słupka od linii siatki jest przenoszone na nią); każde pole zachowuje rygle, które mieszczą się pod jego najniższym punktem; panel nad ostatnim wypełnia aż do obrysu, a pręt brzegowy podąża za nim, skośny; słupki są do niego przycinane. Ustawienia typu pozostają, a **Profil…** otwiera obrys ponownie, by go zmienić, bez przebudowy; **Płaska góra** zwraca prostokąt. Widać go w 3D, na elewacjach i przekrojach, zestawienia mierzą panele i pręty tak, jak narysowane, a IFC niesie je jako części.
+
+![Szczyt narysowany jako obrys ściany osłonowej](shots/curtain-boundary-editor.webp)
+
+![Ściana osłonowa pod swoim szczytem, w 3D](shots/curtain-boundary-3d.webp)
+
+**Pręty…** nadaje wybranym słupkom i ryglom własny profil. Elewacja ściany pokazuje każdy pręt: kliknij jeden (<kbd>Shift</kbd> lub <kbd>Ctrl</kbd>/<kbd>⌘</kbd> dodaje kolejne, albo weź wszystkie słupki lub wszystkie rygle), wybierz profil z [bibliotek profili](profiles.md) albo zwykłą skrzynkę, jego **Obrót** i **Odbicie**, jego wyrównanie w poprzek pręta (przód lub tył na jego płaszczyźnie) i wzdłuż (krawędź początkowa lub końcowa na linii siatki lub poziomie) oraz jego przesunięcia w poprzek i na zewnątrz budynku; obraz obok pokazuje przekrój tak, jak siedzi. **Zastosuj do wybranych** nadaje im styl, **Wróć do ustawień typu** go zdejmuje. Własny profil typu ma te same pola położenia w **Ściany osłonowe…**, dla każdej ściany typu. Profil pozostaje kopią w projekcie: **Aktualizuj z biblioteki** zmienia każdy pręt z niego wykonany, w tej ścianie i w innych.
+
+![Pręty: profil ułożony na wybranych słupkach](shots/curtain-members-dialog.webp)
+
+![Dwa słupki z własnym profilem, w 3D](shots/curtain-members-3d.webp)
+
 ## Typy ścian
 
 Typ ściany to zestaw warstw, od lica po prawej stronie kierunku, w którym rysowana jest ściana (zewnętrznego, gdy rysujesz wokół budynku przeciwnie do ruchu wskazówek zegara), do lica po jej lewej. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.

@@ -6282,6 +6282,139 @@ export const scenes = [
     },
   },
   {
+    // A tag turned and aligned (report #129, decision 429) and what it tags lit (#130): a tag on the east wall aligned to it, one
+    // typed to 30°; the aligned tag's rotation grip; the element it tags highlighted while it is selected.
+    id: 'tag-rotate',
+    async run(t) {
+      await t.fresh();
+      const { walls, storey } = await house(t, { roof: false });
+      await t.fit();
+      const plan = `plan:${storey}`;
+      const a = (await t.cmd('drafting.addTag', { viewId: plan, element: walls[1], field: 'name', at: [12.8, 3], leaderShape: 'straight' })).id;
+      const b = (await t.cmd('drafting.addTag', { viewId: plan, element: walls[2], field: 'name', at: [6, 7.4], leaderShape: 'straight', rotation: 30 })).id;
+      await t.cmd('drafting.updateTag', { id: a, align: true });
+      await t.ui({ view: 'plan', keyPlan: false, selection: a, selected: [a] });
+      await t.wait(900);
+      const tag = (await t.nodes()).find((n) => n.id === a);
+      t.expect(tag?.props.align === true, 'the tag follows its wall');
+      t.expect(await t.page.locator('[data-grip=turn]').count() === 1, 'a selected tag has its turning grip');
+      t.expect(await t.page.locator('[data-tag-rotation]').count() === 1 && await t.page.locator('[data-tag-align]').count() === 1, 'its properties have Rotation and Align to element');
+      t.expect(await t.page.locator('.plan-item.tag-target, .plan-mark.tag-target').count() > 0, 'the wall it tags is highlighted while its tag is selected');
+      const [cx, cy] = await t.planPoint(12, 3.5);
+      await t.shot('tag-rotate', { clip: { x: cx - 470, y: cy - 190, width: 560, height: 330 } });
+      await select(t, b);
+      await t.wait(500);
+      t.expect((await t.nodes()).find((n) => n.id === b)?.props.rotation === 30, 'the other is turned 30° by hand');
+    },
+  },
+  {
+    // A dimension on a grid axis stays where it measured when the axis's end is dragged along itself (report #126).
+    id: 'dimension-grid-line',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const g = await t.cmd('drafting.addAxis', { x1: 0, y1: -2, x2: 0, y2: 10, tag: '1' });
+      await t.cmd('drafting.addAxis', { x1: 12, y1: -2, x2: 12, y2: 10, tag: '2' });
+      const d = (await t.cmd('drafting.addDimension', { viewId: `plan:${storey}`, a: [0, 8], b: [12, 8], at: [6, 9] })).id;
+      const ends = async () => t.page.evaluate(async (id) => {
+        const s = (await import('/src/engine/session.ts')).useSession.getState();
+        const q = await (await import('/src/engine/session.ts')).query('view.drawing', { id: s.nodes.get(id)?.props.viewId });
+        return q.marks.find((m) => m.id === id)?.data?.points;
+      }, d);
+      const before = await ends();
+      await t.cmd('drafting.updateAxis', { gridId: g.gridId, tag: '1', y1: -4 });
+      await t.cmd('drafting.updateAxis', { gridId: g.gridId, tag: '1', y2: 12 });
+      await t.wait(800);
+      const after = await ends();
+      t.expect(JSON.stringify(before) === JSON.stringify(after), `the dimension stays where it measured (${JSON.stringify(before)} → ${JSON.stringify(after)})`);
+      await t.ui({ view: 'plan', keyPlan: false, selection: null, selected: [] });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -2, y: -5 }, { x: 14, y: 13 }));
+      await t.wait(900);
+      await t.shot('dimension-grid-line', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // A curtain wall by its boundary (report #127): a gable drawn in the profile dialog, the grid, the panels and the members
+    // following it, in 3D.
+    id: 'curtain-boundary',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const cw = (await t.cmd('architecture.addCurtainWall', { storeyId: storey, x1: 0, y1: -4, x2: 7, y2: -4, height: 3 })).id;
+      await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
+      await t.wait(800);
+      await t.page.locator('[data-action=curtain-profile]').first().click();
+      await t.page.waitForSelector('[data-testid=wall-profile]', { timeout: 10000 });
+      await t.page.locator('[data-field=profile-peak]').fill('4800');
+      await t.page.locator('[data-action=profile-gable]').click();
+      await t.wait(600);
+      await t.shot('curtain-boundary-editor', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-action=profile-apply]').click();
+      await t.wait(1400);
+      const wall = (await t.nodes()).find((n) => n.id === cw);
+      t.expect(Array.isArray(wall.props.topProfile) && wall.props.topProfile.length === 3, 'the curtain wall keeps its gable');
+      t.expect(Math.abs(Number(wall.props.height) - 4.8) < 1e-6, 'its height is its highest point');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.7, pitch: -0.2, distance: 16, target: { x: 3.5, y: -4, z: 2 } }, false));
+      await t.wait(1500);
+      await t.shot('curtain-boundary-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Custom profiles for chosen curtain wall members (report #128): a section drawn in the editor, kept, given to two mullions of
+    // a wall, turned and aligned; the members dialog and the result in 3D.
+    id: 'curtain-members',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const cw = (await t.cmd('architecture.addCurtainWall', { storeyId: storey, x1: 0, y1: -4, x2: 7, y2: -4, height: 3 })).id;
+      // The editor makes the profile: a hollow 50 × 100 box.
+      const profile = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('profiles.fromRings', {
+        name: 'Alu 50x100', material: 'aluminium', unit: 0.001,
+        rings: [[[0, 0], [50, 0], [50, 100], [0, 100]], [[3, 3], [3, 97], [47, 97], [47, 3]]],
+      }));
+      t.expect(profile?.kind === 'outline', 'the editor\'s rings make an outline profile');
+      const used = await t.cmd('profiles.use', { profile, library: 'My profiles' });
+      await t.cmd('architecture.setCurtainMembers', { id: cw, keys: ['mullion:1', 'mullion:2'], profile: used.section, place: { rotate: 90, across: 'front' } });
+      await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
+      await t.wait(800);
+      await t.page.locator('[data-action=curtain-members]').first().click();
+      await t.page.waitForSelector('[data-testid=curtain-members]', { timeout: 10000 });
+      await t.page.locator('[data-member="mullion:1"]').click();
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-placed-section]').count() === 1, 'the section is drawn as it sits on its member');
+      await t.shot('curtain-members-dialog', { of: '.dialog', pad: 0 });
+      await t.page.keyboard.press('Escape');
+      await t.ui({ dialog: null });
+      const wall = (await t.nodes()).find((n) => n.id === cw);
+      t.expect(wall.props.memberStyles && Object.keys(wall.props.memberStyles).length === 2, 'two members have a style of their own');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.7, pitch: -0.2, distance: 8, target: { x: 3.5, y: -4, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('curtain-members-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // The section editor (report #128): Manage → Profile libraries → Draw a profile…, a hollow box with a chamber added.
+    id: 'profile-editor',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ dialog: 'profileLibraries' });
+      await t.page.waitForSelector('[data-dialog=profile-libraries]', { timeout: 10000 });
+      await t.page.locator('[data-testid=profile-draw-new]').click();
+      await t.page.waitForSelector('[data-testid=profile-editor]', { timeout: 10000 });
+      await t.page.locator('[data-action=editor-T]').click();
+      await t.page.locator('[data-action=editor-box]').click();
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-editor-point]').count() === 8, 'a hollow box has its two rings\' eight points');
+      await t.shot('profile-editor', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-testid=profile-editor-make]').click();
+      await t.page.waitForSelector('[data-testid=profile-outline]', { timeout: 10000 });
+      t.expect(await t.page.locator('[data-testid=profile-outline-keep]').count() === 1, 'the profile made goes on to be kept in a library');
+    },
+  },
+  {
     // An opening's height under a dimension line (report #92, decision 338): a string along the south wall, its segments
     // across the door and the window writing the width over the line and the height under it, read from the model; then
     // Drafting standards → Dimensions with its Opening height column.

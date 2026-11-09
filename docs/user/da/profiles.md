@@ -51,6 +51,10 @@ Tegn tværsnittet med Tegning som lukkede polylinjer og cirkler (dem inden i et 
 
 **Tegn dens omrids** gør det modsatte: den valgte profils omrids som lukkede polylinjer i den forreste visning, så Studio kan ekstrudere eller feje det.
 
+**Tegn en profil…** åbner tværsnitseditoren: ydersiden og dens kamre som punkter i millimeter. Træk punkterne (1 mm; <kbd>Shift</kbd> 5 mm), klik på et omrids for at tilføje et punkt, højreklik på et punkt for at fjerne det, eller skriv dem i tabellen; start fra et rektangel, en hul kasse, et T, en vinkel eller et U med de mål, du angiver, og tilføj kamre i midten. Giv den et navn, vælg aluminium, opret den og gem den som ethvert omrids. **Redigér dens kontur…** åbner en profil, du har, i editoren: gemt igen under sit navn markeres projektets kopi som nyere, og **Opdatér fra biblioteket** bringer den til hver type og hver facadeglasvægstang lavet af den. Valgte sprosser og tværposte tager en egen profil, drejet, justeret og forskudt: se [Vægge](walls.md).
+
+![Tværsnitseditoren: en hul kasse med sit kammer](shots/profile-editor.webp)
+
 ## Brug en profil
 
 I **Stål → Ståltyper**, **Konstruktion → Konstruktionstyper** (søjler og bjælker) og rammehallens profiler vælger du **Fra et profilbibliotek…** og skriver for at søge.

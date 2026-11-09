@@ -105,6 +105,8 @@ Les annotations d’un plan (cotes, textes, lignes dessinées, étiquettes) peuv
 
 ![La hauteur de l’ouverture dans les styles de cote](shots/dimension-opening-height-style.webp)
 
+**Cotes sur une ligne.** Un point de cote cliqué sur un axe de la trame ou sur l’axe d’un mur se tient à la ligne, non à un point de celle-ci. Faites glisser l’extrémité de l’axe le long de lui-même pour que sa bulle tienne dans la vue, ou allongez ou raccourcissez le mur : la cote continue de mesurer là où vous l’avez posée et sa ligne ne tourne pas. Si l’axe ou le mur se déplace en travers, le point va avec lui, au même endroit le long. Une cote sur la face d’un mur reste de même là où elle mesurait quand le mur est étiré dans sa longueur. Les cotes faites avant se tiennent à un axe de trame de la même façon ; une sur l’axe d’un mur se rattache de nouveau en recliquant sur son point.
+
 ### Étiquettes
 
 **Annoter → Étiquette** (<kbd>TG</kbd>) pose sur une vue un cadre avec ce qu’un élément dit de lui-même, et une ligne de rappel jusqu’à lui. Tant que l’outil est actif, la barre sous la vue choisit ce que l’étiquette affiche : le repère, le nom, la classe ou le type, **Résistance au feu**, **Isolement acoustique**, **Transmission thermique** ou **Autre paramètre…** par son nom ; ou un type d’étiquette des normes de dessin ; et **RAPPEL** active ou désactive la ligne de rappel. Cliquez sur l’élément, puis là où va l’étiquette (tapez d’abord **E** pour couder la ligne). **Annoter → Étiqueter un paramètre** demande le nom du paramètre et lance l’outil avec lui.
@@ -122,6 +124,12 @@ Une étiquette sélectionnée a des poignées. Faites glisser le cadre pour dép
 ![Les propriétés d’une étiquette](shots/tag-properties.webp)
 
 Le repère d’une porte ou d’une fenêtre se modifie partie par partie, chaque texte déplacé ou tourné et chaque extrémité de sa ligne allongée : voir [Portes et fenêtres](doors-windows.md).
+
+**Faire tourner une étiquette.** Dans les propriétés d’une étiquette, **Rotation** fait tourner son texte et son épaulement ou son cadre d’un angle, en degrés par rapport à l’horizontale, et **Aligner sur l’élément** lui fait suivre la direction de l’élément qu’elle étiquette (l’axe d’un mur ou d’une poutre, la plus longue arête de tout autre) et tourner avec lui ; la rotation s’ajoute alors à cette direction. Une étiquette est toujours dessinée lisible, jamais à l’envers. Une étiquette sélectionnée a au-dessus de son texte une poignée de rotation : faites-la glisser par pas de 15° (dont 45° et 90° ; maintenez <kbd>Maj</kbd> pour un angle libre), et Ctrl/⌘-clic remet le texte à l’horizontale. La ligne de rappel atteint toujours l’élément. Les étiquettes simples et de composition tournent pareil, en plans, coupes et façades, et les planches, le PDF et le DXF les impriment comme vous les voyez.
+
+**Ce qu’une étiquette étiquette.** Tant que l’outil **Étiquette** attend un élément, celui qui est sous le curseur est mis en évidence dans la couleur d’accent ; survolez une étiquette posée, ou sélectionnez-la, et l’élément qu’elle étiquette est mis en évidence.
+
+![Une étiquette alignée sur son mur, avec sa poignée de rotation, et le mur étiqueté en évidence](shots/tag-rotate.webp)
 
 #### Étiquette de composition
 

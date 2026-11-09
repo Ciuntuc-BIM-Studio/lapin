@@ -55,6 +55,20 @@ Le mur reste un mur : son épaisseur, ses couches, ses jonctions et ses portes e
 
 ![Le mur ouest de la maison en pignon, sa fenêtre gardée](shots/wall-profile-3d.webp)
 
+### Le contour et les barres d’un mur-rideau
+
+**Profil…** dans les propriétés d’un mur-rideau dessine son contour en élévation, comme pour un mur : un pignon, une pente, des gradins ou un contour quelconque, avec des points à faire glisser, à ajouter ou à retirer et un tableau en millimètres. Le mur monte jusqu’à son point le plus haut. Sa trame gagne une ligne là où le contour se brise (une brisure à moins d’un meneau et demi d’une ligne de la trame est ramenée sur elle) ; chaque travée garde les traverses qui tiennent sous son point le plus bas ; le panneau au-dessus de la dernière monte jusqu’au contour et une barre de rive le suit, inclinée ; les meneaux sont coupés à lui. Les réglages du type restent, et **Profil…** rouvre le contour pour le changer, sans reconstruire ; **Sommet plat** rend le rectangle. Il se voit en 3D, élévations et coupes, les nomenclatures mesurent les panneaux et les barres tels que dessinés, et l’IFC les porte comme pièces.
+
+![Un pignon dessiné comme contour d’un mur-rideau](shots/curtain-boundary-editor.webp)
+
+![Le mur-rideau sous son pignon, en 3D](shots/curtain-boundary-3d.webp)
+
+**Barres…** donne à des meneaux et traverses choisis un profil propre. L’élévation du mur montre chaque barre : cliquez-en une (<kbd>Maj</kbd> ou <kbd>Ctrl</kbd>/<kbd>⌘</kbd> en ajoute, ou prenez tous les meneaux ou toutes les traverses), choisissez un profil des [bibliothèques de profilés](profiles.md) ou une boîte simple, sa **Rotation** et sa **Symétrie**, son alignement en travers de la barre (face avant ou arrière sur son plan) et le long (arête de début ou de fin sur la ligne de trame ou le niveau) et ses décalages en travers et vers l’extérieur du bâtiment ; l’image à côté montre la section telle qu’elle est posée. **Appliquer aux éléments choisis** leur donne le style, **Revenir à celui du type** l’enlève. Le profil propre d’un type a les mêmes champs de position dans **Murs-rideaux…**, pour chaque mur du type. Le profilé reste une copie dans le projet : **Mettre à jour depuis la bibliothèque** change chaque barre qui en est faite, dans ce mur et dans d’autres.
+
+![Barres : un profil posé sur les meneaux choisis](shots/curtain-members-dialog.webp)
+
+![Deux meneaux avec un profil propre, en 3D](shots/curtain-members-3d.webp)
+
 ## Types de murs
 
 Un type de mur est un ensemble de couches, de la face à droite du sens dans lequel le mur est tracé (l’extérieur, si vous tracez autour d’un bâtiment dans le sens inverse des aiguilles d’une montre) à la face à sa gauche. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.

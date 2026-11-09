@@ -55,6 +55,20 @@ Die Wand bleibt eine Wand: ihre Dicke, ihre Schichten, ihre Anschlüsse und ihre
 
 ![Die Westwand des Hauses als Giebel, ihr Fenster erhalten](shots/wall-profile-3d.webp)
 
+### Rand und Stäbe einer Vorhangfassade
+
+**Profil…** in den Eigenschaften einer Vorhangfassade zeichnet ihren Rand in der Ansicht, wie bei einer Wand: einen Giebel, eine Schräge, Stufen oder einen beliebigen Umriss, mit Punkten zum Ziehen, Hinzufügen oder Entfernen und einer Tabelle in Millimetern. Die Fassade reicht bis zu ihrem höchsten Punkt. Ihr Raster bekommt eine Linie dort, wo der Rand knickt (ein Knick innerhalb von anderthalb Pfostenbreiten einer Rasterlinie wird auf sie verschoben); jedes Feld behält die Riegel, die unter seinen tiefsten Punkt passen; das Paneel über dem letzten füllt bis zum Rand, und ein Randstab folgt ihm, geneigt; die Pfosten werden auf ihn geschnitten. Die Einstellungen des Typs bleiben, und **Profil…** öffnet den Rand wieder zum Ändern, ohne Neuaufbau; **Gerade Oberkante** gibt das Rechteck zurück. Es zeigt sich in 3D, Ansichten und Schnitten, die Listen messen Paneele und Stäbe wie gezeichnet, und das IFC trägt sie als Teile.
+
+![Ein Giebel als Rand einer Vorhangfassade gezeichnet](shots/curtain-boundary-editor.webp)
+
+![Die Vorhangfassade unter ihrem Giebel, in 3D](shots/curtain-boundary-3d.webp)
+
+**Stäbe…** gibt ausgewählten Pfosten und Riegeln ein eigenes Profil. Die Ansicht der Fassade zeigt jeden Stab: Klicken Sie einen an (<kbd>Umschalt</kbd> oder <kbd>Strg</kbd>/<kbd>⌘</kbd> fügt weitere hinzu, oder nehmen Sie alle Pfosten oder alle Riegel), wählen Sie ein Profil aus den [Profilbibliotheken](profiles.md) oder einen einfachen Quader, seine **Drehung** und **Spiegelung**, seine Ausrichtung quer zum Stab (Vorder- oder Rückseite auf seiner Ebene) und entlang (Anfangs- oder Endkante auf der Rasterlinie oder Höhe) und seine Versätze quer und aus dem Gebäude heraus; das Bild daneben zeigt den Querschnitt, wie er sitzt. **Auf die gewählten anwenden** gibt ihnen den Stil, **Zurück zu dem des Typs** nimmt ihn weg. Das eigene Profil eines Typs hat dieselben Lagefelder in **Vorhangfassaden…**, für jede Fassade des Typs. Das Profil bleibt eine Kopie im Projekt: **Aus der Bibliothek aktualisieren** ändert jeden daraus gemachten Stab, in dieser Fassade und in anderen.
+
+![Stäbe: ein Profil auf den gewählten Pfosten](shots/curtain-members-dialog.webp)
+
+![Zwei Pfosten mit eigenem Profil, in 3D](shots/curtain-members-3d.webp)
+
 ## Wandtypen
 
 Ein Wandtyp ist eine Folge von Schichten, von der Seite rechts der Richtung, in der die Wand gezeichnet wird (die Außenseite, wenn Sie gegen den Uhrzeigersinn um ein Gebäude zeichnen), zur Seite links davon. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.

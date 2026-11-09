@@ -105,6 +105,8 @@ Le annotazioni di una pianta (quote, testi, linee disegnate, etichette) possono 
 
 ![L’altezza dell’apertura negli stili di quota](shots/dimension-opening-height-style.webp)
 
+**Quote su una linea.** Un punto di quota cliccato su un asse della griglia o sull'asse di un muro si tiene alla linea, non a un punto di essa. Trascina l'estremità dell'asse lungo se stesso perché la sua bolla stia nella vista, oppure allunga o accorcia il muro: la quota continua a misurare dove l'hai messa e la sua linea non ruota. Se l'asse o il muro si sposta di traverso, il punto va con lui, nello stesso punto lungo. Anche una quota sulla faccia di un muro resta dove misurava quando il muro viene allungato nella sua lunghezza. Le quote fatte prima si tengono a un asse della griglia allo stesso modo; una sull'asse di un muro si riaggancia cliccando di nuovo il suo punto.
+
 ### Etichette
 
 **Annota → Etichetta** (<kbd>TG</kbd>) mette su una vista un riquadro con ciò che un elemento dice di sé, e una linea di richiamo fino a esso. Mentre lo strumento è attivo, la barra sotto la vista sceglie cosa mostra l’etichetta: la sigla, il nome, la classe o il tipo, **Resistenza al fuoco**, **Isolamento acustico**, **Trasmittanza termica** o **Altro parametro…** per nome; oppure un tipo di etichetta degli standard di disegno; e **RICHIAMO** attiva o disattiva la linea di richiamo. Fai clic sull’elemento, poi dove va l’etichetta (digita prima **E** per piegare la linea in un gomito). **Annota → Etichetta un parametro** chiede il nome del parametro e avvia lo strumento con esso.
@@ -122,6 +124,12 @@ Un’etichetta selezionata ha delle maniglie. Trascina il riquadro per spostare 
 ![Le proprietà di un’etichetta](shots/tag-properties.webp)
 
 Il contrassegno di una porta o di una finestra si modifica parte per parte, ogni testo spostato o ruotato e ogni estremità della sua linea allungata: vedi [Porte e finestre](doors-windows.md).
+
+**Ruotare un'etichetta.** Nelle proprietà di un'etichetta, **Rotazione** ruota il suo testo e la sua spalla o il suo riquadro di un angolo, in gradi rispetto all'orizzontale, e **Allinea all'elemento** le fa seguire la direzione dell'elemento che etichetta (l'asse di un muro o di una trave, il lato più lungo di qualunque altro) e ruotare con esso; la rotazione si aggiunge allora a quella direzione. Un'etichetta è sempre disegnata leggibile, mai capovolta. Un'etichetta selezionata ha sopra il testo una maniglia di rotazione: trascinala a passi di 15° (compresi 45° e 90°; tieni premuto <kbd>Maiusc</kbd> per un angolo libero), e Ctrl/⌘-clic rimette il testo orizzontale. La linea di richiamo raggiunge sempre l'elemento. Le etichette semplici e quelle di stratigrafia ruotano allo stesso modo, in piante, sezioni e prospetti, e le tavole, il PDF e il DXF le stampano come le vedi.
+
+**Cosa etichetta un'etichetta.** Finché lo strumento **Etichetta** aspetta un elemento, quello sotto il cursore è evidenziato col colore di accento; passa il cursore su un'etichetta posata, o selezionala, e l'elemento che etichetta è evidenziato.
+
+![Un'etichetta allineata al suo muro, con la maniglia di rotazione, e il muro etichettato evidenziato](shots/tag-rotate.webp)
 
 #### Etichetta di stratigrafia
 

@@ -105,6 +105,8 @@ Annoteringer på en plan (mål, tekster, tegnede linjer, mærker) kan flyttes ti
 
 ![Åbningens højde i målstilene](shots/dimension-opening-height-style.webp)
 
+**Mål på en linje.** Et målpunkt, der klikkes på en rasterakse eller på midtlinjen af en væg, holder sig til linjen, ikke til et punkt på den. Træk aksens ende langs med sig selv, så dens hoved kan være i visningen, eller gør væggen længere eller kortere: målet bliver ved med at måle, hvor du satte det, og dets linje drejer ikke. Flyttes aksen eller væggen på tværs, følger punktet med, samme sted langs. Et mål på en vægs flade bliver også, hvor det målte, når væggen strækkes i sin længde. Mål lavet før holder sig til en rasterakse på samme måde; et på en vægs midtlinje fæstnes igen ved at klikke på dets punkt igen.
+
 ### Mærker
 
 **Annotér → Mærke** (<kbd>TG</kbd>) sætter en boks på en visning med det, et element siger om sig selv, og en henvisningslinje til det. Mens værktøjet er aktivt, vælger bjælken under visningen, hvad mærket viser: mærket, navnet, klassen eller typen, **Brandklasse**, **Lydisolering**, **Varmetransmission** eller **En anden parameter…** efter dens navn; eller en mærketype fra tegningsstandarderne; og **HENVISNING** slår henvisningslinjen til eller fra. Klik på elementet og derefter, hvor mærket skal stå (tast først **E** for at knække linjen). **Annotér → Mærk en parameter** spørger efter parameterens navn og starter værktøjet med den.
@@ -122,6 +124,12 @@ Et valgt mærke har greb. Træk i boksen for at flytte mærket: henvisningslinje
 ![Et mærkes egenskaber](shots/tag-properties.webp)
 
 En dørs eller et vindues mærke redigeres del for del, hver tekst flyttet eller drejet og hver ende af linjen forlænget: se [Døre og vinduer](doors-windows.md).
+
+**Drej et mærke.** I et mærkes egenskaber drejer **Rotation** dets tekst og dets skulder eller boks en vinkel i grader fra vandret, og **Justér efter elementet** får det til at følge retningen på det mærkede element (aksen på en væg eller en bjælke, den længste kant på alt andet) og dreje med det; rotationen lægges så til den retning. Et mærke tegnes altid læsbart, aldrig på hovedet. Et valgt mærke har et drejegreb over sin tekst: træk det i trin på 15° (45° og 90° iblandt; hold <kbd>Shift</kbd> for vilkårlig vinkel), og Ctrl/⌘-klik stiller teksten vandret igen. Henvisningslinjen når stadig elementet. Enkle mærker og opbygningsmærker drejer ens, i planer, snit og opstalter, og ark, PDF og DXF udskriver dem, som du ser dem.
+
+**Hvad et mærke mærker.** Mens værktøjet **Mærke** venter på et element, fremhæves det under markøren i accentfarven; hold markøren på et placeret mærke, eller vælg det, og det element, det mærker, fremhæves.
+
+![Et mærke justeret efter sin væg med sit drejegreb, og den mærkede væg fremhævet](shots/tag-rotate.webp)
 
 #### Opbygningsmærke
 

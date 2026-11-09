@@ -109,6 +109,8 @@ Annotations on a plan (dimensions, texts, drafted lines, tags) can go to another
 
 ![Opening height in the dimension styles](shots/dimension-opening-height-style.webp)
 
+**Dimensions on a line.** A dimension point clicked on a grid axis or on a wall's centre line holds on the line, not on a point of it. Drag the axis's end along itself to make its head fit the view, or make the wall longer or shorter: the dimension keeps measuring where you put it and its line does not turn. If the axis or the wall moves across, the point goes with it, at the same place along. A dimension on a wall's face likewise stays where it measured when the wall is stretched along itself. Dimensions made before attach to a grid axis the same way; one on a wall's centre line is attached anew by clicking its point again.
+
 ### Tags
 
 **Annotate → Tag** (<kbd>TG</kbd>) puts a box on a view with what an element says of itself, and a leader to it. While the tool is on, the bar under the view chooses what the tag shows: the mark, name, class or type, **Fire rating**, **Acoustic rating**, **Thermal transmittance**, or **Another parameter…** by its name; or a tag type of the drafting standards; and **LEADER** turns the leader on or off. Click the element, then where the tag goes (type **E** first to bend the leader at an elbow). **Annotate → Tag a parameter** asks for the parameter's name and starts the tool with it.
@@ -126,6 +128,12 @@ A selected tag has grips. Drag the box to move the tag: the leader keeps pointin
 ![A tag's properties](shots/tag-properties.webp)
 
 A door's or window's marker is edited part by part, each text moved or turned and each end of its line drawn out: see [Doors and windows](doors-windows.md).
+
+**Turning a tag.** In a tag's properties, **Rotation** turns its text and its shoulder or box by an angle in degrees from level, and **Align to element** makes it follow the direction of the element it tags (a wall's or beam's axis, the longest edge of anything else), turning with it when the element turns; the rotation is then added to that direction. A tag is always drawn upright, never upside down. A selected tag has a turning grip over its text: drag it in steps of 15° (45° and 90° among them; hold <kbd>Shift</kbd> for any angle), and Ctrl/⌘-click puts the text level again. The leader still reaches the element. Plain and build-up tags turn alike, in plans, sections and elevations, and sheets, the PDF and the DXF print them as you see them.
+
+**What a tag tags.** While the **Tag** tool waits for an element, the one under the cursor is highlighted in the accent colour; hover a placed tag, or select it, and the element it tags is highlighted.
+
+![A tag aligned to its wall, with its turning grip, and the wall it tags highlighted](shots/tag-rotate.webp)
 
 #### Build-up tag
 

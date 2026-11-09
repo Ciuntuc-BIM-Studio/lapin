@@ -55,6 +55,20 @@ El muro sigue siendo un muro: su espesor, sus capas, sus uniones y sus puertas y
 
 ![El muro oeste de la casa como hastial, con su ventana conservada](shots/wall-profile-3d.webp)
 
+### El contorno y las barras de un muro cortina
+
+**Perfil…** en las propiedades de un muro cortina dibuja su contorno en alzado, como en un muro: un hastial, una pendiente, escalones o cualquier contorno, con puntos que arrastrar, añadir o quitar y una tabla en milímetros. El muro sube hasta su punto más alto. Su retícula gana una línea donde el contorno se quiebra (un quiebro a menos de un montante y medio de una línea de la retícula se lleva a ella); cada vano conserva los travesaños que caben bajo su punto más bajo; el panel sobre el último llena hasta el contorno y una barra de borde lo sigue, inclinada; los montantes se cortan a él. Los ajustes del tipo se mantienen, y **Perfil…** abre de nuevo el contorno para cambiarlo, sin reconstruir; **Coronación plana** devuelve el rectángulo. Se ve en 3D, alzados y secciones, las tablas miden los paneles y las barras tal como están dibujados, y el IFC los lleva como piezas.
+
+![Un hastial dibujado como contorno de un muro cortina](shots/curtain-boundary-editor.webp)
+
+![El muro cortina bajo su hastial, en 3D](shots/curtain-boundary-3d.webp)
+
+**Barras…** da a montantes y travesaños elegidos un perfil propio. El alzado del muro muestra cada barra: haga clic en una (<kbd>Mayús</kbd> o <kbd>Ctrl</kbd>/<kbd>⌘</kbd> añade más, o tome todos los montantes o todos los travesaños), elija un perfil de las [bibliotecas de perfiles](profiles.md) o una caja simple, su **Rotación** y su **Simetría**, su alineación transversal a la barra (cara frontal o posterior sobre su plano) y a lo largo (borde inicial o final sobre la línea de la retícula o el nivel) y sus desfases transversal y hacia el exterior del edificio; el dibujo de al lado muestra la sección tal como queda. **Aplicar a los elegidos** les da el estilo, **Volver al del tipo** se lo quita. El perfil propio de un tipo tiene los mismos campos de posición en **Muros cortina…**, para todos los muros del tipo. El perfil sigue siendo una copia en el proyecto: **Actualizar desde la biblioteca** cambia todas las barras hechas con él, en este muro y en otros.
+
+![Barras: un perfil colocado en los montantes elegidos](shots/curtain-members-dialog.webp)
+
+![Dos montantes con perfil propio, en 3D](shots/curtain-members-3d.webp)
+
 ## Tipos de muro
 
 Un tipo de muro es un conjunto de capas, desde la cara a la derecha del sentido en que se dibuja el muro (el exterior, si dibuja alrededor del edificio en sentido antihorario) hasta la cara de su izquierda. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.

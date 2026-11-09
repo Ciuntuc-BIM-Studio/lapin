@@ -55,6 +55,20 @@ Peretele rămâne perete: grosimea, straturile, îmbinările, ușile și ferestr
 
 ![Peretele de vest al casei ca fronton, cu fereastra păstrată](shots/wall-profile-3d.webp)
 
+### Conturul și barele unui perete cortină
+
+**Profil…** din proprietățile unui perete cortină îi desenează conturul în elevație, ca la un perete: un fronton, o pantă, trepte sau orice contur, cu puncte de tras, adăugat sau scos și un tabel în milimetri. Peretele urcă până la cel mai înalt punct. Grila lui primește o linie unde se frânge conturul (o frângere la mai puțin de un montant și jumătate de o linie a grilei e mutată pe ea); fiecare travee păstrează traversele care încap sub punctul ei cel mai de jos; panoul de deasupra ultimei umple până la contur, iar o bară de margine îi urmează linia, înclinată; montanții sunt tăiați după el. Setările tipului rămân, iar **Profil…** deschide din nou conturul ca să-l schimbi, fără reconstruire; **Vârf drept** dă dreptunghiul înapoi. Se vede în 3D, fațade și secțiuni, extrasele măsoară panourile și barele așa cum sunt desenate, iar IFC-ul le poartă ca piese.
+
+![Un fronton desenat ca contur al unui perete cortină](shots/curtain-boundary-editor.webp)
+
+![Peretele cortină sub fronton, în 3D](shots/curtain-boundary-3d.webp)
+
+**Bare…** dă unor montanți și traverse alese un profil propriu. Elevația peretelui arată fiecare bară: dă clic pe una (<kbd>Shift</kbd> sau <kbd>Ctrl</kbd>/<kbd>⌘</kbd> adaugă altele, sau ia toți montanții ori toate traversele), alege un profil din [bibliotecile de profile](profiles.md) sau o cutie simplă, **Rotirea** și **Oglindirea** lui, alinierea de-a curmezișul barei (fața din față sau din spate pe planul ei) și de-a lungul ei (muchia de început sau de sfârșit pe linia grilei sau pe nivel) și decalajele de-a curmezișul și spre exteriorul clădirii; imaginea alăturată arată secțiunea așa cum stă. **Aplică la cele alese** le dă stilul, **Înapoi la cel al tipului** îl ia. Profilul propriu al unui tip are aceleași câmpuri de poziție în **Pereți cortină…**, pentru fiecare perete al tipului. Profilul rămâne o copie în proiect: **Actualizează din bibliotecă** schimbă fiecare bară făcută din el, în acest perete și în altele.
+
+![Bare: un profil așezat pe montanții aleși](shots/curtain-members-dialog.webp)
+
+![Doi montanți cu un profil propriu, în 3D](shots/curtain-members-3d.webp)
+
 ## Tipurile de pereți
 
 Un tip de perete e un set de straturi, de la fața din dreapta sensului în care e desenat peretele (exteriorul, când desenezi în jurul clădirii în sens trigonometric) la fața din stânga. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **De la** și **Până la** spun cât de sus merge peste baza peretelui (un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.

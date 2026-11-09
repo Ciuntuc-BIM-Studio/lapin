@@ -51,6 +51,10 @@ Zeichnen Sie den Querschnitt mit Zeichnen aus geschlossenen Polylinien und Kreis
 
 **Umriss zeichnen** macht das Gegenteil: der Umriss des gewählten Profils als geschlossene Polylinien in der vorderen Ansicht, zum Extrudieren oder Sweepen in Studio.
 
+**Profil zeichnen…** öffnet den Querschnittseditor: die Außenkontur und ihre Kammern als Punkte in Millimetern. Ziehen Sie die Punkte (1 mm; <kbd>Umschalt</kbd> 5 mm), klicken Sie auf eine Kontur, um einen Punkt hinzuzufügen, mit Rechtsklick auf einen Punkt entfernen Sie ihn, oder tippen Sie sie in die Tabelle; beginnen Sie mit einem Rechteck, einem Hohlkasten, einem T, einem Winkel oder einem U-Profil mit den Maßen, die Sie angeben, und fügen Sie Kammern in der Mitte hinzu. Benennen Sie es, wählen Sie Aluminium, erstellen und speichern Sie es wie jede Kontur. **Kontur bearbeiten…** öffnet ein vorhandenes Profil im Editor: erneut unter seinem Namen gespeichert, wird die Kopie des Projekts als neuer markiert, und **Aus der Bibliothek aktualisieren** bringt es zu jedem Typ und jedem Vorhangfassadenstab, der daraus gemacht ist. Ausgewählte Pfosten und Riegel nehmen ein eigenes Profil, gedreht, ausgerichtet und versetzt: siehe [Wände](walls.md).
+
+![Der Querschnittseditor: ein Hohlkasten mit seiner Kammer](shots/profile-editor.webp)
+
 ## Ein Profil verwenden
 
 Wählen Sie in **Stahl → Stahltypen**, **Tragwerk → Tragwerkstypen** (Stützen und Träger) und bei den Profilen der Rahmenhalle **Aus einer Profilbibliothek…** und tippen Sie, um zu suchen.

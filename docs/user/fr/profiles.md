@@ -51,6 +51,10 @@ Dessinez la section avec Dessin en polylignes fermées et cercles (ceux à l'int
 
 **Dessiner son contour** fait l'inverse : le contour du profilé choisi en polylignes fermées dans la vue active, pour que Studio l'extrude ou le balaie.
 
+**Dessiner un profilé…** ouvre l’éditeur de sections : l’extérieur et ses chambres comme points en millimètres. Faites glisser les points (1 mm ; <kbd>Maj</kbd> 5 mm), cliquez sur un contour pour ajouter un point, clic droit sur un point pour le retirer, ou saisissez-les dans le tableau ; partez d’un rectangle, d’un caisson creux, d’un T, d’une cornière ou d’un U avec les dimensions que vous donnez, et ajoutez des chambres au milieu. Nommez-le, choisissez l’aluminium, créez-le et enregistrez-le comme tout contour. **Modifier son contour…** ouvre dans l’éditeur un profilé que vous avez : enregistré de nouveau sous son nom, la copie du projet est marquée plus récente et **Mettre à jour depuis la bibliothèque** l’apporte à chaque type et à chaque barre de mur-rideau qui en est faite. Les meneaux et traverses choisis prennent un profil propre, tourné, aligné et décalé : voir [Murs](walls.md).
+
+![L’éditeur de sections : un caisson creux avec sa chambre](shots/profile-editor.webp)
+
 ## Utiliser un profilé
 
 Dans **Acier → Types acier**, **Structure → Types structurels** (poteaux et poutres) et les profilés de la halle à portiques, choisissez **D'une bibliothèque de profilés…** et tapez pour chercher.

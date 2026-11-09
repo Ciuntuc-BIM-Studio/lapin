@@ -51,6 +51,10 @@ Desenhe a seção com Desenho como polilinhas fechadas e círculos (os que estã
 
 **Desenhar o contorno** faz o contrário: o contorno do perfil escolhido como polilinhas fechadas na vista ativa, para o Studio extrudar ou varrer.
 
+**Desenhar um perfil…** abre o editor de secções: o exterior e as suas câmaras como pontos em milímetros. Arraste os pontos (1 mm; <kbd>Shift</kbd> 5 mm), clique num contorno para acrescentar um ponto, clique com o botão direito num ponto para o retirar, ou escreva-os na tabela; parta de um retângulo, uma caixa oca, um T, uma cantoneira ou um U com as medidas que der, e acrescente câmaras ao centro. Dê-lhe um nome, escolha o alumínio, crie-o e guarde-o como qualquer contorno. **Editar o seu contorno…** abre no editor um perfil que já tem: guardado de novo com o seu nome, a cópia do projeto é marcada como mais recente e **Atualizar da biblioteca** leva-o a cada tipo e a cada barra de parede-cortina feita com ele. Os montantes e travessas escolhidos tomam um perfil próprio, rodado, alinhado e deslocado: veja [Paredes](walls.md).
+
+![O editor de secções: uma caixa oca com a sua câmara](shots/profile-editor.webp)
+
 ## Usar um perfil
 
 Em **Aço → Tipos de aço**, **Estrutura → Tipos estruturais** (pilares e vigas) e nos perfis do galpão de pórticos, escolha **De uma biblioteca de perfis…** e digite para pesquisar.

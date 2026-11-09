@@ -51,6 +51,10 @@ Narysuj przekrój w Rysowaniu jako zamknięte polilinie i okręgi (te wewnątrz 
 
 **Narysuj kontur** działa odwrotnie: kontur wybranego profilu jako zamknięte polilinie w aktywnym widoku, do wyciągnięcia lub przeciągnięcia w Studio.
 
+**Narysuj profil…** otwiera edytor przekrojów: obrys zewnętrzny i jego komory jako punkty w milimetrach. Przeciągaj punkty (1 mm; <kbd>Shift</kbd> 5 mm), kliknij obrys, aby dodać punkt, kliknij punkt prawym przyciskiem, aby go usunąć, albo wpisz je w tabeli; zacznij od prostokąta, pustej skrzynki, kształtownika T, kątownika lub ceownika o podanych wymiarach i dodaj komory pośrodku. Nazwij go, wybierz aluminium, utwórz go i zapisz jak każdy kontur. **Edytuj jego obrys…** otwiera w edytorze profil, który masz: zapisany znowu pod swoją nazwą, kopia w projekcie jest oznaczana jako nowsza, a **Aktualizuj z biblioteki** przenosi go do każdego typu i każdego pręta ściany osłonowej z niego wykonanego. Wybrane słupki i rygle dostają własny profil, obrócony, wyrównany i przesunięty: zobacz [Ściany](walls.md).
+
+![Edytor przekrojów: pusta skrzynka z komorą](shots/profile-editor.webp)
+
 ## Użycie profilu
 
 W **Stal → Typy stalowe**, **Konstrukcja → Typy konstrukcyjne** (słupy i belki) oraz przy profilach hali ramowej wybierz **Z biblioteki profili…** i pisz, aby szukać.

@@ -51,6 +51,10 @@ Dibuja la sección con Delineación como polilíneas cerradas y círculos (los q
 
 **Dibujar su contorno** hace lo contrario: el contorno del perfil elegido como polilíneas cerradas en la vista activa, para que Studio lo extruya o lo barra.
 
+**Dibujar un perfil…** abre el editor de secciones: el exterior y sus cámaras como puntos en milímetros. Arrastre los puntos (1 mm; <kbd>Mayús</kbd> 5 mm), haga clic en un contorno para añadir un punto, clic derecho en un punto para quitarlo, o escríbalos en la tabla; parta de un rectángulo, una caja hueca, una T, un ángulo o un canal con las medidas que dé, y añada cámaras en el centro. Póngale nombre, elija aluminio, créelo y guárdelo como cualquier contorno. **Editar su contorno…** abre en el editor un perfil que ya tiene: guardado de nuevo con su nombre, la copia del proyecto se marca como más nueva y **Actualizar desde la biblioteca** lo lleva a todos los tipos y a todas las barras de muro cortina hechas con él. Los montantes y travesaños elegidos toman un perfil propio, girado, alineado y desplazado: véase [Muros](walls.md).
+
+![El editor de secciones: una caja hueca con su cámara](shots/profile-editor.webp)
+
 ## Usar un perfil
 
 En **Acero → Tipos de acero**, **Estructura → Tipos estructurales** (pilares y vigas) y los perfiles de la nave de pórticos, elige **De una biblioteca de perfiles…** y escribe para buscar.

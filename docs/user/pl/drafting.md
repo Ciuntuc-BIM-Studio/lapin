@@ -105,6 +105,8 @@ Opisy na rzucie (wymiary, teksty, narysowane linie, etykiety) mogą przejść na
 
 ![Wysokość otworu w stylach wymiarów](shots/dimension-opening-height-style.webp)
 
+**Wymiary na linii.** Punkt wymiaru kliknięty na osi siatki lub na osi ściany trzyma się linii, a nie punktu na niej. Przeciągnij koniec osi wzdłuż niej samej, aby jej bąbel zmieścił się w widoku, albo wydłuż lub skróć ścianę: wymiar nadal mierzy tam, gdzie go postawiono, a jego linia się nie obraca. Jeśli oś lub ściana przesunie się w poprzek, punkt idzie z nią, w tym samym miejscu wzdłuż. Wymiar na licu ściany również zostaje tam, gdzie mierzył, gdy ścianę rozciągnięto wzdłuż. Wymiary zrobione wcześniej trzymają się osi siatki tak samo; ten na osi ściany przypina się na nowo przez ponowne kliknięcie jego punktu.
+
 ### Etykiety
 
 **Opisz → Etykieta** (<kbd>TG</kbd>) umieszcza na widoku ramkę z tym, co element mówi o sobie, i linię odniesienia do niego. Gdy narzędzie jest włączone, pasek pod widokiem wybiera, co pokazuje etykieta: znak, nazwę, klasę lub typ, **Odporność ogniowa**, **Izolacyjność akustyczna**, **Współczynnik przenikania ciepła** albo **Inny parametr…** po nazwie; albo typ etykiety ze standardów rysunkowych; a **ODNOŚNIK** włącza lub wyłącza linię odniesienia. Kliknij element, potem miejsce etykiety (najpierw wpisz **E**, aby załamać linię). **Opisz → Oznacz parametr** pyta o nazwę parametru i uruchamia z nim narzędzie.
@@ -122,6 +124,12 @@ Zaznaczona etykieta ma uchwyty. Przeciągnij ramkę, aby przesunąć etykietę: 
 ![Właściwości etykiety](shots/tag-properties.webp)
 
 Znacznik drzwi lub okna edytuje się część po części: każdy tekst przesunięty lub obrócony, każdy koniec jego linii wydłużony; zob. [Drzwi i okna](doors-windows.md).
+
+**Obracanie etykiety.** We właściwościach etykiety **Obrót** obraca jej tekst i półkę lub ramkę o kąt w stopniach od poziomu, a **Wyrównaj do elementu** każe jej podążać za kierunkiem elementu, który opisuje (osią ściany lub belki, najdłuższą krawędzią czegokolwiek innego) i obracać się razem z nim; obrót dodaje się wtedy do tego kierunku. Etykieta jest zawsze rysowana czytelnie, nigdy do góry nogami. Zaznaczona etykieta ma nad tekstem uchwyt obrotu: przeciągaj go co 15° (w tym 45° i 90°; z <kbd>Shift</kbd> dowolny kąt), a Ctrl/⌘-klik ustawia tekst znowu poziomo. Linia odniesienia nadal sięga elementu. Etykiety zwykłe i układu warstw obracają się tak samo, na rzutach, przekrojach i elewacjach, a arkusze, PDF i DXF drukują je tak, jak je widzisz.
+
+**Co opisuje etykieta.** Gdy narzędzie **Etykieta** czeka na element, ten pod kursorem jest podświetlony kolorem akcentu; najedź na postawioną etykietę albo ją zaznacz, a element, który opisuje, zostanie podświetlony.
+
+![Etykieta wyrównana do swojej ściany, z uchwytem obrotu, i opisywana ściana podświetlona](shots/tag-rotate.webp)
 
 #### Etykieta układu warstw
 

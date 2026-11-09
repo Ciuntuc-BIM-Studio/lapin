@@ -51,6 +51,10 @@ Desenează secțiunea cu Desen, din polilinii închise și cercuri (cele din int
 
 **Desenează-i conturul** face invers: conturul profilului ales ca polilinii închise în vederea din față, ca Studio să-l extrudeze sau să-l deruleze.
 
+**Desenează un profil…** deschide editorul de secțiuni: exteriorul și camerele lui, ca puncte în milimetri. Trage punctele (1 mm; <kbd>Shift</kbd> 5 mm), dă clic pe un contur ca să adaugi un punct, clic dreapta pe un punct ca să-l scoți, sau scrie-le în tabel; pornește de la un dreptunghi, o cutie goală, un T, un corniere sau un U, cu mărimile pe care le dai, și adaugă camere la mijloc. Dă-i un nume, alege aluminiul, fă-l și păstrează-l ca orice contur. **Editează conturul…** deschide în editor un profil pe care îl ai: păstrat din nou sub numele lui, copia din proiect e marcată ca mai nouă, iar **Actualizează din bibliotecă** îl aduce la fiecare tip și la fiecare bară de perete cortină făcută din el. Montanții și traversele alese iau un profil propriu, întors, aliniat și decalat: vezi [Pereți](walls.md).
+
+![Editorul de secțiuni: o cutie goală cu camera ei](shots/profile-editor.webp)
+
 ## Folosirea unui profil
 
 În **Oțel → Tipuri metalice**, **Structură → Tipuri structurale** (stâlpi și grinzi) și la profilele halei cu cadre, alege **Dintr-o bibliotecă de profile…** și scrie ca să cauți.

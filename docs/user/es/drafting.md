@@ -105,6 +105,8 @@ Las anotaciones de una planta (cotas, textos, líneas dibujadas, etiquetas) pued
 
 ![La altura del hueco en los estilos de cota](shots/dimension-opening-height-style.webp)
 
+**Cotas sobre una línea.** Un punto de cota marcado sobre un eje de la retícula o sobre el eje de un muro se sujeta a la línea, no a un punto de ella. Arrastre el extremo del eje a lo largo de sí mismo para que quepa su burbuja en la vista, o alargue o acorte el muro: la cota sigue midiendo donde usted la puso y su línea no gira. Si el eje o el muro se desplaza en sentido transversal, el punto va con él, en el mismo lugar a lo largo. Una cota sobre la cara de un muro también se queda donde midió cuando el muro se estira a lo largo. Las cotas hechas antes se sujetan a un eje de la retícula igual; una sobre el eje de un muro se vuelve a sujetar haciendo clic de nuevo en su punto.
+
 ### Etiquetas
 
 **Anotar → Etiqueta** (<kbd>TG</kbd>) pone en una vista un recuadro con lo que un elemento dice de sí mismo y una línea de referencia hasta él. Mientras la herramienta está activa, la barra bajo la vista elige lo que muestra la etiqueta: la marca, el nombre, la clase o el tipo, **Resistencia al fuego**, **Aislamiento acústico**, **Transmitancia térmica** u **Otro parámetro…** por su nombre; o un tipo de etiqueta de las normas de dibujo; y **REFERENCIA** activa o desactiva la línea de referencia. Haga clic en el elemento y luego donde va la etiqueta (escriba antes **E** para quebrar la línea en un codo). **Anotar → Etiquetar un parámetro** pide el nombre del parámetro e inicia la herramienta con él.
@@ -122,6 +124,12 @@ Una etiqueta seleccionada tiene pinzamientos. Arrastre el recuadro para mover la
 ![Las propiedades de una etiqueta](shots/tag-properties.webp)
 
 El marcador de una puerta o ventana se edita parte por parte, cada texto movido o girado y cada extremo de su línea alargado: ver [Puertas y ventanas](doors-windows.md).
+
+**Girar una etiqueta.** En las propiedades de una etiqueta, **Rotación** gira su texto y su hombro o recuadro un ángulo, en grados desde la horizontal, y **Alinear con el elemento** hace que siga la dirección del elemento que etiqueta (el eje de un muro o de una viga, el borde más largo de cualquier otro) y gire con él; la rotación se suma entonces a esa dirección. Una etiqueta se dibuja siempre legible, nunca boca abajo. Una etiqueta seleccionada tiene sobre su texto un tirador de giro: arrástrelo de 15° en 15° (también 45° y 90°; mantenga <kbd>Mayús</kbd> para cualquier ángulo) y Ctrl/⌘-clic deja el texto de nuevo horizontal. La línea de referencia sigue llegando al elemento. Las etiquetas simples y las de composición giran igual, en plantas, secciones y alzados, y las láminas, el PDF y el DXF las imprimen como usted las ve.
+
+**Qué etiqueta una etiqueta.** Mientras la herramienta **Etiqueta** espera un elemento, el que está bajo el cursor se resalta con el color de acento; pase el cursor sobre una etiqueta colocada, o selecciónela, y se resalta el elemento que etiqueta.
+
+![Una etiqueta alineada con su muro, con su tirador de giro, y el muro etiquetado resaltado](shots/tag-rotate.webp)
 
 #### Etiqueta de composición
 

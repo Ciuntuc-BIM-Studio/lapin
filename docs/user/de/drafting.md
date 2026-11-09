@@ -105,6 +105,8 @@ Beschriftungen eines Grundrisses (Bemaßungen, Texte, gezeichnete Linien, Tags) 
 
 ![Die Öffnungshöhe in den Bemaßungsstilen](shots/dimension-opening-height-style.webp)
 
+**Bemaßungen auf einer Linie.** Ein Bemaßungspunkt, der auf eine Rasterachse oder auf die Mittellinie einer Wand geklickt wird, hält sich an der Linie, nicht an einem Punkt auf ihr. Ziehen Sie das Ende der Achse an ihr entlang, damit ihr Kopf in die Ansicht passt, oder verlängern oder verkürzen Sie die Wand: Die Bemaßung misst weiter dort, wo Sie sie gesetzt haben, und ihre Linie dreht sich nicht. Wird die Achse oder die Wand quer verschoben, geht der Punkt mit, an derselben Stelle entlang. Auch eine Bemaßung auf einer Wandfläche bleibt dort, wo sie maß, wenn die Wand in ihrer Länge gestreckt wird. Früher erstellte Bemaßungen halten sich an einer Rasterachse genauso; eine auf einer Wandmittellinie wird neu angebunden, indem Sie ihren Punkt erneut anklicken.
+
 ### Beschriftungen
 
 **Beschriften → Beschriftung** (<kbd>TG</kbd>) setzt in eine Ansicht einen Kasten mit dem, was ein Element über sich sagt, und eine Hinweislinie zu ihm. Solange das Werkzeug aktiv ist, wählt die Leiste unter der Ansicht, was die Beschriftung zeigt: die Marke, den Namen, die Klasse oder den Typ, **Feuerwiderstand**, **Schallschutz**, **Wärmedurchgangskoeffizient** oder **Anderer Parameter…** nach seinem Namen; oder einen Beschriftungstyp der Zeichnungsstandards; und **HINWEISLINIE** schaltet die Hinweislinie ein oder aus. Klicken Sie auf das Element, dann dorthin, wo die Beschriftung hin soll (tippen Sie vorher **E**, um die Linie in einem Knick abzuwinkeln). **Beschriften → Parameter beschriften** fragt nach dem Namen des Parameters und startet das Werkzeug damit.
@@ -122,6 +124,12 @@ Eine ausgewählte Beschriftung hat Griffe. Ziehen Sie den Kasten, um die Beschri
 ![Die Eigenschaften einer Beschriftung](shots/tag-properties.webp)
 
 Die Markierung einer Tür oder eines Fensters wird Teil für Teil bearbeitet, jeder Text verschoben oder gedreht und jedes Linienende verlängert: siehe [Türen und Fenster](doors-windows.md).
+
+**Eine Beschriftung drehen.** In den Eigenschaften einer Beschriftung dreht **Drehung** ihren Text und ihre Schulter oder ihren Kasten um einen Winkel in Grad von der Waagrechten, und **Am Element ausrichten** lässt sie der Richtung des beschrifteten Elements folgen (der Achse einer Wand oder eines Balkens, der längsten Kante von allem anderen) und sich mit ihm drehen; die Drehung kommt dann zu dieser Richtung hinzu. Eine Beschriftung wird immer lesbar gezeichnet, nie auf dem Kopf. Eine ausgewählte Beschriftung hat über ihrem Text einen Drehgriff: Ziehen Sie ihn in Schritten von 15° (darunter 45° und 90°; mit <kbd>Umschalt</kbd> beliebiger Winkel), und Strg/⌘-Klick stellt den Text wieder waagrecht. Die Hinweislinie erreicht das Element weiterhin. Einfache und Schichtaufbau-Beschriftungen drehen sich gleich, in Grundrissen, Schnitten und Ansichten, und Pläne, PDF und DXF drucken sie, wie Sie sie sehen.
+
+**Was eine Beschriftung beschriftet.** Solange das Werkzeug **Beschriftung** auf ein Element wartet, wird das Element unter dem Cursor in der Akzentfarbe hervorgehoben; fahren Sie über eine gesetzte Beschriftung oder wählen Sie sie aus, und das beschriftete Element wird hervorgehoben.
+
+![Eine an ihrer Wand ausgerichtete Beschriftung mit Drehgriff, die beschriftete Wand hervorgehoben](shots/tag-rotate.webp)
 
 #### Schichtaufbau-Beschriftung
 

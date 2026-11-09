@@ -51,6 +51,10 @@ Disegna la sezione con Disegno come polilinee chiuse e cerchi (quelli dentro un 
 
 **Disegna il contorno** fa il contrario: il contorno del profilo scelto come polilinee chiuse nella vista attiva, perché Studio lo estruda o lo sposti lungo un percorso.
 
+**Disegna un profilo…** apre l'editor di sezioni: l'esterno e le sue camere come punti in millimetri. Trascina i punti (1 mm; <kbd>Maiusc</kbd> 5 mm), clicca su un contorno per aggiungere un punto, clic destro su un punto per toglierlo, o scrivili nella tabella; parti da un rettangolo, una scatola cava, una T, un angolare o un U con le dimensioni che dai, e aggiungi camere al centro. Dagli un nome, scegli l'alluminio, crealo e salvalo come qualsiasi contorno. **Modifica il suo contorno…** apre nell'editor un profilo che hai: salvato di nuovo col suo nome, la copia del progetto è segnata come più recente e **Aggiorna dalla libreria** lo porta a ogni tipo e a ogni asta di facciata continua che ne è fatta. Montanti e traversi scelti prendono un profilo proprio, ruotato, allineato e spostato: vedi [Muri](walls.md).
+
+![L'editor di sezioni: una scatola cava con la sua camera](shots/profile-editor.webp)
+
 ## Usare un profilo
 
 In **Acciaio → Tipi in acciaio**, **Struttura → Tipi strutturali** (pilastri e travi) e nei profili del capannone a portali, scegli **Da una libreria di profili…** e scrivi per cercare.

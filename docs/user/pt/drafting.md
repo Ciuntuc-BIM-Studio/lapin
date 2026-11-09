@@ -105,6 +105,8 @@ As anotações de uma planta (cotas, textos, linhas desenhadas, etiquetas) podem
 
 ![A altura da abertura nos estilos de cota](shots/dimension-opening-height-style.webp)
 
+**Cotas sobre uma linha.** Um ponto de cota clicado num eixo da malha ou no eixo de uma parede prende-se à linha, não a um ponto dela. Arraste a extremidade do eixo ao longo dele próprio para que a sua bolha caiba na vista, ou alongue ou encurte a parede: a cota continua a medir onde você a pôs e a sua linha não roda. Se o eixo ou a parede se desloca na transversal, o ponto vai com ele, no mesmo sítio ao longo. Uma cota na face de uma parede também fica onde media quando a parede é esticada no seu comprimento. As cotas feitas antes prendem-se a um eixo da malha da mesma maneira; uma no eixo de uma parede prende-se de novo clicando outra vez no seu ponto.
+
 ### Identificadores
 
 **Anotar → Identificador** (<kbd>TG</kbd>) coloca numa vista uma caixa com o que um elemento diz de si mesmo, e uma linha de chamada até ele. Enquanto a ferramenta está ativa, a barra sob a vista escolhe o que o identificador mostra: a marca, o nome, a classe ou o tipo, **Resistência ao fogo**, **Isolamento acústico**, **Transmitância térmica** ou **Outro parâmetro…** pelo nome; ou um tipo de etiqueta dos padrões de desenho; e **CHAMADA** liga ou desliga a linha de chamada. Clique no elemento e depois onde vai o identificador (digite antes **E** para dobrar a linha num cotovelo). **Anotar → Etiquetar um parâmetro** pede o nome do parâmetro e inicia a ferramenta com ele.
@@ -122,6 +124,12 @@ Um identificador selecionado tem pegas. Arraste a caixa para mover o identificad
 ![As propriedades de um identificador](shots/tag-properties.webp)
 
 O marcador de uma porta ou janela é editado parte por parte, cada texto movido ou girado e cada ponta da sua linha alongada: veja [Portas e janelas](doors-windows.md).
+
+**Rodar um identificador.** Nas propriedades de um identificador, **Rotação** roda o seu texto e o seu ombro ou caixa num ângulo, em graus a partir da horizontal, e **Alinhar ao elemento** faz com que siga a direção do elemento que identifica (o eixo de uma parede ou de uma viga, a aresta mais longa de qualquer outro) e rode com ele; a rotação soma-se então a essa direção. Um identificador é sempre desenhado legível, nunca de cabeça para baixo. Um identificador selecionado tem sobre o texto uma pega de rotação: arraste-a de 15° em 15° (incluindo 45° e 90°; mantenha <kbd>Shift</kbd> para qualquer ângulo), e Ctrl/⌘-clique volta a pôr o texto na horizontal. A linha de chamada continua a alcançar o elemento. Os identificadores simples e os de composição rodam da mesma forma, em plantas, cortes e alçados, e as pranchas, o PDF e o DXF imprimem-nos como você os vê.
+
+**O que um identificador identifica.** Enquanto a ferramenta **Identificador** espera um elemento, o que está sob o cursor é realçado com a cor de destaque; passe o cursor sobre um identificador colocado, ou selecione-o, e o elemento que identifica é realçado.
+
+![Um identificador alinhado à sua parede, com a pega de rotação, e a parede identificada realçada](shots/tag-rotate.webp)
 
 #### Identificador de composição
 

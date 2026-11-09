@@ -109,6 +109,8 @@ Adnotările de pe un plan (cote, texte, linii desenate, etichete) pot trece pe a
 
 ![Înălțimea golului în stilurile de cotă](shots/dimension-opening-height-style.webp)
 
+**Cote pe o linie.** Un punct de cotă pus pe o axă din grilă sau pe axa unui perete se ține de linie, nu de un punct al ei. Trage capătul axei de-a lungul ei ca să încapă bula în vedere, sau lungește ori scurtează peretele: cota măsoară mai departe unde ai pus-o, iar linia ei nu se rotește. Dacă axa sau peretele se mută de-a curmezișul, punctul merge cu ea, în același loc de-a lungul. La fel rămâne, când peretele e întins pe lungime, o cotă pusă pe fața lui. Cotele făcute înainte se țin de o axă din grilă la fel; una pe axa unui perete se atașează din nou dând clic pe punctul ei.
+
 ### Etichete
 
 **Adnotări → Etichetă** (<kbd>TG</kbd>) pune pe o vedere o casetă cu ce spune un element despre el, cu o linie de indicație până la el. Cât timp unealta e pornită, bara de sub vedere alege ce arată eticheta: marca, numele, clasa sau tipul, **Rezistență la foc**, **Izolare acustică**, **Transmitanță termică** sau **Alt parametru…** după nume; ori un tip de etichetă din standardele de desen; iar **INDICAȚIE** pornește sau oprește linia de indicație. Dă clic pe element, apoi unde merge eticheta (tastează întâi **E** ca să frângi linia într-un cot). **Adnotări → Etichetează un parametru** cere numele parametrului și pornește unealta cu el.
@@ -126,6 +128,12 @@ O etichetă selectată are mânere. Trage de casetă ca s-o muți: linia de indi
 ![Proprietățile unei etichete](shots/tag-properties.webp)
 
 Marcajul unei uși sau ferestre se modifică parte cu parte, fiecare text mutat sau rotit și fiecare capăt al liniei lungit: vezi [Uși și ferestre](doors-windows.md).
+
+**Rotirea unei etichete.** În proprietățile unei etichete, **Rotire** întoarce textul și umărul sau chenarul ei cu un unghi, în grade față de orizontală, iar **Aliniază la element** o face să urmeze direcția elementului etichetat (axa unui perete sau a unei grinzi, cea mai lungă muchie a altceva) și să se întoarcă odată cu el; rotirea se adaugă atunci la acea direcție. O etichetă e desenată mereu în sens de citit, niciodată cu susul în jos. O etichetă selectată are deasupra textului un mâner de rotire: trage-l din 15° în 15° (și 45°, 90°; ține <kbd>Shift</kbd> pentru orice unghi), iar Ctrl/⌘-clic pune textul din nou orizontal. Linia de indicație ajunge tot la element. Etichetele simple și cele de stratificație se întorc la fel, în planuri, secțiuni și fațade, iar planșele, PDF-ul și DXF-ul le tipăresc ca le vezi.
+
+**Ce etichetează o etichetă.** Cât timp unealta **Etichetă** așteaptă un element, cel de sub cursor e evidențiat cu culoarea de accent; ține cursorul pe o etichetă pusă, sau selecteaz-o, și elementul pe care îl etichetează e evidențiat.
+
+![O etichetă aliniată la peretele ei, cu mânerul de rotire, și peretele etichetat evidențiat](shots/tag-rotate.webp)
 
 #### Eticheta de stratificație
 
