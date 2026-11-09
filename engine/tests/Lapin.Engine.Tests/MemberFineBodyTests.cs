@@ -55,7 +55,8 @@ public class MemberFineBodyTests(ITestOutputHelper output)
         Assert.Same(fine, f.Session.FineGeometry(id));
         // What measures it stays on the light body.
         var q = f.Session.Quantities(id).First(s => s.Name == "Qto_ColumnBaseQuantities");
-        Assert.Equal(51.88e-4 * f.Bounds(id) switch { var (a, b) => b.Z - a.Z }, q.Quantities.First(x => x.Name == "NetVolume").Value, 6);
+        // The quantities follow the profile's real area, not the sharp body's (decision 418).
+        Assert.InRange(q.Quantities.First(x => x.Name == "NetVolume").Value / (f.Bounds(id) switch { var (a, b) => b.Z - a.Z }), 53.81e-4 * 0.999, 53.81e-4 * 1.001);
     }
 
     [Theory]

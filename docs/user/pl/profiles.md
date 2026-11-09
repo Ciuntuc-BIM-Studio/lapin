@@ -57,7 +57,7 @@ W **Stal → Typy stalowe**, **Konstrukcja → Typy konstrukcyjne** (słupy i be
 
 ![Wybór przeszukuje wszystkie biblioteki](shots/profile-picker.webp)
 
-Profil jest kopiowany do projektu, a typ go zachowuje. Bryły są lekkie, z ostrymi narożami, na każdym poziomie oprócz jednego: widok na **LOD 400** (rzut, przekrój, elewacja, arkusz lub 3D) rysuje rzeczywisty przekrój z zaokrągleniami, promieniami na końcach półek i pochylonymi półkami. Ilości i eksporty pozostają na bryle z ostrymi narożami; zaokrąglenia i pochylone półki liczą się we właściwościach i eksporcie konstrukcji.
+Profil jest kopiowany do projektu, a typ go zachowuje. Bryły są lekkie, z ostrymi narożami, na każdym poziomie oprócz jednego: widok na **LOD 400** (rzut, przekrój, elewacja, arkusz lub 3D) rysuje rzeczywisty przekrój z zaokrągleniami, promieniami na końcach półek i pochylonymi półkami. Eksporty i wybór pozostają na bryle z ostrymi narożami, ale ilości, masy, przedmiary, lista elementów stalowych i kosztorysy używają rzeczywistego pola przekroju (IPE 300 ma 53,81 cm², a nie 51,88 jak ostry obrys); przekrój bez promieni się nie zmienia.
 
 ![Belka i słup stalowy w widoku 3D na LOD 400: narysowane zaokrąglenia](shots/profile-real-section.webp)
 

@@ -295,7 +295,8 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         var (start, end) = SteelEnd.Of(e);
         var built = SteelBody.Build(m, ax, start, end, null);
         // The member's own body: its haunches are pieces welded on (their weight in the hall's summary).
-        var net = g.Parts.Where(p => p.Key == "body").Sum(p => Measure.Volume(p.Solid));
+        // Sharp body × the real section's ratio (decision 418); the haunches are plates, as drawn.
+        var net = g.Parts.Where(p => p.Key == "body").Sum(p => Measure.Volume(p.Solid)) * ax.Section.RealRatio;
         var area = ax.Section.Area;
         yield return new QuantitySet("Qto_MemberBaseQuantities",
         [

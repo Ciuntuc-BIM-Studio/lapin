@@ -57,7 +57,7 @@ En **Acero → Tipos de acero**, **Estructura → Tipos estructurales** (pilares
 
 ![El selector busca en todas las bibliotecas](shots/profile-picker.webp)
 
-El perfil se copia al proyecto y el tipo lo conserva. Los cuerpos son ligeros, con esquinas vivas, en todos los niveles menos uno: una vista a **LOD 400** (planta, sección, alzado, plano o 3D) dibuja la sección real, con radios de acuerdo, radios en las puntas y alas inclinadas. Las cantidades y las exportaciones conservan el cuerpo de esquinas vivas; los radios de acuerdo y las alas inclinadas cuentan en las propiedades y en la exportación estructural.
+El perfil se copia al proyecto y el tipo lo conserva. Los cuerpos son ligeros, con esquinas vivas, en todos los niveles menos uno: una vista a **LOD 400** (planta, sección, alzado, plano o 3D) dibuja la sección real, con radios de acuerdo, radios en las puntas y alas inclinadas. Las exportaciones y la selección conservan el cuerpo de esquinas vivas, pero las cantidades, los pesos, las mediciones, la lista de elementos de acero y los presupuestos usan el área real de la sección (un IPE 300 tiene 53,81 cm², no los 51,88 del contorno de esquinas vivas); una sección sin radios no cambia.
 
 ![Una viga y un pilar de acero en una vista 3D a LOD 400: radios de acuerdo dibujados](shots/profile-real-section.webp)
 

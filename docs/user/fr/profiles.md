@@ -57,7 +57,7 @@ Dans **Acier → Types acier**, **Structure → Types structurels** (poteaux et 
 
 ![Le sélecteur cherche dans toutes les bibliothèques](shots/profile-picker.webp)
 
-Le profilé est copié dans le projet et le type le garde. Les corps sont légers, à angles vifs, à tous les niveaux sauf un : une vue au **LOD 400** (plan, coupe, élévation, feuille ou 3D) dessine la section réelle, avec congés, rayons de bout d'aile et ailes inclinées. Les quantités et les exports gardent le corps à angles vifs ; les congés et les ailes inclinées comptent dans les propriétés et dans l'export de structure.
+Le profilé est copié dans le projet et le type le garde. Les corps sont légers, à angles vifs, à tous les niveaux sauf un : une vue au **LOD 400** (plan, coupe, élévation, feuille ou 3D) dessine la section réelle, avec congés, rayons de bout d'aile et ailes inclinées. Les exports et la sélection gardent le corps à angles vifs, mais les quantités, les poids, les métrés, la liste des éléments d'acier et les estimations utilisent l'aire réelle de la section (un IPE 300 fait 53,81 cm², pas les 51,88 du contour à angles vifs) ; une section sans rayons ne change pas.
 
 ![Une poutre et un poteau d'acier dans une vue 3D au LOD 400 : congés dessinés](shots/profile-real-section.webp)
 

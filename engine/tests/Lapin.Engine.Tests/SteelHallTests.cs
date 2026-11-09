@@ -291,7 +291,7 @@ public class SteelHallTests
         // The same weights as the hall built in the model.
         var hall = Hall(f);
         double kg(Func<string, bool> role, Func<string, bool> part) => Members(f, hall).Where(x => role(x.Key))
-            .SelectMany(x => f.Session.Geometry(x.Value.Id)!.Parts.Where(g => part(g.Key ?? ""))).Sum(g => Measure.Volume(g.Solid)) * SteelModule.SteelDensity;
+            .SelectMany(x => f.Session.Geometry(x.Value.Id)!.Parts.Where(g => part(g.Key ?? "")).Select(g => Measure.Volume(g.Solid) * (g.Key == "body" ? MemberAxes.Of(f.Model, x.Value)!.Section.RealRatio : 1))).Sum() * SteelModule.SteelDensity;
         var w = sum["weights"]!;
         Assert.Equal(kg(r => r.Contains(":raf"), k => k == "body"), (double)w["rafter"]!, 0.1);
         Assert.Equal(kg(r => r.Contains(":raf"), k => k.StartsWith("haunch", StringComparison.Ordinal)), (double)w["haunch"]!, 0.1);

@@ -57,7 +57,7 @@ In **Steel → Steel types**, **Structure → Structure types** (columns and bea
 
 ![The picker searches every library](shots/profile-picker.webp)
 
-The profile is copied into the project and the type keeps it. Bodies are light, with sharp corners, at every level but one: a view at **LOD 400** (a plan, a section, an elevation, a sheet or a 3D view) draws the real section, root fillets, toe radii, sloping flanges. Quantities and exports keep the sharp body; the root radii and sloping flanges count in the properties and in the structural export.
+The profile is copied into the project and the type keeps it. Bodies are light, with sharp corners, at every level but one: a view at **LOD 400** (a plan, a section, an elevation, a sheet or a 3D view) draws the real section, root fillets, toe radii, sloping flanges. Exports and picking keep the sharp body, but quantities, weights, takeoffs, the Steel members list and estimates use the section's real area (an IPE 300 is 53.81 cm², not the sharp outline's 51.88); a section with no radii changes nothing.
 
 ![A steel beam and column in a 3D view at LOD 400: root fillets drawn](shots/profile-real-section.webp)
 

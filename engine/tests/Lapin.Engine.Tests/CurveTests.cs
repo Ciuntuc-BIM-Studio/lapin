@@ -131,7 +131,7 @@ public class CurveTests
         var ipe = (string)f.Run("structure.createBeamType", new JsonObject { ["section"] = "IPE 300" })!["id"]!;
         var steel = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = ipe, ["x1"] = 0, ["y1"] = 10, ["x2"] = 6, ["y2"] = 10, ["x3"] = 3, ["y3"] = 11 })!["id"]!;
         var length = PathCurve.Of(f.Model.Get(steel)!).Length;
-        var area = Section.Catalogue["IPE 300"].Area;
+        var area = Section.Catalogue["IPE 300"].SharpArea;
         Assert.InRange(Volume(f, steel), area * length * 0.99, area * length * 1.01);
         Assert.Equal(3, f.Bounds(steel).Max.Z, 6);
         // A channel flipped faces the other way across its axis.

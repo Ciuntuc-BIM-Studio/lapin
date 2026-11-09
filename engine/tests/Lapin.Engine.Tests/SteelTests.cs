@@ -45,7 +45,7 @@ public class SteelTests
     public void Hollow_and_cold_formed_sections_have_their_areas_and_outlines()
     {
         var rhs = Section.Catalogue["RHS 150×100×6"];
-        Assert.Equal(0.1 * 0.15 - 0.088 * 0.138, rhs.Area, 9);
+        Assert.Equal(0.1 * 0.15 - 0.088 * 0.138, rhs.SharpArea, 9);
         Assert.Single(rhs.Holes());
         Assert.True(Polygon2.SignedArea(rhs.Holes()[0]) < 0);
         Assert.Equal("RHS 150×100×6", rhs.Label);
@@ -82,7 +82,7 @@ public class SteelTests
         var f = F();
         var type = (string)f.Run("structure.createBeamType", new JsonObject { ["section"] = "RHS 200×100×8" })!["id"]!;
         var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = type, ["x1"] = 0, ["y1"] = 0, ["x2"] = 4, ["y2"] = 0 })!["id"]!;
-        Assert.Equal(Section.Catalogue["RHS 200×100×8"].Area * 4, Volume(f, beam), 9);
+        Assert.Equal(Section.Catalogue["RHS 200×100×8"].SharpArea * 4, Volume(f, beam), 9);
     }
 
     // ------------------------------------------------------------ ends
@@ -93,7 +93,7 @@ public class SteelTests
         var f = F();
         var ipe = Type(f, "IPE 300");
         var m = Member(f, ipe, 0, 0, 3, 6, 0, 3);
-        var area = Section.Catalogue["IPE 300"].Area;
+        var area = Section.Catalogue["IPE 300"].SharpArea;
         Assert.Equal(area * 6, Volume(f, m), 9);
         // Centred: the section's box about the axis.
         Assert.Equal(3 - 0.15, Points(f, m).Min(p => p.Z), 9);
@@ -105,7 +105,7 @@ public class SteelTests
         Assert.Equal(6.25, Points(f, m).Max(p => p.X), 9);
         var q = f.Session.Quantities(m).Single(s => s.Name == "Qto_MemberBaseQuantities").Quantities;
         Assert.Equal(6.24, q.Single(x => x.Name == "Length").Value, 9);
-        Assert.Equal(area * 6.24 * SteelModule.SteelDensity, q.Single(x => x.Name == "NetWeight").Value, 6);
+        Assert.Equal(Section.Catalogue["IPE 300"].Area * 6.24 * SteelModule.SteelDensity, q.Single(x => x.Name == "NetWeight").Value, 6);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class SteelTests
         var f = F();
         var ipe = Type(f, "IPE 300");
         var m = Member(f, ipe, 0, 0, 3, 6, 0, 3);
-        var area = Section.Catalogue["IPE 300"].Area;
+        var area = Section.Catalogue["IPE 300"].SharpArea;
         // 30° in plan: the flanges' tips run on, the section being symmetric about its up the volume stays.
         Ends(f, m, end: new JsonObject { ["cut"] = "plane", ["planAngle"] = 30 });
         Assert.Equal(area * 6, Volume(f, m), 9);
@@ -166,7 +166,7 @@ public class SteelTests
         // On the column's flange, 10 mm off it.
         Ends(f, m, end: new JsonObject { ["cut"] = "fit", ["ref"] = column, ["extension"] = -0.01 });
         Assert.Equal(0.1 + 0.01, Points(f, m).Min(p => p.X), 9);
-        Assert.Equal(Section.Catalogue["IPE 300"].Area * (5 - 0.11), Volume(f, m), 9);
+        Assert.Equal(Section.Catalogue["IPE 300"].SharpArea * (5 - 0.11), Volume(f, m), 9);
         f.Run("structure.updateColumn", new JsonObject { ["id"] = column, ["x"] = -1 });
         Assert.Equal(-1 + 0.11, Points(f, m).Min(p => p.X), 9);
         // Turned a quarter, the column shows the member its web's side: half its depth.

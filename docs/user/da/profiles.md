@@ -57,7 +57,7 @@ I **Stål → Ståltyper**, **Konstruktion → Konstruktionstyper** (søjler og 
 
 ![Vælgeren søger i alle biblioteker](shots/profile-picker.webp)
 
-Profilen kopieres til projektet, og typen beholder den. Kroppe er lette, med skarpe hjørner, på alle niveauer undtagen ét: en visning på **LOD 400** (plan, snit, opstalt, tegningsark eller 3D) tegner det virkelige tværsnit med hulkehler, afrundede flangespidser og skrå flanger. Mængder og eksporter beholder den skarpe krop; hulkehler og skrå flanger tæller i egenskaberne og i konstruktionseksporten.
+Profilen kopieres til projektet, og typen beholder den. Kroppe er lette, med skarpe hjørner, på alle niveauer undtagen ét: en visning på **LOD 400** (plan, snit, opstalt, tegningsark eller 3D) tegner det virkelige tværsnit med hulkehler, afrundede flangespidser og skrå flanger. Eksporter og valg beholder den skarpe krop, men mængder, vægte, mængdeudtræk, listen over stålelementer og overslag bruger tværsnittets virkelige areal (en IPE 300 er 53,81 cm², ikke den skarpe kontur 51,88); et snit uden radier ændres ikke.
 
 ![En stålbjælke og -søjle i en 3D-visning på LOD 400: hulkehler tegnet](shots/profile-real-section.webp)
 

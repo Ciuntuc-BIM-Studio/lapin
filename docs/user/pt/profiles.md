@@ -57,7 +57,7 @@ Em **Aço → Tipos de aço**, **Estrutura → Tipos estruturais** (pilares e vi
 
 ![O seletor pesquisa em todas as bibliotecas](shots/profile-picker.webp)
 
-O perfil é copiado para o projeto e o tipo o mantém. Os corpos são leves, com cantos vivos, em todos os níveis menos um: uma vista em **LOD 400** (planta, corte, alçado, folha ou 3D) desenha a secção real, com raios de concordância, raios nas pontas e banzos inclinados. As quantidades e as exportações mantêm o corpo de cantos vivos; raios de concordância e banzos inclinados contam nas propriedades e na exportação estrutural.
+O perfil é copiado para o projeto e o tipo o mantém. Os corpos são leves, com cantos vivos, em todos os níveis menos um: uma vista em **LOD 400** (planta, corte, alçado, folha ou 3D) desenha a secção real, com raios de concordância, raios nas pontas e banzos inclinados. As exportações e a seleção mantêm o corpo de cantos vivos, mas as quantidades, os pesos, as medições, a lista de elementos de aço e os orçamentos usam a área real da secção (um IPE 300 tem 53,81 cm², não os 51,88 do contorno de cantos vivos); uma secção sem raios não muda.
 
 ![Uma viga e um pilar de aço numa vista 3D em LOD 400: raios de concordância desenhados](shots/profile-real-section.webp)
 

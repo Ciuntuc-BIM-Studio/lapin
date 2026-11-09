@@ -57,7 +57,7 @@ In **Acciaio → Tipi in acciaio**, **Struttura → Tipi strutturali** (pilastri
 
 ![Il selettore cerca in tutte le librerie](shots/profile-picker.webp)
 
-Il profilo viene copiato nel progetto e il tipo lo conserva. I corpi sono leggeri, a spigoli vivi, a ogni livello tranne uno: una vista a **LOD 400** (pianta, sezione, prospetto, tavola o 3D) disegna la sezione reale, con raccordi, raggi di punta e ali inclinate. Quantità ed esportazioni restano sul corpo a spigoli vivi; raccordi e ali inclinate contano nelle proprietà e nell'esportazione strutturale.
+Il profilo viene copiato nel progetto e il tipo lo conserva. I corpi sono leggeri, a spigoli vivi, a ogni livello tranne uno: una vista a **LOD 400** (pianta, sezione, prospetto, tavola o 3D) disegna la sezione reale, con raccordi, raggi di punta e ali inclinate. Esportazioni e selezione restano sul corpo a spigoli vivi, ma quantità, pesi, computi, l'elenco degli elementi in acciaio e le stime usano l'area reale della sezione (un IPE 300 è 53,81 cm², non i 51,88 del contorno a spigoli vivi); una sezione senza raggi non cambia.
 
 ![Una trave e un pilastro d'acciaio in una vista 3D a LOD 400: raccordi disegnati](shots/profile-real-section.webp)
 

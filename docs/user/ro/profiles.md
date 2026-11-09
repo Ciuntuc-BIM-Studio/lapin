@@ -57,7 +57,7 @@ Desenează secțiunea cu Desen, din polilinii închise și cercuri (cele din int
 
 ![Alegătorul caută în toate bibliotecile](shots/profile-picker.webp)
 
-Profilul se copiază în proiect, iar tipul îl păstrează. Corpurile sunt ușoare, cu colțuri drepte, la toate nivelurile în afară de unul: o vedere la **LOD 400** (plan, secțiune, elevație, planșă sau 3D) desenează secțiunea reală, racordări, raze la vârfuri, tălpi înclinate. Cantitățile și exporturile rămân pe corpul cu colțuri drepte; razele de racordare și tălpile înclinate contează în proprietăți și în exportul de structură.
+Profilul se copiază în proiect, iar tipul îl păstrează. Corpurile sunt ușoare, cu colțuri drepte, la toate nivelurile în afară de unul: o vedere la **LOD 400** (plan, secțiune, elevație, planșă sau 3D) desenează secțiunea reală, racordări, raze la vârfuri, tălpi înclinate. Exporturile și alegerea rămân pe corpul cu colțuri drepte, dar cantitățile, greutățile, extrasele, Lista barelor metalice și devizele folosesc aria reală a secțiunii (un IPE 300 are 53,81 cm², nu 51,88 cât conturul cu colțuri drepte); o secțiune fără raze nu se schimbă.
 
 ![O grindă și un stâlp metalic într-o vedere 3D la LOD 400: racordările desenate](shots/profile-real-section.webp)
 
