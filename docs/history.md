@@ -144,3 +144,5 @@ Then (#427, a tester's report #120) images to trace and a PDF's pictures were dr
 Then (#428, a tester's report #122) a SOLID hatch can be selected again: its outline and its area are sent to the interface to click, a pattern hatch too (inside, where nothing else lies).
 
 Then (#429, a tester's report #121) EXPLODE (X, Draft → Edit → Explode): a polyline or a rectangle split into its lines on the same layer, pen and group, in one undo step (`drafting.explode`); circles, arcs, hatches and dimension strings stay.
+
+Then (#430, a tester's question #119) Measure in the 3D view gives the true length in space between points at different heights (`ToolInput.heights`, `measured3d`), and Ask Lapin answers "is there a tape tool" in every language.

@@ -20,11 +20,33 @@ export function measured(points: Vec2[]): { legs: number[]; total: number; area:
   return { legs, total: legs.reduce((s, l) => s + l, 0), area: points.length >= 3 ? Math.abs(a) / 2 : null };
 }
 
+/**
+ * The same in space, for points clicked in the 3D view with their heights: each leg's true length (a ridge to an eave is
+ * longer than its plan), the total, and the plan area they enclose.
+ */
+export function measured3d(points: Vec2[], heights: number[]): { legs: number[]; total: number; area: number | null; rise: number } {
+  const flat = measured(points);
+  const legs = points.slice(1).map((p, i) => Math.hypot(p.x - points[i].x, p.y - points[i].y, (heights[i + 1] ?? 0) - (heights[i] ?? 0)));
+  return { legs, total: legs.reduce((s, l) => s + l, 0), area: flat.area, rise: (heights[heights.length - 1] ?? 0) - (heights[0] ?? 0) };
+}
+
 export const measure: ToolDef = {
   id: 'measure', label: 'Measure', icon: Ruler, shortcut: 'ME',
   gesture: { kind: 'polyline' },
-  complete: ({ points }) => {
+  complete: ({ points, heights }) => {
     if (points.length < 2) return;
+    // Clicked in the 3D view on points at different heights: the distance in space.
+    if (heights && heights.length === points.length && heights.some((h) => Math.abs(h - heights[0]) > 1e-3)) {
+      const m = measured3d(points, heights);
+      const parts = [`Length ${lengthText(m.total)}`];
+      if (m.legs.length > 1) parts.push(`legs ${m.legs.map((l) => lengthText(l)).join(' + ')}`);
+      else {
+        const [a, b] = points;
+        parts.push(`Δx ${lengthText(Math.abs(b.x - a.x))}`, `Δy ${lengthText(Math.abs(b.y - a.y))}`, `Δz ${lengthText(Math.abs(m.rise))}`);
+      }
+      notify(parts.join(' · '));
+      return;
+    }
     const { legs, total, area } = measured(points);
     const parts = [`Length ${lengthText(total)}`];
     if (legs.length > 1) parts.push(`legs ${legs.map((l) => lengthText(l)).join(' + ')}`);

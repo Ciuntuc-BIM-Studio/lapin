@@ -54,6 +54,8 @@ export interface ToolInput {
   points: Vec2[]; entity?: NodeDto; face?: FaceHit;
   /** The length typed in the live input (m) when the last point came from it, so a tool may measure along its own path rather than the screen. */
   typed?: number;
+  /** In the 3D view, the height (m) of each point as clicked (a snap on a ridge, a corner above the level); a tool that measures in space reads it, the others work on the level. */
+  heights?: number[];
 }
 
 /** What a tool's completion can use: the storey it draws on, and the engine. */
