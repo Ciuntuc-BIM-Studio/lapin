@@ -19,10 +19,12 @@ import { PendingDialog } from '../core/PendingDialog';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { deleteType } from '../core/deleteType';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
+import { placeJson, type Place } from './memberPlace';
+import { PlaceFields } from './PlaceFields';
 
 interface Grid { mode: 'count' | 'spacing' | 'max' | 'offsets'; count?: number; spacing?: number; justify?: 'start' | 'center' | 'end'; offsets?: number[] }
 /** A member's size; `profile`: the library profile whose real outline its body takes (decision 417), with that size. */
-interface Section { width: number; depth: number; profile?: ({ name?: string; width: number; depth: number } & Record<string, unknown>) | null }
+interface Section { width: number; depth: number; profile?: ({ name?: string; width: number; depth: number } & Record<string, unknown>) | null; place?: Place | null }
 export interface CurtainSpec {
   u: Grid; v: Grid; mullion: Section; transom: Section; edge: boolean;
   panel: { thickness: number; kind: 'glass' | 'opaque' };
@@ -115,7 +117,7 @@ export function CurtainWallDialog() {
   // A library profile for a member (decision 417): copied into the project, its real outline the member's body, with its size.
   const pickProfile = (key: 'mullion' | 'transom', profile: unknown, library: string | null) => {
     void (execute('profiles.use', { profile, library }) as Promise<{ section?: NonNullable<Section['profile']> } | null>).then((r) => {
-      if (r?.section) set({ [key]: { width: r.section.width, depth: r.section.depth, profile: r.section } });
+      if (r?.section) set({ [key]: { width: r.section.width, depth: r.section.depth, profile: r.section, place: spec[key].place } });
     });
   };
   const close = () => useUi.setState({ dialog: null });
@@ -159,14 +161,20 @@ export function CurtainWallDialog() {
               <label className="field-line"><span className="eyebrow">Name</span><input value={name} onChange={(e) => setName(e.target.value)} /></label>
               <GridFields label="Along (mullions)" grid={spec.u} onChange={(u) => set({ u })} />
               <GridFields label="Up (transoms)" grid={spec.v} onChange={(v) => set({ v })} />
-              <Mm label="Mullion width" value={spec.mullion.width} onChange={(v) => set({ mullion: { width: v, depth: spec.mullion.depth } })} />
-              <Mm label="Mullion depth" value={spec.mullion.depth} onChange={(v) => set({ mullion: { width: spec.mullion.width, depth: v } })} />
-              <Mm label="Transom width" value={spec.transom.width} onChange={(v) => set({ transom: { width: v, depth: spec.transom.depth } })} />
-              <Mm label="Transom depth" value={spec.transom.depth} onChange={(v) => set({ transom: { width: spec.transom.width, depth: v } })} />
+              <Mm label="Mullion width" value={spec.mullion.width} onChange={(v) => set({ mullion: { width: v, depth: spec.mullion.depth, place: spec.mullion.place } })} />
+              <Mm label="Mullion depth" value={spec.mullion.depth} onChange={(v) => set({ mullion: { width: spec.mullion.width, depth: v, place: spec.mullion.place } })} />
+              <Mm label="Transom width" value={spec.transom.width} onChange={(v) => set({ transom: { width: v, depth: spec.transom.depth, place: spec.transom.place } })} />
+              <Mm label="Transom depth" value={spec.transom.depth} onChange={(v) => set({ transom: { width: spec.transom.width, depth: v, place: spec.transom.place } })} />
               <label className="field-line"><span className="eyebrow">Mullion from a library</span><ProfilePickerField testId="curtain-mullion-library" value={spec.mullion.profile?.name ?? null} onPick={(p, library) => pickProfile('mullion', p, library)} />
-                {spec.mullion.profile && <button type="button" data-testid="curtain-mullion-plain" title="Keeps its size as a plain rectangle" onClick={() => set({ mullion: { width: spec.mullion.width, depth: spec.mullion.depth } })}>Plain</button>}</label>
+                {spec.mullion.profile && <button type="button" data-testid="curtain-mullion-plain" title="Keeps its size as a plain rectangle" onClick={() => set({ mullion: { width: spec.mullion.width, depth: spec.mullion.depth, place: spec.mullion.place } })}>Plain</button>}</label>
               <label className="field-line"><span className="eyebrow">Transom from a library</span><ProfilePickerField testId="curtain-transom-library" value={spec.transom.profile?.name ?? null} onPick={(p, library) => pickProfile('transom', p, library)} />
-                {spec.transom.profile && <button type="button" data-testid="curtain-transom-plain" title="Keeps its size as a plain rectangle" onClick={() => set({ transom: { width: spec.transom.width, depth: spec.transom.depth } })}>Plain</button>}</label>
+                {spec.transom.profile && <button type="button" data-testid="curtain-transom-plain" title="Keeps its size as a plain rectangle" onClick={() => set({ transom: { width: spec.transom.width, depth: spec.transom.depth, place: spec.transom.place } })}>Plain</button>}</label>
+              {(['mullion', 'transom'] as const).map((key) => (spec[key].profile || spec[key].place) && (
+                <details key={key} className="place-details" data-testid={`curtain-${key}-place`} open={!!spec[key].place}>
+                  <summary className="eyebrow">{key === 'mullion' ? 'Mullion profile: place' : 'Transom profile: place'}</summary>
+                  <PlaceFields place={spec[key].place ?? {}} onChange={(p) => set({ [key]: { ...spec[key], place: placeJson(p) } })} />
+                </details>
+              ))}
               <label className="field-line"><span className="eyebrow">Edge members</span><input type="checkbox" checked={spec.edge} onChange={(e) => set({ edge: e.target.checked })} /></label>
               <label className="field-line"><span className="eyebrow">Panels</span>
                 <select value={spec.panel.kind} onChange={(e) => set({ panel: { ...spec.panel, kind: e.target.value as 'glass' | 'opaque' } })}>

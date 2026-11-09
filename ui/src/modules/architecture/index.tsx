@@ -47,6 +47,7 @@ import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, s
 import { lazyPart } from '../../platform/lazyPart';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
+const CurtainMembersDialog = lazyPart(() => import('./CurtainMembersDialog').then((m) => m.CurtainMembersDialog), { title: 'Curtain wall members' });
 const WallProfileDialog = lazyPart(() => import('./WallProfileDialog').then((m) => m.WallProfileDialog), { title: 'Wall profile' });
 const GateTypesDialog = lazyPart(() => import('./gates/GateTypesDialog').then((m) => m.GateTypesDialog), { title: 'Gate types' });
 const WallTypesDialog = lazyPart(() => import('./WallTypesDialog').then((m) => m.WallTypesDialog), { title: 'Wall types' });
@@ -499,7 +500,7 @@ const architecture: LapinModule = {
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
     { id: 'gate', label: 'Gate', classes: [GATE_CLASS], component: GateSection },
   ],
-  dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog },
+  dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, curtainMembers: CurtainMembersDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog },
   grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips,
     [GATE_CLASS]: (n: NodeDto) => {
       const { nodes, relations } = useSession.getState();

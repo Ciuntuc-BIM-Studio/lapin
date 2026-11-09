@@ -21,6 +21,8 @@ import { isDesktop } from '../../../engine/files';
 import { engineInBrowser } from '../../../engine/session';
 import { pickFolder } from '../cde/cde';
 import { SectionView } from './SectionView';
+import { ProfileEditor, type EditorStart } from './ProfileEditor';
+import { starter, toMm } from './sectionEditor';
 import { TableImport, type CheckDto, type ImportReport, type TableRead } from './TableImport';
 
 interface PropsDto {
@@ -80,6 +82,8 @@ export function ProfileLibrariesDialog() {
   const [busy, setBusy] = useState(false);
   // An outline read from the drawing or a DXF, being named before it goes into a library.
   const [outline, setOutline] = useState<{ profile: ProfileJson; library: string; dto: PropsDto | null } | null>(null);
+  // The section editor: a profile drawn or its outline edited (report #128).
+  const [editor, setEditor] = useState<EditorStart | null>(null);
   const folders = sharedFolders();
 
   // The search runs over every library when text is typed, else over the one chosen.
@@ -127,6 +131,17 @@ export function ProfileLibrariesDialog() {
   const startOutline = async (profile: ProfileJson) => {
     const dto = await query<PropsDto>('profiles.properties', { profile });
     setOutline({ profile, library: 'My profiles', dto });
+  };
+  const drawNew = () => setEditor({ name: 'Aluminium 50x100', material: 'aluminium', rings: starter('box', { width: 50, depth: 100, wall: 3 }), library: 'My profiles' });
+  /** The profile chosen, its outline in the editor: kept under its name in this computer's library it came from (else My profiles), the project's copy then marked newer. */
+  const editOutline = () => {
+    if (!current || !dto) return;
+    setEditor({ name: current.name, material: current.material ?? 'steel', rings: toMm(dto.rings), library: currentEntry?.origin === 'computer' ? currentEntry.name : 'My profiles' });
+  };
+  const edited = async (profile: ProfileJson, library: string) => {
+    const dtoNew = await query<PropsDto>('profiles.properties', { profile });
+    setEditor(null);
+    setOutline({ profile, library, dto: dtoNew });
   };
   const fromSelection = async () => {
     const ids = useUi.getState().selected;
@@ -197,7 +212,9 @@ export function ProfileLibrariesDialog() {
       <div className="dialog wide profile-libraries" role="dialog" aria-label="Profile libraries" data-dialog="profile-libraries" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title"><Library size={14} /> Profile libraries</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
-          {table ? (
+          {editor ? (
+            <ProfileEditor start={editor} onCancel={() => setEditor(null)} onDone={(p, l) => void edited(p, l)} />
+          ) : table ? (
             <>
               <h4 className="eyebrow" data-no-i18n>{table.name}</h4>
               <TableImport file={table} read={table.read} onDone={(r) => void imported(r)} onCancel={() => setTable(null)} />
@@ -223,6 +240,7 @@ export function ProfileLibrariesDialog() {
                   <button type="button" className="btn" onClick={() => void importTable()} data-testid="profile-import-table"><FileUp size={14} />Table…</button>
                   <button type="button" className="btn" disabled={busy} onClick={() => void importIfc()} data-testid="profile-import-ifc" title="An IFC file: a profile library, or any model (the profiles its elements use)"><FileUp size={14} />IFC…</button>
                   <button type="button" className="btn" onClick={() => void fromDxf()} data-testid="profile-import-dxf" title="A DXF's closed outlines as one profile: the biggest its outside, those inside it its holes"><FileUp size={14} />DXF…</button>
+                  <button type="button" className="btn" onClick={drawNew} data-testid="profile-draw-new" title="Draw a section: its outside and its chambers, with their sizes in millimetres (aluminium profiles for curtain wall members)"><PenLine size={14} />Draw a profile…</button>
                   <button type="button" className="btn" onClick={() => void fromSelection()} data-testid="profile-from-selection" title="The closed outlines selected in a view (Drafting) as one profile: those inside another are its holes"><PenLine size={14} />From the selection</button>
                 </div>
                 {!engineInBrowser && <div className="profile-folders" data-testid="profile-folders">
@@ -292,6 +310,7 @@ export function ProfileLibrariesDialog() {
                     </p>
                     <div className="row wrap">
                       {currentEntry?.origin !== 'project' && <button type="button" className="btn primary" onClick={() => void copyIntoProject()} data-testid="profile-use"><BookMarked size={14} />Copy into the project</button>}
+                      {dto && <button type="button" className="btn" onClick={editOutline} data-testid="profile-edit-outline" title="Its outline in the section editor, to change its points and sizes; kept, the project's copy is marked newer and Update brings it to every member made of it"><PenLine size={14} />Edit its outline…</button>}
                       {dto && <button type="button" className="btn" onClick={() => void drawOutline()} data-testid="profile-draw" title="Its outline as closed polylines in the view in front, for Studio to extrude or sweep"><PenLine size={14} />Draw its outline</button>}
                       {copy && newer && <button type="button" className="btn primary" disabled={busy} onClick={() => void update()} data-testid="profile-update" title={`From ${newer.entry.name}`}><RefreshCw size={14} />Update from the library</button>}
                       {copy && <button type="button" className="btn" disabled={copy.types.length > 0} title={copy.types.length ? 'Its types use it: change their profile first' : 'Take it out of the project'} onClick={() => void execute('profiles.remove', { id: copy.id }).then(() => setChosen(null))}><Trash2 size={14} />Remove</button>}

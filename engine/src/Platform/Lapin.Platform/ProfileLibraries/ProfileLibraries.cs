@@ -144,6 +144,29 @@ public static class ProjectProfiles
         };
     }
 
+    /// <summary>Why drawn rings cannot be a profile: one that crosses itself or another (touching at a point is allowed to none), or a degenerate ring.</summary>
+    public static void CheckRings(IReadOnlyList<List<Vec2>> rings)
+    {
+        static bool Cross(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
+        {
+            double Side(Vec2 p, Vec2 q, Vec2 r) => Vec2.Cross(q - p, r - p);
+            var (d1, d2, d3, d4) = (Side(a, b, c), Side(a, b, d), Side(c, d, a), Side(c, d, b));
+            return ((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12)) && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12));
+        }
+        for (var i = 0; i < rings.Count; i++)
+        {
+            if (Math.Abs(Polygon2.SignedArea(rings[i])) < 1e-10) throw new CommandException($"Outline {i + 1} encloses no area.");
+            for (var j = i; j < rings.Count; j++)
+                for (var p = 0; p < rings[i].Count; p++)
+                    for (var q = i == j ? p + 2 : 0; q < rings[j].Count; q++)
+                    {
+                        if (i == j && p == 0 && q == rings[i].Count - 1) continue;
+                        if (Cross(rings[i][p], rings[i][(p + 1) % rings[i].Count], rings[j][q], rings[j][(q + 1) % rings[j].Count]))
+                            throw new CommandException(i == j ? $"Outline {i + 1} crosses itself." : $"Outlines {i + 1} and {j + 1} cross each other.");
+                    }
+        }
+    }
+
     /// <summary>The closed outlines of drafted shapes (closed polylines with their arcs, circles), in their view's plane.</summary>
     public static List<List<Vec2>> DraftedLoops(IModelView m, IEnumerable<string> ids)
     {
@@ -312,6 +335,20 @@ public static class ProfileLibraryCommands
             var loops = ProjectProfiles.DraftedLoops(q.Model, ids);
             if (loops.Count == 0) throw new CommandException("Select closed outlines drawn with Drafting (a closed polyline, a rectangle or a circle; those inside another are its holes).");
             return ProjectProfiles.WithSummary(ProjectProfiles.FromOutlines(loops, (string?)a["name"] is { Length: > 0 } n ? n.Trim() : "Outline profile", (string?)a["material"] ?? "steel", "drafting"));
+        });
+
+        // {rings: [[[x, y], …], …], unit? (metres per unit, 0.001 = millimetres), name?, material?}: a profile drawn in the editor (report #128),
+        // each ring a closed outline: the biggest the outside, those inside it holes, any other outside beside it; a ring that crosses
+        // itself or another is refused. Centred on its box, with its summary.
+        r.Query("profiles.fromRings", (_, a) =>
+        {
+            var unit = Json.Number(a["unit"]) is { } u && u > 0 ? u : 0.001;
+            var loops = (a["rings"] as JsonArray ?? []).OfType<JsonArray>()
+                .Select(ring => ring.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2((Json.Number(p[0]) ?? 0) * unit, (Json.Number(p[1]) ?? 0) * unit)).ToList()).ToList();
+            if (loops.Count == 0) throw new CommandException("Draw an outline first: a ring of at least three points.");
+            if (loops.Any(l => l.Count < 3)) throw new CommandException("An outline needs three points at least.");
+            ProjectProfiles.CheckRings(loops);
+            return ProjectProfiles.WithSummary(ProjectProfiles.FromOutlines(loops, (string?)a["name"] is { Length: > 0 } n ? n.Trim() : "Drawn profile", (string?)a["material"] ?? "aluminium", "drawn"));
         });
 
         // {data, name?, unit? (metres per drawing unit), material?}: a DXF's closed outlines as an outline profile.

@@ -1,6 +1,6 @@
 /** A curtain wall in the inspector: its type (and the configurator), its length along its axis, how many of its type there are. */
 
-import { Settings2 } from 'lucide-react';
+import { Boxes, Mountain, Settings2 } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { ofClass, relatedOf, typeOf } from '../../engine/model';
@@ -25,6 +25,17 @@ export function CurtainWallSection({ node }: { node: NodeDto }) {
           <button type="button" className="icon" title="Curtain walls…" onClick={() => useUi.setState({ dialog: 'curtainWalls', curtainTypeId: type?.id ?? null })}><Settings2 size={14} /></button>
         </span>
       </label>
+      {node.editable && (
+        <span className="row" style={{ gap: 6 }}>
+          <button type="button" className="btn" data-action="curtain-profile" title="Its boundary drawn in elevation: a gable, a slope, steps; the grid, panels and mullions follow" onClick={() => useUi.setState({ dialog: 'wallProfile', selection: node.id })}>
+            <Mountain size={14} />Profile…
+          </button>
+          <button type="button" className="btn" data-action="curtain-members" title="Chosen mullions and transoms with a profile of their own, turned, aligned or offset" onClick={() => useUi.setState({ dialog: 'curtainMembers', selection: node.id })}>
+            <Boxes size={14} />Members…
+          </button>
+          {Array.isArray(node.props.topProfile) && <button type="button" className="btn" title="Flat on top again" onClick={() => void execute('architecture.setCurtainWallProfile', { ids: [node.id], top: null })}>Flat top</button>}
+        </span>
+      )}
       <dl className="fields">
         <dt>Length</dt><dd className="num">{c ? lengthText(arcLength(c)) : '—'}</dd>
         <dt>Of its type</dt><dd className="num">{type ? relatedOf(model, type.id, 'IfcRelDefinesByType').length : 0}</dd>

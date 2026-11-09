@@ -231,6 +231,20 @@ describe('Ask Lapin', () => {
     expect(best('mi s-a schimbat biblioteca de profile cum actualizez proiectul')).toBe('profile-update');
   });
 
+  it('answers the testers\' reports #126 to #130', () => {
+    expect(best('Dimension line rotates: I moved the end point of the grid lines and one of the dimension lines rotated')).toBe('dimension-grid-line');
+    expect(best('de ce se roteste cota cand mut capatul axei')).toBe('dimension-grid-line');
+    expect(best('Rotate the tags: more flexibility if I could rotate the tag, or align it to the element')).toBe('tag-rotate');
+    expect(best('cum aliniez eticheta la element')).toBe('tag-rotate');
+    expect(best('When placing a tag, the tagged element highlights')).toBe('tag-highlight');
+    expect(best('cum vad ce element etichetează eticheta')).toBe('tag-highlight');
+    expect(best('Edit Curtain Wall Profile, similar to Revit')).toBe('curtain-wall-boundary');
+    expect(best('cum fac un perete cortina cu fronton')).toBe('curtain-wall-boundary');
+    expect(best('Custom aluminium profiles for curtain wall mullions and transoms')).toBe('curtain-member-profiles');
+    expect(best('how do I assign a profile to selected mullions only')).toBe('curtain-member-profiles');
+    expect(best('cum folosesc un profil de aluminiu propriu la montanti')).toBe('curtain-member-profiles');
+  });
+
   it('keeps its entries whole: ids unique, both languages, keywords already plain', () => {
     expect(new Set(FAQ.map((e) => e.id)).size).toBe(FAQ.length);
     for (const e of FAQ) {
