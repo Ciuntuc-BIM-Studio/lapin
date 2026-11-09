@@ -6,6 +6,7 @@ using Lapin.Drawing.Documents;
 using Lapin.Drawing.Export;
 using Lapin.Drawing.Views;
 using Lapin.Geometry;
+using Lapin.Platform.Cde.PdfRemarks;
 
 namespace Lapin.Engine.Tests;
 
@@ -116,6 +117,15 @@ public class DocumentWriterTests
         Assert.NotNull(r);
         Assert.Equal((40, 25), (r!.W, r.H));
         Assert.NotNull(Raster.Read(DocPng.White()));
+    }
+
+    [Fact]
+    public void A_png_keeps_its_see_through_pixels()
+    {
+        byte[] pixels = [255, 0, 0, 255, 0, 0, 0, 0];
+        var picture = Raster.Read(PdfImport.Png(pixels, 2, 1, 4))!;
+        Assert.Equal(2, picture.W);
+        Assert.Equal(new byte[] { 255, 0 }, picture.Alpha);
     }
 
     [Fact]

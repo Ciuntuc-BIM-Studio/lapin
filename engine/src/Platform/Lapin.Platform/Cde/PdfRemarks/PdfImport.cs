@@ -208,7 +208,7 @@ public static class PdfImport
         }
         var ihdr = new List<byte>();
         ihdr.AddRange(BigEndian((uint)w)); ihdr.AddRange(BigEndian((uint)h));
-        ihdr.AddRange([8, (byte)(channels == 3 ? 2 : 0), 0, 0, 0]);
+        ihdr.AddRange([8, (byte)(channels switch { 4 => 6, 3 => 2, 2 => 4, _ => 0 }), 0, 0, 0]);
         Chunk("IHDR", [.. ihdr]);
         using (var z = new MemoryStream())
         {
