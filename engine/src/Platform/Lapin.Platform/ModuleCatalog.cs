@@ -122,6 +122,25 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         {
             // A class that ranks without an envelope (MEP runs) cuts by its own means: not read here.
             if (envelope == null || ClassPriority(cls, model) is not { } classPriority) continue;
+            // Who may cut is worked out once for all the walls built at one revision (see CandidatesOf), not once for each of them.
+            if (CacheCutters && model is TrackingView { Inner: ModelStore store } view)
+            {
+                var whole = classPriority > mine || CutOrder.MaterialsOf(model) != null;
+                var list = CandidatesOf(store, cls, envelope, whole);
+                // What the search reads, as the plain loop below notes it.
+                view.Read.Add(whole ? TrackingView.ClassKey(cls) : TrackingView.CutKey(cls));
+                view.Read.UnionWith(list.Reads);
+                foreach (var c in list.All)
+                {
+                    if (c.Entity.Id == target.Id || joined.Contains(c.Entity.Id) || c.Priority is not { } theirs || theirs <= mine) continue;
+                    if (!whole && !Raised(c.Entity, model, mine)) continue;
+                    if (c.Solid is null || c.Bounds is not { } cb) continue;
+                    const double tolerance = 1e-6;
+                    if (cb.Min.X >= bounds.Max.X - tolerance || cb.Max.X <= bounds.Min.X + tolerance || cb.Min.Y >= bounds.Max.Y - tolerance || cb.Max.Y <= bounds.Min.Y + tolerance || cb.Min.Z >= bounds.Max.Z - tolerance || cb.Max.Z <= bounds.Min.Z + tolerance) continue;
+                    o.Add(c.Solid);
+                }
+                continue;
+            }
             // A class ranked under the target's: only its elements raised over the target by their own priority
             // (read under a narrow key, so a wall does not rebuild on every edit of every other wall).
             // Priorities by material: any element may rank over its class, read whole.
@@ -139,6 +158,55 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         }
         return o;
     }
+    /// <summary>
+    /// Whether the cutters of a class are worked out once per model revision (decision 423). Off only to build as it was, for the
+    /// tests that compare the two (<c>SessionTuning.Reference</c>).
+    /// </summary>
+    public bool CacheCutters { get; set; } = true;
+
+    sealed record Candidate(Entity Entity, int? Priority, Solid? Solid, (Vec3 Min, Vec3 Max)? Bounds);
+    sealed record Candidates(List<Candidate> All, HashSet<string> Reads);
+    sealed class CandidateCache(ModelStore store, long revision)
+    {
+        public readonly ModelStore Store = store;
+        public readonly long Revision = revision;
+        public readonly System.Collections.Concurrent.ConcurrentDictionary<(string, bool), Lazy<Candidates>> Lists = new();
+    }
+    CandidateCache? _candidates;
+
+    /// <summary>
+    /// A class's possible cutters at this revision, each with its priority, envelope and box, and what working them out read: all
+    /// of the class, or (not <paramref name="whole"/>) only those with a priority or a class of their own, which are the only ones
+    /// <see cref="Raised"/> can pass when the project ranks no material. Every wall built at the revision shares one list; without it each
+    /// wall sorted the slabs again and rebuilt every envelope (28% of a type change on 4,440 walls, with 3,240 following).
+    /// </summary>
+    Candidates CandidatesOf(ModelStore store, string cls, EnvelopeProducer envelope, bool whole)
+    {
+        var cache = Volatile.Read(ref _candidates);
+        if (cache == null || !ReferenceEquals(cache.Store, store) || cache.Revision != store.Revision)
+        {
+            cache = new CandidateCache(store, store.Revision);
+            Volatile.Write(ref _candidates, cache);
+        }
+        return cache.Lists.GetOrAdd((cls, whole), _ => new Lazy<Candidates>(() =>
+        {
+            var rec = new TrackingView(store);
+            var all = new List<Candidate>();
+            foreach (var e in store.OfClass(cls))
+            {
+                if (!whole && !e.Attrs.ContainsKey("cutPriority") && !e.Attrs.ContainsKey("exportAs")) continue;
+                rec.Get(e.Id);
+                var priority = PriorityOf(e, rec);
+                var solid = priority != null ? envelope(e, rec) : null;
+                all.Add(new Candidate(e, priority, solid, solid != null ? Measure.Bounds(solid) : null));
+            }
+            return new Candidates(all, rec.Read);
+        })).Value;
+    }
+
+    /// <summary>The cutters' list is let go once the builds that used it are done: it holds a solid for each possible cutter.</summary>
+    public void ForgetCutters() => Volatile.Write(ref _candidates, null);
+
     /// <summary>Whether a class ranks in the cut order but cuts by provision openings (MEP runs, decision 293): its edits build again the hosts near it (decision 296).</summary>
     public bool CutsByProvisions(string ifcClass) => _cutters.TryGetValue(ifcClass, out var c) && c.Envelope == null;
     public Solid? EnvelopeOf(Entity element, IModelView model) => _cutters.TryGetValue(element.Class, out var c) ? c.Envelope?.Invoke(element, model) : null;

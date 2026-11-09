@@ -129,3 +129,5 @@ Then (#420, `docs/plan-units.md`) hotlinks mirrored (`HotLinks.Placing.Mirrored`
 Then (#421, `docs/rooms.md`) a room's doors and windows chosen in its properties by type and side, off by default, beside placing them on walls (`RoomOpenings.cs`): ordinary doors and windows in the walls on those sides, found again by key, each entry keeping a point on its side so it follows copies, turns and mirrors.
 
 Then (#422, `docs/plan-units.md`) apartment types, step A: a component of `kind: "unit"` takes walls with their doors and windows (Modify → Make apartment type), instances copied, turned and mirrored, an edit carrying only the members that changed, under the same ids.
+
+Then (#423, `docs/experiment-editing-speed.md`) who may cut a wall is worked out once per model revision and class (`ModuleCatalog.CandidatesOf`), not once per wall: a type change on 4,440 walls 4.4 s → 2.8 s, opening 3.9 s → 2.6 s.

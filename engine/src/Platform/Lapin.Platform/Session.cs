@@ -895,6 +895,7 @@ public sealed class Session
         void Did() { var n = Interlocked.Increment(ref done); if (Progress != null && es.Count >= ParallelFrom && (n == es.Count || n % step == 0)) Progress("Building the model", n, es.Count); }
         if (OneCore || es.Count < ParallelFrom) for (var i = 0; i < es.Count; i++) { o[i] = Compute(es[i]); Did(); }
         else Parallel.For(0, es.Count, i => { o[i] = Compute(es[i]); Did(); });
+        _catalog.ForgetCutters();
         for (var i = 0; i < es.Count; i++) if (o[i] is { } b) o[i] = Register(es[i], b);
         return o;
     }
