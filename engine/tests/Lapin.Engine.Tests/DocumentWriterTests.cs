@@ -119,7 +119,7 @@ public class DocumentWriterTests
         Assert.NotNull(Raster.Read(DocPng.White()));
     }
 
-    [Fact]
+    [Fact(DisplayName = "Pixels (rows top to bottom, 8 bits a channel, grey, grey and alpha, RGB or RGBA) as a PNG file")]
     public void A_png_keeps_its_see_through_pixels()
     {
         byte[] pixels = [255, 0, 0, 255, 0, 0, 0, 0];
