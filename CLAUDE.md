@@ -104,7 +104,7 @@ The history of what was built, decision by decision, is in `docs/history.md`; th
 - Roofs, timber, steel, rebar, site works: `docs/plan-roof-framing.md`, `docs/plan-wood.md`, `docs/plan-steel.md`, `docs/plan-rebar.md`, `docs/plan-site-works.md`
 - MEP, furniture, elevators: `docs/plan-mep.md`, `docs/plan-furniture.md`, `docs/plan-elevators.md`
 - Urban: `docs/plan-urban.md`
-- Apartment types (planned): `docs/plan-units.md`
+- Apartment types: `docs/plan-units.md`
 - Editions' override points: `docs/overrides.md`
 
 Premium modules live in private sibling repos, each with its `products/<id>.json` and `"external"`: `../lapin-urban` (`urban`), `../lapin-mep` (`mep-pro`), `../lapin-rail` (`rail`), `../lapin-planning` (`planning-pro`). The BubbleBIM editions stay in private repos' `products/`, never here.

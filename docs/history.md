@@ -127,3 +127,5 @@ Then (#419, `docs/plan-profile-libraries.md`) quantities follow the profile's re
 Then (#420, `docs/plan-units.md`) hotlinks mirrored (`HotLinks.Placing.Mirrored`); apartment types, fixed in size and built on components (`kind: "unit"`), are planned as the free module's next step.
 
 Then (#421, `docs/rooms.md`) a room's doors and windows chosen in its properties by type and side, off by default, beside placing them on walls (`RoomOpenings.cs`): ordinary doors and windows in the walls on those sides, found again by key, each entry keeping a point on its side so it follows copies, turns and mirrors.
+
+Then (#422, `docs/plan-units.md`) apartment types, step A: a component of `kind: "unit"` takes walls with their doors and windows (Modify → Make apartment type), instances copied, turned and mirrored, an edit carrying only the members that changed, under the same ids.

@@ -30,18 +30,18 @@ Conturul apartamentului e limita lui: un perete interior poate să se oprească 
 
 ### Problemele de rezolvat
 
-1. **Îmbinări în interior.** La copiere, îmbinările dintre membri trebuie să rămână între copiile lor. De verificat ce face azi `ElementTransform.Run` cu ele.
+1. **Îmbinări în interior (rezolvat la pasul A).** Se păstrează între copii și între o copie și un membru rămas.
 2. **Îmbinări la limită.** Îmbinarea unui perete interior cu peretele clădirii ține de instanță, nu de tip: se caută după fiecare așezare și nu se propagă. Aici e partea cea mai grea.
-3. **Oglindire.** Ușile își schimbă mâna (verificat prin hotlink, `A_mirrored_door_opens_the_other_way`). De testat pereții cu straturi asimetrice, camerele, mobilierul și finisajele.
-4. **Câmpuri proprii instanței.** Numărul camerei, marca ușii și numele apartamentului diferă de la o instanță la alta și nu se propagă.
+3. **Oglindire.** Pereții, ușile și camerele o urmează (`UnitTests`), iar `WallPlacement` întoarce straturile. De testat cu ochii pereții cu straturi asimetrice, mobilierul și finisajele.
+4. **Câmpuri proprii instanței.** Numărul camerei, marca ușii și numele apartamentului diferă de la o instanță la alta și nu se propagă. Azi instanțele au aceleași numere de cameră (101, 102 în amândouă); se rezolvă la pasul C.
 5. **Excepții.** Un membru schimbat sau șters într-o singură instanță rămâne așa (marcat `own`, ca la generatorul de grafic), până când îl readuci la tip.
-6. **Viteză.** `Settle` reface azi toate instanțele în întregime. Măsurat: o editare la 200 de instanțe cu 2 membri, circa 0,5 s în Debug. Un apartament are zeci de membri, deci prin extrapolare ar ajunge la zeci de secunde. Trebuie dus la cei schimbați, nu la toți, și măsurat din nou.
+6. **Viteză (rezolvat la pasul A).** `Settle` duce acum doar membrii schimbați. Măsurat: un perete editat, dus la 100 de apartamente, circa 0,5 s în Debug. Copierea unei instanțe e mai lentă când sunt multe (zeci de secunde pentru 100 de copii, pe mașina încărcată); de văzut dacă deranjează.
 7. **Etaje.** Copy to storeys există; de verificat că apartamentele repetate pe etaje rămân instanțe cu pereți și uși.
 8. **IFC.** Rămân elemente obișnuite într-un `IfcGroup`, cu `Lapin_Unit` pentru tip. La import vin ca grup, fără legătura de tip, dacă nu există intenția Lapin.
 
 ### Pașii
 
-- **A. Modelul:** `kind: "unit"`, Make apartment type din selecție, instanțe mutate, rotite, oglindite, editarea dusă la celelalte, îmbinările interioare, propagarea doar a ce s-a schimbat.
+- **A (făcut, 09.11.2026). Modelul:** `kind: "unit"`, Make apartment type din selecție, instanțe mutate, rotite, oglindite, editarea dusă la celelalte, îmbinările interioare, propagarea doar a ce s-a schimbat.
 - **B. Limita:** peretele interior oprit în peretele clădirii, pentru fiecare instanță.
 - **C. Instanța:** câmpurile proprii și excepțiile, numerotarea camerelor pe apartament.
 - **D. Folosirea:** lista de apartamente (tip, număr, suprafețe), biblioteca din alt `.lapin`, un hotlink transformat în apartament-tip, ghidul și scena.

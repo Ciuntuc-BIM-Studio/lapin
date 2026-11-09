@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 import { select, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 
-interface Row { id: string; name: string; instances: string[]; members: number }
+interface Row { id: string; name: string; kind?: string | null; instances: string[]; members: number }
 
 export function ComponentsDialog() {
   const version = useSession((s) => s.nodes);
@@ -19,11 +19,12 @@ export function ComponentsDialog() {
         <div className="dialog-body">
           {rows.length === 0 ? <p className="muted small">No components yet. Select Studio solids, floors or rooms, then Modify → Make component.</p> : (
             <table className="grid small">
-              <thead><tr><th>Component</th><th>Instances</th><th>Elements</th><th /></tr></thead>
+              <thead><tr><th>Component</th><th>Kind</th><th>Instances</th><th>Elements</th><th /></tr></thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id} data-component={r.id}>
                     <td><input key={r.name} defaultValue={r.name} aria-label="Rename" data-no-i18n onBlur={(e) => { const name = e.target.value.trim(); if (name && name !== r.name) void execute('component.rename', { id: r.id, name }); }} /></td>
+                    <td>{r.kind === 'unit' ? 'Apartment type' : 'Component'}</td>
                     <td className="num">{r.instances.length}</td>
                     <td className="num">{r.members}</td>
                     <td><button type="button" className="btn small" onClick={() => { select(r.instances[0] ?? null); useUi.setState({ selected: r.instances, dialog: null }); }}>Select</button></td>

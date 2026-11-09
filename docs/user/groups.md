@@ -33,6 +33,14 @@ Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Th
 - **Make unique**, in its properties, lets one instance go its own way. **Select instances** selects them all.
 - **Mirror** keeps it an instance, of the other hand: what you change in either reaches the other mirrored.
 
+### Apartment types
+
+A component cannot hold walls, but an **apartment type** can. Select an apartment's walls, rooms and furniture and choose **Modify → Make apartment type** (<kbd>CU</kbd>). The doors and windows in those walls come with them. Copy it, rotate it or **Mirror** it, as the flat on the other side of a staircase: a change in one reaches the others, mirrored where they are, and every element keeps its identity in IFC.
+
+For now an apartment type has a fixed size and its walls stay its own: it does not join the walls of the building around it.
+
+![An apartment type in two instances, the second mirrored](shots/units-plan.webp)
+
 **Manage → Components** lists the project's components, with how many instances each has. Rename them there, or select all the instances of one. The instances are ordinary elements in plans, sections, schedules, quantities and exports, each with its own GlobalId.
 
 ![A component in four instances, one turned: the outline changed in one, followed by all](shots/components-3d.webp)

@@ -3,7 +3,7 @@
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn } from 'lucide-react';
+import { AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -26,7 +26,7 @@ import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { openDocuments } from './documents/documents';
 import { convertToNative } from './convertTools';
 import { GroupSection } from './GroupSection';
-import { editSelectedGroup, groupSelection, makeComponent, removeFromGroup, ungroupSelection } from './groupTools';
+import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
 import { toggleRegion3d } from '../../viewport/select3d';
 import { hideSelection, isolateSelection, resetTemporary } from '../../viewport/temporary';
 import { Storeys3DLooks } from './Storeys3D';
@@ -138,6 +138,7 @@ const core: LapinModule = {
       // Groups (docs/groups.md), with Revit's keys.
       { id: 'modify.group', label: 'Create group', icon: Group, shortcut: 'GP', run: () => void groupSelection() },
       { id: 'modify.component', label: 'Make component', icon: Boxes, shortcut: 'CK', run: () => void makeComponent() },
+      { id: 'modify.unit', label: 'Make apartment type', icon: Building2, shortcut: 'CU', run: () => void makeUnit() },
       { id: 'modify.ungroup', label: 'Ungroup', icon: Ungroup, shortcut: 'UG', run: () => void ungroupSelection() },
       { id: 'modify.editGroup', label: 'Edit group', icon: PencilRuler, shortcut: 'EG', run: editSelectedGroup },
       { id: 'modify.removeFromGroup', label: 'Remove from group', icon: SquareMinus, run: () => void removeFromGroup() },

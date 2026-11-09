@@ -27,6 +27,10 @@ Undo takes the whole step back. Only the commands go through `Settle`; imports a
 - `component.makeUnique`: a component of its own, with this one instance.
 - Ungroup: its members become plain elements, the others stay instances.
 
+## Apartment types
+
+A component of `kind: "unit"` (`docs/plan-units.md`, `component.make {kind: "unit"}`, Modify → Make apartment type, CU) takes walls too, and anything else of the project's own on a storey. What a wall hosts comes with its wall and keeps its ids, found by `componentKey` as the members are. An edit carries only the members that changed; a join between one of them and a member that stayed is made again on the copy. Measured (`Many_flats_follow_an_edit_in_reasonable_time`, 09.11.2026): one wall edited, carried to 100 flats, about 0.5 s in a Debug build on a loaded machine.
+
 ## Commands
 
 `component.make {ids, name?}`, `component.makeUnique {id}`, `component.rename {id, name}`, the query `component.list`. Interface: Modify → Make component (CK), the group's section in Properties (Select instances, Make unique), Manage → Components.

@@ -2469,6 +2469,46 @@ export const scenes = [
     },
   },
   {
+    // Apartment types (docs/plan-units.md): a flat made a type, mirrored, a change in one reaching the other.
+    id: 'units',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const walls = [];
+      for (const [a, b] of [[[0, 0], [6, 0]], [[6, 0], [6, 5]], [[6, 5], [0, 5]], [[0, 5], [0, 0]], [[3.5, 0], [3.5, 5]]]) walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      await t.cmd('architecture.addDoor', { wallId: walls[0], x: 1.5, y: 0 });
+      await t.cmd('architecture.addDoor', { wallId: walls[4], x: 3.5, y: 2 });
+      await t.cmd('architecture.addWindow', { wallId: walls[2], x: 4.5, y: 5 });
+      const rooms = [(await t.cmd('architecture.addRoom', { storeyId: s, x: 1.5, y: 2.5, name: 'Living room', function: 'Living' })).id, (await t.cmd('architecture.addRoom', { storeyId: s, x: 5, y: 2.5, name: 'Bedroom', function: 'Bedroom' })).id];
+      await t.ui({ keyPlan: false, selected: [...walls, ...rooms], selection: rooms[0] });
+      await t.wait(400);
+      await t.tool('modify.unit');
+      const box = t.page.locator('.ask-box');
+      await box.waitFor({ timeout: 5000 });
+      await box.locator('input').first().fill('Flat A');
+      await box.locator('.btn.primary').click();
+      await t.wait(800);
+      const group = (await t.nodes()).find((n) => n.type === 'IfcGroup');
+      t.expect(!!group, 'the flat is one instance');
+      const copied = await t.cmd('element.transform', { ids: [group.id], op: 'mirror', a: [7, 0], b: [7, 1], copy: true });
+      t.expect((copied.ids ?? []).length > 0, 'mirrored copy made');
+      await t.wait(800);
+      let nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'IfcGroup').length === 2, 'two instances');
+      t.expect(nodes.filter((n) => n.type === 'IfcDoor').length === 4, 'the doors came with the walls');
+      // The inner wall moved in the first: in the mirrored flat, the other way.
+      await t.cmd('element.transform', { ids: [walls[4]], op: 'move', by: [-0.5, 0] });
+      await t.wait(800);
+      nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'IfcWall').some((w) => Math.abs(w.props.start[0] - 11) < 1e-6 && Math.abs(w.props.end[0] - 11) < 1e-6), 'the mirrored flat followed, mirrored');
+      await t.ui({ selected: [], selection: null });
+      await t.wait(400);
+      await t.fit();
+      await t.wait(500);
+      await t.shot('units-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // A room's doors and windows chosen in its properties, by type and side (docs/rooms.md).
     id: 'room-openings',
     async run(t) {

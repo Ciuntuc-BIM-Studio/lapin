@@ -42,6 +42,16 @@ export async function removeFromGroup(): Promise<void> {
 }
 
 /** What is selected made a component (docs/components.md): an instance of it, selected. */
+/** What is selected made an apartment type (docs/plan-units.md): a component that takes walls, with their doors. */
+export async function makeUnit(): Promise<void> {
+  if (!selected().length) { notify('Select the walls, rooms and furniture of an apartment.'); return; }
+  const { ask, textField } = await import('../../shell/AskBox');
+  const r = await ask('Make apartment type', [textField('name', 'Name', '')]);
+  if (!r) return;
+  const made = await execute('component.make', { ids: selected(), kind: 'unit', ...(r.name ? { name: String(r.name) } : {}) }) as { id?: string } | null;
+  if (made?.id) { selectOnly([made.id]); notify('Made an apartment type: copies of it are instances. Double-click one to edit them all.'); }
+}
+
 export async function makeComponent(): Promise<void> {
   if (!selected().length) { notify('Select Studio solids, floors or rooms to make a component.'); return; }
   const { ask, textField } = await import('../../shell/AskBox');

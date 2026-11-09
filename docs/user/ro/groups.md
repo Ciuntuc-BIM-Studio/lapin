@@ -33,6 +33,14 @@ Selectează elementele și alege **Modifică → Fă componentă** (<kbd>CK</kbd
 - **Fă unică**, din proprietăți, lasă o instanță să o ia pe drumul ei. **Selectează instanțele** le selectează pe toate.
 - **Mirror** o păstrează instanță, cu mâna schimbată: ce modifici în oricare ajunge oglindit în cealaltă.
 
+### Tipuri de apartament
+
+O componentă nu poate conține pereți, dar un **tip de apartament** poate. Selectează pereții, încăperile și mobilierul unui apartament și alege **Modificare → Fă tip de apartament** (<kbd>CU</kbd>). Ușile și ferestrele din acei pereți vin cu ei. Copiază-l, rotește-l sau oglindește-l cu **Mirror**, ca apartamentul de pe cealaltă parte a casei scării: o schimbare într-unul ajunge în celelalte, oglindită acolo unde sunt oglindite, iar fiecare element își păstrează identitatea în IFC.
+
+Deocamdată un tip de apartament are dimensiuni fixe, iar pereții rămân ai lui: nu se îmbină cu pereții clădirii din jur.
+
+![Un tip de apartament în două instanțe, a doua oglindită](shots/units-plan.webp)
+
 **Gestionare → Componente** listează componentele proiectului și câte instanțe are fiecare. Acolo le redenumești sau le selectezi instanțele. Instanțele sunt elemente obișnuite în planuri, secțiuni, liste, cantități și exporturi, fiecare cu GlobalId-ul ei.
 
 ![O componentă în patru instanțe, una rotită: conturul schimbat într-una, urmat de toate](shots/components-3d.webp)
