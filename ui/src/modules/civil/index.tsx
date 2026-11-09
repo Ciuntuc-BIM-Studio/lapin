@@ -5,7 +5,7 @@
  * plantings that stand on it (docs/spec-site.md).
  */
 
-import { BrickWall, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
+import { BrickWall, PenLine, Building2, Crosshair, FileDown, FileUp, Fence, Image as ImageIcon, ImagePlus, Map as MapIcon, MapPin, Mountain, MoveVertical, Paintbrush, Route, Shovel, Spline, Sprout, TreeDeciduous, Waves } from 'lucide-react';
 import { PlatformIcon, TerrainIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import type { NodeDto } from '../../engine/protocol';
@@ -24,6 +24,7 @@ import { lazyPart } from '../../platform/lazyPart';
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const BrushDialog = lazyPart(() => import('./BrushDialog').then((m) => m.BrushDialog), { title: 'Terrain brush' });
 const CorridorDialog = lazyPart(() => import('./CorridorDialog').then((m) => m.CorridorDialog), { title: 'Corridor' });
+const EntourageKindsDialog = lazyPart(() => import('./EntourageKindsDialog').then((m) => m.EntourageKindsDialog), { title: 'Entourage Kinds' });
 
 /** The lowest surveyed elevation, rounded down to the metre: what ±0.00 defaults to. */
 function lowest(text: string): number | null {
@@ -232,6 +233,7 @@ const roadFromLinework = fromLinework('civil.roadFromLinework', 'Road from linew
 const breaklineFromLinework = fromLinework('civil.breaklineFromLinework', 'Breakline from linework', 'breakline', 'BL');
 
 const corridor: ToolDef = { id: 'civil.corridor', label: 'Corridor…', icon: Spline, shortcut: 'CR', run: () => useUi.setState({ dialog: 'corridor' }) };
+const entourageKinds: ToolDef = { id: 'civil.entourageKinds', label: 'Entourage Kinds', icon: ImagePlus, run: () => useUi.setState({ dialog: 'entourageKinds' }) };
 
 /** A retaining wall along a polyline, the high ground on its left; its section is set in the inspector. */
 const retainingWall: ToolDef = {
@@ -279,7 +281,7 @@ const civil: LapinModule = {
       { label: 'Import', tools: [], small: [terrainFromDxf, geoJson, cityJson, orthophoto] },
       { label: 'Earthworks', tools: [platform, ditch, sculpt('raise', 'Raise', MoveVertical, 'SU'), sculpt('lower', 'Lower', Shovel, 'SL')], small: [sculpt('flatten', 'Flatten', Mountain, 'FN'), sculpt('smooth', 'Smooth', Paintbrush, 'SS'), brush] },
       { label: 'Landscape', tools: [path, road, retainingWall, plant, plantingZone], small: [corridor, roadFromLinework] },
-      { label: 'Entourage', tools: [entourage], small: [entourageRow] },
+      { label: 'Entourage', tools: [entourage], small: [entourageRow, entourageKinds] },
     ],
   }],
   grips: {
@@ -306,7 +308,7 @@ const civil: LapinModule = {
     { id: 'planting', label: 'Planting', classes: ['LapinPlanting'], component: PlantingSection, replacesFields: () => true },
     { id: 'entourage', label: 'Entourage', classes: ['LapinEntourage'], component: EntourageSection, replacesFields: () => true },
   ],
-  dialogs: { brush: BrushDialog, corridor: CorridorDialog },
+  dialogs: { brush: BrushDialog, corridor: CorridorDialog, entourageKinds: EntourageKindsDialog },
 };
 
 export default civil;

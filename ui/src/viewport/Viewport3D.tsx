@@ -29,7 +29,7 @@ import { usePaneField } from '../app/pane';
 import { findTool } from '../platform/modules';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
-import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, type Face, type TextureKind } from './textures';
+import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, pictureOf, pictureUv, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, type Face, type TextureKind } from './textures';
 import { lookOf } from './look';
 import { glassThrough, reflections, standardMaterial } from './materialLook';
 import { Realism, sunColour, useRenderProfile } from './render3d';
@@ -134,6 +134,21 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         mesh.userData.nodeId = nodeId;
         mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
+      }
+      const picture = pictureOf(nodeId, nodes);
+      if (picture) {
+        const pg = new THREE.BufferGeometry();
+        pg.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        if (normals.length === positions.length) pg.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        else pg.computeVertexNormals();
+        pg.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
+        pictureUv(pg, typeof owner?.props.rotation === 'number' ? owner.props.rotation : 0);
+        const pm = new THREE.MeshStandardMaterial({ color: 0xffffff, map: imageTexture(picture, THREE.ClampToEdgeWrapping), roughness: 0.85, metalness: 0, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+        const pmMesh = new THREE.Mesh(pg, pm);
+        pmMesh.userData.nodeId = nodeId;
+        pmMesh.receiveShadow = true;
+        group.add(pmMesh);
+        return;
       }
       // How it renders (report #76): rough or glossy, metal, see-through, glowing; its texture's size and turn.
       const lk = lookOf(mat);

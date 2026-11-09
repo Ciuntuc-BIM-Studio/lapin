@@ -6,6 +6,7 @@ using Lapin.Geometry;
 using Lapin.Ifc;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Protocol;
 
 namespace Lapin.Engine.Tests;
 
@@ -153,5 +154,147 @@ public sealed class EntourageTests
         Assert.Contains("IFCBUILDINGELEMENTPROXY", with);
         Assert.Contains("'Entourage'", with);
         Assert.Contains(".USERDEFINED.", with);
+    }
+
+    const string OnePixel = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+    static string Picture(Fixture f, string name = "Cut-out") =>
+        (string)f.Run("image.add", new JsonObject { ["name"] = name, ["mime"] = "image/png", ["data"] = OnePixel })!["id"]!;
+
+    [Fact]
+    public void A_kind_of_the_project_is_made_from_a_picture_and_a_figure_carries_it()
+    {
+        var f = Project();
+        var image = Picture(f);
+        var id = (string)f.Run("civil.addEntourageKind", new JsonObject
+        {
+            ["imageId"] = image, ["name"] = "Cyclist", ["height"] = 1.8, ["width"] = 0.6, ["category"] = "person",
+        })!["id"]!;
+        var kind = f.Model.Get(id)!;
+        Assert.Equal(Entourage.KindClass, kind.Class);
+        Assert.Equal("Cyclist", kind.Name);
+        Assert.Equal(image, kind.Str("image"));
+
+        var figure = Add(f, new JsonObject { ["kind"] = id, ["x"] = 1, ["y"] = 2 });
+        Assert.Equal(id, f.Model.Get(figure)!.Str("kind"));
+        Assert.Equal("Cyclist 1", f.Model.Get(figure)!.Name);
+
+        var resolved = Entourage.PictureOf(f.Model, f.Model.Get(figure)!)!;
+        Assert.Equal("Cyclist", resolved.Label);
+        Assert.Equal(1.8, resolved.Height);
+        Assert.Equal(0.6, resolved.Width);
+    }
+
+    [Fact]
+    public void A_figure_of_a_picture_kind_is_a_card_as_wide_and_as_tall_as_its_kind()
+    {
+        var f = Project();
+        var kind = (string)f.Run("civil.addEntourageKind", new JsonObject
+        {
+            ["imageId"] = Picture(f), ["height"] = 1.9, ["width"] = 0.8,
+        })!["id"]!;
+        var id = Add(f, new JsonObject { ["kind"] = kind, ["x"] = 0, ["y"] = 0, ["rotation"] = 0 });
+        var g = Entourage.Geometry(f.Model.Get(id)!, f.Model)!;
+        Assert.Single(g.Parts);
+        Assert.Equal("picture", g.Parts[0].Name);
+        Assert.True(Measure.Volume(g.Parts[0].Solid) > 0);
+        var (min, max) = Bounds(f, id);
+        Assert.InRange(min.Z, -0.01, 0.01);
+        Assert.InRange(max.Z, 1.9 * 0.97, 1.9 * 1.03);
+        Assert.InRange(max.X - min.X, 0.8 * 0.97, 0.8 * 1.03);
+
+        var taller = Add(f, new JsonObject { ["kind"] = kind, ["x"] = 2, ["y"] = 0, ["height"] = 2.4 });
+        Assert.InRange(Bounds(f, taller).Max.Z, 2.4 * 0.97, 2.4 * 1.03);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(90)]
+    [InlineData(37)]
+    public void A_picture_kind_draws_its_card_in_the_plan(double rotation)
+    {
+        var f = Project();
+        var kind = (string)f.Run("civil.addEntourageKind", new JsonObject
+        {
+            ["imageId"] = Picture(f), ["height"] = 1.9, ["width"] = 0.8,
+        })!["id"]!;
+        var figure = Add(f, new JsonObject { ["kind"] = kind, ["x"] = 4, ["y"] = 2, ["rotation"] = rotation });
+        var geometry = Entourage.Geometry(f.Model.Get(figure)!, f.Model)!;
+        var symbol = Assert.Single(geometry.Plan!, p => p.In(Entourage2d.Outline));
+        Assert.DoesNotContain(geometry.Plan!, p => p.In("none"));
+        Assert.True(symbol.Closed);
+        Assert.Equal(4, symbol.Points.Count);
+        var a = rotation * Math.PI / 180;
+        var local = symbol.Points.Select(p => new Vec2((p.X - 4) * Math.Cos(a) + (p.Y - 2) * Math.Sin(a), -(p.X - 4) * Math.Sin(a) + (p.Y - 2) * Math.Cos(a))).ToList();
+        Assert.Equal(0.8, local.Max(p => p.X) - local.Min(p => p.X), 6);
+        Assert.Equal(0.04, local.Max(p => p.Y) - local.Min(p => p.Y), 6);
+        var plan = Views.Find(f.Model, "plan:" + Ground(f))!;
+        var (drawing, _, problem) = Views.Generate(f.Session.Reader, plan);
+        Assert.True(drawing != null, problem);
+        Assert.Contains(drawing!.Lines, l => l.Element == figure);
+    }
+
+    [Fact]
+    public void A_kind_can_be_renamed_and_resized_after_it_is_made()
+    {
+        var f = Project();
+        var kind = (string)f.Run("civil.addEntourageKind", new JsonObject
+        {
+            ["imageId"] = Picture(f), ["name"] = "First", ["height"] = 1.6, ["width"] = 0.5,
+        })!["id"]!;
+        var figure = Add(f, new JsonObject { ["kind"] = kind, ["x"] = 0, ["y"] = 0 });
+
+        f.Run("element.rename", new JsonObject { ["id"] = kind, ["name"] = "Cyclist" });
+        f.Run("element.update", new JsonObject { ["ids"] = new JsonArray(kind), ["attrs"] = new JsonObject { ["height"] = 2.1, ["width"] = 0.9 } });
+
+        Assert.Equal("Cyclist", f.Model.Get(kind)!.Name);
+        Assert.Equal("Cyclist", Entourage.PictureOf(f.Model, f.Model.Get(figure)!)!.Label);
+        var (min, max) = Bounds(f, figure);
+        Assert.InRange(max.Z, 2.1 * 0.97, 2.1 * 1.03);
+        Assert.InRange(max.X - min.X, 0.9 * 0.97, 0.9 * 1.03);
+    }
+
+    [Fact]
+    public void A_kind_needs_a_picture_of_the_project()
+    {
+        var f = Project();
+        Assert.Throws<CommandException>(() => f.Run("civil.addEntourageKind", new JsonObject { ["imageId"] = "nowhere" }));
+        Assert.Throws<CommandException>(() => f.Run("civil.addEntourage", new JsonObject { ["kind"] = "nowhere", ["x"] = 0, ["y"] = 0 }));
+    }
+
+    [Fact]
+    public void A_picture_is_kept_once_however_many_figures_use_it_and_undo_takes_the_kind_away()
+    {
+        var f = Project();
+        var image = Picture(f);
+        var kind = (string)f.Run("civil.addEntourageKind", new JsonObject { ["imageId"] = image })!["id"]!;
+        Add(f, new JsonObject { ["kind"] = kind, ["x"] = 0, ["y"] = 0 });
+        Add(f, new JsonObject { ["kind"] = kind, ["x"] = 2, ["y"] = 0 });
+        Assert.Single(f.Model.OfClass(Images.Class));
+        Assert.Equal(2, f.Model.OfClass(Entourage.Class).Count());
+
+        f.Session.Undo();
+        f.Session.Undo();
+        f.Session.Undo();
+        Assert.Null(f.Model.Get(kind));
+        Assert.Empty(f.Model.OfClass(Entourage.Class));
+    }
+
+    [Fact]
+    public void A_kind_and_its_figures_come_back_after_saving_and_reopening()
+    {
+        var f = Project();
+        var image = Picture(f);
+        var kind = (string)f.Run("civil.addEntourageKind", new JsonObject { ["imageId"] = image, ["name"] = "Van" })!["id"]!;
+        var figure = Add(f, new JsonObject { ["kind"] = kind, ["x"] = 3, ["y"] = 4 });
+        var files = new ProjectFiles((_, _) => throw new InvalidOperationException("no files"), (_, _, _, _, _) => throw new InvalidOperationException("no files"));
+        var (bytes, _) = files.SaveBytes(f.Session, "entourage.lapin");
+
+        var g = Project();
+        files.OpenBytes(g.Session, "entourage.lapin", bytes);
+        Assert.Equal(Entourage.KindClass, g.Model.Get(kind)!.Class);
+        Assert.Equal(image, g.Model.Get(kind)!.Str("image"));
+        Assert.Equal("Van", g.Model.Get(kind)!.Name);
+        Assert.Equal(kind, g.Model.Get(figure)!.Str("kind"));
     }
 }

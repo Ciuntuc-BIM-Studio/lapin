@@ -235,6 +235,41 @@ export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDt
   return { id, url: `data:${mime};base64,${data}`, width: w, height: h };
 }
 
+export function pictureUv(geometry: THREE.BufferGeometry, rotation = 0): void {
+  const pos = geometry.getAttribute('position');
+  if (!pos?.count) return;
+  const angle = rotation * Math.PI / 180;
+  const c = Math.cos(angle), s = Math.sin(angle);
+  let left = Infinity, right = -Infinity, bottom = Infinity, top = -Infinity;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i) * c + pos.getY(i) * s, z = pos.getZ(i);
+    left = Math.min(left, x); right = Math.max(right, x);
+    bottom = Math.min(bottom, z); top = Math.max(top, z);
+  }
+  const width = right - left || 1, height = top - bottom || 1;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    uv[2 * i] = (pos.getX(i) * c + pos.getY(i) * s - left) / width;
+    uv[2 * i + 1] = (pos.getZ(i) - bottom) / height;
+  }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+
+export function pictureOf(figureId: string, nodes: Map<string, NodeDto>): OwnImage | null {
+  const figure = nodes.get(figureId);
+  if (!figure || figure.type !== 'LapinEntourage') return null;
+  const kindId = figure.props.kind;
+  const kind = typeof kindId === 'string' ? nodes.get(kindId) : undefined;
+  if (!kind || kind.type !== 'LapinEntourageKind') return null;
+  const imageId = kind.props.image;
+  const img = typeof imageId === 'string' ? nodes.get(imageId) : undefined;
+  const data = img?.props.data, mime = img?.props.mime;
+  if (typeof data !== 'string' || typeof mime !== 'string') return null;
+  const width = typeof kind.props.width === 'number' ? kind.props.width : 0.7;
+  const height = typeof kind.props.height === 'number' ? kind.props.height : 1.75;
+  return { id: String(imageId), url: `data:${mime};base64,${data}`, width, height };
+}
+
 /** The images' textures, by image and wrap: repeated on a material's faces, clamped on an orthophoto. */
 const images = new Map<string, THREE.Texture>();
 const listeners = new Set<() => void>();

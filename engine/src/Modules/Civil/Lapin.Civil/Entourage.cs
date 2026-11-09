@@ -41,8 +41,23 @@ public static class Entourage
     public static Kind KindOf(Entity e) => Kinds.FirstOrDefault(k => k.Key == e.Str("kind")) ?? Kinds[0];
     public static Kind? Find(string? key) => Kinds.FirstOrDefault(k => k.Key == key);
 
+    public const string KindClass = "LapinEntourageKind";
+
+    public sealed record PictureKind(string Id, string Label, string ImageId, double Height, double Width, string Category);
+
+    public static PictureKind? PictureOf(IModelView m, Entity e) =>
+        e.Str("kind") is { Length: > 0 } id && m.Get(id) is { Class: KindClass } k
+            ? new PictureKind(k.Id, k.Name, k.Str("image") ?? "",
+                k.NumOrNull("height") is { } h && h > 0.2 ? h : 1.75,
+                k.NumOrNull("width") is { } w && w > 0.1 ? w : 0.7,
+                k.Str("category") ?? "person")
+            : null;
+
     /// <summary>How tall it is: its own height, else its kind's.</summary>
     public static double HeightOf(Entity e) => e.NumOrNull("height") is { } h && h > 0.2 ? h : KindOf(e).Height;
+
+    public static double HeightOf(IModelView m, Entity e) =>
+        e.NumOrNull("height") is { } h && h > 0.2 ? h : PictureOf(m, e)?.Height ?? KindOf(e).Height;
 
     static readonly string[] Skins = ["#e0b39a", "#c68e6a", "#8d5b3e", "#f1cdb3"];
     const string Shoes = "#2a2a2a", Glass = "#2e3a44", Tyre = "#1c1c1e", Rim = "#a9afb5";
@@ -68,8 +83,9 @@ public static class Entourage
 
     public static ElementGeometry? Geometry(Entity e, IModelView m)
     {
-        var kind = KindOf(e);
         var f = FrameOf(m, e);
+        if (PictureOf(m, e) is { } picture) return PictureGeometry(e, m, picture, f);
+        var kind = KindOf(e);
         var color = e.Str("color") is { Length: 7 } c && c[0] == '#' ? c : kind.Color;
         var parts = new Dictionary<string, (string Color, List<Solid> Solids)>();
         void Add(string part, string col, Solid? s)
@@ -95,6 +111,20 @@ public static class Entourage
         }
         var list = parts.Select(p => new GeometryPart(p.Key, p.Value.Color, Paths.Combine(p.Value.Solids, "entourage"), null, p.Key)).ToList();
         return new ElementGeometry(list, plan, [f.At], Silhouettes: silhouettes);
+    }
+
+    static ElementGeometry PictureGeometry(Entity e, IModelView m, PictureKind picture, Frame f)
+    {
+        var height = HeightOf(m, e);
+        const double thickness = 0.04;
+        var card = Box(f, 0, 0, height / 2, picture.Width, thickness, height);
+        var parts = new List<GeometryPart>();
+        if (card != null) parts.Add(new GeometryPart("picture", "#c8ccd2", Paths.Combine([card], "entourage"), null, "picture"));
+        var half = picture.Width / 2;
+        var outline = new[] { f.Q(-half, -thickness / 2), f.Q(half, -thickness / 2), f.Q(half, thickness / 2), f.Q(-half, thickness / 2) };
+        var plan = new[] { Entourage2d.Outline, Entourage2d.Abstract, Entourage2d.Detailed }
+            .Select(mode => new PlanItem("symbol", true, outline, Mode: mode)).ToList();
+        return new ElementGeometry(parts, plan, [f.At]);
     }
 
     // ---- People ----
@@ -312,12 +342,34 @@ public static class Entourage
 
     public static void Register(IModuleRegistry r)
     {
+        r.Command("addEntourageKind", "Entourage kind", (ctx, a) =>
+        {
+            var imageId = (string?)a["imageId"] ?? throw new CommandException("An entourage kind needs a picture from the project.");
+            if (ctx.Model.Get(imageId) is not { Class: Images.Class } image) throw new CommandException("The picture is not one of the project's images.");
+            var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : image.Name;
+            var attrs = new JsonObject
+            {
+                ["image"] = imageId,
+                ["height"] = Json.Number(a["height"]) is { } h && h > 0.2 ? h : 1.75,
+                ["width"] = Json.Number(a["width"]) is { } w && w > 0.1 ? w : 0.7,
+                ["category"] = a["category"] is JsonValue cv ? cv.ToString() : "person",
+            };
+            var kind = new Entity(ctx.NewId(), KindClass, name, attrs);
+            ctx.Add(kind);
+            return new JsonObject { ["id"] = kind.Id };
+        });
         // People and cars: one at a point ({x, y, rotation?}), or a row along a line ({points: [[x, y], [x, y]], spacing?}),
         // cars parked across it, people walking along it; {kind, height?, color?, offset?, storeyId?}. One undo step.
         r.Command("addEntourage", "Entourage", (ctx, a) =>
         {
             var storeyId = (string?)a["storeyId"] ?? Spatial.Storeys(ctx.Model).FirstOrDefault()?.Id ?? throw new CommandException("The project has no storey.");
-            var kind = Find((string?)a["kind"] ?? "man") ?? throw new CommandException($"An entourage is one of {string.Join(", ", Kinds.Select(k => k.Key))}.");
+            var requested = (string?)a["kind"] ?? "man";
+            var builtIn = Find(requested);
+            var project = builtIn == null && ctx.Model.Get(requested) is { Class: KindClass } k ? k : null;
+            if (builtIn == null && project == null) throw new CommandException($"An entourage is one of {string.Join(", ", Kinds.Select(k => k.Key))}, or a kind of the project's.");
+            var key = builtIn?.Key ?? requested;
+            var label = builtIn?.Label ?? project!.Name;
+            var category = builtIn?.Category ?? project!.Str("category") ?? "person";
             var places = new List<(Vec2 At, double Rotation)>();
             if (a["points"] is JsonArray { Count: >= 2 })
             {
@@ -325,7 +377,7 @@ public static class Entourage
                 var d = pts[^1] - pts[0];
                 var length = d.Length;
                 if (length < 0.1) throw new CommandException("Draw the row longer.");
-                var spacing = Json.Number(a["spacing"]) is { } s && s > 0.3 ? s : kind.Category == "car" ? 2.5 : 1.2;
+                var spacing = Json.Number(a["spacing"]) is { } s && s > 0.3 ? s : category == "car" ? 2.5 : 1.2;
                 var dir = Math.Atan2(d.Y, d.X) * 180 / Math.PI;
                 // A car stands across the row (parked side by side, its front to the row's left); a person faces along it.
                 var rot = dir + 90;
@@ -334,18 +386,18 @@ public static class Entourage
             }
             else places.Add((Args.Point(a, "x", "y"), Json.Number(a["rotation"]) ?? 0));
             var ids = new JsonArray();
-            var count = ctx.Model.OfClass(Class).Count(x => KindOf(x).Key == kind.Key);
+            var count = ctx.Model.OfClass(Class).Count(x => x.Str("kind") == key);
             foreach (var (at, rot) in places)
             {
                 var attrs = new JsonObject
                 {
-                    ["kind"] = kind.Key, ["at"] = new JsonArray(at.X, at.Y), ["rotation"] = Math.Round(((rot % 360) + 360) % 360, 3),
+                    ["kind"] = key, ["at"] = new JsonArray(at.X, at.Y), ["rotation"] = Math.Round(((rot % 360) + 360) % 360, 3),
                     ["exportAs"] = IfcClass.BuildingElementProxy, ["objectType"] = ObjectType,
                 };
                 if (Json.Number(a["height"]) is { } h && h > 0.2) attrs["height"] = h;
                 if (Json.Number(a["offset"]) is { } off) attrs["offset"] = off;
                 if ((string?)a["color"] is { Length: 7 } col && col[0] == '#') attrs["color"] = col;
-                var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"{kind.Label} {++count}";
+                var name = ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : $"{label} {++count}";
                 var e = new Entity(ctx.NewId(), Class, name, attrs, "USERDEFINED");
                 ctx.Add(e);
                 Spatial.Contain(ctx, storeyId, e.Id);
