@@ -2469,6 +2469,39 @@ export const scenes = [
     },
   },
   {
+    // A room's doors and windows chosen in its properties, by type and side (docs/rooms.md).
+    id: 'room-openings',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [a, b] of [[[0, 0], [5, 0]], [[5, 0], [5, 4]], [[5, 4], [0, 4]], [[0, 4], [0, 0]]]) await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] });
+      const room = (await t.cmd('architecture.addRoom', { storeyId: s, x: 2.5, y: 2 })).id;
+      await t.ui({ keyPlan: false, selected: [room], selection: room });
+      await t.wait(600);
+      const panel = t.page.locator('[data-testid=room-openings]');
+      await panel.waitFor({ timeout: 5000 });
+      t.expect(!(await panel.locator('[data-field=room-openings]').isChecked()), 'off by default');
+      await panel.locator('[data-field=room-openings]').check();
+      await t.wait(400);
+      await panel.locator('[data-add=door]').click();
+      await t.wait(500);
+      await panel.locator('[data-add=window]').click();
+      await t.wait(800);
+      const nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'IfcDoor').length === 1, 'the door is in its wall');
+      t.expect(nodes.filter((n) => n.type === 'IfcWindow').length === 1, 'the window is in its wall');
+      await t.ui({ selected: [], selection: null });
+      await t.wait(400);
+      await t.fit();
+      await t.wait(400);
+      await t.ui({ selected: [room], selection: room });
+      await t.wait(600);
+      await panel.scrollIntoViewIfNeeded();
+      await t.shot('room-openings', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      await t.shot('room-openings-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();

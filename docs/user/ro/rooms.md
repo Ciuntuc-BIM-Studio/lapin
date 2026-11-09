@@ -27,6 +27,16 @@ Cantitățile de dedesubt arată aria netă a încăperii (fără stâlpi), peri
 
 ![Proprietățile unei încăperi](shots/room-properties.webp)
 
+## Uși și ferestre din încăpere
+
+Poți alege ușile și ferestrele unei încăperi chiar din încăpere. Bifează **Uși și ferestre din încăpere** în proprietățile ei; implicit e oprită. Un plan mic numerotează laturile încăperii. **Adaugă ușă** sau **Adaugă fereastră** adaugă un rând în care alegi tipul, latura și **Offset**-ul față de mijlocul laturii, iar la fereastră și **Parapetul**.
+
+Fiecare rând face o ușă sau o fereastră obișnuită în peretele de pe acea latură: se selectează, se întoarce, intră în extrase și se exportă ca oricare alta, iar așezarea ușilor pe pereți merge ca înainte. Ușa se deschide spre încăpere. Dacă debifezi opțiunea, încăperea își scoate ușile și ferestrele și păstrează lista; dacă o bifezi din nou, revin. Deocamdată merg doar pe pereți drepți.
+
+![Ușile și ferestrele unei încăperi, după tip și latură](shots/room-openings.webp)
+
+![Ușa și fereastra în plan: ușa se deschide spre încăpere](shots/room-openings-plan.webp)
+
 ## Eticheta încăperii
 
 **Arhitectură → Eticheta încăperii** (sau **Eticheta încăperii…** în proprietățile unei încăperi) alege ce arată eticheta fiecărei încăperi în planuri, rând cu rând: numele, numărul, funcțiunea, departamentul, aria, aria brută, perimetrul, înălțimea, volumul sau finisajul pardoselii, ori un text al tău. Primul rând e îngroșat. **Standarde de desen → Etichete** arată aceeași etichetă ca text: `{name}|{number}|{area}`.

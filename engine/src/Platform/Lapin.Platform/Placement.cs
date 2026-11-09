@@ -168,6 +168,10 @@ public static class Placement
             if (t.Mirrored) pts.Reverse(); // a mirrored outline keeps running counter-clockwise
             a["contour"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray());
         }
+        // The points a room's doors and windows are found again by (docs/rooms.md).
+        if ((a["roomOpenings"] as JsonObject)?["items"] is JsonArray entries)
+            foreach (var entry in entries.OfType<JsonObject>())
+                if (entry["at"] is JsonArray { Count: >= 2 } at) entry["at"] = J(t.Point(Args.PointOf(at)));
         // A room's islands (the columns inside it), loops as its contour is.
         if (a["islands"] is JsonArray isl)
             a["islands"] = new JsonArray(isl.OfType<JsonArray>().Select(l =>

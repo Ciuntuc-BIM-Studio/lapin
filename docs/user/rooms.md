@@ -27,6 +27,16 @@ The quantities below show the room's net area (without the columns), its perimet
 
 ![A room's properties](shots/room-properties.webp)
 
+## Doors and windows from the room
+
+You can choose a room's doors and windows from the room itself. Tick **Doors and windows from the room** in its properties, which is off by default. A small plan numbers the room's sides. **Add door** or **Add window** adds a row where you pick the type, the side and the **Offset** from the middle of that side, and a window's **Sill**.
+
+Each row makes an ordinary door or window in the wall on that side: it is selected, flipped, scheduled and exported like any other, and placing doors on walls works as before. A door opens into the room. Untick the option and the room takes its doors and windows away, keeping the list; tick it again and they come back. Only straight walls take them for now.
+
+![A room's doors and windows, by type and side](shots/room-openings.webp)
+
+![The door and the window in the plan: the door opens into the room](shots/room-openings-plan.webp)
+
 ## Room tag
 
 **Architecture → Room tag** (or **Room tag…** in a room's properties) sets what every room's stamp shows on plans, line by line: the name, number, function, department, area, gross area, perimeter, height, volume or floor finish, or a text of your own. The first line is bold. **Drafting standards → Tags** shows the same tag as text: `{name}|{number}|{area}`.

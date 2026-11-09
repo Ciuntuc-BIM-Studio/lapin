@@ -254,6 +254,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Skirtings.Register(r);
         WallSweeps.Register(r);
         RoomFinishes.Register(r);
+        RoomOpenings.Register(r);
         TypeExchange.Register(r);
 
         r.Command("createSlabType", "New floor type", (ctx, a) =>

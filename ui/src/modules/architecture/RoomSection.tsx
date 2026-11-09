@@ -18,6 +18,7 @@ import { Cell, LengthCell, NumberField } from '../../shell/cells';
 import { HatchSwatch } from '../core/HatchSwatch';
 import { useSchemes } from './rooms';
 import { RoomFinishField } from './RoomFinishes';
+import { RoomOpeningsField } from './RoomOpenings';
 
 /** A text field with suggestions (an HTML datalist): commits on blur or Enter. */
 function Suggest({ value, options, onCommit, id }: { value: string; options: string[]; onCommit: (v: string) => void; id: string }) {
@@ -86,6 +87,7 @@ export function RoomSection({ node }: { node: NodeDto }) {
         <dt>Outline</dt>
         <dd className={lost || none ? 'small warn' : 'muted small'}>{node.props.auto ? (lost ? 'no longer enclosed: it keeps its last outline' : 'found from the walls round its point') : none ? 'none: its IFC file gave it no shape' : node.props.imported ? 'from its IFC file' : 'drawn'}</dd>
       </dl>
+      <RoomOpeningsField node={node} />
       <div className="row">
         <button type="button" className="btn small" onClick={() => useUi.setState({ dialog: 'roomColors' })}><Palette size={12} />Room colours…</button>
         <button type="button" className="btn small" title="What the rooms' stamps show in plan" onClick={() => useUi.setState({ dialog: 'roomTag' })}><Tag size={12} />Room tag…</button>

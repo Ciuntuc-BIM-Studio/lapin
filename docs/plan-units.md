@@ -23,7 +23,8 @@ Un apartament-tip e un `LapinComponent` cu `kind: "unit"`, care primește și pe
 ### Regula de împărțire
 
 - **Apartamentul** are pereții interiori, ușile dintre camere, camerele, finisajele și mobilierul.
-- **Clădirea** are fațada, pereții dintre apartamente și coridorul, cu ușile de intrare și ferestrele din ei.
+- **Clădirea** are fațada, pereții dintre apartamente și coridorul.
+- **Ușile de intrare și ferestrele** le poartă camera, nu peretele (răspunsul utilizatorului, 09.11.2026): configuratorul încăperii le alege după tip și latură, iar la așezarea unei instanțe ele se pun în peretele de pe acea latură (`RoomOpenings`, `docs/rooms.md`). O cameră ține un punct pe latură, deci urmează oglindirea și rotirea.
 
 Conturul apartamentului e limita lui: un perete interior poate să se oprească în ea, pe peretele clădirii.
 
@@ -47,7 +48,7 @@ Conturul apartamentului e limita lui: un perete interior poate să se oprească 
 
 Fiecare pas pornește de la teste, cu un apartament de probă cu două camere, baie, uși și mobilier.
 
-## Întrebări pentru utilizator
+## Răspunsurile utilizatorului (09.11.2026)
 
-1. **Ușile de intrare și ferestrele** rămân ale clădirii, în versiunea propusă. Ele nu se repetă singure cu apartamentul, deci se așază o dată pe fațadă. Varianta cealaltă e ca apartamentul să le poarte și să le pună în peretele pe care îl găsește la limită: e mai comod, dar mult mai greu și mai fragil. Recomandare: ale clădirii în prima versiune.
-2. **Cum se desenează un apartament:** direct în proiect, selectat și făcut tip, sau și într-un fișier separat? Recomandare: în proiect, iar fișierul separat vine la pasul D.
+1. Ușile și ferestrele le poartă camera, din configuratorul ei, după tip și latură, ca opțiune oprită implicit, și la camerele obișnuite (făcut, `docs/rooms.md`).
+2. Apartamentul se desenează direct în proiect și apoi se face tip; fișierul separat vine la pasul D.
