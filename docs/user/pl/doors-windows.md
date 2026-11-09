@@ -104,6 +104,12 @@ Każdy z nich przylega do rzeczywistych lic ściany w miejscu okna, wyznaczonych
 
 ![Okno rozwierne łukowe: jedno skrzydło rozwierne biegnące wzdłuż łuku odcinkowego, bez ślemienia pod nim](shots/joinery-arched-casement.webp)
 
+### Szkło bez ramy
+
+**Szkło bez ramy** robi drzwi lub okno z samego szkła hartowanego, bez ościeżnicy i ramy skrzydła; styl **Szkło bez ramy** ustawia to od razu, ze skrzydłem na zawiasach czopowych. W drzwiach **Mocowanie** mówi, co trzyma skrzydło: **Zawiasy czopowe i okucia narożne** (samozamykacz w posadzce i czop górny, okucie w każdym narożu po stronie zawiasów i zamek narożny na dole po przeciwnej) albo **Zawiasy do szkła** (dwa, trzy przy skrzydle wyższym niż 2,30 m, zaciśnięte na szkle i przykręcone do ściany lub sąsiedniej tafli). **Grubość szkła** to 6–25 mm (domyślnie 12 mm), **Szczelina wokół szkła** to luz do otworu i między taflami, **Szczelina pod skrzydłem** luz nad posadzką. Skrzydło jest rozwierane, wahadłowe lub przesuwne; tafla obok lub nad nim jest stała i stoi w profilu U na posadzce i pod nadprożem. Skrzydło przesuwne wisi na szynie na całą szerokość otworu, przed stałymi taflami od strony pomieszczenia, i zachodzi na nie 50 mm, jak w szklanej ściance działowej lub kabinie prysznicowej. Uchwyt to pochwyt po obu stronach, chyba że wybierzesz inny. Okno bez ramy to szklenie stałe. Rzuty rysują skrzydło otwarte jako jego szkło, widoki okucia i szynę; w IFC typ nie ma ościeżnicy (jego grubość to grubość szkła).
+
+![Szklane drzwi bez ramy na zawiasach czopowych z okuciami narożnymi, w konfiguratorze](shots/joinery-frameless-door.webp)
+
 **Szprosy** dzielą kwatery: **Siatka (kolonialna)** z polami w poziomie i pionie, **Prairie** ze szprosami przy krawędziach lub **Romby**.
 
 Na elewacji, oprócz opaski, okno może mieć **Zwornik**, **Zwieńczenie nad otworem** (**Gzyms**, **Naczółek**, **Naczółek łukowy** lub **Kapinos**, który podąża za łukiem) oraz **Płycina pod parapetem** z konsolami.

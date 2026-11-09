@@ -1,21 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import type { ModelState } from '../../engine/model';
 import type { NodeDto, RelationDto } from '../../engine/protocol';
-import { baysText, fit, hallOf, parseBays, parseBracing, secondaryName, secondaryProfiles, secondaryValue, summaryRows } from './hall';
+import { baysForLength, baysText, fit, hallOf, parseBays, parseBracing, secondaryName, secondaryProfiles, secondaryValue, summaryRows } from './hall';
 
 const node = (id: string, type: string): NodeDto => ({ id, type, name: id, props: {}, editable: true } as unknown as NodeDto);
 
 describe('the hall configurator', () => {
   it('reads bays typed equal or listed, and writes them back the same way', () => {
-    expect(parseBays('5 × 6')).toEqual([6, 6, 6, 6, 6]);
-    expect(parseBays('3x7.5')).toEqual([7.5, 7.5, 7.5]);
-    expect(parseBays('6, 6, 7.5')).toEqual([6, 6, 7.5]);
-    expect(parseBays('6 6;7.5')).toEqual([6, 6, 7.5]);
-    expect(parseBays('6, -1')).toBeNull();
-    expect(parseBays('')).toBeNull();
-    expect(baysText([6, 6, 6, 6, 6])).toBe('5 × 6');
-    expect(baysText([6, 7.5, 6])).toBe('6, 7.5, 6');
-    expect(baysText([6])).toBe('6');
+    expect(parseBays('5 × 6', 'm')).toEqual([6, 6, 6, 6, 6]);
+    expect(parseBays('3x7.5', 'm')).toEqual([7.5, 7.5, 7.5]);
+    expect(parseBays('6, 6, 7.5', 'm')).toEqual([6, 6, 7.5]);
+    expect(parseBays('6 6;7.5', 'm')).toEqual([6, 6, 7.5]);
+    expect(parseBays('6, -1', 'm')).toBeNull();
+    expect(parseBays('', 'm')).toBeNull();
+    expect(baysText([6, 6, 6, 6, 6], 'm')).toBe('5 × 6');
+    expect(baysText([6, 7.5, 6], 'm')).toBe('6, 7.5, 6');
+    expect(baysText([6], 'm')).toBe('6');
+  });
+
+  it('reads and writes bays in the project\'s unit, a bare small number still as metres (question 7)', () => {
+    expect(baysText([6, 6, 6], 'mm')).toBe('3 × 6000');
+    expect(baysText([6, 7.5], 'cm')).toBe('600, 750');
+    expect(parseBays('3 × 6000', 'mm')).toEqual([6, 6, 6]);
+    expect(parseBays('6000, 7500', 'mm')).toEqual([6, 7.5]);
+    expect(parseBays('3 × 2', 'mm')).toEqual([2, 2, 2]);
+    expect(parseBays('2 × 6m', 'mm')).toEqual([6, 6]);
+    expect(parseBays('600, 750', 'cm')).toEqual([6, 7.5]);
+    expect(parseBays("2 × 20'", 'ft-in')![0]).toBeCloseTo(6.096, 6);
+    expect(parseBays('6000, abc', 'mm')).toBeNull();
+  });
+
+  it('makes the hall a length with as many bays, each equal', () => {
+    expect(baysForLength([6, 6, 7.5], 30)).toEqual([10, 10, 10]);
+    expect(baysForLength([6, 6], null)).toBeNull();
+    expect(baysForLength(undefined, 12)).toEqual([12]);
   });
 
   it('reads the braced bays as whole numbers, in order, once each', () => {

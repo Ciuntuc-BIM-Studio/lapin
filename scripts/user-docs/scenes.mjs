@@ -779,6 +779,31 @@ export const scenes = [
     },
   },
   {
+    // A frameless glass door (tester's question 7): toughened glass, no frame or sash, a sliding leaf in front of a fixed pane.
+    id: 'door-frameless-glass',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.tree-item').filter({ hasText: 'New door' }).click();
+      await t.wait(400);
+      await dialog.locator('select[data-field=style]').selectOption('frameless-glass');
+      await t.wait(600);
+      t.expect(await dialog.locator('input[data-field=frameless]').isChecked(), 'the style makes the door frameless glass');
+      t.expect(await dialog.locator('select[data-field=frameless-fixing]').inputValue() === 'pivot', 'on pivots with patch fittings by default');
+      t.expect(await dialog.locator('select[data-field=shape]').count() === 0, 'no shape or frame fields for frameless glass');
+      await dialog.locator('input[data-field=frameless]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await t.wait(500);
+      await t.shot('joinery-frameless-door', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      await t.keys('Escape');
+      const type = (await t.nodes()).find((n) => n.type === 'IfcDoorType' && n.props?.spec?.frameless?.fixing === 'pivot');
+      t.expect(type, 'the door type keeps its frameless glass');
+    },
+  },
+  {
     // Bay, bow and box windows (report #60): a bay window type from the configurator (New bay window, a bow style), placed
     // with the Bay window tool and by command, in plan (the projection, the roof dashed over it) and in 3D.
     id: 'bay-windows',

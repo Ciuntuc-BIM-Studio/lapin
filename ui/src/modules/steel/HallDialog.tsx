@@ -15,10 +15,10 @@ import { create } from 'zustand';
 import { Pencil, RotateCcw, Save, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
-import { lengthText } from '../../engine/unitsStore';
+import { lengthText, unitLabel, useStandards } from '../../engine/unitsStore';
 import { LengthField, NumberField } from '../../shell/cells';
 import { t, useLang } from '../../i18n';
-import { baysText, fit, parseBays, parseBracing, secondaryName, secondaryProfiles, secondaryValue, summaryRows, type HallAttrs, type HallPreview, type HaunchDto, type PreviewItem, type PreviewRole } from './hall';
+import { baysForLength, baysText, fit, parseBays, parseBracing, secondaryName, secondaryProfiles, secondaryValue, summaryRows, type HallAttrs, type HallPreview, type HaunchDto, type PreviewItem, type PreviewRole } from './hall';
 import type { SectionDto } from './sections';
 import { anchorCounts, BOLT_SIZES, boltLabel, GRADES, type NodeParamsDto } from './nodes';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
@@ -197,6 +197,7 @@ export function HallDialog() {
     </label>
   );
   const bays = value('bays');
+  const units = useStandards((st) => st.units);
   // A secondary member's profile: the catalogue's of its kind, a round bar for the bracing.
   const secondary = (k: 'purlin' | 'rail' | 'brace' | 'eavesBeamProfile', label: string) => {
     const name = secondaryName(value(k));
@@ -256,10 +257,17 @@ export function HallDialog() {
               <div className="joinery-form">
                 {tab === 'frame' && <>
                   {len('span', 'Span', 3)}
-                  <label className="field-line roof-field" title="Equal bays as 5 × 6, or each listed: 6, 6, 7.5"><span className="eyebrow">Bays</span>
-                    <input value={baysDraft ?? baysText(bays)} data-field="hall-bays" onChange={(e) => setBaysDraft(e.target.value)}
-                      onBlur={() => { if (baysDraft == null) return; const b = parseBays(baysDraft); if (b) set('bays', b); setBaysDraft(null); }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                  <label className="field-line roof-field" title="Equal bays as 5 × 6000, or each listed: 6000, 6000, 7500, in the project's unit"><span className="eyebrow">Bays</span>
+                    <span className="cell-wrap">
+                      <input className="cell" value={baysDraft ?? baysText(bays, units)} data-field="hall-bays" onChange={(e) => setBaysDraft(e.target.value)}
+                        onBlur={() => { if (baysDraft == null) return; const b = parseBays(baysDraft, units); if (b) set('bays', b); setBaysDraft(null); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                      {unitLabel(units) && <span className="cell-unit">{unitLabel(units)}</span>}
+                    </span>
+                  </label>
+                  <label className="field-line roof-field" title="The hall's length: as many bays as it has, each made equal"><span className="eyebrow">Length</span>
+                    <LengthField metres={bays?.length ? bays.reduce((a, b) => a + b, 0) : null} min={1} testId="hall-length"
+                      onCommit={(v) => { const b = baysForLength(bays, v); if (b) { set('bays', b); setBaysDraft(null); } }} />
                   </label>
                   {len('eaves', 'Eaves height', 1)}
                   <label className="field-line roof-field"><span className="eyebrow">Roof</span>

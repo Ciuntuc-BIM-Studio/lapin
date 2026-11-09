@@ -70,7 +70,14 @@ interface Spec {
   style?: string | null;
   /** The frame's place across the wall as a value (report #76); none: the frame's offset (centred). */
   position?: Position | null;
+  /** Frameless toughened glass, no frame or sash (tester's question 7): what holds a leaf, the glass, the gaps; none: framed. */
+  frameless?: Frameless | null;
 }
+/** How a frameless leaf is held (pivots with patch fittings, or glass hinges), the glass's thickness, the gaps round it and under a leaf. */
+interface Frameless { fixing: 'pivot' | 'hinges'; glass: number; gap: number; floor: number }
+const FRAMELESS: Frameless = { fixing: 'pivot', glass: 0.012, gap: 0.004, floor: 0.008 };
+/** What a frameless pane may do: a door's leaves swing, swing both ways or slide; a window's panes are fixed. */
+const FRAMELESS_DOOR_OPS = ['swing-left', 'swing-right', 'double-acting-left', 'double-acting-right', 'door-sliding-left', 'door-sliding-right', 'fixed'];
 /** From the wall's exterior finish face, its core's exterior face or its middle plane, the frame (its outer face; from the middle, its centre) this far back. */
 export interface Position { from: 'exterior' | 'core' | 'centre'; distance: number }
 /** The parts' materials by name (report #76); a part without one keeps its colour. */
@@ -125,7 +132,12 @@ const JOINERY_STYLES: Record<string, { label: string; apply: (s: Spec) => Partia
   prairie: { label: 'Prairie', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'prairie', margin: 0.1 } }) },
   traditional: { label: 'Traditional', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'grid', across: 1, up: 2 } }) },
   oculus: { label: 'Round window', apply: (s) => ({ shape: { ...SHAPE, kind: 'circle', bars: 'cross' }, muntins: null, height: s.width, columns: [1], rows: [1], panels: [{ col: 0, row: 0, operation: 'fixed' }] }) },
+  // Tester's question 7: toughened glass alone, a leaf on pivots with patch fittings and a pull bar (a window: one fixed pane).
+  'frameless-glass': { label: 'Frameless glass', apply: (s) => ({ frameless: { ...FRAMELESS }, shape: null, muntins: null, bay: null, profile: null, frameSection: null, sashSection: null,
+    columns: [1], rows: [1], panels: [{ col: 0, row: 0, operation: s.kind === 'door' ? 'swing-left' : 'fixed' }] }) },
 };
+// Every other style is framed: choosing one takes frameless glass away.
+for (const [k, st] of Object.entries(JOINERY_STYLES)) if (k !== 'frameless-glass') { const apply = st.apply; st.apply = (s) => ({ frameless: null, ...apply(s) }); }
 
 /** The details each style adds on the facade (and takes away: a style's own ornaments replace another's). */
 function styleDetails(key: string, d: Details): Details {
@@ -218,7 +230,8 @@ const PARTS: { part: MaterialPart; label: string; door?: boolean; window?: boole
  */
 function PartMaterials({ spec, onChange }: { spec: Spec; onChange: (m: Materials) => void }) {
   const mats = spec.materials ?? {};
-  const parts = PARTS.filter((p) => (spec.kind === 'door' ? !p.window : !p.door));
+  // Frameless glass (tester's question 7) has only its glass, its fittings and a window's boards.
+  const parts = PARTS.filter((p) => (spec.kind === 'door' ? !p.window : !p.door) && (!spec.frameless || ['glass', 'hardware', 'board'].includes(p.part)));
   const applyAll = async () => {
     const args: Record<string, unknown> = { kind: spec.kind };
     for (const { part } of parts) args[part] = mats[part] ?? '';
@@ -402,6 +415,31 @@ function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial
   );
 }
 
+/** Frameless glass (tester's question 7): on or off, what holds a door's leaves, the glass, the gaps. */
+function FramelessFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial<Spec>) => void }) {
+  const fl = spec.frameless;
+  const door = spec.kind === 'door';
+  const setFl = (p: Partial<Frameless>) => onChange({ frameless: { ...(fl ?? FRAMELESS), ...p } });
+  return (
+    <>
+      <label className="field-line check" title="Toughened glass alone: no frame, no sash"><input type="checkbox" data-field="frameless" checked={!!fl}
+        onChange={(e) => onChange(e.target.checked
+          ? { frameless: { ...FRAMELESS }, shape: null, muntins: null, bay: null, profile: null, frameSection: null, sashSection: null,
+              panels: spec.panels.map((p) => ({ ...p, operation: door ? (FRAMELESS_DOOR_OPS.includes(p.operation) ? p.operation : 'swing-left') : 'fixed' })) }
+          : { frameless: null })} /><span>Frameless glass</span></label>
+      {fl && <>
+        {door && <label className="field-line"><span className="eyebrow">Fixing</span>
+          <select data-field="frameless-fixing" value={fl.fixing} onChange={(e) => setFl({ fixing: e.target.value as Frameless['fixing'] })}>
+            <option value="pivot">Pivots and patch fittings</option><option value="hinges">Glass hinges</option>
+          </select></label>}
+        <Mm label="Glass thickness" value={fl.glass} onChange={(v) => setFl({ glass: v })} />
+        <Mm label="Gap round the glass" value={fl.gap} onChange={(v) => setFl({ gap: v })} />
+        {door && <Mm label="Gap under the leaf" value={fl.floor} onChange={(v) => setFl({ floor: v })} />}
+      </>}
+    </>
+  );
+}
+
 /** The handles (report #48): their style, a door handle's height, their colour. */
 function HardwareFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial<Spec>) => void }) {
   const hw = spec.hardware ?? HARDWARE;
@@ -409,7 +447,7 @@ function HardwareFields({ spec, onChange }: { spec: Spec; onChange: (patch: Part
     <>
       <label className="field-line"><span className="eyebrow">Handle</span>
         <select data-field="handle" value={hw.handle} onChange={(e) => onChange({ hardware: { ...hw, handle: e.target.value as Hardware['handle'] } })}>
-          <option value="auto">{spec.kind === 'door' ? 'Lever (default)' : 'Window handle (default)'}</option>
+          <option value="auto">{spec.frameless ? 'Pull bar (default)' : spec.kind === 'door' ? 'Lever (default)' : 'Window handle (default)'}</option>
           <option value="lever">Lever</option><option value="knob">Knob</option><option value="pull">Pull bar</option><option value="window">Window handle</option><option value="none">None</option>
         </select></label>
       {spec.kind === 'door' && hw.handle !== 'none' && <Mm label="Handle height" value={hw.height} onChange={(v) => onChange({ hardware: { ...hw, height: v } })} />}
@@ -510,10 +548,10 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
         <select data-field="pane-operation" value={cur.operation} onChange={(e) => patch({ operation: e.target.value })}>
           {operations.map((o) => <option key={o} value={o}>{HAND_LABELS[o] ?? o}</option>)}
         </select></label>
-      <label className="field-line"><span className="eyebrow">Infill</span>
+      {!spec.frameless && <label className="field-line"><span className="eyebrow">Infill</span>
         <select data-field="pane-infill" value={infill} onChange={(e) => patch({ infill: e.target.value, glazed: e.target.value === 'glass' })}>
           {Object.entries(INFILL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select></label>
+        </select></label>}
       <div className="field-line"><span className="eyebrow">Split</span>
         <span className="row wrap" style={{ gap: 4 }}>
           <input className="num mini" style={{ width: 64 }} data-field="split-col-at" placeholder={String(Math.round(width / 2))} value={at.col} onChange={(e) => setAt({ ...at, col: e.target.value })} title="mm from the pane's left edge (seen from outside)" />
@@ -644,7 +682,7 @@ export function JoineryDialog() {
   };
   const details: Details = spec.details ?? {};
   const setDetails = (patch: Partial<Details>) => set({ details: { ...details, ...patch } });
-  const operations = spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
+  const operations = spec.frameless ? (spec.kind === 'door' ? FRAMELESS_DOOR_OPS : ['fixed']) : spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
   const close = () => useUi.setState({ dialog: null });
   const startNew = (kind: 'door' | 'window', bay = false) => { setEditing(null); setFresh({ kind, bay }); };
   const setGrid = (c: string, r: string) => {
@@ -662,8 +700,8 @@ export function JoineryDialog() {
     return weights.map((w) => Math.round((usable * Math.max(w, 0)) / total * 10) / 10);
   };
   const inner = preview?.grid?.inner;
-  const colSizes = sizesOf(spec.columns, inner ? inner[1] - inner[0] : undefined, spec.frame.mullion);
-  const rowSizes = sizesOf(spec.rows, inner ? inner[3] - inner[2] : undefined, spec.frame.transom);
+  const colSizes = sizesOf(spec.columns, inner ? inner[1] - inner[0] : undefined, spec.frameless?.gap ?? spec.frame.mullion);
+  const rowSizes = sizesOf(spec.rows, inner ? inner[3] - inner[2] : undefined, spec.frameless?.gap ?? spec.frame.transom);
   const setSizes = (axis: 'col' | 'row', i: number, value: number) => {
     const next = resized(axis === 'col' ? colSizes : rowSizes, i, value);
     if (!next) { notify('That leaves too little for the others (50 mm at least).'); return; }
@@ -731,8 +769,10 @@ export function JoineryDialog() {
                     if (patch.columns) setCols(patch.columns.join(' '));
                     if (patch.rows) setRows(patch.rows.join(' '));
                   }} /></label>
-              {!spec.bay && <ShapeFields spec={spec} onChange={set} />}
-              {spec.kind === 'window' && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
+              {!spec.bay && <FramelessFields spec={spec} onChange={set} />}
+              {!spec.bay && !spec.frameless && <ShapeFields spec={spec} onChange={set} />}
+              {spec.kind === 'window' && !spec.frameless && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
+              {!spec.frameless && <>
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v }, frameSection: null })} />
               <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v }, frameSection: null })} />
               <label className="field-line"><span className="eyebrow">Position in the wall</span>
@@ -740,7 +780,14 @@ export function JoineryDialog() {
                   onChange={(e) => set({ position: e.target.value ? { from: e.target.value as Position['from'], distance: spec.position?.distance ?? 0 } : null })}>
                   <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option>
                 </select></label>
+              </>}
+              {spec.frameless && <label className="field-line"><span className="eyebrow">Position in the wall</span>
+                <select data-field="position-from" title="Where the glass sits across the wall, as a value from a face of the wall" value={spec.position?.from ?? ''}
+                  onChange={(e) => set({ position: e.target.value ? { from: e.target.value as Position['from'], distance: spec.position?.distance ?? 0 } : null })}>
+                  <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option>
+                </select></label>}
               {spec.position && <Mm label="Set back" value={spec.position.distance} onChange={(v) => set({ position: { ...spec.position!, distance: v } })} />}
+              {!spec.frameless && <>
               <Mm label="Mullion width" value={spec.frame.mullion} onChange={(v) => set({ frame: { ...spec.frame, mullion: v } })} />
               <Mm label="Transom width" value={spec.frame.transom} onChange={(v) => set({ frame: { ...spec.frame, transom: v } })} />
               <label className="field-line"><span className="eyebrow">Frame from a library</span><ProfilePickerField testId="joinery-frame-library" value={spec.frameSection?.name ?? null} onPick={(p, library) => pickMemberProfile('frame', p, library)} />
@@ -763,6 +810,7 @@ export function JoineryDialog() {
                 <Mm label="Glazing bead" value={spec.profile.bead} onChange={(v) => set({ profile: { ...spec.profile!, bead: v } })} />
                 {spec.kind === 'window' && <label className="field-line check"><input type="checkbox" checked={spec.profile.drip} onChange={(e) => set({ profile: { ...spec.profile!, drip: e.target.checked } })} /><span>Drip under the bottom rail</span></label>}
               </>}
+              </>}
               <label className="field-line"><span className="eyebrow">Columns (relative)</span><input data-field="columns" value={cols} title="Divide into columns by relative widths, e.g. 1 1 for two equal ones or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
               <label className="field-line"><span className="eyebrow">Rows (relative)</span><input value={rows} title="Divide into rows by relative heights, bottom to top" onChange={(e) => setGrid(cols, e.target.value)} /></label>
               {colSizes.length > 1 && <SizeRow label="Column widths" sizes={colSizes} field="col-size" onCommit={(i, mm) => setSizes('col', i, mm)} />}
@@ -772,7 +820,7 @@ export function JoineryDialog() {
                 onGrid={(g) => { set({ columns: g.columns, rows: g.rows, panels: g.panels }); setCols(g.columns.map(roundW).join(' ')); setRows(g.rows.map(roundW).join(' ')); }}
                 colSizes={colSizes} rowSizes={rowSizes} />
               <PartMaterials spec={spec} onChange={(materials) => set({ materials })} />
-              {!spec.materials?.frame && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
+              {!spec.materials?.frame && !spec.frameless && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
               <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
               <p className="eyebrow">Details</p>
 

@@ -104,6 +104,12 @@ Cada una se sitúa según las caras reales del muro donde está la ventana, a pa
 
 ![Una ventana batiente en arco: una sola hoja batiente que sigue un arco rebajado, sin travesaño debajo](shots/joinery-arched-casement.webp)
 
+### Vidrio sin marco
+
+**Vidrio sin marco** hace una puerta o ventana solo de vidrio templado, sin marco ni hoja enmarcada; el estilo **Vidrio sin marco** lo aplica de una vez, con una hoja sobre pivotes. En una puerta, **Fijación** dice qué sostiene la hoja: **Pivotes y herrajes de esquina** (un cierrapuertas de suelo y un pivote superior, un herraje en cada esquina del lado de giro y una cerradura de esquina abajo en el lado opuesto) o **Bisagras de vidrio** (dos, tres en una hoja de más de 2,30 m, sujetas al vidrio y fijadas al muro o al panel de al lado). El **Espesor del vidrio** va de 6 a 25 mm (12 mm por defecto), la **Holgura alrededor del vidrio** es la separación con el hueco y entre paneles, la **Holgura bajo la hoja** la del suelo. Una hoja gira, es de vaivén o corre; un panel a su lado o encima es fijo, en un perfil en U en el suelo y bajo el dintel. Una hoja corredera cuelga de un riel a todo el ancho del hueco, delante de los paneles fijos hacia la habitación, y los pasa 50 mm, como una mampara de vidrio o de ducha. El tirador es una barra en ambas caras salvo que elijas otro. Una ventana sin marco es un acristalamiento fijo. Las plantas dibujan la hoja abierta como su vidrio, los alzados los herrajes y el riel; en IFC el tipo no tiene marco (su espesor es el del vidrio).
+
+![Una puerta de vidrio sin marco sobre pivotes con herrajes de esquina, en el configurador](shots/joinery-frameless-door.webp)
+
 **Junquillos** dividen los vidrios: **Cuadrícula (colonial)** con sus vidrios a lo ancho y a lo alto, **Prairie** con barras cerca de los bordes, o **Rombos**.
 
 En la fachada, además del recercado, una ventana puede tener **Clave**, **Remate sobre el hueco** (**Cornisa**, **Frontón**, **Frontón curvo** o un **Guardapolvo** que sigue un remate en arco) y un **Antepecho bajo el vierteaguas** con sus ménsulas.

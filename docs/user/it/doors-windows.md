@@ -104,6 +104,12 @@ Ciascuno si posiziona rispetto alle facce reali del muro dove si trova la finest
 
 ![Una finestra a battente ad arco: una sola anta a battente che segue un arco ribassato, senza traverso sotto](shots/joinery-arched-casement.webp)
 
+### Vetro senza telaio
+
+**Vetro senza telaio** fa una porta o finestra di solo vetro temprato, senza telaio né anta; lo stile **Vetro senza telaio** lo imposta subito, con un'anta su perni. In una porta, **Fissaggio** dice cosa regge l'anta: **Perni e accessori d'angolo** (una cerniera a pavimento e un perno in alto, un accessorio a ogni angolo dal lato cerniere e una serratura d'angolo in basso dal lato opposto) o **Cerniere per vetro** (due, tre su un'anta più alta di 2,30 m, serrate sul vetro e fissate al muro o al pannello accanto). Lo **Spessore del vetro** va da 6 a 25 mm (12 mm predefinito), la **Fuga attorno al vetro** è lo spazio verso il vano e tra i pannelli, la **Fuga sotto l'anta** quello sopra il pavimento. Un'anta è a battente, va e vieni o scorrevole; un pannello accanto o sopra è fisso, in un profilo a U a pavimento e sotto l'architrave. Un'anta scorrevole è appesa a un binario per tutta la larghezza del vano, davanti ai pannelli fissi verso la stanza, e li supera di 50 mm, come una parete divisoria in vetro o un box doccia. La maniglia è un maniglione su entrambe le facce, se non ne scegli un'altra. Una finestra senza telaio è una vetrata fissa. Le piante disegnano l'anta aperta come il suo vetro, i prospetti gli accessori e il binario; in IFC il tipo non ha telaio (il suo spessore è quello del vetro).
+
+![Una porta in vetro senza telaio su perni con accessori d'angolo, nel configuratore](shots/joinery-frameless-door.webp)
+
 Le **Inglesine** dividono le ante: **Griglia (coloniale)** con i suoi riquadri in larghezza e in altezza, **Prairie** con barre vicino ai bordi, oppure **Losanghe**.
 
 Sulla facciata, oltre alla cornice, una finestra può avere una **Chiave di volta**, un **Coronamento sull’apertura** (una **Cornice**, un **Timpano**, un **Timpano curvo**, oppure un **Gocciolatoio** che segue una testa ad arco) e un **Pannello sotto il davanzale** con le sue mensole.

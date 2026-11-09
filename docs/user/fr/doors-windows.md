@@ -104,6 +104,12 @@ Chacun se place d’après les faces réelles du mur à l’endroit de la fenêt
 
 ![Une fenêtre battante cintrée : un seul ouvrant à la française qui suit un arc segmentaire, sans traverse dessous](shots/joinery-arched-casement.webp)
 
+### Verre sans cadre
+
+**Verre sans cadre** fait une porte ou une fenêtre de verre trempé seul, sans dormant ni ouvrant ; le style **Verre sans cadre** l'applique d'un coup, avec un vantail sur pivots. Pour une porte, **Fixation** dit ce qui tient le vantail : **Pivots et ferrures d'angle** (un pivot de sol et un pivot haut, une ferrure à chaque angle côté paumelles et une serrure d'angle en bas à l'opposé) ou **Charnières à verre** (deux, trois sur un vantail de plus de 2,30 m, serrées sur le verre et fixées au mur ou au panneau voisin). L'**Épaisseur du verre** va de 6 à 25 mm (12 mm par défaut), le **Jeu autour du verre** est celui avec la baie et entre les panneaux, le **Jeu sous le vantail** celui au-dessus du sol. Un vantail est battant, va-et-vient ou coulissant ; un panneau à côté ou au-dessus est fixe, dans un profilé en U au sol et sous le linteau. Un vantail coulissant est suspendu à un rail sur toute la largeur de la baie, devant les panneaux fixes côté pièce, et les dépasse de 50 mm, comme une cloison vitrée ou une paroi de douche. La poignée est une poignée bâton sur les deux faces sauf si vous en choisissez une autre. Une fenêtre sans cadre est un vitrage fixe. Les plans dessinent le vantail ouvert comme son verre, les élévations les ferrures et le rail ; en IFC le type n'a pas de dormant (son épaisseur est celle du verre).
+
+![Une porte en verre sans cadre sur pivots avec ferrures d'angle, dans le configurateur](shots/joinery-frameless-door.webp)
+
 **Petits-bois** divisent les vitrages : **Grille (colonial)** avec ses carreaux en largeur et en hauteur, **Prairie** avec des barres près des bords, ou des **Losanges**.
 
 Sur la façade, en plus de l’encadrement, une fenêtre peut avoir une **Clé de voûte**, un **Couronnement au-dessus de la baie** (une **Corniche**, un **Fronton**, un **Fronton cintré** ou un **Larmier** qui suit une tête cintrée) et une **Allège sous l’appui** avec ses consoles.

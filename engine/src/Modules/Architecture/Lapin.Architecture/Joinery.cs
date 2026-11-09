@@ -159,7 +159,9 @@ public sealed record JoinerySpec(
     JsonObject? FrameSection = null,
     JsonObject? SashSection = null,
     /// <summary>The frame's place across the wall as a value from the exterior face, the core or the centre (report #76); null: <see cref="JoineryFrame.Offset"/>.</summary>
-    JoineryPosition? Position = null)
+    JoineryPosition? Position = null,
+    /// <summary>Frameless toughened glass, no frame or sash (tester's question 7): how it is held, the glass, the gaps; null: framed.</summary>
+    JoineryFrameless? Frameless = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -202,7 +204,8 @@ public sealed record JoinerySpec(
             double Y(double w) => sy * (centre - w);
             var face = bands.Max(b => Math.Max(Y(b.From), Y(b.To)));
             var reference = pos.From == "core" && bands.Where(b => b.Core).ToList() is { Count: > 0 } core ? core.Max(b => Math.Max(Y(b.From), Y(b.To))) : face;
-            offset = reference - pos.Distance - Frame.Depth / 2;
+            // Frameless glass (tester's question 7) is as deep as its glass.
+            offset = reference - pos.Distance - (Frameless?.Glass ?? Frame.Depth) / 2;
         }
         return this with { Frame = Frame with { Offset = offset } };
     }
@@ -247,6 +250,9 @@ public sealed record JoineryBox(string Role, Vec3 Min, Vec3 Max, IReadOnlyList<V
 {
     /// <summary>A member with a library profile's real outline through this box (decision 417): else the box itself.</summary>
     public JoineryMember? Member { get; init; }
+
+    /// <summary>A part that moves with a door leaf (frameless glass, its fittings and handles): a plan draws the leaf open by its swing, not this closed.</summary>
+    public bool Leaf { get; init; }
 }
 
 /// <summary>
@@ -313,6 +319,7 @@ public static class Joinery
     /// <summary>The clear opening inside the outer frame members (a door has a threshold, not a bottom member).</summary>
     public static CellRect InnerRect(JoinerySpec s)
     {
+        if (s.Frameless != null) return Frameless.Inner(s);
         var f = s.Frame.Width;
         var bottom = s.IsDoor ? Math.Max(0, s.Threshold) : f;
         // A headed type's grid stops under the transom on the spring line, or without it reaches the head's inner apex (report #112);
@@ -343,8 +350,14 @@ public static class Joinery
     public static (List<(double A, double B)> Cols, List<(double A, double B)> Rows) Grid(JoinerySpec s)
     {
         var r = InnerRect(s);
-        return (Splits(s.Columns, r.X0, r.X1, s.Frame.Mullion), Splits(s.Rows, r.Z0, r.Z1, s.Frame.Transom));
+        return (Splits(s.Columns, r.X0, r.X1, MullionOf(s)), Splits(s.Rows, r.Z0, r.Z1, TransomOf(s)));
     }
+
+    /// <summary>What parts the grid's columns: the mullion, or frameless glass's gap.</summary>
+    public static double MullionOf(JoinerySpec s) => s.Frameless?.Gap ?? s.Frame.Mullion;
+
+    /// <summary>What parts the grid's rows: the transom, or frameless glass's gap.</summary>
+    public static double TransomOf(JoinerySpec s) => s.Frameless?.Gap ?? s.Frame.Transom;
 
     /// <summary>A panel's rectangle: its cells and the mullions or transoms between them.</summary>
     public static CellRect PanelRect(JoinerySpec s, JoineryPanel p)
@@ -410,6 +423,7 @@ public static class Joinery
         if (!Positive(s.Frame.Depth) || !Positive(s.Frame.Width)) return "The frame needs a positive depth and width.";
         if (s.Columns.Length is < 1 or > 12 || s.Rows.Length is < 1 or > 12) return "Use 1 to 12 columns and rows.";
         if (!s.Columns.Concat(s.Rows).All(Positive)) return "Column widths and row heights must be positive.";
+        if (s.Frameless != null) return Frameless.Problem(s);
         if (JoineryShapes.Round(s))
             return s.Width < 2 * s.Frame.Width + 0.1 || s.Height < 2 * s.Frame.Width + 0.1 ? "A round window needs room inside its frame." : null;
         if (JoineryShapes.Headed(s) && !JoineryShapes.ArchedPanes(s) && JoineryShapes.Spring(s) - Math.Max(s.Frame.Transom, 0.02) - InnerRect(s).Z0 < 0.1)
@@ -527,8 +541,8 @@ public static class Joinery
     public static (List<double> Mullions, List<double> Transoms) LiningOffsets(JoinerySpec s)
     {
         var (cols, rows) = Grid(s);
-        return (cols.Take(cols.Count - 1).Select(c => (c.B + s.Frame.Mullion / 2 + s.Width / 2) / s.Width).ToList(),
-                rows.Take(rows.Count - 1).Select(r => (r.B + s.Frame.Transom / 2) / s.Height).ToList());
+        return (cols.Take(cols.Count - 1).Select(c => (c.B + MullionOf(s) / 2 + s.Width / 2) / s.Width).ToList(),
+                rows.Take(rows.Count - 1).Select(r => (r.B + TransomOf(s) / 2) / s.Height).ToList());
     }
 
     // ------------------------------------------------------------ body
@@ -598,7 +612,7 @@ public static class Joinery
     public static readonly string[] HandleStyles = ["auto", "lever", "knob", "pull", "window", "none"];
 
     /// <summary>The handle's style for a type: its own, or a lever on a door and a window handle on a window.</summary>
-    public static string HandleStyle(JoinerySpec s) => s.Hardware?.Handle is { } h && HandleStyles.Contains(h) && h != "auto" ? h : s.IsDoor ? "lever" : "window";
+    public static string HandleStyle(JoinerySpec s) => s.Hardware?.Handle is { } h && HandleStyles.Contains(h) && h != "auto" ? h : s.Frameless != null ? "pull" : s.IsDoor ? "lever" : "window";
 
     /// <summary>Where a panel's handle goes: its centre in X and Z, and whether it lies across (a top- or bottom-hung sash); null for panels without one.</summary>
     public static (double X, double Z, bool Across)? HandleAt(JoinerySpec s, CellRect r, string op, bool door)
@@ -624,7 +638,7 @@ public static class Joinery
     /// −1 into the room, +1 out): the grip ("handle", one box or prism) and what fixes it ("hardware": a rose, a
     /// plate, the bar's posts). A lever turns towards the panel's middle; a window handle hangs down.
     /// </summary>
-    static IEnumerable<JoineryBox> HandleBoxes(JoinerySpec s, CellRect r, string op, double face, int outwards, bool door)
+    internal static IEnumerable<JoineryBox> HandleBoxes(JoinerySpec s, CellRect r, string op, double face, int outwards, bool door)
     {
         var style = HandleStyle(s);
         if (style == "none" || HandleAt(s, r, op, door) is not var (x, z, across)) yield break;
@@ -681,6 +695,8 @@ public static class Joinery
     {
         var f = s.Frame;
         double y0 = f.Offset - f.Depth / 2, y1 = f.Offset + f.Depth / 2;
+        // Frameless glass (tester's question 7): the panes and their fittings, and the window boards under them.
+        if (s.Frameless != null) return [.. Frameless.Boxes(s), .. Boards(s, y0, y1, new CellRect(-s.Width / 2, s.Width / 2, 0, s.Height))];
         if (JoineryShapes.Round(s)) return JoineryShapes.RoundBoxes(s, y0, y1);
         var outer = new CellRect(-s.Width / 2, s.Width / 2, 0, s.Height);
         var inner = InnerRect(s);
@@ -772,13 +788,17 @@ public static class Joinery
         // A drip on the frame's bottom member outside.
         if (frameStop && pr is { Drip: true } && !s.IsDoor && inner.Z0 > 1e-6) boxes.Add(new("frame", new(inner.X0, y1, inner.Z0 - 0.012), new(inner.X1, y1 + 0.015, inner.Z0)));
 
-        if (!s.IsDoor)
-        {
-            const double t = 0.025;
-            if (s.Board.Interior > 0) boxes.Add(new("board", new(outer.X0, y0 - s.Board.Interior, 0), new(outer.X1, y0, t)));
-            if (s.Board.Exterior > 0) boxes.Add(new("board", new(outer.X0, y1, 0), new(outer.X1, y1 + s.Board.Exterior, t)));
-        }
+        boxes.AddRange(Boards(s, y0, y1, outer));
         return boxes.Where(b => b.Max.X - b.Min.X > 1e-6 && b.Max.Y - b.Min.Y > 1e-6 && b.Max.Z - b.Min.Z > 1e-6).ToList();
+    }
+
+    /// <summary>A window's boards inside and outside, under the frame's depth <paramref name="y0"/>..<paramref name="y1"/>.</summary>
+    static IEnumerable<JoineryBox> Boards(JoinerySpec s, double y0, double y1, CellRect outer)
+    {
+        if (s.IsDoor) yield break;
+        const double t = 0.025;
+        if (s.Board.Interior > 0) yield return new("board", new(outer.X0, y0 - s.Board.Interior, 0), new(outer.X1, y0, t));
+        if (s.Board.Exterior > 0) yield return new("board", new(outer.X0, y1, 0), new(outer.X1, y1 + s.Board.Exterior, t));
     }
 
     /// <summary>The glazing bars of one pane (its glass's rectangle), each across the glass, standing proud of it both sides.</summary>

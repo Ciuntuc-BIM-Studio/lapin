@@ -112,6 +112,12 @@ Each one sits by the wall's real faces where the window is, from the wall's laye
 
 ![An arched casement: one side-hung sash following a segmental arch, no transom under it](shots/joinery-arched-casement.webp)
 
+### Frameless glass
+
+**Frameless glass** makes a door or window of toughened glass alone, with no frame and no sash; the **Frameless glass** style sets it at once, with one leaf on pivots. For a door, **Fixing** says what holds a leaf: **Pivots and patch fittings** (a floor spring and a top pivot, a fitting at each corner on the hinge side and a lock patch at the bottom opposite) or **Glass hinges** (two, three on a leaf taller than 2.30 m, clamped to the glass and fixed to the jamb or the pane beside it). **Glass thickness** is 6 to 25 mm (12 mm by default), **Gap round the glass** is the clearance to the opening and between the panes, **Gap under the leaf** the one over the floor. A leaf swings, swings both ways or slides; a pane beside or over it is fixed, standing in a channel on the floor and under the head. A sliding leaf hangs from a track across the head, in front of the fixed panes towards the room, and runs 50 mm past them, as a glass partition's or a shower screen's. The handle is a pull bar on both faces unless you choose another. A frameless window is fixed glazing. Plans draw a leaf open as its glass, elevations the fittings and the track; in IFC the type has no lining (its thickness is the glass's).
+
+![A frameless glass door on pivots with patch fittings, in the configurator](shots/joinery-frameless-door.webp)
+
 **Glazing bars** divide the panes: **Grid (colonial)** with its lites across and up, **Prairie** with bars near the edges, or a **Diamond lattice**.
 
 On the facade, besides the surround, a window can have a **Keystone**, a **Crown over the opening** (a **Cornice**, a **Pediment**, a **Segmental pediment**, or a **Hood mould** that follows an arched head) and an **Apron under the sill** with its consoles.

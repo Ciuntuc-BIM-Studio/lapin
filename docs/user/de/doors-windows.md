@@ -104,6 +104,12 @@ Jedes Teil richtet sich nach den tatsächlichen Flächen der Wand dort, wo das F
 
 ![Ein Rundbogen-Drehflügel: ein Drehflügel, der einem Segmentbogen folgt, ohne Kämpfer darunter](shots/joinery-arched-casement.webp)
 
+### Rahmenloses Glas
+
+**Rahmenloses Glas** macht eine Tür oder ein Fenster nur aus Einscheibensicherheitsglas, ohne Zarge und ohne Flügelrahmen; der Stil **Rahmenloses Glas** setzt es auf einmal, mit einem Flügel auf Drehlagern. Bei einer Tür sagt **Befestigung**, was den Flügel hält: **Drehlager und Eckbeschläge** (ein Bodentürschließer und ein oberes Drehlager, ein Beschlag an jeder Ecke der Bandseite und ein Schlosskasten unten gegenüber) oder **Glastürbänder** (zwei, drei bei einem Flügel über 2,30 m, an das Glas geklemmt und an der Wand oder der Scheibe daneben befestigt). Die **Glasdicke** ist 6 bis 25 mm (12 mm voreingestellt), die **Fuge um das Glas** der Abstand zur Öffnung und zwischen den Scheiben, die **Fuge unter dem Flügel** der zum Boden. Ein Flügel dreht, pendelt oder schiebt; eine Scheibe daneben oder darüber ist fest und steht in einem U-Profil am Boden und unter dem Sturz. Ein Schiebeflügel hängt an einer Laufschiene über die ganze Öffnung, vor den festen Scheiben zum Raum hin, und läuft 50 mm über sie hinaus, wie bei einer Glastrennwand oder Duschwand. Der Griff ist ein Stangengriff auf beiden Seiten, wenn du keinen anderen wählst. Ein rahmenloses Fenster ist eine Festverglasung. Grundrisse zeichnen den Flügel offen als sein Glas, Ansichten die Beschläge und die Schiene; in IFC hat der Typ keine Zarge (seine Dicke ist die des Glases).
+
+![Eine rahmenlose Glastür auf Drehlagern mit Eckbeschlägen, im Konfigurator](shots/joinery-frameless-door.webp)
+
 **Sprossen** teilen die Scheiben: **Raster (Kolonial)** mit Feldern in der Breite und Höhe, **Prairie** mit Sprossen nahe den Rändern, oder ein **Rautenmuster**.
 
 An der Fassade kann ein Fenster neben der Fasche einen **Schlussstein**, eine **Bekrönung über der Öffnung** (ein **Gesims**, eine **Giebelverdachung**, einen **Segmentgiebel** oder ein **Überschlagsgesims**, das einem Bogen folgt) und ein **Brüstungsfeld unter der Sohlbank** mit Konsolen haben.

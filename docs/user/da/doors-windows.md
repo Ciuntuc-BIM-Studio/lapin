@@ -104,6 +104,12 @@ Hver af dem sidder efter væggens virkelige flader, hvor vinduet er, ud fra væg
 
 ![Et buet sidehængt vindue: én sidehængt ramme der følger en segmentbue, uden tværpost under den](shots/joinery-arched-casement.webp)
 
+### Rammeløst glas
+
+**Rammeløst glas** laver en dør eller et vindue af hærdet glas alene, uden karm og uden ramme; stilen **Rammeløst glas** sætter det på én gang, med et dørblad på pivoter. På en dør siger **Ophæng**, hvad der bærer dørbladet: **Pivoter og hjørnebeslag** (en gulvdørlukker og en toppivot, et beslag i hvert hjørne i hængselsiden og en hjørnelås forneden i modsat side) eller **Glashængsler** (to, tre på et dørblad over 2,30 m, spændt på glasset og fastgjort til væggen eller glasset ved siden af). **Glastykkelse** er 6 til 25 mm (12 mm som standard), **Fuge rundt om glasset** er afstanden til hullet og mellem glassene, **Fuge under dørbladet** afstanden til gulvet. Et dørblad slår op, er pendul eller skydes; et glas ved siden af eller over er fast og står i en U-profil på gulvet og under overliggeren. Et skydeblad hænger i en skinne i hele hullets bredde, foran de faste glas mod rummet, og går 50 mm ind over dem, som i en glasvæg eller en bruseadskillelse. Grebet er et trækgreb på begge sider, medmindre du vælger et andet. Et rammeløst vindue er fast glas. Planer tegner dørbladet åbent som sit glas, opstalter beslagene og skinnen; i IFC har typen ingen karm (dens tykkelse er glassets).
+
+![En rammeløs glasdør på pivoter med hjørnebeslag, i konfiguratoren](shots/joinery-frameless-door.webp)
+
 **Sprosser** deler ruderne: **Gitter (kolonial)** med ruder i bredden og højden, **Prairie** med sprosser nær kanterne, eller et **Rudemønster**.
 
 På facaden kan et vindue ud over indfatningen have en **Slutsten**, en **Krone over åbningen** (et **Gesims**, en **Fronton**, en **Buet fronton** eller en **Vandnæse**, der følger en buet top) og et **Brystningsfelt under sålbænken** med konsoller.

@@ -104,6 +104,12 @@ Cada uma se posiciona pelas faces reais da parede onde a janela está, a partir 
 
 ![Uma janela de batente em arco: uma só folha de batente que segue um arco abatido, sem travessa por baixo](shots/joinery-arched-casement.webp)
 
+### Vidro sem caixilho
+
+**Vidro sem caixilho** faz uma porta ou janela só de vidro temperado, sem aro nem caixilho; o estilo **Vidro sem caixilho** aplica-o de uma vez, com uma folha sobre pivôs. Numa porta, **Fixação** diz o que segura a folha: **Pivôs e ferragens de canto** (uma mola de pavimento e um pivô superior, uma ferragem em cada canto do lado das dobradiças e uma fechadura de canto em baixo no lado oposto) ou **Dobradiças de vidro** (duas, três numa folha com mais de 2,30 m, apertadas no vidro e fixas à parede ou ao painel ao lado). A **Espessura do vidro** vai de 6 a 25 mm (12 mm por omissão), a **Folga à volta do vidro** é a distância ao vão e entre painéis, a **Folga sob a folha** a do pavimento. Uma folha é de batente, de vaivém ou de correr; um painel ao lado ou por cima é fixo, num perfil em U no pavimento e sob a padieira. Uma folha de correr fica suspensa de uma calha em toda a largura do vão, à frente dos painéis fixos do lado do compartimento, e passa-os 50 mm, como numa divisória de vidro ou num resguardo de duche. O puxador é uma barra nas duas faces, a não ser que escolhas outro. Uma janela sem caixilho é um envidraçado fixo. As plantas desenham a folha aberta como o seu vidro, os alçados as ferragens e a calha; em IFC o tipo não tem aro (a sua espessura é a do vidro).
+
+![Uma porta de vidro sem caixilho sobre pivôs com ferragens de canto, no configurador](shots/joinery-frameless-door.webp)
+
 **Travessas de vidro** dividem os vidros: **Quadriculado (colonial)** com os seus quadros na largura e na altura, **Prairie** com barras perto das bordas, ou uma **Losangos**.
 
 Na fachada, além da moldura, uma janela pode ter uma **Fecho de arco**, um **Coroamento sobre a abertura** (uma **Cornija**, um **Frontão**, um **Frontão curvo** ou uma **Pingadeira** que segue um topo em arco) e um **Painel sob o peitoril** com os seus consoles.

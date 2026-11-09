@@ -52,11 +52,20 @@ public static class JoinerySymbols
     static List<JStroke> DoorLeafPlan(JinerySpecView s, JoineryPanel p, CellRect r, int level = PlanDetail.Fine)
     {
         var f = s.Spec.Frame;
-        var t = s.Spec.Sash.LeafThickness;
-        var yIn = f.Offset - f.Depth / 2;
+        var fl = s.Spec.Frameless;
+        // Frameless glass (tester's question 7): the leaf is the glass, hinged at its interior face.
+        var t = fl?.Glass ?? s.Spec.Sash.LeafThickness;
+        var yIn = fl != null ? f.Offset - fl.Glass / 2 : f.Offset - f.Depth / 2;
         var w = r.X1 - r.X0;
         var left = HingeLeft(p.Operation);
         var op = p.Operation;
+        if (fl != null && op.StartsWith("door-sliding"))
+        {
+            // The glass in front of the panes, past them, and the way it slides.
+            var (q, ys, dir) = (Frameless.PaneRect(s.Spec, p), Frameless.Plane(s.Spec, p), left ? -1 : 1);
+            return [Rect(q.X0, ys - t / 2, q.X1, ys + t / 2, "cut"),
+                .. Arrow(new((q.X0 + q.X1) / 2 - dir * w / 4, ys - t - 0.08), new((q.X0 + q.X1) / 2 + dir * w / 4, ys - t - 0.08), "thin")];
+        }
         if (op.StartsWith("door-sliding"))
         {
             // It slides along the interior face, towards its side.
@@ -82,7 +91,7 @@ public static class JoinerySymbols
         };
         if (op.StartsWith("double-acting"))
         {
-            var h2 = new Vec2(hinge.X, f.Offset + f.Depth / 2);
+            var h2 = new Vec2(hinge.X, fl != null ? f.Offset + fl.Glass / 2 : f.Offset + f.Depth / 2);
             o.Add(left ? Arc(h2, w, 0, Math.PI / 2, "thin", true) : Arc(h2, w, Math.PI / 2, Math.PI, "thin", true));
         }
         return o;
@@ -119,7 +128,7 @@ public static class JoinerySymbols
         else
             foreach (var b in boxes.Where(b => b.Min.Z <= z && b.Max.Z >= z))
             {
-                if (b.Role is "leaf" or "handle" or "hardware" or "muntin") continue;
+                if (b.Role is "leaf" or "handle" or "hardware" or "muntin" || b.Leaf) continue;
                 if (level <= PlanDetail.Medium && b.Role is "sash" or "board") continue;
                 // A jamb through a library profile (decision 417): its real outline.
                 if (b.Member is { Upright: true } jamb)
@@ -254,7 +263,7 @@ public static class JoinerySymbols
             // A pane following an arched head (report #112) is drawn by its outline, each inset of it too.
             JStroke Loop(double inset, string w) => JoineryShapes.PaneOutline(s, r, inset) is { } loop ? new(loop, w, true) : Rect(r.X0 + inset, r.Z0 + inset, r.X1 - inset, r.Z1 - inset, w);
             o.Add(Loop(0, "outline"));
-            var sash = p.Operation != "fixed" && (!Joinery.IsDoorLeaf(p.Operation) || Joinery.InfillOf(p) == "glass");
+            var sash = s.Frameless == null && p.Operation != "fixed" && (!Joinery.IsDoorLeaf(p.Operation) || Joinery.InfillOf(p) == "glass");
             var sw = sash ? s.Sash.Width : 0;
             if (sash) o.Add(Loop(sw, "thin"));
             // An opaque panel in a window's pane or a fixed side panel (decision 370): its moulding, a rectangle inside.
@@ -264,8 +273,12 @@ public static class JoinerySymbols
                 o.Add(Loop(sw + g, "thin"));
             }
             o.AddRange(OpeningMarks(p.Operation, r, exterior, convention, JoineryShapes.PaneTop(s, r)));
-            if (hardware) o.AddRange(Hardware(s, p, r));
+            if (hardware && s.Frameless == null) o.AddRange(Hardware(s, p, r));
         }
+        // Frameless glass (tester's question 7): no frame, so the opening's outline is the wall's; the fittings, track and handles are what shows.
+        if (s.Frameless != null)
+            foreach (var b in Joinery.Boxes(s).Where(b => b.Role is "hardware" || (hardware && b.Role is "handle")))
+                o.Add(Rect(b.Min.X, b.Min.Z, b.Max.X, b.Max.Z, "outline"));
         if (s.Kind == "window" && s.Board.Exterior > 0 && exterior) o.Add(Rect(-s.Width / 2 - 0.03, -0.04, s.Width / 2 + 0.03, 0, "outline"));
         return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
     }
