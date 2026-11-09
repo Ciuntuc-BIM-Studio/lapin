@@ -4,7 +4,7 @@
  * words. The Steel tab's catalog cards and types dialog draw with it (decision 268).
  */
 
-export interface SectionDto { kind?: string; width?: number; depth?: number; web?: number; flange?: number; lip?: number; name?: string }
+export interface SectionDto { kind?: string; width?: number; depth?: number; web?: number; flange?: number; lip?: number; name?: string; rings?: [number, number][][]; profileId?: string }
 export interface P { x: number; y: number }
 
 const ring = (r: number, n = 32): P[] => Array.from({ length: n }, (_, i) => ({ x: r * Math.cos((2 * Math.PI * i) / n), y: r * Math.sin((2 * Math.PI * i) / n) }));
@@ -60,6 +60,13 @@ export function sectionShape(s: SectionDto): { outline: P[]; holes: P[][] } {
     case 'T': return { outline: [{ x: -tw / 2, y: -d }, { x: tw / 2, y: -d }, { x: tw / 2, y: d - tf }, { x: w, y: d - tf }, { x: w, y: d }, { x: -w, y: d }, { x: -w, y: d - tf }, { x: -tw / 2, y: d - tf }], holes: [] };
     case 'L': return { outline: [{ x: -w, y: -d }, { x: w, y: -d }, { x: w, y: -d + tf }, { x: -w + tw, y: -d + tf }, { x: -w + tw, y: d }, { x: -w, y: d }], holes: [] };
     case 'C': case 'Z': case 'SIGMA': return { outline: sheet(centreline(s), tw), holes: [] };
+    case 'outline': {
+      // A profile library's outline (docs/plan-profile-libraries.md): the biggest ring outside, the clockwise ones its holes.
+      const rings = (s.rings ?? []).filter((r) => r.length >= 3).map((r) => r.map(([x, y]) => ({ x, y })));
+      if (!rings.length) return { outline: [], holes: [] };
+      const outer = rings.reduce((a, b) => (Math.abs(signedArea(b)) > Math.abs(signedArea(a)) ? b : a));
+      return { outline: signedArea(outer) < 0 ? [...outer].reverse() : outer, holes: rings.filter((r) => r !== outer && signedArea(r) < 0) };
+    }
     default: return { outline: [{ x: -w, y: -d }, { x: w, y: -d }, { x: w, y: d }, { x: -w, y: d }], holes: [] };
   }
 }

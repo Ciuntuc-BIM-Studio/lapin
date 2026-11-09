@@ -12,6 +12,8 @@ import { ofClass, relatedOf } from '../../engine/model';
 import { deleteType } from '../core/deleteType';
 import { LengthField } from '../../shell/cells';
 import { kgPerMetre, sectionLabel, sectionPath, type SectionDto } from './sections';
+import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
+import { useLibraryPick } from '../core/profileLibraries/useLibraryPick';
 
 type Made = 'member' | 'beam' | 'column';
 const CUSTOM = ['RHS', 'CHS', 'C', 'Z', 'SIGMA'];
@@ -39,11 +41,16 @@ export function SteelTypesDialog() {
   const [t, setT] = useState(0.005);
   const [lip, setLip] = useState(0.02);
   const own = profile === '';
-  const section: SectionDto | undefined = own ? { kind, width: w, depth: kind === 'CHS' ? w : d, web: t, flange: t, lip: ['C', 'Z', 'SIGMA'].includes(kind) ? lip : 0 } : catalogue.find((p) => p.name === profile);
+  // A profile of the libraries (docs/plan-profile-libraries.md): copied into the project with the type.
+  const fromLibrary = profile === '@library';
+  const lib = useLibraryPick();
+  const section: SectionDto | undefined = fromLibrary ? lib.section ?? undefined
+    : own ? { kind, width: w, depth: kind === 'CHS' ? w : d, web: t, flange: t, lip: ['C', 'Z', 'SIGMA'].includes(kind) ? lip : 0 } : catalogue.find((p) => p.name === profile);
 
   const create = async () => {
+    if (fromLibrary && !lib.picked) return;
     const sec = own ? { kind, width: w, depth: kind === 'CHS' ? w : d, thickness: t, lip: ['C', 'Z', 'SIGMA'].includes(kind) ? lip : 0 } : profile;
-    const args = { name: name.trim() || undefined, section: sec };
+    const args = fromLibrary ? { name: name.trim() || undefined, profile: lib.picked!.profile, library: lib.picked!.library } : { name: name.trim() || undefined, section: sec };
     const r = (await execute(made === 'member' ? 'steel.createType' : made === 'beam' ? 'structure.createBeamType' : 'structure.createColumnType', args)) as { id?: string } | null;
     if (r?.id && made === 'member') useUi.setState({ memberTypeId: r.id });
     if (r?.id) setName('');
@@ -78,8 +85,12 @@ export function SteelTypesDialog() {
               <select value={profile} data-field="steel-profile" onChange={(e) => setProfile(e.target.value)}>
                 {catalogue.map((p) => <option key={p.name} value={p.name} data-no-i18n>{p.name}</option>)}
                 <option value="">Of its own dimensions</option>
+                <option value="@library">From a profile library…</option>
               </select>
             </label>
+            {fromLibrary && <label className="field-line"><span className="eyebrow">Library profile</span>
+              <ProfilePickerField testId="steel-library-profile" value={lib.picked?.profile.name} onPick={lib.pick} />
+            </label>}
             {own && <>
               <label className="field-line"><span className="eyebrow">Shape</span>
                 <select value={kind} onChange={(e) => setKind(e.target.value)}>{CUSTOM.map((k) => <option key={k} value={k} data-no-i18n>{k === 'SIGMA' ? 'Σ' : k}</option>)}</select>
@@ -91,7 +102,7 @@ export function SteelTypesDialog() {
             </>}
             <div className="row" style={{ gap: 12, alignItems: 'center' }}>
               <SectionGlyph section={section} size={64} />
-              <span className="small" data-no-i18n>{sectionLabel(section)}{section ? ` · ${kgPerMetre(section).toFixed(1)} kg/m` : ''}</span>
+              <span className="small" data-no-i18n>{sectionLabel(section)}{section ? ` · ${(fromLibrary && lib.mass != null ? lib.mass : kgPerMetre(section)).toFixed(1)} kg/m` : ''}</span>
             </div>
             <label className="field-line"><span className="eyebrow">Used as</span>
               <select value={made} data-field="steel-made" onChange={(e) => setMade(e.target.value as Made)}>

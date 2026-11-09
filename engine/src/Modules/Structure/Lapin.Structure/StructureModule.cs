@@ -44,7 +44,7 @@ public sealed class StructureModule : ILapinModule
 
         // ------------------------------------------------------------ columns
         r.Command("createColumnType", "New column type", (ctx, a) =>
-            Section.Parse(a["section"]) is var cs ? new JsonObject { ["id"] = Columns.CreateType(ctx, (string?)a["name"], cs, Json.Number(a["height"]), (string?)a["material"] ?? (cs.IsProfile ? "Steel" : "Reinforced concrete")).Id } : null);
+            Section.FromArgs(ctx, a, out var cm) is var cs ? new JsonObject { ["id"] = Columns.CreateType(ctx, (string?)a["name"], cs, Json.Number(a["height"]), (string?)a["material"] ?? cm ?? (cs.IsProfile ? "Steel" : "Reinforced concrete")).Id } : null);
 
         // A column, beam or footing type changed after it was made: its size, its name; its elements follow.
         r.Command("updateType", "Change type", (ctx, a) =>
@@ -111,7 +111,7 @@ public sealed class StructureModule : ILapinModule
 
         // ------------------------------------------------------------ beams
         r.Command("createBeamType", "New beam type", (ctx, a) =>
-            Section.Parse(a["section"]) is var bs ? new JsonObject { ["id"] = Beams.CreateType(ctx, (string?)a["name"], bs, (string?)a["material"] ?? (bs.IsProfile ? "Steel" : "Reinforced concrete")).Id } : null);
+            Section.FromArgs(ctx, a, out var bm) is var bs ? new JsonObject { ["id"] = Beams.CreateType(ctx, (string?)a["name"], bs, (string?)a["material"] ?? bm ?? (bs.IsProfile ? "Steel" : "Reinforced concrete")).Id } : null);
 
         r.Command("addBeam", "Beam", (ctx, a) =>
         {

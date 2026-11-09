@@ -10,7 +10,23 @@ namespace Lapin.Platform.Analysis;
 /// <see cref="Width"/> lies along the frame's local 3, <see cref="Depth"/> along its local 2. <see cref="Designation"/> is
 /// the catalogue's exact name (IPE 300) when the section is one of Lapin's catalogue with its dimensions unchanged.
 /// </summary>
-public sealed record SectionShape(string Kind, double Width, double Depth, double Web = 0, double Flange = 0, double Lip = 0, string? Designation = null);
+public sealed record SectionShape(string Kind, double Width, double Depth, double Web = 0, double Flange = 0, double Lip = 0, string? Designation = null)
+{
+    /// <summary>The root radius (metres; a hollow section's outer corner) when the section says it (a profile library's), else the catalogue's by its designation.</summary>
+    public double? Root { get; init; }
+    /// <summary>The toes' radius (a flange's or a leg's tip, metres); null: half the root's for an angle, none for the others.</summary>
+    public double? Toe { get; init; }
+    /// <summary>The slope of the flanges' inner faces (rise over run: 0.08 on a UPN, 0.14 on an IPN), the flange thickness being at its middle.</summary>
+    public double Slope { get; init; }
+    /// <summary>An asymmetric I's bottom flange (kind <c>asymI</c>): its width and thickness, the top one being <see cref="Width"/> and <see cref="Flange"/>.</summary>
+    public double Width2 { get; init; }
+    public double Flange2 { get; init; }
+    /// <summary>An arbitrary outline's rings (kind <c>outline</c>), about the box's centre: outsides anticlockwise, holes clockwise.</summary>
+    public IReadOnlyList<IReadOnlyList<Vec2>>? Rings { get; init; }
+    /// <summary>The product standard and family when a profile library says them (else the catalogue's).</summary>
+    public string? Standard { get; init; }
+    public string? Family { get; init; }
+}
 
 /// <summary>A frame section: its key (the type's id, or a key made from its shape), its name, its shape, where it was read.</summary>
 public sealed record FrameSection(string Key, string Name, SectionShape Shape, string Source);

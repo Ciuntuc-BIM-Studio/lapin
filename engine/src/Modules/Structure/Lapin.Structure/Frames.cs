@@ -15,7 +15,31 @@ namespace Lapin.Structure;
 /// </summary>
 public sealed record Section(string Kind, double Width, double Depth, double Web = 0, double Flange = 0, string? Name = null, double Lip = 0, int Sides = 0)
 {
-    public static readonly string[] Profiles = ["I", "U", "T", "L", "RHS", "CHS", "C", "Z", "SIGMA"];
+    public static readonly string[] Profiles = ["I", "U", "T", "L", "RHS", "CHS", "C", "Z", "SIGMA", "outline"];
+
+    // ---- From a profile library (docs/plan-profile-libraries.md): what the body leaves out (the bodies stay sharp) but the
+    // properties take, the project's copy of the profile, and an arbitrary outline's rings.
+
+    /// <summary>The root radius (a hollow section's outer corner) and the toes' (a hollow section's inner corner), metres; 0 when not said.</summary>
+    public double Root { get; init; }
+    public double Toe { get; init; }
+    /// <summary>The flanges' inner slope (0.08 on a UPN), the flange thickness at its middle.</summary>
+    public double Slope { get; init; }
+    /// <summary>An outline's rings (kind <c>outline</c>): the outside anticlockwise first, its holes clockwise; about the box's centre.</summary>
+    public IReadOnlyList<IReadOnlyList<Vec2>>? Rings { get; init; }
+    /// <summary>The project's copy of the library profile it was made of (a <c>LapinSectionProfile</c>), its standard and family.</summary>
+    public string? ProfileId { get; init; }
+    public string? Standard { get; init; }
+    public string? Family { get; init; }
+
+    public bool Equals(Section? o) => o is not null && Kind == o.Kind && Width == o.Width && Depth == o.Depth && Web == o.Web && Flange == o.Flange
+        && Name == o.Name && Lip == o.Lip && Sides == o.Sides && Root == o.Root && Toe == o.Toe && Slope == o.Slope && ProfileId == o.ProfileId
+        && Standard == o.Standard && Family == o.Family && SameRings(Rings, o.Rings);
+
+    public override int GetHashCode() => HashCode.Combine(Kind, Width, Depth, Web, Flange, Name, Lip, HashCode.Combine(Sides, Root, ProfileId, Rings?.Sum(r => r.Count) ?? 0));
+
+    static bool SameRings(IReadOnlyList<IReadOnlyList<Vec2>>? a, IReadOnlyList<IReadOnlyList<Vec2>>? b) =>
+        a == null ? b == null : b != null && a.Count == b.Count && a.Zip(b).All(x => x.First.SequenceEqual(x.Second));
     /// <summary>The thin-walled kinds: one sheet thickness (<see cref="Web"/>, <see cref="Flange"/> the same).</summary>
     public static readonly string[] ThinWalled = ["RHS", "CHS", "C", "Z", "SIGMA"];
 
@@ -25,6 +49,7 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
     public static Section Polygon(double diameter, int sides) => new("polygon", diameter, diameter, Sides: sides);
 
     public bool IsProfile => Profiles.Contains(Kind);
+    bool IsOutline => Kind == "outline" && Rings is { Count: > 0 };
     public bool IsHollow => Kind is "RHS" or "CHS";
 
     /// <summary>The section's area: a circle's and a CHS's exactly (not its chords'), any other its outline's less its holes'.</summary>
@@ -36,6 +61,7 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
     public IReadOnlyList<Vec2> Outline()
     {
         double w = Width / 2, d = Depth / 2, tw = Web, tf = Flange;
+        if (Kind == "outline") return IsOutline ? Polygon2.EnsureCcw(Rings!.Where(r => r.Count >= 3).MaxBy(r => Math.Abs(Polygon2.SignedArea(r)))!.ToList()) : [];
         return Kind switch
         {
             "circle" or "CHS" => Ring(w),
@@ -53,6 +79,13 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
     public IReadOnlyList<IReadOnlyList<Vec2>> Holes()
     {
         double w = Width / 2, d = Depth / 2, t = Web;
+        if (Kind == "outline")
+        {
+            // The rings inside the outside (clockwise): its holes.
+            if (!IsOutline) return [];
+            var outside = Outline();
+            return Rings!.Where(r => r.Count >= 3 && Polygon2.SignedArea(r) < 0 && Polygon2.Contains(outside, r[0])).Select(r => (IReadOnlyList<Vec2>)r.ToList()).ToList();
+        }
         return Kind switch
         {
             "RHS" when t > 0 && t < w && t < d => [new Vec2[] { new(-w + t, -d + t), new(-w + t, d - t), new(w - t, d - t), new(w - t, -d + t) }],
@@ -129,6 +162,7 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
         "RHS" => $"RHS {Depth * 1000:0.#}×{Width * 1000:0.#}×{Web * 1000:0.#}",
         "CHS" => $"CHS {Width * 1000:0.#}×{Web * 1000:0.#}",
         "C" or "Z" or "SIGMA" => $"{(Kind == "SIGMA" ? "Σ" : Kind)} {Depth * 1000:0}×{Width * 1000:0}×{Web * 1000:0.#}",
+        "outline" => $"Outline {Depth * 1000:0}×{Width * 1000:0}",
         _ => $"{Kind} {Depth * 1000:0}×{Width * 1000:0}",
     };
 
@@ -139,8 +173,21 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
         if (Lip > 0) o["lip"] = Lip;
         if (Kind == "polygon") o["sides"] = Sides;
         if (Name != null) o["name"] = Name;
+        if (Root > 0) o["r1"] = Root;
+        if (Toe > 0) o["r2"] = Toe;
+        if (Slope > 0) o["slope"] = Slope;
+        if (Rings is { Count: > 0 } rings)
+            o["rings"] = new JsonArray(rings.Select(r => (JsonNode)new JsonArray(r.Select(p => (JsonNode)new JsonArray(Math.Round(p.X, 7), Math.Round(p.Y, 7))).ToArray())).ToArray());
+        if (ProfileId != null) o["profileId"] = ProfileId;
+        if (Standard != null) o["standard"] = Standard;
+        if (Family != null) o["family"] = Family;
         return o;
     }
+
+    /// <summary>The rings a section's JSON gives (<c>rings: [[[x, y], …], …]</c>), metres; null when none.</summary>
+    public static IReadOnlyList<IReadOnlyList<Vec2>>? RingsFrom(JsonNode? n) =>
+        n is JsonArray a && a.OfType<JsonArray>().Select(r => (IReadOnlyList<Vec2>)r.OfType<JsonArray>().Where(p => p.Count >= 2)
+            .Select(p => new Vec2(Json.Number(p[0]) ?? 0, Json.Number(p[1]) ?? 0)).ToList()).Where(r => r.Count >= 3).ToList() is { Count: > 0 } l ? l : null;
 
     /// <summary>The steel profiles a type can be made of by name (mm: depth, width, web, flange; a hollow or cold-formed section's thickness as both, a cold-formed one's lips).</summary>
     public static readonly IReadOnlyDictionary<string, Section> Catalogue = new Dictionary<string, Section>(StringComparer.OrdinalIgnoreCase)
@@ -164,11 +211,19 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
 
     static Section P(string kind, double depth, double width, double web, double flange, string name, double lip = 0) => new(kind, width / 1000, depth / 1000, web / 1000, flange / 1000, name, lip / 1000);
 
+    /// <summary>A profile by its name: the catalogue's, else the built-in profile library's (EN steel); null when neither has it.</summary>
+    public static Section? Named(string name)
+    {
+        var key = name.Trim().Replace("x", "×");
+        if (Catalogue.TryGetValue(key, out var c)) return c;
+        return Lapin.Platform.ProfileLibraries.BuiltInProfiles.Find(name) is { } p ? From(p.SectionJson(null)) : null;
+    }
+
     public static Section? From(JsonNode? n)
     {
-        if (n is JsonValue v && v.TryGetValue<string>(out var named)) return Catalogue.GetValueOrDefault(named.Replace("x", "×"));
+        if (n is JsonValue v && v.TryGetValue<string>(out var named)) return Named(named);
         if (n is not JsonObject o) return null;
-        if ((string?)o["name"] is { } nm && Catalogue.TryGetValue(nm.Replace("x", "×"), out var c) && o["width"] == null) return c;
+        if ((string?)o["name"] is { } nm && o["width"] == null && o["rings"] == null && Named(nm) is { } c) return c;
         var kind = (string?)o["kind"] ?? "rectangle";
         if (kind == "H") kind = "I";
         if (kind == "Σ") kind = "SIGMA";
@@ -178,13 +233,42 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
         var t = Json.Number(o["thickness"]);
         var web = Json.Number(o["web"]) ?? t ?? 0;
         var flange = Json.Number(o["flange"]) ?? (ThinWalled.Contains(kind) ? web : t ?? 0);
-        return new Section(kind, w, d, web, flange, (string?)o["name"], Json.Number(o["lip"]) ?? 0, kind == "polygon" ? (int)(Json.Number(o["sides"]) ?? 0) : 0);
+        var rings = kind == "outline" ? RingsFrom(o["rings"]) : null;
+        if (rings != null && (w <= 0 || d <= 0))
+        {
+            var all = rings.SelectMany(r => r).ToList();
+            (w, d) = (all.Max(p => p.X) - all.Min(p => p.X), all.Max(p => p.Y) - all.Min(p => p.Y));
+        }
+        return new Section(kind, w, d, web, flange, (string?)o["name"], Json.Number(o["lip"]) ?? 0, kind == "polygon" ? (int)(Json.Number(o["sides"]) ?? 0) : 0)
+        {
+            Root = Json.Number(o["r1"]) ?? 0, Toe = Json.Number(o["r2"]) ?? 0, Slope = Json.Number(o["slope"]) ?? 0, Rings = rings,
+            ProfileId = (string?)o["profileId"], Standard = (string?)o["standard"], Family = (string?)o["family"],
+        };
+    }
+
+    /// <summary>
+    /// A type's section from a command's arguments: <c>section</c> as before, or <c>profile</c> (and <c>library</c>) a profile
+    /// of a library (docs/plan-profile-libraries.md), copied into the project if it is not there yet and kept by its id, so
+    /// the type follows the copy; <paramref name="material"/> is then the material its library says (Steel, Aluminium…).
+    /// </summary>
+    public static Section FromArgs(ICommandContext ctx, JsonObject a, out string? material)
+    {
+        material = null;
+        if (a["profile"] is JsonObject pj)
+        {
+            var p = Lapin.Platform.ProfileLibraries.SectionProfile.From(pj) ?? throw new CommandException("The profile needs a name and a kind.");
+            var (copy, _) = Lapin.Platform.ProfileLibraries.ProjectProfiles.Ensure(ctx, p, (string?)a["library"]);
+            material = Lapin.Platform.ProfileLibraries.ProjectProfiles.MaterialName(p.Material);
+            return Parse(Lapin.Platform.ProfileLibraries.ProjectProfiles.Read(copy)!.SectionJson(copy.Id));
+        }
+        return Parse(a["section"]);
     }
 
     public static Section Parse(JsonNode? n)
     {
         var s = From(n) ?? throw new CommandException("A section is a rectangle (width, depth), a circle (diameter), a regular polygon (diameter, sides), a profile I, U, T, L (depth, width, web, flange), RHS, CHS, C, Z or Σ (depth, width, thickness, lip), or a catalogue name (IPE 300).");
         if (s.Kind is not ("rectangle" or "circle" or "polygon") && !s.IsProfile) throw new CommandException("A section is a rectangle, a circle, a regular polygon, or a profile I, U, T, L, RHS, CHS, C, Z or Σ.");
+        if (s.Kind == "outline" && !(s.Outline().Count >= 3 && s.Area > 1e-10)) throw new CommandException("An outline section needs a closed outline enclosing an area.");
         if (!(s.Width > 0 && s.Depth > 0)) throw new CommandException("A section needs a positive size.");
         if (s.Kind == "polygon" && s.Sides is < 3 or > 64) throw new CommandException("A regular polygon has 3 to 64 sides.");
         if (s.Kind is "RHS" or "CHS" && !(s.Web > 0 && 2 * s.Web < Math.Min(s.Width, s.Depth))) throw new CommandException("A hollow section's wall must be thinner than half of it.");

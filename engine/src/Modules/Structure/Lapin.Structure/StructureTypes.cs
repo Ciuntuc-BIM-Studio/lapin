@@ -34,7 +34,7 @@ public static class StructureTypes
         switch (type.Class)
         {
             case IfcClass.ColumnType or IfcClass.BeamType:
-                if (a["section"] != null) attrs["section"] = Section.Parse(a["section"]).ToJson();
+                if (a["section"] != null || a["profile"] != null) attrs["section"] = Section.FromArgs(edit, a, out _).ToJson();
                 if (type.Class == IfcClass.ColumnType && a.ContainsKey("height"))
                 {
                     // Empty: as tall as the storey again.

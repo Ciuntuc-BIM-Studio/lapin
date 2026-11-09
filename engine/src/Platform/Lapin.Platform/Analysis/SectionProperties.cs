@@ -21,6 +21,11 @@ public sealed record SectionProps(double Area, double I22, double I33, double S2
     public SectionProps? Geometric { get; init; }
     /// <summary>The product of inertia ∫x·y dA in the section's drawing (x across, y up its depth), about the centroid.</summary>
     public double Ixy { get; init; }
+    /// <summary>The warping constant (m⁶) and how it was found; null where Lapin has no formula for the shape (an arbitrary outline).</summary>
+    public double? Iw { get; init; }
+    public string? IwMethod { get; init; }
+    /// <summary>The outside's length (m: the paintable surface a metre), its fillets rounded.</summary>
+    public double Perimeter { get; init; }
 }
 
 /// <summary>
@@ -61,6 +66,9 @@ public static class SectionProperties
         if (!(s.Width > 0 && s.Depth > 0) || !double.IsFinite(s.Width) || !double.IsFinite(s.Depth)) return null;
         var cat = CatalogueOf(s.Designation);
         var (standard, family, r) = cat is { } c ? (c.Standard, c.Family, c.Radius) : ((string?)null, (string?)null, 0.0);
+        if (s.Root is { } own && own >= 0) r = own;
+        standard = s.Standard ?? standard;
+        family = s.Family ?? family;
         double b = s.Width, h = s.Depth;
         switch (s.Kind)
         {
@@ -68,14 +76,24 @@ public static class SectionProperties
             {
                 var (a, t) = (Math.Max(b, h), Math.Min(b, h));
                 var j = a * t * t * t * (1.0 / 3 - 0.21 * (t / a) * (1 - Math.Pow(t / a, 4) / 12));
-                return new(b * h, h * b * b * b / 12, b * h * h * h / 12, h * b * b / 6, b * h * h / 6, h * b * b / 4, b * h * h / 4, j, default,
-                    "closed form; J = a·b³·(1/3 − 0.21·(b/a)·(1 − b⁴/(12a⁴))) (Roark)", null, null, 0);
+                return new SectionProps(b * h, h * b * b * b / 12, b * h * h * h / 12, h * b * b / 6, b * h * h / 6, h * b * b / 4, b * h * h / 4, j, default,
+                    "closed form; J = a·b³·(1/3 − 0.21·(b/a)·(1 − b⁴/(12a⁴))) (Roark)", standard, family, 0) { Perimeter = 2 * (b + h) };
             }
             case "circle":
             {
                 var d = b;
                 var i = Math.PI * Math.Pow(d, 4) / 64;
-                return new(Math.PI * d * d / 4, i, i, i / (d / 2), i / (d / 2), d * d * d / 6, d * d * d / 6, 2 * i, default, "closed form (exact)", null, null, 0);
+                return new SectionProps(Math.PI * d * d / 4, i, i, i / (d / 2), i / (d / 2), d * d * d / 6, d * d * d / 6, 2 * i, default, "closed form (exact)", standard, family, 0)
+                    { Iw = 0, IwMethod = "a circle does not warp", Perimeter = Math.PI * d };
+            }
+            case "ellipse":
+            {
+                // Semi-axes a across, c up the depth: A = π·a·c, I about the horizontal axis π·a·c³/4, Z = 4·a·c²/3, J = π·a³·c³/(a² + c²).
+                var (a, cc) = (b / 2, h / 2);
+                double i33 = Math.PI * a * cc * cc * cc / 4, i22 = Math.PI * cc * a * a * a / 4;
+                var per = Math.PI * (3 * (a + cc) - Math.Sqrt((3 * a + cc) * (a + 3 * cc)));
+                return new SectionProps(Math.PI * a * cc, i22, i33, i22 / a, i33 / cc, 4 * cc * a * a / 3, 4 * a * cc * cc / 3, Math.PI * Math.Pow(a, 3) * Math.Pow(cc, 3) / (a * a + cc * cc),
+                    default, "closed form (exact); perimeter by Ramanujan", standard, family, 0) { Perimeter = per };
             }
             case "CHS":
             {
@@ -84,18 +102,29 @@ public static class SectionProperties
                 var di = d - 2 * t;
                 var i = Math.PI * (Math.Pow(d, 4) - Math.Pow(di, 4)) / 64;
                 var z = (d * d * d - di * di * di) / 6;
-                return new(Math.PI / 4 * (d * d - di * di), i, i, i / (d / 2), i / (d / 2), z, z, 2 * i, default, "closed form (exact)", standard, family, 0);
+                return new SectionProps(Math.PI / 4 * (d * d - di * di), i, i, i / (d / 2), i / (d / 2), z, z, 2 * i, default, "closed form (exact)", standard, family, 0)
+                    { Iw = 0, IwMethod = "closed section: negligible", Perimeter = Math.PI * d };
             }
         }
         var rings = Rings(s, r);
-        if (rings == null) return null;
+        if (rings == null || rings.Count == 0) return null;
         var (area, sx, sy, _, _) = Integrals(rings);
         if (!(area > 0)) return null;
         var (cx, cy) = (sy / area, sx / area);
         var moved = rings.Select(ring => ring.Select(p => new Vec2(p.X - cx, p.Y - cy)).ToList()).ToList();
         var (jv, jm) = Torsion(s, r);
         var method = r > 0 ? $"polygon integrals of the nominal outline with root radius r = {r * 1000:0.#} mm ({standard}); J: {jm}" : $"polygon integrals of the outline (sharp corners); J: {jm}";
+        var perimeter = rings.Where(x => Polygon2.SignedArea(x) > 0).Sum(Length);
         var geometric = About(moved, area, jv, new Vec2(cx, cy), method, standard, family, r);
+        if (s.Kind == "outline")
+        {
+            // No formula for any outline: Saint-Venant's estimate for a compact solid, A⁴/(40·Ip) (too high for a thin-walled one).
+            jv = Math.Pow(area, 4) / (40 * (geometric.I22 + geometric.I33));
+            method = "polygon integrals of the outline; J: Saint-Venant's estimate A⁴/(40·Ip), for compact solids only";
+            geometric = geometric with { J = jv, Method = method };
+        }
+        var (iw, iwMethod) = Warping(s, geometric);
+        geometric = geometric with { Iw = iw, IwMethod = iwMethod, Perimeter = perimeter };
         var ixy = Product(moved);
         if (Math.Abs(ixy) <= 1e-9 * (geometric.I22 + geometric.I33)) return geometric with { Ixy = 0 };
         // The principal axis nearest the depth: ∫(p·v)² is extreme for v = (sin φ, cos φ) with tan 2φ = 2·Ixy / (Ixx − Iyy).
@@ -106,7 +135,113 @@ public static class SectionProperties
         // Coordinates along the principal axes: y' along v (the new local 2), x' across it.
         var turned = moved.Select(ring => ring.Select(p => new Vec2(p.X * cs - p.Y * sn, p.X * sn + p.Y * cs)).ToList()).ToList();
         var principal = About(turned, area, jv, new Vec2(cx, cy), method + "; about the principal axes", standard, family, r);
-        return principal with { PrincipalDeg = phi * 180 / Math.PI, Geometric = geometric with { Ixy = ixy }, Ixy = ixy };
+        return principal with { PrincipalDeg = phi * 180 / Math.PI, Geometric = geometric with { Ixy = ixy }, Ixy = ixy, Iw = iw, IwMethod = iwMethod, Perimeter = perimeter };
+    }
+
+    static double Length(IReadOnlyList<Vec2> ring)
+    {
+        var l = 0.0;
+        for (var i = 0; i < ring.Count; i++) l += (ring[(i + 1) % ring.Count] - ring[i]).Length;
+        return l;
+    }
+
+    /// <summary>
+    /// The warping constant: a doubly symmetric I's Iz·(h − tf)²/4, an asymmetric I's hs²·I1·I2/(I1 + I2), a channel's
+    /// thin-walled formula, a cold-formed section's from its sectorial coordinate along the sheet's centreline about its shear
+    /// centre; none for sections whose walls meet at a point (an angle, a T) or that are closed (negligible); null for the others.
+    /// </summary>
+    static (double? Iw, string? Method) Warping(SectionShape s, SectionProps p)
+    {
+        double b = s.Width, h = s.Depth, tw = s.Web, tf = s.Flange;
+        switch (s.Kind)
+        {
+            case "I": return (p.I22 * (h - tf) * (h - tf) / 4, "Iw = Iz·(h − tf)²/4");
+            case "asymI":
+            {
+                var (b2, tf2) = (s.Width2 > 0 ? s.Width2 : b, s.Flange2 > 0 ? s.Flange2 : tf);
+                double i1 = tf * b * b * b / 12, i2 = tf2 * b2 * b2 * b2 / 12, hs = h - (tf + tf2) / 2;
+                return (hs * hs * i1 * i2 / (i1 + i2), "Iw = hs²·I1·I2/(I1 + I2), the flanges' own inertias");
+            }
+            case "U":
+            {
+                double bp = b - tw / 2, hp = h - tf;
+                return (tf * bp * bp * bp * hp * hp / 12 * (3 * bp * tf + 2 * hp * tw) / (6 * bp * tf + hp * tw), "thin-walled channel Iw = tf·b'³·h'²/12·(3b'tf + 2h'tw)/(6b'tf + h'tw)");
+            }
+            case "L" or "T": return (0, "thin-walled: its walls meet at a point (negligible)");
+            case "RHS" or "CHS": return (0, "closed section: negligible");
+            case "C" or "Z" or "SIGMA":
+            {
+                var line = Centreline(s);
+                return line.Count >= 2 && tw > 0 ? (SectorialWarping(line, tw), "sectorial coordinate along the sheet's centreline, about the shear centre") : (null, null);
+            }
+            default: return (null, null);
+        }
+    }
+
+    /// <summary>
+    /// An open thin-walled chain's warping constant (one thickness <paramref name="t"/>, along <paramref name="line"/>): the
+    /// sectorial coordinate from the centroid, made mean-free, the pole moved to where ∫ω² dA is least (the shear centre).
+    /// </summary>
+    public static double SectorialWarping(IReadOnlyList<Vec2> line, double t)
+    {
+        var n = line.Count;
+        double a = 0, sx = 0, sy = 0;
+        for (var i = 0; i + 1 < n; i++)
+        {
+            var l = (line[i + 1] - line[i]).Length;
+            a += t * l; sx += t * l * (line[i].X + line[i + 1].X) / 2; sy += t * l * (line[i].Y + line[i + 1].Y) / 2;
+        }
+        if (!(a > 0)) return 0;
+        var c = new Vec2(sx / a, sy / a);
+        var p = line.Select(q => q - c).ToList();
+        // ω at the nodes about the centroid: twice the area swept from it.
+        var w = new double[n];
+        for (var i = 0; i + 1 < n; i++) w[i + 1] = w[i] + (p[i].X * p[i + 1].Y - p[i + 1].X * p[i].Y);
+        double Int(Func<int, double> f, Func<int, double> g)
+        {
+            double sum = 0;
+            for (var i = 0; i + 1 < n; i++)
+            {
+                var l = (p[i + 1] - p[i]).Length;
+                sum += t * l / 6 * (2 * f(i) * g(i) + f(i) * g(i + 1) + f(i + 1) * g(i) + 2 * f(i + 1) * g(i + 1));
+            }
+            return sum;
+        }
+        var mean = Int(i => w[i], _ => 1) / a;
+        var wb = w.Select(x => x - mean).ToArray();
+        double ixx = Int(i => p[i].Y, i => p[i].Y), iyy = Int(i => p[i].X, i => p[i].X), ixy = Int(i => p[i].X, i => p[i].Y);
+        double iwy = Int(i => wb[i], i => p[i].Y), iwx = Int(i => wb[i], i => p[i].X);
+        // ω about the pole (px, py): ω̄ − px·y + py·x; its square's integral least where both its derivatives vanish.
+        var det = -ixx * iyy + ixy * ixy;
+        double px = 0, py = 0;
+        if (Math.Abs(det) > 1e-30) { px = (-iwy * iyy + ixy * iwx) / det; py = (-ixx * -iwx - (-ixy) * -iwy) / det; }
+        var wp = Enumerable.Range(0, n).Select(i => wb[i] - px * p[i].Y + py * p[i].X).ToArray();
+        return Math.Max(0, Int(i => wp[i], i => wp[i]));
+    }
+
+    /// <summary>
+    /// The section's rings as its properties are found from them (outsides anticlockwise, holes clockwise; fillets rounded),
+    /// about its box's centre; a circle, a CHS and an ellipse by the chord rule. Null when the shape cannot give them.
+    /// </summary>
+    public static List<List<Vec2>>? RingsOf(SectionShape s)
+    {
+        if (!(s.Width > 0 && s.Depth > 0) && s.Kind != "outline") return null;
+        List<Vec2> Ellipse(double a, double c, bool hole = false)
+        {
+            var n = Chords.Circle(Math.Max(a, c));
+            var o = Enumerable.Range(0, n).Select(k => new Vec2(a * Math.Cos(2 * Math.PI * k / n), c * Math.Sin(2 * Math.PI * k / n))).ToList();
+            if (hole) o.Reverse();
+            return o;
+        }
+        switch (s.Kind)
+        {
+            case "circle": return [Ellipse(s.Width / 2, s.Width / 2)];
+            case "ellipse": return [Ellipse(s.Width / 2, s.Depth / 2)];
+            case "CHS": return s.Web > 0 && 2 * s.Web < s.Width ? [Ellipse(s.Width / 2, s.Width / 2), Ellipse(s.Width / 2 - s.Web, s.Width / 2 - s.Web, true)] : null;
+            case "rectangle": { double w = s.Width / 2, d = s.Depth / 2; return [[new(-w, -d), new(w, -d), new(w, d), new(-w, d)]]; }
+        }
+        var r = s.Root ?? CatalogueOf(s.Designation)?.Radius ?? 0;
+        return Rings(s, r);
     }
 
     /// <summary>The properties about the axes of the rings' coordinates (centred).</summary>
@@ -138,10 +273,33 @@ public static class SectionProperties
         double w = s.Width / 2, d = s.Depth / 2, tw = s.Web, tf = s.Flange;
         List<Vec2> outline;
         List<List<Vec2>> holes = [];
+        // Sloping flanges: the inner face falls towards the toe by the slope, the thickness tf where it is measured (an I's a
+        // quarter of its flange from the toe, DIN 1025-1; a channel's half its flange from the web's back, DIN 1026-1).
+        var k = s.Slope > 0 && s.Slope < 0.5 ? s.Slope : 0;
         switch (s.Kind)
         {
-            case "I": outline = [new(-w, -d), new(w, -d), new(w, -d + tf), new(tw / 2, -d + tf), new(tw / 2, d - tf), new(w, d - tf), new(w, d), new(-w, d), new(-w, d - tf), new(-tw / 2, d - tf), new(-tw / 2, -d + tf), new(-w, -d + tf)]; break;
-            case "U": outline = [new(-w, -d), new(w, -d), new(w, -d + tf), new(-w + tw, -d + tf), new(-w + tw, d - tf), new(w, d - tf), new(w, d), new(-w, d)]; break;
+            case "I":
+            {
+                double xm = w / 2, root = tf + k * (xm - tw / 2), toe = tf - k * (w - xm);
+                outline = [new(-w, -d), new(w, -d), new(w, -d + toe), new(tw / 2, -d + root), new(tw / 2, d - root), new(w, d - toe), new(w, d), new(-w, d), new(-w, d - toe), new(-tw / 2, d - root), new(-tw / 2, -d + root), new(-w, -d + toe)];
+                break;
+            }
+            case "asymI":
+            {
+                // The top flange Width × Flange, the bottom Width2 × Flange2, the web centred.
+                double w2 = (s.Width2 > 0 ? s.Width2 : s.Width) / 2, tf2 = s.Flange2 > 0 ? s.Flange2 : tf;
+                if (!(tw > 0 && tf > 0 && tf2 > 0 && tf + tf2 < s.Depth)) return null;
+                outline = [new(-w2, -d), new(w2, -d), new(w2, -d + tf2), new(tw / 2, -d + tf2), new(tw / 2, d - tf), new(w, d - tf), new(w, d), new(-w, d), new(-w, d - tf), new(-tw / 2, d - tf), new(-tw / 2, -d + tf2), new(-w2, -d + tf2)];
+                break;
+            }
+            case "U":
+            {
+                double xm = -w + Math.Max(s.Width / 2, tw), root = tf + k * (xm - (-w + tw)), toe = tf - k * (w - xm);
+                outline = [new(-w, -d), new(w, -d), new(w, -d + toe), new(-w + tw, -d + root), new(-w + tw, d - root), new(w, d - toe), new(w, d), new(-w, d)];
+                break;
+            }
+            case "outline":
+                return s.Rings is { Count: > 0 } given ? [.. given.Where(x => x.Count >= 3).Select(x => x.ToList())] : null;
             case "T": outline = [new(-tw / 2, -d), new(tw / 2, -d), new(tw / 2, d - tf), new(w, d - tf), new(w, d), new(-w, d), new(-w, d - tf), new(-tw / 2, d - tf)]; break;
             case "L": outline = [new(-w, -d), new(w, -d), new(w, -d + tf), new(-w + tw, -d + tf), new(-w + tw, d), new(-w, d)]; break;
             case "RHS":
@@ -150,7 +308,7 @@ public static class SectionProperties
                 if (!(t > 0 && t < w && t < d)) return null;
                 outline = [new(-w, -d), new(w, -d), new(w, d), new(-w, d)];
                 var hole = new List<Vec2> { new(-w + t, -d + t), new(-w + t, d - t), new(w - t, d - t), new(w - t, -d + t) };
-                if (r > 0) { outline = Round(outline, _ => r); hole = Round(hole, _ => Math.Max(r - t, 0)); }
+                if (r > 0) { outline = Round(outline, _ => r); hole = Round(hole, _ => s.Toe ?? Math.Max(r - t, 0)); }
                 return [outline, hole];
             }
             case "C" or "Z" or "SIGMA":
@@ -163,9 +321,11 @@ public static class SectionProperties
         }
         if (s.Kind is "I" or "U" or "T" or "L" && !(tw > 0 && tf > 0)) return null;
         outline = EnsureCcw(outline);
-        // The root fillets: the re-entrant corners (a clockwise turn in a counter-clockwise outline) rounded by r; an angle's
-        // toes (the inner corners of its legs' tips) by r2 = r/2 (EN 10056-1).
-        if (r > 0) outline = s.Kind == "L" ? Round(outline, (i, turn) => turn < 0 ? r : i is 2 or 4 ? r / 2 : 0) : Round(outline, turn => turn < 0 ? r : 0);
+        // The root fillets: the re-entrant corners (a clockwise turn in a counter-clockwise outline) rounded by r; the toes
+        // (the inner corners of the flanges' or legs' tips) by r2, an angle's r/2 when not given (EN 10056-1).
+        int[] toes = s.Kind switch { "I" or "asymI" => [2, 5, 8, 11], "U" => [2, 5], "T" => [3, 6], "L" => [2, 4], _ => [] };
+        var r2 = s.Toe ?? (s.Kind == "L" ? r / 2 : 0);
+        if (r > 0 || r2 > 0) outline = Round(outline, (i, turn) => turn < 0 ? r : toes.Contains(i) ? r2 : 0);
         return [outline, .. holes];
     }
 
@@ -350,6 +510,12 @@ public static class SectionProperties
                 return (t * t * t * hp / 3 + 2 * k * ah, "EN 10210-2 Annex B, It = t³·h/3 + 2·K·Ah");
             }
             case "U": return (2.0 / 3 * (b - tw / 2) * Math.Pow(tf, 3) + 1.0 / 3 * (h - tf) * Math.Pow(tw, 3), "thin-walled open section Σ b·t³/3 (fillets left out)");
+            case "asymI":
+            {
+                var (b2, tf2) = (s.Width2 > 0 ? s.Width2 : b, s.Flange2 > 0 ? s.Flange2 : tf);
+                return ((b * Math.Pow(tf, 3) + b2 * Math.Pow(tf2, 3) + (h - (tf + tf2) / 2) * Math.Pow(tw, 3)) / 3, "thin-walled open section Σ b·t³/3 (fillets left out)");
+            }
+            case "outline": return (0, "");
             case "T": return (1.0 / 3 * b * Math.Pow(tf, 3) + 1.0 / 3 * (h - tf / 2) * Math.Pow(tw, 3), "thin-walled open section Σ b·t³/3 (fillets left out)");
             case "L": return (1.0 / 3 * (b - tw / 2) * Math.Pow(tf, 3) + 1.0 / 3 * (h - tf / 2) * Math.Pow(tw, 3), "thin-walled open section Σ b·t³/3 (fillets left out)");
             default:

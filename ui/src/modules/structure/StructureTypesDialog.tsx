@@ -20,10 +20,13 @@ import { useStandards } from '../../engine/unitsStore';
 import { formatSteps, parseSteps, type Step } from './steps';
 import { Cell, LengthField } from '../../shell/cells';
 import { ProfilePicker, ProfilePreview } from '../core/ProfilesDialog';
+import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
+import { useLibraryPick } from '../core/profileLibraries/useLibraryPick';
+import { SectionGlyph } from '../steel/SteelTypesDialog';
 import type { ProfileJson } from '../core/profiles';
 
 type Kind = 'column' | 'beam' | 'strip' | 'pad';
-type Shape = 'rectangle' | 'circle' | 'polygon';
+type Shape = 'rectangle' | 'circle' | 'polygon' | 'library';
 const num = (m: unknown, fallback: number) => (typeof m === 'number' ? m : fallback);
 
 /** A labelled length of the type (the shared field). */
@@ -43,6 +46,8 @@ export function StructureTypesDialog() {
   // A section's shape; a regular polygon (an octagonal post, as recognised from an IFC) has its sides, its diameter across the corners.
   const [shape, setShape] = useState<Shape>('rectangle');
   const [sides, setSides] = useState(8);
+  // A profile of the libraries (docs/plan-profile-libraries.md): steel, timber, aluminium, precast, copied into the project with the type.
+  const lib = useLibraryPick();
   // Lengths in metres; the steps as typed.
   const units = useStandards((s) => s.units);
   const [w, setW] = useState(0.3);
@@ -67,7 +72,7 @@ export function StructureTypesDialog() {
     setName(t.name);
     const sec = t.props.section as { kind?: string; width?: number; depth?: number; sides?: number } | undefined;
     if (sec) {
-      setShape(sec.kind === 'circle' || sec.kind === 'polygon' ? sec.kind : 'rectangle'); setW(num(sec.width, 0.3)); setD(num(sec.depth, 0.3));
+      setShape(sec.kind === 'circle' || sec.kind === 'polygon' ? sec.kind : sec.kind && sec.kind !== 'rectangle' ? 'library' : 'rectangle'); setW(num(sec.width, 0.3)); setD(num(sec.depth, 0.3));
       if (sec.kind === 'polygon') setSides(num(sec.sides, 8));
     }
     if (t.props.kind === 'strip') {
@@ -92,7 +97,8 @@ export function StructureTypesDialog() {
     if (!edited) return;
     const section = sectionOf();
     const args: Record<string, unknown> = { id: edited.id, name };
-    if (kind === 'column' || kind === 'beam') args.section = section;
+    if ((kind === 'column' || kind === 'beam') && shape === 'library') { if (lib.picked) Object.assign(args, { profile: lib.picked.profile, library: lib.picked.library }); }
+    else if (kind === 'column' || kind === 'beam') args.section = section;
     else if (kind === 'strip' && stripShape === 'profile') Object.assign(args, { bottom, ...(profileId ? { profileId } : {}) });
     else if (kind === 'strip') Object.assign(args, { stemHeight: stem, footingWidth: fw, footingHeight: fh, bottom, ...(edited.props.profile ? { profile: null } : { core }) });
     else Object.assign(args, { bottom, steps });
@@ -103,7 +109,10 @@ export function StructureTypesDialog() {
 
   const create = async () => {
     const section = sectionOf();
-    if (kind === 'column') await execute('structure.createColumnType', { name, section });
+    if ((kind === 'column' || kind === 'beam') && shape === 'library') {
+      if (!lib.picked) return;
+      await execute(kind === 'column' ? 'structure.createColumnType' : 'structure.createBeamType', { name, profile: lib.picked.profile, library: lib.picked.library });
+    } else if (kind === 'column') await execute('structure.createColumnType', { name, section });
     else if (kind === 'beam') await execute('structure.createBeamType', { name, section });
     else if (kind === 'strip' && stripShape === 'profile') {
       if (!profileId) return;
@@ -152,9 +161,15 @@ export function StructureTypesDialog() {
             {(kind === 'column' || kind === 'beam') && <>
               <label className="field-line"><span className="eyebrow">Section</span>
                 <select value={shape} onChange={(e) => setShape(e.target.value as Shape)}><option value="rectangle">Rectangle</option><option value="circle">Circle</option>
-                  {(kind === 'column' || shape === 'polygon') && <option value="polygon">Polygon</option>}</select>
+                  {(kind === 'column' || shape === 'polygon') && <option value="polygon">Polygon</option>}<option value="library">From a profile library…</option></select>
               </label>
-              <Len label={shape === 'rectangle' ? 'Width' : 'Diameter'} value={w} min={0.01} onChange={setW} />
+              {shape === 'library' && <>
+                <label className="field-line"><span className="eyebrow">Library profile</span>
+                  <ProfilePickerField testId="structure-library-profile" value={lib.picked?.profile.name ?? (edited?.props.section as { name?: string } | undefined)?.name} onPick={lib.pick} /></label>
+                {lib.section && <div className="row" style={{ gap: 10, alignItems: 'center' }}><SectionGlyph section={lib.section} size={56} />
+                  <span className="small" data-no-i18n>{`${lib.picked?.profile.name ?? ''}${lib.mass != null ? ` · ${lib.mass.toFixed(1)} kg/m` : ''}`}</span></div>}
+              </>}
+              {shape !== 'library' && <Len label={shape === 'rectangle' ? 'Width' : 'Diameter'} value={w} min={0.01} onChange={setW} />}
               {shape === 'polygon' && <label className="field-line"><span className="eyebrow">Sides</span>
                 <input type="number" min={3} max={64} step={1} value={sides} onChange={(e) => setSides(Math.max(3, Math.min(64, Math.round(Number(e.target.value) || 3))))} /></label>}
               {shape === 'rectangle' && <Len label={kind === 'beam' ? 'Depth' : 'Length'} value={d} min={0.01} onChange={setD} />}

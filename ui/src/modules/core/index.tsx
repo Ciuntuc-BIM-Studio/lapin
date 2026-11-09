@@ -4,7 +4,7 @@ import { StoreySection } from './StoreySection';
 import { ImportIfcDialog } from './ImportIfcDialog';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn } from 'lucide-react';
+import { AppWindow, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -50,6 +50,7 @@ import { RemarksDialog as SheetRemarksDialog } from './cde/pdfRemarks/RemarksDia
 import { DisplayQualityDialog } from './DisplayQualityDialog';
 import { SunDialog } from './SunDialog';
 import { ProfilesDialog } from './ProfilesDialog';
+import { ProfileLibrariesDialog } from './profileLibraries/ProfileLibrariesDialog';
 import { SectionsDialog } from './SectionsDialog';
 import { convertToNative } from './convertTools';
 import { GroupSection } from './GroupSection';
@@ -152,6 +153,8 @@ const core: LapinModule = {
         { id: 'manage.viewFilters', label: 'View filters', icon: Filter, run: () => openVisibility('filters') },
         // The project's 2D profiles: what wall sweeps, reveals and strip footings are swept with (decision 297).
         { id: 'manage.profiles', label: 'Profiles', icon: ProfileIcon, run: () => useUi.setState({ dialog: 'profiles' }) },
+        // Cross-section profiles from libraries: Lapin's EN set, the user's tables and IFC files, a firm's folders (docs/plan-profile-libraries.md).
+        { id: 'manage.profileLibraries', label: 'Profile libraries', icon: Library, run: () => useUi.setState({ dialog: 'profileLibraries' }) },
       ] },
       { label: 'Files', tools: [
         { id: 'manage.links', label: 'Links', icon: Link2, run: () => useUi.setState({ dialog: 'links' }) },
@@ -274,7 +277,7 @@ const core: LapinModule = {
   // An opening void's label is held by its opening (a roof window's by its roof) where a view draws the voids (decision 292).
   grips: { LapinView: sectionGrips, IfcOpeningElement: voidLabelGrips, IfcRoof: voidLabelGrips },
   references: { LapinView: sectionRefs },
-  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog },
+  dialogs: { importIfc: ImportIfcDialog, materials: MaterialsDialog, standards: StandardsDialog, visibility: VisibilityDialog, viewRange: ViewRangeDialog, objectStyles: ObjectStylesDialog, location: LocationDialog, cutOrder: CutOrderDialog, moveToStorey: MoveToStoreyDialog, copyToStoreys: CopyToStoreysDialog, browserSets: BrowserSetsDialog, links: LinksDialog, versions: VersionsDialog, mapTypes: MapTypesDialog, planStoreys: PlanStoreysDialog, viewSettings: ViewSettingsDialog, viewStyles: ViewStylesDialog, exportMesh: ExportMeshDialog, projectFolder: ProjectFolderDialog, cdeIssue: IssueDialog, documents: DocumentsDialog, documentTemplates: TemplatesDialog, titleBlocks: TitleBlocksDialog, projectInfo: ProjectInfoDialog, cdeCheck: CheckDialog, remarks: RemarksDialog, cdeRemarks: SheetRemarksDialog, displayQuality: DisplayQualityDialog, sun: SunDialog, exportExchange: ExchangeExportDialog, exportJg: JgExportDialog, sections: SectionsDialog, coordination: CoordinationDialog, profiles: ProfilesDialog, profileLibraries: ProfileLibrariesDialog },
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },

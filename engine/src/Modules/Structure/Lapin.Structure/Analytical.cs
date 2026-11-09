@@ -65,6 +65,11 @@ public sealed class StructureAnalytical : IAnalyticalElements
         var designation = s.Name != null && Section.Catalogue.TryGetValue(s.Name, out var c)
             && Math.Abs(c.Width - s.Width) < 1e-9 && Math.Abs(c.Depth - s.Depth) < 1e-9 && Math.Abs(c.Web - s.Web) < 1e-9 && Math.Abs(c.Flange - s.Flange) < 1e-9 && c.Kind == s.Kind
             ? c.Name : null;
-        return new SectionShape(s.Kind, s.Width, s.Depth, s.Web, s.Flange, s.Lip, designation);
+        // A profile library's (docs/plan-profile-libraries.md): its name, standard and radii as the library says them.
+        if (designation == null && s.Name != null && (s.ProfileId != null || s.Standard != null)) designation = s.Name;
+        return new SectionShape(s.Kind, s.Width, s.Depth, s.Web, s.Flange, s.Lip, designation)
+        {
+            Root = s.Root > 0 ? s.Root : null, Toe = s.Toe > 0 ? s.Toe : null, Slope = s.Slope, Rings = s.Rings, Standard = s.Standard, Family = s.Family,
+        };
     }
 }

@@ -61,8 +61,9 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
 
         r.Command("createType", "New member type", (ctx, a) =>
         {
-            var section = Section.Parse(a["section"] ?? throw new CommandException("A member type needs a section."));
-            return new JsonObject { ["id"] = CreateType(ctx, (string?)a["name"], section, (string?)a["material"]).Id };
+            if (a["section"] == null && a["profile"] == null) throw new CommandException("A member type needs a section.");
+            var section = Section.FromArgs(ctx, a, out var material);
+            return new JsonObject { ["id"] = CreateType(ctx, (string?)a["name"], section, (string?)a["material"] ?? material).Id };
         });
 
         // A member type's section or name changed: its members follow; a type named after its section takes the new one's name.
@@ -72,7 +73,7 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
             var attrs = type.CloneAttrs();
             var auto = Section.From(type.Attrs["section"]) is { } old && type.Name == $"Member {old.Label}";
             Section? section = null;
-            if (a["section"] != null) attrs["section"] = (section = Section.Parse(a["section"])).ToJson();
+            if (a["section"] != null || a["profile"] != null) attrs["section"] = (section = Section.FromArgs(ctx, a, out _)).ToJson();
             var name = (string?)a["name"] is { Length: > 0 } n ? n.Trim() : auto && section != null ? $"Member {section.Label}" : type.Name;
             ctx.Replace(type.With(name: name, attrs: attrs));
             return null;

@@ -93,6 +93,7 @@ public sealed class CoreModule : ILapinModule
         Coordination.VoidDrawings.Register(r);
         ElementFaces.Register(r);
         Profiles.Register(r);
+        ProfileLibraries.ProfileLibraryCommands.Register(r);
         Dependencies.Register(r);
         Analysis.JgExchange.Register(r);
 
