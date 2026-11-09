@@ -2,7 +2,7 @@
 // Publish built packages of one product on the site: as the downloads the site
 // links to (fixed names, ciuntucbimstudio.ro/downloads/<product>/), and as an
 // update the installed apps find (ciuntucbimstudio.ro/downloads/<product>-update/).
-//   node scripts/publish-update.mjs <product> <file or folder>… [--notes "what changed"]
+//   node scripts/publish-update.mjs <product> <file or folder>… [--notes "what changed"] [--update-only]
 // e.g. node scripts/publish-update.mjs lapin build/lapin/bundle build/lapin-linux "windows builds"
 // What a folder holds is found by its names (Tauri's): <name>_<version>_….dmg and
 // .app.tar.gz (macOS), -setup.exe and -portable.zip (Windows), .AppImage and .deb (Linux).
@@ -14,6 +14,7 @@
 // platform and kind of package (<target>-<arch>-<kind>.json, what the app asks
 // for), uploaded after its package. The notes default to the commit subjects
 // since the version before (from the git history), shortened.
+// --update-only: the update the installed apps find, the site's downloads left as they are.
 // Uploads go through ciuntucbimstudio-site/deploy/upload-downloads.sh (LAPIN_SITE_DIR).
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -25,6 +26,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const notesAt = args.indexOf('--notes');
 const notesArg = notesAt >= 0 ? args.splice(notesAt, 2)[1] : null;
+const updateOnlyAt = args.indexOf('--update-only');
+const updateOnly = updateOnlyAt >= 0;
+if (updateOnly) args.splice(updateOnlyAt, 1);
 const [productId, ...inputs] = args;
 if (!productId || inputs.length === 0) { console.error('Usage: node scripts/publish-update.mjs <product> <file or folder>… [--notes "…"]'); process.exit(1); }
 const product = JSON.parse(readFileSync(join(root, 'products', `${productId}.json`), 'utf8'));
@@ -43,7 +47,7 @@ const KINDS = [
   { test: /\.deb$/, download: `${prefix}-Linux-x64.deb`, target: 'linux-x86_64-deb' },
 ];
 const walk = (p) => (statSync(p).isDirectory() ? readdirSync(p).flatMap((f) => walk(join(p, f))) : [p]);
-const files = inputs.flatMap((i) => walk(resolve(i))).filter((f) => KINDS.some((k) => k.test.test(f)) && !basename(f).startsWith('.'));
+const files = inputs.flatMap((i) => walk(resolve(i))).filter((f) => KINDS.some((k) => k.test.test(f) && (!updateOnly || k.target)) && !basename(f).startsWith('.'));
 if (files.length === 0) { console.error('No package found in what was given.'); process.exit(1); }
 
 const sh = (cmd, a, opts = {}) => {
@@ -78,7 +82,7 @@ const updates = [];
 for (const file of files) {
   const kind = KINDS.find((k) => k.test.test(file));
   const version = basename(file).match(/_(\d+\.\d+\.\d+)_/)?.[1];
-  if (kind.download) downloads.push(`${file}=${kind.download}`);
+  if (kind.download && !updateOnly) downloads.push(`${file}=${kind.download}`);
   if (!kind.target) continue;
   if (!version) { console.error(`${basename(file)}: no version in its name.`); process.exit(1); }
   if (!existsSync(key) || !password) { console.error(`No update key (${key}) or no password for it: the updates cannot be signed.`); process.exit(1); }
