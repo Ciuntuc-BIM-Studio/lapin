@@ -140,3 +140,5 @@ Then (#426) memory on very large models: the seam face tables kept only near the
 
 Then (#427, a tester's report #123) the side panels on either side: View → Panels puts the project browser and the properties left or right, or both on one side stacked with a divider (`panels.ts`: `browserSide`, `propsSide`, `stackRatio`, `LAYOUTS`; `SideColumn`, `StackSep` in `App.tsx`), kept on this computer; the default is unchanged.
 Then (#427, a tester's report #120) images to trace and a PDF's pictures were drawn upside down (read as mirrored): the corners reached `PenImage` from the bottom left instead of the top left; fixed in `ViewImages.Marks`, tested in plans, sections and elevations.
+
+Then (#428, a tester's report #122) a SOLID hatch can be selected again: its outline and its area are sent to the interface to click, a pattern hatch too (inside, where nothing else lies).

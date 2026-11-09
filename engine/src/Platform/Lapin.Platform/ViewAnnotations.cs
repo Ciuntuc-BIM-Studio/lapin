@@ -70,6 +70,10 @@ public sealed class ViewMark(string? owner)
     public List<(Vec2 A, Vec2 B, string Layer, double Width, string Color, double[]? Dash)> Lines { get; } = [];
     public List<(PenText Text, string Color)> Texts { get; } = [];
     public List<Vec2> Snaps { get; } = [];
+    /// <summary>Lines a click and a selection box take but nothing draws (a hatch's outline: a solid hatch has no lines of its own).</summary>
+    public List<(Vec2 A, Vec2 B)> Edges { get; } = [];
+    /// <summary>The area a click inside takes (even-odd loops), and whether it is opaque: a solid hatch is, a pattern's lines leave the model under it showing.</summary>
+    public (IReadOnlyList<IReadOnlyList<Vec2>> Loops, bool Solid)? Hit { get; set; }
     /// <summary>Filled areas (even-odd loops) and their colour, under the lines.</summary>
     public List<(IReadOnlyList<IReadOnlyList<Vec2>> Loops, string Color)> Fills { get; } = [];
     /// <summary>Pictures under everything (an orthophoto), by their corners in the view's coordinates; not counted in the view's extent.</summary>

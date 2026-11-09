@@ -17,7 +17,22 @@ import { boxTest, segsOf, type RegionTest, type Seg } from './selectBox';
 import { distToSegment, pairs, pointInPolygon } from './snap';
 
 /** A drawing's marks: their ids and segments (x1, y1, x2, y2, …); pick: an element's own pick lines from the drawing (never drawn); data.of: the element a tag marks. */
-export type Mark = { id: string; segments: number[]; pick?: boolean; behind?: boolean; data?: Record<string, unknown> };
+export type Mark = { id: string; segments: number[]; pick?: boolean; behind?: boolean; data?: Record<string, unknown>; hit?: MarkHit };
+/** The area a click inside takes (a hatch): even-odd loops (x, y, …); solid: opaque, so it wins over the model drawn under it. */
+export type MarkHit = { solid: boolean; loops: number[][] };
+
+/** Whether a point lies inside a mark's area (even-odd across its loops) and that area's size, to take the smallest of several. */
+function insideHit(p: Vec2, hit: MarkHit): number | null {
+  let inside = false, area = 0;
+  for (const l of hit.loops) {
+    const poly = pairs(l);
+    if (pointInPolygon(p, poly)) inside = !inside;
+    let a = 0;
+    for (let i = 0; i < poly.length; i++) { const q = poly[(i + 1) % poly.length]; a += poly[i].x * q.y - q.x * poly[i].y; }
+    area = Math.max(area, Math.abs(a) / 2);
+  }
+  return inside ? area : null;
+}
 
 /**
  * The element a mark belongs to when its id is not an element's: a grid's axis is `grid#tag` (selected on its own, as that id),
@@ -97,6 +112,19 @@ export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<str
       // One axis of a grid (grid#tag): selected on its own.
       return { ...hit.owner, id: m.id, name: `Axis ${m.id.slice(m.id.indexOf('#') + 1)}` };
     }
+  }
+  // A click inside a hatch takes it, after every line and outline (report #122): the smallest area first; a solid one lies over the model,
+  // a pattern's lines leave what is under them to be clicked, so it is taken only where nothing else is.
+  if (!types && marks) {
+    const under = !best || best.prio >= PICK_PRIORITY.room;
+    let found: { e: NodeDto; area: number } | null = null;
+    for (const m of marks) {
+      if (!m.hit || m.pick || !(m.hit.solid ? !m.behind || under : !best)) continue;
+      const area = insideHit(p, m.hit);
+      const owner = area != null ? nodes.get(m.id) : undefined;
+      if (area != null && owner && (!found || area < found.area)) found = { e: owner, area };
+    }
+    if (found) return found.e;
   }
   // The drawing's pick lines of what draws nothing of its own in the plan.
   if (marks && (!best || best.prio > PICK_MARK_PRIORITY)) {

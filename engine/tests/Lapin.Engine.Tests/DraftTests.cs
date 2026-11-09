@@ -133,6 +133,25 @@ public class DraftTests
     }
 
     [Fact]
+    public void A_solid_hatch_can_be_clicked_by_its_area_and_its_outline_and_a_pattern_one_too()
+    {
+        // Report #122, decision 428: a SOLID hatch draws no lines, so the interface had nothing to pick it by.
+        var f = F();
+        var plan = Plan(f);
+        Draw(f, plan, new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(10, 0), J(10, 10), J(0, 10)), ["closed"] = true });
+        var solid = (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = plan, ["at"] = J(1, 1), ["pattern"] = "SOLID", ["color"] = "#cccccc" })!["id"]!;
+        var cross = (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = plan, ["at"] = J(1, 1), ["pattern"] = "cross" })!["id"]!;
+        var marks = Drawing(f, plan)["marks"]!.AsArray().OfType<JsonObject>().ToList();
+        var m = marks.Single(x => (string?)x["id"] == solid);
+        Assert.True((bool)m["hit"]!["solid"]!);
+        Assert.Equal(8, m["hit"]!["loops"]![0]!.AsArray().Count);
+        Assert.Equal(16, m["segments"]!.AsArray().Count);
+        var p = marks.Single(x => (string?)x["id"] == cross);
+        Assert.False((bool)p["hit"]!["solid"]!);
+        Assert.True(p["segments"]!.AsArray().Count >= 16);
+    }
+
+    [Fact]
     public void Drafting_goes_to_DXF_on_its_own_layer()
     {
         var f = F();

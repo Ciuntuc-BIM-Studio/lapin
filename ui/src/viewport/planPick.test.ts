@@ -114,3 +114,34 @@ describe('drafting sent behind the model (decision 339)', () => {
     expect(pickAt(P(1, 2), 0.05, [wall, slab], all, low)?.id).toBe('h');
   });
 });
+
+describe('a hatch', () => {
+  // A solid hatch 1..3 × 1..2 (no lines of its own, only its outline as pick edges) and a pattern hatch with a hole.
+  const sq = (x0: number, y0: number, x1: number, y1: number) => [x0, y0, x1, y0, x1, y1, x0, y1];
+  const solid: Mark = { id: 'h', segments: [1, 1, 3, 1, 3, 1, 3, 2, 3, 2, 1, 2, 1, 2, 1, 1], hit: { solid: true, loops: [sq(1, 1, 3, 2)] } };
+  const all = nodesOf(node('w'), node('s', 'IfcSlab'), node('h', 'IfcAnnotation'), node('p', 'IfcAnnotation'));
+
+  it('is taken by a click inside a solid fill, over the model under it, and by its outline', () => {
+    expect(pickAt(P(2, 1.5), 0.05, [wall, slab], all, [solid])?.id).toBe('h');
+    expect(pickAt(P(1.02, 1.5), 0.05, [wall, slab], all, [solid])?.id).toBe('h');
+    expect(pickAt(P(3.5, 1.5), 0.05, [wall, slab], all, [solid])?.id).toBe('s');
+  });
+
+  it('a pattern hatch is taken inside only where nothing else is; a hole is not inside', () => {
+    const pat: Mark = { id: 'p', segments: [], hit: { solid: false, loops: [sq(0, 0, 4, 4), sq(1, 1, 2, 2)] } };
+    expect(pickAt(P(3, 3.5), 0.05, [], all, [pat])?.id).toBe('p');
+    expect(pickAt(P(1.5, 1.5), 0.05, [], all, [pat])).toBeNull();
+    expect(pickAt(P(1, 0.1), 0.05, [wall], all, [pat])?.id).toBe('w');
+  });
+
+  it('the smaller of two hatches lying over each other wins; a line over a hatch is taken first', () => {
+    const big: Mark = { id: 'p', segments: [], hit: { solid: true, loops: [sq(0, 0, 4, 4)] } };
+    expect(pickAt(P(2, 1.5), 0.05, [], all, [big, solid])?.id).toBe('h');
+    const line: Mark = { id: 'p', segments: [0, 1.5, 4, 1.5] };
+    expect(pickAt(P(2, 1.5), 0.05, [], all, [solid, line])?.id).toBe('p');
+  });
+
+  it('is taken by a selection box over its outline', () => {
+    expect(boxIds(P(0, 0), P(5, 5), true, [], all, [solid])).toEqual(['h']);
+  });
+});

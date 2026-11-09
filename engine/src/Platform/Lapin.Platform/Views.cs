@@ -872,7 +872,12 @@ public static class Views
             ["marks"] = new JsonArray(r.Marks.Where(x => x.Owner != null).Select(x => (JsonNode)new JsonObject
             {
                 ["id"] = x.Owner,
-                ["segments"] = new JsonArray(x.Lines.SelectMany(l => new[] { l.A.X, l.A.Y, l.B.X, l.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+                ["segments"] = new JsonArray(x.Lines.Select(l => (l.A, l.B)).Concat(x.Edges).SelectMany(l => new[] { l.A.X, l.A.Y, l.B.X, l.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+                ["hit"] = x.Hit is { } hit ? new JsonObject
+                {
+                    ["solid"] = hit.Solid,
+                    ["loops"] = new JsonArray(hit.Loops.Select(l => (JsonNode)new JsonArray(l.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray())).ToArray()),
+                } : null,
                 ["snaps"] = new JsonArray(x.Snaps.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
                 ["shapes"] = x.Shapes.Count > 0 ? new JsonArray(x.Shapes.Select(sh => (JsonNode)sh.DeepClone()).ToArray()) : null,
                 ["data"] = x.Data?.DeepClone(),
