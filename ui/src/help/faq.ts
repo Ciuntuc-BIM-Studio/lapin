@@ -778,6 +778,8 @@ export const FAQ: Entry[] = [
     aRo: 'Draft → Edit → Explode (sau X, ori EXPLODE în linia de comandă), apoi selectează ce desfaci: o polilinie sau un dreptunghi devine liniile lui, câte una pe latură, pe același strat, cu aceeași peniță, culoare și grup, într-un singur pas de undo. E drumul înapoi de la JOIN. Cercurile și arcele, hașurile și șirurile de cote rămân cum sunt. În 3D merge la fel pe liniile desenate pe un plan de lucru.',
     action: { label: 'Explode', labelRo: 'Explodează', run: { kind: 'tool', id: 'cad.explode' } },
     source: 'report #121',
+  },
+  {
     id: 'joinery-data',
     q: ['Where do I put the U-value, g-value, safety glass, fire rating and fittings of a window?', 'Can I write the fire rating as free text, like EI 30 or laminated inside, tempered both sides?', 'How do I add my own data to a door, like sauna window or frosted glass?'],
     qRo: ['Unde pun valoarea U, valoarea g, sticla de siguranță, rezistența la foc și feroneria unei ferestre?', 'Pot scrie rezistența la foc ca text liber, de exemplu EI 30?', 'Cum adaug datele mele la o ușă, de exemplu fereastră de saună sau sticlă mată?'],
