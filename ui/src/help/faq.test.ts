@@ -186,6 +186,12 @@ describe('Ask Lapin', () => {
     expect(ask('')).toEqual([]);
   });
 
+  it('explains where a profile\'s real shape shows', () => {
+    expect(best('why does my aluminium profile not show in the window frame')).toBe('profile-real-shape');
+    expect(best('steel beams drawn with sharp corners no root fillets')).toBe('profile-real-shape');
+    expect(best('de ce grinzile metalice au colturi drepte fara racordari')).toBe('profile-real-shape');
+  });
+
   it('points to the profile libraries for profiles Lapin does not ship', () => {
     expect(best('how do I import AISC steel profiles')).toBe('profile-libraries');
     expect(best('I need W shapes from my supplier catalogue')).toBe('profile-libraries');

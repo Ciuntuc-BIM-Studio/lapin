@@ -718,6 +718,17 @@ public static class Openings
 
     internal static Solid? Box(JoineryBox b, Func<double, double, double, Vec3> map)
     {
+        // A library profile's real outline along the member (decision 417), through the box from end to end.
+        if (b.Member is { } member)
+        {
+            Vec3 At(Vec2 q)
+            {
+                var (across, y) = member.On(b, q);
+                return member.Upright ? map(across, y, b.Min.Z) : map(b.Min.X, y, across);
+            }
+            var sweep = member.Upright ? map(0, 0, b.Max.Z) - map(0, 0, b.Min.Z) : map(b.Max.X, 0, 0) - map(b.Min.X, 0, 0);
+            return Prism.Extrude(member.Outline.Outer.Select(At).ToList(), member.Outline.Holes.Select(h => (IReadOnlyList<Vec3>)h.Select(At).ToList()).ToList(), sweep, b.Role);
+        }
         // An outline (an arch, a slanting bar): its points mapped at the near face, swept to the far one.
         if (b.Profile is { Count: >= 3 } outline)
         {

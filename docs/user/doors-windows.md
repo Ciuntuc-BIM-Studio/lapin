@@ -81,6 +81,8 @@ A door or a window is a grid of panes. Every pane chooses how it opens and what 
 
 **Profile system** starts the type from a **PVC**, **Aluminium**, **Timber** or **Steel (slim)** profile: it sets the frame, mullion, transom and sash sizes and gives the profiles their finer shapes. The frame has a **Rebate** the sash closes on, the sash laps over the frame by its **Sash overlap**, **Glazing beads** hold the glass, and a window has a drip under its bottom rail. Every size stays editable. **Simple (plain profiles)** keeps plain rectangular members, as before.
 
+**Frame from a library** and **Sash from a library** take a profile from your [profile libraries](profiles.md) (an aluminium or PVC section read from a DXF, say): straight frame and sash members then have its real outline, holes included, in 3D, in sections and in plans, with its width and depth. It replaces what it is the real shape of, the system's stop, lip and drips; glazing beads stay. Curved heads and round windows keep a plain band, and so do this grid's mullions and transoms. **Plain** goes back to a rectangle of that size.
+
 ![A PVC window: the sashes lapping over the frame, the beads, a solid panel under a fixed light](shots/joinery-profiles-3d.webp)
 
 Under **Details**, **Interior sill** and **Exterior sill** switch the sills on and off, and **Jamb linings** switches the reveal's finish on the jambs and head. Where sills and linings are not used, untick them.

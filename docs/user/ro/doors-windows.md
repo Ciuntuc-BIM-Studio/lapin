@@ -81,6 +81,8 @@ O ușă sau o fereastră e o grilă de ochiuri. Fiecare ochi alege cum se deschi
 
 **Sistem de profile** pornește tipul de la un profil **PVC**, **Aluminiu**, **Lemn** sau **Oțel (profile subțiri)**: stabilește dimensiunile tocului, montanților, traverselor și cercevelelor și dă profilelor formele lor fine. Tocul are un **Falț** pe care se închide cerceveaua, cerceveaua se suprapune peste toc cu **Suprapunerea cercevelei**, **baghetele de fixare a geamului** țin sticla, iar o fereastră are un lăcrimar sub traversa de jos. Fiecare dimensiune rămâne editabilă. **Simplu (profile drepte)** păstrează profile dreptunghiulare simple, ca până acum.
 
+**Toc dintr-o bibliotecă** și **Cercevea dintr-o bibliotecă** iau un profil din [bibliotecile de profile](profiles.md) (o secțiune de aluminiu sau PVC citită dintr-un DXF, de pildă): barele drepte ale tocului și cercevelei au atunci conturul lui real, cu goluri cu tot, în 3D, în secțiuni și în planuri, cu lățimea și adâncimea lui. Înlocuiește ce e forma lui reală, opritorul, buza și lăcrimarele sistemului; baghetele de geam rămân. Capetele curbe și ferestrele rotunde rămân o bandă simplă, la fel montanții și traversele grilei. **Simplu** se întoarce la un dreptunghi de aceeași mărime.
+
 ![O fereastră din PVC: cercevelele suprapuse peste toc, baghetele, un panou plin sub un ochi fix](shots/joinery-profiles-3d.webp)
 
 La **Detalii**, **Glaf interior** și **Solbanc** pornesc și opresc glafurile, iar **Căptușeala glafurilor laterale** pornește finisajul șpaleților pe laterale și sus. Unde nu folosești glafuri și căptușeli, debifează-le.

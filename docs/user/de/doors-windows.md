@@ -73,6 +73,8 @@ Eine Tür oder ein Fenster ist ein Raster aus Feldern. Jedes Feld wählt, wie es
 
 **Profilsystem** beginnt den Typ mit einem Profil aus **PVC**, **Aluminium**, **Holz** oder **Stahl (schlank)**: Es setzt die Maße von Rahmen, Pfosten, Riegeln und Flügeln und gibt den Profilen ihre feineren Formen. Der Rahmen hat einen **Falz**, auf den der Flügel schließt, der Flügel überdeckt den Rahmen um seinen **Flügelüberschlag**, **Glasleisten** halten das Glas, und ein Fenster hat eine Tropfkante unter dem unteren Holz. Jedes Maß bleibt bearbeitbar. **Einfach (glatte Profile)** behält schlichte rechteckige Teile wie bisher.
 
+**Rahmen aus einer Bibliothek** und **Flügel aus einer Bibliothek** nehmen ein Profil aus Ihren [Profilbibliotheken](profiles.md) (etwa einen aus einer DXF gelesenen Aluminium- oder PVC-Querschnitt): gerade Rahmen- und Flügelstäbe haben dann seine wirkliche Kontur samt Hohlräumen, in 3D, in Schnitten und Grundrissen, mit seiner Breite und Tiefe. Es ersetzt, wovon es die wirkliche Form ist: Anschlag, Lippe und Tropfkanten des Systems; Glasleisten bleiben. Gebogene Köpfe und runde Fenster behalten ein einfaches Band, ebenso die Pfosten und Riegel des Rasters. **Einfach** kehrt zu einem Rechteck dieser Größe zurück.
+
 ![Ein PVC-Fenster: die Flügel über dem Rahmen, die Glasleisten, ein Vollpaneel unter einem festen Feld](shots/joinery-profiles-3d.webp)
 
 Unter **Details** schalten **Fensterbank innen** und **Fensterbank außen** die Fensterbänke ein und aus, und **Laibungsverkleidung** schaltet den Abschluss der Laibung an den Seiten und am Sturz ein. Wo Fensterbänke und Verkleidungen nicht gebraucht werden, entfernen Sie die Haken.

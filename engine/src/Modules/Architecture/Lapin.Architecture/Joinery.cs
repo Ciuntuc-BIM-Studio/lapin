@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Platform.ProfileLibraries;
 
 namespace Lapin.Architecture;
 
@@ -127,7 +128,14 @@ public sealed record JoinerySpec(
     /// <summary>The profile system's finer shapes (rebate, lapped sash, beads, drip; decision 370); null: plain boxes.</summary>
     JoineryProfile? Profile = null,
     /// <summary>The configurator's style last applied (modern, georgian…; reports #110–111), shown in its select; null: none applied.</summary>
-    string? Style = null)
+    string? Style = null,
+    /// <summary>
+    /// The library profiles of the frame and the sash (a section's JSON, decision 417): straight members take their real outline, x
+    /// towards the glass, y out of the building; their width and depth are then the profile's. They replace what they are the real
+    /// shape of (the frame's stop and drip, the sash's lip and drip); beads stay, curved members a plain band. Null: plain.
+    /// </summary>
+    JsonObject? FrameSection = null,
+    JsonObject? SashSection = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -162,6 +170,9 @@ public sealed record JoinerySpec(
             // A partial object binds its missing parts to null: as unreadable as bad JSON.
             if (s is null || s.Kind is null || s.Name is null || s.Mark is null || s.Frame is null || s.Sash is null
                 || s.Columns is null || s.Rows is null || s.Panels is null || s.Board is null || s.Colors is null) return null;
+            // A profile's sizes are the member's, even after the profile was updated from its library.
+            if (s.FrameSection is { } fs && Json.Number(fs["width"]) is { } fw && Json.Number(fs["depth"]) is { } fd) s = s with { Frame = s.Frame with { Width = fw, Depth = fd } };
+            if (s.SashSection is { } ss && Json.Number(ss["width"]) is { } sw && Json.Number(ss["depth"]) is { } sd) s = s with { Sash = s.Sash with { Width = sw, Depth = sd } };
             return s;
         }
         catch (JsonException) { return null; }
@@ -184,7 +195,21 @@ public readonly record struct CellRect(double X0, double X1, double Z0, double Z
 /// handle, muntin); or, with a <see cref="Profile"/> (X along, Z up; and its <see cref="Holes"/>),
 /// that outline through Min.Y..Max.Y, Min and Max its bounds (an arch, a bar on the slant).
 /// </summary>
-public sealed record JoineryBox(string Role, Vec3 Min, Vec3 Max, IReadOnlyList<Vec2>? Profile = null, IReadOnlyList<IReadOnlyList<Vec2>>? Holes = null);
+public sealed record JoineryBox(string Role, Vec3 Min, Vec3 Max, IReadOnlyList<Vec2>? Profile = null, IReadOnlyList<IReadOnlyList<Vec2>>? Holes = null)
+{
+    /// <summary>A member with a library profile's real outline through this box (decision 417): else the box itself.</summary>
+    public JoineryMember? Member { get; init; }
+}
+
+/// <summary>
+/// A library profile's outline on a straight member: running up (<see cref="Upright"/>, a jamb, along Z) or along (a head or a sill, along
+/// X), the profile's x towards the glass (<see cref="Inward"/>: +1 or −1 along the axis across the member), its y along type Y, out of the building.
+/// </summary>
+public sealed record JoineryMember(MemberOutline Outline, bool Upright, int Inward)
+{
+    /// <summary>A profile's point at the box's centre, in the plane across the member: X and Y on an upright one, Y and Z on one lying along.</summary>
+    public (double Across, double Y) On(JoineryBox b, Vec2 q) => (Upright ? (b.Min.X + b.Max.X) / 2 + Inward * q.X : (b.Min.Z + b.Max.Z) / 2 + Inward * q.X, (b.Min.Y + b.Max.Y) / 2 + q.Y);
+}
 
 /// <summary>The configurator's rules: the grid, the panels, what IFC calls them, the body.</summary>
 public static class Joinery
@@ -502,6 +527,23 @@ public static class Joinery
         yield return new(role, new(r.X0 + w, y0, r.Z1 - w), new(r.X1 - w, y1, r.Z1));
     }
 
+    /// <summary>A box with a library profile through it: one for each of its bodies (a plain box when it has none).</summary>
+    static IEnumerable<JoineryBox> WithSection(JoineryBox box, JsonObject? section, bool upright, int inward)
+    {
+        var outlines = MemberOutline.Of(section);
+        if (outlines.Count == 0) { yield return box; yield break; }
+        foreach (var o in outlines) yield return box with { Member = new JoineryMember(o, upright, inward) };
+    }
+
+    /// <summary>Four straight members round <paramref name="r"/>, as <see cref="Ring"/> lays them, each through its profile.</summary>
+    static IEnumerable<JoineryBox> SectionRing(CellRect r, double w, double y0, double y1, string role, JsonObject? section)
+    {
+        foreach (var b in WithSection(new(role, new(r.X0, y0, r.Z0), new(r.X0 + w, y1, r.Z1)), section, true, 1)) yield return b;
+        foreach (var b in WithSection(new(role, new(r.X1 - w, y0, r.Z0), new(r.X1, y1, r.Z1)), section, true, -1)) yield return b;
+        foreach (var b in WithSection(new(role, new(r.X0 + w, y0, r.Z0), new(r.X1 - w, y1, r.Z0 + w)), section, false, 1)) yield return b;
+        foreach (var b in WithSection(new(role, new(r.X0 + w, y0, r.Z1 - w), new(r.X1 - w, y1, r.Z1)), section, false, -1)) yield return b;
+    }
+
     /// <summary>A pane's rectangle taken <paramref name="d"/> in (negative: out). Bands of it are the sash's members, the frame's stop, the glazing beads.</summary>
     static CellRect Inset(CellRect r, double d) => new(r.X0 + d, r.X1 - d, r.Z0 + d, r.Z1 - d);
 
@@ -597,14 +639,15 @@ public static class Joinery
         var headed = JoineryShapes.Headed(s);
         // The jambs run to the head's spring line, and the head is the arch over it; a rectangle's head is its top member.
         var jambTop = headed ? JoineryShapes.Spring(s) : s.Height;
-        var boxes = new List<JoineryBox>
-        {
-            new("frame", new(outer.X0, y0, 0), new(inner.X0, y1, jambTop)),
-            new("frame", new(inner.X1, y0, 0), new(outer.X1, y1, jambTop)),
-        };
+        // The frame's straight members, through a library profile when it has one (decision 417); a head's curve keeps its band.
+        var boxes = new List<JoineryBox>();
+        boxes.AddRange(WithSection(new("frame", new(outer.X0, y0, 0), new(inner.X0, y1, jambTop)), s.FrameSection, true, 1));
+        boxes.AddRange(WithSection(new("frame", new(inner.X1, y0, 0), new(outer.X1, y1, jambTop)), s.FrameSection, true, -1));
         if (headed) boxes.AddRange(JoineryShapes.HeadBoxes(s, y0, y1));
-        else boxes.Add(new("frame", new(inner.X0, y0, inner.Z1), new(inner.X1, y1, s.Height)));
-        if (inner.Z0 > 1e-6) boxes.Add(new("frame", new(inner.X0, y0, 0), new(inner.X1, y1, inner.Z0)));
+        else boxes.AddRange(WithSection(new("frame", new(inner.X0, y0, inner.Z1), new(inner.X1, y1, s.Height)), s.FrameSection, false, -1));
+        if (inner.Z0 > 1e-6) boxes.AddRange(WithSection(new("frame", new(inner.X0, y0, 0), new(inner.X1, y1, inner.Z0)), s.FrameSection, false, 1));
+        // What a library profile is the real shape of is not added over it (the system's beads stay: they are pieces of their own).
+        bool frameStop = s.FrameSection == null, sashLip = s.SashSection == null;
         var panels = Normalised(s);
         boxes.AddRange(Bars(s, panels, y0, y1));
 
@@ -653,13 +696,14 @@ public static class Joinery
                 }
                 if (pr != null)
                 {
-                    boxes.AddRange(Band(0, pr.Rebate, f.Offset + infillT / 2, y1, "frame"));
+                    if (frameStop) boxes.AddRange(Band(0, pr.Rebate, f.Offset + infillT / 2, y1, "frame"));
                     boxes.AddRange(Band(0, pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "frame"));
                 }
             }
             else
             {
-                boxes.AddRange(Band(0, sh.Width, sy0, sy1, "sash"));
+                if (s.SashSection != null && Out(0) == null) boxes.AddRange(SectionRing(r, sh.Width, sy0, sy1, "sash", s.SashSection));
+                else boxes.AddRange(Band(0, sh.Width, sy0, sy1, "sash"));
                 if (solid) boxes.Add(Sheet("leaf", sh.Width, f.Offset, infillT));
                 else
                 {
@@ -669,16 +713,16 @@ public static class Joinery
                 if (pr != null)
                 {
                     // The frame's stop on the exterior half, the sash's lip lapping over the frame inside, its beads, its drip.
-                    boxes.AddRange(Band(0, pr.Rebate, sy1, y1, "frame"));
-                    if (pr.Overlap > 0) boxes.AddRange(Band(-pr.Overlap, Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
+                    if (frameStop) boxes.AddRange(Band(0, pr.Rebate, sy1, y1, "frame"));
+                    if (sashLip && pr.Overlap > 0) boxes.AddRange(Band(-pr.Overlap, Math.Min(0.012, sh.Width / 3), sy0 - 0.006, sy0, "sash"));
                     boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - infillT / 2 - 0.018, f.Offset - infillT / 2, "sash"));
-                    if (pr.Drip && !s.IsDoor) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
+                    if (sashLip && pr.Drip && !s.IsDoor) boxes.Add(new("sash", new(r.X0 + sh.Width, sy1, r.Z0 + 0.005), new(r.X1 - sh.Width, sy1 + 0.012, r.Z0 + 0.02)));
                 }
-                boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && pr.Overlap > 0 ? 0.006 : 0), -1, false));
+                boxes.AddRange(HandleBoxes(s, r, p.Operation, sy0 - (pr != null && sashLip && pr.Overlap > 0 ? 0.006 : 0), -1, false));
             }
         }
         // A drip on the frame's bottom member outside.
-        if (pr is { Drip: true } && !s.IsDoor && inner.Z0 > 1e-6) boxes.Add(new("frame", new(inner.X0, y1, inner.Z0 - 0.012), new(inner.X1, y1 + 0.015, inner.Z0)));
+        if (frameStop && pr is { Drip: true } && !s.IsDoor && inner.Z0 > 1e-6) boxes.Add(new("frame", new(inner.X0, y1, inner.Z0 - 0.012), new(inner.X1, y1 + 0.015, inner.Z0)));
 
         if (!s.IsDoor)
         {

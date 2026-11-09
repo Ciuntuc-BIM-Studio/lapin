@@ -59,6 +59,12 @@ Em **Aço → Tipos de aço**, **Estrutura → Tipos estruturais** (pilares e vi
 
 O perfil é copiado para o projeto e o tipo o mantém. Os corpos são leves, com cantos vivos, em todos os níveis menos um: uma vista em **LOD 400** (planta, corte, alçado, folha ou 3D) desenha a secção real, com raios de concordância, raios nas pontas e banzos inclinados. As quantidades e as exportações mantêm o corpo de cantos vivos; raios de concordância e banzos inclinados contam nas propriedades e na exportação estrutural.
 
-Em outros lugares o perfil dá o que a ferramenta pode usar: molduras, rasgos e sapatas corridas tomam o exterior dele como perfil 2D (**De uma biblioteca de perfis…** na lista deles), e montantes e travessas de fachadas-cortina e caixilhos de portas e janelas tomam sua largura e profundidade.
+![Uma viga e um pilar de aço numa vista 3D em LOD 400: raios de concordância desenhados](shots/profile-real-section.webp)
+
+Em outros lugares o perfil dá o que a ferramenta pode usar: molduras, rasgos e sapatas corridas tomam o exterior dele como perfil 2D (**De uma biblioteca de perfis…** na lista deles), e montantes e travessas de fachadas-cortina, caixilhos e folhas de portas e janelas tomam o seu contorno real, com vazios, ao longo de cada peça, com a sua largura e profundidade; o x do perfil vai através da peça (em direção ao vidro no caixilho e na folha), o y para fora do edifício. **Simples** retira o contorno e mantém o tamanho.
+
+![Montantes e travessas de fachada-cortina de uma secção de alumínio](shots/profile-real-mullions.webp)
+
+![Caixilho e folha de uma janela da mesma secção](shots/profile-real-frame.webp)
 
 Uma biblioteca pode mudar depois de usada. Um perfil do projeto diferente do de mesmo nome na sua biblioteca é assinalado **mais recente na biblioteca**; **Atualizar a partir da biblioteca** o substitui e todos os tipos feitos com ele acompanham, como um só passo de desfazer. Nada muda até você pedir. Projetos anteriores mantêm seus tipos.

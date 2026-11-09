@@ -59,6 +59,12 @@ Wählen Sie in **Stahl → Stahltypen**, **Tragwerk → Tragwerkstypen** (Stütz
 
 Das Profil wird ins Projekt kopiert, und der Typ behält es. Körper sind leicht, mit scharfen Ecken, auf jedem Grad außer einem: eine Ansicht auf **LOD 400** (Grundriss, Schnitt, Ansicht, Plan oder 3D) zeichnet den wirklichen Querschnitt mit Ausrundungen, Flanschspitzenradien und geneigten Flanschen. Mengen und Exporte behalten den scharfen Körper; Ausrundungen und geneigte Flansche zählen in den Eigenschaften und im Tragwerksexport.
 
-Anderswo gibt das Profil, was das Werkzeug nutzen kann: Wandprofile, Nuten und Streifenfundamente nehmen seine Außenseite als 2D-Profil (**Aus einer Profilbibliothek…** in ihrer Liste), Pfosten und Riegel von Vorhangfassaden sowie Tür- und Fensterrahmen seine Breite und Tiefe.
+![Stahlträger und -stütze in einer 3D-Ansicht auf LOD 400: Ausrundungen gezeichnet](shots/profile-real-section.webp)
+
+Anderswo gibt das Profil, was das Werkzeug nutzen kann: Wandprofile, Nuten und Streifenfundamente nehmen seine Außenseite als 2D-Profil (**Aus einer Profilbibliothek…** in ihrer Liste), Pfosten und Riegel von Vorhangfassaden sowie Rahmen und Flügel von Türen und Fenstern seine wirkliche Kontur samt Hohlräumen entlang jedes Stabs, mit seiner Breite und Tiefe; das x des Profils läuft quer zum Stab (bei Rahmen und Flügel zum Glas), sein y aus dem Gebäude heraus. **Einfach** nimmt die Kontur weg und behält die Größe.
+
+![Pfosten und Riegel einer Vorhangfassade aus einem Aluminiumquerschnitt](shots/profile-real-mullions.webp)
+
+![Rahmen und Flügel eines Fensters aus demselben Querschnitt](shots/profile-real-frame.webp)
 
 Eine Bibliothek kann sich ändern, nachdem Sie sie benutzt haben. Ein Projektprofil, das von dem gleichnamigen in seiner Bibliothek abweicht, wird mit **neuer in der Bibliothek** markiert; **Aus der Bibliothek aktualisieren** ersetzt es, und alle daraus gemachten Typen folgen, als ein Rückgängig-Schritt. Nichts ändert sich, bevor Sie es verlangen. Ältere Projekte behalten ihre Typen.

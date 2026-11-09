@@ -59,6 +59,12 @@ En **Acero → Tipos de acero**, **Estructura → Tipos estructurales** (pilares
 
 El perfil se copia al proyecto y el tipo lo conserva. Los cuerpos son ligeros, con esquinas vivas, en todos los niveles menos uno: una vista a **LOD 400** (planta, sección, alzado, plano o 3D) dibuja la sección real, con radios de acuerdo, radios en las puntas y alas inclinadas. Las cantidades y las exportaciones conservan el cuerpo de esquinas vivas; los radios de acuerdo y las alas inclinadas cuentan en las propiedades y en la exportación estructural.
 
-En otros sitios el perfil da lo que esa herramienta puede usar: molduras, rozas y zapatas corridas toman su exterior como perfil 2D (**De una biblioteca de perfiles…** en su lista), y los montantes y travesaños de los muros cortina y los marcos de puertas y ventanas toman su ancho y canto.
+![Una viga y un pilar de acero en una vista 3D a LOD 400: radios de acuerdo dibujados](shots/profile-real-section.webp)
+
+En otros sitios el perfil da lo que esa herramienta puede usar: molduras, rozas y zapatas corridas toman su exterior como perfil 2D (**De una biblioteca de perfiles…** en su lista), y los montantes y travesaños de los muros cortina y los marcos y hojas de puertas y ventanas toman su contorno real, con huecos, a lo largo de cada pieza, con su ancho y canto; la x del perfil va a través de la pieza (hacia el vidrio en marco y hoja), su y hacia fuera del edificio. **Simple** quita el contorno y conserva el tamaño.
+
+![Montantes y travesaños de muro cortina de una sección de aluminio](shots/profile-real-mullions.webp)
+
+![Marco y hoja de una ventana de la misma sección](shots/profile-real-frame.webp)
 
 Una biblioteca puede cambiar después de usarla. Un perfil del proyecto distinto del de igual nombre en su biblioteca se marca **más nuevo en la biblioteca**; **Actualizar desde la biblioteca** lo sustituye y todos los tipos hechos con él lo siguen, como un solo paso de deshacer. Nada cambia hasta que lo pides. Los proyectos anteriores conservan sus tipos.

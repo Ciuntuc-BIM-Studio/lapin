@@ -73,6 +73,8 @@ Una puerta o una ventana es una cuadrícula de paños. Cada paño elige cómo ab
 
 **Sistema de perfiles** empieza el tipo con un perfil de **PVC**, **Aluminio**, **Madera** o **Acero (esbelto)**: fija las medidas del marco, los montantes, los travesaños y las hojas y da a los perfiles sus formas finas. El marco tiene un **Galce** contra el que cierra la hoja, la hoja solapa el marco en su **Solape de la hoja**, los **junquillos** sujetan el vidrio, y una ventana tiene un goterón bajo su travesaño inferior. Cada medida sigue editable. **Simple (perfiles lisos)** mantiene piezas rectangulares sencillas, como antes.
 
+**Marco de una biblioteca** y **Hoja de una biblioteca** toman un perfil de sus [bibliotecas de perfiles](profiles.md) (una sección de aluminio o PVC leída de un DXF, por ejemplo): las piezas rectas de marco y hoja tienen entonces su contorno real, con huecos, en 3D, en secciones y en plantas, con su ancho y canto. Sustituye aquello de lo que es la forma real: el tope, el labio y los goterones del sistema; los junquillos se quedan. Las cabezas curvas y las ventanas redondas conservan una banda simple, igual que los montantes y travesaños de la cuadrícula. **Simple** vuelve a un rectángulo de ese tamaño.
+
 ![Una ventana de PVC: las hojas solapando el marco, los junquillos, un panel ciego bajo un paño fijo](shots/joinery-profiles-3d.webp)
 
 En **Detalles**, **Vierteaguas interior** y **Vierteaguas exterior** activan y desactivan los vierteaguas, y **Revestimiento de jambas** activa el acabado del vano en las jambas y el dintel. Donde no se usen vierteaguas ni revestimientos, desmárquelos.

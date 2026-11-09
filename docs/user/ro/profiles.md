@@ -59,6 +59,12 @@ Desenează secțiunea cu Desen, din polilinii închise și cercuri (cele din int
 
 Profilul se copiază în proiect, iar tipul îl păstrează. Corpurile sunt ușoare, cu colțuri drepte, la toate nivelurile în afară de unul: o vedere la **LOD 400** (plan, secțiune, elevație, planșă sau 3D) desenează secțiunea reală, racordări, raze la vârfuri, tălpi înclinate. Cantitățile și exporturile rămân pe corpul cu colțuri drepte; razele de racordare și tălpile înclinate contează în proprietăți și în exportul de structură.
 
-În altă parte profilul dă ce poate folosi unealta: baghetele, șanțurile și fundațiile continue iau exteriorul lui ca profil 2D (**Dintr-o bibliotecă de profile…** în lista lor), iar montanții și traversele pereților cortină și tocurile ușilor și ferestrelor iau lățimea și adâncimea lui.
+![O grindă și un stâlp metalic într-o vedere 3D la LOD 400: racordările desenate](shots/profile-real-section.webp)
+
+În altă parte profilul dă ce poate folosi unealta: baghetele, șanțurile și fundațiile continue iau exteriorul lui ca profil 2D (**Dintr-o bibliotecă de profile…** în lista lor), iar montanții și traversele pereților cortină și tocurile și cercevelele ușilor și ferestrelor iau conturul lui real, cu goluri cu tot, de-a lungul fiecărei bare, cu lățimea și adâncimea lui; x-ul profilului merge de-a curmezișul barei (spre geam la toc și cercevea), y-ul lui spre exteriorul clădirii. **Simplu** ia conturul înapoi și păstrează mărimea.
+
+![Montanți și traverse de perete cortină dintr-o secțiune de aluminiu](shots/profile-real-mullions.webp)
+
+![Tocul și cerceveaua unei ferestre din aceeași secțiune](shots/profile-real-frame.webp)
 
 O bibliotecă se poate schimba după ce ai folosit-o. Un profil al proiectului diferit de cel cu același nume din biblioteca lui e marcat **mai nou în bibliotecă**; **Actualizează din bibliotecă** îl înlocuiește, iar toate tipurile făcute din el urmează, ca un singur pas de anulare. Nimic nu se schimbă până nu ceri. Proiectele făcute înainte își păstrează tipurile cum sunt.

@@ -59,6 +59,12 @@ I **Stål → Ståltyper**, **Konstruktion → Konstruktionstyper** (søjler og 
 
 Profilen kopieres til projektet, og typen beholder den. Kroppe er lette, med skarpe hjørner, på alle niveauer undtagen ét: en visning på **LOD 400** (plan, snit, opstalt, tegningsark eller 3D) tegner det virkelige tværsnit med hulkehler, afrundede flangespidser og skrå flanger. Mængder og eksporter beholder den skarpe krop; hulkehler og skrå flanger tæller i egenskaberne og i konstruktionseksporten.
 
-Andre steder giver profilen det, værktøjet kan bruge: vægprofiler, riller og stribefundamenter tager dens yderside som 2D-profil (**Fra et profilbibliotek…** i deres liste), og sprosser og tværposter i curtain walls samt karme i døre og vinduer tager dens bredde og dybde.
+![En stålbjælke og -søjle i en 3D-visning på LOD 400: hulkehler tegnet](shots/profile-real-section.webp)
+
+Andre steder giver profilen det, værktøjet kan bruge: vægprofiler, riller og stribefundamenter tager dens yderside som 2D-profil (**Fra et profilbibliotek…** i deres liste), og sprosser og tværposter i curtain walls samt karme og rammer i døre og vinduer tager dens virkelige kontur, med huller, langs hvert element, med dens bredde og dybde; profilens x går på tværs af elementet (mod glasset i karm og ramme), dens y ud af bygningen. **Enkel** fjerner konturen og beholder størrelsen.
+
+![Sprosser og tværposter i en facadeglasvæg fra et aluminiumssnit](shots/profile-real-mullions.webp)
+
+![Et vindues karm og ramme fra samme snit](shots/profile-real-frame.webp)
 
 Et bibliotek kan ændre sig, efter du har brugt det. En projektprofil, der afviger fra den med samme navn i dens bibliotek, markeres **nyere i biblioteket**; **Opdatér fra biblioteket** erstatter den, og alle typer lavet af den følger med, som ét fortryd-trin. Intet ændres, før du beder om det. Ældre projekter beholder deres typer.

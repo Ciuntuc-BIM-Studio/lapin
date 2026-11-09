@@ -73,6 +73,8 @@ Uma porta ou uma janela é uma grade de módulos. Cada módulo escolhe como abre
 
 **Sistema de perfis** começa o tipo de um perfil de **PVC**, **Alumínio**, **Madeira** ou **Aço (esbelto)**: define as medidas do marco, dos montantes, das travessas e das folhas e dá aos perfis as suas formas finas. O marco tem um **Rebaixo** onde a folha fecha, a folha se sobrepõe ao marco pela **Sobreposição da folha**, **baguetes** prendem o vidro, e uma janela tem uma pingadeira sob a travessa inferior. Cada medida continua editável. **Simples (perfis retos)** mantém peças retangulares simples, como antes.
 
+**Caixilho de uma biblioteca** e **Folha de uma biblioteca** tomam um perfil das suas [bibliotecas de perfis](profiles.md) (uma secção de alumínio ou PVC lida de um DXF, por exemplo): as peças retas de caixilho e folha têm então o seu contorno real, com vazios, em 3D, em cortes e em plantas, com a sua largura e profundidade. Substitui aquilo de que é a forma real: o batente, o lábio e as pingadeiras do sistema; os bites ficam. As cabeças curvas e as janelas redondas mantêm uma banda simples, como os montantes e travessas da grelha. **Simples** volta a um retângulo desse tamanho.
+
 ![Uma janela de PVC: as folhas sobrepostas ao marco, as baguetes, um painel cego sob um módulo fixo](shots/joinery-profiles-3d.webp)
 
 Em **Detalhes**, **Peitoril interno** e **Peitoril externo** ligam e desligam os peitoris, e **Revestimento das ombreiras** liga o acabamento do vão nas ombreiras e na verga. Onde peitoris e revestimentos não são usados, desmarque-os.

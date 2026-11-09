@@ -1446,6 +1446,48 @@ export const scenes = [
     },
   },
   {
+    // A profile's real shape: steel at LOD 400 with its root fillets (decision 415); a curtain wall's mullions and a window's frame and
+    // sash from an aluminium section with chambers (decision 417).
+    id: 'profile-shapes',
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const s = await t.storey();
+      const column = (await t.cmd('structure.createColumnType', { name: 'HEA 300', section: 'HEA 300', material: 'Steel' })).id;
+      await t.cmd('structure.addColumn', { storeyId: s, typeId: column, x: 1, y: 1 });
+      const beam = (await t.cmd('structure.createBeamType', { name: 'IPE 400', section: 'IPE 400', material: 'Steel' })).id;
+      await t.cmd('structure.addBeam', { storeyId: s, typeId: beam, x1: 1, y1: 1, x2: 5, y2: 1 });
+      await open3d(t);
+      await t.cmd('view.setStyle', { id: '3d', detail: 400 });
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.4, pitch: -0.25, distance: 2.2, target: { x: 1.1, y: 1, z: 2.8 } }, false));
+      await t.wait(1800);
+      const fine = await page.evaluate(async () => (await import('/src/engine/session.ts')).engine.call('view.fine', { id: '3d' }));
+      t.expect(fine.lod === 400 && fine.items.length === 2, 'at LOD 400 the column and the beam have their real sections');
+      await t.shot('profile-real-section', { of: '[data-testid=view3d]', pad: 0 });
+      // An aluminium section with chambers, 60 wide, 110 deep, read from a maker's DXF in real life.
+      const alu = { name: 'ALU 60x110', kind: 'outline', material: 'aluminium', b: 0.06, h: 0.11, rings: [
+        [[-0.03, -0.055], [0.03, -0.055], [0.03, 0.055], [0.008, 0.055], [0.008, 0.03], [-0.03, 0.03]],
+        [[-0.02, -0.045], [-0.02, -0.01], [0.02, -0.01], [0.02, -0.045]], [[-0.02, 0.0], [-0.02, 0.02], [0.02, 0.02], [0.02, 0.0]],
+      ] };
+      const section = (await t.cmd('profiles.use', { profile: alu, library: 'Aluminium system' })).section;
+      const curtain = await page.evaluate(async () => (await import('/src/engine/session.ts')).query('architecture.curtainWallPreview', {}));
+      t.expect(curtain != null, 'the curtain wall preview answers');
+      const defaults = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().info.catalogs['architecture.curtainWallDefault']);
+      const cw = (await t.cmd('architecture.createCurtainWallType', { name: 'ALU facade', spec: { ...defaults, mullion: { width: 0.06, depth: 0.11, profile: section }, transom: { width: 0.06, depth: 0.11, profile: section } } })).id;
+      await t.cmd('architecture.addCurtainWall', { storeyId: s, typeId: cw, x1: 8, y1: 0, x2: 12, y2: 0, height: 3 });
+      const info = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().info.catalogs['architecture.joinery']);
+      const type = (await t.cmd('architecture.createJoineryType', { spec: { ...info.defaultWindow, name: 'ALU 1200', frame: { ...info.defaultWindow.frame, width: 0.06, depth: 0.11 }, sash: { ...info.defaultWindow.sash, width: 0.06, depth: 0.11 }, frameSection: section, sashSection: section } })).id;
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 14, y1: 0, x2: 18, y2: 0 })).id;
+      await t.cmd('architecture.addWindow', { wallId: wall, x: 16, y: 0, typeId: type });
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.5, pitch: -0.3, distance: 2.4, target: { x: 9.5, y: 0, z: 1.5 } }, false));
+      await t.wait(1800);
+      await t.shot('profile-real-mullions', { of: '[data-testid=view3d]', pad: 0 });
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.4, pitch: -0.2, distance: 1.8, target: { x: 16, y: 0, z: 1.6 } }, false));
+      await t.wait(1500);
+      await t.shot('profile-real-frame', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     // Profile libraries (docs/plan-profile-libraries.md): the built-in EN set drawn with its properties; a producer's table with German headings
     // matched and its wrong value flagged; an IFC profile library; a type made from the picker; a drafted outline with a hole kept as a profile.
     id: 'profiles',

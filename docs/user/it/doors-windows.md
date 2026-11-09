@@ -73,6 +73,8 @@ Una porta o una finestra è una griglia di specchiature. Ogni specchiatura scegl
 
 **Sistema di profili** parte da un profilo in **PVC**, **Alluminio**, **Legname** o **Acciaio (sottile)**: imposta le misure di telaio, montanti, traversi e ante e dà ai profili le loro forme fini. Il telaio ha una **Battuta** su cui l’anta chiude, l’anta si sovrappone al telaio per il suo **Sormonto dell’anta**, i **fermavetri** tengono il vetro e una finestra ha un gocciolatoio sotto il traverso inferiore. Ogni misura resta modificabile. **Semplice (profili lisci)** mantiene elementi rettangolari semplici, come prima.
 
+**Telaio da una libreria** e **Anta da una libreria** prendono un profilo dalle vostre [librerie di profili](profiles.md) (una sezione di alluminio o PVC letta da un DXF, per esempio): gli elementi diritti di telaio e anta hanno allora il suo contorno reale, con i vuoti, in 3D, in sezione e in pianta, con larghezza e profondità. Sostituisce ciò di cui è la forma reale: la battuta, il labbro e i gocciolatoi del sistema; i fermavetri restano. Le teste curve e le finestre rotonde mantengono una fascia semplice, come i montanti e traversi della griglia. **Semplice** torna a un rettangolo di quella misura.
+
 ![Una finestra in PVC: le ante che si sovrappongono al telaio, i fermavetri, un pannello cieco sotto una luce fissa](shots/joinery-profiles-3d.webp)
 
 In **Dettagli**, **Davanzale interno** e **Davanzale esterno** attivano e disattivano i davanzali, e **Rivestimento delle spallette** attiva la finitura della mazzetta sulle spalle e sull’architrave. Dove davanzali e rivestimenti non servono, togli la spunta.

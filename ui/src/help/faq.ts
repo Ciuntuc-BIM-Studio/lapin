@@ -173,6 +173,16 @@ export const FAQ: Entry[] = [
     source: 'docs/plan-profile-libraries.md',
   },
   {
+    id: 'profile-real-shape',
+    q: ['Why does my aluminium profile not show in the window frame?', 'How do I use a real PVC or aluminium section for a curtain wall mullion?', 'Why are steel beams drawn with sharp corners, without root fillets?'],
+    qRo: ['De ce nu se vede profilul meu de aluminiu în tocul ferestrei?', 'Cum folosesc o secțiune reală de PVC sau aluminiu la montantul unui perete cortină?', 'De ce grinzile metalice au colțuri drepte, fără racordări?'],
+    keywords: ['mullion', 'transom', 'frame', 'sash', 'aluminium', 'pvc', 'real', 'shape', 'outline', 'fillet', 'fillets', 'root', 'sharp', 'corners', 'lod', '400',
+      'montant', 'traversa', 'toc', 'cercevea', 'aluminiu', 'racordari', 'racordare', 'contur', 'colturi'],
+    a: "Curtain wall mullions and transoms and door and window frames and sashes take a library profile's real outline, holes included: in their configurators choose it under … from a library (Plain goes back to a rectangle). Steel beams and columns keep light sharp bodies at every level but one: set the view to LOD 400 (View → View settings) and they draw their root fillets and sloping flanges, in drawings and in 3D.",
+    aRo: 'Montanții și traversele pereților cortină, tocurile și cercevelele ușilor și ferestrelor iau conturul real al unui profil din bibliotecă, cu goluri cu tot: în configuratorul lor alege-l la … dintr-o bibliotecă (Simplu se întoarce la un dreptunghi). Grinzile și stâlpii metalici au corpuri ușoare, cu colțuri drepte, la toate nivelurile în afară de unul: pune vederea la LOD 400 (Vedere → Setările vederii) și își desenează racordările și tălpile înclinate, în desene și în 3D.',
+    source: 'docs/plan-profile-libraries.md',
+  },
+  {
     id: 'profile-update',
     q: ['My profile library changed: how do I update the project?', 'What does newer in library mean?', 'Why does a value of my profile table show a difference?'],
     qRo: ['Mi s-a schimbat biblioteca de profile: cum actualizez proiectul?', 'Ce înseamnă mai nou în bibliotecă?', 'De ce arată o diferență o valoare din tabelul meu de profile?'],

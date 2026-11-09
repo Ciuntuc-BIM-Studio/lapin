@@ -73,6 +73,8 @@ En dør eller et vindue er et gitter af felter. Hvert felt vælger, hvordan det 
 
 **Profilsystem** starter typen fra en profil i **PVC**, **Aluminium**, **Træ** eller **Stål (slank)**: det sætter karm-, sprosse-, tværpost- og rammemål og giver profilerne deres finere former. Karmen har en **Fals**, som rammen lukker mod, rammen dækker karmen med sit **Rammeoverlap**, **glaslister** holder glasset, og et vindue har en drypnæse under bundstykket. Hvert mål kan stadig redigeres. **Enkel (glatte profiler)** beholder enkle rektangulære dele som før.
 
+**Karm fra et bibliotek** og **Ramme fra et bibliotek** tager en profil fra dine [profilbiblioteker](profiles.md) (for eksempel et aluminiums- eller PVC-snit læst fra en DXF): lige karm- og rammeelementer får dens virkelige kontur, med huller, i 3D, i snit og i planer, med dens bredde og dybde. Den erstatter det, den er den virkelige form af: systemets anslag, læbe og drypnæser; glaslister bliver. Buede overkanter og runde vinduer beholder et enkelt bånd, ligesom gitterets sprosser og tværposter. **Enkel** går tilbage til et rektangel af samme størrelse.
+
 ![Et PVC-vindue: rammerne over karmen, glaslisterne, et tæt panel under et fast felt](shots/joinery-profiles-3d.webp)
 
 Under **Detaljer** slår **Indvendig sålbænk** og **Udvendig sålbænk** sålbænkene til og fra, og **Lysningsbeklædning** slår lysningens afslutning til på siderne og foroven. Hvor sålbænke og beklædninger ikke bruges, så fjern fluebenet.

@@ -73,6 +73,8 @@ Une porte ou une fenêtre est une grille de compartiments. Chaque compartiment c
 
 **Système de profilés** part d’un profilé **PVC**, **Aluminium**, **Bois** ou **Acier (fin)** : il fixe les tailles du dormant, des meneaux, des traverses et des ouvrants et donne aux profilés leurs formes fines. Le dormant a une **Feuillure** sur laquelle l’ouvrant se ferme, l’ouvrant recouvre le dormant de son **Recouvrement de l’ouvrant**, des **parcloses** tiennent le verre, et une fenêtre a un jet d’eau sous sa traverse basse. Chaque taille reste modifiable. **Simple (profilés droits)** garde des pièces rectangulaires simples, comme avant.
 
+**Dormant d'une bibliothèque** et **Ouvrant d'une bibliothèque** prennent un profilé de vos [bibliothèques de profilés](profiles.md) (une section d'aluminium ou de PVC lue d'un DXF, par exemple) : les barres droites du dormant et de l'ouvrant ont alors son contour réel, vides compris, en 3D, en coupe et en plan, avec sa largeur et sa profondeur. Il remplace ce dont il est la forme réelle : la butée, la lèvre et les larmiers du système ; les parcloses restent. Les têtes courbes et les fenêtres rondes gardent une bande simple, comme les montants et traverses de la grille. **Simple** revient à un rectangle de cette taille.
+
 ![Une fenêtre PVC : les ouvrants qui recouvrent le dormant, les parcloses, un panneau plein sous un fixe](shots/joinery-profiles-3d.webp)
 
 Sous **Détails**, **Tablette intérieure** et **Appui extérieur** activent ou désactivent les appuis, et **Habillage des tableaux** active la finition de l’embrasure sur les tableaux et le linteau. Là où appuis et habillages ne servent pas, décochez-les.

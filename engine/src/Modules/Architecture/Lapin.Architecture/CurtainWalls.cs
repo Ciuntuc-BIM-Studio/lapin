@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Platform.ProfileLibraries;
 
 namespace Lapin.Architecture;
 
@@ -66,8 +67,12 @@ public sealed record CurtainGrid(string Mode, int Count = 1, double Spacing = 1.
     }
 }
 
-/// <summary>A member's section: in the wall's plane across the member (width), and across the wall (depth), metres.</summary>
-public readonly record struct CurtainSection(double Width, double Depth);
+/// <summary>
+/// A member's section: in the wall's plane across the member (width), and across the wall (depth), metres; <see cref="Profile"/>,
+/// the library profile it was made of (a section's JSON, decision 417): its body takes that profile's real outline, its x across
+/// the member, its y out of the building; its width and depth are then the profile's.
+/// </summary>
+public readonly record struct CurtainSection(double Width, double Depth, JsonObject? Profile = null);
 
 /// <summary>What a curtain wall type holds: its grid, its members and panels, their colours.</summary>
 public sealed record CurtainSpec(CurtainGrid U, CurtainGrid V, CurtainSection Mullion, CurtainSection Transom, bool Edge, double PanelThickness, string PanelKind,
@@ -80,7 +85,9 @@ public sealed record CurtainSpec(CurtainGrid U, CurtainGrid V, CurtainSection Mu
     {
         var d = Default;
         if (n is not JsonObject o) return d;
-        static CurtainSection Sec(JsonNode? x, CurtainSection f) => x is JsonObject s ? new(Json.Number(s["width"]) ?? f.Width, Json.Number(s["depth"]) ?? f.Depth) : f;
+        static CurtainSection Sec(JsonNode? x, CurtainSection f) => x is not JsonObject s ? f
+            : s["profile"] is JsonObject p && Json.Number(p["width"]) is { } pw && Json.Number(p["depth"]) is { } pd ? new(pw, pd, p)
+            : new(Json.Number(s["width"]) ?? f.Width, Json.Number(s["depth"]) ?? f.Depth);
         static string Colour(JsonNode? x, string f) => (string?)x is { Length: 7 } c && c[0] == '#' ? c : f;
         static string? Named(JsonNode? x) => x is JsonValue v && v.TryGetValue<string>(out var t) && t.Trim().Length > 0 ? t.Trim() : null;
         var panel = o["panel"] as JsonObject;
@@ -94,12 +101,19 @@ public sealed record CurtainSpec(CurtainGrid U, CurtainGrid V, CurtainSection Mu
     public JsonObject ToJson() => WithMaterials(new()
     {
         ["u"] = U.ToJson(), ["v"] = V.ToJson(),
-        ["mullion"] = new JsonObject { ["width"] = Mullion.Width, ["depth"] = Mullion.Depth },
-        ["transom"] = new JsonObject { ["width"] = Transom.Width, ["depth"] = Transom.Depth },
+        ["mullion"] = SectionJson(Mullion),
+        ["transom"] = SectionJson(Transom),
         ["edge"] = Edge,
         ["panel"] = new JsonObject { ["thickness"] = PanelThickness, ["kind"] = PanelKind },
         ["frameColor"] = FrameColor, ["glassColor"] = GlassColor, ["opaqueColor"] = OpaqueColor,
     });
+
+    static JsonObject SectionJson(CurtainSection s)
+    {
+        var o = new JsonObject { ["width"] = s.Width, ["depth"] = s.Depth };
+        if (s.Profile != null) o["profile"] = s.Profile.DeepClone();
+        return o;
+    }
 
     /// <summary>The materials' names, those it has (a type made before report #76 is written as it was).</summary>
     internal JsonObject WithMaterials(JsonObject o)
@@ -360,6 +374,43 @@ public static class CurtainWalls
         return [a + d * x0 - n, a + d * x1 - n, a + d * x1 + n, a + d * x0 + n];
     }
 
+    /// <summary>
+    /// A mullion or transom with a library profile, as a solid: a mullion's section in plan, its x along the wall and its y out of
+    /// the building (the wall's right), up its height; a transom's standing across its bay, its x up. Null for a panel or a plain member.
+    /// </summary>
+    static Solid? Member(CurtainSpec spec, PathCurve c, CurtainLayout l, CurtainPiece p, double baseZ)
+    {
+        var outlines = p.Role switch { "mullion" => MemberOutline.Of(spec.Mullion.Profile), "transom" => MemberOutline.Of(spec.Transom.Profile), _ => [] };
+        if (outlines.Count == 0) return null;
+        var solids = new List<Solid>();
+        foreach (var o in outlines)
+        {
+            Func<Vec2, Vec3> At;
+            Vec3 sweep;
+            if (p.Role == "mullion")
+            {
+                var s = l.U[p.I0];
+                var (a, d) = (c.PointAt(s), c.TangentAt(s));
+                var mid = (p.A1 - p.A0) / 2;
+                At = q => (a + d * (mid + q.X) - d.Perp * q.Y).At(baseZ + p.Z0);
+                sweep = new Vec3(0, 0, p.Z1 - p.Z0);
+            }
+            else
+            {
+                var (pa, pb) = (c.PointAt(l.U[p.I0]), c.PointAt(l.U[p.I1]));
+                var d = (pb - pa).Normalized();
+                var start = pa + d * p.A0;
+                var zc = baseZ + (p.Z0 + p.Z1) / 2;
+                At = q => new Vec3(start.X - d.Perp.X * q.Y, start.Y - d.Perp.Y * q.Y, zc + q.X);
+                var run = (pb - pa).Length - p.A0 - p.A1;
+                if (run <= 1e-6) return null;
+                sweep = new Vec3(d.X, d.Y, 0) * run;
+            }
+            if (Prism.Extrude(o.Outer.Select(At).ToList(), o.Holes.Select(h => (IReadOnlyList<Vec3>)h.Select(At).ToList()).ToList(), sweep, p.Role) is { } solid) solids.Add(solid);
+        }
+        return solids.Count > 0 ? Openings.Combine(solids, p.Role) : null;
+    }
+
     static double Base(IModelView m, Entity w) => (Spatial.StoreyOf(m, w.Id)?.Num("elevation") ?? 0) + w.Num("baseOffset");
 
     public static ElementGeometry Geometry(Entity w, IModelView m)
@@ -383,7 +434,8 @@ public static class CurtainWalls
         {
             if (!(piece.Z1 - piece.Z0 > 1e-9)) continue;
             var fp = Footprint(c, layout, piece);
-            if (Prism.ExtrudeFootprint(fp, z + piece.Z0, piece.Z1 - piece.Z0, piece.Role) is not { } solid) continue;
+            // A library profile's real outline (decision 417), butted at the grid as a plain member is; a plain box without one.
+            if ((Member(spec, c, layout, piece, z) ?? Prism.ExtrudeFootprint(fp, z + piece.Z0, piece.Z1 - piece.Z0, piece.Role)) is not { } solid) continue;
             var name = piece.Role switch { "mullion" => "Mullion", "transom" => "Transom", _ => spec.PanelKind == "glass" ? "Glass panel" : "Panel" };
             parts.Add(new GeometryPart(name, piece.Role == "panel" ? infill : frameColor, solid, piece.Role == "panel" ? infillMat : frameMat, piece.Key));
             // In plan: the mullions cut, the panels at the cut height as thin bands.

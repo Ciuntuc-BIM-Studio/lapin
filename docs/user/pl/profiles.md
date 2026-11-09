@@ -59,6 +59,12 @@ W **Stal → Typy stalowe**, **Konstrukcja → Typy konstrukcyjne** (słupy i be
 
 Profil jest kopiowany do projektu, a typ go zachowuje. Bryły są lekkie, z ostrymi narożami, na każdym poziomie oprócz jednego: widok na **LOD 400** (rzut, przekrój, elewacja, arkusz lub 3D) rysuje rzeczywisty przekrój z zaokrągleniami, promieniami na końcach półek i pochylonymi półkami. Ilości i eksporty pozostają na bryle z ostrymi narożami; zaokrąglenia i pochylone półki liczą się we właściwościach i eksporcie konstrukcji.
 
-Gdzie indziej profil daje to, co narzędzie może wykorzystać: listwy, bruzdy i ławy fundamentowe biorą jego obrys jako profil 2D (**Z biblioteki profili…** na ich liście), a słupki i rygle ścian osłonowych oraz ościeżnice drzwi i okien jego szerokość i głębokość.
+![Belka i słup stalowy w widoku 3D na LOD 400: narysowane zaokrąglenia](shots/profile-real-section.webp)
+
+Gdzie indziej profil daje to, co narzędzie może wykorzystać: listwy, bruzdy i ławy fundamentowe biorą jego obrys jako profil 2D (**Z biblioteki profili…** na ich liście), a słupki i rygle ścian osłonowych oraz ościeżnice i skrzydła drzwi i okien jego rzeczywisty obrys, z otworami, wzdłuż każdego pręta, z jego szerokością i głębokością; x profilu biegnie w poprzek pręta (w stronę szyby w ościeżnicy i skrzydle), y na zewnątrz budynku. **Zwykły** usuwa obrys i zachowuje rozmiar.
+
+![Słupki i rygle ściany osłonowej z przekroju aluminiowego](shots/profile-real-mullions.webp)
+
+![Ościeżnica i skrzydło okna z tego samego przekroju](shots/profile-real-frame.webp)
 
 Biblioteka może się zmienić po użyciu. Profil projektu różny od tego o tej samej nazwie w jego bibliotece jest oznaczony **nowszy w bibliotece**; **Aktualizuj z biblioteki** go zastępuje, a wszystkie typy z niego zrobione podążają za nim, jako jeden krok cofania. Nic się nie zmienia bez Twojej prośby. Starsze projekty zachowują swoje typy.

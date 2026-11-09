@@ -59,6 +59,12 @@ In **Acciaio → Tipi in acciaio**, **Struttura → Tipi strutturali** (pilastri
 
 Il profilo viene copiato nel progetto e il tipo lo conserva. I corpi sono leggeri, a spigoli vivi, a ogni livello tranne uno: una vista a **LOD 400** (pianta, sezione, prospetto, tavola o 3D) disegna la sezione reale, con raccordi, raggi di punta e ali inclinate. Quantità ed esportazioni restano sul corpo a spigoli vivi; raccordi e ali inclinate contano nelle proprietà e nell'esportazione strutturale.
 
-Altrove il profilo dà ciò che lo strumento può usare: modanature, scanalature e fondazioni continue prendono il suo esterno come profilo 2D (**Da una libreria di profili…** nel loro elenco), montanti e traversi delle facciate continue e telai di porte e finestre prendono larghezza e profondità.
+![Una trave e un pilastro d'acciaio in una vista 3D a LOD 400: raccordi disegnati](shots/profile-real-section.webp)
+
+Altrove il profilo dà ciò che lo strumento può usare: modanature, scanalature e fondazioni continue prendono il suo esterno come profilo 2D (**Da una libreria di profili…** nel loro elenco), montanti e traversi delle facciate continue, telai e ante di porte e finestre prendono il suo contorno reale, con i vuoti, lungo ogni elemento, con larghezza e profondità; la x del profilo va di traverso all'elemento (verso il vetro in telaio e anta), la y verso l'esterno dell'edificio. **Semplice** toglie il contorno e mantiene la misura.
+
+![Montanti e traversi di facciata continua da una sezione di alluminio](shots/profile-real-mullions.webp)
+
+![Telaio e anta di una finestra dalla stessa sezione](shots/profile-real-frame.webp)
 
 Una libreria può cambiare dopo l'uso. Un profilo del progetto diverso da quello con lo stesso nome nella sua libreria è marcato **più recente in libreria**; **Aggiorna dalla libreria** lo sostituisce e tutti i tipi fatti con esso lo seguono, in un solo passo di annullamento. Nulla cambia finché non lo chiedi. I progetti precedenti conservano i loro tipi.

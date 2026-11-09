@@ -73,6 +73,8 @@ Drzwi lub okno to siatka kwater. Każda kwatera wybiera, jak się otwiera i czym
 
 **System profili** zaczyna typ od profilu **PVC**, **Aluminium**, **Tarcica** (drewno) lub **Stal (smukła)**: ustala wymiary ościeżnicy, słupków, rygli i skrzydeł i nadaje profilom dokładniejsze kształty. Ościeżnica ma przylgę (**Przylga**), do której domyka się skrzydło, skrzydło zachodzi na ościeżnicę o **Zakład skrzydła**, **listwy przyszybowe** trzymają szybę, a okno ma okapnik pod dolnym ramiakiem. Każdy wymiar pozostaje edytowalny. **Prosty (gładkie profile)** zachowuje proste prostokątne elementy, jak dotąd.
 
+**Ościeżnica z biblioteki** i **Skrzydło z biblioteki** biorą profil z [bibliotek profili](profiles.md) (na przykład przekrój aluminiowy lub PVC odczytany z DXF): proste pręty ościeżnicy i skrzydła mają wtedy jego rzeczywisty obrys, z otworami, w 3D, w przekrojach i rzutach, z jego szerokością i głębokością. Zastępuje to, czego jest rzeczywistym kształtem: przylgę, wargę i kapinosy systemu; listwy szklące zostają. Łukowe nadproża i okna okrągłe zachowują zwykły pas, podobnie słupki i ślemiona siatki. **Zwykły** wraca do prostokąta tego rozmiaru.
+
 ![Okno PVC: skrzydła zachodzące na ościeżnicę, listwy przyszybowe, pełny panel pod stałą kwaterą](shots/joinery-profiles-3d.webp)
 
 W sekcji **Szczegóły** pola **Parapet wewnętrzny** i **Parapet zewnętrzny** włączają i wyłączają parapety, a **Obróbka ościeży** włącza wykończenie ościeża po bokach i u góry. Gdzie parapety i obróbki nie są potrzebne, odznacz je.

@@ -121,6 +121,12 @@ public static class JoinerySymbols
             {
                 if (b.Role is "leaf" or "handle" or "hardware" or "muntin") continue;
                 if (level <= PlanDetail.Medium && b.Role is "sash" or "board") continue;
+                // A jamb through a library profile (decision 417): its real outline.
+                if (b.Member is { Upright: true } jamb)
+                {
+                    foreach (var loop in jamb.Outline.Holes.Prepend(jamb.Outline.Outer)) o.Add(new([.. loop.Select(q => { var (a, y) = jamb.On(b, q); return new Vec2(a, y); })], "cut", true));
+                    continue;
+                }
                 // An outline (an arch, a round frame) is cut where the plane crosses it; the glass a line at medium.
                 foreach (var (x0, x1) in JoineryShapes.Spans(b, z))
                     o.Add(level <= PlanDetail.Medium && b.Role == "glass" ? Line(new(x0, (b.Min.Y + b.Max.Y) / 2), new(x1, (b.Min.Y + b.Max.Y) / 2), "thin")
@@ -320,7 +326,10 @@ public static class JoinerySymbols
         // Cut where the plane crosses; the handles beside it seen (report #48), in front of the panel they turn.
         var boxes = Joinery.Boxes(s);
         var o = boxes.Where(b => b.Role is not ("handle" or "hardware" or "muntin") && b.Min.X <= x && b.Max.X >= x)
-            .SelectMany(b => JoineryShapes.Spans(b, x, vertical: true).Select(z => Rect(b.Min.Y, z.A, b.Max.Y, z.B, b.Role == "glass" ? "thin" : "cut"))).ToList();
+            .SelectMany(b => b.Member is { Upright: false } m
+                // A head or sill through a library profile (decision 417): its real outline.
+                ? m.Outline.Holes.Prepend(m.Outline.Outer).Select(loop => new JStroke([.. loop.Select(q => { var (z, y) = m.On(b, q); return new Vec2(y, z); })], "cut", true))
+                : JoineryShapes.Spans(b, x, vertical: true).Select(z => Rect(b.Min.Y, z.A, b.Max.Y, z.B, b.Role == "glass" ? "thin" : "cut"))).ToList();
         foreach (var b in boxes.Where(b => b.Role is "handle" or "hardware"))
             o.Add(Rect(b.Min.Y, b.Min.Z, b.Max.Y, b.Max.Z, "outline"));
         return o;

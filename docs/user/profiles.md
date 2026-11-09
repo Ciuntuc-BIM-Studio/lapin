@@ -59,6 +59,12 @@ In **Steel → Steel types**, **Structure → Structure types** (columns and bea
 
 The profile is copied into the project and the type keeps it. Bodies are light, with sharp corners, at every level but one: a view at **LOD 400** (a plan, a section, an elevation, a sheet or a 3D view) draws the real section, root fillets, toe radii, sloping flanges. Quantities and exports keep the sharp body; the root radii and sloping flanges count in the properties and in the structural export.
 
-Elsewhere the profile gives what that tool can use: wall sweeps, reveals and strip footings take its outside as a 2D profile (**From a profile library…** in their list), and curtain wall mullions and transoms and door and window frames take its width and depth.
+![A steel beam and column in a 3D view at LOD 400: root fillets drawn](shots/profile-real-section.webp)
+
+Elsewhere the profile gives what that tool can use: wall sweeps, reveals and strip footings take its outside as a 2D profile (**From a profile library…** in their list), and curtain wall mullions and transoms and door and window frames and sashes take its real outline, holes included, along each member, with its width and depth; the profile's x points across the member (towards the glass on a frame or sash), its y out of the building. **Plain** takes the outline off and keeps the size.
+
+![Curtain wall mullions and transoms from an aluminium section](shots/profile-real-mullions.webp)
+
+![A window's frame and sash from the same section](shots/profile-real-frame.webp)
 
 A library may change after you used it. A project's profile that differs from the one of the same name in its library is marked **newer in library**; **Update from the library** replaces it and every type made of it follows, as one undo step. Nothing changes until you ask. Projects made before keep their types as they are.

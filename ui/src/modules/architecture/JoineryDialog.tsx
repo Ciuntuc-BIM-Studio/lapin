@@ -30,6 +30,7 @@ import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField'
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
 /** A profile system's finer shapes (decision 370): the frame's rebate, the sash lapping over it, glazing beads, a drip. */
 interface Profile { system: string; rebate: number; overlap: number; bead: number; drip: boolean }
+interface LibrarySection { name?: string; width: number; depth: number; [key: string]: unknown }
 
 /**
  * A hinged door leaf's operation as the schedules name its hand (report #91) and a window's: looking from the handle towards the
@@ -61,6 +62,9 @@ interface Spec {
   /** A window that projects from its wall (report #60): a bay, a bow or a box. */
   bay?: Bay | null;
   profile?: Profile | null;
+  /** The library profiles whose real outlines the frame's and the sash's straight members take (decision 417), with their sizes. */
+  frameSection?: LibrarySection | null;
+  sashSection?: LibrarySection | null;
   /** The style last applied (a key of JOINERY_STYLES; report #111): its select shows it, "(modified)" once a field differs. */
   style?: string | null;
 }
@@ -619,6 +623,15 @@ export function JoineryDialog() {
   if (!spec || !catalog) return <PendingDialog title="Doors and windows" />;
   // A name the dialog gave ("Door 900×2100") follows the size as it is typed (report #51); one the user wrote stays.
   const sizeName = (s: Pick<Spec, 'kind' | 'width' | 'height'>) => `${s.kind === 'door' ? 'Door' : 'Window'} ${Math.round(s.width * 1000)}×${Math.round(s.height * 1000)}`;
+  // A library profile for the frame or the sash (decision 417): copied into the project, its real outline the straight members' bodies, with its size.
+  const pickMemberProfile = (member: 'frame' | 'sash', profile: unknown, library: string | null) => {
+    void (execute('profiles.use', { profile, library }) as Promise<{ section?: LibrarySection } | null>).then((r) => {
+      const section = r?.section;
+      if (!section) return;
+      if (member === 'frame') set({ frame: { ...spec.frame, width: section.width, depth: section.depth }, frameSection: section });
+      else set({ sash: { ...spec.sash, width: section.width, depth: section.depth }, sashSection: section });
+    });
+  };
   const set = (patch: Partial<Spec>) => {
     const next = { ...spec, ...patch };
     if (('width' in patch || 'height' in patch) && !('name' in patch) && spec.name === sizeName(spec)) next.name = sizeName(next);
@@ -715,16 +728,19 @@ export function JoineryDialog() {
                   }} /></label>
               {!spec.bay && <ShapeFields spec={spec} onChange={set} />}
               {spec.kind === 'window' && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
-              <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v } })} />
-              <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v } })} />
+              <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v }, frameSection: null })} />
+              <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v }, frameSection: null })} />
               <Mm label="Mullion width" value={spec.frame.mullion} onChange={(v) => set({ frame: { ...spec.frame, mullion: v } })} />
               <Mm label="Transom width" value={spec.frame.transom} onChange={(v) => set({ frame: { ...spec.frame, transom: v } })} />
-              <label className="field-line"><span className="eyebrow">Frame from a library</span><ProfilePickerField testId="joinery-frame-library" onPick={(p) => { if (p.b && p.h) set({ frame: { ...spec.frame, width: p.b, depth: p.h } }); }} /></label>
+              <label className="field-line"><span className="eyebrow">Frame from a library</span><ProfilePickerField testId="joinery-frame-library" value={spec.frameSection?.name ?? null} onPick={(p, library) => pickMemberProfile('frame', p, library)} />
+                {spec.frameSection && <button type="button" data-testid="joinery-frame-plain" title="Keeps its size as a plain rectangle" onClick={() => set({ frameSection: null })}>Plain</button>}</label>
+              {spec.kind === 'window' && <label className="field-line"><span className="eyebrow">Sash from a library</span><ProfilePickerField testId="joinery-sash-library" value={spec.sashSection?.name ?? null} onPick={(p, library) => pickMemberProfile('sash', p, library)} />
+                {spec.sashSection && <button type="button" data-testid="joinery-sash-plain" title="Keeps its size as a plain rectangle" onClick={() => set({ sashSection: null })}>Plain</button>}</label>}
               <label className="field-line"><span className="eyebrow">Profile system</span>
                 <select data-field="profile-system" data-i18n-ctx="profiles" value={spec.profile?.system ?? ''} title="Sets the frame, mullion and sash sizes and the profile's finer shapes; each stays editable" onChange={(e) => {
                   const sys = catalog.profileSystems?.[e.target.value];
                   if (!e.target.value) set({ profile: null });
-                  else if (sys) set({ frame: { ...sys.frame, offset: spec.frame.offset }, sash: sys.sash, profile: sys.profile });
+                  else if (sys) set({ frame: { ...sys.frame, offset: spec.frame.offset }, sash: sys.sash, profile: sys.profile, frameSection: null, sashSection: null });
                 }}>
                   <option value="">Simple (plain profiles)</option>
                   {Object.keys(catalog.profileSystems ?? {}).map((k) => <option key={k} value={k}>{PROFILE_LABELS[k] ?? k}</option>)}

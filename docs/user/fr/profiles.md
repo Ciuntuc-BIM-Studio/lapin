@@ -59,6 +59,12 @@ Dans **Acier → Types acier**, **Structure → Types structurels** (poteaux et 
 
 Le profilé est copié dans le projet et le type le garde. Les corps sont légers, à angles vifs, à tous les niveaux sauf un : une vue au **LOD 400** (plan, coupe, élévation, feuille ou 3D) dessine la section réelle, avec congés, rayons de bout d'aile et ailes inclinées. Les quantités et les exports gardent le corps à angles vifs ; les congés et les ailes inclinées comptent dans les propriétés et dans l'export de structure.
 
-Ailleurs, le profilé donne ce que l'outil peut utiliser : moulures, engravures et semelles filantes prennent son extérieur comme profil 2D (**D'une bibliothèque de profilés…** dans leur liste), montants et traverses de murs-rideaux et dormants de portes et fenêtres prennent sa largeur et sa profondeur.
+![Une poutre et un poteau d'acier dans une vue 3D au LOD 400 : congés dessinés](shots/profile-real-section.webp)
+
+Ailleurs, le profilé donne ce que l'outil peut utiliser : moulures, engravures et semelles filantes prennent son extérieur comme profil 2D (**D'une bibliothèque de profilés…** dans leur liste), montants et traverses de murs-rideaux, dormants et ouvrants de portes et fenêtres prennent son contour réel, vides compris, le long de chaque barre, avec sa largeur et sa profondeur ; le x du profilé va en travers de la barre (vers le vitrage pour dormant et ouvrant), son y vers l'extérieur du bâtiment. **Simple** retire le contour et garde la taille.
+
+![Montants et traverses de mur-rideau d'une section d'aluminium](shots/profile-real-mullions.webp)
+
+![Dormant et ouvrant d'une fenêtre de la même section](shots/profile-real-frame.webp)
 
 Une bibliothèque peut changer après usage. Un profilé du projet différent de celui de même nom dans sa bibliothèque est marqué **plus récent en bibliothèque** ; **Mettre à jour depuis la bibliothèque** le remplace et tous les types faits avec lui suivent, en une seule étape d'annulation. Rien ne change sans votre demande. Les projets antérieurs gardent leurs types.

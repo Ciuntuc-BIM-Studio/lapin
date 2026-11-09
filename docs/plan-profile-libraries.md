@@ -47,7 +47,7 @@ Când fișierul dă valori, Lapin le păstrează pe ale fișierului și le compa
 ## Interfața
 
 - **Gestionare → Biblioteci de profile…**: bibliotecile în stânga (încorporată, pe calculator, folderele firmei, proiectul), profilele pe familii, standard și fel, cu căutare; profilul ales desenat cu cotele lui și tabelul proprietăților (calculat și din fișier, cu diferențele marcate); importul IFC, CSV/XLSX și contur (din desen sau DXF), exportul IFC și CSV, folderele firmei, Actualizează.
-- **Alegătoarele de profile**: tipurile metalice (Oțel → Tipuri metalice), tipurile de stâlpi și grinzi (Structură → Tipuri), hala (profilele cadrului și cele secundare) caută în toate bibliotecile după nume și familie; pentru baghetele pereților și fundațiile continue (profilele 2D) un profil de bibliotecă se ia ca exterior, fără goluri; pentru Studio, „Desenează-i conturul” îl pune ca polilinii închise în vederea din față, de extrudat sau derulat; montanții și traversele pereților cortină și tocul tâmplăriei își iau doar lățimea și adâncimea din profilul ales (sunt dreptunghiuri).
+- **Alegătoarele de profile**: tipurile metalice (Oțel → Tipuri metalice), tipurile de stâlpi și grinzi (Structură → Tipuri), hala (profilele cadrului și cele secundare) caută în toate bibliotecile după nume și familie; pentru baghetele pereților și fundațiile continue (profilele 2D) un profil de bibliotecă se ia ca exterior, fără goluri; pentru Studio, „Desenează-i conturul” îl pune ca polilinii închise în vederea din față, de extrudat sau derulat; montanții și traversele pereților cortină, tocul și cerceveaua tâmplăriei iau conturul real al profilului ales (vezi mai jos, decizia 417).
 
 ## Dincolo de oțel
 
@@ -76,6 +76,16 @@ Costul măsurat (hala implicită, `MemberFineBodyTests`): 272 de bare, dintre ca
 **Recunoașterea** nu se schimbă: dreptunghiurile și cercurile dintr-un fișier străin devin native și trec poarta de fidelitate; un I, L, U… rămâne referință cu corpul fișierului (grinzile și stâlpii profilați nu se recunosc încă în secțiuni native). `IfcCycleTests` cuprinde acum un L răsturnat, un UPN și un HEA rotit: fără derivă.
 
 Tot aici: C și Z fără buze aveau lățimea mai mică cu o grosime decât spuneau; acum aripa ajunge la lățime (`Section.Centreline`, `SectionProperties`), deci `B` e a toată secțiunea și se citește înapoi la fel.
+
+## Conturul real în fațade și tâmplărie (decizia 417)
+
+`CurtainSection.Profile` (montanți, traverse) și `JoinerySpec.FrameSection`, `SashSection` țin secțiunea profilului (JSON-ul ei, cu `profileId`, deci urmează Actualizează din bibliotecă; lățimea și adâncimea se iau din ea la citire). Fără profil nimic nu se schimbă. `MemberOutline.Of` dă corpurile (exterior, goluri) cu racordările după `Chords`.
+
+- **Orientarea**: x-ul profilului de-a curmezișul barei, spre geam la toc și cercevea (oglindit de la un montant la celălalt, sus și jos la fel), în planul peretelui la fațadă (în sus la traverse); y-ul spre exteriorul clădirii (`+Y` al tâmplăriei, dreapta peretelui la fațadă). Adâncimea profilului trece peste perete, ca a dreptunghiului.
+- **Colțurile** ca până acum: montanții plini, traversele între ei; montanții de toc plini, buiandrugul și pragul între ei, tăiate drept.
+- **Desenele**: planul și secțiunea taie corpul (fațadele), simbolurile tâmplăriei din plan și secțiune desenează conturul (`JoineryBox.Member`), 3D-ul prin `Openings.Box`. La orice nivel de dezvoltare, fiindcă e profilul ales de utilizator.
+- **Cu sistemele de profile (decizia 370)**: rămân împreună. Sistemul dă mărimile de pornire și formele fine (opritor, buză, baghete, lăcrimar); un profil de bibliotecă înlocuiește bara lui și ce e forma ei reală (tocul: opritorul și lăcrimarul; cerceveaua: buza și lăcrimarul), baghetele de geam rămân, ca piese separate. Alegerea unui sistem șterge profilele din bibliotecă; alegerea unui profil păstrează sistemul pentru cealaltă bară.
+- **Limite**: capetele curbe, ferestrele rotunde și panourile cu arc rămân o bandă simplă; montanții și traversele grilei tâmplăriei și foaia ușii rămân cutii; golul din fereastră se face după cutie, deci geamul se oprește la marginea interioară nominală. IFC-ul tâmplăriei și al fațadelor rămâne B-rep, cu forma reală.
 
 ## Limite
 
