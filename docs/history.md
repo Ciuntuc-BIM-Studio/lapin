@@ -139,3 +139,4 @@ Then (#425) undo and redo take the builds elements had in models of 5,000 entiti
 Then (#426) memory on very large models: the seam face tables kept only near the last edit, and the geometry of storeys nobody works on let go above 640 MB of builds (browser 160 MB) and built again when asked for (`SessionTuning`); the estimate is measured against the heap.
 
 Then (#427, a tester's report #123) the side panels on either side: View → Panels puts the project browser and the properties left or right, or both on one side stacked with a divider (`panels.ts`: `browserSide`, `propsSide`, `stackRatio`, `LAYOUTS`; `SideColumn`, `StackSep` in `App.tsx`), kept on this computer; the default is unchanged.
+Then (#427, a tester's report #120) images to trace and a PDF's pictures were drawn upside down (read as mirrored): the corners reached `PenImage` from the bottom left instead of the top left; fixed in `ViewImages.Marks`, tested in plans, sections and elevations.
