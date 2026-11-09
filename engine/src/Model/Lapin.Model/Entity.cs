@@ -19,6 +19,14 @@ namespace Lapin.Model;
 public sealed class Entity(string id, string @class, string name, JsonObject attrs, string? predefinedType = null)
 {
     public string Id { get; } = id;
+    static long _versions;
+    /// <summary>
+    /// Which entity this exact object is, among all made in the process: every <see cref="With"/> brings a new one, and an undo puts back
+    /// the object it took out, so the same number. What a build read is stamped by these (<see cref="ModelStore.ReadStamp"/>), so an
+    /// earlier build is found again exactly when everything it read is the very objects it read.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public long Version { get; } = Interlocked.Increment(ref _versions);
     /// <summary>The IFC entity: "IfcWall".</summary>
     public string Class { get; } = @class;
     public string Name { get; } = name;

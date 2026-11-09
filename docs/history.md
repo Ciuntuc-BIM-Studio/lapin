@@ -133,3 +133,7 @@ Then (#422, `docs/plan-units.md`) apartment types, step A: a component of `kind:
 Then (#423, `docs/experiment-editing-speed.md`) who may cut a wall is worked out once per model revision and class (`ModuleCatalog.CandidatesOf`), not once per wall: a type change on 4,440 walls 4.4 s → 2.8 s, opening 3.9 s → 2.6 s.
 
 Then (#424) the recovery journal's `fsync` leaves the session's thread: a line is with the system when written and on the disk within 100 ms or at close (up to ~100 ms of work exposed to a power cut, accepted); 3–5 ms off every edit.
+
+Then (#425) undo and redo take the builds elements had in models of 5,000 entities and up (`Session.Builds.cs`: `Entity.Version`, a 128-bit `ModelStore.ReadStamp` of everything a build read, at most 3 builds per element, 384 MB estimated, oldest first): on 18,000 entities undoing a wall height ×0.13, a type change ×0.58.
+
+Then (#426) memory on very large models: the seam face tables kept only near the last edit, and the geometry of storeys nobody works on let go above 640 MB of builds (browser 160 MB) and built again when asked for (`SessionTuning`); the estimate is measured against the heap.

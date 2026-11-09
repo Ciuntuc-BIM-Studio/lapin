@@ -12,7 +12,7 @@ namespace Lapin.Platform;
 /// <see cref="Diff"/>: the entities and relationships it changed and the
 /// elements whose geometry it rebuilt. Single-threaded by design.
 /// </summary>
-public sealed class Session
+public sealed partial class Session
 {
     readonly ModuleCatalog _catalog;
     readonly ProductManifest _product;
@@ -25,10 +25,26 @@ public sealed class Session
     long _version;
 
     /// <summary>An element as built: its geometry, what it read, its render item as the tessellator made it (its edges before the seams go), and its box.</summary>
-    sealed record Built(ElementGeometry? Geometry, HashSet<string> Reads, RenderItem? Item, (Vec3 Min, Vec3 Max)? Bounds);
+    sealed record Built(ElementGeometry? Geometry, HashSet<string> Reads, RenderItem? Item, (Vec3 Min, Vec3 Max)? Bounds)
+    {
+        /// <summary>What a build says of itself, kept when its geometry and render arrays are let go (<see cref="Session.MaintainMemory"/>).</summary>
+        public bool HasGeometry { get; init; }
+        public bool HadItem { get; init; }
+        public bool Fine { get; init; }
+        public string? Storey { get; init; }
+        public bool Released { get; init; }
+        /// <summary>An instance of a shared body: its mesh is the session's, made and sent by the render, so it is never kept or let go.</summary>
+        public bool Pinned { get; init; }
+        public long EntityVersion { get; init; }
+        /// <summary>Of everything it read when it was built; null when that cannot be told.</summary>
+        public (ulong A, ulong B)? Stamp { get; init; }
+        public long Bytes { get; init; }
+    }
 
     /// <summary>Each solid's faces ready for the seams, once per solid (solids are immutable; an element rebuilt brings new ones).</summary>
     readonly System.Collections.Concurrent.ConcurrentDictionary<Solid, List<Seams.Plane>> _planes = new(ReferenceEqualityComparer.Instance);
+    /// <summary>The solids whose faces the items being made looked at (<see cref="TrimSeamPlanes"/>).</summary>
+    readonly System.Collections.Concurrent.ConcurrentDictionary<Solid, byte> _planesUsed = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>The shared bodies' meshes (docs/plan-instancing.md), each with the body it was tessellated from; and those the interface has.</summary>
     readonly Dictionary<string, (JsonObject Body, SharedMesh Mesh)> _meshes = [];
@@ -427,7 +443,7 @@ public sealed class Session
         Interlocked.Increment(ref _changes);
         Changed(t);
         if (t.Reverts != null) Emit("tx", t); else Emit("undo", t, author);
-        return DiffAfter(t);
+        return DiffAfterUndoing(t);
     }
 
     public Diff Redo(string? author = null)
@@ -437,7 +453,7 @@ public sealed class Session
         Interlocked.Increment(ref _changes);
         Changed(t);
         if (t.Redoes != null) Emit("tx", t); else Emit("redo", t, author);
-        return DiffAfter(t);
+        return DiffAfterUndoing(t);
     }
 
     /// <summary>The document's state as <paramref name="author"/> sees it: their own undo and redo.</summary>
@@ -466,7 +482,7 @@ public sealed class Session
             if (_readers.TryGetValue(key, out var r)) found.UnionWith(r);
         found.Remove(id);
         // What builds nothing of itself (an opening a door fills: the door is what is drawn) is no dependent.
-        return [.. found.Where(x => _store.Get(x) != null && !(_built.TryGetValue(x, out var b) && b.Geometry == null)).Order(StringComparer.Ordinal)];
+        return [.. found.Where(x => _store.Get(x) != null && !(_built.TryGetValue(x, out var b) && !b.HasGeometry)).Order(StringComparer.Ordinal)];
     }
 
     /// <summary>The entities the element <paramref name="id"/> was built from (its type, its storey, its host, the walls it joins), itself left out.</summary>
@@ -493,7 +509,12 @@ public sealed class Session
     /// <summary>An element's geometry as it is now (built when first asked for).</summary>
     public ElementGeometry? Geometry(string id)
     {
-        if (_built.TryGetValue(id, out var b)) return b.Geometry;
+        if (_built.TryGetValue(id, out var b))
+        {
+            if (b.Released) { Rehydrate([id]); _built.TryGetValue(id, out b); }
+            Touch(b?.Storey);
+            return b?.Geometry;
+        }
         return _store.Get(id) is { } e ? Build(e)?.Geometry : null;
     }
 
@@ -529,7 +550,7 @@ public sealed class Session
         EnsureBuilt();
         var items = new List<FineBody>();
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
-        foreach (var id in ids ?? _built.Where(kv => kv.Value.Geometry is { FineShape: true }).Select(kv => kv.Key).ToList())
+        foreach (var id in ids ?? _built.Where(kv => kv.Value.Fine).Select(kv => kv.Key).ToList())
         {
             if (Geometry(id) is not { FineShape: true } || _store.Get(id) is not { } e || FineGeometry(id) is not { } fine) continue;
             items.Add(new FineBody(id, fine.Parts.Select(p =>
@@ -568,10 +589,10 @@ public sealed class Session
         var seamKeys = new List<string?>();
         var keys = new Dictionary<string, string?>();
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
-        foreach (var (id, b) in _built)
+        foreach (var (id, b0) in _built.ToArray())
         {
-            if (b.Geometry is not { } g0 || b.Bounds is not { } box || b.Item == null) continue;
-            var g = fine && g0.FineShape ? FineGeometry(id) ?? g0 : g0;
+            if (b0.Bounds is not { } box || !b0.HadItem || !b0.HasGeometry) continue;
+            var b = b0;
             // Only what a plane crosses and none cuts wholly away.
             var crossed = false;
             var gone = false;
@@ -587,6 +608,10 @@ public sealed class Session
                 if (lo < 0) crossed = true;
             }
             if (gone || !crossed) continue;
+            // What a plane crosses is built again if it was let go.
+            if (b.Released) { Rehydrate([id]); if (!_built.TryGetValue(id, out b!)) continue; }
+            if (b.Geometry is not { } g0 || b.Item == null) continue;
+            var g = fine && g0.FineShape ? FineGeometry(id) ?? g0 : g0;
             var cls = _store.Get(id)?.Class ?? b.Item.Type;
             for (var i = 0; i < g.Parts.Count; i++)
             {
@@ -683,8 +708,9 @@ public sealed class Session
         for (var i = 0; i < todo.Count; i++) if (built[i] is { Item: not null }) ids.Add(todo[i].Id);
         // Every element built first: each one's edges are trimmed against its neighbours.
         var grid = new BoxGrid(_built);
-        var render = EmitMany(ids, grid);
+        var render = EmitMany(ids, grid, whole: true);
         _meshesSent.Clear();
+        MaintainMemory();
         return new Diff(++_version, true,
             _store.Entities.Select(Dto).ToList(), [], [], [],
             render, [], State(),
@@ -780,9 +806,11 @@ public sealed class Session
             var was = new Dictionary<string, (Vec3 Min, Vec3 Max)?>();
             foreach (var id in ids)
             {
-                if (_built.TryGetValue(id, out var old) && old.Item != null) hadItems.Add(id);
+                if (_built.TryGetValue(id, out var old) && old.HadItem) hadItems.Add(id);
                 if (old?.Bounds is { } box) boxes.Add(box);
                 was[id] = old?.Bounds;
+                // Kept a while: an undo puts back what it read, and the element is as it was.
+                if (old != null) KeepBuild(id, old);
                 Forget(id);
             }
             // Built on every core, then taken in the order they came.
@@ -793,6 +821,7 @@ public sealed class Session
             foreach (var id in ids)
             {
                 var built = byId.GetValueOrDefault(id);
+                Touch(built?.Storey);
                 if (built is { Item: not null })
                 {
                     emit.Add(id);
@@ -835,6 +864,7 @@ public sealed class Session
         var grid = new BoxGrid(_built);
         emit.AddRange(Neighbours(grid, boxes, rebuild.ToHashSet()));
         var render = EmitMany(emit, grid);
+        MaintainMemory();
         // A shared body gone: its mesh too (its instances went with it, or were rebuilt without it).
         var meshesRemoved = new List<string>();
         foreach (var c in t.Entities)
@@ -901,11 +931,14 @@ public sealed class Session
     }
 
     /// <summary>The render items of <paramref name="ids"/> with their seams, on every core (each element's against its neighbours, read only), in order.</summary>
-    List<RenderItem> EmitMany(IReadOnlyList<string> ids, BoxGrid grid)
+    List<RenderItem> EmitMany(IReadOnlyList<string> ids, BoxGrid grid, bool whole = false)
     {
+        // The seams look at the neighbours' geometry: any that was let go is built again first (on this thread, before the cores share the rest).
+        RehydrateAround(ids, grid);
         var o = new RenderItem?[ids.Count];
         if (OneCore || ids.Count < ParallelFrom) { var keys = new Dictionary<string, string?>(); for (var i = 0; i < ids.Count; i++) o[i] = Emitted(ids[i], keys, grid); }
         else Parallel.For(0, ids.Count, () => new Dictionary<string, string?>(), (i, _, keys) => { o[i] = Emitted(ids[i], keys, grid); return keys; }, _ => { });
+        TrimSeamPlanes(whole);
         return [.. o.OfType<RenderItem>()];
     }
 
@@ -913,7 +946,9 @@ public sealed class Session
     Built Register(Entity e, Built built)
     {
         Forget(e.Id);
+        TookBuild(e.Id, built);
         _built[e.Id] = built;
+        _liveBytes += built.Bytes;
         foreach (var id in built.Reads) (_readers.TryGetValue(id, out var set) ? set : _readers[id] = []).Add(e.Id);
         return built;
     }
@@ -923,6 +958,9 @@ public sealed class Session
     {
         var producer = ProducerOf(e);
         if (producer == null) return null;
+        // Built before, and everything it read is as it was (an undo, a redo): the same build.
+        if (_undoing && _earlierOf.Count > 0 && Remembered(e) is { } again) return again;
+        Interlocked.Increment(ref _buildsMade);
         var view = new TrackingView(_store);
         view.Read.Add(e.Id);
         ElementGeometry? g;
@@ -942,7 +980,13 @@ public sealed class Session
             problems.Add(ex is ModelException or InvalidOperationException or ArgumentException ? ex.Message : $"{ex.GetType().Name}: {ex.Message}");
             item = Render(e, null, problems, view);
         }
-        return new Built(g, view.Read, item, BoundsOf(g));
+        var pinned = g?.Instance != null;
+        return new Built(g, view.Read, item, BoundsOf(g))
+        {
+            HasGeometry = g != null, HadItem = item != null, Fine = g?.FineShape ?? false, Storey = item?.StoreyId, Pinned = pinned, EntityVersion = e.Version,
+            Bytes = Estimate(g, item, view.Read),
+            Stamp = KeepsEarlier && !pinned ? StampOf(view.Read) : null,
+        };
     }
 
     static (Vec3 Min, Vec3 Max)? BoundsOf(ElementGeometry? g)
@@ -963,7 +1007,7 @@ public sealed class Session
 
     /// <summary>The built elements whose box touches one of <paramref name="boxes"/>, other than <paramref name="except"/>.</summary>
     static IEnumerable<string> Neighbours(BoxGrid grid, IReadOnlyList<(Vec3 Min, Vec3 Max)> boxes, ICollection<string> except) =>
-        grid.Near(boxes).Where(n => n.Built.Item != null && !except.Contains(n.Id)).Select(n => n.Id);
+        grid.Near(boxes).Where(n => n.Built.HadItem && !except.Contains(n.Id)).Select(n => n.Id);
 
     /// <summary>
     /// The built elements' boxes on a grid in plan, so the elements near a box are found
@@ -1050,10 +1094,10 @@ public sealed class Session
         if (!Seamed(_store.Get(id))) return item;
         var cls = _store.Get(id)?.Class ?? item.Type;
         var near = new List<(Built Built, string Class)>();
-        foreach (var (nid, nb) in grid.Near([box]))
-            if (nid != id && nb.Geometry != null && Seamed(_store.Get(nid))) near.Add((nb, _store.Get(nid)?.Class ?? nb.Item?.Type ?? ""));
+        foreach (var (nid, _) in grid.Near([box]))
+            if (nid != id && _built.TryGetValue(nid, out var nb) && nb.Geometry != null && Seamed(_store.Get(nid))) near.Add((nb, _store.Get(nid)?.Class ?? nb.Item?.Type ?? ""));
         if (near.Count == 0) return item;
-        List<Seams.Plane> PlanesOf(Solid s) => _planes.GetOrAdd(s, Seams.Planes);
+        List<Seams.Plane> PlanesOf(Solid s) { if (!_tuning.KeepSeamPlanes) _planesUsed[s] = 0; return _planes.GetOrAdd(s, Seams.Planes); }
         List<RenderPart>? trimmed = null;
         for (var i = 0; i < parts.Count; i++)
         {
@@ -1075,6 +1119,8 @@ public sealed class Session
     void Forget(string id)
     {
         if (!_built.Remove(id, out var old)) return;
+        _liveBytes -= old.Bytes;
+        if (old.Released) _releasedCount--;
         foreach (var p in old.Geometry?.Parts ?? []) _planes.TryRemove(p.Solid, out _);
         foreach (var r in old.Reads)
             if (_readers.TryGetValue(r, out var set)) { set.Remove(id); if (set.Count == 0) _readers.Remove(r); }
@@ -1125,6 +1171,10 @@ public sealed class Session
         _built.Clear();
         _readers.Clear();
         _planes.Clear();
+        ForgetEarlier();
+        _liveBytes = 0;
+        _releasedCount = 0;
+        _storeyUse.Clear();
     }
 
     /// <summary>
