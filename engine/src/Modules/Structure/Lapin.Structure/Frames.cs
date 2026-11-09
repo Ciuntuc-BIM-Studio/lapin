@@ -75,6 +75,36 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
         };
     }
 
+    /// <summary>
+    /// The profile's sizes the outline leaves out, from what the section keeps: its own radii and slope, or, for a name of
+    /// the built-in library with the same sizes (types made from the catalogue keep only the four sizes), the library's;
+    /// null when it has none (a bent cold-formed section, a rectangle, an outline already drawn as it is).
+    /// </summary>
+    Lapin.Platform.Analysis.SectionShape? RealShape()
+    {
+        if (Kind is not ("I" or "U" or "T" or "L" or "RHS")) return null;
+        var shape = StructureAnalytical.Shape(this);
+        if (Root <= 0 && Toe <= 0 && Slope <= 0 && Name != null && Lapin.Platform.ProfileLibraries.BuiltInProfiles.Find(Name) is { } b
+            && b.Kind == Kind && Math.Abs(b.B - Width) < 1e-9 && Math.Abs(b.H - Depth) < 1e-9 && Math.Abs(b.Tw - Web) < 1e-9 && Math.Abs(b.Tf - Flange) < 1e-9)
+            shape = b.Shape() with { Designation = Name };
+        var root = shape.Root ?? Lapin.Platform.Analysis.SectionProperties.CatalogueOf(shape.Designation)?.Radius ?? 0;
+        return root > 0 || shape.Toe > 0 || shape.Slope > 0 ? shape : null;
+    }
+
+    /// <summary>Whether the section's real outline differs from <see cref="Outline"/>: what a view at LOD 400 draws (decision 415).</summary>
+    public bool HasRealShape => RealShape() != null;
+
+    /// <summary>
+    /// The real outline and holes: root fillets, toe radii and sloping flanges, the curves by the chord rule. The sharp ones
+    /// when it has none. About the same box's centre as <see cref="Outline"/>, so a member stays where it is.
+    /// </summary>
+    public (IReadOnlyList<Vec2> Outline, IReadOnlyList<IReadOnlyList<Vec2>> Holes) Real()
+    {
+        var rings = RealShape() is { } s ? Lapin.Platform.Analysis.SectionProperties.RingsOf(s, chords: true) : null;
+        if (rings is not { Count: > 0 }) return (Outline(), Holes());
+        return (rings[0], rings.Skip(1).Select(r => (IReadOnlyList<Vec2>)r).ToList());
+    }
+
     /// <summary>A hollow section's inside, clockwise; none for the others.</summary>
     public IReadOnlyList<IReadOnlyList<Vec2>> Holes()
     {

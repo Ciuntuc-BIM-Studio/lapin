@@ -223,7 +223,8 @@ public static class SectionProperties
     /// The section's rings as its properties are found from them (outsides anticlockwise, holes clockwise; fillets rounded),
     /// about its box's centre; a circle, a CHS and an ellipse by the chord rule. Null when the shape cannot give them.
     /// </summary>
-    public static List<List<Vec2>>? RingsOf(SectionShape s)
+    /// <param name="chords">The fillets by the chord rule (<see cref="Chords"/>, for a body a view draws) rather than the fine steps the properties are integrated over.</param>
+    public static List<List<Vec2>>? RingsOf(SectionShape s, bool chords = false)
     {
         if (!(s.Width > 0 && s.Depth > 0) && s.Kind != "outline") return null;
         List<Vec2> Ellipse(double a, double c, bool hole = false)
@@ -241,7 +242,7 @@ public static class SectionProperties
             case "rectangle": { double w = s.Width / 2, d = s.Depth / 2; return [[new(-w, -d), new(w, -d), new(w, d), new(-w, d)]]; }
         }
         var r = s.Root ?? CatalogueOf(s.Designation)?.Radius ?? 0;
-        return Rings(s, r);
+        return Rings(s, r, chords);
     }
 
     /// <summary>The properties about the axes of the rings' coordinates (centred).</summary>
@@ -268,7 +269,7 @@ public static class SectionProperties
     }
 
     /// <summary>The section's rings, counter-clockwise outside and clockwise holes, its root fillets (and a hollow section's corners) rounded.</summary>
-    static List<List<Vec2>>? Rings(SectionShape s, double r)
+    static List<List<Vec2>>? Rings(SectionShape s, double r, bool chords = false)
     {
         double w = s.Width / 2, d = s.Depth / 2, tw = s.Web, tf = s.Flange;
         List<Vec2> outline;
@@ -308,7 +309,7 @@ public static class SectionProperties
                 if (!(t > 0 && t < w && t < d)) return null;
                 outline = [new(-w, -d), new(w, -d), new(w, d), new(-w, d)];
                 var hole = new List<Vec2> { new(-w + t, -d + t), new(-w + t, d - t), new(w - t, d - t), new(w - t, -d + t) };
-                if (r > 0) { outline = Round(outline, _ => r); hole = Round(hole, _ => s.Toe ?? Math.Max(r - t, 0)); }
+                if (r > 0) { outline = Round(outline, (_, _) => r, chords); hole = Round(hole, (_, _) => s.Toe ?? Math.Max(r - t, 0), chords); }
                 return [outline, hole];
             }
             case "C" or "Z" or "SIGMA":
@@ -325,15 +326,15 @@ public static class SectionProperties
         // (the inner corners of the flanges' or legs' tips) by r2, an angle's r/2 when not given (EN 10056-1).
         int[] toes = s.Kind switch { "I" or "asymI" => [2, 5, 8, 11], "U" => [2, 5], "T" => [3, 6], "L" => [2, 4], _ => [] };
         var r2 = s.Toe ?? (s.Kind == "L" ? r / 2 : 0);
-        if (r > 0 || r2 > 0) outline = Round(outline, (i, turn) => turn < 0 ? r : toes.Contains(i) ? r2 : 0);
+        if (r > 0 || r2 > 0) outline = Round(outline, (i, turn) => turn < 0 ? r : toes.Contains(i) ? r2 : 0, chords);
         return [outline, .. holes];
     }
 
     /// <summary>A ring's corners rounded by the radius the turn there asks (0: left sharp), each by an arc in 16 steps a quarter.</summary>
-    static List<Vec2> Round(List<Vec2> ring, Func<double, double> radiusFor) => Round(ring, (_, turn) => radiusFor(turn));
+    static List<Vec2> Round(List<Vec2> ring, Func<double, double> radiusFor) => Round(ring, (_, turn) => radiusFor(turn), false);
 
     /// <summary>A ring's corners rounded by the radius each corner (its index, its turn) asks.</summary>
-    static List<Vec2> Round(List<Vec2> ring, Func<int, double, double> radiusFor)
+    static List<Vec2> Round(List<Vec2> ring, Func<int, double, double> radiusFor, bool chords = false)
     {
         var o = new List<Vec2>();
         var n = ring.Count;
@@ -358,7 +359,7 @@ public static class SectionProperties
             var side = Math.Sign(turn);
             var centre = t1 + d1.Perp * (side * r);
             var start = Math.Atan2(t1.Y - centre.Y, t1.X - centre.X);
-            var steps = Math.Max(2, (int)Math.Ceiling(Math.Abs(turn) / (Math.PI / 2) * 16));
+            var steps = chords ? Chords.Count(r, turn, 2) : Math.Max(2, (int)Math.Ceiling(Math.Abs(turn) / (Math.PI / 2) * 16));
             for (var k = 0; k <= steps; k++)
             {
                 var ang = start + turn * k / steps;

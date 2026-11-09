@@ -21,6 +21,9 @@ public sealed record MemberAxis(Vec3 Start, Vec3 End, Section Section, double Ro
 {
     public static readonly string[] Insertions = ["center", "top", "bottom"];
 
+    /// <summary>Its body from the section's real outline (root fillets, sloping flanges), as a view at LOD 400 draws it (decision 415); else the light one.</summary>
+    public bool Fine { get; init; }
+
     public double Length => (End - Start).Length;
     public Vec3 U => (End - Start).Normalized();
 
@@ -51,8 +54,9 @@ public sealed record MemberAxis(Vec3 Start, Vec3 End, Section Section, double Ro
         get
         {
             Vec2 F(Vec2 p) => Flipped ? p with { X = -p.X } : p;
-            var outline = Polygon2.EnsureCcw(Section.Outline().Select(F).ToList());
-            var holes = Section.Holes().Select(h => (IReadOnlyList<Vec2>)Polygon2.EnsureCcw(h.Select(F).ToList()).Reverse().ToList()).ToList();
+            var (own, ownHoles) = Fine ? Section.Real() : (Section.Outline(), Section.Holes());
+            var outline = Polygon2.EnsureCcw(own.Select(F).ToList());
+            var holes = ownHoles.Select(h => (IReadOnlyList<Vec2>)Polygon2.EnsureCcw(h.Select(F).ToList()).Reverse().ToList()).ToList();
             return (outline, holes);
         }
     }

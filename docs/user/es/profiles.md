@@ -55,7 +55,7 @@ En **Acero → Tipos de acero**, **Estructura → Tipos estructurales** (pilares
 
 ![El selector busca en todas las bibliotecas](shots/profile-picker.webp)
 
-El perfil se copia al proyecto y el tipo lo conserva. Los cuerpos se modelan con esquinas vivas, como antes; los radios de acuerdo y las alas inclinadas cuentan en las propiedades y en la exportación estructural.
+El perfil se copia al proyecto y el tipo lo conserva. Los cuerpos son ligeros, con esquinas vivas, en todos los niveles menos uno: una vista a **LOD 400** (planta, sección, alzado, plano o 3D) dibuja la sección real, con radios de acuerdo, radios en las puntas y alas inclinadas. Las cantidades y las exportaciones conservan el cuerpo de esquinas vivas; los radios de acuerdo y las alas inclinadas cuentan en las propiedades y en la exportación estructural.
 
 En otros sitios el perfil da lo que esa herramienta puede usar: molduras, rozas y zapatas corridas toman su exterior como perfil 2D (**De una biblioteca de perfiles…** en su lista), y los montantes y travesaños de los muros cortina y los marcos de puertas y ventanas toman su ancho y canto.
 

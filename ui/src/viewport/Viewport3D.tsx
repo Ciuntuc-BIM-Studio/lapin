@@ -68,6 +68,7 @@ import { dragTo, isWindow, regionTestOf, SelectRegion, toggleLasso, type SelectD
 import type { Seg } from './selectBox';
 import { resetTemporary, temporaryOn, useTemporary } from './temporary';
 import { place } from '../engine/instances';
+import { fineShown, useFineBodies } from './fineBodies';
 import { disposeUnderlays, sameSources, underlayGroup, underlaySources, type UnderlayBatch } from './underlays3d';
 import { PointCloudLayer, type Hierarchy, type Tile } from './pointClouds3d';
 import { cloudSpecs, isCloudLink, setCloudStatus, type ViewCloud } from './pointClouds';
@@ -1551,6 +1552,8 @@ export function Viewport3D() {
   const fog = useUi((st) => st.fog);
   // The layers this 3D view shows (its style's or its own): the parts the others are drawn without, picked through, walked through.
   const layers = useSession((st) => layers3dOf(st.nodes, view3dId).mode);
+  // At LOD 400 members draw their real section (decision 415), fetched then: everyone else's meshes stay as they are.
+  const fineBodies = useFineBodies(view3dId, render, useSession((st) => st.nodes));
   // Fog: the model fades into the background with distance (a display rule for linked context, big sites).
   useEffect(() => { const s = scene.current; if (s) s.fog = fog ? new THREE.FogExp2(CLEAR[theme], 0.012) : null; }, [fog, theme]);
   useEffect(() => {
@@ -1559,14 +1562,14 @@ export function Viewport3D() {
     const live = items.current;
     for (const [id, entry] of live) {
       const now = render.get(id);
-      if (now && !now.instance && shownIn(now, layers) === entry.item) continue;
+      if (now && !now.instance && shownIn(fineShown(now, fineBodies.on), layers) === entry.item) continue;
       s.remove(entry.object);
       dispose(entry.object);
       live.delete(id);
     }
     for (const [id, whole] of render) {
       if (live.has(id) || whole.instance) continue;
-      const item = shownIn(whole, layers);
+      const item = shownIn(fineShown(whole, fineBodies.on), layers);
       const object = meshOf(item);
       s.add(object);
       live.set(id, { item, object });
@@ -1598,7 +1601,7 @@ export function Viewport3D() {
     if (layer) { layer.sync(render, meshes); layer.restyle(looks, [...shown], visualStyle, layers); }
     boxDirty.current();
     invalidate.current();
-  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d]);
+  }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version]);
 
   // A walk asked for (a plan's right-click on a room), or ended; the model changed or shown otherwise under a walker.
   useEffect(() => { if (walkStart) walkApi.current.start(walkStart); else walkApi.current.stop(); }, [walkStart]);
@@ -1701,11 +1704,11 @@ export function Viewport3D() {
     if (!capPlanes.length) { put([]); return; }
     // Asked a moment after the last change (a face dragged asks once it rests), the newest answer kept.
     const timer = setTimeout(() => {
-      void engine.call<CapItem[]>('view.caps', { planes: capPlanes, style: capStyle, scale: capScale, layers }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
+      void engine.call<CapItem[]>('view.caps', { planes: capPlanes, style: capStyle, scale: capScale, layers, fine: fineBodies.on }).then((items) => { if (!stale) put(items ?? []); }).catch(() => undefined);
     }, 60);
     return () => { stale = true; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- capKey stands for capPlanes
-  }, [capKey, render]);
+  }, [capKey, render, fineBodies.on, fineBodies.version]);
   useEffect(() => {
     const s = scene.current, renderer = rendererRef.current;
     if (!s || !renderer) return;

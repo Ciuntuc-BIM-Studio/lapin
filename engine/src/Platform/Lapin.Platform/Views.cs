@@ -442,7 +442,9 @@ public static class Views
             if (stored && building < PlanDetail.Lod400 && ReferenceLayers.CategoryOf(e) == "rebar") continue;
             // Connections (steel nodes, fasteners) from LOD 350.
             if (building < PlanDetail.Lod350 && ReferenceLayers.CategoryOf(e) == "steelConnections") continue;
-            if (q.Geometry(e.Id) is not { } g) continue;
+            // LOD 400 draws a member's real section, its root fillets and sloping flanges (decision 415); every lower level the light one.
+            if ((building >= PlanDetail.Lod400 ? q.FineGeometry(e.Id) : q.Geometry(e.Id)) is not { } g) continue;
+            var smooth = building >= PlanDetail.Lod400 && g.FineShape;
             if (cutZ is { } cz && stored && Plan2d.Read(e) is { Count: > 0 } own)
             {
                 OwnPlan(e, g, own, cz, symbols, fills, texts);
@@ -454,7 +456,7 @@ public static class Views
                 var bySymbol = SiteSymbols.Contains(e.Class) && g.Plan is { Count: > 0 };
                 foreach (var p in g.Parts)
                     if (!bySymbol && Measure.Bounds(p.Solid) is { } b && b.Max.Z > SitePlans.Underground && ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p))
-                        parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: true));
+                        parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: true) { Smooth = smooth });
                 if (bySymbol)
                     foreach (var item in g.Plan!)
                     {
@@ -474,7 +476,7 @@ public static class Views
                 continue;
             }
             foreach (var p in g.Parts)
-                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette });
+                if (ViewStyles.Draws(m, style, e.Id, p.Key, bandCache) && PartShown(e, p.Key) && Detailed(e, p)) parts.Add(new DrawPart(p.Solid, e.Id, e.Class, p.Key, MaterialOf(e, p), CutInPlan: stored || p.CutInPlan) { BySilhouette = bySilhouette, Smooth = smooth });
             if (bySilhouette && silhouettes != null)
                 foreach (var sh in g.Silhouettes!)
                     if (sh.Mode == null || sh.Mode == entourage) silhouettes.Add(new DrawSilhouette(sh, e.Id, e.Class, style.EntourageFill, thin));

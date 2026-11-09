@@ -55,7 +55,7 @@ Dans **Acier → Types acier**, **Structure → Types structurels** (poteaux et 
 
 ![Le sélecteur cherche dans toutes les bibliothèques](shots/profile-picker.webp)
 
-Le profilé est copié dans le projet et le type le garde. Les corps sont modélisés à angles vifs, comme avant ; les congés et les ailes inclinées comptent dans les propriétés et dans l'export de structure.
+Le profilé est copié dans le projet et le type le garde. Les corps sont légers, à angles vifs, à tous les niveaux sauf un : une vue au **LOD 400** (plan, coupe, élévation, feuille ou 3D) dessine la section réelle, avec congés, rayons de bout d'aile et ailes inclinées. Les quantités et les exports gardent le corps à angles vifs ; les congés et les ailes inclinées comptent dans les propriétés et dans l'export de structure.
 
 Ailleurs, le profilé donne ce que l'outil peut utiliser : moulures, engravures et semelles filantes prennent son extérieur comme profil 2D (**D'une bibliothèque de profilés…** dans leur liste), montants et traverses de murs-rideaux et dormants de portes et fenêtres prennent sa largeur et sa profondeur.
 

@@ -55,7 +55,7 @@ Wählen Sie in **Stahl → Stahltypen**, **Tragwerk → Tragwerkstypen** (Stütz
 
 ![Die Auswahl durchsucht alle Bibliotheken](shots/profile-picker.webp)
 
-Das Profil wird ins Projekt kopiert, und der Typ behält es. Körper werden wie bisher mit scharfen Ecken modelliert; Ausrundungen und geneigte Flansche zählen in den Eigenschaften und im Tragwerksexport.
+Das Profil wird ins Projekt kopiert, und der Typ behält es. Körper sind leicht, mit scharfen Ecken, auf jedem Grad außer einem: eine Ansicht auf **LOD 400** (Grundriss, Schnitt, Ansicht, Plan oder 3D) zeichnet den wirklichen Querschnitt mit Ausrundungen, Flanschspitzenradien und geneigten Flanschen. Mengen und Exporte behalten den scharfen Körper; Ausrundungen und geneigte Flansche zählen in den Eigenschaften und im Tragwerksexport.
 
 Anderswo gibt das Profil, was das Werkzeug nutzen kann: Wandprofile, Nuten und Streifenfundamente nehmen seine Außenseite als 2D-Profil (**Aus einer Profilbibliothek…** in ihrer Liste), Pfosten und Riegel von Vorhangfassaden sowie Tür- und Fensterrahmen seine Breite und Tiefe.
 

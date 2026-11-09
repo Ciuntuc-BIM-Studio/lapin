@@ -46,6 +46,12 @@ public sealed record CapPart(int Part, string Color, string? Material, float[] P
 /// <summary>An element's caps, part by part.</summary>
 public sealed record CapItem(string NodeId, IReadOnlyList<CapPart> Parts);
 
+/// <summary>An element's parts as a 3D view at LOD 400 draws them (<see cref="Session.FineBodies"/>), in place of its render's.</summary>
+public sealed record FineBody(string NodeId, IReadOnlyList<RenderPart> Parts);
+
+/// <summary>A 3D view's level of development and, from LOD 400, the bodies it draws finer than the render has them.</summary>
+public sealed record FineBodies(int Lod, IReadOnlyList<FineBody> Items);
+
 public sealed record RenderItem(
     string NodeId,
     string Type,

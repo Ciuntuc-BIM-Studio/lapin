@@ -550,7 +550,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         var editor = role is "editor" or "owner";
         switch (method)
         {
-            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "pointcloud.tiles"
+            case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles"
                 or "project.versions" or "project.compareVersions"
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey":
                 return null;
@@ -633,7 +633,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "doc.redo": return (null, session.Redo(session.Author));
             case "doc.query":
                 return (session.Query((string?)p["name"] ?? throw new CommandException("The query is missing."), p["args"] as JsonObject ?? [])?.DeepClone(), null);
-            case "view.caps": return (session.Caps(ClipPlanes(p["planes"]), drawing: (string?)p["style"] == "drawing", scale: Json.Number(p["scale"]) is { } sc && sc > 0 ? sc : 50, layers: ViewStyles.LayersOf(p["layers"])), null);
+            case "view.caps": return (session.Caps(ClipPlanes(p["planes"]), drawing: (string?)p["style"] == "drawing", scale: Json.Number(p["scale"]) is { } sc && sc > 0 ? sc : 50, layers: ViewStyles.LayersOf(p["layers"]), fine: p["fine"] is JsonValue fv && fv.TryGetValue<bool>(out var fb) && fb), null);
+            // What a 3D view at LOD 400 draws finer than the render (decision 415): {id, ids}; no ids, every such element.
+            case "view.fine": return (session.FineBodies((string?)p["id"], (p["ids"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToList()), null);
             // A point cloud's tiles for the 3D view, by name, as raw arrays (docs/point-clouds.md).
             case "pointcloud.tiles":
                 return (PointCloudLinks.Tiles(session.Model, Links.Require(session.Model, (string?)p["id"]), (p["nodes"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>()), null);

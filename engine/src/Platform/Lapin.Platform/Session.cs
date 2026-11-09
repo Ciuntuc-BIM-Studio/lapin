@@ -507,6 +507,40 @@ public sealed class Session
         return g;
     }
 
+    /// <summary>What LOD 400 draws finer than <see cref="Geometry(string)"/>, kept as long as that geometry stands: it changes when the element does.</summary>
+    readonly System.Runtime.CompilerServices.ConditionalWeakTable<ElementGeometry, ElementGeometry> _fine = new();
+
+    /// <summary>The element as a view at LOD 400 draws it (<see cref="ElementGeometry.FineShape"/>); its own geometry when it has no finer shape.</summary>
+    public ElementGeometry? FineGeometry(string id)
+    {
+        if (Geometry(id) is not { FineShape: true } g) return Geometry(id);
+        return _fine.GetValue(g, _ => Geometry(id, new GeometryOptions(Fine: true)) ?? g);
+    }
+
+    /// <summary>
+    /// What a 3D view draws finer than the render has it (decision 415): under LOD 400 nothing but its level, so no one else's
+    /// mesh grows; from it, the fine parts of <paramref name="ids"/> (null: of every element with a finer shape).
+    /// </summary>
+    public FineBodies FineBodies(string? viewId, IReadOnlyList<string>? ids)
+    {
+        var view = viewId == null || viewId == GraphicsSets.View3d ? GraphicsSets.As3dView(_store) : _store.Get(viewId) is { Class: Views.Class } v && v.Str("kind") == "3d" ? v : throw new CommandException("Not a 3D view.");
+        var lod = ViewDetail.Of(_store, view);
+        if (lod < PlanDetail.Lod400) return new FineBodies(lod, []);
+        EnsureBuilt();
+        var items = new List<FineBody>();
+        var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
+        foreach (var id in ids ?? _built.Where(kv => kv.Value.Geometry is { FineShape: true }).Select(kv => kv.Key).ToList())
+        {
+            if (Geometry(id) is not { FineShape: true } || _store.Get(id) is not { } e || FineGeometry(id) is not { } fine) continue;
+            items.Add(new FineBody(id, fine.Parts.Select(p =>
+            {
+                var m = p.Tessellate();
+                return new RenderPart(p.Name, p.Color, m.Positions, m.Normals, m.Indices, m.Edges, p.Material, ViewStyles.HiddenBy(_store, e.Id, p, bands), null, p.Key);
+            }).ToList()));
+        }
+        return new FineBodies(lod, items);
+    }
+
     /// <summary>What an entity measures: its quantity sets and its parts' (none when its class has no measures).</summary>
     public IReadOnlyList<QuantitySet> Quantities(string id)
     {
@@ -524,7 +558,8 @@ public sealed class Session
     /// <paramref name="drawing"/>: as a sheet draws the cut, each cap with its material's section
     /// fill and hatch, the hatch at 1:<paramref name="scale"/>.
     /// </summary>
-    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005, bool drawing = false, double scale = 50, string layers = "all")
+    /// <param name="fine">The bodies as a 3D view at LOD 400 draws them (decision 415), so the caps close them.</param>
+    public List<CapItem> Caps(IReadOnlyList<ClipPlane> planes, double lift = 0.0005, bool drawing = false, double scale = 50, string layers = "all", bool fine = false)
     {
         var result = new List<CapItem>();
         if (planes.Count == 0) return result;
@@ -535,7 +570,8 @@ public sealed class Session
         var bands = new Dictionary<string, IReadOnlyList<LayerBand>?>();
         foreach (var (id, b) in _built)
         {
-            if (b.Geometry is not { } g || b.Bounds is not { } box || b.Item == null) continue;
+            if (b.Geometry is not { } g0 || b.Bounds is not { } box || b.Item == null) continue;
+            var g = fine && g0.FineShape ? FineGeometry(id) ?? g0 : g0;
             // Only what a plane crosses and none cuts wholly away.
             var crossed = false;
             var gone = false;
@@ -1131,6 +1167,7 @@ public sealed class Session
         public IModelView Model => s._store;
         public IServices Services => s._catalog;
         public ElementGeometry? Geometry(string entityId) => s.Geometry(entityId);
+        public ElementGeometry? FineGeometry(string entityId) => s.FineGeometry(entityId);
         public string? Title => s.Path is { Length: > 0 } p ? System.IO.Path.GetFileNameWithoutExtension(p.Replace('\\', '/').Split('/')[^1]) : null;
         public IReadOnlyList<string> DependentsOf(string id) => s.DependentsOf(id);
         public IReadOnlyList<string> DependenciesOf(string id) => s.DependenciesOf(id);

@@ -55,7 +55,7 @@ In **Steel → Steel types**, **Structure → Structure types** (columns and bea
 
 ![The picker searches every library](shots/profile-picker.webp)
 
-The profile is copied into the project and the type keeps it. Bodies are modelled with sharp corners, as before; the root radii and sloping flanges count in the properties and in the structural export.
+The profile is copied into the project and the type keeps it. Bodies are light, with sharp corners, at every level but one: a view at **LOD 400** (a plan, a section, an elevation, a sheet or a 3D view) draws the real section, root fillets, toe radii, sloping flanges. Quantities and exports keep the sharp body; the root radii and sloping flanges count in the properties and in the structural export.
 
 Elsewhere the profile gives what that tool can use: wall sweeps, reveals and strip footings take its outside as a 2D profile (**From a profile library…** in their list), and curtain wall mullions and transoms and door and window frames take its width and depth.
 

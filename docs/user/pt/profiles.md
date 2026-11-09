@@ -55,7 +55,7 @@ Em **Aço → Tipos de aço**, **Estrutura → Tipos estruturais** (pilares e vi
 
 ![O seletor pesquisa em todas as bibliotecas](shots/profile-picker.webp)
 
-O perfil é copiado para o projeto e o tipo o mantém. Os corpos são modelados com cantos vivos, como antes; raios de concordância e banzos inclinados contam nas propriedades e na exportação estrutural.
+O perfil é copiado para o projeto e o tipo o mantém. Os corpos são leves, com cantos vivos, em todos os níveis menos um: uma vista em **LOD 400** (planta, corte, alçado, folha ou 3D) desenha a secção real, com raios de concordância, raios nas pontas e banzos inclinados. As quantidades e as exportações mantêm o corpo de cantos vivos; raios de concordância e banzos inclinados contam nas propriedades e na exportação estrutural.
 
 Em outros lugares o perfil dá o que a ferramenta pode usar: molduras, rasgos e sapatas corridas tomam o exterior dele como perfil 2D (**De uma biblioteca de perfis…** na lista deles), e montantes e travessas de fachadas-cortina e caixilhos de portas e janelas tomam sua largura e profundidade.
 

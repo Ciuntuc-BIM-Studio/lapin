@@ -59,9 +59,14 @@ Același depozit, cu materialul și categoria: lemn lamelat și masiv (dreptungh
 - **B**: importul și exportul IFC al profilelor (toate subtipurile, proprietățile, unitățile), exportul CSV.
 - **C**: folderele firmei, actualizarea din bibliotecă, conturul ca profil (desen, DXF), alegătoarele în hală, pereți cortină, tâmplărie, baghete și Studio.
 
+## Secțiunea reală la LOD 400 (decizia 415)
+
+Corpurile rămân ușoare, cu colțuri drepte, la toate nivelurile: `Session.Geometry` nu se schimbă, deci nici cantitățile, exporturile, proprietățile sau mesh-ul trimis interfeței. Doar o vedere la LOD 400 cere corpul fin: `ElementGeometry.FineShape` spune că producătorul știe mai mult, `GeometryOptions.Fine` îl construiește din `Section.Real()` (racordări, raze la vârfuri, tălpi înclinate, curbele după `Chords`; un nume din catalog cu aceleași dimensiuni ia razele și panta din biblioteca încorporată), iar `Session.FineGeometry` îl ține cât timp stă geometria elementului. Desenele (`Views.Gather`) îl iau la `lod >= 400`, fără o linie pe fiecare fațetă a racordării (`DrawPart.Smooth`, `HiddenLines.Draw(smooth)`: unghiul 3D-ului, `Tessellator.CreaseDeg`). 3D-ul îl cere doar la LOD 400 (`view.fine`, `ui/src/viewport/fineBodies.ts`), o dată pentru fiecare element așa cum e construit, și îl desenează în locul celui ușor; capacele secțiunii (`view.caps {fine}`) îl închid.
+
+Costul măsurat (hala implicită, `MemberFineBodyTests`): 272 de bare, dintre care 94 cu secțiune reală (celelalte sunt formate la rece, îndoite drept, și rămân la fel): 11 326 de triunghiuri cu colțuri drepte, 18 816 la LOD 400 (×1,66), construite în 74 ms; la orice alt nivel, nimic în plus. Alegeri: cantitățile, exporturile și alegerea în plan rămân pe corpul ușor; în 3D la LOD 400 alegerea lovește corpul desenat, același element.
+
 ## Limite
 
-- Corpurile elementelor rămân cu colțuri drepte (ca până acum); racordările și panta tălpilor intră doar în proprietăți.
 - `It` și `Iw` nu se calculează pentru un contur arbitrar (rămân ale fișierului, dacă le dă); `Iw` la U e aproximarea pereților subțiri (UPN: cu 15 % peste tabel, din cauza tălpilor înclinate).
 - Folderele firmei doar în desktop (browserul nu ajunge la foldere).
 - Nicio bibliotecă a unui terț nu e în depozit: testele folosesc fișiere mici generate.

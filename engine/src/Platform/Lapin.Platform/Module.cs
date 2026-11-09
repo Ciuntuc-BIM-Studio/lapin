@@ -191,6 +191,11 @@ public interface IQueryContext
     IModelView Model { get; }
     IServices Services { get; }
     ElementGeometry? Geometry(string entityId);
+    /// <summary>
+    /// The element as a view at LOD 400 draws it (<see cref="ElementGeometry.FineShape"/>: a steel section's root fillets, toe
+    /// radii and sloping flanges), built when first asked for; the element's own geometry when it has no finer shape.
+    /// </summary>
+    ElementGeometry? FineGeometry(string entityId) => Geometry(entityId);
     /// <summary>The project's file name without its extension ("House"), what the interface calls the project; null before it has a file.</summary>
     string? Title => null;
     /// <summary>The elements built from what <paramref name="id"/> is (its attributes, or its relationships): built again when it changes (<see cref="Dependencies"/>).</summary>
@@ -414,6 +419,12 @@ public sealed record ElementGeometry(IReadOnlyList<GeometryPart> Parts, IReadOnl
 {
     // Lines: polylines in space with no body (CAD linework with heights), drawn as such in 3D, in LineColor.
     // Silhouettes: what elevations and sections draw instead of the body's edges (people, cars, plants: decision 341).
+
+    /// <summary>
+    /// Its producer builds a finer body when asked (<see cref="GeometryOptions.Fine"/>): a steel section's real outline, which
+    /// only a view at LOD 400 draws (decision 415); everything else, the quantities, exports and every lower level, keep this one.
+    /// </summary>
+    public bool FineShape { get; init; }
 }
 
 /// <summary>
@@ -431,7 +442,8 @@ public sealed class CommandException(string message) : ModelException(message);
 /// IFC writes the openings and subtracts them itself. Offered to producers
 /// through <see cref="IServices"/>; absent, the views' geometry.
 /// </summary>
-public sealed record GeometryOptions(bool CutOpenings = true);
+/// <param name="Fine">The real section of a member (<see cref="ElementGeometry.FineShape"/>), as a view at LOD 400 draws it.</param>
+public sealed record GeometryOptions(bool CutOpenings = true, bool Fine = false);
 
 /// <summary>The body of a void (an IfcOpeningElement) in its host, for whoever writes it out; a service of the module that owns the host.</summary>
 public interface IVoidShapes

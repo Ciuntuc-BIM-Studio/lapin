@@ -55,7 +55,7 @@ Desenează secțiunea cu Desen, din polilinii închise și cercuri (cele din int
 
 ![Alegătorul caută în toate bibliotecile](shots/profile-picker.webp)
 
-Profilul se copiază în proiect, iar tipul îl păstrează. Corpurile se modelează cu colțuri drepte, ca până acum; razele de racordare și tălpile înclinate contează în proprietăți și în exportul de structură.
+Profilul se copiază în proiect, iar tipul îl păstrează. Corpurile sunt ușoare, cu colțuri drepte, la toate nivelurile în afară de unul: o vedere la **LOD 400** (plan, secțiune, elevație, planșă sau 3D) desenează secțiunea reală, racordări, raze la vârfuri, tălpi înclinate. Cantitățile și exporturile rămân pe corpul cu colțuri drepte; razele de racordare și tălpile înclinate contează în proprietăți și în exportul de structură.
 
 În altă parte profilul dă ce poate folosi unealta: baghetele, șanțurile și fundațiile continue iau exteriorul lui ca profil 2D (**Dintr-o bibliotecă de profile…** în lista lor), iar montanții și traversele pereților cortină și tocurile ușilor și ferestrelor iau lățimea și adâncimea lui.
 

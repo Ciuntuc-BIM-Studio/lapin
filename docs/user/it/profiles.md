@@ -55,7 +55,7 @@ In **Acciaio → Tipi in acciaio**, **Struttura → Tipi strutturali** (pilastri
 
 ![Il selettore cerca in tutte le librerie](shots/profile-picker.webp)
 
-Il profilo viene copiato nel progetto e il tipo lo conserva. I corpi sono modellati a spigoli vivi, come prima; raccordi e ali inclinate contano nelle proprietà e nell'esportazione strutturale.
+Il profilo viene copiato nel progetto e il tipo lo conserva. I corpi sono leggeri, a spigoli vivi, a ogni livello tranne uno: una vista a **LOD 400** (pianta, sezione, prospetto, tavola o 3D) disegna la sezione reale, con raccordi, raggi di punta e ali inclinate. Quantità ed esportazioni restano sul corpo a spigoli vivi; raccordi e ali inclinate contano nelle proprietà e nell'esportazione strutturale.
 
 Altrove il profilo dà ciò che lo strumento può usare: modanature, scanalature e fondazioni continue prendono il suo esterno come profilo 2D (**Da una libreria di profili…** nel loro elenco), montanti e traversi delle facciate continue e telai di porte e finestre prendono larghezza e profondità.
 

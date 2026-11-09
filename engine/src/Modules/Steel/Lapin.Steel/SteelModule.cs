@@ -263,6 +263,7 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
     static ElementGeometry Body(Entity e, IModelView m, IServices? services, MemberAxis ax, string name, string color, string? material)
     {
         var (start, end) = SteelEnd.Of(e);
+        if (services?.Get<GeometryOptions>()?.Fine == true) ax = ax with { Fine = true };
         var built = SteelBody.Build(m, ax, start, end, services?.Get<ISolidBooleans>());
         var problems = built.Problems.Count > 0 ? built.Problems : null;
         if (built.Solid is not { } solid) return new ElementGeometry([], Diagnostics: problems);
@@ -285,7 +286,7 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
             }
             if (hp.Count > 0) problems = [.. problems ?? [], .. hp];
         }
-        return new ElementGeometry(parts, plan, [a, b], problems);
+        return new ElementGeometry(parts, plan, [a, b], problems) { FineShape = ax.Section.HasRealShape };
     }
 
     static IEnumerable<QuantitySet> Quantities(Entity e, ElementGeometry? g, IModelView m)

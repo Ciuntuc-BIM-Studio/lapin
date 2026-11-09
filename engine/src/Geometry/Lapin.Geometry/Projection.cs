@@ -57,9 +57,12 @@ public static class HiddenLines
     /// nothing is drawn at the clip, and a solid wholly outside is left out.
     /// </param>
     /// <param name="rise">The same up and down (along <see cref="ViewFrame.Up"/>): a section across an element sees only its window.</param>
+    /// <param name="smooth">Solids whose curves are made of flats (a member's fillets): an edge between two faces that both face the eye and turn less than the 3D's crease angle draws no line; the outline, where a face turns away, still does.</param>
     public static (List<Seg2> Lines, List<CutArea> Cuts, List<Seg2> Hidden) Draw(IReadOnlyList<(Solid Solid, int Owner)> solids, ViewFrame view, bool cut = false,
-        double maxDepth = double.PositiveInfinity, bool hidden = false, IReadOnlyList<string?>? keys = null, (double Min, double Max)? span = null, (double Min, double Max)? rise = null)
+        double maxDepth = double.PositiveInfinity, bool hidden = false, IReadOnlyList<string?>? keys = null, (double Min, double Max)? span = null, (double Min, double Max)? rise = null,
+        IReadOnlyList<bool>? smooth = null)
     {
+        var creaseCos = Math.Cos(Tessellator.CreaseDeg * Math.PI / 180);
         bool Joins(int i, int j) => i == j || keys == null || keys[i] != null && keys[i] == keys[j];
         var occluders = new List<Occluder>();
         var cuts = new List<CutArea>();
@@ -126,6 +129,7 @@ public static class HiddenLines
                 // Only an edge of a face turned to the eye can be seen: the others lie behind the element's own
                 // front (or on its outline, where the front face's edge is drawn already).
                 if (!(Vec3.Dot(na, view.Dir) < -1e-6 || fb >= 0 && Vec3.Dot(s.Faces[fb].Normal, view.Dir) < -1e-6)) continue;
+                if (smooth?[si] == true && fb >= 0 && Vec3.Dot(na, s.Faces[fb].Normal) > creaseCos && Vec3.Dot(na, view.Dir) < -1e-6 && Vec3.Dot(s.Faces[fb].Normal, view.Dir) < -1e-6) continue;
                 edges.Add((s.Vertices[h.From], s.Vertices[h.To], si, fa, fb, owner));
             }
         }

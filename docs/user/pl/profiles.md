@@ -55,7 +55,7 @@ W **Stal → Typy stalowe**, **Konstrukcja → Typy konstrukcyjne** (słupy i be
 
 ![Wybór przeszukuje wszystkie biblioteki](shots/profile-picker.webp)
 
-Profil jest kopiowany do projektu, a typ go zachowuje. Bryły modelowane są z ostrymi narożami, jak dotąd; zaokrąglenia i pochylone półki liczą się we właściwościach i eksporcie konstrukcji.
+Profil jest kopiowany do projektu, a typ go zachowuje. Bryły są lekkie, z ostrymi narożami, na każdym poziomie oprócz jednego: widok na **LOD 400** (rzut, przekrój, elewacja, arkusz lub 3D) rysuje rzeczywisty przekrój z zaokrągleniami, promieniami na końcach półek i pochylonymi półkami. Ilości i eksporty pozostają na bryle z ostrymi narożami; zaokrąglenia i pochylone półki liczą się we właściwościach i eksporcie konstrukcji.
 
 Gdzie indziej profil daje to, co narzędzie może wykorzystać: listwy, bruzdy i ławy fundamentowe biorą jego obrys jako profil 2D (**Z biblioteki profili…** na ich liście), a słupki i rygle ścian osłonowych oraz ościeżnice drzwi i okien jego szerokość i głębokość.
 

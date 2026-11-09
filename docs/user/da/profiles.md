@@ -55,7 +55,7 @@ I **Stål → Ståltyper**, **Konstruktion → Konstruktionstyper** (søjler og 
 
 ![Vælgeren søger i alle biblioteker](shots/profile-picker.webp)
 
-Profilen kopieres til projektet, og typen beholder den. Kroppe modelleres med skarpe hjørner som før; hulkehler og skrå flanger tæller i egenskaberne og i konstruktionseksporten.
+Profilen kopieres til projektet, og typen beholder den. Kroppe er lette, med skarpe hjørner, på alle niveauer undtagen ét: en visning på **LOD 400** (plan, snit, opstalt, tegningsark eller 3D) tegner det virkelige tværsnit med hulkehler, afrundede flangespidser og skrå flanger. Mængder og eksporter beholder den skarpe krop; hulkehler og skrå flanger tæller i egenskaberne og i konstruktionseksporten.
 
 Andre steder giver profilen det, værktøjet kan bruge: vægprofiler, riller og stribefundamenter tager dens yderside som 2D-profil (**Fra et profilbibliotek…** i deres liste), og sprosser og tværposter i curtain walls samt karme i døre og vinduer tager dens bredde og dybde.
 

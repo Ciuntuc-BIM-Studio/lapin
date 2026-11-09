@@ -43,17 +43,25 @@ public static class Columns
     {
         var (section, material, _) = Spec(m, column);
         if (Envelope(column, m) is not { } solid) return new ElementGeometry([], Diagnostics: ["The column has no height."]);
+        // At LOD 400 the real section (decision 415); every other reader the light one, with the same box.
+        var fine = services?.Get<GeometryOptions>()?.Fine == true;
+        var (outlineOf, holes) = fine ? section.Real() : (section.Outline(), section.Holes());
+        if (fine && holes.Count == 0)
+        {
+            var (z, h) = (Place.Elevation(m, column) + column.Num("baseOffset"), Spec(m, column).Height);
+            solid = Prism.ExtrudeFootprint(Polygon2.EnsureCcw(Place.Placed(outlineOf, Place.Point(column), column.Num("rotation")).ToList()), z, h, "column") ?? solid;
+        }
         // A hollow section stands open inside (decision 268); the envelope a column cuts with stays whole.
-        if (section.Holes() is { Count: > 0 } holes)
+        if (holes.Count > 0)
         {
             var z = Place.Elevation(m, column) + column.Num("baseOffset");
             IReadOnlyList<Vec3> Up(IEnumerable<Vec2> ring) => Place.Placed(ring, Place.Point(column), column.Num("rotation")).Select(p => p.At(z)).ToList();
-            solid = Prism.Extrude(Up(section.Outline()), holes.Select(Up).ToList(), new Vec3(0, 0, Spec(m, column).Height), "column") ?? solid;
+            solid = Prism.Extrude(Up(outlineOf), holes.Select(Up).ToList(), new Vec3(0, 0, Spec(m, column).Height), "column") ?? solid;
         }
         var problems = new List<string>();
         var parts = CutPriorities.Apply(column, m, services, [new GeometryPart(column.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
         var footprint = Place.Placed(section.Outline(), Place.Point(column), column.Num("rotation"));
-        return new ElementGeometry(parts, [new PlanItem("cut", true, footprint)], [Place.Point(column)], problems.Count > 0 ? problems : null);
+        return new ElementGeometry(parts, [new PlanItem("cut", true, footprint)], [Place.Point(column)], problems.Count > 0 ? problems : null) { FineShape = section.HasRealShape };
     }
 
     public static IEnumerable<QuantitySet> Quantities(Entity column, ElementGeometry? g, IModelView m)
@@ -269,8 +277,11 @@ public static class Beams
         if (span.TrimmedStart) from = _ => span.S0;
         if (span.TrimmedEnd) to = _ => span.S1;
         IReadOnlyList<Vec2> fp = c.IsArc ? c.Band(from, to, f.YMin, f.YMax) : Strips.Footprint(f, ends, f.YMin, f.YMax);
+        // At LOD 400 the real section (decision 415); every other reader the light one, with the same box.
+        var fine = services?.Get<GeometryOptions>()?.Fine == true;
+        var (ownOutline, ownHoles) = fine ? section.Real() : (section.Outline(), section.Holes());
         // Flipped, the section is mirrored across the axis (an angle or a channel faces the other way).
-        var outline = section.Outline().Select(p => beam.Bool("flipped") ? p with { X = -p.X } : p).ToList();
+        var outline = ownOutline.Select(p => beam.Bool("flipped") ? p with { X = -p.X } : p).ToList();
         Solid? solid;
         if (section.IsProfile && c.IsArc)
         {
@@ -291,9 +302,9 @@ public static class Beams
             var side = new Vec3(-u.Y, u.X, 0);
             var mid = Top(m, beam) - section.Depth / 2;
             Vec3 At(Vec2 p) => new Vec3(f.Start.X, f.Start.Y, mid) + side * (beam.Bool("flipped") ? -p.X : p.X) + new Vec3(0, 0, p.Y);
-            var ring = section.Outline().Select(At).ToList();
+            var ring = ownOutline.Select(At).ToList();
             // A hollow section's inside runs through it (decision 268).
-            var holes = section.Holes().Select(h => (IReadOnlyList<Vec3>)h.Select(At).ToList()).ToList();
+            var holes = ownHoles.Select(h => (IReadOnlyList<Vec3>)h.Select(At).ToList()).ToList();
             solid = Prism.Extrude(ring, holes, new Vec3(u.X, u.Y, 0) * (f.End - f.Start).Length, "beam");
         }
         else solid = Prism.ExtrudeFootprint(fp, Top(m, beam) - section.Depth, section.Depth, "beam");
@@ -301,7 +312,7 @@ public static class Beams
         var parts = CutPriorities.Apply(beam, m, services, [new GeometryPart(beam.Name, Materials.ColorOf(m, material), solid, material, "body")], problems);
         // Snaps on the axis's ends (the column centres) and, trimmed, on the faces it stops at.
         IReadOnlyList<Vec2> snaps = trimmed ? [c.Start, c.End, span.Start, span.End] : [c.Start, c.End];
-        return new ElementGeometry(parts, [new PlanItem("outline", true, fp)], snaps, problems.Count > 0 ? problems : null);
+        return new ElementGeometry(parts, [new PlanItem("outline", true, fp)], snaps, problems.Count > 0 ? problems : null) { FineShape = section.HasRealShape };
     }
 
     /// <summary>The beam's quantities over its clear length: the span between the column faces less the columns it passes through.</summary>
