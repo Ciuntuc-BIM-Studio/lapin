@@ -563,7 +563,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         if (Views.Find(q.Model, dim.Str("viewId") ?? "") is not { } view) return st;
         var (drawing, spec, _) = Views.Generate(q, view);
         if (drawing == null || spec == null) return st;
-        return st.Select(s => s.Ref != null && Dimensions.Resolve(q.Model, spec.Kind, drawing, s.Ref) is { } p ? (p, s.Ref) : s).ToList();
+        return st.Select(s => s.Ref != null && Dimensions.Resolve(q.Model, spec.Kind, drawing, s.Ref, s.P) is { } p ? (p, s.Ref) : s).ToList();
     }
 
     static void Save(ICommandContext ctx, Entity dim, List<(Vec2 P, DimEndRef? Ref)> stations, List<string?> texts, List<Vec2?>? offsets = null)

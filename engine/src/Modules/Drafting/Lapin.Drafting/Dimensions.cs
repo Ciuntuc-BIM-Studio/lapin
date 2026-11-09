@@ -18,7 +18,7 @@ namespace Lapin.Drafting;
 /// <item>"axis": a wall's (or beam's) centre line, how far along it.</item>
 /// </list>
 /// </summary>
-public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Dir, Vec2? Local = null, Vec2? LocalDir = null, string? Tag = null, double S = 0)
+public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Dir, Vec2? Local = null, Vec2? LocalDir = null, string? Tag = null, double S = 0, double? S2 = null, double? Len = null)
 {
     static JsonArray J(Vec2 p) => new(p.X, p.Y);
     static Vec2? V(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : null;
@@ -28,11 +28,12 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
         var o = new JsonObject { ["kind"] = Kind };
         switch (Kind)
         {
-            case "grid": o["grid"] = Element; o["tag"] = Tag; o["s"] = S; break;
-            case "axis": o["element"] = Element; o["s"] = S; break;
+            case "grid": o["grid"] = Element; o["tag"] = Tag; o["s"] = S; if (S2 is { } g2) o["s2"] = g2; break;
+            case "axis": o["element"] = Element; o["s"] = S; if (S2 is { } a2) o["s2"] = a2; break;
             default:
                 o["element"] = Element; o["offset"] = J(Offset); o["dir"] = J(Dir);
                 if (Local is { } l && LocalDir is { } ld) { o["local"] = J(l); o["localDir"] = J(ld); }
+                if (Len is { } len) o["len"] = len;
                 break;
         }
         return o;
@@ -43,10 +44,10 @@ public sealed record DimEndRef(string Kind, string Element, Vec2 Offset, Vec2 Di
         if (n is not JsonObject o) return null;
         switch ((string?)o["kind"] ?? "edge")
         {
-            case "grid" when (string?)o["grid"] is { } g && (string?)o["tag"] is { } t: return new("grid", g, default, default, Tag: t, S: Json.Number(o["s"]) ?? 0);
-            case "axis" when (string?)o["element"] is { } e: return new("axis", e, default, default, S: Json.Number(o["s"]) ?? 0);
+            case "grid" when (string?)o["grid"] is { } g && (string?)o["tag"] is { } t: return new("grid", g, default, default, Tag: t, S: Json.Number(o["s"]) ?? 0, S2: Json.Number(o["s2"]));
+            case "axis" when (string?)o["element"] is { } e: return new("axis", e, default, default, S: Json.Number(o["s"]) ?? 0, S2: Json.Number(o["s2"]));
             case "edge" when (string?)o["element"] is { Length: > 0 } e && V(o["offset"]) is { } off && V(o["dir"]) is { } d:
-                return new("edge", e, off, d, V(o["local"]), V(o["localDir"]));
+                return new("edge", e, off, d, V(o["local"]), V(o["localDir"]), Len: Json.Number(o["len"]));
         }
         return null;
     }
@@ -106,6 +107,9 @@ public static class Dimensions
         return null;
     }
 
+    /// <summary>An element's axis length (m); null when it has no axis.</summary>
+    static double? LengthOf(Entity? e) => e?.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray ? (P(e.Attrs["end"]) - P(e.Attrs["start"])).Length : null;
+
     static Vec2 ToLocal((Vec2 O, Vec2 U) f, Vec2 p) { var v = p - f.O; return new Vec2(Vec2.Dot(v, f.U), Vec2.Dot(v, f.U.Perp)); }
     static Vec2 FromLocal((Vec2 O, Vec2 U) f, Vec2 l) => f.O + f.U * l.X + f.U.Perp * l.Y;
     static Vec2 DirToLocal((Vec2 O, Vec2 U) f, Vec2 d) => new(Vec2.Dot(d, f.U), Vec2.Dot(d, f.U.Perp));
@@ -137,36 +141,40 @@ public static class Dimensions
         {
             var dir = (hit.B - hit.A).Normalized();
             if (viewKind == "plan" && Frame(m.Get(hit.Poly.Element)) is { } f)
-                return new DimEndRef("edge", hit.Poly.Element, p - mid, dir, ToLocal(f, p), DirToLocal(f, dir));
+                return new DimEndRef("edge", hit.Poly.Element, p - mid, dir, ToLocal(f, p), DirToLocal(f, dir), Len: LengthOf(m.Get(hit.Poly.Element)));
             return new DimEndRef("edge", hit.Poly.Element, p - mid, dir);
         }
         if (viewKind != "plan") return null;
         foreach (var grid in m.OfClass(IfcClass.Grid))
             foreach (var ax in Grids.Axes(grid))
                 if (Foot(p, ax.A, ax.B).Dist <= tolerance)
-                    return new DimEndRef("grid", grid.Id, default, default, Tag: ax.Tag, S: Vec2.Dot(p - ax.A, ax.Dir));
+                    return new DimEndRef("grid", grid.Id, default, default, Tag: ax.Tag, S: Vec2.Dot(p - ax.A, ax.Dir), S2: Vec2.Dot(ax.B - p, ax.Dir));
         foreach (var e in m.Entities.Where(e => e.Class is IfcClass.Wall or IfcClass.Beam && e.Attrs["start"] is JsonArray))
             if (Frame(e) is { } f && Foot(p, P(e.Attrs["start"]), P(e.Attrs["end"])).Dist <= tolerance)
-                return new DimEndRef("axis", e.Id, default, default, S: Vec2.Dot(p - f.O, f.U));
+                return new DimEndRef("axis", e.Id, default, default, S: Vec2.Dot(p - f.O, f.U), S2: Vec2.Dot(P(e.Attrs["end"]) - p, f.U));
         return null;
     }
 
     /// <summary>The end now, or null when what it holds on is gone.</summary>
-    public static Vec2? Resolve(IModelView m, string viewKind, ViewDrawing d, DimEndRef r)
+    public static Vec2? Resolve(IModelView m, string viewKind, ViewDrawing d, DimEndRef r, Vec2? hint = null)
     {
         switch (r.Kind)
         {
             case "grid":
             {
                 if (m.Get(r.Element) is not { Class: IfcClass.Grid } grid || Grids.Axes(grid).FirstOrDefault(a => a.Tag == r.Tag) is not { } ax) return null;
-                return ax.A + ax.Dir * r.S;
+                return OnLine(ax.A, ax.B, r, hint);
             }
             case "axis":
-                return Frame(m.Get(r.Element)) is { } f ? f.O + f.U * r.S : null;
+                return m.Get(r.Element) is { } w && Frame(w) is { } f ? OnLine(f.O, P(w.Attrs["end"]), r, hint) : null;
         }
         Vec2 q, dir;
         if (viewKind == "plan" && r.Local is { } local && r.LocalDir is { } ld && Frame(m.Get(r.Element)) is { } frame && Middle(d, r.Element) != null)
+        {
             (q, dir) = (FromLocal(frame, local), DirFromLocal(frame, ld).Normalized());
+            // A face along an element made longer or shorter (an end dragged along it): the point stays where it was measured (report #126).
+            if (Math.Abs(ld.Normalized().Y) < Parallel && r.Len is { } len0 && hint is { } h && LengthOf(m.Get(r.Element)) is { } len1 && Math.Abs(len1 - len0) > 1e-6) q = h;
+        }
         else if (Middle(d, r.Element) is { } mid)
             (q, dir) = (mid + r.Offset, r.Dir);
         else return null;
@@ -182,6 +190,22 @@ public static class Dimensions
             if (dist <= Reach && (best == null || dist < best.Value.Dist)) best = (dist, onLine);
         }
         return best?.P;
+    }
+
+    /// <summary>
+    /// A point held on a line (a grid axis, a wall's centre line), found by its distance from the start while the line keeps
+    /// its length (moved, turned or mirrored as a whole, it takes the point with it), and by the foot of the point as it was
+    /// drawn when the line is made longer or shorter: an end dragged along the line leaves the dimension where it was measured,
+    /// not turned about the other point (report #126). Without the length (an older dimension) a grid axis keeps the foot.
+    /// </summary>
+    static Vec2 OnLine(Vec2 a, Vec2 b, DimEndRef r, Vec2? hint)
+    {
+        var dir = (b - a).Length < 1e-9 ? new Vec2(1, 0) : (b - a).Normalized();
+        var viaStart = a + dir * r.S;
+        var foot = hint is { } h ? a + dir * Vec2.Dot(h - a, dir) : viaStart;
+        // A line the length it was moved or turned as a whole: the point goes with it. Made longer or shorter: it stays where it was.
+        if (r.S2 is { } s2) return Math.Abs((b - a).Length - (r.S + s2)) < 1e-6 ? viaStart : foot;
+        return r.Kind == "grid" ? foot : viaStart;
     }
 
     // ------------------------------------------------------------ the string: its points, what each holds on, its texts
@@ -264,7 +288,7 @@ public static class Dimensions
         foreach (var (p, r) in Stations(dim))
         {
             if (r == null) { o.Add(p); continue; }
-            if (Resolve(m, viewKind, d, r) is { } q) o.Add(q);
+            if (Resolve(m, viewKind, d, r, p) is { } q) o.Add(q);
             else { o.Add(p); orphan = true; }
         }
         return (o, orphan);
