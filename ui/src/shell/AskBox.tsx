@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { parseLength, formatLength, unitLabel } from '../engine/unitsStore';
 
-interface Field { key: string; label: string; value: string; length?: boolean; choices?: { value: string; label: string }[] }
+interface Field { key: string; label: string; value: string; length?: boolean; text?: boolean; choices?: { value: string; label: string }[] }
 interface Asking { title: string; fields: Field[]; x: number; y: number; resolve: (v: Record<string, string | number> | null) => void }
 
 const useAsk = create<{ asking: Asking | null }>(() => ({ asking: null }));
@@ -26,7 +26,7 @@ export async function askLength(title: string, label: string, initial: number): 
   return r ? (r.v as number) : null;
 }
 
-/** Several values at once: lengths parsed in the project's unit, numbers as numbers, choices as they are. */
+/** Several values at once: lengths parsed in the project's unit, numbers as numbers, texts and choices as they are. */
 export function ask(title: string, fields: Field[]): Promise<Record<string, string | number> | null> {
   useAsk.getState().asking?.resolve(null);
   return new Promise((resolve) => useAsk.setState({ asking: { title, fields, x: last.x, y: last.y, resolve } }));
@@ -34,6 +34,7 @@ export function ask(title: string, fields: Field[]): Promise<Record<string, stri
 
 export function lengthField(key: string, label: string, metres: number): Field { return { key, label, value: formatLength(metres), length: true }; }
 export function numberField(key: string, label: string, n: number): Field { return { key, label, value: String(n) }; }
+export function textField(key: string, label: string, value: string): Field { return { key, label, value, text: true }; }
 export function choiceField(key: string, label: string, value: string, choices: { value: string; label: string }[]): Field { return { key, label, value, choices }; }
 
 /** The box itself, over everything, near the pointer (mounted by the module's background). */
@@ -52,7 +53,7 @@ export function AskBox() {
     const out: Record<string, string | number> = {};
     for (const f of asking.fields) {
       const t = (values[f.key] ?? '').trim();
-      if (f.choices) { out[f.key] = t; continue; }
+      if (f.choices || f.text) { out[f.key] = t; continue; }
       const n = f.length ? parseLength(t) : Number(t.replace(',', '.'));
       if (n == null || !Number.isFinite(n)) { first.current?.focus(); return; }
       out[f.key] = n;
@@ -70,7 +71,7 @@ export function AskBox() {
           <span>{f.label}</span>
           {f.choices
             ? <select value={values[f.key] ?? f.value} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}>{f.choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
-            : <input ref={i === 0 ? first : undefined} className="num" value={values[f.key] ?? ''} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} />}
+            : <input ref={i === 0 ? first : undefined} className={f.text ? undefined : 'num'} value={values[f.key] ?? ''} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} />}
           {f.length && <span className="muted">{unitLabel()}</span>}
         </label>
       ))}

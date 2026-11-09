@@ -22,6 +22,23 @@ Double-click a member, or click **Edit group** (<kbd>EG</kbd>). The rest of the 
 
 ![A group open for editing: the garden wall outside it faded](shots/group-edit.webp)
 
+## Components
+
+A component is a group whose copies stay the same, as in SketchUp: change one and all of them change. It suits what you repeat many times: a planter, a bay of a canopy, a kitchen island, a roof light, a typical room's floor. It takes **Studio solids, floors and rooms**; walls cannot be part of one, since a wall's joins and doors depend on its neighbours.
+
+Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Then copy it as you copy anything: **Copy**, **Rotate**, **Copy to storeys**. Each copy is an **instance**.
+
+- **Double-click** an instance to open it, as a group. What you change inside (an outline, a height, a push/pull, a new or deleted member) changes in every instance, in one undo step.
+- **Move and turn** an instance on its own: the others stay where they are, and an edit reaches a turned instance turned.
+- **Make unique**, in its properties, lets one instance go its own way. **Select instances** selects them all.
+- **Mirror** asks you to make the instance unique first.
+
+**Manage → Components** lists the project's components, with how many instances each has. Rename them there, or select all the instances of one. The instances are ordinary elements in plans, sections, schedules, quantities and exports, each with its own GlobalId.
+
+![A component in four instances, one turned: the outline changed in one, followed by all](shots/components-3d.webp)
+
+![An instance's properties: the component, Select instances, Make unique](shots/component-properties.webp)
+
 ## Drilling into assemblies
 
 Some elements are parts of a whole: a steel hall's columns, rafters and purlins, the parts of an assembly (a Studio box, an assembly read from an IFC file), and the members of a group. **View → Drill into assemblies**, off at first, picks them the way the whole is built. The first click on a part selects the whole at the top: the group, or the hall. While it is selected, a click inside it selects the part one level down on the way to what you clicked, and each further click goes one level deeper, down to the element itself. A click on another part of the same whole selects that part at the same level. <kbd>Esc</kbd> steps one level up, and at the top lets go of the selection; a click on empty space lets go too. <kbd>Ctrl</kbd>+click (<kbd>Cmd</kbd>+click on a Mac) selects the element itself straight away, and <kbd>Shift</kbd> adds the whole at the top to the selection. A breadcrumb over the view names the levels, from the storey to the selection: click one to select it. While a part inside a whole is selected, the rest of the model is drawn lightly faded. It works the same in 3D, plans, sections and elevations. A selection box or a lasso takes the wholes at the top. A double-click still opens a group for editing; inside it, the drilling starts below the group. The choice is kept on this computer, and is also in **View → View settings**.

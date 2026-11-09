@@ -132,7 +132,10 @@ public static class StoreyCopy
                 if (relations)
                     foreach (var g in groups)
                         if (m.Get(g) is { } group && Groups.Make(ctx, group.Name, Groups.MembersOf(m, g).Where(map.ContainsKey).Select(x => map[x]).ToList()) is { } twin)
+                        {
                             twins[g] = twin.Id;
+                            Components.CopiedInstance(ctx, group, twin, Placement2D.Move(new Lapin.Geometry.Vec2(0, 0)), 0);
+                        }
                 if (!relations)
                 {
                     var copied = map.Values.ToHashSet();

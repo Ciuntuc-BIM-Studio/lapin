@@ -295,7 +295,13 @@ public sealed class Session
         JsonNode? r = null;
         // What a link brought in is read-only, except to the link commands and to the imports that make links.
         var allowLinked = command.StartsWith("link.", StringComparison.Ordinal) || command.EndsWith(".importDxf", StringComparison.Ordinal);
-        var t = Commit(entry.Label, edit => r = entry.Handler(new CommandContext(edit, _catalog, new QueryContext(this), allowLinked), args), author);
+        var t = Commit(entry.Label, edit =>
+        {
+            var ctx = new CommandContext(edit, _catalog, new QueryContext(this), allowLinked);
+            r = entry.Handler(ctx, args);
+            // An instance of a component changed: the others follow, in the same undo step (docs/components.md).
+            Components.Settle(ctx, edit);
+        }, author);
         result = r;
         if (t == null) return Empty();
         Emit("tx", t);

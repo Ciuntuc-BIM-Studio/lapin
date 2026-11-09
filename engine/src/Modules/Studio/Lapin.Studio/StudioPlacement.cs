@@ -30,6 +30,9 @@ public sealed class StudioPlacement : IElementPlacement
         return o;
     }
 
+    /// <summary>The sketch that is the solid's own: on a plan it goes with the solid; on another view a copy shares it.</summary>
+    public IEnumerable<string> Dependents(IModelView m, Entity e) => OnPlan(m, e) ? Sketch(m, e).Select(x => x.Id) : [];
+
     /// <summary>Whether the solid is drawn from a sketch on a plan (it then moves with its sketch).</summary>
     static bool OnPlan(IModelView m, Entity e)
     {
@@ -115,6 +118,18 @@ public sealed class StudioPlacement : IElementPlacement
 /// A Studio solid raised or lowered by a 3D move (docs/plan-3d-modelling.md): a move step up or down, merged into the
 /// last step when that is already an upright move, so a solid moved up twice keeps one step.
 /// </summary>
+public sealed class StudioStoreyShift : IStoreyShift
+{
+    /// <summary>A primitive or a body stands on a point in the world: it goes up with the storey.</summary>
+    public JsonObject? Shifted(Entity e, double dz)
+    {
+        if (e.Str("operation") is not ("primitive" or "body") || Features.P(e.Attrs["at"]) is not { } at) return null;
+        var attrs = e.CloneAttrs();
+        attrs["at"] = Features.J(new Vec3(at.X, at.Y, at.Z + dz));
+        return attrs;
+    }
+}
+
 public sealed class StudioRise : IElementRise
 {
     public bool Handles(Entity e) => e.Str("operation") != null && StudioModule.Classes.Contains(e.Class);

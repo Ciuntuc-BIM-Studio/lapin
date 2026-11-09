@@ -40,3 +40,13 @@ export async function removeFromGroup(): Promise<void> {
   if (!ids.length) { notify('Open a group (double-click it) and select the members to take out.'); return; }
   await execute('group.remove', { ids });
 }
+
+/** What is selected made a component (docs/components.md): an instance of it, selected. */
+export async function makeComponent(): Promise<void> {
+  if (!selected().length) { notify('Select Studio solids, floors or rooms to make a component.'); return; }
+  const { ask, textField } = await import('../../shell/AskBox');
+  const r = await ask('Make component', [textField('name', 'Name', '')]);
+  if (!r) return;
+  const made = await execute('component.make', { ids: selected(), ...(r.name ? { name: String(r.name) } : {}) }) as { id?: string } | null;
+  if (made?.id) { selectOnly([made.id]); notify('Made a component: copies of it are instances. Double-click one to edit them all.'); }
+}

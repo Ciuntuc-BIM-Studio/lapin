@@ -50,6 +50,8 @@ public interface IElementPlacement
     void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving);
     /// <summary>A copy carried by <paramref name="t"/>: its new id (null: the platform's own copy will do).</summary>
     string? Copy(ICommandContext ctx, Entity e, Placement2D t) => null;
+    /// <summary>What belongs to the element without being it, and goes with its copy (a solid's sketch on a plan).</summary>
+    IEnumerable<string> Dependents(IModelView m, Entity e) => [];
 }
 
 /// <summary>

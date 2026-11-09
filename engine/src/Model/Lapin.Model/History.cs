@@ -4,6 +4,9 @@ namespace Lapin.Model;
 public interface IEdit
 {
     IModelView Model { get; }
+    /// <summary>What this edit has changed so far (entities, relationships), for what follows from a change in the same undo step.</summary>
+    IReadOnlyList<Change<Entity>> EntityChanges => [];
+    IReadOnlyList<Change<Relation>> RelationChanges => [];
     /// <summary>A new stable id (an IFC GlobalId), for entities and relationships alike.</summary>
     string NewId();
     void Add(Entity entity);

@@ -4738,6 +4738,53 @@ export const scenes = [
     },
   },
   {
+    // Components (a tester's wish, docs/components.md): a floor and a solid made a component, copied and turned; an edit in one instance followed by all.
+    id: 'components',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const floor = (await t.cmd('architecture.addSlab', { storeyId: s, points: [[0, 0], [3, 0], [3, 2], [0, 2]] })).id;
+      const block = (await t.cmd('studio.primitive', { shape: 'box', at: [1, 0.6], storeyId: s, width: 1, length: 0.8, height: 0.9 })).id;
+      await t.ui({ keyPlan: false, selected: [floor, block], selection: block });
+      await t.wait(400);
+      // Modify → Make component, named in its box.
+      await t.tool('modify.component');
+      await t.page.locator('.ask-box input').first().fill('Planter bay');
+      await t.page.locator('.ask-box .btn.primary').click();
+      await t.wait(800);
+      const group = (await t.nodes()).find((n) => n.type === 'IfcGroup');
+      t.expect(group?.props.component, 'the selection is an instance of a component');
+      const instances = [group.id];
+      for (const by of [[5, 0], [10, 0], [15, 0]]) {
+        const r = await t.cmd('element.transform', { ids: [group.id], op: 'copy', by });
+        instances.push(r.ids.find((id) => id !== group.id));
+      }
+      const made = (await t.nodes()).filter((n) => n.type === 'IfcGroup');
+      t.expect(made.length === 4 && made.every((g) => g.props.component === group.props.component), `four instances of it (${made.length})`);
+      const last = made.find((g) => g.props.componentXf[0] > 15);
+      await t.cmd('element.transform', { ids: [last.id], op: 'rotate', center: [last.props.componentXf[0], last.props.componentXf[1]], angle: 40 });
+      // The first instance's floor made longer: all follow.
+      await t.cmd('architecture.updateSlab', { id: floor, points: [[0, 0], [4, 0], [4, 2], [2, 3.2], [0, 2]] });
+      await t.wait(600);
+      const floors = (await t.nodes()).filter((n) => n.type === 'IfcSlab');
+      t.expect(floors.length === 4 && floors.every((f) => f.props.contour.length === 5), 'every instance takes the new outline');
+      await t.ui({ selected: [last.id], selection: last.id });
+      await t.wait(500);
+      await t.page.locator('[data-testid=group-component]').waitFor({ timeout: 5000 });
+      await t.shot('component-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      await t.ui({ selected: [], selection: null });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.1, pitch: -0.55, distance: 26, target: { x: 9.5, y: 1.2, z: 0.3 } }, false));
+      await t.wait(1500);
+      await t.shot('components-3d', { of: '[data-testid=view3d]', pad: 0 });
+      // Manage → Components.
+      await t.tool('manage.components');
+      await t.page.locator('[data-testid=components] tbody tr').first().waitFor({ timeout: 5000 });
+      t.expect((await t.page.locator('[data-testid=components] tbody tr td.num').first().textContent()) === '4', 'the list says four instances');
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'export',
     async run(t) {
       await t.fresh();

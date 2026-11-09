@@ -67,6 +67,7 @@ public sealed class CoreModule : ILapinModule
         // A view's sun shadows, drawn as filled areas under elevations, sections and site plans.
         ViewShadows.Register(r);
         Groups.Register(r);
+        Components.Register(r);
         // The wholes an element is a part of, for drill-down picking.
         Assemblies.Register(r);
         TypeMappings.Register(r);
@@ -292,7 +293,7 @@ public static class ElementTransform
         public IReadOnlyList<string> Kept { get; init; } = [];
     }
 
-    public static Result Run(ICommandContext ctx, JsonObject a)
+    public static Result Run(ICommandContext ctx, JsonObject a, Placement2D? given = null)
     {
         static Lapin.Geometry.Vec2 V(JsonNode? n, string what) => Args.Point(n, what);
         // A group selected is its members (docs/groups.md).
@@ -303,7 +304,7 @@ public static class ElementTransform
         // A 3D move's vertical part (docs/plan-3d-modelling.md): what has a height of its own goes up or down by it.
         var up = op is "move" or "copy" ? Json.Number(a["up"]) ?? 0 : 0;
         var rise = Json.Number(a["rise"]) ?? (world is { Count: >= 3 } ? Json.Number(world[2]) : null) ?? up;
-        var t = op switch
+        var t = given ?? op switch
         {
             "move" or "copy" => Placement2D.Move(V(a["by"], "displacement"), rise),
             "rotate" => Placement2D.Rotate(V(a["center"], "centre"), (Json.Number(a["angle"]) ?? 0) * Math.PI / 180),
@@ -312,6 +313,8 @@ public static class ElementTransform
             _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
         };
         var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
+        // A component's instance turns and moves as a whole (docs/components.md); mirrored it would no longer be the same thing.
+        if (t.Mirrored) Components.RefuseMirror(ctx.Model, groups);
         var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
             .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
         if (all.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
@@ -354,6 +357,7 @@ public static class ElementTransform
                 {
                     made.Add((JsonNode)twin.Id);
                     twins[g] = twin.Id;
+                    Components.CopiedInstance(ctx, group, twin, t, up);
                 }
         // Parts selected on their own (a grid's axis): their module carries them.
         // One whose element goes as a whole goes with it, once.
@@ -372,6 +376,8 @@ public static class ElementTransform
                 if (id == null || ctx.Model.Get(id) is not { } now) continue;
                 if (!ElementRise.Lift(ctx, now, up)) kept.Add(id);
             }
+        // An instance moved as a whole says where it stands now (docs/components.md).
+        if (!copy) foreach (var g in groups) Components.MovedInstance(ctx, g, t, up);
         return new Result(made, copies, twins) { Kept = kept };
     }
 }

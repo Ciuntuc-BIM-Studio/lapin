@@ -114,6 +114,7 @@ public sealed partial class StudioModule : ILapinModule, IGeometryFilter
         r.Service<IElementPlacement>(new StudioPlacement());
         // Raised or lowered by a 3D move: a move step (docs/plan-3d-modelling.md).
         r.Service<IElementRise>(new StudioRise());
+        r.Service<IStoreyShift>(new StudioStoreyShift());
         // Its solids cut in a drawing are filled white when their material gives no fill.
         r.Service<ICutFill>(new StudioCutFill());
         // An import's references made editable on request (the import's third way, docs/spec-ifc.md).

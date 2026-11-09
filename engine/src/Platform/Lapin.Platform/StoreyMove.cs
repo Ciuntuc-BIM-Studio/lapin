@@ -24,6 +24,13 @@ public interface IStoreyDatum
     IEnumerable<string> DatumsOf(Entity e);
 }
 
+/// <summary>What keeps its height in the world rather than from its storey (a Studio primitive's point): moved up or down with the storey it goes to.</summary>
+public interface IStoreyShift
+{
+    /// <summary>The element's attributes raised by <paramref name="dz"/>; null when it reads its height from its storey.</summary>
+    JsonObject? Shifted(Entity e, double dz);
+}
+
 /// <summary>
 /// Moving elements to another storey (the old Lapin's Move to storey): each
 /// leaves its storey for the target, with what it hosts (its openings' doors
@@ -156,6 +163,9 @@ public static class StoreyMove
             }
             return changed ? attrs : null;
         }
+        // Kept with the storey: what holds a height in the world goes with it.
+        foreach (var s in ctx.Services.All<IStoreyShift>())
+            if (s.Shifted(e, target.Num("elevation") - from.Num("elevation")) is { } shifted) return shifted;
         if (ctx.Services.All<IStoreyDatum>().SelectMany(d => d.DatumsOf(e)).Distinct().ToList() is { Count: > 0 } datums)
         {
             var attrs = e.CloneAttrs();
