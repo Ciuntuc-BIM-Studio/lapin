@@ -22,6 +22,8 @@ La ficha **Estructura** contiene los pórticos y la cimentación.
 
 Dibuje la cimentación en el nivel **Foundations**, o dele una planta propia.
 
+**En las plantas.** Una zapata queda bajo el forjado, así que una planta la dibuja a trazos en la planta del nivel en que está, como la planta de un edificio muestra lo que hay debajo. Para verla cortada y vista, use una **planta de cimentación**: en el navegador del proyecto, el **+** junto a **Plantas** crea una para el nivel activo (corte 0,50 m bajo él, vista 2,50 m hacia abajo).
+
 ![Pilares, vigas y zapatas aisladas en 3D](shots/structure-3d.webp)
 
 ## Tipos y esquinas

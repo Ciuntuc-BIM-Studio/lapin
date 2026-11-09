@@ -22,6 +22,8 @@ Die Registerkarte **Tragwerk** enthält das Skelett und die Gründung.
 
 Zeichnen Sie die Gründung auf der Ebene **Foundations**, oder geben Sie ihr einen eigenen Grundriss.
 
+**In den Grundrissen.** Ein Fundament liegt unter der Decke, darum zeichnet ein Grundriss es gestrichelt im Grundriss der Ebene, auf der es steht, wie ein Gebäudegrundriss zeigt, was darunter liegt. Um es geschnitten und gesehen zu sehen, nehmen Sie einen **Fundamentgrundriss**: im Projektbrowser legt das **+** neben **Grundrisse** einen für die aktive Ebene an (0,50 m darunter geschnitten, 2,50 m tief gesehen).
+
 ![Stützen, Träger und Einzelfundamente in 3D](shots/structure-3d.webp)
 
 ## Typen und Ecken

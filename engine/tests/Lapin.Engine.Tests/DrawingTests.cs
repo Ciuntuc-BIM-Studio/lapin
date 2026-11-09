@@ -331,6 +331,23 @@ public class DrawingTests
     }
 
     [Fact]
+    public void Footings_under_a_plans_range_are_drawn_dashed_in_the_plan_of_their_storey()
+    {
+        // A tester's report #115: a pad footing (−1.80 to −0.90) was in 3D only: no plan showed it.
+        var f = new Fixture(new ArchitectureModule(), new StructureModule());
+        var before = Segs(Draw(f, new JsonObject { ["storeyId"] = f.Storey }), "HIDDEN");
+        f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 2, ["y"] = 3 });
+        f.Run("structure.addStripFooting", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = -3, ["x2"] = 6, ["y2"] = -3 });
+        var d = Draw(f, new JsonObject { ["storeyId"] = f.Storey });
+        Assert.True(Segs(d, "HIDDEN") - before >= 8, "the pad's two steps and the strip");
+        // On the Foundations level of a new project (−1.50) a pad hangs under the level and is drawn there too.
+        var low = (string)f.Run("storey.create", new JsonObject { ["name"] = "Foundations", ["elevation"] = -1.5, ["height"] = 1.5 })!["id"]!;
+        f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = low, ["x"] = 8, ["y"] = 3 });
+        var dl = Draw(f, new JsonObject { ["storeyId"] = low });
+        Assert.True(Segs(dl, "HIDDEN") >= 4);
+    }
+
+    [Fact]
     public void A_roof_draws_its_outline_and_ridges_overhead_in_the_plan_of_its_storey()
     {
         var f = new Fixture();

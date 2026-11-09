@@ -22,6 +22,8 @@ La scheda **Struttura** contiene il telaio e le fondazioni.
 
 Disegna le fondazioni sul livello **Foundations**, oppure dai loro una pianta propria.
 
+**Nelle piante.** Una fondazione sta sotto il solaio, quindi una pianta la disegna tratteggiata nella pianta del livello su cui poggia, come la pianta di un edificio mostra ciò che c'è sotto. Per vederla tagliata e vista, usa una **pianta delle fondazioni**: nel browser di progetto il **+** accanto a **Piante** ne crea una per il livello attivo (taglio 0,50 m sotto, vista 2,50 m verso il basso).
+
 ![Pilastri, travi e plinti in 3D](shots/structure-3d.webp)
 
 ## Tipi e angoli

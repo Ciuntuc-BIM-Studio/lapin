@@ -829,6 +829,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Open Site', labelRo: 'Deschide Site', run: { kind: 'tab', id: 'site' } },
     source: 'report #118',
   },
+  {
+    id: 'footings-in-plan',
+    q: ['Pad footing elements added show only in 3D, not in the plan', 'Why do I not see my footings in the floor plan?', 'Where are the foundations drawn in 2D?'],
+    qRo: ['Fundațiile izolate apar doar în 3D, nu și în plan', 'De ce nu văd fundațiile în planul etajului?', 'Unde se desenează fundațiile în 2D?'],
+    keywords: ['footing', 'footings', 'pad', 'foundation', 'foundations', 'plan', '2d', 'dashed', 'hidden', 'fundatie', 'fundatii', 'izolata', 'izolate', 'talpa', 'cuzinet', 'cuzineti'],
+    a: 'A footing lies under the floor, so a plan draws it dashed (as the plan of a building shows what is under it) in the plan of the level it stands on: the Foundations level\'s, or the ground floor\'s. To see it cut and seen, draw a foundation plan: in the project browser, the + beside Floor plans makes one (cut 0.50 m under its level, seeing 2.50 m down); footings and strip stems show in it as in a foundations drawing. A floor or a wall drawn in a foundation plan goes on the level under it, at its own elevation.',
+    aRo: 'O fundație stă sub planșeu, deci planul o desenează întrerupt (cum arată planul unei clădiri ce e dedesubt) în planul nivelului pe care stă: al nivelului Foundations sau al parterului. Ca s-o vezi tăiată și văzută, desenează un plan de fundații: în browserul proiectului, + de lângă Floor plans face unul (tăiat la 0,50 m sub nivel, privind 2,50 m în jos); fundațiile izolate și soclurile continue apar în el ca într-un plan de fundații. O placă sau un perete desenat într-un plan de fundații stă pe nivelul de dedesubt, la cota lui.',
+    action: { label: 'Open Structure', labelRo: 'Deschide Structure', run: { kind: 'tab', id: 'structure' } },
+    source: 'report #115',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

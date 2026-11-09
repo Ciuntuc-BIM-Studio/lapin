@@ -22,6 +22,8 @@ Karta **Konstrukcja** zawiera szkielet i fundamenty.
 
 Rysuj fundamenty na poziomie **Fundamenty** albo daj im osobny rzut.
 
+**W rzutach.** Ława leży pod stropem, więc rzut rysuje ją linią przerywaną w rzucie poziomu, na którym stoi, jak rzut budynku pokazuje to, co jest pod nim. Aby zobaczyć ją przeciętą i widzianą, użyj **rzutu fundamentów**: w przeglądarce projektu **+** obok **Rzuty** tworzy go dla aktywnego poziomu (cięcie 0,50 m pod nim, widok 2,50 m w dół).
+
 ![Słupy, belki i stopy fundamentowe w 3D](shots/structure-3d.webp)
 
 ## Typy i narożniki

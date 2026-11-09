@@ -22,6 +22,8 @@ A guia **Estrutura** reúne a estrutura e as fundações.
 
 Desenhe as fundações no nível **Fundações**, ou dê a elas uma planta própria.
 
+**Nas plantas.** Uma sapata fica sob o piso, por isso uma planta desenha-a a tracejado na planta do nível em que assenta, como a planta de um edifício mostra o que está por baixo. Para a ver cortada e vista, use uma **planta de fundações**: no navegador do projeto, o **+** ao lado de **Plantas** cria uma para o nível ativo (corte 0,50 m abaixo, vista 2,50 m para baixo).
+
 ![Pilares, vigas e sapatas isoladas em 3D](shots/structure-3d.webp)
 
 ## Tipos e cantos

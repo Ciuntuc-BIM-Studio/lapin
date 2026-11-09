@@ -22,6 +22,8 @@ The **Structure** tab holds the frame and the foundations.
 
 Draw foundations on the **Foundations** level, or give them a plan of their own.
 
+**In the plans.** A footing lies under the floor, so a plan draws it dashed in the plan of the level it stands on, as a plan of a building shows what is under it. To see it cut and seen, use a **foundation plan**: in the project browser, the **+** beside **Floor plans** makes one for the active level (cut 0.50 m under it, seeing 2.50 m down).
+
 ![Columns, beams and pad footings in 3D](shots/structure-3d.webp)
 
 ## Types and corners

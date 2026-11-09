@@ -22,6 +22,8 @@ Tabul **Structură** are cadrele și fundațiile.
 
 Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
+**În planuri.** O fundație stă sub planșeu, deci planul o desenează întrerupt în planul nivelului pe care stă, cum arată planul unei clădiri ce e dedesubt. Ca s-o vezi tăiată și văzută, folosește un **plan de fundații**: în browserul proiectului, **+** de lângă **Planuri** face unul pentru nivelul activ (tăiat la 0,50 m sub el, privind 2,50 m în jos).
+
 ![Stâlpi, grinzi și fundații izolate în 3D](shots/structure-3d.webp)
 
 ## Tipuri și colțuri

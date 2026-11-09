@@ -22,6 +22,8 @@ Fanen **Konstruktion** rummer bærende konstruktion og fundamenter.
 
 Tegn fundamenter på niveauet **Foundations**, eller giv dem deres egen plan.
 
+**I planerne.** Et fundament ligger under dækket, så en plan tegner det stiplet i planen for det niveau, det står på, som en bygnings plan viser, hvad der er under den. For at se det snittet og set brug en **fundamentsplan**: i projektbrowseren laver **+** ved siden af **Etageplaner** en til det aktive niveau (snit 0,50 m under det, med udsyn 2,50 m ned).
+
 ![Søjler, bjælker og punktfundamenter i 3D](shots/structure-3d.webp)
 
 ## Typer og hjørner
