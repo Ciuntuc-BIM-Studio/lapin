@@ -1339,6 +1339,9 @@ export const PT: Record<string, string> = {
   'The main run': 'Linha principal',
   'The other part': 'Outra parte',
   'The kitchen’s layout': 'Disposição da cozinha',
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  'The drawing could not be read as DXF.': 'Não foi possível ler o desenho como DXF.',
+  'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'Pontos de levantamento importados com os números do ficheiro: parecem coordenadas de mapa, mas o seu sistema não é um que o Lapin conheça (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Indique-o em Gerenciar → Localização ou converta primeiro o desenho.',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

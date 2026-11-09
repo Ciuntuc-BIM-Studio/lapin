@@ -22,6 +22,26 @@ public class GeoTests
         Assert.Equal(lat, la, 1e-7);
     }
 
+    // PROJ 9 (pyproj): EPSG:4326 → EPSG:2154 (RGF93 v1 / Lambert-93; the datum shift is null, GRS 80 = WGS 84 to the centimetre).
+    [Theory]
+    [InlineData(3, 46.5, 700000.0, 6600000.0)]
+    [InlineData(2.2945, 48.8584, 648237.3015, 6862271.6816)]
+    [InlineData(-1.5536, 47.2184, 355577.8016, 6689723.1029)]
+    [InlineData(7.7521, 48.5734, 1050362.6954, 6840899.6472)]
+    [InlineData(5.3698, 43.2965, 892390.2215, 6247035.2568)]
+    [InlineData(-4.4861, 48.3904, 146632.9785, 6836262.3263)]
+    public void Lambert93_matches_PROJ_both_ways(double lon, double lat, double e, double n)
+    {
+        var (x, y) = GeoRef.FromWgs84(GeoRef.Lambert93, lon, lat);
+        Assert.Equal(e, x, 0.001);
+        Assert.Equal(n, y, 0.001);
+        var (lo, la) = GeoRef.ToWgs84("2154", e, n);
+        Assert.Equal(lon, lo, 1e-8);
+        Assert.Equal(lat, la, 1e-8);
+        Assert.Equal(GeoRef.Lambert93, GeoRef.Get("epsg:2154")!.Id);
+        Assert.Equal(GeoRef.Lambert93, GeoRef.Guess([(e, n)]));
+    }
+
     [Theory]
     [InlineData("EPSG:32635", 26.1025, 44.4268, 428561.4934, 4919670.0321)]
     [InlineData("EPSG:32635", 28.65, 44.17, 631909.5359, 4892078.2901)]
@@ -46,8 +66,8 @@ public class GeoTests
         var (lo, la) = GeoRef.ToWgs84(GeoRef.WebMercator, mx, my);
         Assert.Equal(26.1025, lo, 1e-9);
         Assert.Equal(44.4268, la, 1e-9);
-        Assert.Null(GeoRef.Get("EPSG:2154"));
-        Assert.Throws<ArgumentException>(() => GeoRef.ToWgs84("EPSG:2154", 0, 0));
+        Assert.Null(GeoRef.Get("EPSG:27572"));
+        Assert.Throws<ArgumentException>(() => GeoRef.ToWgs84("EPSG:27572", 0, 0));
     }
 
     [Fact]
@@ -74,6 +94,6 @@ public class GeoTests
         var geo = (JsonObject)f.Session.Query("project.geo", new JsonObject { ["x"] = 10, ["y"] = 5 })!;
         Assert.Equal(26.1025, (double)geo["lon"]!, 1e-4);
         Assert.Equal(44.4268, (double)geo["lat"]!, 1e-4);
-        Assert.Throws<CommandException>(() => f.Run("project.location", new JsonObject { ["crs"] = "EPSG:2154" }));
+        Assert.Throws<CommandException>(() => f.Run("project.location", new JsonObject { ["crs"] = "EPSG:27572" }));
     }
 }

@@ -1342,6 +1342,9 @@ export const PL: Record<string, string> = {
   'The main run': 'Ciągu głównym',
   'The other part': 'Drugiej części',
   'The kitchen’s layout': 'Układ kuchni',
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  'The drawing could not be read as DXF.': 'Nie udało się odczytać rysunku jako DXF.',
+  'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'Punkty pomiarowe zaimportowane z liczbami pliku: wyglądają na współrzędne mapy, ale ich układ nie jest znany Lapin (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Nazwij go w Zarządzaj → Lokalizacja lub najpierw przekonwertuj rysunek.',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -11,6 +11,7 @@ public sealed record Ellipsoid(string Name, double A, double InvF)
     public double E => Math.Sqrt(E2);
 
     public static readonly Ellipsoid Wgs84 = new("WGS 84", 6378137, 298.257223563);
+    public static readonly Ellipsoid Grs80 = new("GRS 1980", 6378137, 298.257222101);
     public static readonly Ellipsoid Krassowsky = new("Krassowsky 1940", 6378245, 298.3);
 
     /// <summary>Latitude and longitude (radians) and height to earth-centred cartesian coordinates.</summary>
@@ -87,7 +88,7 @@ public sealed record Crs(string Id, string Name, string Datum, string Projection
 /// </summary>
 public static class GeoRef
 {
-    public const string Wgs84 = "EPSG:4326", Stereo70 = "EPSG:3844", WebMercator = "EPSG:3857";
+    public const string Wgs84 = "EPSG:4326", Stereo70 = "EPSG:3844", WebMercator = "EPSG:3857", Lambert93 = "EPSG:2154";
 
     /// <summary>Pulkovo 1942(58) to WGS 84 for Romania (EPSG:15993, about 3 m).</summary>
     static readonly Helmert Stereo70Shift = new(2.329, -147.042, -92.08, 0.309, -0.325, -0.497, 5.69);
@@ -101,6 +102,7 @@ public static class GeoRef
         {
             4326 => new(Wgs84, "WGS 84", "WGS 84", "Geographic", true),
             3844 => new(Stereo70, "Pulkovo 1942(58) / Stereo 70", "Pulkovo 1942(58)", "Oblique Stereographic"),
+            2154 => new(Lambert93, "RGF93 v1 / Lambert-93", "RGF93 v1", "Lambert Conic Conformal (2SP)"),
             3857 => new(WebMercator, "WGS 84 / Pseudo-Mercator", "WGS 84", "Popular Visualisation Pseudo Mercator"),
             >= 32601 and <= 32660 => new($"EPSG:{code}", $"WGS 84 / UTM zone {code - 32600}N", "WGS 84", "Transverse Mercator"),
             >= 32701 and <= 32760 => new($"EPSG:{code}", $"WGS 84 / UTM zone {code - 32700}S", "WGS 84", "Transverse Mercator"),
@@ -109,7 +111,7 @@ public static class GeoRef
     }
 
     /// <summary>The systems offered for a project.</summary>
-    public static readonly string[] Offered = [Stereo70, "EPSG:32634", "EPSG:32635", "EPSG:32632", "EPSG:32633", Wgs84, WebMercator];
+    public static readonly string[] Offered = [Stereo70, Lambert93, "EPSG:32634", "EPSG:32635", "EPSG:32632", "EPSG:32633", Wgs84, WebMercator];
 
     static int Code(string id)
     {
@@ -126,6 +128,8 @@ public static class GeoRef
         switch (code)
         {
             case 4326: return (x, y);
+            // RGF93 is GRS 80 and WGS 84 to the centimetre: PROJ takes the longitude and latitude as they are.
+            case 2154: { var (lat, lon) = LccInverse(Ellipsoid.Grs80, Lambert93Params, x, y); return (Deg(lon), Deg(lat)); }
             case 3857: return (x / Ellipsoid.Wgs84.A * 180 / Math.PI, (2 * Math.Atan(Math.Exp(y / Ellipsoid.Wgs84.A)) - Math.PI / 2) * 180 / Math.PI);
             case 3844:
             {
@@ -152,6 +156,7 @@ public static class GeoRef
         switch (code)
         {
             case 4326: return (lon, lat);
+            case 2154: return LccForward(Ellipsoid.Grs80, Lambert93Params, Rad(lat), Rad(lon));
             case 3857: return (Rad(lon) * Ellipsoid.Wgs84.A, Math.Log(Math.Tan(Math.PI / 4 + Rad(lat) / 2)) * Ellipsoid.Wgs84.A);
             case 3844:
             {
@@ -239,6 +244,52 @@ public static class GeoRef
             lat = next;
         }
         return (lat, lam / G.C + Lon0);
+    }
+
+    // ─── Lambert conformal conic, two standard parallels (EPSG 9802; Snyder, Map Projections 15-1 to 15-11) ───
+
+    /// <summary>Latitude of origin, longitude of origin, first and second standard parallels (degrees), false easting and northing (m).</summary>
+    public readonly record struct Lcc(double Lat0, double Lon0, double Lat1, double Lat2, double Fe, double Fn);
+
+    /// <summary>RGF93 / Lambert-93 (EPSG:2154), France's.</summary>
+    static readonly Lcc Lambert93Params = new(46.5, 3, 44, 49, 700000, 6600000);
+
+    static double LccM(double e, double phi) { var s = Math.Sin(phi); return Math.Cos(phi) / Math.Sqrt(1 - e * e * s * s); }
+    static double LccT(double e, double phi) { var s = e * Math.Sin(phi); return Math.Tan(Math.PI / 4 - phi / 2) / Math.Pow((1 - s) / (1 + s), e / 2); }
+
+    static (double N, double F, double Rho0) LccConstants(Ellipsoid el, Lcc p)
+    {
+        var e = el.E;
+        var (m1, m2) = (LccM(e, Rad(p.Lat1)), LccM(e, Rad(p.Lat2)));
+        var (t1, t2, t0) = (LccT(e, Rad(p.Lat1)), LccT(e, Rad(p.Lat2)), LccT(e, Rad(p.Lat0)));
+        var n = (Math.Log(m1) - Math.Log(m2)) / (Math.Log(t1) - Math.Log(t2));
+        var f = m1 / (n * Math.Pow(t1, n));
+        return (n, f, el.A * f * Math.Pow(t0, n));
+    }
+
+    static (double X, double Y) LccForward(Ellipsoid el, Lcc p, double lat, double lon)
+    {
+        var (n, f, rho0) = LccConstants(el, p);
+        var rho = el.A * f * Math.Pow(LccT(el.E, lat), n);
+        var theta = n * (lon - Rad(p.Lon0));
+        return (p.Fe + rho * Math.Sin(theta), p.Fn + rho0 - rho * Math.Cos(theta));
+    }
+
+    static (double Lat, double Lon) LccInverse(Ellipsoid el, Lcc p, double x, double y)
+    {
+        var (n, f, rho0) = LccConstants(el, p);
+        var (dx, dy) = (x - p.Fe, rho0 - (y - p.Fn));
+        var rho = Math.Sign(n) * Math.Sqrt(dx * dx + dy * dy);
+        var theta = Math.Atan2(Math.Sign(n) * dx, Math.Sign(n) * dy);
+        var t = Math.Pow(rho / (el.A * f), 1 / n);
+        var e = el.E;
+        var lat = Math.PI / 2 - 2 * Math.Atan(t);
+        for (var i = 0; i < 12; i++)
+        {
+            var s = e * Math.Sin(lat);
+            lat = Math.PI / 2 - 2 * Math.Atan(t * Math.Pow((1 - s) / (1 + s), e / 2));
+        }
+        return (lat, theta / n + Rad(p.Lon0));
     }
 
     // ─── Transverse Mercator (Krüger's series to n⁶, as Karney gives them) ───
@@ -336,6 +387,8 @@ public static class GeoRef
         // survey, northings over 6 000 000) the zone cannot be told from the numbers: the project is tied without a
         // system, and Manage → Location names it (zones 32 and 33 are offered).
         if (x is > 160000 and < 840000 && y is > 4000000 and < 6000000) return "EPSG:32635";
+        // Lambert-93 over metropolitan France (eastings 100 km to 1 300 km, northings 6 000 km to 7 200 km).
+        if (x is > 100000 and < 1300000 && y is > 6000000 and < 7200000) return Lambert93;
         return null;
     }
 

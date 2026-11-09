@@ -1395,6 +1395,9 @@ export const LO: Record<string, string> = {
   'The main run': 'ແຖວຫຼັກ',
   'The other part': 'ສ່ວນອື່ນ',
   'The kitchen’s layout': 'ການຈັດວາງຂອງເຮືອນຄົວ',
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  'The drawing could not be read as DXF.': 'ບໍ່ສາມາດອ່ານແບບແຕ້ມເປັນ DXF ໄດ້.',
+  'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'ນຳເຂົ້າຈຸດສຳຫຼວດດ້ວຍຕົວເລກຂອງໄຟລ໌: ເບິ່ງຄືພິກັດແຜນທີ່ ແຕ່ລະບົບຂອງມັນບໍ່ແມ່ນລະບົບທີ່ Lapin ຮູ້ຈັກ (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). ໃສ່ຊື່ມັນໃນ ຈັດການ → ທີ່ຕັ້ງ ຫຼື ແປງແບບແຕ້ມກ່ອນ.',
 };
 
 /** Phrases with a number or a name in them. */

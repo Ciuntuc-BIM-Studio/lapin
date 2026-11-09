@@ -181,6 +181,11 @@ describe('Ask Lapin', () => {
     expect(best('how do I make the point cloud slice thicker for facades?')).toBe('point-cloud-views');
   });
 
+  it('answers the testers\' reports #115 to #118', () => {
+    expect(best('Unknown command "civil.dxfPointLayers" importing terrain points from a DXF')).toBe('dxf-survey-points');
+    expect(best('DXF exported from QGIS in EPSG:2154 Lambert-93')).toBe('dxf-survey-points');
+  });
+
   it('says why the storeys changed after an import (decision 406)', () => {
     expect(best('why did my storeys change after importing an IFC?')).toBe('import-storeys');
     expect(best('unde a disparut parterul dupa import')).toBe('import-storeys');

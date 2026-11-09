@@ -1336,6 +1336,9 @@ export const DA: Record<string, string> = {
   'The main run': 'Hovedrækken',
   'The other part': 'Den anden del',
   'The kitchen’s layout': 'Køkkenets indretning',
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  'The drawing could not be read as DXF.': 'Tegningen kunne ikke læses som DXF.',
+  'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'Opmålingspunkter importeret med filens egne tal: de ligner kortkoordinater, men deres system er ikke et, Lapin kender (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Angiv det i Administrer → Placering, eller konvertér tegningen først.',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

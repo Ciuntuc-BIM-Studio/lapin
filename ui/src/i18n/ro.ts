@@ -1340,6 +1340,9 @@ export const RO: Record<string, string> = {
   'The main run': 'Rândul principal',
   'The other part': 'Cealaltă parte',
   'The kitchen’s layout': 'Dispunerea bucătăriei',
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  'The drawing could not be read as DXF.': 'Desenul nu a putut fi citit ca DXF.',
+  'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'Punctele de teren au fost importate cu numerele fișierului: par coordonate de hartă, dar sistemul lor nu e unul pe care Lapin îl cunoaște (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Numește-l în Gestionare → Amplasament sau convertește mai întâi desenul.',
 };
 
 /** Phrases with a number or a name in them. */

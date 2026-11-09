@@ -46,9 +46,15 @@ public static class GeoImportCommands
             var layers = (a["layers"] as JsonArray)?.Select(x => (string?)x).OfType<string>().ToHashSet();
             var raw = GeoImport.DxfSurvey(doc, layers, a["contours"] is not JsonValue cv || !cv.TryGetValue<bool>(out var c) || c);
             if (raw.Count < 3) throw new CommandException($"The drawing has {raw.Count} surveyed point(s) with a height: a terrain needs three.");
-            var place = GeoImport.Placer(ctx, (string?)a["crs"], raw.Select(p => (p.X, p.Y)).ToList());
+            var sample = raw.Select(p => (p.X, p.Y)).ToList();
+            // Map-sized numbers in a system Lapin does not know (a DXF names none): kept as they are, and said.
+            var unknown = GeoRef.Get((string?)a["crs"]) == null && GeoRef.LooksLikeMap(sample) && GeoImport.Guess(sample) == null && Location.Crs(ctx.Model) == null;
+            var place = GeoImport.Placer(ctx, (string?)a["crs"], sample);
             var pts = raw.Select(p => { var q = place(p.X, p.Y); return new Vec3(q.X, q.Y, p.Z); }).ToList();
-            return Terrain(ctx, a, pts, (string?)a["name"] ?? "Terrain from DXF");
+            var result = Terrain(ctx, a, pts, (string?)a["name"] ?? "Terrain from DXF");
+            if (Location.Crs(ctx.Model) is { } system) result["crs"] = system;
+            if (unknown) result["unknownSystem"] = true;
+            return result;
         });
 
         // The layers of a DXF drawing with how many surveyed points each holds (to choose from before importing).

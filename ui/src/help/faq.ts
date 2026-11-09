@@ -819,6 +819,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Open Furniture types', labelRo: 'Deschide Furniture types', run: { kind: 'dialog', id: 'furnitureTypes' } },
     source: 'report #124',
   },
+  {
+    id: 'dxf-survey-points',
+    q: ['Importing terrain points from a DXF: Unknown command civil.dxfPointLayers', 'Which coordinate systems does Lapin know? EPSG:2154 Lambert-93', 'How do I import survey points from QGIS?'],
+    qRo: ['Import puncte de teren din DXF: Unknown command civil.dxfPointLayers', 'Ce sisteme de coordonate cunoaște Lapin? EPSG:2154 Lambert-93', 'Cum import puncte de teren din QGIS?'],
+    keywords: ['dxf', 'qgis', 'terrain', 'survey', 'points', 'lambert', '2154', 'epsg', 'crs', 'coordinate', 'coordinates', 'projection', 'stereo', 'utm', 'unknown', 'command', 'teren', 'puncte', 'topografice', 'coordonate', 'proiectie', 'sistem'],
+    a: 'Site → Points from DXF reads the POINTs with a height (and blocks, heights written beside points, contour lines), asks which layers to take, and makes a terrain tied to the map. Lapin knows Stereo 70 (EPSG:3844), Lambert-93 (EPSG:2154), UTM, Web Mercator and WGS 84; a DXF names no system, so map-sized numbers are recognised by their range. When they are in a system Lapin does not know, the points keep the file\'s own numbers and Lapin says so: name the system in Manage → Location, or convert the drawing first. „Unknown command” means an older build: update Lapin.',
+    aRo: 'Site → Points from DXF citește POINT-urile cu cotă (și blocurile, cotele scrise lângă puncte, curbele de nivel), întreabă ce straturi să ia și face un teren legat de hartă. Lapin cunoaște Stereo 70 (EPSG:3844), Lambert-93 (EPSG:2154), UTM, Web Mercator și WGS 84; un DXF nu numește niciun sistem, deci numerele de mărimea unei hărți se recunosc după interval. Când sunt într-un sistem pe care Lapin nu-l cunoaște, punctele păstrează numerele fișierului și Lapin spune asta: numește sistemul în Manage → Location sau convertește mai întâi desenul. „Unknown command” înseamnă o versiune mai veche: actualizează Lapin.',
+    action: { label: 'Open Site', labelRo: 'Deschide Site', run: { kind: 'tab', id: 'site' } },
+    source: 'report #118',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

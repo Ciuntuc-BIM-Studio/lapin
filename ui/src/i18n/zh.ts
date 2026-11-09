@@ -1339,6 +1339,9 @@ export const ZH: Record<string, string> = {
   'The main run': '主台面',
   'The other part': '另一部分',
   'The kitchen’s layout': '厨房的布局',
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  'The drawing could not be read as DXF.': '无法将该图纸读取为 DXF。',
+  'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': '已按文件自身的数值导入测量点：它们看起来像地图坐标，但其坐标系不是 Lapin 已知的（Stereo 70、Lambert-93、UTM、Web Mercator、WGS 84）。请在“管理 → 位置”中指定，或先转换图纸。',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
