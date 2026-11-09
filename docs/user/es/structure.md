@@ -30,6 +30,8 @@ Dibuje la cimentación en el nivel **Foundations**, o dele una planta propia.
 
 Una viga trazada de eje de pilar a eje de pilar se detiene en las caras de los pilares; su longitud, su volumen y sus estribos cuentan la luz libre entre ellas. **Inglete**, **A tope** e **Intercambiar** cambian cómo se encuentran dos vigas o dos zapatas. **Igualar tipo** (<kbd>MA</kbd>) copia el tipo de un elemento a otros, y **Crear similar** (<kbd>CS</kbd>) empieza a dibujar otro elemento del mismo tipo.
 
+Cualquier otro perfil viene de las bibliotecas: **De una biblioteca de perfiles…** busca en todas (ver [Bibliotecas de perfiles](profiles.md)).
+
 ## Zapatas corridas con perfil
 
 Un tipo de zapata corrida es el estándar, un murete con sus capas sobre una zapata, o cualquier perfil barrido a lo largo del eje de la zapata, como los perfiles de zapata de Revit. En **Tipos estructurales → Strip**, elija **Forma: Perfil** y un perfil: uno del catálogo (rectangular, escalonada en 2 o 3 escalones, con la cara superior inclinada, excéntrica con el murete en un borde, con murete), hecho con sus medidas, o uno del proyecto (**Gestionar → Perfiles**, donde también puede escribir sus vértices o leer un contorno dibujado). El punto de inserción del perfil va en el eje de la zapata, a la cota **Inferior** del tipo.

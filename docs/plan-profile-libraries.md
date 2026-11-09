@@ -47,7 +47,7 @@ Când fișierul dă valori, Lapin le păstrează pe ale fișierului și le compa
 ## Interfața
 
 - **Gestionare → Biblioteci de profile…**: bibliotecile în stânga (încorporată, pe calculator, folderele firmei, proiectul), profilele pe familii, standard și fel, cu căutare; profilul ales desenat cu cotele lui și tabelul proprietăților (calculat și din fișier, cu diferențele marcate); importul IFC, CSV/XLSX și contur (din desen sau DXF), exportul IFC și CSV, folderele firmei, Actualizează.
-- **Alegătoarele de profile**: tipurile metalice (Oțel → Tipuri metalice), tipurile de stâlpi și grinzi (Structură → Tipuri), hala (profilele cadrului) caută în toate bibliotecile după nume și familie; pentru baghetele pereților și fundațiile continue (profilele 2D) și pentru Studio un profil de bibliotecă se poate lua ca contur; montanții și traversele pereților cortină și profilele tâmplăriei își iau dimensiunile din profilul ales.
+- **Alegătoarele de profile**: tipurile metalice (Oțel → Tipuri metalice), tipurile de stâlpi și grinzi (Structură → Tipuri), hala (profilele cadrului și cele secundare) caută în toate bibliotecile după nume și familie; pentru baghetele pereților și fundațiile continue (profilele 2D) un profil de bibliotecă se ia ca exterior, fără goluri; pentru Studio, „Desenează-i conturul” îl pune ca polilinii închise în vederea din față, de extrudat sau derulat; montanții și traversele pereților cortină și tocul tâmplăriei își iau doar lățimea și adâncimea din profilul ales (sunt dreptunghiuri).
 
 ## Dincolo de oțel
 

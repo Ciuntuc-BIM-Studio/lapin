@@ -62,7 +62,8 @@ export function formatValue(v: number | undefined, factor: number): string {
   const x = v / factor;
   const a = Math.abs(x);
   const digits = a >= 1000 ? 0 : a >= 100 ? 1 : a >= 10 ? 2 : a >= 1 ? 3 : 4;
-  return x.toFixed(digits).replace(/\.?0+$/, (m) => (m.startsWith('.') ? '' : m));
+  const text = x.toFixed(digits);
+  return Number(text) === 0 ? '0' : text;
 }
 
 /** Millimetres, a decimal only where needed (7.1, 10.7, 300). */
@@ -181,6 +182,22 @@ export function fit(rings: Ring[], w: number, h: number, pad: number): { k: numb
 /** An SVG path of the rings (even-odd: holes stay open). */
 export function ringsPath(rings: Ring[], k: number, x0: number, y0: number): string {
   return rings.filter((r) => r.length >= 3).map((r) => `M${r.map(([x, y]) => `${(x0 + x * k).toFixed(2)},${(y0 - y * k).toFixed(2)}`).join('L')}Z`).join('');
+}
+
+/** A profile's outside as the project's 2D profiles keep it (`LapinProfile`: wall sweeps, reveals, strip footings), the insertion point bottom left, bottom middle for a footing; holes are left out. */
+export function asSweepShape(rings: Ring[], use: 'sweep' | 'reveal' | 'footing', name: string): { name: string; points: [number, number][]; insertion: [number, number] } | null {
+  const area = (r: Ring) => r.reduce((a, p, i) => { const q = r[(i + 1) % r.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0) / 2;
+  const outs = rings.filter((r) => r.length >= 3 && area(r) > 0);
+  if (!outs.length) return null;
+  const outer = outs.reduce((a, b) => (area(b) > area(a) ? b : a));
+  const xs = outer.map((p) => p[0]), ys = outer.map((p) => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys);
+  return { name, points: outer.map(([x, y]) => [Math.round((x - minX) * 1e6) / 1e6, Math.round((y - minY) * 1e6) / 1e6]), insertion: use === 'footing' ? [(maxX - minX) / 2, 0] : [0, 0] };
+}
+
+/** A profile added to a library's list: one of the same name replaced, the list in natural order. */
+export function withProfile(library: LibraryJson, p: ProfileJson): LibraryJson {
+  return { ...library, profiles: [...library.profiles.filter((x) => x.name.toLowerCase() !== p.name.toLowerCase()), p].sort((a, b) => naturalCompare(a.name, b.name)) };
 }
 
 /** The dimensions a profile's drawing writes beside it, by its kind (mm). */

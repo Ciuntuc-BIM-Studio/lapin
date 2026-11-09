@@ -30,6 +30,8 @@ Desenhe as fundações no nível **Fundações**, ou dê a elas uma planta próp
 
 Vigas e sapatas se unem sozinhas onde se encontram, um canto em meia-esquadria. Uma viga desenhada de eixo de pilar a eixo de pilar para nas faces dos pilares; o seu comprimento, volume e estribos contam o vão livre entre eles. **Meia-esquadria**, **Topo** e **Inverter** mudam como duas vigas ou duas sapatas se encontram. **Corresponder tipo** (<kbd>MA</kbd>) copia o tipo de um elemento para outros, e **Criar similar** (<kbd>CS</kbd>) começa a desenhar outro elemento do mesmo tipo.
 
+Qualquer outro perfil vem das bibliotecas: **De uma biblioteca de perfis…** pesquisa em todas (ver [Bibliotecas de perfis](profiles.md)).
+
 ## Sapatas corridas com perfil
 
 Um tipo de sapata corrida é o padrão, um murete com as suas camadas sobre uma sapata, ou qualquer perfil varrido ao longo do eixo da sapata, como os perfis de fundação do Revit. Em **Tipos estruturais → Strip**, escolha **Forma: Perfil** e um perfil: um do catálogo (retangular, escalonada em 2 ou 3 degraus, com a face superior inclinada, excêntrica com o murete num bordo, com murete) com as suas medidas, ou um do projeto (**Gerenciar → Perfis**, onde também pode escrever os seus vértices ou ler um contorno desenhado). O ponto de inserção do perfil fica no eixo da sapata, à cota **Inferior** do tipo.

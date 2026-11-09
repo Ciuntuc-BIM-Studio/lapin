@@ -61,8 +61,22 @@ public static class ProjectProfiles
     }
 
     /// <summary>The types whose section was made of the copy <paramref name="id"/>.</summary>
-    public static List<Entity> TypesUsing(IModelView m, string id) =>
-        m.Entities.Where(e => (e.Attrs["section"] as JsonObject)?["profileId"]?.GetValue<string>() == id).ToList();
+    public static List<Entity> TypesUsing(IModelView m, string id) => m.Entities.Where(e => e.Attrs.Any(kv => Holds(kv.Value, id, 0))).ToList();
+
+    /// <summary>Whether a section of the copy is this attribute, or under it (a steel hall's frames keep their sections in their spec).</summary>
+    static bool Holds(JsonNode? n, string id, int depth) => n is JsonObject o && ((o["profileId"] is JsonValue v && v.TryGetValue<string>(out var s) && s == id)
+        || depth < 2 && o.Any(kv => kv.Value is JsonObject && Holds(kv.Value, id, depth + 1)));
+
+    /// <summary>Every section of the copy under an attribute replaced by the profile's new one.</summary>
+    static void Replace(JsonObject attrs, string id, SectionProfile p, int depth)
+    {
+        foreach (var key in attrs.Select(kv => kv.Key).ToList())
+        {
+            if (attrs[key] is not JsonObject o) continue;
+            if (o["profileId"] is JsonValue v && v.TryGetValue<string>(out var s) && s == id) attrs[key] = p.SectionJson(id);
+            else if (depth < 2) Replace(o, id, p, depth + 1);
+        }
+    }
 
     /// <summary>The copy replaced by <paramref name="p"/> (the library's newer one): every type made of it takes the new section, its elements following.</summary>
     public static int Update(ICommandContext ctx, Entity copy, SectionProfile p)
@@ -76,7 +90,7 @@ public static class ProjectProfiles
         foreach (var t in types)
         {
             var ta = t.CloneAttrs();
-            ta["section"] = p.SectionJson(copy.Id);
+            Replace(ta, copy.Id, p, 0);
             ctx.Replace(t.With(attrs: ta));
         }
         return types.Count;

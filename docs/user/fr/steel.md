@@ -45,6 +45,8 @@ Sur un **plan** le contour est la barre vue de dessus : sa largeur est celle des
 
 ![Le dialogue Types acier](shots/steel-types.webp)
 
+Tout autre profilé vient des bibliothèques : **D'une bibliothèque de profilés…** les parcourt toutes (voir [Bibliothèques de profilés](profiles.md)).
+
 Les profilés creux sont vides à l’intérieur, dans la vue 3D, les coupes et les quantités. Les profilés formés à froid sont des formes génériques avec leurs dimensions, aux plis vifs, sans catalogue de fabricant.
 
 ![Des barres en 3D](shots/steel-3d.webp)

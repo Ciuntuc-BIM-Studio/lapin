@@ -45,6 +45,8 @@ Im **Grundriss** ist der Umriss der Stab von oben gesehen: seine Breite ist die 
 
 ![Der Dialog Stahltypen](shots/steel-types.webp)
 
+Jedes andere Profil kommt aus den Bibliotheken: **Aus einer Profilbibliothek…** durchsucht sie alle (siehe [Profilbibliotheken](profiles.md)).
+
 Hohlprofile sind innen hohl, in der 3D-Ansicht, in den Schnitten und in den Mengen. Die kaltgeformten Profile sind generische Formen mit Maßen, scharf gekantet, ohne Herstellerkatalog.
 
 ![Stäbe in 3D](shots/steel-3d.webp)

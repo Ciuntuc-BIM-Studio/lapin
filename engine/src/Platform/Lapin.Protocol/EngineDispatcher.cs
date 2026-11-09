@@ -714,6 +714,46 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 lib["checkCount"] = read.Checks.Count;
                 return (lib, null);
             }
+            case "profiles.readFolder":
+            {
+                // A firm's folder of profile libraries (a local, network or synced one): each .lapinprofiles file in it; a bad file said, never fatal.
+                var folder = HostFiles.Check((string?)p["path"] ?? throw new CommandException("The folder's path is missing."));
+                var libraries = new JsonArray();
+                var problems = new JsonArray();
+                var exists = Directory.Exists(folder);
+                if (!exists) problems.Add((JsonNode)$"The folder {folder} cannot be reached.");
+                else
+                    foreach (var file in Directory.EnumerateFiles(folder, $"*.{Lapin.Platform.ProfileLibraries.ProfileLibrary.Extension}").Order(StringComparer.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            var lib = Lapin.Platform.ProfileLibraries.ProfileLibrary.From(JsonNode.Parse(File.ReadAllText(file))) ?? throw new InvalidDataException("not a profile library");
+                            libraries.Add((JsonNode)new JsonObject { ["file"] = file, ["modified"] = File.GetLastWriteTime(file).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture), ["library"] = lib.ToJson(summaries: true) });
+                        }
+                        catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+                        {
+                            problems.Add((JsonNode)$"{Path.GetFileName(file)}: {e.Message}");
+                        }
+                    }
+                return (new JsonObject { ["folder"] = folder, ["exists"] = exists, ["libraries"] = libraries, ["problems"] = problems }, null);
+            }
+            case "profiles.writeFolder":
+            {
+                // A library written into a folder as <its name>.lapinprofiles (one of that name replaced), through a temporary file so a reader never sees half of it.
+                var folder = HostFiles.Check((string?)p["path"] ?? throw new CommandException("The folder's path is missing."));
+                var lib = Lapin.Platform.ProfileLibraries.ProfileLibrary.From(p["library"]) ?? throw new CommandException("No library was sent.");
+                if (!Directory.Exists(folder)) throw new CommandException($"The folder {folder} cannot be reached.");
+                var safe = string.Concat(lib.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) || c is '/' or '\\' or ':' ? '_' : c)).Trim();
+                var target = Path.Combine(folder, $"{(safe.Length > 0 ? safe : "profiles")}.{Lapin.Platform.ProfileLibraries.ProfileLibrary.Extension}");
+                try
+                {
+                    var temp = target + ".tmp";
+                    File.WriteAllText(temp, lib.ToJson().ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+                    File.Move(temp, target, true);
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException) { throw new CommandException($"The library could not be written there: {e.Message}"); }
+                return (new JsonObject { ["file"] = target }, null);
+            }
             case "profiles.exportIfc":
             {
                 // A library (or the project's profiles) as an IFC4 profile library file.

@@ -21,6 +21,7 @@ import { t, useLang } from '../../i18n';
 import { baysText, fit, parseBays, parseBracing, secondaryName, secondaryProfiles, secondaryValue, summaryRows, type HallAttrs, type HallPreview, type HaunchDto, type PreviewItem, type PreviewRole } from './hall';
 import type { SectionDto } from './sections';
 import { anchorCounts, BOLT_SIZES, boltLabel, GRADES, type NodeParamsDto } from './nodes';
+import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 
 /** The hall the configurator is open on; null: a new one. */
 export const useHall = create<{ id: string | null }>(() => ({ id: null }));
@@ -110,6 +111,7 @@ export function HallDialog() {
   const styles = (info?.catalogs['steel.hallStyles'] as unknown as Style[] | undefined) ?? [];
   const own = (project?.props.hallStyles as Style[] | undefined) ?? [];
   const catalogue = (info?.catalogs['steel.profiles'] as unknown as SectionDto[] | undefined) ?? [];
+  const [libraryFor, setLibraryFor] = useState<string | null>(null);
   const profiles = catalogue.filter((p) => p.kind === 'I' || p.kind === 'RHS');
   const [tab, setTab] = useState<Tab>('frame');
   const [draft, setDraft] = useState<Draft>({ attrs: {} });
@@ -168,13 +170,23 @@ export function HallDialog() {
   };
 
   const mono = value('roof') === 'mono';
+  // A profile of the libraries (docs/plan-profile-libraries.md), copied into the project and kept by the hall as a section of it.
+  const fromLibrary = (k: string, label: string, kinds: readonly string[]) => (
+    <label className="field-line roof-field"><span className="eyebrow">{label}</span>
+      <ProfilePickerField testId={`hall-${k}-library`} kinds={kinds} onPick={(p, library) => {
+        void (execute('profiles.use', { profile: p, library }) as Promise<{ section?: unknown } | null>).then((r) => { if (r?.section) set(k as never, r.section as never); setLibraryFor(null); });
+      }} />
+    </label>
+  );
   const profile = (k: 'column' | 'rafter' | 'post' | 'gableRafter', label: string) => {
     const name = profileName(value(k));
+    if (libraryFor === k) return fromLibrary(k, label, ['I', 'RHS']);
     return (
       <label className="field-line roof-field"><span className="eyebrow">{label}</span>
-        <select value={name} data-field={`hall-${k}`} onChange={(e) => set(k, e.target.value)}>
+        <select value={name} data-field={`hall-${k}`} onChange={(e) => { if (e.target.value === '@library') setLibraryFor(k); else set(k, e.target.value); }}>
           {!profiles.some((p) => p.name === name) && <option value={name} data-no-i18n>{name}</option>}
           {profiles.map((p) => <option key={p.name} value={p.name} data-no-i18n>{p.name}</option>)}
+          <option value="@library">From a profile library…</option>
         </select>
       </label>
     );
@@ -189,11 +201,13 @@ export function HallDialog() {
   const secondary = (k: 'purlin' | 'rail' | 'brace' | 'eavesBeamProfile', label: string) => {
     const name = secondaryName(value(k));
     const names = secondaryProfiles(k === 'eavesBeamProfile' ? 'eaves' : k, catalogue as unknown as { kind: string; name?: string }[]);
+    if (libraryFor === k) return fromLibrary(k, label, k === 'brace' ? ['L', 'CHS', 'circle', 'RHS'] : ['Z', 'C', 'SIGMA', 'U', 'I', 'RHS']);
     return (
       <label className="field-line roof-field"><span className="eyebrow">{label}</span>
-        <select value={name} data-field={`hall-${k}`} onChange={(e) => set(k, secondaryValue(e.target.value))}>
+        <select value={name} data-field={`hall-${k}`} onChange={(e) => { if (e.target.value === '@library') setLibraryFor(k); else set(k, secondaryValue(e.target.value)); }}>
           {!names.includes(name) && <option value={name} data-no-i18n>{name}</option>}
           {names.map((n) => <option key={n} value={n} data-no-i18n>{n}</option>)}
+          <option value="@library">From a profile library…</option>
         </select>
       </label>
     );

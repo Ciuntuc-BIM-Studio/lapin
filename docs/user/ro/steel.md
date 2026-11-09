@@ -45,6 +45,8 @@ Pe un **plan**, conturul e bara văzută de sus: lățimea e a tălpilor, iar un
 
 ![Dialogul Tipuri metalice](shots/steel-types.webp)
 
+Orice alt profil vine din biblioteci: **Dintr-o bibliotecă de profile…** caută în toate (vezi [Biblioteci de profile](profiles.md)).
+
 Profilele tubulare sunt goale în interior, în vederea 3D, în secțiuni și în cantități. Profilele formate la rece sunt forme generice cu dimensiuni, cu îndoiturile în unghi drept, fără catalog de producător.
 
 ![Bare în 3D](shots/steel-3d.webp)

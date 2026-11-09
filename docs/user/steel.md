@@ -46,6 +46,8 @@ On a **plan** the outline is the member seen from above: its width is the flange
 
 ![The Steel types dialog](shots/steel-types.webp)
 
+Any other profile comes from the libraries: **From a profile library…** searches them all (see [Profile libraries](profiles.md)).
+
 Hollow sections are open inside, in the 3D view, the sections and the quantities. The cold-formed sections are generic shapes with dimensions, their bends sharp, without a manufacturer's catalogue.
 
 ![Members in 3D](shots/steel-3d.webp)

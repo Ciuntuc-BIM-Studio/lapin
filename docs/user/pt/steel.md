@@ -45,6 +45,8 @@ Numa **planta** o contorno é a barra vista de cima: sua largura é a das abas, 
 
 ![O diálogo Tipos de aço](shots/steel-types.webp)
 
+Qualquer outro perfil vem das bibliotecas: **De uma biblioteca de perfis…** pesquisa em todas (ver [Bibliotecas de perfis](profiles.md)).
+
 Os perfis tubulares são ocos por dentro, na vista 3D, nos cortes e nas quantidades. Os perfis formados a frio são formas genéricas com dimensões, de dobras vivas, sem catálogo de fabricante.
 
 ![Barras em 3D](shots/steel-3d.webp)

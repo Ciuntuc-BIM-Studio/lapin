@@ -45,6 +45,8 @@ Su una **pianta** il contorno è l’asta vista dall’alto: la sua larghezza è
 
 ![La finestra Tipi in acciaio](shots/steel-types.webp)
 
+Ogni altro profilo viene dalle librerie: **Da una libreria di profili…** le cerca tutte (vedi [Librerie di profili](profiles.md)).
+
 I profili cavi sono vuoti all’interno, nella vista 3D, nelle sezioni e nelle quantità. I profili formati a freddo sono forme generiche con dimensioni, a pieghe vive, senza catalogo del produttore.
 
 ![Aste in 3D](shots/steel-3d.webp)

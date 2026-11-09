@@ -45,6 +45,8 @@ Na **rzucie** obrys to pręt widziany z góry: jego szerokość to szerokość p
 
 ![Okno Typy stalowe](shots/steel-types.webp)
 
+Każdy inny profil pochodzi z bibliotek: **Z biblioteki profili…** przeszukuje je wszystkie (zob. [Biblioteki profili](profiles.md)).
+
 Profile zamknięte są puste w środku, w widoku 3D, w przekrojach i w ilościach. Profile gięte na zimno to ogólne kształty z wymiarami, o ostrych zagięciach, bez katalogu producenta.
 
 ![Pręty w 3D](shots/steel-3d.webp)

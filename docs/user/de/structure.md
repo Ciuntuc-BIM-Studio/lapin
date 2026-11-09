@@ -30,6 +30,8 @@ Zeichnen Sie die Gründung auf der Ebene **Foundations**, oder geben Sie ihr ein
 
 Träger und Fundamente verbinden sich von selbst, wo sie aufeinandertreffen, eine Ecke als Gehrung. Ein von Stützenachse zu Stützenachse gezeichneter Träger endet an den Stützenflächen; seine Länge, sein Volumen und seine Bügel zählen die lichte Weite dazwischen. **Gehrung**, **Stumpf** und **Tauschen** ändern, wie zwei Träger oder zwei Fundamente aufeinandertreffen. **Typ übertragen** (<kbd>MA</kbd>) überträgt den Typ eines Elements auf andere, und **Ähnliches erstellen** (<kbd>CS</kbd>) beginnt, ein weiteres Element desselben Typs zu zeichnen.
 
+Jedes andere Profil kommt aus den Bibliotheken: **Aus einer Profilbibliothek…** durchsucht sie alle (siehe [Profilbibliotheken](profiles.md)).
+
 ## Streifenfundamente mit Profil
 
 Ein Streifenfundamenttyp ist entweder der Standardtyp, eine Sockelwand mit ihren Schichten auf einem Fundament, oder ein beliebiges Profil, das entlang der Fundamentachse geführt wird, wie die Fundamentprofile in Revit. Wählen Sie in **Tragwerkstypen → Strip** **Form: Profil** und ein Profil: eines aus dem Katalog (rechteckig, in 2 oder 3 Stufen, mit geneigter Oberseite, exzentrisch mit der Sockelwand an einem Rand, mit Sockelwand) mit seinen Maßen, oder eines des Projekts (**Verwalten → Profile**, wo Sie auch seine Eckpunkte eingeben oder eine gezeichnete Kontur einlesen können). Der Einfügepunkt des Profils liegt auf der Fundamentachse in der Höhe **Unten** des Typs.

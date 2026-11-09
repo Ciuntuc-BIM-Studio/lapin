@@ -30,6 +30,8 @@ Dessinez les fondations sur le niveau **Foundations**, ou donnez-leur un plan à
 
 Les poutres et les semelles se joignent d’elles-mêmes là où elles se rencontrent, un angle en onglet. Une poutre tracée d’axe de poteau à axe de poteau s’arrête aux faces des poteaux ; sa longueur, son volume et ses cadres comptent la portée libre entre elles. **Onglet**, **Bout à bout** et **Permuter** changent la façon dont deux poutres ou deux semelles se rencontrent. **Appliquer le type** (<kbd>MA</kbd>) copie le type d’un élément vers d’autres, et **Créer un similaire** (<kbd>CS</kbd>) commence le dessin d’un autre élément du même type.
 
+Tout autre profilé vient des bibliothèques : **D'une bibliothèque de profilés…** les parcourt toutes (voir [Bibliothèques de profilés](profiles.md)).
+
 ## Semelles filantes à profil
 
 Un type de semelle filante est soit le type standard, un voile avec ses couches sur une semelle, soit n'importe quel profil balayé le long de l'axe de la semelle, comme les profils de semelle de Revit. Dans **Types structurels → Strip**, choisissez **Forme : Profil** et un profil : un profil du catalogue (rectangulaire, à 2 ou 3 redans, à dessus incliné, excentrée avec son voile sur un bord, avec voile) avec ses dimensions, ou un profil du projet (**Gérer → Profils**, où vous pouvez aussi saisir ses sommets ou lire un contour dessiné). Le point d'insertion du profil se place sur l'axe de la semelle, au niveau **Bas** du type.

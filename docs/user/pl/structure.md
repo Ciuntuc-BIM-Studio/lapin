@@ -30,6 +30,8 @@ Rysuj fundamenty na poziomie **Fundamenty** albo daj im osobny rzut.
 
 Belki i fundamenty łączą się same tam, gdzie się spotykają, narożniki na ucios. Belka narysowana od osi słupa do osi słupa kończy się na licach słupów; jej długość, objętość i strzemiona liczą się w świetle między nimi. **Na ukos**, **Na styk** i **Zamień** zmieniają sposób, w jaki spotykają się dwie belki lub dwa fundamenty. **Dopasuj typ** (<kbd>MA</kbd>) kopiuje typ jednego elementu na inne, a **Utwórz podobny** (<kbd>CS</kbd>) zaczyna rysowanie kolejnego elementu tego samego typu.
 
+Każdy inny profil pochodzi z bibliotek: **Z biblioteki profili…** przeszukuje je wszystkie (zob. [Biblioteki profili](profiles.md)).
+
 ## Ławy fundamentowe z profilem
 
 Typ ławy fundamentowej to typ standardowy, czyli ściana fundamentowa z warstwami na ławie, albo dowolny profil przeciągnięty wzdłuż osi ławy, jak profile fundamentów w Revit. W **Typy konstrukcyjne → Strip** wybierz **Kształt: Profil** i profil: jeden z katalogu (prostokątna, schodkowa z 2 lub 3 stopniami, ze skośną górą, mimośrodowa ze ścianą przy jednej krawędzi, ze ścianą fundamentową) z jego wymiarami, albo jeden z profili projektu (**Zarządzaj → Profile**, gdzie można też wpisać jego wierzchołki lub odczytać narysowany kontur). Punkt wstawienia profilu leży na osi ławy, na poziomie **Dół** typu.

@@ -25,6 +25,7 @@ import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
 import { JoineryPreview3D } from './JoineryPreview3D';
 import { merge, neighbour, normalised, resized, shifted, split, type GridSpec } from './joineryGrid';
+import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
 /** A profile system's finer shapes (decision 370): the frame's rebate, the sash lapping over it, glazing beads, a drip. */
@@ -718,6 +719,7 @@ export function JoineryDialog() {
               <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v } })} />
               <Mm label="Mullion width" value={spec.frame.mullion} onChange={(v) => set({ frame: { ...spec.frame, mullion: v } })} />
               <Mm label="Transom width" value={spec.frame.transom} onChange={(v) => set({ frame: { ...spec.frame, transom: v } })} />
+              <label className="field-line"><span className="eyebrow">Frame from a library</span><ProfilePickerField testId="joinery-frame-library" onPick={(p) => { if (p.b && p.h) set({ frame: { ...spec.frame, width: p.b, depth: p.h } }); }} /></label>
               <label className="field-line"><span className="eyebrow">Profile system</span>
                 <select data-field="profile-system" data-i18n-ctx="profiles" value={spec.profile?.system ?? ''} title="Sets the frame, mullion and sash sizes and the profile's finer shapes; each stays editable" onChange={(e) => {
                   const sys = catalog.profileSystems?.[e.target.value];

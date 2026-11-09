@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { definition, families, fieldOf, formatValue, matches, newerInLibrary, rememberChoice, rememberedChoice, search, setColumn, type LibraryEntry, type ProfileJson, type ProjectCopy } from './model';
+import { asSweepShape, withProfile, definition, families, fieldOf, formatValue, matches, newerInLibrary, rememberChoice, rememberedChoice, search, setColumn, type LibraryEntry, type ProfileJson, type ProjectCopy } from './model';
 
 const store = new Map<string, string>();
 vi.stubGlobal('localStorage', {
@@ -53,8 +53,22 @@ describe('profile libraries', () => {
 
   it('show values in their units to four figures', () => {
     expect(formatValue(53.81e-4, 1e-4)).toBe('53.81');
+    expect(formatValue(-1e-12, 1e-3)).toBe('0');
     expect(formatValue(8356e-8, 1e-8)).toBe('8356');
     expect(formatValue(0.1259e-6, 1e-9)).toBe('125.9');
     expect(formatValue(undefined, 1)).toBe('');
+  });
+
+  it('make a sweep\'s 2D profile of the outside, leaving the holes', () => {
+    const shape = asSweepShape([[[-0.05, -0.03], [0.05, -0.03], [0.05, 0.03], [-0.05, 0.03]], [[-0.04, -0.02], [-0.04, 0.02], [0.04, 0.02], [0.04, -0.02]]], 'footing', 'Tube');
+    expect(shape?.points).toEqual([[0, 0], [0.1, 0], [0.1, 0.06], [0, 0.06]]);
+    expect(shape?.insertion[0]).toBeCloseTo(0.05);
+    expect(asSweepShape([], 'sweep', 'x')).toBeNull();
+  });
+
+  it('add a profile to a library, one of its name replaced, in order', () => {
+    const l = withProfile({ name: 'F', profiles: [ipe(300), ipe(80)] }, ipe(300, 9));
+    expect(l.profiles.map((p) => p.name)).toEqual(['IPE 80', 'IPE 300']);
+    expect(l.profiles[1].tw).toBe(0.009);
   });
 });

@@ -30,6 +30,8 @@ Tegn fundamenter på niveauet **Foundations**, eller giv dem deres egen plan.
 
 Bjælker og fundamenter sammenføjes af sig selv, hvor de mødes, et hjørne som geringssamling. En bjælke tegnet fra søjleakse til søjleakse stopper ved søjlernes flader; dens længde, volumen og bøjler tæller den frie spændvidde imellem dem. **Geringssamling**, **Stødsamling** og **Byt om** ændrer, hvordan to bjælker eller to fundamenter mødes. **Matchtype** (<kbd>MA</kbd>) kopierer ét elements type til andre, og **Opret lignende** (<kbd>CS</kbd>) begynder at tegne et nyt element af samme type.
 
+Enhver anden profil kommer fra bibliotekerne: **Fra et profilbibliotek…** søger i dem alle (se [Profilbiblioteker](profiles.md)).
+
 ## Stribefundamenter med profil
 
 En stribefundamenttype er enten standardtypen, en sokkelvæg med sine lag på et fundament, eller en hvilken som helst profil ført langs fundamentets akse, som Revits fundamentprofiler. I **Konstruktionstyper → Strip** vælger du **Form: Profil** og en profil: én fra kataloget (rektangulær, trappet i 2 eller 3 trin, med skrå overside, excentrisk med sokkelvæggen i den ene kant, med sokkelvæg) med sine mål, eller én af projektets (**Administrer → Profiler**, hvor du også kan indtaste dens hjørner eller læse en tegnet kontur). Profilens indsættelsespunkt ligger på fundamentets akse i typens **Bund**-kote.

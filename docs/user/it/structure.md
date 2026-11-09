@@ -30,6 +30,8 @@ Disegna le fondazioni sul livello **Foundations**, oppure dai loro una pianta pr
 
 Travi e fondazioni si uniscono da sole dove si incontrano, con un angolo a quartabuono. Una trave disegnata da asse di pilastro ad asse di pilastro si ferma alle facce dei pilastri; la sua lunghezza, il suo volume e le sue staffe contano la luce netta tra di essi. **A quartabuono**, **Di testa** e **Scambia** cambiano il modo in cui si incontrano due travi o due fondazioni. **Corrispondenza tipo** (<kbd>MA</kbd>) copia il tipo di un elemento su altri, e **Crea simile** (<kbd>CS</kbd>) avvia il disegno di un altro elemento dello stesso tipo.
 
+Ogni altro profilo viene dalle librerie: **Da una libreria di profili…** le cerca tutte (vedi [Librerie di profili](profiles.md)).
+
 ## Travi di fondazione con profilo
 
 Un tipo di trave di fondazione è quello standard, un muretto con i suoi strati su una fondazione, oppure qualsiasi profilo estruso lungo l'asse della fondazione, come i profili di fondazione di Revit. In **Tipi strutturali → Strip**, scegli **Forma: Profilo** e un profilo: uno del catalogo (rettangolare, a 2 o 3 gradoni, con la faccia superiore inclinata, eccentrica con il muretto su un bordo, con muretto) con le sue misure, oppure uno del progetto (**Gestisci → Profili**, dove puoi anche digitarne i vertici o leggere un contorno disegnato). Il punto di inserimento del profilo va sull'asse della fondazione, alla quota **Inferiore** del tipo.

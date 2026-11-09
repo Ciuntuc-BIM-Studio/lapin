@@ -18,6 +18,7 @@ import { formatLengths, parseLengths } from '../core/format';
 import { PendingDialog } from '../core/PendingDialog';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { deleteType } from '../core/deleteType';
+import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 
 interface Grid { mode: 'count' | 'spacing' | 'max' | 'offsets'; count?: number; spacing?: number; justify?: 'start' | 'center' | 'end'; offsets?: number[] }
 interface Section { width: number; depth: number }
@@ -155,6 +156,8 @@ export function CurtainWallDialog() {
               <Mm label="Mullion depth" value={spec.mullion.depth} onChange={(v) => set({ mullion: { ...spec.mullion, depth: v } })} />
               <Mm label="Transom width" value={spec.transom.width} onChange={(v) => set({ transom: { ...spec.transom, width: v } })} />
               <Mm label="Transom depth" value={spec.transom.depth} onChange={(v) => set({ transom: { ...spec.transom, depth: v } })} />
+              <label className="field-line"><span className="eyebrow">Mullion from a library</span><ProfilePickerField testId="curtain-mullion-library" onPick={(p) => { if (p.b && p.h) set({ mullion: { width: p.b, depth: p.h } }); }} /></label>
+              <label className="field-line"><span className="eyebrow">Transom from a library</span><ProfilePickerField testId="curtain-transom-library" onPick={(p) => { if (p.b && p.h) set({ transom: { width: p.b, depth: p.h } }); }} /></label>
               <label className="field-line"><span className="eyebrow">Edge members</span><input type="checkbox" checked={spec.edge} onChange={(e) => set({ edge: e.target.checked })} /></label>
               <label className="field-line"><span className="eyebrow">Panels</span>
                 <select value={spec.panel.kind} onChange={(e) => set({ panel: { ...spec.panel, kind: e.target.value as 'glass' | 'opaque' } })}>

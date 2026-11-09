@@ -273,4 +273,88 @@ public class ProfileLibraryTests
         }
         Assert.Empty(res.Checks);
     }
+
+    [Fact]
+    public void A_drafted_outline_with_a_hole_is_one_profile()
+    {
+        var f = new Fixture(new StructureModule(), new SteelModule(), new Lapin.Drafting.DraftingModule());
+        var plan = $"plan:{f.Storey}";
+        string Draw(double x0, double y0, double x1, double y1) => (string)((JsonArray)f.Run("drafting.draw", new JsonObject
+        {
+            ["viewId"] = plan, ["shape"] = new JsonObject { ["type"] = "polyline", ["closed"] = true, ["pts"] = new JsonArray(new JsonArray(x0, y0), new JsonArray(x1, y0), new JsonArray(x1, y1), new JsonArray(x0, y1)) },
+        })!["ids"]!)[0]!;
+        var ids = new JsonArray(Draw(5, 5, 5.1, 5.06), Draw(5.005, 5.005, 5.095, 5.055));
+        var p = SectionProfile.From(f.Session.Query("profiles.fromOutline", new JsonObject { ["ids"] = ids, ["name"] = "Tube", ["material"] = "aluminium" }))!;
+        Assert.Equal(("outline", "Tube", "aluminium"), (p.Kind, p.Name, p.Material));
+        Assert.Equal(0.1, p.B, 6);
+        Assert.Equal(0.06, p.H, 6);
+        Assert.Equal(0.1 * 0.06 - 0.09 * 0.05, ProfileProps.Compute(p).Values["A"], 7);
+        // Centred on its box.
+        Assert.Equal(-0.05, p.Rings!.SelectMany(r => r).Min(q => q.X), 6);
+    }
+
+    [Fact]
+    public void A_DXF_s_closed_outlines_are_read_in_its_units()
+    {
+        // A closed polyline 100 × 60 (millimetres, the file says) and a circle Ø20 inside it, and a line that is no outline.
+        var dxf = string.Join("\n", "0", "SECTION", "2", "HEADER", "9", "$INSUNITS", "70", "4", "0", "ENDSEC", "0", "SECTION", "2", "ENTITIES",
+            "0", "LWPOLYLINE", "8", "0", "90", "4", "70", "1", "10", "0", "20", "0", "10", "100", "20", "0", "10", "100", "20", "60", "10", "0", "20", "60",
+            "0", "CIRCLE", "8", "0", "10", "50", "20", "30", "40", "10",
+            "0", "LINE", "8", "0", "10", "0", "20", "0", "11", "500", "21", "500",
+            "0", "ENDSEC", "0", "EOF", "");
+        var f = F();
+        var p = SectionProfile.From(f.Session.Query("profiles.fromDxf", new JsonObject { ["data"] = Convert.ToBase64String(Utf8(dxf)), ["name"] = "alu.dxf" }))!;
+        Assert.Equal("alu", p.Name);
+        Assert.Equal(0.1, p.B, 6);
+        Assert.Equal(2, p.Rings!.Count);
+        Assert.Equal(0.1 * 0.06 - Math.PI * 0.0001, ProfileProps.Compute(p).Values["A"], 6);
+        Assert.ThrowsAny<Exception>(() => f.Session.Query("profiles.fromDxf", new JsonObject { ["data"] = Convert.ToBase64String(Utf8(string.Join("\n", "0", "SECTION", "2", "ENTITIES", "0", "ENDSEC", "0", "EOF", ""))) }));
+    }
+
+    [Fact]
+    public void A_firm_s_folder_is_read_and_written_and_a_bad_file_is_said()
+    {
+        var dir = Directory.CreateTempSubdirectory("lapin-profiles-").FullName;
+        try
+        {
+            var f = F();
+            var d = new Lapin.Protocol.EngineDispatcher(f.Session, Lapin.Host.PackageFiles.Create());
+            JsonNode Call(string method, JsonObject p)
+            {
+                var (reply, _) = d.Handle(new JsonObject { ["id"] = 1, ["method"] = method, ["params"] = p }.ToJsonString());
+                var o = JsonNode.Parse(Lapin.Protocol.BinaryFrame.HeaderText(reply))!;
+                return o["error"] is { } e ? throw new Exception(e.ToJsonString()) : o["result"]!;
+            }
+            var lib = new ProfileLibrary("Firm: steel/alu", null, "steel", [BuiltInProfiles.Find("IPE 300")!]);
+            var file = (string)Call("profiles.writeFolder", new JsonObject { ["path"] = dir, ["library"] = lib.ToJson() })["file"]!;
+            Assert.True(File.Exists(file));
+            Assert.EndsWith(".lapinprofiles", file);
+            File.WriteAllText(Path.Combine(dir, "broken.lapinprofiles"), "{ not json");
+            var r = Call("profiles.readFolder", new JsonObject { ["path"] = dir });
+            var read = Assert.Single(r["libraries"]!.AsArray());
+            Assert.Equal("Firm: steel/alu", (string?)read!["library"]!["name"]);
+            Assert.Equal("IPE 300", (string?)read["library"]!["profiles"]![0]!["name"]);
+            Assert.Contains("broken", (string?)Assert.Single(r["problems"]!.AsArray()));
+            // A folder gone is said, not an error; a guest never reaches one.
+            Assert.Single(Call("profiles.readFolder", new JsonObject { ["path"] = dir + "-gone" })["problems"]!.AsArray());
+            Assert.NotNull(Lapin.Protocol.EngineDispatcher.AllowedRemote("profiles.readFolder", new JsonObject { ["path"] = dir }, "editor"));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public void A_hall_of_a_library_profile_follows_its_update()
+    {
+        var f = new Fixture(new StructureModule(), new SteelModule(), new Lapin.Drafting.DraftingModule());
+        var p = BuiltInProfiles.Find("HEA 260")!;
+        var used = f.Run("profiles.use", new JsonObject { ["profile"] = p.ToJson(), ["library"] = BuiltInProfiles.Name })!;
+        var hall = (string)f.Run("steel.addHall", new JsonObject { ["storeyId"] = f.Storey, ["style"] = "hall-20", ["attrs"] = new JsonObject { ["column"] = used["section"]!.DeepClone(), ["nodes"] = false, ["secondary"] = false } })!["id"]!;
+        var column = f.Model.OfClass(Lapin.Model.IfcClass.ColumnType).Single(t => (string?)t.Attrs["section"]?["profileId"] == (string)used["id"]!);
+        Assert.Equal(0.25, Section.From(column.Attrs["section"])!.Depth, 9);
+        f.Run("profiles.update", new JsonObject { ["id"] = used["id"]!.DeepClone(), ["profile"] = (p with { H = 0.26 }).ToJson() });
+        Assert.Equal(0.26, Section.From(f.Model.Get(column.Id)!.Attrs["section"])!.Depth, 9);
+        // The hall's own spec says so too: built again, it stays.
+        f.Run("steel.updateHall", new JsonObject { ["id"] = hall, ["attrs"] = new JsonObject { ["span"] = 22 } });
+        Assert.Contains(f.Model.OfClass(Lapin.Model.IfcClass.ColumnType), t => (string?)t.Attrs["section"]?["profileId"] == (string)used["id"]! && Math.Abs(Section.From(t.Attrs["section"])!.Depth - 0.26) < 1e-9);
+    }
 }

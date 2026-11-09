@@ -1446,6 +1446,93 @@ export const scenes = [
     },
   },
   {
+    // Profile libraries (docs/plan-profile-libraries.md): the built-in EN set drawn with its properties; a producer's table with German headings
+    // matched and its wrong value flagged; an IFC profile library; a type made from the picker; a drafted outline with a hole kept as a profile.
+    id: 'profiles',
+    async run(t) {
+      await t.fresh();
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const { writeFileSync } = await import('node:fs');
+      await t.tool('manage.profileLibraries');
+      const dialog = t.page.locator('[data-dialog=profile-libraries]');
+      t.expect(await dialog.count() > 0, 'the Profile libraries dialog opens');
+      await dialog.locator('[data-profile="HEA 200"]').waitFor({ timeout: 15000 });
+      await dialog.locator('[data-profile="HEA 200"]').click();
+      await dialog.locator('[data-testid=profile-props]').waitFor({ timeout: 10000 });
+      const area = await dialog.locator('[data-testid=profile-props] tbody tr').first().locator('td.num').first().innerText();
+      t.expect(Math.abs(Number(area.replace(',', '.')) - 53.83) < 0.5, `HEA 200's area is worked out (${area} cm²)`);
+      await t.shot('profile-libraries', { of: '.dialog', pad: 0 });
+      // A producer's table: German headings, one area wrong.
+      const csv = join(tmpdir(), 'Stahlprofile.csv');
+      writeFileSync(csv, '﻿Bezeichnung;h [mm];b [mm];s [mm];t [mm];r [mm];A [cm²];G [kg/m];Iy [cm4];iy [cm];Iz [cm4];It [cm4]\n'
+        + 'IPE 300;300;150;7,1;10,7;15;53,81;42,2;8356;12,46;603,8;20,12\n'
+        + 'HEA 200;190;200;6,5;10;18;53,83;42,3;3692;8,28;1336;20,98\n'
+        + 'HEB 200;200;200;9;15;18;99,99;61,3;5696;8,54;2003;59,28\n');
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      let chooser = t.page.waitForEvent('filechooser', { timeout: 10000 });
+      await dialog.locator('[data-testid=profile-import-table]').click();
+      await (await chooser).setFiles(csv);
+      await dialog.locator('[data-testid=profile-table-matching]').waitFor({ timeout: 10000 });
+      const guessed = await dialog.locator('[data-testid^=profile-column-]').evaluateAll((els) => els.map((e) => e.value));
+      t.expect(guessed.slice(0, 6).join(',') === 'name,h,b,tw,t,r1', `the columns guessed from the German headings (${guessed.join(',')})`);
+      await t.shot('profile-table', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-testid=profile-table-go]').click();
+      await dialog.locator('[data-testid=profile-report]').waitFor({ timeout: 10000 });
+      t.expect((await dialog.locator('[data-testid=profile-report]').innerText()).includes('HEB 200'), 'the wrong area is on the check list');
+      await dialog.locator('[data-profile="HEB 200"]').click();
+      await dialog.locator('[data-testid=profile-props] tr.flagged').first().waitFor({ timeout: 10000 });
+      await t.shot('profile-check', { of: '.dialog', pad: 0 });
+      // An IFC profile library, as other programs write one.
+      const ifc = join(tmpdir(), 'Firm profiles.ifc');
+      writeFileSync(ifc, "ISO-10303-21;\nHEADER;\nFILE_DESCRIPTION((''),'2;1');\nFILE_NAME('f','2026-01-01T00:00:00',(''),(''),'','','');\nFILE_SCHEMA(('IFC4'));\nENDSEC;\nDATA;\n"
+        + "#1=IFCSIUNIT(*,.LENGTHUNIT.,.MILLI.,.METRE.);\n#2=IFCUNITASSIGNMENT((#1));\n#3=IFCPROJECTLIBRARY('0abcdefghijklmnopqrstu',$,'Firm',$,$,$,$,$,#2);\n"
+        + "#4=IFCISHAPEPROFILEDEF(.AREA.,'W14X90',$,368.,356.,11.2,18.,15.,$,$);\n#5=IFCRECTANGLEHOLLOWPROFILEDEF(.AREA.,'RHS 120x80x5',$,80.,120.,5.,5.,7.5);\n#6=IFCLSHAPEPROFILEDEF(.AREA.,'L 90x90x9',$,90.,90.,9.,11.,5.5,$);\nENDSEC;\nEND-ISO-10303-21;\n");
+      chooser = t.page.waitForEvent('filechooser', { timeout: 10000 });
+      await dialog.locator('[data-testid=profile-import-ifc]').click();
+      await (await chooser).setFiles(ifc);
+      await dialog.locator('[data-profile="W14X90"]').waitFor({ timeout: 15000 });
+      t.expect(await dialog.locator('[data-profile^="L 90"]').count() > 0, 'the IFC file\'s profiles are a library');
+      await dialog.locator('[data-profile="W14X90"]').click();
+      await dialog.locator('[data-testid=profile-props]').waitFor({ timeout: 10000 });
+      await t.wait(400);
+      await t.shot('profile-ifc', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // The Steel types' picker searches them all; the type made keeps the project's copy.
+      await t.button('Steel', { exact: true });
+      await t.tool('steel.types');
+      const types = t.page.locator('[data-dialog=steel-types]');
+      await types.locator('select[data-field=steel-profile]').selectOption('@library');
+      await types.locator('[data-testid=steel-library-profile-search]').fill('W14');
+      await types.locator('[data-profile="W14X90"]').waitFor({ timeout: 10000 });
+      await t.shot('profile-picker', { of: '.dialog', pad: 0 });
+      await types.locator('[data-profile="W14X90"]').dispatchEvent('mousedown');
+      await t.wait(500);
+      await types.locator('[data-field=steel-create-type]').click();
+      await t.wait(800);
+      const nodes = await t.nodes();
+      const copy = nodes.find((n) => n.type === 'LapinSectionProfile');
+      t.expect(copy?.name === 'W14X90', 'the profile was copied into the project');
+      t.expect(nodes.some((n) => n.type === 'LapinSteelMemberType' && n.props.section?.profileId === copy?.id), 'the member type keeps its copy');
+      await t.ui({ dialog: null });
+      // A drafted outline with a hole, made a profile.
+      const storey = await t.storey();
+      const plan = `plan:${storey}`;
+      const rect = async (x0, y0, x1, y1) => (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], closed: true } })).ids[0];
+      const ids = [await rect(0, 0, 0.1, 0.06), await rect(0.005, 0.005, 0.095, 0.055)];
+      await t.ui({ selection: ids[0], selected: ids });
+      await t.tool('manage.profileLibraries');
+      await dialog.locator('[data-testid=profile-from-selection]').click();
+      await dialog.locator('[data-testid=profile-outline]').waitFor({ timeout: 10000 });
+      await dialog.locator('[data-testid=profile-outline-name]').fill('Alu 100×60×5');
+      await t.wait(300);
+      await t.shot('profile-outline', { of: '.dialog', pad: 0 });
+      await dialog.locator('[data-testid=profile-outline-keep]').click();
+      await dialog.locator('[data-profile="Alu 100×60×5"]').waitFor({ timeout: 10000 });
+      await t.ui({ dialog: null, selection: null, selected: [] });
+    },
+  },
+  {
     // Steel, stage 2 (docs/plan-steel.md, decision 270): the portal frame hall configurator — a catalogue style, the haunch
     // at the eaves welded from plates, the hall made in one step; a rafter's haunches in Properties; the hall edited again.
     id: 'steel-hall',

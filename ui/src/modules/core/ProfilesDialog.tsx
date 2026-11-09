@@ -13,6 +13,8 @@ import { ofClass } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import { Cell, LengthField } from '../../shell/cells';
 import { PendingDialog } from './PendingDialog';
+import { ProfilePickerField } from './profileLibraries/ProfilePickerField';
+import { asSweepShape, type ProfileJson as LibraryProfile, type Ring } from './profileLibraries/model';
 import { formatPoints, parsePoints, profileArea, profileSize, profileSvg, type CatalogueProfile, type ProfileJson } from './profiles';
 
 export type ProfileUse = 'sweep' | 'reveal' | 'footing';
@@ -44,11 +46,23 @@ export function ProfilePicker({ use, value, onPick, testId }: { use: ProfileUse;
   const own = useMemo(() => [...nodes.values()].filter((n) => n.type === 'LapinProfile')
     .sort((a, b) => Number(b.props.use === use) - Number(a.props.use === use) || a.name.localeCompare(b.name)), [nodes, use]);
   const catalogue = profileCatalogue().filter((c) => c.use === use);
+  const [searching, setSearching] = useState(false);
+  // A profile of the libraries (docs/plan-profile-libraries.md): its outside made a project profile for this use.
+  const fromLibrary = async (p: LibraryProfile) => {
+    setSearching(false);
+    const r = await query<{ rings: Ring[] }>('profiles.properties', { profile: p });
+    const shape = r ? asSweepShape(r.rings, use, p.name) : null;
+    if (!shape) return;
+    const made = await execute('profile.create', { profile: shape, name: p.name, use }) as { id?: string } | null;
+    if (made?.id) onPick(made.id);
+  };
+  if (searching) return <ProfilePickerField testId={`${testId ?? 'profile'}-library`} onPick={(p) => void fromLibrary(p)} />;
   const pick = async (v: string) => {
     if (v.startsWith('catalog:')) {
       const r = await execute('profile.create', { catalog: v.slice(8) }) as { id?: string } | null;
       if (r?.id) onPick(r.id);
-    } else if (v === 'manage') useUi.setState({ dialog: 'profiles' });
+    } else if (v === 'library') setSearching(true);
+    else if (v === 'manage') useUi.setState({ dialog: 'profiles' });
     else if (v) onPick(v);
   };
   return (
@@ -60,6 +74,7 @@ export function ProfilePicker({ use, value, onPick, testId }: { use: ProfileUse;
       <optgroup label="From the catalogue">
         {catalogue.map((c) => <option key={c.id} value={`catalog:${c.id}`}>{c.label}</option>)}
       </optgroup>
+      <option value="library">From a profile library…</option>
       <option value="manage">Profiles…</option>
     </select>
   );

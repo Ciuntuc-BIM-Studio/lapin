@@ -45,6 +45,8 @@ En una **planta** el contorno es la barra vista desde arriba: su ancho es el de 
 
 ![El diálogo Tipos de acero](shots/steel-types.webp)
 
+Cualquier otro perfil viene de las bibliotecas: **De una biblioteca de perfiles…** busca en todas (ver [Bibliotecas de perfiles](profiles.md)).
+
 Los perfiles huecos están vacíos por dentro, en la vista 3D, en las secciones y en las cantidades. Los perfiles conformados en frío son formas genéricas con dimensiones, de pliegues vivos, sin catálogo de fabricante.
 
 ![Barras en 3D](shots/steel-3d.webp)

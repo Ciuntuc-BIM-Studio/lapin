@@ -45,6 +45,8 @@ På en **plan** er omridset stangen set ovenfra: dens bredde er flangernes, og e
 
 ![Dialogen Ståltyper](shots/steel-types.webp)
 
+Enhver anden profil kommer fra bibliotekerne: **Fra et profilbibliotek…** søger i dem alle (se [Profilbiblioteker](profiles.md)).
+
 Hulprofiler er hule indvendigt, i 3D-visningen, i snittene og i mængderne. De koldformede profiler er generiske former med mål, skarpt bukkede, uden en producents katalog.
 
 ![Stænger i 3D](shots/steel-3d.webp)

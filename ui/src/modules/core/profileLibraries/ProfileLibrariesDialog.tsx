@@ -7,16 +7,19 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { BookMarked, Download, FileUp, Library, RefreshCw, Search, Trash2, X } from 'lucide-react';
+import { BookMarked, Download, FileUp, FolderPlus, Library, PenLine, RefreshCw, Save, Search, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
-import { engine, execute, query, useSession } from '../../../engine/session';
+import { activeStorey, engine, execute, query, useSession } from '../../../engine/session';
 import { LONG_TIMEOUT_MS } from '../../../engine/client';
 import { pickFile, saveFile, safeFileName, toBase64 } from '../../../engine/files';
 import {
-  families, formatValue, KIND_LABELS, KINDS, massOf, MATERIAL_LABELS, naturalCompare, newerInLibrary, PROPS, search,
+  families, formatValue, MATERIALS, withProfile, KIND_LABELS, KINDS, massOf, MATERIAL_LABELS, naturalCompare, newerInLibrary, PROPS, search,
   type LibraryEntry, type LibraryJson, type ProfileJson, type ProjectProfilesDto, type Ring,
 } from './model';
-import { forgetOnComputer, keepOnComputer, useProfileLibraries } from './store';
+import { computerLibraries, forgetOnComputer, keepOnComputer, setSharedFolders, sharedFolders, useProfileLibraries, writeToFolder } from './store';
+import { isDesktop } from '../../../engine/files';
+import { engineInBrowser } from '../../../engine/session';
+import { pickFolder } from '../cde/cde';
 import { SectionView } from './SectionView';
 import { TableImport, type CheckDto, type ImportReport, type TableRead } from './TableImport';
 
@@ -30,7 +33,8 @@ const ORIGIN_LABELS: Record<string, string> = { builtin: 'Built in', computer: '
 /** The properties' table: Lapin's value, the file's, and the difference where it is more than the check allows. */
 function PropsTable({ dto }: { dto: PropsDto }) {
   const checked = new Map(dto.checks.map((c) => [c.key, c]));
-  const rows = PROPS.filter((p) => dto.values[p.key]);
+  // A centroid on the box's centre says nothing.
+  const rows = PROPS.filter((p) => dto.values[p.key] && !(['cx', 'cy'].includes(p.key) && Math.abs(dto.values[p.key].computed ?? 0) < 1e-7));
   const anyGiven = rows.some((p) => dto.values[p.key].given != null);
   return (
     <table className="profile-props" data-testid="profile-props">
@@ -74,6 +78,9 @@ export function ProfileLibrariesDialog() {
   const [table, setTable] = useState<{ name: string; bytes: Uint8Array; read: TableRead } | null>(null);
   const [report, setReport] = useState<ImportReport | null>(null);
   const [busy, setBusy] = useState(false);
+  // An outline read from the drawing or a DXF, being named before it goes into a library.
+  const [outline, setOutline] = useState<{ profile: ProfileJson; library: string; dto: PropsDto | null } | null>(null);
+  const folders = sharedFolders();
 
   // The search runs over every library when text is typed, else over the one chosen.
   const scope = text.trim() ? all : lib ? [lib] : [];
@@ -116,6 +123,47 @@ export function ProfileLibrariesDialog() {
       const r = await engine.call<{ name: string; data: string }>('profiles.exportIfc', { library }, { timeoutMs: LONG_TIMEOUT_MS });
       await saveFile(Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0)), `${safeFileName(library.name, 'profiles')}.ifc`);
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+  };
+  const startOutline = async (profile: ProfileJson) => {
+    const dto = await query<PropsDto>('profiles.properties', { profile });
+    setOutline({ profile, library: 'My profiles', dto });
+  };
+  const fromSelection = async () => {
+    const ids = useUi.getState().selected;
+    if (!ids.length) { notify('Select closed outlines drawn with Drafting first (those inside another are its holes), then come back here.'); return; }
+    try { await startOutline(await engine.call<ProfileJson>('doc.query', { name: 'profiles.fromOutline', args: { ids } })); } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+  };
+  const fromDxf = async () => {
+    const f = await pickFile('A DXF with the closed outline', ['dxf']);
+    if (!f) return;
+    try { await startOutline(await engine.call<ProfileJson>('doc.query', { name: 'profiles.fromDxf', args: { data: toBase64(f.bytes), name: f.name } })); } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+  };
+  const keepOutline = async () => {
+    if (!outline) return;
+    const old = (await computerLibraries()).find((l) => l.name === outline.library)?.library ?? { name: outline.library, material: outline.profile.material ?? 'steel', profiles: [] };
+    await keepOnComputer(withProfile(old, outline.profile));
+    setLibKey(`computer:${outline.library}`);
+    setChosen({ key: `computer:${outline.library}`, name: outline.profile.name });
+    setOutline(null);
+  };
+  const addFolder = async () => {
+    const path = isDesktop() ? await pickFolder(null) : window.prompt('The folder (full path):')?.trim() || null;
+    if (path && !folders.some((f) => f.path === path)) setSharedFolders([...folders, { path, writable: false }]);
+  };
+  const saveToFolder = async (path: string) => {
+    if (!lib) return;
+    try {
+      const file = await writeToFolder(path, { ...lib.library, profiles: lib.library.profiles.map((p) => { const c = { ...p }; delete c.summary; return c; }) });
+      notify(`Saved: ${file}`);
+    } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+  };
+  const drawOutline = async () => {
+    if (!dto) return;
+    const u = useUi.getState();
+    const viewId = u.view === 'plan' ? u.planViewId ?? (activeStorey() ? `plan:${activeStorey()!.id}` : null) : u.drawingViewId;
+    if (!viewId) { notify('Open a plan, a section or a sketch plane first: the outline is drawn there.'); return; }
+    const r = await execute('drafting.draw', { viewId, shapes: dto.rings.map((pts) => ({ type: 'polyline', pts, closed: true })) }) as { ids?: string[] } | null;
+    if (r?.ids?.length) { useUi.setState({ selection: r.ids[0], selected: r.ids, dialog: null }); notify('Its outline is drawn at the view\'s origin: Studio can extrude or sweep it.'); }
   };
   const imported = async (r: ImportReport) => {
     await keepOnComputer(r.library);
@@ -164,7 +212,7 @@ export function ProfileLibrariesDialog() {
                     <ul className="plain-list">
                       {g.items.map((e) => (
                         <li key={e.key} className={`tree-item${e.key === lib?.key ? ' selected' : ''}`} onClick={() => { setLibKey(e.key); setFamily(''); }} data-library={e.name}>
-                          <span data-no-i18n>{e.name}</span><span className="muted small" data-no-i18n>{` ${e.library.profiles.length}`}</span>
+                          {e.origin === 'project' ? <span>{e.name}</span> : <span data-no-i18n>{e.name}</span>}<span className="muted small" data-no-i18n>{` ${e.library.profiles.length}`}</span>
                           {e.origin === 'computer' && <button type="button" className="icon mini" title="Forget it on this computer (the projects keep their copies)" onClick={(ev) => { ev.stopPropagation(); void forgetOnComputer(e.name); }}><Trash2 size={11} /></button>}
                         </li>
                       ))}
@@ -174,7 +222,23 @@ export function ProfileLibrariesDialog() {
                 <div className="row wrap">
                   <button type="button" className="btn" onClick={() => void importTable()} data-testid="profile-import-table"><FileUp size={14} />Table…</button>
                   <button type="button" className="btn" disabled={busy} onClick={() => void importIfc()} data-testid="profile-import-ifc" title="An IFC file: a profile library, or any model (the profiles its elements use)"><FileUp size={14} />IFC…</button>
+                  <button type="button" className="btn" onClick={() => void fromDxf()} data-testid="profile-import-dxf" title="A DXF's closed outlines as one profile: the biggest its outside, those inside it its holes"><FileUp size={14} />DXF…</button>
+                  <button type="button" className="btn" onClick={() => void fromSelection()} data-testid="profile-from-selection" title="The closed outlines selected in a view (Drafting) as one profile: those inside another are its holes"><PenLine size={14} />From the selection</button>
                 </div>
+                {!engineInBrowser && <div className="profile-folders" data-testid="profile-folders">
+                  <p className="eyebrow">Folders</p>
+                  <ul className="plain-list small">
+                    {folders.map((f) => (
+                      <li key={f.path} className="row">
+                        <span className="grow" title={f.path} data-no-i18n>{f.path.split(/[\\/]/).pop()}</span>
+                        <label className="check" title="Lapin may save libraries there"><input type="checkbox" checked={f.writable} onChange={(e) => setSharedFolders(folders.map((x) => (x.path === f.path ? { ...x, writable: e.target.checked } : x)))} />writable</label>
+                        {f.writable && lib && lib.origin !== 'project' && lib.origin !== 'builtin' && lib.folder !== f.path && <button type="button" className="icon mini" title="Save the library chosen into this folder" onClick={() => void saveToFolder(f.path)} data-testid="profile-save-folder"><Save size={11} /></button>}
+                        <button type="button" className="icon mini" title="Stop reading this folder (its files stay)" onClick={() => setSharedFolders(folders.filter((x) => x.path !== f.path))}><Trash2 size={11} /></button>
+                      </li>
+                    ))}
+                  </ul>
+                  <button type="button" className="btn" onClick={() => void addFolder()} data-testid="profile-add-folder" title="A local, network or synced folder of .lapinprofiles files, shared by the firm"><FolderPlus size={14} />Add a folder…</button>
+                </div>}
                 {loading && <p className="muted small">Reading the libraries…</p>}
                 {problems.map((p, i) => <p key={i} className="error-text small" data-no-i18n>{p}</p>)}
               </nav>
@@ -226,19 +290,34 @@ export function ProfileLibrariesDialog() {
                       {' · '}<span>{MATERIAL_LABELS[current.material ?? 'steel'] ?? current.material}</span>
                       {copy?.library && <><span className="muted"> · from </span><span data-no-i18n>{copy.library}</span></>}
                     </p>
-                    {dto && <SectionView profile={current} rings={dto.rings} centroid={dto.values.cx && dto.values.cy ? [dto.values.cx.computed ?? 0, dto.values.cy.computed ?? 0] : null} />}
-                    {dto?.problem && <p className="error-text small" data-no-i18n>{dto.problem}</p>}
-                    {dto && <PropsTable dto={dto} />}
-                    {dto && dto.checks.length > 0 && <p className="muted small">The file's values marked differ from Lapin's by more than 2 % (area, mass), 3 % (inertias, moduli) or 10 % (It, Iw): check them, or the column's unit.</p>}
                     <div className="row wrap">
                       {currentEntry?.origin !== 'project' && <button type="button" className="btn primary" onClick={() => void copyIntoProject()} data-testid="profile-use"><BookMarked size={14} />Copy into the project</button>}
+                      {dto && <button type="button" className="btn" onClick={() => void drawOutline()} data-testid="profile-draw" title="Its outline as closed polylines in the view in front, for Studio to extrude or sweep"><PenLine size={14} />Draw its outline</button>}
                       {copy && newer && <button type="button" className="btn primary" disabled={busy} onClick={() => void update()} data-testid="profile-update" title={`From ${newer.entry.name}`}><RefreshCw size={14} />Update from the library</button>}
                       {copy && <button type="button" className="btn" disabled={copy.types.length > 0} title={copy.types.length ? 'Its types use it: change their profile first' : 'Take it out of the project'} onClick={() => void execute('profiles.remove', { id: copy.id }).then(() => setChosen(null))}><Trash2 size={14} />Remove</button>}
                     </div>
                     {copy && <p className="muted small"><span>Types made of it:</span> <span data-no-i18n>{copy.types.length}</span></p>}
+                    {dto && <SectionView profile={current} rings={dto.rings} centroid={dto.values.cx && dto.values.cy ? [dto.values.cx.computed ?? 0, dto.values.cy.computed ?? 0] : null} />}
+                    {dto?.problem && <p className="error-text small" data-no-i18n>{dto.problem}</p>}
+                    {dto && <PropsTable dto={dto} />}
+                    {dto && dto.checks.length > 0 && <p className="muted small">The file's values marked differ from Lapin's by more than 2 % (area, mass), 3 % (inertias, moduli) or 10 % (It, Iw): check them, or the column's unit.</p>}
                   </>
                 )}
               </section>
+            </div>
+          )}
+          {outline && (
+            <div className="profile-report" data-testid="profile-outline">
+              <div className="row wrap" style={{ alignItems: 'flex-start' }}>
+                {outline.dto && <SectionView profile={outline.profile} rings={outline.dto.rings} size={160} />}
+                <div className="grow">
+                  <label className="field-line"><span className="eyebrow">Name</span><input value={outline.profile.name} data-testid="profile-outline-name" onChange={(e) => setOutline({ ...outline, profile: { ...outline.profile, name: e.target.value } })} /></label>
+                  <label className="field-line"><span className="eyebrow">Material</span><select value={outline.profile.material ?? 'steel'} onChange={(e) => setOutline({ ...outline, profile: { ...outline.profile, material: e.target.value } })}>{MATERIALS.map((m) => <option key={m} value={m}>{MATERIAL_LABELS[m]}</option>)}</select></label>
+                  <label className="field-line"><span className="eyebrow">Library</span><input value={outline.library} onChange={(e) => setOutline({ ...outline, library: e.target.value })} /></label>
+                  {outline.dto && <PropsTable dto={outline.dto} />}
+                  <div className="row"><span className="grow" /><button type="button" className="btn" onClick={() => setOutline(null)}>Back</button><button type="button" className="btn primary" disabled={!outline.profile.name.trim() || !outline.library.trim()} onClick={() => void keepOutline()} data-testid="profile-outline-keep">Keep on this computer</button></div>
+                </div>
+              </div>
             </div>
           )}
           {report && !table && (

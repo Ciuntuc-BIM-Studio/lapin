@@ -186,6 +186,14 @@ describe('Ask Lapin', () => {
     expect(ask('')).toEqual([]);
   });
 
+  it('points to the profile libraries for profiles Lapin does not ship', () => {
+    expect(best('how do I import AISC steel profiles')).toBe('profile-libraries');
+    expect(best('I need W shapes from my supplier catalogue')).toBe('profile-libraries');
+    expect(best('cum import o biblioteca de profile dintr-un tabel')).toBe('profile-libraries');
+    expect(best('what does newer in library mean')).toBe('profile-update');
+    expect(best('mi s-a schimbat biblioteca de profile cum actualizez proiectul')).toBe('profile-update');
+  });
+
   it('keeps its entries whole: ids unique, both languages, keywords already plain', () => {
     expect(new Set(FAQ.map((e) => e.id)).size).toBe(FAQ.length);
     for (const e of FAQ) {
