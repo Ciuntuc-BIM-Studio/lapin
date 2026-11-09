@@ -1,6 +1,16 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
+  "True north up: click for project north": "Nordul geografic în sus: clic pentru nordul proiectului",
+  "Project north up: click to turn the plan to true north": "Nordul proiectului în sus: clic ca planul să se rotească spre nordul geografic",
+  "Export the plan as DXF: in the plan's, the base point's or the map's coordinates": "Exportă planul ca DXF: în coordonatele planului, ale punctului de bază sau ale hărții",
+  "In the plan’s coordinates (mm)": "În coordonatele planului (mm)",
+  "From the project base point (mm)": "Față de punctul de bază al proiectului (mm)",
+  "In map coordinates (E, N in metres)": "În coordonatele hărții (E, N în metri)",
+  "Spot coordinate": "Cotă de coordonate",
+  "A spot coordinate is written on a plan: open one.": "O cotă de coordonate se scrie pe un plan: deschide unul.",
+  "The project has no survey point: Manage → Location ties it to the map.": "Proiectul nu are punct topografic: Gestionare → Amplasament îl leagă de hartă.",
   // Decision 445: Preferences, the grid and snaps, the UCS, the project's points, view tabs dragged into windows
   "Internal origin": "Originea internă",
   "Project base point": "Punctul de bază al proiectului",
@@ -351,7 +361,7 @@ export const RO: Record<string, string> = {
   'the level below': 'nivelul de dedesubt', 'unlimited': 'nelimitat', 'At': 'La', 'Back to the default': 'Înapoi la implicit',
   'Drafting layers': 'Layere de desen', 'Current': 'Curent', 'Colour': 'Culoare', 'Pen (mm)': 'Peniță (mm)', 'Locked': 'Blocat', 'Add': 'Adaugă', "New layer's name": 'Numele noului layer',
   'Base point': 'Punct de bază', 'Survey point': 'Punct topografic', 'Show the base and survey points in plans': 'Arată punctul de bază și punctul topografic în planuri',
-  'Add a survey point': 'Adaugă un punct topografic', 'Remove the survey point': 'Șterge punctul topografic', 'True north': 'Nordul adevărat', 'Easting': 'Est', 'Northing': 'Nord',
+  'Add a survey point': 'Adaugă un punct topografic', 'Remove the survey point': 'Șterge punctul topografic', 'True north': 'Nordul geografic', 'Easting': 'Est', 'Northing': 'Nord',
   'Wall type': 'Tip de perete', 'New type': 'Tip nou', 'Save type': 'Salvează tipul', 'Create type': 'Creează tipul', 'Delete type': 'Șterge tipul', 'Draw with it': 'Desenează cu el',
   'Place with it': 'Pune cu el', 'Layer': 'Strat', 'Material': 'Material', 'Core': 'Miez', 'Zone': 'Zonă', 'New door': 'Ușă nouă', 'New window': 'Fereastră nouă',
   'Precast': 'Prefabricat', 'Cast in place': 'Turnat pe loc', 'As the wall': 'Ca peretele', 'Product': 'Produs', 'Reinforcement': 'Armare',
@@ -1496,6 +1506,7 @@ export const RO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Punctul [Map/Project/Internal: ${({ 'map E, N': 'hartă E, N', 'base point X, Y': 'punct de bază X, Y', 'plan origin X, Y': 'originea planului X, Y' } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS rotit cu ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Lăsate în afara încadrării, departe de model: ${m[1]}. ZE încadrează tot.`],
   [/^as its style: (.+)$/, (m) => `ca stilul: ${RO[m[1]] ?? m[1]}`],

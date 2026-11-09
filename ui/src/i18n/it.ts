@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
+  "True north up: click for project north": "Nord geografico in alto: clic per il nord di progetto",
+  "Project north up: click to turn the plan to true north": "Nord di progetto in alto: clic per ruotare la pianta verso il nord geografico",
+  "Export the plan as DXF: in the plan's, the base point's or the map's coordinates": "Esporta la pianta in DXF: nelle coordinate della pianta, del punto base o della mappa",
+  "In the plan’s coordinates (mm)": "Nelle coordinate della pianta (mm)",
+  "From the project base point (mm)": "Dal punto base del progetto (mm)",
+  "In map coordinates (E, N in metres)": "In coordinate della mappa (E, N in metri)",
+  "Spot coordinate": "Quota di coordinate",
+  "A spot coordinate is written on a plan: open one.": "Una quota di coordinate si scrive su una pianta: aprine una.",
+  "The project has no survey point: Manage → Location ties it to the map.": "Il progetto non ha un punto di rilievo: Gestisci → Posizione lo collega alla mappa.",
   // Decision 445: Preferences, the grid and snaps, the UCS, the project's points, view tabs dragged into windows
   "Internal origin": "Origine interna",
   "Project base point": "Punto base del progetto",
@@ -1501,6 +1511,7 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const IT_PATTERNS: Language['patterns'] = [
+  [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Il punto [Map/Project/Internal: ${({ "map E, N": "mappa E, N", "base point X, Y": "punto base X, Y", "plan origin X, Y": "origine della pianta X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS ruotato di ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Fuori dall’inquadratura, lontani dal modello: ${m[1]}. ZE inquadra tutto.`],
   [/^as its style: (.+)$/, (m) => `come il suo stile: ${IT[m[1]] ?? m[1]}`],

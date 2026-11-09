@@ -19,14 +19,22 @@ O ridicare topo vine în coordonate de hartă: estică și nordică, la sute de 
 **Punctele proiectului**, ca în Revit. **Vedere → Punctele de coordonate** (sau **Arată originea internă, punctul de bază și punctul topografic în planuri și în 3D** din Gestionare → Amplasament) desenează trei puncte în planuri și în vederea 3D:
 
 - **originea internă**, 0,0 al planului, care nu se mută niciodată: axa X cu roșu și axa Y cu verde (și Z cu albastru în 3D);
-- **punctul de bază al proiectului**, un cerc cu o cruce: cota lui (unde stă ±0,00), coordonatele lui pe hartă când proiectul e legat de hartă și o săgeată spre **nordul adevărat**, cu unghiul ei, când proiectul e rotit față de el (**Nordul adevărat** din Gestionare → Amplasament);
+- **punctul de bază al proiectului**, un cerc cu o cruce: cota lui (unde stă ±0,00), coordonatele lui pe hartă când proiectul e legat de hartă și o săgeată spre **nordul geografic**, cu unghiul ei, când proiectul e rotit față de el (**Nordul geografic** din Gestionare → Amplasament);
 - **punctul topografic**, un triunghi, cu estul, nordul și cota lui.
 
 Un plan face snap la toate trei. Vederea 3D le desenează la locul lor, la orice zoom, deasupra modelului.
 
-![Originea internă, punctul de bază rotit cu 12,5° față de nordul adevărat și punctul topografic în 3D](shots/location-3d.webp)
+![Originea internă, punctul de bază rotit cu 12,5° față de nordul geografic și punctul topografic în 3D](shots/location-3d.webp)
 
-**Coordonatele la cursor.** Cât timp cursorul e într-un plan, bara de stare arată unde se află. Un clic pe coordonate alege față de ce se citesc: **originea internă**, **punctul de bază al proiectului**, **punctul topografic (hartă)** (est și nord, rotite spre nordul adevărat, așa cum le scrie exportul IFC) sau **UCS-ul** (vezi [Snap și ajutoare](drafting.md#snap-și-ajutoare)). Alegerea se păstrează în **Fișier → Preferințe… → Coordonate**.
+**Coordonatele la cursor.** Cât timp cursorul e într-un plan, bara de stare arată unde se află. Un clic pe coordonate alege față de ce se citesc: **originea internă**, **punctul de bază al proiectului**, **punctul topografic (hartă)** (est și nord, rotite spre nordul geografic, așa cum le scrie exportul IFC) sau **UCS-ul** (vezi [Snap și ajutoare](drafting.md#snap-și-ajutoare)). Alegerea se păstrează în **Fișier → Preferințe… → Coordonate**.
+
+**Planurile unui proiect georeferențiat.** Modelul se desenează în coordonatele lui, lângă originea internă; cele ale hărții se calculează din punctul topografic, așa că un plan rămâne la fel de precis și de rapid ca oricare altul. Trei lucruri îl pun pe hartă:
+
+- **Cote de coordonate.** **Adnotări → Cote → Cotă de coordonate** (DIMCOORD): un clic pe punct, apoi unde se termină linia de indicație. Scrie **E** și **N** ale punctului, în metri, prin punctul topografic și rotite spre nordul geografic; fără punct topografic, **X** și **Y** față de punctul de bază al proiectului. Tastează întâi **M**, **P** sau **I** ca să alegi harta, punctul de bază sau originea planului. Valorile se calculează la fiecare desenare: mută punctul topografic și toate cotele de coordonate se rescriu.
+- **Un plan în coordonatele hărții.** Butonul **DXF** din bara planului îl exportă **în coordonatele planului** (milimetri față de originea internă), **față de punctul de bază al proiectului** (milimetri) sau **în coordonatele hărții** (E și N în metri, rotite spre nordul geografic), ca desenul să se așeze peste planul cadastral sau peste DXF-ul topografului.
+- **Nordul geografic în sus.** Când proiectul e rotit față de nordul geografic, butonul cu busola din bara planului rotește planul pe ecran ca nordul geografic să fie în sus, și înapoi. Desenul, snap-urile, grila și UCS-ul se rotesc cu el; alegerea se păstrează pentru fiecare plan, pe acest calculator. Planșele și PDF-ul rămân cu nordul proiectului în sus.
+
+![O cotă de coordonate pe planul unui proiect georeferențiat, cu nordul geografic în sus](shots/spot-coordinate.webp)
 
 ## Importul
 

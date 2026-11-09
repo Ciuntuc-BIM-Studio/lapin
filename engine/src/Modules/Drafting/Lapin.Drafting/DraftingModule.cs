@@ -135,7 +135,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             // An angle, a radius, a diameter, an arc length, a slope, a level, an ordinate.
             if (DimensionKinds.Attrs(ctx, viewId, a) is { } kindAttrs)
             {
-                var names = new Dictionary<string, string> { ["angular"] = "Angle", ["radial"] = "Radius", ["diameter"] = "Diameter", ["arc"] = "Arc length", ["slope"] = "Slope", ["level"] = "Level", ["ordinate"] = "Ordinate" };
+                var names = new Dictionary<string, string> { ["angular"] = "Angle", ["radial"] = "Radius", ["diameter"] = "Diameter", ["arc"] = "Arc length", ["slope"] = "Slope", ["level"] = "Level", ["ordinate"] = "Ordinate", ["coordinate"] = "Spot coordinate" };
                 var made = new Entity(ctx.NewId(), IfcClass.Annotation, names[(string)kindAttrs["dimKind"]!], kindAttrs, "DIMENSION");
                 ctx.Add(made);
                 return new JsonObject { ["id"] = made.Id };

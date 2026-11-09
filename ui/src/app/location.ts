@@ -72,3 +72,24 @@ export const setUcs = (f: Frame | null) => execute('project.location', { ucs: f 
 
 /** Show or hide the internal origin, the base point and the survey point in plans and in 3D: one undo step. */
 export const setLocationShown = (show: boolean) => execute('project.location', { show });
+
+// ─── A plan turned to true north (decision 447) ───
+// Each plan's choice (project north up, as drawn; or true north up, the plan turned by the angle to true north),
+// kept on this computer by the plan's key; on screen only: sheets and the PDF print project north up.
+const NORTH_KEY = 'lapin.trueNorth';
+function readNorth(): Record<string, boolean> {
+  try { const v = JSON.parse(localStorage.getItem(NORTH_KEY) ?? '{}'); return v && typeof v === 'object' ? v as Record<string, boolean> : {}; } catch { return {}; }
+}
+export const useTrueNorth = create<{ on: Record<string, boolean> }>(() => ({ on: readNorth() }));
+export function setTrueNorth(key: string, on: boolean): void {
+  const next = { ...useTrueNorth.getState().on };
+  if (on) next[key] = true; else delete next[key];
+  useTrueNorth.setState({ on: next });
+  try { localStorage.setItem(NORTH_KEY, JSON.stringify(next)); } catch { /* kept for this session */ }
+}
+
+/** The screen turn (radians, anticlockwise) that puts true north up: the plan's north (−sin θ, cos θ) turned by −θ. */
+export const trueNorthTurn = (northAngle: number) => (-northAngle * Math.PI) / 180;
+
+/** Points turned by an angle about the origin. */
+export const turn = (p: Vec2, a: number): Vec2 => (a ? { x: p.x * Math.cos(a) - p.y * Math.sin(a), y: p.x * Math.sin(a) + p.y * Math.cos(a) } : p);

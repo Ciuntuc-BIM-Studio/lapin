@@ -3003,6 +3003,23 @@ export const scenes = [
       await t.wait(800);
       await t.until(async () => (await t.page.locator('[data-testid=location-3d]').count()) > 0, 'the project\'s points over the 3D view');
       await t.shot('location-3d');
+      // Decision 447: a spot coordinate at the house's corner reads the map; the plan turned to true north; its DXF in map coordinates.
+      await t.ui({ view: 'plan' });
+      await t.wait(800);
+      const spot = await t.cmd('drafting.addDimension', { viewId: plan, dimKind: 'coordinate', a: [0, 0], at: [-2.5, -2] });
+      t.expect(!!spot?.id, 'a spot coordinate is made');
+      await t.until(async () => (await t.page.locator('[data-testid=plan-true-north]').count()) > 0, 'the true north button on a turned project');
+      await t.page.locator('[data-testid=plan-true-north]').first().click();
+      await t.wait(400);
+      t.expect(((await t.page.locator('[data-testid=plan-true-north]').first().getAttribute('class')) ?? '').includes('on'), 'the plan turns to true north');
+      await t.page.locator('[data-testid=plan-export-dxf]').first().click();
+      await t.wait(300);
+      t.expect(await t.page.getByRole('menuitem').count() >= 3, 'the DXF button offers the plan\'s, the base point\'s and the map\'s coordinates');
+      await t.page.keyboard.press('Escape');
+      await t.fit();
+      await t.wait(800);
+      await t.shot('spot-coordinate', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.locator('[data-testid=plan-true-north]').first().click();
     },
   },
   {

@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
+  "True north up: click for project north": "Geografisch Nord oben: Klick für Projektnord",
+  "Project north up: click to turn the plan to true north": "Projektnord oben: Klick, um den Grundriss nach geografisch Nord zu drehen",
+  "Export the plan as DXF: in the plan's, the base point's or the map's coordinates": "Grundriss als DXF exportieren: in den Koordinaten des Grundrisses, des Basispunkts oder der Karte",
+  "In the plan’s coordinates (mm)": "In den Koordinaten des Grundrisses (mm)",
+  "From the project base point (mm)": "Vom Projektbasispunkt (mm)",
+  "In map coordinates (E, N in metres)": "In Kartenkoordinaten (E, N in Metern)",
+  "Spot coordinate": "Koordinatenkote",
+  "A spot coordinate is written on a plan: open one.": "Eine Koordinatenkote wird in einen Grundriss geschrieben: Öffne einen.",
+  "The project has no survey point: Manage → Location ties it to the map.": "Das Projekt hat keinen Vermessungspunkt: Verwalten → Standort verknüpft es mit der Karte.",
   // Decision 445: Preferences, the grid and snaps, the UCS, the project's points, view tabs dragged into windows
   "Internal origin": "Interner Ursprung",
   "Project base point": "Projektbasispunkt",
@@ -1499,6 +1509,7 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DE_PATTERNS: Language['patterns'] = [
+  [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Der Punkt [Map/Project/Internal: ${({ "map E, N": "Karte E, N", "base point X, Y": "Basispunkt X, Y", "plan origin X, Y": "Grundriss-Ursprung X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS um ${m[1]}° gedreht.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Außerhalb des Ausschnitts, weit vom Modell entfernt: ${m[1]}. ZE zeigt alles.`],
   [/^as its style: (.+)$/, (m) => `wie sein Stil: ${DE[m[1]] ?? m[1]}`],

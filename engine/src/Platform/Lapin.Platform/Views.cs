@@ -905,16 +905,38 @@ public static class Views
         return o;
     }
 
-    /// <summary>A view as DXF at real size (1 m = 1000 mm, y up), its texts and dashes as high as on paper at its scale.</summary>
-    public static byte[] Dxf(IQueryContext q, Entity view)
+    /// <summary>The systems a plan's DXF can be written in: the plan's own (its internal origin), the project base point's, the map's.</summary>
+    public static readonly string[] DxfCoords = ["internal", "project", "map"];
+
+    /// <summary>
+    /// A view as DXF at real size, y up, its texts and dashes as high as on paper at its scale. In the plan's own
+    /// coordinates (millimetres from the internal origin), the project base point's (millimetres from it), or, for
+    /// a plan of a georeferenced project, the map's (decision 447): eastings and northings in metres through the
+    /// survey point, turned to true north (<see cref="GeoRef.ToMap"/>), so the drawing lands on a cadastral DXF.
+    /// </summary>
+    public static byte[] Dxf(IQueryContext q, Entity view, string coords = "internal")
     {
         var r = Render(q, view);
+        if (!DxfCoords.Contains(coords)) throw new CommandException($"A DXF is written in internal, project or map coordinates, not {coords}.");
+        if (coords != "internal" && r.Kind != "plan") throw new CommandException("Only a plan is written in project or map coordinates: a section or elevation has no place on the map.");
+        if (coords == "map" && Location.Survey(q.Model) == null) throw new CommandException("The project has no survey point: Manage → Location ties it to the map first.");
+        var basePt = Location.Base(q.Model).At;
+        var north = Location.Base(q.Model).NorthAngle ?? 0;
+        // A model point (metres) in the file's units; an angle (degrees, anticlockwise) turned as the plan turns to the map.
+        Func<Vec2, Vec2> place = coords switch
+        {
+            "map" => p => { var (e, n) = GeoRef.ToMap(q.Model, p); return new Vec2(e, n); },
+            "project" => p => (p - basePt) * 1000,
+            _ => p => p * 1000,
+        };
+        var unit = coords == "map" ? 1.0 : 1000.0;
+        var turn = coords == "map" ? -north : 0;
         var pens = r.Pens.Select(p =>
         {
-            var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash?.Select(v => v * r.Scale).ToArray());
-            o.Segments.AddRange(p.Segments.Select(s => (s.A * 1000, s.B * 1000)));
-            o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(v => v * 1000).ToList()));
-            o.Texts.AddRange(p.Texts.Select(t => t with { At = t.At * 1000, Height = t.Height * r.Scale }));
+            var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash?.Select(v => v * r.Scale * unit / 1000).ToArray());
+            o.Segments.AddRange(p.Segments.Select(s => (place(s.A), place(s.B))));
+            o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(place).ToList()));
+            o.Texts.AddRange(p.Texts.Select(t => t with { At = place(t.At), Height = t.Height * r.Scale * unit / 1000, Angle = t.Angle + turn }));
             return o;
         }).ToList();
         // DxfWriter.Page flips y on a page; a model drawing is y up already: give it a page of height 0 mirrored back.
@@ -926,7 +948,13 @@ public static class Views
             o.Texts.AddRange(p.Texts.Select(t => t with { At = new Vec2(t.At.X, -t.At.Y) }));
             return o;
         }).ToList();
-        return Lapin.Drawing.Export.DxfWriter.Page(new Lapin.Drawing.Export.PaperPage(0, 0, flipped), $"Lapin · {view.Name} · 1:{r.Scale:0}");
+        var where = coords switch
+        {
+            "map" => $" · {Location.Crs(q.Model) ?? "map"} coordinates, metres",
+            "project" => " · from the project base point, mm",
+            _ => "",
+        };
+        return Lapin.Drawing.Export.DxfWriter.Page(new Lapin.Drawing.Export.PaperPage(0, 0, flipped), $"Lapin · {view.Name} · 1:{r.Scale:0}{where}", coords == "map" ? 6 : 4);
     }
 
     /// <summary>

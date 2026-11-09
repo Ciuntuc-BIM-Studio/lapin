@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
+  "True north up: click for project north": "ທິດເໜືອແທ້ຢູ່ເທິງ: ຄລິກເພື່ອທິດເໜືອຂອງໂຄງການ",
+  "Project north up: click to turn the plan to true north": "ທິດເໜືອຂອງໂຄງການຢູ່ເທິງ: ຄລິກເພື່ອໝູນແຜນຜັງໄປຫາທິດເໜືອແທ້",
+  "Export the plan as DXF: in the plan's, the base point's or the map's coordinates": "ສົ່ງອອກແຜນຜັງເປັນ DXF: ໃນພິກັດຂອງແຜນຜັງ, ຂອງຈຸດຖານ ຫຼື ຂອງແຜນທີ່",
+  "In the plan’s coordinates (mm)": "ໃນພິກັດຂອງແຜນຜັງ (mm)",
+  "From the project base point (mm)": "ຈາກຈຸດຖານຂອງໂຄງການ (mm)",
+  "In map coordinates (E, N in metres)": "ໃນພິກັດແຜນທີ່ (E, N ເປັນແມັດ)",
+  "Spot coordinate": "ຄ່າພິກັດຈຸດ",
+  "A spot coordinate is written on a plan: open one.": "ຄ່າພິກັດຈຸດຖືກຂຽນໃສ່ແຜນຜັງ: ເປີດແຜນຜັງໜຶ່ງ.",
+  "The project has no survey point: Manage → Location ties it to the map.": "ໂຄງການບໍ່ມີຈຸດສຳຫຼວດ: ຈັດການ → ທີ່ຕັ້ງໂຄງການ ຜູກມັນເຂົ້າກັບແຜນທີ່.",
   // Decision 445: Preferences, the grid and snaps, the UCS, the project's points, view tabs dragged into windows
   "Internal origin": "ຈຸດເລີ່ມຕົ້ນພາຍໃນ",
   "Project base point": "ຈຸດຫຼັກຖານໂຄງການ (Base point)",
@@ -1551,6 +1561,7 @@ export const LO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const LO_PATTERNS: Language['patterns'] = [
+  [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `ຈຸດ [Map/Project/Internal: ${({ "map E, N": "ແຜນທີ່ E, N", "base point X, Y": "ຈຸດຖານ X, Y", "plan origin X, Y": "ຈຸດເລີ່ມຕົ້ນຂອງແຜນຜັງ X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS ໝູນໄປ ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `ຢູ່ນອກກອບ, ຫ່າງຈາກແບບຈຳລອງ: ${m[1]}. ZE ປັບໃຫ້ພໍດີທັງໝົດ.`],
   [/^as its style: (.+)$/, (m) => `ຕາມຮູບແບບ: ${LO[m[1]] ?? m[1]}`],

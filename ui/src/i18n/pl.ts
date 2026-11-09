@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
+  "True north up: click for project north": "Północ geograficzna u góry: kliknij, by wybrać północ projektu",
+  "Project north up: click to turn the plan to true north": "Północ projektu u góry: kliknij, by obrócić rzut ku północy geograficznej",
+  "Export the plan as DXF: in the plan's, the base point's or the map's coordinates": "Eksportuj rzut jako DXF: we współrzędnych rzutu, punktu bazowego lub mapy",
+  "In the plan’s coordinates (mm)": "We współrzędnych rzutu (mm)",
+  "From the project base point (mm)": "Od punktu bazowego projektu (mm)",
+  "In map coordinates (E, N in metres)": "We współrzędnych mapy (E, N w metrach)",
+  "Spot coordinate": "Rzędna współrzędnych",
+  "A spot coordinate is written on a plan: open one.": "Rzędna współrzędnych jest zapisywana na rzucie: otwórz jakiś.",
+  "The project has no survey point: Manage → Location ties it to the map.": "Projekt nie ma punktu geodezyjnego: Zarządzaj → Lokalizacja łączy go z mapą.",
   // Decision 445: Preferences, the grid and snaps, the UCS, the project's points, view tabs dragged into windows
   "Internal origin": "Początek wewnętrzny",
   "Project base point": "Punkt bazowy projektu",
@@ -1505,6 +1515,7 @@ const n = (count: string, one: string, few: string, many: string) => `${count} $
 
 /** Phrases with a number or a name in them. */
 export const PL_PATTERNS: Language['patterns'] = [
+  [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Punkt [Map/Project/Internal: ${({ "map E, N": "mapa E, N", "base point X, Y": "punkt bazowy X, Y", "plan origin X, Y": "początek rzutu X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS obrócony o ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Poza kadrem, daleko od modelu: ${m[1]}. ZE kadruje wszystko.`],
   [/^as its style: (.+)$/, (m) => `jak jego styl: ${PL[m[1]] ?? m[1]}`],

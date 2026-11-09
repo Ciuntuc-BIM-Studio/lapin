@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
+  "True north up: click for project north": "Sand nord op: klik for projektnord",
+  "Project north up: click to turn the plan to true north": "Projektnord op: klik for at dreje planen mod sand nord",
+  "Export the plan as DXF: in the plan's, the base point's or the map's coordinates": "Eksportér planen som DXF: i planens, basispunktets eller kortets koordinater",
+  "In the plan’s coordinates (mm)": "I planens koordinater (mm)",
+  "From the project base point (mm)": "Fra projektets basispunkt (mm)",
+  "In map coordinates (E, N in metres)": "I kortkoordinater (E, N i meter)",
+  "Spot coordinate": "Koordinatkote",
+  "A spot coordinate is written on a plan: open one.": "En koordinatkote skrives på en plan: åbn en.",
+  "The project has no survey point: Manage → Location ties it to the map.": "Projektet har intet målepunkt: Administrer → Placering knytter det til kortet.",
   // Decision 445: Preferences, the grid and snaps, the UCS, the project's points, view tabs dragged into windows
   "Internal origin": "Intern oprindelse",
   "Project base point": "Projektets basispunkt",
@@ -1494,6 +1504,7 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DA_PATTERNS: Language['patterns'] = [
+  [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Punktet [Map/Project/Internal: ${({ "map E, N": "kort E, N", "base point X, Y": "basispunkt X, Y", "plan origin X, Y": "planens oprindelse X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS drejet med ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Uden for udsnittet, langt fra modellen: ${m[1]}. ZE viser alt.`],
   [/^as its style: (.+)$/, (m) => `som dens stil: ${DA[m[1]] ?? m[1]}`],

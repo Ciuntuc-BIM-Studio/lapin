@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
+  "True north up: click for project north": "Nord géographique en haut : clic pour le nord du projet",
+  "Project north up: click to turn the plan to true north": "Nord du projet en haut : clic pour tourner le plan vers le nord géographique",
+  "Export the plan as DXF: in the plan's, the base point's or the map's coordinates": "Exporter le plan en DXF : dans les coordonnées du plan, du point de base ou de la carte",
+  "In the plan’s coordinates (mm)": "Dans les coordonnées du plan (mm)",
+  "From the project base point (mm)": "Depuis le point de base du projet (mm)",
+  "In map coordinates (E, N in metres)": "En coordonnées de la carte (E, N en mètres)",
+  "Spot coordinate": "Cote de coordonnées",
+  "A spot coordinate is written on a plan: open one.": "Une cote de coordonnées s’écrit sur un plan : ouvrez-en un.",
+  "The project has no survey point: Manage → Location ties it to the map.": "Le projet n’a pas de point topographique : Gérer → Emplacement le relie à la carte.",
   // Decision 445: Preferences, the grid and snaps, the UCS, the project's points, view tabs dragged into windows
   "Internal origin": "Origine interne",
   "Project base point": "Point de base du projet",
@@ -1503,6 +1513,7 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '0
 
 /** Phrases with a number or a name in them. */
 export const FR_PATTERNS: Language['patterns'] = [
+  [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Le point [Map/Project/Internal: ${({ "map E, N": "carte E, N", "base point X, Y": "point de base X, Y", "plan origin X, Y": "origine du plan X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS tourné de ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Hors du cadrage, loin du modèle : ${m[1]}. ZE cadre tout.`],
   [/^as its style: (.+)$/, (m) => `comme son style: ${FR[m[1]] ?? m[1]}`],

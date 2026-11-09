@@ -28,6 +28,14 @@ A plan snaps to all three. The 3D view draws them at their places at any zoom, o
 
 **Coordinates at the cursor.** While the cursor is in a plan, the status line reads where it is. A click on the coordinates chooses what they are read from: the **internal origin**, the **project base point**, the **survey point (map)** (eastings and northings, turned to true north, as the IFC export writes them) or the **UCS** (see [Snaps and helpers](drafting.md#snaps-and-helpers)). The choice is kept in **File → Preferences… → Coordinates**.
 
+**Plans of a georeferenced project.** The model is drawn in its own coordinates, near the internal origin; the map's are worked out from the survey point, so a plan stays as precise and as quick as any other. Three things put it on the map:
+
+- **Spot coordinates.** **Annotate → Dimension → Spot coordinate** (DIMCOORD): click a point, then where its leader ends. It writes the point's **E** and **N** in metres, through the survey point and turned to true north; without a survey point, its **X** and **Y** from the project base point. Type **M**, **P** or **I** first to choose the map, the base point or the plan's origin. The values are worked out on every drawing: move the survey point and every spot coordinate is written again.
+- **A plan in map coordinates.** The plan's **DXF** button exports it **in the plan's coordinates** (millimetres from the internal origin), **from the project base point** (millimetres) or **in map coordinates** (E and N in metres, turned to true north), so the drawing lands on the cadastral plan or the surveyor's DXF.
+- **True north up.** When the project is turned from true north, the compass button in the plan's bar turns the plan on screen so true north points up, and back. Drawing, snaps, the grid and the UCS turn with it; the choice is kept for each plan on this computer. Sheets and the PDF keep project north up.
+
+![A spot coordinate on a plan of a georeferenced project, true north up](shots/spot-coordinate.webp)
+
 ## Importing
 
 - **Terrain from points** reads a CSV or text file from a survey: x y z, or number northing easting elevation, one point a line.

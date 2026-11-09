@@ -17,12 +17,36 @@ namespace Lapin.Drafting;
 /// <item><c>arc</c>: an arc's length (⌒), held on a drafted arc (<c>shape</c>) or its centre, radius and angles;</item>
 /// <item><c>slope</c>: the slope of the line from <c>a</c> to <c>b</c>, in % or degrees (<c>format</c>: auto, %, deg, ratio; auto: % under 15 %, degrees above), its arrow pointing down the slope;</item>
 /// <item><c>level</c>: the level at <c>a</c> (in a section or elevation its height; in a plan its storey's, or <c>z</c> when given), with the level mark;</item>
-/// <item><c>ordinate</c>: how far <c>a</c> lies from the origin <c>o</c> along x or y (<c>axis</c>), its leader to <c>at</c>.</item>
+/// <item><c>ordinate</c>: how far <c>a</c> lies from the origin <c>o</c> along x or y (<c>axis</c>), its leader to <c>at</c>;</item>
+/// <item><c>coordinate</c> (a spot coordinate, decision 447): where <c>a</c> lies on a plan, its leader to <c>at</c> and two lines of text, in the
+/// system it keeps (<c>system</c>): the map's eastings and northings (through the survey point, turned to true north), the project base
+/// point's X and Y, or the plan's own; worked out on every drawing, so moving the survey point or the base point rewrites them.</item>
 /// </list>
 /// </summary>
 public static class DimensionKinds
 {
-    public static readonly string[] Kinds = ["angular", "radial", "diameter", "arc", "slope", "level", "ordinate"];
+    public static readonly string[] Kinds = ["angular", "radial", "diameter", "arc", "slope", "level", "ordinate", "coordinate"];
+    public static readonly string[] CoordinateSystems = ["map", "project", "internal"];
+
+    /// <summary>A spot coordinate's two lines (metres, three decimals): E and N on the map, X and Y from the base point or the plan's origin.</summary>
+    public static (string First, string Second) CoordinateText(IModelView m, Vec2 p, string? system)
+    {
+        static string F(double v) => v.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture);
+        switch (system)
+        {
+            case "map" when Location.Survey(m) != null:
+            {
+                var (e, n) = GeoRef.ToMap(m, p);
+                return ($"E {F(e)}", $"N {F(n)}");
+            }
+            case "internal": return ($"X {F(p.X)}", $"Y {F(p.Y)}");
+            default:
+            {
+                var d = p - Location.Base(m).At;
+                return ($"X {F(d.X)}", $"Y {F(d.Y)}");
+            }
+        }
+    }
     public static readonly string[] SlopeFormats = ["auto", "%", "deg", "ratio"];
 
     static Vec2 P(JsonNode? n) => n is JsonArray a && a.Count >= 2 ? new Vec2(Json.Number(a[0]) ?? 0, Json.Number(a[1]) ?? 0) : default;
@@ -226,6 +250,27 @@ public static class DimensionKinds
                     mk.Snaps.Add(a);
                     break;
                 }
+                case "coordinate":
+                {
+                    // The point marked with a small circle and cross, a leader to a shoulder, the two lines above and below it.
+                    var r0 = 1.2 * mm;
+                    mk.Polyline(ViewMark.Circle(a, r0, 16), true, "DIMENSION", w, color);
+                    mk.Line(a - new Vec2(r0 * 1.6, 0), a + new Vec2(r0 * 1.6, 0), "DIMENSION", w, color).Line(a - new Vec2(0, r0 * 1.6), a + new Vec2(0, r0 * 1.6), "DIMENSION", w, color);
+                    var (l1, l2) = CoordinateText(c.Model, a, dim.Str("system"));
+                    var side = at.X >= a.X ? 1 : -1;
+                    var shoulder = Math.Max(l1.Length, l2.Length) * text.Height * 0.62 * mm;
+                    var dir = at - a;
+                    if (dir.Length > r0) mk.Line(a + dir.Normalized() * r0, at, "DIMENSION", w, color);
+                    var end = at + new Vec2(side * shoulder, 0);
+                    mk.Line(at, end, "DIMENSION", w, color);
+                    var anchor = side > 0 ? "start" : "end";
+                    var from = at + new Vec2(side * style.TextGap * mm, 0);
+                    mk.Text(new PenText(from + new Vec2(0, style.TextGap * mm), l1, text.Height, 0, anchor, "bottom", text.Bold, text.Font, text.Italic), color);
+                    // Both on their baselines (every reader of a drawing honours that): the second a text's height and a gap under the shoulder.
+                    mk.Text(new PenText(from - new Vec2(0, style.TextGap * mm + text.Height * mm), l2, text.Height, 0, anchor, "bottom", text.Bold, text.Font, text.Italic), color);
+                    mk.Snaps.Add(a);
+                    break;
+                }
                 case "ordinate":
                 {
                     mk.Line(a, at, "DIMENSION", w, color);
@@ -281,6 +326,17 @@ public static class DimensionKinds
                 if (a["o"] is null) attrs["o"] = J(new Vec2(0, 0));
                 attrs["axis"] = (string?)a["axis"] == "y" ? "y" : "x";
                 break;
+            case "coordinate":
+            {
+                if (a["a"] is null) throw new CommandException("A spot coordinate needs its point.");
+                var view = Views.Find(ctx.Model, viewId);
+                if (view == null || view.Str("kind") is not ("plan" or null)) throw new CommandException("A spot coordinate is written on a plan: a section or elevation has no place on the map.");
+                var system = (string?)a["system"] ?? (Location.Survey(ctx.Model) != null ? "map" : "project");
+                if (!CoordinateSystems.Contains(system)) throw new CommandException("A spot coordinate reads the map (map), the project base point (project) or the plan's origin (internal).");
+                if (system == "map" && Location.Survey(ctx.Model) == null) throw new CommandException("The project has no survey point: Manage → Location ties it to the map first.");
+                attrs["system"] = system;
+                break;
+            }
         }
         return attrs;
     }

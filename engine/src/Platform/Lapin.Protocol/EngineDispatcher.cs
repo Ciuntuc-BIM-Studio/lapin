@@ -980,7 +980,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             {
                 var id = (string?)p["id"] ?? throw new CommandException("Which sheet or view?");
                 var bytes = session.Model.Get(id) is { Class: Sheets.Class } sheet ? Sheets.Dxf(session.Reader, sheet)
-                    : Views.Find(session.Model, id) is { } view ? Views.Dxf(session.Reader, view)
+                    : Views.Find(session.Model, id) is { } view ? Views.Dxf(session.Reader, view, (string?)p["coords"] ?? "internal")
                     : throw new CommandException("There is no such sheet or view.");
                 return (Deliver(bytes, "drawing.dxf"), null);
             }

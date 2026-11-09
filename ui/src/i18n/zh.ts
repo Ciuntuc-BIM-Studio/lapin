@@ -3,6 +3,16 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
+  "True north up: click for project north": "正北朝上：点击切换为项目北",
+  "Project north up: click to turn the plan to true north": "项目北朝上：点击将平面图旋转至正北",
+  "Export the plan as DXF: in the plan's, the base point's or the map's coordinates": "将平面图导出为 DXF：使用平面图、基点或地图的坐标",
+  "In the plan’s coordinates (mm)": "平面图坐标 (mm)",
+  "From the project base point (mm)": "相对于项目基点 (mm)",
+  "In map coordinates (E, N in metres)": "地图坐标（E, N，单位米）",
+  "Spot coordinate": "坐标标注",
+  "A spot coordinate is written on a plan: open one.": "坐标标注写在平面图上：请打开一个平面图。",
+  "The project has no survey point: Manage → Location ties it to the map.": "项目没有测量点：管理 → 位置 可将其关联到地图。",
   // Decision 445: Preferences, the grid and snaps, the UCS, the project's points, view tabs dragged into windows
   "Internal origin": "内部原点",
   "Project base point": "项目基点",
@@ -1494,6 +1504,7 @@ export const ZH: Record<string, string> = {
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
+  [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `点 [Map/Project/Internal: ${({ "map E, N": "地图 E, N", "base point X, Y": "基点 X, Y", "plan origin X, Y": "平面图原点 X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS 已旋转 ${m[1]}°。`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `在取景范围之外、远离模型的项目：${m[1]}。ZE 可显示全部。`],
   [/^as its style: (.+)$/, (m) => `同其样式: ${ZH[m[1]] ?? m[1]}`],

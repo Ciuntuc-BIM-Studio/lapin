@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler } from 'lucide-react';
+import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -21,6 +21,7 @@ import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 import { lazyPart } from '../../platform/lazyPart';
+import { surveyPoint, useLocation } from '../../app/location';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ImportDxfDialog = lazyPart(() => import('./ImportDxfDialog').then((m) => m.ImportDxfDialog), { title: 'Import DXF' });
@@ -314,6 +315,28 @@ registerCommand({ names: ['DIMSLOPE', 'DSL'], label: 'Slope', start: slopeComman
 registerCommand({ names: ['DIMLEVEL', 'DLV'], label: 'Level', start: levelCommand });
 registerCommand({ names: ['DIMORDINATE', 'DOR'], label: 'Ordinate', start: ordinateCommand });
 
+/**
+ * DIMCOORD (decision 447): a spot coordinate on a plan, the point then where its leader ends [Map/Project/Internal:
+ * what it reads]. Map by default when the project is tied to the map (eastings and northings through the survey
+ * point, turned to true north), else the project base point's X and Y; worked out again whenever the points move.
+ */
+function coordinateCommand(): Step | null {
+  let system: 'map' | 'project' | 'internal' = surveyPoint(useLocation.getState().loc) ? 'map' : 'project';
+  const names = { map: 'map E, N', project: 'base point X, Y', internal: 'plan origin X, Y' };
+  const step = (): Step => ({
+    prompt: `The point [Map/Project/Internal: ${names[system]}]`, want: 'point',
+    keywords: {
+      M: () => { if (surveyPoint(useLocation.getState().loc)) system = 'map'; else cadLog('The project has no survey point: Manage → Location ties it to the map.'); return step(); },
+      P: () => { system = 'project'; return step(); },
+      I: () => { system = 'internal'; return step(); },
+    },
+    point: (a) => ({ prompt: 'Where the leader ends', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }], point: (at) => addKind('coordinate', { a: pair(a), at: pair(at), system }) }),
+  });
+  if (useUi.getState().view !== 'plan') { cadLog('A spot coordinate is written on a plan: open one.'); return null; }
+  return step();
+}
+registerCommand({ names: ['DIMCOORD', 'DCO'], label: 'Spot coordinate', start: coordinateCommand });
+
 // ─── Linework (LW…): the view's generated lines hidden, shown or restyled, joined at corners ───
 
 type LwMode = { action: 'hide' | 'show' | 'style'; style?: { pen?: number; color?: string; pattern?: string } };
@@ -584,7 +607,7 @@ const drafting: LapinModule = {
       groups: [
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
-          small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
+          small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE'), cad('dimCoord', 'Spot coordinate', Crosshair, 'DIMCOORD')] },
         { label: 'Text', small: [tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
           id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
           run: () => void (async () => {

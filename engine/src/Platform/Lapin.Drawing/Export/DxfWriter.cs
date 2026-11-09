@@ -247,6 +247,9 @@ public sealed class DxfWriter(double patternScale)
     const int SkeletonLineTypes = 3;
 
     /// <summary>The document, windows-1252 encoded.</summary>
+    /// <summary>The drawing's units as $INSUNITS says them: 4 millimetres (Lapin's own), 6 metres (map coordinates, decision 447).</summary>
+    public int Units { get; init; } = 4;
+
     public byte[] Bytes(string comment)
     {
         var lt = LineTypes();
@@ -256,6 +259,7 @@ public sealed class DxfWriter(double patternScale)
         var text = Skeleton();
         var nl = text.IndexOf('\n', 4);
         text = "999\n" + comment.Replace("\n", " ") + text[nl..];
+        if (Units != 4) text = text.Replace("$INSUNITS\n 70\n4\n", $"$INSUNITS\n 70\n{Units.ToString(CultureInfo.InvariantCulture)}\n");
         text = text.Replace("{{BLOCKRECORDS}}\n", Pairs(_blockRecords)).Replace("{{BLOCKS}}\n", Pairs(_blocks))
             .Replace("{{BLOCKRECORDCOUNT}}", (2 + _blockCount).ToString(CultureInfo.InvariantCulture));
         text = text.Replace("{{LTYPES}}\n", Pairs(lt)).Replace("{{LAYERS}}\n", Pairs(layers)).Replace("{{ENTITIES}}\n", Pairs(_out)).Replace("{{HANDSEED}}", _handle.ToString("X"))
@@ -268,9 +272,9 @@ public sealed class DxfWriter(double patternScale)
     /// Pages of pens (paper mm, y down) as one DXF each, y up, at 1:1 in mm. Pens of a block (a title block, decision 340) are
     /// written as that block's definition, inserted at 0,0, their live texts (a tag) as its attributes.
     /// </summary>
-    public static byte[] Page(PaperPage page, string comment)
+    public static byte[] Page(PaperPage page, string comment, int units = 4)
     {
-        var w = new DxfWriter();
+        var w = new DxfWriter { Units = units };
         Vec2 P(Vec2 p) => new(p.X, page.H - p.Y);
         void Draw(Pen pen, Func<PenText, bool> keep)
         {
