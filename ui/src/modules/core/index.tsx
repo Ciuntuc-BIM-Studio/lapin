@@ -16,6 +16,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { viewShowsField } from './planeFields';
 import { closePane, setTool, splitPane, useUi } from '../../app/store';
 import { isDesktop } from '../../engine/files';
+import { setLocationShown, useLocation } from '../../app/location';
 import { openViewWindow } from '../../app/windows';
 import { assistantAvailable } from '../../assistant/available';
 import { setLayout, showPropsTab } from '../../app/panels';
@@ -226,6 +227,8 @@ const core: LapinModule = {
         { id: 'view.fog', label: 'Fog', icon: CloudFog, run: () => useUi.setState((s) => ({ fog: !s.fog })) },
         // For the eyes only (decision 247): the plan's background grid (F7) and every line one pixel (TL); sheets and PDFs keep their pens.
         { id: 'view.grid', label: 'Grid', icon: Grid3x3, run: toggleGrid },
+        // The internal origin, the project base point and the survey point in plans and 3D (decision 445): the project's switch, one undo step.
+        { id: 'view.locationPoints', label: 'Coordinate points', icon: MapPin, run: () => { const shown = !useLocation.getState().loc.show; void setLocationShown(shown); notify(shown ? 'The internal origin, the base point and the survey point are shown in plans and 3D.' : 'The project\'s points are hidden.'); } },
         { id: 'view.thinLines', label: 'Thin lines', icon: Minus, shortcut: 'TL', run: toggleThinLines },
         // The shapes drafted on plans, sections and reference planes, as lines on their planes in 3D (decision 312).
         { id: 'view.drafts3d', label: 'Drafts in 3D', icon: PenLine, run: toggleDrafts3d },
@@ -280,6 +283,7 @@ const core: LapinModule = {
       // The same ids as the app's own commands (app/commands.ts): one entry in the shortcuts, its keys in the tooltip.
       { label: 'Interface', tools: [
         { id: 'app.interface', label: 'Interface…', icon: PanelsTopLeft, run: () => useUi.setState({ dialog: 'interface' }) },
+        { id: 'app.preferences', label: 'Preferences…', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'preferences' }) },
         { id: 'app.shortcuts', label: 'Keyboard shortcuts…', icon: Keyboard, run: () => useUi.setState({ dialog: 'shortcuts' }) },
         { id: 'app.quickTools', label: 'Quick tools…', icon: LayoutGrid, run: () => useUi.setState({ dialog: 'quickTools' }) },
         // The model assistant (docs/plan-assistant.md): the desktop's only, absent from the web build.

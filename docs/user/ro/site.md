@@ -16,6 +16,18 @@ O ridicare topo vine în coordonate de hartă: estică și nordică, la sute de 
 
 ![Gestionare → Amplasament: sistemul de coordonate și punctul de referință](shots/site-location.webp)
 
+**Punctele proiectului**, ca în Revit. **Vedere → Punctele de coordonate** (sau **Arată originea internă, punctul de bază și punctul topografic în planuri și în 3D** din Gestionare → Amplasament) desenează trei puncte în planuri și în vederea 3D:
+
+- **originea internă**, 0,0 al planului, care nu se mută niciodată: axa X cu roșu și axa Y cu verde (și Z cu albastru în 3D);
+- **punctul de bază al proiectului**, un cerc cu o cruce: cota lui (unde stă ±0,00), coordonatele lui pe hartă când proiectul e legat de hartă și o săgeată spre **nordul adevărat**, cu unghiul ei, când proiectul e rotit față de el (**Nordul adevărat** din Gestionare → Amplasament);
+- **punctul topografic**, un triunghi, cu estul, nordul și cota lui.
+
+Un plan face snap la toate trei. Vederea 3D le desenează la locul lor, la orice zoom, deasupra modelului.
+
+![Originea internă, punctul de bază rotit cu 12,5° față de nordul adevărat și punctul topografic în 3D](shots/location-3d.webp)
+
+**Coordonatele la cursor.** Cât timp cursorul e într-un plan, bara de stare arată unde se află. Un clic pe coordonate alege față de ce se citesc: **originea internă**, **punctul de bază al proiectului**, **punctul topografic (hartă)** (est și nord, rotite spre nordul adevărat, așa cum le scrie exportul IFC) sau **UCS-ul** (vezi [Snap și ajutoare](drafting.md#snap-și-ajutoare)). Alegerea se păstrează în **Fișier → Preferințe… → Coordonate**.
+
 ## Importul
 
 - **Teren din puncte** citește un fișier CSV sau text de la topograf: x y z, sau număr nordică estică cotă, câte un punct pe linie.

@@ -43,6 +43,7 @@ function appCommands(): CommandDef[] {
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },
     { id: 'app.interface', label: 'Interface…', category: general, defaults: ['Ctrl+.'], run: dialog('interface') },
+    { id: 'app.preferences', label: 'Preferences…', category: general, defaults: ['Ctrl+,'], run: dialog('preferences') },
     { id: 'app.quickTools', label: 'Quick tools…', category: general, defaults: [], run: dialog('quickTools') },
     // The workspaces (decision 243), each a command of its own: Commands… → "Workspace: MEP".
     ...WORKSPACE_IDS.map((w) => ({ id: `app.workspace.${w}`, label: `Workspace: ${WORKSPACE_LABELS[w]}`, category: general, defaults: [], run: () => chooseWorkspace(w) })),

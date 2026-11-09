@@ -34,7 +34,7 @@ Vrei mai mult loc pentru desen? **Vedere → Interfață…** alege o fereastră
 - **Zoom.** Rotița mouse-ului sau ciupit pe trackpad. Lapin face zoom unde e cursorul.
 - **Deplasare.** Trage cu butonul din mijloc sau din dreapta, sau cu două degete pe trackpad.
 - **Rotire în 3D.** Trage cu butonul stâng. Cu elemente selectate, vederea se rotește în jurul lor; altfel, în jurul punctului modelului de sub cursor.
-- **Arată tot.** Butonul **Încadrează**, comanda <kbd>ZE</kbd> sau dublu clic cu butonul din mijloc.
+- **Arată modelul.** Butonul **Încadrează** sau dublu clic cu butonul din mijloc: vederea încadrează corpul principal al modelului, ca clădirea să o umple chiar dacă ceva stă departe (un punct topografic la kilometri distanță, un text lăsat de un desen importat în originea lui, o linie rătăcită). Ce rămâne afară e numărat într-un mesaj. <kbd>ZE</kbd> încadrează tot, inclusiv acele obiecte îndepărtate. Un plan se deschide încadrat la fel, la fel și vederea 3D.
 
 ## Unitățile
 

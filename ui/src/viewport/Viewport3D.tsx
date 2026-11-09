@@ -51,6 +51,10 @@ import { useFaceSketch } from './faceSketch';
 import { useAxisDrag } from './axisDrag';
 import { SectionBox3D } from './SectionBox3D';
 import { RefPlanes3D, useRefPlaneDrag } from './RefPlanes3D';
+import { Location3D } from './Location3D';
+import { coreBounds, type Bounds } from './zoom';
+import { gridStepAt, usePrefs } from '../app/prefs';
+import { ucsOf, useLocation } from '../app/location';
 import { planePoint, refPlanesGroup, refPlanesKey, refPlanesOf } from './refPlanes';
 import { useRebar3d } from './rebar3d';
 import { useVoids3d, VOIDS_GROUP } from './voids3d';
@@ -94,10 +98,14 @@ function lineworkMaterial(color: string): THREE.LineBasicMaterial {
   return m;
 }
 
-function groundGrid(theme: keyof typeof GRID, z: number): THREE.GridHelper {
-  const grid = new THREE.GridHelper(60, 60, GRID[theme][0], GRID[theme][1]);
+function groundGrid(theme: keyof typeof GRID, z: number, step = 1, ucs: { x: number; y: number; angle: number } | null = null): THREE.GridHelper {
+  // 60 lines each way at the step (1 m: the adaptive grid's), at most 600; a fixed step's grid turns with the UCS (decision 445).
+  const n = Math.max(2, Math.min(600, Math.round(60 / Math.max(step, 1e-3))));
+  const grid = new THREE.GridHelper(n * step, n, GRID[theme][0], GRID[theme][1]);
+  grid.rotation.order = 'ZXY';
   grid.rotation.x = Math.PI / 2;
-  grid.position.z = z;
+  grid.rotation.z = ucs ? (ucs.angle * Math.PI) / 180 : 0;
+  grid.position.set(ucs?.x ?? 0, ucs?.y ?? 0, z);
   grid.name = 'ground-grid';
   return grid;
 }
@@ -683,11 +691,18 @@ export function Viewport3D() {
       moveTo: (p) => { const cur = pose(); const dx = p.x - cam.position.x, dy = p.y - cam.position.y; flyTo({ ...cur, target: { x: cur.target.x + dx, y: cur.target.y + dy, z: cur.target.z } }, false); },
       setHeight: (z) => { const cur = pose(); flyTo({ ...cur, target: { ...cur.target, z: cur.target.z + (z - cam.position.z) } }, false); },
       fit: (animate = true) => {
-        const box = new THREE.Box3();
-        for (const { object } of live.values()) if (object.visible) box.expandByObject(object);
-        layer.expand(box, useLooks.getState().looks);
+        // The model's main body (decision 446): what stands far from it (a stray element, a far survey object) left out.
+        const own: THREE.Box3[] = [];
+        for (const { object } of live.values()) if (object.visible) { const b = new THREE.Box3().expandByObject(object); if (!b.isEmpty()) own.push(b); }
+        // The instanced elements (a large model's): one box; a point cloud only where there is no model (an airborne scan is a district), as plans do.
+        const shared = new THREE.Box3();
+        layer.expand(shared, useLooks.getState().looks);
+        if (!shared.isEmpty()) own.push(shared);
         const cloudBox = cloudLayer.current?.box();
-        if (cloudBox) box.union(cloudBox);
+        if (!own.length && cloudBox && !cloudBox.isEmpty()) own.push(cloudBox.clone());
+        const core = coreBounds(own.map((b) => [b.min.x, b.min.y, b.max.x, b.max.y] as Bounds));
+        const box = new THREE.Box3();
+        if (core) for (const b of own) { const mx = (b.min.x + b.max.x) / 2, my = (b.min.y + b.max.y) / 2; if (mx >= core.bounds[0] && mx <= core.bounds[2] && my >= core.bounds[1] && my <= core.bounds[3]) box.union(b); }
         if (box.isEmpty()) box.set(new THREE.Vector3(-5, -5, 0), new THREE.Vector3(5, 5, 3));
         const centre = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
         const radius = Math.max(size.length() / 2, 1);
@@ -1442,17 +1457,20 @@ export function Viewport3D() {
   const theme = useUi((st) => st.theme);
   const gridShown = useDisplay((st) => st.grid);
   const elevation = elevationRef.current;
+  const gridFixed = usePrefs((st) => (st.gridMode === 'fixed' ? st.gridStep : 0));
+  const ucs3d = useLocation((st) => st.loc.ucs ? `${st.loc.ucs.x},${st.loc.ucs.y},${st.loc.ucs.angle}` : '');
   useEffect(() => {
     rendererRef.current?.setClearColor(CLEAR[theme]);
     const s = scene.current;
     const old = s?.getObjectByName('ground-grid');
     if (!s) return;
     if (old) { s.remove(old); dispose(old); }
-    const grid = groundGrid(theme, elevation);
+    const u = ucsOf(useLocation.getState().loc);
+    const grid = groundGrid(theme, elevation, gridFixed ? gridStepAt(0, { gridMode: 'fixed', gridStep: gridFixed }) : 1, u ? { x: u.origin.x, y: u.origin.y, angle: u.angle } : null);
     grid.visible = gridShown;
     s.add(grid);
     invalidate.current();
-  }, [theme, elevation, gridShown]);
+  }, [theme, elevation, gridShown, gridFixed, ucs3d]);
 
   // The grid's axes, on the lowest storey: dash-dot lines with their labels at both ends.
   // Keyed on the grids and the lowest storey only, not on every diff.
@@ -1826,6 +1844,7 @@ export function Viewport3D() {
       {!walkStart && <Guides3D camera={camRef} canvas={host} />}
       {!walkStart && <SketchGrips3D camera={camRef} canvas={host} scene={scene} />}
       {!walkStart && <RefPlanes3D camera={camRef} canvas={host} />}
+      {!walkStart && <Location3D camera={camRef} canvas={host} />}
       <KeyPlan mode="3d" />
     </>
   );

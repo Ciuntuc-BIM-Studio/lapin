@@ -21,7 +21,10 @@ export const PX_PER_MM = 96 / 25.4;
 export const actualScale = (scale: number) => (PX_PER_MM * 1000) / scale;
 
 export interface ZoomHost {
+  /** Everything the view draws (ZE). */
   fitAll(): void;
+  /** The model's main body, what stands far from it left out (the Fit button, the middle button twice, a plan opened); fitAll where a view has no such rule. */
+  fitModel?(): void;
   /** False when nothing is selected in the view. */
   fitSelection(): boolean;
   /** Two corners (view coordinates). */
@@ -145,6 +148,29 @@ export function framing(b: Bounds, size: { w: number; h: number }, pad = 0.85, m
   const w = Math.max(b[2] - b[0], 1e-3), h = Math.max(b[3] - b[1], 1e-3);
   const scale = Math.min(size.w / w, size.h / h) * pad;
   return { cx: (b[0] + b[2]) / 2, cy: (b[1] + b[3]) / 2, scale: Math.max(min, Math.min(scale, max)) };
+}
+
+/**
+ * The frame of the model's main body (decision 446): the boxes whose middles lie near the bulk of them, leaving out
+ * what stands far away (a survey point 2 km off, a text an imported DXF left at its origin, a stray line), so the
+ * building fills the view instead of a dot. Near: within `k` times the median distance of the middles from their
+ * median, and never less than `floor` metres; a plan whose boxes all lie near keeps them all. `left` counts the boxes
+ * left out, for the view to say so (ZE still frames everything).
+ */
+export function coreBounds(boxes: readonly Bounds[], o: { k?: number; floor?: number } = {}): { bounds: Bounds; left: number } | null {
+  if (!boxes.length) return null;
+  const k = o.k ?? 8, floor = o.floor ?? 60;
+  const median = (v: number[]) => { const a = [...v].sort((x, y) => x - y); const m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
+  const mids = boxes.map((b) => ({ x: (b[0] + b[2]) / 2, y: (b[1] + b[3]) / 2 }));
+  const c = { x: median(mids.map((m) => m.x)), y: median(mids.map((m) => m.y)) };
+  const d = mids.map((m) => Math.hypot(m.x - c.x, m.y - c.y));
+  const reach = Math.max(floor, k * median(d));
+  let bounds: Bounds | null = null, left = 0;
+  boxes.forEach((b, i) => {
+    if (d[i] > reach) { left++; return; }
+    bounds = bounds ? [Math.min(bounds[0], b[0]), Math.min(bounds[1], b[1]), Math.max(bounds[2], b[2]), Math.max(bounds[3], b[3])] : [...b] as Bounds;
+  });
+  return bounds ? { bounds, left } : null;
 }
 
 export const boundsOf = (pts: Iterable<Vec2>): Bounds | null => {

@@ -14,6 +14,7 @@ import { execute, undo, useSession } from '../../engine/session';
 import { beginMove3d } from '../moveIn3d';
 import { useWorkPlane } from '../sketch/sketch3d';
 import { deleteElements } from '../../engine/dependents';
+import { ucsOf, useLocation } from '../../app/location';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
 import { arcThrough, dist, toJson, type Shape } from './shapes';
@@ -25,6 +26,8 @@ import { xy } from '../../platform/vec';
 /** What a 2D view lends the command line: its view, and what lies under a point. */
 export interface CadHost {
   viewId: string;
+  /** A plan (typed coordinates are in the UCS), not a section or an elevation (in its own frame). */
+  isPlan?(): boolean;
   /** The drafted shape under a point, with its exact geometry. */
   pickDraft(p: Vec2): { id: string; shape: Shape } | null;
   /** Anything selectable under a point (a drafted shape, an annotation, an element). */
@@ -529,13 +532,14 @@ export const submit = serial(async (raw: string): Promise<void> => {
   const n = step.scalar ? parseScalar(text, step.want !== 'point') : null;
   if (n != null && step.scalar) { await advance(step.scalar(n)); return; }
   if (step.want === 'point' || step.want === 'select' || step.want === 'pick' || step.want === 'none') {
-    const parsed = parseCoordinateInput(text, { last: step.base ?? s.lastPoint });
+    const frame = s.host?.isPlan?.() ? ucsOf(useLocation.getState().loc) : null;
+    const parsed = parseCoordinateInput(text, { last: step.base ?? s.lastPoint, frame });
     if (parsed?.kind === 'point' && step.point) { useCad.setState({ lastPoint: parsed.pt }); await advance(step.point(parsed.pt)); return; }
     if (parsed?.kind === 'distance') {
       if (step.value) { await advance(step.value(parsed.d)); return; }
       // A distance from the base toward the cursor (squared by ortho).
       if (step.base && step.point) {
-        const toward = s.cursor ? (s.ortho ? applyOrtho(step.base, s.cursor) : s.cursor) : { x: step.base.x + 1, y: step.base.y };
+        const toward = s.cursor ? (s.ortho ? applyOrtho(step.base, s.cursor, frame) : s.cursor) : { x: step.base.x + 1, y: step.base.y };
         const p = pointAlong(step.base, toward, parsed.d);
         useCad.setState({ lastPoint: p });
         await advance(step.point(p));

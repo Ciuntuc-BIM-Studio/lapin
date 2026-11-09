@@ -16,6 +16,18 @@ A survey comes in map coordinates: eastings and northings, hundreds of kilometre
 
 ![Manage → Location: the coordinate system and the survey point](shots/site-location.webp)
 
+**The project's points**, as in Revit. **View → Coordinate points** (or **Show the internal origin, the base point and the survey point in plans and 3D** in Manage → Location) draws three points in plans and in the 3D view:
+
+- the **internal origin**, the plan's 0,0, which never moves: its X axis in red and its Y axis in green (and Z in blue in 3D);
+- the **project base point**, a circle with a cross: its elevation (where ±0.00 stands), its map coordinates when the project is tied to the map, and an arrow to **true north** with its angle when the project is turned from it (**True north** in Manage → Location);
+- the **survey point**, a triangle, with its eastings, northings and elevation.
+
+A plan snaps to all three. The 3D view draws them at their places at any zoom, over the model.
+
+![The internal origin, the base point turned 12.5° from true north and the survey point in 3D](shots/location-3d.webp)
+
+**Coordinates at the cursor.** While the cursor is in a plan, the status line reads where it is. A click on the coordinates chooses what they are read from: the **internal origin**, the **project base point**, the **survey point (map)** (eastings and northings, turned to true north, as the IFC export writes them) or the **UCS** (see [Snaps and helpers](drafting.md#snaps-and-helpers)). The choice is kept in **File → Preferences… → Coordinates**.
+
 ## Importing
 
 - **Terrain from points** reads a CSV or text file from a survey: x y z, or number northing easting elevation, one point a line.

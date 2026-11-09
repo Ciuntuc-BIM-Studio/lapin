@@ -2957,6 +2957,55 @@ export const scenes = [
     },
   },
   {
+    // Decision 445: File → Preferences (grid and snaps), the snap menu, a UCS in a plan, the project's points in 3D.
+    id: 'preferences',
+    touches: ['core', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ keyPlan: false });
+      // A line left 2.5 km away (decision 446): Fit frames the house and says what it left out; ZE would frame both.
+      const plan = `plan:${await t.storey()}`;
+      await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'line', a: [2000, 1500], b: [2001, 1500] } });
+      await t.wait(600);
+      await t.fit();
+      await t.until(async () => (await t.page.locator('.notice-status').count()) > 0, 'a notice that something far was left out of the frame');
+      const scale = await t.page.evaluate(async () => { const storey = (await import('/src/engine/session.ts')).activeStorey(); return (await import('/src/viewport/zoom.ts')).recall(`plan:${storey?.id}`)?.scale ?? 0; });
+      t.expect(scale > 20, `the house fills the plan (${scale.toFixed(2)} px/m)`);
+      await t.page.keyboard.press('Control+Comma');
+      await t.wait(400);
+      if (await t.page.locator('[data-testid=preferences]').count() === 0) await t.ui({ dialog: 'preferences' });
+      await t.page.waitForSelector('[data-testid=preferences]', { timeout: 10_000 });
+      await t.page.locator('[data-field=prefs-grid]').click();
+      await t.page.getByRole('radio').nth(1).check();
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-field=prefs-grid-step]').count() > 0, 'a fixed grid asks for its step');
+      await t.shot('preferences', { of: '.prefs-dialog', pad: 0 });
+      await t.page.getByRole('radio').nth(0).check();
+      await t.ui({ dialog: null });
+      await t.wait(300);
+      // The snap menu: a right click on SNAP under the plan.
+      await t.page.locator('[data-testid=snap-toggle]').first().click({ button: 'right' });
+      await t.wait(400);
+      t.expect(await t.page.getByRole('menuitem').count() >= 8, 'the snap menu lists the object snaps');
+      await t.shot('snap-menu', { clip: await t.page.evaluate(() => { const m = document.querySelector('[role=menu]') ?? document.querySelector('.context-menu'); const r = (m ?? document.body).getBoundingClientRect(); return { x: Math.max(0, r.left - 240), y: Math.max(0, r.top - 40), width: Math.min(window.innerWidth, r.width + 480), height: Math.min(window.innerHeight - Math.max(0, r.top - 40), r.height + 120) }; }) });
+      await t.page.keyboard.press('Escape');
+      // A UCS turned 30° at a corner of the house, the grid along its axes.
+      await t.cmd('project.location', { ucs: { x: 12, y: 8, angle: 30 } });
+      await t.until(async () => (await t.page.locator('[data-testid=ucs-icon]').count()) > 0, 'the UCS icon in the plan');
+      t.expect((await t.page.locator('[data-testid=ucs-chip]').first().textContent())?.trim() === 'UCS', 'the UCS chip says a UCS is set');
+      await t.shot('ucs', { of: '[data-testid=plan]', pad: 0 });
+      await t.cmd('project.location', { ucs: null });
+      // The project's points in 3D: the base point turned 12.5° from true north, a survey point.
+      await t.cmd('project.location', { show: true, base: { x: 4, y: -3, northAngle: 12.5 }, survey: { x: -6, y: 10, easting: 584500, northing: 452300, elevation: 118 } });
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click({ timeout: 3000 }).catch(() => {});
+      await t.wait(800);
+      await t.until(async () => (await t.page.locator('[data-testid=location-3d]').count()) > 0, 'the project\'s points over the 3D view');
+      await t.shot('location-3d');
+    },
+  },
+  {
     id: 'site',
     async run(t) {
       await t.fresh();

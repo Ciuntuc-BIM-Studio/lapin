@@ -95,5 +95,26 @@ public class GraphicsSetTests
         f.Run("project.location", new JsonObject { ["show"] = true, ["base"] = new JsonObject { ["elevation"] = 120.5 }, ["survey"] = new JsonObject { ["x"] = 10, ["y"] = 5, ["easting"] = 500000, ["northing"] = 4500000, ["elevation"] = 118 } });
         Assert.Contains("Base point +120.50", Texts());
         Assert.Contains("Survey point E 500000.000 N 4500000.000 +118.00", Texts());
+        Assert.Contains("Internal origin", Texts());
+        // The base point at the plan's origin, 10 m west and 5 m south of the survey point: its map coordinates under it.
+        Assert.Contains("E 499990.000 N 4499995.000", Texts());
+        Assert.DoesNotContain(Texts(), t => t.StartsWith("True north"));
+        f.Run("project.location", new JsonObject { ["base"] = new JsonObject { ["northAngle"] = 12.5 } });
+        Assert.Contains("True north 12.5°", Texts());
+    }
+
+    [Fact]
+    public void The_user_coordinate_system_is_kept_in_the_project_and_cleared_at_the_plan_s_own()
+    {
+        var f = new Fixture();
+        f.Run("project.location", new JsonObject { ["ucs"] = new JsonObject { ["x"] = 3, ["y"] = 4, ["angle"] = 390 } });
+        var loc = (JsonObject)f.Session.Query("project.location", new JsonObject())!;
+        Assert.Equal(3, (double)loc["ucs"]!["x"]!, 9);
+        Assert.Equal(30, (double)loc["ucs"]!["angle"]!, 9);
+        f.Run("project.location", new JsonObject { ["ucs"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["angle"] = 0 } });
+        Assert.Null(((JsonObject)f.Session.Query("project.location", new JsonObject())!)["ucs"]);
+        f.Run("project.location", new JsonObject { ["ucs"] = new JsonObject { ["x"] = 1, ["y"] = 0, ["angle"] = 0 } });
+        f.Run("project.location", new JsonObject { ["ucs"] = null });
+        Assert.Null(((JsonObject)f.Session.Query("project.location", new JsonObject())!)["ucs"]);
     }
 }

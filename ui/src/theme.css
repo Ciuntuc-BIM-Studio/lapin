@@ -1951,3 +1951,46 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .pane-chips .chip { margin: 0; cursor: pointer; background: none; border-color: var(--rule-strong); color: var(--ink-muted); text-transform: none; letter-spacing: 0; font-size: 11px; padding: 1px 8px; }
 .pane-chips .chip.on { border-color: var(--accent); color: var(--accent); font-weight: 600; background: var(--accent-wash); }
 .size-row input.mini { padding: 2px 4px; }
+
+/* The UCS icon in plans (decision 445): X red, Y green, as the 3D view's axes. */
+.ucs-icon { pointer-events: none; }
+.ucs-icon line { stroke-width: 1.5; }
+.ucs-icon .ucs-x { stroke: #c0392b; fill: #c0392b; }
+.ucs-icon .ucs-y { stroke: #27ae60; fill: #27ae60; }
+.ucs-icon .ucs-origin { fill: none; stroke: var(--ink, #333); stroke-width: 1; }
+.ucs-icon .ucs-label { font-size: 11px; font-weight: 600; fill: var(--ink, #333); }
+
+/* File → Preferences… (decision 445): the pages on the left, the page on the right. */
+.prefs-dialog { width: min(760px, calc(100vw - 32px)); }
+.prefs-body { display: flex; gap: 16px; min-height: 360px; }
+.prefs-nav { display: flex; flex-direction: column; gap: 2px; min-width: 150px; border-right: 1px solid var(--rule); padding-right: 8px; }
+.prefs-tab { text-align: left; padding: 6px 10px; border: 0; background: none; color: var(--ink); font: inherit; border-radius: 3px; cursor: pointer; }
+.prefs-tab:hover { background: var(--wash); }
+.prefs-tab.on { background: var(--accent-wash); box-shadow: inset 2px 0 var(--accent); }
+.prefs-page { flex: 1; display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.prefs-page h4 { margin: 8px 0 2px; }
+.prefs-page h4:first-child { margin-top: 0; }
+.pref-radios, .pref-checks { display: flex; flex-direction: column; gap: 3px; }
+.pref-checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+@media (max-width: 560px) { .prefs-body { flex-direction: column; } .prefs-nav { flex-direction: row; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--rule); } }
+.status-coords { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.cad-toggle.cad-more { padding-left: 3px; padding-right: 3px; margin-left: -2px; }
+
+/* The project's points over the 3D view (decision 445). */
+.location-3d { pointer-events: none; }
+.location-3d line, .location-3d circle, .location-3d polygon { stroke-width: 1.5; fill: none; }
+.location-3d text { font-size: 11px; }
+.location-3d .loc-x line { stroke: #c0392b; } .location-3d .loc-x text { fill: #c0392b; }
+.location-3d .loc-y line { stroke: #27ae60; } .location-3d .loc-y text { fill: #27ae60; }
+.location-3d .loc-z line { stroke: #2e6db4; } .location-3d .loc-z text { fill: #2e6db4; }
+.location-3d .loc-point line, .location-3d .loc-point circle, .location-3d .loc-point polygon { stroke: #2e6db4; }
+.location-3d .loc-point text { fill: #2e6db4; }
+.location-3d .loc-label { fill: #2e6db4; paint-order: stroke; stroke: var(--paper); stroke-width: 3px; }
+
+/* A view's tab dragged (decision 445): its name at the pointer, where it would go lit. */
+.tab-drag { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+.tab-ghost { position: fixed; padding: 3px 10px; background: var(--raised); border: 1px solid var(--accent); border-radius: 3px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.18); white-space: nowrap; }
+.tab-drop { position: fixed; background: color-mix(in srgb, var(--accent) 14%, transparent); border: 2px solid var(--accent); border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+.tab-drop span { background: var(--accent); color: var(--paper); padding: 4px 10px; border-radius: 3px; font-size: 12px; }
+.tab-drop.window { border-style: dashed; }
+.view-tab { touch-action: none; }

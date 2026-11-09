@@ -34,6 +34,16 @@ Every tool shows its letters in its tooltip; you can change them in **View → K
 
 Lapin snaps to the ends, middles and intersections of what is drawn, and to the grid. <kbd>F3</kbd> turns snapping on or off, <kbd>F8</kbd> ortho and <kbd>F10</kbd> polar tracking. Their state shows at the bottom right of the view.
 
+**Which snaps.** A right click on **SNAP** (or the ▾ beside it) lists the object snaps: **Endpoint**, **Midpoint**, **Intersection**, **Centre**, **Quadrant**, **Perpendicular** and **Nearest**, each on or off, then **Snap to the grid** and the polar tracking angle (every 5°, 10°, 15°, 22.5°, 30°, 45° or 90°). The same choices are in **File → Preferences… → Grid and snaps**, and they are kept for the next start.
+
+![The snap menu under the plan](shots/snap-menu.webp)
+
+**The grid.** The plan's grid is **adaptive** at first: its step follows the zoom. In **Preferences → Grid and snaps** choose **Fixed** and type its step (for example 100 mm or 1 m) and every how many lines one is drawn heavier. The grid then keeps that step at every zoom, and the cursor snaps to it where no object snap takes the point. When the step is too fine for the zoom, only its heavier lines are drawn. The 3D view's ground grid takes the same step.
+
+**UCS.** A user coordinate system, as in AutoCAD: type **UCS** on the command line, click its origin, then a point on its X axis (<kbd>Enter</kbd> keeps the angle). **W** goes back to the plan's own axes (World), **B** puts it on the project base point, **S** on the survey point with its axes east and north, and **R** turns it by an angle you type. The **UCS** chip beside SNAP shows when one is set, and its menu offers the same. In a UCS, typed coordinates (`x,y`, `@dx,dy`, `d<angle`), ortho, polar tracking and the grid follow its axes, and its icon (X red, Y green) stands at its origin. The UCS is kept in the project, and setting it is one undo step.
+
+![A UCS turned 30°: its icon and the grid along its axes](shots/ucs.webp)
+
 ## Selecting
 
 Click an element to select it; <kbd>Shift</kbd>-click adds to the selection. To select several at once, drag with the left button where nothing is selected. Dragged to the right, the box is blue and takes what lies wholly inside it (a window); dragged to the left, it is green and dashed and takes everything it touches (crossing), as in AutoCAD. Press <kbd>Space</kbd> while you drag and the box becomes a lasso that follows the mouse, keeping the mode the box had; <kbd>Space</kbd> again goes back to the box. On the command line, while a command asks you to select objects, type **WP** or **CP** and click the corners of a polygon, then <kbd>Enter</kbd>: a window polygon or a crossing polygon.

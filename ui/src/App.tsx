@@ -13,6 +13,12 @@ import { bindingText } from './app/commands';
 import { closePane, closeTab, focusPane, isTableView, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
 import { PaneContext } from './app/pane';
 import { openViewWindow } from './app/windows';
+import { beginTabDrag, DROP_LABELS, tabToWindow, useTabDrag } from './app/tabDrag';
+import { openContextMenu, type MenuItem } from './shell/ContextMenu';
+import { t as tr } from './i18n';
+import { resolveTheme, setPrefs, usePrefs } from './app/prefs';
+import { CursorCoords } from './shell/CursorCoords';
+import { watchLocation } from './app/location';
 import { useShortcuts } from './app/keys';
 import { useSession } from './engine/session';
 import { unitLabel, useStandards } from './engine/unitsStore';
@@ -84,6 +90,7 @@ function StatusBar() {
         : <span className={connected ? 'ok' : 'off'}>{connected ? 'Engine connected' : 'Engine offline'}</span>}
       {merged && <CadPrompt inline />}
       {parts.hud === 'status' && <span className="status-hud">{facts.level} <span className="accent">{facts.elevation}</span> · {facts.view}</span>}
+      <CursorCoords />
       <span>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <span>{elements} elements</span>
       <button type="button" className="status-link" title="The project's units: change them in Drafting standards → Project" onClick={() => openStandards('project')}>Units: {unitLabel(units) || units}</button>
@@ -117,6 +124,7 @@ function PaneTabs({ i }: { i: number }) {
   const tabs = useUi((s) => s.viewTabs);
   const storeyId = useUi((s) => s.storeyId);
   const nodes = useSession((s) => s.nodes);
+  const dragRef = useRef<{ dragged: () => boolean } | null>(null);
   if (!pane) return null;
   const label = (t: ViewTab): string => {
     switch (t.view) {
@@ -131,6 +139,20 @@ function PaneTabs({ i }: { i: number }) {
     }
   };
   const mine = tabKey({ ...pane, storeyId: pane.view === 'plan' ? storeyId : null });
+  // A tab's own menu (decision 445): a window of its own, the other pane or a split, closing.
+  const tabMenu = (x: number, y: number, t: ViewTab) => {
+    const items: MenuItem[] = [];
+    if (role === 'main' && !isGuest()) {
+      if (isDesktop()) items.push({ label: 'Open in a new window', onSelect: () => void tabToWindow(t, label(t)) });
+      if (count < 2) {
+        items.push({ label: 'Split: open beside', onSelect: () => { splitPane('row'); openTab(1, t); } });
+        items.push({ label: 'Split: open below', onSelect: () => { splitPane('column'); openTab(1, t); } });
+      } else items.push({ label: 'Open in the other pane', onSelect: () => openTab(i === 0 ? 1 : 0, t) });
+    }
+    items.push({ label: 'Close', onSelect: () => closeTab(tabKey(t)) });
+    if (tabs.length > 1) items.push({ label: 'Close the others', onSelect: () => { for (const o of useUi.getState().viewTabs) if (tabKey(o) !== tabKey(t)) closeTab(tabKey(o)); } });
+    openContextMenu(x, y, items);
+  };
   const current = tabs.find((t) => tabKey(t) === mine);
   return (
     <div className="view-tabs">
@@ -138,7 +160,10 @@ function PaneTabs({ i }: { i: number }) {
         {tabs.map((t) => {
           const key = tabKey(t);
           return (
-            <button type="button" key={key} className={`view-tab${key === mine ? ' on' : ''}`} title={label(t)} onClick={() => openTab(i, t)}>
+            <button type="button" key={key} className={`view-tab${key === mine ? ' on' : ''}`} title={`${tr(label(t))} · ${tr('drag out for a window of its own, to the side to split')}`}
+              onPointerDown={(e) => { if (e.button === 0 && !(e.target as HTMLElement).closest('.close') && role === 'main' && !isGuest()) dragRef.current = beginTabDrag(e, t, label(t)); }}
+              onClick={() => { if (dragRef.current?.dragged()) { dragRef.current = null; return; } dragRef.current = null; openTab(i, t); }}
+              onContextMenu={(e) => { e.preventDefault(); tabMenu(e.clientX, e.clientY, t); }}>
               {label(t)}
               <span className="close" role="button" aria-label="Close" onClick={(e) => { e.stopPropagation(); closeTab(key); }}><X size={11} /></span>
             </button>
@@ -159,6 +184,18 @@ function PaneTabs({ i }: { i: number }) {
         </>
       )}
       {role === 'main' && isDesktop() && !isGuest() && <button type="button" className="icon mini" title="Open this view in a window of its own (for a second screen)" onClick={() => void openViewWindow(pane, current ? label(current) : 'View')}><AppWindow size={13} /></button>}
+    </div>
+  );
+}
+
+/** A tab being dragged: its name at the pointer, the place it would go lit (decision 445). */
+function TabDragOverlay() {
+  const { label, at, drop } = useTabDrag();
+  if (!label || !at) return null;
+  return (
+    <div className="tab-drag" aria-hidden>
+      {drop && <div className={`tab-drop ${drop.kind}`} style={{ left: drop.rect.left, top: drop.rect.top, width: drop.rect.width, height: drop.rect.height }}><span>{tr(DROP_LABELS[drop.kind])}</span></div>}
+      <div className="tab-ghost" style={{ left: at.x + 12, top: at.y + 8 }} data-no-i18n>{label}</div>
     </div>
   );
 }
@@ -348,11 +385,12 @@ function PanelOverlay() {
 /** The dialogs of working together (File → Share session…, Join session…), opened by the store's `dialog`. */
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const InterfaceDialog = lazyPart(() => import('./shell/InterfaceDialog').then((m) => m.InterfaceDialog), { title: 'Interface' });
+const PreferencesDialog = lazyPart(() => import('./shell/PreferencesDialog').then((m) => m.PreferencesDialog), { title: 'Preferences' });
 const QuickToolsDialog = lazyPart(() => import('./shell/QuickToolsDialog').then((m) => m.QuickToolsDialog), { title: 'Quick tools' });
 const ShortcutsDialog = lazyPart(() => import('./shell/ShortcutsDialog').then((m) => m.ShortcutsDialog), { title: 'Keyboard shortcuts' });
 const OptimizeIfcDialog = lazyPart(() => import('./shell/OptimizeIfcDialog').then((m) => m.OptimizeIfcDialog), { title: 'Optimize IFC' });
 
-const shareDialogs: Record<string, React.ComponentType> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog };
+const shareDialogs: Record<string, React.ComponentType> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, preferences: PreferencesDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog };
 
 function Workspace() {
   const open = useUi((s) => s.dialog);
@@ -371,6 +409,7 @@ function Workspace() {
         <PanelOverlay />
       </div>
       <StatusBar />
+      <TabDragOverlay />
       {Dialog && <Dialog />}
       <GuestBar />
       <PresenceReporter />
@@ -398,7 +437,19 @@ export function App() {
   const screen = useUi((s) => s.screen);
   const theme = useUi((s) => s.theme);
   useShortcuts();
+  useEffect(() => { watchLocation(); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  // The theme chosen is kept for the next start (a tester's report: dark came back light every time); a system choice follows the system.
+  useEffect(() => { const p = usePrefs.getState(); if (p.theme !== 'system' && p.theme !== theme) setPrefs({ theme }); }, [theme]);
+  const themeChoice = usePrefs((s) => s.theme);
+  useEffect(() => {
+    if (themeChoice !== 'system') return;
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    const apply = () => useUi.setState({ theme: resolveTheme('system') });
+    apply();
+    mq?.addEventListener?.('change', apply);
+    return () => mq?.removeEventListener?.('change', apply);
+  }, [themeChoice]);
   const role = useUi((s) => s.windowRole);
   if (screen === 'join') return <JoinGate onJoin={() => void connect()} />;
   return <>{screen === 'start' ? <StartScreen /> : role === 'view' ? <ViewWindow /> : <Workspace />}<EngineNotice /><BusyOverlay /><ContextMenuHost /></>;

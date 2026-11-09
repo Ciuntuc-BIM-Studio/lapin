@@ -38,7 +38,7 @@ export function LocationDialog() {
       <div className="dialog" role="dialog" aria-label="Location" onClick={(e) => e.stopPropagation()}>
         <header className="dialog-head"><span className="panel-title">Location</span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body loc">
-          <label className="row"><input type="checkbox" checked={!!l.show} onChange={(e) => void execute('project.location', { show: e.target.checked })} /> Show the base and survey points in plans</label>
+          <label className="row"><input type="checkbox" checked={!!l.show} onChange={(e) => void execute('project.location', { show: e.target.checked })} /> Show the internal origin, the base point and the survey point in plans and 3D</label>
           <label className="row"><span className="muted small loc-label">Coordinate system</span>
             <select value={l.crs ?? ''} title="What the survey point's eastings and northings are in; imports in another system are converted to it"
               onChange={(e) => void execute('project.location', { crs: e.target.value || null })}>

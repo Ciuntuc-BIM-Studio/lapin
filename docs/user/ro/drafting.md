@@ -34,6 +34,16 @@ Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți sc
 
 Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și de grilă. <kbd>F3</kbd> pornește sau oprește snap-ul, <kbd>F8</kbd> ortho și <kbd>F10</kbd> urmărirea polară. Starea lor se vede în dreapta jos a vederii.
 
+**Ce snap-uri.** Un clic dreapta pe **SNAP** (sau pe ▾ de lângă el) arată snap-urile la obiecte: **Capăt**, **Mijloc**, **Intersecție**, **Centru**, **Cadran**, **Perpendicular** și **Cel mai apropiat**, fiecare pornit sau oprit, apoi **Snap la grilă** și unghiul urmăririi polare (la fiecare 5°, 10°, 15°, 22,5°, 30°, 45° sau 90°). Aceleași alegeri sunt în **Fișier → Preferințe… → Grilă și snap** și se păstrează la următoarea pornire.
+
+![Meniul de snap sub plan](shots/snap-menu.webp)
+
+**Grila.** Grila planului e la început **adaptivă**: pasul ei urmează zoomul. În **Preferințe → Grilă și snap** alege **Fixă** și scrie pasul (de exemplu 100 mm sau 1 m) și la câte linii una e desenată mai groasă. Grila păstrează atunci acel pas la orice zoom, iar cursorul face snap la ea unde niciun snap la obiecte nu ia punctul. Când pasul e prea fin pentru zoom, se desenează doar liniile ei mai groase. Grila de la sol a vederii 3D ia același pas.
+
+**UCS.** Un sistem de coordonate al utilizatorului, ca în AutoCAD: scrie **UCS** în linia de comandă, dă clic pe origine, apoi pe un punct de pe axa X (<kbd>Enter</kbd> păstrează unghiul). **W** revine la axele planului (Global), **B** îl pune în punctul de bază al proiectului, **S** în punctul topografic, cu axele spre est și nord, iar **R** îl rotește cu un unghi pe care îl scrii. Chip-ul **UCS** de lângă SNAP arată când e setat unul, iar meniul lui oferă același lucru. Într-un UCS, coordonatele scrise (`x,y`, `@dx,dy`, `d<unghi`), ortho, urmărirea polară și grila urmează axele lui, iar pictograma lui (X roșu, Y verde) stă în origine. UCS-ul se păstrează în proiect, iar setarea lui e un singur pas de undo.
+
+![Un UCS rotit cu 30°: pictograma lui și grila de-a lungul axelor](shots/ucs.webp)
+
 ## Selectare
 
 Dă clic pe un element ca să-l selectezi; <kbd>Shift</kbd>-clic adaugă la selecție. Ca să selectezi mai multe deodată, trage cu butonul stâng de unde nu e nimic selectat. Tras spre dreapta, chenarul e albastru și ia ce e cuprins în întregime în el (fereastră); tras spre stânga, e verde și punctat și ia tot ce atinge (crossing), ca în AutoCAD. Apasă <kbd>Space</kbd> în timp ce tragi și chenarul devine un lasou care urmează mouse-ul, cu modul pe care îl avea chenarul; <kbd>Space</kbd> din nou revine la chenar. Pe linia de comandă, când o comandă cere să selectezi obiecte, scrie **WP** sau **CP** și dă clic pe colțurile unui poligon, apoi <kbd>Enter</kbd>: un poligon fereastră sau un poligon crossing.

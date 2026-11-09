@@ -8,7 +8,9 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Vec2 } from '../../platform/module';
 import type { DrawingDto } from '../drawing';
-import { ALL_MODES, SnapIndex, findSnap, type SnapMode } from './snaps';
+import { SnapIndex, findSnap, type SnapMode } from './snaps';
+import { usePrefs } from '../../app/prefs';
+import { fromFrame, isIdentity, toFrame, ucsOf, useLocation, type Frame } from '../../app/location';
 import { fromJson, nearestOnShape, type Shape } from './shapes';
 import { applyOrtho } from './input';
 import { track, trackOnOrtho, type Guide } from './tracking';
@@ -27,7 +29,16 @@ export interface Aimed { point: Vec2; kind: 'point' | 'grid' | 'free'; mode?: Sn
  * angle; then the nearest snap; then the grid or the raw point (squared to
  * the base with ortho). `lock` says which constraint actually holds the point.
  */
-export function resolveAim(raw: Vec2, c: { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode } | null; acquired: readonly Vec2[]; tol: number; grid?: number }): Aimed {
+export interface AimInput { base: Vec2 | null; ortho: boolean; polar: boolean; snap: { point: Vec2; mode: SnapMode } | null; acquired: readonly Vec2[]; tol: number; grid?: number; polarStep?: number; frame?: Frame | null }
+
+export function resolveAim(raw: Vec2, c: AimInput): Aimed {
+  // In a UCS (decision 445) ortho, the guides, polar angles and the grid follow its axes: the same rule in its coordinates.
+  if (c.frame && !isIdentity(c.frame)) {
+    const f = c.frame;
+    const L = (p: Vec2) => toFrame(f, p), W = (q: Vec2) => fromFrame(f, q);
+    const a = resolveAim(L(raw), { ...c, frame: null, base: c.base ? L(c.base) : null, snap: c.snap ? { ...c.snap, point: L(c.snap.point) } : null, acquired: c.acquired.map(L) });
+    return { ...a, point: W(a.point), guides: a.guides.map((g) => ({ ...g, from: W(g.from), to: W(g.to) })) };
+  }
   const { base, snap: s, tol } = c;
   const ortho = c.ortho && !!base;
   if (s && s.mode !== 'nearest') return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
@@ -37,7 +48,7 @@ export function resolveAim(raw: Vec2, c: { base: Vec2 | null; ortho: boolean; po
     const t = trackOnOrtho(applyOrtho(base, raw), base, pool, tol);
     if (t) return { point: t.point, kind: 'point', guides: t.guides, lock: 'ortho' };
   } else {
-    const t = track(raw, pool, tol, { base, polarStep: c.polar ? 45 : null });
+    const t = track(raw, pool, tol, { base, polarStep: c.polar ? c.polarStep ?? 45 : null });
     if (t) return { point: t.point, kind: 'point', guides: t.guides, lock: t.guides.some((g) => g.kind === 'polar') ? 'polar' : 'tracking' };
   }
   if (s) return { point: s.point, kind: 'point', mode: s.mode, guides: [] };
@@ -93,6 +104,9 @@ export function useCadCanvas(o: {
   // A section's or an elevation's frame: its moves are also given in the model (a wall sweep moved up its wall).
   const frameRef = useRef(o.drawing?.frame ?? null);
   frameRef.current = o.drawing?.kind === 'plan' ? null : o.drawing?.frame ?? null;
+  // A plan drafts in the UCS; a section or an elevation in its own frame.
+  const planRef = useRef(o.drawing?.kind === 'plan');
+  planRef.current = o.drawing?.kind === 'plan';
   const { shapes, drafts } = useMemo(() => snapShapes(o.drawing, o.extra), [o.drawing, o.extra]);
   const index = useMemo(() => new SnapIndex(shapes), [shapes]);
   const acquired = useRef<Vec2[]>([]);
@@ -112,6 +126,7 @@ export function useCadCanvas(o: {
     if (!o.viewId) return;
     const host: CadHost = {
       viewId: o.viewId,
+      isPlan: () => planRef.current,
       pickDraft: (p) => {
         const tol = 8 / scaleRef.current;
         let best: { id: string; shape: Shape; d: number } | null = null;
@@ -155,7 +170,8 @@ export function useCadCanvas(o: {
     const cad = useCad.getState();
     const tol = 10 / scaleRef.current;
     const base = from ?? cad.step?.base ?? null;
-    const s = cad.osnap ? findSnap(raw, shapes, index, { tolerance: tol, modes: ALL_MODES, from: base }) : null;
+    const prefs = usePrefs.getState();
+    const s = cad.osnap ? findSnap(raw, shapes, index, { tolerance: tol, modes: new Set(prefs.snapModes), from: base }) : null;
     if (s && s.mode !== 'nearest') {
       // Resting on a snap acquires it for the guide lines.
       if (!hold.current || Math.hypot(hold.current.p.x - s.point.x, hold.current.p.y - s.point.y) > 1e-9) {
@@ -166,7 +182,8 @@ export function useCadCanvas(o: {
         }, 350) };
       }
     } else if (hold.current) { clearTimeout(hold.current.timer); hold.current = null; }
-    return resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, snap: s, acquired: acquired.current, tol, grid: o2.grid });
+    const frame = planRef.current ? ucsOf(useLocation.getState().loc) : null;
+    return resolveAim(raw, { base, ortho: cad.ortho || !!o2.orthoHeld, polar: cad.polar, polarStep: prefs.polarStep, snap: s, acquired: acquired.current, tol, grid: o2.grid, frame });
   }, [shapes, index]);
 
   /** A point the gesture placed: acquired for the guides. */
