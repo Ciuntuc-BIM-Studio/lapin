@@ -131,3 +131,5 @@ Then (#421, `docs/rooms.md`) a room's doors and windows chosen in its properties
 Then (#422, `docs/plan-units.md`) apartment types, step A: a component of `kind: "unit"` takes walls with their doors and windows (Modify → Make apartment type), instances copied, turned and mirrored, an edit carrying only the members that changed, under the same ids.
 
 Then (#423, `docs/experiment-editing-speed.md`) who may cut a wall is worked out once per model revision and class (`ModuleCatalog.CandidatesOf`), not once per wall: a type change on 4,440 walls 4.4 s → 2.8 s, opening 3.9 s → 2.6 s.
+
+Then (#424) the recovery journal's `fsync` leaves the session's thread: a line is with the system when written and on the disk within 100 ms or at close (up to ~100 ms of work exposed to a power cut, accepted); 3–5 ms off every edit.

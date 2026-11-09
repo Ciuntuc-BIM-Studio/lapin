@@ -45,16 +45,59 @@ public sealed class FileJournalStore : IJournalStore
         Directory.CreateDirectory(dir);
     }
 
+    /// <summary>
+    /// A line is with the operating system when <see cref="WriteLine"/> returns (a crash of Lapin loses nothing) and on the disk at most
+    /// <see cref="DiskWithin"/> later, or when the journal is closed (a save, closing the project, quitting): the call on the session's
+    /// thread no longer waits for the disk (an <c>fsync</c> after every edit was 3 to 5 ms of every one, decision 424). Only a power cut
+    /// or a crash of the system in that moment loses the last line or two.
+    /// </summary>
     sealed class Writer(FileStream file) : IJournalWriter
     {
+        /// <summary>How long a written line may wait to be on the disk.</summary>
+        public static readonly TimeSpan DiskWithin = TimeSpan.FromMilliseconds(100);
+
         readonly StreamWriter _w = new(file);
+        readonly object _sync = new();
+        bool _unsynced, _scheduled, _closed;
+
         public void WriteLine(string line)
         {
-            _w.WriteLine(line);
-            _w.Flush();
-            file.Flush(flushToDisk: true);
+            lock (_sync)
+            {
+                _w.WriteLine(line);
+                _w.Flush();
+                _unsynced = true;
+                if (_scheduled) return;
+                _scheduled = true;
+            }
+            // Holding the writer only weakly: a session dropped without closing (a crash the tests make) must still let its file go.
+            var me = new WeakReference<Writer>(this);
+            _ = Task.Delay(DiskWithin).ContinueWith(_ => { if (me.TryGetTarget(out var w)) w.ToDisk(); });
         }
-        public void Dispose() => _w.Dispose();
+
+        void ToDisk()
+        {
+            lock (_sync)
+            {
+                _scheduled = false;
+                if (_closed || !_unsynced) return;
+                _unsynced = false;
+                file.Flush(flushToDisk: true);
+            }
+        }
+
+        /// <summary>Closing puts what is written on the disk first: the journal of a project closed cleanly is complete.</summary>
+        public void Dispose()
+        {
+            lock (_sync)
+            {
+                if (_closed) return;
+                _closed = true;
+                _w.Flush();
+                if (_unsynced) file.Flush(flushToDisk: true);
+                _w.Dispose();
+            }
+        }
     }
 
     /// <summary>The journal, held exclusively while this session writes in it.</summary>
