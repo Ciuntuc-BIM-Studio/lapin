@@ -14,6 +14,7 @@ Work asked for or left open, not started yet. When an item is done, it moves to 
 
 ## Left open by earlier work
 
+- Plans with many timber-frame walls: a plan of 40–80 framed walls still draws in about 0.5–2 s on a Mac, after decision 418 made their edits fast; roof framing, CLT, joists and steel halls were not measured for the same cause.
 - Point clouds:
   - the index kept beside the project, so a project moves to another computer without reindexing (approved 08.11.2026);
   - the plan hang seen while filming is not reproduced: watch for it (decision 399);
