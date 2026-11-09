@@ -568,6 +568,18 @@ export const FAQ: Entry[] = [
     source: 'faq',
   },
   {
+    id: 'panel-sides',
+    q: ['How do I move the interface to the other side?', 'Can I put the project browser on the right and the properties on the left?', 'Can the browser and the properties be one under the other?'],
+    qRo: ['Cum mut interfața pe cealaltă parte?', 'Pot pune browserul de proiect în dreapta și proprietățile în stânga?', 'Pot avea browserul și proprietățile unul sub altul?'],
+    keywords: ['side', 'sides', 'left', 'right', 'swap', 'move', 'panel', 'panels', 'interface', 'layout', 'browser', 'properties', 'stack', 'stacked', 'other', 'under', 'revit', 'stanga', 'dreapta', 'parte', 'interfata', 'panou', 'panouri', 'proprietati', 'aspect', 'sub',
+      // Spanish, Portuguese, French, Italian, German, Polish, Danish, Chinese
+      'lado', 'otro', 'interfaz', 'izquierda', 'derecha', 'paneles', 'propiedades', 'navegador', 'esquerda', 'direita', 'painel', 'paineis', 'propriedades', 'gauche', 'droite', 'cote', 'interface', 'panneau', 'panneaux', 'proprietes', 'navigateur', 'sinistra', 'destra', 'lato', 'pannello', 'pannelli', 'proprieta', 'links', 'rechts', 'seite', 'oberflache', 'eigenschaften', 'lewo', 'prawo', 'strona', 'strone', 'wlasciwosci', 'panele', 'venstre', 'hojre', 'side', 'egenskaber', '左', '右', '面板', '侧', '属性'],
+    a: 'View → Panels puts the project browser and the properties where you want them: Browser left, Properties right (the default), Browser right, Properties left, or both on the left or both on the right, one under the other as in Revit, with a divider between them you drag (double-click it to halve). Each panel still folds to a rail (Ctrl+B, Ctrl+Shift+B), and the assistant tab stays with the properties. The choice is kept on this computer.',
+    aRo: 'View → Panels pune browserul de proiect și proprietățile unde vrei: Browser left, Properties right (implicit), Browser right, Properties left, sau ambele în stânga ori ambele în dreapta, unul sub altul ca în Revit, cu un separator între ele pe care îl tragi (dublu clic îl pune la jumătate). Fiecare panou se pliază în continuare într-o bară (Ctrl+B, Ctrl+Shift+B), iar fila asistentului rămâne cu proprietățile. Alegerea se păstrează pe acest calculator.',
+    action: { label: 'Browser right, Properties left', labelRo: 'Browser right, Properties left', run: { kind: 'tool', id: 'view.panels.swapped' } },
+    source: 'report #123',
+  },
+  {
     id: 'move-3d',
     q: ['How do I move an object in 3D and snap it to another one?', 'Can I move a stair onto the corner of a floor in the 3D view?', 'How do I move something up or down in 3D?'],
     qRo: ['Cum mut un obiect în 3D și îl prind de altul?', 'Pot muta o scară pe colțul unei plăci în vederea 3D?', 'Cum mut ceva în sus sau în jos în 3D?'],

@@ -91,6 +91,12 @@ Click an icon on a folded panel's rail to open the panel over the view without u
 
 ![A folded browser opened over the view from its rail](shots/browser-overlay.webp)
 
+## Panels on either side
+
+**View → Panels** puts the project browser and the properties panel where you want them, as in Revit: **Browser left, Properties right** (the default), **Browser right, Properties left**, **Both panels on the left** or **Both panels on the right**. With both on one side they stand one under the other; drag the divider between them to share the height (double-click it to halve), and drag the side's edge to make it wider. Each panel still folds, on its own: a folded one is a thin bar in the stack, or a rail when both are folded. The assistant tab (desktop) stays with the properties. Lapin remembers the arrangement on this computer.
+
+![Browser and properties stacked on the left](shots/panel-layouts.webp)
+
 ## Light and dark
 
 The moon at the right end of the ribbon turns the interface dark (graphite); the sun turns it light again (paper). In the dark theme plans, sections and elevations lie on the dark background, their black pens in light ink; sheets stay paper. The configurators' small drawings (a door's or window's plan, section and elevation, a roof's, a balcony's, an elevator's, a hall's, a stair's…) and the previews of tags, title blocks and materials are drawn on a light paper card in both themes, so their lines, texts and dimensions read as on a printed drawing.

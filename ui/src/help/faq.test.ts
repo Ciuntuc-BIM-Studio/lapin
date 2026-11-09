@@ -33,6 +33,13 @@ describe('Ask Lapin', () => {
     expect(best('Make the architecture components addable and editable in the 3D viewport. Sometimes the user may have to work fully in 3D, not just in plan.')).toBe('place-3d');
     expect(best('cum desenez pereti in 3D')).toBe('place-3d');
     expect(best('I was expecting the same dragging and dropping of components like in the plan viewport into the 3D viewport as well')).toBe('place-3d');
+    // Report #123, in the tester's words (Spanish) and the other languages.
+    expect(best('como cambiar a otro lado la interfaz')).toBe('panel-sides');
+    expect(best('cum pun proprietățile în stânga și browserul în dreapta')).toBe('panel-sides');
+    expect(best('put the project browser on the right and properties on the left')).toBe('panel-sides');
+    expect(best('comment mettre les propriétés à gauche et le navigateur à droite')).toBe('panel-sides');
+    expect(best('wie verschiebe ich die Eigenschaften auf die linke Seite')).toBe('panel-sides');
+    expect(best('como mover o painel de propriedades para a esquerda')).toBe('panel-sides');
     expect(best('Include Bay, Bow and Box windows for better window design customization. Make every component customizable.')).toBe('bay-windows');
     expect(best('various sunshade design types, with customizable shapes, dimensions, materials and projection lengths, to improve façade aesthetics, control sunlight, and energy efficiency')).toBe('sunshades');
   });

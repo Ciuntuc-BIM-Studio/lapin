@@ -91,6 +91,12 @@ Cliquez une icône sur la barre d’un panneau replié pour ouvrir le panneau su
 
 ![Une arborescence repliée ouverte sur la vue depuis sa barre](shots/browser-overlay.webp)
 
+## Les panneaux de chaque côté
+
+**Affichage → Panneaux** (View → Panels) place l'arborescence du projet et le panneau des propriétés où vous voulez, comme dans Revit : **Navigateur à gauche, Propriétés à droite** (par défaut), **Navigateur à droite, Propriétés à gauche**, **Les deux panneaux à gauche** ou **Les deux panneaux à droite**. Quand les deux sont du même côté, ils sont l'un sous l'autre ; faites glisser le séparateur entre eux pour partager la hauteur (double-clic pour la diviser en deux), et le bord du côté pour l'élargir. Chaque panneau se replie toujours seul : un panneau replié est une fine barre dans la pile, ou une barre latérale quand les deux le sont. L'onglet de l'assistant (bureau) reste avec les propriétés. Lapin retient la disposition sur cet ordinateur.
+
+![Navigateur et propriétés empilés à gauche](shots/panel-layouts.webp)
+
 ## Clair et sombre
 
 La lune au bout droit du ruban rend l’interface sombre (graphite) ; le soleil la rend de nouveau claire (papier). Dans le thème sombre, les plans, coupes et élévations reposent sur le fond sombre, leurs plumes noires en encre claire ; les feuilles restent du papier. Les petits dessins des configurateurs (le plan, la coupe et l’élévation d’une porte ou d’une fenêtre, d’un toit, d’un balcon, d’un ascenseur, d’une halle, d’un escalier…) et les aperçus des étiquettes, des cartouches et des matériaux sont dessinés sur une carte de papier claire dans les deux thèmes, pour que leurs lignes, textes et cotes se lisent comme sur un dessin imprimé.

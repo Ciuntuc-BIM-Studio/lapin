@@ -18,7 +18,7 @@ import { closePane, setTool, splitPane, useUi } from '../../app/store';
 import { isDesktop } from '../../engine/files';
 import { openViewWindow } from '../../app/windows';
 import { assistantAvailable } from '../../assistant/available';
-import { showPropsTab } from '../../app/panels';
+import { setLayout, showPropsTab } from '../../app/panels';
 import { SheetSection } from './SheetSection';
 import { Visibility3D, VisibilityDialog, openVisibility } from './VisibilityDialog';
 import { LinkedProjectsWatch, LinksDialog, LinksLook } from './LinksDialog';
@@ -256,6 +256,13 @@ const core: LapinModule = {
         { id: 'view.displayQuality', label: 'Display quality', icon: Gauge, run: () => useUi.setState({ dialog: 'displayQuality' }) },
         // The project's sun on a day and an hour, lighting the 3D view with its shadows (docs/plan-visualisation.md).
         { id: 'view.sun', label: 'Sun and shadows', icon: SunMedium, run: () => useUi.setState({ dialog: 'sun' }) },
+      ] },
+      // Which side the project browser and the properties stand on (decision 427, report #123); kept on this computer.
+      { label: 'Panels', tools: [
+        { id: 'view.panels.default', label: 'Browser left, Properties right', icon: PanelsTopLeft, run: () => { setLayout('default'); notify('The project browser stands on the left and the properties on the right.'); } },
+        { id: 'view.panels.swapped', label: 'Browser right, Properties left', icon: PanelsTopLeft, run: () => { setLayout('swapped'); notify('The project browser stands on the right and the properties on the left.'); } },
+        { id: 'view.panels.bothLeft', label: 'Both panels on the left', icon: PanelsTopLeft, run: () => { setLayout('bothLeft'); notify('The project browser and the properties are stacked on the left; drag the divider between them.'); } },
+        { id: 'view.panels.bothRight', label: 'Both panels on the right', icon: PanelsTopLeft, run: () => { setLayout('bothRight'); notify('The project browser and the properties are stacked on the right; drag the divider between them.'); } },
       ] },
       // Selecting and clearing up in 3D (docs/groups.md): a region, and hiding for now, with Revit's keys.
       { label: 'Select', tools: [

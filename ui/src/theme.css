@@ -743,6 +743,7 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 /* The properties panel: groups that fold, rows as a grid of cells with a spreadsheet's feel. */
 .props { position: relative; }
 .props-resize { position: absolute; left: -3px; top: 0; bottom: 0; width: 6px; cursor: col-resize; z-index: 5; }
+.side-col.on-left .props-resize { left: auto; right: -3px; }
 .props-resize:hover { background: var(--accent); opacity: 0.35; }
 .props-filter { display: flex; align-items: center; gap: 6px; margin: 8px 12px 2px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 3px; background: var(--bg); color: var(--ink-muted); }
 .props-filter input { flex: 1; border: 0; background: transparent; padding: 5px 0; outline: none; }
@@ -1070,6 +1071,15 @@ button.mode-chip:hover { color: var(--accent); }
 .rail-icon { width: 28px; height: 28px; margin: 0; color: var(--ink-muted); }
 .rail-icon.on { color: var(--accent); background: var(--accent-wash); }
 .panel-overlay { position: absolute; top: 0; bottom: 0; z-index: 14; display: flex; background: var(--panel); border: 1px solid var(--rule-strong); box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18); }
+/* A side holds one panel or two stacked (View → Panels). */
+.side-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.side-col.rails > .panel.rail { flex: 1; }
+.side-col > .side { min-height: 0; }
+.stack-sep { flex: none; height: 6px; cursor: row-resize; background: var(--bg); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.stack-sep:hover { background: var(--accent-wash); }
+.fold-bar { flex: none; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-top: 1px solid var(--rule); background: var(--panel); color: var(--ink-muted); font: inherit; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+.fold-bar:hover { color: var(--ink); background: var(--accent-wash); }
+.side-col.on-left .side > .panel-fold { right: 6px; }
 /* Focus: the selection's card. */
 .sel-card { position: absolute; right: 12px; bottom: 12px; z-index: 4; display: flex; flex-direction: column; gap: 6px; width: 260px; padding: 10px 12px; background: var(--hud); border: 1px solid var(--rule); border-radius: 3px; backdrop-filter: blur(4px); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08); }
 .sel-card .fields { border-left: 0; }

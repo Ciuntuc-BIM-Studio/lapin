@@ -5333,6 +5333,18 @@ export const scenes = [
       await t.page.locator('.interface-dialog .btn.primary').click();
       await t.wait(400);
       t.expect(await t.page.locator('.band .group').count() > 0, 'Comfortable brings the large ribbon back');
+      // The panels on either side (decision 427, report #123): swapped, then stacked on the left; back to the default.
+      await t.tool('view.panels.swapped');
+      await t.wait(300);
+      t.expect(await t.page.locator('.side-col.on-left .props-side').count() === 1 && await t.page.locator('.side-col.on-right .browser-side').count() === 1, 'View → Panels swaps the browser and the properties');
+      await t.tool('view.panels.bothLeft');
+      await t.wait(400);
+      t.expect(await t.page.locator('.side-col.on-left.stacked .browser-side').count() === 1 && await t.page.locator('.side-col.on-left.stacked .props-side').count() === 1 && await t.page.locator('.stack-sep').count() === 1, 'both panels stack on the left with a divider');
+      await t.fit();
+      await t.shot('panel-layouts', { clip: { x: 0, y: 0, width: 760, height: 620 } });
+      await t.tool('view.panels.default');
+      await t.wait(300);
+      t.expect(await t.page.locator('.side-col.on-left .browser-side').count() === 1 && await t.page.locator('.side-col.on-right .props-side').count() === 1, 'the default layout is back');
       // The quick tools the user chooses (decision 259): slot 7 given the stair from View → Quick tools…, slot 2 emptied.
       await t.tool('app.quickTools');
       t.expect(await t.page.locator('.quick-tools-dialog').count() === 1, 'View → Quick tools… opens its dialog');

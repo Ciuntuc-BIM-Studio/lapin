@@ -4,9 +4,9 @@
  * Atrium's HUD, the properties panel, the status bar.
  */
 
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AppWindow, Bot, Columns2, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
-import { closeOverlay, columns, setPanelWidth, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
+import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
 import { assistantAvailable } from './assistant/available';
 import { useInterface } from './app/interface';
 import { bindingText } from './app/commands';
@@ -219,22 +219,77 @@ function Panes() {
   );
 }
 
-/** A separator beside a side panel: dragged, it sets the panel's width. */
-function SideSep({ side }: { side: 'browser' | 'props' }) {
+/** A separator beside a side: dragged, it sets the side's width (its first open panel's). */
+function SideSep({ side }: { side: Side }) {
   const onDown = (e: React.PointerEvent) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     const start = e.clientX;
-    const width = side === 'browser' ? usePanels.getState().browserWidth : usePanels.getState().propsWidth;
-    const move = (ev: PointerEvent) => setPanelWidth(side, width + (side === 'browser' ? ev.clientX - start : start - ev.clientX));
+    const st = usePanels.getState();
+    const first = panelsOn(st, side).find((p) => (p === 'browser' ? st.browserOpen : st.propsOpen)) ?? 'browser';
+    const width = first === 'browser' ? st.browserWidth : st.propsWidth;
+    const move = (ev: PointerEvent) => setPanelWidth(first, width + (side === 'left' ? ev.clientX - start : start - ev.clientX));
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
   };
-  return <div className="side-sep" role="separator" aria-orientation="vertical" onPointerDown={onDown} onDoubleClick={() => togglePanel(side)} title="Drag to resize; double-click to fold or unfold" />;
+  const fold = () => { const st = usePanels.getState(); const first = panelsOn(st, side).find((p) => (p === 'browser' ? st.browserOpen : st.propsOpen)); if (first) togglePanel(first); };
+  return <div className="side-sep" role="separator" aria-orientation="vertical" onPointerDown={onDown} onDoubleClick={fold} title="Drag to resize; double-click to fold or unfold" />;
+}
+
+/** The divider between two panels stacked on one side: dragged, it shares their height. */
+function StackSep({ host }: { host: React.RefObject<HTMLDivElement | null> }) {
+  const onDown = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      const r = host.current!.getBoundingClientRect();
+      setStackRatio((ev.clientY - r.top) / r.height);
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return <div className="stack-sep" role="separator" aria-orientation="horizontal" onPointerDown={onDown} onDoubleClick={() => setStackRatio(0.5)} title="Drag to share the height; double-click to halve" />;
+}
+
+const PANEL_NAME: Record<PanelId, string> = { browser: 'Project browser', props: 'Properties' };
+
+/** A panel folded inside a stack whose other panel is open: a thin bar to unfold it. */
+function FoldedBar({ panel, side }: { panel: PanelId; side: Side }) {
+  return (
+    <button type="button" className="fold-bar" data-rail={panel} title={`Unfold the ${PANEL_NAME[panel].toLowerCase()}`} onClick={() => togglePanel(panel)}>
+      {side === 'left' ? <PanelLeftOpen size={13} /> : <PanelRightOpen size={13} />}<span>{PANEL_NAME[panel]}</span>
+    </button>
+  );
+}
+
+/** One side of the workspace: its panels (open, folded to a bar, or all folded to rails), stacked when there are two. */
+function SideColumn({ side }: { side: Side }) {
+  const st = usePanels();
+  const host = useRef<HTMLDivElement>(null);
+  const ps = panelsOn(st, side);
+  if (!ps.length) return <span />;
+  const isOpen = (p: PanelId) => (p === 'browser' ? st.browserOpen : st.propsOpen);
+  const open = ps.filter(isOpen);
+  if (!open.length) {
+    return <div className={`side-col on-${side} rails`}>{ps.map((p) => <Rail key={p} panel={p} side={side} label={PANEL_NAME[p]} />)}</div>;
+  }
+  const grow = (p: PanelId) => (open.length < 2 ? 1 : p === 'browser' ? st.stackRatio : 1 - st.stackRatio);
+  return (
+    <div ref={host} className={`side-col on-${side}${ps.length > 1 ? ' stacked' : ''}`}>
+      {ps.map((p, i) => isOpen(p) ? (
+        <Fragment key={p}>
+          {i > 0 && open.length > 1 && <StackSep host={host} />}
+          <div className={`side ${p === 'browser' ? 'browser-side' : 'props-side'}`} style={{ flex: `${grow(p)} 1 0` }}>
+            <PanelFold side={p} at={side} />{p === 'browser' ? <ProjectBrowser /> : <RightPanel />}
+          </div>
+        </Fragment>
+      ) : <FoldedBar key={p} panel={p} side={side} />)}
+    </div>
+  );
 }
 
 /** A folded panel: a narrow rail; its icons open the panel over the view for a moment, the arrow unfolds it. */
-function Rail({ side, label }: { side: 'browser' | 'props'; label: string }) {
+function Rail({ panel: side, side: at, label }: { panel: PanelId; side: Side; label: string }) {
   const hidden = usePanels((p) => p.railsHidden);
   const overlay = usePanels((p) => p.overlay);
   if (hidden) return <span />;
@@ -243,7 +298,7 @@ function Rail({ side, label }: { side: 'browser' | 'props'; label: string }) {
   const on = (tab?: string) => (overlay?.side === side && overlay.tab === tab ? ' on' : '');
   return (
     <aside className={`panel rail ${side}`} aria-label={label} data-rail={side}>
-      <button type="button" className="icon mini" title={`Unfold the ${label.toLowerCase()}${keys ? ` (${keys})` : ''}`} onClick={() => togglePanel(side)}>{side === 'browser' ? <PanelLeftOpen size={15} /> : <PanelRightOpen size={15} />}</button>
+      <button type="button" className="icon mini" title={`Unfold the ${label.toLowerCase()}${keys ? ` (${keys})` : ''}`} onClick={() => togglePanel(side)}>{at === 'left' ? <PanelLeftOpen size={15} /> : <PanelRightOpen size={15} />}</button>
       {side === 'browser' ? <>
         <button type="button" className={`icon rail-icon${on('project')}`} title="Project: views, sheets and schedules" onClick={pick('project')}><FolderTree size={16} /></button>
         <button type="button" className={`icon rail-icon${on('levels')}`} title="Levels" onClick={pick('levels')}><Layers size={16} /></button>
@@ -263,6 +318,8 @@ function PanelOverlay() {
   const inset = usePanels((p) => (p.railsHidden ? 0 : 36));
   const browserWidth = usePanels((p) => p.browserWidth);
   const propsWidth = usePanels((p) => p.propsWidth);
+  const browserSide = usePanels((p) => p.browserSide);
+  const propsSide = usePanels((p) => p.propsSide);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!overlay) return;
@@ -278,9 +335,11 @@ function PanelOverlay() {
   }, [overlay]);
   if (!overlay) return null;
   const browser = overlay.side === 'browser';
+  const at = browser ? browserSide : propsSide;
+  const width = browser ? browserWidth : propsWidth;
   return (
-    <div ref={ref} className={`panel-overlay side ${browser ? 'left' : 'right'}`} style={browser ? { left: inset, width: browserWidth } : { right: inset, width: propsWidth }}>
-      <PanelFold side={overlay.side} overlay />
+    <div ref={ref} className={`panel-overlay side ${at}`} style={at === 'left' ? { left: inset, width } : { right: inset, width }}>
+      <PanelFold side={overlay.side} at={at} overlay />
       {browser ? <ProjectBrowser key={overlay.tab ?? "project"} show={overlay.tab === 'assistant' ? undefined : overlay.tab} /> : <PropertiesPanel />}
     </div>
   );
@@ -304,11 +363,11 @@ function Workspace() {
     <div className={`workspace ui-${ui.preset} rows-${ui.parts.rows}`}>
       <Ribbon />
       <div className="body" style={{ gridTemplateColumns: columns(panels) }}>
-        {panels.browserOpen ? <div className="side browser-side"><PanelFold side="browser" /><ProjectBrowser /></div> : <Rail side="browser" label="Project browser" />}
-        {panels.browserOpen ? <SideSep side="browser" /> : <span />}
+        <SideColumn side="left" />
+        {panelsOn(panels, 'left').some((p) => (p === 'browser' ? panels.browserOpen : panels.propsOpen)) ? <SideSep side="left" /> : <span />}
         <main className="views"><Panes /></main>
-        {panels.propsOpen ? <SideSep side="props" /> : <span />}
-        {panels.propsOpen ? <div className="side props-side"><PanelFold side="props" /><RightPanel /></div> : <Rail side="props" label="Properties" />}
+        {panelsOn(panels, 'right').some((p) => (p === 'browser' ? panels.browserOpen : panels.propsOpen)) ? <SideSep side="right" /> : <span />}
+        <SideColumn side="right" />
         <PanelOverlay />
       </div>
       <StatusBar />

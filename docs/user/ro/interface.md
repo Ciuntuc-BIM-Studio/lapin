@@ -91,6 +91,12 @@ Apasă o pictogramă de pe bara unui panou pliat ca să-l deschizi peste vedere 
 
 ![Un browser pliat, deschis peste vedere de pe bara lui](shots/browser-overlay.webp)
 
+## Panourile pe oricare parte
+
+**View → Panels** pune browserul de proiect și panoul de proprietăți unde vrei, ca în Revit: **Browser în stânga, Proprietăți în dreapta** (implicit), **Browser în dreapta, Proprietăți în stânga**, **Ambele panouri în stânga** sau **Ambele panouri în dreapta**. Când sunt amândouă pe o parte, stau unul sub altul; trage separatorul dintre ele ca să împarți înălțimea (dublu clic îl pune la jumătate) și trage marginea părții ca să o lărgești. Fiecare panou se pliază în continuare singur: unul pliat e o bară subțire în coloană, sau o bandă laterală când sunt pliate ambele. Fila asistentului (desktop) rămâne cu proprietățile. Lapin ține minte aranjarea pe acest calculator.
+
+![Browserul și proprietățile, unul sub altul în stânga](shots/panel-layouts.webp)
+
 ## Luminos și întunecat
 
 Luna din capătul din dreapta al panglicii face interfața întunecată (grafit); soarele o face din nou luminoasă (hârtie). În tema întunecată planurile, secțiunile și fațadele stau pe fundalul întunecat, cu penițele negre în cerneală deschisă; planșele rămân hârtie. Desenele mici ale configuratoarelor (planul, secțiunea și fațada unei uși sau ferestre, ale unui acoperiș, balcon, lift, hale, scări…) și previzualizările etichetelor, cartușelor și materialelor se desenează pe un card de hârtie deschis în ambele teme, ca liniile, textele și cotele să se citească la fel ca pe un desen tipărit.

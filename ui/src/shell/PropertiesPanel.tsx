@@ -10,7 +10,7 @@ import { AlignHorizontalJustifyCenter, ChevronRight, Search, Trash2 } from 'luci
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
-import { setPanelWidth, usePanels } from '../app/panels';
+import { governor, setPanelWidth, usePanels } from '../app/panels';
 import { activeStorey, execute, useSession } from '../engine/session';
 import { ownPlanOf } from '../viewport/storeyPlan';
 import { frontView } from '../viewport/frontView';
@@ -135,8 +135,10 @@ function IfcPropertiesSection({ node }: { node: NodeDto }) {
 
 function startResize(e: React.PointerEvent): void {
   e.preventDefault();
-  const x0 = e.clientX, w0 = usePanels.getState().propsWidth;
-  const move = (ev: PointerEvent) => setPanelWidth('props', w0 - (ev.clientX - x0));
+  const st = usePanels.getState();
+  const x0 = e.clientX, w0 = governor(st, 'props') === 'browser' ? st.browserWidth : st.propsWidth;
+  const dir = st.propsSide === 'left' ? 1 : -1;
+  const move = (ev: PointerEvent) => setPanelWidth('props', w0 + dir * (ev.clientX - x0));
   const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
 }

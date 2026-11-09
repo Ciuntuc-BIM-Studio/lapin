@@ -91,6 +91,12 @@ Klik på et ikon på et indfoldet panels skinne for at åbne panelet over visnin
 
 ![En indfoldet browser åbnet over visningen fra sin skinne](shots/browser-overlay.webp)
 
+## Paneler på begge sider
+
+**Vis → Paneler** (View → Panels) placerer projektbrowseren og egenskabspanelet, hvor du vil, som i Revit: **Browser til venstre, Egenskaber til højre** (standard), **Browser til højre, Egenskaber til venstre**, **Begge paneler til venstre** eller **Begge paneler til højre**. Står begge på samme side, ligger de under hinanden; træk i skillelinjen mellem dem for at dele højden (dobbeltklik halverer), og i sidens kant for at gøre den bredere. Hvert panel kan stadig foldes for sig: et foldet panel er en tynd bjælke i stakken, eller en skinne, når begge er foldet. Assistentens fane (skrivebord) bliver ved egenskaberne. Lapin husker opstillingen på denne computer.
+
+![Browser og egenskaber stablet til venstre](shots/panel-layouts.webp)
+
 ## Lys og mørk
 
 Månen yderst til højre på båndet gør brugerfladen mørk (grafit); solen gør den lys igen (papir). I det mørke tema ligger planer, snit og facader på den mørke baggrund med de sorte penne i lyst blæk; ark forbliver papir. Konfiguratorernes små tegninger (en dørs eller et vindues plan, snit og facade, et tags, en altans, en elevators, en hals, en trappes…) og forhåndsvisningerne af mærker, tegningshoveder og materialer tegnes på et lyst papirkort i begge temaer, så deres linjer, tekster og mål læses som på en udskrevet tegning.

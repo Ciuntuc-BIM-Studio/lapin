@@ -91,6 +91,12 @@ Haga clic en un icono del carril de un panel plegado para abrir el panel sobre l
 
 ![Un explorador plegado abierto sobre la vista desde su carril](shots/browser-overlay.webp)
 
+## Paneles a cada lado
+
+**Vista → Paneles** (View → Panels) coloca el explorador del proyecto y el panel de propiedades donde quieras, como en Revit: **Navegador a la izquierda, Propiedades a la derecha** (por defecto), **Navegador a la derecha, Propiedades a la izquierda**, **Ambos paneles a la izquierda** o **Ambos paneles a la derecha**. Con los dos en un lado quedan uno bajo el otro; arrastra el divisor entre ellos para repartir la altura (doble clic lo divide por la mitad) y arrastra el borde del lado para ensancharlo. Cada panel se sigue plegando por separado: uno plegado es una barra fina en la pila, o un carril cuando están plegados los dos. La pestaña del asistente (escritorio) se queda con las propiedades. Lapin recuerda la disposición en este equipo.
+
+![Explorador y propiedades apilados a la izquierda](shots/panel-layouts.webp)
+
 ## Claro y oscuro
 
 La luna en el extremo derecho de la cinta vuelve oscura la interfaz (grafito); el sol la vuelve clara otra vez (papel). En el tema oscuro las plantas, secciones y alzados quedan sobre el fondo oscuro, con sus plumas negras en tinta clara; las láminas siguen siendo papel. Los dibujos pequeños de los configuradores (la planta, la sección y el alzado de una puerta o ventana, de una cubierta, un balcón, un ascensor, una nave, una escalera…) y las vistas previas de etiquetas, cajetines y materiales se dibujan sobre una tarjeta de papel clara en ambos temas, para que sus líneas, textos y cotas se lean como en un plano impreso.
