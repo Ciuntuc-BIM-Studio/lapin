@@ -54,7 +54,7 @@ Small, behaviour-preserving refactors that both hosts then share. Each is one co
 
 ## Stage 3: budgets, CI, limits
 
-- **Budgets** written in `scripts/build-web.mjs` and enforced there: compressed download ≤ 20 MB (15 MB until 08.11.2026), start to `session.info` ≤ 4 s on a 2020 laptop, rebuild of the test house ≤ 3× native. A build that breaks a budget fails, so the numbers from the spike stay true.
+- **Budgets** written in `scripts/build-web.mjs` and enforced there: compressed first load ≤ 15 MB, and ≤ 17 MB with every lazy part (see Lazy parts below; 20 MB for a day on 08.11.2026, when the download reached 15), start to `session.info` ≤ 4 s on a 2020 laptop, rebuild of the test house ≤ 3× native. A build that breaks a budget fails, so the numbers from the spike stay true.
 - **CI**: a `web` job beside `ui` and `engine` in `.github/workflows/ci.yml` (the Emscripten workload, `dotnet publish`, the budgets, a headless Chrome smoke test that opens `testLapin.lapin`). The `engine` job does not change.
 - **Stated limits** on the web (in the start screen's about text, and in `docs/mcp.md`): no MCP bridge; no detached view windows; the memory ceiling (2 GB; a large imported IFC may not fit, which is in line with "Lapin is native first"); Safari and Firefox save by download.
 - **What the web does without, by choice**: no server engine, no accounts, no sync. A tester's project lives in their browser (OPFS journal) and in the `.lapin` they download.
@@ -112,3 +112,37 @@ Stage 0: 2–3 days. Stage 1: 2–3 days (mostly tests). Stage 2: 5–7 days. St
 - **Reports from the browser.** The report's body is built once (`SupportReport.Body`), for both hosts. The desktop posts it as before. In the browser the engine returns it (a worker cannot wait for the network inside a call) and the page posts it to `/api/feedback`, the same server the web build is served from, so no CORS is needed (`VITE_FEEDBACK_URL` overrides that). The help menu's links open in a new tab.
 - Checked in headless Chrome on the built folder: the old fixture opens with its two storeys, the three layered walls joined at their corners, the column and the floor; a report goes out with `url: "browser"` and its number comes back.
 - The third item of the stage (the desktop saving through `project.saveBytes`, its journals elsewhere) was optional and stays open: nothing needs it today.
+
+## Lazy parts (09.11.2026, decision 413)
+
+The web download reached 15.0 MB. What it was made of, and what it is now (KB, brotli at quality 9, what `build-web.mjs` counts; of the languages only the largest, 128 KB, counts):
+
+| Part | Before | First load now | Fetched when used |
+|---|---|---|---|
+| `dotnet.native.wasm` (AOT code, runtime, manifold; 46 MB raw before, 42 MB now) | 10 884 | 10 059 | |
+| Lapin's assemblies and Arrow (metadata, IL stripped) | 2 244 | 2 115 | 163 (`Lapin.Mesh` 115, `Lapin.PointClouds` 48) |
+| .NET's assemblies | 1 140 | 804 | 422 (`System.Text.Encoding.CodePages` 204, `System.Private.Xml` 150, `System.Net.Http` 54, `System.Private.Xml.Linq` 14) |
+| .NET's JavaScript | 114 | 114 | |
+| The interface's entry chunk | 806 | 559 | about 330, in chunks of a dialog or a view each |
+| Styles, icon, one language | 165 | 165 | |
+| **Total** | **15.0 MB** | **13.5 MB** | **14.4 MB with everything** |
+
+That is one commit against its parent. With the features merged the same day on top the build measures 13.7 MB at the first load and 14.6 MB with everything.
+
+The AOT objects show where the native size lies (MB of `.o`, 110 in all): generic instances 32, `Lapin.Architecture` 12, `Lapin.Platform` 10, `System.Private.CoreLib` 7, `Lapin.Ifc` 3.7, `Lapin.Drawing` 2.9, the other modules 0.5–2 each. There is no ICU to drop (the invariant culture already) and symbols are already stripped.
+
+**The engine.** With AOT, lazy loading alone (`BlazorWebAssemblyLazyLoad`) saves only an assembly's metadata: its code stays in `dotnet.native.wasm`. So each lazy assembly is also left out of AOT (`_AOT_InternalForceInterpretAssemblies`, an internal item of the wasm SDK: to check at each .NET update) and runs in the interpreter, with its IL. `build-web.mjs` lists them (`LAZY`) and writes `generated/Parts.g.props`; the desktop never sees that file. The SDK adds `--aot-lazy-assembly-load` to the runtime for such a build.
+
+- **How one comes.** Nothing asks for a part ahead. When the runtime first needs a lazy assembly it raises `AssemblyLoadContext.Resolving`; `Lapin.Browser` asks the worker (`part`), which fetches it there and then with a synchronous request (a worker may) and hands back the bytes, loaded with `LoadFromStream`. The page gets `{ part, state }` and says "Loading a part of Lapin used for the first time…".
+- **What keeps a part away.** Mono's AOT code resolves everything a method refers to when that method first runs, and all the fields of a class it touches. So what every session runs must not mention a lazy assembly's types: `EngineDispatcher`'s Mesh calls are methods of their own (`EngineDispatcher.Mesh.cs`, not inlined), `PointCloudSlices.Marks` looks for clouds before going further, and `PointCloudLinks` keeps its stores and the lambdas over index nodes in a nested class (a class's lambdas share one closure class, whose fields are all set up at once). Behaviour on the desktop is the same; a lazy part wrongly reached is only downloaded early, never an error, and `check-web` fails if opening a project or drawing a wall fetches one.
+- **The failure.** The worker tries twice. The runtime then remembers the refusal as long as it runs, so a part cannot be retried in the same session: every use says "This part of Lapin could not be downloaded. Check the connection, save your work and reload the page." (`EngineTransport.explain`), the rest of the engine goes on working, and a new page brings it.
+- **The price: the interpreter**, measured in Chrome on the M-series Mac, the same run before and after (the time includes fetching the part from localhost): OBJ of 204 800 triangles imported 2.4 → 2.6 s, GLB of it exported 1.4 → 1.9 s, a LAS of 500 000 points linked and indexed 0.65 → 1.6–1.9 s. Not measured: a LAZ of that size, XML-heavy files (a big price list, LandXML). Drawing, modelling, IFC and saving are compiled as before.
+- **The next lever, not taken.** The modules could be left to the interpreter too: 11 of them (planning, cost, clash, site works, rebar, wood, steel, MEP, civil, transport, furniture) would take about 1.2 MB more off, measured with the six parts above: the whole engine at 12.2 MB against 13.4. They cannot be lazy, since they register at start and a project may hold their elements, and their geometry would slow down: kept compiled until the budget needs it.
+
+**The interface.** `lazyPart` (`ui/src/platform/lazyPart.tsx`) makes a module's dialogs and pane views (Gantt, estimate, cost over time) chunks fetched when first shown: a dialog's frame says "Loading…", or that it could not be fetched with Try again (a pane view says so in place). The document editor (TipTap, ProseMirror) leaves with the documents dialog, Ask Lapin's answers with its dialog. It applies on the desktop too, where a chunk is read from the app at once. Dialogs another file also imports stay in the entry chunk, as Vite warns (joinery, for one): more could leave.
+
+**The budgets.** `build-web.mjs` counts the interface's first load by following the entry's static imports, the worker and the styles: 15 MB for the first load, 17 MB with everything. The bytes are its own measure: the site's Cloudflare compresses on the fly, the main chunk arriving about a fifth larger than `build-web.mjs` counts (975 KB against 806 before these changes).
+
+**The check.** `check-web` opens the user's `testLapin.lapin` when it is there (`LAPIN_WEB_PROJECT`) and draws a wall, with nothing lazy fetched; Export 3D fetches `Lapin.Mesh`; a BIM Open Schema file goes out and into a new project; its server refuses a dialog's chunk (the message, then Try again) and `Lapin.PointClouds` (the message, twice, then a new page links the LAS).
+
+**The desktop**: `pnpm build:product lapin` before and after, unsigned, gives the same 66 files in `Lapin.app` and the same `product.json`.

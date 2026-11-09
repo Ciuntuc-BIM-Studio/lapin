@@ -15,16 +15,20 @@ import { CalendarDays, ChartGantt, CheckCheck, CircleOff, CirclePlay, Clapperboa
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { exportIfc } from '../../engine/files';
-import { CalendarDialog } from './CalendarDialog';
-import { GenerateDialog } from './GenerateDialog';
-import { GanttView } from './GanttView';
 import { TaskSection } from './TaskSection';
-import { AssignDialog } from './AssignDialog';
 import { SelectionToTask } from './SelectionToTask';
 import { ElementTasksSection, inSomeTask, TaskLinksSection } from './TaskLinksSection';
 import { ganttOnSheet, SimulationCard, SimulationLooks, toggleSimulation, ViewDateSection } from './SimulationView';
-import { StagesDialog, VideoDialog } from './SimulationDialogs';
 import { addTask, assignSelection, clearBaseline, exportMsp, exportXlsx, importMsp, importProgress, indent, linkSelected, markSelection, openGantt, outdent, saveBaseline, selectUnlinked, taskElementsOf, unlinkSelected } from './schedule';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const StagesDialog = lazyPart(() => import('./SimulationDialogs').then((m) => m.StagesDialog), { title: 'Stages sheet' });
+const VideoDialog = lazyPart(() => import('./SimulationDialogs').then((m) => m.VideoDialog), { title: 'Export video' });
+const CalendarDialog = lazyPart(() => import('./CalendarDialog').then((m) => m.CalendarDialog), { title: 'Work calendar' });
+const GenerateDialog = lazyPart(() => import('./GenerateDialog').then((m) => m.GenerateDialog), { title: 'Generate schedule' });
+const GanttView = lazyPart(() => import('./GanttView').then((m) => m.GanttView), { inline: true });
+const AssignDialog = lazyPart(() => import('./AssignDialog').then((m) => m.AssignDialog), { title: 'Add to task' });
 
 const planning: LapinModule = {
   id: 'planning',

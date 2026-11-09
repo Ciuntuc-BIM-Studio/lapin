@@ -30,7 +30,12 @@ public static class PointCloudSlices
     static readonly Lock Gate = new();
 
     /// <summary>The marks of every cloud the view shows, under its drawing; none in a developed section's pieces.</summary>
-    public static IEnumerable<ViewMark> Marks(ViewContext c, ViewSpec spec, VisibilityGraphics vg)
+    public static IEnumerable<ViewMark> Marks(ViewContext c, ViewSpec spec, VisibilityGraphics vg) =>
+        PointCloudLinks.All(c.Model).Any() ? MarksOf(c, spec, vg) : [];
+
+    /// <summary>Apart from <see cref="Marks"/>, which every drawing calls: nothing of Lapin.PointClouds is touched in a project without clouds (the browser downloads it when first needed).</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    static List<ViewMark> MarksOf(ViewContext c, ViewSpec spec, VisibilityGraphics vg)
     {
         var o = new List<ViewMark>();
         foreach (var link in PointCloudLinks.All(c.Model))

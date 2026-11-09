@@ -12,13 +12,17 @@ import { axisGrips, pt } from '../../viewport/gripKit';
 import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
 import { RebarRunSection, RebarSection } from './RebarSection';
-import { InsetPickDialog, RebarSettingsDialog } from './RebarDialogs';
 import { BarDotIcon, LBarIcon, PolylineBarIcon, StirrupIcon, StirrupsIcon, TieIcon, UBarIcon } from './icons';
 import { structureHooks } from '../structure/hooks';
 import { StirrupsFields } from './StirrupsFields';
 import { bars3d } from './bars3d';
 import { labelPlaceGrips, type LabelData } from './labelGrips';
 import { anchorGrips, type AnchorData } from './anchors';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const InsetPickDialog = lazyPart(() => import('./RebarDialogs').then((m) => m.InsetPickDialog), { title: 'Inset view' });
+const RebarSettingsDialog = lazyPart(() => import('./RebarDialogs').then((m) => m.RebarSettingsDialog), { title: 'Rebar settings' });
 
 // The stirrups of a beam's or a column's type are set in the Structure types dialog (decision 215).
 structureHooks.typeExtras.push(StirrupsFields);

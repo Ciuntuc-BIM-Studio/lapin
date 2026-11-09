@@ -35,6 +35,8 @@ export interface EngineTransport {
   connect(handlers: { onOpen(link: EngineLink): void; onMessage(data: ArrayBuffer | string): void; onClose(): void }): Promise<void>;
   /** False: one failed start is final (an engine in a worker that would not load will not load the next time either). */
   readonly retries?: boolean;
+  /** What the user reads for an error the engine answered with, when the transport knows better (a lazy part that could not be fetched). */
+  explain?(error: string): string;
 }
 
 /** The local engine, over a WebSocket at the URL given (resolved at each connection: the engine may move ports). */
@@ -108,7 +110,7 @@ export class EngineClient {
     if (!p) return;
     this.pending.delete(msg.id);
     clearTimeout(p.timer);
-    if (msg.error) p.reject(new Error(msg.error)); else p.resolve(msg.result);
+    if (msg.error) p.reject(new Error(this.transport.explain?.(msg.error) ?? msg.error)); else p.resolve(msg.result);
   }
 
   call<T = unknown>(method: string, params: Record<string, unknown> = {}, options: CallOptions = {}): Promise<T> {

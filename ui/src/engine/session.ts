@@ -7,7 +7,7 @@
 
 import { create } from 'zustand';
 import { EngineClient, engineUrl, LONG_TIMEOUT_MS } from './client';
-import { workerTransport } from './workerTransport';
+import { ENGINE_PART_FAILED, workerTransport, type PartState } from './workerTransport';
 import { invitation, relayTransport, savedName, setPresenceSender, useShare, type Participant, type ShareStatus } from './share';
 import { notify } from '../app/store';
 import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo, SharedMesh } from './protocol';
@@ -39,7 +39,18 @@ export const engineInBrowser = import.meta.env.VITE_ENGINE === 'worker';
 
 /** A guest (docs/plan-multiplayer.md) talks to the host's engine through the relay; otherwise this computer's own engine. */
 const guestOf = invitation();
-export const engine = new EngineClient(guestOf ? relayTransport(guestOf, savedName) : engineInBrowser ? workerTransport() : engineUrl);
+/** A lazy part of the browser's engine on its way, or not come (docs/plan-browser-engine.md, Lazy parts). */
+const onPart = (name: string, state: PartState) => {
+  if (state === 'loading') notify('Loading a part of Lapin used for the first time…');
+  else if (state === 'failed') notify(ENGINE_PART_FAILED);
+  else {
+    // The parts fetched so far, on the page for the web build's check (scripts/check-web.mjs).
+    const root = document.documentElement;
+    root.dataset.lapinParts = [...(root.dataset.lapinParts ? root.dataset.lapinParts.split(' ') : []), name].join(' ');
+    if (useUi.getState().notice === 'Loading a part of Lapin used for the first time…') notify(null);
+  }
+};
+export const engine = new EngineClient(guestOf ? relayTransport(guestOf, savedName) : engineInBrowser ? workerTransport(undefined, onPart) : engineUrl);
 
 /** Fold an engine diff into the session (a reset replaces everything). A diff older than what is shown is skipped. */
 export function applyDiff(d: Diff): void {

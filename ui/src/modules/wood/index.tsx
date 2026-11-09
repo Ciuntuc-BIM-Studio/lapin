@@ -9,8 +9,11 @@ import { Settings2, Table2 } from 'lucide-react';
 import type { LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
 import { execute } from '../../engine/session';
-import { FrameDialog } from './FrameDialog';
 import { OpeningWoodSection, RoofWoodSection, WallWoodSection } from './Sections';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const FrameDialog = lazyPart(() => import('./FrameDialog').then((m) => m.FrameDialog), { title: 'Timber frame' });
 
 const frame: ToolDef = { id: 'wood.frame', label: 'Timber frame and CLT', icon: Settings2, run: () => useUi.setState({ dialog: 'woodFrame' }) };
 const boards: ToolDef = {

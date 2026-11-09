@@ -10,8 +10,11 @@ import type { NodeDto } from '../../engine/protocol';
 import { notify, useUi } from '../../app/store';
 import { ensureStorey, execute, useSession } from '../../engine/session';
 import { StructureSection } from './StructureSection';
-import { StructureTypesDialog } from './StructureTypesDialog';
 import { sameKind } from '../../shell/params';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').then((m) => m.StructureTypesDialog), { title: 'Structure types' });
 
 const column: ToolDef = {
   id: 'structure.column', label: 'Column', icon: ColumnIcon, shortcut: 'CL',

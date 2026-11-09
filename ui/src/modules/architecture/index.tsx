@@ -1,6 +1,5 @@
 /** Architecture: layered walls and their types, doors and windows, floors, roofs, rooms and their colours. */
 
-import { WallProfileDialog } from './WallProfileDialog';
 import { Armchair, ArrowLeftRight, CornerDownRight, Layers3, Link2, Settings2, Slash, Table2 } from 'lucide-react';
 import { AttachRoofIcon, CurtainWallIcon, CurvedWallIcon, DetachRoofIcon, DoorIcon, DormerIcon, RoofIcon, RampIcon, RoofWindowIcon, SlabIcon, SlabOpeningIcon, StairIcon, WallIcon, WallTypesIcon, WindowIcon } from '../../icons';
 import type { Grip, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
@@ -17,46 +16,50 @@ import { fillFlips, fillGhost, flipFillHand, useFillHand, type PanelLike } from 
 import { activate } from '../../platform/modules';
 import { gateGroup } from './gates/tools';
 import { GateSection } from './gates/GateSection';
-import { GateTypesDialog } from './gates/GateTypesDialog';
 import { CLASS as GATE_CLASS, gateGrips, overallOf } from './gates/gates';
 import { setJoinStyle, setWallLine, useWallPrefs, type WallLine } from './prefs';
 import { WallLayers } from './WallLayers';
-import { WallTypesDialog } from './WallTypesDialog';
-import { JoineryDialog } from './JoineryDialog';
 import { JoinerySection } from './JoinerySection';
 import { SlabSection } from './SlabSection';
-import { SlabTypesDialog } from './SlabTypesDialog';
 import { RoofSection } from './RoofSection';
-import { RoofDialog } from './RoofDialog';
 import { roofOpeningGrips, roofOpeningRefs } from './roofOpeningGrips';
 import { DownpipeSection, downpipe, downpipeGrips } from './Downpipe';
 import { railing, railingGrips } from './Railing';
 import { BALCONY, BalconySection, balcony, balconyConfigurator, balconyGrips, balconyOutline, balconySchedule, galleryEdge, stackBalconies, styleOf } from './Balconies';
-import { BalconyDialog } from './BalconyDialog';
 import { StairSection, type StairNumbers } from './StairSection';
-import { StairTypesDialog } from './StairTypesDialog';
 import { UnderStairDialog, openUnderStair } from './UnderStairDialog';
 import { UnderStairSection } from './UnderStairSection';
 import { dirOf, footFromTop } from './stairPlacement';
-import { CurtainWallDialog } from './CurtainWallDialog';
 import { CurtainWallSection } from './CurtainWallSection';
-import { RoomColorsDialog } from './RoomColorsDialog';
 import { RoomSection, RoomViewSection } from './RoomSection';
 import { roomGrips, roomRefs } from './rooms';
 import { newElement, typedBy } from './NewElement';
 import { WallThumb, SlabThumb, JoineryThumb } from './Thumbs';
 import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
-import { OpeningDialog } from './OpeningDialog';
 import { wallOpeningGrips } from './wallOpeningGrips';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
-import { RoomFinishesDialog } from './RoomFinishes';
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
 import { WallSweepSection, WallSweepsOnWall, hasSweeps, revealSelected, sweepSelected, wallReveal, wallSweep, wallSweepSchedule } from './WallSweeps';
 import { SkirtingSection, SkirtingTypesDialog, skirting, skirtingGrips, skirtingInRoom, skirtingSchedule, skirtingTypes } from './Skirtings';
 import { colorLegend, room, roomColors, roomOutline, roomTag, updateRooms } from './roomTools';
-import { RoomTagDialog } from './RoomTagDialog';
 import { sameKind } from '../../shell/params';
 import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, sunshadeGrips, sunshadeSchedule, sunshadeTypes } from './Sunshades';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const WallProfileDialog = lazyPart(() => import('./WallProfileDialog').then((m) => m.WallProfileDialog), { title: 'Wall profile' });
+const GateTypesDialog = lazyPart(() => import('./gates/GateTypesDialog').then((m) => m.GateTypesDialog), { title: 'Gate types' });
+const WallTypesDialog = lazyPart(() => import('./WallTypesDialog').then((m) => m.WallTypesDialog), { title: 'Wall types' });
+const JoineryDialog = lazyPart(() => import('./JoineryDialog').then((m) => m.JoineryDialog), { title: 'Doors and windows' });
+const SlabTypesDialog = lazyPart(() => import('./SlabTypesDialog').then((m) => m.SlabTypesDialog), { title: 'Floor types' });
+const RoofDialog = lazyPart(() => import('./RoofDialog').then((m) => m.RoofDialog), { title: 'Roof' });
+const BalconyDialog = lazyPart(() => import('./BalconyDialog').then((m) => m.BalconyDialog), { title: 'Balcony' });
+const StairTypesDialog = lazyPart(() => import('./StairTypesDialog').then((m) => m.StairTypesDialog), { title: 'Stair types' });
+const CurtainWallDialog = lazyPart(() => import('./CurtainWallDialog').then((m) => m.CurtainWallDialog), { title: 'Curtain walls' });
+const RoomColorsDialog = lazyPart(() => import('./RoomColorsDialog').then((m) => m.RoomColorsDialog), { title: 'Room colours' });
+const OpeningDialog = lazyPart(() => import('./OpeningDialog').then((m) => m.OpeningDialog), { title: 'Wall opening' });
+const RoomFinishesDialog = lazyPart(() => import('./RoomFinishes').then((m) => m.RoomFinishesDialog), { title: 'Room finishes' });
+const RoomTagDialog = lazyPart(() => import('./RoomTagDialog').then((m) => m.RoomTagDialog), { title: 'Room tag' });
 
 const wall: ToolDef = {
   id: 'architecture.wall', label: 'Wall', icon: WallIcon, shortcut: 'WA', properties: newElement('IfcWallType', 'wallTypeId', 'wallTypes'), typed: typedBy('IfcWallType', 'wallTypeId', 'wallTypes', WallThumb),

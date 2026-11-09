@@ -17,10 +17,13 @@ import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unit
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
 import { EarthworkSection, PathSection, PlantingSection, RetainingWallSection } from './SiteSections';
-import { BrushDialog } from './BrushDialog';
-import { CorridorDialog } from './CorridorDialog';
 import { isDitch, setBrush, useBrush, type BrushKind } from './prefs';
 import { EntourageSection, entourage, entourageRow } from './entourage';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const BrushDialog = lazyPart(() => import('./BrushDialog').then((m) => m.BrushDialog), { title: 'Terrain brush' });
+const CorridorDialog = lazyPart(() => import('./CorridorDialog').then((m) => m.CorridorDialog), { title: 'Corridor' });
 
 /** The lowest surveyed elevation, rounded down to the metre: what ±0.00 defaults to. */
 function lowest(text: string): number | null {

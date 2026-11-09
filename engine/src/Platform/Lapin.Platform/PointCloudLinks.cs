@@ -37,7 +37,42 @@ public static class PointCloudLinks
     /// <summary>A file's bytes read in a browser, kept for the session so its cloud can be indexed (it cannot be read again).</summary>
     static readonly ConcurrentDictionary<string, byte[]> _bytes = new();
     static readonly ConcurrentDictionary<string, Job> _jobs = new();
-    static readonly ConcurrentDictionary<string, PointStore> _stores = new();
+    /// <summary>
+    /// The indexes opened, apart so that nothing of Lapin.PointClouds is touched until a cloud is: the browser's engine
+    /// downloads that assembly the first time it is needed (docs/plan-browser-engine.md, Lazy parts).
+    /// </summary>
+    static class Opened
+    {
+        public static readonly ConcurrentDictionary<string, PointStore> Stores = new();
+
+        // Here, not in PointCloudLinks, for its lambdas over the index's nodes: a class's lambdas share one closure class,
+        // whose fields (one delegate each) are all set up when any of them is first used (Register's, at start).
+        public static (float[] Positions, byte[] Colors) Sample(IModelView m, Entity link, Look look, int max)
+        {
+            if (StoreOf(link) is not { } s) return ([], []);
+            var t = TransformOf(m, link);
+            var byDepth = s.Nodes.GroupBy(n => n.Name.Length).OrderBy(g => g.Key);
+            var pos = new List<float>();
+            var col = new List<byte>();
+            foreach (var level in byDepth)
+            {
+                if (col.Count / 3 + level.Sum(n => (long)n.Count) > max && col.Count > 0) break;
+                foreach (var n in level)
+                {
+                    var p = s.Read(n.Name);
+                    for (var i = 0; i < p.Count; i++)
+                    {
+                        if (look.HiddenClasses.Contains(p.Class(i))) continue;
+                        var (x, y, z) = Apply(t, p.X(i), p.Y(i), p.Z(i));
+                        pos.Add((float)x); pos.Add((float)y); pos.Add((float)z);
+                        var c = s.HasColor ? (p.R(i), p.G(i), p.B(i)) : ((byte)200, (byte)200, (byte)200);
+                        col.Add(c.Item1); col.Add(c.Item2); col.Add(c.Item3);
+                    }
+                }
+            }
+            return ([.. pos], [.. col]);
+        }
+    }
 
     /// <summary>An index being made: its stage and progress, or why it failed.</summary>
     sealed class Job
@@ -80,10 +115,10 @@ public static class PointCloudLinks
     public static PointStore? StoreOf(Entity link)
     {
         if (link.Str("key") is not { } key) return null;
-        if (_stores.TryGetValue(key, out var s)) return s;
+        if (Opened.Stores.TryGetValue(key, out var s)) return s;
         var opened = PointStore.Open(DirOf(key));
         if (opened == null) return null;
-        return _stores.GetOrAdd(key, opened);
+        return Opened.Stores.GetOrAdd(key, opened);
     }
 
     /// <summary>
@@ -123,7 +158,7 @@ public static class PointCloudLinks
             {
                 var reader = PointReaders.Open(source);
                 var store = Indexer.Build(reader, DirOf(key), key, source.Length, (stage, done) => { job.Stage = stage; job.Done = done; });
-                _stores[key] = store;
+                Opened.Stores[key] = store;
                 job.Finished = true;
                 if (deliveries != null && stamp is { } st)
                     deliveries.Deliver("Index point cloud", st, ctx =>
@@ -448,31 +483,7 @@ public static class PointCloudLinks
     /// A cloud's points for an export, in the project's coordinates: its octree read from the root down, level by level,
     /// until <paramref name="max"/> points (a coarser sample of the whole, never a corner of it); classes hidden left out.
     /// </summary>
-    public static (float[] Positions, byte[] Colors) Sample(IModelView m, Entity link, Look look, int max)
-    {
-        if (StoreOf(link) is not { } s) return ([], []);
-        var t = TransformOf(m, link);
-        var byDepth = s.Nodes.GroupBy(n => n.Name.Length).OrderBy(g => g.Key);
-        var pos = new List<float>();
-        var col = new List<byte>();
-        foreach (var level in byDepth)
-        {
-            if (col.Count / 3 + level.Sum(n => (long)n.Count) > max && col.Count > 0) break;
-            foreach (var n in level)
-            {
-                var p = s.Read(n.Name);
-                for (var i = 0; i < p.Count; i++)
-                {
-                    if (look.HiddenClasses.Contains(p.Class(i))) continue;
-                    var (x, y, z) = Apply(t, p.X(i), p.Y(i), p.Z(i));
-                    pos.Add((float)x); pos.Add((float)y); pos.Add((float)z);
-                    var c = s.HasColor ? (p.R(i), p.G(i), p.B(i)) : ((byte)200, (byte)200, (byte)200);
-                    col.Add(c.Item1); col.Add(c.Item2); col.Add(c.Item3);
-                }
-            }
-        }
-        return ([.. pos], [.. col]);
-    }
+    public static (float[] Positions, byte[] Colors) Sample(IModelView m, Entity link, Look look, int max) => Opened.Sample(m, link, look, max);
 
     public static void Register(IModuleRegistry r)
     {

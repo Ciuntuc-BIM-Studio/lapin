@@ -10,14 +10,17 @@
 import { Calculator, CalendarRange, FileSpreadsheet, FileText, ListChecks, Sheet, Sigma, Table2, Tags } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
-import { SchedulesDialog } from './SchedulesDialog';
-import { PriceListsDialog } from './PriceListsDialog';
-import { MapArticlesDialog } from './MapArticlesDialog';
-import { EstimateView } from './EstimateView';
-import { CostTimeView } from './CostTimeView';
 import { openCostTime } from './costTime';
 import { exportPdf, exportXlsx, formOnSheet, openEstimate, useEstimate } from './estimate';
 import { exportTakeoff, takeoff } from './schedules';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const SchedulesDialog = lazyPart(() => import('./SchedulesDialog').then((m) => m.SchedulesDialog), { title: 'Schedules' });
+const PriceListsDialog = lazyPart(() => import('./PriceListsDialog').then((m) => m.PriceListsDialog), { title: 'Price lists' });
+const MapArticlesDialog = lazyPart(() => import('./MapArticlesDialog').then((m) => m.MapArticlesDialog), { title: 'Map articles' });
+const EstimateView = lazyPart(() => import('./EstimateView').then((m) => m.EstimateView), { inline: true });
+const CostTimeView = lazyPart(() => import('./CostTimeView').then((m) => m.CostTimeView), { inline: true });
 
 const cost: LapinModule = {
   id: 'cost',

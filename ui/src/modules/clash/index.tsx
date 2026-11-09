@@ -3,7 +3,10 @@
 import { Merge } from 'lucide-react';
 import type { LapinModule } from '../../platform/module';
 import { useUi } from '../../app/store';
-import { ClashDialog } from './ClashDialog';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const ClashDialog = lazyPart(() => import('./ClashDialog').then((m) => m.ClashDialog), { title: 'Clash detection' });
 
 const clash: LapinModule = {
   id: 'clash',

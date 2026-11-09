@@ -13,6 +13,12 @@
  * synchronously; the worker keeps them in memory, read at start, and writes
  * each line through to storage in order. A journal another tab is writing is
  * held by its lock ("lapin-journal:<name>") and counts as in use.
+ *
+ * The lazy parts (docs/plan-browser-engine.md, Lazy parts): assemblies the
+ * build leaves out of the first download (point clouds, the 3D exchange, XML,
+ * DXF's code pages). The engine asks for one the first time it needs it
+ * (`part`), and the worker fetches it there and then, synchronously (a worker
+ * may), telling the page `{ part, state: 'loading' | 'loaded' | 'failed' }`.
  */
 
 interface Exports { Start(): string; Call(message: string): Uint8Array }
@@ -99,6 +105,36 @@ function post(bytes: Uint8Array): void {
   scope.postMessage({ frame: copy.buffer }, [copy.buffer]);
 }
 
+// ─── The lazy parts ──────────────────────────────────────────────────────
+
+/** Each lazy part's file in _framework, by its assembly's name (from the runtime's boot configuration). */
+const parts = new Map<string, string>();
+let framework = '';
+
+/** A lazy part's bytes, fetched now; null when the name is not a lazy part or it could not be fetched (the engine then says what it could not load). */
+function part(name: string): Uint8Array | null {
+  const file = parts.get(name);
+  if (!file) return null;
+  scope.postMessage({ part: name, state: 'loading' });
+  // Tried twice: the runtime remembers an assembly it was refused for as long as it runs, so a blip is worth a second try.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', framework + file, false);
+      xhr.responseType = 'arraybuffer';
+      xhr.send();
+      if (xhr.status !== 200) throw new Error(`HTTP ${xhr.status}`);
+      parts.delete(name);
+      scope.postMessage({ part: name, state: 'loaded' });
+      return new Uint8Array(xhr.response as ArrayBuffer);
+    } catch (e) {
+      console.warn(`[lapin] the part ${name} could not be fetched:`, e);
+    }
+  }
+  scope.postMessage({ part: name, state: 'failed' });
+  return null;
+}
+
 /** Where the start has got to, for the page to show (and for a start that hangs, to tell where). */
 const step = (s: string) => scope.postMessage({ step: s });
 
@@ -112,7 +148,9 @@ async function start(base: string): Promise<void> {
   const { dotnet } = await import(/* @vite-ignore */ `${base}_framework/dotnet.js`);
   const runtime = await dotnet.create();
   step('engine');
-  runtime.setModuleImports('lapin-host', { frame: post });
+  framework = `${base}_framework/`;
+  for (const a of (runtime.getConfig().resources?.lazyAssembly ?? []) as { name: string; virtualPath: string }[]) parts.set(a.virtualPath.replace(/\.(wasm|dll)$/, ''), a.name);
+  runtime.setModuleImports('lapin-host', { frame: post, part });
   runtime.setModuleImports('lapin-journal', journalModule);
   await runtime.runMain(runtime.getConfig().mainAssemblyName, []);
   const exports = await runtime.getAssemblyExports(runtime.getConfig().mainAssemblyName);

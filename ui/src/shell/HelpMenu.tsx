@@ -19,9 +19,12 @@ import { isGuest } from '../engine/share';
 import { isDesktop } from '../engine/files';
 import { checkForUpdates } from '../app/updates';
 import { LANGUAGES, setLang, useLang } from '../i18n';
-import { AskDialog } from '../help/AskDialog';
 import { BunnyIcon } from '../icons';
 import { replacements } from '../platform/modules';
+import { lazyPart } from '../platform/lazyPart';
+
+// Ask Lapin and its answers (help/faq.ts), fetched the first time it is opened.
+const AskDialog = lazyPart(() => import('../help/AskDialog').then((m) => m.AskDialog), { title: 'Ask Lapin' });
 
 
 /** An image shrunk to at most 1600 px on its longer side, as a JPEG data URL. */

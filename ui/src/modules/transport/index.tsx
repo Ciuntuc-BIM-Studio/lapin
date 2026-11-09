@@ -12,9 +12,12 @@ import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { CLASS, elevatorGrips, groupStyles, styleAbout, useElevatorPrefs, type ElevatorStyle, type OwnStyle } from './elevator';
 import { activate } from '../../platform/modules';
-import { ElevatorDialog } from './ElevatorDialog';
 import { ElevatorSection } from './ElevatorSection';
 import { openConfigurator } from './openConfigurator';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const ElevatorDialog = lazyPart(() => import('./ElevatorDialog').then((m) => m.ElevatorDialog), { title: 'Elevator' });
 
 function useStyles(): { catalogue: ElevatorStyle[]; own: OwnStyle[] } {
   const info = useSession((s) => s.info);

@@ -14,5 +14,5 @@ bash /tmp/dotnet-install.sh --version 10.0.300 --install-dir ~/.dotnet-wasm --no
 
 1. builds manifold for the browser if it is missing (`node scripts/build-manifold.mjs --browser-wasm` → `engine/native/browser-wasm/`);
 2. writes `generated/` (the product's modules, from the same resolution the desktop uses);
-3. publishes this project (AOT, trimmed);
+3. publishes this project (AOT, trimmed; the assemblies in its `LAZY` list left to the interpreter and fetched when first touched: docs/plan-browser-engine.md, Lazy parts);
 4. builds the interface with `VITE_ENGINE=worker` and puts both in `build/<product>/web/`.

@@ -9,12 +9,9 @@ import { notify, select, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
 import { cadHost, cadLog, registerCommand, startCommand, withSelection, type Step } from '../../viewport/cad/session';
 import { importDxf, importTrace } from '../../engine/files';
-import { ImportDxfDialog } from './ImportDxfDialog';
-import { ImportTraceDialog } from './ImportTraceDialog';
 import { DimensionSection } from './DimensionSection';
 import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
-import { LayersDialog } from './LayersDialog';
 import { frontView } from '../../viewport/frontView';
 import { BoundarySection, boundaryGrips, viewBoundary } from './ViewBoundary';
 import { xy } from '../../platform/vec';
@@ -23,6 +20,12 @@ import { openStandards } from '../core/standardsTab';
 import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const ImportDxfDialog = lazyPart(() => import('./ImportDxfDialog').then((m) => m.ImportDxfDialog), { title: 'Import DXF' });
+const ImportTraceDialog = lazyPart(() => import('./ImportTraceDialog').then((m) => m.ImportTraceDialog), { title: 'Import PDF or image' });
+const LayersDialog = lazyPart(() => import('./LayersDialog').then((m) => m.LayersDialog), { title: 'Drafting layers' });
 
 /** An aligned dimension: its two points, then where its line goes; then on as a string, one object. Points on an element's cut edge, a grid axis or a wall's centre line follow it. */
 const DRAFTED = new Set(['DRAFT', 'TEXT', 'DIMENSION', 'TAG']);

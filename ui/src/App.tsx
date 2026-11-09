@@ -25,12 +25,9 @@ import { Ribbon } from './shell/Ribbon';
 import { StartScreen } from './shell/StartScreen';
 import { useHudFacts, ViewportHud } from './shell/ViewportHud';
 import { CadPrompt } from './viewport/cad/CommandLine';
-import { InterfaceDialog } from './shell/InterfaceDialog';
-import { QuickToolsDialog } from './shell/QuickToolsDialog';
-import { ShortcutsDialog } from './shell/ShortcutsDialog';
 import { BusyOverlay } from './shell/BusyOverlay';
-import { OptimizeIfcDialog } from './shell/OptimizeIfcDialog';
 import { CommandPalette } from './shell/CommandPalette';
+import { lazyPart } from './platform/lazyPart';
 import { SelectionCard } from './shell/SelectionCard';
 import { PanelFold } from './shell/PanelFold';
 import { ContextMenuHost } from './shell/ContextMenu';
@@ -290,7 +287,13 @@ function PanelOverlay() {
 }
 
 /** The dialogs of working together (File → Share session…, Join session…), opened by the store's `dialog`. */
-const shareDialogs: Record<string, () => React.JSX.Element | null> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog };
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const InterfaceDialog = lazyPart(() => import('./shell/InterfaceDialog').then((m) => m.InterfaceDialog), { title: 'Interface' });
+const QuickToolsDialog = lazyPart(() => import('./shell/QuickToolsDialog').then((m) => m.QuickToolsDialog), { title: 'Quick tools' });
+const ShortcutsDialog = lazyPart(() => import('./shell/ShortcutsDialog').then((m) => m.ShortcutsDialog), { title: 'Keyboard shortcuts' });
+const OptimizeIfcDialog = lazyPart(() => import('./shell/OptimizeIfcDialog').then((m) => m.OptimizeIfcDialog), { title: 'Optimize IFC' });
+
+const shareDialogs: Record<string, React.ComponentType> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog };
 
 function Workspace() {
   const open = useUi((s) => s.dialog);

@@ -22,6 +22,7 @@
     <ProjectReference Include="../../Platform/Lapin.Protocol/Lapin.Protocol.csproj" />
   </ItemGroup>
   <Import Project="generated/Product.g.props" />
+  <Import Project="generated/Parts.g.props" Condition="Exists('generated/Parts.g.props')" />
   <Target Name="LapinBrowserChecks" BeforeTargets="Build">
     <Error Condition="!Exists('$(LapinNative)manifoldc.a')" Text="manifold for the browser is missing: run node scripts/build-manifold.mjs --browser-wasm" />
   </Target>

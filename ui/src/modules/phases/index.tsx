@@ -4,9 +4,12 @@ import { Clock, Hammer, ListOrdered, Trash2 } from 'lucide-react';
 import type { LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
 import { execute, query } from '../../engine/session';
-import { PhasesDialog } from './PhasesDialog';
 import { PhaseLooks } from './PhaseLooks';
 import { ElementPhaseSection, ViewPhaseSection } from './PhaseSections';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const PhasesDialog = lazyPart(() => import('./PhasesDialog').then((m) => m.PhasesDialog), { title: 'Phases' });
 
 /** The selection, given a phase relative to the active one. */
 const onSelection = (label: string, args: (active: string) => Record<string, unknown>): ToolDef['run'] => () => {

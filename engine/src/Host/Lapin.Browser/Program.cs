@@ -1,4 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.InteropServices.JavaScript;
+using System.Runtime.Loader;
 using System.Runtime.Versioning;
 using Lapin.Geometry;
 using Lapin.Platform;
@@ -20,7 +23,25 @@ static partial class Engine
     [JSImport("frame", "lapin-host")]
     internal static partial void Frame(byte[] frame);
 
-    public static void Main() { }
+    /// <summary>
+    /// A lazy part's assembly (docs/plan-browser-engine.md, Lazy parts), fetched by the worker the first time the
+    /// engine needs it; null when the name is not one of the build's lazy parts, or it could not be fetched.
+    /// </summary>
+    [JSImport("part", "lapin-host")]
+    internal static partial byte[]? Part(string name);
+
+    public static void Main() => AssemblyLoadContext.Default.Resolving += Resolve;
+
+    /// <summary>
+    /// An assembly the runtime looks for and did not load at start: one of the lazy parts (point clouds, the 3D exchange,
+    /// XML, DXF's code pages), loaded from the bytes the worker fetches, synchronously, where the engine first touches it.
+    /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The lazy parts are trimmed with the engine, in the same pass: what they use is kept.")]
+    static Assembly? Resolve(AssemblyLoadContext context, AssemblyName name)
+    {
+        if (name.Name is not { } n || Part(n) is not { } bytes) return null;
+        return context.LoadFromStream(new MemoryStream(bytes));
+    }
 
     /// <summary>The session of the product this build is for, its journal in the browser's own storage. Returns the product's id.</summary>
     [JSExport]

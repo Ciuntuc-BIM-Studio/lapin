@@ -369,7 +369,7 @@ public sealed record DiffEvent(string Event, Diff Data);
 /// host serializes the calls. The host sends the diff (to every interface it
 /// serves) before the reply.
 /// </summary>
-public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecoveryJournal? recovery = null, ISupportDesk? support = null)
+public sealed partial class EngineDispatcher(Session session, ProjectFiles files, IRecoveryJournal? recovery = null, ISupportDesk? support = null)
 {
     public Session Session => session;
 
@@ -403,8 +403,9 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
 
     /// <summary>The last file surveyed (project.ifcSurvey), read and indexed, for the import that follows to take as it is.</summary>
     (string Key, byte[] Bytes, StepFile File, string Hash)? _surveyed;
-    (string Key, Lapin.Mesh.Fragments.FragModel Model)? _fragSurveyed;
-    (string Key, Lapin.Mesh.Bos.BosView View)? _bosSurveyed;
+    // The Fragments and BOS files surveyed (EngineDispatcher.Mesh.cs): as objects, so that this class touches nothing of Lapin.Mesh.
+    object? _fragSurveyed;
+    object? _bosSurveyed;
 
     /// <summary>An IFC file as a call gives it: by path (the desktop) or as base64 in data (the browser); its name and a key that tells the same file again.</summary>
     (byte[] Bytes, string Name, string? Path, string Key) IfcBytes(JsonObject p)
@@ -776,24 +777,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 IfcExport.Write(session, ms, "project.ifc", options);
                 return (Deliver(ms.ToArray(), "project.ifc"), null);
             }
-            case "project.exportMesh":
-            {
-                // The model as a 3D mesh (docs/plan-mesh-export.md): glb, gltf, usdz, usda or dae; a 3D view's visible elements, or all; a phase; edges; the origin.
-                var options = Lapin.Mesh.MeshExportOptions.From(p);
-                // The kinds and storeys chosen (the export survey's), left out as the hidden are.
-                if (p["kinds"] is JsonArray || p["storeys"] is JsonArray)
-                {
-                    // A mesh is for showing the model: its entourage goes with it unless the kinds chosen leave it out.
-                    var q = (JsonObject)p.DeepClone();
-                    q["entourage"] = true;
-                    options = options with { Hidden = Lapin.Ifc.ModelSurvey.Excluded(session, q) };
-                }
-                var (bytes, result) = Lapin.Mesh.MeshExport.Write(session, options);
-                var name = $"{(session.Path is { } sp ? Path.GetFileNameWithoutExtension(sp) : "project")}.{options.Extension}";
-                var delivered = Deliver(bytes, name);
-                foreach (var (k, v) in result.ToJson()) delivered[k] = v?.DeepClone();
-                return (delivered, null);
-            }
+            case "project.exportMesh": return ExportMesh(p, Deliver);
             case "ifc.optimize":
             {
                 // An IFC file cleaned and optimised into a copy (docs/ifc-optimize.md): a pass from file to file, no project needed, the original
@@ -896,53 +880,10 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
             case "project.exportSurvey":
                 // The project's elements and storeys as an import survey shows a file's, for an export's choice.
                 return (Lapin.Ifc.ModelSurvey.Of(session), null);
-            case "project.fragSurvey":
-            {
-                // What a Fragments file holds, in the IFC survey's shape, kept read for the import that follows.
-                var (bytes, name, _, key) = IfcBytes(p);
-                ReportProgress("Reading the file", 0, 0);
-                var model = Lapin.Mesh.Fragments.FragImport.Read(bytes, name);
-                _fragSurveyed = (key, model);
-                return (Lapin.Mesh.Fragments.FragSurvey.Of(model, name, bytes.Length), null);
-            }
-            case "project.importFragments":
-            {
-                // A That Open Fragments file (.frag, docs/fragments.md) into the open project: its items as references with their bodies, by path or by its bytes;
-                // the kinds and storeys chosen (the survey's), as one group unless asked otherwise.
-                ReportProgress("Reading the file", 0, 0);
-                var (bytes, name, _, key) = IfcBytes(p);
-                var options = new Lapin.Mesh.Fragments.FragImportOptions(Chosen(p["kinds"]), Chosen(p["storeys"]), p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb,
-                    Editable: (string?)p["mode"] == "editable" || p["editable"] is JsonValue ev && ev.TryGetValue<bool>(out var eb) && eb,
-                    // "auto" and "editable": recognised from their triangles where a module takes them; "reference" (the default): as the file draws them.
-                    Recognize: (string?)p["mode"] is "auto" or "editable");
-                var model = _fragSurveyed is { } fs && fs.Key == key ? fs.Model : Lapin.Mesh.Fragments.FragImport.Read(bytes, name);
-                _fragSurveyed = null;
-                var r = Lapin.Mesh.Fragments.FragImport.Run(session, model, name, out var imported, options);
-                return (r.ToJson(), imported);
-            }
-            case "project.bosSurvey":
-            {
-                // What a BIM Open Schema file holds (docs/bos.md), in the IFC survey's shape, kept read for the import that follows.
-                var (bytes, name, _, key) = IfcBytes(p);
-                ReportProgress("Reading the file", 0, 0);
-                var view = Lapin.Mesh.Bos.BosImport.Read(bytes, name);
-                _bosSurveyed = (key, view);
-                return (Lapin.Mesh.Bos.BosSurvey.Of(view, name, bytes.Length), null);
-            }
-            case "project.importBos":
-            {
-                // A BIM Open Schema file (.bos, docs/bos.md) into the open project, as a Fragments file comes in: references with their bodies,
-                // the kinds and storeys chosen, as one group unless asked otherwise; recognised or made editable on request.
-                ReportProgress("Reading the file", 0, 0);
-                var (bytes, name, _, key) = IfcBytes(p);
-                var options = new Lapin.Mesh.Fragments.FragImportOptions(Chosen(p["kinds"]), Chosen(p["storeys"]), p["group"] is not JsonValue gv || !gv.TryGetValue<bool>(out var gb) || gb,
-                    Editable: (string?)p["mode"] == "editable" || p["editable"] is JsonValue ev && ev.TryGetValue<bool>(out var eb) && eb,
-                    Recognize: (string?)p["mode"] is "auto" or "editable");
-                var view = _bosSurveyed is { } bs && bs.Key == key ? bs.View : Lapin.Mesh.Bos.BosImport.Read(bytes, name);
-                _bosSurveyed = null;
-                var r = Lapin.Mesh.Bos.BosImport.Run(session, view, name, out var imported, options);
-                return (r.ToJson(), imported);
-            }
+            case "project.fragSurvey": return FragSurvey(p);
+            case "project.importFragments": return ImportFragments(p);
+            case "project.bosSurvey": return BosSurvey(p);
+            case "project.importBos": return ImportBos(p);
             case "project.importBcf":
             {
                 // A BCF file (2.1 or 3.0, docs/plan-cde.md stage 2) into the project's remarks: topics by GUID, updated when known, added when new; by path or by its bytes.
@@ -980,14 +921,7 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 });
                 return (new JsonObject { ["recognition"] = rec.ToJson(), ["editable"] = made.ToJson() }, diff);
             }
-            case "project.importMesh":
-            {
-                // A mesh from another program (OBJ, STL, glTF, GLB) into the open project as references (MeshImport); a .gltf's buffers beside it read from its folder.
-                ReportProgress("Reading the file", 0, 0);
-                var (bytes, name, path, _) = IfcBytes(p);
-                var r = Lapin.Mesh.MeshImport.Run(session, bytes, name, p, path != null ? Path.GetDirectoryName(path) : null, out var imported);
-                return (r.ToJson(), imported);
-            }
+            case "project.importMesh": return ImportMesh(p);
             case "project.linkLapin":
             {
                 // Another Lapin project linked in, read-only, placed where asked (docs/links.md, Hotlinks); by path, or its bytes in a browser.

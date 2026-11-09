@@ -14,14 +14,17 @@ import { toPairs } from '../../viewport/gripKit';
 import { edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
 import { notify, useUi } from '../../app/store';
 import { activeStorey, engine, execute, useSession } from '../../engine/session';
-import { ScaffoldDialog } from './ScaffoldDialog';
-import { FormworkDialog } from './FormworkDialog';
 import { FormworkSection, ScaffoldSection } from './Sections';
 import { setSiteWorks, useSiteWorks } from './prefs';
 import { FormworkTypeFields, ScaffoldTypeFields } from './TypeFields';
 import { activate } from '../../platform/modules';
 import { typeOf } from '../../engine/model';
 import { rememberedType } from './typeChoice';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const ScaffoldDialog = lazyPart(() => import('./ScaffoldDialog').then((m) => m.ScaffoldDialog), { title: 'Scaffolds' });
+const FormworkDialog = lazyPart(() => import('./FormworkDialog').then((m) => m.FormworkDialog), { title: 'Formwork' });
 
 const selectedOf = (...classes: string[]): string[] => {
   const nodes = useSession.getState().nodes;

@@ -22,15 +22,18 @@ import { runSystem, schedule } from './tools';
 import { mepHooks } from './hooks';
 import { setMep, useMep } from './prefs';
 import { MepSection } from './MepSection';
-import { SystemsDialog } from './SystemsDialog';
 import { editSystem, editedSystem, toggleEdit } from './edit';
 import { Background } from './Background';
 import { mainArgs } from './gas';
 import { LengthField } from '../../shell/cells';
 import { fanGroup } from './fans/tools';
 import { FanSection } from './fans/FanSection';
-import { FanTypesDialog } from './fans/FanTypesDialog';
 import { CLASS as FAN_CLASS, fanGrips } from './fans/fans';
+import { lazyPart } from '../../platform/lazyPart';
+
+// Fetched the first time each is opened (platform/lazyPart.tsx).
+const SystemsDialog = lazyPart(() => import('./SystemsDialog').then((m) => m.SystemsDialog), { title: 'Systems' });
+const FanTypesDialog = lazyPart(() => import('./fans/FanTypesDialog').then((m) => m.FanTypesDialog), { title: 'Exhaust fan types' });
 
 /** A role as its tool places it: its id in the engine's catalogue, the services it takes ("*": any), whether it sits on a run. */
 interface RoleTool { id: string; label: string; icon: Icon; services: string[]; inline?: boolean; shortcut?: string }
