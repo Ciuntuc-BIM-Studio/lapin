@@ -16,6 +16,8 @@ The export asks for the schema (**IFC4**, read everywhere, or **IFC4X3**), the d
 
 ![Export IFC](shots/export-ifc.webp)
 
+Beams, columns and steel members are written by their parametric profile, named, with its mechanical values ([Profile libraries](profiles.md)).
+
 **Import IFC…** reads another program's IFC. Before anything comes in, Lapin reads the file and shows what it holds: its elements by discipline (architecture, structure, MEP, furniture and equipment, site), each discipline by kind with how many there are, and its storeys with how many elements stand on each. Untick what you do not need, for example MEP and furniture when you work on the structure, or keep only the storeys you work on. **How** brings the elements recognised as Lapin elements, all of them as references, or linked. While the file is read and imported, Lapin shows what it is doing and how far along it is; a large file takes a while.
 
 ![Import IFC](shots/import-ifc.webp)

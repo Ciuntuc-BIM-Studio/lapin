@@ -65,6 +65,18 @@ Corpurile rămân ușoare, cu colțuri drepte, la toate nivelurile: `Session.Geo
 
 Costul măsurat (hala implicită, `MemberFineBodyTests`): 272 de bare, dintre care 94 cu secțiune reală (celelalte sunt formate la rece, îndoite drept, și rămân la fel): 11 326 de triunghiuri cu colțuri drepte, 18 816 la LOD 400 (×1,66), construite în 74 ms; la orice alt nivel, nimic în plus. Alegeri: cantitățile, exporturile și alegerea în plan rămân pe corpul ușor; în 3D la LOD 400 alegerea lovește corpul desenat, același element.
 
+## Profilul parametric în IFC-ul modelului (decizia 416)
+
+`IfcSweep.Parametric`: grinzile și stâlpii drepți (`FrameIfcBodies`, oricare, și de beton), barele metalice și halele (`SteelBody.Swept`) se scriu ca `IfcExtrudedAreaSolid` din subtipul parametric (`ProfileIfc.Parametric`: I, I nesimetric, U, T, L, C cu buze, Z fără buze, RHS, CHS, dreptunghi, cerc, elipsă), cu `ProfileName` și `Pset_ProfileMechanical` (valorile fișierului dacă le-a dat, altfel ale lui Lapin; în SI, cu unitățile spuse pe proprietate), o singură definiție pentru tot ce o împarte. Contururile, poligoanele, Σ, Z cu buze și C fără buze rămân arbitrare, cu numele lor.
+
+**Așezarea**: secțiunile lui Lapin sunt centrate pe cutia lor, ca profilele parametrice ale IFC, și L, U, C, Z stau la fel (inima la stânga, aripile la dreapta, T cu talpa sus): `Position` rămâne identitatea. O secțiune răsturnată (`flipped`) nu are imagine în oglindă în IFC: profilul se extrudă invers din capătul celălalt, cu x inversat, ceea ce e chiar oglinda (`Section.Sweep`).
+
+**Corpul**: `FilletRadius`, `EdgeRadius` și `FlangeSlope` se scriu când profilul le are, ca adevăr despre profil; alte programe vor desena racordările. Cititorul lui Lapin (`IfcModel.Profile`) desenează profilele cu colțuri drepte, deci același corp ca elementul; excepție I-ul nesimetric, pe care Lapin îl ține ca un contur cu racordări și îl citește la fel. Corpurile stocate au coordonatele la 0,1 mm (`StoredBodies`). Un element tăiat (ordinea de tăiere, un stâlp prin grindă, o îmbinare în ungi) rămâne B-rep (`SweepIsBody`: un singur corp, același volum și aceeași cutie). O grindă rotundă rămâne B-rep: corpul ei e banda.
+
+**Recunoașterea** nu se schimbă: dreptunghiurile și cercurile dintr-un fișier străin devin native și trec poarta de fidelitate; un I, L, U… rămâne referință cu corpul fișierului (grinzile și stâlpii profilați nu se recunosc încă în secțiuni native). `IfcCycleTests` cuprinde acum un L răsturnat, un UPN și un HEA rotit: fără derivă.
+
+Tot aici: C și Z fără buze aveau lățimea mai mică cu o grosime decât spuneau; acum aripa ajunge la lățime (`Section.Centreline`, `SectionProperties`), deci `B` e a toată secțiunea și se citește înapoi la fel.
+
 ## Limite
 
 - `It` și `Iw` nu se calculează pentru un contur arbitrar (rămân ale fișierului, dacă le dă); `Iw` la U e aproximarea pereților subțiri (UPN: cu 15 % peste tabel, din cauza tălpilor înclinate).

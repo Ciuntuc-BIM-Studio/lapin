@@ -41,6 +41,8 @@ El tipo de una fila sale de su columna de tipo (W, HP, UPN, HSS, PIPE…) o de s
 
 **IFC** y **CSV** bajo la lista escriben la biblioteca elegida (o los perfiles del proyecto) como biblioteca de perfiles IFC4 o como una tabla que Lapin vuelve a leer.
 
+También en el IFC del modelo las vigas, los pilares y los perfiles de acero se escriben por su perfil paramétrico (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, rectángulos y círculos), con el nombre del perfil y `Pset_ProfileMechanical`, de modo que otros programas ven un IPE 300 y no una polilínea. Los contornos, Σ y Z con labios siguen como perfiles arbitrarios; un elemento cortado por otro sigue siendo el sólido que es.
+
 ## Un contorno como perfil
 
 Dibuja la sección con Delineación como polilíneas cerradas y círculos (los que están dentro de otro son huecos), selecciónalos y pulsa **De la selección**, o lee el dibujo de un fabricante con **DXF…**. Ponle nombre, elige su material y biblioteca y guárdalo. Así entran los perfiles de aluminio y PVC, las secciones prefabricadas y las formas de madera: el mismo almacén, con su material y densidad.

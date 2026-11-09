@@ -16,6 +16,8 @@ Eksport pyta o schemat (**IFC4**, czytany wszędzie, lub **IFC4X3**), szczegół
 
 ![Eksport IFC](shots/export-ifc.webp)
 
+Belki, słupy i profile stalowe zapisywane są przez profil parametryczny, z nazwą i wartościami mechanicznymi ([Biblioteki profili](profiles.md)).
+
 **Importuj IFC…** wczytuje IFC z innego programu. Zanim cokolwiek zostanie wprowadzone, Lapin czyta plik i pokazuje, co zawiera: elementy według branż (architektura, konstrukcja, instalacje, meble i wyposażenie, teren), każdą branżę według rodzajów z ich liczbą oraz kondygnacje z liczbą elementów na każdej. Odznacz to, czego nie potrzebujesz, na przykład instalacje i meble, gdy pracujesz nad konstrukcją, albo zostaw tylko kondygnacje, nad którymi pracujesz. **Jak** wprowadza elementy rozpoznane jako elementy Lapina, wszystkie jako odniesienia lub jako połączone. Podczas czytania i importu pliku Lapin pokazuje, co robi i jak daleko zaszedł; duży plik wymaga chwili.
 
 ![Import IFC](shots/import-ifc.webp)

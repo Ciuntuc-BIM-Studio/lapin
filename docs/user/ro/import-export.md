@@ -16,6 +16,8 @@ Exportul întreabă schema (**IFC4**, citit peste tot, sau **IFC4X3**), detaliul
 
 ![Exportă IFC](shots/export-ifc.webp)
 
+Grinzile, stâlpii și barele metalice se scriu prin profilul lor parametric, cu nume și cu valorile mecanice ([Biblioteci de profile](profiles.md)).
+
 **Importă IFC…** citește IFC-ul altui program. Înainte să intre ceva, Lapin citește fișierul și îți arată ce conține: elementele pe discipline (arhitectură, structură, instalații, mobilier și echipamente, sit), fiecare disciplină pe tipuri, cu câte sunt din fiecare, și etajele, cu câte elemente stau pe fiecare. Debifează ce nu-ți trebuie, de exemplu instalațiile și mobilierul când lucrezi la structură, sau păstrează doar etajele la care lucrezi. **Cum** aduce elementele recunoscute ca elemente Lapin, pe toate ca referințe sau legate. Cât timp fișierul se citește și se importă, Lapin arată ce face și cât a mai rămas; un fișier mare durează.
 
 ![Import IFC](shots/import-ifc.webp)

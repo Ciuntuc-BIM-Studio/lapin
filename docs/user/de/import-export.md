@@ -16,6 +16,8 @@ Der Export fragt nach dem Schema (**IFC4**, überall lesbar, oder **IFC4X3**), d
 
 ![IFC exportieren](shots/export-ifc.webp)
 
+Träger, Stützen und Stahlprofile werden über ihr parametrisches Profil geschrieben, benannt und mit seinen mechanischen Werten ([Profilbibliotheken](profiles.md)).
+
 **IFC importieren…** liest die IFC-Datei eines anderen Programms. Bevor etwas hereinkommt, liest Lapin die Datei und zeigt, was sie enthält: ihre Elemente nach Disziplin (Architektur, Tragwerk, TGA, Möbel und Ausstattung, Gelände), jede Disziplin nach Art mit der jeweiligen Anzahl, und ihre Geschosse mit der Anzahl der Elemente auf jedem. Deaktivieren Sie, was Sie nicht brauchen, zum Beispiel TGA und Möbel, wenn Sie am Tragwerk arbeiten, oder behalten Sie nur die Geschosse, an denen Sie arbeiten. **Wie** holt die erkannten Elemente als Lapin-Elemente, alle als Referenzen oder verknüpft herein. Während die Datei gelesen und importiert wird, zeigt Lapin, was es gerade tut und wie weit es ist; eine große Datei braucht eine Weile.
 
 ![IFC importieren](shots/import-ifc.webp)

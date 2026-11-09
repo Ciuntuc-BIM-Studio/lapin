@@ -373,23 +373,25 @@ public static class SectionProperties
     static List<Vec2> Centreline(SectionShape s)
     {
         double h = s.Web / 2, x = s.Width / 2 - h, y = s.Depth / 2 - h, lip = s.Lip > h ? s.Depth / 2 - s.Lip : double.NaN;
+        // Without lips a flange's square end stands at the width: the width is always the whole section's.
+        var tip = double.IsNaN(lip) ? s.Width / 2 : x;
         var o = new List<Vec2>();
         switch (s.Kind)
         {
             case "C" or "SIGMA":
                 if (!double.IsNaN(lip)) o.Add(new(x, -lip));
-                o.AddRange([new(x, -y), new(-x, -y)]);
+                o.AddRange([new(tip, -y), new(-x, -y)]);
                 if (s.Kind == "SIGMA")
                 {
                     var fold = s.Width / 4;
                     o.AddRange([new(-x, -s.Depth / 4 - fold / 2), new(-x + fold, -s.Depth / 4 + fold / 2), new(-x + fold, s.Depth / 4 - fold / 2), new(-x, s.Depth / 4 + fold / 2)]);
                 }
-                o.AddRange([new(-x, y), new(x, y)]);
+                o.AddRange([new(-x, y), new(tip, y)]);
                 if (!double.IsNaN(lip)) o.Add(new(x, lip));
                 break;
             case "Z":
                 if (!double.IsNaN(lip)) o.Add(new(-x, -lip));
-                o.AddRange([new(-x, -y), new(0, -y), new(0, y), new(x, y)]);
+                o.AddRange([new(-tip, -y), new(0, -y), new(0, y), new(tip, y)]);
                 if (!double.IsNaN(lip)) o.Add(new(x, lip));
                 break;
         }

@@ -41,6 +41,8 @@ A row's kind comes from its type column (W, HP, UPN, HSS, PIPE…) or its name; 
 
 **IFC** and **CSV** under the list write the library chosen (or the project's profiles) as an IFC4 profile library or a table Lapin reads back.
 
+Beams, columns and steel members are written in the model's IFC by their parametric profile too (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, rectangles and circles), with the profile's name and `Pset_ProfileMechanical`, so other tools see an IPE 300 and not a polyline. Outlines, Σ and lipped Z stay arbitrary profiles; a member cut by another stays the solid it is.
+
 ## An outline as a profile
 
 Draw the section with Drafting as closed polylines and circles (those inside another are its holes), select them and press **From the selection**, or read a producer's drawing with **DXF…**. Name it, choose its material and library, and keep it. This is how aluminium and PVC extrusions, precast sections and timber shapes get in: the same store, with their own material and density.

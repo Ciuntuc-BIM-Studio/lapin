@@ -41,6 +41,8 @@ O tipo de uma linha vem da sua coluna de tipo (W, HP, UPN, HSS, PIPE…) ou do n
 
 **IFC** e **CSV** sob a lista gravam a biblioteca escolhida (ou os perfis do projeto) como biblioteca de perfis IFC4 ou como tabela que o Lapin volta a ler.
 
+Também no IFC do modelo as vigas, pilares e perfis de aço são gravados pelo seu perfil paramétrico (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, retângulos e círculos), com o nome do perfil e `Pset_ProfileMechanical`, de modo que outros programas veem um IPE 300 e não uma polilinha. Contornos, Σ e Z com abas ficam perfis arbitrários; um elemento cortado por outro continua o sólido que é.
+
 ## Um contorno como perfil
 
 Desenhe a seção com Desenho como polilinhas fechadas e círculos (os que estão dentro de outro são furos), selecione-os e clique em **Da seleção**, ou leia o desenho de um fabricante com **DXF…**. Dê um nome, escolha material e biblioteca e guarde. É assim que entram perfis de alumínio e PVC, seções pré-moldadas e formas de madeira: o mesmo depósito, com o material e a densidade deles.

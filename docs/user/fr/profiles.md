@@ -41,6 +41,8 @@ Le type d'une ligne vient de sa colonne de type (W, HP, UPN, HSS, PIPE…) ou de
 
 **IFC** et **CSV** sous la liste écrivent la bibliothèque choisie (ou les profilés du projet) en bibliothèque de profilés IFC4 ou en tableau que Lapin sait relire.
 
+Dans l'IFC de la maquette aussi, poutres, poteaux et profilés d'acier sont écrits par leur profil paramétrique (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, rectangles et cercles), avec le nom du profilé et `Pset_ProfileMechanical` : les autres logiciels voient un IPE 300 et non une polyligne. Contours, Σ et Z à lèvres restent des profils arbitraires ; un élément coupé par un autre reste le solide qu'il est.
+
 ## Un contour comme profilé
 
 Dessinez la section avec Dessin en polylignes fermées et cercles (ceux à l'intérieur d'un autre sont ses trous), sélectionnez-les et cliquez sur **Depuis la sélection**, ou lisez le dessin d'un fabricant avec **DXF…**. Nommez-le, choisissez son matériau et sa bibliothèque, gardez-le. C'est ainsi qu'entrent les profilés aluminium et PVC, les sections préfabriquées et les formes en bois : le même stock, avec leur matériau et leur densité.

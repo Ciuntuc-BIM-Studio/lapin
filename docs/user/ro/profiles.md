@@ -41,6 +41,8 @@ Felul unui rând vine din coloana lui de tip (W, HP, UPN, HSS, PIPE…) sau din 
 
 **IFC** și **CSV** de sub listă scriu biblioteca aleasă (sau profilele proiectului) ca bibliotecă IFC4 de profile ori ca tabel pe care Lapin îl citește înapoi.
 
+Și în IFC-ul modelului grinzile, stâlpii și barele metalice se scriu prin profilul lor parametric (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, dreptunghiuri și cercuri), cu numele profilului și `Pset_ProfileMechanical`, deci alte programe văd un IPE 300, nu o polilinie. Contururile, Σ și Z cu buze rămân profile arbitrare; o bară tăiată de alta rămâne corpul care este.
+
 ## Un contur ca profil
 
 Desenează secțiunea cu Desen, din polilinii închise și cercuri (cele din interiorul altuia sunt goluri), selectează-le și apasă **Din selecție**, sau citește desenul unui producător cu **DXF…**. Dă-i un nume, alege-i materialul și biblioteca și păstrează-l. Așa intră profilele de aluminiu și PVC, secțiunile prefabricate și formele de lemn: același depozit, cu materialul și densitatea lor.

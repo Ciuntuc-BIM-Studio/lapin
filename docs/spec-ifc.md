@@ -119,6 +119,10 @@ Regula IFC: un element voidat de goluri își scrie corpul **netăiat**, iar gol
 
 Un element cu piese agregate sub el (zone, planele acoperișului, treptele) **nu are corp propriu**: piesele îl au. Așa cere `IfcRelAggregates` și așa evităm solidele duble. De aici cele două niveluri de detaliu din **[Î2]**.
 
+### Profilele parametrice (09.11.2026, decizia 416)
+
+Grinzile, stâlpii, barele metalice și halele: `IfcExtrudedAreaSolid` din subtipul parametric al profilului, cu `ProfileName` și `Pset_ProfileMechanical`; contururile rămân arbitrare; un element tăiat rămâne B-rep. Detalii în `docs/plan-profile-libraries.md`, Profilul parametric în IFC-ul modelului.
+
 ### Geometria la export (30.10.2026, #181)
 
 Dialogul **Export IFC** (până acum exportul pornea direct, cu valorile implicite) alege schema, detaliul, faza și cum se scriu corpurile; implicit totul e ca înainte.

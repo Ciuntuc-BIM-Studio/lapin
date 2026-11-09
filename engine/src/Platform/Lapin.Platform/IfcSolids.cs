@@ -8,7 +8,15 @@ namespace Lapin.Platform;
 /// <see cref="Axis"/> × <see cref="XDir"/>, standing at <see cref="Origin"/>, swept along <see cref="Axis"/> (a unit
 /// vector) by <see cref="Depth"/>. World metres.
 /// </summary>
-public sealed record IfcSweep(IReadOnlyList<Vec2> Profile, IReadOnlyList<IReadOnlyList<Vec2>> Holes, Vec3 Origin, Vec3 XDir, Vec3 Axis, double Depth);
+public sealed record IfcSweep(IReadOnlyList<Vec2> Profile, IReadOnlyList<IReadOnlyList<Vec2>> Holes, Vec3 Origin, Vec3 XDir, Vec3 Axis, double Depth)
+{
+    /// <summary>
+    /// The profile this sweep is made of, when it has one: IFC writes it as its parametric subtype with its name and
+    /// <c>Pset_ProfileMechanical</c> (decision 416), centred on its box as Lapin's sections and IFC's are, so <see cref="Origin"/>
+    /// and <see cref="XDir"/> stand for it as they do for <see cref="Profile"/>. Kinds IFC has no form for keep <see cref="Profile"/>.
+    /// </summary>
+    public Lapin.Platform.ProfileLibraries.SectionProfile? Parametric { get; init; }
+}
 
 /// <summary>A plane cutting a sweep: what lies on the side <see cref="Normal"/> points to (out of the material) is taken off.</summary>
 public sealed record IfcClip(Vec3 Point, Vec3 Normal);

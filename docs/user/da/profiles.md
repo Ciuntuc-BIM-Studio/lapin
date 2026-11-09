@@ -41,6 +41,8 @@ En rækkes slags kommer fra dens typekolonne (W, HP, UPN, HSS, PIPE…) eller na
 
 **IFC** og **CSV** under listen skriver det valgte bibliotek (eller projektets profiler) som et IFC4-profilbibliotek eller en tabel, Lapin kan læse igen.
 
+Bjælker, søjler og stålprofiler skrives også i modellens IFC ved deres parametriske profil (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, rektangler og cirkler) med profilens navn og `Pset_ProfileMechanical`, så andre programmer ser en IPE 300 og ikke en polylinje. Konturer, Σ og Z med læber forbliver vilkårlige profiler; et element skåret af et andet forbliver det legeme, det er.
+
 ## Et omrids som profil
 
 Tegn tværsnittet med Tegning som lukkede polylinjer og cirkler (dem inden i et andet er huller), markér dem og tryk **Fra markeringen**, eller læs en producents tegning med **DXF…**. Giv det et navn, vælg materiale og bibliotek, og gem det. Sådan kommer aluminiums- og PVC-profiler, præfabrikerede tværsnit og træformer ind: samme lager, med eget materiale og egen densitet.

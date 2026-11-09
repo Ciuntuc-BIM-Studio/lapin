@@ -16,6 +16,8 @@ A exportação pede o esquema (**IFC4**, lido em todo lugar, ou **IFC4X3**), o d
 
 ![Exportar IFC](shots/export-ifc.webp)
 
+Vigas, pilares e perfis de aço são gravados pelo seu perfil paramétrico, com nome e valores mecânicos ([Bibliotecas de perfis](profiles.md)).
+
 **Importar IFC…** lê o IFC de outro programa. Antes que qualquer coisa entre, o Lapin lê o arquivo e mostra o que ele contém: os seus elementos por disciplina (arquitetura, estrutura, MEP, mobiliário e equipamentos, terreno), cada disciplina por tipo com quantos há, e os seus pavimentos com quantos elementos estão em cada um. Desmarque o que você não precisa, por exemplo MEP e mobiliário quando você trabalha na estrutura, ou mantenha só os pavimentos em que você trabalha. **Como** traz os elementos reconhecidos como elementos do Lapin, todos eles como referências, ou vinculados. Enquanto o arquivo é lido e importado, o Lapin mostra o que está fazendo e em que ponto está; um arquivo grande leva um tempo.
 
 ![Importar IFC](shots/import-ifc.webp)

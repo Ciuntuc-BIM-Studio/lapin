@@ -52,6 +52,13 @@ public sealed record SectionProfile
 
     public double DensityOrDefault => Density ?? Densities.GetValueOrDefault(Material, 0);
 
+    /// <summary>Whether IFC has a parametric form for its kind (a C only with lips, a Z only without); an outline, a Σ and the others go by their rings.</summary>
+    public bool HasIfcForm => Kind switch
+    {
+        "I" or "asymI" or "U" or "T" or "L" or "RHS" or "CHS" or "rectangle" or "circle" or "ellipse" => true,
+        "C" => Lip > 0, "Z" => Lip <= 0, _ => false,
+    };
+
     /// <summary>How the profile's shape is read for its properties.</summary>
     public SectionShape Shape() => new(Kind, B, Kind is "circle" or "CHS" ? B : H, Tw, Tf, Lip, Name)
     {

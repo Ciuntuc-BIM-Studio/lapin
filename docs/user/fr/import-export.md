@@ -16,6 +16,8 @@ L’export demande le schéma (**IFC4**, lu partout, ou **IFC4X3**), le détail 
 
 ![Exporter IFC](shots/export-ifc.webp)
 
+Poutres, poteaux et profilés d'acier sont écrits par leur profil paramétrique, nommé, avec ses valeurs mécaniques ([Bibliothèques de profilés](profiles.md)).
+
 **Importer IFC…** lit le fichier IFC d’un autre logiciel. Avant que quoi que ce soit n’entre, Lapin lit le fichier et montre ce qu’il contient : ses éléments par discipline (architecture, structure, fluides, mobilier et équipements, site), chaque discipline par catégorie avec leur nombre, et ses niveaux avec le nombre d’éléments sur chacun. Décochez ce dont vous n’avez pas besoin, par exemple les fluides et le mobilier quand vous travaillez sur la structure, ou ne gardez que les niveaux sur lesquels vous travaillez. **Comment** importe les éléments reconnus comme éléments Lapin, tous comme références, ou liés. Pendant la lecture et l’import du fichier, Lapin montre ce qu’il fait et où il en est ; un gros fichier prend un certain temps.
 
 ![Importer IFC](shots/import-ifc.webp)

@@ -199,7 +199,7 @@ public static class SteelBody
         var clips = new List<IfcClip>();
         if (pts.Max(p => Station(built.Start, p)) - a > 1e-9) clips.Add(new IfcClip(built.Start.Point, built.Start.Normal));
         if (b - pts.Min(p => Station(built.End, p)) > 1e-9) clips.Add(new IfcClip(built.End.Point, built.End.Normal));
-        var body = new IfcSweep(outline, holes, ax.At(default, a), ax.Frame.V, u, b - a);
+        var body = ax.Section.Sweep(m, ax.At(default, a), ax.Frame.V, u, b - a, ax.Flipped);
         var openings = built.Copes.SelectMany(c => CopeBoxes(ax, c.End, c.AtEnd, c.Station)).Select(x => Sweep(ax, x)).ToList();
         return new IfcSweptBody(body, clips, openings);
     }

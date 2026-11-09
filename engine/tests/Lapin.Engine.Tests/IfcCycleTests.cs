@@ -55,6 +55,14 @@ public class IfcCycleTests(ITestOutputHelper output) : IDisposable
         f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = ct, ["x"] = 6, ["y"] = 3 });
         f.Run("structure.addColumn", new JsonObject { ["storeyId"] = upper, ["typeId"] = ct, ["x"] = 6, ["y"] = 3 });
         f.Run("structure.addBeam", new JsonObject { ["storeyId"] = upper, ["x1"] = 4, ["y1"] = 3, ["x2"] = 8, ["y2"] = 3 });
+        // Steel, by its parametric profiles (decision 416): an angle flipped, a channel, a column turned.
+        var angle = (string)f.Run("structure.createBeamType", new JsonObject { ["name"] = "L 100", ["section"] = new JsonObject { ["name"] = "L 100×100×10" }, ["material"] = "Steel" })!["id"]!;
+        var flippedAngle = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = upper, ["typeId"] = angle, ["x1"] = 1, ["y1"] = 5, ["x2"] = 3, ["y2"] = 5 })!["id"]!;
+        f.Run("structure.flip", new JsonObject { ["ids"] = new JsonArray(flippedAngle) });
+        var channel = (string)f.Run("structure.createBeamType", new JsonObject { ["name"] = "UPN 200", ["section"] = new JsonObject { ["name"] = "UPN 200" }, ["material"] = "Steel" })!["id"]!;
+        f.Run("structure.addBeam", new JsonObject { ["storeyId"] = upper, ["typeId"] = channel, ["x1"] = 5, ["y1"] = 5, ["x2"] = 7, ["y2"] = 4 });
+        var hea = (string)f.Run("structure.createColumnType", new JsonObject { ["name"] = "HEA 200", ["section"] = new JsonObject { ["name"] = "HEA 200" }, ["material"] = "Steel" })!["id"]!;
+        f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["typeId"] = hea, ["x"] = 2, ["y"] = 1, ["rotation"] = 30 });
         f.Run("architecture.addWall", new JsonObject { ["storeyId"] = upper, ["typeId"] = outer, ["x1"] = 0, ["y1"] = 0, ["x2"] = 8, ["y2"] = 0 });
         f.Run("architecture.addWall", new JsonObject { ["storeyId"] = upper, ["typeId"] = outer, ["x1"] = 8, ["y1"] = 0, ["x2"] = 8, ["y2"] = 6 });
         f.Run("architecture.addRoof", new JsonObject { ["storeyId"] = upper, ["points"] = Pts((0, 0), (8, 0), (8, 6), (0, 6)) });

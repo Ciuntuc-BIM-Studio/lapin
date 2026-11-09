@@ -703,6 +703,7 @@ public static class IfcExport
             var reps = new List<string>();
             // A body its module gives as constructive solids (a steel member: its profile swept, cut by its ends' planes, decision 268).
             var swept = !grouped && at == null && railPart == null ? SweptOf(e) : null;
+            if (swept != null && !SweepIsBody(swept, parts)) swept = null;
             if (swept != null) reps.Add(SweptRep(swept, parts[0].Color, fr));
             // An instance of a shared body: the body once, as a representation map, each instance mapping it where it stands.
             else if (!grouped && at == null && railPart == null && geo!.Instance is { } inst && Mapped(inst, z0) is { } mapped) reps.Add(mapped);
@@ -748,6 +749,30 @@ public static class IfcExport
             return null;
         }
 
+        /// <summary>The profile definitions written, by what they say, and the SI units their values are in.</summary>
+        readonly Dictionary<string, string> profileDefs = [];
+        ProfileIfc.SiUnits? profileUnits;
+
+        /// <summary>
+        /// Whether a plain sweep is the element's body: one part of its volume and box (a member cut by the project's cut order, or
+        /// mitred at a join, is not, and is written as the B-rep it is). Sweeps with cuts of their own say what they are.
+        /// </summary>
+        static bool SweepIsBody(IfcSweptBody b, List<GeometryPart> parts)
+        {
+            if (b.Clips.Count > 0 || b.Openings.Count > 0 || b.Parts.Count > 0) return true;
+            if (parts.Count != 1 || Measure.Bounds(parts[0].Solid) is not { } box) return false;
+            var w = b.Body;
+            var y = Vec3.Cross(w.Axis, w.XDir);
+            var ends = new[] { w.Origin, w.Origin + w.Axis * w.Depth };
+            var corners = w.Profile.SelectMany(q => ends.Select(o => o + w.XDir * q.X + y * q.Y)).ToList();
+            const double Tol = 1e-4;
+            bool Near(double a, double c) => Math.Abs(a - c) <= Tol;
+            if (!Near(corners.Min(c => c.X), box.Min.X) || !Near(corners.Max(c => c.X), box.Max.X) || !Near(corners.Min(c => c.Y), box.Min.Y)
+                || !Near(corners.Max(c => c.Y), box.Max.Y) || !Near(corners.Min(c => c.Z), box.Min.Z) || !Near(corners.Max(c => c.Z), box.Max.Z)) return false;
+            var volume = (Math.Abs(Polygon2.SignedArea(w.Profile)) - w.Holes.Sum(h => Math.Abs(Polygon2.SignedArea(h)))) * w.Depth;
+            return Math.Abs(volume - Measure.Volume(parts[0].Solid)) <= Math.Max(1e-9, volume * 1e-4);
+        }
+
         /// <summary>
         /// A sweep as IFC has one: its profile (an IfcArbitraryClosedProfileDef, its holes as voids) placed on its origin, its
         /// x and its axis in the frame, extruded along the placement's z by its depth (IfcExtrudedAreaSolid).
@@ -757,9 +782,23 @@ public static class IfcExport
             string Curve(IReadOnlyList<Vec2> loop) => f.Add("IFCPOLYLINE", L(loop.Append(loop[0]).Select(P2)));
             string Dir(Vec3 n) => f.Add("IFCDIRECTION", L(new[] { R(n.X), R(n.Y), R(n.Z) }));
             var outer = Polygon2.EnsureCcw(w.Profile);
-            var profile = w.Holes.Count == 0
-                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), Null, Curve(outer))
-                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), Null, Curve(outer), L(w.Holes.Select(h => Curve(Polygon2.EnsureCcw(h).Reverse().ToList()))));
+            string Arbitrary(string? name) => w.Holes.Count == 0
+                ? f.Add("IFCARBITRARYCLOSEDPROFILEDEF", E("AREA"), S(name), Curve(outer))
+                : f.Add("IFCARBITRARYPROFILEDEFWITHVOIDS", E("AREA"), S(name), Curve(outer), L(w.Holes.Select(h => Curve(Polygon2.EnsureCcw(h).Reverse().ToList()))));
+            // Its profile by its parametric subtype, once for all that share it (decision 416); an outline, or a kind IFC has no form for, by its rings.
+            string profile;
+            if (w.Parametric is { } section)
+            {
+                var key = section.ToJson().ToJsonString() + (!section.HasIfcForm ? string.Join(' ', outer.Select(q => $"{q.X:0.######},{q.Y:0.######}")) : "");
+                if (!profileDefs.TryGetValue(key, out var known))
+                {
+                    known = ProfileIfc.Parametric(f, section, 1) ?? Arbitrary(section.Name);
+                    ProfileIfc.WriteProperties(f, section, known, profileUnits ??= new ProfileIfc.SiUnits(f));
+                    profileDefs[key] = known;
+                }
+                profile = known;
+            }
+            else profile = Arbitrary(null);
             var o = fr.Local(w.Origin);
             var position = f.Add("IFCAXIS2PLACEMENT3D", f.Add("IFCCARTESIANPOINT", L(new[] { R(o.X), R(o.Y), R(o.Z) })), Dir(fr.Turn(w.Axis)), Dir(fr.Turn(w.XDir)));
             return f.Add("IFCEXTRUDEDAREASOLID", profile, position, f.Add("IFCDIRECTION", "(0.,0.,1.)"), R(w.Depth));

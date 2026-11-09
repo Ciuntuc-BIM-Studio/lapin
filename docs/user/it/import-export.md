@@ -16,6 +16,8 @@ L’esportazione chiede lo schema (**IFC4**, letto ovunque, oppure **IFC4X3**), 
 
 ![Esporta IFC](shots/export-ifc.webp)
 
+Travi, pilastri e profili d'acciaio sono scritti con il loro profilo parametrico, con nome e valori meccanici ([Librerie di profili](profiles.md)).
+
 **Importa IFC…** legge l’IFC di un altro programma. Prima che entri qualsiasi cosa, Lapin legge il file e mostra che cosa contiene: i suoi elementi per disciplina (architettura, struttura, impianti, arredi e attrezzature, sito), ogni disciplina per categoria con il numero di elementi, e i suoi piani con quanti elementi stanno su ciascuno. Togli la spunta a ciò che non ti serve, per esempio impianti e arredi quando lavori sulla struttura, oppure tieni solo i piani su cui lavori. **Come** porta dentro gli elementi riconosciuti come elementi Lapin, tutti come riferimenti, oppure collegati. Mentre il file viene letto e importato, Lapin mostra che cosa sta facendo e a che punto è; un file grande richiede un po’ di tempo.
 
 ![Importa IFC](shots/import-ifc.webp)

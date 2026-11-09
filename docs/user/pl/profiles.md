@@ -41,6 +41,8 @@ Rodzaj wiersza wynika z kolumny typu (W, HP, UPN, HSS, PIPE…) lub z nazwy; dla
 
 **IFC** i **CSV** pod listą zapisują wybraną bibliotekę (lub profile projektu) jako bibliotekę profili IFC4 albo tabelę, którą Lapin odczyta z powrotem.
 
+Także w IFC modelu belki, słupy i profile stalowe zapisywane są przez profil parametryczny (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, prostokąty i koła), z nazwą profilu i `Pset_ProfileMechanical`, więc inne programy widzą IPE 300, a nie polilinię. Obrysy, Σ i Z z wywinięciami pozostają profilami dowolnymi; element przecięty przez inny pozostaje bryłą, którą jest.
+
 ## Kontur jako profil
 
 Narysuj przekrój w Rysowaniu jako zamknięte polilinie i okręgi (te wewnątrz innego to otwory), zaznacz je i naciśnij **Z zaznaczenia** albo odczytaj rysunek producenta przez **DXF…**. Nazwij go, wybierz materiał i bibliotekę i zachowaj. Tak trafiają tu profile aluminiowe i PVC, przekroje prefabrykowane i kształty drewniane: ten sam magazyn, z własnym materiałem i gęstością.

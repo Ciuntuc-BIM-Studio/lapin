@@ -766,6 +766,9 @@ public sealed partial class IfcModel
             {
                 // The bottom flange at 3 and 6, the top at 8 and 9, in IFC4 and IFC2x3 alike.
                 double wb = L(3) / 2, d = L(4) / 2, t = L(5) / 2, fb = L(6), wt = p[8] is null ? wb : L(8) / 2, ft = p[9] is null ? fb : L(9);
+                // With a fillet, as a library's asymmetric I is drawn: it has no sharp body in Lapin to be the same as (it is kept as an outline).
+                if (p[7] is not null && L(7) > 0 && Lapin.Platform.Analysis.SectionProperties.RingsOf(new Lapin.Platform.Analysis.SectionShape("asymI", 2 * wt, 2 * d, 2 * t, ft) { Root = L(7), Width2 = 2 * wb, Flange2 = fb }) is [{ } rounded, ..])
+                    return One(Placed([.. rounded.Select(q => new Vec3(q.X, q.Y, 0))]));
                 return One(Placed([new(-wb, -d, 0), new(wb, -d, 0), new(wb, -d + fb, 0), new(t, -d + fb, 0), new(t, d - ft, 0), new(wt, d - ft, 0), new(wt, d, 0), new(-wt, d, 0), new(-wt, d - ft, 0), new(-t, d - ft, 0), new(-t, -d + fb, 0), new(-wb, -d + fb, 0)]));
             }
             case "IFCCSHAPEPROFILEDEF":

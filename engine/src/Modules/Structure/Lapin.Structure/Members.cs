@@ -331,3 +331,32 @@ public static class Beams
         ]);
     }
 }
+
+/// <summary>
+/// Straight beams and columns as IFC's swept solids with their parametric profile (decision 416): what the steel module's ends do not
+/// already write (<see cref="IIfcSweptBodies"/>); the export keeps its B-rep where this is not the element's body (cut by the cut
+/// order, mitred at a join).
+/// </summary>
+sealed class FrameIfcBodies : IIfcSweptBodies
+{
+    public IfcSweptBody? BodyOf(IModelView m, Entity e)
+    {
+        if (e.Class is not (IfcClass.Column or IfcClass.Beam) || StoredBodies.Has(e) || e.Attrs["steelEnds"] is JsonObject) return null;
+        if (e.Class == IfcClass.Column)
+        {
+            if (e.Attrs["at"] is null) return null;
+            var (section, _, height) = Columns.Spec(m, e);
+            if (!(height > 0)) return null;
+            var at = Place.Point(e);
+            var r = e.Num("rotation") * Math.PI / 180;
+            return new IfcSweptBody(section.Sweep(m, at.At(Place.Elevation(m, e) + e.Num("baseOffset")), new Vec3(Math.Cos(r), Math.Sin(r), 0), Vec3.UnitZ, height, false), [], []);
+        }
+        if (e.Attrs["start"] is null || Beams.Frame(e, m) is null) return null;
+        var span = Beams.SpanOf(m, e);
+        if (span.Curve.IsArc || span.Empty) return null;
+        var (beamSection, _) = Beams.Spec(m, e);
+        var u = (span.End - span.Start).Normalized();
+        var origin = span.Start.At(Beams.Top(m, e) - beamSection.Depth / 2);
+        return new IfcSweptBody(beamSection.Sweep(m, origin, new Vec3(-u.Y, u.X, 0), new Vec3(u.X, u.Y, 0), (span.End - span.Start).Length, e.Bool("flipped")), [], []);
+    }
+}

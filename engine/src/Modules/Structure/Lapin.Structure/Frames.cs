@@ -105,6 +105,40 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
         return (rings[0], rings.Skip(1).Select(r => (IReadOnlyList<Vec2>)r).ToList());
     }
 
+    /// <summary>
+    /// The section as a profile for IFC (decision 416): the project's copy it was made of (with the file's values), else the
+    /// built-in library's by its name and sizes, else its own sizes; a section with no library behind it says no mass. A regular
+    /// polygon and an outline with no copy have none: IFC gets their rings.
+    /// </summary>
+    public Lapin.Platform.ProfileLibraries.SectionProfile? AsProfile(IModelView m)
+    {
+        if (ProfileId != null && m.Get(ProfileId) is { } copy && Lapin.Platform.ProfileLibraries.ProjectProfiles.Read(copy) is { } own) return own;
+        if (Kind is "polygon" or "outline") return null;
+        if (Name != null && Lapin.Platform.ProfileLibraries.BuiltInProfiles.Find(Name) is { } b && b.Kind == Kind && Math.Abs(b.B - Width) < 1e-9 && Math.Abs(b.H - Depth) < 1e-9
+            && Math.Abs(b.Tw - Web) < 1e-9 && Math.Abs(b.Tf - Flange) < 1e-9) return b;
+        return new Lapin.Platform.ProfileLibraries.SectionProfile
+        {
+            Name = Label, Kind = Kind, H = Depth, B = Width, Tw = Web, Tf = Flange, Lip = Lip, R1 = Root, R2 = Toe, Slope = Slope, Standard = Standard, Family = Family, Material = "other",
+        };
+    }
+
+    /// <summary>Whether mirroring it across its up leaves another shape: it then goes the other way along its axis in IFC, a profile having no mirror image.</summary>
+    bool Handed => Kind is "L" or "U" or "C" or "Z" or "SIGMA" or "outline";
+
+    /// <summary>
+    /// The section swept from <paramref name="origin"/> along <paramref name="axis"/>, its x along <paramref name="xDir"/>, as IFC
+    /// writes it (<see cref="IfcSweep"/>); flipped, mirrored across its up: an unsymmetric parametric profile by sweeping it the
+    /// other way from the far end with its x reversed, which is that mirror image, any other by its rings mirrored.
+    /// </summary>
+    public IfcSweep Sweep(IModelView m, Vec3 origin, Vec3 xDir, Vec3 axis, double depth, bool flipped)
+    {
+        var profile = AsProfile(m);
+        if (flipped && Handed && profile is { HasIfcForm: true })
+            return new IfcSweep(Outline(), Holes(), origin + axis * depth, -xDir, -axis, depth) { Parametric = profile };
+        Vec2 F(Vec2 p) => flipped ? p with { X = -p.X } : p;
+        return new IfcSweep(Polygon2.EnsureCcw(Outline().Select(F).ToList()), Holes().Select(h => (IReadOnlyList<Vec2>)Polygon2.EnsureCcw(h.Select(F).ToList()).Reverse().ToList()).ToList(), origin, xDir, axis, depth) { Parametric = profile };
+    }
+
     /// <summary>A hollow section's inside, clockwise; none for the others.</summary>
     public IReadOnlyList<IReadOnlyList<Vec2>> Holes()
     {
@@ -134,23 +168,25 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
     public IReadOnlyList<Vec2> Centreline()
     {
         double h = Web / 2, x = Width / 2 - h, y = Depth / 2 - h, lip = Lip > h ? Depth / 2 - Lip : double.NaN;
+        // Without lips a flange's square end stands at the width: the width is always the whole section's.
+        var tip = double.IsNaN(lip) ? Width / 2 : x;
         var o = new List<Vec2>();
         switch (Kind)
         {
             case "C" or "SIGMA":
                 if (!double.IsNaN(lip)) o.Add(new(x, -lip));
-                o.AddRange([new(x, -y), new(-x, -y)]);
+                o.AddRange([new(tip, -y), new(-x, -y)]);
                 if (Kind == "SIGMA")
                 {
                     var fold = Width / 4;
                     o.AddRange([new(-x, -Depth / 4 - fold / 2), new(-x + fold, -Depth / 4 + fold / 2), new(-x + fold, Depth / 4 - fold / 2), new(-x, Depth / 4 + fold / 2)]);
                 }
-                o.AddRange([new(-x, y), new(x, y)]);
+                o.AddRange([new(-x, y), new(tip, y)]);
                 if (!double.IsNaN(lip)) o.Add(new(x, lip));
                 break;
             case "Z":
                 if (!double.IsNaN(lip)) o.Add(new(-x, -lip));
-                o.AddRange([new(-x, -y), new(0, -y), new(0, y), new(x, y)]);
+                o.AddRange([new(-tip, -y), new(0, -y), new(0, y), new(tip, y)]);
                 if (!double.IsNaN(lip)) o.Add(new(x, lip));
                 break;
         }

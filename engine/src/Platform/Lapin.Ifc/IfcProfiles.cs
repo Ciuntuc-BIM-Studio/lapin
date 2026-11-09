@@ -401,31 +401,44 @@ public static class ProfileIfc
         var massLength = f.Add("IFCDERIVEDUNIT", L(new[] { f.Add("IFCDERIVEDUNITELEMENT", kg, I(1)), f.Add("IFCDERIVEDUNITELEMENT", metre, I(-1)) }), E("MASSPERLENGTHUNIT"), Null);
         var units = f.Add("IFCUNITASSIGNMENT", L(new[] { mm, area, angle, inertia, modulus, warping, massLength }));
         f.Add("IFCPROJECTLIBRARY", S(Guid("lapin-profiles", library.Name)), Null, S(library.Name), S(library.Description), Null, Null, Null, Null, units);
-        static string Mm(double m) => R(m * 1000);
-        string Opt(double m) => m > 0 ? Mm(m) : Null;
         foreach (var p in library.Profiles)
         {
-            string? id = p.Kind switch
-            {
-                "I" => f.Add("IFCISHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.B), Mm(p.H), Mm(p.Tw), Mm(p.Tf), Opt(p.R1), Opt(p.R2), p.Slope > 0 ? R(Math.Atan(p.Slope)) : Null),
-                "asymI" => f.Add("IFCASYMMETRICISHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.B2), Mm(p.H), Mm(p.Tw), Mm(p.Tf2), Opt(p.R1), Mm(p.B), Mm(p.Tf), Opt(p.R1), Null, Null, Null, Null),
-                "U" => f.Add("IFCUSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.H), Mm(p.B), Mm(p.Tw), Mm(p.Tf), Opt(p.R1), Opt(p.R2), p.Slope > 0 ? R(Math.Atan(p.Slope)) : Null),
-                "T" => f.Add("IFCTSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.H), Mm(p.B), Mm(p.Tw), Mm(p.Tf), Opt(p.R1), Opt(p.R2), Null, Null, Null),
-                "L" => f.Add("IFCLSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.H), Mm(p.B), Mm(p.Tw), Opt(p.R1), Opt(p.R2), Null),
-                "RHS" => f.Add("IFCRECTANGLEHOLLOWPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.B), Mm(p.H), Mm(p.Tw), Opt(p.R2), Opt(p.R1)),
-                "CHS" => f.Add("IFCCIRCLEHOLLOWPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.B / 2), Mm(p.Tw)),
-                "C" when p.Lip > 0 => f.Add("IFCCSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.H), Mm(p.B), Mm(p.Tw), Mm(p.Lip), Null),
-                "rectangle" => f.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.B), Mm(p.H)),
-                "circle" => f.Add("IFCCIRCLEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.B / 2)),
-                "ellipse" => f.Add("IFCELLIPSEPROFILEDEF", E("AREA"), S(p.Name), Null, Mm(p.B / 2), Mm(p.H / 2)),
-                _ => Arbitrary(f, p),
-            };
+            string? id = Parametric(f, p, 1000) ?? Arbitrary(f, p);
             if (id == null) continue;
             WriteProperties(f, p, id);
         }
         using var ms = new MemoryStream();
         f.Write(ms, library.Name, "Lapin profile library");
         return ms.ToArray();
+    }
+
+    /// <summary>
+    /// A profile in its parametric subtype, centred on its box as IFC defines them (Position left out: it is the identity),
+    /// the sizes in the file's length (<paramref name="perMetre"/> of them to a metre); null when IFC has no form for its kind
+    /// (an outline, a Σ, a C without lips, a Z with lips or unequal thicknesses).
+    /// </summary>
+    public static string? Parametric(Step f, SectionProfile p, double perMetre)
+    {
+        string V(double m) => R(m * perMetre);
+        string Opt(double m) => m > 0 ? V(m) : Null;
+        string Slope() => p.Slope > 0 ? R(Math.Atan(p.Slope)) : Null;
+        return p.Kind switch
+        {
+            "I" => f.Add("IFCISHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B), V(p.H), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Slope()),
+            "asymI" => f.Add("IFCASYMMETRICISHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B2), V(p.H), V(p.Tw), V(p.Tf2), Opt(p.R1), V(p.B), V(p.Tf), Opt(p.R1), Null, Null, Null, Null),
+            "U" => f.Add("IFCUSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V(p.B), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Slope()),
+            "T" => f.Add("IFCTSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V(p.B), V(p.Tw), V(p.Tf), Opt(p.R1), Opt(p.R2), Null, Null, Null),
+            "L" => f.Add("IFCLSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V(p.B), V(p.Tw), Opt(p.R1), Opt(p.R2), Null),
+            "RHS" => f.Add("IFCRECTANGLEHOLLOWPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B), V(p.H), V(p.Tw), Opt(p.R2), Opt(p.R1)),
+            "CHS" => f.Add("IFCCIRCLEHOLLOWPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B / 2), V(p.Tw)),
+            "C" when p.Lip > 0 => f.Add("IFCCSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V(p.B), V(p.Tw), V(p.Lip), Null),
+            // IFC's flange runs from the web's far face; Lapin's width is the whole section's.
+            "Z" when p.Lip <= 0 => f.Add("IFCZSHAPEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.H), V((p.B + p.Tw) / 2), V(p.Tw), V(p.Tw), Null, Null),
+            "rectangle" => f.Add("IFCRECTANGLEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B), V(p.H)),
+            "circle" => f.Add("IFCCIRCLEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B / 2)),
+            "ellipse" => f.Add("IFCELLIPSEPROFILEDEF", E("AREA"), S(p.Name), Null, V(p.B / 2), V(p.H / 2)),
+            _ => null,
+        };
     }
 
     /// <summary>A profile by its rings: one outside, with or without holes; several as a composite of arbitrary profiles.</summary>
@@ -448,21 +461,41 @@ public static class ProfileIfc
         return f.Add("IFCCOMPOSITEPROFILEDEF", E("AREA"), S(p.Name), L(outsides.Select(o => One(o, null))), Null);
     }
 
-    static void WriteProperties(Step f, SectionProfile p, string id)
+    /// <summary>The units a model's profile values are written in when its project has no assignment for them (SI, as its lengths): by a property's dimension.</summary>
+    public sealed class SiUnits(Step f)
+    {
+        string? _inertia, _modulus, _warping, _area, _mass, _metre, _kg;
+        string Metre => _metre ??= f.Add("IFCSIUNIT", Derived, E("LENGTHUNIT"), Null, E("METRE"));
+        string Power(ref string? slot, string type, int power) => slot ??= f.Add("IFCDERIVEDUNIT", L(new[] { f.Add("IFCDERIVEDUNITELEMENT", Metre, I(power)) }), E(type), Null);
+        public string? Of(string name) => name switch
+        {
+            "MassPerLength" => _mass ??= f.Add("IFCDERIVEDUNIT", L(new[] { f.Add("IFCDERIVEDUNITELEMENT", _kg ??= f.Add("IFCSIUNIT", Derived, E("MASSUNIT"), E("KILO"), E("GRAM")), I(1)), f.Add("IFCDERIVEDUNITELEMENT", Metre, I(-1)) }), E("MASSPERLENGTHUNIT"), Null),
+            "CrossSectionArea" => _area ??= f.Add("IFCSIUNIT", Derived, E("AREAUNIT"), Null, E("SQUARE_METRE")),
+            "MomentOfInertiaY" or "MomentOfInertiaZ" or "TorsionalConstantX" => Power(ref _inertia, "MOMENTOFINERTIAUNIT", 4),
+            "WarpingConstant" => Power(ref _warping, "WARPINGCONSTANTUNIT", 6),
+            "MinimumSectionModulusY" or "MinimumSectionModulusZ" => Power(ref _modulus, "SECTIONMODULUSUNIT", 3),
+            "Perimeter" => Metre,
+            _ => null,
+        };
+    }
+
+    /// <summary>A profile's <c>Pset_ProfileMechanical</c> (the file's values where it gave them, else Lapin's) and <c>Lapin_Profile</c> on <paramref name="id"/>; in the library's millimetres, or in SI with the units said (<paramref name="si"/>: a model's).</summary>
+    public static void WriteProperties(Step f, SectionProfile p, string id, SiUnits? si = null)
     {
         var c = ProfileProps.Compute(p).Values;
         double? V(string k) => p.Given.TryGetValue(k, out var g) ? g : c.TryGetValue(k, out var x) ? x : null;
         var props = new List<string>();
-        void Prop(string name, string type, double? v) { if (v is { } x && double.IsFinite(x)) props.Add(f.Add("IFCPROPERTYSINGLEVALUE", S(name), Null, Typed(type, R(x)), Null)); }
+        void Prop(string name, string type, double? v) { if (v is { } x && double.IsFinite(x) && x > 0) props.Add(f.Add("IFCPROPERTYSINGLEVALUE", S(name), Null, Typed(type, R(x)), si?.Of(name) ?? Null)); }
+        var (mm, mm2, mm3, mm4, mm6) = si != null ? (1.0, 1.0, 1.0, 1.0, 1.0) : (1e3, 1e6, 1e9, 1e12, 1e18);
         Prop("MassPerLength", "IFCMASSPERLENGTHMEASURE", V("mass"));
-        Prop("CrossSectionArea", "IFCAREAMEASURE", V("A") * 1e6);
-        Prop("Perimeter", "IFCPOSITIVELENGTHMEASURE", V("paint") * 1e3);
-        Prop("MomentOfInertiaY", "IFCMOMENTOFINERTIAMEASURE", V("Iy") * 1e12);
-        Prop("MomentOfInertiaZ", "IFCMOMENTOFINERTIAMEASURE", V("Iz") * 1e12);
-        Prop("TorsionalConstantX", "IFCMOMENTOFINERTIAMEASURE", V("It") * 1e12);
-        if (V("Iw") is > 0) Prop("WarpingConstant", "IFCWARPINGCONSTANTMEASURE", V("Iw") * 1e18);
-        Prop("MinimumSectionModulusY", "IFCSECTIONMODULUSMEASURE", V("Wely") * 1e9);
-        Prop("MinimumSectionModulusZ", "IFCSECTIONMODULUSMEASURE", V("Welz") * 1e9);
+        Prop("CrossSectionArea", "IFCAREAMEASURE", V("A") * mm2);
+        Prop("Perimeter", "IFCPOSITIVELENGTHMEASURE", V("paint") * mm);
+        Prop("MomentOfInertiaY", "IFCMOMENTOFINERTIAMEASURE", V("Iy") * mm4);
+        Prop("MomentOfInertiaZ", "IFCMOMENTOFINERTIAMEASURE", V("Iz") * mm4);
+        Prop("TorsionalConstantX", "IFCMOMENTOFINERTIAMEASURE", V("It") * mm4);
+        if (V("Iw") is > 0) Prop("WarpingConstant", "IFCWARPINGCONSTANTMEASURE", V("Iw") * mm6);
+        Prop("MinimumSectionModulusY", "IFCSECTIONMODULUSMEASURE", V("Wely") * mm3);
+        Prop("MinimumSectionModulusZ", "IFCSECTIONMODULUSMEASURE", V("Welz") * mm3);
         if (V("Wply") is { } wpy && V("Wely") is > 0) Prop("PlasticShapeFactorY", "IFCPOSITIVERATIOMEASURE", wpy / V("Wely"));
         if (V("Wplz") is { } wpz && V("Welz") is > 0) Prop("PlasticShapeFactorZ", "IFCPOSITIVERATIOMEASURE", wpz / V("Welz"));
         if (props.Count > 0) f.Add("IFCPROFILEPROPERTIES", S("Pset_ProfileMechanical"), Null, L(props), id);

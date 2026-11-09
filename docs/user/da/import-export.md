@@ -16,6 +16,8 @@ Eksporten spørger om skemaet (**IFC4**, der læses overalt, eller **IFC4X3**), 
 
 ![Eksportér IFC](shots/export-ifc.webp)
 
+Bjælker, søjler og stålprofiler skrives ved deres parametriske profil, navngivet og med dens mekaniske værdier ([Profilbiblioteker](profiles.md)).
+
 **Importér IFC…** læser et andet programs IFC. Før noget kommer ind, læser Lapin filen og viser, hvad den indeholder: dens elementer efter fagområde (arkitektur, konstruktion, installationer, møbler og udstyr, grund), hvert fagområde efter art med antal, og dens etager med hvor mange elementer der står på hver. Fjern fluebenet ved det, du ikke har brug for, for eksempel installationer og møbler, når du arbejder med konstruktionen, eller behold kun de etager, du arbejder på. **Hvordan** henter elementerne genkendt som Lapin-elementer, dem alle som referencer, eller linket. Mens filen læses og importeres, viser Lapin, hvad det laver, og hvor langt det er nået; en stor fil tager et stykke tid.
 
 ![Importér IFC](shots/import-ifc.webp)

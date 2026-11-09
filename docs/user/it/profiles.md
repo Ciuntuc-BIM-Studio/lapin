@@ -41,6 +41,8 @@ Il tipo di una riga viene dalla sua colonna tipo (W, HP, UPN, HSS, PIPE…) o da
 
 **IFC** e **CSV** sotto la lista scrivono la libreria scelta (o i profili del progetto) come libreria di profili IFC4 o come tabella che Lapin rilegge.
 
+Anche nell'IFC del modello travi, pilastri e profili d'acciaio sono scritti con il loro profilo parametrico (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, rettangoli e cerchi), con il nome del profilo e `Pset_ProfileMechanical`, così gli altri programmi vedono un IPE 300 e non una polilinea. Contorni, Σ e Z con labbri restano profili arbitrari; un elemento tagliato da un altro resta il solido che è.
+
 ## Un contorno come profilo
 
 Disegna la sezione con Disegno come polilinee chiuse e cerchi (quelli dentro un altro sono fori), selezionali e premi **Dalla selezione**, oppure leggi il disegno di un produttore con **DXF…**. Dagli un nome, scegli materiale e libreria e conservalo. Così entrano i profili in alluminio e PVC, le sezioni prefabbricate e le forme in legno: lo stesso archivio, con il loro materiale e densità.

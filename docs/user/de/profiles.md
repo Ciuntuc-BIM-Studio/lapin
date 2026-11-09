@@ -41,6 +41,8 @@ Die Art einer Zeile kommt aus ihrer Typspalte (W, HP, UPN, HSS, PIPE…) oder de
 
 **IFC** und **CSV** unter der Liste schreiben die gewählte Bibliothek (oder die Profile des Projekts) als IFC4-Profilbibliothek oder als Tabelle, die Lapin wieder liest.
 
+Auch im IFC des Modells werden Träger, Stützen und Stahlprofile über ihr parametrisches Profil geschrieben (`IfcIShapeProfileDef`, `IfcLShapeProfileDef`, …, Rechtecke und Kreise), mit dem Profilnamen und `Pset_ProfileMechanical`, sodass andere Programme ein IPE 300 sehen und keine Polylinie. Konturen, Σ und Z mit Lippen bleiben beliebige Profile; ein von einem anderen geschnittenes Bauteil bleibt der Körper, der es ist.
+
 ## Ein Umriss als Profil
 
 Zeichnen Sie den Querschnitt mit Zeichnen aus geschlossenen Polylinien und Kreisen (die in einem anderen sind Löcher), wählen Sie sie und drücken Sie **Aus der Auswahl**, oder lesen Sie die Zeichnung eines Herstellers mit **DXF…**. Benennen Sie ihn, wählen Sie Material und Bibliothek und behalten Sie ihn. So kommen Aluminium- und PVC-Profile, Fertigteilquerschnitte und Holzformen hinein: derselbe Speicher, mit eigenem Material und eigener Dichte.
