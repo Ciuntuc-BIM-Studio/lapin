@@ -8,7 +8,7 @@ import type { FileAction } from '../platform/module';
 import { modules } from '../platform/modules';
 import { resolveFileActions } from '../platform/replaces';
 import { useUi } from '../app/store';
-import { importDxf, importIfc, linkPointCloud, newProject, openProject, saveProject, importFragments, importBos, importMesh, importTrace } from '../engine/files';
+import { importDxf, importIfc, linkPointCloud, newProject, openProject, saveProject, importFragments, importBos, linkLapin, importMesh, importTrace } from '../engine/files';
 import { openOptimize } from '../engine/ifcOptimize';
 import { engineInBrowser } from '../engine/session';
 import { leave } from '../engine/share';
@@ -30,6 +30,7 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.importFragments', label: 'Import Fragments…', run: () => importFragments() },
     { id: 'file.importBos', label: 'Import BIM Open Schema…', run: () => importBos() },
     { id: 'file.linkIfc', label: 'Link IFC…', run: () => importIfc('link') },
+    { id: 'file.linkLapin', label: 'Link Lapin project…', run: () => linkLapin() },
     { id: 'file.exportExchange', label: 'Export IFC, Fragments or BOS…', run: dialog('exportExchange') },
     // The analytical model for JG Structures' structural analysis (docs/jg-structures.md).
     { id: 'file.exportJg', label: 'Export JG Structures (JSON)…', run: dialog('exportJg') },
@@ -51,7 +52,7 @@ export function baseFileActions(): FileAction[] {
 /** The menu of the computer's own user. The model exchanged (docs/fragments.md, Exchange): IFC and Fragments, chosen alike both ways. */
 export const HOST_SECTIONS: FileSection[] = [
   { ids: ['file.new', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion'] },
-  { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.importBos', 'file.linkIfc', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
+  { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.importBos', 'file.linkIfc', 'file.linkLapin', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
   { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh'] },
   { ids: ['file.share', 'file.join', 'file.startScreen'] },
 ];

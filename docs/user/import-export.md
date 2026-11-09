@@ -102,6 +102,16 @@ An imported DXF is part of the project: **File → Save** keeps it in the `.lapi
 
 A linked IFC keeps what its file says of its elements' materials. Walls, floors and roofs with layer sets are drawn in their layers even as references, so an engineer hides the architectural link's finishes (**Walls ▸ Finishes**, **Slabs ▸ Finishes**) and a structural view style draws only their cores; a linked structural model's bars are in the **Rebar** category, which every 3D view leaves out until it is shown. A link made with an older version gets its walls' layers when it is reloaded (its floors' at once).
 
+### Linking another Lapin project
+
+**File → Link Lapin project…** places another `.lapin` file in this project as a read-only module, as a hotlink does in ArchiCAD. Say where it goes (**Placed at x**, **Placed at y**, **Turned**). Its walls, doors and floors come in as Lapin elements, with their plan symbols, and you can link the same project as many times as you want, each placement apart: a typical apartment or a repeated block, drawn in one file.
+
+To change it, edit its own file. When that file changes, **Manage → Links** says **The source changed: read it again**; a click brings in the new version, in the same places. The link's other tools work as for any link: show, halftone, convert to native, unlink. In the browser a link cannot be read again, since the page has no path to the file: link the new file instead. References the source brought from other files stay where those files put them, whatever the placement.
+
+![The same project linked twice, the second turned](shots/hotlink-plan.webp)
+
+![Manage → Links with both placements](shots/hotlink-links.webp)
+
 ## Point clouds
 
 **File → Link point cloud…** links a laser scan or a photogrammetry cloud, in the open formats only: **LAS** (1.0–1.4, every point format), **LAZ** (compressed LAS), **E57**, **PLY** (ASCII and binary) and points as text, **XYZ**, **PTS** and **CSV**. Proprietary formats (Autodesk ReCap's RCP and RCS, FARO's FLS, Leica's LGS) are not read: export the scan from its program as E57 or LAS first.

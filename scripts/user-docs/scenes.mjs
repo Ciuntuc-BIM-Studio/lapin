@@ -4872,6 +4872,49 @@ export const scenes = [
     },
   },
   {
+    // Another Lapin project linked in, as ArchiCAD's hotlink (a tester's wish, docs/links.md): a small flat saved, then placed twice in a new project, the second turned.
+    id: 'hotlink',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      const saved = await t.call('project.saveBytes', { name: 'flat.lapin' });
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const { writeFileSync } = await import('node:fs');
+      const file = join(tmpdir(), 'lapin-guide-flat.lapin');
+      writeFileSync(file, Buffer.from(saved.data, 'base64'));
+      await t.fresh();
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      for (const [x, turned] of [['0', '0'], ['24000', '90']]) {
+        await t.button('File', { exact: true });
+        const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+        await t.page.getByRole('menuitem', { name: 'Link Lapin project…' }).click();
+        await (await chooser).setFiles(file);
+        const box = t.page.locator('.ask-box');
+        await box.waitFor({ timeout: 5000 });
+        await box.locator('input').nth(0).fill(x);
+        await box.locator('input').nth(2).fill(turned);
+        await box.locator('.btn.primary').click();
+        await t.page.waitForSelector('[data-testid=busy]', { state: 'detached', timeout: 120_000 });
+        await t.wait(800);
+      }
+      const nodes = await t.nodes();
+      const links = nodes.filter((n) => n.type === 'LapinLink');
+      const walls = nodes.filter((n) => n.type === 'IfcWall');
+      t.expect(links.length === 2 && links.every((l) => l.props.kind === 'lapin'), `two links of the project (${links.length})`);
+      t.expect(walls.length === 10 && walls.every((w) => w.props.linkId), `its five walls, twice, each the link's (${walls.length})`);
+      t.expect(new Set(walls.map((w) => w.id)).size === 10, 'each placement with ids of its own');
+      await t.ui({ keyPlan: false, selected: [], selection: null });
+      await t.wait(800);
+      await t.fit();
+      await t.shot('hotlink-plan', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('manage.links');
+      await t.wait(500);
+      await t.shot('hotlink-links', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     id: 'export',
     async run(t) {
       await t.fresh();

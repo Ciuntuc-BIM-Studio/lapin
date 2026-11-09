@@ -33,6 +33,15 @@ Un fișier legat (IFC sau DXF) intră în model ca orice import, dar aparține l
 
 Un nor de puncte e o legătură de tip `pointcloud` (decizia 395, `docs/plan-visibility-graphics.md`, etapa D): File → Link point cloud… (`pointcloud.link`, după cale sau octeți). Formate deschise doar: LAS 1.0–1.4, LAZ, E57, PLY, XYZ/PTS/CSV. Punctele nu intră în model: indexul (octree de dale, `Lapin.PointClouds`) stă în folderul utilizatorului (`PointClouds/<cheie>`), cheia pe legătură (`key`), iar vederea 3D aduce dalele după cameră (`pointcloud.tiles`). Legătura ține și `placement` (`mode` shared/origin/center, `units`, `offset`, `rotation`), `colorMode` (rgb, intensity, elevation, classification), `pointSize`, `cloud` (rezumatul indexului). Shown, Halftone și 3D ca la celelalte legături; Convert to native și Open separately nu se aplică; Reload recitește fișierul și reindexează doar dacă s-a schimbat (`pointcloud.reload`). Nu se exportă în IFC. În vederi (decizia 396): Visibility / Graphics → Point clouds (`graphics.pointClouds`), felia planurilor și secțiunilor desenată ca imagine sub desen cu punctele ca snap (`PointCloudSlices`), snap în 3D, Export 3D cu bifa Point clouds (GLB/glTF).
 
+## Hotlink-uri: alt proiect Lapin
+
+File → Link Lapin project… (`project.linkLapin`, `Lapin.Protocol/HotLinks.cs`, cerut de un tester, 09.11.2026, ca hotlink-ul din ArchiCAD): un alt `.lapin` legat, doar pentru citire, ca un modul așezat unde spui (x, y, rotație). Se repetă astfel clădiri sau apartamente întregi cu pereți, ceea ce componentele nu fac (`docs/components.md`).
+
+- **Cum intră.** Sursa se citește într-o sesiune separată, se mută și se rotește acolo (`element.transform`), se scrie ca IFC cu intenția Lapin și intră prin `IfcImport.Link`, cu `kind: "lapin"`. Pereții, ușile și plăcile vin astfel native, cu simbolurile lor în plan. Referințele din fișiere rămân unde le-a pus fișierul; mesajul spune câte.
+- **GlobalId-uri proprii.** Fiecare legătură are un `seed` în `options`, iar `HotLinks.Seeded` derivă din el toate GlobalId-urile fișierului, oriunde sunt numite. Același proiect se poate lega de câte ori vrei, iar o copie a chiar proiectului deschis nu îi atinge elementele. La recitire, același `seed` dă aceleași id-uri.
+- **Când se schimbă sursa.** `options.modified` ține data fișierului citit; `project.linksChanged` listează legăturile a căror sursă s-a schimbat, iar Manage → Links arată „The source changed: read it again”. Recitirea nu se face singură.
+- **Rămase:** editarea sursei din proiectul gazdă, un hotlink în interiorul altui hotlink (ce e legat în sursă nu intră), repoziționarea unei legături fără s-o refaci.
+
 ## Rămase
 
 - Poziționarea unei legături (translație/rotație a unui IFC legat) și legături imbricate.

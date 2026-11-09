@@ -988,6 +988,17 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 var r = Lapin.Mesh.MeshImport.Run(session, bytes, name, p, path != null ? Path.GetDirectoryName(path) : null, out var imported);
                 return (r.ToJson(), imported);
             }
+            case "project.linkLapin":
+            {
+                // Another Lapin project linked in, read-only, placed where asked (docs/links.md, Hotlinks); by path, or its bytes in a browser.
+                ReportProgress("Reading the project", 0, 0);
+                var (bytes, name, path, _) = IfcBytes(p);
+                var r = HotLinks.Link(session, bytes, name, path, new HotLinks.Placing(Json.Number(p["x"]) ?? 0, Json.Number(p["y"]) ?? 0, Json.Number(p["rotation"]) ?? 0), out var linked);
+                return (r.ToJson(), linked);
+            }
+            case "project.linksChanged":
+                // The linked projects whose files changed since they were read: Manage → Links says so, and a click reads them again.
+                return (new JsonArray([.. session.Model.OfClass(Links.Class).Where(HotLinks.Changed).Select(l => (JsonNode)l.Id)]), null);
             case "project.reloadLink":
             {
                 // A link read again from its file (the desktop: a link made from a path): what it held goes, what the file holds now comes in its place.
@@ -1001,6 +1012,11 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                     if (link.Str("viewId") is { } v) args["viewId"] = v;
                     var d = session.Execute("drafting.importDxf", args, out var dr);
                     return (dr, d);
+                }
+                if (link.Str("kind") == HotLinks.Kind)
+                {
+                    var h = HotLinks.Link(session, File.ReadAllBytes(path), Path.GetFileName(path), path, HotLinks.Placing.Of(link.Attrs["options"] as JsonObject), out var again, link.Id);
+                    return (h.ToJson(), again);
                 }
                 var r = IfcImport.Link(session, File.ReadAllBytes(path), Path.GetFileName(path), path, new IfcImportOptions("auto"), out var reloaded, link.Id);
                 return (r.ToJson(), reloaded);

@@ -102,6 +102,16 @@ Un DXF importat face parte din proiect: **File → Save** îl păstrează în fi
 
 Un IFC legat păstrează ce spune fișierul despre materialele elementelor lui. Pereții, planșeele și acoperișurile cu seturi de straturi se desenează în straturile lor chiar ca referințe, așa că un inginer ascunde finisajele legăturii de arhitectură (**Pereți ▸ Finisaje**, **Plăci ▸ Finisaje**), iar un stil de vedere de structură le desenează doar miezurile; barele unui model de structură legat sunt în categoria **Armături**, pe care orice vedere 3D o lasă deoparte până o arăți. O legătură făcută cu o versiune mai veche își primește straturile pereților când e reîncărcată (ale planșeelor imediat).
 
+### Legarea altui proiect Lapin
+
+**Fișier → Leagă proiect Lapin…** pune alt fișier `.lapin` în acest proiect ca modul doar pentru citire, cum face un hotlink în ArchiCAD. Spui unde stă (**Plasat la x**, **Plasat la y**, **Rotit**). Pereții, ușile și plăcile lui vin ca elemente Lapin, cu simbolurile lor în plan, iar același proiect se poate lega de câte ori vrei, fiecare așezare separat: un apartament tip sau un bloc repetat, desenat într-un singur fișier.
+
+Ca să-l schimbi, editezi fișierul lui. Când fișierul se schimbă, **Gestionare → Legături** spune **Sursa s-a schimbat: citește din nou**; un clic aduce versiunea nouă, în aceleași locuri. Restul uneltelor merg ca la orice legătură: afișare, halftone, conversie la nativ, dezlegare. În browser o legătură nu se poate reciti, pentru că pagina nu are calea fișierului: leagă fișierul nou. Referințele aduse de sursă din alte fișiere rămân unde le-au pus acele fișiere, oricum ar fi așezarea.
+
+![Același proiect legat de două ori, al doilea rotit](shots/hotlink-plan.webp)
+
+![Gestionare → Legături cu ambele așezări](shots/hotlink-links.webp)
+
 ## Nori de puncte
 
 **File → Link point cloud…** leagă o scanare laser sau un nor din fotogrammetrie, numai în formate deschise: **LAS** (1.0–1.4, toate formatele de punct), **LAZ** (LAS comprimat), **E57**, **PLY** (ASCII și binar) și puncte ca text, **XYZ**, **PTS** și **CSV**. Formatele proprietare (RCP și RCS din Autodesk ReCap, FLS de la FARO, LGS de la Leica) nu se citesc: exportă întâi scanarea din programul ei ca E57 sau LAS.

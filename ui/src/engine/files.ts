@@ -430,6 +430,27 @@ export async function importFragments(): Promise<void> {
 }
 
 /**
+ * Another Lapin project linked in, read-only, as a module placed where asked (docs/links.md, Hotlinks). The same project may be
+ * linked many times; Manage → Links reads a link again when its file changes.
+ */
+export async function linkLapin(): Promise<void> {
+  const picked = isDesktop() ? null : await pickFile('Lapin project', 'lapin');
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Lapin project', extensions: ['lapin'] }]) : picked?.name ?? null;
+  if (!path) return;
+  const name = path.split(/[\\/]/).pop() ?? path;
+  const { ask, lengthField, numberField } = await import('../shell/AskBox');
+  const r = await ask(`Link ${name}`, [lengthField('x', 'Placed at x', 0), lengthField('y', 'Placed at y', 0), numberField('rotation', 'Turned (°)', 0)]);
+  if (!r) return;
+  const place = { x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation) };
+  const { begin, end } = await import('./ifcImport');
+  begin(`Linking ${name}`, 'Reading the project');
+  try {
+    await engine.call('project.linkLapin', picked ? { name: picked.name, data: toBase64(picked.bytes), ...place } : { path, ...place }, { timeoutMs: LONG_TIMEOUT_MS });
+    notify(`Linked ${name}: read-only, Manage → Links reads it again when it changes.`);
+  } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { end(); }
+}
+
+/**
  * A BIM Open Schema file (.bos, docs/bos.md: Parquet tables in a zip) into the open project, looked at first and chosen
  * from as a Fragments file is: its elements as references with their bodies, on their storeys, identical meshes shared.
  */

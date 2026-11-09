@@ -68,6 +68,9 @@ export function LinksDialog() {
     void tick();
     return () => { stop = true; };
   }, [cloudIds]);
+  // Linked projects whose files changed since they were read (docs/links.md, Hotlinks).
+  const [changed, setChanged] = useState<string[]>([]);
+  useEffect(() => { if (links.some((l) => l.props.kind === 'lapin')) void engine.call<string[]>('project.linksChanged', {}).then(setChanged).catch(() => setChanged([])); }, [nodes]); // eslint-disable-line react-hooks/exhaustive-deps
   const counts = new Map<string, number>();
   for (const n of nodes.values()) if (typeof n.props.linkId === 'string' && n.storeyId) counts.set(n.props.linkId, (counts.get(n.props.linkId) ?? 0) + 1);
   const run = async (id: string, what: () => Promise<unknown>) => {
@@ -114,6 +117,7 @@ export function LinksDialog() {
                       <td><input type="checkbox" checked={l.props.halftone === true} onChange={(e) => void execute('link.update', { id: l.id, halftone: e.target.checked })} /></td>
                       <td>{(l.props.kind === 'dxf' || cloud) && <input type="checkbox" data-link="in3d" title="Its drawing on its view's plane in the 3D view" checked={l.props.in3d !== false} onChange={(e) => void execute('link.update', { id: l.id, in3d: e.target.checked })} />}</td>
                       <td className="row-tools">
+                        {changed.includes(l.id) && <button type="button" className="btn small" data-link="changed" disabled={busy != null} onClick={() => void run(l.id, () => engine.call('project.reloadLink', { id: l.id }, { timeoutMs: 600_000 }))}>The source changed: read it again</button>}
                         {cloud && <button type="button" className="icon mini" data-link="place" title="Where it stands: by the map, origin to origin or centred, its unit, moved and turned" disabled={busy != null} onClick={() => void run(l.id, () => placeCloud(l))}><MapPin size={12} /></button>}
                         {path && cloud && <button type="button" className="icon mini" title="Read the file again (indexed again if it changed)" disabled={busy != null} onClick={() => void run(l.id, () => execute('pointcloud.reload', { id: l.id }))}><RefreshCw size={12} /></button>}
                         {path && !cloud && <button type="button" className="icon mini" title="Read the file again (what the link holds is replaced)" disabled={busy != null} onClick={() => void run(l.id, () => engine.call('project.reloadLink', { id: l.id }, { timeoutMs: 600_000 }).then(() => notify(`${l.name} read again.`)))}><RefreshCw size={12} /></button>}

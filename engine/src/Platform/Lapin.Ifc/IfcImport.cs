@@ -149,15 +149,20 @@ public static partial class IfcImport
     }
 
     /// <summary>A read IFC file as a link (the survey read it already).</summary>
-    public static IfcImportResult Link(Session session, StepFile file, string name, string? path, IfcImportOptions? options, out Diff diff, string? existing = null)
+    public static IfcImportResult Link(Session session, StepFile file, string name, string? path, IfcImportOptions? options, out Diff diff, string? existing = null, string kind = "ifc", JsonObject? linkOptions = null)
     {
         var reader = new Reader(session, file, options ?? new IfcImportOptions()) { ReadProcesses = false };
         string? linkId = null;
         diff = session.Edit(existing != null ? $"Reload {name}" : $"Link {name}", edit =>
         {
             Entity link;
-            if (existing != null) { link = Links.Require(edit.Model, existing); Links.RemoveElements(edit, link.Id); }
-            else link = Links.Create(edit, "ifc", name, path);
+            if (existing != null)
+            {
+                link = Links.Require(edit.Model, existing);
+                Links.RemoveElements(edit, link.Id);
+                if (linkOptions != null) { var a = link.CloneAttrs(); a["options"] = linkOptions.DeepClone(); edit.Replace(link.With(attrs: a)); }
+            }
+            else link = Links.Create(edit, kind, name, path, linkOptions);
             var before = edit.Model.Entities.Select(e => e.Id).ToHashSet();
             reader.Apply(edit);
             Links.Tag(edit, link.Id, edit.Model.Entities.Select(e => e.Id).Where(id => !before.Contains(id)).ToList());

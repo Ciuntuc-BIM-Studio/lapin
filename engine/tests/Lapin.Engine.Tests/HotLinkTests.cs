@@ -1,0 +1,110 @@
+using System.Text.Json.Nodes;
+using Lapin.Architecture;
+using Lapin.Host;
+using Lapin.Model;
+using Lapin.Platform;
+using Lapin.Protocol;
+
+namespace Lapin.Engine.Tests;
+
+/// <summary>Hotlinks (docs/links.md): another Lapin project linked read-only, native, placed where asked, as many times as wanted, read again when it changes.</summary>
+public class HotLinkTests
+{
+    /// <summary>A small project on disk: two joined walls with a door, a floor.</summary>
+    static (string Path, byte[] Bytes, Fixture Source) Source()
+    {
+        var f = new Fixture(new ArchitectureModule());
+        var a = f.Wall(0, 0, 4, 0);
+        f.Wall(4, 0, 4, 3);
+        f.Run("architecture.addDoor", new JsonObject { ["wallId"] = a, ["along"] = 2 });
+        f.Run("architecture.addSlab", new JsonObject { ["storeyId"] = f.Storey, ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(4, 0), new JsonArray(4, 3), new JsonArray(0, 3)) });
+        var path = Path.Combine(Path.GetTempPath(), $"hotlink-{Guid.NewGuid():N}.lapin");
+        PackageFiles.Save(f.Session, path);
+        return (path, File.ReadAllBytes(path), f);
+    }
+
+    static double[] Start(Entity wall) => [.. wall.Attrs["start"]!.AsArray().Select(v => Json.Number(v) ?? 0)];
+
+    [Fact]
+    public void It_comes_in_native_read_only_and_placed()
+    {
+        var (path, bytes, _) = Source();
+        var host = new Fixture(new ArchitectureModule());
+        var r = HotLinks.Link(host.Session, bytes, "module.lapin", path, new HotLinks.Placing(10, 5, 0), out _);
+        var link = host.Model.Get(r.LinkId!)!;
+        Assert.Equal(HotLinks.Kind, link.Str("kind"));
+        var walls = host.Model.OfClass(IfcClass.Wall).ToList();
+        Assert.Equal(2, walls.Count);
+        Assert.All(walls, w => Assert.Equal(link.Id, w.Str(Links.Key)));
+        Assert.Single(host.Model.OfClass(IfcClass.Door));
+        Assert.Single(host.Model.OfClass(IfcClass.Slab));
+        Assert.Contains(walls, w => Math.Abs(Start(w)[0] - 10) < 1e-6 && Math.Abs(Start(w)[1] - 5) < 1e-6);
+        // Native, not a reference; and it cannot be edited.
+        Assert.All(walls, w => Assert.False(StoredBodies.Has(w)));
+        Assert.Throws<CommandException>(() => host.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(walls[0].Id) }));
+        File.Delete(path);
+    }
+
+    [Fact]
+    public void One_project_is_placed_many_times_each_with_its_own_ids()
+    {
+        var (path, bytes, _) = Source();
+        var host = new Fixture(new ArchitectureModule());
+        HotLinks.Link(host.Session, bytes, "module.lapin", path, new HotLinks.Placing(0, 0, 0), out _);
+        HotLinks.Link(host.Session, bytes, "module.lapin", path, new HotLinks.Placing(20, 0, 90), out _);
+        var walls = host.Model.OfClass(IfcClass.Wall).ToList();
+        Assert.Equal(4, walls.Count);
+        Assert.Equal(2, host.Model.OfClass(Links.Class).Count());
+        Assert.Equal(4, walls.Select(w => w.Id).Distinct().Count());
+        File.Delete(path);
+    }
+
+    [Fact]
+    public void A_copy_of_this_very_project_never_touches_its_elements()
+    {
+        var (path, bytes, source) = Source();
+        // The host holds the source's own elements, under the same ids.
+        var host = new Fixture(new ArchitectureModule());
+        PackageFiles.Open(host.Session, path);
+        var mine = host.Model.OfClass(IfcClass.Wall).Select(w => w.Id).ToHashSet();
+        HotLinks.Link(host.Session, bytes, "copy.lapin", path, new HotLinks.Placing(30, 0, 0), out _);
+        Assert.Equal(4, host.Model.OfClass(IfcClass.Wall).Count());
+        Assert.All(mine, id => Assert.Null(host.Model.Get(id)!.Str(Links.Key)));
+        Assert.All(mine, id => Assert.True(Start(host.Model.Get(id)!)[0] < 10));
+        Assert.Equal(mine, source.Model.OfClass(IfcClass.Wall).Select(w => w.Id).ToHashSet());
+        File.Delete(path);
+    }
+
+    [Fact]
+    public void Read_again_it_takes_the_source_as_it_is_now_under_the_same_ids()
+    {
+        var (path, bytes, source) = Source();
+        var host = new Fixture(new ArchitectureModule());
+        var r = HotLinks.Link(host.Session, bytes, "module.lapin", path, new HotLinks.Placing(10, 0, 0), out _);
+        var link = host.Model.Get(r.LinkId!)!;
+        var before = host.Model.OfClass(IfcClass.Wall).Select(w => w.Id).ToHashSet();
+        Assert.False(HotLinks.Changed(link));
+
+        // The source changes: a wall more, its file newer.
+        source.Wall(0, 0, 0, 3);
+        PackageFiles.Save(source.Session, path);
+        File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddMinutes(1));
+        Assert.True(HotLinks.Changed(link));
+
+        HotLinks.Link(host.Session, File.ReadAllBytes(path), "module.lapin", path, HotLinks.Placing.Of(link.Attrs["options"] as JsonObject), out _, link.Id);
+        var after = host.Model.OfClass(IfcClass.Wall).ToList();
+        Assert.Equal(3, after.Count);
+        Assert.Subset(after.Select(w => w.Id).ToHashSet(), before);
+        Assert.Contains(after, w => Math.Abs(Start(w)[0] - 10) < 1e-6);
+        Assert.False(HotLinks.Changed(host.Model.Get(link.Id)!));
+        File.Delete(path);
+    }
+
+    [Fact]
+    public void What_is_not_a_project_says_so()
+    {
+        var host = new Fixture(new ArchitectureModule());
+        Assert.ThrowsAny<Exception>(() => HotLinks.Link(host.Session, [1, 2, 3], "x.lapin", null, new HotLinks.Placing(0, 0, 0), out _));
+        Assert.Empty(host.Model.OfClass(Links.Class));
+    }
+}
