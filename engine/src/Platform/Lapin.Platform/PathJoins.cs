@@ -40,6 +40,11 @@ public static class Joins
 
     public static JoinStyle StyleOf(Relation r) => (string?)r.Attrs?["style"] == "mitre" ? JoinStyle.Mitre : JoinStyle.Butt;
 
+    /// <summary>On a join: the related element stops in the relating one, which it never cuts or shortens (a flat's inner wall in the building's wall, docs/plan-units.md).</summary>
+    public const string StopsOn = "stopsOn";
+
+    public static bool Stops(Relation r) => r.Attrs?[StopsOn] is JsonValue v && v.TryGetValue<bool>(out var on) && on;
+
     static JoinWall Frame(IPathElements paths, IModelView m, Entity e) =>
         paths.FrameOf(e, m) ?? throw new CommandException($"„{e.Name}” cannot be joined as it is.");
 
@@ -60,7 +65,7 @@ public static class Joins
         var fb = frameFor?.Invoke(b) ?? paths.FrameOf(b, m);
         if (fa == null || fb == null) { problem = "A joined element has no body to join."; return null; }
         (fa, fb) = Tangents(a, b, r, fa, fb);
-        try { return WallJoins.Compute(fa, fb, new JoinOptions(Priority: 'a', Style: StyleOf(r))); }
+        try { return WallJoins.Compute(fa, fb, new JoinOptions(Priority: 'a', Style: StyleOf(r), Through: Stops(r) ? 'a' : null)); }
         catch (CommandException ex) { problem = ex.Message; return null; }
     }
 
@@ -245,16 +250,18 @@ public static class Joins
     /// a priority, the element that ran through before still does; without a style, the pair keeps
     /// its own, and a new corner is mitred (decision 175; a T is butt whatever is asked).
     /// </summary>
-    public static WallJoin Join(IEdit edit, IPathElements paths, Entity a, Entity b, JoinStyle? style = null, char? priority = null)
+    /// <param name="stop"><paramref name="b"/> stops in <paramref name="a"/>, which is left as it is (<see cref="StopsOn"/>); a join made so stays so.</param>
+    public static WallJoin Join(IEdit edit, IPathElements paths, Entity a, Entity b, JoinStyle? style = null, char? priority = null, bool stop = false)
     {
         if (a.Id == b.Id) throw new CommandException("An element cannot be joined to itself.");
         if (a.Class != b.Class) throw new CommandException($"A {a.Class} joins only a {a.Class}.");
         var existing = Between(edit.Model, a.Id, b.Id);
+        char? through = stop ? 'a' : existing != null && Stops(existing) ? existing.Relating == a.Id ? 'a' : 'b' : null;
         priority ??= existing == null ? null : existing.Relating == a.Id ? 'a' : 'b';
         // A curved element and a straight one: the arc runs through (on along its tangent), the straight one stops at its face.
         if (priority == null && PathCurve.Of(a).IsArc != PathCurve.Of(b).IsArc) priority = PathCurve.Of(a).IsArc ? 'a' : 'b';
         var (fa, fb) = Tangents(a, b, existing, Frame(paths, edit.Model, a), Frame(paths, edit.Model, b));
-        var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Mitre)));
+        var join = WallJoins.Compute(fa, fb, new JoinOptions(Priority: priority, Style: style ?? (existing != null ? StyleOf(existing) : JoinStyle.Mitre), Through: through));
         // A crossing is worked out on straight axes: an arc's frame is only a tangent, which says nothing of where it crosses.
         if (join.Kind == JoinKind.X && (PathCurve.Of(a).IsArc || PathCurve.Of(b).IsArc))
             throw new CommandException("A curved element is not joined where it crosses another: split it there.");
@@ -268,6 +275,7 @@ public static class Joins
             ["kind"] = join.Kind.ToString(),
             ["style"] = join.Style == JoinStyle.Mitre ? "mitre" : "butt",
         };
+        if (through != null) attrs[StopsOn] = true;
         if (existing != null) edit.ReplaceRelation(existing with { Relating = relating.Id, Related = [related.Id], Attrs = attrs });
         else edit.AddRelation(new Relation(edit.NewId(), Class, relating.Id, [related.Id], attrs));
         return join;
@@ -292,8 +300,30 @@ public static class Joins
         edit.Replace(current.With(attrs: attrs));
     }
 
+    /// <summary>
+    /// An end of a straight element, free, stopped in the nearest of <paramref name="walls"/> it ends on: a T that leaves that
+    /// wall as it is, the end brought to its axis and cut at its face. The wall it stopped in, or null when none is near.
+    /// </summary>
+    public static Entity? Stop(IEdit edit, IPathElements paths, Entity e, int end, IEnumerable<Entity> walls)
+    {
+        var m = edit.Model;
+        if (PathCurve.Of(e).IsArc || paths.FrameOf(e, m) is not { } fe) return null;
+        var at = end == 0 ? Start(e) : End(e);
+        foreach (var wall in walls.Where(w => w.Id != e.Id && w.Class == e.Class && !PathCurve.Of(w).IsArc && Between(m, w.Id, e.Id) == null).OrderBy(w => DistanceTo(w, at)))
+        {
+            if (paths.FrameOf(wall, m) is not { } fw) continue;
+            WallJoin trial;
+            try { trial = WallJoins.Compute(fw, fe, new JoinOptions(Through: 'a')); }
+            catch (CommandException) { continue; }
+            if (trial.B.Connection != (end == 0 ? Connection.AtStart : Connection.AtEnd)) continue;
+            Join(edit, paths, wall, e, JoinStyle.Butt, stop: true);
+            return wall;
+        }
+        return null;
+    }
+
     /// <summary>The ends of the element that a join already takes (start, end).</summary>
-    static bool[] JoinedEnds(IModelView m, Entity e)
+    public static bool[] JoinedEnds(IModelView m, Entity e)
     {
         var o = new bool[2];
         foreach (var r in Of(m, e.Id))

@@ -49,6 +49,7 @@ Cerut de utilizator (09.11.2026), pentru apartamentele-tip (`docs/plan-units.md`
 - O ușă se deschide spre încăpere la creare (`flipSide` când încăperea e la dreapta peretelui); o întoarcere făcută apoi de mână rămâne.
 - O copie a încăperii, împreună cu pereții ei, preia ușa copiată la pornire, fără să o dubleze (aceeași clasă, sub 5 mm distanță).
 - Doar pereți drepți în această versiune; o latură fără perete drept refuză, cu mesaj. Ștergerea încăperii lasă ușile pe loc.
+- Într-o instanță de componentă (`docs/plan-units.md`, Limita) lista se aplică din nou unde stă instanța, chiar dacă peretele nu e membru (`RoomOpenings.Settle`): fără refuz, cu `noWall` la intrarea care nu are perete sau loc. O ușă se regăsește după `roomOpeningKey`, iar intrarea ține și direcțiile `hand` și `face`, ca o oglindire să inverseze mâna. Ce se face de mână pe o astfel de ușă se scrie pe intrare și ajunge la toate instanțele (`RoomOpenings.Edited`); o copie a ei, făcută cu peretele, nu mai e a camerei până când camera o preia la loc.
 
 ## Schemele de culori
 

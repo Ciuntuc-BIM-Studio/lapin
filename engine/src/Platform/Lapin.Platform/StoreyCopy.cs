@@ -134,7 +134,9 @@ public static class StoreyCopy
                         if (m.Get(g) is { } group && Groups.Make(ctx, group.Name, Groups.MembersOf(m, g).Where(map.ContainsKey).Select(x => map[x]).ToList()) is { } twin)
                         {
                             twins[g] = twin.Id;
-                            Components.CopiedInstance(ctx, group, twin, Placement2D.Move(new Lapin.Geometry.Vec2(0, 0)), 0);
+                            // Kept in place, it stands over its new storey by what the levels differ: its members' height, found again after an edit.
+                            var up = keep == "world" && Groups.MembersOf(m, g).Select(x => Spatial.StoreyOf(m, x)).FirstOrDefault(x => x != null) is { } home ? home.Num("elevation") - target.Num("elevation") : 0;
+                            Components.CopiedInstance(ctx, group, twin, Placement2D.Move(new Lapin.Geometry.Vec2(0, 0)), up);
                         }
                 if (!relations)
                 {

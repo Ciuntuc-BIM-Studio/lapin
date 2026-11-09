@@ -33,6 +33,8 @@ You can choose a room's doors and windows from the room itself. Tick **Doors and
 
 Each row makes an ordinary door or window in the wall on that side: it is selected, flipped, scheduled and exported like any other, and placing doors on walls works as before. A door opens into the room. Untick the option and the room takes its doors and windows away, keeping the list; tick it again and they come back. Only straight walls take them for now.
 
+In an [apartment type](groups.md) these doors and windows go with the room: every instance has its own in the wall on that side, whether that wall belongs to the apartment or to the building. Where no wall can take one, its row says so.
+
 ![A room's doors and windows, by type and side](shots/room-openings.webp)
 
 ![The door and the window in the plan: the door opens into the room](shots/room-openings-plan.webp)

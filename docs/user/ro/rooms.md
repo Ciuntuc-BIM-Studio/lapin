@@ -33,6 +33,8 @@ Poți alege ușile și ferestrele unei încăperi chiar din încăpere. Bifează
 
 Fiecare rând face o ușă sau o fereastră obișnuită în peretele de pe acea latură: se selectează, se întoarce, intră în extrase și se exportă ca oricare alta, iar așezarea ușilor pe pereți merge ca înainte. Ușa se deschide spre încăpere. Dacă debifezi opțiunea, încăperea își scoate ușile și ferestrele și păstrează lista; dacă o bifezi din nou, revin. Deocamdată merg doar pe pereți drepți.
 
+Într-un [tip de apartament](groups.md), aceste uși și ferestre merg cu camera: fiecare instanță le are pe ale ei în peretele de pe latura aceea, fie că peretele ține de apartament, fie de clădire. Unde niciun perete nu poate primi una, rândul ei îți spune.
+
 ![Ușile și ferestrele unei încăperi, după tip și latură](shots/room-openings.webp)
 
 ![Ușa și fereastra în plan: ușa se deschide spre încăpere](shots/room-openings-plan.webp)

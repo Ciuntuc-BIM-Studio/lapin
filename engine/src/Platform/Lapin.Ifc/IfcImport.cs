@@ -240,6 +240,7 @@ public static partial class IfcImport
             WriteContainment(edit);
             Enforce(edit);
             MapTypes(edit);
+            UnitInstances(edit);
             if (ReadProcesses && !o.ReferenceOnly) Processes(edit);
             if (ReadProcesses && !o.ReferenceOnly) Controls(edit);
             var left = edit.Model.Entities.Count(e => s.Catalog.Geometry(e.Class) != null && !seen.Contains(e.Id) && e.Class is not (IfcClass.OpeningElement or IfcClass.Annotation or IfcClass.Grid));
@@ -786,6 +787,32 @@ public static partial class IfcImport
 
         int with2d, left2d, without2d;
 
+        /// <summary>
+        /// Lapin's own apartment types (docs/plan-units.md): an IfcGroup saying Lapin_Unit, whose members came back natively,
+        /// is an instance again. Not when the file comes in as one group, for groups do not nest; then, and in anyone else's
+        /// file, they are plain elements.
+        /// </summary>
+        void UnitInstances(IEdit edit)
+        {
+            if (o.ReferenceOnly || o.Group) return;
+            var members = new Dictionary<int, List<string>>();
+            foreach (var r in f.OfType("IFCRELASSIGNSTOGROUP"))
+                if (f.Get(r[6]) is { Type: "IFCGROUP" } g)
+                    (members.TryGetValue(g.Id, out var l) ? l : members[g.Id] = []).AddRange(Items(r[4]).Select(e => Str(e[0])).OfType<string>());
+            foreach (var g in f.OfType("IFCGROUP"))
+                foreach (var sid in definitions.GetValueOrDefault(g.Id) ?? [])
+                {
+                    if (f.Entities.GetValueOrDefault(sid) is not { Type: "IFCPROPERTYSET" } set || Str(set[2]) != IfcExport.UnitSetName) continue;
+                    var p = new Dictionary<string, object?>();
+                    foreach (var x in Items(set[4]))
+                        if (x.Type == "IFCPROPERTYSINGLEVALUE" && Str(x[0]) is { } name) p[name] = Value(x[2]);
+                    if (Str(g[0]) is not { } gid || !GlobalId.IsValid(gid) || p.GetValueOrDefault("TypeId") as string is not { } typeId || !GlobalId.IsValid(typeId)) continue;
+                    double N(string k) => Convert.ToDouble(p.GetValueOrDefault(k) ?? 0d, System.Globalization.CultureInfo.InvariantCulture);
+                    Components.Restore(edit, gid, Str(g[2]) ?? "Apartment", typeId, p.GetValueOrDefault("Type") as string ?? "Apartment type", members.GetValueOrDefault(g.Id) ?? [],
+                        [N("X"), N("Y"), N("Z"), N("Degrees"), p.GetValueOrDefault("Mirrored") is true ? 1 : 0]);
+                }
+        }
+
         /// <summary>Whether the intent is a Studio solid's: an operation on a sketch (its profile, or the box a bottom or top belongs to).</summary>
         static bool Sketched(Intent intent) =>
             intent.Attrs["operation"] is JsonValue && (intent.Attrs["profile"] is JsonValue || intent.Attrs["box"] is JsonValue);
@@ -894,8 +921,9 @@ public static partial class IfcImport
                     var attrs = new JsonObject
                     {
                         ["relatingConnection"] = Enum(rel[10]) ?? "NOTDEFINED", ["relatedConnection"] = Enum(rel[9]) ?? "NOTDEFINED",
-                        ["kind"] = Str(rel[2]) ?? "L", ["style"] = Str(rel[3]) ?? "butt",
+                        ["kind"] = Str(rel[2]) ?? "L", ["style"] = Str(rel[3]) is { } style && style != Joins.StopsOn ? style : "butt",
                     };
+                    if (Str(rel[3]) == Joins.StopsOn) attrs[Joins.StopsOn] = true;
                     var relId = Str(rel[0]);
                     relations.Add(x => Relate(x, relId, IfcClass.RelConnectsPathElements, gid, otherGid, attrs));
                 }

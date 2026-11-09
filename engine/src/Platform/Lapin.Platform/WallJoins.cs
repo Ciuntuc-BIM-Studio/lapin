@@ -48,7 +48,8 @@ public sealed record WallJoin(JoinKind Kind, JoinStyle Style, Vec2 Point, char R
 /// <param name="Tolerance">How far an axis end may be from the joint and still count as being there. Default: twice the thicker wall.</param>
 /// <param name="Priority">Which wall runs through a corner or a crossing and relates an in-line join: a or b. Default: the thicker, a on a tie. The crossed wall of a T always runs through.</param>
 /// <param name="Style">Corners only: butt (one wall through) or mitre (both on the diagonal). A T and an in-line join are always butt.</param>
-public sealed record JoinOptions(double? Tolerance = null, char? Priority = null, JoinStyle Style = JoinStyle.Butt);
+/// <param name="Through">The wall (a or b) that only runs through: a T wherever the other ends on its run, even near its own end, where a free join would make a corner and shorten it (a flat's inner wall stopping in the building's wall, docs/plan-units.md). The other must end there.</param>
+public sealed record JoinOptions(double? Tolerance = null, char? Priority = null, JoinStyle Style = JoinStyle.Butt, char? Through = null);
 
 /// <summary>A wall body's plan outline in its own frame (origin at Start, X along the axis, Y to the left): right-start, right-end, left-end, left-start.</summary>
 public sealed record WallOutline(Vec2[] Corners, bool Rectangular, double Length);
@@ -209,11 +210,19 @@ public static class WallJoins
 
         var la = new Laid(a);
         var lb = new Laid(b);
-        if (Math.Abs(Vec2.Cross(la.Along, lb.Along)) <= ParallelSin) return EndToEnd(la, lb, tolerance, options);
+        var parallel = Math.Abs(Vec2.Cross(la.Along, lb.Along)) <= ParallelSin;
+        if (parallel && options.Through != null) throw new CommandException("The walls run side by side: one cannot stop in the other.");
+        if (parallel) return EndToEnd(la, lb, tolerance, options);
 
         var joint = la.Axis.Meet(lb.Axis)!.Value;
         var onA = la.Reach(joint, tolerance);
         var onB = lb.Reach(joint, tolerance);
+        if (options.Through is { } through)
+        {
+            static Connection? OnRun(Laid wall, Vec2 x) => Vec2.Dot(x - wall.Wall.Start, wall.Along) is var s && s >= -Tiny && s <= wall.Length + Tiny ? Connection.AtPath : null;
+            static Connection? Ending(Connection? c) => c == Connection.AtPath ? null : c;
+            (onA, onB) = through == 'a' ? (OnRun(la, joint), Ending(onB)) : (Ending(onA), OnRun(lb, joint));
+        }
         if (onA == null || onB == null)
             throw new CommandException($"The walls do not meet: where their axes would cross is more than {tolerance:0.###} m from an end.");
         var priority = options.Priority ?? (b.Thickness > a.Thickness ? 'b' : 'a');

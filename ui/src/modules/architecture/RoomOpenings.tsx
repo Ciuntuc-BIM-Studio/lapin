@@ -12,7 +12,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { LengthCell } from '../../shell/cells';
 
 interface Side { index: number; a: [number, number]; b: [number, number]; length: number; wall?: string | null }
-interface Item { key: string; kind: 'door' | 'window'; typeId?: string | null; side?: number | null; offset?: number | null; sill?: number | null; fill?: string | null; fillName?: string | null; gone?: boolean }
+interface Item { key: string; kind: 'door' | 'window'; typeId?: string | null; side?: number | null; offset?: number | null; sill?: number | null; fill?: string | null; noWall?: boolean; fillName?: string | null; gone?: boolean }
 interface Data { on: boolean; sides: Side[]; items: Item[] }
 
 /** The room's outline with its sides numbered and a mark where each door or window goes. */
@@ -102,6 +102,7 @@ export function RoomOpeningsField({ node }: { node: NodeDto }) {
                 </>
               )}
               {i.gone && <dd className="small warn">It was deleted: any change here puts it back.</dd>}
+              {i.noWall && <dd className="small warn">No wall can take it here.</dd>}
             </dl>
           ))}
           <div className="row">

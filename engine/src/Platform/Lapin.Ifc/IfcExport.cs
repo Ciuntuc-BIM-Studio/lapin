@@ -72,6 +72,8 @@ public static class IfcExport
     // The keys the sets' GlobalIds derive from stay the old names: a file exported again keeps its sets' ids.
     /// <summary>The key a type's mirror image (doors and windows flipped on one axis) is derived from.</summary>
     const string MirrorKey = "#mirrored";
+    /// <summary>An apartment type's instance: its type's name and id, where it stands (docs/plan-units.md).</summary>
+    public const string UnitSetName = "Lapin_Unit";
     const string IntentKey = "Pset_Lapin_Intent", PhaseKey = "Pset_Lapin_Phase", ParamsKey = "Pset_Lapin_Parameters";
     public const string Version = "1";
 
@@ -1993,6 +1995,18 @@ public static class IfcExport
                 if (members.Count == 0) continue;
                 var group = f.Add("IFCGROUP", Gid(g.Id), Null, S(g.Name), Null, Null);
                 f.Add("IFCRELASSIGNSTOGROUP", Gid(g.Id, "members"), Null, Null, Null, L(members), Null, group);
+                // An instance of an apartment type says of which, and where it stands (docs/plan-units.md).
+                if (Components.UnitOf(m, g) is { } unit)
+                    Define(group, f.Add("IFCPROPERTYSET", Gid(g.Id, UnitSetName), Null, S(UnitSetName), Null, L(new[]
+                    {
+                        Single("Type", Typed("IFCLABEL", S(unit.Type.Name))),
+                        Single("TypeId", Typed("IFCIDENTIFIER", S(unit.Type.Id))),
+                        Single("X", Typed("IFCLENGTHMEASURE", R(unit.X))),
+                        Single("Y", Typed("IFCLENGTHMEASURE", R(unit.Y))),
+                        Single("Z", Typed("IFCLENGTHMEASURE", R(unit.Z))),
+                        Single("Degrees", Typed("IFCREAL", R(unit.Degrees))),
+                        Single("Mirrored", Typed("IFCBOOLEAN", unit.Mirrored ? ".T." : ".F.")),
+                    })), Gid(g.Id, "unit-rel"));
             }
             foreach (var (typeId, t) in types) f.Add("IFCRELDEFINESBYTYPE", Gid(typeId, "defines"), Null, Null, Null, L(t.Occurrences), t.Ref);
             foreach (var (materialId, list) in materialUses) f.Add("IFCRELASSOCIATESMATERIAL", Gid(materialId, "associates"), Null, Null, Null, L(list), Material(materialId));
@@ -2004,7 +2018,7 @@ public static class IfcExport
             // Joins: the element that runs through relates the other; the ends they meet at, the style as the description.
             foreach (var rel in m.Relations.Where(r => r.Class == IfcClass.RelConnectsPathElements))
                 if (rel.Related.Count > 0 && written.TryGetValue(rel.Relating, out var a) && written.TryGetValue(rel.Related[0], out var b))
-                    f.Add("IFCRELCONNECTSPATHELEMENTS", Gid(rel.Id), Null, S((string?)rel.Attrs?["kind"]), S((string?)rel.Attrs?["style"]), Null, a, b, "()", "()",
+                    f.Add("IFCRELCONNECTSPATHELEMENTS", Gid(rel.Id), Null, S((string?)rel.Attrs?["kind"]), S(Joins.Stops(rel) ? Joins.StopsOn : (string?)rel.Attrs?["style"]), Null, a, b, "()", "()",
                         E(Connection((string?)rel.Attrs?["relatedConnection"])), E(Connection((string?)rel.Attrs?["relatingConnection"])));
             // Temporary works: the product resource they are (formwork, a scaffold), assigned to them; formwork connected to the element it forms.
             foreach (var e in m.Entities)

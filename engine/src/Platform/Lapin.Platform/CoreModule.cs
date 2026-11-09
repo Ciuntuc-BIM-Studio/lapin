@@ -322,6 +322,7 @@ public static class ElementTransform
             : ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement)?.Id;
         var entities = all.Where(e => HostOf(e) == null).ToList();
         var moving = entities.Select(e => e.Id).ToHashSet();
+        if (!copy) Components.Leaving(ctx, groups, moving);
         // One whose host moves too goes with it; one whose host stays is its module's to move in a host (report #82: MOVE
         // and COPY on a window slide it along its wall), once: an opening selected with its door is the door's.
         var hostedIds = all.Where(e => HostOf(e) is { } h && !moving.Contains(h)).Select(e => e.Id).ToHashSet();

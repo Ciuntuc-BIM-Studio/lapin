@@ -37,7 +37,14 @@ Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Th
 
 A component cannot hold walls, but an **apartment type** can. Select an apartment's walls, rooms and furniture and choose **Modify → Make apartment type** (<kbd>CU</kbd>). The doors and windows in those walls come with them. Copy it, rotate it or **Mirror** it, as the flat on the other side of a staircase: a change in one reaches the others, mirrored where they are, and every element keeps its identity in IFC.
 
-For now an apartment type has a fixed size and its walls stay its own: it does not join the walls of the building around it.
+An apartment type holds the inner walls, the doors between the rooms, the rooms and the furniture. The building holds the facade, the walls between apartments and the corridor. Where the two meet belongs to each instance:
+
+- An inner wall stops in the building's wall it reaches: its end is cut at that wall's face, and the building's wall is left as it is. This is found again each time an instance is placed, moved or mirrored, and when a building wall is drawn or moved near it. Moving a building wall changes only the apartment that touches it.
+- Entrance doors and facade windows belong to the room, not to the wall: choose them in the room's properties (see [Doors and windows from the room](rooms.md)). Every instance then has its own door in the building's wall on that side, of the other hand in a mirrored instance. Moving or turning one of these doors by hand, or changing its type, changes it in every instance. Where no wall can take it, the room's properties say so.
+
+An apartment type has a fixed size: it does not stretch to fit a wider or narrower slot.
+
+**Copy to storeys** copies an instance as another instance, which stops in that storey's walls. In IFC an instance is a group of ordinary elements with a `Lapin_Unit` property set. Import the file again with **As one group** unticked and it is an instance again; with the option ticked, as it is by default, its elements stay plain members of the file's one group.
 
 ![An apartment type in two instances, the second mirrored](shots/units-plan.webp)
 

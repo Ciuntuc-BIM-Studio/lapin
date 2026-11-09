@@ -37,7 +37,14 @@ Selectează elementele și alege **Modifică → Fă componentă** (<kbd>CK</kbd
 
 O componentă nu poate conține pereți, dar un **tip de apartament** poate. Selectează pereții, încăperile și mobilierul unui apartament și alege **Modificare → Fă tip de apartament** (<kbd>CU</kbd>). Ușile și ferestrele din acei pereți vin cu ei. Copiază-l, rotește-l sau oglindește-l cu **Mirror**, ca apartamentul de pe cealaltă parte a casei scării: o schimbare într-unul ajunge în celelalte, oglindită acolo unde sunt oglindite, iar fiecare element își păstrează identitatea în IFC.
 
-Deocamdată un tip de apartament are dimensiuni fixe, iar pereții rămân ai lui: nu se îmbină cu pereții clădirii din jur.
+Tipul de apartament ține pereții interiori, ușile dintre camere, camerele și mobilierul. Clădirea ține fațada, pereții dintre apartamente și coridorul. Locul unde se întâlnesc ține de fiecare instanță:
+
+- Un perete interior se oprește în peretele clădirii la care ajunge: capătul lui se taie la fața acelui perete, iar peretele clădirii rămâne cum e. Oprirea se caută din nou de fiecare dată când așezi, muți sau oglindești o instanță și când desenezi sau muți un perete al clădirii în apropiere. Dacă muți un perete al clădirii, se schimbă doar apartamentul care îl atinge.
+- Ușile de intrare și ferestrele de pe fațadă țin de cameră, nu de perete: le alegi în proprietățile camerei (vezi [Uși și ferestre din încăpere](rooms.md)). Fiecare instanță are atunci ușa ei în peretele clădirii de pe latura aceea, cu mâna inversă într-o instanță oglindită. Dacă muți sau întorci de mână o astfel de ușă ori îi schimbi tipul, schimbarea apare în toate instanțele. Unde niciun perete nu o poate primi, îți spun proprietățile camerei.
+
+Un tip de apartament are dimensiuni fixe: nu se întinde după un loc mai lat sau mai îngust.
+
+**Copiază pe niveluri** face din copie altă instanță, care se oprește în pereții acelui nivel. În IFC o instanță e un grup de elemente obișnuite, cu setul de proprietăți `Lapin_Unit`; importă fișierul din nou cu **Ca un singur grup** nebifat și e din nou o instanță; cu opțiunea bifată, cum e implicit, elementele lui rămân membri obișnuiți ai grupului fișierului.
 
 ![Un tip de apartament în două instanțe, a doua oglindită](shots/units-plan.webp)
 

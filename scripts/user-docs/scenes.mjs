@@ -2469,18 +2469,28 @@ export const scenes = [
     },
   },
   {
-    // Apartment types (docs/plan-units.md): a flat made a type, mirrored, a change in one reaching the other.
+    // Apartment types (docs/plan-units.md): a flat drawn inside the building's walls made a type, mirrored into the next
+    // slot: a change in one reaches the other, each stopping in the building's walls and each with its room's door in the facade.
     id: 'units',
     async run(t) {
       await t.fresh();
       const s = await t.storey();
-      const walls = [];
-      for (const [a, b] of [[[0, 0], [6, 0]], [[6, 0], [6, 5]], [[6, 5], [0, 5]], [[0, 5], [0, 0]], [[3.5, 0], [3.5, 5]]]) walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
-      await t.cmd('architecture.addDoor', { wallId: walls[0], x: 1.5, y: 0 });
-      await t.cmd('architecture.addDoor', { wallId: walls[4], x: 3.5, y: 2 });
-      await t.cmd('architecture.addWindow', { wallId: walls[2], x: 4.5, y: 5 });
+      const wall = async (a, b) => (await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id;
+      // The building: the facade and the walls between the flats.
+      const south = await wall([0, 0], [14, 0]);
+      await wall([14, 0], [14, 5]);
+      await wall([14, 5], [0, 5]);
+      await wall([0, 5], [0, 0]);
+      await wall([7, 0], [7, 5]);
+      // The flat: an inner wall from facade to facade, its door, two rooms.
+      const inner = await wall([3.5, 0], [3.5, 5]);
+      await t.cmd('architecture.addDoor', { wallId: inner, x: 3.5, y: 2 });
       const rooms = [(await t.cmd('architecture.addRoom', { storeyId: s, x: 1.5, y: 2.5, name: 'Living room', function: 'Living' })).id, (await t.cmd('architecture.addRoom', { storeyId: s, x: 5, y: 2.5, name: 'Bedroom', function: 'Bedroom' })).id];
-      await t.ui({ keyPlan: false, selected: [...walls, ...rooms], selection: rooms[0] });
+      // The room carries the door in the facade, not the wall.
+      const sides = (await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.roomOpenings', { id }), rooms[0])).sides;
+      const side = sides.find((x) => x.a[1] < 1 && x.b[1] < 1).index;
+      await t.cmd('architecture.setRoomOpenings', { id: rooms[0], on: true, items: [{ key: 'in', kind: 'door', side }] });
+      await t.ui({ keyPlan: false, selected: [inner, ...rooms], selection: rooms[0] });
       await t.wait(400);
       await t.tool('modify.unit');
       const box = t.page.locator('.ask-box');
@@ -2495,9 +2505,12 @@ export const scenes = [
       await t.wait(800);
       let nodes = await t.nodes();
       t.expect(nodes.filter((n) => n.type === 'IfcGroup').length === 2, 'two instances');
-      t.expect(nodes.filter((n) => n.type === 'IfcDoor').length === 4, 'the doors came with the walls');
-      // The inner wall moved in the first: in the mirrored flat, the other way.
-      await t.cmd('element.transform', { ids: [walls[4]], op: 'move', by: [-0.5, 0] });
+      const doors = nodes.filter((n) => n.type === 'IfcDoor');
+      t.expect(doors.length === 4, 'the inner doors came with the walls, each room its own door in the facade');
+      t.expect(doors.filter((n) => n.props.roomOpening).length === 2, 'each room carries its door');
+      t.expect(nodes.some((n) => n.id === south), 'the facade is still there, one wall');
+      // The inner wall moved in the first: in the mirrored flat, the other way, still stopped in the facade.
+      await t.cmd('element.transform', { ids: [inner], op: 'move', by: [-0.5, 0] });
       await t.wait(800);
       nodes = await t.nodes();
       t.expect(nodes.filter((n) => n.type === 'IfcWall').some((w) => Math.abs(w.props.start[0] - 11) < 1e-6 && Math.abs(w.props.end[0] - 11) < 1e-6), 'the mirrored flat followed, mirrored');
