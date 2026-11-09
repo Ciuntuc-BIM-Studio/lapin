@@ -209,7 +209,7 @@ public sealed partial class IfcModel
     public static (double Length, double Angle) ProjectUnits(StepFile f)
     {
         double len = 1, angle = 1;
-        var project = f.OfType("IFCPROJECT").FirstOrDefault();
+        var project = f.OfType("IFCPROJECT").FirstOrDefault() ?? f.OfType("IFCPROJECTLIBRARY").FirstOrDefault();
         // A file with no project's units (a fragment): the units it holds, a conversion-based one over the SI unit it is based on.
         var units = f.Get(project?[8])?[0] is List<object?> assigned ? assigned.Select(f.Get).OfType<StepEntity>()
             : f.OfType("IFCSIUNIT").Concat(f.OfType("IFCCONVERSIONBASEDUNIT"));
@@ -761,6 +761,23 @@ public sealed partial class IfcModel
             {
                 double d = L(3) / 2, w = L(4) / 2, t = L(5), f = L(6);
                 return One(Placed([new(-w, -d, 0), new(w, -d, 0), new(w, -d + f, 0), new(-w + t, -d + f, 0), new(-w + t, d - f, 0), new(w, d - f, 0), new(w, d, 0), new(-w, d, 0)]));
+            }
+            case "IFCASYMMETRICISHAPEPROFILEDEF":
+            {
+                // The bottom flange at 3 and 6, the top at 8 and 9, in IFC4 and IFC2x3 alike.
+                double wb = L(3) / 2, d = L(4) / 2, t = L(5) / 2, fb = L(6), wt = p[8] is null ? wb : L(8) / 2, ft = p[9] is null ? fb : L(9);
+                return One(Placed([new(-wb, -d, 0), new(wb, -d, 0), new(wb, -d + fb, 0), new(t, -d + fb, 0), new(t, d - ft, 0), new(wt, d - ft, 0), new(wt, d, 0), new(-wt, d, 0), new(-wt, d - ft, 0), new(-t, d - ft, 0), new(-t, -d + fb, 0), new(-wb, -d + fb, 0)]));
+            }
+            case "IFCCSHAPEPROFILEDEF":
+            {
+                double d = L(3) / 2, w = L(4) / 2, t = L(5), g = L(6);
+                return One(Placed([new(-w, -d, 0), new(w, -d, 0), new(w, -d + g, 0), new(w - t, -d + g, 0), new(w - t, -d + t, 0), new(-w + t, -d + t, 0), new(-w + t, d - t, 0), new(w - t, d - t, 0), new(w - t, d - g, 0), new(w, d - g, 0), new(w, d, 0), new(-w, d, 0)]));
+            }
+            case "IFCZSHAPEPROFILEDEF":
+            {
+                // The web on the axis, the bottom flange to the left, the top to the right, each running from the web's far face.
+                double d = L(3) / 2, w = L(4), t = L(5) / 2, f = L(6);
+                return One(Placed([new(t - w, -d, 0), new(t, -d, 0), new(t, d - f, 0), new(w - t, d - f, 0), new(w - t, d, 0), new(-t, d, 0), new(-t, -d + f, 0), new(t - w, -d + f, 0)]));
             }
             case "IFCARBITRARYCLOSEDPROFILEDEF": return One(Curve(File.Get(p[2])));
             case "IFCARBITRARYPROFILEDEFWITHVOIDS": return One(Curve(File.Get(p[2])), [.. Items(p[3]).Select(Curve)]);

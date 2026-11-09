@@ -698,6 +698,29 @@ public sealed class EngineDispatcher(Session session, ProjectFiles files, IRecov
                 return (Deliver(bytes, name), null);
             }
             case "project.compareVersions": return (files.CompareVersions(session, p["a"], p["b"]), null);
+            case "profiles.readIfc":
+            {
+                // An IFC file's profiles as a library (docs/plan-profile-libraries.md), nothing kept: the interface keeps it. By its bytes or path.
+                var (bytes, name, _, _) = IfcBytes(p);
+                ReportProgress("Reading the profiles", 0, 0);
+                var model = new IfcModel(StepFile.Read(bytes));
+                var material = (string?)p["material"] is { Length: > 0 } pm && Lapin.Platform.ProfileLibraries.SectionProfile.Densities.ContainsKey(pm) ? pm : "steel";
+                var read = model.ReadProfiles(material, name);
+                if (read.Profiles.Count == 0) throw new CommandException(read.Notes.Count > 0 ? $"No profile could be read from the file. {string.Join(" ", read.Notes)}" : "The file holds no IFC profile.");
+                var lib = new Lapin.Platform.ProfileLibraries.ProfileLibrary(Path.GetFileNameWithoutExtension(name), null, material, read.Profiles).ToJson(summaries: true);
+                lib["skipped"] = read.Skipped;
+                lib["notes"] = new JsonArray(read.Notes.Select(x => (JsonNode)x).ToArray());
+                lib["checks"] = new JsonArray(read.Checks.Take(500).Select(x => (JsonNode)Lapin.Platform.ProfileLibraries.ProfileProps.CheckJson(x)).ToArray());
+                lib["checkCount"] = read.Checks.Count;
+                return (lib, null);
+            }
+            case "profiles.exportIfc":
+            {
+                // A library (or the project's profiles) as an IFC4 profile library file.
+                var lib = Lapin.Platform.ProfileLibraries.ProfileLibrary.From(p["library"]) ?? throw new CommandException("No library was sent.");
+                if (lib.Profiles.Count == 0) throw new CommandException("The library has no profile to export.");
+                return (Deliver(Lapin.Ifc.ProfileIfc.Write(lib), $"{lib.Name}.ifc"), null);
+            }
             case "project.exportIfc":
             {
                 // The project as IFC (docs/spec-ifc.md): IFC4, or IFC4X3; parts grouped under their element, or one body each; a phase, or everything;

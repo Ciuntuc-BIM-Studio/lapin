@@ -314,7 +314,7 @@ public static class ProfileTables
             {
                 Name = name, Kind = k, H = H, B = B, Tw = tw, Tf = tf, R1 = Num(r, "r1") ?? 0, R2 = Num(r, "r2") ?? 0, Lip = lip, Slope = Num(r, "slope") ?? 0,
                 B2 = Num(r, "b2") ?? 0, Tf2 = Num(r, "tf2") ?? 0,
-                Family = Cell(r, "family") is { Length: > 0 } fam ? fam : family ?? FamilyOf(name), Standard = Cell(r, "standard") is { Length: > 0 } st ? st : standard,
+                Family = Cell(r, "family") is { Length: > 0 } fam ? fam : family ?? FamilyOrKind(name, k), Standard = Cell(r, "standard") is { Length: > 0 } st ? st : standard,
                 Material = mat, Source = source, Given = given,
             };
             if (p.Kind == "I" && p.B2 > 0 && Math.Abs(p.B2 - p.B) > 1e-6) p = p with { Kind = "asymI" };
@@ -333,12 +333,15 @@ public static class ProfileTables
         return new(o, skipped, notes, checks);
     }
 
-    /// <summary>A family from a designation's letters (IPE 300 → IPE, W14X90 → W, HSS6X6X1/2 → HSS).</summary>
+    /// <summary>A family from a designation's first letters (IPE 300 → IPE, W14X90 → W, HSS6X6X1/2 → HSS, 150UB14.0 → UB); null when it has none (21.3-2.3).</summary>
     public static string? FamilyOf(string name)
     {
-        var head = new string(name.Trim().TakeWhile(c => char.IsLetter(c) || c == 'Σ').ToArray());
+        var head = new string(name.Trim().SkipWhile(c => !char.IsLetter(c)).TakeWhile(char.IsLetter).ToArray());
         return head.Length > 0 ? head.ToUpperInvariant() : null;
     }
+
+    /// <summary>A family from the name, else what the kind is called.</summary>
+    public static string FamilyOrKind(string name, string kind) => FamilyOf(name) ?? kind switch { "SIGMA" => "Σ", "asymI" => "I", "circle" => "Round", "rectangle" => "Flat", "outline" => "Outline", _ => kind };
 
     /// <summary>A material from what a table writes: steel (S235, S355, A992…), aluminium, timber (GL24h, C24), concrete, PVC; null otherwise.</summary>
     public static string? MaterialOf(string text)

@@ -82,7 +82,7 @@ public sealed record SectionProfile
                 o["kind"] = Kind;
                 break;
         }
-        o["width"] = B;
+        o["width"] = Math.Max(B, B2);
         o["depth"] = Kind is "circle" or "CHS" ? B : H;
         if (Kind is not ("rectangle" or "circle" or "ellipse" or "outline" or "asymI")) { o["web"] = Tw; o["flange"] = Tf; }
         if (Lip > 0) o["lip"] = Lip;

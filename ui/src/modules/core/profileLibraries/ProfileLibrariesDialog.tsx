@@ -10,10 +10,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { BookMarked, Download, FileUp, Library, RefreshCw, Search, Trash2, X } from 'lucide-react';
 import { notify, useUi } from '../../../app/store';
 import { engine, execute, query, useSession } from '../../../engine/session';
+import { LONG_TIMEOUT_MS } from '../../../engine/client';
 import { pickFile, saveFile, safeFileName, toBase64 } from '../../../engine/files';
 import {
   families, formatValue, KIND_LABELS, KINDS, massOf, MATERIAL_LABELS, naturalCompare, newerInLibrary, PROPS, search,
-  type LibraryEntry, type ProfileJson, type ProjectProfilesDto, type Ring,
+  type LibraryEntry, type LibraryJson, type ProfileJson, type ProjectProfilesDto, type Ring,
 } from './model';
 import { forgetOnComputer, keepOnComputer, useProfileLibraries } from './store';
 import { SectionView } from './SectionView';
@@ -98,6 +99,24 @@ export function ProfileLibrariesDialog() {
       setTable({ name: f.name, bytes: f.bytes, read });
     } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
   };
+  const importIfc = async () => {
+    const f = await pickFile('IFC file (a profile library, or any model)', ['ifc']);
+    if (!f) return;
+    setBusy(true);
+    try {
+      const r = await engine.call<LibraryJson & { skipped: number; notes: string[]; checks: CheckDto[]; checkCount: number }>('profiles.readIfc', { data: toBase64(f.bytes), name: f.name }, { timeoutMs: LONG_TIMEOUT_MS });
+      const { skipped, notes, checks, checkCount, ...library } = r;
+      await imported({ library, skipped, notes, checks, checkCount });
+    } catch (e) { notify(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+  };
+  const exportIfc = async () => {
+    if (!lib) return;
+    try {
+      const library = { name: lib.origin === 'project' ? 'Project profiles' : lib.name, material: lib.library.material ?? 'steel', profiles: lib.library.profiles };
+      const r = await engine.call<{ name: string; data: string }>('profiles.exportIfc', { library }, { timeoutMs: LONG_TIMEOUT_MS });
+      await saveFile(Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0)), `${safeFileName(library.name, 'profiles')}.ifc`);
+    } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+  };
   const imported = async (r: ImportReport) => {
     await keepOnComputer(r.library);
     setTable(null);
@@ -154,6 +173,7 @@ export function ProfileLibrariesDialog() {
                 ))}
                 <div className="row wrap">
                   <button type="button" className="btn" onClick={() => void importTable()} data-testid="profile-import-table"><FileUp size={14} />Table…</button>
+                  <button type="button" className="btn" disabled={busy} onClick={() => void importIfc()} data-testid="profile-import-ifc" title="An IFC file: a profile library, or any model (the profiles its elements use)"><FileUp size={14} />IFC…</button>
                 </div>
                 {loading && <p className="muted small">Reading the libraries…</p>}
                 {problems.map((p, i) => <p key={i} className="error-text small" data-no-i18n>{p}</p>)}
@@ -189,7 +209,10 @@ export function ProfileLibrariesDialog() {
                   {found.length === 0 && <li className="muted small">No profile.</li>}
                 </ul>
                 <div className="row wrap">
-                  {lib && lib.origin !== 'project' && <button type="button" className="btn" onClick={() => void exportCsv()} title="The library as a CSV Lapin reads back"><Download size={14} />CSV</button>}
+                  {lib && lib.library.profiles.length > 0 && <>
+                    <button type="button" className="btn" onClick={() => void exportCsv()} title="The library as a CSV Lapin reads back"><Download size={14} />CSV</button>
+                    <button type="button" className="btn" onClick={() => void exportIfc()} data-testid="profile-export-ifc" title="The library as an IFC4 profile library file, for other programs"><Download size={14} />IFC</button>
+                  </>}
                 </div>
               </section>
               <section className="profile-libraries-detail" data-testid="profile-detail">
