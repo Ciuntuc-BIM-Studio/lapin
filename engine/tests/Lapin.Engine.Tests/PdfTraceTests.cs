@@ -109,7 +109,7 @@ public class PdfTraceTests
     [Fact]
     public void An_image_is_drawn_upright_not_mirrored_in_a_plan_and_in_a_section_looking_either_way()
     {
-        // Decision 427 (report #120): the corners went to the drawing from the bottom left, the order a PenImage reads from the top left.
+        // Decision 428 (report #120): the corners went to the drawing from the bottom left, the order a PenImage reads from the top left.
         var f = F();
         f.Wall(0, 0, 10, 0);
         var views = new List<string> { Plan(f) };

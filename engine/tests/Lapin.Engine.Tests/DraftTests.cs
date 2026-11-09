@@ -135,7 +135,7 @@ public class DraftTests
     [Fact]
     public void Explode_splits_polylines_and_rectangles_into_lines_on_the_same_layer_in_one_undo_step_and_leaves_the_rest()
     {
-        // Report #121, decision 429: JOIN welds lines into a polyline, EXPLODE is the way back.
+        // Report #121, decision 430: JOIN welds lines into a polyline, EXPLODE is the way back.
         var f = F();
         var plan = Plan(f);
         f.Run("drafting.setLayer", new JsonObject { ["name"] = "A-DET", ["color"] = "#c0392b", ["weight"] = 0.35 });
@@ -195,7 +195,7 @@ public class DraftTests
     [Fact]
     public void A_solid_hatch_can_be_clicked_by_its_area_and_its_outline_and_a_pattern_one_too()
     {
-        // Report #122, decision 428: a SOLID hatch draws no lines, so the interface had nothing to pick it by.
+        // Report #122, decision 429: a SOLID hatch draws no lines, so the interface had nothing to pick it by.
         var f = F();
         var plan = Plan(f);
         Draw(f, plan, new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(10, 0), J(10, 10), J(0, 10)), ["closed"] = true });

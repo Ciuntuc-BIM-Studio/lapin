@@ -229,7 +229,7 @@ public static class Drafts
                     foreach (var s in segs) mk.Line(s.A, s.B, layer.Name, Pens.Default.Hatch, color);
                 }
                 foreach (var l in loops) mk.Shapes.Add(new Polyline(l, true).ToJson().Also(j => j["hatch"] = true));
-                // A hatch is taken by its outline and by a click inside it: a solid one has no lines to click (report #122, decision 428).
+                // A hatch is taken by its outline and by a click inside it: a solid one has no lines to click (report #122, decision 429).
                 foreach (var l in loops) for (var i = 0; i < l.Count; i++) mk.Edges.Add((l[i], l[(i + 1) % l.Count]));
                 mk.Hit = (loops, pattern == null || pattern.Solid);
                 mk.Snaps.AddRange(loops.SelectMany(l => l));

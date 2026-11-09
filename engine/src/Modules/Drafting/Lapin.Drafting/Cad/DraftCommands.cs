@@ -248,7 +248,7 @@ public static class DraftCommands
             return new JsonObject { ["ids"] = made, ["joined"] = joined, ["pieces"] = pieces.Count };
         });
 
-        // Polylines (a rectangle is one) split into their lines, the way back from JOIN (report #121, decision 429). Each piece is a
+        // Polylines (a rectangle is one) split into their lines, the way back from JOIN (report #121, decision 430). Each piece is a
         // shape of its own on the same layer, with the same colour, role and attributes (a DXF's heights split with it), in the
         // group the polyline was in; the first keeps the polyline's entity. Circles and arcs, hatches and dimension strings are not
         // polylines and stay as they are; one undo step.
