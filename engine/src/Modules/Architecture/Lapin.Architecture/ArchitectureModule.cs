@@ -111,6 +111,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.DoorType, "Door type", [], "#c8a27a", Kind: "type"));
         r.Class(new(IfcClass.WindowType, "Window type", [], "#9cc8e8", Kind: "type"));
         r.Service<IVoidShapes>(new VoidShapes());
+        r.Service<IIfcElementSets>(new JoineryDataSets());
         r.Service<Lapin.Platform.Coordination.IOpeningVoids>(new ArchitectureVoids());
         // The openings' boxes a dimension across one reads its height from (report #92, decision 338).
         r.Service<IWallOpenings>(new ArchitectureWallOpenings());
@@ -632,6 +633,40 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var type = ctx.Model.Get((string?)a["typeId"] ?? "") is { Class: IfcClass.DoorType or IfcClass.WindowType } t ? t : throw new CommandException("There is no such door or window type.");
             foreach (var id in Ids(a))
                 if (ctx.Model.Get(id) is { Class: IfcClass.Door or IfcClass.Window } fill) Openings.SetType(ctx, fill, type);
+            return null;
+        });
+
+        // The frame's place across the wall for some elements (report #76): from the exterior face, the core or the centre, a distance; {clear: true} back to the type's.
+        r.Command("setJoineryPosition", "Place the frame in the wall", (ctx, a) =>
+        {
+            var position = a["clear"] is JsonValue c && c.TryGetValue<bool>(out var clear) && clear ? null
+                : JoineryPosition.From_(a) ?? throw new CommandException("Say where: from, distance.");
+            var changed = 0;
+            foreach (var id in Ids(a))
+            {
+                if (ctx.Model.Get(id) is not { Class: IfcClass.Door or IfcClass.Window } fill) continue;
+                var attrs = fill.CloneAttrs();
+                if (position == null) attrs.Remove("position"); else attrs["position"] = position.ToJson();
+                ctx.Replace(fill.With(attrs: attrs));
+                changed++;
+            }
+            if (changed == 0) throw new CommandException("Select doors or windows.");
+            return null;
+        });
+
+        // A door or window type's data, or some elements' own (report #76): free text for U-value, g-value, safety glass, fire rating
+        // and fittings (uValue, gValue, safetyGlass, fireRating, fittings; empty takes one off), and extras [{name, value}]: the
+        // user's parameters in Lapin_Joinery. {typeId} for a type, else the elements (ids).
+        r.Command("setJoineryData", "Door and window data", (ctx, a) =>
+        {
+            var data = a["data"] as JsonObject;
+            var extras = a["extras"] as JsonArray;
+            if (data == null && extras == null) throw new CommandException("Nothing to change.");
+            var targets = (string?)a["typeId"] is { } typeId
+                ? [ctx.Model.Get(typeId) is { Class: IfcClass.DoorType or IfcClass.WindowType } found ? found : throw new CommandException("There is no such door or window type.")]
+                : Ids(a).Select(id => ctx.Model.Get(id)).OfType<Entity>().Where(x => x.Class is IfcClass.Door or IfcClass.Window).ToList();
+            if (targets.Count == 0) throw new CommandException("Select doors or windows, or a type.");
+            foreach (var target in targets) JoineryData.Apply(ctx, target, data, extras);
             return null;
         });
 

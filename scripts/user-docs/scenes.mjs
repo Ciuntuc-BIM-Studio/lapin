@@ -4498,6 +4498,100 @@ export const scenes = [
     },
   },
   {
+    // A door or window's frame position in the wall and its data as free text (a tester's report #76): in the configurator the
+    // frame set back 50 mm from the exterior finish, the Data box with its U-value, fire rating and a parameter of the user's
+    // own; then a window selected, with its own fire rating over the type's.
+    id: 'joinery-data',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.fit();
+      await t.tool('architecture.joineryTypes');
+      await t.wait(900);
+      const dialog = t.page.locator('.dialog.wide').first();
+      const windowType = (await t.nodes()).find((n) => n.type === 'IfcWindowType');
+      await t.page.locator('.dialog .type-list .tree-item').filter({ hasText: windowType.name }).first().click();
+      await t.wait(700);
+      await t.page.locator('.dialog [data-field=position-from]').selectOption('exterior');
+      const back = dialog.locator('label.field-line', { hasText: 'Set back' }).locator('input');
+      await back.fill('50');
+      await back.press('Enter');
+      await t.wait(500);
+      await t.page.locator('.dialog button', { hasText: /^(Save type|Create type)$/ }).first().click();
+      await t.wait(900);
+      const window = (await t.nodes()).find((n) => n.id === windowType.id);
+      t.expect(window && window.props.spec.position.from === 'exterior' && Math.abs(window.props.spec.position.distance - 0.05) < 1e-6, 'the type keeps its position: 50 mm from the exterior finish');
+      await t.shot('joinery-position', { of: '.dialog.wide', pad: 0 });
+      // The Data box: free text, never a list.
+      await t.page.locator('[data-testid=joinery-data]').click();
+      await t.page.waitForSelector('[data-testid=joinery-data-form]', { timeout: 10000 });
+      await t.page.locator('[data-field=uValue]').fill('0,9 W/m²K');
+      await t.page.locator('[data-field=gValue]').fill('0.52');
+      await t.page.locator('[data-field=safetyGlass]').fill('laminated inside, tempered outside');
+      await t.page.locator('[data-field=fireRating]').fill('EI 30');
+      await t.page.locator('[data-field=fittings]').fill('Roto NX');
+      await t.page.locator('[data-testid=joinery-extra-add]').click();
+      await t.page.locator('[data-field=extra-name]').last().fill('Sauna window');
+      await t.page.locator('[data-field=extra-value]').last().fill('yes');
+      await t.shot('joinery-data', { of: '[aria-label="Door and window data"] .dialog', pad: 0 });
+      await t.page.locator('[data-testid=joinery-data-save]').click();
+      await t.wait(900);
+      const type = (await t.nodes()).find((n) => n.id === window.id);
+      const names = (type.props.params ?? []).map((p) => p.name);
+      t.expect(['U-value', 'g-value', 'Safety glass', 'FireRating', 'Fittings', 'Sauna window'].every((n) => names.includes(n)), `the data is the type's parameters (${names.join(', ')})`);
+      t.expect((type.props.params ?? []).find((p) => p.name === 'FireRating')?.pset === 'Pset_WindowCommon', 'the fire rating is IFC\'s own');
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(400);
+      // A window selected: its frame position and its own data over the type's.
+      const fill = (await t.nodes()).find((n) => n.type === 'IfcWindow');
+      await select(t, fill.id);
+      await t.wait(900);
+      t.expect(await t.page.locator('aside.props [data-field=position-from]').count() === 1, 'a window offers its own frame position');
+      await t.page.locator('[data-testid=joinery-data]').click();
+      await t.page.waitForSelector('[data-testid=joinery-data-form]', { timeout: 10000 });
+      await t.page.locator('[data-field=fireRating]').fill('EI 60');
+      await t.page.locator('[data-testid=joinery-data-save]').click();
+      await t.wait(900);
+      const own = (await t.nodes()).find((n) => n.id === fill.id);
+      t.expect((own.props.params ?? []).some((p) => p.name === 'FireRating' && p.value === 'EI 60'), 'the window\'s own fire rating is its own');
+      t.expect(!(own.props.params ?? []).some((p) => p.name === 'U-value'), 'what is the type\'s stays the type\'s');
+      await t.shot('joinery-data-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+    },
+  },
+  {
+    // The kitchen's layouts (a tester's report #124): six kitchen types placed in plan — one wall, galley, L-shaped, U-shaped,
+    // island and peninsula, each with its sink, hob and tall unit — and the types dialog on the L-shaped one.
+    id: 'kitchen-layouts',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.fit();
+      await t.button('Interior', { exact: true });
+      const layouts = ['one-wall', 'galley', 'l-shaped', 'u-shaped', 'island', 'peninsula'];
+      const ids = {};
+      for (const [i, layout] of layouts.entries()) {
+        const type = (await t.cmd('furniture.createType', { kind: 'kitchen', layout })).id;
+        ids[layout] = type;
+        await t.cmd('furniture.place', { storeyId: s, typeId: type, x: (i % 3) * 5, y: Math.floor(i / 3) * 4.5, against: false });
+      }
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      const pieces = (await t.nodes()).filter((n) => n.type === 'IfcFurniture');
+      t.expect(pieces.length === 6, `six kitchens placed (${pieces.length})`);
+      await t.shot('kitchen-layouts', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('furniture.types');
+      await t.wait(400);
+      const lType = (await t.nodes()).find((n) => n.id === ids['l-shaped']);
+      await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: lType.name }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-param=layout] select').count() === 1, 'a kitchen type has its layout');
+      t.expect(await t.page.locator('.dialog [data-param=leg] input').count() === 1, 'an L has its leg');
+      t.expect(await t.page.locator('.dialog [data-param=gap]').count() === 0, 'what the layout does not use is not shown');
+      await t.shot('kitchen-layout-types', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
     // Furniture (docs/plan-furniture.md): a living room and a bedroom furnished — a sofa clicked by the wall (backed onto it),
     // armchairs, a coffee table, a table with chairs round it, a bed, bedside tables, a wardrobe, a kitchen drawn along a
     // wall — in plan by their symbols and in 3D; the types dialog with its preview; a piece's properties.

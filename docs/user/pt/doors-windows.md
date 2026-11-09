@@ -141,6 +141,24 @@ Em planta as faces são cortadas, o assento, o peitoril e a base desenhados sob 
 
 **Maçaneta** escolhe o puxador do tipo: uma **Alavanca**, uma **Bola**, um **Puxador** ou uma **Puxador de janela**, ou **Nenhum**. Por padrão, uma porta tem uma maçaneta de alavanca e uma janela uma manopla de janela. Uma porta tem o puxador nas duas faces, na **Altura da maçaneta** que você define; **Cor da maçaneta** define a sua cor. Os puxadores aparecem em 3D, nos cortes e nas elevações, e nos desenhos do configurador quando **Ferragens** está marcado.
 
+### Posição do aro e peitoris
+
+**Position in the wall** (posição na parede) define onde fica o aro na espessura da parede como um valor, não apenas centrado: escolha **From the exterior finish**, **From the core** ou **From the wall’s centre**, e **Set back**, quanto a face exterior do aro fica atrás dessa referência (a partir do centro, quanto o centro do aro). *From the exterior finish* e 50 mm põe o aro 50 mm atrás do reboco. O aro, as ombreiras, os peitoris e os símbolos de abertura acompanham, em plantas, cortes, 3D e IFC. Um tipo feito sem posição continua **Centred in the wall**. No painel de propriedades uma porta ou janela tem **Frame in the wall** para ter a sua própria posição (**As the type** a abandona) e **Set back** para a distância.
+
+![O configurador com o aro 50 mm atrás do acabamento exterior](shots/joinery-position.webp)
+
+O **Exterior sill** (peitoril exterior) tem uma **Slope** (inclinação) em graus (5° para começar; 15° para um metálico). Um peitoril inclinado cai afastando-se do aro e tira da parede tudo o que está por cima: o reboco, o núcleo e o emboço são cortados pela sua face superior inclinada, em 3D, em cortes e elevações e nas quantidades.
+
+### Dados: valor U, resistência ao fogo, ferragens
+
+**Data…**, sob o tipo no configurador (e no painel de propriedades, para as portas e janelas selecionadas), abre uma caixa de texto livre: **U-value**, **g-value**, **Safety glass** (laminado por dentro, temperado dos dois lados…), **Fire rating** (EI 30, EI2 60-C5…) e **Fittings**; **More data** acrescenta os seus, por exemplo *Sauna window* ou *Frosted glass*. Nada se escolhe de uma lista. O valor próprio de uma porta ou janela prevalece sobre o do tipo; um campo vazio volta ao do tipo (mostrado em cinza).
+
+![A caixa de dados de um tipo de janela](shots/joinery-data.webp)
+
+São os parâmetros do tipo: as tabelas de portas e janelas mostram cada um como uma linha, as etiquetas os leem como `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` e `{Fittings}`, e o IFC os guarda. A resistência ao fogo é `FireRating` de `Pset_WindowCommon` ou `Pset_DoorCommon`; um valor U legível como número (0.9 ou *0,9 W/m²K*) é também lá `ThermalTransmittance`, com `GlazingAreaFraction` para uma janela; o resto está no conjunto `Lapin_Joinery`.
+
+![Os dados próprios de uma janela no painel de propriedades](shots/joinery-data-properties.webp)
+
 ### Parâmetros
 
 **Parâmetros · nas tabelas**, embaixo no configurador, guarda os parâmetros próprios do tipo: **+ Resistência ao fogo** (guardada no Pset_DoorCommon ou no Pset_WindowCommon do IFC como FireRating), **+ Fabricante**, **+ Código do produto**, **+ Site**, ou qualquer parâmetro que você nomear. As portas e janelas do tipo os herdam, e cada um vira uma linha das tabelas de esquadrias: veja [Tabelas e gráficos](schedules.md).

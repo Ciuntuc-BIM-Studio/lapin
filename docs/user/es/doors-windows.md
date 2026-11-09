@@ -141,6 +141,24 @@ En planta las caras se cortan, el asiento, el vierteaguas y la base se dibujan b
 
 **Manilla** elige la manilla del tipo: **Manilla de palanca**, **Pomo**, **Tirador de barra**, **Manilla de ventana** o ninguna. Por defecto, una puerta lleva manilla de palanca y una ventana manilla de ventana. Una puerta tiene manilla en ambas caras, a la **Altura de la manilla** que se indique; **Color de la manilla** le da su color. Las manillas se ven en 3D, en secciones y alzados, y en los dibujos del configurador cuando está marcado **Herrajes**.
 
+### Posición del marco y alféizares
+
+**Position in the wall** (posición en el muro) fija dónde está el marco en el espesor del muro como un valor, no solo centrado: elige **From the exterior finish**, **From the core** o **From the wall’s centre**, y **Set back**, cuánto queda la cara exterior del marco detrás de esa referencia (desde el centro, cuánto el centro del marco). *From the exterior finish* y 50 mm pone el marco 50 mm detrás del revoco. El marco, las mochetas, los alféizares y los símbolos de apertura se mueven con él, en plantas, secciones, 3D e IFC. Un tipo hecho sin posición sigue **Centred in the wall**. En el panel de propiedades una puerta o ventana tiene **Frame in the wall** para darse su propia posición (**As the type** la abandona) y **Set back** para su distancia.
+
+![El configurador con el marco 50 mm detrás del acabado exterior](shots/joinery-position.webp)
+
+El **Exterior sill** (vierteaguas exterior) tiene una **Slope** (pendiente) en grados (5° al empezar; 15° para uno metálico). Un vierteaguas inclinado cae alejándose del marco y saca del muro todo lo que hay encima: el revoco, el núcleo y el enlucido se cortan según su cara superior inclinada, en 3D, en secciones y alzados y en las mediciones.
+
+### Datos: valor U, resistencia al fuego, herrajes
+
+**Data…**, bajo el tipo en el configurador (y en el panel de propiedades, para las puertas y ventanas seleccionadas), abre una caja de texto libre: **U-value**, **g-value**, **Safety glass** (laminado por el interior, templado por ambas caras…), **Fire rating** (EI 30, EI2 60-C5…) y **Fittings**; **More data** añade los tuyos, como *Sauna window* o *Frosted glass*. Nada se elige de una lista. El valor propio de una puerta o ventana prevalece sobre el del tipo; un campo vacío vuelve al del tipo (en gris).
+
+![La caja de datos de un tipo de ventana](shots/joinery-data.webp)
+
+Son los parámetros del tipo: las tablas de puertas y ventanas muestran cada uno como una fila, las etiquetas los leen como `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` y `{Fittings}`, y el IFC los conserva. La resistencia al fuego es `FireRating` de `Pset_WindowCommon` o `Pset_DoorCommon`; un valor U que se lee como número (0.9 o *0,9 W/m²K*) es también allí `ThermalTransmittance`, con `GlazingAreaFraction` para una ventana; el resto está en el conjunto `Lapin_Joinery`.
+
+![Los datos propios de una ventana en el panel de propiedades](shots/joinery-data-properties.webp)
+
 ### Parámetros
 
 **Parámetros · en tablas**, al pie del configurador, guarda los parámetros propios del tipo: **+ Resistencia al fuego** (guardada en Pset_DoorCommon o Pset_WindowCommon de IFC como FireRating), **+ Fabricante**, **+ Código de producto**, **+ Sitio web**, o cualquier parámetro al que dé nombre. Las puertas y ventanas del tipo los heredan, y cada uno se convierte en una fila de las tablas de carpintería: vea [Tablas y gráficos](schedules.md).

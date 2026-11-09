@@ -187,6 +187,17 @@ describe('Ask Lapin', () => {
     expect(best('the imported storey has the wrong level')).toBe('import-storeys');
   });
 
+  it('answers the testers of reports #76 and #124 in their own words', () => {
+    expect(best('Important are parameters: U-value, g-value, safety glass, fire rating, fittings, in separate dialogue boxes as free text')).toBe('joinery-data');
+    expect(best('cum pun valoarea U si sticla de siguranta la o fereastra ca text liber')).toBe('joinery-data');
+    expect(best('The position of window from exterior wall finish is not there, should be a value, for example 50 mm from ext. wall')).toBe('joinery-position');
+    expect(best('cum setez pozitia ferestrei in perete fata de finisajul exterior')).toBe('joinery-position');
+    expect(best('Normal metal 15 degree exterior sill does not work, it does not cut the wall')).toBe('sill-slope');
+    expect(best('solbancul exterior inclinat nu taie peretele')).toBe('sill-slope');
+    expect(best('Is it possible to create more kitchen types like: Galley, L shaped, U shaped, island and peninsula')).toBe('kitchen-layouts');
+    expect(best('vreau o bucatarie cu insula si peninsula in forma de U')).toBe('kitchen-layouts');
+  });
+
   it('says nothing to what it does not know', () => {
     expect(ask('weather tomorrow in Paris')).toEqual([]);
     expect(ask('can I render photorealistic images with ray tracing?')).toEqual([]);

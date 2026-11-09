@@ -141,6 +141,24 @@ In pianta le facce sono tagliate, seduta, davanzale e base disegnati sotto il ta
 
 **Maniglia** sceglie la maniglia del tipo: una **Maniglia a leva**, un **Pomolo**, un **Maniglione** o una **Maniglia per finestra**, oppure **Nessuno**. Per impostazione predefinita una porta ha una maniglia a leva e una finestra una maniglia per finestra. Una porta ha la maniglia su entrambe le facce, all’**Altezza della maniglia** che imposti; **Colore della maniglia** ne imposta il colore. Le maniglie si vedono in 3D, nelle sezioni e nei prospetti, e nei disegni del configuratore quando **Ferramenta** è spuntato.
 
+### Posizione del telaio e davanzali
+
+**Position in the wall** (posizione nel muro) stabilisce dove sta il telaio nello spessore del muro come valore, non solo centrato: scegli **From the exterior finish**, **From the core** o **From the wall’s centre**, e **Set back**, di quanto la faccia esterna del telaio sta dietro quel riferimento (dal centro, di quanto il centro del telaio). *From the exterior finish* e 50 mm mette il telaio 50 mm dietro l’intonaco. Il telaio, le mazzette, i davanzali e i simboli di apertura si spostano con lui, in piante, sezioni, 3D e IFC. Un tipo fatto senza posizione resta **Centred in the wall**. Nel pannello delle proprietà una porta o una finestra ha **Frame in the wall** per darsi una posizione propria (**As the type** la lascia) e **Set back** per la distanza.
+
+![Il configuratore con il telaio 50 mm dietro la finitura esterna](shots/joinery-position.webp)
+
+L’**Exterior sill** (davanzale esterno) ha una **Slope** (pendenza) in gradi (5° all’inizio; 15° per uno metallico). Un davanzale inclinato scende allontanandosi dal telaio e toglie dal muro tutto ciò che sta sopra: intonaco, nucleo e intonaco interno sono tagliati secondo la sua faccia superiore inclinata, in 3D, in sezioni e prospetti e nei computi.
+
+### Dati: valore U, resistenza al fuoco, ferramenta
+
+**Data…**, sotto il tipo nel configuratore (e nel pannello delle proprietà, per le porte e finestre selezionate), apre una casella di testo libero: **U-value**, **g-value**, **Safety glass** (stratificato all’interno, temperato su entrambi i lati…), **Fire rating** (EI 30, EI2 60-C5…) e **Fittings**; **More data** aggiunge i tuoi, per esempio *Sauna window* o *Frosted glass*. Niente si sceglie da un elenco. Il valore proprio di una porta o finestra prevale su quello del tipo; un campo vuoto torna a quello del tipo (mostrato in grigio).
+
+![La casella dei dati di un tipo di finestra](shots/joinery-data.webp)
+
+Sono i parametri del tipo: gli abachi di porte e finestre mostrano ciascuno come una riga, le etichette li leggono come `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` e `{Fittings}`, e l’IFC li conserva. La resistenza al fuoco è `FireRating` di `Pset_WindowCommon` o `Pset_DoorCommon`; un valore U leggibile come numero (0.9 o *0,9 W/m²K*) è anche lì `ThermalTransmittance`, con `GlazingAreaFraction` per una finestra; il resto è nell’insieme `Lapin_Joinery`.
+
+![I dati propri di una finestra nel pannello delle proprietà](shots/joinery-data-properties.webp)
+
 ### Parametri
 
 **Parametri · negli abachi**, in fondo al configuratore, contiene i parametri propri del tipo: **+ Resistenza al fuoco** (tenuta in Pset_DoorCommon o Pset_WindowCommon di IFC come FireRating), **+ Produttore**, **+ Codice prodotto**, **+ Sito web**, o qualsiasi parametro a cui dai un nome. Le porte e le finestre del tipo li ereditano, e ognuno diventa una riga degli abachi dei serramenti: vedi [Abachi e grafici](schedules.md).

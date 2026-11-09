@@ -79,7 +79,7 @@ public static class FurnitureBodies
     const string Sym = "symbol";
 
     /// <summary>Whether the kind is built mirrored for its hand (a corner sofa with its corner on the right is the left one mirrored).</summary>
-    public static bool Handed(Spec s) => s.Kind.Key == "cornerSofa" && s.Str("corner") == "right";
+    public static bool Handed(Spec s) => s.Kind.Key == "cornerSofa" && s.Str("corner") == "right" || KitchenLayouts.Handed(s);
 
     /// <summary>The piece built (its builder mirrored for <see cref="Handed"/> already): <paramref name="length"/> is a kitchen's own (its run's length).</summary>
     public static void Build(Builder b, Spec s, double? length = null)
@@ -104,7 +104,7 @@ public static class FurnitureBodies
     }
 
     /// <summary>The footprint's corners, which the kitchen's own length widens.</summary>
-    public static (double W, double D) Footprint(Spec s, double? length) => (s.Kind.Key == "kitchen" ? length ?? s.W : s.W, s.D);
+    public static (double W, double D) Footprint(Spec s, double? length) => s.Kind.Key == "kitchen" ? (length ?? s.W, KitchenLayouts.Depth(s)) : (s.W, s.D);
 
     static string Swap(string side) => side switch { "left" => "right", "right" => "left", _ => side };
 
@@ -441,75 +441,6 @@ public static class FurnitureBodies
 
     // ---- Kitchen ----
 
-    /// <summary>A straight kitchen run of length <paramref name="len"/>: base units, a worktop with the sink and the hob, wall units, a tall unit at one end.</summary>
-    static void Kitchen(Builder b, Spec s, double len)
-    {
-        double d = s.D, top = s.H, wt = s.Num("worktop", 0.04), pl = s.Num("plinth", 0.1), unit = s.Num("unit", 0.6);
-        var tall = s.Str("tall", "none");
-        double x0 = -len / 2, x1 = len / 2;
-        const double tw = 0.6, th = 2.15;
-        if (tall == "left" && len > tw + 0.3) x0 += tw;
-        else if (tall == "right" && len > tw + 0.3) x1 -= tw;
-        else tall = "none";
-        var run = x1 - x0;
-        var n = Math.Max(1, (int)Math.Round(run / unit));
-        var uw = run / n;
-        b.Block("body", x0, x1, -d / 2 + 0.07, d / 2, 0, pl);
-        b.Block("body", x0, x1, -d / 2 + 0.04, d / 2, pl, top - wt);
-        for (var i = 0; i < n; i++)
-        {
-            double a = x0 + i * uw + 0.0015, e = x0 + (i + 1) * uw - 0.0015;
-            // The top drawer over a door, as kitchen base units are.
-            b.Block("fronts", a, e, -d / 2 + 0.022, -d / 2 + 0.04, top - wt - 0.16, top - wt - 0.003, 0.002);
-            b.Block("fronts", a, e, -d / 2 + 0.022, -d / 2 + 0.04, pl + 0.003, top - wt - 0.163, 0.002);
-            var mid = (a + e) / 2;
-            b.Block("metal", mid - 0.07, mid + 0.07, -d / 2 + 0.0, -d / 2 + 0.022, top - wt - 0.05, top - wt - 0.038);
-            if (i > 0) b.Line(Sym, (a - 0.0015, -d / 2), (a - 0.0015, -d / 2 + 0.04));
-        }
-        b.Block("top", x0, x1, -d / 2, d / 2, top - wt, top, 0.003);
-        b.PlanRect(Sym, x0, x1, -d / 2, d / 2);
-        // The sink, its tap; the hob's glass and rings.
-        double At(double f, double half) => Math.Clamp(x0 + f * run, x0 + half + 0.03, x1 - half - 0.03);
-        if (run >= 0.6)
-        {
-            var xs = At(s.Num("sinkAt", 0.3), 0.25);
-            b.Block("metal", xs - 0.25, xs + 0.25, -0.2, 0.2, top, top + 0.004, 0.02);
-            b.Cylinder("metal", xs, d / 2 - 0.07, 0.016, top, top + 0.3, 10);
-            b.PlanRect(Sym, xs - 0.25, xs + 0.25, -0.2, 0.2, 0.02);
-            b.PlanRect(Sym, xs - 0.2, xs + 0.2, -0.16, 0.16, 0.05);
-            b.Circle(Sym, xs, 0.06, 0.025, 12);
-        }
-        if (run >= 1.2)
-        {
-            var xh = At(s.Num("hobAt", 0.72), 0.3);
-            b.Block("glass", xh - 0.29, xh + 0.29, -0.25, 0.25, top, top + 0.006, 0.01);
-            b.PlanRect(Sym, xh - 0.29, xh + 0.29, -0.25, 0.25, 0.01);
-            foreach (var (cx, cy, r) in new[] { (-0.14, -0.11, 0.09), (0.14, -0.11, 0.07), (-0.14, 0.12, 0.07), (0.14, 0.12, 0.09) })
-                b.Circle(Sym, xh + cx, cy, r, 16);
-        }
-        if (s.Bool("wallUnits"))
-        {
-            double wf = s.Num("wallFrom", 1.45), wh = s.Num("wallHeight", 0.72), wd = Math.Min(d, s.Num("wallDepth", 0.35));
-            b.Block("body", x0, x1, d / 2 - wd + 0.018, d / 2, wf, wf + wh);
-            for (var i = 0; i < n; i++)
-            {
-                double a = x0 + i * uw + 0.0015, e = x0 + (i + 1) * uw - 0.0015;
-                b.Block("fronts", a, e, d / 2 - wd, d / 2 - wd + 0.018, wf + 0.002, wf + wh - 0.002, 0.002);
-            }
-            b.PlanRect("overhead", x0, x1, d / 2 - wd, d / 2);
-        }
-        if (tall != "none")
-        {
-            double a = tall == "left" ? -len / 2 : x1, e = a + tw;
-            b.Block("body", a, e, -d / 2 + 0.04, d / 2, 0, pl);
-            b.Block("body", a, e, -d / 2 + 0.022, d / 2, pl, th);
-            b.Block("fronts", a + 0.0015, e - 0.0015, -d / 2, -d / 2 + 0.022, pl + 0.003, pl + 1.2, 0.002);
-            b.Block("fronts", a + 0.0015, e - 0.0015, -d / 2, -d / 2 + 0.022, pl + 1.203, th - 0.003, 0.002);
-            var hx = tall == "left" ? e - 0.05 : a + 0.05;
-            b.Block("metal", hx - 0.007, hx + 0.007, -d / 2 - 0.025, -d / 2, pl + 0.9, pl + 1.15);
-            b.PlanRect(Sym, a, e, -d / 2, d / 2);
-            b.Line(Sym, (a, -d / 2), (e, d / 2));
-            b.Line(Sym, (a, d / 2), (e, -d / 2));
-        }
-    }
+    /// <summary>A kitchen of the main run's length <paramref name="len"/> in its layout (<see cref="KitchenLayouts"/>): runs of base units with a worktop, the sink and the hob, wall units, a tall unit.</summary>
+    static void Kitchen(Builder b, Spec s, double len) => KitchenLayouts.Build(b, s, len);
 }

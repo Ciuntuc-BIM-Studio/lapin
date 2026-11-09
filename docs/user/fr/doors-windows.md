@@ -141,6 +141,24 @@ En plan, les faces sont coupées, l'assise, l'appui et la base dessinés sous la
 
 **Poignée** choisit la poignée du type : **Béquille**, **Bouton**, **Barre de tirage**, **Poignée de fenêtre** ou aucune. Par défaut, une porte a une béquille et une fenêtre une poignée de fenêtre. Une porte a sa poignée sur les deux faces, à la **Hauteur de la poignée** indiquée ; **Couleur de la poignée** règle sa couleur. Les poignées se voient en 3D, en coupe et en élévation, et dans les dessins du configurateur quand **Quincaillerie** est cochée.
 
+### Position du cadre et appuis
+
+**Position in the wall** (position dans le mur) fixe où se trouve le cadre dans l’épaisseur du mur comme une valeur, et non seulement centré : choisissez **From the exterior finish**, **From the core** ou **From the wall’s centre**, puis **Set back**, de combien la face extérieure du cadre est en retrait de cette référence (depuis le centre, de combien le centre du cadre). *From the exterior finish* et 50 mm place le cadre à 50 mm derrière l’enduit. Le cadre, les embrasures, les appuis et les symboles d’ouverture suivent, en plans, coupes, 3D et IFC. Un type fait sans position reste **Centred in the wall**. Dans le panneau des propriétés, une porte ou une fenêtre a **Frame in the wall** pour se donner sa propre position (**As the type** l’abandonne) et **Set back** pour sa distance.
+
+![Le configurateur avec le cadre à 50 mm derrière la finition extérieure](shots/joinery-position.webp)
+
+L’**Exterior sill** (appui extérieur) a une **Slope** (pente) en degrés (5° au départ ; 15° pour un appui métallique). Un appui incliné s’éloigne du cadre en descendant et retire du mur tout ce qui le surmonte : l’enduit, le noyau et le plâtre sont coupés selon sa face supérieure inclinée, en 3D, en coupes et élévations et dans les quantités.
+
+### Données : valeur U, résistance au feu, quincaillerie
+
+**Data…**, sous le type dans le configurateur (et dans le panneau des propriétés, pour les portes et fenêtres sélectionnées), ouvre une boîte de texte libre : **U-value**, **g-value**, **Safety glass** (feuilleté côté intérieur, trempé des deux côtés…), **Fire rating** (EI 30, EI2 60-C5…) et **Fittings** ; **More data** ajoute les vôtres, par exemple *Sauna window* ou *Frosted glass*. Rien ne se choisit dans une liste. La valeur propre d’une porte ou d’une fenêtre l’emporte sur celle de son type ; un champ vide revient à celle du type (affichée en gris).
+
+![La boîte de données d’un type de fenêtre](shots/joinery-data.webp)
+
+Ce sont les paramètres du type : les nomenclatures de portes et fenêtres montrent chacun comme une ligne, les étiquettes les lisent comme `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` et `{Fittings}`, et l’IFC les conserve. La résistance au feu est `FireRating` de `Pset_WindowCommon` ou `Pset_DoorCommon` ; une valeur U lisible comme un nombre (0.9 ou *0,9 W/m²K*) y est aussi `ThermalTransmittance`, avec `GlazingAreaFraction` pour une fenêtre ; le reste est dans le jeu `Lapin_Joinery`.
+
+![Les données propres d’une fenêtre dans le panneau des propriétés](shots/joinery-data-properties.webp)
+
 ### Paramètres
 
 **Paramètres · dans les nomenclatures**, en bas du configurateur, contient les paramètres propres du type : **+ Résistance au feu** (rangée dans Pset_DoorCommon ou Pset_WindowCommon d’IFC comme FireRating), **+ Fabricant**, **+ Code produit**, **+ Site web**, ou tout paramètre que vous nommez. Les portes et fenêtres du type en héritent, et chacun devient une ligne des nomenclatures des menuiseries : voir [Nomenclatures et graphiques](schedules.md).

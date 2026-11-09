@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
-import { furnitureGrips, planBox, planPaths, sizeOf, typesOfKind, type FurnitureKind, type PreviewDto } from './furniture';
+import { appliesTo, furnitureGrips, planBox, planPaths, sizeOf, typesOfKind, type FurnitureKind, type KindParam, type PreviewDto } from './furniture';
 
 const node = (id: string, type: string, props: Record<string, unknown>, name = id): NodeDto => ({ id, type, name, props } as unknown as NodeDto);
 
@@ -35,5 +35,19 @@ describe('furniture', () => {
     expect(planPaths(p)[0].d).toBe('M0.0000 0.0000 L1.0000 0.0000 L1.0000 -0.5000 Z');
     const [x, y, w, h] = planBox(p, 0);
     expect([x, y, w, h]).toEqual([0, -0.5, 1, 0.5]);
+  });
+});
+
+describe('a kitchen’s layouts (report #124)', () => {
+  const params = [
+    { key: 'layout', label: 'Layout', kind: 'choice' },
+    { key: 'leg', label: 'Leg', kind: 'length', layouts: ['l-shaped', 'u-shaped'] },
+    { key: 'unit', label: 'Unit', kind: 'length' },
+  ] as KindParam[];
+
+  it('shows the parameters the layout uses, the layout of the spec or else the kind’s', () => {
+    const defaults = { layout: 'one-wall' };
+    expect(params.filter((p) => appliesTo(p, {}, defaults)).map((p) => p.key)).toEqual(['layout', 'unit']);
+    expect(params.filter((p) => appliesTo(p, { layout: 'u-shaped' }, defaults)).map((p) => p.key)).toEqual(['layout', 'leg', 'unit']);
   });
 });

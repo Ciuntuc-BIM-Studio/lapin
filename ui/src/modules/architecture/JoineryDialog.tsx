@@ -25,6 +25,7 @@ import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
 import { JoineryPreview3D } from './JoineryPreview3D';
 import { merge, neighbour, normalised, resized, shifted, split, type GridSpec } from './joineryGrid';
+import { JoineryDataButton } from './JoineryData';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
@@ -67,7 +68,11 @@ interface Spec {
   sashSection?: LibrarySection | null;
   /** The style last applied (a key of JOINERY_STYLES; report #111): its select shows it, "(modified)" once a field differs. */
   style?: string | null;
+  /** The frame's place across the wall as a value (report #76); none: the frame's offset (centred). */
+  position?: Position | null;
 }
+/** From the wall's exterior finish face, its core's exterior face or its middle plane, the frame (its outer face; from the middle, its centre) this far back. */
+export interface Position { from: 'exterior' | 'core' | 'centre'; distance: number }
 /** The parts' materials by name (report #76); a part without one keeps its colour. */
 interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
 type MaterialPart = keyof Materials;
@@ -730,6 +735,12 @@ export function JoineryDialog() {
               {spec.kind === 'window' && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
               <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v }, frameSection: null })} />
               <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v }, frameSection: null })} />
+              <label className="field-line"><span className="eyebrow">Position in the wall</span>
+                <select data-field="position-from" title="Where the frame sits across the wall, as a value from a face of the wall" value={spec.position?.from ?? ''}
+                  onChange={(e) => set({ position: e.target.value ? { from: e.target.value as Position['from'], distance: spec.position?.distance ?? 0 } : null })}>
+                  <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option>
+                </select></label>
+              {spec.position && <Mm label="Set back" value={spec.position.distance} onChange={(v) => set({ position: { ...spec.position!, distance: v } })} />}
               <Mm label="Mullion width" value={spec.frame.mullion} onChange={(v) => set({ frame: { ...spec.frame, mullion: v } })} />
               <Mm label="Transom width" value={spec.frame.transom} onChange={(v) => set({ frame: { ...spec.frame, transom: v } })} />
               <label className="field-line"><span className="eyebrow">Frame from a library</span><ProfilePickerField testId="joinery-frame-library" value={spec.frameSection?.name ?? null} onPick={(p, library) => pickMemberProfile('frame', p, library)} />
@@ -795,6 +806,8 @@ export function JoineryDialog() {
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               <HardwareFields spec={spec} onChange={set} />
               {spec.kind === 'door' && !spec.materials?.leaf && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
+              <p className="eyebrow">Data</p>
+              {editing ? <JoineryDataButton type={model.nodes.get(editing) ?? null} /> : <p className="muted small">Save the type to give it data (U-value, g-value, safety glass, fire rating, fittings).</p>}
               <TypeParams typeId={editing} kind={spec.kind} />
             </div>
             <div className="joinery-preview">

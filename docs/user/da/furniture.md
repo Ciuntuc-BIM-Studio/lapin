@@ -1,7 +1,7 @@
 ---
 title: Møbler
 order: 47
-summary: Sofaer, hjørnesofaer, lænestole, stole, senge, garderobeskabe, kommoder, reoler, skænke, borde, skriveborde og lige køkkener ud fra parametriske typer, stillet op ad vægge med et klik.
+summary: Sofaer, hjørnesofaer, lænestole, stole, senge, garderobeskabe, kommoder, reoler, skænke, borde, skriveborde og køkkener i seks indretninger ud fra parametriske typer, stillet op ad vægge med et klik.
 ---
 
 ## Placér møbler
@@ -42,6 +42,18 @@ Facader og snit tegner kroppene med deres materialers skraveringer. I 3D er møb
 - det har bordplade, vask og kogeplade (hvor de står langs køkkenet, indstilles på typen), overskabe ovenover og et højskab til køleskabet i den ene ende.
 
 Et køkkens **Længde** kan stadig ændres i egenskaberne; skabene deles igen.
+
+### Køkkenets indretninger
+
+En køkkentype har en **Layout** (indretning): **One wall** (den lige række), **Galley** (to parallelle rækker med en gang imellem), **L-shaped**, **U-shaped**, **Island** (en række på bagvæggen og en fritstående ø med sin gang) eller **Peninsula** (et L med en række, der rager ud fra benet, med bordpladen overhængende til barstole). Når du vælger en, starter typen fra indretningens mål, og hvert mål kan redigeres ved siden af forhåndsvisningen: benenes længde fra bagvæggen, gangen mellem rækkerne, den modstående rækkes længde, øens længde, dybde og placering, halvøens længde og overhæng og, for et L eller en halvø, hjørnet til venstre eller højre.
+
+![De seks indretninger i plan: én væg, parallel, L, U, ø og halvø](shots/kitchen-layouts.webp)
+
+**Sink on** og **Hob on** sætter dem på hovedrækken eller på den anden del (benet, den modstående række, øen, halvøen), **Sink at** og **Hob at** siger hvor langs den, og **Tall unit (fridge)** står i en fri ende. Hjørneskabene er blinde; overskabe er kun på rækker mod en væg, ikke på en ø eller en halvø.
+
+![En køkkentype: L-formet](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) tegner enhver indretning med to punkter langs den væg, hovedrækken står mod: linjen er dens længde, ryggen på væggens flade, og et L, en halvø, et U eller et parallelkøkken skubbes ind i det hjørne eller mellem de vægge, det tegnes nær. **Flip** giver et L eller en halvø hjørnet på den anden side. Møbelskemaet nævner indretningen og fodaftrykkets dybde. I IFC forbliver det et IfcFurniture af en brugerdefineret Kitchen-type.
 
 ## Et møbels egenskaber
 

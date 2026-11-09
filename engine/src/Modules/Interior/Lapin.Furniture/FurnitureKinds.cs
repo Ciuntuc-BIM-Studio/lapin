@@ -6,7 +6,7 @@ using Lapin.Platform;
 namespace Lapin.Furniture;
 
 /// <summary>A parameter of a furniture kind, as the types dialog edits it: a length, a number, a choice or a switch.</summary>
-public sealed record KindParam(string Key, string Label, string Kind, double? Min = null, double? Max = null, string[]? Choices = null);
+public sealed record KindParam(string Key, string Label, string Kind, double? Min = null, double? Max = null, string[]? Choices = null, string[]? Layouts = null);
 
 /// <summary>
 /// A kind of furniture (docs/plan-furniture.md, Felurile): its key, label, group, IFC predefined type (USERDEFINED with
@@ -24,6 +24,7 @@ public sealed record FurnitureKind(string Key, string Label, string Group, strin
         {
             ["key"] = p.Key, ["label"] = p.Label, ["kind"] = p.Kind, ["min"] = p.Min, ["max"] = p.Max,
             ["choices"] = p.Choices is { } c ? new JsonArray([.. c.Select(x => (JsonNode)x)]) : null,
+            ["layouts"] = p.Layouts is { } ly ? new JsonArray([.. ly.Select(x => (JsonNode)x)]) : null,
         })]),
         ["defaults"] = Defaults.DeepClone(),
         ["roles"] = new JsonArray([.. Roles.Select(r => (JsonNode)r)]),
@@ -50,6 +51,8 @@ public static class FurnitureKinds
     static KindParam L(string k, string l, double min = 0, double max = 3) => new(k, l, "length", min, max);
     static KindParam N(string k, string l, double min, double max) => new(k, l, "number", min, max);
     static KindParam C(string k, string l, params string[] c) => new(k, l, "choice", Choices: c);
+    /// <summary>A parameter shown (and used) for some of the kitchen's layouts only.</summary>
+    static KindParam In(KindParam p, params string[] layouts) => p with { Layouts = layouts };
     static KindParam B(string k, string l) => new(k, l, "bool");
     static JsonObject D(params (string Key, JsonNode? Value)[] v) { var o = new JsonObject(); foreach (var (k, x) in v) o[k] = x; return o; }
 
@@ -122,12 +125,26 @@ public static class FurnitureKinds
             ["top", "fronts", "metal"]),
         new("kitchen", "Kitchen", "Kitchen", "USERDEFINED", "Kitchen", 3.0, 0.6, 0.9,
         [
+            C("layout", "Layout", KitchenLayouts.Keys),
             L("worktop", "Worktop thickness", 0.01, 0.08), L("plinth", "Plinth", 0, 0.2), L("unit", "Base unit width", 0.3, 1.2),
-            N("sinkAt", "Sink at (0–1 along)", 0, 1), N("hobAt", "Hob at (0–1 along)", 0, 1), B("wallUnits", "Wall units"),
+            In(C("corner", "Corner on the", "left", "right"), "l-shaped", "peninsula"),
+            In(L("leg", "Leg length from the back wall", 1.2, 6), "l-shaped", "u-shaped", "peninsula"),
+            In(L("leg2", "Second leg length", 1.2, 6), "u-shaped"),
+            In(L("gap", "Aisle between the runs", 0.8, 3), "galley", "island"),
+            In(L("secondRun", "Opposite run length (0: as long as the first)", 0, 12), "galley"),
+            In(L("islandLength", "Island length", 0.6, 6), "island"),
+            In(L("islandDepth", "Island depth", 0.6, 1.6), "island"),
+            In(N("islandAt", "Island at (0–1 along)", 0, 1), "island"),
+            In(L("peninsula", "Peninsula length", 0.6, 4), "peninsula"),
+            In(L("overhang", "Worktop overhang for stools", 0, 0.5), "peninsula"),
+            C("sinkOn", "Sink on", "run", "other"), N("sinkAt", "Sink at (0–1 along)", 0, 1),
+            C("hobOn", "Hob on", "run", "other"), N("hobAt", "Hob at (0–1 along)", 0, 1), B("wallUnits", "Wall units"),
             L("wallFrom", "Wall units from", 1.2, 1.8), L("wallHeight", "Wall unit height", 0.3, 1.2), L("wallDepth", "Wall unit depth", 0.2, 0.5),
             C("tall", "Tall unit (fridge)", "none", "left", "right"),
         ],
-            D(("worktop", 0.04), ("plinth", 0.1), ("unit", 0.6), ("sinkAt", 0.3), ("hobAt", 0.72), ("wallUnits", true), ("wallFrom", 1.45), ("wallHeight", 0.72), ("wallDepth", 0.35), ("tall", "right")),
+            D(("layout", "one-wall"), ("worktop", 0.04), ("plinth", 0.1), ("unit", 0.6), ("corner", "left"), ("leg", 2.4), ("leg2", 2.4), ("gap", 1.2), ("secondRun", 0.0),
+              ("islandLength", 1.8), ("islandDepth", 0.9), ("islandAt", 0.5), ("peninsula", 1.2), ("overhang", 0.3), ("sinkOn", "run"), ("sinkAt", 0.3), ("hobOn", "run"), ("hobAt", 0.72),
+              ("wallUnits", true), ("wallFrom", 1.45), ("wallHeight", 0.72), ("wallDepth", 0.35), ("tall", "right")),
             ["body", "fronts", "top", "metal", "glass"]),
     ];
 

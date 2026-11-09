@@ -149,6 +149,24 @@ Tocurile, cercevelele, sticla și mânerele sunt ale tipului, deci materialele �
 
 **Mâner** alege mânerul tipului: **Clanță**, **Buton**, **Bară de tragere**, **Mâner de fereastră** sau niciunul. Implicit, o ușă are clanță, iar o fereastră mâner de fereastră. O ușă are mâner pe ambele fețe, la **Înălțimea mânerului** pe care o dai; **Culoarea mânerului** îi dă culoarea. Mânerele se văd în 3D, în secțiuni și fațade, și în desenele configuratorului când e bifată **Feronerie**.
 
+### Poziția tocului și solbancurile
+
+**Position in the wall** (poziția în perete) stabilește unde stă tocul pe grosimea peretelui ca valoare, nu doar centrat: alege **From the exterior finish**, **From the core** sau **From the wall’s centre**, apoi **Set back**, cât de în spatele acelei referințe e fața exterioară a tocului (de la centru, cât de departe e centrul tocului). *From the exterior finish* și 50 mm pune tocul la 50 mm în spatele tencuielii. Tocul, șpaleții, solbancurile și simbolurile de deschidere se mută odată cu el, în planuri, secțiuni, 3D și IFC. Un tip făcut fără poziție rămâne **Centred in the wall**. În panoul de proprietăți, o ușă sau o fereastră are **Frame in the wall** ca să-și dea o poziție proprie (**As the type** o lasă pe a tipului) și **Set back** pentru distanța ei.
+
+![Configuratorul cu tocul la 50 mm în spatele finisajului exterior](shots/joinery-position.webp)
+
+**Exterior sill** (solbancul exterior) are o **Slope** (pantă) în grade (5° la început; 15° pentru un solbanc metalic). Un solbanc înclinat coboară dinspre toc și scoate din perete tot ce e deasupra lui: tencuiala, miezul și glaful sunt tăiate după fața lui înclinată, în 3D, în secțiuni și fațade și în cantități.
+
+### Date: valoarea U, rezistența la foc, feronerie
+
+**Data…**, sub tip în configurator (și în panoul de proprietăți, pentru ușile și ferestrele selectate), deschide o casetă de text liber: **U-value**, **g-value**, **Safety glass** (laminată pe interior, securizată pe ambele fețe…), **Fire rating** (EI 30, EI2 60-C5…) și **Fittings**; **More data** adaugă oricâte ale tale, de exemplu *Sauna window* sau *Frosted glass*. Nimic nu se alege dintr-o listă. Valoarea proprie a unei uși sau ferestre are prioritate față de cea a tipului; un câmp gol revine la a tipului (arătată șters).
+
+![Caseta de date a unui tip de fereastră](shots/joinery-data.webp)
+
+Sunt parametrii tipului: extrasele de uși și ferestre arată fiecare pe un rând, etichetele le citesc ca `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` și `{Fittings}`, iar IFC le păstrează. Rezistența la foc este `FireRating` din `Pset_WindowCommon` sau `Pset_DoorCommon`; o valoare U care se citește ca număr (0.9 sau *0,9 W/m²K*) este acolo `ThermalTransmittance`, cu `GlazingAreaFraction` pentru fereastră; restul e în setul `Lapin_Joinery`.
+
+![Datele proprii ale unei ferestre în panoul de proprietăți](shots/joinery-data-properties.webp)
+
 ### Parametri
 
 **Parametri · în extrase**, în partea de jos a configuratorului, ține parametrii proprii ai tipului: **+ Rezistență la foc** (păstrată în Pset_DoorCommon sau Pset_WindowCommon din IFC ca FireRating), **+ Producător**, **+ Cod produs**, **+ Site web** sau orice parametru căruia îi dai un nume. Ușile și ferestrele tipului îi moștenesc, și fiecare devine un rând al extraselor de tâmplărie: vezi [Extrase și grafice](schedules.md).

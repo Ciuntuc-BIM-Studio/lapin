@@ -149,6 +149,24 @@ In a plan the faces are cut, the seat, sill and base are drawn below the cut and
 
 **Handle** picks the handle of the type: a **Lever**, a **Knob**, a **Pull bar** or a **Window handle**, or **None**. By default a door has a lever and a window a window handle. A door has its handle on both faces, at the **Handle height** you set; **Handle colour** sets its colour. Handles show in 3D, in sections and elevations, and in the configurator's drawings when **Hardware** is ticked.
 
+### Frame position and sills
+
+**Position in the wall** sets where the frame sits across the wall as a value, not only centred: choose **From the exterior finish**, **From the core** or **From the wall’s centre**, and **Set back**, how far the frame’s outer face is behind that reference (from the centre, how far the frame’s centre is). *From the exterior finish* and 50 mm puts the frame 50 mm behind the render. The frame, the reveals, the sills and the opening symbols move with it, in plans, sections, 3D and IFC. A type made without a position stays **Centred in the wall**. In the properties panel a door or window has **Frame in the wall** to give itself its own position (**As the type** gives it up) and **Set back** for its distance.
+
+![The configurator with the frame 50 mm back from the exterior finish](shots/joinery-position.webp)
+
+The **Exterior sill** has a **Slope** in degrees (5° to start; 15° for a metal sill). A sloped sill falls away from the frame and takes everything over it out of the wall: the render, the core and the plaster are cut to its sloping top face, in 3D, in sections and elevations, and in the quantities.
+
+### Data: U-value, fire rating, fittings
+
+**Data…**, under the type in the configurator (and in the properties panel, for the doors and windows selected), opens a box of free text: **U-value**, **g-value**, **Safety glass** (laminated inside, tempered both sides…), **Fire rating** (EI 30, EI2 60-C5…) and **Fittings**; **More data** adds any of your own, such as *Sauna window* or *Frosted glass*. Nothing is chosen from a list. A door or window’s own value wins over its type’s; an empty field falls back to the type’s (shown greyed).
+
+![The data box of a window type](shots/joinery-data.webp)
+
+They are the type’s parameters: the door and window schedules show each as a row, tags read them as `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` and `{Fittings}`, and IFC keeps them. The fire rating is `FireRating` of `Pset_WindowCommon` or `Pset_DoorCommon`; a U-value that reads as a number (0.9, or *0,9 W/m²K*) is `ThermalTransmittance` there too, with `GlazingAreaFraction` for a window; the rest is in the set `Lapin_Joinery`.
+
+![A window’s own data in the properties panel](shots/joinery-data-properties.webp)
+
 ### Parameters
 
 **Parameters · in schedules**, at the bottom of the configurator, holds the type's own parameters: **+ Fire rating** (kept in IFC's Pset_DoorCommon or Pset_WindowCommon as FireRating), **+ Manufacturer**, **+ Product code**, **+ Website**, or any parameter you name. The type's doors and windows inherit them, and each one becomes a row of the joinery schedules: see [Schedules and charts](schedules.md).

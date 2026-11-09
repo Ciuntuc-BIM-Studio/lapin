@@ -26,10 +26,13 @@ static class FurnitureRooms
 
     public static string Label(Entity? room) => room == null ? "" : room.Str("number") is { Length: > 0 } n ? $"{n} {room.Name}" : room.Name;
 
+    /// <summary>A kind's label; a kitchen's with its layout when it is not the straight one.</summary>
+    public static string KindLabel(Spec s) => s.Kind.Key == "kitchen" && KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} · {KitchenLayouts.Label(l)}" : s.Kind.Label;
+
     public static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
 
     public static string Size(Entity e, Spec s) => s.Kind.Key == "kitchen"
-        ? $"{Mm(e.NumOrNull("length") ?? s.W)} × {Mm(s.D)} × {Mm(s.H)}"
+        ? $"{Mm(e.NumOrNull("length") ?? s.W)} × {Mm(KitchenLayouts.Depth(s))} × {Mm(s.H)}"
         : $"{Mm(s.W)} × {Mm(s.D)} × {Mm(s.H)}";
 }
 
@@ -50,7 +53,7 @@ public sealed class FurnitureSchedule : IScheduleSource
             {
                 var s = new Spec(g.First().T?.Attrs["spec"] as JsonObject);
                 var where = g.Select(x => FurnitureRooms.Label(rooms.GetValueOrDefault(x.E.Id))).Where(x => x.Length > 0).Distinct().OrderBy(x => x, StringComparer.Ordinal);
-                return (Group: FurnitureKinds.All.ToList().IndexOf(s.Kind), Row: (IReadOnlyList<string>)[g.First().T?.Name ?? g.First().E.Name, s.Kind.Label, g.Key.Size, g.Count().ToString(CultureInfo.InvariantCulture), string.Join(", ", where)], Key: g.First().T?.Id);
+                return (Group: FurnitureKinds.All.ToList().IndexOf(s.Kind), Row: (IReadOnlyList<string>)[g.First().T?.Name ?? g.First().E.Name, FurnitureRooms.KindLabel(s), g.Key.Size, g.Count().ToString(CultureInfo.InvariantCulture), string.Join(", ", where)], Key: g.First().T?.Id);
             })
             .OrderBy(x => x.Group).ThenBy(x => x.Row[0], StringComparer.Ordinal).ToList();
         var rows = groups.Select(x => x.Row).ToList();
@@ -84,7 +87,7 @@ public sealed class FurnitureByRoom : IScheduleSource
             foreach (var t in g.GroupBy(e => FurnitureModule.TypeOf(m, e)?.Id ?? e.Id).OrderBy(t => t.First().Name, StringComparer.Ordinal))
             {
                 var s = new Spec(FurnitureModule.TypeOf(m, t.First())?.Attrs["spec"] as JsonObject);
-                rows.Add([first ? label : "", t.First().Name, s.Kind.Label, t.Count().ToString(CultureInfo.InvariantCulture)]);
+                rows.Add([first ? label : "", t.First().Name, FurnitureRooms.KindLabel(s), t.Count().ToString(CultureInfo.InvariantCulture)]);
                 first = false;
             }
         }

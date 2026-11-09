@@ -141,6 +141,24 @@ W rzucie ściany są przecięte, siedzisko, parapet i podstawa rysowane poniżej
 
 **Klamka** wybiera klamkę typu: **Klamka**, **Gałka**, **Pochwyt** lub **Klamka okienna** albo **Brak**. Domyślnie drzwi mają klamkę dźwigniową, a okno klamkę okienną. Drzwi mają klamkę po obu stronach, na wysokości z pola **Wysokość klamki**; **Kolor klamki** ustala jej kolor. Klamki są widoczne w 3D, na przekrojach i elewacjach oraz na rysunkach konfiguratora, gdy zaznaczone jest **Okucia**.
 
+### Położenie ramy i parapety
+
+**Position in the wall** (położenie w ścianie) ustala, gdzie w grubości ściany leży rama, jako wartość, a nie tylko wyśrodkowanie: wybierz **From the exterior finish**, **From the core** lub **From the wall’s centre** i **Set back**, o ile zewnętrzna płaszczyzna ramy leży za tym odniesieniem (od środka: o ile środek ramy). *From the exterior finish* i 50 mm ustawia ramę 50 mm za tynkiem. Rama, ościeża, parapety i symbole otwierania przesuwają się razem z nią, w rzutach, przekrojach, 3D i IFC. Typ zrobiony bez położenia pozostaje **Centred in the wall**. W panelu właściwości drzwi lub okno mają **Frame in the wall**, by nadać sobie własne położenie (**As the type** z niego rezygnuje) i **Set back** na odległość.
+
+![Konfigurator z ramą 50 mm za wykończeniem zewnętrznym](shots/joinery-position.webp)
+
+**Exterior sill** (parapet zewnętrzny) ma **Slope** (spadek) w stopniach (na początek 5°; 15° dla metalowego). Pochylony parapet opada od ramy i zabiera ze ściany wszystko, co nad nim: tynk, rdzeń i tynk wewnętrzny są cięte wzdłuż jego pochylonej górnej powierzchni, w 3D, w przekrojach i widokach oraz w przedmiarach.
+
+### Dane: wartość U, odporność ogniowa, okucia
+
+**Data…**, pod typem w konfiguratorze (i w panelu właściwości, dla zaznaczonych drzwi i okien), otwiera okno z dowolnym tekstem: **U-value**, **g-value**, **Safety glass** (klejone od wewnątrz, hartowane obustronnie…), **Fire rating** (EI 30, EI2 60-C5…) i **Fittings**; **More data** dodaje własne, na przykład *Sauna window* lub *Frosted glass*. Nic nie wybiera się z listy. Własna wartość drzwi lub okna ma pierwszeństwo przed wartością typu; puste pole wraca do wartości typu (pokazanej na szaro).
+
+![Okno danych typu okna](shots/joinery-data.webp)
+
+To parametry typu: zestawienia drzwi i okien pokazują każdy jako wiersz, opisy czytają je jako `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` i `{Fittings}`, a IFC je zachowuje. Odporność ogniowa to `FireRating` z `Pset_WindowCommon` lub `Pset_DoorCommon`; wartość U czytelna jako liczba (0.9 lub *0,9 W/m²K*) jest tam też `ThermalTransmittance`, a dla okna także `GlazingAreaFraction`; reszta jest w zestawie `Lapin_Joinery`.
+
+![Własne dane okna w panelu właściwości](shots/joinery-data-properties.webp)
+
 ### Parametry
 
 **Parametry · w zestawieniach**, u dołu konfiguratora, zawiera własne parametry typu: **+ Odporność ogniowa** (zapisywana w Pset_DoorCommon lub Pset_WindowCommon IFC jako FireRating), **+ Producent**, **+ Kod produktu**, **+ Strona internetowa** lub dowolny parametr, który nazwiesz. Drzwi i okna tego typu je dziedziczą, a każdy staje się wierszem zestawień stolarki: zobacz [Zestawienia i wykresy](schedules.md).

@@ -28,6 +28,28 @@ public sealed record JoineryFrame(double Depth, double Width, double Mullion, do
 /// <summary>A sash's profile, a door leaf's thickness, the glass.</summary>
 public sealed record JoinerySash(double Width, double Depth, double LeafThickness, double GlassThickness);
 
+/// <summary>
+/// Where the frame sits across the wall (report #76), as a value from a reference: <see cref="From"/> "exterior" (the wall's
+/// exterior finish face), "core" (the core's exterior face) or "centre" (the wall's middle plane); <see cref="Distance"/> metres
+/// inwards (negative: proud). For the faces it is the frame's outer face that is that far back; from the centre, the frame's
+/// centre. A type without one keeps <see cref="JoineryFrame.Offset"/>.
+/// </summary>
+public sealed record JoineryPosition(string From = "exterior", double Distance = 0)
+{
+    public static readonly string[] Froms = ["exterior", "core", "centre"];
+
+    /// <summary>A position as a command or an element's <c>position</c> attribute gives it; null when it names none.</summary>
+    public static JoineryPosition? From_(JsonNode? node)
+    {
+        if (node is not JsonObject o) return null;
+        var from = (string?)o["from"] ?? "exterior";
+        if (!Froms.Contains(from)) throw new CommandException($"„{from}” is not a reference for the frame's position ({string.Join(", ", Froms)}).");
+        return new JoineryPosition(from, Json.Number(o["distance"]) ?? 0);
+    }
+
+    public JsonObject ToJson() => new() { ["from"] = From, ["distance"] = Distance };
+}
+
 public sealed record JoineryBoard(double Interior, double Exterior);
 
 public sealed record JoineryColors(string Frame, string Glass, string Leaf);
@@ -135,7 +157,9 @@ public sealed record JoinerySpec(
     /// shape of (the frame's stop and drip, the sash's lip and drip); beads stay, curved members a plain band. Null: plain.
     /// </summary>
     JsonObject? FrameSection = null,
-    JsonObject? SashSection = null)
+    JsonObject? SashSection = null,
+    /// <summary>The frame's place across the wall as a value from the exterior face, the core or the centre (report #76); null: <see cref="JoineryFrame.Offset"/>.</summary>
+    JoineryPosition? Position = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -158,6 +182,30 @@ public sealed record JoinerySpec(
         false);
 
     public bool IsDoor => Kind == "door";
+
+    /// <summary>
+    /// The spec with the frame placed where its position says in <paramref name="wall"/>'s build-up (the element's own over the
+    /// type's); the spec itself when there is none. <paramref name="flipSide"/>: the exterior is the wall's left.
+    /// </summary>
+    public JoinerySpec Positioned(IModelView m, Entity wall, JoineryPosition? own, bool flipSide)
+    {
+        var pos = own ?? Position;
+        if (pos == null) return this;
+        double offset;
+        if (pos.From == "centre") offset = -pos.Distance;
+        else
+        {
+            var bands = Walls.Section(m, wall).Where(b => b.To - b.From > 1e-9).ToList();
+            if (bands.Count == 0) return this;
+            var centre = (bands.Min(b => b.From) + bands.Max(b => b.To)) / 2;
+            var sy = flipSide ? -1 : 1;
+            double Y(double w) => sy * (centre - w);
+            var face = bands.Max(b => Math.Max(Y(b.From), Y(b.To)));
+            var reference = pos.From == "core" && bands.Where(b => b.Core).ToList() is { Count: > 0 } core ? core.Max(b => Math.Max(Y(b.From), Y(b.To))) : face;
+            offset = reference - pos.Distance - Frame.Depth / 2;
+        }
+        return this with { Frame = Frame with { Offset = offset } };
+    }
 
     public JsonObject ToJson() => (JsonObject)JsonSerializer.SerializeToNode(this, ArchitectureJson.Default.JoinerySpec)!;
 

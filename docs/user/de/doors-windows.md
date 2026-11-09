@@ -141,6 +141,24 @@ Im Grundriss sind die Flächen geschnitten, Sitzbank, Fensterbank und Unterbau u
 
 **Griff** wählt den Griff des Typs: **Drücker**, **Knauf**, **Stoßgriff**, **Fenstergriff** oder keinen. Standardmäßig hat eine Tür einen Drücker und ein Fenster einen Fenstergriff. Eine Tür hat den Griff auf beiden Seiten, in der angegebenen **Griffhöhe**; **Griffarbe** setzt seine Farbe. Griffe erscheinen in 3D, in Schnitten und Ansichten und in den Zeichnungen des Konfigurators, wenn **Beschläge** angehakt ist.
 
+### Lage des Rahmens und Fensterbänke
+
+**Position in the wall** (Lage in der Wand) legt fest, wo der Rahmen in der Wanddicke sitzt, als Maß und nicht nur zentriert: Wählen Sie **From the exterior finish**, **From the core** oder **From the wall’s centre** und **Set back**, wie weit die Außenfläche des Rahmens hinter dieser Bezugsfläche liegt (ab der Mitte: wie weit die Rahmenmitte). *From the exterior finish* und 50 mm setzt den Rahmen 50 mm hinter den Putz. Rahmen, Laibungen, Fensterbänke und Öffnungssymbole wandern mit, in Grundrissen, Schnitten, 3D und IFC. Ein Typ ohne Lage bleibt **Centred in the wall**. In der Eigenschaftenleiste hat eine Tür oder ein Fenster **Frame in the wall** für eine eigene Lage (**As the type** gibt sie auf) und **Set back** für den Abstand.
+
+![Der Konfigurator mit dem Rahmen 50 mm hinter der Außenbekleidung](shots/joinery-position.webp)
+
+Die **Exterior sill** (Fensterbank außen) hat ein **Slope** (Gefälle) in Grad (zunächst 5°, 15° für eine Metallbank). Eine geneigte Bank fällt vom Rahmen weg und nimmt alles darüber aus der Wand: Putz, Kern und Innenputz werden nach ihrer geneigten Oberseite geschnitten, in 3D, in Schnitten und Ansichten und in den Mengen.
+
+### Daten: U-Wert, Feuerwiderstand, Beschläge
+
+**Data…** unter dem Typ im Konfigurator (und in der Eigenschaftenleiste für die gewählten Türen und Fenster) öffnet ein Feld mit freiem Text: **U-value**, **g-value**, **Safety glass** (innen Verbundglas, beidseitig vorgespannt…), **Fire rating** (EI 30, EI2 60-C5…) und **Fittings**; **More data** fügt eigene hinzu, etwa *Sauna window* oder *Frosted glass*. Nichts wird aus einer Liste gewählt. Der eigene Wert einer Tür oder eines Fensters geht dem des Typs vor; ein leeres Feld fällt auf den des Typs zurück (grau angezeigt).
+
+![Das Datenfeld eines Fenstertyps](shots/joinery-data.webp)
+
+Es sind die Parameter des Typs: Die Türen- und Fensterlisten zeigen jeden als Zeile, Beschriftungen lesen sie als `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` und `{Fittings}`, und die IFC behält sie. Der Feuerwiderstand ist `FireRating` in `Pset_WindowCommon` oder `Pset_DoorCommon`; ein U-Wert, der als Zahl lesbar ist (0.9 oder *0,9 W/m²K*), ist dort auch `ThermalTransmittance`, bei einem Fenster mit `GlazingAreaFraction`; der Rest steht im Set `Lapin_Joinery`.
+
+![Die eigenen Daten eines Fensters in der Eigenschaftenleiste](shots/joinery-data-properties.webp)
+
 ### Parameter
 
 **Parameter · in Bauteillisten**, unten im Konfigurator, enthält die eigenen Parameter des Typs: **+ Feuerwiderstand** (in IFC in Pset_DoorCommon oder Pset_WindowCommon als FireRating geführt), **+ Hersteller**, **+ Produktcode**, **+ Website** oder jeden Parameter, den Sie benennen. Die Türen und Fenster des Typs erben sie, und jeder wird zu einer Zeile der Tür- und Fensterlisten: siehe [Bauteillisten und Diagramme](schedules.md).

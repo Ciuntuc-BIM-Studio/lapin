@@ -141,6 +141,24 @@ I plan er fladerne snittet, sæde, sålbænk og sokkel tegnet under snittet og t
 
 **Greb** vælger typens greb: **Dørgreb**, **Knop**, **Trækstang**, **Vinduesgreb** eller intet. Som standard har en dør et dørgreb og et vindue et vinduesgreb. En dør har greb på begge sider i den **Grebshøjde**, du angiver; **Grebets farve** sætter farven. Greb vises i 3D, i snit og opstalter og i konfiguratorens tegninger, når **Beslag** er markeret.
 
+### Karmens placering og vindueskarme
+
+**Position in the wall** (placering i væggen) fastlægger, hvor karmen sidder i vægtykkelsen, som en værdi og ikke kun centreret: vælg **From the exterior finish**, **From the core** eller **From the wall’s centre**, og **Set back**, hvor langt karmens ydre flade ligger bag denne reference (fra midten: hvor langt karmens midte ligger). *From the exterior finish* og 50 mm sætter karmen 50 mm bag pudsen. Karmen, lysningerne, vindueskarmene og åbningssymbolerne følger med, i planer, snit, 3D og IFC. En type uden placering forbliver **Centred in the wall**. I egenskabspanelet har en dør eller et vindue **Frame in the wall** til sin egen placering (**As the type** opgiver den) og **Set back** til afstanden.
+
+![Konfiguratoren med karmen 50 mm bag den ydre overflade](shots/joinery-position.webp)
+
+**Exterior sill** (ydre vindueskarm) har en **Slope** (hældning) i grader (5° til at begynde med, 15° til en metalkarm). En skrå karm falder væk fra karmen og tager alt over sig ud af væggen: puds, kerne og indvendig puds skæres efter dens skrå overside, i 3D, i snit og facader og i mængderne.
+
+### Data: U-værdi, brandklasse, beslag
+
+**Data…**, under typen i konfiguratoren (og i egenskabspanelet, for de valgte døre og vinduer), åbner en boks med fri tekst: **U-value**, **g-value**, **Safety glass** (lamineret indvendigt, hærdet på begge sider…), **Fire rating** (EI 30, EI2 60-C5…) og **Fittings**; **More data** tilføjer dine egne, f.eks. *Sauna window* eller *Frosted glass*. Intet vælges fra en liste. En dørs eller et vindues egen værdi går forud for typens; et tomt felt falder tilbage til typens (vist gråt).
+
+![Datafeltet for en vinduestype](shots/joinery-data.webp)
+
+Det er typens parametre: skemaerne over døre og vinduer viser hver som en række, tags læser dem som `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` og `{Fittings}`, og IFC gemmer dem. Brandklassen er `FireRating` i `Pset_WindowCommon` eller `Pset_DoorCommon`; en U-værdi, der kan læses som et tal (0.9 eller *0,9 W/m²K*), er også `ThermalTransmittance` der, med `GlazingAreaFraction` for et vindue; resten er i sættet `Lapin_Joinery`.
+
+![Et vindues egne data i egenskabspanelet](shots/joinery-data-properties.webp)
+
 ### Parametre
 
 **Parametre · i skemaer**, nederst i konfiguratoren, rummer typens egne parametre: **+ Brandmodstand** (holdt i IFC's Pset_DoorCommon eller Pset_WindowCommon som FireRating), **+ Producent**, **+ Varenummer**, **+ Websted** eller enhver parameter, du navngiver. Typens døre og vinduer arver dem, og hver bliver en række i snedkerskemaerne: se [Skemaer og diagrammer](schedules.md).

@@ -11,6 +11,8 @@ import { mm, num, ofClass, relatedOf, relatingOf, typeOf } from '../../engine/mo
 import type { NodeDto } from '../../engine/protocol';
 import { LengthField } from '../../shell/cells';
 import { sameKind } from '../../shell/params';
+import { JoineryDataButton } from './JoineryData';
+import type { Position } from './JoineryDialog';
 
 /** Doors and windows flip together. */
 const JOINERY = ['IfcDoor', 'IfcWindow'];
@@ -29,7 +31,11 @@ export function JoinerySection({ node }: { node: NodeDto }) {
   const types = ofClass(model, node.type === 'IfcDoor' ? 'IfcDoorType' : 'IfcWindowType');
   const opening = relatingOf(model, node.id, 'IfcRelFillsElement');
   const wall = opening ? relatingOf(model, opening.id, 'IfcRelVoidsElement') : null;
-  const spec = type?.props.spec as { width?: number; height?: number } | undefined;
+  const spec = type?.props.spec as { width?: number; height?: number; position?: Position | null } | undefined;
+  // The frame's place across the wall (report #76): the element's own over the type's.
+  const ownPosition = node.props.position as Position | null | undefined;
+  const position = ownPosition ?? spec?.position ?? null;
+  const setPosition = (p: Position | null) => void execute('architecture.setJoineryPosition', p ? { ids: sameKind(node, JOINERY), ...p } : { ids: sameKind(node, JOINERY), clear: true });
   return (
     <div className="layers">
       <label className="type-pick">
@@ -48,12 +54,22 @@ export function JoinerySection({ node }: { node: NodeDto }) {
           <dt>Along the wall</dt><dd><LengthField metres={num(opening, 'along')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { id: node.id, along: v }); }} /></dd>
           <dt>Sill</dt><dd><LengthField metres={num(opening, 'sill')} onCommit={(v) => { if (v != null) void execute('architecture.moveOpening', { ids: sameKind(node, JOINERY), sill: v }); }} /></dd>
         </>}
+        {node.editable && <>
+          <dt>Frame in the wall</dt><dd>
+            <select data-field="position-from" title="Where the frame sits across the wall; its type’s unless set here" value={ownPosition?.from ?? ''}
+              onChange={(e) => setPosition(e.target.value ? { from: e.target.value as Position['from'], distance: position?.distance ?? 0 } : null)}>
+              <option value="">{spec?.position ? 'As the type' : 'Centred (the type’s)'}</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option>
+            </select>
+          </dd>
+          {ownPosition && <><dt>Set back</dt><dd><LengthField metres={ownPosition.distance} onCommit={(v) => { if (v != null) setPosition({ ...ownPosition, distance: v }); }} /></dd></>}
+        </>}
         <dt>Of its type</dt><dd className="num">{type ? relatedOf(model, type.id, 'IfcRelDefinesByType').length : 0}</dd>
       </dl>
       {node.editable && (
         <div className="row">
           <button type="button" className="btn" title="Hinges on the other side" onClick={() => void execute('architecture.flipJoinery', { ids: sameKind(node, JOINERY), axis: 'x' })}><FlipHorizontal2 size={14} />Hand</button>
           <button type="button" className="btn" title="Opens to the other side of the wall" onClick={() => void execute('architecture.flipJoinery', { ids: sameKind(node, JOINERY), axis: 'y' })}><FlipVertical2 size={14} />Side</button>
+          <JoineryDataButton ids={sameKind(node, JOINERY)} typeNode={type} own={node} />
           {/* The door or window goes, its opening stays in the wall with its size and head (report #114, decision 392). */}
           {wall?.type === 'IfcWall' && <button type="button" className="btn" data-action="fill-to-opening" onClick={() => void toOpening(node)}><SquareDashed size={14} />Change to opening</button>}
         </div>
