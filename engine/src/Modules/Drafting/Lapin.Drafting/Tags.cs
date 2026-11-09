@@ -82,21 +82,22 @@ public static class Tags
     /// <paramref name="end"/> (none: no leader) through a free <paramref name="elbow"/>; a leader not pointed or bent by
     /// hand is left out while the box stands on its end.
     /// </summary>
-    internal static ViewMark Box(string? id, IReadOnlyList<string> lines, TextStyle style, double mm, Vec2 at, Vec2? end, Vec2? elbow, bool shaped, string color)
+    internal static ViewMark Box(string? id, IReadOnlyList<string> lines, TextStyle style, double mm, Vec2 at, Vec2? end, Vec2? elbow, bool shaped, string color, double angle = 0)
     {
+        var turn = new Turn(at, angle);
         var h = style.Height * mm;
         // One line: a box twice the text's height; more: each 1.5 heights apart.
         var halfH = (lines.Count * 1.5 * h + 0.5 * h) / 2;
         var halfW = (Math.Max(1, lines.Max(l => l.Length)) * h * 0.62 + h) / 2;
         var mk = new ViewMark(id);
         Vec2[] box = [at + new Vec2(-halfW, -halfH), at + new Vec2(halfW, -halfH), at + new Vec2(halfW, halfH), at + new Vec2(-halfW, halfH)];
-        mk.Polyline(box, true, "TAG", Pens.Default.Hatch, color);
+        mk.Polyline(box.Select(turn.P).ToArray(), true, "TAG", Pens.Default.Hatch, color);
         for (var i = 0; i < lines.Count; i++)
-            mk.Text(new PenText(new Vec2(at.X, at.Y + halfH - 0.25 * h - 1.5 * h * (i + 0.5)), lines[i], style.Height, 0, "middle", "middle", style.Bold, style.Font, style.Italic), color);
+            mk.Text(turn.Text(new Vec2(at.X, at.Y + halfH - 0.25 * h - 1.5 * h * (i + 0.5)), lines[i], style, "middle", "middle"), color);
         var data = new JsonObject { ["at"] = J(at), ["leader"] = end != null, ["shape"] = TagLeaders.Straight };
         if (end is { } target && (shaped || (target - at).Length > halfH * 1.5))
         {
-            var from = Leaves(at, halfW, halfH, elbow ?? target);
+            var from = turn.P(Leaves(at, halfW, halfH, turn.Inv(elbow ?? target)));
             Vec2[] path = elbow is { } k ? [from, k, target] : [from, target];
             mk.Polyline(path, false, "TAG", Pens.Default.Hatch, color);
             mk.Polyline(ViewMark.Circle(target, h / 5, 8), true, "TAG", Pens.Default.Seen, color);
@@ -108,6 +109,42 @@ public static class Tags
         mk.Data = data;
         mk.Snaps.Add(at);
         return mk;
+    }
+
+    /// <summary>
+    /// The direction an element draws along in a view (degrees, counter-clockwise, in the view's coordinates): a path
+    /// element's axis in a plan, else its longest edge (a cut's outline, or a line it draws); null when it draws nothing.
+    /// </summary>
+    internal static double? DirectionOf(ViewContext c, Entity? e)
+    {
+        if (e == null) return null;
+        if (c.Kind == "plan" && e.Attrs["start"] is JsonArray && e.Attrs["end"] is JsonArray && Dimensions.Frame(e) is { } f)
+            return Math.Atan2(f.U.Y, f.U.X) * 180 / Math.PI;
+        var edges = c.Drawing.Cuts.Where(p => p.Element == e.Id).SelectMany(p => p.Loops.SelectMany(l => l.Select((q, i) => (A: q, B: l[(i + 1) % l.Length]))))
+            .Concat(c.Drawing.Lines.Where(l => l.Element == e.Id).Select(l => (l.A, l.B))).ToList();
+        if (edges.Count == 0) return null;
+        var (a, b) = edges.MaxBy(x => (x.B - x.A).Length);
+        return (b - a).Length < 1e-9 ? null : Math.Atan2(b.Y - a.Y, b.X - a.X) * 180 / Math.PI;
+    }
+
+    /// <summary>A tag's angle as drawn (degrees, upright, never upside down): its own <c>rotation</c>, added to the element's direction when it is aligned to it (report #129).</summary>
+    internal static double AngleOf(ViewContext c, Entity tag, Entity? e)
+    {
+        var own = tag.NumOrNull("rotation") ?? 0;
+        var align = tag.Attrs["align"] is JsonValue v && v.TryGetValue<bool>(out var on) && on;
+        return Turn.Readable(own + (align ? DirectionOf(c, e) ?? 0 : 0));
+    }
+
+    /// <summary>What the interface needs of a turned tag: the angle drawn, whether it follows its element, and that direction (the rotate grip's zero).</summary>
+    internal static void AngleData(JsonObject data, Entity tag, Entity? e, ViewContext c, Vec2 centre, double reach)
+    {
+        var angle = AngleOf(c, tag, e);
+        data["angle"] = Math.Round(angle, 4);
+        // The turning grip: over the text's middle, square to its baseline, clear of the block.
+        data["centre"] = J(centre);
+        data["turn"] = J(centre + new Turn(default, angle * Math.PI / 180).V(new Vec2(0, reach)));
+        var align = tag.Attrs["align"] is JsonValue v && v.TryGetValue<bool>(out var on) && on;
+        if (align) { data["align"] = true; data["base"] = Math.Round(DirectionOf(c, e) ?? 0, 4); }
     }
 
     static string? LeaderShape(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) && s is TagLeaders.Straight or TagLeaders.Elbow ? s : null;
@@ -128,6 +165,8 @@ public static class Tags
             // A build-up tag (docs/plan-buildup-tags.md): the element's layers as a note, its leaders one or one per layer.
             if (type is { Shape: "buildup" }) { yield return BuildupTags.Mark(c, t, e, type, style, follow); continue; }
             var at = Followed(Pt(t.Attrs["at"])) ?? default;
+            var angle = AngleOf(c, t, e);
+            var rad = angle * Math.PI / 180;
             var lines = LinesOf(c.Model, t, e, type, c.Book.Units);
             var color = e == null ? "#c0392b" : style.Color ?? "#000000";
             var leaderOn = t.Attrs["leader"] is not JsonValue lv || !lv.TryGetValue<bool>(out var on) || on;
@@ -135,8 +174,9 @@ public static class Tags
             if (TagLeaders.ShapeOf(t, type) == TagLeaders.Elbow)
             {
                 var to = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
-                var (em, head, side) = TagLeaders.Plain(t.Id, lines, style, type, c.Mm, at, to, leaderOn, color);
+                var (em, head, side) = TagLeaders.Plain(t.Id, lines, style, type, c.Mm, at, to, leaderOn, color, rad);
                 em.Data = ElbowData(at, head, side, leaderOn, e, to);
+                AngleData(em.Data, t, e, c, head, (lines.Count * TagLeaders.Pitch * style.Height * c.Mm + 2 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
                 if (leaderOn && to is { } p0) em.Snaps.Add(p0);
                 em.Snaps.Add(at);
                 yield return em;
@@ -145,8 +185,9 @@ public static class Tags
             // The leader: to the spot it was pointed at, else the middle of what the element draws here; through its elbow.
             var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? Anchor(c.Drawing, e.Id) : null);
             var elbow = Followed(Pt(t.Attrs["elbow"]));
-            var mk = Box(t.Id, lines, style, c.Mm, at, leaderOn ? end : null, elbow, t.Attrs["end"] is JsonArray || elbow != null, color);
+            var mk = Box(t.Id, lines, style, c.Mm, at, leaderOn ? end : null, elbow, t.Attrs["end"] is JsonArray || elbow != null, color, rad);
             mk.Data!["of"] = e?.Id;
+            AngleData(mk.Data, t, e, c, at, (lines.Count * 1.5 * style.Height * c.Mm + 0.5 * style.Height * c.Mm) / 2 + 1.5 * style.Height * c.Mm);
             mk.Data["leader"] = leaderOn;
             yield return mk;
         }
@@ -174,6 +215,8 @@ public static class Tags
             if (a["leader"] is JsonValue lv && lv.TryGetValue<bool>(out var leader) && !leader) attrs["leader"] = false;
             if (Pt(a["elbow"]) is { } elbow) attrs["elbow"] = J(elbow);
             if (a["leaderShape"] is not null) attrs["leaderShape"] = LeaderShape(a["leaderShape"]) ?? throw new CommandException("A leader is straight or an elbow.");
+            if (Json.Number(a["rotation"]) is { } rot && Math.Abs(rot) > 1e-9) attrs["rotation"] = Math.Round(rot, 4);
+            if (a["align"] is JsonValue al && al.TryGetValue<bool>(out var aligned) && aligned) attrs["align"] = true;
             attrs[TagLeaders.RevKey] = TagLeaders.Rev;
             // Where the element stands now: the tag follows it from there (report #93).
             TagHold.Hold(ctx.Model, attrs, e, Views.Find(ctx.Model, viewId) is { } v && TagHold.Axes(ctx.Model, v) is { Plan: true }, ctx.Query.Geometry);
@@ -216,6 +259,19 @@ public static class Tags
                     if (a["leaderShape"] is null || a["leaderShape"] is JsonValue sv && sv.TryGetValue<string>(out var none) && none == "") attrs.Remove("leaderShape");
                     else attrs["leaderShape"] = LeaderShape(a["leaderShape"]) ?? throw new CommandException("A leader is straight or an elbow.");
                     if ((string?)attrs["leaderShape"] == TagLeaders.Elbow && !a.ContainsKey("elbow")) attrs.Remove("elbow");
+                }
+                // Its angle (report #129): turned by hand (degrees; 0 or null: upright), and aligned to its element's direction.
+                if (a.ContainsKey("rotation"))
+                {
+                    if (a["rotation"] is null) attrs.Remove("rotation");
+                    else if (Json.Number(a["rotation"]) is { } deg && double.IsFinite(deg)) { if (Math.Abs(deg) < 1e-9) attrs.Remove("rotation"); else attrs["rotation"] = Math.Round(deg, 4); }
+                    else throw new CommandException("A rotation is an angle in degrees.");
+                }
+                if (a.ContainsKey("align"))
+                {
+                    if (a["align"] is null || a["align"] is JsonValue av && av.TryGetValue<bool>(out var al) && !al) attrs.Remove("align");
+                    else if (a["align"] is JsonValue av2 && av2.TryGetValue<bool>(out _)) attrs["align"] = true;
+                    else throw new CommandException("Align is on or off.");
                 }
                 if (a.ContainsKey("field"))
                 {

@@ -132,6 +132,8 @@ public static class BuildupTags
         var content = e != null && buildUp != null ? BuildupText.Content(c.Model, e, type, c.Book.Units, c.Services, buildUp) : null;
         content ??= new BuildupContent(["?"], [], [], false);
         var lay = BuildupText.Lay(content, style.Height, style.Bold, type.BulletOrDefault, type.WidthOrDefault);
+        var angle = Tags.AngleOf(c, t, e);
+        var turn = new Turn(at, angle * Math.PI / 180);
         var leaderOn = t.Attrs["leader"] is not JsonValue lo || !lo.TryGetValue<bool>(out var isOn) || isOn;
         // An elbow (decision 331): the tag's point is the knee, the block beside it, the leaders' knees one column.
         if (TagLeaders.ShapeOf(t, type) == TagLeaders.Elbow)
@@ -140,18 +142,20 @@ public static class BuildupTags
             List<(int, Vec2)>? targets = null;
             if (leaderOn && to is { } a && e != null && buildUp != null && type.LeaderPerLayer && content.Entries.Count > 0 && LayerPoints(c, e, buildUp, a) is { Count: > 0 } pts)
                 targets = content.Entries.Select((x, i) => (i, pts.TryGetValue(x.Layer, out var q) ? q : (Vec2?)null)).Where(x => x.Item2 != null).Select(x => (x.i, x.Item2!.Value)).ToList();
-            var (em, head, side) = TagLeaders.Buildup(t.Id, lay, type, style, mm, at, to, leaderOn, targets, color);
+            var (em, head, side) = TagLeaders.Buildup(t.Id, lay, type, style, mm, at, to, leaderOn, targets, color, turn.Angle);
             em.Data = Tags.ElbowData(at, head, side, leaderOn, e, to);
+            Tags.AngleData(em.Data, t, e, c, head, lay.Height * mm / 2 + 1.5 * h);
             em.Data["buildup"] = true;
             em.Snaps.Add(at);
             return em;
         }
         foreach (var x in lay.Texts)
-            mk.Text(new PenText(new Vec2(at.X + x.X * mm, at.Y - x.Y * mm), x.Text, style.Height, 0, "start", "bottom", style.Bold, style.Font, style.Italic), color);
+            mk.Text(turn.Text(new Vec2(at.X + x.X * mm, at.Y - x.Y * mm), x.Text, style, "start", "bottom"), color);
         var (left, right, top, bottom) = (at.X, at.X + lay.Width * mm, at.Y, at.Y - lay.Height * mm);
         // What a click on the tag hits: its block, never drawn.
-        mk.Polyline([new(left, bottom), new(right, bottom), new(right, top), new(left, top)], true, "PICK", 0, color);
+        mk.Polyline([turn.P(new(left, bottom)), turn.P(new(right, bottom)), turn.P(new(right, top)), turn.P(new(left, top))], true, "PICK", 0, color);
         var data = new JsonObject { ["at"] = J(at), ["leader"] = leaderOn, ["of"] = e?.Id, ["buildup"] = true, ["shape"] = TagLeaders.Straight };
+        Tags.AngleData(data, t, e, c, turn.P(new Vec2(at.X + lay.Width * mm / 2, at.Y - lay.Height * mm / 2)), lay.Height * mm / 2 + 1.5 * h);
         var end = Followed(Pt(t.Attrs["end"])) ?? (e != null ? DefaultEnd(c, e) : null);
         var elbow = Followed(Pt(t.Attrs["elbow"]));
         var dot = h / 5;
@@ -163,12 +167,12 @@ public static class BuildupTags
             var targets = content.Entries.Select((x, i) => (Entry: i, To: points.TryGetValue(x.Layer, out var p) ? p : (Vec2?)null)).Where(x => x.To != null).ToList();
             if (targets.Count > 0)
             {
-                var toRight = targets.Average(x => x.To!.Value.X) > (left + right) / 2;
+                var toRight = targets.Average(x => turn.Inv(x.To!.Value).X) > (left + right) / 2;
                 var (side, sign) = toRight ? (right + 0.8 * h, 1) : (left - 0.8 * h, -1);
                 foreach (var (entry, to) in targets)
                 {
-                    var from = new Vec2(side, at.Y - lay.EntryMid[entry] * mm);
-                    var stub = from + new Vec2(sign * 2.5 * mm, 0);
+                    var from = turn.P(new Vec2(side, at.Y - lay.EntryMid[entry] * mm));
+                    var stub = from + turn.V(new Vec2(sign * 2.5 * mm, 0));
                     mk.Polyline([from, stub, to!.Value], false, "TAG", Pens.Default.Hatch, color);
                     mk.Polyline(ViewMark.Circle(to.Value, dot, 8), true, "TAG", Pens.Default.Seen, color);
                     mk.Snaps.Add(to.Value);
@@ -180,11 +184,11 @@ public static class BuildupTags
         if (!drawn && (bool)data["leader"]! && end is { } target)
         {
             // One: from the side of the block nearer the element (its middle), through its elbow.
-            var toward = elbow ?? target;
+            var toward = turn.Inv(elbow ?? target);
             var midY = (top + bottom) / 2;
-            var from = toward.X < left ? new Vec2(left - 0.8 * h, midY)
+            var from = turn.P(toward.X < left ? new Vec2(left - 0.8 * h, midY)
                 : toward.X > right ? new Vec2(right + 0.8 * h, midY)
-                : new Vec2((left + right) / 2, toward.Y > top ? top + 0.5 * h : bottom - 0.5 * h);
+                : new Vec2((left + right) / 2, toward.Y > top ? top + 0.5 * h : bottom - 0.5 * h));
             Vec2[] path = elbow is { } k ? [from, k, target] : [from, target];
             mk.Polyline(path, false, "TAG", Pens.Default.Hatch, color);
             mk.Polyline(ViewMark.Circle(target, dot, 8), true, "TAG", Pens.Default.Seen, color);
