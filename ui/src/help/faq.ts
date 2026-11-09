@@ -818,6 +818,8 @@ export const FAQ: Entry[] = [
     aRo: 'Da. În Furniture → Furniture types, New type, Kitchen, alege o Layout: One wall (rândul drept), Galley (două rânduri paralele), L-shaped, U-shaped, Island (un rând și o insulă separată) sau Peninsula (un L cu un rând care iese din braț). Dispunerea pornește mărimile (lungimile brațelor, culoarul dintre rânduri, lungimea și adâncimea insulei, peninsula și consola blatului pentru scaune înalte), fiecare rămâne editabilă lângă previzualizare; Sink on și Hob on le pun pe rândul principal sau pe cealaltă parte (braț, rândul opus, insulă, peninsulă), iar coloana (frigiderul) stă la un capăt liber. Furniture → Kitchen o desenează de-a lungul unui perete: spatele pe fața peretelui, cât linia, un L sau un U strecurat în colțul lângă care e tras; Flip dă unui L sau unei peninsule colțul pe cealaltă parte. Extrasul numește dispunerea; în IFC e un tip de mobilier aparte.',
     action: { label: 'Open Furniture types', labelRo: 'Deschide Furniture types', run: { kind: 'dialog', id: 'furnitureTypes' } },
     source: 'report #124',
+  },
+  {
     id: 'dimension-grid-line',
     q: ['Why does a dimension line rotate when I move the end of a grid line?', 'How do I keep a dimension attached to a grid line when I change its length?', 'The dimension should snap to the grid line, not to one point on it'],
     qRo: ['De ce se rotește o cotă când mut capătul unei axe din grilă?', 'Cum țin o cotă atașată de o axă când îi schimb lungimea?', 'Cota trebuie să rămână pe axă, nu pe un punct al ei'],
