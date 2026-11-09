@@ -1339,16 +1339,25 @@ export const ZH: Record<string, string> = {
   'The main run': '主台面',
   'The other part': '另一部分',
   'The kitchen’s layout': '厨房的布局',
-  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 434)
   'The drawing could not be read as DXF.': '无法将该图纸读取为 DXF。',
   'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': '已按文件自身的数值导入测量点：它们看起来像地图坐标，但其坐标系不是 Lapin 已知的（Stereo 70、Lambert-93、UTM、Web Mercator、WGS 84）。请在“管理 → 位置”中指定，或先转换图纸。',
-  // Report #116: a strip footing alone or with its wall (decision 427+)
+  // Report #116: a strip footing alone or with its wall (decision 436)
   'Footing alone': '仅基础',
   'With wall': '带墙',
   'Wall on the footing': '基础上的墙',
   'Strip type with a wall': '带墙的条形基础类型',
   'First type with a wall': '第一个带墙的类型',
   'Draw the concrete footing alone, or with the wall (the stem) of a strip type on it': '只绘制混凝土基础，或在其上带条形基础类型的墙（基座）',
+  // Report #117: foundation plans place on the level under, elevation in Properties (decision 437)
+  'Offset from level': '相对楼层的偏移',
+  'Top elevation': '顶部标高',
+  'Bottom elevation': '底部标高',
+  'Base elevation': '底座标高',
+  'The level\'s elevation and this offset from it: the figure below follows it': '楼层标高及相对它的此偏移：下面的标高随之变化',
+  'The top of the element, above ±0.00: type it to move the element there': '构件的顶部，高于 ±0.00：输入数值即可将构件移到该处',
+  'The bottom of the element, above ±0.00: type it to move the element there': '构件的底部，高于 ±0.00：输入数值即可将构件移到该处',
+  'The base of the element, above ±0.00: type it to move the element there': '构件的底座，高于 ±0.00：输入数值即可将构件移到该处',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

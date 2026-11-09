@@ -28,6 +28,8 @@ Draw foundations on the **Foundations** level, or give them a plan of their own.
 
 **In the plans.** A footing lies under the floor, so a plan draws it dashed in the plan of the level it stands on, as a plan of a building shows what is under it. To see it cut and seen, use a **foundation plan**: in the project browser, the **+** beside **Floor plans** makes one for the active level (cut 0.50 m under it, seeing 2.50 m down).
 
+**Drawing in a foundation plan.** It shows the level under it too, and what you draw there with a floor, wall, column or beam tool goes on that level (the Foundations of a new project, at −1.50); the footing tools keep the plan's own level, a footing's bottom being its type's under it.
+
 ![Columns, beams and pad footings in 3D](shots/structure-3d.webp)
 
 ## Types and corners

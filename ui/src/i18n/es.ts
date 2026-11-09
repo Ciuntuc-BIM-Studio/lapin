@@ -1341,16 +1341,25 @@ export const ES: Record<string, string> = {
   'The main run': 'La línea principal',
   'The other part': 'La otra parte',
   'The kitchen’s layout': 'Disposición de la cocina',
-  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 434)
   'The drawing could not be read as DXF.': 'No se pudo leer el dibujo como DXF.',
   'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'Puntos de levantamiento importados con los números del archivo: parecen coordenadas de mapa, pero su sistema no es uno que Lapin conozca (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Nómbralo en Gestionar → Ubicación o convierte antes el dibujo.',
-  // Report #116: a strip footing alone or with its wall (decision 427+)
+  // Report #116: a strip footing alone or with its wall (decision 436)
   'Footing alone': 'Solo la zapata',
   'With wall': 'Con muro',
   'Wall on the footing': 'Muro sobre la zapata',
   'Strip type with a wall': 'Tipo de zapata corrida con muro',
   'First type with a wall': 'Primer tipo con muro',
   'Draw the concrete footing alone, or with the wall (the stem) of a strip type on it': 'Dibuja solo la zapata de hormigón o con el muro (el arranque) de un tipo de zapata corrida encima',
+  // Report #117: foundation plans place on the level under, elevation in Properties (decision 437)
+  'Offset from level': 'Desfase del nivel',
+  'Top elevation': 'Cota superior',
+  'Bottom elevation': 'Cota inferior',
+  'Base elevation': 'Cota de la base',
+  'The level\'s elevation and this offset from it: the figure below follows it': 'La cota del nivel y este desfase respecto a él: la cota de abajo lo sigue',
+  'The top of the element, above ±0.00: type it to move the element there': 'La parte superior del elemento, sobre ±0,00: escríbela para mover el elemento allí',
+  'The bottom of the element, above ±0.00: type it to move the element there': 'La parte inferior del elemento, sobre ±0,00: escríbela para mover el elemento allí',
+  'The base of the element, above ±0.00: type it to move the element there': 'La base del elemento, sobre ±0,00: escríbela para mover el elemento allí',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -21,7 +21,7 @@ public sealed class StructureModule : ILapinModule
         r.Class(new(IfcClass.ColumnType, "Column type", [new("height", "Height", "length", Min: 0.01)], "#a8a8a8", Kind: "type"));
         r.Class(new(IfcClass.Beam, "Beam", [new("topOffset", "Top offset", "length"), new(PathCurve.Key, "Arc rise", "length"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.BeamType, "Beam type", [], "#a8a8a8", Kind: "type"));
-        r.Class(new(IfcClass.Footing, "Footing", [new("rotation", "Rotation", "angle"), new(PathCurve.Key, "Arc rise (strip)", "length"), priority], "#a8a8a8"));
+        r.Class(new(IfcClass.Footing, "Footing", [new("offset", "Offset from level", "length"), new("rotation", "Rotation", "angle"), new(PathCurve.Key, "Arc rise (strip)", "length"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.FootingType, "Footing type", [new("bottom", "Bottom level", "length")], "#a8a8a8", Kind: "type"));
 
         r.Service<IStoreyLevels>(new Levels());

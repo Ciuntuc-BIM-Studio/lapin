@@ -348,6 +348,26 @@ public class DrawingTests
     }
 
     [Fact]
+    public void A_foundation_plan_shows_the_level_under_it_and_what_stands_there()
+    {
+        // A tester's report #117: a floor drawn in a foundation plan stood at ±0.00, not at the foundations' level.
+        var f = new Fixture(new ArchitectureModule(), new StructureModule());
+        var ground = f.Storey;
+        var low = (string)f.Run("storey.create", new JsonObject { ["name"] = "Foundations", ["elevation"] = -1.5, ["height"] = 1.5 })!["id"]!;
+        var view = (string)f.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = ground, ["foundation"] = true })!["id"]!;
+        var shown = f.Model.Get(view)!.Attrs["storeys"] as JsonObject;
+        Assert.Equal("some", (string?)shown?["mode"]);
+        Assert.Equal(low, (string?)(shown?["ids"] as JsonArray)?[0]);
+        // A wall on the level under it is cut by the plan (0.50 under the ground floor, inside the foundations' height).
+        f.Run("architecture.addWall", new JsonObject { ["storeyId"] = low, ["x1"] = 0, ["y1"] = 0, ["x2"] = 5, ["y2"] = 0 });
+        Assert.True(Segs(Draw(f, new JsonObject { ["id"] = view }), "CUT") >= 4);
+        // With nothing under it, the plan is as it was.
+        var g = new Fixture(new ArchitectureModule(), new StructureModule());
+        var alone = (string)g.Run("view.create", new JsonObject { ["kind"] = "plan", ["storeyId"] = g.Storey, ["foundation"] = true })!["id"]!;
+        Assert.Null(g.Model.Get(alone)!.Attrs["storeys"]);
+    }
+
+    [Fact]
     public void A_roof_draws_its_outline_and_ridges_overhead_in_the_plan_of_its_storey()
     {
         var f = new Fixture();

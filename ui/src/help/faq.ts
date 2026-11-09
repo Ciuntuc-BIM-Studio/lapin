@@ -849,6 +849,16 @@ export const FAQ: Entry[] = [
     action: { label: 'Open Structure types', labelRo: 'Deschide Structure types', run: { kind: 'tool', id: 'structure.types' } },
     source: 'report #116',
   },
+  {
+    id: 'element-elevation',
+    q: ['Drawing an element not following elevation: my floor shows at 0.00 not -1.50', 'How do I change the elevation of an element?', 'Where do I set the offset from the level?'],
+    qRo: ['Elementul desenat nu urmează cota: placa apare la 0,00, nu la -1,50', 'Cum schimb cota unui element?', 'Unde setez decalajul față de nivel?'],
+    keywords: ['elevation', 'elevations', 'level', 'levels', 'offset', 'height', 'absolute', 'coordinates', 'z', 'bonsai', 'foundation', 'cota', 'cote', 'nivel', 'decalaj', 'inaltime', 'coordonate'],
+    a: 'Select the element: Properties → Placement shows its Storey, its Offset from level and its Elevation (the base of a wall or column, the top of a floor or beam, the bottom of a footing, above ±0.00). Type either: the other follows. A floor or a wall drawn in a foundation plan stands on the level under it. In a plan of the Foundations level (−1.50) what you draw is at −1.50 (a footing\'s bottom is its type\'s under that level); Modify → Move to storey moves it to another level.',
+    aRo: 'Selectează elementul: Properties → Placement arată Storey, Offset from level și Elevation (baza unui perete sau stâlp, fața de sus a unei plăci sau grinzi, fața de jos a unei fundații, față de ±0,00). Scrie oricare: cealaltă o urmează. O placă sau un perete desenat într-un plan de fundații stă pe nivelul de dedesubt. Într-un plan al nivelului Foundations (−1,50) ce desenezi e la −1,50 (fața de jos a unei fundații e cea a tipului ei sub nivel); Modify → Move to storey îl mută pe alt nivel.',
+    action: { label: 'Open Levels', labelRo: 'Deschide Levels', run: { kind: 'tool', id: 'core.levels' } },
+    source: 'report #117',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

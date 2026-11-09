@@ -16,6 +16,7 @@ import { ownPlanOf } from '../viewport/storeyPlan';
 import { frontView } from '../viewport/frontView';
 import { view3dNode } from '../viewport/storeys3d';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
+import { elevationOf, offsetFor } from '../engine/elevation';
 import { fieldShown, type FieldDescriptor, type NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
 import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
@@ -271,6 +272,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const type = typeOf(model, node.id);
   const storey = relatingOf(model, node.id, 'IfcRelContainedInSpatialStructure');
   const sections = propertySections(node.type).filter((s) => !s.shows || s.shows(node));
+  const elevation = node.editable ? elevationOf(node, storey, type, cls?.fields.map((f) => f.key) ?? []) : null;
   const TypeFields = type ? typeFieldsOf(type.type) : null;
   return (
     <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
@@ -295,12 +297,18 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
                 {storeys(model).map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
               </select>
             </dd>
+            {elevation && <>
+              <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>
+              <dd><LengthCell metres={elevation.offset} onCommit={(v) => void execute('element.update', { ids: sameKind(node), attrs: { [elevation.key]: v } })} /></dd>
+              <dt title={elevation.of === 'top' ? 'The top of the element, above ±0.00: type it to move the element there' : elevation.of === 'bottom' ? 'The bottom of the element, above ±0.00: type it to move the element there' : 'The base of the element, above ±0.00: type it to move the element there'}>{elevation.of === 'top' ? 'Top elevation' : elevation.of === 'bottom' ? 'Bottom elevation' : 'Base elevation'}</dt>
+              <dd><LengthCell metres={elevation.absolute} onCommit={(v) => { if (v != null) void execute('element.update', { ids: [node.id], attrs: { [elevation.key]: offsetFor(elevation, v) } }); }} /></dd>
+            </>}
           </dl>
         </Group>
       )}
       {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
         <Group id="dimensions" label="Dimensions">
-          <dl className="fields">{fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
+          <dl className="fields">{fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).filter((f) => f.key !== elevation?.key).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
         </Group>
       )}
       {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}

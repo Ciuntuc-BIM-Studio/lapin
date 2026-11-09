@@ -28,6 +28,8 @@ Dibuje la cimentación en el nivel **Foundations**, o dele una planta propia.
 
 **En las plantas.** Una zapata queda bajo el forjado, así que una planta la dibuja a trazos en la planta del nivel en que está, como la planta de un edificio muestra lo que hay debajo. Para verla cortada y vista, use una **planta de cimentación**: en el navegador del proyecto, el **+** junto a **Plantas** crea una para el nivel activo (corte 0,50 m bajo él, vista 2,50 m hacia abajo).
 
+**Dibujar en una planta de cimentación.** Muestra también el nivel inferior, y lo que dibuje allí con una herramienta de losa, muro, pilar o viga va a ese nivel (la Cimentación de un proyecto nuevo, a −1,50); las herramientas de zapatas conservan el nivel de la planta, siendo la base de una zapata la de su tipo bajo él.
+
 ![Pilares, vigas y zapatas aisladas en 3D](shots/structure-3d.webp)
 
 ## Tipos y esquinas

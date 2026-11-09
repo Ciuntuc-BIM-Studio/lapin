@@ -28,6 +28,8 @@ Dessinez les fondations sur le niveau **Foundations**, ou donnez-leur un plan à
 
 **Dans les plans.** Une semelle est sous le plancher, donc un plan la dessine en tirets dans le plan du niveau où elle se trouve, comme le plan d'un bâtiment montre ce qui est dessous. Pour la voir coupée et vue, utilisez un **plan de fondations** : dans le navigateur de projet, le **+** à côté de **Vues en plan** en crée un pour le niveau actif (coupe 0,50 m sous lui, vue de 2,50 m vers le bas).
 
+**Dessiner dans un plan de fondations.** Il montre aussi le niveau en dessous, et ce que vous y dessinez avec un outil de dalle, de mur, de poteau ou de poutre va sur ce niveau (les Fondations d'un nouveau projet, à −1,50) ; les outils de semelles gardent le niveau du plan, le dessous d'une semelle étant celui de son type sous lui.
+
 ![Poteaux, poutres et semelles isolées en 3D](shots/structure-3d.webp)
 
 ## Types et angles

@@ -1342,16 +1342,25 @@ export const PL: Record<string, string> = {
   'The main run': 'Ciągu głównym',
   'The other part': 'Drugiej części',
   'The kitchen’s layout': 'Układ kuchni',
-  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 434)
   'The drawing could not be read as DXF.': 'Nie udało się odczytać rysunku jako DXF.',
   'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'Punkty pomiarowe zaimportowane z liczbami pliku: wyglądają na współrzędne mapy, ale ich układ nie jest znany Lapin (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Nazwij go w Zarządzaj → Lokalizacja lub najpierw przekonwertuj rysunek.',
-  // Report #116: a strip footing alone or with its wall (decision 427+)
+  // Report #116: a strip footing alone or with its wall (decision 436)
   'Footing alone': 'Sama ława',
   'With wall': 'Ze ścianą',
   'Wall on the footing': 'Ściana na ławie',
   'Strip type with a wall': 'Typ ławy fundamentowej ze ścianą',
   'First type with a wall': 'Pierwszy typ ze ścianą',
   'Draw the concrete footing alone, or with the wall (the stem) of a strip type on it': 'Rysuje samą betonową ławę lub z murkiem (cokołem) typu ławy fundamentowej na niej',
+  // Report #117: foundation plans place on the level under, elevation in Properties (decision 437)
+  'Offset from level': 'Przesunięcie od poziomu',
+  'Top elevation': 'Rzędna góry',
+  'Bottom elevation': 'Rzędna spodu',
+  'Base elevation': 'Rzędna podstawy',
+  'The level\'s elevation and this offset from it: the figure below follows it': 'Rzędna poziomu i to przesunięcie od niego: rzędna poniżej za nim podąża',
+  'The top of the element, above ±0.00: type it to move the element there': 'Góra elementu, nad ±0,00: wpisz ją, aby przenieść element tam',
+  'The bottom of the element, above ±0.00: type it to move the element there': 'Spód elementu, nad ±0,00: wpisz go, aby przenieść element tam',
+  'The base of the element, above ±0.00: type it to move the element there': 'Podstawa elementu, nad ±0,00: wpisz ją, aby przenieść element tam',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

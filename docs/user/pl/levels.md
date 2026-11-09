@@ -45,3 +45,7 @@ Kopie używają tych samych typów co oryginały i dostają nowe identyfikatory 
 ![Ściany i strop parteru skopiowane na dwa poziomy powyżej, w 3D](shots/copy-to-storeys-3d.webp)
 
 Aby zamiast tego przenieść zaznaczenie na inny poziom, wybierz **Modyfikuj → Przenieś na kondygnację**. Elementy zachowują wysokości nad nowym poziomem albo zostają tam, gdzie są w przestrzeni.
+
+## Rzędna elementu
+
+Element na poziomie stoi na rzędnej poziomu i przesunięciu od niej. **Właściwości → Umiejscowienie** pokazuje jego **Kondygnację**, **Przesunięcie od poziomu** i **Rzędną** nad ±0,00: podstawę ściany lub słupa, górę stropu lub belki (przesunięcie belki liczy się od góry poziomu), spód ławy (dolny poziom jej typu pod poziomem plus przesunięcie). Wpisz jedną z liczb, a druga za nią podąży: element przesuwa się we wszystkich widokach, w jednym kroku cofania. Aby umieścić element na innym poziomie, zmień jego **Kondygnację**. To, co rysujesz w rzucie, stoi na poziomie tego rzutu.

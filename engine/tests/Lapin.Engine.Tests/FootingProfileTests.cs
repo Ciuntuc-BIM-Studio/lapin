@@ -139,6 +139,17 @@ public class FootingProfileTests : IDisposable
     }
 
     [Fact]
+    public void A_footings_offset_raises_it_off_its_level()
+    {
+        // A tester's report #117: an element's elevation is its level's and an offset, changed in its properties.
+        var f = Make();
+        var pad = (string)f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 0, ["y"] = 0 })!["id"]!;
+        var low = f.Bounds(pad).Min.Z;
+        f.Run("element.update", new JsonObject { ["ids"] = new JsonArray(pad), ["attrs"] = new JsonObject { ["offset"] = 0.5 } });
+        Assert.Equal(low + 0.5, f.Bounds(pad).Min.Z, 9);
+    }
+
+    [Fact]
     public void A_type_turns_from_its_stem_to_a_profile_and_back()
     {
         var f = Make();

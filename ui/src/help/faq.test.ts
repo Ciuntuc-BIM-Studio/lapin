@@ -182,6 +182,9 @@ describe('Ask Lapin', () => {
   });
 
   it('answers the testers\' reports #115 to #118', () => {
+    expect(best('drawing an element not following elevation')).toBe('element-elevation');
+    expect(best('to have element coordinates to change their elevation')).toBe('element-elevation');
+    expect(best('unde setez decalajul fata de nivel')).toBe('element-elevation');
     expect(best('strip footing with wall. when modeling it is sometimes useful to only model the concrete element, not the wall')).toBe('strip-footing-alone');
     expect(best('cum desenez o fundatie continua fara perete')).toBe('strip-footing-alone');
     expect(best('Pad footing elements added show only in 3D, not in the plan')).toBe('footings-in-plan');

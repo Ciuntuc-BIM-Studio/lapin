@@ -28,6 +28,8 @@ Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
 **În planuri.** O fundație stă sub planșeu, deci planul o desenează întrerupt în planul nivelului pe care stă, cum arată planul unei clădiri ce e dedesubt. Ca s-o vezi tăiată și văzută, folosește un **plan de fundații**: în browserul proiectului, **+** de lângă **Planuri** face unul pentru nivelul activ (tăiat la 0,50 m sub el, privind 2,50 m în jos).
 
+**Desenând într-un plan de fundații.** Arată și nivelul de dedesubt, iar ce desenezi acolo cu o unealtă de placă, perete, stâlp sau grindă stă pe acel nivel (Fundații la un proiect nou, la −1,50); uneltele de fundații păstrează nivelul planului, fața de jos a fundației fiind cea a tipului ei sub el.
+
 ![Stâlpi, grinzi și fundații izolate în 3D](shots/structure-3d.webp)
 
 ## Tipuri și colțuri

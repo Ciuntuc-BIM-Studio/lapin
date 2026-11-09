@@ -1395,16 +1395,25 @@ export const LO: Record<string, string> = {
   'The main run': 'ແຖວຫຼັກ',
   'The other part': 'ສ່ວນອື່ນ',
   'The kitchen’s layout': 'ການຈັດວາງຂອງເຮືອນຄົວ',
-  // Report #118: a DXF the engine could not read, Lambert-93 (decision 427+)
+  // Report #118: a DXF the engine could not read, Lambert-93 (decision 434)
   'The drawing could not be read as DXF.': 'ບໍ່ສາມາດອ່ານແບບແຕ້ມເປັນ DXF ໄດ້.',
   'Survey points imported with the file\'s own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.': 'ນຳເຂົ້າຈຸດສຳຫຼວດດ້ວຍຕົວເລກຂອງໄຟລ໌: ເບິ່ງຄືພິກັດແຜນທີ່ ແຕ່ລະບົບຂອງມັນບໍ່ແມ່ນລະບົບທີ່ Lapin ຮູ້ຈັກ (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). ໃສ່ຊື່ມັນໃນ ຈັດການ → ທີ່ຕັ້ງ ຫຼື ແປງແບບແຕ້ມກ່ອນ.',
-  // Report #116: a strip footing alone or with its wall (decision 427+)
+  // Report #116: a strip footing alone or with its wall (decision 436)
   'Footing alone': 'ພຽງແຕ່ຖານຮາກ',
   'With wall': 'ມີຝາ',
   'Wall on the footing': 'ຝາເທິງຖານຮາກ',
   'Strip type with a wall': 'ປະເພດຖານຮາກແບບແຖບທີ່ມີຝາ',
   'First type with a wall': 'ປະເພດທຳອິດທີ່ມີຝາ',
   'Draw the concrete footing alone, or with the wall (the stem) of a strip type on it': 'ແຕ້ມພຽງຖານຮາກຄອນກີດ ຫຼື ພ້ອມຝາ (ສ່ວນຄໍ) ຂອງປະເພດຖານຮາກແບບແຖບໄວ້ເທິງ',
+  // Report #117: foundation plans place on the level under, elevation in Properties (decision 437)
+  'Offset from level': 'ໄລຍະເຍື້ອງຈາກລະດັບ',
+  'Top elevation': 'ລະດັບດ້ານເທິງ',
+  'Bottom elevation': 'ລະດັບດ້ານລຸ່ມ',
+  'Base elevation': 'ລະດັບຖານ',
+  'The level\'s elevation and this offset from it: the figure below follows it': 'ລະດັບຂອງຊັ້ນ ແລະ ໄລຍະເຍື້ອງນີ້: ຄ່າລະດັບທາງລຸ່ມຕາມມັນ',
+  'The top of the element, above ±0.00: type it to move the element there': 'ດ້ານເທິງຂອງອົງປະກອບ ເໜືອ ±0.00: ພິມເພື່ອຍ້າຍອົງປະກອບໄປບ່ອນນັ້ນ',
+  'The bottom of the element, above ±0.00: type it to move the element there': 'ດ້ານລຸ່ມຂອງອົງປະກອບ ເໜືອ ±0.00: ພິມເພື່ອຍ້າຍອົງປະກອບໄປບ່ອນນັ້ນ',
+  'The base of the element, above ±0.00: type it to move the element there': 'ຖານຂອງອົງປະກອບ ເໜືອ ±0.00: ພິມເພື່ອຍ້າຍອົງປະກອບໄປບ່ອນນັ້ນ',
 };
 
 /** Phrases with a number or a name in them. */

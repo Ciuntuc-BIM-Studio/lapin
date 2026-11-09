@@ -219,3 +219,5 @@ Then (#434, a tester's report #118) a DXF's survey points in the browser answere
 Then (#435, a tester's report #115) footings under a plan's range (pad and strip, `Generator.HiddenBelowInPlan`) are drawn dashed in the plan of their storey; a foundation plan cuts and sees them.
 
 Then (#436, a tester's report #116) a strip footing is the concrete alone by default, the wall (its stem) optional: `addStripFooting {stem}`, the tool's option in the command line's bar (`stripOptions.tsx`), `StripFootings.FootingAloneType`.
+
+Then (#437, a tester's report #117) what is drawn in a foundation plan goes on the level under it, which the plan now shows; Properties → Placement gives an element's Offset from level and its absolute Elevation, both editable (`elevation.ts`), and footings an `offset` of their own.

@@ -1226,6 +1226,10 @@ public static class Views
                         attrs["foundation"] = true;
                         attrs["cutHeight"] = -0.5;
                         attrs["viewRange"] = new ViewRange(new("self", 0), new("self", -3.0), new("self", -3.0)).ToJson();
+                        // It shows the level under it too (the Foundations of a new project): what is drawn in it goes there (decision 437, report #117).
+                        var elevation = storey.Num("elevation");
+                        if (Spatial.Storeys(ctx.Model).Where(x => x.Num("elevation") < elevation - 1e-6).OrderByDescending(x => x.Num("elevation")).FirstOrDefault() is { } below)
+                            attrs["storeys"] = new StoreyDisplay("some", new HashSet<string> { below.Id }, false).ToJson();
                     }
                     name = (string?)a["name"] ?? storey.Name;
                     break;

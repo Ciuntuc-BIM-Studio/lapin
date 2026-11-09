@@ -45,3 +45,7 @@ The copies use the same types as the originals and get new IFC GlobalIds. All th
 ![The ground floor's walls and floor copied to the two levels above, in 3D](shots/copy-to-storeys-3d.webp)
 
 To move the selection to another level instead, choose **Modify → Move to storey**. It keeps the elements' heights over the new level, or keeps them where they are in space.
+
+## An element's elevation
+
+An element on a level stands at the level's elevation and an offset from it. **Properties → Placement** shows its **Storey**, its **Offset from level** and its **Elevation** above ±0.00: the base of a wall or column, the top of a floor or beam (a beam's offset is from the level's top), the bottom of a footing (its type's bottom level under the level, plus the offset). Type either figure and the other follows: the element moves in every view, in one undo step. To put an element on another level, change its **Storey**. What you draw in a plan stands on that plan's level.

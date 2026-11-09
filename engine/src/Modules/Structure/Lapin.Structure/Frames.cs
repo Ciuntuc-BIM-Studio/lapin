@@ -369,7 +369,8 @@ static class Place
 
     public static JsonArray Json2(Vec2 p) => new(p.X, p.Y);
 
-    public static double Elevation(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+    /// <summary>The level an element stands on: its storey's, and for a footing its own offset from it (report #117; the type's bottom is under that).</summary>
+    public static double Elevation(IModelView m, Entity e) => (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + (e.Class == IfcClass.Footing ? e.Num("offset") : 0);
 
     public static double StoreyHeight(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("height", 3) ?? 3;
 

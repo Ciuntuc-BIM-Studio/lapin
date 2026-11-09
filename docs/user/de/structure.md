@@ -28,6 +28,8 @@ Zeichnen Sie die Gründung auf der Ebene **Foundations**, oder geben Sie ihr ein
 
 **In den Grundrissen.** Ein Fundament liegt unter der Decke, darum zeichnet ein Grundriss es gestrichelt im Grundriss der Ebene, auf der es steht, wie ein Gebäudegrundriss zeigt, was darunter liegt. Um es geschnitten und gesehen zu sehen, nehmen Sie einen **Fundamentgrundriss**: im Projektbrowser legt das **+** neben **Grundrisse** einen für die aktive Ebene an (0,50 m darunter geschnitten, 2,50 m tief gesehen).
 
+**Zeichnen in einem Fundamentgrundriss.** Er zeigt auch die Ebene darunter, und was Sie dort mit einem Decken-, Wand-, Stützen- oder Trägerwerkzeug zeichnen, kommt auf diese Ebene (die Gründung eines neuen Projekts, bei −1,50); die Fundamentwerkzeuge behalten die Ebene des Grundrisses, die Unterkante eines Fundaments ist die seines Typs darunter.
+
 ![Stützen, Träger und Einzelfundamente in 3D](shots/structure-3d.webp)
 
 ## Typen und Ecken
