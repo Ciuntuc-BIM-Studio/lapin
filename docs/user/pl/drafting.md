@@ -58,6 +58,8 @@ Karta **Rysunek** rysuje linie, polilinie, prostokąty, okręgi i łuki. Edytuje
 
 **Odsuń** (<kbd>O</kbd>) kopiuje linię, polilinię, prostokąt, okrąg lub łuk w odległości. Wpisz odległość w jednostce projektu (w projekcie w milimetrach `500` to pół metra; `2m` lub `1'6"` mówią swoją jednostkę), kliknij kształt, a potem stronę, na którą idzie; pyta o kolejny kształt, aż naciśniesz <kbd>Enter</kbd> lub <kbd>Esc</kbd>. Wpisz zamiast tego **T** (Through), a każda kopia przejdzie przez kliknięty punkt. Narożniki polilinii zostają ostre (na ucios), jak w CAD. Odsunięcie działa na rzutach, przekrojach, elewacjach, na płaszczyznach odniesienia i w widoku 3D.
 
+**Rozbij** (<kbd>X</kbd>, lub **EXPLODE**) to droga powrotna od **Połącz**: zaznacz polilinie lub prostokąty, a każda z nich staje się swoimi liniami, po jednej na bok, na tej samej warstwie, tym samym piórem i kolorem i w tej samej grupie, w jednym kroku cofania. Okręgi, łuki, kreskowania i łańcuchy wymiarów zostają, jakie były, a zaznaczenie bez niczego do rozbicia mówi o tym. Działa w rzutach, przekrojach, elewacjach, na płaszczyznach odniesienia i na płaszczyźnie roboczej w widoku 3D.
+
 Każda długość, o którą pyta wiersz poleceń, jest w jednostce projektu, a monit mówi, w jakiej: `Depth (mm)`, `Height (ft-in)`. Kąty, współczynniki i liczności to zwykłe liczby: `90` po **Obróć** to 90°, bez względu na jednostkę.
 
 ### Odrysowywanie PDF lub obrazu

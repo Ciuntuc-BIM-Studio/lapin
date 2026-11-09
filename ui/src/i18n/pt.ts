@@ -129,7 +129,7 @@ export const PT: Record<string, string> = {
 
   // Tools
   'Wall': 'Parede', 'Door': 'Porta', 'Window': 'Janela', 'Floor': 'Piso', 'Roof': 'Telhado', 'Floor opening': 'Abertura no piso', 'Wall types': 'Tipos de parede',
-  'Floor types': 'Tipos de piso', 'Doors & windows': 'Portas e janelas', 'Join': 'Unir', 'Mitre': 'Meia-esquadria', 'Butt': 'Topo', 'Swap': 'Inverter',
+  'Floor types': 'Tipos de piso', 'Doors & windows': 'Portas e janelas', 'Join': 'Unir', 'Explode': 'Decompor', 'Mitre': 'Meia-esquadria', 'Butt': 'Topo', 'Swap': 'Inverter',
   'Mitre new corners': 'Novos cantos em meia-esquadria', 'Stair': 'Escada', 'Column': 'Pilar', 'Beam': 'Viga', 'Strip footing': 'Sapata corrida', 'Pad footing': 'Sapata isolada',
   'Structure types': 'Tipos estruturais', 'Columns at grid': 'Pilares na grade', 'Line': 'Linha', 'Polyline': 'Polilinha', 'Rectangle': 'Retângulo', 'Circle': 'Círculo', 'Arc': 'Arco',
   'Move': 'Mover', 'Copy': 'Copiar', 'Rotate': 'Girar', 'Mirror': 'Espelhar', 'Scale': 'Escala', 'Erase': 'Apagar', 'Delete': 'Excluir', 'Offset': 'Deslocamento',

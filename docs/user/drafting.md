@@ -28,7 +28,7 @@ Every tool shows its letters in its tooltip; you can change them in **View → K
 
 ## Measuring
 
-**Measure** (<kbd>ME</kbd>, the second quick tool, or **MEASURE** or **DIST** on the command line) measures without drawing anything: click points in a plan, a section or an elevation, snapping as you go, and press <kbd>Enter</kbd>. While you click, the live input shows each leg's length and angle; at the end the notice gives the total length, each leg (for one leg, its Δx, Δy and angle) and, from three points on, the area they enclose.
+**Measure** (<kbd>ME</kbd>, the second quick tool, or **MEASURE** or **DIST** on the command line) measures without drawing anything: click points in a plan, a section or an elevation, snapping as you go, and press <kbd>Enter</kbd>. While you click, the live input shows each leg's length and angle; at the end the notice gives the total length, each leg (for one leg, its Δx, Δy and angle) and, from three points on, the area they enclose. In the 3D view the points snap to the model's corners, edges and faces; when they are at different heights the notice gives the true length in space, with Δz.
 
 ## Snaps and helpers
 
@@ -61,6 +61,8 @@ The **Draft** tab draws lines, polylines, rectangles, circles and arcs. It edits
 ![The Draft tab](shots/ribbon-draft.webp)
 
 **Offset** (<kbd>O</kbd>) copies a line, a polyline, a rectangle, a circle or an arc at a distance. Type the distance in the project's unit (in a project in millimetres `500` is half a metre; `2m` or `1'6"` say their own unit), click the shape, then the side it goes to; it asks for the next shape until you press <kbd>Enter</kbd> or <kbd>Esc</kbd>. Type **T** (Through) instead and each copy passes through the point you click. A polyline's corners stay sharp (mitred), as in CAD. Offset works in plans, sections, elevations, on reference planes and in the 3D view.
+
+**Explode** (<kbd>X</kbd>, or **EXPLODE**) is the way back from **Join**: select polylines or rectangles and each becomes its lines, one for every side, on the same layer with the same pen and colour and in the same group, in one undo step. Circles, arcs, hatches and dimension strings are left as they are, and a selection with nothing to split says so. It works in plans, sections, elevations, on reference planes and on the work plane in the 3D view.
 
 Every length the command line asks for is in the project's unit, and the prompt says which: `Depth (mm)`, `Height (ft-in)`. Angles, factors and counts are plain numbers: `90` after **Rotate** is 90° whatever the unit.
 

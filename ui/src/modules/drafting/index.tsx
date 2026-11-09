@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler } from 'lucide-react';
+import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -378,6 +378,13 @@ registerCommand({ names: ['JOIN', 'J'], label: 'Join', start: () => withSelectio
   return null;
 }) });
 
+/** EXPLODE: polylines and rectangles split into lines, the way back from JOIN; circles, arcs, hatches and dimensions stay (report #121). */
+registerCommand({ names: ['EXPLODE', 'X'], label: 'Explode', start: () => withSelection(async (ids) => {
+  const r = await execute('drafting.explode', { ids }) as { exploded?: number; pieces?: number; kept?: number } | null;
+  if (r) cadLog(`${r.exploded} shape${r.exploded === 1 ? '' : 's'} into ${r.pieces} lines${r.kept ? ` (${r.kept} left as they are)` : ''}.`);
+  return null;
+}) });
+
 registerCommand({ names: ['LINEWORK', 'LW'], label: 'Linework', start: lineworkStep });
 registerCommand({ names: ['LWJOIN', 'LWJ'], label: 'Linework join', start: () => lineworkCorner('join') });
 registerCommand({ names: ['LWTRIM', 'LWTR'], label: 'Linework trim', start: () => lineworkCorner('trim') });
@@ -563,7 +570,7 @@ const drafting: LapinModule = {
       groups: [
         { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC')] },
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATE'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('erase', 'Erase', Eraser, 'ERASE')] },
-        { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN')] },
+        { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN'), cad('explode', 'Explode', Unlink2, 'EXPLODE')] },
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
         orderGroup,
         { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },

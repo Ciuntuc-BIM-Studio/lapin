@@ -58,6 +58,8 @@ Die Registerkarte **Zeichnen** zeichnet Linien, Polylinien, Rechtecke, Kreise un
 
 **Versatz** (<kbd>O</kbd>) kopiert eine Linie, eine Polylinie, ein Rechteck, einen Kreis oder einen Bogen in einem Abstand. Geben Sie den Abstand in der Einheit des Projekts ein (in einem Projekt in Millimetern ist `500` ein halber Meter; `2m` oder `1'6"` nennen ihre eigene Einheit), klicken Sie die Form an, dann die Seite, zu der sie geht; es fragt nach der nächsten Form, bis Sie <kbd>Enter</kbd> oder <kbd>Esc</kbd> drücken. Geben Sie stattdessen **T** (Through) ein, geht jede Kopie durch den angeklickten Punkt. Die Ecken einer Polylinie bleiben scharf (auf Gehrung), wie im CAD. Versatz arbeitet in Grundrissen, Schnitten, Ansichten, auf Referenzebenen und in der 3D-Ansicht.
 
+**Auflösen** (<kbd>X</kbd>, oder **EXPLODE**) ist der Weg zurück von **Verbinden**: Polylinien oder Rechtecke auswählen, und jede wird zu ihren Linien, eine je Seite, auf derselben Ebene mit demselben Stift, derselben Farbe und in derselben Gruppe, in einem Rückgängig-Schritt. Kreise, Bögen, Schraffuren und Maßketten bleiben, wie sie sind; eine Auswahl ohne etwas zum Zerlegen sagt es. Es funktioniert in Grundrissen, Schnitten, Ansichten, auf Referenzebenen und auf der Arbeitsebene in der 3D-Ansicht.
+
 Jede Länge, nach der die Befehlszeile fragt, ist in der Einheit des Projekts, und die Aufforderung nennt sie: `Depth (mm)`, `Height (ft-in)`. Winkel, Faktoren und Anzahlen sind einfache Zahlen: `90` nach **Drehen** sind 90°, gleich welche Einheit.
 
 ### Über einem PDF oder einem Bild nachzeichnen

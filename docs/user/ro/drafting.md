@@ -28,7 +28,7 @@ Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți sc
 
 ## Măsurarea
 
-**Măsoară** (<kbd>ME</kbd>, a doua unealtă rapidă, sau **MEASURE** ori **DIST** în linia de comandă) măsoară fără să deseneze ceva: dai clic pe puncte într-un plan, o secțiune sau o fațadă, cu snap, și apeși <kbd>Enter</kbd>. Cât dai clic, câmpul de introducere arată lungimea și unghiul fiecărui segment; la sfârșit, mesajul dă lungimea totală, fiecare segment (la unul singur, Δx, Δy și unghiul) și, de la trei puncte, aria pe care o închid.
+**Măsoară** (<kbd>ME</kbd>, a doua unealtă rapidă, sau **MEASURE** ori **DIST** în linia de comandă) măsoară fără să deseneze ceva: dai clic pe puncte într-un plan, o secțiune sau o fațadă, cu snap, și apeși <kbd>Enter</kbd>. Cât dai clic, câmpul de introducere arată lungimea și unghiul fiecărui segment; la sfârșit, mesajul dă lungimea totală, fiecare segment (la unul singur, Δx, Δy și unghiul) și, de la trei puncte, aria pe care o închid. În vederea 3D punctele se prind de colțurile, muchiile și fețele modelului; când sunt la înălțimi diferite, mesajul dă lungimea adevărată în spațiu, cu Δz.
 
 ## Snap și ajutoare
 
@@ -61,6 +61,8 @@ Tabul **Desen** desenează linii, polilinii, dreptunghiuri, cercuri și arce. Le
 ![Tabul Desen](shots/ribbon-draft.webp)
 
 **Paralelă** (<kbd>O</kbd>) copiază o linie, o polilinie, un dreptunghi, un cerc sau un arc la o distanță. Scrie distanța în unitatea proiectului (într-un proiect în milimetri `500` înseamnă jumătate de metru; `2m` sau `1'6"` își spun unitatea), fă clic pe formă, apoi pe partea în care merge; îți cere forma următoare până apeși <kbd>Enter</kbd> sau <kbd>Esc</kbd>. Scrie **T** (Through) în loc și fiecare copie trece prin punctul pe care faci clic. Colțurile unei polilinii rămân ascuțite (în teșitură), ca în CAD. Paralela merge în planuri, secțiuni, fațade, pe planuri de referință și în vederea 3D.
+
+**Explodează** (<kbd>X</kbd>, sau **EXPLODE**) e drumul înapoi de la **Îmbină**: selectează polilinii sau dreptunghiuri și fiecare devine liniile lui, câte una pe latură, pe același strat, cu aceeași peniță și culoare și în același grup, într-un singur pas de undo. Cercurile, arcele, hașurile și șirurile de cote rămân cum sunt, iar o selecție fără nimic de desfăcut o spune. Merge în planuri, secțiuni, fațade, pe planuri de referință și pe planul de lucru din vederea 3D.
 
 Orice lungime cerută de linia de comandă e în unitatea proiectului, iar mesajul spune care: `Depth (mm)`, `Height (ft-in)`. Unghiurile, factorii și numărătorile sunt numere simple: `90` după **Rotire** înseamnă 90°, oricare ar fi unitatea.
 

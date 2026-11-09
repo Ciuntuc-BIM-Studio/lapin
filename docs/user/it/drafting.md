@@ -58,6 +58,8 @@ La scheda **Disegno** disegna linee, polilinee, rettangoli, cerchi e archi. Li m
 
 **Offset** (<kbd>O</kbd>) copia una linea, una polilinea, un rettangolo, un cerchio o un arco a una distanza. Scrivi la distanza nell’unità del progetto (in un progetto in millimetri `500` è mezzo metro; `2m` o `1'6"` dicono la propria unità), fai clic sulla forma, poi sul lato verso cui va; chiede la forma successiva finché premi <kbd>Invio</kbd> o <kbd>Esc</kbd>. Scrivi invece **T** (Through) e ogni copia passa per il punto su cui fai clic. Gli spigoli di una polilinea restano vivi (a quartabuono), come in CAD. L’offset funziona in piante, sezioni, prospetti, su piani di riferimento e nella vista 3D.
 
+**Esplodi** (<kbd>X</kbd>, o **EXPLODE**) è la via del ritorno da **Unisci**: seleziona polilinee o rettangoli e ognuno diventa le sue linee, una per lato, sullo stesso livello con la stessa penna e colore e nello stesso gruppo, in un solo passo di annullamento. Cerchi, archi, campiture e catene di quote restano come sono, e una selezione senza niente da dividere lo dice. Funziona in piante, sezioni, prospetti, su piani di riferimento e sul piano di lavoro della vista 3D.
+
 Ogni lunghezza che la riga di comando chiede è nell’unità del progetto, e il messaggio dice quale: `Depth (mm)`, `Height (ft-in)`. Angoli, fattori e conteggi sono numeri semplici: `90` dopo **Ruota** è 90°, qualunque sia l’unità.
 
 ### Ricalcare un PDF o un’immagine

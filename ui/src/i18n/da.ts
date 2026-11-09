@@ -131,7 +131,7 @@ export const DA: Record<string, string> = {
 
   // Tools
   'Wall': 'Væg', 'Door': 'Dør', 'Window': 'Vindue', 'Floor': 'Dæk', 'Roof': 'Tag', 'Floor opening': 'Dækåbning', 'Wall types': 'Vægtyper',
-  'Floor types': 'Dæktyper', 'Doors & windows': 'Døre og vinduer', 'Join': 'Sammenføj', 'Mitre': 'Geringssamling', 'Butt': 'Stødsamling', 'Swap': 'Byt om',
+  'Floor types': 'Dæktyper', 'Doors & windows': 'Døre og vinduer', 'Join': 'Sammenføj', 'Explode': 'Eksplodér', 'Mitre': 'Geringssamling', 'Butt': 'Stødsamling', 'Swap': 'Byt om',
   'Mitre new corners': 'Gering på nye hjørner', 'Stair': 'Trappe', 'Column': 'Søjle', 'Beam': 'Bjælke', 'Strip footing': 'Stribefundament', 'Pad footing': 'Punktfundament',
   'Structure types': 'Konstruktionstyper', 'Columns at grid': 'Søjler ved modullinjer', 'Line': 'Linje', 'Polyline': 'Polylinje', 'Rectangle': 'Rektangel', 'Circle': 'Cirkel', 'Arc': 'Bue',
   'Move': 'Flyt', 'Copy': 'Kopiér', 'Rotate': 'Rotér', 'Mirror': 'Spejl', 'Scale': 'Skalér', 'Erase': 'Slet', 'Delete': 'Slet', 'Offset': 'Forskyd',

@@ -129,7 +129,7 @@ export const ZH: Record<string, string> = {
 
   // Tools
   'Wall': '墙', 'Door': '门', 'Window': '窗', 'Floor': '楼板', 'Roof': '屋顶', 'Floor opening': '楼板洞口', 'Wall types': '墙类型',
-  'Floor types': '楼板类型', 'Doors & windows': '门窗', 'Join': '连接', 'Mitre': '斜接', 'Butt': '对接', 'Swap': '交换',
+  'Floor types': '楼板类型', 'Doors & windows': '门窗', 'Join': '连接', 'Explode': '分解', 'Mitre': '斜接', 'Butt': '对接', 'Swap': '交换',
   'Mitre new corners': '新转角斜接', 'Stair': '楼梯', 'Column': '柱', 'Beam': '梁', 'Strip footing': '条形基础', 'Pad footing': '独立基础',
   'Structure types': '结构类型', 'Columns at grid': '轴网处布柱', 'Line': '直线', 'Polyline': '多段线', 'Rectangle': '矩形', 'Circle': '圆', 'Arc': '圆弧',
   'Move': '移动', 'Copy': '复制', 'Rotate': '旋转', 'Mirror': '镜像', 'Scale': '缩放', 'Erase': '删除', 'Delete': '删除', 'Offset': '偏移',

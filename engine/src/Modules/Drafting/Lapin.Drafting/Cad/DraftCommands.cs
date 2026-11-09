@@ -248,6 +248,61 @@ public static class DraftCommands
             return new JsonObject { ["ids"] = made, ["joined"] = joined, ["pieces"] = pieces.Count };
         });
 
+        // Polylines (a rectangle is one) split into their lines, the way back from JOIN (report #121, decision 429). Each piece is a
+        // shape of its own on the same layer, with the same colour, role and attributes (a DXF's heights split with it), in the
+        // group the polyline was in; the first keeps the polyline's entity. Circles and arcs, hatches and dimension strings are not
+        // polylines and stay as they are; one undo step.
+        r.Command("explode", "Explode", (ctx, a) =>
+        {
+            var ids = Ids(a);
+            if (ids.Count == 0) throw new CommandException("Which shapes?");
+            var made = new JsonArray();
+            var exploded = 0;
+            var kept = 0;
+            foreach (var id in ids)
+            {
+                if (ctx.Model.Get(id) is not { Class: IfcClass.Annotation, PredefinedType: Drafts.Predefined } e || e.Attrs["hatch"] != null || Drafts.ShapeOf(e) is not { } shape) { kept++; continue; }
+                if (shape is not Polyline p) { kept++; continue; }
+                Drafts.Require(ctx.Model, id);
+                var n = p.Pts.Count;
+                var heights = e.Attrs["heights"] is JsonArray ha ? ha.Select(z => Json.Number(z) ?? 0).ToList() : null;
+                if (heights != null && heights.Count == n - 1 && p.Closed) heights.Add(heights[0]);
+                var count = p.Closed ? n : n - 1;
+                var pieces = new List<(Vec2 A, Vec2 B, double? Za, double? Zb)>();
+                for (var i = 0; i < count; i++)
+                {
+                    var (ia, ib) = (i, (i + 1) % n);
+                    if ((p.Pts[ib] - p.Pts[ia]).Length < 1e-9) continue;
+                    pieces.Add((p.Pts[ia], p.Pts[ib], heights != null && ia < heights.Count ? heights[ia] : null, heights != null && ib < heights.Count ? heights[ib] : null));
+                }
+                if (pieces.Count == 0) { kept++; continue; }
+                var view = e.Str("viewId") ?? "";
+                var group = Groups.Of(ctx.Model, e.Id);
+                var more = new List<string>();
+                for (var k = 0; k < pieces.Count; k++)
+                {
+                    var (pa, pb, za, zb) = pieces[k];
+                    var attrs = e.CloneAttrs();
+                    var line = new Line(pa, pb);
+                    attrs["shape"] = line.ToJson();
+                    if (heights != null) { if (za is { } z1 && zb is { } z2) attrs["heights"] = new JsonArray(z1, z2); else attrs.Remove("heights"); }
+                    var name = Drafts.UniqueName(ctx.Model, view, "Line");
+                    if (k == 0) { ctx.Replace(e.With(name: name, attrs: attrs)); made.Add((JsonNode)e.Id); }
+                    else
+                    {
+                        var piece = new Entity(ctx.NewId(), IfcClass.Annotation, name, attrs, Drafts.Predefined);
+                        ctx.Add(piece);
+                        more.Add(piece.Id);
+                        made.Add((JsonNode)piece.Id);
+                    }
+                }
+                if (group != null && more.Count > 0) ctx.RelateAll(Groups.Rel, group.Id, more);
+                exploded++;
+            }
+            if (exploded == 0) throw new CommandException("Explode splits polylines and rectangles into lines; circles, arcs, hatches and dimensions stay as they are.");
+            return new JsonObject { ["ids"] = made, ["exploded"] = exploded, ["pieces"] = made.Count, ["kept"] = kept };
+        });
+
         // A hatch filling the region around a point: the smallest closed outline there, its islands left out.
         r.Command("hatch", "Hatch", (ctx, a) =>
         {

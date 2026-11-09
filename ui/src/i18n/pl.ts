@@ -129,7 +129,7 @@ export const PL: Record<string, string> = {
 
   // Tools
   'Wall': 'Ściana', 'Door': 'Drzwi', 'Window': 'Okno', 'Floor': 'Strop', 'Roof': 'Dach', 'Floor opening': 'Otwór w stropie', 'Wall types': 'Typy ścian',
-  'Floor types': 'Typy stropów', 'Doors & windows': 'Drzwi i okna', 'Join': 'Połącz', 'Mitre': 'Na ukos', 'Butt': 'Na styk', 'Swap': 'Zamień',
+  'Floor types': 'Typy stropów', 'Doors & windows': 'Drzwi i okna', 'Join': 'Połącz', 'Explode': 'Rozbij', 'Mitre': 'Na ukos', 'Butt': 'Na styk', 'Swap': 'Zamień',
   'Mitre new corners': 'Nowe narożniki na ukos', 'Stair': 'Schody', 'Column': 'Słup', 'Beam': 'Belka', 'Strip footing': 'Ława fundamentowa', 'Pad footing': 'Stopa fundamentowa',
   'Structure types': 'Typy konstrukcyjne', 'Columns at grid': 'Słupy w siatce', 'Line': 'Linia', 'Polyline': 'Polilinia', 'Rectangle': 'Prostokąt', 'Circle': 'Okrąg', 'Arc': 'Łuk',
   'Move': 'Przesuń', 'Copy': 'Kopiuj', 'Rotate': 'Obróć', 'Mirror': 'Lustro', 'Scale': 'Skaluj', 'Erase': 'Wymaż', 'Delete': 'Usuń', 'Offset': 'Odsuń',

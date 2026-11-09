@@ -753,6 +753,32 @@ export const FAQ: Entry[] = [
     action: { label: 'Open Stair types', labelRo: 'Deschide Stair types', run: { kind: 'tool', id: 'architecture.stairTypes' } },
     source: 'report #109',
   },
+  {
+    id: 'measure',
+    q: ['Is there a tape tool to quickly check a measure?', 'How do I measure a distance?', 'How do I check the length between two points without drawing?'],
+    qRo: ['Există o ruletă pentru a verifica repede o măsură?', 'Cum măsor o distanță?', 'Cum văd lungimea dintre două puncte fără să desenez?'],
+    keywords: ['measure', 'measuring', 'measurement', 'tape', 'ruler', 'distance', 'length', 'check', 'quickly', 'masoara', 'masor', 'masurare', 'masuratoare', 'ruleta', 'distanta', 'lungimea', 'verifica',
+      // Spanish, Portuguese, French, Italian, German, Polish, Danish, Chinese
+      'medir', 'medicion', 'medida', 'medidas', 'distancia', 'cinta', 'regla', 'medicao', 'trena', 'regua', 'mesurer', 'mesure', 'distance', 'metre', 'regle', 'misura', 'misurare', 'distanza', 'metro', 'righello',
+      'messen', 'messung', 'massband', 'abstand', 'entfernung', 'miarka', 'miary', 'miara', 'miare', 'mierzyc', 'zmierzyc', 'pomiar', 'odleglosc', 'maleband', 'malebaand', 'maling', 'afstand', 'maal', '测量', '量', '尺寸', '卷尺', '距离'],
+    a: 'Measure (ME, the second quick tool, or MEASURE or DIST on the command line) measures without drawing anything. Click points in a plan, a section, an elevation or the 3D view (snapping to the model\'s corners, edges and faces; in 3D the cursor shows what it is on), then press Enter: the notice gives each leg and the total length (for one leg its Δx, Δy and angle, in 3D its Δz too: the true length in space), and from three points on, the area they enclose. A dimension (DI) is a measurement that stays in the drawing; Studio → Tape measure (KM) measures an edge or a point in 3D and leaves guides.',
+    aRo: 'Measure (ME, a doua unealtă rapidă, sau MEASURE ori DIST în linia de comandă) măsoară fără să deseneze nimic. Dă clic pe puncte într-un plan, o secțiune, o fațadă sau în vederea 3D (se prinde de colțurile, muchiile și fețele modelului; în 3D cursorul arată pe ce stă) și apasă Enter: mesajul dă fiecare segment și lungimea totală (la un segment Δx, Δy și unghiul, în 3D și Δz: lungimea adevărată în spațiu), iar de la trei puncte în sus și aria cuprinsă. O cotă (DI) e o măsurătoare care rămâne în desen; Studio → Tape measure (KM) măsoară o muchie sau un punct în 3D și lasă ghidaje.',
+    action: { label: 'Measure', labelRo: 'Măsoară', run: { kind: 'tool', id: 'measure' } },
+    source: 'report #119',
+  },
+  {
+    id: 'explode',
+    q: ['How do I explode a polyline into lines?', 'Can I split a rectangle back into four lines?', 'JOIN made a polyline, how do I undo it?'],
+    qRo: ['Cum desfac o polilinie în linii?', 'Pot împărți un dreptunghi la loc în patru linii?', 'JOIN a făcut o polilinie, cum o desfac?'],
+    keywords: ['explode', 'exploding', 'polyline', 'polylines', 'split', 'break', 'rectangle', 'lines', 'join', 'desfac', 'desface', 'explodeaza', 'polilinie', 'poliliniile', 'imparte', 'dreptunghi', 'linii',
+      // Spanish, Portuguese, French, Italian, German, Polish, Danish, Chinese
+      'descomponer', 'polilinea', 'polilineas', 'rectangulo', 'lineas', 'unir', 'decompor', 'polilinha', 'retangulo', 'linhas', 'decomposer', 'polyligne', 'polylignes', 'rectangle', 'lignes', 'esplodere', 'esplodi', 'polilinee', 'rettangolo', 'linee', 'unisci',
+      'auflosen', 'zerlegen', 'polylinie', 'linien', 'rechteck', 'rozbic', 'rozbij', 'polilinia', 'polilinie', 'prostokat', 'linie', 'eksploder', 'eksplodere', 'polylinje', 'polylinjer', 'rektangel', 'linjer', '分解', '多段线', '矩形'],
+    a: 'Draft → Edit → Explode (or X, or EXPLODE on the command line), then select what to split: a polyline or a rectangle becomes its lines, one each side, on the same layer with the same pen, colour and group, in one undo step. It is the way back from JOIN. Circles and arcs, hatches and dimension strings are left as they are. In 3D it works on the lines drawn on a work plane the same way.',
+    aRo: 'Draft → Edit → Explode (sau X, ori EXPLODE în linia de comandă), apoi selectează ce desfaci: o polilinie sau un dreptunghi devine liniile lui, câte una pe latură, pe același strat, cu aceeași peniță, culoare și grup, într-un singur pas de undo. E drumul înapoi de la JOIN. Cercurile și arcele, hașurile și șirurile de cote rămân cum sunt. În 3D merge la fel pe liniile desenate pe un plan de lucru.',
+    action: { label: 'Explode', labelRo: 'Explodează', run: { kind: 'tool', id: 'cad.explode' } },
+    source: 'report #121',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

@@ -129,7 +129,7 @@ export const RO: Record<string, string> = {
 
   // Tools
   'Wall': 'Perete', 'Door': 'Ușă', 'Window': 'Fereastră', 'Floor': 'Placă', 'Roof': 'Acoperiș', 'Floor opening': 'Gol în placă', 'Wall types': 'Tipuri de pereți',
-  'Floor types': 'Tipuri de plăci', 'Doors & windows': 'Uși și ferestre', 'Join': 'Îmbină', 'Mitre': 'La 45°', 'Butt': 'Cap la cap', 'Swap': 'Inversează',
+  'Floor types': 'Tipuri de plăci', 'Doors & windows': 'Uși și ferestre', 'Join': 'Îmbină', 'Explode': 'Explodează', 'Mitre': 'La 45°', 'Butt': 'Cap la cap', 'Swap': 'Inversează',
   'Mitre new corners': 'Colțuri noi la 45°', 'Stair': 'Scară', 'Column': 'Stâlp', 'Beam': 'Grindă', 'Strip footing': 'Fundație continuă', 'Pad footing': 'Fundație izolată',
   'Structure types': 'Tipuri structurale', 'Columns at grid': 'Stâlpi pe axe', 'Line': 'Linie', 'Polyline': 'Polilinie', 'Rectangle': 'Dreptunghi', 'Circle': 'Cerc', 'Arc': 'Arc',
   'Move': 'Mută', 'Copy': 'Copiază', 'Rotate': 'Rotește', 'Mirror': 'Oglindește', 'Scale': 'Scalează', 'Erase': 'Șterge', 'Delete': 'Șterge', 'Offset': 'Paralelă',

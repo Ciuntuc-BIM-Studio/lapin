@@ -131,7 +131,7 @@ export const IT: Record<string, string> = {
 
   // Tools
   'Wall': 'Muro', 'Door': 'Porta', 'Window': 'Finestra', 'Floor': 'Solaio', 'Roof': 'Tetto', 'Floor opening': 'Foro nel solaio', 'Wall types': 'Tipi di muro',
-  'Floor types': 'Tipi di solaio', 'Doors & windows': 'Porte e finestre', 'Join': 'Unisci', 'Mitre': 'A quartabuono', 'Butt': 'Di testa', 'Swap': 'Scambia',
+  'Floor types': 'Tipi di solaio', 'Doors & windows': 'Porte e finestre', 'Join': 'Unisci', 'Explode': 'Esplodi', 'Mitre': 'A quartabuono', 'Butt': 'Di testa', 'Swap': 'Scambia',
   'Mitre new corners': 'Nuovi angoli a quartabuono', 'Stair': 'Scala', 'Column': 'Pilastro', 'Beam': 'Trave', 'Strip footing': 'Trave di fondazione', 'Pad footing': 'Plinto',
   'Structure types': 'Tipi strutturali', 'Columns at grid': 'Pilastri sulla griglia', 'Line': 'Linea', 'Polyline': 'Polilinea', 'Rectangle': 'Rettangolo', 'Circle': 'Cerchio', 'Arc': 'Arco',
   'Move': 'Sposta', 'Copy': 'Copia', 'Rotate': 'Ruota', 'Mirror': 'Specchia', 'Scale': 'Scala', 'Erase': 'Cancella', 'Delete': 'Elimina', 'Offset': 'Offset',

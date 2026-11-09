@@ -131,7 +131,7 @@ export const DE: Record<string, string> = {
 
   // Tools
   'Wall': 'Wand', 'Door': 'Tür', 'Window': 'Fenster', 'Floor': 'Decke', 'Roof': 'Dach', 'Floor opening': 'Deckenöffnung', 'Wall types': 'Wandtypen',
-  'Floor types': 'Deckentypen', 'Doors & windows': 'Türen und Fenster', 'Join': 'Verbinden', 'Mitre': 'Gehrung', 'Butt': 'Stumpf', 'Swap': 'Tauschen',
+  'Floor types': 'Deckentypen', 'Doors & windows': 'Türen und Fenster', 'Join': 'Verbinden', 'Explode': 'Auflösen', 'Mitre': 'Gehrung', 'Butt': 'Stumpf', 'Swap': 'Tauschen',
   'Mitre new corners': 'Neue Ecken auf Gehrung', 'Stair': 'Treppe', 'Column': 'Stütze', 'Beam': 'Träger', 'Strip footing': 'Streifenfundament', 'Pad footing': 'Einzelfundament',
   'Structure types': 'Tragwerkstypen', 'Columns at grid': 'Stützen am Raster', 'Line': 'Linie', 'Polyline': 'Polylinie', 'Rectangle': 'Rechteck', 'Circle': 'Kreis', 'Arc': 'Bogen',
   'Move': 'Verschieben', 'Copy': 'Kopieren', 'Rotate': 'Drehen', 'Mirror': 'Spiegeln', 'Scale': 'Skalieren', 'Erase': 'Löschen', 'Delete': 'Löschen', 'Offset': 'Versatz',

@@ -131,7 +131,7 @@ export const FR: Record<string, string> = {
 
   // Tools
   'Wall': 'Mur', 'Door': 'Porte', 'Window': 'Fenêtre', 'Floor': 'Dalle', 'Roof': 'Toit', 'Floor opening': 'Trémie de dalle', 'Wall types': 'Types de murs',
-  'Floor types': 'Types de dalles', 'Doors & windows': 'Portes et fenêtres', 'Join': 'Joindre', 'Mitre': 'Onglet', 'Butt': 'Bout à bout', 'Swap': 'Permuter',
+  'Floor types': 'Types de dalles', 'Doors & windows': 'Portes et fenêtres', 'Join': 'Joindre', 'Explode': 'Décomposer', 'Mitre': 'Onglet', 'Butt': 'Bout à bout', 'Swap': 'Permuter',
   'Mitre new corners': 'Angles neufs en onglet', 'Stair': 'Escalier', 'Column': 'Poteau', 'Beam': 'Poutre', 'Strip footing': 'Semelle filante', 'Pad footing': 'Semelle isolée',
   'Structure types': 'Types structurels', 'Columns at grid': 'Poteaux sur quadrillage', 'Line': 'Ligne', 'Polyline': 'Polyligne', 'Rectangle': 'Rectangle', 'Circle': 'Cercle', 'Arc': 'Arc',
   'Move': 'Déplacer', 'Copy': 'Copier', 'Rotate': 'Faire pivoter', 'Mirror': 'Symétrie', 'Scale': 'Échelle', 'Erase': 'Effacer', 'Delete': 'Supprimer', 'Offset': 'Décaler',

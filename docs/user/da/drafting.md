@@ -58,6 +58,8 @@ Fanen **Tegn** tegner linjer, polylinjer, rektangler, cirkler og buer. Den redig
 
 **Forskyd** (<kbd>O</kbd>) kopierer en linje, en polylinje, et rektangel, en cirkel eller en bue i en afstand. Skriv afstanden i projektets enhed (i et projekt i millimeter er `500` en halv meter; `2m` eller `1'6"` siger deres egen enhed), klik på formen og så på den side, den skal til; den beder om den næste form, til du trykker <kbd>Enter</kbd> eller <kbd>Esc</kbd>. Skriv **T** (Through) i stedet, så går hver kopi gennem det punkt, du klikker. En polylinjes hjørner forbliver skarpe (i geringer), som i CAD. Forskyd virker i planer, snit, facader, på referenceplaner og i 3D-visningen.
 
+**Eksplodér** (<kbd>X</kbd>, eller **EXPLODE**) er vejen tilbage fra **Sammenføj**: markér polylinjer eller rektangler, og hver bliver til sine linjer, én for hver side, på samme lag med samme pen og farve og i samme gruppe, i ét fortrydelsestrin. Cirkler, buer, skraveringer og målkæder lades urørte, og en markering uden noget at dele siger det. Det virker i plantegninger, snit, facader, på referenceplaner og på arbejdsplanet i 3D-visningen.
+
 Hver længde, kommandolinjen beder om, er i projektets enhed, og prompten siger hvilken: `Depth (mm)`, `Height (ft-in)`. Vinkler, faktorer og antal er almindelige tal: `90` efter **Rotér** er 90°, uanset enheden.
 
 ### Tegn efter en PDF eller et billede

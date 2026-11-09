@@ -58,6 +58,8 @@ La ficha **Dibujo** dibuja líneas, polilíneas, rectángulos, círculos y arcos
 
 **Desfase** (<kbd>O</kbd>) copia una línea, una polilínea, un rectángulo, un círculo o un arco a una distancia. Escribe la distancia en la unidad del proyecto (en un proyecto en milímetros `500` es medio metro; `2m` o `1'6"` dicen su propia unidad), haz clic en la forma y luego en el lado hacia el que va; pide la forma siguiente hasta que pulses <kbd>Enter</kbd> o <kbd>Esc</kbd>. Escribe **T** (Through) en su lugar y cada copia pasa por el punto en que haces clic. Las esquinas de una polilínea quedan vivas (en inglete), como en CAD. El desfase funciona en plantas, secciones, alzados, en planos de referencia y en la vista 3D.
 
+**Descomponer** (<kbd>X</kbd>, o **EXPLODE**) es el camino de vuelta de **Unir**: selecciona polilíneas o rectángulos y cada uno se convierte en sus líneas, una por lado, en la misma capa con el mismo lápiz y color y en el mismo grupo, en un solo paso de deshacer. Los círculos, los arcos, las tramas y las cadenas de cotas se quedan como están, y una selección sin nada que dividir lo dice. Funciona en plantas, secciones, alzados, en planos de referencia y en el plano de trabajo de la vista 3D.
+
 Toda longitud que pide la línea de comandos está en la unidad del proyecto, y el mensaje dice cuál: `Depth (mm)`, `Height (ft-in)`. Los ángulos, factores y recuentos son números simples: `90` tras **Girar** es 90°, sea cual sea la unidad.
 
 ### Calcar sobre un PDF o una imagen

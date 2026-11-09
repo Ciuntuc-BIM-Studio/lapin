@@ -142,3 +142,5 @@ Then (#427, a tester's report #123) the side panels on either side: View → Pan
 Then (#427, a tester's report #120) images to trace and a PDF's pictures were drawn upside down (read as mirrored): the corners reached `PenImage` from the bottom left instead of the top left; fixed in `ViewImages.Marks`, tested in plans, sections and elevations.
 
 Then (#428, a tester's report #122) a SOLID hatch can be selected again: its outline and its area are sent to the interface to click, a pattern hatch too (inside, where nothing else lies).
+
+Then (#429, a tester's report #121) EXPLODE (X, Draft → Edit → Explode): a polyline or a rectangle split into its lines on the same layer, pen and group, in one undo step (`drafting.explode`); circles, arcs, hatches and dimension strings stay.

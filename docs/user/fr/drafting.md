@@ -58,6 +58,8 @@ L’onglet **Dessin** trace des lignes, des polylignes, des rectangles, des cerc
 
 **Décaler** (<kbd>O</kbd>) copie une ligne, une polyligne, un rectangle, un cercle ou un arc à une distance. Tapez la distance dans l’unité du projet (dans un projet en millimètres, `500` est un demi-mètre ; `2m` ou `1'6"` disent leur propre unité), cliquez sur la forme, puis sur le côté où elle va ; il demande la forme suivante jusqu’à <kbd>Entrée</kbd> ou <kbd>Échap</kbd>. Tapez plutôt **T** (Through) et chaque copie passe par le point cliqué. Les angles d’une polyligne restent vifs (en onglet), comme en CAO. Décaler fonctionne dans les plans, coupes, élévations, sur les plans de référence et dans la vue 3D.
 
+**Décomposer** (<kbd>X</kbd>, ou **EXPLODE**) est le chemin inverse de **Joindre** : sélectionnez des polylignes ou des rectangles et chacun devient ses lignes, une par côté, sur le même calque avec le même stylo et la même couleur et dans le même groupe, en une seule étape d'annulation. Les cercles, les arcs, les hachures et les chaînes de cotes restent tels quels, et une sélection sans rien à découper le dit. Cela fonctionne dans les plans, les coupes, les façades, sur les plans de référence et sur le plan de travail de la vue 3D.
+
 Toute longueur que demande la ligne de commande est dans l’unité du projet, et l’invite dit laquelle : `Depth (mm)`, `Height (ft-in)`. Les angles, facteurs et nombres sont de simples nombres : `90` après **Rotation** fait 90°, quelle que soit l’unité.
 
 ### Décalquer un PDF ou une image

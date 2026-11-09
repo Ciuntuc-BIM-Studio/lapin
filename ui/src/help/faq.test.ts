@@ -214,4 +214,30 @@ describe('Ask Lapin', () => {
       for (const k of e.keywords) expect(normalise(k)).toBe(k);
     }
   });
+
+  it('answers the tape question and the explode question in every interface language (reports #119, #121)', () => {
+    // Report #119 in the tester\'s own Polish, then the same question in the other languages.
+    expect(best('czy masz narzędzie miarka do szybkiego sprawdzania miary?')).toBe('measure');
+    expect(best('Is there a tape tool to quickly check a measure?')).toBe('measure');
+    expect(best('exista o ruleta pentru masurare rapida?')).toBe('measure');
+    expect(best('¿hay una herramienta de medición para comprobar una medida rápidamente?')).toBe('measure');
+    expect(best('existe uma ferramenta de medição para verificar uma medida rapidamente?')).toBe('measure');
+    expect(best('y a-t-il un outil mètre pour vérifier une mesure rapidement ?')).toBe('measure');
+    expect(best('hai uno strumento metro per controllare rapidamente una misura?')).toBe('measure');
+    expect(best('gibt es ein Maßband-Werkzeug, um schnell ein Maß zu prüfen?')).toBe('measure');
+    expect(best('har du et målebånd til hurtigt at tjekke et mål?')).toBe('measure');
+    expect(best('有没有快速检查尺寸的测量工具？')).toBe('measure');
+    expect(best('cum masor o distanta')).toBe('measure');
+    // Report #121 in the tester\'s own Italian, and the others.
+    expect(best('esplodere polilinea')).toBe('explode');
+    expect(best('how do I explode a polyline')).toBe('explode');
+    expect(best('cum desfac o polilinie in linii')).toBe('explode');
+    expect(best('como descomponer una polilínea en líneas')).toBe('explode');
+    expect(best('como decompor uma polilinha em linhas')).toBe('explode');
+    expect(best('comment décomposer une polyligne en lignes')).toBe('explode');
+    expect(best('eine Polylinie in Linien auflösen')).toBe('explode');
+    expect(best('jak rozbić polilinię na linie')).toBe('explode');
+    expect(best('hvordan eksploderer jeg en polylinje')).toBe('explode');
+    expect(best('如何分解多段线')).toBe('explode');
+  });
 });

@@ -58,6 +58,8 @@ A guia **Desenho** desenha linhas, polilinhas, retângulos, círculos e arcos. E
 
 **Deslocamento** (<kbd>O</kbd>) copia uma linha, uma polilinha, um retângulo, um círculo ou um arco a uma distância. Digite a distância na unidade do projeto (num projeto em milímetros `500` é meio metro; `2m` ou `1'6"` dizem a própria unidade), clique na forma e depois no lado para onde ela vai; ele pede a forma seguinte até você apertar <kbd>Enter</kbd> ou <kbd>Esc</kbd>. Digite **T** (Through) em vez disso e cada cópia passa pelo ponto clicado. Os cantos de uma polilinha ficam vivos (em meia-esquadria), como no CAD. O deslocamento funciona em plantas, cortes, elevações, em planos de referência e na vista 3D.
 
+**Decompor** (<kbd>X</kbd>, ou **EXPLODE**) é o caminho de volta de **Unir**: selecione polilinhas ou retângulos e cada um vira as suas linhas, uma por lado, na mesma camada com a mesma caneta e cor e no mesmo grupo, em um único passo de desfazer. Círculos, arcos, hachuras e cadeias de cotas ficam como estão, e uma seleção sem nada para dividir avisa. Funciona em plantas, cortes, elevações, em planos de referência e no plano de trabalho da vista 3D.
+
 Todo comprimento que a linha de comando pede está na unidade do projeto, e a mensagem diz qual: `Depth (mm)`, `Height (ft-in)`. Ângulos, fatores e contagens são números simples: `90` depois de **Girar** é 90°, seja qual for a unidade.
 
 ### Decalcar um PDF ou uma imagem

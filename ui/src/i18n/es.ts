@@ -131,7 +131,7 @@ export const ES: Record<string, string> = {
 
   // Tools
   'Wall': 'Muro', 'Door': 'Puerta', 'Window': 'Ventana', 'Floor': 'Losa', 'Roof': 'Cubierta', 'Floor opening': 'Hueco en losa', 'Wall types': 'Tipos de muro',
-  'Floor types': 'Tipos de losa', 'Doors & windows': 'Puertas y ventanas', 'Join': 'Unir', 'Mitre': 'Inglete', 'Butt': 'A tope', 'Swap': 'Intercambiar',
+  'Floor types': 'Tipos de losa', 'Doors & windows': 'Puertas y ventanas', 'Join': 'Unir', 'Explode': 'Descomponer', 'Mitre': 'Inglete', 'Butt': 'A tope', 'Swap': 'Intercambiar',
   'Mitre new corners': 'Esquinas nuevas a inglete', 'Stair': 'Escalera', 'Column': 'Pilar', 'Beam': 'Viga', 'Strip footing': 'Zapata corrida', 'Pad footing': 'Zapata aislada',
   'Structure types': 'Tipos estructurales', 'Columns at grid': 'Pilares en la rejilla', 'Line': 'Línea', 'Polyline': 'Polilínea', 'Rectangle': 'Rectángulo', 'Circle': 'Círculo', 'Arc': 'Arco',
   'Move': 'Desplazar', 'Copy': 'Copiar', 'Rotate': 'Girar', 'Mirror': 'Simetría', 'Scale': 'Escala', 'Erase': 'Borrar', 'Delete': 'Eliminar', 'Offset': 'Desfase',

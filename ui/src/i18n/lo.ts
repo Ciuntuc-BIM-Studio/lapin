@@ -126,7 +126,7 @@ export const LO: Record<string, string> = {
 
   // Tools
   'Wall': 'ຝາ', 'Door': 'ປະຕູ', 'Window': 'ປ່ອງຢ້ຽມ', 'Floor': 'ພື້ນ', 'Roof': 'ຫຼັງຄາ', 'Floor opening': 'ຊ່ອງເປີດພື້ນ', 'Wall types': 'ປະເພດຝາ',
-  'Floor types': 'ປະເພດພື້ນ', 'Doors & windows': 'ປະຕູ ແລະ ປ່ອງຢ້ຽມ', 'Join': 'ເຊື່ອມຕໍ່', 'Mitre': 'ເຂົ້າຫຼ່ຽມ 45°', 'Butt': 'ຕໍ່ຊົນ', 'Swap': 'ສະຫຼັບ',
+  'Floor types': 'ປະເພດພື້ນ', 'Doors & windows': 'ປະຕູ ແລະ ປ່ອງຢ້ຽມ', 'Join': 'ເຊື່ອມຕໍ່', 'Explode': 'ແຍກອອກ', 'Mitre': 'ເຂົ້າຫຼ່ຽມ 45°', 'Butt': 'ຕໍ່ຊົນ', 'Swap': 'ສະຫຼັບ',
   'Mitre new corners': 'ເຂົ້າຫຼ່ຽມ 45° ສຳລັບມຸມໃໝ່', 'Stair': 'ຂັ້ນໄດ', 'Column': 'ເສົາ', 'Beam': 'ຄານ', 'Strip footing': 'ຖານຮາກຍາວ', 'Pad footing': 'ຖານຮາກດ່ຽວ',
   'Structure types': 'ປະເພດໂຄງສ້າງ', 'Columns at grid': 'ເສົາຕາມຕາໜ່າງແກນ', 'Line': 'ເສັ້ນຊື່', 'Polyline': 'ເສັ້ນຕໍ່ເນື່ອງ (Polyline)', 'Rectangle': 'ຮູບສີ່ແຈສາກ', 'Circle': 'ຮູບວົງມົນ', 'Arc': 'ເສັ້ນໂຄ້ງ',
   'Move': 'ຍ້າຍ', 'Copy': 'ສຳເນົາ', 'Rotate': 'ໝຸນ', 'Mirror': 'ພິກກະຈົກ', 'Scale': 'ຍໍ່-ຂະຫຍາຍ', 'Erase': 'ລຶບ', 'Delete': 'ລຶບ', 'Offset': 'ໄລຍະຂະໜານ (Offset)',
