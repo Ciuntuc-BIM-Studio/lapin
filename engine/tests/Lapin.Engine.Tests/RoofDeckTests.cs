@@ -30,6 +30,19 @@ public class RoofDeckTests
 
     static void Set(Fixture f, string roof, JsonObject attrs) => f.Run("architecture.updateRoof", new JsonObject { ["id"] = roof, ["attrs"] = attrs });
 
+    /// <summary>An imported roof reference's <c>shape</c> is the file's description of its body, an object: a project holding one opens.</summary>
+    [Fact]
+    public void A_roof_reference_whose_shape_is_the_files_description_is_read_without_failing()
+    {
+        var attrs = new JsonObject { ["shape"] = new JsonObject { ["kind"] = "mesh" }, ["structure"] = new JsonArray() };
+        Assert.False(RoofCoverings.Unframed(attrs));
+        var roof = new Entity("roof-reference", IfcClass.Roof, "Imported roof", attrs);
+        var (entities, _) = new RoofDeckUpgrade().Upgrade([roof], []);
+        Assert.Contains(entities, e => e.Id == "roof-reference");
+        Assert.True(RoofCoverings.Unframed(new JsonObject { ["shape"] = "flat" }));
+        Assert.True(RoofCoverings.Unframed(new JsonObject { ["structure"] = "none" }));
+    }
+
     static Entity? Material(Fixture f, string name) => f.Model.OfClass(IfcClass.Material).FirstOrDefault(e => e.Name == name);
 
     static GeometryPart Part(Fixture f, string roof, string key) => f.Session.Geometry(roof)!.Parts.Single(p => p.Key == key);

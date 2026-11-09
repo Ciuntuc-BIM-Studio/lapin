@@ -47,7 +47,7 @@ public static class RoofCoverings
         NameOf(roof) is { Length: > 0 } name && Materials.Find(m, name)?.Str("color") is { Length: > 0 } c ? c : covering.Color;
 
     /// <summary>Whether a roof's attributes give it no framing, so a deck: flat, a vault, or no structure.</summary>
-    public static bool Unframed(JsonObject attrs) => (string?)attrs["shape"] is "flat" or "barrel" || (string?)attrs["structure"] == "none";
+    public static bool Unframed(JsonObject attrs) => Text(attrs["shape"]) is "flat" or "barrel" || Text(attrs["structure"]) == "none";
 
     /// <summary>The name of the material the deck is made of: the roof's own, else reinforced concrete; empty for none.</summary>
     public static string DeckNameOf(Entity roof) => Text(roof.Attrs[DeckKey]) ?? DeckDefault;
