@@ -1,5 +1,6 @@
 /** The modules of the product this build was made for (`virtual:lapin-modules`, from products/<id>.json). */
 
+import { create } from 'zustand';
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
 import type { Grip, GripView, LapinModule, ModuleViewDef, RefLine, RibbonTabDef, ToolDef } from './module';
@@ -105,6 +106,9 @@ export const typeSlot = (i: number, type: string | null) => setSlots(current(), 
 export const resetSlots = () => setSlots(current(), null);
 
 /** Press a tool: a drawing tool switches on (or off), a button does its thing. */
+/** Counts what changed a tool's ghost without the cursor moving (Space): the views redraw it. */
+export const useToolTick = create<{ n: number }>(() => ({ n: 0 }));
+
 export function activate(t: ToolDef): void {
   // A tool ends the drafting command that was running.
   if (useCad.getState().step) cancel(true);

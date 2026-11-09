@@ -494,6 +494,49 @@ export const scenes = [
     },
   },
   {
+    // Placing a door or window as Revit does (a tester's wish): the cursor's side of the wall is the side it opens to, Space its other hand, shown before the click.
+    id: 'fill-placing',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [a, b] of [[[0, 0], [8, 0]], [[8, 0], [8, 5]], [[8, 5], [0, 5]], [[0, 5], [0, 0]]]) await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] });
+      await t.ui({ keyPlan: false });
+      await t.wait(600);
+      await t.fit();
+      await t.tool('architecture.door');
+      await t.wait(300);
+      const place = async (x, y) => {
+        const [px, py] = await t.planPoint(x, y);
+        await t.page.mouse.move(px - 3, py - 3);
+        await t.page.mouse.move(px, py);
+        await t.wait(250);
+        return [px, py];
+      };
+      const box = async () => { const [a, b] = [await t.planPoint(1, -1.6), await t.planPoint(5.4, 1.8)]; return { x: a[0], y: b[1], width: b[0] - a[0], height: a[1] - b[1] }; };
+      // Inside the room: the leaf swings in, hinged towards the wall's start.
+      let at = await place(2, 0.5);
+      t.expect(await t.page.locator('[data-testid=pick-ghost] polyline').count() === 6, 'the door is shown before the click');
+      await t.shot('fill-ghost', { clip: await box() });
+      await t.page.mouse.click(at[0], at[1]);
+      await t.wait(500);
+      // Outside the room, in the other hand.
+      at = await place(4.4, -0.5);
+      await t.keys(' ');
+      await t.wait(250);
+      await t.shot('fill-ghost-other', { clip: await box() });
+      await t.page.mouse.click(at[0], at[1]);
+      await t.wait(600);
+      await t.keys(' ');
+      await t.keys('Escape');
+      await t.wait(400);
+      const doors = (await t.nodes()).filter((n) => n.type === 'IfcDoor');
+      t.expect(doors.length === 2, `two doors placed (${doors.length})`);
+      t.expect(!doors[0].props.flipHand && !doors[0].props.flipSide, 'inside: the door as it comes');
+      t.expect(doors[1].props.flipHand && doors[1].props.flipSide, 'outside, Space pressed: the other side and the other hand');
+      await t.shot('fill-placed', { clip: await box() });
+    },
+  },
+  {
     id: 'openings',
     async run(t) {
       await t.fresh();

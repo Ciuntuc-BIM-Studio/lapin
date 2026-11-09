@@ -12,7 +12,8 @@ import { notify, useUi } from '../../app/store';
 import { activeStorey, execute, query, useSession } from '../../engine/session';
 import { registerCommand, startCommand, type Step } from '../../viewport/cad/session';
 import type { Shape } from '../../viewport/cad/shapes';
-import { num, relatingOf, typeOf, usageOf } from '../../engine/model';
+import { num, ofClass, relatingOf, typeLayers, typeOf, usageOf } from '../../engine/model';
+import { fillFlips, fillGhost, flipFillHand, useFillHand, type PanelLike } from './fillPlacing';
 import { activate } from '../../platform/modules';
 import { gateGroup } from './gates/tools';
 import { GateSection } from './gates/GateSection';
@@ -239,16 +240,40 @@ const detachRoof: ToolDef = {
   },
 };
 const wallTypes: ToolDef = { id: 'architecture.wallTypes', label: 'Wall types', icon: WallTypesIcon, run: () => useUi.setState({ dialog: 'wallTypes' }) };
+/** The command line's bar while a door or window is being placed. */
+function FillPlacingHint() {
+  const flipped = useFillHand((s) => s.flipped);
+  return <button type="button" className="btn small" data-action="fill-hand" aria-pressed={flipped} title="The side of the wall the cursor is on is the side it opens to" onClick={flipFillHand}>{flipped ? 'Other hand (Space)' : 'Hand (Space)'}</button>;
+}
 /** A door or window: click a wall where it goes (the type: the one picked in the configurator, else the project's first). */
 const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'], shortcut: string): ToolDef => ({
   id: `architecture.${kind}`, label, icon, shortcut,
   properties: kind === 'door' ? newElement('IfcDoorType', 'doorTypeId', 'joinery') : newElement('IfcWindowType', 'windowTypeId', 'joinery'),
   typed: kind === 'door' ? typedBy('IfcDoorType', 'doorTypeId', 'joinery', JoineryThumb) : typedBy('IfcWindowType', 'windowTypeId', 'joinery', JoineryThumb),
-  gesture: { kind: 'pick', types: ['IfcWall'] },
+  // Space: the other hand; the side of the wall the cursor is on: the side it opens to, shown before the click.
+  space: flipFillHand,
+  options: FillPlacingHint,
+  gesture: {
+    kind: 'pick', types: ['IfcWall'], reach: 40,
+    ghost: (wall, at) => {
+      const s = useSession.getState();
+      const wanted = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
+      const cls = kind === 'door' ? 'IfcDoorType' : 'IfcWindowType';
+      const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, cls)[0];
+      const spec = type?.props.spec as { width?: number; columns?: number[]; panels?: PanelLike[] } | undefined;
+      const shape = spec?.width ? { width: spec.width, columns: spec.columns, panels: spec.panels }
+        : kind === 'door' ? { width: 0.9, panels: [{ operation: 'swing-left' }] } : { width: 1.2, panels: [{ operation: 'fixed' }] };
+      const wallType = typeOf(s, wall.id);
+      const thickness = (wallType ? typeLayers(s, wallType.id) : []).reduce((a, l) => a + l.thickness, 0) || 0.25;
+      return fillGhost(wall.props, at, thickness, shape, useFillHand.getState().flipped);
+    },
+  },
   complete: async ({ points: [p], entity }, ctx) => {
     if (!entity) return;
     const typeId = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
-    await ctx.execute(kind === 'door' ? 'architecture.addDoor' : 'architecture.addWindow', { wallId: entity.id, x: p.x, y: p.y, ...(typeId ? { typeId } : {}) });
+    await ctx.execute(kind === 'door' ? 'architecture.addDoor' : 'architecture.addWindow', {
+      wallId: entity.id, x: p.x, y: p.y, ...fillFlips(arcOf(entity.props), p, useFillHand.getState().flipped), ...(typeId ? { typeId } : {}),
+    });
   },
 });
 const door = fillTool('door', 'Door', DoorIcon, 'DR');

@@ -936,6 +936,9 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             : Openings.EnsureType(ctx, kind);
         var along = Json.Number(a["along"]) ?? Openings.AlongOf(wall, new Vec2(Json.Number(a["x"]) ?? 0, Json.Number(a["y"]) ?? 0));
         var fill = Openings.AddFill(ctx, wall, type, along, Json.Number(a["sill"]));
+        // Placed in the hand and to the side the tool chose (Space, the cursor's side of the wall).
+        if (a["flipHand"] is JsonValue hv && hv.TryGetValue<bool>(out var hand) && hand) { Openings.Flip(ctx, fill, "x"); fill = ctx.Model.Get(fill.Id)!; }
+        if (a["flipSide"] is JsonValue sv && sv.TryGetValue<bool>(out var side) && side) Openings.Flip(ctx, fill, "y");
         return new JsonObject { ["id"] = fill.Id };
     }
 

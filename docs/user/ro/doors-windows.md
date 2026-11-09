@@ -12,6 +12,14 @@ Alege **Arhitectură → Ușă** (<kbd>DR</kbd>) sau **Fereastră** (<kbd>WN</kb
 
 Cât timp Door sau Window e activă, panoul de proprietăți arată tipul pe care îl va pune, cu dimensiunile lui: alege altul acolo înainte să dai clic pe perete.
 
+Planul arată ușa sau fereastra înainte de clic. **Partea peretelui pe care stă cursorul e partea în care se deschide**, iar cursorul poate sta și lângă perete, nu doar pe el, așa că un perete subțire se nimerește ușor. **Space** mută balamalele pe celălalt toc și rămâne așa până îl apeși din nou. În vederea 3D, fața peretelui pe care dai clic hotărăște partea, iar Space merge la fel, fără previzualizare. Le poți schimba și după, cu **Mâna** și **Partea**.
+
+![O ușă arătată înainte de clic, deschisă în partea cursorului](shots/fill-ghost.webp)
+
+![Următoarea, în afara peretelui, cu cealaltă mână după Space](shots/fill-ghost-other.webp)
+
+![Amândouă ușile puse așa cum au fost arătate](shots/fill-placed.webp)
+
 ![Un plan cu o ușă și ferestre](shots/openings-plan.webp)
 
 Ca să muți o ușă sau o fereastră de-a lungul peretelui, selectează-o și trage de ea. Ca s-o schimbi, folosește panoul de proprietăți: tipul, înălțimea parapetului și partea în care se deschide. Cu mai multe uși și ferestre selectate, **Balamale**, **Parte**, parapetul și tipul le schimbă pe toate dintr-un pas, la fel și o săgeată de întoarcere din plan.

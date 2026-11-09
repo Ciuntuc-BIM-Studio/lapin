@@ -16,7 +16,7 @@
 
 import { useEffect } from 'react';
 import { useUi } from './store';
-import { hotbarIds } from '../platform/modules';
+import { findTool, hotbarIds, useToolTick } from '../platform/modules';
 import { reach } from './hotbar';
 import { cancel, submit, useCad } from '../viewport/cad/session';
 import { liveCommit, useLive } from '../viewport/liveInput';
@@ -50,6 +50,8 @@ export interface KeySnapshot {
   buffer: string;
   /** The running command's step: what it wants ("text" takes any character). */
   step: { want?: string } | null;
+  /** Whether the active tool takes Space (a door's other hand). */
+  toolSpace?: boolean;
   /** Whether a command ran before (Enter or Space repeats it). */
   hasLast: boolean;
   /** How far the number keys reach: up to the last quick slot holding a tool. */
@@ -66,6 +68,7 @@ export type KeyIntent =
   | { kind: 'command'; id: string }
   /** Letters that are a sequence something longer starts with: typed, and run if nothing more comes. */
   | { kind: 'pending'; id: string; buffer: string }
+  | { kind: 'toolSpace' }
   | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
@@ -134,6 +137,7 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   }
   const typing = s.buffer.length > 0 || !!s.step;
   if (e.key === 'Escape') return s.step || s.buffer ? { kind: 'cancel' } : null;
+  if (e.key === ' ' && !typing && s.toolSpace) return { kind: 'toolSpace' };
   if (e.key === 'Enter' || (e.key === ' ' && (typing || s.hasLast) && s.step?.want !== 'text')) {
     // Plan gestures (a floor's outline) take their own Enter.
     if (!typing && !s.hasLast) return null;
@@ -166,7 +170,7 @@ function snapshot(): KeySnapshot {
   const ui = useUi.getState();
   const cad = useCad.getState();
   return {
-    screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool, selected: ui.selected,
+    screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
     hotbar: reach(hotbarIds()), keymap: keymap(),
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
@@ -190,6 +194,7 @@ export function carryOut(intent: KeyIntent): void {
       }, pending.delay + 10);
       break;
     }
+    case 'toolSpace': { const t = useUi.getState().tool; if (t) findTool(t)?.space?.(); useToolTick.setState((s) => ({ n: s.n + 1 })); break; }
     case 'closeDialog': useUi.setState({ dialog: null }); break;
     case 'cancel': cancel(); break;
     case 'submit': void submit(useCad.getState().buffer); break;

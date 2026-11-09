@@ -197,4 +197,9 @@ describe('a value a 3D tool waits for (decision 378)', () => {
     expect(keyIntent(press('6'), state({ value: { text: '' }, buffer: 'L' }))).toEqual({ kind: 'type', buffer: 'L6' });
     release();
   });
+  it('gives Space to a tool that takes it, unless something is typed', () => {
+    expect(keyIntent(press(' '), state({ tool: 'architecture.door', toolSpace: true }))).toEqual({ kind: 'toolSpace' });
+    expect(keyIntent(press(' '), state({ tool: 'architecture.door', toolSpace: true, buffer: 'WA' }))?.kind).toBe('submit');
+    expect(keyIntent(press(' '), state({ tool: 'architecture.wall', toolSpace: false }))).toBeNull();
+  });
 });

@@ -47,6 +47,24 @@ const near = (p: Vec2, s: number[], tol: number): boolean => {
 const drawsInPlan = (r: RenderItem): boolean => r.plan.some((it) => it.kind !== 'label' && it.kind !== 'grid');
 
 /** What lies under `p` within `tol` (metres); with `types`, only elements of those classes (annotations then are not picked). */
+/** The nearest element of `types` within `tol` of the point, by its plan lines (inside a closed outline: nearest of all). */
+export function nearestOf(p: Vec2, tol: number, items: RenderItem[], nodes: Map<string, NodeDto>, types: string[]): NodeDto | null {
+  let best: NodeDto | null = null, least = tol;
+  for (const r of items) {
+    const e = nodes.get(r.nodeId);
+    if (!e || !(types.includes('*') || types.includes(e.type))) continue;
+    for (const it of r.plan) {
+      if (it.kind === 'label' || it.kind === 'grid' || it.kind === 'reach') continue;
+      const poly = pairs(it.points);
+      let d = it.closed && pointInPolygon(p, poly) ? 0 : Infinity;
+      const n = it.closed ? poly.length : poly.length - 1;
+      for (let i = 0; i < n && d > 0; i++) d = Math.min(d, distToSegment(p, poly[i], poly[(i + 1) % poly.length]));
+      if (d < least || (d === 0 && !best)) { least = d; best = e; }
+    }
+  }
+  return best;
+}
+
 export function pickAt(p: Vec2, tol: number, items: RenderItem[], nodes: Map<string, NodeDto>, marks: Mark[] | undefined, types?: string[]): NodeDto | null {
   const takes = (e: NodeDto) => !types || types.includes('*') || types.includes(e.type);
   let best: { e: NodeDto; prio: number } | null = null;

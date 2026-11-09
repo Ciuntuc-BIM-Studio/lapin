@@ -12,6 +12,14 @@ Choose **Architecture → Door** (<kbd>DR</kbd>) or **Window** (<kbd>WN</kbd>), 
 
 While Door or Window is on, the properties panel shows the type it will place, with its size: choose another there before you click the wall.
 
+The plan shows the door or window before you click. **The side of the wall your cursor is on is the side it opens to**, and the cursor can stand beside the wall as well as on it, so a thin wall is easy to place on. **Space** moves the hinges to the other jamb and stays that way until you press it again. In the 3D view, the face of the wall you click decides the side, and Space works the same, without the preview. You can still change both afterwards with **Hand** and **Side**.
+
+![A door shown before the click, opening to the side the cursor is on](shots/fill-ghost.webp)
+
+![The next one, outside the wall, in its other hand after Space](shots/fill-ghost-other.webp)
+
+![Both doors placed as they were shown](shots/fill-placed.webp)
+
 ![A plan with a door and windows](shots/openings-plan.webp)
 
 To move a door or window along its wall, select it and drag it. To change it, use the properties panel: its type, its sill height, and which side it opens to (**Side**). With several doors and windows selected, **Hand**, **Side**, the sill and the type change all of them in one step, and so does a flip arrow in the plan.

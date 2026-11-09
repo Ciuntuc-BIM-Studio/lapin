@@ -21,11 +21,11 @@ import { activeStorey, execute, useSession } from '../engine/session';
 import { ownPlanOf } from './storeyPlan';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
-import { findTool } from '../platform/modules';
+import { findTool, useToolTick } from '../platform/modules';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
-import { markSelected, pickAt, regionIds } from './planPick';
+import { markSelected, nearestOf, pickAt, regionIds } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { pickable, useScope } from '../platform/scope';
 import { pairs } from './snap';
@@ -81,6 +81,10 @@ export function PlanView() {
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [pts, setPts] = useState<Vec2[]>([]);
   const [hover, setHover] = useState<Aimed | null>(null);
+  /** Where the cursor is, unsnapped: what a pick reads, and the side of a wall a door opens to. */
+  const rawHover = useRef<Vec2 | null>(null);
+  // Space while a tool is on changes what its ghost shows.
+  useToolTick((s) => s.n);
   const [ortho, setOrtho] = useState(false);
   /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl), from `base` (the press, snapped). */
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
@@ -316,7 +320,7 @@ export function PlanView() {
     switch (g.kind) {
       case 'point': void complete([p]); break;
       case 'pick': {
-        const e = pick(raw, g.types);
+        const e = g.reach ? nearestOf(raw, g.reach / view.scale, pickItems, nodes, g.types) : pick(raw, g.types);
         if (e) void complete([raw], e);
         else useSession.setState({ error: 'Pick an element this tool works on.' });
         break;
@@ -456,6 +460,7 @@ export function PlanView() {
       if (d.moved && e.buttons !== 1) setView({ ...d.view, cx: d.view.cx - dx / d.view.scale, cy: d.view.cy + dy / d.view.scale });
     }
     setHover(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)));
+    { const r = svgRef.current!.getBoundingClientRect(); rawHover.current = toWorld(e.clientX - r.left, e.clientY - r.top); }
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
@@ -579,6 +584,13 @@ export function PlanView() {
     if (!tool?.gesture || !hover) return null;
     const cur = (live.owner === 'tool' && (live.len || live.ang) ? livePoint({ ...live, cursor: hover.point }) : null) ?? hover.point;
     const g = tool.gesture.kind;
+    // What a pick would put down (a door, on the side of the wall the cursor is on).
+    if (tool.gesture.kind === 'pick' && tool.gesture.ghost && rawHover.current) {
+      const at = rawHover.current;
+      const host = tool.gesture.reach ? nearestOf(at, tool.gesture.reach / view.scale, pickItems, nodes, tool.gesture.types) : pick(at, tool.gesture.types);
+      if (!host) return null;
+      return <g className="plan-preview" data-testid="pick-ghost">{tool.gesture.ghost(host, at).map((l, i) => <polyline key={i} fill="none" points={l.map(toScreen).map((p) => `${p.x},${p.y}`).join(' ')} />)}</g>;
+    }
     // The tool's own preview (a detour's bypass), when it has one for these points.
     const own = tool.gesture.kind === 'threePoints' && tool.gesture.preview && pts.length > 0 ? tool.gesture.preview(pts, cur) : null;
     if (own && own.length > 1) {

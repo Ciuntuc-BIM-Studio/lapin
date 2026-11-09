@@ -28,7 +28,13 @@ export type Gesture =
   | { kind: 'polygon' }
   /** `constrain`: where the next point may go, given the points placed (a pipe of copper turns only by 45°): the aimed point moved onto what is allowed. */
   | { kind: 'polyline'; constrain?: (placed: Vec2[], aimed: Vec2) => Vec2 }
-  | { kind: 'pick'; /** IFC classes it can be used on. */ types: string[] }
+  | {
+    kind: 'pick'; /** IFC classes it can be used on. */ types: string[];
+    /** How near (screen px) the nearest of them is taken, so the cursor can stand beside it (a door's side of a thin wall); else under the cursor only. */
+    reach?: number;
+    /** What the click would put there, as lines on the plan (metres), redrawn as the cursor moves. */
+    ghost?: (entity: NodeDto, at: Vec2) => Vec2[][];
+  }
   /**
    * An element picked, then a point (a bar cut: one end of the lap on the bar, then the other): the first click's point and the
    * element, then the second point; a length typed after the first click comes as `typed`. Enter or Escape after the first
@@ -70,6 +76,8 @@ export interface ToolDef {
   complete?: (input: ToolInput, ctx: ToolContext) => Promise<void> | void;
   /** A button: what it does when pressed (a tool with a gesture is switched on instead). */
   run?: () => void;
+  /** What Space does while the tool is on and nothing is typed (a door's other hand). */
+  space?: () => void;
   /** What the tool lets one choose while it is on (the line a wall is drawn on), shown in the command line's bar. */
   options?: ComponentType;
   /** What it puts down, shown in Properties while it is on (the type a wall is drawn with), before the first click. */
