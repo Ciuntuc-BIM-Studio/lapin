@@ -41,6 +41,7 @@ import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import { feedPoint, useCad } from './cad/session';
+import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
@@ -234,6 +235,11 @@ export function PlanView() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const shown = useMemo(() => shownSelection(selected, nodes, relations), [selected, nodes, relations, expansion]);
   const shownList = useMemo(() => [...shown], [shown]);
+  // What the selected or hovered tags tag, and what the TAG command hovers (report #130).
+  const tagHover = useTagHover();
+  const targets = useMemo(() => tagTargets(selected, nodes, tagHover), [selected, nodes, tagHover]);
+  const targetList = useMemo(() => [...targets], [targets]);
+  const anyTags = useMemo(() => viewHasTags(nodes, ownPlan ?? (storey ? `plan:${storey.id}` : null)), [nodes, ownPlan, storey]);
   // Drilled into a whole (platform/assemblies.ts): what is outside it dimmed, as an edit scope's is (more lightly).
   const drillPath = useDrill((st) => st.path);
   const drillOn = useDisplay((st) => st.drillSelect);
@@ -461,6 +467,7 @@ export function PlanView() {
     }
     setHover(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)));
     { const r = svgRef.current!.getBoundingClientRect(); rawHover.current = toWorld(e.clientX - r.left, e.clientY - r.top); }
+    trackTagHover(rawHover.current, { pickElement: (q) => pick(q)?.id ?? null, pickTag: (q) => pick(q, ['IfcAnnotation'])?.id ?? null, anyTags, busy: !!tool?.gesture || !!d });
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
@@ -680,7 +687,7 @@ export function PlanView() {
       <KeyPlan mode="plan" frame={measured ? [toWorld(0, size.h), toWorld(size.w, 0)] : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
       <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep ? ' tool' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
-        onPointerLeave={() => { setHover(null); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
+        onPointerLeave={() => { setHover(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (tool?.gesture || useCad.getState().step) return;
           const rect = svgRef.current!.getBoundingClientRect();
@@ -704,7 +711,7 @@ export function PlanView() {
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (
             <path key={key} d={d} strokeDasharray={pattern && DASHES[pattern] ? DASHES[pattern].map((mm) => mm * (drawing?.scale ?? 100) / 1000 * view.scale).join(' ') : undefined}
-              className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}${inside?.has(r.nodeId) ? ' in-drill' : ''}`} />
+              className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : targets.has(r.nodeId) ? ' tag-target' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}${inside?.has(r.nodeId) ? ' in-drill' : ''}`} />
           ))}
         </g>
         {peers.map((p) => {
@@ -724,6 +731,12 @@ export function PlanView() {
             </g>
           );
         })}
+        {(drawing?.marks ?? []).filter((m) => targets.size > 0 && markSelected(m.id, targetList) && !markSelected(m.id, shownList)).map((m) => (
+          <path key={`tag:${m.id}`} className="plan-mark tag-target" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
+            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
+            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+          }).join('')} />
+        ))}
         {(drawing?.marks ?? []).filter((m) => markSelected(m.id, shownList)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });

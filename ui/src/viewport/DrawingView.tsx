@@ -38,6 +38,7 @@ import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput'
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
+import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 
 type View = View2;
 const clampScale = (s: number) => Math.min(4000, Math.max(2, s));
@@ -54,6 +55,11 @@ export function DrawingView() {
   // The dark theme: the drawing on the theme's background, its black pens in the theme's ink, as a plan (report #90).
   const onDark = drawsOnDark(useUi((s) => s.theme));
   const drawing = useDrawing(id);
+  // What the selected or hovered tags tag, and what the TAG command hovers (report #130).
+  const tagHover = useTagHover();
+  const targets = useMemo(() => tagTargets(selected, nodes, tagHover), [selected, nodes, tagHover]);
+  const targetList = useMemo(() => [...targets], [targets]);
+  const anyTags = useMemo(() => viewHasTags(nodes, id), [nodes, id]);
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   // The view is remembered per section or elevation for the session; a new one fits itself once its drawing arrives.
@@ -298,7 +304,9 @@ export function DrawingView() {
             }
             if (d.moved) { setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); return; }
           }
-          setHover(at(e).aimed);
+          const here = at(e);
+          setHover(here.aimed);
+          trackTagHover(here.raw, { pickElement: pickAny, pickTag: (q) => { const t = pickDrawing(q, 6 / v.scale, drawing?.marks, nodes, (n) => n.props.predefinedType === 'TAG'); return t ?? null; }, anyTags, busy: !!tool?.gesture || !!d });
         }}
         onPointerUp={(e) => {
           if (editor.onPointerUp()) return;
@@ -322,7 +330,7 @@ export function DrawingView() {
           if (gestureClick(aimed.point, raw)) return;
           pickClick(pickAny(raw), { add: e.shiftKey });
         }}
-        onPointerLeave={() => { setHover(null); editor.onPointerLeave(); }}
+        onPointerLeave={() => { setHover(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }}
         onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (useCad.getState().step) return;
@@ -333,6 +341,12 @@ export function DrawingView() {
         }}>
         <rect width="100%" height="100%" className="paper" />
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} onDark={onDark} screen={size} />}
+        {(drawing?.marks ?? []).filter((m) => targets.size > 0 && markSelected(m.id, targetList) && !markSelected(m.id, shown)).map((m) => (
+          <path key={`tag:${m.id}`} className="plan-mark tag-target" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
+            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
+            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+          }).join('')} />
+        ))}
         {(drawing?.marks ?? []).filter((m) => markSelected(m.id, shown)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });

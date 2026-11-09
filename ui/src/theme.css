@@ -550,6 +550,10 @@ label.check { display: inline-flex; gap: 6px; align-items: center; margin-right:
 .tree-row:hover .icon.mini { opacity: 1; }
 .icon.on { color: var(--accent); }
 .plan-mark.selected { stroke: var(--accent); stroke-width: 2; fill: none; }
+/* What a tag tags (report #130): the element, lit while its tag is hovered or selected or the TAG command hovers it. */
+.plan-item.tag-target { stroke: var(--accent); fill: var(--accent-wash); stroke-width: 2.5; }
+.plan-items.ghost .plan-item.tag-target { fill: none; }
+.plan-mark.tag-target { stroke: var(--accent); stroke-width: 3; fill: none; opacity: 0.85; stroke-linecap: round; }
 .pen-text text { user-select: none; }
 .plan-item.heavy { stroke-width: 1.6; }
 .plan-item.dashed { stroke-width: 0.7; stroke-dasharray: 4 3; }
