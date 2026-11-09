@@ -194,7 +194,7 @@ public static class PdfImport
         }
     }
 
-    /// <summary>Pixels (rows top to bottom, 8 bits a channel, grey or RGB) as a PNG file.</summary>
+    /// <summary>Pixels (rows top to bottom, 8 bits a channel, grey, grey and alpha, RGB or RGBA) as a PNG file.</summary>
     public static byte[] Png(byte[] pixels, int w, int h, int channels)
     {
         using var o = new MemoryStream();
