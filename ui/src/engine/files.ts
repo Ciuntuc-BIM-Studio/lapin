@@ -445,10 +445,10 @@ export async function linkLapin(): Promise<void> {
   const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Lapin project', extensions: ['lapin'] }]) : picked?.name ?? null;
   if (!path) return;
   const name = path.split(/[\\/]/).pop() ?? path;
-  const { ask, lengthField, numberField } = await import('../shell/AskBox');
-  const r = await ask(`Link ${name}`, [lengthField('x', 'Placed at x', 0), lengthField('y', 'Placed at y', 0), numberField('rotation', 'Turned (°)', 0)]);
+  const { ask, choiceField, lengthField, numberField } = await import('../shell/AskBox');
+  const r = await ask(`Link ${name}`, [lengthField('x', 'Placed at x', 0), lengthField('y', 'Placed at y', 0), numberField('rotation', 'Turned (°)', 0), choiceField('mirror', 'Mirrored', 'no', [{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }])]);
   if (!r) return;
-  const place = { x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation) };
+  const place = { x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation), mirror: r.mirror === 'yes' };
   const { begin, end } = await import('./ifcImport');
   begin(`Linking ${name}`, 'Reading the project');
   try {

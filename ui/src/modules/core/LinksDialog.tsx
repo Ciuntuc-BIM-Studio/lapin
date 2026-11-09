@@ -43,13 +43,13 @@ export async function placeCloud(l: NodeDto): Promise<void> {
 
 /** A linked project placed elsewhere (docs/links.md, Hotlinks); in a browser its file is asked for, the page having kept no path. */
 async function placeProject(l: NodeDto): Promise<void> {
-  const o = (l.props.options ?? {}) as { x?: number; y?: number; rotation?: number };
-  const { ask, lengthField, numberField } = await import('../../shell/AskBox');
-  const r = await ask('Place the linked project', [lengthField('x', 'Placed at x', o.x ?? 0), lengthField('y', 'Placed at y', o.y ?? 0), numberField('rotation', 'Turned (°)', o.rotation ?? 0)]);
+  const o = (l.props.options ?? {}) as { x?: number; y?: number; rotation?: number; mirror?: boolean };
+  const { ask, choiceField, lengthField, numberField } = await import('../../shell/AskBox');
+  const r = await ask('Place the linked project', [lengthField('x', 'Placed at x', o.x ?? 0), lengthField('y', 'Placed at y', o.y ?? 0), numberField('rotation', 'Turned (°)', o.rotation ?? 0), choiceField('mirror', 'Mirrored', o.mirror ? 'yes' : 'no', [{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }])]);
   if (!r) return;
   const data = typeof l.props.path === 'string' ? null : await pickFile('Lapin project', 'lapin');
   if (typeof l.props.path !== 'string' && !data) return;
-  await engine.call('project.reloadLink', { id: l.id, x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation), ...(data ? { data: toBase64(data.bytes) } : {}) }, { timeoutMs: 600_000 });
+  await engine.call('project.reloadLink', { id: l.id, x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation), mirror: r.mirror === 'yes', ...(data ? { data: toBase64(data.bytes) } : {}) }, { timeoutMs: 600_000 });
 }
 
 /** A project linked in a browser read again, from its file chosen again. */

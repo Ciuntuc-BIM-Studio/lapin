@@ -929,7 +929,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 // Another Lapin project linked in, read-only, placed where asked (docs/links.md, Hotlinks); by path, or its bytes in a browser.
                 ReportProgress("Reading the project", 0, 0);
                 var (bytes, name, path, _) = IfcBytes(p);
-                var r = HotLinks.Link(session, bytes, name, path, new HotLinks.Placing(Json.Number(p["x"]) ?? 0, Json.Number(p["y"]) ?? 0, Json.Number(p["rotation"]) ?? 0), out var linked);
+                var r = HotLinks.Link(session, bytes, name, path, new HotLinks.Placing(Json.Number(p["x"]) ?? 0, Json.Number(p["y"]) ?? 0, Json.Number(p["rotation"]) ?? 0, (bool?)p["mirror"] ?? false), out var linked);
                 return (r.ToJson(), linked);
             }
             case "project.linksChanged":
@@ -940,10 +940,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 // A link read again from its file (the desktop: a link made from a path): what it held goes, what the file holds now comes in its place.
                 var link = Links.Require(session.Model, (string?)p["id"]);
                 // A linked project: read again, or placed anew (x, y, rotation); from its file, or from the bytes given (a browser keeps no path).
-                if (link.Str("kind") == HotLinks.Kind && (p["data"] != null || p["x"] != null || p["y"] != null || p["rotation"] != null))
+                if (link.Str("kind") == HotLinks.Kind && (p["data"] != null || p["x"] != null || p["y"] != null || p["rotation"] != null || p["mirror"] != null))
                 {
                     var was = HotLinks.Placing.Of(link.Attrs["options"] as JsonObject);
-                    var place = new HotLinks.Placing(Json.Number(p["x"]) ?? was.X, Json.Number(p["y"]) ?? was.Y, Json.Number(p["rotation"]) ?? was.Degrees);
+                    var place = new HotLinks.Placing(Json.Number(p["x"]) ?? was.X, Json.Number(p["y"]) ?? was.Y, Json.Number(p["rotation"]) ?? was.Degrees, (bool?)p["mirror"] ?? was.Mirrored);
                     var from = (string?)p["data"] is { } data ? Convert.FromBase64String(data)
                         : link.Str("path") is { } known && File.Exists(HostFiles.Check(known)) ? File.ReadAllBytes(known)
                         : throw new CommandException("This link's file cannot be read here: choose it again.");

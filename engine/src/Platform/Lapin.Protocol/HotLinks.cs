@@ -21,13 +21,14 @@ public static class HotLinks
 {
     public const string Kind = "lapin";
 
-    public sealed record Placing(double X, double Y, double Degrees)
+    /// <summary>Where a link stands: mirrored first, left and right swapped about its own origin (x to −x), then turned, then moved.</summary>
+    public sealed record Placing(double X, double Y, double Degrees, bool Mirrored = false)
     {
         public JsonObject ToJson(string seed, DateTime? modified) => new()
         {
-            ["x"] = X, ["y"] = Y, ["rotation"] = Degrees, ["seed"] = seed, ["modified"] = modified?.ToString("O"),
+            ["x"] = X, ["y"] = Y, ["rotation"] = Degrees, ["mirror"] = Mirrored, ["seed"] = seed, ["modified"] = modified?.ToString("O"),
         };
-        public static Placing Of(JsonObject? o) => new(Json.Number(o?["x"]) ?? 0, Json.Number(o?["y"]) ?? 0, Json.Number(o?["rotation"]) ?? 0);
+        public static Placing Of(JsonObject? o) => new(Json.Number(o?["x"]) ?? 0, Json.Number(o?["y"]) ?? 0, Json.Number(o?["rotation"]) ?? 0, o?["mirror"] is JsonValue m && m.TryGetValue<bool>(out var b) && b);
     }
 
     /// <summary>A new link of the project in <paramref name="bytes"/>, or (<paramref name="existing"/>) the link read again.</summary>
@@ -49,7 +50,7 @@ public static class HotLinks
         return (string?)(link.Attrs["options"] as JsonObject)?["modified"] is { } was && File.GetLastWriteTimeUtc(path).ToString("O") != was;
     }
 
-    /// <summary>The source written as IFC, moved and turned as asked.</summary>
+    /// <summary>The source written as IFC, mirrored, turned and moved as asked.</summary>
     static byte[] Placed(Session host, byte[] bytes, Placing place)
     {
         using var input = new MemoryStream(bytes, writable: false);
@@ -61,13 +62,14 @@ public static class HotLinks
         var source = new Session(host.Catalog, host.Product);
         var (entities, relations) = OwnAll(content);
         source.Load(entities, relations, null, content.Classes);
-        if (place.X != 0 || place.Y != 0 || place.Degrees != 0)
+        if (place.X != 0 || place.Y != 0 || place.Degrees != 0 || place.Mirrored)
         {
             var placed = Spatial.Storeys(source.Model).SelectMany(s => source.Model.RelatedOf(s.Id, IfcClass.RelContainedInSpatialStructure)).ToList();
             Carry(source, placed.Where(StoredBodies.Has).Select(e => e.Id).ToHashSet(), place);
             var ids = new JsonArray([.. placed.Where(e => !StoredBodies.Has(e)).Select(e => (JsonNode)e.Id)]);
             if (ids.Count > 0)
             {
+                if (place.Mirrored) source.Execute("element.transform", new JsonObject { ["ids"] = ids.DeepClone(), ["op"] = "mirror", ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(0, 1) }, out _);
                 if (place.Degrees != 0) source.Execute("element.transform", new JsonObject { ["ids"] = ids.DeepClone(), ["op"] = "rotate", ["center"] = new JsonArray(0, 0), ["angle"] = place.Degrees }, out _);
                 if (place.X != 0 || place.Y != 0) source.Execute("element.transform", new JsonObject { ["ids"] = ids.DeepClone(), ["op"] = "move", ["by"] = new JsonArray(place.X, place.Y) }, out _);
             }
@@ -110,7 +112,11 @@ public static class HotLinks
         if (ids.Count == 0) return;
         var a = place.Degrees * Math.PI / 180;
         var (c, s) = (Math.Cos(a), Math.Sin(a));
-        (double X, double Y) At(double x, double y) => (x * c - y * s + place.X, x * s + y * c + place.Y);
+        (double X, double Y) At(double x0, double y)
+        {
+            var x = place.Mirrored ? -x0 : x0;
+            return (x * c - y * s + place.X, x * s + y * c + place.Y);
+        }
         void Body(JsonNode? n)
         {
             switch (n)
@@ -123,6 +129,8 @@ public static class HotLinks
                     {
                         var (v, t) = StoredBodies.ReadPart(part);
                         for (var i = 0; i + 2 < v.Length; i += 3) (v[i], v[i + 1]) = At(v[i], v[i + 1]);
+                        // A reflection turns the faces inside out: each triangle's order back.
+                        if (place.Mirrored) for (var i = 0; i + 2 < t.Length; i += 3) (t[i + 1], t[i + 2]) = (t[i + 2], t[i + 1]);
                         var written = StoredBodies.WritePart((string?)part["name"] ?? "Body", (string?)part["color"] ?? "#cccccc", v, t);
                         part.Remove("v"); part.Remove("t");
                         part["v64"] = written["v64"]!.DeepClone();
@@ -153,7 +161,29 @@ public static class HotLinks
                 Body(attrs[StoredBodies.Key]);
                 Body(attrs[StoredBodies.UncutKey]);
                 Body(attrs[StoredBodies.OpeningsKey]);
-                if (StoredBodies.InstanceOf(e) is var (_, xf))
+                if (place.Mirrored && StoredBodies.InstanceOf(e) is var (shared, placedBy))
+                {
+                    // A mirrored instance is no longer the same body turned: it takes a body of its own.
+                    var own = edit.Model.Get(shared)!.Attrs[StoredBodies.Key]!.DeepClone();
+                    foreach (var part in own["parts"]!.AsArray().OfType<JsonObject>())
+                    {
+                        var (v, t) = StoredBodies.ReadPart(part);
+                        for (var i = 0; i + 2 < v.Length; i += 3)
+                        {
+                            var w = StoredBodies.Apply(placedBy, new Lapin.Geometry.Vec3(v[i], v[i + 1], v[i + 2]));
+                            (v[i], v[i + 1], v[i + 2]) = (w.X, w.Y, w.Z);
+                        }
+                        var written = StoredBodies.WritePart((string?)part["name"] ?? "Body", (string?)part["color"] ?? "#cccccc", v, t);
+                        part.Remove("v"); part.Remove("t");
+                        part["v64"] = written["v64"]!.DeepClone();
+                        part["t64"] = written["t64"]!.DeepClone();
+                    }
+                    Body(own);
+                    attrs[StoredBodies.Key] = own;
+                    attrs.Remove(StoredBodies.BodyOf);
+                    attrs.Remove(StoredBodies.XfKey);
+                }
+                else if (StoredBodies.InstanceOf(e) is var (_, xf))
                 {
                     // Its axes turned, its origin carried; the shared body stays in its own frame.
                     var m = xf.ToArray();
@@ -169,7 +199,8 @@ public static class HotLinks
                     {
                         Flat(item["pts"] as JsonArray);
                         foreach (var loop in (item["loops"] as JsonArray)?.OfType<JsonArray>() ?? []) Flat(loop);
-                        if (Json.Number(item["angle"]) is { } angle) item["angle"] = Math.Round(angle + place.Degrees, 3);
+                        // A text stays readable when mirrored: it runs the other way along its line.
+                        if (Json.Number(item["angle"]) is { } angle) item["angle"] = Math.Round((place.Mirrored ? -angle : angle) + place.Degrees, 3);
                     }
                 edit.Replace(e.With(attrs: attrs));
             }
