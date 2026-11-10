@@ -20,6 +20,8 @@ Seleccione la sección en el explorador para configurar su escala, su profundida
 
 La línea de una sección se dibuja en todas las plantas, y la sección se marca en todas las demás secciones y alzados que atraviesa su plano: una línea fina discontinua donde el plano corta la vista, con el nombre de la sección y una flecha que mira hacia donde mira la sección, arriba, del mismo tamaño en papel que en una planta. Una sección nunca se marca en sí misma. Un clic en un marcador selecciona la sección; un doble clic la abre.
 
+**Tamaño de los marcadores.** **Gestionar → Normas de dibujo → Proyecto** fija el tamaño con que se dibujan los marcadores de secciones y alzados, en milímetros de papel: **Tamaño de marcadores** (el diámetro del círculo del alzado; las flechas de una sección, 0,7 de él; al principio 10 mm) y **Texto de marcadores** (la altura de sus nombres; vacío: la del estilo de texto estándar). Una sección o un alzado con tamaño propio tiene **Tamaño del marcador (mm)** y **Texto del marcador (mm)** en sus propiedades; si están vacíos, toma los del proyecto. El motor dibuja los marcadores, así que las plantas, las secciones que cruzan, las láminas, el PDF y el DXF los siguen.
+
 Cada sección está en una **capa de marcadores** (**Sections** al principio; **Capa del marcador** en las propiedades de la sección la cambia), y cada vista elige qué marca. **Vista → Secciones…** lista las secciones del proyecto por capa para la vista en primer plano, con una casilla por capa y por sección solo para esta vista, la capa de cada sección (una existente o **Nueva capa…**) y en cuántas vistas está oculta cada una. Una lámina marca lo que marcan sus vistas.
 
 Una sección cortada a través de una viga o un pilar (**Sección aquí**, **Sección transversal** en la pestaña Armado simple) también tiene pinzamientos en planta: arrastre cualquiera de los extremos a lo largo de la línea para dar a ese lado más o menos margen, y arrastre el centro a lo largo del elemento para mover la estación en la que corta. La ventana de la sección la sigue.
@@ -31,6 +33,12 @@ Una sección cortada a través de una viga o un pilar (**Sección aquí**, **Sec
 **+** junto a **Alzados** crea de una vez los cuatro alzados del edificio.
 
 ![El alzado sur](shots/elevation-view.webp)
+
+Cada planta marca cada alzado situado delante del edificio: una línea fina de trazo y punto a lo ancho de hacia donde mira, y en su centro un círculo con una flecha negra que apunta al edificio, con el nombre del alzado detrás. Un clic en el marcador selecciona el alzado; un doble clic lo abre. **Marcas de alzado** en **Visibilidad / Gráficos** (<kbd>VV</kbd>) las oculta en una vista.
+
+**Hasta dónde llega un alzado.** Seleccione el alzado en una planta: su línea tiene un pinzamiento en cada extremo. Arrastre uno a lo largo de la línea para alargar o acortar el alzado por ese lado; el alzado dibuja entonces solo lo que queda entre los dos extremos, y sus láminas y el PDF lo siguen. Cada arrastre es un paso de deshacer. Mientras no los arrastre, la línea abarca todo el edificio y crece con él.
+
+![El marcador de un alzado en planta, con su línea acortada hasta la mitad de la casa](shots/elevation-marker.webp)
 
 ### Sombras del sol
 

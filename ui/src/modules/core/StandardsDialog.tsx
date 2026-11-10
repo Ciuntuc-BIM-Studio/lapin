@@ -1,7 +1,8 @@
 /**
  * Drafting standards: the project's text styles, dimension styles, axis types
  * (and the default one), tag types (a box, or a door's or window's marker
- * across its wall in plan; their leaders, decision 331), layers and layer groups. Sizes are paper millimetres.
+ * across its wall in plan; their leaders, decision 331), layers and layer groups; on Project, the units, line ends and the
+ * section and elevation markers' sizes (decision 455). Sizes are paper millimetres.
  * Each change is one engine command; Standard (and layer 0) always stay.
  */
 
@@ -16,7 +17,7 @@ import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; markSize?: number; markText?: number };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -111,6 +112,13 @@ export function StandardsDialog() {
     }
   };
 
+  // A marker size typed in the Project tab: empty clears it (the default), a number within its range sets it.
+  const markOption = (key: 'markSize' | 'markText', text: string, was: number | undefined, min: number, max: number) => {
+    const t = text.trim();
+    if (t === '') { if (was != null) void execute('standards.options', { [key]: null }); return; }
+    const n = Number(t.replace(',', '.'));
+    if (Number.isFinite(n) && n >= min && n <= max && n !== was) void execute('standards.options', { [key]: n });
+  };
   const rows = book[tab.list] as Entry[];
   const options = (
     <dl className="fields standards-options">
@@ -122,6 +130,13 @@ export function StandardsDialog() {
       <dd><select value={String(book.lineCap ?? 'round')} onChange={(e) => void execute('standards.options', { lineCap: e.target.value })}>
         <option value="round">round</option><option value="square">square (mitred)</option>
       </select></dd>
+      {/* The section and elevation markers' symbol size and text height (decision 455); a marker's own, in its properties, goes before. */}
+      <dt title="The size of the section markers' arrows and the elevation markers' circle, in paper mm, in plans, sections, elevations, sheets and PDF; a marker's own size in its properties goes before it">Marker size</dt>
+      <dd><input className="num" data-field="mark-size" key={`ms${book.markSize ?? ''}`} defaultValue={book.markSize == null ? '' : String(book.markSize)} placeholder="10"
+        onBlur={(e) => markOption('markSize', e.target.value, book.markSize, 1, 50)} /> mm</dd>
+      <dt title="The height of the section and elevation markers' names, in paper mm; empty: the Standard text style's">Marker text</dt>
+      <dd><input className="num" data-field="mark-text" key={`mt${book.markText ?? ''}`} defaultValue={book.markText == null ? '' : String(book.markText)} placeholder={String(book.textStyles.find((t) => t.id === 'standard')?.height ?? 2.5)}
+        onBlur={(e) => markOption('markText', e.target.value, book.markText, 0.5, 20)} /> mm</dd>
     </dl>
   );
   return (

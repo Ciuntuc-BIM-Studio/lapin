@@ -31,7 +31,7 @@ export function textureOf(material: NodeDto | undefined, face: Face = 'side'): T
   if (own === 'none') return null;
   if (typeof own === 'string' && own in TILE) return own as TextureKind;
   const hatch = String((material.props.section as { hatch?: string } | undefined)?.hatch ?? '').toUpperCase();
-  const byHatch: Record<string, TextureKind> = { BRICK: 'brick', CONCRETE: 'concrete', WOOD: 'wood', WOODCROSS: 'wood', INSULATION: 'insulation', EARTH: 'earth', TILES: 'tiles', STEEL: 'metal', GRAVEL: 'earth', BOARDS: 'wood', STONE: 'stone', VERTICAL: 'metal' };
+  const byHatch: Record<string, TextureKind> = { BRICK: 'brick', CONCRETE: 'concrete', RCONCRETE: 'concrete', WOOD: 'wood', WOODCROSS: 'wood', INSULATION: 'insulation', EARTH: 'earth', TILES: 'tiles', STEEL: 'metal', GRAVEL: 'earth', BOARDS: 'wood', STONE: 'stone', VERTICAL: 'metal' };
   if (byHatch[hatch]) return byHatch[hatch];
   const n = material.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   if (/brick|caramid|masonry|zidari/.test(n)) return 'brick';

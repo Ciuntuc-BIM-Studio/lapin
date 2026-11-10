@@ -24,6 +24,8 @@ Wählen Sie den Schnitt im Browser aus, um im Eigenschaftenbereich seinen Maßst
 
 Die Linie eines Schnitts wird in jedem Grundriss gezeichnet, und der Schnitt wird in jedem anderen Schnitt und jeder Ansicht markiert, die seine Ebene kreuzt: eine feine gestrichelte Linie, wo die Ebene die Ansicht schneidet, mit dem Namen des Schnitts und einem Pfeil in seine Blickrichtung oben, auf dem Papier so groß wie im Grundriss. Ein Schnitt wird nie in sich selbst markiert. Ein Klick auf einen Marker wählt den Schnitt aus, ein Doppelklick öffnet ihn.
 
+**Markergröße.** **Verwalten → Zeichnungsstandards → Projekt** legt fest, wie groß die Schnitt- und Ansichtsmarker gezeichnet werden, in Papiermillimetern: **Markergröße** (der Kreis der Ansicht im Durchmesser, die Pfeile eines Schnitts 0,7 davon; zuerst 10 mm) und **Markertext** (die Höhe ihrer Namen; leer: die des Standard-Textstils). Ein Schnitt oder eine Ansicht mit eigener Größe hat **Markergröße (mm)** und **Markertext (mm)** in den Eigenschaften; leer übernimmt sie die des Projekts. Die Engine zeichnet die Marker, daher folgen Grundrisse, die Schnitte, die sie kreuzen, Pläne, das PDF und die DXF-Datei.
+
 Jeder Schnitt liegt auf einem **Marker-Layer** (zuerst **Sections**; **Marker-Layer** in den Eigenschaften des Schnitts ändert ihn), und jede Ansicht wählt, was sie markiert. **Ansicht → Schnitte…** listet die Schnitte des Projekts nach Layer für die vordere Ansicht, mit einem Kontrollkästchen je Layer und je Schnitt nur für diese Ansicht, dem Layer jedes Schnitts (ein vorhandener oder **Neuer Layer…**) und in wie vielen Ansichten jeder ausgeblendet ist. Ein Plan markiert, was seine Ansichten markieren.
 
 Ein Schnitt quer durch einen Balken oder eine Stütze (**Schnitt hier**, **Querschnitt** auf der Registerkarte Einfache Bewehrung) hat auch im Grundriss Griffe: Ziehen Sie ein Ende entlang der Linie, um dieser Seite mehr oder weniger Rand zu geben, und die Mitte entlang des Elements, um die Station zu verschieben, an der er schneidet. Das Fenster des Schnitts folgt.
@@ -35,6 +37,12 @@ Ein Schnitt quer durch einen Balken oder eine Stütze (**Schnitt hier**, **Quers
 **+** neben **Ansichten** erstellt die vier Ansichten des Gebäudes auf einmal.
 
 ![Die Südansicht](shots/elevation-view.webp)
+
+Jeder Grundriss markiert jede Ansicht vor dem Gebäude: eine feine Strichpunktlinie quer zu ihrer Blickrichtung und in ihrer Mitte ein Kreis mit einem schwarzen Pfeil, der auf das Gebäude zeigt, dahinter der Name der Ansicht. Ein Klick auf den Marker wählt die Ansicht aus, ein Doppelklick öffnet sie. **Ansichtsmarken** in **Sichtbarkeit / Grafiken** (<kbd>VV</kbd>) blendet sie in einer Ansicht aus.
+
+**Wie weit eine Ansicht reicht.** Wählen Sie die Ansicht in einem Grundriss aus: Ihre Linie hat an jedem Ende einen Griff. Ziehen Sie einen entlang der Linie, um die Ansicht auf dieser Seite zu verlängern oder zu verkürzen; die Ansicht zeichnet dann nur, was zwischen den beiden Enden liegt, und ihre Pläne und das PDF folgen. Jedes Ziehen ist ein Rückgängig-Schritt. Solange Sie sie nicht ziehen, umfasst die Linie das ganze Gebäude und wächst mit ihm.
+
+![Der Marker einer Ansicht im Grundriss, ihre Linie auf die Mitte des Hauses verkürzt](shots/elevation-marker.webp)
 
 ### Sonnenschatten
 

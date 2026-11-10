@@ -54,7 +54,7 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
 /// <c>plan</c> and <c>elevation</c>, the same, for those kinds of view;
 /// <c>membrane</c> (drawn as a heavy dashed line); <c>drawJoints</c>.
 /// A field the material does not give comes from its name: concrete,
-/// brick, insulation, timber, steel… A plan takes the section's graphics
+/// masonry, insulation, timber, steel… (<see cref="Guesses"/>; an unknown name the general 45° lines). A plan takes the section's graphics
 /// unless it has its own; an elevation guesses its surface from the name
 /// apart (<see cref="ElevationFromName"/>: brick, stone, boards, never BATT).
 /// <c>hatch</c> null (JSON null) means "no hatch", absent means "from the name".
@@ -70,7 +70,38 @@ public static class MaterialGraphics
 
     sealed record Guess(bool Membrane = false, string? Hatch = null);
 
+    /// <summary>
+    /// What a name suggests for a cut (decision 456, a tester's request): the section symbols drawings use (ISO 128-50's
+    /// 45° lines as the general hatch; DIN 1356 and STAS 105's masonry, concrete and reinforced concrete). Masonry and brick
+    /// as 45° lines (brick's courses are what a facade shows: <see cref="ElevationGuesses"/>), plain concrete speckled,
+    /// reinforced concrete speckled over 45° lines, insulation as batts, timber's grain, steel's paired lines, earth, gravel;
+    /// finishes, glass, air and membranes nothing. A name nothing matches takes the general 45° lines (<see cref="GenericHatch"/>).
+    /// The first match wins: membranes and insulation first ("bitumen sheet", "stone wool"), glass and air ("glass block"), reinforced before plain concrete.
+    /// </summary>
     static readonly (Regex Re, Guess G)[] Guesses =
+    [
+        (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|sheet|folie|barier"), new(Membrane: true)),
+        (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), new(Hatch: "BATT")),
+        (new(@"glass|glazing|sticla|geam|\bair\b|cavity|\baer\b|lama de aer"), new()),
+        (new(@"reinforced|armat|\brc\b|stahlbeton"), new(Hatch: "RCONCRETE")),
+        (new(@"brick|masonry|block|caramid|zidari|bca|aac"), new(Hatch: "LINES45")),
+        (new(@"concrete|beton|screed|sapa|c\d\d/"), new(Hatch: "CONCRETE")),
+        (new(@"timber|wood|clt|osb|plywood|lemn"), new(Hatch: "WOOD")),
+        (new(@"steel|metal|otel|alumin"), new(Hatch: "STEEL")),
+        (new(@"gravel|ballast|pietris|aggregate"), new(Hatch: "GRAVEL")),
+        (new(@"earth|soil|pamant|ground"), new(Hatch: "EARTH")),
+        (new(@"tile|ceramic|gresie|faianta"), new(Hatch: "TILES")),
+        (new(@"plaster|render|gypsum|tencuial|gips|finish|paint|vopsea|stucco"), new()),
+    ];
+
+    /// <summary>The cut hatch of a name nothing matches: ISO 128-50's general 45° lines.</summary>
+    public const string GenericHatch = "LINES45";
+
+    /// <summary>
+    /// The suggestions decision 325 made, before decision 456: brick and masonry in courses (BRICK), an unknown name
+    /// nothing. Kept only so a project saved before keeps the hatches it drew (<c>MaterialHatchUpgrade</c>).
+    /// </summary>
+    static readonly (Regex Re, Guess G)[] LegacyGuesses =
     [
         (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|sheet|folie|barier"), new(Membrane: true)),
         (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), new(Hatch: "BATT")),
@@ -111,12 +142,19 @@ public static class MaterialGraphics
     // Romanian diacritics fold to their letters, as the old names were typed.
     static string Fold(string name) => Normalise(name).Replace('ă', 'a').Replace('â', 'a').Replace('î', 'i').Replace('ș', 's').Replace('ş', 's').Replace('ț', 't').Replace('ţ', 't');
 
-    static Guess? GuessOf(string name)
+    /// <summary>What the name matches (null: nothing does).</summary>
+    static Guess? GuessOf(string name, (Regex Re, Guess G)[]? table = null)
     {
         var n = Fold(name);
-        foreach (var (re, g) in Guesses) if (re.IsMatch(n)) return g;
+        foreach (var (re, g) in table ?? Guesses) if (re.IsMatch(n)) return g;
         return null;
     }
+
+    /// <summary>A section's hatch from the name: what it matches, else the general 45° lines.</summary>
+    static Guess Suggested(string name) => GuessOf(name) ?? new Guess(Hatch: GenericHatch);
+
+    /// <summary>What decision 325's names suggested for a cut (a pattern, or none), for a project saved before decision 456.</summary>
+    public static string? LegacyFromName(string name) => GuessOf(name, LegacyGuesses) is { Membrane: false } g ? g.Hatch : null;
 
     /// <summary>What a name suggests for an elevation's surface hatch: a pattern, or none (insulation, membranes, finishes, concrete, an unknown name).</summary>
     public static string? ElevationFromName(string name)
@@ -127,7 +165,7 @@ public static class MaterialGraphics
     }
 
     /// <summary>What a name suggests for a section: its hatch (or none) and whether it is a membrane.</summary>
-    public static (string? Hatch, bool Membrane) FromName(string name) => GuessOf(name) is { } g ? (g.Hatch, g.Membrane) : (null, false);
+    public static (string? Hatch, bool Membrane) FromName(string name) => Suggested(name) is var g ? (g.Hatch, g.Membrane) : default;
 
     /// <summary>The material's own graphics for a kind of view (a plan: the section's fields, then the plan's own).</summary>
     static ViewGraphics? Own(Entity? material, string kind)
@@ -156,7 +194,7 @@ public static class MaterialGraphics
         name ??= material?.Name ?? "";
         var own = Own(material, kind);
         var elevation = kind == "elevation";
-        var guess = elevation ? null : GuessOf(name);
+        var guess = elevation ? null : Suggested(name);
         var color = material?.Str("color");
         // "" in an own field is an explicit none; null is "not given". An elevation's guess is the facade's (ElevationFromName).
         string? hatch = own?.Hatch is { } h ? (h.Length == 0 ? null : h.ToUpperInvariant()) : elevation ? ElevationFromName(name) : guess?.Hatch;
@@ -179,7 +217,8 @@ public static class MaterialGraphics
         ViewGraphics? g = null;
         if (pattern != null)
         {
-            var known = HatchLibrary.Find(pattern, extra) != null ? pattern.ToUpperInvariant() : FromName(pattern).Hatch;
+            // A pattern named as no pattern of the library: what its name says, if it says anything (never the general lines).
+            var known = HatchLibrary.Find(pattern, extra) != null ? pattern.ToUpperInvariant() : GuessOf(pattern)?.Hatch;
             if (known != null) g = new ViewGraphics(known, scale ?? 1);
         }
         else if (linesAngleDeg is { } a)

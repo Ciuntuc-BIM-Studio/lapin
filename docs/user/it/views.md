@@ -24,6 +24,8 @@ Seleziona la sezione nel browser per impostarne la scala, la profondità, la dis
 
 La linea di una sezione è disegnata in ogni pianta, e la sezione è segnata in ogni altra sezione e in ogni prospetto che il suo piano attraversa: una sottile linea tratteggiata dove il piano taglia la vista, con il nome della sezione e una freccia, in alto, rivolta dove guarda la sezione, della stessa dimensione sulla carta che in pianta. Una sezione non è mai segnata in sé stessa. Fai clic su un indicatore per selezionare la sezione, doppio clic per aprirla.
 
+**Dimensione degli indicatori.** **Gestisci → Standard di disegno → Progetto** imposta quanto sono grandi gli indicatori di sezione e di prospetto, in millimetri sulla carta: **Dimensione indicatori** (il diametro del cerchio del prospetto, le frecce di una sezione 0,7 di esso; all’inizio 10 mm) e **Testo indicatori** (l’altezza dei loro nomi; vuoto: quella dello stile di testo standard). Una sezione o un prospetto con una dimensione propria ha **Dimensione indicatore (mm)** e **Testo indicatore (mm)** nelle proprietà; se vuoti, usa quelli del progetto. Il motore disegna gli indicatori, quindi piante, sezioni che attraversano, tavole, PDF e DXF li seguono.
+
 Ogni sezione sta su un **layer dell’indicatore** (all’inizio **Sezioni**; **Layer dell’indicatore** nelle proprietà della sezione lo cambia), e ogni vista sceglie che cosa segnare. **Vista → Sezioni…** elenca le sezioni del progetto per layer per la vista in primo piano, con una casella per layer e per sezione valida solo per questa vista, il layer di ogni sezione (uno esistente, o **Nuovo layer…**) e in quante viste ciascuna è nascosta. Una tavola segna ciò che segnano le sue viste.
 
 Una sezione tagliata trasversalmente a una trave o a un pilastro (**Sezione qui**, **Sezione trasversale** nella scheda Armature semplici) ha maniglie anche in pianta: trascina uno dei due estremi lungo la linea per dare a quel lato più o meno margine, trascina il centro lungo l’elemento per spostare la progressiva a cui taglia. La finestra della sezione segue.
@@ -35,6 +37,12 @@ Una sezione tagliata trasversalmente a una trave o a un pilastro (**Sezione qui*
 **+** accanto a **Prospetti** crea in un colpo solo i quattro prospetti dell’edificio.
 
 ![Il prospetto sud](shots/elevation-view.webp)
+
+Ogni pianta segna ogni prospetto davanti all’edificio: una sottile linea a tratto e punto attraverso la direzione in cui guarda, e al suo centro un cerchio la cui freccia nera punta verso l’edificio, con il nome del prospetto dietro. Fai clic sull’indicatore per selezionare il prospetto, doppio clic per aprirlo. **Simboli di prospetto** in **Visibilità / Grafica** (<kbd>VV</kbd>) li nasconde in una vista.
+
+**Fin dove arriva un prospetto.** Seleziona il prospetto in una pianta: la sua linea ha una maniglia a ogni estremo. Trascinane una lungo la linea per allungare o accorciare il prospetto da quel lato; il prospetto disegna allora solo ciò che sta tra i due estremi, e le sue tavole e il PDF seguono. Ogni trascinamento è un passo di annullamento. Finché non le trascini, la linea copre tutto l’edificio e cresce con esso.
+
+![L’indicatore di un prospetto in pianta, con la linea accorciata fino a metà della casa](shots/elevation-marker.webp)
 
 ### Ombre del sole
 

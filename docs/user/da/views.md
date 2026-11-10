@@ -24,6 +24,8 @@ Markér snittet i browseren for at indstille dets skala, dybde, fagområde og st
 
 Et snits linje tegnes i hver plan, og snittet markeres i hvert andet snit og hver facade, som dets plan krydser: en fin stiplet linje, hvor planet skærer visningen, med snittets navn og en pil, der ser den vej, snittet ser, øverst, i samme størrelse på papir som i en plan. Et snit markeres aldrig i sig selv. Klik på en markør for at vælge snittet, dobbeltklik for at åbne det.
 
+**Markørstørrelse.** **Administrer → Tegningsstandarder → Projekt** bestemmer, hvor store snit- og facademarkørerne tegnes, i papirmillimeter: **Markørernes størrelse** (facadens cirkel på tværs, et snits pile 0,7 af den; først 10 mm) og **Markørernes tekst** (højden på deres navne; tom: standardens tekststil). Et snit eller en facade med sin egen størrelse har **Markørstørrelse (mm)** og **Markørtekst (mm)** i sine egenskaber; er de tomme, bruger den projektets. Motoren tegner markørerne, så planer, de snit de krydser, tegningsark, PDF og DXF følger alle med.
+
 Hvert snit ligger på et **markørlag** (**Sections** fra start; **Markørlag** i snittets egenskaber ændrer det), og hver visning vælger, hvad den markerer. **Vis → Snit…** viser projektets snit efter lag for den forreste visning, med et afkrydsningsfelt pr. lag og pr. snit kun for denne visning, hvert snits lag (et eksisterende eller **Nyt lag…**) og i hvor mange visninger hvert er skjult. Et tegningsark markerer, hvad dets visninger markerer.
 
 Et snit skåret på tværs af en bjælke eller en søjle (**Snit her**, **Tværsnit** på fanen Simpel armering) har også greb i planen: træk en af enderne langs linjen for at give den side mere eller mindre margen, og træk midten langs elementet for at flytte stationen, det skærer ved. Snittets vindue følger med.
@@ -35,6 +37,12 @@ Et snit skåret på tværs af en bjælke eller en søjle (**Snit her**, **Tværs
 **+** ved siden af **Facader** laver bygningens fire facader på én gang.
 
 ![Sydfacaden](shots/elevation-view.webp)
+
+Hver plan markerer hver facade foran bygningen: en fin stregpunktlinje på tværs af den retning, den ser, og midt på den en cirkel med en sort pil, der peger mod bygningen, med facadens navn bag sig. Klik på markøren for at vælge facaden, dobbeltklik for at åbne den. **Facademarkeringer** i **Synlighed / Grafik** (<kbd>VV</kbd>) skjuler dem i en visning.
+
+**Hvor langt en facade rækker.** Vælg facaden i en plan: dens linje har et greb i hver ende. Træk et langs linjen for at strække eller forkorte facaden på den side; facaden tegner så kun det, der ligger mellem de to ender, og dens tegningsark og PDF følger med. Hvert træk er ét fortryd-trin. Indtil du trækker dem, spænder linjen over hele bygningen og vokser med den.
+
+![En facades markør i plan, linjen forkortet til midten af huset](shots/elevation-marker.webp)
 
 ### Solskygger
 

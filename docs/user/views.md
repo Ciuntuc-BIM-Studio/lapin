@@ -24,6 +24,8 @@ Select the section in the browser to set its scale, its depth, its discipline an
 
 A section's line is drawn in every plan, and the section is marked in every other section and elevation its plane crosses: a fine dashed line where the plane cuts the view, with the section's name and an arrow looking the way the section looks at its top, the same size on paper as in a plan. A section is never marked in itself. Click a marker to select the section, double-click it to open it.
 
+**Marker size.** **Manage → Drafting standards → Project** sets how large the section and elevation markers are drawn, in paper millimetres: **Marker size** (the elevation's circle across, a section's arrows 0.7 of it; 10 mm at first) and **Marker text** (the height of their names; empty: the Standard text style's). A section or an elevation of its own size has **Marker size (mm)** and **Marker text (mm)** in its properties; empty, it takes the project's. The engine draws the markers, so plans, the sections they cross, sheets, the PDF and the DXF all follow.
+
 Each section sits on a **marker layer** (**Sections** at first; **Marker layer** in the section's properties changes it), and each view chooses what it marks. **View → Sections…** lists the project's sections by layer for the view in front, with a checkbox per layer and per section for this view alone, the layer of each section (an existing one, or **New layer…**), and in how many views each is hidden. A sheet marks what its views mark.
 
 A section cut across a beam or a column (**Section here**, **Section across** on the Simple rebar tab) has grips in plan too: drag either end along the line to give that side more or less margin, drag the middle along the element to move the station it cuts at. The section's window follows.
@@ -35,6 +37,12 @@ A section cut across a beam or a column (**Section here**, **Section across** on
 **+** next to **Elevations** makes the four elevations of the building at once.
 
 ![The south elevation](shots/elevation-view.webp)
+
+Every plan marks each elevation in front of the building: a fine chain line across the way it looks, and in its middle a circle whose black arrow points at the building, with the elevation's name behind it. Click the marker to select the elevation, double-click it to open it. **Elevation marks** in **Visibility / Graphics** (<kbd>VV</kbd>) hides them in a view.
+
+**How far an elevation reaches.** Select the elevation in a plan: its line has a grip at each end. Drag one along the line to stretch or shorten the elevation on that side; the elevation then draws only what lies between the two ends, and its sheets and PDF follow. Each drag is one undo step. Until you drag them, the line spans the whole building and grows with it.
+
+![An elevation's marker in plan, its line shortened to the middle of the house](shots/elevation-marker.webp)
 
 ### Sun shadows
 

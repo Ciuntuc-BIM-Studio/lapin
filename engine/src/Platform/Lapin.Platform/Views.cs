@@ -102,7 +102,14 @@ public static class Views
                     if (view.NumOrNull("originX") == null) return (null, "There is nothing to see.");
                     bounds = (new Vec3(-1, -1, 0), new Vec3(1, 1, 1));
                 }
-                return (ViewSpec.Elevation(LookOf(view), bounds, hidden, view.NumOrNull("originX")), null);
+                var spec = ViewSpec.Elevation(LookOf(view), bounds, hidden, view.NumOrNull("originX"));
+                // As far as its marker's line reaches (decision 456): its extent along its right, from the model's origin.
+                if (ElevationMarkers.Extent(view) is var (lo, hi))
+                {
+                    var o = Vec3.Dot(spec.Frame.Origin, spec.Frame.Right);
+                    spec = spec with { Span = (lo - o, hi - o) };
+                }
+                return (spec, null);
             }
             case RefPlanes.Kind:
                 return (RefPlanes.Spec(view, hidden), null);
@@ -980,22 +987,27 @@ public static class Views
                 if (pieces.Count == 0) continue;
                 var (first, last) = (pieces[0], pieces[^1]);
                 var mk = new ViewMark(v.Id);
-                var (arrow, head) = (0.7 * k, 0.25 * k);
+                // Its symbol's size and its text's height: its own, else the project's (decision 455).
+                var (size, textHeight) = SectionMarkers.Sizes(c.Book, v, text);
+                var u = size * c.Mm;
+                var (arrow, head) = (0.7 * u, 0.25 * u);
                 mk.Polyline(path, false, "SECTION", Pens.Default.Hatch, dash: LineStyles.DashOf("center"));
                 var u0 = (first.B - first.A) * (1 / first.Length);
                 var u1 = (last.B - last.A) * (1 / last.Length);
-                mk.Line(first.A, first.A + u0 * Math.Min(0.8 * k, first.Length / 3), "SECTION", Pens.Default.Cut).Line(last.B, last.B - u1 * Math.Min(0.8 * k, last.Length / 3), "SECTION", Pens.Default.Cut);
+                mk.Line(first.A, first.A + u0 * Math.Min(0.8 * u, first.Length / 3), "SECTION", Pens.Default.Cut).Line(last.B, last.B - u1 * Math.Min(0.8 * u, last.Length / 3), "SECTION", Pens.Default.Cut);
                 foreach (var (end, look) in new[] { (first.A, u0.Perp), (last.B, u1.Perp) })
                 {
                     var tip = end + look * arrow;
                     mk.Line(end, tip, "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head + look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head - look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
-                      .Text(new PenText(tip + look * (0.35 * k), v.Name, text.Height, Baseline: "middle", Font: text.Font));
+                      .Text(new PenText(tip + look * (0.35 * u), v.Name, textHeight, Baseline: "middle", Font: text.Font));
                 }
                 mk.Snaps.AddRange(path);
                 yield return mk;
             }
+            // The elevations' markers (decision 456): their line, as far as each reaches, and the symbol looking at the building.
+            foreach (var mark in ElevationMarkers.Marks(c, text)) yield return mark;
         }
         else if (c.Drawing.Bounds is { } bounds && c.View.Str("kind") != RefPlanes.Kind)
         {
@@ -1208,6 +1220,9 @@ public static class Views
             new("openingSymbols", "Opening symbols", "choice", Choices: ["show", "hide"]),
             // The layer a section's marker is on, so views hide markers by layer (SectionMarkers).
             new("markerLayer", "Marker layer", "text"),
+            // A section's or elevation's marker: its symbol's size and its text's height (paper mm; empty: the drafting standards', decision 455).
+            new("markSize", "Marker size (mm)", "number", Min: Standards.MinMarkSize, Max: Standards.MaxMarkSize),
+            new("markTextSize", "Marker text (mm)", "number", Min: Standards.MinMarkText, Max: Standards.MaxMarkText),
             // An elevation's sketch plane, along its look; a reference plane's place and turn (docs/plan-studio-thick.md).
             new("planeDepth", "Sketch plane depth", "length"),
             new("x", "Origin x", "length"), new("y", "Origin y", "length"), new("z", "Origin z", "length"),
@@ -1299,6 +1314,7 @@ public static class Views
         Insets.Register(r);
         ViewBoundaries.Register(r);
         SectionMarkers.Register(r);
+        ElevationMarkers.Register(r);
 
         // A section across an element moved along it or widened: {id, station?, marginA?, marginB?} (AcrossSections).
         r.Command("view.updateAcross", "Move section", (ctx, a) =>

@@ -24,6 +24,8 @@ Selecione o corte no navegador para definir a sua escala, a sua profundidade, a 
 
 A linha de um corte é desenhada em todas as plantas, e o corte é marcado em todos os outros cortes e elevações que o seu plano atravessa: uma linha tracejada fina onde o plano corta a vista, com o nome do corte e uma seta no topo apontando para onde o corte olha, com o mesmo tamanho no papel que em uma planta. Um corte nunca é marcado em si mesmo. Clique em um marcador para selecionar o corte e clique duas vezes para abri-lo.
 
+**Tamanho dos marcadores.** **Gerenciar → Padrões de desenho → Projeto** define o tamanho com que os marcadores de corte e de elevação são desenhados, em milímetros de papel: **Tamanho dos marcadores** (o diâmetro do círculo da elevação; as setas de um corte têm 0,7 dele; 10 mm no início) e **Texto dos marcadores** (a altura dos seus nomes; vazio: a do estilo de texto padrão). Um corte ou uma elevação com tamanho próprio tem **Tamanho do marcador (mm)** e **Texto do marcador (mm)** nas suas propriedades; vazios, usa os do projeto. O motor desenha os marcadores, então plantas, os cortes que elas atravessam, pranchas, o PDF e o DXF os acompanham.
+
 Cada corte fica em um **layer de marcadores** (**Cortes** no início; **Layer do marcador** nas propriedades do corte a altera), e cada vista escolhe o que marca. **Vista → Cortes…** lista os cortes do projeto por layer para a vista em primeiro plano, com uma caixa de seleção por layer e por corte só para esta vista, o layer de cada corte (um existente ou **Novo layer…**) e em quantas vistas cada um está oculto. Uma prancha marca o que as suas vistas marcam.
 
 Um corte feito através de uma viga ou de um pilar (**Corte aqui**, **Corte transversal** na guia Armadura simples) também tem alças em planta: arraste qualquer uma das extremidades ao longo da linha para dar mais ou menos margem a esse lado, arraste o meio ao longo do elemento para mover a estaca em que ele corta. A janela do corte acompanha.
@@ -35,6 +37,12 @@ Um corte feito através de uma viga ou de um pilar (**Corte aqui**, **Corte tran
 O **+** ao lado de **Elevações** cria as quatro elevações do edifício de uma vez.
 
 ![A elevação sul](shots/elevation-view.webp)
+
+Toda planta marca cada elevação diante do edifício: uma linha fina traço-ponto atravessando a direção em que ela olha e, no meio, um círculo cuja seta preta aponta para o edifício, com o nome da elevação atrás. Clique no marcador para selecionar a elevação e clique duas vezes para abri-la. **Marcas de elevação** em **Visibilidade / Gráficos** (<kbd>VV</kbd>) as oculta em uma vista.
+
+**Até onde vai uma elevação.** Selecione a elevação em uma planta: a sua linha tem uma alça em cada extremidade. Arraste uma ao longo da linha para alongar ou encurtar a elevação desse lado; a elevação desenha então apenas o que está entre as duas extremidades, e as suas pranchas e o PDF acompanham. Cada arrasto é um passo de desfazer. Enquanto você não as arrasta, a linha abrange todo o edifício e cresce com ele.
+
+![O marcador de uma elevação em planta, com a linha encurtada até o meio da casa](shots/elevation-marker.webp)
 
 ### Sombras do sol
 

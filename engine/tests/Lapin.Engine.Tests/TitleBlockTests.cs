@@ -126,6 +126,8 @@ public sealed class TitleBlockTests : IDisposable
         var f = F();
         f.Wall(0, 0, 10, 0);
         f.Wall(10, 0, 10, 6);
+        // The walls hatched as they were then (decision 456 changed the brick's cut hatch, not the title blocks).
+        f.LegacyHatches();
         var expected = new Dictionary<string, (string Pens, string Dxf)>
         {
             ["A3"] = ("a8343dd727de72b2bc6e13ea06b0e072f88e44f422587874a610fb2bbe3e3859", "80112a7edcd9cf7d84b75b975bd26b64a004d5bccb5c8a033030ddc9c59028dd"),

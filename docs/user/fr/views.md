@@ -24,6 +24,8 @@ Sélectionnez la coupe dans l’arborescence pour régler son échelle, sa profo
 
 La ligne d’une coupe est dessinée dans chaque plan, et la coupe est repérée dans chaque autre coupe et élévation que son plan traverse : une fine ligne en tirets là où le plan coupe la vue, avec le nom de la coupe et une flèche dans la direction où elle regarde, en haut, de la même taille sur le papier que dans un plan. Une coupe n’est jamais repérée dans elle-même. Un clic sur un repère sélectionne la coupe, un double-clic l’ouvre.
 
+**Taille des repères.** **Gérer → Normes de dessin → Projet** règle la taille des repères de coupe et d’élévation, en millimètres sur papier : **Taille des repères** (le diamètre du cercle de l’élévation ; les flèches d’une coupe en font 0,7 ; 10 mm au départ) et **Texte des repères** (la hauteur de leurs noms ; vide : celle du style de texte standard). Une coupe ou une élévation de taille propre a **Taille du repère (mm)** et **Texte du repère (mm)** dans ses propriétés ; vides, elle prend ceux du projet. Le moteur dessine les repères, donc les plans, les coupes qu’ils traversent, les feuilles, le PDF et le DXF les suivent.
+
 Chaque coupe est sur un **calque de repères** (**Sections** au départ ; **Calque du repère** dans les propriétés de la coupe le change), et chaque vue choisit ce qu’elle repère. **Vue → Coupes…** liste les coupes du projet par calque pour la vue au premier plan, avec une case par calque et par coupe pour cette vue seulement, le calque de chaque coupe (un calque existant, ou **Nouveau calque…**) et dans combien de vues chacune est masquée. Une feuille repère ce que ses vues repèrent.
 
 Une coupe faite en travers d’une poutre ou d’un poteau (**Coupe ici**, **Coupe transversale** dans l’onglet Ferraillage simple) a aussi des poignées dans le plan : glissez l’une des extrémités le long de la ligne pour donner à ce côté plus ou moins de marge, et le milieu le long de l’élément pour déplacer la station où elle passe. La fenêtre de la coupe suit.
@@ -35,6 +37,12 @@ Une coupe faite en travers d’une poutre ou d’un poteau (**Coupe ici**, **Cou
 Le **+** à côté de **Élévations** crée d’un coup les quatre élévations du bâtiment.
 
 ![L’élévation sud](shots/elevation-view.webp)
+
+Chaque plan repère chaque élévation placée devant le bâtiment : une fine ligne en traits mixtes en travers de sa direction de regard, et en son milieu un cercle dont la flèche noire pointe vers le bâtiment, avec le nom de l’élévation derrière. Un clic sur le repère sélectionne l’élévation, un double-clic l’ouvre. **Repères d’élévation** dans **Visibilité / Graphismes** (<kbd>VV</kbd>) les masque dans une vue.
+
+**Jusqu’où va une élévation.** Sélectionnez l’élévation dans un plan : sa ligne a une poignée à chaque extrémité. Glissez-en une le long de la ligne pour allonger ou raccourcir l’élévation de ce côté ; l’élévation ne dessine alors que ce qui se trouve entre les deux extrémités, et ses feuilles et le PDF suivent. Chaque glissement est une étape d’annulation. Tant que vous ne les glissez pas, la ligne couvre tout le bâtiment et grandit avec lui.
+
+![Le repère d’une élévation dans un plan, sa ligne raccourcie jusqu’au milieu de la maison](shots/elevation-marker.webp)
 
 ### Ombres du soleil
 

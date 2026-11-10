@@ -10,7 +10,7 @@
 import { GitCommitHorizontal, Route, Spline } from 'lucide-react';
 import { execute, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
-import type { Grip, RefLine, ToolDef, Vec2 } from '../../platform/module';
+import type { Grip, GripView, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { useUi } from '../../app/store';
 import { frontDiscipline } from './disciplines';
 import { pt } from '../../platform/vec';
@@ -97,8 +97,31 @@ function acrossGrips(node: NodeDto): Grip[] {
   ];
 }
 
-/** A section's grips in plan: its points (dragged, or taken out), a new point on each piece; a curved section its three points; one that follows an element has none of its own; one across an element its margins and station. */
-export function sectionGrips(node: NodeDto): Grip[] {
+/** What an elevation's marker in plan tells of its line (decision 456): its ends, its right, and how far it reaches along it. */
+type ElevationLine = { ends?: number[][]; right?: number[]; min?: number; max?: number };
+
+/**
+ * An elevation's grips in plan (decision 456): its marker line's two ends, each dragged along the line, set how far the
+ * elevation reaches on that side (view.setExtent, one undo step; the other end stays where it is drawn).
+ */
+export function elevationGrips(node: NodeDto, view?: GripView): Grip[] {
+  if (node.type !== 'LapinView' || node.props.kind !== 'elevation') return [];
+  const line = view?.mark?.data as ElevationLine | undefined;
+  const { ends, right, min, max } = line ?? {};
+  if (!ends || ends.length < 2 || !right || typeof min !== 'number' || typeof max !== 'number') return [];
+  const along = (p: Vec2) => p.x * right[0] + p.y * right[1];
+  const [a, b] = ends.map(([x, y]) => ({ x, y }));
+  const set = (lo: number, hi: number) => ({ command: 'view.setExtent', args: { id: node.id, min: r3(lo), max: r3(hi) } });
+  const title = 'Drag along the line: how far the elevation reaches on this side';
+  return [
+    { key: 'extentMin', kind: 'end', at: a, title, step: (to) => set(Math.min(along(to), max - 0.1), max) },
+    { key: 'extentMax', kind: 'end', at: b, title, step: (to) => set(min, Math.max(along(to), min + 0.1)) },
+  ];
+}
+
+/** A section's grips in plan: its points (dragged, or taken out), a new point on each piece; a curved section its three points; one that follows an element has none of its own; one across an element its margins and station. An elevation's line ends. */
+export function sectionGrips(node: NodeDto, view?: GripView): Grip[] {
+  if (node.props.kind === 'elevation') return elevationGrips(node, view);
   if (!isSection(node) || followedBy(node)) return [];
   if (isAcross(node)) return acrossGrips(node);
   const pts = sectionPoints(node);

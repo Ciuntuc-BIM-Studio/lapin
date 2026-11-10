@@ -18,6 +18,15 @@ public static class SectionMarkers
     public const string DefaultLayer = "Sections";
     public const string Key = "sectionMarkers";
 
+    /// <summary>
+    /// A marker's symbol size and text height (paper mm, decision 455): the section's or elevation's own (<c>markSize</c>,
+    /// <c>markTextSize</c>), else the drafting standards' (<see cref="StyleBook.MarkSize"/>, <see cref="StyleBook.MarkText"/>),
+    /// else 10 mm and the text style's height.
+    /// </summary>
+    public static (double Size, double Text) Sizes(StyleBook book, Entity marked, TextStyle text) =>
+        (Standards.MarkValue(marked.Attrs["markSize"], Standards.MinMarkSize, Standards.MaxMarkSize) ?? book.MarkSize ?? Standards.DefaultMarkSize,
+         Standards.MarkValue(marked.Attrs["markTextSize"], Standards.MinMarkText, Standards.MaxMarkText) ?? book.MarkText ?? text.Height);
+
     public static string LayerOf(Entity section) => section.Str("markerLayer") is { Length: > 0 } l ? l : DefaultLayer;
 
     /// <summary>What the view hides: the sections by id, and the layers by name.</summary>
@@ -64,9 +73,11 @@ public static class SectionMarkers
         var margin = 1.0 * k;
         var (x0, x1, y0, y1) = (bounds.Min.X - margin, bounds.Max.X + margin, bounds.Min.Y - margin, bounds.Max.Y + margin);
         var frames = Views.ViewPlanes(c, x0, x1);
-        var (arrow, head) = (0.7 * k, 0.25 * k);
         foreach (var v in sections)
         {
+            var (size, textHeight) = Sizes(c.Book, v, text);
+            var u = size * c.Mm;
+            var (arrow, head) = (0.7 * u, 0.25 * u);
             var (path, _, _) = SectionPaths.Resolve(m, c.Services, v);
             if (path == null) continue;
             var pieces = SectionPaths.Pieces(path);
@@ -91,7 +102,7 @@ public static class SectionMarkers
                     mk.Line(top, tip, "SECTION", Pens.Default.Seen, "#333333")
                       .Line(tip, tip - dir * head + dir.Perp * (head * 0.5), "SECTION", Pens.Default.Seen, "#333333")
                       .Line(tip, tip - dir * head - dir.Perp * (head * 0.5), "SECTION", Pens.Default.Seen, "#333333")
-                      .Text(new PenText(tip + dir * (0.35 * k), v.Name, text.Height, Anchor: dir.X < -0.5 ? "end" : "start", Baseline: "middle", Font: text.Font), "#333333");
+                      .Text(new PenText(tip + dir * (0.35 * u), v.Name, textHeight, Anchor: dir.X < -0.5 ? "end" : "start", Baseline: "middle", Font: text.Font), "#333333");
                     mk.Snaps.AddRange([a, b]);
                 }
             }

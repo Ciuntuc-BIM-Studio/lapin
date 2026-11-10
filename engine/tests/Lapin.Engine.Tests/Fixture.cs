@@ -47,5 +47,13 @@ sealed class Fixture
                 new Vec3(all.Max(b => b.Max.X), all.Max(b => b.Max.Y), all.Max(b => b.Max.Z)));
     }
 
+    /// <summary>Every material's section hatch set to what decision 325 suggested from its name (brick in courses), as a test drawn before decision 456 saw it.</summary>
+    public void LegacyHatches()
+    {
+        foreach (var m in Model.OfClass(IfcClass.Material).ToList())
+            if (Lapin.Drawing.MaterialGraphics.Resolve(m, "section") is { Membrane: false, Source: "name" })
+                Run("material.update", new JsonObject { ["id"] = m.Id, ["section"] = new JsonObject { ["hatch"] = Lapin.Drawing.MaterialGraphics.LegacyFromName(m.Name) } });
+    }
+
     public LayerUsage Usage(string wallId) => Layers.ReadUsage(Walls.UsageOf(Model, wallId)!)!;
 }

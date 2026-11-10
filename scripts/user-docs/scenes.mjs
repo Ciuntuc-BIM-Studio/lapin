@@ -3526,6 +3526,45 @@ export const scenes = [
     },
   },
   {
+    // Section and elevation markers (decisions 455, 456): the project's marker size in Drafting standards → Project, the
+    // south elevation marked in the plan, its line's end grip dragged so the elevation reaches only the middle of the house.
+    id: 'views-elevation-marker',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [6, -2], end: [6, 10] });
+      const { id } = await t.cmd('view.create', { kind: 'elevation', direction: 'south' });
+      // The project's sizes, typed in Drafting standards → Project.
+      await t.tool('manage.standards');
+      await t.page.locator('.dialog').getByText('Project', { exact: true }).first().click();
+      const size = t.page.locator('.dialog [data-field=mark-size]');
+      await size.fill('12');
+      await size.blur();
+      await t.wait(600);
+      const book = await t.call('doc.query', { name: 'standards.get', args: {} });
+      t.expect(book?.markSize === 12, `the markers' size set to 12 mm (${book?.markSize})`);
+      await t.keys('Escape');
+      // The elevation selected in the plan: a grip on each end of its line; the right one dragged to x = 8.
+      await t.ui({ selected: [id], selection: id });
+      await t.fit();
+      await t.wait(800);
+      const gripAt = async (key) => { const r = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      const end = await gripAt('extentMax');
+      t.expect(end && (await gripAt('extentMin')), 'the elevation has a grip on each end of its line');
+      const [toX] = await t.planPoint(8, -2.5);
+      await t.page.mouse.move(end[0], end[1]);
+      await t.page.mouse.down();
+      await t.page.mouse.move((end[0] + toX) / 2, end[1], { steps: 4 });
+      await t.page.mouse.move(toX, end[1], { steps: 4 });
+      await t.page.mouse.up();
+      await t.wait(1000);
+      const max = (await t.nodes()).find((n) => n.id === id)?.props.extentMax;
+      t.expect(typeof max === 'number' && Math.abs(max - 8) < 0.3, `the elevation reaches to x = 8 (${max})`);
+      await t.shot('elevation-marker', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Visibility / Graphics as in Revit (docs/plan-visibility-graphics.md, decision 391): a wall's finishes off as a
     // subcategory, and a linked structure displayed custom in the plan, its columns off in this view alone.
     id: 'views-vg',
