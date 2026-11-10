@@ -56,6 +56,10 @@ public sealed class CoreModule : ILapinModule
         Views.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
         r.Service<IProjectUpgrade>(new ViewDetail.LevelUpgrade());
+        // References move, turn, mirror, copy and rise like any element (decision 448).
+        var references = new ReferencePlacement();
+        r.Service<IElementPlacement>(references);
+        r.Service<IElementRise>(references);
         GraphicsSets.Register(r);
         ViewFilters.Register(r);
         BrowserSets.Register(r);
@@ -242,6 +246,38 @@ public sealed class CoreModule : ILapinModule
             return o;
         });
 
+        // Copies in a row or round a centre (decision 448): {ids, count (with the first), step: [x, y, z]} or {kind: "polar",
+        // count, angle filled (degrees, 360 a full turn), center: [x, y]}; each copy as element.transform copies, one undo step.
+        r.Command("element.array", "Array", (ctx, a) =>
+        {
+            var count = (int)Math.Round(Json.Number(a["count"]) ?? 0);
+            if (count < 2 || count > 1000) throw new CommandException("An array has 2 to 1000 items, the first among them.");
+            if (Args.Ids(a).Count == 0) throw new CommandException("Select what to array.");
+            var polar = (string?)a["kind"] == "polar";
+            var made = new JsonArray();
+            if (polar)
+            {
+                var angle = Json.Number(a["angle"]) ?? 360;
+                if (!double.IsFinite(angle) || Math.Abs(angle) < 1e-9 || Math.Abs(angle) > 360) throw new CommandException("A polar array fills an angle of up to 360°.");
+                var center = Args.Point(a["center"], "centre");
+                // A full turn shares it out; a part of one puts the last copy at its end.
+                var step = Math.Abs(Math.Abs(angle) - 360) < 1e-9 ? angle / count : angle / (count - 1);
+                for (var i = 1; i < count; i++)
+                    foreach (var id in ElementTransform.Run(ctx, new JsonObject { ["ids"] = a["ids"]!.DeepClone(), ["op"] = "rotate", ["copy"] = true, ["center"] = new JsonArray(center.X, center.Y), ["angle"] = step * i }).Made)
+                        made.Add(id!.DeepClone());
+            }
+            else
+            {
+                var s = a["step"] as JsonArray;
+                var (dx, dy, dz) = (Json.Number(s?.ElementAtOrDefault(0)) ?? 0, Json.Number(s?.ElementAtOrDefault(1)) ?? 0, Json.Number(s?.ElementAtOrDefault(2)) ?? 0);
+                if (!double.IsFinite(dx + dy + dz) || Math.Abs(dx) + Math.Abs(dy) + Math.Abs(dz) < 1e-9) throw new CommandException("An array's step cannot be nothing.");
+                for (var i = 1; i < count; i++)
+                    foreach (var id in ElementTransform.Run(ctx, new JsonObject { ["ids"] = a["ids"]!.DeepClone(), ["op"] = "copy", ["by"] = new JsonArray(dx * i, dy * i), ["up"] = dz * i }).Made)
+                        made.Add(id!.DeepClone());
+            }
+            return new JsonObject { ["ids"] = made };
+        });
+
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
             var given = Args.Ids(a);
@@ -315,7 +351,6 @@ public static class ElementTransform
         var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
         var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
             .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
-        if (all.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
         // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.
         string? HostOf(Entity e) => ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening
             ? ctx.Model.RelatingOf(opening.Id, IfcClass.RelVoidsElement)?.Id ?? opening.Id

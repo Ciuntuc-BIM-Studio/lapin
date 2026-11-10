@@ -30,7 +30,7 @@ Alcuni elementi sono parti di un insieme: i pilastri, i traversi e gli arcarecci
 
 ## File importati
 
-Ogni file IFC, Fragments o mesh che importi entra come un unico gruppo con il nome del file. Togli la spunta da **Come un unico gruppo** nell’importazione IFC per portare dentro gli elementi sciolti. Un file collegato non viene raggruppato: è già un unico collegamento, in sola lettura (vedi [Importazione ed esportazione](import-export.md)). Gli elementi letti da un file IFC come riferimenti restano dove li ha messi il file: un loro gruppo si può ripulire ed eliminare, non spostare.
+Ogni file IFC, Fragments o mesh che importi entra come un unico gruppo con il nome del file. Togli la spunta da **Come un unico gruppo** nell’importazione IFC per portare dentro gli elementi sciolti. Un file collegato non viene raggruppato: è già un unico collegamento, in sola lettura (vedi [Importazione ed esportazione](import-export.md)). Gli elementi letti da un file come riferimenti (di un IFC, di una mesh) si spostano, ruotano, specchiano e copiano con il loro gruppo come qualsiasi elemento; la loro forma resta quella del file.
 
 ## Selezionare una regione in 3D
 

@@ -865,6 +865,7 @@ export const LO: Record<string, string> = {
   'Step y': 'ໄລຍະຫ່າງ y',
   'Step z': 'ໄລຍະຫ່າງ z',
   'Array round an upright': 'ອາເຣອ້ອມແກນຕັ້ງ',
+  'In a row': 'ເປັນແຖວ', 'Round a centre': 'ອ້ອມຈຸດສູນກາງ', 'Select what to array first, then Array.': 'ເລືອກສິ່ງທີ່ຈະເຮັດຊ້ຳກ່ອນ, ແລ້ວ ແຖວຊ້ຳ.', 'Select what to array first, then Polar array.': 'ເລືອກສິ່ງທີ່ຈະເຮັດຊ້ຳກ່ອນ, ແລ້ວ ອາເຣແບບວົງ.', 'Select what to move first, then Move 3D.': 'ເລືອກສິ່ງທີ່ຈະຍ້າຍກ່ອນ, ແລ້ວ ຍ້າຍ 3D.',
   'Angle filled (°)': 'ມຸມທີ່ຄອບຄຸມ (°)',
   'Centre x': 'ຈຸດສູນກາງ x',
   'Centre y': 'ຈຸດສູນກາງ y',

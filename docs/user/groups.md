@@ -62,7 +62,7 @@ Some elements are parts of a whole: a steel hall's columns, rafters and purlins,
 
 ## Imported files
 
-Every IFC, Fragments or mesh file you import comes in as one group named after the file. Untick **As one group** in the IFC import to bring the elements in loose. A linked file is not grouped: it is already one link, read-only (see [Import and export](import-export.md)). Elements read from an IFC file as references stay where the file put them: a group of them can be cleared up and deleted, not moved.
+Every IFC, Fragments or mesh file you import comes in as one group named after the file. Untick **As one group** in the IFC import to bring the elements in loose. A linked file is not grouped: it is already one link, read-only (see [Import and export](import-export.md)). Elements read from a file as references (an IFC file's, a mesh's) move, turn, mirror and are copied with their group like any element; their shape stays the file's.
 
 ## Selecting a region in 3D
 

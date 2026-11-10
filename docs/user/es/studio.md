@@ -89,8 +89,8 @@ Estas herramientas trabajan sobre las caras y aristas del cuerpo tal como está 
 - **Redondear arista** (FE) redondea la arista más cercana al clic, y **Achaflanar arista** (CE) la achaflana. Elija *alrededor de la cara* para tratar todas las aristas de la cara a la vez.
 - **Vaciado** vacía los sólidos seleccionados, con paredes tan gruesas como escriba. Puede quedar cerrado, o abierto en su extremo, en su croquis o en ambos.
 - **Dividir** corta un sólido en dos por un plano paralelo a la cara elegida, tan adentro de la cara como arrastre o escriba. Las dos partes conservan el croquis. **Cortar** conserva solo un lado: elija **Conservar detrás** o **Conservar delante** en la barra de la parte inferior de la vista.
-- **Matriz** repite el sólido en fila, y **Matriz polar** lo repite alrededor de una vertical.
-- **Girar 3D** gira el sólido alrededor de una arista que elija. **Simetría 3D** lo refleja en el plano de una cara. **Desplazar 3D** pone flechas según x, y y z sobre los sólidos seleccionados: arrastre una, o escriba una distancia para el eje que se muestra junto al valor (<kbd>Tab</kbd> pasa al eje siguiente).
+- **Matriz** repite el sólido en fila, y **Matriz polar** lo repite alrededor de una vertical. Con cualquier otra cosa seleccionada (una referencia, un grupo, un muro), hacen copias de ella, como **Modificar → Matriz**: **En fila**, un paso según x, y y z, o **Alrededor de un centro**, el ángulo que llenan las copias (360° las reparte en una vuelta completa).
+- **Girar 3D** gira el sólido alrededor de una arista que elija. **Simetría 3D** lo refleja en el plano de una cara. **Desplazar 3D** pone flechas según x, y y z sobre la selección (sólidos, referencias, grupos o cualquier elemento): arrastre una, o escriba una distancia para el eje que se muestra junto al valor (<kbd>Tab</kbd> pasa al eje siguiente).
 
 ![Empujar/Tirar: la cara superior estirada hacia arriba, lo que añade dibujado en verde y la distancia junto a la flecha](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ Las propiedades de una polilínea enumeran sus lados. Escriba la longitud de un 
 
 ## Mallas de otros programas
 
-**Archivo → Importar malla (OBJ, STL, glTF)…** trae una malla como referencias que puede ver y a las que puede forzar el cursor. Un archivo OBJ o STL no dice su unidad ni qué eje va hacia arriba, así que Lapin lo pregunta. Seleccione una referencia y haga clic en **Convertir en sólido Studio** para poder editarla. Entonces admite empujar/tirar, redondeos, booleanas y los demás pasos. La misma herramienta funciona con muros, losas y elementos de archivos IFC.
+**Archivo → Importar malla (OBJ, STL, glTF)…** trae una malla como referencias que puede ver y a las que puede forzar el cursor. Un archivo OBJ o STL no dice su unidad ni qué eje va hacia arriba, así que Lapin lo pregunta. Una referencia se desplaza, gira, refleja y copia tal como es, como cualquier elemento. Para cambiar su forma, selecciónela y haga clic en **Convertir en sólido Studio**. Entonces admite empujar/tirar, redondeos, booleanas y los demás pasos. La misma herramienta funciona con muros, losas y elementos de archivos IFC.
 
 ## Booleanas
 

@@ -89,8 +89,8 @@ These tools work on the faces and edges of the body as it is built now. The face
 - **Fillet edge** (FE) rounds the edge nearest your click, and **Chamfer edge** (CE) bevels it. Choose *all round the face* to do every edge of the face at once.
 - **Shell** hollows the selected solids, with walls as thick as you type. It can stay closed, or be left open at its end, at its sketch or at both.
 - **Split** cuts a solid in two by a plane parallel to the face you pick, as far into the face as you drag or type. Both parts keep the sketch. **Slice** keeps one side only: choose **Keep behind** or **Keep in front** in the bar at the bottom of the view.
-- **Array** repeats the solid in a row, and **Polar array** repeats it round an upright.
-- **Rotate 3D** turns the solid about an edge you pick. **Mirror 3D** mirrors it in a face's plane. **Move 3D** puts arrows along x, y and z on the selected solids: drag one, or type a distance for the axis shown beside the value (<kbd>Tab</kbd> goes to the next axis).
+- **Array** repeats the solid in a row, and **Polar array** repeats it round an upright. With anything else selected (a reference, a group, a wall), they make copies of it instead, as **Modify → Array** does: **In a row**, a step along x, y and z, or **Round a centre**, the angle the copies fill (360° shares a full turn out).
+- **Rotate 3D** turns the solid about an edge you pick. **Mirror 3D** mirrors it in a face's plane. **Move 3D** puts arrows along x, y and z on the selection (solids, references, groups or any element): drag one, or type a distance for the axis shown beside the value (<kbd>Tab</kbd> goes to the next axis).
 
 ![Push/pull: the top face pulled up, what it adds drawn in green, and the distance beside the arrow](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ A polyline's properties list its sides. Type a side's length, and its end moves 
 
 ## Meshes from other programs
 
-**File → Import mesh (OBJ, STL, glTF)…** brings in a mesh as references you can see and snap to. An OBJ or STL file does not say its unit or which way is up, so Lapin asks. Select a reference and click **Make Studio solid** to make it editable. It then takes push/pull, fillets, booleans and the other steps. The same tool works on walls, slabs and elements from IFC files.
+**File → Import mesh (OBJ, STL, glTF)…** brings in a mesh as references you can see and snap to. An OBJ or STL file does not say its unit or which way is up, so Lapin asks. A reference moves, turns, mirrors and is copied as it is, like any element. To change its shape, select it and click **Make Studio solid**. It then takes push/pull, fillets, booleans and the other steps. The same tool works on walls, slabs and elements from IFC files.
 
 ## Booleans
 

@@ -89,8 +89,8 @@ Diese Werkzeuge arbeiten an den Flächen und Kanten des Körpers, wie er jetzt g
 - **Kante abrunden** (FE) rundet die Kante, die dem Klick am nächsten liegt, und **Kante fasen** (CE) fast sie. Wählen Sie *rings um die Fläche*, um alle Kanten der Fläche auf einmal zu bearbeiten.
 - **Schale** höhlt die gewählten Körper aus, mit so dicken Wänden, wie Sie eingeben. Sie kann geschlossen bleiben oder am Ende, an der Skizze oder an beiden offen sein.
 - **Teilen** schneidet einen Körper in zwei, an einer Ebene parallel zur gewählten Fläche, so tief in die Fläche, wie Sie ziehen oder eingeben. Beide Teile behalten die Skizze. **Abschneiden** behält nur eine Seite: Wählen Sie **Dahinter behalten** oder **Davor behalten** in der Leiste unten in der Ansicht.
-- **Reihe** wiederholt den Körper in einer Linie, und **Polare Anordnung** wiederholt ihn um eine Senkrechte.
-- **3D drehen** dreht den Körper um eine gewählte Kante. **3D spiegeln** spiegelt ihn an der Ebene einer Fläche. **3D verschieben** setzt Pfeile entlang x, y und z auf die gewählten Körper: Ziehen Sie an einem, oder geben Sie einen Abstand für die Achse ein, die neben dem Wert steht (<kbd>Tab</kbd> geht zur nächsten Achse).
+- **Reihe** wiederholt den Körper in einer Linie, und **Polare Anordnung** wiederholt ihn um eine Senkrechte. Ist etwas anderes gewählt (eine Referenz, eine Gruppe, eine Wand), machen sie stattdessen Kopien davon, wie **Ändern → Reihe**: **In einer Reihe**, ein Schritt entlang x, y und z, oder **Um einen Mittelpunkt**, der Winkel, den die Kopien füllen (360° verteilt sie auf eine volle Drehung).
+- **3D drehen** dreht den Körper um eine gewählte Kante. **3D spiegeln** spiegelt ihn an der Ebene einer Fläche. **3D verschieben** setzt Pfeile entlang x, y und z auf die Auswahl (Körper, Referenzen, Gruppen oder jedes Element): Ziehen Sie an einem, oder geben Sie einen Abstand für die Achse ein, die neben dem Wert steht (<kbd>Tab</kbd> geht zur nächsten Achse).
 
 ![Drücken/Ziehen: die obere Fläche nach oben gezogen, was hinzukommt grün gezeichnet, der Abstand neben dem Pfeil](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ Die Eigenschaften einer Polylinie listen ihre Seiten. Geben Sie die Länge einer
 
 ## Netze aus anderen Programmen
 
-**Datei → Netz importieren (OBJ, STL, glTF)…** holt ein Netz als Referenzen herein, die Sie sehen und fangen können. Eine OBJ- oder STL-Datei sagt weder ihre Einheit noch, welche Achse oben ist, also fragt Lapin. Wählen Sie eine Referenz und klicken Sie auf **Zu Studio-Körper machen**, um sie bearbeitbar zu machen. Dann nimmt sie Drücken/Ziehen, Abrundungen, boolesche Operationen und die anderen Schritte an. Dasselbe Werkzeug wirkt auf Wände, Decken und Elemente aus IFC-Dateien.
+**Datei → Netz importieren (OBJ, STL, glTF)…** holt ein Netz als Referenzen herein, die Sie sehen und fangen können. Eine OBJ- oder STL-Datei sagt weder ihre Einheit noch, welche Achse oben ist, also fragt Lapin. Eine Referenz lässt sich wie jedes Element so, wie sie ist, verschieben, drehen, spiegeln und kopieren. Um ihre Form zu ändern, wählen Sie sie und klicken Sie auf **Zu Studio-Körper machen**. Dann nimmt sie Drücken/Ziehen, Abrundungen, boolesche Operationen und die anderen Schritte an. Dasselbe Werkzeug wirkt auf Wände, Decken und Elemente aus IFC-Dateien.
 
 ## Boolesche Operationen
 

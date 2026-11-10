@@ -62,7 +62,7 @@ Unele elemente sunt părți ale unui întreg: stâlpii, riglele și panele unei 
 
 ## Fișierele importate
 
-Fiecare fișier IFC, Fragments sau rețea pe care îl imporți intră ca un singur grup, cu numele fișierului. Debifează **Ca un singur grup** la importul IFC ca să aduci elementele libere. Un fișier legat nu se grupează: e deja o legătură, doar pentru citire (vezi [Import și export](import-export.md)). Elementele citite dintr-un IFC ca referințe rămân unde le-a pus fișierul: un grup de astfel de elemente se poate curăța și șterge, nu muta.
+Fiecare fișier IFC, Fragments sau rețea pe care îl imporți intră ca un singur grup, cu numele fișierului. Debifează **Ca un singur grup** la importul IFC ca să aduci elementele libere. Un fișier legat nu se grupează: e deja o legătură, doar pentru citire (vezi [Import și export](import-export.md)). Elementele citite dintr-un fișier ca referințe (dintr-un IFC, dintr-o rețea) se mută, se rotesc, se oglindesc și se copiază împreună cu grupul lor ca orice element; forma lor rămâne cea din fișier.
 
 ## Selectarea unei regiuni în 3D
 

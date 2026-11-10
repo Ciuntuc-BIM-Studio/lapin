@@ -26,6 +26,7 @@ import { LinkedProjectsWatch, LinksDialog, LinksLook } from './LinksDialog';
 import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { openDocuments } from './documents/documents';
 import { convertToNative } from './convertTools';
+import { arraySelection } from './arrayTool';
 import { GroupSection } from './GroupSection';
 import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
 import { toggleRegion3d } from '../../viewport/select3d';
@@ -130,6 +131,8 @@ const core: LapinModule = {
       { id: 'modify.copy', label: 'Copy', icon: Copy, run: () => void startCommand('COPY') },
       { id: 'modify.rotate', label: 'Rotate', icon: RotateCw, run: () => void startCommand('ROTATE') },
       { id: 'modify.mirror', label: 'Mirror', icon: FlipHorizontal2, run: () => void startCommand('MIRROR') },
+      // Copies in a row or round a centre, any element alike (decision 448).
+      { id: 'modify.array', label: 'Array', icon: Grid3x3, run: () => void arraySelection() },
       { id: 'modify.delete', label: 'Delete', icon: Trash2, run: () => void startCommand('ERASE') },
       { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
       { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },

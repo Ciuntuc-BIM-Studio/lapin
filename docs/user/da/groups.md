@@ -30,7 +30,7 @@ Nogle elementer er dele af en helhed: en stålhals søjler, spær og åse, delen
 
 ## Importerede filer
 
-Hver IFC-, Fragments- eller mesh-fil, du importerer, kommer ind som én gruppe opkaldt efter filen. Fjern fluebenet ved **Som én gruppe** i IFC-importen for at hente elementerne løse. En linket fil grupperes ikke: den er allerede ét link, skrivebeskyttet (se [Import og eksport](import-export.md)). Elementer læst fra en IFC-fil som referencer bliver, hvor filen satte dem: en gruppe af dem kan ryddes op og slettes, ikke flyttes.
+Hver IFC-, Fragments- eller mesh-fil, du importerer, kommer ind som én gruppe opkaldt efter filen. Fjern fluebenet ved **Som én gruppe** i IFC-importen for at hente elementerne løse. En linket fil grupperes ikke: den er allerede ét link, skrivebeskyttet (se [Import og eksport](import-export.md)). Elementer læst fra en fil som referencer (fra en IFC-fil, fra et mesh) flyttes, drejes, spejles og kopieres sammen med deres gruppe som ethvert element; deres form forbliver filens.
 
 ## At vælge et område i 3D
 

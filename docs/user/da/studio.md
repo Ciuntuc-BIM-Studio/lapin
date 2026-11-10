@@ -89,8 +89,8 @@ Disse værktøjer arbejder på legemets flader og kanter, som det er bygget nu. 
 - **Afrund kant** (FE) afrunder kanten nærmest klikket, og **Affas kant** (CE) affaser den. Vælg *hele vejen rundt om fladen* for at tage alle fladens kanter på én gang.
 - **Skal** udhuler de valgte legemer med vægge så tykke, som du skriver. Den kan forblive lukket eller være åben i enden, ved skitsen eller i begge.
 - **Opdel** skærer et legeme i to ved et plan parallelt med den valgte flade, så langt ind i fladen som du trækker eller skriver. Begge dele beholder skitsen. **Afskær** beholder kun én side: vælg **Behold bagved** eller **Behold foran** i bjælken nederst i visningen.
-- **Række** gentager legemet på linje, og **Polær række** gentager det om en lodret akse.
-- **Rotér 3D** drejer legemet om en kant, du vælger. **Spejl 3D** spejler det i en flades plan. **Flyt 3D** sætter pile langs x, y og z på de valgte legemer: træk i en, eller skriv en afstand for den akse, der vises ved værdien (<kbd>Tab</kbd> går til næste akse).
+- **Række** gentager legemet på linje, og **Polær række** gentager det om en lodret akse. Med noget andet valgt (en reference, en gruppe, en væg) laver de i stedet kopier af det, som **Redigér → Række**: **På række**, et trin langs x, y og z, eller **Omkring et centrum**, den vinkel, kopierne fylder (360° fordeler dem over en hel omdrejning).
+- **Rotér 3D** drejer legemet om en kant, du vælger. **Spejl 3D** spejler det i en flades plan. **Flyt 3D** sætter pile langs x, y og z på markeringen (legemer, referencer, grupper eller ethvert element): træk i en, eller skriv en afstand for den akse, der vises ved værdien (<kbd>Tab</kbd> går til næste akse).
 
 ![Skub/Træk: topfladen trukket op, det, den tilføjer, tegnet med grønt, og afstanden ved pilen](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ En polylinjes egenskaber viser dens sider. Skriv en sides længde, og dens ende 
 
 ## Mesh fra andre programmer
 
-**Filer → Importér mesh (OBJ, STL, glTF)…** henter et mesh ind som referencer, du kan se og fange til. En OBJ- eller STL-fil siger hverken sin enhed eller hvilken akse der vender op, så Lapin spørger. Vælg en reference og klik på **Gør til Studio-legeme** for at kunne redigere den. Så tager den skub/træk, afrundinger, boolske operationer og de andre trin. Det samme værktøj virker på vægge, dæk og elementer fra IFC-filer.
+**Filer → Importér mesh (OBJ, STL, glTF)…** henter et mesh ind som referencer, du kan se og fange til. En OBJ- eller STL-fil siger hverken sin enhed eller hvilken akse der vender op, så Lapin spørger. En reference flyttes, drejes, spejles og kopieres, som den er, som ethvert element. For at ændre dens form, vælg den og klik på **Gør til Studio-legeme**. Så tager den skub/træk, afrundinger, boolske operationer og de andre trin. Det samme værktøj virker på vægge, dæk og elementer fra IFC-filer.
 
 ## Boolske operationer
 

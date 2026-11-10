@@ -30,7 +30,7 @@ Algunos elementos son partes de un todo: los pilares, dinteles y correas de una 
 
 ## Archivos importados
 
-Cada archivo IFC, Fragments o de malla que importe entra como un solo grupo con el nombre del archivo. Desmarque **Como un solo grupo** en la importación IFC para traer los elementos sueltos. Un archivo vinculado no se agrupa: ya es un vínculo, de solo lectura (vea [Importar y exportar](import-export.md)). Los elementos leídos de un archivo IFC como referencias se quedan donde los puso el archivo: un grupo de ellos se puede limpiar y borrar, no desplazar.
+Cada archivo IFC, Fragments o de malla que importe entra como un solo grupo con el nombre del archivo. Desmarque **Como un solo grupo** en la importación IFC para traer los elementos sueltos. Un archivo vinculado no se agrupa: ya es un vínculo, de solo lectura (vea [Importar y exportar](import-export.md)). Los elementos leídos de un archivo como referencias (de un IFC, de una malla) se desplazan, giran, reflejan y copian con su grupo como cualquier elemento; su forma sigue siendo la del archivo.
 
 ## Seleccionar una región en 3D
 

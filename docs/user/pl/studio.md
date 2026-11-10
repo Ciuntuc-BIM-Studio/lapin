@@ -89,8 +89,8 @@ Te narzędzia działają na ścianach i krawędziach bryły w jej obecnym kszta�
 - **Zaokrąglij krawędź** (FE) zaokrągla krawędź najbliższą kliknięciu, a **Fazuj krawędź** (CE) ją fazuje. Wybierz *dookoła ściany*, aby zrobić to naraz ze wszystkimi krawędziami ściany.
 - **Skorupa** wydrąża zaznaczone bryły, ze ściankami tak grubymi, jak wpiszesz. Może pozostać zamknięta lub zostać otwarta na końcu, na szkicu lub na obu.
 - **Podziel** tnie bryłę na dwie płaszczyzną równoległą do wybranej ściany, tak głęboko w ścianę, jak przeciągniesz lub wpiszesz. Obie części zachowują szkic. **Przetnij** zachowuje tylko jedną stronę: wybierz **Zachowaj z tyłu** lub **Zachowaj z przodu** na pasku u dołu widoku.
-- **Szyk** powtarza bryłę w rzędzie, a **Szyk biegunowy** powtarza ją wokół pionowej osi.
-- **Obróć 3D** obraca bryłę wokół wybranej krawędzi. **Lustro 3D** odbija ją lustrzanie w płaszczyźnie ściany. **Przesuń 3D** stawia strzałki wzdłuż x, y i z na zaznaczonych bryłach: przeciągnij jedną lub wpisz odległość dla osi pokazanej obok wartości (<kbd>Tab</kbd> przechodzi do następnej osi).
+- **Szyk** powtarza bryłę w rzędzie, a **Szyk biegunowy** powtarza ją wokół pionowej osi. Przy zaznaczeniu czegokolwiek innego (odniesienia, grupy, ściany) tworzą natomiast jego kopie, tak jak **Modyfikuj → Szyk**: **W rzędzie**, krok wzdłuż x, y i z, lub **Wokół środka**, kąt, który wypełniają kopie (360° rozkłada je na pełny obrót).
+- **Obróć 3D** obraca bryłę wokół wybranej krawędzi. **Lustro 3D** odbija ją lustrzanie w płaszczyźnie ściany. **Przesuń 3D** stawia strzałki wzdłuż x, y i z na zaznaczeniu (bryłach, odniesieniach, grupach lub dowolnym elemencie): przeciągnij jedną lub wpisz odległość dla osi pokazanej obok wartości (<kbd>Tab</kbd> przechodzi do następnej osi).
 
 ![Wypychanie/wciąganie: górna ściana wyciągnięta w górę, to, co dodaje, narysowane na zielono, a odległość obok strzałki](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ Właściwości polilinii wymieniają jej boki. Wpisz długość boku, a jego kon
 
 ## Siatki z innych programów
 
-**Plik → Importuj siatkę (OBJ, STL, glTF)…** wprowadza siatkę jako odniesienia, które widzisz i do których możesz przyciągać. Plik OBJ lub STL nie mówi, jaka jest jego jednostka ani gdzie jest góra, więc Lapin pyta. Zaznacz odniesienie i kliknij **Utwórz bryłę Studio**, aby stało się edytowalne. Przyjmuje wtedy wypychanie/wciąganie, zaokrąglenia, operacje logiczne i pozostałe kroki. To samo narzędzie działa na ścianach, płytach i elementach z plików IFC.
+**Plik → Importuj siatkę (OBJ, STL, glTF)…** wprowadza siatkę jako odniesienia, które widzisz i do których możesz przyciągać. Plik OBJ lub STL nie mówi, jaka jest jego jednostka ani gdzie jest góra, więc Lapin pyta. Odniesienie przesuwa się, obraca, odbija i kopiuje takie, jakie jest, jak każdy element. Aby zmienić jego kształt, zaznacz je i kliknij **Utwórz bryłę Studio**. Przyjmuje wtedy wypychanie/wciąganie, zaokrąglenia, operacje logiczne i pozostałe kroki. To samo narzędzie działa na ścianach, płytach i elementach z plików IFC.
 
 ## Operacje logiczne
 

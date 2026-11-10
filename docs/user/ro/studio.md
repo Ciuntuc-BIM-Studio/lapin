@@ -89,8 +89,8 @@ Uneltele acestea lucrează pe fețele și muchiile corpului așa cum e construit
 - **Racordează muchia** (FE) rotunjește muchia cea mai apropiată de clic, iar **Teșește muchia** (CE) o teșește. Alege *de jur împrejurul feței* ca să faci toate muchiile feței deodată.
 - **Coajă** golește solidele selectate, cu pereți groși cât scrii. Poate rămâne închisă sau poate fi lăsată deschisă la capăt, la schiță sau la ambele.
 - **Împarte** taie un solid în două după un plan paralel cu fața aleasă, cât de adânc în față tragi sau scrii. Ambele părți păstrează schița. **Retează** păstrează doar o parte: alege **Păstrează în spate** sau **Păstrează în față** în bara de jos a vederii.
-- **Matrice** repetă solidul pe un rând, iar **Matrice polară** îl repetă în jurul unei verticale.
-- **Rotește 3D** rotește solidul în jurul unei muchii alese. **Oglindește 3D** îl oglindește în planul unei fețe. **Mută 3D** pune săgeți pe x, y și z pe solidele selectate: tragi de una sau scrii o distanță pentru axa arătată lângă valoare (<kbd>Tab</kbd> trece la axa următoare).
+- **Repetare** repetă solidul pe un rând, iar **Matrice polară** îl repetă în jurul unei verticale. Cu orice altceva selectat (o referință, un grup, un perete), fac în schimb copii ale lui, ca Modifică → **Repetare**: **Pe un șir**, un pas pe x, y și z, sau **În jurul unui centru**, unghiul pe care îl umplu copiile (360° le împarte pe o tură întreagă).
+- **Rotește 3D** rotește solidul în jurul unei muchii alese. **Oglindește 3D** îl oglindește în planul unei fețe. **Mută 3D** pune săgeți pe x, y și z pe selecție (solide, referințe, grupuri sau orice element): tragi de una sau scrii o distanță pentru axa arătată lângă valoare (<kbd>Tab</kbd> trece la axa următoare).
 
 ![Împinge/Trage: fața de sus trasă în sus, ce adaugă desenat cu verde și distanța lângă săgeată](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ Proprietățile unei polilinii îi arată laturile. Scrie lungimea unei laturi, 
 
 ## Rețele din alte programe
 
-**Fișier → Importă rețea (OBJ, STL, glTF)…** aduce o rețea ca referințe pe care le vezi și la care te prinzi. Un fișier OBJ sau STL nu spune în ce unitate e și care axă e în sus, așa că Lapin întreabă. Selectează o referință și apasă **Fă solid Studio** ca s-o poți edita. Primește apoi împinge/trage, racordări, booleene și ceilalți pași. Aceeași unealtă merge pe pereți, plăci și elemente din fișiere IFC.
+**Fișier → Importă rețea (OBJ, STL, glTF)…** aduce o rețea ca referințe pe care le vezi și la care te prinzi. Un fișier OBJ sau STL nu spune în ce unitate e și care axă e în sus, așa că Lapin întreabă. O referință se mută, se rotește, se oglindește și se copiază așa cum e, ca orice element. Ca să-i schimbi forma, selecteaz-o și apasă **Fă solid Studio**. Primește apoi împinge/trage, racordări, booleene și ceilalți pași. Aceeași unealtă merge pe pereți, plăci și elemente din fișiere IFC.
 
 ## Booleene
 

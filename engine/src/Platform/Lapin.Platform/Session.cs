@@ -1257,7 +1257,8 @@ sealed class CommandContext(IEdit edit, ModuleCatalog catalog, IQueryContext que
 
     void EnsureEditable(Entity e)
     {
-        if (catalog.OwnerOf(e.Class) == null)
+        // A reference is drawn from its body by the platform, whatever its class (decision 448): no module needs to own it to move or delete it.
+        if (catalog.OwnerOf(e.Class) == null && !StoredBodies.Has(e))
             throw new CommandException($"„{e.Name}” ({e.Class}) belongs to a module this product does not have: here it can only be seen.");
         if (!allowLinked && e.Str(Links.Key) is { } linkId)
         {

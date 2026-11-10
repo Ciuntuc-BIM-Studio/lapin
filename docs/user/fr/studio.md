@@ -89,8 +89,8 @@ Ces outils travaillent sur les faces et les arêtes du corps tel qu’il est con
 - **Arrondir l’arête** (FE) arrondit l’arête la plus proche du clic, et **Chanfreiner l’arête** (CE) la chanfreine. Choisissez *tout autour de la face* pour traiter toutes les arêtes de la face d’un coup.
 - **Coque** évide les solides sélectionnés, avec des parois aussi épaisses que vous le tapez. Elle peut rester fermée, ou être laissée ouverte à son extrémité, à son esquisse ou aux deux.
 - **Scinder** coupe un solide en deux par un plan parallèle à la face choisie, aussi loin dans la face que vous le faites glisser ou le tapez. Les deux parties gardent l’esquisse. **Trancher** ne garde qu’un côté : choisissez **Garder derrière** ou **Garder devant** dans la barre en bas de la vue.
-- **Réseau** répète le solide en ligne, et **Réseau polaire** le répète autour d’une verticale.
-- **Rotation 3D** fait tourner le solide autour d’une arête choisie. **Symétrie 3D** le reflète dans le plan d’une face. **Déplacer 3D** pose des flèches selon x, y et z sur les solides sélectionnés : faites-en glisser une, ou tapez une distance pour l’axe affiché près de la valeur (<kbd>Tab</kbd> passe à l’axe suivant).
+- **Réseau** répète le solide en ligne, et **Réseau polaire** le répète autour d’une verticale. Avec autre chose de sélectionné (une référence, un groupe, un mur), ils en font des copies, comme **Modifier → Réseau** : **En ligne**, un pas selon x, y et z, ou **Autour d’un centre**, l’angle que remplissent les copies (360° les répartit sur un tour complet).
+- **Rotation 3D** fait tourner le solide autour d’une arête choisie. **Symétrie 3D** le reflète dans le plan d’une face. **Déplacer 3D** pose des flèches selon x, y et z sur la sélection (solides, références, groupes ou n’importe quel élément) : faites-en glisser une, ou tapez une distance pour l’axe affiché près de la valeur (<kbd>Tab</kbd> passe à l’axe suivant).
 
 ![Pousser/Tirer : la face du dessus tirée vers le haut, ce qu’elle ajoute dessiné en vert, et la distance près de la flèche](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ Les propriétés d’une polyligne listent ses côtés. Tapez la longueur d’un
 
 ## Les maillages d’autres logiciels
 
-**Fichier → Importer un maillage (OBJ, STL, glTF)…** fait entrer un maillage sous forme de références que vous voyez et auxquelles vous vous accrochez. Un fichier OBJ ou STL ne dit ni son unité ni quel axe est vers le haut, donc Lapin le demande. Sélectionnez une référence et cliquez sur **Faire un solide Studio** pour la rendre modifiable. Elle accepte alors pousser/tirer, arrondis, booléens et les autres étapes. Le même outil fonctionne sur les murs, les dalles et les éléments des fichiers IFC.
+**Fichier → Importer un maillage (OBJ, STL, glTF)…** fait entrer un maillage sous forme de références que vous voyez et auxquelles vous vous accrochez. Un fichier OBJ ou STL ne dit ni son unité ni quel axe est vers le haut, donc Lapin le demande. Une référence se déplace, pivote, se reflète et se copie telle quelle, comme n’importe quel élément. Pour changer sa forme, sélectionnez-la et cliquez sur **Faire un solide Studio**. Elle accepte alors pousser/tirer, arrondis, booléens et les autres étapes. Le même outil fonctionne sur les murs, les dalles et les éléments des fichiers IFC.
 
 ## Booléens
 

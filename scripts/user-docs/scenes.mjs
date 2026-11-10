@@ -5974,6 +5974,53 @@ export const scenes = [
     },
   },
   {
+    // An imported mesh's chair placed like any element (decision 448): six of them round a table with Modify → Array, their
+    // triangles shared.
+    id: 'reference-array',
+    touches: ['studio'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      // A chair as another program would give it: a seat, a back and four legs, its back to the south.
+      let obj = 'o chair\n';
+      let n = 0;
+      const box = (x0, y0, z0, x1, y1, z1) => {
+        for (const [x, y, z] of [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]]) obj += `v ${x} ${y} ${z}\n`;
+        for (const f of [[1, 4, 3, 2], [5, 6, 7, 8], [1, 2, 6, 5], [3, 4, 8, 7], [1, 5, 8, 4], [2, 3, 7, 6]]) obj += `f ${f.map((i) => i + n).join(' ')}\n`;
+        n += 8;
+      };
+      const [cx, cy] = [0, -1.05];
+      box(cx - 0.22, cy - 0.22, 0.42, cx + 0.22, cy + 0.22, 0.47);
+      box(cx - 0.22, cy - 0.27, 0.42, cx + 0.22, cy - 0.22, 0.9);
+      for (const [x, y] of [[-0.2, -0.2], [0.17, -0.2], [-0.2, 0.17], [0.17, 0.17]]) box(cx + x, cy + y, 0, cx + x + 0.03, cy + y + 0.03, 0.42);
+      await page.evaluate(async ([obj, storeyId]) => (await import('/src/engine/session.ts')).engine.call('project.importMesh',
+        { name: 'chair.obj', data: btoa(obj), up: 'z', oneElement: true, storeyId }), [obj, storey]);
+      await t.wait(800);
+      await t.cmd('studio.primitive', { shape: 'cylinder', at: [0, 0], radius: 0.6, height: 0.74, storeyId: storey });
+      const chairs = async () => (await t.nodes()).filter((x) => x.type === 'IfcBuildingElementProxy' && x.name === 'chair');
+      const chair = (await chairs())[0];
+      t.expect(chair, 'the chair came in as a reference');
+      await t.ui({ view: '3d', selection: chair.id, selected: [chair.id] });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(1200);
+
+      // Modify → Array round the table's middle: six chairs in a full turn.
+      await t.tool('modify.array');
+      t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
+      await page.locator('.ask-box select').first().selectOption('polar');
+      const inputs = page.locator('.ask-box input');
+      await inputs.nth(0).fill('6');
+      await inputs.nth(4).fill('360');
+      await page.locator('.ask-box button.primary').click();
+      await t.until(async () => (await chairs()).length === 6, 'six chairs round the table');
+      await t.ui({ selection: null, selected: [] });
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target: { x: 0, y: 0, z: 0.4 }, azimuth: Math.PI / 4, pitch: -0.6, distance: 5 }, false));
+      await t.wait(1200);
+      await t.shot('reference-array', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     // Studio as a geometry editor (docs/plan-studio-editor.md): push/pull and a fillet in 3D, a pipe's steps, a rising handrail.
     id: 'studio-editor',
     async run(t) {
