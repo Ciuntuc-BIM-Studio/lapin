@@ -48,6 +48,8 @@ public static class Openings
         if (m.RelatingOf(fillId, IfcClass.RelDefinesByType) is not { } type || JoinerySpec.From(type.Attrs["spec"]) is not { } spec) return null;
         // The frame's place in the wall (report #76): the element's own value over the type's, worked out from the wall's build-up.
         var fill = m.Get(fillId);
+        // A curtain wall's door (report #133): its type at the size it stands in its cell.
+        if (fill != null && CurtainCells.SeatOf(m, fill) is { } seat) return seat.Spec ?? spec;
         var own = JoineryPosition.From_(fill?.Attrs["position"]);
         if (own == null && spec.Position == null) return spec;
         return OpeningOf(m, fillId) is { } opening && WallOf(m, opening.Id) is { } wall ? spec.Positioned(m, wall, own, fill?.Bool("flipSide") == true) : spec;
@@ -155,6 +157,8 @@ public static class Openings
         foreach (var fill in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
                 CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height, opening.Id);
+            // A curtain wall's door: still in its cell (report #133).
+            else CurtainCells.CheckDoor(edit.Model, fill);
     }
 
     // ------------------------------------------------------------ placing
@@ -278,6 +282,8 @@ public static class Openings
             edit.Replace(own.With(attrs: attrs));
         }
         edit.Relate(IfcClass.RelDefinesByType, type.Id, fill.Id);
+        // A curtain wall's door takes its new type in its cell (report #133).
+        CurtainCells.CheckDoor(edit.Model, edit.Model.Get(fill.Id)!);
     }
 
     // ------------------------------------------------------------ geometry
@@ -412,6 +418,8 @@ public static class Openings
 
     public static ElementGeometry? FillGeometry(Entity fill, IModelView m)
     {
+        // A curtain wall's door (report #133): in its cell, drawn as any door is.
+        if (CurtainCells.SeatOf(m, fill) is { } seat) return CurtainDoorGeometry(fill, m, seat);
         var spec = SpecOf(m, fill.Id);
         var opening = OpeningOf(m, fill.Id);
         var wall = opening == null ? null : WallOf(m, opening.Id);
@@ -427,22 +435,35 @@ public static class Openings
         var bay = BayWindows.Projecting(spec);
         var dressing = PathCurve.Of(wall) is { IsArc: true } ? null : new Dressing(m, wall, f, p, spec, sx, sy, bay);
         if (bay) return BayGeometry(fill, m, spec, wall, f, p, sx, sy, dressing);
-        foreach (var group in Joinery.Boxes(spec).Where(b => dressing?.Replaces(b) != true).GroupBy(b => b.Role))
-        {
-            var solids = group.Select(b => Box(b, Map)).OfType<Solid>().ToList();
-            if (solids.Count == 0) continue;
-            // The part's material (by name, report #76) gives its colour; without one, the type's colour for the part.
-            var material = MaterialOfPart(m, spec, group.Key);
-            var color = material != null ? Materials.ColorOf(m, material) : group.Key switch
-            {
-                "glass" => spec.Colors.Glass, "leaf" => spec.Colors.Leaf,
-                "handle" or "hardware" => spec.Hardware?.Color ?? HandleColor["handle"],
-                _ => HandleColor.GetValueOrDefault(group.Key, spec.Colors.Frame),
-            };
-            parts.Add(new GeometryPart(group.Key, color, Combine(solids, group.Key), material, group.Key));
-        }
+        parts.AddRange(BodyParts(m, spec, Joinery.Boxes(spec).Where(b => dressing?.Replaces(b) != true), Map));
         if (dressing != null) parts.AddRange(dressing.Parts());
         return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null), [f.At(p.Along, f.Centre, 0).Xy]);
+    }
+
+    /// <summary>The joinery's boxes as parts, one per role, each in its material (by name, report #76) or the type's colour for the part.</summary>
+    static IEnumerable<GeometryPart> BodyParts(IModelView m, JoinerySpec spec, IEnumerable<JoineryBox> boxes, Func<double, double, double, Vec3> map)
+    {
+        foreach (var group in boxes.GroupBy(b => b.Role))
+        {
+            var solids = group.Select(b => Box(b, map)).OfType<Solid>().ToList();
+            if (solids.Count == 0) continue;
+            var material = MaterialOfPart(m, spec, group.Key);
+            yield return new GeometryPart(group.Key, RoleColor(m, spec, group.Key, material), Combine(solids, group.Key), material, group.Key);
+        }
+    }
+
+    /// <summary>
+    /// A curtain wall door's body (report #133): its type's joinery at the size it stands, in its cell's frame (the bay's chord, the
+    /// wall's axis its middle plane), flipped as any door, with the plan symbol and swing; nothing, and why, where it cannot stand.
+    /// </summary>
+    static ElementGeometry CurtainDoorGeometry(Entity fill, IModelView m, CurtainCells.DoorSeat s)
+    {
+        if (s.Problem != null || s.Spec is not { } spec) return new ElementGeometry([], Diagnostics: [s.Problem ?? "A door needs its door type."]);
+        var (f, p) = (s.Frame, s.Placed);
+        var sx = fill.Bool("flipHand") ? -1 : 1;
+        var sy = fill.Bool("flipSide") ? -1 : 1;
+        Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.FillSill + z);
+        return new ElementGeometry([.. BodyParts(m, spec, Joinery.Boxes(spec), Map)], Symbol(spec, f, p, sx, sy, false), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>The colour of a part of a door's or window's body by its role: its material's, else the type's for the part.</summary>

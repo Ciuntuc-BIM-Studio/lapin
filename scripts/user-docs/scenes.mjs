@@ -6638,6 +6638,50 @@ export const scenes = [
     },
   },
   {
+    // Curtain panel types and curtain wall doors in chosen cells (report #133): a framed spandrel given to the upper row, a door
+    // smaller than its cell placed in the bottom row with its transom and mullions round it; the dialog and the result in 3D.
+    id: 'curtain-cells',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const typeId = (await t.cmd('architecture.createCurtainWallType', { name: 'Shopfront', spec: { u: { mode: 'max', spacing: 1.5 }, v: { mode: 'offsets', offsets: [2.6] } } })).id;
+      const cw = (await t.cmd('architecture.addCurtainWall', { storeyId: storey, x1: 0, y1: -4, x2: 7, y2: -4, height: 3, typeId })).id;
+      await t.cmd('architecture.createCurtainPanelType', { name: 'Framed spandrel', panel: { kind: 'framed', thickness: 0.03, offset: 0.02, frameWidth: 0.06, frameDepth: 0.09, inset: 0.015, infill: 'solid' } });
+      await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
+      await t.wait(800);
+      await t.page.locator('[data-action=curtain-cells]').first().click();
+      await t.page.waitForSelector('[data-testid=curtain-cells]', { timeout: 10000 });
+      const d = t.page.locator('[data-testid=curtain-cells]');
+      // The upper row: the spandrel.
+      await d.locator('[data-cell="panel:0:1"]').click();
+      for (const k of ['panel:1:1', 'panel:3:1', 'panel:4:1']) await d.locator(`[data-cell="${k}"]`).click({ modifiers: ['Shift'] });
+      const spandrel = await d.locator('select[data-field=cell-panel-type] option').nth(1).getAttribute('value');
+      await d.locator('select[data-field=cell-panel-type]').selectOption(spandrel);
+      await d.locator('[data-action=cells-panel-apply]').click();
+      await t.wait(800);
+      // The middle bottom cell: a glazed door of its own size, centred, with glass round it.
+      await d.locator('[data-cell="panel:2:0"]').click();
+      await d.locator('input[data-field=door-fit]').uncheck();
+      await t.wait(300);
+      await d.locator('[data-action=cells-door-place]').click();
+      await t.wait(1200);
+      t.expect(await d.locator('[data-door="panel:2:0"]').count() === 1, 'the door is drawn in its cell');
+      await t.shot('curtain-cells-dialog', { of: '.dialog', pad: 0 });
+      await t.page.keyboard.press('Escape');
+      await t.ui({ dialog: null });
+      const nodes = await t.nodes();
+      const wall = nodes.find((n) => n.id === cw);
+      t.expect(wall.props.panelTypes && Object.keys(wall.props.panelTypes).length === 4, 'four cells have the spandrel');
+      const door = nodes.find((n) => n.type === 'IfcDoor' && n.props.cell === 'panel:2:0');
+      t.expect(door != null, 'the door is a door, in its cell');
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.6, pitch: -0.15, distance: 11, target: { x: 3.5, y: -4, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('curtain-cells-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     // The section editor (report #128): Manage → Profile libraries → Draw a profile…, a hollow box with a chamber added.
     id: 'profile-editor',
     async run(t) {

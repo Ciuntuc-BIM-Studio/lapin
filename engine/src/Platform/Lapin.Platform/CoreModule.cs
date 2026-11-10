@@ -412,9 +412,10 @@ public static class ElementTransform
         // What is pinned is not moved, turned or mirrored; it is copied, and its copies are not pinned (decision 449).
         if (!copy) Pins.Refuse(all);
         // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.
+        var hosting = ctx.Services.All<IHostedPlacement>().ToList();
         string? HostOf(Entity e) => ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening
             ? ctx.Model.RelatingOf(opening.Id, IfcClass.RelVoidsElement)?.Id ?? opening.Id
-            : ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement)?.Id;
+            : ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement)?.Id ?? hosting.Select(h => h.HostOf(ctx.Model, e)).FirstOrDefault(x => x != null);
         var entities = all.Where(e => HostOf(e) == null).ToList();
         var moving = entities.Select(e => e.Id).ToHashSet();
         if (!copy) Components.Leaving(ctx, groups, moving);

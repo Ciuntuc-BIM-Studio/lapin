@@ -50,13 +50,24 @@ public sealed class JoineryIfc : IJoineryIfc
         return new IfcJoineryType(spec.IsDoor, M(op), user is { } u && mirrored ? IfcHands.MirrorText(u) : user, panels, lining);
     }
 
+    /// <summary>A curtain wall's door at the size it stands in its cell (report #133); null for any other.</summary>
+    public (double Width, double Height)? Size(IModelView m, Entity element) =>
+        CurtainCells.SeatOf(m, element) is { Spec: { } s } ? (s.Width, s.Height) : null;
+
     public IfcJoineryPlace? Place(IModelView m, Entity element)
     {
         var opening = Openings.OpeningOf(m, element.Id);
         var wall = opening == null ? null : Openings.WallOf(m, opening.Id);
+        // A curtain wall's door: in its cell's frame (report #133).
+        if (opening == null && CurtainCells.SeatOf(m, element) is { Problem: null } seat) return PlaceIn(element, seat.Frame, seat.Placed);
         if (opening == null || wall == null) return null;
         var p = Openings.Place(m, opening);
         var f = Openings.FrameOf(m, wall, p.Along);
+        return PlaceIn(element, f, p);
+    }
+
+    static IfcJoineryPlace PlaceIn(Entity element, Openings.WallFrame f, Openings.Placed p)
+    {
         var sx = element.Bool("flipHand") ? -1 : 1;
         var sy = element.Bool("flipSide") ? -1 : 1;
         // The type frame's −Y (the interior, where the panels open) is the wall's left; a flipped side opens the other way.

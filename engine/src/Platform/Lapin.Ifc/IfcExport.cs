@@ -241,6 +241,7 @@ public static class IfcExport
             WriteElements();
             ProvisionVoids();
             Assemblies();
+            CurtainWallParts();
             Network();
             carry?.Finish(buildingRef);
             Finish();
@@ -663,6 +664,22 @@ public static class IfcExport
             }
         }
 
+        /// <summary>
+        /// A curtain wall's doors (report #133): elements of their own, written as such, are parts of their wall (IfcRelAggregates, as
+        /// IFC decomposes a curtain wall) and no longer contained in the storey themselves.
+        /// </summary>
+        void CurtainWallParts()
+        {
+            foreach (var cw in m.OfClass("IfcCurtainWall"))
+            {
+                if (!written.TryGetValue(cw.Id, out var whole)) continue;
+                var parts = m.RelatedOf(cw.Id, IfcClass.RelAggregates).Select(p => written.GetValueOrDefault(p.Id)).OfType<string>().ToList();
+                if (parts.Count == 0) continue;
+                foreach (var list in contained.Values) list.RemoveAll(parts.Contains);
+                f.Add("IFCRELAGGREGATES", Gid(cw.Id, "elements"), Null, Null, Null, whole, L(parts));
+            }
+        }
+
         /// <summary>The bodies of the batch being written, merged or simplified ahead (<see cref="WriteElements"/>).</summary>
         readonly System.Collections.Concurrent.ConcurrentDictionary<Solid, Solid> simplified = new(ReferenceEqualityComparer.Instance);
 
@@ -986,6 +1003,8 @@ public static class IfcExport
         {
             // A door or a window, or what is written as one (a gate: its type's clear width and height).
             if (e.Class is not (IfcClass.Door or IfcClass.Window) && e.Str("exportAs") is not (IfcClass.Door or IfcClass.Window)) return (null, null);
+            // A door at a size of its own (a curtain wall's, filling its cell).
+            if (s.Catalog.Get<IJoineryIfc>()?.Size(m, e) is { } own) return (own.Height, own.Width);
             var spec = type?.Attrs["spec"] as JsonObject;
             var opening = m.RelatingOf(e.Id, IfcClass.RelFillsElement);
             return (Json.Number(spec?["height"]) ?? opening?.NumOrNull("height"), Json.Number(spec?["width"]) ?? opening?.NumOrNull("width"));
@@ -1259,6 +1278,7 @@ public static class IfcExport
                 ("IfcCurtainWall", "mullion") => new("IfcMember", "MULLION", null),
                 ("IfcCurtainWall", "transom") => new("IfcMember", "USERDEFINED", "TRANSOM"),
                 ("IfcCurtainWall", "panel") => new("IfcPlate", "CURTAIN_PANEL", null),
+                ("IfcCurtainWall", "frame") => new("IfcMember", "USERDEFINED", "Panel frame"),
                 (IfcClass.Stair, "flight") => new(IfcClass.StairFlight, "STRAIGHT", null),
                 (IfcClass.Stair, "winders") => new(IfcClass.StairFlight, "WINDER", null),
                 (IfcClass.Stair, "landing") => new(IfcClass.Slab, "LANDING", null),

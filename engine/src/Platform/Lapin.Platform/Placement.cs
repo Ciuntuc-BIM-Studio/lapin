@@ -62,6 +62,8 @@ public interface IElementPlacement
 public interface IHostedPlacement
 {
     bool Handles(IModelView m, Entity e);
+    /// <summary>The host of one its module keeps in a host without an opening (a curtain wall's door in its cell); null: the opening's wall.</summary>
+    string? HostOf(IModelView m, Entity e) => null;
     /// <summary>These elements carried by <paramref name="t"/> together, or (<paramref name="copy"/>) copies of them: the copies' ids.</summary>
     IReadOnlyList<string> Transform(ICommandContext ctx, IReadOnlyList<Entity> elements, Placement2D t, bool copy);
 }

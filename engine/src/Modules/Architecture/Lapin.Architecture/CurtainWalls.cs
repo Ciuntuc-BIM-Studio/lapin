@@ -208,9 +208,10 @@ public sealed record CurtainLayout(IReadOnlyList<double> U, IReadOnlyList<double
 /// A1 around it), the heights it spans, and its depth across the wall. Under a
 /// profile (<see cref="CurtainWalls.ProfileOf"/>) a panel or a member that
 /// follows the boundary has its <c>Outline</c>: the polygon in the wall's own
-/// plane, (along the wall, up), which the rectangle only boxes.
+/// plane, (along the wall, up), which the rectangle only boxes. <c>Plain</c>: a piece round a curtain wall door (report #133),
+/// a plain box between <c>A0</c> and <c>A1</c> of its bay (a mullion there too), never a library profile.
 /// </summary>
-public readonly record struct CurtainPiece(string Role, string Key, int I0, int I1, double A0, double A1, double Z0, double Z1, double Depth, IReadOnlyList<Vec2>? Outline = null);
+public readonly record struct CurtainPiece(string Role, string Key, int I0, int I1, double A0, double A1, double Z0, double Z1, double Depth, IReadOnlyList<Vec2>? Outline = null, bool Plain = false);
 
 /// <summary>
 /// Curtain walls (the old Lapin's configurator): an IfcCurtainWall drawn
@@ -242,6 +243,8 @@ public static class CurtainWalls
         // Over a wall (50): a curtain wall drawn in one cuts its way through it.
         r.Cutter(Class, 52, Envelope);
         r.Catalog("curtainWallDefault", CurtainSpec.Default.ToJson());
+        // Panel types and doors in chosen cells (report #133).
+        CurtainCells.Register(r);
 
         r.Query("curtainWallPreview", (q, a) =>
         {
@@ -467,6 +470,15 @@ public static class CurtainWalls
         return type;
     }
 
+    /// <summary>A curtain wall's spec, axis and layout as its geometry lays it (its boundary's, up to its highest point), its doors left out.</summary>
+    internal static (CurtainSpec Spec, PathCurve C, CurtainLayout Layout) LayoutOf(IModelView m, Entity w)
+    {
+        var spec = SpecOf(m, w);
+        var c = PathCurve.Of(w);
+        var profile = ProfileOf(w);
+        return (spec, c, Layout(spec, c.Length, Math.Max(w.Num("height", Walls.DefaultHeight), profile?.Max(p => p.V) ?? 0), profile));
+    }
+
     public static CurtainSpec SpecOf(IModelView m, Entity typeOrWall) =>
         CurtainSpec.From((typeOrWall.Class == TypeClass ? typeOrWall : m.RelatingOf(typeOrWall.Id, IfcClass.RelDefinesByType))?.Attrs["spec"]);
 
@@ -653,7 +665,7 @@ public static class CurtainWalls
     }
 
     /// <summary>A piece with an outline, as a solid: its polygon in the plane of its bay's chord, thick across the wall.</summary>
-    static Solid? Outlined(PathCurve c, CurtainLayout l, CurtainPiece p, double baseZ)
+    static Solid? Outlined(PathCurve c, CurtainLayout l, CurtainPiece p, double baseZ, double? depth = null, double offset = 0)
     {
         if (p.Outline is not { Count: >= 3 } outline) return null;
         Vec2 pa, d;
@@ -674,13 +686,14 @@ public static class CurtainWalls
             d = (pb - pa).Normalized();
         }
         var n = d.Perp;
+        var t = depth ?? p.Depth;
         Vec3 At(Vec2 q)
         {
             var x = (q.X - l.U[p.I0]) / span * chord;
-            var o = pa + d * x - n * (p.Depth / 2);
+            var o = pa + d * x - n * (offset + t / 2);
             return new Vec3(o.X, o.Y, baseZ + q.Y);
         }
-        var sweep = new Vec3(n.X, n.Y, 0) * p.Depth;
+        var sweep = new Vec3(n.X, n.Y, 0) * t;
         return Prism.Extrude(outline.Select(At).ToList(), null, sweep, p.Role);
     }
 
@@ -692,12 +705,16 @@ public static class CurtainWalls
         return Math.Abs(s) / 2;
     }
 
-    /// <summary>A piece's footprint in plan: a mullion square to the axis at its line, a transom or panel straight along its bay's chord.</summary>
-    static Vec2[] Footprint(PathCurve c, CurtainLayout l, CurtainPiece p)
+    /// <summary>
+    /// A piece's footprint in plan: a mullion square to the axis at its line, a transom or panel (or a mullion round a door)
+    /// straight along its bay's chord; <paramref name="depth"/> across the wall (null: the piece's own), its centre
+    /// <paramref name="offset"/> out of the building.
+    /// </summary>
+    static Vec2[] Footprint(PathCurve c, CurtainLayout l, CurtainPiece p, double? depth = null, double offset = 0)
     {
         Vec2 a, d;
         double x0, x1;
-        if (p.Role == "mullion")
+        if (p.Role == "mullion" && p.I0 == p.I1)
         {
             var s = l.U[p.I0];
             (a, d) = (c.PointAt(s), c.TangentAt(s));
@@ -709,7 +726,8 @@ public static class CurtainWalls
             (a, d) = (pa, (pb - pa).Normalized());
             (x0, x1) = (p.A0, (pb - pa).Length - p.A1);
         }
-        var n = d.Perp * (p.Depth / 2);
+        var n = d.Perp * ((depth ?? p.Depth) / 2);
+        a -= d.Perp * offset;
         return [a + d * x0 - n, a + d * x1 - n, a + d * x1 + n, a + d * x0 + n];
     }
 
@@ -775,7 +793,7 @@ public static class CurtainWalls
         return (section, place);
     }
 
-    static double Base(IModelView m, Entity w) => (Spatial.StoreyOf(m, w.Id)?.Num("elevation") ?? 0) + w.Num("baseOffset");
+    internal static double Base(IModelView m, Entity w) => (Spatial.StoreyOf(m, w.Id)?.Num("elevation") ?? 0) + w.Num("baseOffset");
 
     public static ElementGeometry Geometry(Entity w, IModelView m)
     {
@@ -784,9 +802,11 @@ public static class CurtainWalls
         if (c.Chord < 0.1) return new ElementGeometry([], Diagnostics: ["The curtain wall has no length."]);
         var spec = SpecOf(m, w);
         var profile = ProfileOf(w);
-        var layout = Layout(spec, c.Length, height, profile);
         var z = Base(m, w);
-        var problems = Fit(spec, layout, c.Length) is { } p ? new List<string> { p } : null;
+        var grid = Layout(spec, c.Length, height, profile);
+        var problems = Fit(spec, grid, c.Length) is { } p ? new List<string> { p } : [];
+        // Its doors in their cells (report #133), with the glazing and framing round them.
+        var layout = CurtainCells.Built(m, w, spec, grid, c, problems);
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
         // The materials by name (report #76), each giving its colour; without one, the type's colours.
@@ -799,9 +819,17 @@ public static class CurtainWalls
         {
             if (!(piece.Z1 - piece.Z0 > 1e-9)) continue;
             var fp = Footprint(c, layout, piece);
+            // A cell's own panel type (report #133): its sheet, or its frame round its infill, or nothing.
+            if (piece.Role == "panel" && CurtainCells.PanelOf(m, w, CurtainCells.CellKeyOf(piece.Key)) is ({ } own, { } ownType))
+            {
+                var made = Panel(m, spec, own, ownType.Name, c, layout, piece, z, Mat, frameMat, frameColor);
+                parts.AddRange(made);
+                if (made.Count > 0 && piece.Z0 <= PlanCut && piece.Z1 > PlanCut) plan.Add(new PlanItem("symbol", true, Footprint(c, layout, piece, own.Kind == "framed" ? own.FrameDepth : own.Thickness, own.Offset)));
+                continue;
+            }
             // A library profile's real outline (decision 417), butted at the grid as a plain member is; a plain box without one.
             // A boundary member and a panel under a profile: their polygon; a library profile's mullion stays its own shape (cut flat).
-            var member = piece.Outline == null || piece.Role == "mullion" ? Member(spec, w, c, layout, piece, z) : null;
+            var member = piece.Plain ? null : piece.Outline == null || piece.Role == "mullion" ? Member(spec, w, c, layout, piece, z) : null;
             if ((member ?? Outlined(c, layout, piece, z) ?? Prism.ExtrudeFootprint(fp, z + piece.Z0, piece.Z1 - piece.Z0, piece.Role)) is not { } solid) continue;
             var name = piece.Role switch { "mullion" => "Mullion", "transom" => "Transom", _ => spec.PanelKind == "glass" ? "Glass panel" : "Panel" };
             parts.Add(new GeometryPart(name, piece.Role == "panel" ? infill : frameColor, solid, piece.Role == "panel" ? infillMat : frameMat, piece.Key));
@@ -811,7 +839,53 @@ public static class CurtainWalls
         }
         // The axis, where a click picks it.
         plan.Add(new PlanItem("hit", false, c.Line(0, c.Length, 0)));
-        return new ElementGeometry(parts, plan, [c.Start, c.End, c.PointAt(c.Length / 2)], problems);
+        return new ElementGeometry(parts, plan, [c.Start, c.End, c.PointAt(c.Length / 2)], problems.Count > 0 ? problems : null);
+    }
+
+    /// <summary>
+    /// A panel of a panel type (report #133) in its cell: a sheet its thickness, its centre its offset out of the building; framed, a
+    /// frame round the cell (<c>frame:…</c>, a part of its own) and the infill inside it set back from the frame's outer face (under a
+    /// boundary, or in a cell too small for the frame, the infill alone where it would be); empty, nothing.
+    /// </summary>
+    static List<GeometryPart> Panel(IModelView m, CurtainSpec spec, CurtainPanelSpec ps, string name, PathCurve c, CurtainLayout l, CurtainPiece p, double z,
+        Func<string?, string?> mat, string? typeFrameMat, string typeFrameColor)
+    {
+        var o = new List<GeometryPart>();
+        if (ps.Sheet is not { } sheet) return o;
+        var infillMat = mat(ps.Material ?? (sheet == "glass" ? spec.GlassMaterial : spec.OpaqueMaterial));
+        var infillColor = infillMat != null ? Materials.ColorOf(m, infillMat) : sheet == "glass" ? spec.GlassColor : spec.OpaqueColor;
+        var (pa, pb) = (c.PointAt(l.U[p.I0]), c.PointAt(l.U[p.I1]));
+        var chord = (pb - pa).Length;
+        var (x0, x1) = (p.A0, chord - p.A1);
+        var fw = ps.FrameWidth;
+        // The frame's faces across the wall, out of the building; the infill's, set back from its outer face.
+        var (fy0, fy1) = (ps.Offset - ps.FrameDepth / 2, ps.Offset + ps.FrameDepth / 2);
+        var (iy0, iy1) = (fy1 - ps.Inset - ps.Thickness, fy1 - ps.Inset);
+        var framed = ps.Kind == "framed" && p.Outline == null && x1 - x0 > 2 * fw + 0.02 && p.Z1 - p.Z0 > 2 * fw + 0.02;
+        if (!framed)
+        {
+            var off = ps.Kind == "framed" ? (iy0 + iy1) / 2 : ps.Offset;
+            if ((Outlined(c, l, p, z, ps.Thickness, off) ?? Prism.ExtrudeFootprint(Footprint(c, l, p, ps.Thickness, off), z + p.Z0, p.Z1 - p.Z0, "panel")) is { } solid)
+                o.Add(new GeometryPart(name, infillColor, solid, infillMat, p.Key));
+            return o;
+        }
+        var d = (pb - pa).Normalized();
+        // A box along the chord from xa to xb, up from za to zb, out of the building from ya to yb.
+        Solid? Box(double xa, double xb, double za, double zb, double ya, double yb, string tag)
+        {
+            Vec2 P(double x, double y) => pa + d * x - d.Perp * y;
+            return Prism.ExtrudeFootprint([P(xa, yb), P(xb, yb), P(xb, ya), P(xa, ya)], z + za, zb - za, tag);
+        }
+        var ring = new[]
+        {
+            Box(x0, x0 + fw, p.Z0, p.Z1, fy0, fy1, "frame"), Box(x1 - fw, x1, p.Z0, p.Z1, fy0, fy1, "frame"),
+            Box(x0 + fw, x1 - fw, p.Z0, p.Z0 + fw, fy0, fy1, "frame"), Box(x0 + fw, x1 - fw, p.Z1 - fw, p.Z1, fy0, fy1, "frame"),
+        }.OfType<Solid>().ToList();
+        var frameMat = ps.FrameMaterial != null ? mat(ps.FrameMaterial) : typeFrameMat;
+        var frameColor = frameMat != null ? Materials.ColorOf(m, frameMat) : typeFrameColor;
+        if (ring.Count > 0) o.Add(new GeometryPart(name + " frame", frameColor, Openings.Combine(ring, "frame"), frameMat, "frame" + p.Key["panel".Length..]));
+        if (Box(x0 + fw, x1 - fw, p.Z0 + fw, p.Z1 - fw, iy0, iy1, "panel") is { } infill) o.Add(new GeometryPart(name, infillColor, infill, infillMat, p.Key));
+        return o;
     }
 
     /// <summary>What it cuts a wall it is drawn in with: its band, as deep as a thick wall, up its height.</summary>
@@ -830,7 +904,7 @@ public static class CurtainWalls
         var height = w.Num("height", Walls.DefaultHeight);
         var spec = SpecOf(m, w);
         var profile = ProfileOf(w);
-        var layout = Layout(spec, c.Length, height, profile);
+        var layout = CurtainCells.Built(m, w, spec, Layout(spec, c.Length, height, profile), c, null);
         // Under a boundary: the height of its highest point, the side area under it.
         var gross = c.Length * height;
         if (profile != null)
@@ -844,7 +918,8 @@ public static class CurtainWalls
             new("Height", height, "LENGTH"),
             new("GrossSideArea", gross, "AREA", "Gross side area"),
         ]);
-        var panels = layout.Pieces.Where(p => p.Role == "panel").ToList();
+        // An open cell (an empty panel type, report #133) has no panel.
+        var panels = layout.Pieces.Where(p => p.Role == "panel" && CurtainCells.PanelOf(m, w, CurtainCells.CellKeyOf(p.Key)).Spec?.Kind != "empty").ToList();
         double Chord(CurtainPiece p) => (c.PointAt(layout.U[p.I1]) - c.PointAt(layout.U[p.I0])).Length;
         double Along(CurtainPiece p) => Chord(p) - p.A0 - p.A1;
         // A piece that follows the boundary: its area from its outline (the chord over the arc), its length along the top.
