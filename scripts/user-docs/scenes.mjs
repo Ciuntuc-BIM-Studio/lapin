@@ -1431,6 +1431,26 @@ export const scenes = [
       const plan = `plan:${storey}`;
       await t.button('Steel', { exact: true });
       await t.shot('ribbon-steel', { of: '.topbar', pad: 0 });
+      // Decision 458: the quick buttons before the view tabs (3D, Section, Measure), and the Steel tab's Column (an HEB 200 column type).
+      await t.page.locator('[data-testid="quick-view.section"]').click();
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool) === 'view.section', 'the quick Section button starts the section tool');
+      await t.page.locator('[data-testid="quick-measure"]').click();
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool) === 'measure', 'the quick Measure button starts the measure tool');
+      await t.keys('Escape');
+      await t.ui({ view: 'plan' });
+      await t.wait(500);
+      await t.tool('steel.column');
+      const box = await t.page.locator('[data-testid=plan]').boundingBox();
+      await t.page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await t.wait(800);
+      const steelColumns = (await t.nodes()).filter((n) => n.type === 'IfcColumn');
+      t.expect(steelColumns.length === 1 && steelColumns[0].name === 'Column HEB 200', `the Steel tab's Column places an HEB 200 column (${steelColumns.map((n) => n.name).join(', ')})`);
+      await t.keys('Escape');
+      await t.cmd('core.delete', { ids: steelColumns.map((n) => n.id) });
+      await t.page.locator('[data-testid="quick-view.3d"]').click();
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().view) === '3d', 'the quick 3D button opens the 3D view');
+      await t.ui({ view: 'plan' });
+      await t.wait(500);
       // The user's sketch: a band 150 mm wide (an IPE 300's flanges), both ends slanted; and a second one beside it, square.
       const slant = 0.15 * Math.tan(Math.PI / 6);
       const a = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, 0], [6, 0], [6 + slant, 0.15], [slant, 0.15]], closed: true } })).ids[0];

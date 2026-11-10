@@ -9,6 +9,7 @@ summary: Steel members with configurable ends — extended or set back, cut by a
 ![The Steel tab](shots/ribbon-steel.webp)
 
 - **Portal frame hall…**: a whole steel hall from a few numbers, in the hall configurator (below).
+- **Column**: a column of the structure, placed with one click on the storey, of a steel profile: an **HEB 200** by default, from the built-in EN catalogue (its column type is made the first time and used again). Change its profile in Properties or in **Structure → Structure types**; the Structure tab's own Column tool places the project's current column type as before.
 - **Member** (SM): a steel member along two points, on the storey's top with its section's top on the axis, as a beam. Its type is chosen in Properties before the first click, or from the **Catalog** tab, where each steel type is drawn by its section.
 - **Convert to member**: the selected drafted outlines made members (below).
 - **Mitre** and **Fit**: two members joined at their ends (below).

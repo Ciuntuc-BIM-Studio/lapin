@@ -116,6 +116,8 @@ The theme is kept: Lapin starts again in the one you left it in. **File → Pref
 
 ## View tabs and windows
 
+Three quick buttons stand before the tabs: **3D** opens the 3D view, **Section** (<kbd>SE</kbd>) starts the section tool and **Measure** (<kbd>ME</kbd>) the measure tool, so the three most used views and tools are one click away from any view.
+
 Each view opened has a tab above the view. Drag a tab to put the view somewhere else. Dragged out of the window, or onto its edge, it opens in a **window of its own** where you drop it, for a second screen (desktop app). Dropped on the right or bottom quarter of a view, it splits the view and opens beside it or under it. Dropped on the other pane, it opens there. While you drag, the place it would go is lit and named. A click on a tab still just opens it.
 
 A right click on a tab offers the same: **Open in a new window**, **Split: open beside**, **Split: open below** (or **Open in the other pane** when the view is split), **Close** and **Close the others**. The window button at the right of the tabs, and **View → New window**, open the view in front in a window of its own. The windows share the model, the selection, the storey and the tool; each keeps its own zoom.

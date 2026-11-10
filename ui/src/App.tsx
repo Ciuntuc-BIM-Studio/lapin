@@ -5,12 +5,13 @@
  */
 
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { AppWindow, Bot, Columns2, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
+import { AppWindow, Bot, Box, Columns2, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
 import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
 import { assistantAvailable } from './assistant/available';
 import { useInterface } from './app/interface';
 import { bindingText } from './app/commands';
 import { closePane, closeTab, focusPane, isTableView, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
+import type { ToolDef } from './platform/module';
 import { PaneContext } from './app/pane';
 import { openViewWindow } from './app/windows';
 import { beginTabDrag, DROP_LABELS, tabToWindow, useTabDrag } from './app/tabDrag';
@@ -21,10 +22,11 @@ import { CursorCoords } from './shell/CursorCoords';
 import { watchLocation } from './app/location';
 import { useShortcuts } from './app/keys';
 import { useSession } from './engine/session';
+import { SectionIcon } from './icons';
 import { unitLabel, useStandards } from './engine/unitsStore';
 import { openStandards } from './modules/core/standardsTab';
 import { isDesktop, projectTitle } from './engine/files';
-import { backgrounds, dialog, moduleView, modules, overlays, productInfo } from './platform/modules';
+import { activate, backgrounds, dialog, findTool, moduleView, modules, overlays, productInfo } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
 import { PropertiesPanel } from './shell/PropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
@@ -156,6 +158,7 @@ function PaneTabs({ i }: { i: number }) {
   const current = tabs.find((t) => tabKey(t) === mine);
   return (
     <div className="view-tabs">
+      <QuickViews />
       <div className="view-tab-strip">
         {tabs.map((t) => {
           const key = tabKey(t);
@@ -184,6 +187,28 @@ function PaneTabs({ i }: { i: number }) {
         </>
       )}
       {role === 'main' && isDesktop() && !isGuest() && <button type="button" className="icon mini" title="Open this view in a window of its own (for a second screen)" onClick={() => void openViewWindow(pane, current ? label(current) : 'View')}><AppWindow size={13} /></button>}
+    </div>
+  );
+}
+
+/** 3D, Section and Measure in one click, before the view tabs (a tester's request, decision 458). */
+function QuickViews() {
+  const tool = useUi((s) => s.tool);
+  const quick: { id: string; icon: ToolDef['icon']; hint: string }[] = [
+    { id: 'view.3d', icon: Box, hint: '3D' },
+    { id: 'view.section', icon: SectionIcon, hint: 'Section' },
+    { id: 'measure', icon: Ruler, hint: 'Measure' },
+  ];
+  return (
+    <div className="quick-views" role="group" aria-label={tr('Views')}>
+      {quick.map(({ id, icon: Icon, hint }) => {
+        const def = findTool(id);
+        if (!def) return null;
+        return (
+          <button type="button" key={id} className={`icon mini${tool === id ? ' on' : ''}`} data-testid={`quick-${id}`} aria-label={tr(hint)}
+            title={def.shortcut ? `${tr(hint)} (${def.shortcut})` : tr(hint)} onClick={() => activate(def)}><Icon size={14} /></button>
+        );
+      })}
     </div>
   );
 }

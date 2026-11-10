@@ -116,6 +116,8 @@ Tema se păstrează: Lapin pornește din nou în cea în care l-ai lăsat. **Fi�
 
 ## Taburile vederilor și ferestrele
 
+Trei butoane rapide stau înaintea tab-urilor: **3D** deschide vederea 3D, **Secțiune** (<kbd>SE</kbd>) pornește unealta de secțiune, iar **Măsoară** (<kbd>ME</kbd>) unealta de măsurare, deci cele mai folosite vederi și unelte sunt la un clic distanță din orice vedere.
+
 Fiecare vedere deschisă are un tab deasupra ei. Trage un tab ca să muți vederea în altă parte. Tras afară din fereastră, sau pe marginea ei, se deschide într-o **fereastră separată** acolo unde îl lași, pentru un al doilea ecran (aplicația desktop). Lăsat pe sfertul din dreapta sau de jos al unei vederi, o împarte și se deschide alături sau dedesubt. Lăsat pe celălalt panou, se deschide acolo. Cât timp tragi, locul în care ar ajunge e luminat și numit. Un clic pe tab doar îl deschide, ca înainte.
 
 Un clic dreapta pe tab oferă același lucru: **Deschide într-o fereastră nouă**, **Împarte: deschide alături**, **Împarte: deschide dedesubt** (sau **Deschide în celălalt panou** când vederea e împărțită), **Închide** și **Închide-le pe celelalte**. Butonul de fereastră din dreapta taburilor și **Vedere → Fereastră nouă** deschid vederea din față într-o fereastră separată. Ferestrele împart modelul, selecția, nivelul și unealta; fiecare își păstrează zoomul.

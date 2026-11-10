@@ -11,7 +11,7 @@
  */
 
 import { Anchor, ArrowRightToLine, Frame, Layers3, Link2, ListOrdered, Slash, Table2, WandSparkles, Warehouse } from 'lucide-react';
-import { BeamIcon } from '../../icons';
+import { BeamIcon, ColumnIcon } from '../../icons';
 import type { Grip, LapinModule, ToolDef } from '../../platform/module';
 import { notify, useUi } from '../../app/store';
 import { execute, useSession } from '../../engine/session';
@@ -39,6 +39,23 @@ const member: ToolDef = {
   },
   complete: async ({ points: [a, b] }, ctx) => {
     await ctx.execute('steel.addMember', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, typeId: useUi.getState().memberTypeId ?? undefined });
+  },
+};
+
+/**
+ * A steel column (a tester's request, decision 458): the structure module's column, of a column type made of a steel profile of
+ * the built-in EN catalogue (HEB 200 by default; the type is made the first time, and any later one the project has of that
+ * profile is used again). Its profile changes in the properties panel or Structure types, as for any column.
+ */
+const STEEL_COLUMN = 'HEB 200';
+const column: ToolDef = {
+  id: 'steel.column', label: 'Column', icon: ColumnIcon,
+  gesture: { kind: 'point' },
+  complete: async ({ points: [p] }, ctx) => {
+    const { nodes } = useSession.getState();
+    let type = [...nodes.values()].find((n) => n.type === 'IfcColumnType' && (n.props.section as { name?: string } | undefined)?.name === STEEL_COLUMN)?.id;
+    if (!type) type = ((await ctx.execute('structure.createColumnType', { name: `Column ${STEEL_COLUMN}`, section: STEEL_COLUMN })) as { id?: string } | null)?.id;
+    await ctx.execute('structure.addColumn', { storeyId: ctx.storeyId, x: p.x, y: p.y, ...(type ? { typeId: type } : {}) });
   },
 };
 
@@ -133,7 +150,7 @@ const steel: LapinModule = {
     id: 'steel', label: 'Steel', order: 34, include: ['modify'],
     groups: [
       { label: 'Halls', tools: [hall] },
-      { label: 'Members', tools: [member, convert] },
+      { label: 'Members', tools: [column, member, convert] },
       { label: 'Ends', tools: [mitre, fit] },
       { label: 'Nodes', tools: [connections] },
       { label: 'Drawings', tools: [anchorPlan, frameView] },

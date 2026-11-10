@@ -9,6 +9,7 @@ summary: Bare metalice cu capete configurabile — prelungite sau retrase, tăia
 ![Tabul Oțel](shots/ribbon-steel.webp)
 
 - **Hală cu cadre portal…**: o hală metalică întreagă din câteva cifre, în configuratorul de hală (mai jos).
+- **Stâlp**: un stâlp al structurii, pus cu un clic pe etaj, dintr-un profil metalic: implicit un **HEB 200** din catalogul EN integrat (tipul lui de stâlp se face prima dată și se refolosește). Profilul se schimbă în Proprietăți sau în **Structură → Tipuri de structură**; unealta Stâlp din fila Structură pune ca înainte tipul curent al proiectului.
 - **Bară** (<kbd>SM</kbd>): o bară metalică între două puncte, la nivelul de sus al etajului, cu fața de sus a secțiunii pe axă, ca o grindă. Tipul îl alegi în Proprietăți înainte de primul clic, sau din tabul **Catalog**, unde fiecare tip metalic e desenat după secțiunea lui.
 - **Convertește în bară**: contururile desenate selectate devin bare (mai jos).
 - **La 45°** și **Încadrează**: două bare îmbinate la capete (mai jos).

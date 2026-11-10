@@ -215,6 +215,10 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .sets-editor .field-line input, .sets-editor .field-line textarea { width: 100%; box-sizing: border-box; }
 .views { display: flex; flex-direction: column; min-width: 0; }
 .view-tabs { display: flex; align-items: flex-end; gap: 2px; padding: 4px 6px 0; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.quick-views { display: flex; align-items: center; gap: 1px; flex: none; margin: 0 6px 4px 4px; padding-right: 6px; border-right: 1px solid var(--rule); }
+.quick-views .icon.mini { margin: 0; }
+.quick-views .icon.mini.on { background: var(--rule); color: var(--ink); }
+@media (max-width: 700px) { .quick-views { margin-left: 0; padding-right: 3px; margin-right: 3px; } }
 .view-tab-strip { display: flex; align-items: flex-end; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .view-tab-strip::-webkit-scrollbar { display: none; }
 .view-tab { white-space: nowrap; max-width: 220px; }
