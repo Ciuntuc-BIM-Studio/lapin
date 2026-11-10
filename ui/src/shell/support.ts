@@ -1,7 +1,7 @@
 /** What the help menu reports with and links to: the app's last errors, the community and the site. */
 
 import { notify } from '../app/store';
-import { engine, engineInBrowser } from '../engine/session';
+import { engine, engineInBrowser, useSession } from '../engine/session';
 import { type Lang, useLang } from '../i18n';
 
 /** The app's last errors, newest last (at most 20). */
@@ -32,8 +32,8 @@ export function installRecentErrors(): void {
   console.error = (...args: unknown[]) => { keep(`console: ${args.map((a) => (a instanceof Error ? a.message : String(a))).join(' ')}`); original(...args); };
 }
 
-/** Open the community or the site in the system's browser (the engine does it). */
-export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro', source: 'https://github.com/Ciuntuc-BIM-Studio/lapin-pro' } as const;
+/** What the help menu links to: the guide, the forum (Lapin's users and fans, docs/plan-forum.md), the community on Skool (courses), the site, the source. */
+export const LINKS = { guide: 'https://lapin.ciuntucbimstudio.ro/docs/', forum: 'https://forum.lapinbim.com', community: 'https://www.skool.com/bubblebim-club-1376/about', site: 'https://ciuntucbimstudio.ro', source: 'https://github.com/Ciuntuc-BIM-Studio/lapin-pro' } as const;
 
 /** The languages the user guide is written in (scripts/user-docs/languages.mjs); an interface language not among them (Lao) opens it in English. */
 const GUIDED: readonly Lang[] = ['en', 'ro', 'es', 'de', 'fr', 'da', 'it', 'pl', 'pt'];
@@ -53,6 +53,42 @@ export const openLink = (which: keyof typeof LINKS) => {
   const lang = useLang.getState().lang;
   if (engineInBrowser) { window.open(which === 'guide' ? guideUrl(lang) : LINKS[which], '_blank', 'noopener'); return; }
   void engine.call('support.open', { link: which === 'guide' ? guideLink(lang) : which }).catch(() => notify('The link could not be opened.'));
+};
+
+/** The forum's category for Lapin's topics. */
+export const FORUM_CATEGORY = 'lapin';
+
+/**
+ * A new topic on the forum, its title and text filled in (Discourse's /new-topic, in
+ * Lapin's category; the visitor signs in there and posts it, or not). The same
+ * address as the engine's (Support.ForumTopic): the title cut to 200 characters, the text to 4000.
+ */
+export function forumTopicUrl(title?: string, body?: string): string {
+  const q: string[] = [];
+  const t = (title ?? '').trim().slice(0, 200);
+  const b = (body ?? '').trim().slice(0, 4000);
+  if (t) q.push(`title=${encodeURIComponent(t)}`);
+  if (b) q.push(`body=${encodeURIComponent(b)}`);
+  q.push(`category=${FORUM_CATEGORY}`);
+  return `${LINKS.forum}/new-topic?${q.join('&')}`;
+}
+
+/** What a new topic's text starts with: room for the question, then the app's version and where it runs (nothing else of the computer or the project). */
+export const forumTopicBody = (question: string, version: string | undefined, where: 'desktop' | 'web'): string =>
+  `${question.trim()}\n\n\n---\nLapin ${version ?? ''} · ${where}`.trim();
+
+/** A new topic for a question: a short one is its title; a long one is cut for the title and given whole in the text. */
+export function forumQuestion(question: string, version: string | undefined, where: 'desktop' | 'web'): { title: string; body: string } {
+  const q = question.trim();
+  const long = q.length > 200;
+  return { title: long ? `${q.slice(0, 197)}…` : q, body: forumTopicBody(long ? q : '', version, where) };
+}
+
+/** Ask on the forum: a new topic with the question (if any), opened like the help menu's other links. */
+export const openForumTopic = (question = '') => {
+  const { title, body } = forumQuestion(question, useSession.getState().info?.engineVersion, engineInBrowser ? 'web' : 'desktop');
+  if (engineInBrowser) { window.open(forumTopicUrl(title, body), '_blank', 'noopener'); return; }
+  void engine.call('support.open', { link: 'forumTopic', title, body }).catch(() => notify('The link could not be opened.'));
 };
 
 /** Where the web build posts reports: the Lapin server it is served from. */

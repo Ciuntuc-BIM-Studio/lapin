@@ -25,7 +25,8 @@ public interface ISupportDesk
     JsonObject Report(JsonObject p);
     /// <summary>One of the replies' calls (<see cref="SupportMessages"/>): the server's answer, or the body for the page to post.</summary>
     JsonObject Messages(JsonObject p);
-    void Open(string? link);
+    /// <summary>Open one of the help menu's links by name; the forum's new topic takes its title and body from <paramref name="p"/>.</summary>
+    void Open(string? link, JsonObject p);
 }
 
 /// <summary>
@@ -1059,7 +1060,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "support.report": return ((support ?? throw new CommandException("Reports are sent from the app.")).Report(p), null);
             case "support.messages": return ((support ?? throw new CommandException("Messages are read from the app.")).Messages(p), null);
             case "support.open":
-                (support ?? throw new CommandException("Nothing to open here.")).Open((string?)p["link"]);
+                (support ?? throw new CommandException("Nothing to open here.")).Open((string?)p["link"], p);
                 return (null, null);
             case "recovery.list": return (recovery?.List() ?? [], null);
             case "recovery.restore": return (null, (recovery ?? throw new CommandException("No recovery here.")).Restore(PathParam()));

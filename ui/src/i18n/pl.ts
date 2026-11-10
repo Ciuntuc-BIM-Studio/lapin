@@ -286,7 +286,7 @@ export const PL: Record<string, string> = {
   'Drafting': 'Rysowanie', 'by layer': 'wg warstwy', 'Line type': 'Typ linii', 'Start': 'Początek', 'End': 'Koniec', 'Centre': 'Środek', 'Radius': 'Promień', 'Diameter': 'Średnica', 'Circumference': 'Obwód', 'Vertices': 'Wierzchołki', 'Closed': 'Zamknięta', 'Start angle': 'Kąt początkowy', 'End angle': 'Kąt końcowy', 'Pattern': 'Wzór', 'Position': 'Położenie', 'Tagged element': 'Element z etykietą', 'Field': 'Pole',
   'Start screen': 'Ekran startowy', 'Commands…': 'Polecenia…', 'Theme': 'Motyw', 'Undo': 'Cofnij', 'Redo': 'Ponów', 'Undo and redo': 'Cofnij i ponów',
   'Report an issue': 'Zgłoś problem', 'Report an issue…': 'Zgłoś problem…', 'User guide': 'Podręcznik użytkownika', 'Check for updates…': 'Sprawdź aktualizacje…', 'Lapin is up to date.': 'Lapin jest aktualny.',
-  'Community (Skool)': 'Społeczność (Skool)', 'Community on Skool': 'Społeczność na Skool', 'What happened': 'Co się stało', 'What you expected': 'Czego się spodziewałeś',
+  'Forum': 'Forum', 'Ask on the forum…': 'Zapytaj na forum…', 'Ask on the forum': 'Zapytaj na forum', "Or ask Lapin's users and fans on the forum.": 'Albo zapytaj użytkowników i fanów Lapina na forum.', 'Community (Skool)': 'Społeczność (Skool)', 'Community on Skool': 'Społeczność na Skool', 'What happened': 'Co się stało', 'What you expected': 'Czego się spodziewałeś',
   'E-mail (optional)': 'E-mail (opcjonalnie)', 'Screenshot (optional)': 'Zrzut ekranu (opcjonalnie)', 'Cancel': 'Anuluj', 'Send': 'Wyślij', 'Close': 'Zamknij', 'Done': 'Gotowe',
   // The report form
   'Title': 'Tytuł', 'Something is wrong': 'Coś jest nie tak', 'An idea': 'Pomysł', 'A question': 'Pytanie', 'In a few words': 'W kilku słowach',

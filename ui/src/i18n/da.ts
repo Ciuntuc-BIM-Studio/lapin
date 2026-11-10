@@ -288,7 +288,7 @@ export const DA: Record<string, string> = {
   'Drafting': 'Tegning', 'by layer': 'efter lag', 'Line type': 'Linjetype', 'Start': 'Start', 'End': 'Slut', 'Centre': 'Centrum', 'Radius': 'Radius', 'Diameter': 'Diameter', 'Circumference': 'Omkreds', 'Vertices': 'Hjørnepunkter', 'Closed': 'Lukket', 'Start angle': 'Startvinkel', 'End angle': 'Slutvinkel', 'Pattern': 'Mønster', 'Position': 'Position', 'Tagged element': 'Mærket element', 'Field': 'Felt',
   'Start screen': 'Startskærm', 'Commands…': 'Kommandoer…', 'Theme': 'Tema', 'Undo': 'Fortryd', 'Redo': 'Annuller fortryd', 'Undo and redo': 'Fortryd og annuller fortryd',
   'Report an issue': 'Rapportér et problem', 'Report an issue…': 'Rapportér et problem…', 'User guide': 'Brugervejledning', 'Check for updates…': 'Søg efter opdateringer…', 'Lapin is up to date.': 'Lapin er opdateret.',
-  'Community (Skool)': 'Fællesskab (Skool)', 'Community on Skool': 'Fællesskab på Skool', 'What happened': 'Hvad skete der', 'What you expected': 'Hvad du forventede',
+  'Forum': 'Forum', 'Ask on the forum…': 'Spørg i forummet…', 'Ask on the forum': 'Spørg i forummet', "Or ask Lapin's users and fans on the forum.": 'Eller spørg Lapins brugere og fans i forummet.', 'Community (Skool)': 'Fællesskab (Skool)', 'Community on Skool': 'Fællesskab på Skool', 'What happened': 'Hvad skete der', 'What you expected': 'Hvad du forventede',
   'E-mail (optional)': 'E-mail (valgfri)', 'Screenshot (optional)': 'Skærmbillede (valgfrit)', 'Cancel': 'Annuller', 'Send': 'Send', 'Close': 'Luk', 'Done': 'Færdig',
   // The report form
   'Title': 'Titel', 'Something is wrong': 'Noget er galt', 'An idea': 'En idé', 'A question': 'Et spørgsmål', 'In a few words': 'Med få ord',

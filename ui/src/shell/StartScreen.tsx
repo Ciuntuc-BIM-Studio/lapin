@@ -96,7 +96,7 @@ export function StartScreen() {
         ))}
       </section>
       <footer className="start-foot muted small">
-        <span>Lapin · Ciuntuc BIM Studio · <button type="button" className="link" onClick={() => openLink('community')}>Community on Skool</button> · <button type="button" className="link" onClick={() => openLink('site')}>ciuntucbimstudio.ro</button></span>
+        <span>Lapin · Ciuntuc BIM Studio · <button type="button" className="link" onClick={() => openLink('forum')}>Forum</button> · <button type="button" className="link" onClick={() => openLink('community')}>Community on Skool</button> · <button type="button" className="link" onClick={() => openLink('site')}>ciuntucbimstudio.ro</button></span>
         <span>
           {LANGUAGES.filter((l) => l.id !== lang).map((l) => (
             <span key={l.id}><button type="button" className="link" data-no-i18n onClick={() => setLang(l.id)}>{l.name}</button>{' · '}</span>

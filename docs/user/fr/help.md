@@ -10,7 +10,7 @@ Cliquez sur **Ask Me**, le lapin en haut à droite, ou appuyez sur <kbd>F1</kbd>
 
 ![Ask Me expliquant comment copier un mur](shots/ask-me.webp)
 
-Si Ask Me n’a pas de réponse, **Envoyer la question** nous l’envoie. Nous y répondons, et la réponse est ajoutée à Ask Me pour tout le monde.
+Si Ask Me n’a pas de réponse, **Envoyer la question** nous l’envoie. Nous y répondons, et la réponse est ajoutée à Ask Me pour tout le monde. **Demander sur le forum** interroge plutôt les utilisateurs et les fans de Lapin : cela ouvre un nouveau sujet sur le forum, avec votre question pour titre.
 
 ## Le menu d’aide
 
@@ -22,7 +22,9 @@ Le bouton **?** à côté de Ask Me ouvre le menu d’aide :
 - **Guide de l’utilisateur** ouvre ce guide, dans la langue de l’interface.
 - **Signaler un problème…** nous dit ce qui n’a pas fonctionné, ou nous envoie une idée ou une question. Dites ce qui s’est passé et ce que vous attendiez, et ajoutez une capture d’écran si cela aide. La version de l’application et ses derniers messages d’erreur accompagnent le signalement.
 - **Messages…** affiche les réponses à vos signalements. Il apparaît dès que vous avez demandé une réponse une première fois.
-- **Communauté (Skool)** est l’endroit où les utilisateurs et l’équipe échangent.
+- **Forum** ouvre le forum de Lapin (forum.lapinbim.com), où les utilisateurs et les fans échangent, montrent leur travail et s’entraident. Le forum est en anglais, mais vous pouvez écrire dans votre langue.
+- **Demander sur le forum…** ouvre un nouveau sujet sur le forum, dans la catégorie Lapin, avec la version de l’application ajoutée sous votre texte. Rien d’autre sur votre ordinateur ou votre projet n’est envoyé. Vous vous connectez au forum et y publiez le sujet.
+- **Communauté (Skool)** est l’endroit où se trouvent les cours et les autres documents de l’équipe.
 - **Rechercher des mises à jour…** n’existe que dans l’application de bureau.
 - **À propos de Lapin…** affiche la version, la licence, un lien vers le code source, et ce que signifie helpware.
 

@@ -286,7 +286,7 @@ export const RO: Record<string, string> = {
   'Drafting': 'Desen', 'by layer': 'după layer', 'Line type': 'Tip de linie', 'Start': 'Început', 'End': 'Sfârșit', 'Centre': 'Centru', 'Radius': 'Rază', 'Diameter': 'Diametru', 'Circumference': 'Circumferință', 'Vertices': 'Vârfuri', 'Closed': 'Închis', 'Start angle': 'Unghi de început', 'End angle': 'Unghi de sfârșit', 'Pattern': 'Model', 'Position': 'Poziție', 'Tagged element': 'Element etichetat', 'Field': 'Câmp',
   'Start screen': 'Ecranul de start', 'Commands…': 'Comenzi…', 'Theme': 'Temă', 'Undo': 'Anulează', 'Redo': 'Refă', 'Undo and redo': 'Anulează și refă',
   'Report an issue': 'Raportează o problemă', 'Report an issue…': 'Raportează o problemă…', 'User guide': 'Ghidul utilizatorului', 'Check for updates…': 'Caută actualizări…', 'Lapin is up to date.': 'Lapin este la zi.',
-  'Community (Skool)': 'Comunitatea (Skool)', 'Community on Skool': 'Comunitatea pe Skool', 'What happened': 'Ce s-a întâmplat', 'What you expected': 'Ce te așteptai să se întâmple',
+  'Forum': 'Forum', 'Ask on the forum…': 'Întreabă pe forum…', 'Ask on the forum': 'Întreabă pe forum', "Or ask Lapin's users and fans on the forum.": 'Sau întreabă utilizatorii și fanii Lapin pe forum.', 'Community (Skool)': 'Comunitatea (Skool)', 'Community on Skool': 'Comunitatea pe Skool', 'What happened': 'Ce s-a întâmplat', 'What you expected': 'Ce te așteptai să se întâmple',
   'E-mail (optional)': 'E-mail (opțional)', 'Screenshot (optional)': 'Captură de ecran (opțional)', 'Cancel': 'Renunță', 'Send': 'Trimite', 'Close': 'Închide', 'Done': 'Gata',
   // The report form
   'Title': 'Titlu', 'Something is wrong': 'Ceva nu merge', 'An idea': 'O idee', 'A question': 'O întrebare', 'In a few words': 'În câteva cuvinte',

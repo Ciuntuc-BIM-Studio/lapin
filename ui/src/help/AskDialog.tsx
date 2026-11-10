@@ -12,7 +12,7 @@ import { BunnyIcon } from '../icons';
 import { useUi } from '../app/store';
 import { activate, findTool } from '../platform/modules';
 import { openStandards } from '../modules/core/standardsTab';
-import { openLink } from '../shell/support';
+import { openForumTopic, openLink } from '../shell/support';
 import { useLang } from '../i18n';
 import { FAQ, ask, type Entry } from './faq';
 import { useDialogFocus } from '../shell/dialogFocus';
@@ -86,7 +86,11 @@ export function AskDialog({ onClose, onReport }: { onClose: () => void; onReport
           ) : (
             <div key={i} className="ask-msg lapin">
               <p>I don't have an answer to that yet. Send us the question: we'll answer it and add it here.</p>
-              <button type="button" className="btn compact" onClick={() => onReport(m.unknown ?? '')}>Send the question</button>
+              <p>Or ask Lapin's users and fans on the forum.</p>
+              <div className="row">
+                <button type="button" className="btn compact" onClick={() => onReport(m.unknown ?? '')}>Send the question</button>
+                <button type="button" className="btn compact" onClick={() => openForumTopic(m.unknown ?? '')}>Ask on the forum</button>
+              </div>
             </div>
           ))}
           <div ref={end} />

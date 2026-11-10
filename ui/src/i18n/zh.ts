@@ -286,7 +286,7 @@ export const ZH: Record<string, string> = {
   'Drafting': '绘图', 'by layer': '随图层', 'Line type': '线型', 'Start': '起点', 'End': '终点', 'Centre': '圆心', 'Radius': '半径', 'Diameter': '直径', 'Circumference': '周长', 'Vertices': '顶点', 'Closed': '闭合', 'Start angle': '起始角度', 'End angle': '终止角度', 'Pattern': '图案', 'Position': '位置', 'Tagged element': '被标记的构件', 'Field': '字段',
   'Start screen': '起始屏幕', 'Commands…': '命令…', 'Theme': '主题', 'Undo': '撤销', 'Redo': '重做', 'Undo and redo': '撤销和重做',
   'Report an issue': '报告问题', 'Report an issue…': '报告问题…', 'User guide': '用户指南', 'Check for updates…': '检查更新…', 'Lapin is up to date.': 'Lapin 已是最新版本。',
-  'Community (Skool)': '社区（Skool）', 'Community on Skool': 'Skool 社区', 'What happened': '发生了什么', 'What you expected': '您期望的结果',
+  'Forum': '论坛', 'Ask on the forum…': '在论坛提问…', 'Ask on the forum': '在论坛提问', "Or ask Lapin's users and fans on the forum.": '或者在论坛上询问 Lapin 的用户和爱好者。', 'Community (Skool)': '社区（Skool）', 'Community on Skool': 'Skool 社区', 'What happened': '发生了什么', 'What you expected': '您期望的结果',
   'E-mail (optional)': '电子邮件（可选）', 'Screenshot (optional)': '截图（可选）', 'Cancel': '取消', 'Send': '发送', 'Close': '关闭', 'Done': '完成',
   // The report form
   'Title': '标题', 'Something is wrong': '出现问题', 'An idea': '一个想法', 'A question': '一个问题', 'In a few words': '简要描述',

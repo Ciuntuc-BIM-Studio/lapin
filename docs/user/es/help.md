@@ -10,7 +10,7 @@ Haga clic en **Ask Me**, el conejo de arriba a la derecha, o pulse <kbd>F1</kbd>
 
 ![Ask Me responde cómo copiar un muro](shots/ask-me.webp)
 
-Si Ask Me no tiene respuesta, **Enviar la pregunta** nos la envía. La respondemos y la respuesta se añade a Ask Me para todos.
+Si Ask Me no tiene respuesta, **Enviar la pregunta** nos la envía. La respondemos y la respuesta se añade a Ask Me para todos. **Preguntar en el foro** pregunta en cambio a los usuarios y fans de Lapin: abre un tema nuevo en el foro con su pregunta como título.
 
 ## El menú de ayuda
 
@@ -22,7 +22,9 @@ El botón **?** junto a Ask Me abre el menú de ayuda:
 - **Guía del usuario** abre esta guía, en el idioma de la interfaz.
 - **Informar de un problema…** nos cuenta qué ha fallado, o nos envía una idea o una pregunta. Diga qué ocurrió y qué esperaba, y añada una captura de pantalla si ayuda. La versión de la aplicación y sus últimos mensajes de error acompañan al informe.
 - **Mensajes…** muestra las respuestas a sus informes. Aparece después de pedir una respuesta por primera vez.
-- **Comunidad (Skool)** es donde hablan los usuarios y el equipo.
+- **Foro** abre el foro de Lapin (forum.lapinbim.com), donde usuarios y fans hablan, muestran su trabajo y se ayudan entre sí. El foro está en inglés, pero puede escribir en su idioma.
+- **Preguntar en el foro…** abre un tema nuevo en el foro, en la categoría de Lapin, con la versión de la aplicación añadida debajo de su texto. Nada más de su ordenador ni de su proyecto se envía con él. Usted inicia sesión en el foro y publica allí el tema.
+- **Comunidad (Skool)** es donde están los cursos y el resto del material del equipo.
 - **Buscar actualizaciones…** solo está en la aplicación de escritorio.
 - **Acerca de Lapin…** muestra la versión, la licencia, un enlace al código fuente y lo que significa helpware.
 

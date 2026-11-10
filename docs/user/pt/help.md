@@ -10,7 +10,7 @@ Clique em **Pergunte-me**, o coelho no canto superior direito, ou pressione <kbd
 
 ![O Pergunte-me respondendo como copiar uma parede](shots/ask-me.webp)
 
-Se o Pergunte-me não tiver resposta, **Enviar a pergunta** a envia para nós. Nós a respondemos, e a resposta é acrescentada ao Pergunte-me para todos.
+Se o Pergunte-me não tiver resposta, **Enviar a pergunta** a envia para nós. Nós a respondemos, e a resposta é acrescentada ao Pergunte-me para todos. **Perguntar no fórum** pergunta, em vez disso, aos usuários e fãs do Lapin: abre um tópico novo no fórum com a sua pergunta como título.
 
 ## O menu de ajuda
 
@@ -22,7 +22,9 @@ O botão **?** ao lado do Pergunte-me abre o menu de ajuda:
 - **Guia do usuário** abre este guia, no idioma da interface.
 - **Relatar um problema…** nos conta o que deu errado, ou envia uma ideia ou uma pergunta. Diga o que aconteceu e o que você esperava, e adicione uma captura de tela se ajudar. A versão do aplicativo e as últimas mensagens de erro dele vão junto com o relato.
 - **Mensagens…** mostra as respostas aos seus relatos. Aparece depois que você pede uma resposta.
-- **Comunidade (Skool)** é onde os usuários e a equipe conversam.
+- **Fórum** abre o fórum do Lapin (forum.lapinbim.com), onde usuários e fãs conversam, mostram o seu trabalho e se ajudam. O fórum é em inglês, mas você pode escrever no seu idioma.
+- **Perguntar no fórum…** abre um tópico novo no fórum, na categoria do Lapin, com a versão do aplicativo acrescentada abaixo do seu texto. Nada mais do seu computador nem do seu projeto vai junto. Você entra no fórum e publica o tópico lá.
+- **Comunidade (Skool)** é onde ficam os cursos e os outros materiais da equipe.
 - **Verificar atualizações…** existe só no aplicativo de desktop.
 - **Sobre o Lapin…** mostra a versão, a licença, um link para o código-fonte e o que significa helpware.
 
