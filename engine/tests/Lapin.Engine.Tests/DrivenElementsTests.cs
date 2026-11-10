@@ -284,6 +284,25 @@ public class DrivenElementsTests
     }
 
     [Fact]
+    public void A_new_axis_never_goes_into_a_grid_a_module_drives()
+    {
+        var gen = new Generator();
+        var f = new Fixture(new ArchitectureModule(), new Lapin.Drafting.DraftingModule(), gen);
+        // A generator's own grid (driven: rebuilt from its spec) is the project's first.
+        f.Session.Edit("Generated grid", e => e.Add(new Entity(GlobalId.New(), IfcClass.Grid, "Generated grid", new JsonObject
+        {
+            ["axes"] = new JsonArray(new JsonObject { ["tag"] = "1", ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(0, 5) }),
+            [Generator.RoleKey] = "grid",
+        })));
+        var own = f.Model.OfClass(IfcClass.Grid).Single().Id;
+        var made = (string)f.Run("drafting.addAxis", new JsonObject { ["x1"] = 3, ["y1"] = 0, ["x2"] = 3, ["y2"] = 5 })!["gridId"]!;
+        Assert.NotEqual(own, made);
+        Assert.Single(Lapin.Drafting.Grids.Axes(f.Model.Get(own)!));
+        // The next axis goes to the user's grid, as ever.
+        Assert.Equal(made, (string)f.Run("drafting.addAxis", new JsonObject { ["x1"] = 6, ["y1"] = 0, ["x2"] = 6, ["y2"] = 5 })!["gridId"]!);
+    }
+
+    [Fact]
     public void A_modules_own_groups_and_keys_stay_out_of_the_IFC_file()
     {
         var (f, _, _, _, _, _) = Made();

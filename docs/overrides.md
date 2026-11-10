@@ -65,6 +65,7 @@ sealed class MyDriven : IDrivenElements, IIfcExportFilter
 - Three answers, as pinning (decision 449) and `r.Override` give them: let it go (do nothing), refuse (a `CommandException`, which rolls the whole command back), or do it in its own terms and add the ids to `outcome.Handled`, which the command then leaves out. Ids it does not drive go on as before, in the same undo step.
 - **`IDrivenElements.After`** is called after every command (`Session.Execute`, before components settle), inside its undo step, with the command's changes: what any command did to a driven element (another module's command too: a door's type, its place along its wall) is written back into the module's spec there, so building it again keeps it.
 - **`IIfcExportFilter`**: the export leaves out the groups `SkipsGroup` names (no `IFCGROUP`, no `IFCRELASSIGNSTOGROUP`; the members are written as any element) and never writes the `PrivateKeys` attributes in an element's `Lapin_Intent` set, so a link that lives in `.lapin` stays there.
+- A grid a module drives (a generator's own IfcGrid) never takes the axes drawn with *Grid axis* or *Grid…*: `Grids.Ensure` skips it, so they go to the project's own grid (made when there is none). Its axes moved with the axis tools reach the module through `After`.
 - Without a module that registers them, every command runs as it did. Tests: `DrivenElementsTests` (a test generator).
 
 ## Engine: results delivered later

@@ -39,9 +39,14 @@ public static class Grids
 
     public static (string Grid, string Tag)? ParseAxisId(string id) => id.IndexOf('#') is var i and > 0 ? (id[..i], id[(i + 1)..]) : null;
 
+    /// <summary>
+    /// The project's grid new axes go to: its first, but never one a module drives (a generator's own grid, rebuilt from
+    /// its spec: docs/overrides.md, Driven elements); made when there is none.
+    /// </summary>
     public static Entity Ensure(ICommandContext ctx)
     {
-        if (ctx.Model.OfClass(IfcClass.Grid).FirstOrDefault() is { } g) return g;
+        var driven = ctx.Services.All<IDrivenElements>();
+        if (ctx.Model.OfClass(IfcClass.Grid).FirstOrDefault(g => !driven.Any(d => d.Drives(ctx.Model, g))) is { } g) return g;
         var grid = new Entity(ctx.NewId(), IfcClass.Grid, "Grid", new JsonObject { ["axes"] = new JsonArray() });
         ctx.Add(grid);
         return grid;
