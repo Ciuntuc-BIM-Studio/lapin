@@ -17,6 +17,22 @@ Lapin kann nicht alle Stahlprofile der Welt mitliefern. Es bringt einen kleinen 
 
 Tippen Sie ins Suchfeld, um alle Bibliotheken zugleich nach Name, Familie, Norm oder Art zu durchsuchen; wählen Sie ein Profil, um es mit Maßen und Eigenschaften zu sehen.
 
+## Normen
+
+Jedes Profil erscheint unter seiner Norm: **EN** für Lapins Satz und jedes Profil, dessen Norm eine europäische ist (EN 10365, DIN EN, SR EN…), **AISC / ASTM** für amerikanische Tabellen (etwa eine Spalte *Standard* mit ASTM A6), BS, DIN, JIS, AS/NZS und die anderen unter ihrem Namen, und eine Bibliothek, deren Profile keine nennen — die eigene des Büros — unter ihrem eigenen Namen. Einer Bibliothek auf diesem Computer kann man sagen, unter welcher sie erscheint (**Gezeigt unter**, über ihrer Liste).
+
+Die Auswahllisten zeigen zuerst die Profile des Projekts, dann jede Norm unter ihrer Überschrift. Die Schaltflächen oben in der Liste blenden eine Norm aus oder ein; Ihre Wahl bleibt auf diesem Computer gespeichert, für jedes Projekt (auch unter **Datei → Einstellungen → Profile**).
+
+![Die Auswahl nach Normen gruppiert, mit ihren Schaltflächen](shots/profile-picker-standards.webp)
+
+Ein Projekt behält nur die Profile, die seine Typen verwenden, nie eine ganze Bibliothek, sodass eine Bibliothek, die Sie haben, in seiner Datei nichts wiegt. Was ein Projekt anbietet, ist seine eigene Wahl: **Normen in diesem Projekt** unter den Bibliotheken hakt die Normen an, die seine Auswahllisten zeigen; die Profile, die schon darin sind, bleiben. **Datei → Einstellungen → Profile** wählt die Normen, mit denen ein neues Projekt beginnt (alle, wenn Sie nichts wählen).
+
+![Die Normen, die ein Projekt anbietet](shots/profile-project-standards.webp)
+
+![Die Normen, die ein neues Projekt anbietet](shots/prefs-profiles.webp)
+
+Lapin liefert die AISC Shapes Database nicht mit: AISC erlaubt Entwicklern, sie nur unter einem eigenen Lizenzvertrag aufzunehmen, den ein MIT-Programm nicht weitergeben kann. Laden Sie sie bei AISC herunter und importieren Sie sie mit **Tabelle…**: Ihre Spalten werden erkannt.
+
 ## Eigenschaften
 
 Aus den Maßen berechnet Lapin Fläche, Iy, Iz, elastische und plastische Widerstandsmomente, Trägheitsradien, Hauptachsen und ihren Winkel (Winkel, Z, jeder unsymmetrische Umriss), Torsionskonstante It und Wölbwiderstand Iw, wo es eine Formel gibt, die Masse pro Meter aus der Dichte des Materials und die Anstrichfläche pro Meter. Sie stimmen auf etwa 1 % mit den veröffentlichten Tabellen überein (It und Iw gewalzter I-Profile auf 3 %; Iw eines U-Profils mit geneigten Flanschen nur auf 20 %). Ein beliebiger Umriss hat It und Iw nur, wenn seine Datei sie angibt.

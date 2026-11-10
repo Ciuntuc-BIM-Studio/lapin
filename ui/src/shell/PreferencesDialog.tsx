@@ -4,6 +4,7 @@
  * grid adaptive or fixed (its step and every how many lines a heavier one), snapping to it, each object snap on or
  * off, polar tracking's angle. Coordinates: what the status line reads at the cursor, the project's points shown in
  * plans and 3D, the UCS. Display: the switches of View → Graphics and the 3D view's navigation, in one place.
+ * Profiles: the profile standards a new project offers and those the pickers show (decision 457).
  */
 
 import { useState } from 'react';
@@ -17,11 +18,32 @@ import { LengthField, NumberField } from './cells';
 import { COORD_LABELS, SNAP_LABELS } from './CursorCoords';
 import { formatLength } from '../engine/unitsStore';
 import { startCommand } from '../viewport/cad/session';
+import { useProfileLibraries } from '../modules/core/profileLibraries/store';
+import { standardsOf } from '../modules/core/profileLibraries/model';
+import { StandardChecks } from '../modules/core/profileLibraries/StandardChecks';
 
-type Page = 'general' | 'grid' | 'coords' | 'display';
+type Page = 'general' | 'grid' | 'coords' | 'display' | 'profiles';
 const PAGES: { id: Page; label: string }[] = [
   { id: 'general', label: 'General' }, { id: 'grid', label: 'Grid and snaps' }, { id: 'coords', label: 'Coordinates' }, { id: 'display', label: 'Display' },
+  { id: 'profiles', label: 'Profiles' },
 ];
+
+/** The profile standards (decision 457): those a new project offers, those the pickers show. */
+function ProfilesPage() {
+  const p = usePrefs();
+  const { entries, loading } = useProfileLibraries();
+  const all = standardsOf(entries);
+  if (loading) return <p className="muted small">Reading the libraries…</p>;
+  return <>
+    <h4>Standards a new project offers</h4>
+    <StandardChecks all={all} value={p.newProjectProfileStandards} testId="prefs-new-project-standards" onChange={(v) => setPrefs({ newProjectProfileStandards: v })} />
+    <p className="muted small">A project keeps only the profiles its types use, never a whole library: these are what its pickers offer. Manage → Profile libraries changes them for the project open.</p>
+    <h4>Shown in the pickers</h4>
+    <StandardChecks all={all} value={all.filter((g) => !p.profileStandardsHidden.includes(g))} testId="prefs-shown-standards"
+      onChange={(v) => setPrefs({ profileStandardsHidden: v ? all.filter((g) => !v.includes(g)) : [] })} />
+    <p className="muted small">The chips at the top of a picker's list do the same.</p>
+  </>;
+}
 const THEMES: { id: ThemeChoice; label: string }[] = [{ id: 'paper', label: 'Light' }, { id: 'graphite', label: 'Dark' }, { id: 'system', label: 'As the system' }];
 const DISPLAY: { key: keyof Display; label: string }[] = [
   { key: 'grid', label: 'Grid in plans and 3D (F7)' },
@@ -136,6 +158,7 @@ export function PreferencesDialog() {
               </div>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'displayQuality' })}>Display quality…</button></p>
             </>}
+            {page === 'profiles' && <ProfilesPage />}
           </section>
         </div>
         <footer className="dialog-foot"><span className="muted small">Kept on this computer, for every project.</span><span className="grow" /><button type="button" className="btn primary" onClick={close}>Done</button></footer>

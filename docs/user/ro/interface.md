@@ -111,6 +111,7 @@ Tema se păstrează: Lapin pornește din nou în cea în care l-ai lăsat. **Fi�
 - **Grilă și snap**: grila planului, adaptivă sau fixă, snap la ea, ce snap-uri la obiecte ia cursorul și unghiul urmăririi polare (vezi [Snap și ajutoare](drafting.md#snap-și-ajutoare)).
 - **Coordonate**: ce citește bara de stare la cursor, dacă punctele proiectului se văd și UCS-ul (vezi [Coordonate reale](site.md#coordonate-reale)).
 - **Afișare**: comutatoarele din Vedere → Grafică (grila, liniile subțiri, desenele și DXF-ul în 3D) și felul în care navighezi în vederea 3D, într-un singur loc.
+- **Profile**: standardele de profile oferite de un proiect nou și cele arătate de alegătoare (vezi [Biblioteci de profile](profiles.md#standardele)).
 
 ![Fișier → Preferințe: grila și snap-ul](shots/preferences.webp)
 

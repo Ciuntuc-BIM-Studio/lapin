@@ -17,6 +17,22 @@ Lapin nie może zawierać wszystkich profili stalowych świata, więc ma mały z
 
 Pisz w polu wyszukiwania, aby szukać we wszystkich bibliotekach po nazwie, rodzinie, normie lub rodzaju; wybierz profil, aby zobaczyć jego rysunek, wymiary i właściwości.
 
+## Normy
+
+Każdy profil jest pokazany pod swoją normą: **EN** dla zestawu Lapina i każdego profilu, którego norma jest europejska (EN 10365, DIN EN, SR EN…), **AISC / ASTM** dla tabel amerykańskich (na przykład kolumna *Standard* z ASTM A6), BS, DIN, JIS, AS/NZS i inne pod swoimi nazwami, a biblioteka, której profile nie podają żadnej — biblioteka firmy — pod własną nazwą. Bibliotece na tym komputerze można wskazać, pod którą ma się pokazywać (**Pokazana pod**, nad jej listą).
+
+Listy wyboru pokazują najpierw profile projektu, potem każdą normę pod jej nagłówkiem. Przyciski u góry listy ukrywają lub pokazują normę; twój wybór jest zapamiętany na tym komputerze, dla każdego projektu (także w **Plik → Preferencje → Profile**).
+
+![Lista wyboru pogrupowana według norm, z przyciskami](shots/profile-picker-standards.webp)
+
+Projekt przechowuje tylko profile używane przez jego typy, nigdy całej biblioteki, więc biblioteka, którą masz, nic nie waży w jego pliku. To, co projekt oferuje, jest jego wyborem: **Normy w tym projekcie**, pod bibliotekami, zaznacza normy pokazywane przez jego listy wyboru; profile już w nim zostają. **Plik → Preferencje → Profile** wybiera normy, z którymi zaczyna się nowy projekt (wszystkie, jeśli nie wybierzesz).
+
+![Normy oferowane przez projekt](shots/profile-project-standards.webp)
+
+![Normy oferowane przez nowy projekt](shots/prefs-profiles.webp)
+
+Lapin nie zawiera AISC Shapes Database: AISC pozwala ją dołączać tylko na podstawie własnej umowy licencyjnej, której program MIT nie może przekazać dalej. Pobierz ją z AISC i zaimportuj przez **Tabela…**: jej kolumny są rozpoznawane.
+
 ## Właściwości
 
 Z wymiarów Lapin oblicza pole, Iy, Iz, wskaźniki sprężyste i plastyczne, promienie bezwładności, osie główne i ich kąt (kątowniki, Z, każdy kontur niesymetryczny), stałą skręcania It i wycinkowy moment bezwładności Iw tam, gdzie jest wzór, masę na metr z gęstości materiału i powierzchnię malowania na metr. Zgadzają się z publikowanymi tabelami w granicach ok. 1 % (It i Iw walcowanych I do 3 %; Iw ceownika z pochylonymi półkami tylko do 20 %). Dowolny kontur nie ma It ani Iw, chyba że poda je jego plik.

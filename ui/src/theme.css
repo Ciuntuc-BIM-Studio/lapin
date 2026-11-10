@@ -1640,6 +1640,12 @@ dl.fields label.check input { width: auto; margin: 0; }
 .profile-picker-list { position: absolute; z-index: 20; left: 0; right: 0; max-height: 260px; overflow: auto; margin: 2px 0 0; padding: 2px; list-style: none; background: var(--panel); border: 1px solid var(--rule); box-shadow: 0 4px 14px rgba(0,0,0,.15); }
 .profile-picker-list li { display: flex; gap: 6px; align-items: baseline; padding: 3px 6px; cursor: pointer; }
 .profile-picker-list li:hover { background: var(--accent-soft, #e8dfd0); }
+.profile-picker-list li.profile-group-head, .profile-list li.profile-group-head { cursor: default; padding: 6px 6px 2px; font-size: 11px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--muted, #777); border-bottom: 1px solid var(--rule); }
+.profile-picker-list li.profile-group-head:hover { background: none; }
+.profile-picker-list li.profile-standards, .profile-standards { display: flex; flex-wrap: wrap; gap: 4px; cursor: default; padding: 4px 6px; }
+.profile-picker-list li.profile-standards:hover { background: none; }
+.profile-standards .chip { font-size: 11px; padding: 1px 7px; border: 1px solid var(--rule); border-radius: 10px; background: none; color: inherit; cursor: pointer; }
+.profile-standards .chip.on { background: var(--accent-soft, #e8dfd0); border-color: var(--accent, #8a6d3b); }
 .profile-report { margin-top: 10px; border-top: 1px solid var(--rule); padding-top: 8px; }
 .profile-report .check-list { max-height: 140px; overflow: auto; }
 @media (max-width: 860px) { .profile-libraries-grid { grid-template-columns: 1fr; } }

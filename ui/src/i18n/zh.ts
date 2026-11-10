@@ -1543,6 +1543,8 @@ export const ZH: Record<string, string> = {
   'The top of the element, above ±0.00: type it to move the element there': '构件的顶部，高于 ±0.00：输入数值即可将构件移到该处',
   'The bottom of the element, above ±0.00: type it to move the element there': '构件的底部，高于 ±0.00：输入数值即可将构件移到该处',
   'The base of the element, above ±0.00: type it to move the element there': '构件的底座，高于 ±0.00：输入数值即可将构件移到该处',
+  // Profile standards in the pickers and new projects (decision 457)
+  "Standards a new project offers": "新项目提供的标准", "A project keeps only the profiles its types use, never a whole library: these are what its pickers offer. Manage → Profile libraries changes them for the project open.": "项目只保留其类型使用的型材，从不保存整个库：这些是其选择器提供的内容。管理 → 型材库 可为当前打开的项目更改它们。", "Shown in the pickers": "在选择器中显示", "The chips at the top of a picker's list do the same.": "选择器列表顶部的按钮作用相同。", "No library yet.": "尚无库。", "Every standard, those added later too": "所有标准，包括以后添加的", "The standards shown: a click hides or shows one (kept for you, in every project)": "显示的标准：单击可隐藏或显示一个（为你保存，适用于所有项目）", "Shown under": "显示于", "The standard the pickers show its profiles under; empty: each profile's own, else the library's name": "选择器显示其型材所依据的标准；为空：各型材自己的标准，否则为库的名称", "Standards in this project": "本项目的标准", "What its pickers offer; it keeps only the profiles its types use. Preferences → Profiles chooses them for new projects.": "其选择器提供的内容；它只保留其类型使用的型材。首选项 → 轮廓 为新项目选择它们。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

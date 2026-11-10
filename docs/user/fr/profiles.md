@@ -17,6 +17,22 @@ Lapin ne peut pas fournir tous les profilés d'acier du monde : il apporte un pe
 
 Tapez dans la recherche pour parcourir toutes les bibliothèques par nom, famille, norme ou type ; choisissez un profilé pour le voir dessiné avec ses dimensions et ses propriétés.
 
+## Normes
+
+Chaque profilé apparaît sous sa norme : **EN** pour le jeu de Lapin et tout profilé dont la norme est européenne (EN 10365, DIN EN, SR EN…), **AISC / ASTM** pour les tableaux américains (une colonne *Standard* disant ASTM A6, par exemple), BS, DIN, JIS, AS/NZS et les autres sous leur nom, et une bibliothèque dont les profilés n’en disent aucune — celle de votre bureau — sous son propre nom. On peut dire à une bibliothèque de cet ordinateur sous laquelle elle apparaît (**Affichée sous**, au-dessus de sa liste).
+
+Les sélecteurs montrent d’abord les profilés du projet, puis chaque norme sous son titre. Les boutons en haut de la liste masquent ou affichent une norme ; votre choix est gardé sur cet ordinateur, pour tous les projets (aussi dans **Fichier → Préférences → Profils**).
+
+![Le sélecteur groupé par norme, avec ses boutons](shots/profile-picker-standards.webp)
+
+Un projet ne garde que les profilés utilisés par ses types, jamais une bibliothèque entière : une bibliothèque que vous avez ne pèse donc rien dans son fichier. Ce qu’un projet propose est son propre choix : **Normes de ce projet**, sous les bibliothèques, coche les normes que montrent ses sélecteurs ; les profilés déjà dedans restent. **Fichier → Préférences → Profils** choisit les normes avec lesquelles commence un nouveau projet (toutes, sauf si vous choisissez).
+
+![Les normes proposées par un projet](shots/profile-project-standards.webp)
+
+![Les normes proposées par un nouveau projet](shots/prefs-profiles.webp)
+
+Lapin ne fournit pas l’AISC Shapes Database : l’AISC ne permet de l’inclure que sous un contrat de licence propre, qu’un programme MIT ne peut pas transmettre. Téléchargez-la chez l’AISC et importez-la avec **Tableau…** : ses colonnes sont reconnues.
+
 ## Propriétés
 
 À partir des dimensions, Lapin calcule l'aire, Iy, Iz, les modules élastiques et plastiques, les rayons de giration, les axes principaux et leur angle (cornières, Z, tout contour dissymétrique), la constante de torsion It et de gauchissement Iw là où une formule existe, la masse par mètre selon la densité du matériau et la surface à peindre par mètre. Elles concordent avec les tableaux publiés à environ 1 % (It et Iw des I laminés à 3 % ; Iw d'un U à ailes inclinées seulement à 20 %). Un contour quelconque n'a ni It ni Iw sauf si son fichier les donne.

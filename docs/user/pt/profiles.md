@@ -17,6 +17,22 @@ O Lapin não pode trazer todos os perfis de aço do mundo; traz um pequeno conju
 
 Digite na pesquisa para procurar em todas as bibliotecas por nome, família, norma ou tipo; escolha um perfil para vê-lo desenhado com dimensões e propriedades.
 
+## Normas
+
+Cada perfil aparece sob a sua norma: **EN** para o conjunto do Lapin e qualquer perfil cuja norma seja europeia (EN 10365, DIN EN, SR EN…), **AISC / ASTM** para as tabelas americanas (uma coluna *Standard* que diz ASTM A6, por exemplo), BS, DIN, JIS, AS/NZS e as outras pelos seus nomes, e uma biblioteca cujos perfis não dizem nenhuma — a da sua empresa — sob o seu próprio nome. A uma biblioteca deste computador pode dizer-se sob qual aparece (**Mostrada sob**, acima da sua lista).
+
+Os seletores mostram primeiro os perfis do projeto e depois cada norma sob o seu título. Os botões no topo da lista ocultam ou mostram uma norma; a sua escolha fica guardada neste computador, para todos os projetos (também em **Arquivo → Preferências → Perfis**).
+
+![O seletor agrupado por norma, com os seus botões](shots/profile-picker-standards.webp)
+
+Um projeto guarda só os perfis que os seus tipos usam, nunca uma biblioteca inteira, por isso uma biblioteca que tenha não pesa nada no seu arquivo. O que um projeto oferece é escolha dele: **Normas deste projeto**, sob as bibliotecas, marca as normas que os seus seletores mostram; os perfis que já tem ficam. **Arquivo → Preferências → Perfis** escolhe as normas com que começa um projeto novo (todas, a menos que escolha).
+
+![As normas que um projeto oferece](shots/profile-project-standards.webp)
+
+![As normas que um projeto novo oferece](shots/prefs-profiles.webp)
+
+O Lapin não inclui a AISC Shapes Database: a AISC só permite incluí-la sob um contrato de licença próprio, que um programa MIT não pode transmitir. Descarregue-a da AISC e importe-a com **Tabela…**: as suas colunas são reconhecidas.
+
 ## Propriedades
 
 A partir das dimensões, o Lapin calcula área, Iy, Iz, módulos elásticos e plásticos, raios de giração, eixos principais e seu ângulo (cantoneiras, Z, qualquer contorno assimétrico), constante de torção It e de empenamento Iw onde há fórmula, massa por metro pela densidade do material e área de pintura por metro. Concordam com as tabelas publicadas em cerca de 1 % (It e Iw de perfis I laminados em 3 %; Iw de um U com banzos inclinados só em 20 %). Um contorno arbitrário não tem It nem Iw, a menos que o arquivo os dê.

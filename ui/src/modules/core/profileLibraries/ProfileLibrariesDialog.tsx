@@ -3,7 +3,9 @@
  * computer's, the project's copies — their profiles in the middle by family and kind with a search, the profile chosen on
  * the right drawn with its dimensions and its properties (Lapin's worked out, the file's beside them, the differences
  * marked). Import a CSV or XLSX table (its columns matched as the price lists' are); copy a profile into the project; a
- * copy its library has newer is marked and updated on request, the types made of it following.
+ * copy its library has newer is marked and updated on request, the types made of it following. The standards (decision
+ * 457): each library's shown beside it (this computer's can be told which it is shown under), a search over every library
+ * listed under their headings, and the standards the project's pickers offer.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -13,7 +15,7 @@ import { activeStorey, engine, execute, query, useSession } from '../../../engin
 import { LONG_TIMEOUT_MS } from '../../../engine/client';
 import { pickFile, saveFile, safeFileName, toBase64 } from '../../../engine/files';
 import {
-  families, formatValue, MATERIALS, withProfile, KIND_LABELS, KINDS, massOf, MATERIAL_LABELS, naturalCompare, newerInLibrary, PROPS, search,
+  families, formatValue, groupFound, MATERIALS, withProfile, KIND_LABELS, KINDS, massOf, MATERIAL_LABELS, naturalCompare, newerInLibrary, PROPS, search, standardsOf,
   type LibraryEntry, type LibraryJson, type ProfileJson, type ProjectProfilesDto, type Ring,
 } from './model';
 import { computerLibraries, forgetOnComputer, keepOnComputer, setSharedFolders, sharedFolders, useProfileLibraries, writeToFolder } from './store';
@@ -24,6 +26,7 @@ import { SectionView } from './SectionView';
 import { ProfileEditor, type EditorStart } from './ProfileEditor';
 import { starter, toMm } from './sectionEditor';
 import { TableImport, type CheckDto, type ImportReport, type TableRead } from './TableImport';
+import { StandardChecks } from './StandardChecks';
 
 interface PropsDto {
   values: Record<string, { computed?: number; given?: number; method?: string }>;
@@ -89,6 +92,11 @@ export function ProfileLibrariesDialog() {
   // The search runs over every library when text is typed, else over the one chosen.
   const scope = text.trim() ? all : lib ? [lib] : [];
   const found = useMemo(() => search(scope, text, { kind: kind || undefined, family: family || undefined }, 800), [scope, text, kind, family]);
+  // Searching every library: the profiles under their standards' headings (decision 457); one library's: as they are.
+  const listed = useMemo((): { entry: LibraryEntry; profile: ProfileJson; head?: string }[] => text.trim()
+    ? groupFound(found, null, []).flatMap((g) => [{ entry: g.items[0].entry, profile: g.items[0].profile, head: g.project ? '' : g.group }, ...g.items])
+    : found, [found, text]);
+  const allStandards = useMemo(() => standardsOf(entries), [entries]);
   const fams = useMemo(() => (lib ? families(lib.library.profiles) : []), [lib]);
   const current = chosen ? all.find((e) => e.key === chosen.key)?.library.profiles.find((p) => p.name === chosen.name) ?? null : null;
   const currentEntry = chosen ? all.find((e) => e.key === chosen.key) ?? null : null;
@@ -230,6 +238,7 @@ export function ProfileLibrariesDialog() {
                       {g.items.map((e) => (
                         <li key={e.key} className={`tree-item${e.key === lib?.key ? ' selected' : ''}`} onClick={() => { setLibKey(e.key); setFamily(''); }} data-library={e.name}>
                           {e.origin === 'project' ? <span>{e.name}</span> : <span data-no-i18n>{e.name}</span>}<span className="muted small" data-no-i18n>{` ${e.library.profiles.length}`}</span>
+                          {e.origin !== 'project' && standardsOf([e]).some((g) => g !== e.name) && <span className="muted small" data-no-i18n>{` · ${standardsOf([e]).join(', ')}`}</span>}
                           {e.origin === 'computer' && <button type="button" className="icon mini" title="Forget it on this computer (the projects keep their copies)" onClick={(ev) => { ev.stopPropagation(); void forgetOnComputer(e.name); }}><Trash2 size={11} /></button>}
                         </li>
                       ))}
@@ -257,6 +266,12 @@ export function ProfileLibrariesDialog() {
                   </ul>
                   <button type="button" className="btn" onClick={() => void addFolder()} data-testid="profile-add-folder" title="A local, network or synced folder of .lapinprofiles files, shared by the firm"><FolderPlus size={14} />Add a folder…</button>
                 </div>}
+                <div className="profile-project-standards">
+                  <p className="eyebrow">Standards in this project</p>
+                  <StandardChecks all={allStandards} value={project.standards ?? null} testId="profile-project-standards"
+                    onChange={(v) => void execute('profiles.setStandards', { standards: v })} />
+                  <p className="muted small">What its pickers offer; it keeps only the profiles its types use. Preferences → Profiles chooses them for new projects.</p>
+                </div>
                 {loading && <p className="muted small">Reading the libraries…</p>}
                 {problems.map((p, i) => <p key={i} className="error-text small" data-no-i18n>{p}</p>)}
               </nav>
@@ -275,8 +290,17 @@ export function ProfileLibrariesDialog() {
                     {fams.map((f) => <option key={f.family} value={f.family} data-no-i18n>{`${f.family || '—'} (${f.count})`}</option>)}
                   </select>}
                 </div>
+                {lib?.origin === 'computer' && (
+                  <label className="row small" title="The standard the pickers show its profiles under; empty: each profile's own, else the library's name">
+                    <span>Shown under</span>
+                    <input key={lib.key} list="profile-standard-names" defaultValue={lib.library.standard ?? ''} placeholder={standardsOf([lib]).join(', ')} data-testid="profile-library-standard" data-no-i18n
+                      onBlur={(e) => { const v = e.target.value.trim() || null; if (v !== (lib.library.standard ?? null)) void keepOnComputer({ ...lib.library, standard: v }); }} />
+                    <datalist id="profile-standard-names">{standardsOf(entries).map((g) => <option key={g} value={g} />)}</datalist>
+                  </label>
+                )}
                 <ul className="plain-list profile-list" data-testid="profile-list">
-                  {found.map(({ entry, profile }) => {
+                  {listed.map(({ entry, profile, head }) => {
+                    if (head != null) return <li key={`#${head}`} className="profile-group-head" data-group={head || 'project'}>{head ? <span data-no-i18n>{head}</span> : <span>In the project</span>}</li>;
                     const pc = entry.origin === 'project' ? project.copies.find((c) => c.name === profile.name) : null;
                     const isNewer = pc ? newerInLibrary(pc, entries) != null : false;
                     return (

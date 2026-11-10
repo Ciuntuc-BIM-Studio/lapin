@@ -114,11 +114,14 @@ public sealed partial class Session
     /// template's own levels (decision 261), bottom up. Nothing to undo,
     /// nothing to save.
     /// </summary>
-    public Diff New(bool plain = false, IReadOnlyList<(string Name, double Elevation, double Height)>? storeys = null)
+    /// <param name="profileStandards">The profile standards its pickers offer (decision 457; none: all), from the user's choice for new projects.</param>
+    public Diff New(bool plain = false, IReadOnlyList<(string Name, double Elevation, double Height)>? storeys = null, IReadOnlyList<string>? profileStandards = null)
     {
+        _newProfileStandards = plain ? null : profileStandards;
         if (plain) StartEmpty();
         else if (storeys is { Count: > 0 }) StartEmpty(storeys, fresh: true);
         else StartEmpty(_product.Storeys is { Length: > 0 } own ? [.. own.Select(x => (x.Name, x.Elevation, x.Height))] : NewProjectStoreys, fresh: true);
+        _newProfileStandards = null;
         Path = null;
         Emit("start");
         return Snapshot();
@@ -141,6 +144,8 @@ public sealed partial class Session
         return Snapshot();
     }
 
+    IReadOnlyList<string>? _newProfileStandards;
+
     /// <summary>The session as it starts, before a project is made or opened: one ground floor.</summary>
     void StartEmpty() => StartEmpty(_product.Storeys is { Length: > 0 } own ? [(own[0].Name, own[0].Elevation, own[0].Height)] : [("Ground floor", 0.0, 3.0)]);
 
@@ -161,6 +166,8 @@ public sealed partial class Session
             {
                 var attrs = project.CloneAttrs();
                 attrs["drafting"] = new JsonObject { ["dimStyles"] = new JsonArray(new JsonObject { ["id"] = Standards.Standard, ["name"] = "Standard", ["openingHeight"] = Standards.NewProjectOpeningHeight }) };
+                // The profile standards its pickers offer: names only, no profile is copied until a type uses it.
+                if (_newProfileStandards != null) ProfileLibraries.ProfileStandards.Write(attrs, _newProfileStandards);
                 edit.Replace(project.With(attrs: attrs));
             }
             for (var i = 0; i < storeys.Count; i++)

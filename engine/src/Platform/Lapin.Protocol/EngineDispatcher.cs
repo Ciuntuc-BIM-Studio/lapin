@@ -647,7 +647,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 return (ids.Where(id => session.Model.Get(id) != null).ToDictionary(id => id, id => session.Quantities(id)), null);
             }
             // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
-            case "project.new": files.Reset(); return (null, session.New(p["plain"]?.GetValue<bool>() == true, TemplateStoreys(p["storeys"])));
+            // `profileStandards`: the profile standards its pickers offer (decision 457; none: all).
+            case "project.new": files.Reset(); return (null, session.New(p["plain"]?.GetValue<bool>() == true, TemplateStoreys(p["storeys"]), Lapin.Platform.ProfileLibraries.ProfileStandards.Read(p["profileStandards"])));
             case "project.open":
             {
                 var diff = files.Open(session, PathParam());

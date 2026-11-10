@@ -17,6 +17,22 @@ Lapin non può includere tutti i profili d'acciaio del mondo: porta un piccolo s
 
 Scrivi nella ricerca per cercare in tutte le librerie per nome, famiglia, norma o tipo; scegli un profilo per vederlo disegnato con dimensioni e proprietà.
 
+## Norme
+
+Ogni profilo appare sotto la sua norma: **EN** per il set di Lapin e ogni profilo la cui norma è europea (EN 10365, DIN EN, SR EN…), **AISC / ASTM** per le tabelle americane (una colonna *Standard* che dice ASTM A6, per esempio), BS, DIN, JIS, AS/NZS e le altre con il loro nome, e una libreria i cui profili non ne indicano nessuna — quella dello studio — con il suo nome. A una libreria di questo computer si può dire sotto quale appare (**Mostrata sotto**, sopra il suo elenco).
+
+I selettori mostrano prima i profili del progetto, poi ogni norma sotto il suo titolo. I pulsanti in cima all’elenco nascondono o mostrano una norma; la tua scelta resta su questo computer, per ogni progetto (anche in **File → Preferenze → Profili**).
+
+![Il selettore raggruppato per norma, con i suoi pulsanti](shots/profile-picker-standards.webp)
+
+Un progetto conserva solo i profili usati dai suoi tipi, mai un’intera libreria, quindi una libreria che hai non pesa nulla nel suo file. Ciò che un progetto offre è una sua scelta: **Norme di questo progetto**, sotto le librerie, spunta le norme mostrate dai suoi selettori; i profili già presenti restano. **File → Preferenze → Profili** sceglie le norme con cui parte un nuovo progetto (tutte, se non scegli).
+
+![Le norme offerte da un progetto](shots/profile-project-standards.webp)
+
+![Le norme offerte da un nuovo progetto](shots/prefs-profiles.webp)
+
+Lapin non include l’AISC Shapes Database: l’AISC ne consente l’inclusione solo con un proprio contratto di licenza, che un programma MIT non può trasmettere. Scaricala dall’AISC e importala con **Tabella…**: le sue colonne vengono riconosciute.
+
 ## Proprietà
 
 Dalle dimensioni Lapin calcola area, Iy, Iz, moduli elastici e plastici, raggi d'inerzia, assi principali e loro angolo (angolari, Z, ogni contorno asimmetrico), costante di torsione It e di ingobbamento Iw dove esiste una formula, massa per metro dalla densità del materiale e superficie da verniciare per metro. Concordano con le tabelle pubblicate entro circa l'1 % (It e Iw degli I laminati entro il 3 %; Iw di un profilo a U con ali inclinate solo entro il 20 %). Un contorno qualsiasi non ha It né Iw se il suo file non li dà.

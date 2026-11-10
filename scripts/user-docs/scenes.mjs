@@ -1620,6 +1620,84 @@ export const scenes = [
     },
   },
   {
+    // Profile standards (a tester's request, decision 457): the user's own AISC-style table (its Standard column says ASTM A6)
+    // beside Lapin's EN set and a firm's library of its own; the picker grouped under the standards' headings with their chips,
+    // EN hidden by its chip; the standards the project offers; those a new project offers in Preferences → Profiles.
+    id: 'profile-standards',
+    touches: ['core', 'steel'],
+    async run(t) {
+      await t.fresh();
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const { writeFileSync } = await import('node:fs');
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      await t.tool('manage.profileLibraries');
+      const dialog = t.page.locator('[data-dialog=profile-libraries]');
+      await dialog.locator('[data-profile="HEA 200"]').waitFor({ timeout: 15000 });
+      const importCsv = async (file, text) => {
+        const path = join(tmpdir(), file);
+        writeFileSync(path, text);
+        const chooser = t.page.waitForEvent('filechooser', { timeout: 10000 });
+        await dialog.locator('[data-testid=profile-import-table]').click();
+        await (await chooser).setFiles(path);
+        await dialog.locator('[data-testid=profile-table-matching]').waitFor({ timeout: 10000 });
+        await dialog.locator('[data-testid=profile-table-go]').click();
+        await dialog.locator('[data-testid=profile-report]').waitFor({ timeout: 10000 });
+      };
+      // Your own copy of an American table (Lapin ships none: its licence does not let Lapin pass it on).
+      await importCsv('My AISC shapes.csv', 'Type,AISC_Manual_Label,W,A,d,bf,tw,tf,Ix,Iy,Standard\n'
+        + 'W,W14X90,90,26.5,14,14.5,0.44,0.71,999,362,ASTM A6\n'
+        + 'W,W14X120,120,35.3,14.5,14.7,0.59,0.94,1380,495,ASTM A6\n'
+        + 'W,W12X40,40,11.7,11.9,8.01,0.295,0.515,307,44.1,ASTM A6\n');
+      // A firm's own library: no standard, its own group.
+      await importCsv('Firm sections.csv', 'Type;Name;h [mm];b [mm];s [mm];t [mm];r [mm]\nI;Firm I 140;140;90;6;9;8\nI;Firm I 160;160;100;6;10;8\n');
+      await dialog.locator('[data-profile="Firm I 140"]').waitFor({ timeout: 10000 });
+      await t.ui({ dialog: null });
+      // The steel types' picker: the project's copies, then EN, AISC / ASTM, the firm's, each under its heading.
+      await t.button('Steel', { exact: true });
+      await t.tool('steel.types');
+      const types = t.page.locator('[data-dialog=steel-types]');
+      await types.locator('select[data-field=steel-profile]').selectOption('@library');
+      const search = types.locator('[data-testid=steel-library-profile-search]');
+      await search.fill('14');
+      await types.locator('[data-profile="W14X90"]').waitFor({ timeout: 10000 });
+      const heads = await types.locator('.profile-group-head').evaluateAll((els) => els.map((e) => e.getAttribute('data-group')));
+      t.expect(heads.join('|') === 'EN|AISC / ASTM|Firm sections', `the list is grouped by standard (${heads.join(', ')})`);
+      t.expect(await types.locator('[data-testid=profile-picker-standards] [data-standard]').count() === 3, 'a chip for each standard');
+      await t.shot('profile-picker-standards', { of: '.dialog', pad: 0 });
+      // EN hidden by its chip: kept for this user.
+      await types.locator('[data-testid=profile-picker-standards] [data-standard="EN"]').click();
+      await t.wait(300);
+      t.expect(await types.locator('[data-profile="IPE 140"]').count() === 0 && await types.locator('[data-profile="W14X90"]').count() === 1, 'EN hidden, AISC shown');
+      t.expect(await t.page.evaluate(() => JSON.parse(localStorage.getItem('lapin.prefs') ?? '{}').profileStandardsHidden?.includes('EN')), 'the choice is kept in the preferences');
+      await types.locator('[data-testid=profile-picker-standards] [data-standard="EN"]').click();
+      await search.blur();
+      await t.ui({ dialog: null });
+      // The standards this project offers: AISC / ASTM taken out of it.
+      await t.tool('manage.profileLibraries');
+      await dialog.locator('[data-testid=profile-project-standards]').waitFor({ timeout: 10000 });
+      await dialog.locator('[data-testid=profile-project-standards] input[data-standard="AISC / ASTM"]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcProject' && Array.isArray(n.props.profileStandards) && !n.props.profileStandards.includes('AISC / ASTM')), 'the project offers EN and the firm\'s only');
+      await dialog.locator('[data-testid=profile-search]').fill('14');
+      await t.wait(300);
+      await t.shot('profile-project-standards', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // Preferences → Profiles: a new project offers EN only.
+      await t.ui({ dialog: 'preferences' });
+      await t.page.waitForSelector('[data-testid=preferences]', { timeout: 10_000 });
+      await t.page.locator('[data-field=prefs-profiles]').click();
+      const fresh = t.page.locator('[data-testid=prefs-new-project-standards]');
+      await fresh.waitFor({ timeout: 10000 });
+      await fresh.locator('input[data-standard="AISC / ASTM"]').uncheck();
+      await fresh.locator('input[data-standard="Firm sections"]').uncheck();
+      await t.wait(200);
+      t.expect(await t.page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('lapin.prefs') ?? '{}').newProjectProfileStandards)) === '["EN"]', 'new projects will offer EN only');
+      await t.shot('prefs-profiles', { of: '.prefs-dialog', pad: 0 });
+      await fresh.getByRole('button', { name: 'All' }).click();
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Steel, stage 2 (docs/plan-steel.md, decision 270): the portal frame hall configurator — a catalogue style, the haunch
     // at the eaves welded from plates, the hall made in one step; a rafter's haunches in Properties; the hall edited again.
     id: 'steel-hall',

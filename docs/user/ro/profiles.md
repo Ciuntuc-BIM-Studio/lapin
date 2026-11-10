@@ -17,6 +17,22 @@ Lapin nu poate livra toate profilele metalice folosite în lume, așa că vine c
 
 Scrie în căutare ca să cauți în toate bibliotecile după nume, familie, standard sau fel; alege un profil ca să-l vezi desenat, cu dimensiunile și proprietățile lui.
 
+## Standardele
+
+Fiecare profil apare sub standardul lui: **EN** pentru setul lui Lapin și orice profil al cărui standard e o normă europeană (EN 10365, DIN EN, SR EN…), **AISC / ASTM** pentru tabelele americane (o coloană *Standard* care spune ASTM A6, de exemplu), BS, DIN, JIS, AS/NZS și celelalte după numele lor, iar o bibliotecă ale cărei profile nu spun niciunul — a firmei — sub propriul nume. Unei biblioteci de pe acest calculator i se poate spune sub care apare (**Arătată la**, deasupra listei ei).
+
+Alegătoarele arată întâi profilele proiectului, apoi fiecare standard sub titlul lui. Butoanele din capul listei ascund sau arată un standard; alegerea ta se ține minte pe acest calculator, pentru toate proiectele (și în **Fișier → Preferințe → Profile**).
+
+![Alegătorul grupat pe standarde, cu butoanele lui](shots/profile-picker-standards.webp)
+
+Un proiect păstrează doar profilele folosite de tipurile lui, niciodată o bibliotecă întreagă, deci o bibliotecă pe care o ai nu cântărește nimic în fișierul lui. Ce oferă un proiect e alegerea lui: **Standardele acestui proiect**, sub biblioteci, bifează standardele arătate de alegătoarele lui; profilele deja în el rămân. **Fișier → Preferințe → Profile** alege standardele cu care pornește un proiect nou (toate, dacă nu alegi).
+
+![Standardele oferite de un proiect](shots/profile-project-standards.webp)
+
+![Standardele oferite de un proiect nou](shots/prefs-profiles.webp)
+
+Lapin nu vine cu AISC Shapes Database: AISC permite includerea ei doar printr-un contract de licență propriu, pe care un program MIT nu-l poate transmite mai departe. Descarc-o de la AISC și importă-o cu **Tabel…**: coloanele ei sunt recunoscute.
+
 ## Proprietățile
 
 Din dimensiunile unui profil, Lapin calculează aria, Iy, Iz, modulele elastice și plastice, razele de girație, axele principale și unghiul lor (corniere, Z, orice contur nesimetric), constanta de torsiune It și cea de deplanare Iw unde există o formulă, masa pe metru din densitatea materialului și suprafața de vopsit pe metru. Se potrivesc cu tabelele publicate cam la 1 % (It și Iw ale profilelor I laminate la 3 %; Iw al unui U cu tălpi înclinate doar la 20 %). Un contur arbitrar n-are It sau Iw decât dacă le dă fișierul lui.

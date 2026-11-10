@@ -27,6 +27,10 @@ export interface Prefs {
   /** Polar tracking's increment, degrees. */
   polarStep: number;
   coords: CoordSystem;
+  /** The profile standards the pickers leave out for this user (decision 457): a standard added later shows. */
+  profileStandardsHidden: string[];
+  /** The profile standards a new project offers (null: all); the project keeps only the profiles its types use. */
+  newProjectProfileStandards: string[] | null;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
@@ -34,7 +38,10 @@ export const POLAR_STEPS: readonly number[] = [5, 10, 15, 22.5, 30, 45, 90];
 export const DEFAULT_PREFS: Prefs = {
   theme: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
   snapModes: [...SNAP_MODES], polarStep: 45, coords: 'internal',
+  profileStandardsHidden: [], newProjectProfileStandards: null,
 };
+
+const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
 
 const KEY = 'lapin.prefs';
 const pick = <T,>(v: unknown, allowed: readonly T[], fallback: T): T => (allowed.includes(v as T) ? (v as T) : fallback);
@@ -54,6 +61,8 @@ export function readPrefs(stored: unknown): Prefs {
     snapModes: modes,
     polarStep: pick(o.polarStep, POLAR_STEPS, d.polarStep),
     coords: pick(o.coords, ['internal', 'project', 'survey', 'ucs'] as const, d.coords),
+    profileStandardsHidden: names(o.profileStandardsHidden) ?? [],
+    newProjectProfileStandards: names(o.newProjectProfileStandards),
   };
 }
 

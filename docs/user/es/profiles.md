@@ -17,6 +17,22 @@ Lapin no puede incluir todos los perfiles de acero del mundo, así que trae un p
 
 Escribe en la búsqueda para mirar en todas las bibliotecas a la vez por nombre, familia, norma o tipo; elige un perfil para verlo dibujado con sus dimensiones y propiedades.
 
+## Normas
+
+Cada perfil aparece bajo su norma: **EN** para el conjunto de Lapin y cualquier perfil cuya norma sea europea (EN 10365, DIN EN, SR EN…), **AISC / ASTM** para las tablas americanas (una columna *Standard* que dice ASTM A6, por ejemplo), BS, DIN, JIS, AS/NZS y las demás por su nombre, y una biblioteca cuyos perfiles no dicen ninguna — la de tu empresa — bajo su propio nombre. A una biblioteca de este ordenador se le puede decir bajo cuál aparece (**Mostrada bajo**, encima de su lista).
+
+Los selectores muestran primero los perfiles del proyecto y luego cada norma bajo su título. Los botones de arriba de la lista ocultan o muestran una norma; tu elección se guarda en este ordenador, para todos los proyectos (también en **Archivo → Preferencias → Perfiles**).
+
+![El selector agrupado por normas, con sus botones](shots/profile-picker-standards.webp)
+
+Un proyecto guarda solo los perfiles que usan sus tipos, nunca una biblioteca entera, así que una biblioteca que tengas no pesa nada en su archivo. Lo que ofrece un proyecto es elección suya: **Normas de este proyecto**, bajo las bibliotecas, marca las normas que muestran sus selectores; los perfiles que ya tiene se quedan. **Archivo → Preferencias → Perfiles** elige las normas con las que empieza un proyecto nuevo (todas, salvo que elijas).
+
+![Las normas que ofrece un proyecto](shots/profile-project-standards.webp)
+
+![Las normas que ofrece un proyecto nuevo](shots/prefs-profiles.webp)
+
+Lapin no incluye la AISC Shapes Database: AISC solo permite incluirla bajo un acuerdo de licencia propio, que un programa MIT no puede transmitir. Descárgala de AISC e impórtala con **Tabla…**: sus columnas se reconocen.
+
 ## Propiedades
 
 A partir de las dimensiones, Lapin calcula el área, Iy, Iz, los módulos elástico y plástico, los radios de giro, los ejes principales y su ángulo (angulares, Z, cualquier contorno asimétrico), la constante de torsión It y la de alabeo Iw donde hay fórmula, la masa por metro según la densidad del material y la superficie de pintura por metro. Coinciden con las tablas publicadas en torno al 1 % (It e Iw de perfiles I laminados al 3 %; Iw de un canal con alas inclinadas solo al 20 %). Un contorno arbitrario no tiene It ni Iw salvo que los dé su archivo.

@@ -111,6 +111,7 @@ The theme is kept: Lapin starts again in the one you left it in. **File → Pref
 - **Grid and snaps**: the plan's grid, adaptive or fixed, snapping to it, which object snaps the cursor takes, and the polar tracking angle (see [Snaps and helpers](drafting.md#snaps-and-helpers)).
 - **Coordinates**: what the status line reads at the cursor, whether the project's points are shown, and the UCS (see [Real coordinates](site.md#real-coordinates)).
 - **Display**: the switches of View → Graphics (grid, thin lines, drafts and DXF in 3D) and how the 3D view is navigated, in one place.
+- **Profiles**: the profile standards a new project offers and those the pickers show (see [Profile libraries](profiles.md#standards)).
 
 ![File → Preferences: grid and snaps](shots/preferences.webp)
 

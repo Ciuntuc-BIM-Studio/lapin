@@ -17,6 +17,22 @@ Lapin cannot ship every steel profile used in the world, so it ships a small Eur
 
 Type in the search box to look through every library at once by name, family, standard or kind; choose a profile to see it drawn with its dimensions and its properties.
 
+## Standards
+
+Each profile is shown under its standard: **EN** for Lapin's set and any profile whose standard is a European norm (EN 10365, DIN EN, SR EN…), **AISC / ASTM** for American tables (a *Standard* column saying ASTM A6, for instance), BS, DIN, JIS, AS/NZS and the others by their names, and a library whose profiles say none — a firm's own — under its own name. A library on this computer can be told which one it is shown under (**Shown under**, beside its list).
+
+The pickers list the project's own profiles first, then each standard under its heading. The chips at the top of the list hide or show a standard; your choice is kept on this computer, for every project (**File → Preferences → Profiles** too).
+
+![The picker grouped by standard, with its chips](shots/profile-picker-standards.webp)
+
+A project keeps only the profiles its types use, never a whole library, so a library you have weighs nothing in its file. What a project offers is its own choice: **Standards in this project** under the libraries ticks the standards its pickers show; the profiles already in it stay. **File → Preferences → Profiles** chooses the standards a new project starts with (every standard, unless you choose).
+
+![The standards a project offers](shots/profile-project-standards.webp)
+
+![The standards a new project offers](shots/prefs-profiles.webp)
+
+Lapin does not ship the AISC Shapes Database: AISC lets developers include it only under a licence agreement of its own, which an MIT program cannot pass on. Download it from AISC and import it with **Table…**: its columns are recognised.
+
 ## Properties
 
 From a profile's dimensions Lapin works out its area, Iy, Iz, the elastic and plastic moduli, the radii of gyration, the principal axes and their angle (angles, Z sections, any unsymmetric outline), the torsion constant It and the warping constant Iw where a formula exists, the mass per metre from its material's density and the paint area per metre. They agree with the published tables to about 1 % (It and Iw of rolled I sections to 3 %; Iw of a channel with sloping flanges only to 20 %). An arbitrary outline has no It or Iw unless its file gives them.

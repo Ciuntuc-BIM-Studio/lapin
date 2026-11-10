@@ -17,6 +17,22 @@ Lapin kan ikke levere alle verdens stålprofiler, så det har et lille europæis
 
 Skriv i søgefeltet for at søge i alle biblioteker på navn, familie, standard eller slags; vælg en profil for at se den tegnet med mål og egenskaber.
 
+## Standarder
+
+Hver profil vises under sin standard: **EN** for Lapins sæt og enhver profil, hvis standard er en europæisk norm (EN 10365, DIN EN, SR EN…), **AISC / ASTM** for amerikanske tabeller (f.eks. en *Standard*-kolonne med ASTM A6), BS, DIN, JIS, AS/NZS og de andre efter deres navne, og et bibliotek, hvis profiler ikke angiver nogen — firmaets eget — under sit eget navn. Et bibliotek på denne computer kan få at vide, hvilken det vises under (**Vist under**, over dets liste).
+
+Vælgerne viser først projektets egne profiler, derefter hver standard under sin overskrift. Knapperne øverst i listen skjuler eller viser en standard; dit valg gemmes på denne computer, for alle projekter (også i **Filer → Præferencer → Profiler**).
+
+![Vælgeren grupperet efter standard, med sine knapper](shots/profile-picker-standards.webp)
+
+Et projekt beholder kun de profiler, dets typer bruger, aldrig et helt bibliotek, så et bibliotek, du har, vejer intet i dets fil. Hvad et projekt tilbyder, er dets eget valg: **Standarder i dette projekt** under bibliotekerne markerer de standarder, dets vælgere viser; profilerne, der allerede er i det, bliver. **Filer → Præferencer → Profiler** vælger de standarder, et nyt projekt starter med (alle, medmindre du vælger).
+
+![De standarder, et projekt tilbyder](shots/profile-project-standards.webp)
+
+![De standarder, et nyt projekt tilbyder](shots/prefs-profiles.webp)
+
+Lapin leveres ikke med AISC Shapes Database: AISC lader kun udviklere medtage den under en særskilt licensaftale, som et MIT-program ikke kan give videre. Hent den fra AISC, og importér den med **Tabel…**: dens kolonner genkendes.
+
 ## Egenskaber
 
 Ud fra målene beregner Lapin areal, Iy, Iz, elastiske og plastiske modstandsmomenter, inertiradier, hovedakser og deres vinkel (vinkler, Z, ethvert usymmetrisk omrids), vridningskonstant It og hvælvingskonstant Iw, hvor der findes en formel, masse pr. meter ud fra materialets densitet og malingsareal pr. meter. De stemmer med de offentliggjorte tabeller inden for ca. 1 % (It og Iw for valsede I-profiler inden for 3 %; Iw for en U-profil med skrå flanger kun inden for 20 %). Et vilkårligt omrids har kun It og Iw, hvis dets fil angiver dem.
