@@ -23,6 +23,32 @@ public static class ElevationMarkers
     public static (double Min, double Max)? Extent(Entity view) =>
         view.Str("kind") == "elevation" && view.NumOrNull(MinKey) is { } lo && view.NumOrNull(MaxKey) is { } hi && hi > lo ? (lo, hi) : null;
 
+    public const string ShiftKey = "markerShift";
+
+    /// <summary>
+    /// How far an elevation's marker was moved (decision 460): its symbol along its line (m, along its right) and the whole
+    /// marker out from the building (m, against its look). The elevation sees the same wherever its marker stands.
+    /// </summary>
+    public static (double Along, double Out) Shift(Entity view) =>
+        view.Attrs[ShiftKey] is JsonArray { Count: >= 2 } s ? (Json.Number(s[0]) ?? 0, Json.Number(s[1]) ?? 0) : (0, 0);
+
+    /// <summary>
+    /// An elevation's marker moved by <paramref name="by"/> in plan (the Move tool, its symbol dragged): along its line and
+    /// out from the building. Unlike Revit's, whose marker line is the view's near clip, a Lapin elevation looks at the
+    /// building whole from outside, so moving the marker never changes what it sees: its reach has its own grips
+    /// (<c>view.setExtent</c>), and a cut inside the building is a section's.
+    /// </summary>
+    public static Entity Moved(Entity view, Vec2 by)
+    {
+        var (d, right) = Axes(view);
+        var (along, outward) = Shift(view);
+        (along, outward) = (Math.Round(along + Vec2.Dot(by, right), 6), Math.Round(outward - Vec2.Dot(by, d), 6));
+        var attrs = view.CloneAttrs();
+        if (Math.Abs(along) < 1e-9 && Math.Abs(outward) < 1e-9) attrs.Remove(ShiftKey);
+        else attrs[ShiftKey] = new JsonArray(along, outward);
+        return view.With(attrs: attrs);
+    }
+
     /// <summary>The plan direction an elevation looks along, and its right (looking along it).</summary>
     static (Vec2 Look, Vec2 Right) Axes(Entity view)
     {
@@ -43,9 +69,11 @@ public static class ElevationMarkers
             Vec2[] corners = bounds is { } b ? [b.Min, new(b.Max.X, b.Min.Y), b.Max, new(b.Min.X, b.Max.Y)] : [];
             var own = Extent(v);
             if (own == null && corners.Length == 0) continue;
-            // In front of the building as the elevation sees it, a symbol and a little more away; on its sketch plane's front when it has nothing to see.
+            // In front of the building as the elevation sees it, clear of the sections' heads there (a symbol and a half and
+            // 25 mm on paper away, decision 460), on its sketch plane's front when it has nothing to see; moved, as far as it was.
+            var (along, outward) = Shift(v);
             var front = corners.Length > 0 ? corners.Min(p => Vec2.Dot(p, d)) : v.Num("planeDepth");
-            var depth = front - (u + 8 * c.Mm);
+            var depth = front - (1.5 * u + 25 * c.Mm) - outward;
             var (lo, hi) = own ?? (corners.Min(p => Vec2.Dot(p, right)) - 0.5 * u, corners.Max(p => Vec2.Dot(p, right)) + 0.5 * u);
             Vec2 At(double t) => right * t + d * depth;
             var (a, bEnd) = (At(lo), At(hi));
@@ -53,7 +81,7 @@ public static class ElevationMarkers
             mk.Line(a, bEnd, "ELEVATION", Pens.Default.Hatch, dash: LineStyles.DashOf("center"));
             // The symbol behind the line's middle: a circle of the symbol's size, its arrow filled, pointing at the building.
             var r = u / 2;
-            var centre = At((lo + hi) / 2) - d * r;
+            var centre = At((lo + hi) / 2 + along) - d * r;
             mk.Polyline(ViewMark.Circle(centre, r, 32), true, "ELEVATION", Pens.Default.Seen);
             Vec2[] arrow = [centre + d * (1.6 * r), centre + right * (0.8 * r), centre - right * (0.8 * r)];
             mk.Fills.Add(([arrow], "#000000"));
@@ -69,6 +97,7 @@ public static class ElevationMarkers
                 ["ends"] = new JsonArray(new JsonArray(Math.Round(a.X, 6), Math.Round(a.Y, 6)), new JsonArray(Math.Round(bEnd.X, 6), Math.Round(bEnd.Y, 6))),
                 ["right"] = new JsonArray(Math.Round(right.X, 9), Math.Round(right.Y, 9)),
                 ["min"] = Math.Round(lo, 6), ["max"] = Math.Round(hi, 6), ["own"] = own != null,
+                ["symbol"] = new JsonArray(Math.Round(centre.X, 6), Math.Round(centre.Y, 6)),
             };
             yield return mk;
         }

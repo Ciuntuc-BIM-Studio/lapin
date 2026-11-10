@@ -52,7 +52,7 @@ sealed class Fixture
     {
         foreach (var m in Model.OfClass(IfcClass.Material).ToList())
             if (Lapin.Drawing.MaterialGraphics.Resolve(m, "section") is { Membrane: false, Source: "name" })
-                Run("material.update", new JsonObject { ["id"] = m.Id, ["section"] = new JsonObject { ["hatch"] = Lapin.Drawing.MaterialGraphics.LegacyFromName(m.Name) } });
+                Run("material.update", new JsonObject { ["id"] = m.Id, ["section"] = new JsonObject { ["hatch"] = Lapin.Drawing.MaterialGraphics.LegacyFromName(m.Name, 0) } });
     }
 
     public LayerUsage Usage(string wallId) => Layers.ReadUsage(Walls.UsageOf(Model, wallId)!)!;

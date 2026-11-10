@@ -24,7 +24,9 @@ Select the section in the browser to set its scale, its depth, its discipline an
 
 A section's line is drawn in every plan, and the section is marked in every other section and elevation its plane crosses: a fine dashed line where the plane cuts the view, with the section's name and an arrow looking the way the section looks at its top, the same size on paper as in a plan. A section is never marked in itself. Click a marker to select the section, double-click it to open it.
 
-**Marker size.** **Manage → Drafting standards → Project** sets how large the section and elevation markers are drawn, in paper millimetres: **Marker size** (the elevation's circle across, a section's arrows 0.7 of it; 10 mm at first) and **Marker text** (the height of their names; empty: the Standard text style's). A section or an elevation of its own size has **Marker size (mm)** and **Marker text (mm)** in its properties; empty, it takes the project's. The engine draws the markers, so plans, the sections they cross, sheets, the PDF and the DXF all follow.
+**Marker size.** **Manage → Drafting standards → Project** sets how large the markers are drawn, in paper millimetres, for sections and elevations apart: **Section marker size** (a section's arrows are 0.7 of it) and **Section marker text**, **Elevation marker size** (the elevation's circle across) and **Elevation marker text**; 10 mm and the Standard text style's height until you set them. A project that had one marker size keeps it for both. A section or an elevation of its own size has **Marker size (mm)** and **Marker text (mm)** in its properties; empty, it takes the project's. The engine draws the markers, so plans, the sections they cross, sheets, the PDF and the DXF all follow.
+
+**Moving a section.** Select the section in a plan and move it with **Move** (or drag it by its line): as in Revit, it cuts where you put it, and turned or mirrored it looks the turned or mirrored way. Each head (its arrow and name) has a grip of its own: drag it to move the head off the line's end, for example clear of a dimension, and a fine leader joins it back; the section cuts the same. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click the grip to put the head back. A section across or along an element follows the element and is moved with it.
 
 Each section sits on a **marker layer** (**Sections** at first; **Marker layer** in the section's properties changes it), and each view chooses what it marks. **View → Sections…** lists the project's sections by layer for the view in front, with a checkbox per layer and per section for this view alone, the layer of each section (an existing one, or **New layer…**), and in how many views each is hidden. A sheet marks what its views mark.
 
@@ -38,11 +40,13 @@ A section cut across a beam or a column (**Section here**, **Section across** on
 
 ![The south elevation](shots/elevation-view.webp)
 
-Every plan marks each elevation in front of the building: a fine chain line across the way it looks, and in its middle a circle whose black arrow points at the building, with the elevation's name behind it. Click the marker to select the elevation, double-click it to open it. **Elevation marks** in **Visibility / Graphics** (<kbd>VV</kbd>) hides them in a view.
+Every plan marks each elevation in front of the building, clear of the sections' heads there: a fine chain line across the way it looks, and in its middle a circle whose black arrow points at the building, with the elevation's name behind it. Click the marker to select the elevation, double-click it to open it. **Elevation marks** in **Visibility / Graphics** (<kbd>VV</kbd>) hides them in a view.
 
 **How far an elevation reaches.** Select the elevation in a plan: its line has a grip at each end. Drag one along the line to stretch or shorten the elevation on that side; the elevation then draws only what lies between the two ends, and its sheets and PDF follow. Each drag is one undo step. Until you drag them, the line spans the whole building and grows with it.
 
-![An elevation's marker in plan, its line shortened to the middle of the house](shots/elevation-marker.webp)
+**Moving an elevation's marker.** Drag the circle's grip, or select the elevation and use **Move**: the marker goes where you put it, further out from the building or along its line, in one undo step. A Lapin elevation always looks at the whole building from outside, so moving its marker never changes what it shows (in Revit the marker's line is also where the elevation starts seeing; here its reach has its own grips, and a cut inside the building is a section). An elevation looks north, south, east or west, so it is not turned or mirrored. A pinned elevation or section (**Modify → Pin**) is not moved until it is unpinned.
+
+![An elevation's marker in plan, moved out from the house, its line shortened, a section's head moved off its end](shots/elevation-marker.webp)
 
 ### Sun shadows
 

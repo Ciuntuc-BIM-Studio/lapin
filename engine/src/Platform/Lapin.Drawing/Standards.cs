@@ -86,14 +86,16 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// with its scale. Each list always has its Standard entry (layer "0").
 /// An annotation names its styles in its params and may override any field
 /// of them in <c>o.&lt;field&gt;</c>.
-/// <see cref="MarkSize"/> and <see cref="MarkText"/> (decision 455): the section and elevation markers' symbol size and
+/// <see cref="SectionMarkSize"/>, <see cref="SectionMarkText"/>, <see cref="ElevationMarkSize"/> and
+/// <see cref="ElevationMarkText"/> (decisions 455, 460): the section markers' and the elevation markers' symbol size and
 /// text height (paper mm; null: <see cref="Standards.DefaultMarkSize"/> and the Standard text's height), which a marker's
-/// own <c>markSize</c> and <c>markTextSize</c> override.
+/// own <c>markSize</c> and <c>markTextSize</c> override. Standards saved with one <c>markSize</c> and <c>markText</c>
+/// (decision 455) give them to both kinds.
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
     string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
-    string LineCap = "round", string Units = "mm", double? MarkSize = null, double? MarkText = null)
+    string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null)
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -270,7 +272,8 @@ public static class Standards
             WithStandard(List("layers").Select(ReadLayer).ToList(), Layer0, l => l.Id, "0"),
             List("layerGroups").Where(g => g["id"] is JsonValue).Select(g => new LayerGroup(Str(g["id"], ""), Str(g["name"], "Group"), g["visible"] is not JsonValue gv || !gv.TryGetValue<bool>(out var b) || b, True(g["locked"]))).Where(g => g.Id.Length > 0).ToList(),
             OneOf(o["lineCap"], LineCaps, "round"), OneOf(o["units"], ProjectUnits, "mm"),
-            MarkValue(o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["markText"], MinMarkText, MaxMarkText));
+            MarkValue(o["sectionMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["sectionMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
+            MarkValue(o["elevationMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["elevationMarkText"] ?? o["markText"], MinMarkText, MaxMarkText));
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;

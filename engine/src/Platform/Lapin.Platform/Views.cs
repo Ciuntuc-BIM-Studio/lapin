@@ -995,14 +995,21 @@ public static class Views
                 var u0 = (first.B - first.A) * (1 / first.Length);
                 var u1 = (last.B - last.A) * (1 / last.Length);
                 mk.Line(first.A, first.A + u0 * Math.Min(0.8 * u, first.Length / 3), "SECTION", Pens.Default.Cut).Line(last.B, last.B - u1 * Math.Min(0.8 * u, last.Length / 3), "SECTION", Pens.Default.Cut);
-                foreach (var (end, look) in new[] { (first.A, u0.Perp), (last.B, u1.Perp) })
+                // Each head (its arrow and name) where its end is, or moved off it (decision 460: headA, headB), a fine leader back.
+                var heads = new JsonArray();
+                foreach (var (key, end, look) in new[] { ("a", first.A, u0.Perp), ("b", last.B, u1.Perp) })
                 {
-                    var tip = end + look * arrow;
-                    mk.Line(end, tip, "SECTION", Pens.Default.Seen)
+                    var off = SectionHeads.Offset(v, key);
+                    var foot = end + off;
+                    if (off.Length > 1e-9) mk.Line(end, foot, "SECTION", Pens.Default.Hatch);
+                    var tip = foot + look * arrow;
+                    mk.Line(foot, tip, "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head + look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head - look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
                       .Text(new PenText(tip + look * (0.35 * u), v.Name, textHeight, Baseline: "middle", Font: text.Font));
+                    heads.Add((JsonNode)new JsonObject { ["end"] = key, ["at"] = new JsonArray(Math.Round(tip.X, 6), Math.Round(tip.Y, 6)), ["offset"] = new JsonArray(Math.Round(off.X, 6), Math.Round(off.Y, 6)) });
                 }
+                mk.Data = new JsonObject { ["heads"] = heads };
                 mk.Snaps.AddRange(path);
                 yield return mk;
             }
@@ -1315,6 +1322,7 @@ public static class Views
         ViewBoundaries.Register(r);
         SectionMarkers.Register(r);
         ElevationMarkers.Register(r);
+        SectionHeads.Register(r);
 
         // A section across an element moved along it or widened: {id, station?, marginA?, marginB?} (AcrossSections).
         r.Command("view.updateAcross", "Move section", (ctx, a) =>

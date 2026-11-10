@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from '../../engine/protocol';
-import { elevationGrips } from './sections';
+import { elevationGrips, sectionHeadGrips } from './sections';
 
 const elevation = { id: 'e', type: 'LapinView', name: 'South elevation', parentId: null, props: { kind: 'elevation', direction: 'south' } } as unknown as NodeDto;
-const mark = { id: 'e', segments: [], data: { ends: [[-0.5, -2], [10.5, -2]], right: [1, 0], min: -0.5, max: 10.5, own: false } };
+const mark = { id: 'e', segments: [], data: { ends: [[-0.5, -2], [10.5, -2]], right: [1, 0], min: -0.5, max: 10.5, own: false, symbol: [5, -2.5] } };
 
 describe("an elevation's grips in plan (decision 456)", () => {
   it('puts one on each end of its marker line', () => {
     const grips = elevationGrips(elevation, { mark });
-    expect(grips.map((g) => [g.key, g.at.x, g.at.y])).toEqual([['extentMin', -0.5, -2], ['extentMax', 10.5, -2]]);
+    expect(grips.map((g) => [g.key, g.at.x, g.at.y])).toEqual([['extentMin', -0.5, -2], ['extentMax', 10.5, -2], ['marker', 5, -2.5]]);
   });
 
   it('sets how far it reaches on the side dragged, along its line, the other end where it is drawn', () => {
@@ -22,5 +22,21 @@ describe("an elevation's grips in plan (decision 456)", () => {
   it('has none without the line the engine drew, nor on a section', () => {
     expect(elevationGrips(elevation)).toEqual([]);
     expect(elevationGrips({ ...elevation, props: { kind: 'section' } } as NodeDto, { mark })).toEqual([]);
+  });
+});
+
+describe('markers moved in plan (decision 460)', () => {
+  it("moves an elevation's marker by its symbol, through element.transform", () => {
+    const marker = elevationGrips(elevation, { mark }).find((g) => g.key === 'marker')!;
+    expect(marker.step!({ x: 6, y: -4.5 })).toEqual({ command: 'element.transform', args: { ids: ['e'], op: 'move', by: [1, -2] } });
+  });
+
+  it("moves a section's head off its end, and puts it back", () => {
+    const section = { ...elevation, id: 's', props: { kind: 'section', start: [6, -2], end: [6, 10] } } as unknown as NodeDto;
+    const heads = { id: 's', segments: [], data: { heads: [{ end: 'a', at: [5.3, -2], offset: [0, 0] }, { end: 'b', at: [4.3, 9.5], offset: [-1, -0.5] }] } };
+    const [a, b] = sectionHeadGrips(section, { mark: heads });
+    expect(a.step!({ x: 4.3, y: -2.5 })).toEqual({ command: 'view.moveHead', args: { id: 's', end: 'a', offset: [-1, -0.5] } });
+    expect(a.remove!()).toBeNull();
+    expect(b.remove!()).toEqual({ command: 'view.moveHead', args: { id: 's', end: 'b', offset: null } });
   });
 });

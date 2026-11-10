@@ -51,15 +51,18 @@ public sealed class ViewMarkerSizeTests
         Assert.Equal(2.5, TextHeight(d, "South elevation"), 6);
         Assert.Equal(2.5, TextHeight(Drawing(f, south), "A-A"), 6);
 
-        // The project's: a 20 mm symbol (the arrow 0.7 of it) and 4 mm texts, in plans and in the views a section crosses.
-        f.Run("standards.options", new JsonObject { ["markSize"] = 20, ["markText"] = 4 });
+        // The project's, a section's and an elevation's apart (decision 460): sections a 20 mm symbol (the arrow 0.7 of
+        // it) and 4 mm names, elevations 5 mm names; in plans and in the views a section crosses.
+        f.Run("standards.options", new JsonObject { ["sectionMarkSize"] = 20, ["sectionMarkText"] = 4, ["elevationMarkText"] = 5 });
         var book = (JsonObject)f.Session.Query("standards.get", new JsonObject())!;
-        Assert.Equal(20, (double)book["markSize"]!);
-        Assert.Equal(4, (double)book["markText"]!);
+        Assert.Equal(20, (double)book["sectionMarkSize"]!);
+        Assert.Equal(4, (double)book["sectionMarkText"]!);
+        Assert.Equal(5, (double)book["elevationMarkText"]!);
+        Assert.Null(book["elevationMarkSize"]);
         d = Drawing(f, plan);
         Assert.Equal(1.4, Arrow(d, a), 6);
         Assert.Equal(4, TextHeight(d, "A-A"), 6);
-        Assert.Equal(4, TextHeight(d, "South elevation"), 6);
+        Assert.Equal(5, TextHeight(d, "South elevation"), 6);
         Assert.Equal(4, TextHeight(Drawing(f, south), "A-A"), 6);
 
         // A marker's own over the project's; cleared, the project's again.
@@ -68,19 +71,40 @@ public sealed class ViewMarkerSizeTests
         Assert.Equal(0.35, Arrow(d, a), 6);
         Assert.Equal(3, TextHeight(d, "A-A"), 6);
         Assert.Equal(3, TextHeight(Drawing(f, south), "A-A"), 6);
-        Assert.Equal(4, TextHeight(d, "South elevation"), 6);
+        Assert.Equal(5, TextHeight(d, "South elevation"), 6);
         f.Run("element.update", new JsonObject { ["id"] = south, ["attrs"] = new JsonObject { ["markTextSize"] = 6 } });
         Assert.Equal(6, TextHeight(Drawing(f, plan), "South elevation"), 6);
         f.Run("element.update", new JsonObject { ["id"] = a, ["attrs"] = new JsonObject { ["markSize"] = null, ["markTextSize"] = null } });
         Assert.Equal(1.4, Arrow(Drawing(f, plan), a), 6);
 
         // Out of range is refused; empty in the standards is the default again.
-        Assert.Throws<CommandException>(() => f.Run("standards.options", new JsonObject { ["markSize"] = 0 }));
+        Assert.Throws<CommandException>(() => f.Run("standards.options", new JsonObject { ["sectionMarkSize"] = 0 }));
         Assert.Throws<CommandException>(() => f.Run("element.update", new JsonObject { ["id"] = a, ["attrs"] = new JsonObject { ["markSize"] = 500 } }));
-        f.Run("standards.options", new JsonObject { ["markSize"] = null, ["markText"] = null });
+        f.Run("standards.options", new JsonObject { ["sectionMarkSize"] = null, ["sectionMarkText"] = null, ["elevationMarkText"] = null });
         d = Drawing(f, plan);
         Assert.Equal(0.7, Arrow(d, a), 6);
         Assert.Equal(2.5, TextHeight(d, "A-A"), 6);
+        Assert.Equal(6, TextHeight(d, "South elevation"), 6);   // its own still
+    }
+
+    [Fact]
+    public void Standards_saved_with_one_marker_size_give_it_to_both_kinds()
+    {
+        // As decision 455 kept them: markSize and markText for both; read, each kind takes them, written, they part.
+        var book = Lapin.Drawing.Standards.Read(new JsonObject { ["markSize"] = 14, ["markText"] = 3.5 });
+        Assert.Equal((14.0, 3.5, 14.0, 3.5), (book.SectionMarkSize, book.SectionMarkText, book.ElevationMarkSize, book.ElevationMarkText));
+        var f = F();
+        var (a, south, plan) = House(f);
+        f.Run("standards.replace", new JsonObject { ["standards"] = new JsonObject { ["markSize"] = 14, ["markText"] = 3.5 } });
+        var d = Drawing(f, plan);
+        Assert.Equal(0.98, Arrow(d, a), 6);
+        Assert.Equal(3.5, TextHeight(d, "South elevation"), 6);
+        f.Run("standards.options", new JsonObject { ["elevationMarkText"] = 2 });
+        var json = (JsonObject)f.Session.Query("standards.get", new JsonObject())!;
+        Assert.Null(json["markSize"]);
+        Assert.Equal(14, (double)json["sectionMarkSize"]!);
+        Assert.Equal(2, TextHeight(Drawing(f, plan), "South elevation"), 6);
+        Assert.Equal(3.5, TextHeight(Drawing(f, plan), "A-A"), 6);
     }
 
     [Fact]

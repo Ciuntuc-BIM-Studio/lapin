@@ -24,7 +24,9 @@ Selectează secțiunea în navigator ca să-i setezi scara, adâncimea, discipli
 
 Linia unei secțiuni se desenează în fiecare plan, iar secțiunea se marchează în fiecare altă secțiune și fațadă pe care o taie planul ei: o linie subțire întreruptă acolo unde planul taie vederea, cu numele secțiunii și o săgeată care privește încotro privește secțiunea, sus, la aceeași mărime pe hârtie ca în plan. O secțiune nu se marchează niciodată în ea însăși. Clic pe un marcator selectează secțiunea, dublu-clic o deschide.
 
-**Dimensiunea marcatorilor.** **Gestionare → Standarde de desen → Proiect** stabilește cât de mari se desenează marcatorii de secțiune și de fațadă, în milimetri pe hârtie: **Dimensiune marcatori** (diametrul cercului fațadei, săgețile unei secțiuni au 0,7 din el; 10 mm la început) și **Text marcatori** (înălțimea numelor lor; gol: cea a stilului de text standard). O secțiune sau o fațadă cu mărime proprie are **Dimensiune marcator (mm)** și **Text marcator (mm)** în proprietăți; goale, ia valorile proiectului. Motorul desenează marcatorii, așa că planurile, secțiunile pe care le taie, planșele, PDF-ul și DXF-ul îi urmează.
+**Dimensiunea marcatorilor.** **Gestionare → Standarde de desen → Proiect** stabilește cât de mari se desenează marcatorii, în milimetri pe hârtie, separat pentru secțiuni și fațade: **Dimensiune marcator secțiune** (săgețile unei secțiuni au 0,7 din ea) și **Text marcator secțiune**, **Dimensiune marcator fațadă** (diametrul cercului fațadei) și **Text marcator fațadă**; 10 mm și înălțimea stilului de text standard până nu le stabilești. Un proiect care avea o singură dimensiune a marcatorilor o păstrează pentru amândouă. O secțiune sau o fațadă cu mărime proprie are **Dimensiune marcator (mm)** și **Text marcator (mm)** în proprietăți; goale, ia valorile proiectului. Motorul desenează marcatorii, așa că planurile, secțiunile pe care le taie, planșele, PDF-ul și DXF-ul îi urmează.
+
+**Mutarea unei secțiuni.** Selectează secțiunea într-un plan și mut-o cu **Mută** (sau trage-o de linia ei): ca în Revit, taie unde o pui, iar rotită sau oglindită privește în sensul rotit sau oglindit. Fiecare cap (săgeata și numele ei) are propriul grip: trage-l ca să muți capul de la capătul liniei, de exemplu ca să nu stea peste o cotă, iar o linie de legătură subțire îl unește la loc; secțiunea taie la fel. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-clic pe grip pune capul înapoi. O secțiune de-a curmezișul sau de-a lungul unui element urmează elementul și se mută odată cu el.
 
 Fiecare secțiune stă pe un **strat de marcatori** (**Sections** la început; **Strat de marcator** din proprietățile secțiunii îl schimbă), iar fiecare vedere alege ce marchează. **Vedere → Secțiuni…** listează secțiunile proiectului pe straturi, pentru vederea din față, cu o bifă pe strat și pe secțiune doar pentru această vedere, stratul fiecărei secțiuni (unul existent sau **Strat nou…**) și în câte vederi e ascunsă fiecare. O planșă marchează ce marchează vederile ei.
 
@@ -38,11 +40,13 @@ O secțiune tăiată transversal printr-o grindă sau un stâlp (**Secțiune aic
 
 ![Fațada de sud](shots/elevation-view.webp)
 
-Fiecare plan marchează fiecare fațadă din fața clădirii: o linie subțire punct-linie de-a curmezișul direcției în care privește și, în mijlocul ei, un cerc a cărui săgeată neagră arată spre clădire, cu numele fațadei în spatele ei. Clic pe marcator selectează fațada, dublu-clic o deschide. **Marcaje de fațadă** din **Vizibilitate / Grafică** (<kbd>VV</kbd>) le ascunde într-o vedere.
+Fiecare plan marchează fiecare fațadă din fața clădirii, ferit de capetele secțiunilor de acolo: o linie subțire punct-linie de-a curmezișul direcției în care privește și, în mijlocul ei, un cerc a cărui săgeată neagră arată spre clădire, cu numele fațadei în spatele ei. Clic pe marcator selectează fațada, dublu-clic o deschide. **Marcaje de fațadă** din **Vizibilitate / Grafică** (<kbd>VV</kbd>) le ascunde într-o vedere.
 
 **Cât de departe ajunge o fațadă.** Selectează fațada într-un plan: linia ei are câte un grip la fiecare capăt. Trage unul de-a lungul liniei ca să lungești sau să scurtezi fațada pe partea aceea; fațada desenează atunci doar ce se află între cele două capete, iar planșele ei și PDF-ul urmează. Fiecare tragere este un pas de anulare. Până nu le tragi, linia cuprinde toată clădirea și crește odată cu ea.
 
-![Marcajul unei fațade în plan, cu linia scurtată până la mijlocul casei](shots/elevation-marker.webp)
+**Mutarea marcajului unei fațade.** Trage gripul cercului sau selectează fațada și folosește **Mută**: marcajul merge unde îl pui, mai departe de clădire sau de-a lungul liniei lui, într-un singur pas de anulare. O fațadă Lapin privește mereu toată clădirea din exterior, așa că mutarea marcajului ei nu schimbă niciodată ce arată (în Revit linia marcajului este și locul de unde fațada începe să vadă; aici întinderea ei are gripurile ei, iar o tăietură în interiorul clădirii este o secțiune). O fațadă privește spre nord, sud, est sau vest, deci nu se rotește și nu se oglindește. O fațadă sau o secțiune fixată (**Modifică → Fixează**) nu se mută până nu e eliberată.
+
+![Marcajul unei fațade în plan, mutat mai departe de casă, cu linia scurtată și capul unei secțiuni mutat de la capătul ei](shots/elevation-marker.webp)
 
 ### Umbre de soare
 

@@ -3526,41 +3526,69 @@ export const scenes = [
     },
   },
   {
-    // Section and elevation markers (decisions 455, 456): the project's marker size in Drafting standards → Project, the
-    // south elevation marked in the plan, its line's end grip dragged so the elevation reaches only the middle of the house.
+    // Section and elevation markers (decisions 455, 456, 460): the section markers' size in Drafting standards → Project
+    // (a section's and an elevation's apart), the south elevation marked in the plan clear of A-A's head, its line's end
+    // grip dragged so it reaches only the middle of the house, its marker dragged further out, A-A's head moved off its end.
     id: 'views-elevation-marker',
     touches: ['core'],
     async run(t) {
       await t.fresh();
       await house(t, { roof: false });
-      await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [6, -2], end: [6, 10] });
+      const section = await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [6, -2], end: [6, 10] });
       const { id } = await t.cmd('view.create', { kind: 'elevation', direction: 'south' });
-      // The project's sizes, typed in Drafting standards → Project.
+      // The section markers' size, typed in Drafting standards → Project.
       await t.tool('manage.standards');
       await t.page.locator('.dialog').getByText('Project', { exact: true }).first().click();
-      const size = t.page.locator('.dialog [data-field=mark-size]');
+      const size = t.page.locator('.dialog [data-field=section-mark-size]');
       await size.fill('12');
       await size.blur();
       await t.wait(600);
+      t.expect(await t.page.locator('.dialog [data-field=elevation-mark-size]').count() === 1, 'the elevation markers have a size of their own');
       const book = await t.call('doc.query', { name: 'standards.get', args: {} });
-      t.expect(book?.markSize === 12, `the markers' size set to 12 mm (${book?.markSize})`);
+      t.expect(book?.sectionMarkSize === 12 && book?.elevationMarkSize == null, `the section markers' size set to 12 mm (${book?.sectionMarkSize}), the elevations' as they were`);
       await t.keys('Escape');
+      const gripAt = async (key) => { const r = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      const drag = async (from, to) => {
+        await t.page.mouse.move(from[0], from[1]);
+        await t.page.mouse.down();
+        await t.page.mouse.move((from[0] + to[0]) / 2, (from[1] + to[1]) / 2, { steps: 4 });
+        await t.page.mouse.move(to[0], to[1], { steps: 4 });
+        await t.page.mouse.up();
+        await t.wait(1000);
+      };
       // The elevation selected in the plan: a grip on each end of its line; the right one dragged to x = 8.
       await t.ui({ selected: [id], selection: id });
       await t.fit();
       await t.wait(800);
-      const gripAt = async (key) => { const r = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
       const end = await gripAt('extentMax');
       t.expect(end && (await gripAt('extentMin')), 'the elevation has a grip on each end of its line');
       const [toX] = await t.planPoint(8, -2.5);
-      await t.page.mouse.move(end[0], end[1]);
-      await t.page.mouse.down();
-      await t.page.mouse.move((end[0] + toX) / 2, end[1], { steps: 4 });
-      await t.page.mouse.move(toX, end[1], { steps: 4 });
-      await t.page.mouse.up();
-      await t.wait(1000);
+      await drag(end, [toX, end[1]]);
       const max = (await t.nodes()).find((n) => n.id === id)?.props.extentMax;
       t.expect(typeof max === 'number' && Math.abs(max - 8) < 0.3, `the elevation reaches to x = 8 (${max})`);
+      // Its marker dragged 1.5 m further out by the circle's grip: the elevation sees the same.
+      const marker = await gripAt('marker');
+      t.expect(marker, 'the elevation marker has a grip to move it');
+      const [, y0] = await t.planPoint(0, 0);
+      const [, y1] = await t.planPoint(0, -1.5);
+      await drag(marker, [marker[0], marker[1] + (y1 - y0)]);
+      const shift = (await t.nodes()).find((n) => n.id === id)?.props.markerShift;
+      t.expect(Array.isArray(shift) && Math.abs(shift[1] - 1.5) < 0.3, `the marker moved out 1.5 m (${JSON.stringify(shift)})`);
+      // A-A's head at its south end moved off the line, west of it.
+      await t.ui({ selected: [section.id], selection: section.id });
+      await t.wait(600);
+      const head = await gripAt('head-a');
+      t.expect(head, "the section's head has a grip");
+      const [x0] = await t.planPoint(0, 0);
+      const [x1] = await t.planPoint(-1, 0);
+      await drag(head, [head[0] + (x1 - x0), head[1]]);
+      const headA = (await t.nodes()).find((n) => n.id === section.id)?.props.headA;
+      t.expect(Array.isArray(headA) && Math.abs(headA[0] + 1) < 0.3, `the head moved 1 m west (${JSON.stringify(headA)})`);
+      const start = (await t.nodes()).find((n) => n.id === section.id)?.props.start;
+      t.expect(start?.[0] === 6, 'the section cuts where it did');
+      await t.ui({ selected: [id, section.id], selection: id });
+      await t.fit();
+      await t.wait(600);
       await t.shot('elevation-marker', { of: '[data-testid=plan]', pad: 0 });
     },
   },

@@ -42,19 +42,19 @@ public class DraftingResourcesTests
         Assert.Equal("LINES45", MaterialGraphics.FromIfcHatch(null, null, 45, null)!.Hatch);
         Assert.Equal("HORIZONTAL", MaterialGraphics.FromIfcHatch(null, null, 180, null)!.Hatch);
         Assert.Equal(("CONCRETE", 2.0, "#eeeeee"), MaterialGraphics.FromIfcHatch("concrete", 2, null, "#eeeeee") is { } g ? (g.Hatch, g.HatchScale!.Value, g.Fill) : default);
-        Assert.Equal("LINES45", MaterialGraphics.FromIfcHatch("Masonry hatch", null, null, null)!.Hatch);
+        Assert.Equal("MASONRY", MaterialGraphics.FromIfcHatch("Masonry hatch", null, null, null)!.Hatch);
     }
 
     [Fact]
     public void Names_suggest_hatches_and_membranes()
     {
-        Assert.Equal("LINES45", MaterialGraphics.Resolve(Mat("Cărămidă")).Hatch);
-        Assert.Equal("BATT", MaterialGraphics.Resolve(Mat("EPS 100")).Hatch);
+        Assert.Equal("MASONRY", MaterialGraphics.Resolve(Mat("Cărămidă")).Hatch);
+        Assert.Equal("RIGID", MaterialGraphics.Resolve(Mat("EPS 100")).Hatch);
         Assert.Equal("WOOD", MaterialGraphics.Resolve(Mat("Timber")).Hatch);
         Assert.True(MaterialGraphics.Resolve(Mat("Vapour barrier")).Membrane);
         Assert.Null(MaterialGraphics.Resolve(Mat("Vapour barrier")).Hatch);
-        Assert.Null(MaterialGraphics.Resolve(Mat("Plaster")).Hatch);
-        Assert.Equal("LINES45", MaterialGraphics.Resolve(Mat("Unobtainium")).Hatch);
+        Assert.Equal("GYPSUM", MaterialGraphics.Resolve(Mat("Plaster")).Hatch);
+        Assert.Null(MaterialGraphics.Resolve(Mat("Unobtainium")).Hatch);
     }
 
     [Fact]
@@ -62,21 +62,21 @@ public class DraftingResourcesTests
     {
         var f = new Fixture();
         var brick = (string)f.Run("material.create", new JsonObject { ["name"] = "Brick", ["color"] = "#aa5533" })!["id"]!;
-        Assert.Equal("LINES45", MaterialGraphics.Resolve(f.Model.Get(brick), "section").Hatch);
+        Assert.Equal("MASONRY", MaterialGraphics.Resolve(f.Model.Get(brick), "section").Hatch);
         f.Run("material.update", new JsonObject { ["id"] = brick, ["plan"] = new JsonObject { ["hatch"] = "CROSS" } });
         Assert.Equal("CROSS", MaterialGraphics.Resolve(f.Model.Get(brick), "plan").Hatch);
-        Assert.Equal("LINES45", MaterialGraphics.Resolve(f.Model.Get(brick), "section").Hatch);
+        Assert.Equal("MASONRY", MaterialGraphics.Resolve(f.Model.Get(brick), "section").Hatch);
         // A fill only when asked: "material" follows its colour.
         Assert.Null(MaterialGraphics.Resolve(f.Model.Get(brick), "section").Fill);
         f.Run("material.update", new JsonObject { ["id"] = brick, ["section"] = new JsonObject { ["fill"] = "material" } });
         Assert.Equal("#aa5533", MaterialGraphics.Resolve(f.Model.Get(brick), "section").Fill);
         f.Run("material.update", new JsonObject { ["id"] = brick, ["plan"] = null });
-        Assert.Equal("LINES45", MaterialGraphics.Resolve(f.Model.Get(brick), "plan").Hatch);
+        Assert.Equal("MASONRY", MaterialGraphics.Resolve(f.Model.Get(brick), "plan").Hatch);
         // An explicit none, then back to the name.
         f.Run("material.update", new JsonObject { ["id"] = brick, ["section"] = new JsonObject { ["hatch"] = null } });
         Assert.Null(MaterialGraphics.Resolve(f.Model.Get(brick), "section").Hatch);
         f.Run("material.reset", new JsonObject { ["id"] = brick });
-        Assert.Equal("LINES45", MaterialGraphics.Resolve(f.Model.Get(brick), "section").Hatch);
+        Assert.Equal("MASONRY", MaterialGraphics.Resolve(f.Model.Get(brick), "section").Hatch);
         Assert.Equal("#aa5533", f.Model.Get(brick)!.Str("color"));
         // Unknown patterns and bad values are refused.
         Assert.Throws<CommandException>(() => f.Run("material.update", new JsonObject { ["id"] = brick, ["section"] = new JsonObject { ["hatch"] = "NOPE" } }));
@@ -94,7 +94,7 @@ public class DraftingResourcesTests
         Assert.True(JsonNode.DeepEquals(new JsonObject
         {
             ["color"] = "#aa5533",
-            ["hatches"] = new JsonObject { ["section"] = new JsonObject { ["pattern"] = "LINES45", ["scale"] = 1.5 }, ["elevation"] = new JsonObject { ["pattern"] = "BRICK" } },
+            ["hatches"] = new JsonObject { ["section"] = new JsonObject { ["pattern"] = "MASONRY", ["scale"] = 1.5 }, ["elevation"] = new JsonObject { ["pattern"] = "BRICK" } },
         }, a), a.ToJsonString());
     }
 

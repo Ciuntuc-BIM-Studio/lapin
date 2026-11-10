@@ -19,13 +19,16 @@ public static class SectionMarkers
     public const string Key = "sectionMarkers";
 
     /// <summary>
-    /// A marker's symbol size and text height (paper mm, decision 455): the section's or elevation's own (<c>markSize</c>,
-    /// <c>markTextSize</c>), else the drafting standards' (<see cref="StyleBook.MarkSize"/>, <see cref="StyleBook.MarkText"/>),
-    /// else 10 mm and the text style's height.
+    /// A marker's symbol size and text height (paper mm, decisions 455, 460): the section's or elevation's own
+    /// (<c>markSize</c>, <c>markTextSize</c>), else the drafting standards' for its kind (<see cref="StyleBook.SectionMarkSize"/>
+    /// and the rest), else 10 mm and the text style's height.
     /// </summary>
-    public static (double Size, double Text) Sizes(StyleBook book, Entity marked, TextStyle text) =>
-        (Standards.MarkValue(marked.Attrs["markSize"], Standards.MinMarkSize, Standards.MaxMarkSize) ?? book.MarkSize ?? Standards.DefaultMarkSize,
-         Standards.MarkValue(marked.Attrs["markTextSize"], Standards.MinMarkText, Standards.MaxMarkText) ?? book.MarkText ?? text.Height);
+    public static (double Size, double Text) Sizes(StyleBook book, Entity marked, TextStyle text)
+    {
+        var elevation = marked.Str("kind") == "elevation";
+        return (Standards.MarkValue(marked.Attrs["markSize"], Standards.MinMarkSize, Standards.MaxMarkSize) ?? (elevation ? book.ElevationMarkSize : book.SectionMarkSize) ?? Standards.DefaultMarkSize,
+            Standards.MarkValue(marked.Attrs["markTextSize"], Standards.MinMarkText, Standards.MaxMarkText) ?? (elevation ? book.ElevationMarkText : book.SectionMarkText) ?? text.Height);
+    }
 
     public static string LayerOf(Entity section) => section.Str("markerLayer") is { Length: > 0 } l ? l : DefaultLayer;
 

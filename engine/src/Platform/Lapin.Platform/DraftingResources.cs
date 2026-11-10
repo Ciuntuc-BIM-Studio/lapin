@@ -444,7 +444,7 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), how lines end on screen and paper (round, square), the markers' sizes (markSize, markText).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), how lines end on screen and paper (round, square), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
@@ -457,8 +457,16 @@ public static class DraftingResources
                 if (a[key] == null) { raw.Remove(key); return; }
                 raw[key] = Standards.MarkValue(a[key], min, max) ?? throw new CommandException($"A marker's {what} is {min}–{max} mm.");
             }
-            Mark("markSize", Standards.MinMarkSize, Standards.MaxMarkSize, "symbol size");
-            Mark("markText", Standards.MinMarkText, Standards.MaxMarkText, "text height");
+            // A section's and an elevation's apart (decision 460); decision 455's single pair still sets both.
+            foreach (var kind in new[] { "section", "elevation" })
+            {
+                if (a.ContainsKey("markSize") && !a.ContainsKey(kind + "MarkSize")) a[kind + "MarkSize"] = a["markSize"]?.DeepClone();
+                if (a.ContainsKey("markText") && !a.ContainsKey(kind + "MarkText")) a[kind + "MarkText"] = a["markText"]?.DeepClone();
+                Mark(kind + "MarkSize", Standards.MinMarkSize, Standards.MaxMarkSize, "symbol size");
+                Mark(kind + "MarkText", Standards.MinMarkText, Standards.MaxMarkText, "text height");
+            }
+            raw.Remove("markSize");
+            raw.Remove("markText");
             Write(ctx, raw);
             return null;
         });

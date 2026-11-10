@@ -2,7 +2,7 @@
  * Drafting standards: the project's text styles, dimension styles, axis types
  * (and the default one), tag types (a box, or a door's or window's marker
  * across its wall in plan; their leaders, decision 331), layers and layer groups; on Project, the units, line ends and the
- * section and elevation markers' sizes (decision 455). Sizes are paper millimetres.
+ * section and elevation markers' sizes, each kind its own (decisions 455, 460). Sizes are paper millimetres.
  * Each change is one engine command; Standard (and layer 0) always stay.
  */
 
@@ -17,7 +17,7 @@ import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; markSize?: number; markText?: number };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -52,6 +52,15 @@ const TABS: Tab[] = [
   { id: 'layer', label: 'Layers', list: 'layers', fresh: { name: 'Layer' }, cols: [
     { key: 'name', label: 'Name', kind: 'text' }, { key: 'color', label: 'Colour', kind: 'color' }, { key: 'lineWeight', label: 'Pen mm', kind: 'mm' },
     { key: 'lineType', label: 'Line', kind: 'choice', choices: LINE_TYPES }, { key: 'group', label: 'Group', kind: 'group' }, { key: 'visible', label: 'On', kind: 'bool' }, { key: 'locked', label: 'Lock', kind: 'bool' }] },
+];
+
+/** The markers' sizes on the Project tab (decision 460): a section's and an elevation's apart, each its symbol and its name. */
+type MarkKey = 'sectionMarkSize' | 'sectionMarkText' | 'elevationMarkSize' | 'elevationMarkText';
+const MARK_ROWS: { key: MarkKey; field: string; size: boolean; label: string; title: string }[] = [
+  { key: 'sectionMarkSize', field: 'section-mark-size', size: true, label: 'Section marker size', title: "The size of the section markers' arrows (0.7 of it), in paper mm, in plans, sections, elevations, sheets and PDF; a section's own size in its properties goes before it" },
+  { key: 'sectionMarkText', field: 'section-mark-text', size: false, label: 'Section marker text', title: "The height of the section markers' names, in paper mm; empty: the Standard text style's" },
+  { key: 'elevationMarkSize', field: 'elevation-mark-size', size: true, label: 'Elevation marker size', title: "The elevation markers' circle across, in paper mm, in plans, sheets and PDF; an elevation's own size in its properties goes before it" },
+  { key: 'elevationMarkText', field: 'elevation-mark-text', size: false, label: 'Elevation marker text', title: "The height of the elevation markers' names, in paper mm; empty: the Standard text style's" },
 ];
 
 /** How a tag's template reads the element (report #64), one phrase for the translations. */
@@ -113,7 +122,7 @@ export function StandardsDialog() {
   };
 
   // A marker size typed in the Project tab: empty clears it (the default), a number within its range sets it.
-  const markOption = (key: 'markSize' | 'markText', text: string, was: number | undefined, min: number, max: number) => {
+  const markOption = (key: MarkKey, text: string, was: number | undefined, min: number, max: number) => {
     const t = text.trim();
     if (t === '') { if (was != null) void execute('standards.options', { [key]: null }); return; }
     const n = Number(t.replace(',', '.'));
@@ -130,13 +139,16 @@ export function StandardsDialog() {
       <dd><select value={String(book.lineCap ?? 'round')} onChange={(e) => void execute('standards.options', { lineCap: e.target.value })}>
         <option value="round">round</option><option value="square">square (mitred)</option>
       </select></dd>
-      {/* The section and elevation markers' symbol size and text height (decision 455); a marker's own, in its properties, goes before. */}
-      <dt title="The size of the section markers' arrows and the elevation markers' circle, in paper mm, in plans, sections, elevations, sheets and PDF; a marker's own size in its properties goes before it">Marker size</dt>
-      <dd><input className="num" data-field="mark-size" key={`ms${book.markSize ?? ''}`} defaultValue={book.markSize == null ? '' : String(book.markSize)} placeholder="10"
-        onBlur={(e) => markOption('markSize', e.target.value, book.markSize, 1, 50)} /> mm</dd>
-      <dt title="The height of the section and elevation markers' names, in paper mm; empty: the Standard text style's">Marker text</dt>
-      <dd><input className="num" data-field="mark-text" key={`mt${book.markText ?? ''}`} defaultValue={book.markText == null ? '' : String(book.markText)} placeholder={String(book.textStyles.find((t) => t.id === 'standard')?.height ?? 2.5)}
-        onBlur={(e) => markOption('markText', e.target.value, book.markText, 0.5, 20)} /> mm</dd>
+      {/* The section markers' and the elevation markers' symbol size and text height, each kind its own (decisions 455, 460); a marker's own, in its properties, goes before. */}
+      {MARK_ROWS.map((row) => {
+        const was = book[row.key];
+        const standard = Number(book.textStyles.find((t) => t.id === 'standard')?.height ?? 2.5);
+        return [
+          <dt key={`${row.key}t`} title={row.title}>{row.label}</dt>,
+          <dd key={`${row.key}d`}><input className="num" data-field={row.field} key={`${row.key}${was ?? ''}`} defaultValue={was == null ? '' : String(was)} placeholder={row.size ? '10' : String(standard)}
+            onBlur={(e) => markOption(row.key, e.target.value, was, row.size ? 1 : 0.5, row.size ? 50 : 20)} /> mm</dd>,
+        ];
+      })}
     </dl>
   );
   return (

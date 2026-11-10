@@ -54,7 +54,7 @@ public sealed record ResolvedMaterial(string Name, string? Hatch, double HatchSc
 /// <c>plan</c> and <c>elevation</c>, the same, for those kinds of view;
 /// <c>membrane</c> (drawn as a heavy dashed line); <c>drawJoints</c>.
 /// A field the material does not give comes from its name: concrete,
-/// masonry, insulation, timber, steel… (<see cref="Guesses"/>; an unknown name the general 45° lines). A plan takes the section's graphics
+/// masonry, insulation, timber, steel… as Revit's default materials (<see cref="Guesses"/>; an unknown name none). A plan takes the section's graphics
 /// unless it has its own; an elevation guesses its surface from the name
 /// apart (<see cref="ElevationFromName"/>: brick, stone, boards, never BATT).
 /// <c>hatch</c> null (JSON null) means "no hatch", absent means "from the name".
@@ -71,14 +71,60 @@ public static class MaterialGraphics
     sealed record Guess(bool Membrane = false, string? Hatch = null);
 
     /// <summary>
-    /// What a name suggests for a cut (decision 456, a tester's request): the section symbols drawings use (ISO 128-50's
-    /// 45° lines as the general hatch; DIN 1356 and STAS 105's masonry, concrete and reinforced concrete). Masonry and brick
-    /// as 45° lines (brick's courses are what a facade shows: <see cref="ElevationGuesses"/>), plain concrete speckled,
-    /// reinforced concrete speckled over 45° lines, insulation as batts, timber's grain, steel's paired lines, earth, gravel;
-    /// finishes, glass, air and membranes nothing. A name nothing matches takes the general 45° lines (<see cref="GenericHatch"/>).
-    /// The first match wins: membranes and insulation first ("bitumen sheet", "stone wool"), glass and air ("glass block"), reinforced before plain concrete.
+    /// What a name suggests for a cut (decision 460, after the tester's request of decision 456): the cut patterns Revit's
+    /// default materials carry, drawn by Lapin's own patterns. Brick, masonry and stone 45° lines (MASONRY, Revit's
+    /// "Masonry - Brick"); concrete blocks, aerated concrete and CMU a diagonal crosshatch (BLOCK, Revit's "Diagonal
+    /// crosshatch" on Concrete Masonry Units); concrete, cast in place or reinforced, the speckle (CONCRETE, Revit's
+    /// "Concrete"); rigid insulation a fine square grid (RIGID, Revit's "Insulation - Rigid"), batts and wool BATT; gypsum,
+    /// plaster and render a stipple (GYPSUM, Revit's "Gypsum-Plaster"); sand a dense stipple (SAND); timber its grain
+    /// (WOOD), plywood, OSB and CLT their crossed layers (WOODCROSS); steel and metal STEEL; earth and gravel theirs.
+    /// Tiles keep their grid (TILES: a roof's covering band shows). Glass, air, paint and finishes, membranes and a name nothing matches: none (Revit's Default material has no
+    /// cut pattern). Brick's courses are what a facade shows (<see cref="ElevationGuesses"/>). The first match wins:
+    /// membranes and insulation first ("bitumen sheet", "stone wool"), glass and air ("glass block"), blocks before
+    /// concrete and before masonry ("concrete block", "zidărie BCA").
     /// </summary>
     static readonly (Regex Re, Guess G)[] Guesses =
+    [
+        (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|sheet|folie|barier"), new(Membrane: true)),
+        (new(@"eps\b|xps\b|polystyren|polistiren|pir\b|pur\b|rigid|extrudat|expandat"), new(Hatch: "RIGID")),
+        (new(@"insul|wool|vata|izola|batt|fibre|fiber"), new(Hatch: "BATT")),
+        (new(@"glass|glazing|sticla|geam|\bair\b|cavity|\baer\b|lama de aer"), new()),
+        (new(@"block|\bcmu\b|bca|aac|ytong|boltari|blocuri"), new(Hatch: "BLOCK")),
+        (new(@"brick|masonry|caramid|zidari|clinker|stone|piatra"), new(Hatch: "MASONRY")),
+        (new(@"concrete|beton|screed|sapa|c\d\d/|reinforced|armat"), new(Hatch: "CONCRETE")),
+        (new(@"plywood|osb|\bclt\b|placaj"), new(Hatch: "WOODCROSS")),
+        (new(@"timber|wood|lemn|lumber|glulam"), new(Hatch: "WOOD")),
+        (new(@"steel|metal|otel|alumin"), new(Hatch: "STEEL")),
+        (new(@"\bsand\b|nisip"), new(Hatch: "SAND")),
+        (new(@"gravel|ballast|pietris|aggregate"), new(Hatch: "GRAVEL")),
+        (new(@"earth|soil|pamant|ground"), new(Hatch: "EARTH")),
+        (new(@"plaster|render|gypsum|tencuial|gips|stucco"), new(Hatch: "GYPSUM")),
+        (new(@"tile|ceramic|gresie|faianta|tigla|olan"), new(Hatch: "TILES")),
+    ];
+
+    /// <summary>
+    /// The suggestions decision 325 made (a project with no <c>hatchRev</c>): brick and masonry in courses (BRICK), an
+    /// unknown name nothing. Kept only so a project saved then keeps the hatches it drew (<c>MaterialHatchUpgrade</c>).
+    /// </summary>
+    static readonly (Regex Re, Guess G)[] Guesses325 =
+    [
+        (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|sheet|folie|barier"), new(Membrane: true)),
+        (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), new(Hatch: "BATT")),
+        (new(@"brick|masonry|block|caramid|zidari|bca|aac"), new(Hatch: "BRICK")),
+        (new(@"concrete|beton|screed|sapa|c\d\d/"), new(Hatch: "CONCRETE")),
+        (new(@"timber|wood|clt|osb|plywood|lemn"), new(Hatch: "WOOD")),
+        (new(@"steel|metal|otel|alumin"), new(Hatch: "STEEL")),
+        (new(@"gravel|ballast|pietris|aggregate"), new(Hatch: "GRAVEL")),
+        (new(@"earth|soil|pamant|ground"), new(Hatch: "EARTH")),
+        (new(@"tile|ceramic|gresie|faianta"), new(Hatch: "TILES")),
+        (new(@"plaster|render|gypsum|tencuial|gips|finish|paint"), new()),
+    ];
+
+    /// <summary>
+    /// The suggestions decision 456 made (<c>hatchRev</c> 1): masonry 45° lines, reinforced concrete RCONCRETE, an unknown
+    /// name the 45° lines. Kept only so a project saved then keeps the hatches it drew.
+    /// </summary>
+    static readonly (Regex Re, Guess G)[] Guesses456 =
     [
         (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|sheet|folie|barier"), new(Membrane: true)),
         (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), new(Hatch: "BATT")),
@@ -92,27 +138,6 @@ public static class MaterialGraphics
         (new(@"earth|soil|pamant|ground"), new(Hatch: "EARTH")),
         (new(@"tile|ceramic|gresie|faianta"), new(Hatch: "TILES")),
         (new(@"plaster|render|gypsum|tencuial|gips|finish|paint|vopsea|stucco"), new()),
-    ];
-
-    /// <summary>The cut hatch of a name nothing matches: ISO 128-50's general 45° lines.</summary>
-    public const string GenericHatch = "LINES45";
-
-    /// <summary>
-    /// The suggestions decision 325 made, before decision 456: brick and masonry in courses (BRICK), an unknown name
-    /// nothing. Kept only so a project saved before keeps the hatches it drew (<c>MaterialHatchUpgrade</c>).
-    /// </summary>
-    static readonly (Regex Re, Guess G)[] LegacyGuesses =
-    [
-        (new(@"vapou?r|barrier|membrane|foil|\bdpc\b|damp|bitum|sheet|folie|barier"), new(Membrane: true)),
-        (new(@"insul|wool|eps\b|xps\b|polystyren|pir\b|pur\b|vata|izola"), new(Hatch: "BATT")),
-        (new(@"brick|masonry|block|caramid|zidari|bca|aac"), new(Hatch: "BRICK")),
-        (new(@"concrete|beton|screed|sapa|c\d\d/"), new(Hatch: "CONCRETE")),
-        (new(@"timber|wood|clt|osb|plywood|lemn"), new(Hatch: "WOOD")),
-        (new(@"steel|metal|otel|alumin"), new(Hatch: "STEEL")),
-        (new(@"gravel|ballast|pietris|aggregate"), new(Hatch: "GRAVEL")),
-        (new(@"earth|soil|pamant|ground"), new(Hatch: "EARTH")),
-        (new(@"tile|ceramic|gresie|faianta"), new(Hatch: "TILES")),
-        (new(@"plaster|render|gypsum|tencuial|gips|finish|paint"), new()),
     ];
 
     /// <summary>
@@ -134,6 +159,7 @@ public static class MaterialGraphics
         (new(@"timber|wood|lemn|larch|cedar|pine|spruce|lambriu|siding|weatherboard|scandura"), "BOARDS"),
         (new(@"clad|placare|sandwich|trapez|tabla|zinc|copper|cupru|standing seam|faltuit|corrugated|cutat|metal sheet|steel sheet|roof sheet"), "VERTICAL"),
         (new(@"concrete|beton|screed|sapa|c\d\d/"), null),
+        (new(@"\bsand\b|nisip"), "SAND"),
         (new(@"gravel|ballast|pietris|aggregate"), "GRAVEL"),
         (new(@"earth|soil|pamant|ground"), "EARTH"),
         (new(@"tile|ceramic|gresie|faianta|porcelain"), "TILES"),
@@ -150,11 +176,19 @@ public static class MaterialGraphics
         return null;
     }
 
-    /// <summary>A section's hatch from the name: what it matches, else the general 45° lines.</summary>
-    static Guess Suggested(string name) => GuessOf(name) ?? new Guess(Hatch: GenericHatch);
+    /// <summary>A section's hatch from the name: what it matches, else none.</summary>
+    static Guess Suggested(string name) => GuessOf(name) ?? new Guess();
 
-    /// <summary>What decision 325's names suggested for a cut (a pattern, or none), for a project saved before decision 456.</summary>
-    public static string? LegacyFromName(string name) => GuessOf(name, LegacyGuesses) is { Membrane: false } g ? g.Hatch : null;
+    /// <summary>
+    /// What an earlier build's names suggested for a cut (a pattern, or none): decision 325's for a project of no
+    /// <c>hatchRev</c> (<paramref name="rev"/> 0), decision 456's for <c>hatchRev</c> 1 (a name nothing matched: 45° lines).
+    /// </summary>
+    public static string? LegacyFromName(string name, int rev = 0) => rev switch
+    {
+        0 => GuessOf(name, Guesses325) is { Membrane: false } g ? g.Hatch : null,
+        1 => GuessOf(name, Guesses456) is { } g ? (g.Membrane ? null : g.Hatch) : "LINES45",
+        _ => FromName(name).Hatch,
+    };
 
     /// <summary>What a name suggests for an elevation's surface hatch: a pattern, or none (insulation, membranes, finishes, concrete, an unknown name).</summary>
     public static string? ElevationFromName(string name)

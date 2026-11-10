@@ -46,6 +46,26 @@ public static class HatchLibrary
 15, 0.7,2.2, 4.4,6.1, 0,-4.3, 0,-7.1
 95, 2.6,1.5, 3.2,5.7, 0,-5.2
 
+*MASONRY, Masonry and brick cut: 45 degree lines 3.2 mm apart
+45, 0,0, 0,3.2
+
+*BLOCK, Concrete blocks cut: diagonal crosshatch 3 mm
+45, 0,0, 0,3
+135, 0,0, 0,3
+
+*RIGID, Rigid insulation cut: square grid 2.4 mm
+0, 0,0, 0,2.4
+90, 0,0, 0,2.4
+
+*GYPSUM, Gypsum and plaster cut: staggered stipple
+0, 0,0, 2.2,1.6, 0,-4.4
+0, 1.1,0.8, 2.2,1.6, 0,-4.4
+
+*SAND, Sand: dense stipple
+0, 0,0, 1.2,0.9, 0,-2.4
+0, 0.6,0.45, 1.2,0.9, 0,-2.4
+0, 0.3,0.2, 1.7,1.35, 0,-3.4
+
 *INSULATION, Batt insulation zig-zag rows
 60, 0,0, -2.309401,4, 4.618802,-4.618802
 120, 4.618802,0, 2.309401,4, 4.618802,-4.618802

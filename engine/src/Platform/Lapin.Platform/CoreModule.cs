@@ -62,6 +62,8 @@ public sealed class CoreModule : ILapinModule
         var references = new ReferencePlacement();
         r.Service<IElementPlacement>(references);
         r.Service<IElementRise>(references);
+        // Sections and elevations moved in plan: a section with its cut, an elevation's marker alone (decision 460).
+        r.Service<IElementPlacement>(new ViewMarkerPlacement());
         GraphicsSets.Register(r);
         ViewFilters.Register(r);
         BrowserSets.Register(r);
@@ -523,7 +525,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = 1 });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();
