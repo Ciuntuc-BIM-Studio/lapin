@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
-import type { Grip, GripView, LapinModule, ModuleViewDef, RefLine, RibbonTabDef, ToolDef } from './module';
+import type { Vec2, Grip, GripView, LapinModule, ModuleViewDef, PlanOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { addModuleViews, toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
@@ -12,6 +12,7 @@ import { parseSlot, setSlots, slotsOf, useHotbars, withSlot, withSlotType, withS
 import { useSession } from '../engine/session';
 import { useInterface } from '../app/interface';
 import { addSelectionExpander } from './groups';
+import { snapGrip } from '../viewport/grips';
 import { replacementsOf, replacesAny, through, withReplacedTools, type Replacement } from './replaces';
 
 /** The product's modules, with the tools some of them replace in place (docs/overrides.md); as loaded when none does. */
@@ -32,6 +33,14 @@ function replacedOnce<T>(kind: 'dialogs' | 'views', id: string, original: () => 
 }
 /** What the modules show over the active model view (the planning module's card to drag the selection onto a task). */
 export const overlays = (): ComponentType[] => modules.flatMap((m) => m.overlays ?? []);
+
+/** What the modules draw inside the plan's SVG, in the plan's own coordinates. */
+export const planOverlays = (): ComponentType<PlanOverlayProps>[] => modules.flatMap((m) => m.planOverlays ?? []);
+/** The grip's drop point as the modules' `gripSnap`s keep it (the point itself when none answers). */
+export const gripSnapped = (grip: Grip, to: Vec2, free: boolean): Vec2 => {
+  const node = grip.owner ? useSession.getState().nodes.get(grip.owner) : undefined;
+  return node ? snapGrip(modules.map((m) => m.gripSnap), node, grip, to, free) : to;
+};
 
 export const ribbonTabs = (): RibbonTabDef[] => mergeTabs(modules, product.tabs ?? undefined);
 /** The modules' own quick tools, in their order: a workspace's slots until the user sets them. */

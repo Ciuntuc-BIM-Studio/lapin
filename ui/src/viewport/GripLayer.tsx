@@ -17,7 +17,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUi } from '../app/store';
 import { execute, useSession } from '../engine/session';
 import type { Grip, GripView, RefLine, Vec2 } from '../platform/module';
-import { gripsOf, referencesOf } from '../platform/modules';
+import { gripsOf, gripSnapped, referencesOf } from '../platform/modules';
 import { dropGrips, groupGrips, movers, runSteps, setHotRemove, type GripGroup } from './grips';
 import { openContextMenu } from '../shell/ContextMenu';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
@@ -208,7 +208,9 @@ export function useGripEditor(o: GripEditorOptions) {
     // A grip that keeps its own angles (a tag's knee): on them unless Shift frees it.
     const typed = livePoint({ ...useLive.getState(), cursor: aimed }) ?? aimed;
     const keep = members.length === 1 ? members[0].constrain : undefined;
-    const at = keep ? keep(typed, e.shiftKey) : typed;
+    const kept = keep ? keep(typed, e.shiftKey) : typed;
+    // A module's own snap for a grip of an element it does not own (a generated block's grid), after the owner's.
+    const at = members.length === 1 ? gripSnapped(members[0], kept, e.shiftKey) : kept;
     setDrag({ ...drag, members, at, moved: drag.moved || Math.hypot(at.x - drag.group.at.x, at.y - drag.group.at.y) > 1e-6 });
     return true;
   };

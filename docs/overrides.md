@@ -112,3 +112,15 @@ replaces: {
 - Several modules replacing one id chain in load order, each given the one before it.
 - Resolved in `ui/src/platform/modules.ts` (pure helpers in `ui/src/platform/replaces.ts`). Without replacements the module list is the one loaded, unchanged.
 - Code that imports another module's tool directly, rather than reading it from the modules, sees the original.
+
+## Interface: plan overlays and grip snap
+
+Two more points on a `LapinModule` (`ui/src/platform/module.ts`), for modules that drive elements from a specification of their own:
+
+```ts
+planOverlays: [MyGhost],                                  // ComponentType<PlanOverlayProps>[]
+gripSnap: (element, grip, to, free) => Vec2 | undefined,  // undefined: leave the point
+```
+
+- `planOverlays` are drawn inside every plan view's SVG, over the elements and grips, with the plan's own transform: `toScreen(p)`, `toWorld(x, y)`, `scale` (px per metre), `rotation` (true north up) and `view` (`{ id, storeyId }`). The layer takes no pointer: an element that should be clicked carries `data-overlay-hit` and `pointer-events: all`, and a press on it starts no selection, grip or tool in the plan. Resolved by `planOverlays()` in `ui/src/platform/modules.ts`, drawn by `ui/src/viewport/PlanOverlays.tsx`.
+- `gripSnap` is asked while a grip is dragged in a 2D view, after the owner's own `Grip.constrain`, for the elements the module does not own (the owner's `grips` are unchanged); the first module to answer with a point wins. It is not asked while Shift is held, nor when several grips are dragged together. Pure helper `snapGrip` in `ui/src/viewport/grips.ts`.

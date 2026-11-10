@@ -32,6 +32,7 @@ import { pairs } from './snap';
 import { formatLength, lengthText } from '../engine/unitsStore';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
+import { PlanOverlays } from './PlanOverlays';
 import { useShallow } from 'zustand/react/shallow';
 import { useDisplay } from '../app/display';
 import { gridSnapStep, gridStepAt, usePrefs } from '../app/prefs';
@@ -817,6 +818,7 @@ export function PlanView() {
         ))}
         {pts.map((p, i) => { const s = toScreen(p); return <circle key={i} cx={s.x} cy={s.y} r={3} className="plan-vertex" />; })}
         {editor.render}
+        <PlanOverlays toScreen={toScreen} toWorld={toWorld} scale={view.scale} rotation={rot} view={{ id: ownPlan ?? null, storeyId: storey?.id ?? null }} />
         {preview}
         {marker && hover && !hover.mode && (hover.kind === 'point' && !hover.guides.length
           ? <rect x={marker.x - 5} y={marker.y - 5} width={10} height={10} className="plan-snap point" />

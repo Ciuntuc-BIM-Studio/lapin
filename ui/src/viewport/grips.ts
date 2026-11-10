@@ -6,6 +6,7 @@
  * moves only its own end (its neighbours stay; the join holds while they meet).
  */
 
+import type { NodeDto } from '../engine/protocol';
 import type { Grip, GripStep, Vec2 } from '../platform/module';
 import { execute } from '../engine/session';
 
@@ -33,6 +34,16 @@ export function movers(group: GripGroup, pick: number, alone: boolean): Grip[] {
   const p = ((pick % (n + 1)) + n + 1) % (n + 1);
   if (p < n) return [group.members[p]];
   return alone ? [group.members[0]] : group.members;
+}
+
+/** Where a drag lands once the modules' `gripSnap`s have had their say (LapinModule.gripSnap): the first to answer wins. */
+export function snapGrip(snaps: (((element: NodeDto, grip: Grip, to: Vec2, free: boolean) => Vec2 | undefined) | undefined)[], element: NodeDto, grip: Grip, to: Vec2, free: boolean): Vec2 {
+  if (free) return to;
+  for (const s of snaps) {
+    const r = s?.(element, grip, to, free);
+    if (r) return r;
+  }
+  return to;
 }
 
 /** Run grip steps: one command alone, several as one edit. */
