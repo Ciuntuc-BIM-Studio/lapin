@@ -340,6 +340,8 @@ public sealed partial class StudioModule
         foreach (var id in ids)
         {
             var e = Solid(ctx.Model, id);
+            // A pinned solid is not moved, turned or mirrored by a step (decision 449); its shape still changes.
+            if (op is "move" or "rotate" or "mirror") Pins.Refuse([e]);
             var f = Resolve(ctx, e, (JsonObject)given.DeepClone());
             var list = Features0(e);
             list.Add(f);

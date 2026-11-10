@@ -50,6 +50,10 @@ Drzwi, okno lub otwór w ścianie przesuwa się i kopiuje wzdłuż swojej ścian
 
 Oś siatki przesuwa się, kopiuje, obraca i odbija lustrzanie sama albo razem z innymi elementami. Kopia jest nową osią tej samej siatki, nazwaną według ostatniej osi biegnącej w tym samym kierunku: przy osiach 1, 2 i 3 kopia każdej z nich to 4.
 
+### Przypinanie
+
+Przypnij to, co nie może się przesunąć przez pomyłkę: zaimportowany model, siatkę, rysunek inwentaryzacji. Zaznacz go i wybierz **Modyfikuj → Przypnij**, albo zaznacz **Przypięty** w sekcji **Umiejscowienie** w jego właściwościach. Przypięty element nie jest przesuwany, obracany, odbijany, podnoszony, przenoszony na inną kondygnację ani usuwany i nie pokazuje uchwytów. Jego pozostałe pola nadal się zmieniają: typ, wysokość lub materiał. Nadal można go kopiować, a kopia nie jest przypięta. Ściana połączona z nim, która się przesuwa, zostawia końce przypiętej ściany tam, gdzie są. Przypięcie grupy przypina jej członków; grupa z przypiętym członkiem nie jest przesuwana. **Modyfikuj → Odepnij** (<kbd>UP</kbd>) znów go uwalnia. Przypiąć można każdy element: ścianę, odniesienie z zaimportowanego pliku, narysowaną linię.
+
 ## Rysowanie
 
 Karta **Rysunek** rysuje linie, polilinie, prostokąty, okręgi i łuki. Edytuje je poleceniami odsuń, utnij, wydłuż, zaokrąglenie, fazowanie i połącz, wypełnia obszary kreskowaniem i porządkuje je na warstwach (**Warstwy**). **Importuj DXF** wczytuje rysunek CAD jako linie, do których możesz przyciągać i które możesz edytować.

@@ -50,6 +50,10 @@ Une porte, une fenêtre ou une ouverture de mur se déplace et se copie le long 
 
 Un axe de quadrillage se déplace, se copie, pivote et se reflète seul ou avec d’autres éléments. Une copie est un nouvel axe de la même grille, nommé d’après le dernier axe qui court dans sa direction : avec les axes 1, 2 et 3, la copie de n’importe lequel d’entre eux est 4.
 
+### Épinglage
+
+Épinglez ce qui ne doit pas bouger par erreur : un modèle importé, la grille, un dessin de relevé. Sélectionnez-le et choisissez **Modifier → Épingler**, ou cochez **Épinglé** sous **Placement** dans ses propriétés. Un élément épinglé n’est ni déplacé, ni tourné, ni symétrisé, ni élevé, ni envoyé à un autre niveau, ni supprimé, et il n’affiche pas de poignées. Ses autres champs changent toujours : son type, sa hauteur ou son matériau. Il peut toujours être copié, et la copie n’est pas épinglée. Un mur joint à lui qui se déplace laisse les extrémités du mur épinglé où elles sont. Épingler un groupe épingle ses membres ; un groupe avec un membre épinglé ne se déplace pas. **Modifier → Désépingler** (<kbd>UP</kbd>) le libère de nouveau. Tout élément peut être épinglé : un mur, une référence d’un fichier importé, une ligne dessinée.
+
 ## Dessin
 
 L’onglet **Dessin** trace des lignes, des polylignes, des rectangles, des cercles et des arcs. Il les modifie par décalage, ajustement, prolongement, raccord, chanfrein et jonction, remplit des surfaces de hachures et les organise sur des **Calques**. **Importer DXF** fait entrer un dessin de CAO sous forme de lignes auxquelles vous pouvez vous accrocher et que vous pouvez modifier.

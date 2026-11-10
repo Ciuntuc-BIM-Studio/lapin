@@ -50,6 +50,10 @@ Uma porta, uma janela ou uma abertura na parede se move e se copia ao longo da s
 
 Um eixo da malha move, copia, gira e espelha sozinho ou junto com outros elementos. Uma cópia é um novo eixo da mesma malha, nomeado a partir do último eixo que corre no mesmo sentido: com os eixos 1, 2 e 3, uma cópia de qualquer um deles é o 4.
 
+### Fixação
+
+Fixe o que não deve mover-se por engano: um modelo importado, a malha, um desenho de levantamento. Selecione-o e escolha **Modificar → Fixar**, ou marque **Fixado** em **Posicionamento** nas suas propriedades. Um elemento fixado não é movido, rodado, espelhado, elevado, levado para outro piso nem apagado, e não mostra alças. Os outros campos continuam a mudar: o tipo, a altura ou o material. Ainda pode ser copiado, e a cópia não fica fixada. Uma parede ligada a ele que se move deixa as extremidades da parede fixada onde estão. Fixar um grupo fixa os seus membros; um grupo com um membro fixado não se move. **Modificar → Soltar** (<kbd>UP</kbd>) solta-o de novo. Qualquer elemento pode ser fixado: uma parede, uma referência de um ficheiro importado, uma linha desenhada.
+
 ## Desenho
 
 A guia **Desenho** desenha linhas, polilinhas, retângulos, círculos e arcos. Ela os edita com deslocar, aparar, estender, concordância, chanfro e unir, preenche áreas com hachuras e os organiza em **Layers**. **Importar DXF** traz um desenho CAD como linhas em que você pode fazer snap e que pode editar.

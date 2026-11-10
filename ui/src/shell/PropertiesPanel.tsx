@@ -23,6 +23,7 @@ import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
 import { DependenciesSection } from './DependenciesSection';
 import { deleteElements } from '../engine/dependents';
+import { isPinned, setPinned } from '../modules/core/pinTools';
 import { ParamsSection } from './ParamsSection';
 import { AxisFields } from './AxisFields';
 import { paramKey, sameKind, type Param } from './params';
@@ -297,6 +298,8 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
                 {storeys(model).map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
               </select>
             </dd>
+            <dt title="A pinned element stays where it is: it is not moved, turned, mirrored, sent to another storey nor deleted until it is unpinned. Its other fields still change">Pinned</dt>
+            <dd><input type="checkbox" data-field="pinned" checked={isPinned(node)} onChange={(e) => void setPinned(useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id], e.target.checked)} /></dd>
             {elevation && <>
               <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>
               <dd><LengthCell metres={elevation.offset} onCommit={(v) => void execute('element.update', { ids: sameKind(node), attrs: { [elevation.key]: v } })} /></dd>
@@ -324,7 +327,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
       <IfcPropertiesSection node={node} />
       {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
         <section className="sect actions">
-          <button type="button" className="btn" onClick={() => void deleteElements([node.id])}><Trash2 size={14} />Delete</button>
+          <button type="button" className="btn" disabled={isPinned(node)} title={isPinned(node) ? 'Pinned: unpin it to delete it' : undefined} onClick={() => void deleteElements([node.id])}><Trash2 size={14} />Delete</button>
         </section>
       )}
       <details className="sect advanced">

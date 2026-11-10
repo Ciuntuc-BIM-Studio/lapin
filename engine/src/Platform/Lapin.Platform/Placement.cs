@@ -221,7 +221,8 @@ public static class Placement
             foreach (var r in m.RelationsOf(e.Id, IfcClass.RelConnectsPathElements).ToList())
                 foreach (var pid in r.Related.Append(r.Relating).Where(x => x != e.Id && moving?.Contains(x) != true).Distinct())
                 {
-                    if (m.Get(pid) is not { } partner || partner.Attrs["start"] is not JsonArray || partner.Attrs["end"] is not JsonArray) continue;
+                    // A pinned neighbour keeps its ends (decision 449).
+                    if (m.Get(pid) is not { } partner || Pins.Is(partner) || partner.Attrs["start"] is not JsonArray || partner.Attrs["end"] is not JsonArray) continue;
                     var attrs = partner.CloneAttrs();
                     var changed = false;
                     foreach (var k in new[] { "start", "end" })

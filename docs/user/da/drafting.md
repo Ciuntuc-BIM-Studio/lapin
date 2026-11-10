@@ -50,6 +50,10 @@ En dør, et vindue eller en vægåbning flyttes og kopieres langs sin væg: kun 
 
 En modullinje flyttes, kopieres, roteres og spejles for sig selv eller sammen med andre elementer. En kopi er en ny modullinje i samme net, opkaldt efter den sidste modullinje, der løber samme vej: med modullinjerne 1, 2 og 3 bliver en kopi af en hvilken som helst af dem til 4.
 
+### Fastgørelse
+
+Fastgør det, der ikke må flytte sig ved en fejl: en importeret model, nettet, en opmålingstegning. Vælg det og vælg **Redigér → Fastgør**, eller sæt hak i **Fastgjort** under **Placering** i dets egenskaber. Et fastgjort element flyttes, drejes, spejles, hæves, sendes til en anden etage eller slettes ikke, og det viser ingen greb. Dets andre felter kan stadig ændres: dets type, højde eller materiale. Det kan stadig kopieres, og kopien er ikke fastgjort. En væg, der er forbundet med det og flyttes, lader den fastgjorte væggs ender blive, hvor de er. Fastgørelse af en gruppe fastgør dens medlemmer; en gruppe med et fastgjort medlem flyttes ikke. **Redigér → Frigør** (<kbd>UP</kbd>) slipper det igen. Ethvert element kan fastgøres: en væg, en reference fra en importeret fil, en tegnet linje.
+
 ## Tegning
 
 Fanen **Tegn** tegner linjer, polylinjer, rektangler, cirkler og buer. Den redigerer dem med forskyd, trim, forlæng, afrunding, affasning og sammenføj, fylder områder med skraveringer og organiserer dem på **Lag**. **Importér DXF** henter en CAD-tegning ind som linjer, du kan fange til og redigere.

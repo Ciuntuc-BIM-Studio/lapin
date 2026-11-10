@@ -64,6 +64,10 @@ O ușă, o fereastră sau un gol din perete se mută și se copiază de-a lungul
 
 O axă se mută, se copiază, se rotește și se oglindește singură sau împreună cu alte elemente. O copie e o axă nouă a aceluiași caroiaj, numită după ultima axă care merge în aceeași direcție: cu axele 1, 2 și 3, copia oricăreia e 4.
 
+### Fixarea
+
+Fixează ce nu trebuie să se miște din greșeală: un model importat, caroiajul, un desen de releveu. Selectează-l și alege **Modifică → Fixează**, sau bifează **Fixat** la **Amplasare** în proprietățile lui. Un element fixat nu se mută, nu se rotește, nu se oglindește, nu se ridică, nu trece pe alt nivel și nu se șterge, și nu are grip-uri. Celelalte câmpuri ale lui se schimbă în continuare: tipul, înălțimea sau materialul. Se poate totuși copia, iar copia nu e fixată. Un perete legat de el care se mută lasă capetele peretelui fixat unde sunt. Fixarea unui grup fixează membrii lui; un grup cu un membru fixat nu se mută. **Modifică → Eliberează** (<kbd>UP</kbd>) îl lasă din nou liber. Orice element poate fi fixat: un perete, o referință dintr-un fișier importat, o linie desenată.
+
 ## Desen
 
 Tabul **Desen** desenează linii, polilinii, dreptunghiuri, cercuri și arce. Le editează cu paralelă, taie, prelungește, racordare, teșire și îmbinare, umple suprafețe cu hașuri și le organizează pe **Layere**. **Importă DXF** aduce un desen CAD ca linii de care te poți prinde și pe care le poți edita.

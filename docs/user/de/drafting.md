@@ -50,6 +50,10 @@ Eine Tür, ein Fenster oder eine Wandöffnung wird entlang ihrer Wand verschoben
 
 Eine Rasterachse lässt sich allein oder zusammen mit anderen Elementen verschieben, kopieren, drehen und spiegeln. Eine Kopie ist eine neue Achse desselben Rasters, benannt nach der letzten Achse in ihrer Richtung: Bei den Achsen 1, 2 und 3 ist eine Kopie einer beliebigen von ihnen die 4.
 
+### Fixieren
+
+Fixieren Sie, was nicht versehentlich verrutschen darf: ein importiertes Modell, das Raster, eine Vermessungszeichnung. Wählen Sie es aus und wählen Sie **Ändern → Fixieren**, oder setzen Sie in seinen Eigenschaften unter **Platzierung** den Haken bei **Fixiert**. Ein fixiertes Element wird nicht verschoben, gedreht, gespiegelt, angehoben, in ein anderes Geschoss gesetzt oder gelöscht, und es zeigt keine Griffe. Seine anderen Felder lassen sich weiter ändern: sein Typ, seine Höhe oder sein Material. Es lässt sich weiterhin kopieren, und die Kopie ist nicht fixiert. Wird eine mit ihm verbundene Wand verschoben, bleiben die Enden der fixierten Wand, wo sie sind. Das Fixieren einer Gruppe fixiert ihre Mitglieder; eine Gruppe mit einem fixierten Mitglied wird nicht verschoben. **Ändern → Lösen** (<kbd>UP</kbd>) gibt es wieder frei. Jedes Element lässt sich fixieren: eine Wand, eine Referenz aus einer importierten Datei, eine gezeichnete Linie.
+
 ## Zeichnen
 
 Die Registerkarte **Zeichnen** zeichnet Linien, Polylinien, Rechtecke, Kreise und Bögen. Sie bearbeitet sie mit Versatz, Stutzen, Dehnen, Abrunden, Fase und Verbinden, füllt Flächen mit Schraffuren und ordnet sie auf **Layer** an. **DXF importieren** holt eine CAD-Zeichnung als Linien herein, die Sie fangen und bearbeiten können.

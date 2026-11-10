@@ -52,6 +52,8 @@ public static class StoreyMove
             var ids = Args.Ids(a).Distinct().ToList();
             if (ids.Count == 0) throw new CommandException("Select what to move to another storey.");
             var picked = ids.Select(id => ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.")).ToList();
+            // A pinned element stays on its storey (decision 449).
+            Pins.Refuse(picked);
             var moving = new List<Entity>();
             foreach (var e in picked)
             {

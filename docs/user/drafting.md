@@ -64,6 +64,10 @@ A door, a window or a wall opening moves and copies along its wall: only the par
 
 A grid axis moves, copies, rotates and mirrors on its own, or together with other elements. A copy is a new axis of the same grid, named after the last axis that runs its way: with axes 1, 2 and 3, a copy of any of them is 4.
 
+### Pinning
+
+Pin what must not move by mistake: an imported model, the grid, a survey drawing. Select it and choose **Modify → Pin**, or tick **Pinned** under **Placement** in its properties. A pinned element is not moved, rotated, mirrored, raised, sent to another storey or deleted, and it shows no grips. Its other fields still change: its type, height or material. It can still be copied, and the copy is not pinned. A wall joined to it that moves keeps the pinned wall's ends where they are. Pinning a group pins its members; a group with a pinned member does not move. **Modify → Unpin** (<kbd>UP</kbd>) lets it go again. Any element can be pinned: a wall, a reference from an imported file, a drafted line.
+
 ## Drafting
 
 The **Draft** tab draws lines, polylines, rectangles, circles and arcs. It edits them with offset, trim, extend, fillet, chamfer and join, fills areas with hatches, and organises them on **Layers**. **Import DXF** brings a CAD drawing in as lines you can snap to and edit.

@@ -3,7 +3,7 @@
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
+import { Pin, PinOff, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -26,6 +26,7 @@ import { LinkedProjectsWatch, LinksDialog, LinksLook } from './LinksDialog';
 import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { openDocuments } from './documents/documents';
 import { convertToNative } from './convertTools';
+import { pinSelection } from './pinTools';
 import { arraySelection } from './arrayTool';
 import { GroupSection } from './GroupSection';
 import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
@@ -134,6 +135,9 @@ const core: LapinModule = {
       // Copies in a row or round a centre, any element alike (decision 448).
       { id: 'modify.array', label: 'Array', icon: Grid3x3, run: () => void arraySelection() },
       { id: 'modify.delete', label: 'Delete', icon: Trash2, run: () => void startCommand('ERASE') },
+      // Pinned where it is, as Revit pins (decision 449): not moved, turned, mirrored nor deleted until unpinned.
+      { id: 'modify.pin', label: 'Pin', icon: Pin, run: () => void pinSelection(true) },
+      { id: 'modify.unpin', label: 'Unpin', icon: PinOff, shortcut: 'UP', run: () => void pinSelection(false) },
       { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
       { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },

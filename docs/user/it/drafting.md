@@ -50,6 +50,10 @@ Una porta, una finestra o un’apertura nel muro si sposta e si copia lungo il s
 
 Un asse della griglia si sposta, si copia, ruota e si specchia da solo o insieme ad altri elementi. Una copia è un nuovo asse della stessa griglia, chiamato in base all’ultimo asse che corre nella sua direzione: con gli assi 1, 2 e 3, una copia di uno qualsiasi di essi è 4.
 
+### Blocco
+
+Blocca ciò che non deve spostarsi per errore: un modello importato, la griglia, un disegno di rilievo. Selezionalo e scegli **Modifica → Blocca**, oppure spunta **Bloccato** sotto **Posizionamento** nelle sue proprietà. Un elemento bloccato non si sposta, non ruota, non si specchia, non si alza, non passa a un altro piano e non si cancella, e non mostra maniglie. Gli altri campi cambiano ancora: il tipo, l’altezza o il materiale. Si può comunque copiare, e la copia non è bloccata. Un muro unito a esso che si sposta lascia le estremità del muro bloccato dove sono. Bloccare un gruppo ne blocca i membri; un gruppo con un membro bloccato non si sposta. **Modifica → Sblocca** (<kbd>UP</kbd>) lo libera di nuovo. Qualsiasi elemento può essere bloccato: un muro, un riferimento da un file importato, una linea disegnata.
+
 ## Disegno
 
 La scheda **Disegno** disegna linee, polilinee, rettangoli, cerchi e archi. Li modifica con offset, taglia, estendi, raccordo, smusso e unisci, riempie le aree con retini e li organizza in **Layer**. **Importa DXF** porta dentro un disegno CAD come linee che puoi agganciare con lo snap e modificare.

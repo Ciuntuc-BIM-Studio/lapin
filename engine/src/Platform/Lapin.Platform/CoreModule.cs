@@ -205,6 +205,8 @@ public sealed class CoreModule : ILapinModule
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Nothing to change.");
                 if (StoredBodies.Has(e)) throw new CommandException($"„{e.Name}” is a reference from an IFC file: it can be deleted, not changed.");
                 var d = ctx.Describe(e.Class) ?? throw new CommandException($"{e.Class} cannot be changed here.");
+                // A pinned element keeps where it stands; its other fields still change (decision 449).
+                Pins.RefuseMove(e, values.Select(kv => kv.Key));
                 var attrs = e.CloneAttrs();
                 foreach (var (key, value) in values)
                 {
@@ -235,6 +237,15 @@ public sealed class CoreModule : ILapinModule
                 results.Add(entry.Handler(ctx, step!["args"] as JsonObject ?? [])?.DeepClone());
             }
             return results;
+        });
+
+        // Pinned where it is, or let go (decision 449): {ids, pinned}; a group's members with it. Any element, a reference too.
+        r.Command("element.pin", "Pin", (ctx, a) =>
+        {
+            var ids = Args.Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Select what to pin.");
+            var pinned = a["pinned"] is not JsonValue pv || !pv.TryGetValue<bool>(out var pb) || pb;
+            return new JsonObject { ["changed"] = Pins.Set(ctx, ids, pinned) };
         });
 
         r.Command("element.transform", "Transform", (ctx, a) =>
@@ -283,6 +294,8 @@ public sealed class CoreModule : ILapinModule
             var given = Args.Ids(a);
             // A group deleted goes with its members; a group its last member left goes too (docs/groups.md).
             var (ids, groups) = Groups.Expand(ctx.Model, given);
+            // What is pinned stays (decision 449).
+            Pins.Refuse(ids.Concat(groups).Select(id => ctx.Model.Get(id)).OfType<Entity>());
             var groupsTouched = groups.Concat(ids.Select(id => Groups.Of(ctx.Model, id)?.Id).OfType<string>()).Distinct().ToList();
             var bodies = new HashSet<string>();
             foreach (var id in ids.Distinct())
@@ -351,6 +364,8 @@ public static class ElementTransform
         var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
         var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
             .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
+        // What is pinned is not moved, turned or mirrored; it is copied, and its copies are not pinned (decision 449).
+        if (!copy) Pins.Refuse(all);
         // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.
         string? HostOf(Entity e) => ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening
             ? ctx.Model.RelatingOf(opening.Id, IfcClass.RelVoidsElement)?.Id ?? opening.Id
@@ -412,6 +427,7 @@ public static class ElementTransform
             }
         // An instance moved as a whole says where it stands now (docs/components.md).
         if (!copy) foreach (var g in groups) Components.MovedInstance(ctx, g, t, up);
+        if (copy) Pins.Unpinned(ctx, made.Select(x => (string?)x).OfType<string>());
         return new Result(made, copies, twins) { Kept = kept };
     }
 }

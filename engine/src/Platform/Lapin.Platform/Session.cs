@@ -895,7 +895,7 @@ public sealed partial class Session
             try { extra.Add(e, _store, props); } catch (Exception) { /* derived only: the node goes without it */ }
         var owner = _catalog.OwnerOf(e.Class);
         var storey = e.Class == IfcClass.BuildingStorey ? null : Spatial.ShownOn(_store, e)?.Id;
-        return new NodeDto(e.Id, e.Class, e.Name, Spatial.ParentOf(_store, e.Id)?.Id, 0, 0, props, owner != null, owner, storey);
+        return new NodeDto(e.Id, e.Class, e.Name, Spatial.ParentOf(_store, e.Id)?.Id, 0, 0, props, owner != null || StoredBodies.Has(e), owner, storey);
     }
 
     static RelationDto Dto(Relation r) => new(r.Id, r.Class, r.Relating, r.Related);
@@ -1189,7 +1189,7 @@ public sealed partial class Session
         if (g?.Instance is { } inst && MeshOf(inst.Body, e, read, bands) is { } mesh)
         {
             var plan2d = (g.Plan ?? []).Where(i => i.In(ViewStyles.EntourageModes[0])).Select(i => new PlanItemDto(i.Kind, i.Closed, i.Points.SelectMany(v => new[] { v.X, v.Y }).ToArray())).ToList();
-            return new RenderItem(e.Id, e.Class, Spatial.ShownOn(_store, e)?.Id, _catalog.OwnerOf(e.Class) != null,
+            return new RenderItem(e.Id, e.Class, Spatial.ShownOn(_store, e)?.Id, (_catalog.OwnerOf(e.Class) != null || StoredBodies.Has(e)),
                 mesh.Parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan2d, [],
                 [.. problems, .. g.Diagnostics ?? []], [], new RenderInstance(inst.Body, [.. inst.Xf.Select(v => (float)v)]));
         }
@@ -1211,7 +1211,7 @@ public sealed partial class Session
                 for (var i = 0; i + 1 < pl.Count; i++) seg.AddRange([(float)pl[i].X, (float)pl[i].Y, (float)pl[i].Z, (float)pl[i + 1].X, (float)pl[i + 1].Y, (float)pl[i + 1].Z]);
             if (seg.Count > 0) lines = [.. seg];
         }
-        return new RenderItem(e.Id, e.Class, Spatial.ShownOn(_store, e)?.Id, _catalog.OwnerOf(e.Class) != null,
+        return new RenderItem(e.Id, e.Class, Spatial.ShownOn(_store, e)?.Id, (_catalog.OwnerOf(e.Class) != null || StoredBodies.Has(e)),
             g?.LineColor ?? parts.FirstOrDefault()?.Color ?? "#c9ced6", [], [], [], [], plan, snaps,
             [.. problems, .. g?.Diagnostics ?? []], parts, null, lines);
     }

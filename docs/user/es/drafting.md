@@ -50,6 +50,10 @@ Una puerta, una ventana o un hueco de muro se desplaza y se copia a lo largo de 
 
 Un eje de rejilla se desplaza, se copia, se gira y se refleja por sí solo o junto con otros elementos. Una copia es un nuevo eje de la misma rejilla, con el nombre que sigue al último eje en su dirección: con los ejes 1, 2 y 3, la copia de cualquiera de ellos es el 4.
 
+### Fijación
+
+Fija lo que no debe moverse por error: un modelo importado, la rejilla, un dibujo de levantamiento. Selecciónalo y elige **Modificar → Fijar**, o marca **Fijado** en **Colocación** en sus propiedades. Un elemento fijado no se mueve, gira, refleja, eleva, pasa a otra planta ni se borra, y no muestra pinzamientos. Sus demás campos siguen cambiando: su tipo, altura o material. Aún se puede copiar, y la copia no queda fijada. Un muro unido a él que se mueve deja los extremos del muro fijado donde están. Fijar un grupo fija a sus miembros; un grupo con un miembro fijado no se mueve. **Modificar → Liberar** (<kbd>UP</kbd>) lo suelta de nuevo. Cualquier elemento se puede fijar: un muro, una referencia de un archivo importado, una línea dibujada.
+
 ## Dibujo
 
 La ficha **Dibujo** dibuja líneas, polilíneas, rectángulos, círculos y arcos. Los edita con desfase, recortar, alargar, empalme, chaflán y unir, rellena áreas con sombreados y los organiza en **Capas**. **Importar DXF** trae un dibujo CAD como líneas a las que puede forzar el cursor y que puede editar.

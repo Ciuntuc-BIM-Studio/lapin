@@ -119,6 +119,8 @@ public static class DraftCommands
                 }
                 var e = ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.");
                 if (e.Class != IfcClass.Annotation) continue; // model elements move by their own tools
+                // A pinned shape stays where it is; its copy is not pinned (decision 449).
+                if (!copy) Pins.Refuse([e]);
                 var attrs = e.CloneAttrs();
                 if (e.PredefinedType == Drafts.Predefined)
                 {
@@ -160,6 +162,7 @@ public static class DraftCommands
                 else continue;
                 if (copy)
                 {
+                    attrs.Remove(Pins.Key);
                     var n = new Entity(ctx.NewId(), e.Class, e.Name, attrs, e.PredefinedType);
                     ctx.Add(n);
                     made.Add((JsonNode)n.Id);

@@ -45,7 +45,8 @@ export const dialog = (id: string, shell?: Record<string, ComponentType>): Compo
 export const moduleView = (kind: string): ModuleViewDef | null =>
   replacedOnce<ModuleViewDef | null>('views', kind, () => modules.map((m) => m.views?.[kind]).find(Boolean) ?? null);
 
-export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => modules.flatMap((m) => m.grips?.[node.type]?.(node, view) ?? []).map((g) => ({ owner: node.id, ...g }));
+// A pinned element shows no grips: it stays where it is (decision 449).
+export const gripsOf = (node: NodeDto, view?: GripView): Grip[] => node.props.pinned === true ? [] : modules.flatMap((m) => m.grips?.[node.type]?.(node, view) ?? []).map((g) => ({ owner: node.id, ...g }));
 export const referencesOf = (node: NodeDto): RefLine[] => modules.flatMap((m) => m.references?.[node.type]?.(node) ?? []);
 export const similarOf = (cls: string) => modules.map((m) => m.similar?.[cls]).find(Boolean) ?? null;
 export const setTypeOf = (cls: string) => modules.map((m) => m.setType?.[cls]).find(Boolean) ?? null;

@@ -6018,6 +6018,16 @@ export const scenes = [
       await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target: { x: 0, y: 0, z: 0.4 }, azimuth: Math.PI / 4, pitch: -0.6, distance: 5 }, false));
       await t.wait(1200);
       await t.shot('reference-array', { of: '[data-testid=view3d]', pad: 0 });
+
+      // One chair pinned from its properties (decision 449): it cannot be deleted until Modify → Unpin lets it go.
+      const first = (await chairs())[0];
+      await t.ui({ selection: first.id, selected: [first.id] });
+      await t.wait(800);
+      await page.locator('aside.props input[data-field=pinned]').click();
+      await t.until(async () => (await t.nodes()).find((x) => x.id === first.id)?.props.pinned === true, 'the chair is pinned');
+      t.expect(await page.locator('aside.props .sect.actions button').first().isDisabled(), 'a pinned chair cannot be deleted');
+      await t.tool('modify.unpin');
+      await t.until(async () => (await t.nodes()).find((x) => x.id === first.id)?.props.pinned !== true, 'Modify → Unpin lets it go');
     },
   },
   {
