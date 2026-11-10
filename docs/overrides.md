@@ -124,3 +124,15 @@ gripSnap: (element, grip, to, free) => Vec2 | undefined,  // undefined: leave th
 
 - `planOverlays` are drawn inside every plan view's SVG, over the elements and grips, with the plan's own transform: `toScreen(p)`, `toWorld(x, y)`, `scale` (px per metre), `rotation` (true north up) and `view` (`{ id, storeyId }`). The layer takes no pointer: an element that should be clicked carries `data-overlay-hit` and `pointer-events: all`, and a press on it starts no selection, grip or tool in the plan. Resolved by `planOverlays()` in `ui/src/platform/modules.ts`, drawn by `ui/src/viewport/PlanOverlays.tsx`.
 - `gripSnap` is asked while a grip is dragged in a 2D view, after the owner's own `Grip.constrain`, for the elements the module does not own (the owner's `grips` are unchanged); the first module to answer with a point wins. It is not asked while Shift is held, nor when several grips are dragged together. Pure helper `snapGrip` in `ui/src/viewport/grips.ts`.
+
+## Interface: placement checks
+
+One more point on a `LapinModule`, for modules that drive walls (doors and windows put in them must fit):
+
+```ts
+placementCheck: (req) => ({ ok, message?, snapAlong? }) | null   // may be async; null leaves the host to the next module
+```
+
+- Asked, throttled (about 8 a second, only the latest question answered), while the Door or Window tool is on and the cursor is over a wall; `req` is `{ kind: 'door' | 'window', host, along (m from the start of the host's axis), width, typeId }`. The first module to answer wins.
+- `ok: false` draws the ghost as an error with `message` beside the cursor; `snapAlong` (m along the axis) is where ghost and click go when the cursor is within a metre of it, on the cursor's side of the wall. The engine is still asked at the click and its sentence error shows as usual.
+- A tool opts in with `gesture.placing(entity, at)` on its `pick` gesture (Door and Window do). Resolved by `askPlacement` in `ui/src/platform/modules.ts`; the store and pure helpers are in `ui/src/platform/placement.ts`.

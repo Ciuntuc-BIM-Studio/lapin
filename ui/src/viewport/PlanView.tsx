@@ -21,7 +21,8 @@ import { activeStorey, execute, useSession } from '../engine/session';
 import { ownPlanOf } from './storeyPlan';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
-import { findTool, useToolTick } from '../platform/modules';
+import { askPlacement, findTool, useToolTick } from '../platform/modules';
+import { placedAt, requestFor, resetPlacement, usePlacement, verdictFor } from '../platform/placement';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
@@ -55,6 +56,7 @@ import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, p
 import { ScaleChip } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { axisLine, riseThrough } from './arc';
+import { wrapText } from './wrapText';
 import { others, reportPresence, useShare } from '../engine/share';
 
 /** The radius of the arc from a to b through p (Infinity: in line). */
@@ -92,6 +94,7 @@ export function PlanView() {
   const rawHover = useRef<Vec2 | null>(null);
   // Space while a tool is on changes what its ghost shows.
   useToolTick((s) => s.n);
+  usePlacement((s) => s.verdict); // a module's answer to whether a door or window fits where the cursor is
   const [ortho, setOrtho] = useState(false);
   /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl), from `base` (the press, snapped). */
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
@@ -369,7 +372,11 @@ export function PlanView() {
       case 'point': void complete([p]); break;
       case 'pick': {
         const e = g.reach ? nearestOf(raw, g.reach / view.scale, pickItems, nodes, g.types) : pick(raw, g.types);
-        if (e) void complete([raw], e);
+        // A door or window a module refused where the cursor is goes to the place it offered, when that is near.
+        const what = e && g.placing ? g.placing(e, raw) : null;
+        const q = e && what ? requestFor(e, raw, what) : null;
+        const to = q ? placedAt(q.arc, raw, verdictFor(q.req)).point : raw;
+        if (e) void complete([to], e);
         else useSession.setState({ error: 'Pick an element this tool works on.' });
         break;
       }
@@ -509,6 +516,13 @@ export function PlanView() {
     }
     setHover(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)));
     { const r = svgRef.current!.getBoundingClientRect(); rawHover.current = toWorld(e.clientX - r.left, e.clientY - r.top); }
+    if (tool?.gesture?.kind === 'pick' && tool.gesture.placing) {
+      const g = tool.gesture, at = rawHover.current;
+      const host = g.reach ? nearestOf(at, g.reach / view.scale, pickItems, nodes, g.types) : pick(at, g.types);
+      const what = host ? g.placing!(host, at) : null;
+      const q = host && what ? requestFor(host, at, what) : null;
+      if (q) askPlacement(q.req); else resetPlacement();
+    }
     trackTagHover(rawHover.current, { pickElement: (q) => pick(q)?.id ?? null, pickTag: (q) => pick(q, ['IfcAnnotation'])?.id ?? null, anyTags, busy: !!tool?.gesture || !!d });
   };
   const onPointerUp = (e: React.PointerEvent) => {
@@ -650,7 +664,20 @@ export function PlanView() {
       const at = rawHover.current;
       const host = tool.gesture.reach ? nearestOf(at, tool.gesture.reach / view.scale, pickItems, nodes, tool.gesture.types) : pick(at, tool.gesture.types);
       if (!host) return null;
-      return <g className="plan-preview" data-testid="pick-ghost">{tool.gesture.ghost(host, at).map((l, i) => <polyline key={i} fill="none" points={l.map(toScreen).map((p) => `${p.x},${p.y}`).join(' ')} />)}</g>;
+      // A module's verdict on whether it fits here: refused, the ghost is an error with the reason; or it stands at the place offered.
+      const what = tool.gesture.placing?.(host, at) ?? null;
+      const q = what ? requestFor(host, at, what) : null;
+      const verdict = q ? verdictFor(q.req) : null;
+      const put = q ? placedAt(q.arc, at, verdict) : { point: at, snapped: false };
+      const bad = verdict?.ok === false && !put.snapped;
+      const label = verdict && !verdict.ok && verdict.message ? wrapText(verdict.message, 56) : [];
+      const tip = toScreen(at);
+      return (
+        <g className={`plan-preview${bad ? ' bad' : ''}`} data-testid="pick-ghost" data-fits={verdict ? String(verdict.ok || put.snapped) : undefined}>
+          {tool.gesture.ghost(host, put.point).map((l, i) => <polyline key={i} fill="none" points={l.map(toScreen).map((p) => `${p.x},${p.y}`).join(' ')} />)}
+          {label.length > 0 && <text x={tip.x + 14} y={tip.y + 18} data-testid="pick-reason">{label.map((t, i) => <tspan key={i} x={tip.x + 14} dy={i ? 14 : 0}>{t}</tspan>)}</text>}
+        </g>
+      );
     }
     // The tool's own preview (a detour's bypass), when it has one for these points.
     const own = tool.gesture.kind === 'threePoints' && tool.gesture.preview && pts.length > 0 ? tool.gesture.preview(pts, cur) : null;

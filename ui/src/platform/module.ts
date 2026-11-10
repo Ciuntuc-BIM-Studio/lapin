@@ -34,6 +34,11 @@ export type Gesture =
     reach?: number;
     /** What the click would put there, as lines on the plan (metres), redrawn as the cursor moves. */
     ghost?: (entity: NodeDto, at: Vec2) => Vec2[][];
+    /**
+     * What the click would put on the element (a door or window: its size and type), so the modules' `placementCheck`s
+     * are asked as the cursor moves; null: nothing to check here.
+     */
+    placing?: (entity: NodeDto, at: Vec2) => { kind: 'door' | 'window'; width: number; typeId: string | null } | null;
   }
   /**
    * An element picked, then a point (a bar cut: one end of the lap on the bar, then the other): the first click's point and the
@@ -225,6 +230,11 @@ export interface Replaces {
   fileActions?: Record<string, (original: FileAction) => FileAction>;
 }
 
+/** What a door or window being placed asks of the modules: where along its host's axis (m from its start), how wide, of which type. */
+export interface PlacementRequest { kind: 'door' | 'window'; host: NodeDto; along: number; width: number; typeId: string | null }
+/** The answer: whether it fits, the reason when it does not (a sentence, shown by the cursor), and the place along the host's axis where it does. */
+export interface PlacementVerdict { ok: boolean; message?: string; snapAlong?: number }
+
 /**
  * What a module's plan overlay is given: the plan's own transform (the view's pan, zoom and true-north turn), so it can
  * draw in model coordinates inside the plan's SVG and read where the pointer is in the model.
@@ -286,6 +296,13 @@ export interface LapinModule {
    * with a point wins. Not asked while Shift is held (`free`), nor for a grip dragged along with others.
    */
   gripSnap?: (element: NodeDto, grip: Grip, to: Vec2, free: boolean) => Vec2 | undefined;
+  /**
+   * Whether a door or window fits where the cursor is, for hosts this module drives: asked (throttled) as the cursor moves
+   * over a host while the Door or Window tool is on; null leaves the host to the next module and the engine. A refusal
+   * (`ok: false`) draws the preview as an error with its `message` by the cursor, and `snapAlong` (m along the host's axis)
+   * is where the click goes when the cursor is within a metre of it. The engine still has the last word at the click.
+   */
+  placementCheck?: (req: PlacementRequest) => Promise<PlacementVerdict | null> | PlacementVerdict | null;
   /** What it replaces of the other modules' and the shell's (an edition of its own; docs/overrides.md). */
   replaces?: Replaces;
 }
