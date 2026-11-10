@@ -6799,6 +6799,43 @@ export const scenes = [
     },
   },
   {
+    // A curtain wall door under a sloped boundary (report #133, the user's answers): its mullions rising to the boundary, a transom
+    // over its head and the glass over it following the slope, framed panels framed along their trimmed outline; and the door's
+    // opening symbol in the south elevation.
+    id: 'curtain-cells-boundary',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const typeId = (await t.cmd('architecture.createCurtainWallType', { name: 'Gable front', spec: { u: { mode: 'max', spacing: 1.5 }, v: { mode: 'count', count: 1 } } })).id;
+      const cw = (await t.cmd('architecture.addCurtainWall', { storeyId: storey, x1: 0, y1: -4, x2: 6, y2: -4, height: 3, typeId })).id;
+      await t.cmd('architecture.setCurtainWallProfile', { ids: [cw], top: [[0, 3.6], [3, 4.4], [6, 3.6]] });
+      const framed = (await t.cmd('architecture.createCurtainPanelType', { name: 'Framed glass', panel: { kind: 'framed', thickness: 0.024, frameWidth: 0.06, frameDepth: 0.08, inset: 0.02, infill: 'glass' } })).id;
+      await t.cmd('architecture.setCurtainPanels', { id: cw, keys: ['panel:0:top', 'panel:2:top', 'panel:3:top'], typeId: framed });
+      await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
+      await t.wait(800);
+      await t.page.locator('[data-action=curtain-cells]').first().click();
+      await t.page.waitForSelector('[data-testid=curtain-cells]', { timeout: 10000 });
+      const d = t.page.locator('[data-testid=curtain-cells]');
+      await d.locator('[data-cell="panel:1:top"]').click();
+      await d.locator('input[data-field=door-fit]').uncheck();
+      await t.wait(300);
+      await d.locator('[data-action=cells-door-place]').click();
+      await t.wait(1200);
+      t.expect(await d.locator('[data-door="panel:1:top"]').count() === 1, 'the door stands in the trimmed cell');
+      await t.page.keyboard.press('Escape');
+      await t.ui({ dialog: null, selection: null, selected: [] });
+      const parts = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.curtainCells', { id }), cw);
+      t.expect(parts.pieces.some((p) => p.key === 'mullion:1:top:left' && p.outline), 'its mullion rises to the boundary');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.5, pitch: -0.12, distance: 10, target: { x: 3, y: -4, z: 2 } }, false));
+      await t.wait(1500);
+      await t.shot('curtain-cells-gable', { of: '[data-testid=view3d]', pad: 0 });
+      await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' });
+      await openFromBrowser(t, 'South', 2500);
+      await t.shot('curtain-cells-elevation', { of: '[data-testid=drawing]', pad: 0 });
+    },
+  },
+  {
     // The section editor (report #128): Manage → Profile libraries → Draw a profile…, a hollow box with a chamber added.
     id: 'profile-editor',
     async run(t) {

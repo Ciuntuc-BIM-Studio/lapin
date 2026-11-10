@@ -55,10 +55,24 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         foreach (var fill in m.OfClass(IfcClass.Door).Concat(m.OfClass(IfcClass.Window)))
         {
             if (hiddenElements.Contains(fill.Id) || graphics.Hides(fill)) continue;
-            if (Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { } wall || Openings.SpecOf(m, fill.Id) is not { } spec) continue;
-            if (hiddenElements.Contains(wall.Id)) continue;
-            var p = Openings.Place(m, opening);
-            var f = Openings.FrameOf(m, wall, p.Along);
+            Openings.WallFrame f;
+            Openings.Placed p;
+            JoinerySpec spec;
+            HashSet<string> own;
+            // A curtain wall's door (report #133): in its cell's frame, as its body is drawn.
+            if (CurtainCells.SeatOf(m, fill) is { } seat)
+            {
+                if (seat.Problem != null || seat.Spec == null || hiddenElements.Contains(seat.Wall.Id)) continue;
+                (f, p, spec, own) = (seat.Frame, seat.Placed, seat.Spec, [fill.Id, seat.Wall.Id]);
+            }
+            else
+            {
+                if (Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { } wall || Openings.SpecOf(m, fill.Id) is not { } ws) continue;
+                if (hiddenElements.Contains(wall.Id)) continue;
+                p = Openings.Place(m, opening);
+                f = Openings.FrameOf(m, wall, p.Along);
+                (spec, own) = (ws, [fill.Id, wall.Id, opening.Id]);
+            }
             var sx = fill.Bool("flipHand") ? -1 : 1;
             var sy = fill.Bool("flipSide") ? -1 : 1;
             // The exterior is the wall's right (its left when the side is flipped): the symbol shows where that faces the eye.
@@ -66,7 +80,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (Vec3.Dot(new Vec3(outward.X, outward.Y, 0), c.Frame.Dir) > -0.5) continue;
             var yExt = sy > 0 ? f.YMin : f.YMax;
             Vec3 W(double x, double z) => f.At(p.Along + sx * x, yExt, p.FillSill + z);
-            if (c.Occluded(W(0, spec.Height / 2), new HashSet<string> { fill.Id, wall.Id, opening.Id })) continue;
+            if (c.Occluded(W(0, spec.Height / 2), own)) continue;
             var mark = new ViewMark(fill.Id);
             // A round window is one fixed light: no opening symbol.
             foreach (var panel in JoineryShapes.Round(spec) ? [] : Joinery.Normalised(spec))

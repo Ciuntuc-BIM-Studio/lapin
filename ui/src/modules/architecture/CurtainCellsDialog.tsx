@@ -83,7 +83,7 @@ export function CurtainCellsDialog() {
     setDraft(null);
   };
   const placeDoor = async () => {
-    const free = chosen.filter((c) => !c.door && !c.outline).map((c) => c.key);
+    const free = chosen.filter((c) => !c.door).map((c) => c.key);
     if (!free.length) return;
     const args: Record<string, unknown> = { id: wall.id, keys: free, fit, align, offset };
     if (doorTypeId === NEW) args.door = { ...door, ...(frame ? { frameSection: frame } : {}) };
@@ -202,7 +202,7 @@ export function CurtainCellsDialog() {
                 <label className="field-line" title="From where it is aligned, into the cell"><span className="eyebrow">Offset</span><LengthField metres={offset} onCommit={(v) => { if (v != null) setOffset(v); }} /></label>
               </>}
               <div className="row wrap" style={{ gap: 6 }}>
-                <button type="button" className="btn small primary" data-action="cells-door-place" disabled={!chosen.some((c) => !c.door && !c.outline)} onClick={() => void placeDoor()}><DoorOpen size={13} />Door in the chosen</button>
+                <button type="button" className="btn small primary" data-action="cells-door-place" disabled={!chosen.some((c) => !c.door)} onClick={() => void placeDoor()}><DoorOpen size={13} />Door in the chosen</button>
                 <button type="button" className="btn small" data-action="cells-door-remove" disabled={!doorsChosen.length} onClick={removeDoors}><Trash2 size={13} />Take the door out</button>
               </div>
               <p className="muted small">Hand, side and type: select the door. A door smaller than its cell gets a transom over it and a mullion beside it, glazed with the cell&apos;s panel.</p>

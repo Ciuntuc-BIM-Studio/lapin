@@ -75,6 +75,12 @@ Væggen forbliver en væg: dens tykkelse, dens lag, dens samlinger og dens døre
 
 ![En facadeglasvæg med en dør og indrammede brystningspaneler, i 3D](shots/curtain-cells-3d.webp)
 
+Under en kontur tegnet med **Profil…** går en dør ind i et afskåret felt, hvor som helst dens rektangel passer under konturen: sprosserne ved siden af den går op til konturen, ruderne ved siden af dem fyldes op til den, en tværpost spænder over dens overkant, og glasset over den følger hældningen. Når den fylder et sådant felt, stopper dens overkant en tværpost under konturens laveste side. Hvor den ikke passer, siger Lapin hvor meget og hvad der skal gøres (sænk den, flyt den mod den højeste side, eller vælg et højere felt). Et indrammet panel i et afskåret felt får rammen langs hele sin kontur, også den skrå side. En opstalt, der vender mod dørens yderside, tegner dens åbningssymboler stiplet som for enhver dør eller ethvert vindue.
+
+![En dør under en skrå kontur på en facadeglasvæg, med indrammede paneler langs skråningen, i 3D](shots/curtain-cells-gable.webp)
+
+![Dørens åbningssymbol i opstalten](shots/curtain-cells-elevation.webp)
+
 ## Vægtyper
 
 En vægtype er et sæt lag, fra siden til højre for den retning, væggen tegnes i (ydersiden, når du tegner rundt om en bygning mod uret), til siden til venstre. Hvert lag har et materiale og en tykkelse, og ét lag er **Kerne**. Væggens linje løber langs kernen. Du redigerer typerne under **Arkitektur → Vægtyper**. Et andet lag end kernen kan have sin egen højde: **Fra** og **Op til** angiver, hvor højt det går over væggens fod (fliser op til 1500, en beklædning fra 300); tomt går det i hele højden.

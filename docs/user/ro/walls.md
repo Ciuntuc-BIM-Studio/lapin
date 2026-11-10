@@ -75,6 +75,12 @@ Peretele rămâne perete: grosimea, straturile, îmbinările, ușile și ferestr
 
 ![Un perete cortină cu o ușă și parapete în ramă, în 3D](shots/curtain-cells-3d.webp)
 
+Sub un contur desenat cu **Profil…**, o ușă intră într-o celulă tăiată de contur oriunde dreptunghiul ei încape sub el: montanții de lângă ea urcă până la contur, ochiurile de lângă ei se umplu până la el, o traversă trece peste capul ei, iar sticla de deasupra urmează panta. Când umple o asemenea celulă, capul ei se oprește cu o traversă sub latura mai joasă a conturului. Unde nu încape, Lapin spune cu cât și ce e de făcut (coboar-o, mut-o spre latura mai înaltă sau alege o celulă mai înaltă). Un panou cu ramă într-o celulă tăiată are rama pe tot conturul, și pe latura înclinată. O fațadă spre exteriorul ușii îi desenează simbolurile de deschidere, punctat, ca la orice ușă sau fereastră.
+
+![O ușă sub conturul înclinat al unui perete cortină, cu panouri cu ramă de-a lungul pantei, în 3D](shots/curtain-cells-gable.webp)
+
+![Simbolul de deschidere al ușii în fațadă](shots/curtain-cells-elevation.webp)
+
 ## Tipurile de pereți
 
 Un tip de perete e un set de straturi, de la fața din dreapta sensului în care e desenat peretele (exteriorul, când desenezi în jurul clădirii în sens trigonometric) la fața din stânga. Fiecare strat are un material și o grosime, iar unul dintre ele e **miezul**. Linia peretelui merge pe miez. Ca să editezi tipurile, alege **Arhitectură → Tipuri de pereți**. Un strat altul decât miezul poate avea înălțimea lui: **De la** și **Până la** spun cât de sus merge peste baza peretelui (un placaj de faianță până la 1500, un placaj de fațadă de la 300 în sus); gol, merge pe toată înălțimea.

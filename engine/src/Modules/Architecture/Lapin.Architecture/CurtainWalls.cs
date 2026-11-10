@@ -861,6 +861,26 @@ public static class CurtainWalls
         // The frame's faces across the wall, out of the building; the infill's, set back from its outer face.
         var (fy0, fy1) = (ps.Offset - ps.FrameDepth / 2, ps.Offset + ps.FrameDepth / 2);
         var (iy0, iy1) = (fy1 - ps.Inset - ps.Thickness, fy1 - ps.Inset);
+        var frameMat = ps.FrameMaterial != null ? mat(ps.FrameMaterial) : typeFrameMat;
+        var frameColor = frameMat != null ? Materials.ColorOf(m, frameMat) : typeFrameColor;
+        var d = (pb - pa).Normalized();
+        // A cell trimmed by the boundary (#127): the frame along its outline, a frame's width in from each side, the infill inside.
+        if (ps.Kind == "framed" && p.Outline is { Count: >= 3 } outline)
+        {
+            var span = Math.Max(l.U[p.I1] - l.U[p.I0], 1e-9);
+            var outer = outline.Select(q => new Vec2((q.X - l.U[p.I0]) * chord / span, q.Y)).ToList();
+            if (InsetConvex(outer, fw) is { } inner)
+            {
+                Vec3 At(Vec2 q, double y) => (pa + d * q.X - d.Perp * y).At(z + q.Y);
+                IReadOnlyList<Vec3> Ring(List<Vec2> r, double y) => r.Select(q => At(q, y)).ToList();
+                var through = new Vec3(d.Perp.X, d.Perp.Y, 0);
+                if (Prism.Extrude(Ring(outer, fy1), [Ring(inner, fy1)], through * ps.FrameDepth, "frame") is { } band)
+                    o.Add(new GeometryPart(name + " frame", frameColor, band, frameMat, "frame" + p.Key["panel".Length..]));
+                if (Prism.Extrude(Ring(inner, iy1), null, through * ps.Thickness, "panel") is { } sheetSolid)
+                    o.Add(new GeometryPart(name, infillColor, sheetSolid, infillMat, p.Key));
+                return o;
+            }
+        }
         var framed = ps.Kind == "framed" && p.Outline == null && x1 - x0 > 2 * fw + 0.02 && p.Z1 - p.Z0 > 2 * fw + 0.02;
         if (!framed)
         {
@@ -869,7 +889,6 @@ public static class CurtainWalls
                 o.Add(new GeometryPart(name, infillColor, solid, infillMat, p.Key));
             return o;
         }
-        var d = (pb - pa).Normalized();
         // A box along the chord from xa to xb, up from za to zb, out of the building from ya to yb.
         Solid? Box(double xa, double xb, double za, double zb, double ya, double yb, string tag)
         {
@@ -881,10 +900,46 @@ public static class CurtainWalls
             Box(x0, x0 + fw, p.Z0, p.Z1, fy0, fy1, "frame"), Box(x1 - fw, x1, p.Z0, p.Z1, fy0, fy1, "frame"),
             Box(x0 + fw, x1 - fw, p.Z0, p.Z0 + fw, fy0, fy1, "frame"), Box(x0 + fw, x1 - fw, p.Z1 - fw, p.Z1, fy0, fy1, "frame"),
         }.OfType<Solid>().ToList();
-        var frameMat = ps.FrameMaterial != null ? mat(ps.FrameMaterial) : typeFrameMat;
-        var frameColor = frameMat != null ? Materials.ColorOf(m, frameMat) : typeFrameColor;
         if (ring.Count > 0) o.Add(new GeometryPart(name + " frame", frameColor, Openings.Combine(ring, "frame"), frameMat, "frame" + p.Key["panel".Length..]));
         if (Box(x0 + fw, x1 - fw, p.Z0 + fw, p.Z1 - fw, iy0, iy1, "panel") is { } infill) o.Add(new GeometryPart(name, infillColor, infill, infillMat, p.Key));
+        return o;
+    }
+
+    /// <summary>
+    /// A convex outline taken <paramref name="by"/> in from every side (each side moved inwards, the corners where the moved sides
+    /// meet); null when it closes up (a cell too small or too sharp for the frame), so the panel is its infill alone.
+    /// </summary>
+    internal static List<Vec2>? InsetConvex(IReadOnlyList<Vec2> poly, double by)
+    {
+        var p = new List<Vec2>();
+        foreach (var q in poly) if (p.Count == 0 || (q - p[^1]).Length > 1e-6) p.Add(q);
+        if (p.Count > 2 && (p[0] - p[^1]).Length <= 1e-6) p.RemoveAt(p.Count - 1);
+        if (p.Count < 3) return null;
+        double Signed(IReadOnlyList<Vec2> r) { var s = 0.0; for (var k = 0; k < r.Count; k++) { var (a, b) = (r[k], r[(k + 1) % r.Count]); s += a.X * b.Y - b.X * a.Y; } return s / 2; }
+        if (Signed(p) < 0) p.Reverse();
+        var n = p.Count;
+        // Each side moved in along its left normal (counter-clockwise: the inside).
+        var lines = Enumerable.Range(0, n).Select(k =>
+        {
+            var (a, b) = (p[k], p[(k + 1) % n]);
+            var dir = (b - a).Normalized();
+            var left = new Vec2(-dir.Y, dir.X);
+            return (A: a + left * by, Dir: dir);
+        }).ToList();
+        var o = new List<Vec2>();
+        for (var k = 0; k < n; k++)
+        {
+            var (l0, l1) = (lines[(k + n - 1) % n], lines[k]);
+            var cross = l0.Dir.X * l1.Dir.Y - l0.Dir.Y * l1.Dir.X;
+            if (Math.Abs(cross) < 1e-9) { o.Add(l1.A); continue; }
+            var w = l1.A - l0.A;
+            var t = (w.X * l1.Dir.Y - w.Y * l1.Dir.X) / cross;
+            o.Add(l0.A + l0.Dir * t);
+        }
+        // Closed up: the inner outline turned over, or a side of it running backwards.
+        if (Signed(o) < 1e-4) return null;
+        for (var k = 0; k < n; k++)
+            if (Vec2.Dot(o[(k + 1) % n] - o[k], lines[k].Dir) < -1e-9) return null;
         return o;
     }
 

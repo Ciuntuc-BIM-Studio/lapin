@@ -75,6 +75,12 @@ A parede continua uma parede: a espessura, as camadas, as junções e as portas 
 
 ![Uma parede-cortina com uma porta e parapeitos com quadro, em 3D](shots/curtain-cells-3d.webp)
 
+Sob um contorno desenhado com **Perfil…** uma porta entra numa célula recortada onde quer que o seu retângulo caiba sob o contorno: os montantes ao lado sobem até ao contorno, os vidros ao lado deles enchem-se até ele, uma travessa atravessa a sua cabeça e o vidro por cima segue a inclinação. Ao preencher uma célula assim, a sua cabeça para uma travessa abaixo do lado mais baixo do contorno. Onde não cabe, o Lapin diz quanto falta e o que fazer (baixá-la, movê-la para o lado mais alto ou escolher uma célula mais alta). Um painel com quadro numa célula recortada tem o quadro ao longo de todo o contorno, também no lado inclinado. Um alçado virado para o exterior de uma porta desenha os seus símbolos de abertura, tracejados, como em qualquer porta ou janela.
+
+![Uma porta sob o contorno inclinado de uma parede-cortina, com painéis com quadro ao longo da inclinação, em 3D](shots/curtain-cells-gable.webp)
+
+![O símbolo de abertura da porta no alçado](shots/curtain-cells-elevation.webp)
+
 ## Tipos de parede
 
 Um tipo de parede é um conjunto de camadas, da face à direita do sentido em que a parede é desenhada (a externa, quando você desenha ao redor de um edifício no sentido anti-horário) à face à sua esquerda. Cada camada tem um material e uma espessura, e uma camada é o **núcleo**. A linha da parede corre ao longo do núcleo. Para editar os tipos, escolha **Arquitetura → Tipos de parede**. Uma camada que não é o núcleo pode ter uma altura própria: **De** e **Até** definem até onde ela sobe acima da base da parede (um barrado de azulejos até 1500, um revestimento de 300 para cima); vazios, ela ocupa a altura toda.

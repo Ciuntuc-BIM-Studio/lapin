@@ -75,6 +75,12 @@ El muro sigue siendo un muro: su espesor, sus capas, sus uniones y sus puertas y
 
 ![Un muro cortina con una puerta y antepechos enmarcados, en 3D](shots/curtain-cells-3d.webp)
 
+Bajo un contorno dibujado con **Perfil…** una puerta entra en una celda recortada dondequiera que su rectángulo quepa bajo el contorno: los montantes de al lado suben hasta el contorno, los paños junto a ellos se llenan hasta él, un travesaño cruza su cabeza y el vidrio de encima sigue la pendiente. Al llenar una celda así, su cabeza se detiene un travesaño por debajo del lado más bajo del contorno. Donde no cabe, Lapin dice cuánto falta y qué hacer (bajarla, moverla hacia el lado más alto o elegir una celda más alta). Un panel enmarcado en una celda recortada lleva el marco a lo largo de todo su contorno, también en el lado inclinado. Un alzado que mira al exterior de una puerta dibuja sus símbolos de apertura, a trazos, como en cualquier puerta o ventana.
+
+![Una puerta bajo el contorno inclinado de un muro cortina, con paneles enmarcados a lo largo de la pendiente, en 3D](shots/curtain-cells-gable.webp)
+
+![El símbolo de apertura de la puerta en el alzado](shots/curtain-cells-elevation.webp)
+
 ## Tipos de muro
 
 Un tipo de muro es un conjunto de capas, desde la cara a la derecha del sentido en que se dibuja el muro (el exterior, si dibuja alrededor del edificio en sentido antihorario) hasta la cara de su izquierda. Cada capa tiene un material y un espesor, y una capa es el **núcleo**. La línea del muro va por el núcleo. Para editar los tipos, elija **Arquitectura → Tipos de muro**. Una capa que no sea el núcleo puede tener su propia altura: **Desde** y **Hasta** fijan hasta dónde llega sobre la base del muro (un alicatado hasta 1500, un aplacado desde 300); vacío, ocupa toda la altura.

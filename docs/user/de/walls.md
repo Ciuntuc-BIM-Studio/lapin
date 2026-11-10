@@ -75,6 +75,12 @@ Die Wand bleibt eine Wand: ihre Dicke, ihre Schichten, ihre Anschlüsse und ihre
 
 ![Eine Vorhangfassade mit einer Tür und gerahmten Brüstungen, in 3D](shots/curtain-cells-3d.webp)
 
+Unter einer mit **Profil…** gezeichneten Kontur kommt eine Tür in ein angeschnittenes Feld, wo immer ihr Rechteck unter die Kontur passt: die Pfosten neben ihr reichen bis zur Kontur, die Scheiben daneben füllen bis zu ihr, ein Riegel überspannt ihren Kopf, und das Glas darüber folgt der Neigung. Füllt sie ein solches Feld, endet ihr Kopf einen Riegel unter der niedrigeren Seite der Kontur. Wo sie nicht passt, sagt Lapin, um wie viel und was zu tun ist (sie niedriger machen, zur höheren Seite schieben oder ein höheres Feld wählen). Ein gerahmtes Paneel in einem angeschnittenen Feld ist entlang seiner Kontur gerahmt, auch an der schrägen Seite. Eine Ansicht auf die Außenseite einer Tür zeichnet ihre Öffnungssymbole gestrichelt, wie bei jeder Tür und jedem Fenster.
+
+![Eine Tür unter der schrägen Kontur einer Vorhangfassade, mit gerahmten Paneelen entlang der Neigung, in 3D](shots/curtain-cells-gable.webp)
+
+![Das Öffnungssymbol der Tür in der Ansicht](shots/curtain-cells-elevation.webp)
+
 ## Wandtypen
 
 Ein Wandtyp ist eine Folge von Schichten, von der Seite rechts der Richtung, in der die Wand gezeichnet wird (die Außenseite, wenn Sie gegen den Uhrzeigersinn um ein Gebäude zeichnen), zur Seite links davon. Jede Schicht hat ein Material und eine Dicke, und eine Schicht ist der **Kern**. Die Achse der Wand verläuft entlang des Kerns. Um die Typen zu bearbeiten, wählen Sie **Architektur → Wandtypen**. Eine Schicht außer dem Kern kann eine eigene Höhe haben: **Von** und **Bis** legen fest, wie hoch sie über dem Wandfuß reicht (ein Fliesensockel bis 1500, eine Bekleidung ab 300); leer läuft sie über die ganze Höhe.

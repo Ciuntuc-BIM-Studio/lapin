@@ -75,6 +75,12 @@ Le mur reste un mur : son épaisseur, ses couches, ses jonctions et ses portes e
 
 ![Un mur-rideau avec une porte et des allèges encadrées, en 3D](shots/curtain-cells-3d.webp)
 
+Sous un contour dessiné avec **Profil…**, une porte va dans une cellule rognée partout où son rectangle tient sous le contour : les meneaux à côté d'elle montent jusqu'au contour, les vitrages à côté d'eux s'y remplissent, une traverse franchit sa tête et le verre au-dessus suit la pente. Quand elle remplit une telle cellule, sa tête s'arrête une traverse sous le côté le plus bas du contour. Là où elle ne tient pas, Lapin dit de combien et quoi faire (l'abaisser, la déplacer vers le côté le plus haut ou choisir une cellule plus haute). Un panneau encadré dans une cellule rognée est encadré le long de tout son contour, côté incliné compris. Une élévation tournée vers l'extérieur d'une porte dessine ses symboles d'ouverture, en tirets, comme pour toute porte ou fenêtre.
+
+![Une porte sous le contour incliné d'un mur-rideau, avec des panneaux encadrés le long de la pente, en 3D](shots/curtain-cells-gable.webp)
+
+![Le symbole d'ouverture de la porte dans l'élévation](shots/curtain-cells-elevation.webp)
+
 ## Types de murs
 
 Un type de mur est un ensemble de couches, de la face à droite du sens dans lequel le mur est tracé (l’extérieur, si vous tracez autour d’un bâtiment dans le sens inverse des aiguilles d’une montre) à la face à sa gauche. Chaque couche a un matériau et une épaisseur, et une couche est le **noyau**. La ligne du mur suit le noyau. Pour modifier les types, choisissez **Architecture → Types de murs**. Une couche autre que l’âme peut avoir sa propre hauteur : **De** et **Jusqu’à** règlent jusqu’où elle monte au-dessus du pied du mur (une faïence jusqu’à 1500, un bardage à partir de 300) ; vide, elle court sur toute la hauteur.

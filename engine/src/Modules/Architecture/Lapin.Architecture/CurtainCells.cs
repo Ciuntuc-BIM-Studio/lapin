@@ -299,7 +299,11 @@ public static class CurtainCells
     /// <see cref="Problem"/> why it cannot stand there (its cell gone, too small, a strip too narrow beside it).
     /// </summary>
     public sealed record DoorSeat(Entity Door, Entity Wall, string Key, CurtainPiece Cell, JoinerySpec? Spec, Openings.WallFrame Frame, Openings.Placed Placed,
-        double Chord, double CellX0, double CellX1, double X0, double X1, bool Bottom, string? Problem);
+        double Chord, double CellX0, double CellX1, double X0, double X1, bool Bottom, string? Problem)
+    {
+        /// <summary>A cell trimmed by the wall's boundary (#127): its outline along the bay's chord (x from the bay's first line, up); null for a rectangle.</summary>
+        public IReadOnlyList<Vec2>? Trimmed { get; init; }
+    }
 
     /// <summary>A curtain wall door's seat; null for a door that is no curtain wall's.</summary>
     public static DoorSeat? SeatOf(IModelView m, Entity door)
@@ -326,34 +330,111 @@ public static class CurtainCells
         var baseZ = CurtainWalls.Base(m, w);
         DoorSeat Fail(string why, CurtainPiece at = default) => new(door, w, key, at, null, default, default, 0, 0, 0, 0, 0, false, why);
         if (cell.Key == null) return Fail($"Its cell ({key}) is no longer in the curtain wall's grid.");
-        if (cell.Outline != null || key.Split(':') is not [_, _, var row] || !int.TryParse(row, NumberStyles.Integer, CultureInfo.InvariantCulture, out var j))
-            return Fail("A door needs a rectangular cell, not one under the curtain wall's boundary.", cell);
+        if (key.Split(':') is not [_, _, var row]) return Fail($"„{key}” is not a cell.", cell);
         if (m.RelatingOf(door.Id, IfcClass.RelDefinesByType) is not { } type || JoinerySpec.From(type.Attrs["spec"]) is not { IsDoor: true } ts) return Fail("A door needs its door type.", cell);
         var (pa, pb) = (c.PointAt(l.U[cell.I0]), c.PointAt(l.U[cell.I1]));
         var chord = (pb - pa).Length;
         var d = (pb - pa).Normalized();
         var (cx0, cx1) = (cell.A0, chord - cell.A1);
-        // In the bottom row it stands on the floor: the sill transom is cut away under it.
-        var bottom = j == 0;
+        var tw = spec.Transom.Width;
+        // A cell under the wall's boundary (#127, panel:i:top): its outline along the chord; the door goes where its rectangle fits under it.
+        var poly = cell.Outline is { Count: >= 3 } o ? ChordOutline(l, cell, chord, o) : null;
+        double TopAt(double x) => poly == null ? cell.Z1 : Top(poly, x);
+        // In the bottom row it stands on the floor: the sill transom is cut away under it (a trimmed cell is the bottom one when it starts on the sill).
+        var bottom = row == "0" || poly != null && cell.Z0 <= (spec.Edge ? tw : 0) + 1e-6;
         var z0 = bottom ? 0 : cell.Z0;
         var fit = door.Bool("fit");
-        var (width, height) = fit ? (cx1 - cx0, cell.Z1 - z0) : (ts.Width, ts.Height);
+        double width, height;
+        if (!fit) (width, height) = (ts.Width, ts.Height);
+        else if (poly == null) (width, height) = (cx1 - cx0, cell.Z1 - z0);
+        else
+        {
+            // Filling a trimmed cell: as wide as the cell, as high as its lowest side leaves under a transom (none where the top is level).
+            var low = Math.Min(TopAt(cx0), TopAt(cx1));
+            var level = Math.Abs(TopAt(cx0) - TopAt(cx1)) <= Gap && poly.Where(q => q.X > cx0 + 1e-6 && q.X < cx1 - 1e-6).All(q => q.Y <= low + Gap || q.Y <= cell.Z0 + 1e-6);
+            (width, height) = (cx1 - cx0, low - z0 - (level ? 0 : tw));
+        }
         var off = door.Num("offset");
         var x0 = fit ? cx0 : door.Str("align") switch { "left" => cx0 + off, "right" => cx1 - width - off, _ => (cx0 + cx1 - width) / 2 + off };
         var (x1, z1) = (x0 + width, z0 + height);
         static string Mm(double v) => (v * 1000).ToString("0", CultureInfo.InvariantCulture);
         if (width < 0.4 - 1e-9 || height < 1.0 - 1e-9) return Fail($"A door needs at least 400 mm of width and 1000 mm of height: {Mm(width)} × {Mm(height)} mm is too small for one.", cell);
         if (x0 < cx0 - 1e-6 || x1 > cx1 + 1e-6) return Fail($"The door, {Mm(width)} mm wide, does not fit in its cell ({Mm(cx1 - cx0)} mm) there.", cell);
-        if (z1 > cell.Z1 + 1e-6) return Fail($"The door, {Mm(height)} mm high, is taller than its cell ({Mm(cell.Z1 - z0)} mm).", cell);
-        var (side, top) = (spec.Mullion.Width + 0.05, spec.Transom.Width + 0.05);
+        var (side, top) = (spec.Mullion.Width + 0.05, tw + 0.05);
         bool Strip(double gap, double min) => gap > Gap && gap < min - 1e-9;
         if (Strip(x0 - cx0, side) || Strip(cx1 - x1, side)) return Fail($"The door leaves a strip too narrow for glass beside it: leave at least {Mm(side)} mm, or none.", cell);
-        if (Strip(cell.Z1 - z1, top)) return Fail($"The door leaves a strip too narrow for glass over it: leave at least {Mm(top)} mm, or none.", cell);
+        if (poly == null)
+        {
+            if (z1 > cell.Z1 + 1e-6) return Fail($"The door, {Mm(height)} mm high, is taller than its cell ({Mm(cell.Z1 - z0)} mm).", cell);
+            if (Strip(cell.Z1 - z1, top)) return Fail($"The door leaves a strip too narrow for glass over it: leave at least {Mm(top)} mm, or none.", cell);
+        }
+        else
+        {
+            // Under the boundary: its head (the boundary's top over it is lowest at one of its sides, the outline being convex), with room
+            // for a transom over it unless the boundary is level on its head, and the mullions beside it reaching over its head.
+            var under = Math.Min(TopAt(x0), TopAt(x1));
+            var levelHead = Math.Abs(TopAt(x0) - z1) <= Gap && Math.Abs(TopAt(x1) - z1) <= Gap;
+            if (!(under >= z1 - 1e-6) || !levelHead && under < z1 + tw - 1e-6)
+                return Fail($"The door, {Mm(height)} mm high, does not fit under the curtain wall's boundary there: it leaves {Mm(Math.Max(0, under - z0))} mm over its sill at its lower side{(levelHead ? "" : $", and a transom over it needs {Mm(tw)} mm more")}. Lower it, move it to the higher side or choose a higher cell.", cell);
+            if (x0 - cx0 > Gap && TopAt(x0 - spec.Mullion.Width) < z1 + (levelHead ? 0 : tw) - 1e-6 || cx1 - x1 > Gap && TopAt(x1 + spec.Mullion.Width) < z1 + (levelHead ? 0 : tw) - 1e-6)
+                return Fail("The curtain wall's boundary comes down beside the door under its head: move it in, or let it reach the cell's side.", cell);
+        }
         var sized = fit ? ts with { Width = width, Height = height } : ts;
         if (Joinery.Problem(sized) is { } problem) return Fail(problem, cell);
         var frame = new Openings.WallFrame(pa, d, d.Perp, baseZ, -spec.Mullion.Depth / 2, spec.Mullion.Depth / 2);
         var placed = new Openings.Placed(door, door, sized, (x0 + x1) / 2, z0, width, height);
-        return new DoorSeat(door, w, key, cell, sized, frame, placed, chord, cx0, cx1, x0, x1, bottom, null);
+        return new DoorSeat(door, w, key, cell, sized, frame, placed, chord, cx0, cx1, x0, x1, bottom, null) { Trimmed = poly };
+    }
+
+    /// <summary>A trimmed cell's outline (along the wall, up) along its bay's chord: x from the bay's first grid line.</summary>
+    static List<Vec2> ChordOutline(CurtainLayout l, CurtainPiece cell, double chord, IReadOnlyList<Vec2> outline)
+    {
+        var span = Math.Max(l.U[cell.I1] - l.U[cell.I0], 1e-9);
+        return outline.Select(q => new Vec2((q.X - l.U[cell.I0]) * chord / span, q.Y)).ToList();
+    }
+
+    /// <summary>The top of a convex outline over <paramref name="x"/>: its highest crossing there; −∞ off it.</summary>
+    internal static double Top(IReadOnlyList<Vec2> poly, double x)
+    {
+        var best = double.NegativeInfinity;
+        for (var k = 0; k < poly.Count; k++)
+        {
+            var (a, b) = (poly[k], poly[(k + 1) % poly.Count]);
+            if (x < Math.Min(a.X, b.X) - 1e-9 || x > Math.Max(a.X, b.X) + 1e-9) continue;
+            best = Math.Max(best, Math.Abs(b.X - a.X) < 1e-12 ? Math.Max(a.Y, b.Y) : a.Y + (b.Y - a.Y) * (x - a.X) / (b.X - a.X));
+        }
+        return best;
+    }
+
+    /// <summary>A convex outline cut to <paramref name="xa"/>..<paramref name="xb"/> and over <paramref name="zMin"/>; null when under 1 mm² is left.</summary>
+    internal static List<Vec2>? Cut(IReadOnlyList<Vec2> poly, double xa, double xb, double zMin = double.NegativeInfinity)
+    {
+        List<Vec2> Half(List<Vec2> p, Func<Vec2, double> side)
+        {
+            var o = new List<Vec2>();
+            for (var k = 0; k < p.Count; k++)
+            {
+                var (a, b) = (p[k], p[(k + 1) % p.Count]);
+                var (sa, sb) = (side(a), side(b));
+                if (sa >= 0) o.Add(a);
+                if (sa >= 0 != sb >= 0) o.Add(a + (b - a) * (sa / (sa - sb)));
+            }
+            return o;
+        }
+        var r = Half(poly.ToList(), q => q.X - xa);
+        r = Half(r, q => xb - q.X);
+        if (!double.IsNegativeInfinity(zMin)) r = Half(r, q => q.Y - zMin);
+        var dedup = new List<Vec2>();
+        foreach (var q in r) if (dedup.Count == 0 || (q - dedup[^1]).Length > 1e-9) dedup.Add(q);
+        if (dedup.Count > 1 && (dedup[0] - dedup[^1]).Length <= 1e-9) dedup.RemoveAt(dedup.Count - 1);
+        return dedup.Count >= 3 && Area(dedup) > 1e-6 ? dedup : null;
+    }
+
+    static double Area(IReadOnlyList<Vec2> p)
+    {
+        var s = 0.0;
+        for (var k = 0; k < p.Count; k++) { var (a, b) = (p[k], p[(k + 1) % p.Count]); s += a.X * b.Y - b.X * a.Y; }
+        return Math.Abs(s) / 2;
     }
 
     /// <summary>A gap under a millimetre is none: the door meets the cell's edge.</summary>
@@ -384,17 +465,51 @@ public static class CurtainCells
             var (left, right, over) = (s.X0 - s.CellX0 > Gap, s.CellX1 - s.X1 > Gap, cell.Z1 - z1 > Gap);
             CurtainPiece Piece(string role, string k, double x0, double x1, double za, double zb, double depth) =>
                 new(role, k, cell.I0, cell.I1, x0, s.Chord - x1, za, zb, depth, null, true);
-            if (over)
+            if (s.Trimmed is { } poly)
+            {
+                // Under the boundary: the mullions beside the door rise to it, the panes beside them fill up to it, a transom spans
+                // the door's head and the glass over it follows the boundary.
+                var span = l.U[cell.I1] - l.U[cell.I0];
+                CurtainPiece? Shaped(string role, string k, List<Vec2>? outline, double depth, double? floor = null)
+                {
+                    if (outline == null) return null;
+                    var low = outline.Min(q => q.Y);
+                    if (floor is { } fz) outline = outline.Select(q => q.Y <= low + 1e-9 ? new Vec2(q.X, fz) : q).ToList();
+                    var (xa, xb) = (outline.Min(q => q.X), outline.Max(q => q.X));
+                    var inU = outline.Select(q => new Vec2(l.U[cell.I0] + q.X * span / s.Chord, q.Y)).ToList();
+                    return new CurtainPiece(role, k, cell.I0, cell.I1, xa, s.Chord - xb, outline.Min(q => q.Y), outline.Max(q => q.Y), depth, inU, true);
+                }
+                var head = Math.Max(Top(poly, s.X0), Top(poly, s.X1)) - z1 > Gap;
+                var added = new List<CurtainPiece?>();
+                if (left)
+                {
+                    added.Add(Shaped("mullion", $"mullion:{i}:{j}:left", Cut(poly, s.X0 - mw, s.X0), spec.Mullion.Depth, z0));
+                    added.Add(Shaped("panel", $"panel:{i}:{j}:left", Cut(poly, s.CellX0, s.X0 - mw), spec.PanelThickness));
+                }
+                if (right)
+                {
+                    added.Add(Shaped("mullion", $"mullion:{i}:{j}:right", Cut(poly, s.X1, s.X1 + mw), spec.Mullion.Depth, z0));
+                    added.Add(Shaped("panel", $"panel:{i}:{j}:right", Cut(poly, s.X1 + mw, s.CellX1), spec.PanelThickness));
+                }
+                if (head)
+                {
+                    added.Add(Piece("transom", $"transom:{i}:{j}:head", s.X0, s.X1, z1, z1 + tw, spec.Transom.Depth));
+                    if (Cut(poly, s.X0, s.X1, z1 + tw) is { } above && above.Max(q => q.Y) - above.Min(q => q.Y) > 0.02)
+                        added.Add(Shaped("panel", $"panel:{i}:{j}:head", above, spec.PanelThickness));
+                }
+                pieces.AddRange(added.OfType<CurtainPiece>());
+            }
+            else if (over)
             {
                 pieces.Add(Piece("transom", $"transom:{i}:{j}:head", s.CellX0, s.CellX1, z1, z1 + tw, spec.Transom.Depth));
                 if (cell.Z1 - (z1 + tw) > 0.02) pieces.Add(Piece("panel", $"panel:{i}:{j}:head", s.CellX0, s.CellX1, z1 + tw, cell.Z1, spec.PanelThickness));
             }
-            if (left)
+            if (left && s.Trimmed == null)
             {
                 pieces.Add(Piece("mullion", $"mullion:{i}:{j}:left", s.X0 - mw, s.X0, z0, z1, spec.Mullion.Depth));
                 pieces.Add(Piece("panel", $"panel:{i}:{j}:left", s.CellX0, s.X0 - mw, cell.Z0, z1, spec.PanelThickness));
             }
-            if (right)
+            if (right && s.Trimmed == null)
             {
                 pieces.Add(Piece("mullion", $"mullion:{i}:{j}:right", s.X1, s.X1 + mw, z0, z1, spec.Mullion.Depth));
                 pieces.Add(Piece("panel", $"panel:{i}:{j}:right", s.X1 + mw, s.CellX1, cell.Z0, z1, spec.PanelThickness));

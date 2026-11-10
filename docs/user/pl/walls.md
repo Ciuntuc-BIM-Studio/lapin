@@ -75,6 +75,12 @@ Niżej sekcja **Zależności** pokazuje, co jest zbudowane ze ściany i z czego 
 
 ![Ściana osłonowa z drzwiami i podokiennikami w ramie, w 3D](shots/curtain-cells-3d.webp)
 
+Pod konturem narysowanym przez **Profil…** drzwi wchodzą do przyciętego pola wszędzie tam, gdzie ich prostokąt mieści się pod konturem: słupki obok nich sięgają do konturu, szyby obok słupków wypełniają się do niego, rygiel przechodzi nad ich nadprożem, a szkło nad nimi biegnie wzdłuż spadku. Gdy wypełniają takie pole, ich górna krawędź kończy się rygiel poniżej niższej strony konturu. Gdzie się nie mieszczą, Lapin mówi o ile i co zrobić (obniżyć je, przesunąć ku wyższej stronie lub wybrać wyższe pole). Panel w ramie w przyciętym polu ma ramę wzdłuż całego konturu, także po skośnej stronie. Widok elewacji zwrócony do zewnętrznej strony drzwi rysuje ich symbole otwierania linią przerywaną, jak dla każdych drzwi i okna.
+
+![Drzwi pod skośnym konturem ściany osłonowej, z panelami w ramie wzdłuż spadku, w 3D](shots/curtain-cells-gable.webp)
+
+![Symbol otwierania drzwi na elewacji](shots/curtain-cells-elevation.webp)
+
 ## Typy ścian
 
 Typ ściany to zestaw warstw, od lica po prawej stronie kierunku, w którym rysowana jest ściana (zewnętrznego, gdy rysujesz wokół budynku przeciwnie do ruchu wskazówek zegara), do lica po jej lewej. Każda warstwa ma materiał i grubość, a jedna warstwa jest **rdzeniem**. Linia ściany biegnie wzdłuż rdzenia. Aby edytować typy, wybierz **Architektura → Typy ścian**. Warstwa inna niż rdzeń może mieć własną wysokość: **Od** i **Do** określają, jak wysoko sięga ponad podstawę ściany (lamperia z płytek do 1500, okładzina od 300 w górę); gdy są puste, warstwa biegnie przez całą wysokość.

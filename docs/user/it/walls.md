@@ -75,6 +75,12 @@ Il muro resta un muro: spessore, strati, giunzioni, porte e finestre restano com
 
 ![Una facciata continua con una porta e parapetti con telaio, in 3D](shots/curtain-cells-3d.webp)
 
+Sotto un contorno disegnato con **Profilo…** una porta entra in una cella tagliata ovunque il suo rettangolo stia sotto il contorno: i montanti accanto salgono fino al contorno, le specchiature accanto a loro si riempiono fino a esso, un traverso attraversa la sua testa e il vetro sopra segue la pendenza. Quando riempie una cella così, la sua testa si ferma un traverso sotto il lato più basso del contorno. Dove non ci sta, Lapin dice di quanto e cosa fare (abbassarla, spostarla verso il lato più alto o scegliere una cella più alta). Un pannello con telaio in una cella tagliata ha il telaio lungo tutto il contorno, anche sul lato inclinato. Un prospetto rivolto all'esterno di una porta ne disegna i simboli di apertura, tratteggiati, come per ogni porta o finestra.
+
+![Una porta sotto il contorno inclinato di una facciata continua, con pannelli con telaio lungo la pendenza, in 3D](shots/curtain-cells-gable.webp)
+
+![Il simbolo di apertura della porta nel prospetto](shots/curtain-cells-elevation.webp)
+
 ## Tipi di muro
 
 Un tipo di muro è un insieme di strati, dalla faccia a destra del verso in cui il muro è disegnato (l’esterno, se disegni intorno all’edificio in senso antiorario) alla faccia alla sua sinistra. Ogni strato ha un materiale e uno spessore, e uno strato è il **nucleo**. La linea del muro corre lungo il nucleo. Per modificare i tipi, scegli **Architettura → Tipi di muro**. Uno strato diverso dal nucleo può avere un’altezza propria: **Da** e **Fino a** stabiliscono fin dove arriva sopra la base del muro (uno zoccolo piastrellato fino a 1500, un rivestimento da 300 in su); se vuoti, lo strato corre per tutta l’altezza.
