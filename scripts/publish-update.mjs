@@ -12,7 +12,8 @@
 // or TAURI_SIGNING_PRIVATE_KEY_PASSWORD), the signature bound to the version, so
 // the key never leaves this machine and no build needs it. One manifest per
 // platform and kind of package (<target>-<arch>-<kind>.json, what the app asks
-// for), uploaded after its package. The notes default to the commit subjects
+// for), uploaded after its package; the installer's also as windows-x86_64-unknown.json, which
+// the portable zip's app asks for. The notes default to the commit subjects
 // since the version before (from the git history), shortened.
 // --update-only: the update the installed apps find, the site's downloads left as they are.
 // Uploads go through ciuntucbimstudio-site/deploy/upload-downloads.sh (LAPIN_SITE_DIR).
@@ -98,11 +99,15 @@ for (const file of files) {
     signature: readFileSync(`${file}.sig`, 'utf8').trim(),
   }, null, 2));
   updates.push(`${file}=${published}`, `${manifest}=${kind.target}.json`);
+  // The portable zip's exe is the app as built, not marked by a bundler, so it asks for
+  // windows-x86_64-unknown.json (tauri-plugin-updater): it is given the installer, which
+  // installs Lapin beside it (report #132).
+  if (kind.target === 'windows-x86_64-nsis') updates.push(`${manifest}=windows-x86_64-unknown.json`);
 }
 
 if (updates.length) sh(upload, [`${productId}-update`, ...updates]);
 if (downloads.length) sh(upload, [productId, ...downloads]);
-console.log(`✓ ${downloads.length} download(s), ${updates.length / 2} update(s) of ${productId}`);
+console.log(`✓ ${downloads.length} download(s), ${updates.filter((u) => !u.endsWith('.json')).length} update(s) of ${productId}`);
 
 // Every published build is also kept, never served: the site's archive-builds.sh puts
 // each version's packages (and the update signatures) in the server's archive/<product>/<version>/.
