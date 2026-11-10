@@ -4197,6 +4197,68 @@ export const scenes = [
     },
   },
   {
+    // A tester's report (decisions 453, 454): Move, Mirror and dragging in a section or an elevation act in its plane. A beam
+    // dragged up in the south elevation rises by its top offset, which Properties shows while the drag lasts; Rotate is refused.
+    id: 'section-move',
+    touches: ['core', 'drafting', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const storeyId = await t.storey();
+      for (const x of [0, 6]) await t.cmd('structure.addColumn', { storeyId, x, y: 0 });
+      const beam = (await t.cmd('structure.addBeam', { storeyId, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+      const south = (await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' })).id;
+      await t.wait(800);
+      await openFromBrowser(t, 'South', 2500);
+      await t.fit();
+      await select(t, beam);
+      await t.wait(800);
+      // Where the beam's drawn line is on the screen: the middle of its first segment, through the view's own zoom.
+      const at = async (dy = 0) => {
+        const p = await page.evaluate(async ([viewId, id, dy]) => {
+          const svg = document.querySelector('[data-testid=drawing]');
+          const view = (await import('/src/viewport/zoom.ts')).recall(viewId);
+          const d = await (await import('/src/engine/session.ts')).query('view.drawing', { id: viewId });
+          const m = d.marks.find((x) => x.id === id) ?? d.marks.find((x) => x.id.startsWith(`${id}:`));
+          if (!svg || !view || !m) return null;
+          const s = m.segments, x = (s[0] + s[2]) / 2, y = (s[1] + s[3]) / 2 + dy;
+          const r = svg.getBoundingClientRect();
+          return [r.left + (x - view.cx) * view.scale + r.width / 2, r.top + r.height / 2 - (y - view.cy) * view.scale];
+        }, [south, beam, dy]);
+        if (!p) throw new Error('the beam is not drawn in the elevation');
+        return p;
+      };
+      const offset = () => page.evaluate(() => {
+        const dt = [...document.querySelectorAll('aside.props dt')].find((x) => x.textContent?.trim() === 'Offset from level');
+        const input = dt?.nextElementSibling?.querySelector('input');
+        return input ? input.value : null;
+      });
+      const before = await offset();
+      t.expect(before != null, 'the beam\'s offset from its level is in its properties');
+      const [x0, y0] = await at();
+      const [x1, y1] = await at(0.5);
+      await page.mouse.move(x0, y0, { steps: 3 });
+      await page.mouse.down();
+      await page.mouse.move(x1, y1, { steps: 12 });
+      await t.wait(400);
+      t.expect(await page.locator('.move-trace .move-ghost').count() > 0, 'dragging the selected beam in the elevation leaves its ghost where it was');
+      t.expect(await offset() !== before, `its offset from the level follows the drag in Properties (${before} → ${await offset()})`);
+      await t.shot('section-drag', { clip: { x: 250, y: 120, width: 1180, height: 730 } });
+      await page.mouse.up();
+      // Let go about 0.5 m up (the drag snaps, to the columns' tops perhaps): the beam is that much higher, by its top offset.
+      await t.until(async () => ((await t.nodes()).find((n) => n.id === beam)?.props.topOffset ?? 0) > 0.25, 'let go, the beam is higher: its top offset');
+      const moved = (await t.nodes()).find((n) => n.id === beam);
+      t.expect(Math.abs(moved.props.start[1]) < 1e-6, 'and it stays on its line in plan');
+      // Rotate there: refused, with what to do instead.
+      const refused = await page.evaluate(async (id) => {
+        const s = await import('/src/engine/session.ts');
+        await s.execute('element.transform', { ids: [id], op: 'rotate', center: [0, 0], angle: 90, frame: { origin: [0, 0, 0], right: [1, 0, 0], up: [0, 0, 1] } });
+        return s.useSession.getState().error;
+      }, beam);
+      t.expect(/tip them over/.test(refused ?? ''), `a turn of the beam in the elevation is refused (${refused})`);
+    },
+  },
+  {
     // A tester's report (#106, decision 382): a DXF imported into a plan lies in the 3D view on its storey's level, in its
     // layers' colours, its hatch faint; one import is switched off and on, and View → DXF in 3D hides them all.
     id: 'dxf-3d',

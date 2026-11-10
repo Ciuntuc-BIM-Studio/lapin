@@ -22,6 +22,7 @@ import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
 import { xy } from '../../platform/vec';
+import type { ViewFrame } from '../viewFrame';
 
 /** What a 2D view lends the command line: its view, and what lies under a point. */
 export interface CadHost {
@@ -38,8 +39,8 @@ export interface CadHost {
   outlinesOf?(id: string): Shape[];
   /** Everything selectable a region takes (a window or crossing polygon). */
   inRegion?(takes: RegionTest): string[];
-  /** A section's or an elevation's move from one of its points to another, in the model ([dx, dy, dz]); none in a plan (decision 298: a wall sweep moved up). */
-  toModel?(from: Vec2, to: Vec2): [number, number, number] | null;
+  /** Where a section's or an elevation's point lies in the model (decision 453: element.transform carries the model's elements by it); none in a plan. */
+  frameAt?(at: Vec2): ViewFrame | null;
 }
 
 type Next = Step | null | void | Promise<Step | null | void>;
@@ -252,6 +253,12 @@ const moved = (s: Shape, d: Vec2): Shape => {
   }
 };
 
+/** In a section or an elevation, the view's frame for element.transform: its points are the view's, the model's elements move in the model (decision 453). */
+export function frameArg(at: Vec2): { frame?: ViewFrame } {
+  const f = useCad.getState().host?.frameAt?.(at);
+  return f ? { frame: f } : {};
+}
+
 function moveOrCopy(copy: boolean): Step | null | void | Promise<Step | null | void> {
   // In the 3D view, a move in 3D snapped to the bodies (docs/plan-3d-modelling.md, report #104): Move3D.tsx takes it.
   // A sketch's work plane open, or only drafted shapes selected: the plane's own move (decision 375).
@@ -274,8 +281,7 @@ function moveOnPlane(copy: boolean, ids: string[]): Step {
         prompt: copy ? 'Second point (Enter to finish)' : 'Second point', want: 'point', base, trace: ghost,
         preview: (c) => ghost.map((s) => moved(s, { x: c.x - base.x, y: c.y - base.y })),
         point: async (p) => {
-          const world = useCad.getState().host?.toModel?.(base, p);
-          await execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y], ...(world ? { world } : {}) });
+          await execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y], ...frameArg(base) });
           return copy ? second() : null;
         },
         enter: () => null,
@@ -289,7 +295,7 @@ function rotate(): Step | null | void | Promise<Step | null | void> {
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
     point: (c) => {
-      const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: xy(c), angle: deg }); return null; };
+      const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: xy(c), angle: deg, ...frameArg(c) }); return null; };
       return { prompt: 'Angle (degrees, or a point)', want: 'point', base: c, preview: (p) => [{ type: 'line', a: c, b: p }], scalar: go, point: (p) => go((Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI) };
     },
   }));
@@ -302,7 +308,7 @@ function mirror(): Step | null | void | Promise<Step | null | void> {
     point: (a) => {
       const second = (): Step => ({
         prompt: `Second point [Erase source: ${erase ? 'yes' : 'no'}]`, want: 'point', base: a, preview: (p) => [{ type: 'line', a, b: p }],
-        point: async (b) => { await execute('element.transform', { ids, op: 'mirror', a: xy(a), b: xy(b), copy: !erase }); return null; },
+        point: async (b) => { await execute('element.transform', { ids, op: 'mirror', a: xy(a), b: xy(b), copy: !erase, ...frameArg(a) }); return null; },
         keywords: { E: () => { erase = !erase; return second(); } },
       });
       return second();

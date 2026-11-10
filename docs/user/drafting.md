@@ -64,6 +64,12 @@ A door, a window or a wall opening moves and copies along its wall: only the par
 
 A grid axis moves, copies, rotates and mirrors on its own, or together with other elements. A copy is a new axis of the same grid, named after the last axis that runs its way: with axes 1, 2 and 3, a copy of any of them is 4.
 
+### In sections and elevations
+
+**Move** (<kbd>M</kbd>), **Copy** (<kbd>CO</kbd>) and dragging a selected element work in a section or an elevation too, in the view's plane. Along the view, the element moves in plan along the section's line; up or down, it rises or drops by its offset from its level (a wall's or column's base offset, a beam's top offset, a floor's offset). While you drag, its **Offset from level** in the properties follows. A door or a window still slides along its wall, and lines drafted on the view move in the view. **Mirror** there takes a vertical line and mirrors the elements across the plane through it, square to the view. Elements do not **Rotate** in a section or an elevation, as that would tip them over: turn them in a plan or in 3D. Drafted lines rotate and mirror any way. A pinned element stays where it is.
+
+![A beam dragged up in the south elevation: its ghost where it was, the offset at the mouse and its offset from the level following in the properties](shots/section-drag.webp)
+
 ### Pinning
 
 Pin what must not move by mistake: an imported model, the grid, a survey drawing. Select it and choose **Modify → Pin**, or tick **Pinned** under **Placement** in its properties. A pinned element is not moved, rotated, mirrored, raised, sent to another storey or deleted, and it shows no grips. Its other fields still change: its type, height or material. It can still be copied, and the copy is not pinned. A wall joined to it that moves keeps the pinned wall's ends where they are. Pinning a group pins its members; a group with a pinned member does not move. **Modify → Unpin** (<kbd>UP</kbd>) lets it go again. Any element can be pinned: a wall, a reference from an imported file, a drafted line.

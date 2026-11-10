@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NodeDto } from './protocol';
-import { elevationOf, offsetFor } from './elevation';
+import { elevationOf, offsetFor, raisedBy } from './elevation';
 
 const node = (type: string, props: Record<string, unknown> = {}): NodeDto => ({ id: type, type, name: type, props, editable: true } as unknown as NodeDto);
 const foundations = node('IfcBuildingStorey', { elevation: -1.5, height: 1.5 });
@@ -29,5 +29,13 @@ describe('an element\'s elevation (report #117)', () => {
   it('has none off a storey or on a class without an offset', () => {
     expect(elevationOf(node('IfcSlab'), null, null, ['offset'])).toBeNull();
     expect(elevationOf(node('IfcDoor'), first, null, [])).toBeNull();
+  });
+});
+
+describe('an element dragged up in a section (decision 454)', () => {
+  it('shows its offset and elevation moved by the drag so far, unchanged with none', () => {
+    const beam = elevationOf(node('IfcBeam', { topOffset: -0.3 }), first, null, ['topOffset'])!;
+    expect(raisedBy(beam, 0.5)).toMatchObject({ key: 'topOffset', offset: 0.2, absolute: 6.2 });
+    expect(raisedBy(beam, 0)).toBe(beam);
   });
 });

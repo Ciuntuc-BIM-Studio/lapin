@@ -10,7 +10,9 @@
  * - A grip of a thing of its own (a roof window on its roof): a right-click offers to remove it, and Delete over it does.
  *
  * Plans show the grips of elements on their storey and of shapes drafted on
- * them; sections and elevations show the grips of shapes drafted on them.
+ * them; sections and elevations show the grips of shapes drafted on them, and
+ * the model's elements selected there are dragged by their body (DrawingView,
+ * decision 453).
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -22,7 +24,7 @@ import { dropGrips, groupGrips, movers, runSteps, setHotRemove, type GripGroup }
 import { openContextMenu } from '../shell/ContextMenu';
 import { formatAngle, formatLength, liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { traceBegin, traceEnd } from './moveTrace';
-import { useCad } from './cad/session';
+import { frameArg, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
 import { useLang } from '../i18n';
 import { faceLetters } from './faceMarks';
@@ -217,7 +219,7 @@ export function useGripEditor(o: GripEditorOptions) {
     if (drag.moved && drag.copy) {
       // Ctrl/⌘ on a move grip: the elements stay, a copy goes where the grip was let go.
       const ids = [...new Set(drag.members.map((m) => m.owner).filter((x): x is string => !!x))];
-      if (ids.length) void execute('element.transform', { ids, op: 'copy', by: [drag.at.x - drag.group.at.x, drag.at.y - drag.group.at.y] });
+      if (ids.length) void execute('element.transform', { ids, op: 'copy', by: [drag.at.x - drag.group.at.x, drag.at.y - drag.group.at.y], ...frameArg(drag.group.at) });
     } else if (drag.moved) void dropGrips(drag.members, drag.at);
     setDrag(null);
     liveEnd('grip');

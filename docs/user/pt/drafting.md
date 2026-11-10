@@ -50,6 +50,12 @@ Uma porta, uma janela ou uma abertura na parede se move e se copia ao longo da s
 
 Um eixo da malha move, copia, gira e espelha sozinho ou junto com outros elementos. Uma cópia é um novo eixo da mesma malha, nomeado a partir do último eixo que corre no mesmo sentido: com os eixos 1, 2 e 3, uma cópia de qualquer um deles é o 4.
 
+### Em cortes e elevações
+
+**Mover** (<kbd>M</kbd>), **Copiar** (<kbd>CO</kbd>) e arrastar um elemento selecionado também funcionam em um corte ou uma elevação, no plano da vista. Ao longo da vista, o elemento se move em planta ao longo da linha do corte; para cima ou para baixo, ele sobe ou desce pelo seu deslocamento do nível (o deslocamento da base de uma parede ou pilar, o deslocamento do topo de uma viga, o deslocamento de uma laje). Enquanto você arrasta, o seu **Deslocamento do nível** nas propriedades acompanha. Uma porta ou uma janela continua deslizando ao longo da sua parede, e as linhas desenhadas na vista se movem na vista. **Espelhar** ali usa uma linha vertical e espelha os elementos em relação ao plano que passa por ela, perpendicular à vista. Os elementos não **giram** em um corte ou uma elevação, porque tombariam: gire-os em uma planta ou em 3D. As linhas desenhadas giram e espelham de qualquer jeito. Um elemento fixado fica onde está.
+
+![Uma viga arrastada para cima na elevação sul: o seu fantasma onde estava, o deslocamento junto ao mouse e o seu deslocamento do nível acompanhando nas propriedades](shots/section-drag.webp)
+
 ### Fixação
 
 Fixe o que não deve mover-se por engano: um modelo importado, a malha, um desenho de levantamento. Selecione-o e escolha **Modificar → Fixar**, ou marque **Fixado** em **Posicionamento** nas suas propriedades. Um elemento fixado não é movido, rodado, espelhado, elevado, levado para outro piso nem apagado, e não mostra alças. Os outros campos continuam a mudar: o tipo, a altura ou o material. Ainda pode ser copiado, e a cópia não fica fixada. Uma parede ligada a ele que se move deixa as extremidades da parede fixada onde estão. Fixar um grupo fixa os seus membros; um grupo com um membro fixado não se move. **Modificar → Soltar** (<kbd>UP</kbd>) solta-o de novo. Qualquer elemento pode ser fixado: uma parede, uma referência de um ficheiro importado, uma linha desenhada.

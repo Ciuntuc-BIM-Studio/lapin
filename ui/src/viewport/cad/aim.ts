@@ -16,6 +16,7 @@ import { applyOrtho } from './input';
 import { track, trackOnOrtho, type Guide } from './tracking';
 import { useCad, type CadHost } from './session';
 import type { RegionTest } from '../selectBox';
+import { viewFrameAt } from '../viewFrame';
 
 /** What holds an aimed point that no object snap took: the ortho line from the base (on, or Shift held), a polar angle from the base, or a tracking guide through an acquired point. */
 export type AimLock = 'ortho' | 'polar' | 'tracking';
@@ -102,8 +103,8 @@ export function useCadCanvas(o: {
   inRegion?: (takes: RegionTest) => string[];
 }) {
   // A section's or an elevation's frame: its moves are also given in the model (a wall sweep moved up its wall).
-  const frameRef = useRef(o.drawing?.frame ?? null);
-  frameRef.current = o.drawing?.kind === 'plan' ? null : o.drawing?.frame ?? null;
+  const frameRef = useRef(o.drawing ?? null);
+  frameRef.current = o.drawing ?? null;
   // A plan drafts in the UCS; a section or an elevation in its own frame.
   const planRef = useRef(o.drawing?.kind === 'plan');
   planRef.current = o.drawing?.kind === 'plan';
@@ -150,12 +151,7 @@ export function useCadCanvas(o: {
         return out;
       },
       inRegion: (takes) => regionRef.current?.(takes) ?? [],
-      toModel: (from, to) => {
-        const f = frameRef.current;
-        if (!f) return null;
-        const [dx, dy] = [to.x - from.x, to.y - from.y];
-        return [0, 1, 2].map((k) => (f.right[k] ?? 0) * dx + (f.up[k] ?? 0) * dy) as [number, number, number];
-      },
+      frameAt: (at) => viewFrameAt(frameRef.current, at),
     };
     useCad.setState({ host });
     return () => { if (useCad.getState().host === host) useCad.setState({ host: null }); };

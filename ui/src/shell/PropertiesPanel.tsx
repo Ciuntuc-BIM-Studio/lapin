@@ -16,7 +16,8 @@ import { ownPlanOf } from '../viewport/storeyPlan';
 import { frontView } from '../viewport/frontView';
 import { view3dNode } from '../viewport/storeys3d';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
-import { elevationOf, offsetFor } from '../engine/elevation';
+import { elevationOf, offsetFor, raisedBy } from '../engine/elevation';
+import { useLiveRise } from '../viewport/viewFrame';
 import { fieldShown, type FieldDescriptor, type NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
 import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
@@ -273,7 +274,10 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const type = typeOf(model, node.id);
   const storey = relatingOf(model, node.id, 'IfcRelContainedInSpatialStructure');
   const sections = propertySections(node.type).filter((s) => !s.shows || s.shows(node));
-  const elevation = node.editable ? elevationOf(node, storey, type, cls?.fields.map((f) => f.key) ?? []) : null;
+  // While it is dragged up or down in a section or an elevation, its offset follows the drag (decision 454).
+  const rise = useLiveRise((s) => (s.ids.includes(node.id) ? s.dz : 0));
+  const level = node.editable ? elevationOf(node, storey, type, cls?.fields.map((f) => f.key) ?? []) : null;
+  const elevation = level ? raisedBy(level, rise) : null;
   const TypeFields = type ? typeFieldsOf(type.type) : null;
   return (
     <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>

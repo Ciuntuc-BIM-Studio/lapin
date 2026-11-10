@@ -50,6 +50,12 @@ Drzwi, okno lub otwór w ścianie przesuwa się i kopiuje wzdłuż swojej ścian
 
 Oś siatki przesuwa się, kopiuje, obraca i odbija lustrzanie sama albo razem z innymi elementami. Kopia jest nową osią tej samej siatki, nazwaną według ostatniej osi biegnącej w tym samym kierunku: przy osiach 1, 2 i 3 kopia każdej z nich to 4.
 
+### W przekrojach i elewacjach
+
+**Przesuń** (<kbd>M</kbd>), **Kopiuj** (<kbd>CO</kbd>) i przeciąganie zaznaczonego elementu działają też w przekroju lub elewacji, w płaszczyźnie widoku. Wzdłuż widoku element przesuwa się w rzucie wzdłuż linii przekroju; w górę lub w dół podnosi się lub opuszcza o swoje przesunięcie od poziomu (przesunięcie dołu ściany lub słupa, przesunięcie góry belki, przesunięcie stropu). Podczas przeciągania jego **Przesunięcie od poziomu** we właściwościach podąża za nim. Drzwi lub okno nadal przesuwa się wzdłuż swojej ściany, a linie narysowane na widoku przesuwają się w widoku. **Lustro** bierze tam pionową linię i odbija elementy względem płaszczyzny przechodzącej przez nią, prostopadłej do widoku. Elementów nie **obraca się** w przekroju ani w elewacji, bo by się przewróciły: obróć je w rzucie lub w 3D. Narysowane linie obracają się i odbijają dowolnie. Przypięty element zostaje na miejscu.
+
+![Belka przeciągnięta w górę w elewacji południowej: jej cień tam, gdzie była, przesunięcie przy myszy i jej przesunięcie od poziomu podążające za nią we właściwościach](shots/section-drag.webp)
+
 ### Przypinanie
 
 Przypnij to, co nie może się przesunąć przez pomyłkę: zaimportowany model, siatkę, rysunek inwentaryzacji. Zaznacz go i wybierz **Modyfikuj → Przypnij**, albo zaznacz **Przypięty** w sekcji **Umiejscowienie** w jego właściwościach. Przypięty element nie jest przesuwany, obracany, odbijany, podnoszony, przenoszony na inną kondygnację ani usuwany i nie pokazuje uchwytów. Jego pozostałe pola nadal się zmieniają: typ, wysokość lub materiał. Nadal można go kopiować, a kopia nie jest przypięta. Ściana połączona z nim, która się przesuwa, zostawia końce przypiętej ściany tam, gdzie są. Przypięcie grupy przypina jej członków; grupa z przypiętym członkiem nie jest przesuwana. **Modyfikuj → Odepnij** (<kbd>UP</kbd>) znów go uwalnia. Przypiąć można każdy element: ścianę, odniesienie z zaimportowanego pliku, narysowaną linię.

@@ -50,6 +50,12 @@ Una porta, una finestra o un’apertura nel muro si sposta e si copia lungo il s
 
 Un asse della griglia si sposta, si copia, ruota e si specchia da solo o insieme ad altri elementi. Una copia è un nuovo asse della stessa griglia, chiamato in base all’ultimo asse che corre nella sua direzione: con gli assi 1, 2 e 3, una copia di uno qualsiasi di essi è 4.
 
+### In sezioni e prospetti
+
+**Sposta** (<kbd>M</kbd>), **Copia** (<kbd>CO</kbd>) e il trascinamento di un elemento selezionato funzionano anche in una sezione o in un prospetto, nel piano della vista. Lungo la vista, l’elemento si sposta in pianta lungo la linea della sezione; in su o in giù, sale o scende del suo scostamento dal livello (lo scostamento di base di un muro o di un pilastro, lo scostamento superiore di una trave, lo scostamento di un solaio). Mentre trascini, il suo **Scostamento dal livello** nelle proprietà lo segue. Una porta o una finestra scorre ancora lungo il suo muro, e le linee disegnate sulla vista si spostano nella vista. **Specchia** lì prende una linea verticale e specchia gli elementi rispetto al piano che la contiene, perpendicolare alla vista. Gli elementi non si **ruotano** in una sezione o in un prospetto, perché si ribalterebbero: ruotali in una pianta o in 3D. Le linee disegnate ruotano e si specchiano in ogni modo. Un elemento bloccato resta dov’è.
+
+![Una trave trascinata in su nel prospetto sud: il suo fantasma dove era, lo spostamento vicino al mouse e il suo scostamento dal livello che segue nelle proprietà](shots/section-drag.webp)
+
 ### Blocco
 
 Blocca ciò che non deve spostarsi per errore: un modello importato, la griglia, un disegno di rilievo. Selezionalo e scegli **Modifica → Blocca**, oppure spunta **Bloccato** sotto **Posizionamento** nelle sue proprietà. Un elemento bloccato non si sposta, non ruota, non si specchia, non si alza, non passa a un altro piano e non si cancella, e non mostra maniglie. Gli altri campi cambiano ancora: il tipo, l’altezza o il materiale. Si può comunque copiare, e la copia non è bloccata. Un muro unito a esso che si sposta lascia le estremità del muro bloccato dove sono. Bloccare un gruppo ne blocca i membri; un gruppo con un membro bloccato non si sposta. **Modifica → Sblocca** (<kbd>UP</kbd>) lo libera di nuovo. Qualsiasi elemento può essere bloccato: un muro, un riferimento da un file importato, una linea disegnata.

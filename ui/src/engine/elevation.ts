@@ -43,3 +43,7 @@ export function elevationOf(node: NodeDto, storey: NodeDto | null, type: NodeDto
 
 /** The offset that puts the element at <paramref name="absolute"/>. */
 export const offsetFor = (e: Elevation, absolute: number): number => Math.round((absolute - e.origin) * 1e6) / 1e6;
+
+/** The elevation while the element is dragged up or down by `dz` in a section or an elevation (decision 454): what Properties shows live. */
+export const raisedBy = (e: Elevation, dz: number): Elevation =>
+  dz ? { ...e, offset: Math.round((e.offset + dz) * 1e6) / 1e6, absolute: Math.round((e.absolute + dz) * 1e6) / 1e6 } : e;

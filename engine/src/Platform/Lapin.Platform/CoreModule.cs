@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Geometry;
 using Lapin.Model;
 
 namespace Lapin.Platform;
@@ -353,6 +354,17 @@ public static class ElementTransform
         // A 3D move's vertical part (docs/plan-3d-modelling.md): what has a height of its own goes up or down by it.
         var up = op is "move" or "copy" ? Json.Number(a["up"]) ?? 0 : 0;
         var rise = Json.Number(a["rise"]) ?? (world is { Count: >= 3 } ? Json.Number(world[2]) : null) ?? up;
+        // A section's or an elevation's frame (decision 453): the command's points are the view's (x along it, y up), which
+        // is what its drafted shapes take; the model's elements are carried by the same edit in the model instead.
+        var frame = a["frame"] is JsonObject fo && Args.TryPoint3(fo["right"]) is { } fr && Args.TryPoint3(fo["up"]) is { } fu
+            ? (Origin: Args.TryPoint3(fo["origin"]) ?? default, Right: fr, Up: fu) : ((Vec3 Origin, Vec3 Right, Vec3 Up)?)null;
+        if (given == null && frame is { } fm && op is "move" or "copy" && world == null)
+        {
+            var by = V(a["by"], "displacement");
+            var w = fm.Right * by.X + fm.Up * by.Y;
+            world = new JsonArray(w.X, w.Y, w.Z);
+            rise = Json.Number(a["rise"]) ?? w.Z;
+        }
         var t = given ?? op switch
         {
             "move" or "copy" => Placement2D.Move(V(a["by"], "displacement"), rise),
@@ -364,6 +376,39 @@ public static class ElementTransform
         var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
         var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
             .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
+        // The model's own edit when the view's is not it (a section's or an elevation's): a move along the view and up, a mirror
+        // about a vertical line across the plane through it square to the view. A turn there would tip the elements over, and a
+        // mirror about any other line turn them upside down: refused for the model's elements, drafted shapes still take them.
+        Placement2D? inModel = null;
+        double lift = 0;
+        // A move given in the model alone (world, an older caller's) carries the elements by it too.
+        if (given == null && (frame != null || world != null && op is "move" or "copy"))
+        {
+            var modelSelected = all.Any(e => !OnView(e)) || ids.Any(id => ctx.Model.Get(id) == null);
+            switch (op)
+            {
+                case "move" or "copy":
+                    inModel = Placement2D.Move(Args.PointOf(world), rise);
+                    lift = world is { Count: >= 3 } ? Json.Number(world[2]) ?? 0 : 0;
+                    break;
+                case "rotate" when modelSelected:
+                    throw new CommandException("Elements turn in a plan or in 3D: in a section or an elevation a turn would tip them over (drafted shapes turn here).");
+                case "mirror" when modelSelected && frame is { } fm2:
+                {
+                    var (pa, pb) = (V(a["a"], "start"), V(a["b"], "end"));
+                    var d = pb - pa;
+                    var r = new Vec2(fm2.Right.X, fm2.Right.Y);
+                    if (Math.Abs(d.X) > 1e-3 * d.Length || r.Length < 1e-9)
+                        throw new CommandException("In a section or an elevation, elements mirror about a vertical line (across the plane through it, square to the view).");
+                    // The view's x is measured along its right (a unit vector, level in a section or an elevation): the line's foot in plan.
+                    var at = new Vec2(fm2.Origin.X, fm2.Origin.Y) + r * ((pa.X + pb.X) / 2);
+                    inModel = Placement2D.Mirror(at, at + new Vec2(-r.Y, r.X));
+                    break;
+                }
+            }
+        }
+        // How each one is carried: a drafted shape (or a bar drawn on the view) as the view's points say, the rest in the model.
+        Placement2D Of(Entity e) => inModel != null && !OnView(e) ? inModel : t;
         // What is pinned is not moved, turned or mirrored; it is copied, and its copies are not pinned (decision 449).
         if (!copy) Pins.Refuse(all);
         // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.
@@ -380,16 +425,16 @@ public static class ElementTransform
         var made = new JsonArray();
         var copies = new Dictionary<string, string>();
         var twins = new Dictionary<string, string>();
-        // In a section or an elevation the view's move is given in the model too (world): what is placed in a host moves by it.
-        var inHost = world != null && op is "move" or "copy" ? Placement2D.Move(Args.PointOf(world), rise) : t;
+        // In a section or an elevation the view's edit is given in the model too: what is placed in a host moves by it.
+        var inHost = inModel ?? t;
         // What follows the elements without being selected (their tags, report #93) is told before and after.
         var selected = all.Select(e => e.Id).ToHashSet();
         var followers = ctx.Services.All<ITransformFollowers>().Select(f => (f, State: f.Before(ctx, moving, selected))).ToList();
         foreach (var e in entities)
         {
             if (ctx.Model.Get(e.Id) is not { } now) continue;
-            if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
-            else Placement.Transform(ctx, now, t, moving);
+            if (copy) { var c = Placement.Copy(ctx, now, Of(now)); made.Add((JsonNode)c); copies[e.Id] = c; }
+            else Placement.Transform(ctx, now, Of(now), moving);
         }
         foreach (var own in ctx.Services.All<IHostedPlacement>())
             if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
@@ -406,30 +451,35 @@ public static class ElementTransform
                 {
                     made.Add((JsonNode)twin.Id);
                     twins[g] = twin.Id;
-                    Components.CopiedInstance(ctx, group, twin, t, up);
+                    Components.CopiedInstance(ctx, group, twin, inModel ?? t, up + lift);
                 }
         // Parts selected on their own (a grid's axis): their module carries them.
         // One whose element goes as a whole goes with it, once.
         foreach (var id in ids.Distinct().Where(id => ctx.Model.Get(id) == null && !(id.IndexOf('#') is var h and > 0 && moving.Contains(id[..h]))))
             foreach (var part in ctx.Services.All<IPartPlacement>())
-                if (part.Transform(ctx, id, t, copy) is { } after)
+                if (part.Transform(ctx, id, inModel ?? t, copy) is { } after)
                 {
                     if (copy) made.Add((JsonNode)after);
                     break;
                 }
         var kept = new List<string>();
-        if (Math.Abs(up) > 1e-9)
-            foreach (var e in entities)
-            {
-                var id = copy ? copies.GetValueOrDefault(e.Id) : e.Id;
-                if (id == null || ctx.Model.Get(id) is not { } now) continue;
-                if (!ElementRise.Lift(ctx, now, up)) kept.Add(id);
-            }
+        foreach (var e in entities)
+        {
+            // A section's or an elevation's move up raises the model's elements by their offset from the level, not what lies on the view.
+            var dz = up + (OnView(e) ? 0 : lift);
+            if (Math.Abs(dz) <= 1e-9) continue;
+            var id = copy ? copies.GetValueOrDefault(e.Id) : e.Id;
+            if (id == null || ctx.Model.Get(id) is not { } now) continue;
+            if (!ElementRise.Lift(ctx, now, dz)) kept.Add(id);
+        }
         // An instance moved as a whole says where it stands now (docs/components.md).
-        if (!copy) foreach (var g in groups) Components.MovedInstance(ctx, g, t, up);
+        if (!copy) foreach (var g in groups) Components.MovedInstance(ctx, g, inModel ?? t, up + lift);
         if (copy) Pins.Unpinned(ctx, made.Select(x => (string?)x).OfType<string>());
         return new Result(made, copies, twins) { Kept = kept };
     }
+
+    /// <summary>What lies on a view and takes the view's points (a drafted shape, a dimension, a bar drawn on it), not the model's.</summary>
+    public static bool OnView(Entity e) => e.Class == IfcClass.Annotation || e.Str("viewId") is { Length: > 0 };
 }
 
 /// <summary>The spatial structure: one project, site and building; the storeys, lowest first.</summary>

@@ -50,6 +50,12 @@ Une porte, une fenêtre ou une ouverture de mur se déplace et se copie le long 
 
 Un axe de quadrillage se déplace, se copie, pivote et se reflète seul ou avec d’autres éléments. Une copie est un nouvel axe de la même grille, nommé d’après le dernier axe qui court dans sa direction : avec les axes 1, 2 et 3, la copie de n’importe lequel d’entre eux est 4.
 
+### Dans les coupes et les élévations
+
+**Déplacer** (<kbd>M</kbd>), **Copier** (<kbd>CO</kbd>) et le glisser d’un élément sélectionné fonctionnent aussi dans une coupe ou une élévation, dans le plan de la vue. Le long de la vue, l’élément se déplace en plan le long de la ligne de coupe ; vers le haut ou le bas, il monte ou descend de son décalage par rapport au niveau (le décalage de base d’un mur ou d’un poteau, le décalage supérieur d’une poutre, le décalage d’un plancher). Pendant que vous glissez, son **Décalage par rapport au niveau** suit dans les propriétés. Une porte ou une fenêtre glisse toujours le long de son mur, et les lignes dessinées sur la vue se déplacent dans la vue. **Symétrie** y prend une ligne verticale et réfléchit les éléments par rapport au plan qui la contient, perpendiculaire à la vue. Les éléments ne **pivotent** pas dans une coupe ou une élévation, car ils se renverseraient : faites-les pivoter dans un plan ou en 3D. Les lignes dessinées pivotent et se reflètent comme on veut. Un élément épinglé reste où il est.
+
+![Une poutre glissée vers le haut dans l’élévation sud : son fantôme à son ancienne place, le décalage près de la souris et son décalage par rapport au niveau qui suit dans les propriétés](shots/section-drag.webp)
+
 ### Épinglage
 
 Épinglez ce qui ne doit pas bouger par erreur : un modèle importé, la grille, un dessin de relevé. Sélectionnez-le et choisissez **Modifier → Épingler**, ou cochez **Épinglé** sous **Placement** dans ses propriétés. Un élément épinglé n’est ni déplacé, ni tourné, ni symétrisé, ni élevé, ni envoyé à un autre niveau, ni supprimé, et il n’affiche pas de poignées. Ses autres champs changent toujours : son type, sa hauteur ou son matériau. Il peut toujours être copié, et la copie n’est pas épinglée. Un mur joint à lui qui se déplace laisse les extrémités du mur épinglé où elles sont. Épingler un groupe épingle ses membres ; un groupe avec un membre épinglé ne se déplace pas. **Modifier → Désépingler** (<kbd>UP</kbd>) le libère de nouveau. Tout élément peut être épinglé : un mur, une référence d’un fichier importé, une ligne dessinée.

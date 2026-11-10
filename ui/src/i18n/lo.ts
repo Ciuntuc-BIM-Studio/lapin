@@ -867,6 +867,8 @@ export const LO: Record<string, string> = {
   'Array round an upright': 'ອາເຣອ້ອມແກນຕັ້ງ',
   'In a row': 'ເປັນແຖວ', 'Round a centre': 'ອ້ອມຈຸດສູນກາງ', 'Select what to array first, then Array.': 'ເລືອກສິ່ງທີ່ຈະເຮັດຊ້ຳກ່ອນ, ແລ້ວ ແຖວຊ້ຳ.', 'Select what to array first, then Polar array.': 'ເລືອກສິ່ງທີ່ຈະເຮັດຊ້ຳກ່ອນ, ແລ້ວ ອາເຣແບບວົງ.', 'Select what to move first, then Move 3D.': 'ເລືອກສິ່ງທີ່ຈະຍ້າຍກ່ອນ, ແລ້ວ ຍ້າຍ 3D.',
   'Pin': 'ປັກໝຸດ', 'Unpin': 'ຖອດໝຸດ', 'Pinned': 'ປັກໝຸດແລ້ວ', 'A pinned element stays where it is: it is not moved, turned, mirrored, sent to another storey nor deleted until it is unpinned. Its other fields still change': 'ອົງປະກອບທີ່ປັກໝຸດຢູ່ບ່ອນເດີມ: ບໍ່ຖືກຍ້າຍ, ໝຸນ, ສະທ້ອນ, ຍ້າຍໄປຊັ້ນອື່ນ ຫຼື ລຶບ ຈົນກວ່າຈະຖອດໝຸດ. ຊ່ອງອື່ນຍັງປ່ຽນໄດ້', 'Pinned: unpin it to delete it': 'ປັກໝຸດແລ້ວ: ຖອດໝຸດກ່ອນຈຶ່ງລຶບໄດ້', 'Select what to pin first.': 'ເລືອກສິ່ງທີ່ຈະປັກໝຸດກ່ອນ.', 'Select what to unpin first.': 'ເລືອກສິ່ງທີ່ຈະຖອດໝຸດກ່ອນ.',
+  // Moving in a section or an elevation (decision 453).
+  'Elements turn in a plan or in 3D: in a section or an elevation a turn would tip them over (drafted shapes turn here).': 'ອົງປະກອບໝູນໄດ້ໃນແຜນຜັງ ຫຼື ໃນ 3D: ໃນຮູບໜ້າຕັດ ຫຼື ຮູບດ້ານ ການໝູນຈະເຮັດໃຫ້ມັນລົ້ມ (ຮູບທີ່ແຕ້ມໝູນໄດ້ທີ່ນີ້).', 'In a section or an elevation, elements mirror about a vertical line (across the plane through it, square to the view).': 'ໃນຮູບໜ້າຕັດ ຫຼື ຮູບດ້ານ, ອົງປະກອບສະທ້ອນກັບເສັ້ນຕັ້ງ (ຜ່ານລະນາບທີ່ຜ່ານເສັ້ນນັ້ນ, ຕັ້ງສາກກັບມຸມມອງ).',
   'Angle filled (°)': 'ມຸມທີ່ຄອບຄຸມ (°)',
   'Centre x': 'ຈຸດສູນກາງ x',
   'Centre y': 'ຈຸດສູນກາງ y',

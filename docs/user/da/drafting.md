@@ -50,6 +50,12 @@ En dør, et vindue eller en vægåbning flyttes og kopieres langs sin væg: kun 
 
 En modullinje flyttes, kopieres, roteres og spejles for sig selv eller sammen med andre elementer. En kopi er en ny modullinje i samme net, opkaldt efter den sidste modullinje, der løber samme vej: med modullinjerne 1, 2 og 3 bliver en kopi af en hvilken som helst af dem til 4.
 
+### I snit og facader
+
+**Flyt** (<kbd>M</kbd>), **Kopiér** (<kbd>CO</kbd>) og træk af et markeret element virker også i et snit eller en facade, i visningens plan. Langs visningen flytter elementet sig i plan langs snitlinjen; op eller ned hæves eller sænkes det med sin forskydning fra niveauet (en vægs eller søjles basisforskydning, en bjælkes topforskydning, et dæks forskydning). Mens du trækker, følger dets **Forskydning fra niveau** med i egenskaberne. En dør eller et vindue glider stadig langs sin væg, og linjer tegnet på visningen flytter sig i visningen. **Spejl** tager dér en lodret linje og spejler elementerne om planet gennem den, vinkelret på visningen. Elementer **roteres** ikke i et snit eller en facade, da de ville vælte: drej dem i en plan eller i 3D. Tegnede linjer roterer og spejles, som du vil. Et fastgjort element bliver, hvor det er.
+
+![En bjælke trukket op i sydfacaden: dens skygge, hvor den var, forskydningen ved musen og dens forskydning fra niveauet, der følger med i egenskaberne](shots/section-drag.webp)
+
 ### Fastgørelse
 
 Fastgør det, der ikke må flytte sig ved en fejl: en importeret model, nettet, en opmålingstegning. Vælg det og vælg **Redigér → Fastgør**, eller sæt hak i **Fastgjort** under **Placering** i dets egenskaber. Et fastgjort element flyttes, drejes, spejles, hæves, sendes til en anden etage eller slettes ikke, og det viser ingen greb. Dets andre felter kan stadig ændres: dets type, højde eller materiale. Det kan stadig kopieres, og kopien er ikke fastgjort. En væg, der er forbundet med det og flyttes, lader den fastgjorte væggs ender blive, hvor de er. Fastgørelse af en gruppe fastgør dens medlemmer; en gruppe med et fastgjort medlem flyttes ikke. **Redigér → Frigør** (<kbd>UP</kbd>) slipper det igen. Ethvert element kan fastgøres: en væg, en reference fra en importeret fil, en tegnet linje.

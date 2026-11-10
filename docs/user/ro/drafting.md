@@ -64,6 +64,12 @@ O ușă, o fereastră sau un gol din perete se mută și se copiază de-a lungul
 
 O axă se mută, se copiază, se rotește și se oglindește singură sau împreună cu alte elemente. O copie e o axă nouă a aceluiași caroiaj, numită după ultima axă care merge în aceeași direcție: cu axele 1, 2 și 3, copia oricăreia e 4.
 
+### În secțiuni și fațade
+
+**Mută** (<kbd>M</kbd>), **Copiază** (<kbd>CO</kbd>) și tragerea unui element selectat merg și într-o secțiune sau o fațadă, în planul vederii. De-a lungul vederii, elementul se mută în plan de-a lungul liniei secțiunii; în sus sau în jos, urcă sau coboară cu decalajul lui față de nivel (decalajul bazei unui perete sau stâlp, decalajul de sus al unei grinzi, decalajul unei plăci). Cât tragi, **Decalaj față de nivel** din proprietăți îl urmează. O ușă sau o fereastră alunecă în continuare de-a lungul peretelui ei, iar liniile desenate pe vedere se mută în vedere. **Oglindește** ia acolo o linie verticală și oglindește elementele față de planul care trece prin ea, perpendicular pe vedere. Elementele nu se **Rotesc** într-o secțiune sau o fațadă, pentru că s-ar răsturna: rotește-le într-un plan sau în 3D. Liniile desenate se rotesc și se oglindesc oricum. Un element fixat rămâne unde e.
+
+![O grindă trasă în sus în fațada de sud: fantoma ei unde era, deplasarea lângă mouse și decalajul față de nivel urmând-o în proprietăți](shots/section-drag.webp)
+
 ### Fixarea
 
 Fixează ce nu trebuie să se miște din greșeală: un model importat, caroiajul, un desen de releveu. Selectează-l și alege **Modifică → Fixează**, sau bifează **Fixat** la **Amplasare** în proprietățile lui. Un element fixat nu se mută, nu se rotește, nu se oglindește, nu se ridică, nu trece pe alt nivel și nu se șterge, și nu are grip-uri. Celelalte câmpuri ale lui se schimbă în continuare: tipul, înălțimea sau materialul. Se poate totuși copia, iar copia nu e fixată. Un perete legat de el care se mută lasă capetele peretelui fixat unde sunt. Fixarea unui grup fixează membrii lui; un grup cu un membru fixat nu se mută. **Modifică → Eliberează** (<kbd>UP</kbd>) îl lasă din nou liber. Orice element poate fi fixat: un perete, o referință dintr-un fișier importat, o linie desenată.

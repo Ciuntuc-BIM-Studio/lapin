@@ -50,6 +50,12 @@ Una puerta, una ventana o un hueco de muro se desplaza y se copia a lo largo de 
 
 Un eje de rejilla se desplaza, se copia, se gira y se refleja por sí solo o junto con otros elementos. Una copia es un nuevo eje de la misma rejilla, con el nombre que sigue al último eje en su dirección: con los ejes 1, 2 y 3, la copia de cualquiera de ellos es el 4.
 
+### En secciones y alzados
+
+**Desplazar** (<kbd>M</kbd>), **Copiar** (<kbd>CO</kbd>) y arrastrar un elemento seleccionado funcionan también en una sección o un alzado, en el plano de la vista. A lo largo de la vista, el elemento se mueve en planta a lo largo de la línea de la sección; hacia arriba o hacia abajo, sube o baja según su desfase del nivel (el desfase de base de un muro o un pilar, el desfase superior de una viga, el desfase de un forjado). Mientras arrastra, su **Desfase del nivel** en las propiedades lo sigue. Una puerta o una ventana sigue deslizándose a lo largo de su muro, y las líneas dibujadas en la vista se mueven en la vista. **Simetría** toma allí una línea vertical y refleja los elementos respecto al plano que pasa por ella, perpendicular a la vista. Los elementos no se **giran** en una sección o un alzado, porque se volcarían: gírelos en una planta o en 3D. Las líneas dibujadas giran y se reflejan de cualquier manera. Un elemento fijado se queda donde está.
+
+![Una viga arrastrada hacia arriba en el alzado sur: su fantasma donde estaba, el desplazamiento junto al ratón y su desfase del nivel siguiéndolo en las propiedades](shots/section-drag.webp)
+
 ### Fijación
 
 Fija lo que no debe moverse por error: un modelo importado, la rejilla, un dibujo de levantamiento. Selecciónalo y elige **Modificar → Fijar**, o marca **Fijado** en **Colocación** en sus propiedades. Un elemento fijado no se mueve, gira, refleja, eleva, pasa a otra planta ni se borra, y no muestra pinzamientos. Sus demás campos siguen cambiando: su tipo, altura o material. Aún se puede copiar, y la copia no queda fijada. Un muro unido a él que se mueve deja los extremos del muro fijado donde están. Fijar un grupo fija a sus miembros; un grupo con un miembro fijado no se mueve. **Modificar → Liberar** (<kbd>UP</kbd>) lo suelta de nuevo. Cualquier elemento se puede fijar: un muro, una referencia de un archivo importado, una línea dibujada.
