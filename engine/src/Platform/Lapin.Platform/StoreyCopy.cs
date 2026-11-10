@@ -54,7 +54,10 @@ public static class StoreyCopy
             var relations = Flag(a["relations"], true);
             var skipDuplicates = Flag(a["skipDuplicates"], true);
 
-            var (ids, groups) = Groups.Expand(m, Args.Ids(a));
+            // What a module drives (its groups whole) it copies there in its own terms, or refuses (docs/overrides.md, Driven elements).
+            var driven = Driven.Before(ctx, new DrivenEdit("element.copyToStoreys", Args.Ids(a), a) { Storeys = [.. targets.Select(x => x.Id)] });
+            var (ids, groups) = Groups.Expand(m, Driven.Rest(Args.Ids(a), driven));
+            ids = Driven.Rest(ids, driven);
             var picked = ids.Distinct().Select(id => m.Get(id) ?? throw new CommandException($"There is no {id}.")).ToList();
             var chosen = picked.Select(e => e.Id).ToHashSet();
             var top = new List<Entity>();
@@ -74,7 +77,11 @@ public static class StoreyCopy
                 if (Spatial.StoreyOf(m, e.Id) is null) throw new CommandException($"„{e.Name}” is on no storey.");
                 top.Add(e);
             }
-            if (top.Count == 0 && notes.Count == 0) throw new CommandException("Select what to copy to other storeys.");
+            if (top.Count == 0 && notes.Count == 0)
+            {
+                if (driven.Handled.Count > 0) return new JsonObject { ["ids"] = new JsonArray([.. driven.Made.Select(x => (JsonNode)x)]), ["storeys"] = new JsonArray(), ["skipped"] = new JsonArray() };
+                throw new CommandException("Select what to copy to other storeys.");
+            }
             var hooks = ctx.Services.All<IStoreyCopy>().ToList();
             // What a module names as going with an element (a room's finishes) goes with it.
             if (hosted)
@@ -179,6 +186,7 @@ public static class StoreyCopy
                 foreach (var id in here) made.Add((JsonNode)(string)id!);
                 perStorey.Add((JsonNode)new JsonObject { ["storeyId"] = target.Id, ["ids"] = here });
             }
+            foreach (var id in driven.Made) made.Add((JsonNode)id);
             return new JsonObject { ["ids"] = made, ["storeys"] = perStorey, ["skipped"] = skipped };
         });
     }

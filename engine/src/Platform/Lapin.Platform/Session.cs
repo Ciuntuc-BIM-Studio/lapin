@@ -315,6 +315,8 @@ public sealed partial class Session
         {
             var ctx = new CommandContext(edit, _catalog, new QueryContext(this), allowLinked);
             r = entry.Handler(ctx, args);
+            // What the command changed of elements a module drives, written back in the module's terms (docs/overrides.md, Driven elements).
+            Driven.After(ctx, edit, command);
             // An instance of a component changed: the others follow, in the same undo step (docs/components.md).
             Components.Settle(ctx, edit);
         }, author);

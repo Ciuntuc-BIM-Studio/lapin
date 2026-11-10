@@ -28,6 +28,45 @@ r.OverrideQuery("core.faceAt", (ctx, args, next) => next(args));
 - No override: the catalog holds the handlers as registered; the command path is unchanged.
 - `ModuleCatalog.Overrides` lists them; `session.info` sends them as `overrides` only when there are any.
 
+## Engine: driven elements
+
+For modules that drive elements from a specification of their own (a generator, a premium configurator whose output is rebuilt from its inputs): their elements are ordinary native elements, so the generic commands would act on them as on any other and the next rebuild would undo the edit. Two services keep them right; neither is used by a module of this repository.
+
+```csharp
+public void Register(IModuleRegistry r)
+{
+    var mine = new MyDriven();
+    r.Service<IDrivenElements>(mine);
+    r.Service<IIfcExportFilter>(mine);
+}
+
+sealed class MyDriven : IDrivenElements, IIfcExportFilter
+{
+    public bool Drives(IModelView m, Entity e) => /* one of mine: a member, or a group I own */;
+
+    public void Before(ICommandContext ctx, DrivenEdit edit, DrivenOutcome outcome)
+    {
+        // edit.Command, edit.Ids (only mine), edit.Args; element.transform also gives Transform, Up, Copy; Copy to storeys,
+        // Move to storey and Duplicate storey give Storeys.
+        if (edit.Command == "group.create") throw new CommandException("… is its generator's.");   // refused
+        foreach (var id in edit.Ids) { /* the edit done in my terms */ outcome.Handled.Add(id); }    // done here
+        // outcome.Made: what I made in their stead (a copy), returned with the command's ids
+        // nothing done: the command goes on as it is
+    }
+
+    public void After(ICommandContext ctx, IEdit edit, string command) { /* edit.EntityChanges written back into my spec */ }
+
+    public bool SkipsGroup(IModelView m, Entity group) => /* my own group: not written to IFC */;
+    public IEnumerable<string> PrivateKeys => ["myKey"];   // never written in Lapin_Intent
+}
+```
+
+- **`IDrivenElements.Before`** is asked by `element.delete`, `element.transform` (and so `element.array` and every copy made through it), `element.update`, `element.rename`, `element.setParam`, `element.removeParam`, `group.create`, `group.add`, `group.remove`, `group.ungroup`, `component.make`, `component.makeUnique`, `element.moveToStorey`, `element.copyToStoreys` and `storey.duplicate` (with contents), before they act, with the ids given that the module drives (`Driven.Before`). A group the module owns is given whole: moved, copied or ungrouped, it is the module's to say what that means (a placement changed, a new instance of the same spec, the link dropped).
+- Three answers, as pinning (decision 449) and `r.Override` give them: let it go (do nothing), refuse (a `CommandException`, which rolls the whole command back), or do it in its own terms and add the ids to `outcome.Handled`, which the command then leaves out. Ids it does not drive go on as before, in the same undo step.
+- **`IDrivenElements.After`** is called after every command (`Session.Execute`, before components settle), inside its undo step, with the command's changes: what any command did to a driven element (another module's command too: a door's type, its place along its wall) is written back into the module's spec there, so building it again keeps it.
+- **`IIfcExportFilter`**: the export leaves out the groups `SkipsGroup` names (no `IFCGROUP`, no `IFCRELASSIGNSTOGROUP`; the members are written as any element) and never writes the `PrivateKeys` attributes in an element's `Lapin_Intent` set, so a link that lives in `.lapin` stays there.
+- Without a module that registers them, every command runs as it did. Tests: `DrivenElementsTests` (a test generator).
+
 ## Engine: results delivered later
 
 A module that works something out in the background (an analysis, a call to a model, a long solve) takes a stamp of the model in its command or query, starts the work and returns at once:
