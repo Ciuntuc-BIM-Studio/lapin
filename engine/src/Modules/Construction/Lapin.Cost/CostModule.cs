@@ -174,6 +174,8 @@ public sealed class CostModule : ILapinModule
         r.Service<IScheduleCosts>(new ScheduleCostsOf());
         r.Service<ISheetContent>(new CostCurveSheet());
         r.Service<IVersionCompare>(new CostCompare());
+        // The estimate in the page exported for the browser (decision 482).
+        r.Service<IPageTables>(new CostPageTable());
         r.Catalog("forms", new JsonArray(CostForms.All.Select(f => (JsonNode)new JsonObject { ["id"] = f.Id, ["label"] = f.Label }).ToArray()));
 
         // ---------------------------------------------------------------- price lists

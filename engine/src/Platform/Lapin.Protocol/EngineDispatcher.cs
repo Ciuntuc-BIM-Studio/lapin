@@ -61,6 +61,9 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     public Diff OpenBytes(Session session, string name, byte[] bytes)
     {
         LastNotes = [];
+        LastPage = null;
+        _page = null;
+        if (HtmlPackage.IsPage(bytes)) return OpenPage(session, name, bytes);
         using var input = new MemoryStream(bytes, writable: false);
         if (Lapin.Package.LegacyPackage.Is(input))
         {
@@ -85,6 +88,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         using var ms = new MemoryStream();
         ProjectPackage.Write(session, ms, versions, issues, foreign);
         var bytes = ms.ToArray();
+        _page = null;
         var diff = session.Saved(name);
         KeepForeign(name, foreign);
         Keep(name, versions.From(bytes));
@@ -95,8 +99,43 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>What the last opening left out (an old project's parts that do not come over), for the interface to tell.</summary>
     public List<string> LastNotes { get; set; } = [];
 
+    /// <summary>The page the last opening read the project from (a Lapin for the browser .html, decision 482): its file's name; null for a project's own file.</summary>
+    public string? LastPage { get; private set; }
+
+    /// <summary>
+    /// What a page opened from carried beside the model (its versions and other tools' entries), kept for the first
+    /// save: the project opens without a file of its own, so Save asks where, as a .lapin, never over the page.
+    /// </summary>
+    (PackageVersions Versions, PackageForeign Foreign)? _page;
+
+    /// <summary>
+    /// A project from a page Lapin exported for the browser (docs/html-export.md): the package after the page, read as a
+    /// zip as it stands; a page of anyone else's, or Lapin's without its project, refused with why.
+    /// </summary>
+    Diff OpenPage(Session session, string name, byte[] bytes)
+    {
+        try { HtmlPackage.Check(bytes); }
+        catch (InvalidDataException e) { throw new CommandException(e.Message); }
+        var content = LapinPackage.Read(new MemoryStream(bytes, writable: false));
+        var diff = session.Load(content.Entities, content.Relations, null, content.Classes);
+        _page = (PackageVersions.Of(bytes), PackageForeign.Of(bytes));
+        KeepIssues(null, PackageIssues.Of(bytes));
+        LastPage = Path.GetFileName(name);
+        return diff;
+    }
+
+    /// <summary>A project opened otherwise (recovered work): no page's versions carried over.</summary>
+    public void ForgetPage() => _page = null;
+
     public Diff Open(Session session, string path)
     {
+        LastPage = null;
+        _page = null;
+        if (path.EndsWith(HtmlPackage.Suffix, StringComparison.OrdinalIgnoreCase) || path.EndsWith(".htm", StringComparison.OrdinalIgnoreCase) || File.Exists(path) && HtmlPackage.IsPage(path))
+        {
+            LastNotes = [];
+            return OpenPage(session, path, File.ReadAllBytes(path));
+        }
         var diff = open(session, path);
         Keep(path, PackageVersions.Of(path));
         KeepIssues(path, PackageIssues.Of(path));
@@ -111,6 +150,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
         var issues = IssueFilesOf(session);
         var foreign = Foreign(session);
         write(session, target, versions, issues, foreign);
+        _page = null;
         var diff = session.Saved(target);
         KeepForeign(session.Path ?? target, foreign);
         Keep(session.Path ?? target, versions.From(session.Path ?? target));
@@ -121,6 +161,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>A new project: no issue files of the last one carried over.</summary>
     public void Reset()
     {
+        _page = null;
         _issues = PackageIssues.Empty();
         _issuesOf = null;
         _foreign = PackageForeign.None;
@@ -130,7 +171,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>The entries other tools put in the open project's file: those read with it, else read from its file (a project recovered); none for a new project.</summary>
     public PackageForeign Foreign(Session session)
     {
-        if (session.Path is not { } path) return PackageForeign.None;
+        if (session.Path is not { } path) return _page?.Foreign ?? PackageForeign.None;
         if (_foreignOf != path) KeepForeign(path, PackageForeign.Of(path));
         return _foreign;
     }
@@ -176,7 +217,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
     /// <summary>The open project's versions: those kept with its path, else read from its file (a project recovered, or opened by another way).</summary>
     public PackageVersions Versions(Session session)
     {
-        if (session.Path is not { } path) return PackageVersions.None;
+        if (session.Path is not { } path) return _page?.Versions ?? PackageVersions.None;
         if (_versionsOf != path) Keep(path, PackageVersions.Of(path));
         return _versions;
     }
@@ -226,6 +267,7 @@ public sealed class ProjectFiles(Func<Session, string, Diff> open, Action<Sessio
             using var ms = new MemoryStream();
             LapinPackage.Write(ms, build, versions, issues, foreign);
             var bytes = ms.ToArray();
+            _page = null;
             var diff = session.Saved(name);
             KeepForeign(name, foreign);
             Keep(name, versions.From(bytes));
@@ -559,7 +601,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         {
             case "session.info" or "doc.snapshot" or "doc.query" or "quantities.of" or "quantities.many" or "view.caps" or "view.fine" or "pointcloud.tiles"
                 or "project.versions" or "project.compareVersions"
-                or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey":
+                or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
                 return null;
             case "doc.execute":
                 // Marking progress on site (docs/plan-4d5d.md, stage 5) is open to every guest, one who joined to look too.
@@ -744,7 +786,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "project.open":
             {
                 var diff = files.Open(session, PathParam());
-                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()) }, diff);
+                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()), ["page"] = files.LastPage }, diff);
             }
             case "project.save": return (null, files.Save(session, (string?)p["path"] is { } savePath ? HostFiles.Check(savePath) : null));
             case "project.openBytes":
@@ -752,7 +794,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 // A project from its bytes (a host without files: the browser), base64 in `data`.
                 var name = (string?)p["name"] ?? "project.lapin";
                 var diff = files.OpenBytes(session, name, Convert.FromBase64String((string?)p["data"] ?? throw new CommandException("The project's bytes are missing.")));
-                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()) }, diff);
+                return (new JsonObject { ["notes"] = new JsonArray(files.LastNotes.Select(n => (JsonNode)n).ToArray()), ["page"] = files.LastPage }, diff);
             }
             case "project.saveBytes":
             {
@@ -873,6 +915,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 return (Deliver(ms.ToArray(), "project.ifc"), null);
             }
             case "project.exportMesh": return ExportMesh(p, Deliver);
+            // Lapin for the browser (decision 482): the project as one .html, a viewer and the package; what its dialog shows first.
+            case "project.exportHtml": return ExportHtml(p, Deliver);
+            case "project.htmlPlan": return HtmlPlan(p);
             case "ifc.optimize":
             {
                 // An IFC file cleaned and optimised into a copy (docs/ifc-optimize.md): a pass from file to file, no project needed, the original
@@ -1154,7 +1199,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 (support ?? throw new CommandException("Nothing to open here.")).Open((string?)p["link"], p);
                 return (null, null);
             case "recovery.list": return (recovery?.List() ?? [], null);
-            case "recovery.restore": return (null, (recovery ?? throw new CommandException("No recovery here.")).Restore(PathParam()));
+            case "recovery.restore": files.ForgetPage(); return (null, (recovery ?? throw new CommandException("No recovery here.")).Restore(PathParam()));
             case "recovery.discard":
                 (recovery ?? throw new CommandException("No recovery here.")).Discard(PathParam());
                 return (null, null);
