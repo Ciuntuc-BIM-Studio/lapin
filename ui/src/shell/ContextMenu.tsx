@@ -14,6 +14,8 @@ export interface MenuItem {
   checked?: boolean;
   disabled?: boolean;
   onSelect: () => void;
+  /** The keys that do the same, shown at the end of the entry (HH). */
+  shortcut?: string;
   /** The translation's context for the label (a tab's i18nCtx: the Construction tab is not a stair's construction). */
   ctx?: string;
 }
@@ -78,6 +80,7 @@ export function ContextMenuHost() {
           onClick={() => { closeContextMenu(); it.onSelect(); }}>
           <span className="context-icon">{it.checked ? '✓' : it.icon}</span>
           <span data-i18n-ctx={it.ctx}>{it.label}</span>
+          {it.shortcut && <span className="context-keys">{it.shortcut}</span>}
         </button>
       ))}
     </div>

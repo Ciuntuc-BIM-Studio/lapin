@@ -193,7 +193,7 @@ Det, der har sin egen højde, går op eller ned med flytningen: bunden af en væ
 
 Det, der står på sit niveau (en væg, en trappe, en søjle, et dæk, en bjælke, et rækværk, et tag, et møbel, en dør eller et vindue), beholder sit niveau, når flytningen fanger fra et punkt til et andet: det kommer kun dertil i plan, så en trappe flyttet i sit øverste hjørne hen på et dæks hjørne ikke stiger de få centimeter mellem trappens konstruktion og dækkets belægning (trappens top ligger allerede i flugt med belægningen på det niveau, den fører til). For at flytte den op eller ned skal du følge eller låse den blå akse (↑) eller skrive dx,dy,dz; mærket siger, når niveauet holdes. Når intet er markeret, beder Move og Copy om elementerne: klik på dem i 3D, og tryk Enter.
 
-Du kan også trykke på et markeret element og trække det: det flyttes på samme måde fra det punkt, du trykkede på, fanget, og placeres, hvor du slipper. **View → Drag to move in 3D** slår det fra, så et træk på markeringen drejer visningen.
+Et træk i 3D drejer altid visningen, også når markøren står på et element. For at flytte et markeret element ved at trække i det skal du trykke på det og holde stille et øjeblik (markøren bliver til en flyttemarkør) og så trække: det flyttes på samme måde fra det punkt, du trykkede på, fanget, og placeres, hvor du slipper. **View → Drag to move in 3D** slår det fra, så et træk på markeringen drejer visningen, også efter ventetiden.
 
 ![En trappe flyttet i 3D ved det øverste trins hjørne hen på dækkets hjørne](shots/model-3d-move.webp)
 

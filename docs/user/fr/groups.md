@@ -40,4 +40,4 @@ Chaque fichier IFC, Fragments ou maillage que vous importez arrive en un seul gr
 
 ## Masquer pour l’instant
 
-**Vue → Masquer** (<kbd>HH</kbd>) masque la sélection dans la vue 3D. **Isoler** (<kbd>HI</kbd>) masque tout le reste. **Tout afficher** (<kbd>HR</kbd>), ou le **×** de l’étiquette, ramène tout. Rien n’est enregistré ni supprimé : c’est un moyen d’atteindre ce qui se trouve à l’intérieur d’un modèle importé pendant que vous le nettoyez.
+**Vue → Masquer** (<kbd>HH</kbd>) masque la sélection dans la vue 3D. **Isoler** (<kbd>HI</kbd>) masque tout le reste. **Tout afficher** (<kbd>HR</kbd>), ou le **×** de l’étiquette, ramène tout. Rien n’est enregistré ni supprimé : c’est un moyen d’atteindre ce qui se trouve à l’intérieur d’un modèle importé pendant que vous le nettoyez. Le clic droit dans la vue 3D propose les mêmes entrées (**Masquer**, **Isoler** et, tant que quelque chose est masqué, **Tout afficher**) : ce qui est sous le curseur est d’abord sélectionné s’il ne l’est pas déjà.

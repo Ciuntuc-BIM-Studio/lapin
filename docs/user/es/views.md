@@ -189,7 +189,7 @@ Lo que tiene altura propia sube o baja con el movimiento: la base de un muro, un
 
 Lo que está sobre su nivel (un muro, una escalera, un pilar, un forjado, una viga, una barandilla, una cubierta, un mueble, una puerta o una ventana) conserva su nivel cuando el desplazamiento se engancha de un punto a otro: va allí solo en planta, de modo que una escalera movida por su esquina superior a la esquina de un forjado no sube los pocos centímetros entre la estructura de la escalera y el acabado del forjado (la parte superior de la escalera ya queda enrasada con el acabado del nivel al que sube). Para subirla o bajarla, sigue o bloquea el eje azul (↑), o escribe dx,dy,dz; la etiqueta indica cuándo se conserva el nivel. Sin nada seleccionado, Move y Copy piden los elementos: haz clic en ellos en 3D y pulsa Intro.
 
-También puedes pulsar sobre un elemento seleccionado y arrastrarlo: se mueve igual, desde el punto pulsado, ajustado, y se coloca donde lo sueltas. **View → Drag to move in 3D** lo desactiva, para que arrastrar sobre la selección haga orbitar la vista.
+Arrastrar en 3D siempre hace orbitar la vista, incluso con el cursor sobre un elemento. Para mover un elemento seleccionado arrastrándolo, púlsalo y mantenlo quieto un momento (el cursor se convierte en un cursor de mover) y luego arrastra: se mueve igual, desde el punto pulsado, ajustado, y se coloca donde lo sueltas. **View → Drag to move in 3D** lo desactiva, para que arrastrar sobre la selección haga orbitar la vista incluso tras la espera.
 
 ![Una escalera movida en 3D por la esquina del peldaño superior hasta la esquina del forjado](shots/model-3d-move.webp)
 

@@ -6,8 +6,9 @@
  * the selection is carried on the screen as the cursor moves. A value typed at
  * any time (a length along the cursor's way, or dx,dy[,dz]), Enter applies it;
  * → ← ↑ lock an axis, Shift holds the one inferred; Esc cancels. Pressing on a
- * selected element and dragging moves it the same way (View → Drag to move in
- * 3D), from the snapped point under the press.
+ * selected element, holding still for a moment, and dragging moves it the same
+ * way (View → Drag to move in 3D), from the snapped point under the press; a
+ * drag that starts at once orbits, as everywhere.
  */
 
 import { useEffect, useRef } from 'react';
@@ -18,7 +19,6 @@ import { useDisplay } from '../app/display';
 import { claimValue } from '../app/valueOwner';
 import { activeStorey, execute, useSession } from '../engine/session';
 import { num } from '../engine/model';
-import { pickClick } from '../platform/assemblies';
 import { shownSelection } from '../platform/groups';
 import { useCamera, type Vec3 } from './camera';
 import { useCad } from './cad/session';
@@ -26,6 +26,9 @@ import { formatLength, parseLength } from './liveInput';
 import { beginMove3d, carriedWith, endMove3d, moveArgs, moves, moveTarget, staysOnLevel, typedTarget, useMove3d, vertical } from './moveIn3d';
 import { hitAt, insideView, projector, rayAt, snapAt, type ViewRefs } from './scene3d';
 import { arrowLock3 } from './snap3d';
+
+/** How long a press stays still on the selection before a drag moves it (ms). */
+const HOLD_MS = 350;
 
 const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 
@@ -187,47 +190,66 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, canvas]);
 
-  // Dragging a selected element by its body: pressed on it, moved past a few pixels, it moves (letting go applies).
+  // Dragging a selected element by its body: pressed on it and held still for a moment (the cursor turns to a move cursor),
+  // then moved past a few pixels, it moves (letting go applies). A press that moves at once is the orbit's: the press
+  // reaches the orbit controls untouched, and the hold, when it completes, cancels the orbit it began.
   useEffect(() => {
     if (active || !dragOn) return;
-    let press: { x: number; y: number; id: string; pointer: number; mods: { add: boolean; leaf: boolean } } | null = null;
+    let press: { x: number; y: number; id: string; pointer: number; held: boolean } | null = null;
+    let timer = 0;
+    const glass = () => canvas.current?.querySelector('canvas') ?? null;
+    const end = () => {
+      clearTimeout(timer);
+      press = null;
+      const c = glass();
+      if (c) c.style.cursor = '';
+    };
+    const hold = () => {
+      if (!press) return;
+      press.held = true;
+      const c = glass();
+      if (!c) return;
+      c.style.cursor = 'move';
+      // The orbit began with the press (the controls' and the orbit about the selection's): it ends here, unmoved.
+      try { c.dispatchEvent(new PointerEvent('pointercancel', { pointerId: press.pointer, bubbles: true })); } catch { /* no PointerEvent: nothing to end */ }
+    };
     const onDown = (e: PointerEvent) => {
+      end();
       if (e.button !== 0 || e.shiftKey || e.altKey || e.pointerType === 'touch') return;
-      if (e.target !== canvas.current?.querySelector('canvas')) return;
+      if (e.target !== glass()) return;
       const ui = useUi.getState();
       if (ui.tool || useCad.getState().step || !ui.selected.length) return;
       const ray = rayAt(refsRef.current, e.clientX, e.clientY);
       const hit = ray ? hitAt(scene.current, ray) : null;
       const { nodes, relations } = useSession.getState();
       if (!hit || !shownSelection(ui.selected, nodes, relations).has(hit.nodeId)) return;
-      // The orbit does not start: the press is the selection's.
-      e.stopPropagation(); e.preventDefault();
-      press = { x: e.clientX, y: e.clientY, id: hit.nodeId, pointer: e.pointerId, mods: { add: false, leaf: e.ctrlKey || e.metaKey } };
+      // The press goes on to the orbit (and to the click that picks); only the hold makes it a move's.
+      press = { x: e.clientX, y: e.clientY, id: hit.nodeId, pointer: e.pointerId, held: false };
+      timer = window.setTimeout(hold, HOLD_MS);
     };
     const onMove = (e: PointerEvent) => {
       if (!press || e.pointerId !== press.pointer) return;
       if (Math.hypot(e.clientX - press.x, e.clientY - press.y) < 5) return;
+      // Moved before the hold completed: an orbit, which is already turning.
+      if (!press.held) { end(); return; }
       const at = snapAt(refsRef.current, press.x, press.y, { level: level() });
-      press = null;
+      end();
       if (!at) return;
       e.stopPropagation();
       beginMove3d(useUi.getState().selected, false, at.point, true);
     };
-    const onUp = (e: PointerEvent) => {
-      if (!press || e.pointerId !== press.pointer) return;
-      // A click on a selected element (no drag): picked as a click picks.
-      const p = press;
-      press = null;
-      e.stopPropagation();
-      pickClick(p.id, p.mods);
-    };
+    // Let go without moving, held or not: a click, which the view picks as it picks any.
+    const onUp = (e: PointerEvent) => { if (press && e.pointerId === press.pointer) end(); };
     window.addEventListener('pointerdown', onDown, true);
     window.addEventListener('pointermove', onMove, true);
     window.addEventListener('pointerup', onUp, true);
+    window.addEventListener('pointercancel', onUp, true);
     return () => {
+      end();
       window.removeEventListener('pointerdown', onDown, true);
       window.removeEventListener('pointermove', onMove, true);
       window.removeEventListener('pointerup', onUp, true);
+      window.removeEventListener('pointercancel', onUp, true);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, dragOn, canvas, scene]);

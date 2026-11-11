@@ -193,7 +193,7 @@ Ciò che ha una quota propria sale o scende con lo spostamento: la base di un mu
 
 Ciò che sta sul proprio livello (un muro, una scala, un pilastro, un solaio, una trave, un parapetto, un tetto, un arredo, una porta o una finestra) mantiene il livello quando lo spostamento si aggancia da un punto a un altro: ci va solo in pianta, così una scala spostata per il suo angolo in alto sull'angolo di un solaio non sale dei pochi centimetri tra la struttura della scala e la finitura del solaio (la sommità della scala arriva già a filo con la finitura del livello che serve). Per spostarla in su o in giù, segui o blocca l'asse blu (↑), oppure scrivi dx,dy,dz; l'etichetta dice quando il livello è mantenuto. Senza nulla selezionato, Move e Copy chiedono gli elementi: cliccali in 3D, poi Invio.
 
-Puoi anche premere su un elemento selezionato e trascinarlo: si sposta allo stesso modo, dal punto premuto, agganciato, e si posa dove lo rilasci. **View → Drag to move in 3D** lo disattiva, perché un trascinamento sulla selezione faccia orbitare la vista.
+Un trascinamento in 3D fa sempre orbitare la vista, anche con il cursore su un elemento. Per spostare un elemento selezionato trascinandolo, premilo e tieni fermo un istante (il cursore diventa un cursore di spostamento), poi trascina: si sposta allo stesso modo, dal punto premuto, agganciato, e si posa dove lo rilasci. **View → Drag to move in 3D** lo disattiva, perché un trascinamento sulla selezione faccia orbitare la vista anche dopo l’attesa.
 
 ![Una scala spostata in 3D dallo spigolo del gradino più alto sullo spigolo del solaio](shots/model-3d-move.webp)
 

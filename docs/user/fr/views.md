@@ -193,7 +193,7 @@ Ce qui a une hauteur propre monte ou descend avec le déplacement : la base d'un
 
 Ce qui repose sur son niveau (un mur, un escalier, un poteau, une dalle, une poutre, un garde-corps, un toit, un meuble, une porte ou une fenêtre) garde son niveau quand le déplacement s'accroche d'un point à un autre : il y va en plan seulement, de sorte qu'un escalier déplacé par son coin haut sur le coin d'une dalle ne monte pas des quelques centimètres entre la structure de l'escalier et le revêtement de la dalle (le haut d'un escalier arrive déjà au nu du revêtement du niveau qu'il dessert). Pour le monter ou le descendre, suivez ou verrouillez l'axe bleu (↑), ou tapez dx,dy,dz ; l'étiquette indique quand le niveau est gardé. Sans rien de sélectionné, Move et Copy demandent les éléments : cliquez-les en 3D, puis Entrée.
 
-Vous pouvez aussi appuyer sur un élément sélectionné et le faire glisser : il se déplace de la même façon, depuis le point appuyé, accroché, et se pose où vous relâchez. **View → Drag to move in 3D** désactive cela, pour qu'un glisser sur la sélection fasse orbiter la vue.
+Un glisser en 3D fait toujours orbiter la vue, même quand le curseur est sur un élément. Pour déplacer un élément sélectionné en le faisant glisser, appuyez dessus et restez immobile un instant (le curseur devient un curseur de déplacement), puis faites glisser : il se déplace de la même façon, depuis le point appuyé, accroché, et se pose où vous relâchez. **View → Drag to move in 3D** désactive cela, pour qu'un glisser sur la sélection fasse orbiter la vue même après l'attente.
 
 ![Un escalier déplacé en 3D par le coin de sa marche haute sur le coin de la dalle](shots/model-3d-move.webp)
 

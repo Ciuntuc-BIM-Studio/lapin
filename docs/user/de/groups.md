@@ -40,4 +40,4 @@ Jede IFC-, Fragments- oder Netzdatei, die Sie importieren, kommt als eine Gruppe
 
 ## Vorübergehend ausblenden
 
-**Ansicht → Ausblenden** (<kbd>HH</kbd>) blendet die Auswahl in der 3D-Ansicht aus. **Isolieren** (<kbd>HI</kbd>) blendet alles andere aus. **Alles zeigen** (<kbd>HR</kbd>), oder das **×** auf dem Chip, bringt alles zurück. Nichts wird gespeichert oder gelöscht: So erreichen Sie, was in einem importierten Modell innen liegt, während Sie es aufräumen.
+**Ansicht → Ausblenden** (<kbd>HH</kbd>) blendet die Auswahl in der 3D-Ansicht aus. **Isolieren** (<kbd>HI</kbd>) blendet alles andere aus. **Alles zeigen** (<kbd>HR</kbd>), oder das **×** auf dem Chip, bringt alles zurück. Nichts wird gespeichert oder gelöscht: So erreichen Sie, was in einem importierten Modell innen liegt, während Sie es aufräumen. Ein Rechtsklick in der 3D-Ansicht bietet dieselben Einträge (**Ausblenden**, **Isolieren** und, solange etwas ausgeblendet ist, **Alles zeigen**): Was unter dem Cursor liegt, wird zuerst ausgewählt, wenn es noch nicht ausgewählt ist.

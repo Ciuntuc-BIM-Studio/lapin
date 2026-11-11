@@ -193,7 +193,7 @@ Was eine eigene Höhe hat, geht mit der Verschiebung hoch oder runter: der Fuß 
 
 Was auf seiner Ebene steht (eine Wand, eine Treppe, eine Stütze, eine Decke, ein Träger, ein Geländer, ein Dach, ein Möbel, eine Tür oder ein Fenster), behält seine Ebene, wenn die Verschiebung von einem Punkt zu einem anderen einrastet: Es geht nur im Grundriss dorthin, sodass eine Treppe, die an ihrer oberen Ecke auf die Ecke einer Decke verschoben wird, nicht um die wenigen Zentimeter zwischen der Treppenkonstruktion und dem Belag der Decke steigt (der Treppenkopf liegt schon bündig mit dem Belag der Ebene, zu der sie führt). Um sie nach oben oder unten zu bewegen, folgen oder sperren Sie die blaue Achse (↑) oder geben dx,dy,dz ein; der Chip sagt, wann die Ebene gehalten wird. Ist nichts ausgewählt, fragen Move und Copy nach den Elementen: Klicken Sie sie in 3D an und drücken Sie Enter.
 
-Sie können auch auf ein ausgewähltes Element drücken und es ziehen: Es wird ebenso verschoben, vom gedrückten Punkt aus, eingerastet, und dort abgesetzt, wo Sie loslassen. **View → Drag to move in 3D** schaltet das aus, sodass Ziehen auf der Auswahl die Ansicht dreht.
+Ein Ziehen in 3D dreht immer die Ansicht, auch wenn der Cursor auf einem Element steht. Um ein ausgewähltes Element durch Ziehen zu verschieben, drücken Sie darauf und halten kurz still (der Cursor wird zum Verschiebe-Cursor), dann ziehen Sie: Es wird ebenso verschoben, vom gedrückten Punkt aus, eingerastet, und dort abgesetzt, wo Sie loslassen. **View → Drag to move in 3D** schaltet das aus, sodass Ziehen auf der Auswahl die Ansicht auch nach dem Halten dreht.
 
 ![Eine Treppe in 3D an der Ecke der obersten Stufe auf die Ecke der Decke verschoben](shots/model-3d-move.webp)
 

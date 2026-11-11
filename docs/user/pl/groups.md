@@ -40,4 +40,4 @@ Każdy importowany plik IFC, Fragments lub siatki trafia do projektu jako jedna 
 
 ## Tymczasowe ukrywanie
 
-**Widok → Ukryj** (<kbd>HH</kbd>) ukrywa zaznaczenie w widoku 3D. **Izoluj** (<kbd>HI</kbd>) ukrywa wszystko inne. **Pokaż wszystko** (<kbd>HR</kbd>) albo **×** na plakietce przywraca wszystko. Nic nie jest zapisywane ani usuwane: to sposób, by dotrzeć do wnętrza zaimportowanego modelu podczas jego porządkowania.
+**Widok → Ukryj** (<kbd>HH</kbd>) ukrywa zaznaczenie w widoku 3D. **Izoluj** (<kbd>HI</kbd>) ukrywa wszystko inne. **Pokaż wszystko** (<kbd>HR</kbd>) albo **×** na plakietce przywraca wszystko. Nic nie jest zapisywane ani usuwane: to sposób, by dotrzeć do wnętrza zaimportowanego modelu podczas jego porządkowania. Kliknięcie prawym przyciskiem w widoku 3D daje te same pozycje (**Ukryj**, **Izoluj** i, dopóki coś jest ukryte, **Pokaż wszystko**): to, co jest pod kursorem, jest najpierw zaznaczane, jeśli jeszcze nie jest.

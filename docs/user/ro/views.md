@@ -193,7 +193,7 @@ Ce are o cotă proprie urcă sau coboară cu mutarea: baza unui perete, a unui s
 
 Ce stă pe nivelul lui (un perete, o scară, un stâlp, o placă, o grindă, o balustradă, un acoperiș, o piesă de mobilier, o ușă sau o fereastră) își păstrează nivelul când mutarea se prinde de la un punct la altul: ajunge acolo doar în plan, așa că o scară mutată de colțul ei de sus pe colțul unei plăci nu urcă cei câțiva centimetri dintre structura scării și finisajul plăcii (vârful scării ajunge deja la fața finisajului nivelului la care urcă). Ca s-o muți în sus sau în jos, urmează sau blochează axa albastră (↑), ori scrie dx,dy,dz; eticheta spune când nivelul e păstrat. Fără nimic selectat, Move și Copy cer elementele: dă clic pe ele în 3D, apoi Enter.
 
-Poți și să apeși pe un element selectat și să-l tragi: se mută la fel, din punctul apăsat, prins, și rămâne unde îl eliberezi. **View → Drag to move in 3D** oprește asta, ca o tragere pe selecție să rotească vederea.
+O tragere în 3D rotește întotdeauna vederea, chiar și când cursorul e pe un element. Ca să muți un element selectat trăgându-l, apasă pe el și ține-l pe loc o clipă (cursorul devine cursor de mutare), apoi trage: se mută la fel, din punctul apăsat, prins, și rămâne unde îl eliberezi. **View → Drag to move in 3D** oprește asta, ca o tragere pe selecție să rotească vederea chiar și după așteptare.
 
 ![O scară mutată în 3D de colțul treptei de sus pe colțul plăcii](shots/model-3d-move.webp)
 

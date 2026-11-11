@@ -40,4 +40,4 @@ Todo arquivo IFC, Fragments ou de malha que você importa entra como um grupo co
 
 ## Ocultar por enquanto
 
-**Vista → Ocultar** (<kbd>HH</kbd>) oculta a seleção na vista 3D. **Isolar** (<kbd>HI</kbd>) oculta todo o resto. **Mostrar tudo** (<kbd>HR</kbd>), ou o **×** no chip, traz tudo de volta. Nada é salvo nem excluído: é um jeito de chegar ao que fica dentro de um modelo importado enquanto você o limpa.
+**Vista → Ocultar** (<kbd>HH</kbd>) oculta a seleção na vista 3D. **Isolar** (<kbd>HI</kbd>) oculta todo o resto. **Mostrar tudo** (<kbd>HR</kbd>), ou o **×** no chip, traz tudo de volta. Nada é salvo nem excluído: é um jeito de chegar ao que fica dentro de um modelo importado enquanto você o limpa. O clique direito na vista 3D oferece as mesmas entradas (**Ocultar**, **Isolar** e, enquanto algo está oculto, **Mostrar tudo**): o que está sob o cursor é selecionado primeiro se ainda não estiver.

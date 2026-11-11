@@ -193,7 +193,7 @@ O que tem altura própria sobe ou desce com o movimento: a base de uma parede, d
 
 O que assenta no seu nível (uma parede, uma escada, um pilar, uma laje, uma viga, uma guarda, uma cobertura, um móvel, uma porta ou uma janela) mantém o seu nível quando a deslocação se prende de um ponto a outro: vai para lá só em planta, pelo que uma escada movida pelo seu canto de cima para o canto de uma laje não sobe os poucos centímetros entre a estrutura da escada e o acabamento da laje (o topo de uma escada já fica à face do acabamento do nível a que sobe). Para a subir ou descer, siga ou bloqueie o eixo azul (↑), ou escreva dx,dy,dz; a etiqueta diz quando o nível é mantido. Sem nada selecionado, Move e Copy pedem os elementos: clique neles em 3D e prima Enter.
 
-Também pode premir um elemento selecionado e arrastá-lo: move-se da mesma forma, a partir do ponto premido, ajustado, e fica onde o solta. **View → Drag to move in 3D** desliga isto, para que arrastar sobre a seleção faça orbitar a vista.
+Arrastar em 3D faz sempre orbitar a vista, mesmo com o cursor sobre um elemento. Para mover um elemento selecionado arrastando-o, prima-o e mantenha-o parado um momento (o cursor torna-se um cursor de mover) e depois arraste: move-se da mesma forma, a partir do ponto premido, ajustado, e fica onde o solta. **View → Drag to move in 3D** desliga isto, para que arrastar sobre a seleção faça orbitar a vista mesmo depois da espera.
 
 ![Uma escada movida em 3D pelo canto do degrau de cima até ao canto da laje](shots/model-3d-move.webp)
 

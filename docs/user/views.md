@@ -193,7 +193,7 @@ What has a height of its own goes up or down with the move: a wall's, a column's
 
 What stands on its level (a wall, a stair, a column, a floor, a beam, a railing, a roof, furniture, a door or a window) keeps its level when the move snaps from one point to another: it goes there in plan only, so a stair moved by its top corner onto a floor's corner does not climb the few centimetres between the stair's structure and the floor's finish (a stair's top already lands flush with the finish of the level it climbs to). To move it up or down, follow or lock the blue axis (↑), or type dx,dy,dz; the chip says when the level is kept. With nothing selected, Move and Copy ask for the elements: click them in 3D, then press Enter.
 
-You can also press on a selected element and drag it: it moves the same way, from the point you pressed, snapped, and is placed where you let go. **View → Drag to move in 3D** turns this off, so that a drag on the selection orbits the view.
+A drag in 3D always orbits the view, even when the cursor is on an element. To move a selected element by dragging it, press on it and hold still for a moment (the cursor turns into a move cursor), then drag: it moves the same way, from the point you pressed, snapped, and is placed where you let go. **View → Drag to move in 3D** turns this off, so that a drag on the selection orbits the view even after the hold.
 
 ![A stair moved in 3D by its top step's corner onto the floor's corner](shots/model-3d-move.webp)
 

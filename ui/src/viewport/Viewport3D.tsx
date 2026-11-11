@@ -16,7 +16,7 @@ import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeome
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { X } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
-import { selectionItems } from '../shell/selectionMenu';
+import { selectionItems, temporaryItems } from '../shell/selectionMenu';
 import type { CapItem, NodeDto, RenderItem } from '../engine/protocol';
 import { activeStorey, engine, engineInBrowser, execute, query, useSession } from '../engine/session';
 import { num, storeys as storeysOf } from '../engine/model';
@@ -1317,7 +1317,17 @@ export function Viewport3D() {
       e.preventDefault();
       const still = rightAt && Math.hypot(e.clientX - rightAt.x, e.clientY - rightAt.y) < 5;
       rightAt = null;
-      if (still) openContextMenu(e.clientX, e.clientY, selectionItems());
+      if (!still) return;
+      // What is under the cursor is selected first when it is not already (as the plan's menu does for drafting).
+      if (!useUi.getState().tool) {
+        const r = renderer.domElement.getBoundingClientRect();
+        ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), cam);
+        const id = nodeOfHit(pickAt());
+        const { selected } = useUi.getState();
+        const { nodes, relations } = useSession.getState();
+        if (id && pickable(nodes.get(id)) && !shownSelection(selected, nodes, relations).has(id)) pickClick(id);
+      }
+      openContextMenu(e.clientX, e.clientY, [...selectionItems(), ...temporaryItems()]);
     };
     renderer.domElement.addEventListener('pointerdown', onRightDown);
     renderer.domElement.addEventListener('contextmenu', onMenu);

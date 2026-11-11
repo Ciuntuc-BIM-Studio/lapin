@@ -72,4 +72,4 @@ Every IFC, Fragments or mesh file you import comes in as one group named after t
 
 ## Hiding for now
 
-**View → Hide** (<kbd>HH</kbd>) hides the selection in the 3D view. **Isolate** (<kbd>HI</kbd>) hides everything else. **Show all** (<kbd>HR</kbd>), or the **×** on the chip, brings everything back. Nothing is saved or deleted: it is a way to reach what lies inside an imported model while you clear it up.
+**View → Hide** (<kbd>HH</kbd>) hides the selection in the 3D view. **Isolate** (<kbd>HI</kbd>) hides everything else. **Show all** (<kbd>HR</kbd>), or the **×** on the chip, brings everything back. Nothing is saved or deleted: it is a way to reach what lies inside an imported model while you clear it up. Right-click in the 3D view for the same entries (**Hide**, **Isolate**, and **Show all** while something is hidden): what is under the cursor is selected first when it is not selected yet.

@@ -40,4 +40,4 @@ Cada archivo IFC, Fragments o de malla que importe entra como un solo grupo con 
 
 ## Ocultar por ahora
 
-**Vista → Ocultar** (<kbd>HH</kbd>) oculta la selección en la vista 3D. **Aislar** (<kbd>HI</kbd>) oculta todo lo demás. **Mostrar todo** (<kbd>HR</kbd>), o la **×** de la etiqueta, lo devuelve todo. Nada se guarda ni se borra: es una forma de llegar a lo que hay dentro de un modelo importado mientras lo limpia.
+**Vista → Ocultar** (<kbd>HH</kbd>) oculta la selección en la vista 3D. **Aislar** (<kbd>HI</kbd>) oculta todo lo demás. **Mostrar todo** (<kbd>HR</kbd>), o la **×** de la etiqueta, lo devuelve todo. Nada se guarda ni se borra: es una forma de llegar a lo que hay dentro de un modelo importado mientras lo limpia. El clic derecho en la vista 3D ofrece las mismas entradas (**Ocultar**, **Aislar** y, mientras algo está oculto, **Mostrar todo**): lo que hay bajo el cursor se selecciona primero si aún no lo está.

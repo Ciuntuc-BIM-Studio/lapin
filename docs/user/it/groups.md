@@ -40,4 +40,4 @@ Ogni file IFC, Fragments o mesh che importi entra come un unico gruppo con il no
 
 ## Nascondere per ora
 
-**Vista → Nascondi** (<kbd>HH</kbd>) nasconde la selezione nella vista 3D. **Isola** (<kbd>HI</kbd>) nasconde tutto il resto. **Mostra tutto** (<kbd>HR</kbd>), oppure la **×** sull’etichetta, fa riapparire tutto. Nulla viene salvato o eliminato: è un modo per raggiungere ciò che sta all’interno di un modello importato mentre lo ripulisci.
+**Vista → Nascondi** (<kbd>HH</kbd>) nasconde la selezione nella vista 3D. **Isola** (<kbd>HI</kbd>) nasconde tutto il resto. **Mostra tutto** (<kbd>HR</kbd>), oppure la **×** sull’etichetta, fa riapparire tutto. Nulla viene salvato o eliminato: è un modo per raggiungere ciò che sta all’interno di un modello importato mentre lo ripulisci. Il clic destro nella vista 3D offre le stesse voci (**Nascondi**, **Isola** e, finché qualcosa è nascosto, **Mostra tutto**): ciò che sta sotto il cursore viene selezionato per primo se non lo è già.

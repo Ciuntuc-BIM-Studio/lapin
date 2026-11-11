@@ -9,6 +9,7 @@ import { useSession } from '../engine/session';
 import { copyable } from '../modules/core/CopyToStoreysDialog';
 import { editSelectedGroup, groupSelection, removeFromGroup, ungroupSelection } from '../modules/core/groupTools';
 import { GROUP, groupOf } from '../platform/groups';
+import { hideSelection, isolateSelection, resetTemporary, temporaryOn, useTemporary } from '../viewport/temporary';
 import { useScope } from '../platform/scope';
 import type { MenuItem } from './ContextMenu';
 
@@ -36,4 +37,14 @@ export function selectionItems(): MenuItem[] {
     { label: 'Move to storey…', onSelect: () => useUi.setState({ dialog: 'moveToStorey' }) },
   ] : [];
   return [...groupItems(), ...storeys];
+}
+
+/** The 3D view's temporary Hide and Isolate (HH, HI) for the selection, and Show all (HR) while something is hidden. */
+export function temporaryItems(): MenuItem[] {
+  const items: MenuItem[] = [];
+  if (useUi.getState().selected.length) {
+    items.push({ label: 'Hide', shortcut: 'HH', onSelect: hideSelection }, { label: 'Isolate', shortcut: 'HI', onSelect: isolateSelection });
+  }
+  if (temporaryOn(useTemporary.getState())) items.push({ label: 'Show all', shortcut: 'HR', onSelect: resetTemporary });
+  return items;
 }

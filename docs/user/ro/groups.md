@@ -72,4 +72,4 @@ Fiecare fișier IFC, Fragments sau rețea pe care îl imporți intră ca un sing
 
 ## Ascunderea temporară
 
-**Vedere → Ascunde** (<kbd>HH</kbd>) ascunde selecția în vederea 3D. **Izolează** (<kbd>HI</kbd>) ascunde tot restul. **Arată tot** (<kbd>HR</kbd>), sau **×** de pe etichetă, aduce totul înapoi. Nimic nu se salvează și nu se șterge: e un mod de a ajunge la ce e în interiorul unui model importat cât timp îl cureți.
+**Vedere → Ascunde** (<kbd>HH</kbd>) ascunde selecția în vederea 3D. **Izolează** (<kbd>HI</kbd>) ascunde tot restul. **Arată tot** (<kbd>HR</kbd>), sau **×** de pe etichetă, aduce totul înapoi. Nimic nu se salvează și nu se șterge: e un mod de a ajunge la ce e în interiorul unui model importat cât timp îl cureți. Clic dreapta în vederea 3D oferă aceleași intrări (**Ascunde**, **Izolează** și, cât timp ceva e ascuns, **Arată tot**): ce e sub cursor se selectează întâi, dacă nu e deja selectat.

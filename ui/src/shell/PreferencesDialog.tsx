@@ -55,7 +55,7 @@ const DISPLAY: { key: keyof Display; label: string }[] = [
   { key: 'dxf3d', label: 'DXF in 3D' },
   { key: 'zoomToCursor', label: 'The wheel zooms to the cursor in 3D' },
   { key: 'orbitSelection', label: 'Orbit round the selection in 3D' },
-  { key: 'dragMove3d', label: 'Drag a selected element to move it in 3D' },
+  { key: 'dragMove3d', label: 'Hold a selected element for a moment, then drag it to move it in 3D' },
   { key: 'drillSelect', label: 'Clicks drill into assemblies' },
   { key: 'sketchupKeys', label: 'SketchUp’s one-letter keys in 3D' },
 ];

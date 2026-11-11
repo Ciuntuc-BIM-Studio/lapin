@@ -193,7 +193,7 @@ To, co ma własną wysokość, idzie w górę lub w dół z przesunięciem: pods
 
 To, co stoi na swoim poziomie (ściana, schody, słup, strop, belka, balustrada, dach, mebel, drzwi lub okno), zachowuje swój poziom, gdy przesunięcie przyciąga się od punktu do punktu: trafia tam tylko w rzucie, więc schody przesunięte za górny narożnik na narożnik stropu nie podnoszą się o kilka centymetrów między konstrukcją schodów a wykończeniem stropu (góra schodów już wypada w licu wykończenia poziomu, na który prowadzą). Aby przesunąć je w górę lub w dół, podążaj za niebieską osią albo ją zablokuj (↑), albo wpisz dx,dy,dz; etykieta mówi, kiedy poziom jest zachowany. Gdy nic nie jest zaznaczone, Move i Copy pytają o elementy: kliknij je w 3D, potem Enter.
 
-Możesz też nacisnąć zaznaczony element i go przeciągnąć: przesuwa się tak samo, od naciśniętego punktu, przyciągnięty, i zostaje tam, gdzie go puścisz. **View → Drag to move in 3D** to wyłącza, aby przeciąganie po zaznaczeniu obracało widok.
+Przeciąganie w 3D zawsze obraca widok, także gdy kursor jest na elemencie. Aby przesunąć zaznaczony element przeciąganiem, naciśnij go i przytrzymaj chwilę w miejscu (kursor zmieni się w kursor przesuwania), a potem przeciągnij: przesuwa się tak samo, od naciśniętego punktu, przyciągnięty, i zostaje tam, gdzie go puścisz. **View → Drag to move in 3D** to wyłącza, aby przeciąganie po zaznaczeniu obracało widok także po przytrzymaniu.
 
 ![Schody przesunięte w 3D narożnikiem najwyższego stopnia na narożnik stropu](shots/model-3d-move.webp)
 

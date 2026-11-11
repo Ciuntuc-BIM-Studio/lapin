@@ -40,4 +40,4 @@ Hver IFC-, Fragments- eller mesh-fil, du importerer, kommer ind som én gruppe o
 
 ## At skjule midlertidigt
 
-**Vis → Skjul** (<kbd>HH</kbd>) skjuler valget i 3D-visningen. **Isolér** (<kbd>HI</kbd>) skjuler alt andet. **Vis alt** (<kbd>HR</kbd>), eller **×** på mærket, henter alt tilbage. Intet gemmes eller slettes: det er en måde at nå det, der ligger inde i en importeret model, mens du rydder op i den.
+**Vis → Skjul** (<kbd>HH</kbd>) skjuler valget i 3D-visningen. **Isolér** (<kbd>HI</kbd>) skjuler alt andet. **Vis alt** (<kbd>HR</kbd>), eller **×** på mærket, henter alt tilbage. Intet gemmes eller slettes: det er en måde at nå det, der ligger inde i en importeret model, mens du rydder op i den. Højreklik i 3D-visningen giver de samme valg (**Skjul**, **Isolér** og **Vis alt**, mens noget er skjult): det, der er under markøren, markeres først, hvis det ikke allerede er markeret.
