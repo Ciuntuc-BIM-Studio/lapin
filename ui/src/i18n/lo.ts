@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // The 3D view's style in the HUD
+  "3D · EDGES": "3D · ຂອບ",
+  "3D · X-RAY": "3D · ລັງສີ X",
+  "3D · WIREFRAME": "3D · ໂຄງເສັ້ນ",
   // Report #142: the X-ray visual style
   "X-ray": "ລັງສີ X",
   "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "ມຸມມອງ 3D ສະແດງທຸກພື້ນຜິວເປັນແບບໂປ່ງໃສ ພ້ອມຂອບ; ອົງປະກອບທີ່ເລືອກຍັງທຶບຢູ່. ຄວາມໂປ່ງໃສຕາມໝວດຢູ່ໃນ Visibility / Graphics.",

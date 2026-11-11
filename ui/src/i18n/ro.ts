@@ -1,6 +1,10 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // The 3D view's style in the HUD
+  "3D · EDGES": "3D · MUCHII",
+  "3D · X-RAY": "3D · RAZE X",
+  "3D · WIREFRAME": "3D · SÂRMĂ",
   // Report #142: the X-ray visual style
   "X-ray": "Raze X",
   "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "Vederea 3D arată toate suprafețele transparente, cu muchiile lor; selecția rămâne opacă. Transparența pe categorii e în Visibility / Graphics.",

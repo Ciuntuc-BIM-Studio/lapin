@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // The 3D view's style in the HUD
+  "3D · EDGES": "3D · ARISTAS",
+  "3D · X-RAY": "3D · RAYOS X",
+  "3D · WIREFRAME": "3D · ALAMBRE",
   // Report #142: the X-ray visual style
   "X-ray": "Rayos X",
   "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "La vista 3D muestra todas las superficies transparentes, con sus aristas; la selección sigue opaca. La transparencia por categoría está en Visibility / Graphics.",

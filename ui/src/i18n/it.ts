@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // The 3D view's style in the HUD
+  "3D · EDGES": "3D · SPIGOLI",
+  "3D · X-RAY": "3D · RAGGI X",
+  "3D · WIREFRAME": "3D · FILO DI FERRO",
   // Report #142: the X-ray visual style
   "X-ray": "Raggi X",
   "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "La vista 3D mostra tutte le superfici trasparenti, con i loro spigoli; la selezione resta opaca. La trasparenza per categoria è in Visibility / Graphics.",

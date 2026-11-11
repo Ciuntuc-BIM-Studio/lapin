@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // The 3D view's style in the HUD
+  "3D · EDGES": "3D · KANTER",
+  "3D · X-RAY": "3D · RØNTGEN",
+  "3D · WIREFRAME": "3D · TRÅDRAMME",
   // Report #142: the X-ray visual style
   "X-ray": "Røntgen",
   "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "3D-visningen viser alle flader gennemsigtige med deres kanter; markeringen forbliver massiv. Gennemsigtighed pr. kategori findes i Visibility / Graphics.",

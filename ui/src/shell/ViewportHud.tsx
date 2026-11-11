@@ -40,6 +40,7 @@ export function toolHint(tool: string | null): string | null {
 export function useHudFacts() {
   const tool = useUi((s) => s.tool);
   const view = useUi((s) => s.view);
+  const style = useUi((s) => s.visualStyle);
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
   useStandards((s) => s.units);
@@ -49,7 +50,7 @@ export function useHudFacts() {
   return {
     mode: active ? active.label.toUpperCase() : 'SELECT',
     level: (storey?.name ?? '—').toUpperCase(), elevation: level(num(storey ?? undefined, 'elevation')),
-    view: view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : view === 'gantt' ? 'GANTT' : view === 'estimate' ? 'ESTIMATE' : view === 'costTime' ? 'S-CURVE' : '3D · SHADED',
+    view: view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : view === 'gantt' ? 'GANTT' : view === 'estimate' ? 'ESTIMATE' : view === 'costTime' ? 'S-CURVE' : `3D · ${style === 'edges' ? 'EDGES' : style === 'xray' ? 'X-RAY' : style === 'wireframe' ? 'WIREFRAME' : 'SHADED'}`,
     snap: prefs.gridSnap ? `POINTS · GRID ${prefs.gridMode === 'fixed' ? lengthText(prefs.gridStep) : lengthText(0.05)}` : 'POINTS',
   };
 }

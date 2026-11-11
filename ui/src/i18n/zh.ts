@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // The 3D view's style in the HUD
+  "3D · EDGES": "3D · 边线",
+  "3D · X-RAY": "3D · X 光",
+  "3D · WIREFRAME": "3D · 线框",
   // Report #142: the X-ray visual style
   "X-ray": "X 光",
   "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "3D 视图将所有表面显示为透明并保留边线；选中的对象保持不透明。按类别设置透明度请用 Visibility / Graphics。",

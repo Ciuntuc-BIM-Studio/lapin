@@ -3590,6 +3590,36 @@ export const scenes = [
       await t.shot('view-xray', { of: '[data-testid=view3d]', pad: 0 });
       await t.tool('view.xray');
       t.expect(await style() === 'edges', 'and off again, back to shaded with edges');
+      // A dialog moves by its title bar (report #140, shell/dialogDrag.ts): dragged with the mouse it moves, never out of the window; a double click recentres it.
+      await t.ui({ dialog: 'displayQuality' });
+      await t.wait(800);
+      t.expect(await t.page.locator('.dialog').count() >= 1, `a dialog is open (dialog state: ${await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().dialog)})`);
+      const dialog = t.page.locator('.dialog').first();
+      const head = dialog.locator('.dialog-head');
+      const box = async () => dialog.boundingBox();
+      const before = await box();
+      const h = await head.boundingBox();
+      t.expect(before && h, 'a dialog with its title bar');
+      const grab = [h.x + 24, h.y + h.height / 2];
+      await t.page.mouse.move(grab[0], grab[1]);
+      await t.page.mouse.down();
+      await t.page.mouse.move(grab[0] + 60, grab[1] + 40, { steps: 5 });
+      await t.page.mouse.up();
+      const moved = await box();
+      t.expect(Math.abs(moved.x - before.x - 60) < 2 && Math.abs(moved.y - before.y - 40) < 2, `the dialog follows the drag (${before.x},${before.y} → ${moved.x},${moved.y})`);
+      const h2 = await head.boundingBox();
+      await t.page.mouse.move(h2.x + 24, h2.y + h2.height / 2);
+      await t.page.mouse.down();
+      await t.page.mouse.move(-400, -400, { steps: 5 });
+      await t.page.mouse.up();
+      const far = await box();
+      const win = await t.page.evaluate(() => ({ w: window.innerWidth, h: window.innerHeight }));
+      t.expect(far.x >= -1 && far.y >= -1 && far.x + far.width <= win.w + 1 && far.y + far.height <= win.h + 1, `and stays inside the window (${far.x},${far.y})`);
+      const h3 = await head.boundingBox();
+      await t.page.mouse.dblclick(h3.x + 24, h3.y + h3.height / 2);
+      const again = await box();
+      t.expect(Math.abs(again.x - before.x) < 2 && Math.abs(again.y - before.y) < 2, 'a double click on the title puts it back in the middle');
+      await t.keys('Escape');
     },
   },
   {
