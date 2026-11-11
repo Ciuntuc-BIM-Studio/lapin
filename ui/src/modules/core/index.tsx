@@ -3,7 +3,7 @@
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { Pin, PinOff, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
+import { Pin, PinOff, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, Star, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -296,6 +296,7 @@ const core: LapinModule = {
         { id: 'app.preferences', label: 'Preferences…', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'preferences' }) },
         { id: 'app.shortcuts', label: 'Keyboard shortcuts…', icon: Keyboard, run: () => useUi.setState({ dialog: 'shortcuts' }) },
         { id: 'app.quickTools', label: 'Quick tools…', icon: LayoutGrid, run: () => useUi.setState({ dialog: 'quickTools' }) },
+        { id: 'app.myTools', label: 'Customize My tools…', icon: Star, run: () => useUi.setState({ dialog: 'myTools' }) },
         // The model assistant (docs/plan-assistant.md): the desktop's only, absent from the web build.
         ...(import.meta.env.VITE_ENGINE !== 'worker' && assistantAvailable()
           ? [{ id: 'app.assistant', label: 'Assistant', icon: Bot, run: () => showPropsTab('assistant') }] : []),

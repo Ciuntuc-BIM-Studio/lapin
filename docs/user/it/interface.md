@@ -67,6 +67,25 @@ La freccia in fondo alla barra nasconde gli strumenti rapidi; al loro posto rest
 
 ![Vista → Strumenti rapidi…](shots/quick-tools-dialog.webp)
 
+## I miei strumenti
+
+**I miei strumenti** è una scheda del nastro tutta tua, la prima della riga delle schede: ci metti solo gli strumenti che usi, presi da qualsiasi scheda, in gruppi che nomini tu.
+
+- **Metterci gli strumenti.** Clic destro su uno strumento del nastro → **Aggiungi a I miei strumenti**, **Aggiungi a I miei strumenti in…** un gruppo, oppure **Aggiungi a un nuovo gruppo di I miei strumenti**. Oppure trascina uno strumento da un’altra scheda sulla scheda **I miei strumenti**: tenuto lì un momento, la scheda si apre e rilasci lo strumento dove una linea mostra che finirà.
+- **Ordinarli nel nastro stesso.** Trascina uno strumento prima o dopo un altro, nel suo gruppo o in un altro gruppo; trascina un gruppo dal suo nome per spostarlo tra i gruppi. Una linea mostra dove finirà, gli altri si scostano, e rilasciare altrove non cambia nulla. Doppio clic sul nome di un gruppo per rinominarlo. Clic destro su uno strumento: **Rendi piccolo** o **Rendi grande**, **Sposta prima**, **Sposta dopo** e **Rimuovi da I miei strumenti**; clic destro sul nome di un gruppo: **Rinomina gruppo**, **Elimina gruppo**, **Nuovo gruppo** e **Annulla l’ultima modifica**. Da tastiera, <kbd>Alt</kbd> <kbd>←</kbd> o <kbd>→</kbd> sposta lo strumento attivo e <kbd>Canc</kbd> lo rimuove.
+- **Personalizza I miei strumenti…** (l’ingranaggio in fondo alla scheda, View → Interface, o Commands…) mostra a sinistra tutti gli strumenti dell’applicazione, con ricerca e raggruppati per scheda, e a destra la tua scheda. Trascina gli strumenti da una parte all’altra, oppure premi **+** (o <kbd>Enter</kbd>) per aggiungerne uno; trascina nella parte destra per ordinarli; trascina uno strumento a sinistra per toglierlo. Ogni riga ha anche pulsanti per spostarla su o giù, per mostrarla come strumento grande o piccolo, un elenco per spostarla in un altro gruppo e **×** per rimuoverla. Da tastiera, <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> spostano lo strumento attivo (anche oltre i capi del suo gruppo), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> lo portano nel gruppo prima o dopo, <kbd>Canc</kbd> lo rimuove e <kbd>Ctrl</kbd> <kbd>Z</kbd> annulla l’ultima modifica. **Annulla** e **Ripristina** sono in basso, quindi un rilascio sbagliato non fa perdere nulla.
+- **Esporta…** e **Importa…** salvano la scheda in un piccolo file da portare su un altro computer o dare a un collega.
+
+Lapin conserva I miei strumenti su questo computer, per te (l’app desktop e il browser separati). Uno strumento che la tua edizione non ha è nascosto, non perso: torna con il suo modulo.
+
+![I miei strumenti](shots/my-tools-empty.webp)
+
+![I miei strumenti](shots/my-tools-menu.webp)
+
+![I miei strumenti: due gruppi, Muri e Aperture](shots/my-tools-tab.webp)
+
+![View → Interface → Personalizza I miei strumenti…](shots/my-tools-dialog.webp)
+
 ## Il catalogo
 
 La scheda **Catalogo** del browser di progetto mostra i tipi del progetto per ogni strumento che posa elementi con tipo: muri, porte, finestre, solai, facciate continue, scale, rampe, controsoffitti e battiscopa. Ogni tipo è disegnato in piccolo (gli strati di un muro come la sua sezione in pianta, quelli di un solaio in sezione, il prospetto di una porta o di una finestra, il profilo di un battiscopa), con quello che è in poche parole.

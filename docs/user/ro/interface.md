@@ -67,6 +67,25 @@ Săgeata de la capătul barei ascunde uneltele rapide; în locul lor rămâne un
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Uneltele mele
+
+**Uneltele mele** e o filă de ribbon a ta, prima din rândul filelor: pui în ea doar uneltele pe care le folosești, luate din orice filă, în grupuri pe care le numești tu.
+
+- **Pune unelte în ea.** Clic dreapta pe orice unealtă din ribbon → **Adaugă la Uneltele mele**, **Adaugă la Uneltele mele în…** un grup, sau **Adaugă într-un grup nou din Uneltele mele**. Sau trage o unealtă dintr-o altă filă pe fila **Uneltele mele**: ținută acolo o clipă, fila se deschide, iar tu lași unealta acolo unde o linie arată că va ajunge.
+- **Ordonează-le chiar în ribbon.** Trage o unealtă înaintea sau după alta, în grupul ei sau într-un alt grup; trage un grup de numele lui ca să-l muți printre grupuri. O linie arată unde va ajunge, celelalte se dau la o parte, iar dacă lași în altă parte nu se schimbă nimic. Dublu clic pe numele unui grup ca să-l redenumești. Clic dreapta pe o unealtă pentru **Fă-o mică** sau **Fă-o mare**, **Mută mai devreme**, **Mută mai târziu** și **Scoate din Uneltele mele**; clic dreapta pe numele unui grup pentru **Redenumește grupul**, **Șterge grupul**, **Grup nou** și **Anulează ultima schimbare**. De la tastatură, <kbd>Alt</kbd> <kbd>←</kbd> sau <kbd>→</kbd> mută unealta aflată în focus, iar <kbd>Delete</kbd> o scoate.
+- **Personalizează Uneltele mele…** (rotița de la capătul filei, View → Interface, sau Commands…) arată în stânga toate uneltele aplicației, căutate și grupate pe file, iar în dreapta fila ta. Trage uneltele dintr-o parte în alta sau apasă **+** (ori <kbd>Enter</kbd>) ca să adaugi una; trage în partea dreaptă ca să le ordonezi; trage o unealtă înapoi în stânga ca s-o scoți. Fiecare rând are și butoane pentru a-l muta în sus sau în jos, pentru a-l arăta ca unealtă mare sau mică, o listă ca să-l muți în alt grup și **×** ca să-l scoți. De la tastatură, <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> mută unealta aflată în focus (și peste capetele grupului), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> o mută în grupul dinainte sau de după, <kbd>Delete</kbd> o scoate, iar <kbd>Ctrl</kbd> <kbd>Z</kbd> anulează ultima schimbare. **Anulează** și **Resetează** sunt jos, așa că o mutare greșită nu pierde nimic.
+- **Exportă…** și **Importă…** salvează fila ca un fișier mic pe care îl poți duce pe alt calculator sau da unui coleg.
+
+Lapin păstrează Uneltele mele pe acest calculator, pentru tine (aplicația desktop și browserul separat). O unealtă pe care ediția ta nu o are e ascunsă, nu pierdută: revine odată cu modulul ei.
+
+![Uneltele mele](shots/my-tools-empty.webp)
+
+![Uneltele mele](shots/my-tools-menu.webp)
+
+![Uneltele mele: două grupuri, Pereți și Goluri](shots/my-tools-tab.webp)
+
+![View → Interface → Personalizează Uneltele mele…](shots/my-tools-dialog.webp)
+
 ## Catalogul
 
 Fila **Catalog** din browserul proiectului arată tipurile proiectului pentru fiecare unealtă care pune elemente cu tip: pereți, uși, ferestre, plăci, pereți cortină, scări, rampe, tavane și plinte. Fiecare tip e desenat mic (straturile unui perete ca în secțiunea din plan, ale unei plăci în secțiune, vederea unei uși sau ferestre, profilul unei plinte), cu ce este în câteva cuvinte.

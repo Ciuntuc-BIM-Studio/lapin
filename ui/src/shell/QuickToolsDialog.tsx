@@ -17,7 +17,7 @@ import { useSession } from '../engine/session';
 import type { ToolDef } from '../platform/module';
 
 /** The tools to choose from: each ribbon tab's, then the quick tools no tab has. */
-function choices(): { label: string; tools: ToolDef[] }[] {
+export function choices(): { label: string; tools: ToolDef[] }[] {
   const seen = new Set<string>();
   const out: { label: string; tools: ToolDef[] }[] = [];
   const take = (label: string, tools: ToolDef[]) => {

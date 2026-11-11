@@ -67,6 +67,25 @@ Pilen for enden af bjælken skjuler hurtigværktøjerne; et lille **Hurtigværkt
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Mine værktøjer
+
+**Mine værktøjer** er en fane i båndet, der er din egen, den første i fanerækken: du lægger kun de værktøjer i den, du bruger, taget fra en hvilken som helst fane, i grupper du selv navngiver.
+
+- **Læg værktøjer i.** Højreklik på et værktøj i båndet → **Føj til Mine værktøjer**, **Føj til Mine værktøjer i…** en gruppe, eller **Føj til en ny gruppe i Mine værktøjer**. Eller træk et værktøj fra en anden fane hen på fanen **Mine værktøjer**: holdt der et øjeblik åbner fanen sig, og du slipper værktøjet, hvor en streg viser, at det lander.
+- **Ordn dem i selve båndet.** Træk et værktøj før eller efter et andet, i sin gruppe eller ind i en anden gruppe; træk en gruppe ved dens navn for at flytte den blandt grupperne. En streg viser, hvor det lander, de andre glider til side, og slipper du et andet sted, ændres intet. Dobbeltklik på en gruppes navn for at omdøbe den. Højreklik på et værktøj: **Gør lille** eller **Gør stor**, **Flyt tidligere**, **Flyt senere** og **Fjern fra Mine værktøjer**; højreklik på en gruppes navn: **Omdøb gruppe**, **Slet gruppe**, **Ny gruppe** og **Fortryd den sidste ændring**. Med tastaturet flytter <kbd>Alt</kbd> <kbd>←</kbd> eller <kbd>→</kbd> det fokuserede værktøj, og <kbd>Delete</kbd> fjerner det.
+- **Tilpas Mine værktøjer…** (tandhjulet for enden af fanen, View → Interface eller Commands…) viser til venstre alle programmets værktøjer, søgbare og grupperet efter fane, og til højre din fane. Træk værktøjer over, eller tryk **+** (eller <kbd>Enter</kbd>) for at tilføje et; træk på højre side for at ordne; træk et værktøj tilbage til venstre for at tage det ud. Hver række har også knapper til at flytte den op eller ned, til at vise den som stort eller lille værktøj, en liste til at flytte den til en anden gruppe og **×** til at fjerne den. Med tastaturet flytter <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> det fokuserede værktøj (også over gruppens ender), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> flytter det til gruppen før eller efter, <kbd>Delete</kbd> fjerner det, og <kbd>Ctrl</kbd> <kbd>Z</kbd> fortryder den sidste ændring. **Fortryd** og **Nulstil** står nederst, så et forkert slip mister intet.
+- **Eksportér…** og **Importér…** gemmer fanen som en lille fil, du kan tage med til en anden computer eller give til en kollega.
+
+Lapin gemmer Mine værktøjer på denne computer, til dig (skrivebordsprogrammet og browseren hver for sig). Et værktøj, din udgave ikke har, er skjult, ikke tabt: det kommer tilbage med sit modul.
+
+![Mine værktøjer](shots/my-tools-empty.webp)
+
+![Mine værktøjer](shots/my-tools-menu.webp)
+
+![Mine værktøjer: to grupper, Vægge og Åbninger](shots/my-tools-tab.webp)
+
+![View → Interface → Tilpas Mine værktøjer…](shots/my-tools-dialog.webp)
+
 ## Kataloget
 
 Fanen **Katalog** i projektbrowseren viser projektets typer for hvert værktøj, der sætter elementer med type: vægge, døre, vinduer, dæk, glasfacader, trapper, ramper, lofter og fodpaneler. Hver type er tegnet lille (en vægs lag som dens plansnit, et dæks i snit, en dørs eller et vindues opstalt, et fodpanels profil) med, hvad den er, i få ord.

@@ -7,7 +7,7 @@
  */
 
 import { setPrefs } from '../app/prefs';
-import { useEffect, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Moon, Redo2, Search, Sun, Undo2 } from 'lucide-react';
 import { HelpMenu } from './HelpMenu';
 import { BrandName } from './BrandMark';
@@ -19,7 +19,8 @@ import { isGuest } from '../engine/share';
 import { Participants } from './Sharing';
 import { TabStrip, WorkspaceSwitch } from './TabStrip';
 import { useInterface, visibleTabIds } from '../app/interface';
-import { TOOL_DRAG } from '../app/hotbar';
+import { MY_TAB } from '../app/myTools';
+import { MyToolsBand, toolDragProps, toolMenu } from './MyToolsBand';
 import { bindingText, hint, useBindings } from '../app/commands';
 import type { FileAction, RibbonTabDef, ToolDef } from '../platform/module';
 
@@ -90,11 +91,8 @@ function FileMenu() {
   );
 }
 
-/** A ribbon tool dragged onto a quick slot goes in it (decision 259). */
-const dragTool = (tl: ToolDef) => ({
-  draggable: true,
-  onDragStart: (e: DragEvent) => { e.dataTransfer.setData(TOOL_DRAG, tl.id); e.dataTransfer.effectAllowed = 'copy'; },
-});
+/** A ribbon tool dragged onto a quick slot goes in it (decision 259); dragged onto the My tools tab, in My tools (decision 479); right-clicked, its menu offers My tools. */
+const dragTool = (tl: ToolDef) => ({ ...toolDragProps(tl.id), onContextMenu: (e: React.MouseEvent) => toolMenu(e, tl) });
 
 /** The band of the tab: large tools with their names and keys, or icons only. */
 function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolean; onPicked?: () => void; drop?: boolean }) {
@@ -147,18 +145,23 @@ function Band({ tab, icons, onPicked, drop }: { tab: RibbonTabDef; icons: boolea
   );
 }
 
+/** The My tools tab as the tab strip knows it; its band is MyToolsBand's. */
+const MY_TAB_DEF: RibbonTabDef = { id: MY_TAB, label: 'My tools', groups: [], order: -1 };
+
 export function Ribbon() {
   const workspace = useInterface((s) => s.workspace);
   const mine = useInterface((s) => s.mine);
   const hiddenTabs = useInterface((s) => s.hiddenTabs);
   // The workspace's tabs in its order (View → Interface…, the start screen); the current one gone, the first stands in.
   const all = ribbonTabs();
-  const tabs = visibleTabIds({ workspace, mine, hiddenTabs }, all).map((id) => all.find((t) => t.id === id)!);
-  const tabId = useUi((s) => s.tab) ?? tabs[0]?.id;
+  const own = visibleTabIds({ workspace, mine, hiddenTabs }, all).map((id) => all.find((t) => t.id === id)!);
+  // My tools (decision 479) stands first in every workspace; the tab the app opens on stays the first of the workspace.
+  const tabs = [MY_TAB_DEF, ...own];
+  const tabId = useUi((s) => s.tab) ?? own[0]?.id;
   const theme = useUi((s) => s.theme);
   const doc = useSession((s) => s.doc);
   const mode = useInterface((s) => s.parts.ribbon);
-  const tab = tabs.find((t) => t.id === tabId) ?? tabs[0];
+  const tab = tabs.find((t) => t.id === tabId) ?? own[0] ?? tabs[0];
   // Focus: the band drops from its tab, over the view, and folds after a tool, on Escape or a click elsewhere.
   const [dropped, setDropped] = useState(false);
   const host = useRef<HTMLElement>(null);
@@ -192,9 +195,9 @@ export function Ribbon() {
         <button type="button" className="icon" title="Theme" onClick={() => { const next = theme === 'paper' ? 'graphite' : 'paper'; setPrefs({ theme: next }); useUi.setState({ theme: next }); }}>{theme === 'paper' ? <Moon size={15} /> : <Sun size={15} />}</button>
         <HelpMenu />
       </div>
-      {tab && mode === 'large' && <Band tab={tab} icons={false} />}
-      {tab && mode === 'icons' && <Band tab={tab} icons />}
-      {tab && mode === 'dropdown' && dropped && <Band tab={tab} icons drop onPicked={() => setDropped(false)} />}
+      {tab && mode === 'large' && (tab.id === MY_TAB ? <MyToolsBand icons={false} /> : <Band tab={tab} icons={false} />)}
+      {tab && mode === 'icons' && (tab.id === MY_TAB ? <MyToolsBand icons /> : <Band tab={tab} icons />)}
+      {tab && mode === 'dropdown' && dropped && (tab.id === MY_TAB ? <MyToolsBand icons drop onPicked={() => setDropped(false)} /> : <Band tab={tab} icons drop onPicked={() => setDropped(false)} />)}
     </header>
   );
 }

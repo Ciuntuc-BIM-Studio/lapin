@@ -67,6 +67,25 @@ La flèche au bout de la barre masque les outils rapides ; une petite poignée *
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Mes outils
+
+**Mes outils** est un onglet du ruban à vous, le premier de la rangée d’onglets : vous n’y mettez que les outils que vous utilisez, pris dans n’importe quel onglet, en groupes que vous nommez.
+
+- **Y mettre des outils.** Clic droit sur un outil du ruban → **Ajouter à Mes outils**, **Ajouter à Mes outils dans…** un groupe, ou **Ajouter à un nouveau groupe de Mes outils**. Ou glissez un outil d’un autre onglet sur l’onglet **Mes outils** : maintenu un instant au-dessus, l’onglet s’ouvre et vous déposez l’outil là où un trait montre qu’il ira.
+- **Les ordonner dans le ruban même.** Glissez un outil avant ou après un autre, dans son groupe ou dans un autre groupe ; glissez un groupe par son nom pour le déplacer parmi les groupes. Un trait montre où il ira, les autres s’écartent, et déposer ailleurs ne change rien. Double-clic sur le nom d’un groupe pour le renommer. Clic droit sur un outil : **Rendre petit** ou **Rendre grand**, **Déplacer avant**, **Déplacer après** et **Retirer de Mes outils** ; clic droit sur le nom d’un groupe : **Renommer le groupe**, **Supprimer le groupe**, **Nouveau groupe** et **Annuler la dernière modification**. Au clavier, <kbd>Alt</kbd> <kbd>←</kbd> ou <kbd>→</kbd> déplace l’outil actif et <kbd>Suppr</kbd> le retire.
+- **Personnaliser Mes outils…** (la roue dentée au bout de l’onglet, View → Interface, ou Commands…) montre à gauche tous les outils de l’application, avec recherche et groupés par onglet, et à droite votre onglet. Glissez des outils de l’un à l’autre, ou appuyez sur **+** (ou <kbd>Enter</kbd>) pour en ajouter un ; glissez dans la partie droite pour les ordonner ; glissez un outil vers la gauche pour le retirer. Chaque ligne a aussi des boutons pour la monter ou la descendre, pour l’afficher en grand ou en petit outil, une liste pour la passer dans un autre groupe et **×** pour la retirer. Au clavier, <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> déplacent l’outil actif (aussi au-delà des bouts de son groupe), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> le passent au groupe d’avant ou d’après, <kbd>Suppr</kbd> le retire et <kbd>Ctrl</kbd> <kbd>Z</kbd> annule la dernière modification. **Annuler** et **Réinitialiser** sont en bas : un mauvais dépôt ne fait rien perdre.
+- **Exporter…** et **Importer…** enregistrent l’onglet dans un petit fichier que vous emportez sur un autre ordinateur ou donnez à un collègue.
+
+Lapin garde Mes outils sur cet ordinateur, pour vous (l’application de bureau et le navigateur à part). Un outil que votre édition n’a pas est masqué, pas perdu : il revient avec son module.
+
+![Mes outils](shots/my-tools-empty.webp)
+
+![Mes outils](shots/my-tools-menu.webp)
+
+![Mes outils : deux groupes, Murs et Ouvertures](shots/my-tools-tab.webp)
+
+![View → Interface → Personnaliser Mes outils…](shots/my-tools-dialog.webp)
+
 ## Le catalogue
 
 L’onglet **Catalogue** du navigateur de projet montre les types du projet pour chaque outil qui pose des éléments typés : murs, portes, fenêtres, dalles, murs-rideaux, escaliers, rampes, plafonds et plinthes. Chaque type est dessiné en petit (les couches d’un mur comme sa coupe en plan, celles d’une dalle en coupe, l’élévation d’une porte ou d’une fenêtre, le profil d’une plinthe), avec ce qu’il est en quelques mots.

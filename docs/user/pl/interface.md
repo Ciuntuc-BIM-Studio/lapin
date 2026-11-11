@@ -67,6 +67,25 @@ Strzałka na końcu paska ukrywa szybkie narzędzia; w ich miejscu zostaje mały
 
 ![Widok → Szybkie narzędzia…](shots/quick-tools-dialog.webp)
 
+## Moje narzędzia
+
+**Moje narzędzia** to Twoja własna karta wstążki, pierwsza w rzędzie kart: wkładasz do niej tylko narzędzia, których używasz, wzięte z dowolnej karty, w grupach, które sam nazywasz.
+
+- **Dodawanie narzędzi.** Kliknij prawym przyciskiem narzędzie na wstążce → **Dodaj do Moich narzędzi**, **Dodaj do Moich narzędzi w…** grupie, albo **Dodaj do nowej grupy w Moich narzędziach**. Możesz też przeciągnąć narzędzie z innej karty na kartę **Moje narzędzia**: przytrzymane chwilę nad nią, karta się otwiera, a Ty upuszczasz narzędzie tam, gdzie linia pokazuje, że wyląduje.
+- **Porządkowanie w samej wstążce.** Przeciągnij narzędzie przed lub za inne, w jego grupie albo do innej grupy; przeciągnij grupę za jej nazwę, aby przenieść ją między grupami. Linia pokazuje, gdzie wyląduje, pozostałe się odsuwają, a upuszczenie gdzie indziej nic nie zmienia. Dwukrotne kliknięcie nazwy grupy zmienia jej nazwę. Prawy przycisk na narzędziu: **Zrób małe** lub **Zrób duże**, **Przesuń wcześniej**, **Przesuń później** i **Usuń z Moich narzędzi**; prawy przycisk na nazwie grupy: **Zmień nazwę grupy**, **Usuń grupę**, **Nowa grupa** i **Cofnij ostatnią zmianę**. Z klawiatury <kbd>Alt</kbd> <kbd>←</kbd> lub <kbd>→</kbd> przesuwa narzędzie z fokusem, a <kbd>Delete</kbd> je usuwa.
+- **Dostosuj Moje narzędzia…** (koło zębate na końcu karty, View → Interface lub Commands…) pokazuje po lewej wszystkie narzędzia aplikacji, z wyszukiwaniem i pogrupowane według kart, a po prawej Twoją kartę. Przeciągaj narzędzia na drugą stronę albo naciśnij **+** (lub <kbd>Enter</kbd>), aby dodać jedno; przeciągaj po prawej stronie, aby ustawić kolejność; przeciągnij narzędzie z powrotem w lewo, aby je wyjąć. Każdy wiersz ma też przyciski przesuwania w górę lub w dół, pokazywania jako duże lub małe narzędzie, listę do przeniesienia do innej grupy i **×** do usunięcia. Z klawiatury <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> przesuwają narzędzie z fokusem (także poza końce jego grupy), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> przenoszą je do grupy przed lub po, <kbd>Delete</kbd> je usuwa, a <kbd>Ctrl</kbd> <kbd>Z</kbd> cofa ostatnią zmianę. **Cofnij** i **Resetuj** są na dole, więc błędne upuszczenie niczego nie traci.
+- **Eksportuj…** i **Importuj…** zapisują kartę jako mały plik, który możesz zabrać na inny komputer lub dać koledze.
+
+Lapin trzyma Moje narzędzia na tym komputerze, dla Ciebie (aplikacja desktopowa i przeglądarka osobno). Narzędzie, którego nie ma Twoja edycja, jest ukryte, nie utracone: wraca wraz ze swoim modułem.
+
+![Moje narzędzia](shots/my-tools-empty.webp)
+
+![Moje narzędzia](shots/my-tools-menu.webp)
+
+![Moje narzędzia: dwie grupy, Ściany i Otwory](shots/my-tools-tab.webp)
+
+![View → Interface → Dostosuj Moje narzędzia…](shots/my-tools-dialog.webp)
+
 ## Katalog
 
 Karta **Katalog** w przeglądarce projektu pokazuje typy projektu dla każdego narzędzia, które wstawia elementy z typem: ściany, drzwi, okna, stropy, ściany osłonowe, schody, rampy, sufity i listwy przypodłogowe. Każdy typ jest narysowany w małej skali (warstwy ściany jak w przekroju rzutu, stropu w przekroju, widok drzwi lub okna, profil listwy), z krótkim opisem.

@@ -18,6 +18,8 @@ export interface MenuItem {
   shortcut?: string;
   /** The translation's context for the label (a tab's i18nCtx: the Construction tab is not a stair's construction). */
   ctx?: string;
+  /** The label is the user's own text (a group's name): never translated. */
+  raw?: boolean;
 }
 
 interface MenuState { at: { x: number; y: number } | null; items: MenuItem[] }
@@ -79,7 +81,7 @@ export function ContextMenuHost() {
         <button key={i} type="button" role="menuitem" className="context-item" disabled={it.disabled}
           onClick={() => { closeContextMenu(); it.onSelect(); }}>
           <span className="context-icon">{it.checked ? '✓' : it.icon}</span>
-          <span data-i18n-ctx={it.ctx}>{it.label}</span>
+          <span data-i18n-ctx={it.ctx} data-no-i18n={it.raw ? '' : undefined}>{it.label}</span>
           {it.shortcut && <span className="context-keys">{it.shortcut}</span>}
         </button>
       ))}

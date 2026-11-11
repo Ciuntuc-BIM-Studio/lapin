@@ -67,6 +67,25 @@ La flecha al final de la barra oculta las herramientas rápidas; en su lugar que
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Mis herramientas
+
+**Mis herramientas** es una pestaña de la cinta que es solo tuya, la primera de la fila de pestañas: pones en ella solo las herramientas que usas, tomadas de cualquier pestaña, en grupos que nombras tú.
+
+- **Poner herramientas.** Clic derecho en cualquier herramienta de la cinta → **Añadir a Mis herramientas**, **Añadir a Mis herramientas en…** un grupo, o **Añadir a un grupo nuevo de Mis herramientas**. O arrastra una herramienta de otra pestaña sobre la pestaña **Mis herramientas**: mantenida un momento encima, la pestaña se abre y sueltas la herramienta donde una línea muestra que quedará.
+- **Ordenarlas en la propia cinta.** Arrastra una herramienta antes o después de otra, en su grupo o en otro grupo; arrastra un grupo por su nombre para moverlo entre los grupos. Una línea muestra dónde quedará, las demás se apartan, y soltar en cualquier otro sitio no cambia nada. Doble clic en el nombre de un grupo para renombrarlo. Clic derecho en una herramienta: **Hacerla pequeña** o **Hacerla grande**, **Mover antes**, **Mover después** y **Quitar de Mis herramientas**; clic derecho en el nombre de un grupo: **Renombrar grupo**, **Eliminar grupo**, **Grupo nuevo** y **Deshacer el último cambio**. Con el teclado, <kbd>Alt</kbd> <kbd>←</kbd> o <kbd>→</kbd> mueve la herramienta enfocada y <kbd>Supr</kbd> la quita.
+- **Personalizar Mis herramientas…** (el engranaje al final de la pestaña, View → Interface, o Commands…) muestra a la izquierda todas las herramientas de la aplicación, con búsqueda y agrupadas por pestaña, y a la derecha tu pestaña. Arrastra herramientas de un lado a otro, o pulsa **+** (o <kbd>Enter</kbd>) para añadir una; arrastra dentro de la derecha para ordenarlas; arrastra una herramienta de vuelta a la izquierda para quitarla. Cada fila tiene además botones para subirla o bajarla, para mostrarla como herramienta grande o pequeña, una lista para pasarla a otro grupo y **×** para quitarla. Con el teclado, <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> mueven la herramienta enfocada (también pasando los extremos de su grupo), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> la pasan al grupo anterior o siguiente, <kbd>Supr</kbd> la quita y <kbd>Ctrl</kbd> <kbd>Z</kbd> deshace el último cambio. **Deshacer** y **Restablecer** están abajo, así que un soltar equivocado no pierde nada.
+- **Exportar…** e **Importar…** guardan la pestaña como un archivo pequeño que puedes llevar a otro ordenador o dar a un colega.
+
+Lapin guarda Mis herramientas en este ordenador, para ti (la aplicación de escritorio y el navegador, por separado). Una herramienta que tu edición no tiene queda oculta, no perdida: vuelve con su módulo.
+
+![Mis herramientas](shots/my-tools-empty.webp)
+
+![Mis herramientas](shots/my-tools-menu.webp)
+
+![Mis herramientas: dos grupos, Muros y Huecos](shots/my-tools-tab.webp)
+
+![View → Interface → Personalizar Mis herramientas…](shots/my-tools-dialog.webp)
+
 ## El catálogo
 
 La pestaña **Catálogo** del navegador del proyecto muestra los tipos del proyecto para cada herramienta que coloca elementos con tipo: muros, puertas, ventanas, forjados, muros cortina, escaleras, rampas, techos y rodapiés. Cada tipo se dibuja en pequeño (las capas de un muro como su corte en planta, las de un forjado en sección, el alzado de una puerta o ventana, el perfil de un rodapié), con lo que es en pocas palabras.

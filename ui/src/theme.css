@@ -2075,3 +2075,66 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .model-swatch-row > span { min-width: 80px; }
 .model-swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); padding: 0; cursor: pointer; }
 .model-swatch.on { outline: 2px solid var(--accent, #3d6fd8); outline-offset: 1px; }
+
+/* My tools (decision 479): the personal tab, its drop lines, and Customize My tools…. */
+.tab.drop-hot { background: var(--accent-wash); color: var(--ink); }
+.my-band { align-items: stretch; }
+.my-band.over { outline: 2px dashed var(--accent); outline-offset: -3px; }
+.my-band .tool.drop-before::before, .my-band .tool.drop-after::after { content: ''; position: absolute; background: var(--accent); border-radius: 1px; pointer-events: none; }
+.my-band .tool:not(.small).drop-before::before { left: -2px; top: 2px; bottom: 2px; width: 3px; }
+.my-band .tool:not(.small).drop-after::after { right: -2px; top: 2px; bottom: 2px; width: 3px; }
+.my-band .tool.small.drop-before::before { left: 2px; right: 2px; top: -1px; height: 3px; }
+.my-band .tool.small.drop-after::after { left: 2px; right: 2px; bottom: -1px; height: 3px; }
+.my-group { position: relative; }
+.my-group.drop-before { box-shadow: inset 3px 0 0 var(--accent); }
+.my-group.drop-after { box-shadow: inset -3px 0 0 var(--accent); }
+.my-group.over .group-tools { outline: 2px dashed var(--accent); outline-offset: -2px; border-radius: 3px; }
+.my-group-empty { align-self: center; padding: 0 10px; font-size: 10.5px; color: var(--ink-muted); white-space: nowrap; }
+.my-group-label { cursor: grab; border-radius: 3px; }
+.my-group-label:hover, .my-group-label:focus-visible { background: var(--wash); color: var(--ink); outline: none; }
+.my-rename { width: 120px; align-self: center; margin-bottom: 2px; padding: 1px 4px; font: inherit; font-size: 10.5px; text-align: center; border: 1px solid var(--accent); border-radius: 2px; background: var(--raised); color: var(--ink); }
+.my-empty { align-self: center; padding: 0 14px; font-size: 12px; color: var(--ink-muted); white-space: nowrap; }
+.my-customize { align-self: center; margin-left: auto; flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 3px; background: none; color: var(--ink-muted); cursor: pointer; }
+.my-customize:hover { background: var(--wash); color: var(--ink); }
+.band.icons.my-band .my-group { flex-direction: row; align-items: center; }
+.band.icons.my-band .my-group-label { order: -1; font-size: 9px; padding: 0 6px 0 0; }
+.band.icons.my-band .my-group .group-tools { flex: none; align-items: center; }
+@media (prefers-reduced-motion: reduce) { .my-band *, .my-tools-dialog * { transition: none !important; } }
+
+.my-tools-dialog { width: min(980px, calc(100vw - 32px)); height: min(680px, calc(100vh - 64px)); }
+.my-tools-body { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; overflow: hidden; }
+.my-tools-help, .my-keys { margin: 0; }
+.my-tools-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 14px; flex: 1; min-height: 0; }
+.my-catalogue, .my-tab { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--rule); border-radius: 3px; position: relative; }
+.my-catalogue.remove { border-color: var(--accent); background: var(--accent-wash); }
+.my-col-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--rule); }
+.my-col-title { font-weight: 700; font-size: 12.5px; }
+.my-search { display: flex; align-items: center; gap: 5px; flex: 1; padding: 3px 7px; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--raised); }
+.my-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; color: var(--ink); outline: none; }
+.my-col-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 8px 10px; }
+.my-remove-hint { position: absolute; inset: auto 10px 10px 10px; padding: 8px; text-align: center; font-size: 12px; border: 2px dashed var(--accent); border-radius: 3px; background: var(--panel); pointer-events: none; }
+.my-cat-title { margin: 10px 0 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); }
+.my-cat-row, .my-row { display: flex; align-items: center; gap: 7px; min-height: 28px; padding: 1px 6px; border: 1px solid transparent; border-radius: 3px; cursor: grab; position: relative; }
+.my-cat-row:hover, .my-row:hover { background: var(--wash); }
+.my-cat-row:focus-visible, .my-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.my-cat-row svg:first-child, .my-row > svg { color: var(--accent); flex: none; }
+.my-cat-row.in { opacity: 0.55; }
+.my-in { display: grid; place-items: center; width: 28px; height: 28px; color: var(--accent); }
+.my-row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.my-cat-row .icon, .my-row .icon, .my-card-head .icon { margin: 0; width: 24px; height: 24px; flex: none; }
+.my-grip { display: grid; place-items: center; color: var(--ink-muted); cursor: grab; flex: none; }
+.my-card { margin: 8px 0; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--panel); position: relative; }
+.my-card.target { border-color: var(--accent); }
+.my-card.over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.my-card-head { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-bottom: 1px solid var(--rule); }
+.my-group-name { flex: 1; min-width: 0; padding: 3px 5px; font: inherit; font-weight: 600; font-size: 12px; border: 1px solid transparent; border-radius: 2px; background: none; color: var(--ink); }
+.my-group-name:hover, .my-group-name:focus { border-color: var(--rule-strong); background: var(--raised); outline: none; }
+.my-rows { padding: 3px 4px; min-height: 30px; }
+.my-card-empty, .my-tab-empty { padding: 8px; text-align: center; font-size: 11.5px; color: var(--ink-muted); }
+.my-move { max-width: 96px; font-size: 11px; padding: 1px 2px; border: 1px solid var(--rule-strong); border-radius: 2px; background: var(--raised); color: var(--ink); }
+.my-row.drop-before::before, .my-row.drop-after::after { content: ''; position: absolute; left: 4px; right: 4px; height: 3px; background: var(--accent); border-radius: 2px; pointer-events: none; }
+.my-row.drop-before::before { top: -2px; }
+.my-row.drop-after::after { bottom: -2px; }
+.my-card.drop-before { box-shadow: 0 -3px 0 var(--accent); }
+.my-card.drop-after { box-shadow: 0 3px 0 var(--accent); }
+.small-btn { display: inline-flex; align-items: center; gap: 5px; }

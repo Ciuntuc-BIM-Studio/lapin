@@ -417,7 +417,8 @@ const OptimizeIfcDialog = lazyPart(() => import('./shell/OptimizeIfcDialog').the
 const ProjectTemplatesDialog = lazyPart(() => import('./shell/ProjectTemplatesDialog').then((m) => m.ProjectTemplatesDialog), { title: 'Project templates' });
 const SaveTemplateDialog = lazyPart(() => import('./shell/ProjectTemplatesDialog').then((m) => m.SaveTemplateDialog), { title: 'Save as template' });
 
-const shareDialogs: Record<string, React.ComponentType> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, preferences: PreferencesDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog, projectTemplates: ProjectTemplatesDialog, saveTemplate: SaveTemplateDialog };
+const MyToolsDialog = lazyPart(() => import('./shell/MyToolsDialog').then((m) => m.MyToolsDialog), { title: 'Customize My tools' });
+const shareDialogs: Record<string, React.ComponentType> = { myTools: MyToolsDialog, share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, preferences: PreferencesDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog, projectTemplates: ProjectTemplatesDialog, saveTemplate: SaveTemplateDialog };
 
 function Workspace() {
   const open = useUi((s) => s.dialog);

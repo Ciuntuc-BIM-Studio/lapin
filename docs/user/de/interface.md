@@ -67,6 +67,25 @@ Der Pfeil am Ende der Leiste blendet die Schnellwerkzeuge aus; an ihrer Stelle b
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## Meine Werkzeuge
+
+**Meine Werkzeuge** ist ein eigener Reiter des Menübands, der erste in der Reiterzeile: Du legst darin nur die Werkzeuge ab, die Du benutzt, aus beliebigen Reitern, in Gruppen mit Deinen Namen.
+
+- **Werkzeuge hineinlegen.** Rechtsklick auf ein Werkzeug im Menüband → **Zu Meine Werkzeuge hinzufügen**, **Zu Meine Werkzeuge hinzufügen in…** eine Gruppe, oder **Zu einer neuen Gruppe in Meine Werkzeuge hinzufügen**. Oder ziehe ein Werkzeug aus einem anderen Reiter auf den Reiter **Meine Werkzeuge**: kurz darüber gehalten, öffnet er sich, und Du lässt das Werkzeug dort fallen, wo eine Linie zeigt, dass es landet.
+- **Im Menüband selbst ordnen.** Ziehe ein Werkzeug vor oder hinter ein anderes, in seiner Gruppe oder in eine andere Gruppe; ziehe eine Gruppe an ihrem Namen, um sie zwischen den Gruppen zu verschieben. Eine Linie zeigt, wo es landet, die anderen rücken beiseite, und Ablegen an anderer Stelle ändert nichts. Doppelklick auf den Namen einer Gruppe benennt sie um. Rechtsklick auf ein Werkzeug: **Klein machen** oder **Groß machen**, **Weiter nach vorn**, **Weiter nach hinten** und **Aus Meine Werkzeuge entfernen**; Rechtsklick auf den Namen einer Gruppe: **Gruppe umbenennen**, **Gruppe löschen**, **Neue Gruppe** und **Letzte Änderung rückgängig machen**. Mit der Tastatur verschiebt <kbd>Alt</kbd> <kbd>←</kbd> oder <kbd>→</kbd> das fokussierte Werkzeug, <kbd>Entf</kbd> entfernt es.
+- **Meine Werkzeuge anpassen…** (das Zahnrad am Ende des Reiters, View → Interface oder Commands…) zeigt links alle Werkzeuge der Anwendung, durchsuchbar und nach Reitern gruppiert, rechts Deinen Reiter. Ziehe Werkzeuge hinüber oder drücke **+** (oder <kbd>Enter</kbd>), um eines hinzuzufügen; ziehe auf der rechten Seite, um zu ordnen; ziehe ein Werkzeug zurück nach links, um es herauszunehmen. Jede Zeile hat außerdem Schaltflächen zum Verschieben nach oben oder unten, zum Anzeigen als großes oder kleines Werkzeug, eine Liste zum Verschieben in eine andere Gruppe und **×** zum Entfernen. Mit der Tastatur verschieben <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> das fokussierte Werkzeug (auch über die Enden seiner Gruppe), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> in die Gruppe davor oder danach, <kbd>Entf</kbd> entfernt es und <kbd>Strg</kbd> <kbd>Z</kbd> macht die letzte Änderung rückgängig. **Rückgängig** und **Zurücksetzen** stehen unten, ein falsches Ablegen kostet also nichts.
+- **Exportieren…** und **Importieren…** speichern den Reiter als kleine Datei, die Du auf einen anderen Rechner mitnehmen oder einem Kollegen geben kannst.
+
+Lapin behält Meine Werkzeuge auf diesem Rechner, für Dich (Desktop-App und Browser getrennt). Ein Werkzeug, das Deine Edition nicht hat, ist ausgeblendet, nicht verloren: Es kommt mit seinem Modul zurück.
+
+![Meine Werkzeuge](shots/my-tools-empty.webp)
+
+![Meine Werkzeuge](shots/my-tools-menu.webp)
+
+![Meine Werkzeuge: zwei Gruppen, Wände und Öffnungen](shots/my-tools-tab.webp)
+
+![View → Interface → Meine Werkzeuge anpassen…](shots/my-tools-dialog.webp)
+
 ## Der Katalog
 
 Die Registerkarte **Katalog** im Projektbrowser zeigt die Typen des Projekts für jedes Werkzeug, das Elemente mit Typ setzt: Wände, Türen, Fenster, Decken, Vorhangfassaden, Treppen, Rampen, Unterdecken und Sockelleisten. Jeder Typ ist klein gezeichnet (die Schichten einer Wand als Grundrissschnitt, die einer Decke im Schnitt, die Ansicht einer Tür oder eines Fensters, das Profil einer Sockelleiste), dazu in wenigen Worten, was er ist.

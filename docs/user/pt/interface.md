@@ -67,6 +67,25 @@ A seta no fim da barra oculta as ferramentas rápidas; fica no lugar delas uma p
 
 ![Vista → Ferramentas rápidas…](shots/quick-tools-dialog.webp)
 
+## Minhas ferramentas
+
+**Minhas ferramentas** é uma aba da faixa só sua, a primeira da fileira de abas: você coloca nela apenas as ferramentas que usa, tiradas de qualquer aba, em grupos que você mesmo nomeia.
+
+- **Colocar ferramentas.** Clique com o botão direito em uma ferramenta da faixa → **Adicionar a Minhas ferramentas**, **Adicionar a Minhas ferramentas em…** um grupo, ou **Adicionar a um novo grupo de Minhas ferramentas**. Ou arraste uma ferramenta de outra aba para a aba **Minhas ferramentas**: mantida um instante sobre ela, a aba se abre e você solta a ferramenta onde uma linha mostra que ela vai ficar.
+- **Ordená-las na própria faixa.** Arraste uma ferramenta para antes ou depois de outra, no seu grupo ou em outro grupo; arraste um grupo pelo nome para movê-lo entre os grupos. Uma linha mostra onde vai ficar, as outras se afastam, e soltar em outro lugar não muda nada. Clique duas vezes no nome de um grupo para renomeá-lo. Botão direito em uma ferramenta: **Tornar pequena** ou **Tornar grande**, **Mover para antes**, **Mover para depois** e **Remover de Minhas ferramentas**; botão direito no nome de um grupo: **Renomear grupo**, **Excluir grupo**, **Novo grupo** e **Desfazer a última alteração**. Pelo teclado, <kbd>Alt</kbd> <kbd>←</kbd> ou <kbd>→</kbd> move a ferramenta com o foco e <kbd>Delete</kbd> a remove.
+- **Personalizar Minhas ferramentas…** (a engrenagem no fim da aba, View → Interface ou Commands…) mostra à esquerda todas as ferramentas do aplicativo, com busca e agrupadas por aba, e à direita a sua aba. Arraste ferramentas de um lado para o outro, ou pressione **+** (ou <kbd>Enter</kbd>) para adicionar uma; arraste no lado direito para ordenar; arraste uma ferramenta de volta para a esquerda para tirá-la. Cada linha tem também botões para subir ou descer, para mostrá-la como ferramenta grande ou pequena, uma lista para movê-la a outro grupo e **×** para removê-la. Pelo teclado, <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> movem a ferramenta com o foco (também além das pontas do seu grupo), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> a levam ao grupo anterior ou seguinte, <kbd>Delete</kbd> a remove e <kbd>Ctrl</kbd> <kbd>Z</kbd> desfaz a última alteração. **Desfazer** e **Redefinir** ficam embaixo, então um soltar errado não perde nada.
+- **Exportar…** e **Importar…** salvam a aba como um arquivo pequeno que você leva a outro computador ou dá a um colega.
+
+O Lapin guarda Minhas ferramentas neste computador, para você (o aplicativo de desktop e o navegador separados). Uma ferramenta que a sua edição não tem fica oculta, não perdida: volta com o seu módulo.
+
+![Minhas ferramentas](shots/my-tools-empty.webp)
+
+![Minhas ferramentas](shots/my-tools-menu.webp)
+
+![Minhas ferramentas: dois grupos, Paredes e Aberturas](shots/my-tools-tab.webp)
+
+![View → Interface → Personalizar Minhas ferramentas…](shots/my-tools-dialog.webp)
+
 ## O catálogo
 
 A guia **Catálogo** do navegador do projeto mostra os tipos do projeto para cada ferramenta que coloca elementos com tipo: paredes, portas, janelas, lajes, fachadas-cortina, escadas, rampas, forros e rodapés. Cada tipo é desenhado em pequeno (as camadas de uma parede como seu corte em planta, as de uma laje em corte, a elevação de uma porta ou janela, o perfil de um rodapé), com o que ele é em poucas palavras.

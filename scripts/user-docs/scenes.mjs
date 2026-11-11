@@ -6121,7 +6121,7 @@ export const scenes = [
       // The workspaces (decision 243): MEP shows its tabs in its order; back to All for the rest of the scene.
       await t.page.locator('.interface-dialog [data-workspace=mep]').click();
       await t.wait(300);
-      t.expect((await t.page.locator('.tabs-row .tab').count()) <= 7, 'the MEP workspace shows only its tabs');
+      t.expect((await t.page.locator('.tabs-row .tab').count()) <= 8, 'the MEP workspace shows only its tabs (and My tools)');
       await t.shot('workspaces', { of: '.interface-dialog [data-field=workspace]', pad: 6 });
       await t.page.locator('.interface-dialog [data-workspace=all]').click();
       await t.wait(300);
@@ -6217,6 +6217,93 @@ export const scenes = [
       await t.wait(200);
       t.expect(await t.page.locator('[data-alias=WA]').count() === 1, 'the alias is added');
       await t.page.locator('[data-alias=WA] button[title="Remove this alias"]').click();
+    },
+  },
+  {
+    // My tools (decision 479): a ribbon tab of the user's own, filled by right-click and by dragging, ordered in the ribbon and in Customize My tools….
+    id: 'my-tools',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.fit();
+      const store = () => t.page.evaluate(async () => {
+        const m = await import('/src/app/myTools.ts');
+        return m.myTab().groups.map((g) => ({ label: g.label, tools: g.items.map((i) => i.tool) }));
+      });
+      await t.page.evaluate(async () => { const m = await import('/src/app/myTools.ts'); m.useMyTools.setState({ tabs: [], past: [] }); });
+      // Empty: the tab stands first, with its hint.
+      await t.page.locator('[data-tab=my-tools]').click();
+      await t.wait(300);
+      t.expect(await t.page.locator('.my-empty').count() === 1, 'an empty My tools tab says how to fill it');
+      await t.shot('my-tools-empty', { of: '.topbar', pad: 0 });
+      // Right-click a tool of another tab → Add to My tools.
+      await t.page.locator('[data-tab=architecture]').click();
+      await t.wait(300);
+      await t.page.locator('.band .tool', { hasText: 'Wall' }).first().click({ button: 'right' });
+      await t.wait(200);
+      await t.shot('my-tools-menu', { of: '.context-menu', pad: 12 });
+      await t.page.locator('.context-menu .context-item', { hasText: 'Add to My tools' }).first().click();
+      await t.wait(200);
+      // A second one in a group of its own, a third dragged onto the tab's header.
+      await t.page.locator('.band .tool', { hasText: 'Door' }).first().click({ button: 'right' });
+      await t.page.locator('.context-menu .context-item', { hasText: 'Add to a new group in My tools' }).click();
+      await t.wait(200);
+      await t.page.locator('.band .tool', { hasText: 'Window' }).first().dragTo(t.page.locator('[data-tab=my-tools]'));
+      await t.wait(300);
+      let groups = await store();
+      t.expect(groups.length === 2 && groups[0].tools.length === 1 && groups[1].tools.length === 2, 'right-click and dragging onto the tab header fill My tools: ' + JSON.stringify(groups));
+      // Reordered in the ribbon itself: the window dragged in front of the door.
+      await t.page.locator('[data-tab=my-tools]').click();
+      await t.wait(400);
+      const mine = t.page.locator('.my-band');
+      const door = groups[1].tools[0], win = groups[1].tools[1];
+      await mine.locator(`[data-my-tool="${win}"]`).dragTo(mine.locator(`[data-my-tool="${door}"]`), { targetPosition: { x: 4, y: 20 } });
+      await t.wait(400);
+      groups = await store();
+      t.expect(groups[1].tools[0] === win && groups[1].tools[1] === door, 'dragging a tool in the ribbon reorders its group: ' + JSON.stringify(groups));
+      // And between groups: the wall dragged into the second group.
+      await mine.locator(`[data-my-tool="${groups[0].tools[0]}"]`).dragTo(mine.locator(`[data-my-tool="${door}"]`), { targetPosition: { x: 40, y: 20 } });
+      await t.wait(400);
+      groups = await store();
+      t.expect(groups[0].tools.length === 0 && groups[1].tools.length === 3, 'a tool moves between groups by dragging: ' + JSON.stringify(groups));
+      await t.page.evaluate(async () => { (await import('/src/app/myTools.ts')).undoMyTools(); });
+      await t.wait(300);
+      // A group renamed in place.
+      await mine.locator('.my-group-label').nth(0).dblclick();
+      await t.page.locator('.my-rename').fill('Walls');
+      await t.keys('Enter');
+      await mine.locator('.my-group-label').nth(1).dblclick();
+      await t.page.locator('.my-rename').fill('Openings');
+      await t.keys('Enter');
+      await t.wait(300);
+      groups = await store();
+      t.expect(groups[0].label === 'Walls' && groups[1].label === 'Openings', 'double-clicking a group\'s name renames it');
+      await t.page.locator('.band .group-label', { hasText: 'Walls' }).hover();
+      await t.shot('my-tools-tab', { of: '.topbar', pad: 0 });
+      // Customize My tools…: the whole catalogue on the left, the tab on the right.
+      await t.page.locator('[data-testid=my-tools-customize]').click();
+      await t.wait(500);
+      t.expect(await t.page.locator('.my-tools-dialog').count() === 1, 'the customize button opens Customize My tools…');
+      await t.page.locator('.my-tools-dialog .my-search input').fill('stair');
+      await t.wait(200);
+      await t.page.locator('.my-tools-dialog .my-cat-row .icon').first().click();
+      await t.wait(300);
+      await t.page.locator('.my-tools-dialog .my-search input').fill('');
+      groups = await store();
+      t.expect(groups.flatMap((g) => g.tools).some((x) => x.includes('stair')), 'a tool found by search is added with its + button');
+      // By keys: Alt+↑ moves the focused tool up, Ctrl+Z takes the move back.
+      const row = t.page.locator('.my-tools-dialog .my-row', { hasText: 'Stair' });
+      await row.focus();
+      const before = JSON.stringify(await store());
+      await t.keys('Alt+ArrowUp');
+      t.expect(JSON.stringify(await store()) !== before, 'Alt+↑ moves the tool focused');
+      await t.keys('Control+z');
+      t.expect(JSON.stringify(await store()) === before, 'Ctrl+Z takes the move back');
+      await t.shot('my-tools-dialog', { of: '.my-tools-dialog', pad: 0 });
+      await t.page.locator('.my-tools-dialog .btn.primary').click();
+      await t.wait(300);
+      await t.page.evaluate(async () => { const m = await import('/src/app/myTools.ts'); m.useMyTools.setState({ tabs: [], past: [] }); localStorage.removeItem('lapin.myTools'); });
     },
   },
   {

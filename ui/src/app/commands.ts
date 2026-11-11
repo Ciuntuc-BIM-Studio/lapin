@@ -46,6 +46,7 @@ function appCommands(): CommandDef[] {
     { id: 'app.interface', label: 'Interface…', category: general, defaults: ['Ctrl+.'], run: dialog('interface') },
     { id: 'app.preferences', label: 'Preferences…', category: general, defaults: ['Ctrl+,'], run: dialog('preferences') },
     { id: 'app.quickTools', label: 'Quick tools…', category: general, defaults: [], run: dialog('quickTools') },
+    { id: 'app.myTools', label: 'Customize My tools…', category: general, defaults: [], run: dialog('myTools') },
     // The workspaces (decision 243), each a command of its own: Commands… → "Workspace: MEP".
     ...WORKSPACE_IDS.map((w) => ({ id: `app.workspace.${w}`, label: `Workspace: ${WORKSPACE_LABELS[w]}`, category: general, defaults: [], run: () => chooseWorkspace(w) })),
     { id: 'app.osnap', label: 'Object snap', category: draw, defaults: ['F3'], run: () => useCad.setState((s) => ({ osnap: !s.osnap })) },

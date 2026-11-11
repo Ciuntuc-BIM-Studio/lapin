@@ -67,6 +67,25 @@ The arrow at the bar's end hides the quick tools; a small **Quick tools** handle
 
 ![View → Quick tools…](shots/quick-tools-dialog.webp)
 
+## My tools
+
+**My tools** is a ribbon tab of your own, the first in the tab row: you put in it only the tools you use, taken from any tab, in groups you name.
+
+- **Put tools in.** Right-click any tool in the ribbon → **Add to My tools**, **Add to My tools in…** a group, or **Add to a new group in My tools**. Or drag a tool from another tab onto the **My tools** tab: held over it for a moment, the tab opens, and you drop the tool where a line shows it will land.
+- **Order them in the ribbon itself.** Drag a tool before or after another, in its group or into another group; drag a group by its name to move it among the groups. A line shows where it will land, the others slide aside, and dropping anywhere else changes nothing. Double-click a group's name to rename it. Right-click a tool for **Make small** or **Make large**, **Move earlier**, **Move later** and **Remove from My tools**; right-click a group's name for **Rename group**, **Delete group**, **New group** and **Undo the last change**. By keys, <kbd>Alt</kbd> <kbd>←</kbd> or <kbd>→</kbd> moves the tool focused and <kbd>Delete</kbd> removes it.
+- **Customize My tools…** (the gear at the end of the tab, View → Interface, or Commands…) shows every tool of the application on the left, searched and grouped by tab, and your tab on the right. Drag tools across, or press **+** (or <kbd>Enter</kbd>) to add one; drag within the right side to reorder; drag a tool back to the left to take it out. Each row also has buttons to move it up or down, to show it as a large or small tool, a list to move it to another group, and **×** to remove it. By keys, <kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd> move the tool focused (across the ends of its group too), <kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd> move it to the group before or after, <kbd>Delete</kbd> removes it and <kbd>Ctrl</kbd> <kbd>Z</kbd> undoes the last change. **Undo** and **Reset** are at the bottom, so a wrong drop loses nothing.
+- **Export…** and **Import…** save the tab as a small file you can take to another computer or give to a colleague.
+
+Lapin keeps My tools on this computer, for you (the desktop app and the browser apart). A tool your edition lacks is hidden, not lost: it comes back with its module.
+
+![My tools](shots/my-tools-empty.webp)
+
+![My tools](shots/my-tools-menu.webp)
+
+![My tools: two groups, Walls and Openings](shots/my-tools-tab.webp)
+
+![View → Interface → Customize My tools…](shots/my-tools-dialog.webp)
+
 ## The catalog
 
 The project browser's **Catalog** tab shows the project's types for each tool that places typed elements: walls, doors, windows, floors, curtain walls, stairs, ramps, ceilings and skirtings. Each type is drawn small (a wall's layers as its plan cut, a floor's as its section, a door's or window's elevation, a skirting's profile), with what it is in a few words.
