@@ -7,7 +7,7 @@
  */
 
 import {
-  Archive, Armchair, Package, Ruler, BedDouble, BedSingle, Coffee, CookingPot, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, Settings2, Shirt, Sofa, Table2, Users, UtensilsCrossed,
+  Archive, Armchair, BookHeart, Package, Ruler, BedDouble, BedSingle, Coffee, CookingPot, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, Settings2, Shirt, Sofa, Table2, Users, UtensilsCrossed,
 } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { LapinModule, ToolDef } from '../../platform/module';
@@ -18,6 +18,10 @@ import { relatingOf } from '../../engine/model';
 import { CLASS, chooseType, chosenType, furnitureGrips, sizeOf, specOf, typesOfKind, useFurniturePrefs } from './furniture';
 import { FurnitureSection } from './FurnitureSection';
 import { FurnitureTypesDialog, editType, useKinds } from './FurnitureTypesDialog';
+import { FurnitureLibraryDialog, SaveToLibraryDialog } from './FurnitureLibraryDialog';
+import { refreshLibrary, useFurnitureLibrary } from './library';
+import { addTemplateAddition } from '../../engine/templates';
+import { useEffect } from 'react';
 
 /** The bar of a kind's tool: its type, its turn when it stands free, and whether it backs onto walls. */
 function kindOptions(kind: string, placing = true) {
@@ -133,6 +137,23 @@ const chairsAround: ToolDef = {
   },
 };
 
+/** My furniture library (decision 476): the user's own furniture types, for every project. */
+const library: ToolDef = { id: 'furniture.library', label: 'My furniture…', icon: BookHeart, run: () => useUi.setState({ dialog: 'furnitureLibrary' }) };
+
+// Save as template… may put the whole library into the template (decision 476).
+addTemplateAddition({
+  id: 'furniture', label: 'Add every type in My furniture',
+  shown: () => useFurnitureLibrary.getState().entries.length > 0,
+  params: async () => ({ furniture: (await refreshLibrary()).map((e) => e.type) }),
+});
+
+/** The library read once the engine is there, so Save as template… knows whether to offer it. */
+function LibraryWatch() {
+  const connected = useSession((s) => s.connected);
+  useEffect(() => { if (connected) void refreshLibrary(); }, [connected]);
+  return null;
+}
+
 const types: ToolDef = { id: 'furniture.types', label: 'Furniture types', icon: Layers3, run: () => editType(useFurniturePrefs.getState().types.sofa) };
 
 const schedule = (id: string, label: string, kind: string, icon: Icon): ToolDef => ({
@@ -158,13 +179,14 @@ const furniture: LapinModule = {
       { label: 'Tables', tools: [table], small: [coffeeTable, desk, chairsAround] },
       { label: 'Kitchen', tools: [kitchen] },
       { label: 'Schedules', tools: [byType], small: [byRoom, kitchenUnits, cutList] },
-      { label: 'Types', tools: [types] },
+      { label: 'Types', tools: [types], small: [library] },
     ],
   }],
   propertySections: [
     { id: 'furniture', label: 'Furniture', classes: [CLASS], component: FurnitureSection, replacesFields: () => true },
   ],
-  dialogs: { furnitureTypes: FurnitureTypesDialog },
+  dialogs: { furnitureTypes: FurnitureTypesDialog, furnitureLibrary: FurnitureLibraryDialog, furnitureSaveToLibrary: SaveToLibraryDialog },
+  background: LibraryWatch,
   grips: {
     [CLASS]: (node: NodeDto) => {
       const { nodes, relations } = useSession.getState();

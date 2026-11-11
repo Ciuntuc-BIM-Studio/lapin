@@ -5136,6 +5136,74 @@ export const scenes = [
     },
   },
   {
+    // My furniture library (decision 476): a desk of boards saved from Furniture types → Save to my library… with its category,
+    // tags, article code and price beside the thumbnail drawn from the engine's preview; five more kept the same way; Interior →
+    // My furniture… with its thumbnails, an item inserted (the identical type in the project reused) and one placed (its tool
+    // started). The entries are deleted at the end, so the next scenes' library stays empty.
+    id: 'furniture-library',
+    touches: ['core', 'furniture'],
+    async run(t) {
+      await t.fresh();
+      await t.button('Interior', { exact: true });
+      const make = async (preset, name, spec = {}) => (await t.cmd('furniture.createType', { kind: 'casework', preset, name, spec })).id;
+      await make('desk', 'Walnut desk', { width: 1.4, materials: { body: 'Walnut veneer', fronts: 'Lacquered MDF sage' } });
+      const others = [
+        [await make('sideboard', 'Oak sideboard', { materials: { fronts: 'Lacquered MDF sage' } }), 'Oak sideboard', 'living', ['oak', 'modern']],
+        [await make('wardrobeSliding', 'Sliding wardrobe'), 'Sliding wardrobe', 'bedroom', ['sliding']],
+        [await make('tvUnit', 'TV unit fluted', { frontStyle: 'fluted', materials: { fronts: 'Walnut veneer' } }), 'TV unit fluted', 'living', ['walnut', 'fluted']],
+        [await make('vanity', 'Bathroom vanity'), 'Bathroom vanity', 'bathroom', ['white']],
+        [await make('bookcase', 'Tall bookcase'), 'Tall bookcase', 'storage', ['oak']],
+      ];
+      const kept = [];
+      try {
+        // Five kept by the page's own code, as the dialog keeps them (the type's item, the preview's thumbnail).
+        for (const [typeId, name, category, tags] of others)
+          kept.push(await t.page.evaluate(async ([typeId, name, category, tags]) => (await import('/src/modules/furniture/library.ts')).saveToLibrary(typeId, { name, category, tags }), [typeId, name, category, tags]));
+        // The desk from the dialog.
+        await t.tool('furniture.types');
+        await t.wait(400);
+        await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: 'Walnut desk' }).first().click();
+        await t.wait(800);
+        await t.page.locator('.dialog [data-action=furniture-save-library]').click();
+        const save = t.page.locator('[data-dialog=furniture-save-library]');
+        await save.waitFor({ timeout: 10_000 });
+        await save.locator('[data-field=library-tags]').fill('walnut, home office');
+        await save.locator('[data-field=library-article]').fill('WD-140');
+        await save.locator('[data-field=library-price]').fill('2450');
+        await save.locator('.furniture-thumb img').waitFor({ timeout: 10_000 });
+        t.expect(await save.locator('[data-field=library-save-category]').inputValue() === 'office', 'a desk starts in the office category');
+        await t.shot('furniture-save-library', { of: '[data-dialog=furniture-save-library]', pad: 0 });
+        await save.locator('[data-action=library-save]').click();
+        await save.waitFor({ state: 'detached', timeout: 10_000 });
+        const entries = await t.call('furnitureLibrary.list', {});
+        kept.push(...entries.filter((e) => e.name === 'Walnut desk').map((e) => e.id));
+        t.expect(entries.length === 6 && entries.some((e) => e.name === 'Walnut desk' && e.article === 'WD-140' && e.price === 2450), 'the library keeps the six, the desk with its article and price');
+        await t.page.locator('.dialog button[title="Close"]').first().click();
+        await t.wait(300);
+
+        // Interior → My furniture…: the thumbnails; the sideboard inserted (the project's identical one reused), the desk placed.
+        await t.tool('furniture.library');
+        const lib = t.page.locator('[data-dialog=furniture-library]');
+        await lib.waitFor({ timeout: 10_000 });
+        await lib.locator('.furniture-card').nth(5).waitFor({ timeout: 10_000 });
+        await t.wait(500);
+        await t.shot('furniture-library', { of: '[data-dialog=furniture-library]', pad: 0 });
+        const types = async () => (await t.nodes()).filter((n) => n.type === 'IfcFurnitureType').length;
+        const before = await types();
+        await lib.locator('[data-library-entry="Oak sideboard"] [data-action=library-insert]').click();
+        await t.wait(600);
+        t.expect(await types() === before, 'inserting a type the project has reuses it');
+        await lib.locator('[data-library-entry="Walnut desk"] [data-action=library-place]').click();
+        await lib.waitFor({ state: 'detached', timeout: 10_000 });
+        const tool = await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool);
+        t.expect(tool === 'furniture.casework', `Place starts the casework tool (${tool})`);
+        await t.page.keyboard.press('Escape');
+      } finally {
+        for (const id of kept) await t.call('furnitureLibrary.delete', { id }).catch(() => undefined);
+      }
+    },
+  },
+  {
     // Furniture (docs/plan-furniture.md): a living room and a bedroom furnished — a sofa clicked by the wall (backed onto it),
     // armchairs, a coffee table, a table with chairs round it, a bed, bedside tables, a wardrobe, a kitchen drawn along a
     // wall — in plan by their symbols and in 3D; the types dialog with its preview; a piece's properties.

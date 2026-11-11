@@ -18,10 +18,44 @@ public sealed class TemplateLibrary(string folder)
     public string Folder { get; } = folder;
 
     /// <summary>The open project as a template's package: its set-up, no model, no versions, no issues' files.</summary>
-    public static byte[] Make(Session session)
+    public static byte[] Make(Session session, JsonArray? furniture = null)
     {
         var (entities, relations) = session.TemplateContent();
+        if (furniture is { Count: > 0 }) (entities, relations) = WithFurniture(session, entities, relations, furniture);
         return Write(session, entities, relations, session.ModuleOf);
+    }
+
+    /// <summary>
+    /// A template's content with furniture types of the user's library put in (decision 476): each item inserted as into a project
+    /// (<c>furniture.insertFromLibrary</c>: its materials matched by name or made, an identical type reused), in a session of its
+    /// own, so the open project is left alone. Refused where the edition has no furniture.
+    /// </summary>
+    public static (List<Entity> Entities, List<Relation> Relations) WithFurniture(Session session, IEnumerable<Entity> entities, IEnumerable<Relation> relations, JsonArray furniture)
+    {
+        if (session.Catalog.Command("furniture.insertFromLibrary") == null) throw new CommandException("This edition of Lapin has no furniture.");
+        var scratch = new Session(session.Catalog, session.Product);
+        scratch.Load(entities, relations, null);
+        foreach (var item in furniture)
+        {
+            var o = item as JsonObject ?? throw new CommandException("A library item is an object.");
+            // An entry of the library, or the type it holds.
+            var type = o["type"] is JsonObject t ? t : o;
+            scratch.Execute("furniture.insertFromLibrary", new JsonObject { ["item"] = type.DeepClone() }, out _);
+        }
+        return scratch.TemplateContent();
+    }
+
+    /// <summary>A template's package with furniture types of the library put in (Add to a template…).</summary>
+    public static byte[] AddFurniture(Session session, byte[] bytes, JsonArray furniture)
+    {
+        var content = Read(bytes);
+        var store = new ModelStore();
+        new History(store).Load(content.Entities, content.Relations);
+        var (es, rs) = ProjectTemplates.Strip(store, session.Catalog);
+        if (!es.Any(e => e.Class == IfcClass.BuildingStorey)) throw new CommandException("The file has no storey: it is not a Lapin project.");
+        (es, rs) = WithFurniture(session, es, rs, furniture);
+        string ModuleOf(string cls) => session.Catalog.OwnerOf(cls) ?? content.Classes.GetValueOrDefault(cls, "unknown");
+        return Write(session, es, rs, ModuleOf);
     }
 
     static byte[] Write(Session session, IEnumerable<Entity> entities, IEnumerable<Relation> relations, Func<string, string> moduleOf)

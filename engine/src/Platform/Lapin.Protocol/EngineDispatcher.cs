@@ -380,6 +380,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// <summary>The project templates kept on this computer (decision 470): the desktop's user folder; null in a host without one (the browser keeps its own).</summary>
     public TemplateLibrary? Templates { get; init; }
 
+    /// <summary>My furniture library kept on this computer (decision 476): the desktop's user folder; null in a host without one (the browser keeps its own).</summary>
+    public FurnitureLibrary? Furniture { get; init; }
+
     /// <summary>Where a long call's progress goes (the host sends it to the caller); null: nobody listens.</summary>
     public Action<JsonObject>? Progress { get; set; }
 
@@ -623,9 +626,11 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
         TemplateLibrary Library() => Templates ?? throw new CommandException("Templates are kept by the desktop app; in the browser the page keeps them.");
         static byte[] Base64(JsonNode? data)
         {
-            try { return Convert.FromBase64String((string?)data ?? throw new CommandException("The template's bytes are missing.")); }
-            catch (FormatException) { throw new CommandException("The template's bytes are not base64."); }
+            try { return Convert.FromBase64String((string?)data ?? throw new CommandException("The file's bytes are missing.")); }
+            catch (FormatException) { throw new CommandException("The file's bytes are not base64."); }
         }
+        FurnitureLibrary FurnitureShelf() => Furniture ?? throw new CommandException("My furniture is kept by the desktop app; in the browser the page keeps it.");
+        string FurnitureId() => (string?)p["id"] ?? throw new CommandException("Which furniture?");
         string PathParam() => HostFiles.Check((string?)p["path"] ?? throw new CommandException("The file's path is missing."));
         int Number() => p["number"] is JsonValue nv && nv.TryGetValue<int>(out var n) ? n : throw new CommandException("Which version?");
 
@@ -669,13 +674,20 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 return (null, TemplateLibrary.NewProject(session, bytes));
             }
             // The open project as a template's bytes (the browser keeps them); with `data`, a file's (a template or any project) instead, the open project left alone.
+            // `furniture`: items of my furniture library put in too (decision 476).
             case "template.make":
-                return (new JsonObject { ["data"] = Convert.ToBase64String(p["data"] is JsonValue ? TemplateLibrary.FromFile(session, Base64(p["data"])) : TemplateLibrary.Make(session)) }, null);
+            {
+                var furniture = p["furniture"] as JsonArray;
+                var made = p["data"] is JsonValue
+                    ? furniture is { Count: > 0 } ? TemplateLibrary.AddFurniture(session, Base64(p["data"]), furniture) : TemplateLibrary.FromFile(session, Base64(p["data"]))
+                    : TemplateLibrary.Make(session, furniture);
+                return (new JsonObject { ["data"] = Convert.ToBase64String(made) }, null);
+            }
             case "templates.list": return (Templates?.List() ?? [], null);
             case "templates.save":
             {
                 // The open project kept as a template; one of that name is replaced only when asked (`overwrite`).
-                var id = Library().Keep((string?)p["name"] ?? "", TemplateLibrary.Make(session), p["overwrite"]?.GetValue<bool>() == true);
+                var id = Library().Keep((string?)p["name"] ?? "", TemplateLibrary.Make(session, p["furniture"] as JsonArray), p["overwrite"]?.GetValue<bool>() == true);
                 return (id == null ? new JsonObject { ["exists"] = true } : new JsonObject { ["id"] = id }, null);
             }
             case "templates.import":
@@ -692,6 +704,38 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 var id = (string?)p["id"] ?? throw new CommandException("Which template?");
                 return (Deliver(Library().Bytes(id), TemplateLibrary.IdOf(id) + ".lapin"), null);
             }
+            // Items of my furniture library put into a template of the library (decision 476): {id, furniture: [entries or types]}.
+            case "templates.addFurniture":
+            {
+                var id = (string?)p["id"] ?? throw new CommandException("Which template?");
+                var furniture = p["furniture"] as JsonArray ?? throw new CommandException("Which furniture?");
+                Library().Keep(id, TemplateLibrary.AddFurniture(session, Library().Bytes(id), furniture), overwrite: true);
+                return (null, null);
+            }
+            // ---- my furniture library (decision 476): kept by the desktop's engine; the browser keeps its entries and asks only to check, pack and unpack them.
+            case "furnitureLibrary.list": return (new JsonArray([.. (Furniture?.List() ?? []).Select(e => (JsonNode)e)]), null);
+            case "furnitureLibrary.get": return (FurnitureShelf().Get(FurnitureId()), null);
+            case "furnitureLibrary.add": return (new JsonObject { ["id"] = FurnitureShelf().Add(p["entry"] as JsonObject ?? throw new CommandException("Which furniture?")) }, null);
+            case "furnitureLibrary.update": return (FurnitureShelf().Update(FurnitureId(), p["patch"] as JsonObject ?? []), null);
+            case "furnitureLibrary.duplicate": return (new JsonObject { ["id"] = FurnitureShelf().Duplicate(FurnitureId()) }, null);
+            case "furnitureLibrary.delete": FurnitureShelf().Delete(FurnitureId()); return (null, null);
+            case "furnitureLibrary.export":
+            {
+                // `ids`: those entries (none: the whole library), to `path` or handed back as bytes.
+                var ids = p["ids"] is JsonArray ia ? ia.Select(x => (string?)x).OfType<string>().ToList() : null;
+                var name = ids is { Count: 1 } ? TemplateLibrary.IdOf((string?)FurnitureShelf().Get(ids[0])["name"] ?? "Furniture") : "My furniture";
+                return (Deliver(FurnitureShelf().Export(ids), name + FurnitureLibrary.Suffix), null);
+            }
+            case "furnitureLibrary.import":
+            {
+                var bytes = (string?)p["path"] is { Length: > 0 } fp ? File.ReadAllBytes(HostFiles.Check(fp)) : Base64(p["data"]);
+                var (added, skipped) = FurnitureShelf().Import(bytes);
+                return (new JsonObject { ["added"] = new JsonArray([.. added.Select(x => (JsonNode)x)]), ["skipped"] = skipped }, null);
+            }
+            case "furnitureLibrary.check": return (FurnitureLibrary.Check(p["entry"] as JsonObject ?? throw new CommandException("Which furniture?")), null);
+            case "furnitureLibrary.pack":
+                return (new JsonObject { ["data"] = Convert.ToBase64String(FurnitureLibrary.Pack((p["entries"] as JsonArray ?? []).OfType<JsonObject>())) }, null);
+            case "furnitureLibrary.unpack": return (new JsonArray([.. FurnitureLibrary.Unpack(Base64(p["data"])).Select(e => (JsonNode)e)]), null);
             case "templates.delete":
                 Library().Delete((string?)p["id"] ?? throw new CommandException("Which template?"));
                 return (null, null);

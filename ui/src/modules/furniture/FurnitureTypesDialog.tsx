@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Copy, Plus, Trash2, X } from 'lucide-react';
+import { BookmarkPlus, Copy, Library, Plus, Trash2, X } from 'lucide-react';
 import { useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
@@ -15,6 +15,7 @@ import { LengthField } from '../../shell/cells';
 import { KitchenUnitsEditor } from './KitchenUnitsEditor';
 import { CaseworkEditor } from './CaseworkEditor';
 import { ParamField } from './ParamField';
+import { saveTypeToLibrary } from './library';
 import { cutListRows, type CaseworkCatalog } from './casework';
 import {
   CHOICE_LABELS, ROLE_FALLBACK, ROLE_LABELS, TYPE_CLASS, appliesTo, chooseType, kindOf, planBox, planPaths, sizeOf, specOf, useTypesDialog,
@@ -135,6 +136,7 @@ export function FurnitureTypesDialog() {
                 </select>
               )}
               <button type="button" className="btn small" data-action="furniture-new-type" onClick={() => void create()}><Plus size={13} /> New type</button>
+              <button type="button" className="btn small" data-action="furniture-my-library" title="Your own furniture types, for every project" onClick={() => useUi.setState({ dialog: 'furnitureLibrary' })}><Library size={13} /> My furniture…</button>
             </div>
             {groups.map((g) => {
               const of = types.filter((t) => kinds.find((k) => k.key === kindOf(t))?.group === g).sort((a, b) => a.name.localeCompare(b.name));
@@ -161,6 +163,7 @@ export function FurnitureTypesDialog() {
               <div className="row" style={{ gap: 6, alignItems: 'center' }}>
                 <span className="eyebrow">{kind.label}</span>
                 <span className="grow" />
+                <button type="button" className="btn small" data-action="furniture-save-library" onClick={() => saveTypeToLibrary(type.id)} title="Keep this type in your own library, to use it in other projects"><BookmarkPlus size={13} /> Save to my library…</button>
                 <button type="button" className="btn small" onClick={() => void duplicate()} title="A copy of this type, to change"><Copy size={13} /> Duplicate</button>
               </div>
               <div className="furniture-edit-grid">

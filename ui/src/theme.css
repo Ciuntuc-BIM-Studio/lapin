@@ -1882,6 +1882,21 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .casework-cutlist td:nth-child(3), .casework-cutlist th:nth-child(3) { white-space: nowrap; }
 .casework-cutlist td, .casework-cutlist th { padding: 1px 2px; text-align: left; border-bottom: 1px solid var(--line, #d8d2c6); }
 .casework-cutlist tr.front td { font-style: italic; }
+/* My furniture library (decision 476): a grid of thumbnails. */
+.furniture-library { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin: 10px 0; max-height: 60vh; overflow: auto; }
+.furniture-card { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid var(--line, #d8d2c6); border-radius: 6px; background: var(--bg); min-width: 0; }
+.furniture-thumb { display: grid; place-items: center; width: 100%; max-width: 160px; aspect-ratio: 1; margin: 0 auto; background: var(--panel, #f4f1ea); border-radius: 4px; overflow: hidden; }
+.furniture-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.furniture-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.furniture-card-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.furniture-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.furniture-tags .chip { padding: 0 5px; border-radius: 8px; background: var(--panel, #f4f1ea); border: 1px solid var(--line, #d8d2c6); font-size: 10px; }
+.furniture-card-actions { gap: 3px; align-items: center; flex-wrap: wrap; }
+.furniture-card-template { gap: 4px; align-items: center; }
+.furniture-card-template select { flex: 1; min-width: 0; }
+.furniture-save .furniture-thumb { flex: 0 0 140px; }
+.furniture-save .fields { flex: 1; min-width: 0; }
+.furniture-save .fields input, .furniture-save .fields select { width: 100%; box-sizing: border-box; }
 @media (max-width: 760px) { .furniture-edit-grid { grid-template-columns: 1fr; } }
 .furniture-edit dl.fields dd input:not([type=checkbox]), .furniture-edit dl.fields dd select { width: 100%; }
 .dialog[data-dialog=furniture-types] .type-list .tree-item { white-space: nowrap; }

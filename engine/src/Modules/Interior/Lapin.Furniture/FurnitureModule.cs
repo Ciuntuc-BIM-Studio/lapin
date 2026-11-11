@@ -105,6 +105,17 @@ public sealed class FurnitureModule : ILapinModule
             return new JsonObject { ["id"] = copy.Id };
         });
 
+        // My furniture library (decision 476): a type as the library keeps it, {typeId} → {class, name, predefinedType, spec, materials}.
+        r.Query("libraryItem", (q, a) => LibraryItems.Of(q.Model, RequireType(q.Model, (string?)a["typeId"])));
+
+        // A library item into the project, {item} → {id, reused}: its materials matched by name or made, an identical type reused.
+        r.Command("insertFromLibrary", "Insert from my furniture", (ctx, a) =>
+        {
+            var item = a["item"] as JsonObject ?? throw new CommandException("Which library item?");
+            var (type, reused) = LibraryItems.Insert(ctx, item);
+            return new JsonObject { ["id"] = type.Id, ["reused"] = reused };
+        });
+
         // A piece at a point: {storeyId, typeId? | kind?, x, y, rotation?, against? (true: backed onto the nearest wall's face), offset?, length?} → {id, against}.
         r.Command("place", "Furniture", (ctx, a) =>
         {

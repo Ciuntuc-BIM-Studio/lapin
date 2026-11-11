@@ -189,6 +189,33 @@ Podgląd obok pól pokazuje symbol typu w rzucie i jego widok z przodu na bież�
 
 ![Okno Typy mebli z sofą i jej szezlongiem](shots/furniture-types.webp)
 
+## Moja biblioteka mebli
+
+Typ, który dobrze skonfigurowałeś (kuchnię, szafę, biurko z płyt, sofę), możesz zachować do każdego projektu w **Moje meble**, Twojej własnej bibliotece na tym komputerze.
+
+**Zapisz w mojej bibliotece…** w **Typy mebli** zachowuje zaznaczony typ. Podaj:
+
+- **nazwę**;
+- **kategorię**: kuchnia, salon, sypialnia, łazienka, biuro, przechowywanie lub inna;
+- **etykiety**, oddzielone przecinkami (dąb, nowoczesny…);
+- **kod artykułu** i **cenę orientacyjną**, jeśli chcesz. Oba są Twoje: Lapin nie dostarcza cen.
+
+Miniatura jest rysowana z podglądu typu. Typ zabiera wszystko, czego potrzebuje: swoją konfigurację i materiały z ich kolorami, kreskowaniami i obrazami.
+
+![Zapisz w mojej bibliotece: nazwa, kategoria, etykiety, kod artykułu i cena obok miniatury](shots/furniture-save-library.webp)
+
+**Wnętrza → Moje meble…** (lub **Moje meble…** w Typy mebli) pokazuje bibliotekę jako miniatury. Szukaj w niej według nazwy, etykiety, artykułu lub rodzaju i filtruj według kategorii i etykiety. Dla każdej pozycji:
+
+- **Wstaw** umieszcza typ w otwartym projekcie i wybiera go dla jego narzędzia. Materiał, który projekt już ma pod tą nazwą, jest używany bez zmian, a pozostałe są tworzone. Jeśli projekt ma już identyczny typ, używany jest ten i nie powstaje kopia. Każde wstawienie to jeden krok cofania.
+- **Ustaw** wstawia go i uruchamia jego narzędzie, więc następne kliknięcie stawia mebel. Kuchnię rysuje się wzdłuż ściany.
+- **Zmień nazwę**, **Etykiety**, **Duplikuj** i **Usuń** zmieniają tylko bibliotekę. Projekty, które już mają ten typ, go zachowują.
+- **Eksportuj** zapisuje pozycję jako plik `.lapinlib`. **Eksportuj wszystko…** zapisuje całą bibliotekę, a **Importuj…** wczytuje ją z powrotem. Import pomija pozycję, która już jest w bibliotece bez zmian. Pozycja o tym samym id, ale ze zmienioną zawartością, jest dodawana obok tej, którą masz, więc nic nie zostaje nadpisane.
+- **Dodaj do szablonu…** wkłada typ do jednego z Twoich szablonów projektu, więc każdy projekt z niego rozpoczęty ma ten typ.
+
+![Moje meble: miniatury biblioteki, przeszukane i przefiltrowane, każda gotowa do wstawienia lub ustawienia](shots/furniture-library.webp)
+
+Na komputerze biblioteka jest przechowywana w Twoim folderze Lapin, jeden plik na pozycję. W przeglądarce przechowuje ją przeglądarka. Aby przenieść ją między nimi lub na inny komputer, wyeksportuj ją i zaimportuj plik. Szablon projektu zachowuje typy mebli projektu, z którego jest zapisany. **Zapisz jako szablon…** może też dodać wszystkie typy z Moich mebli (**Dodaj wszystkie typy z Moich mebli**).
+
 ## Zestawienia i IFC
 
 **Zestawienie mebli** wymienia każdy typ z jego rodzajem, wymiarami, liczbą mebli i pomieszczeniami, w których stoją, wraz z sumą. **Meble według pomieszczeń** wymienia każde pomieszczenie z tym, co w nim stoi. Oba są w przeglądarce projektu, w **Zestawieniach**, i drukują się oraz eksportują jak każde zestawienie. Typ mebla z pozycją kosztorysową jest wyceniany za sztukę w kosztorysie.

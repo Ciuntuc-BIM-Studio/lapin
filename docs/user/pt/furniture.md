@@ -189,6 +189,33 @@ A pré-visualização ao lado dos campos mostra o símbolo em planta e a frente 
 
 ![O diálogo Tipos de mobiliário com um sofá e a sua chaise](shots/furniture-types.webp)
 
+## A minha biblioteca de mobiliário
+
+Um tipo que configurou bem (uma cozinha, um armário, uma secretária de painéis, um sofá) pode ser guardado para todos os projetos em **O meu mobiliário**, a sua própria biblioteca neste computador.
+
+**Guardar na minha biblioteca…** em **Tipos de mobiliário** guarda o tipo selecionado. Indique:
+
+- um **nome**;
+- uma **categoria**: cozinha, sala, quarto, casa de banho, escritório, arrumação ou outra;
+- **identificadores**, separados por vírgulas (carvalho, moderno…);
+- um **código de artigo** e um **preço indicativo**, se quiser. Ambos são seus: o Lapin não inclui preços.
+
+A miniatura é desenhada a partir da pré-visualização do tipo. O tipo leva consigo tudo o que precisa: a sua configuração e os seus materiais, com as suas cores, tramas e imagens.
+
+![Guardar na minha biblioteca: o nome, a categoria, os identificadores, o código de artigo e o preço junto à miniatura](shots/furniture-save-library.webp)
+
+**Interiores → O meu mobiliário…** (ou **O meu mobiliário…** em Tipos de mobiliário) mostra a biblioteca como miniaturas. Pesquise-a por nome, identificador, artigo ou tipo, e filtre-a por categoria e por identificador. Para cada item:
+
+- **Inserir** coloca o tipo no projeto aberto e escolhe-o para a sua ferramenta. Um material que o projeto já tenha com esse nome é usado tal como está, e os outros são criados. Se o projeto já tem um tipo idêntico, esse é usado e não se faz cópia. Cada inserção é um passo de anular.
+- **Colocar** insere-o e inicia a sua ferramenta, de modo que o clique seguinte põe uma peça. Uma cozinha desenha-se ao longo de uma parede.
+- **Renomear**, **Identificadores**, **Duplicar** e **Excluir** alteram apenas a biblioteca. Os projetos que já têm o tipo mantêm-no.
+- **Exportar** escreve o item como um ficheiro `.lapinlib`. **Exportar tudo…** escreve toda a biblioteca, e **Importar…** lê um de volta. A importação ignora um item que já está na biblioteca sem alterações. Um item com o mesmo id mas conteúdo alterado é adicionado ao lado do que tem, de modo que nada é substituído.
+- **Adicionar a um modelo…** coloca o tipo num dos seus modelos de projeto, de modo que todo o projeto iniciado a partir dele tenha o tipo.
+
+![O meu mobiliário: as miniaturas da biblioteca, pesquisadas e filtradas, cada uma pronta a inserir ou a colocar](shots/furniture-library.webp)
+
+No computador a biblioteca fica na sua pasta Lapin, um ficheiro por item. No navegador é guardada pelo navegador. Para a passar de um para o outro, ou para outro computador, exporte-a e importe o ficheiro. Um modelo de projeto guarda os tipos de mobiliário do projeto a partir do qual é guardado. **Guardar como modelo…** também pode adicionar todos os tipos de O meu mobiliário (**Adicionar todos os tipos de O meu mobiliário**).
+
 ## Tabelas e IFC
 
 **Tabela de mobiliário** lista cada tipo com o seu gênero, tamanho, quantos móveis o usam e os ambientes onde estão, com o total. **Mobiliário por ambiente** lista cada ambiente com o que há nele. As duas ficam no navegador do projeto, em **Tabelas**, e são impressas e exportadas como qualquer tabela. Um tipo de mobiliário com um item de custo é orçado por peça no orçamento.

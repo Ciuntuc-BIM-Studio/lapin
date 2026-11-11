@@ -189,6 +189,33 @@ Die Vorschau neben den Feldern zeigt das Grundrisssymbol und die Vorderansicht d
 
 ![Der Dialog Möbeltypen mit einem Sofa und seiner Recamiere](shots/furniture-types.webp)
 
+## Meine Möbelbibliothek
+
+Einen Typ, den Sie gut eingerichtet haben (eine Küche, einen Kleiderschrank, einen Schreibtisch aus Platten, ein Sofa), können Sie für jedes Projekt in **Meine Möbel** aufbewahren, Ihrer eigenen Bibliothek auf diesem Computer.
+
+**In meiner Bibliothek speichern…** in **Möbeltypen** bewahrt den gewählten Typ auf. Geben Sie an:
+
+- einen **Namen**;
+- eine **Kategorie**: Küche, Wohnzimmer, Schlafzimmer, Bad, Büro, Stauraum oder Sonstiges;
+- **Beschriftungen**, durch Kommas getrennt (Eiche, modern…);
+- einen **Artikelcode** und einen **unverbindlichen Preis**, wenn Sie möchten. Beides gehört Ihnen: Lapin liefert keine Preise mit.
+
+Das Vorschaubild wird aus der Vorschau des Typs gezeichnet. Der Typ nimmt alles mit, was er braucht: seine Konfiguration und seine Materialien mit ihren Farben, Schraffuren und Bildern.
+
+![In meiner Bibliothek speichern: der Name, die Kategorie, die Beschriftungen, der Artikelcode und der Preis neben dem Vorschaubild](shots/furniture-save-library.webp)
+
+**Innenausbau → Meine Möbel…** (oder **Meine Möbel…** in Möbeltypen) zeigt die Bibliothek als Vorschaubilder. Durchsuchen Sie sie nach Name, Beschriftung, Artikel oder Art und filtern Sie sie nach Kategorie und nach Beschriftung. Für jeden Eintrag:
+
+- **Einfügen** setzt den Typ in das geöffnete Projekt und wählt ihn für sein Werkzeug. Ein Material, das das Projekt unter diesem Namen schon hat, wird unverändert verwendet, die anderen werden angelegt. Hat das Projekt schon einen identischen Typ, wird dieser verwendet und keine Kopie angelegt. Jedes Einfügen ist ein Schritt für Rückgängig.
+- **Platzieren** fügt ihn ein und startet sein Werkzeug, sodass der nächste Klick ein Stück setzt. Eine Küche wird entlang einer Wand gezeichnet.
+- **Umbenennen**, **Beschriftungen**, **Duplizieren** und **Löschen** ändern nur die Bibliothek. Projekte, die den Typ schon haben, behalten ihn.
+- **Exportieren** schreibt den Eintrag als `.lapinlib`-Datei. **Alle exportieren…** schreibt die ganze Bibliothek, und **Importieren…** liest eine wieder ein. Der Import überspringt einen Eintrag, der unverändert schon in der Bibliothek ist. Ein Eintrag mit derselben Kennung, aber geändertem Inhalt wird neben dem vorhandenen hinzugefügt, sodass nichts überschrieben wird.
+- **Zu einer Vorlage hinzufügen…** setzt den Typ in eine Ihrer Projektvorlagen, sodass jedes daraus begonnene Projekt den Typ hat.
+
+![Meine Möbel: die Vorschaubilder der Bibliothek, durchsucht und gefiltert, jedes bereit zum Einfügen oder Platzieren](shots/furniture-library.webp)
+
+Auf dem Desktop wird die Bibliothek in Ihrem Lapin-Ordner aufbewahrt, eine Datei pro Eintrag. Im Browser bewahrt sie der Browser auf. Um sie zwischen beiden oder auf einen anderen Computer zu bringen, exportieren Sie sie und importieren die Datei. Eine Projektvorlage behält die Möbeltypen des Projekts, aus dem sie gespeichert wird. **Als Vorlage speichern…** kann auch alle Typen aus Meine Möbel hinzufügen (**Alle Typen aus Meine Möbel hinzufügen**).
+
 ## Listen und IFC
 
 **Möbelliste** führt jeden Typ mit seiner Art, Größe, der Zahl der Möbel und den Räumen, in denen sie stehen, mit der Summe. **Möbel nach Raum** führt jeden Raum mit dem, was darin steht. Beide stehen im Projektbrowser unter **Bauteillisten** und werden wie jede Liste gedruckt und exportiert. Ein Möbeltyp mit einer Kostenposition wird in der Kostenberechnung pro Stück bepreist.

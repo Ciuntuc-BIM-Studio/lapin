@@ -189,6 +189,33 @@ Forhåndsvisningen ved siden af felterne viser typens plansymbol og forside, men
 
 ![Dialogen Møbeltyper med en sofa og dens chaiselong](shots/furniture-types.webp)
 
+## Mit møbelbibliotek
+
+En type, du har konfigureret godt (et køkken, et garderobeskab, et skrivebord af plader, en sofa), kan gemmes til alle projekter i **Mine møbler**, dit eget bibliotek på denne computer.
+
+**Gem i mit bibliotek…** i **Møbeltyper** gemmer den valgte type. Giv den:
+
+- et **navn**;
+- en **kategori**: køkken, stue, soveværelse, badeværelse, kontor, opbevaring eller andet;
+- **mærker**, adskilt af kommaer (eg, moderne…);
+- en **varekode** og en **vejledende pris**, hvis du vil. Begge er dine egne: Lapin leverer ingen priser.
+
+Miniaturebilledet tegnes ud fra typens forhåndsvisning. Typen tager alt med, hvad den har brug for: sin konfiguration og sine materialer med deres farver, skraveringer og billeder.
+
+![Gem i mit bibliotek: navnet, kategorien, mærkerne, varekoden og prisen ved siden af miniaturebilledet](shots/furniture-save-library.webp)
+
+**Interiør → Mine møbler…** (eller **Mine møbler…** i Møbeltyper) viser biblioteket som miniaturebilleder. Søg i det efter navn, mærke, vare eller art, og filtrér det efter kategori og efter mærke. For hvert element:
+
+- **Indsæt** lægger typen i det åbne projekt og vælger den til sit værktøj. Et materiale, som projektet allerede har med det navn, bruges, som det er, og de andre oprettes. Hvis projektet allerede har en identisk type, bruges den, og der laves ingen kopi. Hver indsættelse er ét trin at fortryde.
+- **Placér** indsætter den og starter dens værktøj, så næste klik sætter et stykke ned. Et køkken tegnes langs en væg.
+- **Omdøb**, **Mærker**, **Duplikér** og **Slet** ændrer kun biblioteket. Projekter, der allerede har typen, beholder den.
+- **Eksportér** skriver elementet som en `.lapinlib`-fil. **Eksportér alle…** skriver hele biblioteket, og **Importér…** læser en tilbage. Import springer et element over, som allerede er i biblioteket uændret. Et element med samme id, men ændret indhold, tilføjes ved siden af det, du har, så intet overskrives.
+- **Føj til en skabelon…** lægger typen i en af dine projektskabeloner, så ethvert projekt startet ud fra den har typen.
+
+![Mine møbler: bibliotekets miniaturebilleder, søgt og filtreret, hvert klar til at blive indsat eller placeret](shots/furniture-library.webp)
+
+På skrivebordet gemmes biblioteket i din Lapin-mappe, én fil pr. element. I browseren gemmer browseren det. For at flytte det mellem de to eller til en anden computer eksporterer du det og importerer filen. En projektskabelon beholder møbeltyperne fra det projekt, den gemmes fra. **Gem som skabelon…** kan også tilføje alle typer i Mine møbler (**Føj alle typer i Mine møbler til**).
+
 ## Skemaer og IFC
 
 **Møbelskema** viser hver type med dens slags, størrelse, antallet af møbler og de rum, de står i, med totalen. **Møbler pr. rum** viser hvert rum med det, der står i det. Begge ligger i projektbrowseren under **Skemaer** og udskrives og eksporteres som ethvert skema. En møbeltype med en prispost prissættes pr. stk. i overslaget.

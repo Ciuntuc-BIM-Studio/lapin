@@ -189,6 +189,33 @@ Previzualizarea de lângă câmpuri arată simbolul din plan și fața tipului p
 
 ![Dialogul Furniture types cu o canapea și șezlongul ei](shots/furniture-types.webp)
 
+## Biblioteca mea de mobilier
+
+Un tip configurat bine (o bucătărie, un dulap, un birou din plăci, o canapea) poate fi păstrat pentru orice proiect în **Mobilierul meu**, biblioteca ta de pe acest calculator.
+
+**Salvează în biblioteca mea…** din **Tipuri de mobilier** păstrează tipul ales. Îi dai:
+
+- un **nume**;
+- o **categorie**: bucătărie, living, dormitor, baie, birou, depozitare sau altele;
+- **etichete**, despărțite prin virgulă (stejar, modern…);
+- un **cod de articol** și un **preț orientativ**, dacă vrei. Amândouă sunt ale tale: Lapin nu vine cu prețuri.
+
+Miniatura e desenată din previzualizarea tipului. Tipul pleacă cu tot ce îi trebuie: configurația și materialele lui, cu culorile, hașurile și imaginile lor.
+
+![Salvează în biblioteca mea: numele, categoria, etichetele, codul de articol și prețul, lângă miniatură](shots/furniture-save-library.webp)
+
+**Interior → Mobilierul meu…** (sau **Mobilierul meu…** din Tipuri de mobilier) arată biblioteca în miniaturi. O cauți după nume, etichetă, articol sau fel și o filtrezi după categorie și după etichetă. Pentru fiecare element:
+
+- **Inserează** pune tipul în proiectul deschis și îl alege pentru unealta lui. Un material pe care proiectul îl are deja cu acel nume e folosit așa cum e, iar celelalte se creează. Dacă proiectul are deja un tip identic, se folosește acela și nu se face o copie. Fiecare inserare e un singur pas de anulare.
+- **Așază** îl inserează și pornește unealta lui, ca următorul clic să pună o piesă. O bucătărie se desenează de-a lungul unui perete.
+- **Redenumește**, **Etichete**, **Duplică** și **Șterge** schimbă doar biblioteca. Proiectele care au deja tipul îl păstrează.
+- **Exportă** scrie elementul ca fișier `.lapinlib`. **Exportă tot…** scrie toată biblioteca, iar **Importă…** citește un fișier înapoi. Importul sare peste un element care e deja în bibliotecă neschimbat. Un element cu același id, dar cu alt conținut, se adaugă lângă cel pe care îl ai, ca nimic să nu fie suprascris.
+- **Adaugă într-un șablon…** pune tipul într-unul din șabloanele tale de proiect, ca orice proiect pornit din el să aibă tipul.
+
+![Mobilierul meu: miniaturile bibliotecii, căutate și filtrate, fiecare gata de inserat sau de așezat](shots/furniture-library.webp)
+
+Pe desktop biblioteca e păstrată în dosarul tău Lapin, câte un fișier pentru fiecare element. În browser o păstrează browserul. Ca s-o muți între cele două sau pe alt calculator, o exporți și imporți fișierul. Un șablon de proiect păstrează tipurile de mobilier ale proiectului din care e salvat. **Salvează ca șablon…** poate adăuga și toate tipurile din Mobilierul meu (**Adaugă toate tipurile din Mobilierul meu**).
+
 ## Extrase și IFC
 
 **Furniture schedule** (extrasul de mobilier) arată fiecare tip cu felul, dimensiunile, numărul de piese și încăperile în care stau, plus totalul. **Furniture by room** (mobilierul pe încăperi) arată ce stă în fiecare încăpere. Amândouă sunt în navigatorul proiectului, la **Schedules**, și se tipăresc și se exportă ca orice extras. Un tip de mobilier cu articol de deviz se plătește pe bucată în deviz.

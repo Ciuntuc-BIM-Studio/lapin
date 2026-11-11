@@ -32,11 +32,12 @@ export const defaultTemplateOf = (chosen: string | null, list: TemplateInfo[]) =
 export interface TemplateRow extends TemplateInfo { data: string }
 
 /** Where the browser keeps its rows (IndexedDB; a map in the tests or where IndexedDB is not there). */
-export interface TemplateRows {
-  all(): Promise<TemplateRow[]>;
-  put(row: TemplateRow): Promise<void>;
+export interface Rows<T extends { id: string }> {
+  all(): Promise<T[]>;
+  put(row: T): Promise<void>;
   remove(id: string): Promise<void>;
 }
+export type TemplateRows = Rows<TemplateRow>;
 
 const bytesOf = (base64: string) => Math.floor((base64.length * 3) / 4);
 
@@ -79,10 +80,9 @@ export class BrowserTemplates {
   remove(id: string): Promise<void> { return this.rows.remove(id); }
 }
 
-/** The rows in the page's IndexedDB (`lapin-templates`), in memory where there is none. */
-function indexedRows(): TemplateRows {
-  const memory = new Map<string, TemplateRow>();
-  const DB = 'lapin-templates', STORE = 'templates';
+/** Rows kept in the page's IndexedDB (the templates' `lapin-templates`, my furniture's `lapin-furniture`), in memory where there is none. */
+export function indexedRows<T extends { id: string }>(DB = 'lapin-templates', STORE = 'templates', what = 'template'): Rows<T> {
+  const memory = new Map<string, T>();
   const open = (): Promise<IDBDatabase | null> => new Promise((resolve) => {
     if (typeof indexedDB === 'undefined') { resolve(null); return; }
     try {
@@ -99,19 +99,19 @@ function indexedRows(): TemplateRows {
       try {
         const req = run(db.transaction(STORE, mode).objectStore(STORE));
         req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(new Error('The browser did not keep the template (its storage may be full).'));
+        req.onerror = () => reject(new Error(`The browser did not keep the ${what} (its storage may be full).`));
       } catch (e) { reject(e instanceof Error ? e : new Error(String(e))); }
     });
   }
   return {
-    all: async () => (await tx<TemplateRow[]>('readonly', (s) => s.getAll() as IDBRequest<TemplateRow[]>)) ?? [...memory.values()],
+    all: async () => (await tx<T[]>('readonly', (s) => s.getAll() as IDBRequest<T[]>)) ?? [...memory.values()],
     put: async (row) => { if ((await tx('readwrite', (s) => s.put(row))) === undefined) memory.set(row.id, row); },
     remove: async (id) => { if ((await tx('readwrite', (s) => s.delete(id))) === undefined) memory.delete(id); },
   };
 }
 
 let browser: BrowserTemplates | null = null;
-const inBrowser = () => (browser ??= new BrowserTemplates(indexedRows()));
+const inBrowser = () => (browser ??= new BrowserTemplates(indexedRows<TemplateRow>()));
 
 /** The list the dialogs and the start screen show, read again after each change. */
 export const useTemplates = create<{ list: TemplateInfo[]; read: boolean }>(() => ({ list: [], read: false }));
@@ -122,14 +122,25 @@ export async function refreshTemplates(): Promise<TemplateInfo[]> {
   return list;
 }
 
-/** The open project kept as a template: its id, or 'exists' (nothing written) when one has the name and replacing it was not asked. */
-export async function saveAsTemplate(name: string, overwrite = false): Promise<string | 'exists'> {
+/**
+ * What a module may offer to put into a template as it is saved (Save as template…'s check boxes): my furniture library's
+ * items (decision 476). `params` gives what the engine's `templates.save` / `template.make` take for it (`furniture`).
+ */
+export interface TemplateAddition { id: string; label: string; shown: () => boolean; params: () => Promise<Record<string, unknown>> }
+export const templateAdditions: TemplateAddition[] = [];
+export function addTemplateAddition(a: TemplateAddition): void {
+  const i = templateAdditions.findIndex((x) => x.id === a.id);
+  if (i >= 0) templateAdditions[i] = a; else templateAdditions.push(a);
+}
+
+/** The open project kept as a template: its id, or 'exists' (nothing written) when one has the name and replacing it was not asked. `extra`: what additions put in. */
+export async function saveAsTemplate(name: string, overwrite = false, extra: Record<string, unknown> = {}): Promise<string | 'exists'> {
   let r: string | 'exists';
   if (engineInBrowser) {
-    const made = await engine.call<{ data: string }>('template.make', undefined, { timeoutMs: LONG_TIMEOUT_MS });
+    const made = await engine.call<{ data: string }>('template.make', extra, { timeoutMs: LONG_TIMEOUT_MS });
     r = await inBrowser().keep(name, made.data, overwrite);
   } else {
-    const o = await engine.call<{ id?: string; exists?: boolean }>('templates.save', { name, overwrite }, { timeoutMs: LONG_TIMEOUT_MS });
+    const o = await engine.call<{ id?: string; exists?: boolean }>('templates.save', { ...extra, name, overwrite }, { timeoutMs: LONG_TIMEOUT_MS });
     r = o.exists ? 'exists' : o.id!;
   }
   await refreshTemplates();
@@ -172,6 +183,17 @@ export async function importTemplate(file: { path?: string; data?: string }, nam
   }
   await refreshTemplates();
   return r;
+}
+
+/** Furniture types of my library put into a template of the library (decision 476): `furniture` the entries (or their types). */
+export async function addFurnitureToTemplate(id: string, furniture: unknown[]): Promise<void> {
+  if (engineInBrowser) {
+    const made = await engine.call<{ data: string }>('template.make', { data: await inBrowser().data(id), furniture }, { timeoutMs: LONG_TIMEOUT_MS });
+    await inBrowser().keep(id, made.data, true);
+  } else {
+    await engine.call('templates.addFurniture', { id, furniture }, { timeoutMs: LONG_TIMEOUT_MS });
+  }
+  await refreshTemplates();
 }
 
 /** A template's bytes (base64), to export in the browser. */

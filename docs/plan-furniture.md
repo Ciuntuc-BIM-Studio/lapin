@@ -94,9 +94,13 @@ Cerut de utilizator la 11.11.2026, după bucătăria cu corpuri proprii (decizia
 - Biblioteca: Kenney Furniture Kit (CC0, https://kenney.nl/assets/furniture-kit) și Poly Haven (CC0, de verificat pe polyhaven.com/license înainte de folosire).
 - Licențele: fiecare model cu sursa și licența lui într-un registru verificat de un script în stilul `pnpm check:licenses` (un model fără licență permisivă înregistrată nu intră în build).
 
-### Etapa 3: configurații salvate (de făcut)
+### Etapa 3: configurații salvate, făcută (decizia 476)
 
 - O configurație bună devine un `IfcFurnitureType` în biblioteca utilizatorului și în șabloanele de proiect (decizia 470), ca să fie refolosită între proiecte.
+- **Biblioteca mea de mobilier**: pe desktop un fișier JSON pe element în `<user-dir>/furniture/` (`FurnitureLibrary`, Lapin.Protocol), în browser IndexedDB; un element are nume, categorie, etichete, cod de articol, preț orientativ (al utilizatorului), miniatură (fața din previzualizarea motorului) și tipul cu materialele lui după valoare (`furniture.libraryItem`).
+- **Inserarea** (`furniture.insertFromLibrary`, un pas): materialele după nume (folosite sau create), un tip identic refolosit, altfel un tip nou cu GlobalId nou. Specul e păstrat opac: un tip din modele mesh (etapa 2) se salvează la fel, iar o ediție care nu are felul îl refuză cu numele lui.
+- **Fișierul `.lapinlib`**: JSON `{format: "lapin-furniture-library", version: 1, items}`, un element sau toată biblioteca; la import nimic nu e suprascris (același conținut sărit, alt conținut sub un id nou).
+- **Șabloanele**: păstrează deja tipurile proiectului; Salvează ca șablon… poate adăuga toate tipurile bibliotecii, iar un element se poate adăuga într-un șablon existent.
 
 Rămas din etapa 1, dacă e cerut: corpuri suprapuse ca elemente separate, colțuri (L) pentru corpuri, cant (benzi de margine) și feronerie în listă, prețuri pe placă în deviz, export al listei de debitare pentru optimizare.
 

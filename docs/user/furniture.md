@@ -189,6 +189,33 @@ The preview beside the fields shows the type's plan symbol and its front as you 
 
 ![The Furniture types dialog with a sofa and its chaise longue](shots/furniture-types.webp)
 
+## My furniture library
+
+A type you have configured well (a kitchen, a wardrobe, a desk of boards, a sofa) can be kept for every project in **My furniture**, your own library on this computer.
+
+**Save to my library…** in **Furniture types** keeps the selected type. Give it:
+
+- a **name**;
+- a **category**: kitchen, living, bedroom, bathroom, office, storage or other;
+- **tags**, separated by commas (oak, modern…);
+- an **article code** and an **indicative price**, if you want them. Both are your own: Lapin ships no prices.
+
+Its thumbnail is drawn from the type's preview. The type goes with everything it needs: its configuration and its materials, with their colours, hatches and images.
+
+![Save to my library: the name, category, tags, article code and price beside the thumbnail](shots/furniture-save-library.webp)
+
+**Interior → My furniture…** (or **My furniture…** in Furniture types) shows the library as thumbnails. Search it by name, tag, article or kind, and filter it by category and by tag. For each item:
+
+- **Insert** puts the type into the open project and chooses it for its tool. A material the project already has by that name is used as it is, and the others are made. If the project already has an identical type, that one is used and no copy is made. Each insert is one undo step.
+- **Place** inserts it and starts its tool, so the next click puts a piece down. A kitchen is drawn along a wall.
+- **Rename**, **Tags**, **Duplicate** and **Delete** change the library only. Projects that already have the type keep it.
+- **Export** writes the item as a `.lapinlib` file. **Export all…** writes the whole library, and **Import…** reads one back. Import skips an item that is already in the library unchanged. An item with the same id but changed content is added beside the one you have, so nothing is overwritten.
+- **Add to a template…** puts the type into one of your project templates, so every project started from it has the type.
+
+![My furniture: the library's thumbnails, searched and filtered, each ready to insert or place](shots/furniture-library.webp)
+
+On the desktop the library is kept in your Lapin folder, one file per item. In the browser it is kept by the browser. To move it between the two, or to another computer, export it and import the file. A project template keeps the furniture types of the project it is saved from. **Save as template…** can also add every type in My furniture (**Add every type in My furniture**).
+
 ## Schedules and IFC
 
 **Furniture schedule** lists each type with its kind, size, how many pieces use it and the rooms they stand in, with the total. **Furniture by room** lists each room with what stands in it. Both are in the project browser under **Schedules**, and print and export like any schedule. A furniture type with a cost article is priced per piece in the estimate.

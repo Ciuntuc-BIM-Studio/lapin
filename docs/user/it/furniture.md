@@ -189,6 +189,33 @@ L’anteprima accanto ai campi mostra il simbolo in pianta e il fronte del tipo 
 
 ![La finestra Tipi di arredo con un divano e la sua chaise longue](shots/furniture-types.webp)
 
+## La mia libreria di arredi
+
+Un tipo che hai configurato bene (una cucina, un armadio, una scrivania di pannelli, un divano) può essere conservato per ogni progetto in **I miei arredi**, la tua libreria su questo computer.
+
+**Salva nella mia libreria…** in **Tipi di arredo** conserva il tipo selezionato. Indica:
+
+- un **nome**;
+- una **categoria**: cucina, soggiorno, camera da letto, bagno, ufficio, contenitori o altro;
+- le **etichette**, separate da virgole (rovere, moderno…);
+- un **codice articolo** e un **prezzo indicativo**, se vuoi. Entrambi sono tuoi: Lapin non fornisce prezzi.
+
+La miniatura è disegnata dall’anteprima del tipo. Il tipo porta con sé tutto ciò che gli serve: la sua configurazione e i suoi materiali, con i loro colori, i tratteggi e le immagini.
+
+![Salva nella mia libreria: il nome, la categoria, le etichette, il codice articolo e il prezzo accanto alla miniatura](shots/furniture-save-library.webp)
+
+**Interni → I miei arredi…** (o **I miei arredi…** in Tipi di arredo) mostra la libreria come miniature. Cercala per nome, etichetta, articolo o genere, e filtrala per categoria e per etichetta. Per ogni elemento:
+
+- **Inserisci** mette il tipo nel progetto aperto e lo sceglie per il suo strumento. Un materiale che il progetto ha già con quel nome viene usato così com’è, e gli altri vengono creati. Se il progetto ha già un tipo identico, si usa quello e non si fa nessuna copia. Ogni inserimento è un passo di annullamento.
+- **Posiziona** lo inserisce e avvia il suo strumento, così il clic successivo posa un pezzo. Una cucina si disegna lungo una parete.
+- **Rinomina**, **Etichette**, **Duplica** ed **Elimina** cambiano solo la libreria. I progetti che hanno già il tipo lo conservano.
+- **Esporta** scrive l’elemento come file `.lapinlib`. **Esporta tutto…** scrive l’intera libreria, e **Importa…** ne rilegge uno. L’importazione salta un elemento già presente nella libreria e invariato. Un elemento con lo stesso id ma contenuto modificato viene aggiunto accanto a quello che hai, così nulla viene sovrascritto.
+- **Aggiungi a un modello…** mette il tipo in uno dei tuoi modelli di progetto, così ogni progetto avviato da esso ha il tipo.
+
+![I miei arredi: le miniature della libreria, cercate e filtrate, ognuna pronta da inserire o posizionare](shots/furniture-library.webp)
+
+Sul desktop la libreria è conservata nella tua cartella Lapin, un file per elemento. Nel browser è conservata dal browser. Per spostarla dall’uno all’altro, o su un altro computer, esportala e importa il file. Un modello di progetto conserva i tipi di arredo del progetto da cui è salvato. **Salva come modello…** può anche aggiungere tutti i tipi di I miei arredi (**Aggiungi tutti i tipi di I miei arredi**).
+
 ## Abachi e IFC
 
 **Abaco degli arredi** elenca ogni tipo con il suo genere, le dimensioni, il numero di arredi e i locali in cui si trovano, con il totale. **Arredi per locale** elenca ogni locale con ciò che contiene. Entrambi sono nel browser di progetto, sotto **Abachi**, e si stampano ed esportano come ogni abaco. Un tipo di arredo con una voce di prezzo viene computato a pezzo nel computo.

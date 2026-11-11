@@ -11,7 +11,7 @@ import { notify, useUi } from '../app/store';
 import { setPrefs, usePrefs } from '../app/prefs';
 import { engine, engineInBrowser, useSession } from '../engine/session';
 import { download, enter, newProject, pickFile, pickPath, projectTitle, toBase64 } from '../engine/files';
-import { deleteTemplate, importTemplate, refreshTemplates, renameTemplate, saveAsTemplate, startFromTemplate, startFromTemplateFile, templateData, useTemplates, type TemplateInfo } from '../engine/templates';
+import { deleteTemplate, importTemplate, templateAdditions, refreshTemplates, renameTemplate, saveAsTemplate, startFromTemplate, startFromTemplateFile, templateData, useTemplates, type TemplateInfo } from '../engine/templates';
 
 const FILTERS = [{ name: 'Lapin project or template', extensions: ['lapin'] }];
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -39,13 +39,18 @@ export function SaveTemplateDialog() {
   const [name, setName] = useState(() => projectTitle(doc?.path));
   const [asDefault, setAsDefault] = useState(false);
   const [busy, setBusy] = useState(false);
+  // What modules offer to put in too (my furniture library, decision 476), each its own check box, off until ticked.
+  const additions = templateAdditions.filter((a) => a.shown());
+  const [added, setAdded] = useState<Record<string, boolean>>({});
   const save = async () => {
     setBusy(true);
     try {
-      let id = await saveAsTemplate(name);
+      const extra: Record<string, unknown> = {};
+      for (const a of additions) if (added[a.id]) Object.assign(extra, await a.params());
+      let id = await saveAsTemplate(name, false, extra);
       if (id === 'exists') {
         if (!window.confirm('A template has this name on this computer. Replace it?')) { setBusy(false); return; }
-        id = await saveAsTemplate(name, true);
+        id = await saveAsTemplate(name, true, extra);
       }
       if (asDefault && id !== 'exists') setPrefs({ defaultTemplate: id });
       notify(asDefault ? 'Template saved: new projects start from it.' : 'Template saved: File → New from template… starts a project from it.');
@@ -66,6 +71,9 @@ export function SaveTemplateDialog() {
             <dd><input type="text" value={name} autoFocus data-field="template-name" data-no-i18n onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) void save(); }} /></dd>
           </dl>
           <label className="row small"><input type="checkbox" data-field="template-default" checked={asDefault} onChange={(e) => setAsDefault(e.target.checked)} /> Start every new project from it (File → New project)</label>
+          {additions.map((a) => (
+            <label key={a.id} className="row small"><input type="checkbox" data-field={`template-add-${a.id}`} checked={!!added[a.id]} onChange={(e) => setAdded({ ...added, [a.id]: e.target.checked })} /> {a.label}</label>
+          ))}
           <p className="muted small">{engineInBrowser ? 'Kept in this browser. Export it from File → New from template… to keep a file.' : 'Kept on this computer, in your Lapin folder. Export it to share it with an office.'}</p>
         </div>
         <footer className="dialog-foot"><span className="grow" />

@@ -189,6 +189,33 @@ L’aperçu à côté des champs montre le symbole en plan et la face du type à
 
 ![La boîte de dialogue Types de mobilier avec un canapé et sa méridienne](shots/furniture-types.webp)
 
+## Ma bibliothèque de mobilier
+
+Un type que vous avez bien configuré (une cuisine, une armoire, un bureau en panneaux, un canapé) peut être gardé pour tous les projets dans **Mon mobilier**, votre propre bibliothèque sur cet ordinateur.
+
+**Enregistrer dans ma bibliothèque…** dans **Types de mobilier** garde le type sélectionné. Donnez-lui :
+
+- un **nom** ;
+- une **catégorie** : cuisine, séjour, chambre, salle de bains, bureau, rangement ou autre ;
+- des **étiquettes**, séparées par des virgules (chêne, moderne…) ;
+- un **code article** et un **prix indicatif**, si vous le souhaitez. Les deux sont à vous : Lapin ne fournit aucun prix.
+
+La vignette est dessinée à partir de l’aperçu du type. Le type emporte tout ce dont il a besoin : sa configuration et ses matériaux, avec leurs couleurs, leurs hachures et leurs images.
+
+![Enregistrer dans ma bibliothèque : le nom, la catégorie, les étiquettes, le code article et le prix à côté de la vignette](shots/furniture-save-library.webp)
+
+**Intérieur → Mon mobilier…** (ou **Mon mobilier…** dans Types de mobilier) montre la bibliothèque sous forme de vignettes. Cherchez-y par nom, étiquette, article ou genre, et filtrez par catégorie et par étiquette. Pour chaque élément :
+
+- **Insérer** met le type dans le projet ouvert et le choisit pour son outil. Un matériau que le projet a déjà sous ce nom est utilisé tel quel, et les autres sont créés. Si le projet a déjà un type identique, celui-ci est utilisé et aucune copie n’est faite. Chaque insertion est une étape d’annulation.
+- **Poser** l’insère et lance son outil, de sorte que le clic suivant pose une pièce. Une cuisine se dessine le long d’un mur.
+- **Renommer**, **Étiquettes**, **Dupliquer** et **Supprimer** ne changent que la bibliothèque. Les projets qui ont déjà le type le gardent.
+- **Exporter** écrit l’élément en fichier `.lapinlib`. **Tout exporter…** écrit toute la bibliothèque, et **Importer…** en relit un. L’import saute un élément déjà présent dans la bibliothèque et inchangé. Un élément de même identifiant mais au contenu modifié est ajouté à côté de celui que vous avez, si bien que rien n’est écrasé.
+- **Ajouter à un modèle…** met le type dans l’un de vos modèles de projet, de sorte que tout projet créé à partir de lui ait ce type.
+
+![Mon mobilier : les vignettes de la bibliothèque, recherchées et filtrées, chacune prête à insérer ou à poser](shots/furniture-library.webp)
+
+Sur le bureau, la bibliothèque est gardée dans votre dossier Lapin, un fichier par élément. Dans le navigateur, elle est gardée par le navigateur. Pour la passer de l’un à l’autre, ou sur un autre ordinateur, exportez-la et importez le fichier. Un modèle de projet garde les types de mobilier du projet à partir duquel il est enregistré. **Enregistrer comme modèle…** peut aussi ajouter tous les types de Mon mobilier (**Ajouter tous les types de Mon mobilier**).
+
 ## Nomenclatures et IFC
 
 **Nomenclature du mobilier** liste chaque type avec sa sorte, sa taille, le nombre de meubles et les pièces où ils se trouvent, avec le total. **Mobilier par pièce** liste chaque pièce avec ce qui s’y trouve. Les deux sont dans le navigateur du projet, sous **Nomenclatures**, et s’impriment et s’exportent comme toute nomenclature. Un type de mobilier avec un article de prix est chiffré à la pièce dans le devis.
