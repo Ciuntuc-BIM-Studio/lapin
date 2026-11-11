@@ -62,6 +62,9 @@ public static class Walls
     /// <summary>The wall becomes of <paramref name="type"/>: its usage points at the type's layers, its axis on their core.</summary>
     public static void SetType(IEdit edit, Entity wall, Entity type)
     {
+        // A wall still named after its old type (Add names it so) takes the new type's name; a name given to it stays (issue #16).
+        if (TypeOf(edit.Model, wall.Id) is { } old && old.Id != type.Id && edit.Model.Get(wall.Id) is { } current && current.Name == old.Name)
+            edit.Replace(wall = current.With(name: type.Name));
         edit.Relate(IfcClass.RelDefinesByType, type.Id, wall.Id);
         LayOut(edit, wall, type);
         // The type's sweeps and reveals (decision 298).
