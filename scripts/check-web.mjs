@@ -239,6 +239,26 @@ try {
         else console.log(`▸ Export IFC: ${file}, ${bytes.length} bytes`);
       }
     }
+    // File → Lapin for the browser (.html)…: the page with its 3D model and the project after it (decision 482).
+    if (!failed) {
+      await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
+      await sleep(200);
+      await ev(`[...document.querySelectorAll('[role=menuitem]')].find(x => /Lapin for the browser/.test(x.textContent))?.click()`);
+      let clicked = false;
+      for (let k = 0; k < 120 && !clicked; k++) {
+        await sleep(250);
+        clicked = Boolean(await ev(`(() => { const b = [...document.querySelectorAll('[aria-label="Lapin for the browser"] button')].find(x => x.textContent.trim() === 'Export'); if (!b || b.disabled) return false; b.click(); return true; })()`));
+      }
+      if (!clicked) fail('File → Lapin for the browser (.html)… did not open its dialog, or it has nothing to export.');
+      else {
+        let file = null;
+        for (let k = 0; k < 120 && !file; k++) { await sleep(250); file = readdirSync(downloads).find((f) => f.endsWith('.html')) ?? null; }
+        const text = file ? readFileSync(join(downloads, file), 'latin1') : '';
+        if (text.length < 1000) fail(`Lapin for the browser downloaded nothing. ${errors.join(' | ')}`);
+        else if (!/<html/i.test(text.slice(0, 2000)) || !text.includes('<plaintext')) fail('Lapin for the browser is not a page with its project.');
+        else console.log(`▸ Lapin for the browser: ${file}, ${text.length} bytes`);
+      }
+    }
     // A BIM Open Schema file: exported, then imported into a new project.
     if (!failed) {
       await ev(`[...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'File')?.click()`);
