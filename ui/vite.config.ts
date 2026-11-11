@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite';
+import { build as viteBuild, defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -39,8 +39,44 @@ function productModules(): Plugin {
   };
 }
 
+/**
+ * The viewer of the page Lapin exports for the browser (decision 482, docs/html-export.md): ui/src/standalone/viewer.ts
+ * built on its own as one IIFE script with three.js inside, its code a string the interface hands the engine, which
+ * inlines it into the page (a page from a file loads nothing). Built once per server or build, the first time the
+ * export dialog asks (`import('virtual:lapin-viewer')`): the app itself carries it only in that lazy chunk.
+ */
+function standaloneViewer(): Plugin {
+  const id = 'virtual:lapin-viewer';
+  const resolved = '\0' + id;
+  let code: Promise<string> | null = null;
+  const make = async () => {
+    const out = await viteBuild({
+      configFile: false, logLevel: 'warn', mode: 'production', publicDir: false,
+      define: { 'process.env.NODE_ENV': '"production"' },
+      build: {
+        write: false, minify: true, target: 'es2020', sourcemap: false, emptyOutDir: false, copyPublicDir: false,
+        lib: { entry: resolve(__dirname, 'src/standalone/viewer.ts'), formats: ['iife'], name: 'LapinViewer', fileName: () => 'viewer.js' },
+        rollupOptions: { output: { inlineDynamicImports: true } },
+      },
+    });
+    const outputs = (Array.isArray(out) ? out : [out]) as { output: { type: string; code?: string }[] }[];
+    const chunk = outputs.flatMap((o) => o.output).find((c) => c.type === 'chunk');
+    if (!chunk?.code) throw new Error('The browser viewer did not build.');
+    return chunk.code;
+  };
+  return {
+    name: 'lapin-standalone-viewer',
+    resolveId: (s) => (s === id ? resolved : undefined),
+    load: async (s) => {
+      if (s !== resolved) return undefined;
+      code ??= make();
+      return `export default ${JSON.stringify(await code)};\n`;
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), productModules()],
+  plugins: [react(), productModules(), standaloneViewer()],
   // A module from a sibling repository resolves its packages through its own node_modules (a link to a lapin-pro's):
   // one React, one store, the ones of this checkout.
   resolve: { alias: { '@lapin': resolve(__dirname, 'src') }, dedupe: ['react', 'react-dom', 'zustand', 'lucide-react'] },

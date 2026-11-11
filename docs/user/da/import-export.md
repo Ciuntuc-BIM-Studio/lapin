@@ -144,3 +144,26 @@ En sky eksporteres ikke med modellen: IFC og Fragments bærer modellen, ikke sca
 ![Eksportér 3D](shots/export-3d.webp)
 
 Du vælger, hvad der skal eksporteres, hvilken fase og origo. **Hvad** er **alt**, eller modellen **som visningen viser det**: 3D-visningen forrest, uden dens skjulte elementer og kategorier og de etager, den ikke viser, med de lag den viser (uden overflader, eller kun kernerne). Når den visning er skåret (snittet over de viste etager, et snit vist i 3D, snitboksen), skærer **Snit** også eksporten der og lukker hvert snit i sine materialer, så filen ser ud som skærmen. En 3D-visning, der udelader noget, eksporteres, som den viser det, medmindre du vælger andet. Hvert element beholder sin IFC-klasse, type og GlobalId. Vil du udveksle selve modellen frem for dens flader, så brug **Eksportér IFC…**.
+
+## Lapin til browseren
+
+**Filer → Lapin til browseren (.html)…** skriver projektet som en webside, én enkelt .html-fil, du kan sende til hvem som helst. Den åbnes med dobbeltklik i enhver browser (Chrome, Edge, Safari, Firefox), på enhver computer, uden internet og uden noget at installere:
+
+- **3D**: modellen, som 3D-visningen viser den. Træk for at dreje den, højretræk for at panorere, hjulet for at zoome; **Tilpas** viser det hele. Vælg en etage alene eller med dem under den; klik på et element for at vælge det (Shift føjer til markeringen), og **Isolér** eller **Skjul** det; **Vis alt** bringer alt tilbage.
+- **Tegninger**: de planer, snit, facader og tegningsark, du har sat kryds ved, tegnet, som Lapin udskriver dem, skarpe ved enhver zoom. Træk for at panorere, hjulet for at zoome, **Udskriv** for at udskrive den viste. Klik på et element på en tegning for at vælge det: det er det samme element i 3D.
+- **Overslag**, når projektet har et: dets kapitler og linjer, totalerne, markeret som *vejledende*, når det bruger Lapins egne grove værdier. Klik på en kolonnes overskrift for at sortere, skriv i **Filter** for at finde en linje, klik på en linje for at vælge dens elementer.
+- **Egenskaber**: det, der er valgt, med dets klasse, type, etage, materiale, egenskaber og mængder.
+
+![Filer → Lapin til browseren](shots/html-export-dialog.webp)
+
+I dialogen vælger du, hvilke tegninger der kommer med (alle som standard), 3D-modellen, overslaget og **selve projektet**. Siden viser sin størrelse, før den skrives. Siden taler det sprog, Lapin taler, når du eksporterer den.
+
+![Siden i en browser: 3D-modellen](shots/html-export-3d.webp)
+
+![En plan i siden, en væg der er klikket på viser sine egenskaber](shots/html-export-drawing.webp)
+
+![Overslaget i siden](shots/html-export-costs.webp)
+
+Med projektet indeni er siden også projektet: **Filer → Åbn** i Lapin tager .html-filen og åbner det projekt, den indeholder, uden at det er gemt; **Gem** spørger, hvor det skal gemmes som en .lapin, og skriver aldrig oven på siden. Uden projektet viser siden kun modellen, og Lapin åbner den ikke. En webside, som Lapin ikke har skrevet, afvises.
+
+Siden er et øjebliksbillede: det, den viser, er projektet, da det blev eksporteret, og intet, en læser gør i den, ændrer projektet. Den er så stor som sine dele: projektet, 3D-modellen (omtrent som en GLB-eksport) og tegningerne, plus cirka 0,6 MB til selve viseren.

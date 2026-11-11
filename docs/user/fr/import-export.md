@@ -144,3 +144,26 @@ Un nuage n'est pas exporté avec le modèle : IFC et Fragments portent le modèl
 ![Exporter 3D](shots/export-3d.webp)
 
 Vous choisissez ce qu’il faut exporter, quelle phase et l’origine. **Quoi** vaut **tout**, ou le modèle **tel que la vue le montre** : la vue 3D au premier plan, sans ses éléments et catégories masqués ni les niveaux qu’elle n’affiche pas, avec les couches qu’elle affiche (sans les finitions, ou le noyau seulement). Quand cette vue est coupée (la coupe au-dessus des niveaux affichés, une coupe affichée en 3D, la zone de coupe), **Coupe** coupe aussi l’export à cet endroit et ferme chaque coupe dans ses matériaux, si bien que le fichier ressemble à l’écran. Une vue 3D qui omet quelque chose est exportée telle qu’elle s’affiche, sauf si vous en décidez autrement. Chaque élément garde sa classe IFC, son type et son GlobalId. Pour échanger le modèle lui-même plutôt que ses surfaces, utilisez **Exporter IFC…**.
+
+## Lapin pour le navigateur
+
+**Fichier → Lapin pour le navigateur (.html)…** écrit le projet sous forme de page web, un seul fichier .html que vous pouvez envoyer à n’importe qui. Il s’ouvre d’un double-clic dans n’importe quel navigateur (Chrome, Edge, Safari, Firefox), sur n’importe quel ordinateur, sans internet et sans rien installer :
+
+- **3D** : le modèle tel que le montre la vue 3D. Faites glisser pour le tourner, faites glisser avec le bouton droit pour le déplacer, la molette pour zoomer ; **Ajuster** l’affiche en entier. Choisissez un niveau seul ou avec ceux du dessous ; cliquez sur un élément pour le sélectionner (Maj ajoute à la sélection), puis **Isolez**-le ou **Masquez**-le ; **Tout afficher** ramène tout.
+- **Dessins** : les vues en plan, coupes, élévations et feuilles que vous avez cochées, dessinées comme Lapin les imprime, nettes à tout zoom. Faites glisser pour déplacer, la molette pour zoomer, **Imprimer** pour imprimer celui qui est affiché. Cliquez sur un élément d’un dessin pour le sélectionner : c’est le même élément qu’en 3D.
+- **Devis**, quand le projet en a un : ses chapitres et ses lignes, les totaux, marqués *indicatifs* quand il utilise les valeurs approximatives propres à Lapin. Cliquez sur l’en-tête d’une colonne pour trier, tapez dans **Filtre** pour trouver une ligne, cliquez sur une ligne pour sélectionner ses éléments.
+- **Propriétés** : ce qui est sélectionné, avec sa classe, son type, son niveau, son matériau, ses propriétés et ses quantités.
+
+![Fichier → Lapin pour le navigateur](shots/html-export-dialog.webp)
+
+Dans la boîte de dialogue, vous choisissez les dessins qui entrent (tous par défaut), le modèle 3D, le devis et **le projet lui-même**. La page indique sa taille avant d’être écrite. La page parle la langue que parle Lapin au moment de l’export.
+
+![La page dans un navigateur : le modèle 3D](shots/html-export-3d.webp)
+
+![Un plan dans la page, un mur cliqué montrant ses propriétés](shots/html-export-drawing.webp)
+
+![Le devis dans la page](shots/html-export-costs.webp)
+
+Avec le projet à l’intérieur, la page est aussi le projet : **Fichier → Ouvrir** dans Lapin prend le .html et ouvre le projet qu’il contient, non enregistré ; **Enregistrer** demande où le garder en .lapin, et n’écrit jamais sur la page. Sans le projet, la page ne montre que le modèle, et Lapin ne l’ouvre pas. Une page web que Lapin n’a pas écrite est refusée.
+
+La page est un instantané : ce qu’elle montre est le projet au moment de l’export, et rien de ce qu’un lecteur y fait ne change le projet. Elle pèse ce que pèsent ses parties : le projet, le modèle 3D (à peu près la taille d’un export GLB) et les dessins, avec environ 0,6 Mo pour la visionneuse elle-même.

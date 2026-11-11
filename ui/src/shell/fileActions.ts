@@ -48,6 +48,8 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.importTrace', label: 'Import PDF or image…', run: () => importTrace() },
     { id: 'file.importMesh', label: 'Import mesh (OBJ, STL, glTF)…', run: () => importMesh() },
     { id: 'file.exportMesh', label: 'Export 3D (glTF, USD, DAE)…', run: dialog('exportMesh') },
+    // The project as one .html that any browser opens, and that Lapin opens again (decision 482, docs/html-export.md).
+    { id: 'file.exportHtml', label: 'Lapin for the browser (.html)…', menu: 'export-html', run: dialog('exportHtml') },
     { id: 'file.share', label: 'Share session…', shown: () => !engineInBrowser, run: dialog('share') },
     { id: 'file.join', label: 'Join session…', run: dialog('join') },
     { id: 'file.preferences', label: 'Preferences…', keys: 'app.preferences', run: dialog('preferences') },
@@ -60,12 +62,12 @@ export function baseFileActions(): FileAction[] {
 export const HOST_SECTIONS: FileSection[] = [
   { ids: ['file.new', 'file.newFromTemplate', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion', 'file.saveTemplate'] },
   { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.importBos', 'file.importSdnf', 'file.linkIfc', 'file.linkLapin', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
-  { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh'] },
+  { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh', 'file.exportHtml'] },
   { ids: ['file.share', 'file.join', 'file.startScreen'] },
 ];
 
 /** A guest works in the host's project: the host opens and saves it; a guest exports what they need, or leaves. */
-export const GUEST_SECTIONS: FileSection[] = [{ ids: ['file.exportExchange', 'file.exportJg', 'file.exportMesh', 'file.leave'] }];
+export const GUEST_SECTIONS: FileSection[] = [{ ids: ['file.exportExchange', 'file.exportJg', 'file.exportMesh', 'file.exportHtml', 'file.leave'] }];
 
 let actions: Map<string, FileAction> | null = null;
 

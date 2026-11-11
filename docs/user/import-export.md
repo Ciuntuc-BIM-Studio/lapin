@@ -166,3 +166,26 @@ A cloud is never exported with the model: IFC and Fragments carry the model, not
 ![Export 3D](shots/export-3d.webp)
 
 You choose what to export, which phase, and the origin. **What** is **everything**, or the model **as the view shows it**: the 3D view in front, without its hidden elements and categories and the storeys it does not show, with the layers it shows (without finishes, or the cores only). When that view is cut (the cut above the storeys shown, a section shown in 3D, the section box), **Cut** cuts the export there too and closes each cut in its materials, so the file looks like the screen. A 3D view that leaves anything out is exported as it shows it unless you choose otherwise. Every element keeps its IFC class, type and GlobalId. To exchange the model itself rather than its surfaces, use **Export IFC**.
+
+## Lapin for the browser
+
+**File → Lapin for the browser (.html)…** writes the project as one web page, a single .html file you can send to anyone. It opens with a double-click in any browser (Chrome, Edge, Safari, Firefox), on any computer, with no internet and nothing to install:
+
+- **3D**: the model as the 3D view shows it. Drag to turn it, right-drag to pan, the wheel to zoom; **Fit** shows it all. Pick a storey alone or with those below it; click an element to select it (Shift adds to the selection), then **Isolate** it or **Hide** it; **Show all** brings everything back.
+- **Drawings**: the plans, sections, elevations and sheets you ticked, drawn as Lapin prints them, as sharp at any zoom. Drag to pan, the wheel to zoom, **Print** to print the one shown. Click an element on a drawing to select it: it is the same element in 3D.
+- **Estimate**, when the project has one: its chapters and lines, the totals, marked *indicative* when it uses Lapin's own rough values. Click a column's heading to sort, type in **Filter** to find a line, click a line to select its elements.
+- **Properties**: whatever is selected, with its class, type, storey, material, its properties and quantities.
+
+![File → Lapin for the browser](shots/html-export-dialog.webp)
+
+In the dialog you choose which drawings go in (all of them by default), the 3D model, the estimate, and **the project itself**. The page shows its size before it is written. The page speaks the language Lapin speaks when you export it.
+
+![The page in a browser: the 3D model](shots/html-export-3d.webp)
+
+![A plan in the page, a wall clicked showing its properties](shots/html-export-drawing.webp)
+
+![The estimate in the page](shots/html-export-costs.webp)
+
+With the project inside, the page is also the project: **File → Open** in Lapin takes the .html and opens the project it holds, unsaved; **Save** asks where to keep it as a .lapin, and never writes over the page. Without the project the page only shows the model, and Lapin does not open it. A web page that Lapin did not write is refused.
+
+The page is a snapshot: what it shows is the project when it was exported, and nothing a reader does in it changes the project. It is as large as its parts: the project, the 3D model (about the size of a GLB export) and the drawings, with about 0.6 MB for the viewer itself.

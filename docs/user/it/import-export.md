@@ -144,3 +144,26 @@ Una nuvola non viene esportata con il modello: IFC e Fragments portano il modell
 ![Esporta 3D](shots/export-3d.webp)
 
 Scegli che cosa esportare, quale fase e l’origine. **Cosa** è **tutto**, oppure il modello **come lo mostra la vista**: la vista 3D in primo piano, senza i suoi elementi e le sue categorie nascosti e senza i piani che non mostra, con gli strati che mostra (senza finiture, o solo i nuclei). Quando quella vista è tagliata (il taglio sopra i piani mostrati, una sezione mostrata in 3D, il box di sezione), **Taglio** taglia anche l’esportazione lì e chiude ogni taglio nei suoi materiali, così il file appare come lo schermo. Una vista 3D che esclude qualcosa viene esportata come la mostra, a meno che tu non scelga diversamente. Ogni elemento conserva la sua classe IFC, il suo tipo e il suo GlobalId. Per scambiare il modello in sé anziché le sue superfici, usa **Esporta IFC**.
+
+## Lapin per il browser
+
+**File → Lapin per il browser (.html)…** scrive il progetto come pagina web, un unico file .html che puoi inviare a chiunque. Si apre con un doppio clic in qualsiasi browser (Chrome, Edge, Safari, Firefox), su qualsiasi computer, senza internet e senza installare nulla:
+
+- **3D**: il modello come lo mostra la vista 3D. Trascina per ruotarlo, trascina con il tasto destro per spostarlo, la rotellina per lo zoom; **Adatta** lo mostra intero. Scegli un piano da solo o con quelli sotto; fai clic su un elemento per selezionarlo (Maiusc aggiunge alla selezione), poi **Isolalo** o **Nascondilo**; **Mostra tutto** riporta tutto.
+- **Disegni**: le piante, le sezioni, i prospetti e le tavole che hai spuntato, disegnati come li stampa Lapin, nitidi a qualsiasi zoom. Trascina per spostare, la rotellina per lo zoom, **Stampa** per stampare quello mostrato. Fai clic su un elemento in un disegno per selezionarlo: è lo stesso elemento del 3D.
+- **Preventivo**, quando il progetto ne ha uno: i suoi capitoli e le sue voci, i totali, contrassegnati come *indicativi* quando usa i valori approssimativi propri di Lapin. Fai clic sull'intestazione di una colonna per ordinare, scrivi in **Filtro** per trovare una voce, fai clic su una voce per selezionarne gli elementi.
+- **Proprietà**: ciò che è selezionato, con la sua classe, tipo, piano, materiale, le sue proprietà e quantità.
+
+![File → Lapin per il browser](shots/html-export-dialog.webp)
+
+Nella finestra scegli quali disegni includere (tutti per impostazione predefinita), il modello 3D, il preventivo e **il progetto stesso**. La pagina mostra la sua dimensione prima di essere scritta. La pagina parla la lingua che parla Lapin quando la esporti.
+
+![La pagina in un browser: il modello 3D](shots/html-export-3d.webp)
+
+![Una pianta nella pagina, un muro selezionato che mostra le sue proprietà](shots/html-export-drawing.webp)
+
+![Il preventivo nella pagina](shots/html-export-costs.webp)
+
+Con il progetto all'interno, la pagina è anche il progetto: **File → Apri** in Lapin prende il file .html e apre il progetto che contiene, non salvato; **Salva** chiede dove conservarlo come .lapin e non scrive mai sopra la pagina. Senza il progetto la pagina mostra solo il modello e Lapin non la apre. Una pagina web che Lapin non ha scritto viene rifiutata.
+
+La pagina è un'istantanea: ciò che mostra è il progetto al momento dell'esportazione, e nulla di ciò che un lettore fa al suo interno cambia il progetto. È grande quanto le sue parti: il progetto, il modello 3D (circa quanto un'esportazione GLB) e i disegni, più circa 0,6 MB per il visualizzatore stesso.

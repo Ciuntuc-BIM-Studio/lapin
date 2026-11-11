@@ -96,7 +96,7 @@ The history of what was built, decision by decision, is in `docs/history.md`; th
 - Studio (solids, sketches, thick solids): `docs/spec-studio.md`, `docs/plan-studio-editor.md`, `docs/plan-studio-sketch.md`, `docs/plan-studio-thick.md`, `docs/plan-3d-modelling.md`
 - Groups, components, links, versions: `docs/groups.md`, `docs/components.md`, `docs/links.md`, `docs/versions.md`
 - IFC (import, recognition, the fidelity gate, export): `docs/spec-ifc.md`, `docs/ifc-optimize.md`
-- Other formats: `docs/dxf-import.md`, `docs/fragments.md`, `docs/bos.md`, `docs/sdnf.md`, `docs/plan-mesh-export.md`
+- Other formats: `docs/dxf-import.md`, `docs/fragments.md`, `docs/bos.md`, `docs/sdnf.md`, `docs/plan-mesh-export.md`, `docs/html-export.md`
 - Large models, display: `docs/plan-instancing.md`, `docs/plan-display-precision.md`
 - Browser engine, multiplayer, assistant, MCP: `docs/plan-browser-engine.md`, `docs/plan-multiplayer.md`, `docs/plan-assistant.md`, `docs/mcp.md`
 - CDE, documents, tags: `docs/plan-cde.md`, `docs/plan-documents.md`, `docs/plan-buildup-tags.md`

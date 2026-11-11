@@ -144,3 +144,26 @@ Chmura nie jest eksportowana z modelem: IFC i Fragments niosą model, nie skan, 
 ![Eksport 3D](shots/export-3d.webp)
 
 Wybierasz, co eksportować, jaką fazę i początek układu. **Co** to **wszystko** albo model **tak, jak pokazuje go widok**: widok 3D na pierwszym planie, bez ukrytych elementów i kategorii oraz kondygnacji, których nie pokazuje, z warstwami, które pokazuje (bez wykończeń lub tylko rdzenie). Gdy ten widok jest przecięty (cięcie nad pokazanymi kondygnacjami, przekrój pokazany w 3D, przekrój prostopadłościenny), **Cięcie** przecina tam także eksport i zamyka każde cięcie w jego materiałach, więc plik wygląda jak ekran. Widok 3D, który coś pomija, jest eksportowany tak, jak to pokazuje, chyba że wybierzesz inaczej. Każdy element zachowuje swoją klasę IFC, typ i GlobalId. Aby wymienić sam model, a nie jego powierzchnie, użyj **Eksportuj IFC**.
+
+## Lapin dla przeglądarki
+
+**Plik → Lapin dla przeglądarki (.html)…** zapisuje projekt jako stronę internetową, jeden plik .html, który możesz wysłać komukolwiek. Otwiera się dwukrotnym kliknięciem w dowolnej przeglądarce (Chrome, Edge, Safari, Firefox), na dowolnym komputerze, bez internetu i bez niczego do instalowania:
+
+- **3D**: model tak, jak pokazuje go widok 3D. Przeciągnij, aby go obrócić, przeciągnij prawym przyciskiem, aby przesunąć, kółko przybliża; **Dopasuj** pokazuje całość. Wybierz kondygnację samą lub razem z tymi poniżej; kliknij element, aby go zaznaczyć (Shift dodaje do zaznaczenia), a potem **Izoluj** go lub **Ukryj**; **Pokaż wszystko** przywraca wszystko.
+- **Rysunki**: rzuty, przekroje, elewacje i arkusze, które zaznaczyłeś, narysowane tak, jak drukuje je Lapin, ostre przy każdym powiększeniu. Przeciągnij, aby przesunąć, kółko przybliża, **Drukuj** drukuje pokazany rysunek. Kliknij element na rysunku, aby go zaznaczyć: to ten sam element co w 3D.
+- **Kosztorys**, gdy projekt go ma: jego rozdziały i pozycje, sumy, oznaczone jako *orientacyjne*, gdy używa własnych, przybliżonych wartości Lapin. Kliknij nagłówek kolumny, aby sortować, wpisz w **Filtr**, aby znaleźć pozycję, kliknij pozycję, aby zaznaczyć jej elementy.
+- **Właściwości**: to, co jest zaznaczone, z jego klasą, typem, kondygnacją, materiałem, właściwościami i ilościami.
+
+![Plik → Lapin dla przeglądarki](shots/html-export-dialog.webp)
+
+W oknie wybierasz, które rysunki wchodzą (domyślnie wszystkie), model 3D, kosztorys i **sam projekt**. Strona pokazuje swój rozmiar, zanim zostanie zapisana. Strona mówi w języku, w którym mówi Lapin podczas eksportu.
+
+![Strona w przeglądarce: model 3D](shots/html-export-3d.webp)
+
+![Rzut na stronie, klikniętą ścianę, która pokazuje swoje właściwości](shots/html-export-drawing.webp)
+
+![Kosztorys na stronie](shots/html-export-costs.webp)
+
+Z projektem w środku strona jest też projektem: **Plik → Otwórz** w Lapin bierze plik .html i otwiera zawarty w nim projekt, niezapisany; **Zapisz** pyta, gdzie go zachować jako .lapin, i nigdy nie zapisuje na stronie. Bez projektu strona pokazuje tylko model, a Lapin jej nie otwiera. Strona internetowa, której Lapin nie napisał, jest odrzucana.
+
+Strona jest migawką: pokazuje projekt z chwili eksportu, a nic, co czytelnik w niej zrobi, nie zmienia projektu. Jest tak duża jak jej części: projekt, model 3D (mniej więcej jak eksport GLB) i rysunki, plus około 0,6 MB na samą przeglądarkę.

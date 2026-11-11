@@ -144,3 +144,26 @@ Eine Wolke wird nicht mit dem Modell exportiert: IFC und Fragments tragen das Mo
 ![3D exportieren](shots/export-3d.webp)
 
 Sie wählen, was exportiert wird, welche Bauphase und den Ursprung. **Was** ist **alles** oder das Modell, **wie die Ansicht es zeigt**: die vorne liegende 3D-Ansicht, ohne ihre ausgeblendeten Elemente und Kategorien und ohne die Geschosse, die sie nicht zeigt, mit den Schichten, die sie zeigt (ohne Bekleidungen oder nur die Kerne). Wenn diese Ansicht geschnitten ist (der Schnitt über den angezeigten Geschossen, ein in 3D gezeigter Schnitt, der Schnittbereich), schneidet **Schnitt** auch den Export dort und schließt jeden Schnitt in seinen Materialien, sodass die Datei wie der Bildschirm aussieht. Eine 3D-Ansicht, die etwas weglässt, wird so exportiert, wie sie es zeigt, sofern Sie nichts anderes wählen. Jedes Element behält seine IFC-Klasse, seinen Typ und seine GlobalId. Um das Modell selbst statt seiner Oberflächen auszutauschen, verwenden Sie **IFC exportieren…**.
+
+## Lapin für den Browser
+
+**Datei → Lapin für den Browser (.html)…** schreibt das Projekt als Webseite, eine einzige .html-Datei, die Sie an jeden schicken können. Sie öffnet sich per Doppelklick in jedem Browser (Chrome, Edge, Safari, Firefox), auf jedem Computer, ohne Internet und ohne etwas zu installieren:
+
+- **3D**: das Modell, wie es die 3D-Ansicht zeigt. Ziehen Sie, um es zu drehen, ziehen Sie mit der rechten Taste, um es zu verschieben, das Rad zoomt; **Einpassen** zeigt es ganz. Wählen Sie ein Geschoss allein oder mit denen darunter; klicken Sie ein Element an, um es auszuwählen (Umschalt fügt zur Auswahl hinzu), und **Isolieren** oder **Ausblenden** Sie es; **Alles zeigen** bringt alles zurück.
+- **Zeichnungen**: die Grundrisse, Schnitte, Ansichten und Pläne, die Sie angehakt haben, gezeichnet, wie Lapin sie druckt, bei jedem Zoom scharf. Ziehen zum Verschieben, das Rad zum Zoomen, **Drucken** druckt die angezeigte Zeichnung. Klicken Sie ein Element in einer Zeichnung an, um es auszuwählen: Es ist dasselbe Element wie in 3D.
+- **Kostenberechnung**, wenn das Projekt eine hat: ihre Kapitel und Positionen, die Summen, als *Richtwert* gekennzeichnet, wenn Lapins eigene grobe Werte verwendet werden. Klicken Sie auf die Überschrift einer Spalte, um zu sortieren, tippen Sie in **Filter**, um eine Position zu finden, klicken Sie eine Position an, um ihre Elemente auszuwählen.
+- **Eigenschaften**: das, was ausgewählt ist, mit Klasse, Typ, Geschoss, Material, seinen Eigenschaften und Mengen.
+
+![Datei → Lapin für den Browser](shots/html-export-dialog.webp)
+
+Im Dialog wählen Sie, welche Zeichnungen hineinkommen (standardmäßig alle), das 3D-Modell, die Kostenberechnung und **das Projekt selbst**. Die Seite zeigt ihre Größe, bevor sie geschrieben wird. Die Seite spricht die Sprache, die Lapin beim Export spricht.
+
+![Die Seite in einem Browser: das 3D-Modell](shots/html-export-3d.webp)
+
+![Ein Grundriss in der Seite, eine angeklickte Wand zeigt ihre Eigenschaften](shots/html-export-drawing.webp)
+
+![Die Kostenberechnung in der Seite](shots/html-export-costs.webp)
+
+Mit dem Projekt darin ist die Seite zugleich das Projekt: **Datei → Öffnen** in Lapin nimmt die .html und öffnet das darin enthaltene Projekt, ungespeichert; **Speichern** fragt, wo es als .lapin abgelegt werden soll, und schreibt nie über die Seite. Ohne das Projekt zeigt die Seite nur das Modell, und Lapin öffnet sie nicht. Eine Webseite, die Lapin nicht geschrieben hat, wird abgelehnt.
+
+Die Seite ist eine Momentaufnahme: Sie zeigt das Projekt zum Zeitpunkt des Exports, und nichts, was ein Leser darin tut, ändert das Projekt. Sie ist so groß wie ihre Teile: das Projekt, das 3D-Modell (etwa so groß wie ein GLB-Export) und die Zeichnungen, dazu etwa 0,6 MB für den Viewer selbst.

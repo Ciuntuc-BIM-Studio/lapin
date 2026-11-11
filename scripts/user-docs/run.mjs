@@ -365,10 +365,12 @@ function tools(page, url, folder, lang) {
     expect(ok, what) { if (!ok) throw new Error(`expected: ${what}`); },
     /**
      * A picture for the guide, shots/<name>.webp: the window, or a part of it
-     * (a CSS selector or a locator, with `pad` pixels around it).
+     * (a CSS selector or a locator, with `pad` pixels around it). `page`: another
+     * page of the browser's (a page Lapin exported, opened from its file), taken
+     * as it is: it speaks the language it was written in.
      */
     async shot(name, opts = {}) {
-      if (lang === 'en') { await photograph(name, opts); return; }
+      if (lang === 'en' || opts.page) { await photograph(name, opts); return; }
       // The part to photograph is found while the interface is in English (its selector may name an English label or title, which the
       // language turns), and marked so it is found again in the picture's language.
       const target = typeof opts.of === 'string' ? page.locator(opts.of).first() : opts.of;
@@ -384,16 +386,17 @@ function tools(page, url, folder, lang) {
   async function photograph(name, opts) {
     await t.wait(opts.settle ?? 500);
     let clip;
-    const target = typeof opts.of === 'string' ? page.locator(opts.of).first() : opts.of;
+    const from = opts.page ?? page;
+    const target = typeof opts.of === 'string' ? from.locator(opts.of).first() : opts.of;
     if (target) {
       const b = await target.boundingBox();
       if (!b) throw new Error(`nothing to photograph for ${name} (${opts.of})`);
       const pad = opts.pad ?? 8;
-      const vp = page.viewportSize();
+      const vp = from.viewportSize();
       const x = Math.max(0, b.x - pad), y = Math.max(0, b.y - pad);
       clip = { x, y, width: Math.min(vp.width - x, b.width + 2 * pad), height: Math.min(vp.height - y, b.height + 2 * pad, opts.maxHeight ?? Infinity) };
     } else if (opts.clip) clip = opts.clip;
-    const png = await page.screenshot({ clip, animations: 'disabled', caret: 'hide' });
+    const png = await from.screenshot({ clip, animations: 'disabled', caret: 'hide' });
     // WebP, made by the browser itself: a third of a PNG's size, the text as sharp.
     const webp = await page.evaluate(async (b64) => {
       const img = new Image(); img.src = `data:image/png;base64,${b64}`; await img.decode();

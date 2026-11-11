@@ -16,6 +16,18 @@ import { fitAfterImport, poseKey } from '../viewport/camera';
 import { flushUserSettings } from '../app/userSettings';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
+/** What File → Open takes: a project, or a page Lapin exported for the browser with its project inside (decision 482). */
+const OPEN_FILTERS = [{ name: 'Lapin project', extensions: ['lapin', 'html', 'htm'] }, { name: 'Lapin for the browser', extensions: ['html', 'htm'] }];
+
+/** The name the first save of a project opened from a page suggests: House.lapin for House.html (never the page itself). */
+let pageName: string | null = null;
+
+/** A project read from a page (an .html Lapin exported): it opens without a file of its own, Save asks where, as a .lapin. */
+function openedFromPage(page: string | null | undefined): boolean {
+  pageName = page ? `${page.replace(/\.[^.]+$/, '')}.lapin` : null;
+  if (page) notify('Opened the project inside the page. Save it as a .lapin to keep working on it.');
+  return !!page;
+}
 
 export const isDesktop = () => Boolean((window as unknown as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__);
 
@@ -207,28 +219,28 @@ function tellOld(notes: string[]): void {
 export async function openProject(path?: string): Promise<void> {
   if (!(await confirmDiscard('Open another'))) return;
   if (engineInBrowser) {
-    const picked = await pickFile('Lapin project', 'lapin');
+    const picked = await pickFile('Lapin project', ['lapin', 'html', 'htm']);
     if (!picked) return;
     try {
-      const r = await engine.call<{ notes?: string[] } | null>('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
-      // An old project (format 2) opens unsaved: saving must not write the new format over the old file.
+      const r = await engine.call<{ notes?: string[]; page?: string | null } | null>('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
+      // An old project (format 2), or one read from a page, opens unsaved: saving must not write over the file it came from.
       const old = !useSession.getState().doc?.path;
       projectHandle = old ? null : picked.handle;
       enter();
-      if (old) tellOld(r?.notes ?? []);
+      if (!openedFromPage(r?.page) && old) tellOld(r?.notes ?? []);
     } catch (e) {
       notify(e instanceof Error ? e.message : String(e));
     }
     return;
   }
-  const target = path ?? (await pickPath('open'));
+  const target = path ?? (await pickPath('open', undefined, OPEN_FILTERS));
   if (!target) return;
   try {
-    const r = await engine.call<{ notes?: string[] } | null>('project.open', { path: target }, { timeoutMs: LONG_TIMEOUT_MS });
+    const r = await engine.call<{ notes?: string[]; page?: string | null } | null>('project.open', { path: target }, { timeoutMs: LONG_TIMEOUT_MS });
     remember(target);
     enter();
-    // An old Lapin project (format 2) is rebuilt natively and opens unsaved; say what it left out.
-    if (!useSession.getState().doc?.path) tellOld(r?.notes ?? []);
+    // An old Lapin project (format 2) is rebuilt natively and opens unsaved; say what it left out. A page's project opens unsaved too.
+    if (!openedFromPage(r?.page) && !useSession.getState().doc?.path) tellOld(r?.notes ?? []);
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }
@@ -238,7 +250,7 @@ export async function saveProject(as = false): Promise<boolean> {
   const current = useSession.getState().doc?.path ?? null;
   if (engineInBrowser) {
     try {
-      const r = await engine.call<{ name: string; data: string }>('project.saveBytes', { name: current ?? 'project.lapin' }, { timeoutMs: LONG_TIMEOUT_MS });
+      const r = await engine.call<{ name: string; data: string }>('project.saveBytes', { name: current ?? pageName ?? 'project.lapin' }, { timeoutMs: LONG_TIMEOUT_MS });
       const kept = await keep(fromBase64(r.data), r.name, projectHandle, as);
       if (!kept) return false;
       projectHandle = kept.handle;
@@ -249,7 +261,7 @@ export async function saveProject(as = false): Promise<boolean> {
       return false;
     }
   }
-  const target = as || !current ? await pickPath('save', current ?? 'project.lapin') : current;
+  const target = as || !current ? await pickPath('save', current ?? pageName ?? 'project.lapin') : current;
   if (!target) return false;
   const path = target.endsWith('.lapin') ? target : `${target}.lapin`;
   try {
@@ -361,7 +373,7 @@ export async function guardWindowClose(): Promise<void> {
  * An export from the engine (PDF, DXF): to the path the save dialog gives on
  * the desktop, else handed back and downloaded by the browser.
  */
-const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream', bcfzip: 'application/zip', bcf: 'application/zip', zip: 'application/zip', csv: 'text/csv', json: 'application/json' };
+const MIME: Record<string, string> = { pdf: 'application/pdf', dxf: 'application/dxf', ifc: 'application/x-step', glb: 'model/gltf-binary', gltf: 'model/gltf+json', usdz: 'model/vnd.usdz+zip', usda: 'model/vnd.usda', dae: 'model/vnd.collada+xml', frag: 'application/octet-stream', bcfzip: 'application/zip', bcf: 'application/zip', zip: 'application/zip', csv: 'text/csv', json: 'application/json', html: 'text/html' };
 
 export async function exportFile(method: string, args: Record<string, unknown>, name: string, ext: string): Promise<void> {
   try {

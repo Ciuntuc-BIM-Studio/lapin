@@ -110,6 +110,17 @@ export function translate(text: string, lang: Lang = useLang.getState().lang, ct
   return null;
 }
 
+/**
+ * A language's exact phrases (English → the language), for a page that translates without this code: the page Lapin
+ * exports for the browser (decision 482) carries them. Empty for English, or a language not loaded.
+ */
+export function phraseBook(lang: Lang = useLang.getState().lang): Record<string, string> {
+  if (lang === 'en') return {};
+  const dict = TABLES[lang]?.dict ?? {};
+  // A phrase with a context (session|Join) is for the interface's own words: the page has none of them.
+  return Object.fromEntries(Object.entries(dict).filter(([k]) => !k.includes('|')).map(([k, v]) => [k, rebrand(v)]));
+}
+
 /** For code that builds a phrase itself (a notice): the phrase in the language chosen. */
 export function t(text: string, ctx?: string): string {
   return rebrand(translate(text, undefined, ctx) ?? text);

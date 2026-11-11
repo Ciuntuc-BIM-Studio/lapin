@@ -5886,6 +5886,94 @@ export const scenes = [
     },
   },
   {
+    // Lapin for the browser (decision 482, docs/html-export.md): the project as one .html file, opened from its file in the
+    // browser with no server (the 3D model, a plan, the estimate, a click selecting across them), then opened again in Lapin.
+    id: 'html-export',
+    touches: ['core', 'cost'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t);
+      await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [5, -2], end: [5, 10], scale: 50 });
+      const sheet = await t.cmd('sheet.create', { paper: 'A3', name: 'Ground floor plan' });
+      await t.cmd('sheet.addViewport', { id: sheet.id, viewId: `plan:${storey}`, x: 200, y: 140 });
+      // An estimate from Lapin's own indicative values: the page marks it as the app does.
+      await t.cmd('cost.addPriceList', { template: true });
+      const nodes = await t.nodes();
+      const typeOf = (cls) => nodes.find((n) => n.type === cls)?.id;
+      if (typeOf('IfcWallType')) await t.cmd('cost.setArticles', { type: typeOf('IfcWallType'), articles: [{ code: 'LAP-MAS' }] });
+      if (typeOf('IfcSlabType')) await t.cmd('cost.setArticles', { type: typeOf('IfcSlabType'), articles: [{ code: 'LAP-RC', basis: 'volume' }] });
+      if (typeOf('IfcDoorType')) await t.cmd('cost.setArticles', { type: typeOf('IfcDoorType'), articles: [{ code: 'LAP-DOOR' }] });
+      if (typeOf('IfcWindowType')) await t.cmd('cost.setArticles', { type: typeOf('IfcWindowType'), articles: [{ code: 'LAP-WIN', basis: 'area' }] });
+      await t.cmd('cost.createEstimate', { name: 'House' });
+      await t.wait(600);
+
+      // File → Lapin for the browser (.html)…: the drawings ticked, the 3D model, the estimate and the project in it.
+      await t.button('File', { exact: true });
+      await t.page.locator('[data-menu=export-html]').click();
+      const dialog = t.page.locator('[aria-label="Lapin for the browser"]');
+      await dialog.locator('[data-testid=html-export-size]').waitFor({ timeout: 60_000 });
+      const ticked = await dialog.locator('[data-testid=html-export-drawings] input[type=checkbox]').evaluateAll((els) => els.filter((e) => e.checked).length);
+      t.expect(ticked >= 3, `the plan, the section and the sheet are ticked (${ticked})`);
+      t.expect(await dialog.locator('[data-testid=html-export-tables]').isChecked(), 'the estimate goes with the page');
+      t.expect(await dialog.locator('[data-testid=html-export-project]').isChecked(), 'the project goes inside the page, so Lapin opens it again');
+      await t.shot('html-export-dialog', { of: '[aria-label="Lapin for the browser"]', pad: 0 });
+      const download = t.page.waitForEvent('download', { timeout: 120_000 });
+      await dialog.getByRole('button', { name: 'Export', exact: true }).click();
+      const page = await download;
+      t.expect(page.suggestedFilename().endsWith('.html'), `the browser downloads one .html (${page.suggestedFilename()})`);
+
+      // The same page in the guide's language, written where the scene opens it from.
+      const file = join(mkdtempSync(join(tmpdir(), 'lapin-guide-html-')), 'House.html');
+      const args = await t.page.evaluate(async ([lang]) => {
+        await (await import('/src/i18n/index.ts')).loadLanguage(lang);
+        return (await import('/src/engine/htmlExport.ts')).htmlExportArgs({ viewId: '3d' }, lang);
+      }, [t.lang]);
+      const written = await t.call('project.exportHtml', { ...args, path: file });
+      t.expect(written?.sizes?.project > 0 && written?.sizes?.model3d > 0, 'the page carries the project and the 3D model');
+
+      // Opened from its file, as a double-click opens it: no server, no network.
+      const viewerContext = await t.page.context().browser().newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 });
+      const viewer = await viewerContext.newPage();
+      const offline = [];
+      viewer.on('request', (r) => { if (!r.url().startsWith('file:') && !r.url().startsWith('data:') && !r.url().startsWith('blob:')) offline.push(r.url()); });
+      await viewer.goto(`file://${file}`);
+      await viewer.locator('[data-testid=lp-3d]').waitFor({ timeout: 60_000 });
+      await viewer.locator('[data-loaded=true]').waitFor({ timeout: 60_000 });
+      t.expect(await viewer.locator('plaintext').evaluate((e) => getComputedStyle(e).display === 'none'), 'the project after the page is hidden text');
+      await viewer.waitForTimeout(800);
+      await t.shot('html-export-3d', { page: viewer });
+      // The drawings: the first plan, an element clicked on it shown in the properties.
+      await viewer.locator('.lp-tab[data-key=drawings]').click();
+      await viewer.locator('.lp-list button[title="Ground floor"]').click();
+      await viewer.locator('.lp-paper[data-drawing^="plan:"] svg').waitFor({ timeout: 20_000 });
+      await viewer.waitForTimeout(400);
+      const pick = viewer.locator('.lp-paper [data-gid]').first();
+      t.expect(await pick.count() === 1, 'the plan names its elements by their GlobalIds');
+      const box = await pick.boundingBox();
+      if (box) await viewer.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await viewer.waitForTimeout(400);
+      t.expect(await viewer.locator('.lp-side dd', { hasText: /^Ifc/ }).count() > 0, 'a click on the plan shows the element\'s properties');
+      await t.shot('html-export-drawing', { page: viewer });
+      // The estimate: its lines, marked indicative, a row selecting its elements.
+      await viewer.locator('.lp-tab[data-key="table:cost"]').click();
+      await viewer.locator('.lp-table tbody tr').first().waitFor({ timeout: 10_000 });
+      t.expect(await viewer.locator('.lp-tablebox .lp-tag').count() === 1, 'the estimate is marked indicative, as the app marks it');
+      await viewer.locator('.lp-table tbody tr:not(.lp-heading)').first().click();
+      await viewer.waitForTimeout(300);
+      await t.shot('html-export-costs', { page: viewer });
+      t.expect(offline.length === 0, `the page asks the network for nothing (${offline.join(', ')})`);
+      await viewerContext.close();
+
+      // Opened again in Lapin: the project inside the page, unsaved, the same walls.
+      const walls = nodes.filter((n) => n.type === 'IfcWall').length;
+      const opened = await t.call('project.open', { path: file });
+      t.expect(opened?.page === 'House.html', 'Lapin reads the project from the page');
+      await t.wait(1000);
+      t.expect((await t.nodes()).filter((n) => n.type === 'IfcWall').length === walls, 'the same walls come back');
+      t.expect(!(await t.page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc?.path)), 'it opens without a file of its own: Save asks where, as a .lapin');
+    },
+  },
+  {
     // The analytical model for JG Structures (docs/jg-structures.md): a small concrete frame on footings, its export checked.
     id: 'export-jg',
     async run(t) {

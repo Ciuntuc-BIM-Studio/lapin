@@ -166,3 +166,26 @@ Un nor nu se exportă cu modelul: IFC și Fragments duc modelul, nu scanarea, ia
 ![Export 3D](shots/export-3d.webp)
 
 Alegi ce exporți, ce fază și originea. **Ce** este **tot**, sau modelul **cum îl arată vederea**: vederea 3D din față, fără elementele și categoriile ei ascunse și fără etajele pe care nu le arată, cu straturile pe care le arată (fără finisaje sau doar miezurile). Când vederea e tăiată (tăietura de deasupra etajelor afișate, o secțiune arătată în 3D, cutia de secțiune), **Tăietură** taie și exportul acolo și închide fiecare tăietură în materialele ei, ca fișierul să arate ca ecranul. O vedere 3D care lasă ceva deoparte se exportă cum o arată, dacă nu alegi altfel. Fiecare element își păstrează clasa IFC, tipul și GlobalId-ul. Ca să schimbi modelul în sine, nu suprafețele lui, folosește **Exportă IFC**.
+
+## Lapin pentru browser
+
+**Fișier → Lapin pentru browser (.html)…** scrie proiectul ca o pagină web, un singur fișier .html pe care îl poți trimite oricui. Se deschide cu dublu clic în orice browser (Chrome, Edge, Safari, Firefox), pe orice calculator, fără internet și fără nimic de instalat:
+
+- **3D**: modelul așa cum îl arată vederea 3D. Trage ca să-l rotești, trage cu butonul din dreapta ca să-l deplasezi, rotița ca să mărești; **Încadrează** îl arată întreg. Alege un etaj singur sau împreună cu cele de dedesubt; fă clic pe un element ca să-l selectezi (Shift adaugă la selecție), apoi **Izolează**-l sau **Ascunde**-l; **Arată tot** aduce totul înapoi.
+- **Desene**: planurile, secțiunile, fațadele și planșele pe care le-ai bifat, desenate cum le tipărește Lapin, clare la orice mărire. Trage ca să deplasezi, rotița ca să mărești, **Tipărește** ca să tipărești desenul afișat. Fă clic pe un element dintr-un desen ca să-l selectezi: e același element și în 3D.
+- **Deviz**, când proiectul are unul: capitolele și liniile lui, totalurile, marcate *orientativ* când folosește valorile aproximative ale Lapin. Fă clic pe titlul unei coloane ca să sortezi, scrie în **Filtru** ca să găsești o linie, fă clic pe o linie ca să-i selectezi elementele.
+- **Proprietăți**: ce e selectat, cu clasa, tipul, nivelul, materialul, proprietățile și cantitățile lui.
+
+![Fișier → Lapin pentru browser](shots/html-export-dialog.webp)
+
+În dialog alegi ce desene intră (toate, implicit), modelul 3D, devizul și **proiectul însuși**. Pagina arată mărimea ei înainte de a fi scrisă. Pagina vorbește limba pe care o vorbește Lapin când o exporți.
+
+![Pagina într-un browser: modelul 3D](shots/html-export-3d.webp)
+
+![Un plan în pagină, cu un perete selectat care își arată proprietățile](shots/html-export-drawing.webp)
+
+![Devizul în pagină](shots/html-export-costs.webp)
+
+Cu proiectul înăuntru, pagina este și proiectul: **Fișier → Deschide** în Lapin ia fișierul .html și deschide proiectul pe care îl conține, nesalvat; **Salvează** întreabă unde să-l păstrezi ca .lapin și nu scrie niciodată peste pagină. Fără proiect, pagina arată doar modelul, iar Lapin nu o deschide. O pagină web scrisă de altcineva decât Lapin este refuzată.
+
+Pagina este o instantanee: ce arată este proiectul de la momentul exportului, iar nimic din ce face un cititor în ea nu schimbă proiectul. Este cât părțile ei: proiectul, modelul 3D (cam cât un export GLB) și desenele, plus cam 0,6 MB pentru vizualizatorul în sine.
