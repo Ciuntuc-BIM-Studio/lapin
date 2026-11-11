@@ -58,6 +58,8 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
   const refs: ViewRefs = { camera, canvas, scene };
   const refsRef = useRef(refs);
   refsRef.current = refs;
+  /** The height of each point clicked (3D snaps), kept for a tool that measures in space. */
+  const zs = useRef<number[]>([]);
   const state = useRef({ pts, at, text, lock });
   state.current = { pts, at, text, lock };
   const level = () => num(activeStorey() ?? undefined, 'elevation');
@@ -70,11 +72,16 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
     if (!g || !tool) return;
     const step = clickStep(g, state.current.pts, constrained(g, state.current.pts, p), 8 / pxPerM());
     setPts(step.pts);
+    // The height of the point clicked (a snap off the level), kept for a tool that measures in space.
+    const prev = state.current.pts.length;
+    const z = hit && hit.kind !== 'On level' ? hit.point.z : level();
+    const heights = step.done ? (step.done.length > prev ? [...zs.current.slice(0, prev), z] : zs.current.slice(0, step.done.length)) : undefined;
+    zs.current = step.done ? (step.pts.length === 1 ? [z] : []) : step.pts.length > prev ? [...zs.current.slice(0, prev), z] : zs.current.slice(0, step.pts.length);
     setText('');
     setLock(null);
     // One click on a floor of another storey (a chair on the first floor's slab): the element goes on that storey.
     const on = g.kind === 'point' && hit && hit.kind !== 'On level' ? storeyOf(hit.point.z) : null;
-    if (step.done) void completeTool(tool, { points: step.done, ...(typed != null ? { typed } : {}) }, undefined, on);
+    if (step.done) void completeTool(tool, { points: step.done, heights, ...(typed != null ? { typed } : {}) }, undefined, on);
   };
   /** Pixels a metre where the cursor is (how near closes a polygon). */
   const pxPerM = () => {
@@ -92,7 +99,7 @@ export function Place3D({ camera, canvas, scene }: ViewRefs) {
       return;
     }
     const step = enterStep(g, s.pts);
-    if (step) { setPts(step.pts); void completeTool(tool, { points: step.done! }); }
+    if (step) { setPts(step.pts); void completeTool(tool, { points: step.done!, heights: Array.from({ length: step.done!.length }, (_, i) => zs.current[i] ?? level()) }); zs.current = []; }
   };
   const enterRef = useRef(enter);
   enterRef.current = enter;

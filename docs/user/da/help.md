@@ -10,7 +10,7 @@ Klik på **Ask Me**, kaninen øverst til højre, eller tryk på <kbd>F1</kbd> hv
 
 ![Ask Me der svarer på, hvordan man kopierer en væg](shots/ask-me.webp)
 
-Hvis Ask Me ikke har et svar, sender **Send spørgsmålet** det til os. Vi besvarer det, og svaret føjes til Ask Me for alle.
+Hvis Ask Me ikke har et svar, sender **Send spørgsmålet** det til os. Vi besvarer det, og svaret føjes til Ask Me for alle. **Spørg i forummet** spørger i stedet Lapins brugere og fans: det åbner et nyt emne i forummet med dit spørgsmål som titel.
 
 ## Hjælpemenuen
 
@@ -22,7 +22,9 @@ Knappen **?** ved siden af Ask Me åbner hjælpemenuen:
 - **Brugervejledning** åbner denne vejledning på brugerfladens sprog.
 - **Rapportér et problem…** fortæller os, hvad der gik galt, eller sender en idé eller et spørgsmål. Sig, hvad der skete, og hvad du forventede, og vedhæft et skærmbillede, hvis det hjælper. Programmets version og dets seneste fejlmeddelelser følger med rapporten.
 - **Beskeder…** viser svarene på dine rapporter. Den vises, når du første gang har bedt om et svar.
-- **Fællesskab (Skool)** er stedet, hvor brugerne og holdet taler sammen.
+- **Forum** åbner Lapins forum (forum.lapinbim.com), hvor brugere og fans taler sammen, viser deres arbejde og hjælper hinanden. Forummet er på engelsk, men du kan skrive på dit eget sprog.
+- **Spørg i forummet…** åbner et nyt emne i forummet, i Lapins kategori, med programmets version under din tekst. Intet andet om din computer eller dit projekt følger med. Du logger ind i forummet og opretter emnet dér.
+- **Fællesskab (Skool)** er stedet for kurserne og holdets øvrige materiale.
 - **Søg efter opdateringer…** findes kun i skrivebordsprogrammet.
 - **Om Lapin…** viser versionen, licensen, et link til kildekoden og hvad helpware betyder.
 

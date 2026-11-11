@@ -103,7 +103,7 @@ const table = piece('table', 'Table', UtensilsCrossed, 'TB');
 const coffeeTable = piece('coffeeTable', 'Coffee table', Coffee);
 const desk = piece('desk', 'Desk', LampDesk);
 
-/** The straight kitchen: two points along a wall, its back on the wall's face, as long as the line. */
+/** A kitchen of any layout: two points along a wall, its back on the wall's face, as long as the line (an L or a U tucked into the corner it is drawn near). */
 const kitchen: ToolDef = {
   id: 'furniture.kitchen', label: 'Kitchen', icon: CookingPot, shortcut: 'KT',
   gesture: { kind: 'twoPoints' },
@@ -143,7 +143,7 @@ const byRoom = schedule('furniture.byRoom', 'Furniture by room', 'furnitureRooms
 const furniture: LapinModule = {
   id: 'furniture',
   name: 'Furniture',
-  summary: 'Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and straight kitchens, parametric types placed against walls, with their plan symbols, schedules and IFC.',
+  summary: 'Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and kitchens in six layouts, parametric types placed against walls, with their plan symbols, schedules and IFC.',
   tabs: [{
     // On the Interior tab with the finishes (decision 367).
     id: 'interior', label: 'Interior', order: 25, include: ['modify'], i18nCtx: 'furniture',

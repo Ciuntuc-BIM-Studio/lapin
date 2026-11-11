@@ -4,21 +4,29 @@
  * Atrium's HUD, the properties panel, the status bar.
  */
 
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { AppWindow, Bot, Columns2, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
-import { closeOverlay, columns, setPanelWidth, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
+import { Fragment, lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { AppWindow, Bot, Box, Columns2, Ruler, FolderTree, Layers, ListTree, PanelLeftOpen, PanelRightOpen, Rows2, SlidersHorizontal, X } from 'lucide-react';
+import { closeOverlay, columns, panelsOn, setPanelWidth, setStackRatio, type PanelId, type Side, showOverlay, showPropsTab, togglePanel, usePanels, type PanelTab } from './app/panels';
 import { assistantAvailable } from './assistant/available';
 import { useInterface } from './app/interface';
 import { bindingText } from './app/commands';
 import { closePane, closeTab, focusPane, isTableView, notify, openTab, splitPane, tabKey, useUi, type ViewTab } from './app/store';
+import type { ToolDef } from './platform/module';
 import { PaneContext } from './app/pane';
 import { openViewWindow } from './app/windows';
+import { beginTabDrag, DROP_LABELS, tabToWindow, useTabDrag } from './app/tabDrag';
+import { openContextMenu, type MenuItem } from './shell/ContextMenu';
+import { t as tr } from './i18n';
+import { resolveTheme, setPrefs, usePrefs } from './app/prefs';
+import { CursorCoords } from './shell/CursorCoords';
+import { watchLocation } from './app/location';
 import { useShortcuts } from './app/keys';
 import { useSession } from './engine/session';
+import { SectionIcon } from './icons';
 import { unitLabel, useStandards } from './engine/unitsStore';
 import { openStandards } from './modules/core/standardsTab';
 import { isDesktop, projectTitle } from './engine/files';
-import { backgrounds, dialog, moduleView, modules, overlays, productInfo } from './platform/modules';
+import { activate, backgrounds, dialog, findTool, moduleView, modules, overlays, productInfo } from './platform/modules';
 import { ProjectBrowser } from './shell/ProjectBrowser';
 import { PropertiesPanel } from './shell/PropertiesPanel';
 import { Ribbon } from './shell/Ribbon';
@@ -84,6 +92,7 @@ function StatusBar() {
         : <span className={connected ? 'ok' : 'off'}>{connected ? 'Engine connected' : 'Engine offline'}</span>}
       {merged && <CadPrompt inline />}
       {parts.hud === 'status' && <span className="status-hud">{facts.level} <span className="accent">{facts.elevation}</span> · {facts.view}</span>}
+      <CursorCoords />
       <span>{projectTitle(doc?.path)}{doc?.dirty ? ' · unsaved' : ''}</span>
       <span>{elements} elements</span>
       <button type="button" className="status-link" title="The project's units: change them in Drafting standards → Project" onClick={() => openStandards('project')}>Units: {unitLabel(units) || units}</button>
@@ -117,6 +126,7 @@ function PaneTabs({ i }: { i: number }) {
   const tabs = useUi((s) => s.viewTabs);
   const storeyId = useUi((s) => s.storeyId);
   const nodes = useSession((s) => s.nodes);
+  const dragRef = useRef<{ dragged: () => boolean } | null>(null);
   if (!pane) return null;
   const label = (t: ViewTab): string => {
     switch (t.view) {
@@ -131,14 +141,32 @@ function PaneTabs({ i }: { i: number }) {
     }
   };
   const mine = tabKey({ ...pane, storeyId: pane.view === 'plan' ? storeyId : null });
+  // A tab's own menu (decision 445): a window of its own, the other pane or a split, closing.
+  const tabMenu = (x: number, y: number, t: ViewTab) => {
+    const items: MenuItem[] = [];
+    if (role === 'main' && !isGuest()) {
+      if (isDesktop()) items.push({ label: 'Open in a new window', onSelect: () => void tabToWindow(t, label(t)) });
+      if (count < 2) {
+        items.push({ label: 'Split: open beside', onSelect: () => { splitPane('row'); openTab(1, t); } });
+        items.push({ label: 'Split: open below', onSelect: () => { splitPane('column'); openTab(1, t); } });
+      } else items.push({ label: 'Open in the other pane', onSelect: () => openTab(i === 0 ? 1 : 0, t) });
+    }
+    items.push({ label: 'Close', onSelect: () => closeTab(tabKey(t)) });
+    if (tabs.length > 1) items.push({ label: 'Close the others', onSelect: () => { for (const o of useUi.getState().viewTabs) if (tabKey(o) !== tabKey(t)) closeTab(tabKey(o)); } });
+    openContextMenu(x, y, items);
+  };
   const current = tabs.find((t) => tabKey(t) === mine);
   return (
     <div className="view-tabs">
+      <QuickViews />
       <div className="view-tab-strip">
         {tabs.map((t) => {
           const key = tabKey(t);
           return (
-            <button type="button" key={key} className={`view-tab${key === mine ? ' on' : ''}`} title={label(t)} onClick={() => openTab(i, t)}>
+            <button type="button" key={key} className={`view-tab${key === mine ? ' on' : ''}`} title={`${tr(label(t))} · ${tr('drag out for a window of its own, to the side to split')}`}
+              onPointerDown={(e) => { if (e.button === 0 && !(e.target as HTMLElement).closest('.close') && role === 'main' && !isGuest()) dragRef.current = beginTabDrag(e, t, label(t)); }}
+              onClick={() => { if (dragRef.current?.dragged()) { dragRef.current = null; return; } dragRef.current = null; openTab(i, t); }}
+              onContextMenu={(e) => { e.preventDefault(); tabMenu(e.clientX, e.clientY, t); }}>
               {label(t)}
               <span className="close" role="button" aria-label="Close" onClick={(e) => { e.stopPropagation(); closeTab(key); }}><X size={11} /></span>
             </button>
@@ -159,6 +187,40 @@ function PaneTabs({ i }: { i: number }) {
         </>
       )}
       {role === 'main' && isDesktop() && !isGuest() && <button type="button" className="icon mini" title="Open this view in a window of its own (for a second screen)" onClick={() => void openViewWindow(pane, current ? label(current) : 'View')}><AppWindow size={13} /></button>}
+    </div>
+  );
+}
+
+/** 3D, Section and Measure in one click, before the view tabs (a tester's request, decision 458). */
+function QuickViews() {
+  const tool = useUi((s) => s.tool);
+  const quick: { id: string; icon: ToolDef['icon']; hint: string }[] = [
+    { id: 'view.3d', icon: Box, hint: '3D' },
+    { id: 'view.section', icon: SectionIcon, hint: 'Section' },
+    { id: 'measure', icon: Ruler, hint: 'Measure' },
+  ];
+  return (
+    <div className="quick-views" role="group" aria-label={tr('Views')}>
+      {quick.map(({ id, icon: Icon, hint }) => {
+        const def = findTool(id);
+        if (!def) return null;
+        return (
+          <button type="button" key={id} className={`icon mini${tool === id ? ' on' : ''}`} data-testid={`quick-${id}`} aria-label={tr(hint)}
+            title={def.shortcut ? `${tr(hint)} (${def.shortcut})` : tr(hint)} onClick={() => activate(def)}><Icon size={14} /></button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A tab being dragged: its name at the pointer, the place it would go lit (decision 445). */
+function TabDragOverlay() {
+  const { label, at, drop } = useTabDrag();
+  if (!label || !at) return null;
+  return (
+    <div className="tab-drag" aria-hidden>
+      {drop && <div className={`tab-drop ${drop.kind}`} style={{ left: drop.rect.left, top: drop.rect.top, width: drop.rect.width, height: drop.rect.height }}><span>{tr(DROP_LABELS[drop.kind])}</span></div>}
+      <div className="tab-ghost" style={{ left: at.x + 12, top: at.y + 8 }} data-no-i18n>{label}</div>
     </div>
   );
 }
@@ -219,22 +281,77 @@ function Panes() {
   );
 }
 
-/** A separator beside a side panel: dragged, it sets the panel's width. */
-function SideSep({ side }: { side: 'browser' | 'props' }) {
+/** A separator beside a side: dragged, it sets the side's width (its first open panel's). */
+function SideSep({ side }: { side: Side }) {
   const onDown = (e: React.PointerEvent) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
     const start = e.clientX;
-    const width = side === 'browser' ? usePanels.getState().browserWidth : usePanels.getState().propsWidth;
-    const move = (ev: PointerEvent) => setPanelWidth(side, width + (side === 'browser' ? ev.clientX - start : start - ev.clientX));
+    const st = usePanels.getState();
+    const first = panelsOn(st, side).find((p) => (p === 'browser' ? st.browserOpen : st.propsOpen)) ?? 'browser';
+    const width = first === 'browser' ? st.browserWidth : st.propsWidth;
+    const move = (ev: PointerEvent) => setPanelWidth(first, width + (side === 'left' ? ev.clientX - start : start - ev.clientX));
     const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
   };
-  return <div className="side-sep" role="separator" aria-orientation="vertical" onPointerDown={onDown} onDoubleClick={() => togglePanel(side)} title="Drag to resize; double-click to fold or unfold" />;
+  const fold = () => { const st = usePanels.getState(); const first = panelsOn(st, side).find((p) => (p === 'browser' ? st.browserOpen : st.propsOpen)); if (first) togglePanel(first); };
+  return <div className="side-sep" role="separator" aria-orientation="vertical" onPointerDown={onDown} onDoubleClick={fold} title="Drag to resize; double-click to fold or unfold" />;
+}
+
+/** The divider between two panels stacked on one side: dragged, it shares their height. */
+function StackSep({ host }: { host: React.RefObject<HTMLDivElement | null> }) {
+  const onDown = (e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      const r = host.current!.getBoundingClientRect();
+      setStackRatio((ev.clientY - r.top) / r.height);
+    };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return <div className="stack-sep" role="separator" aria-orientation="horizontal" onPointerDown={onDown} onDoubleClick={() => setStackRatio(0.5)} title="Drag to share the height; double-click to halve" />;
+}
+
+const PANEL_NAME: Record<PanelId, string> = { browser: 'Project browser', props: 'Properties' };
+
+/** A panel folded inside a stack whose other panel is open: a thin bar to unfold it. */
+function FoldedBar({ panel, side }: { panel: PanelId; side: Side }) {
+  return (
+    <button type="button" className="fold-bar" data-rail={panel} title={`Unfold the ${PANEL_NAME[panel].toLowerCase()}`} onClick={() => togglePanel(panel)}>
+      {side === 'left' ? <PanelLeftOpen size={13} /> : <PanelRightOpen size={13} />}<span>{PANEL_NAME[panel]}</span>
+    </button>
+  );
+}
+
+/** One side of the workspace: its panels (open, folded to a bar, or all folded to rails), stacked when there are two. */
+function SideColumn({ side }: { side: Side }) {
+  const st = usePanels();
+  const host = useRef<HTMLDivElement>(null);
+  const ps = panelsOn(st, side);
+  if (!ps.length) return <span />;
+  const isOpen = (p: PanelId) => (p === 'browser' ? st.browserOpen : st.propsOpen);
+  const open = ps.filter(isOpen);
+  if (!open.length) {
+    return <div className={`side-col on-${side} rails`}>{ps.map((p) => <Rail key={p} panel={p} side={side} label={PANEL_NAME[p]} />)}</div>;
+  }
+  const grow = (p: PanelId) => (open.length < 2 ? 1 : p === 'browser' ? st.stackRatio : 1 - st.stackRatio);
+  return (
+    <div ref={host} className={`side-col on-${side}${ps.length > 1 ? ' stacked' : ''}`}>
+      {ps.map((p, i) => isOpen(p) ? (
+        <Fragment key={p}>
+          {i > 0 && open.length > 1 && <StackSep host={host} />}
+          <div className={`side ${p === 'browser' ? 'browser-side' : 'props-side'}`} style={{ flex: `${grow(p)} 1 0` }}>
+            <PanelFold side={p} at={side} />{p === 'browser' ? <ProjectBrowser /> : <RightPanel />}
+          </div>
+        </Fragment>
+      ) : <FoldedBar key={p} panel={p} side={side} />)}
+    </div>
+  );
 }
 
 /** A folded panel: a narrow rail; its icons open the panel over the view for a moment, the arrow unfolds it. */
-function Rail({ side, label }: { side: 'browser' | 'props'; label: string }) {
+function Rail({ panel: side, side: at, label }: { panel: PanelId; side: Side; label: string }) {
   const hidden = usePanels((p) => p.railsHidden);
   const overlay = usePanels((p) => p.overlay);
   if (hidden) return <span />;
@@ -243,7 +360,7 @@ function Rail({ side, label }: { side: 'browser' | 'props'; label: string }) {
   const on = (tab?: string) => (overlay?.side === side && overlay.tab === tab ? ' on' : '');
   return (
     <aside className={`panel rail ${side}`} aria-label={label} data-rail={side}>
-      <button type="button" className="icon mini" title={`Unfold the ${label.toLowerCase()}${keys ? ` (${keys})` : ''}`} onClick={() => togglePanel(side)}>{side === 'browser' ? <PanelLeftOpen size={15} /> : <PanelRightOpen size={15} />}</button>
+      <button type="button" className="icon mini" title={`Unfold the ${label.toLowerCase()}${keys ? ` (${keys})` : ''}`} onClick={() => togglePanel(side)}>{at === 'left' ? <PanelLeftOpen size={15} /> : <PanelRightOpen size={15} />}</button>
       {side === 'browser' ? <>
         <button type="button" className={`icon rail-icon${on('project')}`} title="Project: views, sheets and schedules" onClick={pick('project')}><FolderTree size={16} /></button>
         <button type="button" className={`icon rail-icon${on('levels')}`} title="Levels" onClick={pick('levels')}><Layers size={16} /></button>
@@ -263,6 +380,8 @@ function PanelOverlay() {
   const inset = usePanels((p) => (p.railsHidden ? 0 : 36));
   const browserWidth = usePanels((p) => p.browserWidth);
   const propsWidth = usePanels((p) => p.propsWidth);
+  const browserSide = usePanels((p) => p.browserSide);
+  const propsSide = usePanels((p) => p.propsSide);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!overlay) return;
@@ -278,9 +397,11 @@ function PanelOverlay() {
   }, [overlay]);
   if (!overlay) return null;
   const browser = overlay.side === 'browser';
+  const at = browser ? browserSide : propsSide;
+  const width = browser ? browserWidth : propsWidth;
   return (
-    <div ref={ref} className={`panel-overlay side ${browser ? 'left' : 'right'}`} style={browser ? { left: inset, width: browserWidth } : { right: inset, width: propsWidth }}>
-      <PanelFold side={overlay.side} overlay />
+    <div ref={ref} className={`panel-overlay side ${at}`} style={at === 'left' ? { left: inset, width } : { right: inset, width }}>
+      <PanelFold side={overlay.side} at={at} overlay />
       {browser ? <ProjectBrowser key={overlay.tab ?? "project"} show={overlay.tab === 'assistant' ? undefined : overlay.tab} /> : <PropertiesPanel />}
     </div>
   );
@@ -289,11 +410,12 @@ function PanelOverlay() {
 /** The dialogs of working together (File → Share session…, Join session…), opened by the store's `dialog`. */
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const InterfaceDialog = lazyPart(() => import('./shell/InterfaceDialog').then((m) => m.InterfaceDialog), { title: 'Interface' });
+const PreferencesDialog = lazyPart(() => import('./shell/PreferencesDialog').then((m) => m.PreferencesDialog), { title: 'Preferences' });
 const QuickToolsDialog = lazyPart(() => import('./shell/QuickToolsDialog').then((m) => m.QuickToolsDialog), { title: 'Quick tools' });
 const ShortcutsDialog = lazyPart(() => import('./shell/ShortcutsDialog').then((m) => m.ShortcutsDialog), { title: 'Keyboard shortcuts' });
 const OptimizeIfcDialog = lazyPart(() => import('./shell/OptimizeIfcDialog').then((m) => m.OptimizeIfcDialog), { title: 'Optimize IFC' });
 
-const shareDialogs: Record<string, React.ComponentType> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog };
+const shareDialogs: Record<string, React.ComponentType> = { share: ShareDialog, join: JoinDialog, interface: InterfaceDialog, preferences: PreferencesDialog, quickTools: QuickToolsDialog, shortcuts: ShortcutsDialog, palette: CommandPalette, optimizeIfc: OptimizeIfcDialog };
 
 function Workspace() {
   const open = useUi((s) => s.dialog);
@@ -304,14 +426,15 @@ function Workspace() {
     <div className={`workspace ui-${ui.preset} rows-${ui.parts.rows}`}>
       <Ribbon />
       <div className="body" style={{ gridTemplateColumns: columns(panels) }}>
-        {panels.browserOpen ? <div className="side browser-side"><PanelFold side="browser" /><ProjectBrowser /></div> : <Rail side="browser" label="Project browser" />}
-        {panels.browserOpen ? <SideSep side="browser" /> : <span />}
+        <SideColumn side="left" />
+        {panelsOn(panels, 'left').some((p) => (p === 'browser' ? panels.browserOpen : panels.propsOpen)) ? <SideSep side="left" /> : <span />}
         <main className="views"><Panes /></main>
-        {panels.propsOpen ? <SideSep side="props" /> : <span />}
-        {panels.propsOpen ? <div className="side props-side"><PanelFold side="props" /><RightPanel /></div> : <Rail side="props" label="Properties" />}
+        {panelsOn(panels, 'right').some((p) => (p === 'browser' ? panels.browserOpen : panels.propsOpen)) ? <SideSep side="right" /> : <span />}
+        <SideColumn side="right" />
         <PanelOverlay />
       </div>
       <StatusBar />
+      <TabDragOverlay />
       {Dialog && <Dialog />}
       <GuestBar />
       <PresenceReporter />
@@ -339,7 +462,19 @@ export function App() {
   const screen = useUi((s) => s.screen);
   const theme = useUi((s) => s.theme);
   useShortcuts();
+  useEffect(() => { watchLocation(); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  // The theme chosen is kept for the next start (a tester's report: dark came back light every time); a system choice follows the system.
+  useEffect(() => { const p = usePrefs.getState(); if (p.theme !== 'system' && p.theme !== theme) setPrefs({ theme }); }, [theme]);
+  const themeChoice = usePrefs((s) => s.theme);
+  useEffect(() => {
+    if (themeChoice !== 'system') return;
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    const apply = () => useUi.setState({ theme: resolveTheme('system') });
+    apply();
+    mq?.addEventListener?.('change', apply);
+    return () => mq?.removeEventListener?.('change', apply);
+  }, [themeChoice]);
   const role = useUi((s) => s.windowRole);
   if (screen === 'join') return <JoinGate onJoin={() => void connect()} />;
   return <>{screen === 'start' ? <StartScreen /> : role === 'view' ? <ViewWindow /> : <Workspace />}<EngineNotice /><BusyOverlay /><ContextMenuHost /></>;

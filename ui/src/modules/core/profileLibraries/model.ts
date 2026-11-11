@@ -13,16 +13,25 @@ export interface ProfileJson {
   /** The engine's area and mass worked out, for lists (never read back). */
   summary?: ProfileSummary;
 }
-export interface LibraryJson { format?: string; version?: number; name: string; description?: string | null; material?: string; profiles: ProfileJson[] }
+/** `standard`: the standard the pickers show its profiles under (EN, AISC / ASTM, a firm's own); none: each profile's, else the library's name. */
+export interface LibraryJson { format?: string; version?: number; name: string; description?: string | null; material?: string; standard?: string | null; profiles: ProfileJson[] }
 
 export type LibraryOrigin = 'builtin' | 'computer' | 'folder' | 'project';
 /** A library as the manager lists it: where it lives, and (a folder's) its file and whether Lapin may write there. */
 export interface LibraryEntry { key: string; origin: LibraryOrigin; name: string; library: LibraryJson; folder?: string; file?: string; writable?: boolean; added?: string }
 
 /** A project's copy (`LapinSectionProfile`), as `profiles.project` gives it. */
-export interface ProjectCopy { id: string; name: string; library?: string | null; source?: string | null; added?: string | null; updated?: string | null; profile: ProfileJson; types: string[] }
+export interface ProjectCopy { id: string; name: string; library?: string | null; standard?: string | null; source?: string | null; added?: string | null; updated?: string | null; profile: ProfileJson; types: string[] }
 export interface LegacyType { typeId: string; typeName: string; class: string; section: Record<string, unknown>; builtin?: string | null }
-export interface ProjectProfilesDto { copies: ProjectCopy[]; legacy: LegacyType[] }
+/** `standards`: the profile standards the project's pickers offer (null: all). */
+export interface ProjectProfilesDto { copies: ProjectCopy[]; legacy: LegacyType[]; standards?: string[] | null }
+
+/** The profile standards a project offers (IfcProject's `profileStandards`, profiles.setStandards); null: all. */
+export function projectStandardsOf(nodes: ReadonlyMap<string, { type: string; props: Record<string, unknown> }>): string[] | null {
+  for (const n of nodes.values())
+    if (n.type === 'IfcProject') return Array.isArray(n.props.profileStandards) ? (n.props.profileStandards as unknown[]).filter((x): x is string => typeof x === 'string') : null;
+  return null;
+}
 
 export const KINDS = ['I', 'asymI', 'U', 'T', 'L', 'RHS', 'CHS', 'C', 'Z', 'SIGMA', 'rectangle', 'circle', 'ellipse', 'outline'] as const;
 export const KIND_LABELS: Record<string, string> = {
@@ -97,6 +106,67 @@ export function search(entries: LibraryEntry[], text: string, filters: { kind?: 
     }
   }
   return o;
+}
+
+// ─── Standards: the groups the pickers show (decision 457) ─────────────────────
+
+export const EN = 'EN';
+export const AISC = 'AISC / ASTM';
+const KNOWN: [string, string][] = [['AS/NZS', 'AS/NZS'], ['AS', 'AS/NZS'], ['BS', 'BS'], ['DIN', 'DIN'], ['JIS', 'JIS'], ['GB', 'GB'], ['CSA', 'CSA'], ['IS', 'IS'], ['GOST', 'GOST']];
+const startsAsWord = (s: string, prefix: string) => s.startsWith(prefix) && (s.length === prefix.length || !/[A-Z]/.test(s[prefix.length]));
+
+/** A standard's name as written (EN 10365:2017, DIN EN 10025-2, ASTM A6) as the group it is shown under, as the engine's `ProfileStandards.Group`; null when none is recognised. */
+export function standardGroup(standard: string | null | undefined): string | null {
+  const s = (standard ?? '').trim().toUpperCase();
+  if (!s) return null;
+  if (startsAsWord(s, 'EN') || /^[A-Z]{2,4}[\s-]?EN[\s\-\d]/.test(s)) return EN;
+  if (s.startsWith('ASTM') || s.startsWith('AISC')) return AISC;
+  for (const [prefix, group] of KNOWN) if (startsAsWord(s, prefix)) return group;
+  return null;
+}
+
+/** The group a library's profile is shown under: the library's own standard, else the profile's, else the library's name. */
+export function groupOf(entry: LibraryEntry, p: ProfileJson): string {
+  return entry.library.standard?.trim() || standardGroup(p.standard) || entry.name;
+}
+
+/** EN first, AISC / ASTM next, the other standards and the libraries of their own in natural order. */
+export function compareGroups(a: string, b: string): number {
+  const rank = (g: string) => (g === EN ? 0 : g === AISC ? 1 : 2);
+  return rank(a) - rank(b) || naturalCompare(a, b);
+}
+
+/** Every group the libraries' profiles fall in (the project's copies left out: they are always shown), in order. */
+export function standardsOf(entries: LibraryEntry[]): string[] {
+  const s = new Set<string>();
+  for (const e of entries) if (e.origin !== 'project') for (const p of e.library.profiles) s.add(groupOf(e, p));
+  return [...s].sort(compareGroups);
+}
+
+/**
+ * The profiles found as the picker shows them: the project's copies first under their heading, then each standard's
+ * under its own, in order. A standard the project does not offer (`offered`, null: all) or the user hid is left out;
+ * the project's copies never are (its types use them).
+ */
+export function groupFound(found: Found[], offered: readonly string[] | null, hidden: readonly string[], limit = Infinity): { group: string; project: boolean; items: Found[] }[] {
+  const groups = new Map<string, { group: string; project: boolean; items: Found[] }>();
+  let n = 0;
+  for (const f of found) {
+    const project = f.entry.origin === 'project';
+    const group = project ? '' : groupOf(f.entry, f.profile);
+    if (!project && ((offered && !offered.includes(group)) || hidden.includes(group))) continue;
+    if (n++ >= limit) break;
+    const g = groups.get(group) ?? { group, project, items: [] };
+    g.items.push(f);
+    groups.set(group, g);
+  }
+  return [...groups.values()].sort((a, b) => (a.project ? -1 : b.project ? 1 : compareGroups(a.group, b.group)));
+}
+
+/** A standard turned on or off in a list (a filter, the project's): null stays all but the one turned off, among `all`. */
+export function toggled(list: readonly string[] | null, all: readonly string[], group: string, on: boolean): string[] {
+  const base = list ?? all;
+  return on ? [...new Set([...base, group])].sort(compareGroups) : base.filter((g) => g !== group);
 }
 
 /** Names compared as people read them: IPE 80 before IPE 100, L 50×50×5 before L 50×50×6. */

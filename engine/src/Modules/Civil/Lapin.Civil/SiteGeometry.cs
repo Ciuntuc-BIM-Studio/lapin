@@ -27,6 +27,30 @@ public static class SiteGeometry
         return Measure.SignedVolume(s) < 0 ? Flip(s) : s;
     }
 
+    /// <summary>
+    /// One closed solid through several rings of the same count (a tube along
+    /// a corridor), capped at both ends: one solid where pairwise lofts would
+    /// make one per stretch — far cheaper to cut a terrain with.
+    /// </summary>
+    public static Solid? LoftMany(IReadOnlyList<IReadOnlyList<Vec3>> rings, string? tag = null)
+    {
+        if (rings.Count < 2) return null;
+        var n = rings[0].Count;
+        if (n < 3 || rings.Any(r => r.Count != n)) return null;
+        var verts = rings.SelectMany(r => r).ToList();
+        var last = (rings.Count - 1) * n;
+        var faces = new List<Face> { Face([.. Enumerable.Range(0, n).Reverse()], verts), Face([.. Enumerable.Range(last, n)], verts) };
+        for (var k = 0; k + 1 < rings.Count; k++)
+            for (var i = 0; i < n; i++)
+            {
+                var j = (i + 1) % n;
+                faces.Add(Face([k * n + i, k * n + j, (k + 1) * n + j, (k + 1) * n + i], verts));
+            }
+        var s = new Solid([.. verts], [.. faces], tag);
+        if (Measure.Volume(s) < 1e-12) return null;
+        return Measure.SignedVolume(s) < 0 ? Flip(s) : s;
+    }
+
     static Face Face(int[] ring, List<Vec3> verts)
     {
         var normal = VecMath.NewellNormal(ring.Select(i => verts[i]).ToList());

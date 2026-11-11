@@ -28,11 +28,21 @@ Fiecare unealtă își arată literele când ții mouse-ul peste ea; le poți sc
 
 ## Măsurarea
 
-**Măsoară** (<kbd>ME</kbd>, a doua unealtă rapidă, sau **MEASURE** ori **DIST** în linia de comandă) măsoară fără să deseneze ceva: dai clic pe puncte într-un plan, o secțiune sau o fațadă, cu snap, și apeși <kbd>Enter</kbd>. Cât dai clic, câmpul de introducere arată lungimea și unghiul fiecărui segment; la sfârșit, mesajul dă lungimea totală, fiecare segment (la unul singur, Δx, Δy și unghiul) și, de la trei puncte, aria pe care o închid.
+**Măsoară** (<kbd>ME</kbd>, a doua unealtă rapidă, sau **MEASURE** ori **DIST** în linia de comandă) măsoară fără să deseneze ceva: dai clic pe puncte într-un plan, o secțiune sau o fațadă, cu snap, și apeși <kbd>Enter</kbd>. Cât dai clic, câmpul de introducere arată lungimea și unghiul fiecărui segment; la sfârșit, mesajul dă lungimea totală, fiecare segment (la unul singur, Δx, Δy și unghiul) și, de la trei puncte, aria pe care o închid. În vederea 3D punctele se prind de colțurile, muchiile și fețele modelului; când sunt la înălțimi diferite, mesajul dă lungimea adevărată în spațiu, cu Δz.
 
 ## Snap și ajutoare
 
 Lapin se prinde de capetele, mijloacele și intersecțiile a ce e desenat, și de grilă. <kbd>F3</kbd> pornește sau oprește snap-ul, <kbd>F8</kbd> ortho și <kbd>F10</kbd> urmărirea polară. Starea lor se vede în dreapta jos a vederii.
+
+**Ce snap-uri.** Un clic dreapta pe **SNAP** (sau pe ▾ de lângă el) arată snap-urile la obiecte: **Capăt**, **Mijloc**, **Intersecție**, **Centru**, **Cadran**, **Perpendicular** și **Cel mai apropiat**, fiecare pornit sau oprit, apoi **Snap la grilă** și unghiul urmăririi polare (la fiecare 5°, 10°, 15°, 22,5°, 30°, 45° sau 90°). Aceleași alegeri sunt în **Fișier → Preferințe… → Grilă și snap** și se păstrează la următoarea pornire.
+
+![Meniul de snap sub plan](shots/snap-menu.webp)
+
+**Grila.** Grila planului e la început **adaptivă**: pasul ei urmează zoomul. În **Preferințe → Grilă și snap** alege **Fixă** și scrie pasul (de exemplu 100 mm sau 1 m) și la câte linii una e desenată mai groasă. Grila păstrează atunci acel pas la orice zoom, iar cursorul face snap la ea unde niciun snap la obiecte nu ia punctul. Când pasul e prea fin pentru zoom, se desenează doar liniile ei mai groase. Grila de la sol a vederii 3D ia același pas.
+
+**UCS.** Un sistem de coordonate al utilizatorului, ca în AutoCAD: scrie **UCS** în linia de comandă, dă clic pe origine, apoi pe un punct de pe axa X (<kbd>Enter</kbd> păstrează unghiul). **W** revine la axele planului (Global), **B** îl pune în punctul de bază al proiectului, **S** în punctul topografic, cu axele spre est și nord, iar **R** îl rotește cu un unghi pe care îl scrii. Chip-ul **UCS** de lângă SNAP arată când e setat unul, iar meniul lui oferă același lucru. Într-un UCS, coordonatele scrise (`x,y`, `@dx,dy`, `d<unghi`), ortho, urmărirea polară și grila urmează axele lui, iar pictograma lui (X roșu, Y verde) stă în origine. UCS-ul se păstrează în proiect, iar setarea lui e un singur pas de undo.
+
+![Un UCS rotit cu 30°: pictograma lui și grila de-a lungul axelor](shots/ucs.webp)
 
 ## Selectare
 
@@ -54,6 +64,16 @@ O ușă, o fereastră sau un gol din perete se mută și se copiază de-a lungul
 
 O axă se mută, se copiază, se rotește și se oglindește singură sau împreună cu alte elemente. O copie e o axă nouă a aceluiași caroiaj, numită după ultima axă care merge în aceeași direcție: cu axele 1, 2 și 3, copia oricăreia e 4.
 
+### În secțiuni și fațade
+
+**Mută** (<kbd>M</kbd>), **Copiază** (<kbd>CO</kbd>) și tragerea unui element selectat merg și într-o secțiune sau o fațadă, în planul vederii. De-a lungul vederii, elementul se mută în plan de-a lungul liniei secțiunii; în sus sau în jos, urcă sau coboară cu decalajul lui față de nivel (decalajul bazei unui perete sau stâlp, decalajul de sus al unei grinzi, decalajul unei plăci). Cât tragi, **Decalaj față de nivel** din proprietăți îl urmează. O ușă sau o fereastră alunecă în continuare de-a lungul peretelui ei, iar liniile desenate pe vedere se mută în vedere. **Oglindește** ia acolo o linie verticală și oglindește elementele față de planul care trece prin ea, perpendicular pe vedere. Elementele nu se **Rotesc** într-o secțiune sau o fațadă, pentru că s-ar răsturna: rotește-le într-un plan sau în 3D. Liniile desenate se rotesc și se oglindesc oricum. Un element fixat rămâne unde e.
+
+![O grindă trasă în sus în fațada de sud: fantoma ei unde era, deplasarea lângă mouse și decalajul față de nivel urmând-o în proprietăți](shots/section-drag.webp)
+
+### Fixarea
+
+Fixează ce nu trebuie să se miște din greșeală: un model importat, caroiajul, un desen de releveu. Selectează-l și alege **Modifică → Fixează**, sau bifează **Fixat** la **Amplasare** în proprietățile lui. Un element fixat nu se mută, nu se rotește, nu se oglindește, nu se ridică, nu trece pe alt nivel și nu se șterge, și nu are grip-uri. Celelalte câmpuri ale lui se schimbă în continuare: tipul, înălțimea sau materialul. Se poate totuși copia, iar copia nu e fixată. Un perete legat de el care se mută lasă capetele peretelui fixat unde sunt. Fixarea unui grup fixează membrii lui; un grup cu un membru fixat nu se mută. **Modifică → Eliberează** (<kbd>UP</kbd>) îl lasă din nou liber. Orice element poate fi fixat: un perete, o referință dintr-un fișier importat, o linie desenată.
+
 ## Desen
 
 Tabul **Desen** desenează linii, polilinii, dreptunghiuri, cercuri și arce. Le editează cu paralelă, taie, prelungește, racordare, teșire și îmbinare, umple suprafețe cu hașuri și le organizează pe **Layere**. **Importă DXF** aduce un desen CAD ca linii de care te poți prinde și pe care le poți edita.
@@ -61,6 +81,8 @@ Tabul **Desen** desenează linii, polilinii, dreptunghiuri, cercuri și arce. Le
 ![Tabul Desen](shots/ribbon-draft.webp)
 
 **Paralelă** (<kbd>O</kbd>) copiază o linie, o polilinie, un dreptunghi, un cerc sau un arc la o distanță. Scrie distanța în unitatea proiectului (într-un proiect în milimetri `500` înseamnă jumătate de metru; `2m` sau `1'6"` își spun unitatea), fă clic pe formă, apoi pe partea în care merge; îți cere forma următoare până apeși <kbd>Enter</kbd> sau <kbd>Esc</kbd>. Scrie **T** (Through) în loc și fiecare copie trece prin punctul pe care faci clic. Colțurile unei polilinii rămân ascuțite (în teșitură), ca în CAD. Paralela merge în planuri, secțiuni, fațade, pe planuri de referință și în vederea 3D.
+
+**Explodează** (<kbd>X</kbd>, sau **EXPLODE**) e drumul înapoi de la **Îmbină**: selectează polilinii sau dreptunghiuri și fiecare devine liniile lui, câte una pe latură, pe același strat, cu aceeași peniță și culoare și în același grup, într-un singur pas de undo. Cercurile, arcele, hașurile și șirurile de cote rămân cum sunt, iar o selecție fără nimic de desfăcut o spune. Merge în planuri, secțiuni, fațade, pe planuri de referință și pe planul de lucru din vederea 3D.
 
 Orice lungime cerută de linia de comandă e în unitatea proiectului, iar mesajul spune care: `Depth (mm)`, `Height (ft-in)`. Unghiurile, factorii și numărătorile sunt numere simple: `90` după **Rotire** înseamnă 90°, oricare ar fi unitatea.
 
@@ -97,7 +119,7 @@ Unde elementele desenate se suprapun, cel desenat mai târziu stă deasupra. Ca 
 
 Tabul **Adnotări** are cotele, textele, axele, cotele de nivel și etichetele. O cotă citește modelul, așa că se actualizează când se mută un perete. Cum arată textele, cotele, axele și etichetele se setează în **Gestionare → Standarde de desen**.
 
-O cotă aliniată sau liniară continuă ca lanț: după primele două puncte și linia ei, fiecare clic adaugă punctul următor pe aceeași linie, iar **Enter** (sau **Esc**) face tot lanțul o singură cotă (**U** scoate ultimul punct; scrie întâi **S** pentru o cotă simplă). Un lanț se poartă ca o polilinie: un clic îl selectează tot și se mută, se copiază și se șterge ca un tot. Un lanț care măsoară pereți, muchii sau axe de rețea rămâne prins de ele: tras sau mutat singur, doar linia de cotă alunecă, perpendicular pe lanț, deci o scăpare a mouse-ului nu-l lasă să măsoare în gol; mutat împreună cu ce măsoară, merge cu ele. Grip-urile lui stau pe fiecare punct măsurat (tragi ca să-l muți, Ctrl/⌘-clic ca să-l scoți), la mijlocul fiecărui segment (tragi ca să adaugi un punct, Ctrl/⌘-clic adaugă unul la jumătate) și la capetele liniei de cotă (tragi ca să muți linia). Ca să pui puncte noi într-un lanț, ca în ArchiCAD, selectează-l și apasă **Adnotări → Adaugă puncte** (sau scrie **DIMADD**, ori **Adaugă puncte** în proprietățile lui): fiecare punct pe care dai clic intră în lanț acolo unde cade pe linia lui, între punctele vecine sau dincolo de un capăt, ca nou capăt, și se prinde de peretele, muchia sau axa pe care cade; **Enter** sau **Esc** încheie. Ca să scoți puncte, Ctrl/⌘-clic pe grip-urile lor, sau apasă **Adnotări → Scoate puncte** (**DIMDEL**, ori **Scoate puncte** în proprietăți) și dă clic lângă fiecare punct; segmentele de o parte și de alta devin unul. Și valoarea fiecărui segment are un grip: trage-l ca să muți valoarea din locul ei acolo unde segmentele sunt scurte și valorile s-ar suprapune; când iese de lângă segmentul ei, o linie de indicație subțire o leagă înapoi. Ctrl/⌘-clic pe grip, sau **Textele înapoi pe linie** în proprietăți, o pune la loc. O valoare mutată rămâne cu segmentul ei când se mută punctele și se rotește odată cu lanțul. Dublu-clic pe un segment ca să-i scrii valoarea: elementul măsurat se mută, și odată cu el tot ce urmează în lanț. Proprietățile arată valoarea și textul fiecărui segment, despart un lanț în cote simple și unesc cotele simple care se continuă pe aceeași linie.
+O cotă aliniată sau liniară este implicit una singură: dai clic pe cele două puncte ale ei, apoi pe locul liniei, și comanda cere următoarea cotă. **Esc** o încheie. Bifează **Continuu** în bara de comenzi (sau scrie **C**; se ține minte) și cota continuă ca lanț: după primele două puncte și linia ei, fiecare clic adaugă punctul următor pe aceeași linie, iar valoarea fiecărui segment se vede cât desenezi. Ca să închei lanțul, apasă **Enter**, dă clic dreapta, apasă butonul **Finalizează lanțul** din bară sau dă clic din nou pe ultimul punct (merge și dublu-clic). **U** scoate ultimul punct. **Esc**, o altă unealtă sau o altă comandă păstrează lanțul desenat până atunci și o spune; anularea îl scoate. O cotă liniară păstrează direcția dată (orizontală sau verticală, după partea punctelor pe care pui linia) până ești clar de cealaltă parte; **Tab** o răstoarnă, iar bara arată care este. Un lanț se poartă ca o polilinie: un clic îl selectează tot și se mută, se copiază și se șterge ca un tot. Un lanț care măsoară pereți, muchii sau axe de rețea rămâne prins de ele: tras sau mutat singur, doar linia de cotă alunecă, perpendicular pe lanț, deci o scăpare a mouse-ului nu-l lasă să măsoare în gol; mutat împreună cu ce măsoară, merge cu ele. Grip-urile lui stau pe fiecare punct măsurat (tragi ca să-l muți, Ctrl/⌘-clic ca să-l scoți), la mijlocul fiecărui segment (tragi ca să muți linia de cotă prin punct; Ctrl/⌘-tragere adaugă un punct unde îl lași, Ctrl/⌘-clic adaugă unul la jumătate) și la capetele liniei de cotă (tragi ca să muți linia). Ca să pui puncte noi într-un lanț, ca în ArchiCAD, selectează-l și apasă **Adnotări → Adaugă puncte** (sau scrie **DIMADD**, ori **Adaugă puncte** în proprietățile lui): fiecare punct pe care dai clic intră în lanț acolo unde cade pe linia lui, între punctele vecine sau dincolo de un capăt, ca nou capăt, și se prinde de peretele, muchia sau axa pe care cade; **Enter** sau **Esc** încheie. Ca să scoți puncte, Ctrl/⌘-clic pe grip-urile lor, sau apasă **Adnotări → Scoate puncte** (**DIMDEL**, ori **Scoate puncte** în proprietăți) și dă clic lângă fiecare punct; segmentele de o parte și de alta devin unul. Și valoarea fiecărui segment are un grip: trage-l ca să muți valoarea din locul ei acolo unde segmentele sunt scurte și valorile s-ar suprapune; când iese de lângă segmentul ei, o linie de indicație subțire o leagă înapoi. Ctrl/⌘-clic pe grip, sau **Textele înapoi pe linie** în proprietăți, o pune la loc. O valoare mutată rămâne cu segmentul ei când se mută punctele și se rotește odată cu lanțul. Dublu-clic pe un segment ca să-i scrii valoarea: elementul măsurat se mută, și odată cu el tot ce urmează în lanț. Proprietățile arată valoarea și textul fiecărui segment, despart un lanț în cote simple și unesc cotele simple care se continuă pe aceeași linie.
 
 Adnotările de pe un plan (cote, texte, linii desenate, etichete) pot trece pe alt plan, în același loc, pentru că planurile au aceleași coordonate: selectează-le și alege planul în proprietăți, la **View** ca să le muți sau la **Copy to** ca să le copiezi. Așa ajung și cotele făcute pe o planimetrie pe planul nivelului. Punctele unei cote se agață apoi de ce taie noul plan în acel loc: pereți, muchii, axe.
 
@@ -106,6 +128,8 @@ Adnotările de pe un plan (cote, texte, linii desenate, etichete) pot trece pe a
 ![Înălțimile ușii și ferestrei sub segmentele lor](shots/dimension-opening-height.webp)
 
 ![Înălțimea golului în stilurile de cotă](shots/dimension-opening-height-style.webp)
+
+**Cote pe o linie.** Un punct de cotă pus pe o axă din grilă sau pe axa unui perete se ține de linie, nu de un punct al ei. Trage capătul axei de-a lungul ei ca să încapă bula în vedere, sau lungește ori scurtează peretele: cota măsoară mai departe unde ai pus-o, iar linia ei nu se rotește. Dacă axa sau peretele se mută de-a curmezișul, punctul merge cu ea, în același loc de-a lungul. La fel rămâne, când peretele e întins pe lungime, o cotă pusă pe fața lui. Cotele făcute înainte se țin de o axă din grilă la fel; una pe axa unui perete se atașează din nou dând clic pe punctul ei.
 
 ### Etichete
 
@@ -124,6 +148,12 @@ O etichetă selectată are mânere. Trage de casetă ca s-o muți: linia de indi
 ![Proprietățile unei etichete](shots/tag-properties.webp)
 
 Marcajul unei uși sau ferestre se modifică parte cu parte, fiecare text mutat sau rotit și fiecare capăt al liniei lungit: vezi [Uși și ferestre](doors-windows.md).
+
+**Rotirea unei etichete.** În proprietățile unei etichete, **Rotire** întoarce textul și umărul sau chenarul ei cu un unghi, în grade față de orizontală, iar **Aliniază la element** o face să urmeze direcția elementului etichetat (axa unui perete sau a unei grinzi, cea mai lungă muchie a altceva) și să se întoarcă odată cu el; rotirea se adaugă atunci la acea direcție. O etichetă e desenată mereu în sens de citit, niciodată cu susul în jos. O etichetă selectată are deasupra textului un mâner de rotire: trage-l din 15° în 15° (și 45°, 90°; ține <kbd>Shift</kbd> pentru orice unghi), iar Ctrl/⌘-clic pune textul din nou orizontal. Linia de indicație ajunge tot la element. Etichetele simple și cele de stratificație se întorc la fel, în planuri, secțiuni și fațade, iar planșele, PDF-ul și DXF-ul le tipăresc ca le vezi.
+
+**Ce etichetează o etichetă.** Cât timp unealta **Etichetă** așteaptă un element, cel de sub cursor e evidențiat cu culoarea de accent; ține cursorul pe o etichetă pusă, sau selecteaz-o, și elementul pe care îl etichetează e evidențiat.
+
+![O etichetă aliniată la peretele ei, cu mânerul de rotire, și peretele etichetat evidențiat](shots/tag-rotate.webp)
 
 #### Eticheta de stratificație
 

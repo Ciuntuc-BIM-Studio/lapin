@@ -42,8 +42,15 @@ function ViewSettingsEditor({ view }: { view: NodeDto }) {
   const [read, setRead] = useState<{ id: string; state: ViewStyleState } | null>(null);
   useEffect(() => {
     let live = true;
-    void query<ViewStyleState>('view.style', { id: view.id }).then((r) => { if (live) setRead(r ? { id: view.id, state: r } : null); });
-    return () => { live = false; };
+    let again: ReturnType<typeof setTimeout> | undefined;
+    // No answer (the engine busy past the wait): what was read stays and it asks again, so the panel never stays at "…".
+    const ask = () => void query<ViewStyleState>('view.style', { id: view.id }).then((r) => {
+      if (!live) return;
+      if (r) setRead({ id: view.id, state: r });
+      else again = setTimeout(ask, 1000);
+    });
+    ask();
+    return () => { live = false; clearTimeout(again); };
   }, [view.id, nodes]);
   const state = read?.id === view.id ? read.state : null;
   if (!state) return <p className="muted">…</p>;

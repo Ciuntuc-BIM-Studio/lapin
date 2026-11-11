@@ -25,7 +25,10 @@ public sealed record ScheduleEntry(string Key, string Kind, JoinerySpec? Spec, s
     public const string MirroredKey = "#mirrored";
 
     /// <summary>The type the entry lists (its key without the mirror's ending).</summary>
-    public string TypeKey => Key.EndsWith(MirroredKey, StringComparison.Ordinal) ? Key[..^MirroredKey.Length] : Key;
+    public string TypeKey => (Key.EndsWith(MirroredKey, StringComparison.Ordinal) ? Key[..^MirroredKey.Length] : Key) is var k && k.IndexOf(SizedKey, StringComparison.Ordinal) is var at and >= 0 ? k[..at] : k;
+
+    /// <summary>The key's part for doors of a type at a size of their own (curtain wall doors filling their cells, report #133): <c>#size:1450x2575</c>.</summary>
+    public const string SizedKey = "#size:";
 
     /// <summary>Whether it lists a type's mirror image: the doors and windows of the type flipped to its other hand.</summary>
     public bool Mirrored => Key.EndsWith(MirroredKey, StringComparison.Ordinal);
@@ -88,10 +91,24 @@ public static class Schedules
                         .Select((x, i) => new Occurrence(x.e.Id, x.Level, i + 1, s?.IsExternal)).ToList();
                     return new ScheduleEntry(key, k, s, mk, name, s?.Width ?? 0, s?.Height ?? 0, counts, placed.Count, numbered, Params: ParamValues(type, placed));
                 }
-                // A type only ever placed flipped is listed by its mirror image alone; one placed nowhere, as itself (unused).
-                if (own.Count > 0 || mirrored.Count == 0) entries.Add(Entry(type.Id, spec, mark, type.Name, own));
+                // Curtain wall doors filling their cells (report #133): an entry for each size they stand at, besides the type's own.
+                List<(Entity e, JoinerySpec? Size)> sized = spec == null ? [] : all.Select(e => (e, Size: CurtainCells.SeatOf(m, e)?.Spec)).Where(x => x.Size is { } s && (Math.Abs(s.Width - spec.Width) > 5e-4 || Math.Abs(s.Height - spec.Height) > 5e-4)).ToList();
+                var bySize = sized.GroupBy(x => (W: Math.Round(x.Size!.Width * 1000), H: Math.Round(x.Size!.Height * 1000))).ToList();
+                own = own.Except(sized.Select(x => x.e)).ToList();
+                mirrored = mirrored.Except(sized.Select(x => x.e)).ToList();
+                // A type only ever placed flipped (or at sizes of its own) is listed by those alone; one placed nowhere, as itself (unused).
+                if (own.Count > 0 || mirrored.Count == 0 && bySize.Count == 0) entries.Add(Entry(type.Id, spec, mark, type.Name, own));
                 if (mirrored.Count > 0)
                     entries.Add(Entry(type.Id + ScheduleEntry.MirroredKey, spec == null ? null : Architecture.Joinery.Mirrored(spec), mark.Length > 0 ? mark + MirroredMark : mark, $"{type.Name} (mirrored)", mirrored));
+                foreach (var g in bySize)
+                {
+                    var size = g.First().Size!;
+                    var label = $"{g.Key.W:0}×{g.Key.H:0}";
+                    foreach (var flipped in g.GroupBy(x => Architecture.Joinery.IsMirrored(x.e)))
+                        entries.Add(flipped.Key
+                            ? Entry(type.Id + ScheduleEntry.SizedKey + label + ScheduleEntry.MirroredKey, Architecture.Joinery.Mirrored(size), mark.Length > 0 ? mark + MirroredMark : mark, $"{type.Name} {label} (mirrored)", flipped.Select(x => x.e).ToList())
+                            : Entry(type.Id + ScheduleEntry.SizedKey + label, size, mark, $"{type.Name} {label}", flipped.Select(x => x.e).ToList()));
+                }
             }
         }
         // Windows before doors, then by mark (numbers as numbers), then width.

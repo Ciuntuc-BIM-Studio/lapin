@@ -133,6 +133,85 @@ public class DraftTests
     }
 
     [Fact]
+    public void Explode_splits_polylines_and_rectangles_into_lines_on_the_same_layer_in_one_undo_step_and_leaves_the_rest()
+    {
+        // Report #121, decision 430: JOIN welds lines into a polyline, EXPLODE is the way back.
+        var f = F();
+        var plan = Plan(f);
+        f.Run("drafting.setLayer", new JsonObject { ["name"] = "A-DET", ["color"] = "#c0392b", ["weight"] = 0.35 });
+        var ids = f.Run("drafting.draw", new JsonObject
+        {
+            ["viewId"] = plan, ["layer"] = "A-DET",
+            ["shapes"] = new JsonArray(
+                new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(4, 0), J(4, 3), J(0, 3)), ["closed"] = true },
+                new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(10, 0), J(12, 0), J(12, 2)), ["closed"] = false },
+                new JsonObject { ["type"] = "circle", ["c"] = J(20, 0), ["r"] = 1 }),
+        })!["ids"]!.AsArray().Select(x => (string)x!).ToList();
+        var hatch = (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = plan, ["at"] = J(1, 1), ["pattern"] = "SOLID" })!["id"]!;
+        var rect = ids[0];
+        var gid = (string)f.Run("group.create", new JsonObject { ["ids"] = new JsonArray(rect) })!["id"]!;
+        var before = f.Model.OfClass(IfcClass.Annotation).Count();
+        var r = (JsonObject)f.Run("drafting.explode", new JsonObject { ["ids"] = new JsonArray(ids.Select(i => (JsonNode)i).ToArray()) })!;
+        // The rectangle gave four lines, the open polyline two; the circle stayed.
+        Assert.Equal(2, (int)r["exploded"]!);
+        Assert.Equal(6, ((JsonArray)r["ids"]!).Count);
+        Assert.Equal(1, (int)r["kept"]!);
+        Assert.Equal(before + 4, f.Model.OfClass(IfcClass.Annotation).Count());
+        var lines = ((JsonArray)r["ids"]!).Select(x => f.Model.Get((string)x!)!).ToList();
+        Assert.All(lines, e => { Assert.IsType<Lapin.Drafting.Cad.Line>(Drafts.ShapeOf(e)); Assert.Equal("A-DET", e.Str("layer")); });
+        Assert.Equal(4, lines.Take(4).Select(e => (Lapin.Drafting.Cad.Line)Drafts.ShapeOf(e)!).Count(l => Math.Abs((l.B - l.A).Length - 4) < 1e-9 || Math.Abs((l.B - l.A).Length - 3) < 1e-9));
+        Assert.Equal(lines.Count, lines.Select(e => e.Name).Distinct().Count());
+        // The rectangle's lines are in its group; the first kept the entity.
+        Assert.Equal(rect, lines[0].Id);
+        Assert.All(lines.Take(4), e => Assert.Equal(gid, Groups.Of(f.Model, e.Id)?.Id));
+        Assert.IsType<Circle>(S(f, ids[2]));
+        Assert.NotNull(f.Model.Get(hatch));
+        // Lines, circles, hatches alone give nothing to explode; a locked layer refuses.
+        Assert.Throws<CommandException>(() => f.Run("drafting.explode", new JsonObject { ["ids"] = new JsonArray(ids[2], hatch) }));
+        // One undo step brings the polylines back.
+        f.Session.Undo();
+        Assert.Equal(before, f.Model.OfClass(IfcClass.Annotation).Count());
+        Assert.IsType<Lapin.Drafting.Cad.Polyline>(S(f, rect));
+        f.Run("drafting.setLayer", new JsonObject { ["name"] = "A-DET", ["locked"] = true });
+        Assert.Throws<CommandException>(() => f.Run("drafting.explode", new JsonObject { ["ids"] = new JsonArray(rect) }));
+    }
+
+    [Fact]
+    public void Explode_splits_a_3D_polylines_heights_with_it()
+    {
+        var f = F();
+        var plan = Plan(f);
+        var id = Draw(f, plan, new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(4, 0), J(4, 3)), ["closed"] = false })[0];
+        var e = f.Model.Get(id)!;
+        var attrs = e.CloneAttrs();
+        attrs["heights"] = new JsonArray(0.0, 1.0, 2.5);
+        f.Session.Edit("heights", c => c.Replace(e.With(attrs: attrs)));
+        var r = (JsonObject)f.Run("drafting.explode", new JsonObject { ["id"] = id })!;
+        var zs = ((JsonArray)r["ids"]!).Select(x => f.Model.Get((string)x!)!.Attrs["heights"]!.AsArray().Select(z => (double)z!).ToArray()).ToList();
+        Assert.Equal([0.0, 1.0], zs[0]);
+        Assert.Equal([1.0, 2.5], zs[1]);
+    }
+
+    [Fact]
+    public void A_solid_hatch_can_be_clicked_by_its_area_and_its_outline_and_a_pattern_one_too()
+    {
+        // Report #122, decision 429: a SOLID hatch draws no lines, so the interface had nothing to pick it by.
+        var f = F();
+        var plan = Plan(f);
+        Draw(f, plan, new JsonObject { ["type"] = "polyline", ["pts"] = new JsonArray(J(0, 0), J(10, 0), J(10, 10), J(0, 10)), ["closed"] = true });
+        var solid = (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = plan, ["at"] = J(1, 1), ["pattern"] = "SOLID", ["color"] = "#cccccc" })!["id"]!;
+        var cross = (string)f.Run("drafting.hatch", new JsonObject { ["viewId"] = plan, ["at"] = J(1, 1), ["pattern"] = "cross" })!["id"]!;
+        var marks = Drawing(f, plan)["marks"]!.AsArray().OfType<JsonObject>().ToList();
+        var m = marks.Single(x => (string?)x["id"] == solid);
+        Assert.True((bool)m["hit"]!["solid"]!);
+        Assert.Equal(8, m["hit"]!["loops"]![0]!.AsArray().Count);
+        Assert.Equal(16, m["segments"]!.AsArray().Count);
+        var p = marks.Single(x => (string?)x["id"] == cross);
+        Assert.False((bool)p["hit"]!["solid"]!);
+        Assert.True(p["segments"]!.AsArray().Count >= 16);
+    }
+
+    [Fact]
     public void Drafting_goes_to_DXF_on_its_own_layer()
     {
         var f = F();

@@ -91,6 +91,12 @@ Kliknij ikonę na pasku zwiniętego panelu, aby otworzyć panel nad widokiem bez
 
 ![Zwinięta przeglądarka otwarta nad widokiem z jej paska](shots/browser-overlay.webp)
 
+## Panele po obu stronach
+
+**Widok → Panele** (View → Panels) ustawia przeglądarkę projektu i panel właściwości, gdzie chcesz, jak w Revicie: **Przeglądarka po lewej, Właściwości po prawej** (domyślnie), **Przeglądarka po prawej, Właściwości po lewej**, **Oba panele po lewej** lub **Oba panele po prawej**. Gdy oba są po jednej stronie, leżą jeden pod drugim; przeciągnij separator między nimi, aby podzielić wysokość (dwuklik dzieli na pół), a krawędź strony, aby ją poszerzyć. Każdy panel nadal zwija się osobno: zwinięty to wąski pasek w stosie albo szyna, gdy zwinięte są oba. Karta asystenta (komputer) zostaje przy właściwościach. Lapin zapamiętuje układ na tym komputerze.
+
+![Przeglądarka i właściwości jedno pod drugim po lewej](shots/panel-layouts.webp)
+
 ## Jasny i ciemny
 
 Księżyc na prawym końcu wstążki przełącza interfejs na ciemny (grafit); słońce z powrotem na jasny (papier). W ciemnym motywie rzuty, przekroje i elewacje leżą na ciemnym tle, a ich czarne pióra rysują jasnym tuszem; arkusze pozostają papierem. Małe rysunki konfiguratorów (rzut, przekrój i elewacja drzwi lub okna, dachu, balkonu, windy, hali, schodów…) oraz podglądy etykiet, tabliczek rysunkowych i materiałów są rysowane na jasnej karcie papieru w obu motywach, aby ich linie, teksty i wymiary czytały się jak na wydrukowanym rysunku.

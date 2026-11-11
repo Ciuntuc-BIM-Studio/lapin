@@ -50,6 +50,16 @@ Une porte, une fenêtre ou une ouverture de mur se déplace et se copie le long 
 
 Un axe de quadrillage se déplace, se copie, pivote et se reflète seul ou avec d’autres éléments. Une copie est un nouvel axe de la même grille, nommé d’après le dernier axe qui court dans sa direction : avec les axes 1, 2 et 3, la copie de n’importe lequel d’entre eux est 4.
 
+### Dans les coupes et les élévations
+
+**Déplacer** (<kbd>M</kbd>), **Copier** (<kbd>CO</kbd>) et le glisser d’un élément sélectionné fonctionnent aussi dans une coupe ou une élévation, dans le plan de la vue. Le long de la vue, l’élément se déplace en plan le long de la ligne de coupe ; vers le haut ou le bas, il monte ou descend de son décalage par rapport au niveau (le décalage de base d’un mur ou d’un poteau, le décalage supérieur d’une poutre, le décalage d’un plancher). Pendant que vous glissez, son **Décalage par rapport au niveau** suit dans les propriétés. Une porte ou une fenêtre glisse toujours le long de son mur, et les lignes dessinées sur la vue se déplacent dans la vue. **Symétrie** y prend une ligne verticale et réfléchit les éléments par rapport au plan qui la contient, perpendiculaire à la vue. Les éléments ne **pivotent** pas dans une coupe ou une élévation, car ils se renverseraient : faites-les pivoter dans un plan ou en 3D. Les lignes dessinées pivotent et se reflètent comme on veut. Un élément épinglé reste où il est.
+
+![Une poutre glissée vers le haut dans l’élévation sud : son fantôme à son ancienne place, le décalage près de la souris et son décalage par rapport au niveau qui suit dans les propriétés](shots/section-drag.webp)
+
+### Épinglage
+
+Épinglez ce qui ne doit pas bouger par erreur : un modèle importé, la grille, un dessin de relevé. Sélectionnez-le et choisissez **Modifier → Épingler**, ou cochez **Épinglé** sous **Placement** dans ses propriétés. Un élément épinglé n’est ni déplacé, ni tourné, ni symétrisé, ni élevé, ni envoyé à un autre niveau, ni supprimé, et il n’affiche pas de poignées. Ses autres champs changent toujours : son type, sa hauteur ou son matériau. Il peut toujours être copié, et la copie n’est pas épinglée. Un mur joint à lui qui se déplace laisse les extrémités du mur épinglé où elles sont. Épingler un groupe épingle ses membres ; un groupe avec un membre épinglé ne se déplace pas. **Modifier → Désépingler** (<kbd>UP</kbd>) le libère de nouveau. Tout élément peut être épinglé : un mur, une référence d’un fichier importé, une ligne dessinée.
+
 ## Dessin
 
 L’onglet **Dessin** trace des lignes, des polylignes, des rectangles, des cercles et des arcs. Il les modifie par décalage, ajustement, prolongement, raccord, chanfrein et jonction, remplit des surfaces de hachures et les organise sur des **Calques**. **Importer DXF** fait entrer un dessin de CAO sous forme de lignes auxquelles vous pouvez vous accrocher et que vous pouvez modifier.
@@ -57,6 +67,8 @@ L’onglet **Dessin** trace des lignes, des polylignes, des rectangles, des cerc
 ![L’onglet Dessin](shots/ribbon-draft.webp)
 
 **Décaler** (<kbd>O</kbd>) copie une ligne, une polyligne, un rectangle, un cercle ou un arc à une distance. Tapez la distance dans l’unité du projet (dans un projet en millimètres, `500` est un demi-mètre ; `2m` ou `1'6"` disent leur propre unité), cliquez sur la forme, puis sur le côté où elle va ; il demande la forme suivante jusqu’à <kbd>Entrée</kbd> ou <kbd>Échap</kbd>. Tapez plutôt **T** (Through) et chaque copie passe par le point cliqué. Les angles d’une polyligne restent vifs (en onglet), comme en CAO. Décaler fonctionne dans les plans, coupes, élévations, sur les plans de référence et dans la vue 3D.
+
+**Décomposer** (<kbd>X</kbd>, ou **EXPLODE**) est le chemin inverse de **Joindre** : sélectionnez des polylignes ou des rectangles et chacun devient ses lignes, une par côté, sur le même calque avec le même stylo et la même couleur et dans le même groupe, en une seule étape d'annulation. Les cercles, les arcs, les hachures et les chaînes de cotes restent tels quels, et une sélection sans rien à découper le dit. Cela fonctionne dans les plans, les coupes, les façades, sur les plans de référence et sur le plan de travail de la vue 3D.
 
 Toute longueur que demande la ligne de commande est dans l’unité du projet, et l’invite dit laquelle : `Depth (mm)`, `Height (ft-in)`. Les angles, facteurs et nombres sont de simples nombres : `90` après **Rotation** fait 90°, quelle que soit l’unité.
 
@@ -103,6 +115,8 @@ Les annotations d’un plan (cotes, textes, lignes dessinées, étiquettes) peuv
 
 ![La hauteur de l’ouverture dans les styles de cote](shots/dimension-opening-height-style.webp)
 
+**Cotes sur une ligne.** Un point de cote cliqué sur un axe de la trame ou sur l’axe d’un mur se tient à la ligne, non à un point de celle-ci. Faites glisser l’extrémité de l’axe le long de lui-même pour que sa bulle tienne dans la vue, ou allongez ou raccourcissez le mur : la cote continue de mesurer là où vous l’avez posée et sa ligne ne tourne pas. Si l’axe ou le mur se déplace en travers, le point va avec lui, au même endroit le long. Une cote sur la face d’un mur reste de même là où elle mesurait quand le mur est étiré dans sa longueur. Les cotes faites avant se tiennent à un axe de trame de la même façon ; une sur l’axe d’un mur se rattache de nouveau en recliquant sur son point.
+
 ### Étiquettes
 
 **Annoter → Étiquette** (<kbd>TG</kbd>) pose sur une vue un cadre avec ce qu’un élément dit de lui-même, et une ligne de rappel jusqu’à lui. Tant que l’outil est actif, la barre sous la vue choisit ce que l’étiquette affiche : le repère, le nom, la classe ou le type, **Résistance au feu**, **Isolement acoustique**, **Transmission thermique** ou **Autre paramètre…** par son nom ; ou un type d’étiquette des normes de dessin ; et **RAPPEL** active ou désactive la ligne de rappel. Cliquez sur l’élément, puis là où va l’étiquette (tapez d’abord **E** pour couder la ligne). **Annoter → Étiqueter un paramètre** demande le nom du paramètre et lance l’outil avec lui.
@@ -120,6 +134,12 @@ Une étiquette sélectionnée a des poignées. Faites glisser le cadre pour dép
 ![Les propriétés d’une étiquette](shots/tag-properties.webp)
 
 Le repère d’une porte ou d’une fenêtre se modifie partie par partie, chaque texte déplacé ou tourné et chaque extrémité de sa ligne allongée : voir [Portes et fenêtres](doors-windows.md).
+
+**Faire tourner une étiquette.** Dans les propriétés d’une étiquette, **Rotation** fait tourner son texte et son épaulement ou son cadre d’un angle, en degrés par rapport à l’horizontale, et **Aligner sur l’élément** lui fait suivre la direction de l’élément qu’elle étiquette (l’axe d’un mur ou d’une poutre, la plus longue arête de tout autre) et tourner avec lui ; la rotation s’ajoute alors à cette direction. Une étiquette est toujours dessinée lisible, jamais à l’envers. Une étiquette sélectionnée a au-dessus de son texte une poignée de rotation : faites-la glisser par pas de 15° (dont 45° et 90° ; maintenez <kbd>Maj</kbd> pour un angle libre), et Ctrl/⌘-clic remet le texte à l’horizontale. La ligne de rappel atteint toujours l’élément. Les étiquettes simples et de composition tournent pareil, en plans, coupes et façades, et les planches, le PDF et le DXF les impriment comme vous les voyez.
+
+**Ce qu’une étiquette étiquette.** Tant que l’outil **Étiquette** attend un élément, celui qui est sous le curseur est mis en évidence dans la couleur d’accent ; survolez une étiquette posée, ou sélectionnez-la, et l’élément qu’elle étiquette est mis en évidence.
+
+![Une étiquette alignée sur son mur, avec sa poignée de rotation, et le mur étiqueté en évidence](shots/tag-rotate.webp)
 
 #### Étiquette de composition
 

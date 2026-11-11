@@ -33,6 +33,21 @@ Selectează elementele și alege **Modifică → Fă componentă** (<kbd>CK</kbd
 - **Fă unică**, din proprietăți, lasă o instanță să o ia pe drumul ei. **Selectează instanțele** le selectează pe toate.
 - **Mirror** o păstrează instanță, cu mâna schimbată: ce modifici în oricare ajunge oglindit în cealaltă.
 
+### Tipuri de apartament
+
+O componentă nu poate conține pereți, dar un **tip de apartament** poate. Selectează pereții, încăperile și mobilierul unui apartament și alege **Modificare → Fă tip de apartament** (<kbd>CU</kbd>). Ușile și ferestrele din acei pereți vin cu ei. Copiază-l, rotește-l sau oglindește-l cu **Mirror**, ca apartamentul de pe cealaltă parte a casei scării: o schimbare într-unul ajunge în celelalte, oglindită acolo unde sunt oglindite, iar fiecare element își păstrează identitatea în IFC.
+
+Tipul de apartament ține pereții interiori, ușile dintre camere, camerele și mobilierul. Clădirea ține fațada, pereții dintre apartamente și coridorul. Locul unde se întâlnesc ține de fiecare instanță:
+
+- Un perete interior se oprește în peretele clădirii la care ajunge: capătul lui se taie la fața acelui perete, iar peretele clădirii rămâne cum e. Oprirea se caută din nou de fiecare dată când așezi, muți sau oglindești o instanță și când desenezi sau muți un perete al clădirii în apropiere. Dacă muți un perete al clădirii, se schimbă doar apartamentul care îl atinge.
+- Ușile de intrare și ferestrele de pe fațadă țin de cameră, nu de perete: le alegi în proprietățile camerei (vezi [Uși și ferestre din încăpere](rooms.md)). Fiecare instanță are atunci ușa ei în peretele clădirii de pe latura aceea, cu mâna inversă într-o instanță oglindită. Dacă muți sau întorci de mână o astfel de ușă ori îi schimbi tipul, schimbarea apare în toate instanțele. Unde niciun perete nu o poate primi, îți spun proprietățile camerei.
+
+Un tip de apartament are dimensiuni fixe: nu se întinde după un loc mai lat sau mai îngust.
+
+**Copiază pe niveluri** face din copie altă instanță, care se oprește în pereții acelui nivel. În IFC o instanță e un grup de elemente obișnuite, cu setul de proprietăți `Lapin_Unit`; importă fișierul din nou cu **Ca un singur grup** nebifat și e din nou o instanță; cu opțiunea bifată, cum e implicit, elementele lui rămân membri obișnuiți ai grupului fișierului.
+
+![Un tip de apartament în două instanțe, a doua oglindită](shots/units-plan.webp)
+
 **Gestionare → Componente** listează componentele proiectului și câte instanțe are fiecare. Acolo le redenumești sau le selectezi instanțele. Instanțele sunt elemente obișnuite în planuri, secțiuni, liste, cantități și exporturi, fiecare cu GlobalId-ul ei.
 
 ![O componentă în patru instanțe, una rotită: conturul schimbat într-una, urmat de toate](shots/components-3d.webp)
@@ -47,7 +62,7 @@ Unele elemente sunt părți ale unui întreg: stâlpii, riglele și panele unei 
 
 ## Fișierele importate
 
-Fiecare fișier IFC, Fragments sau rețea pe care îl imporți intră ca un singur grup, cu numele fișierului. Debifează **Ca un singur grup** la importul IFC ca să aduci elementele libere. Un fișier legat nu se grupează: e deja o legătură, doar pentru citire (vezi [Import și export](import-export.md)). Elementele citite dintr-un IFC ca referințe rămân unde le-a pus fișierul: un grup de astfel de elemente se poate curăța și șterge, nu muta.
+Fiecare fișier IFC, Fragments sau rețea pe care îl imporți intră ca un singur grup, cu numele fișierului. Debifează **Ca un singur grup** la importul IFC ca să aduci elementele libere. Un fișier legat nu se grupează: e deja o legătură, doar pentru citire (vezi [Import și export](import-export.md)). Elementele citite dintr-un fișier ca referințe (dintr-un IFC, dintr-o rețea) se mută, se rotesc, se oglindesc și se copiază împreună cu grupul lor ca orice element; forma lor rămâne cea din fișier.
 
 ## Selectarea unei regiuni în 3D
 

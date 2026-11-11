@@ -17,6 +17,22 @@ Lapin no puede incluir todos los perfiles de acero del mundo, así que trae un p
 
 Escribe en la búsqueda para mirar en todas las bibliotecas a la vez por nombre, familia, norma o tipo; elige un perfil para verlo dibujado con sus dimensiones y propiedades.
 
+## Normas
+
+Cada perfil aparece bajo su norma: **EN** para el conjunto de Lapin y cualquier perfil cuya norma sea europea (EN 10365, DIN EN, SR EN…), **AISC / ASTM** para las tablas americanas (una columna *Standard* que dice ASTM A6, por ejemplo), BS, DIN, JIS, AS/NZS y las demás por su nombre, y una biblioteca cuyos perfiles no dicen ninguna — la de tu empresa — bajo su propio nombre. A una biblioteca de este ordenador se le puede decir bajo cuál aparece (**Mostrada bajo**, encima de su lista).
+
+Los selectores muestran primero los perfiles del proyecto y luego cada norma bajo su título. Los botones de arriba de la lista ocultan o muestran una norma; tu elección se guarda en este ordenador, para todos los proyectos (también en **Archivo → Preferencias → Perfiles**).
+
+![El selector agrupado por normas, con sus botones](shots/profile-picker-standards.webp)
+
+Un proyecto guarda solo los perfiles que usan sus tipos, nunca una biblioteca entera, así que una biblioteca que tengas no pesa nada en su archivo. Lo que ofrece un proyecto es elección suya: **Normas de este proyecto**, bajo las bibliotecas, marca las normas que muestran sus selectores; los perfiles que ya tiene se quedan. **Archivo → Preferencias → Perfiles** elige las normas con las que empieza un proyecto nuevo (todas, salvo que elijas).
+
+![Las normas que ofrece un proyecto](shots/profile-project-standards.webp)
+
+![Las normas que ofrece un proyecto nuevo](shots/prefs-profiles.webp)
+
+Lapin no incluye la AISC Shapes Database: AISC solo permite incluirla bajo un acuerdo de licencia propio, que un programa MIT no puede transmitir. Descárgala de AISC e impórtala con **Tabla…**: sus columnas se reconocen.
+
 ## Propiedades
 
 A partir de las dimensiones, Lapin calcula el área, Iy, Iz, los módulos elástico y plástico, los radios de giro, los ejes principales y su ángulo (angulares, Z, cualquier contorno asimétrico), la constante de torsión It y la de alabeo Iw donde hay fórmula, la masa por metro según la densidad del material y la superficie de pintura por metro. Coinciden con las tablas publicadas en torno al 1 % (It e Iw de perfiles I laminados al 3 %; Iw de un canal con alas inclinadas solo al 20 %). Un contorno arbitrario no tiene It ni Iw salvo que los dé su archivo.
@@ -51,14 +67,24 @@ Dibuja la sección con Delineación como polilíneas cerradas y círculos (los q
 
 **Dibujar su contorno** hace lo contrario: el contorno del perfil elegido como polilíneas cerradas en la vista activa, para que Studio lo extruya o lo barra.
 
+**Dibujar un perfil…** abre el editor de secciones: el exterior y sus cámaras como puntos en milímetros. Arrastre los puntos (1 mm; <kbd>Mayús</kbd> 5 mm), haga clic en un contorno para añadir un punto, clic derecho en un punto para quitarlo, o escríbalos en la tabla; parta de un rectángulo, una caja hueca, una T, un ángulo o un canal con las medidas que dé, y añada cámaras en el centro. Póngale nombre, elija aluminio, créelo y guárdelo como cualquier contorno. **Editar su contorno…** abre en el editor un perfil que ya tiene: guardado de nuevo con su nombre, la copia del proyecto se marca como más nueva y **Actualizar desde la biblioteca** lo lleva a todos los tipos y a todas las barras de muro cortina hechas con él. Los montantes y travesaños elegidos toman un perfil propio, girado, alineado y desplazado: véase [Muros](walls.md).
+
+![El editor de secciones: una caja hueca con su cámara](shots/profile-editor.webp)
+
 ## Usar un perfil
 
 En **Acero → Tipos de acero**, **Estructura → Tipos estructurales** (pilares y vigas) y los perfiles de la nave de pórticos, elige **De una biblioteca de perfiles…** y escribe para buscar.
 
 ![El selector busca en todas las bibliotecas](shots/profile-picker.webp)
 
-El perfil se copia al proyecto y el tipo lo conserva. Los cuerpos son ligeros, con esquinas vivas, en todos los niveles menos uno: una vista a **LOD 400** (planta, sección, alzado, plano o 3D) dibuja la sección real, con radios de acuerdo, radios en las puntas y alas inclinadas. Las cantidades y las exportaciones conservan el cuerpo de esquinas vivas; los radios de acuerdo y las alas inclinadas cuentan en las propiedades y en la exportación estructural.
+El perfil se copia al proyecto y el tipo lo conserva. Los cuerpos son ligeros, con esquinas vivas, en todos los niveles menos uno: una vista a **LOD 400** (planta, sección, alzado, plano o 3D) dibuja la sección real, con radios de acuerdo, radios en las puntas y alas inclinadas. Las exportaciones y la selección conservan el cuerpo de esquinas vivas, pero las cantidades, los pesos, las mediciones, la lista de elementos de acero y los presupuestos usan el área real de la sección (un IPE 300 tiene 53,81 cm², no los 51,88 del contorno de esquinas vivas); una sección sin radios no cambia.
 
-En otros sitios el perfil da lo que esa herramienta puede usar: molduras, rozas y zapatas corridas toman su exterior como perfil 2D (**De una biblioteca de perfiles…** en su lista), y los montantes y travesaños de los muros cortina y los marcos de puertas y ventanas toman su ancho y canto.
+![Una viga y un pilar de acero en una vista 3D a LOD 400: radios de acuerdo dibujados](shots/profile-real-section.webp)
+
+En otros sitios el perfil da lo que esa herramienta puede usar: molduras, rozas y zapatas corridas toman su exterior como perfil 2D (**De una biblioteca de perfiles…** en su lista), y los montantes y travesaños de los muros cortina y los marcos y hojas de puertas y ventanas toman su contorno real, con huecos, a lo largo de cada pieza, con su ancho y canto; la x del perfil va a través de la pieza (hacia el vidrio en marco y hoja), su y hacia fuera del edificio. **Simple** quita el contorno y conserva el tamaño.
+
+![Montantes y travesaños de muro cortina de una sección de aluminio](shots/profile-real-mullions.webp)
+
+![Marco y hoja de una ventana de la misma sección](shots/profile-real-frame.webp)
 
 Una biblioteca puede cambiar después de usarla. Un perfil del proyecto distinto del de igual nombre en su biblioteca se marca **más nuevo en la biblioteca**; **Actualizar desde la biblioteca** lo sustituye y todos los tipos hechos con él lo siguen, como un solo paso de deshacer. Nada cambia hasta que lo pides. Los proyectos anteriores conservan sus tipos.

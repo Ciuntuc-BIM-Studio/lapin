@@ -22,6 +22,14 @@ A guia **Estrutura** reúne a estrutura e as fundações.
 
 Desenhe as fundações no nível **Fundações**, ou dê a elas uma planta própria.
 
+**Uma sapata corrida é só o betão**, a menos que peça a parede. Com **Sapata corrida** ou **Sapata corrida curva** ativa, a barra da linha de comandos oferece **Só a sapata** (por omissão: uma sapata de betão de 600 × 400 mm, um tipo de perfil criado da primeira vez) ou **Com parede** (o embasamento de um tipo de sapata corrida por cima, com as suas camadas) e qual o tipo com parede a usar. A escolha é guardada. Uma sapata já desenhada muda com o seu tipo em **Tipos estruturais**.
+
+![A opção da ferramenta de sapata corrida na linha de comandos: só a sapata ou com parede](shots/structure-strip-option.webp)
+
+**Nas plantas.** Uma sapata fica sob o piso, por isso uma planta desenha-a a tracejado na planta do nível em que assenta, como a planta de um edifício mostra o que está por baixo. Para a ver cortada e vista, use uma **planta de fundações**: no navegador do projeto, o **+** ao lado de **Plantas** cria uma para o nível ativo (corte 0,50 m abaixo, vista 2,50 m para baixo).
+
+**Desenhar numa planta de fundações.** Mostra também o nível de baixo, e o que desenhar aí com uma ferramenta de piso, parede, pilar ou viga fica nesse nível (as Fundações de um projeto novo, a −1,50); as ferramentas de sapatas mantêm o nível da planta, sendo a base de uma sapata a do seu tipo abaixo dele.
+
 ![Pilares, vigas e sapatas isoladas em 3D](shots/structure-3d.webp)
 
 ## Tipos e cantos

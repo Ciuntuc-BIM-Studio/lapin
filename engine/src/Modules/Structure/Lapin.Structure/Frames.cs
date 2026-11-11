@@ -53,9 +53,26 @@ public sealed record Section(string Kind, double Width, double Depth, double Web
     public bool IsHollow => Kind is "RHS" or "CHS";
 
     /// <summary>The section's area: a circle's and a CHS's exactly (not its chords'), any other its outline's less its holes'.</summary>
-    public double Area => Kind == "circle" ? Math.PI * Width * Width / 4
+    public double SharpArea => Kind == "circle" ? Math.PI * Width * Width / 4
         : Kind == "CHS" ? Math.PI / 4 * (Width * Width - (Width - 2 * Web) * (Width - 2 * Web))
         : Math.Abs(Polygon2.SignedArea(Outline())) - Holes().Sum(h => Math.Abs(Polygon2.SignedArea(h)));
+
+    /// <summary>
+    /// The section's real area (decision 418): the published one where the profile has root fillets and toe radii (an IPE 300's
+    /// 53.81 cm², not the sharp outline's 51.88), by the fine steps its properties are integrated over; the sharp one for a section
+    /// with no radii. What quantities, weights, takeoffs and estimates read.
+    /// </summary>
+    public double Area
+    {
+        get
+        {
+            if (RealShape() is not { } shape || Lapin.Platform.Analysis.SectionProperties.RingsOf(shape) is not { Count: > 0 } rings) return SharpArea;
+            return rings.Sum(r => Polygon2.SignedArea(r));
+        }
+    }
+
+    /// <summary>How much more the real section holds than the sharp body the views draw: 1 without radii. A volume of the sharp body times this is the real one, whatever the cuts at its ends.</summary>
+    public double RealRatio => SharpArea is > 1e-12 and var sharp ? Area / sharp : 1;
 
     /// <summary>The outline, counter-clockwise, about the box's centre (a circle by the chord rule; a profile's web vertical, an L, a U and a C open to the right; a hollow section's outside).</summary>
     public IReadOnlyList<Vec2> Outline()
@@ -352,7 +369,8 @@ static class Place
 
     public static JsonArray Json2(Vec2 p) => new(p.X, p.Y);
 
-    public static double Elevation(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0;
+    /// <summary>The level an element stands on: its storey's, and for a footing its own offset from it (report #117; the type's bottom is under that).</summary>
+    public static double Elevation(IModelView m, Entity e) => (Spatial.StoreyOf(m, e.Id)?.Num("elevation") ?? 0) + (e.Class == IfcClass.Footing ? e.Num("offset") : 0);
 
     public static double StoreyHeight(IModelView m, Entity e) => Spatial.StoreyOf(m, e.Id)?.Num("height", 3) ?? 3;
 

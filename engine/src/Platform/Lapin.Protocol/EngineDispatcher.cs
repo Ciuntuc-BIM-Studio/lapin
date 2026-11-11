@@ -25,7 +25,8 @@ public interface ISupportDesk
     JsonObject Report(JsonObject p);
     /// <summary>One of the replies' calls (<see cref="SupportMessages"/>): the server's answer, or the body for the page to post.</summary>
     JsonObject Messages(JsonObject p);
-    void Open(string? link);
+    /// <summary>Open one of the help menu's links by name; the forum's new topic takes its title and body from <paramref name="p"/>.</summary>
+    void Open(string? link, JsonObject p);
 }
 
 /// <summary>
@@ -647,7 +648,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 return (ids.Where(id => session.Model.Get(id) != null).ToDictionary(id => id, id => session.Quantities(id)), null);
             }
             // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
-            case "project.new": files.Reset(); return (null, session.New(p["plain"]?.GetValue<bool>() == true, TemplateStoreys(p["storeys"])));
+            // `profileStandards`: the profile standards its pickers offer (decision 457; none: all).
+            case "project.new": files.Reset(); return (null, session.New(p["plain"]?.GetValue<bool>() == true, TemplateStoreys(p["storeys"]), Lapin.Platform.ProfileLibraries.ProfileStandards.Read(p["profileStandards"])));
             case "project.open":
             {
                 var diff = files.Open(session, PathParam());
@@ -929,7 +931,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 // Another Lapin project linked in, read-only, placed where asked (docs/links.md, Hotlinks); by path, or its bytes in a browser.
                 ReportProgress("Reading the project", 0, 0);
                 var (bytes, name, path, _) = IfcBytes(p);
-                var r = HotLinks.Link(session, bytes, name, path, new HotLinks.Placing(Json.Number(p["x"]) ?? 0, Json.Number(p["y"]) ?? 0, Json.Number(p["rotation"]) ?? 0), out var linked);
+                var r = HotLinks.Link(session, bytes, name, path, new HotLinks.Placing(Json.Number(p["x"]) ?? 0, Json.Number(p["y"]) ?? 0, Json.Number(p["rotation"]) ?? 0, (bool?)p["mirror"] ?? false), out var linked);
                 return (r.ToJson(), linked);
             }
             case "project.linksChanged":
@@ -940,10 +942,10 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 // A link read again from its file (the desktop: a link made from a path): what it held goes, what the file holds now comes in its place.
                 var link = Links.Require(session.Model, (string?)p["id"]);
                 // A linked project: read again, or placed anew (x, y, rotation); from its file, or from the bytes given (a browser keeps no path).
-                if (link.Str("kind") == HotLinks.Kind && (p["data"] != null || p["x"] != null || p["y"] != null || p["rotation"] != null))
+                if (link.Str("kind") == HotLinks.Kind && (p["data"] != null || p["x"] != null || p["y"] != null || p["rotation"] != null || p["mirror"] != null))
                 {
                     var was = HotLinks.Placing.Of(link.Attrs["options"] as JsonObject);
-                    var place = new HotLinks.Placing(Json.Number(p["x"]) ?? was.X, Json.Number(p["y"]) ?? was.Y, Json.Number(p["rotation"]) ?? was.Degrees);
+                    var place = new HotLinks.Placing(Json.Number(p["x"]) ?? was.X, Json.Number(p["y"]) ?? was.Y, Json.Number(p["rotation"]) ?? was.Degrees, (bool?)p["mirror"] ?? was.Mirrored);
                     var from = (string?)p["data"] is { } data ? Convert.FromBase64String(data)
                         : link.Str("path") is { } known && File.Exists(HostFiles.Check(known)) ? File.ReadAllBytes(known)
                         : throw new CommandException("This link's file cannot be read here: choose it again.");
@@ -980,7 +982,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             {
                 var id = (string?)p["id"] ?? throw new CommandException("Which sheet or view?");
                 var bytes = session.Model.Get(id) is { Class: Sheets.Class } sheet ? Sheets.Dxf(session.Reader, sheet)
-                    : Views.Find(session.Model, id) is { } view ? Views.Dxf(session.Reader, view)
+                    : Views.Find(session.Model, id) is { } view ? Views.Dxf(session.Reader, view, (string?)p["coords"] ?? "internal")
                     : throw new CommandException("There is no such sheet or view.");
                 return (Deliver(bytes, "drawing.dxf"), null);
             }
@@ -1058,7 +1060,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             case "support.report": return ((support ?? throw new CommandException("Reports are sent from the app.")).Report(p), null);
             case "support.messages": return ((support ?? throw new CommandException("Messages are read from the app.")).Messages(p), null);
             case "support.open":
-                (support ?? throw new CommandException("Nothing to open here.")).Open((string?)p["link"]);
+                (support ?? throw new CommandException("Nothing to open here.")).Open((string?)p["link"], p);
                 return (null, null);
             case "recovery.list": return (recovery?.List() ?? [], null);
             case "recovery.restore": return (null, (recovery ?? throw new CommandException("No recovery here.")).Restore(PathParam()));

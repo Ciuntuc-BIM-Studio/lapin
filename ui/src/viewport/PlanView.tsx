@@ -9,19 +9,20 @@ import { membersOf, openGroupOf, pickTarget, shownSelection, useExpansion } from
 import { drillInside, pickClick, pickRegion, useDrill } from '../platform/assemblies';
 import { orthophotos } from './textures';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
+import { Compass, FileDown, Footprints, Layers, Maximize, MousePointer2, PenLine } from 'lucide-react';
 import { openContextMenu } from '../shell/ContextMenu';
 import { selectionItems } from '../shell/selectionMenu';
 import { drawOrderItems, isDrafted } from './drawOrder';
 import { num } from '../engine/model';
 import { useWalk, walkInto } from './walk';
-import { select, setTool, useUi } from '../app/store';
+import { notify, select, setTool, useUi } from '../app/store';
 import { usePaneActive, usePaneField } from '../app/pane';
 import { activeStorey, execute, useSession } from '../engine/session';
 import { ownPlanOf } from './storeyPlan';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
-import { findTool, useToolTick } from '../platform/modules';
+import { askPlacement, findTool, useToolTick } from '../platform/modules';
+import { placedAt, requestFor, resetPlacement, usePlacement, verdictFor } from '../platform/placement';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
@@ -32,7 +33,13 @@ import { pairs } from './snap';
 import { formatLength, lengthText } from '../engine/unitsStore';
 import { completeTool } from './tools';
 import { DrawingLayer } from './DrawingLayer';
+import { PlanOverlays } from './PlanOverlays';
+import { useShallow } from 'zustand/react/shallow';
 import { useDisplay } from '../app/display';
+import { gridSnapStep, gridStepAt, usePrefs } from '../app/prefs';
+import { exportFile } from '../engine/files';
+import { basePoint, surveyPoint, fromFrame, isIdentity, setTrueNorth, toFrame, trueNorthTurn, turn, ucsOf, useLocation, useTrueNorth } from '../app/location';
+import { UcsIcon } from './UcsIcon';
 import { drawsOnDark, useDrawing } from './drawing';
 import { setUnderlay, useUnderlay } from './underlay';
 import { editDimension } from './dimensionEdit';
@@ -40,13 +47,16 @@ import { openPickedView } from './openView';
 import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
-import { feedPoint, useCad } from './cad/session';
+import './cad/ucs';
+import { feedPoint, finishStep, useCad } from './cad/session';
+import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
-import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
+import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { axisLine, riseThrough } from './arc';
+import { wrapText } from './wrapText';
 import { others, reportPresence, useShare } from '../engine/share';
 
 /** The radius of the arc from a to b through p (Infinity: in line). */
@@ -60,7 +70,6 @@ type View = View2; // scale = px per metre
 /** Pixels per metre: from a site of kilometres (a railway, a road) to a detail. */
 const clampScale = (s: number) => Math.max(0.02, Math.min(s, 2000));
 /** The grid's step for a zoom: the first of 1, 5, 25, 100, 500… m that stays 12 px apart or more on screen. */
-const gridStep = (scale: number) => [1, 5, 25, 100, 500, 2500, 10000, 50000].find((st) => st * scale >= 12) ?? 50000;
 
 const KIND_ORDER: Record<string, number> = { grid: 0, overhead: 1, ridge: 2, hip: 2, valley: 2, break: 2, outline: 3, cut: 4, symbol: 5, heavy: 5, label: 6 };
 
@@ -85,6 +94,7 @@ export function PlanView() {
   const rawHover = useRef<Vec2 | null>(null);
   // Space while a tool is on changes what its ghost shows.
   useToolTick((s) => s.n);
+  usePlacement((s) => s.verdict); // a module's answer to whether a door or window fits where the cursor is
   const [ortho, setOrtho] = useState(false);
   /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl), from `base` (the press, snapped). */
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
@@ -142,14 +152,29 @@ export function PlanView() {
   // A new tool starts a new gesture.
   useEffect(() => { setPts([]); }, [toolId]);
 
-  const toScreen = useCallback((p: Vec2) => ({
-    x: (p.x - view.cx) * view.scale + size.w / 2,
-    y: size.h / 2 - (p.y - view.cy) * view.scale,
-  }), [view, size]);
-  const toWorld = useCallback((x: number, y: number): Vec2 => ({
-    x: (x - size.w / 2) / view.scale + view.cx,
-    y: (size.h / 2 - y) / view.scale + view.cy,
-  }), [view, size]);
+  // True north up (decision 447): the plan turned on screen by the angle to true north, chosen per plan; drawn,
+  // snapped and picked through these two, so all of it turns together. Sheets and the PDF keep project north up.
+  const northAngle = useLocation((st) => basePoint(st.loc).northAngle);
+  const trueNorth = useTrueNorth((st) => !!st.on[key]) && Math.abs(northAngle) > 1e-9;
+  const rot = trueNorth ? trueNorthTurn(northAngle) : 0;
+  const toScreen = useCallback((p: Vec2) => {
+    const d = turn({ x: p.x - view.cx, y: p.y - view.cy }, rot);
+    return { x: d.x * view.scale + size.w / 2, y: size.h / 2 - d.y * view.scale };
+  }, [view, size, rot]);
+  const toWorld = useCallback((x: number, y: number): Vec2 => {
+    const d = turn({ x: (x - size.w / 2) / view.scale, y: (size.h / 2 - y) / view.scale }, -rot);
+    return { x: d.x + view.cx, y: d.y + view.cy };
+  }, [view, size, rot]);
+  /** A screen move (pixels) as a move in the plan. */
+  const screenDelta = (dx: number, dy: number, scale: number): Vec2 => turn({ x: dx / scale, y: -dy / scale }, -rot);
+  /** Framing for points of the plan as the screen shows them (turned to true north or not). */
+  const frameOn = useCallback((pts: Vec2[], pad: number, min: number, max: number): View => {
+    const q = pts.map((p) => turn(p, rot));
+    const v = framing([Math.min(...q.map((p) => p.x)), Math.min(...q.map((p) => p.y)), Math.max(...q.map((p) => p.x)), Math.max(...q.map((p) => p.y))], size, pad, min, max);
+    const c = turn({ x: v.cx, y: v.cy }, -rot);
+    return { ...v, cx: c.x, cy: c.y };
+  }, [size, rot]);
+  const corners = (b: Bounds): Vec2[] => [{ x: b[0], y: b[1] }, { x: b[2], y: b[1] }, { x: b[2], y: b[3] }, { x: b[0], y: b[3] }];
 
   // The shown storey only.
   // The storey's items, each with the plan items its plan's scale draws (a track: its axis at 1:2000, its rails at 1:500, every sleeper at 1:100).
@@ -171,8 +196,27 @@ export function PlanView() {
   }, [items, drawing]);
   const fit = useCallback(() => {
     const b = extent();
-    if (b) go(framing(b, size, 0.8, 0.02, 400));
-  }, [extent, size, go]);
+    if (b) go(frameOn(corners(b), 0.8, 0.02, 400));
+  }, [extent, frameOn, go]);
+
+  /** Each element's, annotation's and point cloud slice's box, for the model's frame (decision 446). */
+  const boxes = useCallback((clouds = true): Bounds[] => {
+    const out: Bounds[] = [];
+    const add = (pts: ArrayLike<number>) => { const b = boundsOf(pairs(pts)); if (b) out.push(b); };
+    for (const r of items) { const pts: number[] = []; for (const it of r.plan) if (it.kind !== 'reach') for (let i = 0; i < it.points.length; i++) pts.push(it.points[i]); if (pts.length >= 2) add(pts); }
+    for (const m of drawing?.marks ?? []) if (m.segments.length >= 2) add(m.segments);
+    if (clouds) for (const p of drawing?.pens ?? []) for (const img of p.images ?? []) if (img.id.startsWith('pointcloud:')) add(img.corners);
+    return out;
+  }, [items, drawing]);
+  const boxesRef = useRef(boxes);
+  boxesRef.current = boxes;
+  /** The model framed: its main body, what stands far from it left out and said so. */
+  const fitModel = useCallback(() => {
+    const c = coreBounds(boxes(false)) ?? coreBounds(boxes());
+    if (!c) return;
+    go(frameOn(corners(c.bounds), 0.8, 0.02, 400));
+    if (c.left) notify(`Left out of the frame, far from the model: ${c.left}. ZE frames everything.`);
+  }, [boxes, frameOn, go]);
 
   // A different storey: its remembered view, else frame it. Only then: an edit or a
   // resize keeps the view, so the effect reads the current fit through a ref, not as a dependency.
@@ -185,9 +229,9 @@ export function PlanView() {
   extentRef.current = extent;
   const frameNow = useCallback((): View => {
     // The model first; a point cloud's slice only on a plan with nothing else (an airborne scan is a whole district).
-    const b = extentRef.current(undefined, false) ?? extentRef.current();
-    return b ? framing(b, size, 0.8, 0.02, 400) : { cx: 4, cy: 2, scale: 60 };
-  }, [drawing, size]);
+    const c = coreBounds(boxesRef.current(false)) ?? coreBounds(boxesRef.current());
+    return c ? frameOn(corners(c.bounds), 0.8, 0.02, 400) : { cx: 4, cy: 2, scale: 60 };
+  }, [drawing, frameOn]);
   const frameRef = useRef(frameNow);
   frameRef.current = frameNow;
   const drawingRef = useRef(drawing);
@@ -214,8 +258,10 @@ export function PlanView() {
   // The zoom commands and keys, while this pane is in front.
   const host: ZoomHost = {
     fitAll: fit,
-    fitSelection: () => { const b = extent(new Set(selected)); if (!b) return false; go(framing(b, size, 0.6, 0.02, 1000)); return true; },
-    zoomWindow: (a, b) => go(framing([Math.min(a.x, b.x), Math.min(a.y, b.y), Math.max(a.x, b.x), Math.max(a.y, b.y)], size, 0.95, 0.02, 2000)),
+    fitModel,
+    fitSelection: () => { const b = extent(new Set(selected)); if (!b) return false; go(frameOn(corners(b), 0.6, 0.02, 1000)); return true; },
+    // The window's two corners as dragged on screen: on a turned plan its box is the screen's, not the plan's.
+    zoomWindow: (a, b) => go(frameOn([a, b], 0.95, 0.02, 2000)),
     actual: () => go({ ...view, scale: clampScale(actualScale(drawing?.scale ?? 100)) }),
     zoomBy: (f) => go({ ...view, scale: clampScale(view.scale * f) }),
     previous: () => { const p = popHistory<View>(key); if (!p) return false; setView(p); return true; },
@@ -234,6 +280,11 @@ export function PlanView() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const shown = useMemo(() => shownSelection(selected, nodes, relations), [selected, nodes, relations, expansion]);
   const shownList = useMemo(() => [...shown], [shown]);
+  // What the selected or hovered tags tag, and what the TAG command hovers (report #130).
+  const tagHover = useTagHover();
+  const targets = useMemo(() => tagTargets(selected, nodes, tagHover), [selected, nodes, tagHover]);
+  const targetList = useMemo(() => [...targets], [targets]);
+  const anyTags = useMemo(() => viewHasTags(nodes, ownPlan ?? (storey ? `plan:${storey.id}` : null)), [nodes, ownPlan, storey]);
   // Drilled into a whole (platform/assemblies.ts): what is outside it dimmed, as an edit scope's is (more lightly).
   const drillPath = useDrill((st) => st.path);
   const drillOn = useDisplay((st) => st.drillSelect);
@@ -280,7 +331,7 @@ export function PlanView() {
   const snapAt = useCallback((clientX: number, clientY: number, from?: Vec2): Aimed => {
     const rect = svgRef.current!.getBoundingClientRect();
     const raw = toWorld(clientX - rect.left, clientY - rect.top);
-    const a = aim(raw, from ?? null, { grid: view.scale > 30 ? 0.05 : 0.5, orthoHeld: ortho });
+    const a = aim(raw, from ?? null, { grid: gridSnapStep(view.scale), orthoHeld: ortho });
     useCad.setState({ cursor: a.point });
     liveCursor(a.point);
     return a;
@@ -321,7 +372,11 @@ export function PlanView() {
       case 'point': void complete([p]); break;
       case 'pick': {
         const e = g.reach ? nearestOf(raw, g.reach / view.scale, pickItems, nodes, g.types) : pick(raw, g.types);
-        if (e) void complete([raw], e);
+        // A door or window a module refused where the cursor is goes to the place it offered, when that is near.
+        const what = e && g.placing ? g.placing(e, raw) : null;
+        const q = e && what ? requestFor(e, raw, what) : null;
+        const to = q ? placedAt(q.arc, raw, verdictFor(q.req)).point : raw;
+        if (e) void complete([to], e);
         else useSession.setState({ error: 'Pick an element this tool works on.' });
         break;
       }
@@ -413,7 +468,7 @@ export function PlanView() {
 
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as Element).setPointerCapture?.(e.pointerId);
-    if (middleTwice.current(e)) { fit(); return; }
+    if (middleTwice.current(e)) { fitModel(); return; }
     if (editor.onPointerDown(e)) return;
     // Pressed on what is selected, with no tool or command running: a drag carries the selection.
     let carry: string[] | undefined;
@@ -457,10 +512,18 @@ export function PlanView() {
         setHover(snapAt(e.clientX, e.clientY, d.base));
         return;
       }
-      if (d.moved && e.buttons !== 1) setView({ ...d.view, cx: d.view.cx - dx / d.view.scale, cy: d.view.cy + dy / d.view.scale });
+      if (d.moved && e.buttons !== 1) { const m = screenDelta(dx, dy, d.view.scale); setView({ ...d.view, cx: d.view.cx - m.x, cy: d.view.cy - m.y }); }
     }
     setHover(constrained(snapAt(e.clientX, e.clientY, pts[pts.length - 1] ?? useCad.getState().step?.base ?? undefined)));
     { const r = svgRef.current!.getBoundingClientRect(); rawHover.current = toWorld(e.clientX - r.left, e.clientY - r.top); }
+    if (tool?.gesture?.kind === 'pick' && tool.gesture.placing) {
+      const g = tool.gesture, at = rawHover.current;
+      const host = g.reach ? nearestOf(at, g.reach / view.scale, pickItems, nodes, g.types) : pick(at, g.types);
+      const what = host ? g.placing!(host, at) : null;
+      const q = host && what ? requestFor(host, at, what) : null;
+      if (q) askPlacement(q.req); else resetPlacement();
+    }
+    trackTagHover(rawHover.current, { pickElement: (q) => pick(q)?.id ?? null, pickTag: (q) => pick(q, ['IfcAnnotation'])?.id ?? null, anyTags, busy: !!tool?.gesture || !!d });
   };
   const onPointerUp = (e: React.PointerEvent) => {
     if (editor.onPointerUp()) return;
@@ -491,6 +554,8 @@ export function PlanView() {
         return;
       }
     }
+    // A right-click while a command asks for points is its Enter: it finishes (a dimension string, a polyline).
+    if (d && !d.moved && e.button === 2 && useCad.getState().step?.enter) { void finishStep(); return; }
     if (d && !d.moved && e.button === 2 && !tool?.gesture && !useCad.getState().step) { if (!editor.onContextMenu(e)) roomMenu(e.clientX, e.clientY); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();
@@ -531,7 +596,7 @@ export function PlanView() {
     const mode = wheelMode.current(e);
     if (!mode) return;
     if (mode === 'pan') {
-      setView({ ...view, cx: view.cx + e.deltaX / view.scale, cy: view.cy - e.deltaY / view.scale });
+      { const m = screenDelta(e.deltaX, e.deltaY, view.scale); setView({ ...view, cx: view.cx + m.x, cy: view.cy + m.y }); }
       return;
     }
     const rect = svgRef.current!.getBoundingClientRect();
@@ -552,23 +617,35 @@ export function PlanView() {
     return `M${p.map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join('L')}${closed ? 'Z' : ''}`;
   }, [toScreen]);
 
-  // The background grid (F7) is for the eyes only: snapping to it stays.
+  // The background grid (F7) is for the eyes only: snapping to it stays. Adaptive (its step follows the zoom) or fixed
+  // (File → Preferences: one step whatever the zoom, thinned to its heavier lines when they would crowd); in a UCS it
+  // turns with its axes from its origin (decision 445).
   const gridShown = useDisplay((st) => st.grid);
+  const gridPrefs = usePrefs(useShallow((p) => ({ gridMode: p.gridMode, gridStep: p.gridStep, gridMajor: p.gridMajor, gridSnap: p.gridSnap })));
+  const ucs = useLocation((st) => ucsOf(st.loc));
+  const ucsKey = ucs ? `${ucs.origin.x},${ucs.origin.y},${ucs.angle}` : '';
   const grid = useMemo(() => {
     const lines: { d: string; major: boolean }[] = [];
     if (!measured) return lines;
-    const step = gridStep(view.scale);
-    const a = toWorld(0, size.h), b = toWorld(size.w, 0);
-    for (let x = Math.floor(a.x / step) * step; x <= b.x; x += step) {
-      const s = toScreen({ x, y: 0 }).x;
-      lines.push({ d: `M${s},0V${size.h}`, major: Math.round(x / step) % 5 === 0 });
-    }
-    for (let y = Math.floor(a.y / step) * step; y <= b.y; y += step) {
-      const s = toScreen({ x: 0, y }).y;
-      lines.push({ d: `M0,${s}H${size.w}`, major: Math.round(y / step) % 5 === 0 });
-    }
+    const frame = ucs && !isIdentity(ucs) ? ucs : null;
+    let step = gridStepAt(view.scale, gridPrefs);
+    const major = gridPrefs.gridMode === 'fixed' ? gridPrefs.gridMajor : 5;
+    let every = 1;
+    // A fixed step too fine for the zoom: only every major-th line, then every major²-th…
+    while (step * every * view.scale < 6 && every < 1e9) every *= Math.max(2, major);
+    step *= every;
+    const L = (p: Vec2) => (frame ? toFrame(frame, p) : p), W = (q: Vec2) => (frame ? fromFrame(frame, q) : q);
+    const corners = [toWorld(0, 0), toWorld(size.w, 0), toWorld(0, size.h), toWorld(size.w, size.h)].map(L);
+    const min = { x: Math.min(...corners.map((c) => c.x)), y: Math.min(...corners.map((c) => c.y)) };
+    const max = { x: Math.max(...corners.map((c) => c.x)), y: Math.max(...corners.map((c) => c.y)) };
+    if ((max.x - min.x) / step > 2000 || (max.y - min.y) / step > 2000) return lines;
+    const seg = (a: Vec2, b: Vec2) => { const p = toScreen(W(a)), q = toScreen(W(b)); return `M${p.x.toFixed(1)},${p.y.toFixed(1)}L${q.x.toFixed(1)},${q.y.toFixed(1)}`; };
+    const isMajor = (v: number) => every > 1 || Math.round(v / step) % major === 0;
+    for (let x = Math.floor(min.x / step) * step; x <= max.x; x += step) lines.push({ d: seg({ x, y: min.y }, { x, y: max.y }), major: isMajor(x) });
+    for (let y = Math.floor(min.y / step) * step; y <= max.y; y += step) lines.push({ d: seg({ x: min.x, y }, { x: max.x, y }), major: isMajor(y) });
     return lines;
-  }, [view, size, measured, toScreen, toWorld]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, size, measured, toScreen, toWorld, gridPrefs, ucsKey]);
 
   const drawn = useMemo(() => {
     const out: { key: string; r: RenderItem; kind: string; d: string; closed: boolean; text: string | null; at: Vec2; pattern: string | null }[] = [];
@@ -589,7 +666,20 @@ export function PlanView() {
       const at = rawHover.current;
       const host = tool.gesture.reach ? nearestOf(at, tool.gesture.reach / view.scale, pickItems, nodes, tool.gesture.types) : pick(at, tool.gesture.types);
       if (!host) return null;
-      return <g className="plan-preview" data-testid="pick-ghost">{tool.gesture.ghost(host, at).map((l, i) => <polyline key={i} fill="none" points={l.map(toScreen).map((p) => `${p.x},${p.y}`).join(' ')} />)}</g>;
+      // A module's verdict on whether it fits here: refused, the ghost is an error with the reason; or it stands at the place offered.
+      const what = tool.gesture.placing?.(host, at) ?? null;
+      const q = what ? requestFor(host, at, what) : null;
+      const verdict = q ? verdictFor(q.req) : null;
+      const put = q ? placedAt(q.arc, at, verdict) : { point: at, snapped: false };
+      const bad = verdict?.ok === false && !put.snapped;
+      const label = verdict && !verdict.ok && verdict.message ? wrapText(verdict.message, 56) : [];
+      const tip = toScreen(at);
+      return (
+        <g className={`plan-preview${bad ? ' bad' : ''}`} data-testid="pick-ghost" data-fits={verdict ? String(verdict.ok || put.snapped) : undefined}>
+          {tool.gesture.ghost(host, put.point).map((l, i) => <polyline key={i} fill="none" points={l.map(toScreen).map((p) => `${p.x},${p.y}`).join(' ')} />)}
+          {label.length > 0 && <text x={tip.x + 14} y={tip.y + 18} data-testid="pick-reason">{label.map((t, i) => <tspan key={i} x={tip.x + 14} dy={i ? 14 : 0}>{t}</tspan>)}</text>}
+        </g>
+      );
     }
     // The tool's own preview (a detour's bypass), when it has one for these points.
     const own = tool.gesture.kind === 'threePoints' && tool.gesture.preview && pts.length > 0 ? tool.gesture.preview(pts, cur) : null;
@@ -675,12 +765,30 @@ export function PlanView() {
         <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
         <ScaleChip pxPerMetre={view.scale} scale={drawing?.scale ?? 100} onActual={host.actual} />
-        <button type="button" className="icon" title="Fit everything (ZE)" onClick={fit}><Maximize size={14} /></button>
+        {Math.abs(northAngle) > 1e-9 && (
+          <button type="button" className={`icon${trueNorth ? ' on' : ''}`} data-testid="plan-true-north"
+            title={trueNorth ? 'True north up: click for project north' : 'Project north up: click to turn the plan to true north'}
+            onClick={() => setTrueNorth(key, !trueNorth)}><Compass size={14} /></button>
+        )}
+        <button type="button" className="icon" title="Fit the model (ZE: everything)" onClick={fitModel}><Maximize size={14} /></button>
+        {storey && <button type="button" className="icon" data-testid="plan-export-dxf" title="Export the plan as DXF: in the plan's, the base point's or the map's coordinates"
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            const id = ownPlan ?? `plan:${storey.id}`;
+            const name = `${siteView?.name ?? storey.name}.dxf`;
+            const run = (coords: 'internal' | 'project' | 'map') => void exportFile('export.dxf', { id, coords }, name, 'dxf');
+            const loc = useLocation.getState().loc;
+            openContextMenu(r.left, r.bottom + 4, [
+              { label: 'In the plan’s coordinates (mm)', onSelect: () => run('internal') },
+              { label: 'From the project base point (mm)', onSelect: () => run('project') },
+              { label: 'In map coordinates (E, N in metres)', disabled: !surveyPoint(loc), onSelect: () => run('map') },
+            ]);
+          }}><FileDown size={14} /><span className="small">DXF</span></button>}
       </div>
       <KeyPlan mode="plan" frame={measured ? [toWorld(0, size.h), toWorld(size.w, 0)] : null} onLookAt={(p) => go({ ...view, cx: p.x, cy: p.y })} />
       <svg ref={svgRef} className={`plan-svg${tool?.gesture || cadStep ? ' tool' : ''}`} data-testid="plan"
         onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
-        onPointerLeave={() => { setHover(null); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
+        onPointerLeave={() => { setHover(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }} onWheel={onWheel} onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (tool?.gesture || useCad.getState().step) return;
           const rect = svgRef.current!.getBoundingClientRect();
@@ -690,6 +798,7 @@ export function PlanView() {
           if (n && !openGroupOf(n.id) && !openPickedView(n.id)) void editDimension(n.id, w);
         }}>
         {gridShown && <g className="plan-grid">{grid.map((l, i) => <path key={i} d={l.d} className={l.major ? 'major' : ''} />)}</g>}
+        {ucs && !isIdentity(ucs) && <UcsIcon frame={ucs} toScreen={toScreen} />}
         {/* The drawing lays the orthophotos itself (CivilModule's marks, so sheets print them); the modelling lines lie over them here. */}
         {!(drawing && (planDrawing || siteView)) && orthophotos(nodes).filter((o) => !o.storeyId || o.storeyId === storey?.id).map((o) => {
           // The image's unit square onto its corners on screen: (1, 0) to the top right, (0, 1) to the bottom left.
@@ -697,14 +806,14 @@ export function PlanView() {
           return <image key={`ortho:${o.id}`} href={o.image.url} x={0} y={0} width={1} height={1} preserveAspectRatio="none" opacity={o.opacity} className="plan-orthophoto"
             transform={`matrix(${tr.x - tl.x} ${tr.y - tl.y} ${bl.x - tl.x} ${bl.y - tl.y} ${tl.x} ${tl.y})`} />;
         })}
-        {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} screen={size} /></g>}
-        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : inside ? 'drill-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} screen={size} /></g>}
+        {underDrawing && <g className="plan-underlay" aria-label="Underlay"><DrawingLayer drawing={underDrawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} screen={size} turnDeg={(rot * 180) / Math.PI} /></g>}
+        {drawing && (planDrawing || siteView) && <g className={scope ? 'scoped-out' : inside ? 'drill-out' : undefined}><DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={view.scale} onDark={onDark} screen={size} turnDeg={(rot * 180) / Math.PI} /></g>}
         <g className={`plan-items${drawing && (planDrawing || siteView) ? ' ghost' : ''}${scope ? ' scoped' : ''}${inside ? ' drilled' : ''}`}>
           {drawn.map(({ key, r, kind, d, closed, text, at, pattern }) => kind === 'hit' && !shown.has(r.nodeId) ? null : kind === 'label' ? (
             <text key={key} x={at.x} y={at.y} className="plan-label">{text}</text>
           ) : (
             <path key={key} d={d} strokeDasharray={pattern && DASHES[pattern] ? DASHES[pattern].map((mm) => mm * (drawing?.scale ?? 100) / 1000 * view.scale).join(' ') : undefined}
-              className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}${inside?.has(r.nodeId) ? ' in-drill' : ''}`} />
+              className={`plan-item ${kind}${closed ? ' closed' : ''}${r.editable ? '' : ' foreign'}${shown.has(r.nodeId) ? ' selected' : targets.has(r.nodeId) ? ' tag-target' : ''}${scope && pickable(nodes.get(r.nodeId)) ? ' in-scope' : ''}${inside?.has(r.nodeId) ? ' in-drill' : ''}`} />
           ))}
         </g>
         {peers.map((p) => {
@@ -724,6 +833,12 @@ export function PlanView() {
             </g>
           );
         })}
+        {(drawing?.marks ?? []).filter((m) => targets.size > 0 && markSelected(m.id, targetList) && !markSelected(m.id, shownList)).map((m) => (
+          <path key={`tag:${m.id}`} className="plan-mark tag-target" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
+            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
+            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+          }).join('')} />
+        ))}
         {(drawing?.marks ?? []).filter((m) => markSelected(m.id, shownList)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
@@ -732,6 +847,7 @@ export function PlanView() {
         ))}
         {pts.map((p, i) => { const s = toScreen(p); return <circle key={i} cx={s.x} cy={s.y} r={3} className="plan-vertex" />; })}
         {editor.render}
+        <PlanOverlays toScreen={toScreen} toWorld={toWorld} scale={view.scale} rotation={rot} view={{ id: ownPlan ?? null, storeyId: storey?.id ?? null }} />
         {preview}
         {marker && hover && !hover.mode && (hover.kind === 'point' && !hover.guides.length
           ? <rect x={marker.x - 5} y={marker.y - 5} width={10} height={10} className="plan-snap point" />

@@ -21,7 +21,7 @@ Klik, hvor væggen starter, og klik derefter ved hvert hjørne. Den næste væg 
 Hvor to vægge mødes, samler Lapin dem selv. Deres lag løber ind i hinanden, sådan som de ville blive bygget.
 
 - **Buet væg** (<kbd>WC</kbd>) tegner en væg langs en bue.
-- **Facadeglasvæg** (<kbd>CW</kbd>) tegner en glasvæg med sprosser og paneler.
+- **Facadeglasvæg** (<kbd>CW</kbd>) tegner en glasvæg med sprosser og paneler; dens type kan tage deres virkelige form fra et [profilbibliotek](profiles.md).
 - Vægge sammenføjes af sig selv, hvor de mødes: et hjørne som geringssamling, en væg, der ender på en anden, som T, en, der krydser en anden, som X. Ved et T eller et X løber lagene ind i hinanden, som de bygges: den endende vægs kerne fortsætter gennem den andens overflader ind til dens kerne, og dens overflader stopper ved den andens flade, hvor de møder deres lige, så planen viser én opbygning uden en linje igennem. **Sammenføj** (<kbd>JW</kbd>), **Geringssamling** og **Stødsamling** ændrer, hvordan to vægge mødes, når det ikke er det, du vil; **Nye hjørner som gering** gør stødsamling til standard på denne computer. Uanset hvad går hvert lag selv rundt om hjørnet: overfladerne mødes med deres egne og løber ubrudt videre, og kernerne mødes på diagonalen (gering) eller den ene kerne løber ud til den andens yderside (stød), så en plan af vægge med lag viser rene hjørner. Hvert lag går ind i den anden væg gennem dens lag med lavere **Prioritet** og stopper ved det første med samme eller højere (se **Vægtyper** nedenfor), så som standard møder kerner kerner, og beklædninger stopper ved fladerne; i et hjørne løber en kerne med højere prioritet gennem den andens, hvad enten det er gering eller stød. En vægs **Snitprioritet** fører den aldrig ind i en væg, den er sammenføjet med: mellem sammenføjede vægge afgør den kun, hvilken kerne der løber igennem, når begge kerner har samme prioritet (ved et stødhjørne eller en krydsning).
 - **Byt om** ændrer, hvilken af de to vægge der løber igennem.
 
@@ -54,6 +54,32 @@ Væggen forbliver en væg: dens tykkelse, dens lag, dens samlinger og dens døre
 ![En gavl tegnet i profileditoren](shots/wall-profile-editor.webp)
 
 ![Husets vestvæg som gavl, med vinduet bevaret](shots/wall-profile-3d.webp)
+
+### En facadeglasvægs kant og stænger
+
+**Profil…** i en facadeglasvægs egenskaber tegner dens kant i opstalt, som for en væg: en gavl, en hældning, trin eller et vilkårligt omrids, med punkter, der kan trækkes, tilføjes eller fjernes, og en tabel i millimeter. Væggen går op til sit højeste punkt. Dens raster får en linje, hvor kanten knækker (et knæk inden for halvanden sprosse fra en rasterlinje flyttes ind på den); hvert felt beholder de tværposte, der er plads til under dets laveste punkt; panelet over den sidste fylder op til kanten, og en kantstang følger den, skrå; sprosserne skæres til den. Typens indstillinger bliver, og **Profil…** åbner kanten igen, så du kan ændre den, uden genopbygning; **Plan top** giver rektanglet tilbage. Den ses i 3D, opstalter og snit, lister måler paneler og stænger, som de er tegnet, og IFC bærer dem som dele.
+
+![En gavl tegnet som kant på en facadeglasvæg](shots/curtain-boundary-editor.webp)
+
+![Facadeglasvæggen under sin gavl, i 3D](shots/curtain-boundary-3d.webp)
+
+**Stænger…** giver valgte sprosser og tværposte en egen profil. Væggens opstalt viser hver stang: klik på en (<kbd>Shift</kbd> eller <kbd>Ctrl</kbd>/<kbd>⌘</kbd> tilføjer flere, eller tag alle sprosser eller alle tværposte), vælg en profil fra [profilbibliotekerne](profiles.md) eller en enkel kasse, dens **Rotation** og **Spejl**, dens justering på tværs af stangen (for- eller bagside på dens plan) og langs den (start- eller slutkant på rasterlinjen eller niveauet) og dens forskydninger på tværs og ud af bygningen; billedet ved siden af viser tværsnittet, som det sidder. **Anvend på de valgte** giver dem stilen, **Tilbage til typens** fjerner den. En types egen profil har de samme placeringsfelter i **Facadeglasvægge…**, for hver væg af typen. Profilen forbliver en kopi i projektet: **Opdatér fra biblioteket** ændrer hver stang lavet af den, i denne væg og i andre.
+
+![Stænger: en profil placeret på de valgte sprosser](shots/curtain-members-dialog.webp)
+
+![To sprosser med egen profil, i 3D](shots/curtain-members-3d.webp)
+
+**Paneler og døre…** giver valgte felter et eget panel eller en dør. Væggens opstalt viser hvert felt, som motoren bygger det: klik på et (<kbd>Shift</kbd> eller <kbd>Ctrl</kbd>/<kbd>⌘</kbd> tilføjer flere). En **paneltype** gemmes én gang i projektet og gives til felter i enhver facadeglasvæg: glas, massiv, en **indrammet fyldning** (en ramme med sin bredde og dybde rundt om feltet, glas- eller massiv fyldning trukket tilbage fra dens yderside med tilbagetrækket) eller **åben** (intet panel); dens tykkelse, forskydning ud fra aksen og materialer (facadeglasvægtypens, når intet er valgt). **Giv til de valgte** anvender den, **Typens panel** fjerner den; en ændret paneltype ændrer alle dens felter. **Dør i de valgte** erstatter hvert valgt felt med en dør: en ny dør til facadeglasvæg (enkelt eller dobbelt, slag- eller skydedør, bredde og højde, glas- eller massive fløje, rammeprofil fra [profilbibliotekerne](profiles.md)) eller enhver dørtype i projektet. **Fyld feltet** giver den feltets størrelse; ellers beholder den typens, står til venstre, i midten eller til højre i feltet med en forskydning og får en tværpost over sig og en sprosse ved siden af, hvor der er glas tilbage, glasset med feltets panel. I nederste række står døren på gulvet, og bundtværposten skæres væk under den. Indstillingerne gemmes pr. felt, så de følger med, når rasteret ændres: en dør, der fylder sit felt, vokser eller krymper med det, og én, hvis felt er væk, siger det og kommer tilbage med det. Døren er en dør: vælg den for at vende hængsling eller side, skifte type eller flytte den til et andet felt (Flyt langs væggen); mærker, dørlister (i den størrelse, den står) og IFC-eksporten (en IfcDoor, der er en del af dens IfcCurtainWall) tæller den med.
+
+![Paneler og døre: et indrammet brystningspanel og en dør i de valgte felter](shots/curtain-cells-dialog.webp)
+
+![En facadeglasvæg med en dør og indrammede brystningspaneler, i 3D](shots/curtain-cells-3d.webp)
+
+Under en kontur tegnet med **Profil…** går en dør ind i et afskåret felt, hvor som helst dens rektangel passer under konturen: sprosserne ved siden af den går op til konturen, ruderne ved siden af dem fyldes op til den, en tværpost spænder over dens overkant, og glasset over den følger hældningen. Når den fylder et sådant felt, stopper dens overkant en tværpost under konturens laveste side. Hvor den ikke passer, siger Lapin hvor meget og hvad der skal gøres (sænk den, flyt den mod den højeste side, eller vælg et højere felt). Et indrammet panel i et afskåret felt får rammen langs hele sin kontur, også den skrå side. En opstalt, der vender mod dørens yderside, tegner dens åbningssymboler stiplet som for enhver dør eller ethvert vindue.
+
+![En dør under en skrå kontur på en facadeglasvæg, med indrammede paneler langs skråningen, i 3D](shots/curtain-cells-gable.webp)
+
+![Dørens åbningssymbol i opstalten](shots/curtain-cells-elevation.webp)
 
 ## Vægtyper
 

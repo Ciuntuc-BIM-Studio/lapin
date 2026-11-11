@@ -21,7 +21,7 @@ Dă clic unde începe peretele, apoi la fiecare colț. Peretele următor urmeaz�
 Unde se întâlnesc doi pereți, Lapin îi îmbină singur. Straturile lor intră unele în altele așa cum s-ar construi.
 
 - **Perete curb** (<kbd>WC</kbd>) desenează un perete pe un arc.
-- **Perete cortină** (<kbd>CW</kbd>) desenează un perete vitrat cu montanți și panouri.
+- **Perete cortină** (<kbd>CW</kbd>) desenează un perete vitrat cu montanți și panouri; tipul lui le poate lua forma reală dintr-o [bibliotecă de profile](profiles.md).
 - Pereții se îmbină singuri unde se întâlnesc: un colț la 45°, un perete care se termină pe altul în T, unul care îl traversează pe altul în X. La un T sau un X straturile intră unul în altul cum se construiesc: miezul peretelui care se termină trece prin finisajele celuilalt până la miezul lui, iar finisajele lui se opresc la fața celuilalt, unde își întâlnesc perechea, așa că planul arată o singură alcătuire, fără linie prin ea. **Îmbină** (<kbd>JW</kbd>), **La 45°** și **Cap la cap** schimbă felul în care se întâlnesc doi pereți când nu e ce vrei; **Colțuri noi la 45°** face cap la cap implicitul pe acest calculator. În ambele cazuri, fiecare strat întoarce colțul singur: finisajele se întâlnesc cu finisajele și merg continuu, iar miezurile se întâlnesc pe diagonală (la 45°) sau un miez merge până la fața exterioară a celuilalt (cap la cap), așa că planul pereților cu straturi arată colțuri curate. Fiecare strat intră în celălalt perete prin straturile lui cu **Prioritate** mai mică și se oprește la primul cu prioritate egală sau mai mare (vezi **Tipurile de pereți** mai jos), așa că implicit miezurile se întâlnesc cu miezuri și finisajele se opresc la fețe; la un colț, un miez cu prioritate mai mare trece prin celălalt, la 45° sau cap la cap. **Prioritatea la tăiere** a unui perete nu-l mai face să intre într-un perete cu care e îmbinat: între pereți îmbinați decide doar care miez trece când ambele miezuri au aceeași prioritate (la un colț cap la cap sau la o încrucișare).
 - **Inversează** schimbă care dintre cei doi pereți trece prin colț.
 
@@ -54,6 +54,32 @@ Peretele rămâne perete: grosimea, straturile, îmbinările, ușile și ferestr
 ![Un fronton desenat în editorul de profil](shots/wall-profile-editor.webp)
 
 ![Peretele de vest al casei ca fronton, cu fereastra păstrată](shots/wall-profile-3d.webp)
+
+### Conturul și barele unui perete cortină
+
+**Profil…** din proprietățile unui perete cortină îi desenează conturul în elevație, ca la un perete: un fronton, o pantă, trepte sau orice contur, cu puncte de tras, adăugat sau scos și un tabel în milimetri. Peretele urcă până la cel mai înalt punct. Grila lui primește o linie unde se frânge conturul (o frângere la mai puțin de un montant și jumătate de o linie a grilei e mutată pe ea); fiecare travee păstrează traversele care încap sub punctul ei cel mai de jos; panoul de deasupra ultimei umple până la contur, iar o bară de margine îi urmează linia, înclinată; montanții sunt tăiați după el. Setările tipului rămân, iar **Profil…** deschide din nou conturul ca să-l schimbi, fără reconstruire; **Vârf drept** dă dreptunghiul înapoi. Se vede în 3D, fațade și secțiuni, extrasele măsoară panourile și barele așa cum sunt desenate, iar IFC-ul le poartă ca piese.
+
+![Un fronton desenat ca contur al unui perete cortină](shots/curtain-boundary-editor.webp)
+
+![Peretele cortină sub fronton, în 3D](shots/curtain-boundary-3d.webp)
+
+**Bare…** dă unor montanți și traverse alese un profil propriu. Elevația peretelui arată fiecare bară: dă clic pe una (<kbd>Shift</kbd> sau <kbd>Ctrl</kbd>/<kbd>⌘</kbd> adaugă altele, sau ia toți montanții ori toate traversele), alege un profil din [bibliotecile de profile](profiles.md) sau o cutie simplă, **Rotirea** și **Oglindirea** lui, alinierea de-a curmezișul barei (fața din față sau din spate pe planul ei) și de-a lungul ei (muchia de început sau de sfârșit pe linia grilei sau pe nivel) și decalajele de-a curmezișul și spre exteriorul clădirii; imaginea alăturată arată secțiunea așa cum stă. **Aplică la cele alese** le dă stilul, **Înapoi la cel al tipului** îl ia. Profilul propriu al unui tip are aceleași câmpuri de poziție în **Pereți cortină…**, pentru fiecare perete al tipului. Profilul rămâne o copie în proiect: **Actualizează din bibliotecă** schimbă fiecare bară făcută din el, în acest perete și în altele.
+
+![Bare: un profil așezat pe montanții aleși](shots/curtain-members-dialog.webp)
+
+![Doi montanți cu un profil propriu, în 3D](shots/curtain-members-3d.webp)
+
+**Panouri și uși…** dă celulelor alese un panou propriu sau o ușă. Elevația peretelui arată fiecare celulă așa cum o construiește motorul: dă clic pe una (<kbd>Shift</kbd> sau <kbd>Ctrl</kbd>/<kbd>⌘</kbd> adaugă altele). Un **tip de panou** se salvează o dată în proiect și se dă celulelor oricărui perete cortină: sticlă, plin, o **umplutură în ramă** (o ramă de lățimea și adâncimea ei în jurul celulei, umplutura de sticlă sau plină retrasă față de fața ei exterioară cu retragerea) sau **deschisă** (fără panou); grosimea, decalajul față de axă și materialele lui (ale tipului de perete cortină când nu e ales niciunul). **Dă celor alese** îl aplică, **Panoul tipului** îl scoate; un tip de panou modificat schimbă fiecare celulă a lui. **Ușă în cele alese** înlocuiește fiecare celulă aleasă cu o ușă: o ușă nouă de perete cortină (simplă sau dublă, batantă sau glisantă, lățimea și înălțimea ei, canate vitrate sau pline, profilul tocului din [bibliotecile de profile](profiles.md)) sau orice tip de ușă din proiect. **Umple celula** o face de mărimea celulei; altfel își păstrează mărimea tipului, stă la stânga, la centru sau la dreapta în celulă cu un decalaj și primește o traversă deasupra și un montant alături unde rămâne sticlă, vitrate cu panoul celulei. Pe rândul de jos ușa stă pe pardoseală, iar traversa de jos e tăiată sub ea. Setările se păstrează pe celulă, deci urmează grila când se schimbă: o ușă care umple celula crește sau scade odată cu ea, iar una a cărei celulă a dispărut spune asta și revine odată cu ea. Ușa e o ușă: selecteaz-o ca să-i schimbi mâna sau partea, tipul, sau ca s-o muți în altă celulă (Mută de-a lungul peretelui); etichetele, tabelele de uși (la mărimea la care stă) și exportul IFC (un IfcDoor parte a IfcCurtainWall-ului ei) o numără.
+
+![Panouri și uși: un parapet în ramă și o ușă în celulele alese](shots/curtain-cells-dialog.webp)
+
+![Un perete cortină cu o ușă și parapete în ramă, în 3D](shots/curtain-cells-3d.webp)
+
+Sub un contur desenat cu **Profil…**, o ușă intră într-o celulă tăiată de contur oriunde dreptunghiul ei încape sub el: montanții de lângă ea urcă până la contur, ochiurile de lângă ei se umplu până la el, o traversă trece peste capul ei, iar sticla de deasupra urmează panta. Când umple o asemenea celulă, capul ei se oprește cu o traversă sub latura mai joasă a conturului. Unde nu încape, Lapin spune cu cât și ce e de făcut (coboar-o, mut-o spre latura mai înaltă sau alege o celulă mai înaltă). Un panou cu ramă într-o celulă tăiată are rama pe tot conturul, și pe latura înclinată. O fațadă spre exteriorul ușii îi desenează simbolurile de deschidere, punctat, ca la orice ușă sau fereastră.
+
+![O ușă sub conturul înclinat al unui perete cortină, cu panouri cu ramă de-a lungul pantei, în 3D](shots/curtain-cells-gable.webp)
+
+![Simbolul de deschidere al ușii în fațadă](shots/curtain-cells-elevation.webp)
 
 ## Tipurile de pereți
 

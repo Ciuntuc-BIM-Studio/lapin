@@ -17,6 +17,22 @@ Lapin kann nicht alle Stahlprofile der Welt mitliefern. Es bringt einen kleinen 
 
 Tippen Sie ins Suchfeld, um alle Bibliotheken zugleich nach Name, Familie, Norm oder Art zu durchsuchen; wählen Sie ein Profil, um es mit Maßen und Eigenschaften zu sehen.
 
+## Normen
+
+Jedes Profil erscheint unter seiner Norm: **EN** für Lapins Satz und jedes Profil, dessen Norm eine europäische ist (EN 10365, DIN EN, SR EN…), **AISC / ASTM** für amerikanische Tabellen (etwa eine Spalte *Standard* mit ASTM A6), BS, DIN, JIS, AS/NZS und die anderen unter ihrem Namen, und eine Bibliothek, deren Profile keine nennen — die eigene des Büros — unter ihrem eigenen Namen. Einer Bibliothek auf diesem Computer kann man sagen, unter welcher sie erscheint (**Gezeigt unter**, über ihrer Liste).
+
+Die Auswahllisten zeigen zuerst die Profile des Projekts, dann jede Norm unter ihrer Überschrift. Die Schaltflächen oben in der Liste blenden eine Norm aus oder ein; Ihre Wahl bleibt auf diesem Computer gespeichert, für jedes Projekt (auch unter **Datei → Einstellungen → Profile**).
+
+![Die Auswahl nach Normen gruppiert, mit ihren Schaltflächen](shots/profile-picker-standards.webp)
+
+Ein Projekt behält nur die Profile, die seine Typen verwenden, nie eine ganze Bibliothek, sodass eine Bibliothek, die Sie haben, in seiner Datei nichts wiegt. Was ein Projekt anbietet, ist seine eigene Wahl: **Normen in diesem Projekt** unter den Bibliotheken hakt die Normen an, die seine Auswahllisten zeigen; die Profile, die schon darin sind, bleiben. **Datei → Einstellungen → Profile** wählt die Normen, mit denen ein neues Projekt beginnt (alle, wenn Sie nichts wählen).
+
+![Die Normen, die ein Projekt anbietet](shots/profile-project-standards.webp)
+
+![Die Normen, die ein neues Projekt anbietet](shots/prefs-profiles.webp)
+
+Lapin liefert die AISC Shapes Database nicht mit: AISC erlaubt Entwicklern, sie nur unter einem eigenen Lizenzvertrag aufzunehmen, den ein MIT-Programm nicht weitergeben kann. Laden Sie sie bei AISC herunter und importieren Sie sie mit **Tabelle…**: Ihre Spalten werden erkannt.
+
 ## Eigenschaften
 
 Aus den Maßen berechnet Lapin Fläche, Iy, Iz, elastische und plastische Widerstandsmomente, Trägheitsradien, Hauptachsen und ihren Winkel (Winkel, Z, jeder unsymmetrische Umriss), Torsionskonstante It und Wölbwiderstand Iw, wo es eine Formel gibt, die Masse pro Meter aus der Dichte des Materials und die Anstrichfläche pro Meter. Sie stimmen auf etwa 1 % mit den veröffentlichten Tabellen überein (It und Iw gewalzter I-Profile auf 3 %; Iw eines U-Profils mit geneigten Flanschen nur auf 20 %). Ein beliebiger Umriss hat It und Iw nur, wenn seine Datei sie angibt.
@@ -51,14 +67,24 @@ Zeichnen Sie den Querschnitt mit Zeichnen aus geschlossenen Polylinien und Kreis
 
 **Umriss zeichnen** macht das Gegenteil: der Umriss des gewählten Profils als geschlossene Polylinien in der vorderen Ansicht, zum Extrudieren oder Sweepen in Studio.
 
+**Profil zeichnen…** öffnet den Querschnittseditor: die Außenkontur und ihre Kammern als Punkte in Millimetern. Ziehen Sie die Punkte (1 mm; <kbd>Umschalt</kbd> 5 mm), klicken Sie auf eine Kontur, um einen Punkt hinzuzufügen, mit Rechtsklick auf einen Punkt entfernen Sie ihn, oder tippen Sie sie in die Tabelle; beginnen Sie mit einem Rechteck, einem Hohlkasten, einem T, einem Winkel oder einem U-Profil mit den Maßen, die Sie angeben, und fügen Sie Kammern in der Mitte hinzu. Benennen Sie es, wählen Sie Aluminium, erstellen und speichern Sie es wie jede Kontur. **Kontur bearbeiten…** öffnet ein vorhandenes Profil im Editor: erneut unter seinem Namen gespeichert, wird die Kopie des Projekts als neuer markiert, und **Aus der Bibliothek aktualisieren** bringt es zu jedem Typ und jedem Vorhangfassadenstab, der daraus gemacht ist. Ausgewählte Pfosten und Riegel nehmen ein eigenes Profil, gedreht, ausgerichtet und versetzt: siehe [Wände](walls.md).
+
+![Der Querschnittseditor: ein Hohlkasten mit seiner Kammer](shots/profile-editor.webp)
+
 ## Ein Profil verwenden
 
 Wählen Sie in **Stahl → Stahltypen**, **Tragwerk → Tragwerkstypen** (Stützen und Träger) und bei den Profilen der Rahmenhalle **Aus einer Profilbibliothek…** und tippen Sie, um zu suchen.
 
 ![Die Auswahl durchsucht alle Bibliotheken](shots/profile-picker.webp)
 
-Das Profil wird ins Projekt kopiert, und der Typ behält es. Körper sind leicht, mit scharfen Ecken, auf jedem Grad außer einem: eine Ansicht auf **LOD 400** (Grundriss, Schnitt, Ansicht, Plan oder 3D) zeichnet den wirklichen Querschnitt mit Ausrundungen, Flanschspitzenradien und geneigten Flanschen. Mengen und Exporte behalten den scharfen Körper; Ausrundungen und geneigte Flansche zählen in den Eigenschaften und im Tragwerksexport.
+Das Profil wird ins Projekt kopiert, und der Typ behält es. Körper sind leicht, mit scharfen Ecken, auf jedem Grad außer einem: eine Ansicht auf **LOD 400** (Grundriss, Schnitt, Ansicht, Plan oder 3D) zeichnet den wirklichen Querschnitt mit Ausrundungen, Flanschspitzenradien und geneigten Flanschen. Exporte und Auswahl behalten den scharfen Körper, aber Mengen, Gewichte, Auszüge, die Stahlbauteilliste und Kostenschätzungen nehmen die wirkliche Querschnittsfläche (ein IPE 300 hat 53,81 cm², nicht die 51,88 der scharfen Kontur); ein Querschnitt ohne Radien ändert sich nicht.
 
-Anderswo gibt das Profil, was das Werkzeug nutzen kann: Wandprofile, Nuten und Streifenfundamente nehmen seine Außenseite als 2D-Profil (**Aus einer Profilbibliothek…** in ihrer Liste), Pfosten und Riegel von Vorhangfassaden sowie Tür- und Fensterrahmen seine Breite und Tiefe.
+![Stahlträger und -stütze in einer 3D-Ansicht auf LOD 400: Ausrundungen gezeichnet](shots/profile-real-section.webp)
+
+Anderswo gibt das Profil, was das Werkzeug nutzen kann: Wandprofile, Nuten und Streifenfundamente nehmen seine Außenseite als 2D-Profil (**Aus einer Profilbibliothek…** in ihrer Liste), Pfosten und Riegel von Vorhangfassaden sowie Rahmen und Flügel von Türen und Fenstern seine wirkliche Kontur samt Hohlräumen entlang jedes Stabs, mit seiner Breite und Tiefe; das x des Profils läuft quer zum Stab (bei Rahmen und Flügel zum Glas), sein y aus dem Gebäude heraus. **Einfach** nimmt die Kontur weg und behält die Größe.
+
+![Pfosten und Riegel einer Vorhangfassade aus einem Aluminiumquerschnitt](shots/profile-real-mullions.webp)
+
+![Rahmen und Flügel eines Fensters aus demselben Querschnitt](shots/profile-real-frame.webp)
 
 Eine Bibliothek kann sich ändern, nachdem Sie sie benutzt haben. Ein Projektprofil, das von dem gleichnamigen in seiner Bibliothek abweicht, wird mit **neuer in der Bibliothek** markiert; **Aus der Bibliothek aktualisieren** ersetzt es, und alle daraus gemachten Typen folgen, als ein Rückgängig-Schritt. Nichts ändert sich, bevor Sie es verlangen. Ältere Projekte behalten ihre Typen.

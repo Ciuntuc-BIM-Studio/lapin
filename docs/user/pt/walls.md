@@ -21,7 +21,7 @@ Clique onde a parede começa e depois em cada canto. A próxima parede segue o m
 Onde duas paredes se encontram, o Lapin faz a junção sozinho. As camadas delas entram umas nas outras como seriam construídas.
 
 - **Parede curva** (<kbd>WC</kbd>) desenha uma parede ao longo de um arco.
-- **Parede-cortina** (<kbd>CW</kbd>) desenha uma parede envidraçada com montantes e painéis.
+- **Parede-cortina** (<kbd>CW</kbd>) desenha uma parede envidraçada com montantes e painéis; o seu tipo pode tomar a sua forma real de uma [biblioteca de perfis](profiles.md).
 - As paredes se unem sozinhas onde se encontram: um canto em meia-esquadria, uma parede que termina em outra em T, uma que cruza outra em X. Em um T ou em um X as camadas entram umas nas outras como na obra: o núcleo da parede que termina atravessa os acabamentos da outra até o núcleo dela, e os acabamentos dela param na face da outra, encontrando os seus iguais, assim a planta mostra uma única composição sem linha atravessando. **Unir** (<kbd>JW</kbd>), **Meia-esquadria** e **Topo** mudam como duas paredes se encontram quando não é o que você quer; **Novos cantos em meia-esquadria** torna a junção de topo o padrão neste computador. Em qualquer caso, cada camada vira o canto por conta própria: os acabamentos encontram os seus iguais e contornam sem interrupção, e os núcleos se encontram na diagonal (meia-esquadria) ou um núcleo segue até a face externa do outro (de topo), assim uma planta de paredes em camadas mostra cantos limpos. Cada camada entra na outra parede através das camadas dela de **Prioridade** menor e para na primeira de prioridade igual ou maior (veja **Tipos de parede** abaixo), de modo que, por padrão, núcleos encontram núcleos e acabamentos param nas faces; num canto, um núcleo de prioridade maior atravessa o da outra, em meia-esquadria ou de topo. A **Prioridade de corte** de uma parede nunca a faz entrar numa parede unida a ela: entre paredes unidas, decide apenas qual núcleo passa quando os dois núcleos têm a mesma prioridade (num canto de topo ou num cruzamento).
 - **Inverter** muda qual das duas paredes passa direto.
 
@@ -54,6 +54,32 @@ A parede continua uma parede: a espessura, as camadas, as junções e as portas 
 ![Uma empena desenhada no editor de perfil](shots/wall-profile-editor.webp)
 
 ![A parede oeste da casa como empena, com a janela mantida](shots/wall-profile-3d.webp)
+
+### O contorno e as barras de uma parede-cortina
+
+**Perfil…** nas propriedades de uma parede-cortina desenha o seu contorno em alçado, como numa parede: um frontão, uma inclinação, degraus ou qualquer contorno, com pontos para arrastar, acrescentar ou retirar e uma tabela em milímetros. A parede sobe até ao seu ponto mais alto. A sua malha ganha uma linha onde o contorno quebra (uma quebra a menos de um montante e meio de uma linha da malha é levada para ela); cada vão mantém as travessas que cabem sob o seu ponto mais baixo; o painel acima da última enche até ao contorno e uma barra de bordo segue-o, inclinada; os montantes são cortados por ele. As definições do tipo mantêm-se, e **Perfil…** volta a abrir o contorno para o mudar, sem reconstruir; **Topo plano** devolve o retângulo. Vê-se em 3D, alçados e cortes, os mapas medem painéis e barras como desenhados, e o IFC leva-os como peças.
+
+![Um frontão desenhado como contorno de uma parede-cortina](shots/curtain-boundary-editor.webp)
+
+![A parede-cortina sob o seu frontão, em 3D](shots/curtain-boundary-3d.webp)
+
+**Barras…** dá a montantes e travessas escolhidos um perfil próprio. O alçado da parede mostra cada barra: clique numa (<kbd>Shift</kbd> ou <kbd>Ctrl</kbd>/<kbd>⌘</kbd> acrescenta mais, ou tome todos os montantes ou todas as travessas), escolha um perfil das [bibliotecas de perfis](profiles.md) ou uma caixa simples, a sua **Rotação** e o seu **Espelhamento**, o seu alinhamento na transversal da barra (face da frente ou de trás no seu plano) e ao longo (aresta inicial ou final na linha da malha ou no nível) e os seus deslocamentos na transversal e para o exterior do edifício; a imagem ao lado mostra a secção como assenta. **Aplicar aos escolhidos** dá-lhes o estilo, **Voltar ao do tipo** tira-o. O perfil próprio de um tipo tem os mesmos campos de posição em **Paredes-cortina…**, para cada parede do tipo. O perfil continua uma cópia no projeto: **Atualizar da biblioteca** muda cada barra feita com ele, nesta parede e noutras.
+
+![Barras: um perfil colocado nos montantes escolhidos](shots/curtain-members-dialog.webp)
+
+![Dois montantes com perfil próprio, em 3D](shots/curtain-members-3d.webp)
+
+**Painéis e portas…** dá às células escolhidas um painel próprio ou uma porta. O alçado da parede mostra cada célula tal como o motor a constrói: clique numa (<kbd>Shift</kbd> ou <kbd>Ctrl</kbd>/<kbd>⌘</kbd> acrescenta outras). Um **tipo de painel** guarda-se uma vez no projeto e dá-se às células de qualquer parede-cortina: vidro, cheio, um **enchimento com quadro** (um quadro da sua largura e profundidade à volta da célula, o enchimento de vidro ou cheio recuado da sua face exterior pelo recuo) ou **aberta** (sem painel); a sua espessura, o deslocamento fora do eixo e os materiais (os do tipo de parede-cortina quando nenhum é escolhido). **Dar às escolhidas** aplica-o, **O painel do tipo** retira-o; um tipo de painel alterado muda todas as suas células. **Porta nas escolhidas** substitui cada célula escolhida por uma porta: uma nova porta de parede-cortina (simples ou dupla, de batente ou de correr, a sua largura e altura, folhas envidraçadas ou cheias, o perfil do aro das [bibliotecas de perfis](profiles.md)) ou qualquer tipo de porta do projeto. **Preencher a célula** dá-lhe o tamanho da célula; caso contrário mantém o do seu tipo, fica à esquerda, ao centro ou à direita na célula com um deslocamento, e recebe uma travessa por cima e um montante ao lado onde fica vidro, envidraçados com o painel da célula. Na fila de baixo a porta assenta no pavimento e a travessa inferior é cortada por baixo dela. As definições ficam por célula, por isso seguem a grelha quando muda: uma porta que preenche a sua célula cresce ou diminui com ela, e uma cuja célula desapareceu di-lo e volta com ela. A porta é uma porta: selecione-a para mudar a mão ou o lado, o tipo, ou movê-la para outra célula (Mover ao longo da parede); as etiquetas, os mapas de portas (no tamanho em que está) e a exportação IFC (uma IfcDoor que faz parte da sua IfcCurtainWall) contam-na.
+
+![Painéis e portas: um parapeito com quadro e uma porta nas células escolhidas](shots/curtain-cells-dialog.webp)
+
+![Uma parede-cortina com uma porta e parapeitos com quadro, em 3D](shots/curtain-cells-3d.webp)
+
+Sob um contorno desenhado com **Perfil…** uma porta entra numa célula recortada onde quer que o seu retângulo caiba sob o contorno: os montantes ao lado sobem até ao contorno, os vidros ao lado deles enchem-se até ele, uma travessa atravessa a sua cabeça e o vidro por cima segue a inclinação. Ao preencher uma célula assim, a sua cabeça para uma travessa abaixo do lado mais baixo do contorno. Onde não cabe, o Lapin diz quanto falta e o que fazer (baixá-la, movê-la para o lado mais alto ou escolher uma célula mais alta). Um painel com quadro numa célula recortada tem o quadro ao longo de todo o contorno, também no lado inclinado. Um alçado virado para o exterior de uma porta desenha os seus símbolos de abertura, tracejados, como em qualquer porta ou janela.
+
+![Uma porta sob o contorno inclinado de uma parede-cortina, com painéis com quadro ao longo da inclinação, em 3D](shots/curtain-cells-gable.webp)
+
+![O símbolo de abertura da porta no alçado](shots/curtain-cells-elevation.webp)
 
 ## Tipos de parede
 

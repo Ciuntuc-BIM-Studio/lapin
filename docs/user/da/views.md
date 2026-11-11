@@ -24,6 +24,10 @@ Markér snittet i browseren for at indstille dets skala, dybde, fagområde og st
 
 Et snits linje tegnes i hver plan, og snittet markeres i hvert andet snit og hver facade, som dets plan krydser: en fin stiplet linje, hvor planet skærer visningen, med snittets navn og en pil, der ser den vej, snittet ser, øverst, i samme størrelse på papir som i en plan. Et snit markeres aldrig i sig selv. Klik på en markør for at vælge snittet, dobbeltklik for at åbne det.
 
+**Markørstørrelse.** **Administrer → Tegningsstandarder → Projekt** bestemmer, hvor store markørerne tegnes, i papirmillimeter, for snit og facader hver for sig: **Snitmarkørens størrelse** (et snits pile er 0,7 af den) og **Snitmarkørens tekst**, **Facademarkørens størrelse** (facadens cirkel på tværs) og **Facademarkørens tekst**; 10 mm og standardens tekststils højde, indtil du sætter dem. Et projekt, der havde én markørstørrelse, beholder den for begge. Et snit eller en facade med sin egen størrelse har **Markørstørrelse (mm)** og **Markørtekst (mm)** i sine egenskaber; er de tomme, bruger den projektets. Motoren tegner markørerne, så planer, de snit de krydser, tegningsark, PDF og DXF følger alle med.
+
+**Flytte et snit.** Vælg snittet i en plan og flyt det med **Flyt** (eller træk det i dets linje): som i Revit skærer det, hvor du sætter det, og drejet eller spejlet ser det den drejede eller spejlede vej. Hvert hoved (dets pil og navn) har sit eget greb: træk det for at flytte hovedet væk fra linjens ende, for eksempel fri af et mål, og en fin henvisningslinje forbinder det igen; snittet skærer det samme. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-klik på grebet for at sætte hovedet tilbage. Et snit på tværs af eller langs et element følger elementet og flyttes med det.
+
 Hvert snit ligger på et **markørlag** (**Sections** fra start; **Markørlag** i snittets egenskaber ændrer det), og hver visning vælger, hvad den markerer. **Vis → Snit…** viser projektets snit efter lag for den forreste visning, med et afkrydsningsfelt pr. lag og pr. snit kun for denne visning, hvert snits lag (et eksisterende eller **Nyt lag…**) og i hvor mange visninger hvert er skjult. Et tegningsark markerer, hvad dets visninger markerer.
 
 Et snit skåret på tværs af en bjælke eller en søjle (**Snit her**, **Tværsnit** på fanen Simpel armering) har også greb i planen: træk en af enderne langs linjen for at give den side mere eller mindre margen, og træk midten langs elementet for at flytte stationen, det skærer ved. Snittets vindue følger med.
@@ -35,6 +39,14 @@ Et snit skåret på tværs af en bjælke eller en søjle (**Snit her**, **Tværs
 **+** ved siden af **Facader** laver bygningens fire facader på én gang.
 
 ![Sydfacaden](shots/elevation-view.webp)
+
+Hver plan markerer hver facade foran bygningen, fri af snittenes hoveder dér: en fin stregpunktlinje på tværs af den retning, den ser, og midt på den en cirkel med en sort pil, der peger mod bygningen, med facadens navn bag sig. Klik på markøren for at vælge facaden, dobbeltklik for at åbne den. **Facademarkeringer** i **Synlighed / Grafik** (<kbd>VV</kbd>) skjuler dem i en visning.
+
+**Hvor langt en facade rækker.** Vælg facaden i en plan: dens linje har et greb i hver ende. Træk et langs linjen for at strække eller forkorte facaden på den side; facaden tegner så kun det, der ligger mellem de to ender, og dens tegningsark og PDF følger med. Hvert træk er ét fortryd-trin. Indtil du trækker dem, spænder linjen over hele bygningen og vokser med den.
+
+**Flytte en facades markør.** Træk cirklens greb, eller vælg facaden og brug **Flyt**: markøren går, hvor du sætter den, længere væk fra bygningen eller langs dens linje, i ét fortryd-trin. En Lapin-facade ser altid på hele bygningen udefra, så en flytning af dens markør ændrer aldrig det, den viser (i Revit er markørens linje også der, hvor facaden begynder at se; her har dens rækkevidde sine egne greb, og et snit inde i bygningen er et snit). En facade ser mod nord, syd, øst eller vest, så den drejes eller spejles ikke. En fastgjort facade eller et fastgjort snit (**Redigér → Fastgør**) flyttes ikke, før det frigøres.
+
+![En facades markør i plan, flyttet ud fra huset, linjen forkortet, et snits hoved flyttet væk fra dets ende](shots/elevation-marker.webp)
 
 ### Solskygger
 

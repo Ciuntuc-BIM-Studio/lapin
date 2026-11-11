@@ -102,7 +102,14 @@ public static class Views
                     if (view.NumOrNull("originX") == null) return (null, "There is nothing to see.");
                     bounds = (new Vec3(-1, -1, 0), new Vec3(1, 1, 1));
                 }
-                return (ViewSpec.Elevation(LookOf(view), bounds, hidden, view.NumOrNull("originX")), null);
+                var spec = ViewSpec.Elevation(LookOf(view), bounds, hidden, view.NumOrNull("originX"));
+                // As far as its marker's line reaches (decision 456): its extent along its right, from the model's origin.
+                if (ElevationMarkers.Extent(view) is var (lo, hi))
+                {
+                    var o = Vec3.Dot(spec.Frame.Origin, spec.Frame.Right);
+                    spec = spec with { Span = (lo - o, hi - o) };
+                }
+                return (spec, null);
             }
             case RefPlanes.Kind:
                 return (RefPlanes.Spec(view, hidden), null);
@@ -872,7 +879,12 @@ public static class Views
             ["marks"] = new JsonArray(r.Marks.Where(x => x.Owner != null).Select(x => (JsonNode)new JsonObject
             {
                 ["id"] = x.Owner,
-                ["segments"] = new JsonArray(x.Lines.SelectMany(l => new[] { l.A.X, l.A.Y, l.B.X, l.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+                ["segments"] = new JsonArray(x.Lines.Select(l => (l.A, l.B)).Concat(x.Edges).SelectMany(l => new[] { l.A.X, l.A.Y, l.B.X, l.B.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
+                ["hit"] = x.Hit is { } hit ? new JsonObject
+                {
+                    ["solid"] = hit.Solid,
+                    ["loops"] = new JsonArray(hit.Loops.Select(l => (JsonNode)new JsonArray(l.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray())).ToArray()),
+                } : null,
                 ["snaps"] = new JsonArray(x.Snaps.SelectMany(p => new[] { p.X, p.Y }).Select(v => (JsonNode)Math.Round(v, 5)).ToArray()),
                 ["shapes"] = x.Shapes.Count > 0 ? new JsonArray(x.Shapes.Select(sh => (JsonNode)sh.DeepClone()).ToArray()) : null,
                 ["data"] = x.Data?.DeepClone(),
@@ -900,16 +912,38 @@ public static class Views
         return o;
     }
 
-    /// <summary>A view as DXF at real size (1 m = 1000 mm, y up), its texts and dashes as high as on paper at its scale.</summary>
-    public static byte[] Dxf(IQueryContext q, Entity view)
+    /// <summary>The systems a plan's DXF can be written in: the plan's own (its internal origin), the project base point's, the map's.</summary>
+    public static readonly string[] DxfCoords = ["internal", "project", "map"];
+
+    /// <summary>
+    /// A view as DXF at real size, y up, its texts and dashes as high as on paper at its scale. In the plan's own
+    /// coordinates (millimetres from the internal origin), the project base point's (millimetres from it), or, for
+    /// a plan of a georeferenced project, the map's (decision 447): eastings and northings in metres through the
+    /// survey point, turned to true north (<see cref="GeoRef.ToMap"/>), so the drawing lands on a cadastral DXF.
+    /// </summary>
+    public static byte[] Dxf(IQueryContext q, Entity view, string coords = "internal")
     {
         var r = Render(q, view);
+        if (!DxfCoords.Contains(coords)) throw new CommandException($"A DXF is written in internal, project or map coordinates, not {coords}.");
+        if (coords != "internal" && r.Kind != "plan") throw new CommandException("Only a plan is written in project or map coordinates: a section or elevation has no place on the map.");
+        if (coords == "map" && Location.Survey(q.Model) == null) throw new CommandException("The project has no survey point: Manage → Location ties it to the map first.");
+        var basePt = Location.Base(q.Model).At;
+        var north = Location.Base(q.Model).NorthAngle ?? 0;
+        // A model point (metres) in the file's units; an angle (degrees, anticlockwise) turned as the plan turns to the map.
+        Func<Vec2, Vec2> place = coords switch
+        {
+            "map" => p => { var (e, n) = GeoRef.ToMap(q.Model, p); return new Vec2(e, n); },
+            "project" => p => (p - basePt) * 1000,
+            _ => p => p * 1000,
+        };
+        var unit = coords == "map" ? 1.0 : 1000.0;
+        var turn = coords == "map" ? -north : 0;
         var pens = r.Pens.Select(p =>
         {
-            var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash?.Select(v => v * r.Scale).ToArray());
-            o.Segments.AddRange(p.Segments.Select(s => (s.A * 1000, s.B * 1000)));
-            o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(v => v * 1000).ToList()));
-            o.Texts.AddRange(p.Texts.Select(t => t with { At = t.At * 1000, Height = t.Height * r.Scale }));
+            var o = new Pen(p.Layer, p.Stroke, p.Width, p.Fill, p.Dash?.Select(v => v * r.Scale * unit / 1000).ToArray());
+            o.Segments.AddRange(p.Segments.Select(s => (place(s.A), place(s.B))));
+            o.Loops.AddRange(p.Loops.Select(l => (IReadOnlyList<Vec2>)l.Select(place).ToList()));
+            o.Texts.AddRange(p.Texts.Select(t => t with { At = place(t.At), Height = t.Height * r.Scale * unit / 1000, Angle = t.Angle + turn }));
             return o;
         }).ToList();
         // DxfWriter.Page flips y on a page; a model drawing is y up already: give it a page of height 0 mirrored back.
@@ -921,7 +955,13 @@ public static class Views
             o.Texts.AddRange(p.Texts.Select(t => t with { At = new Vec2(t.At.X, -t.At.Y) }));
             return o;
         }).ToList();
-        return Lapin.Drawing.Export.DxfWriter.Page(new Lapin.Drawing.Export.PaperPage(0, 0, flipped), $"Lapin · {view.Name} · 1:{r.Scale:0}");
+        var where = coords switch
+        {
+            "map" => $" · {Location.Crs(q.Model) ?? "map"} coordinates, metres",
+            "project" => " · from the project base point, mm",
+            _ => "",
+        };
+        return Lapin.Drawing.Export.DxfWriter.Page(new Lapin.Drawing.Export.PaperPage(0, 0, flipped), $"Lapin · {view.Name} · 1:{r.Scale:0}{where}", coords == "map" ? 6 : 4);
     }
 
     /// <summary>
@@ -947,22 +987,34 @@ public static class Views
                 if (pieces.Count == 0) continue;
                 var (first, last) = (pieces[0], pieces[^1]);
                 var mk = new ViewMark(v.Id);
-                var (arrow, head) = (0.7 * k, 0.25 * k);
+                // Its symbol's size and its text's height: its own, else the project's (decision 455).
+                var (size, textHeight) = SectionMarkers.Sizes(c.Book, v, text);
+                var u = size * c.Mm;
+                var (arrow, head) = (0.7 * u, 0.25 * u);
                 mk.Polyline(path, false, "SECTION", Pens.Default.Hatch, dash: LineStyles.DashOf("center"));
                 var u0 = (first.B - first.A) * (1 / first.Length);
                 var u1 = (last.B - last.A) * (1 / last.Length);
-                mk.Line(first.A, first.A + u0 * Math.Min(0.8 * k, first.Length / 3), "SECTION", Pens.Default.Cut).Line(last.B, last.B - u1 * Math.Min(0.8 * k, last.Length / 3), "SECTION", Pens.Default.Cut);
-                foreach (var (end, look) in new[] { (first.A, u0.Perp), (last.B, u1.Perp) })
+                mk.Line(first.A, first.A + u0 * Math.Min(0.8 * u, first.Length / 3), "SECTION", Pens.Default.Cut).Line(last.B, last.B - u1 * Math.Min(0.8 * u, last.Length / 3), "SECTION", Pens.Default.Cut);
+                // Each head (its arrow and name) where its end is, or moved off it (decision 460: headA, headB), a fine leader back.
+                var heads = new JsonArray();
+                foreach (var (key, end, look) in new[] { ("a", first.A, u0.Perp), ("b", last.B, u1.Perp) })
                 {
-                    var tip = end + look * arrow;
-                    mk.Line(end, tip, "SECTION", Pens.Default.Seen)
+                    var off = SectionHeads.Offset(v, key);
+                    var foot = end + off;
+                    if (off.Length > 1e-9) mk.Line(end, foot, "SECTION", Pens.Default.Hatch);
+                    var tip = foot + look * arrow;
+                    mk.Line(foot, tip, "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head + look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
                       .Line(tip, tip - look * head - look.Perp * (head * 0.5), "SECTION", Pens.Default.Seen)
-                      .Text(new PenText(tip + look * (0.35 * k), v.Name, text.Height, Baseline: "middle", Font: text.Font));
+                      .Text(new PenText(tip + look * (0.35 * u), v.Name, textHeight, Baseline: "middle", Font: text.Font));
+                    heads.Add((JsonNode)new JsonObject { ["end"] = key, ["at"] = new JsonArray(Math.Round(tip.X, 6), Math.Round(tip.Y, 6)), ["offset"] = new JsonArray(Math.Round(off.X, 6), Math.Round(off.Y, 6)) });
                 }
+                mk.Data = new JsonObject { ["heads"] = heads };
                 mk.Snaps.AddRange(path);
                 yield return mk;
             }
+            // The elevations' markers (decision 456): their line, as far as each reaches, and the symbol looking at the building.
+            foreach (var mark in ElevationMarkers.Marks(c, text)) yield return mark;
         }
         else if (c.Drawing.Bounds is { } bounds && c.View.Str("kind") != RefPlanes.Kind)
         {
@@ -1175,6 +1227,9 @@ public static class Views
             new("openingSymbols", "Opening symbols", "choice", Choices: ["show", "hide"]),
             // The layer a section's marker is on, so views hide markers by layer (SectionMarkers).
             new("markerLayer", "Marker layer", "text"),
+            // A section's or elevation's marker: its symbol's size and its text's height (paper mm; empty: the drafting standards', decision 455).
+            new("markSize", "Marker size (mm)", "number", Min: Standards.MinMarkSize, Max: Standards.MaxMarkSize),
+            new("markTextSize", "Marker text (mm)", "number", Min: Standards.MinMarkText, Max: Standards.MaxMarkText),
             // An elevation's sketch plane, along its look; a reference plane's place and turn (docs/plan-studio-thick.md).
             new("planeDepth", "Sketch plane depth", "length"),
             new("x", "Origin x", "length"), new("y", "Origin y", "length"), new("z", "Origin z", "length"),
@@ -1221,6 +1276,10 @@ public static class Views
                         attrs["foundation"] = true;
                         attrs["cutHeight"] = -0.5;
                         attrs["viewRange"] = new ViewRange(new("self", 0), new("self", -3.0), new("self", -3.0)).ToJson();
+                        // It shows the level under it too (the Foundations of a new project): what is drawn in it goes there (decision 437, report #117).
+                        var elevation = storey.Num("elevation");
+                        if (Spatial.Storeys(ctx.Model).Where(x => x.Num("elevation") < elevation - 1e-6).OrderByDescending(x => x.Num("elevation")).FirstOrDefault() is { } below)
+                            attrs["storeys"] = new StoreyDisplay("some", new HashSet<string> { below.Id }, false).ToJson();
                     }
                     name = (string?)a["name"] ?? storey.Name;
                     break;
@@ -1262,6 +1321,8 @@ public static class Views
         Insets.Register(r);
         ViewBoundaries.Register(r);
         SectionMarkers.Register(r);
+        ElevationMarkers.Register(r);
+        SectionHeads.Register(r);
 
         // A section across an element moved along it or widened: {id, station?, marginA?, marginB?} (AcrossSections).
         r.Command("view.updateAcross", "Move section", (ctx, a) =>

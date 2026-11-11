@@ -1,13 +1,16 @@
 /**
  * A profile chosen from the libraries (docs/plan-profile-libraries.md): typed to search every library at once — the
  * project's copies first, then Lapin's, this computer's and the firm's folders — by name, family, standard or kind; a
- * kind filter where only some fit (a hall's frame wants I sections). `onPick` gets the profile and its library's name, for
+ * kind filter where only some fit (a hall's frame wants I sections). The list is grouped under headings, the project's
+ * copies first, then each standard (EN, AISC / ASTM, a firm's own; decision 457): only those the project offers, and of
+ * them those the user has not hidden with the chips at its top (kept in the preferences). `onPick` gets the profile and its library's name, for
  * the engine to copy into the project with the type made of it (`profile`, `library` in the type commands).
  */
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useSession } from '../../../engine/session';
-import { massOf, naturalCompare, search, type LibraryEntry, type ProfileJson } from './model';
+import { setPrefs, usePrefs } from '../../../app/prefs';
+import { groupFound, massOf, naturalCompare, projectStandardsOf, search, standardsOf, type LibraryEntry, type ProfileJson } from './model';
 import { useProfileLibraries } from './store';
 
 /** The project's copies as a library entry of their own. */
@@ -24,10 +27,15 @@ export function ProfilePickerField({ kinds, onPick, testId, placeholder, value }
 }) {
   const nodes = useSession((s) => s.nodes);
   const { entries, loading } = useProfileLibraries();
+  const hidden = usePrefs((s) => s.profileStandardsHidden);
   const [text, setText] = useState('');
   const [open, setOpen] = useState(false);
   const all = useMemo(() => [projectEntry(nodes as never), ...entries], [nodes, entries]);
-  const found = useMemo(() => search(all, text, { kinds }, 60), [all, text, kinds]);
+  // The standards the project offers (all when it says none), each shown or hidden for this user by its chip.
+  const offered = useMemo(() => projectStandardsOf(nodes as never), [nodes]);
+  const standards = useMemo(() => standardsOf(entries).filter((g) => !offered || offered.includes(g)), [entries, offered]);
+  const groups = useMemo(() => groupFound(search(all, text, { kinds }, 2000), offered, hidden, 80), [all, text, kinds, offered, hidden]);
+  const toggle = (g: string) => setPrefs({ profileStandardsHidden: hidden.includes(g) ? hidden.filter((x) => x !== g) : [...hidden, g] });
   const pick = (entry: LibraryEntry, p: ProfileJson) => {
     const library = entry.origin === 'project' ? ((p as ProfileJson & { library?: string }).library ?? null) : entry.name;
     const profile = { ...p } as ProfileJson & { library?: string };
@@ -42,15 +50,29 @@ export function ProfilePickerField({ kinds, onPick, testId, placeholder, value }
         data-testid={`${testId ?? 'library-profile'}-search`} />
       {open && (
         <ul className="profile-picker-list" role="listbox">
-          {loading && <li className="muted small">Reading the libraries…</li>}
-          {!loading && found.length === 0 && <li className="muted small">No profile matches: import a library in Manage → Profile libraries.</li>}
-          {found.map(({ entry, profile }) => (
-            <li key={`${entry.key}/${profile.name}`} role="option" aria-selected={false} onMouseDown={(e) => { e.preventDefault(); pick(entry, profile); }} data-profile={profile.name}>
-              <span data-no-i18n>{profile.name}</span>
-              <span className="muted small" data-no-i18n>{[profile.family, massOf(profile) != null ? `${massOf(profile)!.toFixed(1)} kg/m` : null].filter(Boolean).join(' · ')}</span>
-              <span className="grow" />
-              <span className="muted small" data-no-i18n>{entry.name}</span>
+          {standards.length > 1 && (
+            <li className="profile-standards" role="presentation" title="The standards shown: a click hides or shows one (kept for you, in every project)" data-testid="profile-picker-standards" onMouseDown={(e) => e.preventDefault()}>
+              {standards.map((g) => (
+                <button key={g} type="button" className={`chip${hidden.includes(g) ? '' : ' on'}`} aria-pressed={!hidden.includes(g)} data-standard={g} onClick={() => toggle(g)} data-no-i18n>{g}</button>
+              ))}
             </li>
+          )}
+          {loading && <li className="muted small">Reading the libraries…</li>}
+          {!loading && groups.length === 0 && <li className="muted small">No profile matches: import a library in Manage → Profile libraries.</li>}
+          {groups.map((g) => (
+            <Fragment key={g.project ? '#project' : g.group}>
+              <li className="profile-group-head" role="presentation" data-group={g.project ? 'project' : g.group} onMouseDown={(e) => e.preventDefault()}>
+                {g.project ? <span>In the project</span> : <span data-no-i18n>{g.group}</span>}
+              </li>
+              {g.items.map(({ entry, profile }) => (
+                <li key={`${entry.key}/${profile.name}`} role="option" aria-selected={false} onMouseDown={(e) => { e.preventDefault(); pick(entry, profile); }} data-profile={profile.name}>
+                  <span data-no-i18n>{profile.name}</span>
+                  <span className="muted small" data-no-i18n>{[profile.family, massOf(profile) != null ? `${massOf(profile)!.toFixed(1)} kg/m` : null].filter(Boolean).join(' · ')}</span>
+                  <span className="grow" />
+                  {entry.origin !== 'project' && entry.name !== g.group && <span className="muted small" data-no-i18n>{entry.name}</span>}
+                </li>
+              ))}
+            </Fragment>
           ))}
         </ul>
       )}

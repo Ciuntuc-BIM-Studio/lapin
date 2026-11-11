@@ -21,7 +21,7 @@ Click where the wall starts, then click at each corner. The next wall follows th
 Where two walls meet, Lapin joins them by itself. Their layers run into each other the way they would be built.
 
 - **Curved wall** (<kbd>WC</kbd>) draws a wall along an arc.
-- **Curtain wall** (<kbd>CW</kbd>) draws a glazed wall with mullions and panels.
+- **Curtain wall** (<kbd>CW</kbd>) draws a glazed wall with mullions and panels; its type can take their real shape from a [profile library](profiles.md).
 - Walls join by themselves where they meet: a corner as a mitre, a wall ending on another as a T, one crossing another as an X. At a T or an X the layers run into each other as built: the ending wall's core goes on through the other's finishes to its core, and its finishes stop at the other's face, meeting their like, so the plan shows one build-up with no line through it. **Join** (<kbd>JW</kbd>), **Mitre** and **Butt** change how two walls meet when that is not what you want; **Mitre new corners** makes butt the default on this computer. Either way, each layer turns the corner on its own: the finishes meet their like and run round unbroken, and the cores meet on the diagonal (mitre) or one core runs on to the other's outer face (butt), so a plan of layered walls shows clean corners. Each layer goes on into the other wall through its layers of a lower **Priority** and stops at the first as high or higher (see **Wall types** below), so by default cores meet cores and finishes stop at the faces; at a corner, a core of a higher priority runs through the other's, mitre or butt. A wall's **Cut priority** never takes it into a wall it is joined to: between joined walls it only decides which core runs through when both cores have the same priority (at a butt corner or a crossing).
 - **Swap** changes which of the two walls runs through.
 
@@ -54,6 +54,32 @@ The wall stays a wall: its thickness, its layers, its joins and its doors and wi
 ![A gable drawn in the profile editor](shots/wall-profile-editor.webp)
 
 ![The house's west wall as a gable, its window kept](shots/wall-profile-3d.webp)
+
+### A curtain wall's boundary and members
+
+**Profile…** in a curtain wall's properties draws its boundary in elevation, as for a wall: a gable, a slope, steps, or any outline, with points to drag, add or take out and a table in millimetres. The wall rises to its highest point. Its grid gains a line where the boundary bends (a bend within a mullion and a half of a grid line is moved onto it); each bay keeps the transoms that fit under its lowest point; the panel above the last one fills up to the boundary, and an edge member follows it, sloped; the mullions are cut to it. The type's settings stay, and **Profile…** opens the boundary again to change it, with no rebuilding; **Flat top** gives the rectangle back. It shows in 3D, elevations and sections, the schedules measure the panels and members as drawn, and the IFC carries them as parts.
+
+![A gable drawn as a curtain wall's boundary](shots/curtain-boundary-editor.webp)
+
+![The curtain wall under its gable, in 3D](shots/curtain-boundary-3d.webp)
+
+**Members…** gives chosen mullions and transoms a profile of their own. The wall's elevation shows every member: click one (<kbd>Shift</kbd> or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> adds more, or take all the mullions or all the transoms), choose a profile from the [profile libraries](profiles.md) or a plain box, its **Rotation** and **Mirror**, its alignment across the member (front or back face on its plane) and along it (start or end edge on the grid line or level), and its offsets across and out of the building; the picture beside shows the section as it sits. **Apply to the chosen** gives them the style, **Back to the type's** takes it off. A type's own profile has the same place fields in **Curtain walls…**, for every wall of the type. The profile stays a copy in the project: **Update from the library** changes every member made of it, in this wall and in others.
+
+![Members: a profile placed on the mullions chosen](shots/curtain-members-dialog.webp)
+
+![Two mullions with a profile of their own, in 3D](shots/curtain-members-3d.webp)
+
+**Panels and doors…** gives chosen cells a panel of their own or a door. The wall's elevation shows every cell as the engine builds it: click one (<kbd>Shift</kbd> or <kbd>Ctrl</kbd>/<kbd>⌘</kbd> adds more). A **panel type** is saved once in the project and given to cells of any curtain wall: glass, solid, a **framed infill** (a frame of its width and depth round the cell, the glass or solid infill set back from its outer face by the inset) or **open** (no panel); its thickness, its offset out of the axis and its materials (the curtain wall type's when none is chosen). **Give to the chosen** applies it, **The type's panel** takes it off; editing a panel type changes every cell of it. **Door in the chosen** replaces each chosen cell by a door: a new curtain wall door (single or double, swinging or sliding, its width and height, glazed or solid leaves, its frame profile from the [profile libraries](profiles.md)) or any door type of the project. **Fill the cell** makes it the cell's size; otherwise it keeps its type's, stands left, centred or right in the cell with an offset, and gets a transom over it and a mullion beside it where glass is left, glazed with the cell's panel. In the bottom row a door stands on the floor and the sill transom is cut away under it. The settings are kept by cell, so they follow when the grid changes: a door filling its cell grows or shrinks with it, and one whose cell is gone says so and comes back with it. The door is a door: select it to flip its hand or side, change its type, or move it to another cell (Move along the wall); tags, door schedules (at the size it stands) and the IFC export (an IfcDoor that is part of its IfcCurtainWall) count it.
+
+![Panels and doors: a framed spandrel and a door in the chosen cells](shots/curtain-cells-dialog.webp)
+
+![A curtain wall with a door and framed spandrels, in 3D](shots/curtain-cells-3d.webp)
+
+Under a boundary drawn with **Profile…** a door goes into a trimmed cell wherever its rectangle fits under the boundary: the mullions beside it rise to the boundary, the panes beside them fill up to it, a transom spans its head and the glass over it follows the slope. Filling such a cell, its head stops a transom under the boundary's lower side. Where it does not fit, Lapin says by how much and what to do (lower it, move it to the higher side, or choose a higher cell). A framed panel in a trimmed cell is framed along its outline, sloped side too. An elevation that faces a door's exterior draws its opening symbols, dashed, as for any door or window.
+
+![A door under a sloped curtain wall boundary, with framed panels along the slope, in 3D](shots/curtain-cells-gable.webp)
+
+![The door's opening symbol in the elevation](shots/curtain-cells-elevation.webp)
 
 ## Wall types
 

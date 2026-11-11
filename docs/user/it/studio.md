@@ -89,8 +89,8 @@ Questi strumenti lavorano sulle facce e sugli spigoli del corpo così com’è c
 - **Raccorda spigolo** (FE) arrotonda lo spigolo più vicino al tuo clic, e **Smussa spigolo** (CE) lo smussa. Scegli *tutto attorno alla faccia* per trattare in una volta tutti gli spigoli della faccia.
 - **Guscio** svuota i solidi selezionati, con pareti dello spessore che digiti. Può restare chiuso, oppure essere lasciato aperto alla sua estremità, al suo schizzo o a entrambi.
 - **Dividi** taglia un solido in due con un piano parallelo alla faccia che scegli, tanto in profondità nella faccia quanto trascini o digiti. Entrambe le parti conservano lo schizzo. **Seziona** conserva un solo lato: scegli **Tieni dietro** o **Tieni davanti** nella barra in fondo alla vista.
-- **Serie** ripete il solido in fila, e **Serie polare** lo ripete attorno a un asse verticale.
-- **Ruota 3D** ruota il solido attorno a uno spigolo che scegli. **Specchia 3D** lo specchia nel piano di una faccia. **Sposta 3D** mette frecce lungo x, y e z sui solidi selezionati: trascinane una, oppure digita una distanza per l’asse mostrato accanto al valore (<kbd>Tab</kbd> passa all’asse successivo).
+- **Serie** ripete il solido in fila, e **Serie polare** lo ripete attorno a un asse verticale. Con qualsiasi altra cosa selezionata (un riferimento, un gruppo, un muro), ne fanno invece delle copie, come **Modifica → Serie**: **In fila**, un passo lungo x, y e z, oppure **Attorno a un centro**, l’angolo che le copie riempiono (360° le distribuisce su un giro completo).
+- **Ruota 3D** ruota il solido attorno a uno spigolo che scegli. **Specchia 3D** lo specchia nel piano di una faccia. **Sposta 3D** mette frecce lungo x, y e z sulla selezione (solidi, riferimenti, gruppi o qualsiasi elemento): trascinane una, oppure digita una distanza per l’asse mostrato accanto al valore (<kbd>Tab</kbd> passa all’asse successivo).
 
 ![Spingi/tira: la faccia superiore tirata verso l’alto, ciò che aggiunge disegnato in verde, e la distanza accanto alla freccia](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ Le proprietà di una polilinea elencano i suoi lati. Digita la lunghezza di un l
 
 ## Mesh da altri programmi
 
-**File → Importa mesh (OBJ, STL, glTF)…** porta dentro una mesh come riferimenti che puoi vedere e su cui puoi fare snap. Un file OBJ o STL non dice la sua unità né quale verso è l’alto, quindi Lapin lo chiede. Seleziona un riferimento e fai clic su **Rendi solido Studio** per renderlo modificabile. A quel punto accetta spingi/tira, raccordi, booleane e gli altri passi. Lo stesso strumento funziona su muri, solette ed elementi provenienti da file IFC.
+**File → Importa mesh (OBJ, STL, glTF)…** porta dentro una mesh come riferimenti che puoi vedere e su cui puoi fare snap. Un file OBJ o STL non dice la sua unità né quale verso è l’alto, quindi Lapin lo chiede. Un riferimento si sposta, ruota, specchia e copia così com’è, come qualsiasi elemento. Per cambiarne la forma, selezionalo e fai clic su **Rendi solido Studio**. A quel punto accetta spingi/tira, raccordi, booleane e gli altri passi. Lo stesso strumento funziona su muri, solette ed elementi provenienti da file IFC.
 
 ## Booleane
 

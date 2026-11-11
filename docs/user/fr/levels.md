@@ -45,3 +45,7 @@ Les copies utilisent les mêmes types que les originaux et reçoivent de nouveau
 ![Les murs et la dalle du rez-de-chaussée copiés sur les deux niveaux au-dessus, en 3D](shots/copy-to-storeys-3d.webp)
 
 Pour déplacer la sélection vers un autre niveau, choisissez **Modifier → Déplacer vers un niveau**. Les éléments gardent leurs hauteurs au-dessus du nouveau niveau, ou restent là où ils sont dans l’espace.
+
+## L'altitude d'un élément
+
+Un élément d'un niveau se tient à l'altitude du niveau et à un décalage de celle-ci. **Propriétés → Placement** montre son **Niveau**, son **Décalage par rapport au niveau** et son **Altitude** au-dessus de ±0,00 : la base d'un mur ou d'un poteau, le dessus d'une dalle ou d'une poutre (le décalage d'une poutre est pris depuis le haut du niveau), le dessous d'une semelle (le niveau bas de son type sous le niveau, plus le décalage). Saisissez l'un des chiffres et l'autre suit : l'élément se déplace dans toutes les vues, en une seule étape d'annulation. Pour mettre un élément sur un autre niveau, changez son **Niveau**. Ce que vous dessinez dans un plan se tient au niveau de ce plan.

@@ -153,6 +153,23 @@ public class WallTests
     }
 
     [Fact]
+    public void Retyping_a_wall_named_after_its_type_takes_the_new_types_name_and_keeps_a_name_given_to_it()
+    {
+        // GitHub issue #16: the IFC tree labels a wall by its name, which a new wall takes from its type.
+        var f = new Fixture();
+        var a = f.Type("Brick Wall 285", ("Brick", 0.285, true));
+        var b = f.Type("Concrete 300", ("Concrete", 0.3, true));
+        var auto = f.Wall(0, 0, 4, 0, a);
+        var named = f.Wall(0, 2, 4, 2, a);
+        f.Run("element.rename", new JsonObject { ["id"] = named, ["name"] = "Party wall" });
+        Assert.Equal("Brick Wall 285", f.Model.Get(auto)!.Name);
+        f.Run("architecture.setWallType", new JsonObject { ["ids"] = new JsonArray(auto, named), ["typeId"] = b });
+        Assert.Equal(b, Walls.TypeOf(f.Model, auto)!.Id);
+        Assert.Equal("Concrete 300", f.Model.Get(auto)!.Name);
+        Assert.Equal("Party wall", f.Model.Get(named)!.Name);
+    }
+
+    [Fact]
     public void Wrong_input_is_refused_and_changes_nothing()
     {
         var f = new Fixture();

@@ -3,7 +3,7 @@
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn } from 'lucide-react';
+import { Pin, PinOff, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
@@ -16,17 +16,20 @@ import type { NodeDto } from '../../engine/protocol';
 import { viewShowsField } from './planeFields';
 import { closePane, setTool, splitPane, useUi } from '../../app/store';
 import { isDesktop } from '../../engine/files';
+import { setLocationShown, useLocation } from '../../app/location';
 import { openViewWindow } from '../../app/windows';
 import { assistantAvailable } from '../../assistant/available';
-import { showPropsTab } from '../../app/panels';
+import { setLayout, showPropsTab } from '../../app/panels';
 import { SheetSection } from './SheetSection';
 import { Visibility3D, VisibilityDialog, openVisibility } from './VisibilityDialog';
 import { LinkedProjectsWatch, LinksDialog, LinksLook } from './LinksDialog';
 import { toggleClashMarks, toggleVoids2d } from './coordination/coordination';
 import { openDocuments } from './documents/documents';
 import { convertToNative } from './convertTools';
+import { pinSelection } from './pinTools';
+import { arraySelection } from './arrayTool';
 import { GroupSection } from './GroupSection';
-import { editSelectedGroup, groupSelection, makeComponent, removeFromGroup, ungroupSelection } from './groupTools';
+import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
 import { toggleRegion3d } from '../../viewport/select3d';
 import { hideSelection, isolateSelection, resetTemporary } from '../../viewport/temporary';
 import { Storeys3DLooks } from './Storeys3D';
@@ -129,7 +132,12 @@ const core: LapinModule = {
       { id: 'modify.copy', label: 'Copy', icon: Copy, run: () => void startCommand('COPY') },
       { id: 'modify.rotate', label: 'Rotate', icon: RotateCw, run: () => void startCommand('ROTATE') },
       { id: 'modify.mirror', label: 'Mirror', icon: FlipHorizontal2, run: () => void startCommand('MIRROR') },
+      // Copies in a row or round a centre, any element alike (decision 448).
+      { id: 'modify.array', label: 'Array', icon: Grid3x3, run: () => void arraySelection() },
       { id: 'modify.delete', label: 'Delete', icon: Trash2, run: () => void startCommand('ERASE') },
+      // Pinned where it is, as Revit pins (decision 449): not moved, turned, mirrored nor deleted until unpinned.
+      { id: 'modify.pin', label: 'Pin', icon: Pin, run: () => void pinSelection(true) },
+      { id: 'modify.unpin', label: 'Unpin', icon: PinOff, shortcut: 'UP', run: () => void pinSelection(false) },
       { id: 'modify.similar', label: 'Create similar', icon: CopyCheck, shortcut: 'CS', run: createSimilar },
       { id: 'modify.match', label: 'Match type', icon: Pipette, shortcut: 'MA', run: () => void startCommand('MATCHTYPE') },
       { id: 'modify.moveToStorey', label: 'Move to storey', icon: MoveToStoreyIcon, run: () => useUi.setState({ dialog: 'moveToStorey' }) },
@@ -138,6 +146,7 @@ const core: LapinModule = {
       // Groups (docs/groups.md), with Revit's keys.
       { id: 'modify.group', label: 'Create group', icon: Group, shortcut: 'GP', run: () => void groupSelection() },
       { id: 'modify.component', label: 'Make component', icon: Boxes, shortcut: 'CK', run: () => void makeComponent() },
+      { id: 'modify.unit', label: 'Make apartment type', icon: Building2, shortcut: 'CU', run: () => void makeUnit() },
       { id: 'modify.ungroup', label: 'Ungroup', icon: Ungroup, shortcut: 'UG', run: () => void ungroupSelection() },
       { id: 'modify.editGroup', label: 'Edit group', icon: PencilRuler, shortcut: 'EG', run: editSelectedGroup },
       { id: 'modify.removeFromGroup', label: 'Remove from group', icon: SquareMinus, run: () => void removeFromGroup() },
@@ -225,6 +234,8 @@ const core: LapinModule = {
         { id: 'view.fog', label: 'Fog', icon: CloudFog, run: () => useUi.setState((s) => ({ fog: !s.fog })) },
         // For the eyes only (decision 247): the plan's background grid (F7) and every line one pixel (TL); sheets and PDFs keep their pens.
         { id: 'view.grid', label: 'Grid', icon: Grid3x3, run: toggleGrid },
+        // The internal origin, the project base point and the survey point in plans and 3D (decision 445): the project's switch, one undo step.
+        { id: 'view.locationPoints', label: 'Coordinate points', icon: MapPin, run: () => { const shown = !useLocation.getState().loc.show; void setLocationShown(shown); notify(shown ? 'The internal origin, the base point and the survey point are shown in plans and 3D.' : 'The project\'s points are hidden.'); } },
         { id: 'view.thinLines', label: 'Thin lines', icon: Minus, shortcut: 'TL', run: toggleThinLines },
         // The shapes drafted on plans, sections and reference planes, as lines on their planes in 3D (decision 312).
         { id: 'view.drafts3d', label: 'Drafts in 3D', icon: PenLine, run: toggleDrafts3d },
@@ -256,6 +267,13 @@ const core: LapinModule = {
         // The project's sun on a day and an hour, lighting the 3D view with its shadows (docs/plan-visualisation.md).
         { id: 'view.sun', label: 'Sun and shadows', icon: SunMedium, run: () => useUi.setState({ dialog: 'sun' }) },
       ] },
+      // Which side the project browser and the properties stand on (decision 427, report #123); kept on this computer.
+      { label: 'Panels', tools: [
+        { id: 'view.panels.default', label: 'Browser left, Properties right', icon: PanelsTopLeft, run: () => { setLayout('default'); notify('The project browser stands on the left and the properties on the right.'); } },
+        { id: 'view.panels.swapped', label: 'Browser right, Properties left', icon: PanelsTopLeft, run: () => { setLayout('swapped'); notify('The project browser stands on the right and the properties on the left.'); } },
+        { id: 'view.panels.bothLeft', label: 'Both panels on the left', icon: PanelsTopLeft, run: () => { setLayout('bothLeft'); notify('The project browser and the properties are stacked on the left; drag the divider between them.'); } },
+        { id: 'view.panels.bothRight', label: 'Both panels on the right', icon: PanelsTopLeft, run: () => { setLayout('bothRight'); notify('The project browser and the properties are stacked on the right; drag the divider between them.'); } },
+      ] },
       // Selecting and clearing up in 3D (docs/groups.md): a region, and hiding for now, with Revit's keys.
       { label: 'Select', tools: [
         { id: 'view.selectRegion', label: 'Select region', icon: BoxSelect, shortcut: 'SR', run: () => { if (useUi.getState().view !== '3d') useUi.setState({ view: '3d' }); toggleRegion3d(); } },
@@ -272,6 +290,7 @@ const core: LapinModule = {
       // The same ids as the app's own commands (app/commands.ts): one entry in the shortcuts, its keys in the tooltip.
       { label: 'Interface', tools: [
         { id: 'app.interface', label: 'Interface…', icon: PanelsTopLeft, run: () => useUi.setState({ dialog: 'interface' }) },
+        { id: 'app.preferences', label: 'Preferences…', icon: SlidersHorizontal, run: () => useUi.setState({ dialog: 'preferences' }) },
         { id: 'app.shortcuts', label: 'Keyboard shortcuts…', icon: Keyboard, run: () => useUi.setState({ dialog: 'shortcuts' }) },
         { id: 'app.quickTools', label: 'Quick tools…', icon: LayoutGrid, run: () => useUi.setState({ dialog: 'quickTools' }) },
         // The model assistant (docs/plan-assistant.md): the desktop's only, absent from the web build.

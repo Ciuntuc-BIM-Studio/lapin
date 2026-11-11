@@ -73,6 +73,8 @@ Uma porta ou uma janela é uma grade de módulos. Cada módulo escolhe como abre
 
 **Sistema de perfis** começa o tipo de um perfil de **PVC**, **Alumínio**, **Madeira** ou **Aço (esbelto)**: define as medidas do marco, dos montantes, das travessas e das folhas e dá aos perfis as suas formas finas. O marco tem um **Rebaixo** onde a folha fecha, a folha se sobrepõe ao marco pela **Sobreposição da folha**, **baguetes** prendem o vidro, e uma janela tem uma pingadeira sob a travessa inferior. Cada medida continua editável. **Simples (perfis retos)** mantém peças retangulares simples, como antes.
 
+**Caixilho de uma biblioteca** e **Folha de uma biblioteca** tomam um perfil das suas [bibliotecas de perfis](profiles.md) (uma secção de alumínio ou PVC lida de um DXF, por exemplo): as peças retas de caixilho e folha têm então o seu contorno real, com vazios, em 3D, em cortes e em plantas, com a sua largura e profundidade. Substitui aquilo de que é a forma real: o batente, o lábio e as pingadeiras do sistema; os bites ficam. As cabeças curvas e as janelas redondas mantêm uma banda simples, como os montantes e travessas da grelha. **Simples** volta a um retângulo desse tamanho.
+
 ![Uma janela de PVC: as folhas sobrepostas ao marco, as baguetes, um painel cego sob um módulo fixo](shots/joinery-profiles-3d.webp)
 
 Em **Detalhes**, **Peitoril interno** e **Peitoril externo** ligam e desligam os peitoris, e **Revestimento das ombreiras** liga o acabamento do vão nas ombreiras e na verga. Onde peitoris e revestimentos não são usados, desmarque-os.
@@ -101,6 +103,12 @@ Cada uma se posiciona pelas faces reais da parede onde a janela está, a partir 
 **Travessa no arranque do arco**, marcada por omissão, mantém essa travessa e a bandeira fixa por cima. Desmarque-a para uma janela de batente em arco: a fila de cima dos vidros sobe dentro do arco, e o aro, a folha, o vidro, as travessas de vidro e o símbolo de abertura seguem o arco a toda a volta, sem barra por baixo. O vidro abre como escolher (batente, oscilobatente, fixo), os montantes sobem até ao arco, e as plantas, cortes, alçados, a pré-visualização 3D e o IFC mostram-no assim. O estilo **Janela de batente em arco** põe de uma vez um arco abatido com uma só folha de batente.
 
 ![Uma janela de batente em arco: uma só folha de batente que segue um arco abatido, sem travessa por baixo](shots/joinery-arched-casement.webp)
+
+### Vidro sem caixilho
+
+**Vidro sem caixilho** faz uma porta ou janela só de vidro temperado, sem aro nem caixilho; o estilo **Vidro sem caixilho** aplica-o de uma vez, com uma folha sobre pivôs. Numa porta, **Fixação** diz o que segura a folha: **Pivôs e ferragens de canto** (uma mola de pavimento e um pivô superior, uma ferragem em cada canto do lado das dobradiças e uma fechadura de canto em baixo no lado oposto) ou **Dobradiças de vidro** (duas, três numa folha com mais de 2,30 m, apertadas no vidro e fixas à parede ou ao painel ao lado). A **Espessura do vidro** vai de 6 a 25 mm (12 mm por omissão), a **Folga à volta do vidro** é a distância ao vão e entre painéis, a **Folga sob a folha** a do pavimento. Uma folha é de batente, de vaivém ou de correr; um painel ao lado ou por cima é fixo, num perfil em U no pavimento e sob a padieira. Uma folha de correr fica suspensa de uma calha em toda a largura do vão, à frente dos painéis fixos do lado do compartimento, e passa-os 50 mm, como numa divisória de vidro ou num resguardo de duche. O puxador é uma barra nas duas faces, a não ser que escolhas outro. Uma janela sem caixilho é um envidraçado fixo. As plantas desenham a folha aberta como o seu vidro, os alçados as ferragens e a calha; em IFC o tipo não tem aro (a sua espessura é a do vidro).
+
+![Uma porta de vidro sem caixilho sobre pivôs com ferragens de canto, no configurador](shots/joinery-frameless-door.webp)
 
 **Travessas de vidro** dividem os vidros: **Quadriculado (colonial)** com os seus quadros na largura e na altura, **Prairie** com barras perto das bordas, ou uma **Losangos**.
 
@@ -138,6 +146,24 @@ Em planta as faces são cortadas, o assento, o peitoril e a base desenhados sob 
 ### Puxadores
 
 **Maçaneta** escolhe o puxador do tipo: uma **Alavanca**, uma **Bola**, um **Puxador** ou uma **Puxador de janela**, ou **Nenhum**. Por padrão, uma porta tem uma maçaneta de alavanca e uma janela uma manopla de janela. Uma porta tem o puxador nas duas faces, na **Altura da maçaneta** que você define; **Cor da maçaneta** define a sua cor. Os puxadores aparecem em 3D, nos cortes e nas elevações, e nos desenhos do configurador quando **Ferragens** está marcado.
+
+### Posição do aro e peitoris
+
+**Position in the wall** (posição na parede) define onde fica o aro na espessura da parede como um valor, não apenas centrado: escolha **From the exterior finish**, **From the core** ou **From the wall’s centre**, e **Set back**, quanto a face exterior do aro fica atrás dessa referência (a partir do centro, quanto o centro do aro). *From the exterior finish* e 50 mm põe o aro 50 mm atrás do reboco. O aro, as ombreiras, os peitoris e os símbolos de abertura acompanham, em plantas, cortes, 3D e IFC. Um tipo feito sem posição continua **Centred in the wall**. No painel de propriedades uma porta ou janela tem **Frame in the wall** para ter a sua própria posição (**As the type** a abandona) e **Set back** para a distância.
+
+![O configurador com o aro 50 mm atrás do acabamento exterior](shots/joinery-position.webp)
+
+O **Exterior sill** (peitoril exterior) tem uma **Slope** (inclinação) em graus (5° para começar; 15° para um metálico). Um peitoril inclinado cai afastando-se do aro e tira da parede tudo o que está por cima: o reboco, o núcleo e o emboço são cortados pela sua face superior inclinada, em 3D, em cortes e elevações e nas quantidades.
+
+### Dados: valor U, resistência ao fogo, ferragens
+
+**Data…**, sob o tipo no configurador (e no painel de propriedades, para as portas e janelas selecionadas), abre uma caixa de texto livre: **U-value**, **g-value**, **Safety glass** (laminado por dentro, temperado dos dois lados…), **Fire rating** (EI 30, EI2 60-C5…) e **Fittings**; **More data** acrescenta os seus, por exemplo *Sauna window* ou *Frosted glass*. Nada se escolhe de uma lista. O valor próprio de uma porta ou janela prevalece sobre o do tipo; um campo vazio volta ao do tipo (mostrado em cinza).
+
+![A caixa de dados de um tipo de janela](shots/joinery-data.webp)
+
+São os parâmetros do tipo: as tabelas de portas e janelas mostram cada um como uma linha, as etiquetas os leem como `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` e `{Fittings}`, e o IFC os guarda. A resistência ao fogo é `FireRating` de `Pset_WindowCommon` ou `Pset_DoorCommon`; um valor U legível como número (0.9 ou *0,9 W/m²K*) é também lá `ThermalTransmittance`, com `GlazingAreaFraction` para uma janela; o resto está no conjunto `Lapin_Joinery`.
+
+![Os dados próprios de uma janela no painel de propriedades](shots/joinery-data-properties.webp)
 
 ### Parâmetros
 

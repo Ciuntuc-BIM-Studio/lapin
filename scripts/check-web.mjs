@@ -28,6 +28,12 @@ const web = join(root, 'build', id, 'web');
 const budget = Number(process.env.LAPIN_WEB_START_BUDGET_MS ?? 4000);
 const project = process.env.LAPIN_WEB_PROJECT ?? join(homedir(), 'Documents/GitHub/Lapin/modele/testLapin.lapin');
 if (!existsSync(join(web, 'index.html'))) { console.error(`check-web: no build/${id}/web (run pnpm build:web ${id}).`); process.exit(1); }
+// Every command and query the interface calls by name must exist in the engine (this host runs the same modules): decision 434.
+{
+  const { unanswered } = await import('./check-commands.mjs');
+  const bad = unanswered();
+  if (bad.length) { for (const b of bad) console.error(`check-web: ${b.file}:${b.line} ${b.mod}.${b.name}: ${b.why}`); process.exit(1); }
+}
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** A LAS 1.2 of 5 000 points (format 2, coloured): a floor 10 × 10 m and a wall on it. */

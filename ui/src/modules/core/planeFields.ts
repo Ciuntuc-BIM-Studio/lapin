@@ -9,5 +9,7 @@ export function viewShowsField(kind: unknown, key: string): boolean {
   if (key === 'planeDepth') return kind === 'elevation';
   // The layer a section's marker is on (decision 223): only a section has a marker.
   if (key === 'markerLayer') return kind === 'section';
+  // A marker's size and text height (decision 455): sections and elevations have markers.
+  if (key === 'markSize' || key === 'markTextSize') return kind === 'section' || kind === 'elevation';
   return true;
 }

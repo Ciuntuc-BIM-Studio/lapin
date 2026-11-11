@@ -17,6 +17,22 @@ Lapin nie może zawierać wszystkich profili stalowych świata, więc ma mały z
 
 Pisz w polu wyszukiwania, aby szukać we wszystkich bibliotekach po nazwie, rodzinie, normie lub rodzaju; wybierz profil, aby zobaczyć jego rysunek, wymiary i właściwości.
 
+## Normy
+
+Każdy profil jest pokazany pod swoją normą: **EN** dla zestawu Lapina i każdego profilu, którego norma jest europejska (EN 10365, DIN EN, SR EN…), **AISC / ASTM** dla tabel amerykańskich (na przykład kolumna *Standard* z ASTM A6), BS, DIN, JIS, AS/NZS i inne pod swoimi nazwami, a biblioteka, której profile nie podają żadnej — biblioteka firmy — pod własną nazwą. Bibliotece na tym komputerze można wskazać, pod którą ma się pokazywać (**Pokazana pod**, nad jej listą).
+
+Listy wyboru pokazują najpierw profile projektu, potem każdą normę pod jej nagłówkiem. Przyciski u góry listy ukrywają lub pokazują normę; twój wybór jest zapamiętany na tym komputerze, dla każdego projektu (także w **Plik → Preferencje → Profile**).
+
+![Lista wyboru pogrupowana według norm, z przyciskami](shots/profile-picker-standards.webp)
+
+Projekt przechowuje tylko profile używane przez jego typy, nigdy całej biblioteki, więc biblioteka, którą masz, nic nie waży w jego pliku. To, co projekt oferuje, jest jego wyborem: **Normy w tym projekcie**, pod bibliotekami, zaznacza normy pokazywane przez jego listy wyboru; profile już w nim zostają. **Plik → Preferencje → Profile** wybiera normy, z którymi zaczyna się nowy projekt (wszystkie, jeśli nie wybierzesz).
+
+![Normy oferowane przez projekt](shots/profile-project-standards.webp)
+
+![Normy oferowane przez nowy projekt](shots/prefs-profiles.webp)
+
+Lapin nie zawiera AISC Shapes Database: AISC pozwala ją dołączać tylko na podstawie własnej umowy licencyjnej, której program MIT nie może przekazać dalej. Pobierz ją z AISC i zaimportuj przez **Tabela…**: jej kolumny są rozpoznawane.
+
 ## Właściwości
 
 Z wymiarów Lapin oblicza pole, Iy, Iz, wskaźniki sprężyste i plastyczne, promienie bezwładności, osie główne i ich kąt (kątowniki, Z, każdy kontur niesymetryczny), stałą skręcania It i wycinkowy moment bezwładności Iw tam, gdzie jest wzór, masę na metr z gęstości materiału i powierzchnię malowania na metr. Zgadzają się z publikowanymi tabelami w granicach ok. 1 % (It i Iw walcowanych I do 3 %; Iw ceownika z pochylonymi półkami tylko do 20 %). Dowolny kontur nie ma It ani Iw, chyba że poda je jego plik.
@@ -51,14 +67,24 @@ Narysuj przekrój w Rysowaniu jako zamknięte polilinie i okręgi (te wewnątrz 
 
 **Narysuj kontur** działa odwrotnie: kontur wybranego profilu jako zamknięte polilinie w aktywnym widoku, do wyciągnięcia lub przeciągnięcia w Studio.
 
+**Narysuj profil…** otwiera edytor przekrojów: obrys zewnętrzny i jego komory jako punkty w milimetrach. Przeciągaj punkty (1 mm; <kbd>Shift</kbd> 5 mm), kliknij obrys, aby dodać punkt, kliknij punkt prawym przyciskiem, aby go usunąć, albo wpisz je w tabeli; zacznij od prostokąta, pustej skrzynki, kształtownika T, kątownika lub ceownika o podanych wymiarach i dodaj komory pośrodku. Nazwij go, wybierz aluminium, utwórz go i zapisz jak każdy kontur. **Edytuj jego obrys…** otwiera w edytorze profil, który masz: zapisany znowu pod swoją nazwą, kopia w projekcie jest oznaczana jako nowsza, a **Aktualizuj z biblioteki** przenosi go do każdego typu i każdego pręta ściany osłonowej z niego wykonanego. Wybrane słupki i rygle dostają własny profil, obrócony, wyrównany i przesunięty: zobacz [Ściany](walls.md).
+
+![Edytor przekrojów: pusta skrzynka z komorą](shots/profile-editor.webp)
+
 ## Użycie profilu
 
 W **Stal → Typy stalowe**, **Konstrukcja → Typy konstrukcyjne** (słupy i belki) oraz przy profilach hali ramowej wybierz **Z biblioteki profili…** i pisz, aby szukać.
 
 ![Wybór przeszukuje wszystkie biblioteki](shots/profile-picker.webp)
 
-Profil jest kopiowany do projektu, a typ go zachowuje. Bryły są lekkie, z ostrymi narożami, na każdym poziomie oprócz jednego: widok na **LOD 400** (rzut, przekrój, elewacja, arkusz lub 3D) rysuje rzeczywisty przekrój z zaokrągleniami, promieniami na końcach półek i pochylonymi półkami. Ilości i eksporty pozostają na bryle z ostrymi narożami; zaokrąglenia i pochylone półki liczą się we właściwościach i eksporcie konstrukcji.
+Profil jest kopiowany do projektu, a typ go zachowuje. Bryły są lekkie, z ostrymi narożami, na każdym poziomie oprócz jednego: widok na **LOD 400** (rzut, przekrój, elewacja, arkusz lub 3D) rysuje rzeczywisty przekrój z zaokrągleniami, promieniami na końcach półek i pochylonymi półkami. Eksporty i wybór pozostają na bryle z ostrymi narożami, ale ilości, masy, przedmiary, lista elementów stalowych i kosztorysy używają rzeczywistego pola przekroju (IPE 300 ma 53,81 cm², a nie 51,88 jak ostry obrys); przekrój bez promieni się nie zmienia.
 
-Gdzie indziej profil daje to, co narzędzie może wykorzystać: listwy, bruzdy i ławy fundamentowe biorą jego obrys jako profil 2D (**Z biblioteki profili…** na ich liście), a słupki i rygle ścian osłonowych oraz ościeżnice drzwi i okien jego szerokość i głębokość.
+![Belka i słup stalowy w widoku 3D na LOD 400: narysowane zaokrąglenia](shots/profile-real-section.webp)
+
+Gdzie indziej profil daje to, co narzędzie może wykorzystać: listwy, bruzdy i ławy fundamentowe biorą jego obrys jako profil 2D (**Z biblioteki profili…** na ich liście), a słupki i rygle ścian osłonowych oraz ościeżnice i skrzydła drzwi i okien jego rzeczywisty obrys, z otworami, wzdłuż każdego pręta, z jego szerokością i głębokością; x profilu biegnie w poprzek pręta (w stronę szyby w ościeżnicy i skrzydle), y na zewnątrz budynku. **Zwykły** usuwa obrys i zachowuje rozmiar.
+
+![Słupki i rygle ściany osłonowej z przekroju aluminiowego](shots/profile-real-mullions.webp)
+
+![Ościeżnica i skrzydło okna z tego samego przekroju](shots/profile-real-frame.webp)
 
 Biblioteka może się zmienić po użyciu. Profil projektu różny od tego o tej samej nazwie w jego bibliotece jest oznaczony **nowszy w bibliotece**; **Aktualizuj z biblioteki** go zastępuje, a wszystkie typy z niego zrobione podążają za nim, jako jeden krok cofania. Nic się nie zmienia bez Twojej prośby. Starsze projekty zachowują swoje typy.

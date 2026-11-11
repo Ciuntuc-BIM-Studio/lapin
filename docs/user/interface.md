@@ -91,9 +91,37 @@ Click an icon on a folded panel's rail to open the panel over the view without u
 
 ![A folded browser opened over the view from its rail](shots/browser-overlay.webp)
 
+## Panels on either side
+
+**View → Panels** puts the project browser and the properties panel where you want them, as in Revit: **Browser left, Properties right** (the default), **Browser right, Properties left**, **Both panels on the left** or **Both panels on the right**. With both on one side they stand one under the other; drag the divider between them to share the height (double-click it to halve), and drag the side's edge to make it wider. Each panel still folds, on its own: a folded one is a thin bar in the stack, or a rail when both are folded. The assistant tab (desktop) stays with the properties. Lapin remembers the arrangement on this computer.
+
+![Browser and properties stacked on the left](shots/panel-layouts.webp)
+
 ## Light and dark
 
 The moon at the right end of the ribbon turns the interface dark (graphite); the sun turns it light again (paper). In the dark theme plans, sections and elevations lie on the dark background, their black pens in light ink; sheets stay paper. The configurators' small drawings (a door's or window's plan, section and elevation, a roof's, a balcony's, an elevator's, a hall's, a stair's…) and the previews of tags, title blocks and materials are drawn on a light paper card in both themes, so their lines, texts and dimensions read as on a printed drawing.
+
+The theme is kept: Lapin starts again in the one you left it in. **File → Preferences…** also offers **As the system**, which follows the computer's own light or dark setting.
+
+## Preferences
+
+**File → Preferences…** (<kbd>Ctrl</kbd>+<kbd>,</kbd>, also in **View → Interface**) holds your own settings, kept on this computer for every project and applied at once:
+
+- **General**: the theme (light, dark, or as the system), the language, and links to **Interface…** and **Keyboard shortcuts…**.
+- **Grid and snaps**: the plan's grid, adaptive or fixed, snapping to it, which object snaps the cursor takes, and the polar tracking angle (see [Snaps and helpers](drafting.md#snaps-and-helpers)).
+- **Coordinates**: what the status line reads at the cursor, whether the project's points are shown, and the UCS (see [Real coordinates](site.md#real-coordinates)).
+- **Display**: the switches of View → Graphics (grid, thin lines, drafts and DXF in 3D) and how the 3D view is navigated, in one place.
+- **Profiles**: the profile standards a new project offers and those the pickers show (see [Profile libraries](profiles.md#standards)).
+
+![File → Preferences: grid and snaps](shots/preferences.webp)
+
+## View tabs and windows
+
+Three quick buttons stand before the tabs: **3D** opens the 3D view, **Section** (<kbd>SE</kbd>) starts the section tool and **Measure** (<kbd>ME</kbd>) the measure tool, so the three most used views and tools are one click away from any view.
+
+Each view opened has a tab above the view. Drag a tab to put the view somewhere else. Dragged out of the window, or onto its edge, it opens in a **window of its own** where you drop it, for a second screen (desktop app). Dropped on the right or bottom quarter of a view, it splits the view and opens beside it or under it. Dropped on the other pane, it opens there. While you drag, the place it would go is lit and named. A click on a tab still just opens it.
+
+A right click on a tab offers the same: **Open in a new window**, **Split: open beside**, **Split: open below** (or **Open in the other pane** when the view is split), **Close** and **Close the others**. The window button at the right of the tabs, and **View → New window**, open the view in front in a window of its own. The windows share the model, the selection, the storey and the tool; each keeps its own zoom.
 
 ## Keyboard shortcuts
 

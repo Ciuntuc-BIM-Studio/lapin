@@ -1,7 +1,7 @@
 ---
 title: Furniture
 order: 47
-summary: Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and straight kitchens, from parametric types, placed against walls with a click.
+summary: Sofas, corner sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards, tables, desks and kitchens in six layouts, from parametric types, placed against walls with a click.
 ---
 
 ## Placing furniture
@@ -42,6 +42,18 @@ Elevations and sections draw the bodies, with their materials' hatches. In 3D th
 - it has a worktop, a sink and a hob (where they stand along the run is set on the type), wall units above, and a tall unit for the fridge at one end.
 
 A kitchen's **Length** stays editable in its properties; the units are split again.
+
+### Kitchen layouts
+
+A kitchen type has a **Layout**: **One wall** (the straight run), **Galley** (two parallel runs with an aisle between), **L-shaped**, **U-shaped**, **Island** (a run on the back wall and a separate island with its aisle) or **Peninsula** (an L with a run reaching out from its leg, its worktop overhanging for stools). Choosing one starts the type from that layout’s sizes, and each stays editable beside the preview: the leg lengths from the back wall, the aisle between runs, the opposite run’s length, the island’s length, depth and place, the peninsula’s length and overhang, and for an L or a peninsula the corner on the left or the right.
+
+![The six layouts in plan: one wall, galley, L-shaped, U-shaped, island and peninsula](shots/kitchen-layouts.webp)
+
+**Sink on** and **Hob on** put them on the main run or on the other part (the leg, the opposite run, the island, the peninsula), **Sink at** and **Hob at** say where along it, and the **Tall unit (fridge)** stands at a free end. The corner units are blind; wall units are only on runs against a wall, not on an island or a peninsula.
+
+![A kitchen type: L-shaped](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) draws any layout with two points along the wall the main run is against: the line is its length, its back on the wall’s face, and an L, a peninsula, a U or a galley is slid into the corner or between the walls it is drawn near. **Flip** gives an L or a peninsula its corner on the other side. The furniture schedule names the layout and lists the footprint’s depth. In IFC it stays an IfcFurniture of a user-defined Kitchen type.
 
 ## A piece's properties
 

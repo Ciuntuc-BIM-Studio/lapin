@@ -24,6 +24,10 @@ Zaznacz przekrój w przeglądarce, aby ustawić w panelu Właściwości jego ska
 
 Linia przekroju jest rysowana na każdym rzucie, a przekrój jest oznaczony w każdym innym przekroju i elewacji, które przecina jego płaszczyzna: cienką linią przerywaną tam, gdzie płaszczyzna tnie widok, z nazwą przekroju i strzałką u góry pokazującą kierunek patrzenia, tej samej wielkości na papierze co na rzucie. Przekrój nigdy nie jest oznaczony w samym sobie. Kliknij znacznik, aby zaznaczyć przekrój, kliknij go dwukrotnie, aby go otworzyć.
 
+**Rozmiar znaczników.** **Zarządzaj → Standardy rysunkowe → Projekt** ustawia, jak duże są rysowane znaczniki, w milimetrach na papierze, osobno dla przekrojów i elewacji: **Rozmiar znacznika przekroju** (strzałki przekroju mają 0,7 tej wartości) i **Tekst znacznika przekroju**, **Rozmiar znacznika elewacji** (średnica koła elewacji) i **Tekst znacznika elewacji**; na początku 10 mm i wysokość standardowego stylu tekstu, dopóki ich nie ustawisz. Projekt, który miał jeden rozmiar znaczników, zachowuje go dla obu. Przekrój lub elewacja z własnym rozmiarem ma we właściwościach **Rozmiar znacznika (mm)** i **Tekst znacznika (mm)**; gdy są puste, bierze wartości projektu. Silnik rysuje znaczniki, więc rzuty, przekroje, które przecinają, arkusze, PDF i DXF się do nich dostosowują.
+
+**Przesuwanie przekroju.** Zaznacz przekrój na rzucie i przesuń go poleceniem **Przesuń** (albo przeciągnij go za linię): jak w Revit, tnie tam, gdzie go postawisz, a obrócony lub odbity patrzy w obróconą lub odbitą stronę. Każda główka (jego strzałka i nazwa) ma własny uchwyt: przeciągnij go, aby odsunąć główkę od końca linii, na przykład od wymiaru, a cienka linia odniesienia łączy ją z powrotem; przekrój tnie tak samo. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-kliknięcie uchwytu przywraca główkę na miejsce. Przekrój w poprzek elementu lub wzdłuż niego podąża za elementem i jest przesuwany razem z nim.
+
 Każdy przekrój leży na **warstwie znaczników** (na początku **Przekroje**; **Warstwa znacznika** we właściwościach przekroju ją zmienia), a każdy widok wybiera, co oznacza. **Widok → Przekroje…** wyświetla przekroje projektu według warstw dla widoku na pierwszym planie, z polem wyboru dla każdej warstwy i każdego przekroju tylko dla tego widoku, warstwą każdego przekroju (istniejącą lub **Nowa warstwa…**) oraz liczbą widoków, w których każdy jest ukryty. Arkusz oznacza to, co oznaczają jego widoki.
 
 Przekrój poprzeczny przez belkę lub słup (**Przekrój tutaj**, **Przekrój poprzeczny** na karcie Zbrojenie proste) też ma uchwyty na rzucie: przeciągnij dowolny koniec wzdłuż linii, aby dać tej stronie większy lub mniejszy margines, przeciągnij środek wzdłuż elementu, aby przesunąć pikietaż, w którym tnie. Okno przekroju podąża za nim.
@@ -35,6 +39,14 @@ Przekrój poprzeczny przez belkę lub słup (**Przekrój tutaj**, **Przekrój po
 **+** obok **Elewacje** tworzy od razu cztery elewacje budynku.
 
 ![Elewacja południowa](shots/elevation-view.webp)
+
+Każdy rzut oznacza każdą elewację przed budynkiem, z dala od główek przekrojów, które tam są: cienką linią punktową w poprzek kierunku jej patrzenia, a pośrodku kołem z czarną strzałką wskazującą budynek, z nazwą elewacji za nim. Kliknij znacznik, aby zaznaczyć elewację, kliknij go dwukrotnie, aby ją otworzyć. **Znaczniki elewacji** w **Widoczność / Grafika** (<kbd>VV</kbd>) ukrywają je w widoku.
+
+**Jak daleko sięga elewacja.** Zaznacz elewację na rzucie: jej linia ma uchwyt na każdym końcu. Przeciągnij jeden wzdłuż linii, aby wydłużyć lub skrócić elewację z tej strony; elewacja rysuje wtedy tylko to, co leży między oboma końcami, a jej arkusze i PDF podążają za nią. Każde przeciągnięcie to jeden krok cofania. Dopóki ich nie przeciągniesz, linia obejmuje cały budynek i rośnie razem z nim.
+
+**Przesuwanie znacznika elewacji.** Przeciągnij uchwyt koła albo zaznacz elewację i użyj **Przesuń**: znacznik trafia tam, gdzie go postawisz, dalej od budynku lub wzdłuż jego linii, w jednym kroku cofania. Elewacja Lapin zawsze patrzy na cały budynek z zewnątrz, więc przesunięcie jej znacznika nigdy nie zmienia tego, co pokazuje (w Revit linia znacznika jest też miejscem, od którego elewacja zaczyna widzieć; tu jej zasięg ma własne uchwyty, a cięcie wewnątrz budynku to przekrój). Elewacja patrzy na północ, południe, wschód lub zachód, więc nie jest obracana ani odbijana. Przypięta elewacja lub przypięty przekrój (**Modyfikuj → Przypnij**) nie jest przesuwany, dopóki nie zostanie odpięty.
+
+![Znacznik elewacji na rzucie, odsunięty od domu, jej linia skrócona, główka przekroju odsunięta od jego końca](shots/elevation-marker.webp)
 
 ### Cienie słońca
 

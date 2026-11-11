@@ -1,5 +1,6 @@
 /**
  * A wall by its profile (a tester's wish, #100, decision 372): its top drawn in elevation, seen from its start to its end.
+ * A curtain wall's boundary the same way (#127): its grid, mullions, transoms and panels follow what is drawn here.
  * The points are dragged (10 mm steps; Shift keeps the height), a click on the top line adds one, a right-click takes one
  * out; the table holds them in millimetres. Shapes to start from: a gable, a slope, steps. The wall stays a wall: its
  * thickness, layers, joins, doors and windows as they were.
@@ -58,12 +59,14 @@ export function WallProfileDialog() {
     const ps = [[0, 0] as Pt, [0, pts[0]?.[1] ?? h] as Pt, ...pts, [l, pts[pts.length - 1]?.[1] ?? h] as Pt, [l, 0] as Pt];
     return ps.map(([u, v]) => `${sx(u).toFixed(1)},${sy(v).toFixed(1)}`).join(' ');
   }, [pts, l, h, k]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!wall || wall.type !== 'IfcWall') return null;
+  if (!wall || (wall.type !== 'IfcWall' && wall.type !== 'IfcCurtainWall')) return null;
+  const curtain = wall.type === 'IfcCurtainWall';
   const mm = (v: number) => Math.round(v * 1000);
   const setPoint = (i: number, p: Pt) => setPts((cur) => cur.map((q, j) => (j === i ? p : q)));
   const apply = async (next: Pt[] | null) => {
-    const r = await execute('architecture.setWallProfile', { id: wall.id, top: next ? tidyProfile(next, l) : null });
-    if (r !== undefined) notify(next ? 'The wall follows its profile.' : 'The wall is flat again.');
+    const top = next ? tidyProfile(next, l) : null;
+    const r = curtain ? await execute('architecture.setCurtainWallProfile', { ids: [wall.id], top }) : await execute('architecture.setWallProfile', { id: wall.id, top });
+    if (r !== undefined) notify(next ? (curtain ? 'The curtain wall follows its boundary.' : 'The wall follows its profile.') : curtain ? 'The curtain wall is flat on top again.' : 'The wall is flat again.');
   };
   const shape = (kind: 'gable' | 'slope' | 'steps') => setPts(profileShape(kind, l, h, Number(peak) / 1000 || h + 1));
   // A click on the top line between two points puts a point there.
@@ -75,10 +78,10 @@ export function WallProfileDialog() {
   };
   return (
     <div className="dialog-backdrop" onClick={close}>
-      <div className="dialog wide" role="dialog" aria-label="Wall profile" data-testid="wall-profile" onClick={(e) => e.stopPropagation()}>
-        <header className="dialog-head"><span className="panel-title">Wall profile · <span data-no-i18n>{wall.name}</span></span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
+      <div className="dialog wide" role="dialog" aria-label={curtain ? 'Curtain wall boundary' : 'Wall profile'} data-testid="wall-profile" onClick={(e) => e.stopPropagation()}>
+        <header className="dialog-head"><span className="panel-title">{curtain ? 'Curtain wall boundary' : 'Wall profile'} · <span data-no-i18n>{wall.name}</span></span><button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button></header>
         <div className="dialog-body">
-          <p className="muted small">Seen from its start to its end. Drag a point (Shift keeps its height); click the top line to add one, right-click a point to take it out. A step is two points one over the other.</p>
+          <p className="muted small">Seen from its start to its end. Drag a point (Shift keeps its height); click the top line to add one, right-click a point to take it out. A step is two points one over the other.{curtain && ' The grid, the mullions, the transoms and the panels follow the boundary; the type\'s settings stay.'}</p>
           <svg ref={svg} viewBox={`0 0 ${W} ${H}`} width={W} height={H} className="wall-profile-svg"
             onPointerMove={(e) => { if (drag == null) return; const [u, v] = toModel(e); setPoint(drag, [Math.min(Math.max(u, 0), l), e.shiftKey ? pts[drag][1] : Math.max(v, 0.05)]); }}
             onPointerUp={() => setDrag(null)} onPointerLeave={() => setDrag(null)}>

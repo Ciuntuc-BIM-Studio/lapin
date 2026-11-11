@@ -1,7 +1,7 @@
 ---
 title: Arredi
 order: 47
-summary: Divani, divani angolari, poltrone, sedie, letti, armadi, cassettiere, librerie, credenze, tavoli, scrivanie e cucine lineari, da tipi parametrici, addossati ai muri con un clic.
+summary: Divani, divani angolari, poltrone, sedie, letti, armadi, cassettiere, librerie, credenze, tavoli, scrivanie e cucine in sei disposizioni, da tipi parametrici, addossati ai muri con un clic.
 ---
 
 ## Posizionare gli arredi
@@ -42,6 +42,18 @@ I prospetti e le sezioni disegnano i corpi, con i tratteggi dei loro materiali. 
 - ha un piano di lavoro, un lavello e un piano cottura (la loro posizione lungo la cucina si imposta sul tipo), pensili sopra e una colonna per il frigorifero a un’estremità.
 
 La **Lunghezza** di una cucina resta modificabile nelle sue proprietà; i mobili vengono divisi di nuovo.
+
+### Disposizioni della cucina
+
+Un tipo di cucina ha una **Layout** (disposizione): **One wall** (la fila dritta), **Galley** (due file parallele con un corridoio in mezzo), **L-shaped**, **U-shaped**, **Island** (una fila sul muro di fondo e un’isola separata con il suo corridoio) o **Peninsula** (una L con una fila che esce dal suo braccio, il piano a sbalzo per gli sgabelli). Sceglierne una fa partire il tipo dalle misure della disposizione, e ciascuna resta modificabile accanto all’anteprima: la lunghezza dei bracci dal muro di fondo, il corridoio tra le file, la lunghezza della fila opposta, lunghezza, profondità e posto dell’isola, lunghezza e sbalzo della penisola e, per una L o una penisola, l’angolo a sinistra o a destra.
+
+![Le sei disposizioni in pianta: su una parete, a corridoio, a L, a U, con isola e con penisola](shots/kitchen-layouts.webp)
+
+**Sink on** e **Hob on** li mettono sulla fila principale o sull’altra parte (il braccio, la fila opposta, l’isola, la penisola), **Sink at** e **Hob at** dicono dove lungo di essa, e la **Tall unit (fridge)** sta a un’estremità libera. I mobili d’angolo sono ciechi; i pensili ci sono solo sulle file contro un muro, non su un’isola o una penisola.
+
+![Un tipo di cucina: a L](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) disegna qualsiasi disposizione con due punti lungo il muro a cui sta la fila principale: la linea ne è la lunghezza, il dorso sulla faccia del muro, e una L, una penisola, una U o una cucina a corridoio scivola nell’angolo o tra i muri vicino a cui si disegna. **Flip** dà a una L o a una penisola l’angolo dall’altra parte. L’abaco dell’arredo nomina la disposizione e dà la profondità dell’ingombro. In IFC resta un IfcFurniture di un tipo Kitchen definito dall’utente.
 
 ## Le proprietà di un arredo
 

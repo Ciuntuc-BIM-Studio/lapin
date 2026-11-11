@@ -43,17 +43,33 @@ public sealed class JoineryIfc : IJoineryIfc
             }).ToList();
         var (mullions, transoms) = Joinery.LiningOffsets(spec);
         if (mirrored) mullions = mullions.Select(x => Math.Round(1 - x, 6)).Reverse().ToList();
-        var lining = new IfcJoineryLining(spec.Frame.Depth, spec.Frame.Width, spec.Frame.Mullion, spec.Frame.Transom, spec.IsDoor ? Math.Max(0, spec.Threshold) : 0, mullions, transoms);
+        // IFC has one mullion and one transom thickness: the widest there is (decision 466).
+        var (mw, tw) = Joinery.LiningBars(spec);
+        // Frameless glass has no lining (tester's question 7): its thickness is the glass's, its width none, the gaps part the panes.
+        var lining = spec.Frameless is { } fl
+            ? new IfcJoineryLining(fl.Glass, 0, fl.Gap, fl.Gap, 0, mullions, transoms)
+            : new IfcJoineryLining(spec.Frame.Depth, spec.Frame.Width, mw, tw, spec.IsDoor ? Math.Max(0, spec.Threshold) : 0, mullions, transoms);
         return new IfcJoineryType(spec.IsDoor, M(op), user is { } u && mirrored ? IfcHands.MirrorText(u) : user, panels, lining);
     }
+
+    /// <summary>A curtain wall's door at the size it stands in its cell (report #133); null for any other.</summary>
+    public (double Width, double Height)? Size(IModelView m, Entity element) =>
+        CurtainCells.SeatOf(m, element) is { Spec: { } s } ? (s.Width, s.Height) : null;
 
     public IfcJoineryPlace? Place(IModelView m, Entity element)
     {
         var opening = Openings.OpeningOf(m, element.Id);
         var wall = opening == null ? null : Openings.WallOf(m, opening.Id);
+        // A curtain wall's door: in its cell's frame (report #133).
+        if (opening == null && CurtainCells.SeatOf(m, element) is { Problem: null } seat) return PlaceIn(element, seat.Frame, seat.Placed);
         if (opening == null || wall == null) return null;
         var p = Openings.Place(m, opening);
         var f = Openings.FrameOf(m, wall, p.Along);
+        return PlaceIn(element, f, p);
+    }
+
+    static IfcJoineryPlace PlaceIn(Entity element, Openings.WallFrame f, Openings.Placed p)
+    {
         var sx = element.Bool("flipHand") ? -1 : 1;
         var sy = element.Bool("flipSide") ? -1 : 1;
         // The type frame's −Y (the interior, where the panels open) is the wall's left; a flipped side opens the other way.

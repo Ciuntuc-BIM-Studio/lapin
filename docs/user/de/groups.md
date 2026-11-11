@@ -30,7 +30,7 @@ Manche Elemente sind Teile eines Ganzen: die Stützen, Riegel und Pfetten einer 
 
 ## Importierte Dateien
 
-Jede IFC-, Fragments- oder Netzdatei, die Sie importieren, kommt als eine Gruppe mit dem Namen der Datei. Entfernen Sie beim IFC-Import das Häkchen bei **Als eine Gruppe**, um die Elemente lose zu holen. Eine verknüpfte Datei wird nicht gruppiert: Sie ist bereits eine Verknüpfung, schreibgeschützt (siehe [Import und Export](import-export.md)). Elemente, die als Referenzen aus einer IFC-Datei gelesen werden, bleiben, wo die Datei sie hingesetzt hat: Eine Gruppe davon lässt sich aufräumen und löschen, nicht verschieben.
+Jede IFC-, Fragments- oder Netzdatei, die Sie importieren, kommt als eine Gruppe mit dem Namen der Datei. Entfernen Sie beim IFC-Import das Häkchen bei **Als eine Gruppe**, um die Elemente lose zu holen. Eine verknüpfte Datei wird nicht gruppiert: Sie ist bereits eine Verknüpfung, schreibgeschützt (siehe [Import und Export](import-export.md)). Elemente, die als Referenzen aus einer Datei gelesen werden (aus einer IFC-Datei, aus einem Netz), lassen sich mit ihrer Gruppe wie jedes Element verschieben, drehen, spiegeln und kopieren; ihre Form bleibt die der Datei.
 
 ## Einen Bereich in 3D auswählen
 

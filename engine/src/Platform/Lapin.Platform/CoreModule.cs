@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Geometry;
 using Lapin.Model;
 
 namespace Lapin.Platform;
@@ -56,6 +57,13 @@ public sealed class CoreModule : ILapinModule
         Views.Register(r);
         r.Service<IProjectUpgrade>(new StoreyPlans.DefaultPlanUpgrade());
         r.Service<IProjectUpgrade>(new ViewDetail.LevelUpgrade());
+        r.Service<IProjectUpgrade>(new MaterialHatchUpgrade());
+        // References move, turn, mirror, copy and rise like any element (decision 448).
+        var references = new ReferencePlacement();
+        r.Service<IElementPlacement>(references);
+        r.Service<IElementRise>(references);
+        // Sections and elevations moved in plan: a section with its cut, an elevation's marker alone (decision 460).
+        r.Service<IElementPlacement>(new ViewMarkerPlacement());
         GraphicsSets.Register(r);
         ViewFilters.Register(r);
         BrowserSets.Register(r);
@@ -134,6 +142,8 @@ public sealed class CoreModule : ILapinModule
         r.Command("element.rename", "Rename", (ctx, a) =>
         {
             var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Nothing to rename.");
+            // An element a module drives: its module first (docs/overrides.md, Driven elements).
+            if (Driven.Before(ctx, new DrivenEdit("element.rename", [e.Id], a)).Handled.Contains(e.Id)) return null;
             var name = ((string?)a["name"])?.Trim();
             if (string.IsNullOrEmpty(name)) throw new CommandException("A name cannot be empty.");
             // A drafted shape's name is unique on its view (Studio finds its profiles and paths by it).
@@ -149,7 +159,7 @@ public sealed class CoreModule : ILapinModule
         // one of the user's never „Pset_…” (StandardPsets).
         r.Command("element.setParam", "Set parameter", (ctx, a) =>
         {
-            var ids = Args.Ids(a).ToList();
+            var ids = Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("element.setParam", Args.Ids(a), a)));
             if (ids.Count == 0) throw new CommandException("Which element?");
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : throw new CommandException("A parameter needs a name.");
             foreach (var id in ids)
@@ -175,7 +185,7 @@ public sealed class CoreModule : ILapinModule
         {
             var name = (string?)a["name"] ?? throw new CommandException("Which parameter?");
             var pset = (string?)a["pset"] is { Length: > 0 } ps && ps != StandardPsets.Own ? ps : null;
-            foreach (var id in Args.Ids(a))
+            foreach (var id in Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("element.removeParam", Args.Ids(a), a))))
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
                 if (e.Attrs["params"] is not JsonArray old) continue;
@@ -196,11 +206,14 @@ public sealed class CoreModule : ILapinModule
             var ids = Args.Ids(a).ToList();
             if (ids.Count == 0) throw new CommandException("Nothing to change.");
             var values = a["attrs"] as JsonObject ?? throw new CommandException("Nothing to change.");
-            foreach (var id in ids)
+            // What a module drives is its module's first: it may refuse a field, or set it in its own terms (docs/overrides.md, Driven elements).
+            foreach (var id in Driven.Rest(ids, Driven.Before(ctx, new DrivenEdit("element.update", ids, a))))
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Nothing to change.");
                 if (StoredBodies.Has(e)) throw new CommandException($"„{e.Name}” is a reference from an IFC file: it can be deleted, not changed.");
                 var d = ctx.Describe(e.Class) ?? throw new CommandException($"{e.Class} cannot be changed here.");
+                // A pinned element keeps where it stands; its other fields still change (decision 449).
+                Pins.RefuseMove(e, values.Select(kv => kv.Key));
                 var attrs = e.CloneAttrs();
                 foreach (var (key, value) in values)
                 {
@@ -233,6 +246,15 @@ public sealed class CoreModule : ILapinModule
             return results;
         });
 
+        // Pinned where it is, or let go (decision 449): {ids, pinned}; a group's members with it. Any element, a reference too.
+        r.Command("element.pin", "Pin", (ctx, a) =>
+        {
+            var ids = Args.Ids(a).ToList();
+            if (ids.Count == 0) throw new CommandException("Select what to pin.");
+            var pinned = a["pinned"] is not JsonValue pv || !pv.TryGetValue<bool>(out var pb) || pb;
+            return new JsonObject { ["changed"] = Pins.Set(ctx, ids, pinned) };
+        });
+
         r.Command("element.transform", "Transform", (ctx, a) =>
         {
             var t = ElementTransform.Run(ctx, a);
@@ -242,11 +264,48 @@ public sealed class CoreModule : ILapinModule
             return o;
         });
 
+        // Copies in a row or round a centre (decision 448): {ids, count (with the first), step: [x, y, z]} or {kind: "polar",
+        // count, angle filled (degrees, 360 a full turn), center: [x, y]}; each copy as element.transform copies, one undo step.
+        r.Command("element.array", "Array", (ctx, a) =>
+        {
+            var count = (int)Math.Round(Json.Number(a["count"]) ?? 0);
+            if (count < 2 || count > 1000) throw new CommandException("An array has 2 to 1000 items, the first among them.");
+            if (Args.Ids(a).Count == 0) throw new CommandException("Select what to array.");
+            var polar = (string?)a["kind"] == "polar";
+            var made = new JsonArray();
+            if (polar)
+            {
+                var angle = Json.Number(a["angle"]) ?? 360;
+                if (!double.IsFinite(angle) || Math.Abs(angle) < 1e-9 || Math.Abs(angle) > 360) throw new CommandException("A polar array fills an angle of up to 360°.");
+                var center = Args.Point(a["center"], "centre");
+                // A full turn shares it out; a part of one puts the last copy at its end.
+                var step = Math.Abs(Math.Abs(angle) - 360) < 1e-9 ? angle / count : angle / (count - 1);
+                for (var i = 1; i < count; i++)
+                    foreach (var id in ElementTransform.Run(ctx, new JsonObject { ["ids"] = a["ids"]!.DeepClone(), ["op"] = "rotate", ["copy"] = true, ["center"] = new JsonArray(center.X, center.Y), ["angle"] = step * i }).Made)
+                        made.Add(id!.DeepClone());
+            }
+            else
+            {
+                var s = a["step"] as JsonArray;
+                var (dx, dy, dz) = (Json.Number(s?.ElementAtOrDefault(0)) ?? 0, Json.Number(s?.ElementAtOrDefault(1)) ?? 0, Json.Number(s?.ElementAtOrDefault(2)) ?? 0);
+                if (!double.IsFinite(dx + dy + dz) || Math.Abs(dx) + Math.Abs(dy) + Math.Abs(dz) < 1e-9) throw new CommandException("An array's step cannot be nothing.");
+                for (var i = 1; i < count; i++)
+                    foreach (var id in ElementTransform.Run(ctx, new JsonObject { ["ids"] = a["ids"]!.DeepClone(), ["op"] = "copy", ["by"] = new JsonArray(dx * i, dy * i), ["up"] = dz * i }).Made)
+                        made.Add(id!.DeepClone());
+            }
+            return new JsonObject { ["ids"] = made };
+        });
+
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
-            var given = Args.Ids(a);
+            // What a module drives (and the groups it owns) it deletes in its own terms, or refuses (docs/overrides.md, Driven elements).
+            var driven = Driven.Before(ctx, new DrivenEdit("element.delete", Args.Ids(a), a));
+            var given = Driven.Rest(Args.Ids(a), driven);
             // A group deleted goes with its members; a group its last member left goes too (docs/groups.md).
             var (ids, groups) = Groups.Expand(ctx.Model, given);
+            ids = Driven.Rest(ids, driven);
+            // What is pinned stays (decision 449).
+            Pins.Refuse(ids.Concat(groups).Select(id => ctx.Model.Get(id)).OfType<Entity>());
             var groupsTouched = groups.Concat(ids.Select(id => Groups.Of(ctx.Model, id)?.Id).OfType<string>()).Distinct().ToList();
             var bodies = new HashSet<string>();
             foreach (var id in ids.Distinct())
@@ -304,6 +363,17 @@ public static class ElementTransform
         // A 3D move's vertical part (docs/plan-3d-modelling.md): what has a height of its own goes up or down by it.
         var up = op is "move" or "copy" ? Json.Number(a["up"]) ?? 0 : 0;
         var rise = Json.Number(a["rise"]) ?? (world is { Count: >= 3 } ? Json.Number(world[2]) : null) ?? up;
+        // A section's or an elevation's frame (decision 453): the command's points are the view's (x along it, y up), which
+        // is what its drafted shapes take; the model's elements are carried by the same edit in the model instead.
+        var frame = a["frame"] is JsonObject fo && Args.TryPoint3(fo["right"]) is { } fr && Args.TryPoint3(fo["up"]) is { } fu
+            ? (Origin: Args.TryPoint3(fo["origin"]) ?? default, Right: fr, Up: fu) : ((Vec3 Origin, Vec3 Right, Vec3 Up)?)null;
+        if (given == null && frame is { } fm && op is "move" or "copy" && world == null)
+        {
+            var by = V(a["by"], "displacement");
+            var w = fm.Right * by.X + fm.Up * by.Y;
+            world = new JsonArray(w.X, w.Y, w.Z);
+            rise = Json.Number(a["rise"]) ?? w.Z;
+        }
         var t = given ?? op switch
         {
             "move" or "copy" => Placement2D.Move(V(a["by"], "displacement"), rise),
@@ -313,15 +383,58 @@ public static class ElementTransform
             _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
         };
         var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
+        // What a module drives (its groups whole, or members alone) it moves or copies in its own terms, or refuses (docs/overrides.md, Driven elements).
+        var driven = Driven.Before(ctx, new DrivenEdit("element.transform", Args.Ids(a), a) { Transform = t, Up = up, Copy = copy });
+        if (driven.Handled.Count > 0)
+        {
+            (ids, groups) = Groups.Expand(ctx.Model, Driven.Rest(Args.Ids(a), driven));
+            ids = Driven.Rest(ids, driven);
+        }
         var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
             .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
-        if (all.FirstOrDefault(StoredBodies.Has) is { } fixedOne) throw new CommandException($"„{fixedOne.Name}” is a reference from an IFC file: it stays where the file put it.");
+        // The model's own edit when the view's is not it (a section's or an elevation's): a move along the view and up, a mirror
+        // about a vertical line across the plane through it square to the view. A turn there would tip the elements over, and a
+        // mirror about any other line turn them upside down: refused for the model's elements, drafted shapes still take them.
+        Placement2D? inModel = null;
+        double lift = 0;
+        // A move given in the model alone (world, an older caller's) carries the elements by it too.
+        if (given == null && (frame != null || world != null && op is "move" or "copy"))
+        {
+            var modelSelected = all.Any(e => !OnView(e)) || ids.Any(id => ctx.Model.Get(id) == null);
+            switch (op)
+            {
+                case "move" or "copy":
+                    inModel = Placement2D.Move(Args.PointOf(world), rise);
+                    lift = world is { Count: >= 3 } ? Json.Number(world[2]) ?? 0 : 0;
+                    break;
+                case "rotate" when modelSelected:
+                    throw new CommandException("Elements turn in a plan or in 3D: in a section or an elevation a turn would tip them over (drafted shapes turn here).");
+                case "mirror" when modelSelected && frame is { } fm2:
+                {
+                    var (pa, pb) = (V(a["a"], "start"), V(a["b"], "end"));
+                    var d = pb - pa;
+                    var r = new Vec2(fm2.Right.X, fm2.Right.Y);
+                    if (Math.Abs(d.X) > 1e-3 * d.Length || r.Length < 1e-9)
+                        throw new CommandException("In a section or an elevation, elements mirror about a vertical line (across the plane through it, square to the view).");
+                    // The view's x is measured along its right (a unit vector, level in a section or an elevation): the line's foot in plan.
+                    var at = new Vec2(fm2.Origin.X, fm2.Origin.Y) + r * ((pa.X + pb.X) / 2);
+                    inModel = Placement2D.Mirror(at, at + new Vec2(-r.Y, r.X));
+                    break;
+                }
+            }
+        }
+        // How each one is carried: a drafted shape (or a bar drawn on the view) as the view's points say, the rest in the model.
+        Placement2D Of(Entity e) => inModel != null && !OnView(e) ? inModel : t;
+        // What is pinned is not moved, turned or mirrored; it is copied, and its copies are not pinned (decision 449).
+        if (!copy) Pins.Refuse(all);
         // What a module places in a host (a door in its opening, the opening in its wall) is not moved on its own like the rest.
+        var hosting = ctx.Services.All<IHostedPlacement>().ToList();
         string? HostOf(Entity e) => ctx.Model.RelatingOf(e.Id, IfcClass.RelFillsElement) is { } opening
             ? ctx.Model.RelatingOf(opening.Id, IfcClass.RelVoidsElement)?.Id ?? opening.Id
-            : ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement)?.Id;
+            : ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement)?.Id ?? hosting.Select(h => h.HostOf(ctx.Model, e)).FirstOrDefault(x => x != null);
         var entities = all.Where(e => HostOf(e) == null).ToList();
         var moving = entities.Select(e => e.Id).ToHashSet();
+        if (!copy) Components.Leaving(ctx, groups, moving);
         // One whose host moves too goes with it; one whose host stays is its module's to move in a host (report #82: MOVE
         // and COPY on a window slide it along its wall), once: an opening selected with its door is the door's.
         var hostedIds = all.Where(e => HostOf(e) is { } h && !moving.Contains(h)).Select(e => e.Id).ToHashSet();
@@ -329,16 +442,16 @@ public static class ElementTransform
         var made = new JsonArray();
         var copies = new Dictionary<string, string>();
         var twins = new Dictionary<string, string>();
-        // In a section or an elevation the view's move is given in the model too (world): what is placed in a host moves by it.
-        var inHost = world != null && op is "move" or "copy" ? Placement2D.Move(Args.PointOf(world), rise) : t;
+        // In a section or an elevation the view's edit is given in the model too: what is placed in a host moves by it.
+        var inHost = inModel ?? t;
         // What follows the elements without being selected (their tags, report #93) is told before and after.
         var selected = all.Select(e => e.Id).ToHashSet();
         var followers = ctx.Services.All<ITransformFollowers>().Select(f => (f, State: f.Before(ctx, moving, selected))).ToList();
         foreach (var e in entities)
         {
             if (ctx.Model.Get(e.Id) is not { } now) continue;
-            if (copy) { var c = Placement.Copy(ctx, now, t); made.Add((JsonNode)c); copies[e.Id] = c; }
-            else Placement.Transform(ctx, now, t, moving);
+            if (copy) { var c = Placement.Copy(ctx, now, Of(now)); made.Add((JsonNode)c); copies[e.Id] = c; }
+            else Placement.Transform(ctx, now, Of(now), moving);
         }
         foreach (var own in ctx.Services.All<IHostedPlacement>())
             if (hosted.Where(e => own.Handles(ctx.Model, e)).ToList() is { Count: > 0 } mine)
@@ -355,29 +468,36 @@ public static class ElementTransform
                 {
                     made.Add((JsonNode)twin.Id);
                     twins[g] = twin.Id;
-                    Components.CopiedInstance(ctx, group, twin, t, up);
+                    Components.CopiedInstance(ctx, group, twin, inModel ?? t, up + lift);
                 }
         // Parts selected on their own (a grid's axis): their module carries them.
         // One whose element goes as a whole goes with it, once.
         foreach (var id in ids.Distinct().Where(id => ctx.Model.Get(id) == null && !(id.IndexOf('#') is var h and > 0 && moving.Contains(id[..h]))))
             foreach (var part in ctx.Services.All<IPartPlacement>())
-                if (part.Transform(ctx, id, t, copy) is { } after)
+                if (part.Transform(ctx, id, inModel ?? t, copy) is { } after)
                 {
                     if (copy) made.Add((JsonNode)after);
                     break;
                 }
         var kept = new List<string>();
-        if (Math.Abs(up) > 1e-9)
-            foreach (var e in entities)
-            {
-                var id = copy ? copies.GetValueOrDefault(e.Id) : e.Id;
-                if (id == null || ctx.Model.Get(id) is not { } now) continue;
-                if (!ElementRise.Lift(ctx, now, up)) kept.Add(id);
-            }
+        foreach (var e in entities)
+        {
+            // A section's or an elevation's move up raises the model's elements by their offset from the level, not what lies on the view.
+            var dz = up + (OnView(e) ? 0 : lift);
+            if (Math.Abs(dz) <= 1e-9) continue;
+            var id = copy ? copies.GetValueOrDefault(e.Id) : e.Id;
+            if (id == null || ctx.Model.Get(id) is not { } now) continue;
+            if (!ElementRise.Lift(ctx, now, dz)) kept.Add(id);
+        }
         // An instance moved as a whole says where it stands now (docs/components.md).
-        if (!copy) foreach (var g in groups) Components.MovedInstance(ctx, g, t, up);
+        if (!copy) foreach (var g in groups) Components.MovedInstance(ctx, g, inModel ?? t, up + lift);
+        if (copy) Pins.Unpinned(ctx, made.Select(x => (string?)x).OfType<string>());
+        foreach (var id in driven.Made) made.Add((JsonNode)id);
         return new Result(made, copies, twins) { Kept = kept };
     }
+
+    /// <summary>What lies on a view and takes the view's points (a drafted shape, a dimension, a bar drawn on it), not the model's.</summary>
+    public static bool OnView(Entity e) => e.Class == IfcClass.Annotation || e.Str("viewId") is { Length: > 0 };
 }
 
 /// <summary>The spatial structure: one project, site and building; the storeys, lowest first.</summary>
@@ -419,7 +539,7 @@ public static class Spatial
         var project = Project(edit.Model);
         if (project == null)
         {
-            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1 });
+            project = new Entity(IdOf(edit, seed?.Project.Id), IfcClass.Project, seed?.Project.Name ?? "Project", new JsonObject { ["lengthUnit"] = "METRE", [ViewDetail.RevKey] = 1, [MaterialHatchUpgrade.RevKey] = MaterialHatchUpgrade.Rev });
             edit.Add(project);
         }
         var site = edit.Model.OfClass(IfcClass.Site).FirstOrDefault();

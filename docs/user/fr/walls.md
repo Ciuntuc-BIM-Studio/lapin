@@ -21,7 +21,7 @@ Cliquez là où le mur commence, puis cliquez à chaque angle. Le mur suivant su
 Là où deux murs se rencontrent, Lapin les joint de lui-même. Leurs couches se prolongent l’une dans l’autre comme elles seraient construites.
 
 - **Mur courbe** (<kbd>WC</kbd>) dessine un mur le long d’un arc.
-- **Mur-rideau** (<kbd>CW</kbd>) dessine un mur vitré avec des meneaux et des panneaux.
+- **Mur-rideau** (<kbd>CW</kbd>) dessine un mur vitré avec des meneaux et des panneaux ; son type peut prendre leur forme réelle d'une [bibliothèque de profilés](profiles.md).
 - Les murs se joignent d’eux-mêmes là où ils se rencontrent : un angle en onglet, un mur qui finit sur un autre en T, un mur qui en traverse un autre en X. À un T ou à un X, les couches se rejoignent comme on les construit : le noyau du mur qui finit traverse les finitions de l’autre jusqu’à son noyau, et ses finitions s’arrêtent à la face de l’autre, où elles rejoignent leurs semblables, si bien que le plan montre une seule composition, sans ligne au travers. **Joindre** (<kbd>JW</kbd>), **Onglet** et **Bout à bout** changent la façon dont deux murs se rencontrent quand ce n’est pas ce que vous voulez ; **Nouveaux angles en onglet** fait du bout à bout le réglage par défaut sur cet ordinateur. Dans les deux cas, chaque couche tourne l’angle d’elle-même : les finitions rejoignent leurs semblables et continuent sans rupture, et les âmes se rencontrent sur la diagonale (onglet) ou l’une va jusqu’à la face extérieure de l’autre (bout à bout), si bien que le plan des murs multicouches montre des angles nets. Chaque couche entre dans l'autre mur à travers ses couches de **Priorité** inférieure et s'arrête à la première de priorité égale ou supérieure (voir **Types de murs** plus bas) : par défaut, les noyaux rencontrent les noyaux et les finitions s'arrêtent aux faces ; à un angle, un noyau de priorité supérieure traverse celui de l'autre, en onglet comme en about. La **Priorité de coupe** d'un mur ne le fait jamais entrer dans un mur auquel il est joint : entre murs joints, elle décide seulement quel noyau traverse quand les deux noyaux ont la même priorité (à un angle en about ou à un croisement).
 - **Permuter** change lequel des deux murs passe à travers l’autre.
 
@@ -54,6 +54,32 @@ Le mur reste un mur : son épaisseur, ses couches, ses jonctions et ses portes e
 ![Un pignon dessiné dans l’éditeur de profil](shots/wall-profile-editor.webp)
 
 ![Le mur ouest de la maison en pignon, sa fenêtre gardée](shots/wall-profile-3d.webp)
+
+### Le contour et les barres d’un mur-rideau
+
+**Profil…** dans les propriétés d’un mur-rideau dessine son contour en élévation, comme pour un mur : un pignon, une pente, des gradins ou un contour quelconque, avec des points à faire glisser, à ajouter ou à retirer et un tableau en millimètres. Le mur monte jusqu’à son point le plus haut. Sa trame gagne une ligne là où le contour se brise (une brisure à moins d’un meneau et demi d’une ligne de la trame est ramenée sur elle) ; chaque travée garde les traverses qui tiennent sous son point le plus bas ; le panneau au-dessus de la dernière monte jusqu’au contour et une barre de rive le suit, inclinée ; les meneaux sont coupés à lui. Les réglages du type restent, et **Profil…** rouvre le contour pour le changer, sans reconstruire ; **Sommet plat** rend le rectangle. Il se voit en 3D, élévations et coupes, les nomenclatures mesurent les panneaux et les barres tels que dessinés, et l’IFC les porte comme pièces.
+
+![Un pignon dessiné comme contour d’un mur-rideau](shots/curtain-boundary-editor.webp)
+
+![Le mur-rideau sous son pignon, en 3D](shots/curtain-boundary-3d.webp)
+
+**Barres…** donne à des meneaux et traverses choisis un profil propre. L’élévation du mur montre chaque barre : cliquez-en une (<kbd>Maj</kbd> ou <kbd>Ctrl</kbd>/<kbd>⌘</kbd> en ajoute, ou prenez tous les meneaux ou toutes les traverses), choisissez un profil des [bibliothèques de profilés](profiles.md) ou une boîte simple, sa **Rotation** et sa **Symétrie**, son alignement en travers de la barre (face avant ou arrière sur son plan) et le long (arête de début ou de fin sur la ligne de trame ou le niveau) et ses décalages en travers et vers l’extérieur du bâtiment ; l’image à côté montre la section telle qu’elle est posée. **Appliquer aux éléments choisis** leur donne le style, **Revenir à celui du type** l’enlève. Le profil propre d’un type a les mêmes champs de position dans **Murs-rideaux…**, pour chaque mur du type. Le profilé reste une copie dans le projet : **Mettre à jour depuis la bibliothèque** change chaque barre qui en est faite, dans ce mur et dans d’autres.
+
+![Barres : un profil posé sur les meneaux choisis](shots/curtain-members-dialog.webp)
+
+![Deux meneaux avec un profil propre, en 3D](shots/curtain-members-3d.webp)
+
+**Panneaux et portes…** donne aux cellules choisies un panneau à elles ou une porte. L'élévation du mur montre chaque cellule telle que le moteur la construit : cliquez sur une cellule (<kbd>Maj</kbd> ou <kbd>Ctrl</kbd>/<kbd>⌘</kbd> en ajoute d'autres). Un **type de panneau** est enregistré une fois dans le projet et donné aux cellules de n'importe quel mur-rideau : verre, plein, un **remplissage encadré** (un cadre de sa largeur et de sa profondeur autour de la cellule, le remplissage en verre ou plein en retrait de sa face extérieure selon le retrait) ou **ouvert** (sans panneau) ; son épaisseur, son décalage hors de l'axe et ses matériaux (ceux du type de mur-rideau si aucun n'est choisi). **Donner aux cellules choisies** l'applique, **Le panneau du type** le retire ; un type de panneau modifié change toutes ses cellules. **Porte dans les cellules choisies** remplace chaque cellule choisie par une porte : une nouvelle porte de mur-rideau (simple ou double, battante ou coulissante, sa largeur et sa hauteur, vantaux vitrés ou pleins, le profil du cadre tiré des [bibliothèques de profils](profiles.md)) ou n'importe quel type de porte du projet. **Remplir la cellule** lui donne la taille de la cellule ; sinon elle garde celle de son type, se place à gauche, au centre ou à droite dans la cellule avec un décalage, et reçoit une traverse au-dessus et un meneau à côté là où il reste du verre, vitrés avec le panneau de la cellule. Dans la rangée du bas, la porte repose sur le sol et la traverse basse est coupée sous elle. Les réglages sont gardés par cellule, ils suivent donc la trame quand elle change : une porte qui remplit sa cellule grandit ou rapetisse avec elle, et une dont la cellule a disparu le signale et revient avec elle. La porte est une porte : sélectionnez-la pour changer sa main ou son côté, son type, ou la déplacer dans une autre cellule (Déplacer le long du mur) ; les étiquettes, les nomenclatures de portes (à la taille où elle est) et l'export IFC (une IfcDoor faisant partie de son IfcCurtainWall) la comptent.
+
+![Panneaux et portes : une allège encadrée et une porte dans les cellules choisies](shots/curtain-cells-dialog.webp)
+
+![Un mur-rideau avec une porte et des allèges encadrées, en 3D](shots/curtain-cells-3d.webp)
+
+Sous un contour dessiné avec **Profil…**, une porte va dans une cellule rognée partout où son rectangle tient sous le contour : les meneaux à côté d'elle montent jusqu'au contour, les vitrages à côté d'eux s'y remplissent, une traverse franchit sa tête et le verre au-dessus suit la pente. Quand elle remplit une telle cellule, sa tête s'arrête une traverse sous le côté le plus bas du contour. Là où elle ne tient pas, Lapin dit de combien et quoi faire (l'abaisser, la déplacer vers le côté le plus haut ou choisir une cellule plus haute). Un panneau encadré dans une cellule rognée est encadré le long de tout son contour, côté incliné compris. Une élévation tournée vers l'extérieur d'une porte dessine ses symboles d'ouverture, en tirets, comme pour toute porte ou fenêtre.
+
+![Une porte sous le contour incliné d'un mur-rideau, avec des panneaux encadrés le long de la pente, en 3D](shots/curtain-cells-gable.webp)
+
+![Le symbole d'ouverture de la porte dans l'élévation](shots/curtain-cells-elevation.webp)
 
 ## Types de murs
 

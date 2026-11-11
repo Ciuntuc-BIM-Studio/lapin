@@ -192,7 +192,9 @@ public static class ViewImages
             if (e.Str("image") is not { } image) continue;
             var corners = Corners(e);
             var mk = new ViewMark(e.Id);
-            mk.Images.Add(new PenImage(image, corners, Math.Clamp(e.NumOrNull("opacity") ?? 0.5, 0.05, 1)));
+            // A PenImage's corners run top left, top right, bottom right, bottom left; ours run from the bottom left (decision 428:
+            // laid in the other order the picture was drawn upside down, which read as mirrored).
+            mk.Images.Add(new PenImage(image, [corners[3], corners[2], corners[1], corners[0]], Math.Clamp(e.NumOrNull("opacity") ?? 0.5, 0.05, 1)));
             mk.Polyline(corners, true, Views.ConstructionLayer, 0.13, "#9a9a9a");
             mk.Snaps.AddRange(corners);
             yield return mk;

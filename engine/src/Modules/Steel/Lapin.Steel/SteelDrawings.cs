@@ -307,7 +307,7 @@ public sealed class SteelMembersSchedule : IScheduleSource
             var hall = Halls.Of(m, e.Id);
             var parts = geometry(e.Id)?.Parts ?? [];
             var body = parts.Where(p => p.Key == "body").ToList();
-            var volume = (body.Count > 0 ? body : parts.Take(1)).Sum(p => Measure.Volume(p.Solid));
+            var volume = (body.Count > 0 ? body : parts.Take(1)).Sum(p => Measure.Volume(p.Solid)) * ax.Section.RealRatio;
             var sec = ax.Section;
             var length = Math.Round(built.Length, 3);
             var paint = Polygon2.Perimeter(sec.Outline()) * built.Length;

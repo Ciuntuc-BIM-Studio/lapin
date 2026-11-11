@@ -155,6 +155,13 @@ public static class Generator
     /// <summary>Classes drawn in plan by their own symbols instead of their cut.</summary>
     public static readonly HashSet<string> SymbolicInPlan = ["IfcDoor", "IfcWindow", "IfcRoof", "IfcGeographicElement", "IfcStair", "IfcRamp", "IfcPavement", "LapinPlanting", "LapinEntourage", "IfcFurniture", "IfcShadingDevice", "IfcTransportElement", "LapinTrack", "LapinPlatform", "LapinTurnout", "LapinCrossing", "LapinLevelCrossing"];
 
+    /// <summary>
+    /// Classes a plan draws dashed when they lie wholly under its range (decision 435, a tester's report #115): foundations
+    /// under the floor are drawn in the plan of their storey as hidden outlines, as a plan of a building shows what is under it.
+    /// A foundation plan, whose range reaches them, cuts or sees them as any element.
+    /// </summary>
+    public static readonly HashSet<string> HiddenBelowInPlan = ["IfcFooting", "IfcPile"];
+
     /// <param name="seamKey">
     /// What a part's surface joins by (<see cref="MaterialDrawing.SeamKey"/>): where it goes on in one plane into a part of the
     /// same key, the edge between them is no line. Default: parts of one material (or, without one, of one class) join.
@@ -225,6 +232,15 @@ public static class Generator
         var modelBox = Box(primary.SelectMany(p => p.Solid.Vertices).Select(v.Frame.Map));
         if (modelBox is { } mb && v.Span is { } span) modelBox = (new Vec2(Math.Max(mb.Item1.X, span.Min), mb.Item1.Y), new Vec2(Math.Min(mb.Item2.X, span.Max), mb.Item2.Y));
         lines = DropStray(lines, cutBox, modelBox);
+        if (plan && v.Hidden)
+        {
+            var low = parts.Where(p => HiddenBelowInPlan.Contains(p.Class) && Z(p.Solid).Max <= cutZ - v.Below + 1e-9).ToList();
+            if (low.Count > 0)
+            {
+                var (edges, _, _) = HiddenLines.Draw(low.Select((p, i) => (p.Solid, i)).ToList(), v.Frame, false, ViewRanges.Unlimited, keys: low.Select(seamKey).ToList(), smooth: low.Select(p => p.Smooth).ToList());
+                foreach (var e in edges) { var p = low[e.Owner]; lines.Add(new DLine(e.A, e.B, LineRole.Hidden, p.Element, p.Class)); }
+            }
+        }
         if (symbols != null)
             foreach (var sym in symbols.Where(s => s.Points3 != null))
             {

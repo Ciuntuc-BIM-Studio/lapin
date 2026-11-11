@@ -24,6 +24,10 @@ Seleziona la sezione nel browser per impostarne la scala, la profondità, la dis
 
 La linea di una sezione è disegnata in ogni pianta, e la sezione è segnata in ogni altra sezione e in ogni prospetto che il suo piano attraversa: una sottile linea tratteggiata dove il piano taglia la vista, con il nome della sezione e una freccia, in alto, rivolta dove guarda la sezione, della stessa dimensione sulla carta che in pianta. Una sezione non è mai segnata in sé stessa. Fai clic su un indicatore per selezionare la sezione, doppio clic per aprirla.
 
+**Dimensione degli indicatori.** **Gestisci → Standard di disegno → Progetto** imposta quanto sono grandi gli indicatori, in millimetri sulla carta, per sezioni e prospetti separatamente: **Dimensione indicatore di sezione** (le frecce di una sezione sono 0,7 di essa) e **Testo indicatore di sezione**, **Dimensione indicatore di prospetto** (il diametro del cerchio del prospetto) e **Testo indicatore di prospetto**; 10 mm e l’altezza dello stile di testo standard finché non li imposti. Un progetto che aveva una sola dimensione degli indicatori la conserva per entrambi. Una sezione o un prospetto con una dimensione propria ha **Dimensione indicatore (mm)** e **Testo indicatore (mm)** nelle proprietà; se vuoti, usa quelli del progetto. Il motore disegna gli indicatori, quindi piante, sezioni che attraversano, tavole, PDF e DXF li seguono.
+
+**Spostare una sezione.** Seleziona la sezione in una pianta e spostala con **Sposta** (o trascinala per la sua linea): come in Revit, taglia dove la metti, e ruotata o specchiata guarda dalla parte ruotata o specchiata. Ogni testa (la sua freccia e il suo nome) ha una maniglia propria: trascinala per spostare la testa fuori dall’estremo della linea, per esempio lontano da una quota, e una sottile linea di richiamo la riunisce; la sezione taglia allo stesso modo. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-clic sulla maniglia rimette a posto la testa. Una sezione attraverso o lungo un elemento segue l’elemento e si sposta con esso.
+
 Ogni sezione sta su un **layer dell’indicatore** (all’inizio **Sezioni**; **Layer dell’indicatore** nelle proprietà della sezione lo cambia), e ogni vista sceglie che cosa segnare. **Vista → Sezioni…** elenca le sezioni del progetto per layer per la vista in primo piano, con una casella per layer e per sezione valida solo per questa vista, il layer di ogni sezione (uno esistente, o **Nuovo layer…**) e in quante viste ciascuna è nascosta. Una tavola segna ciò che segnano le sue viste.
 
 Una sezione tagliata trasversalmente a una trave o a un pilastro (**Sezione qui**, **Sezione trasversale** nella scheda Armature semplici) ha maniglie anche in pianta: trascina uno dei due estremi lungo la linea per dare a quel lato più o meno margine, trascina il centro lungo l’elemento per spostare la progressiva a cui taglia. La finestra della sezione segue.
@@ -35,6 +39,14 @@ Una sezione tagliata trasversalmente a una trave o a un pilastro (**Sezione qui*
 **+** accanto a **Prospetti** crea in un colpo solo i quattro prospetti dell’edificio.
 
 ![Il prospetto sud](shots/elevation-view.webp)
+
+Ogni pianta segna ogni prospetto davanti all’edificio, lontano dalle teste delle sezioni che vi si trovano: una sottile linea a tratto e punto attraverso la direzione in cui guarda, e al suo centro un cerchio la cui freccia nera punta verso l’edificio, con il nome del prospetto dietro. Fai clic sull’indicatore per selezionare il prospetto, doppio clic per aprirlo. **Simboli di prospetto** in **Visibilità / Grafica** (<kbd>VV</kbd>) li nasconde in una vista.
+
+**Fin dove arriva un prospetto.** Seleziona il prospetto in una pianta: la sua linea ha una maniglia a ogni estremo. Trascinane una lungo la linea per allungare o accorciare il prospetto da quel lato; il prospetto disegna allora solo ciò che sta tra i due estremi, e le sue tavole e il PDF seguono. Ogni trascinamento è un passo di annullamento. Finché non le trascini, la linea copre tutto l’edificio e cresce con esso.
+
+**Spostare l’indicatore di un prospetto.** Trascina la maniglia del cerchio, oppure seleziona il prospetto e usa **Sposta**: l’indicatore va dove lo metti, più lontano dall’edificio o lungo la sua linea, in un passo di annullamento. Un prospetto di Lapin guarda sempre tutto l’edificio da fuori, quindi spostare il suo indicatore non cambia mai ciò che mostra (in Revit la linea dell’indicatore è anche dove il prospetto comincia a vedere; qui la sua portata ha maniglie proprie, e un taglio dentro l’edificio è una sezione). Un prospetto guarda a nord, sud, est o ovest, quindi non viene ruotato né specchiato. Un prospetto o una sezione bloccati (**Modifica → Blocca**) non si spostano finché non vengono sbloccati.
+
+![L’indicatore di un prospetto in pianta, spostato lontano dalla casa, con la linea accorciata e la testa di una sezione spostata fuori dal suo estremo](shots/elevation-marker.webp)
 
 ### Ombre del sole
 

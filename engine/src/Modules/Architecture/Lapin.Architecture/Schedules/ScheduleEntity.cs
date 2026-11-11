@@ -263,7 +263,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
                 opening?.Value(e) ?? "", Typed(e, "sill", e.Kind == "window" && e.Spec != null ? Mm(e.Spec.SillHeight) : ""),
             };
             line.AddRange(data.Levels.Select(l => Typed(e, "level:" + l, manual ? "" : e.Counts.GetValueOrDefault(l).ToString(CultureInfo.InvariantCulture))));
-            line.AddRange([Typed(e, "total", manual ? "" : e.Total.ToString(CultureInfo.InvariantCulture)), Typed(e, "uValue", e.Spec?.ThermalTransmittance?.ToString(CultureInfo.InvariantCulture) ?? ""), Typed(e, "fire", ScheduleLayout.FireRating(e) ?? "")]);
+            line.AddRange([Typed(e, "total", manual ? "" : e.Total.ToString(CultureInfo.InvariantCulture)), Typed(e, "uValue", ScheduleLayout.UValue(e) ?? ""), Typed(e, "fire", ScheduleLayout.FireRating(e) ?? "")]);
             line.AddRange(ps.Select(p => Typed(e, p, e.Params?.GetValueOrDefault(p[ScheduleLayout.ParamPrefix.Length..]) ?? "")));
             line.AddRange(table.CustomRows.Select(c => table.Cells.GetValueOrDefault(e.Key)?.GetValueOrDefault("custom:" + c.Id) ?? ""));
             lines.Add(line);

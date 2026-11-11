@@ -91,6 +91,12 @@ Clique em um ícone na barra de um painel recolhido para abrir o painel sobre a 
 
 ![Um navegador recolhido aberto sobre a vista a partir da barra](shots/browser-overlay.webp)
 
+## Painéis de cada lado
+
+**Ver → Painéis** (View → Panels) põe o navegador do projeto e o painel de propriedades onde quiser, como no Revit: **Navegador à esquerda, Propriedades à direita** (predefinição), **Navegador à direita, Propriedades à esquerda**, **Ambos os painéis à esquerda** ou **Ambos os painéis à direita**. Com os dois do mesmo lado, ficam um sob o outro; arraste o divisor entre eles para repartir a altura (clique duplo divide ao meio) e a margem do lado para o alargar. Cada painel continua a recolher-se sozinho: um recolhido é uma barra fina na pilha, ou uma barra lateral quando ambos estão recolhidos. O separador do assistente (desktop) fica com as propriedades. O Lapin lembra a disposição neste computador.
+
+![Navegador e propriedades empilhados à esquerda](shots/panel-layouts.webp)
+
 ## Claro e escuro
 
 A lua na ponta direita da faixa de opções torna a interface escura (grafite); o sol torna-a clara de novo (papel). No tema escuro, plantas, cortes e alçados ficam sobre o fundo escuro, com as penas pretas em tinta clara; as folhas continuam papel. Os pequenos desenhos dos configuradores (a planta, o corte e o alçado de uma porta ou janela, de uma cobertura, uma varanda, um elevador, um pavilhão, uma escada…) e as pré-visualizações de etiquetas, carimbos e materiais são desenhados num cartão de papel claro nos dois temas, para que as suas linhas, textos e cotas se leiam como num desenho impresso.

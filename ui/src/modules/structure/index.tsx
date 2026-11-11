@@ -12,6 +12,7 @@ import { ensureStorey, execute, useSession } from '../../engine/session';
 import { StructureSection } from './StructureSection';
 import { sameKind } from '../../shell/params';
 import { lazyPart } from '../../platform/lazyPart';
+import { StripOption, stripArgs } from './stripOptions';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const StructureTypesDialog = lazyPart(() => import('./StructureTypesDialog').then((m) => m.StructureTypesDialog), { title: 'Structure types' });
@@ -33,15 +34,15 @@ const curvedBeam: ToolDef = {
   complete: async ({ points: [a, b, p] }, ctx) => { await ctx.execute('structure.addBeam', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y }); },
 };
 const strip: ToolDef = {
-  id: 'structure.strip', label: 'Strip footing', icon: StripFootingIcon, shortcut: 'SF',
+  id: 'structure.strip', label: 'Strip footing', icon: StripFootingIcon, shortcut: 'SF', options: StripOption,
   gesture: { kind: 'twoPoints', repeat: true },
-  complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y }); },
+  complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, ...stripArgs(useSession.getState().nodes) }); },
 };
 /** A curved strip foundation: its ends, then a point the arc passes through. */
 const curvedStrip: ToolDef = {
-  id: 'structure.curvedStrip', label: 'Curved strip footing', icon: StripFootingIcon, shortcut: 'CF',
+  id: 'structure.curvedStrip', label: 'Curved strip footing', icon: StripFootingIcon, shortcut: 'CF', options: StripOption,
   gesture: { kind: 'threePoints', arc: true },
-  complete: async ({ points: [a, b, p] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y }); },
+  complete: async ({ points: [a, b, p] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...stripArgs(useSession.getState().nodes) }); },
 };
 const pad: ToolDef = {
   id: 'structure.pad', label: 'Pad footing', icon: PadFootingIcon, shortcut: 'PF',

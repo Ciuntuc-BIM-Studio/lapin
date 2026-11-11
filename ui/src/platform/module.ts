@@ -34,6 +34,11 @@ export type Gesture =
     reach?: number;
     /** What the click would put there, as lines on the plan (metres), redrawn as the cursor moves. */
     ghost?: (entity: NodeDto, at: Vec2) => Vec2[][];
+    /**
+     * What the click would put on the element (a door or window: its size and type), so the modules' `placementCheck`s
+     * are asked as the cursor moves; null: nothing to check here.
+     */
+    placing?: (entity: NodeDto, at: Vec2) => { kind: 'door' | 'window'; width: number; typeId: string | null } | null;
   }
   /**
    * An element picked, then a point (a bar cut: one end of the lap on the bar, then the other): the first click's point and the
@@ -54,6 +59,8 @@ export interface ToolInput {
   points: Vec2[]; entity?: NodeDto; face?: FaceHit;
   /** The length typed in the live input (m) when the last point came from it, so a tool may measure along its own path rather than the screen. */
   typed?: number;
+  /** In the 3D view, the height (m) of each point as clicked (a snap on a ridge, a corner above the level); a tool that measures in space reads it, the others work on the level. */
+  heights?: number[];
 }
 
 /** What a tool's completion can use: the storey it draws on, and the engine. */
@@ -152,6 +159,8 @@ export interface Grip {
   move?: (to: Vec2) => Promise<unknown> | void;
   /** Ctrl/⌘-click: insert a vertex here (an edge's middle). */
   insert?: () => GripStep | null;
+  /** Ctrl/⌘-drag (with `insert`): insert a vertex where the grip is dropped; a Ctrl/⌘-click still does `insert`. */
+  insertAt?: (to: Vec2) => GripStep | null;
   /** Ctrl/⌘-click: take this vertex out. */
   remove?: () => GripStep | null;
   /**
@@ -223,6 +232,28 @@ export interface Replaces {
   fileActions?: Record<string, (original: FileAction) => FileAction>;
 }
 
+/** What a door or window being placed asks of the modules: where along its host's axis (m from its start), how wide, of which type. */
+export interface PlacementRequest { kind: 'door' | 'window'; host: NodeDto; along: number; width: number; typeId: string | null }
+/** The answer: whether it fits, the reason when it does not (a sentence, shown by the cursor), and the place along the host's axis where it does. */
+export interface PlacementVerdict { ok: boolean; message?: string; snapAlong?: number }
+
+/**
+ * What a module's plan overlay is given: the plan's own transform (the view's pan, zoom and true-north turn), so it can
+ * draw in model coordinates inside the plan's SVG and read where the pointer is in the model.
+ */
+export interface PlanOverlayProps {
+  /** A model point (metres) as the plan shows it, in SVG pixels. */
+  toScreen: (p: Vec2) => { x: number; y: number };
+  /** An SVG point (pixels, from the plan's top left) as a model point. */
+  toWorld: (x: number, y: number) => Vec2;
+  /** Pixels per metre. */
+  scale: number;
+  /** The plan turned on screen (radians; true north up), 0 otherwise. */
+  rotation: number;
+  /** The plan: its view's id when it has one (else null) and its storey's. */
+  view: { id: string | null; storeyId: string | null };
+}
+
 export interface LapinModule {
   id: string;
   name: string;
@@ -255,6 +286,25 @@ export interface LapinModule {
   expandSelection?: (id: string, node: NodeDto | undefined) => readonly string[] | null;
   /** Shown over the active pane's model view (not over a module's own view): a card the selection is dragged from. */
   overlays?: ComponentType[];
+  /**
+   * Drawn inside every plan view's SVG, over its elements and grips, in the plan's own coordinates (`PlanOverlayProps`).
+   * Nothing in it takes the pointer unless it asks: an element that should be clicked carries `data-overlay-hit` (and
+   * `pointer-events: all`), and a press on it does not start a selection, a grip or a tool in the plan underneath.
+   */
+  planOverlays?: ComponentType<PlanOverlayProps>[];
+  /**
+   * Where a grip of an element this module does not own would land (a grid axis of a generated block, kept to 10 mm):
+   * asked while the grip is dragged, after the owner's own `constrain`, for every module in turn; the first to answer
+   * with a point wins. Not asked while Shift is held (`free`), nor for a grip dragged along with others.
+   */
+  gripSnap?: (element: NodeDto, grip: Grip, to: Vec2, free: boolean) => Vec2 | undefined;
+  /**
+   * Whether a door or window fits where the cursor is, for hosts this module drives: asked (throttled) as the cursor moves
+   * over a host while the Door or Window tool is on; null leaves the host to the next module and the engine. A refusal
+   * (`ok: false`) draws the preview as an error with its `message` by the cursor, and `snapAlong` (m along the host's axis)
+   * is where the click goes when the cursor is within a metre of it. The engine still has the last word at the click.
+   */
+  placementCheck?: (req: PlacementRequest) => Promise<PlacementVerdict | null> | PlacementVerdict | null;
   /** What it replaces of the other modules' and the shell's (an edition of its own; docs/overrides.md). */
   replaces?: Replaces;
 }

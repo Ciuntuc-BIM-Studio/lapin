@@ -72,6 +72,8 @@ public static class IfcExport
     // The keys the sets' GlobalIds derive from stay the old names: a file exported again keeps its sets' ids.
     /// <summary>The key a type's mirror image (doors and windows flipped on one axis) is derived from.</summary>
     const string MirrorKey = "#mirrored";
+    /// <summary>An apartment type's instance: its type's name and id, where it stands (docs/plan-units.md).</summary>
+    public const string UnitSetName = "Lapin_Unit";
     const string IntentKey = "Pset_Lapin_Intent", PhaseKey = "Pset_Lapin_Phase", ParamsKey = "Pset_Lapin_Parameters";
     public const string Version = "1";
 
@@ -200,6 +202,9 @@ public static class IfcExport
         public readonly List<string> Notes = [];
 
         readonly IModelView m = s.Model;
+        /// <summary>What modules keep out of the file: their own groups and attribute keys (IIfcExportFilter).</summary>
+        readonly IReadOnlyList<IIfcExportFilter> filters = s.Catalog.All<IIfcExportFilter>();
+        readonly HashSet<string> privateKeys = [.. s.Catalog.All<IIfcExportFilter>().SelectMany(x => x.PrivateKeys)];
         Entity project = null!;
         string model = "", body = "", axis = "", footprint = "", metre = "", siteRef = "", sitePlace = "";
         readonly Dictionary<string, string> storeyRef = [], storeyPlace = [], refIdOf = [];
@@ -239,6 +244,7 @@ public static class IfcExport
             WriteElements();
             ProvisionVoids();
             Assemblies();
+            CurtainWallParts();
             Network();
             carry?.Finish(buildingRef);
             Finish();
@@ -661,6 +667,22 @@ public static class IfcExport
             }
         }
 
+        /// <summary>
+        /// A curtain wall's doors (report #133): elements of their own, written as such, are parts of their wall (IfcRelAggregates, as
+        /// IFC decomposes a curtain wall) and no longer contained in the storey themselves.
+        /// </summary>
+        void CurtainWallParts()
+        {
+            foreach (var cw in m.OfClass("IfcCurtainWall"))
+            {
+                if (!written.TryGetValue(cw.Id, out var whole)) continue;
+                var parts = m.RelatedOf(cw.Id, IfcClass.RelAggregates).Select(p => written.GetValueOrDefault(p.Id)).OfType<string>().ToList();
+                if (parts.Count == 0) continue;
+                foreach (var list in contained.Values) list.RemoveAll(parts.Contains);
+                f.Add("IFCRELAGGREGATES", Gid(cw.Id, "elements"), Null, Null, Null, whole, L(parts));
+            }
+        }
+
         /// <summary>The bodies of the batch being written, merged or simplified ahead (<see cref="WriteElements"/>).</summary>
         readonly System.Collections.Concurrent.ConcurrentDictionary<Solid, Solid> simplified = new(ReferenceEqualityComparer.Instance);
 
@@ -984,6 +1006,8 @@ public static class IfcExport
         {
             // A door or a window, or what is written as one (a gate: its type's clear width and height).
             if (e.Class is not (IfcClass.Door or IfcClass.Window) && e.Str("exportAs") is not (IfcClass.Door or IfcClass.Window)) return (null, null);
+            // A door at a size of its own (a curtain wall's, filling its cell).
+            if (s.Catalog.Get<IJoineryIfc>()?.Size(m, e) is { } own) return (own.Height, own.Width);
             var spec = type?.Attrs["spec"] as JsonObject;
             var opening = m.RelatingOf(e.Id, IfcClass.RelFillsElement);
             return (Json.Number(spec?["height"]) ?? opening?.NumOrNull("height"), Json.Number(spec?["width"]) ?? opening?.NumOrNull("width"));
@@ -1257,6 +1281,7 @@ public static class IfcExport
                 ("IfcCurtainWall", "mullion") => new("IfcMember", "MULLION", null),
                 ("IfcCurtainWall", "transom") => new("IfcMember", "USERDEFINED", "TRANSOM"),
                 ("IfcCurtainWall", "panel") => new("IfcPlate", "CURTAIN_PANEL", null),
+                ("IfcCurtainWall", "frame") => new("IfcMember", "USERDEFINED", "Panel frame"),
                 (IfcClass.Stair, "flight") => new(IfcClass.StairFlight, "STRAIGHT", null),
                 (IfcClass.Stair, "winders") => new(IfcClass.StairFlight, "WINDER", null),
                 (IfcClass.Stair, "landing") => new(IfcClass.Slab, "LANDING", null),
@@ -1620,7 +1645,7 @@ public static class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || privateKeys.Contains(key) || (only != null && !only.Contains(key))) continue;
                 // A foreign element's properties go as the sets its file had, not as text.
                 if (key == "properties" && e.Attrs[IfcSource.Key] != null) continue;
                 var field = fields.GetValueOrDefault(key);
@@ -1989,10 +2014,24 @@ public static class IfcExport
             // Lapin's groups (docs/groups.md) as IFC's: an IfcGroup assigned the members written.
             foreach (var g in Groups.All(m))
             {
+                // A module's own group stays the project's (its members are written as any element).
+                if (filters.Any(x => x.SkipsGroup(m, g))) continue;
                 var members = Groups.MembersOf(m, g.Id).Where(written.ContainsKey).Select(x => written[x]).ToList();
                 if (members.Count == 0) continue;
                 var group = f.Add("IFCGROUP", Gid(g.Id), Null, S(g.Name), Null, Null);
                 f.Add("IFCRELASSIGNSTOGROUP", Gid(g.Id, "members"), Null, Null, Null, L(members), Null, group);
+                // An instance of an apartment type says of which, and where it stands (docs/plan-units.md).
+                if (Components.UnitOf(m, g) is { } unit)
+                    Define(group, f.Add("IFCPROPERTYSET", Gid(g.Id, UnitSetName), Null, S(UnitSetName), Null, L(new[]
+                    {
+                        Single("Type", Typed("IFCLABEL", S(unit.Type.Name))),
+                        Single("TypeId", Typed("IFCIDENTIFIER", S(unit.Type.Id))),
+                        Single("X", Typed("IFCLENGTHMEASURE", R(unit.X))),
+                        Single("Y", Typed("IFCLENGTHMEASURE", R(unit.Y))),
+                        Single("Z", Typed("IFCLENGTHMEASURE", R(unit.Z))),
+                        Single("Degrees", Typed("IFCREAL", R(unit.Degrees))),
+                        Single("Mirrored", Typed("IFCBOOLEAN", unit.Mirrored ? ".T." : ".F.")),
+                    })), Gid(g.Id, "unit-rel"));
             }
             foreach (var (typeId, t) in types) f.Add("IFCRELDEFINESBYTYPE", Gid(typeId, "defines"), Null, Null, Null, L(t.Occurrences), t.Ref);
             foreach (var (materialId, list) in materialUses) f.Add("IFCRELASSOCIATESMATERIAL", Gid(materialId, "associates"), Null, Null, Null, L(list), Material(materialId));
@@ -2004,7 +2043,7 @@ public static class IfcExport
             // Joins: the element that runs through relates the other; the ends they meet at, the style as the description.
             foreach (var rel in m.Relations.Where(r => r.Class == IfcClass.RelConnectsPathElements))
                 if (rel.Related.Count > 0 && written.TryGetValue(rel.Relating, out var a) && written.TryGetValue(rel.Related[0], out var b))
-                    f.Add("IFCRELCONNECTSPATHELEMENTS", Gid(rel.Id), Null, S((string?)rel.Attrs?["kind"]), S((string?)rel.Attrs?["style"]), Null, a, b, "()", "()",
+                    f.Add("IFCRELCONNECTSPATHELEMENTS", Gid(rel.Id), Null, S((string?)rel.Attrs?["kind"]), S(Joins.Stops(rel) ? Joins.StopsOn : (string?)rel.Attrs?["style"]), Null, a, b, "()", "()",
                         E(Connection((string?)rel.Attrs?["relatedConnection"])), E(Connection((string?)rel.Attrs?["relatingConnection"])));
             // Temporary works: the product resource they are (formwork, a scaffold), assigned to them; formwork connected to the element it forms.
             foreach (var e in m.Entities)

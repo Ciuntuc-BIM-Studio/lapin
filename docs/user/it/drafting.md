@@ -50,6 +50,16 @@ Una porta, una finestra o un’apertura nel muro si sposta e si copia lungo il s
 
 Un asse della griglia si sposta, si copia, ruota e si specchia da solo o insieme ad altri elementi. Una copia è un nuovo asse della stessa griglia, chiamato in base all’ultimo asse che corre nella sua direzione: con gli assi 1, 2 e 3, una copia di uno qualsiasi di essi è 4.
 
+### In sezioni e prospetti
+
+**Sposta** (<kbd>M</kbd>), **Copia** (<kbd>CO</kbd>) e il trascinamento di un elemento selezionato funzionano anche in una sezione o in un prospetto, nel piano della vista. Lungo la vista, l’elemento si sposta in pianta lungo la linea della sezione; in su o in giù, sale o scende del suo scostamento dal livello (lo scostamento di base di un muro o di un pilastro, lo scostamento superiore di una trave, lo scostamento di un solaio). Mentre trascini, il suo **Scostamento dal livello** nelle proprietà lo segue. Una porta o una finestra scorre ancora lungo il suo muro, e le linee disegnate sulla vista si spostano nella vista. **Specchia** lì prende una linea verticale e specchia gli elementi rispetto al piano che la contiene, perpendicolare alla vista. Gli elementi non si **ruotano** in una sezione o in un prospetto, perché si ribalterebbero: ruotali in una pianta o in 3D. Le linee disegnate ruotano e si specchiano in ogni modo. Un elemento bloccato resta dov’è.
+
+![Una trave trascinata in su nel prospetto sud: il suo fantasma dove era, lo spostamento vicino al mouse e il suo scostamento dal livello che segue nelle proprietà](shots/section-drag.webp)
+
+### Blocco
+
+Blocca ciò che non deve spostarsi per errore: un modello importato, la griglia, un disegno di rilievo. Selezionalo e scegli **Modifica → Blocca**, oppure spunta **Bloccato** sotto **Posizionamento** nelle sue proprietà. Un elemento bloccato non si sposta, non ruota, non si specchia, non si alza, non passa a un altro piano e non si cancella, e non mostra maniglie. Gli altri campi cambiano ancora: il tipo, l’altezza o il materiale. Si può comunque copiare, e la copia non è bloccata. Un muro unito a esso che si sposta lascia le estremità del muro bloccato dove sono. Bloccare un gruppo ne blocca i membri; un gruppo con un membro bloccato non si sposta. **Modifica → Sblocca** (<kbd>UP</kbd>) lo libera di nuovo. Qualsiasi elemento può essere bloccato: un muro, un riferimento da un file importato, una linea disegnata.
+
 ## Disegno
 
 La scheda **Disegno** disegna linee, polilinee, rettangoli, cerchi e archi. Li modifica con offset, taglia, estendi, raccordo, smusso e unisci, riempie le aree con retini e li organizza in **Layer**. **Importa DXF** porta dentro un disegno CAD come linee che puoi agganciare con lo snap e modificare.
@@ -57,6 +67,8 @@ La scheda **Disegno** disegna linee, polilinee, rettangoli, cerchi e archi. Li m
 ![La scheda Disegno](shots/ribbon-draft.webp)
 
 **Offset** (<kbd>O</kbd>) copia una linea, una polilinea, un rettangolo, un cerchio o un arco a una distanza. Scrivi la distanza nell’unità del progetto (in un progetto in millimetri `500` è mezzo metro; `2m` o `1'6"` dicono la propria unità), fai clic sulla forma, poi sul lato verso cui va; chiede la forma successiva finché premi <kbd>Invio</kbd> o <kbd>Esc</kbd>. Scrivi invece **T** (Through) e ogni copia passa per il punto su cui fai clic. Gli spigoli di una polilinea restano vivi (a quartabuono), come in CAD. L’offset funziona in piante, sezioni, prospetti, su piani di riferimento e nella vista 3D.
+
+**Esplodi** (<kbd>X</kbd>, o **EXPLODE**) è la via del ritorno da **Unisci**: seleziona polilinee o rettangoli e ognuno diventa le sue linee, una per lato, sullo stesso livello con la stessa penna e colore e nello stesso gruppo, in un solo passo di annullamento. Cerchi, archi, campiture e catene di quote restano come sono, e una selezione senza niente da dividere lo dice. Funziona in piante, sezioni, prospetti, su piani di riferimento e sul piano di lavoro della vista 3D.
 
 Ogni lunghezza che la riga di comando chiede è nell’unità del progetto, e il messaggio dice quale: `Depth (mm)`, `Height (ft-in)`. Angoli, fattori e conteggi sono numeri semplici: `90` dopo **Ruota** è 90°, qualunque sia l’unità.
 
@@ -103,6 +115,8 @@ Le annotazioni di una pianta (quote, testi, linee disegnate, etichette) possono 
 
 ![L’altezza dell’apertura negli stili di quota](shots/dimension-opening-height-style.webp)
 
+**Quote su una linea.** Un punto di quota cliccato su un asse della griglia o sull'asse di un muro si tiene alla linea, non a un punto di essa. Trascina l'estremità dell'asse lungo se stesso perché la sua bolla stia nella vista, oppure allunga o accorcia il muro: la quota continua a misurare dove l'hai messa e la sua linea non ruota. Se l'asse o il muro si sposta di traverso, il punto va con lui, nello stesso punto lungo. Anche una quota sulla faccia di un muro resta dove misurava quando il muro viene allungato nella sua lunghezza. Le quote fatte prima si tengono a un asse della griglia allo stesso modo; una sull'asse di un muro si riaggancia cliccando di nuovo il suo punto.
+
 ### Etichette
 
 **Annota → Etichetta** (<kbd>TG</kbd>) mette su una vista un riquadro con ciò che un elemento dice di sé, e una linea di richiamo fino a esso. Mentre lo strumento è attivo, la barra sotto la vista sceglie cosa mostra l’etichetta: la sigla, il nome, la classe o il tipo, **Resistenza al fuoco**, **Isolamento acustico**, **Trasmittanza termica** o **Altro parametro…** per nome; oppure un tipo di etichetta degli standard di disegno; e **RICHIAMO** attiva o disattiva la linea di richiamo. Fai clic sull’elemento, poi dove va l’etichetta (digita prima **E** per piegare la linea in un gomito). **Annota → Etichetta un parametro** chiede il nome del parametro e avvia lo strumento con esso.
@@ -120,6 +134,12 @@ Un’etichetta selezionata ha delle maniglie. Trascina il riquadro per spostare 
 ![Le proprietà di un’etichetta](shots/tag-properties.webp)
 
 Il contrassegno di una porta o di una finestra si modifica parte per parte, ogni testo spostato o ruotato e ogni estremità della sua linea allungata: vedi [Porte e finestre](doors-windows.md).
+
+**Ruotare un'etichetta.** Nelle proprietà di un'etichetta, **Rotazione** ruota il suo testo e la sua spalla o il suo riquadro di un angolo, in gradi rispetto all'orizzontale, e **Allinea all'elemento** le fa seguire la direzione dell'elemento che etichetta (l'asse di un muro o di una trave, il lato più lungo di qualunque altro) e ruotare con esso; la rotazione si aggiunge allora a quella direzione. Un'etichetta è sempre disegnata leggibile, mai capovolta. Un'etichetta selezionata ha sopra il testo una maniglia di rotazione: trascinala a passi di 15° (compresi 45° e 90°; tieni premuto <kbd>Maiusc</kbd> per un angolo libero), e Ctrl/⌘-clic rimette il testo orizzontale. La linea di richiamo raggiunge sempre l'elemento. Le etichette semplici e quelle di stratigrafia ruotano allo stesso modo, in piante, sezioni e prospetti, e le tavole, il PDF e il DXF le stampano come le vedi.
+
+**Cosa etichetta un'etichetta.** Finché lo strumento **Etichetta** aspetta un elemento, quello sotto il cursore è evidenziato col colore di accento; passa il cursore su un'etichetta posata, o selezionala, e l'elemento che etichetta è evidenziato.
+
+![Un'etichetta allineata al suo muro, con la maniglia di rotazione, e il muro etichettato evidenziato](shots/tag-rotate.webp)
 
 #### Etichetta di stratigrafia
 

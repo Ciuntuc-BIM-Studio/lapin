@@ -93,4 +93,53 @@ public class PdfTraceTests
         Assert.Contains(r.Marks, m => m.Owner == id && m.Images.Count == 1);
         Assert.ThrowsAny<Exception>(() => f.Run("drafting.placeImage", new JsonObject { ["viewId"] = plan, ["name"] = "x.txt", ["data"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("hello")) }));
     }
+
+    /// <summary>The picture's top-left corner must be upper-left of its bottom-left one, and its right edge to the right (a PenImage's order: top left, top right, bottom right, bottom left).</summary>
+    static void AssertUpright(PenImage img, double turnDeg = 0)
+    {
+        var (tl, tr, br, bl) = (img.Corners[0], img.Corners[1], img.Corners[2], img.Corners[3]);
+        var (u, v) = (tr - tl, tl - bl);
+        var r = turnDeg * Math.PI / 180;
+        // The reading direction is the image's turn; its up is that turned a quarter (never the mirror of it).
+        Assert.True(Math.Abs(u.Normalized().X - Math.Cos(r)) < 1e-6 && Math.Abs(u.Normalized().Y - Math.Sin(r)) < 1e-6);
+        Assert.True(Math.Abs(v.Normalized().X + Math.Sin(r)) < 1e-6 && Math.Abs(v.Normalized().Y - Math.Cos(r)) < 1e-6);
+        Assert.True(Math.Abs((br - bl).X - u.X) < 1e-6 && Math.Abs((br - bl).Y - u.Y) < 1e-6);
+    }
+
+    [Fact]
+    public void An_image_is_drawn_upright_not_mirrored_in_a_plan_and_in_a_section_looking_either_way()
+    {
+        // Decision 428 (report #120): the corners went to the drawing from the bottom left, the order a PenImage reads from the top left.
+        var f = F();
+        f.Wall(0, 0, 10, 0);
+        var views = new List<string> { Plan(f) };
+        // Sections drawn from either end look towards +Y and −Y; elevations east and west, towards −X and +X.
+        views.Add((string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(0, 2), ["end"] = new JsonArray(10, 2) })!["id"]!);
+        views.Add((string)f.Run("view.create", new JsonObject { ["kind"] = "section", ["start"] = new JsonArray(10, 2), ["end"] = new JsonArray(0, 2) })!["id"]!);
+        foreach (var d in new[] { "east", "west" }) views.Add((string)f.Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = d })!["id"]!);
+        foreach (var view in views)
+        {
+            foreach (var turn in new[] { 0.0, 30 })
+            {
+                var id = (string)f.Run("drafting.placeImage", new JsonObject { ["viewId"] = view, ["name"] = "p.png", ["data"] = Convert.ToBase64String(Png()), ["width"] = 4, ["at"] = new JsonArray(1, 1), ["rotation"] = turn })!["id"]!;
+                var mark = Views.Render(f.Session.Reader, Views.Find(f.Model, view)!).Marks.Single(m => m.Owner == id);
+                AssertUpright(mark.Images.Single(), turn);
+                f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray(id) });
+            }
+        }
+    }
+
+    [Fact]
+    public void A_pdfs_picture_comes_in_upright()
+    {
+        var f = F();
+        var plan = Plan(f);
+        f.Run("drafting.importPdf", new JsonObject { ["viewId"] = plan, ["name"] = "s.pdf", ["data"] = Convert.ToBase64String(Pdf()), ["scale"] = 100 });
+        var e = ViewImages.On(f.Model, plan).Single();
+        Assert.Equal(0, e.Num("rotation"), 6);
+        var mark = Views.Render(f.Session.Reader, Views.Find(f.Model, plan)!).Marks.Single(m => m.Owner == e.Id);
+        AssertUpright(mark.Images.Single());
+        // The PDF's picture lies right of and below the rectangle, as the page was laid out.
+        Assert.True(e.Num("x") > 10);
+    }
 }

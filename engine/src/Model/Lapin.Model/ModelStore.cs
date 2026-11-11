@@ -65,14 +65,66 @@ public sealed class ModelStore : IModelView
     // Each id's relationships where it is among the related: a storey's containment holds every element on it, too long to search for each one.
     readonly Dictionary<string, HashSet<string>> _relatedIn = [];
     int _next;
+    // Per class, the sum of a mix of its entities' versions: the same whatever their order, and back to what it was when an undo puts the entities back.
+    readonly Dictionary<string, (ulong A, ulong B)> _classStamp = [];
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Relation, object> _relationVersions = [];
+    static long _relationVersion;
 
     public long Revision { get; private set; }
+
+    /// <summary>A 64-bit mixer (the finaliser of splitmix64): a bijection, so unlike numbers stay unlike.</summary>
+    public static ulong Mix(ulong v)
+    {
+        v += 0x9E3779B97F4A7C15UL;
+        v = (v ^ (v >> 30)) * 0xBF58476D1CE4E5B9UL;
+        v = (v ^ (v >> 27)) * 0x94D049BB133111EBUL;
+        return v ^ (v >> 31);
+    }
+
+    /// <summary>A second mixer, independent of <see cref="Mix"/>: a stamp is two sums, one of each.</summary>
+    public static ulong Mix2(ulong v) => Mix(v ^ 0xD6E8FEB86659FD93UL) * 0xFF51AFD7ED558CCDUL + 0x2545F4914F6CDD1DUL;
+
+    static ulong VersionOf(Relation r) => (ulong)(long)_relationVersions.GetValue(r, _ => Interlocked.Increment(ref _relationVersion));
+
+    /// <summary>
+    /// What one thing a build read stands for right now, as a stamp that is the same exactly when the read would give the same:
+    /// an entity's (or relationship's) version, 0 when it is not there; <c>rel:id</c> the relationships it takes part in; <c>class:X</c>
+    /// and <c>cut:X</c> the class's entities. Two sums of mixed unique versions under independent mixers (128 bits, with every
+    /// key's own hash going in, in <c>Session.StampOf</c>), so two different states give the same stamp only by a 2^-128 coincidence
+    /// (a test checks that an edit, an undo and a redo each give the stamp they should). Null for a key that stands for something else (a derived cell, the whole model): those builds are not kept.
+    /// </summary>
+    public (ulong A, ulong B)? ReadStamp(string key)
+    {
+        if (key.StartsWith("rel:", StringComparison.Ordinal))
+        {
+            var id = key[4..];
+            ulong a = 7, b = 7, n = 0;
+            if (_touching.TryGetValue(id, out var touching)) foreach (var r in touching) { var v = VersionOf(_relations[r]); a += Mix(v); b += Mix2(v); n++; }
+            if (_relatedIn.TryGetValue(id, out var related)) foreach (var r in related) { var v = VersionOf(_relations[r]) + (1UL << 62); a += Mix(v); b += Mix2(v); n++; }
+            return (a, b + n);
+        }
+        if (key.StartsWith("class:", StringComparison.Ordinal) || key.StartsWith("cut:", StringComparison.Ordinal))
+            return key == "class:*" ? null : _classStamp.GetValueOrDefault(key[(key.IndexOf(':') + 1)..]);
+        if (key.Contains(':')) return null;
+        if (_entities.TryGetValue(key, out var e)) return ((ulong)e.Version, Mix2((ulong)e.Version));
+        if (_relations.TryGetValue(key, out var rel)) { var v = VersionOf(rel) + (1UL << 62); return (v, Mix2(v)); }
+        return (0, 0);
+    }
 
     public Entity? Get(string id) => _entities.GetValueOrDefault(id);
     public Relation? GetRelation(string id) => _relations.GetValueOrDefault(id);
     public IEnumerable<Entity> Entities => _entities.Values.OrderBy(e => _order[e.Id]);
     public IEnumerable<Relation> Relations => _relations.Values.OrderBy(r => _order[r.Id]);
     public int EntityCount => _entities.Count;
+    void Stamp(string cls, Entity e, int sign)
+    {
+        var (a, b) = _classStamp.GetValueOrDefault(cls);
+        var (x, y) = (Mix((ulong)e.Version), Mix2((ulong)e.Version));
+        _classStamp[cls] = sign > 0 ? (a + x, b + y) : (a - x, b - y);
+    }
+
+    /// <summary>Whether the class has any entity, without sorting them.</summary>
+    public bool HasClass(string @class) => _byClass.TryGetValue(@class, out var ids) && ids.Count > 0;
     public int RelationCount => _relations.Count;
 
     public IEnumerable<Entity> OfClass(string @class) =>
@@ -93,8 +145,9 @@ public sealed class ModelStore : IModelView
 
     internal void Put(Entity e, int? order = null)
     {
-        if (_entities.TryGetValue(e.Id, out var old)) _byClass[old.Class].Remove(e.Id);
+        if (_entities.TryGetValue(e.Id, out var old)) { _byClass[old.Class].Remove(e.Id); Stamp(old.Class, old, -1); }
         _entities[e.Id] = e;
+        Stamp(e.Class, e, +1);
         Place(e.Id, order);
         (_byClass.TryGetValue(e.Class, out var set) ? set : _byClass[e.Class] = []).Add(e.Id);
         Revision++;
@@ -103,6 +156,7 @@ public sealed class ModelStore : IModelView
     internal void Delete(string id)
     {
         if (!_entities.Remove(id, out var e)) return;
+        Stamp(e.Class, e, -1);
         _byClass[e.Class].Remove(id);
         _order.Remove(id);
         Revision++;
@@ -144,7 +198,7 @@ public sealed class ModelStore : IModelView
 
     internal void Clear()
     {
-        _entities.Clear(); _relations.Clear(); _order.Clear(); _byClass.Clear(); _touching.Clear(); _relatedIn.Clear();
+        _entities.Clear(); _relations.Clear(); _order.Clear(); _byClass.Clear(); _touching.Clear(); _relatedIn.Clear(); _classStamp.Clear();
         _next = 0;
         Revision++;
     }

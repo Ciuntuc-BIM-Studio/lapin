@@ -62,6 +62,8 @@ public interface IElementPlacement
 public interface IHostedPlacement
 {
     bool Handles(IModelView m, Entity e);
+    /// <summary>The host of one its module keeps in a host without an opening (a curtain wall's door in its cell); null: the opening's wall.</summary>
+    string? HostOf(IModelView m, Entity e) => null;
     /// <summary>These elements carried by <paramref name="t"/> together, or (<paramref name="copy"/>) copies of them: the copies' ids.</summary>
     IReadOnlyList<string> Transform(ICommandContext ctx, IReadOnlyList<Entity> elements, Placement2D t, bool copy);
 }
@@ -168,6 +170,14 @@ public static class Placement
             if (t.Mirrored) pts.Reverse(); // a mirrored outline keeps running counter-clockwise
             a["contour"] = new JsonArray(pts.Select(p => (JsonNode)J(p)).ToArray());
         }
+        // The points a room's doors and windows are found again by (docs/rooms.md).
+        if ((a["roomOpenings"] as JsonObject)?["items"] is JsonArray entries)
+            foreach (var entry in entries.OfType<JsonObject>())
+            {
+                if (entry["at"] is JsonArray { Count: >= 2 } at) entry["at"] = J(t.Point(Args.PointOf(at)));
+                foreach (var k in new[] { "hand", "face" })
+                    if (entry[k] is JsonArray { Count: >= 2 } d) entry[k] = J(t.Dir(Args.PointOf(d)));
+            }
         // A room's islands (the columns inside it), loops as its contour is.
         if (a["islands"] is JsonArray isl)
             a["islands"] = new JsonArray(isl.OfType<JsonArray>().Select(l =>
@@ -213,7 +223,8 @@ public static class Placement
             foreach (var r in m.RelationsOf(e.Id, IfcClass.RelConnectsPathElements).ToList())
                 foreach (var pid in r.Related.Append(r.Relating).Where(x => x != e.Id && moving?.Contains(x) != true).Distinct())
                 {
-                    if (m.Get(pid) is not { } partner || partner.Attrs["start"] is not JsonArray || partner.Attrs["end"] is not JsonArray) continue;
+                    // A pinned neighbour keeps its ends (decision 449).
+                    if (m.Get(pid) is not { } partner || Pins.Is(partner) || partner.Attrs["start"] is not JsonArray || partner.Attrs["end"] is not JsonArray) continue;
                     var attrs = partner.CloneAttrs();
                     var changed = false;
                     foreach (var k in new[] { "start", "end" })

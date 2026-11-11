@@ -45,3 +45,7 @@ As cópias usam os mesmos tipos que os originais e recebem novos GlobalIds IFC. 
 ![As paredes e a laje do térreo copiadas para os dois níveis acima, em 3D](shots/copy-to-storeys-3d.webp)
 
 Para mover a seleção para outro nível, escolha **Modificar → Mover para o pavimento**. Os elementos mantêm as suas alturas sobre o novo nível, ou ficam onde estão no espaço.
+
+## A cota de um elemento
+
+Um elemento de um nível fica à cota do nível e a um deslocamento dela. **Propriedades → Posicionamento** mostra o seu **Pavimento**, o seu **Deslocamento do nível** e a sua **Cota** acima de ±0,00: a base de uma parede ou pilar, o topo de um piso ou viga (o deslocamento de uma viga é a partir do topo do nível), a face inferior de uma sapata (o nível inferior do seu tipo abaixo do nível, mais o deslocamento). Escreva um dos números e o outro segue-o: o elemento move-se em todas as vistas, num só passo de anular. Para pôr um elemento noutro nível, mude o seu **Pavimento**. O que desenhar numa planta fica no nível dessa planta.

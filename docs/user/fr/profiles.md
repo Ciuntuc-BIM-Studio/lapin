@@ -17,6 +17,22 @@ Lapin ne peut pas fournir tous les profilés d'acier du monde : il apporte un pe
 
 Tapez dans la recherche pour parcourir toutes les bibliothèques par nom, famille, norme ou type ; choisissez un profilé pour le voir dessiné avec ses dimensions et ses propriétés.
 
+## Normes
+
+Chaque profilé apparaît sous sa norme : **EN** pour le jeu de Lapin et tout profilé dont la norme est européenne (EN 10365, DIN EN, SR EN…), **AISC / ASTM** pour les tableaux américains (une colonne *Standard* disant ASTM A6, par exemple), BS, DIN, JIS, AS/NZS et les autres sous leur nom, et une bibliothèque dont les profilés n’en disent aucune — celle de votre bureau — sous son propre nom. On peut dire à une bibliothèque de cet ordinateur sous laquelle elle apparaît (**Affichée sous**, au-dessus de sa liste).
+
+Les sélecteurs montrent d’abord les profilés du projet, puis chaque norme sous son titre. Les boutons en haut de la liste masquent ou affichent une norme ; votre choix est gardé sur cet ordinateur, pour tous les projets (aussi dans **Fichier → Préférences → Profils**).
+
+![Le sélecteur groupé par norme, avec ses boutons](shots/profile-picker-standards.webp)
+
+Un projet ne garde que les profilés utilisés par ses types, jamais une bibliothèque entière : une bibliothèque que vous avez ne pèse donc rien dans son fichier. Ce qu’un projet propose est son propre choix : **Normes de ce projet**, sous les bibliothèques, coche les normes que montrent ses sélecteurs ; les profilés déjà dedans restent. **Fichier → Préférences → Profils** choisit les normes avec lesquelles commence un nouveau projet (toutes, sauf si vous choisissez).
+
+![Les normes proposées par un projet](shots/profile-project-standards.webp)
+
+![Les normes proposées par un nouveau projet](shots/prefs-profiles.webp)
+
+Lapin ne fournit pas l’AISC Shapes Database : l’AISC ne permet de l’inclure que sous un contrat de licence propre, qu’un programme MIT ne peut pas transmettre. Téléchargez-la chez l’AISC et importez-la avec **Tableau…** : ses colonnes sont reconnues.
+
 ## Propriétés
 
 À partir des dimensions, Lapin calcule l'aire, Iy, Iz, les modules élastiques et plastiques, les rayons de giration, les axes principaux et leur angle (cornières, Z, tout contour dissymétrique), la constante de torsion It et de gauchissement Iw là où une formule existe, la masse par mètre selon la densité du matériau et la surface à peindre par mètre. Elles concordent avec les tableaux publiés à environ 1 % (It et Iw des I laminés à 3 % ; Iw d'un U à ailes inclinées seulement à 20 %). Un contour quelconque n'a ni It ni Iw sauf si son fichier les donne.
@@ -51,14 +67,24 @@ Dessinez la section avec Dessin en polylignes fermées et cercles (ceux à l'int
 
 **Dessiner son contour** fait l'inverse : le contour du profilé choisi en polylignes fermées dans la vue active, pour que Studio l'extrude ou le balaie.
 
+**Dessiner un profilé…** ouvre l’éditeur de sections : l’extérieur et ses chambres comme points en millimètres. Faites glisser les points (1 mm ; <kbd>Maj</kbd> 5 mm), cliquez sur un contour pour ajouter un point, clic droit sur un point pour le retirer, ou saisissez-les dans le tableau ; partez d’un rectangle, d’un caisson creux, d’un T, d’une cornière ou d’un U avec les dimensions que vous donnez, et ajoutez des chambres au milieu. Nommez-le, choisissez l’aluminium, créez-le et enregistrez-le comme tout contour. **Modifier son contour…** ouvre dans l’éditeur un profilé que vous avez : enregistré de nouveau sous son nom, la copie du projet est marquée plus récente et **Mettre à jour depuis la bibliothèque** l’apporte à chaque type et à chaque barre de mur-rideau qui en est faite. Les meneaux et traverses choisis prennent un profil propre, tourné, aligné et décalé : voir [Murs](walls.md).
+
+![L’éditeur de sections : un caisson creux avec sa chambre](shots/profile-editor.webp)
+
 ## Utiliser un profilé
 
 Dans **Acier → Types acier**, **Structure → Types structurels** (poteaux et poutres) et les profilés de la halle à portiques, choisissez **D'une bibliothèque de profilés…** et tapez pour chercher.
 
 ![Le sélecteur cherche dans toutes les bibliothèques](shots/profile-picker.webp)
 
-Le profilé est copié dans le projet et le type le garde. Les corps sont légers, à angles vifs, à tous les niveaux sauf un : une vue au **LOD 400** (plan, coupe, élévation, feuille ou 3D) dessine la section réelle, avec congés, rayons de bout d'aile et ailes inclinées. Les quantités et les exports gardent le corps à angles vifs ; les congés et les ailes inclinées comptent dans les propriétés et dans l'export de structure.
+Le profilé est copié dans le projet et le type le garde. Les corps sont légers, à angles vifs, à tous les niveaux sauf un : une vue au **LOD 400** (plan, coupe, élévation, feuille ou 3D) dessine la section réelle, avec congés, rayons de bout d'aile et ailes inclinées. Les exports et la sélection gardent le corps à angles vifs, mais les quantités, les poids, les métrés, la liste des éléments d'acier et les estimations utilisent l'aire réelle de la section (un IPE 300 fait 53,81 cm², pas les 51,88 du contour à angles vifs) ; une section sans rayons ne change pas.
 
-Ailleurs, le profilé donne ce que l'outil peut utiliser : moulures, engravures et semelles filantes prennent son extérieur comme profil 2D (**D'une bibliothèque de profilés…** dans leur liste), montants et traverses de murs-rideaux et dormants de portes et fenêtres prennent sa largeur et sa profondeur.
+![Une poutre et un poteau d'acier dans une vue 3D au LOD 400 : congés dessinés](shots/profile-real-section.webp)
+
+Ailleurs, le profilé donne ce que l'outil peut utiliser : moulures, engravures et semelles filantes prennent son extérieur comme profil 2D (**D'une bibliothèque de profilés…** dans leur liste), montants et traverses de murs-rideaux, dormants et ouvrants de portes et fenêtres prennent son contour réel, vides compris, le long de chaque barre, avec sa largeur et sa profondeur ; le x du profilé va en travers de la barre (vers le vitrage pour dormant et ouvrant), son y vers l'extérieur du bâtiment. **Simple** retire le contour et garde la taille.
+
+![Montants et traverses de mur-rideau d'une section d'aluminium](shots/profile-real-mullions.webp)
+
+![Dormant et ouvrant d'une fenêtre de la même section](shots/profile-real-frame.webp)
 
 Une bibliothèque peut changer après usage. Un profilé du projet différent de celui de même nom dans sa bibliothèque est marqué **plus récent en bibliothèque** ; **Mettre à jour depuis la bibliothèque** le remplace et tous les types faits avec lui suivent, en une seule étape d'annulation. Rien ne change sans votre demande. Les projets antérieurs gardent leurs types.

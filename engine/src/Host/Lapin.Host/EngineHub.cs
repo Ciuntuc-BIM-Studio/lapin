@@ -336,7 +336,7 @@ public sealed class EngineHub
     {
         public JsonObject Report(JsonObject p) => Support.Report(p, Session.AppVersion).GetAwaiter().GetResult();
         public JsonObject Messages(JsonObject p) => Support.Messages(p).GetAwaiter().GetResult();
-        public void Open(string? link) => Support.Open(link);
+        public void Open(string? link, JsonObject p) => Support.Open(link, p);
     }
 }
 

@@ -14,6 +14,7 @@ import { execute, undo, useSession } from '../../engine/session';
 import { beginMove3d } from '../moveIn3d';
 import { useWorkPlane } from '../sketch/sketch3d';
 import { deleteElements } from '../../engine/dependents';
+import { ucsOf, useLocation } from '../../app/location';
 import { applyOrtho, parseCoordinateInput, parseScalar, pointAlong } from './input';
 import { lengthText, parseLength } from '../../engine/unitsStore';
 import { arcThrough, dist, toJson, type Shape } from './shapes';
@@ -21,10 +22,15 @@ import { liveBegin, liveEnd } from '../liveInput';
 import { traceBegin, traceEnd } from '../moveTrace';
 import { lassoTest, type RegionTest } from '../selectBox';
 import { xy } from '../../platform/vec';
+import type { ViewFrame } from '../viewFrame';
 
 /** What a 2D view lends the command line: its view, and what lies under a point. */
 export interface CadHost {
   viewId: string;
+  /** A plan (typed coordinates are in the UCS), not a section or an elevation (in its own frame). */
+  isPlan?(): boolean;
+  /** Pixels per metre of the view, so a step can tell a click on the same spot from one near it. */
+  pxPerMetre?(): number;
   /** The drafted shape under a point, with its exact geometry. */
   pickDraft(p: Vec2): { id: string; shape: Shape } | null;
   /** Anything selectable under a point (a drafted shape, an annotation, an element). */
@@ -35,8 +41,8 @@ export interface CadHost {
   outlinesOf?(id: string): Shape[];
   /** Everything selectable a region takes (a window or crossing polygon). */
   inRegion?(takes: RegionTest): string[];
-  /** A section's or an elevation's move from one of its points to another, in the model ([dx, dy, dz]); none in a plan (decision 298: a wall sweep moved up). */
-  toModel?(from: Vec2, to: Vec2): [number, number, number] | null;
+  /** Where a section's or an elevation's point lies in the model (decision 453: element.transform carries the model's elements by it); none in a plan. */
+  frameAt?(at: Vec2): ViewFrame | null;
 }
 
 type Next = Step | null | void | Promise<Step | null | void>;
@@ -46,6 +52,8 @@ export interface Step {
   /** The point typed coordinates and distances are relative to, and ortho squares to. */
   base?: Vec2 | null;
   preview?: (cursor: Vec2) => Shape[];
+  /** Texts the preview carries (a dimension's values), standing at their points. */
+  labels?: (cursor: Vec2) => { at: Vec2; text: string }[];
   /** The step moves these shapes from its base (MOVE, COPY): the base marker, the line to the cursor and this ghost where they were show until the step ends. */
   trace?: Shape[];
   point?: (p: Vec2) => Next;
@@ -249,6 +257,12 @@ const moved = (s: Shape, d: Vec2): Shape => {
   }
 };
 
+/** In a section or an elevation, the view's frame for element.transform: its points are the view's, the model's elements move in the model (decision 453). */
+export function frameArg(at: Vec2): { frame?: ViewFrame } {
+  const f = useCad.getState().host?.frameAt?.(at);
+  return f ? { frame: f } : {};
+}
+
 function moveOrCopy(copy: boolean): Step | null | void | Promise<Step | null | void> {
   // In the 3D view, a move in 3D snapped to the bodies (docs/plan-3d-modelling.md, report #104): Move3D.tsx takes it.
   // A sketch's work plane open, or only drafted shapes selected: the plane's own move (decision 375).
@@ -271,8 +285,7 @@ function moveOnPlane(copy: boolean, ids: string[]): Step {
         prompt: copy ? 'Second point (Enter to finish)' : 'Second point', want: 'point', base, trace: ghost,
         preview: (c) => ghost.map((s) => moved(s, { x: c.x - base.x, y: c.y - base.y })),
         point: async (p) => {
-          const world = useCad.getState().host?.toModel?.(base, p);
-          await execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y], ...(world ? { world } : {}) });
+          await execute('element.transform', { ids, op: copy ? 'copy' : 'move', by: [p.x - base.x, p.y - base.y], ...frameArg(base) });
           return copy ? second() : null;
         },
         enter: () => null,
@@ -286,7 +299,7 @@ function rotate(): Step | null | void | Promise<Step | null | void> {
   return withSelection((ids) => ({
     prompt: 'Base point', want: 'point',
     point: (c) => {
-      const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: xy(c), angle: deg }); return null; };
+      const go = async (deg: number) => { await execute('element.transform', { ids, op: 'rotate', center: xy(c), angle: deg, ...frameArg(c) }); return null; };
       return { prompt: 'Angle (degrees, or a point)', want: 'point', base: c, preview: (p) => [{ type: 'line', a: c, b: p }], scalar: go, point: (p) => go((Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI) };
     },
   }));
@@ -299,7 +312,7 @@ function mirror(): Step | null | void | Promise<Step | null | void> {
     point: (a) => {
       const second = (): Step => ({
         prompt: `Second point [Erase source: ${erase ? 'yes' : 'no'}]`, want: 'point', base: a, preview: (p) => [{ type: 'line', a, b: p }],
-        point: async (b) => { await execute('element.transform', { ids, op: 'mirror', a: xy(a), b: xy(b), copy: !erase }); return null; },
+        point: async (b) => { await execute('element.transform', { ids, op: 'mirror', a: xy(a), b: xy(b), copy: !erase, ...frameArg(a) }); return null; },
         keywords: { E: () => { erase = !erase; return second(); } },
       });
       return second();
@@ -510,6 +523,15 @@ export const feedPoint = serial(async (p: Vec2): Promise<void> => {
   if (s.step.point) await advance(s.step.point(p));
 });
 
+/** A right-click in a view while a step runs: what Enter does (finish, accept); false when no step takes it. */
+export const finishStep = serial(async (): Promise<boolean> => {
+  const s = useCad.getState();
+  if (!s.step?.enter) return false;
+  log('');
+  await advance(s.step.enter());
+  return true;
+});
+
 /** What was typed, on Enter or Space. */
 export const submit = serial(async (raw: string): Promise<void> => {
   const s = useCad.getState();
@@ -529,13 +551,14 @@ export const submit = serial(async (raw: string): Promise<void> => {
   const n = step.scalar ? parseScalar(text, step.want !== 'point') : null;
   if (n != null && step.scalar) { await advance(step.scalar(n)); return; }
   if (step.want === 'point' || step.want === 'select' || step.want === 'pick' || step.want === 'none') {
-    const parsed = parseCoordinateInput(text, { last: step.base ?? s.lastPoint });
+    const frame = s.host?.isPlan?.() ? ucsOf(useLocation.getState().loc) : null;
+    const parsed = parseCoordinateInput(text, { last: step.base ?? s.lastPoint, frame });
     if (parsed?.kind === 'point' && step.point) { useCad.setState({ lastPoint: parsed.pt }); await advance(step.point(parsed.pt)); return; }
     if (parsed?.kind === 'distance') {
       if (step.value) { await advance(step.value(parsed.d)); return; }
       // A distance from the base toward the cursor (squared by ortho).
       if (step.base && step.point) {
-        const toward = s.cursor ? (s.ortho ? applyOrtho(step.base, s.cursor) : s.cursor) : { x: step.base.x + 1, y: step.base.y };
+        const toward = s.cursor ? (s.ortho ? applyOrtho(step.base, s.cursor, frame) : s.cursor) : { x: step.base.x + 1, y: step.base.y };
         const p = pointAlong(step.base, toward, parsed.d);
         useCad.setState({ lastPoint: p });
         await advance(step.point(p));

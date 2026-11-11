@@ -15,12 +15,17 @@ import { LiveBar } from '../LiveBox';
 import { findTool } from '../../platform/modules';
 import { ROLES, findCommand, roleLabel, useCad } from './session';
 import { useLayers } from './layers';
+import { openSnapMenu, UcsChip, useSnapSummary } from '../../shell/CursorCoords';
+import { usePrefs } from '../../app/prefs';
+import { t } from '../../i18n';
 
 /** The prompt, what is typed, the switches and the layer: the part both kinds of line have. */
 export function CadPrompt({ inline }: { inline?: boolean }) {
   // Only what the prompt shows: not the cursor, which moves on every pointer move.
   const { buffer, step, command, osnap, ortho, polar, layer, role } = useCad(useShallow((s) => ({ buffer: s.buffer, step: s.step, command: s.command, osnap: s.osnap, ortho: s.ortho, polar: s.polar, layer: s.layer, role: s.role })));
   const tool = useUi((s) => s.tool);
+  const snaps = useSnapSummary();
+  const polarStep = usePrefs((s) => s.polarStep);
   const view = useUi((s) => s.view);
   const promptHere = useInterface((s) => s.parts.prompt === 'commandLine');
   useBindings();
@@ -35,9 +40,12 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
       {promptHere && <LiveBar inline />}
       <span className="grow" />
       {(() => { const Options = findTool(tool)?.options ?? (command ? findCommand(command)?.options : undefined); return Options ? <Options /> : null; })()}
-      <button type="button" className={`cad-toggle${osnap ? ' on' : ''}`} title={`Object snap${key('app.osnap')}`} onClick={() => useCad.setState({ osnap: !osnap })}>SNAP</button>
+      <button type="button" className={`cad-toggle${osnap ? ' on' : ''}`} data-testid="snap-toggle" title={`${t('Object snap')}${key('app.osnap')}: ${snaps}. ${t('Right click: which snaps')}`} onClick={() => useCad.setState({ osnap: !osnap })}
+        onContextMenu={(e) => { e.preventDefault(); openSnapMenu(e.clientX, e.clientY); }}>SNAP</button>
+      <button type="button" className="cad-toggle cad-more" data-testid="snap-menu" title="Snap settings" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); openSnapMenu(r.left, r.top); }}>▾</button>
       <button type="button" className={`cad-toggle${ortho ? ' on' : ''}`} title={bindingText('app.ortho') ? `Ortho (${bindingText('app.ortho').split(', ')[0]}; hold Shift)` : 'Ortho (hold Shift)'} onClick={() => useCad.setState({ ortho: !ortho })}>ORTHO</button>
-      <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title={`Polar tracking every 45°${key('app.polar')}`} onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>
+      <UcsChip />
+      <button type="button" className={`cad-toggle${polar ? ' on' : ''}`} title={`${t('Polar tracking every')} ${polarStep}°${key('app.polar')}`} onClick={() => useCad.setState({ polar: !polar })}>POLAR</button>
       {(!inline || twoD) && <>
         <select className="cad-layer" value={layer} title="The layer new shapes go on" onChange={(e) => useCad.setState({ layer: e.target.value })}>
           {(layers.length ? layers : [{ name: '0' }]).map((l) => <option key={l.name} value={l.name}>{l.name}</option>)}

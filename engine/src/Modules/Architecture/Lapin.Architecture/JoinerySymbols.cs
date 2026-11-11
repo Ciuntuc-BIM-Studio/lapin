@@ -52,11 +52,20 @@ public static class JoinerySymbols
     static List<JStroke> DoorLeafPlan(JinerySpecView s, JoineryPanel p, CellRect r, int level = PlanDetail.Fine)
     {
         var f = s.Spec.Frame;
-        var t = s.Spec.Sash.LeafThickness;
-        var yIn = f.Offset - f.Depth / 2;
+        var fl = s.Spec.Frameless;
+        // Frameless glass (tester's question 7): the leaf is the glass, hinged at its interior face.
+        var t = fl?.Glass ?? s.Spec.Sash.LeafThickness;
+        var yIn = fl != null ? f.Offset - fl.Glass / 2 : f.Offset - f.Depth / 2;
         var w = r.X1 - r.X0;
         var left = HingeLeft(p.Operation);
         var op = p.Operation;
+        if (fl != null && op.StartsWith("door-sliding"))
+        {
+            // The glass in front of the panes, past them, and the way it slides.
+            var (q, ys, dir) = (Frameless.PaneRect(s.Spec, p), Frameless.Plane(s.Spec, p), left ? -1 : 1);
+            return [Rect(q.X0, ys - t / 2, q.X1, ys + t / 2, "cut"),
+                .. Arrow(new((q.X0 + q.X1) / 2 - dir * w / 4, ys - t - 0.08), new((q.X0 + q.X1) / 2 + dir * w / 4, ys - t - 0.08), "thin")];
+        }
         if (op.StartsWith("door-sliding"))
         {
             // It slides along the interior face, towards its side.
@@ -82,7 +91,7 @@ public static class JoinerySymbols
         };
         if (op.StartsWith("double-acting"))
         {
-            var h2 = new Vec2(hinge.X, f.Offset + f.Depth / 2);
+            var h2 = new Vec2(hinge.X, fl != null ? f.Offset + fl.Glass / 2 : f.Offset + f.Depth / 2);
             o.Add(left ? Arc(h2, w, 0, Math.PI / 2, "thin", true) : Arc(h2, w, Math.PI / 2, Math.PI, "thin", true));
         }
         return o;
@@ -119,8 +128,14 @@ public static class JoinerySymbols
         else
             foreach (var b in boxes.Where(b => b.Min.Z <= z && b.Max.Z >= z))
             {
-                if (b.Role is "leaf" or "handle" or "hardware" or "muntin") continue;
+                if (b.Role is "leaf" or "handle" or "hardware" or "muntin" || b.Leaf) continue;
                 if (level <= PlanDetail.Medium && b.Role is "sash" or "board") continue;
+                // A jamb through a library profile (decision 417): its real outline.
+                if (b.Member is { Upright: true } jamb)
+                {
+                    foreach (var loop in jamb.Outline.Holes.Prepend(jamb.Outline.Outer)) o.Add(new([.. loop.Select(q => { var (a, y) = jamb.On(b, q); return new Vec2(a, y); })], "cut", true));
+                    continue;
+                }
                 // An outline (an arch, a round frame) is cut where the plane crosses it; the glass a line at medium.
                 foreach (var (x0, x1) in JoineryShapes.Spans(b, z))
                     o.Add(level <= PlanDetail.Medium && b.Role == "glass" ? Line(new(x0, (b.Min.Y + b.Max.Y) / 2), new(x1, (b.Min.Y + b.Max.Y) / 2), "thin")
@@ -181,7 +196,7 @@ public static class JoinerySymbols
         };
     }
 
-    static List<JStroke> Hardware(JoinerySpec s, JoineryPanel p, CellRect r)
+    static List<JStroke> Hardware(JoinerySpec s, JoineryPanel p, CellRect r, JoineryPair? pair = null)
     {
         var op = p.Operation;
         var o = new List<JStroke>();
@@ -208,6 +223,17 @@ public static class JoinerySymbols
                 case "window": o.Add(Rect(x - 0.016, z - 0.04, x + 0.016, z + 0.04, "outline")); o.Add(Rect(x - 0.011, z - 0.12, x + 0.011, z + 0.01, "outline")); return;
                 default: o.Add(Arc(new(x, z), 0.026, 0, 2 * Math.PI, "outline")); o.Add(Rect(Math.Min(x, x + dir * 0.13), z - 0.01, Math.Max(x, x + dir * 0.13), z + 0.01, "outline")); return;
             }
+        }
+        // The passive leaf of a pair with a meeting setting (decision 466): no handle, its flush bolts at the top and bottom by the meeting edge.
+        if (pair != null && s.Meeting != null && pair.Passive == p)
+        {
+            if (s.Meeting.Bolts)
+            {
+                var left = pair.Left == p;
+                var edge = left ? r.X1 - 0.032 : r.X0 + 0.012;
+                foreach (var z in new[] { r.Z0 + 0.03, r.Z1 - 0.23 }) o.Add(Rect(edge, z, edge + 0.02, z + 0.2, "outline"));
+            }
+            return o;
         }
         var zh = leaf ? Math.Min(r.Z0 + 1.05, r.Z1 - 0.2) : (r.Z0 + r.Z1) / 2;
         var slides = op.StartsWith("sliding") || op.StartsWith("door-sliding");
@@ -242,13 +268,14 @@ public static class JoinerySymbols
         var shaped = JoineryShapes.Shaped(s) || s.Muntins is { Pattern: not "none" };
         var o = shaped ? ShapeLines(s).ToList() : [Rect(-s.Width / 2, 0, s.Width / 2, s.Height, "outline")];
         if (JoineryShapes.Round(s)) return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
+        var pairs = Joinery.Meetings(s);
         foreach (var p in Joinery.Normalised(s))
         {
             var r = Joinery.PanelRect(s, p);
             // A pane following an arched head (report #112) is drawn by its outline, each inset of it too.
             JStroke Loop(double inset, string w) => JoineryShapes.PaneOutline(s, r, inset) is { } loop ? new(loop, w, true) : Rect(r.X0 + inset, r.Z0 + inset, r.X1 - inset, r.Z1 - inset, w);
             o.Add(Loop(0, "outline"));
-            var sash = p.Operation != "fixed" && (!Joinery.IsDoorLeaf(p.Operation) || Joinery.InfillOf(p) == "glass");
+            var sash = s.Frameless == null && p.Operation != "fixed" && (!Joinery.IsDoorLeaf(p.Operation) || Joinery.InfillOf(p) == "glass");
             var sw = sash ? s.Sash.Width : 0;
             if (sash) o.Add(Loop(sw, "thin"));
             // An opaque panel in a window's pane or a fixed side panel (decision 370): its moulding, a rectangle inside.
@@ -258,8 +285,19 @@ public static class JoinerySymbols
                 o.Add(Loop(sw + g, "thin"));
             }
             o.AddRange(OpeningMarks(p.Operation, r, exterior, convention, JoineryShapes.PaneTop(s, r)));
-            if (hardware) o.AddRange(Hardware(s, p, r));
+            if (hardware && s.Frameless == null) o.AddRange(Hardware(s, p, r, pairs.FirstOrDefault(m => m.Left == p || m.Right == p)));
         }
+        // An astragal on the active leaf's room face (decision 466): seen from inside, the strip over the joint.
+        if (!exterior && s.Meeting is { } meet)
+            foreach (var pair in pairs.Where(m => m.Kind == "astragal"))
+            {
+                var r = Joinery.PanelRect(s, pair.Right);
+                o.Add(Rect(r.X0 - meet.WidthOf / 2, r.Z0, r.X0 + meet.WidthOf / 2, r.Z1, "thin"));
+            }
+        // Frameless glass (tester's question 7): no frame, so the opening's outline is the wall's; the fittings, track and handles are what shows.
+        if (s.Frameless != null)
+            foreach (var b in Joinery.Boxes(s).Where(b => b.Role is "hardware" || (hardware && b.Role is "handle")))
+                o.Add(Rect(b.Min.X, b.Min.Z, b.Max.X, b.Max.Z, "outline"));
         if (s.Kind == "window" && s.Board.Exterior > 0 && exterior) o.Add(Rect(-s.Width / 2 - 0.03, -0.04, s.Width / 2 + 0.03, 0, "outline"));
         return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
     }
@@ -320,7 +358,10 @@ public static class JoinerySymbols
         // Cut where the plane crosses; the handles beside it seen (report #48), in front of the panel they turn.
         var boxes = Joinery.Boxes(s);
         var o = boxes.Where(b => b.Role is not ("handle" or "hardware" or "muntin") && b.Min.X <= x && b.Max.X >= x)
-            .SelectMany(b => JoineryShapes.Spans(b, x, vertical: true).Select(z => Rect(b.Min.Y, z.A, b.Max.Y, z.B, b.Role == "glass" ? "thin" : "cut"))).ToList();
+            .SelectMany(b => b.Member is { Upright: false } m
+                // A head or sill through a library profile (decision 417): its real outline.
+                ? m.Outline.Holes.Prepend(m.Outline.Outer).Select(loop => new JStroke([.. loop.Select(q => { var (z, y) = m.On(b, q); return new Vec2(y, z); })], "cut", true))
+                : JoineryShapes.Spans(b, x, vertical: true).Select(z => Rect(b.Min.Y, z.A, b.Max.Y, z.B, b.Role == "glass" ? "thin" : "cut"))).ToList();
         foreach (var b in boxes.Where(b => b.Role is "handle" or "hardware"))
             o.Add(Rect(b.Min.Y, b.Min.Z, b.Max.Y, b.Max.Z, "outline"));
         return o;

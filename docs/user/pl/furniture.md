@@ -1,7 +1,7 @@
 ---
 title: Meble
 order: 47
-summary: Sofy, narożniki, fotele, krzesła, łóżka, szafy, komody, regały, kredensy, stoły, biurka i kuchnie jednorzędowe z typów parametrycznych, dosuwane do ścian jednym kliknięciem.
+summary: Sofy, narożniki, fotele, krzesła, łóżka, szafy, komody, regały, kredensy, stoły, biurka i kuchnie w sześciu układach z typów parametrycznych, dosuwane do ścian jednym kliknięciem.
 ---
 
 ## Wstawianie mebli
@@ -42,6 +42,18 @@ Widoki i przekroje rysują bryły z kreskowaniem ich materiałów. W 3D meble s�
 - ma blat roboczy, zlew i płytę grzejną (ich miejsce wzdłuż kuchni ustala się w typie), szafki górne nad nimi i słupek na lodówkę na jednym końcu.
 
 **Długość** kuchni można dalej zmieniać we właściwościach; szafki dzielą się na nowo.
+
+### Układy kuchni
+
+Typ kuchni ma **Layout** (układ): **One wall** (prosty ciąg), **Galley** (dwa równoległe ciągi z przejściem między nimi), **L-shaped**, **U-shaped**, **Island** (ciąg na ścianie tylnej i osobna wyspa z własnym przejściem) lub **Peninsula** (L z ciągiem wychodzącym z ramienia, z blatem wysuniętym na stołki). Wybór układu rozpoczyna typ od jego wymiarów, a każdy z nich można zmieniać obok podglądu: długości ramion od ściany tylnej, przejście między ciągami, długość przeciwległego ciągu, długość, głębokość i miejsce wyspy, długość i nawis półwyspu oraz, w L lub półwyspie, narożnik z lewej lub z prawej.
+
+![Sześć układów w rzucie: jednorzędowy, dwurzędowy, L, U, z wyspą i z półwyspem](shots/kitchen-layouts.webp)
+
+**Sink on** i **Hob on** umieszczają je na ciągu głównym lub na drugiej części (ramię, przeciwległy ciąg, wyspa, półwysep), **Sink at** i **Hob at** mówią, gdzie wzdłuż niej, a **Tall unit (fridge)** stoi na wolnym końcu. Szafki narożne są ślepe; szafki wiszące są tylko na ciągach przy ścianie, nie na wyspie ani półwyspie.
+
+![Typ kuchni: w kształcie L](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) rysuje dowolny układ dwoma punktami wzdłuż ściany, przy której stoi ciąg główny: linia to jego długość, tył na licu ściany, a L, półwysep, U lub kuchnia dwurzędowa wsuwa się w narożnik lub między ściany, przy których jest rysowana. **Flip** daje L lub półwyspowi narożnik po drugiej stronie. Zestawienie mebli nazywa układ i podaje głębokość obrysu. W IFC pozostaje IfcFurniture typu Kitchen zdefiniowanego przez użytkownika.
 
 ## Właściwości mebla
 

@@ -11,6 +11,7 @@ import { activeStorey, engine, engineInBrowser, useSession } from './session';
 import { LONG_TIMEOUT_MS } from './client';
 import { editableText, surveyIfc, type EditableReport } from './ifcImport';
 import { emptyPane, notify, select, useUi } from '../app/store';
+import { usePrefs } from '../app/prefs';
 import { fitAfterImport, poseKey } from '../viewport/camera';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
@@ -168,7 +169,10 @@ export interface NewStorey { name: string; elevation: number; height: number }
 export async function newProject(storeys?: NewStorey[]): Promise<boolean> {
   if (!(await confirmDiscard('Start a new one'))) return false;
   try {
-    await engine.call('project.new', storeys?.length ? { storeys } : undefined);
+    // The profile standards it offers, as the user chose for new projects (Preferences → Profiles; decision 457).
+    const profileStandards = usePrefs.getState().newProjectProfileStandards;
+    const params = { ...(storeys?.length ? { storeys } : {}), ...(profileStandards ? { profileStandards } : {}) };
+    await engine.call('project.new', Object.keys(params).length ? params : undefined);
     enter();
     return true;
   } catch (e) {
@@ -445,10 +449,10 @@ export async function linkLapin(): Promise<void> {
   const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'Lapin project', extensions: ['lapin'] }]) : picked?.name ?? null;
   if (!path) return;
   const name = path.split(/[\\/]/).pop() ?? path;
-  const { ask, lengthField, numberField } = await import('../shell/AskBox');
-  const r = await ask(`Link ${name}`, [lengthField('x', 'Placed at x', 0), lengthField('y', 'Placed at y', 0), numberField('rotation', 'Turned (°)', 0)]);
+  const { ask, choiceField, lengthField, numberField } = await import('../shell/AskBox');
+  const r = await ask(`Link ${name}`, [lengthField('x', 'Placed at x', 0), lengthField('y', 'Placed at y', 0), numberField('rotation', 'Turned (°)', 0), choiceField('mirror', 'Mirrored', 'no', [{ value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }])]);
   if (!r) return;
-  const place = { x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation) };
+  const place = { x: Number(r.x), y: Number(r.y), rotation: Number(r.rotation), mirror: r.mirror === 'yes' };
   const { begin, end } = await import('./ifcImport');
   begin(`Linking ${name}`, 'Reading the project');
   try {

@@ -53,11 +53,14 @@ public sealed class ManifoldBooleans : ISolidBooleans
             foreach (var o in others)
             {
                 var m = ToManifold(o, live);
+                Check(m);
+                // Not checked here: asking a result's status computes it, a whole copy of the body for each cutter. Left
+                // unevaluated, manifold takes the chain of one operation as one batch.
                 var r = op(manifold_alloc_manifold(), acc, m);
                 live.Add(r);
-                Check(r);
                 acc = r;
             }
+            Check(acc);
             return manifold_is_empty(acc) != 0 ? null : FromManifold(acc, tag);
         }
         finally

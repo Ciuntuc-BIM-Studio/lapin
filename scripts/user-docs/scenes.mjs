@@ -643,6 +643,27 @@ export const scenes = [
     },
   },
   {
+    // A double door (decision 466): the Double door preset, its middle mullion picked in the elevation (none), the meeting section.
+    id: 'joinery-double-door',
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const d = page.locator('.dialog');
+      await t.tool('architecture.joineryTypes');
+      await page.waitForSelector('.dialog [data-testid=pane-editor]', { timeout: 15000 });
+      await d.locator('[data-action=new-double-door]').click();
+      await d.locator('[data-testid=meeting-fields]').waitFor({ timeout: 15000 });
+      await t.wait(600);
+      await d.locator('[data-divider=col-0]').click();
+      await t.wait(400);
+      t.expect(await d.locator('[data-testid=bar-field]').count() === 1, 'the picked mullion shows its width');
+      t.expect(await d.locator('input[data-field=bar-none]').isChecked(), 'the preset has no mullion between its leaves');
+      await d.locator('[data-testid=meeting-fields]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(800);
+      await t.shot('joinery-double-door', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
     // Panes, mullions and profiles (decision 370, a tester's questions): a shop door made in the pane editor (four columns, a
     // transom split off each and merged across, two leaves, one solid side panel), then a PVC window in a wall, in 3D.
     id: 'joinery-panes',
@@ -776,6 +797,31 @@ export const scenes = [
       await t.keys('Escape');
       const type = (await t.nodes()).find((n) => n.type === 'IfcWindowType' && n.props?.spec?.shape?.transom === false);
       t.expect(type, 'the window type keeps its sash following the arch');
+    },
+  },
+  {
+    // A frameless glass door (tester's question 7): toughened glass, no frame or sash, a sliding leaf in front of a fixed pane.
+    id: 'door-frameless-glass',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.tool('architecture.joineryTypes');
+      const dialog = t.page.locator('.dialog');
+      await dialog.locator('.tree-item').filter({ hasText: 'New door' }).click();
+      await t.wait(400);
+      await dialog.locator('select[data-field=style]').selectOption('frameless-glass');
+      await t.wait(600);
+      t.expect(await dialog.locator('input[data-field=frameless]').isChecked(), 'the style makes the door frameless glass');
+      t.expect(await dialog.locator('select[data-field=frameless-fixing]').inputValue() === 'pivot', 'on pivots with patch fittings by default');
+      t.expect(await dialog.locator('select[data-field=shape]').count() === 0, 'no shape or frame fields for frameless glass');
+      await dialog.locator('input[data-field=frameless]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      await t.wait(500);
+      await t.shot('joinery-frameless-door', { of: '.dialog', pad: 0 });
+      await dialog.locator('.btn.primary').first().click();
+      await t.wait(800);
+      await t.keys('Escape');
+      const type = (await t.nodes()).find((n) => n.type === 'IfcDoorType' && n.props?.spec?.frameless?.fixing === 'pivot');
+      t.expect(type, 'the door type keeps its frameless glass');
     },
   },
   {
@@ -1406,6 +1452,26 @@ export const scenes = [
       const plan = `plan:${storey}`;
       await t.button('Steel', { exact: true });
       await t.shot('ribbon-steel', { of: '.topbar', pad: 0 });
+      // Decision 458: the quick buttons before the view tabs (3D, Section, Measure), and the Steel tab's Column (an HEB 200 column type).
+      await t.page.locator('[data-testid="quick-view.section"]').click();
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool) === 'view.section', 'the quick Section button starts the section tool');
+      await t.page.locator('[data-testid="quick-measure"]').click();
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().tool) === 'measure', 'the quick Measure button starts the measure tool');
+      await t.keys('Escape');
+      await t.ui({ view: 'plan' });
+      await t.wait(500);
+      await t.tool('steel.column');
+      const box = await t.page.locator('[data-testid=plan]').boundingBox();
+      await t.page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await t.wait(800);
+      const steelColumns = (await t.nodes()).filter((n) => n.type === 'IfcColumn');
+      t.expect(steelColumns.length === 1 && steelColumns[0].name === 'Column HEB 200', `the Steel tab's Column places an HEB 200 column (${steelColumns.map((n) => n.name).join(', ')})`);
+      await t.keys('Escape');
+      await t.cmd('core.delete', { ids: steelColumns.map((n) => n.id) });
+      await t.page.locator('[data-testid="quick-view.3d"]').click();
+      t.expect(await t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().view) === '3d', 'the quick 3D button opens the 3D view');
+      await t.ui({ view: 'plan' });
+      await t.wait(500);
       // The user's sketch: a band 150 mm wide (an IPE 300's flanges), both ends slanted; and a second one beside it, square.
       const slant = 0.15 * Math.tan(Math.PI / 6);
       const a = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'polyline', pts: [[0, 0], [6, 0], [6 + slant, 0.15], [slant, 0.15]], closed: true } })).ids[0];
@@ -1443,6 +1509,48 @@ export const scenes = [
       await open3d(t);
       await t.shot('steel-3d', { of: 'canvas', pad: 0 });
       await t.ui({ keyPlan: true });
+    },
+  },
+  {
+    // A profile's real shape: steel at LOD 400 with its root fillets (decision 415); a curtain wall's mullions and a window's frame and
+    // sash from an aluminium section with chambers (decision 417).
+    id: 'profile-shapes',
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const s = await t.storey();
+      const column = (await t.cmd('structure.createColumnType', { name: 'HEA 300', section: 'HEA 300', material: 'Steel' })).id;
+      await t.cmd('structure.addColumn', { storeyId: s, typeId: column, x: 1, y: 1 });
+      const beam = (await t.cmd('structure.createBeamType', { name: 'IPE 400', section: 'IPE 400', material: 'Steel' })).id;
+      await t.cmd('structure.addBeam', { storeyId: s, typeId: beam, x1: 1, y1: 1, x2: 5, y2: 1 });
+      await open3d(t);
+      await t.cmd('view.setStyle', { id: '3d', detail: 400 });
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.4, pitch: -0.25, distance: 2.2, target: { x: 1.1, y: 1, z: 2.8 } }, false));
+      await t.wait(1800);
+      const fine = await page.evaluate(async () => (await import('/src/engine/session.ts')).engine.call('view.fine', { id: '3d' }));
+      t.expect(fine.lod === 400 && fine.items.length === 2, 'at LOD 400 the column and the beam have their real sections');
+      await t.shot('profile-real-section', { of: '[data-testid=view3d]', pad: 0 });
+      // An aluminium section with chambers, 60 wide, 110 deep, read from a maker's DXF in real life.
+      const alu = { name: 'ALU 60x110', kind: 'outline', material: 'aluminium', b: 0.06, h: 0.11, rings: [
+        [[-0.03, -0.055], [0.03, -0.055], [0.03, 0.055], [0.008, 0.055], [0.008, 0.03], [-0.03, 0.03]],
+        [[-0.02, -0.045], [-0.02, -0.01], [0.02, -0.01], [0.02, -0.045]], [[-0.02, 0.0], [-0.02, 0.02], [0.02, 0.02], [0.02, 0.0]],
+      ] };
+      const section = (await t.cmd('profiles.use', { profile: alu, library: 'Aluminium system' })).section;
+      const curtain = await page.evaluate(async () => (await import('/src/engine/session.ts')).query('architecture.curtainWallPreview', {}));
+      t.expect(curtain != null, 'the curtain wall preview answers');
+      const defaults = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().info.catalogs['architecture.curtainWallDefault']);
+      const cw = (await t.cmd('architecture.createCurtainWallType', { name: 'ALU facade', spec: { ...defaults, mullion: { width: 0.06, depth: 0.11, profile: section }, transom: { width: 0.06, depth: 0.11, profile: section } } })).id;
+      await t.cmd('architecture.addCurtainWall', { storeyId: s, typeId: cw, x1: 8, y1: 0, x2: 12, y2: 0, height: 3 });
+      const info = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().info.catalogs['architecture.joinery']);
+      const type = (await t.cmd('architecture.createJoineryType', { spec: { ...info.defaultWindow, name: 'ALU 1200', frame: { ...info.defaultWindow.frame, width: 0.06, depth: 0.11 }, sash: { ...info.defaultWindow.sash, width: 0.06, depth: 0.11 }, frameSection: section, sashSection: section } })).id;
+      const wall = (await t.cmd('architecture.addWall', { storeyId: s, x1: 14, y1: 0, x2: 18, y2: 0 })).id;
+      await t.cmd('architecture.addWindow', { wallId: wall, x: 16, y: 0, typeId: type });
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 0.5, pitch: -0.3, distance: 2.4, target: { x: 9.5, y: 0, z: 1.5 } }, false));
+      await t.wait(1800);
+      await t.shot('profile-real-mullions', { of: '[data-testid=view3d]', pad: 0 });
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.4, pitch: -0.2, distance: 1.8, target: { x: 16, y: 0, z: 1.6 } }, false));
+      await t.wait(1500);
+      await t.shot('profile-real-frame', { of: '[data-testid=view3d]', pad: 0 });
     },
   },
   {
@@ -1530,6 +1638,84 @@ export const scenes = [
       await dialog.locator('[data-testid=profile-outline-keep]').click();
       await dialog.locator('[data-profile="Alu 100×60×5"]').waitFor({ timeout: 10000 });
       await t.ui({ dialog: null, selection: null, selected: [] });
+    },
+  },
+  {
+    // Profile standards (a tester's request, decision 457): the user's own AISC-style table (its Standard column says ASTM A6)
+    // beside Lapin's EN set and a firm's library of its own; the picker grouped under the standards' headings with their chips,
+    // EN hidden by its chip; the standards the project offers; those a new project offers in Preferences → Profiles.
+    id: 'profile-standards',
+    touches: ['core', 'steel'],
+    async run(t) {
+      await t.fresh();
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const { writeFileSync } = await import('node:fs');
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      await t.tool('manage.profileLibraries');
+      const dialog = t.page.locator('[data-dialog=profile-libraries]');
+      await dialog.locator('[data-profile="HEA 200"]').waitFor({ timeout: 15000 });
+      const importCsv = async (file, text) => {
+        const path = join(tmpdir(), file);
+        writeFileSync(path, text);
+        const chooser = t.page.waitForEvent('filechooser', { timeout: 10000 });
+        await dialog.locator('[data-testid=profile-import-table]').click();
+        await (await chooser).setFiles(path);
+        await dialog.locator('[data-testid=profile-table-matching]').waitFor({ timeout: 10000 });
+        await dialog.locator('[data-testid=profile-table-go]').click();
+        await dialog.locator('[data-testid=profile-report]').waitFor({ timeout: 10000 });
+      };
+      // Your own copy of an American table (Lapin ships none: its licence does not let Lapin pass it on).
+      await importCsv('My AISC shapes.csv', 'Type,AISC_Manual_Label,W,A,d,bf,tw,tf,Ix,Iy,Standard\n'
+        + 'W,W14X90,90,26.5,14,14.5,0.44,0.71,999,362,ASTM A6\n'
+        + 'W,W14X120,120,35.3,14.5,14.7,0.59,0.94,1380,495,ASTM A6\n'
+        + 'W,W12X40,40,11.7,11.9,8.01,0.295,0.515,307,44.1,ASTM A6\n');
+      // A firm's own library: no standard, its own group.
+      await importCsv('Firm sections.csv', 'Type;Name;h [mm];b [mm];s [mm];t [mm];r [mm]\nI;Firm I 140;140;90;6;9;8\nI;Firm I 160;160;100;6;10;8\n');
+      await dialog.locator('[data-profile="Firm I 140"]').waitFor({ timeout: 10000 });
+      await t.ui({ dialog: null });
+      // The steel types' picker: the project's copies, then EN, AISC / ASTM, the firm's, each under its heading.
+      await t.button('Steel', { exact: true });
+      await t.tool('steel.types');
+      const types = t.page.locator('[data-dialog=steel-types]');
+      await types.locator('select[data-field=steel-profile]').selectOption('@library');
+      const search = types.locator('[data-testid=steel-library-profile-search]');
+      await search.fill('14');
+      await types.locator('[data-profile="W14X90"]').waitFor({ timeout: 10000 });
+      const heads = await types.locator('.profile-group-head').evaluateAll((els) => els.map((e) => e.getAttribute('data-group')));
+      t.expect(heads.join('|') === 'EN|AISC / ASTM|Firm sections', `the list is grouped by standard (${heads.join(', ')})`);
+      t.expect(await types.locator('[data-testid=profile-picker-standards] [data-standard]').count() === 3, 'a chip for each standard');
+      await t.shot('profile-picker-standards', { of: '.dialog', pad: 0 });
+      // EN hidden by its chip: kept for this user.
+      await types.locator('[data-testid=profile-picker-standards] [data-standard="EN"]').click();
+      await t.wait(300);
+      t.expect(await types.locator('[data-profile="IPE 140"]').count() === 0 && await types.locator('[data-profile="W14X90"]').count() === 1, 'EN hidden, AISC shown');
+      t.expect(await t.page.evaluate(() => JSON.parse(localStorage.getItem('lapin.prefs') ?? '{}').profileStandardsHidden?.includes('EN')), 'the choice is kept in the preferences');
+      await types.locator('[data-testid=profile-picker-standards] [data-standard="EN"]').click();
+      await search.blur();
+      await t.ui({ dialog: null });
+      // The standards this project offers: AISC / ASTM taken out of it.
+      await t.tool('manage.profileLibraries');
+      await dialog.locator('[data-testid=profile-project-standards]').waitFor({ timeout: 10000 });
+      await dialog.locator('[data-testid=profile-project-standards] input[data-standard="AISC / ASTM"]').click();
+      await t.until(async () => (await t.nodes()).some((n) => n.type === 'IfcProject' && Array.isArray(n.props.profileStandards) && !n.props.profileStandards.includes('AISC / ASTM')), 'the project offers EN and the firm\'s only');
+      await dialog.locator('[data-testid=profile-search]').fill('14');
+      await t.wait(300);
+      await t.shot('profile-project-standards', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // Preferences → Profiles: a new project offers EN only.
+      await t.ui({ dialog: 'preferences' });
+      await t.page.waitForSelector('[data-testid=preferences]', { timeout: 10_000 });
+      await t.page.locator('[data-field=prefs-profiles]').click();
+      const fresh = t.page.locator('[data-testid=prefs-new-project-standards]');
+      await fresh.waitFor({ timeout: 10000 });
+      await fresh.locator('input[data-standard="AISC / ASTM"]').uncheck();
+      await fresh.locator('input[data-standard="Firm sections"]').uncheck();
+      await t.wait(200);
+      t.expect(await t.page.evaluate(() => JSON.stringify(JSON.parse(localStorage.getItem('lapin.prefs') ?? '{}').newProjectProfileStandards)) === '["EN"]', 'new projects will offer EN only');
+      await t.shot('prefs-profiles', { of: '.prefs-dialog', pad: 0 });
+      await fresh.getByRole('button', { name: 'All' }).click();
+      await t.ui({ dialog: null });
     },
   },
   {
@@ -2427,6 +2613,92 @@ export const scenes = [
     },
   },
   {
+    // Apartment types (docs/plan-units.md): a flat drawn inside the building's walls made a type, mirrored into the next
+    // slot: a change in one reaches the other, each stopping in the building's walls and each with its room's door in the facade.
+    id: 'units',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const wall = async (a, b) => (await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id;
+      // The building: the facade and the walls between the flats.
+      const south = await wall([0, 0], [14, 0]);
+      await wall([14, 0], [14, 5]);
+      await wall([14, 5], [0, 5]);
+      await wall([0, 5], [0, 0]);
+      await wall([7, 0], [7, 5]);
+      // The flat: an inner wall from facade to facade, its door, two rooms.
+      const inner = await wall([3.5, 0], [3.5, 5]);
+      await t.cmd('architecture.addDoor', { wallId: inner, x: 3.5, y: 2 });
+      const rooms = [(await t.cmd('architecture.addRoom', { storeyId: s, x: 1.5, y: 2.5, name: 'Living room', function: 'Living' })).id, (await t.cmd('architecture.addRoom', { storeyId: s, x: 5, y: 2.5, name: 'Bedroom', function: 'Bedroom' })).id];
+      // The room carries the door in the facade, not the wall.
+      const sides = (await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.roomOpenings', { id }), rooms[0])).sides;
+      const side = sides.find((x) => x.a[1] < 1 && x.b[1] < 1).index;
+      await t.cmd('architecture.setRoomOpenings', { id: rooms[0], on: true, items: [{ key: 'in', kind: 'door', side }] });
+      await t.ui({ keyPlan: false, selected: [inner, ...rooms], selection: rooms[0] });
+      await t.wait(400);
+      await t.tool('modify.unit');
+      const box = t.page.locator('.ask-box');
+      await box.waitFor({ timeout: 5000 });
+      await box.locator('input').first().fill('Flat A');
+      await box.locator('.btn.primary').click();
+      await t.wait(800);
+      const group = (await t.nodes()).find((n) => n.type === 'IfcGroup');
+      t.expect(!!group, 'the flat is one instance');
+      const copied = await t.cmd('element.transform', { ids: [group.id], op: 'mirror', a: [7, 0], b: [7, 1], copy: true });
+      t.expect((copied.ids ?? []).length > 0, 'mirrored copy made');
+      await t.wait(800);
+      let nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'IfcGroup').length === 2, 'two instances');
+      const doors = nodes.filter((n) => n.type === 'IfcDoor');
+      t.expect(doors.length === 4, 'the inner doors came with the walls, each room its own door in the facade');
+      t.expect(doors.filter((n) => n.props.roomOpening).length === 2, 'each room carries its door');
+      t.expect(nodes.some((n) => n.id === south), 'the facade is still there, one wall');
+      // The inner wall moved in the first: in the mirrored flat, the other way, still stopped in the facade.
+      await t.cmd('element.transform', { ids: [inner], op: 'move', by: [-0.5, 0] });
+      await t.wait(800);
+      nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'IfcWall').some((w) => Math.abs(w.props.start[0] - 11) < 1e-6 && Math.abs(w.props.end[0] - 11) < 1e-6), 'the mirrored flat followed, mirrored');
+      await t.ui({ selected: [], selection: null });
+      await t.wait(400);
+      await t.fit();
+      await t.wait(500);
+      await t.shot('units-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // A room's doors and windows chosen in its properties, by type and side (docs/rooms.md).
+    id: 'room-openings',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      for (const [a, b] of [[[0, 0], [5, 0]], [[5, 0], [5, 4]], [[5, 4], [0, 4]], [[0, 4], [0, 0]]]) await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] });
+      const room = (await t.cmd('architecture.addRoom', { storeyId: s, x: 2.5, y: 2 })).id;
+      await t.ui({ keyPlan: false, selected: [room], selection: room });
+      await t.wait(600);
+      const panel = t.page.locator('[data-testid=room-openings]');
+      await panel.waitFor({ timeout: 5000 });
+      t.expect(!(await panel.locator('[data-field=room-openings]').isChecked()), 'off by default');
+      await panel.locator('[data-field=room-openings]').check();
+      await t.wait(400);
+      await panel.locator('[data-add=door]').click();
+      await t.wait(500);
+      await panel.locator('[data-add=window]').click();
+      await t.wait(800);
+      const nodes = await t.nodes();
+      t.expect(nodes.filter((n) => n.type === 'IfcDoor').length === 1, 'the door is in its wall');
+      t.expect(nodes.filter((n) => n.type === 'IfcWindow').length === 1, 'the window is in its wall');
+      await t.ui({ selected: [], selection: null });
+      await t.wait(400);
+      await t.fit();
+      await t.wait(400);
+      await t.ui({ selected: [room], selection: room });
+      await t.wait(600);
+      await panel.scrollIntoViewIfNeeded();
+      await t.shot('room-openings', { of: 'aside.props', pad: 0, maxHeight: 520 });
+      await t.shot('room-openings-plan', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     id: 'rooms',
     async run(t) {
       await t.fresh();
@@ -2793,6 +3065,80 @@ export const scenes = [
       await open3d(t);
       await t.shot('structure-3d', { of: 'canvas', pad: 0 });
       t.expect((await t.nodes()).filter((n) => n.type === 'IfcColumn').length === 6, 'six columns');
+      // Decision 427 (report #116): the strip footing is the concrete alone unless the wall is asked for, in the command line's bar.
+      await t.tool('structure.strip');
+      t.expect(await t.page.locator('[data-testid=strip-wall]').count() === 1, 'the strip footing tool offers its wall');
+      t.expect(await t.page.locator('[data-testid=strip-wall]').inputValue() === 'alone', 'a footing alone by default');
+      await t.ui({ view: 'plan' });
+      await t.wait(500);
+      await t.shot('structure-strip-option', { of: '.cad-prompt', pad: 4 });
+      await t.keys('Escape');
+    },
+  },
+  {
+    // Decision 445: File → Preferences (grid and snaps), the snap menu, a UCS in a plan, the project's points in 3D.
+    id: 'preferences',
+    touches: ['core', 'drafting'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ keyPlan: false });
+      // A line left 2.5 km away (decision 446): Fit frames the house and says what it left out; ZE would frame both.
+      const plan = `plan:${await t.storey()}`;
+      await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'line', a: [2000, 1500], b: [2001, 1500] } });
+      await t.wait(600);
+      await t.fit();
+      await t.until(async () => (await t.page.locator('.notice-status').count()) > 0, 'a notice that something far was left out of the frame');
+      const scale = await t.page.evaluate(async () => { const storey = (await import('/src/engine/session.ts')).activeStorey(); return (await import('/src/viewport/zoom.ts')).recall(`plan:${storey?.id}`)?.scale ?? 0; });
+      t.expect(scale > 20, `the house fills the plan (${scale.toFixed(2)} px/m)`);
+      await t.page.keyboard.press('Control+Comma');
+      await t.wait(400);
+      if (await t.page.locator('[data-testid=preferences]').count() === 0) await t.ui({ dialog: 'preferences' });
+      await t.page.waitForSelector('[data-testid=preferences]', { timeout: 10_000 });
+      await t.page.locator('[data-field=prefs-grid]').click();
+      await t.page.getByRole('radio').nth(1).check();
+      await t.wait(300);
+      t.expect(await t.page.locator('[data-field=prefs-grid-step]').count() > 0, 'a fixed grid asks for its step');
+      await t.shot('preferences', { of: '.prefs-dialog', pad: 0 });
+      await t.page.getByRole('radio').nth(0).check();
+      await t.ui({ dialog: null });
+      await t.wait(300);
+      // The snap menu: a right click on SNAP under the plan.
+      await t.page.locator('[data-testid=snap-toggle]').first().click({ button: 'right' });
+      await t.wait(400);
+      t.expect(await t.page.getByRole('menuitem').count() >= 8, 'the snap menu lists the object snaps');
+      await t.shot('snap-menu', { clip: await t.page.evaluate(() => { const m = document.querySelector('[role=menu]') ?? document.querySelector('.context-menu'); const r = (m ?? document.body).getBoundingClientRect(); return { x: Math.max(0, r.left - 240), y: Math.max(0, r.top - 40), width: Math.min(window.innerWidth, r.width + 480), height: Math.min(window.innerHeight - Math.max(0, r.top - 40), r.height + 120) }; }) });
+      await t.page.keyboard.press('Escape');
+      // A UCS turned 30° at a corner of the house, the grid along its axes.
+      await t.cmd('project.location', { ucs: { x: 12, y: 8, angle: 30 } });
+      await t.until(async () => (await t.page.locator('[data-testid=ucs-icon]').count()) > 0, 'the UCS icon in the plan');
+      t.expect((await t.page.locator('[data-testid=ucs-chip]').first().textContent())?.trim() === 'UCS', 'the UCS chip says a UCS is set');
+      await t.shot('ucs', { of: '[data-testid=plan]', pad: 0 });
+      await t.cmd('project.location', { ucs: null });
+      // The project's points in 3D: the base point turned 12.5° from true north, a survey point.
+      await t.cmd('project.location', { show: true, base: { x: 4, y: -3, northAngle: 12.5 }, survey: { x: -6, y: 10, easting: 584500, northing: 452300, elevation: 118 } });
+      await open3d(t);
+      await t.page.locator('button[title="Frame everything"]').first().click({ timeout: 3000 }).catch(() => {});
+      await t.wait(800);
+      await t.until(async () => (await t.page.locator('[data-testid=location-3d]').count()) > 0, 'the project\'s points over the 3D view');
+      await t.shot('location-3d');
+      // Decision 447: a spot coordinate at the house's corner reads the map; the plan turned to true north; its DXF in map coordinates.
+      await t.ui({ view: 'plan' });
+      await t.wait(800);
+      const spot = await t.cmd('drafting.addDimension', { viewId: plan, dimKind: 'coordinate', a: [0, 0], at: [-2.5, -2] });
+      t.expect(!!spot?.id, 'a spot coordinate is made');
+      await t.until(async () => (await t.page.locator('[data-testid=plan-true-north]').count()) > 0, 'the true north button on a turned project');
+      await t.page.locator('[data-testid=plan-true-north]').first().click();
+      await t.wait(400);
+      t.expect(((await t.page.locator('[data-testid=plan-true-north]').first().getAttribute('class')) ?? '').includes('on'), 'the plan turns to true north');
+      await t.page.locator('[data-testid=plan-export-dxf]').first().click();
+      await t.wait(300);
+      t.expect(await t.page.getByRole('menuitem').count() >= 3, 'the DXF button offers the plan\'s, the base point\'s and the map\'s coordinates');
+      await t.page.keyboard.press('Escape');
+      await t.fit();
+      await t.wait(800);
+      await t.shot('spot-coordinate', { of: '[data-testid=plan]', pad: 0 });
+      await t.page.locator('[data-testid=plan-true-north]').first().click();
     },
   },
   {
@@ -3198,6 +3544,73 @@ export const scenes = [
       await t.tool('view.displayQuality');
       t.expect(await t.page.locator('.dialog input[type=radio]:checked').count() === 2, 'a rendering and a display quality chosen');
       await t.shot('display-quality', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
+    // Section and elevation markers (decisions 455, 456, 460): the section markers' size in Drafting standards → Project
+    // (a section's and an elevation's apart), the south elevation marked in the plan clear of A-A's head, its line's end
+    // grip dragged so it reaches only the middle of the house, its marker dragged further out, A-A's head moved off its end.
+    id: 'views-elevation-marker',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      const section = await t.cmd('view.create', { kind: 'section', name: 'A-A', start: [6, -2], end: [6, 10] });
+      const { id } = await t.cmd('view.create', { kind: 'elevation', direction: 'south' });
+      // The section markers' size, typed in Drafting standards → Project.
+      await t.tool('manage.standards');
+      await t.page.locator('.dialog').getByText('Project', { exact: true }).first().click();
+      const size = t.page.locator('.dialog [data-field=section-mark-size]');
+      await size.fill('12');
+      await size.blur();
+      await t.wait(600);
+      t.expect(await t.page.locator('.dialog [data-field=elevation-mark-size]').count() === 1, 'the elevation markers have a size of their own');
+      const book = await t.call('doc.query', { name: 'standards.get', args: {} });
+      t.expect(book?.sectionMarkSize === 12 && book?.elevationMarkSize == null, `the section markers' size set to 12 mm (${book?.sectionMarkSize}), the elevations' as they were`);
+      await t.keys('Escape');
+      const gripAt = async (key) => { const r = await t.page.locator(`[data-testid=plan] [data-grip="${key}"]`).first().boundingBox(); return r ? [r.x + r.width / 2, r.y + r.height / 2] : null; };
+      const drag = async (from, to) => {
+        await t.page.mouse.move(from[0], from[1]);
+        await t.page.mouse.down();
+        await t.page.mouse.move((from[0] + to[0]) / 2, (from[1] + to[1]) / 2, { steps: 4 });
+        await t.page.mouse.move(to[0], to[1], { steps: 4 });
+        await t.page.mouse.up();
+        await t.wait(1000);
+      };
+      // The elevation selected in the plan: a grip on each end of its line; the right one dragged to x = 8.
+      await t.ui({ selected: [id], selection: id });
+      await t.fit();
+      await t.wait(800);
+      const end = await gripAt('extentMax');
+      t.expect(end && (await gripAt('extentMin')), 'the elevation has a grip on each end of its line');
+      const [toX] = await t.planPoint(8, -2.5);
+      await drag(end, [toX, end[1]]);
+      const max = (await t.nodes()).find((n) => n.id === id)?.props.extentMax;
+      t.expect(typeof max === 'number' && Math.abs(max - 8) < 0.3, `the elevation reaches to x = 8 (${max})`);
+      // Its marker dragged 1.5 m further out by the circle's grip: the elevation sees the same.
+      const marker = await gripAt('marker');
+      t.expect(marker, 'the elevation marker has a grip to move it');
+      const [, y0] = await t.planPoint(0, 0);
+      const [, y1] = await t.planPoint(0, -1.5);
+      await drag(marker, [marker[0], marker[1] + (y1 - y0)]);
+      const shift = (await t.nodes()).find((n) => n.id === id)?.props.markerShift;
+      t.expect(Array.isArray(shift) && Math.abs(shift[1] - 1.5) < 0.3, `the marker moved out 1.5 m (${JSON.stringify(shift)})`);
+      // A-A's head at its south end moved off the line, west of it.
+      await t.ui({ selected: [section.id], selection: section.id });
+      await t.wait(600);
+      const head = await gripAt('head-a');
+      t.expect(head, "the section's head has a grip");
+      const [x0] = await t.planPoint(0, 0);
+      const [x1] = await t.planPoint(-1, 0);
+      await drag(head, [head[0] + (x1 - x0), head[1]]);
+      const headA = (await t.nodes()).find((n) => n.id === section.id)?.props.headA;
+      t.expect(Array.isArray(headA) && Math.abs(headA[0] + 1) < 0.3, `the head moved 1 m west (${JSON.stringify(headA)})`);
+      const start = (await t.nodes()).find((n) => n.id === section.id)?.props.start;
+      t.expect(start?.[0] === 6, 'the section cuts where it did');
+      await t.ui({ selected: [id, section.id], selection: id });
+      await t.fit();
+      await t.wait(600);
+      await t.shot('elevation-marker', { of: '[data-testid=plan]', pad: 0 });
     },
   },
   {
@@ -3950,6 +4363,68 @@ export const scenes = [
     },
   },
   {
+    // A tester's report (decisions 453, 454): Move, Mirror and dragging in a section or an elevation act in its plane. A beam
+    // dragged up in the south elevation rises by its top offset, which Properties shows while the drag lasts; Rotate is refused.
+    id: 'section-move',
+    touches: ['core', 'drafting', 'structure'],
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const storeyId = await t.storey();
+      for (const x of [0, 6]) await t.cmd('structure.addColumn', { storeyId, x, y: 0 });
+      const beam = (await t.cmd('structure.addBeam', { storeyId, x1: 0, y1: 0, x2: 6, y2: 0 })).id;
+      const south = (await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' })).id;
+      await t.wait(800);
+      await openFromBrowser(t, 'South', 2500);
+      await t.fit();
+      await select(t, beam);
+      await t.wait(800);
+      // Where the beam's drawn line is on the screen: the middle of its first segment, through the view's own zoom.
+      const at = async (dy = 0) => {
+        const p = await page.evaluate(async ([viewId, id, dy]) => {
+          const svg = document.querySelector('[data-testid=drawing]');
+          const view = (await import('/src/viewport/zoom.ts')).recall(viewId);
+          const d = await (await import('/src/engine/session.ts')).query('view.drawing', { id: viewId });
+          const m = d.marks.find((x) => x.id === id) ?? d.marks.find((x) => x.id.startsWith(`${id}:`));
+          if (!svg || !view || !m) return null;
+          const s = m.segments, x = (s[0] + s[2]) / 2, y = (s[1] + s[3]) / 2 + dy;
+          const r = svg.getBoundingClientRect();
+          return [r.left + (x - view.cx) * view.scale + r.width / 2, r.top + r.height / 2 - (y - view.cy) * view.scale];
+        }, [south, beam, dy]);
+        if (!p) throw new Error('the beam is not drawn in the elevation');
+        return p;
+      };
+      const offset = () => page.evaluate(() => {
+        const dt = [...document.querySelectorAll('aside.props dt')].find((x) => x.textContent?.trim() === 'Offset from level');
+        const input = dt?.nextElementSibling?.querySelector('input');
+        return input ? input.value : null;
+      });
+      const before = await offset();
+      t.expect(before != null, 'the beam\'s offset from its level is in its properties');
+      const [x0, y0] = await at();
+      const [x1, y1] = await at(0.5);
+      await page.mouse.move(x0, y0, { steps: 3 });
+      await page.mouse.down();
+      await page.mouse.move(x1, y1, { steps: 12 });
+      await t.wait(400);
+      t.expect(await page.locator('.move-trace .move-ghost').count() > 0, 'dragging the selected beam in the elevation leaves its ghost where it was');
+      t.expect(await offset() !== before, `its offset from the level follows the drag in Properties (${before} → ${await offset()})`);
+      await t.shot('section-drag', { clip: { x: 250, y: 120, width: 1180, height: 730 } });
+      await page.mouse.up();
+      // Let go about 0.5 m up (the drag snaps, to the columns' tops perhaps): the beam is that much higher, by its top offset.
+      await t.until(async () => ((await t.nodes()).find((n) => n.id === beam)?.props.topOffset ?? 0) > 0.25, 'let go, the beam is higher: its top offset');
+      const moved = (await t.nodes()).find((n) => n.id === beam);
+      t.expect(Math.abs(moved.props.start[1]) < 1e-6, 'and it stays on its line in plan');
+      // Rotate there: refused, with what to do instead.
+      const refused = await page.evaluate(async (id) => {
+        const s = await import('/src/engine/session.ts');
+        await s.execute('element.transform', { ids: [id], op: 'rotate', center: [0, 0], angle: 90, frame: { origin: [0, 0, 0], right: [1, 0, 0], up: [0, 0, 1] } });
+        return s.useSession.getState().error;
+      }, beam);
+      t.expect(/tip them over/.test(refused ?? ''), `a turn of the beam in the elevation is refused (${refused})`);
+    },
+  },
+  {
     // A tester's report (#106, decision 382): a DXF imported into a plan lies in the 3D view on its storey's level, in its
     // layers' colours, its hatch faint; one import is switched off and on, and View → DXF in 3D hides them all.
     id: 'dxf-3d',
@@ -4380,6 +4855,100 @@ export const scenes = [
       await t.cmd('architecture.joineryMaterials', { kind: 'door', frame: 'Aluminium RAL 7016 anthracite' });
       await open3d(t);
       await t.shot('materials-render-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
+    // A door or window's frame position in the wall and its data as free text (a tester's report #76): in the configurator the
+    // frame set back 50 mm from the exterior finish, the Data box with its U-value, fire rating and a parameter of the user's
+    // own; then a window selected, with its own fire rating over the type's.
+    id: 'joinery-data',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.fit();
+      await t.tool('architecture.joineryTypes');
+      await t.wait(900);
+      const dialog = t.page.locator('.dialog.wide').first();
+      const windowType = (await t.nodes()).find((n) => n.type === 'IfcWindowType');
+      await t.page.locator('.dialog .type-list .tree-item').filter({ hasText: windowType.name }).first().click();
+      await t.wait(700);
+      await t.page.locator('.dialog [data-field=position-from]').selectOption('exterior');
+      const back = dialog.locator('label.field-line', { hasText: 'Set back' }).locator('input');
+      await back.fill('50');
+      await back.press('Enter');
+      await t.wait(500);
+      await t.page.locator('.dialog button', { hasText: /^(Save type|Create type)$/ }).first().click();
+      await t.wait(900);
+      const window = (await t.nodes()).find((n) => n.id === windowType.id);
+      t.expect(window && window.props.spec.position.from === 'exterior' && Math.abs(window.props.spec.position.distance - 0.05) < 1e-6, 'the type keeps its position: 50 mm from the exterior finish');
+      await t.shot('joinery-position', { of: '.dialog.wide', pad: 0 });
+      // The Data box: free text, never a list.
+      await t.page.locator('[data-testid=joinery-data]').click();
+      await t.page.waitForSelector('[data-testid=joinery-data-form]', { timeout: 10000 });
+      await t.page.locator('[data-field=uValue]').fill('0,9 W/m²K');
+      await t.page.locator('[data-field=gValue]').fill('0.52');
+      await t.page.locator('[data-field=safetyGlass]').fill('laminated inside, tempered outside');
+      await t.page.locator('[data-field=fireRating]').fill('EI 30');
+      await t.page.locator('[data-field=fittings]').fill('Roto NX');
+      await t.page.locator('[data-testid=joinery-extra-add]').click();
+      await t.page.locator('[data-field=extra-name]').last().fill('Sauna window');
+      await t.page.locator('[data-field=extra-value]').last().fill('yes');
+      await t.shot('joinery-data', { of: '[aria-label="Door and window data"] .dialog', pad: 0 });
+      await t.page.locator('[data-testid=joinery-data-save]').click();
+      await t.wait(900);
+      const type = (await t.nodes()).find((n) => n.id === window.id);
+      const names = (type.props.params ?? []).map((p) => p.name);
+      t.expect(['U-value', 'g-value', 'Safety glass', 'FireRating', 'Fittings', 'Sauna window'].every((n) => names.includes(n)), `the data is the type's parameters (${names.join(', ')})`);
+      t.expect((type.props.params ?? []).find((p) => p.name === 'FireRating')?.pset === 'Pset_WindowCommon', 'the fire rating is IFC\'s own');
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(400);
+      // A window selected: its frame position and its own data over the type's.
+      const fill = (await t.nodes()).find((n) => n.type === 'IfcWindow');
+      await select(t, fill.id);
+      await t.wait(900);
+      t.expect(await t.page.locator('aside.props [data-field=position-from]').count() === 1, 'a window offers its own frame position');
+      await t.page.locator('[data-testid=joinery-data]').click();
+      await t.page.waitForSelector('[data-testid=joinery-data-form]', { timeout: 10000 });
+      await t.page.locator('[data-field=fireRating]').fill('EI 60');
+      await t.page.locator('[data-testid=joinery-data-save]').click();
+      await t.wait(900);
+      const own = (await t.nodes()).find((n) => n.id === fill.id);
+      t.expect((own.props.params ?? []).some((p) => p.name === 'FireRating' && p.value === 'EI 60'), 'the window\'s own fire rating is its own');
+      t.expect(!(own.props.params ?? []).some((p) => p.name === 'U-value'), 'what is the type\'s stays the type\'s');
+      await t.shot('joinery-data-properties', { of: 'aside.props', pad: 0, maxHeight: 620 });
+    },
+  },
+  {
+    // The kitchen's layouts (a tester's report #124): six kitchen types placed in plan — one wall, galley, L-shaped, U-shaped,
+    // island and peninsula, each with its sink, hob and tall unit — and the types dialog on the L-shaped one.
+    id: 'kitchen-layouts',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.fit();
+      await t.button('Interior', { exact: true });
+      const layouts = ['one-wall', 'galley', 'l-shaped', 'u-shaped', 'island', 'peninsula'];
+      const ids = {};
+      for (const [i, layout] of layouts.entries()) {
+        const type = (await t.cmd('furniture.createType', { kind: 'kitchen', layout })).id;
+        ids[layout] = type;
+        await t.cmd('furniture.place', { storeyId: s, typeId: type, x: (i % 3) * 5, y: Math.floor(i / 3) * 4.5, against: false });
+      }
+      await t.ui({ selection: null, selected: [], keyPlan: false });
+      await t.fit();
+      await t.wait(1200);
+      const pieces = (await t.nodes()).filter((n) => n.type === 'IfcFurniture');
+      t.expect(pieces.length === 6, `six kitchens placed (${pieces.length})`);
+      await t.shot('kitchen-layouts', { of: '[data-testid=plan]', pad: 0 });
+      await t.tool('furniture.types');
+      await t.wait(400);
+      const lType = (await t.nodes()).find((n) => n.id === ids['l-shaped']);
+      await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: lType.name }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-param=layout] select').count() === 1, 'a kitchen type has its layout');
+      t.expect(await t.page.locator('.dialog [data-param=leg] input').count() === 1, 'an L has its leg');
+      t.expect(await t.page.locator('.dialog [data-param=gap]').count() === 0, 'what the layout does not use is not shown');
+      await t.shot('kitchen-layout-types', { of: '.dialog', pad: 0 });
     },
   },
   {
@@ -4917,12 +5486,15 @@ export const scenes = [
       const place = t.page.locator('.ask-box');
       await place.waitFor({ timeout: 5000 });
       await place.locator('input').nth(1).fill('30000');
+      await place.locator('select').selectOption('yes');
       const again = t.page.waitForEvent('filechooser', { timeout: 10_000 });
       await place.locator('.btn.primary').click();
       await (await again).setFiles(file);
       await t.wait(2500);
       const after = (await t.nodes()).filter((n) => n.type === 'IfcWall');
       t.expect(after.length === 10 && after.every((w) => before.has(w.id)), `placed elsewhere under the same ids (${after.length})`);
+      const moved = (await t.nodes()).find((n) => n.type === 'LapinLink' && n.props.options?.mirror === true);
+      t.expect(!!moved, 'the link says it is mirrored');
       await t.ui({ dialog: null });
     },
   },
@@ -5104,7 +5676,8 @@ export const scenes = [
       await t.page.mouse.click(5, 600);
       await t.page.locator('.help-menu > button').click();
       await t.wait(300);
-      await t.shot('help-menu', { clip: { x: 1100, y: 0, width: 340, height: 340 } });
+      await t.shot('help-menu', { clip: { x: 1100, y: 0, width: 340, height: 400 } });
+      t.expect(await t.page.getByRole('menuitem', { name: 'Forum', exact: true }).count() === 1 && await t.page.getByRole('menuitem', { name: 'Ask on the forum…' }).count() === 1, 'the help menu opens the forum and a new topic on it');
       t.expect((await t.page.locator('.menu-langs button').allTextContents()).join(' ') === 'English Română Español Deutsch Français Dansk Italiano Polski Português ພາສາລາວ 简体中文', 'the help menu offers the interface in English, Romanian, Spanish, German, French, Danish, Italian, Polish, Portuguese, Lao and Simplified Chinese');
       await t.page.getByRole('menuitem', { name: 'About Lapin…' }).click();
       await t.wait(200);
@@ -5215,6 +5788,18 @@ export const scenes = [
       await t.page.locator('.interface-dialog .btn.primary').click();
       await t.wait(400);
       t.expect(await t.page.locator('.band .group').count() > 0, 'Comfortable brings the large ribbon back');
+      // The panels on either side (decision 427, report #123): swapped, then stacked on the left; back to the default.
+      await t.tool('view.panels.swapped');
+      await t.wait(300);
+      t.expect(await t.page.locator('.side-col.on-left .props-side').count() === 1 && await t.page.locator('.side-col.on-right .browser-side').count() === 1, 'View → Panels swaps the browser and the properties');
+      await t.tool('view.panels.bothLeft');
+      await t.wait(400);
+      t.expect(await t.page.locator('.side-col.on-left.stacked .browser-side').count() === 1 && await t.page.locator('.side-col.on-left.stacked .props-side').count() === 1 && await t.page.locator('.stack-sep').count() === 1, 'both panels stack on the left with a divider');
+      await t.fit();
+      await t.shot('panel-layouts', { clip: { x: 0, y: 0, width: 760, height: 620 } });
+      await t.tool('view.panels.default');
+      await t.wait(300);
+      t.expect(await t.page.locator('.side-col.on-left .browser-side').count() === 1 && await t.page.locator('.side-col.on-right .props-side').count() === 1, 'the default layout is back');
       // The quick tools the user chooses (decision 259): slot 7 given the stair from View → Quick tools…, slot 2 emptied.
       await t.tool('app.quickTools');
       t.expect(await t.page.locator('.quick-tools-dialog').count() === 1, 'View → Quick tools… opens its dialog');
@@ -5638,6 +6223,63 @@ export const scenes = [
     },
   },
   {
+    // An imported mesh's chair placed like any element (decision 448): six of them round a table with Modify → Array, their
+    // triangles shared.
+    id: 'reference-array',
+    touches: ['studio'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      // A chair as another program would give it: a seat, a back and four legs, its back to the south.
+      let obj = 'o chair\n';
+      let n = 0;
+      const box = (x0, y0, z0, x1, y1, z1) => {
+        for (const [x, y, z] of [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]]) obj += `v ${x} ${y} ${z}\n`;
+        for (const f of [[1, 4, 3, 2], [5, 6, 7, 8], [1, 2, 6, 5], [3, 4, 8, 7], [1, 5, 8, 4], [2, 3, 7, 6]]) obj += `f ${f.map((i) => i + n).join(' ')}\n`;
+        n += 8;
+      };
+      const [cx, cy] = [0, -1.05];
+      box(cx - 0.22, cy - 0.22, 0.42, cx + 0.22, cy + 0.22, 0.47);
+      box(cx - 0.22, cy - 0.27, 0.42, cx + 0.22, cy - 0.22, 0.9);
+      for (const [x, y] of [[-0.2, -0.2], [0.17, -0.2], [-0.2, 0.17], [0.17, 0.17]]) box(cx + x, cy + y, 0, cx + x + 0.03, cy + y + 0.03, 0.42);
+      await page.evaluate(async ([obj, storeyId]) => (await import('/src/engine/session.ts')).engine.call('project.importMesh',
+        { name: 'chair.obj', data: btoa(obj), up: 'z', oneElement: true, storeyId }), [obj, storey]);
+      await t.wait(800);
+      await t.cmd('studio.primitive', { shape: 'cylinder', at: [0, 0], radius: 0.6, height: 0.74, storeyId: storey });
+      const chairs = async () => (await t.nodes()).filter((x) => x.type === 'IfcBuildingElementProxy' && x.name === 'chair');
+      const chair = (await chairs())[0];
+      t.expect(chair, 'the chair came in as a reference');
+      await t.ui({ view: '3d', selection: chair.id, selected: [chair.id] });
+      await page.waitForSelector('[data-testid=view3d] canvas', { timeout: 20_000 });
+      await t.wait(1200);
+
+      // Modify → Array round the table's middle: six chairs in a full turn.
+      await t.tool('modify.array');
+      t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
+      await page.locator('.ask-box select').first().selectOption('polar');
+      const inputs = page.locator('.ask-box input');
+      await inputs.nth(0).fill('6');
+      await inputs.nth(4).fill('360');
+      await page.locator('.ask-box button.primary').click();
+      await t.until(async () => (await chairs()).length === 6, 'six chairs round the table');
+      await t.ui({ selection: null, selected: [] });
+      await page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ target: { x: 0, y: 0, z: 0.4 }, azimuth: Math.PI / 4, pitch: -0.6, distance: 5 }, false));
+      await t.wait(1200);
+      await t.shot('reference-array', { of: '[data-testid=view3d]', pad: 0 });
+
+      // One chair pinned from its properties (decision 449): it cannot be deleted until Modify → Unpin lets it go.
+      const first = (await chairs())[0];
+      await t.ui({ selection: first.id, selected: [first.id] });
+      await t.wait(800);
+      await page.locator('aside.props input[data-field=pinned]').click();
+      await t.until(async () => (await t.nodes()).find((x) => x.id === first.id)?.props.pinned === true, 'the chair is pinned');
+      t.expect(await page.locator('aside.props .sect.actions button').first().isDisabled(), 'a pinned chair cannot be deleted');
+      await t.tool('modify.unpin');
+      await t.until(async () => (await t.nodes()).find((x) => x.id === first.id)?.props.pinned !== true, 'Modify → Unpin lets it go');
+    },
+  },
+  {
     // Studio as a geometry editor (docs/plan-studio-editor.md): push/pull and a fillet in 3D, a pipe's steps, a rising handrail.
     id: 'studio-editor',
     async run(t) {
@@ -6047,6 +6689,220 @@ export const scenes = [
       await t.shot('tag-leader', { clip: { x: cx - 260, y: cy - 170, width: 520, height: 300 } });
       t.expect(await t.page.locator('[data-tag-fields]').count() > 0, 'a tag\'s properties say what it shows and its leader');
       await t.shot('tag-properties', { of: 'aside.props', pad: 0, maxHeight: 520 });
+    },
+  },
+  {
+    // A tag turned and aligned (report #129, decision 429) and what it tags lit (#130): a tag on the east wall aligned to it, one
+    // typed to 30°; the aligned tag's rotation grip; the element it tags highlighted while it is selected.
+    id: 'tag-rotate',
+    async run(t) {
+      await t.fresh();
+      const { walls, storey } = await house(t, { roof: false });
+      await t.fit();
+      const plan = `plan:${storey}`;
+      const a = (await t.cmd('drafting.addTag', { viewId: plan, element: walls[1], field: 'name', at: [12.8, 3], leaderShape: 'straight' })).id;
+      const b = (await t.cmd('drafting.addTag', { viewId: plan, element: walls[2], field: 'name', at: [6, 7.4], leaderShape: 'straight', rotation: 30 })).id;
+      await t.cmd('drafting.updateTag', { id: a, align: true });
+      await t.ui({ view: 'plan', keyPlan: false, selection: a, selected: [a] });
+      await t.wait(900);
+      const tag = (await t.nodes()).find((n) => n.id === a);
+      t.expect(tag?.props.align === true, 'the tag follows its wall');
+      t.expect(await t.page.locator('[data-grip=turn]').count() === 1, 'a selected tag has its turning grip');
+      t.expect(await t.page.locator('[data-tag-rotation]').count() === 1 && await t.page.locator('[data-tag-align]').count() === 1, 'its properties have Rotation and Align to element');
+      t.expect(await t.page.locator('.plan-item.tag-target, .plan-mark.tag-target').count() > 0, 'the wall it tags is highlighted while its tag is selected');
+      const [cx, cy] = await t.planPoint(12, 3.5);
+      await t.shot('tag-rotate', { clip: { x: cx - 470, y: cy - 190, width: 560, height: 330 } });
+      await select(t, b);
+      await t.wait(500);
+      t.expect((await t.nodes()).find((n) => n.id === b)?.props.rotation === 30, 'the other is turned 30° by hand');
+    },
+  },
+  {
+    // A dimension on a grid axis stays where it measured when the axis's end is dragged along itself (report #126).
+    id: 'dimension-grid-line',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const g = await t.cmd('drafting.addAxis', { x1: 0, y1: -2, x2: 0, y2: 10, tag: '1' });
+      await t.cmd('drafting.addAxis', { x1: 12, y1: -2, x2: 12, y2: 10, tag: '2' });
+      const d = (await t.cmd('drafting.addDimension', { viewId: `plan:${storey}`, a: [0, 8], b: [12, 8], at: [6, 9] })).id;
+      const ends = async () => t.page.evaluate(async (id) => {
+        const s = (await import('/src/engine/session.ts')).useSession.getState();
+        const q = await (await import('/src/engine/session.ts')).query('view.drawing', { id: s.nodes.get(id)?.props.viewId });
+        return q.marks.find((m) => m.id === id)?.data?.points;
+      }, d);
+      const before = await ends();
+      await t.cmd('drafting.updateAxis', { gridId: g.gridId, tag: '1', y1: -4 });
+      await t.cmd('drafting.updateAxis', { gridId: g.gridId, tag: '1', y2: 12 });
+      await t.wait(800);
+      const after = await ends();
+      t.expect(JSON.stringify(before) === JSON.stringify(after), `the dimension stays where it measured (${JSON.stringify(before)} → ${JSON.stringify(after)})`);
+      await t.ui({ view: 'plan', keyPlan: false, selection: null, selected: [] });
+      await t.page.evaluate(async () => (await import('/src/viewport/zoom.ts')).zoomHost()?.zoomWindow({ x: -2, y: -5 }, { x: 14, y: 13 }));
+      await t.wait(900);
+      await t.shot('dimension-grid-line', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
+    // A curtain wall by its boundary (report #127): a gable drawn in the profile dialog, the grid, the panels and the members
+    // following it, in 3D.
+    id: 'curtain-boundary',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const cw = (await t.cmd('architecture.addCurtainWall', { storeyId: storey, x1: 0, y1: -4, x2: 7, y2: -4, height: 3 })).id;
+      await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
+      await t.wait(800);
+      await t.page.locator('[data-action=curtain-profile]').first().click();
+      await t.page.waitForSelector('[data-testid=wall-profile]', { timeout: 10000 });
+      await t.page.locator('[data-field=profile-peak]').fill('4800');
+      await t.page.locator('[data-action=profile-gable]').click();
+      await t.wait(600);
+      await t.shot('curtain-boundary-editor', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-action=profile-apply]').click();
+      await t.wait(1400);
+      const wall = (await t.nodes()).find((n) => n.id === cw);
+      t.expect(Array.isArray(wall.props.topProfile) && wall.props.topProfile.length === 3, 'the curtain wall keeps its gable');
+      t.expect(Math.abs(Number(wall.props.height) - 4.8) < 1e-6, 'its height is its highest point');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.7, pitch: -0.2, distance: 16, target: { x: 3.5, y: -4, z: 2 } }, false));
+      await t.wait(1500);
+      await t.shot('curtain-boundary-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Custom profiles for chosen curtain wall members (report #128): a section drawn in the editor, kept, given to two mullions of
+    // a wall, turned and aligned; the members dialog and the result in 3D.
+    id: 'curtain-members',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const cw = (await t.cmd('architecture.addCurtainWall', { storeyId: storey, x1: 0, y1: -4, x2: 7, y2: -4, height: 3 })).id;
+      // The editor makes the profile: a hollow 50 × 100 box.
+      const profile = await t.page.evaluate(async () => (await import('/src/engine/session.ts')).query('profiles.fromRings', {
+        name: 'Alu 50x100', material: 'aluminium', unit: 0.001,
+        rings: [[[0, 0], [50, 0], [50, 100], [0, 100]], [[3, 3], [3, 97], [47, 97], [47, 3]]],
+      }));
+      t.expect(profile?.kind === 'outline', 'the editor\'s rings make an outline profile');
+      const used = await t.cmd('profiles.use', { profile, library: 'My profiles' });
+      await t.cmd('architecture.setCurtainMembers', { id: cw, keys: ['mullion:1', 'mullion:2'], profile: used.section, place: { rotate: 90, across: 'front' } });
+      await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
+      await t.wait(800);
+      await t.page.locator('[data-action=curtain-members]').first().click();
+      await t.page.waitForSelector('[data-testid=curtain-members]', { timeout: 10000 });
+      await t.page.locator('[data-member="mullion:1"]').click();
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-placed-section]').count() === 1, 'the section is drawn as it sits on its member');
+      await t.shot('curtain-members-dialog', { of: '.dialog', pad: 0 });
+      await t.page.keyboard.press('Escape');
+      await t.ui({ dialog: null });
+      const wall = (await t.nodes()).find((n) => n.id === cw);
+      t.expect(wall.props.memberStyles && Object.keys(wall.props.memberStyles).length === 2, 'two members have a style of their own');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.7, pitch: -0.2, distance: 8, target: { x: 3.5, y: -4, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('curtain-members-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // Curtain panel types and curtain wall doors in chosen cells (report #133): a framed spandrel given to the upper row, a door
+    // smaller than its cell placed in the bottom row with its transom and mullions round it; the dialog and the result in 3D.
+    id: 'curtain-cells',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const typeId = (await t.cmd('architecture.createCurtainWallType', { name: 'Shopfront', spec: { u: { mode: 'max', spacing: 1.5 }, v: { mode: 'offsets', offsets: [2.6] } } })).id;
+      const cw = (await t.cmd('architecture.addCurtainWall', { storeyId: storey, x1: 0, y1: -4, x2: 7, y2: -4, height: 3, typeId })).id;
+      await t.cmd('architecture.createCurtainPanelType', { name: 'Framed spandrel', panel: { kind: 'framed', thickness: 0.03, offset: 0.02, frameWidth: 0.06, frameDepth: 0.09, inset: 0.015, infill: 'solid' } });
+      await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
+      await t.wait(800);
+      await t.page.locator('[data-action=curtain-cells]').first().click();
+      await t.page.waitForSelector('[data-testid=curtain-cells]', { timeout: 10000 });
+      const d = t.page.locator('[data-testid=curtain-cells]');
+      // The upper row: the spandrel.
+      await d.locator('[data-cell="panel:0:1"]').click();
+      for (const k of ['panel:1:1', 'panel:3:1', 'panel:4:1']) await d.locator(`[data-cell="${k}"]`).click({ modifiers: ['Shift'] });
+      const spandrel = await d.locator('select[data-field=cell-panel-type] option').nth(1).getAttribute('value');
+      await d.locator('select[data-field=cell-panel-type]').selectOption(spandrel);
+      await d.locator('[data-action=cells-panel-apply]').click();
+      await t.wait(800);
+      // The middle bottom cell: a glazed door of its own size, centred, with glass round it.
+      await d.locator('[data-cell="panel:2:0"]').click();
+      await d.locator('input[data-field=door-fit]').uncheck();
+      await t.wait(300);
+      await d.locator('[data-action=cells-door-place]').click();
+      await t.wait(1200);
+      t.expect(await d.locator('[data-door="panel:2:0"]').count() === 1, 'the door is drawn in its cell');
+      await t.shot('curtain-cells-dialog', { of: '.dialog', pad: 0 });
+      await t.page.keyboard.press('Escape');
+      await t.ui({ dialog: null });
+      const nodes = await t.nodes();
+      const wall = nodes.find((n) => n.id === cw);
+      t.expect(wall.props.panelTypes && Object.keys(wall.props.panelTypes).length === 4, 'four cells have the spandrel');
+      const door = nodes.find((n) => n.type === 'IfcDoor' && n.props.cell === 'panel:2:0');
+      t.expect(door != null, 'the door is a door, in its cell');
+      await t.ui({ selection: null, selected: [] });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.6, pitch: -0.15, distance: 11, target: { x: 3.5, y: -4, z: 1.5 } }, false));
+      await t.wait(1500);
+      await t.shot('curtain-cells-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
+    // A curtain wall door under a sloped boundary (report #133, the user's answers): its mullions rising to the boundary, a transom
+    // over its head and the glass over it following the slope, framed panels framed along their trimmed outline; and the door's
+    // opening symbol in the south elevation.
+    id: 'curtain-cells-boundary',
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      const typeId = (await t.cmd('architecture.createCurtainWallType', { name: 'Gable front', spec: { u: { mode: 'max', spacing: 1.5 }, v: { mode: 'count', count: 1 } } })).id;
+      const cw = (await t.cmd('architecture.addCurtainWall', { storeyId: storey, x1: 0, y1: -4, x2: 6, y2: -4, height: 3, typeId })).id;
+      await t.cmd('architecture.setCurtainWallProfile', { ids: [cw], top: [[0, 3.6], [3, 4.4], [6, 3.6]] });
+      const framed = (await t.cmd('architecture.createCurtainPanelType', { name: 'Framed glass', panel: { kind: 'framed', thickness: 0.024, frameWidth: 0.06, frameDepth: 0.08, inset: 0.02, infill: 'glass' } })).id;
+      await t.cmd('architecture.setCurtainPanels', { id: cw, keys: ['panel:0:top', 'panel:2:top', 'panel:3:top'], typeId: framed });
+      await t.ui({ view: 'plan', keyPlan: false, selection: cw, selected: [cw] });
+      await t.wait(800);
+      await t.page.locator('[data-action=curtain-cells]').first().click();
+      await t.page.waitForSelector('[data-testid=curtain-cells]', { timeout: 10000 });
+      const d = t.page.locator('[data-testid=curtain-cells]');
+      await d.locator('[data-cell="panel:1:top"]').click();
+      await d.locator('input[data-field=door-fit]').uncheck();
+      await t.wait(300);
+      await d.locator('[data-action=cells-door-place]').click();
+      await t.wait(1200);
+      t.expect(await d.locator('[data-door="panel:1:top"]').count() === 1, 'the door stands in the trimmed cell');
+      await t.page.keyboard.press('Escape');
+      await t.ui({ dialog: null, selection: null, selected: [] });
+      const parts = await t.page.evaluate(async (id) => (await import('/src/engine/session.ts')).query('architecture.curtainCells', { id }), cw);
+      t.expect(parts.pieces.some((p) => p.key === 'mullion:1:top:left' && p.outline), 'its mullion rises to the boundary');
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -0.5, pitch: -0.12, distance: 10, target: { x: 3, y: -4, z: 2 } }, false));
+      await t.wait(1500);
+      await t.shot('curtain-cells-gable', { of: '[data-testid=view3d]', pad: 0 });
+      await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' });
+      await openFromBrowser(t, 'South', 2500);
+      await t.shot('curtain-cells-elevation', { of: '[data-testid=drawing]', pad: 0 });
+    },
+  },
+  {
+    // The section editor (report #128): Manage → Profile libraries → Draw a profile…, a hollow box with a chamber added.
+    id: 'profile-editor',
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.ui({ dialog: 'profileLibraries' });
+      await t.page.waitForSelector('[data-dialog=profile-libraries]', { timeout: 10000 });
+      await t.page.locator('[data-testid=profile-draw-new]').click();
+      await t.page.waitForSelector('[data-testid=profile-editor]', { timeout: 10000 });
+      await t.page.locator('[data-action=editor-T]').click();
+      await t.page.locator('[data-action=editor-box]').click();
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-editor-point]').count() === 8, 'a hollow box has its two rings\' eight points');
+      await t.shot('profile-editor', { of: '.dialog', pad: 0 });
+      await t.page.locator('[data-testid=profile-editor-make]').click();
+      await t.page.waitForSelector('[data-testid=profile-outline]', { timeout: 10000 });
+      t.expect(await t.page.locator('[data-testid=profile-outline-keep]').count() === 1, 'the profile made goes on to be kept in a library');
     },
   },
   {

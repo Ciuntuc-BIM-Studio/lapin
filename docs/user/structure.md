@@ -22,6 +22,14 @@ The **Structure** tab holds the frame and the foundations.
 
 Draw foundations on the **Foundations** level, or give them a plan of their own.
 
+**A strip footing is the concrete alone** unless you ask for the wall. While **Strip footing** or **Curved strip footing** is on, the command line's bar offers **Footing alone** (the default: a 600 × 400 mm concrete footing, a profile type made the first time) or **With wall** (the stem of a strip type on it, with its layers), and which strip type with a wall to use. The choice is kept. A footing already drawn changes with its type in **Structure types**.
+
+![The strip footing tool's option in the command line: footing alone or with a wall](shots/structure-strip-option.webp)
+
+**In the plans.** A footing lies under the floor, so a plan draws it dashed in the plan of the level it stands on, as a plan of a building shows what is under it. To see it cut and seen, use a **foundation plan**: in the project browser, the **+** beside **Floor plans** makes one for the active level (cut 0.50 m under it, seeing 2.50 m down).
+
+**Drawing in a foundation plan.** It shows the level under it too, and what you draw there with a floor, wall, column or beam tool goes on that level (the Foundations of a new project, at −1.50); the footing tools keep the plan's own level, a footing's bottom being its type's under it.
+
 ![Columns, beams and pad footings in 3D](shots/structure-3d.webp)
 
 ## Types and corners

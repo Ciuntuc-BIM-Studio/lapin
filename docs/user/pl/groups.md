@@ -30,7 +30,7 @@ Niektóre elementy są częściami całości: słupy, rygle i płatwie hali stal
 
 ## Zaimportowane pliki
 
-Każdy importowany plik IFC, Fragments lub siatki trafia do projektu jako jedna grupa nazwana od pliku. Odznacz **Jako jedna grupa** przy imporcie IFC, aby wczytać elementy luzem. Plik połączony nie jest grupowany: jest już jednym łączem, tylko do odczytu (zobacz [Import i eksport](import-export.md)). Elementy wczytane z pliku IFC jako odniesienia zostają tam, gdzie umieścił je plik: grupę takich elementów można uporządkować i usunąć, ale nie przesunąć.
+Każdy importowany plik IFC, Fragments lub siatki trafia do projektu jako jedna grupa nazwana od pliku. Odznacz **Jako jedna grupa** przy imporcie IFC, aby wczytać elementy luzem. Plik połączony nie jest grupowany: jest już jednym łączem, tylko do odczytu (zobacz [Import i eksport](import-export.md)). Elementy wczytane z pliku jako odniesienia (z pliku IFC, z siatki) przesuwają się, obracają, odbijają i kopiują razem ze swoją grupą jak każdy element; ich kształt pozostaje taki, jak w pliku.
 
 ## Zaznaczanie obszaru w widoku 3D
 

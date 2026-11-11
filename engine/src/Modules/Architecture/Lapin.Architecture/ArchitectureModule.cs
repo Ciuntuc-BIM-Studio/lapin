@@ -21,7 +21,16 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var (cols, rows) = Joinery.Grid(s);
         var inner = Joinery.InnerRect(s);
         static JsonArray Pairs(List<(double A, double B)> l) => new(l.Select(x => (JsonNode)new JsonArray(x.A, x.B)).ToArray());
-        return new JsonObject { ["inner"] = new JsonArray(inner.X0, inner.X1, inner.Z0, inner.Z1), ["cols"] = Pairs(cols), ["rows"] = Pairs(rows) };
+        static JsonArray Numbers(IEnumerable<double> l) => new(l.Select(x => (JsonNode)x).ToArray());
+        // Each boundary's own mullion and transom (decision 466), and where two leaves meet with none: which boundary, the active and passive columns, how.
+        var pairs = Joinery.Meetings(s);
+        return new JsonObject
+        {
+            ["inner"] = new JsonArray(inner.X0, inner.X1, inner.Z0, inner.Z1), ["cols"] = Pairs(cols), ["rows"] = Pairs(rows),
+            ["mullions"] = Numbers(Joinery.MullionWidths(s)), ["transoms"] = Numbers(Joinery.TransomWidths(s)),
+            ["meetings"] = new JsonArray(Enumerable.Range(0, Math.Max(0, cols.Count - 1)).Select(i => (JsonNode)pairs.Any(p => p.Boundary == i)).ToArray()),
+            ["pairs"] = new JsonArray(pairs.Select(p => (JsonNode)new JsonObject { ["boundary"] = p.Boundary, ["active"] = p.Active.Col, ["passive"] = p.Passive.Col, ["kind"] = p.Kind }).ToArray()),
+        };
     }
 
     /// <summary>A drawing's strokes as the interface draws them: points, weight (cut, outline, thin), closed, dashed.</summary>
@@ -55,10 +64,24 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         foreach (var fill in m.OfClass(IfcClass.Door).Concat(m.OfClass(IfcClass.Window)))
         {
             if (hiddenElements.Contains(fill.Id) || graphics.Hides(fill)) continue;
-            if (Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { } wall || Openings.SpecOf(m, fill.Id) is not { } spec) continue;
-            if (hiddenElements.Contains(wall.Id)) continue;
-            var p = Openings.Place(m, opening);
-            var f = Openings.FrameOf(m, wall, p.Along);
+            Openings.WallFrame f;
+            Openings.Placed p;
+            JoinerySpec spec;
+            HashSet<string> own;
+            // A curtain wall's door (report #133): in its cell's frame, as its body is drawn.
+            if (CurtainCells.SeatOf(m, fill) is { } seat)
+            {
+                if (seat.Problem != null || seat.Spec == null || hiddenElements.Contains(seat.Wall.Id)) continue;
+                (f, p, spec, own) = (seat.Frame, seat.Placed, seat.Spec, [fill.Id, seat.Wall.Id]);
+            }
+            else
+            {
+                if (Openings.OpeningOf(m, fill.Id) is not { } opening || Openings.WallOf(m, opening.Id) is not { } wall || Openings.SpecOf(m, fill.Id) is not { } ws) continue;
+                if (hiddenElements.Contains(wall.Id)) continue;
+                p = Openings.Place(m, opening);
+                f = Openings.FrameOf(m, wall, p.Along);
+                (spec, own) = (ws, [fill.Id, wall.Id, opening.Id]);
+            }
             var sx = fill.Bool("flipHand") ? -1 : 1;
             var sy = fill.Bool("flipSide") ? -1 : 1;
             // The exterior is the wall's right (its left when the side is flipped): the symbol shows where that faces the eye.
@@ -66,7 +89,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (Vec3.Dot(new Vec3(outward.X, outward.Y, 0), c.Frame.Dir) > -0.5) continue;
             var yExt = sy > 0 ? f.YMin : f.YMax;
             Vec3 W(double x, double z) => f.At(p.Along + sx * x, yExt, p.FillSill + z);
-            if (c.Occluded(W(0, spec.Height / 2), new HashSet<string> { fill.Id, wall.Id, opening.Id })) continue;
+            if (c.Occluded(W(0, spec.Height / 2), own)) continue;
             var mark = new ViewMark(fill.Id);
             // A round window is one fixed light: no opening symbol.
             foreach (var panel in JoineryShapes.Round(spec) ? [] : Joinery.Normalised(spec))
@@ -83,6 +106,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
     {
         // The opening symbols on elevations.
         r.Service<IViewAnnotations>(this);
+        r.Service<IInstanceMembers>(new RoomInstanceMembers());
 
         // Door and window markers on a plan: one for each door and window of its storey not yet tagged there ({viewId, doorType?, windowType?}: tag types of the drafting standards).
         r.Command("tagOpenings", "Tag doors and windows", (ctx, a) =>
@@ -111,6 +135,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         r.Class(new(IfcClass.DoorType, "Door type", [], "#c8a27a", Kind: "type"));
         r.Class(new(IfcClass.WindowType, "Window type", [], "#9cc8e8", Kind: "type"));
         r.Service<IVoidShapes>(new VoidShapes());
+        r.Service<IIfcElementSets>(new JoineryDataSets());
         r.Service<Lapin.Platform.Coordination.IOpeningVoids>(new ArchitectureVoids());
         // The openings' boxes a dimension across one reads its height from (report #92, decision 338).
         r.Service<IWallOpenings>(new ArchitectureWallOpenings());
@@ -148,6 +173,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             ["infills"] = new JsonArray(Joinery.Infills.Select(x => (JsonNode)x).ToArray()),
             ["defaultDoor"] = JoinerySpecs.Door.ToJson(),
             ["defaultWindow"] = JoinerySpecs.Window.ToJson(),
+            // Door presets (decision 466): a double door, no mullion between its leaves, a rebated meeting, the right leaf active.
+            ["doorPresets"] = new JsonObject { ["double"] = JoinerySpecs.DoubleDoor.ToJson() },
+            ["meetingKinds"] = new JsonArray(JoineryMeeting.Kinds.Select(x => (JsonNode)x).ToArray()),
+            ["defaultMeeting"] = new JsonObject { ["kind"] = "rebated", ["active"] = "right", ["width"] = JoineryMeeting.DefaultRebate, ["thickness"] = JoineryMeeting.DefaultAstragalThickness, ["bolts"] = true, ["astragalWidth"] = JoineryMeeting.DefaultAstragalWidth },
             ["shapes"] = new JsonArray(JoineryShapes.Kinds.Select(x => (JsonNode)x).ToArray()),
             ["headBars"] = new JsonArray(JoineryShapes.HeadBars.Select(x => (JsonNode)x).ToArray()),
             ["muntins"] = new JsonArray(JoineryShapes.MuntinPatterns.Select(x => (JsonNode)x).ToArray()),
@@ -254,6 +283,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         Skirtings.Register(r);
         WallSweeps.Register(r);
         RoomFinishes.Register(r);
+        RoomOpenings.Register(r);
         TypeExchange.Register(r);
 
         r.Command("createSlabType", "New floor type", (ctx, a) =>
@@ -631,6 +661,40 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             var type = ctx.Model.Get((string?)a["typeId"] ?? "") is { Class: IfcClass.DoorType or IfcClass.WindowType } t ? t : throw new CommandException("There is no such door or window type.");
             foreach (var id in Ids(a))
                 if (ctx.Model.Get(id) is { Class: IfcClass.Door or IfcClass.Window } fill) Openings.SetType(ctx, fill, type);
+            return null;
+        });
+
+        // The frame's place across the wall for some elements (report #76): from the exterior face, the core or the centre, a distance; {clear: true} back to the type's.
+        r.Command("setJoineryPosition", "Place the frame in the wall", (ctx, a) =>
+        {
+            var position = a["clear"] is JsonValue c && c.TryGetValue<bool>(out var clear) && clear ? null
+                : JoineryPosition.From_(a) ?? throw new CommandException("Say where: from, distance.");
+            var changed = 0;
+            foreach (var id in Ids(a))
+            {
+                if (ctx.Model.Get(id) is not { Class: IfcClass.Door or IfcClass.Window } fill) continue;
+                var attrs = fill.CloneAttrs();
+                if (position == null) attrs.Remove("position"); else attrs["position"] = position.ToJson();
+                ctx.Replace(fill.With(attrs: attrs));
+                changed++;
+            }
+            if (changed == 0) throw new CommandException("Select doors or windows.");
+            return null;
+        });
+
+        // A door or window type's data, or some elements' own (report #76): free text for U-value, g-value, safety glass, fire rating
+        // and fittings (uValue, gValue, safetyGlass, fireRating, fittings; empty takes one off), and extras [{name, value}]: the
+        // user's parameters in Lapin_Joinery. {typeId} for a type, else the elements (ids).
+        r.Command("setJoineryData", "Door and window data", (ctx, a) =>
+        {
+            var data = a["data"] as JsonObject;
+            var extras = a["extras"] as JsonArray;
+            if (data == null && extras == null) throw new CommandException("Nothing to change.");
+            var targets = (string?)a["typeId"] is { } typeId
+                ? [ctx.Model.Get(typeId) is { Class: IfcClass.DoorType or IfcClass.WindowType } found ? found : throw new CommandException("There is no such door or window type.")]
+                : Ids(a).Select(id => ctx.Model.Get(id)).OfType<Entity>().Where(x => x.Class is IfcClass.Door or IfcClass.Window).ToList();
+            if (targets.Count == 0) throw new CommandException("Select doors or windows, or a type.");
+            foreach (var target in targets) JoineryData.Apply(ctx, target, data, extras);
             return null;
         });
 

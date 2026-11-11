@@ -45,3 +45,7 @@ Le copie usano gli stessi tipi degli originali e ricevono nuovi GlobalId IFC. Tu
 ![I muri e il solaio del piano terra copiati sui due livelli sopra, in 3D](shots/copy-to-storeys-3d.webp)
 
 Per spostare invece la selezione su un altro livello, scegli **Modifica → Sposta al piano**. Gli elementi mantengono le loro altezze sopra il nuovo livello, o restano dove sono nello spazio.
+
+## La quota di un elemento
+
+Un elemento su un livello sta alla quota del livello e a uno scostamento da essa. **Proprietà → Posizionamento** mostra il suo **Piano**, il suo **Scostamento dal livello** e la sua **Quota altimetrica** sopra ±0,00: la base di un muro o pilastro, il lato superiore di un solaio o trave (lo scostamento di una trave è dalla sommità del livello), il lato inferiore di una fondazione (il livello inferiore del suo tipo sotto il livello, più lo scostamento). Digita una delle cifre e l'altra la segue: l'elemento si sposta in tutte le viste, in un solo passo di annullamento. Per mettere un elemento su un altro livello, cambia il suo **Piano**. Ciò che disegni in una pianta sta al livello di quella pianta.

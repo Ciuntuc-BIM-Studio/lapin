@@ -262,6 +262,36 @@ public class AnnotationTests
     }
 
     [Fact]
+    public void An_end_dragged_along_a_grid_axis_or_a_wall_s_centre_line_leaves_the_dimension_where_it_was()
+    {
+        // Report #126: the dimension rotated when a grid line's end was dragged, because its point was held a distance from the axis's start.
+        var f = F();
+        var g = (string)f.Run("drafting.addAxis", new JsonObject { ["x1"] = 0, ["y1"] = -1, ["x2"] = 0, ["y2"] = 10, ["tag"] = "1" })!["gridId"]!;
+        f.Run("drafting.addAxis", new JsonObject { ["x1"] = 6, ["y1"] = -1, ["x2"] = 6, ["y2"] = 10, ["tag"] = "2" });
+        var w = f.Wall(3, 0, 3, 4);
+        var view = "plan:" + f.Storey;
+        var d1 = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(0, 5), ["b"] = new JsonArray(6, 5), ["at"] = new JsonArray(3, 6) })!["id"]!;
+        var d2 = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(3, 1), ["b"] = new JsonArray(6, 1), ["at"] = new JsonArray(4, -2) })!["id"]!;
+        Assert.Equal("axis", Dimensions.Stations(f.Model.Get(d2)!)[0].Ref!.Kind);
+        // The axis's start dragged along it, then its end.
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "1", ["y1"] = -4 });
+        Near(Ends(f, d1).A, 0, 5);
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "1", ["y2"] = 14 });
+        Near(Ends(f, d1).A, 0, 5);
+        // The wall made longer at its start.
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = w, ["x1"] = 3, ["y1"] = -2 });
+        Near(Ends(f, d2).A, 3, 1);
+        // A dimension on the wall's face likewise.
+        var d3 = (string)f.Run("drafting.addDimension", new JsonObject { ["viewId"] = view, ["a"] = new JsonArray(3.1, 3), ["b"] = new JsonArray(6, 3), ["at"] = new JsonArray(4, 7) })!["id"]!;
+        var before = Ends(f, d3).A;
+        f.Run("architecture.updateWall", new JsonObject { ["id"] = w, ["y1"] = -3 });
+        Near(Ends(f, d3).A, before.X, before.Y);
+        // The line moved across still takes the point with it, at the same place along.
+        f.Run("drafting.updateAxis", new JsonObject { ["gridId"] = g, ["tag"] = "1", ["x1"] = 1, ["x2"] = 1 });
+        Near(Ends(f, d1).A, 1, 5);
+    }
+
+    [Fact]
     public void A_driving_dimension_moves_its_element_and_a_string_pushes_what_follows()
     {
         var f = F();

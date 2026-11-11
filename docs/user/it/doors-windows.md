@@ -73,6 +73,8 @@ Una porta o una finestra è una griglia di specchiature. Ogni specchiatura scegl
 
 **Sistema di profili** parte da un profilo in **PVC**, **Alluminio**, **Legname** o **Acciaio (sottile)**: imposta le misure di telaio, montanti, traversi e ante e dà ai profili le loro forme fini. Il telaio ha una **Battuta** su cui l’anta chiude, l’anta si sovrappone al telaio per il suo **Sormonto dell’anta**, i **fermavetri** tengono il vetro e una finestra ha un gocciolatoio sotto il traverso inferiore. Ogni misura resta modificabile. **Semplice (profili lisci)** mantiene elementi rettangolari semplici, come prima.
 
+**Telaio da una libreria** e **Anta da una libreria** prendono un profilo dalle vostre [librerie di profili](profiles.md) (una sezione di alluminio o PVC letta da un DXF, per esempio): gli elementi diritti di telaio e anta hanno allora il suo contorno reale, con i vuoti, in 3D, in sezione e in pianta, con larghezza e profondità. Sostituisce ciò di cui è la forma reale: la battuta, il labbro e i gocciolatoi del sistema; i fermavetri restano. Le teste curve e le finestre rotonde mantengono una fascia semplice, come i montanti e traversi della griglia. **Semplice** torna a un rettangolo di quella misura.
+
 ![Una finestra in PVC: le ante che si sovrappongono al telaio, i fermavetri, un pannello cieco sotto una luce fissa](shots/joinery-profiles-3d.webp)
 
 In **Dettagli**, **Davanzale interno** e **Davanzale esterno** attivano e disattivano i davanzali, e **Rivestimento delle spallette** attiva la finitura della mazzetta sulle spalle e sull’architrave. Dove davanzali e rivestimenti non servono, togli la spunta.
@@ -101,6 +103,12 @@ Ciascuno si posiziona rispetto alle facce reali del muro dove si trova la finest
 **Traverso all’imposta dell’arco**, spuntato di serie, tiene quel traverso e il sopraluce fisso sopra di esso. Togli la spunta per una finestra a battente ad arco: la fila superiore delle ante sale nell’arco, e il telaio, l’anta, il vetro, le inglesine e il simbolo d’apertura seguono l’arco tutto intorno, senza barra sotto. L’anta si apre come scegli (a battente, anta-ribalta, fissa), i montanti salgono fino all’arco, e piante, sezioni, prospetti, l’anteprima 3D e l’IFC la mostrano così. Lo stile **Finestra a battente ad arco** mette in una volta un arco ribassato con una sola anta a battente.
 
 ![Una finestra a battente ad arco: una sola anta a battente che segue un arco ribassato, senza traverso sotto](shots/joinery-arched-casement.webp)
+
+### Vetro senza telaio
+
+**Vetro senza telaio** fa una porta o finestra di solo vetro temprato, senza telaio né anta; lo stile **Vetro senza telaio** lo imposta subito, con un'anta su perni. In una porta, **Fissaggio** dice cosa regge l'anta: **Perni e accessori d'angolo** (una cerniera a pavimento e un perno in alto, un accessorio a ogni angolo dal lato cerniere e una serratura d'angolo in basso dal lato opposto) o **Cerniere per vetro** (due, tre su un'anta più alta di 2,30 m, serrate sul vetro e fissate al muro o al pannello accanto). Lo **Spessore del vetro** va da 6 a 25 mm (12 mm predefinito), la **Fuga attorno al vetro** è lo spazio verso il vano e tra i pannelli, la **Fuga sotto l'anta** quello sopra il pavimento. Un'anta è a battente, va e vieni o scorrevole; un pannello accanto o sopra è fisso, in un profilo a U a pavimento e sotto l'architrave. Un'anta scorrevole è appesa a un binario per tutta la larghezza del vano, davanti ai pannelli fissi verso la stanza, e li supera di 50 mm, come una parete divisoria in vetro o un box doccia. La maniglia è un maniglione su entrambe le facce, se non ne scegli un'altra. Una finestra senza telaio è una vetrata fissa. Le piante disegnano l'anta aperta come il suo vetro, i prospetti gli accessori e il binario; in IFC il tipo non ha telaio (il suo spessore è quello del vetro).
+
+![Una porta in vetro senza telaio su perni con accessori d'angolo, nel configuratore](shots/joinery-frameless-door.webp)
 
 Le **Inglesine** dividono le ante: **Griglia (coloniale)** con i suoi riquadri in larghezza e in altezza, **Prairie** con barre vicino ai bordi, oppure **Losanghe**.
 
@@ -138,6 +146,24 @@ In pianta le facce sono tagliate, seduta, davanzale e base disegnati sotto il ta
 ### Maniglie
 
 **Maniglia** sceglie la maniglia del tipo: una **Maniglia a leva**, un **Pomolo**, un **Maniglione** o una **Maniglia per finestra**, oppure **Nessuno**. Per impostazione predefinita una porta ha una maniglia a leva e una finestra una maniglia per finestra. Una porta ha la maniglia su entrambe le facce, all’**Altezza della maniglia** che imposti; **Colore della maniglia** ne imposta il colore. Le maniglie si vedono in 3D, nelle sezioni e nei prospetti, e nei disegni del configuratore quando **Ferramenta** è spuntato.
+
+### Posizione del telaio e davanzali
+
+**Position in the wall** (posizione nel muro) stabilisce dove sta il telaio nello spessore del muro come valore, non solo centrato: scegli **From the exterior finish**, **From the core** o **From the wall’s centre**, e **Set back**, di quanto la faccia esterna del telaio sta dietro quel riferimento (dal centro, di quanto il centro del telaio). *From the exterior finish* e 50 mm mette il telaio 50 mm dietro l’intonaco. Il telaio, le mazzette, i davanzali e i simboli di apertura si spostano con lui, in piante, sezioni, 3D e IFC. Un tipo fatto senza posizione resta **Centred in the wall**. Nel pannello delle proprietà una porta o una finestra ha **Frame in the wall** per darsi una posizione propria (**As the type** la lascia) e **Set back** per la distanza.
+
+![Il configuratore con il telaio 50 mm dietro la finitura esterna](shots/joinery-position.webp)
+
+L’**Exterior sill** (davanzale esterno) ha una **Slope** (pendenza) in gradi (5° all’inizio; 15° per uno metallico). Un davanzale inclinato scende allontanandosi dal telaio e toglie dal muro tutto ciò che sta sopra: intonaco, nucleo e intonaco interno sono tagliati secondo la sua faccia superiore inclinata, in 3D, in sezioni e prospetti e nei computi.
+
+### Dati: valore U, resistenza al fuoco, ferramenta
+
+**Data…**, sotto il tipo nel configuratore (e nel pannello delle proprietà, per le porte e finestre selezionate), apre una casella di testo libero: **U-value**, **g-value**, **Safety glass** (stratificato all’interno, temperato su entrambi i lati…), **Fire rating** (EI 30, EI2 60-C5…) e **Fittings**; **More data** aggiunge i tuoi, per esempio *Sauna window* o *Frosted glass*. Niente si sceglie da un elenco. Il valore proprio di una porta o finestra prevale su quello del tipo; un campo vuoto torna a quello del tipo (mostrato in grigio).
+
+![La casella dei dati di un tipo di finestra](shots/joinery-data.webp)
+
+Sono i parametri del tipo: gli abachi di porte e finestre mostrano ciascuno come una riga, le etichette li leggono come `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` e `{Fittings}`, e l’IFC li conserva. La resistenza al fuoco è `FireRating` di `Pset_WindowCommon` o `Pset_DoorCommon`; un valore U leggibile come numero (0.9 o *0,9 W/m²K*) è anche lì `ThermalTransmittance`, con `GlazingAreaFraction` per una finestra; il resto è nell’insieme `Lapin_Joinery`.
+
+![I dati propri di una finestra nel pannello delle proprietà](shots/joinery-data-properties.webp)
 
 ### Parametri
 

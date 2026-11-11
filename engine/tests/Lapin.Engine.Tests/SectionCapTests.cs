@@ -101,6 +101,7 @@ public class SectionCapTests
         var type = f.Type("Brick", ("Brick", 0.25, true));
         double c = Math.Cos(Math.PI / 6), s = Math.Sin(Math.PI / 6);
         var wall = f.Wall(0, 0, 6 * c, 6 * s, type);
+        f.LegacyHatches();
         var core = f.Session.Caps([ClipPlane.Through(new Vec3(0, 0, 1.2), new Vec3(0, 0, -1))], drawing: true).Single(x => x.NodeId == wall).Parts.Single();
         var h = core.Hatch!;
         Assert.NotEmpty(h);

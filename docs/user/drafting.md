@@ -28,11 +28,21 @@ Every tool shows its letters in its tooltip; you can change them in **View → K
 
 ## Measuring
 
-**Measure** (<kbd>ME</kbd>, the second quick tool, or **MEASURE** or **DIST** on the command line) measures without drawing anything: click points in a plan, a section or an elevation, snapping as you go, and press <kbd>Enter</kbd>. While you click, the live input shows each leg's length and angle; at the end the notice gives the total length, each leg (for one leg, its Δx, Δy and angle) and, from three points on, the area they enclose.
+**Measure** (<kbd>ME</kbd>, the second quick tool, or **MEASURE** or **DIST** on the command line) measures without drawing anything: click points in a plan, a section or an elevation, snapping as you go, and press <kbd>Enter</kbd>. While you click, the live input shows each leg's length and angle; at the end the notice gives the total length, each leg (for one leg, its Δx, Δy and angle) and, from three points on, the area they enclose. In the 3D view the points snap to the model's corners, edges and faces; when they are at different heights the notice gives the true length in space, with Δz.
 
 ## Snaps and helpers
 
 Lapin snaps to the ends, middles and intersections of what is drawn, and to the grid. <kbd>F3</kbd> turns snapping on or off, <kbd>F8</kbd> ortho and <kbd>F10</kbd> polar tracking. Their state shows at the bottom right of the view.
+
+**Which snaps.** A right click on **SNAP** (or the ▾ beside it) lists the object snaps: **Endpoint**, **Midpoint**, **Intersection**, **Centre**, **Quadrant**, **Perpendicular** and **Nearest**, each on or off, then **Snap to the grid** and the polar tracking angle (every 5°, 10°, 15°, 22.5°, 30°, 45° or 90°). The same choices are in **File → Preferences… → Grid and snaps**, and they are kept for the next start.
+
+![The snap menu under the plan](shots/snap-menu.webp)
+
+**The grid.** The plan's grid is **adaptive** at first: its step follows the zoom. In **Preferences → Grid and snaps** choose **Fixed** and type its step (for example 100 mm or 1 m) and every how many lines one is drawn heavier. The grid then keeps that step at every zoom, and the cursor snaps to it where no object snap takes the point. When the step is too fine for the zoom, only its heavier lines are drawn. The 3D view's ground grid takes the same step.
+
+**UCS.** A user coordinate system, as in AutoCAD: type **UCS** on the command line, click its origin, then a point on its X axis (<kbd>Enter</kbd> keeps the angle). **W** goes back to the plan's own axes (World), **B** puts it on the project base point, **S** on the survey point with its axes east and north, and **R** turns it by an angle you type. The **UCS** chip beside SNAP shows when one is set, and its menu offers the same. In a UCS, typed coordinates (`x,y`, `@dx,dy`, `d<angle`), ortho, polar tracking and the grid follow its axes, and its icon (X red, Y green) stands at its origin. The UCS is kept in the project, and setting it is one undo step.
+
+![A UCS turned 30°: its icon and the grid along its axes](shots/ucs.webp)
 
 ## Selecting
 
@@ -54,6 +64,16 @@ A door, a window or a wall opening moves and copies along its wall: only the par
 
 A grid axis moves, copies, rotates and mirrors on its own, or together with other elements. A copy is a new axis of the same grid, named after the last axis that runs its way: with axes 1, 2 and 3, a copy of any of them is 4.
 
+### In sections and elevations
+
+**Move** (<kbd>M</kbd>), **Copy** (<kbd>CO</kbd>) and dragging a selected element work in a section or an elevation too, in the view's plane. Along the view, the element moves in plan along the section's line; up or down, it rises or drops by its offset from its level (a wall's or column's base offset, a beam's top offset, a floor's offset). While you drag, its **Offset from level** in the properties follows. A door or a window still slides along its wall, and lines drafted on the view move in the view. **Mirror** there takes a vertical line and mirrors the elements across the plane through it, square to the view. Elements do not **Rotate** in a section or an elevation, as that would tip them over: turn them in a plan or in 3D. Drafted lines rotate and mirror any way. A pinned element stays where it is.
+
+![A beam dragged up in the south elevation: its ghost where it was, the offset at the mouse and its offset from the level following in the properties](shots/section-drag.webp)
+
+### Pinning
+
+Pin what must not move by mistake: an imported model, the grid, a survey drawing. Select it and choose **Modify → Pin**, or tick **Pinned** under **Placement** in its properties. A pinned element is not moved, rotated, mirrored, raised, sent to another storey or deleted, and it shows no grips. Its other fields still change: its type, height or material. It can still be copied, and the copy is not pinned. A wall joined to it that moves keeps the pinned wall's ends where they are. Pinning a group pins its members; a group with a pinned member does not move. **Modify → Unpin** (<kbd>UP</kbd>) lets it go again. Any element can be pinned: a wall, a reference from an imported file, a drafted line.
+
 ## Drafting
 
 The **Draft** tab draws lines, polylines, rectangles, circles and arcs. It edits them with offset, trim, extend, fillet, chamfer and join, fills areas with hatches, and organises them on **Layers**. **Import DXF** brings a CAD drawing in as lines you can snap to and edit.
@@ -61,6 +81,8 @@ The **Draft** tab draws lines, polylines, rectangles, circles and arcs. It edits
 ![The Draft tab](shots/ribbon-draft.webp)
 
 **Offset** (<kbd>O</kbd>) copies a line, a polyline, a rectangle, a circle or an arc at a distance. Type the distance in the project's unit (in a project in millimetres `500` is half a metre; `2m` or `1'6"` say their own unit), click the shape, then the side it goes to; it asks for the next shape until you press <kbd>Enter</kbd> or <kbd>Esc</kbd>. Type **T** (Through) instead and each copy passes through the point you click. A polyline's corners stay sharp (mitred), as in CAD. Offset works in plans, sections, elevations, on reference planes and in the 3D view.
+
+**Explode** (<kbd>X</kbd>, or **EXPLODE**) is the way back from **Join**: select polylines or rectangles and each becomes its lines, one for every side, on the same layer with the same pen and colour and in the same group, in one undo step. Circles, arcs, hatches and dimension strings are left as they are, and a selection with nothing to split says so. It works in plans, sections, elevations, on reference planes and on the work plane in the 3D view.
 
 Every length the command line asks for is in the project's unit, and the prompt says which: `Depth (mm)`, `Height (ft-in)`. Angles, factors and counts are plain numbers: `90` after **Rotate** is 90° whatever the unit.
 
@@ -97,7 +119,7 @@ Where drafted elements overlap, the one drawn later lies on top. To change it, s
 
 The **Annotate** tab has the dimensions, text, grid axes, levels and tags. A dimension reads the model, so it updates when a wall moves. How text, dimensions, axes and tags look is set in **Manage → Drafting standards**.
 
-An aligned or linear dimension goes on as a string: after the first two points and its line, each click adds the next point on the same line, and **Enter** (or **Esc**) makes the whole string one dimension (**U** takes the last point back; type **S** first for a single dimension). A string behaves like a polyline: a click selects all of it, and it moves, copies and deletes as one. A string that measures walls, edges or grid axes stays on them: dragged or moved on its own, only its dimension line slides, square to the string, so a slip of the mouse never leaves it measuring empty space; moved together with what it measures, it goes with them. Its grips sit on each measured point (drag to move it, Ctrl/⌘-click to take it out), in the middle of each segment (drag to add a point, Ctrl/⌘-click to add one halfway) and at the ends of the dimension line (drag to move the line). To put more points into a string, as in ArchiCAD, select it and click **Annotate → Add points** (or type **DIMADD**, or **Add points** in its properties): each point you click goes into the string where it falls along its line, between the points around it or beyond an end as the new end, and holds on the wall, edge or axis it lands on; **Enter** or **Esc** finishes. To take points out, Ctrl/⌘-click their grips, or click **Annotate → Remove points** (**DIMDEL**, or **Remove points** in its properties) and click near each point; the segments either side become one. Each segment's value has a grip too: drag it to move the value off its place where segments are short and values would overlap; once it stands off its segment, a thin leader ties it back. Ctrl/⌘-click the grip, or **Texts back on the line** in the properties, puts it back. A moved value stays with its segment when points move, and turns with the string. Double-click a segment to type its value: the element it measures moves, and so does everything after it in the string. The properties show each segment's value and text, split a string into single dimensions, and join single dimensions that continue one another on one line.
+An aligned or linear dimension is a single one by default: click its two points, then where its line goes, and the command asks for the next. **Esc** leaves. Tick **Continuous** in the command bar (or type **C**; it is remembered) and it goes on as a string instead: after the first two points and its line, each click adds the next point on the same line, with each segment's value shown as you draw. To finish the string, press **Enter**, right-click, click the bar's **Finish string** button, or click the last point again (a double-click does). **U** takes the last point back. **Esc**, another tool or another command keeps the string drawn so far and says so; undo removes it. A linear dimension keeps the direction it was given (horizontal or vertical, by which side of the two points you put the line) until you are clearly on the other side; **Tab** flips it, and the bar shows which it is. A string behaves like a polyline: a click selects all of it, and it moves, copies and deletes as one. A string that measures walls, edges or grid axes stays on them: dragged or moved on its own, only its dimension line slides, square to the string, so a slip of the mouse never leaves it measuring empty space; moved together with what it measures, it goes with them. Its grips sit on each measured point (drag to move it, Ctrl/⌘-click to take it out), in the middle of each segment (drag to move the dimension line through the point; Ctrl/⌘-drag to add a point where you drop it, Ctrl/⌘-click to add one halfway) and at the ends of the dimension line (drag to move the line). To put more points into a string, as in ArchiCAD, select it and click **Annotate → Add points** (or type **DIMADD**, or **Add points** in its properties): each point you click goes into the string where it falls along its line, between the points around it or beyond an end as the new end, and holds on the wall, edge or axis it lands on; **Enter** or **Esc** finishes. To take points out, Ctrl/⌘-click their grips, or click **Annotate → Remove points** (**DIMDEL**, or **Remove points** in its properties) and click near each point; the segments either side become one. Each segment's value has a grip too: drag it to move the value off its place where segments are short and values would overlap; once it stands off its segment, a thin leader ties it back. Ctrl/⌘-click the grip, or **Texts back on the line** in the properties, puts it back. A moved value stays with its segment when points move, and turns with the string. Double-click a segment to type its value: the element it measures moves, and so does everything after it in the string. The properties show each segment's value and text, split a string into single dimensions, and join single dimensions that continue one another on one line.
 
 Annotations on a plan (dimensions, texts, drafted lines, tags) can go to another plan where they are, since plans share their coordinates: select them and choose the plan in their properties, under **View** to move them or **Copy to** to copy them. This also brings dimensions made on a site plan to the level's floor plan. A dimension's points then hold on what the new plan cuts at that place: walls, edges, axes.
 
@@ -106,6 +128,8 @@ Annotations on a plan (dimensions, texts, drafted lines, tags) can go to another
 ![The door's and the window's heights under their segments](shots/dimension-opening-height.webp)
 
 ![Opening height in the dimension styles](shots/dimension-opening-height-style.webp)
+
+**Dimensions on a line.** A dimension point clicked on a grid axis or on a wall's centre line holds on the line, not on a point of it. Drag the axis's end along itself to make its head fit the view, or make the wall longer or shorter: the dimension keeps measuring where you put it and its line does not turn. If the axis or the wall moves across, the point goes with it, at the same place along. A dimension on a wall's face likewise stays where it measured when the wall is stretched along itself. Dimensions made before attach to a grid axis the same way; one on a wall's centre line is attached anew by clicking its point again.
 
 ### Tags
 
@@ -124,6 +148,12 @@ A selected tag has grips. Drag the box to move the tag: the leader keeps pointin
 ![A tag's properties](shots/tag-properties.webp)
 
 A door's or window's marker is edited part by part, each text moved or turned and each end of its line drawn out: see [Doors and windows](doors-windows.md).
+
+**Turning a tag.** In a tag's properties, **Rotation** turns its text and its shoulder or box by an angle in degrees from level, and **Align to element** makes it follow the direction of the element it tags (a wall's or beam's axis, the longest edge of anything else), turning with it when the element turns; the rotation is then added to that direction. A tag is always drawn upright, never upside down. A selected tag has a turning grip over its text: drag it in steps of 15° (45° and 90° among them; hold <kbd>Shift</kbd> for any angle), and Ctrl/⌘-click puts the text level again. The leader still reaches the element. Plain and build-up tags turn alike, in plans, sections and elevations, and sheets, the PDF and the DXF print them as you see them.
+
+**What a tag tags.** While the **Tag** tool waits for an element, the one under the cursor is highlighted in the accent colour; hover a placed tag, or select it, and the element it tags is highlighted.
+
+![A tag aligned to its wall, with its turning grip, and the wall it tags highlighted](shots/tag-rotate.webp)
 
 #### Build-up tag
 

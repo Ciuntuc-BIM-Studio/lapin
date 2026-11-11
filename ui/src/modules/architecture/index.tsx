@@ -47,6 +47,8 @@ import { SHADE, SunshadeSection, SunshadeTypesDialog, sunshade, sunshadeAlong, s
 import { lazyPart } from '../../platform/lazyPart';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
+const CurtainMembersDialog = lazyPart(() => import('./CurtainMembersDialog').then((m) => m.CurtainMembersDialog), { title: 'Curtain wall members' });
+const CurtainCellsDialog = lazyPart(() => import('./CurtainCellsDialog').then((m) => m.CurtainCellsDialog), { title: 'Curtain wall panels and doors' });
 const WallProfileDialog = lazyPart(() => import('./WallProfileDialog').then((m) => m.WallProfileDialog), { title: 'Wall profile' });
 const GateTypesDialog = lazyPart(() => import('./gates/GateTypesDialog').then((m) => m.GateTypesDialog), { title: 'Gate types' });
 const WallTypesDialog = lazyPart(() => import('./WallTypesDialog').then((m) => m.WallTypesDialog), { title: 'Wall types' });
@@ -258,6 +260,14 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
   options: FillPlacingHint,
   gesture: {
     kind: 'pick', types: ['IfcWall'], reach: 40,
+    // What a module that drives a wall is asked, as the cursor moves: whether this fits there.
+    placing: (_wall, _at) => {
+      const s = useSession.getState();
+      const wanted = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
+      const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, kind === 'door' ? 'IfcDoorType' : 'IfcWindowType')[0];
+      const width = (type?.props.spec as { width?: number } | undefined)?.width ?? (kind === 'door' ? 0.9 : 1.2);
+      return { kind, width, typeId: type?.id ?? null };
+    },
     ghost: (wall, at) => {
       const s = useSession.getState();
       const wanted = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
@@ -499,7 +509,7 @@ const architecture: LapinModule = {
     { id: 'roomColors', label: 'Room colours', classes: ['LapinView'], component: RoomViewSection },
     { id: 'gate', label: 'Gate', classes: [GATE_CLASS], component: GateSection },
   ],
-  dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog },
+  dialogs: { wallOpening: OpeningDialog, wallProfile: WallProfileDialog, curtainMembers: CurtainMembersDialog, curtainCells: CurtainCellsDialog, roof: RoofDialog, wallTypes: WallTypesDialog, slabTypes: SlabTypesDialog, joinery: JoineryDialog, stairTypes: StairTypesDialog, ceilingTypes: CeilingTypesDialog, skirtingTypes: SkirtingTypesDialog, roomFinishes: RoomFinishesDialog, curtainWalls: CurtainWallDialog, roomColors: RoomColorsDialog, roomTag: RoomTagDialog, underStair: UnderStairDialog, sunshades: SunshadeTypesDialog, balcony: BalconyDialog, gateTypes: GateTypesDialog },
   grips: { IfcWall: wallGrips, IfcDoor: joineryGrips, IfcWindow: joineryGrips, IfcCurtainWall: curtainGrips, IfcSlab: contourGrips('architecture.updateSlab'), LapinCeiling: contourGrips('architecture.updateCeiling'), IfcOpeningElement: openingGrips, IfcRoof: roofGrips, IfcSpace: roomGrips, LapinDownpipe: downpipeGrips, LapinRailing: railingGrips, LapinSkirting: skirtingGrips, [SHADE]: sunshadeGrips, [BALCONY]: balconyGrips,
     [GATE_CLASS]: (n: NodeDto) => {
       const { nodes, relations } = useSession.getState();

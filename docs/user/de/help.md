@@ -10,7 +10,7 @@ Klicken Sie auf **Ask Me**, den Hasen oben rechts, oder drücken Sie an beliebig
 
 ![Ask Me beantwortet, wie man eine Wand kopiert](shots/ask-me.webp)
 
-Wenn Ask Me keine Antwort hat, schickt **Frage senden** die Frage an uns. Wir beantworten sie, und die Antwort wird für alle zu Ask Me hinzugefügt.
+Wenn Ask Me keine Antwort hat, schickt **Frage senden** die Frage an uns. Wir beantworten sie, und die Antwort wird für alle zu Ask Me hinzugefügt. **Im Forum fragen** fragt stattdessen die Benutzer und Fans von Lapin: Es öffnet im Forum ein neues Thema mit Ihrer Frage als Titel.
 
 ## Das Hilfemenü
 
@@ -22,7 +22,9 @@ Die Schaltfläche **?** neben Ask Me öffnet das Hilfemenü:
 - **Benutzerhandbuch** öffnet dieses Handbuch in der Sprache der Oberfläche.
 - **Problem melden…** teilt uns mit, was schiefgelaufen ist, oder sendet eine Idee oder eine Frage. Sagen Sie, was passiert ist und was Sie erwartet haben, und fügen Sie einen Screenshot hinzu, wenn es hilft. Die Version der App und ihre letzten Fehlermeldungen werden mit der Meldung gesendet.
 - **Nachrichten…** zeigt die Antworten auf Ihre Meldungen. Der Eintrag erscheint, sobald Sie einmal um eine Antwort gebeten haben.
-- **Community (Skool)** ist der Ort, an dem sich Benutzer und das Team austauschen.
+- **Forum** öffnet das Forum von Lapin (forum.lapinbim.com), in dem sich Benutzer und Fans austauschen, ihre Arbeiten zeigen und einander helfen. Das Forum ist auf Englisch, aber Sie können in Ihrer Sprache schreiben.
+- **Im Forum fragen…** öffnet im Forum ein neues Thema in der Kategorie Lapin, mit der Version der App unter Ihrem Text. Sonst geht nichts über Ihren Computer oder Ihr Projekt mit. Sie melden sich im Forum an und veröffentlichen das Thema dort.
+- **Community (Skool)** ist der Ort für die Kurse und das übrige Material des Teams.
 - **Nach Updates suchen…** gibt es nur in der Desktop-App.
 - **Über Lapin…** zeigt die Version, die Lizenz, einen Link zum Quellcode und was Helpware bedeutet.
 

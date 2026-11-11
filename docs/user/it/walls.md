@@ -21,7 +21,7 @@ Fai clic dove inizia il muro, poi fai clic su ogni angolo. Il muro successivo se
 Dove due muri si incontrano, Lapin li unisce da solo. I loro strati si compenetrano come verrebbero costruiti.
 
 - **Muro curvo** (<kbd>WC</kbd>) disegna un muro lungo un arco.
-- **Facciata continua** (<kbd>CW</kbd>) disegna una parete vetrata con montanti e pannelli.
+- **Facciata continua** (<kbd>CW</kbd>) disegna una parete vetrata con montanti e pannelli; il suo tipo può prenderne la forma reale da una [libreria di profili](profiles.md).
 - I muri si uniscono da soli dove si incontrano: un angolo a quartabuono, un muro che termina su un altro a T, uno che ne attraversa un altro a X. A un T o a un X gli strati si compenetrano come si costruiscono: il nucleo del muro che termina prosegue attraverso le finiture dell’altro fino al suo nucleo, e le sue finiture si fermano alla faccia dell’altro, dove incontrano le loro simili, così la pianta mostra un’unica stratigrafia senza una linea in mezzo. **Unisci** (<kbd>JW</kbd>), **A quartabuono** e **Di testa** cambiano il modo in cui due muri si incontrano quando non è quello che vuoi; **Nuovi angoli a quartabuono** rende la giunzione di testa quella predefinita su questo computer. In entrambi i casi, ogni strato gira l’angolo per conto suo: le finiture incontrano le loro simili e proseguono senza interruzioni, e i nuclei si incontrano sulla diagonale (quartabuono) oppure un nucleo prosegue fino alla faccia esterna dell’altro (di testa), così una pianta di muri a strati mostra angoli puliti. Ogni strato entra nell'altro muro attraverso i suoi strati di **Priorità** minore e si ferma al primo di priorità uguale o maggiore (vedi **Tipi di muro** più sotto), così di norma i nuclei incontrano i nuclei e le finiture si fermano alle facce; in un angolo, un nucleo di priorità maggiore passa attraverso quello dell'altro, a quartabuono o di testa. La **Priorità di taglio** di un muro non lo fa mai entrare in un muro a cui è unito: tra muri uniti decide solo quale nucleo passa quando entrambi i nuclei hanno la stessa priorità (in un angolo di testa o in un incrocio).
 - **Scambia** cambia quale dei due muri passa.
 
@@ -54,6 +54,32 @@ Il muro resta un muro: spessore, strati, giunzioni, porte e finestre restano com
 ![Un timpano disegnato nell’editor del profilo](shots/wall-profile-editor.webp)
 
 ![Il muro ovest della casa a timpano, con la finestra conservata](shots/wall-profile-3d.webp)
+
+### Il contorno e le aste di una facciata continua
+
+**Profilo…** nelle proprietà di una facciata continua ne disegna il contorno in prospetto, come per un muro: un timpano, una pendenza, gradini o un contorno qualsiasi, con punti da trascinare, aggiungere o togliere e una tabella in millimetri. La facciata sale fino al suo punto più alto. La sua griglia guadagna una linea dove il contorno si spezza (una spezzata a meno di un montante e mezzo da una linea della griglia viene portata su di essa); ogni campo conserva i traversi che stanno sotto il suo punto più basso; il pannello sopra l'ultimo riempie fino al contorno e un'asta di bordo lo segue, inclinata; i montanti sono tagliati a esso. Le impostazioni del tipo restano, e **Profilo…** riapre il contorno per cambiarlo, senza ricostruire; **Sommità piana** restituisce il rettangolo. Si vede in 3D, prospetti e sezioni, i computi misurano pannelli e aste come disegnati, e l'IFC li porta come parti.
+
+![Un timpano disegnato come contorno di una facciata continua](shots/curtain-boundary-editor.webp)
+
+![La facciata continua sotto il suo timpano, in 3D](shots/curtain-boundary-3d.webp)
+
+**Aste…** dà a montanti e traversi scelti un profilo proprio. Il prospetto della facciata mostra ogni asta: clicca su una (<kbd>Maiusc</kbd> o <kbd>Ctrl</kbd>/<kbd>⌘</kbd> ne aggiunge, o prendi tutti i montanti o tutti i traversi), scegli un profilo dalle [librerie di profili](profiles.md) o una scatola semplice, la sua **Rotazione** e il suo **Specchio**, il suo allineamento trasversale all'asta (faccia anteriore o posteriore sul suo piano) e lungo (bordo iniziale o finale sulla linea della griglia o sul livello) e i suoi spostamenti trasversale e verso l'esterno dell'edificio; l'immagine accanto mostra la sezione come sta. **Applica a quelli scelti** dà loro lo stile, **Torna a quello del tipo** lo toglie. Il profilo proprio di un tipo ha gli stessi campi di posizione in **Facciate continue…**, per ogni facciata del tipo. Il profilo resta una copia nel progetto: **Aggiorna dalla libreria** cambia ogni asta che ne è fatta, in questa facciata e in altre.
+
+![Aste: un profilo posato sui montanti scelti](shots/curtain-members-dialog.webp)
+
+![Due montanti con un profilo proprio, in 3D](shots/curtain-members-3d.webp)
+
+**Pannelli e porte…** dà alle celle scelte un pannello proprio o una porta. Il prospetto del muro mostra ogni cella come la costruisce il motore: fai clic su una (<kbd>Maiusc</kbd> o <kbd>Ctrl</kbd>/<kbd>⌘</kbd> ne aggiunge altre). Un **tipo di pannello** si salva una volta nel progetto e si dà alle celle di qualsiasi facciata continua: vetro, pieno, un **tamponamento con telaio** (un telaio della sua larghezza e profondità intorno alla cella, il tamponamento in vetro o pieno arretrato dalla sua faccia esterna dell'arretramento) o **aperta** (senza pannello); il suo spessore, lo spostamento dall'asse e i suoi materiali (quelli del tipo di facciata continua se non se ne sceglie nessuno). **Dai a quelle scelte** lo applica, **Il pannello del tipo** lo toglie; un tipo di pannello modificato cambia tutte le sue celle. **Porta in quelle scelte** sostituisce ogni cella scelta con una porta: una nuova porta per facciata continua (singola o doppia, a battente o scorrevole, larghezza e altezza, ante vetrate o piene, il profilo del telaio dalle [librerie di profili](profiles.md)) o qualsiasi tipo di porta del progetto. **Riempi la cella** le dà la misura della cella; altrimenti tiene quella del suo tipo, sta a sinistra, al centro o a destra nella cella con uno spostamento, e riceve un traverso sopra e un montante accanto dove resta vetro, vetrati con il pannello della cella. Nella fila in basso la porta poggia sul pavimento e il traverso inferiore è tagliato sotto di essa. Le impostazioni sono tenute per cella, quindi seguono la griglia quando cambia: una porta che riempie la sua cella cresce o si riduce con essa, e una la cui cella non c'è più lo dice e torna con essa. La porta è una porta: selezionala per cambiarne la mano o il lato, il tipo, o spostarla in un'altra cella (Sposta lungo il muro); le etichette, gli abachi delle porte (alla misura a cui sta) e l'esportazione IFC (una IfcDoor parte della sua IfcCurtainWall) la contano.
+
+![Pannelli e porte: un parapetto con telaio e una porta nelle celle scelte](shots/curtain-cells-dialog.webp)
+
+![Una facciata continua con una porta e parapetti con telaio, in 3D](shots/curtain-cells-3d.webp)
+
+Sotto un contorno disegnato con **Profilo…** una porta entra in una cella tagliata ovunque il suo rettangolo stia sotto il contorno: i montanti accanto salgono fino al contorno, le specchiature accanto a loro si riempiono fino a esso, un traverso attraversa la sua testa e il vetro sopra segue la pendenza. Quando riempie una cella così, la sua testa si ferma un traverso sotto il lato più basso del contorno. Dove non ci sta, Lapin dice di quanto e cosa fare (abbassarla, spostarla verso il lato più alto o scegliere una cella più alta). Un pannello con telaio in una cella tagliata ha il telaio lungo tutto il contorno, anche sul lato inclinato. Un prospetto rivolto all'esterno di una porta ne disegna i simboli di apertura, tratteggiati, come per ogni porta o finestra.
+
+![Una porta sotto il contorno inclinato di una facciata continua, con pannelli con telaio lungo la pendenza, in 3D](shots/curtain-cells-gable.webp)
+
+![Il simbolo di apertura della porta nel prospetto](shots/curtain-cells-elevation.webp)
 
 ## Tipi di muro
 

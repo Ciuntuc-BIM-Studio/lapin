@@ -73,6 +73,8 @@ Una puerta o una ventana es una cuadrícula de paños. Cada paño elige cómo ab
 
 **Sistema de perfiles** empieza el tipo con un perfil de **PVC**, **Aluminio**, **Madera** o **Acero (esbelto)**: fija las medidas del marco, los montantes, los travesaños y las hojas y da a los perfiles sus formas finas. El marco tiene un **Galce** contra el que cierra la hoja, la hoja solapa el marco en su **Solape de la hoja**, los **junquillos** sujetan el vidrio, y una ventana tiene un goterón bajo su travesaño inferior. Cada medida sigue editable. **Simple (perfiles lisos)** mantiene piezas rectangulares sencillas, como antes.
 
+**Marco de una biblioteca** y **Hoja de una biblioteca** toman un perfil de sus [bibliotecas de perfiles](profiles.md) (una sección de aluminio o PVC leída de un DXF, por ejemplo): las piezas rectas de marco y hoja tienen entonces su contorno real, con huecos, en 3D, en secciones y en plantas, con su ancho y canto. Sustituye aquello de lo que es la forma real: el tope, el labio y los goterones del sistema; los junquillos se quedan. Las cabezas curvas y las ventanas redondas conservan una banda simple, igual que los montantes y travesaños de la cuadrícula. **Simple** vuelve a un rectángulo de ese tamaño.
+
 ![Una ventana de PVC: las hojas solapando el marco, los junquillos, un panel ciego bajo un paño fijo](shots/joinery-profiles-3d.webp)
 
 En **Detalles**, **Vierteaguas interior** y **Vierteaguas exterior** activan y desactivan los vierteaguas, y **Revestimiento de jambas** activa el acabado del vano en las jambas y el dintel. Donde no se usen vierteaguas ni revestimientos, desmárquelos.
@@ -101,6 +103,12 @@ Cada una se sitúa según las caras reales del muro donde está la ventana, a pa
 **Travesaño en el arranque del arco**, marcado por defecto, conserva ese travesaño y el fijo de arriba. Desmárquelo para una ventana batiente en arco: la fila superior de vidrios sube dentro del arco, y el marco, la hoja, el vidrio, los junquillos y el símbolo de apertura siguen el arco por todo su contorno, sin barra debajo. El vidrio abre como usted elija (batiente, oscilobatiente, fijo), los montantes suben hasta el arco, y las plantas, secciones, alzados, la vista previa 3D y el IFC lo muestran así. El estilo **Ventana batiente en arco** pone de una vez un arco rebajado con una sola hoja batiente.
 
 ![Una ventana batiente en arco: una sola hoja batiente que sigue un arco rebajado, sin travesaño debajo](shots/joinery-arched-casement.webp)
+
+### Vidrio sin marco
+
+**Vidrio sin marco** hace una puerta o ventana solo de vidrio templado, sin marco ni hoja enmarcada; el estilo **Vidrio sin marco** lo aplica de una vez, con una hoja sobre pivotes. En una puerta, **Fijación** dice qué sostiene la hoja: **Pivotes y herrajes de esquina** (un cierrapuertas de suelo y un pivote superior, un herraje en cada esquina del lado de giro y una cerradura de esquina abajo en el lado opuesto) o **Bisagras de vidrio** (dos, tres en una hoja de más de 2,30 m, sujetas al vidrio y fijadas al muro o al panel de al lado). El **Espesor del vidrio** va de 6 a 25 mm (12 mm por defecto), la **Holgura alrededor del vidrio** es la separación con el hueco y entre paneles, la **Holgura bajo la hoja** la del suelo. Una hoja gira, es de vaivén o corre; un panel a su lado o encima es fijo, en un perfil en U en el suelo y bajo el dintel. Una hoja corredera cuelga de un riel a todo el ancho del hueco, delante de los paneles fijos hacia la habitación, y los pasa 50 mm, como una mampara de vidrio o de ducha. El tirador es una barra en ambas caras salvo que elijas otro. Una ventana sin marco es un acristalamiento fijo. Las plantas dibujan la hoja abierta como su vidrio, los alzados los herrajes y el riel; en IFC el tipo no tiene marco (su espesor es el del vidrio).
+
+![Una puerta de vidrio sin marco sobre pivotes con herrajes de esquina, en el configurador](shots/joinery-frameless-door.webp)
 
 **Junquillos** dividen los vidrios: **Cuadrícula (colonial)** con sus vidrios a lo ancho y a lo alto, **Prairie** con barras cerca de los bordes, o **Rombos**.
 
@@ -138,6 +146,24 @@ En planta las caras se cortan, el asiento, el vierteaguas y la base se dibujan b
 ### Manillas
 
 **Manilla** elige la manilla del tipo: **Manilla de palanca**, **Pomo**, **Tirador de barra**, **Manilla de ventana** o ninguna. Por defecto, una puerta lleva manilla de palanca y una ventana manilla de ventana. Una puerta tiene manilla en ambas caras, a la **Altura de la manilla** que se indique; **Color de la manilla** le da su color. Las manillas se ven en 3D, en secciones y alzados, y en los dibujos del configurador cuando está marcado **Herrajes**.
+
+### Posición del marco y alféizares
+
+**Position in the wall** (posición en el muro) fija dónde está el marco en el espesor del muro como un valor, no solo centrado: elige **From the exterior finish**, **From the core** o **From the wall’s centre**, y **Set back**, cuánto queda la cara exterior del marco detrás de esa referencia (desde el centro, cuánto el centro del marco). *From the exterior finish* y 50 mm pone el marco 50 mm detrás del revoco. El marco, las mochetas, los alféizares y los símbolos de apertura se mueven con él, en plantas, secciones, 3D e IFC. Un tipo hecho sin posición sigue **Centred in the wall**. En el panel de propiedades una puerta o ventana tiene **Frame in the wall** para darse su propia posición (**As the type** la abandona) y **Set back** para su distancia.
+
+![El configurador con el marco 50 mm detrás del acabado exterior](shots/joinery-position.webp)
+
+El **Exterior sill** (vierteaguas exterior) tiene una **Slope** (pendiente) en grados (5° al empezar; 15° para uno metálico). Un vierteaguas inclinado cae alejándose del marco y saca del muro todo lo que hay encima: el revoco, el núcleo y el enlucido se cortan según su cara superior inclinada, en 3D, en secciones y alzados y en las mediciones.
+
+### Datos: valor U, resistencia al fuego, herrajes
+
+**Data…**, bajo el tipo en el configurador (y en el panel de propiedades, para las puertas y ventanas seleccionadas), abre una caja de texto libre: **U-value**, **g-value**, **Safety glass** (laminado por el interior, templado por ambas caras…), **Fire rating** (EI 30, EI2 60-C5…) y **Fittings**; **More data** añade los tuyos, como *Sauna window* o *Frosted glass*. Nada se elige de una lista. El valor propio de una puerta o ventana prevalece sobre el del tipo; un campo vacío vuelve al del tipo (en gris).
+
+![La caja de datos de un tipo de ventana](shots/joinery-data.webp)
+
+Son los parámetros del tipo: las tablas de puertas y ventanas muestran cada uno como una fila, las etiquetas los leen como `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` y `{Fittings}`, y el IFC los conserva. La resistencia al fuego es `FireRating` de `Pset_WindowCommon` o `Pset_DoorCommon`; un valor U que se lee como número (0.9 o *0,9 W/m²K*) es también allí `ThermalTransmittance`, con `GlazingAreaFraction` para una ventana; el resto está en el conjunto `Lapin_Joinery`.
+
+![Los datos propios de una ventana en el panel de propiedades](shots/joinery-data-properties.webp)
 
 ### Parámetros
 

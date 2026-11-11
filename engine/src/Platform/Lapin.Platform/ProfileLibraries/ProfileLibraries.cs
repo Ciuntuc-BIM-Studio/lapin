@@ -7,18 +7,21 @@ namespace Lapin.Platform.ProfileLibraries;
 
 /// <summary>
 /// A profile library (docs/plan-profile-libraries.md): a name, what it is mostly of, its profiles. Kept as a
-/// <c>.lapinprofiles</c> file (JSON: <c>format</c>, <c>version</c>, <c>name</c>, <c>material</c>, <c>profiles</c>) on this
+/// <c>.lapinprofiles</c> file (JSON: <c>format</c>, <c>version</c>, <c>name</c>, <c>material</c>, <c>standard</c>, <c>profiles</c>) on this
 /// computer and in a firm's folders; a project keeps only the profiles it uses (<see cref="ProjectProfiles"/>).
 /// </summary>
 public sealed record ProfileLibrary(string Name, string? Description, string Material, IReadOnlyList<SectionProfile> Profiles)
 {
+    /// <summary>The standard the pickers show its profiles under (EN, AISC / ASTM, a firm's own); none: each profile's, else the library's name (<see cref="ProfileStandards"/>).</summary>
+    public string? Standard { get; init; }
+
     public const string Format = "lapin-profiles";
     public const string Extension = "lapinprofiles";
 
     /// <summary>The library as a file holds it; <paramref name="summaries"/> adds each profile's area and mass worked out (for a list, not read back).</summary>
     public JsonObject ToJson(bool summaries = false) => new()
     {
-        ["format"] = Format, ["version"] = 1, ["name"] = Name, ["description"] = Description, ["material"] = Material,
+        ["format"] = Format, ["version"] = 1, ["name"] = Name, ["description"] = Description, ["material"] = Material, ["standard"] = Standard,
         ["profiles"] = new JsonArray(Profiles.Select(p => (JsonNode)(summaries ? ProjectProfiles.WithSummary(p) : p.ToJson())).ToArray()),
     };
 
@@ -26,10 +29,13 @@ public sealed record ProfileLibrary(string Name, string? Description, string Mat
     {
         if (n is not JsonObject o || o["profiles"] is not JsonArray list) return null;
         var profiles = list.Select(SectionProfile.From).OfType<SectionProfile>().ToList();
-        return new((string?)o["name"] is { Length: > 0 } name ? name : "Profiles", (string?)o["description"], (string?)o["material"] ?? "steel", profiles);
+        return new((string?)o["name"] is { Length: > 0 } name ? name : "Profiles", (string?)o["description"], (string?)o["material"] ?? "steel", profiles)
+        {
+            Standard = (string?)o["standard"] is { Length: > 0 } st && st.Trim().Length > 0 ? st.Trim() : null,
+        };
     }
 
-    public static ProfileLibrary BuiltIn() => new(BuiltInProfiles.Name, "Standard dimensions of the common European steel profiles; every property worked out by Lapin.", "steel", BuiltInProfiles.All);
+    public static ProfileLibrary BuiltIn() => new(BuiltInProfiles.Name, "Standard dimensions of the common European steel profiles; every property worked out by Lapin.", "steel", BuiltInProfiles.All) { Standard = ProfileStandards.En };
 }
 
 /// <summary>
@@ -44,7 +50,8 @@ public static class ProjectProfiles
     public static SectionProfile? Read(Entity e) => SectionProfile.From(e.Attrs["profile"]);
 
     /// <summary>The copy of <paramref name="p"/> from <paramref name="library"/> in the project (one with its name from that library), else a new one.</summary>
-    public static (Entity Copy, bool Differs) Ensure(ICommandContext ctx, SectionProfile p, string? library)
+    /// <param name="standard">The standard it is shown under (<see cref="ProfileStandards"/>); none: its own standard's group.</param>
+    public static (Entity Copy, bool Differs) Ensure(ICommandContext ctx, SectionProfile p, string? library, string? standard = null)
     {
         if (p.Problem() is { } why) throw new CommandException(why);
         var lib = string.IsNullOrWhiteSpace(library) ? null : library.Trim();
@@ -55,6 +62,8 @@ public static class ProjectProfiles
         var attrs = new JsonObject { ["profile"] = json, ["added"] = DateTime.UtcNow.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) };
         if (lib != null) attrs["library"] = lib;
         if (p.Source != null) attrs["source"] = p.Source;
+        var group = !string.IsNullOrWhiteSpace(standard) ? standard.Trim() : lib == BuiltInProfiles.Name ? ProfileStandards.En : ProfileStandards.Group(p.Standard);
+        if (group != null) attrs["standard"] = group;
         var made = new Entity(ctx.NewId(), Class, p.Name, attrs);
         ctx.Add(made);
         return (made, false);
@@ -144,6 +153,29 @@ public static class ProjectProfiles
         };
     }
 
+    /// <summary>Why drawn rings cannot be a profile: one that crosses itself or another (touching at a point is allowed to none), or a degenerate ring.</summary>
+    public static void CheckRings(IReadOnlyList<List<Vec2>> rings)
+    {
+        static bool Cross(Vec2 a, Vec2 b, Vec2 c, Vec2 d)
+        {
+            double Side(Vec2 p, Vec2 q, Vec2 r) => Vec2.Cross(q - p, r - p);
+            var (d1, d2, d3, d4) = (Side(a, b, c), Side(a, b, d), Side(c, d, a), Side(c, d, b));
+            return ((d1 > 1e-12 && d2 < -1e-12) || (d1 < -1e-12 && d2 > 1e-12)) && ((d3 > 1e-12 && d4 < -1e-12) || (d3 < -1e-12 && d4 > 1e-12));
+        }
+        for (var i = 0; i < rings.Count; i++)
+        {
+            if (Math.Abs(Polygon2.SignedArea(rings[i])) < 1e-10) throw new CommandException($"Outline {i + 1} encloses no area.");
+            for (var j = i; j < rings.Count; j++)
+                for (var p = 0; p < rings[i].Count; p++)
+                    for (var q = i == j ? p + 2 : 0; q < rings[j].Count; q++)
+                    {
+                        if (i == j && p == 0 && q == rings[i].Count - 1) continue;
+                        if (Cross(rings[i][p], rings[i][(p + 1) % rings[i].Count], rings[j][q], rings[j][(q + 1) % rings[j].Count]))
+                            throw new CommandException(i == j ? $"Outline {i + 1} crosses itself." : $"Outlines {i + 1} and {j + 1} cross each other.");
+                    }
+        }
+    }
+
     /// <summary>The closed outlines of drafted shapes (closed polylines with their arcs, circles), in their view's plane.</summary>
     public static List<List<Vec2>> DraftedLoops(IModelView m, IEnumerable<string> ids)
     {
@@ -204,7 +236,7 @@ public static class ProjectProfiles
         foreach (var e in m.OfClass(Class))
             copies.Add((JsonNode)new JsonObject
             {
-                ["id"] = e.Id, ["name"] = e.Name, ["library"] = e.Str("library"), ["source"] = e.Str("source"), ["added"] = e.Str("added"), ["updated"] = e.Str("updated"),
+                ["id"] = e.Id, ["name"] = e.Name, ["library"] = e.Str("library"), ["standard"] = e.Str("standard") ?? ProfileStandards.Group(Read(e)?.Standard), ["source"] = e.Str("source"), ["added"] = e.Str("added"), ["updated"] = e.Str("updated"),
                 ["profile"] = e.Attrs["profile"]?.DeepClone(), ["types"] = new JsonArray(TypesUsing(m, e.Id).Select(t => (JsonNode)t.Id).ToArray()),
             });
         // Types made before the libraries, or by the catalogue's name: those of a built-in profile's size are shown as from it.
@@ -215,7 +247,9 @@ public static class ProjectProfiles
             var match = BuiltInProfiles.All.FirstOrDefault(p => Same(p, s));
             legacy.Add((JsonNode)new JsonObject { ["typeId"] = t.Id, ["typeName"] = t.Name, ["class"] = t.Class, ["section"] = s.DeepClone(), ["builtin"] = match?.Name });
         }
-        return new JsonObject { ["copies"] = copies, ["legacy"] = legacy };
+        // The standards its pickers offer (none: all).
+        var standards = ProfileStandards.OfProject(m);
+        return new JsonObject { ["copies"] = copies, ["legacy"] = legacy, ["standards"] = standards == null ? null : new JsonArray(standards.Select(x => (JsonNode)x).ToArray()) };
     }
 
     /// <summary>Whether a type's section JSON has a profile's kind and dimensions (within 0.01 mm).</summary>
@@ -245,6 +279,7 @@ public static class ProfileLibraryCommands
     public static void Register(IModuleRegistry r)
     {
         r.Class(new(ProjectProfiles.Class, "Section profile", [], "#6f7d8c", Kind: "resource"));
+        ProfileStandards.Register(r);
 
         // Lapin's own library (EN steel), each profile with its area and mass.
         r.Query("profiles.builtin", (_, _) => ProfileLibrary.BuiltIn().ToJson(summaries: true));
@@ -281,7 +316,8 @@ public static class ProfileLibraryCommands
             };
         });
 
-        // {data, header?, map?, kind?, family?, standard?, material?, name?}: the table read as a library (not kept: the interface keeps it).
+        // {data, header?, map?, kind?, family?, standard?, material?, name?, group?}: the table read as a library (not kept: the interface keeps it);
+        // `group` the standard the pickers show it under (none: its profiles' standard's, else its name).
         r.Query("profiles.importTable", (_, a) =>
         {
             var table = Lapin.Platform.Tables.Read(Bytes(a));
@@ -291,7 +327,7 @@ public static class ProfileLibraryCommands
             var material = (string?)a["material"] is { Length: > 0 } m && SectionProfile.Densities.ContainsKey(m) ? m : "steel";
             var name = (string?)a["name"] is { Length: > 0 } n ? Path.GetFileNameWithoutExtension(n) : "Imported profiles";
             var res = ProfileTables.Import(table, header, map, SectionProfile.KindOf((string?)a["kind"]), (string?)a["family"], (string?)a["standard"], material, (string?)a["name"]);
-            var lib = new ProfileLibrary(name, null, material, res.Profiles).ToJson(summaries: true);
+            var lib = new ProfileLibrary(name, null, material, res.Profiles) { Standard = (string?)a["group"] is { Length: > 0 } grp ? grp.Trim() : null }.ToJson(summaries: true);
             lib["skipped"] = res.Skipped;
             lib["notes"] = new JsonArray(res.Notes.Select(x => (JsonNode)x).ToArray());
             lib["checks"] = new JsonArray(res.Checks.Take(500).Select(x => (JsonNode)ProfileProps.CheckJson(x)).ToArray());
@@ -314,6 +350,20 @@ public static class ProfileLibraryCommands
             return ProjectProfiles.WithSummary(ProjectProfiles.FromOutlines(loops, (string?)a["name"] is { Length: > 0 } n ? n.Trim() : "Outline profile", (string?)a["material"] ?? "steel", "drafting"));
         });
 
+        // {rings: [[[x, y], …], …], unit? (metres per unit, 0.001 = millimetres), name?, material?}: a profile drawn in the editor (report #128),
+        // each ring a closed outline: the biggest the outside, those inside it holes, any other outside beside it; a ring that crosses
+        // itself or another is refused. Centred on its box, with its summary.
+        r.Query("profiles.fromRings", (_, a) =>
+        {
+            var unit = Json.Number(a["unit"]) is { } u && u > 0 ? u : 0.001;
+            var loops = (a["rings"] as JsonArray ?? []).OfType<JsonArray>()
+                .Select(ring => ring.OfType<JsonArray>().Where(p => p.Count >= 2).Select(p => new Vec2((Json.Number(p[0]) ?? 0) * unit, (Json.Number(p[1]) ?? 0) * unit)).ToList()).ToList();
+            if (loops.Count == 0) throw new CommandException("Draw an outline first: a ring of at least three points.");
+            if (loops.Any(l => l.Count < 3)) throw new CommandException("An outline needs three points at least.");
+            ProjectProfiles.CheckRings(loops);
+            return ProjectProfiles.WithSummary(ProjectProfiles.FromOutlines(loops, (string?)a["name"] is { Length: > 0 } n ? n.Trim() : "Drawn profile", (string?)a["material"] ?? "aluminium", "drawn"));
+        });
+
         // {data, name?, unit? (metres per drawing unit), material?}: a DXF's closed outlines as an outline profile.
         r.Query("profiles.fromDxf", (_, a) =>
         {
@@ -327,7 +377,7 @@ public static class ProfileLibraryCommands
         // {profile, library?}: the profile copied into the project (or the copy already there), its section for a type.
         r.Command("profiles.use", "Use profile", (ctx, a) =>
         {
-            var (copy, differs) = ProjectProfiles.Ensure(ctx, ProfileArg(a), (string?)a["library"]);
+            var (copy, differs) = ProjectProfiles.Ensure(ctx, ProfileArg(a), (string?)a["library"], (string?)a["standard"]);
             return new JsonObject { ["id"] = copy.Id, ["section"] = ProjectProfiles.Read(copy)!.SectionJson(copy.Id), ["differs"] = differs };
         });
 

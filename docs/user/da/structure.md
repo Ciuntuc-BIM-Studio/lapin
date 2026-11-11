@@ -22,6 +22,14 @@ Fanen **Konstruktion** rummer bærende konstruktion og fundamenter.
 
 Tegn fundamenter på niveauet **Foundations**, eller giv dem deres egen plan.
 
+**Et stribefundament er kun betonen**, medmindre du beder om muren. Mens **Stribefundament** eller **Buet stribefundament** er slået til, tilbyder kommandolinjens bjælke **Kun fundamentet** (standard: et betonfundament på 600 × 400 mm, en profiltype, der laves første gang) eller **Med mur** (soklen fra en stribefundamenttype ovenpå, med dens lag) og hvilken stribefundamenttype med mur, der bruges. Valget huskes. Et fundament, der allerede er tegnet, ændres med sin type i **Konstruktionstyper**.
+
+![Stribefundamentværktøjets valg i kommandolinjen: kun fundamentet eller med mur](shots/structure-strip-option.webp)
+
+**I planerne.** Et fundament ligger under dækket, så en plan tegner det stiplet i planen for det niveau, det står på, som en bygnings plan viser, hvad der er under den. For at se det snittet og set brug en **fundamentsplan**: i projektbrowseren laver **+** ved siden af **Etageplaner** en til det aktive niveau (snit 0,50 m under det, med udsyn 2,50 m ned).
+
+**At tegne i en fundamentsplan.** Den viser også niveauet under, og det, du tegner dér med et dæk-, væg-, søjle- eller bjælkeværktøj, kommer på det niveau (Fundamenter i et nyt projekt, ved −1,50); fundamentsværktøjerne bevarer planens eget niveau, idet fundamentets underside er dets types under det.
+
 ![Søjler, bjælker og punktfundamenter i 3D](shots/structure-3d.webp)
 
 ## Typer og hjørner

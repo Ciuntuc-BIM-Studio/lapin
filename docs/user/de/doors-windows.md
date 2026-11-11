@@ -73,6 +73,8 @@ Eine Tür oder ein Fenster ist ein Raster aus Feldern. Jedes Feld wählt, wie es
 
 **Profilsystem** beginnt den Typ mit einem Profil aus **PVC**, **Aluminium**, **Holz** oder **Stahl (schlank)**: Es setzt die Maße von Rahmen, Pfosten, Riegeln und Flügeln und gibt den Profilen ihre feineren Formen. Der Rahmen hat einen **Falz**, auf den der Flügel schließt, der Flügel überdeckt den Rahmen um seinen **Flügelüberschlag**, **Glasleisten** halten das Glas, und ein Fenster hat eine Tropfkante unter dem unteren Holz. Jedes Maß bleibt bearbeitbar. **Einfach (glatte Profile)** behält schlichte rechteckige Teile wie bisher.
 
+**Rahmen aus einer Bibliothek** und **Flügel aus einer Bibliothek** nehmen ein Profil aus Ihren [Profilbibliotheken](profiles.md) (etwa einen aus einer DXF gelesenen Aluminium- oder PVC-Querschnitt): gerade Rahmen- und Flügelstäbe haben dann seine wirkliche Kontur samt Hohlräumen, in 3D, in Schnitten und Grundrissen, mit seiner Breite und Tiefe. Es ersetzt, wovon es die wirkliche Form ist: Anschlag, Lippe und Tropfkanten des Systems; Glasleisten bleiben. Gebogene Köpfe und runde Fenster behalten ein einfaches Band, ebenso die Pfosten und Riegel des Rasters. **Einfach** kehrt zu einem Rechteck dieser Größe zurück.
+
 ![Ein PVC-Fenster: die Flügel über dem Rahmen, die Glasleisten, ein Vollpaneel unter einem festen Feld](shots/joinery-profiles-3d.webp)
 
 Unter **Details** schalten **Fensterbank innen** und **Fensterbank außen** die Fensterbänke ein und aus, und **Laibungsverkleidung** schaltet den Abschluss der Laibung an den Seiten und am Sturz ein. Wo Fensterbänke und Verkleidungen nicht gebraucht werden, entfernen Sie die Haken.
@@ -101,6 +103,12 @@ Jedes Teil richtet sich nach den tatsächlichen Flächen der Wand dort, wo das F
 **Kämpfer am Bogenansatz**, standardmäßig angehakt, behält diesen Kämpfer und das feste Oberlicht darüber. Ohne Haken wird es ein Rundbogen-Drehflügel: die oberste Reihe der Scheiben reicht in den Bogen, und Rahmen, Flügel, Glas, Sprossen und Öffnungssymbol folgen dem Bogen ringsum, ohne Sprosse darunter. Die Scheibe öffnet, wie Sie es wählen (Dreh, Dreh-Kipp, fest), Pfosten laufen bis zum Bogen, und Grundrisse, Schnitte, Ansichten, die 3D-Vorschau und IFC zeigen es so. Der Stil **Rundbogen-Drehflügel** setzt auf einmal einen Segmentbogen mit einem Drehflügel.
 
 ![Ein Rundbogen-Drehflügel: ein Drehflügel, der einem Segmentbogen folgt, ohne Kämpfer darunter](shots/joinery-arched-casement.webp)
+
+### Rahmenloses Glas
+
+**Rahmenloses Glas** macht eine Tür oder ein Fenster nur aus Einscheibensicherheitsglas, ohne Zarge und ohne Flügelrahmen; der Stil **Rahmenloses Glas** setzt es auf einmal, mit einem Flügel auf Drehlagern. Bei einer Tür sagt **Befestigung**, was den Flügel hält: **Drehlager und Eckbeschläge** (ein Bodentürschließer und ein oberes Drehlager, ein Beschlag an jeder Ecke der Bandseite und ein Schlosskasten unten gegenüber) oder **Glastürbänder** (zwei, drei bei einem Flügel über 2,30 m, an das Glas geklemmt und an der Wand oder der Scheibe daneben befestigt). Die **Glasdicke** ist 6 bis 25 mm (12 mm voreingestellt), die **Fuge um das Glas** der Abstand zur Öffnung und zwischen den Scheiben, die **Fuge unter dem Flügel** der zum Boden. Ein Flügel dreht, pendelt oder schiebt; eine Scheibe daneben oder darüber ist fest und steht in einem U-Profil am Boden und unter dem Sturz. Ein Schiebeflügel hängt an einer Laufschiene über die ganze Öffnung, vor den festen Scheiben zum Raum hin, und läuft 50 mm über sie hinaus, wie bei einer Glastrennwand oder Duschwand. Der Griff ist ein Stangengriff auf beiden Seiten, wenn du keinen anderen wählst. Ein rahmenloses Fenster ist eine Festverglasung. Grundrisse zeichnen den Flügel offen als sein Glas, Ansichten die Beschläge und die Schiene; in IFC hat der Typ keine Zarge (seine Dicke ist die des Glases).
+
+![Eine rahmenlose Glastür auf Drehlagern mit Eckbeschlägen, im Konfigurator](shots/joinery-frameless-door.webp)
 
 **Sprossen** teilen die Scheiben: **Raster (Kolonial)** mit Feldern in der Breite und Höhe, **Prairie** mit Sprossen nahe den Rändern, oder ein **Rautenmuster**.
 
@@ -138,6 +146,24 @@ Im Grundriss sind die Flächen geschnitten, Sitzbank, Fensterbank und Unterbau u
 ### Griffe
 
 **Griff** wählt den Griff des Typs: **Drücker**, **Knauf**, **Stoßgriff**, **Fenstergriff** oder keinen. Standardmäßig hat eine Tür einen Drücker und ein Fenster einen Fenstergriff. Eine Tür hat den Griff auf beiden Seiten, in der angegebenen **Griffhöhe**; **Griffarbe** setzt seine Farbe. Griffe erscheinen in 3D, in Schnitten und Ansichten und in den Zeichnungen des Konfigurators, wenn **Beschläge** angehakt ist.
+
+### Lage des Rahmens und Fensterbänke
+
+**Position in the wall** (Lage in der Wand) legt fest, wo der Rahmen in der Wanddicke sitzt, als Maß und nicht nur zentriert: Wählen Sie **From the exterior finish**, **From the core** oder **From the wall’s centre** und **Set back**, wie weit die Außenfläche des Rahmens hinter dieser Bezugsfläche liegt (ab der Mitte: wie weit die Rahmenmitte). *From the exterior finish* und 50 mm setzt den Rahmen 50 mm hinter den Putz. Rahmen, Laibungen, Fensterbänke und Öffnungssymbole wandern mit, in Grundrissen, Schnitten, 3D und IFC. Ein Typ ohne Lage bleibt **Centred in the wall**. In der Eigenschaftenleiste hat eine Tür oder ein Fenster **Frame in the wall** für eine eigene Lage (**As the type** gibt sie auf) und **Set back** für den Abstand.
+
+![Der Konfigurator mit dem Rahmen 50 mm hinter der Außenbekleidung](shots/joinery-position.webp)
+
+Die **Exterior sill** (Fensterbank außen) hat ein **Slope** (Gefälle) in Grad (zunächst 5°, 15° für eine Metallbank). Eine geneigte Bank fällt vom Rahmen weg und nimmt alles darüber aus der Wand: Putz, Kern und Innenputz werden nach ihrer geneigten Oberseite geschnitten, in 3D, in Schnitten und Ansichten und in den Mengen.
+
+### Daten: U-Wert, Feuerwiderstand, Beschläge
+
+**Data…** unter dem Typ im Konfigurator (und in der Eigenschaftenleiste für die gewählten Türen und Fenster) öffnet ein Feld mit freiem Text: **U-value**, **g-value**, **Safety glass** (innen Verbundglas, beidseitig vorgespannt…), **Fire rating** (EI 30, EI2 60-C5…) und **Fittings**; **More data** fügt eigene hinzu, etwa *Sauna window* oder *Frosted glass*. Nichts wird aus einer Liste gewählt. Der eigene Wert einer Tür oder eines Fensters geht dem des Typs vor; ein leeres Feld fällt auf den des Typs zurück (grau angezeigt).
+
+![Das Datenfeld eines Fenstertyps](shots/joinery-data.webp)
+
+Es sind die Parameter des Typs: Die Türen- und Fensterlisten zeigen jeden als Zeile, Beschriftungen lesen sie als `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` und `{Fittings}`, und die IFC behält sie. Der Feuerwiderstand ist `FireRating` in `Pset_WindowCommon` oder `Pset_DoorCommon`; ein U-Wert, der als Zahl lesbar ist (0.9 oder *0,9 W/m²K*), ist dort auch `ThermalTransmittance`, bei einem Fenster mit `GlazingAreaFraction`; der Rest steht im Set `Lapin_Joinery`.
+
+![Die eigenen Daten eines Fensters in der Eigenschaftenleiste](shots/joinery-data-properties.webp)
 
 ### Parameter
 

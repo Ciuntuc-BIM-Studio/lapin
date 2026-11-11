@@ -33,6 +33,13 @@ describe('Ask Lapin', () => {
     expect(best('Make the architecture components addable and editable in the 3D viewport. Sometimes the user may have to work fully in 3D, not just in plan.')).toBe('place-3d');
     expect(best('cum desenez pereti in 3D')).toBe('place-3d');
     expect(best('I was expecting the same dragging and dropping of components like in the plan viewport into the 3D viewport as well')).toBe('place-3d');
+    // Report #123, in the tester's words (Spanish) and the other languages.
+    expect(best('como cambiar a otro lado la interfaz')).toBe('panel-sides');
+    expect(best('cum pun proprietățile în stânga și browserul în dreapta')).toBe('panel-sides');
+    expect(best('put the project browser on the right and properties on the left')).toBe('panel-sides');
+    expect(best('comment mettre les propriétés à gauche et le navigateur à droite')).toBe('panel-sides');
+    expect(best('wie verschiebe ich die Eigenschaften auf die linke Seite')).toBe('panel-sides');
+    expect(best('como mover o painel de propriedades para a esquerda')).toBe('panel-sides');
     expect(best('Include Bay, Bow and Box windows for better window design customization. Make every component customizable.')).toBe('bay-windows');
     expect(best('various sunshade design types, with customizable shapes, dimensions, materials and projection lengths, to improve façade aesthetics, control sunlight, and energy efficiency')).toBe('sunshades');
   });
@@ -174,16 +181,46 @@ describe('Ask Lapin', () => {
     expect(best('how do I make the point cloud slice thicker for facades?')).toBe('point-cloud-views');
   });
 
+  it('answers the testers\' reports #115 to #118', () => {
+    expect(best('drawing an element not following elevation')).toBe('element-elevation');
+    expect(best('to have element coordinates to change their elevation')).toBe('element-elevation');
+    expect(best('unde setez decalajul fata de nivel')).toBe('element-elevation');
+    expect(best('strip footing with wall. when modeling it is sometimes useful to only model the concrete element, not the wall')).toBe('strip-footing-alone');
+    expect(best('cum desenez o fundatie continua fara perete')).toBe('strip-footing-alone');
+    expect(best('Pad footing elements added show only in 3D, not in the plan')).toBe('footings-in-plan');
+    expect(best('pad footings not showing in 2D')).toBe('footings-in-plan');
+    expect(best('de ce nu apar fundatiile izolate in plan')).toBe('footings-in-plan');
+    expect(best('Unknown command "civil.dxfPointLayers" importing terrain points from a DXF')).toBe('dxf-survey-points');
+    expect(best('DXF exported from QGIS in EPSG:2154 Lambert-93')).toBe('dxf-survey-points');
+  });
+
   it('says why the storeys changed after an import (decision 406)', () => {
     expect(best('why did my storeys change after importing an IFC?')).toBe('import-storeys');
     expect(best('unde a disparut parterul dupa import')).toBe('import-storeys');
     expect(best('the imported storey has the wrong level')).toBe('import-storeys');
   });
 
+  it('answers the testers of reports #76 and #124 in their own words', () => {
+    expect(best('Important are parameters: U-value, g-value, safety glass, fire rating, fittings, in separate dialogue boxes as free text')).toBe('joinery-data');
+    expect(best('cum pun valoarea U si sticla de siguranta la o fereastra ca text liber')).toBe('joinery-data');
+    expect(best('The position of window from exterior wall finish is not there, should be a value, for example 50 mm from ext. wall')).toBe('joinery-position');
+    expect(best('cum setez pozitia ferestrei in perete fata de finisajul exterior')).toBe('joinery-position');
+    expect(best('Normal metal 15 degree exterior sill does not work, it does not cut the wall')).toBe('sill-slope');
+    expect(best('solbancul exterior inclinat nu taie peretele')).toBe('sill-slope');
+    expect(best('Is it possible to create more kitchen types like: Galley, L shaped, U shaped, island and peninsula')).toBe('kitchen-layouts');
+    expect(best('vreau o bucatarie cu insula si peninsula in forma de U')).toBe('kitchen-layouts');
+  });
+
   it('says nothing to what it does not know', () => {
     expect(ask('weather tomorrow in Paris')).toEqual([]);
     expect(ask('can I render photorealistic images with ray tracing?')).toEqual([]);
     expect(ask('')).toEqual([]);
+  });
+
+  it('explains where a profile\'s real shape shows', () => {
+    expect(best('why does my aluminium profile not show in the window frame')).toBe('profile-real-shape');
+    expect(best('steel beams drawn with sharp corners no root fillets')).toBe('profile-real-shape');
+    expect(best('de ce grinzile metalice au colturi drepte fara racordari')).toBe('profile-real-shape');
   });
 
   it('points to the profile libraries for profiles Lapin does not ship', () => {
@@ -194,11 +231,51 @@ describe('Ask Lapin', () => {
     expect(best('mi s-a schimbat biblioteca de profile cum actualizez proiectul')).toBe('profile-update');
   });
 
+  it('answers the testers\' reports #126 to #130', () => {
+    expect(best('Dimension line rotates: I moved the end point of the grid lines and one of the dimension lines rotated')).toBe('dimension-grid-line');
+    expect(best('de ce se roteste cota cand mut capatul axei')).toBe('dimension-grid-line');
+    expect(best('Rotate the tags: more flexibility if I could rotate the tag, or align it to the element')).toBe('tag-rotate');
+    expect(best('cum aliniez eticheta la element')).toBe('tag-rotate');
+    expect(best('When placing a tag, the tagged element highlights')).toBe('tag-highlight');
+    expect(best('cum vad ce element etichetează eticheta')).toBe('tag-highlight');
+    expect(best('Edit Curtain Wall Profile, similar to Revit')).toBe('curtain-wall-boundary');
+    expect(best('cum fac un perete cortina cu fronton')).toBe('curtain-wall-boundary');
+    expect(best('Custom aluminium profiles for curtain wall mullions and transoms')).toBe('curtain-member-profiles');
+    expect(best('how do I assign a profile to selected mullions only')).toBe('curtain-member-profiles');
+    expect(best('cum folosesc un profil de aluminiu propriu la montanti')).toBe('curtain-member-profiles');
+  });
+
   it('keeps its entries whole: ids unique, both languages, keywords already plain', () => {
     expect(new Set(FAQ.map((e) => e.id)).size).toBe(FAQ.length);
     for (const e of FAQ) {
       expect(e.q.length && e.qRo.length && e.a && e.aRo).toBeTruthy();
       for (const k of e.keywords) expect(normalise(k)).toBe(k);
     }
+  });
+
+  it('answers the tape question and the explode question in every interface language (reports #119, #121)', () => {
+    // Report #119 in the tester\'s own Polish, then the same question in the other languages.
+    expect(best('czy masz narzędzie miarka do szybkiego sprawdzania miary?')).toBe('measure');
+    expect(best('Is there a tape tool to quickly check a measure?')).toBe('measure');
+    expect(best('exista o ruleta pentru masurare rapida?')).toBe('measure');
+    expect(best('¿hay una herramienta de medición para comprobar una medida rápidamente?')).toBe('measure');
+    expect(best('existe uma ferramenta de medição para verificar uma medida rapidamente?')).toBe('measure');
+    expect(best('y a-t-il un outil mètre pour vérifier une mesure rapidement ?')).toBe('measure');
+    expect(best('hai uno strumento metro per controllare rapidamente una misura?')).toBe('measure');
+    expect(best('gibt es ein Maßband-Werkzeug, um schnell ein Maß zu prüfen?')).toBe('measure');
+    expect(best('har du et målebånd til hurtigt at tjekke et mål?')).toBe('measure');
+    expect(best('有没有快速检查尺寸的测量工具？')).toBe('measure');
+    expect(best('cum masor o distanta')).toBe('measure');
+    // Report #121 in the tester\'s own Italian, and the others.
+    expect(best('esplodere polilinea')).toBe('explode');
+    expect(best('how do I explode a polyline')).toBe('explode');
+    expect(best('cum desfac o polilinie in linii')).toBe('explode');
+    expect(best('como descomponer una polilínea en líneas')).toBe('explode');
+    expect(best('como decompor uma polilinha em linhas')).toBe('explode');
+    expect(best('comment décomposer une polyligne en lignes')).toBe('explode');
+    expect(best('eine Polylinie in Linien auflösen')).toBe('explode');
+    expect(best('jak rozbić polilinię na linie')).toBe('explode');
+    expect(best('hvordan eksploderer jeg en polylinje')).toBe('explode');
+    expect(best('如何分解多段线')).toBe('explode');
   });
 });

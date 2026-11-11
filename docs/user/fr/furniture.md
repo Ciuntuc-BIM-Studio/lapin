@@ -1,7 +1,7 @@
 ---
 title: Mobilier
 order: 47
-summary: Canapés, canapés d’angle, fauteuils, chaises, lits, armoires, commodes, bibliothèques, buffets, tables, bureaux et cuisines linéaires, à partir de types paramétriques, posés contre les murs d’un clic.
+summary: Canapés, canapés d’angle, fauteuils, chaises, lits, armoires, commodes, bibliothèques, buffets, tables, bureaux et cuisines en six dispositions, à partir de types paramétriques, posés contre les murs d’un clic.
 ---
 
 ## Placer du mobilier
@@ -42,6 +42,18 @@ Les élévations et les coupes dessinent les corps, avec les hachures de leurs m
 - elle a un plan de travail, un évier et une plaque (leur place le long de la cuisine se règle sur le type), des meubles hauts au-dessus et une colonne pour le réfrigérateur à un bout.
 
 La **Longueur** d’une cuisine reste modifiable dans ses propriétés ; les meubles sont de nouveau répartis.
+
+### Dispositions de la cuisine
+
+Un type de cuisine a une **Layout** (disposition) : **One wall** (la ligne droite), **Galley** (deux lignes parallèles avec une allée entre elles), **L-shaped**, **U-shaped**, **Island** (une ligne sur le mur du fond et un îlot séparé avec son allée) ou **Peninsula** (un L avec une ligne qui sort de sa branche, le plan de travail en débord pour des tabourets). En choisir une fait partir le type des dimensions de la disposition, et chacune reste modifiable à côté de l’aperçu : la longueur des branches depuis le mur du fond, l’allée entre les lignes, la longueur de la ligne opposée, la longueur, la profondeur et la place de l’îlot, la longueur et le débord de la presqu’île et, pour un L ou une presqu’île, l’angle à gauche ou à droite.
+
+![Les six dispositions en plan : un mur, parallèle, en L, en U, avec îlot et avec presqu’île](shots/kitchen-layouts.webp)
+
+**Sink on** et **Hob on** les placent sur la ligne principale ou sur l’autre partie (la branche, la ligne opposée, l’îlot, la presqu’île), **Sink at** et **Hob at** disent où le long de celle-ci, et la **Tall unit (fridge)** se tient à une extrémité libre. Les meubles d’angle sont aveugles ; les meubles hauts ne sont que sur les lignes contre un mur, pas sur un îlot ni sur une presqu’île.
+
+![Un type de cuisine : en L](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) dessine n’importe quelle disposition avec deux points le long du mur contre lequel se tient la ligne principale : la ligne donne sa longueur, son dos sur la face du mur, et un L, une presqu’île, un U ou une cuisine parallèle se glisse dans l’angle ou entre les murs près desquels on la dessine. **Flip** donne à un L ou à une presqu’île l’angle de l’autre côté. La nomenclature du mobilier nomme la disposition et donne la profondeur de l’emprise. En IFC, c’est toujours un IfcFurniture d’un type Kitchen défini par l’utilisateur.
 
 ## Les propriétés d’un meuble
 

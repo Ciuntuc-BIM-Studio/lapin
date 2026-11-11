@@ -24,12 +24,14 @@ import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
 import { JoineryPreview3D } from './JoineryPreview3D';
-import { merge, neighbour, normalised, resized, shifted, split, type GridSpec } from './joineryGrid';
+import { barWidths, fitBars, leafPairs, merge, neighbour, normalised, resized, shifted, split, withBar, type Bars, type GridSpec } from './joineryGrid';
+import { JoineryDataButton } from './JoineryData';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 
 interface Panel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
 /** A profile system's finer shapes (decision 370): the frame's rebate, the sash lapping over it, glazing beads, a drip. */
 interface Profile { system: string; rebate: number; overlap: number; bead: number; drip: boolean }
+interface LibrarySection { name?: string; width: number; depth: number; [key: string]: unknown }
 
 /**
  * A hinged door leaf's operation as the schedules name its hand (report #91) and a window's: looking from the handle towards the
@@ -45,11 +47,17 @@ const HAND_LABELS: Record<string, string> = {
   'side-left': 'Side hung right (hinges at left)', 'side-right': 'Side hung left (hinges at right)',
   'tilt-turn-left': 'Tilt & turn right (hinges at left)', 'tilt-turn-right': 'Tilt & turn left (hinges at right)',
 };
+/** Two leaves meeting: butt, a rebated meeting stile or a cover strip (astragal); the active leaf opens first with the handle, the passive one has flush bolts. */
+export interface Meeting { kind: 'butt' | 'rebated' | 'astragal'; active: 'left' | 'right'; width?: number | null; thickness?: number | null; bolts: boolean }
 interface Spec {
   kind: 'door' | 'window'; name: string; mark: string; width: number; height: number; sillHeight: number;
   frame: { depth: number; width: number; mullion: number; transom: number; offset: number };
   sash: { width: number; depth: number; leafThickness: number; glassThickness: number };
   columns: number[]; rows: number[]; panels: Panel[];
+  /** One width per column boundary (left to right) and per row boundary (bottom up), metres: null the frame's, 0 none (decision 466). */
+  mullions?: Bars; transoms?: Bars;
+  /** How two door leaves meeting over a boundary without a mullion are made; one setting for the type. */
+  meeting?: Meeting | null;
   board: { interior: number; exterior: number }; threshold: number;
   colors: { frame: string; glass: string; leaf: string }; isExternal: boolean; thermalTransmittance?: number | null;
   lintel?: Rule | null;
@@ -61,9 +69,23 @@ interface Spec {
   /** A window that projects from its wall (report #60): a bay, a bow or a box. */
   bay?: Bay | null;
   profile?: Profile | null;
+  /** The library profiles whose real outlines the frame's and the sash's straight members take (decision 417), with their sizes. */
+  frameSection?: LibrarySection | null;
+  sashSection?: LibrarySection | null;
   /** The style last applied (a key of JOINERY_STYLES; report #111): its select shows it, "(modified)" once a field differs. */
   style?: string | null;
+  /** The frame's place across the wall as a value (report #76); none: the frame's offset (centred). */
+  position?: Position | null;
+  /** Frameless toughened glass, no frame or sash (tester's question 7): what holds a leaf, the glass, the gaps; none: framed. */
+  frameless?: Frameless | null;
 }
+/** How a frameless leaf is held (pivots with patch fittings, or glass hinges), the glass's thickness, the gaps round it and under a leaf. */
+interface Frameless { fixing: 'pivot' | 'hinges'; glass: number; gap: number; floor: number }
+const FRAMELESS: Frameless = { fixing: 'pivot', glass: 0.012, gap: 0.004, floor: 0.008 };
+/** What a frameless pane may do: a door's leaves swing, swing both ways or slide; a window's panes are fixed. */
+const FRAMELESS_DOOR_OPS = ['swing-left', 'swing-right', 'double-acting-left', 'double-acting-right', 'door-sliding-left', 'door-sliding-right', 'fixed'];
+/** From the wall's exterior finish face, its core's exterior face or its middle plane, the frame (its outer face; from the middle, its centre) this far back. */
+export interface Position { from: 'exterior' | 'core' | 'centre'; distance: number }
 /** The parts' materials by name (report #76); a part without one keeps its colour. */
 interface Materials { frame?: string | null; sash?: string | null; glass?: string | null; leaf?: string | null; board?: string | null; hardware?: string | null }
 type MaterialPart = keyof Materials;
@@ -116,7 +138,12 @@ const JOINERY_STYLES: Record<string, { label: string; apply: (s: Spec) => Partia
   prairie: { label: 'Prairie', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'prairie', margin: 0.1 } }) },
   traditional: { label: 'Traditional', apply: () => ({ shape: null, muntins: { ...MUNTINS, pattern: 'grid', across: 1, up: 2 } }) },
   oculus: { label: 'Round window', apply: (s) => ({ shape: { ...SHAPE, kind: 'circle', bars: 'cross' }, muntins: null, height: s.width, columns: [1], rows: [1], panels: [{ col: 0, row: 0, operation: 'fixed' }] }) },
+  // Tester's question 7: toughened glass alone, a leaf on pivots with patch fittings and a pull bar (a window: one fixed pane).
+  'frameless-glass': { label: 'Frameless glass', apply: (s) => ({ frameless: { ...FRAMELESS }, shape: null, muntins: null, bay: null, profile: null, frameSection: null, sashSection: null,
+    columns: [1], rows: [1], panels: [{ col: 0, row: 0, operation: s.kind === 'door' ? 'swing-left' : 'fixed' }] }) },
 };
+// Every other style is framed: choosing one takes frameless glass away.
+for (const [k, st] of Object.entries(JOINERY_STYLES)) if (k !== 'frameless-glass') { const apply = st.apply; st.apply = (s) => ({ frameless: null, ...apply(s) }); }
 
 /** The details each style adds on the facade (and takes away: a style's own ornaments replace another's). */
 function styleDetails(key: string, d: Details): Details {
@@ -142,7 +169,7 @@ export function styleModified(spec: Spec): boolean {
   return st != null && !sameAs({ ...st.apply(spec), details: styleDetails(spec.style!, spec.details ?? {}) }, spec);
 }
 
-export interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number; col?: number; row?: number; colSpan?: number; rowSpan?: number; infill?: string }[]; ifcType: string; grid?: { inner: number[]; cols: [number, number][]; rows: [number, number][] } | null }
+export interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number; col?: number; row?: number; colSpan?: number; rowSpan?: number; infill?: string }[]; ifcType: string; grid?: { inner: number[]; cols: [number, number][]; rows: [number, number][]; mullions?: number[]; transoms?: number[]; meetings?: boolean[]; pairs?: { boundary: number; active: number; passive: number; kind: string }[] } | null }
 export interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 export interface Drawing { strokes: Stroke[] }
 export interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
@@ -167,7 +194,7 @@ export function Strokes({ drawing, w, h, flipX = false, label, children }: { dra
       {children?.(sx, sy, k)}
       {(drawing?.strokes ?? []).map((s, i) => (
         <polyline key={i} points={s.pts.map((p) => `${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' ') + (s.closed ? ` ${sx(s.pts[0][0]).toFixed(1)},${sy(s.pts[0][1]).toFixed(1)}` : '')}
-          fill="none" stroke="#1e2a3a" strokeWidth={width(s.weight)} strokeDasharray={s.dashed ? '4 3' : undefined} strokeLinejoin="round" />
+          fill="none" stroke="#1e2a3a" strokeWidth={width(s.weight)} strokeDasharray={s.dashed ? '4 3' : undefined} strokeLinejoin="round" pointerEvents="none" />
       ))}
     </svg>
   );
@@ -209,7 +236,8 @@ const PARTS: { part: MaterialPart; label: string; door?: boolean; window?: boole
  */
 function PartMaterials({ spec, onChange }: { spec: Spec; onChange: (m: Materials) => void }) {
   const mats = spec.materials ?? {};
-  const parts = PARTS.filter((p) => (spec.kind === 'door' ? !p.window : !p.door));
+  // Frameless glass (tester's question 7) has only its glass, its fittings and a window's boards.
+  const parts = PARTS.filter((p) => (spec.kind === 'door' ? !p.window : !p.door) && (!spec.frameless || ['glass', 'hardware', 'board'].includes(p.part)));
   const applyAll = async () => {
     const args: Record<string, unknown> = { kind: spec.kind };
     for (const { part } of parts) args[part] = mats[part] ?? '';
@@ -393,6 +421,31 @@ function ShapeFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial
   );
 }
 
+/** Frameless glass (tester's question 7): on or off, what holds a door's leaves, the glass, the gaps. */
+function FramelessFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial<Spec>) => void }) {
+  const fl = spec.frameless;
+  const door = spec.kind === 'door';
+  const setFl = (p: Partial<Frameless>) => onChange({ frameless: { ...(fl ?? FRAMELESS), ...p } });
+  return (
+    <>
+      <label className="field-line check" title="Toughened glass alone: no frame, no sash"><input type="checkbox" data-field="frameless" checked={!!fl}
+        onChange={(e) => onChange(e.target.checked
+          ? { frameless: { ...FRAMELESS }, shape: null, muntins: null, bay: null, profile: null, frameSection: null, sashSection: null,
+              panels: spec.panels.map((p) => ({ ...p, operation: door ? (FRAMELESS_DOOR_OPS.includes(p.operation) ? p.operation : 'swing-left') : 'fixed' })) }
+          : { frameless: null })} /><span>Frameless glass</span></label>
+      {fl && <>
+        {door && <label className="field-line"><span className="eyebrow">Fixing</span>
+          <select data-field="frameless-fixing" value={fl.fixing} onChange={(e) => setFl({ fixing: e.target.value as Frameless['fixing'] })}>
+            <option value="pivot">Pivots and patch fittings</option><option value="hinges">Glass hinges</option>
+          </select></label>}
+        <Mm label="Glass thickness" value={fl.glass} onChange={(v) => setFl({ glass: v })} />
+        <Mm label="Gap round the glass" value={fl.gap} onChange={(v) => setFl({ gap: v })} />
+        {door && <Mm label="Gap under the leaf" value={fl.floor} onChange={(v) => setFl({ floor: v })} />}
+      </>}
+    </>
+  );
+}
+
 /** The handles (report #48): their style, a door handle's height, their colour. */
 function HardwareFields({ spec, onChange }: { spec: Spec; onChange: (patch: Partial<Spec>) => void }) {
   const hw = spec.hardware ?? HARDWARE;
@@ -400,7 +453,7 @@ function HardwareFields({ spec, onChange }: { spec: Spec; onChange: (patch: Part
     <>
       <label className="field-line"><span className="eyebrow">Handle</span>
         <select data-field="handle" value={hw.handle} onChange={(e) => onChange({ hardware: { ...hw, handle: e.target.value as Hardware['handle'] } })}>
-          <option value="auto">{spec.kind === 'door' ? 'Lever (default)' : 'Window handle (default)'}</option>
+          <option value="auto">{spec.frameless ? 'Pull bar (default)' : spec.kind === 'door' ? 'Lever (default)' : 'Window handle (default)'}</option>
           <option value="lever">Lever</option><option value="knob">Knob</option><option value="pull">Pull bar</option><option value="window">Window handle</option><option value="none">None</option>
         </select></label>
       {spec.kind === 'door' && hw.handle !== 'none' && <Mm label="Handle height" value={hw.height} onChange={(v) => onChange({ hardware: { ...hw, height: v } })} />}
@@ -459,7 +512,7 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
   at: { col: string; row: string }; setAt: (a: { col: string; row: string }) => void;
   onPick: (p: { col: number; row: number } | null) => void; onPanels: (p: Panel[]) => void; onGrid: (g: GridSpec) => void; colSizes: number[]; rowSizes: number[];
 }) {
-  const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame };
+  const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame, mullions: spec.mullions, transoms: spec.transoms };
   const panes = normalised(g) as Panel[];
   const cur = panes.find((p) => pane && p.col === pane.col && p.row === pane.row) ?? panes[0];
   const rect = preview?.panels.find((p) => p.col === cur?.col && p.row === cur?.row);
@@ -501,10 +554,10 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
         <select data-field="pane-operation" value={cur.operation} onChange={(e) => patch({ operation: e.target.value })}>
           {operations.map((o) => <option key={o} value={o}>{HAND_LABELS[o] ?? o}</option>)}
         </select></label>
-      <label className="field-line"><span className="eyebrow">Infill</span>
+      {!spec.frameless && <label className="field-line"><span className="eyebrow">Infill</span>
         <select data-field="pane-infill" value={infill} onChange={(e) => patch({ infill: e.target.value, glazed: e.target.value === 'glass' })}>
           {Object.entries(INFILL_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select></label>
+        </select></label>}
       <div className="field-line"><span className="eyebrow">Split</span>
         <span className="row wrap" style={{ gap: 4 }}>
           <input className="num mini" style={{ width: 64 }} data-field="split-col-at" placeholder={String(Math.round(width / 2))} value={at.col} onChange={(e) => setAt({ ...at, col: e.target.value })} title="mm from the pane's left edge (seen from outside)" />
@@ -524,9 +577,71 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
 /** The window operations: a pane of a door that opens as one is a sash, glass unless asked. */
 const catalogWindowOps = new Set(['side-left', 'side-right', 'tilt-turn-left', 'tilt-turn-right', 'bottom-hung', 'top-hung', 'pivot-horizontal', 'pivot-vertical', 'sliding-left', 'sliding-right', 'sliding-vertical']);
 
+/**
+ * The mullion or transom picked in the elevation (decision 466): its width, the frame's by default, or none, so two panes meet.
+ * Its width shows as the engine drew it.
+ */
+function BarField({ bar, spec, onChange }: { bar: { axis: 'col' | 'row'; i: number } | null; spec: Spec; onChange: (v: number | null) => void }) {
+  if (!bar) {
+    const lines = spec.columns.length > 1 || spec.rows.length > 1;
+    return lines ? <p className="muted small" data-testid="bar-hint">Click a mullion or a transom in the elevation to give it its own width.</p> : null;
+  }
+  const col = bar.axis === 'col';
+  const own = (col ? spec.mullions : spec.transoms)?.[bar.i] ?? null;
+  const effective = own ?? (col ? spec.frame.mullion : spec.frame.transom);
+  return (
+    <div className="pane-editor" data-testid="bar-field">
+      <p className="eyebrow"><span>{col ? 'Mullion' : 'Transom'}</span> <span data-no-i18n>{bar.i + 1}</span></p>
+      <Mm label="Width" value={effective} onChange={(v) => onChange(v < 0 ? null : v)} />
+      <label className="field-line check"><input type="checkbox" data-field="bar-none" checked={own === 0} onChange={(e) => onChange(e.target.checked ? 0 : null)} /><span>{col ? 'No mullion' : 'No transom'}</span></label>
+      <div className="field-line"><span />
+        <button type="button" className="btn small" data-action="bar-default" disabled={own == null} title="Takes the width of the frame's mullions and transoms again" onClick={() => onChange(null)}>Default (frame's)</button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * How two door leaves meet where there is no mullion between them (decision 466): butt, a rebated meeting stile or a cover strip over
+ * the joint; the active leaf (the one that opens first, with the handle) and flush bolts in the passive one. One setting for the type.
+ */
+function MeetingFields({ spec, preview, defaults, onChange }: { spec: Spec; preview: Preview2 | null; defaults?: Meeting & { astragalWidth?: number }; onChange: (m: Meeting) => void }) {
+  const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame };
+  const meets = (preview?.grid?.pairs?.length ?? 0) > 0 || leafPairs(g).some((i) => (spec.mullions?.[i] ?? spec.frame.mullion) === 0);
+  if (!meets) return null;
+  const m: Meeting = spec.meeting ?? { kind: 'butt', active: defaults?.active ?? 'right', bolts: false };
+  const set = (patch: Partial<Meeting>) => onChange({ ...m, ...patch });
+  const width = m.width ?? (m.kind === 'astragal' ? defaults?.astragalWidth ?? 0.045 : defaults?.width ?? 0.014);
+  const thickness = m.thickness ?? defaults?.thickness ?? 0.012;
+  const pairs = preview?.grid?.pairs ?? [];
+  // A pair of double-acting leaves always meets butt.
+  const butt = pairs.length > 0 && pairs.every((p) => p.kind === 'butt') && m.kind !== 'butt';
+  return (
+    <div className="pane-editor" data-testid="meeting-fields">
+      <p className="eyebrow">Leaves meeting</p>
+      <label className="field-line"><span className="eyebrow">Meeting</span>
+        <select data-field="meeting-kind" value={m.kind} onChange={(e) => set({ kind: e.target.value as Meeting['kind'], width: null })}>
+          <option value="butt">Butt</option><option value="rebated">Rebated</option><option value="astragal">Cover strip</option>
+        </select></label>
+      <label className="field-line"><span className="eyebrow">Active leaf</span>
+        <select data-field="meeting-active" title="The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)" value={m.active} onChange={(e) => set({ active: e.target.value as Meeting['active'] })}>
+          <option value="left">Left</option><option value="right">Right</option>
+        </select></label>
+      {m.kind === 'rebated' && <Mm label="Rebate overlap" value={width} onChange={(v) => set({ width: v > 0 ? Math.min(v, 0.12) : null })} />}
+      {m.kind === 'astragal' && <>
+        <Mm label="Cover strip width" value={width} onChange={(v) => set({ width: v > 0 ? Math.min(v, 0.12) : null })} />
+        <Mm label="Cover strip thickness" value={thickness} onChange={(v) => set({ thickness: v > 0 ? Math.min(v, 0.04) : null })} />
+      </>}
+      <label className="field-line check"><input type="checkbox" data-field="meeting-bolts" checked={m.bolts} onChange={(e) => set({ bolts: e.target.checked })} /><span>Flush bolts on the passive leaf</span></label>
+      {butt && <p className="muted small">Double-acting leaves always meet butt.</p>}
+    </div>
+  );
+}
+
 /** Over the elevation: each pane to pick, outlined when picked; each mullion and transom to drag. */
-function PaneOverlay({ preview, pane, drag, sx, sy, kk, onPick, onDrag, onDrop }: {
+function PaneOverlay({ preview, pane, drag, bar, sx, sy, kk, onPick, onBar, onDrag, onDrop }: {
   preview: Preview2 | null; pane: { col: number; row: number } | null; drag: { axis: 'col' | 'row'; i: number; from: number; at: number } | null;
+  bar: { axis: 'col' | 'row'; i: number } | null; onBar: (b: { axis: 'col' | 'row'; i: number }) => void;
   sx: (x: number) => number; sy: (y: number) => number; kk: number;
   onPick: (p: { col: number; row: number }) => void; onDrag: (d: { axis: 'col' | 'row'; i: number; from: number; at: number } | null) => void; onDrop: (d: { axis: 'col' | 'row'; i: number; from: number; at: number }) => void;
 }) {
@@ -560,12 +675,25 @@ function PaneOverlay({ preview, pane, drag, sx, sy, kk, onPick, onDrag, onDrop }
           style: { cursor: l.axis === 'col' ? 'col-resize' : 'row-resize' } as React.CSSProperties,
           onPointerDown: (e: React.PointerEvent<SVGElement>) => { (e.currentTarget as SVGElement).setPointerCapture(e.pointerId); onDrag({ axis: l.axis, i: l.i, from: l.at, at: l.at }); },
           onPointerMove: (e: React.PointerEvent<SVGElement>) => { if (!drag || drag.axis !== l.axis || drag.i !== l.i) return; const q = svgPoint(e); onDrag({ ...drag, at: l.axis === 'col' ? toX(q.x) : toZ(q.y) }); },
-          onPointerUp: () => { if (drag && drag.axis === l.axis && drag.i === l.i) onDrop(drag); },
+          onPointerUp: () => {
+            if (!drag || drag.axis !== l.axis || drag.i !== l.i) return;
+            // A click without a drag picks the bar, to give it a width of its own.
+            if (Math.abs(drag.at - drag.from) < 0.002) { onDrag(null); onBar({ axis: l.axis, i: l.i }); } else onDrop(drag);
+          },
         };
         return l.axis === 'col'
           ? <rect key={`c${l.i}`} data-divider={`col-${l.i}`} x={sx(live) - 4} y={sy(iz1)} width={8} height={(iz1 - iz0) * kk} fill={drag?.axis === 'col' && drag.i === l.i ? 'rgba(197,90,46,0.35)' : 'transparent'} {...common} />
           : <rect key={`r${l.i}`} data-divider={`row-${l.i}`} x={Math.min(sx(ix0), sx(ix1))} y={sy(live) - 4} width={(ix1 - ix0) * kk} height={8} fill={drag?.axis === 'row' && drag.i === l.i ? 'rgba(197,90,46,0.35)' : 'transparent'} {...common} />;
       })}
+      {bar && (() => {
+        // The picked bar as it is drawn: from one pane's edge to the next one's (a line where it is 0).
+        const a = bar.axis === 'col' ? grid.cols : grid.rows;
+        if (bar.i + 1 >= a.length) return null;
+        const lo = a[bar.i][1], hi = a[bar.i + 1][0];
+        return bar.axis === 'col'
+          ? <rect data-bar-picked={`col-${bar.i}`} x={Math.min(sx(lo), sx(hi)) - 1.5} y={sy(iz1)} width={Math.abs(sx(hi) - sx(lo)) + 3} height={(iz1 - iz0) * kk} fill="rgba(197,90,46,0.25)" stroke="#c55a2e" strokeDasharray="3 2" pointerEvents="none" />
+          : <rect data-bar-picked={`row-${bar.i}`} x={Math.min(sx(ix0), sx(ix1))} y={Math.min(sy(lo), sy(hi)) - 1.5} width={(ix1 - ix0) * kk} height={Math.abs(sy(hi) - sy(lo)) + 3} fill="rgba(197,90,46,0.25)" stroke="#c55a2e" strokeDasharray="3 2" pointerEvents="none" />;
+      })()}
       {drag && <text x={8} y={14} fontSize={11} fill="#c55a2e">{Math.round((drag.at - drag.from) * 1000)} mm</text>}
     </g>
   );
@@ -579,11 +707,12 @@ export function JoineryDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = [...ofClass(model, 'IfcDoorType'), ...ofClass(model, 'IfcWindowType')];
   const catalog = info?.catalogs['architecture.joinery'] as unknown as { windowOperations: string[]; doorOperations: string[]; defaultDoor: Spec; defaultWindow: Spec;
+    doorPresets?: Record<string, Spec>; defaultMeeting?: Meeting & { astragalWidth?: number };
     profileSystems?: Record<string, { frame: Spec['frame']; sash: Spec['sash']; profile: Profile }> } | undefined;
   const bayStyles = info?.catalogs['architecture.bayStyles'] as unknown as { spec: Spec }[] | undefined;
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
   // What a new type starts from (a new object each time New door or New window is clicked, so the editor reloads).
-  const [fresh, setFresh] = useState<{ kind: 'door' | 'window'; bay?: boolean }>({ kind: 'window' });
+  const [fresh, setFresh] = useState<{ kind: 'door' | 'window'; bay?: boolean; preset?: string }>({ kind: 'window' });
   const [spec, setSpec] = useState<Spec | null>(null);
   const [cols, setCols] = useState('1');
   const [rows, setRows] = useState('1');
@@ -594,6 +723,9 @@ export function JoineryDialog() {
   const [splitAt, setSplitAt] = useState<{ col: string; row: string }>({ col: '', row: '' });
   const pickPane = (p: { col: number; row: number } | null) => { setPane(p); setSplitAt({ col: '', row: '' }); };
   const [drag, setDrag] = useState<{ axis: 'col' | 'row'; i: number; from: number; at: number } | null>(null);
+  // The mullion or transom picked in the elevation, to give it a width of its own.
+  const [bar, setBar0] = useState<{ axis: 'col' | 'row'; i: number } | null>(null);
+  const pickBar = (b: { axis: 'col' | 'row'; i: number } | null) => setBar0(b);
 
   // The editor loads when the picked type changes, not on every diff (which
   // would throw away what is being typed): it reads the model through a ref.
@@ -603,7 +735,8 @@ export function JoineryDialog() {
   useEffect(() => {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     const bayStyle = fresh.bay ? (bayStyles?.[0]?.spec as unknown as Spec | undefined) : undefined;
-    const s = (t?.props.spec as unknown as Spec | undefined) ?? bayStyle ?? (fresh.kind === 'door' ? catalog?.defaultDoor : catalog?.defaultWindow) ?? null;
+    const preset = fresh.preset ? catalog?.doorPresets?.[fresh.preset] : undefined;
+    const s = (t?.props.spec as unknown as Spec | undefined) ?? preset ?? bayStyle ?? (fresh.kind === 'door' ? catalog?.defaultDoor : catalog?.defaultWindow) ?? null;
     setSpec(s ? structuredClone(s) : null);
     if (s) { setCols(s.columns.join(' ')); setRows(s.rows.join(' ')); }
   }, [editing, catalog, fresh, bayStyles]);
@@ -619,16 +752,28 @@ export function JoineryDialog() {
   if (!spec || !catalog) return <PendingDialog title="Doors and windows" />;
   // A name the dialog gave ("Door 900×2100") follows the size as it is typed (report #51); one the user wrote stays.
   const sizeName = (s: Pick<Spec, 'kind' | 'width' | 'height'>) => `${s.kind === 'door' ? 'Door' : 'Window'} ${Math.round(s.width * 1000)}×${Math.round(s.height * 1000)}`;
+  // A library profile for the frame or the sash (decision 417): copied into the project, its real outline the straight members' bodies, with its size.
+  const pickMemberProfile = (member: 'frame' | 'sash', profile: unknown, library: string | null) => {
+    void (execute('profiles.use', { profile, library }) as Promise<{ section?: LibrarySection } | null>).then((r) => {
+      const section = r?.section;
+      if (!section) return;
+      if (member === 'frame') set({ frame: { ...spec.frame, width: section.width, depth: section.depth }, frameSection: section });
+      else set({ sash: { ...spec.sash, width: section.width, depth: section.depth }, sashSection: section });
+    });
+  };
   const set = (patch: Partial<Spec>) => {
     const next = { ...spec, ...patch };
+    // The bars stay with their lines when columns or rows are set another way (a style, the relative sizes, a bay).
+    if ('columns' in patch && !('mullions' in patch)) next.mullions = fitBars(spec.mullions, next.columns.length);
+    if ('rows' in patch && !('transoms' in patch)) next.transoms = fitBars(spec.transoms, next.rows.length);
     if (('width' in patch || 'height' in patch) && !('name' in patch) && spec.name === sizeName(spec)) next.name = sizeName(next);
     setSpec(next);
   };
   const details: Details = spec.details ?? {};
   const setDetails = (patch: Partial<Details>) => set({ details: { ...details, ...patch } });
-  const operations = spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
+  const operations = spec.frameless ? (spec.kind === 'door' ? FRAMELESS_DOOR_OPS : ['fixed']) : spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
   const close = () => useUi.setState({ dialog: null });
-  const startNew = (kind: 'door' | 'window', bay = false) => { setEditing(null); setFresh({ kind, bay }); };
+  const startNew = (kind: 'door' | 'window', bay = false, preset?: string) => { setEditing(null); setFresh({ kind, bay, preset }); pickBar(null); };
   const setGrid = (c: string, r: string) => {
     setCols(c); setRows(r);
     const cw = weights(c), rw = weights(r);
@@ -637,21 +782,35 @@ export function JoineryDialog() {
   // The grid's sizes in mm, from the engine's preview (decision 370); set one, the last takes the rest.
   // Worked out from the spec's own weights over the inner span (which only the size and frame change), never from a preview
   // that may still be on its way: quick splits one after another each see the grid as it now is.
-  const sizesOf = (weights: number[], span: number | undefined, bar: number) => {
+  // Each bar has its own width (decision 466): the sizes share what the bars leave.
+  const sizesOf = (weights: number[], span: number | undefined, bars: number[]) => {
     if (span == null || weights.length === 0) return [];
     const total = weights.reduce((a, b) => a + Math.max(b, 0), 0) || 1;
-    const usable = span * 1000 - bar * 1000 * (weights.length - 1);
+    const usable = span * 1000 - bars.reduce((a, b) => a + b, 0);
     return weights.map((w) => Math.round((usable * Math.max(w, 0)) / total * 10) / 10);
   };
   const inner = preview?.grid?.inner;
-  const colSizes = sizesOf(spec.columns, inner ? inner[1] - inner[0] : undefined, spec.frame.mullion);
-  const rowSizes = sizesOf(spec.rows, inner ? inner[3] - inner[2] : undefined, spec.frame.transom);
+  const colSizes = sizesOf(spec.columns, inner ? inner[1] - inner[0] : undefined, spec.frameless ? spec.columns.slice(1).map(() => spec.frameless!.gap * 1000) : barWidths(spec.mullions, spec.columns.length, spec.frame.mullion));
+  const rowSizes = sizesOf(spec.rows, inner ? inner[3] - inner[2] : undefined, spec.frameless ? spec.rows.slice(1).map(() => spec.frameless!.gap * 1000) : barWidths(spec.transoms, spec.rows.length, spec.frame.transom));
   const setSizes = (axis: 'col' | 'row', i: number, value: number) => {
     const next = resized(axis === 'col' ? colSizes : rowSizes, i, value);
     if (!next) { notify('That leaves too little for the others (50 mm at least).'); return; }
     if (axis === 'col') { set({ columns: next }); setCols(next.map(roundW).join(' ')); }
     else { set({ rows: next }); setRows(next.map(roundW).join(' ')); }
   };
+
+  // A bar's width set (decision 466); a mullion made 0 between two door leaves gives the type its meeting, from the catalogue's default.
+  const setBar = (axis: 'col' | 'row', i: number, value: number | null) => {
+    const patch: Partial<Spec> = axis === 'col' ? { mullions: withBar(spec.mullions, spec.columns.length, i, value) } : { transoms: withBar(spec.transoms, spec.rows.length, i, value) };
+    const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame };
+    if (axis === 'col' && value === 0 && !spec.meeting && spec.kind === 'door' && !spec.frameless && catalog.defaultMeeting && leafPairs(g).includes(i)) {
+      const { astragalWidth: _a, ...m } = catalog.defaultMeeting;
+      patch.meeting = { ...m, width: null, thickness: null };
+    }
+    set(patch);
+  };
+  const barCount = bar ? (bar.axis === 'col' ? spec.columns.length : spec.rows.length) - 1 : 0;
+  const barOn = bar && bar.i < barCount ? bar : null;
 
   const save = async () => {
     if (editing) await execute('architecture.updateJoineryType', { id: editing, spec });
@@ -691,6 +850,7 @@ export function JoineryDialog() {
               </li>
             ))}
             <li><button type="button" className="tree-item" onClick={() => startNew('door')}><Plus size={12} /> New door</button></li>
+            {catalog.doorPresets?.double && <li><button type="button" className="tree-item" data-action="new-double-door" onClick={() => startNew('door', false, 'double')}><Plus size={12} /> New double door</button></li>}
             <li><button type="button" className="tree-item" onClick={() => startNew('window')}><Plus size={12} /> New window</button></li>
             <li><button type="button" className="tree-item" data-action="new-bay-window" onClick={() => startNew('window', true)}><Plus size={12} /> New bay window</button></li>
           </ul>
@@ -713,18 +873,36 @@ export function JoineryDialog() {
                     if (patch.columns) setCols(patch.columns.join(' '));
                     if (patch.rows) setRows(patch.rows.join(' '));
                   }} /></label>
-              {!spec.bay && <ShapeFields spec={spec} onChange={set} />}
-              {spec.kind === 'window' && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
-              <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v } })} />
-              <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v } })} />
+              {!spec.bay && <FramelessFields spec={spec} onChange={set} />}
+              {!spec.bay && !spec.frameless && <ShapeFields spec={spec} onChange={set} />}
+              {spec.kind === 'window' && !spec.frameless && <BayFields spec={spec} onChange={(patch) => set(patch as Partial<Spec>)} onGrid={(c) => setCols(c.join(' '))} />}
+              {!spec.frameless && <>
+              <Mm label="Frame depth" value={spec.frame.depth} onChange={(v) => set({ frame: { ...spec.frame, depth: v }, frameSection: null })} />
+              <Mm label="Frame width" value={spec.frame.width} onChange={(v) => set({ frame: { ...spec.frame, width: v }, frameSection: null })} />
+              <label className="field-line"><span className="eyebrow">Position in the wall</span>
+                <select data-field="position-from" title="Where the frame sits across the wall, as a value from a face of the wall" value={spec.position?.from ?? ''}
+                  onChange={(e) => set({ position: e.target.value ? { from: e.target.value as Position['from'], distance: spec.position?.distance ?? 0 } : null })}>
+                  <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option>
+                </select></label>
+              </>}
+              {spec.frameless && <label className="field-line"><span className="eyebrow">Position in the wall</span>
+                <select data-field="position-from" title="Where the glass sits across the wall, as a value from a face of the wall" value={spec.position?.from ?? ''}
+                  onChange={(e) => set({ position: e.target.value ? { from: e.target.value as Position['from'], distance: spec.position?.distance ?? 0 } : null })}>
+                  <option value="">Centred in the wall</option><option value="exterior">From the exterior finish</option><option value="core">From the core</option><option value="centre">From the wall’s centre</option>
+                </select></label>}
+              {spec.position && <Mm label="Set back" value={spec.position.distance} onChange={(v) => set({ position: { ...spec.position!, distance: v } })} />}
+              {!spec.frameless && <>
               <Mm label="Mullion width" value={spec.frame.mullion} onChange={(v) => set({ frame: { ...spec.frame, mullion: v } })} />
               <Mm label="Transom width" value={spec.frame.transom} onChange={(v) => set({ frame: { ...spec.frame, transom: v } })} />
-              <label className="field-line"><span className="eyebrow">Frame from a library</span><ProfilePickerField testId="joinery-frame-library" onPick={(p) => { if (p.b && p.h) set({ frame: { ...spec.frame, width: p.b, depth: p.h } }); }} /></label>
+              <label className="field-line"><span className="eyebrow">Frame from a library</span><ProfilePickerField testId="joinery-frame-library" value={spec.frameSection?.name ?? null} onPick={(p, library) => pickMemberProfile('frame', p, library)} />
+                {spec.frameSection && <button type="button" data-testid="joinery-frame-plain" title="Keeps its size as a plain rectangle" onClick={() => set({ frameSection: null })}>Plain</button>}</label>
+              {spec.kind === 'window' && <label className="field-line"><span className="eyebrow">Sash from a library</span><ProfilePickerField testId="joinery-sash-library" value={spec.sashSection?.name ?? null} onPick={(p, library) => pickMemberProfile('sash', p, library)} />
+                {spec.sashSection && <button type="button" data-testid="joinery-sash-plain" title="Keeps its size as a plain rectangle" onClick={() => set({ sashSection: null })}>Plain</button>}</label>}
               <label className="field-line"><span className="eyebrow">Profile system</span>
                 <select data-field="profile-system" data-i18n-ctx="profiles" value={spec.profile?.system ?? ''} title="Sets the frame, mullion and sash sizes and the profile's finer shapes; each stays editable" onChange={(e) => {
                   const sys = catalog.profileSystems?.[e.target.value];
                   if (!e.target.value) set({ profile: null });
-                  else if (sys) set({ frame: { ...sys.frame, offset: spec.frame.offset }, sash: sys.sash, profile: sys.profile });
+                  else if (sys) set({ frame: { ...sys.frame, offset: spec.frame.offset }, sash: sys.sash, profile: sys.profile, frameSection: null, sashSection: null });
                 }}>
                   <option value="">Simple (plain profiles)</option>
                   {Object.keys(catalog.profileSystems ?? {}).map((k) => <option key={k} value={k}>{PROFILE_LABELS[k] ?? k}</option>)}
@@ -736,16 +914,19 @@ export function JoineryDialog() {
                 <Mm label="Glazing bead" value={spec.profile.bead} onChange={(v) => set({ profile: { ...spec.profile!, bead: v } })} />
                 {spec.kind === 'window' && <label className="field-line check"><input type="checkbox" checked={spec.profile.drip} onChange={(e) => set({ profile: { ...spec.profile!, drip: e.target.checked } })} /><span>Drip under the bottom rail</span></label>}
               </>}
+              </>}
               <label className="field-line"><span className="eyebrow">Columns (relative)</span><input data-field="columns" value={cols} title="Divide into columns by relative widths, e.g. 1 1 for two equal ones or 2 1" onChange={(e) => setGrid(e.target.value, rows)} /></label>
               <label className="field-line"><span className="eyebrow">Rows (relative)</span><input value={rows} title="Divide into rows by relative heights, bottom to top" onChange={(e) => setGrid(cols, e.target.value)} /></label>
               {colSizes.length > 1 && <SizeRow label="Column widths" sizes={colSizes} field="col-size" onCommit={(i, mm) => setSizes('col', i, mm)} />}
               {rowSizes.length > 1 && <SizeRow label="Row heights · bottom to top" sizes={rowSizes} field="row-size" onCommit={(i, mm) => setSizes('row', i, mm)} />}
+              {!spec.frameless && !spec.bay && <BarField bar={barOn} spec={spec} onChange={(v) => barOn && setBar(barOn.axis, barOn.i, v)} />}
               <PaneEditor spec={spec} preview={preview} pane={pane} operations={operations}
                 onPick={pickPane} onPanels={(panels) => set({ panels })} at={splitAt} setAt={setSplitAt}
-                onGrid={(g) => { set({ columns: g.columns, rows: g.rows, panels: g.panels }); setCols(g.columns.map(roundW).join(' ')); setRows(g.rows.map(roundW).join(' ')); }}
+                onGrid={(g) => { set({ columns: g.columns, rows: g.rows, panels: g.panels, mullions: g.mullions, transoms: g.transoms }); setCols(g.columns.map(roundW).join(' ')); setRows(g.rows.map(roundW).join(' ')); }}
                 colSizes={colSizes} rowSizes={rowSizes} />
+              {spec.kind === 'door' && !spec.frameless && <MeetingFields spec={spec} preview={preview} defaults={catalog.defaultMeeting} onChange={(meeting) => set({ meeting })} />}
               <PartMaterials spec={spec} onChange={(materials) => set({ materials })} />
-              {!spec.materials?.frame && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
+              {!spec.materials?.frame && !spec.frameless && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
               <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
               <p className="eyebrow">Details</p>
 
@@ -779,6 +960,8 @@ export function JoineryDialog() {
               <DressingFields kind={spec.kind} height={spec.height} details={details} onChange={setDetails} />
               <HardwareFields spec={spec} onChange={set} />
               {spec.kind === 'door' && !spec.materials?.leaf && <label className="field-line"><span className="eyebrow">Leaf</span><input type="color" value={spec.colors.leaf} onChange={(e) => set({ colors: { ...spec.colors, leaf: e.target.value } })} /></label>}
+              <p className="eyebrow">Data</p>
+              {editing ? <JoineryDataButton type={model.nodes.get(editing) ?? null} /> : <p className="muted small">Save the type to give it data (U-value, g-value, safety glass, fire rating, fittings).</p>}
               <TypeParams typeId={editing} kind={spec.kind} />
             </div>
             <div className="joinery-preview">
@@ -787,7 +970,7 @@ export function JoineryDialog() {
                   {!outside && boxes.map((b, i) => b.profile
                     ? <path key={i} d={[b.profile, ...(b.holes ?? [])].map((l) => loopPath(l, sx, sy)).join(' ')} fillRule="evenodd" fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />
                     : <rect key={i} x={Math.min(sx(b.x0), sx(b.x1))} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
-                  {!outside && !spec.bay && <PaneOverlay preview={preview} pane={pane} drag={drag} sx={sx} sy={sy} kk={kk} onPick={pickPane} onDrag={setDrag}
+                  {!outside && !spec.bay && <PaneOverlay preview={preview} pane={pane} drag={drag} bar={barOn} onBar={pickBar} sx={sx} sy={sy} kk={kk} onPick={pickPane} onDrag={setDrag}
                     onDrop={(d) => {
                       const sizes = d.axis === 'col' ? colSizes : rowSizes;
                       const next = shifted(sizes, d.i, Math.round((d.at - d.from) * 1000));

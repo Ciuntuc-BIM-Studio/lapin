@@ -45,3 +45,7 @@ Las copias usan los mismos tipos que los originales y reciben GlobalIds IFC nuev
 ![Los muros y la losa de la planta baja copiados a los dos niveles de arriba, en 3D](shots/copy-to-storeys-3d.webp)
 
 Para mover la selección a otro nivel, elija **Modificar → Mover a planta**. Conserva las alturas de los elementos sobre el nuevo nivel o los deja donde están en el espacio.
+
+## La elevación de un elemento
+
+Un elemento de un nivel está a la elevación del nivel y a un desfase de ella. **Propiedades → Colocación** muestra su **Planta**, su **Desfase del nivel** y su **Elevación** sobre ±0,00: la base de un muro o pilar, la parte superior de una losa o viga (el desfase de una viga es desde la parte superior del nivel), la parte inferior de una zapata (el nivel inferior de su tipo bajo el nivel, más el desfase). Escriba una de las cifras y la otra la sigue: el elemento se mueve en todas las vistas, en un solo paso de deshacer. Para poner un elemento en otro nivel, cambie su **Planta**. Lo que dibuje en una planta está en el nivel de esa planta.

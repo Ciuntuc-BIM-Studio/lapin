@@ -50,6 +50,16 @@ Eine Tür, ein Fenster oder eine Wandöffnung wird entlang ihrer Wand verschoben
 
 Eine Rasterachse lässt sich allein oder zusammen mit anderen Elementen verschieben, kopieren, drehen und spiegeln. Eine Kopie ist eine neue Achse desselben Rasters, benannt nach der letzten Achse in ihrer Richtung: Bei den Achsen 1, 2 und 3 ist eine Kopie einer beliebigen von ihnen die 4.
 
+### In Schnitten und Ansichten
+
+**Verschieben** (<kbd>M</kbd>), **Kopieren** (<kbd>CO</kbd>) und das Ziehen eines ausgewählten Elements funktionieren auch in einem Schnitt oder einer Ansicht, in der Ebene der Ansicht. Entlang der Ansicht bewegt sich das Element im Grundriss entlang der Schnittlinie; nach oben oder unten steigt oder sinkt es um seinen Versatz vom Geschoss (den Basisversatz einer Wand oder Stütze, den oberen Versatz eines Trägers, den Versatz einer Decke). Während Sie ziehen, folgt sein **Versatz vom Geschoss** in den Eigenschaften. Eine Tür oder ein Fenster gleitet weiter entlang ihrer Wand, und auf der Ansicht gezeichnete Linien bewegen sich in der Ansicht. **Spiegeln** nimmt dort eine senkrechte Linie und spiegelt die Elemente an der Ebene durch sie, rechtwinklig zur Ansicht. Elemente werden in einem Schnitt oder einer Ansicht nicht **gedreht**, denn sie würden umkippen: Drehen Sie sie im Grundriss oder in 3D. Gezeichnete Linien drehen und spiegeln sich beliebig. Ein fixiertes Element bleibt, wo es ist.
+
+![Ein Träger in der Südansicht nach oben gezogen: sein Geisterbild an der alten Stelle, der Versatz an der Maus und sein Versatz vom Geschoss, der in den Eigenschaften folgt](shots/section-drag.webp)
+
+### Fixieren
+
+Fixieren Sie, was nicht versehentlich verrutschen darf: ein importiertes Modell, das Raster, eine Vermessungszeichnung. Wählen Sie es aus und wählen Sie **Ändern → Fixieren**, oder setzen Sie in seinen Eigenschaften unter **Platzierung** den Haken bei **Fixiert**. Ein fixiertes Element wird nicht verschoben, gedreht, gespiegelt, angehoben, in ein anderes Geschoss gesetzt oder gelöscht, und es zeigt keine Griffe. Seine anderen Felder lassen sich weiter ändern: sein Typ, seine Höhe oder sein Material. Es lässt sich weiterhin kopieren, und die Kopie ist nicht fixiert. Wird eine mit ihm verbundene Wand verschoben, bleiben die Enden der fixierten Wand, wo sie sind. Das Fixieren einer Gruppe fixiert ihre Mitglieder; eine Gruppe mit einem fixierten Mitglied wird nicht verschoben. **Ändern → Lösen** (<kbd>UP</kbd>) gibt es wieder frei. Jedes Element lässt sich fixieren: eine Wand, eine Referenz aus einer importierten Datei, eine gezeichnete Linie.
+
 ## Zeichnen
 
 Die Registerkarte **Zeichnen** zeichnet Linien, Polylinien, Rechtecke, Kreise und Bögen. Sie bearbeitet sie mit Versatz, Stutzen, Dehnen, Abrunden, Fase und Verbinden, füllt Flächen mit Schraffuren und ordnet sie auf **Layer** an. **DXF importieren** holt eine CAD-Zeichnung als Linien herein, die Sie fangen und bearbeiten können.
@@ -57,6 +67,8 @@ Die Registerkarte **Zeichnen** zeichnet Linien, Polylinien, Rechtecke, Kreise un
 ![Die Registerkarte Zeichnen](shots/ribbon-draft.webp)
 
 **Versatz** (<kbd>O</kbd>) kopiert eine Linie, eine Polylinie, ein Rechteck, einen Kreis oder einen Bogen in einem Abstand. Geben Sie den Abstand in der Einheit des Projekts ein (in einem Projekt in Millimetern ist `500` ein halber Meter; `2m` oder `1'6"` nennen ihre eigene Einheit), klicken Sie die Form an, dann die Seite, zu der sie geht; es fragt nach der nächsten Form, bis Sie <kbd>Enter</kbd> oder <kbd>Esc</kbd> drücken. Geben Sie stattdessen **T** (Through) ein, geht jede Kopie durch den angeklickten Punkt. Die Ecken einer Polylinie bleiben scharf (auf Gehrung), wie im CAD. Versatz arbeitet in Grundrissen, Schnitten, Ansichten, auf Referenzebenen und in der 3D-Ansicht.
+
+**Auflösen** (<kbd>X</kbd>, oder **EXPLODE**) ist der Weg zurück von **Verbinden**: Polylinien oder Rechtecke auswählen, und jede wird zu ihren Linien, eine je Seite, auf derselben Ebene mit demselben Stift, derselben Farbe und in derselben Gruppe, in einem Rückgängig-Schritt. Kreise, Bögen, Schraffuren und Maßketten bleiben, wie sie sind; eine Auswahl ohne etwas zum Zerlegen sagt es. Es funktioniert in Grundrissen, Schnitten, Ansichten, auf Referenzebenen und auf der Arbeitsebene in der 3D-Ansicht.
 
 Jede Länge, nach der die Befehlszeile fragt, ist in der Einheit des Projekts, und die Aufforderung nennt sie: `Depth (mm)`, `Height (ft-in)`. Winkel, Faktoren und Anzahlen sind einfache Zahlen: `90` nach **Drehen** sind 90°, gleich welche Einheit.
 
@@ -103,6 +115,8 @@ Beschriftungen eines Grundrisses (Bemaßungen, Texte, gezeichnete Linien, Tags) 
 
 ![Die Öffnungshöhe in den Bemaßungsstilen](shots/dimension-opening-height-style.webp)
 
+**Bemaßungen auf einer Linie.** Ein Bemaßungspunkt, der auf eine Rasterachse oder auf die Mittellinie einer Wand geklickt wird, hält sich an der Linie, nicht an einem Punkt auf ihr. Ziehen Sie das Ende der Achse an ihr entlang, damit ihr Kopf in die Ansicht passt, oder verlängern oder verkürzen Sie die Wand: Die Bemaßung misst weiter dort, wo Sie sie gesetzt haben, und ihre Linie dreht sich nicht. Wird die Achse oder die Wand quer verschoben, geht der Punkt mit, an derselben Stelle entlang. Auch eine Bemaßung auf einer Wandfläche bleibt dort, wo sie maß, wenn die Wand in ihrer Länge gestreckt wird. Früher erstellte Bemaßungen halten sich an einer Rasterachse genauso; eine auf einer Wandmittellinie wird neu angebunden, indem Sie ihren Punkt erneut anklicken.
+
 ### Beschriftungen
 
 **Beschriften → Beschriftung** (<kbd>TG</kbd>) setzt in eine Ansicht einen Kasten mit dem, was ein Element über sich sagt, und eine Hinweislinie zu ihm. Solange das Werkzeug aktiv ist, wählt die Leiste unter der Ansicht, was die Beschriftung zeigt: die Marke, den Namen, die Klasse oder den Typ, **Feuerwiderstand**, **Schallschutz**, **Wärmedurchgangskoeffizient** oder **Anderer Parameter…** nach seinem Namen; oder einen Beschriftungstyp der Zeichnungsstandards; und **HINWEISLINIE** schaltet die Hinweislinie ein oder aus. Klicken Sie auf das Element, dann dorthin, wo die Beschriftung hin soll (tippen Sie vorher **E**, um die Linie in einem Knick abzuwinkeln). **Beschriften → Parameter beschriften** fragt nach dem Namen des Parameters und startet das Werkzeug damit.
@@ -120,6 +134,12 @@ Eine ausgewählte Beschriftung hat Griffe. Ziehen Sie den Kasten, um die Beschri
 ![Die Eigenschaften einer Beschriftung](shots/tag-properties.webp)
 
 Die Markierung einer Tür oder eines Fensters wird Teil für Teil bearbeitet, jeder Text verschoben oder gedreht und jedes Linienende verlängert: siehe [Türen und Fenster](doors-windows.md).
+
+**Eine Beschriftung drehen.** In den Eigenschaften einer Beschriftung dreht **Drehung** ihren Text und ihre Schulter oder ihren Kasten um einen Winkel in Grad von der Waagrechten, und **Am Element ausrichten** lässt sie der Richtung des beschrifteten Elements folgen (der Achse einer Wand oder eines Balkens, der längsten Kante von allem anderen) und sich mit ihm drehen; die Drehung kommt dann zu dieser Richtung hinzu. Eine Beschriftung wird immer lesbar gezeichnet, nie auf dem Kopf. Eine ausgewählte Beschriftung hat über ihrem Text einen Drehgriff: Ziehen Sie ihn in Schritten von 15° (darunter 45° und 90°; mit <kbd>Umschalt</kbd> beliebiger Winkel), und Strg/⌘-Klick stellt den Text wieder waagrecht. Die Hinweislinie erreicht das Element weiterhin. Einfache und Schichtaufbau-Beschriftungen drehen sich gleich, in Grundrissen, Schnitten und Ansichten, und Pläne, PDF und DXF drucken sie, wie Sie sie sehen.
+
+**Was eine Beschriftung beschriftet.** Solange das Werkzeug **Beschriftung** auf ein Element wartet, wird das Element unter dem Cursor in der Akzentfarbe hervorgehoben; fahren Sie über eine gesetzte Beschriftung oder wählen Sie sie aus, und das beschriftete Element wird hervorgehoben.
+
+![Eine an ihrer Wand ausgerichtete Beschriftung mit Drehgriff, die beschriftete Wand hervorgehoben](shots/tag-rotate.webp)
 
 #### Schichtaufbau-Beschriftung
 

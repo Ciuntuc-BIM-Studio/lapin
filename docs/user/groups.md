@@ -33,6 +33,21 @@ Select the elements and choose **Modify → Make component** (<kbd>CK</kbd>). Th
 - **Make unique**, in its properties, lets one instance go its own way. **Select instances** selects them all.
 - **Mirror** keeps it an instance, of the other hand: what you change in either reaches the other mirrored.
 
+### Apartment types
+
+A component cannot hold walls, but an **apartment type** can. Select an apartment's walls, rooms and furniture and choose **Modify → Make apartment type** (<kbd>CU</kbd>). The doors and windows in those walls come with them. Copy it, rotate it or **Mirror** it, as the flat on the other side of a staircase: a change in one reaches the others, mirrored where they are, and every element keeps its identity in IFC.
+
+An apartment type holds the inner walls, the doors between the rooms, the rooms and the furniture. The building holds the facade, the walls between apartments and the corridor. Where the two meet belongs to each instance:
+
+- An inner wall stops in the building's wall it reaches: its end is cut at that wall's face, and the building's wall is left as it is. This is found again each time an instance is placed, moved or mirrored, and when a building wall is drawn or moved near it. Moving a building wall changes only the apartment that touches it.
+- Entrance doors and facade windows belong to the room, not to the wall: choose them in the room's properties (see [Doors and windows from the room](rooms.md)). Every instance then has its own door in the building's wall on that side, of the other hand in a mirrored instance. Moving or turning one of these doors by hand, or changing its type, changes it in every instance. Where no wall can take it, the room's properties say so.
+
+An apartment type has a fixed size: it does not stretch to fit a wider or narrower slot.
+
+**Copy to storeys** copies an instance as another instance, which stops in that storey's walls. In IFC an instance is a group of ordinary elements with a `Lapin_Unit` property set. Import the file again with **As one group** unticked and it is an instance again; with the option ticked, as it is by default, its elements stay plain members of the file's one group.
+
+![An apartment type in two instances, the second mirrored](shots/units-plan.webp)
+
 **Manage → Components** lists the project's components, with how many instances each has. Rename them there, or select all the instances of one. The instances are ordinary elements in plans, sections, schedules, quantities and exports, each with its own GlobalId.
 
 ![A component in four instances, one turned: the outline changed in one, followed by all](shots/components-3d.webp)
@@ -47,7 +62,7 @@ Some elements are parts of a whole: a steel hall's columns, rafters and purlins,
 
 ## Imported files
 
-Every IFC, Fragments or mesh file you import comes in as one group named after the file. Untick **As one group** in the IFC import to bring the elements in loose. A linked file is not grouped: it is already one link, read-only (see [Import and export](import-export.md)). Elements read from an IFC file as references stay where the file put them: a group of them can be cleared up and deleted, not moved.
+Every IFC, Fragments or mesh file you import comes in as one group named after the file. Untick **As one group** in the IFC import to bring the elements in loose. A linked file is not grouped: it is already one link, read-only (see [Import and export](import-export.md)). Elements read from a file as references (an IFC file's, a mesh's) move, turn, mirror and are copied with their group like any element; their shape stays the file's.
 
 ## Selecting a region in 3D
 

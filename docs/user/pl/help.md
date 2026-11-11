@@ -10,7 +10,7 @@ Kliknij **Zapytaj mnie**, królika w prawym górnym rogu, albo naciśnij <kbd>F1
 
 ![Zapytaj mnie wyjaśnia, jak skopiować ścianę](shots/ask-me.webp)
 
-Jeśli Zapytaj mnie nie zna odpowiedzi, **Wyślij pytanie** przesyła je do nas. Odpowiadamy na nie, a odpowiedź zostaje dodana do Zapytaj mnie dla wszystkich.
+Jeśli Zapytaj mnie nie zna odpowiedzi, **Wyślij pytanie** przesyła je do nas. Odpowiadamy na nie, a odpowiedź zostaje dodana do Zapytaj mnie dla wszystkich. **Zapytaj na forum** pyta zamiast tego użytkowników i fanów Lapina: otwiera na forum nowy temat z twoim pytaniem jako tytułem.
 
 ## Menu pomocy
 
@@ -22,7 +22,9 @@ Przycisk **?** obok Zapytaj mnie otwiera menu pomocy:
 - **Podręcznik użytkownika** otwiera ten podręcznik w języku interfejsu.
 - **Zgłoś problem…** informuje nas, co poszło nie tak, albo wysyła pomysł lub pytanie. Napisz, co się stało i czego się spodziewałeś, i dodaj zrzut ekranu, jeśli to pomoże. Do zgłoszenia dołączana jest wersja aplikacji i jej ostatnie komunikaty o błędach.
 - **Wiadomości…** pokazuje odpowiedzi na twoje zgłoszenia. Pojawia się, gdy poprosisz o odpowiedź.
-- **Społeczność (Skool)** to miejsce, w którym rozmawiają użytkownicy i zespół.
+- **Forum** otwiera forum Lapina (forum.lapinbim.com), na którym użytkownicy i fani rozmawiają, pokazują swoje prace i pomagają sobie nawzajem. Forum jest po angielsku, ale możesz pisać w swoim języku.
+- **Zapytaj na forum…** otwiera na forum nowy temat w kategorii Lapin, z wersją aplikacji dopisaną pod twoim tekstem. Nic więcej o twoim komputerze ani projekcie nie jest wysyłane. Logujesz się na forum i tam publikujesz temat.
+- **Społeczność (Skool)** to miejsce kursów i pozostałych materiałów zespołu.
 - **Sprawdź aktualizacje…** jest dostępne tylko w aplikacji desktopowej.
 - **O Lapinie…** pokazuje wersję, licencję, odnośnik do kodu źródłowego i wyjaśnia, czym jest helpware.
 

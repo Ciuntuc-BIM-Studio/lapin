@@ -22,6 +22,14 @@ La ficha **Estructura** contiene los pórticos y la cimentación.
 
 Dibuje la cimentación en el nivel **Foundations**, o dele una planta propia.
 
+**Una zapata corrida es solo el hormigón**, salvo que pida el muro. Con **Zapata corrida** o **Zapata corrida curva** activada, la barra de la línea de comandos ofrece **Solo la zapata** (por defecto: una zapata de hormigón de 600 × 400 mm, un tipo de perfil que se crea la primera vez) o **Con muro** (el arranque de un tipo de zapata corrida encima, con sus capas) y qué tipo de zapata corrida con muro usar. La elección se recuerda. Una zapata ya dibujada cambia con su tipo en **Tipos estructurales**.
+
+![La opción de la herramienta de zapata corrida en la línea de comandos: solo la zapata o con muro](shots/structure-strip-option.webp)
+
+**En las plantas.** Una zapata queda bajo el forjado, así que una planta la dibuja a trazos en la planta del nivel en que está, como la planta de un edificio muestra lo que hay debajo. Para verla cortada y vista, use una **planta de cimentación**: en el navegador del proyecto, el **+** junto a **Plantas** crea una para el nivel activo (corte 0,50 m bajo él, vista 2,50 m hacia abajo).
+
+**Dibujar en una planta de cimentación.** Muestra también el nivel inferior, y lo que dibuje allí con una herramienta de losa, muro, pilar o viga va a ese nivel (la Cimentación de un proyecto nuevo, a −1,50); las herramientas de zapatas conservan el nivel de la planta, siendo la base de una zapata la de su tipo bajo él.
+
 ![Pilares, vigas y zapatas aisladas en 3D](shots/structure-3d.webp)
 
 ## Tipos y esquinas

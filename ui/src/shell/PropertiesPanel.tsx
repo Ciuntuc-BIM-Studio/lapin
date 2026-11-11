@@ -10,18 +10,21 @@ import { AlignHorizontalJustifyCenter, ChevronRight, Search, Trash2 } from 'luci
 import { Cell, LengthCell } from './cells';
 import { panelFocus, panelKeys, parseNumber } from './cellKeys';
 import { useUi } from '../app/store';
-import { setPanelWidth, usePanels } from '../app/panels';
+import { governor, setPanelWidth, usePanels } from '../app/panels';
 import { activeStorey, execute, useSession } from '../engine/session';
 import { ownPlanOf } from '../viewport/storeyPlan';
 import { frontView } from '../viewport/frontView';
 import { view3dNode } from '../viewport/storeys3d';
 import { relatedOf, relatingOf, storeys, typeOf } from '../engine/model';
+import { elevationOf, offsetFor, raisedBy } from '../engine/elevation';
+import { useLiveRise } from '../viewport/viewFrame';
 import { fieldShown, type FieldDescriptor, type NodeDto } from '../engine/protocol';
 import type { PropertySectionDef } from '../platform/module';
 import { findTool, propertySections, typeFieldsOf } from '../platform/modules';
 import { QuantitiesSection } from './QuantitiesSection';
 import { DependenciesSection } from './DependenciesSection';
 import { deleteElements } from '../engine/dependents';
+import { isPinned, setPinned } from '../modules/core/pinTools';
 import { ParamsSection } from './ParamsSection';
 import { AxisFields } from './AxisFields';
 import { paramKey, sameKind, type Param } from './params';
@@ -135,8 +138,10 @@ function IfcPropertiesSection({ node }: { node: NodeDto }) {
 
 function startResize(e: React.PointerEvent): void {
   e.preventDefault();
-  const x0 = e.clientX, w0 = usePanels.getState().propsWidth;
-  const move = (ev: PointerEvent) => setPanelWidth('props', w0 - (ev.clientX - x0));
+  const st = usePanels.getState();
+  const x0 = e.clientX, w0 = governor(st, 'props') === 'browser' ? st.browserWidth : st.propsWidth;
+  const dir = st.propsSide === 'left' ? 1 : -1;
+  const move = (ev: PointerEvent) => setPanelWidth('props', w0 + dir * (ev.clientX - x0));
   const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
   window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
 }
@@ -269,6 +274,10 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
   const type = typeOf(model, node.id);
   const storey = relatingOf(model, node.id, 'IfcRelContainedInSpatialStructure');
   const sections = propertySections(node.type).filter((s) => !s.shows || s.shows(node));
+  // While it is dragged up or down in a section or an elevation, its offset follows the drag (decision 454).
+  const rise = useLiveRise((s) => (s.ids.includes(node.id) ? s.dz : 0));
+  const level = node.editable ? elevationOf(node, storey, type, cls?.fields.map((f) => f.key) ?? []) : null;
+  const elevation = level ? raisedBy(level, rise) : null;
   const TypeFields = type ? typeFieldsOf(type.type) : null;
   return (
     <aside className="panel props" aria-label="Properties" ref={body} onKeyDown={panelKeys} onFocus={panelFocus}>
@@ -293,12 +302,20 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
                 {storeys(model).map((st) => <option key={st.id} value={st.id}>{st.name}</option>)}
               </select>
             </dd>
+            <dt title="A pinned element stays where it is: it is not moved, turned, mirrored, sent to another storey nor deleted until it is unpinned. Its other fields still change">Pinned</dt>
+            <dd><input type="checkbox" data-field="pinned" checked={isPinned(node)} onChange={(e) => void setPinned(useUi.getState().selected.includes(node.id) ? useUi.getState().selected : [node.id], e.target.checked)} /></dd>
+            {elevation && <>
+              <dt title="The level's elevation and this offset from it: the figure below follows it">Offset from level</dt>
+              <dd><LengthCell metres={elevation.offset} onCommit={(v) => void execute('element.update', { ids: sameKind(node), attrs: { [elevation.key]: v } })} /></dd>
+              <dt title={elevation.of === 'top' ? 'The top of the element, above ±0.00: type it to move the element there' : elevation.of === 'bottom' ? 'The bottom of the element, above ±0.00: type it to move the element there' : 'The base of the element, above ±0.00: type it to move the element there'}>{elevation.of === 'top' ? 'Top elevation' : elevation.of === 'bottom' ? 'Bottom elevation' : 'Base elevation'}</dt>
+              <dd><LengthCell metres={elevation.absolute} onCommit={(v) => { if (v != null) void execute('element.update', { ids: [node.id], attrs: { [elevation.key]: offsetFor(elevation, v) } }); }} /></dd>
+            </>}
           </dl>
         </Group>
       )}
       {cls && cls.fields.length > 0 && node.editable && !sections.some((s) => s.replacesFields?.(node)) && (
         <Group id="dimensions" label="Dimensions">
-          <dl className="fields">{fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
+          <dl className="fields">{fieldsShown(cls.fields, sections, node, sameKind(node).map((id) => nodes.get(id)).filter((n): n is NodeDto => !!n)).filter((f) => f.key !== elevation?.key).map((f) => <FieldRow key={f.key} node={node} field={f} />)}</dl>
         </Group>
       )}
       {node.editable && <Group id="params" label="Parameters"><ParamsSection node={node} /></Group>}
@@ -314,7 +331,7 @@ function ElementPanel({ node, inFront }: { node: NodeDto; inFront?: boolean }) {
       <IfcPropertiesSection node={node} />
       {node.editable && node.type !== 'IfcProject' && node.type !== 'IfcSite' && node.type !== 'IfcBuilding' && (
         <section className="sect actions">
-          <button type="button" className="btn" onClick={() => void deleteElements([node.id])}><Trash2 size={14} />Delete</button>
+          <button type="button" className="btn" disabled={isPinned(node)} title={isPinned(node) ? 'Pinned: unpin it to delete it' : undefined} onClick={() => void deleteElements([node.id])}><Trash2 size={14} />Delete</button>
         </section>
       )}
       <details className="sect advanced">

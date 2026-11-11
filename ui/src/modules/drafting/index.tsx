@@ -1,6 +1,6 @@
 /** Drafting: CAD drawing on views (lines, polylines, circles, arcs, hatches on layers, and their edits), dimensions that follow the elements, texts, grid axes. */
 
-import { ArrowRightToLine, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler } from 'lucide-react';
+import { ArrowRightToLine, Crosshair, ListPlus, ListMinus, Circle, Copy, CopyPlus, CornerUpRight, Eraser, FileInput, FileText, FlipHorizontal2, Hash, Layers, Link2, Unlink2, Move, MoveHorizontal, RectangleHorizontal, RotateCw, Scaling, Scissors, Slash, Spline, Type, Redo2, PenLine, RulerDimensionLine, Tag, Tags, Grid3x3, Settings2, Image as ImageIcon, Ruler } from 'lucide-react';
 import { AngleIcon, ArcLengthIcon, DiameterIcon, DimensionIcon, GridAxisIcon, LevelIcon, OrdinateIcon, RadiusIcon, SlopeIcon } from '../../icons';
 import type { Grip, GripStep, GripView, LapinModule, RefLine, ToolDef, Vec2 } from '../../platform/module';
 import { axisGrips, axisRef, outlineGrips, pt } from '../../viewport/gripKit';
@@ -10,6 +10,7 @@ import { execute, useSession } from '../../engine/session';
 import { cadHost, cadLog, registerCommand, startCommand, withSelection, type Step } from '../../viewport/cad/session';
 import { importDxf, importTrace } from '../../engine/files';
 import { DimensionSection } from './DimensionSection';
+import { DimensionOptions, isSamePoint, pickDirection, segmentLabels, setContinuous, useDimTool } from './dimensionTool';
 import { DraftSection } from './DraftSection';
 import { fromJson, keyPoints, toJson, type Shape } from '../../viewport/cad/shapes';
 import { frontView } from '../../viewport/frontView';
@@ -21,6 +22,7 @@ import { formatLength, formatLevel } from '../../engine/unitsStore';
 import { TagOptions, tagCommand, tagGrips, useTagPrefs } from './tag';
 import { DRAW_ORDER, drawOrder } from '../../viewport/drawOrder';
 import { lazyPart } from '../../platform/lazyPart';
+import { surveyPoint, useLocation } from '../../app/location';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const ImportDxfDialog = lazyPart(() => import('./ImportDxfDialog').then((m) => m.ImportDxfDialog), { title: 'Import DXF' });
@@ -61,48 +63,77 @@ function AxisOptions() {
 }
 
 /**
- * DIM (aligned) and DLI (linear: horizontal or vertical, by where its line
- * goes): two points, then the line; then it goes on as a string, each next
- * point measured from the last on the same line, previewed until Enter makes
- * the whole string one dimension (one object, one undo step; U takes the last
- * point back; S first for a single one). Points on elements, grid axes or
- * wall centre lines follow them.
+ * DIM (aligned) and DLI (linear: horizontal or vertical, by where its line goes): two points, then the line. One
+ * dimension at a time by default, and the command asks for the next one (Esc leaves); with Continuous on (the bar's box,
+ * or C) each next point goes on the same line, measured from the last, previewed with its values until Enter, a
+ * right-click, the Finish button or a click on the last point again makes the whole string one dimension (one object,
+ * one undo step; U takes the last point back). Esc, or another tool or command, keeps the string drawn so far and says
+ * so. A linear dimension's direction holds once chosen (Tab flips it). Points on elements, grid axes or wall centre
+ * lines follow them.
  */
 function dimCommand(linear: boolean): Step {
-  let single = false;
+  const tool = useDimTool;
   const dirOf = (a: Vec2, b: Vec2, at: Vec2): Vec2 | null => {
     if (!linear) return null;
-    const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    return Math.abs(at.y - m.y) >= Math.abs(at.x - m.x) ? { x: 1, y: 0 } : { x: 0, y: 1 };
+    const s = tool.getState();
+    const o = pickDirection(a, b, at, s.orient, s.forced);
+    // Drawn from a preview, so the bar hears of a change after the draw.
+    if (o !== s.orient) queueMicrotask(() => tool.setState({ orient: o }));
+    return o === 'h' ? { x: 1, y: 0 } : { x: 0, y: 1 };
   };
-  const first = (): Step => ({
-    prompt: `First point${single ? '' : ' [Single]'}`, want: 'point',
-    keywords: { S: () => { single = true; return first(); } },
-    point: (a) => ({
-      prompt: 'Second point', want: 'point', base: a, preview: (c) => [{ type: 'line', a, b: c }],
-      point: (b) => ({
-        prompt: 'Where the dimension line goes', want: 'point', base: b,
-        preview: (c) => stringPreview([a, b], c, dirOf(a, b, c) ?? unit(a, b)),
-        point: async (at) => {
-          const dir = dirOf(a, b, at);
-          if (single) { await addString([a, b], at, dir); return null; }
-          const pts = [a, b];
-          // An aligned string measures along its first segment.
-          const along = dir ?? unit(a, b);
-          const next = (): Step => ({
-            prompt: 'Next point of the string [Undo] (Enter to finish)', want: 'point', base: pts[pts.length - 1],
-            preview: (c) => stringPreview([...pts, c], at, along),
-            point: (p) => { pts.push(p); return next(); },
-            keywords: { U: () => { if (pts.length > 2) pts.pop(); return next(); } },
-            enter: async () => { await addString(pts, at, dir ?? (collinear(pts) ? null : along)); return null; },
-            // Escape keeps the string drawn so far, as AutoCAD keeps a continued dimension.
-            escape: () => addString(pts, at, dir ?? (collinear(pts) ? null : along)),
-          });
-          return next();
-        },
+  const tol = () => 6 / (cadHost()?.pxPerMetre?.() || 1e6);
+  const first = (): Step => {
+    tool.setState({ orient: null, forced: false, count: 0 });
+    return {
+      prompt: `First point [${tool.getState().continuous ? 'Single' : 'Continuous'}]`, want: 'point',
+      keywords: {
+        C: () => { setContinuous(!tool.getState().continuous); return first(); },
+        S: () => { setContinuous(false); return first(); },
+        CONTINUOUS: () => { setContinuous(true); return first(); },
+        SINGLE: () => { setContinuous(false); return first(); },
+      },
+      point: (a) => ({
+        prompt: 'Second point', want: 'point', base: a, preview: (c) => [{ type: 'line', a, b: c }],
+        labels: (c) => [{ at: { x: (a.x + c.x) / 2, y: (a.y + c.y) / 2 }, text: formatLength(Math.hypot(c.x - a.x, c.y - a.y)) }],
+        point: (b) => ({
+          prompt: 'Where the dimension line goes', want: 'point', base: b,
+          preview: (c) => stringPreview([a, b], c, dirOf(a, b, c) ?? unit(a, b)),
+          labels: (c) => segmentLabels([a, b], c, dirOf(a, b, c) ?? unit(a, b)),
+          point: async (at) => {
+            const dir = dirOf(a, b, at);
+            tool.setState({ orient: dir ? (dir.x ? 'h' : 'v') : null, forced: true });
+            if (!tool.getState().continuous) { await addString([a, b], at, dir); return first(); }
+            const pts = [a, b];
+            tool.setState({ count: 2 });
+            // An aligned string measures along its first segment.
+            const along = dir ?? unit(a, b);
+            const make = () => addString(pts, at, dir ?? (collinear(pts) ? null : along));
+            const finish = async () => { tool.setState({ count: 0 }); await make(); return null; };
+            const next = (): Step => ({
+              prompt: 'Next point [Undo] (Enter or right-click to finish)', want: 'point', base: pts[pts.length - 1],
+              preview: (c) => stringPreview([...pts, c], at, along),
+              labels: (c) => segmentLabels([...pts, c], at, along),
+              point: (p) => {
+                if (isSamePoint(p, pts[pts.length - 1], tol())) return finish();
+                pts.push(p);
+                tool.setState({ count: pts.length });
+                return next();
+              },
+              keywords: { U: () => { if (pts.length > 2) pts.pop(); tool.setState({ count: pts.length }); return next(); } },
+              enter: finish,
+              // Esc (or another tool, or another command) keeps what is drawn, and says so.
+              escape: async () => {
+                tool.setState({ count: 0 });
+                await make();
+                notify(`Dimension string kept (${pts.length} points) · Undo removes it`);
+              },
+            });
+            return next();
+          },
+        }),
       }),
-    }),
-  });
+    };
+  };
   return first();
 }
 
@@ -211,8 +242,8 @@ const roomDimensions: ToolDef = {
     else notify(r.rooms ? `${r.strings} dimension strings in ${r.rooms} rooms.` : 'No room here to dimension: place rooms first (Architecture → Room).');
   })(),
 };
-registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false) });
-registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true) });
+registerCommand({ names: ['DIMALIGNED', 'DAL', 'DIM'], label: 'Aligned dimension', start: () => dimCommand(false), options: DimensionOptions });
+registerCommand({ names: ['DIMLINEAR', 'DLI'], label: 'Linear dimension', start: () => dimCommand(true), options: DimensionOptions });
 
 // ─── The other dimensions: angle, radius, diameter, arc length, slope, level, ordinate ───
 
@@ -314,6 +345,28 @@ registerCommand({ names: ['DIMSLOPE', 'DSL'], label: 'Slope', start: slopeComman
 registerCommand({ names: ['DIMLEVEL', 'DLV'], label: 'Level', start: levelCommand });
 registerCommand({ names: ['DIMORDINATE', 'DOR'], label: 'Ordinate', start: ordinateCommand });
 
+/**
+ * DIMCOORD (decision 447): a spot coordinate on a plan, the point then where its leader ends [Map/Project/Internal:
+ * what it reads]. Map by default when the project is tied to the map (eastings and northings through the survey
+ * point, turned to true north), else the project base point's X and Y; worked out again whenever the points move.
+ */
+function coordinateCommand(): Step | null {
+  let system: 'map' | 'project' | 'internal' = surveyPoint(useLocation.getState().loc) ? 'map' : 'project';
+  const names = { map: 'map E, N', project: 'base point X, Y', internal: 'plan origin X, Y' };
+  const step = (): Step => ({
+    prompt: `The point [Map/Project/Internal: ${names[system]}]`, want: 'point',
+    keywords: {
+      M: () => { if (surveyPoint(useLocation.getState().loc)) system = 'map'; else cadLog('The project has no survey point: Manage → Location ties it to the map.'); return step(); },
+      P: () => { system = 'project'; return step(); },
+      I: () => { system = 'internal'; return step(); },
+    },
+    point: (a) => ({ prompt: 'Where the leader ends', want: 'point', base: a, preview: (q) => [{ type: 'line', a, b: q }], point: (at) => addKind('coordinate', { a: pair(a), at: pair(at), system }) }),
+  });
+  if (useUi.getState().view !== 'plan') { cadLog('A spot coordinate is written on a plan: open one.'); return null; }
+  return step();
+}
+registerCommand({ names: ['DIMCOORD', 'DCO'], label: 'Spot coordinate', start: coordinateCommand });
+
 // ─── Linework (LW…): the view's generated lines hidden, shown or restyled, joined at corners ───
 
 type LwMode = { action: 'hide' | 'show' | 'style'; style?: { pen?: number; color?: string; pattern?: string } };
@@ -375,6 +428,13 @@ function lineworkReset(): Step {
 registerCommand({ names: ['JOIN', 'J'], label: 'Join', start: () => withSelection(async (ids) => {
   const r = await execute('drafting.join', { ids }) as { joined?: number; pieces?: number } | null;
   cadLog(r?.joined ? `${r.joined} polyline${r.joined === 1 ? '' : 's'} from ${r.pieces} pieces.` : 'Nothing met end to end.');
+  return null;
+}) });
+
+/** EXPLODE: polylines and rectangles split into lines, the way back from JOIN; circles, arcs, hatches and dimensions stay (report #121). */
+registerCommand({ names: ['EXPLODE', 'X'], label: 'Explode', start: () => withSelection(async (ids) => {
+  const r = await execute('drafting.explode', { ids }) as { exploded?: number; pieces?: number; kept?: number } | null;
+  if (r) cadLog(`${r.exploded} shape${r.exploded === 1 ? '' : 's'} into ${r.pieces} lines${r.kept ? ` (${r.kept} left as they are)` : ''}.`);
   return null;
 }) });
 
@@ -447,8 +507,9 @@ function draftGrips(node: NodeDto): Grip[] {
  * A dimension string's grips, like a polyline's: a grip on each measured
  * point (dragged: the point goes there and holds on what it lands on; Ctrl/⌘:
  * taken out, two stay), one in each segment's middle on the dimension line
- * (dragged: a new point where it is dropped; Ctrl/⌘: one halfway), and the
- * dimension line's ends (dragged: the line goes through the point). They stand
+ * (dragged: the line goes through the point, as at its ends; Ctrl/⌘-drag: a new
+ * point where it is dropped; Ctrl/⌘-click: one halfway), and the dimension
+ * line's ends (dragged: the line goes through the point). They stand
  * where the view draws the points (on the elements they hold on), else where
  * they were placed.
  */
@@ -475,8 +536,9 @@ function dimensionGrips(node: NodeDto, view?: GripView): Grip[] {
     const m = { x: (line[i].x + line[i + 1].x) / 2, y: (line[i].y + line[i + 1].y) / 2 };
     const half = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
     grips.push({
-      key: `e${i}`, kind: 'edgeMid', at: m, title: 'Drag: a new point where it is dropped (in its place along the string); Ctrl/⌘-click: one halfway',
-      step: (to: Vec2) => ({ command: 'drafting.insertDimensionPoint', args: { id, point: [to.x, to.y] } }),
+      key: `e${i}`, kind: 'edgeMid', at: m, title: 'Drag: the dimension line goes through the point · Ctrl/⌘-drag: a new point where it is dropped · Ctrl/⌘-click: one halfway',
+      step: (to: Vec2) => ({ command: 'drafting.moveDimension', args: { id, at: [to.x, to.y] } }),
+      insertAt: (to: Vec2) => ({ command: 'drafting.insertDimensionPoint', args: { id, point: [to.x, to.y] } }),
       insert: () => ({ command: 'drafting.insertDimensionPoint', args: { id, index: i + 1, point: [half.x, half.y] } }),
     });
   }
@@ -563,7 +625,7 @@ const drafting: LapinModule = {
       groups: [
         { label: 'Draw', tools: [cad('line', 'Line', Slash, 'LINE'), cad('pline', 'Polyline', Spline, 'PLINE'), cad('rect', 'Rectangle', RectangleHorizontal, 'RECTANGLE'), cad('circle', 'Circle', Circle, 'CIRCLE'), cad('arc', 'Arc', Redo2, 'ARC')] },
         { label: 'Modify', tools: [cad('move', 'Move', Move, 'MOVE'), cad('copy', 'Copy', Copy, 'COPY'), cad('rotate', 'Rotate', RotateCw, 'ROTATE'), cad('mirror', 'Mirror', FlipHorizontal2, 'MIRROR')], small: [cad('scale', 'Scale', Scaling, 'SCALE'), cad('erase', 'Erase', Eraser, 'ERASE')] },
-        { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN')] },
+        { label: 'Edit', tools: [cad('offset', 'Offset', CopyPlus, 'OFFSET'), cad('trim', 'Trim', Scissors, 'TRIM'), cad('extend', 'Extend', ArrowRightToLine, 'EXTEND'), cad('fillet', 'Fillet', CornerUpRight, 'FILLET')], small: [cad('chamfer', 'Chamfer', CornerUpRight, 'CHAMFER'), cad('join', 'Join', Link2, 'JOIN'), cad('explode', 'Explode', Unlink2, 'EXPLODE')] },
         { label: 'Fill', tools: [cad('hatch', 'Hatch', Hash, 'HATCH')] },
         orderGroup,
         { label: 'Linework', tools: [cad('linework', 'Linework', PenLine, 'LINEWORK')], small: [cad('lwJoin', 'Join', CornerUpRight, 'LWJOIN'), cad('lwTrim', 'Trim', Scissors, 'LWTRIM'), cad('lwExtend', 'Extend', ArrowRightToLine, 'LWEXTEND'), cad('lwReset', 'Reset', Eraser, 'LWRESET')] },
@@ -577,7 +639,7 @@ const drafting: LapinModule = {
       groups: [
         { label: 'Dimension', tools: [dimension, cad('dimLinear', 'Linear', MoveHorizontal, 'DIMLINEAR'), cad('dimAngular', 'Angle', AngleIcon, 'DIMANGULAR'), roomDimensions],
           // Points clicked into a selected string, as ArchiCAD's Insert dimension point.
-          small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE')] },
+          small: [cad('dimAdd', 'Add points', ListPlus, 'DIMADD'), cad('dimDel', 'Remove points', ListMinus, 'DIMDEL'), cad('dimRadius', 'Radius', RadiusIcon, 'DIMRADIUS'), cad('dimDiameter', 'Diameter', DiameterIcon, 'DIMDIAMETER'), cad('dimArc', 'Arc length', ArcLengthIcon, 'DIMARC'), cad('dimSlope', 'Slope', SlopeIcon, 'DIMSLOPE'), cad('dimOrdinate', 'Ordinate', OrdinateIcon, 'DIMORDINATE'), cad('dimCoord', 'Spot coordinate', Crosshair, 'DIMCOORD')] },
         { label: 'Text', small: [tagParameter], tools: [text, cad('tag', 'Tag', Tag, 'TAG'), {
           id: 'tagOpenings', label: 'Door & window tags', icon: Tags,
           run: () => void (async () => {

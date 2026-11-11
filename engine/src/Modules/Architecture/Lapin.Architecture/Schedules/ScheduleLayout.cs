@@ -133,7 +133,7 @@ public static class ScheduleLayout
                 "operation" => new(id, "Opening", e => e.Spec == null ? "—" : OperationText(e.Spec), true),
                 "sill" => data.Entries.Any(e => e.Kind == "window") ? new(id, "Sill height (mm)", e => e.Kind == "window" && e.Spec != null ? Mm(e.Spec.SillHeight) : "—", true) : null,
                 "total" => new(id, "Total", e => e.Total.ToString(CultureInfo.InvariantCulture), true, true),
-                "uValue" => new(id, "U (W/m²K)", e => e.Spec?.ThermalTransmittance is { } u ? u.ToString(CultureInfo.InvariantCulture) : "—", true),
+                "uValue" => new(id, "U (W/m²K)", e => UValue(e) is { Length: > 0 } u ? u : "—", true),
                 "fire" => new(id, "Fire rating", e => FireRating(e) is { Length: > 0 } f ? f : "—", true),
                 "lintel" => data.LintelMarks is { Count: > 0 } lm
                     ? new(id, "Lintel", e => e.Occurrences.Select(o => lm.GetValueOrDefault(o.Id)).OfType<string>().Distinct().Order().ToList() is { Count: > 0 } l ? string.Join(", ", l) : "—", true) : null,
@@ -157,7 +157,12 @@ public static class ScheduleLayout
 
     /// <summary>The rows of the parameters the listed types and their elements carry (decision 251), in the order first met; a fire rating goes in its own row.</summary>
     public static List<string> ParamRows(ScheduleData data) =>
-        data.Entries.SelectMany(e => e.Params?.Keys ?? []).Where(n => !Schedules.IsFireRating(n)).Distinct(StringComparer.OrdinalIgnoreCase).Select(n => ParamPrefix + n).ToList();
+        data.Entries.SelectMany(e => e.Params?.Keys ?? []).Where(n => !Schedules.IsFireRating(n) && TagText.Squash(n) != "uvalue").Distinct(StringComparer.OrdinalIgnoreCase).Select(n => ParamPrefix + n).ToList();
+
+    /// <summary>A type's U-value: the data's free text (report #76), else the number the spec keeps.</summary>
+    public static string? UValue(ScheduleEntry e) =>
+        e.Params?.Where(p => TagText.Squash(p.Key) == "uvalue" && p.Value.Length > 0).Select(p => p.Value).FirstOrDefault()
+        ?? e.Spec?.ThermalTransmittance?.ToString(CultureInfo.InvariantCulture);
 
     /// <summary>A type's fire rating: its parameter (or its elements') named so, Pset_DoorCommon's or Pset_WindowCommon's FireRating among them.</summary>
     public static string? FireRating(ScheduleEntry e) => e.Params?.Where(p => Schedules.IsFireRating(p.Key) && p.Value.Length > 0).Select(p => p.Value).FirstOrDefault();

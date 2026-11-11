@@ -68,7 +68,8 @@ public static class Columns
     {
         if (g == null || g.Parts.Count == 0) yield break;
         var (section, _, height) = Spec(m, column);
-        var net = g.Parts.Sum(p => Measure.Volume(p.Solid));
+        // The body the views draw has sharp corners: the real section holds RealRatio more (decision 418).
+        var net = g.Parts.Sum(p => Measure.Volume(p.Solid)) * section.RealRatio;
         yield return new QuantitySet("Qto_ColumnBaseQuantities",
         [
             new("Length", height, "LENGTH"),
@@ -321,7 +322,7 @@ public static class Beams
         if (g == null || g.Parts.Count == 0) yield break;
         var section = Spec(m, beam).Section;
         var length = SpanOf(m, beam).ClearLength;
-        var net = g.Parts.Sum(p => Measure.Volume(p.Solid));
+        var net = g.Parts.Sum(p => Measure.Volume(p.Solid)) * section.RealRatio;
         yield return new QuantitySet("Qto_BeamBaseQuantities",
         [
             new("Length", length, "LENGTH"),

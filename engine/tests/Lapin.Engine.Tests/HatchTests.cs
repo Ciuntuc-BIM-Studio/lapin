@@ -273,7 +273,8 @@ public class BattHatchTests
     public void Insulation_materials_take_the_batt_by_name_and_the_library_knows_it()
     {
         Assert.Equal("BATT", Lapin.Drawing.MaterialGraphics.FromName("Vată minerală").Hatch);
-        Assert.Equal("BATT", Lapin.Drawing.MaterialGraphics.FromName("XPS").Hatch);
+        // Rigid boards a fine square grid, as Revit's "Insulation - Rigid" (decision 460).
+        Assert.Equal("RIGID", Lapin.Drawing.MaterialGraphics.FromName("XPS").Hatch);
         Assert.True(BattHatch.Is(HatchLibrary.Find("batt")));
     }
 }

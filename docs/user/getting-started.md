@@ -34,7 +34,7 @@ Want more room for the drawing? **View → Interface…** chooses a more compact
 - **Zoom.** Turn the mouse wheel or pinch on a trackpad. Lapin zooms where the cursor is.
 - **Pan.** Drag with the middle or the right mouse button, or with two fingers on a trackpad.
 - **Orbit in 3D.** Drag with the left mouse button. With elements selected, the view turns round them; otherwise round the point of the model under the cursor.
-- **Show everything.** Press the **Fit** button, type <kbd>ZE</kbd>, or double-click the middle button.
+- **Show the model.** Press the **Fit** button or double-click the middle button: the view frames the model's main body, so the building fills it even when something stands far away (a survey point kilometres off, a text an imported drawing left at its origin, a stray line). What is left out is counted in a message. <kbd>ZE</kbd> frames everything, those far things included. A plan opens framed the same way, and so does the 3D view.
 
 ## Units
 

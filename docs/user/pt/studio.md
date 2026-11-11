@@ -89,8 +89,8 @@ Estas ferramentas trabalham nas faces e nas arestas do corpo como ele está cons
 - **Arredondar aresta** (FE) arredonda a aresta mais próxima do seu clique, e **Chanfrar aresta** (CE) a chanfra. Escolha *em toda a face* para fazer todas as arestas da face de uma vez.
 - **Casca** esvazia os sólidos selecionados, com paredes da espessura que você digitar. Ela pode ficar fechada, ou ficar aberta na sua extremidade, no seu esboço ou nos dois.
 - **Dividir** corta um sólido em dois por um plano paralelo à face que você escolher, até a profundidade na face que você arrastar ou digitar. As duas partes mantêm o esboço. **Fatiar** mantém só um lado: escolha **Manter atrás** ou **Manter na frente** na barra embaixo da vista.
-- **Matriz** repete o sólido em uma fileira, e **Matriz polar** o repete em volta de um eixo vertical.
-- **Girar 3D** gira o sólido em torno de uma aresta que você escolher. **Espelhar 3D** o espelha no plano de uma face. **Mover 3D** coloca setas ao longo de x, y e z nos sólidos selecionados: arraste uma, ou digite uma distância para o eixo mostrado ao lado do valor (<kbd>Tab</kbd> vai para o próximo eixo).
+- **Matriz** repete o sólido em uma fileira, e **Matriz polar** o repete em volta de um eixo vertical. Com qualquer outra coisa selecionada (uma referência, um grupo, uma parede), eles fazem cópias dela, como **Modificar → Matriz**: **Em fila**, um passo ao longo de x, y e z, ou **À volta de um centro**, o ângulo que as cópias preenchem (360° as distribui numa volta completa).
+- **Girar 3D** gira o sólido em torno de uma aresta que você escolher. **Espelhar 3D** o espelha no plano de uma face. **Mover 3D** coloca setas ao longo de x, y e z na seleção (sólidos, referências, grupos ou qualquer elemento): arraste uma, ou digite uma distância para o eixo mostrado ao lado do valor (<kbd>Tab</kbd> vai para o próximo eixo).
 
 ![Empurrar/puxar: a face de cima puxada para cima, o que ela adiciona desenhado em verde e a distância ao lado da seta](shots/studio-push-pull.webp)
 
@@ -155,7 +155,7 @@ As propriedades de uma polilinha listam os seus lados. Digite o comprimento de u
 
 ## Malhas de outros programas
 
-**Arquivo → Importar malha (OBJ, STL, glTF)…** traz uma malha como referências que você pode ver e nas quais pode usar o snap. Um arquivo OBJ ou STL não diz a sua unidade nem qual lado é para cima, então o Lapin pergunta. Selecione uma referência e clique em **Tornar sólido Studio** para torná-la editável. Ela passa então a aceitar empurrar/puxar, arredondamentos, operações booleanas e os outros passos. A mesma ferramenta funciona em paredes, lajes e elementos de arquivos IFC.
+**Arquivo → Importar malha (OBJ, STL, glTF)…** traz uma malha como referências que você pode ver e nas quais pode usar o snap. Um arquivo OBJ ou STL não diz a sua unidade nem qual lado é para cima, então o Lapin pergunta. Uma referência é movida, girada, espelhada e copiada como está, como qualquer elemento. Para mudar a sua forma, selecione-a e clique em **Tornar sólido Studio**. Ela passa então a aceitar empurrar/puxar, arredondamentos, operações booleanas e os outros passos. A mesma ferramenta funciona em paredes, lajes e elementos de arquivos IFC.
 
 ## Operações booleanas
 

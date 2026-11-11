@@ -73,6 +73,8 @@ Drzwi lub okno to siatka kwater. Każda kwatera wybiera, jak się otwiera i czym
 
 **System profili** zaczyna typ od profilu **PVC**, **Aluminium**, **Tarcica** (drewno) lub **Stal (smukła)**: ustala wymiary ościeżnicy, słupków, rygli i skrzydeł i nadaje profilom dokładniejsze kształty. Ościeżnica ma przylgę (**Przylga**), do której domyka się skrzydło, skrzydło zachodzi na ościeżnicę o **Zakład skrzydła**, **listwy przyszybowe** trzymają szybę, a okno ma okapnik pod dolnym ramiakiem. Każdy wymiar pozostaje edytowalny. **Prosty (gładkie profile)** zachowuje proste prostokątne elementy, jak dotąd.
 
+**Ościeżnica z biblioteki** i **Skrzydło z biblioteki** biorą profil z [bibliotek profili](profiles.md) (na przykład przekrój aluminiowy lub PVC odczytany z DXF): proste pręty ościeżnicy i skrzydła mają wtedy jego rzeczywisty obrys, z otworami, w 3D, w przekrojach i rzutach, z jego szerokością i głębokością. Zastępuje to, czego jest rzeczywistym kształtem: przylgę, wargę i kapinosy systemu; listwy szklące zostają. Łukowe nadproża i okna okrągłe zachowują zwykły pas, podobnie słupki i ślemiona siatki. **Zwykły** wraca do prostokąta tego rozmiaru.
+
 ![Okno PVC: skrzydła zachodzące na ościeżnicę, listwy przyszybowe, pełny panel pod stałą kwaterą](shots/joinery-profiles-3d.webp)
 
 W sekcji **Szczegóły** pola **Parapet wewnętrzny** i **Parapet zewnętrzny** włączają i wyłączają parapety, a **Obróbka ościeży** włącza wykończenie ościeża po bokach i u góry. Gdzie parapety i obróbki nie są potrzebne, odznacz je.
@@ -101,6 +103,12 @@ Każdy z nich przylega do rzeczywistych lic ściany w miejscu okna, wyznaczonych
 **Ślemię u nasady łuku**, zaznaczone domyślnie, zostawia to ślemię i stały naświetlnik nad nim. Odznacz je dla okna rozwiernego łukowego: górny rząd kwater wchodzi w łuk, a ościeżnica, skrzydło, szyba, szprosy i symbol otwierania biegną wzdłuż łuku dookoła, bez poprzeczki pod nim. Kwatera otwiera się tak, jak wybierzesz (rozwierne, rozwierno-uchylne, stałe), słupki dochodzą do łuku, a rzuty, przekroje, elewacje, podgląd 3D i IFC pokazują to w ten sposób. Styl **Okno rozwierne łukowe** ustawia od razu łuk odcinkowy z jednym skrzydłem rozwiernym.
 
 ![Okno rozwierne łukowe: jedno skrzydło rozwierne biegnące wzdłuż łuku odcinkowego, bez ślemienia pod nim](shots/joinery-arched-casement.webp)
+
+### Szkło bez ramy
+
+**Szkło bez ramy** robi drzwi lub okno z samego szkła hartowanego, bez ościeżnicy i ramy skrzydła; styl **Szkło bez ramy** ustawia to od razu, ze skrzydłem na zawiasach czopowych. W drzwiach **Mocowanie** mówi, co trzyma skrzydło: **Zawiasy czopowe i okucia narożne** (samozamykacz w posadzce i czop górny, okucie w każdym narożu po stronie zawiasów i zamek narożny na dole po przeciwnej) albo **Zawiasy do szkła** (dwa, trzy przy skrzydle wyższym niż 2,30 m, zaciśnięte na szkle i przykręcone do ściany lub sąsiedniej tafli). **Grubość szkła** to 6–25 mm (domyślnie 12 mm), **Szczelina wokół szkła** to luz do otworu i między taflami, **Szczelina pod skrzydłem** luz nad posadzką. Skrzydło jest rozwierane, wahadłowe lub przesuwne; tafla obok lub nad nim jest stała i stoi w profilu U na posadzce i pod nadprożem. Skrzydło przesuwne wisi na szynie na całą szerokość otworu, przed stałymi taflami od strony pomieszczenia, i zachodzi na nie 50 mm, jak w szklanej ściance działowej lub kabinie prysznicowej. Uchwyt to pochwyt po obu stronach, chyba że wybierzesz inny. Okno bez ramy to szklenie stałe. Rzuty rysują skrzydło otwarte jako jego szkło, widoki okucia i szynę; w IFC typ nie ma ościeżnicy (jego grubość to grubość szkła).
+
+![Szklane drzwi bez ramy na zawiasach czopowych z okuciami narożnymi, w konfiguratorze](shots/joinery-frameless-door.webp)
 
 **Szprosy** dzielą kwatery: **Siatka (kolonialna)** z polami w poziomie i pionie, **Prairie** ze szprosami przy krawędziach lub **Romby**.
 
@@ -138,6 +146,24 @@ W rzucie ściany są przecięte, siedzisko, parapet i podstawa rysowane poniżej
 ### Klamki
 
 **Klamka** wybiera klamkę typu: **Klamka**, **Gałka**, **Pochwyt** lub **Klamka okienna** albo **Brak**. Domyślnie drzwi mają klamkę dźwigniową, a okno klamkę okienną. Drzwi mają klamkę po obu stronach, na wysokości z pola **Wysokość klamki**; **Kolor klamki** ustala jej kolor. Klamki są widoczne w 3D, na przekrojach i elewacjach oraz na rysunkach konfiguratora, gdy zaznaczone jest **Okucia**.
+
+### Położenie ramy i parapety
+
+**Position in the wall** (położenie w ścianie) ustala, gdzie w grubości ściany leży rama, jako wartość, a nie tylko wyśrodkowanie: wybierz **From the exterior finish**, **From the core** lub **From the wall’s centre** i **Set back**, o ile zewnętrzna płaszczyzna ramy leży za tym odniesieniem (od środka: o ile środek ramy). *From the exterior finish* i 50 mm ustawia ramę 50 mm za tynkiem. Rama, ościeża, parapety i symbole otwierania przesuwają się razem z nią, w rzutach, przekrojach, 3D i IFC. Typ zrobiony bez położenia pozostaje **Centred in the wall**. W panelu właściwości drzwi lub okno mają **Frame in the wall**, by nadać sobie własne położenie (**As the type** z niego rezygnuje) i **Set back** na odległość.
+
+![Konfigurator z ramą 50 mm za wykończeniem zewnętrznym](shots/joinery-position.webp)
+
+**Exterior sill** (parapet zewnętrzny) ma **Slope** (spadek) w stopniach (na początek 5°; 15° dla metalowego). Pochylony parapet opada od ramy i zabiera ze ściany wszystko, co nad nim: tynk, rdzeń i tynk wewnętrzny są cięte wzdłuż jego pochylonej górnej powierzchni, w 3D, w przekrojach i widokach oraz w przedmiarach.
+
+### Dane: wartość U, odporność ogniowa, okucia
+
+**Data…**, pod typem w konfiguratorze (i w panelu właściwości, dla zaznaczonych drzwi i okien), otwiera okno z dowolnym tekstem: **U-value**, **g-value**, **Safety glass** (klejone od wewnątrz, hartowane obustronnie…), **Fire rating** (EI 30, EI2 60-C5…) i **Fittings**; **More data** dodaje własne, na przykład *Sauna window* lub *Frosted glass*. Nic nie wybiera się z listy. Własna wartość drzwi lub okna ma pierwszeństwo przed wartością typu; puste pole wraca do wartości typu (pokazanej na szaro).
+
+![Okno danych typu okna](shots/joinery-data.webp)
+
+To parametry typu: zestawienia drzwi i okien pokazują każdy jako wiersz, opisy czytają je jako `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` i `{Fittings}`, a IFC je zachowuje. Odporność ogniowa to `FireRating` z `Pset_WindowCommon` lub `Pset_DoorCommon`; wartość U czytelna jako liczba (0.9 lub *0,9 W/m²K*) jest tam też `ThermalTransmittance`, a dla okna także `GlazingAreaFraction`; reszta jest w zestawie `Lapin_Joinery`.
+
+![Własne dane okna w panelu właściwości](shots/joinery-data-properties.webp)
 
 ### Parametry
 

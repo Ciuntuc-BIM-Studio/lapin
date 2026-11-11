@@ -73,6 +73,8 @@ En dør eller et vindue er et gitter af felter. Hvert felt vælger, hvordan det 
 
 **Profilsystem** starter typen fra en profil i **PVC**, **Aluminium**, **Træ** eller **Stål (slank)**: det sætter karm-, sprosse-, tværpost- og rammemål og giver profilerne deres finere former. Karmen har en **Fals**, som rammen lukker mod, rammen dækker karmen med sit **Rammeoverlap**, **glaslister** holder glasset, og et vindue har en drypnæse under bundstykket. Hvert mål kan stadig redigeres. **Enkel (glatte profiler)** beholder enkle rektangulære dele som før.
 
+**Karm fra et bibliotek** og **Ramme fra et bibliotek** tager en profil fra dine [profilbiblioteker](profiles.md) (for eksempel et aluminiums- eller PVC-snit læst fra en DXF): lige karm- og rammeelementer får dens virkelige kontur, med huller, i 3D, i snit og i planer, med dens bredde og dybde. Den erstatter det, den er den virkelige form af: systemets anslag, læbe og drypnæser; glaslister bliver. Buede overkanter og runde vinduer beholder et enkelt bånd, ligesom gitterets sprosser og tværposter. **Enkel** går tilbage til et rektangel af samme størrelse.
+
 ![Et PVC-vindue: rammerne over karmen, glaslisterne, et tæt panel under et fast felt](shots/joinery-profiles-3d.webp)
 
 Under **Detaljer** slår **Indvendig sålbænk** og **Udvendig sålbænk** sålbænkene til og fra, og **Lysningsbeklædning** slår lysningens afslutning til på siderne og foroven. Hvor sålbænke og beklædninger ikke bruges, så fjern fluebenet.
@@ -101,6 +103,12 @@ Hver af dem sidder efter væggens virkelige flader, hvor vinduet er, ud fra væg
 **Tværpost ved buens vederlag**, sat til som standard, beholder tværposten og det faste overvindue over den. Fjern fluebenet for et buet sidehængt vindue: den øverste række ruder går op i buen, og karmen, rammen, glasset, sprosserne og åbningssymbolet følger buen hele vejen rundt, uden nogen post under den. Ruden åbner, som du vælger (sidehængt, dreje-kip, fast), poster går op til buen, og planer, snit, opstalter, 3D-forhåndsvisningen og IFC viser det sådan. Stilen **Buet sidehængt vindue** sætter en segmentbue med én sidehængt ramme på én gang.
 
 ![Et buet sidehængt vindue: én sidehængt ramme der følger en segmentbue, uden tværpost under den](shots/joinery-arched-casement.webp)
+
+### Rammeløst glas
+
+**Rammeløst glas** laver en dør eller et vindue af hærdet glas alene, uden karm og uden ramme; stilen **Rammeløst glas** sætter det på én gang, med et dørblad på pivoter. På en dør siger **Ophæng**, hvad der bærer dørbladet: **Pivoter og hjørnebeslag** (en gulvdørlukker og en toppivot, et beslag i hvert hjørne i hængselsiden og en hjørnelås forneden i modsat side) eller **Glashængsler** (to, tre på et dørblad over 2,30 m, spændt på glasset og fastgjort til væggen eller glasset ved siden af). **Glastykkelse** er 6 til 25 mm (12 mm som standard), **Fuge rundt om glasset** er afstanden til hullet og mellem glassene, **Fuge under dørbladet** afstanden til gulvet. Et dørblad slår op, er pendul eller skydes; et glas ved siden af eller over er fast og står i en U-profil på gulvet og under overliggeren. Et skydeblad hænger i en skinne i hele hullets bredde, foran de faste glas mod rummet, og går 50 mm ind over dem, som i en glasvæg eller en bruseadskillelse. Grebet er et trækgreb på begge sider, medmindre du vælger et andet. Et rammeløst vindue er fast glas. Planer tegner dørbladet åbent som sit glas, opstalter beslagene og skinnen; i IFC har typen ingen karm (dens tykkelse er glassets).
+
+![En rammeløs glasdør på pivoter med hjørnebeslag, i konfiguratoren](shots/joinery-frameless-door.webp)
 
 **Sprosser** deler ruderne: **Gitter (kolonial)** med ruder i bredden og højden, **Prairie** med sprosser nær kanterne, eller et **Rudemønster**.
 
@@ -138,6 +146,24 @@ I plan er fladerne snittet, sæde, sålbænk og sokkel tegnet under snittet og t
 ### Greb
 
 **Greb** vælger typens greb: **Dørgreb**, **Knop**, **Trækstang**, **Vinduesgreb** eller intet. Som standard har en dør et dørgreb og et vindue et vinduesgreb. En dør har greb på begge sider i den **Grebshøjde**, du angiver; **Grebets farve** sætter farven. Greb vises i 3D, i snit og opstalter og i konfiguratorens tegninger, når **Beslag** er markeret.
+
+### Karmens placering og vindueskarme
+
+**Position in the wall** (placering i væggen) fastlægger, hvor karmen sidder i vægtykkelsen, som en værdi og ikke kun centreret: vælg **From the exterior finish**, **From the core** eller **From the wall’s centre**, og **Set back**, hvor langt karmens ydre flade ligger bag denne reference (fra midten: hvor langt karmens midte ligger). *From the exterior finish* og 50 mm sætter karmen 50 mm bag pudsen. Karmen, lysningerne, vindueskarmene og åbningssymbolerne følger med, i planer, snit, 3D og IFC. En type uden placering forbliver **Centred in the wall**. I egenskabspanelet har en dør eller et vindue **Frame in the wall** til sin egen placering (**As the type** opgiver den) og **Set back** til afstanden.
+
+![Konfiguratoren med karmen 50 mm bag den ydre overflade](shots/joinery-position.webp)
+
+**Exterior sill** (ydre vindueskarm) har en **Slope** (hældning) i grader (5° til at begynde med, 15° til en metalkarm). En skrå karm falder væk fra karmen og tager alt over sig ud af væggen: puds, kerne og indvendig puds skæres efter dens skrå overside, i 3D, i snit og facader og i mængderne.
+
+### Data: U-værdi, brandklasse, beslag
+
+**Data…**, under typen i konfiguratoren (og i egenskabspanelet, for de valgte døre og vinduer), åbner en boks med fri tekst: **U-value**, **g-value**, **Safety glass** (lamineret indvendigt, hærdet på begge sider…), **Fire rating** (EI 30, EI2 60-C5…) og **Fittings**; **More data** tilføjer dine egne, f.eks. *Sauna window* eller *Frosted glass*. Intet vælges fra en liste. En dørs eller et vindues egen værdi går forud for typens; et tomt felt falder tilbage til typens (vist gråt).
+
+![Datafeltet for en vinduestype](shots/joinery-data.webp)
+
+Det er typens parametre: skemaerne over døre og vinduer viser hver som en række, tags læser dem som `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` og `{Fittings}`, og IFC gemmer dem. Brandklassen er `FireRating` i `Pset_WindowCommon` eller `Pset_DoorCommon`; en U-værdi, der kan læses som et tal (0.9 eller *0,9 W/m²K*), er også `ThermalTransmittance` der, med `GlazingAreaFraction` for et vindue; resten er i sættet `Lapin_Joinery`.
+
+![Et vindues egne data i egenskabspanelet](shots/joinery-data-properties.webp)
 
 ### Parametre
 

@@ -19,6 +19,28 @@ public class GeoImportTests
     static string Text(double x, double y, string value, string layer = "COTE") => $"0\nTEXT\n8\n{layer}\n10\n{x}\n20\n{y}\n30\n0\n40\n0.5\n1\n{value}\n";
 
     [Fact]
+    public void Survey_points_from_a_Lambert_93_DXF_are_taken_as_RGF93_and_unknown_numbers_are_said()
+    {
+        // Report #118: a QGIS DXF in EPSG:2154 (metres, Paris area).
+        var f = F();
+        var dxf = Dxf(Point(648237.3, 6862271.7, 35.5), Point(648267.3, 6862271.7, 36.2), Point(648247.3, 6862301.7, 37.0));
+        var r = (JsonObject)f.Run("civil.importDxfPoints", new JsonObject { ["text"] = dxf })!;
+        Assert.Equal(3, (int)r["points"]!);
+        Assert.Equal(GeoRef.Lambert93, Location.Crs(f.Model));
+        Assert.Equal(GeoRef.Lambert93, (string)r["crs"]!);
+        Assert.Null(r["unknownSystem"]);
+        var (e, n) = GeoRef.ToMap(f.Model, new Vec2(30, 0));
+        Assert.Equal(648267, e, 6);
+        Assert.Equal(6862272, n, 6);
+
+        // Map-sized numbers that no known system explains are kept as they are, and the answer says so.
+        var g = F();
+        var odd = Dxf(Point(2500000, 3000000, 5), Point(2500030, 3000000, 6), Point(2500010, 3000030, 7));
+        var q = (JsonObject)g.Run("civil.importDxfPoints", new JsonObject { ["text"] = odd })!;
+        Assert.True((bool)q["unknownSystem"]!);
+    }
+
+    [Fact]
     public void Survey_points_from_DXF_make_a_terrain_near_the_origin_tied_to_Stereo_70()
     {
         var f = F();

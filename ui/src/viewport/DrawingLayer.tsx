@@ -17,7 +17,7 @@ type ToScreen = (p: { x: number; y: number }) => { x: number; y: number };
  * `minText`: texts smaller on screen (px) are left out; a sheet or schedule keeps its tables' words down to a pixel, so a
  * table seen whole still shows it is filled (report #75: a takeoff on an A1 sheet looked empty at fit).
  */
-export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre, onDark = false, minText = 3, screen }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number; onDark?: boolean; minText?: number; screen?: { w: number; h: number } }) {
+export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPerMetre, onDark = false, minText = 3, screen, turnDeg = 0 }: { drawing: DrawingDto; toScreen: ToScreen; pxPerMetre: number; onDark?: boolean; minText?: number; screen?: { w: number; h: number }; turnDeg?: number }) {
   // Pixels per paper millimetre: a paper mm is scale/1000 m of the model.
   const pxPerMm = pxPerMetre * (drawing.scale ?? 100) / 1000;
   // Thin lines (TL): every pen one pixel on screen, sheets and PDFs keeping theirs.
@@ -51,7 +51,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
                 fontFamily={t.font === 'serif' ? 'ui-serif, Georgia, serif' : t.font === 'mono' ? 'ui-monospace, Menlo, monospace' : 'ui-sans-serif, system-ui, sans-serif'}
                 textAnchor={t.anchor === 'start' ? 'start' : t.anchor === 'end' ? 'end' : 'middle'}
                 dominantBaseline={t.baseline === 'middle' ? 'central' : 'alphabetic'}
-                transform={t.angle ? `rotate(${-t.angle} ${at.x} ${at.y})` : undefined}>{t.text}</text>
+                transform={t.angle || turnDeg ? `rotate(${-(t.angle ?? 0) - turnDeg} ${at.x} ${at.y})` : undefined}>{t.text}</text>
             );
           })}
         </g>
@@ -62,7 +62,7 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
         stroke={stroke ?? 'none'} strokeWidth={width} strokeLinecap={cap} strokeLinejoin={cap === 'square' ? 'miter' : 'round'}
         strokeDasharray={p.dash ? p.dash.map((v) => Math.max(1, Math.min(v * pxPerMm, v * 8)).toFixed(1)).join(' ') : undefined} />
     );
-  }), [drawing, cap, toScreen, pxPerMm, onDark, minText, screen]);
+  }), [drawing, cap, toScreen, pxPerMm, onDark, minText, screen, turnDeg]);
   return <g className="drawing-layer">{paths}</g>;
 });
 
@@ -73,12 +73,13 @@ export const DrawingLayer = memo(function DrawingLayer({ drawing, toScreen, pxPe
 function PenImages({ pen, toScreen, screen }: { pen: PenDto; toScreen: ToScreen; screen?: { w: number; h: number } }) {
   const nodes = useSession((s) => s.nodes);
   const clipId = `pen-clip${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  const clip = pen.clip && pen.clip.length === 4 ? [toScreen({ x: pen.clip[0], y: pen.clip[1] }), toScreen({ x: pen.clip[2], y: pen.clip[3] })] : null;
+  // The box's four corners: a plan turned to true north turns it too.
+  const clip = pen.clip && pen.clip.length === 4 ? [[0, 1], [2, 1], [2, 3], [0, 3]].map(([i, j]) => toScreen({ x: pen.clip![i], y: pen.clip![j] })) : null;
   return (
     <g className="pen-image" clipPath={clip ? `url(#${clipId})` : undefined}>
       {clip && (
         <clipPath id={clipId}>
-          <rect x={Math.min(clip[0].x, clip[1].x)} y={Math.min(clip[0].y, clip[1].y)} width={Math.abs(clip[1].x - clip[0].x)} height={Math.abs(clip[1].y - clip[0].y)} />
+          <polygon points={clip.map((q) => `${q.x},${q.y}`).join(' ')} />
         </clipPath>
       )}
       {(pen.images ?? []).map((img, k) => {

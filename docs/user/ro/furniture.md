@@ -1,7 +1,7 @@
 ---
 title: Mobilier
 order: 47
-summary: Canapele, canapele de colț, fotolii, scaune, paturi, dulapuri, comode, biblioteci, bufete, mese, birouri și bucătării liniare, din tipuri parametrice, puse lângă pereți cu un clic.
+summary: Canapele, canapele de colț, fotolii, scaune, paturi, dulapuri, comode, biblioteci, bufete, mese, birouri și bucătării în șase dispuneri, din tipuri parametrice, puse lângă pereți cu un clic.
 ---
 
 ## Așezarea mobilierului
@@ -42,6 +42,18 @@ Fațadele și secțiunile desenează corpurile, cu hașurile materialelor lor. �
 - are blat, chiuvetă și plită (locul lor de-a lungul bucătăriei se alege pe tip), corpuri sus și o coloană pentru frigider la un capăt.
 
 **Length** (lungimea) bucătăriei rămâne de modificat în proprietăți, iar corpurile se împart din nou.
+
+### Dispunerile bucătăriei
+
+Un tip de bucătărie are o **Layout** (dispunere): **One wall** (rândul drept), **Galley** (două rânduri paralele cu un culoar între ele), **L-shaped**, **U-shaped**, **Island** (un rând pe peretele din spate și o insulă separată, cu culoarul ei) sau **Peninsula** (un L cu un rând care iese din braț, cu blatul în consolă pentru scaune înalte). Alegerea ei pornește tipul de la mărimile dispunerii, iar fiecare rămâne editabilă lângă previzualizare: lungimile brațelor de la peretele din spate, culoarul dintre rânduri, lungimea rândului opus, lungimea, adâncimea și locul insulei, lungimea și consola peninsulei și, la un L sau o peninsulă, colțul pe stânga sau pe dreapta.
+
+![Cele șase dispuneri în plan: pe un perete, paralelă, în L, în U, cu insulă și cu peninsulă](shots/kitchen-layouts.webp)
+
+**Sink on** și **Hob on** le pun pe rândul principal sau pe cealaltă parte (braț, rândul opus, insulă, peninsulă), **Sink at** și **Hob at** spun unde de-a lungul ei, iar **Tall unit (fridge)** stă la un capăt liber. Corpurile de colț sunt oarbe; corpurile de sus sunt doar pe rândurile lipite de un perete, nu pe insulă sau pe peninsulă.
+
+![Un tip de bucătărie: în L](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) desenează orice dispunere cu două puncte de-a lungul peretelui pe care stă rândul principal: linia îi dă lungimea, spatele pe fața peretelui, iar un L, o peninsulă, un U sau o bucătărie paralelă se strecoară în colțul sau între pereții lângă care e trasă. **Flip** dă unui L sau unei peninsule colțul pe cealaltă parte. Extrasul de mobilier numește dispunerea și arată adâncimea amprentei. În IFC rămâne un IfcFurniture de un tip Kitchen definit de utilizator.
 
 ## Proprietățile unei piese
 

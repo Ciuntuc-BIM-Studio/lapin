@@ -45,3 +45,7 @@ Die Kopien verwenden dieselben Typen wie die Originale und erhalten neue IFC-Glo
 ![Die Wände und die Decke des Erdgeschosses in die zwei Ebenen darüber kopiert, in 3D](shots/copy-to-storeys-3d.webp)
 
 Um die Auswahl stattdessen in eine andere Ebene zu verschieben, wählen Sie **Ändern → In Geschoss verschieben**. Die Elemente behalten ihre Höhen über der neuen Ebene oder bleiben, wo sie im Raum sind.
+
+## Die Höhe eines Elements
+
+Ein Element auf einer Ebene steht auf der Höhe der Ebene und einem Versatz davon. **Eigenschaften → Platzierung** zeigt sein **Geschoss**, seinen **Versatz vom Geschoss** und seine **Höhe** über ±0,00: den Fuß einer Wand oder Stütze, die Oberkante einer Decke oder eines Trägers (der Versatz eines Trägers gilt von der Oberkante der Ebene), die Unterkante eines Fundaments (die Unterkante seines Typs unter der Ebene plus Versatz). Tippen Sie eine der Zahlen ein, die andere folgt: das Element wandert in allen Ansichten, in einem Rückgängig-Schritt. Um ein Element auf eine andere Ebene zu setzen, ändern Sie sein **Geschoss**. Was Sie in einem Grundriss zeichnen, steht auf der Ebene dieses Grundrisses.

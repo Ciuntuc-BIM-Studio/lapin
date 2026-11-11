@@ -79,7 +79,25 @@ A door or a window is a grid of panes. Every pane chooses how it opens and what 
 
 ![A shop door in one type: two leaves, side lights and a transom across](shots/joinery-panes.webp)
 
+**Width of one mullion or transom.** Click a mullion or a transom in the elevation (a click, not a drag) and it is picked: its **Width** appears, with **No mullion** (**No transom**) to take it away so the two panes meet, and **Default (frame's)** to give it the common **Mullion width** again. Each one keeps its own width when you add, split or merge columns and rows.
+
+### Double doors and meeting leaves
+
+**New double door** starts a pair of leaves with no mullion between them (1500 × 2100 mm). Any two door leaves, one hinged left and one hinged right, meet when the mullion between them is 0; the side lights next to them keep their mullions.
+
+Where two leaves meet, **Leaves meeting** says how:
+
+- **Butt**: the leaves simply touch.
+- **Rebated**: a meeting stile, the active leaf lapping over the passive one by the **Rebate overlap**.
+- **Cover strip**: a strip (astragal) over the joint, with its **width** and **thickness**.
+
+The **Active leaf** (**Left** or **Right**, as the grid reads, the left one hinged on the left, seen from outside) opens first and has the handle; **Flush bolts on the passive leaf** puts bolts in the other one. One setting serves every pair of the type, and leaves that swing both ways always meet butt. A type made before this keeps its leaves butting, both with handles.
+
+![A double door: no mullion between the leaves, rebated, the right leaf active](shots/joinery-double-door.webp)
+
 **Profile system** starts the type from a **PVC**, **Aluminium**, **Timber** or **Steel (slim)** profile: it sets the frame, mullion, transom and sash sizes and gives the profiles their finer shapes. The frame has a **Rebate** the sash closes on, the sash laps over the frame by its **Sash overlap**, **Glazing beads** hold the glass, and a window has a drip under its bottom rail. Every size stays editable. **Simple (plain profiles)** keeps plain rectangular members, as before.
+
+**Frame from a library** and **Sash from a library** take a profile from your [profile libraries](profiles.md) (an aluminium or PVC section read from a DXF, say): straight frame and sash members then have its real outline, holes included, in 3D, in sections and in plans, with its width and depth. It replaces what it is the real shape of, the system's stop, lip and drips; glazing beads stay. Curved heads and round windows keep a plain band, and so do this grid's mullions and transoms. **Plain** goes back to a rectangle of that size.
 
 ![A PVC window: the sashes lapping over the frame, the beads, a solid panel under a fixed light](shots/joinery-profiles-3d.webp)
 
@@ -109,6 +127,12 @@ Each one sits by the wall's real faces where the window is, from the wall's laye
 **Transom at the springing**, ticked by default, keeps that transom and the fixed fanlight over it. Untick it for an arched casement: the top row of panes reaches into the head, and the frame, the sash, its glass, the glazing bars and the opening symbol follow the arch all round, with no bar across under it. The pane opens as you set it (side-hung, tilt-and-turn, fixed), mullions run up to the arch, and plans, sections, elevations, the 3D preview and IFC show it so. The **Arched casement** style sets a segmental head with one side-hung sash at once.
 
 ![An arched casement: one side-hung sash following a segmental arch, no transom under it](shots/joinery-arched-casement.webp)
+
+### Frameless glass
+
+**Frameless glass** makes a door or window of toughened glass alone, with no frame and no sash; the **Frameless glass** style sets it at once, with one leaf on pivots. For a door, **Fixing** says what holds a leaf: **Pivots and patch fittings** (a floor spring and a top pivot, a fitting at each corner on the hinge side and a lock patch at the bottom opposite) or **Glass hinges** (two, three on a leaf taller than 2.30 m, clamped to the glass and fixed to the jamb or the pane beside it). **Glass thickness** is 6 to 25 mm (12 mm by default), **Gap round the glass** is the clearance to the opening and between the panes, **Gap under the leaf** the one over the floor. A leaf swings, swings both ways or slides; a pane beside or over it is fixed, standing in a channel on the floor and under the head. A sliding leaf hangs from a track across the head, in front of the fixed panes towards the room, and runs 50 mm past them, as a glass partition's or a shower screen's. The handle is a pull bar on both faces unless you choose another. A frameless window is fixed glazing. Plans draw a leaf open as its glass, elevations the fittings and the track; in IFC the type has no lining (its thickness is the glass's).
+
+![A frameless glass door on pivots with patch fittings, in the configurator](shots/joinery-frameless-door.webp)
 
 **Glazing bars** divide the panes: **Grid (colonial)** with its lites across and up, **Prairie** with bars near the edges, or a **Diamond lattice**.
 
@@ -146,6 +170,24 @@ In a plan the faces are cut, the seat, sill and base are drawn below the cut and
 ### Handles
 
 **Handle** picks the handle of the type: a **Lever**, a **Knob**, a **Pull bar** or a **Window handle**, or **None**. By default a door has a lever and a window a window handle. A door has its handle on both faces, at the **Handle height** you set; **Handle colour** sets its colour. Handles show in 3D, in sections and elevations, and in the configurator's drawings when **Hardware** is ticked.
+
+### Frame position and sills
+
+**Position in the wall** sets where the frame sits across the wall as a value, not only centred: choose **From the exterior finish**, **From the core** or **From the wall’s centre**, and **Set back**, how far the frame’s outer face is behind that reference (from the centre, how far the frame’s centre is). *From the exterior finish* and 50 mm puts the frame 50 mm behind the render. The frame, the reveals, the sills and the opening symbols move with it, in plans, sections, 3D and IFC. A type made without a position stays **Centred in the wall**. In the properties panel a door or window has **Frame in the wall** to give itself its own position (**As the type** gives it up) and **Set back** for its distance.
+
+![The configurator with the frame 50 mm back from the exterior finish](shots/joinery-position.webp)
+
+The **Exterior sill** has a **Slope** in degrees (5° to start; 15° for a metal sill). A sloped sill falls away from the frame and takes everything over it out of the wall: the render, the core and the plaster are cut to its sloping top face, in 3D, in sections and elevations, and in the quantities.
+
+### Data: U-value, fire rating, fittings
+
+**Data…**, under the type in the configurator (and in the properties panel, for the doors and windows selected), opens a box of free text: **U-value**, **g-value**, **Safety glass** (laminated inside, tempered both sides…), **Fire rating** (EI 30, EI2 60-C5…) and **Fittings**; **More data** adds any of your own, such as *Sauna window* or *Frosted glass*. Nothing is chosen from a list. A door or window’s own value wins over its type’s; an empty field falls back to the type’s (shown greyed).
+
+![The data box of a window type](shots/joinery-data.webp)
+
+They are the type’s parameters: the door and window schedules show each as a row, tags read them as `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` and `{Fittings}`, and IFC keeps them. The fire rating is `FireRating` of `Pset_WindowCommon` or `Pset_DoorCommon`; a U-value that reads as a number (0.9, or *0,9 W/m²K*) is `ThermalTransmittance` there too, with `GlazingAreaFraction` for a window; the rest is in the set `Lapin_Joinery`.
+
+![A window’s own data in the properties panel](shots/joinery-data-properties.webp)
 
 ### Parameters
 

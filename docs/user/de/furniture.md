@@ -1,7 +1,7 @@
 ---
 title: Möbel
 order: 47
-summary: Sofas, Ecksofas, Sessel, Stühle, Betten, Kleiderschränke, Kommoden, Bücherregale, Sideboards, Tische, Schreibtische und Küchenzeilen aus parametrischen Typen, mit einem Klick an Wände gestellt.
+summary: Sofas, Ecksofas, Sessel, Stühle, Betten, Kleiderschränke, Kommoden, Bücherregale, Sideboards, Tische, Schreibtische und Küchen in sechs Anordnungen aus parametrischen Typen, mit einem Klick an Wände gestellt.
 ---
 
 ## Möbel platzieren
@@ -42,6 +42,18 @@ Ansichten und Schnitte zeichnen die Körper mit den Schraffuren ihrer Materialie
 - sie hat eine Arbeitsplatte, eine Spüle und ein Kochfeld (wo sie entlang der Zeile stehen, legt der Typ fest), Hängeschränke darüber und an einem Ende einen Hochschrank für den Kühlschrank.
 
 Die **Länge** einer Küche bleibt in ihren Eigenschaften änderbar; die Schränke werden neu aufgeteilt.
+
+### Küchenanordnungen
+
+Ein Küchentyp hat ein **Layout** (Anordnung): **One wall** (die gerade Zeile), **Galley** (zwei parallele Zeilen mit einem Gang dazwischen), **L-shaped**, **U-shaped**, **Island** (eine Zeile an der Rückwand und eine freie Insel mit ihrem Gang) oder **Peninsula** (ein L mit einer Zeile, die aus dem Schenkel herausragt, die Arbeitsplatte für Hocker überstehend). Die Wahl startet den Typ mit den Maßen der Anordnung, und jedes bleibt neben der Vorschau änderbar: die Schenkellängen ab der Rückwand, der Gang zwischen den Zeilen, die Länge der gegenüberliegenden Zeile, Länge, Tiefe und Lage der Insel, Länge und Überstand der Halbinsel und bei einem L oder einer Halbinsel die Ecke links oder rechts.
+
+![Die sechs Anordnungen im Grundriss: einzeilig, zweizeilig, L, U, Insel und Halbinsel](shots/kitchen-layouts.webp)
+
+**Sink on** und **Hob on** setzen sie auf die Hauptzeile oder auf den anderen Teil (Schenkel, gegenüberliegende Zeile, Insel, Halbinsel), **Sink at** und **Hob at** sagen, wo entlang, und der **Tall unit (fridge)** steht an einem freien Ende. Die Eckschränke sind blind; Hängeschränke gibt es nur an Zeilen an einer Wand, nicht an Insel oder Halbinsel.
+
+![Ein Küchentyp: L-förmig](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) zeichnet jede Anordnung mit zwei Punkten entlang der Wand, an der die Hauptzeile steht: Die Linie ist ihre Länge, ihre Rückseite liegt auf der Wandfläche, und ein L, eine Halbinsel, ein U oder eine Zweizeile wird in die Ecke oder zwischen die Wände geschoben, in deren Nähe gezeichnet wird. **Flip** gibt einem L oder einer Halbinsel die Ecke auf der anderen Seite. Die Möbelliste nennt die Anordnung und die Tiefe der Grundfläche. In der IFC bleibt es ein IfcFurniture eines benutzerdefinierten Kitchen-Typs.
 
 ## Die Eigenschaften eines Möbels
 

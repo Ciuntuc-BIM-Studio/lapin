@@ -10,8 +10,11 @@ Work asked for or left open, not started yet. When an item is done, it moves to 
 
   Both are configured like doors and windows (a type, a configurator with its pictures, styles), drawn in plan, elevation, section and 3D, scheduled and measured, and written to IFC. Fit them in with wall openings (decision 392) and the exhaust fans' wall provisions (decision 349).
 
+- **BIM Open Schema in the browser** (found 09.11.2026). A `.bos` whose Parquet pages are Brotli-compressed (the `digitalhub-*.bos` samples) cannot be read in the web build, before or after the lazy parts of decision 413; the desktop reads them. Fix it, or say so in the guide's BOS section.
+
 ## Left open by earlier work
 
+- Plans with many timber-frame walls: a plan of 40–80 framed walls still draws in about 0.5–2 s on a Mac, after decision 418 made their edits fast; roof framing, CLT, joists and steel halls were not measured for the same cause.
 - Point clouds:
   - the index kept beside the project, so a project moves to another computer without reindexing (approved 08.11.2026);
   - the plan hang seen while filming is not reproduced: watch for it (decision 399);

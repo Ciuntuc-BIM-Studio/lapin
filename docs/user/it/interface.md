@@ -91,6 +91,12 @@ Fai clic su un’icona sulla barra di un pannello ridotto per aprire il pannello
 
 ![Un browser ridotto aperto sopra la vista dalla sua barra](shots/browser-overlay.webp)
 
+## Pannelli su entrambi i lati
+
+**Vista → Pannelli** (View → Panels) mette il browser di progetto e il pannello delle proprietà dove vuoi, come in Revit: **Browser a sinistra, Proprietà a destra** (predefinito), **Browser a destra, Proprietà a sinistra**, **Entrambi i pannelli a sinistra** o **Entrambi i pannelli a destra**. Con entrambi sullo stesso lato stanno uno sotto l'altro; trascina il divisore tra i due per dividere l'altezza (doppio clic la dimezza) e il bordo del lato per allargarlo. Ogni pannello si riduce ancora da solo: uno ridotto è una barra sottile nella pila, o una barra laterale quando lo sono entrambi. La scheda dell'assistente (desktop) resta con le proprietà. Lapin ricorda la disposizione su questo computer.
+
+![Browser e proprietà impilati a sinistra](shots/panel-layouts.webp)
+
 ## Chiaro e scuro
 
 La luna all’estremità destra della barra multifunzione rende scura l’interfaccia (grafite); il sole la rende di nuovo chiara (carta). Nel tema scuro piante, sezioni e prospetti stanno sullo sfondo scuro, con le penne nere in inchiostro chiaro; le tavole restano carta. I piccoli disegni dei configuratori (pianta, sezione e prospetto di una porta o finestra, di un tetto, un balcone, un ascensore, un capannone, una scala…) e le anteprime di etichette, cartigli e materiali sono disegnati su una scheda di carta chiara in entrambi i temi, così linee, testi e quote si leggono come su un disegno stampato.

@@ -5,7 +5,57 @@
  */
 
 export interface GridPanel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
-export interface GridSpec { columns: number[]; rows: number[]; panels: GridPanel[]; frame: { mullion: number; transom: number } }
+export interface GridSpec { columns: number[]; rows: number[]; panels: GridPanel[]; frame: { mullion: number; transom: number }; mullions?: (number | null)[]; transoms?: (number | null)[] }
+
+/** One bar width per grid line (decision 466): null is the frame's, 0 none, else metres. A list as long as the lines, or none when every bar is the frame's. */
+export type Bars = (number | null)[];
+
+/** The bar list fitted to <paramref name="count"/> cells (count - 1 lines): longer cut, shorter padded with the frame's; undefined when every bar is the frame's. */
+export function fitBars(bars: Bars | null | undefined, count: number): Bars | undefined {
+  const out = Array.from({ length: Math.max(count - 1, 0) }, (_, i) => bars?.[i] ?? null);
+  return out.some((b) => b != null) ? out : undefined;
+}
+
+/** Each line's width in mm: its own, or the frame's (metres) where it has none. */
+export function barWidths(bars: Bars | null | undefined, count: number, frameBar: number): number[] {
+  return Array.from({ length: Math.max(count - 1, 0) }, (_, i) => (bars?.[i] ?? frameBar) * 1000);
+}
+
+/** The bar list after a line was added at <paramref name="at"/> (the frame's bar) or removed. */
+const withLine = (bars: Bars | undefined, count: number, at: number): Bars | undefined => {
+  const b = Array.from({ length: count - 1 }, (_, i) => bars?.[i] ?? null);
+  b.splice(at, 0, null);
+  return fitBars(b, count + 1);
+};
+const withoutLine = (bars: Bars | undefined, count: number, at: number): Bars | undefined => {
+  const b = Array.from({ length: count - 1 }, (_, i) => bars?.[i] ?? null);
+  b.splice(at, 1);
+  return fitBars(b, count - 1);
+};
+
+/** A bar's width set (metres; null: the frame's, 0: none), the list kept as long as the lines. */
+export function withBar(bars: Bars | null | undefined, count: number, index: number, value: number | null): Bars | undefined {
+  const b = Array.from({ length: Math.max(count - 1, 0) }, (_, i) => bars?.[i] ?? null);
+  if (index < 0 || index >= b.length) return fitBars(bars, count);
+  b[index] = value;
+  return fitBars(b, count);
+}
+
+/**
+ * The column boundaries where a door leaf hinged on the left meets one hinged on the right in the same row (what the engine calls a pair
+ * once the mullion between them is 0): the left leaf ends at the boundary, the right one starts after it.
+ */
+export function leafPairs(s: GridSpec): number[] {
+  const panels = normalised(s);
+  const out = new Set<number>();
+  for (const l of panels) {
+    if (l.operation !== 'swing-left' && l.operation !== 'double-acting-left') continue;
+    const end = l.col + span(l, 'col') - 1;
+    const r = panels.find((x) => x.col === end + 1 && x.row === l.row && span(x, 'row') === span(l, 'row'));
+    if (r && (r.operation === 'swing-right' || r.operation === 'double-acting-right')) out.add(end);
+  }
+  return [...out].sort((a, b) => a - b);
+}
 
 const DOOR_LEAVES = new Set(['swing-left', 'swing-right', 'double-acting-left', 'double-acting-right', 'door-sliding-left', 'door-sliding-right', 'folding-left', 'folding-right']);
 
@@ -62,12 +112,14 @@ export function split(s: GridSpec, sizes: number[], pane: GridPanel, axis: 'col'
   const p = panels.find((x) => x.col === pane.col && x.row === pane.row);
   if (!p) return null;
   const bar = (axis === 'col' ? s.frame.mullion : s.frame.transom) * 1000;
+  const lines = axis === 'col' ? s.mullions : s.transoms;
+  const barAt = (i: number) => (lines?.[i] ?? bar / 1000) * 1000;
   const start = axis === 'col' ? p.col : p.row, n = span(p, axis);
   // The pane's extent along the axis, from its first cell's start: each cell and the bars between them.
   let pos = 0;
   for (let k = start; k < start + n; k++) {
     const a = pos, b = pos + sizes[k];
-    if (k > start && Math.abs(at - (a - bar / 2)) < 1) {
+    if (k > start && Math.abs(at - (a - barAt(k - 1) / 2)) < 1) {
       // On a grid line already inside the pane: two panes, no new line.
       const left = { ...p, [axis === 'col' ? 'colSpan' : 'rowSpan']: k - start };
       const right = upper({ ...p, [axis]: k, [axis === 'col' ? 'colSpan' : 'rowSpan']: start + n - k }, axis);
@@ -89,9 +141,11 @@ export function split(s: GridSpec, sizes: number[], pane: GridPanel, axis: 'col'
       const right = upper({ ...p, [axis]: k + 1, [key]: start + n - k }, axis);
       const columns = axis === 'col' ? nextSizes : s.columns;
       const rows = axis === 'row' ? nextSizes : s.rows;
-      return { spec: { ...s, columns, rows, panels: [...moved.filter((x) => x !== p), left, right] }, sizes: nextSizes };
+      // The new line takes the frame's bar; the lines after it move up one.
+      const bars = axis === 'col' ? { mullions: withLine(s.mullions, s.columns.length, k) } : { transoms: withLine(s.transoms, s.rows.length, k) };
+      return { spec: { ...s, ...bars, columns, rows, panels: [...moved.filter((x) => x !== p), left, right] }, sizes: nextSizes };
     }
-    pos = b + bar;
+    pos = b + barAt(k);
   }
   return null;
 }
@@ -133,18 +187,20 @@ export function tidy(s: GridSpec, sizes: { cols: number[]; rows: number[] }): { 
   let spec = s, cur = { cols: [...sizes.cols], rows: [...sizes.rows] };
   for (const axis of ['col', 'row'] as const) {
     const key = axis === 'col' ? 'colSpan' : 'rowSpan';
-    const bar = (axis === 'col' ? s.frame.mullion : s.frame.transom) * 1000;
+    const frameBar = axis === 'col' ? s.frame.mullion : s.frame.transom;
     for (let i = (axis === 'col' ? cur.cols : cur.rows).length - 2; i >= 0; i--) {
       // Boundary i, between i and i+1: needed when a pane starts at i+1 or ends at i.
       const needed = spec.panels.some((x) => x[axis] === i + 1 || x[axis] + span(x, axis) - 1 === i);
       if (needed) continue;
       const list = axis === 'col' ? cur.cols : cur.rows;
+      const bar = ((axis === 'col' ? spec.mullions : spec.transoms)?.[i] ?? frameBar) * 1000;
       const joined = [...list.slice(0, i), list[i] + bar + list[i + 1], ...list.slice(i + 2)];
       cur = axis === 'col' ? { ...cur, cols: joined } : { ...cur, rows: joined };
       spec = {
         ...spec,
         columns: axis === 'col' ? joined : spec.columns,
         rows: axis === 'row' ? joined : spec.rows,
+        ...(axis === 'col' ? { mullions: withoutLine(spec.mullions, list.length, i) } : { transoms: withoutLine(spec.transoms, list.length, i) }),
         panels: spec.panels.map((x) => {
           const xs = x[axis], xn = span(x, axis);
           if (xs > i) return { ...x, [axis]: xs - 1 };

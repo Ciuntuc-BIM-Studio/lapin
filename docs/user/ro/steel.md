@@ -9,6 +9,7 @@ summary: Bare metalice cu capete configurabile — prelungite sau retrase, tăia
 ![Tabul Oțel](shots/ribbon-steel.webp)
 
 - **Hală cu cadre portal…**: o hală metalică întreagă din câteva cifre, în configuratorul de hală (mai jos).
+- **Stâlp**: un stâlp al structurii, pus cu un clic pe etaj, dintr-un profil metalic: implicit un **HEB 200** din catalogul EN integrat (tipul lui de stâlp se face prima dată și se refolosește). Profilul se schimbă în Proprietăți sau în **Structură → Tipuri de structură**; unealta Stâlp din fila Structură pune ca înainte tipul curent al proiectului.
 - **Bară** (<kbd>SM</kbd>): o bară metalică între două puncte, la nivelul de sus al etajului, cu fața de sus a secțiunii pe axă, ca o grindă. Tipul îl alegi în Proprietăți înainte de primul clic, sau din tabul **Catalog**, unde fiecare tip metalic e desenat după secțiunea lui.
 - **Convertește în bară**: contururile desenate selectate devin bare (mai jos).
 - **La 45°** și **Încadrează**: două bare îmbinate la capete (mai jos).
@@ -58,7 +59,7 @@ Profilele tubulare sunt goale în interior, în vederea 3D, în secțiuni și î
 ![Configuratorul de hală](shots/steel-hall.webp)
 
 - **Stilurile**: halele tipice din catalog (**Hală 20 m**, **Hală 30 m**, un **Șopron 10 m** într-o apă) și cele ale proiectului. Un stil ales completează toate câmpurile; oricare se poate schimba apoi. **Salvează ca stil…** păstrează hala așa cum e configurată ca stil al proiectului; **Actualizează stilul** o salvează din nou în stilul ei, iar toate halele stilului îl urmează.
-- **Cadru**: **Deschiderea** (de la axa unui stâlp la a celuilalt), **Traveile** (egale ca `5 × 6`, sau fiecare pe rând: `6, 6, 7.5`), **Înălțimea la streașină** (fața de sus a riglelor deasupra feței exterioare a stâlpului), **Acoperișul** (în două ape sau într-o apă) și **Panta** lui, profilele **Stâlpilor** și ale **Riglelor**.
+- **Cadru**: **Deschiderea** (de la axa unui stâlp la a celuilalt), **Traveile**, de la cadru la cadru, în unitatea proiectului (egale ca `5 × 6000`, sau fiecare pe rând: `6000, 6000, 7500`; o lungime își poate purta unitatea, `6m`, iar un număr simplu sub un metru e citit în metri, deci `5 × 6` înseamnă tot cinci travei de 6 m), **Lungimea** halei (scrisă, păstrează numărul de travei și le face egale), **Înălțimea la streașină** (fața de sus a riglelor deasupra feței exterioare a stâlpului), **Acoperișul** (în două ape sau într-o apă) și **Panta** lui, profilele **Stâlpilor** și ale **Riglelor**.
 - **Vute**: **Vuta la streașină** și **Vuta la coamă**, fiecare cu **Lungimea** de-a lungul riglei de la fața stâlpului (sau de la coamă) și **Adâncimea** sub riglă acolo, și cum e **Executată**: **tăiată din profilul riglei** (un I tăiat oblic de-a lungul inimii, o jumătate sudată sub riglă: inima și talpa riglei) sau **din plăci sudate** (o **Placă a inimii** și o **Placă a tălpii** cu grosimile lor, și lățimea tălpii).
 
 ![Vutele din plăci sudate](shots/steel-hall-haunches.webp)

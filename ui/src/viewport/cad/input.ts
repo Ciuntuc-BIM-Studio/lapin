@@ -9,6 +9,7 @@
 
 import type { Vec2 } from '../../platform/module';
 import { parseImperial, unit } from '../../engine/unitsStore';
+import { fromFrame, isIdentity, toFrame, type Frame } from '../../app/frame';
 
 export type Parsed = { kind: 'point'; pt: Vec2 } | { kind: 'distance'; d: number };
 
@@ -17,7 +18,19 @@ const CART = new RegExp(String.raw`^(${NUM})\s*,\s*(${NUM})$`);
 const POLAR = new RegExp(String.raw`^(${NUM})\s*<\s*(${NUM})$`);
 const BARE = new RegExp(String.raw`^${NUM}$`);
 
-export function parseCoordinateInput(text: string, o: { last: Vec2 | null }): Parsed | null {
+/**
+ * In a UCS (decision 445), x,y and d<deg are in its axes from its origin, and @dx,dy and @d<deg turn with them;
+ * the point comes back in the plan.
+ */
+export function parseCoordinateInput(text: string, o: { last: Vec2 | null; frame?: Frame | null }): Parsed | null {
+  const f = o.frame && !isIdentity(o.frame) ? o.frame : null;
+  if (!f) return parseInPlan(text, o.last);
+  const r = parseInPlan(text, o.last ? toFrame(f, o.last) : null);
+  return r?.kind === 'point' ? { kind: 'point', pt: fromFrame(f, r.pt) } : r;
+}
+
+function parseInPlan(text: string, last: Vec2 | null): Parsed | null {
+  const o = { last };
   let t = text.trim();
   if (!t) return null;
   const rel = t.startsWith('@');
@@ -56,8 +69,9 @@ export function parseScalar(text: string, comma = true): number | null {
   return BARE.test(t) ? Number(t) : null;
 }
 
-/** The point squared to its base: along the dominant axis. */
-export function applyOrtho(base: Vec2, p: Vec2): Vec2 {
+/** The point squared to its base: along the dominant axis (the UCS's, when one is given). */
+export function applyOrtho(base: Vec2, p: Vec2, frame?: Frame | null): Vec2 {
+  if (frame && !isIdentity(frame)) return fromFrame(frame, applyOrtho(toFrame(frame, base), toFrame(frame, p)));
   return Math.abs(p.x - base.x) >= Math.abs(p.y - base.y) ? { x: p.x, y: base.y } : { x: base.x, y: p.y };
 }
 

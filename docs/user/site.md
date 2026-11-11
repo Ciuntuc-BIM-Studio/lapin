@@ -12,14 +12,34 @@ The **Site** tab holds the ground the building stands on: the terrain, the parce
 
 A survey comes in map coordinates: eastings and northings, hundreds of kilometres from zero. Lapin keeps the model near its origin and ties it to the map through the **survey point**. The first import into a project does this for you: the survey point goes to the plan's origin, on the file's first coordinates rounded to the metre, and every later import lands in the same place.
 
-**Manage → Location** shows the **coordinate system** the eastings and northings are in, and the base and survey points. Lapin knows Stereo 70 (EPSG:3844, Romania's national grid), UTM zones 34 and 35 (EPSG:32634, 32635), Web Mercator (EPSG:3857) and longitude and latitude (WGS 84, EPSG:4326). A file in another of these systems is converted when it comes in: a GeoJSON in longitude and latitude lands on the Stereo 70 plan where it belongs. The IFC export writes the system and the survey point, so other programs place the model on the map too.
+**Manage → Location** shows the **coordinate system** the eastings and northings are in, and the base and survey points. Lapin knows Stereo 70 (EPSG:3844, Romania's national grid), UTM zones 34 and 35 (EPSG:32634, 32635), Web Mercator (EPSG:3857) and longitude and latitude (WGS 84, EPSG:4326). A file in another of these systems is converted when it comes in: a GeoJSON in longitude and latitude lands on the Stereo 70 plan where it belongs. The IFC export writes the system and the survey point, so other programs place the model on the map too. Lambert-93 (EPSG:2154, France's national grid) is known too.
 
 ![Manage → Location: the coordinate system and the survey point](shots/site-location.webp)
+
+**The project's points**, as in Revit. **View → Coordinate points** (or **Show the internal origin, the base point and the survey point in plans and 3D** in Manage → Location) draws three points in plans and in the 3D view:
+
+- the **internal origin**, the plan's 0,0, which never moves: its X axis in red and its Y axis in green (and Z in blue in 3D);
+- the **project base point**, a circle with a cross: its elevation (where ±0.00 stands), its map coordinates when the project is tied to the map, and an arrow to **true north** with its angle when the project is turned from it (**True north** in Manage → Location);
+- the **survey point**, a triangle, with its eastings, northings and elevation.
+
+A plan snaps to all three. The 3D view draws them at their places at any zoom, over the model.
+
+![The internal origin, the base point turned 12.5° from true north and the survey point in 3D](shots/location-3d.webp)
+
+**Coordinates at the cursor.** While the cursor is in a plan, the status line reads where it is. A click on the coordinates chooses what they are read from: the **internal origin**, the **project base point**, the **survey point (map)** (eastings and northings, turned to true north, as the IFC export writes them) or the **UCS** (see [Snaps and helpers](drafting.md#snaps-and-helpers)). The choice is kept in **File → Preferences… → Coordinates**.
+
+**Plans of a georeferenced project.** The model is drawn in its own coordinates, near the internal origin; the map's are worked out from the survey point, so a plan stays as precise and as quick as any other. Three things put it on the map:
+
+- **Spot coordinates.** **Annotate → Dimension → Spot coordinate** (DIMCOORD): click a point, then where its leader ends. It writes the point's **E** and **N** in metres, through the survey point and turned to true north; without a survey point, its **X** and **Y** from the project base point. Type **M**, **P** or **I** first to choose the map, the base point or the plan's origin. The values are worked out on every drawing: move the survey point and every spot coordinate is written again.
+- **A plan in map coordinates.** The plan's **DXF** button exports it **in the plan's coordinates** (millimetres from the internal origin), **from the project base point** (millimetres) or **in map coordinates** (E and N in metres, turned to true north), so the drawing lands on the cadastral plan or the surveyor's DXF.
+- **True north up.** When the project is turned from true north, the compass button in the plan's bar turns the plan on screen so true north points up, and back. Drawing, snaps, the grid and the UCS turn with it; the choice is kept for each plan on this computer. Sheets and the PDF keep project north up.
+
+![A spot coordinate on a plan of a georeferenced project, true north up](shots/spot-coordinate.webp)
 
 ## Importing
 
 - **Terrain from points** reads a CSV or text file from a survey: x y z, or number northing easting elevation, one point a line.
-- **Points from DXF** reads a survey drawing: POINT entities with their heights, blocks inserted at a height or carrying it as an attribute, heights written beside points ("245.37" next to its cross), and contour lines at their elevation. When the drawing has points on several layers, Lapin lists them with how many points each holds, and you choose which to take. The points make a terrain.
+- **Points from DXF** reads a survey drawing: POINT entities with their heights, blocks inserted at a height or carrying it as an attribute, heights written beside points ("245.37" next to its cross), and contour lines at their elevation. When the drawing has points on several layers, Lapin lists them with how many points each holds, and you choose which to take. The points make a terrain. A DXF names no system, so Lapin takes numbers the size of a map's by their range (Stereo 70, Lambert-93, UTM). Numbers of a system it does not know are kept as they are, and Lapin says so: name the system in **Manage → Location**, or convert the drawing first.
 - **GeoJSON** brings parcels, lines and points. A file with one polygon gives the **parcel**; one with several gives areas. The parcel also outlines the terrain's parcel, with its area. Files from the cadastre in Stereo 70 say so in the file, and Lapin reads it; a file that says nothing is longitude and latitude, as the GeoJSON standard requires.
 - **CityJSON** brings the neighbouring buildings with their surfaces, at their place and height. They are read-only references; they will cast shadows in the sun study.
 - **Orthophoto** lays an aerial photo under the site. Pick the image (JPEG or PNG, up to 8 MB) together with its world file (`.jgw`, `.pgw` or `.wld`): the world file says where the image lies. The photo is drawn under the plan and wears the terrain in 3D.

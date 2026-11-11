@@ -50,6 +50,16 @@ Uma porta, uma janela ou uma abertura na parede se move e se copia ao longo da s
 
 Um eixo da malha move, copia, gira e espelha sozinho ou junto com outros elementos. Uma cópia é um novo eixo da mesma malha, nomeado a partir do último eixo que corre no mesmo sentido: com os eixos 1, 2 e 3, uma cópia de qualquer um deles é o 4.
 
+### Em cortes e elevações
+
+**Mover** (<kbd>M</kbd>), **Copiar** (<kbd>CO</kbd>) e arrastar um elemento selecionado também funcionam em um corte ou uma elevação, no plano da vista. Ao longo da vista, o elemento se move em planta ao longo da linha do corte; para cima ou para baixo, ele sobe ou desce pelo seu deslocamento do nível (o deslocamento da base de uma parede ou pilar, o deslocamento do topo de uma viga, o deslocamento de uma laje). Enquanto você arrasta, o seu **Deslocamento do nível** nas propriedades acompanha. Uma porta ou uma janela continua deslizando ao longo da sua parede, e as linhas desenhadas na vista se movem na vista. **Espelhar** ali usa uma linha vertical e espelha os elementos em relação ao plano que passa por ela, perpendicular à vista. Os elementos não **giram** em um corte ou uma elevação, porque tombariam: gire-os em uma planta ou em 3D. As linhas desenhadas giram e espelham de qualquer jeito. Um elemento fixado fica onde está.
+
+![Uma viga arrastada para cima na elevação sul: o seu fantasma onde estava, o deslocamento junto ao mouse e o seu deslocamento do nível acompanhando nas propriedades](shots/section-drag.webp)
+
+### Fixação
+
+Fixe o que não deve mover-se por engano: um modelo importado, a malha, um desenho de levantamento. Selecione-o e escolha **Modificar → Fixar**, ou marque **Fixado** em **Posicionamento** nas suas propriedades. Um elemento fixado não é movido, rodado, espelhado, elevado, levado para outro piso nem apagado, e não mostra alças. Os outros campos continuam a mudar: o tipo, a altura ou o material. Ainda pode ser copiado, e a cópia não fica fixada. Uma parede ligada a ele que se move deixa as extremidades da parede fixada onde estão. Fixar um grupo fixa os seus membros; um grupo com um membro fixado não se move. **Modificar → Soltar** (<kbd>UP</kbd>) solta-o de novo. Qualquer elemento pode ser fixado: uma parede, uma referência de um ficheiro importado, uma linha desenhada.
+
 ## Desenho
 
 A guia **Desenho** desenha linhas, polilinhas, retângulos, círculos e arcos. Ela os edita com deslocar, aparar, estender, concordância, chanfro e unir, preenche áreas com hachuras e os organiza em **Layers**. **Importar DXF** traz um desenho CAD como linhas em que você pode fazer snap e que pode editar.
@@ -57,6 +67,8 @@ A guia **Desenho** desenha linhas, polilinhas, retângulos, círculos e arcos. E
 ![A guia Desenho](shots/ribbon-draft.webp)
 
 **Deslocamento** (<kbd>O</kbd>) copia uma linha, uma polilinha, um retângulo, um círculo ou um arco a uma distância. Digite a distância na unidade do projeto (num projeto em milímetros `500` é meio metro; `2m` ou `1'6"` dizem a própria unidade), clique na forma e depois no lado para onde ela vai; ele pede a forma seguinte até você apertar <kbd>Enter</kbd> ou <kbd>Esc</kbd>. Digite **T** (Through) em vez disso e cada cópia passa pelo ponto clicado. Os cantos de uma polilinha ficam vivos (em meia-esquadria), como no CAD. O deslocamento funciona em plantas, cortes, elevações, em planos de referência e na vista 3D.
+
+**Decompor** (<kbd>X</kbd>, ou **EXPLODE**) é o caminho de volta de **Unir**: selecione polilinhas ou retângulos e cada um vira as suas linhas, uma por lado, na mesma camada com a mesma caneta e cor e no mesmo grupo, em um único passo de desfazer. Círculos, arcos, hachuras e cadeias de cotas ficam como estão, e uma seleção sem nada para dividir avisa. Funciona em plantas, cortes, elevações, em planos de referência e no plano de trabalho da vista 3D.
 
 Todo comprimento que a linha de comando pede está na unidade do projeto, e a mensagem diz qual: `Depth (mm)`, `Height (ft-in)`. Ângulos, fatores e contagens são números simples: `90` depois de **Girar** é 90°, seja qual for a unidade.
 
@@ -103,6 +115,8 @@ As anotações de uma planta (cotas, textos, linhas desenhadas, etiquetas) podem
 
 ![A altura da abertura nos estilos de cota](shots/dimension-opening-height-style.webp)
 
+**Cotas sobre uma linha.** Um ponto de cota clicado num eixo da malha ou no eixo de uma parede prende-se à linha, não a um ponto dela. Arraste a extremidade do eixo ao longo dele próprio para que a sua bolha caiba na vista, ou alongue ou encurte a parede: a cota continua a medir onde você a pôs e a sua linha não roda. Se o eixo ou a parede se desloca na transversal, o ponto vai com ele, no mesmo sítio ao longo. Uma cota na face de uma parede também fica onde media quando a parede é esticada no seu comprimento. As cotas feitas antes prendem-se a um eixo da malha da mesma maneira; uma no eixo de uma parede prende-se de novo clicando outra vez no seu ponto.
+
 ### Identificadores
 
 **Anotar → Identificador** (<kbd>TG</kbd>) coloca numa vista uma caixa com o que um elemento diz de si mesmo, e uma linha de chamada até ele. Enquanto a ferramenta está ativa, a barra sob a vista escolhe o que o identificador mostra: a marca, o nome, a classe ou o tipo, **Resistência ao fogo**, **Isolamento acústico**, **Transmitância térmica** ou **Outro parâmetro…** pelo nome; ou um tipo de etiqueta dos padrões de desenho; e **CHAMADA** liga ou desliga a linha de chamada. Clique no elemento e depois onde vai o identificador (digite antes **E** para dobrar a linha num cotovelo). **Anotar → Etiquetar um parâmetro** pede o nome do parâmetro e inicia a ferramenta com ele.
@@ -120,6 +134,12 @@ Um identificador selecionado tem pegas. Arraste a caixa para mover o identificad
 ![As propriedades de um identificador](shots/tag-properties.webp)
 
 O marcador de uma porta ou janela é editado parte por parte, cada texto movido ou girado e cada ponta da sua linha alongada: veja [Portas e janelas](doors-windows.md).
+
+**Rodar um identificador.** Nas propriedades de um identificador, **Rotação** roda o seu texto e o seu ombro ou caixa num ângulo, em graus a partir da horizontal, e **Alinhar ao elemento** faz com que siga a direção do elemento que identifica (o eixo de uma parede ou de uma viga, a aresta mais longa de qualquer outro) e rode com ele; a rotação soma-se então a essa direção. Um identificador é sempre desenhado legível, nunca de cabeça para baixo. Um identificador selecionado tem sobre o texto uma pega de rotação: arraste-a de 15° em 15° (incluindo 45° e 90°; mantenha <kbd>Shift</kbd> para qualquer ângulo), e Ctrl/⌘-clique volta a pôr o texto na horizontal. A linha de chamada continua a alcançar o elemento. Os identificadores simples e os de composição rodam da mesma forma, em plantas, cortes e alçados, e as pranchas, o PDF e o DXF imprimem-nos como você os vê.
+
+**O que um identificador identifica.** Enquanto a ferramenta **Identificador** espera um elemento, o que está sob o cursor é realçado com a cor de destaque; passe o cursor sobre um identificador colocado, ou selecione-o, e o elemento que identifica é realçado.
+
+![Um identificador alinhado à sua parede, com a pega de rotação, e a parede identificada realçada](shots/tag-rotate.webp)
 
 #### Identificador de composição
 

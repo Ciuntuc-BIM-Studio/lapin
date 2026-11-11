@@ -4,6 +4,8 @@
  * works here as in plans: the command line, snaps, ortho and guide lines; a
  * click selects an annotation or a drafted shape, a left drag selects by a
  * box (window to the right, crossing to the left), a middle or right drag pans.
+ * A left drag on the selection moves it (decision 453): the model's elements
+ * along the view and up by their offset from the level, as MOVE does here.
  * A tool with a gesture (a bar, a stirrup distribution, a section across an element) draws here as in a plan.
  */
 
@@ -29,7 +31,10 @@ import { drawOrderItems, isDrafted } from './drawOrder';
 import { CadOverlay } from './cad/canvas';
 import { useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
-import { feedPoint, useCad } from './cad/session';
+import { feedPoint, finishStep, frameArg, useCad } from './cad/session';
+import type { Shape } from './cad/shapes';
+import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
+import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
 import { markIds, markSelected } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
@@ -38,6 +43,7 @@ import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput'
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
 import { ScaleChip } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
+import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 
 type View = View2;
 const clampScale = (s: number) => Math.min(4000, Math.max(2, s));
@@ -54,6 +60,11 @@ export function DrawingView() {
   // The dark theme: the drawing on the theme's background, its black pens in the theme's ink, as a plan (report #90).
   const onDark = drawsOnDark(useUi((s) => s.theme));
   const drawing = useDrawing(id);
+  // What the selected or hovered tags tag, and what the TAG command hovers (report #130).
+  const tagHover = useTagHover();
+  const targets = useMemo(() => tagTargets(selected, nodes, tagHover), [selected, nodes, tagHover]);
+  const targetList = useMemo(() => [...targets], [targets]);
+  const anyTags = useMemo(() => viewHasTags(nodes, id), [nodes, id]);
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   // The view is remembered per section or elevation for the session; a new one fits itself once its drawing arrives.
@@ -62,7 +73,8 @@ export function DrawingView() {
   useEffect(() => { if (view) remember(key, view); }, [key, view]);
   const go = useCallback((v: View) => { setView((old) => { if (old) pushHistory(key, old); return v; }); }, [key]);
   const [hover, setHover] = useState<Aimed | null>(null);
-  const drag = useRef<{ x: number; y: number; view: View; moved: boolean } | null>(null);
+  /** A press; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl/⌘/Alt), from `base` (the press, snapped). */
+  const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
   /** A selection box or lasso being dragged (screen px); Space turns the box into a lasso. */
   const [box, setBox] = useState<SelectDrag | null>(null);
   useLassoKey(!!box, setBox);
@@ -210,6 +222,8 @@ export function DrawingView() {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.closest('input, select, textarea') || useCad.getState().step) return;
+      // Esc while the selection is dragged by its body: nothing moves.
+      if (e.key === 'Escape' && carrying()) { drag.current = null; carryEnd(); clearLiveRise(); return; }
       // A pick-then-point gesture ended after its pick (Enter or Esc) completes with the pick alone; a typed length is the key router's (Enter takes it, Esc clears it).
       if ((e.key === 'Escape' || e.key === 'Enter') && tool?.gesture?.kind === 'pickThenPoint' && pts.length === 1 && picked.current) {
         const l = useLive.getState();
@@ -234,6 +248,27 @@ export function DrawingView() {
     else liveEnd('tool');
   }, [first]);
   useEffect(() => () => liveEnd('tool'), []);
+  // A view that goes while the selection is dragged takes the drag's trace with it.
+  useEffect(() => () => { if (carrying()) carryEnd(); clearLiveRise(); }, []);
+  const dragTrace = useTrace((s) => s.trace?.owner === 'drag');
+
+  /**
+   * The selection dragged by its body (decision 453): moved as MOVE moves it, one undo step, the model's elements along
+   * the view in plan and up by their offset from the level, drafted shapes in the view; Ctrl/⌘ or Alt leaves a copy.
+   */
+  const carryTo = useCallback((ids: string[], base: Vec2, to: Vec2, copy: boolean) => {
+    const by = carryBy(base, to);
+    carryEnd();
+    clearLiveRise();
+    if (by) void execute('element.transform', { ids, op: copy ? 'copy' : 'move', by, ...frameArg(base) });
+  }, []);
+  /** While dragged: what the move raises the model's elements by so far, for their offset in Properties. */
+  const showRise = useCallback((ids: string[], base: Vec2, to: Vec2) => {
+    const f = viewFrameAt(drawing, base);
+    const by = carryBy(base, to);
+    const dz = f && by ? inModel(f, by[0], by[1])[2] : 0;
+    setLiveRise(Math.abs(dz) > 1e-9 ? ids : [], dz);
+  }, [drawing]);
 
   const at = (e: React.PointerEvent): { raw: Vec2; aimed: Aimed } => {
     const r = ref.current!.getBoundingClientRect();
@@ -283,14 +318,47 @@ export function DrawingView() {
           wheelBurst.current = now;
           setView({ scale, cx: p.x - (p.x - v.cx) * (v.scale / scale), cy: p.y - (p.y - v.cy) * (v.scale / scale) });
         }}
-        onPointerDown={(e) => { if (middleTwice.current(e)) { fit(); return; } if (editor.onPointerDown(e)) return; drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false }; (e.target as Element).setPointerCapture?.(e.pointerId); }}
+        onPointerDown={(e) => {
+          if (middleTwice.current(e)) { fit(); return; }
+          if (editor.onPointerDown(e)) return;
+          // Pressed on what is selected, with no tool or command running: a drag carries the selection.
+          let carry: string[] | undefined;
+          let base: Vec2 | undefined;
+          if (e.button === 0 && !tool?.gesture && !useCad.getState().step) {
+            const { raw, aimed } = at(e);
+            const hit = pickAny(raw);
+            const sel = useUi.getState().selected;
+            if (hit && (sel.includes(hit) || sel.includes(pickTarget(hit) ?? hit) || markSelected(hit, sel))) { carry = sel; base = aimed.point; }
+          }
+          drag.current = { x: e.clientX, y: e.clientY, view: v, moved: false, carry, copy: e.altKey || e.ctrlKey || e.metaKey, base };
+          (e.target as Element).setPointerCapture?.(e.pointerId);
+        }}
         onPointerMove={(e) => {
           if (editor.onPointerMove(e)) return;
           const d = drag.current;
           if (d) {
             if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) d.moved = true;
             const step = useCad.getState().step;
-            if (d.moved && e.buttons === 1 && (!step || step.want === 'select')) {
+            // Left drag on the selection: carried as a move grip carries it (the trace from the press, the readout, snaps from the base).
+            if (d.moved && e.buttons === 1 && d.carry && d.base) {
+              const { carry: ids, base, copy } = d;
+              if (!carrying()) {
+                const ghost = (drawing?.marks ?? []).filter((m) => markSelected(m.id, ids)).flatMap((m) => {
+                  const s = m.segments, out: Shape[] = [];
+                  for (let k = 0; k + 3 < s.length; k += 4) out.push({ type: 'line', a: { x: s[k], y: s[k + 1] }, b: { x: s[k + 2], y: s[k + 3] } });
+                  return out;
+                });
+                // A typed length or angle, then Enter: put there, as on release.
+                carryBegin(base, ghost, (p) => { drag.current = null; carryTo(ids, base, p, !!copy); });
+              }
+              const r = ref.current!.getBoundingClientRect();
+              const a = aim(toWorld(e.clientX - r.left, e.clientY - r.top), base, { orthoHeld: e.shiftKey });
+              setHover(a);
+              liveCursor(a.point);
+              showRise(ids, base, a.point);
+              return;
+            }
+            if (d.moved && e.buttons === 1 && !d.carry && (!step || step.want === 'select')) {
               const r = ref.current!.getBoundingClientRect();
               const to = { x: e.clientX - r.left, y: e.clientY - r.top };
               setBox((cur) => dragTo(cur ?? { a: { x: d.x - r.left, y: d.y - r.top }, b: to }, to));
@@ -298,15 +366,24 @@ export function DrawingView() {
             }
             if (d.moved) { setView({ ...d.view, cx: d.view.cx - (e.clientX - d.x) / d.view.scale, cy: d.view.cy + (e.clientY - d.y) / d.view.scale }); return; }
           }
-          setHover(at(e).aimed);
+          const here = at(e);
+          setHover(here.aimed);
+          trackTagHover(here.raw, { pickElement: pickAny, pickTag: (q) => { const t = pickDrawing(q, 6 / v.scale, drawing?.marks, nodes, (n) => n.props.predefinedType === 'TAG'); return t ?? null; }, anyTags, busy: !!tool?.gesture || !!d });
         }}
         onPointerUp={(e) => {
           if (editor.onPointerUp()) return;
           const d = drag.current;
           drag.current = null;
           if (box) { selectBox(box, e.shiftKey); setBox(null); return; }
+          if (d?.moved && e.button === 0 && d.carry && d.base) {
+            const r = ref.current!.getBoundingClientRect();
+            const to = aim(toWorld(e.clientX - r.left, e.clientY - r.top), d.base, { orthoHeld: e.shiftKey }).point;
+            carryTo(d.carry, d.base, to, !!d.copy || e.ctrlKey || e.metaKey || e.altKey);
+            return;
+          }
           // A right-click on drafting: its draw order (decision 339), what is under the cursor (its group when in one) selected
           // first; then grouping the selection (report #98).
+          if (d && !d.moved && e.button === 2 && useCad.getState().step?.enter) { void finishStep(); return; }
           if (d && !d.moved && e.button === 2 && !useCad.getState().step) {
             const under = pickAny(at(e).raw);
             const target = under ? pickTarget(under) : null;
@@ -322,7 +399,7 @@ export function DrawingView() {
           if (gestureClick(aimed.point, raw)) return;
           pickClick(pickAny(raw), { add: e.shiftKey });
         }}
-        onPointerLeave={() => { setHover(null); editor.onPointerLeave(); }}
+        onPointerLeave={() => { setHover(null); trackTagHover(null, { pickElement: () => null, pickTag: () => null, anyTags, busy: true }); editor.onPointerLeave(); }}
         onContextMenu={(e) => e.preventDefault()}
         onDoubleClick={(e) => {
           if (useCad.getState().step) return;
@@ -333,6 +410,12 @@ export function DrawingView() {
         }}>
         <rect width="100%" height="100%" className="paper" />
         {drawing && <DrawingLayer drawing={drawing} toScreen={toScreen} pxPerMetre={v.scale} onDark={onDark} screen={size} />}
+        {(drawing?.marks ?? []).filter((m) => targets.size > 0 && markSelected(m.id, targetList) && !markSelected(m.id, shown)).map((m) => (
+          <path key={`tag:${m.id}`} className="plan-mark tag-target" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
+            const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
+            return `M${a.x} ${a.y}L${b.x} ${b.y}`;
+          }).join('')} />
+        ))}
         {(drawing?.marks ?? []).filter((m) => markSelected(m.id, shown)).map((m) => (
           <path key={`sel:${m.id}`} className="plan-mark selected" d={Array.from({ length: m.segments.length / 4 }, (_, k) => {
             const a = toScreen({ x: m.segments[4 * k], y: m.segments[4 * k + 1] }), b = toScreen({ x: m.segments[4 * k + 2], y: m.segments[4 * k + 3] });
@@ -351,7 +434,7 @@ export function DrawingView() {
         })()}
         {box && <SelectRegion d={box} />}
         {editor.render}
-        {(cadStep || editor.dragging) && <CadOverlay aimed={hover} toScreen={toScreen} />}
+        {(cadStep || editor.dragging || dragTrace) && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>
       {drawing?.problem && <div className="error-text view-problem">{drawing.problem}</div>}
       {active && <LiveBox toScreen={toScreen} />}

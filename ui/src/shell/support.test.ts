@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 const call = vi.fn();
 vi.mock('../engine/session', () => ({ engine: { call: (...a: unknown[]) => call(...a) }, engineInBrowser: true }));
 vi.mock('../app/store', () => ({ notify: vi.fn() }));
-const { sendReport, keepRecentError, RECENT } = await import('./support');
+const { sendReport, keepRecentError, RECENT, forumTopicUrl, forumQuestion } = await import('./support');
 
 const reply = (status: number, body: unknown) => ({ ok: status < 300, status, json: async () => body }) as Response;
 
@@ -58,5 +58,19 @@ describe('the user guide', () => {
     const { LANGUAGES } = await import('../i18n');
     expect(LANGUAGES.map((l) => guideUrl(l.id))).toEqual(['', 'ro/', 'es/', 'de/', 'fr/', 'da/', 'it/', 'pl/', 'pt/', '', ''].map((s) => `https://lapin.ciuntucbimstudio.ro/docs/${s}`));
     expect(LANGUAGES.map((l) => guideLink(l.id))).toEqual(['guide', 'guideRo', 'guideEs', 'guideDe', 'guideFr', 'guideDa', 'guideIt', 'guidePl', 'guidePt', 'guide', 'guide']);
+  });
+});
+
+describe('a new topic on the forum', () => {
+  it('is the same address as the engine makes: only the forum, the title and text escaped in its query, in Lapin\'s category', () => {
+    expect(forumTopicUrl(' Walls & roofs ', 'Lapin 0.1.9\nmacos')).toBe('https://forum.lapinbim.com/new-topic?title=Walls%20%26%20roofs&body=Lapin%200.1.9%0Amacos&category=lapin');
+    expect(forumTopicUrl()).toBe('https://forum.lapinbim.com/new-topic?category=lapin');
+    expect(forumTopicUrl('https://example.com/?x=1#y')).toBe('https://forum.lapinbim.com/new-topic?title=https%3A%2F%2Fexample.com%2F%3Fx%3D1%23y&category=lapin');
+  });
+  it('takes a short question as its title and a long one whole in its text, with the version and where Lapin runs', () => {
+    expect(forumQuestion('How do I copy a wall?', '0.1.500', 'desktop')).toEqual({ title: 'How do I copy a wall?', body: '---\nLapin 0.1.500 · desktop' });
+    const long = forumQuestion('x'.repeat(250), '0.1.500', 'web');
+    expect(long.title).toHaveLength(198);
+    expect(long.body).toBe(`${'x'.repeat(250)}\n\n\n---\nLapin 0.1.500 · web`);
   });
 });

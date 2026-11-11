@@ -21,7 +21,7 @@ Klicken Sie dort, wo die Wand beginnt, und dann an jeder Ecke. Die nächste Wand
 Wo zwei Wände aufeinandertreffen, verbindet Lapin sie selbst. Ihre Schichten laufen so ineinander, wie sie gebaut würden.
 
 - **Gebogene Wand** (<kbd>WC</kbd>) zeichnet eine Wand entlang eines Bogens.
-- **Vorhangfassade** (<kbd>CW</kbd>) zeichnet eine verglaste Wand mit Pfosten, Riegeln und Paneelen.
+- **Vorhangfassade** (<kbd>CW</kbd>) zeichnet eine verglaste Wand mit Pfosten, Riegeln und Paneelen; ihr Typ kann deren wirkliche Form aus einer [Profilbibliothek](profiles.md) nehmen.
 - Wände verbinden sich von selbst, wo sie aufeinandertreffen: eine Ecke als Gehrung, eine Wand, die auf einer anderen endet, als T, eine, die eine andere kreuzt, als X. An einem T oder X laufen die Schichten ineinander, wie gebaut: Der Kern der endenden Wand läuft durch die Bekleidungen der anderen bis zu deren Kern, und seine Bekleidungen enden an der Fläche der anderen, wo sie auf ihresgleichen treffen, sodass der Grundriss einen Aufbau ohne Linie hindurch zeigt. **Verbinden** (<kbd>JW</kbd>), **Gehrung** und **Stumpf** ändern, wie zwei Wände aufeinandertreffen, wenn das nicht gewollt ist; **Neue Ecken auf Gehrung** macht Stumpf zur Vorgabe auf diesem Rechner. In beiden Fällen läuft jede Schicht für sich um die Ecke: die Bekleidungen treffen auf ihresgleichen und laufen ungebrochen weiter, die Kerne treffen sich auf der Diagonale (Gehrung) oder ein Kern läuft bis zur Außenseite des anderen (Stumpf), so zeigt der Grundriss mehrschichtiger Wände saubere Ecken. Jede Schicht läuft in die andere Wand durch deren Schichten mit niedrigerer **Priorität** und endet an der ersten mit gleicher oder höherer (siehe **Wandtypen** unten); so treffen standardmäßig Kerne auf Kerne und Bekleidungen enden an den Oberflächen. An einer Ecke läuft ein Kern mit höherer Priorität durch den anderen, ob Gehrung oder Stumpfstoß. Die **Schnittpriorität** einer Wand führt sie nie in eine Wand, mit der sie verbunden ist: Zwischen verbundenen Wänden entscheidet sie nur, welcher Kern durchläuft, wenn beide Kerne dieselbe Priorität haben (an einer stumpfen Ecke oder einer Kreuzung).
 - **Tauschen** ändert, welche der beiden Wände durchläuft.
 
@@ -54,6 +54,32 @@ Die Wand bleibt eine Wand: ihre Dicke, ihre Schichten, ihre Anschlüsse und ihre
 ![Ein Giebel, im Profileditor gezeichnet](shots/wall-profile-editor.webp)
 
 ![Die Westwand des Hauses als Giebel, ihr Fenster erhalten](shots/wall-profile-3d.webp)
+
+### Rand und Stäbe einer Vorhangfassade
+
+**Profil…** in den Eigenschaften einer Vorhangfassade zeichnet ihren Rand in der Ansicht, wie bei einer Wand: einen Giebel, eine Schräge, Stufen oder einen beliebigen Umriss, mit Punkten zum Ziehen, Hinzufügen oder Entfernen und einer Tabelle in Millimetern. Die Fassade reicht bis zu ihrem höchsten Punkt. Ihr Raster bekommt eine Linie dort, wo der Rand knickt (ein Knick innerhalb von anderthalb Pfostenbreiten einer Rasterlinie wird auf sie verschoben); jedes Feld behält die Riegel, die unter seinen tiefsten Punkt passen; das Paneel über dem letzten füllt bis zum Rand, und ein Randstab folgt ihm, geneigt; die Pfosten werden auf ihn geschnitten. Die Einstellungen des Typs bleiben, und **Profil…** öffnet den Rand wieder zum Ändern, ohne Neuaufbau; **Gerade Oberkante** gibt das Rechteck zurück. Es zeigt sich in 3D, Ansichten und Schnitten, die Listen messen Paneele und Stäbe wie gezeichnet, und das IFC trägt sie als Teile.
+
+![Ein Giebel als Rand einer Vorhangfassade gezeichnet](shots/curtain-boundary-editor.webp)
+
+![Die Vorhangfassade unter ihrem Giebel, in 3D](shots/curtain-boundary-3d.webp)
+
+**Stäbe…** gibt ausgewählten Pfosten und Riegeln ein eigenes Profil. Die Ansicht der Fassade zeigt jeden Stab: Klicken Sie einen an (<kbd>Umschalt</kbd> oder <kbd>Strg</kbd>/<kbd>⌘</kbd> fügt weitere hinzu, oder nehmen Sie alle Pfosten oder alle Riegel), wählen Sie ein Profil aus den [Profilbibliotheken](profiles.md) oder einen einfachen Quader, seine **Drehung** und **Spiegelung**, seine Ausrichtung quer zum Stab (Vorder- oder Rückseite auf seiner Ebene) und entlang (Anfangs- oder Endkante auf der Rasterlinie oder Höhe) und seine Versätze quer und aus dem Gebäude heraus; das Bild daneben zeigt den Querschnitt, wie er sitzt. **Auf die gewählten anwenden** gibt ihnen den Stil, **Zurück zu dem des Typs** nimmt ihn weg. Das eigene Profil eines Typs hat dieselben Lagefelder in **Vorhangfassaden…**, für jede Fassade des Typs. Das Profil bleibt eine Kopie im Projekt: **Aus der Bibliothek aktualisieren** ändert jeden daraus gemachten Stab, in dieser Fassade und in anderen.
+
+![Stäbe: ein Profil auf den gewählten Pfosten](shots/curtain-members-dialog.webp)
+
+![Zwei Pfosten mit eigenem Profil, in 3D](shots/curtain-members-3d.webp)
+
+**Paneele und Türen…** gibt gewählten Feldern ein eigenes Paneel oder eine Tür. Die Ansicht der Wand zeigt jedes Feld, wie der Kern es baut: klicke auf eines (<kbd>Shift</kbd> oder <kbd>Strg</kbd>/<kbd>⌘</kbd> fügt weitere hinzu). Ein **Paneeltyp** wird einmal im Projekt gespeichert und Feldern jeder Vorhangfassade gegeben: Glas, massiv, eine **gerahmte Füllung** (ein Rahmen seiner Breite und Tiefe um das Feld, die Glas- oder Massivfüllung um den Rücksprung hinter seiner Außenfläche) oder **offen** (kein Paneel); seine Dicke, sein Versatz aus der Achse und seine Materialien (die des Vorhangfassadentyps, wenn keines gewählt ist). **Den gewählten geben** wendet ihn an, **Das Paneel des Typs** nimmt ihn weg; ein geänderter Paneeltyp ändert jedes seiner Felder. **Tür in die gewählten** ersetzt jedes gewählte Feld durch eine Tür: eine neue Tür für Vorhangfassaden (ein- oder zweiflügelig, Dreh- oder Schiebetür, Breite und Höhe, verglaste oder massive Flügel, Rahmenprofil aus den [Profilbibliotheken](profiles.md)) oder einen beliebigen Türtyp des Projekts. **Feld füllen** gibt ihr die Größe des Feldes; sonst behält sie die ihres Typs, steht links, mittig oder rechts im Feld mit einem Versatz und bekommt einen Riegel darüber und einen Pfosten daneben, wo Glas bleibt, verglast mit dem Paneel des Feldes. In der untersten Reihe steht die Tür auf dem Boden, der untere Riegel ist unter ihr weggeschnitten. Die Einstellungen gehören zum Feld und folgen daher, wenn sich das Raster ändert: eine Tür, die ihr Feld füllt, wächst oder schrumpft mit ihm, und eine, deren Feld fehlt, sagt es und kommt mit ihm zurück. Die Tür ist eine Tür: wähle sie aus, um Anschlag oder Seite zu wechseln, ihren Typ zu ändern oder sie in ein anderes Feld zu verschieben (entlang der Wand verschieben); Beschriftungen, Türlisten (in der Größe, in der sie steht) und der IFC-Export (eine IfcDoor als Teil ihrer IfcCurtainWall) zählen sie.
+
+![Paneele und Türen: eine gerahmte Brüstung und eine Tür in den gewählten Feldern](shots/curtain-cells-dialog.webp)
+
+![Eine Vorhangfassade mit einer Tür und gerahmten Brüstungen, in 3D](shots/curtain-cells-3d.webp)
+
+Unter einer mit **Profil…** gezeichneten Kontur kommt eine Tür in ein angeschnittenes Feld, wo immer ihr Rechteck unter die Kontur passt: die Pfosten neben ihr reichen bis zur Kontur, die Scheiben daneben füllen bis zu ihr, ein Riegel überspannt ihren Kopf, und das Glas darüber folgt der Neigung. Füllt sie ein solches Feld, endet ihr Kopf einen Riegel unter der niedrigeren Seite der Kontur. Wo sie nicht passt, sagt Lapin, um wie viel und was zu tun ist (sie niedriger machen, zur höheren Seite schieben oder ein höheres Feld wählen). Ein gerahmtes Paneel in einem angeschnittenen Feld ist entlang seiner Kontur gerahmt, auch an der schrägen Seite. Eine Ansicht auf die Außenseite einer Tür zeichnet ihre Öffnungssymbole gestrichelt, wie bei jeder Tür und jedem Fenster.
+
+![Eine Tür unter der schrägen Kontur einer Vorhangfassade, mit gerahmten Paneelen entlang der Neigung, in 3D](shots/curtain-cells-gable.webp)
+
+![Das Öffnungssymbol der Tür in der Ansicht](shots/curtain-cells-elevation.webp)
 
 ## Wandtypen
 

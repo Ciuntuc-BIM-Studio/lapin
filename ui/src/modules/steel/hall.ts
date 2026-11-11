@@ -8,6 +8,7 @@
 import type { ModelState } from '../../engine/model';
 import type { NodeDto } from '../../engine/protocol';
 import type { NodeParamsDto } from './nodes';
+import { formatLength, parseLength, unit, type Unit } from '../../engine/unitsStore';
 
 export interface HaunchDto { length: number; depth: number; kind?: 'cut' | 'plates'; web?: number; flange?: number; width?: number; own?: boolean }
 
@@ -48,25 +49,43 @@ export interface HallPreview {
   summary?: HallSummary;
 }
 
-const trim = (n: number) => String(Math.round(n * 1000) / 1000);
-
-/** The bays as text: equal ones as "5 × 6", else listed. */
-export function baysText(bays: number[] | undefined): string {
-  if (!bays?.length) return '';
-  return bays.every((b) => b === bays[0]) && bays.length > 1 ? `${bays.length} × ${trim(bays[0])}` : bays.map(trim).join(', ');
+/**
+ * One bay typed, in the project's unit or with its own (6000, 6m, 600cm, 20'); a bare number too small to be a bay in that unit
+ * (under a metre: "6" in millimetres) is read as metres, as bays were typed before the unit was shown (tester's question 7).
+ */
+function bayLength(text: string, u: Unit): number | null {
+  const v = parseLength(text, u);
+  if (v == null || !(v > 0)) return null;
+  if (v < 1 && /^\d+(?:\.\d+)?$/.test(text.trim())) return Number(text.trim());
+  return v;
 }
 
-/** Bays typed: "n × b" (or "n x b", "n*b") for n equal ones, else a list by commas, spaces or semicolons (decimals with a point); null when not that. */
-export function parseBays(text: string): number[] | null {
+/** The bays as text in the project's unit (no label): equal ones as "5 × 6000", else listed. */
+export function baysText(bays: number[] | undefined, u: Unit = unit()): string {
+  if (!bays?.length) return '';
+  return bays.every((b) => b === bays[0]) && bays.length > 1 ? `${bays.length} × ${formatLength(bays[0], u)}` : bays.map((b) => formatLength(b, u)).join(', ');
+}
+
+/** Bays typed: "n × b" (or "n x b", "n*b") for n equal ones, else a list by commas or semicolons (spaces too, but not in imperial); in metres, null when not that. */
+export function parseBays(text: string, u: Unit = unit()): number[] | null {
   const t = text.trim();
-  const times = t.match(/^(\d+)\s*[×x*]\s*(\d+(?:[.,]\d+)?)$/i);
+  const times = t.match(/^(\d+)\s*[×x*]\s*(.+)$/i);
   if (times) {
     const n = Number(times[1]);
-    const b = Number(times[2].replace(',', '.'));
-    return n >= 1 && n <= 100 && b > 0 ? Array.from({ length: n }, () => b) : null;
+    const b = bayLength(times[2], u);
+    return n >= 1 && n <= 100 && b != null ? Array.from({ length: n }, () => b) : null;
   }
-  const parts = t.split(/[,;\s]+/).filter(Boolean).map(Number);
-  return parts.length > 0 && parts.every((b) => Number.isFinite(b) && b > 0) ? parts : null;
+  const imperial = u === 'ft-in' || u === 'in' || /['"″′]/.test(t);
+  const parts = t.split(imperial ? /[,;]+/ : /[,;\s]+/).map((x) => x.trim()).filter(Boolean).map((x) => bayLength(x, u));
+  return parts.length > 0 && parts.every((b) => b != null) ? parts as number[] : null;
+}
+
+/** The hall made `length` long with as many bays as it has, each equal (the Length field); null when not a length. */
+export function baysForLength(bays: number[] | undefined, length: number | null): number[] | null {
+  const n = Math.max(1, bays?.length ?? 1);
+  if (length == null || !(length > 0)) return null;
+  const each = Math.round(length / n * 10_000) / 10_000;
+  return Array.from({ length: n }, () => each);
 }
 
 /** The braced bays typed ("1, 6"): whole numbers from 1, in order, once each; null when not that. */

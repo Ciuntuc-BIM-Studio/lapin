@@ -33,6 +33,28 @@ public class JournalStoreTests
         public void Crash() => _open.Clear();
     }
 
+    /// <summary>The journal's lines wait at most a moment for the disk, and closing puts the rest there (decision 424): a journal closed has every line, however fast they came.</summary>
+    [Fact]
+    public async Task A_journal_closed_has_every_line_and_one_waiting_for_the_disk_gives_them_too()
+    {
+        var dir = Directory.CreateTempSubdirectory("lapin-journal-").FullName;
+        try
+        {
+            var store = new FileJournalStore(dir);
+            var (closed, a) = store.Create("closed.jsonl");
+            for (var i = 0; i < 200; i++) a.WriteLine($"{{\"op\":\"tx\",\"n\":{i}}}");
+            a.Dispose();
+            Assert.Equal(200, store.ReadLines(closed).Count);
+            // Not closed: the lines are with the system as they are written, and the disk is asked for them soon after.
+            var (open, b) = store.Create("open.jsonl");
+            for (var i = 0; i < 5; i++) b.WriteLine($"{{\"op\":\"tx\",\"n\":{i}}}");
+            await Task.Delay(300);
+            b.Dispose();
+            Assert.Equal(5, store.ReadLines(open).Count);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
     [Fact]
     public void Unsaved_work_in_a_store_that_is_not_files_comes_back_whole()
     {

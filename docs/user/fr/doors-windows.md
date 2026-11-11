@@ -73,6 +73,8 @@ Une porte ou une fenêtre est une grille de compartiments. Chaque compartiment c
 
 **Système de profilés** part d’un profilé **PVC**, **Aluminium**, **Bois** ou **Acier (fin)** : il fixe les tailles du dormant, des meneaux, des traverses et des ouvrants et donne aux profilés leurs formes fines. Le dormant a une **Feuillure** sur laquelle l’ouvrant se ferme, l’ouvrant recouvre le dormant de son **Recouvrement de l’ouvrant**, des **parcloses** tiennent le verre, et une fenêtre a un jet d’eau sous sa traverse basse. Chaque taille reste modifiable. **Simple (profilés droits)** garde des pièces rectangulaires simples, comme avant.
 
+**Dormant d'une bibliothèque** et **Ouvrant d'une bibliothèque** prennent un profilé de vos [bibliothèques de profilés](profiles.md) (une section d'aluminium ou de PVC lue d'un DXF, par exemple) : les barres droites du dormant et de l'ouvrant ont alors son contour réel, vides compris, en 3D, en coupe et en plan, avec sa largeur et sa profondeur. Il remplace ce dont il est la forme réelle : la butée, la lèvre et les larmiers du système ; les parcloses restent. Les têtes courbes et les fenêtres rondes gardent une bande simple, comme les montants et traverses de la grille. **Simple** revient à un rectangle de cette taille.
+
 ![Une fenêtre PVC : les ouvrants qui recouvrent le dormant, les parcloses, un panneau plein sous un fixe](shots/joinery-profiles-3d.webp)
 
 Sous **Détails**, **Tablette intérieure** et **Appui extérieur** activent ou désactivent les appuis, et **Habillage des tableaux** active la finition de l’embrasure sur les tableaux et le linteau. Là où appuis et habillages ne servent pas, décochez-les.
@@ -101,6 +103,12 @@ Chacun se place d’après les faces réelles du mur à l’endroit de la fenêt
 **Traverse à la naissance de l’arc**, cochée par défaut, garde cette traverse et l’imposte fixe au-dessus. Décochez-la pour une fenêtre battante cintrée : la rangée supérieure de vitrages monte dans l’arc, et le dormant, l’ouvrant, le vitrage, les petits-bois et le symbole d’ouverture suivent l’arc tout autour, sans barre dessous. Le vitrage s’ouvre comme vous le choisissez (à la française, oscillo-battant, fixe), les meneaux montent jusqu’à l’arc, et les plans, coupes, élévations, l’aperçu 3D et l’IFC le montrent ainsi. Le style **Fenêtre battante cintrée** pose d’un coup un arc segmentaire avec un seul ouvrant à la française.
 
 ![Une fenêtre battante cintrée : un seul ouvrant à la française qui suit un arc segmentaire, sans traverse dessous](shots/joinery-arched-casement.webp)
+
+### Verre sans cadre
+
+**Verre sans cadre** fait une porte ou une fenêtre de verre trempé seul, sans dormant ni ouvrant ; le style **Verre sans cadre** l'applique d'un coup, avec un vantail sur pivots. Pour une porte, **Fixation** dit ce qui tient le vantail : **Pivots et ferrures d'angle** (un pivot de sol et un pivot haut, une ferrure à chaque angle côté paumelles et une serrure d'angle en bas à l'opposé) ou **Charnières à verre** (deux, trois sur un vantail de plus de 2,30 m, serrées sur le verre et fixées au mur ou au panneau voisin). L'**Épaisseur du verre** va de 6 à 25 mm (12 mm par défaut), le **Jeu autour du verre** est celui avec la baie et entre les panneaux, le **Jeu sous le vantail** celui au-dessus du sol. Un vantail est battant, va-et-vient ou coulissant ; un panneau à côté ou au-dessus est fixe, dans un profilé en U au sol et sous le linteau. Un vantail coulissant est suspendu à un rail sur toute la largeur de la baie, devant les panneaux fixes côté pièce, et les dépasse de 50 mm, comme une cloison vitrée ou une paroi de douche. La poignée est une poignée bâton sur les deux faces sauf si vous en choisissez une autre. Une fenêtre sans cadre est un vitrage fixe. Les plans dessinent le vantail ouvert comme son verre, les élévations les ferrures et le rail ; en IFC le type n'a pas de dormant (son épaisseur est celle du verre).
+
+![Une porte en verre sans cadre sur pivots avec ferrures d'angle, dans le configurateur](shots/joinery-frameless-door.webp)
 
 **Petits-bois** divisent les vitrages : **Grille (colonial)** avec ses carreaux en largeur et en hauteur, **Prairie** avec des barres près des bords, ou des **Losanges**.
 
@@ -138,6 +146,24 @@ En plan, les faces sont coupées, l'assise, l'appui et la base dessinés sous la
 ### Poignées
 
 **Poignée** choisit la poignée du type : **Béquille**, **Bouton**, **Barre de tirage**, **Poignée de fenêtre** ou aucune. Par défaut, une porte a une béquille et une fenêtre une poignée de fenêtre. Une porte a sa poignée sur les deux faces, à la **Hauteur de la poignée** indiquée ; **Couleur de la poignée** règle sa couleur. Les poignées se voient en 3D, en coupe et en élévation, et dans les dessins du configurateur quand **Quincaillerie** est cochée.
+
+### Position du cadre et appuis
+
+**Position in the wall** (position dans le mur) fixe où se trouve le cadre dans l’épaisseur du mur comme une valeur, et non seulement centré : choisissez **From the exterior finish**, **From the core** ou **From the wall’s centre**, puis **Set back**, de combien la face extérieure du cadre est en retrait de cette référence (depuis le centre, de combien le centre du cadre). *From the exterior finish* et 50 mm place le cadre à 50 mm derrière l’enduit. Le cadre, les embrasures, les appuis et les symboles d’ouverture suivent, en plans, coupes, 3D et IFC. Un type fait sans position reste **Centred in the wall**. Dans le panneau des propriétés, une porte ou une fenêtre a **Frame in the wall** pour se donner sa propre position (**As the type** l’abandonne) et **Set back** pour sa distance.
+
+![Le configurateur avec le cadre à 50 mm derrière la finition extérieure](shots/joinery-position.webp)
+
+L’**Exterior sill** (appui extérieur) a une **Slope** (pente) en degrés (5° au départ ; 15° pour un appui métallique). Un appui incliné s’éloigne du cadre en descendant et retire du mur tout ce qui le surmonte : l’enduit, le noyau et le plâtre sont coupés selon sa face supérieure inclinée, en 3D, en coupes et élévations et dans les quantités.
+
+### Données : valeur U, résistance au feu, quincaillerie
+
+**Data…**, sous le type dans le configurateur (et dans le panneau des propriétés, pour les portes et fenêtres sélectionnées), ouvre une boîte de texte libre : **U-value**, **g-value**, **Safety glass** (feuilleté côté intérieur, trempé des deux côtés…), **Fire rating** (EI 30, EI2 60-C5…) et **Fittings** ; **More data** ajoute les vôtres, par exemple *Sauna window* ou *Frosted glass*. Rien ne se choisit dans une liste. La valeur propre d’une porte ou d’une fenêtre l’emporte sur celle de son type ; un champ vide revient à celle du type (affichée en gris).
+
+![La boîte de données d’un type de fenêtre](shots/joinery-data.webp)
+
+Ce sont les paramètres du type : les nomenclatures de portes et fenêtres montrent chacun comme une ligne, les étiquettes les lisent comme `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` et `{Fittings}`, et l’IFC les conserve. La résistance au feu est `FireRating` de `Pset_WindowCommon` ou `Pset_DoorCommon` ; une valeur U lisible comme un nombre (0.9 ou *0,9 W/m²K*) y est aussi `ThermalTransmittance`, avec `GlazingAreaFraction` pour une fenêtre ; le reste est dans le jeu `Lapin_Joinery`.
+
+![Les données propres d’une fenêtre dans le panneau des propriétés](shots/joinery-data-properties.webp)
 
 ### Paramètres
 

@@ -45,3 +45,7 @@ Kopierne bruger de samme typer som originalerne og får nye IFC-GlobalIds. Alle 
 ![Stueetagens vægge og dæk kopieret til de to etager ovenover, i 3D](shots/copy-to-storeys-3d.webp)
 
 For i stedet at flytte markeringen til en anden etage skal du vælge **Redigér → Flyt til etage**. Elementerne beholder deres højder over den nye etage eller bliver, hvor de er i rummet.
+
+## Et elements kote
+
+Et element på et niveau står i niveauets kote og med en forskydning fra den. **Egenskaber → Placering** viser dets **Etage**, dets **Forskydning fra niveau** og dets **Kote** over ±0,00: fod af en væg eller søjle, overside af et dæk eller en bjælke (en bjælkes forskydning er fra niveauets top), underside af et fundament (dets types underkote under niveauet plus forskydningen). Skriv det ene tal, og det andet følger: elementet flyttes i alle visninger i ét fortrydelsestrin. For at sætte et element på et andet niveau ændrer du dets **Etage**. Det, du tegner i en plan, står på den plans niveau.

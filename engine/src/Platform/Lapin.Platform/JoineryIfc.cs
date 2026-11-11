@@ -40,6 +40,9 @@ public interface IJoineryIfc
 
     /// <summary>The element's placement frame; null when it stands in no wall.</summary>
     IfcJoineryPlace? Place(IModelView m, Entity element);
+
+    /// <summary>Its overall width and height where they are not its type's (a curtain wall door filling its cell); null: its type's.</summary>
+    (double Width, double Height)? Size(IModelView m, Entity element) => null;
 }
 
 /// <summary>IFC's left and right, swapped: the names of a mirror image.</summary>

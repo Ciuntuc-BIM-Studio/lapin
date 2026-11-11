@@ -21,7 +21,7 @@ public sealed class StructureModule : ILapinModule
         r.Class(new(IfcClass.ColumnType, "Column type", [new("height", "Height", "length", Min: 0.01)], "#a8a8a8", Kind: "type"));
         r.Class(new(IfcClass.Beam, "Beam", [new("topOffset", "Top offset", "length"), new(PathCurve.Key, "Arc rise", "length"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.BeamType, "Beam type", [], "#a8a8a8", Kind: "type"));
-        r.Class(new(IfcClass.Footing, "Footing", [new("rotation", "Rotation", "angle"), new(PathCurve.Key, "Arc rise (strip)", "length"), priority], "#a8a8a8"));
+        r.Class(new(IfcClass.Footing, "Footing", [new("offset", "Offset from level", "length"), new("rotation", "Rotation", "angle"), new(PathCurve.Key, "Arc rise (strip)", "length"), priority], "#a8a8a8"));
         r.Class(new(IfcClass.FootingType, "Footing type", [new("bottom", "Bottom level", "length")], "#a8a8a8", Kind: "type"));
 
         r.Service<IStoreyLevels>(new Levels());
@@ -142,7 +142,12 @@ public sealed class StructureModule : ILapinModule
         r.Command("addStripFooting", "Strip foundation", (ctx, a) =>
         {
             var storey = Place.Storey(ctx, a);
-            var type = Place.TypeFor(ctx, a, IfcClass.FootingType, () => StripFootings.DefaultType(ctx), StripFootings.IsStrip);
+            // "stem": false: the concrete footing alone, without the wall (its stem) the standard type carries; true: a type with its wall; none: the project's first strip type as before.
+            var stem = a["stem"] is JsonValue sv && sv.TryGetValue<bool>(out var sb) ? sb : (bool?)null;
+            var named = (string?)a["typeId"] != null;
+            var type = stem == false && !named ? StripFootings.FootingAloneType(ctx)
+                : stem == true && !named ? Place.TypeFor(ctx, a, IfcClass.FootingType, () => StripFootings.DefaultType(ctx), t => StripFootings.IsStrip(t) && StripFootings.ProfileOf(ctx.Model, t) == null)
+                : Place.TypeFor(ctx, a, IfcClass.FootingType, () => StripFootings.DefaultType(ctx), StripFootings.IsStrip);
             var (p1, p2) = (Place.P(a, "x1", "y1"), Place.P(a, "x2", "y2"));
             var f = StripFootings.Add(ctx, Paths(ctx), storey, p1, p2, type, Style(a["joinStyle"]), Args.Rise(a, p1, p2));
             return new JsonObject { ["id"] = f.Id };

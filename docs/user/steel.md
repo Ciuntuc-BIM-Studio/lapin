@@ -9,6 +9,7 @@ summary: Steel members with configurable ends — extended or set back, cut by a
 ![The Steel tab](shots/ribbon-steel.webp)
 
 - **Portal frame hall…**: a whole steel hall from a few numbers, in the hall configurator (below).
+- **Column**: a column of the structure, placed with one click on the storey, of a steel profile: an **HEB 200** by default, from the built-in EN catalogue (its column type is made the first time and used again). Change its profile in Properties or in **Structure → Structure types**; the Structure tab's own Column tool places the project's current column type as before.
 - **Member** (SM): a steel member along two points, on the storey's top with its section's top on the axis, as a beam. Its type is chosen in Properties before the first click, or from the **Catalog** tab, where each steel type is drawn by its section.
 - **Convert to member**: the selected drafted outlines made members (below).
 - **Mitre** and **Fit**: two members joined at their ends (below).
@@ -59,7 +60,7 @@ Hollow sections are open inside, in the 3D view, the sections and the quantities
 ![The hall configurator](shots/steel-hall.webp)
 
 - **Styles**: the catalogue's typical halls (**Hall 20 m**, **Hall 30 m**, a mono-pitch **Lean-to 10 m**) and the project's own. A style picked fills every field in; any field may then be changed. **Save as style…** keeps the hall as it is configured as a style of the project; **Update style** saves it again into its style, and every hall of that style follows.
-- **Frame**: the **Span** (column axis to column axis), the **Bays** (equal ones as `5 × 6`, or each listed: `6, 6, 7.5`), the **Eaves height** (the rafters' top over the column's outer face), the **Roof** (duo-pitch or mono-pitch) and its **Pitch**, the **Columns**' and **Rafters**' profiles.
+- **Frame**: the **Span** (column axis to column axis), the **Bays**, from frame to frame, in the project's unit (equal ones as `5 × 6000`, or each listed: `6000, 6000, 7500`; a length may carry its own unit, `6m`, and a bare number under a metre is read as metres, so `5 × 6` still means five 6 m bays), the hall's **Length** (typed, it keeps the number of bays and makes them equal), the **Eaves height** (the rafters' top over the column's outer face), the **Roof** (duo-pitch or mono-pitch) and its **Pitch**, the **Columns**' and **Rafters**' profiles.
 - **Haunches**: the **Haunch at the eaves** and the **Haunch at the apex**, each with its **Length** along the rafter from the column's face (or the apex) and its **Depth** below the rafter there, and how it is **Made**: **cut from the rafter's section** (an I cut obliquely along its web, one half welded under the rafter: the rafter's own web and flange) or **welded from plates** (a **Web plate** and a **Flange plate** of their own thickness, and the flange's width).
 
 ![The haunches welded from plates](shots/steel-hall-haunches.webp)

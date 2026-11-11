@@ -79,7 +79,25 @@ O ușă sau o fereastră e o grilă de ochiuri. Fiecare ochi alege cum se deschi
 
 ![O ușă de magazin într-un singur tip: două foi, ochiuri laterale și o supralumină pe toată lățimea](shots/joinery-panes.webp)
 
+**Lățimea unui montant sau a unei traverse.** Fă clic pe un montant sau pe o traversă în elevație (un clic, nu tragere) și este ales: apare **Lățime**, cu **Fără montant** (**Fără traversă**) ca să îl scoți și cele două ochiuri să se întâlnească, și **Implicit (al tocului)** ca să primească din nou lățimea comună a montanților. Fiecare își păstrează lățimea când adaugi, împarți sau unești coloane și rânduri.
+
+### Uși duble și canate care se întâlnesc
+
+**Ușă dublă nouă** pornește o pereche de canate fără montant între ele (1500 × 2100 mm). Oricare două canate de ușă, unul cu balamalele la stânga și unul la dreapta, se întâlnesc când montantul dintre ele este 0; luminatoarele laterale de lângă ele își păstrează montanții.
+
+Unde se întâlnesc două canate, **Canate care se întâlnesc** spune cum:
+
+- **Cap la cap**: canatele doar se ating.
+- **Cu falț**: un montant de întâlnire, canatul activ acoperind canatul pasiv cu **Suprapunere falț**.
+- **Șină de acoperire**: o șină (astragal) peste rost, cu **lățime** și **grosime**.
+
+**Canatul activ** (**Stânga** sau **Dreapta**, așa cum se citește grila, cel stâng având balamalele la stânga, văzut din exterior) se deschide primul și are mânerul; **Zăvoare îngropate în canatul pasiv** pune zăvoare în celălalt. O singură setare servește toate perechile tipului, iar canatele care se deschid în ambele sensuri se întâlnesc mereu cap la cap. Un tip făcut înainte păstrează canatele cap la cap, ambele cu mânere.
+
+![O ușă dublă: fără montant între canate, cu falț, canatul drept activ](shots/joinery-double-door.webp)
+
 **Sistem de profile** pornește tipul de la un profil **PVC**, **Aluminiu**, **Lemn** sau **Oțel (profile subțiri)**: stabilește dimensiunile tocului, montanților, traverselor și cercevelelor și dă profilelor formele lor fine. Tocul are un **Falț** pe care se închide cerceveaua, cerceveaua se suprapune peste toc cu **Suprapunerea cercevelei**, **baghetele de fixare a geamului** țin sticla, iar o fereastră are un lăcrimar sub traversa de jos. Fiecare dimensiune rămâne editabilă. **Simplu (profile drepte)** păstrează profile dreptunghiulare simple, ca până acum.
+
+**Toc dintr-o bibliotecă** și **Cercevea dintr-o bibliotecă** iau un profil din [bibliotecile de profile](profiles.md) (o secțiune de aluminiu sau PVC citită dintr-un DXF, de pildă): barele drepte ale tocului și cercevelei au atunci conturul lui real, cu goluri cu tot, în 3D, în secțiuni și în planuri, cu lățimea și adâncimea lui. Înlocuiește ce e forma lui reală, opritorul, buza și lăcrimarele sistemului; baghetele de geam rămân. Capetele curbe și ferestrele rotunde rămân o bandă simplă, la fel montanții și traversele grilei. **Simplu** se întoarce la un dreptunghi de aceeași mărime.
 
 ![O fereastră din PVC: cercevelele suprapuse peste toc, baghetele, un panou plin sub un ochi fix](shots/joinery-profiles-3d.webp)
 
@@ -109,6 +127,12 @@ Fiecare se așază după fețele reale ale peretelui unde e fereastra, din strat
 **Traversă la nașterea arcului**, bifată implicit, păstrează traversa și ochiul fix de deasupra ei. Debifată, fereastra devine o cercevea în arc: rândul de sus al ochiurilor urcă în arc, iar tocul, cerceveaua, sticla, baghetele și simbolul de deschidere urmează arcul de jur împrejur, fără bară sub el. Ochiul se deschide cum îl alegi (batant, oscilobatant, fix), montanții urcă până în arc, iar planurile, secțiunile, fațadele, previzualizarea 3D și IFC-ul îl arată așa. Stilul **Cercevea în arc** pune deodată un arc de segment cu un singur canat batant.
 
 ![O cercevea în arc: un singur canat batant care urmează un arc de segment, fără traversă sub el](shots/joinery-arched-casement.webp)
+
+### Sticlă fără toc
+
+**Sticlă fără toc** face o ușă sau o fereastră doar din sticlă securizată, fără toc și fără cercevea; stilul **Sticlă fără toc** o face dintr-odată, cu o foaie pe pivoți. La o ușă, **Prindere** spune ce ține foaia: **Pivoți și feronerie de colț** (un amortizor în pardoseală și un pivot sus, câte o piesă de colț pe partea balamalelor și o broască de colț jos, în partea opusă) sau **Balamale de sticlă** (două, trei la o foaie mai înaltă de 2,30 m, prinse de sticlă și fixate de perete sau de panoul de alături). **Grosimea sticlei** e între 6 și 25 mm (12 mm implicit), **Rostul în jurul sticlei** e jocul față de gol și dintre panouri, **Rostul sub foaie** cel deasupra pardoselii. O foaie se deschide batant, în ambele sensuri sau culisează; un panou de lângă ea sau de deasupra e fix, stând într-un profil U pe pardoseală și sub buiandrug. O foaie culisantă atârnă de o șină pe toată lățimea golului, în fața panourilor fixe, spre cameră, și trece cu 50 mm peste ele, ca la un perete despărțitor de sticlă sau la un paravan de duș. Mânerul e o bară pe ambele fețe, dacă nu alegi altul. O fereastră fără toc e un vitraj fix. Planurile desenează foaia deschisă ca sticla ei, elevațiile feroneria și șina; în IFC tipul nu are toc (grosimea lui e a sticlei).
+
+![O ușă de sticlă fără toc, pe pivoți cu feronerie de colț, în configurator](shots/joinery-frameless-door.webp)
 
 **Baghete** împart ochiurile: **Grilă (colonial)** cu ochiurile pe lățime și pe înălțime, **Prairie** cu bare lângă margini, sau **Romburi**.
 
@@ -146,6 +170,24 @@ Tocurile, cercevelele, sticla și mânerele sunt ale tipului, deci materialele �
 ### Mânere
 
 **Mâner** alege mânerul tipului: **Clanță**, **Buton**, **Bară de tragere**, **Mâner de fereastră** sau niciunul. Implicit, o ușă are clanță, iar o fereastră mâner de fereastră. O ușă are mâner pe ambele fețe, la **Înălțimea mânerului** pe care o dai; **Culoarea mânerului** îi dă culoarea. Mânerele se văd în 3D, în secțiuni și fațade, și în desenele configuratorului când e bifată **Feronerie**.
+
+### Poziția tocului și solbancurile
+
+**Position in the wall** (poziția în perete) stabilește unde stă tocul pe grosimea peretelui ca valoare, nu doar centrat: alege **From the exterior finish**, **From the core** sau **From the wall’s centre**, apoi **Set back**, cât de în spatele acelei referințe e fața exterioară a tocului (de la centru, cât de departe e centrul tocului). *From the exterior finish* și 50 mm pune tocul la 50 mm în spatele tencuielii. Tocul, șpaleții, solbancurile și simbolurile de deschidere se mută odată cu el, în planuri, secțiuni, 3D și IFC. Un tip făcut fără poziție rămâne **Centred in the wall**. În panoul de proprietăți, o ușă sau o fereastră are **Frame in the wall** ca să-și dea o poziție proprie (**As the type** o lasă pe a tipului) și **Set back** pentru distanța ei.
+
+![Configuratorul cu tocul la 50 mm în spatele finisajului exterior](shots/joinery-position.webp)
+
+**Exterior sill** (solbancul exterior) are o **Slope** (pantă) în grade (5° la început; 15° pentru un solbanc metalic). Un solbanc înclinat coboară dinspre toc și scoate din perete tot ce e deasupra lui: tencuiala, miezul și glaful sunt tăiate după fața lui înclinată, în 3D, în secțiuni și fațade și în cantități.
+
+### Date: valoarea U, rezistența la foc, feronerie
+
+**Data…**, sub tip în configurator (și în panoul de proprietăți, pentru ușile și ferestrele selectate), deschide o casetă de text liber: **U-value**, **g-value**, **Safety glass** (laminată pe interior, securizată pe ambele fețe…), **Fire rating** (EI 30, EI2 60-C5…) și **Fittings**; **More data** adaugă oricâte ale tale, de exemplu *Sauna window* sau *Frosted glass*. Nimic nu se alege dintr-o listă. Valoarea proprie a unei uși sau ferestre are prioritate față de cea a tipului; un câmp gol revine la a tipului (arătată șters).
+
+![Caseta de date a unui tip de fereastră](shots/joinery-data.webp)
+
+Sunt parametrii tipului: extrasele de uși și ferestre arată fiecare pe un rând, etichetele le citesc ca `{U-value}`, `{g-value}`, `{Safety glass}`, `{Fire rating}` și `{Fittings}`, iar IFC le păstrează. Rezistența la foc este `FireRating` din `Pset_WindowCommon` sau `Pset_DoorCommon`; o valoare U care se citește ca număr (0.9 sau *0,9 W/m²K*) este acolo `ThermalTransmittance`, cu `GlazingAreaFraction` pentru fereastră; restul e în setul `Lapin_Joinery`.
+
+![Datele proprii ale unei ferestre în panoul de proprietăți](shots/joinery-data-properties.webp)
 
 ### Parametri
 

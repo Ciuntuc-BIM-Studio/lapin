@@ -17,6 +17,22 @@ Lapin nu poate livra toate profilele metalice folosite în lume, așa că vine c
 
 Scrie în căutare ca să cauți în toate bibliotecile după nume, familie, standard sau fel; alege un profil ca să-l vezi desenat, cu dimensiunile și proprietățile lui.
 
+## Standardele
+
+Fiecare profil apare sub standardul lui: **EN** pentru setul lui Lapin și orice profil al cărui standard e o normă europeană (EN 10365, DIN EN, SR EN…), **AISC / ASTM** pentru tabelele americane (o coloană *Standard* care spune ASTM A6, de exemplu), BS, DIN, JIS, AS/NZS și celelalte după numele lor, iar o bibliotecă ale cărei profile nu spun niciunul — a firmei — sub propriul nume. Unei biblioteci de pe acest calculator i se poate spune sub care apare (**Arătată la**, deasupra listei ei).
+
+Alegătoarele arată întâi profilele proiectului, apoi fiecare standard sub titlul lui. Butoanele din capul listei ascund sau arată un standard; alegerea ta se ține minte pe acest calculator, pentru toate proiectele (și în **Fișier → Preferințe → Profile**).
+
+![Alegătorul grupat pe standarde, cu butoanele lui](shots/profile-picker-standards.webp)
+
+Un proiect păstrează doar profilele folosite de tipurile lui, niciodată o bibliotecă întreagă, deci o bibliotecă pe care o ai nu cântărește nimic în fișierul lui. Ce oferă un proiect e alegerea lui: **Standardele acestui proiect**, sub biblioteci, bifează standardele arătate de alegătoarele lui; profilele deja în el rămân. **Fișier → Preferințe → Profile** alege standardele cu care pornește un proiect nou (toate, dacă nu alegi).
+
+![Standardele oferite de un proiect](shots/profile-project-standards.webp)
+
+![Standardele oferite de un proiect nou](shots/prefs-profiles.webp)
+
+Lapin nu vine cu AISC Shapes Database: AISC permite includerea ei doar printr-un contract de licență propriu, pe care un program MIT nu-l poate transmite mai departe. Descarc-o de la AISC și importă-o cu **Tabel…**: coloanele ei sunt recunoscute.
+
 ## Proprietățile
 
 Din dimensiunile unui profil, Lapin calculează aria, Iy, Iz, modulele elastice și plastice, razele de girație, axele principale și unghiul lor (corniere, Z, orice contur nesimetric), constanta de torsiune It și cea de deplanare Iw unde există o formulă, masa pe metru din densitatea materialului și suprafața de vopsit pe metru. Se potrivesc cu tabelele publicate cam la 1 % (It și Iw ale profilelor I laminate la 3 %; Iw al unui U cu tălpi înclinate doar la 20 %). Un contur arbitrar n-are It sau Iw decât dacă le dă fișierul lui.
@@ -51,14 +67,24 @@ Desenează secțiunea cu Desen, din polilinii închise și cercuri (cele din int
 
 **Desenează-i conturul** face invers: conturul profilului ales ca polilinii închise în vederea din față, ca Studio să-l extrudeze sau să-l deruleze.
 
+**Desenează un profil…** deschide editorul de secțiuni: exteriorul și camerele lui, ca puncte în milimetri. Trage punctele (1 mm; <kbd>Shift</kbd> 5 mm), dă clic pe un contur ca să adaugi un punct, clic dreapta pe un punct ca să-l scoți, sau scrie-le în tabel; pornește de la un dreptunghi, o cutie goală, un T, un corniere sau un U, cu mărimile pe care le dai, și adaugă camere la mijloc. Dă-i un nume, alege aluminiul, fă-l și păstrează-l ca orice contur. **Editează conturul…** deschide în editor un profil pe care îl ai: păstrat din nou sub numele lui, copia din proiect e marcată ca mai nouă, iar **Actualizează din bibliotecă** îl aduce la fiecare tip și la fiecare bară de perete cortină făcută din el. Montanții și traversele alese iau un profil propriu, întors, aliniat și decalat: vezi [Pereți](walls.md).
+
+![Editorul de secțiuni: o cutie goală cu camera ei](shots/profile-editor.webp)
+
 ## Folosirea unui profil
 
 În **Oțel → Tipuri metalice**, **Structură → Tipuri structurale** (stâlpi și grinzi) și la profilele halei cu cadre, alege **Dintr-o bibliotecă de profile…** și scrie ca să cauți.
 
 ![Alegătorul caută în toate bibliotecile](shots/profile-picker.webp)
 
-Profilul se copiază în proiect, iar tipul îl păstrează. Corpurile sunt ușoare, cu colțuri drepte, la toate nivelurile în afară de unul: o vedere la **LOD 400** (plan, secțiune, elevație, planșă sau 3D) desenează secțiunea reală, racordări, raze la vârfuri, tălpi înclinate. Cantitățile și exporturile rămân pe corpul cu colțuri drepte; razele de racordare și tălpile înclinate contează în proprietăți și în exportul de structură.
+Profilul se copiază în proiect, iar tipul îl păstrează. Corpurile sunt ușoare, cu colțuri drepte, la toate nivelurile în afară de unul: o vedere la **LOD 400** (plan, secțiune, elevație, planșă sau 3D) desenează secțiunea reală, racordări, raze la vârfuri, tălpi înclinate. Exporturile și alegerea rămân pe corpul cu colțuri drepte, dar cantitățile, greutățile, extrasele, Lista barelor metalice și devizele folosesc aria reală a secțiunii (un IPE 300 are 53,81 cm², nu 51,88 cât conturul cu colțuri drepte); o secțiune fără raze nu se schimbă.
 
-În altă parte profilul dă ce poate folosi unealta: baghetele, șanțurile și fundațiile continue iau exteriorul lui ca profil 2D (**Dintr-o bibliotecă de profile…** în lista lor), iar montanții și traversele pereților cortină și tocurile ușilor și ferestrelor iau lățimea și adâncimea lui.
+![O grindă și un stâlp metalic într-o vedere 3D la LOD 400: racordările desenate](shots/profile-real-section.webp)
+
+În altă parte profilul dă ce poate folosi unealta: baghetele, șanțurile și fundațiile continue iau exteriorul lui ca profil 2D (**Dintr-o bibliotecă de profile…** în lista lor), iar montanții și traversele pereților cortină și tocurile și cercevelele ușilor și ferestrelor iau conturul lui real, cu goluri cu tot, de-a lungul fiecărei bare, cu lățimea și adâncimea lui; x-ul profilului merge de-a curmezișul barei (spre geam la toc și cercevea), y-ul lui spre exteriorul clădirii. **Simplu** ia conturul înapoi și păstrează mărimea.
+
+![Montanți și traverse de perete cortină dintr-o secțiune de aluminiu](shots/profile-real-mullions.webp)
+
+![Tocul și cerceveaua unei ferestre din aceeași secțiune](shots/profile-real-frame.webp)
 
 O bibliotecă se poate schimba după ce ai folosit-o. Un profil al proiectului diferit de cel cu același nume din biblioteca lui e marcat **mai nou în bibliotecă**; **Actualizează din bibliotecă** îl înlocuiește, iar toate tipurile făcute din el urmează, ca un singur pas de anulare. Nimic nu se schimbă până nu ceri. Proiectele făcute înainte își păstrează tipurile cum sunt.

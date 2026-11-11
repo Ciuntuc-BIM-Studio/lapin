@@ -22,6 +22,14 @@ L’onglet **Structure** regroupe l’ossature et les fondations.
 
 Dessinez les fondations sur le niveau **Foundations**, ou donnez-leur un plan à elles.
 
+**Une semelle filante n'est que le béton**, sauf si vous demandez le mur. Quand **Semelle filante** ou **Semelle filante courbe** est active, la barre de la ligne de commande propose **Semelle seule** (par défaut : une semelle en béton de 600 × 400 mm, un type à profil créé la première fois) ou **Avec mur** (le soubassement d'un type de semelle filante dessus, avec ses couches) et le type avec mur à utiliser. Le choix est conservé. Une semelle déjà dessinée change avec son type dans **Types structurels**.
+
+![L'option de l'outil semelle filante dans la ligne de commande : semelle seule ou avec mur](shots/structure-strip-option.webp)
+
+**Dans les plans.** Une semelle est sous le plancher, donc un plan la dessine en tirets dans le plan du niveau où elle se trouve, comme le plan d'un bâtiment montre ce qui est dessous. Pour la voir coupée et vue, utilisez un **plan de fondations** : dans le navigateur de projet, le **+** à côté de **Vues en plan** en crée un pour le niveau actif (coupe 0,50 m sous lui, vue de 2,50 m vers le bas).
+
+**Dessiner dans un plan de fondations.** Il montre aussi le niveau en dessous, et ce que vous y dessinez avec un outil de dalle, de mur, de poteau ou de poutre va sur ce niveau (les Fondations d'un nouveau projet, à −1,50) ; les outils de semelles gardent le niveau du plan, le dessous d'une semelle étant celui de son type sous lui.
+
 ![Poteaux, poutres et semelles isolées en 3D](shots/structure-3d.webp)
 
 ## Types et angles

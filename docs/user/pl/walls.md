@@ -21,7 +21,7 @@ Kliknij tam, gdzie zaczyna się ściana, a potem klikaj w każdym narożniku. Na
 Tam, gdzie spotykają się dwie ściany, Lapin sam je łączy. Ich warstwy przechodzą jedna w drugą tak, jak zostałyby zbudowane.
 
 - **Ściana łukowa** (<kbd>WC</kbd>) rysuje ścianę wzdłuż łuku.
-- **Ściana osłonowa** (<kbd>CW</kbd>) rysuje przeszkloną ścianę ze słupkami i panelami.
+- **Ściana osłonowa** (<kbd>CW</kbd>) rysuje przeszkloną ścianę ze słupkami i panelami; jej typ może wziąć ich rzeczywisty kształt z [biblioteki profili](profiles.md).
 - Ściany łączą się same tam, gdzie się spotykają: narożnik na ucios, ściana kończąca się na innej jako T, jedna krzyżująca drugą jako X. W połączeniu T lub X warstwy przechodzą jedna w drugą tak, jak w budowie: rdzeń kończącej się ściany przechodzi przez wykończenia drugiej aż do jej rdzenia, a jej wykończenia zatrzymują się na licu drugiej, spotykając swoje odpowiedniki, więc rzut pokazuje jeden układ warstw bez linii w poprzek. **Połącz** (<kbd>JW</kbd>), **Na ukos** i **Na styk** zmieniają sposób, w jaki spotykają się dwie ściany, gdy nie jest to to, czego chcesz; **Nowe narożniki na ukos** ustawia na tym komputerze połączenie na styk jako domyślne. Tak czy inaczej, każda warstwa skręca w narożniku osobno: wykończenia spotykają swoje odpowiedniki i biegną dookoła bez przerwy, a rdzenie spotykają się po przekątnej (na ucios) albo jeden rdzeń biegnie do zewnętrznego lica drugiego (na styk), więc rzut ścian warstwowych pokazuje czyste narożniki. Każda warstwa wchodzi w drugą ścianę przez jej warstwy o niższym **Priorytecie** i zatrzymuje się na pierwszej o równym lub wyższym (zobacz **Typy ścian** niżej), więc domyślnie rdzenie spotykają się z rdzeniami, a wykończenia kończą się na licach; w narożniku rdzeń o wyższym priorytecie przechodzi przez rdzeń drugiej ściany, na ucios czy na styk. **Priorytet cięcia** ściany nigdy nie wprowadza jej w ścianę, z którą jest połączona: między połączonymi ścianami decyduje tylko o tym, który rdzeń przechodzi, gdy oba rdzenie mają ten sam priorytet (w narożniku na styk lub na skrzyżowaniu).
 - **Zamień** zmienia, która z dwóch ścian przechodzi na wskroś.
 
@@ -54,6 +54,32 @@ Niżej sekcja **Zależności** pokazuje, co jest zbudowane ze ściany i z czego 
 ![Szczyt narysowany w edytorze profilu](shots/wall-profile-editor.webp)
 
 ![Zachodnia ściana domu jako szczyt, z zachowanym oknem](shots/wall-profile-3d.webp)
+
+### Obrys i pręty ściany osłonowej
+
+**Profil…** we właściwościach ściany osłonowej rysuje jej obrys na elewacji, jak dla ściany: szczyt, spadek, stopnie lub dowolny kontur, z punktami do przeciągania, dodawania lub usuwania i tabelą w milimetrach. Ściana sięga swojego najwyższego punktu. Jej siatka zyskuje linię tam, gdzie obrys się załamuje (załamanie bliżej niż półtora słupka od linii siatki jest przenoszone na nią); każde pole zachowuje rygle, które mieszczą się pod jego najniższym punktem; panel nad ostatnim wypełnia aż do obrysu, a pręt brzegowy podąża za nim, skośny; słupki są do niego przycinane. Ustawienia typu pozostają, a **Profil…** otwiera obrys ponownie, by go zmienić, bez przebudowy; **Płaska góra** zwraca prostokąt. Widać go w 3D, na elewacjach i przekrojach, zestawienia mierzą panele i pręty tak, jak narysowane, a IFC niesie je jako części.
+
+![Szczyt narysowany jako obrys ściany osłonowej](shots/curtain-boundary-editor.webp)
+
+![Ściana osłonowa pod swoim szczytem, w 3D](shots/curtain-boundary-3d.webp)
+
+**Pręty…** nadaje wybranym słupkom i ryglom własny profil. Elewacja ściany pokazuje każdy pręt: kliknij jeden (<kbd>Shift</kbd> lub <kbd>Ctrl</kbd>/<kbd>⌘</kbd> dodaje kolejne, albo weź wszystkie słupki lub wszystkie rygle), wybierz profil z [bibliotek profili](profiles.md) albo zwykłą skrzynkę, jego **Obrót** i **Odbicie**, jego wyrównanie w poprzek pręta (przód lub tył na jego płaszczyźnie) i wzdłuż (krawędź początkowa lub końcowa na linii siatki lub poziomie) oraz jego przesunięcia w poprzek i na zewnątrz budynku; obraz obok pokazuje przekrój tak, jak siedzi. **Zastosuj do wybranych** nadaje im styl, **Wróć do ustawień typu** go zdejmuje. Własny profil typu ma te same pola położenia w **Ściany osłonowe…**, dla każdej ściany typu. Profil pozostaje kopią w projekcie: **Aktualizuj z biblioteki** zmienia każdy pręt z niego wykonany, w tej ścianie i w innych.
+
+![Pręty: profil ułożony na wybranych słupkach](shots/curtain-members-dialog.webp)
+
+![Dwa słupki z własnym profilem, w 3D](shots/curtain-members-3d.webp)
+
+**Panele i drzwi…** nadaje wybranym polom własny panel lub drzwi. Widok ściany pokazuje każde pole tak, jak buduje je silnik: kliknij jedno (<kbd>Shift</kbd> lub <kbd>Ctrl</kbd>/<kbd>⌘</kbd> dodaje kolejne). **Typ panelu** zapisuje się raz w projekcie i nadaje polom dowolnej ściany osłonowej: szkło, pełny, **wypełnienie w ramie** (rama o swojej szerokości i głębokości wokół pola, wypełnienie szklane lub pełne cofnięte od jej zewnętrznej powierzchni o cofnięcie) lub **otwarte** (bez panelu); jego grubość, przesunięcie poza oś i materiały (z typu ściany osłonowej, gdy żaden nie jest wybrany). **Nadaj wybranym** stosuje go, **Panel typu** go zdejmuje; zmieniony typ panelu zmienia wszystkie jego pola. **Drzwi w wybranych** zastępuje każde wybrane pole drzwiami: nowymi drzwiami do ściany osłonowej (jedno- lub dwuskrzydłowymi, rozwieranymi lub przesuwnymi, o swojej szerokości i wysokości, z przeszklonymi lub pełnymi skrzydłami, z profilem ościeżnicy z [bibliotek profili](profiles.md)) lub dowolnym typem drzwi z projektu. **Wypełnij pole** nadaje im rozmiar pola; w przeciwnym razie zachowują rozmiar typu, stoją po lewej, pośrodku lub po prawej w polu z przesunięciem i dostają rygiel nad sobą i słupek obok tam, gdzie zostaje szkło, przeszklone panelem pola. W dolnym rzędzie drzwi stoją na podłodze, a dolny rygiel jest pod nimi wycięty. Ustawienia są zapamiętane dla pola, więc podążają za siatką, gdy się zmienia: drzwi wypełniające pole rosną lub maleją razem z nim, a te, których pola już nie ma, mówią o tym i wracają razem z nim. Drzwi są drzwiami: zaznacz je, by zmienić stronę otwierania lub stronę, typ, albo przenieść je do innego pola (Przesuń wzdłuż ściany); etykiety, zestawienia drzwi (w rozmiarze, w jakim stoją) i eksport IFC (IfcDoor będące częścią swojej IfcCurtainWall) je liczą.
+
+![Panele i drzwi: podokiennik w ramie i drzwi w wybranych polach](shots/curtain-cells-dialog.webp)
+
+![Ściana osłonowa z drzwiami i podokiennikami w ramie, w 3D](shots/curtain-cells-3d.webp)
+
+Pod konturem narysowanym przez **Profil…** drzwi wchodzą do przyciętego pola wszędzie tam, gdzie ich prostokąt mieści się pod konturem: słupki obok nich sięgają do konturu, szyby obok słupków wypełniają się do niego, rygiel przechodzi nad ich nadprożem, a szkło nad nimi biegnie wzdłuż spadku. Gdy wypełniają takie pole, ich górna krawędź kończy się rygiel poniżej niższej strony konturu. Gdzie się nie mieszczą, Lapin mówi o ile i co zrobić (obniżyć je, przesunąć ku wyższej stronie lub wybrać wyższe pole). Panel w ramie w przyciętym polu ma ramę wzdłuż całego konturu, także po skośnej stronie. Widok elewacji zwrócony do zewnętrznej strony drzwi rysuje ich symbole otwierania linią przerywaną, jak dla każdych drzwi i okna.
+
+![Drzwi pod skośnym konturem ściany osłonowej, z panelami w ramie wzdłuż spadku, w 3D](shots/curtain-cells-gable.webp)
+
+![Symbol otwierania drzwi na elewacji](shots/curtain-cells-elevation.webp)
 
 ## Typy ścian
 

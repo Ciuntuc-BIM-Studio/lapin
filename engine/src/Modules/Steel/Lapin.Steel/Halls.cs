@@ -413,7 +413,7 @@ public static class Halls
             foreach (var (part, solid) in Solids(m, e, problems))
             {
                 var k = part == "haunch" ? "haunch" : kind;
-                weights[k] += Measure.Volume(solid) * SteelModule.SteelDensity;
+                weights[k] += Measure.Volume(solid) * (part == "body" && MemberAxes.Of(m, e) is { } wax ? wax.Section.RealRatio : 1) * SteelModule.SteelDensity;
                 if (inFrame && kind != "brace") frame.Add((JsonNode)Item(k, solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
                 if (inGable && kind is not ("brace" or "fly" or "purlin")) gable.Add((JsonNode)Item(k, solid.Vertices.Select(v => new Vec2(v.X, v.Z))));
                 if (part != "haunch" && kind is not ("fly" or "rail")) plan.Add((JsonNode)Item(k, solid.Vertices.Select(v => v.Xy)));

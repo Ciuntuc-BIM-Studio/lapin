@@ -17,7 +17,7 @@ import { pt } from '../../viewport/gripKit';
 import { useUi } from '../../app/store';
 import { isPart, partGrips } from '../../platform/labelParts';
 import { formatLength, unitLabel } from '../../engine/unitsStore';
-import { leaderShapeOf, snapKnee, tagLeaderShape } from './tagLeader';
+import { leaderShapeOf, rotationFor, snapKnee, snapTurn, tagLeaderShape, turnAngle } from './tagLeader';
 
 /** What the TAG command puts down: the field it shows (a parameter's name too), a tag type (its template wins), a leader or none. */
 interface TagPrefs { field: string; tagType: string; leader: boolean }
@@ -169,6 +169,8 @@ export function tagGrips(node: NodeDto, view?: GripView): Grip[] {
     key: 'at', kind: 'move', at, title: 'Drag: move the tag (the leader keeps pointing where it does)',
     step: (to: Vec2) => ({ command: 'drafting.updateTag', args: { id, at: [to.x, to.y] } }),
   }];
+  const turn = turnGrip(node, data as { angle?: number; centre?: unknown; turn?: unknown; base?: number } | undefined);
+  if (turn) grips.push(turn);
   const end = pt(data?.end), elbow = pt(data?.elbow), from = pt(data?.from);
   if (end) {
     grips.push({
@@ -197,7 +199,7 @@ interface ElbowData { knee?: unknown; head?: unknown; end?: unknown; side?: numb
  * knee (dragged: kept to 30°, 45°, 60° or 90° from the end, Shift frees it; past the end the text goes to that side; with
  * leaders per layer the column of knees moves), and the leader's end as a straight leader's.
  */
-function elbowGrips(node: NodeDto, data: ElbowData, at: Vec2): Grip[] {
+function elbowGrips(node: NodeDto, data: ElbowData & { angle?: number; centre?: unknown; turn?: unknown; base?: number }, at: Vec2): Grip[] {
   const id = node.id;
   const knee = pt(data.knee) ?? at, head = pt(data.head) ?? at, end = pt(data.end);
   const grips: Grip[] = [{
@@ -214,8 +216,28 @@ function elbowGrips(node: NodeDto, data: ElbowData, at: Vec2): Grip[] {
     step: (to: Vec2) => ({ command: 'drafting.updateTag', args: { id, end: [to.x, to.y] } }),
     remove: () => (node.props.end ? { command: 'drafting.updateTag', args: { id, end: null } } : null),
   });
+  const turn = turnGrip(node, data as { angle?: number; centre?: unknown; turn?: unknown; base?: number });
+  if (turn) grips.push(turn);
   const viewId = typeof node.props.viewId === 'string' ? node.props.viewId : undefined;
   return grips.map((g) => ({ ...g, view: viewId }));
+}
+
+/**
+ * A tag's turning grip (report #129): over its text, square to its baseline. Dragged, the text turns to follow the cursor, kept
+ * to 15° steps (45° and 90° among them; Shift frees it), and from the element's direction when the tag is aligned to it;
+ * Ctrl/⌘-click: upright again (or just aligned).
+ */
+function turnGrip(node: NodeDto, data: { angle?: number; centre?: unknown; turn?: unknown; base?: number } | undefined): Grip | null {
+  const centre = pt(data?.centre), at = pt(data?.turn);
+  if (!centre || !at) return null;
+  const id = node.id;
+  const base = typeof data?.base === 'number' ? data.base : undefined;
+  return {
+    key: 'turn', kind: 'rotate', at, title: 'Drag: turn the tag, in steps of 15° (Shift: any angle) · Ctrl/⌘-click: upright again',
+    constrain: (to, free) => snapTurn(centre, to, free),
+    step: (to) => ({ command: 'drafting.updateTag', args: { id, rotation: rotationFor(turnAngle(centre, to), base) } }),
+    remove: () => (node.props.rotation ? { command: 'drafting.updateTag', args: { id, rotation: null } } : null),
+  };
 }
 
 /** The selected markers of the same view as `node` (it first): what a part's grip changes. */
@@ -313,6 +335,8 @@ export function TagFields({ node }: { node: NodeDto }) {
   const field = String(node.props.field ?? 'mark');
   const template = typeof node.props.template === 'string' ? node.props.template : '';
   const leader = node.props.leader !== false;
+  const rotation = Number(node.props.rotation ?? 0) || 0;
+  const align = node.props.align === true;
   const at = pt(node.props.at);
   const set = (args: Record<string, unknown>) => void execute('drafting.updateTag', { id: node.id, ...args });
   const known = fields.some((f) => f.field === field);
@@ -354,6 +378,20 @@ export function TagFields({ node }: { node: NodeDto }) {
           <input type="checkbox" checked={leader} data-tag-leader-on onChange={(e) => set({ leader: e.target.checked })} />
           {!!node.props.elbow && shape === 'straight' && <button type="button" className="btn mini" onClick={() => set({ elbow: null })}>Straighten</button>}
           {!!node.props.end && <button type="button" className="btn mini" title="The leader points at the element's middle again" onClick={() => set({ end: null })}>On the element</button>}
+        </dd>
+        <dt title="The tag's text turned, in degrees from level (it is always drawn upright, never upside down); drag its turning grip in the plan, in steps of 15°">Rotation</dt>
+        <dd style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <input className="cell num" key={`rot${rotation}`} defaultValue={rotation ? String(rotation) : ''} placeholder="0" style={{ width: 64 }} data-tag-rotation
+            onBlur={(e) => {
+              const v = e.target.value.trim().replace(',', '.');
+              const n = v === '' ? 0 : Number(v);
+              if (Number.isFinite(n) && n !== rotation) set({ rotation: n === 0 ? null : n });
+            }} />
+          <span className="muted">°</span>
+          <label style={{ display: 'flex', gap: 4, alignItems: 'center' }} title="Follow the direction of the element it tags (a wall, a beam, a long edge), turning with it; the rotation is added to it">
+            <input type="checkbox" checked={align} data-tag-align onChange={(e) => set({ align: e.target.checked })} />
+            <span>Align to element</span>
+          </label>
         </dd>
         <dt title="Straight from a box round the text, or an elbow: an oblique line to a knee, then along under the text (as the tag type says, unless the tag says its own)">Leader shape</dt>
         <dd><select className="cell" data-tag-leader-shape value={typeof node.props.leaderShape === 'string' ? node.props.leaderShape : ''}

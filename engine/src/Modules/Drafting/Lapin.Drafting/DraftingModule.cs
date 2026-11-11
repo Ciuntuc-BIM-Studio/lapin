@@ -135,7 +135,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
             // An angle, a radius, a diameter, an arc length, a slope, a level, an ordinate.
             if (DimensionKinds.Attrs(ctx, viewId, a) is { } kindAttrs)
             {
-                var names = new Dictionary<string, string> { ["angular"] = "Angle", ["radial"] = "Radius", ["diameter"] = "Diameter", ["arc"] = "Arc length", ["slope"] = "Slope", ["level"] = "Level", ["ordinate"] = "Ordinate" };
+                var names = new Dictionary<string, string> { ["angular"] = "Angle", ["radial"] = "Radius", ["diameter"] = "Diameter", ["arc"] = "Arc length", ["slope"] = "Slope", ["level"] = "Level", ["ordinate"] = "Ordinate", ["coordinate"] = "Spot coordinate" };
                 var made = new Entity(ctx.NewId(), IfcClass.Annotation, names[(string)kindAttrs["dimKind"]!], kindAttrs, "DIMENSION");
                 ctx.Add(made);
                 return new JsonObject { ["id"] = made.Id };
@@ -563,7 +563,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         if (Views.Find(q.Model, dim.Str("viewId") ?? "") is not { } view) return st;
         var (drawing, spec, _) = Views.Generate(q, view);
         if (drawing == null || spec == null) return st;
-        return st.Select(s => s.Ref != null && Dimensions.Resolve(q.Model, spec.Kind, drawing, s.Ref) is { } p ? (p, s.Ref) : s).ToList();
+        return st.Select(s => s.Ref != null && Dimensions.Resolve(q.Model, spec.Kind, drawing, s.Ref, s.P) is { } p ? (p, s.Ref) : s).ToList();
     }
 
     static void Save(ICommandContext ctx, Entity dim, List<(Vec2 P, DimEndRef? Ref)> stations, List<string?> texts, List<Vec2?>? offsets = null)

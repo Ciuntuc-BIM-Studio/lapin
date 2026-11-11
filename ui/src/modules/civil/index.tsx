@@ -12,7 +12,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { outlineGrips, outlineRef, toPairs } from '../../viewport/gripKit';
 import { edgeMiddles, fromPairs, insertVertex, moveVertex, removeVertex } from '../../viewport/contour';
 import { notify, useUi } from '../../app/store';
-import { execute, useSession } from '../../engine/session';
+import { execute, query } from '../../engine/session';
 import { formatLength, levelUnit, parseLevel, unitName } from '../../engine/unitsStore';
 import { SURVEY, downloadLandXml, pickBinary, pickText, pickFiles } from './survey';
 import { TerrainSection } from './TerrainSection';
@@ -77,9 +77,9 @@ const terrainFromDxf: ToolDef = {
   id: 'civil.dxfPoints', label: 'Points from DXF', icon: MapPin,
   run: () => void pickBinary('.dxf').then(async (file) => {
     if (!file) return;
-    const layers = await execute('civil.dxfPointLayers', { data: file.data }) as { layer: string; points: number }[] | null;
-    const refused = useSession.getState().error;
-    if (refused) { notify(refused); return; }
+    // A question, not an edit: asked with query (run as a command it answered "Unknown command", desktop and browser alike).
+    const layers = await query<{ layer: string; points: number }[]>('civil.dxfPointLayers', { data: file.data });
+    if (!layers) { notify('The drawing could not be read as DXF.'); return; }
     let chosen: string[] | undefined;
     if (layers && layers.length > 1) {
       const answer = window.prompt(`Layers with surveyed points: ${layers.map((l) => `${l.layer} (${l.points})`).join(', ')}.\nWhich to take (comma separated; empty: all)?`, '');
@@ -87,8 +87,9 @@ const terrainFromDxf: ToolDef = {
       chosen = answer.split(',').map((x) => x.trim()).filter(Boolean);
     }
     const storeyId = useUi.getState().storeyId;
-    const r = await execute('civil.importDxfPoints', { data: file.data, name: file.name, ...(chosen?.length ? { layers: chosen } : {}), ...(storeyId ? { storeyId } : {}) }) as { points: number } | null;
-    if (r) landed('survey points', r.points);
+    const r = await execute('civil.importDxfPoints', { data: file.data, name: file.name, ...(chosen?.length ? { layers: chosen } : {}), ...(storeyId ? { storeyId } : {}) }) as { points: number; crs?: string; unknownSystem?: boolean } | null;
+    if (r?.unknownSystem) notify("Survey points imported with the file's own numbers: they look like map coordinates, but their system is not one Lapin knows (Stereo 70, Lambert-93, UTM, Web Mercator, WGS 84). Name it in Manage → Location, or convert the drawing first.");
+    else if (r) landed('survey points', r.points);
   }),
 };
 

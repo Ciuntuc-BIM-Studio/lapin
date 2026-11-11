@@ -13,8 +13,8 @@ import { relatedOf } from '../../engine/model';
 import { deleteType } from '../core/deleteType';
 import { LengthField, NumberField } from '../../shell/cells';
 import {
-  ROLE_LABELS, TYPE_CLASS, chooseType, kindOf, planBox, planPaths, sizeOf, specOf, useTypesDialog,
-  type FurnitureKind, type FurnitureSpec, type KindParam, type PreviewDto,
+  CHOICE_LABELS, ROLE_LABELS, TYPE_CLASS, appliesTo, chooseType, kindOf, planBox, planPaths, sizeOf, specOf, useTypesDialog,
+  type FurnitureKind, type FurnitureSpec, type KindParam, type KitchenLayout, type PreviewDto,
 } from './furniture';
 
 export function useKinds(): FurnitureKind[] {
@@ -59,7 +59,7 @@ function ParamField({ p, value, onCommit }: { p: KindParam; value: unknown; onCo
   switch (p.kind) {
     case 'length': return <LengthField metres={Number(value ?? 0)} min={p.min ?? undefined} max={p.max ?? undefined} onCommit={(v) => { if (v != null) onCommit(v); }} />;
     case 'number': return <NumberField value={Number(value ?? 0)} min={p.min ?? undefined} max={p.max ?? undefined} onCommit={(v) => { if (v != null) onCommit(v); }} />;
-    case 'choice': return <select value={String(value ?? '')} onChange={(e) => onCommit(e.target.value)}>{(p.choices ?? []).map((c) => <option key={c} value={c}>{c}</option>)}</select>;
+    case 'choice': return <select value={String(value ?? '')} onChange={(e) => onCommit(e.target.value)}>{(p.choices ?? []).map((c) => <option key={c} value={c}>{CHOICE_LABELS[c] ?? c}</option>)}</select>;
     case 'bool': return <input type="checkbox" checked={value === true} onChange={(e) => onCommit(e.target.checked)} />;
     default: return null;
   }
@@ -73,6 +73,8 @@ export function FurnitureTypesDialog() {
   const model = { nodes, relations };
   const selected = useTypesDialog((s) => s.typeId);
   const [newKind, setNewKind] = useState('sofa');
+  const [newLayout, setNewLayout] = useState('one-wall');
+  const layouts = ((useSession((s) => s.info?.catalogs['furniture.kitchenLayouts']) ?? []) as unknown as KitchenLayout[]);
   const types = useMemo(() => [...nodes.values()].filter((n) => n.type === TYPE_CLASS), [nodes]);
   const type = types.find((t) => t.id === selected) ?? types[0];
   const spec = specOf(type);
@@ -82,7 +84,7 @@ export function FurnitureTypesDialog() {
   const update = (patch: Record<string, unknown>, name?: string) => type && void execute('furniture.updateType', { id: type.id, ...(name ? { name } : {}), spec: patch });
 
   const create = async () => {
-    const r = (await execute('furniture.createType', { kind: newKind })) as { id?: string } | null;
+    const r = (await execute('furniture.createType', { kind: newKind, ...(newKind === 'kitchen' ? { layout: newLayout } : {}) })) as { id?: string } | null;
     if (r?.id) { select(r.id); chooseType(newKind, r.id); }
   };
   const duplicate = async () => {
@@ -105,6 +107,11 @@ export function FurnitureTypesDialog() {
               <select value={newKind} data-field="furniture-new-kind" onChange={(e) => setNewKind(e.target.value)}>
                 {groups.map((g) => <optgroup key={g} label={g}>{kinds.filter((k) => k.group === g).map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}</optgroup>)}
               </select>
+              {newKind === 'kitchen' && (
+                <select value={newLayout} data-field="furniture-new-layout" title="The kitchen’s layout" onChange={(e) => setNewLayout(e.target.value)}>
+                  {layouts.map((l) => <option key={l.key} value={l.key}>{CHOICE_LABELS[l.key] ?? l.label}</option>)}
+                </select>
+              )}
               <button type="button" className="btn small" data-action="furniture-new-type" onClick={() => void create()}><Plus size={13} /> New type</button>
             </div>
             {groups.map((g) => {
@@ -141,10 +148,11 @@ export function FurnitureTypesDialog() {
                   {spec.kind !== 'kitchen' && <><dt>Width</dt><dd><LengthField testId="furniture-width" metres={Number(spec.width ?? kind.width)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ width: v }); }} /></dd></>}
                   <dt>Depth</dt><dd><LengthField testId="furniture-depth" metres={Number(spec.depth ?? kind.depth)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ depth: v }); }} /></dd>
                   <dt>{spec.kind === 'kitchen' ? 'Worktop height' : 'Height'}</dt><dd><LengthField testId="furniture-height" metres={Number(spec.height ?? kind.height)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ height: v }); }} /></dd>
-                  {kind.params.map((p) => (
+                  {kind.params.filter((p) => appliesTo(p, spec, kind.defaults)).map((p) => (
                     <div key={p.key} className="fields-row" data-param={p.key} style={{ display: 'contents' }}>
                       <dt>{p.label}</dt>
-                      <dd><ParamField p={p} value={spec[p.key] ?? kind.defaults[p.key]} onCommit={(v) => update({ [p.key]: v })} /></dd>
+                      {/* A layout starts the kitchen from its sizes (a galley's aisle, an L's leg…); each stays editable. */}
+                      <dd><ParamField p={p} value={spec[p.key] ?? kind.defaults[p.key]} onCommit={(v) => update(p.key === 'layout' ? (layouts.find((l) => l.key === v)?.preset ?? { layout: v }) : { [p.key]: v })} /></dd>
                     </div>
                   ))}
                   <dt className="section-dt">Materials</dt><dd />

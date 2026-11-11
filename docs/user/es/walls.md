@@ -21,7 +21,7 @@ Haga clic donde empieza el muro y luego en cada esquina. El muro siguiente sigue
 Donde se encuentran dos muros, Lapin los une por sí mismo. Sus capas se encuentran tal como se construirían.
 
 - **Muro curvo** (<kbd>WC</kbd>) dibuja un muro a lo largo de un arco.
-- **Muro cortina** (<kbd>CW</kbd>) dibuja un muro acristalado con montantes y paneles.
+- **Muro cortina** (<kbd>CW</kbd>) dibuja un muro acristalado con montantes y paneles; su tipo puede tomar su forma real de una [biblioteca de perfiles](profiles.md).
 - Los muros se unen por sí solos donde se encuentran: una esquina a inglete, un muro que termina sobre otro en T, uno que cruza otro en X. En una T o una X las capas entran unas en otras como se construyen: el núcleo del muro que termina sigue a través de los acabados del otro hasta su núcleo, y sus acabados se detienen en la cara del otro, donde encuentran a sus iguales, así que la planta muestra una sola composición sin una línea que la cruce. **Unir** (<kbd>JW</kbd>), **Inglete** y **A tope** cambian cómo se encuentran dos muros. En ambos casos, cada capa dobla la esquina por sí sola: los acabados se encuentran con sus iguales y siguen sin cortes, y los núcleos se encuentran en la diagonal (inglete) o un núcleo sigue hasta la cara exterior del otro (a tope), así que la planta de muros multicapa muestra esquinas limpias. Cada capa entra en el otro muro a través de sus capas de menor **Prioridad** y se detiene en la primera de prioridad igual o mayor (vea **Tipos de muro** más abajo), así que por defecto los núcleos se encuentran con núcleos y los acabados se detienen en las caras; en una esquina, un núcleo de mayor prioridad atraviesa el del otro, a inglete o a tope. La **Prioridad de corte** de un muro ya no lo hace entrar en un muro unido a él: entre muros unidos solo decide qué núcleo pasa cuando ambos núcleos tienen la misma prioridad (en una esquina a tope o en un cruce).
 - **Intercambiar** cambia cuál de los dos muros pasa de largo.
 
@@ -54,6 +54,32 @@ El muro sigue siendo un muro: su espesor, sus capas, sus uniones y sus puertas y
 ![Un hastial dibujado en el editor de perfil](shots/wall-profile-editor.webp)
 
 ![El muro oeste de la casa como hastial, con su ventana conservada](shots/wall-profile-3d.webp)
+
+### El contorno y las barras de un muro cortina
+
+**Perfil…** en las propiedades de un muro cortina dibuja su contorno en alzado, como en un muro: un hastial, una pendiente, escalones o cualquier contorno, con puntos que arrastrar, añadir o quitar y una tabla en milímetros. El muro sube hasta su punto más alto. Su retícula gana una línea donde el contorno se quiebra (un quiebro a menos de un montante y medio de una línea de la retícula se lleva a ella); cada vano conserva los travesaños que caben bajo su punto más bajo; el panel sobre el último llena hasta el contorno y una barra de borde lo sigue, inclinada; los montantes se cortan a él. Los ajustes del tipo se mantienen, y **Perfil…** abre de nuevo el contorno para cambiarlo, sin reconstruir; **Coronación plana** devuelve el rectángulo. Se ve en 3D, alzados y secciones, las tablas miden los paneles y las barras tal como están dibujados, y el IFC los lleva como piezas.
+
+![Un hastial dibujado como contorno de un muro cortina](shots/curtain-boundary-editor.webp)
+
+![El muro cortina bajo su hastial, en 3D](shots/curtain-boundary-3d.webp)
+
+**Barras…** da a montantes y travesaños elegidos un perfil propio. El alzado del muro muestra cada barra: haga clic en una (<kbd>Mayús</kbd> o <kbd>Ctrl</kbd>/<kbd>⌘</kbd> añade más, o tome todos los montantes o todos los travesaños), elija un perfil de las [bibliotecas de perfiles](profiles.md) o una caja simple, su **Rotación** y su **Simetría**, su alineación transversal a la barra (cara frontal o posterior sobre su plano) y a lo largo (borde inicial o final sobre la línea de la retícula o el nivel) y sus desfases transversal y hacia el exterior del edificio; el dibujo de al lado muestra la sección tal como queda. **Aplicar a los elegidos** les da el estilo, **Volver al del tipo** se lo quita. El perfil propio de un tipo tiene los mismos campos de posición en **Muros cortina…**, para todos los muros del tipo. El perfil sigue siendo una copia en el proyecto: **Actualizar desde la biblioteca** cambia todas las barras hechas con él, en este muro y en otros.
+
+![Barras: un perfil colocado en los montantes elegidos](shots/curtain-members-dialog.webp)
+
+![Dos montantes con perfil propio, en 3D](shots/curtain-members-3d.webp)
+
+**Paneles y puertas…** da a las celdas elegidas un panel propio o una puerta. El alzado del muro muestra cada celda tal como la construye el motor: haz clic en una (<kbd>Shift</kbd> o <kbd>Ctrl</kbd>/<kbd>⌘</kbd> añade más). Un **tipo de panel** se guarda una vez en el proyecto y se da a celdas de cualquier muro cortina: vidrio, macizo, un **relleno enmarcado** (un marco de su ancho y su fondo alrededor de la celda, el relleno de vidrio o macizo retranqueado de su cara exterior según el retranqueo) o **abierto** (sin panel); su espesor, su desfase fuera del eje y sus materiales (los del tipo de muro cortina si no se elige ninguno). **Dar a las elegidas** lo aplica, **El panel del tipo** lo quita; un tipo de panel cambiado cambia todas sus celdas. **Puerta en las elegidas** sustituye cada celda elegida por una puerta: una nueva puerta de muro cortina (sencilla o doble, batiente o corredera, su ancho y su alto, hojas acristaladas o macizas, el perfil del marco de las [bibliotecas de perfiles](profiles.md)) o cualquier tipo de puerta del proyecto. **Llenar la celda** le da el tamaño de la celda; si no, conserva el de su tipo, se coloca a la izquierda, al centro o a la derecha de la celda con un desfase, y lleva un travesaño encima y un montante al lado donde queda vidrio, acristalados con el panel de la celda. En la fila inferior la puerta apoya en el suelo y el travesaño inferior se corta bajo ella. Los ajustes se guardan por celda, así que siguen a la retícula cuando cambia: una puerta que llena su celda crece o mengua con ella, y una cuya celda ha desaparecido lo dice y vuelve con ella. La puerta es una puerta: selecciónala para cambiar su mano o su lado, su tipo, o moverla a otra celda (Mover a lo largo del muro); las etiquetas, las tablas de puertas (al tamaño al que está) y la exportación IFC (una IfcDoor que forma parte de su IfcCurtainWall) la cuentan.
+
+![Paneles y puertas: un antepecho enmarcado y una puerta en las celdas elegidas](shots/curtain-cells-dialog.webp)
+
+![Un muro cortina con una puerta y antepechos enmarcados, en 3D](shots/curtain-cells-3d.webp)
+
+Bajo un contorno dibujado con **Perfil…** una puerta entra en una celda recortada dondequiera que su rectángulo quepa bajo el contorno: los montantes de al lado suben hasta el contorno, los paños junto a ellos se llenan hasta él, un travesaño cruza su cabeza y el vidrio de encima sigue la pendiente. Al llenar una celda así, su cabeza se detiene un travesaño por debajo del lado más bajo del contorno. Donde no cabe, Lapin dice cuánto falta y qué hacer (bajarla, moverla hacia el lado más alto o elegir una celda más alta). Un panel enmarcado en una celda recortada lleva el marco a lo largo de todo su contorno, también en el lado inclinado. Un alzado que mira al exterior de una puerta dibuja sus símbolos de apertura, a trazos, como en cualquier puerta o ventana.
+
+![Una puerta bajo el contorno inclinado de un muro cortina, con paneles enmarcados a lo largo de la pendiente, en 3D](shots/curtain-cells-gable.webp)
+
+![El símbolo de apertura de la puerta en el alzado](shots/curtain-cells-elevation.webp)
 
 ## Tipos de muro
 

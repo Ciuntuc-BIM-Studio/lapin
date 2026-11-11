@@ -50,6 +50,16 @@ Una puerta, una ventana o un hueco de muro se desplaza y se copia a lo largo de 
 
 Un eje de rejilla se desplaza, se copia, se gira y se refleja por sí solo o junto con otros elementos. Una copia es un nuevo eje de la misma rejilla, con el nombre que sigue al último eje en su dirección: con los ejes 1, 2 y 3, la copia de cualquiera de ellos es el 4.
 
+### En secciones y alzados
+
+**Desplazar** (<kbd>M</kbd>), **Copiar** (<kbd>CO</kbd>) y arrastrar un elemento seleccionado funcionan también en una sección o un alzado, en el plano de la vista. A lo largo de la vista, el elemento se mueve en planta a lo largo de la línea de la sección; hacia arriba o hacia abajo, sube o baja según su desfase del nivel (el desfase de base de un muro o un pilar, el desfase superior de una viga, el desfase de un forjado). Mientras arrastra, su **Desfase del nivel** en las propiedades lo sigue. Una puerta o una ventana sigue deslizándose a lo largo de su muro, y las líneas dibujadas en la vista se mueven en la vista. **Simetría** toma allí una línea vertical y refleja los elementos respecto al plano que pasa por ella, perpendicular a la vista. Los elementos no se **giran** en una sección o un alzado, porque se volcarían: gírelos en una planta o en 3D. Las líneas dibujadas giran y se reflejan de cualquier manera. Un elemento fijado se queda donde está.
+
+![Una viga arrastrada hacia arriba en el alzado sur: su fantasma donde estaba, el desplazamiento junto al ratón y su desfase del nivel siguiéndolo en las propiedades](shots/section-drag.webp)
+
+### Fijación
+
+Fija lo que no debe moverse por error: un modelo importado, la rejilla, un dibujo de levantamiento. Selecciónalo y elige **Modificar → Fijar**, o marca **Fijado** en **Colocación** en sus propiedades. Un elemento fijado no se mueve, gira, refleja, eleva, pasa a otra planta ni se borra, y no muestra pinzamientos. Sus demás campos siguen cambiando: su tipo, altura o material. Aún se puede copiar, y la copia no queda fijada. Un muro unido a él que se mueve deja los extremos del muro fijado donde están. Fijar un grupo fija a sus miembros; un grupo con un miembro fijado no se mueve. **Modificar → Liberar** (<kbd>UP</kbd>) lo suelta de nuevo. Cualquier elemento se puede fijar: un muro, una referencia de un archivo importado, una línea dibujada.
+
 ## Dibujo
 
 La ficha **Dibujo** dibuja líneas, polilíneas, rectángulos, círculos y arcos. Los edita con desfase, recortar, alargar, empalme, chaflán y unir, rellena áreas con sombreados y los organiza en **Capas**. **Importar DXF** trae un dibujo CAD como líneas a las que puede forzar el cursor y que puede editar.
@@ -57,6 +67,8 @@ La ficha **Dibujo** dibuja líneas, polilíneas, rectángulos, círculos y arcos
 ![La ficha Dibujo](shots/ribbon-draft.webp)
 
 **Desfase** (<kbd>O</kbd>) copia una línea, una polilínea, un rectángulo, un círculo o un arco a una distancia. Escribe la distancia en la unidad del proyecto (en un proyecto en milímetros `500` es medio metro; `2m` o `1'6"` dicen su propia unidad), haz clic en la forma y luego en el lado hacia el que va; pide la forma siguiente hasta que pulses <kbd>Enter</kbd> o <kbd>Esc</kbd>. Escribe **T** (Through) en su lugar y cada copia pasa por el punto en que haces clic. Las esquinas de una polilínea quedan vivas (en inglete), como en CAD. El desfase funciona en plantas, secciones, alzados, en planos de referencia y en la vista 3D.
+
+**Descomponer** (<kbd>X</kbd>, o **EXPLODE**) es el camino de vuelta de **Unir**: selecciona polilíneas o rectángulos y cada uno se convierte en sus líneas, una por lado, en la misma capa con el mismo lápiz y color y en el mismo grupo, en un solo paso de deshacer. Los círculos, los arcos, las tramas y las cadenas de cotas se quedan como están, y una selección sin nada que dividir lo dice. Funciona en plantas, secciones, alzados, en planos de referencia y en el plano de trabajo de la vista 3D.
 
 Toda longitud que pide la línea de comandos está en la unidad del proyecto, y el mensaje dice cuál: `Depth (mm)`, `Height (ft-in)`. Los ángulos, factores y recuentos son números simples: `90` tras **Girar** es 90°, sea cual sea la unidad.
 
@@ -103,6 +115,8 @@ Las anotaciones de una planta (cotas, textos, líneas dibujadas, etiquetas) pued
 
 ![La altura del hueco en los estilos de cota](shots/dimension-opening-height-style.webp)
 
+**Cotas sobre una línea.** Un punto de cota marcado sobre un eje de la retícula o sobre el eje de un muro se sujeta a la línea, no a un punto de ella. Arrastre el extremo del eje a lo largo de sí mismo para que quepa su burbuja en la vista, o alargue o acorte el muro: la cota sigue midiendo donde usted la puso y su línea no gira. Si el eje o el muro se desplaza en sentido transversal, el punto va con él, en el mismo lugar a lo largo. Una cota sobre la cara de un muro también se queda donde midió cuando el muro se estira a lo largo. Las cotas hechas antes se sujetan a un eje de la retícula igual; una sobre el eje de un muro se vuelve a sujetar haciendo clic de nuevo en su punto.
+
 ### Etiquetas
 
 **Anotar → Etiqueta** (<kbd>TG</kbd>) pone en una vista un recuadro con lo que un elemento dice de sí mismo y una línea de referencia hasta él. Mientras la herramienta está activa, la barra bajo la vista elige lo que muestra la etiqueta: la marca, el nombre, la clase o el tipo, **Resistencia al fuego**, **Aislamiento acústico**, **Transmitancia térmica** u **Otro parámetro…** por su nombre; o un tipo de etiqueta de las normas de dibujo; y **REFERENCIA** activa o desactiva la línea de referencia. Haga clic en el elemento y luego donde va la etiqueta (escriba antes **E** para quebrar la línea en un codo). **Anotar → Etiquetar un parámetro** pide el nombre del parámetro e inicia la herramienta con él.
@@ -120,6 +134,12 @@ Una etiqueta seleccionada tiene pinzamientos. Arrastre el recuadro para mover la
 ![Las propiedades de una etiqueta](shots/tag-properties.webp)
 
 El marcador de una puerta o ventana se edita parte por parte, cada texto movido o girado y cada extremo de su línea alargado: ver [Puertas y ventanas](doors-windows.md).
+
+**Girar una etiqueta.** En las propiedades de una etiqueta, **Rotación** gira su texto y su hombro o recuadro un ángulo, en grados desde la horizontal, y **Alinear con el elemento** hace que siga la dirección del elemento que etiqueta (el eje de un muro o de una viga, el borde más largo de cualquier otro) y gire con él; la rotación se suma entonces a esa dirección. Una etiqueta se dibuja siempre legible, nunca boca abajo. Una etiqueta seleccionada tiene sobre su texto un tirador de giro: arrástrelo de 15° en 15° (también 45° y 90°; mantenga <kbd>Mayús</kbd> para cualquier ángulo) y Ctrl/⌘-clic deja el texto de nuevo horizontal. La línea de referencia sigue llegando al elemento. Las etiquetas simples y las de composición giran igual, en plantas, secciones y alzados, y las láminas, el PDF y el DXF las imprimen como usted las ve.
+
+**Qué etiqueta una etiqueta.** Mientras la herramienta **Etiqueta** espera un elemento, el que está bajo el cursor se resalta con el color de acento; pase el cursor sobre una etiqueta colocada, o selecciónela, y se resalta el elemento que etiqueta.
+
+![Una etiqueta alineada con su muro, con su tirador de giro, y el muro etiquetado resaltado](shots/tag-rotate.webp)
 
 #### Etiqueta de composición
 

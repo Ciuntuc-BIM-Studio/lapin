@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import type { NodeDto } from '../../engine/protocol';
 import type { Grip, Vec2 } from '../../platform/module';
 
-export interface KindParam { key: string; label: string; kind: 'length' | 'number' | 'choice' | 'bool'; min?: number | null; max?: number | null; choices?: string[] | null }
+export interface KindParam { key: string; label: string; kind: 'length' | 'number' | 'choice' | 'bool'; min?: number | null; max?: number | null; choices?: string[] | null; layouts?: string[] | null }
 export interface FurnitureKind {
   key: string; label: string; group: string; predefined: string; objectType?: string | null;
   width: number; depth: number; height: number; params: KindParam[]; defaults: Record<string, unknown>; roles: string[];
@@ -96,3 +96,16 @@ export function planBox(p: PreviewDto, margin = 0.08): [number, number, number, 
   if (!Number.isFinite(x0)) return [-1, -1, 2, 2];
   return [x0 - margin, y0 - margin, x1 - x0 + 2 * margin, y1 - y0 + 2 * margin];
 }
+
+/** A kitchen's layouts (the engine's catalog `furniture.kitchenLayouts`): the key, its label and the parameters it starts from. */
+export interface KitchenLayout { key: string; label: string; preset: Record<string, unknown> }
+
+/** The choices of a kitchen's layout and its sink and hob, as the dialog names them; the others show as they are. */
+export const CHOICE_LABELS: Record<string, string> = {
+  'one-wall': 'One wall', galley: 'Galley', 'l-shaped': 'L-shaped', 'u-shaped': 'U-shaped', island: 'Island', peninsula: 'Peninsula',
+  run: 'The main run', other: 'The other part',
+};
+
+/** Whether a parameter applies to the type's layout (a parameter without layouts applies to all). */
+export const appliesTo = (p: KindParam, spec: FurnitureSpec, defaults: Record<string, unknown>): boolean =>
+  !p.layouts || p.layouts.includes(String(spec.layout ?? defaults.layout ?? ''));

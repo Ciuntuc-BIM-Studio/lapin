@@ -273,21 +273,62 @@ public static class Pens
         var o = new HashSet<int>();
         // The cut edges of each class's elements, by polygon: the layers of one element, and of the elements of its kind
         // it is joined to (a footing's core running on past the end of another's, against that one's waterproofing).
-        var edges = new Dictionary<string, List<(int Poly, Vec2 A, Vec2 B)>>();
+        // On a grid in plan: every line against every edge took most of a drawing of timber-frame walls (report #125).
+        var edges = new Dictionary<string, EdgeGrid>();
         for (var i = 0; i < d.Cuts.Count; i++)
-            foreach (var loop in d.Cuts[i].Loops)
-                for (var k = 0; k < loop.Length; k++)
-                    (edges.TryGetValue(d.Cuts[i].Class, out var l) ? l : edges[d.Cuts[i].Class] = []).Add((i, loop[k], loop[(k + 1) % loop.Length]));
+        {
+            var cut = d.Cuts[i];
+            if (!edges.TryGetValue(cut.Class, out var grid)) edges[cut.Class] = grid = new EdgeGrid();
+            foreach (var loop in cut.Loops)
+                for (var k = 0; k < loop.Length; k++) grid.Add(i, loop[k], loop[(k + 1) % loop.Length]);
+        }
         // A line of a polygon: its own polygon is the one whose edge holds it; the first found.
+        var on = new HashSet<int>();
         for (var i = 0; i < d.Lines.Count; i++)
         {
             var l = d.Lines[i];
-            if (l.Role != LineRole.Cut || !edges.TryGetValue(l.Class, out var es)) continue;
-            var on = new HashSet<int>();
-            foreach (var (poly, a, b) in es) if (OnEdge(l.A, l.B, a, b)) on.Add(poly);
+            if (l.Role != LineRole.Cut || !edges.TryGetValue(l.Class, out var grid)) continue;
+            on.Clear();
+            grid.Holding(l.A, l.B, on);
             if (on.Count >= 2) o.Add(i);
         }
         return o;
+    }
+
+    /// <summary>Polygons' edges on a grid in plan: an edge in the cells of its points every half cell, found from the middle of a line along it.</summary>
+    sealed class EdgeGrid
+    {
+        const double Size = 0.5;
+        readonly List<(int Poly, Vec2 A, Vec2 B)> _edges = [];
+        readonly Dictionary<(long, long), List<int>> _cells = [];
+        static (long, long) Key(Vec2 p) => ((long)Math.Floor(p.X / Size), (long)Math.Floor(p.Y / Size));
+
+        public void Add(int poly, Vec2 a, Vec2 b)
+        {
+            var at = _edges.Count;
+            _edges.Add((poly, a, b));
+            var n = (int)Math.Min(1e6, Math.Ceiling((b - a).Length / (Size / 2)));
+            (long, long)? last = null;
+            for (var i = 0; i <= n; i++)
+            {
+                var key = Key(n == 0 ? a : a + (b - a) * ((double)i / n));
+                if (key == last) continue;
+                last = key;
+                if (!_cells.TryGetValue(key, out var list)) _cells[key] = list = [];
+                if (list.Count == 0 || list[^1] != at) list.Add(at);
+            }
+        }
+
+        /// <summary>The polygons with an edge holding the segment pq: its middle lies on such an edge, so one of the edge's points is in that cell or next to it.</summary>
+        public void Holding(Vec2 p, Vec2 q, HashSet<int> polys)
+        {
+            var (cx, cy) = Key((p + q) * 0.5);
+            for (var dx = -1L; dx <= 1; dx++)
+                for (var dy = -1L; dy <= 1; dy++)
+                    if (_cells.TryGetValue((cx + dx, cy + dy), out var list))
+                        foreach (var e in list)
+                            if (!polys.Contains(_edges[e].Poly) && OnEdge(p, q, _edges[e].A, _edges[e].B)) polys.Add(_edges[e].Poly);
+        }
     }
 
     /// <summary>Whether the segment pq lies along the edge ab (collinear, within it, 0.1 mm).</summary>
@@ -298,14 +339,14 @@ public static class Pens
         var len = d.Length;
         if (len < 1e-9) return false;
         var u = d * (1 / len);
-        foreach (var x in new[] { p, q })
+        return Holds(p) && Holds(q);
+        bool Holds(Vec2 x)
         {
             var r = x - a;
             if (Math.Abs(Vec2.Cross(u, r)) > tol) return false;
             var t = Vec2.Dot(u, r);
-            if (t < -tol || t > len + tol) return false;
+            return t >= -tol && t <= len + tol;
         }
-        return true;
     }
 
     static List<Pen> Ordered(Dictionary<string, Pen> pens)

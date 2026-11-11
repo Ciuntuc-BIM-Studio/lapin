@@ -28,6 +28,8 @@ public class WallHatchAlignTests
         var f = new Fixture();
         var type = f.Type("Brick 25", ("Solid brick", 0.25, true));
         var wall = f.Wall(0, 0, 6 * Math.Cos(Math.PI / 6), 6 * Math.Sin(Math.PI / 6), type);
+        // Brick in courses, as decision 325 hatched it (a cut's brick is 45° lines since decision 456).
+        f.LegacyHatches();
         // By the material (from the view): the courses square to the plan, not to the wall at 30°.
         var before = Directions(f);
         Assert.NotEmpty(before);

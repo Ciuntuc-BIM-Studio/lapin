@@ -1,7 +1,7 @@
 ---
 title: Mobiliário
 order: 47
-summary: Sofás, sofás de canto, poltronas, cadeiras, camas, guarda-roupas, cômodas, estantes, aparadores, mesas, escrivaninhas e cozinhas lineares, a partir de tipos paramétricos, encostados nas paredes com um clique.
+summary: Sofás, sofás de canto, poltronas, cadeiras, camas, guarda-roupas, cômodas, estantes, aparadores, mesas, escrivaninhas e cozinhas em seis disposições, a partir de tipos paramétricos, encostados nas paredes com um clique.
 ---
 
 ## Posicionar mobiliário
@@ -42,6 +42,18 @@ As elevações e os cortes desenham os corpos, com as hachuras dos seus materiai
 - ela tem bancada, pia e cooktop (a posição deles ao longo da cozinha se define no tipo), armários aéreos acima e uma torre para a geladeira numa das pontas.
 
 O **Comprimento** de uma cozinha continua editável nas suas propriedades; os módulos são divididos de novo.
+
+### Disposições da cozinha
+
+Um tipo de cozinha tem uma **Layout** (disposição): **One wall** (a linha reta), **Galley** (duas linhas paralelas com um corredor entre elas), **L-shaped**, **U-shaped**, **Island** (uma linha na parede do fundo e uma ilha separada com o seu corredor) ou **Peninsula** (um L com uma linha que sai do braço, a bancada em balanço para bancos). Escolher uma faz o tipo partir das medidas da disposição, e cada uma continua editável ao lado da pré-visualização: o comprimento dos braços a partir da parede do fundo, o corredor entre as linhas, o comprimento da linha oposta, o comprimento, a profundidade e o lugar da ilha, o comprimento e o balanço da península e, num L ou numa península, o canto à esquerda ou à direita.
+
+![As seis disposições em planta: numa parede, em paralelo, em L, em U, com ilha e com península](shots/kitchen-layouts.webp)
+
+**Sink on** e **Hob on** põem-nos na linha principal ou na outra parte (o braço, a linha oposta, a ilha, a península), **Sink at** e **Hob at** dizem onde ao longo dela, e a **Tall unit (fridge)** fica numa ponta livre. Os móveis de canto são cegos; os móveis altos só existem nas linhas contra uma parede, não numa ilha nem numa península.
+
+![Um tipo de cozinha: em L](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) desenha qualquer disposição com dois pontos ao longo da parede onde está a linha principal: a linha é o seu comprimento, as costas na face da parede, e um L, uma península, um U ou uma cozinha em paralelo desliza para o canto ou entre as paredes junto das quais se desenha. **Flip** dá a um L ou a uma península o canto do outro lado. A tabela de mobiliário nomeia a disposição e dá a profundidade da pegada. No IFC continua a ser um IfcFurniture de um tipo Kitchen definido pelo usuário.
 
 ## As propriedades de um móvel
 

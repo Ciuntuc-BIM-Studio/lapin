@@ -41,7 +41,8 @@ public static class JoineryElevation
             var inset = Joinery.IsDoorLeaf(op) ? 0 : Math.Min(s.Sash.Width * 0.5, Math.Min(r.X1 - r.X0, r.Z1 - r.Z0) / 6);
             var (x0, x1, y0, y1) = (r.X0 + inset, r.X1 - inset, r.Z0 + inset, r.Z1 - inset);
             Rect(x0, y0, x1, y1, "outline");
-            if (Joinery.IsDoorLeaf(op) && Joinery.InfillOf(p) == "glass")
+            // Frameless glass (tester's question 7): no leaf frame inside the glass.
+            if (Joinery.IsDoorLeaf(op) && Joinery.InfillOf(p) == "glass" && s.Frameless == null)
             {
                 var g = Math.Min(0.12, (x1 - x0) / 5);
                 Rect(x0 + g, y0 + g + 0.3, x1 - g, y1 - g, "thin");

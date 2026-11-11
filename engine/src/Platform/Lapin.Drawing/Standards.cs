@@ -86,11 +86,16 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// with its scale. Each list always has its Standard entry (layer "0").
 /// An annotation names its styles in its params and may override any field
 /// of them in <c>o.&lt;field&gt;</c>.
+/// <see cref="SectionMarkSize"/>, <see cref="SectionMarkText"/>, <see cref="ElevationMarkSize"/> and
+/// <see cref="ElevationMarkText"/> (decisions 455, 460): the section markers' and the elevation markers' symbol size and
+/// text height (paper mm; null: <see cref="Standards.DefaultMarkSize"/> and the Standard text's height), which a marker's
+/// own <c>markSize</c> and <c>markTextSize</c> override. Standards saved with one <c>markSize</c> and <c>markText</c>
+/// (decision 455) give them to both kinds.
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
     string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
-    string LineCap = "round", string Units = "mm")
+    string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null)
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -103,6 +108,14 @@ public static class Standards
     public static readonly DimStyle DefaultDim = new(Standard, "Standard", Standard, "tick", 1.5, 1, 1.5, "above", 0.8, -1, "project");
     public static readonly AxisStyle DefaultAxis = new(Standard, "Standard", Standard, "circle", "both", 10, "dashdot", "1");
     public static readonly DraftLayer Layer0 = new("0", "0", "#18181b", true, false);
+
+    /// <summary>A section's or elevation's marker symbol (paper mm): an elevation's circle across, a section's arrow 0.7 of it.</summary>
+    public const double DefaultMarkSize = 10;
+    /// <summary>What a marker's symbol size and text height may be (paper mm).</summary>
+    public const double MinMarkSize = 1, MaxMarkSize = 50, MinMarkText = 0.5, MaxMarkText = 20;
+
+    /// <summary>A marker size or text height within its range, or null.</summary>
+    public static double? MarkValue(JsonNode? v, double min, double max) => Lapin.Model.Json.Number(v) is { } d && double.IsFinite(d) && d >= min && d <= max ? d : null;
 
     public static readonly string[] Fonts = ["sans", "serif", "mono"];
     public static readonly string[] Arrows = ["tick", "arrow", "dot", "none"];
@@ -258,7 +271,9 @@ public static class Standards
             o["tagTypes"] is JsonArray ? List("tagTypes").Select(ReadTag).OfType<TagType>().ToList() : [.. DefaultTagTypes],
             WithStandard(List("layers").Select(ReadLayer).ToList(), Layer0, l => l.Id, "0"),
             List("layerGroups").Where(g => g["id"] is JsonValue).Select(g => new LayerGroup(Str(g["id"], ""), Str(g["name"], "Group"), g["visible"] is not JsonValue gv || !gv.TryGetValue<bool>(out var b) || b, True(g["locked"]))).Where(g => g.Id.Length > 0).ToList(),
-            OneOf(o["lineCap"], LineCaps, "round"), OneOf(o["units"], ProjectUnits, "mm"));
+            OneOf(o["lineCap"], LineCaps, "round"), OneOf(o["units"], ProjectUnits, "mm"),
+            MarkValue(o["sectionMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["sectionMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
+            MarkValue(o["elevationMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["elevationMarkText"] ?? o["markText"], MinMarkText, MaxMarkText));
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;

@@ -43,8 +43,20 @@ public static class Openings
 
     public static Entity? OpeningOf(IModelView m, string fillId) => m.RelatingOf(fillId, IfcClass.RelFillsElement);
 
-    public static JoinerySpec? SpecOf(IModelView m, string fillId) =>
-        m.RelatingOf(fillId, IfcClass.RelDefinesByType) is { } type ? JoinerySpec.From(type.Attrs["spec"]) : null;
+    public static JoinerySpec? SpecOf(IModelView m, string fillId)
+    {
+        if (m.RelatingOf(fillId, IfcClass.RelDefinesByType) is not { } type || JoinerySpec.From(type.Attrs["spec"]) is not { } spec) return null;
+        // The frame's place in the wall (report #76): the element's own value over the type's, worked out from the wall's build-up.
+        var fill = m.Get(fillId);
+        // A curtain wall's door (report #133): its type at the size it stands in its cell.
+        if (fill != null && CurtainCells.SeatOf(m, fill) is { } seat) return seat.Spec ?? spec;
+        var own = JoineryPosition.From_(fill?.Attrs["position"]);
+        if (own == null && spec.Position == null) return spec;
+        return OpeningOf(m, fillId) is { } opening && WallOf(m, opening.Id) is { } wall ? spec.Positioned(m, wall, own, fill?.Bool("flipSide") == true) : spec;
+    }
+
+    /// <summary>The spec a type keeps, without any element's position worked in.</summary>
+    public static JoinerySpec? TypeSpecOf(Entity type) => JoinerySpec.From(type.Attrs["spec"]);
 
     /// <summary>
     /// A door's or window's opening of its own size (<c>holeWidth</c>, <c>holeHeight</c> on the opening, metres): the hole
@@ -145,6 +157,8 @@ public static class Openings
         foreach (var fill in edit.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
             if (OpeningOf(edit.Model, fill.Id) is { } opening && WallOf(edit.Model, opening.Id) is { } wall)
                 CheckFits(edit.Model, wall, opening.Num("along"), opening.Num("sill"), spec.Width, spec.Height, opening.Id);
+            // A curtain wall's door: still in its cell (report #133).
+            else CurtainCells.CheckDoor(edit.Model, fill);
     }
 
     // ------------------------------------------------------------ placing
@@ -268,6 +282,8 @@ public static class Openings
             edit.Replace(own.With(attrs: attrs));
         }
         edit.Relate(IfcClass.RelDefinesByType, type.Id, fill.Id);
+        // A curtain wall's door takes its new type in its cell (report #133).
+        CurtainCells.CheckDoor(edit.Model, edit.Model.Get(fill.Id)!);
     }
 
     // ------------------------------------------------------------ geometry
@@ -402,6 +418,8 @@ public static class Openings
 
     public static ElementGeometry? FillGeometry(Entity fill, IModelView m)
     {
+        // A curtain wall's door (report #133): in its cell, drawn as any door is.
+        if (CurtainCells.SeatOf(m, fill) is { } seat) return CurtainDoorGeometry(fill, m, seat);
         var spec = SpecOf(m, fill.Id);
         var opening = OpeningOf(m, fill.Id);
         var wall = opening == null ? null : WallOf(m, opening.Id);
@@ -417,22 +435,35 @@ public static class Openings
         var bay = BayWindows.Projecting(spec);
         var dressing = PathCurve.Of(wall) is { IsArc: true } ? null : new Dressing(m, wall, f, p, spec, sx, sy, bay);
         if (bay) return BayGeometry(fill, m, spec, wall, f, p, sx, sy, dressing);
-        foreach (var group in Joinery.Boxes(spec).Where(b => dressing?.Replaces(b) != true).GroupBy(b => b.Role))
-        {
-            var solids = group.Select(b => Box(b, Map)).OfType<Solid>().ToList();
-            if (solids.Count == 0) continue;
-            // The part's material (by name, report #76) gives its colour; without one, the type's colour for the part.
-            var material = MaterialOfPart(m, spec, group.Key);
-            var color = material != null ? Materials.ColorOf(m, material) : group.Key switch
-            {
-                "glass" => spec.Colors.Glass, "leaf" => spec.Colors.Leaf,
-                "handle" or "hardware" => spec.Hardware?.Color ?? HandleColor["handle"],
-                _ => HandleColor.GetValueOrDefault(group.Key, spec.Colors.Frame),
-            };
-            parts.Add(new GeometryPart(group.Key, color, Combine(solids, group.Key), material, group.Key));
-        }
+        parts.AddRange(BodyParts(m, spec, Joinery.Boxes(spec).Where(b => dressing?.Replaces(b) != true), Map));
         if (dressing != null) parts.AddRange(dressing.Parts());
         return new ElementGeometry(parts, Symbol(spec, f, p, sx, sy, dressing != null), [f.At(p.Along, f.Centre, 0).Xy]);
+    }
+
+    /// <summary>The joinery's boxes as parts, one per role, each in its material (by name, report #76) or the type's colour for the part.</summary>
+    static IEnumerable<GeometryPart> BodyParts(IModelView m, JoinerySpec spec, IEnumerable<JoineryBox> boxes, Func<double, double, double, Vec3> map)
+    {
+        foreach (var group in boxes.GroupBy(b => b.Role))
+        {
+            var solids = group.Select(b => Box(b, map)).OfType<Solid>().ToList();
+            if (solids.Count == 0) continue;
+            var material = MaterialOfPart(m, spec, group.Key);
+            yield return new GeometryPart(group.Key, RoleColor(m, spec, group.Key, material), Combine(solids, group.Key), material, group.Key);
+        }
+    }
+
+    /// <summary>
+    /// A curtain wall door's body (report #133): its type's joinery at the size it stands, in its cell's frame (the bay's chord, the
+    /// wall's axis its middle plane), flipped as any door, with the plan symbol and swing; nothing, and why, where it cannot stand.
+    /// </summary>
+    static ElementGeometry CurtainDoorGeometry(Entity fill, IModelView m, CurtainCells.DoorSeat s)
+    {
+        if (s.Problem != null || s.Spec is not { } spec) return new ElementGeometry([], Diagnostics: [s.Problem ?? "A door needs its door type."]);
+        var (f, p) = (s.Frame, s.Placed);
+        var sx = fill.Bool("flipHand") ? -1 : 1;
+        var sy = fill.Bool("flipSide") ? -1 : 1;
+        Vec3 Map(double x, double y, double z) => f.At(p.Along + sx * x, f.Centre - sy * y, p.FillSill + z);
+        return new ElementGeometry([.. BodyParts(m, spec, Joinery.Boxes(spec), Map)], Symbol(spec, f, p, sx, sy, false), [f.At(p.Along, f.Centre, 0).Xy]);
     }
 
     /// <summary>The colour of a part of a door's or window's body by its role: its material's, else the type's for the part.</summary>
@@ -569,10 +600,13 @@ public static class Openings
             || ThresholdOn && b.Role == "frame" && b.Min.Z < 1e-9 && b.Max.Z <= _spec.Threshold + 1e-9 && b.Max.X - b.Min.X > W - _spec.Frame.Width * 2 - 1e-9;
 
         /// <summary>The exterior sill's section (Y, Z): from under the frame, out past the face, sloping down.</summary>
-        IReadOnlyList<(double, double)> OutsideSillProfile(JoinerySill sill, double past)
+        IReadOnlyList<(double, double)> OutsideSillProfile(JoinerySill sill, double past, bool cutter = false)
         {
             var yOut = YExt + Math.Max(0, sill.Projection) + past;
             var drop = (yOut - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180);
+            // What the wall gives up is the sill and the wedge over it, up to the opening's bottom: a sloped sill falls away from the
+            // frame, and the wall above its top face (report #76) would stand proud of it.
+            if (cutter && drop > 1e-9) return [(_yFE, 0), (yOut, 0), (yOut, -drop - sill.Thickness), (_yFE, -sill.Thickness)];
             return [(_yFE, 0), (yOut, -drop), (yOut, -drop - sill.Thickness), (_yFE, -sill.Thickness)];
         }
 
@@ -656,7 +690,7 @@ public static class Openings
             if (SillOutsideOn)
             {
                 var sill = _d.SillOutside!;
-                var box = Swept(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, OutsideSillProfile(sill, 0.05), "opening");
+                var box = Swept(-W / 2 - sill.Overhang, W / 2 + sill.Overhang, OutsideSillProfile(sill, 0.05, true), "opening");
                 if (box != null) yield return (Reach(sill.Thickness + (YExt + sill.Projection + 0.05 - _yFE) * Math.Tan(Math.Clamp(sill.Slope, 0, 45) * Math.PI / 180), 0), box);
             }
 
@@ -718,6 +752,17 @@ public static class Openings
 
     internal static Solid? Box(JoineryBox b, Func<double, double, double, Vec3> map)
     {
+        // A library profile's real outline along the member (decision 417), through the box from end to end.
+        if (b.Member is { } member)
+        {
+            Vec3 At(Vec2 q)
+            {
+                var (across, y) = member.On(b, q);
+                return member.Upright ? map(across, y, b.Min.Z) : map(b.Min.X, y, across);
+            }
+            var sweep = member.Upright ? map(0, 0, b.Max.Z) - map(0, 0, b.Min.Z) : map(b.Max.X, 0, 0) - map(b.Min.X, 0, 0);
+            return Prism.Extrude(member.Outline.Outer.Select(At).ToList(), member.Outline.Holes.Select(h => (IReadOnlyList<Vec3>)h.Select(At).ToList()).ToList(), sweep, b.Role);
+        }
         // An outline (an arch, a slanting bar): its points mapped at the near face, swept to the far one.
         if (b.Profile is { Count: >= 3 } outline)
         {
@@ -830,4 +875,13 @@ public static class JoinerySpecs
 {
     public static JoinerySpec Door => JoinerySpec.DefaultDoor("Door 900×2100");
     public static JoinerySpec Window => JoinerySpec.DefaultWindow("Window 1200×1500");
+
+    /// <summary>
+    /// A double door (decision 466): two leaves of 700, no mullion between them, a rebated meeting, the right leaf active (seen
+    /// from the side it is pushed open from, the leaf most used in Romania and the rest of Europe), flush bolts on the left one.
+    /// </summary>
+    public static JoinerySpec DoubleDoor => JoinerySpec.DefaultDoor("Double door 1500×2100") with
+    {
+        Mark = "DD", Width = 1.5, Columns = [1, 1], Panels = [new(0, 0, "swing-left"), new(1, 0, "swing-right")], Mullions = [0], Meeting = new JoineryMeeting(),
+    };
 }

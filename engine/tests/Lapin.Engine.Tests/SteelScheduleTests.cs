@@ -45,7 +45,7 @@ public class SteelScheduleTests
         Assert.All(rows, r => Assert.Equal("Hall 1", r.Hall));
         // The weights: each its body's, the per metre its section's.
         var col = Halls.Members(f.Model, f.Model.OfClass(Halls.Class).Single().Id)["f1:col:a"];
-        Assert.Equal(f.Session.Geometry(col.Id)!.Parts.Where(p => p.Key == "body").Sum(p => Measure.Volume(p.Solid)) * SteelModule.SteelDensity, Mark("C1").Each, 6);
+        Assert.Equal(f.Session.Geometry(col.Id)!.Parts.Where(p => p.Key == "body").Sum(p => Measure.Volume(p.Solid)) * Section.Catalogue["IPE 400"].RealRatio * SteelModule.SteelDensity, Mark("C1").Each, 6);
         Assert.Equal(Section.Catalogue["IPE 400"].Area * 7850, Mark("C1").KgPerM, 6);
         // The paint: the section's outline round, along its length.
         Assert.Equal(Polygon2.Perimeter(Section.Catalogue["IPE 400"].Outline()) * Mark("C1").Length * 8, Mark("C1").Paint, 1);

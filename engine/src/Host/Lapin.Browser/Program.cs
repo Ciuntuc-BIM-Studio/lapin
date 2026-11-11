@@ -107,7 +107,7 @@ sealed class BrowserSupportDesk : ISupportDesk
         return new() { ["endpoint"] = endpoint, ["send"] = body };
     }
 
-    public void Open(string? link) => throw new CommandException("In the browser the page opens its links.");
+    public void Open(string? link, System.Text.Json.Nodes.JsonObject p) => throw new CommandException("In the browser the page opens its links.");
 }
 
 /// <summary>

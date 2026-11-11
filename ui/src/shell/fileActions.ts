@@ -44,6 +44,7 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.exportMesh', label: 'Export 3D (glTF, USD, DAE)…', run: dialog('exportMesh') },
     { id: 'file.share', label: 'Share session…', shown: () => !engineInBrowser, run: dialog('share') },
     { id: 'file.join', label: 'Join session…', run: dialog('join') },
+    { id: 'file.preferences', label: 'Preferences…', keys: 'app.preferences', run: dialog('preferences') },
     { id: 'file.startScreen', label: 'Start screen', run: () => useUi.setState({ screen: 'start' }) },
     { id: 'file.leave', label: 'Leave session', run: () => leave() },
   ];

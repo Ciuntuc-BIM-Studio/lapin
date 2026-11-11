@@ -30,7 +30,7 @@ Certains éléments sont les parties d'un tout : les poteaux, traverses et panne
 
 ## Fichiers importés
 
-Chaque fichier IFC, Fragments ou maillage que vous importez arrive en un seul groupe au nom du fichier. Décochez **En un seul groupe** à l’import IFC pour apporter les éléments séparément. Un fichier lié n’est pas groupé : c’est déjà un lien, en lecture seule (voir [Import et export](import-export.md)). Les éléments lus d’un fichier IFC comme références restent où le fichier les a mis : un groupe de ces éléments peut être nettoyé et supprimé, pas déplacé.
+Chaque fichier IFC, Fragments ou maillage que vous importez arrive en un seul groupe au nom du fichier. Décochez **En un seul groupe** à l’import IFC pour apporter les éléments séparément. Un fichier lié n’est pas groupé : c’est déjà un lien, en lecture seule (voir [Import et export](import-export.md)). Les éléments lus d’un fichier comme références (d’un IFC, d’un maillage) se déplacent, pivotent, se reflètent et se copient avec leur groupe comme n’importe quel élément ; leur forme reste celle du fichier.
 
 ## Sélectionner une zone en 3D
 

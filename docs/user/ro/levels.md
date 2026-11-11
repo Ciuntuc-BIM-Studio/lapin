@@ -45,3 +45,7 @@ Copiile folosesc aceleași tipuri ca originalele și primesc GlobalId-uri IFC no
 ![Pereții și placa parterului copiate pe cele două niveluri de deasupra, în 3D](shots/copy-to-storeys-3d.webp)
 
 Ca să muți selecția pe alt nivel, alege **Modifică → Mută pe nivel**. Păstrează înălțimile elementelor peste nivelul nou sau le lasă unde sunt în spațiu.
+
+## Cota unui element
+
+Un element de pe un nivel stă la cota nivelului și la un decalaj față de ea. **Proprietăți → Amplasare** arată **Nivel**, **Decalaj față de nivel** și **Cotă** față de ±0,00: baza unui perete sau stâlp, fața de sus a unei plăci sau grinzi (decalajul grinzii e față de fața de sus a nivelului), fața de jos a unei fundații (nivelul de jos al tipului ei sub nivel, plus decalajul). Scrie oricare dintre cifre și cealaltă o urmează: elementul se mută în toate vederile, într-un singur pas de anulare. Ca să pui un element pe alt nivel, schimbă-i **Nivel**. Ce desenezi într-un plan stă pe nivelul acelui plan.

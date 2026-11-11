@@ -33,6 +33,7 @@ public sealed class FurnitureModule : ILapinModule
         r.Class(new(TypeClass, "Furniture type", [], "#b98b5a", Kind: "type"));
         r.Geometry(Class, (e, m, _) => Geometry(e, m));
         r.Catalog("kinds", FurnitureKinds.Catalog());
+        r.Catalog("kitchenLayouts", KitchenLayouts.Catalog());
         r.Service<IElementPlacement>(new FurniturePlacement());
         r.Service<IScheduleSource>(new FurnitureSchedule());
         r.Service<IScheduleSource>(new FurnitureByRoom());
@@ -41,7 +42,16 @@ public sealed class FurnitureModule : ILapinModule
         r.Command("createType", "New furniture type", (ctx, a) =>
         {
             var kind = FurnitureKinds.Find((string?)a["kind"]) ?? throw new CommandException($"A piece of furniture is one of {string.Join(", ", FurnitureKinds.All.Select(k => k.Key))}.");
-            return new JsonObject { ["id"] = CreateType(ctx, kind, (string?)a["name"], a["spec"] as JsonObject).Id };
+            // A kitchen of a layout starts from its preset, under what the spec gives.
+            var given = a["spec"] as JsonObject;
+            if (kind.Key == "kitchen" && (string?)a["layout"] is { } layout)
+            {
+                if (!KitchenLayouts.Keys.Contains(layout)) throw new CommandException($"A kitchen's layout is one of {string.Join(", ", KitchenLayouts.Keys)}.");
+                var preset = KitchenLayouts.Preset(layout);
+                if (given != null) foreach (var (k2, v2) in given) preset[k2] = v2?.DeepClone();
+                given = preset;
+            }
+            return new JsonObject { ["id"] = CreateType(ctx, kind, (string?)a["name"], given).Id };
         });
 
         // A type changed: {id, name?, spec?} (values merged; null: the kind's default again). Its pieces follow.
@@ -98,7 +108,8 @@ public sealed class FurnitureModule : ILapinModule
             if (spec.Kind.Key != "kitchen") throw new CommandException("A kitchen is drawn with a kitchen type.");
             var (p1, p2) = (Args.Point(a, "x1", "y1"), Args.Point(a, "x2", "y2"));
             if ((p2 - p1).Length < 0.6) throw new CommandException("A kitchen is at least 600 mm long.");
-            var (centre, rotation, length) = AlongWall(ctx.Model, storey.Id, p1, p2, spec.D);
+            var (centre, rotation, length) = AlongWall(ctx.Model, storey.Id, p1, p2, KitchenLayouts.Depth(spec));
+            if (KitchenLayouts.Of(spec) is "l-shaped" or "peninsula" or "u-shaped" or "galley") centre = TuckInto(ctx.Model, storey.Id, spec, centre, rotation, Math.Round(Math.Min(12, length), 4));
             var id = Add(ctx, storey, type, centre, rotation, 0, Math.Round(Math.Min(12, length), 4));
             return new JsonObject { ["id"] = id };
         });
@@ -171,7 +182,7 @@ public sealed class FurnitureModule : ILapinModule
                     ["role"] = f.Role, ["color"] = colors.GetValueOrDefault(f.Role, "#999999"),
                     ["x0"] = R(handed ? -f.X1 : f.X0), ["x1"] = R(handed ? -f.X0 : f.X1), ["z0"] = R(f.Z0), ["z1"] = R(f.Z1),
                 })]),
-                ["width"] = FurnitureBodies.Footprint(s, Json.Number(a["length"])).W, ["depth"] = s.D, ["height"] = s.H,
+                ["width"] = FurnitureBodies.Footprint(s, Json.Number(a["length"])).W, ["depth"] = FurnitureBodies.Footprint(s, Json.Number(a["length"])).D, ["height"] = s.H,
             };
         });
     }
@@ -194,7 +205,7 @@ public sealed class FurnitureModule : ILapinModule
     static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
 
     /// <summary>A type's name from its kind and size: Sofa 2200 × 950, Bed 1600 × 2050.</summary>
-    static string DefaultName(Spec s) => s.Kind.Key == "kitchen" ? $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
+    static string DefaultName(Spec s) => s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
 
     static void EnsureMaterials(IEdit edit, JsonObject spec)
     {
@@ -390,6 +401,33 @@ public sealed class FurnitureModule : ILapinModule
         }
         var right = new Vec2(dir.Y, -dir.X);
         return (mid + right * (depth / 2), Facing(right), (p2 - p1).Length);
+    }
+
+    /// <summary>
+    /// A kitchen with legs, backed onto its wall, slid along it until a leg's back is on the wall across the end it reaches
+    /// (an L or a peninsula into the corner it is drawn near; a U or a galley between two walls) when one stands within
+    /// 500 mm of that end. Whatever sits further is left as drawn.
+    /// </summary>
+    static Vec2 TuckInto(IModelView m, string storeyId, Spec spec, Vec2 centre, double rotation, double length)
+    {
+        var layout = KitchenLayouts.Of(spec);
+        var depth = KitchenLayouts.Depth(spec);
+        var rad = rotation * Math.PI / 180;
+        Vec2 x = new(Math.Cos(rad), Math.Sin(rad)), y = new(-Math.Sin(rad), Math.Cos(rad));
+        bool left = layout is "u-shaped" or "galley" or "l-shaped" or "peninsula" && spec.Str("corner") != "right";
+        bool right = layout is "u-shaped" or "galley" or "l-shaped" or "peninsula" && spec.Str("corner") == "right";
+        var shift = 0.0;
+        foreach (var w in WallsOn(m, storeyId))
+        {
+            // The wall in the piece's frame: it must run across the piece (along its y) and cover its depth.
+            if (Math.Abs(Vec2.Dot(w.U, x)) > Math.Sin(12 * Math.PI / 180)) continue;
+            var local = w.Corners.Select(q => (X: Vec2.Dot(q - centre, x), Y: Vec2.Dot(q - centre, y))).ToList();
+            if (Math.Min(local.Max(q => q.Y), depth / 2) - Math.Max(local.Min(q => q.Y), -depth / 2) < 0.2) continue;
+            var (wx0, wx1) = (local.Min(q => q.X), local.Max(q => q.X));
+            if (left && Math.Abs(wx1 + length / 2) <= 0.5 && Math.Abs(wx1 + length / 2) > 1e-4) shift = wx1 + length / 2;
+            else if (right && Math.Abs(wx0 - length / 2) <= 0.5 && Math.Abs(wx0 - length / 2) > 1e-4) shift = wx0 - length / 2;
+        }
+        return centre + x * shift;
     }
 
     // ---- Chairs round a table ----

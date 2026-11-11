@@ -43,6 +43,7 @@ function appCommands(): CommandDef[] {
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },
     { id: 'app.interface', label: 'Interface…', category: general, defaults: ['Ctrl+.'], run: dialog('interface') },
+    { id: 'app.preferences', label: 'Preferences…', category: general, defaults: ['Ctrl+,'], run: dialog('preferences') },
     { id: 'app.quickTools', label: 'Quick tools…', category: general, defaults: [], run: dialog('quickTools') },
     // The workspaces (decision 243), each a command of its own: Commands… → "Workspace: MEP".
     ...WORKSPACE_IDS.map((w) => ({ id: `app.workspace.${w}`, label: `Workspace: ${WORKSPACE_LABELS[w]}`, category: general, defaults: [], run: () => chooseWorkspace(w) })),
@@ -77,7 +78,7 @@ const SAME: Record<string, string> = {
   'modify.move': 'MOVE', 'modify.copy': 'COPY', 'modify.rotate': 'ROTATE', 'modify.mirror': 'MIRROR', 'modify.delete': 'ERASE', 'modify.match': 'MATCHTYPE',
   'cad.line': 'LINE', 'cad.pline': 'PLINE', 'cad.rect': 'RECTANGLE', 'cad.circle': 'CIRCLE', 'cad.arc': 'ARC', 'cad.move': 'MOVE', 'cad.copy': 'COPY',
   'cad.rotate': 'ROTATE', 'cad.mirror': 'MIRROR', 'cad.scale': 'SCALE', 'cad.erase': 'ERASE', 'cad.offset': 'OFFSET', 'cad.trim': 'TRIM', 'cad.extend': 'EXTEND',
-  'cad.fillet': 'FILLET', 'cad.chamfer': 'CHAMFER', 'cad.hatch': 'HATCH', 'cad.tag': 'TAG', 'drafting.dimension': 'DIMALIGNED', 'architecture.stair': 'STAIR', 'architecture.ramp': 'RAMP',
+  'cad.fillet': 'FILLET', 'cad.chamfer': 'CHAMFER', 'cad.explode': 'EXPLODE', 'cad.hatch': 'HATCH', 'cad.tag': 'TAG', 'drafting.dimension': 'DIMALIGNED', 'architecture.stair': 'STAIR', 'architecture.ramp': 'RAMP',
 };
 
 let cached: CommandDef[] | null = null;

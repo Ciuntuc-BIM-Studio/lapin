@@ -10,3 +10,13 @@ describe('measure', () => {
     expect(measured([{ x: 0, y: 0 }, { x: 3, y: 4 }]).area).toBeNull();
   });
 });
+
+describe('measure in 3D', () => {
+  it('takes the true length of a leg between points at different heights', async () => {
+    const { measured3d } = await import('./measure');
+    const r = measured3d([{ x: 0, y: 0 }, { x: 3, y: 0 }], [0, 4]);
+    expect(r.legs[0]).toBe(5);
+    expect(r.rise).toBe(4);
+    expect(measured3d([{ x: 0, y: 0 }, { x: 3, y: 4 }, { x: 3, y: 4 }], [0, 0, 12]).total).toBe(17);
+  });
+});

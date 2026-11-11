@@ -7,6 +7,8 @@
  * swapped by a drag, a slot's right-click menu; floating, each shows its name.
  */
 
+import { useShallow } from 'zustand/react/shallow';
+import { usePrefs } from '../app/prefs';
 import { useUi } from '../app/store';
 import { useInterface } from '../app/interface';
 import { hint } from '../app/commands';
@@ -41,13 +43,14 @@ export function useHudFacts() {
   useUi((s) => s.storeyId);
   useSession((s) => s.nodes);
   useStandards((s) => s.units);
+  const prefs = usePrefs(useShallow((p) => ({ gridSnap: p.gridSnap, gridMode: p.gridMode, gridStep: p.gridStep })));
   const storey = activeStorey();
   const active = findTool(tool);
   return {
     mode: active ? active.label.toUpperCase() : 'SELECT',
     level: (storey?.name ?? '—').toUpperCase(), elevation: level(num(storey ?? undefined, 'elevation')),
     view: view === 'plan' ? 'PLAN' : view === 'drawing' ? 'DRAWING' : view === 'sheet' ? 'SHEET' : view === 'schedule' ? 'SCHEDULE' : view === 'gantt' ? 'GANTT' : view === 'estimate' ? 'ESTIMATE' : view === 'costTime' ? 'S-CURVE' : '3D · SHADED',
-    snap: `POINTS · GRID ${lengthText(0.05)}`,
+    snap: prefs.gridSnap ? `POINTS · GRID ${prefs.gridMode === 'fixed' ? lengthText(prefs.gridStep) : lengthText(0.05)}` : 'POINTS',
   };
 }
 

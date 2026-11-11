@@ -629,38 +629,76 @@ const shell: ToolDef = {
   }),
 };
 
+/**
+ * The selection split: the Studio solids (which take a step of their own) and everything else Move moves (a reference, an
+ * imported mesh's furniture, a group, a wall), which an array copies and Move 3D moves as elements (decision 448).
+ */
+const solidsAndOthers = (): { solids: string[]; others: string[] } => {
+  const nodes = useSession.getState().nodes;
+  const selected = useUi.getState().selected;
+  return {
+    solids: selected.filter((id) => isSolid(nodes.get(id))),
+    others: selected.filter((id) => { const n = nodes.get(id); return !!n && !isSolid(n) && (!!n.storeyId || n.type === 'IfcGroup') && n.props.predefinedType !== 'DRAFT'; }),
+  };
+};
+
 const array: ToolDef = {
   id: 'studio.array', label: 'Array', icon: Grid3x3,
-  run: onSolids('Array', async (ids) => {
-    const r = await ask('Array in a row', [numberField('count', 'Copies (with the first)', 3), lengthField('dx', 'Step x', 1), lengthField('dy', 'Step y', 0), lengthField('dz', 'Step z', 0)]);
-    if (r) await execute('studio.addFeature', { ids, feature: { op: 'array', count: r.count, step: [r.dx, r.dy, r.dz] } });
-  }),
+  run: () => {
+    const { solids, others } = solidsAndOthers();
+    if (!solids.length && !others.length) { notify('Select what to array first, then Array.'); return; }
+    void (async () => {
+      const r = await ask('Array in a row', [numberField('count', 'Copies (with the first)', 3), lengthField('dx', 'Step x', 1), lengthField('dy', 'Step y', 0), lengthField('dz', 'Step z', 0)]);
+      if (!r) return;
+      if (solids.length) await execute('studio.addFeature', { ids: solids, feature: { op: 'array', count: r.count, step: [r.dx, r.dy, r.dz] } });
+      if (others.length) await execute('element.array', { ids: others, count: r.count, step: [r.dx, r.dy, r.dz] });
+    })();
+  },
 };
 
 const polarArray: ToolDef = {
   id: 'studio.polarArray', label: 'Polar array', icon: RotateCw,
-  run: onSolids('Polar array', async (ids) => {
-    const r = await ask('Array round an upright', [numberField('count', 'Copies (with the first)', 6), numberField('angle', 'Angle filled (°)', 360), lengthField('cx', 'Centre x', 0), lengthField('cy', 'Centre y', 0)]);
-    if (r) await execute('studio.addFeature', { ids, feature: { op: 'array', kind: 'polar', count: r.count, angle: r.angle, centre: [r.cx, r.cy, 0], axis: [0, 0, 1] } });
-  }),
+  run: () => {
+    const { solids, others } = solidsAndOthers();
+    if (!solids.length && !others.length) { notify('Select what to array first, then Polar array.'); return; }
+    void (async () => {
+      const r = await ask('Array round an upright', [numberField('count', 'Copies (with the first)', 6), numberField('angle', 'Angle filled (°)', 360), lengthField('cx', 'Centre x', 0), lengthField('cy', 'Centre y', 0)]);
+      if (!r) return;
+      if (solids.length) await execute('studio.addFeature', { ids: solids, feature: { op: 'array', kind: 'polar', count: r.count, angle: r.angle, centre: [r.cx, r.cy, 0], axis: [0, 0, 1] } });
+      if (others.length) await execute('element.array', { ids: others, kind: 'polar', count: r.count, angle: r.angle, center: [r.cx, r.cy] });
+    })();
+  },
 };
 
-/** Move 3D: arrows along x, y and z on the selected solids in the 3D view, one dragged (or a distance typed) moves them as a step; elsewhere the three distances asked. */
+/**
+ * Move 3D: arrows along x, y and z on the selection in the 3D view, one dragged (or a distance typed) moves it as a step;
+ * elsewhere the three distances asked. A Studio solid takes a move step; anything else is moved as Move moves it, its
+ * height by the z part.
+ */
 const move3d: ToolDef = {
   id: 'studio.move3d', label: 'Move 3D', icon: Move3d,
-  run: onSolids('Move 3D', async (ids) => {
-    const box = useUi.getState().view === '3d' ? useCamera.getState().api?.boxOf?.(ids) : null;
-    if (box) {
-      const at = { x: (box.min.x + box.max.x) / 2, y: (box.min.y + box.max.y) / 2, z: (box.min.z + box.max.z) / 2 };
-      beginAxisDrag({
-        title: 'Move 3D', at, axes: XYZ, preview: { kind: 'box', min: box.min, max: box.max },
-        commit: async (d, axis) => { await execute('studio.addFeature', { ids, feature: { op: 'move', by: [0, 1, 2].map((k) => (k === axis ? d : 0)) } }); },
-      });
-      return;
-    }
-    const r = await ask('Move in 3D', [lengthField('dx', 'x', 0), lengthField('dy', 'y', 0), lengthField('dz', 'z (up)', 1)]);
-    if (r) await execute('studio.addFeature', { ids, feature: { op: 'move', by: [r.dx, r.dy, r.dz] } });
-  }),
+  run: () => {
+    const { solids, others } = solidsAndOthers();
+    const ids = [...solids, ...others];
+    if (!ids.length) { notify('Select what to move first, then Move 3D.'); return; }
+    const move = async (by: number[]) => {
+      if (solids.length) await execute('studio.addFeature', { ids: solids, feature: { op: 'move', by } });
+      if (others.length) await execute('element.transform', { ids: others, op: 'move', by: [by[0], by[1]], up: by[2] });
+    };
+    void (async () => {
+      const box = useUi.getState().view === '3d' ? useCamera.getState().api?.boxOf?.(ids) : null;
+      if (box) {
+        const at = { x: (box.min.x + box.max.x) / 2, y: (box.min.y + box.max.y) / 2, z: (box.min.z + box.max.z) / 2 };
+        beginAxisDrag({
+          title: 'Move 3D', at, axes: XYZ, preview: { kind: 'box', min: box.min, max: box.max },
+          commit: async (d, axis) => { await move([0, 1, 2].map((k) => (k === axis ? d : 0))); },
+        });
+        return;
+      }
+      const r = await ask('Move in 3D', [lengthField('dx', 'x', 0), lengthField('dy', 'y', 0), lengthField('dz', 'z (up)', 1)]);
+      if (r) await move([Number(r.dx), Number(r.dy), Number(r.dz)]);
+    })();
+  },
 };
 
 /** The selected elements (walls, references, imported meshes…) made into Studio solids that take steps. */

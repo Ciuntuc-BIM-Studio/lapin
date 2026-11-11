@@ -3,7 +3,7 @@
  * (lapin.ciuntucbimstudio.ro/docs, docs/user), report an issue (it
  * reaches Ciuntuc BIM Studio with the app's last errors attached; a reply
  * only when asked for, read in Messages: replies.ts), the
- * community on Skool, the site, updates (the desktop app), About Lapin
+ * forum (and a new topic on it), the community on Skool, the site, updates (the desktop app), About Lapin
  * (open source, MIT, helpware), the version.
  */
 
@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { notify } from '../app/store';
 import { useSession } from '../engine/session';
-import { RECENT, openLink, reportParams, sendReport } from './support';
+import { RECENT, openForumTopic, openLink, reportParams, sendReport } from './support';
 import { contactFor, useReplies } from './replies';
 import { MessagesDialog } from './MessagesDialog';
 import { useDialogFocus } from './dialogFocus';
@@ -141,6 +141,8 @@ export function HelpMenu() {
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('guide'); }}>User guide</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); setReport(true); }}>Report an issue…</button>
           {hasKey && <button type="button" role="menuitem" onClick={() => { setOpen(false); setMessages(true); }}><span>Messages…</span>{unread > 0 && <span className="badge" data-no-i18n>{unread}</span>}</button>}
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('forum'); }}>Forum</button>
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); openForumTopic(); }}>Ask on the forum…</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('community'); }}>Community (Skool)</button>
           <button type="button" role="menuitem" onClick={() => { setOpen(false); openLink('site'); }}>ciuntucbimstudio.ro</button>
           {isDesktop() && <button type="button" role="menuitem" onClick={() => { setOpen(false); void checkForUpdates(true); }}>Check for updates…</button>}

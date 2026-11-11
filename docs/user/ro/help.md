@@ -10,7 +10,7 @@ Apasă **Ask Me**, iepurașul din dreapta sus, sau tasta <kbd>F1</kbd> oriunde. 
 
 ![Ask Me răspunde cum copiezi un perete](shots/ask-me.webp)
 
-Dacă Ask Me nu are răspuns, **Trimite întrebarea** ne-o trimite nouă. Îi răspundem, iar răspunsul se adaugă în Ask Me pentru toți.
+Dacă Ask Me nu are răspuns, **Trimite întrebarea** ne-o trimite nouă. Îi răspundem, iar răspunsul se adaugă în Ask Me pentru toți. **Întreabă pe forum** întreabă în schimb utilizatorii și fanii Lapin: deschide un subiect nou pe forum, cu întrebarea ta ca titlu.
 
 ## Meniul de ajutor
 
@@ -22,7 +22,9 @@ Butonul **?** de lângă Ask Me deschide meniul de ajutor:
 - **Ghidul utilizatorului** deschide acest ghid, în limba interfeței.
 - **Raportează o problemă…** ne spune ce n-a mers, sau ne trimite o idee ori o întrebare. Spune ce s-a întâmplat și ce te așteptai, și adaugă o captură de ecran dacă ajută. Versiunea aplicației și ultimele ei mesaje de eroare pleacă împreună cu raportul.
 - **Mesaje…** arată răspunsurile la rapoartele tale. Apare după ce ai cerut prima dată un răspuns.
-- **Comunitatea (Skool)** e locul unde vorbesc utilizatorii și echipa.
+- **Forum** deschide forumul Lapin (forum.lapinbim.com), unde utilizatorii și fanii vorbesc, își arată lucrările și se ajută între ei. Forumul e în engleză, dar poți scrie în limba ta.
+- **Întreabă pe forum…** deschide un subiect nou pe forum, în categoria Lapin, cu versiunea aplicației trecută sub textul tău. Nimic altceva despre calculatorul sau proiectul tău nu pleacă odată cu el. Te autentifici pe forum și publici subiectul acolo.
+- **Comunitatea (Skool)** e locul cursurilor și al celorlalte materiale ale echipei.
 - **Caută actualizări…** există doar în aplicația desktop.
 - **Despre Lapin…** arată versiunea, licența, un link spre codul sursă și ce înseamnă helpware.
 

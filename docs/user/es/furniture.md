@@ -1,7 +1,7 @@
 ---
 title: Mobiliario
 order: 47
-summary: Sofás, sofás rinconera, sillones, sillas, camas, armarios, cómodas, librerías, aparadores, mesas, escritorios y cocinas lineales, a partir de tipos paramétricos, apoyados en los muros con un clic.
+summary: Sofás, sofás rinconera, sillones, sillas, camas, armarios, cómodas, librerías, aparadores, mesas, escritorios y cocinas en seis disposiciones, a partir de tipos paramétricos, apoyados en los muros con un clic.
 ---
 
 ## Colocar mobiliario
@@ -42,6 +42,18 @@ Los alzados y las secciones dibujan los cuerpos, con los sombreados de sus mater
 - tiene encimera, fregadero y placa (su posición a lo largo de la cocina se ajusta en el tipo), muebles altos encima y una columna para el frigorífico en un extremo.
 
 La **Longitud** de una cocina sigue siendo editable en sus propiedades; los muebles se reparten de nuevo.
+
+### Disposiciones de la cocina
+
+Un tipo de cocina tiene una **Layout** (disposición): **One wall** (la línea recta), **Galley** (dos líneas paralelas con un pasillo entre ellas), **L-shaped**, **U-shaped**, **Island** (una línea en el muro del fondo y una isla separada con su pasillo) o **Peninsula** (una L con una línea que sale de su brazo, con la encimera volada para taburetes). Al elegir una, el tipo parte de las medidas de la disposición, y cada una sigue editable junto a la vista previa: la longitud de los brazos desde el muro del fondo, el pasillo entre líneas, la longitud de la línea opuesta, la longitud, el fondo y el lugar de la isla, la longitud y el voladizo de la península y, en una L o una península, el rincón a la izquierda o a la derecha.
+
+![Las seis disposiciones en planta: en una pared, en paralelo, en L, en U, con isla y con península](shots/kitchen-layouts.webp)
+
+**Sink on** y **Hob on** los ponen en la línea principal o en la otra parte (el brazo, la línea opuesta, la isla, la península), **Sink at** y **Hob at** dicen dónde a lo largo, y la **Tall unit (fridge)** queda en un extremo libre. Los muebles de rincón son ciegos; los muebles altos solo van en las líneas contra un muro, no en una isla ni en una península.
+
+![Un tipo de cocina: en L](shots/kitchen-layout-types.webp)
+
+**Kitchen** (<kbd>KT</kbd>) dibuja cualquier disposición con dos puntos a lo largo del muro donde está la línea principal: la línea es su longitud, su fondo sobre la cara del muro, y una L, una península, una U o una cocina en paralelo se desliza al rincón o entre los muros junto a los que se dibuja. **Flip** da a una L o a una península el rincón al otro lado. La tabla de mobiliario nombra la disposición y da el fondo de la huella. En IFC sigue siendo un IfcFurniture de un tipo Kitchen definido por el usuario.
 
 ## Las propiedades de un mueble
 

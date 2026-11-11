@@ -10,7 +10,7 @@ Fai clic su **Chiedimi**, il coniglio in alto a destra, oppure premi <kbd>F1</kb
 
 ![Chiedimi che spiega come copiare un muro](shots/ask-me.webp)
 
-Se Chiedimi non ha una risposta, **Invia la domanda** la invia a noi. Noi rispondiamo, e la risposta viene aggiunta a Chiedimi per tutti.
+Se Chiedimi non ha una risposta, **Invia la domanda** la invia a noi. Noi rispondiamo, e la risposta viene aggiunta a Chiedimi per tutti. **Chiedi sul forum** chiede invece agli utenti e ai fan di Lapin: apre un nuovo argomento sul forum con la tua domanda come titolo.
 
 ## Il menu di aiuto
 
@@ -22,7 +22,9 @@ Il pulsante **?** accanto a Chiedimi apre il menu di aiuto:
 - **Guida utente** apre questa guida, nella lingua dell’interfaccia.
 - **Segnala un problema…** ci dice cosa non ha funzionato, oppure ci invia un’idea o una domanda. Racconta cosa è successo e cosa ti aspettavi, e aggiungi uno screenshot se aiuta. La versione dell’applicazione e i suoi ultimi messaggi di errore accompagnano la segnalazione.
 - **Messaggi…** mostra le risposte alle tue segnalazioni. Compare dopo che hai chiesto una risposta.
-- **Comunità (Skool)** è il luogo in cui gli utenti e il team si confrontano.
+- **Forum** apre il forum di Lapin (forum.lapinbim.com), dove utenti e fan parlano, mostrano il proprio lavoro e si aiutano a vicenda. Il forum è in inglese, ma puoi scrivere nella tua lingua.
+- **Chiedi sul forum…** apre un nuovo argomento sul forum, nella categoria di Lapin, con la versione dell’applicazione aggiunta sotto il tuo testo. Nient’altro sul tuo computer o sul tuo progetto viene inviato. Accedi al forum e pubblichi lì l’argomento.
+- **Comunità (Skool)** è il luogo dei corsi e degli altri materiali del team.
 - **Verifica aggiornamenti…** esiste solo nell’applicazione desktop.
 - **Informazioni su Lapin…** mostra la versione, la licenza, un collegamento al codice sorgente e il significato di helpware.
 
