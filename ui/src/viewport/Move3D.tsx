@@ -197,6 +197,8 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
     if (active || !dragOn) return;
     let press: { x: number; y: number; id: string; pointer: number; held: boolean } | null = null;
     let timer = 0;
+    /** The cancel the hold sends the orbit, which must not end the press it was sent for. */
+    let cancelling = false;
     const glass = () => canvas.current?.querySelector('canvas') ?? null;
     const end = () => {
       clearTimeout(timer);
@@ -211,7 +213,9 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
       if (!c) return;
       c.style.cursor = 'move';
       // The orbit began with the press (the controls' and the orbit about the selection's): it ends here, unmoved.
+      cancelling = true;
       try { c.dispatchEvent(new PointerEvent('pointercancel', { pointerId: press.pointer, bubbles: true })); } catch { /* no PointerEvent: nothing to end */ }
+      finally { cancelling = false; }
     };
     const onDown = (e: PointerEvent) => {
       end();
@@ -239,7 +243,7 @@ export function Move3D({ camera, canvas, scene, invalidate }: ViewRefs & { inval
       beginMove3d(useUi.getState().selected, false, at.point, true);
     };
     // Let go without moving, held or not: a click, which the view picks as it picks any.
-    const onUp = (e: PointerEvent) => { if (press && e.pointerId === press.pointer) end(); };
+    const onUp = (e: PointerEvent) => { if (!cancelling && press && e.pointerId === press.pointer) end(); };
     window.addEventListener('pointerdown', onDown, true);
     window.addEventListener('pointermove', onMove, true);
     window.addEventListener('pointerup', onUp, true);
