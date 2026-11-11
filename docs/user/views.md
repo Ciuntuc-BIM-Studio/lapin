@@ -44,7 +44,9 @@ Every plan marks each elevation in front of the building, clear of the sections'
 
 **How far an elevation reaches.** Select the elevation in a plan: its line has a grip at each end. Drag one along the line to stretch or shorten the elevation on that side; the elevation then draws only what lies between the two ends, and its sheets and PDF follow. Each drag is one undo step. Until you drag them, the line spans the whole building and grows with it.
 
-**Moving an elevation's marker.** Drag the circle's grip, or select the elevation and use **Move**: the marker goes where you put it, further out from the building or along its line, in one undo step. A Lapin elevation always looks at the whole building from outside, so moving its marker never changes what it shows (in Revit the marker's line is also where the elevation starts seeing; here its reach has its own grips, and a cut inside the building is a section). An elevation looks north, south, east or west, so it is not turned or mirrored. A pinned elevation or section (**Modify → Pin**) is not moved until it is unpinned.
+**Moving an elevation's marker.** Drag the circle's grip, or select the elevation and use **Move**: the marker goes where you put it, further out from the building or along its line, in one undo step. As in Revit, the marker's line is where the elevation starts seeing. Left outside the building, where a new elevation's marker stands, it sees the whole building. Moved into the building, it shows only what lies beyond its line, and what the line cuts is drawn cut, with the materials' cut hatches, as in a section: an interior elevation. Its reach along the line keeps its own grips. An elevation looks north, south, east or west, so it is not turned or mirrored. A pinned elevation or section (**Modify → Pin**) is not moved until it is unpinned.
+
+![The south elevation's marker moved into the house: the elevation from there, the inner wall cut](shots/elevation-clipped.webp)
 
 ![An elevation's marker in plan, moved out from the house, its line shortened, a section's head moved off its end](shots/elevation-marker.webp)
 

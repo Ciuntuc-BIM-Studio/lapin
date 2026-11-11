@@ -8,7 +8,7 @@ namespace Lapin.Engine.Tests;
 
 /// <summary>
 /// Markers moved in plans (decision 460, the tester's lot B and the user's answer): an elevation's marker anywhere (its
-/// line and symbol, never what the elevation sees: a Lapin elevation looks at the building whole from outside), a
+/// line and symbol; left outside the building, the elevation sees the same: ElevationClipTests for inside), a
 /// section by the Move tool as Revit moves one (its cut goes with it), a section's head moved off its line's end without
 /// changing the cut. One undo step each; a pinned view refuses.
 /// </summary>
@@ -60,12 +60,13 @@ public sealed class ViewMarkerMoveTests
         Assert.Equal(before[0].Y - 2, after[0].Y, 6);
         Assert.Equal(before[0].X, after[0].X, 6);
         Assert.Equal(before[1].X, after[1].X, 6);
-        var shift = (JsonArray)f.Model.Get(south)!.Attrs["markerShift"]!;
-        Assert.Equal((1.0, 2.0), ((double)shift[0]!, (double)shift[1]!));
+        // Kept as where it stands now (decision 460): its symbol 1 m along, its line 2 m further out.
+        Assert.Equal(1, f.Model.Get(south)!.Num("markerAlong"), 6);
+        Assert.Equal(before[0].Y - 2, f.Model.Get(south)!.Num("markerDepth"), 6);
         Assert.Equal(seen, Bounds(Drawing(f, south)));
         // One undo step.
         f.Session.Undo();
-        Assert.Null(f.Model.Get(south)!.Attrs["markerShift"]);
+        Assert.Null(f.Model.Get(south)!.Attrs["markerDepth"]);
         // An elevation looks north, south, east or west: it is not turned or mirrored, and pinned it stays.
         Assert.Throws<CommandException>(() => f.Run("element.transform", new JsonObject { ["ids"] = new JsonArray(south), ["op"] = "rotate", ["center"] = new JsonArray(0, 0), ["angle"] = 30 }));
         f.Run("element.pin", new JsonObject { ["ids"] = new JsonArray(south) });

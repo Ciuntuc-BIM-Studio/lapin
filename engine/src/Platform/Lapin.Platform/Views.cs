@@ -103,6 +103,15 @@ public static class Views
                     bounds = (new Vec3(-1, -1, 0), new Vec3(1, 1, 1));
                 }
                 var spec = ViewSpec.Elevation(LookOf(view), bounds, hidden, view.NumOrNull("originX"));
+                // Its marker moved into the building: it starts seeing at the marker's line and cuts there, as Revit's (decision 460).
+                var look = LookOf(view);
+                var front = Front(bounds, look);
+                if (ElevationMarkers.Clip(view, front) is { } clip)
+                {
+                    var f = spec.Frame;
+                    var at = f.Origin + f.Dir * (clip - (f.Origin.X * look.X + f.Origin.Y * look.Y));
+                    spec = spec with { Frame = new ViewFrame(at, f.Right, f.Up, f.Dir), Cut = true };
+                }
                 // As far as its marker's line reaches (decision 456): its extent along its right, from the model's origin.
                 if (ElevationMarkers.Extent(view) is var (lo, hi))
                 {
@@ -133,6 +142,14 @@ public static class Views
             default: return null;
         }
     }
+
+    /// <summary>The nearest the bounds come along a plan direction (the front an elevation sees).</summary>
+    static double Front((Vec3 Min, Vec3 Max) b, Vec2 look) =>
+        new[] { b.Min.X, b.Max.X }.SelectMany(x => new[] { b.Min.Y, b.Max.Y }.Select(y => x * look.X + y * look.Y)).Min();
+
+    /// <summary>The nearest the model an elevation sees comes along its look (null: nothing to see).</summary>
+    internal static double? ModelFront(IQueryContext q, Entity view) =>
+        view.Str("kind") == "elevation" && Bounds(Gather(q, view).Parts) is { } b ? Front(b, LookOf(view)) : null;
 
     /// <summary>The plan direction an elevation looks along.</summary>
     static Vec2 LookOf(Entity view) => view.Str("direction") switch { "south" => new(0, 1), "east" => new(-1, 0), "west" => new(1, 0), _ => new(0, -1) };
@@ -645,7 +662,8 @@ public static class Views
         if (generated == null || spec == null) return new Rendered([], [], null, scale, view.Str("kind") ?? "plan", problem, []);
         // The view's line edits (Linework) over its generated lines.
         var (drawing, lineworkOrphans) = Linework.Apply(generated, ViewLinework.Edits(view));
-        var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" ? "elevation" : "section";
+        // An elevation cut by its marker's line (decision 460) hatches its cut as a section does.
+        var kind = spec.Kind == "plan" ? "plan" : spec.Kind == "elevation" && !spec.Cut ? "elevation" : "section";
         var resolved = new Dictionary<string, ResolvedMaterial?>();
         ResolvedMaterial? Resolved(string? id) => id == null ? null
             // A material named rather than kept (a track's ballast, its rails): its look guessed from the name.

@@ -39,29 +39,29 @@ public static class SectionHeads
 /// Sections and elevations carried by element.transform in plan (decision 460): a section as Revit moves one, its line
 /// and so its cut with it (turned and mirrored too, its heads' offsets turned with it, a mirrored one looking the mirrored
 /// way); a section across or along an element follows the element and is not moved on its own. An elevation's marker is
-/// moved, along its line and out from the building, never what the elevation sees (<see cref="ElevationMarkers.Moved"/>);
+/// moved, along its line and its look (<see cref="ElevationMarkers.Moved"/>; into the building, the elevation starts seeing at its line, decision 460);
 /// it looks north, south, east or west, so it is not turned or mirrored.
 /// </summary>
 public sealed class ViewMarkerPlacement : IElementPlacement
 {
     public bool Handles(Entity e) => e.Class == Views.Class && e.Str("kind") is "section" or "elevation";
 
-    public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving) => ctx.Replace(Carried(e, t));
+    public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving) => ctx.Replace(Carried(ctx, e, t));
 
     public string? Copy(ICommandContext ctx, Entity e, Placement2D t)
     {
-        var moved = Carried(e, t);
+        var moved = Carried(ctx, e, t);
         var copy = new Entity(ctx.NewId(), e.Class, Views.CopyName(ctx.Model, e.Name, e.Class), moved.CloneAttrs(), e.PredefinedType);
         ctx.Add(copy);
         return copy.Id;
     }
 
-    static Entity Carried(Entity e, Placement2D t)
+    static Entity Carried(ICommandContext ctx, Entity e, Placement2D t)
     {
         if (e.Str("kind") == "elevation")
         {
             if (Math.Abs(t.Turn) > 1e-9 || t.Mirrored) throw new CommandException("An elevation looks north, south, east or west: its marker is moved, not turned or mirrored.");
-            return ElevationMarkers.Moved(e, t.Point(default));
+            return ElevationMarkers.Moved(ctx.Query, e, t.Point(default));
         }
         if (AcrossSections.Is(e) || e.Str("along") is { Length: > 0 })
             throw new CommandException($"„{e.Name}” follows its element: move the element, or stop following it first.");

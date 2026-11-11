@@ -44,7 +44,9 @@ Hver plan markerer hver facade foran bygningen, fri af snittenes hoveder dér: e
 
 **Hvor langt en facade rækker.** Vælg facaden i en plan: dens linje har et greb i hver ende. Træk et langs linjen for at strække eller forkorte facaden på den side; facaden tegner så kun det, der ligger mellem de to ender, og dens tegningsark og PDF følger med. Hvert træk er ét fortryd-trin. Indtil du trækker dem, spænder linjen over hele bygningen og vokser med den.
 
-**Flytte en facades markør.** Træk cirklens greb, eller vælg facaden og brug **Flyt**: markøren går, hvor du sætter den, længere væk fra bygningen eller langs dens linje, i ét fortryd-trin. En Lapin-facade ser altid på hele bygningen udefra, så en flytning af dens markør ændrer aldrig det, den viser (i Revit er markørens linje også der, hvor facaden begynder at se; her har dens rækkevidde sine egne greb, og et snit inde i bygningen er et snit). En facade ser mod nord, syd, øst eller vest, så den drejes eller spejles ikke. En fastgjort facade eller et fastgjort snit (**Redigér → Fastgør**) flyttes ikke, før det frigøres.
+**Flytte en facades markør.** Træk cirklens greb, eller vælg facaden og brug **Flyt**: markøren går, hvor du sætter den, længere væk fra bygningen eller langs dens linje, i ét fortryd-trin. Som i Revit er markørens linje der, hvor facaden begynder at se. Står den uden for bygningen, hvor markøren til en ny facade står, ser den hele bygningen. Flyttet ind i bygningen viser den kun det, der ligger bag dens linje, og det, linjen skærer, tegnes som snit, med materialernes snitskravering, som i et snit: en indvendig facade. Dens rækkevidde langs linjen beholder sine egne greb. En facade ser mod nord, syd, øst eller vest, så den drejes eller spejles ikke. En fastgjort facade eller et fastgjort snit (**Redigér → Fastgør**) flyttes ikke, før det frigøres.
+
+![Sydfacadens markør flyttet ind i huset: facaden set derfra, den indvendige væg skåret](shots/elevation-clipped.webp)
 
 ![En facades markør i plan, flyttet ud fra huset, linjen forkortet, et snits hoved flyttet væk fra dets ende](shots/elevation-marker.webp)
 

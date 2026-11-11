@@ -98,7 +98,7 @@ function acrossGrips(node: NodeDto): Grip[] {
 }
 
 /** What an elevation's marker in plan tells of its line (decision 456): its ends, its right, and how far it reaches along it. */
-type ElevationLine = { ends?: number[][]; right?: number[]; min?: number; max?: number; symbol?: number[] };
+type ElevationLine = { ends?: number[][]; right?: number[]; min?: number; max?: number; symbol?: number[]; depth?: number; along?: number };
 
 /** A move by the step from a grip's point to where it is dragged, through element.transform (one undo step). */
 const moveBy = (id: string, from: Vec2, to: Vec2) => ({ command: 'element.transform', args: { ids: [id], op: 'move', by: [r3(to.x - from.x), r3(to.y - from.y)] } });
@@ -110,11 +110,18 @@ const moveBy = (id: string, from: Vec2, to: Vec2) => ({ command: 'element.transf
 export function elevationGrips(node: NodeDto, view?: GripView): Grip[] {
   if (node.type !== 'LapinView' || node.props.kind !== 'elevation') return [];
   const line = view?.mark?.data as ElevationLine | undefined;
-  const { ends, right, min, max, symbol } = line ?? {};
+  const { ends, right, min, max, symbol, depth, along: placed } = line ?? {};
   if (!ends || ends.length < 2 || !right || typeof min !== 'number' || typeof max !== 'number') return [];
-  // Its symbol dragged: the marker moves (along its line, out from the building), what the elevation sees stays (decision 460).
+  // Its symbol dragged: the marker goes there, its line along the look (into the building, the elevation starts seeing
+  // there, decision 460) and its symbol along the line (decision 460), through view.moveMarker.
   const at = symbol ? { x: symbol[0], y: symbol[1] } : null;
-  const mover: Grip[] = at ? [{ key: 'marker', kind: 'move', at, title: 'Drag: move the marker (the elevation sees the same)', step: (to) => moveBy(node.id, at, to) }] : [];
+  const look = { x: -right[1], y: right[0] };
+  const mover: Grip[] = at && typeof depth === 'number'
+    ? [{ key: 'marker', kind: 'move', at, title: 'Drag: move the marker (moved into the building, the elevation starts seeing at its line)', step: (to) => {
+      const d = { x: to.x - at.x, y: to.y - at.y };
+      return { command: 'view.moveMarker', args: { id: node.id, depth: r3(depth + d.x * look.x + d.y * look.y), along: r3((placed ?? 0) + d.x * right[0] + d.y * right[1]) } };
+    } }]
+    : at ? [{ key: 'marker', kind: 'move', at, title: 'Drag: move the marker (moved into the building, the elevation starts seeing at its line)', step: (to) => moveBy(node.id, at, to) }] : [];
   const along = (p: Vec2) => p.x * right[0] + p.y * right[1];
   const [a, b] = ends.map(([x, y]) => ({ x, y }));
   const set = (lo: number, hi: number) => ({ command: 'view.setExtent', args: { id: node.id, min: r3(lo), max: r3(hi) } });

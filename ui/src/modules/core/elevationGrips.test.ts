@@ -3,7 +3,7 @@ import type { NodeDto } from '../../engine/protocol';
 import { elevationGrips, sectionHeadGrips } from './sections';
 
 const elevation = { id: 'e', type: 'LapinView', name: 'South elevation', parentId: null, props: { kind: 'elevation', direction: 'south' } } as unknown as NodeDto;
-const mark = { id: 'e', segments: [], data: { ends: [[-0.5, -2], [10.5, -2]], right: [1, 0], min: -0.5, max: 10.5, own: false, symbol: [5, -2.5] } };
+const mark = { id: 'e', segments: [], data: { ends: [[-0.5, -2], [10.5, -2]], right: [1, 0], min: -0.5, max: 10.5, own: false, symbol: [5, -2.5], depth: -2, along: 0 } };
 
 describe("an elevation's grips in plan (decision 456)", () => {
   it('puts one on each end of its marker line', () => {
@@ -26,9 +26,12 @@ describe("an elevation's grips in plan (decision 456)", () => {
 });
 
 describe('markers moved in plan (decision 460)', () => {
-  it("moves an elevation's marker by its symbol, through element.transform", () => {
+  it("puts an elevation's marker where its symbol is dragged: its line along the look, its symbol along the line (decision 460)", () => {
     const marker = elevationGrips(elevation, { mark }).find((g) => g.key === 'marker')!;
-    expect(marker.step!({ x: 6, y: -4.5 })).toEqual({ command: 'element.transform', args: { ids: ['e'], op: 'move', by: [1, -2] } });
+    // The south elevation looks north (+y): dragged 1 m east and 2 m south, its line 2 m further out.
+    expect(marker.step!({ x: 6, y: -4.5 })).toEqual({ command: 'view.moveMarker', args: { id: 'e', depth: -4, along: 1 } });
+    // Dragged into the house.
+    expect(marker.step!({ x: 5, y: 3.5 })!.args).toEqual({ id: 'e', depth: 4, along: 0 });
   });
 
   it("moves a section's head off its end, and puts it back", () => {

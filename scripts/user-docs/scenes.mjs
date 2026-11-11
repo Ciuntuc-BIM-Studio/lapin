@@ -3664,13 +3664,16 @@ export const scenes = [
       const max = (await t.nodes()).find((n) => n.id === id)?.props.extentMax;
       t.expect(typeof max === 'number' && Math.abs(max - 8) < 0.3, `the elevation reaches to x = 8 (${max})`);
       // Its marker dragged 1.5 m further out by the circle's grip: the elevation sees the same.
+      const storeyId = await t.storey();
+      const planDrawing = () => t.call('doc.query', { name: 'view.drawing', args: { id: `plan:${storeyId}` } });
+      const depth0 = (await planDrawing())?.marks?.find((m) => m.id === id)?.data?.depth;
       const marker = await gripAt('marker');
       t.expect(marker, 'the elevation marker has a grip to move it');
       const [, y0] = await t.planPoint(0, 0);
       const [, y1] = await t.planPoint(0, -1.5);
       await drag(marker, [marker[0], marker[1] + (y1 - y0)]);
-      const shift = (await t.nodes()).find((n) => n.id === id)?.props.markerShift;
-      t.expect(Array.isArray(shift) && Math.abs(shift[1] - 1.5) < 0.3, `the marker moved out 1.5 m (${JSON.stringify(shift)})`);
+      const depth1 = (await t.nodes()).find((n) => n.id === id)?.props.markerDepth;
+      t.expect(typeof depth0 === 'number' && typeof depth1 === 'number' && Math.abs(depth0 - depth1 - 1.5) < 0.3, `the marker moved out 1.5 m (${depth0} → ${depth1})`);
       // A-A's head at its south end moved off the line, west of it.
       await t.ui({ selected: [section.id], selection: section.id });
       await t.wait(600);
@@ -3687,6 +3690,13 @@ export const scenes = [
       await t.fit();
       await t.wait(600);
       await t.shot('elevation-marker', { of: '[data-testid=plan]', pad: 0 });
+      // Moved into the house, 3.5 m north of its south wall (decision 460): the elevation starts seeing there, the walls its line crosses cut and hatched.
+      await t.ui({ selected: [], selection: null });
+      await t.cmd('view.moveMarker', { id, depth: 3.5, along: 0 });
+      await openFromBrowser(t, 'South elevation', 2500);
+      const drawing = await t.call('doc.query', { name: 'view.drawing', args: { id } });
+      t.expect((drawing?.pens ?? []).some((p) => p.layer === 'HATCH'), 'the elevation draws its cut, hatched');
+      await t.shot('elevation-clipped', { of: '[data-testid=drawing]', pad: 0 });
     },
   },
   {

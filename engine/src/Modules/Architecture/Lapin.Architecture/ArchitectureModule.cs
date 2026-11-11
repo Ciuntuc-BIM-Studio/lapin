@@ -89,7 +89,8 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             if (Vec3.Dot(new Vec3(outward.X, outward.Y, 0), c.Frame.Dir) > -0.5) continue;
             var yExt = sy > 0 ? f.YMin : f.YMax;
             Vec3 W(double x, double z) => f.At(p.Along + sx * x, yExt, p.FillSill + z);
-            if (c.Occluded(W(0, spec.Height / 2), own)) continue;
+            // Beyond the elevation's reach, or before its marker's line when that clips it (decision 460): no symbol.
+            if (!ElevationMarkers.Sees(c, W(0, spec.Height / 2)) || c.Occluded(W(0, spec.Height / 2), own)) continue;
             var mark = new ViewMark(fill.Id);
             // A round window is one fixed light: no opening symbol.
             foreach (var panel in JoineryShapes.Round(spec) ? [] : Joinery.Normalised(spec))
