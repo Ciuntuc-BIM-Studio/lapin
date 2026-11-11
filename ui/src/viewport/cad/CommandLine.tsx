@@ -22,7 +22,7 @@ import { t } from '../../i18n';
 /** The prompt, what is typed, the switches and the layer: the part both kinds of line have. */
 export function CadPrompt({ inline }: { inline?: boolean }) {
   // Only what the prompt shows: not the cursor, which moves on every pointer move.
-  const { buffer, step, command, osnap, ortho, polar, layer, role } = useCad(useShallow((s) => ({ buffer: s.buffer, step: s.step, command: s.command, osnap: s.osnap, ortho: s.ortho, polar: s.polar, layer: s.layer, role: s.role })));
+  const { buffer, takeAll, step, command, osnap, ortho, polar, layer, role } = useCad(useShallow((s) => ({ buffer: s.buffer, takeAll: s.takeAll, step: s.step, command: s.command, osnap: s.osnap, ortho: s.ortho, polar: s.polar, layer: s.layer, role: s.role })));
   const tool = useUi((s) => s.tool);
   const snaps = useSnapSummary();
   const polarStep = usePrefs((s) => s.polarStep);
@@ -34,10 +34,11 @@ export function CadPrompt({ inline }: { inline?: boolean }) {
   const twoD = view === 'plan' || view === 'drawing';
   const key = (id: string) => { const k = bindingText(id).split(', ')[0]; return k ? ` (${k})` : ''; };
   return (
-    <div className={`cad-prompt${inline ? ' inline' : ''}`}>
+    <div className={`cad-prompt${inline ? ' inline' : ''}${takeAll ? ' takeall' : ''}`} data-takeall={takeAll ? 'on' : undefined}>
       <span className="cad-label">{step ? `${command}: ${step.prompt}` : hint ?? 'Command'}</span>
       <span className="cad-buffer">{buffer}<span className="caret" /></span>
-      {promptHere && <LiveBar inline />}
+      {takeAll && <span className="cad-takeall" data-no-i18n>{t('All typing goes to the command line')} · {(bindingText('app.commandLine').split(', ')[0] || '`')} {t('or Esc to leave')}</span>}
+      {promptHere && !takeAll && <LiveBar inline />}
       <span className="grow" />
       {(() => { const Options = findTool(tool)?.options ?? (command ? findCommand(command)?.options : undefined); return Options ? <Options /> : null; })()}
       <button type="button" className={`cad-toggle${osnap ? ' on' : ''}`} data-testid="snap-toggle" title={`${t('Object snap')}${key('app.osnap')}: ${snaps}. ${t('Right click: which snaps')}`} onClick={() => useCad.setState({ osnap: !osnap })}

@@ -12,12 +12,12 @@ import { toggleBothPanels, togglePanel, showOverlay, showPropsTab, usePanels, ap
 import { assistantAvailable } from '../assistant/available';
 import { toggleGrid, toggleThinLines } from './display';
 import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSPACE_LABELS } from './interface';
-import { effectiveBindings, formatBinding, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
+import { effectiveBindings, formatBinding, resolveAlias, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
 import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
 import { redo, undo } from '../engine/session';
 import { deleteElements } from '../engine/dependents';
 import { runFileAction } from '../shell/fileActions';
-import { COMMANDS, TOOL_WORDS, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
+import { COMMANDS, TOOL_WORDS, findCommand, setAliasHook, setCommandFallback, startCommand, useCad } from '../viewport/cad/session';
 import { zoomHost } from '../viewport/zoom';
 import { takeHotRemove } from '../viewport/grips';
 
@@ -41,6 +41,7 @@ function appCommands(): CommandDef[] {
       if (ids.length) { void deleteElements(ids); select(null); }
     } },
     { id: 'app.palette', label: 'Commands…', category: general, defaults: ['Ctrl+K'], run: dialog('palette') },
+    { id: 'app.commandLine', label: 'Command line: take all typing', category: general, defaults: ['Backquote'], run: () => useCad.setState((s) => ({ takeAll: !s.takeAll })) },
     { id: 'app.shortcuts', label: 'Keyboard shortcuts…', category: general, defaults: [], run: dialog('shortcuts') },
     { id: 'app.interface', label: 'Interface…', category: general, defaults: ['Ctrl+.'], run: dialog('interface') },
     { id: 'app.preferences', label: 'Preferences…', category: general, defaults: ['Ctrl+,'], run: dialog('preferences') },
@@ -109,7 +110,7 @@ export function commands(): CommandDef[] {
 export const findCommandDef = (id: string) => commands().find((c) => c.id === id) ?? null;
 
 /** The command line's names, each with the command it is. */
-const cliNames = () => COMMANDS.flatMap((c) => c.names.map((name) => ({ name, command: c.names[0] })));
+export const cliNames = () => COMMANDS.flatMap((c) => c.names.map((name) => ({ name, command: c.names[0] })));
 
 let memo: { state: unknown; map: Keymap; bindings: Record<string, Binding[]> } | null = null;
 
@@ -119,7 +120,7 @@ export function current(): { map: Keymap; bindings: Record<string, Binding[]> } 
   if (memo?.state === state) return memo;
   const cmds = commands();
   const bindings = effectiveBindings(cmds, state);
-  const map = resolveKeymap(cmds, bindings, cliNames());
+  const map = resolveKeymap(cmds, bindings, cliNames(), state.aliases);
   memo = { state, map, bindings };
   return memo;
 }
@@ -155,6 +156,16 @@ setCommandFallback((text) => {
   if (!id) return false;
   runCommand(id);
   return true;
+});
+
+// The user's own aliases (decision 473): typed on the command line, they come before the built-in names.
+setAliasHook((text) => {
+  const target = resolveAlias(text, useKeymap.getState().aliases);
+  if (!target) return null;
+  if (target.startsWith('cad:')) return findCommand(target.slice(4)) ? { cad: target.slice(4) } : null;
+  if (!findCommandDef(target)) return null;
+  runCommand(target);
+  return { done: true };
 });
 
 // The panels follow the interface's choice of them; Compact narrows the properties.

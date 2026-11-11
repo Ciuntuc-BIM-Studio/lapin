@@ -120,6 +120,17 @@ I suggerimenti, i menu e la tavolozza dei comandi (<kbd>Ctrl</kbd> <kbd>K</kbd>)
 
 Le lettere come <kbd>WA</kbd> funzionano quando nessun campo ha il focus e la riga di comando è vuota: digitale sopra la vista. Il comando si esegue subito. Quando un comando della riga di comando inizia con le stesse lettere (<kbd>DI</kbd> e <kbd>DIMADD</kbd>), Lapin attende un attimo: continua a digitare per scrivere il comando più lungo, oppure premi <kbd>Enter</kbd> o <kbd>Space</kbd> per eseguire subito quello più corto. Mentre un comando chiede un punto o un valore, lettere e cifre vanno a esso. I comandi della riga di comando come <kbd>L</kbd>, <kbd>M</kbd> o <kbd>TRIM</kbd> seguiti da <kbd>Enter</kbd> funzionano in ogni schema. <kbd>Esc</kbd> annulla sempre.
 
+Quando i due si scontrano, scegli come si dividono la tastiera:
+
+- **Scorciatoie a lettere (come in Revit)**, in questo dialogo e in **Preferenze → Generale → Tastiera**, è attivo per impostazione predefinita. Disattivalo per tenere solo la riga di comando: ogni lettera va lì, e <kbd>Invio</kbd> o <kbd>Spazio</kbd> esegue un comando, un tuo alias o, se il testo non è nessuno dei due, il comando di cui sono le lettere (<kbd>WA</kbd> <kbd>Invio</kbd> avvia ancora il muro). Gli accordi (<kbd>Ctrl</kbd> + un tasto, i tasti funzione, <kbd>Canc</kbd>) e i numeri degli strumenti rapidi continuano a funzionare.
+- Il tasto <kbd>`</kbd> (quello a sinistra di <kbd>1</kbd>, trovato dal suo posto su qualsiasi layout, e una scorciatoia come le altre: **Riga di comando: prende tutta la digitazione**) dà alla riga di comando tutta la digitazione, con le lettere attive o no. La riga è incorniciata e lo dice; nessuna lettera avvia uno strumento, nessun numero sceglie uno strumento rapido. <kbd>Invio</kbd> esegue quanto digitato e restituisce la digitazione, a meno che un comando chieda poi un punto o un valore: allora la modalità resta finché il comando finisce. <kbd>Esc</kbd> o lo stesso tasto la lascia.
+
+### Alias dei comandi
+
+La pagina **Alias dei comandi** del dialogo tiene i tuoi nomi per i comandi. Scrivi da 1 a 12 lettere o cifre (la prima una lettera), trova il comando nell'elenco (un comando della riga di comando come <kbd>LINE</kbd> o un qualsiasi comando del nastro o dell'app) e premi **Aggiungi alias**. Scrivi l'alias nella riga di comando e premi <kbd>Invio</kbd> o <kbd>Spazio</kbd>. I tuoi vengono prima dei nomi incorporati. La pagina dice cosa sostituisce un alias: un nome incorporato della riga di comando, una scorciatoia con le stesse lettere o una scorciatoia che fa attendere (con le lettere attive, una scorciatoia che è un alias, o l'inizio di uno, attende un attimo così puoi continuare a scrivere e premere <kbd>Invio</kbd>). Gli alias si conservano con le tue scorciatoie, anche in **Esporta…** e **Importa…**.
+
+![Alias dei comandi, con ciò che un alias copre](shots/shortcuts-aliases.webp)
+
 ### Le scorciatoie predefinite
 
 Queste sono le scorciatoie Stile Revit, come le ha Lapin oggi:

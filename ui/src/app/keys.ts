@@ -22,6 +22,7 @@ import { cancel, submit, useCad } from '../viewport/cad/session';
 import { liveCommit, useLive } from '../viewport/liveInput';
 import { chordOf, isBareKey, matchSequence, PendingSequence, type Keymap } from './shortcuts';
 import { keymap, runCommand } from './commands';
+import { useKeymap } from './shortcuts';
 import { valueOwner } from './valueOwner';
 
 /** What `keyIntent` needs to know about the key press. */
@@ -58,6 +59,10 @@ export interface KeySnapshot {
   hotbar: number;
   /** The bindings in force (shortcuts.ts). */
   keymap: Keymap;
+  /** Letters typed over the view start a tool (default true); off, they only go to the command line (decision 473). */
+  letters?: boolean;
+  /** The command line takes all typing (the ` key). */
+  takeAll?: boolean;
   /** A segment being drawn from a base: its length and angle can be typed (the focused field's text). */
   live?: { active: boolean; text: string; typed: boolean };
   /** A 3D tool waits for a typed value (valueOwner.ts): what is typed so far. */
@@ -69,6 +74,8 @@ export type KeyIntent =
   /** Letters that are a sequence something longer starts with: typed, and run if nothing more comes. */
   | { kind: 'pending'; id: string; buffer: string }
   | { kind: 'toolSpace' }
+  /** The ` key: the command line takes all typing, or gives it back. */
+  | { kind: 'cmdMode' }
   | { kind: 'closeDialog' } | { kind: 'cancel' } | { kind: 'submit' } | { kind: 'backspace' }
   | { kind: 'type'; buffer: string }
   | { kind: 'valueType'; key: string } | { kind: 'valueBack' } | { kind: 'valueEnter' }
@@ -119,14 +126,17 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   }
   // Chords with Ctrl, Alt or Cmd, and the function keys: whatever is typed.
   if (mod || /^(Shift\+)?F\d+$/.test(chord)) return bound ? { kind: 'command', id: bound } : null;
-  // A 3D tool waiting for a value takes the value's keys, before the quick tools (1–9) and the shortcuts.
-  if (s.value && !s.buffer) {
+  // The command line's key: it takes all typing (and gives it back), whatever is typed.
+  if (bound === 'app.commandLine') return { kind: 'cmdMode' };
+  const all = !!s.takeAll;
+  // A 3D tool waiting for a value takes the value's keys, before the quick tools (1–9) and the shortcuts (not while the command line takes all).
+  if (s.value && !s.buffer && !all) {
     if (e.key === 'Enter') return { kind: 'valueEnter' };
     if (e.key === 'Backspace' && s.value.text) return { kind: 'valueBack' };
     if (valueKey(s.value.text, e.key)) return { kind: 'valueType', key: e.key };
   }
   // Drawing a segment, nothing on the command line: its length and angle are typed at the cursor.
-  if (s.live?.active && !s.buffer) {
+  if (s.live?.active && !s.buffer && !all) {
     if (e.key === 'Tab') return { kind: 'liveFocus' };
     if (e.key === '<') return { kind: 'liveFocus', field: 'ang' };
     if (e.key === 'Enter' && s.live.typed) return { kind: 'liveCommit' };
@@ -136,19 +146,21 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
     if (unitKey(s.live.text, e.key)) return { kind: 'liveType', key: e.key.toLowerCase() };
   }
   const typing = s.buffer.length > 0 || !!s.step;
-  if (e.key === 'Escape') return s.step || s.buffer ? { kind: 'cancel' } : null;
+  if (e.key === 'Escape') return s.step || s.buffer || all ? { kind: 'cancel' } : null;
   if (e.key === ' ' && !typing && s.toolSpace) return { kind: 'toolSpace' };
   if (e.key === 'Enter' || (e.key === ' ' && (typing || s.hasLast) && s.step?.want !== 'text')) {
     // Plan gestures (a floor's outline) take their own Enter.
-    if (!typing && !s.hasLast) return null;
-    if (!typing && s.tool) return null;
+    // The command line given all typing: Enter with nothing typed gives it back.
+    if (!typing && !s.hasLast) return all ? { kind: 'cancel' } : null;
+    if (!typing && s.tool && !all) return null;
     return { kind: 'submit' };
   }
   if (e.key === 'Backspace' && s.buffer) return { kind: 'backspace' };
+  if (all && e.key === 'Backspace') return null;
   // Delete (or Backspace with nothing typed): the selection, when there is one.
   if (bound === 'app.delete') return s.selected.length && !s.buffer ? { kind: 'command', id: bound } : null;
   // Named keys (Tab, the arrows…) and the bare keys (1–9, +, −, Shift+Z): only while nothing is typed.
-  if (bound && !typing && (isBareKey(chord) || e.key.length > 1)) {
+  if (bound && !typing && (all ? e.key.length > 1 : isBareKey(chord) || e.key.length > 1)) {
     const slot = /^hotbar\.(\d)$/.exec(bound);
     if (slot && Number(slot[1]) > s.hotbar) return null;
     return { kind: 'command', id: bound };
@@ -158,7 +170,7 @@ export function keyIntent(e: KeyPress, s: KeySnapshot): KeyIntent | null {
   if (!allowed) return null;
   const buffer = s.buffer + e.key;
   // Letters that are a shortcut's sequence start its command (when no command is running).
-  if (!s.step) {
+  if (!s.step && !all && s.letters !== false) {
     const m = matchSequence(buffer, s.keymap);
     if (m.kind === 'fire') return { kind: 'command', id: m.id };
     if (m.kind === 'wait') return { kind: 'pending', id: m.id, buffer };
@@ -172,13 +184,16 @@ function snapshot(): KeySnapshot {
   return {
     screen: ui.screen, dialog: openDialog(ui.dialog, !!document.querySelector('[role="dialog"]')), tool: ui.tool, selected: ui.selected, toolSpace: !!(ui.tool && findTool(ui.tool)?.space),
     buffer: cad.buffer, step: cad.step ? { want: cad.step.want } : null, hasLast: !!cad.last,
-    hotbar: reach(hotbarIds()), keymap: keymap(),
+    hotbar: reach(hotbarIds()), keymap: keymap(), letters: useKeymap.getState().letters, takeAll: cad.takeAll,
     live: (() => { const l = useLive.getState(); return { active: !!l.owner, text: l[l.focus], typed: !!(l.len || l.ang) }; })(),
     value: (() => { const o = valueOwner(); return o ? { text: o.text() } : null; })(),
   };
 }
 
 const pending = new PendingSequence();
+
+// The command line given all typing keeps it while a command asks for input, and gives it back when the command ends.
+useCad.subscribe((cur, prev) => { if (cur.takeAll && prev.step && !cur.step) useCad.setState({ takeAll: false }); });
 
 export function carryOut(intent: KeyIntent): void {
   if (intent.kind !== 'pending') pending.clear();
@@ -196,8 +211,14 @@ export function carryOut(intent: KeyIntent): void {
     }
     case 'toolSpace': { const t = useUi.getState().tool; if (t) findTool(t)?.space?.(); useToolTick.setState((s) => ({ n: s.n + 1 })); break; }
     case 'closeDialog': useUi.setState({ dialog: null }); break;
-    case 'cancel': cancel(); break;
-    case 'submit': void submit(useCad.getState().buffer); break;
+    case 'cancel': cancel(); useCad.setState({ takeAll: false }); break;
+    case 'cmdMode': useCad.setState((c) => ({ takeAll: !c.takeAll })); break;
+    case 'submit': {
+      const had = !!useCad.getState().step;
+      // The command line given all typing keeps it while a command asks for input; when what was typed ran and nothing asks for more, it is given back.
+      void submit(useCad.getState().buffer).then(() => { if (!had && !useCad.getState().step) useCad.setState({ takeAll: false }); });
+      break;
+    }
     case 'backspace': useCad.setState((s) => ({ buffer: s.buffer.slice(0, -1) })); break;
     case 'type': useCad.setState({ buffer: intent.buffer }); break;
     case 'valueType': { const o = valueOwner(); if (o) o.set(o.text() + intent.key); break; }

@@ -120,6 +120,17 @@ Værktøjstip, menuerne og kommandopaletten (<kbd>Ctrl</kbd> <kbd>K</kbd>) viser
 
 Bogstaver som <kbd>WA</kbd> virker, når intet felt har fokus og kommandolinjen er tom: skriv dem over visningen. Kommandoen køres med det samme. Når en kommando i kommandolinjen starter med de samme bogstaver (<kbd>DI</kbd> og <kbd>DIMADD</kbd>), venter Lapin et øjeblik: skriv videre for at skrive den længere kommando, eller tryk på <kbd>Enter</kbd> eller <kbd>Space</kbd> for at køre den korte nu. Mens en kommando beder om et punkt eller en værdi, går bogstaver og cifre til den. Kommandoer i kommandolinjen som <kbd>L</kbd>, <kbd>M</kbd> eller <kbd>TRIM</kbd> efterfulgt af <kbd>Enter</kbd> virker i alle forudindstillinger. <kbd>Esc</kbd> annullerer altid.
 
+Når de to støder sammen, vælger du, hvordan de deler tastaturet:
+
+- **Bogstavgenveje (som i Revit)**, i denne dialog og i **Indstillinger → Generelt → Tastatur**, er slået til som standard. Slå det fra for kun at beholde kommandolinjen: hvert bogstav går dertil, og <kbd>Enter</kbd> eller <kbd>Mellemrum</kbd> kører en kommando, et alias af dig eller, hvis teksten ikke er nogen af dem, den kommando, bogstaverne er (<kbd>WA</kbd> <kbd>Enter</kbd> starter stadig væggen). Akkorder (<kbd>Ctrl</kbd> + en tast, funktionstasterne, <kbd>Delete</kbd>) og de hurtige værktøjers taltaster virker stadig.
+- Tasten <kbd>`</kbd> (den til venstre for <kbd>1</kbd>, fundet efter sin plads på ethvert layout og en genvej som de andre: **Kommandolinje: tag al tastning**) giver kommandolinjen al tastning, med bogstaverne slået til eller fra. Linjen får en ramme og siger det; intet bogstav starter et værktøj, intet tal vælger et hurtigt værktøj. <kbd>Enter</kbd> kører det skrevne og giver tastningen tilbage, medmindre en kommando derefter beder om et punkt eller en værdi: så består tilstanden, til kommandoen er slut. <kbd>Esc</kbd> eller samme tast forlader den.
+
+### Kommandoaliasser
+
+Siden **Kommandoaliasser** i dialogen rummer dine egne navne til kommandoer. Skriv 1 til 12 bogstaver eller cifre (det første et bogstav), find kommandoen på listen (en kommandolinjekommando som <kbd>LINE</kbd> eller en hvilken som helst kommando i båndet eller programmet), og tryk **Tilføj alias**. Skriv aliasset i kommandolinjen og tryk <kbd>Enter</kbd> eller <kbd>Mellemrum</kbd>. Dine kommer før de indbyggede navne. Siden siger, hvad et alias erstatter: et indbygget kommandolinjenavn, en genvej med de samme bogstaver eller en genvej, det får til at vente (med bogstaverne slået til venter en genvej, der er et alias eller begyndelsen på et, et øjeblik, så du kan skrive videre og trykke <kbd>Enter</kbd>). Aliasserne gemmes sammen med genvejene, også i **Eksportér…** og **Importér…**.
+
+![Kommandoaliasser, med hvad et alias skygger for](shots/shortcuts-aliases.webp)
+
 ### Standardgenvejene
 
 Dette er genvejene i Revit-stil, som Lapin har dem nu:

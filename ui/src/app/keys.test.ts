@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { carryOut, handleKeydown, keyIntent, openDialog, valueKey, type KeyIntent, type KeyPress, type KeySnapshot } from './keys';
 import { claimValue, valueOwner } from './valueOwner';
 import { resolveKeymap, type CommandDef } from './shortcuts';
+import { useCad } from '../viewport/cad/session';
 
 const cmd = (id: string, defaults: string[], same?: string): CommandDef => ({ id, label: id, category: 'test', defaults, same, run: () => undefined });
 const COMMANDS = [
@@ -9,6 +10,7 @@ const COMMANDS = [
   cmd('app.save', ['Ctrl+S']), cmd('app.saveAs', ['Ctrl+Shift+S']), cmd('app.delete', ['Delete', 'Backspace']),
   cmd('app.ortho', ['F8']), cmd('app.zoomIn', ['Plus', '=']), cmd('app.zoomOut', ['-']), cmd('app.zoomSelection', ['Shift+Z']),
   ...Array.from({ length: 9 }, (_, i) => cmd(`hotbar.${i + 1}`, [String(i + 1)])),
+  cmd('app.commandLine', ['Backquote']),
   cmd('architecture.wall', ['WA']), cmd('view.layers', ['VV']), cmd('drafting.dimension', ['DI'], 'DIMALIGNED'), cmd('modify.copy', ['CO'], 'COPY'),
 ];
 const bindings = Object.fromEntries(COMMANDS.map((c) => [c.id, c.defaults ?? []]));
@@ -201,5 +203,72 @@ describe('a value a 3D tool waits for (decision 378)', () => {
     expect(keyIntent(press(' '), state({ tool: 'architecture.door', toolSpace: true }))).toEqual({ kind: 'toolSpace' });
     expect(keyIntent(press(' '), state({ tool: 'architecture.door', toolSpace: true, buffer: 'WA' }))?.kind).toBe('submit');
     expect(keyIntent(press(' '), state({ tool: 'architecture.wall', toolSpace: false }))).toBeNull();
+  });
+});
+
+describe('the command line, letters off, and the user\'s aliases (decision 473)', () => {
+  it('with the letter shortcuts off, letters are typed and never run a tool by themselves', () => {
+    expect(keyIntent(press('w'), state({ letters: false }))).toEqual({ kind: 'type', buffer: 'w' });
+    expect(keyIntent(press('a'), state({ letters: false, buffer: 'w' }))).toEqual({ kind: 'type', buffer: 'wa' });
+    expect(keyIntent(press('Enter'), state({ letters: false, buffer: 'wa' }))).toEqual({ kind: 'submit' });
+    expect(keyIntent(press('w'), state())).toEqual({ kind: 'type', buffer: 'w' });
+    expect(keyIntent(press('a'), state({ buffer: 'w' }))).toEqual({ kind: 'command', id: 'architecture.wall' });
+  });
+
+  it('leaves the chords and the quick tools alone when the letters are off', () => {
+    expect(keyIntent(press('z', { ctrlKey: true }), state({ letters: false }))).toEqual({ kind: 'command', id: 'app.undo' });
+    expect(keyIntent(press('3'), state({ letters: false }))).toEqual({ kind: 'command', id: 'hotbar.3' });
+    expect(keyIntent(press('F8'), state({ letters: false }))).toEqual({ kind: 'command', id: 'app.ortho' });
+  });
+
+  it('the ` key is found by its place, whatever character the layout types, and toggles the mode', () => {
+    expect(keyIntent(press('`', { code: 'Backquote' }), state())).toEqual({ kind: 'cmdMode' });
+    expect(keyIntent(press('Dead', { code: 'Backquote' }), state())).toEqual({ kind: 'cmdMode' });
+    expect(keyIntent(press('~', { code: 'Backquote', shiftKey: true }), state())).toEqual({ kind: 'cmdMode' });
+    expect(keyIntent(press('`', { code: 'Backquote' }), state({ takeAll: true, buffer: 'DI' }))).toEqual({ kind: 'cmdMode' });
+    expect(keyIntent(press('`', { code: 'Backquote', inField: true }), state())).toBeNull();
+  });
+
+  it('in the mode, every key goes to the command line: no sequence, no quick tool', () => {
+    const on = { takeAll: true };
+    expect(keyIntent(press('w'), state(on))).toEqual({ kind: 'type', buffer: 'w' });
+    expect(keyIntent(press('a'), state({ ...on, buffer: 'w' }))).toEqual({ kind: 'type', buffer: 'wa' });
+    expect(keyIntent(press('3'), state(on))).toEqual({ kind: 'type', buffer: '3' });
+    expect(keyIntent(press('-'), state(on))).toEqual({ kind: 'type', buffer: '-' });
+    expect(keyIntent(press('Enter'), state({ ...on, buffer: 'wa' }))).toEqual({ kind: 'submit' });
+    expect(keyIntent(press('Backspace'), state({ ...on, selected: ['w1'] }))).toBeNull();
+    expect(keyIntent(press('Escape'), state(on))).toEqual({ kind: 'cancel' });
+    expect(keyIntent(press('Enter'), state(on))).toEqual({ kind: 'cancel' });
+    // Chords are the app's still.
+    expect(keyIntent(press('z', { ctrlKey: true }), state(on))).toEqual({ kind: 'command', id: 'app.undo' });
+  });
+
+  it('the mode stays while a command asks for input, and a value or live length goes to the line', () => {
+    expect(keyIntent(press('5'), state({ takeAll: true, step: { want: 'point' }, value: { text: '' } }))).toEqual({ kind: 'type', buffer: '5' });
+    expect(keyIntent(press('5'), state({ takeAll: true, step: { want: 'point' }, live: { active: true, text: '', typed: false } }))).toEqual({ kind: 'type', buffer: '5' });
+  });
+
+  it('carries the mode out: toggled by the key, left by Esc', () => {
+    useCad.setState({ takeAll: false, buffer: '', step: null });
+    carryOut({ kind: 'cmdMode' });
+    expect(useCad.getState().takeAll).toBe(true);
+    carryOut({ kind: 'cancel' });
+    expect(useCad.getState().takeAll).toBe(false);
+  });
+
+  it('a user alias that is a shortcut, or starts one, makes the shortcut wait', () => {
+    const aliases = { WAL: 'cad:LINE', VV: 'cad:LAYER', ON: 'cad:MOVE' };
+    const map = resolveKeymap(COMMANDS, bindings, [{ name: 'COPY', command: 'COPY' }], aliases);
+    expect(map.waits.WA).toBe(true);
+    expect(map.waits.VV).toBe(true);
+    expect(map.waits.DI).toBeUndefined();
+    expect(keyIntent(press('a'), state({ buffer: 'w', keymap: map }))).toEqual({ kind: 'pending', id: 'architecture.wall', buffer: 'wa' });
+    // Typing on reaches the alias.
+    expect(keyIntent(press('l'), state({ buffer: 'wa', keymap: map }))).toEqual({ kind: 'type', buffer: 'wal' });
+    // An alias that is the same command as the shortcut does not make it wait.
+    const same = resolveKeymap(COMMANDS, bindings, [{ name: 'COPY', command: 'COPY' }], { CO: 'cad:COPY' });
+    expect(same.waits.CO).toBeUndefined();
+    // Another command with those letters does.
+    expect(resolveKeymap(COMMANDS, bindings, [], { CO: 'cad:LINE' }).waits.CO).toBe(true);
   });
 });

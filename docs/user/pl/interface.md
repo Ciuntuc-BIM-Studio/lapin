@@ -120,6 +120,17 @@ Podpowiedzi, menu i paleta poleceń (<kbd>Ctrl</kbd> <kbd>K</kbd>) zawsze pokazu
 
 Litery takie jak <kbd>WA</kbd> działają, gdy żadne pole nie ma fokusu, a wiersz poleceń jest pusty: wpisz je nad widokiem. Polecenie uruchamia się od razu. Gdy jakieś polecenie wiersza poleceń zaczyna się od tych samych liter (<kbd>DI</kbd> i <kbd>DIMADD</kbd>), Lapin chwilę czeka: pisz dalej, aby wpisać dłuższe polecenie, albo naciśnij <kbd>Enter</kbd> lub <kbd>Space</kbd>, aby od razu uruchomić krótsze. Gdy polecenie prosi o punkt lub wartość, litery i cyfry trafiają do niego. Polecenia wiersza poleceń, takie jak <kbd>L</kbd>, <kbd>M</kbd> czy <kbd>TRIM</kbd>, zakończone <kbd>Enter</kbd> działają w każdym zestawie. <kbd>Esc</kbd> zawsze anuluje.
 
+Gdy te dwa się zderzają, wybierasz, jak dzielą klawiaturę:
+
+- **Skróty literowe (jak w Revicie)**, w tym oknie i w **Preferencje → Ogólne → Klawiatura**, jest domyślnie włączone. Wyłącz, aby zostawić tylko wiersz poleceń: każda litera trafia do niego, a <kbd>Enter</kbd> lub <kbd>Spacja</kbd> uruchamia polecenie, Twój alias albo, gdy tekst nie jest żadnym z nich, polecenie o tych literach (<kbd>WA</kbd> <kbd>Enter</kbd> nadal uruchamia ścianę). Kombinacje (<kbd>Ctrl</kbd> + klawisz, klawisze funkcyjne, <kbd>Delete</kbd>) i cyfry szybkich narzędzi działają dalej.
+- Klawisz <kbd>`</kbd> (na lewo od <kbd>1</kbd>, rozpoznawany po miejscu na każdym układzie, i skrót jak inne: **Wiersz poleceń: przejmuje całe pisanie**) oddaje wierszowi poleceń całe pisanie, przy włączonych lub wyłączonych literach. Wiersz dostaje ramkę i o tym mówi; żadna litera nie uruchamia narzędzia, żadna cyfra nie wybiera szybkiego narzędzia. <kbd>Enter</kbd> uruchamia wpisane i oddaje pisanie, chyba że polecenie prosi potem o punkt lub wartość: tryb trwa wtedy do końca polecenia. <kbd>Esc</kbd> lub ten sam klawisz go opuszcza.
+
+### Aliasy poleceń
+
+Strona **Aliasy poleceń** w oknie trzyma Twoje własne nazwy poleceń. Wpisz od 1 do 12 liter lub cyfr (pierwsza to litera), znajdź polecenie na liście (polecenie wiersza poleceń, np. <kbd>LINE</kbd>, albo dowolne polecenie wstążki lub aplikacji) i naciśnij **Dodaj alias**. Wpisz alias w wierszu poleceń i naciśnij <kbd>Enter</kbd> lub <kbd>Spację</kbd>. Twoje mają pierwszeństwo przed wbudowanymi nazwami. Strona mówi, co alias zastępuje: wbudowaną nazwę wiersza poleceń, skrót o tych samych literach lub skrót, który każe czekać (przy włączonych literach skrót będący aliasem lub początkiem aliasu czeka chwilę, byś mógł pisać dalej i nacisnąć <kbd>Enter</kbd>). Aliasy zapisują się razem ze skrótami, także w **Eksportuj…** i **Importuj…**.
+
+![Aliasy poleceń, z tym, co alias przesłania](shots/shortcuts-aliases.webp)
+
 ### Domyślne skróty
 
 Oto skróty w stylu Revit, w obecnej postaci w Lapinie:

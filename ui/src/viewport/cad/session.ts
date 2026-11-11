@@ -73,6 +73,8 @@ export interface Step {
 
 interface CadState {
   buffer: string;
+  /** The command line takes all typing (the ` key, decision 473): no letter shortcuts, no quick tools, until Enter has run it or Esc. */
+  takeAll: boolean;
   history: string[];
   command: string | null;
   step: Step | null;
@@ -97,7 +99,7 @@ interface CadState {
 }
 
 export const useCad = create<CadState>(() => ({
-  buffer: '', history: [], command: null, step: null, last: null, cursor: null, lastPoint: null,
+  buffer: '', takeAll: false, history: [], command: null, step: null, last: null, cursor: null, lastPoint: null,
   osnap: true, ortho: false, polar: true, layer: '0', role: '', host: null,
   offset: 0.5, offsetThrough: false, radius: 0, chamfer: 0.1, pattern: 'LINES45', hatchScale: 1,
 }));
@@ -458,6 +460,10 @@ export const TOOL_WORDS: Record<string, string> = { MEASURE: 'measure', MEA: 'me
 let fallback: (text: string) => boolean = () => false;
 export const setCommandFallback = (f: (text: string) => boolean) => { fallback = f; };
 
+/** The user's own alias for a typed word (decision 473): a command-line command to start, or `done` when a registry command ran. */
+let aliasHook: (text: string) => { cad: string } | { done: true } | null = () => null;
+export const setAliasHook = (f: typeof aliasHook) => { aliasHook = f; };
+
 export const findCommand = (name: string) => COMMANDS.find((c) => c.names.includes(name.trim().toUpperCase()));
 
 /** A module's own command for the command line (Studio's EXTRUDE…). */
@@ -539,6 +545,8 @@ export const submit = serial(async (raw: string): Promise<void> => {
   useCad.setState({ buffer: '' });
   if (!s.step) {
     if (!text) { if (s.last) await runCommand(s.last); return; }
+    const alias = aliasHook(text);
+    if (alias) { if ('cad' in alias) await runCommand(alias.cad); return; }
     if (!(await runCommand(text)) && !fallback(text)) log(`Unknown command „${text}”.`);
     return;
   }

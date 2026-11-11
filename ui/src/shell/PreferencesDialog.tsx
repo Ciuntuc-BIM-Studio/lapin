@@ -8,6 +8,7 @@
  * project template File → New starts from (decision 470).
  */
 
+import { setKeymap, useKeymap } from '../app/shortcuts';
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../app/store';
@@ -79,6 +80,7 @@ export function PreferencesDialog() {
   const loc = useLocation((s) => s.loc);
   const ucs = ucsOf(loc);
   const saved = useTemplates((s) => s.list);
+  const keys = useKeymap();
   useEffect(() => { void refreshTemplates(); }, []);
   const close = () => useUi.setState({ dialog: null });
   const theme = (choice: ThemeChoice) => { setPrefs({ theme: choice }); useUi.setState({ theme: resolveTheme(choice) }); };
@@ -113,6 +115,9 @@ export function PreferencesDialog() {
               <h4>Interface</h4>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'interface' })}>Interface…</button>
                 <button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'shortcuts' })}>Keyboard shortcuts…</button></p>
+              <h4>Keyboard</h4>
+              <label className="row small"><input type="checkbox" data-field="prefs-letters" checked={keys.letters} onChange={(e) => setKeymap({ ...keys, letters: e.target.checked })} /> Letter shortcuts (Revit-style)</label>
+              <p className="muted small">Typed letters such as WA start a tool. Off: letters always go to the command line, and Enter or Space runs a command, an alias, or the command whose letters they are. The ` key gives the command line all typing, whichever is on. Your own aliases are in Keyboard shortcuts…</p>
             </>}
             {page === 'grid' && <>
               <h4 data-i18n-ctx="prefs">Grid</h4>

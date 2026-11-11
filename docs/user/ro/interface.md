@@ -140,7 +140,18 @@ Indicațiile, meniurile și paleta de comenzi (<kbd>Ctrl</kbd> <kbd>K</kbd>) ara
 
 ### Literele și linia de comandă
 
-Literele ca <kbd>WA</kbd> merg când niciun câmp nu e activ și linia de comandă e goală: tastează-le peste vedere. Comanda pornește imediat. Când o comandă din linia de comandă începe cu aceleași litere (<kbd>DI</kbd> și <kbd>DIMADD</kbd>), Lapin așteaptă o clipă: tastează mai departe ca să scrii comanda lungă, sau apasă <kbd>Enter</kbd> ori <kbd>Space</kbd> ca s-o pornești acum pe cea scurtă. Cât o comandă cere un punct sau o valoare, literele și cifrele merg la ea. Comenzile din linia de comandă ca <kbd>L</kbd>, <kbd>M</kbd> sau <kbd>TRIM</kbd> urmate de <kbd>Enter</kbd> merg în orice set. <kbd>Esc</kbd> anulează mereu.
+Sunt două feluri de a tasta o comandă. **Literele** ca <kbd>WA</kbd> merg când niciun câmp nu e activ și linia de comandă e goală: tastează-le peste vedere. Comanda pornește imediat. Când o comandă din linia de comandă începe cu aceleași litere (<kbd>DI</kbd> și <kbd>DIMADD</kbd>), Lapin așteaptă o clipă: tastează mai departe ca să scrii comanda lungă, sau apasă <kbd>Enter</kbd> ori <kbd>Space</kbd> ca s-o pornești acum pe cea scurtă. Cât o comandă cere un punct sau o valoare, literele și cifrele merg la ea. **Comenzile din linia de comandă** ca <kbd>L</kbd>, <kbd>M</kbd> sau <kbd>TRIM</kbd> urmate de <kbd>Enter</kbd> merg în orice set. <kbd>Esc</kbd> anulează mereu.
+
+Când cele două se ciocnesc, alegi cum își împart tastatura:
+
+- **Scurtături cu litere (ca în Revit)**, în acest dialog și în **Preferințe → General → Tastatură**, e pornit implicit. Oprește-l ca să rămână doar linia de comandă: fiecare literă tastată merge la ea, iar <kbd>Enter</kbd> sau <kbd>Space</kbd> pornește o comandă, un alias al tău sau, când textul nu e niciuna, comanda ale cărei litere sunt (<kbd>WA</kbd> <kbd>Enter</kbd> pornește tot peretele). Acordurile (<kbd>Ctrl</kbd> + o tastă, tastele de funcții, <kbd>Delete</kbd>) și cifrele uneltelor rapide merg în continuare.
+- Tasta <kbd>`</kbd> (cea din stânga lui <kbd>1</kbd>, găsită după locul ei pe orice tastatură, și o scurtătură ca celelalte: **Linia de comandă: preia toată tastarea**) dă liniei de comandă toată tastarea, cu literele pornite sau oprite. Linia de comandă e încadrată și spune asta; nicio literă nu pornește o unealtă, nicio cifră nu alege o unealtă rapidă. <kbd>Enter</kbd> pornește ce ai tastat și dă tastarea înapoi, afară de cazul în care o comandă cere apoi un punct sau o valoare: modul rămâne până se termină comanda. <kbd>Esc</kbd> sau aceeași tastă îl închide.
+
+### Aliasurile comenzilor
+
+Pagina **Aliasuri de comenzi** a dialogului ține nume proprii pentru comenzi. Tastează 1 până la 12 litere sau cifre (prima literă), găsește comanda în listă (o comandă din linia de comandă, ca <kbd>LINE</kbd>, sau orice comandă din panglică ori din aplicație) și apasă **Adaugă alias**. Tastează aliasul în linia de comandă și apasă <kbd>Enter</kbd> sau <kbd>Space</kbd>. Ale tale au prioritate față de numele încorporate. Pagina spune ce înlocuiește un alias: un nume încorporat din linia de comandă, o scurtătură cu aceleași litere sau o scurtătură pe care o face să aștepte (cu literele pornite, o scurtătură care e alias, sau începutul unuia, așteaptă o clipă ca să poți tasta mai departe și apăsa <kbd>Enter</kbd>). Aliasurile se păstrează odată cu scurtăturile, și în **Export…** și **Import…**.
+
+![Aliasurile comenzilor, cu ce umbrește un alias](shots/shortcuts-aliases.webp)
 
 ### Scurtăturile implicite
 

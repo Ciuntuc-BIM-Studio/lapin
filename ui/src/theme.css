@@ -639,6 +639,9 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cad-prompt { display: flex; align-items: center; gap: 8px; }
 .cad-label { color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cad-buffer { color: var(--ink); white-space: pre; }
+/* The command line given all typing (the ` key, decision 473). */
+.cad-prompt.takeall { box-shadow: inset 0 0 0 1px var(--accent); border-radius: 3px; padding: 2px 6px; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.cad-takeall { color: var(--ink-muted); font-size: 11px; white-space: nowrap; }
 .cad-buffer .caret { display: inline-block; width: 7px; height: 13px; margin-left: 1px; vertical-align: -2px; background: var(--ink); animation: cad-blink 1s steps(2) infinite; }
 @keyframes cad-blink { 50% { opacity: 0; } }
 .cad-toggle { font: 600 10px/1 ui-monospace, Menlo, monospace; letter-spacing: 0.04em; padding: 3px 6px; border: 1px solid var(--rule-strong); border-radius: 3px; background: none; color: var(--ink-muted); cursor: pointer; }
@@ -2023,3 +2026,6 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .plan-preview.bad line, .plan-preview.bad polyline, .plan-preview.bad rect { stroke: var(--err); }
 .plan-preview.bad text { fill: var(--err); }
 .plan-preview text { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+.alias-form { display: grid; grid-template-columns: 8em 1fr auto; gap: 6px; align-items: start; }
+.alias-form select { grid-column: 1 / 3; }
+.alias-note { color: var(--ink-muted); }

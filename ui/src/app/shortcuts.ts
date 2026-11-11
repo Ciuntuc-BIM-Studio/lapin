@@ -55,7 +55,7 @@ const NAMED: Record<string, string> = {
   esc: 'Escape', escape: 'Escape', del: 'Delete', delete: 'Delete', backspace: 'Backspace', tab: 'Tab', enter: 'Enter', return: 'Enter',
   space: 'Space', ' ': 'Space', up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight',
   arrowup: 'ArrowUp', arrowdown: 'ArrowDown', arrowleft: 'ArrowLeft', arrowright: 'ArrowRight',
-  plus: 'Plus', '+': 'Plus', minus: '-', home: 'Home', end: 'End', pageup: 'PageUp', pagedown: 'PageDown', insert: 'Insert',
+  plus: 'Plus', '+': 'Plus', backquote: 'Backquote', '`': 'Backquote', '~': 'Backquote', minus: '-', home: 'Home', end: 'End', pageup: 'PageUp', pagedown: 'PageDown', insert: 'Insert',
 };
 
 /** A sequence: letters typed one after the other (no modifiers). */
@@ -100,8 +100,10 @@ export function normalizeBinding(text: string): Binding | null {
 
 /** What a key press is as a chord, or null for a modifier alone. */
 export function chordOf(e: { key: string; code?: string; ctrlKey: boolean; metaKey: boolean; altKey?: boolean; shiftKey: boolean }): Binding | null {
-  if (['Control', 'Shift', 'Alt', 'Meta', 'CapsLock', 'Dead', 'Unidentified'].includes(e.key)) return null;
   const ctrl = e.ctrlKey || e.metaKey, alt = !!e.altKey;
+  // The key left of 1 (` and ~): by its place, since it is a dead key or another character on some layouts (the command line's key).
+  if (e.code === 'Backquote' && !ctrl && !alt) return 'Backquote';
+  if (['Control', 'Shift', 'Alt', 'Meta', 'CapsLock', 'Dead', 'Unidentified'].includes(e.key)) return null;
   let key = NAMED[e.key.toLowerCase()] ?? e.key;
   // With Alt (a Mac types ∫ for Alt+B) or Ctrl, the key's place says which letter or digit it is.
   const code = e.code ?? '';
@@ -157,8 +159,8 @@ export function formatBinding(b: Binding, mac = MAC): string {
   if (isSequence(b)) return b;
   const parts = b.split('+').map((p) => (p === '' ? 'Plus' : p));
   const names: Record<string, string> = mac
-    ? { Ctrl: '⌘', Alt: '⌥', Shift: '⇧', Plus: '+', Escape: 'Esc', Delete: 'Del', Backspace: '⌫', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Enter: '↵' }
-    : { Ctrl: 'Ctrl', Alt: 'Alt', Shift: '⇧', Plus: '+', Escape: 'Esc', Delete: 'Del', Backspace: '⌫', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Enter: '↵' };
+    ? { Ctrl: '⌘', Alt: '⌥', Shift: '⇧', Plus: '+', Escape: 'Esc', Delete: 'Del', Backspace: '⌫', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Enter: '↵', Backquote: '`' }
+    : { Ctrl: 'Ctrl', Alt: 'Alt', Shift: '⇧', Plus: '+', Escape: 'Esc', Delete: 'Del', Backspace: '⌫', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Enter: '↵', Backquote: '`' };
   return parts.map((p) => names[p] ?? p).join(mac ? '' : ' ');
 }
 
@@ -200,6 +202,35 @@ export interface KeymapState {
   preset: PresetId;
   /** The user's own bindings, by command: they replace the preset's for that command. */
   overrides: Record<string, Binding[]>;
+  /** The user's own command-line aliases (decision 473): the alias (upper case) to its command, `cad:LINE` for a command-line command or a registry id. */
+  aliases: Record<string, string>;
+  /** Letters typed over the view start a tool (WA, Revit-style). Off: every letter goes to the command line. */
+  letters: boolean;
+}
+
+/** An alias in its one spelling (1–12 letters or digits, the first a letter, so it is not a quick tool's digit), or null. */
+export function normalizeAlias(text: string): string | null {
+  const a = text.trim().toUpperCase();
+  return /^[A-Z][A-Z0-9]{0,11}$/.test(a) ? a : null;
+}
+
+/** The command the user's alias for a typed word is (`cad:LINE` or a registry id), or null. */
+export function resolveAlias(text: string, aliases: Record<string, string>): string | null {
+  const a = text.trim().toUpperCase();
+  return Object.prototype.hasOwnProperty.call(aliases, a) ? aliases[a] : null;
+}
+
+/** What a new alias covers: a command line name it replaces, a shortcut with the same letters, shortcuts that wait for it. */
+export interface AliasClash { builtIn: string | null; sequence: string | null; waits: string[] }
+
+/** `cli` is the command line's names with the command each is; `map` the keymap (its sequences). */
+export function aliasClash(alias: string, cli: readonly { name: string; command: string }[], map: Keymap): AliasClash {
+  const a = alias.toUpperCase();
+  const builtIn = cli.find((n) => n.name.toUpperCase() === a)?.command ?? null;
+  const sequence = map.sequences[a] ?? null;
+  // Letters typed on the way to the alias (WA on the way to WAL) are a shortcut: it waits (decision 473).
+  const waits = Object.keys(map.sequences).filter((seq) => seq !== a && a.startsWith(seq));
+  return { builtIn, sequence, waits };
 }
 
 /** The bindings in force: the user's own, else the preset's. */
@@ -234,7 +265,7 @@ export interface Keymap {
  * command names, each with the command it is (so MOVE's own names do not
  * make MV wait when MV is Move).
  */
-export function resolveKeymap(commands: readonly CommandDef[], bindings: Record<string, Binding[]>, cli: readonly { name: string; command: string }[] = []): Keymap {
+export function resolveKeymap(commands: readonly CommandDef[], bindings: Record<string, Binding[]>, cli: readonly { name: string; command: string }[] = [], aliases: Record<string, string> = {}): Keymap {
   const map: Keymap = { chords: {}, sequences: {}, waits: {} };
   for (const c of commands) for (const b of [...(c.fixed ?? []), ...(bindings[c.id] ?? [])]) {
     const into = isSequence(b) ? map.sequences : map.chords;
@@ -243,7 +274,9 @@ export function resolveKeymap(commands: readonly CommandDef[], bindings: Record<
   const same = new Map(commands.map((c) => [c.id, c.same]));
   for (const [seq, id] of Object.entries(map.sequences)) {
     const longer = Object.keys(map.sequences).some((o) => o.length > seq.length && o.startsWith(seq))
-      || cli.some((n) => n.name.length > seq.length && n.name.startsWith(seq) && n.command !== same.get(id));
+      || cli.some((n) => n.name.length > seq.length && n.name.startsWith(seq) && n.command !== same.get(id))
+      // The user's own aliases: the letters of one (or on the way to one) wait, so typing on and Enter reach the alias (decision 473).
+      || Object.entries(aliases).some(([name, target]) => name.startsWith(seq) && target !== id && target !== `cad:${same.get(id)}`);
     if (longer) map.waits[seq] = true;
   }
   return map;
@@ -301,20 +334,20 @@ export function resetCommand(s: KeymapState, id: string): KeymapState {
 }
 
 export const resetAll = (s: KeymapState): KeymapState => ({ ...s, overrides: {} });
-/** Another preset: the user's own changes go, the preset's bindings come. */
-export const withPreset = (preset: PresetId): KeymapState => ({ preset, overrides: {} });
+/** Another preset: the user's own changes go, the preset's bindings come (the aliases and the letters' switch stay). */
+export const withPreset = (preset: PresetId, keep?: Pick<KeymapState, 'aliases' | 'letters'>): KeymapState => ({ preset, overrides: {}, aliases: { ...(keep?.aliases ?? {}) }, letters: keep?.letters ?? true });
 
 const FORMAT = 'lapin-shortcuts';
 
 export function exportKeymap(s: KeymapState): string {
-  return JSON.stringify({ format: FORMAT, version: 1, preset: s.preset, overrides: s.overrides }, null, 2);
+  return JSON.stringify({ format: FORMAT, version: 2, preset: s.preset, overrides: s.overrides, aliases: s.aliases, letters: s.letters }, null, 2);
 }
 
 /** A keymap from a file; its bindings in their one spelling, the ones that are not bindings left out. Null: not a shortcuts file. */
 export function importKeymap(text: string): KeymapState | null {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { return null; }
-  const o = raw as { format?: unknown; preset?: unknown; overrides?: unknown };
+  const o = raw as { format?: unknown; preset?: unknown; overrides?: unknown; aliases?: unknown; letters?: unknown };
   if (!o || typeof o !== 'object' || o.format !== FORMAT) return null;
   const preset: PresetId = o.preset === 'classic' || o.preset === 'revit' ? o.preset : DEFAULT_PRESET;
   const overrides: Record<string, Binding[]> = {};
@@ -324,7 +357,14 @@ export function importKeymap(text: string): KeymapState | null {
       overrides[id] = [...new Set(list.map((b) => (typeof b === 'string' ? normalizeBinding(b) : null)).filter((b): b is Binding => !!b))];
     }
   }
-  return { preset, overrides };
+  const aliases: Record<string, string> = {};
+  if (o.aliases && typeof o.aliases === 'object') {
+    for (const [name, target] of Object.entries(o.aliases as Record<string, unknown>)) {
+      const a = normalizeAlias(name);
+      if (a && typeof target === 'string' && target) aliases[a] = target;
+    }
+  }
+  return { preset, overrides, aliases, letters: o.letters !== false };
 }
 
 // ─── The user's keymap, kept ───────────────────────────────────────────────

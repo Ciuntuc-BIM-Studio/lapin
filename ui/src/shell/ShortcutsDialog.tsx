@@ -8,13 +8,15 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, Plus, RotateCcw, Search, Upload, X } from 'lucide-react';
+import { Download, Pencil, Plus, RotateCcw, Search, Upload, X } from 'lucide-react';
 import { useUi, notify } from '../app/store';
 import {
-  captureKey, conflicts, exportKeymap, formatBinding, importKeymap, isSequence, PRESETS, resetAll, resetCommand, setKeymap, useKeymap,
+  aliasClash, captureKey, conflicts, normalizeAlias, exportKeymap, formatBinding, importKeymap, isSequence, PRESETS, resetAll, resetCommand, setKeymap, useKeymap,
   usersOf, withBinding, withoutBinding, withPreset, type Binding, type PresetId,
 } from '../app/shortcuts';
-import { commands, findCommandDef, useBindings } from '../app/commands';
+import { cliNames, commands, current, findCommandDef, useBindings } from '../app/commands';
+import { COMMANDS } from '../viewport/cad/session';
+import { t } from '../i18n';
 import { isDesktop, saveFile } from '../engine/files';
 
 /** Listening for a binding: a chord at once, or letters ended by Enter. */
@@ -43,7 +45,83 @@ function useCapture(active: boolean, onDone: (b: Binding | null) => void): strin
   return typed;
 }
 
+/** Every command an alias may run: the command line's own (`cad:NAME`) and the app's and ribbon's (their registry ids). */
+function aliasTargets(): { value: string; label: string; group: string }[] {
+  return [
+    ...COMMANDS.map((c) => ({ value: `cad:${c.names[0]}`, label: `${c.label} (${c.names[0]})`, group: 'Command line commands' })),
+    ...commands().map((c) => ({ value: c.id, label: c.label, group: c.category })),
+  ];
+}
+
+const targetName = (value: string) => {
+  if (value.startsWith('cad:')) { const c = COMMANDS.find((x) => x.names[0] === value.slice(4)); return c ? `${c.label} (${c.names[0]})` : value.slice(4); }
+  return findCommandDef(value)?.label ?? value;
+};
+
+/** The user's command aliases (decision 473): add, change or remove one; what each one shadows is shown. */
+function AliasesPanel() {
+  const state = useKeymap();
+  const [alias, setAlias] = useState('');
+  const [find, setFind] = useState('');
+  const [target, setTarget] = useState('');
+  const targets = useMemo(aliasTargets, []);
+  const q = find.trim().toLowerCase();
+  const shown = targets.filter((x) => !q || x.label.toLowerCase().includes(q) || x.value.toLowerCase().includes(q) || x.group.toLowerCase().includes(q));
+  const name = normalizeAlias(alias);
+  const label = (id: string) => (id.startsWith('cad:') ? targetName(id) : findCommandDef(id)?.label ?? id);
+  const clashOf = (a: string) => aliasClash(a, cliNames(), current().map);
+  const notes = (a: string): string[] => {
+    const c = clashOf(a);
+    return [
+      c.builtIn ? `${t('Replaces the command line’s own name for')} ${label(`cad:${c.builtIn}`)}` : '',
+      c.sequence ? `${t('Same letters as the shortcut of')} ${label(c.sequence)}${state.letters ? ` (${t('the shortcut waits a moment; Enter runs the alias')})` : ''}` : '',
+      ...(state.letters ? c.waits.map((seq) => `${t('Makes the shortcut of')} ${label(current().map.sequences[seq])} ${t('wait a moment; Enter runs the alias')}`) : []),
+    ].filter(Boolean);
+  };
+  const add = () => {
+    if (!name || !target) return;
+    setKeymap({ ...state, aliases: { ...state.aliases, [name]: target } });
+    setAlias(''); setTarget(''); setFind('');
+  };
+  const remove = (a: string) => { const aliases = { ...state.aliases }; delete aliases[a]; setKeymap({ ...state, aliases }); };
+  const edit = (a: string) => { setAlias(a); setTarget(state.aliases[a]); setFind(''); };
+  const rows = Object.keys(state.aliases).sort();
+  return (
+    <div className="dialog-body shortcuts-list aliases-panel" data-testid="aliases-panel">
+      <p className="muted small">Your own short names for commands. Type one in the command line and press Enter or Space. Yours come before the built-in ones; the ` key gives the command line all typing, so nothing else takes the letters.</p>
+      <table><tbody>
+        {rows.map((a) => (
+          <tr key={a} data-alias={a}>
+            <td className="cmd-name"><kbd data-no-i18n>{a}</kbd></td>
+            <td>{targetName(state.aliases[a])}{!findCommandDef(state.aliases[a]) && !state.aliases[a].startsWith('cad:') && <span className="muted small"> · <span>No such command</span></span>}
+              {notes(a).map((n) => <div key={n} className="muted small alias-note" data-no-i18n>{n}</div>)}</td>
+            <td className="cmd-reset">
+              <button type="button" className="icon mini" title="Change this alias" onClick={() => edit(a)}><Pencil size={11} /></button>
+              <button type="button" className="icon mini" title="Remove this alias" onClick={() => remove(a)}><X size={11} /></button>
+            </td>
+          </tr>
+        ))}
+        {!rows.length && <tr><td colSpan={3} className="muted small">No aliases yet.</td></tr>}
+      </tbody></table>
+      <h4 className="eyebrow">Add an alias</h4>
+      <div className="alias-form">
+        <input data-field="alias-name" placeholder="Alias" maxLength={12} value={alias} onChange={(e) => setAlias(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase())} />
+        <input data-field="alias-find" placeholder="Find a command" value={find} onChange={(e) => setFind(e.target.value)} />
+        <select data-field="alias-target" size={6} value={target} onChange={(e) => setTarget(e.target.value)} aria-label="Command">
+          {[...new Set(shown.map((x) => x.group))].map((g) => (
+            <optgroup key={g} label={g}>{shown.filter((x) => x.group === g).map((x) => <option key={x.value} value={x.value} data-no-i18n>{x.label}</option>)}</optgroup>
+          ))}
+        </select>
+        <button type="button" className="btn primary" data-field="alias-add" disabled={!name || !target} onClick={add}>Add alias</button>
+      </div>
+      <p className="muted small">An alias is 1 to 12 letters or digits, the first a letter.</p>
+      {name && notes(name).map((n) => <p key={n} className="small alias-note" data-no-i18n>{n}</p>)}
+    </div>
+  );
+}
+
 export function ShortcutsDialog() {
+  const [tab, setTab] = useState<'keys' | 'aliases'>('keys');
   const state = useKeymap();
   const bindings = useBindings();
   const all = useMemo(() => commands(), []);
@@ -71,7 +149,7 @@ export function ShortcutsDialog() {
 
   const choosePreset = (p: PresetId) => {
     if (Object.keys(state.overrides).length && !window.confirm('Your own changes to the shortcuts go, and the preset’s come. Go on?')) return;
-    setKeymap(withPreset(p));
+    setKeymap(withPreset(p, state));
   };
   const exportFile = () => { void saveFile(new TextEncoder().encode(exportKeymap(state)), 'lapin-shortcuts.json', 'application/json'); };
   const importFile = async (f: File) => {
@@ -88,6 +166,13 @@ export function ShortcutsDialog() {
           <span className="panel-title">Keyboard shortcuts</span>
           <button type="button" className="icon" onClick={close} title="Close"><X size={15} /></button>
         </header>
+        <div className="shortcuts-bar">
+          <nav className="prefs-nav row" aria-label="Pages">
+            <button type="button" className={`prefs-tab${tab === 'keys' ? ' on' : ''}`} data-field="shortcuts-tab-keys" onClick={() => setTab('keys')}>Shortcuts</button>
+            <button type="button" className={`prefs-tab${tab === 'aliases' ? ' on' : ''}`} data-field="shortcuts-tab-aliases" onClick={() => setTab('aliases')}>Command aliases</button>
+          </nav>
+          <label className="row small"><input type="checkbox" data-field="letters-toggle" checked={state.letters} onChange={(e) => setKeymap({ ...state, letters: e.target.checked })} /> Letter shortcuts (Revit-style)</label>
+        </div>
         <div className="shortcuts-bar">
           <label className="props-filter"><Search size={12} /><input placeholder="Find a command or a key" value={filter} autoFocus onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') { if (filter) { e.stopPropagation(); setFilter(''); } else close(); } }} /></label>
           <label className="row small"><span className="eyebrow">Preset</span>
@@ -110,7 +195,8 @@ export function ShortcutsDialog() {
             <button type="button" className="btn" onClick={() => setClash(null)}>Cancel</button>
           </div>
         )}
-        <div className="dialog-body shortcuts-list">
+        {tab === 'aliases' && <AliasesPanel />}
+        {tab === 'keys' && <div className="dialog-body shortcuts-list">
           <p className="muted small">Letters (WA) are typed in a view with nothing in a field and the command line empty; a command line command that starts with the same letters makes them wait a moment, or run with Enter. Esc always cancels.</p>
           {categories.map((cat) => (
             <section key={cat} className="shortcut-group">
@@ -144,7 +230,7 @@ export function ShortcutsDialog() {
               </table>
             </section>
           ))}
-        </div>
+        </div>}
       </div>
     </div>
   );

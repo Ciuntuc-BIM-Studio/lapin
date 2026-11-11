@@ -120,6 +120,17 @@ Les info-bulles, les menus et la palette de commandes (<kbd>Ctrl</kbd> <kbd>K</k
 
 Les lettres comme <kbd>WA</kbd> fonctionnent quand aucun champ n’a le focus et que la ligne de commande est vide : tapez-les sur la vue. La commande s’exécute aussitôt. Quand une commande de la ligne de commande commence par les mêmes lettres (<kbd>DI</kbd> et <kbd>DIMADD</kbd>), Lapin attend un instant : continuez à taper pour écrire la commande plus longue, ou appuyez sur <kbd>Enter</kbd> ou <kbd>Space</kbd> pour exécuter tout de suite la plus courte. Pendant qu’une commande demande un point ou une valeur, les lettres et les chiffres lui reviennent. Les commandes de la ligne de commande comme <kbd>L</kbd>, <kbd>M</kbd> ou <kbd>TRIM</kbd> suivies de <kbd>Enter</kbd> fonctionnent avec tous les jeux prédéfinis. <kbd>Esc</kbd> annule toujours.
 
+Quand les deux se heurtent, vous choisissez comment ils se partagent le clavier :
+
+- **Raccourcis par lettres (comme Revit)**, dans ce dialogue et dans **Préférences → Général → Clavier**, est activé par défaut. Désactivez-le pour ne garder que la ligne de commande : chaque lettre y va, et <kbd>Entrée</kbd> ou <kbd>Espace</kbd> exécute une commande, un alias à vous ou, si le texte n'est ni l'un ni l'autre, la commande dont ce sont les lettres (<kbd>WA</kbd> <kbd>Entrée</kbd> lance toujours le mur). Les combinaisons (<kbd>Ctrl</kbd> + une touche, les touches de fonction, <kbd>Suppr</kbd>) et les chiffres des outils rapides continuent de fonctionner.
+- La touche <kbd>`</kbd> (celle à gauche de <kbd>1</kbd>, trouvée par sa place sur n'importe quelle disposition, et un raccourci comme les autres : **Ligne de commande : prend toute la saisie**) donne toute la saisie à la ligne de commande, lettres activées ou non. La ligne est encadrée et le dit ; aucune lettre ne lance un outil, aucun chiffre ne choisit un outil rapide. <kbd>Entrée</kbd> exécute ce qui est tapé et rend la saisie, sauf si une commande demande ensuite un point ou une valeur : le mode reste alors jusqu'à la fin de la commande. <kbd>Échap</kbd> ou la même touche le quitte.
+
+### Alias de commandes
+
+La page **Alias de commandes** du dialogue garde vos propres noms pour les commandes. Tapez 1 à 12 lettres ou chiffres (le premier une lettre), trouvez la commande dans la liste (une commande de la ligne de commande comme <kbd>LINE</kbd> ou n'importe quelle commande du ruban ou de l'application) et appuyez sur **Ajouter l'alias**. Tapez l'alias dans la ligne de commande et appuyez sur <kbd>Entrée</kbd> ou <kbd>Espace</kbd>. Les vôtres passent avant les noms d'origine. La page dit ce qu'un alias remplace : un nom d'origine de la ligne de commande, un raccourci aux mêmes lettres ou un raccourci qu'il fait attendre (lettres activées, un raccourci qui est un alias, ou le début d'un, attend un instant pour que vous puissiez continuer à taper et appuyer sur <kbd>Entrée</kbd>). Les alias sont gardés avec vos raccourcis, aussi dans **Exporter…** et **Importer…**.
+
+![Alias de commandes, avec ce qu'un alias recouvre](shots/shortcuts-aliases.webp)
+
 ### Les raccourcis par défaut
 
 Voici les raccourcis Style Revit, tels que Lapin les a actuellement :

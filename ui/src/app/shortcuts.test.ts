@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  captureKey, chordOf, conflicts, effectiveBindings, exportKeymap, formatBinding, importKeymap, isBareKey, isSequence, matchSequence, normalizeBinding,
+  aliasClash, captureKey, chordOf, normalizeAlias, resolveAlias, conflicts, effectiveBindings, exportKeymap, formatBinding, importKeymap, isBareKey, isSequence, matchSequence, normalizeBinding,
   PendingSequence, presetBindings, resetAll, resetCommand, resolveKeymap, usersOf, withBinding, withoutBinding, withPreset, type CommandDef,
 } from './shortcuts';
 import { keyIntent, type KeyPress, type KeySnapshot } from './keys';
@@ -134,7 +134,7 @@ describe('the keymap', () => {
     expect(importKeymap('{"format":"other"}')).toBeNull();
     expect(importKeymap('not json')).toBeNull();
     expect(importKeymap(JSON.stringify({ format: 'lapin-shortcuts', preset: 'revit', overrides: { 'architecture.wall': ['ctrl+w', 'nonsense+key+x', 'wa'] } })))
-      .toEqual({ preset: 'revit', overrides: { 'architecture.wall': ['Ctrl+W', 'WA'] } });
+      .toEqual({ preset: 'revit', overrides: { 'architecture.wall': ['Ctrl+W', 'WA'] }, aliases: {}, letters: true });
   });
 });
 
@@ -160,5 +160,55 @@ describe('listening for a new shortcut', () => {
     expect(captureKey('WA', press('x'))).toEqual({ kind: 'done', binding: 'WAX' });
     expect(captureKey('', press('Escape'))).toEqual({ kind: 'done', binding: null });
     expect(captureKey('', press('F4'))).toEqual({ kind: 'done', binding: 'F4' });
+  });
+});
+
+describe('aliases and the command line key (decision 473)', () => {
+  it('keeps an alias in its one spelling', () => {
+    expect(normalizeAlias(' wl ')).toBe('WL');
+    expect(normalizeAlias('A1b2')).toBe('A1B2');
+    expect(normalizeAlias('1A')).toBeNull();
+    expect(normalizeAlias('')).toBeNull();
+    expect(normalizeAlias('ABCDEFGHIJKLM')).toBeNull();
+    expect(normalizeAlias('a b')).toBeNull();
+  });
+
+  it('resolves what is typed to the alias\'s command, ignoring case', () => {
+    expect(resolveAlias('wl', { WL: 'cad:LINE' })).toBe('cad:LINE');
+    expect(resolveAlias(' WL ', { WL: 'architecture.wall' })).toBe('architecture.wall');
+    expect(resolveAlias('XX', { WL: 'cad:LINE' })).toBeNull();
+    expect(resolveAlias('constructor', {})).toBeNull();
+  });
+
+  it('shows what an alias shadows', () => {
+    const map = resolveKeymap(COMMANDS, effectiveBindings(COMMANDS, withPreset('revit')), []);
+    const wa = aliasClash('WA', [{ name: 'LINE', command: 'LINE' }, { name: 'L', command: 'LINE' }], map);
+    expect(wa.sequence).toBe('architecture.wall');
+    expect(wa.builtIn).toBeNull();
+    expect(aliasClash('l', [{ name: 'L', command: 'LINE' }], map).builtIn).toBe('LINE');
+    expect(aliasClash('WAX', [], map).waits).toContain('WA');
+    expect(aliasClash('QQ', [], map)).toEqual({ builtIn: null, sequence: null, waits: [] });
+  });
+
+  it('keeps the aliases and the letters switch in a file, and over a change of preset', () => {
+    const s = { ...withPreset('classic'), aliases: { WL: 'cad:LINE' }, letters: false };
+    const back = importKeymap(exportKeymap(s));
+    expect(back?.aliases).toEqual({ WL: 'cad:LINE' });
+    expect(back?.letters).toBe(false);
+    expect(withPreset('revit', s).aliases).toEqual({ WL: 'cad:LINE' });
+    expect(withPreset('revit', s).letters).toBe(false);
+    // An older file has neither.
+    const old = importKeymap(JSON.stringify({ format: 'lapin-shortcuts', version: 1, preset: 'revit', overrides: {} }));
+    expect(old).toEqual({ preset: 'revit', overrides: {}, aliases: {}, letters: true });
+    expect(importKeymap(JSON.stringify({ format: 'lapin-shortcuts', aliases: { '1x': 'a', ok: 'cad:LINE', bad: 5 } }))?.aliases).toEqual({ OK: 'cad:LINE' });
+  });
+
+  it('reads the ` key by its place', () => {
+    expect(chordOf({ key: '`', code: 'Backquote', ctrlKey: false, metaKey: false, shiftKey: false })).toBe('Backquote');
+    expect(chordOf({ key: 'Dead', code: 'Backquote', ctrlKey: false, metaKey: false, shiftKey: false })).toBe('Backquote');
+    expect(chordOf({ key: '~', code: 'Backquote', ctrlKey: false, metaKey: false, shiftKey: true })).toBe('Backquote');
+    expect(normalizeBinding('`')).toBe('Backquote');
+    expect(formatBinding('Backquote')).toBe('`');
+    expect(captureKey('', { key: '`', code: 'Backquote', ctrlKey: false, metaKey: false, shiftKey: false })).toEqual({ kind: 'done', binding: 'Backquote' });
   });
 });

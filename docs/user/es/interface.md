@@ -120,6 +120,17 @@ Las informaciones sobre herramientas, los menús y la paleta de comandos (<kbd>C
 
 Las letras como <kbd>WA</kbd> funcionan cuando ningún campo tiene el foco y la línea de comandos está vacía: escríbalas sobre la vista. El comando se ejecuta al instante. Cuando un comando de la línea de comandos empieza por las mismas letras (<kbd>DI</kbd> y <kbd>DIMADD</kbd>), Lapin espera un momento: siga escribiendo para escribir el comando más largo, o pulse <kbd>Enter</kbd> o <kbd>Space</kbd> para ejecutar ahora el más corto. Mientras un comando pide un punto o un valor, las letras y los dígitos van a él. Los comandos de la línea de comandos como <kbd>L</kbd>, <kbd>M</kbd> o <kbd>TRIM</kbd> seguidos de <kbd>Enter</kbd> funcionan en todos los conjuntos. <kbd>Esc</kbd> siempre cancela.
 
+Cuando los dos chocan, eliges cómo se reparten el teclado:
+
+- **Atajos de letras (como en Revit)**, en este diálogo y en **Preferencias → General → Teclado**, está activado por defecto. Desactívalo para quedarte solo con la línea de comandos: cada letra va a ella, e <kbd>Intro</kbd> o <kbd>Espacio</kbd> ejecuta un comando, un alias tuyo o, si el texto no es ninguno, el comando cuyas letras son (<kbd>WA</kbd> <kbd>Intro</kbd> sigue iniciando el muro). Los acordes (<kbd>Ctrl</kbd> + una tecla, las teclas de función, <kbd>Supr</kbd>) y las cifras de las herramientas rápidas siguen funcionando.
+- La tecla <kbd>`</kbd> (la de la izquierda de <kbd>1</kbd>, hallada por su lugar en cualquier distribución, y un atajo como los demás: **Línea de comandos: toma toda la escritura**) da a la línea de comandos toda la escritura, con las letras activadas o no. La línea se enmarca y lo dice; ninguna letra inicia una herramienta, ninguna cifra elige una herramienta rápida. <kbd>Intro</kbd> ejecuta lo escrito y devuelve la escritura, salvo que un comando pida luego un punto o un valor: entonces el modo sigue hasta que el comando termina. <kbd>Esc</kbd> o la misma tecla lo deja.
+
+### Alias de comandos
+
+La página **Alias de comandos** del diálogo guarda nombres propios para comandos. Escribe de 1 a 12 letras o cifras (la primera una letra), busca el comando en la lista (un comando de la línea de comandos como <kbd>LINE</kbd> o cualquier comando de la cinta o de la aplicación) y pulsa **Añadir alias**. Escribe el alias en la línea de comandos y pulsa <kbd>Intro</kbd> o <kbd>Espacio</kbd>. Los tuyos van antes que los nombres incorporados. La página dice qué sustituye un alias: un nombre incorporado de la línea de comandos, un atajo con las mismas letras o un atajo al que hace esperar (con las letras activadas, un atajo que es un alias, o el comienzo de uno, espera un momento para que puedas seguir escribiendo y pulsar <kbd>Intro</kbd>). Los alias se guardan con tus atajos, también en **Exportar…** e **Importar…**.
+
+![Alias de comandos, con lo que un alias tapa](shots/shortcuts-aliases.webp)
+
 ### Los métodos abreviados predeterminados
 
 Estos son los métodos abreviados de estilo Revit, tal como Lapin los tiene ahora:

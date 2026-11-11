@@ -120,6 +120,17 @@ QuickInfos, die Menüs und die Befehlspalette (<kbd>Strg</kbd> <kbd>K</kbd>) zei
 
 Buchstaben wie <kbd>WA</kbd> funktionieren, wenn kein Feld den Fokus hat und die Befehlszeile leer ist: Geben Sie sie über der Ansicht ein. Der Befehl wird sofort ausgeführt. Beginnt ein Befehl der Befehlszeile mit denselben Buchstaben (<kbd>DI</kbd> und <kbd>DIMADD</kbd>), wartet Lapin einen Moment: Tippen Sie weiter, um den längeren Befehl zu schreiben, oder drücken Sie <kbd>Enter</kbd> oder <kbd>Leertaste</kbd>, um den kürzeren sofort auszuführen. Während ein Befehl nach einem Punkt oder einem Wert fragt, gehen Buchstaben und Ziffern an ihn. Befehle der Befehlszeile wie <kbd>L</kbd>, <kbd>M</kbd> oder <kbd>TRIM</kbd>, gefolgt von <kbd>Enter</kbd>, funktionieren in jeder Vorlage. <kbd>Esc</kbd> bricht immer ab.
 
+Wenn sich die beiden in die Quere kommen, wählen Sie, wie sie sich die Tastatur teilen:
+
+- **Buchstabenkürzel (wie in Revit)**, in diesem Dialog und unter **Einstellungen → Allgemein → Tastatur**, ist standardmäßig an. Schalten Sie es aus, bleibt nur die Befehlszeile: Jeder Buchstabe geht dorthin, und <kbd>Enter</kbd> oder <kbd>Leertaste</kbd> führt einen Befehl, einen Ihrer Aliase oder, wenn der Text keines von beiden ist, den Befehl mit diesen Buchstaben aus (<kbd>WA</kbd> <kbd>Enter</kbd> startet weiterhin die Wand). Tastenkombinationen (<kbd>Strg</kbd> + Taste, Funktionstasten, <kbd>Entf</kbd>) und die Zifferntasten der Schnellwerkzeuge funktionieren weiter.
+- Die Taste <kbd>`</kbd> (links von <kbd>1</kbd>, an ihrem Platz erkannt, auf jedem Layout, und ein Kürzel wie die anderen: **Befehlszeile: alle Eingaben übernehmen**) gibt der Befehlszeile alle Eingaben, ob die Buchstaben an oder aus sind. Die Zeile wird umrandet und sagt es; kein Buchstabe startet ein Werkzeug, keine Ziffer wählt ein Schnellwerkzeug. <kbd>Enter</kbd> führt das Getippte aus und gibt die Eingabe zurück, außer ein Befehl fragt danach nach einem Punkt oder Wert: Dann bleibt der Modus, bis der Befehl endet. <kbd>Esc</kbd> oder dieselbe Taste verlässt ihn.
+
+### Befehlsaliase
+
+Die Seite **Befehlsaliase** des Dialogs enthält eigene Namen für Befehle. Tippen Sie 1 bis 12 Buchstaben oder Ziffern (der erste ein Buchstabe), suchen Sie den Befehl in der Liste (einen Befehl der Befehlszeile wie <kbd>LINE</kbd> oder irgendeinen Befehl des Menübands oder der App) und drücken Sie **Alias hinzufügen**. Tippen Sie den Alias in die Befehlszeile und drücken Sie <kbd>Enter</kbd> oder <kbd>Leertaste</kbd>. Ihre gehen den eingebauten Namen vor. Die Seite sagt, was ein Alias ersetzt: einen eingebauten Namen der Befehlszeile, ein Kürzel mit denselben Buchstaben oder ein Kürzel, das er warten lässt (bei eingeschalteten Buchstaben wartet ein Kürzel, das ein Alias oder der Anfang eines Alias ist, einen Moment, damit Sie weitertippen und <kbd>Enter</kbd> drücken können). Aliase werden mit Ihren Kürzeln gespeichert, auch in **Exportieren…** und **Importieren…**.
+
+![Befehlsaliase, mit dem, was ein Alias überdeckt](shots/shortcuts-aliases.webp)
+
 ### Die Standard-Tastenkürzel
 
 Dies sind die Tastenkürzel im Revit-Stil, wie Lapin sie jetzt hat:

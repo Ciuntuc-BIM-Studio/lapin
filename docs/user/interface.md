@@ -140,7 +140,18 @@ Tooltips, the menus and the command palette (<kbd>Ctrl</kbd> <kbd>K</kbd>) alway
 
 ### Letters and the command line
 
-Letters such as <kbd>WA</kbd> work when no field has the focus and the command line is empty: type them over the view. The command runs at once. When a command line command starts with the same letters (<kbd>DI</kbd> and <kbd>DIMADD</kbd>), Lapin waits a moment: keep typing to write the longer command, or press <kbd>Enter</kbd> or <kbd>Space</kbd> to run the shorter one now. While a command asks for a point or a value, letters and digits go to it. Command line commands such as <kbd>L</kbd>, <kbd>M</kbd> or <kbd>TRIM</kbd> followed by <kbd>Enter</kbd> work in every preset. <kbd>Esc</kbd> always cancels.
+There are two ways to type a command. **Letters** such as <kbd>WA</kbd> work when no field has the focus and the command line is empty: type them over the view. The command runs at once. When a command line command starts with the same letters (<kbd>DI</kbd> and <kbd>DIMADD</kbd>), Lapin waits a moment: keep typing to write the longer command, or press <kbd>Enter</kbd> or <kbd>Space</kbd> to run the shorter one now. While a command asks for a point or a value, letters and digits go to it. **Command line** commands such as <kbd>L</kbd>, <kbd>M</kbd> or <kbd>TRIM</kbd> followed by <kbd>Enter</kbd> work in every preset. <kbd>Esc</kbd> always cancels.
+
+When the two collide, choose how they share the keyboard:
+
+- **Letter shortcuts (Revit-style)**, in this dialog and in **Preferences → General → Keyboard**, is on by default. Turn it off to keep only the command line: every letter you type goes to it, and <kbd>Enter</kbd> or <kbd>Space</kbd> runs a command, an alias of yours, or, when the text is neither, the command whose letters it is (<kbd>WA</kbd> <kbd>Enter</kbd> still starts the wall). Chords (<kbd>Ctrl</kbd> + a key, the function keys, <kbd>Delete</kbd>) and the number keys of the quick tools keep working.
+- The <kbd>`</kbd> key (the one left of <kbd>1</kbd>, found by its place on any layout, and a shortcut like the others: **Command line: take all typing**) gives the command line all the typing, with the letters on or off. The command line is outlined and says so; no letters start a tool, no number picks a quick tool. <kbd>Enter</kbd> runs what you typed and gives the typing back, unless a command then asks for a point or a value: the mode stays until that command ends. <kbd>Esc</kbd> or the same key leaves it.
+
+### Command aliases
+
+The **Command aliases** page of the dialog holds names of your own for commands. Type 1 to 12 letters or digits (the first a letter), find the command in the list (a command line command such as <kbd>LINE</kbd>, or any ribbon or app command), and press **Add alias**. Type the alias in the command line and press <kbd>Enter</kbd> or <kbd>Space</kbd>. Yours come before the built-in names. The page says what an alias replaces: a built-in command line name, a shortcut with the same letters, or a shortcut it makes wait (with the letters on, a shortcut that is an alias, or the start of one, waits a moment so you can type on and press <kbd>Enter</kbd>). Aliases are kept with your shortcuts, in **Export…** and **Import…** too.
+
+![Command aliases, with what an alias shadows](shots/shortcuts-aliases.webp)
 
 ### The default shortcuts
 

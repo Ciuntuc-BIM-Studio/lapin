@@ -6001,9 +6001,22 @@ export const scenes = [
       await t.keys('k', 's');
       await t.wait(400);
       t.expect(await t.page.locator('.shortcuts-dialog').count() === 1, 'KS opens the keyboard shortcuts');
-      await t.page.locator('.shortcuts-dialog input').first().fill('wall');
+      await t.page.locator('.shortcuts-dialog .props-filter input').fill('wall');
       await t.wait(300);
       await t.shot('shortcuts-dialog', { of: '.shortcuts-dialog', pad: 0 });
+      // The Command aliases page (decision 473): an alias of the user's own, with what it shadows.
+      await t.page.locator('[data-field=shortcuts-tab-aliases]').click();
+      await t.page.locator('[data-field=alias-name]').fill('wa');
+      await t.page.locator('[data-field=alias-find]').fill('line');
+      await t.wait(200);
+      await t.page.locator('[data-field=alias-target]').selectOption({ index: 0 });
+      await t.wait(300);
+      t.expect(await t.page.locator('.aliases-panel .alias-note').count() >= 1, 'an alias with the letters of a shortcut shows what it shadows');
+      await t.shot('shortcuts-aliases', { of: '.shortcuts-dialog', pad: 0 });
+      await t.page.locator('[data-field=alias-add]').click();
+      await t.wait(200);
+      t.expect(await t.page.locator('[data-alias=WA]').count() === 1, 'the alias is added');
+      await t.page.locator('[data-alias=WA] button[title="Remove this alias"]').click();
     },
   },
   {
