@@ -52,7 +52,7 @@ const ROLES: RoleTool[] = [
   { id: 'cleanout', label: 'Cleanout', icon: Wrench, services: ['drainage'], inline: true },
   { id: 'panel', label: 'Consumer unit', icon: Zap, services: ['electrical'] },
   { id: 'outlet', label: 'Outlet', icon: Plug, services: ['electrical'] },
-  { id: 'light', label: 'Light', icon: Lightbulb, services: ['electrical'] },
+  { id: 'light', label: 'Light fixture', icon: Lightbulb, services: ['electrical'] },
   { id: 'switch', label: 'Switch', icon: ToggleLeft, services: ['electrical'], inline: true },
   { id: 'fan', label: 'Fan', icon: Fan, services: ['supplyAir', 'extractAir'] },
   { id: 'diffuser', label: 'Diffuser', icon: Wind, services: ['supplyAir'] },

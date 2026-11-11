@@ -184,7 +184,6 @@ export const ZH: Record<string, string> = {
   "Pages": "页面",
   "Preferences": "首选项",
   "Fit the model (ZE: everything)": "适合模型 (ZE：全部)",
-  "theme|Light": "浅色",
   "prefs|Grid": "栅格",
   // Reports #126 to #130: tags turned and aligned, the curtain wall's boundary, its members' profiles, the section editor
   "Align to element": "与构件对齐",
@@ -625,6 +624,7 @@ export const ZH: Record<string, string> = {
   'Consumer unit': '配电箱',
   'Outlet': '插座',
   'Light': '灯具',
+  'Light fixture': '灯具',
   'Switch': '开关',
   'Fan': '风机',
   'Diffuser': '散流器',

@@ -184,7 +184,6 @@ export const LO: Record<string, string> = {
   "Pages": "ໜ້າ",
   "Preferences": "ການຕັ້ງຄ່າ",
   "Fit the model (ZE: everything)": "ປັບໃຫ້ພໍດີກັບແບບຈຳລອງ (ZE: ທັງໝົດ)",
-  "theme|Light": "ສະຫວ່າງ",
   "prefs|Grid": "ຕາໜ່າງ",
   // Reports #126 to #130: tags turned and aligned, the curtain wall's boundary, its members' profiles, the section editor
   "Align to element": "ຈັດຕາມທິດທາງຂອງອົງປະກອບ",
@@ -611,6 +610,7 @@ export const LO: Record<string, string> = {
   'Consumer unit': 'ຕູ້ຄວບຄຸມໄຟຟ້າ',
   'Outlet': 'ປັກສຽບ',
   'Light': 'ດອກໄຟ',
+  'Light fixture': 'ດອກໄຟ',
   'Switch': 'ສະວິດ',
   'Fan': 'ພັດລົມ',
   'Diffuser': 'ຫົວຈ່າຍລົມ',

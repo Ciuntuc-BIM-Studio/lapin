@@ -184,7 +184,6 @@ export const DE: Record<string, string> = {
   "Pages": "Seiten",
   "Preferences": "Einstellungen",
   "Fit the model (ZE: everything)": "Modell einpassen (ZE: alles)",
-  "theme|Light": "Hell",
   "prefs|Grid": "Raster",
   // Reports #126 to #130: tags turned and aligned, the curtain wall's boundary, its members' profiles, the section editor
   "Align to element": "Am Element ausrichten",
@@ -627,6 +626,7 @@ export const DE: Record<string, string> = {
   'Consumer unit': 'Unterverteilung',
   'Outlet': 'Steckdose',
   'Light': 'Leuchte',
+  'Light fixture': 'Leuchte',
   'Switch': 'Schalter',
   'Fan': 'Ventilator',
   'Diffuser': 'Luftauslass',

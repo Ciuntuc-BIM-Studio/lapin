@@ -47,7 +47,7 @@ function ProfilesPage() {
     <p className="muted small">The chips at the top of a picker's list do the same.</p>
   </>;
 }
-const THEMES: { id: ThemeChoice; label: string }[] = [{ id: 'paper', label: 'Light' }, { id: 'graphite', label: 'Dark' }, { id: 'system', label: 'As the system' }];
+const THEMES: { id: ThemeChoice; label: string }[] = [{ id: 'paper', label: 'Light theme' }, { id: 'graphite', label: 'Dark theme' }, { id: 'system', label: 'As the system' }];
 const DISPLAY: { key: keyof Display; label: string }[] = [
   { key: 'grid', label: 'Grid in plans and 3D (F7)' },
   { key: 'thinLines', label: 'Thin lines (TL)' },
@@ -98,7 +98,7 @@ export function PreferencesDialog() {
           <section className="prefs-page">
             {page === 'general' && <>
               <h4>Theme</h4>
-              <div data-i18n-ctx="theme"><Radio name="Theme" value={p.theme} options={THEMES} onChange={theme} /></div>
+              <Radio name="Theme" value={p.theme} options={THEMES} onChange={theme} />
               <p className="muted small">Kept for the next start. The moon and sun at the right of the ribbon switch it too.</p>
               <h4>Language</h4>
               <select value={lang} data-no-i18n onChange={(e) => void setLang(e.target.value as typeof lang)}>

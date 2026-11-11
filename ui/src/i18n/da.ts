@@ -184,7 +184,6 @@ export const DA: Record<string, string> = {
   "Pages": "Sider",
   "Preferences": "Præferencer",
   "Fit the model (ZE: everything)": "Tilpas modellen (ZE: alt)",
-  "theme|Light": "Lys",
   "prefs|Grid": "Gitter",
   // Reports #126 to #130: tags turned and aligned, the curtain wall's boundary, its members' profiles, the section editor
   "Align to element": "Justér efter elementet",
@@ -627,6 +626,7 @@ export const DA: Record<string, string> = {
   'Consumer unit': 'Eltavle',
   'Outlet': 'Stikkontakt',
   'Light': 'Lampe',
+  'Light fixture': 'Lampe',
   'Switch': 'Afbryder',
   'Fan': 'Ventilator',
   'Diffuser': 'Diffusor',

@@ -182,7 +182,6 @@ export const RO: Record<string, string> = {
   "Pages": "Pagini",
   "Preferences": "Preferințe",
   "Fit the model (ZE: everything)": "Încadrează modelul (ZE: tot)",
-  "theme|Light": "Luminoasă",
   "prefs|Grid": "Grilă",
   // Reports #126 to #130: tags turned and aligned, the curtain wall's boundary, its members' profiles, the section editor
   "Align to element": "Aliniază la element",
@@ -637,6 +636,7 @@ export const RO: Record<string, string> = {
   'Consumer unit': 'Tablou electric',
   'Outlet': 'Priză',
   'Light': 'Corp de iluminat',
+  'Light fixture': 'Corp de iluminat',
   'Switch': 'Întrerupător',
   'Fan': 'Ventilator',
   'Diffuser': 'Difuzor',

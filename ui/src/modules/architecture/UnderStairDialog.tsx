@@ -32,7 +32,7 @@ type OwnStyle = { id: string; label: string; spec: UnderStairSpec };
 const FILL: Record<Role, string> = { stair: '#e4dfd5', carcass: '#c99a5b', front: '#a3ae8c', fabric: '#ddd0b8', metal: '#3d3d3d', light: '#ffe7a3' };
 
 const LABELS: Partial<Record<keyof UnderStairSpec, string>> = {
-  featureWidth: 'Feature width', deskHeight: 'Desk height', benchHeight: 'Bench height', cushion: 'Cushions', light: 'Light',
+  featureWidth: 'Feature width', deskHeight: 'Desk height', benchHeight: 'Bench height', cushion: 'Cushions', light: 'Light fixture',
   hookHeight: 'Coat hook height', hookSpacing: 'Coat hook spacing', openingWidth: 'Opening width', openingHeight: 'Opening height', window: 'Window beside the door',
 };
 

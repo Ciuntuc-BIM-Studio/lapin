@@ -184,7 +184,6 @@ export const IT: Record<string, string> = {
   "Pages": "Pagine",
   "Preferences": "Preferenze",
   "Fit the model (ZE: everything)": "Inquadra il modello (ZE: tutto)",
-  "theme|Light": "Chiaro",
   "prefs|Grid": "Griglia",
   // Reports #126 to #130: tags turned and aligned, the curtain wall's boundary, its members' profiles, the section editor
   "Align to element": "Allinea all'elemento",
@@ -627,6 +626,7 @@ export const IT: Record<string, string> = {
   'Consumer unit': 'Quadro elettrico',
   'Outlet': 'Presa',
   'Light': 'Apparecchio illuminante',
+  'Light fixture': 'Apparecchio illuminante',
   'Switch': 'Interruttore',
   'Fan': 'Ventilatore',
   'Diffuser': 'Diffusore',
