@@ -101,6 +101,57 @@ I materiali hanno due ruoli in più: **Zoccolo** e **Maniglie**, oltre a frontal
 
 **Interni → Mobili cucina** crea un abaco dei moduli di ogni cucina, da sinistra, la linea delle basi poi quella dei pensili, con la loro larghezza, altezza e frontale o elettrodomestico. In IFC la cucina resta un solo IfcFurniture del suo tipo, e i moduli viaggiano con il tipo, così Lapin li rilegge.
 
+## Mobili a pannelli e arredi moderni
+
+**Interni → Mobili a pannelli** posiziona arredi fatti di pannelli: armadi, librerie, credenze, mobili TV, cassettiere, mobili bagno con lavabo, scrivanie, mobili ingresso, letti e comodini. Ognuno si configura in **Tipi di arredo**. Scegliete lì **Mobili a pannelli** e un **Modello**, poi **Nuovo tipo**. Il modello dà le misure, la base, il piano e le strutture, e ogni valore resta modificabile. Se in seguito scegliete un altro modello, il tipo riparte dai valori di quel modello e tiene i suoi materiali.
+
+Un mobile a pannelli è fatto di una o più **strutture** affiancate, elencate da sinistra, viste di fronte:
+
+- **Struttura** ne aggiunge una in fondo, il pulsante di divisione la taglia in due metà, le frecce la spostano e il cestino la toglie.
+- Una struttura con una **Larghezza** la mantiene. Le strutture senza larghezza si dividono ciò che le altre lasciano della larghezza del mobile. **Adatta la larghezza** rende il mobile largo quanto le sue strutture, quando tutte hanno una larghezza. Le strutture che non ci stanno vengono lasciate fuori, e l’anteprima lo dice.
+- Una struttura con una **Altezza** propria è più bassa del mobile, come la parte bassa di un mobile ingresso.
+- Un **Vano gambe** è una struttura senza cassa, come lo spazio sotto una scrivania. Il piano passa sopra, e un fianco lo sostiene all’estremità del mobile.
+
+Ogni struttura contiene **zone** impilate dal basso, con un divisorio tra ogni due. L’elenco le mostra come stanno, quella in alto per prima. La freccia aggiunge una zona sopra quella in alto. Una zona ha la sua **Altezza**, o una **Quota del resto**, e il suo **Fronte**:
+
+- **Mensole a giorno**;
+- **Porte**: da 1 a 4, una sola porta con **Cerniere sul lato** sinistro o destro, **Vetrati** o no;
+- **Cassetti**: da 1 a 6, ciascuno con la sua cassa dietro. **Altezze in proporzione, dall’alto** ne dà le altezze: 1:1:2 rende il cassetto in basso alto il doppio degli altri. Vuoto, sono tutti uguali.
+- **Ribalta**, che **si alza** o **si abbassa**.
+
+Dietro frontali a giorno, porte o una ribalta, una zona può avere dei **Ripiani** (regolabili a meno che togliate la spunta a **Ripiani regolabili**) e una **Barra appendiabiti**. Dietro le porte può avere anche **Cassetti interni** in basso. I cassetti sotto le porte sono due zone nella stessa struttura: i cassetti in basso, con la loro altezza, e le porte sopra.
+
+Le sezioni sotto il modello danno il resto:
+
+- **Costruzione**: lo spessore dei pannelli della struttura, dello schienale, dei ripiani e dei frontali; il piano superiore e il fondo **tra i fianchi** o **sopra i fianchi**; lo schienale **incassato** (a 10 mm dal bordo posteriore) o **appoggiato sul retro**.
+- **Base**: uno **Zoccolo**, con la sua altezza e il suo arretramento; dei **Piedini** (metallo sottile, legno rastremato o a slitta), con la loro altezza; **Appeso alla parete**, con l’altezza della sua faccia inferiore; oppure **Nessuno**. Su zoccolo o piedini, l’altezza del mobile arriva fino al suo piano. Appeso alla parete, l’altezza è quella del mobile, e **Appeso a** dice dove sta la sua faccia inferiore.
+- **Piano**: **Nessuno** (i piani delle strutture), **Sporgente** (oltre il fronte e le testate della sua sporgenza) o un **Piano di lavoro** (oltre il fronte soltanto), con il suo spessore. **Foro per il lavabo nel piano** taglia un segnaposto per il lavabo di un mobile bagno e lo disegna con il suo rubinetto.
+- **Frontali**: **Liscia**, **Con telaio** (montanti e traversi attorno a un pannello rientrante) o **Scanalato** (scanalature verticali incise nel frontale). Le maniglie sono **Nessuno** (push to open), una **Maniglia a profilo J** fresata nel bordo dei frontali, una **Barra**, un **Pomolo** o una **Maniglia sul bordo**. **Ante scorrevoli su tutta la larghezza** mette quel numero di ante scorrevoli su due guide davanti a tutte le strutture, come in un armadio.
+
+Un letto fatto con il modello **Letto** ha un telaio, una testiera alta quanto il tipo, una base, il materasso e i cuscini. Ha il **Piano del materasso** e dei cassetti sotto su entrambi i lati, il sinistro o il destro.
+
+I pulsanti di **Stili** applicano un aspetto moderno sopra i valori del tipo in un solo passo:
+
+- **Senza maniglie, push to open**;
+- **Maniglia a profilo J**;
+- **Piedini sottili in metallo**;
+- **Sospeso, appeso alla parete**;
+- **Frontali scanalati**;
+- **Bicolore, legno e colore**: una struttura e un piano in rovere con frontali verde salvia;
+- **Frontali con telaio, pomoli**.
+
+I materiali hanno i loro ruoli: corpo (la struttura), frontali, piano, schienale, zoccolo, piedini, maniglie, vetro, metallo (la barra, il rubinetto) e biancheria (il materasso di un letto). I materiali con cui Lapin parte sono indicativi: dategli i vostri.
+
+Ogni pannello è un solido del suo materiale. In pianta il mobile mostra il suo contorno, la linea dei suoi frontali, i giunti tra le sue strutture e, al livello di dettaglio più fine, l’apertura delle sue porte tratteggiata. Un mobile appeso sopra 1,2 m è disegnato come sovrastante. Prospetti e 3D mostrano i pannelli, i frontali e le maniglie.
+
+L’anteprima elenca la **Distinta di taglio** del tipo: ogni parte (fianchi, fondo, piano, schienale, divisori, ripiani, zoccolo, casse dei cassetti, poi i frontali a parte) con la sua struttura, la lunghezza lungo la venatura × larghezza × spessore e quanti sono. **Interni → Distinta di taglio** crea la distinta di taglio di tutti i tipi di mobile a pannelli del progetto, moltiplicata per i suoi mobili. Elenca solo pannelli: guide, cerniere, piedini e maniglie sono ferramenta.
+
+![Il configuratore dei mobili a pannelli: un modello, gli stili, la costruzione, le strutture e le loro zone, accanto all’anteprima e alla distinta di taglio del motore](shots/casework-types.webp)
+
+![Mobili a pannelli in 3D: una credenza su piedini rastremati, un mobile TV scanalato appeso alla parete, un armadio e una scrivania](shots/casework-3d.webp)
+
+In IFC un mobile a pannelli è un IfcFurniture del suo tipo, con il tipo predefinito del suo modello (SHELF per una libreria, DESK, BED, oppure USERDEFINED con Wardrobe, Sideboard, TV unit, Bathroom vanity…). Le sue strutture viaggiano con il tipo, così Lapin le rilegge. I tipi armadio, credenza e cassettiera fatti prima restano com’erano.
+
 ## Le proprietà di un arredo
 
 Seleziona un arredo per vedere:

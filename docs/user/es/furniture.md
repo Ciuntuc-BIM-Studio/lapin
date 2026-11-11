@@ -101,6 +101,57 @@ Los materiales tienen dos funciones más: **Zócalo** y **Tiradores**, además d
 
 **Interiores → Muebles de cocina** hace una tabla de los módulos de cada cocina, desde la izquierda, la línea de muebles bajos y luego la de muebles altos, con su ancho, su altura y su frente o electrodoméstico. En IFC la cocina sigue siendo un solo IfcFurniture de su tipo, y los módulos viajan con el tipo, así que Lapin los vuelve a leer.
 
+## Muebles de tableros y mobiliario moderno
+
+**Interiores → Muebles de tableros** coloca mobiliario hecho de tableros: armarios, librerías, aparadores, muebles de TV, cómodas, muebles de baño con lavabo, escritorios, muebles de recibidor, camas y mesitas de noche. Cada uno se configura en **Tipos de mobiliario**. Elija allí **Muebles de tableros** y un **Modelo base**, y después **Tipo nuevo**. El modelo base da las medidas, la base, el tablero y los cuerpos, y todos los valores siguen siendo editables. Si más tarde elige otro modelo base, el tipo vuelve a empezar con los valores de ese modelo y conserva sus materiales.
+
+Un mueble de tableros es uno o varios **cuerpos** uno junto a otro, listados desde la izquierda, vistos de frente:
+
+- **Cuerpo** añade uno al final, el botón de dividir lo parte en dos mitades, las flechas lo mueven y la papelera lo quita.
+- Un cuerpo con **Ancho** lo conserva. Los cuerpos sin ancho se reparten lo que los demás dejan del ancho de la pieza. **Ajustar el ancho** hace la pieza tan ancha como sus cuerpos cuando todos tienen ancho. Los cuerpos que no caben se dejan fuera, y la vista previa lo dice.
+- Un cuerpo con **Altura** propia es más bajo que la pieza, como la parte baja de un mueble de recibidor.
+- Un **Hueco para las rodillas** es un cuerpo sin caja, como el espacio bajo un escritorio. El tablero pasa por encima, y un lateral lo sostiene en el extremo de la pieza.
+
+Cada cuerpo tiene **zonas** apiladas de abajo arriba, con un separador entre cada dos. La lista las muestra tal como están, la de arriba primero. La flecha añade una zona sobre la de arriba. Una zona tiene su propia **Altura**, o una **Parte del resto**, y su **Frente**:
+
+- **Estantes abiertos**;
+- **Puertas**: de 1 a 4, una sola puerta con **Bisagras en el lado** izquierdo o derecho, **Acristalados** o no;
+- **Cajones**: de 1 a 6, cada uno con su caja detrás. **Alturas por proporción, desde arriba** da sus alturas: 1:1:2 hace el cajón de abajo el doble de alto que los otros. Vacío, todos son iguales.
+- **Trampilla**, que **se levanta** o **se abate**.
+
+Detrás de frentes abiertos, de puertas o de una trampilla, una zona puede tener **Estantes** (regulables salvo que desmarque **Baldas regulables**) y una **Barra de colgar**. Detrás de puertas puede tener también **Cajones interiores** abajo. Los cajones bajo puertas son dos zonas en un mismo cuerpo: los cajones abajo, con su altura, y las puertas encima.
+
+Las secciones bajo el modelo base dan el resto:
+
+- **Construcción**: el espesor de los tableros del cuerpo, del panel trasero, de las baldas y de los frentes; el tablero superior y el inferior **entre los laterales** o **sobre los laterales**; la trasera **empotrada** (a 10 mm del borde trasero) o **aplicada sobre la trasera**.
+- **Base**: un **Zócalo**, con su altura y su retranqueo; **Patas** (metal fino, madera cónica o un trineo), con su altura; **Colgado de la pared**, con la altura de su cara inferior; o **Ninguno**. Sobre zócalo o patas, la altura de la pieza llega hasta su tablero. Colgada de la pared, la altura es la de la pieza, y **Colgado a** dice dónde está su cara inferior.
+- **Tablero**: **Ninguno** (las tapas de los cuerpos), **Con vuelo** (sobresale por el frente y por los extremos según su vuelo) o una **Encimera** (sobresale solo por el frente), con su espesor. **Hueco para el lavabo en el tablero** corta el sitio del lavabo de un mueble de baño y lo dibuja con su grifo.
+- **Frentes**: **Lisa**, **Con marco** (largueros y travesaños alrededor de un panel hundido) o **Acanalado** (ranuras verticales talladas en el frente). Los tiradores son **Ninguno** (apertura por presión), un **Tirador de perfil J** fresado en el canto de los frentes, una **Barra**, un **Pomo** o un **Tirador de canto**. **Puertas correderas en todo el ancho** pone ese número de puertas correderas en dos carriles delante de todos los cuerpos, como en un armario.
+
+Una cama hecha con el modelo base **Cama** tiene bastidor, un cabecero tan alto como el tipo, un tablero de base, el colchón y las almohadas. Tiene la **Cara superior del colchón** y cajones debajo, a ambos lados, el izquierdo o el derecho.
+
+Los botones de **Estilos** aplican un aspecto moderno sobre los valores del tipo en un solo paso:
+
+- **Sin tiradores, apertura por presión**;
+- **Tirador de perfil J**;
+- **Patas metálicas finas**;
+- **Flotante, colgado de la pared**;
+- **Frentes acanalados**;
+- **Dos tonos, madera y color**: cuerpo y tablero de roble con frentes verde salvia;
+- **Frentes con marco, pomos**.
+
+Los materiales tienen sus funciones: cuerpo (el armazón), frentes, tablero, trasera, zócalo, patas, tiradores, cristal, metal (la barra, el grifo) y ropa de cama (el colchón de una cama). Los materiales con los que Lapin empieza son orientativos: ponga los suyos.
+
+Cada tablero es un sólido de su material. En planta la pieza muestra su contorno, la línea de sus frentes, las juntas entre sus cuerpos y, con el mayor detalle, el giro de sus puertas con línea discontinua. Una pieza colgada por encima de 1,2 m se dibuja como elemento superior. Los alzados y el 3D muestran los tableros, los frentes y los tiradores.
+
+La vista previa lista la **Lista de corte** del tipo: cada pieza (laterales, fondo, tapa, trasera, separadores, baldas, zócalo, cajas de los cajones, y aparte los frentes) con su cuerpo, su largo según la veta × ancho × espesor y cuántas hay. **Interiores → Lista de corte** hace la lista de corte de todos los tipos de mueble de tableros del proyecto, multiplicada por sus piezas. Lista solo tableros: guías, bisagras, patas y tiradores son herrajes.
+
+![El configurador de muebles de tableros: un modelo base, los estilos, la construcción, los cuerpos y sus zonas, junto a la vista previa y la lista de corte del motor](shots/casework-types.webp)
+
+![Muebles de tableros en 3D: un aparador sobre patas cónicas, un mueble de TV acanalado colgado de la pared, un armario y un escritorio](shots/casework-3d.webp)
+
+En IFC un mueble de tableros es un IfcFurniture de su tipo, con el tipo predefinido de su modelo base (SHELF para una librería, DESK, BED, o USERDEFINED con Wardrobe, Sideboard, TV unit, Bathroom vanity…). Sus cuerpos viajan con el tipo, así que Lapin los lee de vuelta. Los tipos armario, aparador y cómoda hechos antes se quedan como estaban.
+
 ## Las propiedades de un mueble
 
 Seleccione un mueble para ver:

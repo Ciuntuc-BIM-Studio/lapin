@@ -65,3 +65,38 @@ Mai târziu, dacă e cerut: verificarea spațiilor libere în fața pieselor (ac
 ## Făcut
 
 05.11.2026 (decizia 330): etapele 1–3. Motorul în `engine/src/Modules/Interior/Lapin.Furniture` (`FurnitureKinds`, `FurnitureBodies`, `FurnitureModule`, `FurnitureSchedules`), testele în `FurnitureTests`; interfața în `ui/src/modules/furniture`; ghidul `docs/user/furniture.md` în toate limbile, cu scena `furniture`. Scurtăturile: SO (canapea), AC (fotoliu), BD (pat), WD (dulap), TB (masă), KT (bucătărie).
+
+11.11.2026 (decizia 475): etapa 1 a configuratorului flexibil, mobilierul din plăci (mai jos).
+
+## Configuratorul flexibil
+
+Cerut de utilizator la 11.11.2026, după bucătăria cu corpuri proprii (decizia 472): un configurator de mobilier flexibil și modern, în trei etape. Plan aprobat; întrebările deschise s-au hotărât după cea mai bună variantă și sunt scrise aici.
+
+### Etapa 1: corpuri de mobilier din plăci (`casework`), făcută (decizia 475)
+
+- **Un fel nou, `casework`** (grupa Casework, unealta Interior → Casework), un singur motor (`Casework.cs`) pentru tot mobilierul din plăci; felurile vechi (dulap, comodă, bufet, bibliotecă, noptieră, birou) rămân neschimbate, ca proiectele vechi să se deschidă la fel (fără `IProjectUpgrade`: specul felurilor vechi nu se schimbă, iar cel nou doar adaugă chei).
+- **Piesa = corpuri alăturate** (`carcasses`, de la stânga privit din față). Un corp cu `width` și-o păstrează; cele fără lățime împart restul lățimii piesei (cel puțin 100 mm fiecare); ce nu încape e lăsat deoparte cu avertisment (ca la bucătărie), ce rămâne liber devine panou de umplutură. Un corp `gap` e spațiu pentru picioare (birou): blatul trece peste el, iar la capătul piesei o laterală (gable) susține blatul. Un corp poate avea `height` proprie, mai mică.
+- **Zonele** unui corp, de jos în sus, cu separator (raft fix) între ele: înălțime fixă (`height`) sau parte din rest (`share`); fața: deschis, uși (1–4, mâna, vitrate), sertare (1–6, `ratios` de sus în jos), clapetă (sus/jos); interiorul: rafturi (reglabile implicit: 1 mm joc pe laterale, 20 mm retrase din față), bară de umerașe (rafturile sub ea doar dacă rămâne 1 m de agățat), sertare interioare în spatele ușilor (retrase 30 mm de balamale). „Sertare sub uși” = două zone. Etajarea pe verticală se face prin zone, nu prin corpuri suprapuse (hotărâre: un model mai simplu, care acoperă cazurile cerute).
+- **Construcția**: grosimile plăcilor (corp 18, spate 8, rafturi 18, fronturi 18 implicit), capac și fund între laterale sau peste ele, spatele încastrat (la 10 mm de muchie) sau aplicat. Sertarele au cutie (laterale 16, capete, fund din materialul spatelui), adâncimea în pași de 50 mm ai glisierelor, 13 mm joc de fiecare parte.
+- **Baza**: soclu retras (plăci față și spate), picioare (metal subțire, lemn conic — trunchi de piramidă —, sanie din platbandă) la capetele fiecărui șir de corpuri și cel mult la 1 m între ele, suspendat pe perete la o cotă (`mount`) sau nimic. Înălțimea tipului e până la blat pe sol; suspendat, e înălțimea piesei, iar `mount` cota feței de jos (hotărâre: ca o comodă TV „de 400, la 300”). Peste 1,2 m piesa se desenează „overhead”.
+- **Blatul**: niciunul (capacele corpurilor), cu consolă (față și capete), blat de lucru (doar față); decupaj pentru lavoar (substituent: gaură în blat, conturul și bateria în plan). Fronturile: placă, cu ramă (montanți și traverse în jurul unei tăblii retrase; vitrate: ramă + sticlă), canelate (caneluri verticale 14 × 4 mm la 30 mm, geometrie). Mânerele: niciunul (push-to-open, fără solide), profil J (frezat în front: frontul din două solide, buza retrasă; nu e un solid de mâner), bară, buton, mâner pe muchie. Uși glisante (`sliding`) peste toate corpurile, pe două șine.
+- **Patul** e o formă proprie (`form: bed`): laterale, tăblie la picioare, tăblie cât tipul, placă de bază, lonjeron central, salteaua și pernele, sertare pe laterale (stânga, dreapta, ambele).
+- **Presetări** (catalogul `furniture.casework`, aplicate ca stilurile tâmplăriei: valorile presetării peste ale felului, materialele rămân): bufet, dulap cu uși batante, dulap cu uși glisante, bibliotecă, comodă TV suspendată, comodă, mobilier de baie cu lavoar, birou cu corp de sertare, mobilier de hol, pat, noptieră. **Stiluri moderne** (petice pe tip, un pas): fără mânere, profil J, picioare subțiri de metal, suspendat, fronturi canelate, bicolor (stejar + salvie), fronturi cu ramă și butoni.
+- **Materiale pe roluri**: body (corpul), fronts, top, back (nou), plinth, legs (nou), handles, glass, metal, linen; implicitele sunt orientative.
+- **Plăcile**: fiecare placă e un solid al rolului ei și o linie în lista de debitare (`BoardRow`: piesa, corpul, rolul, lungimea pe fibră, lățimea, grosimea, axa fibrei, front sau nu). Extrasul **Cut list** (`cutList`): pe tip, plăcile apoi fronturile, la milimetru, înmulțite cu piesele; feroneria (glisiere, balamale, picioare, mânere) nu e listată.
+- **IFC**: `IfcFurniture` al unui `IfcFurnitureType`, PredefinedType după presetare (SHELF, DESK, BED, altfel USERDEFINED cu numele ei); schimbarea presetării schimbă tipul IFC al tipului și al pieselor. Specul (cu corpurile) merge cu tipul și se citește înapoi.
+- **Interfața**: în Tipuri de mobilier, la un tip casework, editorul `CaseworkEditor` (presetare, stiluri, secțiunile construcției, corpurile cu zonele lor, adăugare/împărțire/mutare/scoatere, Fit width), previzualizarea motorului (plan, față) cu lista de debitare; fiecare schimbare e un `updateType`.
+- **Idei de îmbinări**: atelierul Woodworking din FreeCAD (dprojects, MIT după README-ul lui, https://github.com/dprojects/Woodworking) — doar idei (lista de debitare pe plăci, fibra, construcția corpului), rescrise; niciun cod preluat.
+
+### Etapa 2: mobilier moale din modele CC0 întinse pe zone (de făcut)
+
+- Canapele de 2/3 locuri, mese mai lungi, scaune: un model mesh CC0 tăiat în zone (capete fixe, mijloc întins), ca o piesă se poate lungi fără să-și deformeze brațele sau picioarele.
+- Biblioteca: Kenney Furniture Kit (CC0, https://kenney.nl/assets/furniture-kit) și Poly Haven (CC0, de verificat pe polyhaven.com/license înainte de folosire).
+- Licențele: fiecare model cu sursa și licența lui într-un registru verificat de un script în stilul `pnpm check:licenses` (un model fără licență permisivă înregistrată nu intră în build).
+
+### Etapa 3: configurații salvate (de făcut)
+
+- O configurație bună devine un `IfcFurnitureType` în biblioteca utilizatorului și în șabloanele de proiect (decizia 470), ca să fie refolosită între proiecte.
+
+Rămas din etapa 1, dacă e cerut: corpuri suprapuse ca elemente separate, colțuri (L) pentru corpuri, cant (benzi de margine) și feronerie în listă, prețuri pe placă în deviz, export al listei de debitare pentru optimizare.
+

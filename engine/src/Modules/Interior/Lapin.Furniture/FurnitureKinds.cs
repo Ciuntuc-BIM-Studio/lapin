@@ -47,9 +47,26 @@ public static class FurnitureKinds
         // A kitchen's plinth and handles (decision 472); a type without them takes its body's and its metal's.
         ["plinth"] = ("Plinth anthracite", "#3c3f43"),
         ["handles"] = ("Brushed steel", "#9ea4aa"),
+        // Casework's back panels and legs (decision 475).
+        ["back"] = ("HDF white", "#efece6"),
+        ["legs"] = ("Black powder-coated steel", "#2b2c2e"),
     };
 
-    public static readonly string[] RoleOrder = ["body", "upholstery", "top", "fronts", "linen", "metal", "glass", "plinth", "handles"];
+    public static readonly string[] RoleOrder = ["body", "upholstery", "top", "fronts", "linen", "metal", "glass", "plinth", "handles", "back", "legs"];
+
+    /// <summary>The colours of the materials the presets and styles name, when the project has not made them yet (indicative).</summary>
+    public static readonly IReadOnlyDictionary<string, string> MaterialColors = new Dictionary<string, string>
+    {
+        ["Walnut veneer"] = "#6b4a32", ["Lacquered MDF sage"] = "#9caf88", ["Lacquered MDF terracotta"] = "#c4704f", ["Lacquered MDF anthracite"] = "#3d4044",
+        ["White melamine"] = "#f3f2ee", ["Clear glass"] = "#cfe3e8", ["Brass"] = "#b5a06a",
+    };
+
+    /// <summary>The colour a material of that name starts with: a role's default's, a preset's, else none (the project picks one).</summary>
+    public static string? ColorOf(string name) =>
+        RoleDefaults.Values.FirstOrDefault(v => v.Material == name).Color ?? MaterialColors.GetValueOrDefault(name);
+
+    /// <summary>The IFC predefined type and object type of a type of the spec: its kind's, a casework's its preset's.</summary>
+    public static (string Predefined, string? ObjectType) IfcOf(Spec s) => s.Kind.Key == Casework.Key ? Casework.Ifc(s) : (s.Kind.Predefined, s.Kind.ObjectType);
 
     static KindParam L(string k, string l, double min = 0, double max = 3) => new(k, l, "length", min, max);
     static KindParam N(string k, string l, double min, double max) => new(k, l, "number", min, max);
@@ -150,6 +167,24 @@ public static class FurnitureKinds
               ("islandLength", 1.8), ("islandDepth", 0.9), ("islandAt", 0.5), ("peninsula", 1.2), ("overhang", 0.3), ("sinkOn", "run"), ("sinkAt", 0.3), ("hobOn", "run"), ("hobAt", 0.72),
               ("wallUnits", true), ("wallFrom", 1.45), ("wallHeight", 0.72), ("wallDepth", 0.35), ("tall", "right"), ("islandHood", false)),
             ["body", "fronts", "top", "plinth", "handles", "metal", "glass"]),
+        // Casework (decision 475): carcasses of boards, configured; its presets start a type (Casework.Presets).
+        new(Casework.Key, "Casework", "Casework", "USERDEFINED", "Casework", 1.8, 0.45, 0.8,
+        [
+            C("preset", "Preset", Casework.PresetKeys), C("form", "Form", "cabinet", "bed"),
+            L("carcassBoard", "Carcass boards", 0.008, 0.04), L("backBoard", "Back panel", 0.003, 0.025), L("shelfBoard", "Shelves", 0.012, 0.04), L("frontBoard", "Fronts", 0.012, 0.03),
+            C("topOn", "Top and bottom", "between", "over"), C("back", "Back", "inset", "overlay"),
+            C("base", "Base", "plinth", "legs", "floating", "none"), L("plinthHeight", "Plinth height", 0.03, 0.2), L("plinthRecess", "Plinth set back", 0, 0.1),
+            C("legs", "Legs", "metal", "tapered", "sled"), L("legHeight", "Leg height", 0.05, 0.5), L("mount", "Hung at (its underside)", 0, 2.4),
+            C("top", "Top", "none", "overhang", "worktop"), L("topThickness", "Top thickness", 0.012, 0.06), L("overhang", "Overhang", 0, 0.1), B("basin", "Basin cut-out in the top"),
+            C("handles", "Handles", "none", "jprofile", "bar", "knob", "edge"), C("frontStyle", "Front style", "slab", "framed", "fluted"),
+            N("sliding", "Sliding doors across it (0: none)", 0, 6),
+            L("mattressHeight", "Top of the mattress", 0.25, 0.8), N("bedDrawers", "Drawers under it, each side", 0, 4), C("drawersOn", "Drawers on", "both", "left", "right"),
+        ],
+            D(("preset", "sideboard"), ("form", "cabinet"), ("carcassBoard", 0.018), ("backBoard", 0.008), ("shelfBoard", 0.018), ("frontBoard", 0.018), ("topOn", "between"), ("back", "inset"),
+              ("base", "legs"), ("plinthHeight", 0.1), ("plinthRecess", 0.05), ("legs", "tapered"), ("legHeight", 0.18), ("mount", 0.3), ("top", "overhang"), ("topThickness", 0.025),
+              ("overhang", 0.01), ("basin", false), ("handles", "bar"), ("frontStyle", "slab"), ("sliding", 0), ("mattressHeight", 0.5), ("bedDrawers", 0), ("drawersOn", "both"),
+              (Casework.CarcassesKey, Casework.DefaultCarcasses())),
+            ["body", "fronts", "top", "back", "plinth", "legs", "handles", "glass", "metal", "linen"]),
     ];
 
     public static FurnitureKind? Find(string? key) => All.FirstOrDefault(k => k.Key == key);
@@ -191,6 +226,14 @@ public static class FurnitureKinds
                 if (k.Key != "kitchen") throw new CommandException($"A {k.Label.ToLowerInvariant()} has no „{key}”.");
                 var list = KitchenUnits.Normalise(v, key == KitchenUnits.UpperKey);
                 if (list.Count == 0) spec.Remove(key); else spec[key] = list;
+                continue;
+            }
+            // A casework piece's carcasses (decision 475): each checked; null or [] goes back to the kind's three.
+            if (key == Casework.CarcassesKey)
+            {
+                if (k.Key != Casework.Key) throw new CommandException($"A {k.Label.ToLowerInvariant()} has no „{key}”.");
+                var list = Casework.Normalise(v);
+                spec[key] = list.Count == 0 ? Casework.DefaultCarcasses() : list;
                 continue;
             }
             if (key is "width" or "depth" or "height")

@@ -101,6 +101,57 @@ The materials have two more roles: **Plinth** and **Handles**, besides the front
 
 **Interior → Kitchen units** makes a schedule of each kitchen's units, from the left, base line then wall line, with their width, height and front or appliance. In IFC the kitchen stays one IfcFurniture of its type, and the units travel with the type, so Lapin reads them back.
 
+## Casework and modern furniture
+
+**Interior → Casework** places furniture made of boards: wardrobes, bookcases, sideboards, TV units, chests of drawers, bathroom vanities, desks, hall units, beds and nightstands. You configure each one in **Furniture types**. Choose **Casework** and a **Preset** there, then **New type**. The preset sets the sizes, the base, the top and the carcasses, and every value stays editable. Choosing another preset later starts the type again from that preset's values and keeps its materials.
+
+A casework piece is one or more **carcasses** side by side, listed from the left as seen from the front:
+
+- **Carcass** adds one at the end, the split button divides one into two halves, the arrows move one, and the bin takes it out.
+- A carcass with a **Width** keeps it. Carcasses with no width share what the others leave of the piece's width. **Fit width** makes the piece as wide as its carcasses when they all have widths. Carcasses that do not fit are left out, and the preview says so.
+- A carcass with its own **Height** is lower than the piece, like the low part of a hall unit.
+- A **Knee space** is a carcass with no box, such as the space under a desk. The top runs over it, and a gable holds the top up at the end of the piece.
+
+Each carcass holds **zones** stacked from the bottom, with a divider between each two. The list shows them as they stand, the top one first. The arrow adds a zone over the top one. A zone has its own **Height**, or a **Share of the rest**, and its **Front**:
+
+- **Open**;
+- **Doors**: 1 to 4, a single door **Hinged on the** left or right, **Glazed** or not;
+- **Drawers**: 1 to 6, each with its box behind it. **Heights by ratio, from the top** sets their heights: 1:1:2 makes the bottom drawer twice as high as the others. Empty makes them all alike.
+- **Flap**, which **lifts up** or **drops down**.
+
+Behind open fronts, doors or a flap, a zone can have **Shelves** (adjustable unless you clear **Adjustable shelves**) and a **Hanging rail**. Behind doors it can also have **Inner drawers** at the bottom. Drawers under doors are two zones in one carcass: drawers at the bottom with their height, and doors over them.
+
+The sections under the preset set the rest:
+
+- **Construction**: the thickness of the carcass boards, the back panel, the shelves and the fronts; the top and bottom **between the sides** or **over the sides**; the back **set in** (10 mm in from the back) or **laid on the back**.
+- **Base**: a **Plinth**, with its height and how far it is set back; **Legs** (slim metal, tapered wood or a sled frame), with their height; **Hung on the wall**, with the height of its underside; or **None**. On a plinth or legs the piece's height is to its top. Hung on the wall, the piece's height is its own and **Hung at** is where its underside is.
+- **Top**: **None** (the carcasses' own tops), **Overhanging** (past the front and the ends by its overhang) or a **Worktop** (past the front only), with its thickness. **Basin cut-out in the top** cuts a placeholder for a vanity's basin and draws it with its tap.
+- **Fronts**: **Slab**, **Framed** (stiles and rails round a panel set back) or **Fluted** (upright grooves cut into the front). The handles are **None** (push to open), a **J-profile grip** milled into the fronts' edge, a **Bar**, a **Knob** or an **Edge pull**. **Sliding doors across it** puts that many sliding doors on two tracks in front of all the carcasses, as on a wardrobe.
+
+A bed made from the **Bed** preset has a frame, a headboard as high as the type, a base board, the mattress and pillows. It has the **Top of the mattress** and drawers under it on both sides, the left or the right.
+
+The **Styles** buttons apply a modern look over the type's values in one step:
+
+- **Handleless, push to open**;
+- **J-profile grip**;
+- **Slim metal legs**;
+- **Floating, hung on the wall**;
+- **Fluted fronts**;
+- **Two-tone, wood and colour**: an oak carcass and top with sage fronts;
+- **Framed fronts, knobs**.
+
+The materials have their roles: body (the carcass), fronts, top, back, plinth, legs, handles, glass, metal (the rail, the tap) and linen (a bed's mattress). The materials Lapin starts with are indicative: name your own.
+
+Every board is a solid of its material. In plan the piece shows its outline, the line of its fronts, the joints between its carcasses and, at the finest detail, its doors' swings dashed. A piece hung above 1.2 m is drawn overhead. Elevations and 3D show the boards, fronts and handles.
+
+The preview lists the type's **Cut list**: each part (sides, bottom, top, back, dividers, shelves, plinth, drawer boxes, then the fronts apart) with its carcass, its length along the grain × width × thickness and how many. **Interior → Cut list** makes the cut list of every casework type in the project, multiplied by its pieces. It lists boards only: runners, hinges, legs and handles are hardware.
+
+![The casework configurator: a preset, the styles, the construction, the carcasses and their zones, beside the engine's preview and cut list](shots/casework-types.webp)
+
+![Casework in 3D: a sideboard on tapered legs, a fluted TV unit hung on the wall, a wardrobe and a desk](shots/casework-3d.webp)
+
+In IFC a casework piece is an IfcFurniture of its type, with its preset's predefined type (SHELF for a bookcase, DESK, BED, or USERDEFINED with Wardrobe, Sideboard, TV unit, Bathroom vanity…). Its carcasses travel with the type, so Lapin reads them back. The wardrobe, sideboard and chest kinds made before stay as they were.
+
 ## A piece's properties
 
 Select a piece to see:

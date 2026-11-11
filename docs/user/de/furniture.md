@@ -101,6 +101,57 @@ Die Materialien haben zwei Rollen mehr: **Sockel** und **Griffe**, neben den Fro
 
 **Innenausbau → Küchenschränke** erstellt eine Liste der Schränke jeder Küche, von links, erst die Unterschrankreihe, dann die Oberschrankreihe, mit Breite, Höhe und Front oder Gerät. In IFC bleibt die Küche ein einziges IfcFurniture ihres Typs, und die Schränke wandern mit dem Typ, sodass Lapin sie zurückliest.
 
+## Korpusmöbel und moderne Möbel
+
+**Innenausbau → Korpusmöbel** platziert Möbel aus Platten: Kleiderschränke, Bücherregale, Sideboards, TV-Möbel, Kommoden, Waschtischunterschränke, Schreibtische, Garderobenmöbel, Betten und Nachttische. Jedes wird in **Möbeltypen** konfiguriert. Wählen Sie dort **Korpusmöbel** und eine **Vorlage**, dann **Neuer Typ**. Die Vorlage legt die Maße, den Unterbau, die Platte und die Korpusse fest, und jeder Wert bleibt änderbar. Wählen Sie später eine andere Vorlage, beginnt der Typ neu mit den Werten dieser Vorlage und behält seine Materialien.
+
+Ein Korpusmöbel besteht aus einem oder mehreren **Korpussen** nebeneinander, von links nach rechts aufgelistet, von vorn gesehen:
+
+- **Korpus** fügt am Ende einen hinzu, die Teilen-Schaltfläche teilt einen in zwei Hälften, die Pfeile verschieben einen, und der Papierkorb entfernt ihn.
+- Ein Korpus mit **Breite** behält sie. Korpusse ohne Breite teilen sich, was die anderen von der Breite des Möbels übrig lassen. **Breite anpassen** macht das Möbel so breit wie seine Korpusse, wenn alle eine Breite haben. Korpusse, die nicht passen, werden weggelassen, und die Vorschau sagt es.
+- Ein Korpus mit eigener **Höhe** ist niedriger als das Möbel, wie der niedrige Teil eines Garderobenmöbels.
+- Ein **Beinraum** ist ein Korpus ohne Kasten, etwa der Raum unter einem Schreibtisch. Die Platte läuft darüber, und eine Seite trägt die Platte am Ende des Möbels.
+
+Jeder Korpus enthält **Zonen**, von unten nach oben gestapelt, mit einem Trennboden zwischen je zwei. Die Liste zeigt sie, wie sie stehen, die oberste zuerst. Der Pfeil fügt eine Zone über der obersten hinzu. Eine Zone hat ihre eigene **Höhe** oder einen **Anteil am Rest** und ihre **Vorderansicht**:
+
+- **Offene Regale**;
+- **Türen**: 1 bis 4, eine einzelne Tür **Angeschlagen auf der** linken oder rechten Seite, **Verglast** oder nicht;
+- **Schubladen**: 1 bis 6, jede mit ihrem Kasten dahinter. **Höhen im Verhältnis, von oben** legt ihre Höhen fest: 1:1:2 macht die unterste Schublade doppelt so hoch wie die anderen. Leer sind alle gleich.
+- **Klappe**, die **nach oben klappt** oder **nach unten klappt**.
+
+Hinter offenen Fronten, Türen oder einer Klappe kann eine Zone **Fachböden** haben (verstellbar, solange Sie **Verstellbare Fachböden** nicht abwählen) und eine **Kleiderstange**. Hinter Türen kann sie unten auch **Innenschubladen** haben. Schubladen unter Türen sind zwei Zonen in einem Korpus: unten die Schubladen mit ihrer Höhe und darüber die Türen.
+
+Die Abschnitte unter der Vorlage legen den Rest fest:
+
+- **Konstruktion**: die Stärke der Korpusplatten, der Rückwand, der Fachböden und der Fronten; Deckel und Boden **zwischen den Seiten** oder **über den Seiten**; die Rückwand **eingelassen** (10 mm von der Rückkante nach innen) oder **auf die Rückseite gelegt**.
+- **Unterbau**: ein **Sockel** mit seiner Höhe und seinem Rücksprung; **Füße** (schlankes Metall, konisches Holz oder Kufen) mit ihrer Höhe; **An der Wand aufgehängt** mit der Höhe seiner Unterkante; oder **Keine**. Auf Sockel oder Füßen reicht die Höhe des Möbels bis zu seiner Platte. An der Wand aufgehängt gilt die eigene Höhe des Möbels, und **Aufgehängt auf** gibt an, wo seine Unterkante liegt.
+- **Platte**: **Keine** (die Deckel der Korpusse), **Überstehend** (über die Front und die Enden um ihren Überstand) oder eine **Arbeitsplatte** (nur über die Front), mit ihrer Stärke. **Waschtischausschnitt in der Platte** schneidet einen Platzhalter für das Waschbecken eines Waschtischunterschranks und zeichnet es mit seiner Armatur.
+- **Fronten**: **Glatt**, **Gerahmt** (Friese um eine zurückgesetzte Füllung) oder **Gerillt** (senkrechte Rillen in der Front). Die Griffe sind **Keine** (Push-to-open), ein **J-Profil-Griff**, in die Frontkante gefräst, ein **Stangengriff**, ein **Knauf** oder ein **Kantengriff**. **Schiebetüren über die ganze Breite** setzt so viele Schiebetüren auf zwei Schienen vor alle Korpusse, wie bei einem Kleiderschrank.
+
+Ein Bett aus der Vorlage **Bett** hat einen Rahmen, ein Kopfteil so hoch wie der Typ, einen Bettboden, die Matratze und Kissen. Es hat die **Oberkante Matratze** und Schubladen darunter auf beiden Seiten, links oder rechts.
+
+Die Schaltflächen unter **Stile** legen in einem Schritt eine moderne Optik über die Werte des Typs:
+
+- **Grifflos, Push-to-open**;
+- **J-Profil-Griff**;
+- **Schlanke Metallfüße**;
+- **Schwebend, an der Wand aufgehängt**;
+- **Gerillte Fronten**;
+- **Zweifarbig, Holz und Farbe**: ein Korpus und eine Platte aus Eiche mit salbeigrünen Fronten;
+- **Rahmenfronten, Knöpfe**.
+
+Die Materialien haben ihre Rollen: Korpus, Fronten, Platte, Rückwand, Sockel, Füße, Griffe, Glas, Metall (die Stange, die Armatur) und Leinen (die Matratze eines Betts). Die Materialien, mit denen Lapin beginnt, sind Richtwerte: Geben Sie Ihre eigenen ein.
+
+Jede Platte ist ein Volumenkörper aus ihrem Material. Im Grundriss zeigt das Möbel seinen Umriss, die Linie seiner Fronten, die Fugen zwischen seinen Korpussen und im feinsten Detailgrad den Schwenkbereich seiner Türen gestrichelt. Ein Möbel, das über 1,2 m aufgehängt ist, wird als darüberliegend gezeichnet. Ansichten und 3D zeigen die Platten, Fronten und Griffe.
+
+Die Vorschau listet die **Zuschnittliste** des Typs: jedes Teil (Seiten, Boden, Deckel, Rückwand, Trennböden, Fachböden, Sockel, Schubladenkästen, dann die Fronten gesondert) mit seinem Korpus, seiner Länge in Faserrichtung × Breite × Dicke und der Anzahl. **Innenausbau → Zuschnittliste** erstellt die Zuschnittliste aller Korpusmöbeltypen im Projekt, mit der Zahl ihrer Möbel multipliziert. Sie listet nur Platten: Auszüge, Scharniere, Füße und Griffe sind Beschläge.
+
+![Der Konfigurator für Korpusmöbel: eine Vorlage, die Stile, die Konstruktion, die Korpusse und ihre Zonen, neben der Vorschau und der Zuschnittliste der Engine](shots/casework-types.webp)
+
+![Korpusmöbel in 3D: ein Sideboard auf konischen Füßen, ein gerilltes, an der Wand aufgehängtes TV-Möbel, ein Kleiderschrank und ein Schreibtisch](shots/casework-3d.webp)
+
+In IFC ist ein Korpusmöbel ein IfcFurniture seines Typs, mit dem vordefinierten Typ seiner Vorlage (SHELF für ein Bücherregal, DESK, BED oder USERDEFINED mit Wardrobe, Sideboard, TV unit, Bathroom vanity…). Seine Korpusse wandern mit dem Typ, sodass Lapin sie zurückliest. Die früher erstellten Typen Kleiderschrank, Sideboard und Kommode bleiben, wie sie waren.
+
 ## Die Eigenschaften eines Möbels
 
 Wählen Sie ein Möbel aus, um zu sehen:

@@ -101,6 +101,57 @@ Materialerne har to roller mere: **Sokkel** og **Greb**, ved siden af fronterne,
 
 **Interiør → Køkkenskabe** laver et skema over hvert køkkens skabe, fra venstre, underskabsrækken og så overskabsrækken, med deres bredde, højde og front eller apparat. I IFC forbliver køkkenet ét IfcFurniture af sin type, og skabene rejser med typen, så Lapin læser dem tilbage.
 
+## Korpusmøbler og moderne møbler
+
+**Interiør → Korpusmøbler** placerer møbler lavet af plader: garderobeskabe, reoler, skænke, TV-møbler, kommoder, badeværelsesmøbler med håndvask, skriveborde, entrémøbler, senge og natborde. Hvert enkelt sættes op i **Møbeltyper**. Vælg dér **Korpusmøbler** og en **Forudindstilling**, og derefter **Ny type**. Forudindstillingen giver målene, soklen, pladen og korpusserne, og hver værdi kan stadig ændres. Vælger du senere en anden forudindstilling, starter typen forfra med værdierne i den forudindstilling og beholder sine materialer.
+
+Et korpusmøbel er ét eller flere **korpusser** side om side, listet fra venstre, set forfra:
+
+- **Korpus** tilføjer et i enden, delknappen deler et i to halvdele, pilene flytter et, og skraldespanden fjerner det.
+- Et korpus med en **Bredde** beholder den. Korpusser uden bredde deler det, de andre efterlader af møblets bredde. **Tilpas bredden** gør møblet lige så bredt som dets korpusser, når alle har en bredde. Korpusser, der ikke kan være der, udelades, og forhåndsvisningen siger det.
+- Et korpus med sin egen **Højde** er lavere end møblet, som den lave del af et entrémøbel.
+- En **Benplads** er et korpus uden kasse, som pladsen under et skrivebord. Pladen løber hen over den, og en side bærer pladen i enden af møblet.
+
+Hvert korpus rummer **zoner** stablet nedefra, med en skillevæg mellem hver to. Listen viser dem, som de står, den øverste først. Pilen tilføjer en zone over den øverste. En zone har sin egen **Højde** eller en **Andel af resten** og sin **Forside**:
+
+- **Åbne hylder**;
+- **Døre**: 1 til 4, en enkelt dør **Hængslet i** venstre eller højre side, **Glasede** eller ej;
+- **Skuffer**: 1 til 6, hver med sin kasse bagved. **Højder i forhold, oppefra** giver deres højder: 1:1:2 gør den nederste skuffe dobbelt så høj som de andre. Tom er de alle ens.
+- **Klap**, der **løftes op** eller **klappes ned**.
+
+Bag åbne fronter, døre eller en klap kan en zone have **Hylder** (justerbare, medmindre du fjerner markeringen i **Justerbare hylder**) og en **Bøjlestang**. Bag døre kan den også have **Indvendige skuffer** forneden. Skuffer under døre er to zoner i ét korpus: skufferne forneden med deres højde og dørene over dem.
+
+Sektionerne under forudindstillingen giver resten:
+
+- **Konstruktion**: tykkelsen af korpuspladerne, bagpladen, hylderne og fronterne; top og bund **mellem siderne** eller **over siderne**; ryggen **indfældet** (10 mm inde fra bagkanten) eller **lagt på bagsiden**.
+- **Sokkel**: en **Sokkel** med sin højde og hvor langt den er sat tilbage; **Ben** (slankt metal, konisk træ eller slædeben) med deres højde; **Hængt på væggen** med højden af sin underside; eller **Ingen**. På sokkel eller ben er møblets højde op til dets plade. Hængt på væggen er højden møblets egen, og **Ophængt i** siger, hvor dets underside er.
+- **Plade**: **Ingen** (korpussernes egne toppe), **Overhængende** (ud over forsiden og enderne med sit overhæng) eller en **Bordplade** (kun ud over forsiden) med sin tykkelse. **Udskæring til håndvask i pladen** skærer en plads til håndvasken i et badeværelsesmøbel og tegner den med dens hane.
+- **Fronter**: **Glat**, **Med ramme** (stolper og tværstykker rundt om en tilbagetrukket fyldning) eller **Rillet** (lodrette riller skåret i fronten). Grebene er **Ingen** (push-to-open), et **J-profilgreb** fræset i frontens kant, et **Stanggreb**, en **Knop** eller et **Kantgreb**. **Skydedøre over hele bredden** sætter så mange skydedøre på to skinner foran alle korpusserne, som på et garderobeskab.
+
+En seng lavet af forudindstillingen **Seng** har en ramme, en sengegavl lige så høj som typen, en sengebund, madrassen og puder. Den har **Madrassens overside** og skuffer under på begge sider, den venstre eller den højre.
+
+Knapperne under **Stilarter** lægger et moderne udtryk over typens værdier i ét trin:
+
+- **Uden greb, push-to-open**;
+- **J-profilgreb**;
+- **Slanke metalben**;
+- **Svævende, hængt på væggen**;
+- **Rillede fronter**;
+- **Tofarvet, træ og farve**: et korpus og en plade i eg med salvie-grønne fronter;
+- **Fronter med ramme, knopper**.
+
+Materialerne har deres roller: korpus, fronter, plade, bagside, sokkel, ben, greb, glas, metal (stangen, hanen) og sengetøj (en senges madras). De materialer, Lapin starter med, er vejledende: skriv dine egne.
+
+Hver plade er et massivt legeme af sit materiale. I plan viser møblet sin kontur, linjen af sine fronter, samlingerne mellem sine korpusser og, ved den fineste detaljeringsgrad, sine dørs sving stiplet. Et møbel hængt over 1,2 m tegnes som oven over. Opstalter og 3D viser pladerne, fronterne og grebene.
+
+Forhåndsvisningen lister typens **Tilskæringsliste**: hver del (sider, bund, top, bagside, skillevægge, hylder, sokkel, skuffekasser, så fronterne for sig) med dens korpus, dens længde langs fibrene × bredde × tykkelse og hvor mange. **Interiør → Tilskæringsliste** laver tilskæringslisten for alle korpusmøbeltyper i projektet, ganget med deres møbler. Den lister kun plader: skinner, hængsler, ben og greb er beslag.
+
+![Konfiguratoren til korpusmøbler: en forudindstilling, stilarterne, konstruktionen, korpusserne og deres zoner, ved siden af motorens forhåndsvisning og tilskæringsliste](shots/casework-types.webp)
+
+![Korpusmøbler i 3D: en skænk på koniske ben, et rillet TV-møbel hængt på væggen, et garderobeskab og et skrivebord](shots/casework-3d.webp)
+
+I IFC er et korpusmøbel et IfcFurniture af sin type med sin forudindstillings foruddefinerede type (SHELF til en reol, DESK, BED eller USERDEFINED med Wardrobe, Sideboard, TV unit, Bathroom vanity…). Dets korpusser følger med typen, så Lapin læser dem tilbage. De garderobeskabs-, skænk- og kommodetyper, der blev lavet før, forbliver, som de var.
+
 ## Et møbels egenskaber
 
 Vælg et møbel for at se:

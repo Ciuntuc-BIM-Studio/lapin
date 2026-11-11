@@ -1869,6 +1869,19 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .kitchen-unit-width .num { width: 76px; }
 .kitchen-unit-field { display: inline-flex; gap: 4px; align-items: center; }
 .kitchen-unit-field .num { width: 76px; }
+/* The casework configurator (decision 475): a preset, styles, the construction's sections, the carcasses with their zones top first. */
+.casework-editor { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.casework-styles { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.casework-section dl.fields { margin: 0; }
+.casework-carcasses { display: flex; flex-direction: column; gap: 6px; }
+.casework-carcass { display: flex; flex-direction: column; gap: 3px; }
+.casework-zone { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 3px 6px; margin-left: 18px; border-left: 2px solid var(--line, #d8d2c6); }
+.casework-zone select { width: auto; }
+.casework-zone .num, .casework-zone .casework-ratios { width: 72px; }
+.casework-cutlist table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.casework-cutlist td:nth-child(3), .casework-cutlist th:nth-child(3) { white-space: nowrap; }
+.casework-cutlist td, .casework-cutlist th { padding: 1px 2px; text-align: left; border-bottom: 1px solid var(--line, #d8d2c6); }
+.casework-cutlist tr.front td { font-style: italic; }
 @media (max-width: 760px) { .furniture-edit-grid { grid-template-columns: 1fr; } }
 .furniture-edit dl.fields dd input:not([type=checkbox]), .furniture-edit dl.fields dd select { width: 100%; }
 .dialog[data-dialog=furniture-types] .type-list .tree-item { white-space: nowrap; }

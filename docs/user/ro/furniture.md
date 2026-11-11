@@ -101,6 +101,57 @@ Materialele au două roluri în plus: **Plinth** (soclul) și **Handles** (mâne
 
 **Interior → Kitchen units** face un extras cu corpurile fiecărei bucătării, de la stânga, rândul de jos apoi cel de sus, cu lățimea, înălțimea și fața sau aparatul. În IFC bucătăria rămâne un singur IfcFurniture de tipul ei, iar corpurile merg cu tipul, deci Lapin le citește înapoi.
 
+## Corpuri de mobilier și mobilier modern
+
+**Interior → Corpuri de mobilier** pune mobilier făcut din plăci: dulapuri, biblioteci, bufete, comode TV, comode, mobilier de baie cu lavoar, birouri, mobilier de hol, paturi și noptiere. Fiecare se configurează în **Tipuri de mobilier**. Alege acolo **Corpuri de mobilier** și o **Presetare**, apoi **Tip nou**. Presetarea dă dimensiunile, baza, blatul și corpurile, iar fiecare valoare rămâne de modificat. Dacă alegi mai târziu altă presetare, tipul repornește din valorile ei și își păstrează materialele.
+
+O piesă e făcută din unul sau mai multe **corpuri** alăturate, de la stânga, privit din față:
+
+- **Corp** adaugă unul la capăt, butonul de împărțire îl taie în două jumătăți, săgețile îl mută, iar coșul îl scoate.
+- Un corp cu **Lățime** și-o păstrează. Corpurile fără lățime împart ce lasă celelalte din lățimea piesei. **Potrivește lățimea** face piesa cât corpurile ei de lată, când toate au lățime. Corpurile care nu încap sunt lăsate deoparte, iar previzualizarea o spune.
+- Un corp cu **Înălțime** proprie e mai jos decât piesa, ca partea joasă a unui mobilier de hol.
+- Un **Spațiu pentru picioare** e un corp fără cutie, ca locul de sub un birou. Blatul trece peste el, iar la capătul piesei o laterală susține blatul.
+
+Fiecare corp are **zone** suprapuse de jos în sus, cu un separator între fiecare două. Lista le arată așa cum stau, cea de sus prima. Săgeata adaugă o zonă peste cea de sus. O zonă are **Înălțimea** ei sau o **Parte din rest**, și **Fața**:
+
+- **Rafturi deschise**;
+- **Uși**: de la 1 la 4, o singură ușă cu **Balamale pe partea** stângă sau dreaptă, **Vitrate** sau nu;
+- **Sertare**: de la 1 la 6, fiecare cu cutia lui în spate. **Înălțimi în proporție, de sus** le dă înălțimile: 1:1:2 face sertarul de jos de două ori mai înalt decât celelalte. Gol, sunt toate la fel.
+- **Clapetă**, care **se ridică** sau **se coboară**.
+
+În spatele rafturilor deschise, al ușilor sau al unei clapete, o zonă poate avea **Rafturi** (reglabile, dacă nu debifezi **Rafturi reglabile**) și o **Bară de umerașe**. În spatele ușilor poate avea și **Sertare interioare**, jos. Sertarele sub uși sunt două zone în același corp: sertarele jos, cu înălțimea lor, și ușile deasupra.
+
+Secțiunile de sub presetare dau restul:
+
+- **Construcție**: grosimea plăcilor corpului, a panoului din spate, a rafturilor și a fronturilor; blatul și fundul corpului **între laterale** sau **peste laterale**; spatele **încastrat** (la 10 mm de muchia din spate) sau **aplicat pe spate**.
+- **Bază**: un **Soclu**, cu înălțimea și retragerea lui; **Picioare** (metal subțire, lemn conic sau o sanie), cu înălțimea lor; **Suspendat pe perete**, cu înălțimea feței de jos; sau **Niciunul**. Pe soclu sau pe picioare, înălțimea piesei e până la blatul ei. Suspendată, înălțimea e a piesei, iar **Agățat la** spune unde e fața ei de jos.
+- **Blat**: **Niciunul** (capacele corpurilor), **Cu consolă** (depășește fața și capetele cu consola lui) sau un **Blat de lucru** (depășește doar fața), cu grosimea lui. **Decupaj pentru lavoar în blat** taie locul lavoarului unui mobilier de baie și îl desenează cu bateria lui.
+- **Fronturi**: **Placă**, **Cu ramă** (montanți și traverse în jurul unei tăblii retrase) sau **Canelat** (caneluri verticale tăiate în front). Mânerele pot fi **Niciunul** (push-to-open), un **Profil J** frezat în muchia fronturilor, o **Bară**, un **Buton** sau un **Mâner pe muchie**. **Uși glisante pe toată lățimea** pune atâtea uși glisante pe două șine, în fața tuturor corpurilor, ca la un dulap.
+
+Un pat făcut din presetarea **Pat** are cadrul, o tăblie cât tipul de înaltă, o placă de bază, salteaua și pernele. Are **Înălțimea saltelei** și sertare dedesubt, pe ambele părți, pe stânga sau pe dreapta.
+
+Butoanele din **Stiluri** aplică un aspect modern peste valorile tipului, într-un singur pas:
+
+- **Fără mânere, push-to-open**;
+- **Profil J (mâner integrat)**;
+- **Picioare subțiri de metal**;
+- **Suspendat, prins de perete**;
+- **Fronturi canelate**;
+- **Bicolor, lemn și culoare**: corpul și blatul de stejar, fronturile verde salvie;
+- **Fronturi cu ramă, butoni**.
+
+Materialele au rolurile lor: corpul, fronturile, blatul, spatele, soclul, picioarele, mânerele, sticla, metalul (bara, bateria) și lenjeria (salteaua patului). Materialele cu care pornește Lapin sunt orientative: numește-le pe ale tale.
+
+Fiecare placă e un solid din materialul ei. În plan piesa își arată conturul, linia fronturilor, îmbinările dintre corpuri și, la detaliul cel mai fin, deschiderea ușilor, întreruptă. O piesă agățată mai sus de 1,2 m se desenează ca element de deasupra planului de secțiune. Fațadele și 3D-ul arată plăcile, fronturile și mânerele.
+
+Previzualizarea arată **Lista de debitare** a tipului: fiecare piesă (laterale, fund, capac, spate, separatoare, rafturi, soclu, cutiile sertarelor, apoi fronturile separat) cu corpul ei, lungimea pe direcția fibrei × lățimea × grosimea și câte sunt. **Interior → Listă de debitare** face lista de debitare a tuturor tipurilor de corpuri din proiect, înmulțită cu piesele lor. Listează doar plăcile: glisierele, balamalele, picioarele și mânerele sunt feronerie.
+
+![Configuratorul de corpuri de mobilier: presetarea, stilurile, construcția, corpurile și zonele lor, lângă previzualizarea motorului și lista de debitare](shots/casework-types.webp)
+
+![Corpuri de mobilier în 3D: un bufet pe picioare conice, o comodă TV canelată suspendată, un dulap și un birou](shots/casework-3d.webp)
+
+În IFC o piesă de mobilier din corpuri e un IfcFurniture al tipului ei, cu tipul predefinit al presetării (SHELF pentru o bibliotecă, DESK, BED sau USERDEFINED cu Wardrobe, Sideboard, TV unit, Bathroom vanity…). Corpurile ei călătoresc cu tipul, așa că Lapin le citește înapoi. Felurile dulap, bufet și comodă făcute înainte rămân cum erau.
+
 ## Proprietățile unei piese
 
 Când selectezi o piesă, vezi:

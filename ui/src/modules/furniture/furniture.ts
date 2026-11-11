@@ -20,6 +20,7 @@ export const CLASS = 'IfcFurniture';
 /** The material roles, as the dialog names them. */
 export const ROLE_LABELS: Record<string, string> = {
   body: 'Body', upholstery: 'Upholstery', top: 'Top', fronts: 'Fronts', linen: 'Linen', metal: 'Metal', glass: 'Glass', plinth: 'Plinth', handles: 'Handles',
+  back: 'Back', legs: 'Legs',
 };
 
 /** A role a type made before it had its own material takes another's (a kitchen's plinth its body's, its handles the metal's; decision 472). */
@@ -81,6 +82,9 @@ export interface PreviewDto {
   width: number; depth: number; height: number;
   units?: { line: 'Base' | 'Wall'; index: number; type: string; width: number; height: number; detail: string; at: number }[];
   unitsLength?: number | null; warnings?: string[];
+  /** A casework type's boards and its carcasses as laid (decision 475). */
+  boards?: { part: string; carcass: number; role: string; length: number; width: number; thickness: number; grain: string; front: boolean }[];
+  carcasses?: { index: number; x0: number; x1: number }[];
 }
 
 export function planPaths(p: PreviewDto): { d: string; kind: string }[] {
@@ -114,6 +118,13 @@ export const CHOICE_LABELS: Record<string, string> = {
   single: 'Single', 'one-half': '1½ bowl', double: 'Double', corner: 'Corner', standard: 'Standard', 'pull-out': 'Pull-out', none: 'None',
   induction: 'Induction', gas: 'Gas', 'under-counter': 'Under-counter', tall: 'Tall integrated', freestanding: 'Freestanding',
   chimney: 'Chimney', integrated: 'Integrated', left: 'Left', right: 'Right',
+  // Casework (decision 475).
+  cabinet: 'Cabinet', bed: 'Bed', between: 'Between the sides', over: 'Over the sides', inset: 'Set in', overlay: 'Laid on the back',
+  plinth: 'Plinth', legs: 'Legs', floating: 'Hung on the wall', metal: 'Slim metal', tapered: 'Tapered wood', sled: 'Sled',
+  overhang: 'Overhanging', worktop: 'Worktop', jprofile: 'J-profile grip', bar: 'Bar', knob: 'Knob', edge: 'Edge pull',
+  slab: 'Slab', framed: 'Framed', fluted: 'Fluted', flap: 'Flap', up: 'Lifts up', down: 'Drops down', box: 'Carcass', gap: 'Knee space', both: 'Both sides',
+  sideboard: 'Sideboard', wardrobe: 'Wardrobe', wardrobeSliding: 'Wardrobe, sliding doors', bookcase: 'Bookcase', tvUnit: 'TV unit', chest: 'Chest of drawers',
+  vanity: 'Bathroom vanity', desk: 'Desk', hallUnit: 'Hall unit', nightstand: 'Nightstand',
 };
 
 /** Whether a parameter applies to the type's layout (a parameter without layouts applies to all). */

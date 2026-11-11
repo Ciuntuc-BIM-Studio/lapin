@@ -11,15 +11,38 @@ import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
 import { relatedOf } from '../../engine/model';
 import { deleteType } from '../core/deleteType';
-import { LengthField, NumberField } from '../../shell/cells';
+import { LengthField } from '../../shell/cells';
 import { KitchenUnitsEditor } from './KitchenUnitsEditor';
+import { CaseworkEditor } from './CaseworkEditor';
+import { ParamField } from './ParamField';
+import { cutListRows, type CaseworkCatalog } from './casework';
 import {
   CHOICE_LABELS, ROLE_FALLBACK, ROLE_LABELS, TYPE_CLASS, appliesTo, chooseType, kindOf, planBox, planPaths, sizeOf, specOf, useTypesDialog,
-  type FurnitureKind, type FurnitureSpec, type KindParam, type KitchenLayout, type PreviewDto,
+  type FurnitureKind, type FurnitureSpec, type KitchenLayout, type PreviewDto,
 } from './furniture';
 
 export function useKinds(): FurnitureKind[] {
   return ((useSession((s) => s.info?.catalogs['furniture.kinds']) ?? []) as unknown as FurnitureKind[]);
+}
+
+/** A casework type's boards as the cut list groups them (decision 475): the boards, then the fronts. */
+function CutList({ p }: { p: PreviewDto }) {
+  const rows = cutListRows(p.boards ?? []);
+  return (
+    <details className="casework-cutlist" data-testid="casework-cutlist">
+      <summary className="small"><span>Cut list</span> <span data-no-i18n>· {rows.reduce((a, r) => a + r.count, 0)} ×</span></summary>
+      <table className="small">
+        <thead><tr><th>Part</th><th>Carcass</th><th>L × W × T (mm)</th><th>Count</th></tr></thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className={r.front ? 'front' : undefined}>
+              <td>{r.part}</td><td data-no-i18n>{r.carcass || ''}</td><td data-no-i18n>{r.size}</td><td data-no-i18n>{r.count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
+  );
 }
 
 /** The engine's picture of a spec: the plan symbol above, the front below. */
@@ -52,19 +75,9 @@ export function FurniturePreview({ kind, spec, length }: { kind: string; spec: F
       </svg>
       <p className="muted small" data-no-i18n>{Math.round(p.width * 1000)} × {Math.round(p.depth * 1000)} × {Math.round(p.height * 1000)} mm</p>
       {(p.warnings ?? []).map((w, i) => <p key={i} className="error-text small">{w}</p>)}
+      {!!p.boards?.length && <CutList p={p} />}
     </div>
   );
-}
-
-/** One of a kind's parameters, as its kind says it is edited. */
-function ParamField({ p, value, onCommit }: { p: KindParam; value: unknown; onCommit: (v: unknown) => void }) {
-  switch (p.kind) {
-    case 'length': return <LengthField metres={Number(value ?? 0)} min={p.min ?? undefined} max={p.max ?? undefined} onCommit={(v) => { if (v != null) onCommit(v); }} />;
-    case 'number': return <NumberField value={Number(value ?? 0)} min={p.min ?? undefined} max={p.max ?? undefined} onCommit={(v) => { if (v != null) onCommit(v); }} />;
-    case 'choice': return <select value={String(value ?? '')} onChange={(e) => onCommit(e.target.value)}>{(p.choices ?? []).map((c) => <option key={c} value={c}>{CHOICE_LABELS[c] ?? c}</option>)}</select>;
-    case 'bool': return <input type="checkbox" checked={value === true} onChange={(e) => onCommit(e.target.checked)} />;
-    default: return null;
-  }
 }
 
 export function FurnitureTypesDialog() {
@@ -76,6 +89,8 @@ export function FurnitureTypesDialog() {
   const selected = useTypesDialog((s) => s.typeId);
   const [newKind, setNewKind] = useState('sofa');
   const [newLayout, setNewLayout] = useState('one-wall');
+  const [newPreset, setNewPreset] = useState('sideboard');
+  const casework = useSession((s) => s.info?.catalogs['furniture.casework']) as unknown as CaseworkCatalog | undefined;
   const layouts = ((useSession((s) => s.info?.catalogs['furniture.kitchenLayouts']) ?? []) as unknown as KitchenLayout[]);
   const types = useMemo(() => [...nodes.values()].filter((n) => n.type === TYPE_CLASS), [nodes]);
   const type = types.find((t) => t.id === selected) ?? types[0];
@@ -86,7 +101,7 @@ export function FurnitureTypesDialog() {
   const update = (patch: Record<string, unknown>, name?: string) => type && void execute('furniture.updateType', { id: type.id, ...(name ? { name } : {}), spec: patch });
 
   const create = async () => {
-    const r = (await execute('furniture.createType', { kind: newKind, ...(newKind === 'kitchen' ? { layout: newLayout } : {}) })) as { id?: string } | null;
+    const r = (await execute('furniture.createType', { kind: newKind, ...(newKind === 'kitchen' ? { layout: newLayout } : {}), ...(newKind === 'casework' ? { preset: newPreset } : {}) })) as { id?: string } | null;
     if (r?.id) { select(r.id); chooseType(newKind, r.id); }
   };
   const duplicate = async () => {
@@ -112,6 +127,11 @@ export function FurnitureTypesDialog() {
               {newKind === 'kitchen' && (
                 <select value={newLayout} data-field="furniture-new-layout" title="The kitchen’s layout" onChange={(e) => setNewLayout(e.target.value)}>
                   {layouts.map((l) => <option key={l.key} value={l.key}>{CHOICE_LABELS[l.key] ?? l.label}</option>)}
+                </select>
+              )}
+              {newKind === 'casework' && (
+                <select value={newPreset} data-field="furniture-new-preset" title="What the casework starts as" onChange={(e) => setNewPreset(e.target.value)}>
+                  {(casework?.presets ?? []).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
                 </select>
               )}
               <button type="button" className="btn small" data-action="furniture-new-type" onClick={() => void create()}><Plus size={13} /> New type</button>
@@ -151,7 +171,7 @@ export function FurnitureTypesDialog() {
                   {spec.kind !== 'kitchen' && <><dt>Width</dt><dd><LengthField testId="furniture-width" metres={Number(spec.width ?? kind.width)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ width: v }); }} /></dd></>}
                   <dt>Depth</dt><dd><LengthField testId="furniture-depth" metres={Number(spec.depth ?? kind.depth)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ depth: v }); }} /></dd>
                   <dt>{spec.kind === 'kitchen' ? 'Worktop height' : 'Height'}</dt><dd><LengthField testId="furniture-height" metres={Number(spec.height ?? kind.height)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ height: v }); }} /></dd>
-                  {kind.params.filter((p) => appliesTo(p, spec, kind.defaults)).map((p) => (
+                  {spec.kind !== 'casework' && kind.params.filter((p) => appliesTo(p, spec, kind.defaults)).map((p) => (
                     <div key={p.key} className="fields-row" data-param={p.key} style={{ display: 'contents' }}>
                       <dt>{p.label}</dt>
                       {/* A layout starts the kitchen from its sizes (a galley's aisle, an L's leg…); each stays editable. */}
@@ -171,6 +191,7 @@ export function FurnitureTypesDialog() {
                   ))}
                 </dl>
                 {spec.kind === 'kitchen' && <KitchenUnitsEditor spec={spec} update={update} />}
+                {spec.kind === 'casework' && <CaseworkEditor spec={spec} kind={kind} update={update} />}
                 </div>
                 <FurniturePreview kind={kind.key} spec={spec} />
               </div>

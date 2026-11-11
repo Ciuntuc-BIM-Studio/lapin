@@ -5091,6 +5091,51 @@ export const scenes = [
     },
   },
   {
+    // Casework of boards (decision 475): a sideboard on tapered legs from its preset, a TV unit hung on the wall with fluted
+    // fronts, a sliding-door wardrobe and a desk with its knee space; the configurator with its preset, styles, carcasses
+    // and zones beside the engine's preview and cut list; a style applied in one step; the pieces in 3D; the cut list.
+    id: 'casework',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Interior', { exact: true });
+      const make = async (preset, name, spec = {}) => (await t.cmd('furniture.createType', { kind: 'casework', preset, name, spec })).id;
+      const sideboard = await make('sideboard', 'Oak sideboard', { materials: { fronts: 'Lacquered MDF sage' } });
+      const tv = await make('tvUnit', 'TV unit fluted', { frontStyle: 'fluted', materials: { fronts: 'Walnut veneer' } });
+      const wardrobe = await make('wardrobeSliding', 'Sliding wardrobe');
+      const desk = await make('desk', 'Desk with pedestal');
+      await t.cmd('furniture.place', { storeyId: s, typeId: sideboard, x: 0, y: 0, against: false });
+      await t.cmd('furniture.place', { storeyId: s, typeId: tv, x: 2.4, y: 0, against: false });
+      await t.cmd('furniture.place', { storeyId: s, typeId: wardrobe, x: 5, y: 0, against: false });
+      await t.cmd('furniture.place', { storeyId: s, typeId: desk, x: 7.6, y: 0, against: false });
+      await t.tool('furniture.types');
+      await t.wait(400);
+      await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: 'Oak sideboard' }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-testid=casework-editor]').count() === 1, 'a casework type shows its configurator');
+      t.expect(await t.page.locator('.dialog [data-testid=casework-carcasses] .casework-carcass').count() === 3, 'the sideboard lists its three carcasses');
+      // A style applied from the dialog: one step on the type.
+      await t.page.locator('.dialog [data-style=handleless]').click();
+      await t.wait(1200);
+      const spec = (await t.nodes()).find((n) => n.id === sideboard).props.spec;
+      t.expect(spec.handles === 'none', `the handleless style changed the type (${spec.handles})`);
+      await t.page.locator('.dialog [data-testid=casework-cutlist] summary').click();
+      await t.wait(300);
+      t.expect(await t.page.locator('.dialog [data-testid=casework-cutlist] tbody tr').count() > 8, 'the preview lists the cut list');
+      // The carcasses and their zones in view, the preview held at the top of the dialog's view.
+      await t.page.locator('.dialog [data-testid=casework-carcasses]').evaluate((el) => el.scrollIntoView({ block: 'end' }));
+      await t.wait(300);
+      await t.shot('casework-types', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      await t.cmd('architecture.createSchedule', { kind: 'cutList' });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.95, pitch: -0.32, distance: 12, target: { x: 4.2, y: 0, z: 0.8 } }, false));
+      await t.wait(1500);
+      await t.shot('casework-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // Furniture (docs/plan-furniture.md): a living room and a bedroom furnished — a sofa clicked by the wall (backed onto it),
     // armchairs, a coffee table, a table with chairs round it, a bed, bedside tables, a wardrobe, a kitchen drawn along a
     // wall — in plan by their symbols and in 3D; the types dialog with its preview; a piece's properties.

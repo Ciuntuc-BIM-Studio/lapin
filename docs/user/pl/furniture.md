@@ -101,6 +101,57 @@ Materiały mają dwie role więcej: **Cokół** i **Uchwyty**, obok frontów, ko
 
 **Wnętrza → Szafki kuchenne** tworzy zestawienie szafek każdej kuchni, od lewej, najpierw linia dolna, potem wiszących, z ich szerokością, wysokością i frontem lub urządzeniem. W IFC kuchnia pozostaje jednym IfcFurniture swojego typu, a szafki podróżują z typem, więc Lapin odczytuje je z powrotem.
 
+## Meble korpusowe i nowoczesne meble
+
+**Wnętrza → Meble korpusowe** ustawia meble zrobione z płyt: szafy, regały, kredensy, szafki RTV, komody, szafki łazienkowe z umywalką, biurka, szafki do przedpokoju, łóżka i szafki nocne. Każdy konfiguruje się w **Typy mebli**. Wybierz tam **Meble korpusowe** i **Szablon**, potem **Nowy typ**. Szablon ustawia wymiary, podstawę, blat i korpusy, a każda wartość zostaje do zmiany. Jeśli później wybierzesz inny szablon, typ zaczyna od nowa od wartości tego szablonu i zachowuje swoje materiały.
+
+Mebel korpusowy to jeden lub kilka **korpusów** obok siebie, wypisanych od lewej, patrząc od frontu:
+
+- **Korpus** dodaje jeden na końcu, przycisk podziału dzieli go na dwie połowy, strzałki go przesuwają, a kosz go usuwa.
+- Korpus z **Szerokością** ją zachowuje. Korpusy bez szerokości dzielą to, co inne zostawiają z szerokości mebla. **Dopasuj szerokość** robi mebel tak szeroki jak jego korpusy, gdy wszystkie mają szerokość. Korpusy, które się nie mieszczą, są pominięte, a podgląd o tym informuje.
+- Korpus z własną **Wysokością** jest niższy niż mebel, jak niska część szafki do przedpokoju.
+- **Miejsce na nogi** to korpus bez skrzyni, jak przestrzeń pod biurkiem. Blat biegnie nad nim, a bok podpiera blat na końcu mebla.
+
+Każdy korpus ma **strefy** ułożone od dołu, z przegrodą między każdymi dwiema. Lista pokazuje je tak, jak stoją, najpierw górną. Strzałka dodaje strefę nad górną. Strefa ma własną **Wysokość** albo **Część reszty** oraz swój **Front**:
+
+- **Otwarte półki**;
+- **Drzwi**: od 1 do 4, jedne drzwi z **Zawiasy po stronie** lewej lub prawej, **Przeszklone** lub nie;
+- **Szuflady**: od 1 do 6, każda z korpusem szuflady za sobą. **Wysokości w proporcji, od góry** ustawia ich wysokości: 1:1:2 robi dolną szufladę dwa razy wyższą niż pozostałe. Puste, wszystkie są jednakowe.
+- **Klapa**, która **unosi się** albo **opuszcza się**.
+
+Za otwartymi frontami, drzwiami lub klapą strefa może mieć **Półki** (regulowane, chyba że odznaczysz **Półki regulowane**) i **Drążek na ubrania**. Za drzwiami może mieć też **Szuflady wewnętrzne** na dole. Szuflady pod drzwiami to dwie strefy w jednym korpusie: szuflady na dole z ich wysokością i drzwi nad nimi.
+
+Sekcje pod szablonem ustawiają resztę:
+
+- **Budowa**: grubość płyt korpusu, pleców, półek i frontów; góra i dół **między bokami** lub **na bokach**; plecy **wpuszczone** (10 mm od tylnej krawędzi) lub **nakładane na tył**.
+- **Podstawa**: **Cokół** z jego wysokością i cofnięciem; **Nóżki** (smukły metal, drewno stożkowe lub płozy) z ich wysokością; **Zawieszony na ścianie** z wysokością jego spodu; albo **Brak**. Na cokole lub nóżkach wysokość mebla sięga do jego blatu. Zawieszony na ścianie ma własną wysokość mebla, a **Zawieszony na** mówi, gdzie jest jego spód.
+- **Blat**: **Brak** (górne płyty korpusów), **Z nawisem** (poza front i boki o swój nawis) albo **Blat roboczy** (tylko poza front), z jego grubością. **Wycięcie na umywalkę w blacie** wycina miejsce na umywalkę szafki łazienkowej i rysuje ją z baterią.
+- **Fronty**: **Gładki**, **Z ramką** (słupki i poprzeczki wokół cofniętej płyciny) albo **Ryflowany** (pionowe rowki wycięte we froncie). Uchwyty to **Brak** (push to open), **Uchwyt profil J** frezowany w krawędzi frontów, **Uchwyt prętowy**, **Gałka** albo **Uchwyt krawędziowy**. **Drzwi przesuwne na całej szerokości** stawia tyle drzwi przesuwnych na dwóch szynach przed wszystkimi korpusami, jak w szafie.
+
+Łóżko zrobione z szablonu **Łóżko** ma ramę, wezgłowie tak wysokie jak typ, stelaż, materac i poduszki. Ma **Wierzch materaca** i szuflady pod spodem po obu stronach, lewej lub prawej.
+
+Przyciski **Style** nakładają nowoczesny wygląd na wartości typu jednym krokiem:
+
+- **Bez uchwytów, push to open**;
+- **Uchwyt profil J**;
+- **Smukłe nóżki metalowe**;
+- **Wiszące, zawieszone na ścianie**;
+- **Fronty ryflowane**;
+- **Dwukolorowe, drewno i kolor**: dębowy korpus i blat z szałwiowymi frontami;
+- **Fronty z ramką, gałki**.
+
+Materiały mają swoje role: korpus, fronty, blat, plecy, cokół, nóżki, uchwyty, szkło, metal (drążek, bateria) i pościel (materac łóżka). Materiały, od których Lapin zaczyna, są orientacyjne: wpisz własne.
+
+Każda płyta jest bryłą ze swojego materiału. W rzucie mebel pokazuje swój obrys, linię frontów, łączenia między korpusami i, przy najdrobniejszym poziomie szczegółowości, zasięg otwierania drzwi linią przerywaną. Mebel zawieszony powyżej 1,2 m jest rysowany jako nadrzędny. Widoki i 3D pokazują płyty, fronty i uchwyty.
+
+Podgląd wypisuje **Listę formatek** typu: każdą część (boki, dno, górę, plecy, przegrody, półki, cokół, korpusy szuflad, potem osobno fronty) z jej korpusem, jej długością wzdłuż słojów × szerokością × grubością i liczbą sztuk. **Wnętrza → Lista formatek** robi listę formatek wszystkich typów mebli korpusowych w projekcie, pomnożoną przez ich meble. Wypisuje tylko płyty: prowadnice, zawiasy, nóżki i uchwyty to okucia.
+
+![Konfigurator mebli korpusowych: szablon, style, budowa, korpusy i ich strefy, obok podglądu i listy formatek silnika](shots/casework-types.webp)
+
+![Meble korpusowe w 3D: kredens na stożkowych nóżkach, ryflowana szafka RTV zawieszona na ścianie, szafa i biurko](shots/casework-3d.webp)
+
+W IFC mebel korpusowy to IfcFurniture swojego typu, z typem predefiniowanym jego szablonu (SHELF dla regału, DESK, BED albo USERDEFINED z Wardrobe, Sideboard, TV unit, Bathroom vanity…). Jego korpusy podróżują z typem, więc Lapin je odczytuje z powrotem. Typy szafa, kredens i komoda zrobione wcześniej zostają takie, jakie były.
+
 ## Właściwości mebla
 
 Zaznacz mebel, aby zobaczyć:

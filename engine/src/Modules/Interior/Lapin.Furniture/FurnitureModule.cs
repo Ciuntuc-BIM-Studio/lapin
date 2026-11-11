@@ -35,10 +35,12 @@ public sealed class FurnitureModule : ILapinModule
         r.Catalog("kinds", FurnitureKinds.Catalog());
         r.Catalog("kitchenLayouts", KitchenLayouts.Catalog());
         r.Catalog("kitchenUnits", KitchenUnits.Catalog());
+        r.Catalog("casework", Casework.Catalog());
         r.Service<IElementPlacement>(new FurniturePlacement());
         r.Service<IScheduleSource>(new FurnitureSchedule());
         r.Service<IScheduleSource>(new FurnitureByRoom());
         r.Service<IScheduleSource>(new KitchenUnitsSchedule());
+        r.Service<IScheduleSource>(new CutListSchedule());
 
         // A type of a kind: {kind, name?, spec?} → {id}; the spec's values over the kind's defaults, its materials made when missing.
         r.Command("createType", "New furniture type", (ctx, a) =>
@@ -50,6 +52,13 @@ public sealed class FurnitureModule : ILapinModule
             {
                 if (!KitchenLayouts.Keys.Contains(layout)) throw new CommandException($"A kitchen's layout is one of {string.Join(", ", KitchenLayouts.Keys)}.");
                 var preset = KitchenLayouts.Preset(layout);
+                if (given != null) foreach (var (k2, v2) in given) preset[k2] = v2?.DeepClone();
+                given = preset;
+            }
+            // A casework piece of a preset (decision 475): its values under what the spec gives.
+            if (kind.Key == Casework.Key && (string?)a["preset"] is { } pk)
+            {
+                var preset = Casework.Preset(pk);
                 if (given != null) foreach (var (k2, v2) in given) preset[k2] = v2?.DeepClone();
                 given = preset;
             }
@@ -67,7 +76,19 @@ public sealed class FurnitureModule : ILapinModule
             var attrs = type.CloneAttrs();
             attrs["spec"] = spec;
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : type.Name;
-            ctx.Replace(type.With(name: name, attrs: attrs));
+            // A casework type's preset says its IFC type (a desk DESK, a bookcase SHELF…): changed, its pieces follow.
+            var (predefined, objectType) = FurnitureKinds.IfcOf(new Spec(spec));
+            var casework = kind.Key == Casework.Key;
+            var retyped = casework && predefined != type.PredefinedType;
+            ctx.Replace(type.With(name: name, attrs: attrs, predefinedType: casework ? predefined : null));
+            if (casework)
+                foreach (var e in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
+                {
+                    var ea = e.CloneAttrs();
+                    var had = (string?)ea["objectType"];
+                    if (objectType != null) ea["objectType"] = objectType; else ea.Remove("objectType");
+                    if (retyped || had != objectType) ctx.Replace(e.With(attrs: ea, predefinedType: predefined));
+                }
             // Pieces named as their type was are named as it is now.
             if (name != type.Name)
                 foreach (var e in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).Where(x => x.Name == type.Name).ToList())
@@ -140,11 +161,12 @@ public sealed class FurnitureModule : ILapinModule
                 var e = ctx.Model.Get(id) is { Class: Class } x ? x : throw new CommandException("Only furniture takes a furniture type.");
                 var named = e.Name == TypeOf(ctx.Model, e)?.Name;
                 ctx.Relate(IfcClass.RelDefinesByType, type.Id, e.Id);
-                var k = new Spec(type.Attrs["spec"] as JsonObject).Kind;
+                var ts = new Spec(type.Attrs["spec"] as JsonObject);
+                var (predefined, objectType) = FurnitureKinds.IfcOf(ts);
                 var attrs = e.CloneAttrs();
-                if (k.ObjectType != null) attrs["objectType"] = k.ObjectType; else attrs.Remove("objectType");
-                if (k.Key != "kitchen") attrs.Remove("length");
-                ctx.Replace(e.With(name: named ? type.Name : e.Name, attrs: attrs, predefinedType: k.Predefined));
+                if (objectType != null) attrs["objectType"] = objectType; else attrs.Remove("objectType");
+                if (ts.Kind.Key != "kitchen") attrs.Remove("length");
+                ctx.Replace(e.With(name: named ? type.Name : e.Name, attrs: attrs, predefinedType: predefined));
             }
             return null;
         });
@@ -208,6 +230,12 @@ public sealed class FurnitureModule : ILapinModule
                 })]),
                 ["unitsLength"] = s.Kind.Key == "kitchen" && KitchenUnits.Has(s) ? KitchenUnits.RequiredLength(s) : null,
                 ["warnings"] = new JsonArray([.. b.Warnings.Select(w => (JsonNode)w)]),
+                // A casework piece's boards and carcasses as laid (decision 475), for the configurator.
+                ["boards"] = new JsonArray([.. b.Boards.Select(x => (JsonNode)new JsonObject
+                {
+                    ["part"] = x.Part, ["carcass"] = x.Carcass, ["role"] = x.Role, ["length"] = R(x.Length), ["width"] = R(x.Width), ["thickness"] = R(x.Thickness), ["grain"] = x.Grain, ["front"] = x.Front,
+                })]),
+                ["carcasses"] = new JsonArray([.. b.Carcasses.Select(c => (JsonNode)new JsonObject { ["index"] = c.Index, ["x0"] = R(c.X0), ["x1"] = R(c.X1) })]),
             };
         });
     }
@@ -230,7 +258,7 @@ public sealed class FurnitureModule : ILapinModule
     static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
 
     /// <summary>A type's name from its kind and size: Sofa 2200 × 950, Bed 1600 × 2050.</summary>
-    static string DefaultName(Spec s) => s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
+    static string DefaultName(Spec s) => s.Kind.Key == Casework.Key ? $"{Casework.Label(s)} {Mm(s.W)} × {Mm(s.D)}" : s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
 
     static void EnsureMaterials(IEdit edit, JsonObject spec)
     {
@@ -238,7 +266,7 @@ public sealed class FurnitureModule : ILapinModule
         foreach (var role in s.Kind.Roles)
         {
             var name = s.MaterialName(role);
-            Materials.Ensure(edit, name, FurnitureKinds.RoleDefaults.Values.FirstOrDefault(v => v.Material == name).Color);
+            Materials.Ensure(edit, name, FurnitureKinds.ColorOf(name));
         }
     }
 
@@ -248,7 +276,7 @@ public sealed class FurnitureModule : ILapinModule
         g?.Remove("kind");
         var spec = FurnitureKinds.NewSpec(kind, g);
         EnsureMaterials(edit, spec);
-        var type = new Entity(edit.NewId(), TypeClass, Unique(edit.Model, string.IsNullOrWhiteSpace(name) ? DefaultName(new Spec(spec)) : name.Trim()), new JsonObject { ["spec"] = spec }, kind.Predefined);
+        var type = new Entity(edit.NewId(), TypeClass, Unique(edit.Model, string.IsNullOrWhiteSpace(name) ? DefaultName(new Spec(spec)) : name.Trim()), new JsonObject { ["spec"] = spec }, FurnitureKinds.IfcOf(new Spec(spec)).Predefined);
         edit.Add(type);
         return type;
     }
@@ -264,12 +292,14 @@ public sealed class FurnitureModule : ILapinModule
 
     public static string Add(IEdit edit, Entity storey, Entity type, Vec2 at, double rotation, double offset, double? length)
     {
-        var k = new Spec(type.Attrs["spec"] as JsonObject).Kind;
+        var ts = new Spec(type.Attrs["spec"] as JsonObject);
+        var k = ts.Kind;
+        var (predefined, objectType) = FurnitureKinds.IfcOf(ts);
         var attrs = new JsonObject { ["at"] = new JsonArray(R(at.X), R(at.Y)), ["rotation"] = Math.Round(((rotation % 360) + 360) % 360, 4) };
         if (Math.Abs(offset) > 1e-9) attrs["offset"] = offset;
         if (k.Key == "kitchen" && length is { } l && l >= 0.6) attrs["length"] = l;
-        if (k.ObjectType != null) attrs["objectType"] = k.ObjectType;
-        var e = new Entity(edit.NewId(), Class, type.Name, attrs, k.Predefined);
+        if (objectType != null) attrs["objectType"] = objectType;
+        var e = new Entity(edit.NewId(), Class, type.Name, attrs, predefined);
         edit.Add(e);
         Spatial.Contain(edit, storey.Id, e.Id);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, e.Id);

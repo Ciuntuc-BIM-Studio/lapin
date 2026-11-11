@@ -6,7 +6,7 @@
  */
 
 export interface UnitField {
-  key: string; label: string; kind: 'length' | 'number' | 'choice' | 'bool';
+  key: string; label: string; kind: 'length' | 'number' | 'choice' | 'bool' | 'ratios';
   min?: number | null; max?: number | null; choices?: string[] | null; when?: { key: string; values: string[] } | null;
 }
 export interface UnitType {

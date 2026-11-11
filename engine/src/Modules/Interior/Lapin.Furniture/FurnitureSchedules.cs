@@ -27,7 +27,7 @@ static class FurnitureRooms
     public static string Label(Entity? room) => room == null ? "" : room.Str("number") is { Length: > 0 } n ? $"{n} {room.Name}" : room.Name;
 
     /// <summary>A kind's label; a kitchen's with its layout when it is not the straight one.</summary>
-    public static string KindLabel(Spec s) => s.Kind.Key == "kitchen" && KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} · {KitchenLayouts.Label(l)}" : s.Kind.Label;
+    public static string KindLabel(Spec s) => s.Kind.Key == Casework.Key ? $"{s.Kind.Label} · {Casework.Label(s)}" : s.Kind.Key == "kitchen" && KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} · {KitchenLayouts.Label(l)}" : s.Kind.Label;
 
     public static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
 
@@ -126,5 +126,46 @@ public sealed class KitchenUnitsSchedule : IScheduleSource
             }
         }
         return new ScheduleGrid(Label, ["Kitchen", "Line", "No.", "Unit", "Width (mm)", "Height (mm)", "Front / appliance"], rows, keys);
+    }
+}
+
+/// <summary>
+/// The cut list (decision 475): for each casework type the project places, its boards then its fronts, a row per part,
+/// carcass and size (length along the grain × width × thickness, whole millimetres) with its material and how many the
+/// pieces of the type take. Hardware (runners, hinges, legs, handles) is not listed.
+/// </summary>
+public sealed class CutListSchedule : IScheduleSource
+{
+    public string Kind => "cutList";
+    public string Label => "Cut list";
+
+    public ScheduleGrid Grid(IQueryContext q)
+    {
+        var m = q.Model;
+        var rows = new List<IReadOnlyList<string>>();
+        var keys = new List<string?>();
+        var types = m.OfClass(FurnitureModule.Class)
+            .Select(e => FurnitureModule.TypeOf(m, e)).Where(t => t != null).GroupBy(t => t!.Id)
+            .Select(g => (Type: g.First()!, Count: g.Count()))
+            .Where(x => new Spec(x.Type.Attrs["spec"] as JsonObject).Kind.Key == Casework.Key)
+            .OrderBy(x => x.Type.Name, StringComparer.Ordinal);
+        foreach (var (type, count) in types)
+        {
+            var s = new Spec(type.Attrs["spec"] as JsonObject);
+            var b = new Builder(new Vec2(0, 0), 0, 0, false);
+            FurnitureBodies.Build(b, s);
+            var first = true;
+            foreach (var front in new[] { false, true })
+                foreach (var g in b.Boards.Where(x => x.Front == front)
+                    .GroupBy(x => (x.Part, x.Carcass, x.Role, L: FurnitureRooms.Mm(x.Length), W: FurnitureRooms.Mm(x.Width), T: FurnitureRooms.Mm(x.Thickness))))
+                {
+                    var k = g.Key;
+                    rows.Add([first ? type.Name : "", front ? "Fronts" : "Boards", k.Part, k.Carcass > 0 ? k.Carcass.ToString(CultureInfo.InvariantCulture) : "", k.L, k.W, k.T,
+                        s.MaterialName(k.Role), (g.Count() * count).ToString(CultureInfo.InvariantCulture)]);
+                    keys.Add(type.Id);
+                    first = false;
+                }
+        }
+        return new ScheduleGrid(Label, ["Type", "Group", "Part", "Carcass", "Length (mm)", "Width (mm)", "Thickness (mm)", "Material", "Count"], rows, keys);
     }
 }

@@ -7,7 +7,7 @@
  */
 
 import {
-  Archive, Armchair, BedDouble, BedSingle, Coffee, CookingPot, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, Settings2, Shirt, Sofa, Table2, Users, UtensilsCrossed,
+  Archive, Armchair, Package, Ruler, BedDouble, BedSingle, Coffee, CookingPot, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, Settings2, Shirt, Sofa, Table2, Users, UtensilsCrossed,
 } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { LapinModule, ToolDef } from '../../platform/module';
@@ -102,6 +102,8 @@ const sideboard = piece('sideboard', 'Sideboard', PanelsTopLeft);
 const table = piece('table', 'Table', UtensilsCrossed, 'TB');
 const coffeeTable = piece('coffeeTable', 'Coffee table', Coffee);
 const desk = piece('desk', 'Desk', LampDesk);
+/** Casework of boards (decision 475): carcasses side by side, configured in Furniture types from a preset. */
+const casework = piece('casework', 'Casework', Package);
 
 /** A kitchen of any layout: two points along a wall, its back on the wall's face, as long as the line (an L or a U tucked into the corner it is drawn near). */
 const kitchen: ToolDef = {
@@ -140,6 +142,7 @@ const schedule = (id: string, label: string, kind: string, icon: Icon): ToolDef 
 const byType = schedule('furniture.schedule', 'Furniture schedule', 'furniture', ListOrdered);
 const byRoom = schedule('furniture.byRoom', 'Furniture by room', 'furnitureRooms', Table2);
 const kitchenUnits = schedule('furniture.kitchenUnits', 'Kitchen units', 'kitchenUnits', CookingPot);
+const cutList = schedule('furniture.cutList', 'Cut list', 'cutList', Ruler);
 
 const furniture: LapinModule = {
   id: 'furniture',
@@ -151,10 +154,10 @@ const furniture: LapinModule = {
     groups: [
       { label: 'Seating', tools: [sofa, armchair], small: [cornerSofa, chair] },
       { label: 'Beds', tools: [bed], small: [bedside] },
-      { label: 'Storage', tools: [wardrobe], small: [chest, bookcase, sideboard] },
+      { label: 'Storage', tools: [wardrobe, casework], small: [chest, bookcase, sideboard] },
       { label: 'Tables', tools: [table], small: [coffeeTable, desk, chairsAround] },
       { label: 'Kitchen', tools: [kitchen] },
-      { label: 'Schedules', tools: [byType], small: [byRoom, kitchenUnits] },
+      { label: 'Schedules', tools: [byType], small: [byRoom, kitchenUnits, cutList] },
       { label: 'Types', tools: [types] },
     ],
   }],

@@ -101,6 +101,57 @@ Os materiais têm mais duas funções: **Rodapé** e **Puxadores**, além das fr
 
 **Interiores → Móveis de cozinha** faz uma tabela dos módulos de cada cozinha, a partir da esquerda, a linha de móveis baixos e depois a de móveis altos, com a sua largura, altura e frente ou eletrodoméstico. Em IFC a cozinha continua a ser um único IfcFurniture do seu tipo, e os módulos viajam com o tipo, por isso o Lapin lê-os de volta.
 
+## Marcenaria e mobiliário moderno
+
+**Interiores → Marcenaria** posiciona mobiliário feito de chapas: guarda-roupas, estantes, aparadores, racks de TV, cômodas, gabinetes de banheiro com cuba, escrivaninhas, móveis de entrada, camas e criados-mudos. Cada um se configura em **Tipos de mobiliário**. Escolha ali **Marcenaria** e um **Modelo**, depois **Novo tipo**. O modelo define as medidas, a base, o tampo e os corpos, e todo valor continua editável. Se mais tarde escolher outro modelo, o tipo recomeça com os valores desse modelo e mantém seus materiais.
+
+Uma peça de marcenaria é um ou mais **corpos** lado a lado, listados da esquerda, vistos de frente:
+
+- **Corpo** adiciona um no fim, o botão de dividir o parte em duas metades, as setas o movem e a lixeira o remove.
+- Um corpo com **Largura** a mantém. Os corpos sem largura dividem o que os outros deixam da largura da peça. **Ajustar a largura** deixa a peça tão larga quanto seus corpos quando todos têm largura. Os corpos que não cabem ficam de fora, e a pré-visualização avisa.
+- Um corpo com **Altura** própria é mais baixo que a peça, como a parte baixa de um móvel de entrada.
+- Um **Vão para as pernas** é um corpo sem caixa, como o espaço sob uma escrivaninha. O tampo passa por cima, e uma lateral sustenta o tampo na ponta da peça.
+
+Cada corpo tem **zonas** empilhadas de baixo para cima, com uma divisória entre cada duas. A lista as mostra como estão, a de cima primeiro. A seta adiciona uma zona sobre a de cima. Uma zona tem sua própria **Altura**, ou uma **Parte do resto**, e sua **Frente**:
+
+- **Prateleiras abertas**;
+- **Portas**: de 1 a 4, uma única porta com **Dobradiças do lado** esquerdo ou direito, **Envidraçados** ou não;
+- **Gavetas**: de 1 a 6, cada uma com sua caixa atrás. **Alturas por proporção, de cima** define suas alturas: 1:1:2 deixa a gaveta de baixo duas vezes mais alta que as outras. Vazio, são todas iguais.
+- **Basculante**, que **sobe** ou **desce**.
+
+Atrás de frentes abertas, de portas ou de uma basculante, uma zona pode ter **Prateleiras** (reguláveis, a menos que desmarque **Prateleiras reguláveis**) e uma **Barra de cabides**. Atrás de portas ela pode ter também **Gavetas internas** embaixo. Gavetas sob portas são duas zonas no mesmo corpo: as gavetas embaixo, com sua altura, e as portas em cima.
+
+As seções abaixo do modelo definem o resto:
+
+- **Construção**: a espessura das chapas do corpo, do fundo, das prateleiras e das frentes; o topo e a base **entre as laterais** ou **sobre as laterais**; o fundo **embutido** (a 10 mm da borda traseira) ou **aplicado na traseira**.
+- **Base**: um **Rodapé**, com sua altura e seu recuo; **Pés** (metal fino, madeira cônica ou trenó), com sua altura; **Suspenso na parede**, com a altura de sua face inferior; ou **Nenhum**. Sobre rodapé ou pés, a altura da peça vai até o seu tampo. Suspensa na parede, a altura é a da peça, e **Suspenso a** diz onde fica sua face inferior.
+- **Tampo**: **Nenhum** (os topos dos corpos), **Em balanço** (além da frente e das pontas pelo seu balanço) ou uma **Bancada** (além da frente apenas), com sua espessura. **Recorte da cuba no tampo** corta o lugar da cuba de um gabinete de banheiro e a desenha com sua torneira.
+- **Frentes**: **Lisa**, **Com moldura** (montantes e travessas em volta de um painel recuado) ou **Ranhurado** (ranhuras verticais cortadas na frente). Os puxadores são **Nenhum** (push to open), um **Puxador perfil J** fresado na borda das frentes, uma **Barra**, uma **Bola** ou um **Puxador de borda**. **Portas de correr em toda a largura** coloca esse número de portas de correr em dois trilhos na frente de todos os corpos, como num guarda-roupa.
+
+Uma cama feita com o modelo **Cama** tem estrado, uma cabeceira tão alta quanto o tipo, uma base, o colchão e travesseiros. Tem o **Topo do colchão** e gavetas embaixo, dos dois lados, o esquerdo ou o direito.
+
+Os botões de **Estilos** aplicam um visual moderno sobre os valores do tipo em um só passo:
+
+- **Sem puxadores, push to open**;
+- **Puxador perfil J**;
+- **Pés de metal finos**;
+- **Flutuante, preso na parede**;
+- **Frentes ranhuradas**;
+- **Duas cores, madeira e cor**: um corpo e um tampo de carvalho com frentes verde-sálvia;
+- **Frentes com moldura, botões**.
+
+Os materiais têm seus papéis: corpo, frentes, tampo, fundo, rodapé, pés, puxadores, vidro, metal (a barra, a torneira) e roupa de cama (o colchão de uma cama). Os materiais com que o Lapin começa são indicativos: coloque os seus.
+
+Cada chapa é um sólido do seu material. Em planta a peça mostra seu contorno, a linha de suas frentes, as juntas entre seus corpos e, no nível de detalhe mais fino, o giro de suas portas tracejado. Uma peça suspensa acima de 1,2 m é desenhada como elemento superior. Elevações e 3D mostram as chapas, as frentes e os puxadores.
+
+A pré-visualização lista o **Plano de corte** do tipo: cada parte (laterais, base, topo, fundo, divisórias, prateleiras, rodapé, caixas das gavetas, depois as frentes à parte) com seu corpo, seu comprimento ao longo do veio × largura × espessura e quantas são. **Interiores → Plano de corte** faz o plano de corte de todos os tipos de marcenaria do projeto, multiplicado por suas peças. Lista só chapas: corrediças, dobradiças, pés e puxadores são ferragens.
+
+![O configurador de marcenaria: um modelo, os estilos, a construção, os corpos e suas zonas, ao lado da pré-visualização e do plano de corte do motor](shots/casework-types.webp)
+
+![Marcenaria em 3D: um aparador sobre pés cônicos, um rack de TV ranhurado preso na parede, um guarda-roupa e uma escrivaninha](shots/casework-3d.webp)
+
+Em IFC uma peça de marcenaria é um IfcFurniture do seu tipo, com o tipo predefinido do seu modelo (SHELF para uma estante, DESK, BED, ou USERDEFINED com Wardrobe, Sideboard, TV unit, Bathroom vanity…). Seus corpos viajam com o tipo, então o Lapin os lê de volta. Os tipos guarda-roupa, aparador e cômoda feitos antes ficam como estavam.
+
 ## As propriedades de um móvel
 
 Selecione um móvel para ver:

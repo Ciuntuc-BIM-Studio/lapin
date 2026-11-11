@@ -101,6 +101,57 @@ Les matériaux ont deux rôles de plus : **Socle** et **Poignées**, en plus des
 
 **Intérieur → Meubles de cuisine** fait une nomenclature des meubles de chaque cuisine, depuis la gauche, la ligne basse puis la ligne haute, avec leur largeur, leur hauteur et leur façade ou appareil. En IFC, la cuisine reste un seul IfcFurniture de son type, et les meubles voyagent avec le type, si bien que Lapin les relit.
 
+## Meubles à caissons et mobilier moderne
+
+**Intérieur → Meubles à caissons** place du mobilier fait de panneaux : armoires, bibliothèques, buffets, meubles TV, commodes, meubles de salle de bain avec vasque, bureaux, meubles d’entrée, lits et tables de chevet. Chacun se configure dans **Types de mobilier**. Choisissez-y **Meubles à caissons** et un **Modèle**, puis **Nouveau type**. Le modèle donne les dimensions, la base, le plateau et les caissons, et chaque valeur reste modifiable. Si vous choisissez un autre modèle plus tard, le type repart des valeurs de ce modèle et garde ses matériaux.
+
+Un meuble à caissons est fait d’un ou de plusieurs **caissons** côte à côte, listés de la gauche, vus de face :
+
+- **Caisson** en ajoute un à la fin, le bouton de division le coupe en deux moitiés, les flèches le déplacent et la corbeille le retire.
+- Un caisson avec une **Largeur** la garde. Les caissons sans largeur se partagent ce que les autres laissent de la largeur du meuble. **Ajuster la largeur** rend le meuble aussi large que ses caissons quand tous ont une largeur. Les caissons qui ne tiennent pas sont laissés de côté, et l’aperçu le dit.
+- Un caisson avec sa propre **Hauteur** est plus bas que le meuble, comme la partie basse d’un meuble d’entrée.
+- Un **Espace genoux** est un caisson sans caisse, comme la place sous un bureau. Le plateau passe dessus, et un côté le soutient au bout du meuble.
+
+Chaque caisson contient des **zones** empilées du bas vers le haut, avec une séparation entre deux. La liste les montre telles qu’elles sont, celle du haut d’abord. La flèche ajoute une zone au-dessus de celle du haut. Une zone a sa propre **Hauteur**, ou une **Part du reste**, et sa **Face** :
+
+- **Étagères ouvertes** ;
+- **Portes** : de 1 à 4, une seule porte avec **Charnières côté** gauche ou droit, **Vitrés** ou non ;
+- **Tiroirs** : de 1 à 6, chacun avec son coffre derrière. **Hauteurs en proportion, depuis le haut** donne leurs hauteurs : 1:1:2 rend le tiroir du bas deux fois plus haut que les autres. Vide, ils sont tous pareils.
+- **Abattant**, qui **se relève** ou **se rabat**.
+
+Derrière des façades ouvertes, des portes ou un abattant, une zone peut avoir des **Étagères** (réglables sauf si vous décochez **Tablettes réglables**) et une **Tringle à vêtements**. Derrière des portes, elle peut aussi avoir des **Tiroirs intérieurs** en bas. Des tiroirs sous des portes sont deux zones dans un même caisson : les tiroirs en bas, avec leur hauteur, et les portes au-dessus.
+
+Les sections sous le modèle donnent le reste :
+
+- **Construction** : l’épaisseur des panneaux du caisson, du panneau arrière, des tablettes et des façades ; le dessus et le dessous **entre les côtés** ou **sur les côtés** ; le dos **encastré** (à 10 mm du bord arrière) ou **appliqué sur le dos**.
+- **Base** : un **Socle**, avec sa hauteur et son retrait ; des **Pieds** (métal fin, bois fuselé ou luge), avec leur hauteur ; **Suspendu au mur**, avec la hauteur de son dessous ; ou **Aucun**. Sur un socle ou des pieds, la hauteur du meuble va jusqu’à son plateau. Suspendu au mur, la hauteur est celle du meuble, et **Suspendu à** dit où se trouve son dessous.
+- **Plateau** : **Aucun** (les dessus des caissons), **En débord** (au-delà de la face et des bouts de son débord) ou un **Plan de travail** (au-delà de la face seulement), avec son épaisseur. **Découpe de vasque dans le plateau** découpe un emplacement pour la vasque d’un meuble de salle de bain et la dessine avec sa robinetterie.
+- **Façades** : **Lisse**, **À cadre** (montants et traverses autour d’un panneau en retrait) ou **Rainuré** (rainures verticales taillées dans la façade). Les poignées sont **Aucun** (push-to-open), une **Poignée profil J** fraisée dans le chant des façades, une **Barre**, un **Bouton** ou une **Poignée de chant**. **Portes coulissantes sur toute la largeur** met ce nombre de portes coulissantes sur deux rails devant tous les caissons, comme sur une armoire.
+
+Un lit fait avec le modèle **Lit** a un cadre, une tête de lit aussi haute que le type, un fond de lit, le matelas et des oreillers. Il a le **Dessus du matelas** et des tiroirs dessous, des deux côtés, à gauche ou à droite.
+
+Les boutons de **Styles** appliquent un aspect moderne sur les valeurs du type en une seule étape :
+
+- **Sans poignées, push-to-open** ;
+- **Poignée profil J** ;
+- **Pieds métalliques fins** ;
+- **Flottant, suspendu au mur** ;
+- **Façades rainurées** ;
+- **Bicolore, bois et couleur** : un caisson et un plateau en chêne avec des façades vert sauge ;
+- **Façades à cadre, boutons**.
+
+Les matériaux ont leurs rôles : corps (le caisson), façades, plateau, dos, socle, pieds, poignées, verre, métal (la tringle, la robinetterie) et linge (le matelas d’un lit). Les matériaux avec lesquels Lapin démarre sont indicatifs : donnez les vôtres.
+
+Chaque panneau est un solide de son matériau. En plan, le meuble montre son contour, la ligne de ses façades, les joints entre ses caissons et, au niveau de détail le plus fin, le débattement de ses portes en tirets. Un meuble suspendu au-dessus de 1,2 m est dessiné en surplomb. Les élévations et la 3D montrent les panneaux, les façades et les poignées.
+
+L’aperçu liste la **Liste de débit** du type : chaque pièce (côtés, fond, dessus, dos, séparations, tablettes, socle, coffres de tiroirs, puis les façades à part) avec son caisson, sa longueur dans le sens du fil × largeur × épaisseur et le nombre. **Intérieur → Liste de débit** fait la liste de débit de tous les types de meubles à caissons du projet, multipliée par leurs meubles. Elle ne liste que des panneaux : coulisses, charnières, pieds et poignées sont de la quincaillerie.
+
+![Le configurateur de meubles à caissons : un modèle, les styles, la construction, les caissons et leurs zones, à côté de l’aperçu et de la liste de débit du moteur](shots/casework-types.webp)
+
+![Des meubles à caissons en 3D : un buffet sur pieds fuselés, un meuble TV rainuré suspendu au mur, une armoire et un bureau](shots/casework-3d.webp)
+
+En IFC, un meuble à caissons est un IfcFurniture de son type, avec le type prédéfini de son modèle (SHELF pour une bibliothèque, DESK, BED, ou USERDEFINED avec Wardrobe, Sideboard, TV unit, Bathroom vanity…). Ses caissons voyagent avec le type, donc Lapin les relit. Les types armoire, buffet et commode créés avant restent tels qu’ils étaient.
+
 ## Les propriétés d’un meuble
 
 Sélectionnez un meuble pour voir :

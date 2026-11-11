@@ -23,6 +23,10 @@ public sealed class Builder(Vec2 at, double z, double rotationDeg, bool mirror)
     public readonly List<string> Warnings = [];
     /// <summary>A kitchen's units as laid (decision 472), for its schedule.</summary>
     public readonly List<KitchenUnitRow> Units = [];
+    /// <summary>A casework piece's boards (decision 475), for its cut list.</summary>
+    public readonly List<BoardRow> Boards = [];
+    /// <summary>A casework piece's carcasses as laid across it, from the left as seen from its front.</summary>
+    public readonly List<(int Index, double X0, double X1)> Carcasses = [];
 
     /// <summary>Whether it is built mirrored (its spans and plan turned over about its middle).</summary>
     public bool Mirrored => mirror;
@@ -69,6 +73,60 @@ public sealed class Builder(Vec2 at, double z, double rotationDeg, bool mirror)
         Add(role, Prism.Extrude(profile, null, new Vec3(0, 0, z1 - z0), "furniture"));
     }
 
+    /// <summary>A plan polygon (x, y, counter-clockwise or not) extruded from z0 to z1: a fluted front, a board with notches.</summary>
+    public void PlanPrism(string role, IReadOnlyList<(double X, double Y)> plan, double z0, double z1)
+    {
+        if (plan.Count < 3 || z1 - z0 < 1e-4) return;
+        Front.Add((role, plan.Min(p => p.X), plan.Max(p => p.X), z0, z1, plan.Min(p => p.Y)));
+        var profile = plan.Select(p => W(Mx(p.X), p.Y, z0)).ToList();
+        Add(role, Lapin.Geometry.Prism.Extrude(profile, null, new Vec3(0, 0, z1 - z0), "furniture"));
+    }
+
+    /// <summary>A block with a rectangular hole through it, top to bottom (a vanity's top cut for its basin).</summary>
+    public void Slab(string role, double x0, double x1, double y0, double y1, double z0, double z1, (double X0, double X1, double Y0, double Y1) hole)
+    {
+        if (x1 - x0 < 1e-4 || y1 - y0 < 1e-4 || z1 - z0 < 1e-4) return;
+        Front.Add((role, x0, x1, z0, z1, y0));
+        IEnumerable<(double X, double Y)> R(double a0, double a1, double b0, double b1) => [(a0, b0), (a1, b0), (a1, b1), (a0, b1)];
+        var outer = R(x0, x1, y0, y1).Select(p => W(Mx(p.X), p.Y, z0)).ToList();
+        var inner = R(hole.X0, hole.X1, hole.Y0, hole.Y1).Select(p => W(Mx(p.X), p.Y, z0)).ToList();
+        Add(role, Lapin.Geometry.Prism.Extrude(outer, [inner], new Vec3(0, 0, z1 - z0), "furniture"));
+    }
+
+    /// <summary>A section in (y, z) swept across from x0 to x1: a hanging rail, a bar.</summary>
+    public void SweepX(string role, double x0, double x1, IReadOnlyList<(double Y, double Z)> section)
+    {
+        if (x1 - x0 < 1e-4 || section.Count < 3) return;
+        Front.Add((role, x0, x1, section.Min(p => p.Z), section.Max(p => p.Z), section.Min(p => p.Y)));
+        var a = Mx(x0);
+        var profile = section.Select(p => W(a, p.Y, p.Z)).ToList();
+        var d = W(Mx(x1), 0, 0) - W(a, 0, 0);
+        Add(role, Lapin.Geometry.Prism.Extrude(profile, null, d, "furniture"));
+    }
+
+    /// <summary>An upright square frustum about (cx, cy): its half-sizes at the bottom and the top (a tapered leg).</summary>
+    public void Frustum(string role, double cx, double cy, double bottom, double top, double z0, double z1)
+    {
+        if (z1 - z0 < 1e-4 || bottom < 1e-4 || top < 1e-4) return;
+        var r = Math.Max(bottom, top);
+        Front.Add((role, cx - r, cx + r, z0, z1, cy - r));
+        cx = Mx(cx);
+        (double, double)[] sq = [(-1, -1), (1, -1), (1, 1), (-1, 1)];
+        var v = new List<Vec3>();
+        foreach (var (sx, sy) in sq) v.Add(W(cx + sx * bottom, cy + sy * bottom, z0));
+        foreach (var (sx, sy) in sq) v.Add(W(cx + sx * top, cy + sy * top, z1));
+        // Each face's normal given, pointing away from the middle, so a mirrored build keeps them outward.
+        var mid = W(cx, cy, (z0 + z1) / 2);
+        FaceInput Out(int[] loop)
+        {
+            var c = loop.Aggregate(new Vec3(0, 0, 0), (acc, i) => acc + v[i]) * (1.0 / loop.Length);
+            return new(loop, null, c - mid);
+        }
+        var faces = new List<FaceInput> { Out([3, 2, 1, 0]), Out([4, 5, 6, 7]) };
+        for (var i = 0; i < 4; i++) { var j = (i + 1) % 4; faces.Add(Out([i, j, 4 + j, 4 + i])); }
+        Add(role, SolidBuilder.Make(v, faces, "furniture"));
+    }
+
     // ---- Plan ----
 
     public void Line(string kind, params (double X, double Y)[] pts) => Plan.Add(new PlanItem(kind, false, [.. pts.Select(p => Q(p.X, p.Y))]));
@@ -109,6 +167,7 @@ public static class FurnitureBodies
             case "coffeeTable": Table(b, s, true); break;
             case "desk": Desk(b, s); break;
             case "kitchen": Kitchen(b, s, length ?? s.W); break;
+            case Casework.Key: Casework.Build(b, s); break;
         }
     }
 
