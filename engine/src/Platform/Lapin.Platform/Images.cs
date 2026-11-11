@@ -56,11 +56,14 @@ public static class Images
     /// <summary>The file's bytes.</summary>
     public static byte[] Bytes(Entity image) => Convert.FromBase64String(image.Str("data") ?? "");
 
-    /// <summary>Removes the image when no material refers to it (but <paramref name="except"/>, the one changing).</summary>
+    /// <summary>The attributes an entity names an image by: a material's <c>textureImage</c>, an orthophoto's or an entourage kind's <c>image</c>.</summary>
+    static readonly string[] Uses = ["textureImage", "image"];
+
+    /// <summary>Removes the image when nothing refers to it (but <paramref name="except"/>, the one changing): no material, orthophoto or entourage kind.</summary>
     public static void DropIfUnused(ICommandContext ctx, string? imageId, string except)
     {
         if (imageId == null || ctx.Model.Get(imageId) is not { Class: Class }) return;
-        if (ctx.Model.OfClass(IfcClass.Material).Any(mat => mat.Id != except && mat.Str("textureImage") == imageId)) return;
+        if (ctx.Model.Entities.Any(e => e.Id != except && e.Class != Class && Uses.Any(k => e.Str(k) == imageId))) return;
         ctx.Remove(imageId);
     }
 }

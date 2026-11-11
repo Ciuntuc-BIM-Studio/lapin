@@ -26,18 +26,21 @@ export type EntourageKind = (typeof ENTOURAGE_KINDS)[number]['key'];
 
 export const kindOf = (key: unknown) => ENTOURAGE_KINDS.find((k) => k.key === key) ?? ENTOURAGE_KINDS[0];
 
+/** A kind of the project's own, made from one of its pictures (LapinEntourageKind; the engine's Entourage.PictureKind). */
 export interface ProjectKind { id: string; name: string; height: number; width: number; category: string; color: string }
 
 export const PROJECT_KIND_CLASS = 'LapinEntourageKind';
+/** A picture kind's height and width when it has none (the engine's Entourage.PictureHeight, PictureWidth). */
+export const PICTURE_HEIGHT = 1.75, PICTURE_WIDTH = 0.7;
 
 export function projectKinds(nodes: Map<string, NodeDto>): ProjectKind[] {
   const out: ProjectKind[] = [];
   for (const n of nodes.values()) {
     if (n.type !== PROJECT_KIND_CLASS) continue;
-    const height = typeof n.props.height === 'number' ? n.props.height : 1.75;
     out.push({
-      id: n.id, name: n.name, height,
-      width: typeof n.props.width === 'number' ? n.props.width : 0.7,
+      id: n.id, name: n.name,
+      height: typeof n.props.height === 'number' ? n.props.height : PICTURE_HEIGHT,
+      width: typeof n.props.width === 'number' ? n.props.width : PICTURE_WIDTH,
       category: typeof n.props.category === 'string' ? n.props.category : 'person',
       color: '#c8ccd2',
     });
@@ -83,7 +86,7 @@ export const entourageRow: ToolDef = {
   },
 };
 
-/** A person's or car's properties: its kind, turn, height, height above the ground and colour. */
+/** A person's or car's properties: its kind, turn, height, height above the ground and colour (none for a picture kind's figure). */
 export function EntourageSection({ node }: { node: NodeDto }) {
   const pictures = useProjectKinds();
   const picture = pictures.find((p) => p.id === node.props.kind);
@@ -96,8 +99,10 @@ export function EntourageSection({ node }: { node: NodeDto }) {
       <dt>Rotation</dt><dd><NumberField value={typeof node.props.rotation === 'number' ? node.props.rotation : 0} suffix="°" onCommit={(v) => { if (v != null) update({ rotation: v }); }} /></dd>
       <dt>Height</dt><dd><Mm value={height} min={300} onCommit={(v) => update({ height: v })} /></dd>
       <dt title="Raised above the ground under it (a deck, a balcony)">Above the ground</dt><dd><Mm value={node.props.offset} fallback={0} onCommit={(v) => update({ offset: v })} /></dd>
-      <dt title={kind.category === 'car' ? 'The body' : 'The clothes'}>Colour</dt>
-      <dd><input type="color" value={typeof node.props.color === 'string' ? node.props.color : kind.color} onChange={(e) => update({ color: e.target.value })} /></dd>
+      {!picture && <>
+        <dt title={kind.category === 'car' ? 'The body' : 'The clothes'}>Colour</dt>
+        <dd><input type="color" value={typeof node.props.color === 'string' ? node.props.color : kind.color} onChange={(e) => update({ color: e.target.value })} /></dd>
+      </>}
     </dl>
   );
 }

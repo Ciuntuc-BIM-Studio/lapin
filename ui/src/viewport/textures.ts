@@ -235,6 +235,7 @@ export function imageOf(material: NodeDto | undefined, nodes: Map<string, NodeDt
   return { id, url: `data:${mime};base64,${data}`, width: w, height: h };
 }
 
+/** An entourage picture's coordinates on its card: the whole image across the card's width (turned by the figure's rotation) and up its height. */
 export function pictureUv(geometry: THREE.BufferGeometry, rotation = 0): void {
   const pos = geometry.getAttribute('position');
   if (!pos?.count) return;
@@ -255,6 +256,7 @@ export function pictureUv(geometry: THREE.BufferGeometry, rotation = 0): void {
   geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
 
+/** The picture an entourage figure of a picture kind wears (decision 468), or null (a built-in kind, or its picture missing). */
 export function pictureOf(figureId: string, nodes: Map<string, NodeDto>): OwnImage | null {
   const figure = nodes.get(figureId);
   if (!figure || figure.type !== 'LapinEntourage') return null;

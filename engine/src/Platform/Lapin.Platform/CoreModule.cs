@@ -307,6 +307,10 @@ public sealed class CoreModule : ILapinModule
             // What is pinned stays (decision 449).
             Pins.Refuse(ids.Concat(groups).Select(id => ctx.Model.Get(id)).OfType<Entity>());
             var groupsTouched = groups.Concat(ids.Select(id => Groups.Of(ctx.Model, id)?.Id).OfType<string>()).Distinct().ToList();
+            // What a module's elements still use stays (an entourage kind with figures, its picture), whatever the order asked.
+            var deleting = ids.ToHashSet();
+            foreach (var id in deleting)
+                if (ctx.Model.Get(id) is { } x) foreach (var d in ctx.Services.All<IDeletion>()) d.Check(ctx.Model, x, deleting);
             var bodies = new HashSet<string>();
             foreach (var id in ids.Distinct())
             {

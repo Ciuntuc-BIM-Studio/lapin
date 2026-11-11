@@ -143,6 +143,7 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         mesh.castShadow = mesh.receiveShadow = true;
         group.add(mesh);
       }
+      // An entourage figure of a picture kind: its picture on the card, nothing else.
       const picture = pictureOf(nodeId, nodes);
       if (picture) {
         const pg = new THREE.BufferGeometry();
@@ -151,10 +152,12 @@ function addSurface(group: THREE.Group, nodeId: string, positions: Float32Array,
         else pg.computeVertexNormals();
         pg.setIndex(new THREE.BufferAttribute(new Uint32Array(indices.buffer, indices.byteOffset, indices.length), 1));
         pictureUv(pg, typeof owner?.props.rotation === 'number' ? owner.props.rotation : 0);
-        const pm = new THREE.MeshStandardMaterial({ color: 0xffffff, map: imageTexture(picture, THREE.ClampToEdgeWrapping), roughness: 0.85, metalness: 0, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+        // A cut-out: the PNG's see-through pixels discarded (alphaTest, no blending, so it sorts with glass as a solid does),
+        // its shadow cut out the same way.
+        const pm = new THREE.MeshStandardMaterial({ color: 0xffffff, map: imageTexture(picture, THREE.ClampToEdgeWrapping), roughness: 0.85, metalness: 0, alphaTest: 0.5, side: THREE.DoubleSide });
         const pmMesh = new THREE.Mesh(pg, pm);
         pmMesh.userData.nodeId = nodeId;
-        pmMesh.receiveShadow = true;
+        pmMesh.castShadow = pmMesh.receiveShadow = true;
         group.add(pmMesh);
         return;
       }

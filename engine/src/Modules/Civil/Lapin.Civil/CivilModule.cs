@@ -46,13 +46,13 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Class(new(Plantings.Class, "Planting", [new("density", "Plants per 100 m²", "number", Min: 0.1, Max: 500), new("seed", "Seed", "number", Min: 0, Max: 1e9)], "#5a9440"));
         r.Class(new(Entourage.Class, "Entourage",
         [
-            new("kind", "Kind", "choice", Choices: [.. Entourage.Kinds.Select(k => k.Key)]), new("rotation", "Rotation (°)", "number"),
+            new("kind", "Kind", "text"), new("rotation", "Rotation (°)", "number"),
             new("height", "Height", "length", Min: 0.3, Max: 6), new("offset", "Above the ground", "length"), new("color", "Colour", "color"),
         ], "#9aa3ad"));
         r.Class(new(Entourage.KindClass, "Entourage kind",
         [
             new("image", "Picture", "text", ReadOnly: true), new("height", "Height", "length", Min: 0.2, Max: 10),
-            new("width", "Width", "length", Min: 0.1, Max: 10), new("category", "Group", "choice", Choices: ["person", "vehicle", "other"]),
+            new("width", "Width", "length", Min: 0.1, Max: 10), new("category", "Group", "choice", Choices: Entourage.Categories),
         ], "#9aa3ad", Kind: "type"));
         r.Geometry(IfcClass.GeographicElement, Terrains.Geometry);
         r.Quantities(IfcClass.GeographicElement, Terrains.Quantities);
@@ -65,6 +65,8 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Quantities(Plantings.Class, Plantings.Quantities);
         r.Geometry(Entourage.Class, (e, m, _) => Entourage.Geometry(e, m));
         Entourage.Register(r);
+        r.Service<IDeletion>(new KindDeletion());
+        r.Service<IElementUpdate>(new KindUpdate());
         r.Service<IViewAnnotations>(this);
         r.Service<IGround>(new Ground());
         r.Service<IScheduleSource>(new PlantingSchedule());

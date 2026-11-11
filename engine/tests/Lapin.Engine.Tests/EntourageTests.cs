@@ -297,4 +297,161 @@ public sealed class EntourageTests
         Assert.Equal("Van", g.Model.Get(kind)!.Name);
         Assert.Equal(kind, g.Model.Get(figure)!.Str("kind"));
     }
+
+    // ---- Picture kinds: deleting, the picture, exports (PR #21's follow-up, decision 468) ----
+
+    static string PictureKind(Fixture f, string name = "Cyclist", string? image = null) =>
+        (string)f.Run("civil.addEntourageKind", new JsonObject { ["imageId"] = image ?? Picture(f), ["name"] = name })!["id"]!;
+
+    static void Delete(Fixture f, params string[] ids) => f.Run("element.delete", new JsonObject { ["ids"] = new JsonArray([.. ids.Select(i => (JsonNode)i)]) });
+
+    [Fact]
+    public void A_kind_figures_use_is_not_deleted_and_says_how_many_use_it()
+    {
+        var f = Project();
+        var kind = PictureKind(f);
+        var a = Add(f, new JsonObject { ["kind"] = kind, ["x"] = 0, ["y"] = 0 });
+        Add(f, new JsonObject { ["kind"] = kind, ["x"] = 2, ["y"] = 0 });
+        var refused = Assert.Throws<CommandException>(() => Delete(f, kind));
+        Assert.Contains("2 figure(s)", refused.Message);
+        Assert.Contains("Cyclist", refused.Message);
+        Assert.NotNull(f.Model.Get(kind));
+        Assert.Equal(2, f.Model.OfClass(Entourage.Class).Count(x => x.Str("kind") == kind));
+
+        // One left: still refused; the kind with its last figure, in either order, goes.
+        Delete(f, f.Model.OfClass(Entourage.Class).Single(x => x.Id != a).Id);
+        Assert.Contains("1 figure(s)", Assert.Throws<CommandException>(() => Delete(f, kind)).Message);
+        Delete(f, kind, a);
+        Assert.Null(f.Model.Get(kind));
+        Assert.Empty(f.Model.OfClass(Entourage.Class));
+    }
+
+    [Fact]
+    public void A_kind_deleted_takes_its_picture_unless_something_else_uses_it_and_undo_brings_both_back()
+    {
+        var f = Project();
+        var image = Picture(f);
+        var kind = PictureKind(f, image: image);
+        Delete(f, kind);
+        Assert.Null(f.Model.Get(kind));
+        Assert.Null(f.Model.Get(image));
+        f.Session.Undo();
+        Assert.NotNull(f.Model.Get(kind));
+        Assert.NotNull(f.Model.Get(image));
+
+        // Two kinds of one picture: the first deleted leaves it to the second.
+        var second = PictureKind(f, "Second", image);
+        Delete(f, kind);
+        Assert.NotNull(f.Model.Get(image));
+        Assert.Equal(image, f.Model.Get(second)!.Str("image"));
+    }
+
+    [Fact]
+    public void The_picture_a_kind_shows_is_not_deleted_nor_dropped_by_a_material_letting_it_go()
+    {
+        var f = Project();
+        var image = Picture(f, "Tree cut-out");
+        var kind = PictureKind(f, image: image);
+        var refused = Assert.Throws<CommandException>(() => Delete(f, image));
+        Assert.Contains("Cyclist", refused.Message);
+        Assert.NotNull(f.Model.Get(image));
+
+        // A material that wore the same image and lets it go leaves it to the kind.
+        var mat = f.Model.OfClass(IfcClass.Material).FirstOrDefault()?.Id
+            ?? (string)f.Run("material.create", new JsonObject { ["name"] = "Board" })!["id"]!;
+        f.Run("material.update", new JsonObject { ["id"] = mat, ["textureImage"] = image });
+        f.Run("material.update", new JsonObject { ["id"] = mat, ["textureImage"] = null });
+        Assert.NotNull(f.Model.Get(image));
+
+        // Deleted with its kind, the picture goes.
+        Delete(f, image, kind);
+        Assert.Null(f.Model.Get(image));
+        Assert.Null(f.Model.Get(kind));
+    }
+
+    [Fact]
+    public void A_kind_is_made_from_a_file_in_one_undo_step_and_its_group_is_checked()
+    {
+        var f = Project();
+        var made = f.Run("civil.addEntourageKind", new JsonObject
+        {
+            ["data"] = OnePixel, ["mime"] = "image/png", ["name"] = "Van", ["height"] = 2.1, ["width"] = 4.8, ["category"] = "car",
+        })!;
+        var kind = f.Model.Get((string)made["id"]!)!;
+        var image = f.Model.Get((string)made["imageId"]!)!;
+        Assert.Equal(Images.Class, image.Class);
+        Assert.Equal(image.Id, kind.Str("image"));
+        Assert.Equal("car", kind.Str("category"));
+        Assert.Equal(4.8, kind.Num("width"));
+
+        // A row of a car kind is spaced as cars are.
+        var row = (JsonArray)f.Run("civil.addEntourage", new JsonObject { ["kind"] = kind.Id, ["points"] = new JsonArray(new JsonArray(0, 0), new JsonArray(10, 0)), ["storeyId"] = Ground(f) })!["ids"]!;
+        Assert.Equal(5, row.Count);
+
+        Assert.Throws<CommandException>(() => f.Run("civil.addEntourageKind", new JsonObject { ["imageId"] = image.Id, ["category"] = "vehicle" }));
+        Assert.Throws<CommandException>(() => f.Run("civil.addEntourageKind", new JsonObject { ["data"] = OnePixel, ["mime"] = "image/jpeg" }));
+
+        f.Session.Undo();
+        f.Session.Undo();
+        Assert.Null(f.Model.Get(kind.Id));
+        Assert.Null(f.Model.Get(image.Id));
+    }
+
+    [Fact]
+    public void A_figure_is_turned_into_a_picture_kind_in_its_properties_and_back()
+    {
+        var f = Project();
+        var kind = PictureKind(f);
+        var man = Add(f, new JsonObject { ["kind"] = "man", ["x"] = 0, ["y"] = 0 });
+        f.Run("element.update", new JsonObject { ["ids"] = new JsonArray(man), ["attrs"] = new JsonObject { ["kind"] = kind } });
+        Assert.Equal(kind, f.Model.Get(man)!.Str("kind"));
+        Assert.Equal("picture", Assert.Single(Entourage.Geometry(f.Model.Get(man)!, f.Model)!.Parts).Name);
+        Assert.Equal(Entourage.PictureHeight, Entourage.HeightOf(f.Model, f.Model.Get(man)!));
+        f.Run("element.update", new JsonObject { ["ids"] = new JsonArray(man), ["attrs"] = new JsonObject { ["kind"] = "woman" } });
+        Assert.Equal("woman", f.Model.Get(man)!.Str("kind"));
+        Assert.Throws<CommandException>(() => f.Run("element.update", new JsonObject { ["ids"] = new JsonArray(man), ["attrs"] = new JsonObject { ["kind"] = "nowhere" } }));
+        Assert.Equal("woman", f.Model.Get(man)!.Str("kind"));
+    }
+
+    [Fact]
+    public void A_picture_figure_draws_a_flat_rectangle_in_elevations_and_nothing_when_the_style_draws_no_entourage()
+    {
+        var f = Project();
+        var kind = (string)f.Run("civil.addEntourageKind", new JsonObject { ["imageId"] = Picture(f), ["height"] = 1.9, ["width"] = 0.8 })!["id"]!;
+        var figure = Add(f, new JsonObject { ["kind"] = kind, ["x"] = 0, ["y"] = 0, ["rotation"] = 0 });
+        var g = Entourage.Geometry(f.Model.Get(figure)!, f.Model)!;
+        var outline = Assert.Single(g.Silhouettes!, s => s.Mode == Entourage2d.Outline);
+        var side = Assert.Single(outline.Side).Points;
+        Assert.Equal(0.8, side.Max(p => p.X) - side.Min(p => p.X), 6);
+        Assert.Equal(1.9, side.Max(p => p.Y) - side.Min(p => p.Y), 6);
+
+        var elevation = f.Model.Get((string)f.Run("view.create", new JsonObject { ["kind"] = "elevation", ["direction"] = "south" })!["id"]!)!;
+        var (d, _, problem) = Views.Generate(f.Session.Reader, elevation);
+        Assert.True(d != null, problem);
+        var lines = d!.Lines.Where(l => l.Element == figure).ToList();
+        Assert.Equal(4, lines.Count);
+        var xs = lines.SelectMany(l => new[] { l.A.X, l.B.X }).ToList();
+        Assert.Equal(0.8, xs.Max() - xs.Min(), 3);
+    }
+
+    [Fact]
+    public void An_IFC_export_writes_a_picture_figure_as_a_proxy_and_never_the_kind_or_its_picture()
+    {
+        var f = Project();
+        var image = Picture(f, "PictureXyz");
+        var kind = (string)f.Run("civil.addEntourageKind", new JsonObject { ["imageId"] = image, ["name"] = "KindQwerty" })!["id"]!;
+        Add(f, new JsonObject { ["kind"] = kind, ["x"] = 0, ["y"] = 0, ["name"] = "Figure one" });
+        using var ms = new MemoryStream();
+        var ex = ModelSurvey.Excluded(f.Session, new JsonObject { ["entourage"] = true });
+        IfcExport.Write(f.Session, ms, "x.ifc", new IfcExportOptions(Exclude: ex.Count > 0 ? ex : null));
+        var ifc = Encoding.UTF8.GetString(ms.ToArray());
+        Assert.Contains("IFCBUILDINGELEMENTPROXY", ifc);
+        Assert.Contains("'Figure one'", ifc);
+        Assert.DoesNotContain("KindQwerty", ifc);
+        Assert.DoesNotContain("PictureXyz", ifc);
+        Assert.DoesNotContain(Entourage.KindClass, ifc, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(OnePixel[..24], ifc);
+        // The kind's id is named only by the figure's own intent (Lapin_Intent's kind), never as an entity of the file.
+        Assert.Equal([$"IFCPROPERTYSINGLEVALUE('kind',$,IFCLABEL('{kind}'),$);"], ifc.Split('\n').Where(l => l.Contains(kind)).Select(l => l[(l.IndexOf('=') + 1)..].Trim()));
+    }
 }

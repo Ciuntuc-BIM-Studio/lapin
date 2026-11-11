@@ -136,6 +136,12 @@ public interface IStoreySpans
 public interface IDeletion
 {
     bool Delete(ICommandContext ctx, string id);
+
+    /// <summary>
+    /// Before element.delete removes anything: throws when <paramref name="e"/> may not go while what stays (not in
+    /// <paramref name="deleting"/>) still uses it, as a type in use stays (an entourage kind its figures are of).
+    /// </summary>
+    void Check(IModelView m, Entity e, IReadOnlySet<string> deleting) { }
 }
 
 public interface ICutters

@@ -19,6 +19,13 @@ namespace Lapin.Civil;
 /// </para>
 /// In the local frame x runs to the right of a person (along a car, its front at +x), a person faces −y, z is up.
 /// Exported as IfcBuildingElementProxy USERDEFINED "Entourage", and left out of an IFC export unless asked for.
+/// <para>
+/// A project may add kinds of its own from pictures (<see cref="KindClass"/>, PR #21, decision 468): a PNG or JPEG of
+/// the project (<see cref="Images"/>) its height and width, a group (person, car, other). A figure of one names the kind's
+/// id as its <c>kind</c> and stands as a thin card, the picture on its faces in 3D (a PNG's see-through pixels cut out),
+/// its outline in plan, a flat rectangle in elevations and sections. The kind is a resource: never written to an IFC,
+/// kept in the .lapin; one in use, or the picture one uses, is not deleted (<see cref="KindDeletion"/>).
+/// </para>
 /// </summary>
 public static class Entourage
 {
@@ -41,21 +48,30 @@ public static class Entourage
     public static Kind KindOf(Entity e) => Kinds.FirstOrDefault(k => k.Key == e.Str("kind")) ?? Kinds[0];
     public static Kind? Find(string? key) => Kinds.FirstOrDefault(k => k.Key == key);
 
+    /// <summary>A kind of the project's own, made from one of its pictures.</summary>
     public const string KindClass = "LapinEntourageKind";
 
+    /// <summary>The groups a picture kind belongs to: a car's rows are spaced and turned as cars, the others as people.</summary>
+    public static readonly string[] Categories = ["person", "car", "other"];
+
+    public const double PictureHeight = 1.75, PictureWidth = 0.7;
+
+    /// <summary>A picture kind as a figure reads it: its id, name, picture, height and width (metres), group.</summary>
     public sealed record PictureKind(string Id, string Label, string ImageId, double Height, double Width, string Category);
 
+    /// <summary>The picture kind a figure is of, or null (a built-in kind).</summary>
     public static PictureKind? PictureOf(IModelView m, Entity e) =>
-        e.Str("kind") is { Length: > 0 } id && m.Get(id) is { Class: KindClass } k
-            ? new PictureKind(k.Id, k.Name, k.Str("image") ?? "",
-                k.NumOrNull("height") is { } h && h > 0.2 ? h : 1.75,
-                k.NumOrNull("width") is { } w && w > 0.1 ? w : 0.7,
-                k.Str("category") ?? "person")
-            : null;
+        e.Str("kind") is { Length: > 0 } id && Find(id) == null && m.Get(id) is { Class: KindClass } k ? Picture(k) : null;
 
-    /// <summary>How tall it is: its own height, else its kind's.</summary>
+    public static PictureKind Picture(Entity k) => new(k.Id, k.Name, k.Str("image") ?? "",
+        k.NumOrNull("height") is { } h && h >= 0.2 ? h : PictureHeight,
+        k.NumOrNull("width") is { } w && w >= 0.1 ? w : PictureWidth,
+        k.Str("category") is { } c && Categories.Contains(c) ? c : "person");
+
+    /// <summary>How tall a figure of a built-in kind is: its own height, else its kind's. A picture kind's figures: <see cref="HeightOf(IModelView, Entity)"/>.</summary>
     public static double HeightOf(Entity e) => e.NumOrNull("height") is { } h && h > 0.2 ? h : KindOf(e).Height;
 
+    /// <summary>How tall a figure is: its own height, else its kind's, a picture kind's too.</summary>
     public static double HeightOf(IModelView m, Entity e) =>
         e.NumOrNull("height") is { } h && h > 0.2 ? h : PictureOf(m, e)?.Height ?? KindOf(e).Height;
 
@@ -121,10 +137,16 @@ public static class Entourage
         var parts = new List<GeometryPart>();
         if (card != null) parts.Add(new GeometryPart("picture", "#c8ccd2", Paths.Combine([card], "entourage"), null, "picture"));
         var half = picture.Width / 2;
+        // In plan the card's outline, in every mode but none (as the built-in kinds draw their symbols); in elevations and
+        // sections a flat rectangle, the picture's width seen face on, the card's thickness seen edge on.
         var outline = new[] { f.Q(-half, -thickness / 2), f.Q(half, -thickness / 2), f.Q(half, thickness / 2), f.Q(-half, thickness / 2) };
         var plan = new[] { Entourage2d.Outline, Entourage2d.Abstract, Entourage2d.Detailed }
             .Select(mode => new PlanItem("symbol", true, outline, Mode: mode)).ToList();
-        return new ElementGeometry(parts, plan, [f.At]);
+        static List<Vec2> Rect(double hw, double h) => [new(-hw, 0), new(hw, 0), new(hw, h), new(-hw, h)];
+        var silhouettes = new[] { Entourage2d.Outline, Entourage2d.Abstract }
+            .Select(mode => new Lapin.Drawing.Views.Silhouette(new Vec3(f.At.X, f.At.Y, f.Z), [new(Rect(half, height))], [new(Rect(thickness / 2, height))], new Vec2(f.Cos, f.Sin), mode))
+            .ToList();
+        return new ElementGeometry(parts, plan, [f.At], Silhouettes: silhouettes);
     }
 
     // ---- People ----
@@ -342,21 +364,39 @@ public static class Entourage
 
     public static void Register(IModuleRegistry r)
     {
+        // A kind of the project's own from a picture: one of the project's images (imageId), or a PNG or JPEG brought with it
+        // (data as base64, mime, made an image in the same step); {name?, height?, width?, category?: person|car|other}. One undo step.
         r.Command("addEntourageKind", "Entourage kind", (ctx, a) =>
         {
-            var imageId = (string?)a["imageId"] ?? throw new CommandException("An entourage kind needs a picture from the project.");
-            if (ctx.Model.Get(imageId) is not { Class: Images.Class } image) throw new CommandException("The picture is not one of the project's images.");
+            Entity image;
+            if ((string?)a["imageId"] is { } given)
+                image = ctx.Model.Get(given) is { Class: Images.Class } found ? found : throw new CommandException("The picture is not one of the project's images.");
+            else if (a["data"] != null)
+            {
+                var mime = (string?)a["mime"] ?? "";
+                if (!Images.Mimes.Contains(mime)) throw new CommandException("A picture is a PNG or a JPEG.");
+                byte[] bytes;
+                try { bytes = Convert.FromBase64String((string?)a["data"] ?? ""); }
+                catch (FormatException) { throw new CommandException("The picture's data is not base64."); }
+                if (bytes.Length == 0 || bytes.Length > Images.MaxBytes) throw new CommandException($"A picture is at most {Images.MaxBytes / 1024 / 1024} MB.");
+                if (Images.Sniff(bytes) != mime) throw new CommandException($"The file is not a {(mime == "image/png" ? "PNG" : "JPEG")} image.");
+                image = new Entity(ctx.NewId(), Images.Class, ((string?)a["name"])?.Trim() is { Length: > 0 } nm ? nm : "Picture", new JsonObject { ["mime"] = mime, ["data"] = Convert.ToBase64String(bytes) });
+                ctx.Add(image);
+            }
+            else throw new CommandException("An entourage kind needs a picture from the project.");
+            var category = (string?)a["category"] ?? "person";
+            if (!Categories.Contains(category)) throw new CommandException($"An entourage kind's group is one of {string.Join(", ", Categories)}.");
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : image.Name;
             var attrs = new JsonObject
             {
-                ["image"] = imageId,
-                ["height"] = Json.Number(a["height"]) is { } h && h > 0.2 ? h : 1.75,
-                ["width"] = Json.Number(a["width"]) is { } w && w > 0.1 ? w : 0.7,
-                ["category"] = a["category"] is JsonValue cv ? cv.ToString() : "person",
+                ["image"] = image.Id,
+                ["height"] = Json.Number(a["height"]) is { } h && double.IsFinite(h) && h > 0 ? Math.Clamp(h, 0.2, 10) : PictureHeight,
+                ["width"] = Json.Number(a["width"]) is { } w && double.IsFinite(w) && w > 0 ? Math.Clamp(w, 0.1, 10) : PictureWidth,
+                ["category"] = category,
             };
             var kind = new Entity(ctx.NewId(), KindClass, name, attrs);
             ctx.Add(kind);
-            return new JsonObject { ["id"] = kind.Id };
+            return new JsonObject { ["id"] = kind.Id, ["imageId"] = image.Id };
         });
         // People and cars: one at a point ({x, y, rotation?}), or a row along a line ({points: [[x, y], [x, y]], spacing?}),
         // cars parked across it, people walking along it; {kind, height?, color?, offset?, storeyId?}. One undo step.
@@ -369,7 +409,7 @@ public static class Entourage
             if (builtIn == null && project == null) throw new CommandException($"An entourage is one of {string.Join(", ", Kinds.Select(k => k.Key))}, or a kind of the project's.");
             var key = builtIn?.Key ?? requested;
             var label = builtIn?.Label ?? project!.Name;
-            var category = builtIn?.Category ?? project!.Str("category") ?? "person";
+            var category = builtIn?.Category ?? Picture(project!).Category;
             var places = new List<(Vec2 At, double Rotation)>();
             if (a["points"] is JsonArray { Count: >= 2 })
             {
@@ -405,5 +445,43 @@ public static class Entourage
             }
             return new JsonObject { ["id"] = (string?)ids[0], ["ids"] = ids };
         });
+    }
+}
+
+/// <summary>
+/// A picture kind is a type its figures are built with: one in use is not deleted (as a wall type in use is not), nor is the
+/// picture a kind shows; a kind deleted takes its picture with it when nothing else uses it (as a material's image goes).
+/// </summary>
+sealed class KindDeletion : IDeletion
+{
+    public void Check(IModelView m, Entity e, IReadOnlySet<string> deleting)
+    {
+        if (e.Class == Entourage.KindClass)
+        {
+            var n = m.OfClass(Entourage.Class).Count(x => x.Str("kind") == e.Id && !deleting.Contains(x.Id));
+            if (n > 0) throw new CommandException($"„{e.Name}” is used by {n} figure(s): give them another kind first.");
+        }
+        else if (e.Class == Images.Class && m.OfClass(Entourage.KindClass).FirstOrDefault(k => k.Str("image") == e.Id && !deleting.Contains(k.Id)) is { } kind)
+            throw new CommandException($"„{e.Name}” is the picture of the entourage kind „{kind.Name}”: delete the kind first.");
+    }
+
+    public bool Delete(ICommandContext ctx, string id)
+    {
+        if (ctx.Model.Get(id) is not { Class: Entourage.KindClass } kind) return false;
+        ctx.Remove(id);
+        Images.DropIfUnused(ctx, kind.Str("image"), id);
+        return true;
+    }
+}
+
+/// <summary>A figure's kind changed in Properties is a built-in kind or one of the project's.</summary>
+sealed class KindUpdate : IElementUpdate
+{
+    public void Updated(ICommandContext ctx, Entity before, Entity after)
+    {
+        if (after.Class != Entourage.Class || after.Str("kind") == before.Str("kind")) return;
+        var kind = after.Str("kind");
+        if (Entourage.Find(kind) == null && (kind == null || ctx.Model.Get(kind) is not { Class: Entourage.KindClass }))
+            throw new CommandException($"An entourage is one of {string.Join(", ", Entourage.Kinds.Select(k => k.Key))}, or a kind of the project's.");
     }
 }

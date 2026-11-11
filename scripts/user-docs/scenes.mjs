@@ -3327,6 +3327,23 @@ export const scenes = [
       await t.wait(600);
       t.expect(await t.page.locator('aside.props').getByText('Above the ground').count() > 0, 'the car\'s properties');
       await t.shot('entourage-properties', { of: 'aside.props', pad: 0, maxHeight: 700 });
+      // A kind of the project's own from a picture (decision 468): a tree drawn on a see-through PNG, in Entourage kinds….
+      const data = await t.page.evaluate(() => {
+        const c = document.createElement('canvas');
+        c.width = 300; c.height = 400;
+        const g = c.getContext('2d');
+        g.fillStyle = '#6b4a2b'; g.fillRect(138, 250, 24, 150);
+        g.fillStyle = '#4f7f3a'; g.beginPath(); g.ellipse(150, 160, 130, 150, 0, 0, Math.PI * 2); g.fill();
+        const url = c.toDataURL('image/png');
+        return url.slice(url.indexOf(',') + 1);
+      });
+      const tree = await t.cmd('civil.addEntourageKind', { data, mime: 'image/png', name: 'Tree cut-out', height: 4, width: 3, category: 'other' });
+      await t.cmd('civil.addEntourage', { storeyId: s, kind: tree.id, x: -1, y: -3 });
+      await t.ui({ dialog: 'entourageKinds' });
+      await t.wait(600);
+      t.expect(await t.page.locator('[data-testid=entourage-kinds] input[aria-label=Name]').count() === 1, 'the picture kind in Entourage kinds');
+      await t.shot('entourage-kinds', { of: '[data-testid=entourage-kinds]', pad: 0 });
+      await t.ui({ dialog: null });
     },
   },
   {

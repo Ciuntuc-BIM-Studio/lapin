@@ -234,7 +234,7 @@ const roadFromLinework = fromLinework('civil.roadFromLinework', 'Road from linew
 const breaklineFromLinework = fromLinework('civil.breaklineFromLinework', 'Breakline from linework', 'breakline', 'BL');
 
 const corridor: ToolDef = { id: 'civil.corridor', label: 'Corridor…', icon: Spline, shortcut: 'CR', run: () => useUi.setState({ dialog: 'corridor' }) };
-const entourageKinds: ToolDef = { id: 'civil.entourageKinds', label: 'Entourage kinds', icon: ImagePlus, run: () => useUi.setState({ dialog: 'entourageKinds' }) };
+const entourageKinds: ToolDef = { id: 'civil.entourageKinds', label: 'Entourage kinds…', icon: ImagePlus, run: () => useUi.setState({ dialog: 'entourageKinds' }) };
 
 /** A retaining wall along a polyline, the high ground on its left; its section is set in the inspector. */
 const retainingWall: ToolDef = {

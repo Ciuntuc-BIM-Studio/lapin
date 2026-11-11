@@ -107,6 +107,16 @@ How people, cars and plants draw in 2D is a setting of the view style, **Entoura
 
 They give drawings and pictures their scale but are no part of the building. An IFC or Fragments export (File → Export…) leaves them out unless you tick **Entourage** in its list of kinds; IFC writes them as IfcBuildingElementProxy "Entourage". The 3D exports (glTF, USD, COLLADA) take them. Clash tests leave them out.
 
+### Your own pictures
+
+**Entourage kinds…** (in the **Entourage** group) makes kinds of the project's own from pictures: **Add picture…** takes a PNG or a JPEG (at most 8 MB; one larger than 2048 pixels is scaled down) and makes a kind of it, named after the file, 1.75 m tall and as wide as the picture's proportion says. Change its name, **height**, **width** and **group** in the list (in the project's units): a kind in the **Cars** group stands in an entourage row every 2.5 m, as cars do. The kinds then appear under **Pictures** in the command line's bar and in a figure's properties.
+
+![The project's own kinds, each with its height, width and group](shots/entourage-kinds.webp)
+
+A figure of a picture kind stands as a thin card with the picture on both faces in 3D; a PNG's see-through pixels are cut out, its shadow too, so a cut-out person or tree stands on its own. Drawings show it as the built-in kinds: the card's outline in plan, a flat rectangle as wide and as tall as the picture in elevations and sections, nothing when **Entourage in 2D** is **not drawn**. A figure of a picture kind takes its kind's height unless you give it its own; the colour does not apply to it.
+
+The pictures and kinds are kept in the project (saved, undone, versioned) and never written into an IFC; the figures are exported as the other entourage. A kind some figures use is not deleted: Lapin says how many use it, so give them another kind first. A kind deleted takes its picture with it, unless a material or another kind uses it too.
+
 The figures follow the people and cars of [BimGo](https://github.com/aussieBIMguru/BimGo) by Aussie BIM Guru (MIT-0): their proportions, stances and profiles.
 
 ## Gates
