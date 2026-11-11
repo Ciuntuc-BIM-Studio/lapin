@@ -1,0 +1,1286 @@
+{
+  "about": "The furniture models Lapin ships (docs/plan-furniture.md, Configuratorul flexibil, stage 2; decision 477), each from a source with a licence verified on its site. Written by scripts/furniture-assets.mjs and checked by pnpm check:licenses: every model and preview listed, its hash as shipped, its licence in the allowed list. Zones are fractions of the model's extent in Lapin's frame (x across from its left, y from its front to its back, z up); natural is that extent in metres (the kit's units × 2), size the size a new type starts with, min and max what a type may take.",
+  "sources": {
+    "kenney-furniture-kit": {
+      "name": "Furniture Kit 2.0",
+      "url": "https://kenney.nl/assets/furniture-kit",
+      "author": "Kenney (www.kenney.nl)",
+      "licence": "CC0-1.0",
+      "licenceUrl": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "verified": "2026-11-11: the asset page states \"Creative Commons CC0\"; the kit's License.txt reads \"License: (Creative Commons Zero, CC0)\" and \"This content is free to use in personal, educational and commercial projects. Support us by crediting Kenney or www.kenney.nl (this is not mandatory)\".",
+      "fetched": "2026-11-11",
+      "archive": "kenney_furniture-kit.zip",
+      "archiveSha256": "e67652d0932cee41683f74711c03d3e192a2af9979ef8e6b237711f5482d46b0"
+    },
+    "poly-haven": {
+      "name": "Poly Haven models",
+      "url": "https://polyhaven.com/models",
+      "author": "Poly Haven contributors",
+      "licence": "CC0-1.0",
+      "licenceUrl": "https://polyhaven.com/license",
+      "verified": "2026-11-11: polyhaven.com/license states \"Our assets are all licensed as CC0\" and that this covers \"All assets (HDRIs, textures and 3D models)\"; no credit required. Allowed, none shipped yet: its models are photo-scanned with textures (megabytes each), not the flat-coloured low-poly bodies Lapin's materials colour."
+    }
+  },
+  "models": [
+    {
+      "id": "loungeSofa",
+      "name": "Sofa",
+      "group": "Sofas",
+      "predefined": "SOFA",
+      "size": [2, 0.9, 0.82],
+      "natural": [1.96, 0.82, 0.92],
+      "min": [0.539, 0.353, 0.741],
+      "max": [5, 1.8, 1.64],
+      "zones": {
+        "x": [0.09704, 0.90296],
+        "y": [0.14635, 0.78007],
+        "z": [0.5, 0.71739]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "legs"
+      },
+      "seats": true,
+      "file": "models/loungeSofa.glb",
+      "sha256": "1886b811c0d3ad0d8525a4fd43adf4112c497c8e0ed906f06877ca3517f4c7dd",
+      "bytes": 9644,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeSofa.png",
+        "sha256": "63a81fad8d97b91abb0b2e18539bd4f1ecf5a045a4e36e8762869ecd66e07120",
+        "original": "Isometric/loungeSofa_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeSofa.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "loungeDesignSofa",
+      "name": "Modern sofa",
+      "group": "Sofas",
+      "predefined": "SOFA",
+      "size": [2.2, 0.85, 0.75],
+      "natural": [2.24, 0.82, 0.8],
+      "min": [0.801, 0.472, 0.477],
+      "max": [5.5, 1.7, 1.5],
+      "zones": {
+        "x": [0.14301, 0.85699],
+        "y": [0.2134, 0.68551],
+        "z": [0.125, 0.57499]
+      },
+      "slots": {
+        "carpetBlue": "upholstery",
+        "metal": "metal"
+      },
+      "seats": true,
+      "file": "models/loungeDesignSofa.glb",
+      "sha256": "b4f4e6850118e409da301df678228c703b6ac02e94fbb9dbde61543af817fa53",
+      "bytes": 9128,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeDesignSofa.png",
+        "sha256": "cc72034bd3ddfafa124221c5cd6b0f265c022a1a853f47d63fe0bab3dbffd14d",
+        "original": "Isometric/loungeDesignSofa_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeDesignSofa.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "loungeSofaLong",
+      "name": "Sofa with chaise",
+      "group": "Sofas",
+      "predefined": "SOFA",
+      "size": [2.4, 1.6, 0.82],
+      "natural": [1.96, 1.64, 0.92],
+      "min": [1.286, 1.011, 0.741],
+      "max": [6, 3.2, 1.64],
+      "zones": {
+        "x": [0.09704, 0.47959],
+        "y": [0.07318, 0.49999],
+        "z": [0.5, 0.71739]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "legs"
+      },
+      "seats": true,
+      "file": "models/loungeSofaLong.glb",
+      "sha256": "452df1c862f97781615e2c1c832913b48cf6c6f011d3260dc023ff3f117cc9d1",
+      "bytes": 13112,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeSofaLong.png",
+        "sha256": "1ed93cb2616753bd87b73b4c32686ac4c6f163c49a2b8ed710539153ab8fa666",
+        "original": "Isometric/loungeSofaLong_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeSofaLong.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "loungeSofaCorner",
+      "name": "Corner sofa section",
+      "group": "Sofas",
+      "predefined": "SOFA",
+      "size": [2, 2, 0.82],
+      "natural": [1.96, 1.96, 0.92],
+      "min": [1.106, 1.106, 0.741],
+      "max": [5, 4, 1.64],
+      "zones": {
+        "x": [0.09704, 0.58163],
+        "y": [0.09704, 0.58163],
+        "z": [0.5, 0.71739]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "legs"
+      },
+      "file": "models/loungeSofaCorner.glb",
+      "sha256": "bbdd91791e621ac71321eaf38a2432c53279792ef946707f23b216123bd52655",
+      "bytes": 13412,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeSofaCorner.png",
+        "sha256": "391b5f0beff4791103bd27399863a4a348875b56d64007c7160b505fd510a1b9",
+        "original": "Isometric/loungeSofaCorner_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeSofaCorner.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "loungeDesignSofaCorner",
+      "name": "Modern corner sofa section",
+      "group": "Sofas",
+      "predefined": "SOFA",
+      "size": [2.2, 2.2, 0.75],
+      "natural": [2.69966, 2.69966, 0.8],
+      "min": [1.382, 1.382, 0.477],
+      "max": [5.5, 4.4, 1.5],
+      "zones": {
+        "x": [0.11866, 0.66107],
+        "y": [0.11866, 0.66107],
+        "z": [0.125, 0.57499]
+      },
+      "slots": {
+        "carpetBlue": "upholstery",
+        "metal": "metal"
+      },
+      "file": "models/loungeDesignSofaCorner.glb",
+      "sha256": "fe665d07d53fdc6bc96e9fed453874ba4202b008194e1e24100b067081c62be1",
+      "bytes": 13744,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeDesignSofaCorner.png",
+        "sha256": "7ec2cb6b958b28b1750eda83b73d466d20f019b27c9094e6a4181893dc18919f",
+        "original": "Isometric/loungeDesignSofaCorner_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeDesignSofaCorner.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "loungeSofaOttoman",
+      "name": "Ottoman",
+      "group": "Sofas",
+      "predefined": "USERDEFINED",
+      "objectType": "Ottoman",
+      "size": [0.8, 0.8, 0.42],
+      "natural": [0.87966, 0.9, 0.46],
+      "min": [0.304, 0.307, 0.299],
+      "max": [4, 1.6, 0.84],
+      "zones": {
+        "x": [0.13642, 0.86358],
+        "y": [0.13334, 0.86666],
+        "z": [0.2174, 0.60869]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "legs"
+      },
+      "against": false,
+      "file": "models/loungeSofaOttoman.glb",
+      "sha256": "79087654136d7d69653fdc3b52a02d7833fe13e6a0a56b8dcdf652c611dbd959",
+      "bytes": 6960,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeSofaOttoman.png",
+        "sha256": "7185702d9f51f01188e5b2aa0b838dffa2a1b19040abab257744cdbc4114ac87",
+        "original": "Isometric/loungeSofaOttoman_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeSofaOttoman.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "loungeChair",
+      "name": "Armchair",
+      "group": "Armchairs",
+      "predefined": "CHAIR",
+      "size": [0.95, 0.85, 0.82],
+      "natural": [0.98, 0.82, 0.92],
+      "min": [0.441, 0.353, 0.741],
+      "max": [4, 1.7, 1.64],
+      "zones": {
+        "x": [0.19407, 0.80593],
+        "y": [0.14635, 0.78007],
+        "z": [0.5, 0.71739]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "legs"
+      },
+      "file": "models/loungeChair.glb",
+      "sha256": "ddfe6bc4b3451bca61666d7b614552d6ed2a03d82fc76244b72ae3155874dc6c",
+      "bytes": 9648,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeChair.png",
+        "sha256": "83f3259c5ea3ef8f30d8712a1ade85e79032cdbd9bf07429b1adb38e8b6ccd6e",
+        "original": "Isometric/loungeChair_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeChair.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "loungeChairRelax",
+      "name": "Recliner",
+      "group": "Armchairs",
+      "predefined": "CHAIR",
+      "size": [0.9, 1.25, 1],
+      "natural": [0.98, 1.34939, 1.26],
+      "min": [0.639, 0.882, 0.865],
+      "max": [4, 2.5, 2],
+      "zones": {
+        "x": [0.30647, 0.69353],
+        "y": [0.39232, 0.77742],
+        "z": [0.58731, 0.9365]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "metal": "metal",
+        "wood": "legs"
+      },
+      "file": "models/loungeChairRelax.glb",
+      "sha256": "def698179e44de6cd17f4cfc2730273da54dd25458a29b079fbf4468abe5d98e",
+      "bytes": 13904,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeChairRelax.png",
+        "sha256": "ae9b881ef26d3c37808baf178d8aea77aacaffa5bbfebdf6537fcd9d67d88df3",
+        "original": "Isometric/loungeChairRelax_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeChairRelax.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "loungeDesignChair",
+      "name": "Modern armchair",
+      "group": "Armchairs",
+      "predefined": "CHAIR",
+      "size": [1.2, 0.85, 0.75],
+      "natural": [1.45919, 0.82, 0.8],
+      "min": [0.723, 0.472, 0.477],
+      "max": [4, 1.7, 1.5],
+      "zones": {
+        "x": [0.21954, 0.78046],
+        "y": [0.2134, 0.68551],
+        "z": [0.125, 0.57499]
+      },
+      "slots": {
+        "carpetBlue": "upholstery",
+        "metal": "metal"
+      },
+      "file": "models/loungeDesignChair.glb",
+      "sha256": "f0766a7d5698974b711adac18a2108f0e74e3a036fa4e4e0ccf91195b0ee5abf",
+      "bytes": 9136,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/loungeDesignChair.png",
+        "sha256": "001f406a8210b32fd36feddadd21d6561ba10b34c6617b1bd18a26e555e19390",
+        "original": "Isometric/loungeDesignChair_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/loungeDesignChair.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "chair",
+      "name": "Wooden chair",
+      "group": "Chairs",
+      "predefined": "CHAIR",
+      "size": [0.44, 0.48, 0.9],
+      "natural": [0.4, 0.4, 0.94],
+      "min": [0.185, 0.311, 0.725],
+      "max": [4, 0.96, 1.8],
+      "zones": {
+        "x": [0.2, 0.79999],
+        "y": [0.55, 0.79999],
+        "z": [0.14894, 0.40425]
+      },
+      "slots": {
+        "wood": "body"
+      },
+      "against": false,
+      "file": "models/chair.glb",
+      "sha256": "c8a11eec93e89e31250ba91afc1b8d56c3bec7ae86640fd1239f595ff4180883",
+      "bytes": 10756,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/chair.png",
+        "sha256": "b098ba68107e8fb78d62ad71faca8bb0c9a72683c16dfefeb7a2a2e0c5204ef7",
+        "original": "Isometric/chair_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/chair.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "chairCushion",
+      "name": "Chair with cushion",
+      "group": "Chairs",
+      "predefined": "CHAIR",
+      "size": [0.44, 0.48, 0.88],
+      "natural": [0.4, 0.4, 0.92],
+      "min": [0.185, 0.311, 0.705],
+      "max": [4, 0.96, 1.76],
+      "zones": {
+        "x": [0.2, 0.79999],
+        "y": [0.55, 0.79999],
+        "z": [0.15218, 0.41304]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "body"
+      },
+      "against": false,
+      "file": "models/chairCushion.glb",
+      "sha256": "33544228984857f2cb502b58452fed72157335f9b1caf29e96da5c9094c53fdc",
+      "bytes": 12588,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/chairCushion.png",
+        "sha256": "119cc3ac78c160697954aa0c79fea08bb5870e3ed7357d0b50bdfd758348cd80",
+        "original": "Isometric/chairCushion_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/chairCushion.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "chairRounded",
+      "name": "Rounded chair",
+      "group": "Chairs",
+      "predefined": "CHAIR",
+      "size": [0.44, 0.48, 0.88],
+      "natural": [0.4, 0.4, 0.91],
+      "min": [0.22, 0.185, 0.731],
+      "max": [1.1, 0.96, 1.76],
+      "zones": {
+        "y": [0.2, 0.79999],
+        "z": [0.15385, 0.37362]
+      },
+      "slots": {
+        "wood": "body"
+      },
+      "against": false,
+      "file": "models/chairRounded.glb",
+      "sha256": "53f4933ec547179c499f04dbda1231cf44b83ec82c7f4ab981cdf680aee5c973",
+      "bytes": 17156,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/chairRounded.png",
+        "sha256": "aa76a66e8ea4560c82167ef3600198e4c4c1561cd19500913e0847bccbb6ae37",
+        "original": "Isometric/chairRounded_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/chairRounded.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "chairModernCushion",
+      "name": "Modern chair",
+      "group": "Chairs",
+      "predefined": "CHAIR",
+      "size": [0.46, 0.5, 0.88],
+      "natural": [0.4, 0.4, 0.92],
+      "min": [0.149, 0.149, 0.579],
+      "max": [4, 1, 1.76],
+      "zones": {
+        "x": [0.15, 0.84999],
+        "y": [0.15, 0.84999],
+        "z": [0, 0.41304]
+      },
+      "slots": {
+        "carpetBlue": "upholstery",
+        "metal": "metal"
+      },
+      "against": false,
+      "file": "models/chairModernCushion.glb",
+      "sha256": "245132697e633e907e2b48c86d56f6c8543604a3440a055d1c71c06ce11d2858",
+      "bytes": 7376,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/chairModernCushion.png",
+        "sha256": "95f9f07ac445950ebed1e09baa82b2cdd33c3342cbcdc9b2d535928ac66ead1b",
+        "original": "Isometric/chairModernCushion_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/chairModernCushion.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "chairModernFrameCushion",
+      "name": "Modern frame chair",
+      "group": "Chairs",
+      "predefined": "CHAIR",
+      "size": [0.46, 0.5, 0.88],
+      "natural": [0.4, 0.4, 0.92],
+      "min": [0.149, 0.149, 0.579],
+      "max": [4, 1, 1.76],
+      "zones": {
+        "x": [0.15, 0.84999],
+        "y": [0.15, 0.84999],
+        "z": [0.52174, 0.93478]
+      },
+      "slots": {
+        "carpetBlue": "upholstery",
+        "metal": "metal"
+      },
+      "against": false,
+      "file": "models/chairModernFrameCushion.glb",
+      "sha256": "fd3351b077cafbd54224e20fa7a3a1b4a4304019cf44c25a6e7709ad71b852b8",
+      "bytes": 18592,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/chairModernFrameCushion.png",
+        "sha256": "c4ddda7bd0f7f02e61e1a45dc1c1ebd7af46d0bc0c6a9dda1f08797660e1fe46",
+        "original": "Isometric/chairModernFrameCushion_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/chairModernFrameCushion.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "chairDesk",
+      "name": "Office chair",
+      "group": "Chairs",
+      "predefined": "CHAIR",
+      "size": [0.62, 0.62, 1.05],
+      "natural": [0.6699, 0.6286, 1.2152],
+      "min": [0.31, 0.31, 0.848],
+      "max": [1.55, 1.24, 2.1],
+      "zones": {
+        "z": [0.59908, 0.93492]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "metalMedium": "metal"
+      },
+      "against": false,
+      "file": "models/chairDesk.glb",
+      "sha256": "46406619186034cbe92b19b79a5f1a8e3f442a17a70a7524ef2c0ad0f35095c6",
+      "bytes": 39016,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/chairDesk.png",
+        "sha256": "825ccf3214e9d69017a52c703eb10adb77b4c0f0a909f879554e451629d47e61",
+        "original": "Isometric/chairDesk_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/chairDesk.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "stoolBar",
+      "name": "Bar stool",
+      "group": "Chairs",
+      "predefined": "CHAIR",
+      "objectType": "Stool",
+      "size": [0.45, 0.42, 0.8],
+      "natural": [0.53088, 0.45976, 0.87],
+      "min": [0.225, 0.21, 0.493],
+      "max": [1.125, 0.84, 1.6],
+      "zones": {
+        "z": [0.33334, 0.81609]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "body"
+      },
+      "against": false,
+      "file": "models/stoolBar.glb",
+      "sha256": "a86167a9f92401a61fec7e509ad089ecc552d0f299743add3aeb919acb24e341",
+      "bytes": 11816,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/stoolBar.png",
+        "sha256": "62b6df271e7f4c78bf9f5ef6b5f88ea4d7b8f7883cb8bbbb55b2e4553ec2d270",
+        "original": "Isometric/stoolBar_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/stoolBar.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "stoolBarSquare",
+      "name": "Square bar stool",
+      "group": "Chairs",
+      "predefined": "CHAIR",
+      "objectType": "Stool",
+      "size": [0.38, 0.38, 0.75],
+      "natural": [0.307, 0.29525, 0.81],
+      "min": [0.139, 0.138, 0.433],
+      "max": [4, 0.76, 1.5],
+      "zones": {
+        "x": [0.19544, 0.80456],
+        "y": [0.20322, 0.79675],
+        "z": [0.35803, 0.87654]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "body"
+      },
+      "against": false,
+      "file": "models/stoolBarSquare.glb",
+      "sha256": "a7e1099d64eb35416d4d8c9b16921ef12ae7c1c1e6fff5ea75f3ae19cc934a8b",
+      "bytes": 9784,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/stoolBarSquare.png",
+        "sha256": "054fc0647ceb606fd247330e310beebb4ad5be24b5621b3c40c1e3b46b8ef56d",
+        "original": "Isometric/stoolBarSquare_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/stoolBarSquare.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "bench",
+      "name": "Bench with back",
+      "group": "Chairs",
+      "predefined": "USERDEFINED",
+      "objectType": "Bench",
+      "size": [1.4, 0.45, 0.88],
+      "natural": [0.8, 0.4, 0.94],
+      "min": [0.225, 0.311, 0.725],
+      "max": [4, 0.9, 1.76],
+      "zones": {
+        "x": [0.1, 0.89999],
+        "y": [0.55, 0.79999],
+        "z": [0.14894, 0.40425]
+      },
+      "slots": {
+        "wood": "body"
+      },
+      "against": false,
+      "file": "models/bench.glb",
+      "sha256": "ba05a6d23a5a5a44da016757632070e47ff7587ce10e2f6d6d52328b4cf5489b",
+      "bytes": 10756,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/bench.png",
+        "sha256": "ef4724904ef403db98fad5fed179cdda38a3557258eb8604d970be2358ebd619",
+        "original": "Isometric/bench_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/bench.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "benchCushion",
+      "name": "Bench with back and cushion",
+      "group": "Chairs",
+      "predefined": "USERDEFINED",
+      "objectType": "Bench",
+      "size": [1.4, 0.45, 0.88],
+      "natural": [0.8, 0.4, 0.92],
+      "min": [0.225, 0.311, 0.705],
+      "max": [4, 0.9, 1.76],
+      "zones": {
+        "x": [0.1, 0.89999],
+        "y": [0.55, 0.79999],
+        "z": [0.15218, 0.41304]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "wood": "body"
+      },
+      "against": false,
+      "file": "models/benchCushion.glb",
+      "sha256": "5186ad938f8b9eff255361fd1fdc48a81f08c318161cde27c93753ab95a2d354",
+      "bytes": 12500,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/benchCushion.png",
+        "sha256": "32613b9d0c44a0c4f5af498e524961a8e5b8f31ce0b0979b20fc0b1ce15f060d",
+        "original": "Isometric/benchCushion_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/benchCushion.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "table",
+      "name": "Dining table",
+      "group": "Tables",
+      "predefined": "TABLE",
+      "size": [1.6, 0.9, 0.75],
+      "natural": [1.68298, 0.89475, 0.65347],
+      "min": [0.343, 0.632, 0.328],
+      "max": [4, 1.8, 1.5],
+      "zones": {
+        "x": [0.05764, 0.94235],
+        "y": [0.11528, 0.44235],
+        "z": [0.29691, 0.85154]
+      },
+      "slots": {
+        "wood": "top"
+      },
+      "against": false,
+      "file": "models/table.glb",
+      "sha256": "ff1a94498d023957f4bc3ff6f55a7a82977d336dbf01a573b3364f03afe5ff61",
+      "bytes": 8196,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/table.png",
+        "sha256": "6e043a2df18a17fd5a82c8fe8ae7e4c6e2f16cf6b4aaa79d536e5a786e091614",
+        "original": "Isometric/table_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/table.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "tableCross",
+      "name": "Trestle table",
+      "group": "Tables",
+      "predefined": "TABLE",
+      "size": [1.8, 0.9, 0.75],
+      "natural": [1.70424, 0.89475, 0.69483],
+      "min": [0.542, 0.632, 0.464],
+      "max": [4.5, 1.8, 1.5],
+      "zones": {
+        "x": [0.12106, 0.87894],
+        "y": [0.11528, 0.44235],
+        "z": [0, 0.3703]
+      },
+      "slots": {
+        "wood": "top"
+      },
+      "against": false,
+      "file": "models/tableCross.glb",
+      "sha256": "f0d83392aff5df82f6c9585cadff694643dbd30a4ff2b8bb01a00a7a161338a3",
+      "bytes": 12140,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/tableCross.png",
+        "sha256": "17552be9b7da29e512ad1eed7463f4733337329af2cd2085909bc6d938af71f7",
+        "original": "Isometric/tableCross_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/tableCross.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "tableGlass",
+      "name": "Glass dining table",
+      "group": "Tables",
+      "predefined": "TABLE",
+      "size": [1.6, 0.9, 0.75],
+      "natural": [1.68298, 0.89475, 0.65347],
+      "min": [0.343, 0.632, 0.328],
+      "max": [4, 1.8, 1.5],
+      "zones": {
+        "x": [0.05764, 0.94235],
+        "y": [0.11528, 0.44235],
+        "z": [0.29691, 0.85154]
+      },
+      "slots": {
+        "glass": "glass",
+        "metal": "metal"
+      },
+      "against": false,
+      "file": "models/tableGlass.glb",
+      "sha256": "a5ed516d18b51cf5db3cc78f1403451f853a81db45510543d3ed56c1dd9c412b",
+      "bytes": 9848,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/tableGlass.png",
+        "sha256": "287a75a15f714c5cb9e2dfd5f2abbeedf11a21e228e8a32b301e15ddf2edaa90",
+        "original": "Isometric/tableGlass_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/tableGlass.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "tableRound",
+      "name": "Round table",
+      "group": "Tables",
+      "predefined": "TABLE",
+      "size": [1.2, 1.2, 0.75],
+      "natural": [1.38564, 1.6, 0.73347],
+      "min": [0.6, 0.6, 0.293],
+      "max": [3, 2.4, 1.5],
+      "zones": {
+        "z": [0.19088, 0.85936]
+      },
+      "slots": {
+        "wood": "top"
+      },
+      "against": false,
+      "file": "models/tableRound.glb",
+      "sha256": "f8daea9124a542a00b7bdacfddac82dc468573d43e44d7b54dd6316e9695754b",
+      "bytes": 6444,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/tableRound.png",
+        "sha256": "82df6f93e0cd636b334ae5f4bcf37d8c15aa809ba0117ad75e2ebae802b7df2d",
+        "original": "Isometric/tableRound_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/tableRound.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "tableCoffee",
+      "name": "Coffee table",
+      "group": "Tables",
+      "predefined": "TABLE",
+      "size": [1.2, 0.6, 0.42],
+      "natural": [1.32199, 0.8, 0.46],
+      "min": [0.277, 0.225, 0.263],
+      "max": [4, 1.2, 0.84],
+      "zones": {
+        "x": [0.06052, 0.93949],
+        "y": [0.1, 0.89999],
+        "z": [0.30435, 0.7826]
+      },
+      "slots": {
+        "wood": "top"
+      },
+      "against": false,
+      "file": "models/tableCoffee.glb",
+      "sha256": "e38bea760fbd514efbb75528d09b4752c91af44677bbb97e6d4386c263525179",
+      "bytes": 8256,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/tableCoffee.png",
+        "sha256": "73fd5d5d94722077c8ed607d2d05c1ff9ebacca98dbc147597858102f6ff79bc",
+        "original": "Isometric/tableCoffee_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/tableCoffee.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "tableCoffeeGlass",
+      "name": "Glass coffee table",
+      "group": "Tables",
+      "predefined": "TABLE",
+      "size": [1.2, 0.6, 0.42],
+      "natural": [1.32199, 0.8, 0.46],
+      "min": [0.277, 0.225, 0.263],
+      "max": [4, 1.2, 0.84],
+      "zones": {
+        "x": [0.06052, 0.93949],
+        "y": [0.1, 0.89999],
+        "z": [0.30435, 0.7826]
+      },
+      "slots": {
+        "glass": "glass",
+        "metal": "metal"
+      },
+      "against": false,
+      "file": "models/tableCoffeeGlass.glb",
+      "sha256": "05bf257a086a540b3b79b0c1c7dae35b036ed4d520686aed74ea94ea701c447e",
+      "bytes": 9428,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/tableCoffeeGlass.png",
+        "sha256": "2d3ddc4b9f5e1e61e5391276c5a72a95e547de266a24f7f67d71335754640489",
+        "original": "Isometric/tableCoffeeGlass_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/tableCoffeeGlass.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "tableCoffeeSquare",
+      "name": "Square coffee table",
+      "group": "Tables",
+      "predefined": "TABLE",
+      "size": [0.8, 0.8, 0.42],
+      "natural": [0.8, 0.8, 0.46],
+      "min": [0.225, 0.225, 0.263],
+      "max": [4, 1.6, 0.84],
+      "zones": {
+        "x": [0.1, 0.89999],
+        "y": [0.1, 0.89999],
+        "z": [0.30435, 0.7826]
+      },
+      "slots": {
+        "wood": "top"
+      },
+      "against": false,
+      "file": "models/tableCoffeeSquare.glb",
+      "sha256": "bcc81d8919a3af9141c9c93b4520106dd0a90a7144346cd87928014018aac816",
+      "bytes": 8276,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/tableCoffeeSquare.png",
+        "sha256": "356379ecce1f9d9d82d7fa9924da8b7bc239f5b63eda1c3e19f1a1faaad3a511",
+        "original": "Isometric/tableCoffeeSquare_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/tableCoffeeSquare.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "sideTable",
+      "name": "Side table",
+      "group": "Tables",
+      "predefined": "TABLE",
+      "size": [0.6, 0.45, 0.55],
+      "natural": [1.06895, 0.44, 0.76882],
+      "min": [0.287, 0.225, 0.311],
+      "max": [4, 0.9, 1.1],
+      "zones": {
+        "x": [0.09355, 0.90645],
+        "y": [0.22728, 0.77272],
+        "z": [0.1821, 0.84392]
+      },
+      "slots": {
+        "_defaultMat": "body",
+        "wood": "top"
+      },
+      "file": "models/sideTable.glb",
+      "sha256": "8227810584f7d37582e4e9ec821c56f1dc54b99c88a8dc74242ea3b7402bc472",
+      "bytes": 8800,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/sideTable.png",
+        "sha256": "b6400e946691c625d77fd3fac3096f4ac75756afa57c4fc97aebb821b26949b8",
+        "original": "Isometric/sideTable_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/sideTable.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "lampRoundFloor",
+      "name": "Floor lamp",
+      "group": "Lamps",
+      "predefined": "USERDEFINED",
+      "objectType": "Floor lamp",
+      "size": [0.35, 0.35, 1.65],
+      "natural": [0.30408, 0.35112, 1.72],
+      "min": [0.175, 0.175, 0.53],
+      "max": [0.875, 0.7, 3.3],
+      "zones": {
+        "z": [0.02326, 0.79244]
+      },
+      "slots": {
+        "lamp": "shade",
+        "metal": "metal"
+      },
+      "against": false,
+      "file": "models/lampRoundFloor.glb",
+      "sha256": "50fe1b5b588edf15bfa9cc880f71a02a4fda6036350b24733d0ef4de5cc5e908",
+      "bytes": 6600,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/lampRoundFloor.png",
+        "sha256": "3d406e7cf1bca3bb4486894abc7cbb4d9ebe35c547e180976314de8cf65f98c6",
+        "original": "Isometric/lampRoundFloor_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/lampRoundFloor.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "lampSquareFloor",
+      "name": "Square floor lamp",
+      "group": "Lamps",
+      "predefined": "USERDEFINED",
+      "objectType": "Floor lamp",
+      "size": [0.3, 0.3, 1.6],
+      "natural": [0.24, 0.24, 1.72],
+      "min": [0.15, 0.15, 0.587],
+      "max": [0.75, 0.6, 3.2],
+      "zones": {
+        "z": [0.1628, 0.89534]
+      },
+      "slots": {
+        "lamp": "shade",
+        "metal": "metal"
+      },
+      "against": false,
+      "file": "models/lampSquareFloor.glb",
+      "sha256": "6466993748d8e184de9ec5b6b0af613867c50c0ce320d1898b1db9e4c27c2561",
+      "bytes": 5624,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/lampSquareFloor.png",
+        "sha256": "e46cd0f48a1dd24f5dc0398e7e3ea1c5810003176c7e37dc08d970ab8ad3b431",
+        "original": "Isometric/lampSquareFloor_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/lampSquareFloor.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "lampRoundTable",
+      "name": "Table lamp",
+      "group": "Lamps",
+      "predefined": "USERDEFINED",
+      "objectType": "Table lamp",
+      "size": [0.3, 0.3, 0.55],
+      "natural": [0.30408, 0.35112, 0.6285],
+      "min": [0.15, 0.15, 0.421],
+      "max": [0.75, 0.6, 1.1],
+      "zones": {
+        "z": [0.06365, 0.43198]
+      },
+      "slots": {
+        "lamp": "shade",
+        "metal": "metal"
+      },
+      "mount": 0.75,
+      "against": false,
+      "file": "models/lampRoundTable.glb",
+      "sha256": "75bb644caaa3da003b4fcad7a931722dd61cd2858aab70cf660021d5061fa1b2",
+      "bytes": 6604,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/lampRoundTable.png",
+        "sha256": "b0e61b00cefc2bd73734013b3bb697989628c28149ea5a890ba1473f4f2a0018",
+        "original": "Isometric/lampRoundTable_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/lampRoundTable.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "lampSquareCeiling",
+      "name": "Pendant lamp",
+      "group": "Lamps",
+      "predefined": "USERDEFINED",
+      "objectType": "Pendant lamp",
+      "size": [0.3, 0.3, 0.5],
+      "natural": [0.24, 0.24, 0.46],
+      "min": [0.15, 0.15, 0.236],
+      "max": [0.75, 0.6, 1],
+      "zones": {
+        "z": [0.1087, 0.65217]
+      },
+      "slots": {
+        "lamp": "shade",
+        "metal": "metal"
+      },
+      "mount": 1.9,
+      "against": false,
+      "file": "models/lampSquareCeiling.glb",
+      "sha256": "57066be51583d83ae60071e8179af275189cb2911ecb9fc24953bb930c8bf118",
+      "bytes": 5628,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/lampSquareCeiling.png",
+        "sha256": "eb8abafbbe7f1dac9081d18d6eeeda1a9a3857f5804334f7169a8e552364c062",
+        "original": "Isometric/lampSquareCeiling_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/lampSquareCeiling.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "lampWall",
+      "name": "Wall lamp",
+      "group": "Lamps",
+      "predefined": "USERDEFINED",
+      "objectType": "Wall lamp",
+      "size": [0.3, 0.15, 0.2],
+      "natural": [0.45327, 0.30067, 0.1856],
+      "min": [0.15, 0.075, 0.071],
+      "max": [0.75, 0.3, 0.4],
+      "zones": {
+        "z": [0.31251, 1]
+      },
+      "slots": {
+        "lamp": "shade",
+        "metal": "metal"
+      },
+      "mount": 1.8,
+      "file": "models/lampWall.glb",
+      "sha256": "a9679ecd3be05731846f22ade97c37069598ca7a06dd9319f50230e63a1ea83c",
+      "bytes": 4828,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/lampWall.png",
+        "sha256": "b74ea72249246145b1441d1eb12d4e9ab3ecab6a8136de246292c05e8ebfb198",
+        "original": "Isometric/lampWall_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/lampWall.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "pottedPlant",
+      "name": "Potted plant",
+      "group": "Plants",
+      "predefined": "USERDEFINED",
+      "objectType": "Plant",
+      "size": [0.45, 0.45, 1.3],
+      "natural": [0.42412, 0.48292, 1.30803],
+      "min": [0.225, 0.225, 0.65],
+      "max": [1.125, 0.9, 2.6],
+      "zones": {},
+      "slots": {
+        "plant": "foliage",
+        "wood": "pot",
+        "woodDark": "accent"
+      },
+      "against": false,
+      "uniform": true,
+      "file": "models/pottedPlant.glb",
+      "sha256": "5b760eda2766f75fda36b2c5df652a1662f82981ef64cd8fa7fe7bcd386b3a15",
+      "bytes": 7576,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/pottedPlant.png",
+        "sha256": "ffe0cae9b2c287eb15271d232cd26ac9ce90269501aa2435324dd1067bc49f1d",
+        "original": "Isometric/pottedPlant_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/pottedPlant.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "plantSmall1",
+      "name": "Small plant",
+      "group": "Plants",
+      "predefined": "USERDEFINED",
+      "objectType": "Plant",
+      "size": [0.2, 0.2, 0.3],
+      "natural": [0.18932, 0.18932, 0.28],
+      "min": [0.1, 0.1, 0.15],
+      "max": [0.5, 0.4, 0.6],
+      "zones": {},
+      "slots": {
+        "plant": "foliage",
+        "wood": "pot"
+      },
+      "against": false,
+      "uniform": true,
+      "file": "models/plantSmall1.glb",
+      "sha256": "2b9c022feb47be857b2c4fdc29f36522766ba9b70c578c31d7c05d71b4377d15",
+      "bytes": 8224,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/plantSmall1.png",
+        "sha256": "940c5bad3c733a4aa2110a762f8b9dc62bbeef8b1c6b5b21aae0285390609d99",
+        "original": "Isometric/plantSmall1_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/plantSmall1.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "plantSmall2",
+      "name": "Small plant, leafy",
+      "group": "Plants",
+      "predefined": "USERDEFINED",
+      "objectType": "Plant",
+      "size": [0.2, 0.2, 0.3],
+      "natural": [0.18932, 0.18932, 0.28],
+      "min": [0.1, 0.1, 0.15],
+      "max": [0.5, 0.4, 0.6],
+      "zones": {},
+      "slots": {
+        "plant": "foliage",
+        "wood": "pot"
+      },
+      "against": false,
+      "uniform": true,
+      "file": "models/plantSmall2.glb",
+      "sha256": "d7c8ff42c66dd4f9238a73570549813d1ca6c5f6f661d7af9cb764c4fce314b9",
+      "bytes": 12996,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/plantSmall2.png",
+        "sha256": "979e78f3301e69541f75dd660a0ce7319d984f2cc905813e960f0f23ec0257ad",
+        "original": "Isometric/plantSmall2_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/plantSmall2.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "rugRectangle",
+      "name": "Rug",
+      "group": "Rugs",
+      "predefined": "USERDEFINED",
+      "objectType": "Rug",
+      "size": [2.4, 1.7, 0.01],
+      "natural": [3.14, 1.84, 0.02],
+      "min": [0.904, 0.774, 0.005],
+      "max": [6, 3.4, 0.02],
+      "zones": {
+        "x": [0.10434, 0.89566],
+        "y": [0.17806, 0.82194]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "carpetDarker": "accent"
+      },
+      "against": false,
+      "file": "models/rugRectangle.glb",
+      "sha256": "a989d2d59c04e3071e0c90388b113a9a8f339ce1814ef984c51cb6dcd7c8e0eb",
+      "bytes": 3188,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/rugRectangle.png",
+        "sha256": "4e8d8a604316e65dee3b8dbd077c4d855b085d61fc213c55dd5497694c80fad6",
+        "original": "Isometric/rugRectangle_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/rugRectangle.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "rugRounded",
+      "name": "Rug, rounded corners",
+      "group": "Rugs",
+      "predefined": "USERDEFINED",
+      "objectType": "Rug",
+      "size": [2.4, 1.7, 0.01],
+      "natural": [3.14, 1.84, 0.02],
+      "min": [2.006, 0.85, 0.005],
+      "max": [6, 3.4, 0.02],
+      "zones": {
+        "x": [0.29929, 0.70071]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "carpetDarker": "accent"
+      },
+      "against": false,
+      "file": "models/rugRounded.glb",
+      "sha256": "2ef5cc634bb1060a1a5774cfcaf6e11c235791c99d6b59da5fdbc09edfb95a68",
+      "bytes": 10876,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/rugRounded.png",
+        "sha256": "ee202c7cd1dc4a0893cbb69e87392c6df389028da3b72726291db61efea565dd",
+        "original": "Isometric/rugRounded_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/rugRounded.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "rugSquare",
+      "name": "Square rug",
+      "group": "Rugs",
+      "predefined": "USERDEFINED",
+      "objectType": "Rug",
+      "size": [2, 2, 0.01],
+      "natural": [1.80865, 1.84, 0.02],
+      "min": [0.771, 0.774, 0.005],
+      "max": [5, 4, 0.02],
+      "zones": {
+        "x": [0.18115, 0.81886],
+        "y": [0.17806, 0.82194]
+      },
+      "slots": {
+        "carpet": "upholstery",
+        "carpetDarker": "accent"
+      },
+      "against": false,
+      "file": "models/rugSquare.glb",
+      "sha256": "18a63634e9bbdde0b309c008f4cd41df8455f7f2ffdb8fe8985fdf8c2cd06b3d",
+      "bytes": 3180,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/rugSquare.png",
+        "sha256": "512876b4248a869e3ba2200281c482004e0031b9b70ad6806caa3eaee9c6ba0a",
+        "original": "Isometric/rugSquare_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/rugSquare.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    },
+    {
+      "id": "rugRound",
+      "name": "Round rug",
+      "group": "Rugs",
+      "predefined": "USERDEFINED",
+      "objectType": "Rug",
+      "size": [2, 2, 0.01],
+      "natural": [1.84, 1.84, 0.02],
+      "min": [1, 1, 0.005],
+      "max": [5, 4, 0.02],
+      "zones": {},
+      "slots": {
+        "carpet": "upholstery",
+        "carpetDarker": "accent"
+      },
+      "against": false,
+      "file": "models/rugRound.glb",
+      "sha256": "c4cdc8f51ed2dbfb853b147521ed40e995307392fd3b19045b2203ea50f376db",
+      "bytes": 10164,
+      "thumbnail": {
+        "file": "ui/public/furniture-models/rugRound.png",
+        "sha256": "2b8a820557e1632d9faf1a6f7eea3ba6bfe53710cb422c9f947465eedb4aeb49",
+        "original": "Isometric/rugRound_SW.png"
+      },
+      "source": "kenney-furniture-kit",
+      "original": "Models/GLTF format/rugRound.glb",
+      "licence": "CC0-1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "changed": "Nothing: the GLB and its preview are the kit's files as published; Lapin stretches the model by its zones when it builds a piece."
+    }
+  ]
+}

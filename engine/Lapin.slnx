@@ -31,6 +31,7 @@
   </Folder>
   <Folder Name="/src/Modules/Interior/">
     <Project Path="src/Modules/Interior/Lapin.Furniture/Lapin.Furniture.csproj" />
+    <Project Path="src/Modules/Interior/Lapin.Furniture.Models/Lapin.Furniture.Models.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Mep/">
     <Project Path="src/Modules/Mep/Lapin.Mep/Lapin.Mep.csproj" />

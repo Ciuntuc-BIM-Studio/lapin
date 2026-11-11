@@ -4,7 +4,9 @@
 // licence. Fails (exit 1) on anything else — copyleft (GPL, LGPL, AGPL, MPL,
 // EPL, CC-BY-SA…) or unknown — so it is caught before it ships. Dev-only
 // tools (TypeScript, Vite, test runners, xUnit) are not shipped and not checked.
+// The furniture models shipped (CC0 meshes and their previews) are checked against their register.
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -66,8 +68,39 @@ for (const project of projects) {
     }
 }
 
+// Shipped assets (decision 477): the furniture models and their previews, each in the register with its source, a
+// licence of ASSET_ALLOWED (no attribution, no share-alike) and its hash as shipped; no file shipped that it does not list.
+const ASSET_ALLOWED = new Set(['CC0-1.0', 'MIT-0']);
+let assets = 0;
+const registerDir = join(root, 'engine/src/Modules/Interior/Lapin.Furniture.Models');
+const registerPath = join(registerDir, 'furniture-assets.json');
+if (existsSync(registerPath)) {
+  const reg = JSON.parse(readFileSync(registerPath, 'utf8'));
+  const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
+  const listed = new Set();
+  const checkFile = (where, rel, hash, what) => {
+    const p = join(where === 'engine' ? registerDir : root, rel);
+    listed.add(p);
+    if (!existsSync(p)) bad.push(`${what}: ${rel} is listed but missing`);
+    else if (sha(p) !== hash) bad.push(`${what}: ${rel} is not the file registered (its hash differs)`);
+  };
+  for (const [id, src] of Object.entries(reg.sources ?? {}))
+    if (!ASSET_ALLOWED.has(src.licence) || !src.verified) bad.push(`asset source ${id}: ${src.licence ?? 'no licence'}${src.verified ? '' : ', not verified'}`);
+  for (const m of reg.models ?? []) {
+    assets++;
+    const src = reg.sources?.[m.source];
+    if (!src) bad.push(`model ${m.id}: its source ${m.source} is not in the register`);
+    if (!ASSET_ALLOWED.has(m.licence) || (src && src.licence !== m.licence)) bad.push(`model ${m.id}: ${m.licence ?? 'no licence'}`);
+    checkFile('engine', m.file, m.sha256, `model ${m.id}`);
+    if (m.thumbnail) checkFile('root', m.thumbnail.file, m.thumbnail.sha256, `model ${m.id}'s preview`);
+  }
+  for (const [dir, base] of [[join(registerDir, 'models'), registerDir], [join(root, 'ui/public/furniture-models'), root]])
+    if (existsSync(dir)) for (const f of readdirSync(dir)) if (!listed.has(join(dir, f))) bad.push(`${join(dir, f).slice(base.length + 1)}: shipped but not in the furniture models' register`);
+  licences.add('CC0-1.0 (assets)');
+}
+
 if (bad.length) {
   console.error(`✗ ${bad.length} production dependencies are not under a permissive licence:\n  ${bad.join('\n  ')}`);
   process.exit(1);
 }
-console.log(`✓ ${count} production dependencies, all permissive (${[...licences].join(', ')}).`);
+console.log(`✓ ${count} production dependencies and ${assets} assets, all permissive (${[...licences].join(', ')}).`);

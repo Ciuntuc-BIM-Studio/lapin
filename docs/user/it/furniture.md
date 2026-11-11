@@ -152,6 +152,27 @@ L’anteprima elenca la **Distinta di taglio** del tipo: ogni parte (fianchi, fo
 
 In IFC un mobile a pannelli è un IfcFurniture del suo tipo, con il tipo predefinito del suo modello (SHELF per una libreria, DESK, BED, oppure USERDEFINED con Wardrobe, Sideboard, TV unit, Bathroom vanity…). Le sue strutture viaggiano con il tipo, così Lapin le rilegge. I tipi armadio, credenza e cassettiera fatti prima restano com’erano.
 
+## Arredi da modelli
+
+**Interni → Da un modello** posiziona arredi morbidi e sagomati fatti con modelli già pronti: divani, un divano con chaise longue, elementi di divano angolare, un pouf, poltrone, una poltrona reclinabile, sedie, una sedia da ufficio, sgabelli da bar, panche, tavoli da pranzo, rotondi e tavolini, un tavolino d’appoggio, lampade da terra, da tavolo, a sospensione e da parete, piante in vaso e tappeti. I modelli sono mesh a basso numero di poligoni con licenza CC0 (Furniture Kit di Kenney), forniti con Lapin con fonte e licenza annotate.
+
+Un modello è **allungato per zone**: ogni modello ha su ogni asse una fascia che si allunga, mentre ciò che sta prima e dopo mantiene la sua dimensione. Allarga un divano e i suoi braccioli e i piedini restano come sono mentre cresce la seduta: un due posti diventa un tre posti. Alza un tavolo e crescono solo le gambe, il piano mantiene il suo spessore. I tavoli rotondi, i paralumi e le piante sono scalati per intero. Ogni modello ha un minimo e un massimo; una dimensione oltre questi viene tenuta al limite.
+
+In **Tipi di arredo**, scegli **Da un modello** e un modello, poi **Nuovo tipo**. Un tipo di un modello ha:
+
+- la **galleria** dei modelli per gruppo (divani, poltrone, sedie, tavoli, lampade, piante, tappeti): fai clic su un altro per cambiare il modello del tipo, che prende la sua dimensione e i suoi materiali;
+- la sua **larghezza**, **profondità** e **altezza**, ciascuna entro l’intervallo del modello (passa sopra un campo per vederlo). L’anteprima accanto è quella del motore, quindi mostra l’allungamento mentre digiti: la pianta vista dall’alto e il fronte con i colori del tipo;
+- **Appeso a**, per una lampada a sospensione, da parete o da tavolo: l’altezza della sua faccia inferiore;
+- l’**Aspetto** (Nordico, Scuro, Caldo, Morbido), che impostano in un colpo i materiali di tutte le parti, e una riga di colori per ogni parte: imbottitura, accento (il bordo di un tappeto, un secondo tessuto), corpo, superiore, piedini, metallo, vetro, paralume, fogliame e vaso. I materiali sono indicativi: digita i tuoi nei materiali qui sotto.
+
+In pianta un pezzo di un modello è il suo corpo visto dall’alto, disegnato dal motore senza linee nascoste; un divano mostra anche le sedute a 1:50 e più fini. Una lampada appesa sopra 1,2 m è disegnata come sovrastante. Tavoli, sedie, tappeti e lampade da terra stanno dove fai clic; divani, poltrone e tavolini d’appoggio si appoggiano alla parete più vicina come gli altri arredi.
+
+![La finestra Tipi di arredo con un divano da un modello: la galleria, la sua dimensione, gli aspetti e i colori, accanto all’anteprima del motore](shots/furniture-models-types.webp)
+
+![Un soggiorno arredato con modelli: un divano allungato a 2,6 m, poltrone, un tavolino su un tappeto, una lampada da terra e piante](shots/furniture-models-3d.webp)
+
+In IFC un pezzo di un modello è un IfcFurniture del suo tipo con il tipo predefinito del modello (SOFA, CHAIR, TABLE o USERDEFINED con Floor lamp, Plant, Rug…), e il suo corpo è la mesh allungata, come B-rep sfaccettato o insieme di facce secondo l’esportazione. Il modello e la dimensione viaggiano con il tipo, così Lapin li rilegge. L’abaco degli arredi li elenca per gruppo e modello.
+
 ## Le proprietà di un arredo
 
 Seleziona un arredo per vedere:

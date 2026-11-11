@@ -152,6 +152,27 @@ The preview lists the type's **Cut list**: each part (sides, bottom, top, back, 
 
 In IFC a casework piece is an IfcFurniture of its type, with its preset's predefined type (SHELF for a bookcase, DESK, BED, or USERDEFINED with Wardrobe, Sideboard, TV unit, Bathroom vanity…). Its carcasses travel with the type, so Lapin reads them back. The wardrobe, sideboard and chest kinds made before stay as they were.
 
+## Furniture from models
+
+**Interior → From a model** puts down soft and shaped furniture made from ready models: sofas, a sofa with a chaise, corner sofa sections, an ottoman, armchairs, a recliner, chairs, an office chair, bar stools, benches, dining, round and coffee tables, a side table, floor, table, pendant and wall lamps, potted plants and rugs. The models are low-poly meshes under the CC0 licence (Kenney's Furniture Kit), shipped with Lapin with their source and licence recorded.
+
+A model is **stretched by zones**: each model has a band on each axis that stretches, while what lies before and after it keeps its size. Make a sofa wider and its arms and legs stay as they are while the seat grows, so a two-seat sofa becomes a three-seat one; make a table taller and only its legs grow, its top keeps its thickness. Round tables, lamps' shades and plants scale whole across. Each model has the least and the most it can take; a size past them is kept at the limit.
+
+In **Furniture types**, choose **From a model** and a model, then **New type**. A type of a model has:
+
+- the **gallery** of models by group (sofas, armchairs, chairs, tables, lamps, plants, rugs): click another to change the type's model, and it takes that model's size and materials;
+- its **width**, **depth** and **height**, each within the model's range (hover a field to see it). The preview beside it is the engine's, so it shows the stretch as you type: the plan seen from above and the front in the type's colours;
+- **Hung at**, for a pendant, a wall lamp or a table lamp, the height of its underside;
+- the **Looks** (Nordic, Dark, Warm, Soft), which set the materials of every part in one step, and a row of colours for each part: upholstery, accent (a rug's border, a second fabric), body, top, legs, metal, glass, shade, foliage and pot. The materials are indicative: type your own in the materials below.
+
+In plan a piece of a model is its body seen from above, drawn by the engine with the hidden lines removed; a sofa also shows its seats at 1:50 and finer. A lamp hung above 1.2 m is drawn overhead. Tables, chairs, rugs and free-standing lamps stand where you click; sofas, armchairs and side tables back onto the nearest wall like the other furniture.
+
+![The Furniture types dialog with a sofa from a model: the gallery, its size, the looks and colours, beside the engine's preview](shots/furniture-models-types.webp)
+
+![A living room furnished from models: a sofa stretched to 2.6 m, armchairs, a coffee table on a rug, a floor lamp and plants](shots/furniture-models-3d.webp)
+
+In IFC a piece of a model is an IfcFurniture of its type with the model's predefined type (SOFA, CHAIR, TABLE, or USERDEFINED with Floor lamp, Plant, Rug…), and its body is the stretched mesh, as a faceted B-rep or a face set as the export asks. The model and the size travel with the type, so Lapin reads them back. The furniture schedule lists them by group and model.
+
 ## A piece's properties
 
 Select a piece to see:

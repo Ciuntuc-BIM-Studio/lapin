@@ -14,6 +14,8 @@ import { deleteType } from '../core/deleteType';
 import { LengthField } from '../../shell/cells';
 import { KitchenUnitsEditor } from './KitchenUnitsEditor';
 import { CaseworkEditor } from './CaseworkEditor';
+import { ModelEditor, useModelsCatalog } from './ModelEditor';
+import { byGroup } from './models';
 import { ParamField } from './ParamField';
 import { saveTypeToLibrary } from './library';
 import { cutListRows, type CaseworkCatalog } from './casework';
@@ -58,8 +60,11 @@ export function FurniturePreview({ kind, spec, length }: { kind: string; spec: F
   }, [kind, key, length, nodes]);
   if (!p) return <div className="furniture-preview muted small">…</div>;
   const [bx, by, bw, bh] = planBox(p);
-  const fx0 = Math.min(...p.front.map((f) => f.x0), -0.1) - 0.08, fx1 = Math.max(...p.front.map((f) => f.x1), 0.1) + 0.08;
-  const fz1 = Math.max(...p.front.map((f) => f.z1), 0.1) + 0.08;
+  // A model's front is its triangles (decision 477): x, z of each.
+  const tris = p.elevation ?? [];
+  const ex = tris.flatMap((t) => [t.points[0], t.points[2], t.points[4]]), ez = tris.flatMap((t) => [t.points[1], t.points[3], t.points[5]]);
+  const fx0 = Math.min(...p.front.map((f) => f.x0), ...ex, -0.1) - 0.08, fx1 = Math.max(...p.front.map((f) => f.x1), ...ex, 0.1) + 0.08;
+  const fz1 = Math.max(...p.front.map((f) => f.z1), ...ez, 0.1) + 0.08;
   const stroke = Math.max(bw, bh) / 260;
   return (
     <div className="furniture-preview" data-testid="furniture-preview">
@@ -72,6 +77,9 @@ export function FurniturePreview({ kind, spec, length }: { kind: string; spec: F
         {p.front.map((f, i) => (
           <rect key={i} x={f.x0} y={-f.z1} width={f.x1 - f.x0} height={f.z1 - f.z0} fill={f.color} stroke="rgba(0,0,0,.35)" strokeWidth={(fx1 - fx0) / 500} />
         ))}
+        {tris.map((t, i) => (
+          <polygon key={`e${i}`} points={`${t.points[0]},${-t.points[1]} ${t.points[2]},${-t.points[3]} ${t.points[4]},${-t.points[5]}`} fill={t.color} stroke={t.color} strokeWidth={(fx1 - fx0) / 900} strokeLinejoin="round" />
+        ))}
         <line x1={fx0} x2={fx1} y1={0} y2={0} stroke="currentColor" strokeWidth={(fx1 - fx0) / 300} />
       </svg>
       <p className="muted small" data-no-i18n>{Math.round(p.width * 1000)} × {Math.round(p.depth * 1000)} × {Math.round(p.height * 1000)} mm</p>
@@ -79,6 +87,12 @@ export function FurniturePreview({ kind, spec, length }: { kind: string; spec: F
       {!!p.boards?.length && <CutList p={p} />}
     </div>
   );
+}
+
+/** The roles a type's materials are asked for: a model's own (decision 477), else its kind's. */
+function rolesOf(spec: FurnitureSpec, roles: string[], models?: { id: string; roles: string[] }[]): string[] {
+  if (spec.kind !== 'model') return roles;
+  return models?.find((m) => m.id === spec.model)?.roles ?? Object.keys(spec.materials ?? {});
 }
 
 export function FurnitureTypesDialog() {
@@ -91,6 +105,8 @@ export function FurnitureTypesDialog() {
   const [newKind, setNewKind] = useState('sofa');
   const [newLayout, setNewLayout] = useState('one-wall');
   const [newPreset, setNewPreset] = useState('sideboard');
+  const [newModel, setNewModel] = useState('loungeSofa');
+  const modelsCat = useModelsCatalog();
   const casework = useSession((s) => s.info?.catalogs['furniture.casework']) as unknown as CaseworkCatalog | undefined;
   const layouts = ((useSession((s) => s.info?.catalogs['furniture.kitchenLayouts']) ?? []) as unknown as KitchenLayout[]);
   const types = useMemo(() => [...nodes.values()].filter((n) => n.type === TYPE_CLASS), [nodes]);
@@ -102,7 +118,7 @@ export function FurnitureTypesDialog() {
   const update = (patch: Record<string, unknown>, name?: string) => type && void execute('furniture.updateType', { id: type.id, ...(name ? { name } : {}), spec: patch });
 
   const create = async () => {
-    const r = (await execute('furniture.createType', { kind: newKind, ...(newKind === 'kitchen' ? { layout: newLayout } : {}), ...(newKind === 'casework' ? { preset: newPreset } : {}) })) as { id?: string } | null;
+    const r = (await execute('furniture.createType', { kind: newKind, ...(newKind === 'kitchen' ? { layout: newLayout } : {}), ...(newKind === 'casework' ? { preset: newPreset } : {}), ...(newKind === 'model' ? { spec: { model: newModel } } : {}) })) as { id?: string } | null;
     if (r?.id) { select(r.id); chooseType(newKind, r.id); }
   };
   const duplicate = async () => {
@@ -133,6 +149,11 @@ export function FurnitureTypesDialog() {
               {newKind === 'casework' && (
                 <select value={newPreset} data-field="furniture-new-preset" title="What the casework starts as" onChange={(e) => setNewPreset(e.target.value)}>
                   {(casework?.presets ?? []).map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+                </select>
+              )}
+              {newKind === 'model' && (
+                <select value={newModel} data-field="furniture-new-model" title="The model it starts from" onChange={(e) => setNewModel(e.target.value)}>
+                  {byGroup(modelsCat?.models ?? []).map(([g, ms]) => <optgroup key={g} label={g}>{ms.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</optgroup>)}
                 </select>
               )}
               <button type="button" className="btn small" data-action="furniture-new-type" onClick={() => void create()}><Plus size={13} /> New type</button>
@@ -171,10 +192,10 @@ export function FurnitureTypesDialog() {
                 <dl className="fields">
                   <dt>Name</dt>
                   <dd><input key={type.id + type.name} data-field="furniture-type-name" defaultValue={type.name} onBlur={(e) => { const n = e.target.value.trim(); if (n && n !== type.name) update({}, n); }} /></dd>
-                  {spec.kind !== 'kitchen' && <><dt>Width</dt><dd><LengthField testId="furniture-width" metres={Number(spec.width ?? kind.width)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ width: v }); }} /></dd></>}
-                  <dt>Depth</dt><dd><LengthField testId="furniture-depth" metres={Number(spec.depth ?? kind.depth)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ depth: v }); }} /></dd>
-                  <dt>{spec.kind === 'kitchen' ? 'Worktop height' : 'Height'}</dt><dd><LengthField testId="furniture-height" metres={Number(spec.height ?? kind.height)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ height: v }); }} /></dd>
-                  {spec.kind !== 'casework' && kind.params.filter((p) => appliesTo(p, spec, kind.defaults)).map((p) => (
+                  {spec.kind !== 'kitchen' && spec.kind !== 'model' && <><dt>Width</dt><dd><LengthField testId="furniture-width" metres={Number(spec.width ?? kind.width)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ width: v }); }} /></dd></>}
+                  {spec.kind !== 'model' && <><dt>Depth</dt><dd><LengthField testId="furniture-depth" metres={Number(spec.depth ?? kind.depth)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ depth: v }); }} /></dd>
+                  <dt>{spec.kind === 'kitchen' ? 'Worktop height' : 'Height'}</dt><dd><LengthField testId="furniture-height" metres={Number(spec.height ?? kind.height)} min={0.1} max={12} onCommit={(v) => { if (v != null) update({ height: v }); }} /></dd></>}
+                  {spec.kind !== 'casework' && spec.kind !== 'model' && kind.params.filter((p) => appliesTo(p, spec, kind.defaults)).map((p) => (
                     <div key={p.key} className="fields-row" data-param={p.key} style={{ display: 'contents' }}>
                       <dt>{p.label}</dt>
                       {/* A layout starts the kitchen from its sizes (a galley's aisle, an L's leg…); each stays editable. */}
@@ -182,7 +203,7 @@ export function FurnitureTypesDialog() {
                     </div>
                   ))}
                   <dt className="section-dt">Materials</dt><dd />
-                  {kind.roles.map((role) => (
+                  {rolesOf(spec, kind.roles, modelsCat?.models).map((role) => (
                     <div key={role} style={{ display: 'contents' }}>
                       <dt>{ROLE_LABELS[role] ?? role}</dt>
                       <dd>
@@ -195,6 +216,7 @@ export function FurnitureTypesDialog() {
                 </dl>
                 {spec.kind === 'kitchen' && <KitchenUnitsEditor spec={spec} update={update} />}
                 {spec.kind === 'casework' && <CaseworkEditor spec={spec} kind={kind} update={update} />}
+                {spec.kind === 'model' && <ModelEditor spec={spec} update={update} />}
                 </div>
                 <FurniturePreview kind={kind.key} spec={spec} />
               </div>

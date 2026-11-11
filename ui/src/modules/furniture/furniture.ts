@@ -21,6 +21,8 @@ export const CLASS = 'IfcFurniture';
 export const ROLE_LABELS: Record<string, string> = {
   body: 'Body', upholstery: 'Upholstery', top: 'Top', fronts: 'Fronts', linen: 'Linen', metal: 'Metal', glass: 'Glass', plinth: 'Plinth', handles: 'Handles',
   back: 'Back', legs: 'Legs',
+  // The models' slots (decision 477).
+  accent: 'Accent', shade: 'Shade', foliage: 'Foliage', pot: 'Pot',
 };
 
 /** A role a type made before it had its own material takes another's (a kitchen's plinth its body's, its handles the metal's; decision 472). */
@@ -85,6 +87,10 @@ export interface PreviewDto {
   /** A casework type's boards and its carcasses as laid (decision 475). */
   boards?: { part: string; carcass: number; role: string; length: number; width: number; thickness: number; grain: string; front: boolean }[];
   carcasses?: { index: number; x0: number; x1: number }[];
+  /** A model's body from the front (decision 477): its triangles far to near (x, z of each corner), each in its role's colour shaded. */
+  elevation?: { color: string; points: number[] }[];
+  /** The roles the type's materials are asked for. */
+  roles?: string[];
 }
 
 export function planPaths(p: PreviewDto): { d: string; kind: string }[] {

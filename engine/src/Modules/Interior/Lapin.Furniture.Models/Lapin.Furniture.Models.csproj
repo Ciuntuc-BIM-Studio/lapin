@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The furniture models' files (docs/plan-furniture.md, Configuratorul flexibil, stage 2): CC0 GLBs as the kit
+    published them, each in furniture-assets.json with its source, licence and hash (checked by pnpm check:licenses).
+    An assembly of its own, holding nothing but them, so the browser's engine fetches it only when a piece of a model
+    is first built (a lazy part, scripts/build-web.mjs). The register itself goes with Lapin.Furniture.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="models/*.glb" LogicalName="models/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

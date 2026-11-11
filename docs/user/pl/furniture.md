@@ -152,6 +152,27 @@ Podgląd wypisuje **Listę formatek** typu: każdą część (boki, dno, górę,
 
 W IFC mebel korpusowy to IfcFurniture swojego typu, z typem predefiniowanym jego szablonu (SHELF dla regału, DESK, BED albo USERDEFINED z Wardrobe, Sideboard, TV unit, Bathroom vanity…). Jego korpusy podróżują z typem, więc Lapin je odczytuje z powrotem. Typy szafa, kredens i komoda zrobione wcześniej zostają takie, jakie były.
 
+## Meble z modeli
+
+**Wnętrza → Z modelu** stawia meble miękkie i kształtowe zrobione z gotowych modeli: sofy, sofę z szezlongiem, segmenty sofy narożnej, pufę, fotele, fotel rozkładany, krzesła, krzesło biurowe, stołki barowe, ławki, stoły jadalniane, okrągłe i stoliki kawowe, stolik pomocniczy, lampy podłogowe, stołowe, wiszące i kinkiety, rośliny w doniczkach i dywany. Modele to siatki low-poly na licencji CC0 (Furniture Kit Kenneya), dostarczane z Lapin z zapisanym źródłem i licencją.
+
+Model jest **rozciągany strefami**: każdy model ma na każdej osi pas, który się rozciąga, podczas gdy to, co leży przed nim i za nim, zachowuje rozmiar. Poszerz sofę, a jej podłokietniki i nóżki zostają takie, jakie są, rośnie siedzisko, więc dwuosobowa staje się trzyosobową; podnieś stół, a rosną tylko nogi, blat zachowuje grubość. Stoły okrągłe, klosze lamp i rośliny skalują się w całości. Każdy model ma swój najmniejszy i największy rozmiar; rozmiar poza nimi zostaje zatrzymany na granicy.
+
+W **Typy mebli** wybierz **Z modelu** i model, potem **Nowy typ**. Typ z modelu ma:
+
+- **galerię** modeli według grup (sofy, fotele, krzesła, stoły, lampy, rośliny, dywany): kliknij inny, aby zmienić model typu, a typ przejmie jego rozmiar i materiały;
+- swoją **szerokość**, **głębokość** i **wysokość**, każdą w zakresie modelu (najedź na pole, aby go zobaczyć). Podgląd obok pochodzi z silnika, więc pokazuje rozciągnięcie w trakcie pisania: rzut z góry i front w kolorach typu;
+- **Zawieszony na**, dla lampy wiszącej, kinkietu lub lampy stołowej: wysokość jej spodu;
+- **Wygląd** (Nordycki, Ciemny, Ciepły, Łagodny), który ustawia materiały wszystkich części naraz, oraz rząd kolorów dla każdej części: tapicerka, akcent (obrzeże dywanu, druga tkanina), bryła, góra, nóżki, metal, szkło, klosz, listowie i doniczka. Materiały są orientacyjne: wpisz własne w materiałach poniżej.
+
+W rzucie element z modelu to jego bryła widziana z góry, narysowana przez silnik bez linii ukrytych; sofa pokazuje też siedziska w 1:50 i drobniej. Lampa zawieszona wyżej niż 1,2 m jest rysowana jako nadległa. Stoły, krzesła, dywany i lampy wolnostojące stają tam, gdzie klikniesz; sofy, fotele i stoliki pomocnicze opierają się o najbliższą ścianę jak inne meble.
+
+![Okno Typy mebli z sofą z modelu: galeria, jej rozmiar, wyglądy i kolory obok podglądu silnika](shots/furniture-models-types.webp)
+
+![Salon umeblowany z modeli: sofa rozciągnięta do 2,6 m, fotele, stolik kawowy na dywanie, lampa podłogowa i rośliny](shots/furniture-models-3d.webp)
+
+W IFC element z modelu to IfcFurniture swojego typu z predefiniowanym typem modelu (SOFA, CHAIR, TABLE albo USERDEFINED z Floor lamp, Plant, Rug…), a jego bryłą jest rozciągnięta siatka, jako fasetowany B-rep albo zestaw ścian, zależnie od eksportu. Model i rozmiar podróżują z typem, więc Lapin odczytuje je z powrotem. Zestawienie mebli wymienia je według grupy i modelu.
+
 ## Właściwości mebla
 
 Zaznacz mebel, aby zobaczyć:

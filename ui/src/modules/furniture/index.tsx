@@ -3,11 +3,11 @@
  * beds, bedside tables, wardrobes, chests of drawers, bookcases, sideboards, tables, coffee tables, desks — each placing
  * its kind's chosen type at a click, backed onto the nearest wall's face (Against walls in the command line's bar) or
  * turned as the bar says; the straight kitchen drawn along a wall; chairs round a table; the types dialog; the two
- * schedules. A piece's Properties show its type, turn, height and a kitchen's length.
+ * schedules; From a model puts down a CC0 model stretched by zones (decision 477). A piece's Properties show its type, turn, height and a kitchen's length.
  */
 
 import {
-  Archive, Armchair, BookHeart, Package, Ruler, BedDouble, BedSingle, Coffee, CookingPot, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, Settings2, Shirt, Sofa, Table2, Users, UtensilsCrossed,
+  Archive, Armchair, BookHeart, Package, Ruler, BedDouble, BedSingle, Coffee, CookingPot, LampDesk, Layers3, Library, ListOrdered, PanelsTopLeft, Settings2, Shapes, Shirt, Sofa, Table2, Users, UtensilsCrossed,
 } from 'lucide-react';
 import type { Icon } from '../../icons';
 import type { LapinModule, ToolDef } from '../../platform/module';
@@ -108,6 +108,8 @@ const coffeeTable = piece('coffeeTable', 'Coffee table', Coffee);
 const desk = piece('desk', 'Desk', LampDesk);
 /** Casework of boards (decision 475): carcasses side by side, configured in Furniture types from a preset. */
 const casework = piece('casework', 'Casework', Package);
+/** Furniture from a CC0 model stretched by zones (decision 477): sofas, chairs, tables, lamps, plants, rugs; the model and its size in Furniture types. */
+const fromModel = piece('model', 'From a model', Shapes);
 
 /** A kitchen of any layout: two points along a wall, its back on the wall's face, as long as the line (an L or a U tucked into the corner it is drawn near). */
 const kitchen: ToolDef = {
@@ -178,6 +180,7 @@ const furniture: LapinModule = {
       { label: 'Storage', tools: [wardrobe, casework], small: [chest, bookcase, sideboard] },
       { label: 'Tables', tools: [table], small: [coffeeTable, desk, chairsAround] },
       { label: 'Kitchen', tools: [kitchen] },
+      { label: 'Models', tools: [fromModel] },
       { label: 'Schedules', tools: [byType], small: [byRoom, kitchenUnits, cutList] },
       { label: 'Types', tools: [types], small: [library] },
     ],

@@ -8,8 +8,11 @@ using Lapin.Platform;
 
 namespace Lapin.Mesh;
 
-/// <summary>A mesh read from a file: its pieces (an OBJ object, a glTF node's mesh, an STL file), each a name, a colour and triangles in model metres, Z up.</summary>
-public sealed record MeshPiece(string Name, string Color, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles);
+/// <summary>
+/// A mesh read from a file: its pieces (an OBJ object, a glTF node's mesh, an STL file), each a name, a colour and
+/// triangles in model metres, Z up; a glTF primitive's piece also names its material (the furniture models map it to a role).
+/// </summary>
+public sealed record MeshPiece(string Name, string Color, List<Vec3> Vertices, List<(int A, int B, int C)> Triangles, string? Material = null);
 
 /// <summary>What a mesh import brought: the references made, the triangles, and its notes.</summary>
 public sealed record MeshImportResult(int Elements, int Triangles, IReadOnlyList<string> Notes, EditableReport? Editable = null)
@@ -328,6 +331,8 @@ public static class MeshImport
             return Grey;
         }
 
+        string? MaterialOf(JsonNode? prim) => (int?)prim?["material"] is { } mi && mi < materials.Count ? (string?)materials[mi]?["name"] : null;
+
         var pieces = new List<MeshPiece>();
         var skipped = 0;
         // glTF's nodes form strict trees: a node on its own path is a cycle, one met again has a second parent; either would recurse without end.
@@ -366,7 +371,7 @@ public static class MeshImport
                         // A mirroring placement turns the triangles inside out: wound back.
                         tris.Add(mirrored ? (a, c, b) : (a, b, c));
                     }
-                    pieces.Add(new MeshPiece(label, ColorOf(prim), welded, tris));
+                    pieces.Add(new MeshPiece(label, ColorOf(prim), welded, tris, MaterialOf(prim)));
                 }
             }
             foreach (var child in node["children"]?.AsArray() ?? []) Walk((int?)child ?? throw new FormatException($"node {index} has an empty child."), world, depth + 1);

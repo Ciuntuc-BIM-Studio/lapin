@@ -152,6 +152,27 @@ Forhåndsvisningen lister typens **Tilskæringsliste**: hver del (sider, bund, t
 
 I IFC er et korpusmøbel et IfcFurniture af sin type med sin forudindstillings foruddefinerede type (SHELF til en reol, DESK, BED eller USERDEFINED med Wardrobe, Sideboard, TV unit, Bathroom vanity…). Dets korpusser følger med typen, så Lapin læser dem tilbage. De garderobeskabs-, skænk- og kommodetyper, der blev lavet før, forbliver, som de var.
 
+## Møbler fra modeller
+
+**Interiør → Fra en model** placerer bløde og formede møbler lavet af færdige modeller: sofaer, en sofa med chaiselong, hjørnesofasektioner, en puf, lænestole, en hvilestol, stole, en kontorstol, barstole, bænke, spiseborde, runde borde og sofaborde, et sidebord, stander-, bord-, pendel- og væglamper, planter i urtepotter og tæpper. Modellerne er low-poly-net under CC0-licensen (Kenneys Furniture Kit) og leveres med Lapin, med deres kilde og licens noteret.
+
+En model **strækkes i zoner**: hver model har et bånd på hver akse, der strækkes, mens det før og efter beholder sin størrelse. Gør en sofa bredere, og dens arme og ben forbliver, som de er, mens sædet vokser, så en tosædet sofa bliver til en tresædet. Gør et bord højere, og kun benene vokser, mens pladen beholder sin tykkelse. Runde borde, lampeskærme og planter skaleres hele vejen rundt. Hver model har et mindste og et største mål; en størrelse uden for dem holdes ved grænsen.
+
+I **Møbeltyper** vælger du **Fra en model** og en model og derefter **Ny type**. En type af en model har:
+
+- **galleriet** med modeller i grupper (sofaer, lænestole, stole, borde, lamper, planter, tæpper): klik på en anden for at skifte typens model, og typen overtager den models størrelse og materialer;
+- sin **bredde**, **dybde** og **højde**, hver inden for modellens interval (hold musen over et felt for at se det). Forhåndsvisningen ved siden af er motorens, så den viser strækningen, mens du skriver: planen set ovenfra og forsiden i typens farver;
+- **Ophængt i**, for en pendellampe, en væglampe eller en bordlampe: højden af dens underside;
+- **Udseende** (Nordisk, Mørk, Varm, Blød), som sætter materialerne på alle dele i ét trin, og en række farver for hver del: polstring, accent (et tæppes kant, et andet stof), legeme, top, ben, metal, glas, skærm, løv og urtepotte. Materialerne er vejledende: skriv dine egne i materialerne nedenunder.
+
+I planen er et møbel fra en model dets krop set ovenfra, tegnet af motoren uden skjulte linjer; en sofa viser også sine sæder i 1:50 og finere. En lampe hængt højere end 1,2 m tegnes som overliggende. Borde, stole, tæpper og fritstående lamper står, hvor du klikker; sofaer, lænestole og sidebord stilles op mod den nærmeste væg som de øvrige møbler.
+
+![Dialogen Møbeltyper med en sofa fra en model: galleriet, dens størrelse, udseendet og farverne ved siden af motorens forhåndsvisning](shots/furniture-models-types.webp)
+
+![En stue indrettet med modeller: en sofa strakt til 2,6 m, lænestole, et sofabord på et tæppe, en standerlampe og planter](shots/furniture-models-3d.webp)
+
+I IFC er et møbel fra en model et IfcFurniture af sin type med modellens foruddefinerede type (SOFA, CHAIR, TABLE eller USERDEFINED med Floor lamp, Plant, Rug …), og dets krop er det strakte net, som et facetteret B-rep eller et fladesæt, alt efter hvad eksporten beder om. Modellen og størrelsen rejser med typen, så Lapin læser dem tilbage. Møbelskemaet lister dem efter gruppe og model.
+
 ## Et møbels egenskaber
 
 Vælg et møbel for at se:

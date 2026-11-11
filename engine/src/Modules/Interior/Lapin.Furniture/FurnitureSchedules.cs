@@ -27,12 +27,13 @@ static class FurnitureRooms
     public static string Label(Entity? room) => room == null ? "" : room.Str("number") is { Length: > 0 } n ? $"{n} {room.Name}" : room.Name;
 
     /// <summary>A kind's label; a kitchen's with its layout when it is not the straight one.</summary>
-    public static string KindLabel(Spec s) => s.Kind.Key == Casework.Key ? $"{s.Kind.Label} · {Casework.Label(s)}" : s.Kind.Key == "kitchen" && KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} · {KitchenLayouts.Label(l)}" : s.Kind.Label;
+    public static string KindLabel(Spec s) => s.Kind.Key == FurnitureModels.Key ? $"{FurnitureModels.Of(s).Group} · {FurnitureModels.Of(s).Name}" : s.Kind.Key == Casework.Key ? $"{s.Kind.Label} · {Casework.Label(s)}" : s.Kind.Key == "kitchen" && KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} · {KitchenLayouts.Label(l)}" : s.Kind.Label;
 
     public static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
 
     public static string Size(Entity e, Spec s) => s.Kind.Key == "kitchen"
         ? $"{Mm(e.NumOrNull("length") ?? s.W)} × {Mm(KitchenLayouts.Depth(s))} × {Mm(s.H)}"
+        : s.Kind.Key == FurnitureModels.Key && FurnitureModels.SizeOf(s, FurnitureModels.Of(s)) is var m ? $"{Mm(m.W)} × {Mm(m.D)} × {Mm(m.H)}"
         : $"{Mm(s.W)} × {Mm(s.D)} × {Mm(s.H)}";
 }
 

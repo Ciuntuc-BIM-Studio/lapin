@@ -152,6 +152,27 @@ La vista previa lista la **Lista de corte** del tipo: cada pieza (laterales, fon
 
 En IFC un mueble de tableros es un IfcFurniture de su tipo, con el tipo predefinido de su modelo base (SHELF para una librería, DESK, BED, o USERDEFINED con Wardrobe, Sideboard, TV unit, Bathroom vanity…). Sus cuerpos viajan con el tipo, así que Lapin los lee de vuelta. Los tipos armario, aparador y cómoda hechos antes se quedan como estaban.
 
+## Mobiliario a partir de modelos
+
+**Interiores → Desde un modelo** coloca mobiliario blando y de formas hecho con modelos ya preparados: sofás, un sofá con chaise longue, módulos de sofá rinconera, un puf, sillones, un sillón reclinable, sillas, una silla de oficina, taburetes de bar, bancos, mesas de comedor, redondas y de centro, una mesa auxiliar, lámparas de pie, de mesa, colgantes y de pared, plantas en maceta y alfombras. Los modelos son mallas de pocos polígonos con licencia CC0 (Furniture Kit de Kenney), incluidas en Lapin con su origen y su licencia anotados.
+
+Un modelo se **estira por zonas**: cada modelo tiene en cada eje una banda que se estira, mientras lo que hay antes y después conserva su tamaño. Si ensanchas un sofá, sus brazos y sus patas se quedan como están y crece el asiento, así que uno de dos plazas pasa a ser de tres; si subes una mesa, solo crecen las patas y el tablero mantiene su grosor. Las mesas redondas, las pantallas de las lámparas y las plantas se escalan enteras. Cada modelo tiene un mínimo y un máximo; un tamaño fuera de ellos se deja en el límite.
+
+En **Tipos de mobiliario**, elige **Desde un modelo** y un modelo, y luego **Tipo nuevo**. Un tipo de un modelo tiene:
+
+- la **galería** de modelos por grupo (sofás, sillones, sillas, mesas, lámparas, plantas, alfombras): pulsa otro para cambiar el modelo del tipo, que toma su tamaño y sus materiales;
+- su **ancho**, **fondo** y **alto**, cada uno dentro del intervalo del modelo (pasa el cursor por un campo para verlo). La vista previa de al lado es la del motor, así que muestra el estiramiento mientras escribes: la planta vista desde arriba y el frente con los colores del tipo;
+- **Colgado a**, para una lámpara colgante, de pared o de mesa: la altura de su cara inferior;
+- el **Aspecto** (Nórdico, Oscuro, Cálido, Suave), que fijan los materiales de todas las partes de una vez, y una fila de colores para cada parte: tapicería, acento (el borde de una alfombra, una segunda tela), cuerpo, superior, patas, metal, vidrio, pantalla, follaje y maceta. Los materiales son orientativos: escribe los tuyos en los materiales de debajo.
+
+En planta, una pieza de un modelo es su cuerpo visto desde arriba, dibujado por el motor sin líneas ocultas; un sofá muestra además sus asientos a 1:50 y a escalas mayores. Una lámpara colgada a más de 1,2 m se dibuja como elemento superior. Las mesas, las sillas, las alfombras y las lámparas de pie quedan donde pulsas; los sofás, los sillones y las mesas auxiliares se apoyan en la pared más cercana como el resto del mobiliario.
+
+![El cuadro Tipos de mobiliario con un sofá a partir de un modelo: la galería, su tamaño, los aspectos y los colores, junto a la vista previa del motor](shots/furniture-models-types.webp)
+
+![Un salón amueblado con modelos: un sofá estirado a 2,6 m, sillones, una mesa de centro sobre una alfombra, una lámpara de pie y plantas](shots/furniture-models-3d.webp)
+
+En IFC, una pieza de un modelo es un IfcFurniture de su tipo con el tipo predefinido del modelo (SOFA, CHAIR, TABLE o USERDEFINED con Floor lamp, Plant, Rug…), y su cuerpo es la malla estirada, como B-rep facetado o como conjunto de caras, según pida la exportación. El modelo y el tamaño viajan con el tipo, así que Lapin los vuelve a leer. La tabla de mobiliario los lista por grupo y modelo.
+
 ## Las propiedades de un mueble
 
 Seleccione un mueble para ver:

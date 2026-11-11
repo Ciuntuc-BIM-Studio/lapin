@@ -152,6 +152,27 @@ Die Vorschau listet die **Zuschnittliste** des Typs: jedes Teil (Seiten, Boden, 
 
 In IFC ist ein Korpusmöbel ein IfcFurniture seines Typs, mit dem vordefinierten Typ seiner Vorlage (SHELF für ein Bücherregal, DESK, BED oder USERDEFINED mit Wardrobe, Sideboard, TV unit, Bathroom vanity…). Seine Korpusse wandern mit dem Typ, sodass Lapin sie zurückliest. Die früher erstellten Typen Kleiderschrank, Sideboard und Kommode bleiben, wie sie waren.
 
+## Möbel aus Modellen
+
+**Innenausbau → Aus einem Modell** setzt weiche und geformte Möbel aus fertigen Modellen: Sofas, ein Sofa mit Recamiere, Ecksofa-Elemente, einen Hocker, Sessel, einen Relaxsessel, Stühle, einen Bürostuhl, Barhocker, Bänke, Ess-, Rund- und Couchtische, einen Beistelltisch, Steh-, Tisch-, Pendel- und Wandleuchten, Topfpflanzen und Teppiche. Die Modelle sind Low-Poly-Netze unter der CC0-Lizenz (Kenneys Furniture Kit) und werden mit Lapin geliefert, mit vermerkter Quelle und Lizenz.
+
+Ein Modell wird **in Zonen gedehnt**: Jedes Modell hat auf jeder Achse ein Band, das sich dehnt, während das, was davor und danach liegt, seine Größe behält. Machen Sie ein Sofa breiter, bleiben Armlehnen und Füße, wie sie sind, und nur die Sitzfläche wächst: Aus einem Zweisitzer wird ein Dreisitzer. Machen Sie einen Tisch höher, wachsen nur die Beine, die Platte behält ihre Dicke. Runde Tische, Lampenschirme und Pflanzen werden als Ganzes skaliert. Jedes Modell hat ein Minimum und ein Maximum; eine Größe darüber hinaus wird auf die Grenze gesetzt.
+
+Wählen Sie unter **Möbeltypen** **Aus einem Modell** und ein Modell, dann **Neuer Typ**. Ein Typ aus einem Modell hat:
+
+- die **Galerie** der Modelle nach Gruppen (Sofas, Sessel, Stühle, Tische, Lampen, Pflanzen, Teppiche): Klicken Sie auf ein anderes, um das Modell des Typs zu wechseln; der Typ übernimmt dessen Größe und Materialien;
+- seine **Breite**, **Tiefe** und **Höhe**, jeweils im Bereich des Modells (fahren Sie über ein Feld, um ihn zu sehen). Die Vorschau daneben stammt von der Engine und zeigt die Dehnung beim Tippen: den Grundriss von oben und die Vorderansicht in den Farben des Typs;
+- **Aufgehängt auf**, bei einer Pendelleuchte, einer Wandleuchte oder einer Tischlampe: die Höhe ihrer Unterkante;
+- die **Darstellung** (Nordisch, Dunkel, Warm, Sanft), die die Materialien aller Teile in einem Schritt setzt, und eine Reihe von Farben für jedes Teil: Polsterung, Akzent (Teppichrand, ein zweiter Stoff), Körper, Oben, Füße, Metall, Glas, Schirm, Laub und Topf. Die Materialien sind Richtwerte: Geben Sie darunter bei den Materialien Ihre eigenen ein.
+
+Im Grundriss ist ein Möbel aus einem Modell sein Körper von oben, von der Engine ohne verdeckte Linien gezeichnet; ein Sofa zeigt außerdem seine Sitze ab 1:50. Eine Leuchte, die höher als 1,2 m hängt, wird als darüberliegend gezeichnet. Tische, Stühle, Teppiche und frei stehende Leuchten stehen, wo Sie klicken; Sofas, Sessel und Beistelltische stellen sich wie die übrigen Möbel an die nächste Wand.
+
+![Der Dialog Möbeltypen mit einem Sofa aus einem Modell: die Galerie, seine Größe, die Darstellungen und Farben neben der Vorschau der Engine](shots/furniture-models-types.webp)
+
+![Ein Wohnzimmer aus Modellen: ein auf 2,6 m gedehntes Sofa, Sessel, ein Couchtisch auf einem Teppich, eine Stehlampe und Pflanzen](shots/furniture-models-3d.webp)
+
+In IFC ist ein Möbel aus einem Modell ein IfcFurniture seines Typs mit dem vordefinierten Typ des Modells (SOFA, CHAIR, TABLE oder USERDEFINED mit Floor lamp, Plant, Rug …), und sein Körper ist das gedehnte Netz, als facettiertes B-Rep oder als Flächensatz, je nach Export. Modell und Größe reisen mit dem Typ, sodass Lapin sie zurückliest. Die Möbelliste führt sie nach Gruppe und Modell auf.
+
 ## Die Eigenschaften eines Möbels
 
 Wählen Sie ein Möbel aus, um zu sehen:

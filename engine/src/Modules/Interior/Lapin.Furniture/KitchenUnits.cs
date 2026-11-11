@@ -79,13 +79,12 @@ public static class KitchenUnits
     public static bool Has(Spec s) => s.List(BaseKey) is { Count: > 0 } || s.List(UpperKey) is { Count: > 0 };
 
     /// <summary>A run the configurator starts from: a sink, a dishwasher, a hob over an oven and a unit of drawers (2.4 m, with the tall unit at its end 3 m).</summary>
-    public static JsonArray Typical() =>
-    [
+    // new JsonArray(…), not a collection expression: that one calls JsonArray.Add<T>, which trimming refuses (the browser's build).
+    public static JsonArray Typical() => new(
         D(("type", "sink"), ("width", 0.6), ("sink", "single"), ("tap", "standard")),
         D(("type", "dishwasher"), ("width", 0.6)),
         D(("type", "base"), ("width", 0.6), ("front", "drawers"), ("drawers", 3)),
-        D(("type", "hob"), ("width", 0.6), ("fuel", "induction"), ("oven", true)),
-    ];
+        D(("type", "hob"), ("width", 0.6), ("fuel", "induction"), ("oven", true)));
 
     static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
 

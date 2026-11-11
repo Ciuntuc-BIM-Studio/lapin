@@ -2,8 +2,9 @@
   <!--
     Furniture (docs/plan-furniture.md): sofas, armchairs, chairs, beds, wardrobes, chests, bookcases, sideboards,
     tables, desks and the straight kitchen, as IfcFurniture of an IfcFurnitureType that holds their shape. Bodies and
-    plan symbols are built by Lapin, never taken from a library. It needs the architecture module (walls to stand
-    against, rooms to count in).
+    plan symbols are built by Lapin; the pieces from a model (stage 2 of the flexible configurator) stretch a CC0 mesh of
+    Lapin.Furniture.Models by its zones, read with Lapin.Mesh's glTF reader. It needs the architecture module (walls to
+    stand against, rooms to count in).
   -->
   <PropertyGroup>
     <LapinModuleId>furniture</LapinModuleId>
@@ -13,5 +14,12 @@
     <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
     <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" Private="false" />
     <ProjectReference Include="../../Architecture/Lapin.Architecture/Lapin.Architecture.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Mesh/Lapin.Mesh.csproj" Private="false" />
+    <!-- Its own: copied with the module (and a lazy part of the browser's engine). -->
+    <ProjectReference Include="../Lapin.Furniture.Models/Lapin.Furniture.Models.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The register of the models (sources, licences, zones, sizes, slots): read at start for the catalog. -->
+    <EmbeddedResource Include="../Lapin.Furniture.Models/furniture-assets.json" LogicalName="furniture-assets.json" />
   </ItemGroup>
 </Project>

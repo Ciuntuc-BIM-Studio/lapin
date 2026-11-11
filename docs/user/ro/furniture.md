@@ -152,6 +152,27 @@ Previzualizarea arată **Lista de debitare** a tipului: fiecare piesă (laterale
 
 În IFC o piesă de mobilier din corpuri e un IfcFurniture al tipului ei, cu tipul predefinit al presetării (SHELF pentru o bibliotecă, DESK, BED sau USERDEFINED cu Wardrobe, Sideboard, TV unit, Bathroom vanity…). Corpurile ei călătoresc cu tipul, așa că Lapin le citește înapoi. Felurile dulap, bufet și comodă făcute înainte rămân cum erau.
 
+## Mobilier din modele
+
+**Interior → Dintr-un model** pune mobilier moale și cu forme, făcut din modele gata: canapele, o canapea cu șezlong, secțiuni de canapea de colț, un taburet, fotolii, un fotoliu reclinabil, scaune, un scaun de birou, scaune de bar, bănci, mese de dining, rotunde și de cafea, o măsuță laterală, lămpi de podea, de masă, suspendate și aplice, plante în ghiveci și covoare. Modelele sunt rețele de triunghiuri simple, sub licența CC0 (Furniture Kit de la Kenney), livrate cu Lapin, cu sursa și licența fiecăruia înregistrate.
+
+Un model se **întinde pe zone**: pe fiecare axă are o bandă care se întinde, iar ce e înainte și după ea își păstrează mărimea. Dacă lățești o canapea, brațele și picioarele rămân cum sunt și crește șezutul, așa că o canapea de două locuri devine una de trei. Dacă faci o masă mai înaltă, cresc doar picioarele, iar blatul își păstrează grosimea. Mesele rotunde, abajururile lămpilor și plantele se scalează întregi pe orizontală. Fiecare model are o mărime minimă și una maximă; o mărime dincolo de ele rămâne la limită.
+
+În **Tipuri de mobilier**, alege **Dintr-un model** și un model, apoi **Tip nou**. Un tip dintr-un model are:
+
+- **galeria** de modele pe grupe (canapele, fotolii, scaune, mese, lămpi, plante, covoare): dă clic pe alt model ca să schimbi modelul tipului, iar tipul ia mărimea și materialele acelui model;
+- **lățimea**, **adâncimea** și **înălțimea**, fiecare între limitele modelului (ține mouse-ul pe un câmp ca să le vezi). Previzualizarea de alături e a motorului, așa că arată întinderea pe măsură ce scrii: planul văzut de sus și fața în culorile tipului;
+- **Agățat la**, pentru o lampă suspendată, o aplică sau o lampă de masă: înălțimea feței de jos;
+- **Stilurile** (Nordic, Închis, Cald, Delicat), care pun materialele tuturor părților dintr-un singur pas, și câte un rând de culori pentru fiecare parte: tapițeria, accentul (bordura unui covor, a doua țesătură), corpul, blatul, picioarele, metalul, sticla, abajurul, frunzișul și ghiveciul. Materialele sunt orientative: scrie-le pe ale tale în materialele de dedesubt.
+
+În plan o piesă dintr-un model e corpul ei văzut de sus, desenat de motor fără liniile ascunse; o canapea își arată și locurile, la 1:50 și mai fin. O lampă agățată mai sus de 1,2 m se desenează ca element de deasupra planului de secțiune. Mesele, scaunele, covoarele și lămpile de sine stătătoare stau unde dai clic; canapelele, fotoliile și măsuțele laterale se lipesc de cel mai apropiat perete, ca restul mobilierului.
+
+![Dialogul Tipuri de mobilier cu o canapea dintr-un model: galeria, mărimea, stilurile și culorile, lângă previzualizarea motorului](shots/furniture-models-types.webp)
+
+![O cameră de zi mobilată din modele: o canapea întinsă la 2,6 m, fotolii, o măsuță de cafea pe un covor, o lampă de podea și plante](shots/furniture-models-3d.webp)
+
+În IFC o piesă dintr-un model e un IfcFurniture al tipului ei, cu tipul predefinit al modelului (SOFA, CHAIR, TABLE sau USERDEFINED cu Floor lamp, Plant, Rug…), iar corpul ei e rețeaua întinsă, ca B-rep fațetat sau ca set de fețe, după cum cere exportul. Modelul și mărimea călătoresc cu tipul, așa că Lapin le citește înapoi. Extrasul de mobilier le listează pe grupe și modele.
+
 ## Proprietățile unei piese
 
 Când selectezi o piesă, vezi:

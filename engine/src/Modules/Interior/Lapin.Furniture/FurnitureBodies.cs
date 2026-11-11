@@ -27,6 +27,8 @@ public sealed class Builder(Vec2 at, double z, double rotationDeg, bool mirror)
     public readonly List<BoardRow> Boards = [];
     /// <summary>A casework piece's carcasses as laid across it, from the left as seen from its front.</summary>
     public readonly List<(int Index, double X0, double X1)> Carcasses = [];
+    /// <summary>A model's triangles in the local frame (decision 477), for the types dialog's front view.</summary>
+    public readonly List<(string Role, Vec3 A, Vec3 B, Vec3 C)> Elevation = [];
 
     /// <summary>Whether it is built mirrored (its spans and plan turned over about its middle).</summary>
     public bool Mirrored => mirror;
@@ -127,6 +129,16 @@ public sealed class Builder(Vec2 at, double z, double rotationDeg, bool mirror)
         Add(role, SolidBuilder.Make(v, faces, "furniture"));
     }
 
+    /// <summary>A model's triangles (in the local frame) as a solid of the role; mirrored, wound back so its faces still look out.</summary>
+    public void Mesh(string role, IReadOnlyList<Vec3> local, IReadOnlyList<(int A, int B, int C)> tris)
+    {
+        if (tris.Count == 0) return;
+        foreach (var (a, b, cc) in tris) Elevation.Add((role, local[a], local[b], local[cc]));
+        var world = local.Select(p => W(Mx(p.X), p.Y, p.Z)).ToList();
+        IReadOnlyList<(int A, int B, int C)> t = mirror ? [.. tris.Select(x => (x.A, x.C, x.B))] : tris;
+        Add(role, FurnitureModels.MeshSolid(world, t));
+    }
+
     // ---- Plan ----
 
     public void Line(string kind, params (double X, double Y)[] pts) => Plan.Add(new PlanItem(kind, false, [.. pts.Select(p => Q(p.X, p.Y))]));
@@ -168,11 +180,15 @@ public static class FurnitureBodies
             case "desk": Desk(b, s); break;
             case "kitchen": Kitchen(b, s, length ?? s.W); break;
             case Casework.Key: Casework.Build(b, s); break;
+            case FurnitureModels.Key: FurnitureModels.Build(b, s); break;
         }
     }
 
     /// <summary>The footprint's corners, which the kitchen's own length widens.</summary>
-    public static (double W, double D) Footprint(Spec s, double? length) => s.Kind.Key == "kitchen" ? (length ?? s.W, KitchenLayouts.Depth(s)) : (s.W, s.D);
+    public static (double W, double D) Footprint(Spec s, double? length) =>
+        s.Kind.Key == "kitchen" ? (length ?? s.W, KitchenLayouts.Depth(s))
+        : s.Kind.Key == FurnitureModels.Key && FurnitureModels.SizeOf(s, FurnitureModels.Of(s)) is var m ? (m.W, m.D)
+        : (s.W, s.D);
 
     static string Swap(string side) => side switch { "left" => "right", "right" => "left", _ => side };
 

@@ -152,6 +152,27 @@ L’aperçu liste la **Liste de débit** du type : chaque pièce (côtés, fond,
 
 En IFC, un meuble à caissons est un IfcFurniture de son type, avec le type prédéfini de son modèle (SHELF pour une bibliothèque, DESK, BED, ou USERDEFINED avec Wardrobe, Sideboard, TV unit, Bathroom vanity…). Ses caissons voyagent avec le type, donc Lapin les relit. Les types armoire, buffet et commode créés avant restent tels qu’ils étaient.
 
+## Mobilier à partir de modèles
+
+**Intérieur → À partir d’un modèle** place du mobilier souple et de formes, fait à partir de modèles tout prêts : canapés, un canapé avec méridienne, éléments de canapé d’angle, un pouf, fauteuils, un fauteuil inclinable, chaises, une chaise de bureau, tabourets de bar, bancs, tables à manger, rondes et basses, une table d’appoint, lampadaires, lampes de table, suspensions et appliques, plantes en pot et tapis. Les modèles sont des maillages low-poly sous licence CC0 (Furniture Kit de Kenney), livrés avec Lapin, leur source et leur licence notées.
+
+Un modèle est **étiré par zones** : chaque modèle a, sur chaque axe, une bande qui s’étire, tandis que ce qui la précède et la suit garde sa taille. Élargissez un canapé et ses accoudoirs et ses pieds restent tels quels pendant que l’assise grandit : un deux places devient un trois places. Montez une table et seuls ses pieds grandissent, son plateau garde son épaisseur. Les tables rondes, les abat-jour et les plantes sont mis à l’échelle en entier. Chaque modèle a un minimum et un maximum ; une taille au-delà est ramenée à la limite.
+
+Dans **Types de mobilier**, choisissez **À partir d’un modèle** et un modèle, puis **Nouveau type**. Un type issu d’un modèle a :
+
+- la **galerie** des modèles par groupe (canapés, fauteuils, chaises, tables, lampes, plantes, tapis) : cliquez sur un autre pour changer le modèle du type, qui prend sa taille et ses matériaux ;
+- sa **largeur**, sa **profondeur** et sa **hauteur**, chacune dans la plage du modèle (survolez un champ pour la voir). L’aperçu à côté est celui du moteur : il montre l’étirement pendant que vous saisissez, le plan vu du dessus et la face avant aux couleurs du type ;
+- **Suspendu à**, pour une suspension, une applique ou une lampe de table : la hauteur de son dessous ;
+- l’**Aspect** (Nordique, Sombre, Chaud, Doux), qui règlent d’un coup les matériaux de toutes les parties, et une rangée de couleurs pour chaque partie : garnissage, accent (le bord d’un tapis, un second tissu), corps, haut, pieds, métal, verre, abat-jour, feuillage et pot. Les matériaux sont indicatifs : saisissez les vôtres dans les matériaux plus bas.
+
+En plan, une pièce issue d’un modèle est son corps vu du dessus, dessiné par le moteur sans les lignes cachées ; un canapé montre aussi ses assises au 1:50 et plus fin. Une lampe suspendue à plus de 1,2 m est dessinée en surplomb. Les tables, chaises, tapis et lampes sur pied se posent là où vous cliquez ; les canapés, fauteuils et tables d’appoint s’adossent au mur le plus proche comme le reste du mobilier.
+
+![La boîte Types de mobilier avec un canapé issu d’un modèle : la galerie, sa taille, les aspects et les couleurs, à côté de l’aperçu du moteur](shots/furniture-models-types.webp)
+
+![Un séjour meublé à partir de modèles : un canapé étiré à 2,6 m, des fauteuils, une table basse sur un tapis, un lampadaire et des plantes](shots/furniture-models-3d.webp)
+
+En IFC, une pièce issue d’un modèle est un IfcFurniture de son type avec le type prédéfini du modèle (SOFA, CHAIR, TABLE ou USERDEFINED avec Floor lamp, Plant, Rug…), et son corps est le maillage étiré, en B-rep facetté ou en jeu de faces selon l’export. Le modèle et la taille voyagent avec le type, de sorte que Lapin les relit. La nomenclature du mobilier les liste par groupe et par modèle.
+
 ## Les propriétés d’un meuble
 
 Sélectionnez un meuble pour voir :

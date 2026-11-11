@@ -2057,3 +2057,18 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .alias-form { display: grid; grid-template-columns: 8em 1fr auto; gap: 6px; align-items: start; }
 .alias-form select { grid-column: 1 / 3; }
 .alias-note { color: var(--ink-muted); }
+/* Furniture from models (decision 477): the gallery of previews by group, the looks, a colour per role. */
+.model-editor { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.model-gallery { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
+.model-gallery-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 4px; }
+.model-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px; border: 1px solid var(--line, #d8d2c6); border-radius: 6px; background: var(--panel, #fff); cursor: pointer; }
+.model-tile img { width: 56px; height: 56px; object-fit: contain; }
+.model-tile span { text-align: center; line-height: 1.15; }
+.model-tile.on { border-color: var(--accent, #3d6fd8); box-shadow: 0 0 0 1px var(--accent, #3d6fd8) inset; }
+.model-looks { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.model-looks .btn.on { border-color: var(--accent, #3d6fd8); }
+.model-swatches { display: flex; flex-direction: column; gap: 3px; }
+.model-swatch-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.model-swatch-row > span { min-width: 80px; }
+.model-swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); padding: 0; cursor: pointer; }
+.model-swatch.on { outline: 2px solid var(--accent, #3d6fd8); outline-offset: 1px; }

@@ -152,6 +152,27 @@ A pré-visualização lista o **Plano de corte** do tipo: cada parte (laterais, 
 
 Em IFC uma peça de marcenaria é um IfcFurniture do seu tipo, com o tipo predefinido do seu modelo (SHELF para uma estante, DESK, BED, ou USERDEFINED com Wardrobe, Sideboard, TV unit, Bathroom vanity…). Seus corpos viajam com o tipo, então o Lapin os lê de volta. Os tipos guarda-roupa, aparador e cômoda feitos antes ficam como estavam.
 
+## Mobiliário a partir de modelos
+
+**Interiores → A partir de um modelo** coloca mobiliário macio e de formas feito a partir de modelos prontos: sofás, um sofá com chaise longue, módulos de sofá de canto, um puf, poltronas, uma poltrona reclinável, cadeiras, uma cadeira de escritório, bancos de bar, bancos, mesas de jantar, redondas e de centro, uma mesa de apoio, candeeiros de pé, de mesa, suspensos e de parede, plantas em vaso e tapetes. Os modelos são malhas de poucos polígonos com licença CC0 (Furniture Kit de Kenney), fornecidas com o Lapin com a origem e a licença registadas.
+
+Um modelo é **esticado por zonas**: cada modelo tem em cada eixo uma faixa que estica, enquanto o que fica antes e depois mantém o tamanho. Alargue um sofá e os braços e os pés ficam como estão enquanto o assento cresce: um de dois lugares passa a ser de três. Suba uma mesa e só as pernas crescem, o tampo mantém a espessura. As mesas redondas, os abajures e as plantas escalam inteiros. Cada modelo tem um mínimo e um máximo; um tamanho fora deles é mantido no limite.
+
+Em **Tipos de mobiliário**, escolha **A partir de um modelo** e um modelo, depois **Novo tipo**. Um tipo de um modelo tem:
+
+- a **galeria** de modelos por grupo (sofás, poltronas, cadeiras, mesas, candeeiros, plantas, tapetes): clique noutro para mudar o modelo do tipo, que passa a ter o seu tamanho e os seus materiais;
+- a sua **largura**, **profundidade** e **altura**, cada uma dentro do intervalo do modelo (passe o cursor por um campo para o ver). A pré-visualização ao lado é a do motor, por isso mostra o esticamento enquanto escreve: a planta vista de cima e a frente com as cores do tipo;
+- **Suspenso a**, para um candeeiro suspenso, de parede ou de mesa: a altura da sua face inferior;
+- a **Aparência** (Nórdico, Escuro, Quente, Suave), que definem de uma vez os materiais de todas as partes, e uma fila de cores para cada parte: estofamento, destaque (a borda de um tapete, um segundo tecido), corpo, superior, pés, metal, vidro, abajur, folhagem e vaso. Os materiais são indicativos: escreva os seus nos materiais abaixo.
+
+Em planta, uma peça de um modelo é o seu corpo visto de cima, desenhado pelo motor sem as linhas ocultas; um sofá mostra também os assentos a 1:50 e mais fino. Um candeeiro suspenso acima de 1,2 m é desenhado como elemento superior. As mesas, as cadeiras, os tapetes e os candeeiros de pé ficam onde clica; os sofás, as poltronas e as mesas de apoio encostam-se à parede mais próxima como o restante mobiliário.
+
+![A caixa Tipos de mobiliário com um sofá a partir de um modelo: a galeria, o tamanho, as aparências e as cores, ao lado da pré-visualização do motor](shots/furniture-models-types.webp)
+
+![Uma sala mobilada com modelos: um sofá esticado a 2,6 m, poltronas, uma mesa de centro sobre um tapete, um candeeiro de pé e plantas](shots/furniture-models-3d.webp)
+
+Em IFC, uma peça de um modelo é um IfcFurniture do seu tipo com o tipo predefinido do modelo (SOFA, CHAIR, TABLE ou USERDEFINED com Floor lamp, Plant, Rug…), e o seu corpo é a malha esticada, como B-rep facetado ou conjunto de faces conforme a exportação pedir. O modelo e o tamanho viajam com o tipo, por isso o Lapin lê-os de volta. A tabela de mobiliário lista-os por grupo e modelo.
+
 ## As propriedades de um móvel
 
 Selecione um móvel para ver:

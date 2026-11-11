@@ -68,6 +68,8 @@ Mai târziu, dacă e cerut: verificarea spațiilor libere în fața pieselor (ac
 
 11.11.2026 (decizia 475): etapa 1 a configuratorului flexibil, mobilierul din plăci (mai jos).
 
+11.11.2026 (decizia 477): etapa 2, mobilierul din modele CC0 întinse pe zone (mai jos).
+
 ## Configuratorul flexibil
 
 Cerut de utilizator la 11.11.2026, după bucătăria cu corpuri proprii (decizia 472): un configurator de mobilier flexibil și modern, în trei etape. Plan aprobat; întrebările deschise s-au hotărât după cea mai bună variantă și sunt scrise aici.
@@ -88,11 +90,16 @@ Cerut de utilizator la 11.11.2026, după bucătăria cu corpuri proprii (decizia
 - **Interfața**: în Tipuri de mobilier, la un tip casework, editorul `CaseworkEditor` (presetare, stiluri, secțiunile construcției, corpurile cu zonele lor, adăugare/împărțire/mutare/scoatere, Fit width), previzualizarea motorului (plan, față) cu lista de debitare; fiecare schimbare e un `updateType`.
 - **Idei de îmbinări**: atelierul Woodworking din FreeCAD (dprojects, MIT după README-ul lui, https://github.com/dprojects/Woodworking) — doar idei (lista de debitare pe plăci, fibra, construcția corpului), rescrise; niciun cod preluat.
 
-### Etapa 2: mobilier moale din modele CC0 întinse pe zone (de făcut)
+### Etapa 2: mobilier moale din modele CC0 întinse pe zone, făcută (decizia 477)
 
-- Canapele de 2/3 locuri, mese mai lungi, scaune: un model mesh CC0 tăiat în zone (capete fixe, mijloc întins), ca o piesă se poate lungi fără să-și deformeze brațele sau picioarele.
-- Biblioteca: Kenney Furniture Kit (CC0, https://kenney.nl/assets/furniture-kit) și Poly Haven (CC0, de verificat pe polyhaven.com/license înainte de folosire).
-- Licențele: fiecare model cu sursa și licența lui într-un registru verificat de un script în stilul `pnpm check:licenses` (un model fără licență permisivă înregistrată nu intră în build).
+- **Un fel nou, `model`** (grupa Models, unealta Interior → From a model): tipul numește un model (`model`), mărimea (lățime, adâncime, înălțime, ținute între limitele modelului), cota la care atârnă (`mount`, pentru lămpi) și materialele pe roluri. Motorul: `FurnitureModels.cs`.
+- **Biblioteca**: 39 de modele din Kenney Furniture Kit 2.0 (CC0; licența citită pe kenney.nl și în License.txt din kit), livrate neschimbate (GLB, 396 KB) cu previzualizarea izometrică din kit (200 KB, `ui/public/furniture-models`). Poly Haven: CC0 verificat (polyhaven.com/license acoperă și modelele), permis, nelivrat — modelele lui sunt scanate, cu texturi, de ordinul MB, nu corpuri simple colorate de materialele Lapin.
+- **Registrul** `engine/src/Modules/Interior/Lapin.Furniture.Models/furniture-assets.json`, scris de `scripts/furniture-assets.mjs` din kitul despachetat (citit ca date, nimic rulat din el): sursa (URL, autor, licență, ce s-a citit la verificare, data, hash-ul arhivei) și pentru fiecare model fișierul, hash-ul, previzualizarea, grupa, tipul IFC, întinderea la proporțiile lui (unitățile kitului × 2), mărimea de start, minimul și maximul, zonele, sloturile → roluri, cota, dacă se lipește de pereți, dacă arată locuri. `pnpm check:licenses` verifică registrul: fiecare fișier listat, cu hash-ul lui, licența în CC0-1.0/MIT-0, niciun fișier livrat nelistat.
+- **Întinderea pe zone** (nouă felii în 3D): pe fiecare axă, banda fără vârfuri cea mai lată din mijlocul (70 %) modelului; ce e înainte rămâne, ce e după se mută cu creșterea, banda se întinde. Fără bandă (sub o cincime din întindere) axa se scalează întreagă; lămpile și masa rotundă au zonă doar pe înălțime, plantele și covorul rotund se scalează întregi. Minimul lasă o zecime din bandă, capetele nu se micșorează niciodată. Zonele care se repetă (perne pe locuri) nu s-au făcut: modelele alese au șezutul dintr-o bucată.
+- **Materialele**: sloturile modelului (carpet, wood, metal, glass, lamp, plant…) → roluri; roluri noi `accent`, `shade`, `foliage`, `pot`. Un tip are materiale doar pentru rolurile modelului lui; alt model aduce mărimea și rolurile lui. Variante de culoare pe rol și patru stiluri (Nordic, Dark, Warm, Soft), orientative.
+- **Planul**: corpul întins văzut de sus, cu liniile ascunse scoase (`HiddenLines`), înlănțuit și îndreptat; locurile canapelei la 1:50; peste 1,2 m „overhead”. Fațadele și secțiunile din corp. **IFC**: `IfcFurniture` al `IfcFurnitureType`, tipul predefinit al modelului (SOFA, CHAIR, TABLE, USERDEFINED cu Floor lamp, Plant, Rug…), corpul ca B-rep fațetat sau set de fețe; modelul și mărimea se citesc înapoi. Extrasul de mobilier le listează pe grupă și model.
+- **Pe web**: GLB-urile stau într-un assembly propriu, `Lapin.Furniture.Models`, parte leneșă (cu `Lapin.Mesh`, al cărui cititor glTF le citește), atins doar prin `ModelMeshes` când se construiește prima piesă dintr-un model; registrul (47 KB) e în `Lapin.Furniture`. Măsurat: 60 KB brotli pentru modele; prima încărcare rămâne 13,8 MB, cu toate părțile leneșe 15,4 MB.
+- **Interfața**: `ModelEditor` în Tipuri de mobilier: galeria pe grupe, mărimile cu limitele modelului, cota, stilurile și culorile pe rol; previzualizarea motorului adaugă fața ca triunghiuri umbrite.
 
 ### Etapa 3: configurații salvate, făcută (decizia 476)
 

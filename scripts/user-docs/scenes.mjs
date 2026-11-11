@@ -5204,6 +5204,52 @@ export const scenes = [
     },
   },
   {
+    // Furniture from CC0 models stretched by zones (decision 477): a sofa stretched to 2.6 m (its arms and legs as they
+    // were), two armchairs, a coffee table on a rug, a floor lamp and plants; the types dialog on the sofa with its gallery,
+    // sizes, looks and colours beside the engine's preview; a look applied in one step; the room in 3D.
+    id: 'furniture-models',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Interior', { exact: true });
+      const make = async (model, name, spec = {}) => (await t.cmd('furniture.createType', { kind: 'model', name, spec: { model, ...spec } })).id;
+      const sofa = await make('loungeSofa', 'Sofa 2600', { width: 2.6, materials: { upholstery: 'Linen beige', legs: 'Oak solid wood' } });
+      const chair = await make('loungeChair', 'Armchair', { materials: { upholstery: 'Velvet sage' } });
+      const table = await make('tableCoffee', 'Coffee table', { materials: { top: 'Oak solid wood' } });
+      const rug = await make('rugRectangle', 'Rug 2400', { materials: { upholstery: 'Bouclé off-white', accent: 'Fabric charcoal' } });
+      const lamp = await make('lampRoundFloor', 'Floor lamp');
+      const plant = await make('pottedPlant', 'Plant');
+      const place = (typeId, x, y, rotation = 0) => t.cmd('furniture.place', { storeyId: s, typeId, x, y, rotation, against: false });
+      await place(rug, 0, -1.2);
+      await place(sofa, 0, 0);
+      await place(table, 0, -1.25);
+      await place(chair, -1.75, -1.6, 90);
+      await place(chair, 1.75, -1.6, 270);
+      await place(lamp, 1.75, 0.1);
+      await place(plant, -1.75, 0.1);
+      await t.tool('furniture.types');
+      await t.wait(400);
+      await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: 'Sofa 2600' }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-testid=furniture-model-editor]').count() === 1, 'a type of a model shows its configurator');
+      t.expect(await t.page.locator('.dialog [data-testid=furniture-model-gallery] .model-tile').count() >= 20, 'the gallery shows the models');
+      t.expect(await t.page.locator('.dialog .model-tile.on[data-model=loungeSofa]').count() === 1, 'the sofa\'s model is marked');
+      // A look from the dialog: one step on the type, materials for the roles the sofa has.
+      await t.page.locator('.dialog [data-look=warm]').click();
+      await t.wait(1200);
+      const spec = (await t.nodes()).find((n) => n.id === sofa).props.spec;
+      t.expect(spec.materials.upholstery === 'Velvet terracotta' && !('shade' in spec.materials), `the warm look set the sofa's materials (${JSON.stringify(spec.materials)})`);
+      t.expect(await t.page.locator('.dialog [data-testid=furniture-preview] .furniture-front polygon').count() > 20, 'the preview shows the sofa from the front');
+      await t.shot('furniture-models-types', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 2.4, pitch: -0.45, distance: 7.5, target: { x: 0, y: -0.8, z: 0.3 } }, false));
+      await t.wait(1500);
+      await t.shot('furniture-models-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // Furniture (docs/plan-furniture.md): a living room and a bedroom furnished — a sofa clicked by the wall (backed onto it),
     // armchairs, a coffee table, a table with chairs round it, a bed, bedside tables, a wardrobe, a kitchen drawn along a
     // wall — in plan by their symbols and in 3D; the types dialog with its preview; a piece's properties.

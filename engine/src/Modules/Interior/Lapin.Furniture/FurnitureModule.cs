@@ -36,6 +36,7 @@ public sealed class FurnitureModule : ILapinModule
         r.Catalog("kitchenLayouts", KitchenLayouts.Catalog());
         r.Catalog("kitchenUnits", KitchenUnits.Catalog());
         r.Catalog("casework", Casework.Catalog());
+        r.Catalog("models", FurnitureModels.Catalog());
         r.Service<IElementPlacement>(new FurniturePlacement());
         r.Service<IScheduleSource>(new FurnitureSchedule());
         r.Service<IScheduleSource>(new FurnitureByRoom());
@@ -76,12 +77,13 @@ public sealed class FurnitureModule : ILapinModule
             var attrs = type.CloneAttrs();
             attrs["spec"] = spec;
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : type.Name;
-            // A casework type's preset says its IFC type (a desk DESK, a bookcase SHELF…): changed, its pieces follow.
+            // A casework type's preset says its IFC type (a desk DESK, a bookcase SHELF…), a model's its model (a sofa SOFA,
+            // a lamp USERDEFINED): changed, its pieces follow.
             var (predefined, objectType) = FurnitureKinds.IfcOf(new Spec(spec));
-            var casework = kind.Key == Casework.Key;
-            var retyped = casework && predefined != type.PredefinedType;
-            ctx.Replace(type.With(name: name, attrs: attrs, predefinedType: casework ? predefined : null));
-            if (casework)
+            var retypes = FurnitureKinds.Retypes(kind);
+            var retyped = retypes && predefined != type.PredefinedType;
+            ctx.Replace(type.With(name: name, attrs: attrs, predefinedType: retypes ? predefined : null));
+            if (retypes)
                 foreach (var e in ctx.Model.RelatedOf(type.Id, IfcClass.RelDefinesByType).ToList())
                 {
                     var ea = e.CloneAttrs();
@@ -127,6 +129,8 @@ public sealed class FurnitureModule : ILapinModule
             var length = Json.Number(a["length"]);
             var (w, d) = FurnitureBodies.Footprint(spec, length);
             var against = a["against"] is not JsonValue av || !av.TryGetValue<bool>(out var ag) || ag;
+            // A table, a rug, a pendant stands free whatever the tool says (decision 477).
+            if (spec.Kind.Key == FurnitureModels.Key && !FurnitureModels.Of(spec).Against) against = false;
             var backed = against ? Against(ctx.Model, storey.Id, p, w, d) : null;
             if (backed is { } bk) (p, rotation) = bk;
             var id = Add(ctx, storey, type, p, rotation, Json.Number(a["offset"]) ?? 0, length);
@@ -247,11 +251,40 @@ public sealed class FurnitureModule : ILapinModule
                     ["part"] = x.Part, ["carcass"] = x.Carcass, ["role"] = x.Role, ["length"] = R(x.Length), ["width"] = R(x.Width), ["thickness"] = R(x.Thickness), ["grain"] = x.Grain, ["front"] = x.Front,
                 })]),
                 ["carcasses"] = new JsonArray([.. b.Carcasses.Select(c => (JsonNode)new JsonObject { ["index"] = c.Index, ["x0"] = R(c.X0), ["x1"] = R(c.X1) })]),
+                // A model's body seen from the front (decision 477): its triangles far to near, each its role's colour shaded by how it faces.
+                ["elevation"] = Elevation(b, colors),
+                ["roles"] = new JsonArray([.. FurnitureModels.RolesOf(s).Select(x => (JsonNode)x)]),
             };
         });
     }
 
     static double R(double v) => Math.Round(v, 5);
+
+    /// <summary>The front view of a model's triangles: x and z of each, far to near, its colour lit from the front left above.</summary>
+    static JsonArray Elevation(Builder b, Dictionary<string, string> colors)
+    {
+        var light = new Vec3(-0.4, -0.75, 0.55).Normalized();
+        var o = new JsonArray();
+        foreach (var (role, a, bb, c) in b.Elevation.OrderByDescending(t => t.A.Y + t.B.Y + t.C.Y))
+        {
+            var n = Vec3.Cross(bb - a, c - a);
+            if (n.Length < 1e-12 || n.Y > 0) continue; // seen from behind: hidden by the faces in front
+            var shade = 0.62 + 0.38 * Math.Max(0, Vec3.Dot(n.Normalized(), light));
+            o.Add((JsonNode)new JsonObject
+            {
+                ["color"] = Shade(colors.GetValueOrDefault(role, "#999999"), shade),
+                ["points"] = new JsonArray(R(a.X), R(a.Z), R(bb.X), R(bb.Z), R(c.X), R(c.Z)),
+            });
+        }
+        return o;
+    }
+
+    static string Shade(string hex, double k)
+    {
+        if (hex.Length != 7 || hex[0] != '#') return hex;
+        int C(int i) => (int)Math.Round(Math.Clamp(int.Parse(hex.AsSpan(i, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture) * k, 0, 255));
+        return $"#{C(1):x2}{C(3):x2}{C(5):x2}";
+    }
 
     // ---- The model ----
 
@@ -269,12 +302,12 @@ public sealed class FurnitureModule : ILapinModule
     static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);
 
     /// <summary>A type's name from its kind and size: Sofa 2200 × 950, Bed 1600 × 2050.</summary>
-    static string DefaultName(Spec s) => s.Kind.Key == Casework.Key ? $"{Casework.Label(s)} {Mm(s.W)} × {Mm(s.D)}" : s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
+    static string DefaultName(Spec s) => s.Kind.Key == FurnitureModels.Key ? $"{FurnitureModels.Of(s).Name} {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).W)} × {Mm(FurnitureModels.SizeOf(s, FurnitureModels.Of(s)).D)}" : s.Kind.Key == Casework.Key ? $"{Casework.Label(s)} {Mm(s.W)} × {Mm(s.D)}" : s.Kind.Key == "kitchen" ? KitchenLayouts.Of(s) is var l && l != "one-wall" ? $"{s.Kind.Label} {KitchenLayouts.Label(l)}, depth {Mm(s.D)}" : $"{s.Kind.Label}, depth {Mm(s.D)}" : $"{s.Kind.Label} {Mm(s.W)} × {Mm(s.D)}";
 
     static void EnsureMaterials(IEdit edit, JsonObject spec)
     {
         var s = new Spec(spec);
-        foreach (var role in s.Kind.Roles)
+        foreach (var role in FurnitureModels.RolesOf(s))
         {
             var name = s.MaterialName(role);
             Materials.Ensure(edit, name, FurnitureKinds.ColorOf(name));
