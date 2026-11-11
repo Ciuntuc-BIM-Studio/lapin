@@ -1947,6 +1947,12 @@ export const PL: Record<string, string> = {
   'Writing the page': 'Zapisywanie strony',
   'This web page was not written by Lapin: only a page Lapin exported (File → Lapin for the browser) opens as a project.': 'Ta strona internetowa nie została napisana przez Lapin: jako projekt otwiera się tylko strona wyeksportowana przez Lapin (Plik → Lapin dla przeglądarki).',
   'This Lapin page was exported without its project: it shows the model in a browser but cannot be opened. Export it again with the project included.': 'Ta strona Lapin została wyeksportowana bez swojego projektu: pokazuje model w przeglądarce, ale nie można jej otworzyć. Wyeksportuj ją ponownie razem z projektem.',
+  "Partition": "Partycja",
+  "All partitions": "Wszystkie partycje",
+  "No partition": "Bez partycji",
+  "The partitions the schedule lists": "Partycje, które zestawienie wymienia",
+  "Partition: bars in one are numbered, scheduled and filtered apart": "Partycja: pręty w jednej są numerowane, zestawiane i filtrowane osobno",
+  "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "Partycja nowych prętów: numerowane od 1, zestawiane i filtrowane osobno (puste: brak)",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

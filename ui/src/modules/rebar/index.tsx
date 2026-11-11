@@ -19,6 +19,7 @@ import { bars3d } from './bars3d';
 import { labelPlaceGrips, type LabelData } from './labelGrips';
 import { anchorGrips, type AnchorData } from './anchors';
 import { lazyPart } from '../../platform/lazyPart';
+import { PartitionOptions, partitionArg } from './partitions';
 
 // Fetched the first time each is opened (platform/lazyPart.tsx).
 const InsetPickDialog = lazyPart(() => import('./RebarDialogs').then((m) => m.InsetPickDialog), { title: 'Inset view' });
@@ -39,7 +40,8 @@ async function open(r: unknown) {
 const bar = (shape: string, label: string, icon: ToolDef['icon'], shortcut?: string): ToolDef => ({
   id: `rebar.${shape}`, label, icon, shortcut,
   gesture: { kind: 'point' },
-  complete: async ({ points: [p] }, ctx) => { await ctx.execute('rebar.add', { viewId: ctx.viewId, shape, at: [p.x, p.y] }); },
+  options: PartitionOptions,
+  complete: async ({ points: [p] }, ctx) => { await ctx.execute('rebar.add', { viewId: ctx.viewId, shape, at: [p.x, p.y], ...partitionArg() }); },
 });
 const straight = bar('straight', 'Straight bar', Minus, 'RB');
 const lBar = bar('L', 'L bar', LBarIcon);
@@ -51,17 +53,19 @@ const dot = bar('dot', 'Bar in section', BarDotIcon, 'BS');
 const polylineBar: ToolDef = {
   id: 'rebar.polyline', label: 'Polyline bar', icon: PolylineBarIcon,
   gesture: { kind: 'polyline' },
+  options: PartitionOptions,
   complete: async ({ points }, ctx) => {
     if (points.length < 2) return;
     const [o] = points;
-    await ctx.execute('rebar.add', { viewId: ctx.viewId, shape: 'polyline', at: [o.x, o.y], vertices: points.map((p) => [p.x - o.x, p.y - o.y]) });
+    await ctx.execute('rebar.add', { viewId: ctx.viewId, shape: 'polyline', at: [o.x, o.y], vertices: points.map((p) => [p.x - o.x, p.y - o.y]), ...partitionArg() });
   },
 };
 /** Stirrups (or any bar) along a path: its two ends. */
 const run: ToolDef = {
   id: 'rebar.run', label: 'Stirrups along', icon: StirrupsIcon, shortcut: 'RR',
   gesture: { kind: 'twoPoints' },
-  complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('rebar.addRun', { viewId: ctx.viewId, start: [a.x, a.y], end: [b.x, b.y] }); },
+  options: PartitionOptions,
+  complete: async ({ points: [a, b] }, ctx) => { await ctx.execute('rebar.addRun', { viewId: ctx.viewId, start: [a.x, a.y], end: [b.x, b.y], ...partitionArg() }); },
 };
 /** A section across the element clicked, where it was clicked, inset beside the click in this view. */
 const sectionHere: ToolDef = {

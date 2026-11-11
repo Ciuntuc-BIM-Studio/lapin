@@ -1949,6 +1949,12 @@ export const IT: Record<string, string> = {
   'Writing the page': 'Scrittura della pagina',
   'This web page was not written by Lapin: only a page Lapin exported (File → Lapin for the browser) opens as a project.': 'Questa pagina web non è stata scritta da Lapin: solo una pagina esportata da Lapin (File → Lapin per il browser) si apre come progetto.',
   'This Lapin page was exported without its project: it shows the model in a browser but cannot be opened. Export it again with the project included.': 'Questa pagina Lapin è stata esportata senza il suo progetto: mostra il modello in un browser, ma non può essere aperta. Esportala di nuovo con il progetto incluso.',
+  "Partition": "Partizione",
+  "All partitions": "Tutte le partizioni",
+  "No partition": "Nessuna partizione",
+  "The partitions the schedule lists": "Le partizioni che la distinta elenca",
+  "Partition: bars in one are numbered, scheduled and filtered apart": "Partizione: le barre di una sono numerate, elencate e filtrate a parte",
+  "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "La partizione delle nuove barre: numerate da 1 al suo interno, elencate e filtrate a parte (vuoto: nessuna)",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

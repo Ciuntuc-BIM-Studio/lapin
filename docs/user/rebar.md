@@ -52,4 +52,16 @@ A beam's **longitudinal bars** are not on the type (they run over several spans)
 
 **Bar schedule** makes a schedule of every bar by mark: diameter, shape, number, length of one, total length and mass, with the totals by diameter. A mark whose bars differ in diameter or length is noted. It is a schedule like the others: on sheets, in CSV and XLSX.
 
+## Partitions
+
+A **partition** sorts bars into sets of their own, as in Revit: beam stirrups, beam longitudinal bars, wall bars, a storey. It is a text on each bar or distribution (**Partition** in Properties).
+
+- **Drawing in one:** the drawing tools' bar has a **Partition** box. New bars go into the partition typed there, and it lists the ones the model already has.
+- **Marks:** each partition numbers its bars from 1, so mark 1 can be in several.
+- **On types:** stirrups and column bars set on a type have a partition each, in the Structure types dialog.
+- **The schedule:** with partitions it gains a **Partition** column, lists each one's marks apart and adds its mass after them. Its toolbar shows all partitions or one.
+- **Views:** a view filter with a parameter rule on **Partition** (Manage → View filters) hides or colours a partition's bars, like any other filter.
+
+![The bar schedule with two partitions](shots/rebar-partitions.webp)
+
 **Rebar settings** holds the project's choices: a colour for each diameter, the text and balloon sizes on paper, the steel, the cover, the segment lengths written along the bars, and the labels' style for each kind.

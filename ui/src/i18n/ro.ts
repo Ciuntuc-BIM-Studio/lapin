@@ -1945,6 +1945,12 @@ export const RO: Record<string, string> = {
   'Writing the page': 'Se scrie pagina',
   'This web page was not written by Lapin: only a page Lapin exported (File → Lapin for the browser) opens as a project.': 'Această pagină web nu a fost scrisă de Lapin: doar o pagină exportată de Lapin (Fișier → Lapin pentru browser) se deschide ca proiect.',
   'This Lapin page was exported without its project: it shows the model in a browser but cannot be opened. Export it again with the project included.': 'Această pagină Lapin a fost exportată fără proiectul ei: arată modelul într-un browser, dar nu poate fi deschisă. Exportă-o din nou cu proiectul inclus.',
+  "Partition": "Partiție",
+  "All partitions": "Toate partițiile",
+  "No partition": "Fără partiție",
+  "The partitions the schedule lists": "Partițiile pe care le cuprinde extrasul",
+  "Partition: bars in one are numbered, scheduled and filtered apart": "Partiție: barele dintr-una sunt numerotate, extrase și filtrate separat",
+  "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "Partiția în care intră barele noi: numerotate de la 1 în ea, extrase și filtrate separat (gol: niciuna)",
 };
 
 /** Phrases with a number or a name in them. */

@@ -197,7 +197,7 @@ public static class RebarSplit
         second2["at"] = Rebars.J(RebarShapes.Place(s, at, origin));
         second2.Remove("hooks");
         if (hooks?["end"] is JsonObject h1) second2["hooks"] = new JsonObject { ["end"] = h1.DeepClone() };
-        var mark = Rebars.NextMark(ctx.Model);
+        var mark = Rebars.NextMark(ctx.Model, Rebars.Partition(e));
         second2["mark"] = mark;
         second2["lapOffset"] = Math.Round(s.Diameter, 6);
         if (second2["label"] is JsonObject label)

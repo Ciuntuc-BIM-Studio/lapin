@@ -2000,6 +2000,12 @@ export const LO: Record<string, string> = {
   'Writing the page': 'ກຳລັງຂຽນໜ້າ',
   'This web page was not written by Lapin: only a page Lapin exported (File → Lapin for the browser) opens as a project.': 'ໜ້າເວັບນີ້ບໍ່ໄດ້ຖືກຂຽນໂດຍ Lapin: ມີແຕ່ໜ້າທີ່ Lapin ສົ່ງອອກ (ໄຟລ໌ → Lapin ສຳລັບບຣາວເຊີ) ເທົ່ານັ້ນທີ່ເປີດເປັນໂປຣເຈັກໄດ້.',
   'This Lapin page was exported without its project: it shows the model in a browser but cannot be opened. Export it again with the project included.': 'ໜ້າ Lapin ນີ້ຖືກສົ່ງອອກໂດຍບໍ່ມີໂປຣເຈັກຂອງມັນ: ມັນສະແດງແບບຈຳລອງໃນບຣາວເຊີ ແຕ່ເປີດບໍ່ໄດ້. ສົ່ງອອກອີກຄັ້ງພ້ອມໂປຣເຈັກ.',
+  "Partition": "ພາກສ່ວນ",
+  "All partitions": "ທຸກພາກສ່ວນ",
+  "No partition": "ບໍ່ມີພາກສ່ວນ",
+  "The partitions the schedule lists": "ພາກສ່ວນທີ່ຕາຕະລາງສະແດງ",
+  "Partition: bars in one are numbered, scheduled and filtered apart": "ພາກສ່ວນ: ເຫຼັກໃນພາກສ່ວນໜຶ່ງຖືກນັບເລກ, ລົງຕາຕະລາງ ແລະ ກັ່ນຕອງແຍກກັນ",
+  "The partition new bars go in: numbered from 1 in it, scheduled and filtered apart (empty: none)": "ພາກສ່ວນຂອງເຫຼັກໃໝ່: ນັບເລກຈາກ 1 ໃນມັນ, ລົງຕາຕະລາງ ແລະ ກັ່ນຕອງແຍກກັນ (ຫວ່າງ: ບໍ່ມີ)",
 };
 
 /** Phrases with a number or a name in them. */

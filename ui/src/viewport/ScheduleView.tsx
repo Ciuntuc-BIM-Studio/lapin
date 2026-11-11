@@ -18,6 +18,7 @@ import { execute, query, useSession } from '../engine/session';
 import { saveFile, safeFileName } from '../engine/files';
 import { DrawingLayer } from './DrawingLayer';
 import { TakeoffControls } from './TakeoffControls';
+import { RebarScheduleControls } from '../modules/rebar/partitions';
 import { placeOnSheet, sheetsFor } from '../modules/cost/schedules';
 import type { PenDto } from './drawing';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
@@ -163,6 +164,7 @@ export function ScheduleView() {
         <button type="button" className="icon" title={joinery ? 'A row of your own' : 'A row of your own, typed in'} onClick={addRow} data-testid="schedule-add-row"><Plus size={14} /><span className="small">Row</span></button>
         {kind !== 'lintel' && <button type="button" className="icon" title={joinery ? 'A column of your own: a card with no type, every value typed' : 'A column of your own, typed in'} onClick={addColumn} data-testid="schedule-add-column" data-i18n-ctx="schedule"><Plus size={14} /><span className="small">Column</span></button>}
         <button type="button" className={`icon${side === 'charts' ? ' on' : ''}`} title="Charts of the table" onClick={() => setSide(side === 'charts' ? null : 'charts')} data-testid="schedule-charts-toggle"><ChartColumn size={14} /><span className="small">Charts</span></button>
+        {kind === 'rebar' && <RebarScheduleControls id={node.id} partitions={node.props.partitions} />}
         {kind === 'quantities' && <TakeoffControls id={node.id} groupBy={node.props.groupBy} classes={node.props.classes} />}
         {kind === 'wallSweeps' && (
           <select value={Array.isArray(node.props.groupBy) ? String(node.props.groupBy[0] ?? '') : ''} title="What the wall sweeps are added up by first" data-testid="sweeps-group"

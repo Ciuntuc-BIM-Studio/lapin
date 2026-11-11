@@ -52,4 +52,16 @@ Etrierii nu se desenează unul câte unul: țin de **tip**. În Structură → T
 
 **Extras de armare** face un tabel cu fiecare bară pe mărci: diametru, formă, număr, lungimea uneia, lungimea totală și masa, cu totalurile pe diametre. O marcă ale cărei bare diferă la diametru sau lungime e notată. E un tabel ca celelalte: pe planșe, în CSV și XLSX.
 
+## Partiții
+
+O **partiție** împarte barele în seturi separate, ca în Revit: etrierii grinzilor, barele longitudinale ale grinzilor, barele pereților, un etaj. E un text pe fiecare bară sau distribuție (**Partiție** în Proprietăți).
+
+- **Desenat într-una:** bara uneltelor de desenare are o casetă **Partiție**. Barele noi intră în partiția scrisă acolo, iar caseta arată partițiile pe care le are deja modelul.
+- **Mărci:** fiecare partiție își numerotează barele de la 1, deci marca 1 poate exista în mai multe.
+- **Pe tipuri:** etrierii și barele stâlpilor setate pe un tip au fiecare partiția lor, în dialogul tipurilor de structură.
+- **Extrasul:** cu partiții, primește o coloană **Partiție**, listează mărcile fiecăreia separat și adaugă masa ei după ele. Din bara lui de unelte arată toate partițiile sau una.
+- **Vederi:** un filtru de vedere cu o regulă de parametru pe **Partition** (Manage → View filters) ascunde sau colorează barele unei partiții, ca orice alt filtru.
+
+![Extrasul de armare cu două partiții](shots/rebar-partitions.webp)
+
 **Setări armare** ține alegerile proiectului: o culoare pentru fiecare diametru, mărimile textului și ale balonului pe hârtie, oțelul, acoperirea, lungimile segmentelor scrise pe bare și stilul etichetelor pentru fiecare fel.

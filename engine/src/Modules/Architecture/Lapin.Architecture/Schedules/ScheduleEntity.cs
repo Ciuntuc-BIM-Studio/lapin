@@ -322,7 +322,7 @@ public sealed class ScheduleEntity : ISheetContent, Lapin.Platform.Documents.IDo
         {
             var s = Require(ctx.Model, (string?)a["id"]);
             var attrs = s.CloneAttrs();
-            foreach (var key in new[] { "rows", "sort", "drawings", "parts", "reviewed", "unused", "sortBy", "sortDesc", "groupBy", "classes" })
+            foreach (var key in new[] { "rows", "sort", "drawings", "parts", "reviewed", "unused", "sortBy", "sortDesc", "groupBy", "classes", "partitions" })
             {
                 if (!a.ContainsKey(key)) continue;
                 if (a[key] is null) attrs.Remove(key); else attrs[key] = a[key]!.DeepClone();

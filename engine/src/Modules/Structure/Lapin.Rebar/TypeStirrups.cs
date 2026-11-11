@@ -253,14 +253,16 @@ public static class TypeStirrups
         foreach (var e in Members(m))
             if (Of(m, e) is { } laid && laid.Stations.Count > 0)
                 foreach (var loop in laid.LoopsAt(laid.Stations[0]))
-                    yield return new RebarSchedule.Entry(laid.MarkOf(loop.Kind), laid.Spec.Diameter, loop.Kind == 1 && laid.Spec.Pattern == "diamond" ? "Diamond stirrup" : "Stirrup", laid.Stations.Count, laid.BarLength(loop), Derived: true);
+                    yield return new RebarSchedule.Entry(laid.MarkOf(loop.Kind), laid.Spec.Diameter, loop.Kind == 1 && laid.Spec.Pattern == "diamond" ? "Diamond stirrup" : "Stirrup", laid.Stations.Count, laid.BarLength(loop), Derived: true,
+                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "");
     }
 
     /// <summary>The elements a type's stirrups go in: the beams and the columns (read by class, not every entity).</summary>
     public static IEnumerable<Entity> Members(IModelView m) => m.OfClass(IfcClass.Beam).Concat(m.OfClass(IfcClass.Column));
 
     /// <summary>The highest mark a type's stirrups hold, inner ones included.</summary>
-    public static int HighestMark(IModelView m) => m.OfClass(IfcClass.BeamType).Concat(m.OfClass(IfcClass.ColumnType)).Select(t => StirrupSpec.Of(t))
+    public static int HighestMark(IModelView m, string partition = "") => m.OfClass(IfcClass.BeamType).Concat(m.OfClass(IfcClass.ColumnType))
+        .Where(t => (t.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "") == partition).Select(t => StirrupSpec.Of(t))
         .OfType<StirrupSpec>().SelectMany(s => (s.InnerMarks ?? []).Prepend(s.Mark)).DefaultIfEmpty(0).Max();
 
     /// <summary>A type's stirrups set from a command: {id, enabled?, diameter?, cover?, mode?, step?, zones?: [{share, step}] × 3, mark?, pattern? (a column: single, diamond, cross), label?: a style patch | null}.</summary>
@@ -268,6 +270,9 @@ public static class TypeStirrups
     {
         var type = ctx.Model.Get((string?)a["id"] ?? "") is { Class: IfcClass.BeamType or IfcClass.ColumnType } t ? t : throw new CommandException("Stirrups are set on a beam or a column type.");
         var now = StirrupSpec.Of(type) ?? StirrupSpec.Default();
+        // The partition its stirrups go in; a new one numbers them again, in it.
+        var partition = a.ContainsKey("partition") ? ((string?)a["partition"])?.Trim() ?? "" : type.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "";
+        var moved = partition != (type.Str(Rebars.StirrupsPartitionKey)?.Trim() ?? "");
         var enabled = a["enabled"] is JsonValue ev && ev.TryGetValue<bool>(out var en) ? en : now.Enabled;
         var d = Json.Number(a["diameter"]) ?? now.Diameter;
         if (d < 0.004 || d > 0.02) throw new CommandException("A stirrup is between 4 and 20 mm thick.");
@@ -287,17 +292,18 @@ public static class TypeStirrups
         var pattern = (string?)a["pattern"] ?? now.Pattern;
         if (!StirrupSpec.Patterns.Contains(pattern)) throw new CommandException("A column's stirrups are the perimeter's alone (single), with a diamond, or with two inside (cross).");
         if (type.Class == IfcClass.BeamType) pattern = "single";
-        var mark = (int)(Json.Number(a["mark"]) ?? now.Mark);
-        var inner = new List<int>(now.InnerMarks ?? []);
+        var mark = (int)(Json.Number(a["mark"]) ?? (moved ? 0 : now.Mark));
+        var inner = new List<int>(moved && a["mark"] == null ? [] : now.InnerMarks ?? []);
         if (enabled)
         {
-            var next = Rebars.NextMark(ctx.Model);
+            var next = Rebars.NextMark(ctx.Model, partition);
             if (mark <= 0) mark = next++;
             var need = pattern switch { "diamond" => 1, "cross" => 2, _ => 0 };
             while (inner.Count < need) inner.Add(next++);
         }
         var label = a.ContainsKey(LabelStyle.Key) ? LabelStyle.Patch(now.Label, a[LabelStyle.Key]) : now.Label;
         var attrs = type.CloneAttrs();
+        if (partition.Length > 0) attrs[Rebars.StirrupsPartitionKey] = partition; else attrs.Remove(Rebars.StirrupsPartitionKey);
         attrs[StirrupSpec.Key] = new StirrupSpec(enabled, d, cover, mode, step, zones, mark, pattern, inner, label).ToJson();
         ctx.Replace(type.With(attrs: attrs));
     }

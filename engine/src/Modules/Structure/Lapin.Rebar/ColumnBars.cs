@@ -163,10 +163,12 @@ public static class ColumnBars
         foreach (var e in m.OfClass(IfcClass.Column))
             if (Of(m, e, bases) is { } laid)
                 foreach (var g in laid.Lengths.GroupBy(x => Math.Round(x, 4)))
-                    yield return new RebarSchedule.Entry(laid.Spec.Mark, laid.Spec.Diameter, laid.Hooked ? "L bar" : "Straight bar", g.Count(), g.First(), Derived: true);
+                    yield return new RebarSchedule.Entry(laid.Spec.Mark, laid.Spec.Diameter, laid.Hooked ? "L bar" : "Straight bar", g.Count(), g.First(), Derived: true,
+                        Partition: m.RelatingOf(e.Id, IfcClass.RelDefinesByType)?.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "");
     }
 
-    public static int HighestMark(IModelView m) => m.OfClass(IfcClass.ColumnType).Select(t => ColumnBarsSpec.Of(t)?.Mark ?? 0).DefaultIfEmpty(0).Max();
+    public static int HighestMark(IModelView m, string partition = "") => m.OfClass(IfcClass.ColumnType)
+        .Where(t => (t.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "") == partition).Select(t => ColumnBarsSpec.Of(t)?.Mark ?? 0).DefaultIfEmpty(0).Max();
 
     /// <summary>A column type's bars set from a command: {id, enabled?, perFace?, diameter?, lap?, top? (auto, starter, hooks), mark?, label?: a style patch | null}.</summary>
     public static void Set(ICommandContext ctx, JsonObject a)
@@ -180,12 +182,16 @@ public static class ColumnBars
         if (d < 0.006 || d > 0.04) throw new CommandException("A bar is between 6 and 40 mm thick.");
         var lap = Json.Number(a["lap"]) ?? now.Lap;
         if (lap < 0 || lap > 5) throw new CommandException("The starter bars run 0 to 5 m past the top.");
-        var mark = (int)(Json.Number(a["mark"]) ?? now.Mark);
-        if (enabled && mark <= 0) mark = Rebars.NextMark(ctx.Model);
+        // The partition its bars go in; a new one numbers them again, in it.
+        var partition = a.ContainsKey("partition") ? ((string?)a["partition"])?.Trim() ?? "" : type.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "";
+        var moved = partition != (type.Str(Rebars.ColumnBarsPartitionKey)?.Trim() ?? "");
+        var mark = (int)(Json.Number(a["mark"]) ?? (moved ? 0 : now.Mark));
+        if (enabled && mark <= 0) mark = Rebars.NextMark(ctx.Model, partition);
         var top = (string?)a["top"] ?? now.Top;
         if (!ColumnBarsSpec.Tops.Contains(top)) throw new CommandException("A column's bars end as starter bars, with hooks, or by the column above (auto).");
         var label = a.ContainsKey(LabelStyle.Key) ? LabelStyle.Patch(now.Label, a[LabelStyle.Key]) : now.Label;
         var attrs = type.CloneAttrs();
+        if (partition.Length > 0) attrs[Rebars.ColumnBarsPartitionKey] = partition; else attrs.Remove(Rebars.ColumnBarsPartitionKey);
         attrs[ColumnBarsSpec.Key] = new ColumnBarsSpec(enabled, perFace, d, lap, mark, label, top).ToJson();
         ctx.Replace(type.With(attrs: attrs));
     }

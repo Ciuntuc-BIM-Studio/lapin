@@ -6792,6 +6792,30 @@ export const scenes = [
     },
   },
   {
+    // Rebar partitions (decision 483): bars in two partitions, each numbered from 1, the bar schedule listing them apart.
+    id: 'rebar-partitions',
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const view = (await t.cmd('view.create', { kind: 'section', start: [0, -1], end: [6, -1], scale: 50, name: 'Beam B1' })).id;
+      await t.cmd('rebar.add', { viewId: view, shape: 'straight', at: [0.5, 0.4], params: { length: 5 }, diameter: 0.016, partition: 'Beam bars' });
+      await t.cmd('rebar.add', { viewId: view, shape: 'straight', at: [0.5, 0.1], params: { length: 5 }, diameter: 0.012, partition: 'Beam bars' });
+      await t.cmd('rebar.addRun', { viewId: view, start: [0.5, 0.25], end: [5.5, 0.25], partition: 'Beam stirrups' });
+      const schedule = (await t.cmd('architecture.createSchedule', { kind: 'rebar' })).id;
+      await t.ui({ view: 'schedule', scheduleId: schedule, keyPlan: false });
+      await t.wait(1200);
+      const pane = page.locator('.schedule-pane');
+      const text = await pane.innerText();
+      t.expect(text.includes('Beam stirrups') && text.includes('Beam bars'), 'the schedule lists both partitions');
+      t.expect(await page.locator('[data-testid=rebar-schedule-partition]').count() === 1, 'the schedule chooses its partitions');
+      await t.shot('rebar-partitions', { of: '.schedule-pane', pad: 0 });
+      await page.locator('[data-testid=rebar-schedule-partition]').selectOption('Beam stirrups');
+      await t.wait(800);
+      t.expect(!(await pane.locator('table').first().innerText()).includes('Beam bars'), 'one partition alone');
+      await t.ui({ keyPlan: true });
+    },
+  },
+  {
     // An imported mesh's chair placed like any element (decision 448): six of them round a table with Modify → Array, their
     // triangles shared.
     id: 'reference-array',

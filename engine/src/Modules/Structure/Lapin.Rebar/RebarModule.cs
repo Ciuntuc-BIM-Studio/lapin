@@ -82,6 +82,14 @@ public static class Rebars
 
     public static Vec2 At(Entity e) => P(e.Attrs["at"]);
     public static int Mark(Entity e) => (int)Math.Max(1, Math.Round(e.Num("mark", 1)));
+    /// <summary>
+    /// A bar's partition (decision 483, as Revit's): a text that sorts bars into sets of their own (beam stirrups, wall bars, a
+    /// storey…), each numbered apart, scheduled and filtered on its own; "" when none.
+    /// </summary>
+    public static string Partition(Entity? e) => e?.Str(PartitionKey)?.Trim() ?? "";
+    public const string PartitionKey = "partition";
+    /// <summary>On a beam or column type, the partition of the bars it lays: its stirrups', its column bars'.</summary>
+    public const string StirrupsPartitionKey = "stirrupsPartition", ColumnBarsPartitionKey = "columnBarsPartition";
     public static int Count(Entity e) => (int)Math.Max(1, Math.Round(e.Num("count", 1)));
     /// <summary>Where the user put a bar's or a distribution's label (<c>label: {at, elbow, offset}</c>); null when nowhere.</summary>
     public static LabelPlace? LabelPlaceOf(Entity e) => e.Attrs[LabelStyle.Key] is JsonObject o && LabelPlace.From(o) is { IsEmpty: false } p ? p : null;
@@ -111,8 +119,20 @@ public static class Rebars
         return (path, positions, text, $"{positions.Count * Count(e)}{RebarShapes.Dia(s.Diameter)}/{text}");
     }
 
-    /// <summary>The next free mark: one over the highest in the model.</summary>
-    public static int NextMark(IModelView m) => 1 + Math.Max(m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Mark).DefaultIfEmpty(0).Max(), Math.Max(TypeStirrups.HighestMark(m), ColumnBars.HighestMark(m)));
+    /// <summary>The next free mark in a partition: one over the highest its bars hold (the bars drawn and those the types lay); marks start again in each partition.</summary>
+    public static int NextMark(IModelView m, string? partition = null)
+    {
+        var p = partition?.Trim() ?? "";
+        var drawn = m.OfClass(Class).Concat(m.OfClass(RunClass)).Where(e => Partition(e) == p).Select(Mark).DefaultIfEmpty(0).Max();
+        return 1 + Math.Max(drawn, Math.Max(TypeStirrups.HighestMark(m, p), ColumnBars.HighestMark(m, p)));
+    }
+
+    /// <summary>The partitions the model's bars are in, sorted ("" first when some bars have none).</summary>
+    public static List<string> Partitions(IModelView m) =>
+        [.. m.OfClass(Class).Concat(m.OfClass(RunClass)).Select(Partition)
+            .Concat(m.OfClass(IfcClass.BeamType).Concat(m.OfClass(IfcClass.ColumnType)).Where(t => StirrupSpec.Of(t) is { Enabled: true }).Select(t => t.Str(StirrupsPartitionKey)?.Trim() ?? ""))
+            .Concat(m.OfClass(IfcClass.ColumnType).Where(t => ColumnBarsSpec.Of(t) is { Enabled: true }).Select(t => t.Str(ColumnBarsPartitionKey)?.Trim() ?? ""))
+            .Distinct().Order(StringComparer.OrdinalIgnoreCase)];
 }
 
 /// <summary>The bar bending schedule: the bars by mark, their count, length and mass, the totals by diameter.</summary>
@@ -129,7 +149,7 @@ public sealed class RebarSchedule : IScheduleSource
     /// the type's while the lengths are each element's (a storey's height, hooks or starter bars): one row per shape and length,
     /// not a conflict.
     /// </summary>
-    public sealed record Entry(int Mark, double Diameter, string Shape, int Count, double Length, bool Derived = false);
+    public sealed record Entry(int Mark, double Diameter, string Shape, int Count, double Length, bool Derived = false, string Partition = "");
 
     public static List<Entry> Entries(IModelView m)
     {
@@ -140,45 +160,74 @@ public sealed class RebarSchedule : IScheduleSource
         {
             if (!Drawn(e)) continue;
             var s = Rebars.SpecOf(e);
-            o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, Rebars.Pieces(e), RebarShapes.Length(s)));
+            o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, Rebars.Pieces(e), RebarShapes.Length(s), Partition: Rebars.Partition(e)));
         }
         foreach (var e in m.OfClass(Rebars.RunClass))
         {
             if (!Drawn(e)) continue;
             var s = Rebars.SpecOf(e);
             var (_, positions, _, _) = Rebars.RunOf(e, s);
-            o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s)));
+            o.Add(new Entry(Rebars.Mark(e), s.Diameter, RebarShapes.Def(s.Shape).Label, positions.Count * Rebars.Count(e), RebarShapes.Length(s), Partition: Rebars.Partition(e)));
         }
         o.AddRange(TypeStirrups.Entries(m));
         o.AddRange(ColumnBars.Entries(m));
         return o;
     }
 
-    /// <summary>The schedule's rows by mark (the count summed; a mark whose bars differ in diameter or length is noted) and the totals by diameter.</summary>
-    public static List<IReadOnlyList<string>> Rows(IEnumerable<Entry> entries, out double totalMass)
+    /// <summary>
+    /// The schedule's rows by mark (the count summed; a mark whose bars differ in diameter or length is noted) and the totals by diameter.
+    /// <paramref name="byPartition"/>: a first column with each bar's partition, its marks apart from the others' (a mark is a partition's own),
+    /// and each partition's mass after its rows.
+    /// </summary>
+    public static List<IReadOnlyList<string>> Rows(IEnumerable<Entry> entries, out double totalMass, bool byPartition = false)
     {
         var rows = new List<IReadOnlyList<string>>();
         var byDia = new SortedDictionary<int, (double Length, double Mass)>();
         totalMass = 0;
         static string? Variant(Entry x) => x.Derived ? FormattableString.Invariant($"{x.Shape}|{Math.Round(x.Diameter * 1000, 1)}|{Math.Round(x.Length, 3)}") : null;
-        foreach (var g in entries.GroupBy(x => (x.Mark, Variant: Variant(x))).OrderBy(g => g.Key.Mark).ThenBy(g => g.First().Length))
+        IReadOnlyList<string> Row(string partition, params string[] cells) => byPartition ? [partition, .. cells] : cells;
+        var list = entries.ToList();
+        var parts = byPartition ? list.Select(x => x.Partition).Distinct().Order(StringComparer.OrdinalIgnoreCase).ToList() : [""];
+        foreach (var part in parts)
+        {
+            var partMass = 0.0;
+            var mine = byPartition ? list.Where(x => x.Partition == part) : list;
+        foreach (var g in mine.GroupBy(x => (x.Mark, Variant: Variant(x))).OrderBy(g => g.Key.Mark).ThenBy(g => g.First().Length))
         {
             var first = g.First();
             var count = g.Sum(x => x.Count);
             var conflict = g.Any(x => Math.Abs(x.Diameter - first.Diameter) > 1e-9 || Math.Abs(x.Length - first.Length) > 0.0005);
             var total = g.Sum(x => x.Count * x.Length);
             var mass = g.Sum(x => x.Count * x.Length * RebarShapes.MassPerMetre(x.Diameter));
-            rows.Add([g.Key.Mark.ToString(CultureInfo.InvariantCulture), N(first.Diameter * 1000, 3), first.Shape, count.ToString(CultureInfo.InvariantCulture), N(first.Length), N(total), N(mass), conflict ? "Ø or length differs" : ""]);
+            rows.Add(Row(part, g.Key.Mark.ToString(CultureInfo.InvariantCulture), N(first.Diameter * 1000, 3), first.Shape, count.ToString(CultureInfo.InvariantCulture), N(first.Length), N(total), N(mass), conflict ? "Ø or length differs" : ""));
             var d = (int)Math.Round(first.Diameter * 1000);
             byDia[d] = byDia.TryGetValue(d, out var acc) ? (acc.Length + total, acc.Mass + mass) : (total, mass);
             totalMass += mass;
+            partMass += mass;
         }
-        foreach (var (d, (length, mass)) in byDia) rows.Add(["", d.ToString(CultureInfo.InvariantCulture), "Total", "", "", N(length), N(mass), ""]);
-        if (rows.Count > 0) rows.Add(["Total", "", "", "", "", "", N(totalMass), ""]);
+            if (byPartition && parts.Count > 1) rows.Add(Row(part, "", "", "Total", "", "", "", N(partMass), ""));
+        }
+        foreach (var (d, (length, mass)) in byDia) rows.Add(Row("", "", d.ToString(CultureInfo.InvariantCulture), "Total", "", "", N(length), N(mass), ""));
+        if (rows.Count > 0) rows.Add(Row("", "Total", "", "", "", "", "", N(totalMass), ""));
         return rows;
     }
 
-    public ScheduleGrid Grid(IQueryContext q) => new(Label, Columns, Rows(Entries(q.Model), out _));
+    /// <summary>The partitions a schedule lists (its <c>partitions</c>; none: all of them).</summary>
+    public static HashSet<string>? PartitionsOf(Entity? schedule) =>
+        schedule?.Attrs["partitions"] is JsonArray a && a.Count > 0 ? a.Select(x => ((string?)x)?.Trim() ?? "").ToHashSet() : null;
+
+    public ScheduleGrid Grid(IQueryContext q) => Table(q, null);
+
+    public ScheduleGrid Grid(IQueryContext q, Entity schedule) => Table(q, schedule);
+
+    /// <summary>The table a schedule asks for: the partitions it lists (all when none chosen); a partition column once any bar has one.</summary>
+    static ScheduleGrid Table(IQueryContext q, Entity? schedule)
+    {
+        var entries = Entries(q.Model);
+        var byPartition = entries.Any(x => x.Partition.Length > 0);
+        if (PartitionsOf(schedule) is { } only) entries = [.. entries.Where(x => only.Contains(x.Partition))];
+        return new("Bar bending schedule", byPartition ? ["Partition", .. Columns] : Columns, Rows(entries, out _, byPartition));
+    }
 }
 
 /// <summary>
@@ -198,12 +247,12 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             new("mark", "Mark", "number", Min: 1), new("count", "Count", "number", Min: 1), new("diameter", "Diameter", "length", Min: 0.004, Max: 0.05),
             new("steel", "Steel", "choice", Choices: RebarShapes.Steels), new("view", "Seen", "choice", Choices: Rebars.Views),
             new("rotation", "Rotation (°)", "angle"), new("excludeSchedule", "Not in the schedule", "bool"), new("layer", "Layer", "text"),
-            new("lapOffset", "Drawn beside its lap", "length"),
+            new("lapOffset", "Drawn beside its lap", "length"), new(Rebars.PartitionKey, "Partition", "text"),
         ], "#0f766e", Kind: "annotation"));
         r.Class(new(Rebars.RunClass, "Bar distribution", [
             new("mark", "Mark", "number", Min: 1), new("count", "Bars at each position", "number", Min: 1), new("diameter", "Diameter", "length", Min: 0.004, Max: 0.05),
             new("step", "Step", "length", Min: 0.01), new("size", "Drawn length", "length", Min: 0.01), new("show", "Shown", "choice", Choices: Rebars.Shows),
-            new("steel", "Steel", "choice", Choices: RebarShapes.Steels), new("excludeSchedule", "Not in the schedule", "bool"),
+            new("steel", "Steel", "choice", Choices: RebarShapes.Steels), new("excludeSchedule", "Not in the schedule", "bool"), new(Rebars.PartitionKey, "Partition", "text"),
         ], "#1d4ed8", Kind: "annotation"));
 
         r.Catalog("shapes", new JsonObject
@@ -231,7 +280,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var view = Views.Find(ctx.Model, (string?)a["viewId"] ?? "") ?? throw new CommandException("A bar is drawn on a view.");
             var shape = (string?)a["shape"] ?? "straight";
             var def = RebarShapes.Def(shape);
-            var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["at"] = Rebars.J(Args.Point(a["at"], "the bar's point")), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model), ["count"] = 1 };
+            var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["at"] = Rebars.J(Args.Point(a["at"], "the bar's point")), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model, PartitionArg(a)), ["count"] = 1 };
             if (def.FreeVertices && a["vertices"] == null) attrs["vertices"] = new JsonArray(def.Vertices(new Dictionary<string, double>()).Select(p => (JsonNode)Rebars.J(p)).ToArray());
             Write(attrs, a, run: false);
             // Drawn inside an element's cut (a beam in its longitudinal section): the bar lies in that element, one across its width unless told more.
@@ -307,7 +356,7 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
             var start = Args.Point(a["start"], "the path's start");
             var end = Args.Point(a["end"], "the path's end");
             if ((end - start).Length < 1e-6) throw new CommandException("A distribution needs two different points.");
-            var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["start"] = Rebars.J(start), ["end"] = Rebars.J(end), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model), ["count"] = 1, ["step"] = 0.15 };
+            var attrs = new JsonObject { ["viewId"] = view.Id, ["shape"] = shape, ["start"] = Rebars.J(start), ["end"] = Rebars.J(end), ["diameter"] = def.DefaultDiameter, ["mark"] = Rebars.NextMark(ctx.Model, PartitionArg(a)), ["count"] = 1, ["step"] = 0.15 };
             Write(attrs, a, run: true);
             var e = new Entity(ctx.NewId(), Rebars.RunClass, $"{def.Label}s {Rebars.Mark(new Entity("", Rebars.RunClass, "", attrs))}", attrs);
             ctx.Add(e);
@@ -398,6 +447,8 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         r.Command("setColumnBars", "Column bars", (ctx, a) => { ColumnBars.Set(ctx, a); return null; });
 
         // What a bar or a distribution is: its length, developed length, mass, label, positions.
+        // The partitions the model's bars are in, for the schedule's and the tool's lists.
+        r.Query("partitions", (q, _) => new JsonArray(Rebars.Partitions(q.Model).Select(p => (JsonNode)p).ToArray()));
         r.Query("describe", (q, a) =>
         {
             var e = q.Model.Get((string?)a["id"] ?? "") is { } x && x.Class is Rebars.Class or Rebars.RunClass ? x : throw new CommandException("Not a bar.");
@@ -459,8 +510,12 @@ public sealed class RebarModule : ILapinModule, IViewAnnotations, IElementPlacem
         new(RebarAnchors.Anchors(s, at, cover).Select(a => (JsonNode)new JsonObject { ["key"] = a.Key, ["at"] = Rebars.J(a.At) }).ToArray());
 
     /// <summary>The attributes a command may set on a bar or a distribution, checked.</summary>
+    /// <summary>The partition a command gives (trimmed; "" none).</summary>
+    static string PartitionArg(JsonObject a) => ((string?)a[Rebars.PartitionKey])?.Trim() ?? "";
+
     static void Write(JsonObject attrs, JsonObject a, bool run)
     {
+        if (a.ContainsKey(Rebars.PartitionKey)) { if (PartitionArg(a) is { Length: > 0 } pa) attrs[Rebars.PartitionKey] = pa; else attrs.Remove(Rebars.PartitionKey); }
         if ((string?)a["shape"] is { } shape) { RebarShapes.Def(shape); attrs["shape"] = shape; }
         var def = RebarShapes.Def((string?)attrs["shape"] ?? "straight");
         if (a["params"] is JsonObject po)

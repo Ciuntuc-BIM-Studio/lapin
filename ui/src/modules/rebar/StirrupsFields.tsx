@@ -8,6 +8,7 @@ import { execute } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
 import { useRebarCatalog } from './RebarSection';
 import { LabelStyleFields, useRebarSettings, type LabelStylePatch } from './LabelStyleFields';
+import { PartitionInput } from './partitions';
 
 interface Zone { share: number; step: number }
 interface Spec { enabled: boolean; diameter: number; cover: number; mode: 'uniform' | 'zones'; step: number; zones: Zone[]; mark: number; pattern?: 'single' | 'diamond' | 'cross'; label?: LabelStylePatch }
@@ -53,6 +54,7 @@ export function StirrupsFields({ type, kind }: { type: NodeDto; kind: string }) 
           </select>
         </label>}
         <label className="field-line"><span className="eyebrow">Mark</span><NumberField value={s.mark || null} min={1} integer onCommit={(n) => { if (n != null) set({ mark: n }); }} /></label>
+        <label className="field-line"><span className="eyebrow">Partition</span><PartitionInput value={String(type.props.stirrupsPartition ?? '')} testId="type-stirrups-partition" onCommit={(partition) => void execute('rebar.setTypeStirrups', { id: type.id, partition })} /></label>
         <p className="muted small">Drawn in sections as they lie to the axis, in structural plans and elevations, and counted in the bar schedule. The longitudinal bars are drawn by hand (Rebar 2D).</p>
         <p className="eyebrow">Label</p>
         <LabelStyleFields style={s.label} base={settings?.labels.stirrups} onChange={(label) => set({ label })} onReset={() => void execute('rebar.setTypeStirrups', { id: type.id, label: null })} testId="type-stirrups-label" withLine />
@@ -85,6 +87,7 @@ function ColumnBarsFields({ type }: { type: NodeDto }) {
             <option value="auto">By the column above</option><option value="starter">Starter bars past the top</option><option value="hooks">90° hooks inside the top</option>
           </select>
         </label>
+        <label className="field-line"><span className="eyebrow">Partition</span><PartitionInput value={String(type.props.columnBarsPartition ?? '')} testId="column-bars-partition" onCommit={(partition) => void execute('rebar.setColumnBars', { id: type.id, partition })} /></label>
         {b.top !== 'hooks' && <label className="field-line"><span className="eyebrow">Starter bars past the top</span><LengthField metres={b.lap} min={0} max={5} onCommit={(m) => { if (m != null) set({ lap: m }); }} /></label>}
         <p className="muted small">The corners shared, the rest of each face spread evenly, inside the stirrups; from the base to the top and on by the lap, storey by storey. By the column above: where none stands on a column (the top storey), its bars end under the top with a 90° hook inwards.</p>
         <p className="eyebrow">Label</p>
