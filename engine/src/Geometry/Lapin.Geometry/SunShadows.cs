@@ -94,7 +94,21 @@ public static class SunShadows
                 zone = (new Vec2(Math.Max(rBox.Min.X, sb.Min.X), Math.Max(rBox.Min.Y, sb.Min.Y)), new Vec2(Math.Min(rBox.Max.X, sb.Max.X), Math.Min(rBox.Max.Y, sb.Max.Y)));
                 if (zone.Min.X >= zone.Max.X || zone.Min.Y >= zone.Max.Y) return [];
             }
-            return scene.Visible(rs, shade ? null : shadows, zone);
+            // Each place once: two flush faces that overlap (two walls, a wall and a slab's edge) would give the same shadow twice,
+            // and the drawing fills its shadows even-odd, so the overlap would cancel out. A face is also hidden by the flush faces
+            // before it in the drawing's order, which keep the overlap (and its owner); the surface hatches, which share
+            // ViewFaces, are left as they were.
+            var over = scene.Over(rs, zone);
+            var nearer = over.Count;
+            foreach (var h in scene.SeenFaces)
+            {
+                if (ReferenceEquals(h, rs)) break;
+                if (h.Face.Owner >= 0 && Vec3.Dot(h.Face.Normal, n) > 1 - 1e-9 && Math.Abs(Vec3.Dot(h.P0 - p0, n)) < 1e-4
+                    && !(h.Box.Max.X <= zone.Min.X || h.Box.Min.X >= zone.Max.X || h.Box.Max.Y <= zone.Min.Y || h.Box.Min.Y >= zone.Max.Y)) over.Add(h);
+            }
+            if (over.Count == nearer) return scene.Visible(rs, shade ? null : shadows, zone);
+            return ViewFaces.Cells(rs.View, shade ? null : shadows, over.Select(h => h.View).ToList(),
+                (k, at) => k >= nearer || scene.DepthOn(over[k].Face.Normal, over[k].P0, at) < scene.DepthOn(n, p0, at) - 1e-4, zone).ToList();
         }
 
         // Whether a caster's box, carried along the rays onto a plane, may reach a face's box in the view.
