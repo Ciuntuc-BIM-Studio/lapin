@@ -1385,7 +1385,7 @@ button.mode-chip:hover { color: var(--accent); }
 /* The Gantt (planning module, docs/plan-4d5d.md): the table over the chart's left, the chart drawn for what is in view. */
 :root { --gantt-bar: #4f7fb0; --gantt-critical: #d64545; --gantt-summary: #2c3440; --gantt-off: rgba(127, 127, 127, 0.08); }
 [data-theme="graphite"] { --gantt-bar: #6f9fd0; --gantt-critical: #ff6b6b; --gantt-summary: #d8d2c6; --gantt-off: rgba(255, 255, 255, 0.05); }
-.gantt-pane { display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--panel); outline: none; }
+.gantt-pane { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; background: var(--panel); outline: none; }
 .gantt-toolbar { position: static; max-width: none; justify-content: flex-start; padding: 6px 10px; border-bottom: 1px solid var(--rule); gap: 4px; }
 .gantt-toolbar .group-rule { width: 1px; height: 20px; background: var(--rule); margin: 0 4px; }
 .gantt-toolbar .icon.on { background: var(--accent-wash); color: var(--accent); }
@@ -1394,7 +1394,9 @@ button.mode-chip:hover { color: var(--accent); }
 .gantt-zoom .chip.on { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
 .gantt-facts { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-muted); }
 .gantt-facts input[type="date"] { font-size: 12px; margin-left: 4px; }
-.gantt-scroll { position: relative; flex: 1 1 auto; overflow: auto; min-height: 0; }
+/* The toolbar and the simulation player wrap on a narrow pane: they scroll within a share of it, so the table keeps its rows and its scrollbars (a Gantt in a split pane under the 3D view). */
+.gantt-top { flex: 0 1 auto; min-height: 0; max-height: 45%; overflow-y: auto; }
+.gantt-scroll { position: relative; flex: 1 1 auto; overflow: auto; min-height: 96px; }
 .gantt-canvas { position: relative; }
 .gantt-view { position: sticky; top: 0; left: 0; overflow: hidden; }
 .gantt-head-time { position: absolute; top: 0; background: var(--panel); border-bottom: 1px solid var(--rule); }
@@ -1540,7 +1542,7 @@ button.mode-chip:hover { color: var(--accent); }
 dl.fields label.check { display: flex; align-items: center; gap: 6px; }
 dl.fields label.check input { width: auto; margin: 0; }
 /* The 4D simulation (docs/plan-4d5d.md, stage 4): the player at the Gantt's top, the date line, the card over the model, the settings. */
-.sim-bar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 5px 10px; border-bottom: 1px solid var(--rule); background: var(--raised); font-size: 12px; }
+.sim-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 5px 10px; border-bottom: 1px solid var(--rule); background: var(--raised); font-size: 12px; }
 .sim-bar .icon.on { background: var(--accent-wash); color: var(--accent); }
 .sim-bar select, .sim-bar .sim-date { font-size: 12px; padding: 1px 4px; }
 .sim-scrub { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); }
@@ -1549,7 +1551,7 @@ dl.fields label.check input { width: auto; margin: 0; }
 .sim-key { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--ink-muted); }
 .sim-key i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; border: 1px solid rgba(0, 0, 0, 0.25); }
 .sim-key b { color: var(--ink); font-weight: 600; }
-.sim-settings { position: absolute; right: 10px; top: 100%; z-index: 20; display: grid; gap: 6px; width: 270px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); }
+.sim-settings { position: absolute; right: 10px; top: 44px; max-height: calc(100% - 52px); overflow-y: auto; z-index: 20; display: grid; gap: 6px; width: 270px; padding: 8px 10px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); }
 .sim-colour { display: flex; align-items: center; gap: 8px; }
 .sim-colour input[type='color'] { width: 28px; height: 20px; padding: 0; border: 1px solid var(--rule-strong); background: none; }
 .sel-card.sim-card { left: 12px; right: auto; bottom: 12px; width: auto; max-width: 340px; gap: 4px; }

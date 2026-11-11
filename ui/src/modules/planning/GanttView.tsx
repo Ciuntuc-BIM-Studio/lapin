@@ -346,6 +346,7 @@ export function GanttView() {
 
   return (
     <div className="gantt-pane" data-testid="gantt" ref={root} tabIndex={0} onKeyDown={onKey}>
+      <div className="gantt-top">
       <div className="view-toolbar gantt-toolbar">
         <button type="button" className="icon" title="A new task before the one selected (Insert)" onClick={() => void addTask(false)} data-testid="gantt-add"><Plus size={14} /><span className="small">Task</span></button>
         <button type="button" className="icon" title="A milestone before the task selected (Shift+Insert)" onClick={() => void addTask(true)}><Diamond size={14} /><span className="small">Milestone</span></button>
@@ -383,6 +384,7 @@ export function GanttView() {
         </span>
       </div>
       <SimulationBar />
+      </div>
       <div className="gantt-scroll" ref={scroller} onScroll={(e) => { const el = e.currentTarget; setScroll({ left: el.scrollLeft, top: el.scrollTop }); setLinkEdit(null); }}>
         <div className="gantt-canvas" style={{ width: TABLE_W + chartW, height: HEAD_H + totalH }}>
           <div className="gantt-view" style={{ width: size.w, height: size.h }}>
