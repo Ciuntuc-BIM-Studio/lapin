@@ -1,6 +1,6 @@
 # SDNF (`.sdnf`): the Steel Detailing Neutral File
 
-Decision 463, a tester's report #141: *"SDNF is about the only format that allows round-tripping through supported applications."* Lapin writes SDNF 3.0 and reads 3.0 and 2.0, in the steel module (a product without it offers neither). Tekla Structures, Advance Steel, SDS2, ProStructures, AVEVA E3D, Smart 3D/FrameWorks, RISA, SCIA and Dlubal read and write it.
+Decision 474, a tester's report #141: *"SDNF is about the only format that allows round-tripping through supported applications."* Lapin writes SDNF 3.0 and reads 3.0 and 2.0, in the steel module (a product without it offers neither). Tekla Structures, Advance Steel, SDS2, ProStructures, AVEVA E3D, Smart 3D/FrameWorks, RISA, SCIA and Dlubal read and write it.
 
 ## The specification
 
