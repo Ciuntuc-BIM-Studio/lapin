@@ -55,6 +55,52 @@ A kitchen type has a **Layout**: **One wall** (the straight run), **Galley** (tw
 
 **Kitchen** (<kbd>KT</kbd>) draws any layout with two points along the wall the main run is against: the line is its length, its back on the wall’s face, and an L, a peninsula, a U or a galley is slid into the corner or between the walls it is drawn near. **Flip** gives an L or a peninsula its corner on the other side. The furniture schedule names the layout and lists the footprint’s depth. In IFC it stays an IfcFurniture of a user-defined Kitchen type.
 
+### Kitchen units and appliances
+
+A kitchen type can list its own **units** under its parameters in **Furniture types**, in two lines:
+
+- the **Base line**: the main run's units from the left as seen from the front (after a blind corner);
+- the **Wall line**: the units hung above it.
+
+**Add** puts a unit of the chosen kind at the end of a line. **Typical run** starts the base line from a sink, a dishwasher, a unit of drawers and a hob over an oven. The arrows move a unit left or right, and the bin takes it out.
+
+Each unit has a **width**. A cabinet takes any width from 100 to 800 mm: choose 150, 200, 300, 400, 450, 500, 600 or 800, or type another. An appliance takes the sizes it comes in. The units on the base line are:
+
+- **Base unit**, whose **Front** is a drawer over a door, doors (one or two, with the side a single door is **hinged on**), drawers (1 to 4), pan drawers (a shallow drawer over two deep ones) or open shelves;
+- **Sink unit**: a single sink, a 1½ bowl sink, a double sink (from 800) or a corner sink, with a standard tap, a pull-out tap or none. A corner sink reaches into the blind corner when it stands next to it.
+- **Hob over an oven**, 600, 800 or 900 wide, induction or gas, with or without the oven under it;
+- **Freestanding cooker**, 500, 600 or 900 wide, induction or gas. The worktop stops on either side of it.
+- **Dishwasher**, integrated, 450 or 600 wide, behind a full-height front that matches the others;
+- **Fridge**: under the counter, tall and integrated (a fridge door over a freezer door), or freestanding;
+- **Oven tall unit**, with drawers under the oven and a door above it;
+- **Tall unit**, with doors or open shelves;
+- **Filler** and **Gap**.
+
+A tall unit, a fridge or an oven unit has its own **Height**. On the wall line, a **Wall unit** has doors, glazed doors or open shelves, its own **Height** and its own height **From the floor**. Leave either empty to take the run's values. A **Hood** is a chimney hood (650 above the worktop, with its flue up to the wall units' top) or an integrated hood in a wall unit. A **Gap** leaves the wall bare. Wall units step past a tall unit.
+
+With no wall line listed, each base unit gets a wall unit of its width, and a hob or a cooker gets a chimney hood. On an island or a peninsula, **Hood over the hob there** hangs a hood over the hob that stands on it.
+
+What the units leave of the run is split evenly as before, and less than 100 mm becomes a filler. Units that do not fit the run are left out, and the preview and the element say so. **Fit to units** in a kitchen's properties sets its length to what its units need: theirs, plus a blind corner and the tall unit at its end. A type with no units of its own is built as before.
+
+In plan, each unit has its own symbol:
+
+- base doors' swings, dashed and only at the finest detail;
+- the sink's bowls and its tap;
+- the hob's zones or burners;
+- tall units crossed;
+- **DW** on the dishwasher, **F** on a fridge and **OV** on an oven unit;
+- wall units and hoods overhead.
+
+Elevations and 3D show each front, handle and appliance.
+
+The materials have two more roles: **Plinth** and **Handles**, besides the fronts, the carcass (body), the worktop (top), metal and glass. A kitchen type made before this takes its body's material for the plinth and its metal's for the handles.
+
+![A kitchen type's units: the base line and the wall line, with the engine's preview](shots/kitchen-units-types.webp)
+
+![A kitchen of mixed units and appliances, in 3D](shots/kitchen-units-3d.webp)
+
+**Interior → Kitchen units** makes a schedule of each kitchen's units, from the left, base line then wall line, with their width, height and front or appliance. In IFC the kitchen stays one IfcFurniture of its type, and the units travel with the type, so Lapin reads them back.
+
 ## A piece's properties
 
 Select a piece to see:
@@ -85,8 +131,8 @@ Drag the grip in the middle of a piece to move it; drag the grip in front of it 
   - a sideboard: doors and drawers;
   - a table: rectangular, round or oval, on four legs or a pedestal;
   - a desk: a drawer pedestal on the left or right;
-  - a kitchen: base unit width, plinth, worktop, where the sink and hob go, wall units, tall unit;
-- its **materials** by role: body, upholstery, top, fronts, linen, metal, glass. Type any material name; one the project does not have is made, and **Manage → Materials** sets its colour and hatches.
+  - a kitchen: base unit width, plinth, worktop, where the sink and hob go, wall units, tall unit, and its own units (above);
+- its **materials** by role: body, upholstery, top, fronts, linen, metal, glass, and a kitchen's plinth and handles. Type any material name; one the project does not have is made, and **Manage → Materials** sets its colour and hatches.
 
 The preview beside the fields shows the type's plan symbol and its front as you change it. Every piece of a type follows any change to it.
 

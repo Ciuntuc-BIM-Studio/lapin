@@ -19,6 +19,13 @@ public sealed class Builder(Vec2 at, double z, double rotationDeg, bool mirror)
     public readonly List<Vec2> Snaps = [];
     /// <summary>The pieces in the local frame, for the types dialog's front view: x, z extents.</summary>
     public readonly List<(string Role, double X0, double X1, double Z0, double Z1, double Y0)> Front = [];
+    /// <summary>What the piece could not build as asked (a kitchen's units past its run's end).</summary>
+    public readonly List<string> Warnings = [];
+    /// <summary>A kitchen's units as laid (decision 472), for its schedule.</summary>
+    public readonly List<KitchenUnitRow> Units = [];
+
+    /// <summary>Whether it is built mirrored (its spans and plan turned over about its middle).</summary>
+    public bool Mirrored => mirror;
 
     double Mx(double x) => mirror ? -x : x;
     Vec3 W(double x, double y, double zz) => new(at.X + c * x - s * y, at.Y + s * x + c * y, z + zz);
@@ -65,6 +72,8 @@ public sealed class Builder(Vec2 at, double z, double rotationDeg, bool mirror)
     // ---- Plan ----
 
     public void Line(string kind, params (double X, double Y)[] pts) => Plan.Add(new PlanItem(kind, false, [.. pts.Select(p => Q(p.X, p.Y))]));
+    /// <summary>A line drawn only from a level of detail on (<see cref="PlanDetail"/>): a door's swing at 1:50, not at 1:200.</summary>
+    public void LineFrom(int minDetail, string kind, IEnumerable<(double X, double Y)> pts) => Plan.Add(new PlanItem(kind, false, [.. pts.Select(p => Q(p.X, p.Y))], MinDetail: minDetail));
     public void Loop(string kind, IEnumerable<(double X, double Y)> pts) => Plan.Add(new PlanItem(kind, true, [.. pts.Select(p => Q(p.X, p.Y))]));
     public void PlanRect(string kind, double x0, double x1, double y0, double y1, double r = 0) => Loop(kind, Rect(x0, x1, y0, y1, r));
     public void Circle(string kind, double cx, double cy, double r, int sides = 24) =>

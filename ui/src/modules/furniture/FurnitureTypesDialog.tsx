@@ -12,8 +12,9 @@ import type { NodeDto } from '../../engine/protocol';
 import { relatedOf } from '../../engine/model';
 import { deleteType } from '../core/deleteType';
 import { LengthField, NumberField } from '../../shell/cells';
+import { KitchenUnitsEditor } from './KitchenUnitsEditor';
 import {
-  CHOICE_LABELS, ROLE_LABELS, TYPE_CLASS, appliesTo, chooseType, kindOf, planBox, planPaths, sizeOf, specOf, useTypesDialog,
+  CHOICE_LABELS, ROLE_FALLBACK, ROLE_LABELS, TYPE_CLASS, appliesTo, chooseType, kindOf, planBox, planPaths, sizeOf, specOf, useTypesDialog,
   type FurnitureKind, type FurnitureSpec, type KindParam, type KitchenLayout, type PreviewDto,
 } from './furniture';
 
@@ -50,6 +51,7 @@ export function FurniturePreview({ kind, spec, length }: { kind: string; spec: F
         <line x1={fx0} x2={fx1} y1={0} y2={0} stroke="currentColor" strokeWidth={(fx1 - fx0) / 300} />
       </svg>
       <p className="muted small" data-no-i18n>{Math.round(p.width * 1000)} × {Math.round(p.depth * 1000)} × {Math.round(p.height * 1000)} mm</p>
+      {(p.warnings ?? []).map((w, i) => <p key={i} className="error-text small">{w}</p>)}
     </div>
   );
 }
@@ -142,6 +144,7 @@ export function FurnitureTypesDialog() {
                 <button type="button" className="btn small" onClick={() => void duplicate()} title="A copy of this type, to change"><Copy size={13} /> Duplicate</button>
               </div>
               <div className="furniture-edit-grid">
+                <div>
                 <dl className="fields">
                   <dt>Name</dt>
                   <dd><input key={type.id + type.name} data-field="furniture-type-name" defaultValue={type.name} onBlur={(e) => { const n = e.target.value.trim(); if (n && n !== type.name) update({}, n); }} /></dd>
@@ -161,11 +164,14 @@ export function FurnitureTypesDialog() {
                       <dt>{ROLE_LABELS[role] ?? role}</dt>
                       <dd>
                         <input list="furniture-materials" data-role={role} key={`${type.id}${role}${spec.materials?.[role] ?? ''}`} defaultValue={spec.materials?.[role] ?? ''}
+                          placeholder={ROLE_FALLBACK[role] ? spec.materials?.[ROLE_FALLBACK[role]] : undefined}
                           onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== spec.materials?.[role]) update({ materials: { [role]: v } }); }} />
                       </dd>
                     </div>
                   ))}
                 </dl>
+                {spec.kind === 'kitchen' && <KitchenUnitsEditor spec={spec} update={update} />}
+                </div>
                 <FurniturePreview kind={kind.key} spec={spec} />
               </div>
               <datalist id="furniture-materials">{materials.map((m) => <option key={m} value={m} />)}</datalist>

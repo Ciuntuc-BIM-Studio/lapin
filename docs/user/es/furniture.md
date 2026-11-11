@@ -55,6 +55,52 @@ Un tipo de cocina tiene una **Layout** (disposición): **One wall** (la línea r
 
 **Kitchen** (<kbd>KT</kbd>) dibuja cualquier disposición con dos puntos a lo largo del muro donde está la línea principal: la línea es su longitud, su fondo sobre la cara del muro, y una L, una península, una U o una cocina en paralelo se desliza al rincón o entre los muros junto a los que se dibuja. **Flip** da a una L o a una península el rincón al otro lado. La tabla de mobiliario nombra la disposición y da el fondo de la huella. En IFC sigue siendo un IfcFurniture de un tipo Kitchen definido por el usuario.
 
+### Muebles y electrodomésticos de la cocina
+
+Un tipo de cocina puede enumerar sus propios **módulos** bajo sus parámetros, en **Tipos de mobiliario**, en dos líneas:
+
+- la **Línea de muebles bajos**: los módulos de la línea principal desde la izquierda, vistos de frente (después de un rincón ciego);
+- la **Línea de muebles altos**: los módulos colgados encima de ella.
+
+**Añadir** pone un módulo de la clase elegida al final de una línea. **Cocina típica** empieza la línea de muebles bajos con un fregadero, un lavavajillas, un módulo de cajones y una placa sobre un horno. Las flechas mueven un módulo a la izquierda o a la derecha, y la papelera lo quita.
+
+Cada módulo tiene un **ancho**. Un mueble toma cualquier ancho de 100 a 800 mm: elija 150, 200, 300, 400, 450, 500, 600 u 800, o escriba otro. Un electrodoméstico toma los tamaños en que se fabrica. Los módulos de la línea de muebles bajos son:
+
+- **Mueble bajo**, cuyo **Frente** es un cajón sobre una puerta, puertas (una o dos, con el lado en que se articula una puerta sola, **Bisagras en el lado**), cajones (1 a 4), cajones para ollas (un cajón bajo sobre dos hondos) o estantes abiertos;
+- **Mueble de fregadero**: un fregadero de un seno, de 1½ senos, doble (desde 800) o de rincón, con grifo normal, grifo extraíble o sin grifo. Un fregadero de rincón llega al rincón ciego cuando está junto a él.
+- **Placa sobre horno**, de 600, 800 o 900 de ancho, de inducción o de gas, con o sin el horno debajo;
+- **Cocina independiente**, de 500, 600 o 900 de ancho, de inducción o de gas. La encimera se detiene a cada lado de ella.
+- **Lavavajillas** integrado, de 450 o 600 de ancho, tras un frente de altura completa que combina con los demás;
+- **Frigorífico**: bajo encimera, columna integrada (una puerta de frigorífico sobre una de congelador) o independiente;
+- **Columna de horno**, con cajones bajo el horno y una puerta encima;
+- **Columna**, con puertas o estantes abiertos;
+- **Tapajuntas** y **Hueco**.
+
+Una columna, un frigorífico o una columna de horno tiene su propia **Altura**. En la línea de muebles altos, un **Mueble alto** tiene puertas, puertas de vidrio o estantes abiertos, su propia **Altura** y su propia altura **Desde el suelo**. Deje cualquiera de las dos vacía para tomar los valores de la línea. Una **Campana** es una campana de chimenea (a 650 sobre la encimera, con su conducto hasta lo alto de los muebles altos) o una campana integrada en un mueble alto. Un **Hueco** deja el muro libre. Los muebles altos pasan de largo ante una columna.
+
+Sin una línea de muebles altos enumerada, cada mueble bajo recibe un mueble alto de su ancho, y una placa o una cocina recibe una campana de chimenea. En una isla o una península, **Campana sobre la placa allí** cuelga una campana sobre la placa que está en ella.
+
+Lo que los módulos dejan de la línea se reparte por igual como antes, y menos de 100 mm se convierte en un tapajuntas. Los módulos que no caben en la línea se dejan fuera, y la vista previa y el elemento lo dicen. **Ajustar a los módulos**, en las propiedades de una cocina, da a su longitud lo que sus módulos necesitan: la suya, más un rincón ciego y la columna del extremo. Un tipo sin módulos propios se construye como antes.
+
+En planta, cada módulo tiene su propio símbolo:
+
+- el abatimiento de las puertas bajas, a trazos y solo en el detalle más fino;
+- los senos del fregadero y su grifo;
+- las zonas o los quemadores de la placa;
+- las columnas, cruzadas;
+- **DW** en el lavavajillas, **F** en un frigorífico y **OV** en una columna de horno;
+- los muebles altos y las campanas, por encima.
+
+Los alzados y el 3D muestran cada frente, tirador y electrodoméstico.
+
+Los materiales tienen dos funciones más: **Zócalo** y **Tiradores**, además de los frentes, el cuerpo, la encimera (tablero), el metal y el vidrio. Un tipo de cocina hecho antes toma para el zócalo el material de su cuerpo, y para los tiradores el de su metal.
+
+![Los módulos de un tipo de cocina: la línea de muebles bajos y la de muebles altos, con la vista previa del motor](shots/kitchen-units-types.webp)
+
+![Una cocina de módulos y electrodomésticos mezclados, en 3D](shots/kitchen-units-3d.webp)
+
+**Interiores → Muebles de cocina** hace una tabla de los módulos de cada cocina, desde la izquierda, la línea de muebles bajos y luego la de muebles altos, con su ancho, su altura y su frente o electrodoméstico. En IFC la cocina sigue siendo un solo IfcFurniture de su tipo, y los módulos viajan con el tipo, así que Lapin los vuelve a leer.
+
 ## Las propiedades de un mueble
 
 Seleccione un mueble para ver:
@@ -85,8 +131,8 @@ Arrastre el pinzamiento del centro de un mueble para moverlo; arrastre el que ti
   - un aparador: puertas y cajones;
   - una mesa: rectangular, redonda u ovalada, sobre cuatro patas o un pie central;
   - un escritorio: una cajonera a la izquierda o a la derecha;
-  - una cocina: ancho de los muebles bajos, zócalo, encimera, posición del fregadero y de la placa, muebles altos, columna;
-- sus **materiales** por función: cuerpo, tapicería, tablero, frentes, ropa de cama, metal, vidrio. Escriba cualquier nombre de material; uno que el proyecto no tenga se crea, y **Gestionar → Materiales** ajusta su color y sus sombreados.
+  - una cocina: ancho de los muebles bajos, zócalo, encimera, posición del fregadero y de la placa, muebles altos, columna y sus propios módulos (arriba);
+- sus **materiales** por función: cuerpo, tapicería, tablero, frentes, ropa de cama, metal, vidrio y, en una cocina, el zócalo y los tiradores. Escriba cualquier nombre de material; uno que el proyecto no tenga se crea, y **Gestionar → Materiales** ajusta su color y sus sombreados.
 
 La vista previa junto a los campos muestra el símbolo en planta y el frente del tipo a medida que lo cambia. Cada mueble de un tipo sigue cualquier cambio.
 

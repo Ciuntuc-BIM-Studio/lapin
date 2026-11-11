@@ -94,3 +94,37 @@ public sealed class FurnitureByRoom : IScheduleSource
         return new ScheduleGrid(Label, ["Room", "Type", "Kind", "Count"], rows);
     }
 }
+
+/// <summary>
+/// The kitchen units (decision 472): for each kitchen, its units from the left as seen from its front, base line then
+/// wall line, with their kind, width, height and front (the ones its type lays, and those the rest of its run is split into).
+/// </summary>
+public sealed class KitchenUnitsSchedule : IScheduleSource
+{
+    public string Kind => "kitchenUnits";
+    public string Label => "Kitchen units";
+
+    public ScheduleGrid Grid(IQueryContext q)
+    {
+        var m = q.Model;
+        var rooms = FurnitureRooms.Of(q);
+        var rows = new List<IReadOnlyList<string>>();
+        var keys = new List<string?>();
+        foreach (var e in m.OfClass(FurnitureModule.Class).OrderBy(e => e.Name, StringComparer.Ordinal))
+        {
+            var s = new Spec(FurnitureModule.TypeOf(m, e)?.Attrs["spec"] as JsonObject);
+            if (s.Kind.Key != "kitchen") continue;
+            var b = new Builder(new Vec2(0, 0), 0, 0, e.Bool("mirror") ^ FurnitureBodies.Handed(s));
+            FurnitureBodies.Build(b, s, e.NumOrNull("length"));
+            var label = FurnitureRooms.Label(rooms.GetValueOrDefault(e.Id)) is { Length: > 0 } room ? $"{e.Name} ({room})" : e.Name;
+            var first = true;
+            foreach (var u in b.Units)
+            {
+                rows.Add([first ? label : "", u.Line, u.Index.ToString(CultureInfo.InvariantCulture), u.Kind, FurnitureRooms.Mm(u.Width), u.Height > 0 ? FurnitureRooms.Mm(u.Height) : "", u.Detail]);
+                keys.Add(e.Id);
+                first = false;
+            }
+        }
+        return new ScheduleGrid(Label, ["Kitchen", "Line", "No.", "Unit", "Width (mm)", "Height (mm)", "Front / appliance"], rows, keys);
+    }
+}

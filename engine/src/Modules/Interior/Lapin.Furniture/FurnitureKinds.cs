@@ -44,9 +44,12 @@ public static class FurnitureKinds
         ["linen"] = ("Linen white", "#f2efe8"),
         ["metal"] = ("Brushed steel", "#9ea4aa"),
         ["glass"] = ("Black glass", "#202326"),
+        // A kitchen's plinth and handles (decision 472); a type without them takes its body's and its metal's.
+        ["plinth"] = ("Plinth anthracite", "#3c3f43"),
+        ["handles"] = ("Brushed steel", "#9ea4aa"),
     };
 
-    public static readonly string[] RoleOrder = ["body", "upholstery", "top", "fronts", "linen", "metal", "glass"];
+    public static readonly string[] RoleOrder = ["body", "upholstery", "top", "fronts", "linen", "metal", "glass", "plinth", "handles"];
 
     static KindParam L(string k, string l, double min = 0, double max = 3) => new(k, l, "length", min, max);
     static KindParam N(string k, string l, double min, double max) => new(k, l, "number", min, max);
@@ -141,11 +144,12 @@ public static class FurnitureKinds
             C("hobOn", "Hob on", "run", "other"), N("hobAt", "Hob at (0–1 along)", 0, 1), B("wallUnits", "Wall units"),
             L("wallFrom", "Wall units from", 1.2, 1.8), L("wallHeight", "Wall unit height", 0.3, 1.2), L("wallDepth", "Wall unit depth", 0.2, 0.5),
             C("tall", "Tall unit (fridge)", "none", "left", "right"),
+            In(B("islandHood", "Hood over the hob there"), "island", "peninsula"),
         ],
             D(("layout", "one-wall"), ("worktop", 0.04), ("plinth", 0.1), ("unit", 0.6), ("corner", "left"), ("leg", 2.4), ("leg2", 2.4), ("gap", 1.2), ("secondRun", 0.0),
               ("islandLength", 1.8), ("islandDepth", 0.9), ("islandAt", 0.5), ("peninsula", 1.2), ("overhang", 0.3), ("sinkOn", "run"), ("sinkAt", 0.3), ("hobOn", "run"), ("hobAt", 0.72),
-              ("wallUnits", true), ("wallFrom", 1.45), ("wallHeight", 0.72), ("wallDepth", 0.35), ("tall", "right")),
-            ["body", "fronts", "top", "metal", "glass"]),
+              ("wallUnits", true), ("wallFrom", 1.45), ("wallHeight", 0.72), ("wallDepth", 0.35), ("tall", "right"), ("islandHood", false)),
+            ["body", "fronts", "top", "plinth", "handles", "metal", "glass"]),
     ];
 
     public static FurnitureKind? Find(string? key) => All.FirstOrDefault(k => k.Key == key);
@@ -179,6 +183,14 @@ public static class FurnitureKinds
                         if (name is null || (string?)name is not { Length: > 0 } n) mats[role] = RoleDefaults[role].Material; else mats[role] = n.Trim();
                     }
                 spec["materials"] = mats;
+                continue;
+            }
+            // A kitchen's own units, along its main run and above it (decision 472): each checked; null or [] goes back to the even split.
+            if (key is KitchenUnits.BaseKey or KitchenUnits.UpperKey)
+            {
+                if (k.Key != "kitchen") throw new CommandException($"A {k.Label.ToLowerInvariant()} has no „{key}”.");
+                var list = KitchenUnits.Normalise(v, key == KitchenUnits.UpperKey);
+                if (list.Count == 0) spec.Remove(key); else spec[key] = list;
                 continue;
             }
             if (key is "width" or "depth" or "height")
@@ -226,5 +238,8 @@ public sealed class Spec(JsonObject? o)
     public int Int(string key, int fallback) => (int)Math.Round(Num(key, fallback));
     public string Str(string key, string fallback = "") => s[key] is JsonValue v && v.TryGetValue<string>(out var t) ? t : Kind.Defaults[key] is JsonValue d && d.TryGetValue<string>(out var dt) ? dt : fallback;
     public bool Bool(string key) => s[key] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : Kind.Defaults[key] is JsonValue d && d.TryGetValue<bool>(out var db) && db;
+    /// <summary>Whether the spec names a material for the role itself (a kitchen made before decision 472 has none for its plinth and handles).</summary>
+    public bool HasMaterial(string role) => (s["materials"] as JsonObject)?[role] is JsonValue v && v.TryGetValue<string>(out var n) && n.Length > 0;
+    public JsonArray? List(string key) => s[key] as JsonArray;
     public string MaterialName(string role) => (s["materials"] as JsonObject)?[role] is JsonValue v && v.TryGetValue<string>(out var n) && n.Length > 0 ? n : FurnitureKinds.RoleDefaults[role].Material;
 }

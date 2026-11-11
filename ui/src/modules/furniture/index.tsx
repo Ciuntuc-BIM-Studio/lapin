@@ -139,6 +139,7 @@ const schedule = (id: string, label: string, kind: string, icon: Icon): ToolDef 
 });
 const byType = schedule('furniture.schedule', 'Furniture schedule', 'furniture', ListOrdered);
 const byRoom = schedule('furniture.byRoom', 'Furniture by room', 'furnitureRooms', Table2);
+const kitchenUnits = schedule('furniture.kitchenUnits', 'Kitchen units', 'kitchenUnits', CookingPot);
 
 const furniture: LapinModule = {
   id: 'furniture',
@@ -153,7 +154,7 @@ const furniture: LapinModule = {
       { label: 'Storage', tools: [wardrobe], small: [chest, bookcase, sideboard] },
       { label: 'Tables', tools: [table], small: [coffeeTable, desk, chairsAround] },
       { label: 'Kitchen', tools: [kitchen] },
-      { label: 'Schedules', tools: [byType], small: [byRoom] },
+      { label: 'Schedules', tools: [byType], small: [byRoom, kitchenUnits] },
       { label: 'Types', tools: [types] },
     ],
   }],

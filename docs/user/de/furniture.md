@@ -55,6 +55,52 @@ Ein Küchentyp hat ein **Layout** (Anordnung): **One wall** (die gerade Zeile), 
 
 **Kitchen** (<kbd>KT</kbd>) zeichnet jede Anordnung mit zwei Punkten entlang der Wand, an der die Hauptzeile steht: Die Linie ist ihre Länge, ihre Rückseite liegt auf der Wandfläche, und ein L, eine Halbinsel, ein U oder eine Zweizeile wird in die Ecke oder zwischen die Wände geschoben, in deren Nähe gezeichnet wird. **Flip** gibt einem L oder einer Halbinsel die Ecke auf der anderen Seite. Die Möbelliste nennt die Anordnung und die Tiefe der Grundfläche. In der IFC bleibt es ein IfcFurniture eines benutzerdefinierten Kitchen-Typs.
 
+### Küchenschränke und Geräte
+
+Ein Küchentyp kann unter seinen Parametern in **Möbeltypen** seine eigenen **Schränke** auflisten, in zwei Reihen:
+
+- die **Unterschrankreihe**: die Schränke der Hauptzeile von links, von vorn gesehen (nach einer Blindecke);
+- die **Oberschrankreihe**: die Schränke, die darüber hängen.
+
+**Hinzufügen** setzt einen Schrank der gewählten Art ans Ende einer Reihe. **Typische Zeile** beginnt die Unterschrankreihe mit einer Spüle, einem Geschirrspüler, einem Schubladenschrank und einem Kochfeld über einem Backofen. Die Pfeile verschieben einen Schrank nach links oder rechts, und der Papierkorb nimmt ihn heraus.
+
+Jeder Schrank hat eine **Breite**. Ein Schrank nimmt jede Breite von 100 bis 800 mm: Wählen Sie 150, 200, 300, 400, 450, 500, 600 oder 800, oder tippen Sie eine andere. Ein Gerät nimmt die Größen, in denen es hergestellt wird. Die Schränke der Unterschrankreihe sind:
+
+- **Unterschrank**, dessen **Front** eine Schublade über einer Tür ist, Türen (eine oder zwei, bei einer einzelnen Tür mit der Seite, auf der sie **angeschlagen** ist), Schubladen (1 bis 4), Topfauszüge (eine flache Schublade über zwei tiefen) oder offene Regale;
+- **Spülenschrank**: eine Einzelspüle, eine 1½-Becken-Spüle, eine Doppelspüle (ab 800) oder eine Eckspüle, mit normaler Armatur, ausziehbarer Armatur oder ohne. Eine Eckspüle reicht in die Blindecke, wenn sie neben ihr steht.
+- **Kochfeld über Backofen**, 600, 800 oder 900 breit, Induktion oder Gas, mit oder ohne den Backofen darunter;
+- **Freistehender Herd**, 500, 600 oder 900 breit, Induktion oder Gas. Die Arbeitsplatte endet auf beiden Seiten von ihm.
+- **Geschirrspüler**, integriert, 450 oder 600 breit, hinter einer raumhohen Front, die zu den anderen passt;
+- **Kühlschrank**: Unterbau, hoch und integriert (eine Kühlschranktür über einer Gefrierfachtür) oder freistehend;
+- **Hochschrank für Backofen**, mit Schubladen unter dem Backofen und einer Tür darüber;
+- **Hochschrank**, mit Türen oder offenen Regalen;
+- **Blende** und **Lücke**.
+
+Ein Hochschrank, ein Kühlschrank oder ein Backofenschrank hat seine eigene **Höhe**. In der Oberschrankreihe hat ein **Oberschrank** Türen, Glastüren oder offene Regale, seine eigene **Höhe** und seine eigene Höhe **Ab Boden**. Lassen Sie eines von beiden leer, um die Werte der Zeile zu nehmen. Eine **Dunstabzugshaube** ist eine Kaminhaube (650 über der Arbeitsplatte, mit ihrem Rohr bis zur Oberkante der Oberschränke) oder eine in einen Oberschrank integrierte Haube. Eine **Lücke** lässt die Wand frei. Oberschränke weichen einem Hochschrank aus.
+
+Ist keine Oberschrankreihe aufgelistet, bekommt jeder Unterschrank einen Oberschrank seiner Breite, und ein Kochfeld oder ein Herd bekommt eine Kaminhaube. Bei einer Insel oder einer Halbinsel hängt **Dunstabzugshaube über dem Kochfeld dort** eine Haube über das Kochfeld, das auf ihr steht.
+
+Was die Schränke von der Zeile übrig lassen, wird wie zuvor gleichmäßig verteilt, und weniger als 100 mm wird zu einer Blende. Schränke, die nicht in die Zeile passen, werden weggelassen, und die Vorschau und das Element sagen es. **An Schränke anpassen** in den Eigenschaften einer Küche setzt ihre Länge auf das, was ihre Schränke brauchen: ihre eigene, plus eine Blindecke und den Hochschrank am Ende. Ein Typ ohne eigene Schränke wird wie zuvor gebaut.
+
+Im Grundriss hat jeder Schrank sein eigenes Symbol:
+
+- die Türanschläge der Unterschränke, gestrichelt und nur bei feinster Detailstufe;
+- die Becken der Spüle und ihre Armatur;
+- die Zonen oder Brenner des Kochfelds;
+- Hochschränke mit Diagonalen;
+- **DW** am Geschirrspüler, **F** an einem Kühlschrank und **OV** an einem Backofenschrank;
+- Oberschränke und Hauben darüber.
+
+Ansichten und 3D zeigen jede Front, jeden Griff und jedes Gerät.
+
+Die Materialien haben zwei Rollen mehr: **Sockel** und **Griffe**, neben den Fronten, dem Korpus, der Platte (Arbeitsplatte), Metall und Glas. Ein Küchentyp, der davor erstellt wurde, nimmt für den Sockel das Material seines Korpus und für die Griffe das seines Metalls.
+
+![Die Schränke eines Küchentyps: die Unterschrankreihe und die Oberschrankreihe, mit der Vorschau der Engine](shots/kitchen-units-types.webp)
+
+![Eine Küche aus gemischten Schränken und Geräten in 3D](shots/kitchen-units-3d.webp)
+
+**Innenausbau → Küchenschränke** erstellt eine Liste der Schränke jeder Küche, von links, erst die Unterschrankreihe, dann die Oberschrankreihe, mit Breite, Höhe und Front oder Gerät. In IFC bleibt die Küche ein einziges IfcFurniture ihres Typs, und die Schränke wandern mit dem Typ, sodass Lapin sie zurückliest.
+
 ## Die Eigenschaften eines Möbels
 
 Wählen Sie ein Möbel aus, um zu sehen:
@@ -85,8 +131,8 @@ Ziehen Sie den Griff in der Mitte eines Möbels, um es zu verschieben; ziehen Si
   - ein Sideboard: Türen und Schubladen;
   - ein Tisch: rechteckig, rund oder oval, auf vier Beinen oder einem Mittelfuß;
   - ein Schreibtisch: ein Schubladencontainer links oder rechts;
-  - eine Küche: Breite der Unterschränke, Sockel, Arbeitsplatte, Lage von Spüle und Kochfeld, Hängeschränke, Hochschrank;
-- seine **Materialien** nach Rolle: Korpus, Polsterung, Platte, Fronten, Bettwäsche, Metall, Glas. Geben Sie einen beliebigen Materialnamen ein; eines, das das Projekt nicht hat, wird angelegt, und **Verwalten → Materialien** legt seine Farbe und Schraffuren fest.
+  - eine Küche: Breite der Unterschränke, Sockel, Arbeitsplatte, Lage von Spüle und Kochfeld, Hängeschränke, Hochschrank und seine eigenen Schränke (oben);
+- seine **Materialien** nach Rolle: Korpus, Polsterung, Platte, Fronten, Bettwäsche, Metall, Glas und bei einer Küche Sockel und Griffe. Geben Sie einen beliebigen Materialnamen ein; eines, das das Projekt nicht hat, wird angelegt, und **Verwalten → Materialien** legt seine Farbe und Schraffuren fest.
 
 Die Vorschau neben den Feldern zeigt das Grundrisssymbol und die Vorderansicht des Typs, während Sie ihn ändern. Jedes Möbel eines Typs folgt jeder Änderung.
 

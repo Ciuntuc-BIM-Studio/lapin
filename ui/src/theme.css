@@ -1854,6 +1854,15 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .furniture-preview svg { width: 100%; height: auto; max-height: 220px; color: var(--ink, #1e2a3a); }
 .furniture-preview .furniture-front { max-height: 150px; }
 .furniture-edit dl.fields .section-dt { margin-top: 8px; font-weight: 600; }
+.furniture-edit-grid > .furniture-preview { position: sticky; top: 0; }
+.kitchen-units { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.kitchen-units-line { display: flex; flex-direction: column; gap: 4px; }
+.kitchen-unit { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px 6px; border: 1px solid var(--line, #d8d2c6); border-radius: 5px; }
+.kitchen-unit select { width: auto; }
+.kitchen-unit-width { display: inline-flex; gap: 4px; align-items: center; }
+.kitchen-unit-width .num { width: 76px; }
+.kitchen-unit-field { display: inline-flex; gap: 4px; align-items: center; }
+.kitchen-unit-field .num { width: 76px; }
 @media (max-width: 760px) { .furniture-edit-grid { grid-template-columns: 1fr; } }
 .furniture-edit dl.fields dd input:not([type=checkbox]), .furniture-edit dl.fields dd select { width: 100%; }
 .dialog[data-dialog=furniture-types] .type-list .tree-item { white-space: nowrap; }

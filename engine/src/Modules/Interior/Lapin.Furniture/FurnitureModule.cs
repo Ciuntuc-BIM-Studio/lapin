@@ -34,9 +34,11 @@ public sealed class FurnitureModule : ILapinModule
         r.Geometry(Class, (e, m, _) => Geometry(e, m));
         r.Catalog("kinds", FurnitureKinds.Catalog());
         r.Catalog("kitchenLayouts", KitchenLayouts.Catalog());
+        r.Catalog("kitchenUnits", KitchenUnits.Catalog());
         r.Service<IElementPlacement>(new FurniturePlacement());
         r.Service<IScheduleSource>(new FurnitureSchedule());
         r.Service<IScheduleSource>(new FurnitureByRoom());
+        r.Service<IScheduleSource>(new KitchenUnitsSchedule());
 
         // A type of a kind: {kind, name?, spec?} → {id}; the spec's values over the kind's defaults, its materials made when missing.
         r.Command("createType", "New furniture type", (ctx, a) =>
@@ -147,6 +149,21 @@ public sealed class FurnitureModule : ILapinModule
             return null;
         });
 
+        // Kitchens as long as their own units need (decision 472): {ids}; their length their main run's units', blind corners' and tall unit's.
+        r.Command("fitKitchen", "Fit to units", (ctx, a) =>
+        {
+            foreach (var id in Args.Ids(a))
+            {
+                var e = ctx.Model.Get(id) is { Class: Class } x ? x : throw new CommandException("Only a kitchen fits to its units.");
+                var spec = new Spec(TypeOf(ctx.Model, e)?.Attrs["spec"] as JsonObject);
+                if (spec.Kind.Key != "kitchen" || spec.List(KitchenUnits.BaseKey) is not { Count: > 0 }) throw new CommandException("The kitchen's type has no units of its own: add them in Furniture types.");
+                var attrs = e.CloneAttrs();
+                attrs["length"] = Math.Min(12, KitchenUnits.RequiredLength(spec));
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
+
         // Mirrored in place: its other hand (a chaise on the other side, the fridge at the other end), its front where it was.
         r.Command("flip", "Flip", (ctx, a) =>
         {
@@ -168,7 +185,9 @@ public sealed class FurnitureModule : ILapinModule
             if (a["spec"] is JsonObject given) { var g = (JsonObject)given.DeepClone(); g.Remove("kind"); FurnitureKinds.Merge(spec, g, kind); }
             var s = new Spec(spec);
             var b = new Builder(new Vec2(0, 0), 0, 0, FurnitureBodies.Handed(s));
-            FurnitureBodies.Build(b, s, Json.Number(a["length"]));
+            // A kitchen with its own units is previewed as long as they need (a piece's own length is set where it stands).
+            var length = Json.Number(a["length"]) ?? (s.Kind.Key == "kitchen" && s.List(KitchenUnits.BaseKey) is { Count: > 0 } ? Math.Max(s.W, KitchenUnits.RequiredLength(s)) : null);
+            FurnitureBodies.Build(b, s, length);
             var colors = FurnitureKinds.RoleOrder.ToDictionary(role => role, role => Materials.Find(q.Model, s.MaterialName(role))?.Str("color") ?? FurnitureKinds.RoleDefaults[role].Color);
             var handed = FurnitureBodies.Handed(s);
             return new JsonObject
@@ -182,7 +201,13 @@ public sealed class FurnitureModule : ILapinModule
                     ["role"] = f.Role, ["color"] = colors.GetValueOrDefault(f.Role, "#999999"),
                     ["x0"] = R(handed ? -f.X1 : f.X0), ["x1"] = R(handed ? -f.X0 : f.X1), ["z0"] = R(f.Z0), ["z1"] = R(f.Z1),
                 })]),
-                ["width"] = FurnitureBodies.Footprint(s, Json.Number(a["length"])).W, ["depth"] = FurnitureBodies.Footprint(s, Json.Number(a["length"])).D, ["height"] = s.H,
+                ["width"] = FurnitureBodies.Footprint(s, length).W, ["depth"] = FurnitureBodies.Footprint(s, length).D, ["height"] = s.H,
+                ["units"] = new JsonArray([.. b.Units.Select(u => (JsonNode)new JsonObject
+                {
+                    ["line"] = u.Line, ["index"] = u.Index, ["type"] = u.Type, ["width"] = u.Width, ["height"] = u.Height, ["detail"] = u.Detail, ["at"] = u.At,
+                })]),
+                ["unitsLength"] = s.Kind.Key == "kitchen" && KitchenUnits.Has(s) ? KitchenUnits.RequiredLength(s) : null,
+                ["warnings"] = new JsonArray([.. b.Warnings.Select(w => (JsonNode)w)]),
             };
         });
     }
@@ -272,7 +297,7 @@ public sealed class FurnitureModule : ILapinModule
         if (parts.Count == 0) return new ElementGeometry([], b.Plan, [at], ["The piece has no body."]);
         var (w, d) = FurnitureBodies.Footprint(spec, length);
         Vec2[] snaps = [at, b.Q(-w / 2, -d / 2), b.Q(w / 2, -d / 2), b.Q(w / 2, d / 2), b.Q(-w / 2, d / 2), b.Q(0, -d / 2), b.Q(0, d / 2)];
-        return new ElementGeometry(parts, b.Plan, snaps);
+        return new ElementGeometry(parts, b.Plan, snaps, b.Warnings.Count > 0 ? b.Warnings : null);
     }
 
     /// <summary>Several solids as one part, as they are (they do not overlap much and are never merged).</summary>

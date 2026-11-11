@@ -3,7 +3,7 @@
  * kitchen's length, Flip (its other hand, in place) and the way to its type's dialog.
  */
 
-import { FlipHorizontal2, Settings2 } from 'lucide-react';
+import { FlipHorizontal2, Ruler, Settings2 } from 'lucide-react';
 import type { NodeDto } from '../../engine/protocol';
 import { execute, useSession } from '../../engine/session';
 import { LengthField, NumberField } from '../../shell/cells';
@@ -41,6 +41,11 @@ export function FurnitureSection({ node }: { node: NodeDto }) {
         <button type="button" className="btn small" data-action="furniture-flip" title="Its other hand, where it stands: a chaise on the other side, the fridge at the other end" onClick={() => void execute('furniture.flip', { ids: [node.id] })}>
           <FlipHorizontal2 size={13} /> Flip
         </button>
+        {kind === 'kitchen' && Array.isArray(type?.props.spec && (type.props.spec as Record<string, unknown>).units) && (
+          <button type="button" className="btn small" data-action="kitchen-fit" title="Its length as its units need: theirs, a blind corner's and the tall unit's" onClick={() => void execute('furniture.fitKitchen', { ids: [node.id] })}>
+            <Ruler size={13} /> Fit to units
+          </button>
+        )}
         <button type="button" className="btn small" data-action="furniture-edit-type" onClick={() => editType(type)}><Settings2 size={13} /> Edit type…</button>
       </div>
     </div>

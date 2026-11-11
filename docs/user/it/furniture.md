@@ -55,6 +55,52 @@ Un tipo di cucina ha una **Layout** (disposizione): **One wall** (la fila dritta
 
 **Kitchen** (<kbd>KT</kbd>) disegna qualsiasi disposizione con due punti lungo il muro a cui sta la fila principale: la linea ne è la lunghezza, il dorso sulla faccia del muro, e una L, una penisola, una U o una cucina a corridoio scivola nell’angolo o tra i muri vicino a cui si disegna. **Flip** dà a una L o a una penisola l’angolo dall’altra parte. L’abaco dell’arredo nomina la disposizione e dà la profondità dell’ingombro. In IFC resta un IfcFurniture di un tipo Kitchen definito dall’utente.
 
+### Moduli ed elettrodomestici della cucina
+
+Un tipo di cucina può elencare i propri **moduli** sotto i suoi parametri, in **Tipi di arredo**, su due linee:
+
+- la **Linea delle basi**: i moduli della fila principale da sinistra, visti di fronte (dopo un angolo cieco);
+- la **Linea dei pensili**: i moduli appesi sopra di essa.
+
+**Aggiungi** mette un modulo del genere scelto in fondo a una linea. **Cucina tipo** avvia la linea delle basi con un lavello, una lavastoviglie, un modulo di cassetti e un piano cottura su un forno. Le frecce spostano un modulo a sinistra o a destra, e il cestino lo toglie.
+
+Ogni modulo ha una **larghezza**. Un mobile prende qualsiasi larghezza da 100 a 800 mm: scegli 150, 200, 300, 400, 450, 500, 600 o 800, oppure scrivine un’altra. Un elettrodomestico prende le misure in cui esiste. I moduli della linea delle basi sono:
+
+- **Base**, il cui **Fronte** è un cassetto sopra uno sportello, sportelli (uno o due, con il lato su cui è incernierato uno sportello singolo, **Cerniere sul lato**), cassetti (da 1 a 4), cassetti per pentole (un cassetto basso sopra due profondi) o ripiani aperti;
+- **Base lavello**: un lavello a una vasca, a 1½ vasche, doppio (da 800) o d’angolo, con rubinetto normale, rubinetto estraibile o senza. Un lavello d’angolo entra nell’angolo cieco quando gli sta accanto.
+- **Piano cottura su forno**, largo 600, 800 o 900, a induzione o a gas, con o senza il forno sotto;
+- **Cucina a libera installazione**, larga 500, 600 o 900, a induzione o a gas. Il piano di lavoro si ferma da una parte e dall’altra.
+- **Lavastoviglie** integrata, larga 450 o 600, dietro un frontale a tutta altezza uguale agli altri;
+- **Frigorifero**: sottopiano, a colonna integrato (uno sportello del frigorifero sopra uno del congelatore) o a libera installazione;
+- **Colonna forno**, con cassetti sotto il forno e uno sportello sopra;
+- **Colonna**, con sportelli o ripiani aperti;
+- **Fianco di finitura** e **Vuoto**.
+
+Una colonna, un frigorifero o una colonna forno ha la sua **Altezza**. Sulla linea dei pensili, un **Pensile** ha sportelli, sportelli in vetro o ripiani aperti, la sua **Altezza** e la sua altezza **Da terra**. Lascia vuota una delle due per prendere i valori della fila. Una **Cappa** è una cappa a camino (a 650 sopra il piano di lavoro, con il suo condotto fino alla sommità dei pensili) o una cappa integrata in un pensile. Un **Vuoto** lascia nuda la parete. I pensili scavalcano una colonna.
+
+Senza una linea dei pensili elencata, ogni base riceve un pensile della sua larghezza, e un piano cottura o una cucina riceve una cappa a camino. Su un’isola o una penisola, **Cappa sopra il piano cottura lì** appende una cappa sopra il piano cottura che vi sta.
+
+Quello che i moduli lasciano della fila si divide in parti uguali come prima, e meno di 100 mm diventa un fianco di finitura. I moduli che non entrano nella fila sono lasciati fuori, e l’anteprima e l’elemento lo dicono. **Adatta ai moduli**, nelle proprietà di una cucina, porta la sua lunghezza a quello che i suoi moduli richiedono: la loro, più un angolo cieco e la colonna in fondo. Un tipo senza moduli propri è costruito come prima.
+
+In pianta, ogni modulo ha il proprio simbolo:
+
+- l’apertura degli sportelli bassi, tratteggiata e solo al dettaglio più fine;
+- le vasche del lavello e il suo rubinetto;
+- le zone o i fuochi del piano cottura;
+- le colonne, barrate;
+- **DW** sulla lavastoviglie, **F** su un frigorifero e **OV** su una colonna forno;
+- i pensili e le cappe, sopra.
+
+I prospetti e il 3D mostrano ogni fronte, maniglia ed elettrodomestico.
+
+I materiali hanno due ruoli in più: **Zoccolo** e **Maniglie**, oltre a frontali, corpo, piano (top), metallo e vetro. Un tipo di cucina fatto prima prende per lo zoccolo il materiale del suo corpo, e per le maniglie quello del suo metallo.
+
+![I moduli di un tipo di cucina: la linea delle basi e quella dei pensili, con l’anteprima del motore](shots/kitchen-units-types.webp)
+
+![Una cucina di moduli ed elettrodomestici misti, in 3D](shots/kitchen-units-3d.webp)
+
+**Interni → Mobili cucina** crea un abaco dei moduli di ogni cucina, da sinistra, la linea delle basi poi quella dei pensili, con la loro larghezza, altezza e frontale o elettrodomestico. In IFC la cucina resta un solo IfcFurniture del suo tipo, e i moduli viaggiano con il tipo, così Lapin li rilegge.
+
 ## Le proprietà di un arredo
 
 Seleziona un arredo per vedere:
@@ -85,8 +131,8 @@ Trascina la maniglia al centro di un arredo per spostarlo; trascina la maniglia 
   - una credenza: ante e cassetti;
   - un tavolo: rettangolare, rotondo o ovale, su quattro gambe o una gamba centrale;
   - una scrivania: una cassettiera a sinistra o a destra;
-  - una cucina: larghezza delle basi, zoccolo, piano di lavoro, posizione del lavello e del piano cottura, pensili, colonna;
-- i suoi **materiali** per ruolo: corpo, imbottitura, piano, frontali, biancheria, metallo, vetro. Scrivi un nome di materiale qualsiasi; uno che il progetto non ha viene creato, e **Gestisci → Materiali** ne imposta il colore e i tratteggi.
+  - una cucina: larghezza delle basi, zoccolo, piano di lavoro, posizione del lavello e del piano cottura, pensili, colonna, e i suoi moduli (sopra);
+- i suoi **materiali** per ruolo: corpo, imbottitura, piano, frontali, biancheria, metallo, vetro, e per una cucina lo zoccolo e le maniglie. Scrivi un nome di materiale qualsiasi; uno che il progetto non ha viene creato, e **Gestisci → Materiali** ne imposta il colore e i tratteggi.
 
 L’anteprima accanto ai campi mostra il simbolo in pianta e il fronte del tipo mentre lo modifichi. Ogni arredo di un tipo segue ogni modifica.
 

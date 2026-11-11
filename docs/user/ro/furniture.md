@@ -55,6 +55,52 @@ Un tip de bucătărie are o **Layout** (dispunere): **One wall** (rândul drept)
 
 **Kitchen** (<kbd>KT</kbd>) desenează orice dispunere cu două puncte de-a lungul peretelui pe care stă rândul principal: linia îi dă lungimea, spatele pe fața peretelui, iar un L, o peninsulă, un U sau o bucătărie paralelă se strecoară în colțul sau între pereții lângă care e trasă. **Flip** dă unui L sau unei peninsule colțul pe cealaltă parte. Extrasul de mobilier numește dispunerea și arată adâncimea amprentei. În IFC rămâne un IfcFurniture de un tip Kitchen definit de utilizator.
 
+### Corpurile și aparatele bucătăriei
+
+Un tip de bucătărie își poate înșira propriile **corpuri** sub parametrii lui, în **Furniture types**, pe două rânduri:
+
+- **Base line** (rândul de jos): corpurile rândului principal, de la stânga privind din față (după un colț orb);
+- **Wall line** (rândul de sus): corpurile agățate deasupra lui.
+
+**Add** adaugă un corp de felul ales la capătul rândului. **Typical run** pornește rândul de jos de la o chiuvetă, o mașină de spălat vase, un corp cu sertare și o plită peste cuptor. Săgețile mută un corp la stânga sau la dreapta, iar coșul îl scoate.
+
+Fiecare corp are o **lățime**. Un corp de mobilier ia orice lățime între 100 și 800 mm: alegi 150, 200, 300, 400, 450, 500, 600 sau 800 ori scrii alta. Un aparat ia dimensiunile în care se fabrică. Pe rândul de jos sunt:
+
+- **Base unit** (corp de jos), cu **Front** (fața): un sertar peste o ușă, uși (una sau două, cu partea pe care are balamalele o ușă singură, **Hinged on the**), sertare (1–4), sertare pentru oale (un sertar mic peste două adânci) sau rafturi deschise;
+- **Sink unit** (corp cu chiuvetă): chiuvetă simplă, cu 1½ cuve, dublă (de la 800) sau de colț, cu baterie obișnuită, cu duș extractibil sau fără. Chiuveta de colț intră în colțul orb când stă lângă el.
+- **Hob over an oven** (plită peste cuptor), de 600, 800 sau 900, cu inducție sau pe gaz, cu sau fără cuptor dedesubt;
+- **Freestanding cooker** (aragaz de sine stătător), de 500, 600 sau 900, cu inducție sau pe gaz. Blatul se oprește de o parte și de alta a lui.
+- **Dishwasher** (mașină de spălat vase) încorporată, de 450 sau 600, în spatele unei fețe pe toată înălțimea, ca celelalte;
+- **Fridge** (frigider): sub blat, înalt încorporat (ușa frigiderului peste ușa congelatorului) sau de sine stătător;
+- **Oven tall unit** (coloană pentru cuptor), cu sertare sub cuptor și o ușă deasupra;
+- **Tall unit** (coloană), cu uși sau rafturi deschise;
+- **Filler** (panou de completare) și **Gap** (gol).
+
+O coloană, un frigider sau o coloană pentru cuptor are **Height** (înălțimea) ei. Pe rândul de sus, un **Wall unit** (corp sus) are uși, uși vitrate sau rafturi deschise, **Height** (înălțimea) lui și **From the floor** (înălțimea de la pardoseală). Lăsate goale, iau valorile rândului. **Hood** (hota) e cu coș (la 650 deasupra blatului, cu tubul până sus la corpurile de sus) sau integrată într-un corp sus. **Gap** lasă peretele liber. Corpurile de sus ocolesc coloanele.
+
+Fără un rând de sus înșirat, fiecare corp de jos primește un corp sus de lățimea lui, iar o plită sau un aragaz primește o hotă cu coș. La insulă sau peninsulă, **Hood over the hob there** agață o hotă deasupra plitei de pe ea.
+
+Ce lasă corpurile din rând se împarte egal, ca înainte, iar sub 100 mm devine panou de completare. Corpurile care nu încap în rând sunt lăsate deoparte, iar previzualizarea și elementul o spun. **Fit to units** (potrivește la corpuri), din proprietățile bucătăriei, îi dă lungimea de care au nevoie corpurile: a lor, plus colțul orb și coloana de la capăt. Un tip fără corpuri proprii se construiește ca înainte.
+
+În plan, fiecare corp are simbolul lui:
+
+- deschiderea ușilor de jos, întreruptă și doar la detaliul cel mai fin;
+- cuvele chiuvetei și bateria;
+- zonele plitei sau arzătoarele;
+- coloanele, cu diagonale;
+- **DW** pe mașina de spălat vase, **F** pe frigider și **OV** pe coloana pentru cuptor;
+- corpurile sus și hotele, ca linii de deasupra.
+
+Fațadele și 3D-ul arată fiecare față, mâner și aparat.
+
+Materialele au două roluri în plus: **Plinth** (soclul) și **Handles** (mânerele), pe lângă fronturi, corp, blat, metal și sticlă. Un tip de bucătărie făcut înainte de asta ia pentru soclu materialul corpului, iar pentru mânere pe cel al metalului.
+
+![Corpurile unui tip de bucătărie: rândul de jos și cel de sus, cu previzualizarea motorului](shots/kitchen-units-types.webp)
+
+![O bucătărie cu corpuri și aparate amestecate, în 3D](shots/kitchen-units-3d.webp)
+
+**Interior → Kitchen units** face un extras cu corpurile fiecărei bucătării, de la stânga, rândul de jos apoi cel de sus, cu lățimea, înălțimea și fața sau aparatul. În IFC bucătăria rămâne un singur IfcFurniture de tipul ei, iar corpurile merg cu tipul, deci Lapin le citește înapoi.
+
 ## Proprietățile unei piese
 
 Când selectezi o piesă, vezi:
@@ -85,8 +131,8 @@ Mânerul din mijlocul piesei o mută; mânerul din fața ei o rotește, cu fața
   - bufetul: uși și sertare;
   - masa: dreptunghiulară, rotundă sau ovală, pe patru picioare sau pe un picior central;
   - biroul: un corp cu sertare în stânga sau în dreapta;
-  - bucătăria: lățimea corpurilor de jos, soclul, blatul, locul chiuvetei și al plitei, corpurile de sus, coloana;
-- **materialele** pe roluri: corp, tapițerie, blat, fronturi, lenjerie, metal, sticlă. Scrii orice nume de material; unul pe care proiectul nu-l are se face, iar **Manage → Materials** îi stabilește culoarea și hașurile.
+  - bucătăria: lățimea corpurilor de jos, soclul, blatul, locul chiuvetei și al plitei, corpurile de sus, coloana și propriile corpuri (mai sus);
+- **materialele** pe roluri: corp, tapițerie, blat, fronturi, lenjerie, metal, sticlă și, la bucătărie, soclu și mânere. Scrii orice nume de material; unul pe care proiectul nu-l are se face, iar **Manage → Materials** îi stabilește culoarea și hașurile.
 
 Previzualizarea de lângă câmpuri arată simbolul din plan și fața tipului pe măsură ce îl schimbi. Toate piesele unui tip urmează orice schimbare a lui.
 

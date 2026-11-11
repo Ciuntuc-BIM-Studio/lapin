@@ -55,6 +55,52 @@ En køkkentype har en **Layout** (indretning): **One wall** (den lige række), *
 
 **Kitchen** (<kbd>KT</kbd>) tegner enhver indretning med to punkter langs den væg, hovedrækken står mod: linjen er dens længde, ryggen på væggens flade, og et L, en halvø, et U eller et parallelkøkken skubbes ind i det hjørne eller mellem de vægge, det tegnes nær. **Flip** giver et L eller en halvø hjørnet på den anden side. Møbelskemaet nævner indretningen og fodaftrykkets dybde. I IFC forbliver det et IfcFurniture af en brugerdefineret Kitchen-type.
 
+### Køkkenskabe og apparater
+
+En køkkentype kan opregne sine egne **skabe** under sine parametre i **Møbeltyper**, i to rækker:
+
+- **Underskabsrækken**: hovedrækkens skabe fra venstre set forfra (efter et blindt hjørne);
+- **Overskabsrækken**: skabene, der hænger over den.
+
+**Tilføj** sætter et skab af den valgte slags for enden af en række. **Typisk række** begynder underskabsrækken med en vask, en opvaskemaskine, et skab med skuffer og en kogeplade over en ovn. Pilene flytter et skab til venstre eller højre, og papirkurven tager det ud.
+
+Hvert skab har en **bredde**. Et skab tager enhver bredde fra 100 til 800 mm: vælg 150, 200, 300, 400, 450, 500, 600 eller 800, eller skriv en anden. Et apparat tager de størrelser, det fås i. Skabene i underskabsrækken er:
+
+- **Understiksskab**, hvis **Front** er en skuffe over en låge, låger (en eller to, med den side, en enkelt låge er **hængslet i**), skuffer (1 til 4), grydeskuffer (en lav skuffe over to dybe) eller åbne hylder;
+- **Vaskeskab**: en enkelt vask, en 1½-kummes vask, en dobbeltvask (fra 800) eller en hjørnevask, med en almindelig armatur, en udtrækkelig armatur eller ingen. En hjørnevask rækker ind i det blinde hjørne, når den står ved siden af det.
+- **Kogeplade over ovn**, 600, 800 eller 900 bred, induktion eller gas, med eller uden ovnen under;
+- **Fritstående komfur**, 500, 600 eller 900 bredt, induktion eller gas. Bordpladen stopper på begge sider af det.
+- **Opvaskemaskine**, integreret, 450 eller 600 bred, bag en front i fuld højde, der passer til de andre;
+- **Køleskab**: under bordpladen, højt og integreret (en køleskabslåge over en fryserlåge) eller fritstående;
+- **Højskab til ovn**, med skuffer under ovnen og en låge over den;
+- **Højskab**, med låger eller åbne hylder;
+- **Fyldestykke** og **Hul**.
+
+Et højskab, et køleskab eller et ovnskab har sin egen **Højde**. I overskabsrækken har et **Overskab** låger, glaslåger eller åbne hylder, sin egen **Højde** og sin egen højde **Fra gulvet**. Lad en af dem stå tom for at tage rækkens værdier. En **Emhætte** er en skorstensemhætte (650 over bordpladen, med sit rør op til overskabenes top) eller en integreret emhætte i et overskab. Et **Hul** lader væggen stå bar. Overskabe springer forbi et højskab.
+
+Uden en opregnet overskabsrække får hvert underskab et overskab af sin bredde, og en kogeplade eller et komfur får en skorstensemhætte. På en ø eller en halvø hænger **Emhætte over kogepladen der** en emhætte over den kogeplade, der står på den.
+
+Det, skabene efterlader af rækken, fordeles ligeligt som før, og mindre end 100 mm bliver et fyldestykke. Skabe, der ikke passer i rækken, udelades, og forhåndsvisningen og elementet siger det. **Tilpas til skabe** i et køkkens egenskaber sætter dets længde til det, dets skabe behøver: deres egen, plus et blindt hjørne og højskabet for enden. En type uden egne skabe bygges som før.
+
+I plan har hvert skab sit eget symbol:
+
+- underskabslågernes svingning, stiplet og kun ved den fineste detalje;
+- vaskens kummer og dens armatur;
+- kogepladens zoner eller blus;
+- højskabe med kryds;
+- **DW** på opvaskemaskinen, **F** på et køleskab og **OV** på et ovnskab;
+- overskabe og emhætter oven over.
+
+Opstalter og 3D viser hver front, hvert greb og hvert apparat.
+
+Materialerne har to roller mere: **Sokkel** og **Greb**, ved siden af fronterne, korpus, pladen (bordpladen), metal og glas. En køkkentype lavet før tager til soklen sit korpus' materiale og til grebene sit metals.
+
+![En køkkentypes skabe: underskabsrækken og overskabsrækken, med motorens forhåndsvisning](shots/kitchen-units-types.webp)
+
+![Et køkken af blandede skabe og apparater, i 3D](shots/kitchen-units-3d.webp)
+
+**Interiør → Køkkenskabe** laver et skema over hvert køkkens skabe, fra venstre, underskabsrækken og så overskabsrækken, med deres bredde, højde og front eller apparat. I IFC forbliver køkkenet ét IfcFurniture af sin type, og skabene rejser med typen, så Lapin læser dem tilbage.
+
 ## Et møbels egenskaber
 
 Vælg et møbel for at se:
@@ -85,8 +131,8 @@ Træk i grebet midt på et møbel for at flytte det; træk i grebet foran det fo
   - en skænk: låger og skuffer;
   - et bord: rektangulært, rundt eller ovalt, på fire ben eller en søjlefod;
   - et skrivebord: en skuffesektion til venstre eller højre;
-  - et køkken: underskabsbredde, sokkel, bordplade, placering af vask og kogeplade, overskabe, højskab;
-- sine **materialer** efter rolle: korpus, polstring, plade, fronter, sengetøj, metal, glas. Skriv et hvilket som helst materialenavn; et, som projektet ikke har, oprettes, og **Administrer → Materialer** fastlægger dets farve og skraveringer.
+  - et køkken: underskabsbredde, sokkel, bordplade, placering af vask og kogeplade, overskabe, højskab og dets egne skabe (ovenfor);
+- sine **materialer** efter rolle: korpus, polstring, plade, fronter, sengetøj, metal, glas og for et køkken sokkel og greb. Skriv et hvilket som helst materialenavn; et, som projektet ikke har, oprettes, og **Administrer → Materialer** fastlægger dets farve og skraveringer.
 
 Forhåndsvisningen ved siden af felterne viser typens plansymbol og forside, mens du ændrer den. Hvert møbel af en type følger enhver ændring.
 

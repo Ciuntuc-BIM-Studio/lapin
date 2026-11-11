@@ -28,8 +28,9 @@ Cerut de utilizator la 05.11.2026 („dezvoltăm și funcții pentru mobilier?�
 | | **Măsuță de cafea** (`coffeeTable`) | TABLE | formă, raft jos |
 | | **Birou** (`desk`) | DESK | corp cu sertare (niciunul, stânga, dreapta) |
 | Bucătărie | **Bucătărie liniară** (`kitchen`) | USERDEFINED „Kitchen” | lungimea pe element; corpuri jos de 60 cm (restul împărțit), blat, chiuvetă și plită (poziții), corpuri sus (înălțime, adâncime, la ce cotă), coloană pentru frigider la un capăt |
+| | ↳ **Corpurile proprii** (decizia 472) | — | `units` (rândul de jos: corp de jos, chiuvetă, plită peste cuptor, aragaz, mașină de spălat vase 45/60, frigider, coloană cuptor, coloană, panou, gol) și `upper` (corp sus, hotă, gol) pe tip; corpuri 100–800 mm, aparatele în dimensiunile lor; restul rândului împărțit ca înainte |
 
-Materialele pe roluri, ale proiectului (Manage → Materials), create după nume când lipsesc: **body** (lemnul corpului), **upholstery** (stofa), **top** (blatul), **fronts** (fronturile), **linen** (lenjeria și salteaua), **metal** (picioare, mânere). Corpurile au culoarea materialului lor, se hașurează pe fațade după materialul lor și ies în IFC cu materialele lor.
+Materialele pe roluri, ale proiectului (Manage → Materials), create după nume când lipsesc: **body** (lemnul corpului), **upholstery** (stofa), **top** (blatul), **fronts** (fronturile), **linen** (lenjeria și salteaua), **metal** (picioare, mânere), **glass**; la bucătărie și **plinth** (soclul) și **handles** (mânerele), care la un tip mai vechi iau materialul corpului și al metalului (decizia 472). Corpurile au culoarea materialului lor, se hașurează pe fațade după materialul lor și ies în IFC cu materialele lor.
 
 ## Așezarea
 

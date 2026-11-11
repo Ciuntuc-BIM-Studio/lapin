@@ -19,8 +19,11 @@ export const CLASS = 'IfcFurniture';
 
 /** The material roles, as the dialog names them. */
 export const ROLE_LABELS: Record<string, string> = {
-  body: 'Body', upholstery: 'Upholstery', top: 'Top', fronts: 'Fronts', linen: 'Linen', metal: 'Metal', glass: 'Glass',
+  body: 'Body', upholstery: 'Upholstery', top: 'Top', fronts: 'Fronts', linen: 'Linen', metal: 'Metal', glass: 'Glass', plinth: 'Plinth', handles: 'Handles',
 };
+
+/** A role a type made before it had its own material takes another's (a kitchen's plinth its body's, its handles the metal's; decision 472). */
+export const ROLE_FALLBACK: Record<string, string> = { plinth: 'body', handles: 'metal' };
 
 export const specOf = (t: NodeDto | undefined): FurnitureSpec => (t?.props.spec as FurnitureSpec | undefined) ?? {};
 export const kindOf = (t: NodeDto | undefined) => String(specOf(t).kind ?? '');
@@ -76,6 +79,8 @@ export interface PreviewDto {
   plan: { kind: string; closed: boolean; points: number[] }[];
   front: { role: string; color: string; x0: number; x1: number; z0: number; z1: number }[];
   width: number; depth: number; height: number;
+  units?: { line: 'Base' | 'Wall'; index: number; type: string; width: number; height: number; detail: string; at: number }[];
+  unitsLength?: number | null; warnings?: string[];
 }
 
 export function planPaths(p: PreviewDto): { d: string; kind: string }[] {
@@ -104,6 +109,11 @@ export interface KitchenLayout { key: string; label: string; preset: Record<stri
 export const CHOICE_LABELS: Record<string, string> = {
   'one-wall': 'One wall', galley: 'Galley', 'l-shaped': 'L-shaped', 'u-shaped': 'U-shaped', island: 'Island', peninsula: 'Peninsula',
   run: 'The main run', other: 'The other part',
+  // A kitchen's units (decision 472).
+  drawerDoor: 'Drawer over a door', doors: 'Doors', drawers: 'Drawers', pan: 'Pan drawers', open: 'Open shelves', glass: 'Glazed doors',
+  single: 'Single', 'one-half': '1½ bowl', double: 'Double', corner: 'Corner', standard: 'Standard', 'pull-out': 'Pull-out', none: 'None',
+  induction: 'Induction', gas: 'Gas', 'under-counter': 'Under-counter', tall: 'Tall integrated', freestanding: 'Freestanding',
+  chimney: 'Chimney', integrated: 'Integrated', left: 'Left', right: 'Right',
 };
 
 /** Whether a parameter applies to the type's layout (a parameter without layouts applies to all). */

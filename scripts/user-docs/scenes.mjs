@@ -4969,6 +4969,59 @@ export const scenes = [
     },
   },
   {
+    // A kitchen's own units (a tester's report #76, decision 472): a kitchen type laid from units and appliances — a base
+    // unit with one door, a 1½ bowl sink with a pull-out tap, a 450 dishwasher, a hob over an oven, drawers, a tall fridge —
+    // with a wall line of its own (a glazed unit, a taller one, a chimney hood); the types dialog's base and wall lines
+    // beside the engine's preview; the kitchen fitted to its units, in 3D; the kitchen units schedule.
+    id: 'kitchen-units',
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      await t.button('Interior', { exact: true });
+      const u = (type, width, more = {}) => ({ type, width, ...more });
+      const type = (await t.cmd('furniture.createType', {
+        kind: 'kitchen', layout: 'one-wall', name: 'Kitchen with its units',
+        spec: {
+          tall: 'none',
+          units: [u('base', 0.4, { front: 'doors', hand: 'right' }), u('sink', 0.8, { sink: 'one-half', tap: 'pull-out' }), u('dishwasher', 0.45), u('hob', 0.6, { fuel: 'induction' }), u('base', 0.6, { front: 'drawers', drawers: 3 }), u('fridge', 0.6, { fridge: 'tall' })],
+          upper: [u('wall', 0.4, { front: 'glass', doors: 1 }), u('wall', 0.8, { height: 0.9 }), u('space', 0.45), u('hood', 0.6), u('wall', 0.6)],
+          materials: { fronts: 'Lacquered MDF sage', plinth: 'Plinth anthracite' },
+        },
+      })).id;
+      const kitchen = (await t.cmd('furniture.place', { storeyId: s, typeId: type, x: 0, y: 0, against: false })).id;
+      await select(t, kitchen);
+      await t.wait(800);
+      await t.page.locator('[data-action=kitchen-fit]').click();
+      await t.wait(800);
+      const piece = (await t.nodes()).find((n) => n.id === kitchen);
+      t.expect(Math.abs(piece.props.length - 3.45) < 1e-6, `Fit to units makes the kitchen as long as its units (${piece.props.length})`);
+      await t.ui({ selection: null, selected: [] });
+      await t.tool('furniture.types');
+      await t.wait(400);
+      await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: 'Kitchen with its units' }).first().click();
+      await t.wait(1500);
+      t.expect(await t.page.locator('.dialog [data-testid=kitchen-units] .kitchen-unit').count() === 6, 'the base line lists its six units');
+      t.expect(await t.page.locator('.dialog [data-testid=kitchen-upper] .kitchen-unit').count() === 5, 'the wall line lists its five');
+      // A drawer unit's front changed in the dialog: one step on the type, seen in the preview.
+      await t.page.locator('.dialog [data-testid=kitchen-units] .kitchen-unit').nth(4).locator('[data-unit-field=drawers] input').fill('4');
+      await t.page.keyboard.press('Enter');
+      await t.wait(1200);
+      const spec = (await t.nodes()).find((n) => n.id === type).props.spec;
+      t.expect(spec.units[4].drawers === 4, `the drawers changed on the type (${spec.units[4].drawers})`);
+      // The base line under the preview, the preview held at the top of the dialog's view.
+      await t.page.locator('.dialog [data-testid=kitchen-units-editor]').evaluate((el) => el.scrollIntoView({ block: 'end' }));
+      await t.wait(300);
+      await t.shot('kitchen-units-types', { of: '.dialog', pad: 0 });
+      await t.page.locator('.dialog button[title="Close"]').first().click();
+      await t.wait(300);
+      await t.cmd('architecture.createSchedule', { kind: 'kitchenUnits' });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: 1.79, pitch: -0.3, distance: 6.5, target: { x: 0, y: 0, z: 1.1 } }, false));
+      await t.wait(1500);
+      await t.shot('kitchen-units-3d', { of: 'canvas', pad: 0 });
+    },
+  },
+  {
     // Furniture (docs/plan-furniture.md): a living room and a bedroom furnished — a sofa clicked by the wall (backed onto it),
     // armchairs, a coffee table, a table with chairs round it, a bed, bedside tables, a wardrobe, a kitchen drawn along a
     // wall — in plan by their symbols and in 3D; the types dialog with its preview; a piece's properties.

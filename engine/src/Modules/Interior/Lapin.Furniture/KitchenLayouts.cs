@@ -12,7 +12,7 @@ namespace Lapin.Furniture;
 /// the run or on the other element. The footprint is the run's length by <see cref="Depth"/>, the back wall at its back
 /// (+y), the room in front (−y); an L and a peninsula with their corner on the right are built as the left ones, mirrored.
 /// </summary>
-public static class KitchenLayouts
+public static partial class KitchenLayouts
 {
     public static readonly string[] Keys = ["one-wall", "galley", "l-shaped", "u-shaped", "island", "peninsula"];
 
@@ -71,7 +71,7 @@ public static class KitchenLayouts
             _ => new(x, y, 0, -1, 1, 0),
         };
 
-        (double X, double Y) P(double u, double v) => (Ox + Ux * u + Wx * v, Oy + Uy * u + Wy * v);
+        public (double X, double Y) P(double u, double v) => (Ox + Ux * u + Wx * v, Oy + Uy * u + Wy * v);
 
         (double X0, double X1, double Y0, double Y1) Box(double u0, double u1, double v0, double v1)
         {
@@ -100,12 +100,14 @@ public static class KitchenLayouts
     }
 
     /// <summary>What a run has: where its sink and hob go (0–1 along its free span), a tall unit at one end, blind corner squares, wall units, a worktop reaching past its back.</summary>
-    sealed record Run(double Length, string? TallAt = null, double CapStart = 0, double CapEnd = 0, bool WallUnits = false, double? Sink = null, double? Hob = null, double TopDepth = 0);
+    /// <summary><paramref name="Main"/>: the run the type's own units are laid along (decision 472); <paramref name="IslandHood"/>: a hood hung over its hob.</summary>
+    sealed record Run(double Length, string? TallAt = null, double CapStart = 0, double CapEnd = 0, bool WallUnits = false, double? Sink = null, double? Hob = null, double TopDepth = 0,
+        bool Main = false, bool IslandHood = false);
 
     /// <summary>One run of base units: the carcass, a drawer over a door per unit, the worktop, the sink and hob, wall units, a tall unit.</summary>
     static void Build(Builder b, Frame f, Spec s, Run run, double depth)
     {
-        double d = depth, top = s.H, wt = s.Num("worktop", 0.04), pl = s.Num("plinth", 0.1), unit = s.Num("unit", 0.6);
+        var d = depth;
         var tall = run.TallAt;
         var len = run.Length;
         double a = 0, e = len;
@@ -113,9 +115,28 @@ public static class KitchenLayouts
         else if (tall == "end" && len > Tall + 0.3) e = len - Tall;
         else tall = null;
         double fa = a + run.CapStart, fe = e - run.CapEnd;
+        (double, double)? tallSpan = tall == null ? null : tall == "start" ? (0, Tall) : (e, e + Tall);
+        if (run.Main && KitchenUnits.Has(s)) BuildUnits(b, f, s, run, d, a, e, fa, fe, tallSpan);
+        else
+        {
+            BuildAuto(b, f, s, run, d, a, e, fa, fe);
+            if (run.Main) AutoRows(b, f, s, run, fa, fe, tallSpan);
+        }
+        if (tall != null) BuildTall(b, f, s, d, tall == "start" ? 0 : e, tall);
+    }
+
+    /// <summary>The plinth's and handles' roles: their own when the type names materials for them, else the carcass's and the metal's (as kitchens were before decision 472).</summary>
+    static string PlinthRole(Spec s) => s.HasMaterial("plinth") ? "plinth" : "body";
+    static string HandleRole(Spec s) => s.HasMaterial("handles") ? "handles" : "metal";
+
+    /// <summary>The run split evenly into units of about the type's unit width, each a drawer over a door; the sink, the hob and wall units where the type puts them.</summary>
+    static void BuildAuto(Builder b, Frame f, Spec s, Run run, double d, double a, double e, double fa, double fe)
+    {
+        double top = s.H, wt = s.Num("worktop", 0.04), pl = s.Num("plinth", 0.1), unit = s.Num("unit", 0.6);
+        string pr = PlinthRole(s), hr = HandleRole(s);
         var n = Math.Max(1, (int)Math.Round((fe - fa) / unit));
         var uw = (fe - fa) / n;
-        f.Block(b, "body", a, e, 0.07, d, 0, pl);
+        f.Block(b, pr, a, e, 0.07, d, 0, pl);
         f.Block(b, "body", a, e, 0.04, d, pl, top - wt);
         for (var i = 0; i < n; i++)
         {
@@ -123,7 +144,7 @@ public static class KitchenLayouts
             f.Block(b, "fronts", ua, ub, 0.022, 0.04, top - wt - 0.16, top - wt - 0.003, 0.002);
             f.Block(b, "fronts", ua, ub, 0.022, 0.04, pl + 0.003, top - wt - 0.163, 0.002);
             var mid = (ua + ub) / 2;
-            f.Block(b, "metal", mid - 0.07, mid + 0.07, 0.0, 0.022, top - wt - 0.05, top - wt - 0.038);
+            f.Block(b, hr, mid - 0.07, mid + 0.07, 0.0, 0.022, top - wt - 0.05, top - wt - 0.038);
             if (i > 0) f.Line(b, "symbol", ua - 0.0015, 0, ua - 0.0015, 0.04);
         }
         f.Block(b, "top", a, e, 0, Math.Max(d, run.TopDepth), top - wt, top, 0.003);
@@ -158,15 +179,20 @@ public static class KitchenLayouts
             }
             f.Rect(b, "overhead", a, e, d - wd, d);
         }
-        if (tall != null)
+        if (run.IslandHood && run.Hob is { } ih && fe - fa >= 1.2) IslandHood(b, f, s, At(ih, 0.3), d);
+    }
+
+    /// <summary>The tall unit at a run's end (the fridge's, as kitchens had it before their own units).</summary>
+    static void BuildTall(Builder b, Frame f, Spec s, double d, double ta, string tall)
+    {
+        double pl = s.Num("plinth", 0.1), te = ta + Tall;
         {
-            double ta = tall == "start" ? 0 : e, te = ta + Tall;
-            f.Block(b, "body", ta, te, 0.04, d, 0, pl);
+            f.Block(b, PlinthRole(s), ta, te, 0.04, d, 0, pl);
             f.Block(b, "body", ta, te, 0.022, d, pl, TallHeight);
             f.Block(b, "fronts", ta + 0.0015, te - 0.0015, 0, 0.022, pl + 0.003, pl + 1.2, 0.002);
             f.Block(b, "fronts", ta + 0.0015, te - 0.0015, 0, 0.022, pl + 1.203, TallHeight - 0.003, 0.002);
             var hx = tall == "start" ? te - 0.05 : ta + 0.05;
-            f.Block(b, "metal", hx - 0.007, hx + 0.007, -0.025, 0, pl + 0.9, pl + 1.15);
+            f.Block(b, HandleRole(s), hx - 0.007, hx + 0.007, -0.025, 0, pl + 0.9, pl + 1.15);
             f.Rect(b, "symbol", ta, te, 0, d);
             f.Line(b, "symbol", ta, 0, te, d);
             f.Line(b, "symbol", ta, d, te, 0);
@@ -195,7 +221,7 @@ public static class KitchenLayouts
         {
             case "galley":
             {
-                Build(b, main, s, new Run(len, MainTall(true, true), WallUnits: wall, Sink: sinkOther ? null : Along(sinkAt), Hob: hobOther ? null : Along(hobAt)), d);
+                Build(b, main, s, new Run(len, MainTall(true, true), WallUnits: wall, Sink: sinkOther ? null : Along(sinkAt), Hob: hobOther ? null : Along(hobAt), Main: true), d);
                 var l2 = s.Num("secondRun", 0) is > 0.3 and var v ? Math.Min(v, len) : len;
                 var opposite = Frame.Facing('N', -len / 2 + l2, -back + d);
                 Build(b, opposite, s, new Run(l2, null, WallUnits: wall, Sink: sinkOther ? 1 - sinkAt : null, Hob: hobOther ? 1 - hobAt : null), d);
@@ -206,7 +232,7 @@ public static class KitchenLayouts
             {
                 var pen = layout == "peninsula";
                 var pc = pen ? PeninsulaZone(s) : 0;
-                var main1 = new Run(len, MainTall(false, true), CapStart: d, WallUnits: wall, Sink: sinkOther ? null : Along(sinkAt), Hob: hobOther ? null : Along(hobAt));
+                var main1 = new Run(len, MainTall(false, true), CapStart: d, WallUnits: wall, Sink: sinkOther ? null : Along(sinkAt), Hob: hobOther ? null : Along(hobAt), Main: true);
                 Build(b, main, s, main1, d);
                 // The leg runs from the corner to the front; a peninsula's run closes it across, so the leg stops short of it by a unit's depth.
                 var legLen = dt - d - pc;
@@ -218,29 +244,29 @@ public static class KitchenLayouts
                     var p = Math.Clamp(s.Num("peninsula", 1.2), 0.6, Math.Max(0.6, len - d - 0.3));
                     var over = Math.Clamp(s.Num("overhang", 0.3), 0, 0.5);
                     var close = Frame.Facing('N', -len / 2 + d + p, -back + pc);
-                    Build(b, close, s, new Run(p + d, null, CapEnd: d, Sink: sinkOther ? 1 - sinkAt : null, Hob: hobOther ? 1 - hobAt : null, TopDepth: d + over), d);
+                    Build(b, close, s, new Run(p + d, null, CapEnd: d, Sink: sinkOther ? 1 - sinkAt : null, Hob: hobOther ? 1 - hobAt : null, TopDepth: d + over, IslandHood: hobOther && s.Bool("islandHood")), d);
                 }
                 break;
             }
             case "u-shaped":
             {
                 double leg1 = Math.Max(s.Num("leg", 2.4), d + MinFree), leg2 = Math.Max(s.Num("leg2", 2.4), d + MinFree);
-                Build(b, main, s, new Run(len, null, CapStart: d, CapEnd: d, WallUnits: wall, Sink: sinkOther ? null : sinkAt, Hob: hobOther ? null : hobAt), d);
+                Build(b, main, s, new Run(len, null, CapStart: d, CapEnd: d, WallUnits: wall, Sink: sinkOther ? null : sinkAt, Hob: hobOther ? null : hobAt, Main: true), d);
                 Build(b, Frame.Facing('E', -len / 2 + d, back - leg1), s, new Run(leg1 - d, tall == "left" ? "start" : null, WallUnits: wall, Sink: sinkOther ? 1 - sinkAt : null, Hob: hobOther ? 1 - hobAt : null), d);
                 Build(b, Frame.Facing('W', len / 2 - d, back - d), s, new Run(leg2 - d, tall == "right" ? "end" : null, WallUnits: wall), d);
                 break;
             }
             case "island":
             {
-                Build(b, main, s, new Run(len, MainTall(true, true), WallUnits: wall, Sink: sinkOther ? null : sinkAt, Hob: hobOther ? null : hobAt), d);
+                Build(b, main, s, new Run(len, MainTall(true, true), WallUnits: wall, Sink: sinkOther ? null : sinkAt, Hob: hobOther ? null : hobAt, Main: true), d);
                 var li = Math.Clamp(s.Num("islandLength", 1.8), 0.6, len);
                 var di = Math.Max(d, s.Num("islandDepth", 0.9));
                 var xc = -len / 2 + li / 2 + Math.Clamp(s.Num("islandAt", 0.5), 0, 1) * (len - li);
-                Build(b, Frame.Facing('N', xc + li / 2, back - d - s.Num("gap", 1.1)), s, new Run(li, null, Sink: sinkOther ? 1 - sinkAt : null, Hob: hobOther ? 1 - hobAt : null, TopDepth: di), d);
+                Build(b, Frame.Facing('N', xc + li / 2, back - d - s.Num("gap", 1.1)), s, new Run(li, null, Sink: sinkOther ? 1 - sinkAt : null, Hob: hobOther ? 1 - hobAt : null, TopDepth: di, IslandHood: hobOther && s.Bool("islandHood")), d);
                 break;
             }
             default:
-                Build(b, main, s, new Run(len, MainTall(true, true), WallUnits: wall, Sink: Along(sinkAt), Hob: Along(hobAt)), d);
+                Build(b, main, s, new Run(len, MainTall(true, true), WallUnits: wall, Sink: Along(sinkAt), Hob: Along(hobAt), Main: true), d);
                 break;
         }
     }
