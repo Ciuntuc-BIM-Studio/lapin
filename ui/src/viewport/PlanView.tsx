@@ -46,7 +46,7 @@ import { CadOverlay } from './cad/canvas';
 import { snapShapes, useCadCanvas, type Aimed } from './cad/aim';
 import { CommandLine } from './cad/CommandLine';
 import './cad/ucs';
-import { feedPoint, useCad } from './cad/session';
+import { feedPoint, finishStep, useCad } from './cad/session';
 import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
@@ -539,6 +539,8 @@ export function PlanView() {
         return;
       }
     }
+    // A right-click while a command asks for points is its Enter: it finishes (a dimension string, a polyline).
+    if (d && !d.moved && e.button === 2 && useCad.getState().step?.enter) { void finishStep(); return; }
     if (d && !d.moved && e.button === 2 && !tool?.gesture && !useCad.getState().step) { if (!editor.onContextMenu(e)) roomMenu(e.clientX, e.clientY); return; }
     if (!d || d.moved || e.button !== 0) return;
     const rect = svgRef.current!.getBoundingClientRect();

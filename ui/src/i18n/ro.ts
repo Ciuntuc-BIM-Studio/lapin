@@ -39,6 +39,14 @@ export const RO: Record<string, string> = {
   "Cell": "Celulă",
   "The curtain wall's cells: move the door, or give the cells round it a panel type": "Celulele peretelui cortină: mută ușa sau dă celulelor din jur un tip de panou",
   "Curtain panel type": "Tip de panou de perete cortină",
+  // Decision 464: the dimension tool (continuous or single, direction, finishing, the segment grip)
+  "Continuous": "Continuu",
+  "Off: one dimension at a time. On: points go on as a string, each measured from the last (C)": "Oprit: o singură cotă pe rând. Pornit: punctele continuă ca lanț, fiecare măsurat de la ultimul (C)",
+  "Horizontal · Tab": "Orizontal · Tab",
+  "Vertical · Tab": "Vertical · Tab",
+  "Tab flips it": "Tab o răstoarnă",
+  "Make the string (Enter, right-click, or the last point again)": "Fă lanțul (Enter, clic dreapta sau ultimul punct din nou)",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-drag: a new point where it is dropped · Ctrl/⌘-click: one halfway": "Trage: linia de cotă trece prin punct · Ctrl/⌘-trage: un punct nou unde îl lași · Ctrl/⌘-clic: unul la jumătate",
   // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
   "True north up: click for project north": "Nordul geografic în sus: clic pentru nordul proiectului",
   "Project north up: click to turn the plan to true north": "Nordul proiectului în sus: clic ca planul să se rotească spre nordul geografic",
@@ -1554,6 +1562,8 @@ export const RO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  [/^Finish string \((\d+) points\)$/, (m) => `Finalizează lanțul (${m[1]} puncte)`],
+  [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `Lanț de cote păstrat (${m[1]} puncte) · Anulează îl elimină`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Punctul [Map/Project/Internal: ${({ 'map E, N': 'hartă E, N', 'base point X, Y': 'punct de bază X, Y', 'plan origin X, Y': 'originea planului X, Y' } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS rotit cu ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Lăsate în afara încadrării, departe de model: ${m[1]}. ZE încadrează tot.`],

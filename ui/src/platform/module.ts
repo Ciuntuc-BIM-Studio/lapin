@@ -154,6 +154,8 @@ export interface Grip {
   move?: (to: Vec2) => Promise<unknown> | void;
   /** Ctrl/⌘-click: insert a vertex here (an edge's middle). */
   insert?: () => GripStep | null;
+  /** Ctrl/⌘-drag (with `insert`): insert a vertex where the grip is dropped; a Ctrl/⌘-click still does `insert`. */
+  insertAt?: (to: Vec2) => GripStep | null;
   /** Ctrl/⌘-click: take this vertex out. */
   remove?: () => GripStep | null;
   /**

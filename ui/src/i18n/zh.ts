@@ -41,6 +41,14 @@ export const ZH: Record<string, string> = {
   "Cell": "单元格",
   "The curtain wall's cells: move the door, or give the cells round it a panel type": "幕墙的单元格：移动门，或为周围单元格指定面板类型",
   "Curtain panel type": "幕墙面板类型",
+  // Decision 464: the dimension tool (continuous or single, direction, finishing, the segment grip)
+  "Continuous": "连续",
+  "Off: one dimension at a time. On: points go on as a string, each measured from the last (C)": "关闭：一次一个标注。开启：各点连成标注链，每个从上一点量起 (C)",
+  "Horizontal · Tab": "水平 · Tab",
+  "Vertical · Tab": "垂直 · Tab",
+  "Tab flips it": "Tab 切换",
+  "Make the string (Enter, right-click, or the last point again)": "生成标注链（回车、右键，或再次点击最后一点）",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-drag: a new point where it is dropped · Ctrl/⌘-click: one halfway": "拖动：标注线经过该点 · Ctrl/⌘-拖动：在放开处新增一点 · Ctrl/⌘-单击：在中间新增一点",
   // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
   "True north up: click for project north": "正北朝上：点击切换为项目北",
   "Project north up: click to turn the plan to true north": "项目北朝上：点击将平面图旋转至正北",
@@ -1552,6 +1560,8 @@ export const ZH: Record<string, string> = {
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
+  [/^Finish string \((\d+) points\)$/, (m) => `完成标注链（${m[1]} 个点）`],
+  [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `已保留标注链（${m[1]} 个点）· 撤销可将其移除`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `点 [Map/Project/Internal: ${({ "map E, N": "地图 E, N", "base point X, Y": "基点 X, Y", "plan origin X, Y": "平面图原点 X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS 已旋转 ${m[1]}°。`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `在取景范围之外、远离模型的项目：${m[1]}。ZE 可显示全部。`],

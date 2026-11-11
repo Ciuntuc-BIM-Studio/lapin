@@ -29,6 +29,8 @@ export interface CadHost {
   viewId: string;
   /** A plan (typed coordinates are in the UCS), not a section or an elevation (in its own frame). */
   isPlan?(): boolean;
+  /** Pixels per metre of the view, so a step can tell a click on the same spot from one near it. */
+  pxPerMetre?(): number;
   /** The drafted shape under a point, with its exact geometry. */
   pickDraft(p: Vec2): { id: string; shape: Shape } | null;
   /** Anything selectable under a point (a drafted shape, an annotation, an element). */
@@ -50,6 +52,8 @@ export interface Step {
   /** The point typed coordinates and distances are relative to, and ortho squares to. */
   base?: Vec2 | null;
   preview?: (cursor: Vec2) => Shape[];
+  /** Texts the preview carries (a dimension's values), standing at their points. */
+  labels?: (cursor: Vec2) => { at: Vec2; text: string }[];
   /** The step moves these shapes from its base (MOVE, COPY): the base marker, the line to the cursor and this ghost where they were show until the step ends. */
   trace?: Shape[];
   point?: (p: Vec2) => Next;
@@ -517,6 +521,15 @@ export const feedPoint = serial(async (p: Vec2): Promise<void> => {
     return;
   }
   if (s.step.point) await advance(s.step.point(p));
+});
+
+/** A right-click in a view while a step runs: what Enter does (finish, accept); false when no step takes it. */
+export const finishStep = serial(async (): Promise<boolean> => {
+  const s = useCad.getState();
+  if (!s.step?.enter) return false;
+  log('');
+  await advance(s.step.enter());
+  return true;
 });
 
 /** What was typed, on Enter or Space. */

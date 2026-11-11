@@ -35,6 +35,7 @@ import { feedPoint, frameArg, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
+import { feedPoint, finishStep, useCad } from './cad/session';
 import { markIds, markSelected } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
@@ -383,6 +384,7 @@ export function DrawingView() {
           }
           // A right-click on drafting: its draw order (decision 339), what is under the cursor (its group when in one) selected
           // first; then grouping the selection (report #98).
+          if (d && !d.moved && e.button === 2 && useCad.getState().step?.enter) { void finishStep(); return; }
           if (d && !d.moved && e.button === 2 && !useCad.getState().step) {
             const under = pickAny(at(e).raw);
             const target = under ? pickTarget(under) : null;

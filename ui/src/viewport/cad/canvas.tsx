@@ -56,6 +56,7 @@ export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen:
   const typed = live.owner && (live.len || live.ang) ? livePoint({ ...live, cursor: aimed.point }) : null;
   const to = typed ?? aimed.point;
   const preview = step?.preview ? step.preview(to) : [];
+  const labels = step?.labels ? step.labels(to) : [];
   return (
     <g className="cad-overlay">
       <MoveTrace aimed={aimed} to={to} toScreen={toScreen} />
@@ -66,6 +67,7 @@ export function CadOverlay({ aimed, toScreen }: { aimed: Aimed | null; toScreen:
         return <g key={i}><line className="cad-guide" x1={a.x} y1={a.y} x2={ex.x} y2={ex.y} /><path className="cad-acquired" d={`M${a.x - 3},${a.y}H${a.x + 3}M${a.x},${a.y - 3}V${a.y + 3}`} /></g>;
       })}
       {preview.flatMap((s, i) => pointsOf(s, toScreen).map((pts, j) => <polyline key={`${i}:${j}`} className="cad-preview" points={pts} />))}
+      {labels.map((l, i) => { const q = toScreen(l.at); return <text key={`t${i}`} className="cad-preview-text" x={q.x} y={q.y - 4} textAnchor="middle">{l.text}</text>; })}
       {aimed.mode && <g className="cad-snap">{GLYPH[aimed.mode](c.x, c.y)}<text x={c.x + 9} y={c.y - 9}>{aimed.mode}</text></g>}
     </g>
   );

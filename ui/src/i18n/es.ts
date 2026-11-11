@@ -41,6 +41,14 @@ export const ES: Record<string, string> = {
   "Cell": "Celda",
   "The curtain wall's cells: move the door, or give the cells round it a panel type": "Las celdas del muro cortina: mover la puerta, o dar a las celdas de alrededor un tipo de panel",
   "Curtain panel type": "Tipo de panel de muro cortina",
+  // Decision 464: the dimension tool (continuous or single, direction, finishing, the segment grip)
+  "Continuous": "Continua",
+  "Off: one dimension at a time. On: points go on as a string, each measured from the last (C)": "Desactivado: una cota cada vez. Activado: los puntos siguen en cadena, cada uno medido desde el último (C)",
+  "Horizontal · Tab": "Horizontal · Tab",
+  "Vertical · Tab": "Vertical · Tab",
+  "Tab flips it": "Tab la cambia",
+  "Make the string (Enter, right-click, or the last point again)": "Crear la cadena (Intro, clic derecho o el último punto otra vez)",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-drag: a new point where it is dropped · Ctrl/⌘-click: one halfway": "Arrastrar: la línea de cota pasa por el punto · Ctrl/⌘-arrastrar: un punto nuevo donde se suelta · Ctrl/⌘-clic: uno a medio camino",
   // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
   "True north up: click for project north": "Norte verdadero arriba: clic para el norte del proyecto",
   "Project north up: click to turn the plan to true north": "Norte del proyecto arriba: clic para girar la planta al norte verdadero",
@@ -1557,6 +1565,8 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const ES_PATTERNS: Language['patterns'] = [
+  [/^Finish string \((\d+) points\)$/, (m) => `Terminar la cadena (${m[1]} puntos)`],
+  [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `Cadena de cotas conservada (${m[1]} puntos) · Deshacer la quita`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `El punto [Map/Project/Internal: ${({ "map E, N": "mapa E, N", "base point X, Y": "punto base X, Y", "plan origin X, Y": "origen de la planta X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS girado ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Fuera del encuadre, lejos del modelo: ${m[1]}. ZE encuadra todo.`],

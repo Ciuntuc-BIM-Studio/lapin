@@ -73,7 +73,7 @@ export interface GripEditorOptions {
 }
 
 /** A grip being dragged; `copy`: a move grip dragged with Ctrl/⌘, which leaves the element and drops a copy. */
-interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean; copy?: boolean }
+interface Drag { group: GripGroup; members: Grip[]; at: Vec2; moved: boolean; copy?: boolean; insert?: boolean }
 
 export function useGripEditor(o: GripEditorOptions) {
   const selected = useUi((s) => s.selected);
@@ -178,14 +178,16 @@ export function useGripEditor(o: GripEditorOptions) {
     // A flip arrow: a click.
     if (who[0].kind === 'flip') { void runSteps([who[0].click?.()]); return true; }
     const copy = (e.ctrlKey || e.metaKey) && who[0].kind === 'move';
-    if ((e.ctrlKey || e.metaKey) && !copy) {
-      const first = who[0];
+    const first = who[0];
+    // Ctrl/⌘ on a grip with an insert-by-drag (a dimension's segment middle): a click inserts halfway, a drag where it is dropped.
+    const insert = (e.ctrlKey || e.metaKey) && !copy && !!first.insertAt && !!first.insert;
+    if ((e.ctrlKey || e.metaKey) && !copy && !insert) {
       if (first.insert) void runSteps([first.insert()]);
       else if (first.remove) void runSteps([first.remove()]);
       return true;
     }
     (e.target as Element).setPointerCapture?.(e.pointerId);
-    setDrag({ group: g, members: who, at: g.at, moved: false, copy });
+    setDrag({ group: g, members: insert ? [first] : who, at: g.at, moved: false, copy, insert });
     // Its length and angle can be typed while dragging; Enter puts it there.
     liveBegin('grip', g.at, (p) => { void dropGrips(movers(g, pickOf(g), alt.current), p); setDrag(null); liveEnd('grip'); traceEnd('grip'); }, { delta: true });
     // In 2D the move's trace: the ghost of what the grip moves left where it is (a move grip carries it along).
@@ -216,7 +218,10 @@ export function useGripEditor(o: GripEditorOptions) {
   };
   const onPointerUp = (): boolean => {
     if (!drag) return false;
-    if (drag.moved && drag.copy) {
+    if (drag.insert) {
+      const m = drag.members[0];
+      void runSteps([drag.moved ? m.insertAt?.(drag.at) : m.insert?.()]);
+    } else if (drag.moved && drag.copy) {
       // Ctrl/⌘ on a move grip: the elements stay, a copy goes where the grip was let go.
       const ids = [...new Set(drag.members.map((m) => m.owner).filter((x): x is string => !!x))];
       if (ids.length) void execute('element.transform', { ids, op: 'copy', by: [drag.at.x - drag.group.at.x, drag.at.y - drag.group.at.y], ...frameArg(drag.group.at) });

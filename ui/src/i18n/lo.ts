@@ -41,6 +41,14 @@ export const LO: Record<string, string> = {
   "Cell": "ຊ່ອງ",
   "The curtain wall's cells: move the door, or give the cells round it a panel type": "ຊ່ອງຂອງຝາແກ້ວ: ຍ້າຍປະຕູ, ຫຼື ໃຫ້ຊ່ອງອ້ອມຂ້າງມີປະເພດແຜ່ນ",
   "Curtain panel type": "ປະເພດແຜ່ນຂອງຝາແກ້ວ",
+  // Decision 464: the dimension tool (continuous or single, direction, finishing, the segment grip)
+  "Continuous": "ຕໍ່ເນື່ອງ",
+  "Off: one dimension at a time. On: points go on as a string, each measured from the last (C)": "ປິດ: ຂະໜາດເທື່ອລະອັນ. ເປີດ: ຈຸດຕໍ່ກັນເປັນຕ່ອງໂສ້, ແຕ່ລະຈຸດວັດຈາກຈຸດສຸດທ້າຍ (C)",
+  "Horizontal · Tab": "ແນວນອນ · Tab",
+  "Vertical · Tab": "ແນວຕັ້ງ · Tab",
+  "Tab flips it": "Tab ສະລັບ",
+  "Make the string (Enter, right-click, or the last point again)": "ສ້າງຕ່ອງໂສ້ (Enter, ຄລິກຂວາ ຫຼື ຈຸດສຸດທ້າຍອີກຄັ້ງ)",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-drag: a new point where it is dropped · Ctrl/⌘-click: one halfway": "ລາກ: ເສັ້ນຂະໜາດຜ່ານຈຸດ · Ctrl/⌘-ລາກ: ຈຸດໃໝ່ບ່ອນປ່ອຍ · Ctrl/⌘-ຄລິກ: ໜຶ່ງຈຸດເຄິ່ງກາງ",
   // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
   "True north up: click for project north": "ທິດເໜືອແທ້ຢູ່ເທິງ: ຄລິກເພື່ອທິດເໜືອຂອງໂຄງການ",
   "Project north up: click to turn the plan to true north": "ທິດເໜືອຂອງໂຄງການຢູ່ເທິງ: ຄລິກເພື່ອໝູນແຜນຜັງໄປຫາທິດເໜືອແທ້",
@@ -1609,6 +1617,8 @@ export const LO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const LO_PATTERNS: Language['patterns'] = [
+  [/^Finish string \((\d+) points\)$/, (m) => `ສຳເລັດຕ່ອງໂສ້ (${m[1]} ຈຸດ)`],
+  [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `ເກັບຕ່ອງໂສ້ຂະໜາດໄວ້ (${m[1]} ຈຸດ) · ຍົກເລີກຈະລຶບອອກ`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `ຈຸດ [Map/Project/Internal: ${({ "map E, N": "ແຜນທີ່ E, N", "base point X, Y": "ຈຸດຖານ X, Y", "plan origin X, Y": "ຈຸດເລີ່ມຕົ້ນຂອງແຜນຜັງ X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS ໝູນໄປ ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `ຢູ່ນອກກອບ, ຫ່າງຈາກແບບຈຳລອງ: ${m[1]}. ZE ປັບໃຫ້ພໍດີທັງໝົດ.`],

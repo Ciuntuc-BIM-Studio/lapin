@@ -41,6 +41,14 @@ export const DA: Record<string, string> = {
   "Cell": "Felt",
   "The curtain wall's cells: move the door, or give the cells round it a panel type": "Facadeglasvæggens felter: flyt døren, eller giv felterne omkring den en paneltype",
   "Curtain panel type": "Paneltype til facadeglasvæg",
+  // Decision 464: the dimension tool (continuous or single, direction, finishing, the segment grip)
+  "Continuous": "Fortløbende",
+  "Off: one dimension at a time. On: points go on as a string, each measured from the last (C)": "Fra: ét mål ad gangen. Til: punkterne fortsætter som en kæde, hvert målt fra det sidste (C)",
+  "Horizontal · Tab": "Vandret · Tab",
+  "Vertical · Tab": "Lodret · Tab",
+  "Tab flips it": "Tab skifter",
+  "Make the string (Enter, right-click, or the last point again)": "Lav kæden (Enter, højreklik eller det sidste punkt igen)",
+  "Drag: the dimension line goes through the point · Ctrl/⌘-drag: a new point where it is dropped · Ctrl/⌘-click: one halfway": "Træk: målelinjen går gennem punktet · Ctrl/⌘-træk: et nyt punkt, hvor det slippes · Ctrl/⌘-klik: ét halvvejs",
   // Decision 447: plans of a georeferenced project (DXF in map coordinates, the spot coordinate, true north up)
   "True north up: click for project north": "Sand nord op: klik for projektnord",
   "Project north up: click to turn the plan to true north": "Projektnord op: klik for at dreje planen mod sand nord",
@@ -1552,6 +1560,8 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DA_PATTERNS: Language['patterns'] = [
+  [/^Finish string \((\d+) points\)$/, (m) => `Afslut kæden (${m[1]} punkter)`],
+  [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `Målekæde bevaret (${m[1]} punkter) · Fortryd fjerner den`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Punktet [Map/Project/Internal: ${({ "map E, N": "kort E, N", "base point X, Y": "basispunkt X, Y", "plan origin X, Y": "planens oprindelse X, Y" } as Record<string, string>)[m[1]]}]`],
   [/^UCS turned by (-?[\d.]+)°\.$/, (m) => `UCS drejet med ${m[1]}°.`],
   [/^Left out of the frame, far from the model: (\d+)\. ZE frames everything\.$/, (m) => `Uden for udsnittet, langt fra modellen: ${m[1]}. ZE viser alt.`],

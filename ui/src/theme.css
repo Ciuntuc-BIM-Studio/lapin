@@ -639,12 +639,15 @@ button.link { background: none; border: none; padding: 0; color: inherit; text-d
 .cad-buffer .caret { display: inline-block; width: 7px; height: 13px; margin-left: 1px; vertical-align: -2px; background: var(--ink); animation: cad-blink 1s steps(2) infinite; }
 @keyframes cad-blink { 50% { opacity: 0; } }
 .cad-toggle { font: 600 10px/1 ui-monospace, Menlo, monospace; letter-spacing: 0.04em; padding: 3px 6px; border: 1px solid var(--rule-strong); border-radius: 3px; background: none; color: var(--ink-muted); cursor: pointer; }
+.cad-toggle { white-space: nowrap; }
+.cad-toggle input[type=checkbox] { margin: 0 3px 0 0; vertical-align: -2px; accent-color: var(--accent); }
 .cad-toggle.on { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
 .cad-layer { font: 11px ui-monospace, Menlo, monospace; max-width: 120px; }
 .cad-overlay .cad-guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 2 4; }
 .cad-overlay .cad-acquired { stroke: var(--accent); stroke-width: 1.5; }
 .cad-overlay .cad-preview { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 6 3; }
 .cad-overlay .cad-snap rect, .cad-overlay .cad-snap path, .cad-overlay .cad-snap circle { fill: none; stroke: #1f9d55; stroke-width: 2; }
+.cad-overlay .cad-preview-text { font: 11px ui-monospace, Menlo, monospace; fill: var(--accent); stroke: var(--bg, #fff); stroke-width: 3px; paint-order: stroke; pointer-events: none; }
 .cad-overlay .cad-snap text { font: 10px ui-monospace, Menlo, monospace; fill: #1f9d55; }
 /* A move's trace: the ghost where it was, the dashed line from the base to the cursor, the base marker, in the aim's colour. */
 .move-trace { --trace: var(--trace-free); pointer-events: none; }

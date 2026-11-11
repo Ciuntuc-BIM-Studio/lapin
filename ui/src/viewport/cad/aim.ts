@@ -128,6 +128,7 @@ export function useCadCanvas(o: {
     const host: CadHost = {
       viewId: o.viewId,
       isPlan: () => planRef.current,
+      pxPerMetre: () => scaleRef.current,
       pickDraft: (p) => {
         const tol = 8 / scaleRef.current;
         let best: { id: string; shape: Shape; d: number } | null = null;
