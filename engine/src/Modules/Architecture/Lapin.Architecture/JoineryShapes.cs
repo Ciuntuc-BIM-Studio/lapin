@@ -375,6 +375,9 @@ public static class JoineryShapes
         var zs = Spring(s);
         var w = Math.Max(0.015, s.Frame.Mullion * 0.4);
         var (by0, by1) = (s.Frame.Offset - (y1 - y0) * 0.3, s.Frame.Offset + (y1 - y0) * 0.3);
+        // The grid's mullions carried up, each its own width (decision 450): none where the panels below meet.
+        var mullions = Joinery.MullionWidths(s);
+        var carried = new List<double>();
         IEnumerable<Vec2> Ends()
         {
             if (bars == "sunburst")
@@ -389,16 +392,18 @@ public static class JoineryShapes
             else if (bars == "mullions")
             {
                 var (cols, _) = Joinery.Grid(s);
-                foreach (var c in cols.Take(cols.Count - 1)) yield return new Vec2((c.B + s.Frame.Mullion / 2 + 0), zs);
+                for (var i = 0; i + 1 < cols.Count; i++)
+                    if (mullions[i] > 1e-9) { carried.Add(mullions[i]); yield return new Vec2(cols[i].B + mullions[i] / 2, zs); }
             }
             else if (bars == "cross") yield return new Vec2(0, zs);
         }
+        var k = 0;
         foreach (var end in Ends())
         {
             if (bars == "mullions" || bars == "cross")
             {
                 var top = Hit(inner, new Vec2(end.X, zs), new Vec2(0, 1));
-                if (Bar("frame", end, top, bars == "mullions" ? s.Frame.Mullion : w, by0, by1) is { } m) yield return m;
+                if (Bar("frame", end, top, bars == "mullions" ? carried[k++] : w, by0, by1) is { } m) yield return m;
             }
             else if (Bar("frame", new Vec2(0, zs), end, w, by0, by1) is { } b) yield return b;
         }

@@ -51,6 +51,37 @@ New fields of the joinery type (the configurator, a "Details" group), each a par
 
 Defaults are per type; each field can be off. The schedule's section symbol draws the sills. The parts carry their material and area in the quantities. IFC: parts of the door or window (`IfcBuildingElementPart` under the fill), with their materials.
 
+## 4. Per-mullion widths and meeting leaves (decision 450): the API
+
+Engine done; the configurator's interface still to do. All fields optional; a type without them builds and exports as before.
+
+Spec (`JoinerySpec`, JSON names):
+
+- `mullions: (number | null)[]`: one entry per column boundary, left to right (length `columns.length − 1`; missing entries count as null). `null`: `frame.mullion`; `0`: no mullion, the panels meet; else metres (0–1). The UI keeps the list in step when it adds, removes or reorders columns (a mirror reverses it in the engine).
+- `transoms: (number | null)[]`: the same for row boundaries, bottom up.
+- `meeting: { kind, active, width?, thickness?, bolts }` or absent:
+  - `kind`: `"butt" | "rebated" | "astragal"` (default `"rebated"`).
+  - `active`: `"left" | "right"` (default `"right"`): the leaf that opens first and has the handle; left/right as the operations name hands ("left" is the leaf hinged on the left, `swing-left`).
+  - `width`: a rebate's overlap (default 0.014) or an astragal's face (default 0.045), metres, over 0 and up to 0.12.
+  - `thickness`: an astragal's thickness (default 0.012), over 0 and up to 0.04.
+  - `bolts`: flush bolts on the passive leaf (default `true`).
+  - One setting for every pair of the type. Absent: a pair meets butt and both leaves keep their handles (old behaviour), so when the UI sets a mullion between two leaves to 0 it should also set `meeting` from `defaultMeeting`.
+- A pair is two leaves side by side over a boundary whose mullion is 0, the left one `swing-left`/`double-acting-left`, the right one `swing-right`/`double-acting-right`. Double-acting pairs always meet butt; frameless glass has no pairs.
+
+Catalog (`catalogs['architecture.joinery']`):
+
+- `doorPresets.double`: a double door spec (1500 × 2100, two 700 leaves, `mullions: [0]`, rebated, right active).
+- `meetingKinds`: `["butt", "rebated", "astragal"]`.
+- `defaultMeeting`: `{ kind: "rebated", active: "right", width: 0.014, thickness: 0.012, bolts: true, astragalWidth: 0.045 }` (`astragalWidth`: the width to offer when the user picks "astragal" and has not typed one; or leave `width` out and the engine uses it).
+
+Preview (`architecture.joineryPreview`), in `grid` besides `inner`, `cols`, `rows`:
+
+- `mullions: number[]`: each column boundary's effective mullion width (0 where none), so the elevation overlay can pick a mullion at `cols[i].B .. cols[i + 1].A`.
+- `transoms: number[]`: each row boundary's.
+- `meetings: boolean[]`: per column boundary, whether two leaves meet there.
+- `pairs: [{ boundary, active, passive, kind }]`: `active`/`passive` are column indices, `kind` the effective one ("butt" for double-acting or without a setting).
+- `boxes` carry the rebate lips and the astragal (role `leaf`) and the bolts (role `hardware`); `drawings` the bolts in the elevation with hardware and the astragal seen from inside.
+
 ## Order and effort
 
 1 (duplicating, 3D views, sets): the engine first, with its tests, then the browser and the dialog. 2 (the joinery's drawings): the preview and the project settings, then the plans and elevations. 3 (the details): the spec and geometry, then the drawings and quantities.

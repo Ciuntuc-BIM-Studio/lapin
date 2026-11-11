@@ -21,7 +21,16 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var (cols, rows) = Joinery.Grid(s);
         var inner = Joinery.InnerRect(s);
         static JsonArray Pairs(List<(double A, double B)> l) => new(l.Select(x => (JsonNode)new JsonArray(x.A, x.B)).ToArray());
-        return new JsonObject { ["inner"] = new JsonArray(inner.X0, inner.X1, inner.Z0, inner.Z1), ["cols"] = Pairs(cols), ["rows"] = Pairs(rows) };
+        static JsonArray Numbers(IEnumerable<double> l) => new(l.Select(x => (JsonNode)x).ToArray());
+        // Each boundary's own mullion and transom (decision 450), and where two leaves meet with none: which boundary, the active and passive columns, how.
+        var pairs = Joinery.Meetings(s);
+        return new JsonObject
+        {
+            ["inner"] = new JsonArray(inner.X0, inner.X1, inner.Z0, inner.Z1), ["cols"] = Pairs(cols), ["rows"] = Pairs(rows),
+            ["mullions"] = Numbers(Joinery.MullionWidths(s)), ["transoms"] = Numbers(Joinery.TransomWidths(s)),
+            ["meetings"] = new JsonArray(Enumerable.Range(0, Math.Max(0, cols.Count - 1)).Select(i => (JsonNode)pairs.Any(p => p.Boundary == i)).ToArray()),
+            ["pairs"] = new JsonArray(pairs.Select(p => (JsonNode)new JsonObject { ["boundary"] = p.Boundary, ["active"] = p.Active.Col, ["passive"] = p.Passive.Col, ["kind"] = p.Kind }).ToArray()),
+        };
     }
 
     /// <summary>A drawing's strokes as the interface draws them: points, weight (cut, outline, thin), closed, dashed.</summary>
@@ -150,6 +159,10 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             ["infills"] = new JsonArray(Joinery.Infills.Select(x => (JsonNode)x).ToArray()),
             ["defaultDoor"] = JoinerySpecs.Door.ToJson(),
             ["defaultWindow"] = JoinerySpecs.Window.ToJson(),
+            // Door presets (decision 450): a double door, no mullion between its leaves, a rebated meeting, the right leaf active.
+            ["doorPresets"] = new JsonObject { ["double"] = JoinerySpecs.DoubleDoor.ToJson() },
+            ["meetingKinds"] = new JsonArray(JoineryMeeting.Kinds.Select(x => (JsonNode)x).ToArray()),
+            ["defaultMeeting"] = new JsonObject { ["kind"] = "rebated", ["active"] = "right", ["width"] = JoineryMeeting.DefaultRebate, ["thickness"] = JoineryMeeting.DefaultAstragalThickness, ["bolts"] = true, ["astragalWidth"] = JoineryMeeting.DefaultAstragalWidth },
             ["shapes"] = new JsonArray(JoineryShapes.Kinds.Select(x => (JsonNode)x).ToArray()),
             ["headBars"] = new JsonArray(JoineryShapes.HeadBars.Select(x => (JsonNode)x).ToArray()),
             ["muntins"] = new JsonArray(JoineryShapes.MuntinPatterns.Select(x => (JsonNode)x).ToArray()),

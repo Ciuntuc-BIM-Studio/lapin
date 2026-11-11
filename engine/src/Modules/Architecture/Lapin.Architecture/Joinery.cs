@@ -25,6 +25,34 @@ public sealed record JoineryProfile(string System = "custom", double Rebate = 0.
 /// <summary>The frame (lining): across the wall, its face width, the mullions' and transoms', its centre across the wall (+ to the exterior).</summary>
 public sealed record JoineryFrame(double Depth, double Width, double Mullion, double Transom, double Offset);
 
+/// <summary>
+/// How two leaves meet where no mullion stands between them (decision 450): <see cref="Kind"/> "butt" (square edges, a gap),
+/// "rebated" (a rebated meeting stile: each leaf's edge stepped half its thickness, overlapping by <see cref="Width"/>, the
+/// active leaf's lip on the room side, so the passive leaf cannot open before it), "astragal" (a strip <see cref="Width"/> wide
+/// and <see cref="Thickness"/> thick on the active leaf's room face, covering the joint). <see cref="Active"/>: the leaf that
+/// opens first, "left" or "right" as the operations name their hands (the left leaf is the one hinged on the left, "swing-left");
+/// it has the handle, the passive one flush bolts at its top and bottom (<see cref="Bolts"/>). One setting for every pair of a
+/// type. Double-acting leaves always meet butt.
+/// </summary>
+public sealed record JoineryMeeting(string Kind = "rebated", string Active = "right", double? Width = null, double? Thickness = null, bool Bolts = true)
+{
+    public static readonly string[] Kinds = ["butt", "rebated", "astragal"];
+    public static readonly string[] Sides = ["left", "right"];
+
+    /// <summary>A rebated meeting stile's overlap, and an astragal's face and thickness, when the type gives none.</summary>
+    public const double DefaultRebate = 0.014, DefaultAstragalWidth = 0.045, DefaultAstragalThickness = 0.012;
+
+    /// <summary>The overlap of a rebate, or an astragal's width.</summary>
+    public double WidthOf => Width ?? (Kind == "astragal" ? DefaultAstragalWidth : DefaultRebate);
+
+    public double ThicknessOf => Thickness ?? DefaultAstragalThickness;
+
+    public JoineryMeeting Mirrored() => this with { Active = Active == "left" ? "right" : "left" };
+}
+
+/// <summary>Two leaves meeting at a column boundary with no mullion (<see cref="Joinery.Meetings"/>): which is which, and how they meet.</summary>
+public sealed record JoineryPair(int Boundary, JoineryPanel Left, JoineryPanel Right, JoineryPanel Active, JoineryPanel Passive, string Kind);
+
 /// <summary>A sash's profile, a door leaf's thickness, the glass.</summary>
 public sealed record JoinerySash(double Width, double Depth, double LeafThickness, double GlassThickness);
 
@@ -161,7 +189,15 @@ public sealed record JoinerySpec(
     /// <summary>The frame's place across the wall as a value from the exterior face, the core or the centre (report #76); null: <see cref="JoineryFrame.Offset"/>.</summary>
     JoineryPosition? Position = null,
     /// <summary>Frameless toughened glass, no frame or sash (tester's question 7): how it is held, the glass, the gaps; null: framed.</summary>
-    JoineryFrameless? Frameless = null)
+    JoineryFrameless? Frameless = null,
+    /// <summary>
+    /// Each column boundary's mullion, left to right (decision 450): null (or missing), <see cref="JoineryFrame.Mullion"/>; 0, none, the
+    /// panels meet (a double door's leaves). <see cref="Transoms"/> the same for the row boundaries, bottom up. Null: the frame's everywhere.
+    /// </summary>
+    double?[]? Mullions = null,
+    double?[]? Transoms = null,
+    /// <summary>How two leaves meet where no mullion parts them (decision 450); null: butt, both leaves with their handles (as before).</summary>
+    JoineryMeeting? Meeting = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
         "window", name, "W", 1.2, 1.5, 0.9,
@@ -330,18 +366,18 @@ public static class Joinery
         return new CellRect(-s.Width / 2 + f, s.Width / 2 - f, bottom, top);
     }
 
-    static List<(double A, double B)> Splits(double[] weights, double from, double to, double bar)
+    static List<(double A, double B)> Splits(double[] weights, double from, double to, double[] bars)
     {
         var total = weights.Sum(w => Math.Max(w, 0));
         if (total == 0) total = 1;
-        var usable = to - from - bar * (weights.Length - 1);
+        var usable = to - from - bars.Sum();
         var o = new List<(double, double)>();
         var at = from;
         for (var i = 0; i < weights.Length; i++)
         {
             var size = usable * Math.Max(weights[i], 0) / total;
             o.Add((at, at + size));
-            at += size + (i < weights.Length - 1 ? bar : 0);
+            at += size + (i < weights.Length - 1 ? bars[i] : 0);
         }
         return o;
     }
@@ -350,14 +386,53 @@ public static class Joinery
     public static (List<(double A, double B)> Cols, List<(double A, double B)> Rows) Grid(JoinerySpec s)
     {
         var r = InnerRect(s);
-        return (Splits(s.Columns, r.X0, r.X1, MullionOf(s)), Splits(s.Rows, r.Z0, r.Z1, TransomOf(s)));
+        return (Splits(s.Columns, r.X0, r.X1, MullionWidths(s)), Splits(s.Rows, r.Z0, r.Z1, TransomWidths(s)));
     }
 
-    /// <summary>What parts the grid's columns: the mullion, or frameless glass's gap.</summary>
+    /// <summary>What parts the grid's columns by default: the frame's mullion, or frameless glass's gap.</summary>
     public static double MullionOf(JoinerySpec s) => s.Frameless?.Gap ?? s.Frame.Mullion;
 
-    /// <summary>What parts the grid's rows: the transom, or frameless glass's gap.</summary>
+    /// <summary>What parts the grid's rows by default: the transom, or frameless glass's gap.</summary>
     public static double TransomOf(JoinerySpec s) => s.Frameless?.Gap ?? s.Frame.Transom;
+
+    /// <summary>A boundary's own width from a per-boundary list (decision 450): its entry, else the default; frameless glass's gap whatever the list says.</summary>
+    static double At(JoinerySpec s, double?[]? list, int i, double fallback) =>
+        s.Frameless != null ? fallback : list is { } l && i < l.Length && l[i] is { } w && double.IsFinite(w) ? Math.Max(0, w) : fallback;
+
+    /// <summary>Each column boundary's mullion, left to right: <see cref="JoinerySpec.Mullions"/>'s entry, else <see cref="MullionOf"/>; 0 where the panels meet.</summary>
+    public static double[] MullionWidths(JoinerySpec s) => [.. Enumerable.Range(0, Math.Max(0, s.Columns.Length - 1)).Select(i => At(s, s.Mullions, i, MullionOf(s)))];
+
+    /// <summary>Each row boundary's transom, bottom up, as <see cref="MullionWidths"/>.</summary>
+    public static double[] TransomWidths(JoinerySpec s) => [.. Enumerable.Range(0, Math.Max(0, s.Rows.Length - 1)).Select(i => At(s, s.Transoms, i, TransomOf(s)))];
+
+    /// <summary>The leaves of a pair: hinged on the left and on the right, so their free edges meet.</summary>
+    static bool HingedLeft(string op) => op is "swing-left" or "double-acting-left";
+    static bool HingedRight(string op) => op is "swing-right" or "double-acting-right";
+
+    /// <summary>
+    /// Where two swinging (or double-acting) leaves meet with no mullion between them (decision 450): the left one hinged on
+    /// its left, the right one on its right, side by side over a column boundary whose mullion is 0. The kind is the type's
+    /// <see cref="JoinerySpec.Meeting"/> (butt without one, and always for double-acting leaves); frameless glass has none.
+    /// </summary>
+    public static List<JoineryPair> Meetings(JoinerySpec s)
+    {
+        var o = new List<JoineryPair>();
+        if (s.Frameless != null || !s.IsDoor) return o;
+        var widths = MullionWidths(s);
+        var panels = Normalised(s);
+        for (var i = 0; i < widths.Length; i++)
+        {
+            if (widths[i] > 1e-9) continue;
+            var l = panels.FirstOrDefault(p => p.Col + p.ColSpan - 1 == i && HingedLeft(p.Operation));
+            var r = panels.FirstOrDefault(p => p.Col == i + 1 && HingedRight(p.Operation));
+            if (l == null || r == null || l.Row + l.RowSpan <= r.Row || r.Row + r.RowSpan <= l.Row) continue;
+            var m = s.Meeting;
+            var kind = m == null || !l.Operation.StartsWith("swing") || !r.Operation.StartsWith("swing") ? "butt" : m.Kind;
+            var leftActive = m?.Active == "left";
+            o.Add(new JoineryPair(i, l, r, leftActive ? l : r, leftActive ? r : l, kind));
+        }
+        return o;
+    }
 
     /// <summary>A panel's rectangle: its cells and the mullions or transoms between them.</summary>
     public static CellRect PanelRect(JoinerySpec s, JoineryPanel p)
@@ -378,6 +453,8 @@ public static class Joinery
         return s with
         {
             Columns = [.. s.Columns.Reverse()],
+            Mullions = s.Mullions == null ? null : [.. Enumerable.Range(0, Math.Max(0, nc - 1)).Select(i => i < s.Mullions.Length ? s.Mullions[i] : null).Reverse()],
+            Meeting = s.Meeting?.Mirrored(),
             Panels = [.. s.Panels.Select(p =>
             {
                 var span = Math.Max(1, Math.Min(p.ColSpan, nc - p.Col));
@@ -423,6 +500,15 @@ public static class Joinery
         if (!Positive(s.Frame.Depth) || !Positive(s.Frame.Width)) return "The frame needs a positive depth and width.";
         if (s.Columns.Length is < 1 or > 12 || s.Rows.Length is < 1 or > 12) return "Use 1 to 12 columns and rows.";
         if (!s.Columns.Concat(s.Rows).All(Positive)) return "Column widths and row heights must be positive.";
+        if ((s.Mullions ?? []).Concat(s.Transoms ?? []).Any(v => v is { } w && (!double.IsFinite(w) || w < 0 || w > 1)))
+            return "Mullion and transom widths must be zero or positive (and under a metre).";
+        if (s.Meeting is { } meet)
+        {
+            if (!JoineryMeeting.Kinds.Contains(meet.Kind)) return $"„{meet.Kind}” is not a meeting of two leaves ({string.Join(", ", JoineryMeeting.Kinds)}).";
+            if (!JoineryMeeting.Sides.Contains(meet.Active)) return "The active leaf is the left or the right one.";
+            if (meet.Width is { } mw && (!double.IsFinite(mw) || mw <= 0 || mw > 0.12)) return "A rebate's overlap or an astragal's width is over 0 and up to 120 mm.";
+            if (meet.Thickness is { } mt && (!double.IsFinite(mt) || mt <= 0 || mt > 0.04)) return "An astragal is over 0 and up to 40 mm thick.";
+        }
         if (s.Frameless != null) return Frameless.Problem(s);
         if (JoineryShapes.Round(s))
             return s.Width < 2 * s.Frame.Width + 0.1 || s.Height < 2 * s.Frame.Width + 0.1 ? "A round window needs room inside its frame." : null;
@@ -541,9 +627,16 @@ public static class Joinery
     public static (List<double> Mullions, List<double> Transoms) LiningOffsets(JoinerySpec s)
     {
         var (cols, rows) = Grid(s);
-        return (cols.Take(cols.Count - 1).Select(c => (c.B + MullionOf(s) / 2 + s.Width / 2) / s.Width).ToList(),
-                rows.Take(rows.Count - 1).Select(r => (r.B + TransomOf(s) / 2) / s.Height).ToList());
+        var (mw, tw) = (MullionWidths(s), TransomWidths(s));
+        // Where the panels meet with no bar between them (decision 450) the lining has none; frameless glass's gaps all count.
+        bool Present(double w) => s.Frameless != null || w > 1e-9;
+        return (cols.Take(cols.Count - 1).Select((c, i) => (c, i)).Where(x => Present(mw[x.i])).Select(x => (x.c.B + mw[x.i] / 2 + s.Width / 2) / s.Width).ToList(),
+                rows.Take(rows.Count - 1).Select((r, i) => (r, i)).Where(x => Present(tw[x.i])).Select(x => (x.r.B + tw[x.i] / 2) / s.Height).ToList());
     }
+
+    /// <summary>The lining's one mullion and transom thickness (IFC has one each): the widest there is, else the frame's.</summary>
+    public static (double Mullion, double Transom) LiningBars(JoinerySpec s) =>
+        (MullionWidths(s).DefaultIfEmpty(0).Max() is var m && m > 1e-9 ? m : MullionOf(s), TransomWidths(s).DefaultIfEmpty(0).Max() is var t && t > 1e-9 ? t : TransomOf(s));
 
     // ------------------------------------------------------------ body
 
@@ -717,9 +810,14 @@ public static class Joinery
 
         var sh = s.Sash;
         var pr = s.Profile;
+        var pairs = Meetings(s);
         foreach (var p in panels)
         {
             var r = PanelRect(s, p);
+            // A leaf of a pair meeting with no mullion (decision 450): a rebated one's body stops half the overlap short of the meeting line.
+            var pair = pairs.FirstOrDefault(m => m.Left == p || m.Right == p);
+            var meeting = pair == null ? null : new LeafMeeting(pair, p, r, s.Meeting);
+            if (meeting != null) r = meeting.Body;
             // A pane in the top row of a type without its spring-line transom follows the head (report #112): its members,
             // glass and beads are bands of its outline instead of rectangles.
             List<Vec2>? Out(double inset) => JoineryShapes.PaneOutline(s, r, inset);
@@ -745,9 +843,14 @@ public static class Joinery
                     if (pr != null) boxes.AddRange(Band(sh.Width, sh.Width + pr.Bead, f.Offset - sh.GlassThickness / 2 - 0.018, f.Offset - sh.GlassThickness / 2, "leaf"));
                 }
                 else boxes.Add(Sheet("leaf", 0, f.Offset, t));
-                // A door has its handle on both faces.
-                boxes.AddRange(HandleBoxes(s, r, p.Operation, ly0, -1, true));
-                boxes.AddRange(HandleBoxes(s, r, p.Operation, ly1, +1, true));
+                if (meeting != null) boxes.AddRange(meeting.Boxes(s, ly0, ly1));
+                // A door has its handle on both faces; of a pair with a meeting setting, only the active leaf.
+                if (meeting is not { HasHandle: false })
+                {
+                    var hr = meeting?.HandleRect ?? r;
+                    boxes.AddRange(HandleBoxes(s, hr, p.Operation, ly0, -1, true));
+                    boxes.AddRange(HandleBoxes(s, hr, p.Operation, ly1, +1, true));
+                }
             }
             else if (p.Operation == "fixed")
             {
@@ -790,6 +893,50 @@ public static class Joinery
 
         boxes.AddRange(Boards(s, y0, y1, outer));
         return boxes.Where(b => b.Max.X - b.Min.X > 1e-6 && b.Max.Y - b.Min.Y > 1e-6 && b.Max.Z - b.Min.Z > 1e-6).ToList();
+    }
+
+    /// <summary>
+    /// One leaf of a pair meeting with no mullion (decision 450), from its grid rectangle <see cref="Cell"/>: the rectangle its
+    /// body fills (a rebated leaf's stops half the overlap short of the meeting line), the strips it adds (the rebate's lip on
+    /// half its thickness, the active leaf's astragal on its room face, the passive leaf's flush bolts), where its handle goes.
+    /// </summary>
+    sealed record LeafMeeting(JoineryPair Pair, JoineryPanel Panel, CellRect Cell, JoineryMeeting? Setting)
+    {
+        public bool IsLeft => Pair.Left == Panel;
+        public bool IsActive => Pair.Active == Panel;
+        /// <summary>The meeting line's X, and the way into this leaf from it.</summary>
+        public double X => IsLeft ? Cell.X1 : Cell.X0;
+        int Into => IsLeft ? -1 : 1;
+        double Half => Pair.Kind == "rebated" ? Setting!.WidthOf / 2 : 0;
+        public CellRect Body => IsLeft ? Cell with { X1 = Cell.X1 - Half } : Cell with { X0 = Cell.X0 + Half };
+        /// <summary>A meeting setting gives the handle to the active leaf only; without one both keep theirs (as before).</summary>
+        public bool HasHandle => Setting == null || IsActive;
+        /// <summary>Where the handle is set out from: clear of an astragal.</summary>
+        public CellRect HandleRect => Pair.Kind == "astragal" && IsActive ? (IsLeft ? Body with { X1 = X - Setting!.WidthOf / 2 } : Body with { X0 = X + Setting!.WidthOf / 2 }) : Body;
+
+        public IEnumerable<JoineryBox> Boxes(JoinerySpec s, double ly0, double ly1)
+        {
+            if (Setting == null) yield break;
+            var mid = (ly0 + ly1) / 2;
+            // A pane following an arched head (report #112): the strips stop under the arch.
+            var top = JoineryShapes.PaneTop(s, Cell) is { } t ? Math.Min(t(X - Setting.WidthOf / 2), t(X + Setting.WidthOf / 2)) : Cell.Z1;
+            if (Pair.Kind == "rebated")
+            {
+                // The lip across the meeting line: the active leaf's on the room side (it closes last, over the passive one), the passive's outside.
+                var (y0, y1) = IsActive ? (ly0, mid) : (mid, ly1);
+                yield return new("leaf", new(X - Half, y0, Cell.Z0), new(X + Half, y1, top));
+            }
+            else if (Pair.Kind == "astragal" && IsActive)
+                yield return new("leaf", new(X - Setting.WidthOf / 2, ly0 - Setting.ThicknessOf, Cell.Z0), new(X + Setting.WidthOf / 2, ly0, top));
+            if (!IsActive && Setting.Bolts)
+            {
+                // Flush bolts at the passive leaf's top and bottom, by its meeting edge on the room face, clear of a rebate's lip or an astragal.
+                var edge = X + Into * (Pair.Kind == "astragal" ? Setting.WidthOf / 2 : Half);
+                var (x0, x1) = (edge + Into * 0.012, edge + Into * 0.032);
+                foreach (var (z0, z1) in new[] { (Cell.Z0 + 0.03, Cell.Z0 + 0.23), (top - 0.23, top - 0.03) })
+                    yield return new("hardware", new(Math.Min(x0, x1), ly0 - 0.005, z0), new(Math.Max(x0, x1), ly0, z1));
+            }
+        }
     }
 
     /// <summary>A window's boards inside and outside, under the frame's depth <paramref name="y0"/>..<paramref name="y1"/>.</summary>
