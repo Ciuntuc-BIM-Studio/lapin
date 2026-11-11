@@ -3564,6 +3564,35 @@ export const scenes = [
     },
   },
   {
+    // The X-ray visual style (report #142, decision 462): View → Visual style cycles shaded, edges, X-ray, wireframe; View → X-ray
+    // switches it directly. Every surface is see-through with its edges; the selected wall stays solid.
+    id: 'views-xray',
+    touches: ['core'],
+    async run(t) {
+      await t.fresh();
+      await house(t);
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.3, pitch: -0.35, distance: 22, target: { x: 6, y: 4, z: 2 } }, false));
+      const style = () => t.page.evaluate(async () => (await import('/src/app/store.ts')).useUi.getState().visualStyle);
+      await t.button('View', { exact: true });
+      await t.ui({ visualStyle: 'edges' });
+      await t.tool('view.style');
+      t.expect(await style() === 'xray', 'View → Visual style goes from shaded with edges to X-ray');
+      await t.tool('view.style');
+      t.expect(await style() === 'wireframe', 'and on to wireframe');
+      await t.tool('view.xray');
+      t.expect(await style() === 'xray', 'View → X-ray switches it on directly');
+      const wall = (await t.nodes()).find((n) => n.type === 'IfcWall');
+      t.expect(wall, 'a wall in the house');
+      await select(t, wall.id);
+      await t.ui({ notice: null });
+      await t.wait(1500);
+      await t.shot('view-xray', { of: '[data-testid=view3d]', pad: 0 });
+      await t.tool('view.xray');
+      t.expect(await style() === 'edges', 'and off again, back to shaded with edges');
+    },
+  },
+  {
     // Section and elevation markers (decisions 455, 456, 460): the section markers' size in Drafting standards → Project
     // (a section's and an elevation's apart), the south elevation marked in the plan clear of A-A's head, its line's end
     // grip dragged so it reaches only the middle of the house, its marker dragged further out, A-A's head moved off its end.

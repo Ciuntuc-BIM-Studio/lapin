@@ -127,3 +127,7 @@ Oto skróty w stylu Revit, w obecnej postaci w Lapinie:
 <!-- shortcuts -->
 
 Klawisze cyfr <kbd>1</kbd>–<kbd>9</kbd> wybierają szybkie narzędzia.
+
+## Przesuwanie okna dialogowego
+
+Każde okno dialogowe przesuwa się za pasek tytułu, jak okno: naciśnij tytuł i przeciągnij myszą lub palcem. Zostaje w obrębie okna, otwiera się ponownie tam, gdzie je zostawiono, dopóki program jest otwarty, a dwukrotne kliknięcie tytułu przywraca je na środek. Dzięki temu można odsunąć okno od fragmentu modelu, nad którym się pracuje, albo zobaczyć model za nim.

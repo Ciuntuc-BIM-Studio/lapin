@@ -3,11 +3,12 @@
 import { StoreySection } from './StoreySection';
 import { toggleDrafts3d, toggleDragMove3d, toggleDxf3d, toggleDrillSelect, toggleGrid, toggleOrbitSelection, toggleThinLines, toggleZoomToCursor, useDisplay } from '../../app/display';
 import { measure } from './measure';
-import { Pin, PinOff, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
+import { Pin, PinOff, AppWindow, Boxes, ListTree, ArrowRightLeft, Bot, Box, BoxSelect, Cable, ClipboardCheck, Cloud, CloudFog, Compass, Copy, CopyCheck, Eye, EyeOff, ScanEye, FileStack, FileText, Filter, FlipHorizontal2, Focus, FolderOpen, Frame, Gauge, Grid3x3, Group, Hash, History, Info, Keyboard, Library, Layers, Layers3, LayoutGrid, Link2, MapPin, MessageSquare, MessageSquareText, Minus, MousePointer2, Move, Orbit, Palette, PanelBottomClose, PanelsTopLeft, PenLine, PenTool, PencilRuler, Pipette, RotateCw, Ruler, Scissors, Send, SlidersHorizontal, Square, SquareDashed, SquareMinus, SquareSplitHorizontal, SunMedium, Trash2, Ungroup, Wand2, ZoomIn, Building2 } from 'lucide-react';
 import { CopyToStoreysIcon, ElevationIcon, MoveToStoreyIcon, ProfileIcon, SectionIcon } from '../../icons';
 import { execute, useSession } from '../../engine/session';
 import { typeOf } from '../../engine/model';
 import { notify } from '../../app/store';
+import { nextVisualStyle, XRAY_NOTICE } from '../../app/visualStyle';
 import { setTypeOf, similarOf } from '../../platform/modules';
 import { registerCommand, startCommand, useCad, cadLog, type Step } from '../../viewport/cad/session';
 import type { LapinModule } from '../../platform/module';
@@ -230,7 +231,9 @@ const core: LapinModule = {
         { id: 'view.keyPlan', label: 'Key plan', icon: Compass, run: () => useUi.setState((s) => ({ keyPlan: !s.keyPlan })) },
         { id: 'view.split', label: 'Split', icon: SquareSplitHorizontal, run: () => { const s = useUi.getState(); if (s.panes.length > 1) closePane(1); else splitPane('row'); } },
         { id: 'view.window', label: 'New window', icon: AppWindow, run: () => { const s = useUi.getState(); if (isDesktop()) void openViewWindow(s.panes[s.pane]); else notify('A view in a window of its own needs the desktop app.'); } },
-        { id: 'view.style', label: 'Visual style', icon: Eye, run: () => useUi.setState((s) => ({ visualStyle: s.visualStyle === 'shaded' ? 'edges' : s.visualStyle === 'edges' ? 'wireframe' : 'shaded' })) },
+        // Shaded → edges → X-ray → wireframe (report #142); X-ray is also a button of its own.
+        { id: 'view.style', label: 'Visual style', icon: Eye, run: () => { const next = nextVisualStyle(useUi.getState().visualStyle); useUi.setState({ visualStyle: next }); if (next === 'xray') notify(XRAY_NOTICE); } },
+        { id: 'view.xray', label: 'X-ray', icon: ScanEye, run: () => { const on = useUi.getState().visualStyle !== 'xray'; useUi.setState({ visualStyle: on ? 'xray' : 'edges' }); notify(on ? XRAY_NOTICE : 'The 3D view is back to shaded with edges.'); } },
         { id: 'view.fog', label: 'Fog', icon: CloudFog, run: () => useUi.setState((s) => ({ fog: !s.fog })) },
         // For the eyes only (decision 247): the plan's background grid (F7) and every line one pixel (TL); sheets and PDFs keep their pens.
         { id: 'view.grid', label: 'Grid', icon: Grid3x3, run: toggleGrid },

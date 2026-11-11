@@ -905,6 +905,28 @@ export const FAQ: Entry[] = [
     action: { label: 'Open Levels', labelRo: 'Deschide Levels', run: { kind: 'tool', id: 'core.levels' } },
     source: 'report #117',
   },
+  {
+    id: 'xray-view',
+    q: ['How do I make the 3D view transparent?', 'Can I see through the walls in 3D?', 'Is there an X-ray view?'],
+    qRo: ['Cum fac vederea 3D transparentă?', 'Pot vedea prin pereți în 3D?', 'Există o vedere cu raze X?'],
+    keywords: ['transparent', 'transparency', 'xray', 'ghost', 'transparenta', 'transparente', 'razele', 'vedere', 'vederea', 'raze',
+      // Spanish, Portuguese, French, Italian, German, Polish, Danish, Chinese
+      'transparente', 'trasparente', 'trasparenza', 'visualizacion', 'visualizacao', 'rayos', 'raios', 'transparence', 'transparent', 'rayons', 'trasparente', 'raggi', 'durchsichtig', 'transparenz', 'roentgen', 'rontgen', 'przezroczysty', 'przezroczystosc', 'rentgen', 'gennemsigtig', 'gennemsigtigt', 'rontgen', '透明', 'x光'],
+    a: 'View → Visual style goes round shaded, shaded with edges, X-ray and wireframe, and View → X-ray switches X-ray on and off directly: every surface of the 3D view is drawn see-through with its edges, the selection stays solid and a click still picks the element under the cursor. It is for looking only; nothing in the model or the drawings changes. To make only some categories transparent (the roof, the slabs), set their transparency per category in Visibility / Graphics (VV), which also reaches sheets and exports.',
+    aRo: 'View → Visual style trece prin umbrit, umbrit cu muchii, X-ray și wireframe, iar View → X-ray pornește și oprește direct razele X: toate suprafețele vederii 3D sunt desenate transparent, cu muchii, selecția rămâne opacă și un clic alege tot elementul de sub cursor. E doar pentru privit; nimic nu se schimbă în model sau în desene. Ca să faci transparente doar anumite categorii (acoperișul, planșeele), setează transparența pe categorii în Visibility / Graphics (VV), care ajunge și în planșe și în exporturi.',
+    action: { label: 'Switch X-ray on or off', labelRo: 'Pornește sau oprește X-ray', run: { kind: 'tool', id: 'view.xray' } },
+    source: 'report #142',
+  },
+  {
+    id: 'dialog-move',
+    q: ['How do I move a dialog window out of the way?', 'Can I drag a dialog like a window?', 'The dialog covers the part of the model I am working on'],
+    qRo: ['Cum mut o fereastră de dialog din loc?', 'Pot trage un dialog ca pe o fereastră?', 'Dialogul acoperă partea de model la care lucrez'],
+    keywords: ['dialog', 'dialogue', 'dialogs', 'move', 'drag', 'titlebar', 'fereastra', 'dialogul', 'mut', 'trag', 'acopera', 'muta',
+      'ventana', 'mover', 'arrastrar', 'janela', 'mover', 'fenetre', 'deplacer', 'finestra', 'spostare', 'fenster', 'verschieben', 'okno', 'przesunac', 'vindue', 'flytte', '窗口', '对话框', '移动'],
+    a: 'Every dialog moves by its title bar, as a window does: press on the title and drag, with the mouse or a finger. It stays inside the window and opens again where you left it while the program is open; a double click on the title puts it back in the middle.',
+    aRo: 'Orice dialog se mută de bara lui de titlu, ca o fereastră: apasă pe titlu și trage, cu mausul sau cu degetul. Rămâne în fereastră și se deschide din nou unde l-ai lăsat cât timp programul e deschis; dublu clic pe titlu îl aduce înapoi la mijloc.',
+    source: 'report #140',
+  },
 ];
 
 /** Lower case, without diacritics, punctuation as spaces. */

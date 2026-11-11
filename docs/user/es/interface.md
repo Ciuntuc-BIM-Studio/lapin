@@ -127,3 +127,7 @@ Estos son los métodos abreviados de estilo Revit, tal como Lapin los tiene ahor
 <!-- shortcuts -->
 
 Las teclas numéricas <kbd>1</kbd>–<kbd>9</kbd> eligen las herramientas rápidas.
+
+## Mover un cuadro de diálogo
+
+Todo cuadro de diálogo se mueve por su barra de título, como una ventana: pulsa sobre el título y arrastra, con el ratón o con el dedo. Se queda dentro de la ventana, vuelve a abrirse donde lo dejaste mientras el programa siga abierto, y un doble clic en el título lo devuelve al centro. Así puedes apartar un cuadro de la parte del modelo en la que trabajas o mirar el modelo que hay detrás.

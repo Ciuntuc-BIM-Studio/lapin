@@ -127,3 +127,7 @@ Voici les raccourcis Style Revit, tels que Lapin les a actuellement :
 <!-- shortcuts -->
 
 Les touches numériques <kbd>1</kbd>–<kbd>9</kbd> choisissent les outils rapides.
+
+## Déplacer une boîte de dialogue
+
+Toute boîte de dialogue se déplace par sa barre de titre, comme une fenêtre : appuyez sur le titre et glissez, à la souris ou au doigt. Elle reste dans la fenêtre, se rouvre là où vous l'avez laissée tant que le programme est ouvert, et un double clic sur le titre la remet au milieu. Vous pouvez ainsi l'écarter de la partie du modèle sur laquelle vous travaillez ou voir le modèle derrière.

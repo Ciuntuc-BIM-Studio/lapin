@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Report #142: the X-ray visual style
+  "X-ray": "Røntgen",
+  "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "3D-visningen viser alle flader gennemsigtige med deres kanter; markeringen forbliver massiv. Gennemsigtighed pr. kategori findes i Visibility / Graphics.",
+  "The 3D view is back to shaded with edges.": "3D-visningen er tilbage til skygget med kanter.",
   // Decision 472 (report #76): a kitchen's own units, appliances and wall units
   "Base unit": "Understiksskab",
   "Sink unit": "Vaskeskab",

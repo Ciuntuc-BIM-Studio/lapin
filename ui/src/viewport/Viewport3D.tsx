@@ -31,6 +31,7 @@ import type { FaceHit, Vec2 } from '../platform/module';
 import { completeTool } from './tools';
 import { boxUv, boxUvSized, imageOf, imageTexture, orthophotos, orthoTexture, orthoUv, pictureOf, pictureUv, splitByFace, textureFor, textureOf, tileOf, whenImagesLoad, type Face, type TextureKind } from './textures';
 import { lookOf } from './look';
+import { xrayLooks } from './xray';
 import { glassThrough, reflections, standardMaterial } from './materialLook';
 import { Realism, sunColour, useRenderProfile } from './render3d';
 import { KeyPlan } from './KeyPlan';
@@ -1617,9 +1618,11 @@ export function Viewport3D() {
       look(object, looks[id]);
       object.visible = object.visible && visualStyle !== 'wireframe' && !(walking && live.get(id)?.item.type === 'IfcSpace');
     }
+    // X-ray: every element but the selection see-through, over its own look.
+    const seen = visualStyle === 'xray' ? xrayLooks(looks, render.keys(), shown) : looks;
     for (const [id, { item, object }] of live) {
       highlight(object, shown.has(id));
-      look(object, looks[id]);
+      look(object, seen[id]);
       // Inside a room, its own volume is not drawn round the eye.
       if (walking && item.type === 'IfcSpace') object.visible = false;
       // The visual style: faces, edges, or both.
@@ -1634,7 +1637,7 @@ export function Viewport3D() {
     }
     // The instances of shared meshes: added, moved, taken out; drawn as their looks and the selection say.
     const layer = instances.current;
-    if (layer) { layer.sync(render, meshes); layer.restyle(looks, [...shown], visualStyle, layers); }
+    if (layer) { layer.sync(render, meshes); layer.restyle(seen, [...shown], visualStyle, layers); }
     boxDirty.current();
     invalidate.current();
   }, [render, meshes, layers, selected, expansion, looks, visualStyle, walking, capsShown, drafts3d, fineBodies.on, fineBodies.version]);

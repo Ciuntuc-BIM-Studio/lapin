@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // Report #142: the X-ray visual style
+  "X-ray": "Rayos X",
+  "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "La vista 3D muestra todas las superficies transparentes, con sus aristas; la selección sigue opaca. La transparencia por categoría está en Visibility / Graphics.",
+  "The 3D view is back to shaded with edges.": "La vista 3D vuelve a sombreado con aristas.",
   // Decision 472 (report #76): a kitchen's own units, appliances and wall units
   "Base unit": "Mueble bajo",
   "Sink unit": "Mueble de fregadero",

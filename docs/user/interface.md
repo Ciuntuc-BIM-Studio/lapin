@@ -149,3 +149,7 @@ These are the Revit-style shortcuts, as Lapin has them now:
 <!-- shortcuts -->
 
 The number keys <kbd>1</kbd>–<kbd>9</kbd> pick the quick tools.
+
+## Moving a dialog
+
+Every dialog moves by its title bar, as a window does: press on the title and drag, with the mouse or a finger. It stays inside the window, opens again where you left it for as long as the program is open, and a double click on the title puts it back in the middle. That way you can move a dialog off the part of the model you are working on, or look at the model behind it.

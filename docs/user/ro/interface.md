@@ -149,3 +149,7 @@ Acestea sunt scurtăturile în stil Revit, așa cum le are Lapin acum:
 <!-- shortcuts -->
 
 Tastele cu cifre <kbd>1</kbd>–<kbd>9</kbd> aleg uneltele rapide.
+
+## Mutarea unui dialog
+
+Orice dialog se mută de bara lui de titlu, ca o fereastră: apasă pe titlu și trage, cu mausul sau cu degetul. Rămâne în fereastră, se deschide din nou unde l-ai lăsat cât timp programul e deschis, iar dublu clic pe titlu îl aduce înapoi la mijloc. Așa poți muta un dialog de pe partea de model la care lucrezi sau poți vedea modelul din spatele lui.

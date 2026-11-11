@@ -127,3 +127,7 @@ Estes são os atalhos no estilo Revit, como o Lapin os tem agora:
 <!-- shortcuts -->
 
 As teclas numéricas <kbd>1</kbd>–<kbd>9</kbd> escolhem as ferramentas rápidas.
+
+## Mover uma caixa de diálogo
+
+Toda caixa de diálogo move-se pela barra de título, como uma janela: prima o título e arraste, com o rato ou com o dedo. Fica dentro da janela, volta a abrir onde a deixou enquanto o programa estiver aberto, e um duplo clique no título leva-a de volta ao centro. Assim pode afastá-la da parte do modelo em que trabalha ou ver o modelo por trás.

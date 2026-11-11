@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Report #142: the X-ray visual style
+  "X-ray": "Rentgen",
+  "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "Widok 3D pokazuje wszystkie powierzchnie jako przezroczyste, z krawędziami; zaznaczenie pozostaje pełne. Przezroczystość według kategorii jest w Visibility / Graphics.",
+  "The 3D view is back to shaded with edges.": "Widok 3D wrócił do cieniowania z krawędziami.",
   // Decision 472 (report #76): a kitchen's own units, appliances and wall units
   "Base unit": "Szafka dolna",
   "Sink unit": "Szafka pod zlewozmywak",

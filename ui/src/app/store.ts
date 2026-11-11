@@ -130,8 +130,8 @@ export interface UiState extends Pane {
   /** A message for the user (saved, recovered…), cleared by the next one. */
   notice: string | null;
   theme: Theme;
-  /** How the 3D draws: shaded, shaded with edges, or wireframe. */
-  visualStyle: 'shaded' | 'edges' | 'wireframe';
+  /** How the 3D draws: shaded, shaded with edges, X-ray (every surface see-through, the selection solid), or wireframe. */
+  visualStyle: 'shaded' | 'edges' | 'xray' | 'wireframe';
   /** The 3D view fades with distance. */
   fog: boolean;
   /** The reference planes drawn in the 3D view (View → Reference planes). */

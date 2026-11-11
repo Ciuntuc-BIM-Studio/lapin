@@ -245,6 +245,14 @@ describe('Ask Lapin', () => {
     expect(best('cum folosesc un profil de aluminiu propriu la montanti')).toBe('curtain-member-profiles');
   });
 
+  it('answers the testers\' reports #140 and #142', () => {
+    expect(best('I could not move the dialogue window away from the modelling space')).toBe('dialog-move');
+    expect(best('cum mut fereastra de dialog')).toBe('dialog-move');
+    expect(best('cambiar la visualización a trasparente')).toBe('xray-view');
+    expect(best('how do I make the 3D view transparent')).toBe('xray-view');
+    expect(best('cum fac vederea transparenta')).toBe('xray-view');
+  });
+
   it('keeps its entries whole: ids unique, both languages, keywords already plain', () => {
     expect(new Set(FAQ.map((e) => e.id)).size).toBe(FAQ.length);
     for (const e of FAQ) {

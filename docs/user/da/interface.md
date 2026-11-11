@@ -127,3 +127,7 @@ Dette er genvejene i Revit-stil, som Lapin har dem nu:
 <!-- shortcuts -->
 
 Taltasterne <kbd>1</kbd>–<kbd>9</kbd> vælger hurtigværktøjerne.
+
+## Flytte en dialog
+
+Enhver dialog flyttes ved sin titellinje, som et vindue: tryk på titlen og træk, med musen eller en finger. Den bliver inden for vinduet, åbner igen, hvor du lod den, så længe programmet er åbent, og et dobbeltklik på titlen sætter den tilbage i midten. Så kan du flytte en dialog væk fra den del af modellen, du arbejder på, eller se modellen bag den.

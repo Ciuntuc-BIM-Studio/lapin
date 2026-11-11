@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Report #142: the X-ray visual style
+  "X-ray": "X 光",
+  "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "3D 视图将所有表面显示为透明并保留边线；选中的对象保持不透明。按类别设置透明度请用 Visibility / Graphics。",
+  "The 3D view is back to shaded with edges.": "3D 视图已恢复为带边线的着色。",
   // Decision 472 (report #76): a kitchen's own units, appliances and wall units
   "Base unit": "地柜",
   "Sink unit": "水槽柜",

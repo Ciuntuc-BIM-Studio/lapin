@@ -127,3 +127,7 @@ Queste sono le scorciatoie Stile Revit, come le ha Lapin oggi:
 <!-- shortcuts -->
 
 I tasti numerici <kbd>1</kbd>–<kbd>9</kbd> scelgono gli strumenti rapidi.
+
+## Spostare una finestra di dialogo
+
+Ogni finestra di dialogo si sposta dalla barra del titolo, come una finestra: premi sul titolo e trascina, con il mouse o con il dito. Resta dentro la finestra, si riapre dove l'hai lasciata finché il programma è aperto, e un doppio clic sul titolo la riporta al centro. Così puoi scostarla dalla parte del modello su cui lavori o guardare il modello dietro di essa.

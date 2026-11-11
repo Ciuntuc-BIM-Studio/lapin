@@ -3,6 +3,10 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Report #142: the X-ray visual style
+  "X-ray": "ລັງສີ X",
+  "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "ມຸມມອງ 3D ສະແດງທຸກພື້ນຜິວເປັນແບບໂປ່ງໃສ ພ້ອມຂອບ; ອົງປະກອບທີ່ເລືອກຍັງທຶບຢູ່. ຄວາມໂປ່ງໃສຕາມໝວດຢູ່ໃນ Visibility / Graphics.",
+  "The 3D view is back to shaded with edges.": "ມຸມມອງ 3D ກັບຄືນເປັນແບບມີເງາພ້ອມຂອບ.",
   // Decision 472 (report #76): a kitchen's own units, appliances and wall units
   "Base unit": "ຕູ້ລຸ່ມ",
   "Sink unit": "ຕູ້ອ່າງລ້າງ",

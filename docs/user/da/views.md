@@ -83,6 +83,12 @@ Dobbeltklik på **3D** for at åbne 3D-visningen. Træk med venstre knap for at 
 
 Musehjulet zoomer mod modellens punkt under markøren, som bliver hvor det er på skærmen; zoomet stopper lige før punktet og går aldrig igennem det. Et træk med venstre knap drejer visningen om midten af de markerede elementer, som bliver hvor den er på skærmen, så du kan se dem fra alle sider; uden markering drejer den om modellens punkt under markøren, hvor trækket begynder, og om visningens midte, hvis der intet er under markøren. **Vis → Zoom til markøren** og **Vis → Kredsløb om markeringen** slår hver af dem fra (hjulet zoomer så mod visningens midte, og visningen drejer om sin midte), ligesom afkrydsningsfelterne i en 3D-visnings egenskaber. Valget gemmes på denne computer.
 
+### Røntgen, eller en gennemsigtig visning
+
+View → **Visual style** går gennem skygget, skygget med kanter, **X-ray** og trådramme; View → **X-ray** slår røntgen til og fra direkte. I X-ray tegnes alle modellens flader gennemsigtige, med kanterne bevaret, så man ser gennem vægge og dæk til det, der ligger bag. Det valgte forbliver massivt og fremhævet, og et klik vælger stadig elementet under markøren. Stilen hører til 3D-visningen, kun til at kigge på: den ændrer intet i modellen, tegningerne eller eksporterne. Vil du kun gøre nogle kategorier gennemsigtige (taget, dækkene, væggene), så indstil deres gennemsigtighed pr. kategori i **Visibility / Graphics** (<kbd>VV</kbd>); den når også ark og eksporter.
+
+![Et hus i røntgen, en væg valgt](shots/view-xray.webp)
+
 ### Et snit i 3D
 
 Højreklik på et snit i browseren, og vælg **Vis i 3D**. 3D-visningen skærer modellen langs snittets linje. Den beholder den side, snittet ser mod, op til snittets dybde, hvis det har en. Hvert skåret element lukkes, hvor det skæres, lag for lag, hvert lag i sit eget materiale: en væg viser sin murstenskerne og sin puds, lige så massiv som væggen er. **Skraveringer** på chippen nederst i 3D-visningen lægger i stedet snittets tegning på snitfladen, med de snitudfyldninger og skraveringer, et ark udskriver. Snittets mål, kotemærker, mærker og tekster ligger i samme plan, i samme størrelse og på samme sted som i snittet. Linjer beholder deres pentykkelser og deres fulde stregmønstre. De, der er tegnet ved siden af bygningen, står i luften ved siden af snittet. **Annoteringer** på chippen nederst i 3D-visningen skjuler dem eller viser dem igen. En facades **Vis i 3D** drejer kameraet, så det ser samme vej som facaden.

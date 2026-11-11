@@ -1,6 +1,10 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Report #142: the X-ray visual style
+  "X-ray": "Raze X",
+  "The 3D view shows every surface see-through, with its edges; the selection stays solid. Transparency per category is in Visibility / Graphics.": "Vederea 3D arată toate suprafețele transparente, cu muchiile lor; selecția rămâne opacă. Transparența pe categorii e în Visibility / Graphics.",
+  "The 3D view is back to shaded with edges.": "Vederea 3D e din nou umbrită, cu muchii.",
   // Decision 472 (report #76): a kitchen's own units, appliances and wall units
   "Base unit": "Corp de jos",
   "Sink unit": "Corp cu chiuvetă",

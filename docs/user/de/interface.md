@@ -127,3 +127,7 @@ Dies sind die Tastenkürzel im Revit-Stil, wie Lapin sie jetzt hat:
 <!-- shortcuts -->
 
 Die Zifferntasten <kbd>1</kbd>–<kbd>9</kbd> wählen die Schnellwerkzeuge.
+
+## Einen Dialog verschieben
+
+Jeder Dialog lässt sich an seiner Titelleiste verschieben wie ein Fenster: auf den Titel drücken und ziehen, mit der Maus oder dem Finger. Er bleibt im Fenster, öffnet sich wieder dort, wo man ihn gelassen hat, solange das Programm offen ist, und ein Doppelklick auf den Titel setzt ihn zurück in die Mitte. So lässt er sich vom bearbeiteten Teil des Modells wegschieben, oder man sieht das Modell dahinter.
