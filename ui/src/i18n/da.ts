@@ -1953,6 +1953,8 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DA_PATTERNS: Language['patterns'] = [
+  // Content of a module this edition lacks, kept (docs/overrides.md)
+  [/^This project holds content of modules this edition does not have \((.+)\): it is kept as it is and saved back unchanged\.$/, (m) => `Dette projekt indeholder indhold fra moduler, som denne udgave ikke har (${m[1]}): det bevares, som det er, og gemmes uændret igen.`],
   [/^Finish string \((\d+) points\)$/, (m) => `Afslut kæden (${m[1]} punkter)`],
   [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `Målekæde bevaret (${m[1]} punkter) · Fortryd fjerner den`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Punktet [Map/Project/Internal: ${({ "map E, N": "kort E, N", "base point X, Y": "basispunkt X, Y", "plan origin X, Y": "planens oprindelse X, Y" } as Record<string, string>)[m[1]]}]`],

@@ -1958,6 +1958,8 @@ const n = (count: string, one: string, many: string) => `${count} ${count === '1
 
 /** Phrases with a number or a name in them. */
 export const DE_PATTERNS: Language['patterns'] = [
+  // Content of a module this edition lacks, kept (docs/overrides.md)
+  [/^This project holds content of modules this edition does not have \((.+)\): it is kept as it is and saved back unchanged\.$/, (m) => `Dieses Projekt enthält Inhalte von Modulen, die diese Edition nicht hat (${m[1]}): Sie bleiben, wie sie sind, und werden unverändert zurückgespeichert.`],
   [/^Finish string \((\d+) points\)$/, (m) => `Kette beenden (${m[1]} Punkte)`],
   [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `Maßkette behalten (${m[1]} Punkte) · Rückgängig entfernt sie`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Der Punkt [Map/Project/Internal: ${({ "map E, N": "Karte E, N", "base point X, Y": "Basispunkt X, Y", "plan origin X, Y": "Grundriss-Ursprung X, Y" } as Record<string, string>)[m[1]]}]`],

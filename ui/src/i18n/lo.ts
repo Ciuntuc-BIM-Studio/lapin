@@ -2010,6 +2010,8 @@ export const LO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const LO_PATTERNS: Language['patterns'] = [
+  // Content of a module this edition lacks, kept (docs/overrides.md)
+  [/^This project holds content of modules this edition does not have \((.+)\): it is kept as it is and saved back unchanged\.$/, (m) => `ໂຄງການນີ້ມີເນື້ອຫາຂອງໂມດູນທີ່ສະບັບນີ້ບໍ່ມີ (${m[1]}): ມັນຖືກຮັກສາໄວ້ຕາມເດີມ ແລະ ບັນທຶກຄືນໂດຍບໍ່ປ່ຽນແປງ.`],
   [/^Finish string \((\d+) points\)$/, (m) => `ສຳເລັດຕ່ອງໂສ້ (${m[1]} ຈຸດ)`],
   [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `ເກັບຕ່ອງໂສ້ຂະໜາດໄວ້ (${m[1]} ຈຸດ) · ຍົກເລີກຈະລຶບອອກ`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `ຈຸດ [Map/Project/Internal: ${({ "map E, N": "ແຜນທີ່ E, N", "base point X, Y": "ຈຸດຖານ X, Y", "plan origin X, Y": "ຈຸດເລີ່ມຕົ້ນຂອງແຜນຜັງ X, Y" } as Record<string, string>)[m[1]]}]`],

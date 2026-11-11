@@ -68,6 +68,23 @@ sealed class MyDriven : IDrivenElements, IIfcExportFilter
 - A grid a module drives (a generator's own IfcGrid) never takes the axes drawn with *Grid axis* or *Grid…*: `Grids.Ensure` skips it, so they go to the project's own grid (made when there is none). Its axes moved with the axis tools reach the module through `After`.
 - Without a module that registers them, every command runs as it did. Tests: `DrivenElementsTests` (a test generator).
 
+### Content of an absent module (decision 484)
+
+A project may hold what a module this edition lacks wrote: a class of its own (kept by the package under its module and written back as it came, as before) and an entity of a platform class it owns, such as a group it drives. Such an entity says so with `ownerModule` (`ModuleOwned.Key`) set to the module's id:
+
+```csharp
+attrs[ModuleOwned.Key] = "mymodule";   // on the group (or other entity) the module owns
+```
+
+In an edition without that module, the platform's own `AbsentModules` service (registered after every module, an `IDrivenElements` and an `IIfcExportFilter`) keeps it **as it is**:
+
+- its members are ordinary elements: moved, changed, renamed, deleted, copied (a copy is a plain group of plain copies), sent to another storey, given doors and windows;
+- the group itself is not renamed, changed, ungrouped, filled or emptied by hand (`group.*`, `component.make*`, `element.rename/update/setParam` on it are refused, saying which module it belongs to); it is never dropped as empty (`Groups.DropEmpty`, `element.delete`), so the module finds it again;
+- an IFC export leaves it out (its members are written as any element);
+- `Session.AbsentModules()` names the modules the project needs and this edition lacks; `project.open` and `project.openBytes` return them as `absent`, and the interface says so once.
+
+Opened again with the module, the module compares what it drives with what was done meanwhile (its own rule). Tests: `AbsentModuleTests` (a test module that owns a group and a class of its own).
+
 ## Engine: results delivered later
 
 A module that works something out in the background (an analysis, a call to a model, a long solve) takes a stamp of the model in its command or query, starts the work and returns at once:

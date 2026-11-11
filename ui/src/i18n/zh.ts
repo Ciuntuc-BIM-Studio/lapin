@@ -1947,6 +1947,8 @@ export const ZH: Record<string, string> = {
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
+  // Content of a module this edition lacks, kept (docs/overrides.md)
+  [/^This project holds content of modules this edition does not have \((.+)\): it is kept as it is and saved back unchanged\.$/, (m) => `此项目包含本版本没有的模块的内容（${m[1]}）：它将保持原样，并原样保存回去。`],
   [/^Finish string \((\d+) points\)$/, (m) => `完成标注链（${m[1]} 个点）`],
   [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `已保留标注链（${m[1]} 个点）· 撤销可将其移除`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `点 [Map/Project/Internal: ${({ "map E, N": "地图 E, N", "base point X, Y": "基点 X, Y", "plan origin X, Y": "平面图原点 X, Y" } as Record<string, string>)[m[1]]}]`],

@@ -46,6 +46,10 @@ public sealed class ModuleCatalog : IServices, ICutters, IPathElements, IGeometr
         // Overrides wrap what every module registered, whichever loaded first: each one round the one before it.
         foreach (var (info, handler) in c._pending) c.Wrap(info, handler);
         c._pending.Clear();
+        // What modules this edition lacks own in a project is kept as it is (ModuleOwned), asked after every module.
+        var absent = new AbsentModules(c._modules.Select(x => x.Id).ToHashSet());
+        c._services.Add((typeof(IDrivenElements), absent));
+        c._services.Add((typeof(IIfcExportFilter), absent));
         return c;
     }
 

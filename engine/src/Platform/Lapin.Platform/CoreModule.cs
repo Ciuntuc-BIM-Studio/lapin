@@ -312,7 +312,7 @@ public sealed class CoreModule : ILapinModule
                     if ((string?)e.Attrs[StoredBodies.BodyOf] is { } body) bodies.Remove(body);
                 foreach (var body in bodies) ctx.Remove(body);
             }
-            foreach (var g in groups) if (ctx.Model.Get(g) != null) ctx.Remove(g);
+            foreach (var g in groups) if (ctx.Model.Get(g) is { } x && !Groups.KeptForAbsent(ctx, x)) ctx.Remove(g);
             Groups.DropEmpty(ctx, groupsTouched);
             return null;
         });

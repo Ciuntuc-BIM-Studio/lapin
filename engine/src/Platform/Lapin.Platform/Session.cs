@@ -219,6 +219,21 @@ public sealed partial class Session
     /// </summary>
     public string ModuleOf(string ifcClass) => _catalog.OwnerOf(ifcClass) ?? _foreignClasses.GetValueOrDefault(ifcClass, "unknown");
 
+    /// <summary>
+    /// The modules this edition lacks whose content the project holds (classes the file says they wrote, entities they own:
+    /// <see cref="ModuleOwned"/>), by id; kept as they are and written back as they came.
+    /// </summary>
+    public IReadOnlyList<string> AbsentModules()
+    {
+        var loaded = _catalog.Modules.Select(m => m.Id).ToHashSet();
+        var o = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var (cls, module) in _foreignClasses)
+            if (!loaded.Contains(module) && module != "unknown" && Model.OfClass(cls).Any()) o.Add(module);
+        foreach (var e in Model.Entities)
+            if (ModuleOwned.Of(e) is { } m && !loaded.Contains(m)) o.Add(m);
+        return [.. o];
+    }
+
     /// <summary>Classes a file's content brought in through an edit (a version restored): which module wrote each, for the next save.</summary>
     public void AdoptClasses(IReadOnlyDictionary<string, string> classModules)
     {

@@ -1955,6 +1955,8 @@ export const RO: Record<string, string> = {
 
 /** Phrases with a number or a name in them. */
 export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
+  // Content of a module this edition lacks, kept (docs/overrides.md)
+  [/^This project holds content of modules this edition does not have \((.+)\): it is kept as it is and saved back unchanged\.$/, (m) => `Proiectul are conținut al unor module pe care această ediție nu le are (${m[1]}): e păstrat așa cum este și salvat înapoi neschimbat.`],
   [/^Finish string \((\d+) points\)$/, (m) => `Finalizează lanțul (${m[1]} puncte)`],
   [/^Dimension string kept \((\d+) points\) · Undo removes it$/, (m) => `Lanț de cote păstrat (${m[1]} puncte) · Anulează îl elimină`],
   [/^The point \[Map\/Project\/Internal: (map E, N|base point X, Y|plan origin X, Y)\]$/, (m) => `Punctul [Map/Project/Internal: ${({ 'map E, N': 'hartă E, N', 'base point X, Y': 'punct de bază X, Y', 'plan origin X, Y': 'originea planului X, Y' } as Record<string, string>)[m[1]]}]`],

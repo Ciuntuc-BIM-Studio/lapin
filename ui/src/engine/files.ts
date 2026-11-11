@@ -212,6 +212,11 @@ export async function newProject(storeys?: NewStorey[], lapinDefault = false): P
   }
 }
 
+/** A project holding what modules this edition lacks own: said once as it opens (it is kept as it is, and saved back unchanged). */
+function tellAbsent(absent: string[] | undefined): void {
+  if (absent?.length) notify(`This project holds content of modules this edition does not have (${absent.join(', ')}): it is kept as it is and saved back unchanged.`);
+}
+
 function tellOld(notes: string[]): void {
   notify(`Opened an old Lapin project: save it to keep it in the new format.${notes.length ? ` Left out: ${notes.join('; ')}.` : ''}`);
 }
@@ -222,12 +227,15 @@ export async function openProject(path?: string): Promise<void> {
     const picked = await pickFile('Lapin project', ['lapin', 'html', 'htm']);
     if (!picked) return;
     try {
-      const r = await engine.call<{ notes?: string[]; page?: string | null } | null>('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
+      const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[] } | null>('project.openBytes', { name: picked.name, data: toBase64(picked.bytes) }, { timeoutMs: LONG_TIMEOUT_MS });
       // An old project (format 2), or one read from a page, opens unsaved: saving must not write over the file it came from.
       const old = !useSession.getState().doc?.path;
       projectHandle = old ? null : picked.handle;
       enter();
-      if (!openedFromPage(r?.page) && old) tellOld(r?.notes ?? []);
+      if (!openedFromPage(r?.page)) {
+        if (old) tellOld(r?.notes ?? []);
+        else tellAbsent(r?.absent);
+      }
     } catch (e) {
       notify(e instanceof Error ? e.message : String(e));
     }
@@ -236,11 +244,14 @@ export async function openProject(path?: string): Promise<void> {
   const target = path ?? (await pickPath('open', undefined, OPEN_FILTERS));
   if (!target) return;
   try {
-    const r = await engine.call<{ notes?: string[]; page?: string | null } | null>('project.open', { path: target }, { timeoutMs: LONG_TIMEOUT_MS });
+    const r = await engine.call<{ notes?: string[]; page?: string | null; absent?: string[] } | null>('project.open', { path: target }, { timeoutMs: LONG_TIMEOUT_MS });
     remember(target);
     enter();
     // An old Lapin project (format 2) is rebuilt natively and opens unsaved; say what it left out. A page's project opens unsaved too.
-    if (!openedFromPage(r?.page) && !useSession.getState().doc?.path) tellOld(r?.notes ?? []);
+    if (!openedFromPage(r?.page)) {
+      if (!useSession.getState().doc?.path) tellOld(r?.notes ?? []);
+      else tellAbsent(r?.absent);
+    }
   } catch (e) {
     notify(e instanceof Error ? e.message : String(e));
   }
@@ -420,9 +431,10 @@ export async function openStartupFile(): Promise<void> {
     const name = path.split(/[\\/]/).pop() ?? path;
     // A Lapin project (a linked one opened on its own, to edit there): opened as it is.
     if (/\.lapin$/i.test(name)) {
-      await engine.call('project.open', { path }, { timeoutMs: LONG_TIMEOUT_MS });
+      const r = await engine.call<{ absent?: string[] } | null>('project.open', { path }, { timeoutMs: LONG_TIMEOUT_MS });
       remember(path);
       enter();
+      tellAbsent(r?.absent);
       return;
     }
     // An IFC brings its own storeys: the new project starts with a ground floor only.

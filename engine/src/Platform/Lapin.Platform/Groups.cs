@@ -77,8 +77,12 @@ public static class Groups
     public static void DropEmpty(IEdit edit, IEnumerable<string> groupIds)
     {
         foreach (var g in groupIds.Distinct())
-            if (edit.Model.Get(g) is { Class: Class } && !MembersOf(edit.Model, g).Any()) edit.Remove(g);
+            if (edit.Model.Get(g) is { Class: Class } x && !MembersOf(edit.Model, g).Any() && !KeptForAbsent(edit, x)) edit.Remove(g);
     }
+
+    /// <summary>Whether a group is kept for a module this edition does not have (<see cref="ModuleOwned"/>): never dropped, even emptied.</summary>
+    public static bool KeptForAbsent(IEdit edit, Entity group) =>
+        edit is ICommandContext ctx && ctx.Services.All<IDrivenElements>().OfType<AbsentModules>().Any(a => a.Kept(group));
 
     /// <summary>A name not yet taken: "Group 1", "Group 2"…</summary>
     public static string NextName(IModelView m)
