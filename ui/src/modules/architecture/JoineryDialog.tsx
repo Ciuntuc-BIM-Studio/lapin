@@ -24,7 +24,7 @@ import { LintelRuleEditor } from './LintelRule';
 import type { Rule } from './lintels';
 import { BayFields, type Bay } from './BayFields';
 import { JoineryPreview3D } from './JoineryPreview3D';
-import { merge, neighbour, normalised, resized, shifted, split, type GridSpec } from './joineryGrid';
+import { barWidths, fitBars, leafPairs, merge, neighbour, normalised, resized, shifted, split, withBar, type Bars, type GridSpec } from './joineryGrid';
 import { JoineryDataButton } from './JoineryData';
 import { ProfilePickerField } from '../core/profileLibraries/ProfilePickerField';
 
@@ -47,11 +47,17 @@ const HAND_LABELS: Record<string, string> = {
   'side-left': 'Side hung right (hinges at left)', 'side-right': 'Side hung left (hinges at right)',
   'tilt-turn-left': 'Tilt & turn right (hinges at left)', 'tilt-turn-right': 'Tilt & turn left (hinges at right)',
 };
+/** Two leaves meeting: butt, a rebated meeting stile or a cover strip (astragal); the active leaf opens first with the handle, the passive one has flush bolts. */
+export interface Meeting { kind: 'butt' | 'rebated' | 'astragal'; active: 'left' | 'right'; width?: number | null; thickness?: number | null; bolts: boolean }
 interface Spec {
   kind: 'door' | 'window'; name: string; mark: string; width: number; height: number; sillHeight: number;
   frame: { depth: number; width: number; mullion: number; transom: number; offset: number };
   sash: { width: number; depth: number; leafThickness: number; glassThickness: number };
   columns: number[]; rows: number[]; panels: Panel[];
+  /** One width per column boundary (left to right) and per row boundary (bottom up), metres: null the frame's, 0 none (decision 466). */
+  mullions?: Bars; transoms?: Bars;
+  /** How two door leaves meeting over a boundary without a mullion are made; one setting for the type. */
+  meeting?: Meeting | null;
   board: { interior: number; exterior: number }; threshold: number;
   colors: { frame: string; glass: string; leaf: string }; isExternal: boolean; thermalTransmittance?: number | null;
   lintel?: Rule | null;
@@ -163,7 +169,7 @@ export function styleModified(spec: Spec): boolean {
   return st != null && !sameAs({ ...st.apply(spec), details: styleDetails(spec.style!, spec.details ?? {}) }, spec);
 }
 
-export interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number; col?: number; row?: number; colSpan?: number; rowSpan?: number; infill?: string }[]; ifcType: string; grid?: { inner: number[]; cols: [number, number][]; rows: [number, number][] } | null }
+export interface Preview { problem: string | null; boxes: { role: string; x0: number; x1: number; z0: number; z1: number; y0: number; y1: number; profile?: number[] | null; holes?: number[][] | null }[]; panels: { operation: string; x0: number; x1: number; z0: number; z1: number; col?: number; row?: number; colSpan?: number; rowSpan?: number; infill?: string }[]; ifcType: string; grid?: { inner: number[]; cols: [number, number][]; rows: [number, number][]; mullions?: number[]; transoms?: number[]; meetings?: boolean[]; pairs?: { boundary: number; active: number; passive: number; kind: string }[] } | null }
 export interface Stroke { pts: [number, number][]; weight: string; closed: boolean; dashed: boolean }
 export interface Drawing { strokes: Stroke[] }
 export interface Drawings { elevation: Drawing; exterior: Drawing; plan: Drawing; section: Drawing }
@@ -188,7 +194,7 @@ export function Strokes({ drawing, w, h, flipX = false, label, children }: { dra
       {children?.(sx, sy, k)}
       {(drawing?.strokes ?? []).map((s, i) => (
         <polyline key={i} points={s.pts.map((p) => `${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' ') + (s.closed ? ` ${sx(s.pts[0][0]).toFixed(1)},${sy(s.pts[0][1]).toFixed(1)}` : '')}
-          fill="none" stroke="#1e2a3a" strokeWidth={width(s.weight)} strokeDasharray={s.dashed ? '4 3' : undefined} strokeLinejoin="round" />
+          fill="none" stroke="#1e2a3a" strokeWidth={width(s.weight)} strokeDasharray={s.dashed ? '4 3' : undefined} strokeLinejoin="round" pointerEvents="none" />
       ))}
     </svg>
   );
@@ -506,7 +512,7 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
   at: { col: string; row: string }; setAt: (a: { col: string; row: string }) => void;
   onPick: (p: { col: number; row: number } | null) => void; onPanels: (p: Panel[]) => void; onGrid: (g: GridSpec) => void; colSizes: number[]; rowSizes: number[];
 }) {
-  const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame };
+  const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame, mullions: spec.mullions, transoms: spec.transoms };
   const panes = normalised(g) as Panel[];
   const cur = panes.find((p) => pane && p.col === pane.col && p.row === pane.row) ?? panes[0];
   const rect = preview?.panels.find((p) => p.col === cur?.col && p.row === cur?.row);
@@ -571,9 +577,71 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
 /** The window operations: a pane of a door that opens as one is a sash, glass unless asked. */
 const catalogWindowOps = new Set(['side-left', 'side-right', 'tilt-turn-left', 'tilt-turn-right', 'bottom-hung', 'top-hung', 'pivot-horizontal', 'pivot-vertical', 'sliding-left', 'sliding-right', 'sliding-vertical']);
 
+/**
+ * The mullion or transom picked in the elevation (decision 466): its width, the frame's by default, or none, so two panes meet.
+ * Its width shows as the engine drew it.
+ */
+function BarField({ bar, spec, onChange }: { bar: { axis: 'col' | 'row'; i: number } | null; spec: Spec; onChange: (v: number | null) => void }) {
+  if (!bar) {
+    const lines = spec.columns.length > 1 || spec.rows.length > 1;
+    return lines ? <p className="muted small" data-testid="bar-hint">Click a mullion or a transom in the elevation to give it its own width.</p> : null;
+  }
+  const col = bar.axis === 'col';
+  const own = (col ? spec.mullions : spec.transoms)?.[bar.i] ?? null;
+  const effective = own ?? (col ? spec.frame.mullion : spec.frame.transom);
+  return (
+    <div className="pane-editor" data-testid="bar-field">
+      <p className="eyebrow"><span>{col ? 'Mullion' : 'Transom'}</span> <span data-no-i18n>{bar.i + 1}</span></p>
+      <Mm label="Width" value={effective} onChange={(v) => onChange(v < 0 ? null : v)} />
+      <label className="field-line check"><input type="checkbox" data-field="bar-none" checked={own === 0} onChange={(e) => onChange(e.target.checked ? 0 : null)} /><span>{col ? 'No mullion' : 'No transom'}</span></label>
+      <div className="field-line"><span />
+        <button type="button" className="btn small" data-action="bar-default" disabled={own == null} title="Takes the width of the frame's mullions and transoms again" onClick={() => onChange(null)}>Default (frame's)</button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * How two door leaves meet where there is no mullion between them (decision 466): butt, a rebated meeting stile or a cover strip over
+ * the joint; the active leaf (the one that opens first, with the handle) and flush bolts in the passive one. One setting for the type.
+ */
+function MeetingFields({ spec, preview, defaults, onChange }: { spec: Spec; preview: Preview2 | null; defaults?: Meeting & { astragalWidth?: number }; onChange: (m: Meeting) => void }) {
+  const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame };
+  const meets = (preview?.grid?.pairs?.length ?? 0) > 0 || leafPairs(g).some((i) => (spec.mullions?.[i] ?? spec.frame.mullion) === 0);
+  if (!meets) return null;
+  const m: Meeting = spec.meeting ?? { kind: 'butt', active: defaults?.active ?? 'right', bolts: false };
+  const set = (patch: Partial<Meeting>) => onChange({ ...m, ...patch });
+  const width = m.width ?? (m.kind === 'astragal' ? defaults?.astragalWidth ?? 0.045 : defaults?.width ?? 0.014);
+  const thickness = m.thickness ?? defaults?.thickness ?? 0.012;
+  const pairs = preview?.grid?.pairs ?? [];
+  // A pair of double-acting leaves always meets butt.
+  const butt = pairs.length > 0 && pairs.every((p) => p.kind === 'butt') && m.kind !== 'butt';
+  return (
+    <div className="pane-editor" data-testid="meeting-fields">
+      <p className="eyebrow">Leaves meeting</p>
+      <label className="field-line"><span className="eyebrow">Meeting</span>
+        <select data-field="meeting-kind" value={m.kind} onChange={(e) => set({ kind: e.target.value as Meeting['kind'], width: null })}>
+          <option value="butt">Butt</option><option value="rebated">Rebated</option><option value="astragal">Cover strip</option>
+        </select></label>
+      <label className="field-line"><span className="eyebrow">Active leaf</span>
+        <select data-field="meeting-active" title="The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)" value={m.active} onChange={(e) => set({ active: e.target.value as Meeting['active'] })}>
+          <option value="left">Left</option><option value="right">Right</option>
+        </select></label>
+      {m.kind === 'rebated' && <Mm label="Rebate overlap" value={width} onChange={(v) => set({ width: v > 0 ? Math.min(v, 0.12) : null })} />}
+      {m.kind === 'astragal' && <>
+        <Mm label="Cover strip width" value={width} onChange={(v) => set({ width: v > 0 ? Math.min(v, 0.12) : null })} />
+        <Mm label="Cover strip thickness" value={thickness} onChange={(v) => set({ thickness: v > 0 ? Math.min(v, 0.04) : null })} />
+      </>}
+      <label className="field-line check"><input type="checkbox" data-field="meeting-bolts" checked={m.bolts} onChange={(e) => set({ bolts: e.target.checked })} /><span>Flush bolts on the passive leaf</span></label>
+      {butt && <p className="muted small">Double-acting leaves always meet butt.</p>}
+    </div>
+  );
+}
+
 /** Over the elevation: each pane to pick, outlined when picked; each mullion and transom to drag. */
-function PaneOverlay({ preview, pane, drag, sx, sy, kk, onPick, onDrag, onDrop }: {
+function PaneOverlay({ preview, pane, drag, bar, sx, sy, kk, onPick, onBar, onDrag, onDrop }: {
   preview: Preview2 | null; pane: { col: number; row: number } | null; drag: { axis: 'col' | 'row'; i: number; from: number; at: number } | null;
+  bar: { axis: 'col' | 'row'; i: number } | null; onBar: (b: { axis: 'col' | 'row'; i: number }) => void;
   sx: (x: number) => number; sy: (y: number) => number; kk: number;
   onPick: (p: { col: number; row: number }) => void; onDrag: (d: { axis: 'col' | 'row'; i: number; from: number; at: number } | null) => void; onDrop: (d: { axis: 'col' | 'row'; i: number; from: number; at: number }) => void;
 }) {
@@ -607,12 +675,25 @@ function PaneOverlay({ preview, pane, drag, sx, sy, kk, onPick, onDrag, onDrop }
           style: { cursor: l.axis === 'col' ? 'col-resize' : 'row-resize' } as React.CSSProperties,
           onPointerDown: (e: React.PointerEvent<SVGElement>) => { (e.currentTarget as SVGElement).setPointerCapture(e.pointerId); onDrag({ axis: l.axis, i: l.i, from: l.at, at: l.at }); },
           onPointerMove: (e: React.PointerEvent<SVGElement>) => { if (!drag || drag.axis !== l.axis || drag.i !== l.i) return; const q = svgPoint(e); onDrag({ ...drag, at: l.axis === 'col' ? toX(q.x) : toZ(q.y) }); },
-          onPointerUp: () => { if (drag && drag.axis === l.axis && drag.i === l.i) onDrop(drag); },
+          onPointerUp: () => {
+            if (!drag || drag.axis !== l.axis || drag.i !== l.i) return;
+            // A click without a drag picks the bar, to give it a width of its own.
+            if (Math.abs(drag.at - drag.from) < 0.002) { onDrag(null); onBar({ axis: l.axis, i: l.i }); } else onDrop(drag);
+          },
         };
         return l.axis === 'col'
           ? <rect key={`c${l.i}`} data-divider={`col-${l.i}`} x={sx(live) - 4} y={sy(iz1)} width={8} height={(iz1 - iz0) * kk} fill={drag?.axis === 'col' && drag.i === l.i ? 'rgba(197,90,46,0.35)' : 'transparent'} {...common} />
           : <rect key={`r${l.i}`} data-divider={`row-${l.i}`} x={Math.min(sx(ix0), sx(ix1))} y={sy(live) - 4} width={(ix1 - ix0) * kk} height={8} fill={drag?.axis === 'row' && drag.i === l.i ? 'rgba(197,90,46,0.35)' : 'transparent'} {...common} />;
       })}
+      {bar && (() => {
+        // The picked bar as it is drawn: from one pane's edge to the next one's (a line where it is 0).
+        const a = bar.axis === 'col' ? grid.cols : grid.rows;
+        if (bar.i + 1 >= a.length) return null;
+        const lo = a[bar.i][1], hi = a[bar.i + 1][0];
+        return bar.axis === 'col'
+          ? <rect data-bar-picked={`col-${bar.i}`} x={Math.min(sx(lo), sx(hi)) - 1.5} y={sy(iz1)} width={Math.abs(sx(hi) - sx(lo)) + 3} height={(iz1 - iz0) * kk} fill="rgba(197,90,46,0.25)" stroke="#c55a2e" strokeDasharray="3 2" pointerEvents="none" />
+          : <rect data-bar-picked={`row-${bar.i}`} x={Math.min(sx(ix0), sx(ix1))} y={Math.min(sy(lo), sy(hi)) - 1.5} width={(ix1 - ix0) * kk} height={Math.abs(sy(hi) - sy(lo)) + 3} fill="rgba(197,90,46,0.25)" stroke="#c55a2e" strokeDasharray="3 2" pointerEvents="none" />;
+      })()}
       {drag && <text x={8} y={14} fontSize={11} fill="#c55a2e">{Math.round((drag.at - drag.from) * 1000)} mm</text>}
     </g>
   );
@@ -626,11 +707,12 @@ export function JoineryDialog() {
   const model = useMemo(() => ({ nodes, relations }), [nodes, relations]);
   const types = [...ofClass(model, 'IfcDoorType'), ...ofClass(model, 'IfcWindowType')];
   const catalog = info?.catalogs['architecture.joinery'] as unknown as { windowOperations: string[]; doorOperations: string[]; defaultDoor: Spec; defaultWindow: Spec;
+    doorPresets?: Record<string, Spec>; defaultMeeting?: Meeting & { astragalWidth?: number };
     profileSystems?: Record<string, { frame: Spec['frame']; sash: Spec['sash']; profile: Profile }> } | undefined;
   const bayStyles = info?.catalogs['architecture.bayStyles'] as unknown as { spec: Spec }[] | undefined;
   const [editing, setEditing] = useState<string | null>(types[0]?.id ?? null);
   // What a new type starts from (a new object each time New door or New window is clicked, so the editor reloads).
-  const [fresh, setFresh] = useState<{ kind: 'door' | 'window'; bay?: boolean }>({ kind: 'window' });
+  const [fresh, setFresh] = useState<{ kind: 'door' | 'window'; bay?: boolean; preset?: string }>({ kind: 'window' });
   const [spec, setSpec] = useState<Spec | null>(null);
   const [cols, setCols] = useState('1');
   const [rows, setRows] = useState('1');
@@ -641,6 +723,9 @@ export function JoineryDialog() {
   const [splitAt, setSplitAt] = useState<{ col: string; row: string }>({ col: '', row: '' });
   const pickPane = (p: { col: number; row: number } | null) => { setPane(p); setSplitAt({ col: '', row: '' }); };
   const [drag, setDrag] = useState<{ axis: 'col' | 'row'; i: number; from: number; at: number } | null>(null);
+  // The mullion or transom picked in the elevation, to give it a width of its own.
+  const [bar, setBar0] = useState<{ axis: 'col' | 'row'; i: number } | null>(null);
+  const pickBar = (b: { axis: 'col' | 'row'; i: number } | null) => setBar0(b);
 
   // The editor loads when the picked type changes, not on every diff (which
   // would throw away what is being typed): it reads the model through a ref.
@@ -650,7 +735,8 @@ export function JoineryDialog() {
   useEffect(() => {
     const t = editing ? modelRef.current.nodes.get(editing) : undefined;
     const bayStyle = fresh.bay ? (bayStyles?.[0]?.spec as unknown as Spec | undefined) : undefined;
-    const s = (t?.props.spec as unknown as Spec | undefined) ?? bayStyle ?? (fresh.kind === 'door' ? catalog?.defaultDoor : catalog?.defaultWindow) ?? null;
+    const preset = fresh.preset ? catalog?.doorPresets?.[fresh.preset] : undefined;
+    const s = (t?.props.spec as unknown as Spec | undefined) ?? preset ?? bayStyle ?? (fresh.kind === 'door' ? catalog?.defaultDoor : catalog?.defaultWindow) ?? null;
     setSpec(s ? structuredClone(s) : null);
     if (s) { setCols(s.columns.join(' ')); setRows(s.rows.join(' ')); }
   }, [editing, catalog, fresh, bayStyles]);
@@ -677,6 +763,9 @@ export function JoineryDialog() {
   };
   const set = (patch: Partial<Spec>) => {
     const next = { ...spec, ...patch };
+    // The bars stay with their lines when columns or rows are set another way (a style, the relative sizes, a bay).
+    if ('columns' in patch && !('mullions' in patch)) next.mullions = fitBars(spec.mullions, next.columns.length);
+    if ('rows' in patch && !('transoms' in patch)) next.transoms = fitBars(spec.transoms, next.rows.length);
     if (('width' in patch || 'height' in patch) && !('name' in patch) && spec.name === sizeName(spec)) next.name = sizeName(next);
     setSpec(next);
   };
@@ -684,7 +773,7 @@ export function JoineryDialog() {
   const setDetails = (patch: Partial<Details>) => set({ details: { ...details, ...patch } });
   const operations = spec.frameless ? (spec.kind === 'door' ? FRAMELESS_DOOR_OPS : ['fixed']) : spec.kind === 'door' ? [...catalog.doorOperations, 'fixed'] : catalog.windowOperations;
   const close = () => useUi.setState({ dialog: null });
-  const startNew = (kind: 'door' | 'window', bay = false) => { setEditing(null); setFresh({ kind, bay }); };
+  const startNew = (kind: 'door' | 'window', bay = false, preset?: string) => { setEditing(null); setFresh({ kind, bay, preset }); pickBar(null); };
   const setGrid = (c: string, r: string) => {
     setCols(c); setRows(r);
     const cw = weights(c), rw = weights(r);
@@ -693,21 +782,35 @@ export function JoineryDialog() {
   // The grid's sizes in mm, from the engine's preview (decision 370); set one, the last takes the rest.
   // Worked out from the spec's own weights over the inner span (which only the size and frame change), never from a preview
   // that may still be on its way: quick splits one after another each see the grid as it now is.
-  const sizesOf = (weights: number[], span: number | undefined, bar: number) => {
+  // Each bar has its own width (decision 466): the sizes share what the bars leave.
+  const sizesOf = (weights: number[], span: number | undefined, bars: number[]) => {
     if (span == null || weights.length === 0) return [];
     const total = weights.reduce((a, b) => a + Math.max(b, 0), 0) || 1;
-    const usable = span * 1000 - bar * 1000 * (weights.length - 1);
+    const usable = span * 1000 - bars.reduce((a, b) => a + b, 0);
     return weights.map((w) => Math.round((usable * Math.max(w, 0)) / total * 10) / 10);
   };
   const inner = preview?.grid?.inner;
-  const colSizes = sizesOf(spec.columns, inner ? inner[1] - inner[0] : undefined, spec.frameless?.gap ?? spec.frame.mullion);
-  const rowSizes = sizesOf(spec.rows, inner ? inner[3] - inner[2] : undefined, spec.frameless?.gap ?? spec.frame.transom);
+  const colSizes = sizesOf(spec.columns, inner ? inner[1] - inner[0] : undefined, spec.frameless ? spec.columns.slice(1).map(() => spec.frameless!.gap * 1000) : barWidths(spec.mullions, spec.columns.length, spec.frame.mullion));
+  const rowSizes = sizesOf(spec.rows, inner ? inner[3] - inner[2] : undefined, spec.frameless ? spec.rows.slice(1).map(() => spec.frameless!.gap * 1000) : barWidths(spec.transoms, spec.rows.length, spec.frame.transom));
   const setSizes = (axis: 'col' | 'row', i: number, value: number) => {
     const next = resized(axis === 'col' ? colSizes : rowSizes, i, value);
     if (!next) { notify('That leaves too little for the others (50 mm at least).'); return; }
     if (axis === 'col') { set({ columns: next }); setCols(next.map(roundW).join(' ')); }
     else { set({ rows: next }); setRows(next.map(roundW).join(' ')); }
   };
+
+  // A bar's width set (decision 466); a mullion made 0 between two door leaves gives the type its meeting, from the catalogue's default.
+  const setBar = (axis: 'col' | 'row', i: number, value: number | null) => {
+    const patch: Partial<Spec> = axis === 'col' ? { mullions: withBar(spec.mullions, spec.columns.length, i, value) } : { transoms: withBar(spec.transoms, spec.rows.length, i, value) };
+    const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame };
+    if (axis === 'col' && value === 0 && !spec.meeting && spec.kind === 'door' && !spec.frameless && catalog.defaultMeeting && leafPairs(g).includes(i)) {
+      const { astragalWidth: _a, ...m } = catalog.defaultMeeting;
+      patch.meeting = { ...m, width: null, thickness: null };
+    }
+    set(patch);
+  };
+  const barCount = bar ? (bar.axis === 'col' ? spec.columns.length : spec.rows.length) - 1 : 0;
+  const barOn = bar && bar.i < barCount ? bar : null;
 
   const save = async () => {
     if (editing) await execute('architecture.updateJoineryType', { id: editing, spec });
@@ -747,6 +850,7 @@ export function JoineryDialog() {
               </li>
             ))}
             <li><button type="button" className="tree-item" onClick={() => startNew('door')}><Plus size={12} /> New door</button></li>
+            {catalog.doorPresets?.double && <li><button type="button" className="tree-item" data-action="new-double-door" onClick={() => startNew('door', false, 'double')}><Plus size={12} /> New double door</button></li>}
             <li><button type="button" className="tree-item" onClick={() => startNew('window')}><Plus size={12} /> New window</button></li>
             <li><button type="button" className="tree-item" data-action="new-bay-window" onClick={() => startNew('window', true)}><Plus size={12} /> New bay window</button></li>
           </ul>
@@ -815,10 +919,12 @@ export function JoineryDialog() {
               <label className="field-line"><span className="eyebrow">Rows (relative)</span><input value={rows} title="Divide into rows by relative heights, bottom to top" onChange={(e) => setGrid(cols, e.target.value)} /></label>
               {colSizes.length > 1 && <SizeRow label="Column widths" sizes={colSizes} field="col-size" onCommit={(i, mm) => setSizes('col', i, mm)} />}
               {rowSizes.length > 1 && <SizeRow label="Row heights · bottom to top" sizes={rowSizes} field="row-size" onCommit={(i, mm) => setSizes('row', i, mm)} />}
+              {!spec.frameless && !spec.bay && <BarField bar={barOn} spec={spec} onChange={(v) => barOn && setBar(barOn.axis, barOn.i, v)} />}
               <PaneEditor spec={spec} preview={preview} pane={pane} operations={operations}
                 onPick={pickPane} onPanels={(panels) => set({ panels })} at={splitAt} setAt={setSplitAt}
-                onGrid={(g) => { set({ columns: g.columns, rows: g.rows, panels: g.panels }); setCols(g.columns.map(roundW).join(' ')); setRows(g.rows.map(roundW).join(' ')); }}
+                onGrid={(g) => { set({ columns: g.columns, rows: g.rows, panels: g.panels, mullions: g.mullions, transoms: g.transoms }); setCols(g.columns.map(roundW).join(' ')); setRows(g.rows.map(roundW).join(' ')); }}
                 colSizes={colSizes} rowSizes={rowSizes} />
+              {spec.kind === 'door' && !spec.frameless && <MeetingFields spec={spec} preview={preview} defaults={catalog.defaultMeeting} onChange={(meeting) => set({ meeting })} />}
               <PartMaterials spec={spec} onChange={(materials) => set({ materials })} />
               {!spec.materials?.frame && !spec.frameless && <label className="field-line"><span className="eyebrow">Frame</span><input type="color" value={spec.colors.frame} onChange={(e) => set({ colors: { ...spec.colors, frame: e.target.value } })} /></label>}
               <LintelRuleEditor inherit rule={spec.lintel ?? null} onChange={(r) => set({ lintel: r })} />
@@ -864,7 +970,7 @@ export function JoineryDialog() {
                   {!outside && boxes.map((b, i) => b.profile
                     ? <path key={i} d={[b.profile, ...(b.holes ?? [])].map((l) => loopPath(l, sx, sy)).join(' ')} fillRule="evenodd" fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />
                     : <rect key={i} x={Math.min(sx(b.x0), sx(b.x1))} y={sy(b.z1)} width={(b.x1 - b.x0) * kk} height={(b.z1 - b.z0) * kk} fill={fill(b.role)} stroke="none" opacity={b.role === 'glass' ? 0.7 : 1} />)}
-                  {!outside && !spec.bay && <PaneOverlay preview={preview} pane={pane} drag={drag} sx={sx} sy={sy} kk={kk} onPick={pickPane} onDrag={setDrag}
+                  {!outside && !spec.bay && <PaneOverlay preview={preview} pane={pane} drag={drag} bar={barOn} onBar={pickBar} sx={sx} sy={sy} kk={kk} onPick={pickPane} onDrag={setDrag}
                     onDrop={(d) => {
                       const sizes = d.axis === 'col' ? colSizes : rowSizes;
                       const next = shifted(sizes, d.i, Math.round((d.at - d.from) * 1000));

@@ -196,7 +196,7 @@ public static class JoinerySymbols
         };
     }
 
-    static List<JStroke> Hardware(JoinerySpec s, JoineryPanel p, CellRect r)
+    static List<JStroke> Hardware(JoinerySpec s, JoineryPanel p, CellRect r, JoineryPair? pair = null)
     {
         var op = p.Operation;
         var o = new List<JStroke>();
@@ -223,6 +223,17 @@ public static class JoinerySymbols
                 case "window": o.Add(Rect(x - 0.016, z - 0.04, x + 0.016, z + 0.04, "outline")); o.Add(Rect(x - 0.011, z - 0.12, x + 0.011, z + 0.01, "outline")); return;
                 default: o.Add(Arc(new(x, z), 0.026, 0, 2 * Math.PI, "outline")); o.Add(Rect(Math.Min(x, x + dir * 0.13), z - 0.01, Math.Max(x, x + dir * 0.13), z + 0.01, "outline")); return;
             }
+        }
+        // The passive leaf of a pair with a meeting setting (decision 466): no handle, its flush bolts at the top and bottom by the meeting edge.
+        if (pair != null && s.Meeting != null && pair.Passive == p)
+        {
+            if (s.Meeting.Bolts)
+            {
+                var left = pair.Left == p;
+                var edge = left ? r.X1 - 0.032 : r.X0 + 0.012;
+                foreach (var z in new[] { r.Z0 + 0.03, r.Z1 - 0.23 }) o.Add(Rect(edge, z, edge + 0.02, z + 0.2, "outline"));
+            }
+            return o;
         }
         var zh = leaf ? Math.Min(r.Z0 + 1.05, r.Z1 - 0.2) : (r.Z0 + r.Z1) / 2;
         var slides = op.StartsWith("sliding") || op.StartsWith("door-sliding");
@@ -257,6 +268,7 @@ public static class JoinerySymbols
         var shaped = JoineryShapes.Shaped(s) || s.Muntins is { Pattern: not "none" };
         var o = shaped ? ShapeLines(s).ToList() : [Rect(-s.Width / 2, 0, s.Width / 2, s.Height, "outline")];
         if (JoineryShapes.Round(s)) return exterior ? o.Select(x => x with { Pts = x.Pts.Select(q => new Vec2(-q.X, q.Y)).ToList() }).ToList() : o;
+        var pairs = Joinery.Meetings(s);
         foreach (var p in Joinery.Normalised(s))
         {
             var r = Joinery.PanelRect(s, p);
@@ -273,8 +285,15 @@ public static class JoinerySymbols
                 o.Add(Loop(sw + g, "thin"));
             }
             o.AddRange(OpeningMarks(p.Operation, r, exterior, convention, JoineryShapes.PaneTop(s, r)));
-            if (hardware && s.Frameless == null) o.AddRange(Hardware(s, p, r));
+            if (hardware && s.Frameless == null) o.AddRange(Hardware(s, p, r, pairs.FirstOrDefault(m => m.Left == p || m.Right == p)));
         }
+        // An astragal on the active leaf's room face (decision 466): seen from inside, the strip over the joint.
+        if (!exterior && s.Meeting is { } meet)
+            foreach (var pair in pairs.Where(m => m.Kind == "astragal"))
+            {
+                var r = Joinery.PanelRect(s, pair.Right);
+                o.Add(Rect(r.X0 - meet.WidthOf / 2, r.Z0, r.X0 + meet.WidthOf / 2, r.Z1, "thin"));
+            }
         // Frameless glass (tester's question 7): no frame, so the opening's outline is the wall's; the fittings, track and handles are what shows.
         if (s.Frameless != null)
             foreach (var b in Joinery.Boxes(s).Where(b => b.Role is "hardware" || (hardware && b.Role is "handle")))

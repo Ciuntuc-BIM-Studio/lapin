@@ -138,6 +138,8 @@ public static class BayWindows
     {
         Width = width,
         Columns = s.Columns[c0..(c1 + 1)],
+        // The face's own column boundaries' mullions (decision 466).
+        Mullions = s.Mullions == null ? null : [.. Enumerable.Range(c0, c1 - c0).Select(i => i < s.Mullions.Length ? s.Mullions[i] : null)],
         Panels = [.. s.Panels.Where(p => p.Col >= c0 && p.Col <= c1).Select(p => p with { Col = p.Col - c0, ColSpan = Math.Max(1, Math.Min(p.ColSpan, c1 - p.Col + 1)) })],
         Bay = null, Details = null, Shape = null, Lintel = null,
         Board = new JoineryBoard(0, 0),
@@ -172,6 +174,8 @@ public static class BayWindows
         var ranges = Ranges(s);
         var cols = new List<double>();
         var panels = new List<JoineryPanel>();
+        // Each face's own boundaries' mullions; where two faces join, the frame's.
+        var mullions = new List<double?>();
         for (var i = 0; i < faces.Count; i++)
         {
             if (faces[i].Solid) continue;
@@ -179,11 +183,13 @@ public static class BayWindows
             var w = s.Columns[c0..(c1 + 1)];
             var sum = Math.Max(1e-9, w.Sum());
             var at = cols.Count;
+            if (at > 0) mullions.Add(null);
+            for (var c = c0; c < c1; c++) mullions.Add(s.Mullions is { } ml && c < ml.Length ? ml[c] : null);
             foreach (var x in w) cols.Add(Math.Round(faces[i].Length * x / sum, 6));
             panels.AddRange(s.Panels.Where(p => p.Col >= c0 && p.Col <= c1).Select(p => p with { Col = p.Col - c0 + at, ColSpan = Math.Max(1, Math.Min(p.ColSpan, c1 - p.Col + 1)) }));
         }
         if (cols.Count == 0) return s with { Bay = null };
-        return s with { Width = Math.Round(cols.Sum(), 6), Columns = [.. cols], Panels = [.. panels], Bay = null };
+        return s with { Width = Math.Round(cols.Sum(), 6), Columns = [.. cols], Panels = [.. panels], Bay = null, Mullions = s.Mullions == null ? null : [.. mullions] };
     }
 
     static string Mm(double v) => Math.Round(v * 1000).ToString(CultureInfo.InvariantCulture);

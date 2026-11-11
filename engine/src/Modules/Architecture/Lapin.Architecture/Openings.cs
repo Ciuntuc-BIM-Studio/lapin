@@ -875,4 +875,13 @@ public static class JoinerySpecs
 {
     public static JoinerySpec Door => JoinerySpec.DefaultDoor("Door 900×2100");
     public static JoinerySpec Window => JoinerySpec.DefaultWindow("Window 1200×1500");
+
+    /// <summary>
+    /// A double door (decision 466): two leaves of 700, no mullion between them, a rebated meeting, the right leaf active (seen
+    /// from the side it is pushed open from, the leaf most used in Romania and the rest of Europe), flush bolts on the left one.
+    /// </summary>
+    public static JoinerySpec DoubleDoor => JoinerySpec.DefaultDoor("Double door 1500×2100") with
+    {
+        Mark = "DD", Width = 1.5, Columns = [1, 1], Panels = [new(0, 0, "swing-left"), new(1, 0, "swing-right")], Mullions = [0], Meeting = new JoineryMeeting(),
+    };
 }
