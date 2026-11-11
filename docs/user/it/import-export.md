@@ -56,6 +56,18 @@ Gli spazi del file (da Revit, ArchiCAD e altri) entrano come locali di Lapin, ci
 
 ![Esporta IFC o Fragments](shots/export-exchange.webp)
 
+### SDNF (dettaglio delle carpenterie metalliche)
+
+SDNF, lo Steel Detailing Neutral File, è il formato di testo in cui i programmi di dettaglio delle carpenterie metalliche si scambiano una struttura (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D): ogni asta una linea con il suo profilo, il suo grado, il punto della sezione per cui passa la linea e la sua rotazione; piastre; fili fissi. Lapin scrive la versione 3.0 e legge la 3.0 e la 2.0, nelle edizioni con il modulo acciaio.
+
+**Esporta IFC, Fragments o BOS…** con **SDNF** spuntato scrive i pilastri e le travi (di qualsiasi materiale) e le aste in acciaio dei piani e dei tipi scelti, le piastre dei loro collegamenti e i fili fissi, in millimetri. Ogni asta conserva il nome del suo profilo (IPE 300, HEA 240, un profilo della tua libreria), il suo grado e un numero legato al suo id, perché il file possa tornare.
+
+![Esporta SDNF](shots/export-sdnf.webp)
+
+**Importa SDNF…** porta dentro un file come elementi propri di Lapin, in un solo passo che puoi annullare: un pilastro verticale come pilastro, una trave orizzontale come trave, tutto il resto (un controvento, un puntone, un'asta inclinata) come asta in acciaio, ciascuno sul suo piano, con il profilo preso dai profili del progetto e dalla libreria di Lapin; entrano anche le piastre e i fili fissi. Un profilo che nessuna libreria ha (W12X50, se non hai una tabella AISC) conserva il suo nome su una sezione provvisoria ed è elencato, finché non dai un profilo al suo tipo. Un file scritto da Lapin, o lo stesso file di nuovo dopo che il disegnatore lo ha modificato, aggiorna gli elementi da cui è venuto invece di aggiungerne di nuovi. Gli svincoli alle estremità, i fori, i carichi e le aste curve non vengono ancora importati.
+
+![Il capannone riletto da SDNF](shots/import-sdnf-3d.webp)
+
 ## JG Structures (calcolo strutturale)
 
 **Esporta JG Structures (JSON)…** scrive il modello analitico del progetto nel file di scambio di JG Structures, un programma di calcolo strutturale: un file JSON secondo il suo contratto (versione 1.0.0). Lapin ricava il modello da ciò che hai disegnato. Pilastri, travi e aste in acciaio diventano aste sui loro assi; i muri portanti (Pset_WallCommon.LoadBearing sul muro o sul suo tipo) e i solai diventano gusci al centro del loro strato resistente, senza finiture. Condividono i nodi: una trave che porta un solaio sta nel piano medio del solaio, le estremità di pilastri e muri raggiungono la trave o il solaio in testa e al piede, gli angoli di un solaio passano sui pilastri e i muri sottostanti, e il solaio si divide lungo le travi che lo attraversano. I piedi di pilastri e muri su una fondazione sono incastrati; la base di un pilastro in acciaio è incernierata o incastrata come dice il suo collegamento.

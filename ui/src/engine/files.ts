@@ -494,6 +494,27 @@ export async function importBos(): Promise<void> {
 }
 
 /**
+ * A Steel Detailing Neutral File (.sdnf, SDNF 3.0 or 2.0: docs/sdnf.md) into the open project, by the steel module, in one
+ * undo step: its linear members as native columns, beams and steel members, its plates and grids. A file Lapin wrote, or one
+ * brought in before, updates the elements it brought rather than adding them again.
+ */
+export async function importSdnf(): Promise<void> {
+  const exts = ['sdnf', 'dat', 'sdn'];
+  const picked = isDesktop() ? null : await pickFile('SDNF', exts);
+  const path = isDesktop() ? await pickPath('open', undefined, [{ name: 'SDNF', extensions: exts }]) : picked?.name ?? null;
+  if (!path) return;
+  const name = path.split(/[\\/]/).pop() ?? path;
+  try {
+    const r = await engine.call<{ made: number; updated: number; remade: number; plates: number; unknownProfiles: string[] }>('doc.execute',
+      { command: 'steel.importSdnf', args: picked ? { name: picked.name, data: toBase64(picked.bytes) } : { name, path } }, { timeoutMs: LONG_TIMEOUT_MS });
+    notify(`Imported ${name}: ${r.made} new, ${r.updated + r.remade} updated, ${r.plates} plates.`);
+    if (r.unknownProfiles.length) notify(`Profiles in no library, drawn as placeholders: ${r.unknownProfiles.join(', ')}.`);
+  } catch (e) {
+    notify(e instanceof Error ? e.message : String(e));
+  }
+}
+
+/**
  * A mesh from another program into the open project as references (OBJ, STL, glTF, GLB: docs/plan-studio-editor.md);
  * Studio's Make Studio solid makes one editable. OBJ and STL say neither their unit nor which way is up: asked for.
  */

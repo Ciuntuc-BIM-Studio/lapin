@@ -56,6 +56,18 @@ Filens rum (fra Revit, ArchiCAD og andre) kommer ind som Lapin-rum, hvert på si
 
 ![Eksportér IFC eller Fragments](shots/export-exchange.webp)
 
+### SDNF (ståldetaljering)
+
+SDNF, Steel Detailing Neutral File, er det tekstformat, ståldetaljeringsprogrammer udveksler en konstruktion i (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D): hvert element en linje med sin profil, sin stålkvalitet, det punkt i tværsnittet linjen går igennem og sin drejning; plader; akser. Lapin skriver version 3.0 og læser 3.0 og 2.0, i udgaver med stålmodulet.
+
+**Eksportér IFC, Fragments eller BOS…** med **SDNF** valgt skriver søjlerne og bjælkerne (af ethvert materiale) og stålelementerne fra de valgte etager og typer, pladerne i deres samlinger og akserne, i millimeter. Hvert element beholder sin profils navn (IPE 300, HEA 240, en profil fra dit eget bibliotek), sin kvalitet og et nummer knyttet til sit id, så filen kan komme tilbage.
+
+![Eksportér SDNF](shots/export-sdnf.webp)
+
+**Importér SDNF…** henter en fil ind som Lapins egne elementer, i ét trin du kan fortryde: en lodret søjle som søjle, en vandret bjælke som bjælke, alt andet (et vindkryds, et spær, et skråt element) som stålelement, hver på sin etage, med profilen fra projektets profiler og Lapins bibliotek; plader og akser kommer også med. En profil, som intet bibliotek har (W12X50, når du ikke har en AISC-tabel), beholder sit navn på et midlertidigt tværsnit og listes, indtil du giver dens type en profil. En fil, Lapin har skrevet, eller den samme fil igen efter detaljeringen har ændret den, opdaterer de elementer, den kom fra, i stedet for at tilføje nye. Endefrigørelser, huller, laster og krumme elementer hentes ikke ind endnu.
+
+![Hallen læst tilbage fra SDNF](shots/import-sdnf-3d.webp)
+
 ## JG Structures (statisk beregning)
 
 **Eksportér JG Structures (JSON)…** skriver projektets analytiske model i udvekslingsfilen til JG Structures, et program til statisk beregning: en JSON-fil efter programmets kontrakt (version 1.0.0). Lapin udleder modellen af det, du har tegnet. Søjler, bjælker og stålprofiler bliver stænger på deres akser; bærende vægge (Pset_WallCommon.LoadBearing på væggen eller dens type) og dæk bliver skaller midt i deres bærende lag, uden overflader. De deler knuder: en bjælke, der bærer et dæk, ligger i dækkets midterplan, søjle- og vægender møder bjælken eller dækket i top og fod, et dæks hjørner flyttes til søjlerne og væggene under det, og dækket deles langs de bjælker, der krydser det. Fødderne af søjler og vægge på et fundament er indspændte; en stålsøjlefod er charniereret eller indspændt, som samlingen siger.

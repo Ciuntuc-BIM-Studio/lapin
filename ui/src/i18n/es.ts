@@ -1668,6 +1668,8 @@ export const ES: Record<string, string> = {
   "the shortcut waits a moment; Enter runs the alias": "el atajo espera un momento; Intro ejecuta el alias",
   "Makes the shortcut of": "Hace que el atajo de",
   "wait a moment; Enter runs the alias": "espere un momento; Intro ejecuta el alias",
+  // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
+  'Import SDNF…': 'Importar SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'pilares, vigas, barras de acero y chapas, para programas de detallado de acero',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -1835,4 +1837,6 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `La plantilla „${m[1]}” elegida para los proyectos nuevos ya no está en este ordenador: se usó la predeterminada de Lapin.`],
   [/^There is no template „(.+)”\.$/, (m) => `No hay ninguna plantilla „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `Ya hay una plantilla llamada „${m[1]}”.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `Importado ${m[1]}: ${m[2]} nuevos, ${m[3]} actualizados, ${m[4]} chapas.`],
+  [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Perfiles que no están en ninguna biblioteca, dibujados provisionalmente: ${m[1]}.`],
 ];

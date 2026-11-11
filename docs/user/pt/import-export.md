@@ -56,6 +56,18 @@ Os espaços do arquivo (do Revit, do ArchiCAD e de outros) entram como ambientes
 
 ![Exportar IFC ou Fragments](shots/export-exchange.webp)
 
+### SDNF (detalhamento de aço)
+
+SDNF, o Steel Detailing Neutral File, é o formato de texto em que os programas de detalhamento de aço trocam uma estrutura (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D): cada barra uma linha com o seu perfil, a sua classe, o ponto da seção por onde passa a linha e a sua rotação; chapas; eixos. O Lapin escreve a versão 3.0 e lê a 3.0 e a 2.0, nas edições com o módulo de aço.
+
+**Exportar IFC, Fragments ou BOS…** com **SDNF** marcado escreve os pilares e as vigas (de qualquer material) e as barras de aço dos pavimentos e tipos escolhidos, as chapas das suas ligações e os eixos, em milímetros. Cada barra mantém o nome do seu perfil (IPE 300, HEA 240, um perfil da sua própria biblioteca), a sua classe e um número ligado ao seu id, para que o arquivo possa voltar.
+
+![Exportar SDNF](shots/export-sdnf.webp)
+
+**Importar SDNF…** traz um arquivo como elementos próprios do Lapin, num só passo que pode desfazer: um pilar vertical como pilar, uma viga horizontal como viga, todo o resto (um contraventamento, uma asna, uma barra inclinada) como barra de aço, cada um no seu pavimento, com o perfil tirado dos perfis do projeto e da biblioteca do Lapin; as chapas e os eixos também entram. Um perfil que nenhuma biblioteca tem (W12X50, quando não tem uma tabela AISC) mantém o nome numa seção provisória e é listado, até dar um perfil ao seu tipo. Um arquivo escrito pelo Lapin, ou o mesmo arquivo de novo depois de o detalhista o alterar, atualiza os elementos de onde veio em vez de acrescentar novos. As liberações nas extremidades, os furos, as cargas e as barras curvas ainda não são importados.
+
+![O galpão lido de volta do SDNF](shots/import-sdnf-3d.webp)
+
 ## JG Structures (cálculo estrutural)
 
 **Exportar JG Structures (JSON)…** escreve o modelo analítico do projeto no arquivo de intercâmbio do JG Structures, um programa de cálculo estrutural: um arquivo JSON conforme o seu contrato (versão 1.0.0). O Lapin deriva o modelo do que você desenhou. Pilares, vigas e barras de aço viram barras nos seus eixos; as paredes portantes (Pset_WallCommon.LoadBearing na parede ou no seu tipo) e as lajes viram cascas no meio da sua camada resistente, sem acabamentos. Elas compartilham os nós: uma viga que sustenta uma laje fica no plano médio da laje, as extremidades de pilares e paredes chegam à viga ou à laje no topo e na base, os cantos de uma laje passam para os pilares e paredes abaixo dela, e a laje é dividida ao longo das vigas que a atravessam. As bases de pilares e paredes sobre uma fundação são engastadas; a base de um pilar de aço é articulada ou engastada, como diz a sua ligação.

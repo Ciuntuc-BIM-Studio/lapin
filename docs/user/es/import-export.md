@@ -56,6 +56,18 @@ Los espacios del archivo (de Revit, ArchiCAD y otros) entran como habitaciones d
 
 ![Exportar IFC o Fragments](shots/export-exchange.webp)
 
+### SDNF (detallado de acero)
+
+SDNF, el Steel Detailing Neutral File, es el formato de texto en que los programas de detallado de acero intercambian una estructura (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D): cada barra una línea con su perfil, su calidad, el punto de la sección por el que pasa la línea y su giro; chapas; ejes. Lapin escribe la versión 3.0 y lee la 3.0 y la 2.0, en las ediciones con el módulo de acero.
+
+**Exportar IFC, Fragments o BOS…** con **SDNF** marcado escribe los pilares y las vigas (de cualquier material) y las barras de acero de las plantas y los tipos elegidos, las chapas de sus uniones y los ejes, en milímetros. Cada barra conserva el nombre de su perfil (IPE 300, HEA 240, un perfil de tu propia biblioteca), su calidad y un número ligado a su id, para que el archivo pueda volver.
+
+![Exportar SDNF](shots/export-sdnf.webp)
+
+**Importar SDNF…** trae un archivo como elementos propios de Lapin, en un solo paso que puedes deshacer: un pilar vertical como pilar, una viga horizontal como viga, todo lo demás (un arriostramiento, un cabio, una barra inclinada) como barra de acero, cada uno en su planta, con el perfil tomado de los perfiles del proyecto y de la biblioteca de Lapin; también entran sus chapas y ejes. Un perfil que no tiene ninguna biblioteca (W12X50, si no tienes una tabla AISC) conserva su nombre en una sección provisional y se indica, hasta que des un perfil a su tipo. Un archivo escrito por Lapin, o el mismo archivo de nuevo después de que el detallista lo cambie, actualiza los elementos de los que salió en lugar de añadir otros nuevos. Las liberaciones en los extremos, los agujeros, las cargas y las barras curvas aún no se importan.
+
+![La nave leída de nuevo desde SDNF](shots/import-sdnf-3d.webp)
+
 ## JG Structures (cálculo estructural)
 
 **Exportar JG Structures (JSON)…** escribe el modelo analítico del proyecto en el archivo de intercambio de JG Structures, un programa de cálculo estructural: un archivo JSON según su contrato (versión 1.0.0). Lapin deriva el modelo de lo que dibujaste. Pilares, vigas y barras de acero pasan a ser barras sobre sus ejes; los muros portantes (Pset_WallCommon.LoadBearing en el muro o en su tipo) y los forjados pasan a ser láminas en el centro de su capa resistente, sin acabados. Comparten sus nudos: una viga que sostiene un forjado queda en el plano medio del forjado, los extremos de pilares y muros llegan a la viga o al forjado de su cabeza y de su pie, las esquinas de un forjado pasan a los pilares y muros de debajo, y el forjado se divide a lo largo de las vigas que lo cruzan. Los pies de pilares y muros sobre una cimentación quedan empotrados; la base de un pilar de acero es articulada o empotrada según su unión.

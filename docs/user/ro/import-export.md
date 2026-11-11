@@ -68,6 +68,18 @@ Spațiile fișierului (din Revit, ArchiCAD și altele) intră ca încăperi Lapi
 
 **Exportă IFC, Fragments sau BOS…** cu **BIM Open Schema** bifat scrie modelul cum scrie un fișier convertorul IFC al Ara 3D: proiectul, situl, clădirea și etajele, fiecare element sub clasa lui IFC, cu GlobalId-ul, tipul, materialele, atributele IFC, seturile de proprietăți și de cantități și parametrii tăi, conținut în etajul lui; triunghiurile în zecimi de milimetru, o formă folosită de mai multe ori (un tip de stâlp, o fereastră) păstrată o singură dată. Golurile ies cum le scrie convertorul: câte un element gol pentru fiecare ușă, fereastră și gol simplu, care taie peretele și e umplut de ușa sau fereastra lui, cu dimensiunile lui. Corpul lui e ascuns în vizualizatoare, dar rămâne pentru verificarea coliziunilor. Norii de puncte nu fac parte din format și rămân pe dinafară.
 
+### SDNF (detalierea structurilor din oțel)
+
+SDNF, Steel Detailing Neutral File, e formatul text în care programele de detaliere a oțelului își transmit o structură (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D): fiecare bară o linie cu profilul, marca oțelului, punctul secțiunii prin care trece linia și rotirea ei; plăci; axe. Lapin scrie versiunea 3.0 și citește 3.0 și 2.0, în edițiile cu modulul de oțel.
+
+**Exportă IFC, Fragments sau BOS…** cu **SDNF** bifat scrie stâlpii și grinzile (din orice material) și barele de oțel de pe etajele și tipurile alese, plăcile îmbinărilor lor și axele, în milimetri. Fiecare bară își păstrează numele profilului (IPE 300, HEA 240, un profil din biblioteca ta), marca și un număr legat de id-ul ei, ca fișierul să se poată întoarce.
+
+![Exportă SDNF](shots/export-sdnf.webp)
+
+**Importă SDNF…** aduce un fișier ca elemente Lapin, într-un singur pas pe care îl poți anula: un stâlp vertical ca stâlp, o grindă orizontală ca grindă, orice altceva (o contravântuire, un căprior, o bară înclinată) ca bară de oțel, fiecare pe etajul lui, cu profilul luat din profilele proiectului și din biblioteca Lapin; vin și plăcile și axele. Un profil pe care nu-l are nicio bibliotecă (W12X50, când nu ai un tabel AISC) își păstrează numele pe o secțiune provizorie și e listat, până îi dai tipului un profil. Un fișier scris de Lapin, sau același fișier importat din nou după ce l-a schimbat detaliatorul, actualizează elementele din care a venit în loc să adauge altele noi. Eliberările de la capete, găurile, încărcările și barele curbe nu se aduc încă.
+
+![Hala citită înapoi din SDNF](shots/import-sdnf-3d.webp)
+
 ## JG Structures (calcul structural)
 
 **Exportă JG Structures (JSON)…** scrie modelul analitic al proiectului în fișierul de schimb al lui JG Structures, un program de calcul structural: un fișier JSON după contractul lui (versiunea 1.0.0). Lapin face modelul din ce ai desenat. Stâlpii, grinzile și barele de oțel devin bare pe axele lor; pereții portanți (Pset_WallCommon.LoadBearing pe perete sau pe tipul lui) și planșeele devin plăci pe mijlocul stratului lor de rezistență, fără finisaje. Ele au noduri comune: o grindă care poartă un planșeu stă în planul median al planșeului, capetele stâlpilor și ale pereților ajung la grinda sau planșeul de la cap și de la bază, colțurile unui planșeu trec pe stâlpii și pereții de sub el, iar planșeul se împarte de-a lungul grinzilor care îl traversează. Bazele stâlpilor și ale pereților de pe o fundație sunt încastrate; baza unui stâlp de oțel e articulată sau încastrată, cum spune îmbinarea ei.

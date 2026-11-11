@@ -4,14 +4,17 @@
  * a phase, everything or only what the 3D view shows. IFC in IFC4 or IFC4X3, its parts grouped under their element
  * or one body each, its bodies as faceted B-reps (exact) or face sets (a much smaller file), simplified on request
  * within a tolerance where a body is meshed (Simplifier in the engine); Fragments from the project base point, the
- * internal origin or the survey point.
+ * internal origin or the survey point. SDNF 3.0 (docs/sdnf.md, decision 463) where the product has the steel module: the columns, beams
+ * and steel members of the storeys and kinds chosen, their connections' plates, the grids, for steel detailing programs.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
-import { useUi } from '../../app/store';
+import { notify, useUi } from '../../app/store';
 import { engine, useSession } from '../../engine/session';
-import { exportFile, projectTitle } from '../../engine/files';
+import { LONG_TIMEOUT_MS } from '../../engine/client';
+import { exportFile, projectTitle, saveFile } from '../../engine/files';
+import { hasModule } from '../../platform/brand';
 import { choiceOf, type ExchangeFormat, type Survey } from '../../engine/ifcImport';
 import { useLooks } from '../../platform/looks';
 import { nothingChosen, SurveyChoice } from './SurveyChoice';
@@ -21,7 +24,7 @@ import { ORIGINS, usePhaseList } from './format';
 export function ExchangeExportDialog() {
   const path = useSession((s) => s.doc?.path ?? null);
   const view3dId = useUi((s) => s.view3dId);
-  const [format, setFormat] = useState<ExchangeFormat>('ifc');
+  const [format, setFormat] = useState<ExchangeFormat | 'sdnf'>('ifc');
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [offKinds, setOffKinds] = useState<Set<string>>(new Set());
   const [offStoreys, setOffStoreys] = useState<Set<string>>(new Set());
@@ -57,7 +60,16 @@ export function ExchangeExportDialog() {
       ...(phase ? { phase } : {}), ...(onlyShown ? { hidden } : {}), ...(voids ? { voids: true } : {}),
     };
     // The kinds ticked decide; all of them ticked takes the entourage too (the engine leaves it out when not told).
-    if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
+    if (format === 'sdnf') {
+      // The steel module's query (docs/sdnf.md): an ASCII file, saved where the user says.
+      try {
+        const r = await engine.call<{ data: string }>('doc.query', { name: 'steel.sdnfExport', args: { ...(choice.kinds ? { kinds: choice.kinds } : {}), ...(choice.storeys ? { storeys: choice.storeys } : {}), ...(onlyShown ? { hidden } : {}) } }, { timeoutMs: LONG_TIMEOUT_MS });
+        const saved = await saveFile(Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0)), `${projectTitle(path)}.sdnf`, 'text/plain');
+        if (saved) notify(`Exported ${saved}.`);
+      } catch (e) {
+        notify(e instanceof Error ? e.message : String(e));
+      }
+    } else if (format === 'ifc') await exportFile('project.exportIfc', { ...common, entourage: true, schema, detail, geometry, ...(simplify ? { tolerance: mm / 1000 } : {}) }, `${projectTitle(path)}.ifc`, 'ifc');
     else await exportFile('project.exportMesh', { ...common, format, origin, ...(onlyShown ? { viewId: view3dId ?? '3d' } : {}) }, `${projectTitle(path)}.${format}`, format);
     setBusy(false);
     close();
@@ -74,6 +86,7 @@ export function ExchangeExportDialog() {
             <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'ifc'} onChange={() => setFormat('ifc')} /> <strong>IFC</strong> <span className="muted small">the model for every BIM program</span></label>
             <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'frag'} onChange={() => setFormat('frag')} /> <strong>Fragments</strong> <span className="muted small">That Open's format, for BIM web viewers</span></label>
             <label className="check-line"><input type="radio" name="exchange-format" checked={format === 'bos'} onChange={() => setFormat('bos')} /> <strong>BIM Open Schema</strong> <span className="muted small">Parquet tables, for data analysis and viewers</span></label>
+            {hasModule('steel') && <label className="check-line"><input type="radio" name="exchange-format" data-testid="export-sdnf" checked={format === 'sdnf'} onChange={() => setFormat('sdnf')} /> <strong>SDNF</strong> <span className="muted small">columns, beams, steel members and plates, for steel detailing programs</span></label>}
           </div>
         </div>
         <div className="dialog-body split">
@@ -82,7 +95,7 @@ export function ExchangeExportDialog() {
         </div>
         <div className="dialog-body exchange-options">
           <dl className="fields">
-            {phases.length > 0 && (
+            {phases.length > 0 && format !== 'sdnf' && (
               <>
                 <dt title="The elements that stand at the end of this phase">Phase</dt>
                 <dd><select value={phase} onChange={(e) => setPhase(e.target.value)}><option value="">every phase</option>{phases.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></dd>
@@ -94,9 +107,13 @@ export function ExchangeExportDialog() {
                 <dd><label><input type="checkbox" style={{ width: 'auto', marginRight: 6 }} checked={onlyShown} onChange={(e) => setOnlyShown(e.target.checked)} /> only what it shows</label></dd>
               </>
             )}
-            <dt title="Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP">Opening voids</dt>
-            <dd><label><input type="checkbox" data-testid="export-voids" style={{ width: 'auto', marginRight: 6 }} checked={voids} onChange={(e) => setVoids(e.target.checked)} /> as solids, for clash tools</label></dd>
-            {format === 'ifc' ? (
+            {format !== 'sdnf' && (
+              <>
+                <dt title="Each opening in a wall, floor or roof also as a solid of its own (IfcBuildingElementProxy PROVISIONFORVOID with Pset_ProvisionForVoid), for clash tools; the kinds and offset of Manage → Openings vs MEP">Opening voids</dt>
+                <dd><label><input type="checkbox" data-testid="export-voids" style={{ width: 'auto', marginRight: 6 }} checked={voids} onChange={(e) => setVoids(e.target.checked)} /> as solids, for clash tools</label></dd>
+              </>
+            )}
+            {format === 'sdnf' ? null : format === 'ifc' ? (
               <>
                 <dt>Schema</dt>
                 <dd><select value={schema} onChange={(e) => setSchema(e.target.value)}>

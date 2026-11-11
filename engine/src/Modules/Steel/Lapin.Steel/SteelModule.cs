@@ -192,6 +192,35 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
         });
 
         r.Catalog("profiles", new JsonArray(Section.Catalogue.Values.Select(p => (JsonNode)p.ToJson()).ToArray()));
+
+        // SDNF 3.0 (docs/sdnf.md, decision 463): {storeys?, kinds?, hidden?} → {name, data (base64 ASCII), report}.
+        r.Query("sdnfExport", (q, a) =>
+        {
+            static IReadOnlySet<string>? Ids(JsonNode? n) => n is JsonArray arr ? arr.Select(x => (string?)x).OfType<string>().ToHashSet() : null;
+            var result = Sdnf.SdnfExport.Build(q, new Sdnf.SdnfExportOptions(Ids(a["storeys"]), Ids(a["hidden"]), Kinds: Ids(a["kinds"])));
+            return new JsonObject
+            {
+                ["name"] = $"{q.Title ?? "Project"}.sdnf",
+                ["data"] = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(result.Text)),
+                ["report"] = result.Report,
+            };
+        });
+
+        // An SDNF file into the project (docs/sdnf.md): {name, data (base64) | text | path} → the import's report. One undo step.
+        r.Command("importSdnf", "Import SDNF", (ctx, a) =>
+        {
+            var name = (string?)a["name"] ?? "file.sdnf";
+            string text;
+            if ((string?)a["text"] is { } t) text = t;
+            else if ((string?)a["data"] is { } d) text = System.Text.Encoding.Latin1.GetString(Convert.FromBase64String(d));
+            else if ((string?)a["path"] is { } path) { text = System.Text.Encoding.Latin1.GetString(File.ReadAllBytes(path)); name = Path.GetFileName(path); }
+            else throw new CommandException("Which SDNF file?");
+            Sdnf.SdnfFile file;
+            try { file = Sdnf.SdnfReader.Read(text); }
+            catch (FormatException ex) { throw new CommandException($"„{name}” is not an SDNF file Lapin can read: {ex.Message}"); }
+            if (file.Members.Count + file.Plates.Count + file.Grids.Count == 0) throw new CommandException($"„{name}” has no members, plates or grids Lapin can bring in.");
+            return Sdnf.SdnfImport.Run(ctx, file, name);
+        });
     }
 
     static JsonArray P3(Vec3 p) => new(Math.Round(p.X, 9), Math.Round(p.Y, 9), Math.Round(p.Z, 9));

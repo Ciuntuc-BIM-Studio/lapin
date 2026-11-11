@@ -1663,6 +1663,8 @@ export const DA: Record<string, string> = {
   "the shortcut waits a moment; Enter runs the alias": "genvejen venter et øjeblik; Enter kører aliasset",
   "Makes the shortcut of": "Får genvejen til",
   "wait a moment; Enter runs the alias": "til at vente et øjeblik; Enter kører aliasset",
+  // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
+  'Import SDNF…': 'Importér SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'søjler, bjælker, stålprofiler og plader, til ståldetaljeringsprogrammer',
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -1830,4 +1832,6 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Skabelonen „${m[1]}”, der er valgt til nye projekter, er ikke længere på denne computer: Lapins standard blev brugt.`],
   [/^There is no template „(.+)”\.$/, (m) => `Der er ingen skabelon „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `En skabelon hedder allerede „${m[1]}”.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `Importeret ${m[1]}: ${m[2]} nye, ${m[3]} opdaterede, ${m[4]} plader.`],
+  [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profiler i intet bibliotek, tegnet som pladsholdere: ${m[1]}.`],
 ];

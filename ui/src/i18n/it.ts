@@ -1671,6 +1671,8 @@ export const IT: Record<string, string> = {
   "the shortcut waits a moment; Enter runs the alias": "la scorciatoia attende un attimo; Invio esegue l'alias",
   "Makes the shortcut of": "Fa attendere un attimo la scorciatoia di",
   "wait a moment; Enter runs the alias": "; Invio esegue l'alias",
+  // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
+  'Import SDNF…': 'Importa SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'pilastri, travi, aste in acciaio e piastre, per i programmi di dettaglio delle carpenterie metalliche',
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -1837,4 +1839,6 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Il modello „${m[1]}” scelto per i nuovi progetti non è più su questo computer: è stato usato il predefinito di Lapin.`],
   [/^There is no template „(.+)”\.$/, (m) => `Non c’è il modello „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `Un modello si chiama già „${m[1]}”.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `Importato ${m[1]}: ${m[2]} nuovi, ${m[3]} aggiornati, ${m[4]} piastre.`],
+  [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profili in nessuna libreria, disegnati provvisoriamente: ${m[1]}.`],
 ];

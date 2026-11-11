@@ -56,6 +56,18 @@ Les espaces du fichier (de Revit, ArchiCAD et autres) entrent comme pièces Lapi
 
 ![Exporter IFC ou Fragments](shots/export-exchange.webp)
 
+### SDNF (détail de charpente métallique)
+
+SDNF, le Steel Detailing Neutral File, est le format texte dans lequel les logiciels de détail de charpente métallique échangent une structure (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D) : chaque barre une ligne avec son profil, sa nuance, le point de la section par lequel passe la ligne et sa rotation ; des platines ; des files. Lapin écrit la version 3.0 et lit la 3.0 et la 2.0, dans les éditions qui ont le module acier.
+
+**Exporter IFC, Fragments ou BOS…** avec **SDNF** coché écrit les poteaux et les poutres (de tout matériau) et les barres en acier des niveaux et des types choisis, les platines de leurs assemblages et les files, en millimètres. Chaque barre garde le nom de son profil (IPE 300, HEA 240, un profil de votre propre bibliothèque), sa nuance et un numéro lié à son id, pour que le fichier puisse revenir.
+
+![Exporter SDNF](shots/export-sdnf.webp)
+
+**Importer SDNF…** fait entrer un fichier en éléments propres à Lapin, en une seule étape que vous pouvez annuler : un poteau vertical en poteau, une poutre horizontale en poutre, tout le reste (un contreventement, un chevron, une barre inclinée) en barre en acier, chacun sur son niveau, son profil pris dans les profils du projet et la bibliothèque de Lapin ; ses platines et ses files entrent aussi. Un profil qu'aucune bibliothèque n'a (W12X50, quand vous n'avez pas de table AISC) garde son nom sur une section provisoire et est signalé, jusqu'à ce que vous donniez un profil à son type. Un fichier écrit par Lapin, ou le même fichier importé de nouveau après que le dessinateur l'a modifié, met à jour les éléments dont il est issu au lieu d'en ajouter de nouveaux. Les relâchements aux extrémités, les trous, les charges et les barres courbes ne sont pas encore importés.
+
+![La halle relue depuis SDNF](shots/import-sdnf-3d.webp)
+
 ## JG Structures (calcul de structure)
 
 **Exporter JG Structures (JSON)…** écrit le modèle analytique du projet dans le fichier d'échange de JG Structures, un logiciel de calcul de structure : un fichier JSON selon son contrat (version 1.0.0). Lapin tire le modèle de ce que vous avez dessiné. Poteaux, poutres et barres d'acier deviennent des barres sur leurs axes ; les murs porteurs (Pset_WallCommon.LoadBearing sur le mur ou son type) et les planchers deviennent des coques au milieu de leur couche porteuse, sans les finitions. Ils partagent leurs nœuds : une poutre qui porte un plancher se place dans le plan moyen du plancher, les extrémités des poteaux et des murs rejoignent la poutre ou le plancher en tête et en pied, les angles d'un plancher passent sur les poteaux et murs en dessous, et le plancher est découpé le long des poutres qui le traversent. Les pieds de poteaux et de murs sur une fondation sont encastrés ; le pied d'un poteau acier est articulé ou encastré selon son assemblage.

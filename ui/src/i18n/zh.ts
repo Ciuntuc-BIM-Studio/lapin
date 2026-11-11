@@ -1666,6 +1666,8 @@ export const ZH: Record<string, string> = {
   "the shortcut waits a moment; Enter runs the alias": "该快捷键会稍等片刻；按 Enter 运行别名",
   "Makes the shortcut of": "使以下命令的快捷键",
   "wait a moment; Enter runs the alias": "稍等片刻；按 Enter 运行别名",
+  // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
+  'Import SDNF…': '导入 SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': '柱、梁、钢构件和钢板，供钢结构深化设计程序使用',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -1830,4 +1832,6 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `为新项目选择的模板 „${m[1]}” 已不在此计算机上：已使用 Lapin 默认。`],
   [/^There is no template „(.+)”\.$/, (m) => `没有模板 „${m[1]}”。`],
   [/^A template is already called „(.+)”\.$/, (m) => `已有名为 „${m[1]}” 的模板。`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `已导入 ${m[1]}：新建 ${m[2]} 个，更新 ${m[3]} 个，钢板 ${m[4]} 块。`],
+  [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `不在任何库中的型材，以占位截面绘制：${m[1]}。`],
 ];

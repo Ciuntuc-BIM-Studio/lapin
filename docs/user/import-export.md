@@ -68,6 +68,18 @@ The file's spaces (from Revit, ArchiCAD and others) come in as Lapin rooms, each
 
 **Export IFC, Fragments or BOS…** with **BIM Open Schema** ticked writes the model as Ara 3D's IFC converter writes a file: the project, site, building and storeys, each element under its IFC class with its GlobalId, type, materials, IFC attributes, property and quantity sets and your parameters, contained in its storey; its triangles in tenths of a millimetre, a shape used many times (a column type, a window) stored once. Openings go out as the converter writes them: an opening element for each door, window and bare opening, cutting its wall and filled by its door or window, with its sizes. Its body is hidden in viewers but kept for clash tools. Point clouds are not part of the format and stay out.
 
+### SDNF (steel detailing)
+
+SDNF, the Steel Detailing Neutral File, is the text format steel detailing programs exchange a structure in (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D): each member a line with its profile, its grade, the point of its section the line runs through and its turn; plates; grids. Lapin writes version 3.0 and reads 3.0 and 2.0, in editions with the steel module.
+
+**Export IFC, Fragments or BOS…** with **SDNF** ticked writes the columns and beams (of any material) and the steel members of the storeys and kinds chosen, the plates of their steel connections and the grids, in millimetres. Each member keeps its profile's name (IPE 300, HEA 240, a profile of your own library), its grade and a number tied to its id, so the file can come back.
+
+![Export SDNF](shots/export-sdnf.webp)
+
+**Import SDNF…** brings a file in as Lapin's own elements, in one step you can undo: an upright column as a column, a level beam as a beam, anything else (a brace, a rafter, a sloping member) as a steel member, each on its storey, its profile taken from your project's profiles and Lapin's library; its plates and grids come in too. A profile no library has (W12X50, when you have no AISC table) keeps its name on a placeholder section and is listed, until you give its type a profile. Importing a file Lapin wrote, or the same file again after the detailer changed it, updates the elements it came from instead of adding new ones. End releases, holes, loads and curved members are not brought in yet.
+
+![The hall read back from SDNF](shots/import-sdnf-3d.webp)
+
 ## JG Structures (structural analysis)
 
 **Export JG Structures (JSON)…** writes the project's analytical model in the exchange file of JG Structures, a structural analysis program: a JSON file after its contract (version 1.0.0). Lapin derives the model from what you drew. Columns, beams and steel members become frames on their axes; load-bearing walls (Pset_WallCommon.LoadBearing on the wall or its type) and floors become shells on the middle of their core layer, finishes left out. They share their nodes: a beam that carries a floor lies in the floor's mid-plane, column and wall ends meet the beam or floor at their head and foot, a floor's corners move onto the columns and walls under them, and a floor is split along the beams that cross it. The feet of columns and walls on a footing are fixed; a steel column base is pinned or fixed as its connection says.

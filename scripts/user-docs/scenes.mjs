@@ -5535,6 +5535,47 @@ export const scenes = [
     },
   },
   {
+    // SDNF (docs/sdnf.md, decision 463, a tester's report #141): a steel hall written as an SDNF 3.0 file from the exchange
+    // export's SDNF choice, then read into an empty project by File → Import SDNF… as native members, plates and grid.
+    id: 'sdnf',
+    touches: ['core', 'steel', 'structure'],
+    async run(t) {
+      await t.fresh();
+      await t.cmd('steel.addHall', { storeyId: await t.storey(), attrs: { secondary: false } });
+      await t.wait(2000);
+      await t.button('File', { exact: true });
+      await t.page.getByRole('menuitem', { name: 'Export IFC, Fragments or BOS…' }).click();
+      const exchange = t.page.locator('[aria-label="Export IFC, Fragments or BOS"]');
+      await exchange.locator('[data-discipline]').first().waitFor({ timeout: 20_000 });
+      await exchange.locator('[data-testid=export-sdnf]').check();
+      t.expect(await exchange.locator('[data-testid=export-voids]').count() === 0, 'SDNF asks nothing of openings');
+      await t.shot('export-sdnf', { of: '[aria-label="Export IFC, Fragments or BOS"]', pad: 0 });
+      await exchange.getByRole('button', { name: 'Cancel' }).click();
+      const out = await t.call('doc.query', { name: 'steel.sdnfExport', args: {} });
+      const text = Buffer.from(out.data, 'base64').toString('latin1');
+      t.expect(text.startsWith('Packet 00\n"SDNF Version 3.0"') && text.includes('\nPacket 10\n') && text.includes('\nPacket 20\n'), 'the file is SDNF 3.0, its members and plates in their packets');
+      const { tmpdir } = await import('node:os');
+      const { join } = await import('node:path');
+      const { writeFile } = await import('node:fs/promises');
+      const file = join(tmpdir(), 'lapin-guide-hall.sdnf');
+      await writeFile(file, text, 'latin1');
+      await t.fresh();
+      await t.page.evaluate(() => { delete window.showOpenFilePicker; });
+      await t.button('File', { exact: true });
+      const chooser = t.page.waitForEvent('filechooser', { timeout: 10_000 });
+      await t.page.getByRole('menuitem', { name: 'Import SDNF…' }).click();
+      await (await chooser).setFiles(file);
+      await t.wait(2500);
+      const kinds = (await t.nodes()).map((n) => n.type);
+      t.expect(kinds.includes('LapinSteelMember') && kinds.includes('IfcColumn') && kinds.includes('IfcPlate') && kinds.includes('IfcGrid'), 'the hall came back as members, columns, plates and its grid');
+      await t.ui({ selected: [], selection: null });
+      await open3d(t);
+      await t.page.evaluate(async () => (await import('/src/viewport/camera.ts')).useCamera.getState().api?.orbitTo({ azimuth: -2.3, pitch: -0.45, distance: 52, target: { x: 10, y: 15, z: 3 } }, false));
+      await t.wait(1500);
+      await t.shot('import-sdnf-3d', { of: '[data-testid=view3d]', pad: 0 });
+    },
+  },
+  {
     // Components (a tester's wish, docs/components.md): a floor and a solid made a component, copied and turned; an edit in one instance followed by all.
     id: 'components',
     async run(t) {

@@ -1667,6 +1667,8 @@ export const RO: Record<string, string> = {
   "the shortcut waits a moment; Enter runs the alias": "scurtătura așteaptă puțin; Enter rulează aliasul",
   "Makes the shortcut of": "Face scurtătura pentru",
   "wait a moment; Enter runs the alias": "să aștepte puțin; Enter rulează aliasul",
+  // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
+  'Import SDNF…': 'Importă SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'stâlpi, grinzi, bare de oțel și plăci, pentru programele de detaliere a oțelului',
 };
 
 /** Phrases with a number or a name in them. */
@@ -1832,4 +1834,6 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Șablonul „${m[1]}” ales pentru proiectele noi nu mai e pe acest calculator: s-a folosit implicitul Lapin.`],
   [/^There is no template „(.+)”\.$/, (m) => `Nu există șablonul „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `Un șablon se numește deja „${m[1]}”.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `Importat ${m[1]}: ${m[2]} noi, ${m[3]} actualizate, ${m[4]} plăci.`],
+  [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profile din nicio bibliotecă, desenate provizoriu: ${m[1]}.`],
 ];

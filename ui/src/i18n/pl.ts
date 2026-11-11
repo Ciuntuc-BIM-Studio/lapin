@@ -1669,6 +1669,8 @@ export const PL: Record<string, string> = {
   "the shortcut waits a moment; Enter runs the alias": "skrót czeka chwilę; Enter uruchamia alias",
   "Makes the shortcut of": "Sprawia, że skrót dla",
   "wait a moment; Enter runs the alias": "czeka chwilę; Enter uruchamia alias",
+  // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
+  'Import SDNF…': 'Importuj SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'słupy, belki, pręty stalowe i blachy, dla programów do detalowania konstrukcji stalowych',
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -1841,4 +1843,6 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Szablonu „${m[1]}” wybranego dla nowych projektów nie ma już na tym komputerze: użyto domyślnego Lapin.`],
   [/^There is no template „(.+)”\.$/, (m) => `Nie ma szablonu „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `Szablon o nazwie „${m[1]}” już istnieje.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `Zaimportowano ${m[1]}: ${m[2]} nowych, ${m[3]} zaktualizowanych, ${m[4]} blach.`],
+  [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profile spoza bibliotek, narysowane zastępczo: ${m[1]}.`],
 ];

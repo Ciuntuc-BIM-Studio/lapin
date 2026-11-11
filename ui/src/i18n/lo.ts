@@ -1722,6 +1722,8 @@ export const LO: Record<string, string> = {
   "the shortcut waits a moment; Enter runs the alias": "ທາງລັດລໍຖ້າຊົ່ວຄູ່; Enter ແລ່ນນາມແຝງ",
   "Makes the shortcut of": "ເຮັດໃຫ້ທາງລັດຂອງ",
   "wait a moment; Enter runs the alias": "ລໍຖ້າຊົ່ວຄູ່; Enter ແລ່ນນາມແຝງ",
+  // SDNF, the steel detailing neutral file (docs/sdnf.md, decision 463)
+  'Import SDNF…': 'ນຳເຂົ້າ SDNF…', 'columns, beams, steel members and plates, for steel detailing programs': 'ເສົາ, ຄານ, ໂຄງເຫຼັກ ແລະ ແຜ່ນ, ສຳລັບໂປຣແກຣມລາຍລະອຽດໂຄງເຫຼັກ',
 };
 
 /** Phrases with a number or a name in them. */
@@ -1887,4 +1889,6 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `ແມ່ແບບ „${m[1]}” ທີ່ເລືອກສຳລັບໂຄງການໃໝ່ບໍ່ຢູ່ໃນຄອມພິວເຕີນີ້ແລ້ວ: ໄດ້ໃຊ້ຄ່າເລີ່ມຕົ້ນຂອງ Lapin.`],
   [/^There is no template „(.+)”\.$/, (m) => `ບໍ່ມີແມ່ແບບ „${m[1]}”.`],
   [/^A template is already called „(.+)”\.$/, (m) => `ມີແມ່ແບບຊື່ „${m[1]}” ແລ້ວ.`],
+  [/^Imported (.+): (\d+) new, (\d+) updated, (\d+) plates\.$/, (m) => `ນຳເຂົ້າ ${m[1]}: ໃໝ່ ${m[2]}, ອັບເດດ ${m[3]}, ແຜ່ນ ${m[4]}.`],
+  [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `ໂປຣໄຟລ໌ທີ່ບໍ່ຢູ່ໃນຫ້ອງສະໝຸດໃດ, ແຕ້ມເປັນຕົວແທນຊົ່ວຄາວ: ${m[1]}.`],
 ];

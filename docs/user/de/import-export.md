@@ -56,6 +56,18 @@ Die Räume der Datei (aus Revit, ArchiCAD und anderen) kommen als Lapin-Räume h
 
 ![IFC oder Fragments exportieren](shots/export-exchange.webp)
 
+### SDNF (Stahlbau-Detaillierung)
+
+SDNF, das Steel Detailing Neutral File, ist das Textformat, in dem Stahlbau-Detailprogramme eine Konstruktion austauschen (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D): jedes Bauteil eine Linie mit seinem Profil, seiner Stahlgüte, dem Punkt des Querschnitts, durch den die Linie läuft, und seiner Drehung; Bleche; Achsen. Lapin schreibt Version 3.0 und liest 3.0 und 2.0, in Editionen mit dem Stahlbaumodul.
+
+**IFC, Fragments oder BOS exportieren…** mit **SDNF** angekreuzt schreibt die Stützen und Träger (aus jedem Material) und die Stahlbauteile der gewählten Geschosse und Arten, die Bleche ihrer Anschlüsse und die Achsen, in Millimetern. Jedes Bauteil behält den Namen seines Profils (IPE 300, HEA 240, ein Profil Ihrer eigenen Bibliothek), seine Güte und eine an seine Id gebundene Nummer, damit die Datei zurückkommen kann.
+
+![SDNF exportieren](shots/export-sdnf.webp)
+
+**SDNF importieren…** bringt eine Datei als Lapins eigene Elemente herein, in einem Schritt, den Sie rückgängig machen können: eine senkrechte Stütze als Stütze, ein waagerechter Träger als Träger, alles andere (ein Verband, ein Sparren, ein schräges Bauteil) als Stahlbauteil, jedes auf seinem Geschoss, sein Profil aus den Profilen des Projekts und Lapins Bibliothek; Bleche und Achsen kommen mit. Ein Profil, das keine Bibliothek hat (W12X50, wenn Sie keine AISC-Tabelle haben), behält seinen Namen auf einem Platzhalterquerschnitt und wird aufgelistet, bis Sie seinem Typ ein Profil geben. Eine Datei, die Lapin geschrieben hat, oder dieselbe Datei erneut, nachdem der Detaillierer sie geändert hat, aktualisiert die Elemente, aus denen sie kam, statt neue hinzuzufügen. Gelenke an den Enden, Löcher, Lasten und gekrümmte Bauteile werden noch nicht übernommen.
+
+![Die aus SDNF zurückgelesene Halle](shots/import-sdnf-3d.webp)
+
 ## JG Structures (Tragwerksberechnung)
 
 **JG Structures exportieren (JSON)…** schreibt das statische Analysemodell des Projekts in die Austauschdatei von JG Structures, einem Programm zur Tragwerksberechnung: eine JSON-Datei nach dessen Vertrag (Version 1.0.0). Lapin leitet das Modell aus dem Gezeichneten ab. Stützen, Träger und Stahlstäbe werden Stäbe auf ihren Achsen; tragende Wände (Pset_WallCommon.LoadBearing an der Wand oder ihrem Typ) und Decken werden Schalen in der Mitte ihrer tragenden Schicht, ohne Beläge. Sie teilen ihre Knoten: Ein Träger, der eine Decke trägt, liegt in der Mittelebene der Decke, Stützen- und Wandenden treffen den Träger oder die Decke an Kopf und Fuß, die Ecken einer Decke rücken auf die Stützen und Wände darunter, und die Decke wird entlang der Träger geteilt, die sie kreuzen. Die Füße von Stützen und Wänden auf einem Fundament sind eingespannt; ein Stahlstützenfuß ist gelenkig oder eingespannt, wie sein Anschluss sagt.

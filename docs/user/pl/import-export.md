@@ -56,6 +56,18 @@ Przestrzenie z pliku (z Revita, ArchiCAD-a i innych) wchodzą jako pomieszczenia
 
 ![Eksportuj IFC lub Fragments](shots/export-exchange.webp)
 
+### SDNF (detalowanie konstrukcji stalowych)
+
+SDNF, Steel Detailing Neutral File, to format tekstowy, w którym programy do detalowania konstrukcji stalowych wymieniają konstrukcję (Tekla Structures, Advance Steel, SDS2, ProStructures, E3D): każdy pręt to linia z profilem, gatunkiem stali, punktem przekroju, przez który biegnie linia, i obrotem; blachy; osie. Lapin zapisuje wersję 3.0 i czyta 3.0 oraz 2.0, w wydaniach z modułem stali.
+
+**Eksportuj IFC, Fragments lub BOS…** z zaznaczonym **SDNF** zapisuje słupy i belki (z dowolnego materiału) oraz pręty stalowe z wybranych kondygnacji i rodzajów, blachy ich połączeń i osie, w milimetrach. Każdy pręt zachowuje nazwę profilu (IPE 300, HEA 240, profil z Twojej biblioteki), gatunek i numer związany z jego id, aby plik mógł wrócić.
+
+![Eksportuj SDNF](shots/export-sdnf.webp)
+
+**Importuj SDNF…** wczytuje plik jako własne elementy Lapina, w jednym kroku, który można cofnąć: pionowy słup jako słup, poziomą belkę jako belkę, wszystko inne (stężenie, krokiew, pręt ukośny) jako pręt stalowy, każdy na swojej kondygnacji, z profilem z profili projektu i biblioteki Lapina; wchodzą też blachy i osie. Profil, którego nie ma żadna biblioteka (W12X50, gdy nie masz tabeli AISC), zachowuje nazwę na przekroju zastępczym i jest wymieniony, dopóki nie nadasz jego typowi profilu. Plik zapisany przez Lapina albo ten sam plik ponownie, po zmianach detalisty, aktualizuje elementy, z których powstał, zamiast dodawać nowe. Zwolnienia na końcach, otwory, obciążenia i pręty zakrzywione nie są jeszcze wczytywane.
+
+![Hala wczytana z powrotem z SDNF](shots/import-sdnf-3d.webp)
+
 ## JG Structures (obliczenia konstrukcji)
 
 **Eksportuj JG Structures (JSON)…** zapisuje model obliczeniowy projektu w pliku wymiany JG Structures, programu do obliczeń konstrukcji: plik JSON zgodny z jego kontraktem (wersja 1.0.0). Lapin wyprowadza model z tego, co narysowano. Słupy, belki i pręty stalowe stają się prętami na swoich osiach; ściany nośne (Pset_WallCommon.LoadBearing na ścianie lub jej typie) i stropy stają się powłokami w środku swojej warstwy nośnej, bez wykończeń. Mają wspólne węzły: belka niosąca strop leży w płaszczyźnie środkowej stropu, końce słupów i ścian dochodzą do belki lub stropu u góry i u dołu, narożniki stropu przechodzą na słupy i ściany pod nim, a strop dzieli się wzdłuż belek, które go przecinają. Podstawy słupów i ścian na fundamencie są utwierdzone; podstawa słupa stalowego jest przegubowa lub utwierdzona, jak mówi jej połączenie.
