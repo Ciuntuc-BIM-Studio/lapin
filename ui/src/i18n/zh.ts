@@ -1503,6 +1503,8 @@ export const ZH: Record<string, string> = {
   'The top of the element, above ±0.00: type it to move the element there': '构件的顶部，高于 ±0.00：输入数值即可将构件移到该处',
   'The bottom of the element, above ±0.00: type it to move the element there': '构件的底部，高于 ±0.00：输入数值即可将构件移到该处',
   'The base of the element, above ±0.00: type it to move the element there': '构件的底座，高于 ±0.00：输入数值即可将构件移到该处',
+  // Per-mullion widths and meeting leaves (decision 450)
+  'Mullion': '竖梃', 'Transom': '横梃', 'Rebated': '企口', 'Cover strip': '盖缝条', 'Active leaf': '主动扇', 'Meeting': '对合', 'Leaves meeting': '对合的门扇', 'No mullion': '无竖梃', 'No transom': '无横梃', 'Rebate overlap': '企口搭接', 'Cover strip width': '盖缝条宽度', 'Cover strip thickness': '盖缝条厚度', 'Flush bolts on the passive leaf': '被动扇上的暗插销', 'New double door': '新建双开门', 'Default (frame\'s)': '默认（门框的）', 'Click a mullion or a transom in the elevation to give it its own width.': '在立面中点击竖梃或横梃，可为其设置独立宽度。', 'Double-acting leaves always meet butt.': '双向开启的门扇始终对接。', 'Takes the width of the frame\'s mullions and transoms again': '恢复为门框竖梃和横梃的宽度', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': '先开启并带把手的门扇，按网格的读法（左侧门扇铰链在左，从外侧看）',
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

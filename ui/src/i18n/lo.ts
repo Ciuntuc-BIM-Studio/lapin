@@ -1559,6 +1559,8 @@ export const LO: Record<string, string> = {
   'The top of the element, above ±0.00: type it to move the element there': 'ດ້ານເທິງຂອງອົງປະກອບ ເໜືອ ±0.00: ພິມເພື່ອຍ້າຍອົງປະກອບໄປບ່ອນນັ້ນ',
   'The bottom of the element, above ±0.00: type it to move the element there': 'ດ້ານລຸ່ມຂອງອົງປະກອບ ເໜືອ ±0.00: ພິມເພື່ອຍ້າຍອົງປະກອບໄປບ່ອນນັ້ນ',
   'The base of the element, above ±0.00: type it to move the element there': 'ຖານຂອງອົງປະກອບ ເໜືອ ±0.00: ພິມເພື່ອຍ້າຍອົງປະກອບໄປບ່ອນນັ້ນ',
+  // Per-mullion widths and meeting leaves (decision 450)
+  'Mullion': 'ໄມ້ຕັ້ງແບ່ງຊ່ອງ (Mullion)', 'Transom': 'ໄມ້ນອນແບ່ງຊ່ອງ (Transom)', 'Rebated': 'ແບບມີຮ່ອງຊ້ອນ', 'Cover strip': 'ແຖບປິດຮອຍຕໍ່', 'Active leaf': 'ບານທີ່ໃຊ້ງານຫຼັກ', 'Meeting': 'ຈຸດພົບກັນ', 'Leaves meeting': 'ບານທີ່ມາພົບກັນ', 'No mullion': 'ບໍ່ມີໄມ້ຕັ້ງແບ່ງຊ່ອງ', 'No transom': 'ບໍ່ມີໄມ້ນອນແບ່ງຊ່ອງ', 'Rebate overlap': 'ຄວາມຊ້ອນຂອງຮ່ອງ', 'Cover strip width': 'ຄວາມກວ້າງຂອງແຖບປິດຮອຍຕໍ່', 'Cover strip thickness': 'ຄວາມໜາຂອງແຖບປິດຮອຍຕໍ່', 'Flush bolts on the passive leaf': 'ສະຄັກຝັງໃນບານທີ່ບໍ່ໃຊ້ງານຫຼັກ', 'New double door': 'ປະຕູຄູ່ໃໝ່', 'Default (frame\'s)': 'ຄ່າເລີ່ມຕົ້ນ (ຂອງກອບ)', 'Click a mullion or a transom in the elevation to give it its own width.': 'ກົດໄມ້ຕັ້ງ ຫຼື ໄມ້ນອນໃນດ້ານຕັ້ງ ເພື່ອກຳນົດຄວາມກວ້າງຂອງມັນເອງ.', 'Double-acting leaves always meet butt.': 'ບານເປີດສອງທາງຈະພົບກັນແບບຊົນກັນສະເໝີ.', 'Takes the width of the frame\'s mullions and transoms again': 'ກັບໄປໃຊ້ຄວາມກວ້າງຂອງໄມ້ຕັ້ງ ແລະ ໄມ້ນອນຂອງກອບ', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': 'ບານທີ່ເປີດກ່ອນ ແລະ ມີມືຈັບ ຕາມທີ່ອ່ານຕາຕະລາງ (ບານຊ້າຍມີບານພັບຢູ່ຊ້າຍ ເບິ່ງຈາກພາຍນອກ)',
 };
 
 /** Phrases with a number or a name in them. */

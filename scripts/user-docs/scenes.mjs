@@ -643,6 +643,27 @@ export const scenes = [
     },
   },
   {
+    // A double door (decision 450): the Double door preset, its middle mullion picked in the elevation (none), the meeting section.
+    id: 'joinery-double-door',
+    async run(t) {
+      await t.fresh();
+      const { page } = t;
+      const d = page.locator('.dialog');
+      await t.tool('architecture.joineryTypes');
+      await page.waitForSelector('.dialog [data-testid=pane-editor]', { timeout: 15000 });
+      await d.locator('[data-action=new-double-door]').click();
+      await d.locator('[data-testid=meeting-fields]').waitFor({ timeout: 15000 });
+      await t.wait(600);
+      await d.locator('[data-divider=col-0]').click();
+      await t.wait(400);
+      t.expect(await d.locator('[data-testid=bar-field]').count() === 1, 'the picked mullion shows its width');
+      t.expect(await d.locator('input[data-field=bar-none]').isChecked(), 'the preset has no mullion between its leaves');
+      await d.locator('[data-testid=meeting-fields]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await t.wait(800);
+      await t.shot('joinery-double-door', { of: '.dialog', pad: 0 });
+    },
+  },
+  {
     // Panes, mullions and profiles (decision 370, a tester's questions): a shop door made in the pane editor (four columns, a
     // transom split off each and merged across, two leaves, one solid side panel), then a PVC window in a wall, in 3D.
     id: 'joinery-panes',

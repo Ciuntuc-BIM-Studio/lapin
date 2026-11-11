@@ -79,6 +79,22 @@ A door or a window is a grid of panes. Every pane chooses how it opens and what 
 
 ![A shop door in one type: two leaves, side lights and a transom across](shots/joinery-panes.webp)
 
+**Width of one mullion or transom.** Click a mullion or a transom in the elevation (a click, not a drag) and it is picked: its **Width** appears, with **No mullion** (**No transom**) to take it away so the two panes meet, and **Default (frame's)** to give it the common **Mullion width** again. Each one keeps its own width when you add, split or merge columns and rows.
+
+### Double doors and meeting leaves
+
+**New double door** starts a pair of leaves with no mullion between them (1500 × 2100 mm). Any two door leaves, one hinged left and one hinged right, meet when the mullion between them is 0; the side lights next to them keep their mullions.
+
+Where two leaves meet, **Leaves meeting** says how:
+
+- **Butt**: the leaves simply touch.
+- **Rebated**: a meeting stile, the active leaf lapping over the passive one by the **Rebate overlap**.
+- **Cover strip**: a strip (astragal) over the joint, with its **width** and **thickness**.
+
+The **Active leaf** (**Left** or **Right**, as the grid reads, the left one hinged on the left, seen from outside) opens first and has the handle; **Flush bolts on the passive leaf** puts bolts in the other one. One setting serves every pair of the type, and leaves that swing both ways always meet butt. A type made before this keeps its leaves butting, both with handles.
+
+![A double door: no mullion between the leaves, rebated, the right leaf active](shots/joinery-double-door.webp)
+
 **Profile system** starts the type from a **PVC**, **Aluminium**, **Timber** or **Steel (slim)** profile: it sets the frame, mullion, transom and sash sizes and gives the profiles their finer shapes. The frame has a **Rebate** the sash closes on, the sash laps over the frame by its **Sash overlap**, **Glazing beads** hold the glass, and a window has a drip under its bottom rail. Every size stays editable. **Simple (plain profiles)** keeps plain rectangular members, as before.
 
 **Frame from a library** and **Sash from a library** take a profile from your [profile libraries](profiles.md) (an aluminium or PVC section read from a DXF, say): straight frame and sash members then have its real outline, holes included, in 3D, in sections and in plans, with its width and depth. It replaces what it is the real shape of, the system's stop, lip and drips; glazing beads stay. Curved heads and round windows keep a plain band, and so do this grid's mullions and transoms. **Plain** goes back to a rectangle of that size.

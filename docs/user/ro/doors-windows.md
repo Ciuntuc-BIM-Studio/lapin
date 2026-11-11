@@ -79,6 +79,22 @@ O ușă sau o fereastră e o grilă de ochiuri. Fiecare ochi alege cum se deschi
 
 ![O ușă de magazin într-un singur tip: două foi, ochiuri laterale și o supralumină pe toată lățimea](shots/joinery-panes.webp)
 
+**Lățimea unui montant sau a unei traverse.** Fă clic pe un montant sau pe o traversă în elevație (un clic, nu tragere) și este ales: apare **Lățime**, cu **Fără montant** (**Fără traversă**) ca să îl scoți și cele două ochiuri să se întâlnească, și **Implicit (al tocului)** ca să primească din nou lățimea comună a montanților. Fiecare își păstrează lățimea când adaugi, împarți sau unești coloane și rânduri.
+
+### Uși duble și canate care se întâlnesc
+
+**Ușă dublă nouă** pornește o pereche de canate fără montant între ele (1500 × 2100 mm). Oricare două canate de ușă, unul cu balamalele la stânga și unul la dreapta, se întâlnesc când montantul dintre ele este 0; luminatoarele laterale de lângă ele își păstrează montanții.
+
+Unde se întâlnesc două canate, **Canate care se întâlnesc** spune cum:
+
+- **Cap la cap**: canatele doar se ating.
+- **Cu falț**: un montant de întâlnire, canatul activ acoperind canatul pasiv cu **Suprapunere falț**.
+- **Șină de acoperire**: o șină (astragal) peste rost, cu **lățime** și **grosime**.
+
+**Canatul activ** (**Stânga** sau **Dreapta**, așa cum se citește grila, cel stâng având balamalele la stânga, văzut din exterior) se deschide primul și are mânerul; **Zăvoare îngropate în canatul pasiv** pune zăvoare în celălalt. O singură setare servește toate perechile tipului, iar canatele care se deschid în ambele sensuri se întâlnesc mereu cap la cap. Un tip făcut înainte păstrează canatele cap la cap, ambele cu mânere.
+
+![O ușă dublă: fără montant între canate, cu falț, canatul drept activ](shots/joinery-double-door.webp)
+
 **Sistem de profile** pornește tipul de la un profil **PVC**, **Aluminiu**, **Lemn** sau **Oțel (profile subțiri)**: stabilește dimensiunile tocului, montanților, traverselor și cercevelelor și dă profilelor formele lor fine. Tocul are un **Falț** pe care se închide cerceveaua, cerceveaua se suprapune peste toc cu **Suprapunerea cercevelei**, **baghetele de fixare a geamului** țin sticla, iar o fereastră are un lăcrimar sub traversa de jos. Fiecare dimensiune rămâne editabilă. **Simplu (profile drepte)** păstrează profile dreptunghiulare simple, ca până acum.
 
 **Toc dintr-o bibliotecă** și **Cercevea dintr-o bibliotecă** iau un profil din [bibliotecile de profile](profiles.md) (o secțiune de aluminiu sau PVC citită dintr-un DXF, de pildă): barele drepte ale tocului și cercevelei au atunci conturul lui real, cu goluri cu tot, în 3D, în secțiuni și în planuri, cu lățimea și adâncimea lui. Înlocuiește ce e forma lui reală, opritorul, buza și lăcrimarele sistemului; baghetele de geam rămân. Capetele curbe și ferestrele rotunde rămân o bandă simplă, la fel montanții și traversele grilei. **Simplu** se întoarce la un dreptunghi de aceeași mărime.
