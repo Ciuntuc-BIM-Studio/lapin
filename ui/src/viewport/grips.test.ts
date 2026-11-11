@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupGrips, movers } from './grips';
+import { groupGrips, movers, snapGrip } from './grips';
 import type { Grip } from '../platform/module';
 
 const g = (owner: string, key: string, x: number, y: number, kind: Grip['kind'] = 'end'): Grip => ({ owner, key, at: { x, y }, kind });
@@ -23,5 +23,17 @@ describe('grips of the selection', () => {
     expect(owners(1)).toEqual(['b']);
     expect(owners(3)).toEqual(['a']);
     expect(owners(-1)).toEqual(['a', 'b']);
+  });
+});
+
+describe('a module\'s grip snap', () => {
+  const node = { id: 'a' } as never;
+  const grip = g('a', 'end', 0, 0);
+  const tenMm = (_n: unknown, _g: unknown, to: { x: number; y: number }) => ({ x: Math.round(to.x * 100) / 100, y: Math.round(to.y * 100) / 100 });
+  it('takes the first answer, and leaves the point when none answers or the grip is free', () => {
+    const to = { x: 1.2349, y: 2 };
+    expect(snapGrip([undefined, () => undefined, tenMm, () => ({ x: 9, y: 9 })], node, grip, to, false)).toEqual({ x: 1.23, y: 2 });
+    expect(snapGrip([() => undefined], node, grip, to, false)).toBe(to);
+    expect(snapGrip([tenMm], node, grip, to, true)).toBe(to);
   });
 });

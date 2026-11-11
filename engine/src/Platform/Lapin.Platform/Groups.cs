@@ -94,7 +94,11 @@ public static class Groups
         // A group of the elements given (groups among them are dissolved into it).
         r.Command("group.create", "Group", (ctx, a) =>
         {
-            var (elements, groups) = Expand(ctx.Model, Args.Ids(a));
+            // A module's own elements or groups: its module says (docs/overrides.md, Driven elements).
+            var driven = Driven.Before(ctx, new DrivenEdit("group.create", Args.Ids(a), a));
+            var (elements, groups) = Expand(ctx.Model, Driven.Rest(Args.Ids(a), driven));
+            elements = Driven.Rest(elements, driven);
+            if (elements.Count == 0 && driven.Handled.Count > 0) return null;
             if (elements.Select(ctx.Model.Get).OfType<Entity>().FirstOrDefault(e => e.Str(Links.Key) != null) is { } linked)
                 throw new CommandException($"„{linked.Name}” belongs to a link: convert the link to native to group its elements.");
             var name = (string?)a["name"] is { Length: > 0 } n ? n : NextName(ctx.Model);
@@ -109,7 +113,8 @@ public static class Groups
             var ids = Args.Ids(a).Where(id => ctx.Model.Get(id) is { Class: Class }).ToList();
             if (ids.Count == 0) throw new CommandException("Select a group to ungroup it.");
             var members = ids.SelectMany(id => MembersOf(ctx.Model, id)).ToList();
-            foreach (var id in ids) ctx.Remove(id);
+            // A group a module owns it lets go in its own terms (docs/overrides.md, Driven elements).
+            foreach (var id in Driven.Rest(ids, Driven.Before(ctx, new DrivenEdit("group.ungroup", ids, a)))) ctx.Remove(id);
             return new JsonObject { ["ids"] = new JsonArray([.. members.Select(x => (JsonNode)x)]) };
         });
 
@@ -117,7 +122,7 @@ public static class Groups
         r.Command("group.remove", "Remove from group", (ctx, a) =>
         {
             var left = new List<string>();
-            foreach (var id in Args.Ids(a))
+            foreach (var id in Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("group.remove", Args.Ids(a), a))))
                 if (Of(ctx.Model, id) is { } g) { left.Add(g.Id); ctx.Unrelate(Rel, id); }
             if (left.Count == 0) throw new CommandException("None of these is in a group.");
             DropEmpty(ctx, left);
@@ -130,7 +135,10 @@ public static class Groups
             var group = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Class } g ? g : throw new CommandException("There is no such group.");
             var left = new List<string>();
             var adding = new List<string>();
-            foreach (var id in Args.Ids(a))
+            // The group and the elements: their module's first, when a module drives them (docs/overrides.md, Driven elements).
+            var driven = Driven.Before(ctx, new DrivenEdit("group.add", [group.Id, .. Args.Ids(a).Where(x => x != group.Id)], a));
+            if (driven.Handled.Contains(group.Id)) return null;
+            foreach (var id in Driven.Rest(Args.Ids(a).Where(x => x != group.Id), driven))
             {
                 if (ctx.Model.Get(id) is not { } e || !Groupable(ctx.Model, e)) continue;
                 if (Of(ctx.Model, id) is { } was && was.Id != group.Id) left.Add(was.Id);

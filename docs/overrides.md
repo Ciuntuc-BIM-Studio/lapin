@@ -28,6 +28,46 @@ r.OverrideQuery("core.faceAt", (ctx, args, next) => next(args));
 - No override: the catalog holds the handlers as registered; the command path is unchanged.
 - `ModuleCatalog.Overrides` lists them; `session.info` sends them as `overrides` only when there are any.
 
+## Engine: driven elements
+
+For modules that drive elements from a specification of their own (a generator, a premium configurator whose output is rebuilt from its inputs): their elements are ordinary native elements, so the generic commands would act on them as on any other and the next rebuild would undo the edit. Two services keep them right; neither is used by a module of this repository.
+
+```csharp
+public void Register(IModuleRegistry r)
+{
+    var mine = new MyDriven();
+    r.Service<IDrivenElements>(mine);
+    r.Service<IIfcExportFilter>(mine);
+}
+
+sealed class MyDriven : IDrivenElements, IIfcExportFilter
+{
+    public bool Drives(IModelView m, Entity e) => /* one of mine: a member, or a group I own */;
+
+    public void Before(ICommandContext ctx, DrivenEdit edit, DrivenOutcome outcome)
+    {
+        // edit.Command, edit.Ids (only mine), edit.Args; element.transform also gives Transform, Up, Copy; Copy to storeys,
+        // Move to storey and Duplicate storey give Storeys.
+        if (edit.Command == "group.create") throw new CommandException("… is its generator's.");   // refused
+        foreach (var id in edit.Ids) { /* the edit done in my terms */ outcome.Handled.Add(id); }    // done here
+        // outcome.Made: what I made in their stead (a copy), returned with the command's ids
+        // nothing done: the command goes on as it is
+    }
+
+    public void After(ICommandContext ctx, IEdit edit, string command) { /* edit.EntityChanges written back into my spec */ }
+
+    public bool SkipsGroup(IModelView m, Entity group) => /* my own group: not written to IFC */;
+    public IEnumerable<string> PrivateKeys => ["myKey"];   // never written in Lapin_Intent
+}
+```
+
+- **`IDrivenElements.Before`** is asked by `element.delete`, `element.transform` (and so `element.array` and every copy made through it), `element.update`, `element.rename`, `element.setParam`, `element.removeParam`, `group.create`, `group.add`, `group.remove`, `group.ungroup`, `component.make`, `component.makeUnique`, `element.moveToStorey`, `element.copyToStoreys` and `storey.duplicate` (with contents), before they act, with the ids given that the module drives (`Driven.Before`). A group the module owns is given whole: moved, copied or ungrouped, it is the module's to say what that means (a placement changed, a new instance of the same spec, the link dropped).
+- Three answers, as pinning (decision 449) and `r.Override` give them: let it go (do nothing), refuse (a `CommandException`, which rolls the whole command back), or do it in its own terms and add the ids to `outcome.Handled`, which the command then leaves out. Ids it does not drive go on as before, in the same undo step.
+- **`IDrivenElements.After`** is called after every command (`Session.Execute`, before components settle), inside its undo step, with the command's changes: what any command did to a driven element (another module's command too: a door's type, its place along its wall) is written back into the module's spec there, so building it again keeps it.
+- **`IIfcExportFilter`**: the export leaves out the groups `SkipsGroup` names (no `IFCGROUP`, no `IFCRELASSIGNSTOGROUP`; the members are written as any element) and never writes the `PrivateKeys` attributes in an element's `Lapin_Intent` set, so a link that lives in `.lapin` stays there.
+- A grid a module drives (a generator's own IfcGrid) never takes the axes drawn with *Grid axis* or *Grid…*: `Grids.Ensure` skips it, so they go to the project's own grid (made when there is none). Its axes moved with the axis tools reach the module through `After`.
+- Without a module that registers them, every command runs as it did. Tests: `DrivenElementsTests` (a test generator).
+
 ## Engine: results delivered later
 
 A module that works something out in the background (an analysis, a call to a model, a long solve) takes a stamp of the model in its command or query, starts the work and returns at once:
@@ -72,3 +112,27 @@ replaces: {
 - Several modules replacing one id chain in load order, each given the one before it.
 - Resolved in `ui/src/platform/modules.ts` (pure helpers in `ui/src/platform/replaces.ts`). Without replacements the module list is the one loaded, unchanged.
 - Code that imports another module's tool directly, rather than reading it from the modules, sees the original.
+
+## Interface: plan overlays and grip snap
+
+Two more points on a `LapinModule` (`ui/src/platform/module.ts`), for modules that drive elements from a specification of their own:
+
+```ts
+planOverlays: [MyGhost],                                  // ComponentType<PlanOverlayProps>[]
+gripSnap: (element, grip, to, free) => Vec2 | undefined,  // undefined: leave the point
+```
+
+- `planOverlays` are drawn inside every plan view's SVG, over the elements and grips, with the plan's own transform: `toScreen(p)`, `toWorld(x, y)`, `scale` (px per metre), `rotation` (true north up) and `view` (`{ id, storeyId }`). The layer takes no pointer: an element that should be clicked carries `data-overlay-hit` and `pointer-events: all`, and a press on it starts no selection, grip or tool in the plan. Resolved by `planOverlays()` in `ui/src/platform/modules.ts`, drawn by `ui/src/viewport/PlanOverlays.tsx`.
+- `gripSnap` is asked while a grip is dragged in a 2D view, after the owner's own `Grip.constrain`, for the elements the module does not own (the owner's `grips` are unchanged); the first module to answer with a point wins. It is not asked while Shift is held, nor when several grips are dragged together. Pure helper `snapGrip` in `ui/src/viewport/grips.ts`.
+
+## Interface: placement checks
+
+One more point on a `LapinModule`, for modules that drive walls (doors and windows put in them must fit):
+
+```ts
+placementCheck: (req) => ({ ok, message?, snapAlong? }) | null   // may be async; null leaves the host to the next module
+```
+
+- Asked, throttled (about 8 a second, only the latest question answered), while the Door or Window tool is on and the cursor is over a wall; `req` is `{ kind: 'door' | 'window', host, along (m from the start of the host's axis), width, typeId }`. The first module to answer wins.
+- `ok: false` draws the ghost as an error with `message` beside the cursor; `snapAlong` (m along the axis) is where ghost and click go when the cursor is within a metre of it, on the cursor's side of the wall. The engine is still asked at the click and its sentence error shows as usual.
+- A tool opts in with `gesture.placing(entity, at)` on its `pick` gesture (Door and Window do). Resolved by `askPlacement` in `ui/src/platform/modules.ts`; the store and pure helpers are in `ui/src/platform/placement.ts`.

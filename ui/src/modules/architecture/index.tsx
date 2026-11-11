@@ -260,6 +260,14 @@ const fillTool = (kind: 'door' | 'window', label: string, icon: ToolDef['icon'],
   options: FillPlacingHint,
   gesture: {
     kind: 'pick', types: ['IfcWall'], reach: 40,
+    // What a module that drives a wall is asked, as the cursor moves: whether this fits there.
+    placing: (_wall, _at) => {
+      const s = useSession.getState();
+      const wanted = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;
+      const type = (wanted ? s.nodes.get(wanted) : undefined) ?? ofClass(s, kind === 'door' ? 'IfcDoorType' : 'IfcWindowType')[0];
+      const width = (type?.props.spec as { width?: number } | undefined)?.width ?? (kind === 'door' ? 0.9 : 1.2);
+      return { kind, width, typeId: type?.id ?? null };
+    },
     ghost: (wall, at) => {
       const s = useSession.getState();
       const wanted = kind === 'door' ? useUi.getState().doorTypeId : useUi.getState().windowTypeId;

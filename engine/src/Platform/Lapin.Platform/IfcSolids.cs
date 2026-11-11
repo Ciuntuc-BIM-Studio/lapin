@@ -46,6 +46,19 @@ public sealed record IfcSweptPart(string Key, string Name, string Class, string 
 /// </summary>
 public sealed record IfcSystem(string Id, string Name, string Predefined, IReadOnlyList<string> Members, string PropertySet, IReadOnlyList<(string Name, string Value)> Properties);
 
+/// <summary>
+/// What a module keeps out of the IFC export (docs/overrides.md, Driven elements): its own groups (they stay the project's,
+/// in .lapin; their members are written as any element) and its own attribute keys (never written in an element's
+/// Lapin_Intent set).
+/// </summary>
+public interface IIfcExportFilter
+{
+    /// <summary>Whether this group is left out (no IfcGroup, no IfcRelAssignsToGroup).</summary>
+    bool SkipsGroup(IModelView model, Entity group) => false;
+    /// <summary>The attribute keys never written.</summary>
+    IEnumerable<string> PrivateKeys => [];
+}
+
 /// <summary>A module's entities that IFC writes as systems of elements (IfcBuildingSystem).</summary>
 public interface IIfcSystems
 {

@@ -1020,7 +1020,7 @@ button.mode-chip:hover { color: var(--accent); }
 .plan-peer path { fill: none; stroke-width: 3; stroke-opacity: 0.55; pointer-events: none; }
 .plan-peer-cursor { pointer-events: none; }
 .plan-peer-cursor path { fill: currentColor; stroke: #fff; stroke-width: 1; }
-.plan-peer-cursor text { fill: currentColor; font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--paper, #fff); stroke-width: 3px; }
+.plan-peer-cursor text { fill: currentColor; font-size: 11px; font-weight: 600; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; }
 
 /* The section box over the 3D view: its edges and its face handles. */
 .section-box-edge { stroke: var(--accent, #b5532d); stroke-width: 1.2; stroke-dasharray: 6 4; opacity: 0.8; }
@@ -1850,7 +1850,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 
 /* Furniture types (docs/plan-furniture.md): the type's fields beside the engine's preview, the plan above the front. */
 .furniture-edit-grid { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 14px; align-items: start; }
-.furniture-preview { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line, #d8d2c6); border-radius: 6px; background: var(--paper, #fff); }
+.furniture-preview { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line, #d8d2c6); border-radius: 6px; background: var(--bg); }
 .furniture-preview svg { width: 100%; height: auto; max-height: 220px; color: var(--ink, #1e2a3a); }
 .furniture-preview .furniture-front { max-height: 150px; }
 .furniture-edit dl.fields .section-dt { margin-top: 8px; font-weight: 600; }
@@ -1944,12 +1944,12 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .elevator-dialog .roof-styles .roof-own .tree-item { flex-direction: column; }
 .elevator-checks { list-style: none; margin: 4px 0; padding: 0; color: var(--warn, #9a5b12); display: flex; flex-direction: column; gap: 3px; }
 .elevator-checks li { display: flex; gap: 5px; align-items: flex-start; }
-.elevator-plan, .elevator-section { background: var(--paper, #fff); }
+.elevator-plan, .elevator-section { background: var(--bg); }
 .fields dd.stops input[type=checkbox], .elevator-stops input[type=checkbox] { width: auto; flex: none; margin: 0; }
 .fields dd.stops label { justify-content: flex-start; }
 /* Type configurators (exhaust fans, report #55; gates, report #57): the fields beside the engine's preview, the plan above the front. */
 .configurator-grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 14px; align-items: start; }
-.type-preview { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line, #d8d2c6); border-radius: 6px; background: var(--paper, #fff); }
+.type-preview { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line, #d8d2c6); border-radius: 6px; background: var(--bg); }
 .type-preview svg { width: 100%; height: auto; max-height: 200px; color: var(--ink, #1e2a3a); }
 .type-preview .type-preview-front { max-height: 170px; }
 .configurator-edit dl.fields .section-dt { margin-top: 8px; font-weight: 600; }
@@ -2007,3 +2007,7 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .tab-drop span { background: var(--accent); color: var(--paper); padding: 4px 10px; border-radius: 3px; font-size: 12px; }
 .tab-drop.window { border-style: dashed; }
 .view-tab { touch-action: none; }
+/* A door or window a module refuses where the cursor is: the ghost and the reason in the error colour. */
+.plan-preview.bad line, .plan-preview.bad polyline, .plan-preview.bad rect { stroke: var(--err); }
+.plan-preview.bad text { fill: var(--err); }
+.plan-preview text { paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }

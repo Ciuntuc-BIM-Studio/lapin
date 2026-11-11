@@ -51,6 +51,10 @@ public static class StoreyMove
             if (keep is not ("storey" or "world")) throw new CommandException("Keep the elements with the storey (storey) or where they are (world).");
             var ids = Args.Ids(a).Distinct().ToList();
             if (ids.Count == 0) throw new CommandException("Select what to move to another storey.");
+            // What a module drives it sends there in its own terms, or refuses (docs/overrides.md, Driven elements).
+            var driven = Driven.Before(ctx, new DrivenEdit("element.moveToStorey", ids, a) { Storeys = [target.Id] });
+            ids = Driven.Rest(ids, driven);
+            if (ids.Count == 0) return new JsonObject { ["moved"] = new JsonArray() };
             var picked = ids.Select(id => ctx.Model.Get(id) ?? throw new CommandException($"There is no {id}.")).ToList();
             // A pinned element stays on its storey (decision 449).
             Pins.Refuse(picked);
@@ -97,6 +101,10 @@ public static class StoreyMove
                 // What a wall hosts goes with its copy; a reference from an IFC file stays where the file put it.
                 var originals = ctx.Model.RelatedOf(src.Id, IfcClass.RelContainedInSpatialStructure)
                     .Where(e => Host(ctx.Model, e) == null && !StoredBodies.Has(e) && ctx.Model.RelatingOf(e.Id, IfcClass.RelVoidsElement) == null).ToList();
+                // What a module drives it copies there in its own terms (its groups among them), or refuses (docs/overrides.md, Driven elements).
+                var ownGroups = originals.Select(e => Groups.Of(ctx.Model, e.Id)?.Id).OfType<string>().Distinct();
+                var driven = Driven.Before(ctx, new DrivenEdit("storey.duplicate", [.. ownGroups, .. originals.Select(e => e.Id)], a) { Storeys = [storey.Id] });
+                originals = originals.Where(e => !driven.Handled.Contains(e.Id)).ToList();
                 foreach (var e in originals)
                 {
                     var id = Placement.Copy(ctx, e, Placement2D.Move(default));

@@ -489,7 +489,8 @@ public static class Components
         // What is selected made a component: one instance, standing where it is.
         r.Command("component.make", "Make component", (ctx, a) =>
         {
-            var (elements, groups) = Groups.Expand(ctx.Model, Args.Ids(a));
+            // A module's own elements or groups: its module says (docs/overrides.md, Driven elements).
+            var (elements, groups) = Groups.Expand(ctx.Model, Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("component.make", Args.Ids(a), a))));
             var unit = (string?)a["kind"] == UnitKind;
             var selected = elements.Select(ctx.Model.Get).OfType<Entity>().ToList();
             // A door selected with its wall comes with it; on its own it would be left in a wall that is not part of the type.
@@ -525,6 +526,7 @@ public static class Components
         // An instance on its own: a component of its own, the others left as they are.
         r.Command("component.makeUnique", "Make unique", (ctx, a) =>
         {
+            if (Driven.Before(ctx, new DrivenEdit("component.makeUnique", Args.Ids(a), a)).Handled.Count > 0) return null;
             var group = ctx.Model.Get((string?)a["id"] ?? "") is { Class: Groups.Class } x && Of(x) != null ? x : throw new CommandException("Select an instance of a component.");
             var from = ctx.Model.Get(Of(group)!);
             var name = $"{from?.Name ?? group.Name} (unique)";

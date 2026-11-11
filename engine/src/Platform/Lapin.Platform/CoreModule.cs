@@ -142,6 +142,8 @@ public sealed class CoreModule : ILapinModule
         r.Command("element.rename", "Rename", (ctx, a) =>
         {
             var e = ctx.Model.Get((string?)a["id"] ?? "") ?? throw new CommandException("Nothing to rename.");
+            // An element a module drives: its module first (docs/overrides.md, Driven elements).
+            if (Driven.Before(ctx, new DrivenEdit("element.rename", [e.Id], a)).Handled.Contains(e.Id)) return null;
             var name = ((string?)a["name"])?.Trim();
             if (string.IsNullOrEmpty(name)) throw new CommandException("A name cannot be empty.");
             // A drafted shape's name is unique on its view (Studio finds its profiles and paths by it).
@@ -157,7 +159,7 @@ public sealed class CoreModule : ILapinModule
         // one of the user's never „Pset_…” (StandardPsets).
         r.Command("element.setParam", "Set parameter", (ctx, a) =>
         {
-            var ids = Args.Ids(a).ToList();
+            var ids = Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("element.setParam", Args.Ids(a), a)));
             if (ids.Count == 0) throw new CommandException("Which element?");
             var name = ((string?)a["name"])?.Trim() is { Length: > 0 } n ? n : throw new CommandException("A parameter needs a name.");
             foreach (var id in ids)
@@ -183,7 +185,7 @@ public sealed class CoreModule : ILapinModule
         {
             var name = (string?)a["name"] ?? throw new CommandException("Which parameter?");
             var pset = (string?)a["pset"] is { Length: > 0 } ps && ps != StandardPsets.Own ? ps : null;
-            foreach (var id in Args.Ids(a))
+            foreach (var id in Driven.Rest(Args.Ids(a), Driven.Before(ctx, new DrivenEdit("element.removeParam", Args.Ids(a), a))))
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Which element?");
                 if (e.Attrs["params"] is not JsonArray old) continue;
@@ -204,7 +206,8 @@ public sealed class CoreModule : ILapinModule
             var ids = Args.Ids(a).ToList();
             if (ids.Count == 0) throw new CommandException("Nothing to change.");
             var values = a["attrs"] as JsonObject ?? throw new CommandException("Nothing to change.");
-            foreach (var id in ids)
+            // What a module drives is its module's first: it may refuse a field, or set it in its own terms (docs/overrides.md, Driven elements).
+            foreach (var id in Driven.Rest(ids, Driven.Before(ctx, new DrivenEdit("element.update", ids, a))))
             {
                 var e = ctx.Model.Get(id) ?? throw new CommandException("Nothing to change.");
                 if (StoredBodies.Has(e)) throw new CommandException($"„{e.Name}” is a reference from an IFC file: it can be deleted, not changed.");
@@ -295,9 +298,12 @@ public sealed class CoreModule : ILapinModule
 
         r.Command("element.delete", "Delete", (ctx, a) =>
         {
-            var given = Args.Ids(a);
+            // What a module drives (and the groups it owns) it deletes in its own terms, or refuses (docs/overrides.md, Driven elements).
+            var driven = Driven.Before(ctx, new DrivenEdit("element.delete", Args.Ids(a), a));
+            var given = Driven.Rest(Args.Ids(a), driven);
             // A group deleted goes with its members; a group its last member left goes too (docs/groups.md).
             var (ids, groups) = Groups.Expand(ctx.Model, given);
+            ids = Driven.Rest(ids, driven);
             // What is pinned stays (decision 449).
             Pins.Refuse(ids.Concat(groups).Select(id => ctx.Model.Get(id)).OfType<Entity>());
             var groupsTouched = groups.Concat(ids.Select(id => Groups.Of(ctx.Model, id)?.Id).OfType<string>()).Distinct().ToList();
@@ -377,6 +383,13 @@ public static class ElementTransform
             _ => throw new CommandException($"„{op}” is not move, copy, rotate or mirror."),
         };
         var copy = op == "copy" || (a["copy"] is JsonValue cv && cv.TryGetValue<bool>(out var cb) && cb);
+        // What a module drives (its groups whole, or members alone) it moves or copies in its own terms, or refuses (docs/overrides.md, Driven elements).
+        var driven = Driven.Before(ctx, new DrivenEdit("element.transform", Args.Ids(a), a) { Transform = t, Up = up, Copy = copy });
+        if (driven.Handled.Count > 0)
+        {
+            (ids, groups) = Groups.Expand(ctx.Model, Driven.Rest(Args.Ids(a), driven));
+            ids = Driven.Rest(ids, driven);
+        }
         var all = ids.Select(id => ctx.Model.Get(id)).OfType<Entity>()
             .Where(e => e.Class is not (IfcClass.Project or IfcClass.Site or IfcClass.Building or IfcClass.BuildingStorey)).ToList();
         // The model's own edit when the view's is not it (a section's or an elevation's): a move along the view and up, a mirror
@@ -479,6 +492,7 @@ public static class ElementTransform
         // An instance moved as a whole says where it stands now (docs/components.md).
         if (!copy) foreach (var g in groups) Components.MovedInstance(ctx, g, inModel ?? t, up + lift);
         if (copy) Pins.Unpinned(ctx, made.Select(x => (string?)x).OfType<string>());
+        foreach (var id in driven.Made) made.Add((JsonNode)id);
         return new Result(made, copies, twins) { Kept = kept };
     }
 

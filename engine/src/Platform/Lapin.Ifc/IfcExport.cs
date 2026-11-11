@@ -202,6 +202,9 @@ public static class IfcExport
         public readonly List<string> Notes = [];
 
         readonly IModelView m = s.Model;
+        /// <summary>What modules keep out of the file: their own groups and attribute keys (IIfcExportFilter).</summary>
+        readonly IReadOnlyList<IIfcExportFilter> filters = s.Catalog.All<IIfcExportFilter>();
+        readonly HashSet<string> privateKeys = [.. s.Catalog.All<IIfcExportFilter>().SelectMany(x => x.PrivateKeys)];
         Entity project = null!;
         string model = "", body = "", axis = "", footprint = "", metre = "", siteRef = "", sitePlace = "";
         readonly Dictionary<string, string> storeyRef = [], storeyPlace = [], refIdOf = [];
@@ -1642,7 +1645,7 @@ public static class IfcExport
             foreach (var (key, v) in e.Attrs)
             {
                 // A stored body (a reference from IFC) is written as geometry, not as text; the project's standards stay in .lapin.
-                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || (only != null && !only.Contains(key))) continue;
+                if (v == null || key == StoredBodies.Key || key == StoredBodies.SolidBodyKey || key == StoredBodies.BodyOf || key == StoredBodies.XfKey || StoredBodies.ExportOnly.Contains(key) || key == Plan2d.Key || key == IfcSource.Key || key == ReferenceLayers.AxisKey || key == ReferenceLayers.PartOfKey || privateKeys.Contains(key) || (only != null && !only.Contains(key))) continue;
                 // A foreign element's properties go as the sets its file had, not as text.
                 if (key == "properties" && e.Attrs[IfcSource.Key] != null) continue;
                 var field = fields.GetValueOrDefault(key);
@@ -2011,6 +2014,8 @@ public static class IfcExport
             // Lapin's groups (docs/groups.md) as IFC's: an IfcGroup assigned the members written.
             foreach (var g in Groups.All(m))
             {
+                // A module's own group stays the project's (its members are written as any element).
+                if (filters.Any(x => x.SkipsGroup(m, g))) continue;
                 var members = Groups.MembersOf(m, g.Id).Where(written.ContainsKey).Select(x => written[x]).ToList();
                 if (members.Count == 0) continue;
                 var group = f.Add("IFCGROUP", Gid(g.Id), Null, S(g.Name), Null, Null);
