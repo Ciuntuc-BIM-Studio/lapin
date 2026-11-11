@@ -166,6 +166,82 @@ public class CorridorTests
         Assert.Equal(40, q.Quantities.Single(x => x.Name == "GutterLength").Value, 9);
     }
 
+    /// <summary>
+    /// Report #136: gutters, kerbs and sidewalks asked on both sides, as the configurator sends them (one side at a
+    /// time, each a whole side object, and the old kerb switch off), stand on both sides, mirrored; no solid of the
+    /// path reaches across its section (each piece was lofted to the first part of its kind at the next station,
+    /// the left one, so the right side's pieces were blades across the road and the right side was missing).
+    /// Straight and around a curve.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Side_pieces_asked_on_both_sides_stand_on_both_sides_and_nothing_reaches_across(bool curved)
+    {
+        var f = Site();
+        Flat(f);
+        var r = (string)f.Run("civil.addPath", new JsonObject
+        {
+            ["points"] = curved ? Pts((0, 0), (30, 0), (30, 30)) : Pts((0, 0), (30, 0)), ["template"] = "road", ["laneWidth"] = 3, ["crossfall"] = 2.5,
+        })!["id"]!;
+        if (curved) f.Run("civil.setCorridor", new JsonObject { ["id"] = r, ["curves"] = new JsonArray(new JsonArray(0, 0, 0), new JsonArray(12, 0, 0), new JsonArray(0, 0, 0)) });
+        var all = new JsonObject { ["gutter"] = true, ["kerb"] = true, ["sidewalk"] = true };
+        f.Run("civil.updatePath", new JsonObject { ["id"] = r, ["left"] = all.DeepClone(), ["kerb"] = false });
+        f.Run("civil.updatePath", new JsonObject { ["id"] = r, ["right"] = all.DeepClone(), ["kerb"] = false });
+        var e = f.Model.Get(r)!;
+        var t = Paths.TemplateOf(e);
+        Assert.Equal(t.Left, t.Right, 9);
+        var c = Corridors.ChainOf(e);
+        var solids = Paths.Solids(f.Model, e);
+        foreach (var k in new[] { "gutter", "kerb", "sidewalk" })
+        {
+            var list = solids[k];
+            // Each piece wholly on one side of the axis, between the carriageway's edge and the outline.
+            var sides = list.Select(s =>
+            {
+                var offs = s.Vertices.Select(v => c.Project(new Vec2(v.X, v.Y)).Offset).ToList();
+                Assert.True(offs.All(o => o > t.Half - 1e-3) || offs.All(o => o < -t.Half + 1e-3), $"a {k} piece reaches across the road: {offs.Min():0.###} .. {offs.Max():0.###}");
+                return offs[0] > 0 ? 1 : -1;
+            }).ToList();
+            Assert.Equal(sides.Count(x => x > 0), sides.Count(x => x < 0));
+            var (left, right) = (list.Where((_, i) => sides[i] > 0).Sum(Measure.Volume), list.Where((_, i) => sides[i] < 0).Sum(Measure.Volume));
+            Assert.True(left > 0);
+            if (!curved) Assert.Equal(left, right, 6);
+        }
+        // Nothing outside the section's envelope.
+        foreach (var s in solids.Values.SelectMany(x => x))
+            foreach (var v in s.Vertices)
+            {
+                var o = c.Project(new Vec2(v.X, v.Y)).Offset;
+                Assert.InRange(o, -t.Right - 1e-3, t.Left + 1e-3);
+                Assert.InRange(v.Z, -1, 1);
+            }
+        // The 3D parts drawn are the same pieces.
+        var g = f.Session.Geometry(r)!;
+        Assert.Equal(solids["kerb"].Sum(Measure.Volume), g.Parts.Where(p => p.Key == "kerb").Sum(p => Measure.Volume(p.Solid)), 6);
+    }
+
+    /// <summary>Report #136: a road's width is its two lanes; the inspector shows the lane width there, not an alley's width it ignores, nor the old single kerb switch.</summary>
+    [Fact]
+    public void A_road_shows_its_lane_width_and_an_alley_its_width_in_the_inspector()
+    {
+        var f = Site();
+        Flat(f);
+        var cls = f.Session.Reader.Describe(IfcClass.Pavement)!;
+        FieldDescriptor Field(string k) => cls.Fields.Single(x => x.Key == k);
+        var road = f.Model.Get((string)f.Run("civil.addPath", new JsonObject { ["points"] = Pts((0, 0), (30, 0)), ["template"] = "road", ["laneWidth"] = 3 })!["id"]!)!;
+        var alley = f.Model.Get((string)f.Run("civil.addPath", new JsonObject { ["points"] = Pts((0, 5), (30, 5)), ["width"] = 1.5 })!["id"]!)!;
+        Assert.True(Field("laneWidth").Shown(road));
+        Assert.False(Field("laneWidth").Shown(alley));
+        foreach (var k in new[] { "width", "kerb", "kerbHeight", "kerbWidth" })
+        {
+            Assert.False(Field(k).Shown(road));
+            Assert.True(Field(k).Shown(alley));
+        }
+        f.Run("element.update", new JsonObject { ["ids"] = new JsonArray(road.Id), ["attrs"] = new JsonObject { ["laneWidth"] = 3.5 } });
+        Assert.Equal(7, Paths.TemplateOf(f.Model.Get(road.Id)!).Width, 9);
+    }
+
     [Fact]
     public void A_ditch_with_its_own_fall_has_its_bottom_on_the_red_line()
     {

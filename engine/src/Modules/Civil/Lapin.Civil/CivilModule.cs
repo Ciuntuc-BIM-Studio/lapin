@@ -34,8 +34,13 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         ], "#b39b72"));
         r.Class(new(IfcClass.Pavement, "Path",
         [
-            new("width", "Width", "length", Min: 0.2), new("surfaceThickness", "Surface course", "length", Min: 0), new("baseThickness", "Base course", "length", Min: 0),
-            new("kerb", "Kerbs", "bool"), new("kerbHeight", "Kerb height", "length", Min: 0.02), new("kerbWidth", "Kerb width", "length", Min: 0.02),
+            // A road's width is its two lanes; an alley's width and the old single kerb switch do not apply to it (report #136).
+            new("width", "Width", "length", Min: 0.2, ShowIf: FieldDescriptor.When("template", "!road")),
+            new("laneWidth", "Lane width", "length", Min: 1, Max: 6, ShowIf: FieldDescriptor.When("template", "road")),
+            new("surfaceThickness", "Surface course", "length", Min: 0), new("baseThickness", "Base course", "length", Min: 0),
+            new("kerb", "Kerbs", "bool", ShowIf: FieldDescriptor.When("template", "!road")),
+            new("kerbHeight", "Kerb height", "length", Min: 0.02, ShowIf: FieldDescriptor.When("template", "!road")),
+            new("kerbWidth", "Kerb width", "length", Min: 0.02, ShowIf: FieldDescriptor.When("template", "!road")),
         ], Paths.Color));
         r.Class(new(RetainingWalls.Class, "Retaining wall",
         [

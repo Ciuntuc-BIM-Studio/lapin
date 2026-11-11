@@ -407,9 +407,13 @@ public static class Corridors
                 {
                     var (p, q) = (c.PointAt(stations[k]), c.PointAt(stations[k + 1]));
                     var (u, v) = (c.Across(stations[k], seg), c.Across(stations[k + 1], seg));
+                    // A part goes on to the part of the same kind and rank at the next station (a road's right kerb
+                    // to the right kerb, not to the first kerb, the left one: report #136).
+                    var seen = new Dictionary<string, int>();
                     foreach (var part in rings[k])
                     {
-                        var next = rings[k + 1].FirstOrDefault(x => x.Key == part.Key);
+                        var nth = seen[part.Key] = seen.GetValueOrDefault(part.Key, -1) + 1;
+                        var next = rings[k + 1].Where(x => x.Key == part.Key).ElementAtOrDefault(nth);
                         if (next == null || next.Polygon.Count != part.Polygon.Count) continue;
                         var r0 = part.Polygon.Select(x => (p + u * x.X).At(x.Y)).ToList();
                         var r1 = next.Polygon.Select(x => (q + v * x.X).At(x.Y)).ToList();
