@@ -38,7 +38,7 @@ Vrei mai mult loc pentru desen? **Vedere → Interfață…** alege o fereastră
 
 ## Unitățile
 
-Lapin lucrează în milimetri dacă nu alegi altceva. Ca să schimbi unitățile, deschide **Gestionare → Standarde de desen → Proiect → Unități**, sau apasă pe **Unități** în bara de stare de jos. Poți alege milimetri, centimetri, metri, picioare și țoli, sau țoli.
+Lapin lucrează în milimetri dacă nu alegi altceva. Ca să schimbi unitățile, deschide **Gestionare → Standarde de desen → Proiect → Unități**, sau apasă pe **Unități** în bara de stare de jos. Poți alege milimetri, centimetri, metri, picioare și țoli, sau țoli. **Rotunjirea ariilor**, pe același tab, rotunjește ariile încăperilor la 0,1, 0,5 sau 1 m² ([Încăperi](rooms.md#rotunjirea-ariilor)).
 
 ![Standarde de desen, tabul Proiect: unitățile proiectului](shots/standards-project.webp)
 

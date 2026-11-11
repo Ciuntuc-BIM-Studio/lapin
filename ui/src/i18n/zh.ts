@@ -1056,6 +1056,8 @@ export const ZH: Record<string, string> = {
   "The other storeys' elements drawn grey, on screen and on sheets": '其他楼层的元素绘制为灰色，在屏幕和图纸上均如此', 'Section markers ·': '剖切标记 ·',
   'New layer': '新建图层', "The browser files the sheet under this discipline's set": '项目浏览器将图纸归入此专业的集合', 'continuous': '连续',
   'Line ends': '线端', 'round': '圆形', 'square (mitred)': '方形（斜接）', 'Groups:': '组：',
+  // Area rounding (report #76, decision 471)
+  "Area rounding": "面积取整", "Room areas in plans, sheets, schedules and documents, rounded half up (as the Nordic countries write them: x,0 or x,5 m²); the model, quantities and IFC keep the exact area": "平面图、图纸、明细表和文档中的房间面积，四舍五入（如北欧国家的写法：x,0 或 x,5 m²）；模型、工程量和 IFC 保留精确面积", "none (to 0.01 m²)": "不取整（至 0.01 m²）", "to 0.1 m²": "至 0.1 m²", "to 0.5 m²": "至 0.5 m²", "to 1 m²": "至 1 m²",
   'Empty: the unit\'s usual (none in mm, one in cm, two in m; 1/16" in feet and inches, where 1 is 1/8" and 3 is 1/32")': '留空：采用单位的常用值（mm 为无，cm 为一位，m 为两位；英尺英寸为 1/16"，其中 1 为 1/8"，3 为 1/32"）',
   'How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners': '实际线宽的线条如何在屏幕和纸上结束和相接：圆形，或方头加斜接转角',
   'New axes and the BIM grids use it': '新轴线和 BIM 轴网使用它', 'Remove the group (its layers stay)': '移除该组（其图层保留）', 'New group': '新建组',

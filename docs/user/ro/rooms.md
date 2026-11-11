@@ -45,6 +45,10 @@ Fiecare rând face o ușă sau o fereastră obișnuită în peretele de pe acea 
 
 ![Dialogul Eticheta încăperii](shots/room-tag.webp)
 
+## Rotunjirea ariilor
+
+Încăperile își arată aria la sutimea de metru pătrat. **Gestionare → Standarde de desen → Proiect → Rotunjirea ariilor** o rotunjește în schimb la **0,1 m²**, **0,5 m²** sau **1 m²**, jumătatea în sus, cum scriu țările nordice ariile încăperilor (12,27 m² devine 12,5 m² la 0,5 și 12 m² la 1). Se aplică oricărei arii de încăpere pe care o arată Lapin: etichetele din planuri și planșe, legenda culorilor și dialogul Culorile încăperilor, extrasul de încăperi, ariile de pardoseală din cantitățile unei încăperi și ariile pe care le completează un document. Fiecare încăpere se rotunjește separat, iar un total adună încăperile rotunjite, așa că coloana extrasului dă totalul ei. Modelul păstrează aria exactă: fișierul IFC, volumele și celelalte cantități nu se rotunjesc niciodată. Într-un proiect în picioare, pasul e în picioare pătrate.
+
 ## Culorile încăperilor
 
 **Vedere → Culorile încăperilor** colorează încăperile unui plan. Alege o schemă, alege în **Colorează după** ce anume colorează (**Funcțiune**, **Nume**, **Departament**, **Număr** sau **Finisajul pardoselii**) și alege schema la **Planul acesta arată**. Fiecare valoare pe care o au încăperile primește un rând cu:

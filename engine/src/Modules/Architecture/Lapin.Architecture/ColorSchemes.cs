@@ -267,8 +267,10 @@ public static class ColorSchemes
             var m = q.Model;
             var rooms = m.OfClass(Rooms.Class).Select(r => (Room: r, Outline: Rooms.Of(r, m, q.Geometry))).ToList();
             var values = new JsonObject();
+            // The areas as the stamps show them (decision 471): each room to the project's step.
+            var book = DraftingResources.Book(m);
             foreach (var (key, _) in Fields)
-                values[key] = new JsonArray(rooms.Select(x => (Value: ValueOf(x.Room, key), Area: x.Outline?.NetArea ?? 0)).Where(x => x.Value.Length > 0)
+                values[key] = new JsonArray(rooms.Select(x => (Value: ValueOf(x.Room, key), Area: AreaRounding.Shown(x.Outline?.NetArea ?? 0, book.AreaRounding, book.Units))).Where(x => x.Value.Length > 0)
                     .GroupBy(x => x.Value, StringComparer.OrdinalIgnoreCase).OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
                     .Select(g => (JsonNode)new JsonObject { ["value"] = g.First().Value, ["count"] = g.Count(), ["area"] = Math.Round(g.Sum(x => x.Area), 4) }).ToArray());
             var view = (string?)a["viewId"] is { } vid ? Views.Find(m, vid) : null;
@@ -337,7 +339,8 @@ public static class ColorSchemes
                 }
                 mark.Polyline(box, true, "LEGEND", Pens.Default.Hatch, color);
                 var label = e.Value;
-                if (showArea) label += "   " + Rooms.FormatArea(its.Sum(r => Rooms.Of(r, m, c.Geometry)?.NetArea ?? 0), c.Book.Units);
+                // Each room as its stamp shows it (decision 471), so the legend adds up the plan.
+                if (showArea) label += "   " + Rooms.FormatArea(AreaRounding.Sum(its.Select(r => Rooms.Of(r, m, c.Geometry)?.NetArea ?? 0), c.Book.AreaRounding, c.Book.Units), c.Book.Units, c.Book.AreaRounding);
                 mark.Text(new PenText(new Vec2(at.X + sw + 2 * c.Mm, y + sh / 2), label, style.Height, 0, "start", "middle", false, style.Font), color);
                 width = Math.Max(width, sw + 2 * c.Mm + h * 0.6 * label.Length);
                 y -= row;

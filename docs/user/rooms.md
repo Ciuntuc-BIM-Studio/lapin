@@ -45,6 +45,10 @@ In an [apartment type](groups.md) these doors and windows go with the room: ever
 
 ![The Room tag dialog](shots/room-tag.webp)
 
+## Area rounding
+
+Rooms show their area to the hundredth of a square metre. **Manage → Drafting standards → Project → Area rounding** rounds it instead to **0.1 m²**, **0.5 m²** or **1 m²**, half up, as the Nordic countries write room areas (12.27 m² becomes 12.5 m² at 0.5, and 12 m² at 1). It applies to every room area Lapin shows: the stamps on plans and sheets, the colour legend and the Room colours dialog, the room schedule, the floor areas in a room's quantities, and the areas a document fills in. Each room is rounded on its own and a total adds up the rounded rooms, so the schedule's column sums to its total. The model keeps the exact area: the IFC file, the volumes and the other quantities are never rounded. In a project in feet the step is in square feet.
+
 ## Room colours
 
 **View → Room colours** colours the rooms of a plan. Pick a scheme, choose what it colours by (**Function**, **Name**, **Department**, **Number** or **Floor finish**), and set **This plan shows** to the scheme. Each value the rooms have gets a row with:

@@ -12,8 +12,12 @@ import { create } from 'zustand';
 export type Unit = 'mm' | 'cm' | 'm' | 'ft-in' | 'in';
 export const UNITS: Unit[] = ['mm', 'cm', 'm', 'ft-in', 'in'];
 
-interface Standards { units: Unit; lineCap: 'round' | 'square' }
-export const useStandards = create<Standards>(() => ({ units: 'mm', lineCap: 'round' }));
+/** The steps a project may round the areas of its spaces to (decision 471); null: as measured. */
+export type AreaStep = 0.1 | 0.5 | 1 | null;
+export const AREA_STEPS: Exclude<AreaStep, null>[] = [0.1, 0.5, 1];
+
+interface Standards { units: Unit; lineCap: 'round' | 'square'; areaRounding: AreaStep }
+export const useStandards = create<Standards>(() => ({ units: 'mm', lineCap: 'round', areaRounding: null }));
 
 export const unit = (): Unit => useStandards.getState().units;
 /** The unit's label after a shown length ('' for imperial, which carries its own marks). */
@@ -111,6 +115,34 @@ export function parseLength(text: string, dflt: Unit = unit()): number | null {
     sum += (m[1] === '-' ? -1 : 1) * Number(m[2]) * factor;
   }
   return sum;
+}
+
+const SQUARE_FEET = 10.763910417;
+
+/** The project's area step, when it is one Lapin knows (a malformed one: none). */
+export const areaStep = (): AreaStep => {
+  const s = useStandards.getState().areaRounding;
+  return AREA_STEPS.includes(s as Exclude<AreaStep, null>) ? s : null;
+};
+
+/** A value to the nearest `step`, half up (12.25 at 0.5 is 12.5; 12.5 at 1 is 13), as the engine's AreaRounding.ToStep. */
+export function toStep(v: number, step: number): number {
+  const n = Math.round((Math.round(v * 1e4) / 1e4 / step) * 1e9) / 1e9;
+  return Math.round(Math.floor(n + 0.5) * step * 1e9) / 1e9;
+}
+
+/**
+ * The area of a space (m²) as the project shows it (report #76, decision 471): to the hundredth of a square metre (the
+ * tenth of a square foot in an imperial project), or rounded half up to the project's step: 12.5 m² and 12.0 m² at 0.5,
+ * 12 m² at 1. Presentation only: the engine keeps and exports the exact area.
+ */
+export function areaText(m2: number, step: AreaStep = areaStep(), u: Unit = unit()): string {
+  if (!Number.isFinite(m2)) return '';
+  const imperial = u === 'ft-in' || u === 'in';
+  const v = imperial ? m2 * SQUARE_FEET : m2;
+  const shown = step ? toStep(v, step) : v;
+  const decimals = step ? (step >= 1 ? 0 : 1) : imperial ? 1 : 2;
+  return `${shown.toFixed(decimals)} ${imperial ? 'ft²' : 'm²'}`;
 }
 
 /** The unit levels are written in (report #68): metres in a metric project, the project's own unit in an imperial one. */

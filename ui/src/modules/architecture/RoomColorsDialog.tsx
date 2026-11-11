@@ -18,8 +18,8 @@ import { NumberField } from '../../shell/cells';
 import { activate } from '../../platform/modules';
 import { useSchemes, type SchemeEntry } from './rooms';
 import { colorLegend } from './roomTools';
+import { areaText as area, useStandards } from '../../engine/unitsStore';
 
-const area = (m2: number) => `${m2.toFixed(2)} m²`;
 
 export function RoomColorsDialog() {
   const nodes = useSession((s) => s.nodes);
@@ -27,6 +27,9 @@ export function RoomColorsDialog() {
   const uiView = useUi((x) => x.view);
   const [viewId, setViewId] = useState<string | null>(null);
   const [s] = useSchemes(viewId);
+  // The rooms' areas as their stamps show them: the engine sums each room to the project's step (decision 471).
+  useStandards((x) => x.areaRounding);
+  useStandards((x) => x.units);
   const [picked, setPicked] = useState<string | null>(null);
   const [all, setAll] = useState(false);
   const [hatches, setHatches] = useState<string[]>([]);

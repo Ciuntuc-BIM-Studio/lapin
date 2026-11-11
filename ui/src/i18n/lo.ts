@@ -1118,6 +1118,8 @@ export const LO: Record<string, string> = {
   'What this plan draws of the other storeys; its own storey is always drawn': 'ແຜນຜັງນີ້ແຕ້ມຫຍັງຂອງຊັ້ນອື່ນ; ຊັ້ນຂອງມັນເອງແຕ້ມສະເໝີ',
   "The other storeys' elements drawn grey, on screen and on sheets": 'ອົງປະກອບຂອງຊັ້ນອື່ນແຕ້ມສີເທົາ, ເທິງໜ້າຈໍ ແລະ ແຜ່ນແບບ', 'Section markers ·': 'ເຄື່ອງໝາຍຮູບໜ້າຕັດ ·', 'New layer': 'ເລເຢີໃໝ່',
   "The browser files the sheet under this discipline's set": 'ໂປຣແກຣມທ່ອງເກັບແຜ່ນແບບໄວ້ໃນຊຸດຂອງສາຂາວຽກນີ້', 'continuous': 'ຕໍ່ເນື່ອງ', 'Line ends': 'ປາຍເສັ້ນ', 'round': 'ມົນ',
+  // Area rounding (report #76, decision 471)
+  "Area rounding": "ການປັດເນື້ອທີ່", "Room areas in plans, sheets, schedules and documents, rounded half up (as the Nordic countries write them: x,0 or x,5 m²); the model, quantities and IFC keep the exact area": "ເນື້ອທີ່ຫ້ອງໃນແຜນຜັງ, ແຜ່ນແບບ, ຕາຕະລາງ ແລະ ເອກະສານ, ປັດເຄິ່ງຂຶ້ນ (ຄືປະເທດນໍດິກຂຽນ: x,0 ຫຼື x,5 m²); ແບບຈຳລອງ, ປະລິມານ ແລະ IFC ຮັກສາເນື້ອທີ່ທີ່ແນ່ນອນ", "none (to 0.01 m²)": "ບໍ່ມີ (ເຖິງ 0.01 m²)", "to 0.1 m²": "ເຖິງ 0.1 m²", "to 0.5 m²": "ເຖິງ 0.5 m²", "to 1 m²": "ເຖິງ 1 m²",
   'square (mitred)': 'ສີ່ຫຼ່ຽມ (ຕັດມຸມ)', 'Groups:': 'ກຸ່ມ:',
   'Empty: the unit\'s usual (none in mm, one in cm, two in m; 1/16" in feet and inches, where 1 is 1/8" and 3 is 1/32")': 'ວ່າງ: ຕາມປົກກະຕິຂອງຫົວໜ່ວຍ (ບໍ່ມີໃນ mm, ໜຶ່ງໃນ cm, ສອງໃນ m; 1/16" ໃນຟຸດ ແລະ ນິ້ວ, ບ່ອນທີ່ 1 ແມ່ນ 1/8" ແລະ 3 ແມ່ນ 1/32")',
   'How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners': 'ເສັ້ນທີ່ມີຄວາມໜາແທ້ ສິ້ນສຸດ ແລະ ພົບກັນແນວໃດ, ເທິງໜ້າຈໍ ແລະ ເຈ້ຍ: ມົນ, ຫຼື ປາຍສີ່ຫຼ່ຽມ ມຸມຕັດ',

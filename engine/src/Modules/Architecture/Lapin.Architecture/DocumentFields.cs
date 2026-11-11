@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Lapin.Drawing;
 using Lapin.Drawing.Hatch;
 using Lapin.Geometry;
 using Lapin.Model;
@@ -111,7 +112,8 @@ public sealed partial class DocumentFields : IDocumentFields
         yield return new("areas.built", "Built area", Area(ground == null ? null : Positive(foot[ground.Id])));
         yield return new("areas.gross", "Gross floor area", Area(Positive(foot.Values.Sum())));
         yield return new("areas.basement", "Basement area", Area(Positive(storeys.Where(s => s.Num("elevation") < BasementBelow).Sum(s => foot[s.Id]))));
-        yield return new("areas.usable", "Usable area", Area(Positive(m.OfClass(Rooms.Class).Sum(r => Rooms.Of(r, m, q.Geometry)?.NetArea ?? 0))));
+        // The rooms as each is shown (decision 471), so the usable area adds up the room table.
+        yield return new("areas.usable", "Usable area", Area(Positive(AreaRounding.Sum(m.OfClass(Rooms.Class).Select(r => Rooms.Of(r, m, q.Geometry)?.NetArea ?? 0), f.AreaStep, f.Units))));
         yield return new("height.max", "Maximum height", MaxHeight(q) is { } h ? DocNumbers.Length(h, f) : null);
         yield return new("levels.text", "Height regime", LevelsText(storeys) is { Length: > 0 } t ? t : null);
         yield return new("counts.doors", "Doors", m.OfClass(IfcClass.Door).Count().ToString(CultureInfo.InvariantCulture));
@@ -170,7 +172,7 @@ public sealed partial class DocumentFields : IDocumentFields
                 return Spatial.Storeys(m).Select(s =>
                 {
                     var rooms = m.RelatedOf(s.Id, IfcClass.RelContainedInSpatialStructure).Where(e => e.Class == Rooms.Class).ToList();
-                    var usable = rooms.Sum(r => Rooms.Of(r, m, q.Geometry)?.NetArea ?? 0);
+                    var usable = AreaRounding.Sum(rooms.Select(r => Rooms.Of(r, m, q.Geometry)?.NetArea ?? 0), f.AreaStep, f.Units);
                     return (IReadOnlyDictionary<string, string>)new Dictionary<string, string>
                     {
                         ["id"] = s.Id, ["area"] = HasContent(m, s) ? DocNumbers.Area(Footprint(q, s), f) : "",

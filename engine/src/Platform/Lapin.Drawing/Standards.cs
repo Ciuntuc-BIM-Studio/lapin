@@ -91,11 +91,14 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// text height (paper mm; null: <see cref="Standards.DefaultMarkSize"/> and the Standard text's height), which a marker's
 /// own <c>markSize</c> and <c>markTextSize</c> override. Standards saved with one <c>markSize</c> and <c>markText</c>
 /// (decision 455) give them to both kinds.
+/// <see cref="AreaRounding"/> (report #76, decision 471): the step the areas of spaces are shown to (0.1, 0.5 or 1 m², ft² in
+/// an imperial project; null: as measured), presentation only (<see cref="Lapin.Drawing.AreaRounding"/>).
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
     string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
-    string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null)
+    string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null,
+    double? AreaRounding = null)
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -273,7 +276,8 @@ public static class Standards
             List("layerGroups").Where(g => g["id"] is JsonValue).Select(g => new LayerGroup(Str(g["id"], ""), Str(g["name"], "Group"), g["visible"] is not JsonValue gv || !gv.TryGetValue<bool>(out var b) || b, True(g["locked"]))).Where(g => g.Id.Length > 0).ToList(),
             OneOf(o["lineCap"], LineCaps, "round"), OneOf(o["units"], ProjectUnits, "mm"),
             MarkValue(o["sectionMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["sectionMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
-            MarkValue(o["elevationMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["elevationMarkText"] ?? o["markText"], MinMarkText, MaxMarkText));
+            MarkValue(o["elevationMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["elevationMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
+            Lapin.Drawing.AreaRounding.Read(Lapin.Model.Json.Number(o["areaRounding"])));
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;

@@ -38,7 +38,7 @@ Want more room for the drawing? **View → Interface…** chooses a more compact
 
 ## Units
 
-Lapin works in millimetres unless you choose otherwise. To change the units, open **Manage → Drafting standards → Project → Units**, or click **Units** in the status bar at the bottom of the window. You can choose millimetres, centimetres, metres, feet and inches, or inches.
+Lapin works in millimetres unless you choose otherwise. To change the units, open **Manage → Drafting standards → Project → Units**, or click **Units** in the status bar at the bottom of the window. You can choose millimetres, centimetres, metres, feet and inches, or inches. **Area rounding** on the same tab rounds room areas to 0.1, 0.5 or 1 m² ([Rooms](rooms.md#area-rounding)).
 
 ![Drafting standards, Project tab: the project's units](shots/standards-project.webp)
 

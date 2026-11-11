@@ -328,20 +328,22 @@ public static class Rooms
 
     // ─── In plans ────────────────────────────────────────────────────────
 
-    /// <summary>An area as a stamp writes it: square metres to the hundredth, or square feet to the tenth in an imperial project.</summary>
-    public static string FormatArea(double m2, string units) =>
-        units is "ft-in" or "in" ? (m2 * 10.763910417).ToString("0.0", CultureInfo.InvariantCulture) + " ft²" : m2.ToString("0.00", CultureInfo.InvariantCulture) + " m²";
+    /// <summary>
+    /// An area as a stamp writes it: square metres to the hundredth, or square feet to the tenth in an imperial project; to
+    /// the project's <paramref name="step"/> when it rounds its areas (report #76, decision 471).
+    /// </summary>
+    public static string FormatArea(double m2, string units, double? step = null) => AreaRounding.Text(m2, step, units);
 
     static string FormatLength(double m, string units) => units is "ft-in" or "in" ? Standards.FormatImperial(m, units == "ft-in", 2) : m.ToString("0.00", CultureInfo.InvariantCulture) + " m";
 
     /// <summary>What a stamp's template can read of a room besides its attributes: {area}, {grossArea}, {perimeter}, {height}, {volume}.</summary>
-    public static Dictionary<string, string> Values(Entity room, Outline o, IModelView m, string units)
+    public static Dictionary<string, string> Values(Entity room, Outline o, IModelView m, string units, double? areaStep = null)
     {
         var h = HeightOf(room, m);
         return new()
         {
-            ["area"] = FormatArea(o.NetArea, units),
-            ["grossArea"] = FormatArea(o.GrossArea, units),
+            ["area"] = FormatArea(o.NetArea, units, areaStep),
+            ["grossArea"] = FormatArea(o.GrossArea, units, areaStep),
             ["perimeter"] = FormatLength(o.Perimeter, units),
             ["height"] = FormatLength(h, units),
             ["volume"] = units is "ft-in" or "in" ? (o.NetArea * h * 35.314666721).ToString("0.0", CultureInfo.InvariantCulture) + " ft³" : (o.NetArea * h).ToString("0.00", CultureInfo.InvariantCulture) + " m³",
@@ -426,7 +428,7 @@ public static class Rooms
     static ViewMark Stamp(ViewContext c, Entity room, Outline o, TagType type, TextStyle style)
     {
         var at = StampPoint(room, o);
-        var lines = TagText.Lines(type.Template, c.Model, room, Values(room, o, c.Model, c.Book.Units), c.Book.Units);
+        var lines = TagText.Lines(type.Template, c.Model, room, Values(room, o, c.Model, c.Book.Units, c.Book.AreaRounding), c.Book.Units);
         var h = style.Height * c.Mm;
         var step = h * 1.5;
         var color = o.Lost ? "#c0392b" : style.Color ?? "#000000";
@@ -449,7 +451,11 @@ public static class Rooms
     }
 }
 
-/// <summary>The room schedule: every room with its storey, number, name, function, department, net area, perimeter, height and volume, and the total area.</summary>
+/// <summary>
+/// The room schedule: every room with its storey, number, name, function, department, net area, perimeter, height and
+/// volume, and the total area. A project that rounds its areas (decision 471) shows each room's to its step and totals what
+/// the rows show (SFS 5139 rounds each room), so the column adds up; the volume stays the exact area times the height.
+/// </summary>
 public sealed class RoomSchedule : IScheduleSource
 {
     public string Kind => "rooms";
@@ -463,6 +469,8 @@ public sealed class RoomSchedule : IScheduleSource
         var keys = new List<string?>();
         double total = 0;
         string N(double v) => v.ToString("0.00", CultureInfo.InvariantCulture);
+        var step = DraftingResources.Book(m).AreaRounding;
+        string A(double v) => AreaRounding.Text(v, step, "m", withUnit: false);
         foreach (var r in m.OfClass(Rooms.Class)
                      .Select(r => (Room: r, Storey: Spatial.StoreyOf(m, r.Id)))
                      .OrderBy(x => x.Storey == null ? int.MaxValue : storeys.GetValueOrDefault(x.Storey.Id))
@@ -473,10 +481,10 @@ public sealed class RoomSchedule : IScheduleSource
             // A room without an outline yet (a space imported without a shape) is listed, unmeasured.
             keys.Add(r.Room.Id);
             if (Rooms.Of(r.Room, m, q.Geometry) is not { } o) { rows.Add([.. named, "", "", N(h), ""]); continue; }
-            total += o.NetArea;
-            rows.Add([.. named, N(o.NetArea), N(o.Perimeter), N(h), N(o.NetArea * h)]);
+            total += AreaRounding.Shown(o.NetArea, step);
+            rows.Add([.. named, A(o.NetArea), N(o.Perimeter), N(h), N(o.NetArea * h)]);
         }
-        if (rows.Count > 0) { rows.Add(["Total", "", "", "", "", N(total), "", "", ""]); keys.Add(null); }
+        if (rows.Count > 0) { rows.Add(["Total", "", "", "", "", A(total), "", "", ""]); keys.Add(null); }
         return new ScheduleGrid(Label, ["Storey", "Number", "Name", "Function", "Department", "Area (m²)", "Perimeter (m)", "Height (m)", "Volume (m³)"], rows, keys);
     }
 

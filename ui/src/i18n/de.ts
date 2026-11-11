@@ -1056,6 +1056,8 @@ export const DE: Record<string, string> = {
   'What this plan draws of the other storeys; its own storey is always drawn': 'Was dieser Grundriss von den anderen Geschossen zeichnet; sein eigenes Geschoss wird immer gezeichnet',
   "The other storeys' elements drawn grey, on screen and on sheets": 'Die Elemente der anderen Geschosse grau gezeichnet, am Bildschirm und auf Plänen', 'Section markers ·': 'Schnittmarken ·',
   'New layer': 'Neue Ebene', "The browser files the sheet under this discipline's set": 'Der Browser legt den Plan im Satz dieser Fachrichtung ab', 'continuous': 'durchgehend', 'Line ends': 'Linienenden',
+  // Area rounding (report #76, decision 471)
+  "Area rounding": "Flächenrundung", "Room areas in plans, sheets, schedules and documents, rounded half up (as the Nordic countries write them: x,0 or x,5 m²); the model, quantities and IFC keep the exact area": "Raumflächen in Grundrissen, Plänen, Listen und Dokumenten, kaufmännisch gerundet (wie die nordischen Länder sie schreiben: x,0 oder x,5 m²); Modell, Mengen und IFC behalten die genaue Fläche", "none (to 0.01 m²)": "keine (auf 0,01 m²)", "to 0.1 m²": "auf 0,1 m²", "to 0.5 m²": "auf 0,5 m²", "to 1 m²": "auf 1 m²",
   'round': 'rund', 'square (mitred)': 'eckig (auf Gehrung)', 'Groups:': 'Gruppen:',
   'Empty: the unit\'s usual (none in mm, one in cm, two in m; 1/16" in feet and inches, where 1 is 1/8" and 3 is 1/32")': 'Leer: das Übliche der Einheit (keine in mm, eine in cm, zwei in m; 1/16" in Fuß und Zoll, wobei 1 = 1/8" und 3 = 1/32")',
   'How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners': 'Wie Linien echter Stärke enden und sich treffen, am Bildschirm und auf Papier: rund oder eckige Enden mit Gehrungsecken',

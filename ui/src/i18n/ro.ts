@@ -1054,6 +1054,8 @@ export const RO: Record<string, string> = {
   'What this plan draws of the other storeys; its own storey is always drawn': 'Ce desenează acest plan din celelalte etaje; etajul propriu se desenează mereu',
   "The other storeys' elements drawn grey, on screen and on sheets": 'Elementele celorlalte etaje desenate gri, pe ecran și pe planșe', 'Section markers ·': 'Marcaje de secțiune ·',
   'New layer': 'Strat nou', "The browser files the sheet under this discipline's set": 'Browserul pune planșa în setul acestei discipline', 'continuous': 'continuă', 'Line ends': 'Capete de linie',
+  // Area rounding (report #76, decision 471)
+  "Area rounding": "Rotunjirea ariilor", "Room areas in plans, sheets, schedules and documents, rounded half up (as the Nordic countries write them: x,0 or x,5 m²); the model, quantities and IFC keep the exact area": "Ariile camerelor în planuri, planșe, tabele și documente, rotunjite la jumătate în sus (cum le scriu țările nordice: x,0 sau x,5 m²); modelul, cantitățile și IFC păstrează aria exactă", "none (to 0.01 m²)": "fără (la 0,01 m²)", "to 0.1 m²": "la 0,1 m²", "to 0.5 m²": "la 0,5 m²", "to 1 m²": "la 1 m²",
   'round': 'rotunde', 'square (mitred)': 'drepte (în unghi)', 'Groups:': 'Grupuri:',
   'Empty: the unit\'s usual (none in mm, one in cm, two in m; 1/16" in feet and inches, where 1 is 1/8" and 3 is 1/32")': 'Gol: cum e obișnuit pentru unitate (niciuna în mm, una în cm, două în m; 1/16" în picioare și țoli, unde 1 e 1/8" și 3 e 1/32")',
   'How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners': 'Cum se termină și se întâlnesc liniile cu grosime reală, pe ecran și pe hârtie: rotund, sau capete drepte cu colțuri în unghi',

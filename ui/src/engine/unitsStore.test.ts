@@ -1,5 +1,34 @@
 import { describe, expect, it } from 'vitest';
-import { formatLength, lengthText, parseImperial, parseLength, useStandards } from './unitsStore';
+import { areaText, formatLength, lengthText, parseImperial, parseLength, toStep, useStandards } from './unitsStore';
+
+describe('area rounding (report #76, decision 471)', () => {
+  it('rounds an area half up to the step, as the engine does', () => {
+    expect(toStep(12.27, 0.5)).toBe(12.5);
+    expect(toStep(12.27, 1)).toBe(12);
+    expect(toStep(12.27, 0.1)).toBe(12.3);
+    expect(toStep(12.25, 0.5)).toBe(12.5);
+    expect(toStep(12.74, 0.5)).toBe(12.5);
+    expect(toStep(12.75, 0.5)).toBe(13);
+    expect(toStep(12.5, 1)).toBe(13);
+    expect(toStep(12.25, 0.1)).toBe(12.3);
+  });
+  it('writes an area to the hundredth, or to the project step', () => {
+    expect(areaText(12.27, null, 'mm')).toBe('12.27 m²');
+    expect(areaText(12.27, 0.5, 'mm')).toBe('12.5 m²');
+    expect(areaText(12.1, 0.5, 'm')).toBe('12.0 m²');
+    expect(areaText(12.27, 1, 'cm')).toBe('12 m²');
+    expect(areaText(12.27, 0.1, 'mm')).toBe('12.3 m²');
+    // Square feet in an imperial project, rounded in square feet: 12.27 m² is 132.07 ft².
+    expect(areaText(12.27, null, 'ft-in')).toBe('132.1 ft²');
+    expect(areaText(12.27, 1, 'in')).toBe('132 ft²');
+  });
+  it('takes the project step from the standards', () => {
+    useStandards.setState({ areaRounding: 0.5 });
+    expect(areaText(12.27, undefined, 'mm')).toBe('12.5 m²');
+    useStandards.setState({ areaRounding: null });
+    expect(areaText(12.27, undefined, 'mm')).toBe('12.27 m²');
+  });
+});
 
 describe('project units', () => {
   it('formats a length in the project unit', () => {

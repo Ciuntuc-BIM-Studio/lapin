@@ -5168,6 +5168,8 @@ export const scenes = [
       const tab = t.page.locator('.dialog').getByText('Project', { exact: true }).first();
       await tab.click();
       await t.wait(400);
+      // Area rounding (report #76, decision 471): rooms' areas to 0.1, 0.5 or 1 m² (docs/user/rooms.md).
+      t.expect(await t.page.locator('.dialog [data-field=areaRounding]').count() === 1, 'the Project tab has Area rounding');
       await t.shot('standards-project', { of: '.dialog', pad: 0 });
     },
   },

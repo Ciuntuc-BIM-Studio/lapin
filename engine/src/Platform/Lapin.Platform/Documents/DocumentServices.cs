@@ -2,8 +2,11 @@ using Lapin.Model;
 
 namespace Lapin.Platform.Documents;
 
-/// <summary>How a document writes its values: its language (the decimal separator, dates) and the project's units.</summary>
-public sealed record DocFormat(string Lang, string Units)
+/// <summary>
+/// How a document writes its values: its language (the decimal separator, dates), the project's units, and the step the
+/// project shows its areas to (decision 471; null: as measured).
+/// </summary>
+public sealed record DocFormat(string Lang, string Units, double? AreaStep = null)
 {
     public static DocFormat Ro => new("ro", "metric");
 }

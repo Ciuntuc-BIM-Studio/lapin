@@ -444,11 +444,17 @@ public static class DraftingResources
             return null;
         });
 
-        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), how lines end on screen and paper (round, square), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
+        // The project's options: the unit the interface shows lengths in (mm, cm, m, ft-in, in), the step areas are shown to (areaRounding), how lines end on screen and paper (round, square), the section and elevation markers' sizes (sectionMarkSize, sectionMarkText, elevationMarkSize, elevationMarkText; markSize and markText both).
         r.Command("standards.options", "Change drafting standards", (ctx, a) =>
         {
             var raw = Standards.ToJson(Book(ctx.Model));
             if (a.ContainsKey("units")) raw["units"] = (string?)a["units"] is { } u && Standards.ProjectUnits.Contains(u) ? u : throw new CommandException($"The units are one of {string.Join(", ", Standards.ProjectUnits)}.");
+            // The step the areas of spaces are shown to (report #76, decision 471): 0.1, 0.5 or 1; null (or 0): as measured.
+            if (a.ContainsKey("areaRounding"))
+            {
+                if (Lapin.Model.Json.Number(a["areaRounding"]) is not { } step || step == 0) raw.Remove("areaRounding");
+                else raw["areaRounding"] = AreaRounding.Read(step) ?? throw new CommandException("Areas are rounded to 0.1, 0.5 or 1 m², or not at all.");
+            }
             if (a.ContainsKey("lineCap")) raw["lineCap"] = (string?)a["lineCap"] is { } c && Standards.LineCaps.Contains(c) ? c : throw new CommandException("Lines end round or square.");
             // The section and elevation markers' symbol size and text height (paper mm, decision 455); null: the defaults.
             void Mark(string key, double min, double max, string what)

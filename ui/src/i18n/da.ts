@@ -1055,6 +1055,8 @@ export const DA: Record<string, string> = {
   'What this plan draws of the other storeys; its own storey is always drawn': 'Hvad denne plan tegner af de andre etager; dens egen etage tegnes altid',
   "The other storeys' elements drawn grey, on screen and on sheets": 'De andre etagers elementer tegnet gråt, på skærmen og på tegninger', 'Section markers ·': 'Snitmarkeringer ·', 'New layer': 'Nyt lag',
   "The browser files the sheet under this discipline's set": 'Browseren arkiverer tegningen under denne fagdisciplins sæt', 'continuous': 'fuldt optrukket', 'Line ends': 'Linjeender', 'round': 'runde',
+  // Area rounding (report #76, decision 471)
+  "Area rounding": "Afrunding af arealer", "Room areas in plans, sheets, schedules and documents, rounded half up (as the Nordic countries write them: x,0 or x,5 m²); the model, quantities and IFC keep the exact area": "Rumarealer i planer, tegninger, skemaer og dokumenter, afrundet halvt op (som de nordiske lande skriver dem: x,0 eller x,5 m²); modellen, mængderne og IFC beholder det nøjagtige areal", "none (to 0.01 m²)": "ingen (til 0,01 m²)", "to 0.1 m²": "til 0,1 m²", "to 0.5 m²": "til 0,5 m²", "to 1 m²": "til 1 m²",
   'square (mitred)': 'firkantede (geringede)', 'Groups:': 'Grupper:',
   'Empty: the unit\'s usual (none in mm, one in cm, two in m; 1/16" in feet and inches, where 1 is 1/8" and 3 is 1/32")': 'Tom: enhedens sædvanlige (ingen i mm, én i cm, to i m; 1/16" i fod og tommer, hvor 1 er 1/8" og 3 er 1/32")',
   'How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners': 'Hvordan linjer med reel tykkelse ender og mødes, på skærm og papir: runde eller firkantede ender med geringede hjørner',

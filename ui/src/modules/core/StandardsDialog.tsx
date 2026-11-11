@@ -17,7 +17,7 @@ import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -134,6 +134,11 @@ export function StandardsDialog() {
       <dt title="Lengths are shown and typed in this unit everywhere; the engine keeps metres">Units</dt>
       <dd><select value={String(book.units ?? 'mm')} onChange={(e) => void execute('standards.options', { units: e.target.value })}>
         {[['mm', 'millimetres'], ['cm', 'centimetres'], ['m', 'metres'], ['ft-in', 'feet and inches (12\'-3 1/2")'], ['in', 'inches']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select></dd>
+      {/* The step the areas of spaces are shown to, half up (report #76, decision 471): stamps, legends, the room schedule, documents; the model and IFC keep the exact area. */}
+      <dt title="Room areas in plans, sheets, schedules and documents, rounded half up (as the Nordic countries write them: x,0 or x,5 m²); the model, quantities and IFC keep the exact area">Area rounding</dt>
+      <dd><select data-field="areaRounding" value={String(book.areaRounding ?? '')} onChange={(e) => void execute('standards.options', { areaRounding: e.target.value ? Number(e.target.value) : null })}>
+        {[['', 'none (to 0.01 m²)'], ['0.1', 'to 0.1 m²'], ['0.5', 'to 0.5 m²'], ['1', 'to 1 m²']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select></dd>
       <dt title="How lines of true weight end and meet, on screen and on paper: round, or square caps with mitred corners">Line ends</dt>
       <dd><select value={String(book.lineCap ?? 'round')} onChange={(e) => void execute('standards.options', { lineCap: e.target.value })}>

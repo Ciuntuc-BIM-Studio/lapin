@@ -18,8 +18,14 @@ public static class DocNumbers
     /// <summary>A number with its decimals, grouped by thousands.</summary>
     public static string Number(double v, DocFormat f, int decimals = 2) => Math.Round(v, decimals).ToString("N" + decimals, FormatOf(f));
 
-    /// <summary>An area (m²): to the hundredth, in m² (ft² in an imperial project).</summary>
-    public static string Area(double m2, DocFormat f) => Imperial(f) ? Number(m2 * 10.763910417, f, 1) + " ft²" : Number(m2, f) + " m²";
+    /// <summary>An area (m²): to the hundredth, in m² (ft² in an imperial project); to the project's step when it rounds its areas (decision 471).</summary>
+    public static string Area(double m2, DocFormat f)
+    {
+        var shown = Lapin.Drawing.AreaRounding.Shown(m2, f.AreaStep, f.Units);
+        return Imperial(f)
+            ? Number(shown * 10.763910417, f, Lapin.Drawing.AreaRounding.Decimals(f.AreaStep, 1)) + " ft²"
+            : Number(shown, f, Lapin.Drawing.AreaRounding.Decimals(f.AreaStep, 2)) + " m²";
+    }
 
     /// <summary>A length (m): to the hundredth of a metre (ft in an imperial project).</summary>
     public static string Length(double m, DocFormat f) => Imperial(f) ? Number(m / 0.3048, f) + " ft" : Number(m, f) + " m";

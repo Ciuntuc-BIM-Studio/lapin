@@ -67,6 +67,10 @@ Paleta: 16 culori pastelate `#rrggbb` (PDF și DXF nu au transparență), care s
 
 **Annotate → Colour legend**: un `IfcAnnotation` de tip `LEGEND` pe vedere (`at`, `scheme?`, `showArea`), desenat de modulul arhitectură: numele schemei, apoi pentru fiecare intrare folosită de încăperile vederii (în ordinea schemei) o mostră (umplere și hașură) și valoarea, cu aria totală dacă se cere. Urmează schimbările schemei; se mută cu Move.
 
+## Rotunjirea ariilor (raportul #76, decizia 471)
+
+Standardele proiectului țin `areaRounding`: 0,1, 0,5 sau 1 (m², ft² într-un proiect imperial), lipsă: aria măsurată, la sutime. `Lapin.Drawing/AreaRounding` e singura regulă: rotunjire la pasul cel mai apropiat, jumătatea în sus (aria mai întâi la 0,0001 m², ca zgomotul coordonatelor să nu treacă 12,25 sub jumătate), scrisă cu o zecimală la 0,1 și 0,5 (12,0 / 12,5) și fără la 1. O folosesc eticheta încăperii (`{area}`, `{grossArea}`), legenda și interogarea schemelor, extrasul de încăperi, câmpurile documentelor (`DocFormat.AreaStep`: aria construită, desfășurată, utilă, ariile pe etaj și pe încăpere), iar în interfață ariile de pardoseală din Cantități (`areaText`, `unitsStore.ts`). Fiecare încăpere se rotunjește separat și un total e suma rândurilor (SFS 5139 rotunjește fiecare încăpere), deci coloana se adună; volumul rămâne aria exactă ori înălțimea. Doar prezentare: modelul, cantitățile, IFC, costurile și planificarea păstrează aria exactă; un extras exportat (CSV, XLSX) e ce arată tabelul. Cantitățile de material (fețe de perete, plăci, cofraje, învelitori) și parametrii de tip arie scriși de utilizator rămân cum erau.
+
 ## IFC
 
 - **Export:** `IFCSPACE` agregată în etaj cu `IFCRELAGGREGATES` (nu conținută); corpul: `IFCEXTRUDEDAREASOLID` al conturului (`IFCARBITRARYCLOSEDPROFILEDEF`, sau `…WITHVOIDS` cu insulele), cât înălțimea; **Name = numărul, LongName = numele** (cum scriu Revit și ArchiCAD), `ObjectType` = funcțiunea, `PredefinedType` SPACE, `CompositionType` ELEMENT; `Pset_SpaceCommon` (`Reference` = numărul, `IsExternal` = false), `Qto_SpaceBaseQuantities`, `Lapin_Intent` cu toate atributele.

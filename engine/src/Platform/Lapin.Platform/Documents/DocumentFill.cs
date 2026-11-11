@@ -25,7 +25,11 @@ public static class DocumentFill
     };
 
     /// <summary>The document's format: its language and the project's units.</summary>
-    public static DocFormat FormatOf(IModelView m, Entity doc) => new((string?)doc.Str("lang") is { Length: > 0 } l ? l : "ro", DraftingResources.Book(m).Units);
+    public static DocFormat FormatOf(IModelView m, Entity doc)
+    {
+        var book = DraftingResources.Book(m);
+        return new((string?)doc.Str("lang") is { Length: > 0 } l ? l : "ro", book.Units, book.AreaRounding);
+    }
 
     /// <summary>Every field the product's modules give, by key (the first module to give one wins), with its label.</summary>
     public static List<DocField> AllFields(IQueryContext q, DocFormat f)
