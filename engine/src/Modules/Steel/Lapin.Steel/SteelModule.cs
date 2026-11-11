@@ -293,9 +293,18 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
     {
         var (start, end) = SteelEnd.Of(e);
         if (services?.Get<GeometryOptions>()?.Fine == true) ax = ax with { Fine = true };
-        var built = SteelBody.Build(m, ax, start, end, services?.Get<ISolidBooleans>());
+        var booleans = services?.Get<ISolidBooleans>();
+        var built = SteelBody.Build(m, ax, start, end, booleans);
         var problems = built.Problems.Count > 0 ? built.Problems : null;
         if (built.Solid is not { } solid) return new ElementGeometry([], Diagnostics: problems);
+        // Its holes (decision 480) taken off.
+        if (MemberHoles.Has(e))
+        {
+            if (booleans == null) problems = [.. problems ?? [], "Holes need the boolean library (manifold), missing here."];
+            else if (MemberHoles.Cutters(m, e, ax) is { Count: > 0 } cutters)
+                try { solid = booleans.Difference(solid, cutters, "member") ?? solid; }
+                catch (InvalidOperationException ex) { problems = [.. problems ?? [], $"The holes could not be cut: {ex.Message}"]; }
+        }
         var u = ax.U;
         // In plan: what is seen from above. A vertical member: its section where it stands; any other, its body's shadow.
         IReadOnlyList<PlanItem> plan = Math.Abs(u.Z) > 1 - 1e-6
@@ -343,7 +352,7 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
     /// <summary>A steel beam or column with ends: its body built from them, in place of the structure's (which knows nothing of them).</summary>
     public ElementGeometry? Apply(Entity entity, ElementGeometry geometry, IModelView model, IServices services)
     {
-        if (entity.Class is not (IfcClass.Beam or IfcClass.Column) || entity.Attrs[SteelEnd.Key] is not JsonObject) return null;
+        if (entity.Class is not (IfcClass.Beam or IfcClass.Column) || entity.Attrs[SteelEnd.Key] is not JsonObject && !MemberHoles.Has(entity)) return null;
         if (MemberAxes.Of(model, entity) is not { Section.IsProfile: true } ax || geometry.Parts.Count == 0) return null;
         var part = geometry.Parts[0];
         var built = Body(entity, model, services, ax, part.Name, part.Color, part.Material);
@@ -363,10 +372,11 @@ public sealed class SteelModule : ILapinModule, IGeometryFilter, IIfcSweptBodies
     public IfcSweptBody? BodyOf(IModelView model, Entity element)
     {
         if (element.Class is not (Member or IfcClass.Beam or IfcClass.Column)) return null;
-        if (element.Class != Member && element.Attrs[SteelEnd.Key] is not JsonObject) return null;
+        if (element.Class != Member && element.Attrs[SteelEnd.Key] is not JsonObject && !MemberHoles.Has(element)) return null;
         if (MemberAxes.Of(model, element) is not { } ax || element.Class != Member && !ax.Section.IsProfile) return null;
         var (start, end) = SteelEnd.Of(element);
         if (SteelBody.Swept(model, ax, start, end) is not { } swept) return null;
+        if (MemberHoles.Has(element)) swept = swept with { Openings = [.. swept.Openings, .. MemberHoles.Sweeps(model, element, ax)] };
         if (element.Class != Member || Haunch.Of(element) is (null, null)) return swept;
         // The haunches: a piece cut from the section (an IfcMember), or a web and a flange plate (IfcPlate); with the member, an assembly.
         var built = SteelBody.Build(model, ax, start, end, null);

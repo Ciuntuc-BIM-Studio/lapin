@@ -5713,6 +5713,8 @@ export const scenes = [
       const out = await t.call('doc.query', { name: 'steel.sdnfExport', args: {} });
       const text = Buffer.from(out.data, 'base64').toString('latin1');
       t.expect(text.startsWith('Packet 00\n"SDNF Version 3.0"') && text.includes('\nPacket 10\n') && text.includes('\nPacket 20\n'), 'the file is SDNF 3.0, its members and plates in their packets');
+      // Decision 480: the connections' bolt and anchor holes go as holes (packet 22).
+      t.expect(text.includes('\nPacket 22\n'), 'the plates\' bolt and anchor holes are in packet 22');
       const { tmpdir } = await import('node:os');
       const { join } = await import('node:path');
       const { writeFile } = await import('node:fs/promises');

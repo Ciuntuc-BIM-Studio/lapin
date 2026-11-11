@@ -16,7 +16,9 @@ public sealed record SdnfFile(SdnfTitle Title, IReadOnlyList<SdnfMember> Members
 {
     /// <summary>What Lapin wrote in its comments: an SDNF number's element (<c>member 12</c> → its GlobalId, <c>plate 3</c> → <c>node:GlobalId:part</c>, <c>grid 1</c> → its GlobalId).</summary>
     public IReadOnlyDictionary<string, string> LapinIds { get; init; } = new Dictionary<string, string>();
-    /// <summary>What the reader left out and why (holes, loads, connections, curved members).</summary>
+    /// <summary>The holes (packet 22), each in the plate its parent number names (or, as Lapin writes them, a member).</summary>
+    public IReadOnlyList<SdnfHole> Holes { get; init; } = [];
+    /// <summary>What the reader left out and why (loads, connections).</summary>
     public IReadOnlyList<string> Notes { get; init; } = [];
     /// <summary>The members' linear unit as the file names it (<c>millimeters</c>, <c>feet</c>).</summary>
     public string Unit { get; init; } = "millimeters";
@@ -49,6 +51,46 @@ public sealed record SdnfMember(long Id, int Cardinal, string Type, string Piece
     public Vec3 StartOffset { get; init; }
     public Vec3 EndOffset { get; init; }
     public IReadOnlyList<int> Releases { get; init; } = new int[12];
+    /// <summary>A curved member's arc (packet 60): <see cref="Start"/> and <see cref="End"/> are then the arc's ends; null for a linear member (packet 10).</summary>
+    public SdnfArc? Arc { get; init; }
+}
+
+/// <summary>
+/// A curved member's arc (packet 60, record 3): its centre, the angle it starts at and the angle it sweeps (degrees), the
+/// normal of its plane. Lapin reads the sweep counter-clockwise about the normal (right-handed; a negative sweep the other
+/// way) and the start angle from the plane's x: the world's x laid into the plane (its y when the plane stands across x).
+/// </summary>
+public sealed record SdnfArc(Vec3 Centre, double StartAngle, double Sweep, Vec3 Normal)
+{
+    /// <summary>The plane's x, from which the start angle runs.</summary>
+    public static Vec3 Reference(Vec3 normal)
+    {
+        var n = normal.Normalized();
+        var x = new Vec3(1, 0, 0) - n * n.X;
+        if (x.Length < 1e-6) x = new Vec3(0, 1, 0) - n * n.Y;
+        return x.Normalized();
+    }
+
+    /// <summary>The angle of <paramref name="p"/> about the centre, from the plane's x, counter-clockwise about the normal, degrees.</summary>
+    public static double AngleOf(Vec3 centre, Vec3 normal, Vec3 p)
+    {
+        var n = normal.Normalized();
+        var x = Reference(n);
+        var d = p - centre;
+        return Math.Atan2(Vec3.Dot(Vec3.Cross(x, d), n), Vec3.Dot(x, d)) * 180 / Math.PI;
+    }
+}
+
+/// <summary>
+/// A hole (packet 22): its number and its parent's (the plate it goes through; Lapin also writes a member's), its periphery
+/// (0 straight edges, 1 straight and curved, 2 a circle), its depth (<see cref="Thickness"/>: as deep as its plate, through
+/// it), and its loops as a plate's: the top face's and the bottom's, each closed by its first vertex again, the flags
+/// saying the next segment is straight (1) or curved (2); a circle its centre on each face, the flag its radius.
+/// </summary>
+public sealed record SdnfHole(long Id, long Parent, int Periphery, double Thickness, IReadOnlyList<(Vec3 P, double Flag)> Top, IReadOnlyList<(Vec3 P, double Flag)> Bottom)
+{
+    /// <summary>Record 4: approval status, design status, fabricator's note, hole treatment.</summary>
+    public IReadOnlyList<int> Status { get; init; } = new int[4];
 }
 
 /// <summary>
@@ -163,12 +205,13 @@ public static class SdnfWriter
         var (date, time) = (Q(t.Date, 30), Q(t.Time, 30));
 
         // Packet 10, the linear members: ten records each.
-        Line("Packet 10");
-        Line($"{Q("millimeters", 24)} {f.Members.Count}");
-        foreach (var m in f.Members)
+        // A member's records: a linear one's ten (packet 10), a curved one's eleven (packet 60, its arc the third).
+        void Member(SdnfMember m)
         {
             Line($"{m.Id} {m.Cardinal} {m.Status} {m.Class} {Q(m.Type, 24)} {Q(m.PieceMark, 24)} {m.Revision}");
             Line($"{Q(m.Size, 24)} {Q(m.Grade, 24)} {N(m.Rotation)} {(m.MirrorX ? 1 : 0)} {(m.MirrorY ? 1 : 0)}");
+            if (m.Arc is { } arc)
+                Line(Fit(d => $"{P(arc.Centre, d)} {N(arc.StartAngle, "0.#########")} {N(arc.Sweep, "0.#########")} {U(arc.Normal.X)} {U(arc.Normal.Y)} {U(arc.Normal.Z)}"));
             Line(Fit(d => $"{U(m.Orientation.X)} {U(m.Orientation.Y)} {U(m.Orientation.Z)} {P(m.Start, d)} {P(m.End, d)} {L(m.StartCutback, d)} {L(m.EndCutback, d)}"));
             Line($"{L(m.OffsetX)} {L(m.OffsetY)}");
             Line(Fit(d => $"{P(m.StartOffset, d)} {P(m.EndOffset, d)}"));
@@ -182,6 +225,11 @@ public static class SdnfWriter
             // Record 10: the fabricator's note, five user attributes.
             Line("0 0 0 0 0 0");
         }
+        var linear = f.Members.Where(m => m.Arc == null).ToList();
+        var curved = f.Members.Where(m => m.Arc != null).ToList();
+        Line("Packet 10");
+        Line($"{Q("millimeters", 24)} {linear.Count}");
+        foreach (var m in linear) Member(m);
 
         // Packet 20, the plates.
         Line("Packet 20");
@@ -199,6 +247,23 @@ public static class SdnfWriter
             Line("0 0 0 0 0 0");
         }
 
+        // Packet 22, the holes: their number and parent's, periphery, depth and vertices per face, the loops, two records more.
+        if (f.Holes.Count > 0)
+        {
+            Line("Packet 22");
+            Line($"{Q("millimeters", 24)} {Q("millimeters", 24)} {f.Holes.Count}");
+            foreach (var h in f.Holes)
+            {
+                Line($"{h.Id} {h.Parent}");
+                Line($"{h.Periphery} {L(h.Thickness)} {(h.Periphery == 2 ? 1 : h.Top.Count)}");
+                foreach (var (v, flag) in h.Top.Concat(h.Bottom))
+                    Line(Fit(d => $"{P(v, d)} {(h.Periphery == 2 ? L(flag, d) : ((int)flag).ToString(Inv))}"));
+                // Approval status, design status, fabricator's note, hole treatment; three user attributes.
+                Line(string.Join(' ', Enumerable.Range(0, 4).Select(i => i < h.Status.Count ? h.Status[i] : 0)));
+                Line("0 0 0");
+            }
+        }
+
         // Packet 50, the grids: in the members' unit (the packet names none).
         if (f.Grids.Count > 0)
         {
@@ -210,14 +275,22 @@ public static class SdnfWriter
                 foreach (var (label, a, b) in g.Lines) Line(Fit(d => $"{Q(label, 64)} {P(a, d)} {P(b, d)}"));
             }
         }
+
+        // Packet 60, the curved members: their unit and count, eleven records each.
+        if (curved.Count > 0)
+        {
+            Line("Packet 60");
+            Line($"{Q("millimeters", 24)} {curved.Count}");
+            foreach (var m in curved) Member(m);
+        }
         return o.ToString();
     }
 }
 
 /// <summary>
 /// Reads an SDNF file, version 2.0 or 3.0 (its title says which): the title, the linear members (six records each in version
-/// 2, ten in version 3, as many as the packet holds per member when a program writes more), the plates, the grids; the holes,
-/// loads, connections and curved members are counted in <see cref="SdnfFile.Notes"/>. Lapin's comments
+/// 2, ten in version 3, as many as the packet holds per member when a program writes more), the plates, their holes, the
+/// grids, the curved members (eleven records each); the loads and connections are noted in <see cref="SdnfFile.Notes"/>. Lapin's comments
 /// (<c># Lapin member 12 GlobalId</c>) give back the elements it wrote.
 /// </summary>
 public static partial class SdnfReader
@@ -291,6 +364,7 @@ public static partial class SdnfReader
         var members = new List<SdnfMember>();
         var plates = new List<SdnfPlate>();
         var grids = new List<SdnfGridSet>();
+        var holes = new List<SdnfHole>();
         var notes = new List<string>();
         string? unit = null;
         double scale = 1;
@@ -312,17 +386,20 @@ public static partial class SdnfReader
                     break;
                 }
                 case "50": grids.AddRange(Grids(lines, scale)); break;
-                case "22": notes.Add($"The holes (packet 22, {Count(lines)}) were left out: Lapin's plates take none yet."); break;
-                case "30": notes.Add("The member loads (packet 30) were left out."); break;
+                case "22": holes.AddRange(Holes(lines)); break;
+                case "60":
+                {
+                    var (u, s, list) = Members(lines, v3, curved: true);
+                    if (unit == null) (unit, scale) = (u, s);
+                    members.AddRange(list);
+                    break;
+                }
+                case "30": notes.Add("The member loads (packet 30) were left out: Lapin keeps no loads."); break;
                 case "40": notes.Add("The connection details (packet 40, text only) were left out."); break;
-                case "60": notes.Add($"The curved members (packet 60, {Count(lines)}) were left out: only straight members come in."); break;
                 default: notes.Add($"Packet {id} is not one SDNF defines: left out."); break;
             }
-        return new SdnfFile(title, members, plates, grids) { LapinIds = lapin, Notes = notes, Unit = unit ?? "meters" };
+        return new SdnfFile(title, members, plates, grids) { LapinIds = lapin, Notes = notes, Unit = unit ?? "meters", Holes = holes };
     }
-
-    /// <summary>A packet's count of items, from its count record (the second with units, the first for the others).</summary>
-    static string Count(List<string> lines) => lines.Count > 0 ? $"{Fields(lines[0]).LastOrDefault() ?? "?"} given" : "none";
 
     static SdnfTitle Title(List<string> lines)
     {
@@ -346,26 +423,30 @@ public static partial class SdnfReader
         return (name, SdnfUnits.Metres(name) ?? throw new FormatException($"Packet {packet} is in „{name}”, a unit Lapin does not know (millimeters, centimeters, meters, inches, feet)."));
     }
 
-    static (string Unit, double Scale, List<SdnfMember> Members) Members(List<string> lines, bool v3)
+    static (string Unit, double Scale, List<SdnfMember> Members) Members(List<string> lines, bool v3, bool curved = false)
     {
         if (lines.Count == 0) return ("meters", 1, []);
+        var packet = curved ? "60" : "10";
         var head = Fields(lines[0]);
-        var (unit, k) = Units(head, "10");
+        var (unit, k) = Units(head, packet);
         var n = I(head, head.Count - 1);
         var body = lines.Skip(1).ToList();
-        // Ten records a member in version 3, six in version 2; as many as the packet holds per member when a program writes more.
-        var per = n > 0 && body.Count % n == 0 && body.Count / n >= 6 ? body.Count / n : v3 ? 10 : 6;
-        var c = new Cursor(body, "10");
+        // Ten records a member in version 3, six in version 2, a curved member's arc one more (eleven); as many as the packet
+        // holds per member when a program writes more.
+        var least = curved ? 7 : 6;
+        var per = n > 0 && body.Count % n == 0 && body.Count / n >= least ? body.Count / n : curved ? 11 : v3 ? 10 : 6;
+        var c = new Cursor(body, packet);
         var o = new List<SdnfMember>();
-        for (var i = 0; i < n && c.Left >= 6; i++)
+        for (var i = 0; i < n && c.Left >= least; i++)
         {
             var r1 = c.Next();
             var r2 = c.Next();
+            var arc = curved ? c.Next() : null;
             var r3 = c.Next();
             var r4 = c.Next();
             var r5 = c.Next();
             var r6 = c.Next();
-            c.Skip(per - 6);
+            c.Skip(per - least);
             Vec3 V(List<string> f, int at, double s) => new(D(f, at) * s, D(f, at + 1) * s, D(f, at + 2) * s);
             o.Add(new SdnfMember(Id(r1, 0), I(r1, 1), S(r1, 4), S(r1, 5), S(r2, 0), S(r2, 1), D(r2, 2), I(r2, 3) != 0, I(r2, 4) != 0,
                 V(r3, 0, 1), V(r3, 3, k), V(r3, 6, k), D(r3, 9) * k, D(r3, 10) * k)
@@ -374,6 +455,7 @@ public static partial class SdnfReader
                 OffsetX = D(r4, 0) * k, OffsetY = D(r4, 1) * k,
                 StartOffset = V(r5, 0, k), EndOffset = V(r5, 3, k),
                 Releases = Enumerable.Range(0, 12).Select(j => I(r6, j)).ToArray(),
+                Arc = arc == null ? null : new SdnfArc(V(arc, 0, k), D(arc, 3), D(arc, 4), V(arc, 5, 1)),
             });
         }
         return (unit, k, o);
@@ -396,16 +478,7 @@ public static partial class SdnfReader
             var three = v3 && r2.Count >= 6;
             var count = I(r2, 3);
             var periphery = three ? I(r2, 5) : 0;
-            List<(Vec3, double)> Loop(int m, bool scaledFlag)
-            {
-                var l = new List<(Vec3, double)>();
-                for (var j = 0; j < m; j++)
-                {
-                    var f = c.Next();
-                    l.Add((new Vec3(D(f, 0) * k, D(f, 1) * k, D(f, 2) * k), f.Count > 3 ? D(f, 3) * (scaledFlag ? k : 1) : 1));
-                }
-                return l;
-            }
+            List<(Vec3, double)> Loop(int m, bool scaledFlag) => Vertices(c, m, k, scaledFlag);
             List<(Vec3, double)> top, bottom;
             if (!three) { top = Loop(count, false); bottom = []; }
             else if (periphery == 2) { top = Loop(1, true); bottom = Loop(1, true); }
@@ -417,6 +490,47 @@ public static partial class SdnfReader
             });
         }
         return (unit, k, o);
+    }
+
+    /// <summary>A loop's vertices: x, y, z and the flag (a circle's radius, then scaled as a length).</summary>
+    static List<(Vec3, double)> Vertices(Cursor c, int m, double k, bool scaledFlag)
+    {
+        var l = new List<(Vec3, double)>();
+        for (var j = 0; j < m; j++)
+        {
+            var f = c.Next();
+            l.Add((new Vec3(D(f, 0) * k, D(f, 1) * k, D(f, 2) * k), f.Count > 3 ? D(f, 3) * (scaledFlag ? k : 1) : 1));
+        }
+        return l;
+    }
+
+    /// <summary>
+    /// Packet 22: the linear and thickness units and the count; each hole its number and its parent plate's, its periphery,
+    /// depth and vertices per face, its two loops (a circle's centre on each face, its radius the flag), then its status
+    /// record and three user attributes.
+    /// </summary>
+    static List<SdnfHole> Holes(List<string> lines)
+    {
+        if (lines.Count == 0) return [];
+        var head = Fields(lines[0]);
+        var (_, k) = Units(head, "22");
+        var tk = head.Count >= 3 ? SdnfUnits.Metres(S(head, 1)) ?? k : k;
+        var n = I(head, head.Count - 1);
+        var c = new Cursor(lines.Skip(1).ToList(), "22");
+        var o = new List<SdnfHole>();
+        for (var i = 0; i < n && c.More; i++)
+        {
+            var r1 = c.Next();
+            var r2 = c.Next();
+            var periphery = I(r2, 0);
+            var count = periphery == 2 ? 1 : I(r2, 2);
+            var top = Vertices(c, count, k, periphery == 2);
+            var bottom = Vertices(c, count, k, periphery == 2);
+            var r4 = c.More ? c.Next() : [];
+            c.Skip(1);
+            o.Add(new SdnfHole(Id(r1, 0), Id(r1, 1), periphery, D(r2, 1) * tk, top, bottom) { Status = Enumerable.Range(0, 4).Select(j => I(r4, j)).ToArray() });
+        }
+        return o;
     }
 
     static List<SdnfGridSet> Grids(List<string> lines, double k)

@@ -20,9 +20,15 @@ namespace Lapin.Steel.Sdnf;
 /// holds (one exported by Lapin, or imported before from the same source) is that element; any other gets a GlobalId
 /// derived from its source and number. Importing a file again therefore updates what it brought before, and an element
 /// whose class no longer fits (a column now sloping) is made again under its id.</item>
+/// <item>A curved member (packet 60) lying level, its section upright, becomes a curved beam (an arc through its ends); one
+/// arching in any other plane is left out and said (Lapin's curved members are level beams).</item>
 /// <item>Plates (packet 20) come in as plates with their bodies, except those of Lapin's own steel connections still in the
 /// project (they are built from the connection). Grids (packet 50) as grids.</item>
-/// <item>Left out, and said: curved members, holes, loads, connection details; end releases (Lapin has none yet).</item>
+/// <item>Holes (packet 22): through holes cut in the plate they name (its body made with them), or in the member Lapin's own
+/// file names as their parent (kept on it, <see cref="MemberHoles"/>), each by its number, so a file read again replaces an
+/// element's holes rather than adding to them. A recess (a hole less deep than its plate) and a hole off its plate are left
+/// out and said. SDNF carries no bolts: the report says the holes came without them.</item>
+/// <item>Left out, and said: loads, connection details; end releases (Lapin has none yet).</item>
 /// </list>
 /// </summary>
 public static class SdnfImport
@@ -59,6 +65,12 @@ public static class SdnfImport
             hashed.TryAdd(SdnfExport.NumberOf(e.Id), e.Id);
         }
 
+        // The holes by the number of the plate (or member) they go through: a plate's first, as the format has it.
+        var plateNumbers = file.Plates.Select(p => p.Id).ToHashSet();
+        var holesOf = file.Holes.GroupBy(h => h.Parent).ToDictionary(x => x.Key, x => x.ToList());
+        var placed = new HashSet<long>();
+        var holes = 0;
+
         var seen = new HashSet<string>();
         foreach (var mb in file.Members)
         {
@@ -68,21 +80,32 @@ public static class SdnfImport
                 : DerivedId($"{source}\nmember\n{mb.Id}");
             if (!seen.Add(id)) { skipped++; notes.Add($"Member {mb.Id} is in the file twice: the second was left out."); continue; }
             if (mb.Releases.Any(r => r != 0)) released++;
-            var r = Member(ctx, mb, id, source, lapinFile, unknown, notes);
+            var r = mb.Arc is { } arc ? Curved(ctx, mb, arc, id, source, lapinFile, unknown, notes) : Member(ctx, mb, id, source, lapinFile, unknown, notes);
             if (r == null) { skipped++; continue; }
             var (cls, how) = r.Value;
             byClass[cls] = byClass.GetValueOrDefault(cls) + 1;
             if (how == "made") made++; else if (how == "remade") remade++; else updated++;
+            // Its holes, when the file names it as their parent and no plate has its number.
+            var mine = !plateNumbers.Contains(mb.Id) && holesOf.TryGetValue(mb.Id, out var list) ? list : [];
+            if (mine.Count > 0) placed.Add(mb.Id);
+            holes += SetHoles(ctx, id, mine, notes);
         }
 
         foreach (var p in file.Plates)
         {
             var tag = file.LapinIds.TryGetValue($"plate {p.Id}", out var t) ? t : null;
-            // A plate of one of Lapin's own connections still in the project: the connection builds it.
+            placed.Add(p.Id);
+            // A plate of one of Lapin's own connections still in the project: the connection builds it (its holes are its bolts').
             if (tag != null && tag.Split(':') is ["node", var nid, ..] && m.Get(nid) is { Class: SteelNodes.Class }) continue;
-            var id = DerivedId(tag ?? $"{source}\nplate\n{p.Id}");
-            if (Plate(ctx, p, id, source)) plates++; else skipped++;
+            var id = tag != null && GlobalId.IsValid(tag) ? tag : DerivedId(tag ?? $"{source}\nplate\n{p.Id}");
+            var cut = Plate(ctx, p, id, source, holesOf.GetValueOrDefault(p.Id) ?? [], notes);
+            if (cut >= 0) { plates++; holes += cut; } else skipped++;
         }
+        var lost = file.Holes.Where(x => !placed.Contains(x.Parent)).ToList();
+        if (lost.Count > 0)
+            notes.Add($"{lost.Count} hole(s) name a plate or member the file does not have ({string.Join(", ", lost.Select(x => x.Parent).Distinct().Take(5))}): left out.");
+        if (file.Holes.Count > 0)
+            notes.Add("SDNF carries no bolts: the holes came in without them (Lapin's bolts belong to its own steel connections).");
 
         foreach (var set in file.Grids)
         {
@@ -111,7 +134,7 @@ public static class SdnfImport
         return new JsonObject
         {
             ["name"] = name, ["version"] = file.Title.Version, ["source"] = file.Title.IssueCode,
-            ["made"] = made, ["updated"] = updated, ["remade"] = remade, ["plates"] = plates, ["grids"] = grids, ["skipped"] = skipped,
+            ["made"] = made, ["updated"] = updated, ["remade"] = remade, ["plates"] = plates, ["holes"] = holes, ["grids"] = grids, ["skipped"] = skipped,
             ["byClass"] = new JsonObject(byClass.OrderBy(k => k.Key).Select(k => KeyValuePair.Create(k.Key, (JsonNode?)k.Value))),
             ["unknownProfiles"] = new JsonArray([.. unknown.Select(u => (JsonNode)u)]),
             ["notes"] = new JsonArray([.. notes.Select(n => (JsonNode)n)]),
@@ -198,12 +221,7 @@ public static class SdnfImport
         var m = ctx.Model;
         var length = (mb.End - mb.Start).Length;
         if (length < 1e-3) { notes.Add($"Member {mb.Id} is shorter than a millimetre: left out."); return null; }
-        var section = SdnfProfiles.Resolve(m, mb.Size);
-        if (section == null)
-        {
-            section = SdnfProfiles.Placeholder(mb.Size.Length > 0 ? mb.Size : "?");
-            unknown.Add(section.Name!);
-        }
+        var section = SectionOf(m, mb, unknown);
         var u = (mb.End - mb.Start) * (1 / length);
         var (v, w, flipped) = Frame(u, mb.Orientation, mb.Rotation, mb.MirrorX, mb.MirrorY);
         if (!Handed(section)) flipped = false;
@@ -305,8 +323,13 @@ public static class SdnfImport
         // A new steel element's cutbacks as its ends' extensions (an existing one keeps its own ends).
         if (existing?.Class != cls && section.IsProfile && (Math.Abs(mb.StartCutback) > 1e-6 || Math.Abs(mb.EndCutback) > 1e-6))
             attrs[SteelEnd.Key] = SteelEnd.Json2(new SteelEnd(Extension: R(-mb.StartCutback)), new SteelEnd(Extension: R(-mb.EndCutback)));
-        attrs[Key] = new JsonObject { ["id"] = mb.Id, ["source"] = source };
+        return (cls, Commit(ctx, mb, id, source, existing, cls, attrs, predefined, storey, type));
+    }
 
+    /// <summary>The element as the file has it: updated in place when it is already of its class, else (made again) added under its id; its storey and type.</summary>
+    static string Commit(ICommandContext ctx, SdnfMember mb, string id, string source, Entity? existing, string cls, JsonObject attrs, string predefined, Entity storey, Entity type)
+    {
+        attrs[Key] = new JsonObject { ["id"] = mb.Id, ["source"] = source };
         string how;
         if (existing != null && existing.Class == cls)
         {
@@ -322,32 +345,152 @@ public static class SdnfImport
         }
         if (Spatial.StoreyOf(ctx.Model, id)?.Id != storey.Id) Spatial.Contain(ctx, storey.Id, id);
         if (ctx.Model.RelatingOf(id, IfcClass.RelDefinesByType)?.Id != type.Id) ctx.Relate(IfcClass.RelDefinesByType, type.Id, id);
-        return (cls, how);
+        return how;
+    }
+
+    /// <summary>The member's section: by its name, else a placeholder named after it (listed).</summary>
+    static Section SectionOf(IModelView m, SdnfMember mb, ISet<string> unknown)
+    {
+        if (SdnfProfiles.Resolve(m, mb.Size) is { } s) return s;
+        var p = SdnfProfiles.Placeholder(mb.Size.Length > 0 ? mb.Size : "?");
+        unknown.Add(p.Name!);
+        return p;
+    }
+
+    /// <summary>
+    /// A curved member (packet 60) as a curved beam: level (its arc's plane and its ends at one height), its section upright
+    /// all along. Its line through the cardinal point moved to the section's top centre (across the arc: a smaller or
+    /// larger radius; up or down), then the arc through its ends about the file's centre, the way its sweep turns. Lapin's
+    /// own file's node offsets put its ends back on the columns' centres, as a straight beam's.
+    /// </summary>
+    static (string Class, string How)? Curved(ICommandContext ctx, SdnfMember mb, SdnfArc arc, string id, string source, bool lapinFile, ISet<string> unknown, List<string> notes)
+    {
+        var m = ctx.Model;
+        var section = SectionOf(m, mb, unknown);
+        var (s, e) = (mb.Start, mb.End);
+        if (lapinFile) (s, e) = (s + mb.StartOffset, e + mb.EndOffset);
+        var c = arc.Centre;
+        var n = arc.Normal.Length > 1e-9 ? arc.Normal.Normalized() : Vec3.UnitZ;
+        var radius = (s - c).Length;
+        if (radius < 1e-3 || (e - c).Length < 1e-3) { notes.Add($"Curved member {mb.Id} has its ends on its centre: left out."); return null; }
+        // The normal about which it runs counter-clockwise from its start to its end; its tangent at the start.
+        var ccwN = arc.Sweep < 0 ? -n : n;
+        var u0 = Vec3.Cross(ccwN, s - c).Normalized();
+        var (v, w, flipped) = Frame(u0, mb.Orientation, mb.Rotation, mb.MirrorX, mb.MirrorY);
+        if (!Handed(section)) flipped = false;
+        var level = Math.Abs(n.Z) > 1 - 1e-6 && Math.Abs(s.Z - e.Z) < 1e-6 && Math.Abs(s.Z - c.Z) < 1e-6 && Vec3.Dot(w, Vec3.UnitZ) > 1 - 1e-6;
+        if (!level)
+        {
+            notes.Add($"Curved member {mb.Id} ({mb.Size}) arches out of a level plane or has its section turned: Lapin's curved members are level beams with their sections upright, so it was left out.");
+            return null;
+        }
+        // The section's top centre: across the arc by the cardinal point's x (v is radial, ±1 outward), up by what its y leaves.
+        var (cx, cy) = CardinalOffset(mb.Cardinal, section);
+        var outward = Vec3.Dot(v, (s - c).Normalized());
+        var rr = radius - outward * cx;
+        var top = s.Z - cy + section.Depth / 2;
+        var cc = c.Xy;
+        var (d0, d1) = ((s - c).Xy.Normalized(), (e - c).Xy.Normalized());
+        var (a, b) = (cc + d0 * rr, cc + d1 * rr);
+        var ccw = ccwN.Z > 0;
+        var turn = Math.Atan2(Vec2.Cross(d0, d1), Vec2.Dot(d0, d1));
+        if (!ccw) turn = -turn;
+        if (turn <= 1e-9) turn += 2 * Math.PI;
+        var rise = rr * (1 - Math.Cos(turn / 2)) * (ccw ? -1 : 1);
+        var chord = (b - a).Length;
+        if (chord < 1e-3 || Math.Abs(rise) > 10 * chord) { notes.Add($"Curved member {mb.Id} closes nearly a full circle: Lapin's curved beams do not, so it was left out."); return null; }
+
+        var existing = m.Get(id);
+        const string cls = IfcClass.Beam;
+        if (existing != null && existing.Class != cls) notes.Add($"„{existing.Name}” is curved in the file: made again as a curved beam, its id kept.");
+        var material = MaterialFor(ctx, mb.Grade, section);
+        Entity? type = existing?.Class == cls && m.RelatingOf(id, IfcClass.RelDefinesByType) is { } had && Section.From(had.Attrs["section"]) is { } hs && SameProfile(hs, section)
+            && (material == null || (string?)had.Attrs["material"] == Materials.Find(m, material)?.Id) ? had : null;
+        type ??= TypeFor(ctx, IfcClass.BeamType, section, material);
+        var kept = existing?.Class == cls ? Spatial.StoreyOf(m, id) : null;
+        var storey = kept ?? Spatial.Storeys(m).LastOrDefault(x => x.Num("elevation") < top - 1e-3) ?? Spatial.Storeys(m).First();
+        var attrs = existing?.Class == cls ? existing.CloneAttrs() : new JsonObject();
+        attrs["start"] = J2(a);
+        attrs["end"] = J2(b);
+        attrs["topOffset"] = R(top - storey.Num("elevation") - storey.Num("height", 3));
+        attrs[PathCurve.Key] = R(rise);
+        if (flipped) attrs["flipped"] = true; else attrs.Remove("flipped");
+        return (cls, Commit(ctx, mb, id, source, existing, cls, attrs, "BEAM", storey, type));
+    }
+
+    /// <summary>A loop without its closing vertex.</summary>
+    static List<Vec3> Open(IReadOnlyList<(Vec3 P, double Flag)> loop)
+    {
+        var pts = loop.Select(x => x.P).ToList();
+        if (pts.Count > 1 && (pts[^1] - pts[0]).Length < 1e-9) pts.RemoveAt(pts.Count - 1);
+        return pts;
+    }
+
+    /// <summary>
+    /// A member's holes as the file has them, in its frame (they go with it), in place of those it had; none given, it keeps
+    /// none. A round hole by its centres and radius; any other by its two loops (curved edges straight between their
+    /// vertices). The count put on it.
+    /// </summary>
+    static int SetHoles(ICommandContext ctx, string id, IReadOnlyList<SdnfHole> holes, List<string> notes)
+    {
+        if (ctx.Model.Get(id) is not { } e) return 0;
+        var list = new List<MemberHole>();
+        if (holes.Count > 0)
+        {
+            if (MemberAxes.Of(ctx.Model, e) is not { } ax)
+                notes.Add($"„{e.Name}” is curved: its {holes.Count} hole(s) were left out (Lapin cuts holes in straight members).");
+            else
+            {
+                var origin = MemberHoles.Origin(ctx.Model, e, ax);
+                Vec3 L(Vec3 p) => MemberHoles.Local(ax, origin, p);
+                foreach (var h in holes)
+                {
+                    var (top, bottom) = (Open(h.Top), Open(h.Bottom));
+                    var round = h.Periphery == 2;
+                    if (top.Count == 0 || bottom.Count != top.Count || (top[0] - bottom[0]).Length < 1e-6 || (round ? !(h.Top[0].Flag > 0) : top.Count < 3))
+                    {
+                        notes.Add($"Hole {h.Id} in „{e.Name}” has no shape or no depth: left out.");
+                        continue;
+                    }
+                    if (h.Top.Any(x => x.Flag == 2) && !round) notes.Add($"Hole {h.Id}: its curved edges came in straight between their vertices.");
+                    list.Add(new MemberHole(h.Id, round ? h.Top[0].Flag : 0, [.. top.Select(L)], [.. bottom.Select(L)]));
+                }
+            }
+        }
+        if (list.Count == 0 && e.Attrs[MemberHoles.Key] == null) return 0;
+        var attrs = e.CloneAttrs();
+        if (list.Count == 0) attrs.Remove(MemberHoles.Key); else attrs[MemberHoles.Key] = MemberHoles.Write(list);
+        ctx.Replace(e.With(attrs: attrs));
+        return list.Count;
     }
 
     static bool IsAlong(Vec3 offset, Vec3 u) => offset.Length < 1e-9 || Vec3.Cross(offset, u).Length < 1e-6 * Math.Max(1, offset.Length);
 
-    /// <summary>A plate as an element of its own, its body the plate's (a prism between its two faces; a circle by the chord rule).</summary>
-    static bool Plate(ICommandContext ctx, SdnfPlate p, string id, string source)
+    /// <summary>A loop as an element keeps it: [x, y, z, flag] each.</summary>
+    public static JsonArray LoopJson(IReadOnlyList<(Vec3 P, double Flag)> loop) =>
+        new([.. loop.Select(x => (JsonNode)new JsonArray(R(x.P.X), R(x.P.Y), R(x.P.Z), R(x.Flag)))]);
+
+    public static List<(Vec3 P, double Flag)> LoopOf(JsonNode? n) =>
+        n is JsonArray a ? [.. a.OfType<JsonArray>().Where(x => x.Count >= 4).Select(x => (new Vec3(Json.Number(x[0]) ?? 0, Json.Number(x[1]) ?? 0, Json.Number(x[2]) ?? 0), Json.Number(x[3]) ?? 0))] : [];
+
+    /// <summary>
+    /// A plate as an element of its own, its body the plate's (a prism between its two faces; a circle by the chord rule),
+    /// its through holes cut in it: each laid onto the plate's face along its thickness, kept when it lies inside the plate.
+    /// The plate as the file has it and its holes are kept with it (<c>sdnf.def</c>, <c>sdnf.holes</c>), so an SDNF export
+    /// writes them back. The count of holes cut; −1 when the plate has no body.
+    /// </summary>
+    static int Plate(ICommandContext ctx, SdnfPlate p, string id, string source, IReadOnlyList<SdnfHole> holes, List<string> notes)
     {
-        static List<Vec3> Open(IReadOnlyList<(Vec3 P, double Flag)> loop)
-        {
-            var pts = loop.Select(x => x.P).ToList();
-            if (pts.Count > 1 && (pts[^1] - pts[0]).Length < 1e-9) pts.RemoveAt(pts.Count - 1);
-            return pts;
-        }
-        Solid? solid = null;
+        List<Vec3>? outline = null;
+        var sweep = Vec3.Zero;
         if (p.Periphery == 2 && p.Top.Count > 0)
         {
             var c0 = p.Top[0].P;
             var c1 = p.Bottom.Count > 0 ? p.Bottom[0].P : c0;
             var r = p.Top[0].Flag;
-            var axis = c1 - c0;
-            if (axis.Length < 1e-9) axis = Vec3.UnitZ * p.Thickness;
-            var (e1, e2) = VecMath.PlaneBasis(axis.Normalized());
-            var n = Math.Max(8, Chords.Circle(r));
-            var ring = Enumerable.Range(0, n).Select(i => c0 + e1 * (r * Math.Cos(2 * Math.PI * i / n)) + e2 * (r * Math.Sin(2 * Math.PI * i / n))).ToList();
-            if (r > 0) solid = Prism.Extrude(ring, null, axis, "plate");
+            sweep = c1 - c0;
+            if (sweep.Length < 1e-9) sweep = Vec3.UnitZ * p.Thickness;
+            if (r > 0) outline = MemberHoles.Ring(c0, sweep, r);
         }
         else
         {
@@ -355,7 +498,6 @@ public static class SdnfImport
             var bottom = Open(p.Bottom);
             if (top.Count >= 3)
             {
-                Vec3 sweep;
                 if (bottom.Count == top.Count) sweep = bottom[0] - top[0];
                 else
                 {
@@ -365,10 +507,57 @@ public static class SdnfImport
                     top = top.Select(x => x + nn * start).ToList();
                     sweep = nn * p.Thickness;
                 }
-                if (sweep.Length > 1e-9) solid = Prism.Extrude(top, null, sweep, "plate");
+                outline = top;
             }
         }
-        if (solid == null) return false;
+        if (outline == null || sweep.Length < 1e-9) return -1;
+
+        // The holes, on the plate's face: through it, inside it.
+        var normal = VecMath.NewellNormal(outline).Normalized();
+        var along = Vec3.Dot(normal, sweep);
+        var (e1, e2) = VecMath.PlaneBasis(normal);
+        Vec2 In2(Vec3 q) => new(Vec3.Dot(q - outline[0], e1), Vec3.Dot(q - outline[0], e2));
+        var face = outline.Select(In2).ToList();
+        var rings = new List<IReadOnlyList<Vec3>>();
+        var kept = new JsonArray();
+        foreach (var h in holes)
+        {
+            if (h.Thickness > 1e-9 && h.Thickness < p.Thickness - 1e-4)
+            {
+                notes.Add($"Hole {h.Id} goes {h.Thickness * 1000:0.#} mm into plate {p.Id}, {p.Thickness * 1000:0.#} mm thick: a recess, which Lapin's plates do not take, so it was left out.");
+                continue;
+            }
+            var round = h.Periphery == 2;
+            List<Vec3> ring;
+            if (round)
+            {
+                if (h.Top.Count == 0 || !(h.Top[0].Flag > 0)) { notes.Add($"Hole {h.Id} has no radius: left out."); continue; }
+                var axis = h.Bottom.Count > 0 && (h.Bottom[0].P - h.Top[0].P).Length > 1e-9 ? h.Bottom[0].P - h.Top[0].P : sweep;
+                ring = MemberHoles.Ring(h.Top[0].P, axis, h.Top[0].Flag);
+            }
+            else
+            {
+                ring = Open(h.Top);
+                if (ring.Count < 3) { notes.Add($"Hole {h.Id} has fewer than three vertices: left out."); continue; }
+                if (h.Top.Any(x => x.Flag == 2)) notes.Add($"Hole {h.Id}: its curved edges came in straight between their vertices.");
+            }
+            // Laid onto the face along the plate's thickness.
+            ring = [.. ring.Select(q => q + sweep * (Vec3.Dot(normal, outline[0] - q) / along))];
+            if (!ring.All(q => Polygon2.Contains(face, In2(q))))
+            {
+                notes.Add($"Hole {h.Id} is not inside plate {p.Id}: left out.");
+                continue;
+            }
+            rings.Add(ring);
+            kept.Add((JsonNode)new JsonObject
+            {
+                ["id"] = h.Id, ["periphery"] = h.Periphery, ["thickness"] = R(h.Thickness),
+                ["top"] = LoopJson(h.Top), ["bottom"] = LoopJson(h.Bottom),
+            });
+        }
+        var solid = Prism.Extrude(outline, rings, sweep, "plate");
+        if (solid == null) return -1;
+
         var mesh = Tessellator.Tessellate(solid);
         var verts = new List<Vec3>(mesh.Positions.Length / 3);
         for (var i = 0; i + 2 < mesh.Positions.Length; i += 3) verts.Add(new Vec3(mesh.Positions[i], mesh.Positions[i + 1], mesh.Positions[i + 2]));
@@ -377,10 +566,20 @@ public static class SdnfImport
         var material = MaterialFor(ctx, p.Grade, Section.Rectangle(1, 1)) ?? "Steel";
         var mat = Materials.Ensure(ctx, material);
         var name = p.PieceMark.Length > 0 ? p.PieceMark : "Plate";
+        var sdnf = new JsonObject
+        {
+            ["plate"] = p.Id, ["source"] = source,
+            ["def"] = new JsonObject
+            {
+                ["connect"] = p.ConnectPoint, ["type"] = p.Type, ["grade"] = p.Grade, ["thickness"] = R(p.Thickness), ["periphery"] = p.Periphery,
+                ["top"] = LoopJson(p.Top), ["bottom"] = LoopJson(p.Bottom),
+            },
+        };
+        if (kept.Count > 0) sdnf["holes"] = kept;
         var attrs = new JsonObject
         {
             [StoredBodies.Key] = StoredBodies.Write([(name, Materials.ColorOf(ctx.Model, mat.Id), verts, tris)]),
-            [Key] = new JsonObject { ["plate"] = p.Id, ["source"] = source },
+            [Key] = sdnf,
             ["properties"] = new JsonObject
             {
                 ["SDNF"] = new JsonObject
@@ -390,15 +589,16 @@ public static class SdnfImport
                 },
             },
         };
+        if (kept.Count > 0) ((JsonObject)((JsonObject)attrs["properties"]!)["SDNF"]!)["Holes"] = kept.Count.ToString(Inv);
         if (ctx.Model.Get(id) is { } had)
         {
             if (had.Class == "IfcPlate") ctx.Replace(had.With(name: name, attrs: attrs));
-            else return false;
+            else return -1;
         }
         else ctx.Add(new Entity(id, "IfcPlate", name, attrs, "USERDEFINED"));
         var minZ = verts.Count > 0 ? verts.Min(x => x.Z) : 0;
         var storey = StoreyAt(ctx.Model, minZ);
         if (Spatial.StoreyOf(ctx.Model, id)?.Id != storey.Id) Spatial.Contain(ctx, storey.Id, id);
-        return true;
+        return rings.Count;
     }
 }

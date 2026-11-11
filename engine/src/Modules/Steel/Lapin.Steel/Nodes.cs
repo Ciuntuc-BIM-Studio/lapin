@@ -208,7 +208,11 @@ public static class SteelNodes
     // ------------------------------------------------------------ parts
 
     /// <summary>What a connection is made of: its parts (plates, bolts, anchors), its welds, what could not be, the footing its anchors go into, and the rows of bolts it has.</summary>
-    public sealed record Built(List<GeometryPart> Parts, List<Weld> Welds, List<string> Problems, Entity? Footing, NodeSpec Spec, int Rows, List<PlanItem> Plan);
+    public sealed record Built(List<GeometryPart> Parts, List<Weld> Welds, List<string> Problems, Entity? Footing, NodeSpec Spec, int Rows, List<PlanItem> Plan)
+    {
+        /// <summary>Its bolts' and anchors' lines: where each starts (a bolt's head face, an anchor's plate top), the way it runs, its diameter and grip; their holes are the plates' (an SDNF export writes them).</summary>
+        public IReadOnlyList<(Vec3 At, Vec3 Dir, double D, double Grip)> BoltLines { get; init; } = [];
+    }
 
     const string BoltColor = "#3c4550";
     static double Up5(double m) => Math.Ceiling(m * 1000 / 5 - 1e-9) * 5 / 1000;
@@ -220,6 +224,7 @@ public static class SteelNodes
     {
         public readonly List<GeometryPart> List = [];
         public readonly List<PlanItem> Plan = [];
+        public readonly List<(Vec3 At, Vec3 Dir, double D, double Grip)> Lines = [];
         int bolts, anchors, plates;
 
         public void Plate(string name, Solid? s, double t, double w, double l, bool plan = true)
@@ -236,6 +241,7 @@ public static class SteelNodes
         public void Bolt(Vec3 headFace, Vec3 dir, double grip)
         {
             if (Fasteners.Bolt(headFace, dir, spec.Bolt, grip) is not { } s) return;
+            Lines.Add((headFace, dir.Normalized(), spec.Bolt, grip));
             var size = $"M{Mm(spec.Bolt)}×{Mm(Fasteners.Length(spec.Bolt, grip))}";
             List.Add(new GeometryPart($"Bolt {size}", BoltColor, s, material, $"steel-bolt:{++bolts}")
             {
@@ -297,7 +303,7 @@ public static class SteelNodes
                 case "gusset": rows = Gusset(m, node, js, spec, parts, welds, problems); break;
                 case "fly": rows = Fly(m, js, spec, parts, problems); break;
             }
-        return new Built(parts.List, welds, problems, footing, spec, rows, parts.Plan);
+        return new Built(parts.List, welds, problems, footing, spec, rows, parts.Plan) { BoltLines = parts.Lines };
     }
 
     // ------------------------------------------------------------ column base
@@ -383,6 +389,7 @@ public static class SteelNodes
             var outward = (w.Xy - where).Length > 1e-6 ? (w.Xy - where) : ax.Frame.V.Xy;
             var (rod, len) = Fasteners.Anchor(w.Xy, z0 + tp, bottom, d, hook, outward);
             parts.Anchor(rod, len, footing);
+            if (rod != null) parts.Lines.Add((new Vec3(w.X, w.Y, z0 + tp), new Vec3(0, 0, -1), d, tp));
             if (spec.Anchor == "plate")
                 parts.AnchorPlate(Prism.Box(new Vec3(w.X, w.Y, bottom + plateT / 2), plateSide, plateSide, plateT, "anchorplate"), plateT, plateSide);
         }

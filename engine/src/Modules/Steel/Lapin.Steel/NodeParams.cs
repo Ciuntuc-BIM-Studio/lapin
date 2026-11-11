@@ -103,6 +103,9 @@ public sealed record NodeSpec(
     static double Up10(double m) => Math.Ceiling(m * 100 - 1e-9) / 100;
     static double Up50(double m) => Math.Ceiling(m * 20 - 1e-9) / 20;
 
+    /// <summary>A bolt's hole: 2 mm wider than the bolt, 3 mm past M24.</summary>
+    public static double Hole(double bolt) => bolt + (bolt > 0.024 ? 0.003 : 0.002);
+
     /// <summary>
     /// The parameters of a connection of <paramref name="kind"/> resolved over the section it bolts
     /// (<paramref name="bolted"/>: the column at a base, the rafter at an eaves, the rafters at an apex or a splice, the
@@ -120,7 +123,7 @@ public sealed record NodeSpec(
             : kind == "gusset" ? (h < 0.07 ? 0.012 : 0.016)
             : kind == "fly" ? 0.012
             : h < 0.3 ? 0.016 : h < 0.45 ? 0.02 : h < 0.6 ? 0.024 : 0.027);
-        var hole = bolt + (bolt > 0.024 ? 0.003 : 0.002);
+        var hole = Hole(bolt);
         var edge = p.Edge ?? Up5(1.5 * hole);
         var pitch = p.Pitch ?? Up5(Math.Max(3 * hole, 0.06));
         var plate = p.Plate ?? (basePlate ? (fixedBase ? (h < 0.5 ? 0.03 : 0.04) : (h < 0.4 ? 0.02 : 0.025))

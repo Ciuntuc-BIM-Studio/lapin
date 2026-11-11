@@ -21,6 +21,9 @@ public sealed record SdnfExportOptions(IReadOnlySet<string>? Storeys = null, IRe
 /// a flipped section is mirrored about its Y axis. Steel ends (extensions, cuts, mitres, fits) are the cutbacks.</item>
 /// <item>Ids: a member's number is the one it came with from an SDNF file, else a number from its GlobalId; a comment
 /// (<c># Lapin member n GlobalId</c>) maps each number to its element, so an import of the file finds them again.</item>
+/// <item>Curved beams as curved members (packet 60, decision 480); the plates an SDNF file brought, as it had them; the holes
+/// (packet 22) of those plates, of the members (their parent the member's number) and those the connections' bolts and
+/// anchors make in their plates (SDNF has no bolts).</item>
 /// <item>No end releases (Lapin has none yet): every end is written fixed.</item>
 /// </list>
 /// </summary>
@@ -67,9 +70,25 @@ public static class SdnfExport
         var members = new List<SdnfMember>();
         var comments = new List<string> { "Written by Lapin. Lapin's elements by SDNF number: member, plate or grid, its number, its GlobalId." };
         var exported = new HashSet<string>();
+        var holes = new List<SdnfHole>();
+        var holeNumbers = new HashSet<long>();
+        long HoleNumber(long? own, string key)
+        {
+            if (own is { } x && x > 0 && holeNumbers.Add(x)) return x;
+            var n = NumberOf(key);
+            while (!holeNumbers.Add(n)) n = n % 99_999_999 + 1;
+            return n;
+        }
         foreach (var e in elements)
         {
-            if (e.Class == IfcClass.Beam && PathCurve.Of(e).IsArc) { Skip(e, "a curved beam: SDNF's linear members are straight"); continue; }
+            if (e.Class == IfcClass.Beam && PathCurve.Of(e).IsArc)
+            {
+                if (Curved(m, e, numbers[e.Id]) is not { } cm) { Skip(e, "a curved beam that lies entirely in columns"); continue; }
+                members.Add(cm);
+                comments.Add($"Lapin member {numbers[e.Id]} {e.Id}");
+                exported.Add(e.Id);
+                continue;
+            }
             if (MemberAxes.Of(m, e) is not { } ax)
             {
                 Skip(e, e.Class == IfcClass.Beam ? "a beam that lies entirely in columns" : "an element with no length");
@@ -101,6 +120,18 @@ public static class SdnfExport
                 Clean(w), ax.Start, ax.End, c0, c1) { StartOffset = o0, EndOffset = o1 });
             comments.Add($"Lapin member {numbers[e.Id]} {e.Id}");
             exported.Add(e.Id);
+            // Its holes, their parent the member's number (SDNF's parent is a plate's: a program that finds no plate of it leaves them out).
+            var origin = MemberHoles.Origin(m, e, ax);
+            var k = 0;
+            foreach (var h in MemberHoles.Of(e))
+            {
+                var top = h.Top.Select(p => MemberHoles.World(ax, origin, p)).ToList();
+                var bottom = h.Bottom.Select(p => MemberHoles.World(ax, origin, p)).ToList();
+                var number = HoleNumber(h.Number, $"hole:{e.Id}:{k++}");
+                holes.Add(h.Round
+                    ? new SdnfHole(number, numbers[e.Id], 2, (bottom[0] - top[0]).Length, [(top[0], h.Radius)], [(bottom[0], h.Radius)])
+                    : new SdnfHole(number, numbers[e.Id], 0, (bottom[0] - top[0]).Length, Closed(top), Closed(bottom)));
+            }
         }
 
         // The plates of the steel connections of the members written.
@@ -110,6 +141,7 @@ public static class SdnfExport
         {
             if (!SteelNodes.MembersOf(node).Any(j => exported.Contains(j.Id)) || o.Hidden?.Contains(node.Id) == true || o.Kinds?.Contains(SteelNodes.Class) == false) continue;
             if (q.Geometry(node.Id) is not { } g) continue;
+            var bolts = SteelNodes.Build(m, node).BoltLines;
             foreach (var part in g.Parts)
             {
                 if (part.Key is not { } key || !(key.StartsWith("steel-plate:", StringComparison.Ordinal) || key.StartsWith("steel-anchorplate:", StringComparison.Ordinal))) continue;
@@ -120,6 +152,30 @@ public static class SdnfExport
                 var grade = part.Properties?.FirstOrDefault(p => p.Name == "Grade").Value ?? "S235";
                 plates.Add(new SdnfPlate(n, 0, "Plate", part.Name, grade, loops.Thickness, 0, Closed(loops.Top), Closed(loops.Bottom)));
                 comments.Add($"Lapin plate {n} {tag}");
+                // The holes its bolts and anchors go through: round, as wide as the connection's rule (2 or 3 mm over the bolt).
+                var k = 0;
+                foreach (var (top, bottom, d) in BoltHoles(loops.Top, loops.Bottom, bolts))
+                    holes.Add(new SdnfHole(HoleNumber(null, $"hole:{tag}:{k++}"), n, 2, loops.Thickness, [(top, NodeSpec.Hole(d) / 2)], [(bottom, NodeSpec.Hole(d) / 2)]));
+            }
+        }
+
+        // The plates an SDNF file brought (kept as the file had them), and their holes.
+        foreach (var e in m.OfClass("IfcPlate").Where(Wanted).OrderBy(e => e.Id, StringComparer.Ordinal))
+        {
+            if (e.Attrs[SdnfImport.Key] is not JsonObject so || so["def"] is not JsonObject def) continue;
+            var (top, bottom) = (SdnfImport.LoopOf(def["top"]), SdnfImport.LoopOf(def["bottom"]));
+            if (top.Count == 0) continue;
+            var n = Json.Number(so["plate"]) is { } own && own > 0 ? (long)own : NumberOf(e.Id);
+            while (!plateNumbers.Add(n) || used.Contains(n)) n = n % 99_999_999 + 1;
+            plates.Add(new SdnfPlate(n, (int)(Json.Number(def["connect"]) ?? 0), (string?)def["type"] ?? "Plate", e.Name == "Plate" ? "" : e.Name, (string?)def["grade"] ?? "",
+                Json.Number(def["thickness"]) ?? 0, (int)(Json.Number(def["periphery"]) ?? 0), top, bottom));
+            comments.Add($"Lapin plate {n} {e.Id}");
+            var k = 0;
+            foreach (var h in (so["holes"] as JsonArray)?.OfType<JsonObject>() ?? [])
+            {
+                var (ht, hb) = (SdnfImport.LoopOf(h["top"]), SdnfImport.LoopOf(h["bottom"]));
+                if (ht.Count == 0) continue;
+                holes.Add(new SdnfHole(HoleNumber(Json.Number(h["id"]) is { } hid ? (long)hid : null, $"hole:{e.Id}:{k++}"), n, (int)(Json.Number(h["periphery"]) ?? 0), Json.Number(h["thickness"]) ?? 0, ht, hb));
             }
         }
 
@@ -136,16 +192,69 @@ public static class SdnfExport
         var now = o.Now ?? DateTime.Now;
         var title = new SdnfTitle("SDNF Version 3.0", "", "", Spatial.Building(m)?.Name ?? "", Spatial.Project(m)?.Name ?? q.Title ?? "",
             now.ToString("MM/dd/yy", Inv), now.ToString("HH:mm", Inv), 0, "Lapin", "");
-        var file = new SdnfFile(title, members, plates, grids);
+        var file = new SdnfFile(title, members, plates, grids) { Holes = holes };
         var report = new JsonObject
         {
-            ["members"] = members.Count, ["plates"] = plates.Count, ["grids"] = grids.Count, ["skipped"] = skipped,
+            ["members"] = members.Count, ["curved"] = members.Count(x => x.Arc != null), ["plates"] = plates.Count, ["holes"] = holes.Count, ["grids"] = grids.Count, ["skipped"] = skipped,
             ["byType"] = new JsonObject(members.GroupBy(x => x.Type).OrderBy(x => x.Key).Select(x => KeyValuePair.Create(x.Key, (JsonNode?)x.Count()))),
         };
         return new Result(file, comments, report);
     }
 
     static Entity? Place(IModelView m, Entity e) => m.RelatingOf(e.Id, IfcClass.RelDefinesByType);
+
+    static string GradeOf(IModelView m, Entity e)
+    {
+        var material = (string?)Place(m, e)?.Attrs["material"] is { } mid ? m.Get(mid) : null;
+        return material == null ? "" : StructuralMaterials.Of(m, material).Grade ?? material.Name;
+    }
+
+    /// <summary>
+    /// A curved beam as a curved member (packet 60): its clear span along the arc at its top (cardinal point 8), its own ends
+    /// (the columns' centres) as the offsets to its nodes; the arc's centre at that height, the normal about which it turns
+    /// counter-clockwise from start to end (up, or down), the sweep, the start angle from x; the section's up as the
+    /// orientation, mirrored when flipped.
+    /// </summary>
+    static SdnfMember? Curved(IModelView m, Entity e, long number)
+    {
+        var span = Beams.SpanOf(m, e);
+        if (span.Empty) return null;
+        var c = span.Curve;
+        var top = Beams.Top(m, e);
+        var (a, b) = (span.Start.At(top), span.End.At(top));
+        var normal = c.Rise < 0 ? Vec3.UnitZ : -Vec3.UnitZ;
+        var centre = c.Centre.At(top);
+        var sweep = (span.S1 - span.S0) / c.Radius * 180 / Math.PI;
+        return new SdnfMember(number, 8, "Beam", "", SdnfProfiles.NameOf(Beams.Spec(m, e).Section), GradeOf(m, e), 0, false, e.Bool("flipped"), Vec3.UnitZ, a, b)
+        {
+            StartOffset = c.Start.At(top) - a, EndOffset = c.End.At(top) - b,
+            Arc = new SdnfArc(centre, SdnfArc.AngleOf(centre, normal, a), sweep, normal),
+        };
+    }
+
+    /// <summary>
+    /// The holes the bolts and anchors make in a plate: each line that crosses both its faces within its grip, square enough
+    /// to the plate, inside its outline; the hole's centre on each face and the fastener's diameter.
+    /// </summary>
+    public static IEnumerable<(Vec3 Top, Vec3 Bottom, double D)> BoltHoles(IReadOnlyList<Vec3> top, IReadOnlyList<Vec3> bottom, IReadOnlyList<(Vec3 At, Vec3 Dir, double D, double Grip)> bolts)
+    {
+        var through = top[0] - bottom[0];
+        if (through.Length < 1e-9) yield break;
+        var n = through.Normalized();
+        var (e1, e2) = VecMath.PlaneBasis(n);
+        Vec2 In2(Vec3 p) => new(Vec3.Dot(p - top[0], e1), Vec3.Dot(p - top[0], e2));
+        var face = top.Select(In2).ToList();
+        foreach (var (at, dir, d, grip) in bolts)
+        {
+            var across = Vec3.Dot(n, dir);
+            if (Math.Abs(across) < 0.5) continue;
+            var (st, sb) = (Vec3.Dot(n, top[0] - at) / across, Vec3.Dot(n, bottom[0] - at) / across);
+            if (Math.Min(st, sb) < -1e-4 || Math.Max(st, sb) > grip + 1e-4) continue;
+            var (pt, pb) = (at + dir * st, at + dir * sb);
+            if (!Polygon2.Contains(face, In2(pt))) continue;
+            yield return (pt, pb, d);
+        }
+    }
 
     /// <summary>The SDNF type: Column, Beam, or a member's predefined type (Brace, Purlin, Rafter…).</summary>
     static string TypeName(Entity e) => e.Class switch
