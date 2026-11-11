@@ -16,6 +16,9 @@
 //   pnpm docs:user --theme graphite the pictures in the dark theme, for a look only (build/user-docs/shots-graphite; no pages)
 //   pnpm docs:user --full          every scene again, whatever changed (else only the scenes whose inputs changed: below)
 //   pnpm docs:user --jobs 4        how many scenes run at once (default: by this computer's cores and memory, at most 4)
+//   pnpm docs:user --product <id|file> --scenes <file> --docs <folder> [--alone] [--out <folder>]
+//                                  an edition's own scenes and pages with the guide's (--alone: its own only, a guide of its own),
+//                                  written to --out instead of build/user-docs (its state beside it, <folder>-cache)
 //   pnpm docs:user --seed-from <ref> --seed-log <log>[,<log>…]
 //                                  no pictures: the state seeded from those already taken by a run at <ref> (its logs say which), so the next run takes only what changed since (incremental.mjs, seedState)
 //
@@ -45,9 +48,11 @@ import { LANGS, checkInterfaceLanguages } from './languages.mjs';
 import { FULL_EVERY_DAYS, dependencies, reasonToRun, seedState, stateStore } from './incremental.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
-const out = join(root, 'build', 'user-docs');
-const shots = join(out, 'shots');
 const args = process.argv.slice(2);
+// Where the guide goes: build/user-docs, or another folder (--out: an edition's guide kept apart from the published one, its state in <folder>-cache).
+const out = args.includes('--out') ? resolvePath(args[args.indexOf('--out') + 1]) : join(root, 'build', 'user-docs');
+const outName = args.includes('--out') ? out : 'build/user-docs';
+const shots = join(out, 'shots');
 const only = args.includes('--only') ? String(args[args.indexOf('--only') + 1]).split(',') : null;
 checkInterfaceLanguages(root);
 // Another edition (a premium module's pictures, taken with its own scenes from its repository): --product lapin-urban --scenes ../lapin-urban/docs/scenes.mjs
@@ -55,7 +60,10 @@ checkInterfaceLanguages(root);
 const productId = args.includes('--product') ? args[args.indexOf('--product') + 1] : 'lapin';
 const extraFile = args.includes('--scenes') ? resolvePath(args[args.indexOf('--scenes') + 1]) : null;
 const extra = extraFile ? (await import(pathToFileURL(extraFile).href)).scenes ?? [] : [];
-const scenes = [...ownScenes, ...extra];
+// --alone: the edition's scenes and pages only (a guide of its own, none of the guide's pages or pictures in it).
+const alone = args.includes('--alone');
+if (alone && (!extraFile || !args.includes('--docs'))) { console.error('✗ --alone takes --scenes <file> and --docs <folder>: the edition\'s own'); process.exit(1); }
+const scenes = alone ? extra : [...ownScenes, ...extra];
 // How many at once: a worker (an engine, Vite and Chrome) takes about two cores and a few GB while a scene runs.
 const jobs = args.includes('--jobs') ? Math.max(1, Number(args[args.indexOf('--jobs') + 1]) || 1)
   : Math.max(1, Math.min(4, Math.floor(availableParallelism() / 2.5), Math.floor(totalmem() / 2 ** 30 / 6)));
@@ -68,10 +76,10 @@ const theme = args.includes('--theme') ? args[args.indexOf('--theme') + 1] : nul
 if (theme && !['paper', 'graphite'].includes(theme)) { console.error('✗ --theme: paper or graphite'); process.exit(1); }
 /** A language's pictures: shots/ for English, shots/<id>/ for the others (shots-<theme>/ for another theme's). */
 const shotsOf = (lang) => { const base = theme ? join(out, `shots-${theme}`) : shots; return lang === 'en' ? base : join(base, lang); };
-const store = theme ? null : stateStore(root, productId.endsWith('.json') ? resolveProduct(root, productId).id : productId);
+const store = theme ? null : stateStore(root, productId.endsWith('.json') ? resolveProduct(root, productId).id : productId, args.includes('--out') ? `${out}-cache` : undefined);
 // A seed (--seed-from): the state of pictures taken before it existed, then nothing else.
 if (args.includes('--seed-from')) {
-  if (!store || extraFile || extraDocs || !args.includes('--seed-log')) { console.error('✗ --seed-from <ref> takes --seed-log <log>[,<log>…], for this repository\'s scenes in the paper theme'); process.exit(1); }
+  if (!store || extraFile || extraDocs || args.includes('--out') || !args.includes('--seed-log')) { console.error('✗ --seed-from <ref> takes --seed-log <log>[,<log>…], for this repository\'s scenes in the paper theme'); process.exit(1); }
   const product = resolveProduct(root, productId);
   const productFile = productId.endsWith('.json') ? resolvePath(root, productId) : join(root, 'products', `${productId}.json`);
   const sharedNow = dependencies(root, product, productFile, [{ file: join(root, 'scripts/user-docs/scenes.mjs'), scenes: ownScenes }], [join(root, 'docs/user')]).inputs(ownScenes[0], 'en').shared;
@@ -82,7 +90,7 @@ if (args.includes('--seed-from')) {
 }
 // The languages taken whole: all with --full (and another theme), else each whose last full run is missing or over a week old (not with --only).
 const fullLangs = new Set(args.includes('--pages') ? [] : langs.filter((l) => theme || args.includes('--full') || (!only && store.ageDays(l) > FULL_EVERY_DAYS)));
-if (fullLangs.size) console.log(`▸ a full run of ${[...fullLangs].join(', ')}: ${theme ? 'another theme' : args.includes('--full') ? '--full' : [...fullLangs].map((l) => (store.ageDays(l) === Infinity ? `${l} never ran whole here (build/user-docs-cache)` : `${l} last ran whole ${store.ageDays(l).toFixed(1)} days ago`)).join('; ')}`);
+if (fullLangs.size) console.log(`▸ a full run of ${[...fullLangs].join(', ')}: ${theme ? 'another theme' : args.includes('--full') ? '--full' : [...fullLangs].map((l) => (store.ageDays(l) === Infinity ? `${l} never ran whole here (${args.includes('--out') ? `${out}-cache` : 'build/user-docs-cache'})` : `${l} last ran whole ${store.ageDays(l).toFixed(1)} days ago`)).join('; ')}`);
 // A full run takes every scene again: the pictures start from nothing, so none outlives the scene that took it.
 for (const lang of langs) {
   if (fullLangs.has(lang) && !only) for (const f of existsSync(shotsOf(lang)) ? readdirSync(shotsOf(lang)) : []) if (f.endsWith('.webp')) rmSync(join(shotsOf(lang), f));
@@ -90,9 +98,9 @@ for (const lang of langs) {
 }
 
 if (!args.includes('--pages')) await takePictures();
-if (theme) { console.log(`✓ the pictures in the ${theme} theme → build/user-docs/shots-${theme}`); process.exit(0); }
+if (theme) { console.log(`✓ the pictures in the ${theme} theme → ${outName}/shots-${theme}`); process.exit(0); }
 let failed = false;
-const docs = extraDocs ? mergedDocs(extraDocs) : join(root, 'docs/user');
+const docs = alone ? extraDocs : extraDocs ? mergedDocs(extraDocs) : join(root, 'docs/user');
 for (const lang of LANGS) {
   let r;
   try { r = render(root, out, lang, docs); } catch (e) { console.error(`✗ ${lang}: ${e instanceof Error ? e.message : e}`); failed = true; continue; }
@@ -100,7 +108,7 @@ for (const lang of LANGS) {
   for (const u of unused) console.warn(`▸ ${lang}: a picture no page shows: ${u}`);
   if (missing.length) { console.error(`✗ ${lang}: pictures the pages show but no scene takes: ${missing.join(', ')}`); failed = true; }
   if (english.length) console.log(`▸ ${lang}: ${english.length} page(s) not translated yet, rendered from English: ${english.length === pages ? 'all' : english.join(', ')}`);
-  console.log(`✓ ${lang}: ${pages} pages → build/user-docs${lang === 'en' ? '' : `/${lang}`}`);
+  console.log(`✓ ${lang}: ${pages} pages → ${outName}${lang === 'en' ? '' : `/${lang}`}`);
 }
 if (failed) process.exit(1);
 
@@ -118,8 +126,8 @@ async function takePictures() {
   const chosen = scenes.filter((s) => !only || only.some((o) => s.id.startsWith(o)));
   const productFile = productId.endsWith('.json') ? resolvePath(root, productId) : join(root, 'products', `${productId}.json`);
   const deps = store && dependencies(root, product, productFile,
-    [{ file: join(root, 'scripts/user-docs/scenes.mjs'), scenes: ownScenes }, ...(extraFile ? [{ file: extraFile, scenes: extra }] : [])],
-    [join(root, 'docs/user'), ...(extraDocs ? [extraDocs] : [])]);
+    [...(alone ? [] : [{ file: join(root, 'scripts/user-docs/scenes.mjs'), scenes: ownScenes }]), ...(extraFile ? [{ file: extraFile, scenes: extra }] : [])],
+    [...(alone ? [] : [join(root, 'docs/user')]), ...(extraDocs ? [extraDocs] : [])]);
   const queue = [];
   const kept = [];
   for (const lang of langs) for (const scene of chosen) {

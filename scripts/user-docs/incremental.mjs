@@ -159,9 +159,8 @@ export function reasonToRun(entry, now, folderOf) {
   return why.length ? why.join(', ') : null;
 }
 
-/** The state of a product's pictures: build/user-docs-cache/<product>.json. */
-export function stateStore(root, productId) {
-  const dir = join(root, 'build', 'user-docs-cache');
+/** The state of a product's pictures: build/user-docs-cache/<product>.json (or in `dir`, for a guide written elsewhere: run.mjs --out). */
+export function stateStore(root, productId, dir = join(root, 'build', 'user-docs-cache')) {
   const file = join(dir, `${productId}.json`);
   let state = null;
   try { state = JSON.parse(readFileSync(file, 'utf8')); } catch { state = null; }
