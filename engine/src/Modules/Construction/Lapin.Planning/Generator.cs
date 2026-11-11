@@ -16,6 +16,14 @@ public sealed record GenStep(string Key, string Name, IReadOnlyList<string> Clas
     bool Wet = false, string Link = "FS", int Lag = 0, bool On = true, string? Kind = null, bool Cycle = false)
 {
     public const string Demolition = "demolition";
+
+    /// <summary>The Installations step's classes before every service was taken by its supertype: a spec stored with them is read as today's.</summary>
+    static readonly HashSet<string> LegacyMep =
+    [
+        "IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting", "IfcCableSegment", "IfcCableCarrierSegment", "IfcCableCarrierFitting",
+        "IfcSanitaryTerminal", "IfcValve", "IfcBoiler", "IfcFlowMeter", "IfcAirTerminal", "IfcTank", "IfcSwitchingDevice", "IfcSpaceHeater", "IfcOutlet",
+        "IfcLightFixture", "IfcFilter", "IfcFan", "IfcPump", "IfcElectricDistributionBoard", "IfcBurner", "IfcDistributionChamberElement", "IfcFlowTerminal",
+    ];
     public static readonly string[] Splits = ["once", "storey"];
 
     public JsonObject ToJson()
@@ -39,6 +47,8 @@ public sealed record GenStep(string Key, string Name, IReadOnlyList<string> Clas
         var key = ((string?)o["key"])?.Trim() is { Length: > 0 } k ? k : $"step{i + 1}";
         var name = ((string?)o["name"])?.Trim() is { Length: > 0 } nm ? nm : key;
         var classes = o["classes"] is JsonArray a ? a.Select(x => (string?)x).OfType<string>().Where(s => s.Length > 0).Distinct().ToList() : [];
+        // The installations as an older Lapin listed them: every service now (the list missed ventilation units, dampers, sensors…).
+        if (classes.Count == LegacyMep.Count && LegacyMep.SetEquals(classes)) classes = [IfcSchema.DistributionElement];
         string? part;
         try { part = TaskParts.Parse(o["part"]); } catch (CommandException) { part = null; }
         var split = Splits.Contains((string?)o["split"]) ? (string)o["split"]! : "once";
@@ -99,12 +109,9 @@ public static class Generator
     public const string StylesKey = "scheduleStyles";
     public const string OwnPrefix = "own:";
 
-    static readonly string[] Mep =
-    [
-        "IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting", "IfcCableSegment", "IfcCableCarrierSegment", "IfcCableCarrierFitting",
-        "IfcSanitaryTerminal", "IfcValve", "IfcBoiler", "IfcFlowMeter", "IfcAirTerminal", "IfcTank", "IfcSwitchingDevice", "IfcSpaceHeater", "IfcOutlet",
-        "IfcLightFixture", "IfcFilter", "IfcFan", "IfcPump", "IfcElectricDistributionBoard", "IfcBurner", "IfcDistributionChamberElement", "IfcFlowTerminal",
-    ];
+    // The installations: every building service by its supertype (a ventilation unit, a damper, a sensor, Lapin's exhaust
+    // fan), not a list of the classes that would always miss some (a tester's ventilation, 11.11.2026).
+    static readonly string[] Mep = [IfcSchema.DistributionElement];
     static readonly string[] Interior = ["LapinRoomFinish", "LapinSkirting", "LapinCeiling", "IfcCovering", "LapinWallSweep", "LapinRailing", "IfcRailing", "LapinUnderStair", "IfcFurniture"];
 
     static GenStep S(string key, string name, string[] classes, string split, int days, string? norm, string? part = null, bool wet = false, string link = "FS", int lag = 0, string? kind = null, bool cycle = false) =>

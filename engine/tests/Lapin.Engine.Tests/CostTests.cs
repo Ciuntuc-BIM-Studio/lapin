@@ -62,6 +62,18 @@ public class CostTests
 
     static double N(JsonNode? n) => (double)n!;
 
+    [Fact]
+    public void Every_building_service_is_in_the_installations_chapter_by_its_supertype()
+    {
+        // A ventilation unit, its heat recovery, a damper, a sensor: services the chapter's words did not name.
+        foreach (var cls in new[] { "IfcUnitaryEquipment", "IfcAirToAirHeatRecovery", "IfcDamper", "IfcDuctSilencer", "IfcSensor", "IfcController", "IfcJunctionBox", "IfcPipeSegment", "IfcFan" })
+            Assert.Equal("Installations", Costing.ChapterOf(cls));
+        Assert.Equal("Walls", Costing.ChapterOf("IfcWall"));
+        Assert.Equal("Roof", Costing.ChapterOf("IfcRoof"));
+        Assert.Equal("Other", Costing.ChapterOf("LapinDownpipe"));
+        Assert.Equal("Other", Costing.ChapterOf("IfcBuildingElementProxy"));
+    }
+
     // ------------------------------------------------------------------ price lists
 
     [Fact]

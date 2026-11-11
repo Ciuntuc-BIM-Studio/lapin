@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Lapin.Architecture;
 using Lapin.Drawing.Export;
+using Lapin.Mep;
 using Lapin.Model;
 using Lapin.Package;
 using Lapin.Phases;
@@ -364,5 +365,101 @@ public class PlanningGeneratorTests
         Generate(h);
         Assert.Contains("Old task", Tasks(h).Select(x => (string)x["name"]!));
         Assert.Contains("Load-bearing walls · Ground floor", Tasks(h).Select(x => (string)x["name"]!));
+    }
+
+    /// <summary>A building service as an IFC file's reference brings it: the file's class, a body of its own, on a storey.</summary>
+    static string Service(Fixture f, string storey, string cls, double x)
+    {
+        var corners = new List<Lapin.Geometry.Vec3> { new(x, 20, 0.5), new(x + 1, 20, 0.5), new(x, 21, 0.5), new(x, 20, 1.5) };
+        var faces = new List<(int, int, int)> { (0, 2, 1), (0, 1, 3), (1, 2, 3), (2, 0, 3) };
+        string? id = null;
+        f.Session.Edit("Service", edit =>
+        {
+            var e = new Entity(edit.NewId(), cls, cls[3..], new JsonObject
+            {
+                [StoredBodies.Key] = StoredBodies.Write([("Body", "#888888", corners, faces)]), ["reference"] = true, ["ifcClass"] = cls,
+            });
+            edit.Add(e);
+            Spatial.Contain(edit, Storey(f, storey), e.Id);
+            id = e.Id;
+        });
+        return id!;
+    }
+
+    static List<string> ElementsOf(Fixture f, string task) => Task(f, task)["elements"]!.AsArray().Select(x => (string)x!).ToList();
+
+    [Fact]
+    public void Every_building_service_is_in_the_installations_a_ventilation_unit_its_recovery_dampers_ducts_and_Lapins_exhaust_fan()
+    {
+        // A tester's ventilation was in no task: the step listed the classes it knew, and a unitary equipment was not one of them.
+        var f = F(new MepModule());
+        var wall = Wall(f, "Ground floor", 0);
+        var unit = Service(f, "Ground floor", "IfcUnitaryEquipment", 0);
+        var recovery = Service(f, "Ground floor", "IfcAirToAirHeatRecovery", 2);
+        var damper = Service(f, "Ground floor", "IfcDamper", 4);
+        var silencer = Service(f, "Ground floor", "IfcDuctSilencer", 6);
+        var sensor = Service(f, "Ground floor", "IfcSensor", 8);
+        // IFC2X3's generic classes, as such a file's elements are.
+        var segment = Service(f, "First floor", "IfcFlowSegment", 0);
+        var control = Service(f, "First floor", "IfcDistributionControlElement", 2);
+        var duct = Service(f, "First floor", "IfcDuctSegment", 4);
+        // Lapin's own: an exhaust fan and the duct the mep module draws from it to an outlet in the wall.
+        Wall(f, "First floor", 0);
+        var fan = (string)f.Run("mep.placeFan", new JsonObject { ["storeyId"] = Storey(f, "First floor"), ["kind"] = "ceilingDuct", ["x"] = 2, ["y"] = 2, ["height"] = 2.5 })!["id"]!;
+        var fanDuct = (string)f.Run("mep.fanDuct", new JsonObject { ["id"] = fan, ["x"] = 2, ["y"] = -0.6, ["outlet"] = "wall" })!["ductId"]!;
+        Assert.Equal("LapinExhaustFan", f.Model.Get(fan)!.Class);
+        Assert.Equal("IfcDuctSegment", f.Model.Get(fanDuct)!.Class);
+
+        Generate(f, new JsonObject { ["style"] = "masonry" });
+        Assert.Equal([unit, recovery, damper, silencer, sensor], ElementsOf(f, "Installations · Ground floor"));
+        var first = ElementsOf(f, "Installations · First floor");
+        foreach (var id in new[] { segment, control, duct, fan, fanDuct }) Assert.Contains(id, first);
+        Assert.All(first, id => Assert.True(IfcSchema.IsDistribution(f.Model.Get(id)!.Class), f.Model.Get(id)!.Class));
+        // Per storey, the storey below first; the walls stay the walls' (and nothing is left without a task).
+        Assert.Contains("Installations · Ground floor → Installations · First floor", Links(f));
+        Assert.Contains(wall, ElementsOf(f, "Load-bearing walls · Ground floor"));
+        Assert.DoesNotContain(wall, ElementsOf(f, "Installations · Ground floor"));
+        Assert.Equal(0, (int)Schedule(f)["elements"]!["none"]!);
+        // The rule names the supertype, so a service drawn later joins its storey's task by itself.
+        var later = Service(f, "Ground floor", "IfcHumidifier", 10);
+        Assert.Contains(later, ElementsOf(f, "Installations · Ground floor"));
+    }
+
+    [Fact]
+    public void The_installations_take_no_other_steps_elements_and_a_stored_spec_with_the_old_list_takes_every_service()
+    {
+        // No other step of any template names a service, so none of their elements moves (a downpipe, written as an
+        // IfcPipeSegment, is the roof's: its class is Lapin's own, not a service's).
+        foreach (var t in Generator.Templates)
+            foreach (var step in t.Spec.Steps.Where(s => s.Key != "mep"))
+                Assert.DoesNotContain(step.Classes, c => IfcSchema.IsDistribution(c));
+        Assert.False(IfcSchema.IsDistribution("LapinDownpipe"));
+        Assert.False(IfcSchema.IsDistribution(IfcClass.Wall));
+        Assert.Equal([IfcSchema.DistributionElement], Generator.TemplateOf("concrete").Spec.Steps.Single(s => s.Key == "mep").Classes);
+        // A rule's supertype takes its subtypes, IFC2X3's generic classes among them; a class by its name as before.
+        var rule = new TaskRule(["IfcFlowTerminal"], [], [], [], [], []);
+        Assert.True(rule.TakesClass("IfcAirTerminal"));
+        Assert.True(rule.TakesClass("IfcFlowTerminal"));
+        Assert.False(rule.TakesClass("IfcDuctSegment"));
+        Assert.True(new TaskRule([IfcClass.Wall], [], [], [], [], []).TakesClass(IfcClass.Wall));
+        Assert.False(new TaskRule([IfcClass.Wall], [], [], [], [], []).TakesClass("IfcWallStandardCase"));
+
+        // A schedule generated by an older Lapin keeps its spec: the Installations' old list is read as every service.
+        var old = new JsonArray(
+            "IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting", "IfcCableSegment", "IfcCableCarrierSegment", "IfcCableCarrierFitting",
+            "IfcSanitaryTerminal", "IfcValve", "IfcBoiler", "IfcFlowMeter", "IfcAirTerminal", "IfcTank", "IfcSwitchingDevice", "IfcSpaceHeater", "IfcOutlet",
+            "IfcLightFixture", "IfcFilter", "IfcFan", "IfcPump", "IfcElectricDistributionBoard", "IfcBurner", "IfcDistributionChamberElement", "IfcFlowTerminal");
+        var read = GenStep.Read(new JsonObject { ["key"] = "mep", ["name"] = "Installations", ["classes"] = old.DeepClone(), ["split"] = "storey" }, 0)!;
+        Assert.Equal([IfcSchema.DistributionElement], read.Classes);
+        // A list of the user's own stays as it is.
+        var own = GenStep.Read(new JsonObject { ["key"] = "plumbing", ["classes"] = new JsonArray("IfcPipeSegment", "IfcPipeFitting") }, 0)!;
+        Assert.Equal(["IfcPipeSegment", "IfcPipeFitting"], own.Classes);
+
+        var f = F(new MepModule());
+        var unit = Service(f, "Ground floor", "IfcUnitaryEquipment", 0);
+        var spec = Spec(f);
+        foreach (var s in spec["steps"]!.AsArray().OfType<JsonObject>().Where(s => (string?)s["key"] == "mep")) s["classes"] = old.DeepClone();
+        Generate(f, new JsonObject { ["spec"] = spec });
+        Assert.Equal([unit], ElementsOf(f, "Installations · Ground floor"));
     }
 }

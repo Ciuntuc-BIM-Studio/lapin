@@ -40,6 +40,8 @@ public static class ExhaustFans
         ], "#9fb3c8"));
         r.Class(new(TypeClass, "Exhaust fan type", [], "#9fb3c8", Kind: "type"));
         r.Geometry(Class, (e, m, _) => Geometry(e, m));
+        // A building service as the IfcFan it is written as: a schedule's Installations, an estimate's chapter.
+        IfcSchema.Subtype(Class, "IfcFan");
         r.Quantities(Class, (e, g, m) => [new QuantitySet("Lapin_FanQuantities", [new Quantity("Count", 1, "COUNT", "Count")])]);
         r.Catalog("fanKinds", FanKinds.Catalog());
         r.Catalog("fanParams", FanKinds.ParamsCatalog());

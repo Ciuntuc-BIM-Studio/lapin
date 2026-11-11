@@ -37,8 +37,15 @@ public sealed record TaskRule(IReadOnlyList<string> Classes, IReadOnlyList<strin
         return o;
     }
 
+    /// <summary>
+    /// Whether the rule's classes take an element's class: by its name, or a building service by a supertype the rule names
+    /// (IfcDistributionElement takes a ventilation unit, IfcFlowTerminal an air terminal; <see cref="IfcSchema"/>).
+    /// </summary>
+    public bool TakesClass(string cls) =>
+        Classes.Contains(cls) || (IfcSchema.Parent(cls) != null && Classes.Any(c => IfcSchema.IsA(cls, c)));
+
     public bool Matches(ElementFacts f, string defaultPhase) =>
-        (Classes.Count == 0 || Classes.Contains(f.Element.Class))
+        (Classes.Count == 0 || TakesClass(f.Element.Class))
         && (Types.Count == 0 || f.Type != null && Types.Contains(f.Type))
         && (Storeys.Count == 0 || f.Storey != null && Storeys.Contains(f.Storey))
         && (Materials.Count == 0 || Materials.Any(f.Materials.Contains))
