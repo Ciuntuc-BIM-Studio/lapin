@@ -1896,6 +1896,25 @@ export const RO: Record<string, string> = {
   'Already in My tools': 'Deja în Uneltele mele',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ mută o unealtă, Alt+← → o mută în grupul dinainte sau de după, Delete o scoate, Ctrl+Z anulează ultima schimbare.',
   'The file is not a My tools file.': 'Fișierul nu e un fișier Uneltele mele.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "Pe un traseu",
+  "Spacing along the path (0: share out by the copies)": "Pas pe traseu (0: împarte egal după numărul de copii)",
+  "Start distance": "Distanță de început",
+  "End distance": "Distanță de sfârșit",
+  "Offset from the path (+ left)": "Decalaj față de traseu (+ la stânga)",
+  "Along the path": "Pe direcția traseului",
+  "Turn round": "Întoarce",
+  "Give the copies or a spacing.": "Dă numărul de copii sau un pas.",
+  "Open a plan to click the path in.": "Deschide un plan ca să poți da clic pe traseu.",
+  "Click the path (a line, polyline, arc, wall or road)": "Dă clic pe traseu (o linie, polilinie, arc, perete sau drum)",
+  "Pick a line, polyline, arc, wall or road.": "Alege o linie, polilinie, arc, perete sau drum.",
+  "Base point on the selection (Enter: it stays where it is)": "Punct de bază pe selecție (Enter: rămâne unde e)",
+  "The array could not be made.": "Matricea nu a putut fi făcută.",
+  "Nothing to array": "Nimic de repetat",
+  "Drawn points": "Puncte desenate",
+  "shared out": "împărțit egal",
+  "Select the array": "Selectează matricea",
+  "The copies stay as plain elements": "Copiile rămân elemente obișnuite",
 };
 
 /** Phrases with a number or a name in them. */
@@ -2065,4 +2084,6 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profile din nicio bibliotecă, desenate provizoriu: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} adăugate, ${m[2]} erau deja în biblioteca ta.`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Această piesă de mobilier e de un fel („${m[1]}”) pe care această ediție Lapin nu îl construiește.`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `elementul ${m[1]} din ${m[2]}`],
 ];

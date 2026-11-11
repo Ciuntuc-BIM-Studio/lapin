@@ -1897,6 +1897,25 @@ export const ES: Record<string, string> = {
   'Already in My tools': 'Ya está en Mis herramientas',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ mueve una herramienta, Alt+← → la pasa al grupo anterior o siguiente, Supr la quita, Ctrl+Z deshace el último cambio.',
   'The file is not a My tools file.': 'El archivo no es un archivo de Mis herramientas.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "A lo largo de un trazado",
+  "Spacing along the path (0: share out by the copies)": "Separación a lo largo del trazado (0: repartir según las copias)",
+  "Start distance": "Distancia de inicio",
+  "End distance": "Distancia final",
+  "Offset from the path (+ left)": "Desfase respecto al trazado (+ a la izquierda)",
+  "Along the path": "Según el trazado",
+  "Turn round": "Girar",
+  "Give the copies or a spacing.": "Indica las copias o una separación.",
+  "Open a plan to click the path in.": "Abre una planta para hacer clic en el trazado.",
+  "Click the path (a line, polyline, arc, wall or road)": "Haz clic en el trazado (una línea, polilínea, arco, muro o vía)",
+  "Pick a line, polyline, arc, wall or road.": "Elige una línea, polilínea, arco, muro o vía.",
+  "Base point on the selection (Enter: it stays where it is)": "Punto base de la selección (Intro: se queda donde está)",
+  "The array could not be made.": "No se pudo crear la matriz.",
+  "Nothing to array": "Nada que repetir",
+  "Drawn points": "Puntos dibujados",
+  "shared out": "repartido",
+  "Select the array": "Seleccionar la matriz",
+  "The copies stay as plain elements": "Las copias quedan como elementos normales",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -2068,4 +2087,6 @@ export const ES_PATTERNS: Language['patterns'] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Perfiles que no están en ninguna biblioteca, dibujados provisionalmente: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} añadidos, ${m[2]} ya estaban en su biblioteca.`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Esta pieza de mobiliario es de una clase („${m[1]}”) que esta edición de Lapin no construye.`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `elemento ${m[1]} de ${m[2]}`],
 ];

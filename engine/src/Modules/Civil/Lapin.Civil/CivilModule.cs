@@ -77,6 +77,7 @@ public sealed class CivilModule : ILapinModule, IViewAnnotations
         r.Service<IScheduleSource>(new PlantingSchedule());
         r.Service<IScheduleSource>(new ParcelCoordinates());
         r.Service<ISectionPaths>(new CivilSectionPaths());
+        r.Service<IArrayPaths>(new CivilArrayPaths());
         r.Catalog("plants", Plantings.SpeciesJson(Plantings.Catalog));
         r.Catalog("entourage", new JsonArray([.. Entourage.Kinds.Select(k => (JsonNode)new JsonObject { ["key"] = k.Key, ["label"] = k.Label, ["category"] = k.Category, ["height"] = k.Height, ["color"] = k.Color })]));
         r.Catalog("sculptKinds", new JsonArray(SculptDab.Kinds.Select(k => (JsonNode)k).ToArray()));
@@ -304,6 +305,27 @@ sealed class CivilSectionPaths : ISectionPaths
     {
         if (Corridors.Is(e)) return new FollowedPath(Corridors.ChainOf(e).Path, CorridorSpec.Of(e).StationStart);
         if (e.Class == SiteFeatures.Class && SiteFeatures.Kind(e) is "line" or "parcel" or "area") return new FollowedPath(SiteFeatures.Points(e).Select(p => p.Xy).ToList());
+        return null;
+    }
+}
+
+/// <summary>
+/// What an array can follow on the site (decision 481): a road's, a path's, a retaining wall's or a ditch's axis exactly,
+/// along its curves and clothoids (its alignment), from its start; a site feature's line by its points.
+/// </summary>
+sealed class CivilArrayPaths : IArrayPaths
+{
+    public ArrayPath? PathOf(IModelView m, Entity e)
+    {
+        if (Corridors.Is(e))
+        {
+            var c = Corridors.ChainOf(e);
+            if (c.Length < 1e-9) return null;
+            var axis = c.Axis(Chords.Tolerance);
+            return new ArrayPath(c.Length, s => (c.PointAt(c.Start + s), c.DirectionAt(c.Start + s)), axis, (axis[0] - axis[^1]).Length < 1e-6);
+        }
+        if (e.Class == SiteFeatures.Class && SiteFeatures.Kind(e) is "line" or "parcel" or "area" && SiteFeatures.Points(e).Select(p => p.Xy).ToList() is { Count: >= 2 } pts)
+            return ArrayPath.Polyline(pts);
         return null;
     }
 }

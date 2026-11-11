@@ -1895,6 +1895,25 @@ export const ZH: Record<string, string> = {
   'Already in My tools': '已在“我的工具”中',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ 移动工具，Alt+← → 把它移到前一组或后一组，Delete 移除它，Ctrl+Z 撤销上一次更改.',
   'The file is not a My tools file.': '该文件不是“我的工具”文件.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "沿路径",
+  "Spacing along the path (0: share out by the copies)": "沿路径的间距（0：按副本数均分）",
+  "Start distance": "起始距离",
+  "End distance": "结束距离",
+  "Offset from the path (+ left)": "与路径的偏移（+ 为左侧）",
+  "Along the path": "沿路径方向",
+  "Turn round": "翻转",
+  "Give the copies or a spacing.": "请给出副本数或间距。",
+  "Open a plan to click the path in.": "请打开平面图后再点击路径。",
+  "Click the path (a line, polyline, arc, wall or road)": "点击路径（直线、多段线、圆弧、墙或道路）",
+  "Pick a line, polyline, arc, wall or road.": "请选择直线、多段线、圆弧、墙或道路。",
+  "Base point on the selection (Enter: it stays where it is)": "所选对象的基点（回车：保持原位）",
+  "The array could not be made.": "无法创建阵列。",
+  "Nothing to array": "没有可阵列的对象",
+  "Drawn points": "绘制的点",
+  "shared out": "均分",
+  "Select the array": "选择阵列",
+  "The copies stay as plain elements": "副本保留为普通构件",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -2063,4 +2082,6 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `不在任何库中的型材，以占位截面绘制：${m[1]}。`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `已添加 ${m[1]} 项，${m[2]} 项已在您的库中。`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `这件家具属于此版本 Lapin 不支持构建的种类（„${m[1]}”）。`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `第 ${m[1]} 项，共 ${m[2]} 项`],
 ];

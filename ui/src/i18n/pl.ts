@@ -1898,6 +1898,25 @@ export const PL: Record<string, string> = {
   'Already in My tools': 'Już w Moich narzędziach',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ przesuwa narzędzie, Alt+← → przenosi je do grupy przed lub po, Delete je usuwa, Ctrl+Z cofa ostatnią zmianę.',
   'The file is not a My tools file.': 'Plik nie jest plikiem Moich narzędzi.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "Wzdłuż ścieżki",
+  "Spacing along the path (0: share out by the copies)": "Rozstaw wzdłuż ścieżki (0: rozłóż według liczby kopii)",
+  "Start distance": "Odległość początkowa",
+  "End distance": "Odległość końcowa",
+  "Offset from the path (+ left)": "Odsunięcie od ścieżki (+ w lewo)",
+  "Along the path": "Wzdłuż ścieżki",
+  "Turn round": "Obróć",
+  "Give the copies or a spacing.": "Podaj liczbę kopii lub rozstaw.",
+  "Open a plan to click the path in.": "Otwórz rzut, aby kliknąć ścieżkę.",
+  "Click the path (a line, polyline, arc, wall or road)": "Kliknij ścieżkę (linię, polilinię, łuk, ścianę lub drogę)",
+  "Pick a line, polyline, arc, wall or road.": "Wybierz linię, polilinię, łuk, ścianę lub drogę.",
+  "Base point on the selection (Enter: it stays where it is)": "Punkt bazowy zaznaczenia (Enter: zostaje, gdzie jest)",
+  "The array could not be made.": "Nie udało się utworzyć szyku.",
+  "Nothing to array": "Nic do powielenia",
+  "Drawn points": "Narysowane punkty",
+  "shared out": "rozłożone równo",
+  "Select the array": "Zaznacz szyk",
+  "The copies stay as plain elements": "Kopie pozostają zwykłymi elementami",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -2074,4 +2093,6 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profile spoza bibliotek, narysowane zastępczo: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `Dodano ${m[1]}, ${m[2]} było już w Twojej bibliotece.`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Ten mebel jest rodzaju („${m[1]}”), którego ta edycja Lapina nie buduje.`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `element ${m[1]} z ${m[2]}`],
 ];

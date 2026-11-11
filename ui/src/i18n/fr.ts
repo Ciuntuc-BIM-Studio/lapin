@@ -1901,6 +1901,25 @@ export const FR: Record<string, string> = {
   'Already in My tools': 'Déjà dans Mes outils',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ déplace un outil, Alt+← → le passe au groupe d’avant ou d’après, Suppr le retire, Ctrl+Z annule la dernière modification.',
   'The file is not a My tools file.': 'Le fichier n’est pas un fichier Mes outils.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "Le long d'un tracé",
+  "Spacing along the path (0: share out by the copies)": "Espacement le long du tracé (0 : répartir selon le nombre de copies)",
+  "Start distance": "Distance de départ",
+  "End distance": "Distance de fin",
+  "Offset from the path (+ left)": "Décalage par rapport au tracé (+ à gauche)",
+  "Along the path": "Suivant le tracé",
+  "Turn round": "Retourner",
+  "Give the copies or a spacing.": "Indique le nombre de copies ou un espacement.",
+  "Open a plan to click the path in.": "Ouvre un plan pour cliquer sur le tracé.",
+  "Click the path (a line, polyline, arc, wall or road)": "Clique sur le tracé (une ligne, polyligne, un arc, un mur ou une route)",
+  "Pick a line, polyline, arc, wall or road.": "Choisis une ligne, polyligne, un arc, un mur ou une route.",
+  "Base point on the selection (Enter: it stays where it is)": "Point de base de la sélection (Entrée : elle reste où elle est)",
+  "The array could not be made.": "Le réseau n'a pas pu être créé.",
+  "Nothing to array": "Rien à répéter",
+  "Drawn points": "Points dessinés",
+  "shared out": "réparti",
+  "Select the array": "Sélectionner le réseau",
+  "The copies stay as plain elements": "Les copies restent des éléments ordinaires",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -2072,4 +2091,6 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profils absents de toute bibliothèque, dessinés provisoirement : ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} ajoutés, ${m[2]} étaient déjà dans votre bibliothèque.`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Cette pièce de mobilier est d’un genre („${m[1]}”) que cette édition de Lapin ne construit pas.`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `élément ${m[1]} sur ${m[2]}`],
 ];

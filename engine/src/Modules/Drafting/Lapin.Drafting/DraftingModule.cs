@@ -23,6 +23,7 @@ public sealed class DraftingModule : ILapinModule, IViewAnnotations
         r.Geometry(IfcClass.Annotation, Cad.Drafts.Geometry3d);
         r.Service<IViewAnnotations>(this);
         r.Service<ISectionPaths>(new ShapeSectionPaths());
+        r.Service<IArrayPaths>(new ShapeArrayPaths());
         Cad.DraftCommands.Register(r);
         Cad.DxfImport.Register(r);
         Cad.Underlays3d.Register(r);
@@ -646,6 +647,30 @@ sealed class AxisDeletion : IDeletion
             ctx.Replace(grid.With(attrs: attrs));
         }
         return true;
+    }
+}
+
+/// <summary>
+/// A drafted line, polyline, arc or circle in a plan, as an array follows it (decision 481): an arc and a circle exactly
+/// (a circle from its east point, counter-clockwise), the rest by their points. A shape drawn on a section or an
+/// elevation is in that view's coordinates, not in plan: refused.
+/// </summary>
+sealed class ShapeArrayPaths : IArrayPaths
+{
+    public ArrayPath? PathOf(IModelView m, Entity e)
+    {
+        if (e.Class != IfcClass.Annotation || Cad.Drafts.ShapeOf(e) is not { } shape) return null;
+        if (e.Str("viewId") is { } viewId && m.Get(viewId) is { } view && (view.Str("kind") ?? "plan") != "plan")
+            throw new CommandException($"„{e.Name}” is drawn on a section or an elevation: an array follows a line drawn in a plan.");
+        switch (shape)
+        {
+            case Cad.Arc a:
+                return new ArrayPath(a.R * a.Sweep, s => { var t = a.Start + s / a.R; return (a.At(t), new Vec2(-Math.Sin(t), Math.Cos(t))); }, Cad.Geo.Polylines(a)[0]);
+            case Cad.Circle c:
+                return new ArrayPath(2 * Math.PI * c.R, s => { var t = s / c.R; return (c.C + new Vec2(Math.Cos(t), Math.Sin(t)) * c.R, new Vec2(-Math.Sin(t), Math.Cos(t))); }, Cad.Geo.Polylines(c)[0], Closed: true);
+            default:
+                return Cad.Geo.Polylines(shape) is { Count: > 0 } lines && SectionPaths.Clean(lines[0]).Count >= 2 ? ArrayPath.Polyline(lines[0]) : null;
+        }
     }
 }
 

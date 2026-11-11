@@ -1895,6 +1895,25 @@ export const PT: Record<string, string> = {
   'Already in My tools': 'Já está em Minhas ferramentas',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ move uma ferramenta, Alt+← → a leva ao grupo anterior ou seguinte, Delete a remove, Ctrl+Z desfaz a última alteração.',
   'The file is not a My tools file.': 'O arquivo não é um arquivo de Minhas ferramentas.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "Ao longo de um trajeto",
+  "Spacing along the path (0: share out by the copies)": "Espaçamento ao longo do trajeto (0: distribuir pelo número de cópias)",
+  "Start distance": "Distância inicial",
+  "End distance": "Distância final",
+  "Offset from the path (+ left)": "Deslocamento do trajeto (+ à esquerda)",
+  "Along the path": "Ao longo do trajeto",
+  "Turn round": "Virar",
+  "Give the copies or a spacing.": "Indique as cópias ou um espaçamento.",
+  "Open a plan to click the path in.": "Abra uma planta para clicar no trajeto.",
+  "Click the path (a line, polyline, arc, wall or road)": "Clique no trajeto (uma linha, polilinha, arco, parede ou via)",
+  "Pick a line, polyline, arc, wall or road.": "Escolha uma linha, polilinha, arco, parede ou via.",
+  "Base point on the selection (Enter: it stays where it is)": "Ponto de base da seleção (Enter: fica onde está)",
+  "The array could not be made.": "Não foi possível criar a matriz.",
+  "Nothing to array": "Nada para repetir",
+  "Drawn points": "Pontos desenhados",
+  "shared out": "distribuído",
+  "Select the array": "Selecionar a matriz",
+  "The copies stay as plain elements": "As cópias ficam como elementos comuns",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -2065,4 +2084,6 @@ export const PT_PATTERNS: Language['patterns'] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Perfis que não estão em nenhuma biblioteca, desenhados provisoriamente: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} adicionados, ${m[2]} já estavam na sua biblioteca.`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Esta peça de mobiliário é de um tipo („${m[1]}”) que esta edição do Lapin não constrói.`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `item ${m[1]} de ${m[2]}`],
 ];

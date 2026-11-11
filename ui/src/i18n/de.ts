@@ -1897,6 +1897,25 @@ export const DE: Record<string, string> = {
   'Already in My tools': 'Schon in Meine Werkzeuge',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ verschiebt ein Werkzeug, Alt+← → in die Gruppe davor oder danach, Entf entfernt es, Strg+Z macht die letzte Änderung rückgängig.',
   'The file is not a My tools file.': 'Die Datei ist keine Meine-Werkzeuge-Datei.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "Entlang eines Pfads",
+  "Spacing along the path (0: share out by the copies)": "Abstand entlang des Pfads (0: nach Anzahl der Kopien verteilen)",
+  "Start distance": "Startabstand",
+  "End distance": "Endabstand",
+  "Offset from the path (+ left)": "Versatz zum Pfad (+ links)",
+  "Along the path": "Entlang des Pfads",
+  "Turn round": "Umdrehen",
+  "Give the copies or a spacing.": "Gib die Kopien oder einen Abstand an.",
+  "Open a plan to click the path in.": "Öffne einen Grundriss, um den Pfad anzuklicken.",
+  "Click the path (a line, polyline, arc, wall or road)": "Klicke den Pfad an (eine Linie, Polylinie, einen Bogen, eine Wand oder eine Straße)",
+  "Pick a line, polyline, arc, wall or road.": "Wähle eine Linie, Polylinie, einen Bogen, eine Wand oder eine Straße.",
+  "Base point on the selection (Enter: it stays where it is)": "Basispunkt der Auswahl (Eingabe: bleibt, wo sie ist)",
+  "The array could not be made.": "Das Array konnte nicht erstellt werden.",
+  "Nothing to array": "Nichts zu vervielfältigen",
+  "Drawn points": "Gezeichnete Punkte",
+  "shared out": "gleichmäßig verteilt",
+  "Select the array": "Array auswählen",
+  "The copies stay as plain elements": "Die Kopien bleiben gewöhnliche Elemente",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -2068,4 +2087,6 @@ export const DE_PATTERNS: Language['patterns'] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profile in keiner Bibliothek, als Platzhalter gezeichnet: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} hinzugefügt, ${m[2]} waren schon in Ihrer Bibliothek.`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Dieses Möbelstück gehört zu einer Art („${m[1]}”), die diese Edition von Lapin nicht baut.`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `Element ${m[1]} von ${m[2]}`],
 ];

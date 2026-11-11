@@ -75,6 +75,7 @@ public sealed class CoreModule : ILapinModule
         // A view's sun shadows, drawn as filled areas under elevations, sections and site plans.
         ViewShadows.Register(r);
         Groups.Register(r);
+        Arrays.Register(r);
         Components.Register(r);
         // The wholes an element is a part of, for drill-down picking.
         Assemblies.Register(r);
@@ -264,37 +265,11 @@ public sealed class CoreModule : ILapinModule
             return o;
         });
 
-        // Copies in a row or round a centre (decision 448): {ids, count (with the first), step: [x, y, z]} or {kind: "polar",
-        // count, angle filled (degrees, 360 a full turn), center: [x, y]}; each copy as element.transform copies, one undo step.
-        r.Command("element.array", "Array", (ctx, a) =>
-        {
-            var count = (int)Math.Round(Json.Number(a["count"]) ?? 0);
-            if (count < 2 || count > 1000) throw new CommandException("An array has 2 to 1000 items, the first among them.");
-            if (Args.Ids(a).Count == 0) throw new CommandException("Select what to array.");
-            var polar = (string?)a["kind"] == "polar";
-            var made = new JsonArray();
-            if (polar)
-            {
-                var angle = Json.Number(a["angle"]) ?? 360;
-                if (!double.IsFinite(angle) || Math.Abs(angle) < 1e-9 || Math.Abs(angle) > 360) throw new CommandException("A polar array fills an angle of up to 360°.");
-                var center = Args.Point(a["center"], "centre");
-                // A full turn shares it out; a part of one puts the last copy at its end.
-                var step = Math.Abs(Math.Abs(angle) - 360) < 1e-9 ? angle / count : angle / (count - 1);
-                for (var i = 1; i < count; i++)
-                    foreach (var id in ElementTransform.Run(ctx, new JsonObject { ["ids"] = a["ids"]!.DeepClone(), ["op"] = "rotate", ["copy"] = true, ["center"] = new JsonArray(center.X, center.Y), ["angle"] = step * i }).Made)
-                        made.Add(id!.DeepClone());
-            }
-            else
-            {
-                var s = a["step"] as JsonArray;
-                var (dx, dy, dz) = (Json.Number(s?.ElementAtOrDefault(0)) ?? 0, Json.Number(s?.ElementAtOrDefault(1)) ?? 0, Json.Number(s?.ElementAtOrDefault(2)) ?? 0);
-                if (!double.IsFinite(dx + dy + dz) || Math.Abs(dx) + Math.Abs(dy) + Math.Abs(dz) < 1e-9) throw new CommandException("An array's step cannot be nothing.");
-                for (var i = 1; i < count; i++)
-                    foreach (var id in ElementTransform.Run(ctx, new JsonObject { ["ids"] = a["ids"]!.DeepClone(), ["op"] = "copy", ["by"] = new JsonArray(dx * i, dy * i), ["up"] = dz * i }).Made)
-                        made.Add(id!.DeepClone());
-            }
-            return new JsonObject { ["ids"] = made };
-        });
+        // Copies in a row or round a centre (decision 448), or along a path, kept as an arrangement (decision 481, Arrays):
+        // {ids, count (with the first), step: [x, y, z] | fit: [x, y, z]} or {kind: "polar", count, angle filled (degrees,
+        // 360 a full turn), center: [x, y]} or {kind: "path", along | points, count | spacing, start, end, offset, orient,
+        // flip, base}; each copy as element.transform copies, one undo step. Returns the copies and the array.
+        r.Command("element.array", "Array", (ctx, a) => Arrays.Make(ctx, a));
 
         r.Command("element.delete", "Delete", (ctx, a) =>
         {

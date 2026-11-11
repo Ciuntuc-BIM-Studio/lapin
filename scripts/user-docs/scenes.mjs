@@ -6758,6 +6758,49 @@ export const scenes = [
     },
   },
   {
+    // An array that keeps its arrangement (decision 481): columns along a drafted arc, then their count changed in the Array section.
+    id: 'array-path',
+    touches: ['structure', 'drafting'],
+    async run(t) {
+      const { page } = t;
+      await t.fresh();
+      const storey = await t.storey();
+      const plan = 'plan:' + storey;
+      // A quarter circle drawn on the plan, and a column where it starts.
+      const arc = (await t.cmd('drafting.draw', { viewId: plan, shape: { type: 'arc', c: [0, 0], r: 6, start: 0, end: Math.PI / 2 } })).ids[0];
+      const type = await t.cmd('structure.createColumnType', { section: 'HEA 200' });
+      const column = (await t.cmd('structure.addColumn', { storeyId: storey, typeId: type.id, x: 6, y: 0 })).id;
+      await t.ui({ view: 'plan', keyPlan: false, selection: column, selected: [column] });
+      await t.wait(1000);
+      const columns = async () => (await t.nodes()).filter((x) => x.type === 'IfcColumn');
+      // Modify → Array → Along a path: five columns, then a click on the arc and Enter (the selection stays where it is).
+      await t.tool('modify.array');
+      t.expect(await page.locator('.ask-box').count() === 1, 'Array asks how');
+      await page.locator('.ask-box select').first().selectOption('path');
+      await page.locator('.ask-box input').nth(0).fill('5');
+      await page.locator('.ask-box button.primary').click();
+      await t.wait(600);
+      const [px, py] = await t.planPoint(6 * Math.cos(Math.PI / 4), 6 * Math.sin(Math.PI / 4));
+      await page.mouse.move(px, py, { steps: 4 });
+      await t.wait(600);
+      await page.mouse.click(px, py);
+      await t.wait(600);
+      await page.keyboard.press('Enter');
+      await t.until(async () => (await columns()).length === 5, 'five columns along the arc');
+      // A copy selected shows the arrangement: change the count and the columns follow.
+      const copy = (await columns()).find((x) => x.id !== column);
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      t.expect(await page.locator('[data-testid=array-title]').count() === 1, 'a copy shows its Array section');
+      await page.locator('aside.props dl.fields dt:text-is("Copies") + dd input').fill('8');
+      await page.keyboard.press('Enter');
+      await t.until(async () => (await columns()).length === 8, 'eight columns after the count changed');
+      await t.ui({ selection: copy.id, selected: [copy.id] });
+      await t.wait(800);
+      await t.shot('array-path', { of: '[data-testid=plan]', pad: 0 });
+    },
+  },
+  {
     // Studio as a geometry editor (docs/plan-studio-editor.md): push/pull and a fillet in 3D, a pipe's steps, a rising handrail.
     id: 'studio-editor',
     async run(t) {

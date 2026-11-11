@@ -30,6 +30,7 @@ import { convertToNative } from './convertTools';
 import { pinSelection } from './pinTools';
 import { arraySelection } from './arrayTool';
 import { GroupSection } from './GroupSection';
+import { ArraySection, arrayOf } from './ArraySection';
 import { editSelectedGroup, groupSelection, makeComponent, makeUnit, removeFromGroup, ungroupSelection } from './groupTools';
 import { toggleRegion3d } from '../../viewport/select3d';
 import { hideSelection, isolateSelection, resetTemporary } from '../../viewport/temporary';
@@ -310,6 +311,7 @@ const core: LapinModule = {
   background: CoreBackground,
   propertySections: [
     { id: 'group', label: 'Group', classes: ['IfcGroup'], component: GroupSection },
+    { id: 'array', label: 'Array', classes: ['*'], shows: (n) => arrayOf(n, useSession.getState().nodes) !== null, component: ArraySection },
     { id: 'titleBlock', label: 'Title block', classes: ['LapinSheet'], component: SheetSection, fieldKeys: butDiscipline('LapinSheet') },
     { id: 'storeyLevels', label: 'Levels', classes: ['IfcBuildingStorey'], component: StoreySection, replacesFields: () => true },
     { id: 'viewSettings', label: 'View settings', classes: ['LapinView'], component: ViewSettingsSection, fieldKeys: viewFields },

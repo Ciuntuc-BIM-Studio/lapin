@@ -54,6 +54,23 @@ An apartment type has a fixed size: it does not stretch to fit a wider or narrow
 
 ![An instance's properties: the component, Select instances, Make unique](shots/component-properties.webp)
 
+## Arrays
+
+**Modify → Array** makes copies of the selection, any element or group, in one of three ways. **In a row** gives a step along x, y and z. **Round a centre** gives the angle the copies fill and the centre (360° shares a full turn out). **Along a path** puts them along a line you click.
+
+For a path, the dialog asks for these:
+
+- **Copies (with the first)** and **Spacing**. A count alone shares the copies out from the start of the path to its end. A spacing alone puts as many as fit. Both give that many copies at that spacing.
+- **Start distance** and **End distance** leave that much of the path's ends free.
+- **Offset from the path**: a positive value goes to the left of the path's direction.
+- **Orientation**: **Along the path** turns each copy with the path's direction, relative to the first place; **Fixed** keeps every copy as the original stands. **Turn round** flips the direction.
+
+Then click the path, in a plan. It can be a line, a polyline, an arc or a circle you drew, the axis of a wall or a beam, or the line of a road, a path, a ditch or a retaining wall of Civil, or a site feature line. A ghost shows the path and where each copy will stand while you move the pointer. Next, click the point of the selection that goes onto the path, or press <kbd>Enter</kbd> to leave the selection where it is: the copies then keep its offset from the path's start.
+
+![Columns along an arc, one selected with its Array section](shots/array-path.webp)
+
+An array stays an arrangement. Select any copy and the properties show an **Array** section: its kind, the number of copies and its rule (the step, the angle and centre, or the spacing, start, end, offset, orientation and the path's name). Change the count and copies are added or removed; change the spacing or the offset and the copies move. The copies keep their ids, so what refers to them keeps working. Edit the path, and the copies follow it. A copy you moved by hand keeps its offset from its place when the rule changes, and a copy you deleted stays a gap. **Select the array** selects every copy, and **Explode** ends the arrangement: the copies stay as plain elements.
+
 ## Drilling into assemblies
 
 Some elements are parts of a whole: a steel hall's columns, rafters and purlins, the parts of an assembly (a Studio box, an assembly read from an IFC file), and the members of a group. **View → Drill into assemblies**, off at first, picks them the way the whole is built. The first click on a part selects the whole at the top: the group, or the hall. While it is selected, a click inside it selects the part one level down on the way to what you clicked, and each further click goes one level deeper, down to the element itself. A click on another part of the same whole selects that part at the same level. <kbd>Esc</kbd> steps one level up, and at the top lets go of the selection; a click on empty space lets go too. <kbd>Ctrl</kbd>+click (<kbd>Cmd</kbd>+click on a Mac) selects the element itself straight away, and <kbd>Shift</kbd> adds the whole at the top to the selection. A breadcrumb over the view names the levels, from the storey to the selection: click one to select it. While a part inside a whole is selected, the rest of the model is drawn lightly faded. It works the same in 3D, plans, sections and elevations. A selection box or a lasso takes the wholes at the top. A double-click still opens a group for editing; inside it, the drilling starts below the group. The choice is kept on this computer, and is also in **View → View settings**.

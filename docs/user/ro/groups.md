@@ -54,6 +54,23 @@ Un tip de apartament are dimensiuni fixe: nu se întinde după un loc mai lat sa
 
 ![Proprietățile unei instanțe: componenta, Selectează instanțele, Fă unică](shots/component-properties.webp)
 
+## Repetări
+
+**Modificare → Repetare** face copii ale selecției, orice element sau grup, în trei feluri. **Pe un șir** cere un pas pe x, y și z. **În jurul unui centru** cere unghiul pe care îl umplu copiile și centrul (360° le împarte pe un cerc întreg). **Pe un traseu** le pune de-a lungul unei linii pe care dai clic.
+
+Pentru un traseu, fereastra cere:
+
+- **Copii (cu prima)** și **Pas**. Doar numărul de copii le împarte egal de la începutul traseului până la capăt. Doar pasul pune câte încap. Cu amândouă, obții atâtea copii la acel pas.
+- **Distanță de început** și **Distanță de sfârșit** lasă liberă atâta parte din capetele traseului.
+- **Decalaj față de traseu**: o valoare pozitivă merge în stânga direcției traseului.
+- **Orientare**: **Pe direcția traseului** întoarce fiecare copie odată cu direcția traseului, față de primul loc; **Fixă** păstrează fiecare copie ca originalul. **Întoarce** inversează direcția.
+
+Apoi dai clic pe traseu, într-un plan. Poate fi o linie, o polilinie, un arc sau un cerc desenat de tine, axa unui perete sau a unei grinzi, linia unui drum, a unei alei, a unui șanț sau a unui zid de sprijin din Civil, ori o linie caracteristică a terenului. O umbră arată traseul și unde va sta fiecare copie cât timp muți cursorul. Apoi dai clic pe punctul selecției care ajunge pe traseu sau apeși <kbd>Enter</kbd> ca să lași selecția unde e: copiile păstrează atunci decalajul ei față de începutul traseului.
+
+![Stâlpi de-a lungul unui arc, unul selectat, cu secțiunea Repetare](shots/array-path.webp)
+
+O repetare rămâne o aranjare. Selectează orice copie și proprietățile arată o secțiune **Repetare**: felul ei, numărul de copii și regula (pasul, unghiul și centrul, sau pasul, începutul, sfârșitul, decalajul, orientarea și numele traseului). Schimbă numărul și se adaugă sau se șterg copii; schimbă pasul sau decalajul și copiile se mută. Copiile își păstrează identificatorii, deci ce se referă la ele continuă să funcționeze. Modifică traseul și copiile îl urmează. O copie mutată de mână își păstrează decalajul față de locul ei când regula se schimbă, iar una ștearsă rămâne un gol. **Selectează matricea** selectează toate copiile, iar **Explodează** încheie aranjarea: copiile rămân elemente obișnuite.
+
 ## Selecția pe niveluri de ansamblu
 
 Unele elemente sunt părți ale unui întreg: stâlpii, riglele și panele unei hale metalice, părțile unui ansamblu (o cutie din Studio, un ansamblu citit dintr-un fișier IFC) și membrii unui grup. **Vedere → Selecție pe niveluri de ansamblu**, oprită la început, le alege așa cum e construit întregul. Primul clic pe o parte selectează întregul de sus: grupul sau hala. Cât timp e selectat, un clic în interiorul lui selectează partea cu un nivel mai jos, pe drumul spre ce ai atins, iar fiecare clic următor coboară încă un nivel, până la elementul însuși. Un clic pe altă parte a aceluiași întreg o selectează la același nivel. <kbd>Esc</kbd> urcă un nivel, iar sus renunță la selecție; și un clic în gol renunță. <kbd>Ctrl</kbd>+clic (<kbd>Cmd</kbd>+clic pe Mac) selectează direct elementul, iar <kbd>Shift</kbd> adaugă la selecție întregul de sus. Deasupra vederii, un șir de niveluri le numește, de la etaj la selecție: un clic pe unul îl selectează. Cât timp e selectată o parte dintr-un întreg, restul modelului se desenează ușor estompat. Funcționează la fel în 3D, în planuri, secțiuni și fațade. Un dreptunghi sau un lasou de selecție ia întregurile de sus. Dublu-clicul deschide în continuare un grup pentru editare; în interiorul lui, coborârea pornește de sub grup. Alegerea se păstrează pe acest calculator și se află și în **Vedere → Setările vederii**.

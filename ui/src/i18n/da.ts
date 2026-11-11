@@ -1892,6 +1892,25 @@ export const DA: Record<string, string> = {
   'Already in My tools': 'Allerede i Mine værktøjer',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ flytter et værktøj, Alt+← → flytter det til gruppen før eller efter, Delete fjerner det, Ctrl+Z fortryder den sidste ændring.',
   'The file is not a My tools file.': 'Filen er ikke en Mine værktøjer-fil.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "Langs en bane",
+  "Spacing along the path (0: share out by the copies)": "Afstand langs banen (0: fordel efter antal kopier)",
+  "Start distance": "Startafstand",
+  "End distance": "Slutafstand",
+  "Offset from the path (+ left)": "Forskydning fra banen (+ til venstre)",
+  "Along the path": "Langs banen",
+  "Turn round": "Vend",
+  "Give the copies or a spacing.": "Angiv kopierne eller en afstand.",
+  "Open a plan to click the path in.": "Åbn en plan for at klikke på banen.",
+  "Click the path (a line, polyline, arc, wall or road)": "Klik på banen (en linje, polylinje, bue, væg eller vej)",
+  "Pick a line, polyline, arc, wall or road.": "Vælg en linje, polylinje, bue, væg eller vej.",
+  "Base point on the selection (Enter: it stays where it is)": "Basispunkt på markeringen (Enter: den bliver, hvor den er)",
+  "The array could not be made.": "Rækken kunne ikke laves.",
+  "Nothing to array": "Intet at gentage",
+  "Drawn points": "Tegnede punkter",
+  "shared out": "fordelt",
+  "Select the array": "Markér rækken",
+  "The copies stay as plain elements": "Kopierne forbliver almindelige elementer",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -2063,4 +2082,6 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `Profiler i intet bibliotek, tegnet som pladsholdere: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `${m[1]} tilføjet, ${m[2]} var allerede i dit bibliotek.`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `Dette møbel er af en art („${m[1]}”), som denne udgave af Lapin ikke bygger.`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `element ${m[1]} af ${m[2]}`],
 ];

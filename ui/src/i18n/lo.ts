@@ -1951,6 +1951,25 @@ export const LO: Record<string, string> = {
   'Already in My tools': 'ຢູ່ໃນເຄື່ອງມືຂອງຂ້ອຍແລ້ວ',
   'Alt+↑ ↓ moves a tool, Alt+← → moves it to the group before or after, Delete removes it, Ctrl+Z undoes the last change.': 'Alt+↑ ↓ ຍ້າຍເຄື່ອງມື, Alt+← → ຍ້າຍໄປກຸ່ມກ່ອນ ຫຼື ຫຼັງ, Delete ເອົາອອກ, Ctrl+Z ຍົກເລີກການປ່ຽນແປງຄັ້ງຫຼ້າສຸດ.',
   'The file is not a My tools file.': 'ໄຟລ໌ນີ້ບໍ່ແມ່ນໄຟລ໌ເຄື່ອງມືຂອງຂ້ອຍ.',
+  // Decision 481: arrays that keep their arrangement, along a path
+  "Along a path": "ຕາມເສັ້ນທາງ",
+  "Spacing along the path (0: share out by the copies)": "ໄລຍະຫ່າງຕາມເສັ້ນທາງ (0: ແບ່ງຕາມຈຳນວນສຳເນົາ)",
+  "Start distance": "ໄລຍະເລີ່ມຕົ້ນ",
+  "End distance": "ໄລຍະສິ້ນສຸດ",
+  "Offset from the path (+ left)": "ໄລຍະຫ່າງຈາກເສັ້ນທາງ (+ ຊ້າຍ)",
+  "Along the path": "ຕາມທິດທາງເສັ້ນທາງ",
+  "Turn round": "ກັບດ້ານ",
+  "Give the copies or a spacing.": "ໃສ່ຈຳນວນສຳເນົາ ຫຼື ໄລຍະຫ່າງ.",
+  "Open a plan to click the path in.": "ເປີດແຜນຜັງເພື່ອກົດໃສ່ເສັ້ນທາງ.",
+  "Click the path (a line, polyline, arc, wall or road)": "ກົດໃສ່ເສັ້ນທາງ (ເສັ້ນ, ເສັ້ນຫຼາຍທ່ອນ, ເສັ້ນໂຄ້ງ, ຝາ ຫຼື ຖະໜົນ)",
+  "Pick a line, polyline, arc, wall or road.": "ເລືອກເສັ້ນ, ເສັ້ນຫຼາຍທ່ອນ, ເສັ້ນໂຄ້ງ, ຝາ ຫຼື ຖະໜົນ.",
+  "Base point on the selection (Enter: it stays where it is)": "ຈຸດຖານຂອງສິ່ງທີ່ເລືອກ (Enter: ຢູ່ບ່ອນເກົ່າ)",
+  "The array could not be made.": "ບໍ່ສາມາດສ້າງແຖວໄດ້.",
+  "Nothing to array": "ບໍ່ມີຫຍັງໃຫ້ຊ້ຳ",
+  "Drawn points": "ຈຸດທີ່ແຕ້ມ",
+  "shared out": "ແບ່ງເທົ່າກັນ",
+  "Select the array": "ເລືອກແຖວ",
+  "The copies stay as plain elements": "ສຳເນົາຍັງເປັນອົງປະກອບທຳມະດາ",
 };
 
 /** Phrases with a number or a name in them. */
@@ -2120,4 +2139,6 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^Profiles in no library, drawn as placeholders: (.+)\.$/, (m) => `ໂປຣໄຟລ໌ທີ່ບໍ່ຢູ່ໃນຫ້ອງສະໝຸດໃດ, ແຕ້ມເປັນຕົວແທນຊົ່ວຄາວ: ${m[1]}.`],
   [/^(\d+) added, (\d+) already in your library\.$/, (m) => `ເພີ່ມ ${m[1]}, ມີ ${m[2]} ຢູ່ໃນຫ້ອງສະໝຸດຂອງທ່ານແລ້ວ.`],
   [/^This piece of furniture is of a kind \(„(.+)”\) this edition of Lapin does not build\.$/, (m) => `ເຟີນິເຈີຊິ້ນນີ້ເປັນຊະນິດ („${m[1]}”) ທີ່ Lapin ສະບັບນີ້ບໍ່ສ້າງ.`],
+  // Decision 481: arrays
+  [/^item (\d+) of (\d+)$/, (m) => `ລາຍການ ${m[1]} ໃນ ${m[2]}`],
 ];
