@@ -54,7 +54,7 @@ interface Spec {
   frame: { depth: number; width: number; mullion: number; transom: number; offset: number };
   sash: { width: number; depth: number; leafThickness: number; glassThickness: number };
   columns: number[]; rows: number[]; panels: Panel[];
-  /** One width per column boundary (left to right) and per row boundary (bottom up), metres: null the frame's, 0 none (decision 450). */
+  /** One width per column boundary (left to right) and per row boundary (bottom up), metres: null the frame's, 0 none (decision 466). */
   mullions?: Bars; transoms?: Bars;
   /** How two door leaves meeting over a boundary without a mullion are made; one setting for the type. */
   meeting?: Meeting | null;
@@ -578,7 +578,7 @@ function PaneEditor({ spec, preview, pane, operations, onPick, onPanels, onGrid,
 const catalogWindowOps = new Set(['side-left', 'side-right', 'tilt-turn-left', 'tilt-turn-right', 'bottom-hung', 'top-hung', 'pivot-horizontal', 'pivot-vertical', 'sliding-left', 'sliding-right', 'sliding-vertical']);
 
 /**
- * The mullion or transom picked in the elevation (decision 450): its width, the frame's by default, or none, so two panes meet.
+ * The mullion or transom picked in the elevation (decision 466): its width, the frame's by default, or none, so two panes meet.
  * Its width shows as the engine drew it.
  */
 function BarField({ bar, spec, onChange }: { bar: { axis: 'col' | 'row'; i: number } | null; spec: Spec; onChange: (v: number | null) => void }) {
@@ -602,7 +602,7 @@ function BarField({ bar, spec, onChange }: { bar: { axis: 'col' | 'row'; i: numb
 }
 
 /**
- * How two door leaves meet where there is no mullion between them (decision 450): butt, a rebated meeting stile or a cover strip over
+ * How two door leaves meet where there is no mullion between them (decision 466): butt, a rebated meeting stile or a cover strip over
  * the joint; the active leaf (the one that opens first, with the handle) and flush bolts in the passive one. One setting for the type.
  */
 function MeetingFields({ spec, preview, defaults, onChange }: { spec: Spec; preview: Preview2 | null; defaults?: Meeting & { astragalWidth?: number }; onChange: (m: Meeting) => void }) {
@@ -782,7 +782,7 @@ export function JoineryDialog() {
   // The grid's sizes in mm, from the engine's preview (decision 370); set one, the last takes the rest.
   // Worked out from the spec's own weights over the inner span (which only the size and frame change), never from a preview
   // that may still be on its way: quick splits one after another each see the grid as it now is.
-  // Each bar has its own width (decision 450): the sizes share what the bars leave.
+  // Each bar has its own width (decision 466): the sizes share what the bars leave.
   const sizesOf = (weights: number[], span: number | undefined, bars: number[]) => {
     if (span == null || weights.length === 0) return [];
     const total = weights.reduce((a, b) => a + Math.max(b, 0), 0) || 1;
@@ -799,7 +799,7 @@ export function JoineryDialog() {
     else { set({ rows: next }); setRows(next.map(roundW).join(' ')); }
   };
 
-  // A bar's width set (decision 450); a mullion made 0 between two door leaves gives the type its meeting, from the catalogue's default.
+  // A bar's width set (decision 466); a mullion made 0 between two door leaves gives the type its meeting, from the catalogue's default.
   const setBar = (axis: 'col' | 'row', i: number, value: number | null) => {
     const patch: Partial<Spec> = axis === 'col' ? { mullions: withBar(spec.mullions, spec.columns.length, i, value) } : { transoms: withBar(spec.transoms, spec.rows.length, i, value) };
     const g: GridSpec = { columns: spec.columns, rows: spec.rows, panels: spec.panels, frame: spec.frame };

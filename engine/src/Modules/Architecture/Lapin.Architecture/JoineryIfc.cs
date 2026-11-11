@@ -43,7 +43,7 @@ public sealed class JoineryIfc : IJoineryIfc
             }).ToList();
         var (mullions, transoms) = Joinery.LiningOffsets(spec);
         if (mirrored) mullions = mullions.Select(x => Math.Round(1 - x, 6)).Reverse().ToList();
-        // IFC has one mullion and one transom thickness: the widest there is (decision 450).
+        // IFC has one mullion and one transom thickness: the widest there is (decision 466).
         var (mw, tw) = Joinery.LiningBars(spec);
         // Frameless glass has no lining (tester's question 7): its thickness is the glass's, its width none, the gaps part the panes.
         var lining = spec.Frameless is { } fl

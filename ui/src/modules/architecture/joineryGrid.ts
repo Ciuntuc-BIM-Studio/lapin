@@ -7,7 +7,7 @@
 export interface GridPanel { col: number; row: number; operation: string; colSpan?: number; rowSpan?: number; glazed?: boolean; infill?: string | null }
 export interface GridSpec { columns: number[]; rows: number[]; panels: GridPanel[]; frame: { mullion: number; transom: number }; mullions?: (number | null)[]; transoms?: (number | null)[] }
 
-/** One bar width per grid line (decision 450): null is the frame's, 0 none, else metres. A list as long as the lines, or none when every bar is the frame's. */
+/** One bar width per grid line (decision 466): null is the frame's, 0 none, else metres. A list as long as the lines, or none when every bar is the frame's. */
 export type Bars = (number | null)[];
 
 /** The bar list fitted to <paramref name="count"/> cells (count - 1 lines): longer cut, shorter padded with the frame's; undefined when every bar is the frame's. */

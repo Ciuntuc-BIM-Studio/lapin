@@ -26,7 +26,7 @@ public sealed record JoineryProfile(string System = "custom", double Rebate = 0.
 public sealed record JoineryFrame(double Depth, double Width, double Mullion, double Transom, double Offset);
 
 /// <summary>
-/// How two leaves meet where no mullion stands between them (decision 450): <see cref="Kind"/> "butt" (square edges, a gap),
+/// How two leaves meet where no mullion stands between them (decision 466): <see cref="Kind"/> "butt" (square edges, a gap),
 /// "rebated" (a rebated meeting stile: each leaf's edge stepped half its thickness, overlapping by <see cref="Width"/>, the
 /// active leaf's lip on the room side, so the passive leaf cannot open before it), "astragal" (a strip <see cref="Width"/> wide
 /// and <see cref="Thickness"/> thick on the active leaf's room face, covering the joint). <see cref="Active"/>: the leaf that
@@ -191,12 +191,12 @@ public sealed record JoinerySpec(
     /// <summary>Frameless toughened glass, no frame or sash (tester's question 7): how it is held, the glass, the gaps; null: framed.</summary>
     JoineryFrameless? Frameless = null,
     /// <summary>
-    /// Each column boundary's mullion, left to right (decision 450): null (or missing), <see cref="JoineryFrame.Mullion"/>; 0, none, the
+    /// Each column boundary's mullion, left to right (decision 466): null (or missing), <see cref="JoineryFrame.Mullion"/>; 0, none, the
     /// panels meet (a double door's leaves). <see cref="Transoms"/> the same for the row boundaries, bottom up. Null: the frame's everywhere.
     /// </summary>
     double?[]? Mullions = null,
     double?[]? Transoms = null,
-    /// <summary>How two leaves meet where no mullion parts them (decision 450); null: butt, both leaves with their handles (as before).</summary>
+    /// <summary>How two leaves meet where no mullion parts them (decision 466); null: butt, both leaves with their handles (as before).</summary>
     JoineryMeeting? Meeting = null)
 {
     public static JoinerySpec DefaultWindow(string name = "Window") => new(
@@ -395,7 +395,7 @@ public static class Joinery
     /// <summary>What parts the grid's rows by default: the transom, or frameless glass's gap.</summary>
     public static double TransomOf(JoinerySpec s) => s.Frameless?.Gap ?? s.Frame.Transom;
 
-    /// <summary>A boundary's own width from a per-boundary list (decision 450): its entry, else the default; frameless glass's gap whatever the list says.</summary>
+    /// <summary>A boundary's own width from a per-boundary list (decision 466): its entry, else the default; frameless glass's gap whatever the list says.</summary>
     static double At(JoinerySpec s, double?[]? list, int i, double fallback) =>
         s.Frameless != null ? fallback : list is { } l && i < l.Length && l[i] is { } w && double.IsFinite(w) ? Math.Max(0, w) : fallback;
 
@@ -410,7 +410,7 @@ public static class Joinery
     static bool HingedRight(string op) => op is "swing-right" or "double-acting-right";
 
     /// <summary>
-    /// Where two swinging (or double-acting) leaves meet with no mullion between them (decision 450): the left one hinged on
+    /// Where two swinging (or double-acting) leaves meet with no mullion between them (decision 466): the left one hinged on
     /// its left, the right one on its right, side by side over a column boundary whose mullion is 0. The kind is the type's
     /// <see cref="JoinerySpec.Meeting"/> (butt without one, and always for double-acting leaves); frameless glass has none.
     /// </summary>
@@ -628,7 +628,7 @@ public static class Joinery
     {
         var (cols, rows) = Grid(s);
         var (mw, tw) = (MullionWidths(s), TransomWidths(s));
-        // Where the panels meet with no bar between them (decision 450) the lining has none; frameless glass's gaps all count.
+        // Where the panels meet with no bar between them (decision 466) the lining has none; frameless glass's gaps all count.
         bool Present(double w) => s.Frameless != null || w > 1e-9;
         return (cols.Take(cols.Count - 1).Select((c, i) => (c, i)).Where(x => Present(mw[x.i])).Select(x => (x.c.B + mw[x.i] / 2 + s.Width / 2) / s.Width).ToList(),
                 rows.Take(rows.Count - 1).Select((r, i) => (r, i)).Where(x => Present(tw[x.i])).Select(x => (x.r.B + tw[x.i] / 2) / s.Height).ToList());
@@ -814,7 +814,7 @@ public static class Joinery
         foreach (var p in panels)
         {
             var r = PanelRect(s, p);
-            // A leaf of a pair meeting with no mullion (decision 450): a rebated one's body stops half the overlap short of the meeting line.
+            // A leaf of a pair meeting with no mullion (decision 466): a rebated one's body stops half the overlap short of the meeting line.
             var pair = pairs.FirstOrDefault(m => m.Left == p || m.Right == p);
             var meeting = pair == null ? null : new LeafMeeting(pair, p, r, s.Meeting);
             if (meeting != null) r = meeting.Body;
@@ -896,7 +896,7 @@ public static class Joinery
     }
 
     /// <summary>
-    /// One leaf of a pair meeting with no mullion (decision 450), from its grid rectangle <see cref="Cell"/>: the rectangle its
+    /// One leaf of a pair meeting with no mullion (decision 466), from its grid rectangle <see cref="Cell"/>: the rectangle its
     /// body fills (a rebated leaf's stops half the overlap short of the meeting line), the strips it adds (the rebate's lip on
     /// half its thickness, the active leaf's astragal on its room face, the passive leaf's flush bolts), where its handle goes.
     /// </summary>

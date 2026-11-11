@@ -22,7 +22,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
         var inner = Joinery.InnerRect(s);
         static JsonArray Pairs(List<(double A, double B)> l) => new(l.Select(x => (JsonNode)new JsonArray(x.A, x.B)).ToArray());
         static JsonArray Numbers(IEnumerable<double> l) => new(l.Select(x => (JsonNode)x).ToArray());
-        // Each boundary's own mullion and transom (decision 450), and where two leaves meet with none: which boundary, the active and passive columns, how.
+        // Each boundary's own mullion and transom (decision 466), and where two leaves meet with none: which boundary, the active and passive columns, how.
         var pairs = Joinery.Meetings(s);
         return new JsonObject
         {
@@ -159,7 +159,7 @@ public sealed class ArchitectureModule : ILapinModule, IViewAnnotations
             ["infills"] = new JsonArray(Joinery.Infills.Select(x => (JsonNode)x).ToArray()),
             ["defaultDoor"] = JoinerySpecs.Door.ToJson(),
             ["defaultWindow"] = JoinerySpecs.Window.ToJson(),
-            // Door presets (decision 450): a double door, no mullion between its leaves, a rebated meeting, the right leaf active.
+            // Door presets (decision 466): a double door, no mullion between its leaves, a rebated meeting, the right leaf active.
             ["doorPresets"] = new JsonObject { ["double"] = JoinerySpecs.DoubleDoor.ToJson() },
             ["meetingKinds"] = new JsonArray(JoineryMeeting.Kinds.Select(x => (JsonNode)x).ToArray()),
             ["defaultMeeting"] = new JsonObject { ["kind"] = "rebated", ["active"] = "right", ["width"] = JoineryMeeting.DefaultRebate, ["thickness"] = JoineryMeeting.DefaultAstragalThickness, ["bolts"] = true, ["astragalWidth"] = JoineryMeeting.DefaultAstragalWidth },

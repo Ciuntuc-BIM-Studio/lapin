@@ -224,7 +224,7 @@ public static class JoinerySymbols
                 default: o.Add(Arc(new(x, z), 0.026, 0, 2 * Math.PI, "outline")); o.Add(Rect(Math.Min(x, x + dir * 0.13), z - 0.01, Math.Max(x, x + dir * 0.13), z + 0.01, "outline")); return;
             }
         }
-        // The passive leaf of a pair with a meeting setting (decision 450): no handle, its flush bolts at the top and bottom by the meeting edge.
+        // The passive leaf of a pair with a meeting setting (decision 466): no handle, its flush bolts at the top and bottom by the meeting edge.
         if (pair != null && s.Meeting != null && pair.Passive == p)
         {
             if (s.Meeting.Bolts)
@@ -287,7 +287,7 @@ public static class JoinerySymbols
             o.AddRange(OpeningMarks(p.Operation, r, exterior, convention, JoineryShapes.PaneTop(s, r)));
             if (hardware && s.Frameless == null) o.AddRange(Hardware(s, p, r, pairs.FirstOrDefault(m => m.Left == p || m.Right == p)));
         }
-        // An astragal on the active leaf's room face (decision 450): seen from inside, the strip over the joint.
+        // An astragal on the active leaf's room face (decision 466): seen from inside, the strip over the joint.
         if (!exterior && s.Meeting is { } meet)
             foreach (var pair in pairs.Where(m => m.Kind == "astragal"))
             {

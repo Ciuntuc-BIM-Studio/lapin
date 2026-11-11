@@ -8,7 +8,7 @@ using Lapin.Structure;
 namespace Lapin.Engine.Tests;
 
 /// <summary>
-/// Per-mullion widths and the meeting of two leaves (decision 450): a double door with no mullion between its leaves keeps
+/// Per-mullion widths and the meeting of two leaves (decision 466): a double door with no mullion between its leaves keeps
 /// the mullions by its side panels; the leaves meet butt, on a rebated meeting stile or under an astragal on the active
 /// leaf; the handle only on the active leaf, flush bolts on the passive one.
 /// </summary>

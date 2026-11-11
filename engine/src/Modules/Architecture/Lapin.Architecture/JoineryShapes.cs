@@ -375,7 +375,7 @@ public static class JoineryShapes
         var zs = Spring(s);
         var w = Math.Max(0.015, s.Frame.Mullion * 0.4);
         var (by0, by1) = (s.Frame.Offset - (y1 - y0) * 0.3, s.Frame.Offset + (y1 - y0) * 0.3);
-        // The grid's mullions carried up, each its own width (decision 450): none where the panels below meet.
+        // The grid's mullions carried up, each its own width (decision 466): none where the panels below meet.
         var mullions = Joinery.MullionWidths(s);
         var carried = new List<double>();
         IEnumerable<Vec2> Ends()

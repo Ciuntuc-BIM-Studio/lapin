@@ -67,7 +67,7 @@ describe('the pane editor', () => {
   });
 });
 
-describe('per-bar widths (decision 450)', () => {
+describe('per-bar widths (decision 466)', () => {
   const P = (col: number, operation: string, extra = {}) => ({ col, row: 0, operation, ...extra });
 
   it('fits the list to the lines and drops it when every bar is the frame\'s', () => {

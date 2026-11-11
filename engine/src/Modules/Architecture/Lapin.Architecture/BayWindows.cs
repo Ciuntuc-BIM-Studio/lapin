@@ -138,7 +138,7 @@ public static class BayWindows
     {
         Width = width,
         Columns = s.Columns[c0..(c1 + 1)],
-        // The face's own column boundaries' mullions (decision 450).
+        // The face's own column boundaries' mullions (decision 466).
         Mullions = s.Mullions == null ? null : [.. Enumerable.Range(c0, c1 - c0).Select(i => i < s.Mullions.Length ? s.Mullions[i] : null)],
         Panels = [.. s.Panels.Where(p => p.Col >= c0 && p.Col <= c1).Select(p => p with { Col = p.Col - c0, ColSpan = Math.Max(1, Math.Min(p.ColSpan, c1 - p.Col + 1)) })],
         Bay = null, Details = null, Shape = null, Lintel = null,

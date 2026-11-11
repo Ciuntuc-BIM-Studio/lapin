@@ -643,7 +643,7 @@ export const scenes = [
     },
   },
   {
-    // A double door (decision 450): the Double door preset, its middle mullion picked in the elevation (none), the meeting section.
+    // A double door (decision 466): the Double door preset, its middle mullion picked in the elevation (none), the meeting section.
     id: 'joinery-double-door',
     async run(t) {
       await t.fresh();

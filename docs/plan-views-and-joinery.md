@@ -51,7 +51,7 @@ New fields of the joinery type (the configurator, a "Details" group), each a par
 
 Defaults are per type; each field can be off. The schedule's section symbol draws the sills. The parts carry their material and area in the quantities. IFC: parts of the door or window (`IfcBuildingElementPart` under the fill), with their materials.
 
-## 4. Per-mullion widths and meeting leaves (decision 450): the API
+## 4. Per-mullion widths and meeting leaves (decision 466): the API
 
 Engine done; the configurator's interface still to do. All fields optional; a type without them builds and exports as before.
 
