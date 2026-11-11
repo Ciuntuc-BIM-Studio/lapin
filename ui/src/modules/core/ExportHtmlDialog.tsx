@@ -14,7 +14,8 @@ import { engine, useSession } from '../../engine/session';
 import { exportFile, projectTitle } from '../../engine/files';
 import { htmlExportArgs } from '../../engine/htmlExport';
 
-interface PlanDrawing { id: string; name: string; kind: string; number?: string }
+/** A drawing the page can take; `default: false` (and `empty`) when it shows no model element, listed unticked. */
+interface PlanDrawing { id: string; name: string; kind: string; number?: string; default?: boolean; empty?: boolean }
 interface Plan { drawings: PlanDrawing[]; tables: boolean; sizes: { project: number; model3d: number; drawing: number; sheet: number } }
 
 const GROUPS: [string, string][] = [['plan', 'Floor plans'], ['section', 'Sections'], ['elevation', 'Elevations'], ['sheet', 'Sheets']];
@@ -47,7 +48,12 @@ export function ExportHtmlDialog() {
   useEffect(() => {
     let live = true;
     engine.call<Plan>('project.htmlPlan', { viewId: view3dId ?? '3d' }, { timeoutMs: 120_000 })
-      .then((p) => { if (live) setPlan(p); })
+      .then((p) => {
+        if (!live) return;
+        setPlan(p);
+        // A drawing that shows no element (only grids or marks) starts unticked.
+        setOff(new Set(p.drawings.filter((d) => d.default === false).map((d) => d.id)));
+      })
       .catch(() => { if (live) setPlan({ drawings: [], tables: false, sizes: { project: 0, model3d: 0, drawing: 0, sheet: 0 } }); });
     return () => { live = false; };
   }, [view3dId]);
@@ -90,9 +96,11 @@ export function ExportHtmlDialog() {
                     <div key={kind}>
                       <div className="muted small" style={{ margin: '6px 0 2px' }}>{label}</div>
                       {items.map((d) => (
-                        <label key={d.id} className="check-line" style={{ display: 'flex', gap: 6 }}>
+                        <label key={d.id} className="check-line" style={{ display: 'flex', gap: 6 }} data-empty={d.empty ? 'true' : undefined}
+                          title={d.empty ? 'Shows no element of the model: left out unless you tick it' : undefined}>
                           <input type="checkbox" checked={!off.has(d.id)} onChange={() => toggle(d.id)} />
                           <span>{d.kind === 'sheet' && d.number ? `${d.number} · ` : ''}{d.name}</span>
+                          {d.empty && <span className="muted small">(no element)</span>}
                         </label>
                       ))}
                     </div>

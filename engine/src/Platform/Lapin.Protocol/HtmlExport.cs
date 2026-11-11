@@ -15,8 +15,8 @@ using Lapin.Platform;
 namespace Lapin.Protocol;
 
 /// <summary>
-/// What the page exported for the browser carries (decision 482): the drawings (views and sheets; null: the default
-/// ones, <see cref="HtmlExport.DefaultDrawings"/>), the 3D model (as a 3D view shows it: <see cref="ViewId"/>, else the
+/// What the page exported for the browser carries (decision 482): the drawings (views and sheets; null: those of
+/// <see cref="HtmlExport.DefaultDrawings"/> that show a model element), the 3D model (as a 3D view shows it: <see cref="ViewId"/>, else the
 /// whole model), the modules' tables (the estimate), the project itself (without it the page is a viewer only); the
 /// viewer's code and its phrases in the exporting user's language (the interface gives them: the engine has no
 /// interface of its own), the edition's name and the build.
@@ -53,7 +53,7 @@ public static class HtmlExport
     public const string Format = "lapin-html";
     public const int Version = 1;
 
-    /// <summary>The drawings a page takes by default, in the project browser's order: each storey's plan, the sections, the elevations, then the sheets.</summary>
+    /// <summary>The drawings a page can take, in the project browser's order: each storey's plan, the sections, the elevations, then the sheets (by default only those that show an element: <see cref="TakenByDefault"/>).</summary>
     public static List<JsonObject> DefaultDrawings(IModelView m)
     {
         var o = new List<JsonObject>();
@@ -123,8 +123,13 @@ public static class HtmlExport
         return o;
     }
 
-    /// <summary>A drawing (a view or a sheet) as SVG, with its paper size; null when it draws nothing (or cannot be drawn).</summary>
-    public static (string Svg, double W, double H)? Drawing(IQueryContext q, string id)
+    /// <summary>
+    /// A drawing (a view or a sheet) as SVG, with its paper size and whether it shows a model element; null when it draws
+    /// nothing (or cannot be drawn). It shows one when an element can be picked on it — what the view draws, through its
+    /// Visibility / Graphics, not which storey the elements stand on: a plan with only grids, section marks and texts shows
+    /// none. A sheet shows one when a viewport does, or holds a module's content (a schedule).
+    /// </summary>
+    public static (string Svg, double W, double H, bool Shows)? Drawing(IQueryContext q, string id)
     {
         var m = q.Model;
         var cap = DraftingResources.Book(m).LineCap;
@@ -134,13 +139,20 @@ public static class HtmlExport
             var placed = Sheets.Place(q, sheet);
             var page = Sheets.Compose(q, sheet, placed);
             var picks = placed.Where(p => !p.Content).SelectMany(p => Picks(p.Drawing.Marks, p.ToPaper, p.X0, p.Y0, p.X1, p.Y1)).ToList();
-            return (SvgWriter.Write(page, picks, Image), page.W, page.H);
+            return (SvgWriter.Write(page, picks, Image), page.W, page.H, picks.Count > 0 || placed.Any(p => p.Content));
         }
         if (Views.Find(m, id) is not { } view || view.Str("kind") is "3d") return null;
         var r = Views.Render(q, view, print: true);
         if (r.Problem != null || r.Bounds == null || r.Pens.Count == 0) return null;
         var (p2, pk) = ViewOnPaper(r, view.Name, cap);
-        return (SvgWriter.Write(p2, pk, Image), p2.W, p2.H);
+        return (SvgWriter.Write(p2, pk, Image), p2.W, p2.H, pk.Count > 0);
+    }
+
+    /// <summary>Whether a page takes the drawing by default: only when it shows a model element (<see cref="Drawing"/>); one whose drawing fails is not left out on a doubt.</summary>
+    public static bool TakenByDefault(IQueryContext q, string id)
+    {
+        try { return Drawing(q, id)?.Shows ?? false; }
+        catch (CommandException) { return true; }
     }
 
     // ------------------------------------------------------------ properties
@@ -271,15 +283,15 @@ public static class HtmlExport
         var title = Title(session);
         var sizes = new JsonObject();
 
-        // The drawings, each drawn as the sheets print it.
-        var wanted = o.Drawings ?? DefaultDrawings(m).Select(d => (string)d["id"]!).ToList();
+        // The drawings, each drawn as the sheets print it; without a list, those that show a model element.
         var all = DefaultDrawings(m).ToDictionary(d => (string)d["id"]!);
+        var wanted = o.Drawings ?? [.. all.Keys];
         var list = new JsonArray();
         var svgs = new List<(string, string)>();
         var gids = new HashSet<string>();
         foreach (var id in wanted.Distinct())
         {
-            if (Drawing(q, id) is not { } d) continue;
+            if (Drawing(q, id) is not { } d || (o.Drawings == null && !d.Shows)) continue;
             var meta = all.TryGetValue(id, out var known) ? (JsonObject)known.DeepClone()
                 : m.Get(id) is { } e ? Item(id, e.Name, e.Class == Sheets.Class ? "sheet" : e.Str("kind") ?? "plan", e.Str("number"))
                 : Views.Find(m, id) is { } v ? Item(id, v.Name, v.Str("kind") ?? "plan") : Item(id, id, "plan");
@@ -356,7 +368,8 @@ public static class HtmlExport
     }
 
     /// <summary>
-    /// What the export dialog shows before anything is written: the drawings taken by default, whether a module has a
+    /// What the export dialog shows before anything is written: every drawing, each marked whether it is taken by default
+    /// (<c>default</c>; one that shows no model element is listed unticked, marked <c>empty</c>), whether a module has a
     /// table to put (the estimate), and what the parts weigh — the project and the 3D model as they would be written, the
     /// drawings guessed (a sheet holds several views).
     /// </summary>
@@ -364,6 +377,12 @@ public static class HtmlExport
     {
         var q = session.Reader;
         var drawings = DefaultDrawings(session.Model);
+        foreach (var d in drawings)
+        {
+            var taken = TakenByDefault(q, (string)d["id"]!);
+            d["default"] = taken;
+            if (!taken) d["empty"] = true;
+        }
         var tables = false;
         foreach (var source in session.Catalog.All<IPageTables>())
             try { if (source.Table(q) != null) { tables = true; break; } }

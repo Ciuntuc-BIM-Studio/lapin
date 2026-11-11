@@ -156,7 +156,7 @@ Usted elige qué exportar, qué fase y el origen. **Qué** es **todo**, o el mod
 
 ![Archivo → Lapin para el navegador](shots/html-export-dialog.webp)
 
-En el diálogo elige qué dibujos entran (todos por defecto), el modelo 3D, el presupuesto y **el propio proyecto**. La página muestra su tamaño antes de escribirse. La página habla el idioma que habla Lapin cuando la exporta.
+En el diálogo elige qué dibujos entran (por defecto, cada uno que muestra un elemento del modelo; una planta solo con ejes o marcas aparece sin marcar, con *(ningún elemento)*, y entra si la marca), el modelo 3D, el presupuesto y **el propio proyecto**. La página muestra su tamaño antes de escribirse. La página habla el idioma que habla Lapin cuando la exporta.
 
 ![La página en un navegador: el modelo 3D](shots/html-export-3d.webp)
 

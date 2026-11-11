@@ -5914,6 +5914,9 @@ export const scenes = [
       await dialog.locator('[data-testid=html-export-size]').waitFor({ timeout: 60_000 });
       const ticked = await dialog.locator('[data-testid=html-export-drawings] input[type=checkbox]').evaluateAll((els) => els.filter((e) => e.checked).length);
       t.expect(ticked >= 3, `the plan, the section and the sheet are ticked (${ticked})`);
+      // A level's plan with no element on it (only grids or marks) is listed, unticked.
+      const emptyTicked = await dialog.locator('[data-testid=html-export-drawings] [data-empty=true] input[type=checkbox]').evaluateAll((els) => els.filter((e) => e.checked).length);
+      t.expect(emptyTicked === 0, `a drawing that shows no element is not ticked (${emptyTicked})`);
       t.expect(await dialog.locator('[data-testid=html-export-tables]').isChecked(), 'the estimate goes with the page');
       t.expect(await dialog.locator('[data-testid=html-export-project]').isChecked(), 'the project goes inside the page, so Lapin opens it again');
       await t.shot('html-export-dialog', { of: '[aria-label="Lapin for the browser"]', pad: 0 });

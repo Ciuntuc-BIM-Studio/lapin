@@ -1989,6 +1989,8 @@ export const LO: Record<string, string> = {
   'Lapin for the browser': 'Lapin ສຳລັບບຣາວເຊີ',
   'One .html file that opens by double-click in any browser, with no internet: the 3D model, the drawings, the estimate and every element\'s properties. With the project inside, File → Open in Lapin takes it back.': 'ໄຟລ໌ .html ດຽວທີ່ເປີດດ້ວຍການກົດສອງຄັ້ງໃນບຣາວເຊີໃດກໍໄດ້, ບໍ່ຕ້ອງມີອິນເຕີເນັດ: ແບບຈຳລອງ 3D, ຮູບແຕ້ມແບບ, ການປະເມີນລາຄາ ແລະ ຄຸນສົມບັດຂອງທຸກອົງປະກອບ. ເມື່ອມີໂປຣເຈັກຢູ່ພາຍໃນ, ໄຟລ໌ → ເປີດໃນ Lapin ຈະນຳມັນກັບຄືນມາ.',
   'The project has no drawing yet.': 'ໂປຣເຈັກຍັງບໍ່ມີຮູບແຕ້ມແບບເທື່ອ.',
+  '(no element)': '(ບໍ່ມີອົງປະກອບ)',
+  'Shows no element of the model: left out unless you tick it': 'ບໍ່ສະແດງອົງປະກອບໃດຂອງແບບຈຳລອງ: ຖືກປະໄວ້ ເວັ້ນເສຍແຕ່ທ່ານໝາຍເລືອກມັນ',
   'The 3D model, as the 3D view shows it': 'ແບບຈຳລອງ 3D ຕາມທີ່ມຸມມອງ 3D ສະແດງ',
   'The estimate, worked out from the model now': 'ການປະເມີນລາຄາ, ຄຳນວນຈາກແບບຈຳລອງໃນຕອນນີ້',
   'The project itself, so Lapin can open the page again': 'ໂປຣເຈັກເອງ ເພື່ອໃຫ້ Lapin ເປີດໜ້ານີ້ໄດ້ອີກ',

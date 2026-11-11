@@ -156,7 +156,7 @@ Vous choisissez ce qu’il faut exporter, quelle phase et l’origine. **Quoi** 
 
 ![Fichier → Lapin pour le navigateur](shots/html-export-dialog.webp)
 
-Dans la boîte de dialogue, vous choisissez les dessins qui entrent (tous par défaut), le modèle 3D, le devis et **le projet lui-même**. La page indique sa taille avant d’être écrite. La page parle la langue que parle Lapin au moment de l’export.
+Dans la boîte de dialogue, vous choisissez les dessins qui entrent (par défaut, chacun de ceux qui montrent un élément du modèle ; un plan avec seulement des axes ou des repères est listé non coché, marqué *(aucun élément)*, et entre si vous le cochez), le modèle 3D, le devis et **le projet lui-même**. La page indique sa taille avant d’être écrite. La page parle la langue que parle Lapin au moment de l’export.
 
 ![La page dans un navigateur : le modèle 3D](shots/html-export-3d.webp)
 

@@ -156,7 +156,7 @@ Wybierasz, co eksportować, jaką fazę i początek układu. **Co** to **wszystk
 
 ![Plik → Lapin dla przeglądarki](shots/html-export-dialog.webp)
 
-W oknie wybierasz, które rysunki wchodzą (domyślnie wszystkie), model 3D, kosztorys i **sam projekt**. Strona pokazuje swój rozmiar, zanim zostanie zapisana. Strona mówi w języku, w którym mówi Lapin podczas eksportu.
+W oknie wybierasz, które rysunki wchodzą (domyślnie każdy, który pokazuje element modelu; rzut z samymi osiami lub oznaczeniami jest na liście niezaznaczony, z dopiskiem *(brak elementów)*, i wchodzi, jeśli go zaznaczysz), model 3D, kosztorys i **sam projekt**. Strona pokazuje swój rozmiar, zanim zostanie zapisana. Strona mówi w języku, w którym mówi Lapin podczas eksportu.
 
 ![Strona w przeglądarce: model 3D](shots/html-export-3d.webp)
 

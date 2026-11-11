@@ -156,7 +156,7 @@ Sie wählen, was exportiert wird, welche Bauphase und den Ursprung. **Was** ist 
 
 ![Datei → Lapin für den Browser](shots/html-export-dialog.webp)
 
-Im Dialog wählen Sie, welche Zeichnungen hineinkommen (standardmäßig alle), das 3D-Modell, die Kostenberechnung und **das Projekt selbst**. Die Seite zeigt ihre Größe, bevor sie geschrieben wird. Die Seite spricht die Sprache, die Lapin beim Export spricht.
+Im Dialog wählen Sie, welche Zeichnungen hineinkommen (standardmäßig jede, die ein Element des Modells zeigt; ein Grundriss nur mit Achsen oder Markierungen steht ohne Häkchen in der Liste, mit *(kein Element)*, und kommt hinein, wenn Sie ihn ankreuzen), das 3D-Modell, die Kostenberechnung und **das Projekt selbst**. Die Seite zeigt ihre Größe, bevor sie geschrieben wird. Die Seite spricht die Sprache, die Lapin beim Export spricht.
 
 ![Die Seite in einem Browser: das 3D-Modell](shots/html-export-3d.webp)
 

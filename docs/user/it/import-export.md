@@ -156,7 +156,7 @@ Scegli che cosa esportare, quale fase e l’origine. **Cosa** è **tutto**, oppu
 
 ![File → Lapin per il browser](shots/html-export-dialog.webp)
 
-Nella finestra scegli quali disegni includere (tutti per impostazione predefinita), il modello 3D, il preventivo e **il progetto stesso**. La pagina mostra la sua dimensione prima di essere scritta. La pagina parla la lingua che parla Lapin quando la esporti.
+Nella finestra scegli quali disegni includere (per impostazione predefinita ognuno che mostra un elemento del modello; una pianta con soli assi o simboli è nell’elenco non selezionata, segnata *(nessun elemento)*, ed entra se la selezioni), il modello 3D, il preventivo e **il progetto stesso**. La pagina mostra la sua dimensione prima di essere scritta. La pagina parla la lingua che parla Lapin quando la esporti.
 
 ![La pagina in un browser: il modello 3D](shots/html-export-3d.webp)
 

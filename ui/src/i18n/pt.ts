@@ -1933,6 +1933,8 @@ export const PT: Record<string, string> = {
   'Lapin for the browser': 'Lapin para o navegador',
   'One .html file that opens by double-click in any browser, with no internet: the 3D model, the drawings, the estimate and every element\'s properties. With the project inside, File → Open in Lapin takes it back.': 'Um único arquivo .html que abre com um duplo clique em qualquer navegador, sem internet: o modelo 3D, os desenhos, o orçamento e as propriedades de cada elemento. Com o projeto dentro, Arquivo → Abrir no Lapin o recupera.',
   'The project has no drawing yet.': 'O projeto ainda não tem nenhum desenho.',
+  '(no element)': '(nenhum elemento)',
+  'Shows no element of the model: left out unless you tick it': 'Não mostra nenhum elemento do modelo: fica de fora a menos que você o marque',
   'The 3D model, as the 3D view shows it': 'O modelo 3D, como a vista 3D o mostra',
   'The estimate, worked out from the model now': 'O orçamento, calculado agora a partir do modelo',
   'The project itself, so Lapin can open the page again': 'O próprio projeto, para que o Lapin possa abrir a página de novo',

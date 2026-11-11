@@ -1930,6 +1930,8 @@ export const DA: Record<string, string> = {
   'Lapin for the browser': 'Lapin til browseren',
   'One .html file that opens by double-click in any browser, with no internet: the 3D model, the drawings, the estimate and every element\'s properties. With the project inside, File → Open in Lapin takes it back.': 'Én .html-fil, der åbnes med dobbeltklik i enhver browser, uden internet: 3D-modellen, tegningerne, overslaget og hvert elements egenskaber. Med projektet indeni henter Filer → Åbn i Lapin det tilbage.',
   'The project has no drawing yet.': 'Projektet har endnu ingen tegning.',
+  '(no element)': '(intet element)',
+  'Shows no element of the model: left out unless you tick it': 'Viser intet element fra modellen: udeladt, medmindre du sætter flueben ved det',
   'The 3D model, as the 3D view shows it': '3D-modellen, som 3D-visningen viser den',
   'The estimate, worked out from the model now': 'Overslaget, beregnet nu ud fra modellen',
   'The project itself, so Lapin can open the page again': 'Selve projektet, så Lapin kan åbne siden igen',

@@ -1934,6 +1934,8 @@ export const RO: Record<string, string> = {
   'Lapin for the browser': 'Lapin pentru browser',
   'One .html file that opens by double-click in any browser, with no internet: the 3D model, the drawings, the estimate and every element\'s properties. With the project inside, File → Open in Lapin takes it back.': 'Un singur fișier .html care se deschide cu dublu clic în orice browser, fără internet: modelul 3D, desenele, devizul și proprietățile fiecărui element. Cu proiectul înăuntru, Fișier → Deschide în Lapin îl aduce înapoi.',
   'The project has no drawing yet.': 'Proiectul nu are încă niciun desen.',
+  '(no element)': '(niciun element)',
+  'Shows no element of the model: left out unless you tick it': 'Nu arată niciun element al modelului: rămâne pe dinafară dacă nu îl bifezi',
   'The 3D model, as the 3D view shows it': 'Modelul 3D, așa cum îl arată vederea 3D',
   'The estimate, worked out from the model now': 'Devizul, calculat acum din model',
   'The project itself, so Lapin can open the page again': 'Proiectul însuși, ca Lapin să poată deschide din nou pagina',

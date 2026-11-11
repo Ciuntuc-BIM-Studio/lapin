@@ -178,7 +178,7 @@ Alegi ce exporți, ce fază și originea. **Ce** este **tot**, sau modelul **cum
 
 ![Fișier → Lapin pentru browser](shots/html-export-dialog.webp)
 
-În dialog alegi ce desene intră (toate, implicit), modelul 3D, devizul și **proiectul însuși**. Pagina arată mărimea ei înainte de a fi scrisă. Pagina vorbește limba pe care o vorbește Lapin când o exporți.
+În dialog alegi ce desene intră (implicit fiecare desen care arată un element al modelului; un plan doar cu axe sau marcaje e în listă nebifat, cu *(niciun element)*, și intră dacă îl bifezi), modelul 3D, devizul și **proiectul însuși**. Pagina arată mărimea ei înainte de a fi scrisă. Pagina vorbește limba pe care o vorbește Lapin când o exporți.
 
 ![Pagina într-un browser: modelul 3D](shots/html-export-3d.webp)
 

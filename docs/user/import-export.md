@@ -178,7 +178,7 @@ You choose what to export, which phase, and the origin. **What** is **everything
 
 ![File → Lapin for the browser](shots/html-export-dialog.webp)
 
-In the dialog you choose which drawings go in (all of them by default), the 3D model, the estimate, and **the project itself**. The page shows its size before it is written. The page speaks the language Lapin speaks when you export it.
+In the dialog you choose which drawings go in (by default every one that shows an element of the model; a plan with only grids or marks is listed unticked, marked *(no element)*, and goes in if you tick it), the 3D model, the estimate, and **the project itself**. The page shows its size before it is written. The page speaks the language Lapin speaks when you export it.
 
 ![The page in a browser: the 3D model](shots/html-export-3d.webp)
 

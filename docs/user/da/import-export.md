@@ -156,7 +156,7 @@ Du vælger, hvad der skal eksporteres, hvilken fase og origo. **Hvad** er **alt*
 
 ![Filer → Lapin til browseren](shots/html-export-dialog.webp)
 
-I dialogen vælger du, hvilke tegninger der kommer med (alle som standard), 3D-modellen, overslaget og **selve projektet**. Siden viser sin størrelse, før den skrives. Siden taler det sprog, Lapin taler, når du eksporterer den.
+I dialogen vælger du, hvilke tegninger der kommer med (som standard hver tegning, der viser et element fra modellen; en plan med kun akser eller markeringer står på listen uden flueben, mærket *(intet element)*, og kommer med, hvis du sætter flueben ved den), 3D-modellen, overslaget og **selve projektet**. Siden viser sin størrelse, før den skrives. Siden taler det sprog, Lapin taler, når du eksporterer den.
 
 ![Siden i en browser: 3D-modellen](shots/html-export-3d.webp)
 

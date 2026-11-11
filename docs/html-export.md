@@ -63,9 +63,16 @@ storeys: [{id, name, elevation}], drawings: [{id, name, kind, number?, w, h}], t
   scale) and sheets (`Sheets.Compose`, as the PDF prints them), written by `SvgWriter` from the same pens as
   `PdfWriter`: fills even-odd, lines per pen with colour, paper width and dashes, texts (cap height as in the PDF),
   pictures by their corners. After the drawing, each element's pick mark (its cut areas, its seen lines) as an
-  invisible path with `data-gid`: a click selects it, in 3D too. The default list (`HtmlExport.DefaultDrawings`) is
+  invisible path with `data-gid`: a click selects it, in 3D too. The list (`HtmlExport.DefaultDrawings`) is
   the project browser's: each level's plan (its own floor plan view, else its default plan), the other plan views,
   sections, elevations, then the sheets by number. A drawing that draws nothing is left out.
+- **Which are taken by default**: those that show a model element (`HtmlExport.TakenByDefault`), told by what the
+  drawing draws, not by storey membership: an element counts when it has a pick mark on the drawing, so the view's
+  Visibility / Graphics, its range and its crop decide, as for the PDF. A plan with only grids, section marks and
+  texts (the test house's Foundations and First floor) shows none. A sheet shows one when one of its viewports does,
+  or when it holds a module's content (a schedule). Those that show none stay in the dialog's list, unticked and
+  marked *(no element)*; a page written without a `drawings` list leaves them out, one written with them named takes
+  them. A drawing whose rendering fails is not left out on a doubt.
 
 ## The viewer
 
@@ -86,7 +93,8 @@ and graphite themes (the exporting user's, switchable), the exporting user's lan
   delivered as every export (`path`: written there; else `{name, data}` to download), with `sizes` (page,
   drawings, model3d, project, viewer, total). Changes nothing: no undo step. Allowed to a guest of a shared session,
   as the other exports.
-- `project.htmlPlan {viewId?, model3d?}`: the default drawings, whether a module has a table, and the sizes for the
+- `project.htmlPlan {viewId?, model3d?}`: every drawing, each with `default` (false, and `empty: true`, for one that
+  shows no element; it renders each drawing to tell), whether a module has a table, and the sizes for the
   dialog's estimate (the project and the GLB measured, the drawings guessed).
 
 ## Opening it in Lapin

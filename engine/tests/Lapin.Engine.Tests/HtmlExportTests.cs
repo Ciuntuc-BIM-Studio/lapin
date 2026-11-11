@@ -362,6 +362,45 @@ public sealed class HtmlExportTests : IDisposable
     }
 
     [Fact]
+    public void A_drawing_that_shows_no_element_is_listed_but_not_taken_by_default()
+    {
+        var f = Project();
+        var upper = (string)f.Run("storey.create", new JsonObject { ["name"] = "First floor", ["elevation"] = 3 })!["id"]!;
+        var withWall = (string)f.Run("sheet.create", new JsonObject { ["name"] = "Ground floor" })!["id"]!;
+        f.Run("sheet.addViewport", new JsonObject { ["id"] = withWall, ["viewId"] = "plan:" + f.Storey, ["x"] = 200, ["y"] = 150 });
+        var empty = (string)f.Run("sheet.create", new JsonObject { ["name"] = "First floor" })!["id"]!;
+        f.Run("sheet.addViewport", new JsonObject { ["id"] = empty, ["viewId"] = "plan:" + upper, ["x"] = 200, ["y"] = 150 });
+        var (_, call) = Engine(f);
+
+        // The dialog lists every drawing; one that draws no element (the upper storey has none) is not ticked.
+        var listed = ((JsonArray)call("project.htmlPlan", [])["drawings"]!).OfType<JsonObject>().ToDictionary(d => (string)d["id"]!);
+        Assert.True((bool)listed["plan:" + f.Storey]["default"]!);
+        Assert.False((bool)listed["plan:" + upper]["default"]!);
+        Assert.True((bool)listed["plan:" + upper]["empty"]!);
+        Assert.True((bool)listed[withWall]["default"]!);
+        Assert.False((bool)listed[empty]["default"]!);
+        Assert.False(listed[withWall].ContainsKey("empty"));
+
+        // A page written without a list takes the drawings ticked by default; the empty ones only when named.
+        var path = PathOf("defaults.html");
+        call("project.exportHtml", new JsonObject { ["path"] = path, ["model3d"] = false, ["project"] = false });
+        var ids = ((JsonArray)DataOf(PageText(File.ReadAllBytes(path)))["drawings"]!).Select(d => (string)d!["id"]!).ToList();
+        Assert.Contains("plan:" + f.Storey, ids);
+        Assert.Contains(withWall, ids);
+        Assert.DoesNotContain("plan:" + upper, ids);
+        Assert.DoesNotContain(empty, ids);
+        call("project.exportHtml", new JsonObject { ["path"] = path, ["drawings"] = new JsonArray(empty), ["model3d"] = false, ["project"] = false });
+        Assert.Equal(empty, (string?)Assert.Single((JsonArray)DataOf(PageText(File.ReadAllBytes(path)))["drawings"]!)!["id"]);
+
+        // Told by what the view draws, not by where the elements stand: a section whose Visibility / Graphics hides the walls shows none.
+        var section = f.Model.OfClass(Views.Class).First(v => v.Name == "Section A").Id;
+        bool Default(string id) => (bool)((JsonArray)call("project.htmlPlan", [])["drawings"]!).OfType<JsonObject>().First(d => (string?)d["id"] == id)["default"]!;
+        Assert.True(Default(section));
+        f.Run("view.graphics", new JsonObject { ["id"] = section, ["category"] = "walls", ["value"] = new JsonObject { ["hidden"] = true } });
+        Assert.False(Default(section));
+    }
+
+    [Fact]
     public void The_estimate_goes_when_the_edition_has_the_cost_module_marked_as_the_app_marks_it()
     {
         var f = new Fixture(new ArchitectureModule(), new CostModule());

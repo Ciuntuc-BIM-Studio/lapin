@@ -1933,6 +1933,8 @@ export const ZH: Record<string, string> = {
   'Lapin for the browser': 'Lapin 浏览器版',
   'One .html file that opens by double-click in any browser, with no internet: the 3D model, the drawings, the estimate and every element\'s properties. With the project inside, File → Open in Lapin takes it back.': '一个 .html 文件，双击即可在任何浏览器中打开，无需联网：包含 3D 模型、图纸、预算和每个构件的属性。内含项目时，文件 → 在 Lapin 中打开 可将其取回。',
   'The project has no drawing yet.': '项目还没有图纸。',
+  '(no element)': '（无元素）',
+  'Shows no element of the model: left out unless you tick it': '未显示模型的任何元素：除非勾选，否则不包含',
   'The 3D model, as the 3D view shows it': '3D 模型，与 3D 视图所示一致',
   'The estimate, worked out from the model now': '预算，现在根据模型计算',
   'The project itself, so Lapin can open the page again': '项目本身，这样 Lapin 就能再次打开该页面',
