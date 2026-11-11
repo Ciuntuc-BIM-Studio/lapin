@@ -95,9 +95,9 @@ public sealed class CoreModule : ILapinModule
         // Openings as solid voids, and MEP checked against them (decision 289).
         Coordination.OpeningVoids.Register(r);
         // A body many references share (docs/plan-instancing.md): drawn by its instances, never on its own.
-        r.Class(new(StoredBodies.SharedClass, "Shared body", [], "#888888", Kind: "resource"));
+        r.Class(new(StoredBodies.SharedClass, "Shared body", [], "#888888", Kind: "resource", Template: false));
         // What foreign elements share in their file (a type, a system, a material), kept for the export.
-        r.Class(new(IfcSource.RecordClass, "IFC record", [], "#888888", Kind: "resource"));
+        r.Class(new(IfcSource.RecordClass, "IFC record", [], "#888888", Kind: "resource", Template: false));
         ViewStyles.Register(r);
         Coordination.VoidDrawings.Register(r);
         ElementFaces.Register(r);

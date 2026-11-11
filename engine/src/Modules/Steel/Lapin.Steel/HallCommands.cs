@@ -13,7 +13,7 @@ public static class HallCommands
 {
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(Halls.Class, "Portal frame hall", [], "#8a96a3", Kind: "resource"));
+        r.Class(new(Halls.Class, "Portal frame hall", [], "#8a96a3", Kind: "resource", Template: false));
         r.Catalog("hallStyles", new JsonArray([.. HallStyles.Catalogue.Select(x => (JsonNode)x.ToJson())]));
 
         // A new hall on a storey, from a style and the fields given.

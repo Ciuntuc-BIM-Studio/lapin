@@ -258,7 +258,13 @@ public sealed record ClassDescriptor(
     IReadOnlyList<FieldDescriptor> Fields,
     string Color = "#c9ced6",
     /// <summary>"element" (placed on a storey), "type", "resource".</summary>
-    string Kind = "element");
+    string Kind = "element",
+    /// <summary>
+    /// Whether a project template (<see cref="ProjectTemplates"/>) starts from it: null, by its kind (types, resources,
+    /// storeys and views are kept; elements, annotations and groups are not); false, a resource that is the project's own
+    /// content (an issue, a link, an estimate), kept only when something the template keeps uses it.
+    /// </summary>
+    bool? Template = null);
 
 /// <summary>
 /// One coloured part of an element: a wall's layer or zone, a window's frame. <see cref="Key"/> is stable within the element ("layer:0", "zone:ring-beam").

@@ -484,7 +484,7 @@ public static class Components
 
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(Class, "Component", [], "#888888", Kind: "resource"));
+        r.Class(new(Class, "Component", [], "#888888", Kind: "resource", Template: false));
 
         // What is selected made a component: one instance, standing where it is.
         r.Command("component.make", "Make component", (ctx, a) =>

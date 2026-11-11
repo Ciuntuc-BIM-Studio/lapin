@@ -382,7 +382,7 @@ public static class ClashReports
 
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(Class, "Clash report", [], Kind: "resource"));
+        r.Class(new(Class, "Clash report", [], Kind: "resource", Template: false));
         // Run clash check (Manage → Clash check…): {clearance?, empty?} over the project's settings; the report kept, one undo step.
         r.Command("coordination.runCheck", "Run clash check", (ctx, a) => ToJson(ctx.Model, Run(ctx, OpeningClashes.Options.From(ctx.Model, a))));
         // The report as kept, with whether the model changed since; null before the first run.

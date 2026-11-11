@@ -1564,6 +1564,30 @@ export const RO: Record<string, string> = {
   'Mullion': 'Montant', 'Transom': 'Traversă', 'Rebated': 'Cu falț', 'Cover strip': 'Șină de acoperire', 'Active leaf': 'Canat activ', 'Meeting': 'Întâlnire', 'Leaves meeting': 'Canate care se întâlnesc', 'No mullion': 'Fără montant', 'No transom': 'Fără traversă', 'Rebate overlap': 'Suprapunere falț', 'Cover strip width': 'Lățimea șinei de acoperire', 'Cover strip thickness': 'Grosimea șinei de acoperire', 'Flush bolts on the passive leaf': 'Zăvoare îngropate în canatul pasiv', 'New double door': 'Ușă dublă nouă', 'Default (frame\'s)': 'Implicit (al tocului)', 'Click a mullion or a transom in the elevation to give it its own width.': 'Fă clic pe un montant sau pe o traversă în elevație ca să îi dai o lățime proprie.', 'Double-acting leaves always meet butt.': 'Canatele cu deschidere dublă se întâlnesc mereu cap la cap.', 'Takes the width of the frame\'s mullions and transoms again': 'Preia din nou lățimea montanților și a traverselor tocului', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': 'Canatul care se deschide primul și are mânerul, așa cum se citește grila (cel stâng are balamalele la stânga, văzut din exterior)',
   // Entourage kinds from pictures (PR #21, decision 468)
   "Entourage kinds…": "Feluri de anturaj…", "Entourage kinds": "Feluri de anturaj", "Add picture…": "Adaugă o imagine…", "Pictures": "Imagini", "The picture could not be read.": "Imaginea nu a putut fi citită.", "No picture kinds yet.": "Încă niciun fel din imagini.", "A PNG with a see-through background stands as a cut-out; each figure of a kind takes its height and width.": "Un PNG cu fundal transparent stă ca o figură decupată; fiecare figură a unui fel îi ia înălțimea și lățimea.",
+  // Project templates (issues #9 and #20, decision 470): File → Save as template…, New from template…, the default in Preferences
+  "New from template…": "Nou din șablon…",
+  "Project templates": "Șabloane de proiect",
+  "Project templates…": "Șabloane de proiect…",
+  "A template keeps the project’s set-up: its types, materials, units and drafting standards, storeys, views, sheets and title blocks. It keeps no element: no wall, no drawing, no issue.": "Un șablon păstrează configurarea proiectului: tipurile, materialele, unitățile și standardele de desen, etajele, vederile, planșele și cartușele. Nu păstrează niciun element: niciun perete, niciun desen, nicio problemă.",
+  "The one chosen on the left is what File → New project starts from.": "Cel ales în stânga este cel de la care pornește Fișier → Proiect nou.",
+  "Start every new project from it (File → New project)": "Pornește orice proiect nou din el (Fișier → Proiect nou)",
+  "Kept in this browser. Export it from File → New from template… to keep a file.": "Păstrat în acest browser. Exportă-l din Fișier → Nou din șablon… ca să păstrezi un fișier.",
+  "Kept on this computer, in your Lapin folder. Export it to share it with an office.": "Păstrat pe acest calculator, în dosarul tău Lapin. Exportă-l ca să-l împarți cu un birou.",
+  "Template saved: new projects start from it.": "Șablon salvat: proiectele noi pornesc din el.",
+  "Template saved: File → New from template… starts a project from it.": "Șablon salvat: Fișier → Nou din șablon… pornește un proiect din el.",
+  "Start new projects from it": "Pornește proiectele noi din el",
+  "Export as a .lapin file": "Exportă ca fișier .lapin",
+  "Lapin default": "Implicit Lapin",
+  "Lapin’s own start: its storeys, plans and styles": "Pornirea proprie a lui Lapin: etajele, planurile și stilurile lui",
+  "None yet: set up a project, then File → Save as template…": "Niciunul încă: configurează un proiect, apoi Fișier → Salvează ca șablon…",
+  "New from a file…": "Nou dintr-un fișier…",
+  "A new project from a template or project file, without keeping it here": "Un proiect nou dintr-un fișier de șablon sau de proiect, fără să-l păstrezi aici",
+  "From the template": "Din șablonul",
+  "Your template: its types, styles, storeys and sheets": "Șablonul tău: tipurile, stilurile, etajele și planșele lui",
+  "New projects": "Proiecte noi",
+  "File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.": "Fișier → Proiect nou pornește din acest șablon: tipurile, materialele, unitățile, stilurile, etajele și planșele lui. Fișier → Salvează ca șablon… face unul din proiectul deschis.",
+  "Give the template a name.": "Dă un nume șablonului.",
+  "This is an old Lapin project: open it and save it, then use it as a template.": "Acesta e un proiect Lapin vechi: deschide-l și salvează-l, apoi folosește-l ca șablon.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -1724,4 +1748,9 @@ export const RO_PATTERNS: [RegExp, (m: RegExpExecArray) => string][] = [
   [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} are ${m[2]} MB: în browser un nor de puncte are cel mult ${m[3]} MB. Leagă-l în aplicația desktop.`],
   // Point clouds in views: Visibility / Graphics, plans and sections, exports (decision 396)
   [/^Class (\d+)$/, (m) => `Clasa ${m[1]}`],
+  // Project templates (decision 470)
+  [/^The template „(.+)” could not be used: (.+) Lapin's default was used instead\.$/, (m) => `Șablonul „${m[1]}” nu a putut fi folosit: ${m[2]} S-a folosit implicitul Lapin.`],
+  [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Șablonul „${m[1]}” ales pentru proiectele noi nu mai e pe acest calculator: s-a folosit implicitul Lapin.`],
+  [/^There is no template „(.+)”\.$/, (m) => `Nu există șablonul „${m[1]}”.`],
+  [/^A template is already called „(.+)”\.$/, (m) => `Un șablon se numește deja „${m[1]}”.`],
 ];

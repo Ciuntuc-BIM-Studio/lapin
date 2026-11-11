@@ -29,10 +29,11 @@ public sealed class EngineHub
     readonly EngineDispatcher _dispatcher;
     readonly Session _session;
 
-    public EngineHub(Session session, ProjectFiles files, Recovery? recovery = null)
+    /// <param name="userDir">The user's folder on this computer (the desktop's app data folder): the project templates live in its <c>templates</c>.</param>
+    public EngineHub(Session session, ProjectFiles files, Recovery? recovery = null, string? userDir = null)
     {
         _session = session;
-        _dispatcher = new(session, files, recovery, new SupportDesk());
+        _dispatcher = new(session, files, recovery, new SupportDesk()) { Templates = userDir == null ? null : new TemplateLibrary(Path.Combine(userDir, "templates")) };
         Sharing = new Sharing(this);
         session.History.AuthorName = id => Participant(id)?.Name;
         // A module's background result (docs/overrides.md) waits for the calls' queue like a call, then goes out as a diff.

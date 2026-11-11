@@ -13,6 +13,7 @@ import { editableText, surveyIfc, type EditableReport } from './ifcImport';
 import { emptyPane, notify, select, useUi } from '../app/store';
 import { usePrefs } from '../app/prefs';
 import { fitAfterImport, poseKey } from '../viewport/camera';
+import { flushUserSettings } from '../app/userSettings';
 
 const FILTERS = [{ name: 'Lapin project', extensions: ['lapin'] }];
 
@@ -155,7 +156,7 @@ function remember(path: string): void {
 }
 
 /** Into the project: the ground floor's plan in front, the 3D open in a tab beside it. */
-function enter(): void {
+export function enter(): void {
   select(null);
   const plan = emptyPane('plan');
   useUi.setState({ screen: 'workspace', storeyId: null, tool: null, panes: [plan], pane: 0, ...plan });
@@ -165,9 +166,27 @@ function enter(): void {
 /** A level a new project starts with: its name, elevation and height (metres). */
 export interface NewStorey { name: string; elevation: number; height: number }
 
-/** A new project: the edition's levels, or a start screen template's (decision 261). False when the user kept the open one. */
-export async function newProject(storeys?: NewStorey[]): Promise<boolean> {
+/**
+ * A new project: the edition's levels, or a start screen template's (decision 261); without either, the project template
+ * Preferences chose for new projects (decision 470), when it is still on this computer (`lapinDefault`: Lapin's own start
+ * whatever was chosen). False when the user kept the open one.
+ */
+export async function newProject(storeys?: NewStorey[], lapinDefault = false): Promise<boolean> {
   if (!(await confirmDiscard('Start a new one'))) return false;
+  const chosen = storeys?.length || lapinDefault ? null : usePrefs.getState().defaultTemplate;
+  if (chosen) {
+    const { defaultTemplateOf, refreshTemplates, startFromTemplate } = await import('./templates');
+    const template = defaultTemplateOf(chosen, await refreshTemplates());
+    if (template) {
+      try {
+        await startFromTemplate(template.id);
+        enter();
+        return true;
+      } catch (e) {
+        notify(`The template „${template.name}” could not be used: ${e instanceof Error ? e.message : String(e)} Lapin's default was used instead.`);
+      }
+    } else notify(`The template „${chosen}” chosen for new projects is no longer on this computer: Lapin's default was used.`);
+  }
   try {
     // The profile standards it offers, as the user chose for new projects (Preferences → Profiles; decision 457).
     const profileStandards = usePrefs.getState().newProjectProfileStandards;
@@ -321,6 +340,8 @@ export async function guardWindowClose(): Promise<void> {
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const win = getCurrentWindow();
   await win.onCloseRequested(async (e) => {
+    // The settings changed a moment ago reach the user's folder before the window goes (decision 470).
+    await flushUserSettings();
     if (!useSession.getState().doc?.dirty) return;
     e.preventDefault();
     const dialog = await import('@tauri-apps/plugin-dialog');

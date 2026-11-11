@@ -26,6 +26,9 @@ export function baseFileActions(): FileAction[] {
     { id: 'file.save', label: 'Save', keys: 'app.save', run: () => saveProject() },
     { id: 'file.saveAs', label: 'Save as…', keys: 'app.saveAs', run: () => saveProject(true) },
     { id: 'file.saveVersion', label: 'Save version…', run: dialog('versions') },
+    // Project templates (issues #9 and #20, decision 470): the project's set-up kept on this computer, new projects started from it.
+    { id: 'file.newFromTemplate', label: 'New from template…', run: dialog('projectTemplates') },
+    { id: 'file.saveTemplate', label: 'Save as template…', run: dialog('saveTemplate') },
     { id: 'file.importIfc', label: 'Import IFC…', run: () => importIfc() },
     { id: 'file.importFragments', label: 'Import Fragments…', run: () => importFragments() },
     { id: 'file.importBos', label: 'Import BIM Open Schema…', run: () => importBos() },
@@ -52,7 +55,7 @@ export function baseFileActions(): FileAction[] {
 
 /** The menu of the computer's own user. The model exchanged (docs/fragments.md, Exchange): IFC and Fragments, chosen alike both ways. */
 export const HOST_SECTIONS: FileSection[] = [
-  { ids: ['file.new', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion'] },
+  { ids: ['file.new', 'file.newFromTemplate', 'file.open', 'file.save', 'file.saveAs', 'file.saveVersion', 'file.saveTemplate'] },
   { head: 'IFC and Fragments', ids: ['file.importIfc', 'file.importFragments', 'file.importBos', 'file.linkIfc', 'file.linkLapin', 'file.exportExchange', 'file.exportJg', 'file.optimizeIfc'] },
   { head: 'Other formats', ids: ['file.linkPointCloud', 'file.importDxf', 'file.importTrace', 'file.importMesh', 'file.exportMesh'] },
   { ids: ['file.share', 'file.join', 'file.startScreen'] },

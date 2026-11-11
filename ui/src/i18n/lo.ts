@@ -1619,6 +1619,30 @@ export const LO: Record<string, string> = {
   'Mullion': 'ໄມ້ຕັ້ງແບ່ງຊ່ອງ (Mullion)', 'Transom': 'ໄມ້ນອນແບ່ງຊ່ອງ (Transom)', 'Rebated': 'ແບບມີຮ່ອງຊ້ອນ', 'Cover strip': 'ແຖບປິດຮອຍຕໍ່', 'Active leaf': 'ບານທີ່ໃຊ້ງານຫຼັກ', 'Meeting': 'ຈຸດພົບກັນ', 'Leaves meeting': 'ບານທີ່ມາພົບກັນ', 'No mullion': 'ບໍ່ມີໄມ້ຕັ້ງແບ່ງຊ່ອງ', 'No transom': 'ບໍ່ມີໄມ້ນອນແບ່ງຊ່ອງ', 'Rebate overlap': 'ຄວາມຊ້ອນຂອງຮ່ອງ', 'Cover strip width': 'ຄວາມກວ້າງຂອງແຖບປິດຮອຍຕໍ່', 'Cover strip thickness': 'ຄວາມໜາຂອງແຖບປິດຮອຍຕໍ່', 'Flush bolts on the passive leaf': 'ສະຄັກຝັງໃນບານທີ່ບໍ່ໃຊ້ງານຫຼັກ', 'New double door': 'ປະຕູຄູ່ໃໝ່', 'Default (frame\'s)': 'ຄ່າເລີ່ມຕົ້ນ (ຂອງກອບ)', 'Click a mullion or a transom in the elevation to give it its own width.': 'ກົດໄມ້ຕັ້ງ ຫຼື ໄມ້ນອນໃນດ້ານຕັ້ງ ເພື່ອກຳນົດຄວາມກວ້າງຂອງມັນເອງ.', 'Double-acting leaves always meet butt.': 'ບານເປີດສອງທາງຈະພົບກັນແບບຊົນກັນສະເໝີ.', 'Takes the width of the frame\'s mullions and transoms again': 'ກັບໄປໃຊ້ຄວາມກວ້າງຂອງໄມ້ຕັ້ງ ແລະ ໄມ້ນອນຂອງກອບ', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': 'ບານທີ່ເປີດກ່ອນ ແລະ ມີມືຈັບ ຕາມທີ່ອ່ານຕາຕະລາງ (ບານຊ້າຍມີບານພັບຢູ່ຊ້າຍ ເບິ່ງຈາກພາຍນອກ)',
   // Entourage kinds from pictures (PR #21, decision 468)
   "Entourage kinds…": "ຊະນິດອົງປະກອບສາກ…", "Entourage kinds": "ຊະນິດອົງປະກອບສາກ", "Add picture…": "ເພີ່ມຮູບ…", "Pictures": "ຮູບ", "The picture could not be read.": "ບໍ່ສາມາດອ່ານຮູບໄດ້.", "No picture kinds yet.": "ຍັງບໍ່ມີຊະນິດຈາກຮູບ.", "A PNG with a see-through background stands as a cut-out; each figure of a kind takes its height and width.": "PNG ທີ່ມີພື້ນຫຼັງໂປ່ງໃສຈະຕັ້ງເປັນຮູບຕັດ; ແຕ່ລະຮູບຄົນຂອງຊະນິດໜຶ່ງຈະໃຊ້ຄວາມສູງ ແລະ ຄວາມກວ້າງຂອງມັນ.",
+  // Project templates (issues #9 and #20, decision 470): File → Save as template…, New from template…, the default in Preferences
+  "New from template…": "ໃໝ່ຈາກແມ່ແບບ…",
+  "Project templates": "ແມ່ແບບໂຄງການ",
+  "Project templates…": "ແມ່ແບບໂຄງການ…",
+  "A template keeps the project’s set-up: its types, materials, units and drafting standards, storeys, views, sheets and title blocks. It keeps no element: no wall, no drawing, no issue.": "ແມ່ແບບເກັບການຕັ້ງຄ່າຂອງໂຄງການ: ປະເພດ, ວັດສະດຸ, ຫົວໜ່ວຍ ແລະ ມາດຕະຖານການແຕ້ມ, ຊັ້ນອາຄານ, ມຸມມອງ, ແຜ່ນແບບ ແລະ ຕາຕະລາງລາຍລະອຽດແບບ. ມັນບໍ່ເກັບອົງປະກອບໃດເລີຍ: ບໍ່ມີຝາ, ບໍ່ມີແບບແຕ້ມ, ບໍ່ມີບັນຫາ.",
+  "The one chosen on the left is what File → New project starts from.": "ອັນທີ່ເລືອກທາງຊ້າຍແມ່ນຈຸດເລີ່ມຂອງ ໄຟລ໌ → ໂຄງການໃໝ່.",
+  "Start every new project from it (File → New project)": "ເລີ່ມທຸກໂຄງການໃໝ່ຈາກມັນ (ໄຟລ໌ → ໂຄງການໃໝ່)",
+  "Kept in this browser. Export it from File → New from template… to keep a file.": "ເກັບໄວ້ໃນບຣາວເຊີນີ້. ສົ່ງອອກຈາກ ໄຟລ໌ → ໃໝ່ຈາກແມ່ແບບ… ເພື່ອເກັບເປັນໄຟລ໌.",
+  "Kept on this computer, in your Lapin folder. Export it to share it with an office.": "ເກັບໄວ້ໃນຄອມພິວເຕີນີ້, ໃນໂຟນເດີ Lapin ຂອງທ່ານ. ສົ່ງອອກເພື່ອແບ່ງປັນກັບຫ້ອງການ.",
+  "Template saved: new projects start from it.": "ບັນທຶກແມ່ແບບແລ້ວ: ໂຄງການໃໝ່ເລີ່ມຈາກມັນ.",
+  "Template saved: File → New from template… starts a project from it.": "ບັນທຶກແມ່ແບບແລ້ວ: ໄຟລ໌ → ໃໝ່ຈາກແມ່ແບບ… ເລີ່ມໂຄງການຈາກມັນ.",
+  "Start new projects from it": "ເລີ່ມໂຄງການໃໝ່ຈາກມັນ",
+  "Export as a .lapin file": "ສົ່ງອອກເປັນໄຟລ໌ .lapin",
+  "Lapin default": "ຄ່າເລີ່ມຕົ້ນຂອງ Lapin",
+  "Lapin’s own start: its storeys, plans and styles": "ການເລີ່ມຕົ້ນຂອງ Lapin ເອງ: ຊັ້ນອາຄານ, ແຜນຜັງ ແລະ ຮູບແບບ",
+  "None yet: set up a project, then File → Save as template…": "ຍັງບໍ່ມີ: ຕັ້ງຄ່າໂຄງການ, ແລ້ວ ໄຟລ໌ → ບັນທຶກເປັນແມ່ແບບ…",
+  "New from a file…": "ໃໝ່ຈາກໄຟລ໌…",
+  "A new project from a template or project file, without keeping it here": "ໂຄງການໃໝ່ຈາກໄຟລ໌ແມ່ແບບ ຫຼື ໄຟລ໌ໂຄງການ, ໂດຍບໍ່ເກັບມັນໄວ້ບ່ອນນີ້",
+  "From the template": "ຈາກແມ່ແບບ",
+  "Your template: its types, styles, storeys and sheets": "ແມ່ແບບຂອງທ່ານ: ປະເພດ, ຮູບແບບ, ຊັ້ນອາຄານ ແລະ ແຜ່ນແບບ",
+  "New projects": "ໂຄງການໃໝ່",
+  "File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.": "ໄຟລ໌ → ໂຄງການໃໝ່ ເລີ່ມຈາກແມ່ແບບນີ້: ປະເພດ, ວັດສະດຸ, ຫົວໜ່ວຍ, ຮູບແບບ, ຊັ້ນອາຄານ ແລະ ແຜ່ນແບບ. ໄຟລ໌ → ບັນທຶກເປັນແມ່ແບບ… ສ້າງອັນໜຶ່ງຈາກໂຄງການທີ່ເປີດ.",
+  "Give the template a name.": "ຕັ້ງຊື່ໃຫ້ແມ່ແບບ.",
+  "This is an old Lapin project: open it and save it, then use it as a template.": "ນີ້ແມ່ນໂຄງການ Lapin ເກົ່າ: ເປີດ ແລະ ບັນທຶກມັນ, ແລ້ວໃຊ້ເປັນແມ່ແບບ.",
 };
 
 /** Phrases with a number or a name in them. */
@@ -1779,4 +1803,9 @@ export const LO_PATTERNS: Language['patterns'] = [
   [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} ມີ ${m[2]} MB: ໃນບຣາວເຊີ ກຸ່ມຈຸດມີໄດ້ສູງສຸດ ${m[3]} MB. ເຊື່ອມຕໍ່ມັນໃນແອັບເດັສທັອບ.`],
   // Point clouds in views: Visibility / Graphics, plans and sections, exports (decision 396)
   [/^Class (\d+)$/, (m) => `ປະເພດ ${m[1]}`],
+  // Project templates (decision 470)
+  [/^The template „(.+)” could not be used: (.+) Lapin's default was used instead\.$/, (m) => `ໃຊ້ແມ່ແບບ „${m[1]}” ບໍ່ໄດ້: ${m[2]} ໄດ້ໃຊ້ຄ່າເລີ່ມຕົ້ນຂອງ Lapin ແທນ.`],
+  [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `ແມ່ແບບ „${m[1]}” ທີ່ເລືອກສຳລັບໂຄງການໃໝ່ບໍ່ຢູ່ໃນຄອມພິວເຕີນີ້ແລ້ວ: ໄດ້ໃຊ້ຄ່າເລີ່ມຕົ້ນຂອງ Lapin.`],
+  [/^There is no template „(.+)”\.$/, (m) => `ບໍ່ມີແມ່ແບບ „${m[1]}”.`],
+  [/^A template is already called „(.+)”\.$/, (m) => `ມີແມ່ແບບຊື່ „${m[1]}” ແລ້ວ.`],
 ];

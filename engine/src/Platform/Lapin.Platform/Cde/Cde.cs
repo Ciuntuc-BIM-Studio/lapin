@@ -98,7 +98,7 @@ public static class Cde
 
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(CdeIssues.Class, "Issue", [], "#888888", Kind: "resource"));
+        r.Class(new(CdeIssues.Class, "Issue", [], "#888888", Kind: "resource", Template: false));
         // Remarks on sheets, read back from issued PDFs (stage 3).
         PdfRemarks.CdeRemarks.Register(r);
 

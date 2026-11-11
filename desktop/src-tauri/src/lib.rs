@@ -116,6 +116,85 @@ fn open_separately(path: String) -> Result<(), String> {
     Ok(())
 }
 
+// ------------------------------------------------------------ the user's settings
+
+/// Writes of the settings file one at a time (the main window and its view windows all write it).
+#[derive(Default)]
+struct SettingsFile(Mutex<()>);
+
+/// The user's settings: the interface's `lapin.*` keys (Preferences, panels, shortcuts, the language, the libraries
+/// kept on this computer), copied into the app's data folder, the user's folder the engine also keeps its recovery
+/// journals and project templates in. The webview's own storage is not enough on Linux (WebKitGTK writes it late and
+/// loses what was not yet written when the app quits: issue #20); this file is put back into it at every start.
+fn settings_path(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(app.path().app_data_dir().map_err(|e| e.to_string())?.join("settings.json"))
+}
+
+/// The settings kept; none when there is no file. A file that cannot be read is set aside (settings.json.bad), never lost.
+fn read_settings(path: &std::path::Path) -> std::collections::BTreeMap<String, String> {
+    let Ok(text) = std::fs::read_to_string(path) else { return Default::default() };
+    match serde_json::from_str(&text) {
+        Ok(map) => map,
+        Err(_) => {
+            let _ = std::fs::rename(path, path.with_extension("json.bad"));
+            Default::default()
+        }
+    }
+}
+
+/// The settings with the keys set and removed: only the interface's own (`lapin.`).
+fn merged_settings(
+    mut current: std::collections::BTreeMap<String, String>,
+    set: std::collections::BTreeMap<String, String>,
+    remove: Vec<String>,
+) -> std::collections::BTreeMap<String, String> {
+    for key in remove {
+        current.remove(&key);
+    }
+    for (key, value) in set {
+        if key.starts_with("lapin.") {
+            current.insert(key, value);
+        }
+    }
+    current
+}
+
+/// A file written beside, then moved over the old one: never half written, whatever stops the app.
+fn write_atomic(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir)?;
+    }
+    let part = path.with_extension("json.part");
+    {
+        use std::io::Write;
+        let mut f = std::fs::File::create(&part)?;
+        f.write_all(bytes)?;
+        f.sync_all()?;
+    }
+    std::fs::rename(&part, path)
+}
+
+/// The settings kept in the user's folder, for the interface to put back before it reads its own.
+#[tauri::command]
+fn user_settings_read(app: AppHandle) -> Result<std::collections::BTreeMap<String, String>, String> {
+    Ok(read_settings(&settings_path(&app)?))
+}
+
+/// Keys the interface changed (set) or removed, written into the user's folder at once.
+#[tauri::command]
+fn user_settings_write(
+    app: AppHandle,
+    file: State<'_, Arc<SettingsFile>>,
+    set: std::collections::BTreeMap<String, String>,
+    remove: Vec<String>,
+) -> Result<(), String> {
+    let path = settings_path(&app)?;
+    let _one = file.0.lock().unwrap();
+    let next = merged_settings(read_settings(&path), set, remove);
+    let text = serde_json::to_vec_pretty(&next).map_err(|e| e.to_string())?;
+    write_atomic(&path, &text).map_err(|e| e.to_string())
+}
+
 /// The file this instance was started for (LAPIN_OPEN), if any.
 #[tauri::command]
 fn startup_file() -> Option<String> {
@@ -400,7 +479,8 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(engine.clone())
         .manage(Arc::new(OllamaCalls::default()))
-        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel])
+        .manage(Arc::new(SettingsFile::default()))
+        .invoke_handler(tauri::generate_handler![engine_url, open_separately, startup_file, open_path, stop_engine, ollama_request, ollama_cancel, user_settings_read, user_settings_write])
         .setup({
             let engine = engine.clone();
             move |app| {
@@ -425,7 +505,30 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::{read_lines, ready_port};
+    use super::{merged_settings, read_lines, read_settings, ready_port, write_atomic};
+
+    #[test]
+    fn keeps_the_users_settings_in_a_file_that_survives_and_merges_each_change() {
+        let dir = std::env::temp_dir().join(format!("lapin-settings-{}", std::process::id()));
+        let path = dir.join("settings.json");
+        let _ = std::fs::remove_dir_all(&dir);
+        // No file yet: nothing kept.
+        assert!(read_settings(&path).is_empty());
+        let first = merged_settings(Default::default(), [("lapin.prefs".to_string(), "{\"theme\":\"graphite\"}".to_string()), ("other".to_string(), "x".to_string())].into(), vec![]);
+        write_atomic(&path, &serde_json::to_vec(&first).unwrap()).unwrap();
+        let read = read_settings(&path);
+        // Only the interface's own keys, as written; nothing half written left beside.
+        assert_eq!(read.get("lapin.prefs").map(String::as_str), Some("{\"theme\":\"graphite\"}"));
+        assert!(!read.contains_key("other"));
+        assert!(!path.with_extension("json.part").exists());
+        let next = merged_settings(read, [("lapin.lang".to_string(), "ro".to_string())].into(), vec!["lapin.prefs".to_string()]);
+        assert_eq!(next.keys().collect::<Vec<_>>(), vec!["lapin.lang"]);
+        // A file that cannot be read is set aside, not lost.
+        std::fs::write(&path, b"{not json").unwrap();
+        assert!(read_settings(&path).is_empty());
+        assert!(path.with_extension("json.bad").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 
     #[test]
     fn reads_an_answer_line_by_line_chunked_or_not() {

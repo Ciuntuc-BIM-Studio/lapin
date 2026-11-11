@@ -1568,6 +1568,30 @@ export const IT: Record<string, string> = {
   'Mullion': 'Montante', 'Transom': 'Traverso', 'Rebated': 'Con battuta', 'Cover strip': 'Coprigiunto', 'Active leaf': 'Anta attiva', 'Meeting': 'Incontro', 'Leaves meeting': 'Ante che si incontrano', 'No mullion': 'Nessun montante', 'No transom': 'Nessun traverso', 'Rebate overlap': 'Sovrapposizione della battuta', 'Cover strip width': 'Larghezza del coprigiunto', 'Cover strip thickness': 'Spessore del coprigiunto', 'Flush bolts on the passive leaf': 'Catenacci a filo nell\'anta passiva', 'New double door': 'Nuova porta doppia', 'Default (frame\'s)': 'Predefinito (del telaio)', 'Click a mullion or a transom in the elevation to give it its own width.': 'Fai clic su un montante o su un traverso nel prospetto per dargli una larghezza propria.', 'Double-acting leaves always meet butt.': 'Le ante a doppia azione si incontrano sempre di testa.', 'Takes the width of the frame\'s mullions and transoms again': 'Riprende la larghezza dei montanti e dei traversi del telaio', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': 'L\'anta che si apre per prima e ha la maniglia, come si legge la griglia (la sinistra è incernierata a sinistra, vista da fuori)',
   // Entourage kinds from pictures (PR #21, decision 468)
   "Entourage kinds…": "Varianti di entourage…", "Entourage kinds": "Varianti di entourage", "Add picture…": "Aggiungi immagine…", "Pictures": "Immagini", "The picture could not be read.": "Non è stato possibile leggere l'immagine.", "No picture kinds yet.": "Ancora nessuna variante da immagine.", "A PNG with a see-through background stands as a cut-out; each figure of a kind takes its height and width.": "Un PNG con lo sfondo trasparente sta come una sagoma ritagliata; ogni figura di una variante ne prende altezza e larghezza.",
+  // Project templates (issues #9 and #20, decision 470): File → Save as template…, New from template…, the default in Preferences
+  "New from template…": "Nuovo da modello…",
+  "Project templates": "Modelli di progetto",
+  "Project templates…": "Modelli di progetto…",
+  "A template keeps the project’s set-up: its types, materials, units and drafting standards, storeys, views, sheets and title blocks. It keeps no element: no wall, no drawing, no issue.": "Un modello conserva l’impostazione del progetto: tipi, materiali, unità e standard di disegno, piani, viste, tavole e cartigli. Non conserva alcun elemento: nessun muro, nessun disegno, nessuna segnalazione.",
+  "The one chosen on the left is what File → New project starts from.": "Quello scelto a sinistra è quello da cui parte File → Nuovo progetto.",
+  "Start every new project from it (File → New project)": "Avvia ogni nuovo progetto da esso (File → Nuovo progetto)",
+  "Kept in this browser. Export it from File → New from template… to keep a file.": "Conservato in questo browser. Esportalo da File → Nuovo da modello… per tenere un file.",
+  "Kept on this computer, in your Lapin folder. Export it to share it with an office.": "Conservato su questo computer, nella tua cartella di Lapin. Esportalo per condividerlo con uno studio.",
+  "Template saved: new projects start from it.": "Modello salvato: i nuovi progetti partono da esso.",
+  "Template saved: File → New from template… starts a project from it.": "Modello salvato: File → Nuovo da modello… avvia un progetto da esso.",
+  "Start new projects from it": "Avvia i nuovi progetti da esso",
+  "Export as a .lapin file": "Esporta come file .lapin",
+  "Lapin default": "Predefinito di Lapin",
+  "Lapin’s own start: its storeys, plans and styles": "L’avvio proprio di Lapin: i suoi piani, le piante e gli stili",
+  "None yet: set up a project, then File → Save as template…": "Nessuno ancora: imposta un progetto, poi File → Salva come modello…",
+  "New from a file…": "Nuovo da un file…",
+  "A new project from a template or project file, without keeping it here": "Un nuovo progetto da un file di modello o di progetto, senza conservarlo qui",
+  "From the template": "Dal modello",
+  "Your template: its types, styles, storeys and sheets": "Il tuo modello: tipi, stili, piani e tavole",
+  "New projects": "Nuovi progetti",
+  "File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.": "File → Nuovo progetto parte da questo modello: tipi, materiali, unità, stili, piani e tavole. File → Salva come modello… ne crea uno dal progetto aperto.",
+  "Give the template a name.": "Dai un nome al modello.",
+  "This is an old Lapin project: open it and save it, then use it as a template.": "Questo è un vecchio progetto Lapin: aprilo e salvalo, poi usalo come modello.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 
@@ -1729,4 +1753,9 @@ export const IT_PATTERNS: Language['patterns'] = [
   [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} è di ${m[2]} MB: in un browser una nuvola di punti è al massimo di ${m[3]} MB. Collegala nell'app desktop.`],
   // Point clouds in views: Visibility / Graphics, plans and sections, exports (decision 396)
   [/^Class (\d+)$/, (m) => `Classe ${m[1]}`],
+  // Project templates (decision 470)
+  [/^The template „(.+)” could not be used: (.+) Lapin's default was used instead\.$/, (m) => `Il modello „${m[1]}” non si è potuto usare: ${m[2]} È stato usato il predefinito di Lapin.`],
+  [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Il modello „${m[1]}” scelto per i nuovi progetti non è più su questo computer: è stato usato il predefinito di Lapin.`],
+  [/^There is no template „(.+)”\.$/, (m) => `Non c’è il modello „${m[1]}”.`],
+  [/^A template is already called „(.+)”\.$/, (m) => `Un modello si chiama già „${m[1]}”.`],
 ];

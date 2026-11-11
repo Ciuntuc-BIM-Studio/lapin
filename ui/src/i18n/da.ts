@@ -1560,6 +1560,30 @@ export const DA: Record<string, string> = {
   'Mullion': 'Sprosse', 'Transom': 'Tværpost', 'Rebated': 'Med falsk', 'Cover strip': 'Dæklist', 'Active leaf': 'Aktivt fløjblad', 'Meeting': 'Møde', 'Leaves meeting': 'Fløje, der mødes', 'No mullion': 'Ingen sprosse', 'No transom': 'Ingen tværpost', 'Rebate overlap': 'Falsoverlæg', 'Cover strip width': 'Dæklistens bredde', 'Cover strip thickness': 'Dæklistens tykkelse', 'Flush bolts on the passive leaf': 'Skjulte skudrigler i det passive fløjblad', 'New double door': 'Ny dobbeltdør', 'Default (frame\'s)': 'Standard (karmens)', 'Click a mullion or a transom in the elevation to give it its own width.': 'Klik på en sprosse eller en tværpost i opstalten for at give den sin egen bredde.', 'Double-acting leaves always meet butt.': 'Svingdøre til begge sider mødes altid stumpt.', 'Takes the width of the frame\'s mullions and transoms again': 'Bruger igen bredden af karmens sprosser og tværposter', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': 'Det fløjblad, der åbnes først og har håndtaget, som gitteret læses (det venstre er hængslet til venstre, set udefra)',
   // Entourage kinds from pictures (PR #21, decision 468)
   "Entourage kinds…": "Staffagetyper…", "Entourage kinds": "Staffagetyper", "Add picture…": "Tilføj billede…", "Pictures": "Billeder", "The picture could not be read.": "Billedet kunne ikke læses.", "No picture kinds yet.": "Ingen billedtyper endnu.", "A PNG with a see-through background stands as a cut-out; each figure of a kind takes its height and width.": "En PNG med gennemsigtig baggrund står som en udskæring; hver figur af en type får dens højde og bredde.",
+  // Project templates (issues #9 and #20, decision 470): File → Save as template…, New from template…, the default in Preferences
+  "New from template…": "Ny fra skabelon…",
+  "Project templates": "Projektskabeloner",
+  "Project templates…": "Projektskabeloner…",
+  "A template keeps the project’s set-up: its types, materials, units and drafting standards, storeys, views, sheets and title blocks. It keeps no element: no wall, no drawing, no issue.": "En skabelon gemmer projektets opsætning: dets typer, materialer, enheder og tegnestandarder, etager, visninger, tegningsark og tegningshoveder. Den gemmer ingen elementer: ingen væg, ingen tegning, ingen sag.",
+  "The one chosen on the left is what File → New project starts from.": "Den valgte til venstre er den, Filer → Nyt projekt starter fra.",
+  "Start every new project from it (File → New project)": "Start hvert nyt projekt fra den (Filer → Nyt projekt)",
+  "Kept in this browser. Export it from File → New from template… to keep a file.": "Gemt i denne browser. Eksportér den fra Filer → Ny fra skabelon… for at have en fil.",
+  "Kept on this computer, in your Lapin folder. Export it to share it with an office.": "Gemt på denne computer, i din Lapin-mappe. Eksportér den for at dele den med et kontor.",
+  "Template saved: new projects start from it.": "Skabelon gemt: nye projekter starter fra den.",
+  "Template saved: File → New from template… starts a project from it.": "Skabelon gemt: Filer → Ny fra skabelon… starter et projekt fra den.",
+  "Start new projects from it": "Start nye projekter fra den",
+  "Export as a .lapin file": "Eksportér som .lapin-fil",
+  "Lapin default": "Lapins standard",
+  "Lapin’s own start: its storeys, plans and styles": "Lapins egen start: dets etager, planer og stilarter",
+  "None yet: set up a project, then File → Save as template…": "Ingen endnu: opsæt et projekt, og vælg så Filer → Gem som skabelon…",
+  "New from a file…": "Ny fra en fil…",
+  "A new project from a template or project file, without keeping it here": "Et nyt projekt fra en skabelon- eller projektfil, uden at gemme den her",
+  "From the template": "Fra skabelonen",
+  "Your template: its types, styles, storeys and sheets": "Din skabelon: dens typer, stilarter, etager og tegningsark",
+  "New projects": "Nye projekter",
+  "File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.": "Filer → Nyt projekt starter fra denne skabelon: dens typer, materialer, enheder, stilarter, etager og tegningsark. Filer → Gem som skabelon… laver en fra det åbne projekt.",
+  "Give the template a name.": "Giv skabelonen et navn.",
+  "This is an old Lapin project: open it and save it, then use it as a template.": "Dette er et gammelt Lapin-projekt: åbn og gem det, og brug det så som skabelon.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
@@ -1722,4 +1746,9 @@ export const DA_PATTERNS: Language['patterns'] = [
   [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} er ${m[2]} MB: i en browser er en punktsky højst ${m[3]} MB. Sammenkæd den i desktop-appen.`],
   // Point clouds in views: Visibility / Graphics, plans and sections, exports (decision 396)
   [/^Class (\d+)$/, (m) => `Klasse ${m[1]}`],
+  // Project templates (decision 470)
+  [/^The template „(.+)” could not be used: (.+) Lapin's default was used instead\.$/, (m) => `Skabelonen „${m[1]}” kunne ikke bruges: ${m[2]} Lapins standard blev brugt.`],
+  [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Skabelonen „${m[1]}”, der er valgt til nye projekter, er ikke længere på denne computer: Lapins standard blev brugt.`],
+  [/^There is no template „(.+)”\.$/, (m) => `Der er ingen skabelon „${m[1]}”.`],
+  [/^A template is already called „(.+)”\.$/, (m) => `En skabelon hedder allerede „${m[1]}”.`],
 ];

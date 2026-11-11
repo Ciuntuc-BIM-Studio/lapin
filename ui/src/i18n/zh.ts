@@ -1563,6 +1563,30 @@ export const ZH: Record<string, string> = {
   'Mullion': '竖梃', 'Transom': '横梃', 'Rebated': '企口', 'Cover strip': '盖缝条', 'Active leaf': '主动扇', 'Meeting': '对合', 'Leaves meeting': '对合的门扇', 'No mullion': '无竖梃', 'No transom': '无横梃', 'Rebate overlap': '企口搭接', 'Cover strip width': '盖缝条宽度', 'Cover strip thickness': '盖缝条厚度', 'Flush bolts on the passive leaf': '被动扇上的暗插销', 'New double door': '新建双开门', 'Default (frame\'s)': '默认（门框的）', 'Click a mullion or a transom in the elevation to give it its own width.': '在立面中点击竖梃或横梃，可为其设置独立宽度。', 'Double-acting leaves always meet butt.': '双向开启的门扇始终对接。', 'Takes the width of the frame\'s mullions and transoms again': '恢复为门框竖梃和横梃的宽度', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': '先开启并带把手的门扇，按网格的读法（左侧门扇铰链在左，从外侧看）',
   // Entourage kinds from pictures (PR #21, decision 468)
   "Entourage kinds…": "配景种类…", "Entourage kinds": "配景种类", "Add picture…": "添加图片…", "Pictures": "图片", "The picture could not be read.": "无法读取该图片。", "No picture kinds yet.": "还没有图片种类。", "A PNG with a see-through background stands as a cut-out; each figure of a kind takes its height and width.": "背景透明的 PNG 会以剪影立起；同一种类的每个人物都采用其高度和宽度。",
+  // Project templates (issues #9 and #20, decision 470): File → Save as template…, New from template…, the default in Preferences
+  "New from template…": "从模板新建…",
+  "Project templates": "项目模板",
+  "Project templates…": "项目模板…",
+  "A template keeps the project’s set-up: its types, materials, units and drafting standards, storeys, views, sheets and title blocks. It keeps no element: no wall, no drawing, no issue.": "模板保留项目的设置：类型、材料、单位和制图标准、楼层、视图、图纸和标题栏。它不保留任何构件：没有墙、没有绘图、没有问题。",
+  "The one chosen on the left is what File → New project starts from.": "左侧选中的就是 文件 → 新建项目 的起点。",
+  "Start every new project from it (File → New project)": "每个新项目都从它开始（文件 → 新建项目）",
+  "Kept in this browser. Export it from File → New from template… to keep a file.": "保存在此浏览器中。从 文件 → 从模板新建… 导出以保留文件。",
+  "Kept on this computer, in your Lapin folder. Export it to share it with an office.": "保存在此计算机上的 Lapin 文件夹中。导出后可与事务所共享。",
+  "Template saved: new projects start from it.": "模板已保存：新项目从它开始。",
+  "Template saved: File → New from template… starts a project from it.": "模板已保存：文件 → 从模板新建… 可从它开始项目。",
+  "Start new projects from it": "新项目从它开始",
+  "Export as a .lapin file": "导出为 .lapin 文件",
+  "Lapin default": "Lapin 默认",
+  "Lapin’s own start: its storeys, plans and styles": "Lapin 自带的起点：它的楼层、平面和样式",
+  "None yet: set up a project, then File → Save as template…": "还没有：设置一个项目，然后 文件 → 另存为模板…",
+  "New from a file…": "从文件新建…",
+  "A new project from a template or project file, without keeping it here": "从模板或项目文件新建项目，不在此保留",
+  "From the template": "来自模板",
+  "Your template: its types, styles, storeys and sheets": "你的模板：类型、样式、楼层和图纸",
+  "New projects": "新项目",
+  "File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.": "文件 → 新建项目 从此模板开始：类型、材料、单位、样式、楼层和图纸。文件 → 另存为模板… 从打开的项目创建一个。",
+  "Give the template a name.": "请为模板命名。",
+  "This is an old Lapin project: open it and save it, then use it as a template.": "这是旧版 Lapin 项目：请打开并保存，然后再用作模板。",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [
@@ -1722,4 +1746,9 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} 为 ${m[2]} MB：在浏览器中点云最多 ${m[3]} MB。请在桌面应用中链接。`],
   // Point clouds in views: Visibility / Graphics, plans and sections, exports (decision 396)
   [/^Class (\d+)$/, (m) => `类别 ${m[1]}`],
+  // Project templates (decision 470)
+  [/^The template „(.+)” could not be used: (.+) Lapin's default was used instead\.$/, (m) => `无法使用模板 „${m[1]}”：${m[2]} 已改用 Lapin 默认。`],
+  [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `为新项目选择的模板 „${m[1]}” 已不在此计算机上：已使用 Lapin 默认。`],
+  [/^There is no template „(.+)”\.$/, (m) => `没有模板 „${m[1]}”。`],
+  [/^A template is already called „(.+)”\.$/, (m) => `已有名为 „${m[1]}” 的模板。`],
 ];

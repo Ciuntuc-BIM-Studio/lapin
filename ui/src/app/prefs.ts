@@ -3,7 +3,8 @@
  * when the app starts. The theme (light, dark, or as the system is), the 2D views' grid (adaptive: its step follows
  * the zoom; or fixed: one step, drawn and snapped to, whatever the zoom), the object snaps a cursor takes (as
  * AutoCAD's OSNAP settings), polar tracking's angle, and which coordinates the status line reads at the cursor
- * (the plan's own, the project base point's, the survey point's map coordinates, or the UCS's). The display's own
+ * (the plan's own, the project base point's, the survey point's map coordinates, or the UCS's), and the project template a
+ * new project starts from (decision 470). On the desktop they are also kept in the user's folder (app/userSettings.ts). The display's own
  * switches (thin lines, the 3D view's navigation) stay in app/display.ts; the dialog shows them too.
  */
 
@@ -31,6 +32,8 @@ export interface Prefs {
   profileStandardsHidden: string[];
   /** The profile standards a new project offers (null: all); the project keeps only the profiles its types use. */
   newProjectProfileStandards: string[] | null;
+  /** The project template File → New starts from (decision 470): a template's id on this computer; null, Lapin's default. */
+  defaultTemplate: string | null;
 }
 
 export const SNAP_MODES: readonly SnapMode[] = ['endpoint', 'midpoint', 'intersection', 'center', 'quadrant', 'perpendicular', 'nearest'];
@@ -38,7 +41,7 @@ export const POLAR_STEPS: readonly number[] = [5, 10, 15, 22.5, 30, 45, 90];
 export const DEFAULT_PREFS: Prefs = {
   theme: 'paper', gridMode: 'adaptive', gridStep: 1, gridMajor: 5, gridSnap: true,
   snapModes: [...SNAP_MODES], polarStep: 45, coords: 'internal',
-  profileStandardsHidden: [], newProjectProfileStandards: null,
+  profileStandardsHidden: [], newProjectProfileStandards: null, defaultTemplate: null,
 };
 
 const names = (v: unknown): string[] | null => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && !!x.trim()).map((x) => x.trim()))] : null);
@@ -63,6 +66,7 @@ export function readPrefs(stored: unknown): Prefs {
     coords: pick(o.coords, ['internal', 'project', 'survey', 'ucs'] as const, d.coords),
     profileStandardsHidden: names(o.profileStandardsHidden) ?? [],
     newProjectProfileStandards: names(o.newProjectProfileStandards),
+    defaultTemplate: typeof o.defaultTemplate === 'string' && o.defaultTemplate.trim() ? o.defaultTemplate : null,
   };
 }
 

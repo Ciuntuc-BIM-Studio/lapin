@@ -66,7 +66,7 @@ public static class Remarks
 
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(Class, "Remark", [], "#888888", Kind: "resource"));
+        r.Class(new(Class, "Remark", [], "#888888", Kind: "resource", Template: false));
 
         // A new remark: its fields, who makes it, and the viewpoint of the 3D view it was made from (camera, selection, planes, snapshot).
         r.Command("remarks.create", "New remark", (ctx, a) =>

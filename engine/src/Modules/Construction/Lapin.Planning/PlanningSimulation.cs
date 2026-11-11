@@ -14,7 +14,7 @@ public sealed partial class PlanningModule
 {
     static void RegisterSimulation(IModuleRegistry r)
     {
-        r.Class(new(StagesSheet.Class, "Stages", [], "#5b7a99", Kind: "resource"));
+        r.Class(new(StagesSheet.Class, "Stages", [], "#5b7a99", Kind: "resource", Template: false));
         var filter = new StateAtDate();
         r.Service<IViewElementFilter>(filter);
         r.Service<IViewPartFilter>(filter);

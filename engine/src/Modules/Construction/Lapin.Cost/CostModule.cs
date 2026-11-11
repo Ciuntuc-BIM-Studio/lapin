@@ -165,7 +165,7 @@ public sealed class CostModule : ILapinModule
 
     public void Register(IModuleRegistry r)
     {
-        r.Class(new(Costing.Class, "Estimate", [], "#7a6a3a", Kind: "resource"));
+        r.Class(new(Costing.Class, "Estimate", [], "#7a6a3a", Kind: "resource", Template: false));
         r.Class(new(PriceLists.Class, "Price list", [], "#7a6a3a", Kind: "resource"));
         r.Class(new(ArticleRule.Class, "Article rule", [], "#7a6a3a", Kind: "resource"));
         r.Service<IIfcControls>(new CostIfc());

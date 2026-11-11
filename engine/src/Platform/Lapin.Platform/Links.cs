@@ -90,7 +90,7 @@ public static class Links
 
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(Class, "Link", [new("visible", "Shown", "bool"), new("halftone", "Halftone", "bool")], "#888888", Kind: "resource"));
+        r.Class(new(Class, "Link", [new("visible", "Shown", "bool"), new("halftone", "Halftone", "bool")], "#888888", Kind: "resource", Template: false));
         r.Service<IViewElementFilter>(new Filter());
 
         r.Query("link.list", (q, _) => new JsonArray(All(q.Model).Select(l => (JsonNode)ToJson(q.Model, l)).ToArray()));

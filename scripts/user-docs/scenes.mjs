@@ -5681,6 +5681,41 @@ export const scenes = [
     },
   },
   {
+    // Project templates (issues #9 and #20, decision 470): File → Save as template…, then File → New from template… starts a project
+    // with the house's types and no element. The template is deleted at the end, so the next scenes' start screen and New stay Lapin's.
+    id: 'project-templates',
+    touches: ['core', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      await house(t, { roof: false });
+      await t.button('File', { exact: true });
+      await t.page.getByRole('menuitem', { name: 'Save as template…' }).click();
+      const save = t.page.locator('[data-testid=save-template]');
+      await save.waitFor({ timeout: 10_000 });
+      await save.locator('[data-field=template-name]').fill('Office houses');
+      await save.locator('[data-field=template-save]').click();
+      await save.waitFor({ state: 'detached', timeout: 30_000 });
+      try {
+        const kept = await t.call('templates.list', {});
+        t.expect(kept.some((x) => x.id === 'Office houses'), 'the template is kept on this computer');
+        await t.button('File', { exact: true });
+        await t.page.getByRole('menuitem', { name: 'New from template…' }).click();
+        const dialog = t.page.locator('[data-testid=project-templates]');
+        await dialog.waitFor({ timeout: 10_000 });
+        await dialog.locator('[data-template-row="Office houses"]').waitFor({ timeout: 10_000 });
+        await t.shot('project-templates', { of: '[data-testid=project-templates]', pad: 0 });
+        // The house is not saved: the question is answered yes (the runner accepts every dialog), as a user who starts over would.
+        await dialog.locator('[data-template-row="Office houses"]').getByRole('button', { name: 'New project', exact: true }).click();
+        await dialog.waitFor({ state: 'detached', timeout: 30_000 });
+        await t.page.waitForSelector('.plan-svg', { timeout: 30_000 });
+        const kinds = (await t.nodes()).map((n) => n.type);
+        t.expect(kinds.includes('IfcWallType') && !kinds.includes('IfcWall') && !kinds.includes('IfcWallStandardCase'), 'the new project has the house\'s wall types and no wall');
+      } finally {
+        await t.call('templates.delete', { id: 'Office houses' }).catch(() => undefined);
+      }
+    },
+  },
+  {
     id: 'help',
     async run(t) {
       await t.fresh();

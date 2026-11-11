@@ -4,10 +4,11 @@
  * grid adaptive or fixed (its step and every how many lines a heavier one), snapping to it, each object snap on or
  * off, polar tracking's angle. Coordinates: what the status line reads at the cursor, the project's points shown in
  * plans and 3D, the UCS. Display: the switches of View → Graphics and the 3D view's navigation, in one place.
- * Profiles: the profile standards a new project offers and those the pickers show (decision 457).
+ * Profiles: the profile standards a new project offers and those the pickers show (decision 457). General also chooses the
+ * project template File → New starts from (decision 470).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUi } from '../app/store';
 import { POLAR_STEPS, SNAP_MODES, resolveTheme, setPrefs, usePrefs, type CoordSystem, type ThemeChoice } from '../app/prefs';
@@ -21,6 +22,7 @@ import { startCommand } from '../viewport/cad/session';
 import { useProfileLibraries } from '../modules/core/profileLibraries/store';
 import { standardsOf } from '../modules/core/profileLibraries/model';
 import { StandardChecks } from '../modules/core/profileLibraries/StandardChecks';
+import { refreshTemplates, useTemplates } from '../engine/templates';
 
 type Page = 'general' | 'grid' | 'coords' | 'display' | 'profiles';
 const PAGES: { id: Page; label: string }[] = [
@@ -76,6 +78,8 @@ export function PreferencesDialog() {
   const lang = useLang((s) => s.lang);
   const loc = useLocation((s) => s.loc);
   const ucs = ucsOf(loc);
+  const saved = useTemplates((s) => s.list);
+  useEffect(() => { void refreshTemplates(); }, []);
   const close = () => useUi.setState({ dialog: null });
   const theme = (choice: ThemeChoice) => { setPrefs({ theme: choice }); useUi.setState({ theme: resolveTheme(choice) }); };
   return (
@@ -98,6 +102,14 @@ export function PreferencesDialog() {
               <select value={lang} data-no-i18n onChange={(e) => void setLang(e.target.value as typeof lang)}>
                 {LANGUAGES.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
+              <h4>New projects</h4>
+              <label className="row small">Start from <select value={p.defaultTemplate && saved.some((t) => t.id === p.defaultTemplate) ? p.defaultTemplate : ''} data-field="prefs-default-template"
+                onChange={(e) => setPrefs({ defaultTemplate: e.target.value || null })}>
+                <option value="">Lapin default</option>
+                {saved.map((t) => <option key={t.id} value={t.id} data-no-i18n>{t.name}</option>)}
+              </select></label>
+              <p className="muted small">File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.</p>
+              <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'projectTemplates' })}>Project templates…</button></p>
               <h4>Interface</h4>
               <p className="row small"><button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'interface' })}>Interface…</button>
                 <button type="button" className="btn" onClick={() => useUi.setState({ dialog: 'shortcuts' })}>Keyboard shortcuts…</button></p>

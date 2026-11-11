@@ -17,7 +17,7 @@ public sealed partial class StudioModule
 
     static void RegisterFollowMe(IModuleRegistry r)
     {
-        r.Class(new(GuideClass, "Guide", [], "#7a5cc2", Kind: "resource"));
+        r.Class(new(GuideClass, "Guide", [], "#7a5cc2", Kind: "resource", Template: false));
         r.Command("followMe", "Follow Me", FollowMe);
         // {a: [x, y, z], b?: [x, y, z]}: a guide line through a and b (endless), or a guide point at a.
         r.Command("addGuide", "Guide", (ctx, a) =>

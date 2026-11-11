@@ -108,7 +108,7 @@ replaces: {
 
 - Tools by `ToolDef` id: replaced wherever they are (tabs, shared groups, quick tools), one object per id, and the id is kept (keys, quick slots and workspaces name tools by it). An unknown tool id throws at load.
 - Dialogs by the store's `dialog` key, a module's or the shell's (`share`, `join`, `interface`, `quickTools`, `shortcuts`, `palette`, `optimizeIfc`); views by a pane's module view kind. Both may stand where nothing was (their original is `null`), and are made once.
-- File actions by id (`ui/src/shell/fileActions.ts`): `file.new`, `file.open`, `file.save`, `file.saveAs`, `file.saveVersion`, `file.importIfc`, `file.importFragments`, `file.linkIfc`, `file.exportExchange`, `file.optimizeIfc`, `file.importDxf`, `file.importMesh`, `file.exportMesh`, `file.share`, `file.join`, `file.startScreen`, `file.leave`. The keyboard's New, Open, Save and Save as run the same actions. An unknown id throws.
+- File actions by id (`ui/src/shell/fileActions.ts`): `file.new`, `file.newFromTemplate`, `file.open`, `file.save`, `file.saveAs`, `file.saveVersion`, `file.saveTemplate`, `file.importIfc`, `file.importFragments`, `file.linkIfc`, `file.exportExchange`, `file.optimizeIfc`, `file.importDxf`, `file.importMesh`, `file.exportMesh`, `file.share`, `file.join`, `file.startScreen`, `file.leave`. The keyboard's New, Open, Save and Save as run the same actions. An unknown id throws.
 - Several modules replacing one id chain in load order, each given the one before it.
 - Resolved in `ui/src/platform/modules.ts` (pure helpers in `ui/src/platform/replaces.ts`). Without replacements the module list is the one loaded, unchanged.
 - Code that imports another module's tool directly, rather than reading it from the modules, sees the original.

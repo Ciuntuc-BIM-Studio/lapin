@@ -1,7 +1,7 @@
 ---
 title: Files, versions and recovery
 order: 120
-summary: Save and open projects, get back unsaved work after a crash, and keep versions inside the project file.
+summary: Save and open projects, start new ones from your own templates, get back unsaved work after a crash, and keep versions inside the project file.
 ---
 
 <!-- video files -->
@@ -15,6 +15,19 @@ summary: Save and open projects, get back unsaved work after a crash, and keep v
 - **Browser, Safari and Firefox.** Each save downloads the file.
 
 A `.lapin` file holds the whole project: the model, the views, the sheets, the materials with their own images, and the versions.
+
+## Project templates
+
+A template is a project's set-up without its model, so the types and settings you make once start every new project. **File → Save as template…** keeps the project open under a name: its wall, floor, door, window, stair, ceiling and structure types, its materials and profiles, its units and drafting standards (text, dimension and tag styles, layers), its view styles, storeys, views, sheets and title blocks, and of its information what belongs to the office (the designer, who signs). It keeps no element (no wall, no drawing, no room), no issue or remark, no estimate or schedule, and not the job's own information (its number, client, site and permit).
+
+**File → New from template…** (also on the start screen) lists the templates, **Lapin default** first. **New project** on a row starts a project from it: it has no file yet and GlobalIds of its own. Choose a template on the left of its row, or in **File → Preferences… → General → New projects**, and **File → New project** starts from it every time; **Lapin default** goes back to Lapin's own start.
+
+![Project templates: Lapin's default and your own](shots/project-templates.webp)
+
+- **Desktop app.** Templates are `.lapin` files in your Lapin folder, kept with your preferences.
+- **Browser.** Templates are kept in the browser: export them to keep a file.
+
+**Export** saves a template as a `.lapin` file to copy to another computer or share with an office, and **Import…** takes one in. Any project's `.lapin` file works too: its model is left out. **New from a file…** starts a project from such a file without keeping it.
 
 ## Recovering unsaved work
 

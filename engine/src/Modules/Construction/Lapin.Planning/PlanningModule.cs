@@ -145,9 +145,9 @@ public sealed partial class PlanningModule : ILapinModule, IDeletion
 
     public void Register(IModuleRegistry r)
     {
-        r.Class(new(Plan.ScheduleClass, "Work schedule", [], "#5b7a99", Kind: "resource"));
+        r.Class(new(Plan.ScheduleClass, "Work schedule", [], "#5b7a99", Kind: "resource", Template: false));
         r.Class(new(WorkCalendar.Class, "Work calendar", [], "#5b7a99", Kind: "resource"));
-        r.Class(new(Plan.TaskClass, "Task", [], "#5b7a99", Kind: "resource"));
+        r.Class(new(Plan.TaskClass, "Task", [], "#5b7a99", Kind: "resource", Template: false));
         r.Class(new(Norms.Class, "Productivity norms", [], "#5b7a99", Kind: "resource"));
         r.Catalog("scheduleTemplates", new JsonArray(Generator.Templates.Select(t => (JsonNode)t.ToJson()).ToArray()));
         r.Service<IDeletion>(this);

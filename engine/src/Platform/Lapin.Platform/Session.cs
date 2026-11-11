@@ -144,6 +144,25 @@ public sealed partial class Session
         return Snapshot();
     }
 
+    /// <summary>
+    /// A new project made from a template (decision 470): any project's content, its model left out
+    /// (<see cref="ProjectTemplates.Strip"/>, so a whole project serves as well as a template saved as one), under new
+    /// GlobalIds (<see cref="ProjectTemplates.Renew"/>), brought up to date as an opened file is. No file yet; nothing to
+    /// undo, nothing to save.
+    /// </summary>
+    public Diff NewFromTemplate(IEnumerable<Entity> entities, IEnumerable<Relation> relations, IReadOnlyDictionary<string, string>? classModules = null)
+    {
+        var store = new ModelStore();
+        new History(store).Load(entities, relations);
+        var (es, rs) = ProjectTemplates.Strip(store, _catalog);
+        if (!es.Any(e => e.Class == IfcClass.BuildingStorey)) throw new CommandException("The template has no storey: it is not a Lapin project.");
+        var (fresh, freshRelations) = ProjectTemplates.Renew(es, rs);
+        return Load(fresh, freshRelations, null, classModules);
+    }
+
+    /// <summary>The open project as a template keeps it (<see cref="ProjectTemplates.Strip"/>): its set-up, no model.</summary>
+    public (List<Entity> Entities, List<Relation> Relations) TemplateContent() => ProjectTemplates.Strip(_store, _catalog);
+
     IReadOnlyList<string>? _newProfileStandards;
 
     /// <summary>The session as it starts, before a project is made or opened: one ground floor.</summary>

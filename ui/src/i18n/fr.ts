@@ -1569,6 +1569,30 @@ export const FR: Record<string, string> = {
   'Mullion': 'Montant', 'Transom': 'Traverse', 'Rebated': 'À feuillure', 'Cover strip': 'Couvre-joint', 'Active leaf': 'Vantail actif', 'Meeting': 'Rencontre', 'Leaves meeting': 'Vantaux qui se rejoignent', 'No mullion': 'Sans montant', 'No transom': 'Sans traverse', 'Rebate overlap': 'Recouvrement de la feuillure', 'Cover strip width': 'Largeur du couvre-joint', 'Cover strip thickness': 'Épaisseur du couvre-joint', 'Flush bolts on the passive leaf': 'Verrous encastrés dans le vantail semi-fixe', 'New double door': 'Nouvelle porte double', 'Default (frame\'s)': 'Par défaut (du cadre)', 'Click a mullion or a transom in the elevation to give it its own width.': 'Cliquez sur un montant ou une traverse dans l\'élévation pour lui donner sa propre largeur.', 'Double-acting leaves always meet butt.': 'Les vantaux va-et-vient se rejoignent toujours bout à bout.', 'Takes the width of the frame\'s mullions and transoms again': 'Reprend la largeur des montants et traverses du cadre', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': 'Le vantail qui s\'ouvre en premier et porte la poignée, comme se lit la grille (le gauche est articulé à gauche, vu de l\'extérieur)',
   // Entourage kinds from pictures (PR #21, decision 468)
   "Entourage kinds…": "Variantes d'entourage…", "Entourage kinds": "Variantes d'entourage", "Add picture…": "Ajouter une image…", "Pictures": "Images", "The picture could not be read.": "L'image n'a pas pu être lue.", "No picture kinds yet.": "Aucune variante d'image pour l'instant.", "A PNG with a see-through background stands as a cut-out; each figure of a kind takes its height and width.": "Un PNG à fond transparent se dresse en découpe ; chaque figure d'une variante en prend la hauteur et la largeur.",
+  // Project templates (issues #9 and #20, decision 470): File → Save as template…, New from template…, the default in Preferences
+  "New from template…": "Nouveau depuis un modèle…",
+  "Project templates": "Modèles de projet",
+  "Project templates…": "Modèles de projet…",
+  "A template keeps the project’s set-up: its types, materials, units and drafting standards, storeys, views, sheets and title blocks. It keeps no element: no wall, no drawing, no issue.": "Un modèle garde la configuration du projet : ses types, matériaux, unités et normes de dessin, niveaux, vues, feuilles et cartouches. Il ne garde aucun élément : aucun mur, aucun dessin, aucun problème.",
+  "The one chosen on the left is what File → New project starts from.": "Celui choisi à gauche est celui dont part Fichier → Nouveau projet.",
+  "Start every new project from it (File → New project)": "Partir de lui pour chaque nouveau projet (Fichier → Nouveau projet)",
+  "Kept in this browser. Export it from File → New from template… to keep a file.": "Gardé dans ce navigateur. Exportez-le depuis Fichier → Nouveau depuis un modèle… pour garder un fichier.",
+  "Kept on this computer, in your Lapin folder. Export it to share it with an office.": "Gardé sur cet ordinateur, dans votre dossier Lapin. Exportez-le pour le partager avec un bureau.",
+  "Template saved: new projects start from it.": "Modèle enregistré : les nouveaux projets partent de lui.",
+  "Template saved: File → New from template… starts a project from it.": "Modèle enregistré : Fichier → Nouveau depuis un modèle… démarre un projet depuis lui.",
+  "Start new projects from it": "Partir de lui pour les nouveaux projets",
+  "Export as a .lapin file": "Exporter en fichier .lapin",
+  "Lapin default": "Lapin par défaut",
+  "Lapin’s own start: its storeys, plans and styles": "Le départ propre de Lapin : ses niveaux, plans et styles",
+  "None yet: set up a project, then File → Save as template…": "Aucun pour l’instant : configurez un projet, puis Fichier → Enregistrer comme modèle…",
+  "New from a file…": "Nouveau depuis un fichier…",
+  "A new project from a template or project file, without keeping it here": "Un nouveau projet depuis un fichier de modèle ou de projet, sans le garder ici",
+  "From the template": "Depuis le modèle",
+  "Your template: its types, styles, storeys and sheets": "Votre modèle : ses types, styles, niveaux et feuilles",
+  "New projects": "Nouveaux projets",
+  "File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.": "Fichier → Nouveau projet part de ce modèle : ses types, matériaux, unités, styles, niveaux et feuilles. Fichier → Enregistrer comme modèle… en fait un à partir du projet ouvert.",
+  "Give the template a name.": "Donnez un nom au modèle.",
+  "This is an old Lapin project: open it and save it, then use it as a template.": "C’est un ancien projet Lapin : ouvrez-le et enregistrez-le, puis utilisez-le comme modèle.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;
@@ -1731,4 +1755,9 @@ export const FR_PATTERNS: Language['patterns'] = [
   [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} fait ${m[2]} Mo : dans un navigateur un nuage de points fait au plus ${m[3]} Mo. Liez-le dans l'application de bureau.`],
   // Point clouds in views: Visibility / Graphics, plans and sections, exports (decision 396)
   [/^Class (\d+)$/, (m) => `Classe ${m[1]}`],
+  // Project templates (decision 470)
+  [/^The template „(.+)” could not be used: (.+) Lapin's default was used instead\.$/, (m) => `Le modèle „${m[1]}” n’a pas pu être utilisé : ${m[2]} Lapin par défaut a été utilisé.`],
+  [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Le modèle „${m[1]}” choisi pour les nouveaux projets n’est plus sur cet ordinateur : Lapin par défaut a été utilisé.`],
+  [/^There is no template „(.+)”\.$/, (m) => `Il n’y a pas de modèle „${m[1]}”.`],
+  [/^A template is already called „(.+)”\.$/, (m) => `Un modèle s’appelle déjà „${m[1]}”.`],
 ];

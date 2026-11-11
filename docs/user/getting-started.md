@@ -10,6 +10,8 @@ When Lapin opens, it shows the start screen. **New project** starts an empty bui
 
 **Start from** gives a new project set up for its work: **Single-storey house** (foundations and a ground floor), **Two-storey house** (and a first floor), **Apartment block** (a ground floor and four floors), **Hall or frame** (one storey 6 m tall, in the Structure & rebar workspace), **Drafting only** (one level, in the Drafting 2D workspace) and **Start from an IFC** (a new project, then the IFC file to import). Each chooses its workspace too; the levels can be renamed, added or deleted later as in any project.
 
+**New from template…** starts from a project template of your own: the types, materials, units, styles, storeys and sheets you set up once, with no element. Your templates are listed under **Start from** too, and the one chosen in **File → Preferences…** is what **New project** starts from. See [Files, versions and recovery](files.md#project-templates).
+
 ![The start screen](shots/start-screen.webp)
 
 A new project already has three levels: **Foundations** (−1.50), **Ground floor** (±0.00) and **First floor** (+3.00). It opens on the ground floor's plan, ready for the first wall.

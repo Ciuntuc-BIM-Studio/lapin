@@ -377,6 +377,9 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// <summary>Frames written by the generated contracts alone, as a trimmed engine writes them (for tests).</summary>
     public bool ContractsOnly { get; init; }
 
+    /// <summary>The project templates kept on this computer (decision 470): the desktop's user folder; null in a host without one (the browser keeps its own).</summary>
+    public TemplateLibrary? Templates { get; init; }
+
     /// <summary>Where a long call's progress goes (the host sends it to the caller); null: nobody listens.</summary>
     public Action<JsonObject>? Progress { get; set; }
 
@@ -605,7 +608,7 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     (object? Result, Diff? Diff) Dispatch(string method, JsonObject p)
     {
         // Another project: a file surveyed for this one (its bytes, its index) is not kept for it.
-        if (method is "project.new" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; _bosSurveyed = null; }
+        if (method is "project.new" or "project.newFromTemplate" or "project.open" or "project.openBytes" or "recovery.restore") { _surveyed = null; _fragSurveyed = null; _bosSurveyed = null; }
         // A file written where asked (the desktop's save dialog), else handed back to download (a browser).
         JsonObject Deliver(byte[] bytes, string name)
         {
@@ -617,6 +620,12 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             return new JsonObject { ["name"] = name, ["data"] = Convert.ToBase64String(bytes) };
         }
 
+        TemplateLibrary Library() => Templates ?? throw new CommandException("Templates are kept by the desktop app; in the browser the page keeps them.");
+        static byte[] Base64(JsonNode? data)
+        {
+            try { return Convert.FromBase64String((string?)data ?? throw new CommandException("The template's bytes are missing.")); }
+            catch (FormatException) { throw new CommandException("The template's bytes are not base64."); }
+        }
         string PathParam() => HostFiles.Check((string?)p["path"] ?? throw new CommandException("The file's path is missing."));
         int Number() => p["number"] is JsonValue nv && nv.TryGetValue<int>(out var n) ? n : throw new CommandException("Which version?");
 
@@ -650,6 +659,44 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             // A new project with the default storeys; `plain`: one ground floor, for a file that fills it (an IFC opened as a project).
             // `profileStandards`: the profile standards its pickers offer (decision 457; none: all).
             case "project.new": files.Reset(); return (null, session.New(p["plain"]?.GetValue<bool>() == true, TemplateStoreys(p["storeys"]), Lapin.Platform.ProfileLibraries.ProfileStandards.Read(p["profileStandards"])));
+            // ---- project templates (issues #9 and #20, decision 470): a new project from one (the library's by `id`, a file by `path`, bytes in `data`).
+            case "project.newFromTemplate":
+            {
+                byte[] bytes = (string?)p["id"] is { Length: > 0 } tid ? Library().Bytes(tid)
+                    : (string?)p["path"] is { Length: > 0 } tpath ? File.ReadAllBytes(HostFiles.Check(tpath))
+                    : Base64(p["data"]);
+                files.Reset();
+                return (null, TemplateLibrary.NewProject(session, bytes));
+            }
+            // The open project as a template's bytes (the browser keeps them); with `data`, a file's (a template or any project) instead, the open project left alone.
+            case "template.make":
+                return (new JsonObject { ["data"] = Convert.ToBase64String(p["data"] is JsonValue ? TemplateLibrary.FromFile(session, Base64(p["data"])) : TemplateLibrary.Make(session)) }, null);
+            case "templates.list": return (Templates?.List() ?? [], null);
+            case "templates.save":
+            {
+                // The open project kept as a template; one of that name is replaced only when asked (`overwrite`).
+                var id = Library().Keep((string?)p["name"] ?? "", TemplateLibrary.Make(session), p["overwrite"]?.GetValue<bool>() == true);
+                return (id == null ? new JsonObject { ["exists"] = true } : new JsonObject { ["id"] = id }, null);
+            }
+            case "templates.import":
+            {
+                // A template's file (or any project's) taken into the library, by `path` or as `data`; named after the file unless `name` says.
+                var path = (string?)p["path"] is { Length: > 0 } ip ? HostFiles.Check(ip) : null;
+                var bytes = path != null ? File.ReadAllBytes(path) : Base64(p["data"]);
+                var name = (string?)p["name"] is { Length: > 0 } n ? n : path != null ? Path.GetFileNameWithoutExtension(path) : "Template";
+                var id = Library().Import(session, name, bytes, p["overwrite"]?.GetValue<bool>() == true);
+                return (id == null ? new JsonObject { ["exists"] = true } : new JsonObject { ["id"] = id }, null);
+            }
+            case "templates.export":
+            {
+                var id = (string?)p["id"] ?? throw new CommandException("Which template?");
+                return (Deliver(Library().Bytes(id), TemplateLibrary.IdOf(id) + ".lapin"), null);
+            }
+            case "templates.delete":
+                Library().Delete((string?)p["id"] ?? throw new CommandException("Which template?"));
+                return (null, null);
+            case "templates.rename":
+                return (new JsonObject { ["id"] = Library().Rename((string?)p["id"] ?? throw new CommandException("Which template?"), (string?)p["name"] ?? "") }, null);
             case "project.open":
             {
                 var diff = files.Open(session, PathParam());

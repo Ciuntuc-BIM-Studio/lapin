@@ -291,7 +291,7 @@ public static class CdeRemarks
 
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(Class, "Remark", [], "#c0392b", Kind: "resource"));
+        r.Class(new(Class, "Remark", [], "#c0392b", Kind: "resource", Template: false));
 
         // Remarks as cde.readPdf (the host) or cde.pdfRemarks read them: added or, read from the same file again, updated.
         r.Command("cde.importRemarks", "Read PDF remarks", (ctx, a) =>

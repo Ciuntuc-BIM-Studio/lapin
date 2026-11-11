@@ -1566,6 +1566,30 @@ export const PL: Record<string, string> = {
   'Mullion': 'Słupek', 'Transom': 'Poprzeczka', 'Rebated': 'Z ćwierćwałkiem', 'Cover strip': 'Listwa przykrywająca', 'Active leaf': 'Skrzydło czynne', 'Meeting': 'Połączenie', 'Leaves meeting': 'Skrzydła stykające się', 'No mullion': 'Bez słupka', 'No transom': 'Bez poprzeczki', 'Rebate overlap': 'Zakład ćwierćwałka', 'Cover strip width': 'Szerokość listwy przykrywającej', 'Cover strip thickness': 'Grubość listwy przykrywającej', 'Flush bolts on the passive leaf': 'Ryglownice w skrzydle biernym', 'New double door': 'Nowe drzwi dwuskrzydłowe', 'Default (frame\'s)': 'Domyślna (ościeżnicy)', 'Click a mullion or a transom in the elevation to give it its own width.': 'Kliknij słupek lub poprzeczkę na elewacji, aby nadać mu własną szerokość.', 'Double-acting leaves always meet butt.': 'Skrzydła dwukierunkowe zawsze stykają się na styk.', 'Takes the width of the frame\'s mullions and transoms again': 'Wraca do szerokości słupków i poprzeczek ościeżnicy', 'The leaf that opens first and has the handle, as the grid reads (the left one is hinged on the left, seen from outside)': 'Skrzydło otwierane jako pierwsze, z klamką, tak jak czyta się siatkę (lewe ma zawiasy po lewej, patrząc z zewnątrz)',
   // Entourage kinds from pictures (PR #21, decision 468)
   "Entourage kinds…": "Rodzaje sztafażu…", "Entourage kinds": "Rodzaje sztafażu", "Add picture…": "Dodaj obraz…", "Pictures": "Obrazy", "The picture could not be read.": "Nie udało się odczytać obrazu.", "No picture kinds yet.": "Brak jeszcze rodzajów z obrazów.", "A PNG with a see-through background stands as a cut-out; each figure of a kind takes its height and width.": "PNG z przezroczystym tłem stoi jako wycinanka; każda postać danego rodzaju przyjmuje jego wysokość i szerokość.",
+  // Project templates (issues #9 and #20, decision 470): File → Save as template…, New from template…, the default in Preferences
+  "New from template…": "Nowy z szablonu…",
+  "Project templates": "Szablony projektu",
+  "Project templates…": "Szablony projektu…",
+  "A template keeps the project’s set-up: its types, materials, units and drafting standards, storeys, views, sheets and title blocks. It keeps no element: no wall, no drawing, no issue.": "Szablon zachowuje ustawienia projektu: typy, materiały, jednostki i standardy rysunkowe, kondygnacje, widoki, arkusze i tabliczki rysunkowe. Nie zachowuje żadnego elementu: żadnej ściany, rysunku ani zgłoszenia.",
+  "The one chosen on the left is what File → New project starts from.": "Wybrany po lewej jest tym, od którego zaczyna Plik → Nowy projekt.",
+  "Start every new project from it (File → New project)": "Zaczynaj od niego każdy nowy projekt (Plik → Nowy projekt)",
+  "Kept in this browser. Export it from File → New from template… to keep a file.": "Zachowany w tej przeglądarce. Wyeksportuj go z Plik → Nowy z szablonu…, aby mieć plik.",
+  "Kept on this computer, in your Lapin folder. Export it to share it with an office.": "Zachowany na tym komputerze, w twoim folderze Lapin. Wyeksportuj go, aby udostępnić go biuru.",
+  "Template saved: new projects start from it.": "Szablon zapisany: nowe projekty zaczynają się od niego.",
+  "Template saved: File → New from template… starts a project from it.": "Szablon zapisany: Plik → Nowy z szablonu… zaczyna od niego projekt.",
+  "Start new projects from it": "Zaczynaj od niego nowe projekty",
+  "Export as a .lapin file": "Eksportuj jako plik .lapin",
+  "Lapin default": "Domyślny Lapin",
+  "Lapin’s own start: its storeys, plans and styles": "Własny start Lapina: jego kondygnacje, rzuty i style",
+  "None yet: set up a project, then File → Save as template…": "Jeszcze żadnego: przygotuj projekt, potem Plik → Zapisz jako szablon…",
+  "New from a file…": "Nowy z pliku…",
+  "A new project from a template or project file, without keeping it here": "Nowy projekt z pliku szablonu lub projektu, bez zachowywania go tutaj",
+  "From the template": "Z szablonu",
+  "Your template: its types, styles, storeys and sheets": "Twój szablon: jego typy, style, kondygnacje i arkusze",
+  "New projects": "Nowe projekty",
+  "File → New project starts from this template: its types, materials, units, styles, storeys and sheets. File → Save as template… makes one from the project open.": "Plik → Nowy projekt zaczyna od tego szablonu: jego typów, materiałów, jednostek, stylów, kondygnacji i arkuszy. Plik → Zapisz jako szablon… tworzy go z otwartego projektu.",
+  "Give the template a name.": "Nadaj szablonowi nazwę.",
+  "This is an old Lapin project: open it and save it, then use it as a template.": "To stary projekt Lapin: otwórz go i zapisz, a potem użyj go jako szablonu.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {
@@ -1733,4 +1757,9 @@ export const PL_PATTERNS: Language['patterns'] = [
   [/^(.+) is (\d+) MB: in a browser a point cloud is at most (\d+) MB\. Link it in the desktop app\.$/, (m) => `${m[1]} ma ${m[2]} MB: w przeglądarce chmura punktów ma najwyżej ${m[3]} MB. Połącz ją w aplikacji desktopowej.`],
   // Point clouds in views: Visibility / Graphics, plans and sections, exports (decision 396)
   [/^Class (\d+)$/, (m) => `Klasa ${m[1]}`],
+  // Project templates (decision 470)
+  [/^The template „(.+)” could not be used: (.+) Lapin's default was used instead\.$/, (m) => `Nie można było użyć szablonu „${m[1]}”: ${m[2]} Użyto domyślnego Lapin.`],
+  [/^The template „(.+)” chosen for new projects is no longer on this computer: Lapin's default was used\.$/, (m) => `Szablonu „${m[1]}” wybranego dla nowych projektów nie ma już na tym komputerze: użyto domyślnego Lapin.`],
+  [/^There is no template „(.+)”\.$/, (m) => `Nie ma szablonu „${m[1]}”.`],
+  [/^A template is already called „(.+)”\.$/, (m) => `Szablon o nazwie „${m[1]}” już istnieje.`],
 ];

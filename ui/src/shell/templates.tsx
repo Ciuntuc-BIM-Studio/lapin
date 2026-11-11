@@ -97,6 +97,14 @@ export const TEMPLATES: ProjectTemplate[] = [
   },
 ];
 
+/** A project template of the user's (decision 470): a stack of sheets with a plan on the top one. */
+export const savedTemplatePicture = <Pic>
+  <rect x="96" y="22" width="92" height="96" fill={shade} stroke={ink} />
+  <rect x="84" y="12" width="92" height="96" fill={wall} stroke={ink} />
+  <path d="M100 32h60v40h-60zM130 32v40M100 52h30" fill="none" stroke={ink} strokeWidth="2" />
+  <path d="M100 88h60" stroke={roof} strokeWidth="2" />
+</Pic>;
+
 /** The templates this edition offers: those whose modules it has; an edition with its own levels keeps them (the IFC start only). */
 export function templates(): ProjectTemplate[] {
   const own = (productInfo.storeys?.length ?? 0) > 0;

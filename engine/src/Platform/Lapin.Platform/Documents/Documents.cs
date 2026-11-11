@@ -56,7 +56,7 @@ public static class Documents
 
     public static void Register(IModuleRegistry r)
     {
-        r.Class(new(Class, "Document", [], "#4a6fa5", Kind: "resource"));
+        r.Class(new(Class, "Document", [], "#4a6fa5", Kind: "resource", Template: false));
         r.Service<IDocumentFields>(new CoreDocumentFields());
         ProjectInfo.Register(r);
         DocumentEditing.Register(r);

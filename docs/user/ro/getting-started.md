@@ -10,6 +10,8 @@ Când pornește, Lapin arată ecranul de start. **Proiect nou** începe o clădi
 
 **Pornește de la** dă un proiect nou pregătit pentru lucrul lui: **Casă parter** (fundații și parter), **Casă P+1** (și un etaj), **Bloc de locuințe** (parter și patru etaje), **Hală sau structură** (un nivel înalt de 6 m, în spațiul de lucru Structură și armare), **Doar desen 2D** (un nivel, în spațiul de lucru Desen 2D) și **Pornește de la un IFC** (un proiect nou, apoi fișierul IFC de importat). Fiecare își alege și spațiul de lucru; nivelurile se pot redenumi, adăuga sau șterge apoi, ca în orice proiect.
 
+**Nou din șablon…** pornește dintr-un șablon de proiect al tău: tipurile, materialele, unitățile, stilurile, etajele și planșele pregătite o dată, fără niciun element. Șabloanele tale apar și sub **Pornește de la**, iar cel ales în **Fișier → Preferințe…** e cel din care pornește **Proiect nou**. Vezi [Fișiere, versiuni și recuperare](files.md#sabloane-de-proiect).
+
 ![Ecranul de start](shots/start-screen.webp)
 
 Un proiect nou are deja trei niveluri: **Foundations** (−1,50), **Ground floor** (±0,00) și **First floor** (+3,00). Le poți redenumi. Proiectul se deschide pe planul parterului, gata pentru primul perete.

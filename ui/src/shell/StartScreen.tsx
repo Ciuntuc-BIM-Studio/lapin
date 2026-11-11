@@ -1,7 +1,7 @@
 /** The start screen, Atrium's way: the actions on the left; unsaved work to bring back, the templates to start from (decision 261) and the recent projects on the right. */
 
 import { useEffect, useState } from 'react';
-import { Feather, FilePlus2, FolderOpen, History, Trash2, Users } from 'lucide-react';
+import { Feather, FilePlus2, FolderOpen, History, LayoutTemplate, Trash2, Users } from 'lucide-react';
 import { JoinDialog } from './Sharing';
 import { OptimizeIfcDialog } from './OptimizeIfcDialog';
 import { openOptimize } from '../engine/ifcOptimize';
@@ -9,10 +9,13 @@ import { modules, productInfo } from '../platform/modules';
 import { brand, tagline } from '../platform/brand';
 import { BrandName } from './BrandMark';
 import { WorkspacePicker } from './WorkspacePicker';
-import { startFrom, templates } from './templates';
+import { savedTemplatePicture, startFrom, templates } from './templates';
+import { ProjectTemplatesDialog } from './ProjectTemplatesDialog';
+import { defaultTemplateOf, refreshTemplates, startFromTemplate, useTemplates } from '../engine/templates';
+import { usePrefs } from '../app/prefs';
 import { engineInBrowser, useSession } from '../engine/session';
-import { discardWork, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
-import { useUi } from '../app/store';
+import { discardWork, enter, listRecovery, newProject, openProject, projectTitle, recentProjects, restoreWork, type RecoverableWork } from '../engine/files';
+import { notify, useUi } from '../app/store';
 import { openLink } from './support';
 import { LANGUAGES, setLang, useLang } from '../i18n';
 
@@ -24,7 +27,15 @@ export function StartScreen() {
   const doc = useSession((s) => s.doc);
   const [work, setWork] = useState<RecoverableWork[]>([]);
   const recent = recentProjects();
-  useEffect(() => { if (connected) void listRecovery().then(setWork); }, [connected]);
+  useEffect(() => { if (connected) { void listRecovery().then(setWork); void refreshTemplates(); } }, [connected]);
+  // The user's own project templates (decision 470), and the one File → New starts from.
+  const saved = useTemplates((s) => s.list);
+  const fromTemplate = defaultTemplateOf(usePrefs((p) => p.defaultTemplate), saved);
+  const choosing = useUi((s) => s.dialog === 'projectTemplates');
+  const fromSaved = async (id: string) => {
+    if (doc?.dirty && !window.confirm('The project has unsaved changes. Start a new one anyway?')) return;
+    try { await startFromTemplate(id); enter(); } catch (e) { notify(e instanceof Error ? e.message : String(e)); }
+  };
   const back = () => useUi.setState({ screen: 'workspace' });
   const joining = useUi((s) => s.dialog === 'join');
   const optimizing = useUi((s) => s.dialog === 'optimizeIfc');
@@ -34,6 +45,8 @@ export function StartScreen() {
         <h1 className="start-brand"><BrandName big /></h1>
         <p className="muted">{tagline()}</p>
         <button type="button" className="btn primary big" disabled={!connected} onClick={() => void newProject()}><FilePlus2 size={18} />New project</button>
+        {fromTemplate && <p className="muted small" data-start="default-template"><span>From the template</span> <span data-no-i18n>{fromTemplate.name}</span></p>}
+        <button type="button" className="btn big" data-start="templates" disabled={!connected} onClick={() => useUi.setState({ dialog: 'projectTemplates' })}><LayoutTemplate size={18} />New from template…</button>
         <button type="button" className="btn big" disabled={!connected} onClick={() => void openProject()}><FolderOpen size={18} />Open project…</button>
         <button type="button" className="btn big" onClick={() => useUi.setState({ dialog: 'join' })}><Users size={18} />Join session…</button>
         <button type="button" className="btn big" data-start="optimize-ifc" disabled={!connected} onClick={() => openOptimize()}><Feather size={18} />Optimize IFC…</button>
@@ -71,7 +84,7 @@ export function StartScreen() {
             ))}
           </>
         )}
-        {templates().length > 0 && <>
+        {(templates().length > 0 || saved.length > 0) && <>
           <p className="eyebrow">Start from</p>
           <div className="templates" role="group" aria-label="Start from">
             {templates().map((t) => (
@@ -79,6 +92,13 @@ export function StartScreen() {
                 {t.picture}
                 <span className="template-name">{t.label}</span>
                 <span className="muted small">{t.note}</span>
+              </button>
+            ))}
+            {saved.map((t) => (
+              <button type="button" key={`saved-${t.id}`} className="template" data-template={`saved:${t.id}`} disabled={!connected} onClick={() => void fromSaved(t.id)}>
+                {savedTemplatePicture}
+                <span className="template-name" data-no-i18n>{t.name}</span>
+                <span className="muted small">Your template: its types, styles, storeys and sheets</span>
               </button>
             ))}
           </div>
@@ -105,6 +125,7 @@ export function StartScreen() {
       </footer>
       {joining && <JoinDialog />}
       {optimizing && <OptimizeIfcDialog />}
+      {choosing && <ProjectTemplatesDialog />}
     </div>
   );
 }
