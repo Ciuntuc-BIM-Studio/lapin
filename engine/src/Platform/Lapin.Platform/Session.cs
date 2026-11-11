@@ -871,7 +871,7 @@ public sealed partial class Session
             if (hosts.Count > 0) { Rebuild(hosts); rebuild = [.. rebuild, .. hosts]; }
         }
         var grid = new BoxGrid(_built);
-        emit.AddRange(Neighbours(grid, boxes, rebuild.ToHashSet()));
+        emit.AddRange(Neighbours(grid, boxes, rebuild.ToHashSet()).Where(id => Seamed(_store.Get(id))));
         var render = EmitMany(emit, grid);
         MaintainMemory();
         // A shared body gone: its mesh too (its instances went with it, or were rebuilt without it).
@@ -1094,7 +1094,13 @@ public sealed partial class Session
     /// </summary>
     const int SeamedUpTo = 20_000;
 
-    static bool Seamed(Entity? e) => e != null && !StoredBodies.Has(e);
+    static bool Seamed(Entity? e) => e != null && !StoredBodies.Has(e) && !Unseamed.Contains(e.Class);
+
+    /// <summary>
+    /// A site's long bodies: no facade to carry on across, and every element placed on them lies within their box, so each
+    /// edit near one would work out a whole path's or the whole ground's seams again (over 20 s on two 1.4 km roads).
+    /// </summary>
+    static readonly HashSet<string> Unseamed = [IfcClass.Pavement, IfcClass.GeographicElement, IfcClass.EarthworksCut];
 
     RenderItem? Emitted(string id, Dictionary<string, string?> keys, BoxGrid grid)
     {

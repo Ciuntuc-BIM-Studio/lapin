@@ -195,7 +195,7 @@ public static class Terrains
         }
         // Ditches and paths take their volume out of the ground: the ditch's channel, the path's courses.
         var cutters = DitchesOf(m, e.Id).Select(d => (Element: d, Solids: Ditches.Cutters(d, t, m)))
-            .Concat(PathsOf(m, e.Id).Select(pth => (Element: pth, Solids: Paths.Solids(m, pth).Where(kv => kv.Key != "kerb").SelectMany(kv => kv.Value).ToList())))
+            .Concat(PathsOf(m, e.Id).Select(pth => (Element: pth, Solids: Paths.GroundCutters(m, pth))))
             .Where(x => x.Solids.Count > 0).ToList();
         if (cutters.Count > 0)
         {

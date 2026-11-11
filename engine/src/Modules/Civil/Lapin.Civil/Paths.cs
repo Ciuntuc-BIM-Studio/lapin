@@ -117,6 +117,49 @@ public static class Paths
         return Corridors.Sweep(c, Corridors.Runs(c, CorridorSpec.Of(e)), (s, _) => SectionAt(t, red(s)), 2.0);
     }
 
+    /// <summary>
+    /// What a path takes out of the ground (its courses, not its kerbs), as few solids as it can be: each part one tube along a stretch
+    /// (<see cref="SiteGeometry.LoftMany"/>), not one per pair of sections as it is drawn, which the terrain's boolean takes minutes and
+    /// gigabytes over on a long path.
+    /// </summary>
+    public static List<Solid> GroundCutters(IModelView m, Entity e)
+    {
+        var c = Corridors.ChainOf(e);
+        var o = new List<Solid>();
+        if (c.Segments == 0) return o;
+        var t = TemplateOf(e);
+        var red = Corridors.RedLine(m, e, c);
+        foreach (var (from, to) in Corridors.Runs(c, CorridorSpec.Of(e)))
+            for (var seg = 0; seg < c.Segments; seg++)
+            {
+                var (a, z) = (Math.Max(from, c.StationOf(seg)), Math.Min(to, c.StationOf(seg + 1)));
+                if (z - a < 1e-6) continue;
+                // Each part (by key, the n-th of that key) a run of rings, cut where it changes its count.
+                var open = new Dictionary<(string, int), List<IReadOnlyList<Vec3>>>();
+                void Close((string, int) k)
+                {
+                    if (open.Remove(k, out var rings) && SiteGeometry.LoftMany(rings, k.Item1) is { } tube) o.Add(tube);
+                }
+                foreach (var s in c.StationsBetween(a, z, 2.0))
+                {
+                    var (p, u) = (c.PointAt(s), c.Across(s, seg));
+                    var seen = new Dictionary<string, int>();
+                    var here = new HashSet<(string, int)>();
+                    foreach (var part in SectionAt(t, red(s)).Where(x => x.Key != "kerb"))
+                    {
+                        var k = (part.Key, seen[part.Key] = seen.GetValueOrDefault(part.Key, -1) + 1);
+                        here.Add(k);
+                        var ring = part.Polygon.Select(x => (p + u * x.X).At(x.Y)).ToList();
+                        if (open.TryGetValue(k, out var rings) && rings[^1].Count != ring.Count) Close(k);
+                        (open.TryGetValue(k, out var r) ? r : open[k] = []).Add(ring);
+                    }
+                    foreach (var k in open.Keys.Where(k => !here.Contains(k)).ToList()) Close(k);
+                }
+                foreach (var k in open.Keys.ToList()) Close(k);
+            }
+        return o;
+    }
+
     static readonly (string Key, string Name, string Color)[] PartNames =
         [("surface", "Surface course", Color), ("base", "Base course", "#a39888"), ("gutter", "Gutters", "#9a9a9a"), ("kerb", "Kerbs", "#8f8f8f"), ("sidewalk", "Sidewalks", "#c3bdb2")];
 
