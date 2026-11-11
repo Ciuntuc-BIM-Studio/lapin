@@ -27,8 +27,7 @@ public static class SolidFromMesh
     {
         // Plain loops and edges packed in a long, not LINQ and tuple keys: the browser's AOT build interprets those.
         if (triangles.Count < 4) return null;
-        var tris = new (int A, int B, int C)[triangles.Count];
-        for (int i = 0; i < tris.Length; i++) tris[i] = triangles[i];
+        var tris = SplitNeedles(vertices, triangles);
         var normals = new Vec3[tris.Length];
         for (int i = 0; i < tris.Length; i++)
         {
@@ -123,6 +122,66 @@ public static class SolidFromMesh
         }
         if (faces.Count < 4) return null;
         return SolidBuilder.Make(vertices, faces, tag, 1e-9);
+    }
+
+    /// <summary>
+    /// The mesh with its needles taken out: a triangle whose three corners lie on one line (a boolean leaves one where two
+    /// cutters' edges meet on a face, a window's sill and its reveal on a bare wall face) has no plane, so it joined no face
+    /// and its three edges were left open. The corner between the other two is put on the long edge's other triangle instead,
+    /// split in two there, and the needle dropped: the same surface, closed, every triangle with a plane.
+    /// </summary>
+    static (int A, int B, int C)[] SplitNeedles(IReadOnlyList<Vec3> v, IReadOnlyList<(int A, int B, int C)> triangles)
+    {
+        const double tol = 1e-9;
+        var tris = new List<(int A, int B, int C)>(triangles.Count);
+        for (int i = 0; i < triangles.Count; i++) tris.Add(triangles[i]);
+        // A needle turned to start on its long edge, (a, b, c), with c inside a–b and off it by less than the tolerance.
+        bool Needle((int A, int B, int C) t, out (int A, int B, int C) turned)
+        {
+            turned = t;
+            var best = (v[t.B] - v[t.A]).Length;
+            var bc = (v[t.C] - v[t.B]).Length;
+            var ca = (v[t.A] - v[t.C]).Length;
+            if (bc > best) { best = bc; turned = (t.B, t.C, t.A); }
+            if (ca > best) { best = ca; turned = (t.C, t.A, t.B); }
+            if (best < tol) return false;
+            var (pa, pb, pc) = (v[turned.A], v[turned.B], v[turned.C]);
+            var ab = pb - pa;
+            var s = Vec3.Dot(pc - pa, ab) / best;
+            return Vec3.Cross(ab, pc - pa).Length / best < tol && s > tol && best - s > tol;
+        }
+        var owner = new Dictionary<long, int>(tris.Count * 3, EdgeKeys.Comparer);
+        var todo = new Queue<int>();
+        for (int i = 0; i < tris.Count; i++)
+        {
+            for (int e = 0; e < 3; e++) owner[Edge(tris[i], e)] = i;
+            if (Needle(tris[i], out _)) todo.Enqueue(i);
+        }
+        if (todo.Count == 0) return [.. tris];
+        var dead = new HashSet<int>();
+        // Each split takes one needle away; the guard stops an input that is not a closed mesh from going round.
+        for (int guard = 0; todo.Count > 0 && guard < 4 * triangles.Count + 16; guard++)
+        {
+            var i = todo.Dequeue();
+            if (dead.Contains(i) || !Needle(tris[i], out var n)) continue;
+            var (a, b, c) = n;
+            if (!owner.TryGetValue(Pack(b, a), out var j) || j == i || dead.Contains(j)) continue;
+            var other = tris[j];
+            var d = other.A != a && other.A != b ? other.A : other.B != a && other.B != b ? other.B : other.C;
+            if (d == c || d == a || d == b) continue;
+            for (int e = 0; e < 3; e++) { owner.Remove(Edge(tris[i], e)); owner.Remove(Edge(other, e)); }
+            dead.Add(i);
+            // The other triangle (b, a, d) becomes (b, c, d) and (c, a, d): b→c and c→a take the needle's place beside its neighbours.
+            tris[j] = (b, c, d);
+            tris.Add((c, a, d));
+            var k = tris.Count - 1;
+            for (int e = 0; e < 3; e++) { owner[Edge(tris[j], e)] = j; owner[Edge(tris[k], e)] = k; }
+            todo.Enqueue(j);
+            todo.Enqueue(k);
+        }
+        var o = new List<(int A, int B, int C)>(tris.Count - dead.Count);
+        for (int i = 0; i < tris.Count; i++) if (!dead.Contains(i)) o.Add(tris[i]);
+        return [.. o];
     }
 
     /// <summary>A directed edge as one number: its start in the high half, its end in the low.</summary>

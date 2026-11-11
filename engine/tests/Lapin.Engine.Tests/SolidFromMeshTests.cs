@@ -27,6 +27,26 @@ public class SolidFromMeshTests
     }
 
     [Fact]
+    public void A_needle_left_by_a_boolean_is_taken_out_and_the_solid_stays_closed()
+    {
+        // A unit cube whose front face has a corner in the middle of its top edge (m), which the top face does not: the
+        // boolean library closes the gap with a triangle of no area (5, 4, m), its three corners on one line.
+        List<Vec3> v =
+        [
+            new(0, 0, 0), new(1, 0, 0), new(1, 1, 0), new(0, 1, 0), new(0, 0, 1), new(1, 0, 1), new(1, 1, 1), new(0, 1, 1), new(0.5, 0, 1),
+        ];
+        List<(int, int, int)> t =
+        [
+            (0, 2, 1), (0, 3, 2), (4, 5, 6), (4, 6, 7), (0, 1, 5), (0, 5, 8), (0, 8, 4),
+            (3, 7, 6), (3, 6, 2), (0, 4, 7), (0, 7, 3), (1, 2, 6), (1, 6, 5), (5, 4, 8),
+        ];
+        var s = SolidFromMesh.Build(v, t)!;
+        Assert.True(Topology.IsManifold(s), string.Join("; ", Topology.Validate(s).Select(d => d.Message)));
+        Assert.Equal(6, s.Faces.Length);
+        Assert.Equal(1, Measure.Volume(s), 9);
+    }
+
+    [Fact]
     public void A_big_mesh_is_read_in_time_that_grows_with_it()
     {
         // 180,000 triangles: their edges once crowded a few hash buckets (a long's hash is its halves XOR'd), which took minutes.
