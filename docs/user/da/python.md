@@ -50,11 +50,53 @@ Længder er i meter og vinkler i grader, uanset hvilken enhed projektet viser.
 - **Stop** stopper scriptet; intet af det, det gjorde, bevares. Et script, der ikke stopper inden for to sekunder, får sin Python lukket.
 - **Genstart** starter Python igen: de navne, konsollen huskede, glemmes.
 
+## Optag, hvad du gør, som et script
+
+Fanen **Optager** ved siden af konsollen skriver det, du gør i vinduet, som Python, én linje pr. trin.
+
+1. Klik på **Optag**. En rød prik på fanen viser, at der optages.
+2. Arbejd som sædvanlig: tegn vægge, ret en egenskab, slet noget. Hvert trin vises straks som en linje, for eksempel `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
+3. Klik på **Stop** og derefter på **Kopiér** (for at indsætte scriptet et andet sted) eller **Gem som script** (det kommer ind under Mine og åbner i editoren).
+
+![Optageren efter to vægge er tegnet](shots/python-recorder.webp)
+
+Scriptet skrives, så det også virker i et andet projekt:
+- det, et trin lavede, gemmes i en variabel (`wall1`), og senere trin bruger den (`wall1.id`);
+- den etage, du tegnede på, findes ud fra sit navn, ellers ud fra sin kote (`lapin.model.storey("Ground floor", 0)`), og en type ud fra sit navn (`lapin.model.find("IfcWallType", "Brick 250")`);
+- et andet element, der allerede var i projektet, angives ved sit id (`lapin.model["…"]`), så den linje virker kun i dette projekt;
+- med **Markering som lapin.selection()** afkrydset skrives en kommando på det, du havde markeret, som `lapin.selection()`: scriptet arbejder så på det, der er markeret, når du kører det.
+
+Et **Fortryd** under optagelsen tager det sidste trin ud af scriptet, og **Annuller fortryd** sætter det tilbage, så scriptet rummer det, du endte med at gøre. Det, et script gør, optages aldrig, og det gør spørgsmål, der ikke ændrer noget (en oversigt der læses, et mål), heller ikke.
+
+![Det optagede script kørt i et nyt projekt: de samme to vægge](shots/python-recorder-new.webp)
+
+## Projektets scripts
+
+Et script kan gemmes **i projektet**, så det følger med filen: åbn eller skriv det i editoren, og klik på **Gem i projektet**. Det vises under **Projektets** til venstre. At gemme, omdøbe og slette et projekts script er hver især ét fortryd-trin, og projektets versioner bevarer dets scripts. I `.lapin`-filen er hvert script også en almindelig tekstfil, `scripts/<name>.py`, så det kan læses uden Lapin.
+
+**Et projekts script kører aldrig af sig selv**, hverken når projektet åbnes, eller når det gemmes. Første gang du kører det, og igen hver gang dets kode er ændret, spørger Lapin:
+- **Kør én gang**: det kører denne gang, og næste kørsel spørger igen;
+- **Stol på**: det kører, og denne kode huskes som troværdig på denne computer (en ændring af den spørger igen);
+- **Annuller**: intet kører.
+
+Et script, du selv gemmer i projektet, er troværdigt, i det øjeblik du gemmer det. Dine egne scripts (Mine) spørger aldrig.
+
+## Hvad der er markeret
+
+`lapin.selection()` giver det, der er markeret i vinduet, som elementer:
+
+```python
+for e in lapin.selection():
+    print(e.name, e.type)
+```
+
+Et elements felter læses ved deres navne og ændres ved tildeling: `wall.height = 3` ændrer væggen (ét fortryd-trin, eller en del af Kør). `with lapin.step("Name"):` gør flere kommandoer til ét fortryd-trin, mens hver stadig svarer med det samme, så en senere kan bruge det, en tidligere lavede.
+
 ## Sikkerhed
 
-Et script kan alt, hvad du kan på denne computer: det kører i din egen Python med dine rettigheder. Kør scripts, du selv har skrevet eller stoler på.
+Et script kan alt, hvad du kan på denne computer: det kører i din egen Python med dine rettigheder. Kør scripts, du selv har skrevet eller stoler på; et projekts script spørger først.
 
-En gæst i en delt session kan ikke køre scripts på din computer, og et script forbinder kun til Lapin på sin egen computer.
+En gæst i en delt session kan hverken køre scripts på din computer eller lægge et i dit projekt, og et script forbinder kun til Lapin på sin egen computer.
 
 ## For udviklere
 

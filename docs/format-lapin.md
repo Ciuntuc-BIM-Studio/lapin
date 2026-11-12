@@ -81,7 +81,8 @@ versions/blobs/<sha256>            o parte numită de o versiune pe care proiect
 issues/index.json                  emiterile și fișierele lor, de citit fără Lapin (sursa e înregistrarea LapinIssue din model)
 issues/blobs/<sha256>              un fișier făcut de o emitere (PDF, borderou, CSV, manifest, DXF, IFC la cerere), o singură dată
 analytics/*.parquet                tabele pentru BI, doar la versiuni sau la export
-<orice altceva>                    intrările altor unelte (dag/, source/…), păstrate octet cu octet („Părți străine”, mai jos)
+scripts/<nume>.py                  scripturile proiectului ca text (modulul scripting, decizia 489; Lapin citește entitatea LapinScript), părți ale modulului în manifest
+<orice altceva>                    intrările altor unelte (dag/, source/…, un fișier al lor în scripts/), păstrate octet cu octet („Părți străine”, mai jos)
 ```
 
 - **Sursa de adevăr e graful din motor.**

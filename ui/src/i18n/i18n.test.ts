@@ -297,3 +297,18 @@ describe('a view\'s level of development (decision 404)', () => {
     expect(translate('as its style: LOD 350 · connections', 'ro')).toBe('ca stilul: LOD 350 · îmbinări');
   });
 });
+
+describe('the Script panel’s messages (decision 489, stage 3)', () => {
+  const samples = [
+    'Done in 0.12 s: one undo step.',
+    'Python was not found on this computer. Install Python 3.11 or newer from python.org, or choose it in Preferences → Developer extras.',
+    'A script is editing the model: wait for it to finish, or stop it.',
+    '„walls.py” came with the project „house.lapin”.',
+  ];
+  it('are translated in Romanian, German and Chinese', () => {
+    for (const lang of ['ro', 'de', 'zh'] as Lang[]) {
+      for (const s of samples) expect(translate(s, lang), `${lang}: ${s}`).not.toBeNull();
+    }
+    expect(translate('Done in 0.12 s: one undo step.', 'ro')).toContain('0.12');
+  });
+});

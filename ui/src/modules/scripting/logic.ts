@@ -23,30 +23,46 @@ export interface ScriptEvent {
   code?: number;
 }
 
-/** A line of the console: what was typed, what the script printed, its errors, and how each run ended. */
-export interface ConsoleLine { kind: 'in' | 'out' | 'err' | 'info' | 'ok'; text: string; run?: number }
+/**
+ * A line of the console: what was typed, what the script printed, its errors, and how each run ended. `own`: Lapin's
+ * own words (how a run ended, the engine's refusals), translated as the interface is; the rest is the script's, shown
+ * as it is.
+ */
+export interface ConsoleLine { kind: 'in' | 'out' | 'err' | 'info' | 'ok'; text: string; run?: number; own?: boolean }
+
+/** A line of Lapin's own. */
+export const own = (kind: ConsoleLine['kind'], text: string, run?: number): ConsoleLine => ({ kind, text, own: true, ...(run !== undefined ? { run } : {}) });
 
 /** The most lines the console keeps (the oldest go). */
 export const MAX_LINES = 2000;
 
+/** What a failed run adds after its error: nothing it did is kept (but a killed Python, whose message says it already). */
+export const NOTHING_KEPT = 'Nothing the script did is kept.';
+
 /** The console after one event of the kernel. */
 export function foldOutput(lines: readonly ConsoleLine[], e: ScriptEvent): ConsoleLine[] {
-  const add = (l: ConsoleLine): ConsoleLine[] => {
-    const last = lines[lines.length - 1];
-    // A print comes in pieces ("a", "\n"): joined into the line they make.
-    if ((l.kind === 'out' || l.kind === 'err') && last && last.kind === l.kind && last.run === l.run && !last.text.endsWith('\n'))
-      return [...lines.slice(0, -1), { ...last, text: last.text + l.text }];
-    const next = [...lines, l];
+  const add = (...ls: ConsoleLine[]): ConsoleLine[] => {
+    let next = [...lines];
+    for (const l of ls) {
+      const last = next[next.length - 1];
+      // A print comes in pieces ("a", "\n"): joined into the line they make.
+      if ((l.kind === 'out' || l.kind === 'err') && !l.own && last && !last.own && last.kind === l.kind && last.run === l.run && !last.text.endsWith('\n'))
+        next = [...next.slice(0, -1), { ...last, text: last.text + l.text }];
+      else next.push(l);
+    }
     return next.length > MAX_LINES ? next.slice(next.length - MAX_LINES) : next;
   };
   switch (e.type) {
     case 'out': return e.text ? add({ kind: 'out', text: e.text, run: e.id }) : [...lines];
     case 'err': return e.text ? add({ kind: 'err', text: e.text, run: e.id }) : [...lines];
     case 'done': {
-      if (e.ok) return e.console ? [...lines] : add({ kind: 'ok', text: doneText(e), run: e.id });
-      return add({ kind: 'err', text: (e.traceback?.trim() || e.error || 'The script failed.') + (e.killed ? '' : '\nNothing the script did is kept.'), run: e.id });
+      if (e.ok) return e.console ? [...lines] : add(own('ok', doneText(e), e.id));
+      // A traceback is the script's; a message without one (Stopped., the engine's refusal, a Python that ended) is Lapin's.
+      const trace = e.traceback?.trim();
+      const first: ConsoleLine = trace ? { kind: 'err', text: trace, run: e.id } : own('err', e.error || 'The script failed.', e.id);
+      return e.killed ? add(first) : add(first, own('err', NOTHING_KEPT, e.id));
     }
-    case 'exit': return add({ kind: 'info', text: 'Python ended; the next Run starts it again.' });
+    case 'exit': return add(own('info', 'Python ended; the next Run starts it again.'));
     default: return [...lines];
   }
 }
@@ -117,7 +133,8 @@ export interface Completion { label: string; type: 'namespace' | 'function' | 'v
 const TOP: [string, string][] = [
   ['execute', 'execute(command, args): a command by its engine name'], ['query', 'query(name, args): a question that changes nothing'],
   ['undo', 'undo(): one step back'], ['redo', 'redo(): one step forward'], ['save', 'save(path=None)'], ['info', 'info(): the product, modules, commands'],
-  ['batch', 'with lapin.batch(label): one undo step for many'], ['model', 'the model: lapin.model.walls, lapin.model[id]'], ['on', 'on("diff", f): every change'],
+  ['batch', 'with lapin.batch(label): one undo step for many'], ['step', 'with lapin.step(label): one undo step, each command answered at once'],
+  ['selection', 'selection(): what the window has selected'], ['model','the model: lapin.model.walls, lapin.model[id]'], ['on', 'on("diff", f): every change'],
   ['quantities', 'quantities(id)'], ['snapshot', 'snapshot()'], ['state', 'state(): undo label, dirty, path'], ['catalogue', 'catalogue()'], ['call', 'call(method, params)'],
 ];
 

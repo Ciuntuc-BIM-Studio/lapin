@@ -6679,6 +6679,75 @@ export const scenes = [
     },
   },
   {
+    // Decision 489, stage 3: the macro recorder. Record, two walls drawn in the plan with the wall tool, Stop: the recorder's tab
+    // shows them as two lines of Python (the storey found by its name, the second wall's start the first's end); Copy puts the
+    // script on the clipboard; in a new project the copied script, run from the editor, draws the same two walls as one undo step.
+    id: 'python-recorder',
+    touches: ['scripting', 'architecture'],
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall');
+      try {
+        await page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ developerExtras: true }));
+        await t.button('View', { exact: true });
+        await page.locator('.band button.tool', { hasText: /^Script$/ }).first().click();
+        const panel = page.locator('[data-panel=script]');
+        await panel.waitFor({ timeout: 20_000 });
+        await panel.locator('[data-action=script-tab-recorder]').click();
+        await panel.locator('[data-action=script-record]').click();
+        await t.until(async () => (await panel.locator('[data-action=script-record-stop]').count()) > 0, 'the recorder records');
+        // The panel closed while drawing (it would cover the plan): the recorder goes on.
+        await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).closePanel());
+        await t.wait(300);
+        // Two walls drawn in the plan, as a user draws them: start, a corner, the end.
+        await t.tool('architecture.wall');
+        for (const [x, y] of [[0, 0], [5, 0], [5, 4]]) {
+          const [px, py] = await t.planPoint(x, y);
+          await page.mouse.move(px, py, { steps: 3 });
+          await page.mouse.click(px, py);
+          await t.wait(300);
+        }
+        await t.keys('Escape', 'Escape');
+        await t.until(async () => (await walls()).length === 2, 'two walls are drawn');
+        await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).openPanel());
+        await panel.waitFor({ timeout: 20_000 });
+        const recorder = panel.locator('[data-field=script-recorder]');
+        await t.until(async () => ((await recorder.innerText()).match(/lapin\.architecture\.add_wall\(/g) ?? []).length === 2, 'the recorder shows the two walls as two lines');
+        const text = await recorder.innerText();
+        t.expect(/storey1 = lapin\.model\.storey\(/.test(text), 'the storey is found by its name, so the script works in another project');
+        await t.fit();
+        await t.wait(500);
+        await t.shot('python-recorder');
+        await panel.locator('[data-action=script-record-stop]').click();
+        const script = await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).recordedText());
+        await panel.locator('[data-action=script-record-copy]').click().catch(() => undefined);
+
+        // A new project: the copied script pasted into the editor and run.
+        const status = await t.call('script.status', {});
+        if (!status.ok) { console.log(`  ! python-recorder: ${status.message} The script is not run.`); return; }
+        await page.evaluate(async () => (await import('/src/engine/session.ts')).engine.call('project.new'));
+        await t.until(async () => (await walls()).length === 0, 'a new project, with no walls');
+        await page.evaluate(async (code) => { const s = await import('/src/modules/scripting/store.ts'); s.newScript(code); }, script);
+        await panel.locator('[data-field=script-name]').fill(say({ en: 'Two walls', ro: 'Doi pereți' }, t.lang));
+        await panel.locator('[data-action=script-save]').click();
+        await panel.locator(`[data-script="${say({ en: 'Two walls', ro: 'Doi pereți' }, t.lang)}.py"]`).waitFor({ timeout: 10_000 });
+        await panel.locator('[data-action=script-tab-console]').click();
+        await panel.locator('[data-action=script-run]').click();
+        await t.until(async () => (await panel.locator('.script-line.ok').count()) > 0, 'the recorded script runs well', 60_000);
+        t.expect((await walls()).length === 2, `the script draws the same two walls in the new project (${(await walls()).length})`);
+        const doc = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc);
+        t.expect(doc?.undoLabel === say({ en: 'Two walls', ro: 'Doi pereți' }, t.lang), `one undo step named after the script (${doc?.undoLabel})`);
+        await t.fit();
+        await t.wait(600);
+        await t.shot('python-recorder-new');
+      } finally {
+        await page.evaluate(async () => (await import('/src/app/prefs.ts')).setPrefs({ developerExtras: false })).catch(() => undefined);
+        await t.call('script.delete', { name: `${say({ en: 'Two walls', ro: 'Doi pereți' }, t.lang)}.py` }).catch(() => undefined);
+      }
+    },
+  },
+  {
     id: 'help',
     async run(t) {
       await t.fresh();

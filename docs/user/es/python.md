@@ -50,11 +50,53 @@ Las longitudes van en metros y los ángulos en grados, sea cual sea la unidad qu
 - **Detener** detiene el script; no se conserva nada de lo que hizo. A un script que no se detiene en dos segundos se le cierra el Python.
 - **Reiniciar** vuelve a iniciar Python: se olvidan los nombres que guardaba la consola.
 
+## Graba lo que haces como script
+
+La pestaña **Grabadora**, junto a la consola, escribe lo que haces en la ventana como Python, una línea por paso.
+
+1. Haz clic en **Grabar**. Un punto rojo en la pestaña indica que se está grabando.
+2. Trabaja como de costumbre: dibuja muros, cambia una propiedad, borra algo. Cada paso aparece al instante como una línea, por ejemplo `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
+3. Haz clic en **Detener** y luego en **Copiar** (para pegar el script en otro sitio) o en **Guardar como script** (pasa a Míos y se abre en el editor).
+
+![La grabadora tras dibujar dos muros](shots/python-recorder.webp)
+
+El script se escribe de modo que también funcione en otro proyecto:
+- lo que creó un paso se guarda en una variable (`wall1`), y los pasos siguientes la usan (`wall1.id`);
+- la planta en la que dibujaste se encuentra por su nombre, y si no, por su cota (`lapin.model.storey("Ground floor", 0)`), y un tipo por su nombre (`lapin.model.find("IfcWallType", "Brick 250")`);
+- otro elemento que ya estaba en el proyecto se nombra por su id (`lapin.model["…"]`), así que esa línea solo funciona en este proyecto;
+- con **Selección como lapin.selection()** marcada, un comando sobre lo que tenías seleccionado se escribe `lapin.selection()`: el script trabaja entonces sobre lo que esté seleccionado cuando lo ejecutes.
+
+Un **Deshacer** mientras se graba quita el último paso del script, y **Rehacer** lo devuelve, de modo que el script contiene lo que hiciste al final. Lo que hace un script nunca se graba, ni tampoco las consultas que no cambian nada (leer una tabla, una medición).
+
+![El script grabado, ejecutado en un proyecto nuevo: los mismos dos muros](shots/python-recorder-new.webp)
+
+## Los scripts del proyecto
+
+Un script puede guardarse **en el proyecto**, para que viaje con el archivo: ábrelo o escríbelo en el editor y haz clic en **Guardar en el proyecto**. Aparece en **Del proyecto**, a la izquierda. Guardar, renombrar y borrar un script del proyecto son cada uno un solo paso de deshacer, y las versiones del proyecto conservan sus scripts. En el archivo `.lapin` cada uno es además un archivo de texto sencillo, `scripts/<name>.py`, así que puede leerse sin Lapin.
+
+**Un script del proyecto nunca se ejecuta solo**, ni al abrir el proyecto ni al guardarlo. La primera vez que lo ejecutas, y de nuevo cada vez que su código ha cambiado, Lapin pregunta:
+- **Ejecutar una vez**: se ejecuta esta vez, y la siguiente ejecución vuelve a preguntar;
+- **Confiar**: se ejecuta, y este código queda recordado como de confianza en este ordenador (un cambio en él vuelve a preguntar);
+- **Cancelar**: no se ejecuta nada.
+
+Un script que guardas tú mismo en el proyecto es de confianza desde que lo guardas. Tus propios scripts (Míos) nunca preguntan.
+
+## Qué está seleccionado
+
+`lapin.selection()` devuelve lo que está seleccionado en la ventana, como elementos:
+
+```python
+for e in lapin.selection():
+    print(e.name, e.type)
+```
+
+Los campos de un elemento se leen por sus nombres y se cambian por asignación: `wall.height = 3` cambia el muro (un solo paso de deshacer, o parte de la Ejecución). `with lapin.step("Name"):` convierte varios comandos en un solo paso de deshacer, y cada uno sigue respondiendo al instante, de modo que uno posterior puede usar lo que creó uno anterior.
+
 ## Seguridad
 
-Un script puede hacer todo lo que tú puedes hacer en este ordenador: se ejecuta en tu propio Python, con tus permisos. Ejecuta scripts que hayas escrito tú o en los que confíes.
+Un script puede hacer todo lo que tú puedes hacer en este ordenador: se ejecuta en tu propio Python, con tus derechos. Ejecuta scripts que hayas escrito tú o en los que confíes; un script del proyecto pregunta primero.
 
-Un invitado de una sesión compartida no puede ejecutar scripts en tu ordenador, y un script solo se conecta al Lapin de su propio ordenador.
+Un invitado de una sesión compartida no puede ejecutar scripts en tu ordenador ni poner uno en tu proyecto, y un script solo se conecta al Lapin de su propio ordenador.
 
 ## Para desarrolladores
 

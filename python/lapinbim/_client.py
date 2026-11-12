@@ -8,6 +8,7 @@ and undo like the user's own.
 from __future__ import annotations
 
 import json
+import os
 import queue
 import sys
 import threading
@@ -19,6 +20,14 @@ from ._catalogue import Catalogue, Namespace, bind, bundled, merge
 from ._frame import Obj, decode
 from ._model import Element, Model
 from ._ws import TEXT, ConnectionClosed, WebSocket
+
+
+# The Script panel's kernel: the engine that started it gives its Python a token (docs/python.md, The kernel's own
+# connections). Each connection made here to that engine shows it (script.join), so one a script opens itself
+# (lapinbim.Lapin()) joins its run's step. Taken out of the environment as the package loads: a process the script starts
+# does not inherit it.
+_KERNEL_TOKEN = os.environ.pop("LAPIN_SCRIPT_TOKEN", None)
+_KERNEL_PORT = os.environ.get("LAPIN_PORT") if _KERNEL_TOKEN else None
 
 
 class LapinError(Exception):
@@ -138,6 +147,47 @@ class Batch:
         self.results = list(results)
 
 
+class Step:
+    """A step held open on the engine: every command inside, each run at once, is one undo step named ``label``.
+
+    ::
+
+        with lapin.step("Facades"):
+            w = lapin.architecture.add_wall(x1=0, y1=0, x2=5, y2=0)   # its result now: w.id
+            lapin.architecture.add_door(wall_id=w.id, offset=1.2)
+
+    Unlike a batch, each command answers at once (a later one may use an id an earlier one made); while it is open no
+    other connection edits (the window says a script is editing). It ends with ``doc.commit`` when the block ends well
+    and ``doc.rollback`` when it raises (the exception goes on): the model as it was. A step inside a step joins it, as
+    the Script panel's Run is one: only the outermost decides. A connection lost rolls it back. A batch may go inside a
+    step, not a step inside a batch.
+    """
+
+    def __init__(self, client: "Lapin", label: str | None = None):
+        self._client = client
+        self.label = label or "Script"
+        self.joined = False
+        self.kept: bool | None = None
+
+    def __enter__(self) -> "Step":
+        if self._client._batch() is not None:
+            raise LapinError("lapin.step inside a batch: end the batch first (a batch may go inside a step).")
+        r = self._client.call("doc.begin", {"label": self.label})
+        self.joined = bool(isinstance(r, dict) and r.get("joined"))
+        return self
+
+    def __exit__(self, kind, value, tb) -> None:
+        if kind is None:
+            self._client.call("doc.commit")
+            self.kept = not self.joined
+            return
+        self.kept = False
+        try:
+            self._client.call("doc.rollback")
+        except Exception:  # noqa: BLE001 - the block's own exception is what goes on; a lost engine rolled it back already
+            pass
+
+
 class Lapin:
     """One connection to an open Lapin (the desktop app, or ``pnpm dev``).
 
@@ -178,6 +228,14 @@ class Lapin:
         self.closed = False
         self._reader = threading.Thread(target=self._read, name="lapinbim-reader", daemon=True)
         self._reader.start()
+        # In the Script panel: one of its Python's connections, so it edits in the run's step (docs/python.md).
+        self.joined = False
+        if _KERNEL_TOKEN and _KERNEL_PORT == str(self.port):
+            try:
+                self.call("script.join", {"token": _KERNEL_TOKEN}, timeout=connect_timeout)
+                self.joined = True
+            except LapinError:
+                pass
 
     # ------------------------------------------------------------------ the wire
 
@@ -337,6 +395,17 @@ class Lapin:
     def batch(self, label: str | None = None) -> Batch:
         """``with lapin.batch("Facades"):`` the commands inside as one undo step (see Batch)."""
         return Batch(self, label)
+
+    def step(self, label: str | None = None) -> Step:
+        """``with lapin.step("Facades"):`` the commands inside, each answered at once, as one undo step (see Step)."""
+        return Step(self, label)
+
+    def selection(self) -> list[Element]:
+        """What the window has selected now, as elements (a part selected on its own, a grid's axis, is left out).
+        The desktop's Lapin with the scripting module tells it; elsewhere a LapinError says why."""
+        ids = (self.call("script.selection") or {}).get("ids") or []
+        elements = self._elements()
+        return [elements[i] for i in ids if i in elements]
 
     def on(self, event: str, handler: Callable[[Any], Any]) -> Callable[[], None]:
         """``handler(data)`` for each ``event`` the engine sends ("diff", "progress", "presence", "delivery"); "*" gets

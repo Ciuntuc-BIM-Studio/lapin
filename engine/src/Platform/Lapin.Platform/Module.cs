@@ -132,6 +132,18 @@ public interface IStoreySpans
     IReadOnlyList<PlanItem>? PlanOn(IModelView m, Entity e, Entity storey) => null;
 }
 
+/// <summary>
+/// Texts a module writes into the .lapin beside the model, for whoever opens the zip without Lapin: copies of what its
+/// entities hold (a project's scripts as <c>scripts/&lt;name&gt;.py</c>, decision 489). The entities stay what Lapin reads;
+/// the paths are in the package's text folders (Lapin.Package's <c>LapinPackage.TextFolders</c>).
+/// </summary>
+public interface IPackageTexts
+{
+    /// <summary>The module writing them.</summary>
+    string Module { get; }
+    IEnumerable<(string Path, string Text)> Texts(IModelView model);
+}
+
 /// <summary>Deleting what is not an entity of its own (one axis of a grid, selected as grid#tag): true when it was handled.</summary>
 public interface IDeletion
 {

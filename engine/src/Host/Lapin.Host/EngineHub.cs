@@ -88,6 +88,15 @@ public sealed class EngineHub
         Task? _pump;
 
         public Caller Caller { get; set; } = Caller.Local;
+
+        object? _stepKey;
+
+        /// <summary>
+        /// Whose an open step is when this client opens it or edits in it (<see cref="Session.Connection"/>): the client
+        /// itself, or the Script panel's Python (<see cref="ScriptHost.KernelKey"/>) for every connection its process
+        /// opened and joined with its token (<c>script.join</c>).
+        /// </summary>
+        public object StepKey { get => _stepKey ?? this; set => _stepKey = value; }
         /// <summary>The participant it shows (null: a local window that has not said who it is, a detached view).</summary>
         public Participant? Participant { get; set; }
         public abstract Task SendBinary(byte[] frame);
@@ -201,10 +210,12 @@ public sealed class EngineHub
         c.Complete();
         if (had && c.Participant != null) await BroadcastPresence();
         // A script's connection lost (its Python killed, stopped, crashed) with its step open: the step taken back, every window told.
-        if (_session.OwnsStep(c))
+        // A script's Python with several connections (one it opened itself) keeps its step until the last of them goes.
+        var key = c.StepKey;
+        if (_session.OwnsStep(key) && !Clients().Any(o => ReferenceEquals(o.StepKey, key)))
         {
             await _gate.WaitAsync();
-            try { if (_session.RollbackFor(c) is { } back) Broadcast(back); }
+            try { if (_session.RollbackFor(key) is { } back) Broadcast(back); }
             finally { _gate.Release(); }
             if (_session.DeliveriesWaiting) _ = Deliveries();
         }
@@ -246,8 +257,8 @@ public sealed class EngineHub
     public async Task<byte[]?> Handle(string text, Client? client)
     {
         var caller = client?.Caller ?? Caller.Local;
-        // The connection is who a script's open step belongs to (Session.Step.cs).
-        if (client != null) caller = caller with { Connection = client };
+        // The connection is who a script's open step belongs to (Session.Step.cs): the client, or the Python it is one of.
+        if (client != null) caller = caller with { Connection = client.StepKey };
         if (Own(text) is { } own) return await HandleOwn(own, client, caller);
         await _gate.WaitAsync();
         try
@@ -324,6 +335,14 @@ public sealed class EngineHub
                     break;
                 // Python (docs/plan-python-scripting.md, stage 2): the host's own, past the queue of calls (a Stop must reach a script
                 // whose commands hold the queue); what the script does comes back through its own connection as ordinary calls.
+                // Stage 3: a connection of the Script panel's own Python (lapinbim.Lapin() in a script) shows its kernel's token and joins its
+                // run's step; any other token, or none, is refused and the connection stays its own (refused while a step is open, as ever).
+                case "script.join":
+                    if (caller.Remote || client == null) throw new CommandException("Only the host can do that.");
+                    if (!Scripts.IsKernel((string?)p["token"])) throw new CommandException(ScriptHost.NotKernel);
+                    client.StepKey = Scripts.KernelKey;
+                    result = new JsonObject { ["joined"] = true };
+                    break;
                 case var _ when method.StartsWith("script.", StringComparison.Ordinal):
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = await Scripts.Handle(method, p);
@@ -333,7 +352,8 @@ public sealed class EngineHub
                     result = await Sharing.Handle(method, p);
                     break;
             }
-            return BinaryFrame.Encode(new Reply(id, result is JsonNode n ? n : result));
+            // A call without an id (the window's selection told as it changes) asks no answer.
+            return id == null ? null : BinaryFrame.Encode(new Reply(id, result is JsonNode n ? n : result));
         }
         catch (Exception ex) when (ex is CommandException or ModelException or WebSocketException or InvalidOperationException or HttpRequestException or IOException)
         {

@@ -5,7 +5,7 @@
     import lapinbim as lapin
 
     w = lapin.architecture.add_wall(x1=0, y1=0, x2=5, y2=0, height=2.8)   # one undo step
-    with lapin.batch("Ring of walls"):                                    # one undo step for all
+    with lapin.batch("Ring of walls"):                                    # one undo step for all, sent at the end
         for a, b in [((5, 0), (5, 4)), ((5, 4), (0, 4)), ((0, 4), (0, 0))]:
             lapin.architecture.add_wall(x1=a[0], y1=a[1], x2=b[0], y2=b[1])
     for wall in lapin.model.walls:
@@ -20,14 +20,14 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from ._version import __version__
-from ._client import Batch, Deferred, Lapin, LapinError
+from ._client import Batch, Deferred, Lapin, LapinError, Step
 from ._frame import Obj
 from ._model import Element, Model
 
 __all__ = [
-    "__version__", "Lapin", "LapinError", "Batch", "Deferred", "Element", "Model", "Obj",
+    "__version__", "Lapin", "LapinError", "Batch", "Deferred", "Step", "Element", "Model", "Obj",
     "connect", "client", "close", "call", "execute", "query", "undo", "redo", "save", "info", "quantities",
-    "snapshot", "state", "batch", "on", "catalogue", "ns", "command",
+    "snapshot", "state", "batch", "step", "selection", "on", "catalogue", "ns", "command",
 ]
 
 _default: Lapin | None = None
@@ -98,6 +98,16 @@ def state() -> Obj:
 
 def batch(label: str | None = None) -> Batch:
     return client().batch(label)
+
+
+def step(label: str | None = None) -> Step:
+    """``with lapin.step("Facades"):`` one undo step, each command answered at once; rolled back if the block raises."""
+    return client().step(label)
+
+
+def selection() -> list[Element]:
+    """What the window has selected now, as elements."""
+    return client().selection()
 
 
 def on(event: str, handler: Callable[..., Any]) -> Callable[[], None]:

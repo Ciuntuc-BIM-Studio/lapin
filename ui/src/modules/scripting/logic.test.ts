@@ -13,15 +13,22 @@ describe('the Script panel’s console (decision 489)', () => {
   });
 
   it('says how a run ended: one undo step, nothing changed, its error with nothing kept, stopped', () => {
-    expect(foldOutput([], { type: 'done', id: 1, ok: true, kept: true, seconds: 0.123 })).toEqual([{ kind: 'ok', text: 'Done in 0.12 s: one undo step.', run: 1 }]);
+    // Lapin's own words are marked so (translated as the interface is); a traceback is the script's, shown as it is.
+    expect(foldOutput([], { type: 'done', id: 1, ok: true, kept: true, seconds: 0.123 })).toEqual([{ kind: 'ok', text: 'Done in 0.12 s: one undo step.', run: 1, own: true }]);
     expect(foldOutput([], { type: 'done', id: 1, ok: true, kept: false, seconds: 12.4 })[0].text).toBe('Done in 12 s.');
     // A console line that ended well says nothing more.
     expect(foldOutput([], { type: 'done', id: 1, ok: true, console: true })).toEqual([]);
     const failed = foldOutput([], { type: 'done', id: 3, ok: false, error: 'ZeroDivisionError: division by zero', traceback: 'Traceback…\nZeroDivisionError: division by zero\n', line: 2 });
-    expect(failed[0]).toEqual({ kind: 'err', text: 'Traceback…\nZeroDivisionError: division by zero\nNothing the script did is kept.', run: 3 });
-    expect(foldOutput([], { type: 'done', id: 4, ok: false, interrupted: true, error: 'Stopped.' })[0].text).toBe('Stopped.\nNothing the script did is kept.');
-    expect(foldOutput([], { type: 'done', id: 5, ok: false, killed: true, error: 'ended' })[0].text).toBe('ended');
-    expect(foldOutput([], { type: 'exit', code: 0 })[0].kind).toBe('info');
+    expect(failed).toEqual([
+      { kind: 'err', text: 'Traceback…\nZeroDivisionError: division by zero', run: 3 },
+      { kind: 'err', text: 'Nothing the script did is kept.', run: 3, own: true },
+    ]);
+    expect(foldOutput([], { type: 'done', id: 4, ok: false, interrupted: true, error: 'Stopped.' }).map((l) => [l.text, l.own])).toEqual([['Stopped.', true], ['Nothing the script did is kept.', true]]);
+    expect(foldOutput([], { type: 'done', id: 5, ok: false, killed: true, error: 'ended' })).toEqual([{ kind: 'err', text: 'ended', run: 5, own: true }]);
+    expect(foldOutput([], { type: 'exit', code: 0 })[0]).toMatchObject({ kind: 'info', own: true });
+    // A script's print never joins a line of Lapin's.
+    const joined = foldOutput(foldOutput([], { type: 'done', id: 6, ok: false, error: 'x' }), { type: 'err', id: 6, text: 'more' });
+    expect(joined.map((l) => l.text)).toEqual(['x', 'Nothing the script did is kept.', 'more']);
   });
 
   it('keeps at most its last 2000 lines', () => {

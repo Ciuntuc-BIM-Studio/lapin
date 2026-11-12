@@ -33,6 +33,7 @@
     <ProjectReference Include="../../src/Modules/Drafting/Lapin.Drafting/Lapin.Drafting.csproj" />
     <ProjectReference Include="../../src/Modules/Phases/Lapin.Phases/Lapin.Phases.csproj" />
     <ProjectReference Include="../../src/Modules/Coordination/Lapin.Clash/Lapin.Clash.csproj" />
+    <ProjectReference Include="../../src/Modules/Scripting/Lapin.Scripting/Lapin.Scripting.csproj" />
     <ProjectReference Include="../../src/Modules/Interior/Lapin.Furniture/Lapin.Furniture.csproj" />
     <ProjectReference Include="../../src/Modules/Transport/Lapin.Transport/Lapin.Transport.csproj" />
     <ProjectReference Include="../../src/Modules/Civil/Lapin.Civil/Lapin.Civil.csproj" />

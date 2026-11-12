@@ -50,11 +50,53 @@ Lengths are in metres and angles in degrees, whatever unit the project shows.
 - **Stop** stops the script; nothing it did is kept. A script that does not stop within two seconds has its Python ended.
 - **Restart** starts Python again: the names the console kept are forgotten.
 
+## Record what you do as a script
+
+The **Recorder** tab, beside the console, writes what you do in the window as Python, one line per step.
+
+1. Click **Record**. A red dot on the tab shows it is recording.
+2. Work as usual: draw walls, change a property, delete something. Each step shows at once as a line, for example `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
+3. Click **Stop**, then **Copy** (to paste the script elsewhere) or **Save as script** (it goes into Mine and opens in the editor).
+
+![The recorder after drawing two walls](shots/python-recorder.webp)
+
+The script is written so it works on another project too:
+- what a step made is kept in a variable (`wall1`), and later steps use it (`wall1.id`);
+- the storey you drew on is found by its name, else by its elevation (`lapin.model.storey("Ground floor", 0)`), and a type by its name (`lapin.model.find("IfcWallType", "Brick 250")`);
+- another element that was already in the project is named by its id (`lapin.model["…"]`), so that line works only in this project;
+- with **Selection as lapin.selection()** ticked, a command on what you had selected is written `lapin.selection()`: the script then works on what is selected when you run it.
+
+An **Undo** while recording takes the last step out of the script, and **Redo** puts it back, so the script holds what you did in the end. What a script does is never recorded, nor are questions that change nothing (a schedule read, a measurement).
+
+![The recorded script run in a new project: the same two walls](shots/python-recorder-new.webp)
+
+## The project's scripts
+
+A script can be kept **in the project**, so it travels with the file: open or write it in the editor and click **Save in the project**. It shows under **Project's**, on the left. Saving, renaming and deleting a project's script are each one undo step, and the project's versions keep its scripts. In the `.lapin` file each one is also a plain text file, `scripts/<name>.py`, so it can be read without Lapin.
+
+**A project's script never runs by itself**, not when the project opens nor when it is saved. The first time you run it, and again whenever its code has changed, Lapin asks:
+- **Run once**: it runs this time, and the next run asks again;
+- **Trust**: it runs, and this code is remembered as trusted on this computer (a change to it asks again);
+- **Cancel**: nothing runs.
+
+A script you save in the project yourself is trusted as you save it. Your own scripts (Mine) never ask.
+
+## What is selected
+
+`lapin.selection()` gives what is selected in the window, as elements:
+
+```python
+for e in lapin.selection():
+    print(e.name, e.type)
+```
+
+An element's fields read by their names and change by assignment: `wall.height = 3` changes the wall (one undo step, or part of the Run). `with lapin.step("Name"):` makes several commands one undo step while each still answers at once, so a later one can use what an earlier one made.
+
 ## Safety
 
-A script can do anything you can do on this computer: it runs in your own Python, with your rights. Run scripts you wrote or trust.
+A script can do anything you can do on this computer: it runs in your own Python, with your rights. Run scripts you wrote or trust; a project's script asks first.
 
-A guest of a shared session cannot run scripts on your computer, and a script connects only to the Lapin on its own computer.
+A guest of a shared session cannot run scripts on your computer nor put one in your project, and a script connects only to the Lapin on its own computer.
 
 ## For developers
 

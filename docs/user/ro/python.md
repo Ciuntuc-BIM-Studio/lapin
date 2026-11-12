@@ -50,11 +50,53 @@ Lungimile sunt în metri și unghiurile în grade, oricare ar fi unitatea în ca
 - **Oprește** oprește scriptul; nu se păstrează nimic din ce a făcut. Unui script care nu se oprește în două secunde i se închide Python-ul.
 - **Repornește** pornește Python din nou: numele păstrate de consolă se uită.
 
+## Înregistrează ce faci ca script
+
+Fila **Înregistrator**, lângă consolă, scrie ce faci în fereastră ca Python, o linie pe pas.
+
+1. Dă clic pe **Înregistrează**. Un punct roșu pe filă arată că se înregistrează.
+2. Lucrează ca de obicei: desenează pereți, schimbă o proprietate, șterge ceva. Fiecare pas apare pe loc ca o linie, de exemplu `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
+3. Dă clic pe **Oprește**, apoi pe **Copiază** (ca să lipești scriptul în altă parte) sau pe **Salvează ca script** (intră în Ale mele și se deschide în editor).
+
+![Înregistratorul după desenarea a doi pereți](shots/python-recorder.webp)
+
+Scriptul e scris așa încât să meargă și pe alt proiect:
+- ce a făcut un pas se păstrează într-o variabilă (`wall1`), iar pașii următori o folosesc (`wall1.id`);
+- nivelul pe care ai desenat se găsește după nume, altfel după cotă (`lapin.model.storey("Ground floor", 0)`), iar un tip după nume (`lapin.model.find("IfcWallType", "Brick 250")`);
+- un alt element care era deja în proiect e numit după id (`lapin.model["…"]`), deci linia aceea merge doar în acest proiect;
+- cu **Selecția ca lapin.selection()** bifată, o comandă pe ce ai selectat se scrie `lapin.selection()`: scriptul lucrează apoi pe ce e selectat când îl rulezi.
+
+Un **Anulează** în timpul înregistrării scoate ultimul pas din script, iar **Refă** îl pune la loc, așa că scriptul cuprinde ce ai făcut în cele din urmă. Ce face un script nu se înregistrează niciodată, nici întrebările care nu schimbă nimic (un extras citit, o măsurătoare).
+
+![Scriptul înregistrat, rulat într-un proiect nou: aceiași doi pereți](shots/python-recorder-new.webp)
+
+## Scripturile proiectului
+
+Un script poate fi păstrat **în proiect**, ca să meargă odată cu fișierul: deschide-l sau scrie-l în editor și dă clic pe **Salvează în proiect**. Apare la **Ale proiectului**, în stânga. Salvarea, redenumirea și ștergerea unui script al proiectului sunt fiecare un singur pas de anulare, iar versiunile proiectului păstrează scripturile lui. În fișierul `.lapin` fiecare e și un fișier text simplu, `scripts/<name>.py`, deci poate fi citit fără Lapin.
+
+**Un script al proiectului nu rulează niciodată de la sine**, nici când se deschide proiectul, nici când se salvează. Prima dată când îl rulezi, și din nou ori de câte ori i s-a schimbat codul, Lapin întreabă:
+- **Rulează o dată**: rulează de data aceasta, iar următoarea rulare întreabă din nou;
+- **Am încredere**: rulează, iar acest cod e ținut minte ca de încredere pe acest calculator (o schimbare a lui întreabă din nou);
+- **Renunță**: nu rulează nimic.
+
+Un script pe care îl salvezi tu însuți în proiect e de încredere din clipa salvării. Scripturile tale (Ale mele) nu întreabă niciodată.
+
+## Ce e selectat
+
+`lapin.selection()` dă ce e selectat în fereastră, ca elemente:
+
+```python
+for e in lapin.selection():
+    print(e.name, e.type)
+```
+
+Câmpurile unui element se citesc după nume și se schimbă prin atribuire: `wall.height = 3` schimbă peretele (un singur pas de anulare, sau parte din Rulare). `with lapin.step("Name"):` face din mai multe comenzi un singur pas de anulare, iar fiecare răspunde totuși pe loc, deci una de după poate folosi ce a făcut una de dinainte.
+
 ## Siguranța
 
-Un script poate face orice poți face tu pe acest calculator: rulează în Python-ul tău, cu drepturile tale. Rulează scripturi scrise de tine sau în care ai încredere.
+Un script poate face orice poți face tu pe acest calculator: rulează în Python-ul tău, cu drepturile tale. Rulează scripturi scrise de tine sau în care ai încredere; un script al proiectului întreabă mai întâi.
 
-Un invitat al unei sesiuni partajate nu poate rula scripturi pe calculatorul tău, iar un script se conectează doar la Lapin-ul de pe propriul lui calculator.
+Un invitat al unei sesiuni partajate nu poate rula scripturi pe calculatorul tău și nici nu poate pune unul în proiectul tău, iar un script se conectează doar la Lapin-ul de pe propriul lui calculator.
 
 ## Pentru dezvoltatori
 

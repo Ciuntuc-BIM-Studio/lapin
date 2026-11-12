@@ -607,6 +607,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
                 or "export.pdf" or "export.dxf" or "project.exportIfc" or "project.exportMesh" or "project.exportSurvey" or "project.exportHtml" or "project.htmlPlan":
                 return null;
             case "doc.execute":
+                // A project's scripts are the host's (docs/plan-python-scripting.md §7): a guest never puts one in, alone or in a batch.
+                if (HostOnly(p)) return "Only the host can do that.";
                 // Marking progress on site (docs/plan-4d5d.md, stage 5) is open to every guest, one who joined to look too.
                 if (!editor && (string?)p["command"] is { } command && SiteCommands.Contains(command)) return null;
                 return editor ? null : "You joined to look: ask the host to let you edit.";
@@ -628,7 +630,18 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
     /// or a daily report added (the premium planning edition's, stage 8). Named here rather than read from the module, so a
     /// product without them refuses them like any command it lacks.
     /// </summary>
-    public static readonly HashSet<string> SiteCommands = ["planning.markDone", "planning.markStarted", "planning.unmark", "planning.setProgress", "planning-pro.addPhoto", "planning-pro.addReport"];
+    /// <summary>The namespaces of commands no guest runs: a project's scripts (<c>scripting.save</c>, <c>scripting.rename</c>, <c>scripting.delete</c>).</summary>
+    public static readonly string[] HostOnlyCommands = ["scripting."];
+
+    /// <summary>Whether a <c>doc.execute</c> names a host-only command, itself or as a step of its batch.</summary>
+    static bool HostOnly(JsonObject p)
+    {
+        static bool Is(string? c) => c != null && HostOnlyCommands.Any(x => c.StartsWith(x, StringComparison.Ordinal));
+        if (Is((string?)p["command"])) return true;
+        return (string?)p["command"] == "edit.batch" && p["args"]?["steps"] is JsonArray steps && steps.Any(s => s is JsonObject o && Is((string?)o["command"]));
+    }
+
+    public static readonly HashSet<string> SiteCommands =["planning.markDone", "planning.markStarted", "planning.unmark", "planning.setProgress", "planning-pro.addPhoto", "planning-pro.addReport"];
 
     /// <summary>The keys that name a file or a folder on the computer that reads them.</summary>
     static readonly HashSet<string> PathKeys = new(StringComparer.OrdinalIgnoreCase) { "path", "paths", "folder", "directory", "dir" };
@@ -695,7 +708,8 @@ public sealed partial class EngineDispatcher(Session session, ProjectFiles files
             }
             // A step held open by a script's run (docs/plan-python-scripting.md §8): its commands one undo step, the connection's own;
             // the host's alone (a guest is refused by AllowedRemote), rolled back by the host when the connection is lost.
-            case "doc.begin": session.Begin((string?)p["label"] ?? "Script"); return (null, null);
+            // A begin inside the connection's own open step joins it ({joined: true}): only the outermost commit or rollback ends it.
+            case "doc.begin": return (new JsonObject { ["joined"] = session.Begin((string?)p["label"] ?? "Script") }, null);
             case "doc.commit": return (null, session.Commit());
             case "doc.rollback": return (null, session.Rollback());
             case "doc.undo": return (null, session.Undo(session.Author));

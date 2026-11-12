@@ -15,6 +15,10 @@ The code runs in one namespace kept from run to run (the console's names stay), 
 With an engine to connect to (``LAPIN_PORT``) each run is one step held open on it (``doc.begin {label: name}``):
 ``doc.commit`` when it ends well (one undo step named after the script, none when it changed nothing),
 ``doc.rollback`` when it raises or is stopped. A console run's last expression is shown as the Python prompt shows it.
+
+The engine gives the kernel a token (``LAPIN_SCRIPT_TOKEN``, taken out of the environment as lapinbim loads): every
+connection lapinbim opens to that engine shows it (``script.join``), so one a script opens itself joins the run's step
+(stage 3), and ``lapin.step()`` inside a run joins it too.
 """
 
 from __future__ import annotations

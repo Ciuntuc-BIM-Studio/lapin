@@ -50,11 +50,53 @@ Les longueurs sont en mètres et les angles en degrés, quelle que soit l’unit
 - **Arrêter** arrête le script ; rien de ce qu’il a fait n’est conservé. Un script qui ne s’arrête pas en deux secondes voit son Python fermé.
 - **Redémarrer** relance Python : les noms que gardait la console sont oubliés.
 
+## Enregistrer ce que vous faites comme script
+
+L'onglet **Enregistreur**, à côté de la console, écrit ce que vous faites dans la fenêtre en Python, une ligne par étape.
+
+1. Cliquez sur **Enregistrer**. Un point rouge sur l'onglet indique que l'enregistrement est en cours.
+2. Travaillez comme d'habitude : dessinez des murs, changez une propriété, supprimez quelque chose. Chaque étape apparaît aussitôt comme une ligne, par exemple `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
+3. Cliquez sur **Arrêter**, puis sur **Copier** (pour coller le script ailleurs) ou sur **Enregistrer comme script** (il va dans Les miens et s'ouvre dans l'éditeur).
+
+![L'enregistreur après le dessin de deux murs](shots/python-recorder.webp)
+
+Le script est écrit pour fonctionner aussi dans un autre projet :
+- ce qu'une étape a créé est gardé dans une variable (`wall1`), que les étapes suivantes utilisent (`wall1.id`) ;
+- le niveau sur lequel vous avez dessiné est retrouvé par son nom, sinon par son altitude (`lapin.model.storey("Ground floor", 0)`), et un type par son nom (`lapin.model.find("IfcWallType", "Brick 250")`) ;
+- un autre élément qui se trouvait déjà dans le projet est désigné par son id (`lapin.model["…"]`), cette ligne ne fonctionne donc que dans ce projet ;
+- avec **Sélection comme lapin.selection()** cochée, une commande sur ce que vous aviez sélectionné s'écrit `lapin.selection()` : le script travaille alors sur ce qui est sélectionné quand vous l'exécutez.
+
+Un **Annuler** pendant l'enregistrement retire la dernière étape du script, et **Rétablir** la remet, si bien que le script contient ce que vous avez fait au final. Ce qu'un script fait n'est jamais enregistré, ni les questions qui ne changent rien (la lecture d'un tableau, une mesure).
+
+![Le script enregistré, exécuté dans un nouveau projet : les deux mêmes murs](shots/python-recorder-new.webp)
+
+## Les scripts du projet
+
+Un script peut être gardé **dans le projet**, pour voyager avec le fichier : ouvrez-le ou écrivez-le dans l'éditeur et cliquez sur **Enregistrer dans le projet**. Il apparaît sous **Du projet**, à gauche. Enregistrer, renommer et supprimer un script du projet sont chacun une seule étape d'annulation, et les versions du projet gardent ses scripts. Dans le fichier `.lapin`, chacun est aussi un simple fichier texte, `scripts/<name>.py`, qui se lit donc sans Lapin.
+
+**Un script du projet ne s'exécute jamais de lui-même**, ni à l'ouverture du projet ni à son enregistrement. La première fois que vous l'exécutez, puis chaque fois que son code a changé, Lapin demande :
+- **Exécuter une fois** : il s'exécute cette fois, et l'exécution suivante demande de nouveau ;
+- **Faire confiance** : il s'exécute, et ce code est retenu comme fiable sur cet ordinateur (un changement apporté à ce code redemande) ;
+- **Annuler** : rien ne s'exécute.
+
+Un script que vous enregistrez vous-même dans le projet est fiable dès son enregistrement. Vos propres scripts (Les miens) ne demandent jamais.
+
+## Ce qui est sélectionné
+
+`lapin.selection()` donne ce qui est sélectionné dans la fenêtre, sous forme d'éléments :
+
+```python
+for e in lapin.selection():
+    print(e.name, e.type)
+```
+
+Les champs d'un élément se lisent par leur nom et se modifient par affectation : `wall.height = 3` modifie le mur (une seule étape d'annulation, ou une partie de l'Exécution). `with lapin.step("Name"):` fait de plusieurs commandes une seule étape d'annulation, chacune répondant toujours aussitôt, si bien qu'une commande suivante peut utiliser ce qu'une précédente a créé.
+
 ## Sécurité
 
-Un script peut faire tout ce que vous pouvez faire sur cet ordinateur : il s’exécute dans votre propre Python, avec vos droits. Exécutez des scripts que vous avez écrits ou en qui vous avez confiance.
+Un script peut faire tout ce que vous pouvez faire sur cet ordinateur : il s'exécute dans votre propre Python, avec vos droits. Exécutez des scripts que vous avez écrits ou en qui vous avez confiance ; un script du projet demande d'abord.
 
-Un invité d’une session partagée ne peut pas exécuter de scripts sur votre ordinateur, et un script ne se connecte qu’au Lapin de son propre ordinateur.
+Un invité d'une session partagée ne peut ni exécuter de scripts sur votre ordinateur ni en mettre un dans votre projet, et un script ne se connecte qu'au Lapin de son propre ordinateur.
 
 ## Pour les développeurs
 

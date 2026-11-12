@@ -2229,4 +2229,18 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .script-prompt { font: 12px/1.6 ui-monospace, monospace; color: var(--ink-muted); }
 .script-input textarea { flex: 1; resize: none; border: 0; outline: none; background: transparent; color: var(--ink); font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .script-web { padding: 16px; }
+/* Stage 3: the console's tabs, the recorder, a project's script's trust */
+.script-tabs { display: flex; gap: 2px; }
+.script-tabs button { border: 0; border-bottom: 2px solid transparent; background: none; color: var(--ink-muted); padding: 2px 6px; font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.script-tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
+.script-rec-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--err); animation: script-rec 1.2s ease-in-out infinite; }
+@keyframes script-rec { 50% { opacity: 0.3; } }
+.script-recorder-bar { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+.script-recorder-bar .btn { width: auto; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font-size: 11.5px; }
+.script-check { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--ink-muted); }
+.script-line.live { border-left: 2px solid var(--err); padding-left: 6px; }
+.script-trust { margin: 6px 8px; padding: 8px 10px; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent-wash); }
+.script-trust p { margin: 0 0 6px; }
+.script-trust-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.script-trust-actions .btn { width: auto; padding: 4px 10px; font-size: 11.5px; }
 @media (max-width: 900px) { .script-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; } .script-library { border-right: 0; max-height: 90px; } }

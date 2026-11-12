@@ -50,11 +50,53 @@ Längen sind in Metern und Winkel in Grad, gleich in welcher Einheit das Projekt
 - **Stoppen** hält das Skript an; nichts, was es getan hat, bleibt erhalten. Bei einem Skript, das nicht innerhalb von zwei Sekunden anhält, wird sein Python beendet.
 - **Neu starten** startet Python neu: die Namen, die die Konsole behalten hat, werden vergessen.
 
+## Aufzeichnen, was du tust, als Skript
+
+Der Reiter **Rekorder** neben der Konsole schreibt, was du im Fenster tust, als Python, eine Zeile pro Schritt.
+
+1. Klicke auf **Aufnehmen**. Ein roter Punkt auf dem Reiter zeigt, dass aufgenommen wird.
+2. Arbeite wie gewohnt: Wände zeichnen, eine Eigenschaft ändern, etwas löschen. Jeder Schritt erscheint sofort als Zeile, zum Beispiel `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
+3. Klicke auf **Stopp** und dann auf **Kopieren** (um das Skript anderswo einzufügen) oder auf **Als Skript speichern** (es kommt zu Meine und öffnet sich im Editor).
+
+![Der Rekorder nach dem Zeichnen zweier Wände](shots/python-recorder.webp)
+
+Das Skript wird so geschrieben, dass es auch in einem anderen Projekt läuft:
+- was ein Schritt erzeugt hat, wird in einer Variablen gehalten (`wall1`), und spätere Schritte benutzen sie (`wall1.id`);
+- das Geschoss, auf dem du gezeichnet hast, wird über seinen Namen gefunden, sonst über seine Höhe (`lapin.model.storey("Ground floor", 0)`), ein Typ über seinen Namen (`lapin.model.find("IfcWallType", "Brick 250")`);
+- ein anderes Element, das schon im Projekt war, wird mit seiner ID benannt (`lapin.model["…"]`), diese Zeile funktioniert also nur in diesem Projekt;
+- ist **Auswahl als lapin.selection()** angehakt, wird ein Befehl auf das, was du ausgewählt hattest, als `lapin.selection()` geschrieben: das Skript arbeitet dann auf dem, was beim Ausführen ausgewählt ist.
+
+Ein **Rückgängig** während der Aufnahme nimmt den letzten Schritt aus dem Skript, und **Wiederholen** setzt ihn wieder ein, sodass das Skript enthält, was du am Ende getan hast. Was ein Skript tut, wird nie aufgenommen, ebenso wenig Abfragen, die nichts ändern (eine gelesene Liste, eine Messung).
+
+![Das aufgenommene Skript in einem neuen Projekt ausgeführt: dieselben zwei Wände](shots/python-recorder-new.webp)
+
+## Die Skripte des Projekts
+
+Ein Skript kann **im Projekt** aufbewahrt werden, sodass es mit der Datei wandert: öffne oder schreibe es im Editor und klicke auf **Im Projekt speichern**. Es erscheint links unter **Des Projekts**. Speichern, Umbenennen und Löschen eines Projektskripts sind jeweils ein Rückgängig-Schritt, und die Versionen des Projekts bewahren seine Skripte. In der `.lapin`-Datei ist jedes außerdem eine einfache Textdatei, `scripts/<name>.py`, sodass es ohne Lapin gelesen werden kann.
+
+**Ein Projektskript läuft nie von selbst**, weder beim Öffnen des Projekts noch beim Speichern. Beim ersten Ausführen und danach jedes Mal, wenn sich sein Code geändert hat, fragt Lapin:
+- **Einmal ausführen**: es läuft dieses Mal, und beim nächsten Ausführen wird erneut gefragt;
+- **Vertrauen**: es läuft, und dieser Code wird auf diesem Computer als vertrauenswürdig gemerkt (eine Änderung daran fragt erneut);
+- **Abbrechen**: nichts läuft.
+
+Ein Skript, das du selbst im Projekt speicherst, gilt ab dem Speichern als vertrauenswürdig. Deine eigenen Skripte (Meine) fragen nie.
+
+## Was ausgewählt ist
+
+`lapin.selection()` liefert, was im Fenster ausgewählt ist, als Elemente:
+
+```python
+for e in lapin.selection():
+    print(e.name, e.type)
+```
+
+Die Felder eines Elements werden über ihre Namen gelesen und durch Zuweisung geändert: `wall.height = 3` ändert die Wand (ein Rückgängig-Schritt oder Teil des Ausführens). `with lapin.step("Name"):` macht mehrere Befehle zu einem Rückgängig-Schritt, wobei jeder weiterhin sofort antwortet, sodass ein späterer nutzen kann, was ein früherer erzeugt hat.
+
 ## Sicherheit
 
-Ein Skript kann alles, was du auf diesem Computer kannst: es läuft in deinem eigenen Python, mit deinen Rechten. Führe Skripte aus, die du geschrieben hast oder denen du vertraust.
+Ein Skript kann alles, was du auf diesem Computer kannst: es läuft in deinem eigenen Python mit deinen Rechten. Führe Skripte aus, die du selbst geschrieben hast oder denen du vertraust; ein Projektskript fragt zuerst.
 
-Ein Gast einer geteilten Sitzung kann keine Skripte auf deinem Computer ausführen, und ein Skript verbindet sich nur mit dem Lapin auf seinem eigenen Computer.
+Ein Gast einer geteilten Sitzung kann weder Skripte auf deinem Computer ausführen noch eines in dein Projekt legen, und ein Skript verbindet sich nur mit dem Lapin auf seinem eigenen Computer.
 
 ## Für Entwickler
 

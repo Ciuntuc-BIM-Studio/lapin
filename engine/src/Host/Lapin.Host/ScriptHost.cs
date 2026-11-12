@@ -22,6 +22,11 @@ namespace Lapin.Host;
 /// {name, code}</c>, <c>script.delete {name}</c>, <c>script.reveal {name, editor?}</c> (opened in an external editor).
 /// What the kernel prints and how each run ends go to the computer's own windows as <c>script.output</c> events.
 /// </para>
+/// <para>
+/// Stage 3: the kernel's token (<see cref="NewKernelToken"/>; <c>script.join</c>, handled by the hub, joins a connection
+/// of its Python to its run's step), the window's selection (<c>script.selected {ids}</c>, <c>script.selection</c>) and
+/// trust in a project's scripts by the SHA-256 of their code (<c>script.trusted</c>, <c>script.trust</c>, <see cref="TrustFile"/>).
+/// </para>
 /// Nothing of this runs where the edition has no <c>scripting</c> module.
 /// </summary>
 public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, Task> output) : IDisposable
@@ -51,6 +56,45 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
     bool _stopping;
     /// <summary>Why the kernel is being killed (its run's end says so, whichever of the kill and its output's end comes first).</summary>
     volatile string? _killedWhy;
+
+    // ------------------------------------------------------------ the kernel's own connections (stage 3)
+
+    /// <summary>What the Python of the kernel running now shows to be it: given to it alone (its environment), new with each process.</summary>
+    volatile string? _token;
+
+    /// <summary>
+    /// The connections of the kernel running now, one for the engine's open step (<see cref="Session.Connection"/>): its
+    /// own (<c>lapin</c>) and any a script opens itself (<c>lapinbim.Lapin()</c>), each joined by <c>script.join</c>
+    /// with the kernel's token. New with each process.
+    /// </summary>
+    public object KernelKey { get; private set; } = new();
+
+    /// <summary>What a connection is told when its token is not the kernel's.</summary>
+    public const string NotKernel = "That is not the Script panel's Python: the connection stays its own.";
+
+    /// <summary>A new kernel's token (and its key): the one before no longer joins anything. Start gives it to the process it starts.</summary>
+    public string NewKernelToken()
+    {
+        KernelKey = new object();
+        var token = Convert.ToHexStringLower(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+        _token = token;
+        return token;
+    }
+
+    /// <summary>Whether <paramref name="token"/> is the running kernel's (compared in constant time).</summary>
+    public bool IsKernel(string? token)
+    {
+        var t = _token;
+        if (t == null || string.IsNullOrEmpty(token) || token.Length != t.Length) return false;
+        return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(t), Encoding.ASCII.GetBytes(token));
+    }
+
+    // ------------------------------------------------------------ the window's selection (stage 3)
+
+    string[] _selection = [];
+
+    /// <summary>What the computer's window has selected, as it last said (<c>script.selected {ids}</c>): <c>lapin.selection()</c> reads it.</summary>
+    public IReadOnlyList<string> Selection => _selection;
 
     // ------------------------------------------------------------ the package and Python
 
@@ -170,6 +214,18 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
                 return new JsonObject { ["deleted"] = Path.GetFileName(path) };
             }
             case "script.reveal": return Reveal(PathOf(p), (string?)p["editor"]);
+            case "script.selected":
+                _selection = (p["ids"] as JsonArray ?? []).Select(n => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : null).OfType<string>().Take(100_000).ToArray();
+                return new JsonObject { ["count"] = _selection.Length };
+            case "script.selection": return new JsonObject { ["ids"] = new JsonArray(_selection.Select(i => (JsonNode)i).ToArray()) };
+            case "script.trusted": return new JsonObject { ["trusted"] = Trusted().Contains(Sha(p)) };
+            case "script.trust":
+            {
+                var sha = Sha(p);
+                var set = Trusted();
+                if (set.Add(sha)) await WriteTrusted(set);
+                return new JsonObject { ["trusted"] = true };
+            }
             default: throw new CommandException($"Unknown call „{method}”.");
         }
     }
@@ -262,6 +318,8 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
         if (Port > 0) psi.Environment["LAPIN_PORT"] = Port.ToString(System.Globalization.CultureInfo.InvariantCulture);
         else psi.Environment.Remove("LAPIN_PORT");
         psi.Environment["LAPIN_SCRIPT_KERNEL"] = "1";
+        // Its own connections show it with this (script.join): each one the script opens joins its run's step, nobody else's does.
+        psi.Environment["LAPIN_SCRIPT_TOKEN"] = NewKernelToken();
         if (userDir != null) psi.Environment["LAPIN_USER_DIR"] = userDir;
         if (ScriptsDir is { } dir) { Directory.CreateDirectory(dir); psi.WorkingDirectory = dir; }
         var proc = Process.Start(psi) ?? throw new CommandException($"Python ({python.Executable}) did not start.");
@@ -318,6 +376,7 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
         {
             if (!ReferenceEquals(_proc, proc)) return;
             _proc = null;
+            _token = null;
             run = _running;
             _running = null;
             why ??= _killedWhy;
@@ -347,6 +406,45 @@ public sealed class ScriptHost(bool enabled, string? userDir, Func<JsonObject, T
     public void Dispose()
     {
         try { if (_proc is { HasExited: false } p) p.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
+    }
+
+    // ------------------------------------------------------------ trust in a project's scripts (stage 3)
+
+    /// <summary>
+    /// The project scripts trusted on this computer, by the SHA-256 of their code (docs/plan-python-scripting.md §7):
+    /// <c>&lt;user-dir&gt;/scripting-trust.json</c>. A project's script never runs as it opens; its first run, or its first
+    /// after its code changed, asks (the interface's Run once / Trust / Cancel), and Trust keeps its hash here.
+    /// </summary>
+    public string? TrustFile => userDir == null ? null : Path.Combine(userDir, "scripting-trust.json");
+
+    static readonly Regex Hex64 = new("^[0-9a-f]{64}$", RegexOptions.CultureInvariant);
+
+    static string Sha(JsonObject p) =>
+        ((string?)p["sha256"])?.Trim().ToLowerInvariant() is { } s && Hex64.IsMatch(s) ? s : throw new CommandException("A script's SHA-256 is 64 hexadecimal digits.");
+
+    /// <summary>A script's code as its hash (UTF-8, lowercase hex): what trust is kept by.</summary>
+    public static string HashOf(string code) => Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(code)));
+
+    HashSet<string> Trusted()
+    {
+        var set = new HashSet<string>(StringComparer.Ordinal);
+        if (TrustFile is not { } f || !File.Exists(f)) return set;
+        try
+        {
+            if (JsonNode.Parse(File.ReadAllText(f))?["trusted"] is JsonArray a)
+                foreach (var n in a) if (n is JsonValue v && v.TryGetValue<string>(out var s) && Hex64.IsMatch(s)) set.Add(s);
+        }
+        catch (JsonException) { }
+        return set;
+    }
+
+    async Task WriteTrusted(HashSet<string> set)
+    {
+        var f = TrustFile ?? throw new CommandException("Trust is kept by the desktop app.");
+        Directory.CreateDirectory(Path.GetDirectoryName(f)!);
+        var json = new JsonObject { ["trusted"] = new JsonArray(set.Order(StringComparer.Ordinal).Select(s => (JsonNode)s).ToArray()) };
+        await File.WriteAllTextAsync(f + ".saving", json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), new UTF8Encoding(false));
+        File.Move(f + ".saving", f, overwrite: true);
     }
 
     // ------------------------------------------------------------ the user's own scripts

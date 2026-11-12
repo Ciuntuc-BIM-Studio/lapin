@@ -50,11 +50,53 @@ Długości są w metrach, a kąty w stopniach, niezależnie od jednostki, w jaki
 - **Zatrzymaj** zatrzymuje skrypt; nic z tego, co zrobił, nie zostaje. Skryptowi, który nie zatrzyma się w ciągu dwóch sekund, zamyka się Pythona.
 - **Uruchom ponownie** uruchamia Pythona od nowa: nazwy zapamiętane przez konsolę zostają zapomniane.
 
+## Nagraj to, co robisz, jako skrypt
+
+Karta **Rejestrator**, obok konsoli, zapisuje to, co robisz w oknie, jako Python, jedna linia na krok.
+
+1. Kliknij **Nagraj**. Czerwona kropka na karcie pokazuje, że trwa nagrywanie.
+2. Pracuj jak zwykle: rysuj ściany, zmień właściwość, usuń coś. Każdy krok od razu pojawia się jako linia, na przykład `wall1 = lapin.architecture.add_wall(storey_id=storey1, x1=0, y1=0, x2=5, y2=0)`.
+3. Kliknij **Zatrzymaj**, a potem **Kopiuj** (aby wkleić skrypt gdzie indziej) albo **Zapisz jako skrypt** (trafia do Moje i otwiera się w edytorze).
+
+![Rejestrator po narysowaniu dwóch ścian](shots/python-recorder.webp)
+
+Skrypt jest zapisany tak, aby działał także w innym projekcie:
+- to, co utworzył krok, jest trzymane w zmiennej (`wall1`), której używają kolejne kroki (`wall1.id`);
+- kondygnacja, na której rysowałeś, jest znajdowana po nazwie, a jeśli jej brak, po rzędnej (`lapin.model.storey("Ground floor", 0)`), a typ po nazwie (`lapin.model.find("IfcWallType", "Brick 250")`);
+- inny element, który już był w projekcie, jest wskazany swoim id (`lapin.model["…"]`), więc ta linia działa tylko w tym projekcie;
+- gdy zaznaczone jest **Zaznaczenie jako lapin.selection()**, polecenie na tym, co było zaznaczone, jest zapisane jako `lapin.selection()`: skrypt działa wtedy na tym, co jest zaznaczone w chwili uruchomienia.
+
+**Cofnij** podczas nagrywania zdejmuje ze skryptu ostatni krok, a **Ponów** go przywraca, więc skrypt zawiera to, co ostatecznie zrobiłeś. To, co robi skrypt, nigdy nie jest nagrywane, tak samo jak zapytania, które nic nie zmieniają (odczyt zestawienia, pomiar).
+
+![Nagrany skrypt uruchomiony w nowym projekcie: te same dwie ściany](shots/python-recorder-new.webp)
+
+## Skrypty projektu
+
+Skrypt można przechowywać **w projekcie**, aby wędrował razem z plikiem: otwórz go lub napisz w edytorze i kliknij **Zapisz w projekcie**. Pojawia się pod **Projektu**, po lewej. Zapisanie, zmiana nazwy i usunięcie skryptu projektu to każde jeden krok cofania, a wersje projektu zachowują jego skrypty. W pliku `.lapin` każdy z nich jest też zwykłym plikiem tekstowym, `scripts/<name>.py`, więc można go odczytać bez Lapina.
+
+**Skrypt projektu nigdy nie uruchamia się sam**, ani przy otwarciu projektu, ani przy jego zapisie. Przy pierwszym uruchomieniu i potem za każdym razem, gdy jego kod się zmienił, Lapin pyta:
+- **Uruchom raz**: uruchamia się tym razem, a następne uruchomienie znów pyta;
+- **Zaufaj**: uruchamia się, a ten kod jest zapamiętany jako zaufany na tym komputerze (jego zmiana znów pyta);
+- **Anuluj**: nic się nie uruchamia.
+
+Skrypt, który sam zapisujesz w projekcie, jest zaufany od chwili zapisu. Twoje własne skrypty (Moje) nigdy nie pytają.
+
+## Co jest zaznaczone
+
+`lapin.selection()` zwraca to, co jest zaznaczone w oknie, jako elementy:
+
+```python
+for e in lapin.selection():
+    print(e.name, e.type)
+```
+
+Pola elementu odczytuje się po nazwach, a zmienia przez przypisanie: `wall.height = 3` zmienia ścianę (jeden krok cofania albo część Uruchomienia). `with lapin.step("Name"):` robi z kilku poleceń jeden krok cofania, a każde nadal odpowiada od razu, więc późniejsze może użyć tego, co utworzyło wcześniejsze.
+
 ## Bezpieczeństwo
 
-Skrypt może zrobić wszystko, co ty możesz na tym komputerze: działa w twoim Pythonie, z twoimi uprawnieniami. Uruchamiaj skrypty napisane przez siebie albo takie, którym ufasz.
+Skrypt może zrobić wszystko, co możesz zrobić na tym komputerze: działa w twoim własnym Pythonie, z twoimi uprawnieniami. Uruchamiaj skrypty, które sam napisałeś lub którym ufasz; skrypt projektu najpierw pyta.
 
-Gość wspólnej sesji nie może uruchamiać skryptów na twoim komputerze, a skrypt łączy się tylko z Lapinem na własnym komputerze.
+Gość wspólnej sesji nie może uruchamiać skryptów na twoim komputerze ani wstawić żadnego do twojego projektu, a skrypt łączy się tylko z Lapinem na własnym komputerze.
 
 ## Dla programistów
 

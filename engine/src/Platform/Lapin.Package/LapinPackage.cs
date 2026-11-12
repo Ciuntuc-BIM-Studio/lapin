@@ -23,6 +23,9 @@ public sealed record PackageManifest(
 
 public sealed record PackageModule(string Id, int SchemaVersion);
 
+/// <summary>A text a module writes into the package beside the model (<see cref="LapinPackage.TextFolders"/>): its path, its text (UTF-8), the module.</summary>
+public sealed record ModuleText(string Path, string Text, string Module);
+
 /// <summary>A project as read from a package.</summary>
 public sealed record PackageContent(IReadOnlyList<Entity> Entities, IReadOnlyList<Relation> Relations, IReadOnlyDictionary<string, string> Classes, JsonObject Document, PackageManifest Manifest);
 
@@ -40,7 +43,8 @@ public sealed record PackageBuild(PackageManifest Manifest, IReadOnlyList<(Packa
 /// versions/blobs/&lt;sha256&gt;               a version's part the live project no longer has
 /// issues/index.json                      the project's issues and their files, for whoever opens the zip (the record is the model's)
 /// issues/blobs/&lt;sha256&gt;                 a file an issue made, kept in the project (docs/plan-cde.md), once however many issues share it
-/// &lt;anything else&gt;                        another tool's entries (dag/, source/…), kept byte for byte (<see cref="PackageForeign"/>)
+/// scripts/&lt;name&gt;.py                      a project's script as text (the scripting module's, decision 489; its LapinScript entity is what Lapin reads)
+/// &lt;anything else&gt;                        another tool's entries (dag/, source/…, a file of its own in scripts/), kept byte for byte (<see cref="PackageForeign"/>)
 /// </code>
 /// A package without <c>issues/</c> (older, or a project never issued) reads as before; an older Lapin skips the folder it does not know.
 /// Writing goes to a temporary file first, then replaces the target: a crash
@@ -74,9 +78,26 @@ public static class LapinPackage
         string app, string product, IReadOnlyList<PackageModule> modules, JsonObject? document = null, PackageVersions? versions = null) =>
         Write(output, Build(model, moduleOf, storeyOf, app, product, modules, document), versions);
 
+    /// <summary>
+    /// The top-level folders a module writes text into (<see cref="ModuleText"/>): copies of what its entities hold, for
+    /// whoever opens the zip without Lapin (a project's scripts as <c>scripts/&lt;name&gt;.py</c>, decision 489). The model's
+    /// Arrow tables stay what Lapin reads; another tool's entries in the same folder are kept beside them (<see cref="PackageForeign"/>).
+    /// </summary>
+    public static readonly IReadOnlyList<string> TextFolders = ["scripts"];
+
+    /// <summary>Whether a module may write a text part at <paramref name="path"/>: one plain file name in one of <see cref="TextFolders"/>.</summary>
+    public static bool IsTextPath(string path)
+    {
+        var slash = path.IndexOf('/');
+        if (slash <= 0 || !TextFolders.Contains(path[..slash], StringComparer.Ordinal)) return false;
+        var name = path[(slash + 1)..];
+        return name.Length is > 0 and <= 200 && name.IndexOfAny(['/', '\\', ':', '\0']) < 0 && name is not ("." or "..") && !name.StartsWith('.');
+    }
+
     /// <summary>The project as the parts a package holds, before anything is written: what a version keeps as its manifest.</summary>
+    /// <param name="texts">The modules' text parts (<see cref="ModuleText"/>), written after the model; a path outside <see cref="TextFolders"/>, or twice, is refused.</param>
     public static PackageBuild Build(IModelView model, Func<string, string> moduleOf, Func<string, string?> storeyOf,
-        string app, string product, IReadOnlyList<PackageModule> modules, JsonObject? document = null)
+        string app, string product, IReadOnlyList<PackageModule> modules, JsonObject? document = null, IEnumerable<ModuleText>? texts = null)
     {
         var parts = new List<(PackagePart Part, byte[] Bytes)>();
         void Add(string p, byte[] bytes, string? module = null) => parts.Add((new PackagePart(p, Hash(bytes), bytes.Length, module), bytes));
@@ -92,6 +113,14 @@ public static class LapinPackage
             Add($"model/{Safe(chunk.Key.Module)}/{Safe(chunk.Key.Class)}/{Safe(chunk.Key.Storey)}.arrow", ArrowTables.WriteEntities(chunk.ToList(), model.Order), chunk.Key.Module);
         }
         Add(RelationsPath, ArrowTables.WriteRelations(model.Relations.ToList(), model.Order));
+        var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var t in (texts ?? []).OrderBy(t => t.Path, StringComparer.Ordinal))
+        {
+            if (!IsTextPath(t.Path)) throw new InvalidOperationException($"„{t.Module}” writes {t.Path}, outside the text folders.");
+            // Compared without case: two scripts whose names differ only by case would be one file on most disks.
+            if (!written.Add(t.Path)) throw new InvalidOperationException($"{t.Path} is written twice.");
+            Add(t.Path, System.Text.Encoding.UTF8.GetBytes(t.Text), t.Module);
+        }
 
         var manifest = new PackageManifest(Format, Version, app, product, modules, parts.Select(p => p.Part).ToList(), classes);
         return new PackageBuild(manifest, parts);
@@ -121,10 +150,16 @@ public static class LapinPackage
             using var s = zip.CreateEntry(name, CompressionLevel.Optimal).Open();
             s.Write(bytes);
         }
-        var kept = foreign?.Parts.Where(p => PackageForeign.Keeps(p.Path)).ToList() ?? [];
-        var manifest = kept.Count > 0 ? build.Manifest with { Foreign = kept.Select(p => p.Part).ToList() } : build.Manifest;
+        // The text parts of a module this edition lacks (decision 484), as the file had them: written back with the model it keeps.
+        var mine = build.Parts.Select(p => p.Part.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var loaded = build.Manifest.Modules.Select(m => m.Id).ToHashSet(StringComparer.Ordinal);
+        var absent = (foreign?.ModuleParts ?? []).Where(p => p.Module is { } m && !loaded.Contains(m) && IsTextPath(p.Path) && mine.Add(p.Path)).ToList();
+        var allParts = absent.Count == 0 ? build.Parts : [.. build.Parts, .. absent.Select(p => (p.Part with { Module = p.Module }, p.Bytes))];
+        // Another tool's entry where Lapin writes its own (a script of the same name in scripts/): Lapin's is the project's.
+        var kept = foreign?.Parts.Where(p => PackageForeign.Keeps(p.Path) && !mine.Contains(p.Path)).ToList() ?? [];
+        var manifest = build.Manifest with { Parts = allParts.Select(p => p.Part).ToList(), Foreign = kept.Count > 0 ? kept.Select(p => p.Part).ToList() : null };
         Entry(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(manifest, PackageJson.Indented.PackageManifest));
-        foreach (var (part, bytes) in build.Parts) Entry(part.Path, bytes);
+        foreach (var (part, bytes) in allParts) Entry(part.Path, bytes);
         if (versions is { Versions.Count: > 0 })
         {
             Entry(VersionsPath, JsonSerializer.SerializeToUtf8Bytes(new PackageVersionIndex(versions.Versions), PackageJson.Indented.PackageVersionIndex));

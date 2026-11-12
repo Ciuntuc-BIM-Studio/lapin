@@ -124,11 +124,13 @@ public sealed class ScriptStepTests
             Assert.Equal(2, f.Session.Snapshot().Nodes.Count(n => n.Type == IfcClass.Wall));
             return f.Session.Snapshot();
         });
-        // The script itself cannot undo inside its step, nor begin a second one.
+        // The script itself cannot undo inside its step; a step it begins inside joins the open one (stage 3, lapin.step).
         As(f, Kernel, () =>
         {
             Assert.Throws<CommandException>(() => f.Session.Undo());
-            Assert.Throws<CommandException>(() => f.Session.Begin("Again"));
+            Assert.True(f.Session.Begin("Again"));
+            f.Session.Commit();
+            Assert.True(f.Session.StepOpen);   // the inner one ended, the outer goes on
             return f.Session.Commit();
         });
         As(f, Window, () => f.RunDiff("architecture.addWall", WallArgs(f, 1)));
@@ -260,6 +262,156 @@ public sealed class ScriptStepTests
         foreach (var m in new[] { "script.run", "script.stop", "script.restart", "script.status", "script.files", "script.load", "script.save", "script.delete", "script.reveal" })
             Assert.Equal("Only the host can do that.", Error(await hub.Handle(Call(2, m, new JsonObject { ["code"] = "print(1)", ["name"] = "a.py" }), guest)));
         Assert.False(session.StepOpen);
+    }
+
+    // ------------------------------------------------------------------ stage 3: steps inside steps, the kernel's own connections
+
+    [Fact]
+    public void A_step_begun_inside_a_step_joins_it_and_only_the_outermost_ends_it()
+    {
+        var f = new Fixture();
+        As(f, Kernel, () =>
+        {
+            Assert.False(f.Session.Begin("Outer"));
+            f.Run("architecture.addWall", WallArgs(f, 0));
+            Assert.True(f.Session.Begin("Inner"));
+            f.Run("architecture.addWall", WallArgs(f, 1));
+            // An inner rollback (an exception the script caught) takes nothing back: the outer step decides.
+            f.Session.Rollback();
+            Assert.True(f.Session.StepOpen);
+            Assert.True(f.Session.Begin("Inner again"));
+            f.Session.Commit();
+            Assert.True(f.Session.StepOpen);
+            return f.Session.Commit();
+        });
+        Assert.False(f.Session.StepOpen);
+        Assert.Equal(2, Walls(f));
+        Assert.Equal("Outer", f.Session.History.UndoLabel);
+        f.Session.Undo();
+        Assert.Equal(0, Walls(f));
+        // The outer rollback after an inner commit takes everything back.
+        As(f, Kernel, () =>
+        {
+            f.Session.Begin("Outer");
+            f.Session.Begin("Inner");
+            f.Run("architecture.addWall", WallArgs(f, 0));
+            f.Session.Commit();
+            return f.Session.Rollback();
+        });
+        Assert.Equal(0, Walls(f));
+        Assert.False(f.Session.StepOpen);
+    }
+
+    static Fixture Scripting() => new(new ArchitectureModule(), new Lapin.Scripting.ScriptingModule());
+
+    [Fact]
+    public async Task The_kernels_own_connections_join_its_step_and_the_others_are_still_refused()
+    {
+        var f = Scripting();
+        var hub = new EngineHub(f.Session, PackageFiles.Create());
+        var token = hub.Scripts.NewKernelToken();
+        var kernel = new Recorder();
+        var opened = new Recorder();   // lapinbim.Lapin() inside the script
+        var stranger = new Recorder(); // a terminal script, the MCP bridge
+        var window = new Recorder();
+        foreach (var c in new[] { kernel, opened, stranger, window }) hub.Add(c);
+        Assert.Null(Error(await hub.Handle(Call(1, "script.join", new JsonObject { ["token"] = token }), kernel)));
+        Assert.Null(Error(await hub.Handle(Call(2, "script.join", new JsonObject { ["token"] = token }), opened)));
+        // A wrong token, or none, is refused; the connection stays its own.
+        Assert.Equal(ScriptHost.NotKernel, Error(await hub.Handle(Call(3, "script.join", new JsonObject { ["token"] = new string('0', 64) }), stranger)));
+        Assert.Equal(ScriptHost.NotKernel, Error(await hub.Handle(Call(4, "script.join"), stranger)));
+
+        Assert.Null(Error(await hub.Handle(Call(5, "doc.begin", new JsonObject { ["label"] = "walls.py" }), kernel)));
+        Assert.Null(Error(await hub.Handle(Execute(6, f, 0), kernel)));
+        Assert.Null(Error(await hub.Handle(Execute(7, f, 1), opened)));
+        Assert.Equal(Session.ScriptEditing, Error(await hub.Handle(Execute(8, f, 2), stranger)));
+        Assert.Equal(Session.ScriptEditing, Error(await hub.Handle(Execute(9, f, 3), window)));
+        // The connection the script opened goes (its with block ends): the step stays, the kernel's.
+        await hub.Remove(opened);
+        Assert.True(f.Session.StepOpen);
+        Assert.Null(Error(await hub.Handle(Call(10, "doc.commit"), kernel)));
+        Assert.Equal(2, Walls(f));
+        Assert.Equal("walls.py", f.Session.History.UndoLabel);
+
+        // A new kernel (Restart): the old token joins nothing.
+        var again = new Recorder();
+        hub.Add(again);
+        hub.Scripts.NewKernelToken();
+        Assert.Equal(ScriptHost.NotKernel, Error(await hub.Handle(Call(11, "script.join", new JsonObject { ["token"] = token }), again)));
+    }
+
+    [Fact]
+    public async Task A_kernels_step_is_rolled_back_when_the_last_of_its_connections_goes()
+    {
+        var f = Scripting();
+        var hub = new EngineHub(f.Session, PackageFiles.Create());
+        var token = hub.Scripts.NewKernelToken();
+        var kernel = new Recorder();
+        var opened = new Recorder();
+        hub.Add(kernel);
+        hub.Add(opened);
+        await hub.Handle(Call(1, "script.join", new JsonObject { ["token"] = token }), kernel);
+        await hub.Handle(Call(2, "script.join", new JsonObject { ["token"] = token }), opened);
+        await hub.Handle(Call(3, "doc.begin", new JsonObject { ["label"] = "Killed" }), kernel);
+        await hub.Handle(Execute(4, f, 0), opened);
+        await hub.Remove(kernel);
+        Assert.True(f.Session.StepOpen);   // the script's own connection is still there
+        await hub.Remove(opened);
+        Assert.False(f.Session.StepOpen);
+        Assert.Equal(0, Walls(f));
+    }
+
+    [Fact]
+    public async Task A_guest_cannot_join_a_kernel_nor_read_or_set_the_selection()
+    {
+        var f = Scripting();
+        var hub = new EngineHub(f.Session, PackageFiles.Create());
+        var token = hub.Scripts.NewKernelToken();
+        var guest = new Recorder { Caller = new Caller("guest-1", "editor") };
+        hub.Add(guest);
+        Assert.Equal("Only the host can do that.", Error(await hub.Handle(Call(1, "script.join", new JsonObject { ["token"] = token }), guest)));
+        Assert.Equal("Only the host can do that.", Error(await hub.Handle(Call(2, "script.selection"), guest)));
+        Assert.Equal("Only the host can do that.", Error(await hub.Handle(Call(3, "script.selected", new JsonObject { ["ids"] = new JsonArray("a") }), guest)));
+        Assert.Equal("Only the host can do that.", Error(await hub.Handle(Call(4, "script.trust", new JsonObject { ["sha256"] = new string('a', 64) }), guest)));
+    }
+
+    [Fact]
+    public async Task The_windows_selection_reaches_scripts()
+    {
+        var f = Scripting();
+        var hub = new EngineHub(f.Session, PackageFiles.Create());
+        var window = new Recorder();
+        var script = new Recorder();
+        hub.Add(window);
+        hub.Add(script);
+        var a = f.Wall(0, 0, 5, 0);
+        var b = f.Wall(5, 0, 5, 4);
+        // The window says it without asking an answer (a call with no id).
+        Assert.Null(await hub.Handle(new JsonObject { ["method"] = "script.selected", ["params"] = new JsonObject { ["ids"] = new JsonArray(a, b) } }.ToJsonString(), window));
+        var ids = Header(await hub.Handle(Call(1, "script.selection"), script)).GetProperty("result").GetProperty("ids");
+        Assert.Equal([a, b], ids.EnumerateArray().Select(x => x.GetString()!).ToArray());
+    }
+
+    [Fact]
+    public async Task Trust_in_a_projects_script_is_kept_on_this_computer_by_its_code()
+    {
+        var dir = Directory.CreateTempSubdirectory("lapin-trust-").FullName;
+        try
+        {
+            var f = Scripting();
+            var sha = ScriptHost.HashOf("print('hi')\n");
+            var hub = new EngineHub(f.Session, PackageFiles.Create(), null, dir);
+            bool Trusted(byte[]? frame) => Header(frame).GetProperty("result").GetProperty("trusted").GetBoolean();
+            Assert.False(Trusted(await hub.Handle(Call(1, "script.trusted", new JsonObject { ["sha256"] = sha }))));
+            Assert.True(Trusted(await hub.Handle(Call(2, "script.trust", new JsonObject { ["sha256"] = sha }))));
+            Assert.True(File.Exists(Path.Combine(dir, "scripting-trust.json")));
+            // Another engine on this computer (the next start) knows it; other code is not trusted.
+            var next = new EngineHub(Scripting().Session, PackageFiles.Create(), null, dir);
+            Assert.True(Trusted(await next.Handle(Call(3, "script.trusted", new JsonObject { ["sha256"] = sha.ToUpperInvariant() }))));
+            Assert.False(Trusted(await next.Handle(Call(4, "script.trusted", new JsonObject { ["sha256"] = ScriptHost.HashOf("import os") }))));
+            Assert.NotNull(Error(await next.Handle(Call(5, "script.trust", new JsonObject { ["sha256"] = "not a hash" }))));
+        }
+        finally { Directory.Delete(dir, true); }
     }
 
     [Fact]

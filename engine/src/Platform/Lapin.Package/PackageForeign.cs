@@ -3,7 +3,7 @@ using System.IO.Compression;
 namespace Lapin.Package;
 
 /// <summary>An entry another tool put in the package: its path, its bytes as they were read, when the zip says it was written.</summary>
-public sealed record ForeignPart(string Path, byte[] Bytes, DateTimeOffset Modified)
+public sealed record ForeignPart(string Path, byte[] Bytes, DateTimeOffset Modified, string? Module = null)
 {
     public PackagePart Part => new(Path, LapinPackage.Hash(Bytes), Bytes.LongLength);
 }
@@ -26,7 +26,13 @@ public sealed class PackageForeign
 
     public IReadOnlyList<ForeignPart> Parts { get; }
 
-    PackageForeign(IReadOnlyList<ForeignPart> parts) => Parts = parts;
+    /// <summary>
+    /// Lapin's own text parts as the file had them (<see cref="LapinPackage.TextFolders"/>: a project's scripts), each with the
+    /// module that wrote it: an edition without that module writes them back unchanged (decision 484), one with it writes its own.
+    /// </summary>
+    public IReadOnlyList<ForeignPart> ModuleParts { get; }
+
+    PackageForeign(IReadOnlyList<ForeignPart> parts, IReadOnlyList<ForeignPart>? moduleParts = null) { Parts = parts; ModuleParts = moduleParts ?? []; }
 
     /// <summary>A project with nothing of other tools.</summary>
     public static readonly PackageForeign None = new([]);
@@ -56,19 +62,25 @@ public sealed class PackageForeign
         {
             using var zip = new ZipArchive(input, ZipArchiveMode.Read, leaveOpen: true);
             // Only a format 3 package: an old project's (format 2) entries are its model, read by LegacyPackage, not another tool's.
-            LapinPackage.ReadManifest(zip);
+            var manifest = LapinPackage.ReadManifest(zip);
+            // Lapin's own entries are those its manifest lists (a text folder, scripts/, holds them beside other tools' files).
+            var own = manifest.Parts.ToDictionary(p => p.Path, p => p.Module, StringComparer.Ordinal);
             var parts = new List<ForeignPart>();
+            var moduleParts = new List<ForeignPart>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
             foreach (var e in zip.Entries)
             {
                 // Folders are implied by their entries; a name twice (a zip allows it) is kept once, the first, as a reader finds it.
-                if (e.FullName.EndsWith('/') || !Keeps(e.FullName) || !seen.Add(e.FullName)) continue;
+                if (e.FullName.EndsWith('/') || !seen.Add(e.FullName)) continue;
+                var mine = own.TryGetValue(e.FullName, out var module);
+                if (mine ? module == null || !LapinPackage.IsTextPath(e.FullName) : !Keeps(e.FullName)) continue;
                 using var s = e.Open();
                 using var ms = new MemoryStream();
                 s.CopyTo(ms);
-                parts.Add(new ForeignPart(e.FullName, ms.ToArray(), e.LastWriteTime));
+                (mine ? moduleParts : parts).Add(new ForeignPart(e.FullName, ms.ToArray(), e.LastWriteTime, module));
             }
-            return parts.Count == 0 ? None : new PackageForeign(parts.OrderBy(p => p.Path, StringComparer.Ordinal).ToList());
+            return parts.Count == 0 && moduleParts.Count == 0 ? None
+                : new PackageForeign(parts.OrderBy(p => p.Path, StringComparer.Ordinal).ToList(), moduleParts.OrderBy(p => p.Path, StringComparer.Ordinal).ToList());
         }
         catch (Exception ex) when (ex is InvalidDataException or System.Text.Json.JsonException) { return None; }
     }

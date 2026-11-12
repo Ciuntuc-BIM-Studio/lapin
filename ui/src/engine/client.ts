@@ -18,6 +18,9 @@ export interface CallOptions {
 }
 
 /** The default wait for an answer; a stall beyond it is reported, not sat out. */
+/** One who hears each call as it is sent (EngineClient.onCall): what it gives back is told the call's answer. */
+export type CallListener = (method: string, params: Record<string, unknown>) => ((outcome: { result?: unknown; error?: Error }) => void) | void;
+
 export const DEFAULT_TIMEOUT_MS = 30_000;
 /** Opening, saving, importing and exporting may legitimately take long. */
 export const LONG_TIMEOUT_MS = 10 * 60_000;
@@ -61,6 +64,7 @@ export class EngineClient {
   private diffListeners = new Set<(d: Diff) => void>();
   private eventListeners = new Map<string, Set<(data: unknown) => void>>();
   private statusListeners = new Set<(connected: boolean) => void>();
+  private callListeners = new Set<CallListener>();
   private closed = false;
   private readonly transport: EngineTransport;
 
@@ -113,7 +117,23 @@ export class EngineClient {
     if (msg.error) p.reject(new Error(this.transport.explain?.(msg.error) ?? msg.error)); else p.resolve(msg.result);
   }
 
+  /**
+   * Every call this client makes, heard as it goes (the Script panel's recorder, decision 489: every tool's edit passes
+   * here): the listener is told the method and its params as the call is sent, and may give back what to tell when it
+   * is answered (its result, or why it failed). Returns what removes it.
+   */
+  onCall(l: CallListener): () => void { this.callListeners.add(l); return () => this.callListeners.delete(l); }
+
   call<T = unknown>(method: string, params: Record<string, unknown> = {}, options: CallOptions = {}): Promise<T> {
+    if (this.callListeners.size === 0) return this.send<T>(method, params, options);
+    const ends: ((o: { result?: unknown; error?: Error }) => void)[] = [];
+    for (const l of this.callListeners) { try { const end = l(method, params); if (end) ends.push(end); } catch { /* a listener's fault is its own */ } }
+    const p = this.send<T>(method, params, options);
+    if (ends.length) p.then((result) => ends.forEach((e) => { try { e({ result }); } catch { /* its own */ } }), (error: Error) => ends.forEach((e) => { try { e({ error }); } catch { /* its own */ } }));
+    return p;
+  }
+
+  private send<T>(method: string, params: Record<string, unknown>, options: CallOptions): Promise<T> {
     const link = this.link;
     if (!link) return Promise.reject(new Error('The engine is not connected.'));
     const id = ++this.seq;

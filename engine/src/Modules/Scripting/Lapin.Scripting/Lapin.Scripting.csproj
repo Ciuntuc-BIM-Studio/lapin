@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Python scripts in the project (docs/plan-python-scripting.md, stage 3; decision 489): LapinScript entities (a
+    name, its code, its SHA-256) saved, renamed and deleted by commands, so they go into undo, versions and the rule of
+    an absent module like any content; each also written as scripts/<name>.py in the .lapin. Running them is the
+    host's (Lapin.Host/ScriptHost.cs), never this module's: a project's script never runs as it opens.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>scripting</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+  </ItemGroup>
+</Project>
