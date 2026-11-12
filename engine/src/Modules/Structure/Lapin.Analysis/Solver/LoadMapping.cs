@@ -22,6 +22,9 @@ public sealed class MappedCase(CaseLoads loads)
     public int OnCorners { get; set; }
     /// <summary>Area loads on a framed roof's members by their tributary widths.</summary>
     public int OnRoofs { get; set; }
+    /// <summary>What the framed roofs' areas called for (q × area, over the pitch's cosine for a true-area load) and what their members were given (kN, along the loads).</summary>
+    public double RoofsExpected { get; set; }
+    public double RoofsPlaced { get; set; }
     /// <summary>A snow case: its area loads are per horizontal projection.</summary>
     public bool Snow { get; init; }
     /// <summary>Wind on the façades that their lowest strip takes straight to the ground (kN).</summary>
@@ -964,6 +967,7 @@ public sealed partial class StructuralProblem
                         var c = x.C;
                         // Per metre of the bar: the plan's load over the bar's length, over the plane's cosine for a true-area load.
                         var k = c.PlanLength / c.Length * (projected ? 1 : 1 / plane.Normal.Z);
+                        var given = mc.Loads.Span.Count;
                         foreach (var t in Tributary.Profile(part, c.A, c.Dir))
                         {
                             // A strip of a carrier oblique to the frame (a hip) may reach past its ends in its own axis: at its ends.
@@ -974,6 +978,9 @@ public sealed partial class StructuralProblem
                             mc.Loads.Span.Add((c.Element, new SpanLoad(x0, x1, dir * (q * tc.W0 * k), dir * (q * tc.W1 * k))));
                         }
                         placed += q * area;
+                        // The guard: what the members were given against what the strip's area calls for.
+                        mc.RoofsExpected += q * Math.Abs(area) * (projected ? 1 : 1 / plane.Normal.Z);
+                        for (var g = given; g < mc.Loads.Span.Count; g++) mc.RoofsPlaced += Vec3.Dot(mc.Loads.Span[g].Load.Total, dir);
                     }
                 }
                 mc.OnRoofs++;

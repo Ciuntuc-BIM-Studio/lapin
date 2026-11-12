@@ -53,7 +53,8 @@ The kind sets the tolerances against ifc_structural_mechanics:
   deflected axes (5 %) are judged; the beams' shear, moments and torsion are shown, not judged.
 
 PyNite takes bars only: a model with shells is compared with ifc_structural_mechanics alone. Against PyNite every model is held to 1e-4 of the largest value: the same bars, Lapin's arms rigid and PyNite's very
-stiff bars.
+stiff bars. `pynite_run.py` keeps each bar whole: PyNite would cut a bar at any node lying on its axis (an arm's end on a
+column), which Lapin's solver does not.
 
 ## Installing the other programs (once, outside the repository)
 

@@ -12,6 +12,25 @@ import math
 import sys
 
 from Pynite import FEModel3D
+from Pynite.PhysMember import PhysMember
+
+# PyNite cuts a bar at every node lying on its axis. Lapin's solver does not (a bar runs between its own two nodes), and
+# an arm's end often lies on a column's axis (a beam joined to the column's head by a vertical arm, docs/plan-fem.md §9.9,
+# 4): cut there, the column's top piece would run beside the arm, rigid with it, and its end forces would be that
+# piece's. Each bar is one piece here, as in the problem Lapin solved.
+_descritize = PhysMember.descritize
+
+
+def _whole(self):
+    nodes = self.model.nodes
+    self.model.nodes = {self.i_node.name: self.i_node, self.j_node.name: self.j_node}
+    try:
+        _descritize(self)
+    finally:
+        self.model.nodes = nodes
+
+
+PhysMember.descritize = _whole
 
 # An arm (a bar's end off its node) is a short bar this many times as stiff as its bar's section in every way (its
 # largest second moment for bending and torsion alike): being far shorter as well, it is stiffer than the bar by

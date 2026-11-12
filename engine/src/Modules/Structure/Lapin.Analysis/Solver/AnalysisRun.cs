@@ -79,6 +79,8 @@ public sealed partial class AnalysisRun
             var code = rep.Cases.First(x => x.Id == c.Loads.Id).Code;
             if (c.Unmapped > 1e-6)
                 notes.Add($"„{code}”: {R(c.Unmapped, 3)} kN of {c.UnmappedLoads} load{(c.UnmappedLoads == 1 ? "" : "s")} find nothing under them (no bar, slab or wall within reach) and are left out: {string.Join(", ", c.UnmappedSources.Take(6).Select(id => q.Model.Get(id)?.Name ?? id))}{(c.UnmappedSources.Count > 6 ? "…" : "")}.");
+            if (c.RoofsExpected > 1e-9 && Math.Abs(c.RoofsPlaced - c.RoofsExpected) > 0.01 * c.RoofsExpected)
+                notes.Add($"„{code}”: {R(c.RoofsPlaced, 2)} kN placed on the framed roofs' members where their area calls for {R(c.RoofsExpected, 2)} kN: check that the roof's members meet.");
             if (c.ToGround.Length > 1e-6) notes.Add($"„{code}”: {R(c.ToGround.Length, 2)} kN of the wind on the façades goes straight to the ground (the strip at their foot), outside the bars' sums.");
             if (c.WallsOwn > 1e-6) notes.Add($"„{code}”: the load-bearing walls' own weight ({R(c.WallsOwn, 2)} kN) goes straight to what holds them in S1, outside the bars' sums.");
         }

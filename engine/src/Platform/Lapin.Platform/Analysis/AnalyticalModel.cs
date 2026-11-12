@@ -363,16 +363,19 @@ public sealed class AnalyticalModel
 
     /// <summary>
     /// Level beams of different depths meeting a column at one joint (their sections overlapping in height: flush tops, a
-    /// shallow beam framing into a deep one's side) keep each its own axis' level; the column has one node there — its end
-    /// when the joint is at its head or foot, else the deepest beam's level — and every other beam is joined to it by a rigid
-    /// vertical arm (its end's offset), so the column is not cut into slivers between the beams' axes and no beam tilts.
+    /// shallow beam framing into a deep one's side) keep each its own axis' level; the column has one node there, at the
+    /// deepest beam's level, and every other beam is joined to it by a rigid vertical arm (its end's offset), so the column is
+    /// not cut into slivers between the beams' axes and no beam tilts. A joint at the column's head or foot moves that end to
+    /// the node (and the end of a column above or below meeting it there): the shallower beams' own ends then lie beyond the
+    /// column, not on its axis, where a reader of the SAV export would join them to the column (and lose their releases).
     /// Returns how many ends were joined so.
     /// </summary>
     static int JoinAtColumns(List<Bar> bars)
     {
         var joined = 0;
         var level = bars.Where(b => !b.Vertical && b.Horizontal && b.Pts.Count >= 2).ToList();
-        foreach (var c in bars.Where(b => b.Vertical))
+        var columns = bars.Where(b => b.Vertical).ToList();
+        foreach (var c in columns)
         {
             var at = c.Pts[0].Xy;
             var (zLo, zHi) = (Math.Min(c.Pts[0].Z, c.Pts[1].Z), Math.Max(c.Pts[0].Z, c.Pts[1].Z));
@@ -398,10 +401,21 @@ public sealed class AnalyticalModel
             {
                 if (j.Max(e => e.Z) - j.Min(e => e.Z) <= Tolerance) continue;
                 var (top, bottom) = (j.Max(e => e.Z + e.Half), j.Min(e => e.Z - e.Half));
-                // The column's own end when the joint holds it, else the deepest beam's level.
-                var z = zHi >= bottom - Tolerance && zHi <= top + Tolerance && j.Any(e => Math.Abs(e.Z - zHi) <= Tolerance) ? zHi
-                    : zLo >= bottom - Tolerance && zLo <= top + Tolerance && j.Any(e => Math.Abs(e.Z - zLo) <= Tolerance) ? zLo
-                    : j.MaxBy(e => e.Half).Z;
+                // The deepest beam's level (of equally deep ones, the column's end's when one is there, else the highest).
+                var deepest = j.Max(e => e.Half);
+                var z = j.Where(e => e.Half >= deepest - 1e-9).OrderByDescending(e => Math.Abs(e.Z - zHi) <= Tolerance || Math.Abs(e.Z - zLo) <= Tolerance)
+                    .ThenByDescending(e => e.Z).First().Z;
+                // The column's end in the joint moves to the node, with the end of a column meeting it there.
+                for (var k = 0; k < 2; k++)
+                {
+                    var p = c.Pts[k];
+                    if (p.Z < bottom - Tolerance || p.Z > top + Tolerance || Math.Abs(p.Z - z) <= Tolerance) continue;
+                    foreach (var o in columns)
+                        for (var m = 0; m < 2; m++)
+                            if (o != c && (o.Pts[m] - p).Length <= Tolerance) o.Pts[m] = o.Pts[m] with { Z = z };
+                    c.Pts[k] = p with { Z = z };
+                }
+                (zLo, zHi) = (Math.Min(c.Pts[0].Z, c.Pts[1].Z), Math.Max(c.Pts[0].Z, c.Pts[1].Z));
                 foreach (var e in j.Where(e => Math.Abs(e.Z - z) > Tolerance))
                 {
                     e.Bar.EndNode[e.K] = at.At(z);

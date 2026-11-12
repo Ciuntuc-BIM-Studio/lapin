@@ -2716,6 +2716,7 @@ export const ZH_PATTERNS: Language['patterns'] = [
   [/^(\d+) nodes? free to turn without moving anything \(only pinned ends meet there\): held by a spring that takes no force\.$/, (m) => `${m[1]} 个节点可自由转动而不带动任何构件（此处只有铰接端相交）：由不承受任何力的弹簧约束.`],
   [/^„(.+)”: ([\d.]+) kN of (\d+) loads? find nothing under them \(no bar, slab or wall within reach\) and are left out: (.+)\.$/, (m) => `“${m[1]}”：${m[3]} 个荷载共 ${m[2]} kN 在其下找不到任何构件（范围内没有杆件、楼板或墙），已被舍去：${m[4]}.`],
   [/^„(.+)”: ([\d.]+) kN of the wind on the façades goes straight to the ground \(the strip at their foot\), outside the bars' sums\.$/, (m) => `“${m[1]}”：立面风荷载中的 ${m[2]} kN 直接传到地面（其底部的条带），不计入杆件的合计.`],
+  [/^„(.+)”: ([\d.]+) kN placed on the framed roofs' members where their area calls for ([\d.]+) kN: check that the roof's members meet\.$/, (m) => `“${m[1]}”：屋架杆件上施加了 ${m[2]} kN，而其面积应为 ${m[3]} kN：请检查屋面杆件是否相交.`],
   [/^„(.+)”: the load-bearing walls' own weight \(([\d.]+) kN\) goes straight to what holds them in S1, outside the bars' sums\.$/, (m) => `“${m[1]}”：承重墙自重（${m[2]} kN）在 S1 中直接传给支承它们的构件，不计入杆件的合计.`],
   [/^(\d+) stretch(?:es)? of line loads on a slab with no bar under (?:it|them): shared by the slab piece's corners as the point loads are, integrated along (?:it|them)\.$/, (m) => `${m[1]} 段线荷载作用在其下没有杆件的楼板上：与集中荷载一样分配给楼板单元的角点，沿其长度积分.`],
   [/^(\d+) point loads? on a slab with no bar under (?:it|them): shared by the slab piece's corners \(barycentric, bilinear on a quadrilateral\), statically consistent\.$/, (m) => `${m[1]} 个集中荷载作用在其下没有杆件的楼板上：分配给楼板单元的角点（重心坐标，四边形上为双线性），静力等效.`],
