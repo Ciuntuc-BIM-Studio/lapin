@@ -657,6 +657,99 @@ export const scenes = [
     },
   },
   {
+    // Temporary dimensions (a tester's report, decision 511): a selected window measured to the nearest wall face and the
+    // next window along its wall; a value typed moves it ("its corner 1500 from the wall's face"), and its centre is measured
+    // to the other window's ("axis to axis 2500"). Also shown while a window is being placed.
+    id: 'temp-dimensions',
+    touches: ['architecture'],
+    async run(t) {
+      await t.fresh();
+      const s = await t.storey();
+      const walls = [];
+      for (const [a, b] of [[[0, 0], [10, 0]], [[10, 0], [10, 5]], [[10, 5], [0, 5]], [[0, 5], [0, 0]], [[6, 0], [6, 5]]]) walls.push((await t.cmd('architecture.addWall', { storeyId: s, x1: a[0], y1: a[1], x2: b[0], y2: b[1] })).id);
+      const w1 = (await t.cmd('architecture.addWindow', { wallId: walls[0], x: 1.5, y: 0 })).id;
+      const w2 = (await t.cmd('architecture.addWindow', { wallId: walls[0], x: 4, y: 0 })).id;
+      await t.ui({ keyPlan: false });
+      await t.wait(600);
+      await t.fit();
+      const box = async () => { const [a, b] = [await t.planPoint(-0.6, -0.9), await t.planPoint(7, 1.6)]; return { x: a[0], y: b[1], width: b[0] - a[0], height: a[1] - b[1] }; };
+      const dim = (key) => t.page.locator(`[data-testid=temp-dims] [data-dim="${key}"]`);
+      const value = async (key) => Number(await dim(key).getAttribute('data-value'));
+      const type = async (key, text) => {
+        await dim(key).locator('[data-value-hit]').click();
+        await t.page.locator('[data-field=temp-dim]').fill(text);
+        await t.page.locator('[data-field=temp-dim]').press('Enter');
+        await t.wait(700);
+      };
+      // The first window: to the corner's inner face on one side; on the other, the next window is nearer than the partition.
+      await select(t, w1);
+      await t.wait(700);
+      t.expect(await t.page.locator('[data-testid=temp-dims]').getAttribute('data-side') === 'left', 'the dimensions go on the face the partition meets, inside');
+      t.expect(await dim('-1:0').getAttribute('data-ref') === 'wall' && await dim('1:1').getAttribute('data-ref') === 'opening', 'the corner wall\'s face one way, the next window the other');
+      await t.shot('temp-dims', { clip: await box() });
+      // "This window's corner 1500 from the wall's face."
+      await type('-1:0', '1500');
+      t.expect(Math.abs(await value('-1:0') - 1.5) < 1e-6, `the window moved: 1500 from the face (${await value('-1:0')})`);
+      await t.shot('temp-dims-typed', { clip: await box() });
+      // "This window's axis 2500 from the other window's axis": the second window's own end to its centre, the reference to the first's centre.
+      await select(t, w2);
+      await t.wait(700);
+      await dim('-1:1').locator('[data-end=own]').click();
+      await dim('-1:1').locator('[data-end=ref]').click();
+      await t.wait(200);
+      t.expect(await dim('-1:1').getAttribute('data-own') === 'centre' && await dim('-1:1').getAttribute('data-what') === 'centre', 'centre to centre');
+      await type('-1:1', '2500');
+      t.expect(Math.abs(await value('-1:1') - 2.5) < 1e-6, `axis to axis 2500 (${await value('-1:1')})`);
+      const along = async (id) => { const ns = await t.nodes(); const fill = ns.find((n) => n.id === id); const rel = (await t.call('doc.query', { name: 'architecture.openingReferences', args: { id: fill.id } })); return rel.opening.along; };
+      t.expect(Math.abs((await along(w2)) - (await along(w1)) - 2.5) < 1e-6, 'the windows\' middles 2500 apart');
+      await t.shot('temp-dims-axes', { clip: await box() });
+      // Too far: refused, nothing moves.
+      const before = await along(w2);
+      await type('-1:1', '9000');
+      t.expect(Math.abs((await along(w2)) - before) < 1e-9, 'a value past the wall\'s end moves nothing');
+      await t.keys('Escape');
+      await t.ui({ selection: null, selected: [] });
+      // While a window is being placed.
+      await t.tool('architecture.window');
+      await t.wait(300);
+      const [px, py] = await t.planPoint(8, 0.3);
+      await t.page.mouse.move(px - 3, py - 3);
+      await t.page.mouse.move(px, py);
+      await t.wait(500);
+      t.expect(await t.page.locator('[data-testid=temp-dims] [data-dim]').count() >= 2, 'a window being placed is measured too');
+      await t.keys('Escape');
+      await t.wait(300);
+      // A curved wall north of the house, a straight one across its top: measured round the arc, on its outer face.
+      const curved = (await t.cmd('architecture.addWall', { storeyId: s, x1: 0, y1: 8, x2: 8, y2: 8 })).id;
+      await t.cmd('architecture.updateWall', { id: curved, arc: 2 });
+      await t.cmd('architecture.addWall', { storeyId: s, x1: 4, y1: 9.5, x2: 4, y2: 11.5 });
+      const w3 = (await t.cmd('architecture.addWindow', { wallId: curved, along: 2.5 })).id;
+      await t.wait(600);
+      await t.fit();
+      await select(t, w3);
+      await t.wait(800);
+      t.expect(await t.page.locator('[data-testid=temp-dims]').getAttribute('data-curved') === 'true', 'a window in a curved wall is measured round it');
+      const arcBox = async () => { const [a, b] = [await t.planPoint(-0.8, 7.2), await t.planPoint(8.8, 11.8)]; return { x: a[0], y: b[1], width: b[0] - a[0], height: a[1] - b[1] }; };
+      await type('1:0', '1000');
+      t.expect(Math.abs(await value('1:0') - 1) < 1e-6, `round the arc: 1000 from the crossing wall's face (${await value('1:0')})`);
+      await t.shot('temp-dims-curved', { clip: await arcBox() });
+      await t.ui({ selection: null, selected: [] });
+      // In the south elevation: the first window along its wall, and its sill and head over the storey's level.
+      await t.cmd('view.create', { kind: 'elevation', direction: 'south', name: 'South' });
+      await openFromBrowser(t, 'South', 2500);
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await select(t, w1);
+      await t.wait(900);
+      t.expect(await t.page.locator('[data-testid=drawing] [data-testid=temp-dims][data-view=section]').count() === 1, 'the elevation measures the window seen face-on');
+      t.expect(Math.abs(await value('v:sill') - 0.9) < 1e-6, `its sill 900 over the level (${await value('v:sill')})`);
+      await type('v:sill', '1000');
+      t.expect(Math.abs(await value('v:sill') - 1) < 1e-6, `the window up to a sill of 1000 (${await value('v:sill')})`);
+      t.expect(Math.abs(await value('v:head') - 2.5) < 1e-6, `its head goes with it (${await value('v:head')})`);
+      await t.shot('temp-dims-elevation', { of: '[data-testid=drawing]', pad: 0 });
+    },
+  },
+  {
     id: 'openings',
     async run(t) {
       await t.fresh();

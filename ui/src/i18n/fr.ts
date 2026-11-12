@@ -14,6 +14,13 @@ export const FR: Record<string, string> = {
   "Pad footing level": "Niveau de la semelle isolée",
   "Every column has a pad footing under it already.": "Chaque poteau a déjà une semelle isolée sous lui.",
   "Select the columns to put pad footings under.": "Sélectionnez les poteaux sous lesquels poser des semelles isolées.",
+  // Decision 511: a door's or window's temporary dimensions
+  "Type a distance of zero or more.": "Saisissez une distance de zéro ou plus.",
+  "Click: the other opening's near edge, centre or far edge": "Clic : le bord proche, le centre ou le bord éloigné de l'autre ouverture",
+  "Click: the next reference (near face, far face, core faces, axis)": "Clic : la référence suivante (face proche, face éloignée, faces du noyau, axe)",
+  "Click: measure from the opening's edge or its centre": "Clic : mesurer depuis le bord de l'ouverture ou depuis son centre",
+  "Click to type the distance: the opening moves to match": "Cliquez pour saisir la distance : l'ouverture se déplace en conséquence",
+  "Make this dimension permanent": "Rendre cette cote permanente",
   // Decision 500: the partial structure display
   "Entire model": "Modèle entier",
   "Every layer of walls, floors and roofs": "Toutes les couches des murs, des dalles et des toitures",

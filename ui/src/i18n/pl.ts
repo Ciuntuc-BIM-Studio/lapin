@@ -14,6 +14,13 @@ export const PL: Record<string, string> = {
   "Pad footing level": "Poziom stopy fundamentowej",
   "Every column has a pad footing under it already.": "Każdy słup ma już pod sobą stopę fundamentową.",
   "Select the columns to put pad footings under.": "Zaznacz słupy, pod którymi mają stanąć stopy fundamentowe.",
+  // Decision 511: a door's or window's temporary dimensions
+  "Type a distance of zero or more.": "Wpisz odległość równą zero lub większą.",
+  "Click: the other opening's near edge, centre or far edge": "Kliknij: bliższa krawędź, środek lub dalsza krawędź drugiego otworu",
+  "Click: the next reference (near face, far face, core faces, axis)": "Kliknij: następne odniesienie (bliższa powierzchnia, dalsza powierzchnia, powierzchnie rdzenia, oś)",
+  "Click: measure from the opening's edge or its centre": "Kliknij: mierz od krawędzi otworu lub od jego środka",
+  "Click to type the distance: the opening moves to match": "Kliknij, aby wpisać odległość: otwór przesunie się odpowiednio",
+  "Make this dimension permanent": "Zrób z tego wymiaru wymiar stały",
   // Decision 500: the partial structure display
   "Entire model": "Cały model",
   "Every layer of walls, floors and roofs": "Każda warstwa ścian, stropów i dachów",

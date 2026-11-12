@@ -75,8 +75,20 @@ export function askPlacement(req: PlacementRequest, checks: PlacementCheck[]): v
   if (wait === 0) void go(); else timer = setTimeout(() => void go(), wait);
 }
 
+/**
+ * The door or window being placed as the cursor has it now (its host, where along it, how wide), for what the plan draws
+ * with it (its temporary dimensions, decision 511); null when the cursor is over no host.
+ */
+export const usePlacing = create<{ req: PlacementRequest | null }>(() => ({ req: null }));
+export function setPlacing(req: PlacementRequest | null): void {
+  const was = usePlacing.getState().req;
+  if (was === req || (was && req && placementKey(was) === placementKey(req))) return;
+  usePlacing.setState({ req });
+}
+
 /** Forgets what was asked (the tool was left). */
 export function resetPlacement(): void {
+  setPlacing(null);
   latest = '';
   if (timer) { clearTimeout(timer); timer = null; }
   usePlacement.setState({ key: '', verdict: null });

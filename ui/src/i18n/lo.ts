@@ -14,6 +14,13 @@ export const LO: Record<string, string> = {
   "Pad footing level": "ລະດັບຂອງຖານຮາກດ່ຽວ",
   "Every column has a pad footing under it already.": "ທຸກເສົາມີຖານຮາກດ່ຽວຢູ່ໃຕ້ແລ້ວ.",
   "Select the columns to put pad footings under.": "ເລືອກເສົາທີ່ຈະວາງຖານຮາກດ່ຽວຢູ່ໃຕ້.",
+  // Decision 511: a door's or window's temporary dimensions
+  "Type a distance of zero or more.": "ພິມໄລຍະຫ່າງ ສູນ ຫຼື ຫຼາຍກວ່າ.",
+  "Click: the other opening's near edge, centre or far edge": "ຄລິກ: ຂອບໃກ້, ກາງ ຫຼື ຂອບໄກ ຂອງຊ່ອງອື່ນ",
+  "Click: the next reference (near face, far face, core faces, axis)": "ຄລິກ: ຈຸດອ້າງອີງຕໍ່ໄປ (ໜ້າໃກ້, ໜ້າໄກ, ໜ້າແກນ, ແກນກາງ)",
+  "Click: measure from the opening's edge or its centre": "ຄລິກ: ວັດແທກຈາກຂອບຂອງຊ່ອງ ຫຼື ຈາກກາງຂອງມັນ",
+  "Click to type the distance: the opening moves to match": "ຄລິກເພື່ອພິມໄລຍະຫ່າງ: ຊ່ອງຈະຍ້າຍໃຫ້ກົງກັນ",
+  "Make this dimension permanent": "ເຮັດໃຫ້ຂະໜາດນີ້ຖາວອນ",
   // Decision 500: the partial structure display
   "Entire model": "ແບບຈຳລອງທັງໝົດ",
   "Every layer of walls, floors and roofs": "ທຸກຊັ້ນຂອງຝາ, ພື້ນ ແລະ ຫຼັງຄາ",

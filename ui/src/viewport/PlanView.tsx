@@ -22,7 +22,7 @@ import { ownPlanOf } from './storeyPlan';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { askPlacement, findTool, useToolTick } from '../platform/modules';
-import { placedAt, reasonLines, requestFor, resetPlacement, usePlacement, verdictFor } from '../platform/placement';
+import { placedAt, reasonLines, requestFor, resetPlacement, setPlacing, usePlacement, verdictFor } from '../platform/placement';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
@@ -538,7 +538,7 @@ export function PlanView() {
       const host = g.reach ? nearestOf(at, g.reach / view.scale, pickItems, nodes, g.types) : pick(at, g.types);
       const what = host ? g.placing!(host, at) : null;
       const q = host && what ? requestFor(host, at, what) : null;
-      if (q) askPlacement(q.req); else resetPlacement();
+      if (q) { askPlacement(q.req); setPlacing(q.req); } else resetPlacement();
     }
     trackTagHover(rawHover.current, { pickElement: (q) => pick(q)?.id ?? null, pickTag: (q) => pick(q, ['IfcAnnotation'])?.id ?? null, anyTags, busy: !!tool?.gesture || !!d });
   };

@@ -590,6 +590,7 @@
     {"name":"architecture.joineryPreview3d","module":"architecture","args":[{"name":"spec"}]},
     {"name":"architecture.lintelProducts","module":"architecture","args":[]},
     {"name":"architecture.noonShade","module":"architecture","args":[{"name":"id","type":"str"}]},
+    {"name":"architecture.openingReferences","module":"architecture","args":[{"name":"id","type":"str"},{"name":"wallId","type":"str"}]},
     {"name":"architecture.readTypes","module":"architecture","args":[{"name":"text","type":"str"}]},
     {"name":"architecture.roofPreview","module":"architecture","args":[{"name":"id","type":"str"}]},
     {"name":"architecture.roomOpenings","module":"architecture","args":[{"name":"id","type":"str"}]},

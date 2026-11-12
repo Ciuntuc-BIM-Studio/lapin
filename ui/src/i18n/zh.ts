@@ -14,6 +14,13 @@ export const ZH: Record<string, string> = {
   "Pad footing level": "独立基础标高",
   "Every column has a pad footing under it already.": "每根柱下都已有独立基础。",
   "Select the columns to put pad footings under.": "请选择要在其下放置独立基础的柱。",
+  // Decision 511: a door's or window's temporary dimensions
+  "Type a distance of zero or more.": "请输入零或更大的距离。",
+  "Click: the other opening's near edge, centre or far edge": "单击：另一洞口的近边、中心或远边",
+  "Click: the next reference (near face, far face, core faces, axis)": "单击：下一个参照（近面、远面、核心层面、轴线）",
+  "Click: measure from the opening's edge or its centre": "单击：从洞口边缘或其中心测量",
+  "Click to type the distance: the opening moves to match": "单击输入距离：洞口随之移动",
+  "Make this dimension permanent": "将此尺寸设为永久尺寸",
   // Decision 500: the partial structure display
   "Entire model": "整个模型",
   "Every layer of walls, floors and roofs": "墙、楼板和屋顶的每一层",

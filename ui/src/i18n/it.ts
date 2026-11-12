@@ -14,6 +14,13 @@ export const IT: Record<string, string> = {
   "Pad footing level": "Quota del plinto",
   "Every column has a pad footing under it already.": "Ogni pilastro ha già un plinto sotto.",
   "Select the columns to put pad footings under.": "Selezionare i pilastri sotto cui mettere i plinti.",
+  // Decision 511: a door's or window's temporary dimensions
+  "Type a distance of zero or more.": "Scrivi una distanza di zero o più.",
+  "Click: the other opening's near edge, centre or far edge": "Clic: il bordo vicino, il centro o il bordo lontano dell'altra apertura",
+  "Click: the next reference (near face, far face, core faces, axis)": "Clic: il riferimento successivo (faccia vicina, faccia lontana, facce del nucleo, asse)",
+  "Click: measure from the opening's edge or its centre": "Clic: misura dal bordo dell'apertura o dal suo centro",
+  "Click to type the distance: the opening moves to match": "Clic per scrivere la distanza: l'apertura si sposta di conseguenza",
+  "Make this dimension permanent": "Rendi permanente questa quota",
   // Decision 500: the partial structure display
   "Entire model": "Modello intero",
   "Every layer of walls, floors and roofs": "Ogni strato di pareti, solai e coperture",

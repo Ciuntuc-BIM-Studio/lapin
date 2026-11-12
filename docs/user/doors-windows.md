@@ -28,6 +28,31 @@ For an exact distance, use **Move** (<kbd>M</kbd>) or **Copy** (<kbd>CO</kbd>) o
 
 ![A door's properties](shots/door-properties.webp)
 
+### Temporary dimensions
+
+Select one door, window or wall opening in a plan and Lapin draws **temporary dimensions** along its wall, on the face the walls meeting it come in to: from each of its edges to the nearest face of a wall that meets or crosses its wall (or to the wall's own end), and, when another opening of the same wall is nearer, a second, dashed one to that opening. They follow the opening while you drag it, and they are shown while you place one with **Door** or **Window**, before the click.
+
+- **Click a value** to type it, in the project's unit (sums such as `1200+300` work), and press **Enter**: the opening slides along its wall until the dimension reads it, the other end staying where it is. One undo step. **Escape** leaves it as it was. If the opening would no longer fit (past the wall's end, or over another opening), nothing moves and the notice says why.
+- **Click the dot on the opening's end** to measure from its centre instead of its edge.
+- **Click the dot on the other end** to measure to the next thing there: a wall's near face, its far face, its core's faces (a layered wall), its axis; another opening's near edge, its centre, its far edge.
+- **Click the padlock** beside a value to keep it as a permanent dimension of the plan, held on what its ends lie on, like one drawn with **Annotate → Aligned**. It does not lock the distance: the opening can still be moved.
+
+So "this window's corner 1500 from that wall's face" is: select the window, click the value towards the wall, type `1500`, Enter. "This window's axis 2500 from the other window's axis" is: click the dot on the window's end and the dot on the other window's end until both measure centres, then type `2500`.
+
+In a **curved wall** they run round the arc, concentric with it, and read the length along the face they are drawn on (the outer face is longer than the inner one); a value typed moves the opening round the arc. Their padlock makes an arc-length dimension of the plan, which keeps its value as drawn: it does not follow the wall.
+
+In a **section or an elevation** that sees the opening's wall face-on (the wall running along the view, within 10°), the opening selected has its dimensions along the wall over its head, to the same walls and openings, on the face the view sees, and two up its side: from the storey's level to its bottom (its **sill height**) and to its top (its **head height**). Typing either moves the opening up or down; the other follows. A wall cut obliquely or seen edge-on, a curved wall and a jogged or curved section show none.
+
+![A selected window measured to the corner's inner face and to the next window](shots/temp-dims.webp)
+
+![After 1500 typed: its corner 1500 from the wall's face](shots/temp-dims-typed.webp)
+
+![The other window's axis 2500 from the first one's](shots/temp-dims-axes.webp)
+
+![A window in a curved wall measured round the arc, 1000 from the crossing wall's face](shots/temp-dims-curved.webp)
+
+![A window selected in the south elevation: along the wall, and its sill and head heights](shots/temp-dims-elevation.webp)
+
 ## Openings without a door or window
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) cuts an opening alone through a wall where you click it: a passage, a hatch, a hole for a door that comes later. Set its width, height and sill in the properties panel before the click. Selected, its size, its place along the wall and its sill are changed there; like a door, it must fit in the wall and stay clear of the wall's other openings. In IFC it is an opening voiding the wall, with nothing filling it.

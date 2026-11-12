@@ -457,6 +457,18 @@ table.layer-edit:not(.zones):not(.material-params) > tbody > tr:not(.layer-parts
 .ref-face { fill: var(--accent); font: 700 11px var(--font); text-anchor: middle; dominant-baseline: central; pointer-events: none; paint-order: stroke; stroke: var(--bg, #fff); stroke-width: 3px; }
 .grip-hint { font-size: 11px; fill: var(--accent); font-weight: 600; pointer-events: none; }
 .plan-grip-drag { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
+/* A door's or window's temporary dimensions (decision 511): thin accent lines, the value clicked to type, its ends to cycle. */
+.temp-dim-line { fill: none; stroke: var(--accent); stroke-width: 1; }
+.temp-dim.row1 .temp-dim-line { stroke-dasharray: 4 2; }
+.temp-dim-text { fill: var(--accent); font: 600 11px var(--font); font-variant-numeric: tabular-nums; text-anchor: middle; dominant-baseline: central; paint-order: stroke; stroke: var(--bg, #fff); stroke-width: 3px; }
+.temp-dim-hit { fill: transparent; stroke: none; }
+[data-value-hit]:hover .temp-dim-text { text-decoration: underline; }
+.temp-dim-end { fill: var(--panel); stroke: var(--accent); stroke-width: 1.2; }
+.temp-dim-end.own { fill: var(--accent); }
+[data-end]:hover .temp-dim-end { r: 4.5; }
+.temp-dim-lock { fill: none; stroke: var(--accent); stroke-width: 1.2; stroke-linejoin: round; opacity: 0.7; }
+[data-lock]:hover .temp-dim-lock { opacity: 1; fill: var(--accent-wash); }
+.temp-dim-input { width: 100%; box-sizing: border-box; font: 600 12px var(--font); text-align: center; padding: 2px 4px; border: 1.5px solid var(--accent); border-radius: 4px; background: var(--panel); color: var(--ink); }
 .qset + .qset { margin-top: 10px; }
 .qset-head { font-weight: 600; margin-bottom: 4px; }
 .qrow { display: contents; }

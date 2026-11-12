@@ -14,6 +14,13 @@ export const DA: Record<string, string> = {
   "Pad footing level": "Punktfundamentets kote",
   "Every column has a pad footing under it already.": "Hver søjle har allerede et punktfundament under sig.",
   "Select the columns to put pad footings under.": "Vælg de søjler, der skal have punktfundamenter under sig.",
+  // Decision 511: a door's or window's temporary dimensions
+  "Type a distance of zero or more.": "Skriv en afstand på nul eller mere.",
+  "Click: the other opening's near edge, centre or far edge": "Klik: den anden åbnings nære kant, midte eller fjerne kant",
+  "Click: the next reference (near face, far face, core faces, axis)": "Klik: næste reference (nær flade, fjern flade, kernens flader, akse)",
+  "Click: measure from the opening's edge or its centre": "Klik: mål fra åbningens kant eller dens midte",
+  "Click to type the distance: the opening moves to match": "Klik for at skrive afstanden: åbningen flytter sig så den passer",
+  "Make this dimension permanent": "Gør denne mål permanent",
   // Decision 500: the partial structure display
   "Entire model": "Hele modellen",
   "Every layer of walls, floors and roofs": "Alle lag i vægge, dæk og tage",

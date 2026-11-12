@@ -39,6 +39,7 @@ import { clearLiveRise, inModel, setLiveRise, viewFrameAt } from './viewFrame';
 import { markIds, markSelected } from './planPick';
 import { dragTo, regionTestOf, SelectRegion, useLassoKey, type SelectDrag } from './selectDrag';
 import { useGripEditor } from './GripLayer';
+import { DrawingOverlays } from './DrawingOverlays';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
@@ -445,6 +446,8 @@ export function DrawingView() {
         })()}
         {box && <SelectRegion d={box} />}
         {editor.render}
+        <DrawingOverlays toScreen={toScreen} toWorld={toWorld} scale={v.scale} view={{ id: id ?? null }}
+          drawing={drawing ? { kind: drawing.kind, frame: drawing.frame, developed: (drawing.frames?.length ?? 0) > 0, marks: drawing.marks } : null} />
         {(cadStep || editor.dragging || dragTrace) && <CadOverlay aimed={hover} toScreen={toScreen} />}
       </svg>
       {drawing?.problem && <div className="error-text view-problem">{drawing.problem}</div>}

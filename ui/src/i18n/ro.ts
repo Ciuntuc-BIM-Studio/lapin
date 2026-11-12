@@ -12,6 +12,13 @@ export const RO: Record<string, string> = {
   "Pad footing level": "Cota fundației izolate",
   "Every column has a pad footing under it already.": "Fiecare stâlp are deja o fundație izolată sub el.",
   "Select the columns to put pad footings under.": "Selectați stâlpii sub care să puneți fundații izolate.",
+  // Decision 511: a door's or window's temporary dimensions
+  "Type a distance of zero or more.": "Scrieți o distanță de zero sau mai mult.",
+  "Click: the other opening's near edge, centre or far edge": "Clic: muchia apropiată, mijlocul sau muchia depărtată a celuilalt gol",
+  "Click: the next reference (near face, far face, core faces, axis)": "Clic: următoarea referință (fața apropiată, fața depărtată, fețele miezului, axul)",
+  "Click: measure from the opening's edge or its centre": "Clic: măsurați de la muchia golului sau de la mijlocul lui",
+  "Click to type the distance: the opening moves to match": "Clic pentru a scrie distanța: golul se mută ca s-o respecte",
+  "Make this dimension permanent": "Faceți această cotă permanentă",
   // Decision 500: the partial structure display
   "Entire model": "Întregul model",
   "Every layer of walls, floors and roofs": "Toate straturile pereților, planșeelor și acoperișurilor",

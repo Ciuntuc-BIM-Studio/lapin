@@ -261,6 +261,20 @@ export interface PlanOverlayProps {
   view: { id: string | null; storeyId: string | null };
 }
 
+/**
+ * What a module's section or elevation overlay is given (decision 511): the view's transform (a drawing point in metres, x
+ * along the view and y up, as the view shows it), the view's id, and its drawing's frame and marks: where the drawing lies
+ * in the model ((x, y) is origin + right·x + up·y; `developed`: a jogged or curved section of several pieces).
+ */
+export interface DrawingOverlayProps {
+  toScreen: (p: Vec2) => { x: number; y: number };
+  toWorld: (x: number, y: number) => Vec2;
+  /** Pixels per metre. */
+  scale: number;
+  view: { id: string | null };
+  drawing: { kind?: string; frame?: { origin: number[]; right: number[]; up: number[]; dir: number[] }; developed: boolean; marks?: MarkDto[] } | null;
+}
+
 export interface LapinModule {
   id: string;
   name: string;
@@ -301,6 +315,8 @@ export interface LapinModule {
    * `pointer-events: all`), and a press on it does not start a selection, a grip or a tool in the plan underneath.
    */
   planOverlays?: ComponentType<PlanOverlayProps>[];
+  /** Drawn inside every section's and elevation's SVG, over its drawing and grips (`DrawingOverlayProps`), clicked as plan overlays are (`data-overlay-hit`). */
+  drawingOverlays?: ComponentType<DrawingOverlayProps>[];
   /**
    * Where a grip of an element this module does not own would land (a grid axis of a generated block, kept to 10 mm):
    * asked while the grip is dragged, after the owner's own `constrain`, for every module in turn; the first to answer

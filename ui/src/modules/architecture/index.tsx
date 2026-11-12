@@ -36,6 +36,7 @@ import { roomGrips, roomRefs } from './rooms';
 import { newElement, typedBy } from './NewElement';
 import { WallThumb, SlabThumb, JoineryThumb } from './Thumbs';
 import { isWallOpening, wallOpening, WallOpeningSection } from './WallOpening';
+import { OpeningDims, OpeningDimsInView } from './TempDimensions';
 import { wallOpeningGrips } from './wallOpeningGrips';
 import { CeilingSection, CeilingTypesDialog, ceiling, ceilingDiffuser, ceilingInRoom, ceilingLight, ceilingTypes } from './Ceilings';
 import { finishRoom, roomFinishSchedule, roomFinishes } from './roomFinishTools';
@@ -517,6 +518,9 @@ const architecture: LapinModule = {
       return gateGrips(n, overallOf(relatingOf({ nodes, relations }, n.id, 'IfcRelDefinesByType') ?? undefined, kinds));
     },
   },
+  // A door's, window's or wall opening's temporary dimensions (decision 511).
+  planOverlays: [OpeningDims],
+  drawingOverlays: [OpeningDimsInView],
   references: { IfcWall: wallRefs, IfcCurtainWall: pathRefs, IfcSlab: contourRefs, IfcOpeningElement: contourRefs, IfcRoof: (n) => [...contourRefs(n), ...roofOpeningRefs(n)], IfcSpace: roomRefs },
   similar: {
     IfcWall: (n) => { useUi.setState({ wallTypeId: typeOf(useSession.getState(), n.id)?.id ?? null }); activate(wall); },

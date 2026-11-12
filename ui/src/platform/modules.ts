@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
 import type * as THREE from 'three';
-import type { PlacementRequest, Vec2, Grip, GripView, LapinModule, ModuleViewDef, PlanOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
+import type { PlacementRequest, Vec2, Grip, GripView, LapinModule, ModuleViewDef, PlanOverlayProps, DrawingOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { addModuleViews, toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
@@ -42,6 +42,7 @@ export const overlays3d = (): ComponentType<{ camera: React.RefObject<THREE.Came
 
 /** What the modules draw inside the plan's SVG, in the plan's own coordinates. */
 export const planOverlays = (): ComponentType<PlanOverlayProps>[] => modules.flatMap((m) => m.planOverlays ?? []);
+export const drawingOverlays = (): ComponentType<DrawingOverlayProps>[] => modules.flatMap((m) => m.drawingOverlays ?? []);
 /** The grip's drop point as the modules' `gripSnap`s keep it (the point itself when none answers). */
 export const gripSnapped = (grip: Grip, to: Vec2, free: boolean): Vec2 => {
   const node = grip.owner ? useSession.getState().nodes.get(grip.owner) : undefined;

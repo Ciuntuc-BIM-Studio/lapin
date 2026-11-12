@@ -28,6 +28,7 @@ import { frameArg, useCad } from './cad/session';
 import type { Shape } from './cad/shapes';
 import { useLang } from '../i18n';
 import { faceLetters } from './faceMarks';
+import { setGripDrag } from './gripDrag';
 
 /** Where a model point shows on screen; `z` (the 3D view's) is the height it stands at. */
 type ToScreen = (p: Vec2, z?: number) => { x: number; y: number };
@@ -123,6 +124,12 @@ export function useGripEditor(o: GripEditorOptions) {
 
   // A view that goes while a grip is dragged takes its trace with it.
   useEffect(() => () => traceEnd('grip'), []);
+  // In 2D, the drag told to what follows it (a door's temporary dimensions, decision 511).
+  useEffect(() => {
+    if (o.zOf) return;
+    setGripDrag(drag?.moved ? { owners: drag.members.map((m) => m.owner).filter((x): x is string => !!x), key: drag.members[0]?.key ?? '', at: drag.at } : null);
+  }, [drag, o.zOf]);
+  useEffect(() => () => setGripDrag(null), []);
   // Delete over a grip of a thing of its own removes that thing (decision 280).
   useEffect(() => { setHotRemove(hover?.members.length === 1 ? hover.members[0] : null); }, [hover]);
   useEffect(() => () => setHotRemove(null), []);

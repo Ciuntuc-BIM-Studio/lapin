@@ -28,6 +28,31 @@ Pentru o distanță exactă, folosește **Mută** (<kbd>M</kbd>) sau **Copiază*
 
 ![Proprietățile unei uși](shots/door-properties.webp)
 
+### Cote temporare
+
+Selectează în plan o ușă, o fereastră sau un gol din perete și Lapin desenează **cote temporare** de-a lungul peretelui, pe fața în care vin pereții care îl întâlnesc: de la fiecare muchie a golului la cea mai apropiată față a unui perete care îi întâlnește sau îi traversează peretele (sau la capătul peretelui însuși) și, când un alt gol din același perete e mai aproape, încă una, punctată, până la acel gol. Urmăresc golul cât timp îl tragi și se arată și când pui unul cu **Ușă** sau **Fereastră**, înainte de clic.
+
+- **Dă clic pe o valoare** ca s-o tastezi, în unitatea proiectului (merg și sume ca `1200+300`), și apasă **Enter**: golul alunecă pe perete până când cota arată valoarea, celălalt capăt rămânând pe loc. Un singur pas de anulare. **Escape** o lasă cum era. Dacă golul n-ar mai încăpea (dincolo de capătul peretelui sau peste alt gol), nu se mută nimic, iar mesajul spune de ce.
+- **Dă clic pe punctul de la capătul golului** ca să măsori de la mijlocul lui în loc de muchie.
+- **Dă clic pe punctul de la celălalt capăt** ca să măsori până la următorul lucru de acolo: fața apropiată a unui perete, fața depărtată, fețele miezului (la un perete în straturi), axul; muchia apropiată a altui gol, mijlocul lui, muchia depărtată.
+- **Dă clic pe lacăt**, lângă o valoare, ca s-o păstrezi ca o cotă permanentă a planului, legată de ce se află la capetele ei, ca una desenată cu **Adnotări → Aliniată**. Nu blochează distanța: golul se poate muta în continuare.
+
+Așadar „colțul acestei ferestre la 1500 de fața acelui perete” înseamnă: selectează fereastra, dă clic pe valoarea spre perete, tastează `1500`, Enter. „Axul acestei ferestre la 2500 de axul celeilalte ferestre” înseamnă: dă clic pe punctul de la capătul ferestrei și pe cel de la capătul celeilalte ferestre până când amândouă măsoară mijloacele, apoi tastează `2500`.
+
+La un **perete curb** cotele merg pe arc, concentrice cu el, și arată lungimea de-a lungul feței pe care sunt desenate (fața exterioară e mai lungă decât cea interioară); o valoare tastată mută golul pe arc. Lacătul lor face o cotă de lungime de arc a planului, care își păstrează valoarea așa cum a fost desenată: nu urmărește peretele.
+
+Într-o **secțiune sau fațadă** care vede peretele golului din față (peretele merge de-a lungul vederii, în limita a 10°), golul selectat are cotele de-a lungul peretelui deasupra lui, până la aceiași pereți și goluri, pe fața pe care o vede vederea, și două pe lângă el, în sus: de la cota nivelului până la partea lui de jos (**înălțimea parapetului**) și până la partea de sus (**înălțimea buiandrugului**). Tastarea oricăreia mută golul în sus sau în jos; cealaltă urmează. Un perete tăiat oblic sau văzut din profil, un perete curb și o secțiune frântă sau curbă nu arată cote.
+
+![O fereastră selectată, cotată până la fața interioară a colțului și până la fereastra următoare](shots/temp-dims.webp)
+
+![După ce s-a tastat 1500: colțul ei la 1500 de fața peretelui](shots/temp-dims-typed.webp)
+
+![Axul celeilalte ferestre la 2500 de axul primei](shots/temp-dims-axes.webp)
+
+![O fereastră dintr-un perete curb, cotată pe arc, la 1000 de fața peretelui care îl traversează](shots/temp-dims-curved.webp)
+
+![O fereastră selectată în fațada de sud: de-a lungul peretelui și înălțimile parapetului și buiandrugului](shots/temp-dims-elevation.webp)
+
 ## Goluri fără ușă sau fereastră
 
 **Architecture → Wall opening** (<kbd>WO</kbd>) taie un gol simplu prin perete acolo unde dai clic: o trecere, un chepeng, un gol pentru o ușă care vine mai târziu. Lățimea, înălțimea și parapetul le pui în panoul de proprietăți înainte de clic. Selectat, i se schimbă acolo dimensiunile, locul de-a lungul peretelui și parapetul; ca o ușă, trebuie să încapă în perete și să nu atingă celelalte goluri ale lui. În IFC e un gol care taie peretele, fără nimic care să-l umple.
