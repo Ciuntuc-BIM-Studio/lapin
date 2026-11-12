@@ -137,7 +137,7 @@ export function FurnitureTypesDialog() {
         </header>
         <div className="dialog-body split">
           <div>
-            <div className="row" style={{ gap: 6 }}>
+            <div className="row furniture-new" style={{ gap: 6 }}>
               <select value={newKind} data-field="furniture-new-kind" onChange={(e) => setNewKind(e.target.value)}>
                 {groups.map((g) => <optgroup key={g} label={g}>{kinds.filter((k) => k.group === g).map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}</optgroup>)}
               </select>
@@ -181,7 +181,7 @@ export function FurnitureTypesDialog() {
           </div>
           {type && kind ? (
             <div className="type-edit furniture-edit" data-testid="furniture-type-edit">
-              <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+              <div className="row furniture-edit-head" style={{ gap: 6, alignItems: 'center' }}>
                 <span className="eyebrow">{kind.label}</span>
                 <span className="grow" />
                 <button type="button" className="btn small" data-action="furniture-save-library" onClick={() => saveTypeToLibrary(type.id)} title="Keep this type in your own library, to use it in other projects"><BookmarkPlus size={13} /> Save to my library…</button>

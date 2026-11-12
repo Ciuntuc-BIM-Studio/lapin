@@ -1903,6 +1903,13 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 @media (max-width: 760px) { .furniture-edit-grid { grid-template-columns: 1fr; } }
 .furniture-edit dl.fields dd input:not([type=checkbox]), .furniture-edit dl.fields dd select { width: 100%; }
 .dialog[data-dialog=furniture-types] .type-list .tree-item { white-space: nowrap; }
+/* The dialog's headers wrap rather than run over their neighbour: the list's selectors and buttons in a 240px column, the kind's label and its buttons above the editor (any language). */
+.dialog[data-dialog=furniture-types] .furniture-new { flex-wrap: wrap; }
+.dialog[data-dialog=furniture-types] .furniture-new select { flex: 1 1 100%; min-width: 0; max-width: 100%; }
+.dialog[data-dialog=furniture-types] .furniture-new .btn, .dialog[data-dialog=furniture-types] .furniture-edit-head .btn { white-space: nowrap; }
+.dialog[data-dialog=furniture-types] .furniture-edit-head { flex-wrap: wrap; }
+.dialog[data-dialog=furniture-types] .furniture-edit-head .eyebrow { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.dialog[data-dialog=furniture-types] .furniture-edit .row { flex-wrap: wrap; }
 .furniture-edit dl.fields dd input:not([type=checkbox]):not(.num) { text-align: left; }
 
 /* The quick tools hidden by their own button: a small handle where they were brings them back (app/bars.ts). */

@@ -7725,6 +7725,66 @@ export const scenes = [
       await t.cmd('standards.options', { units: 'mm' });
     },
   },
+  {
+    // The ribbon's buttons that open a dialog really open it, clicked as a user does (the band is wider than the window, so the button
+    // is brought into view first): Site → Entourage kinds…, Interior → Furniture types and My furniture…, at two window sizes; and the
+    // Furniture types dialog's headers never run over one another, in a long language too.
+    id: 'ribbon-dialogs',
+    async run(t) {
+      await t.fresh();
+      await t.cmd('furniture.createType', { kind: 'casework', preset: 'sideboard', name: 'Oak sideboard' });
+      const opens = async (tab, label, dialog) => {
+        await t.page.locator(`[data-tab=${tab}]`).click();
+        await t.wait(300);
+        const b = t.page.locator('.band .tool', { hasText: label }).first();
+        await b.scrollIntoViewIfNeeded();
+        await t.wait(200);
+        const box = await b.boundingBox();
+        const vw = t.page.viewportSize().width;
+        t.expect(box && box.x >= 0 && box.x + box.width <= vw, `${label} is on the screen once brought into view (${JSON.stringify(box)})`);
+        await t.page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await t.page.waitForSelector(dialog, { timeout: 10_000 });
+        t.expect(true, `${label} opened its dialog`);
+      };
+      const close = async () => { await t.ui({ dialog: null }); await t.wait(300); };
+      for (const [w, h] of [[1536, 864], [1920, 1080]]) {
+        await t.page.setViewportSize({ width: w, height: h });
+        await t.wait(300);
+        await opens('site', /Entourage kinds/, '[data-testid=entourage-kinds]');
+        await close();
+        await opens('interior', /My furniture/, '[data-dialog=furniture-library]');
+        await close();
+        await opens('interior', /Furniture types/, '[data-dialog=furniture-types]');
+        await t.page.locator('.dialog [data-furniture-type]').filter({ hasText: 'Oak sideboard' }).first().click();
+        await t.wait(800);
+        for (const lang of ['en', 'de', 'pl', 'ro', 'fr']) {
+          for (const width of [w, 1100]) {
+            await t.page.setViewportSize({ width, height: h });
+            await t.page.evaluate(async (l) => (await import('/src/i18n/index.ts')).setLang(l), lang);
+            await t.wait(300);
+            const bad = await t.page.evaluate(() => {
+              const dlg = document.querySelector('.dialog[data-dialog=furniture-types]');
+              const out = [];
+              for (const head of dlg.querySelectorAll('.furniture-new, .furniture-edit-head')) {
+                const kids = [...head.children].filter((e) => e.getBoundingClientRect().width > 0);
+                const hr = head.parentElement.getBoundingClientRect();
+                for (const k of kids) { const r = k.getBoundingClientRect(); if (r.right > hr.right + 1) out.push(`${head.className}: ${k.textContent.trim().slice(0, 20)} runs past its column`); }
+                for (let i = 0; i < kids.length; i++) for (let j = i + 1; j < kids.length; j++) {
+                  const a = kids[i].getBoundingClientRect(), b = kids[j].getBoundingClientRect();
+                  if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) out.push(`${head.className}: "${kids[i].textContent.trim().slice(0, 20)}" overlaps "${kids[j].textContent.trim().slice(0, 20)}"`);
+                }
+              }
+              return out;
+            });
+            t.expect(bad.length === 0, `the Furniture types headers in ${lang} at ${width}: ${bad.join('; ')}`);
+          }
+        }
+        await t.page.setViewportSize({ width: w, height: h });
+        await t.page.evaluate(async () => (await import('/src/i18n/index.ts')).setLang('en'));
+        await close();
+      }
+    },
+  },
 ];
 
 /** A zip of stored entries (name, text), enough for a BCF file: the local headers, the central directory and its end, with CRC-32. */
