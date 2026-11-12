@@ -9,6 +9,7 @@
   "beam": [["rect", {"x": 3, "y": 8, "width": 18, "height": 8, "strokeDasharray": "3 2"}], ["path", {"d": "M3 12h18", "strokeDasharray": "5 2 1 2"}]],
   "stripFooting": [["path", {"d": "M3 20h18v-5h-5V4h-8v11H3z"}], ["path", {"d": "M5 20l3-5M19 20l-3-5"}]],
   "padFooting": [["path", {"d": "M3 20h18v-4h-4v-4h-2V4h-6v8H7v4H3z"}], ["path", {"d": "M5 20l2-4M19 20l-2-4"}]],
+  "padsUnderColumns": [["path", {"d": "M2 20h7v-4H2zM15 20h7v-4h-7z"}], ["path", {"d": "M4.5 16V4M6.5 16V4M17.5 16V4M19.5 16V4"}], ["path", {"d": "M12 6v8M9.5 11.5L12 14l2.5-2.5"}]],
   "stair": [["rect", {"x": 3, "y": 3, "width": 18, "height": 18}], ["path", {"d": "M3 7h18M3 11h18M3 15h18M3 19h18"}], ["path", {"d": "M12 20V4"}], ["path", {"d": "M9 7l3-3 3 3"}]],
   "ramp": [["path", {"d": "M3 19h18V8z"}], ["path", {"d": "M8 15.6l7-3.4"}], ["path", {"d": "M12.6 11.2l2.4 1-1 2.3"}]],
   "room": [["path", {"d": "M4 4h16v9h-7v7H4z"}], ["path", {"d": "M8 9h3"}]],

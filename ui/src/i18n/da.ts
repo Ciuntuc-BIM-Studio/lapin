@@ -3,6 +3,17 @@
 import type { Language } from './index';
 
 export const DA: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "Punktfundamenter under søjler",
+  "At the base of the column": "Ved søjlens fod",
+  "Its own top: it does not follow a column.": "Egen overkant: følger ikke en søjle.",
+  "No column over it: its type's bottom under its level.": "Ingen søjle over den: typens underkant under dens etage.",
+  "Where its IFC file puts it.": "Hvor IFC-filen placerer den.",
+  "An elevation of its own for its top: it no longer follows the column": "En egen kote for overkanten: følger ikke længere søjlen",
+  "At the column's base": "Ved søjlens fod",
+  "Pad footing level": "Punktfundamentets kote",
+  "Every column has a pad footing under it already.": "Hver søjle har allerede et punktfundament under sig.",
+  "Select the columns to put pad footings under.": "Vælg de søjler, der skal have punktfundamenter under sig.",
   // Decision 500: the partial structure display
   "Entire model": "Hele modellen",
   "Every layer of walls, floors and roofs": "Alle lag i vægge, dæk og tage",

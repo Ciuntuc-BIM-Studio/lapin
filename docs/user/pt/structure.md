@@ -18,7 +18,8 @@ A guia **Estrutura** reúne a estrutura e as fundações.
 
 - **Sapata corrida** (<kbd>SF</kbd>) passa sob as paredes. As suas camadas externas são cortadas em meia-esquadria nos cantos.
 - **Sapata corrida curva** (<kbd>CF</kbd>) segue um arco.
-- **Sapata isolada** (<kbd>PF</kbd>) fica sob um pilar.
+- **Sapata isolada** (<kbd>PF</kbd>): clique sob um pilar. Enquanto a ferramenta está ativa, prende-se aos centros dos pilares do nível da planta e do nível acima.
+- **Sapatas isoladas sob pilares** põe uma sapata isolada sob cada pilar selecionado que não tem nenhuma, no seu centro e rodada como ele. Sem pilares selecionados, toma os pilares do nível da planta (numa planta de fundações, os do nível acima).
 
 Desenhe as fundações no nível **Fundações**, ou dê a elas uma planta própria.
 
@@ -28,7 +29,13 @@ Desenhe as fundações no nível **Fundações**, ou dê a elas uma planta próp
 
 **Nas plantas.** Uma sapata fica sob o piso, por isso uma planta desenha-a a tracejado na planta do nível em que assenta, como a planta de um edifício mostra o que está por baixo. Para a ver cortada e vista, use uma **planta de fundações**: no navegador do projeto, o **+** ao lado de **Plantas** cria uma para o nível ativo (corte 0,50 m abaixo, vista 2,50 m para baixo).
 
-**Desenhar numa planta de fundações.** Mostra também o nível de baixo, e o que desenhar aí com uma ferramenta de piso, parede, pilar ou viga fica nesse nível (as Fundações de um projeto novo, a −1,50); as ferramentas de sapatas mantêm o nível da planta, sendo a base de uma sapata a do seu tipo abaixo dele.
+**Desenhar numa planta de fundações.** Mostra também o nível de baixo, e o que desenhar aí com uma ferramenta de piso, parede, pilar ou viga fica nesse nível (as Fundações de um projeto novo, a −1,50); as ferramentas de sapatas mantêm o nível da planta. Uma sapata isolada desenhada aí sob um pilar sobe até à base do pilar; a base de uma sapata corrida é a do seu tipo abaixo do nível.
+
+**Uma sapata isolada sobe até ao seu pilar.** Uma sapata isolada cujo ponto cai na secção de um pilar (ao milímetro) tem o topo na base do pilar: o nível do pilar mais o seu **Deslocamento da base**, os degraus por baixo. Mova o pilar, mude o seu nível ou o deslocamento da base, e a sapata segue-o. Sob pilares assentes uns nos outros segue o mais baixo; de dois igualmente baixos, o de centro mais próximo. Uma sapata sem pilar por cima fica no seu nível, com o **Fundo** do seu tipo por baixo. **Sapatas isoladas sob pilares** põe cada sapata no nível mais alto em ou abaixo da sua base (as Fundações de um projeto novo), senão no mais baixo. Uma sapata isolada importada de um ficheiro IFC fica onde o ficheiro a coloca.
+
+Em **Propriedades** uma sapata isolada mostra o seu **Superior** e **Inferior** como cotas e o pilar que segue. Escreva um **Superior** para lhe dar um próprio: deixa de seguir o pilar. **Na base do pilar** volta a ligá-la.
+
+![O nível de uma sapata isolada em Propriedades: na base do seu pilar](shots/structure-pad-level.webp)
 
 ![Pilares, vigas e sapatas isoladas em 3D](shots/structure-3d.webp)
 

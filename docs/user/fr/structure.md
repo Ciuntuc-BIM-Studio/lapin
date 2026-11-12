@@ -18,7 +18,8 @@ L’onglet **Structure** regroupe l’ossature et les fondations.
 
 - **Semelle filante** (<kbd>SF</kbd>) passe sous les murs. Ses couches extérieures sont coupées en onglet aux angles.
 - **Semelle filante courbe** (<kbd>CF</kbd>) suit un arc.
-- **Semelle isolée** (<kbd>PF</kbd>) se place sous un poteau.
+- **Semelle isolée** (<kbd>PF</kbd>) : cliquez sous un poteau. Tant que l'outil est actif, il s'accroche aux centres des poteaux du niveau du plan et du niveau au-dessus.
+- **Semelles isolées sous poteaux** pose une semelle isolée sous chaque poteau sélectionné qui n'en a pas, en son centre et tournée comme lui. Sans poteau sélectionné, il prend les poteaux du niveau du plan (dans un plan de fondations, ceux du niveau au-dessus).
 
 Dessinez les fondations sur le niveau **Foundations**, ou donnez-leur un plan à elles.
 
@@ -28,7 +29,13 @@ Dessinez les fondations sur le niveau **Foundations**, ou donnez-leur un plan à
 
 **Dans les plans.** Une semelle est sous le plancher, donc un plan la dessine en tirets dans le plan du niveau où elle se trouve, comme le plan d'un bâtiment montre ce qui est dessous. Pour la voir coupée et vue, utilisez un **plan de fondations** : dans le navigateur de projet, le **+** à côté de **Vues en plan** en crée un pour le niveau actif (coupe 0,50 m sous lui, vue de 2,50 m vers le bas).
 
-**Dessiner dans un plan de fondations.** Il montre aussi le niveau en dessous, et ce que vous y dessinez avec un outil de dalle, de mur, de poteau ou de poutre va sur ce niveau (les Fondations d'un nouveau projet, à −1,50) ; les outils de semelles gardent le niveau du plan, le dessous d'une semelle étant celui de son type sous lui.
+**Dessiner dans un plan de fondations.** Il montre aussi le niveau en dessous, et ce que vous y dessinez avec un outil de dalle, de mur, de poteau ou de poutre va sur ce niveau (les Fondations d'un nouveau projet, à −1,50) ; les outils de semelles gardent le niveau du plan. Une semelle isolée dessinée là sous un poteau monte jusqu'à la base du poteau ; le dessous d'une semelle filante est celui de son type sous le niveau.
+
+**Une semelle isolée monte jusqu'à son poteau.** Une semelle isolée dont le point tombe dans la section d'un poteau (au millimètre) a son dessus à la base du poteau : le niveau du poteau plus son **Décalage de base**, les gradins dessous. Déplacez le poteau, changez son niveau ou son décalage de base, et la semelle suit. Sous des poteaux posés les uns sur les autres, elle suit le plus bas ; de deux aussi bas, celui dont le centre est le plus proche. Une semelle sans poteau au-dessus reste sur son niveau, le **Fond** de son type dessous. **Semelles isolées sous poteaux** met chaque semelle dans le niveau le plus haut à ou sous son dessous (les Fondations d'un nouveau projet), sinon dans le plus bas. Une semelle isolée importée d'un fichier IFC reste là où le fichier la place.
+
+Dans **Propriétés** une semelle isolée montre son **Haut** et son **Bas** en cotes et le poteau qu'elle suit. Tapez un **Haut** pour lui donner le sien : elle ne suit plus le poteau. **À la base du poteau** la relie de nouveau.
+
+![Le niveau d'une semelle isolée dans Propriétés : à la base de son poteau](shots/structure-pad-level.webp)
 
 ![Poteaux, poutres et semelles isolées en 3D](shots/structure-3d.webp)
 

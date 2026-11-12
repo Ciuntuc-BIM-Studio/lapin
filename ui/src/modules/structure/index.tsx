@@ -1,7 +1,8 @@
 /** Structure: columns, beams, strip and pad foundations (the engine's structure module). */
 
 import { ArrowLeftRight, CornerDownRight, Grid3x3, Layers3, Slash } from 'lucide-react';
-import { BeamIcon, ColumnIcon, CurvedBeamIcon, PadFootingIcon, StripFootingIcon } from '../../icons';
+import { BeamIcon, ColumnIcon, CurvedBeamIcon, PadFootingIcon, PadsUnderColumnsIcon, StripFootingIcon } from '../../icons';
+import { columnSnapPoints, underColumnsArgs } from './padLevel';
 import type { Grip, LapinModule, RefLine, ToolDef } from '../../platform/module';
 import { flipAcross, pathGrips, pathRef, pt } from '../../viewport/gripKit';
 import { arcOf } from '../../viewport/arc';
@@ -44,10 +45,20 @@ const curvedStrip: ToolDef = {
   gesture: { kind: 'threePoints', arc: true },
   complete: async ({ points: [a, b, p] }, ctx) => { await ctx.execute('structure.addStripFooting', { storeyId: ctx.storeyId, x1: a.x, y1: a.y, x2: b.x, y2: b.y, x3: p.x, y3: p.y, ...stripArgs(useSession.getState().nodes) }); },
 };
+/** A pad footing: under a column it rises to the column's base (decision 507); it snaps to the columns of the storey above too, so a foundation plan puts it right under one. */
 const pad: ToolDef = {
   id: 'structure.pad', label: 'Pad footing', icon: PadFootingIcon, shortcut: 'PF',
   gesture: { kind: 'point' },
+  snapPoints: (storeyId) => columnSnapPoints(useSession.getState(), storeyId),
   complete: async ({ points: [p] }, ctx) => { await ctx.execute('structure.addPadFooting', { storeyId: ctx.storeyId, x: p.x, y: p.y }); },
+};
+/** A pad footing under each selected column (else each of the plan's storey, or of the storey above it) that has none, in the infrastructure storey. */
+const padsUnderColumns: ToolDef = {
+  id: 'structure.padsUnderColumns', label: 'Pad footings under columns', icon: PadsUnderColumnsIcon,
+  run: () => void ensureStorey().then((storeyId) => {
+    const args = underColumnsArgs(useSession.getState(), useUi.getState().selected, storeyId);
+    if (args) void execute('structure.padsUnderColumns', args);
+  }),
 };
 /** A column on every grid crossing of the storey (none twice). */
 const atGrid: ToolDef = {
@@ -105,7 +116,7 @@ const structure: LapinModule = {
     id: 'structure', label: 'Structure', order: 30, include: ['modify'],
     groups: [
       { label: 'Frame', tools: [column, beam], small: [curvedBeam, atGrid] },
-      { label: 'Foundation', tools: [strip, pad], small: [curvedStrip] },
+      { label: 'Foundation', tools: [strip, pad, padsUnderColumns], small: [curvedStrip] },
       { label: 'Corners', tools: [mitre, butt, swap] },
       { label: 'Types', tools: [types] },
     ],

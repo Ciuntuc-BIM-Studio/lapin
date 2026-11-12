@@ -3,6 +3,17 @@
 import type { Language } from './index';
 
 export const FR: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "Semelles isolées sous poteaux",
+  "At the base of the column": "À la base du poteau",
+  "Its own top: it does not follow a column.": "Son propre niveau supérieur : elle ne suit pas de poteau.",
+  "No column over it: its type's bottom under its level.": "Pas de poteau au-dessus : le fond de son type sous son niveau.",
+  "Where its IFC file puts it.": "Là où son fichier IFC la place.",
+  "An elevation of its own for its top: it no longer follows the column": "Une cote propre pour son dessus : elle ne suit plus le poteau",
+  "At the column's base": "À la base du poteau",
+  "Pad footing level": "Niveau de la semelle isolée",
+  "Every column has a pad footing under it already.": "Chaque poteau a déjà une semelle isolée sous lui.",
+  "Select the columns to put pad footings under.": "Sélectionnez les poteaux sous lesquels poser des semelles isolées.",
   // Decision 500: the partial structure display
   "Entire model": "Modèle entier",
   "Every layer of walls, floors and roofs": "Toutes les couches des murs, des dalles et des toitures",

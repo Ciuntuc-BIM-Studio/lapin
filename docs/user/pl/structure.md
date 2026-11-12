@@ -18,7 +18,8 @@ Karta **Konstrukcja** zawiera szkielet i fundamenty.
 
 - **Ława fundamentowa** (<kbd>SF</kbd>) biegnie pod ścianami. Jej warstwy zewnętrzne są łączone na narożnikach na ucios.
 - **Ława fundamentowa łukowa** (<kbd>CF</kbd>) biegnie po łuku.
-- **Stopa fundamentowa** (<kbd>PF</kbd>) jest umieszczana pod słupem.
+- **Stopa fundamentowa** (<kbd>PF</kbd>): kliknij pod słupem. Gdy narzędzie jest włączone, przyciąga do środków słupów poziomu rzutu i poziomu nad nim.
+- **Stopy fundamentowe pod słupami** stawia stopę pod każdym zaznaczonym słupem, który jej nie ma, w jego środku i obróconą jak on. Bez zaznaczonych słupów bierze słupy poziomu rzutu (w rzucie fundamentów te z poziomu nad nim).
 
 Rysuj fundamenty na poziomie **Fundamenty** albo daj im osobny rzut.
 
@@ -28,7 +29,13 @@ Rysuj fundamenty na poziomie **Fundamenty** albo daj im osobny rzut.
 
 **W rzutach.** Ława leży pod stropem, więc rzut rysuje ją linią przerywaną w rzucie poziomu, na którym stoi, jak rzut budynku pokazuje to, co jest pod nim. Aby zobaczyć ją przeciętą i widzianą, użyj **rzutu fundamentów**: w przeglądarce projektu **+** obok **Rzuty** tworzy go dla aktywnego poziomu (cięcie 0,50 m pod nim, widok 2,50 m w dół).
 
-**Rysowanie w rzucie fundamentów.** Pokazuje też poziom pod nim, a to, co tam narysujesz narzędziem stropu, ściany, słupa lub belki, trafia na ten poziom (Fundamenty nowego projektu, na −1,50); narzędzia ław zachowują poziom rzutu, a spód ławy jest spodem jej typu pod nim.
+**Rysowanie w rzucie fundamentów.** Pokazuje też poziom pod nim, a to, co tam narysujesz narzędziem stropu, ściany, słupa lub belki, trafia na ten poziom (Fundamenty nowego projektu, na −1,50); narzędzia fundamentów zachowują poziom rzutu. Stopa fundamentowa narysowana tam pod słupem podnosi się do podstawy słupa; spód ławy jest spodem jej typu pod poziomem.
+
+**Stopa fundamentowa podnosi się do swojego słupa.** Stopa, której punkt leży w przekroju słupa (z dokładnością do milimetra), ma wierzch u podstawy słupa: poziom słupa plus jego **Odsunięcie podstawy**, stopnie pod nim. Przesuń słup, zmień jego poziom lub odsunięcie podstawy, a stopa podąży za nim. Pod słupami stojącymi jeden na drugim podąża za najniższym; z dwóch równie niskich za tym, którego środek jest bliżej. Stopa bez słupa nad nią stoi na swoim poziomie, ze **Spodem** swojego typu pod nim. **Stopy fundamentowe pod słupami** umieszcza każdą stopę na najwyższym poziomie na lub pod jej spodem (Fundamenty nowego projektu), inaczej na najniższym. Stopa zaimportowana z pliku IFC zostaje tam, gdzie umieszcza ją plik.
+
+We **Właściwościach** stopa pokazuje **Górę** i **Dół** jako rzędne oraz słup, za którym podąża. Wpisz **Górę**, by nadać jej własną: przestaje podążać za słupem. **U podstawy słupa** wiąże ją ponownie.
+
+![Poziom stopy fundamentowej we Właściwościach: u podstawy jej słupa](shots/structure-pad-level.webp)
 
 ![Słupy, belki i stopy fundamentowe w 3D](shots/structure-3d.webp)
 

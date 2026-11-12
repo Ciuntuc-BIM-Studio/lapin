@@ -14,7 +14,8 @@ namespace Lapin.Structure;
 /// profile (a rectangle in its plane, else a reference), its axis from the
 /// sweep; or swept vertically, its axis along the long side of the footprint;
 /// of a box's prisms the one whose section is its file type's, else the
-/// longest. A footing: a vertical prism on a rectangle, one step. Each keeps
+/// longest. A footing: a vertical prism on a rectangle, one step, where the file
+/// puts it (it does not follow a column over it, decision 507). Each keeps
 /// the file's GlobalId as its id. The columns and beams of one file type share
 /// a native type while their sections are the same (a column's rectangle
 /// turned a quarter is the same); one of another section takes a type of its
@@ -212,7 +213,7 @@ public sealed class ForeignMembers : IIfcRecognizer
         var step = new PadStep(Round(r.Width), Round(r.Depth), height);
         var type = Type(edit, ctx, IfcClass.FootingType, e, $"pad:{step.Length}:{step.Width}:{step.Height}:{bottom}", $"PF {step.Length * 100:0}×{step.Width * 100:0}",
             name => PadFootings.CreateType(edit, name, [step], bottom, e.Material ?? "Reinforced concrete"));
-        var footing = new Entity(e.GlobalId, IfcClass.Footing, e.Name ?? type.Name, new JsonObject { ["at"] = Place.Json2(r.Centre), ["rotation"] = Math.Round(r.RotationDeg, 3) }, "PAD_FOOTING");
+        var footing = new Entity(e.GlobalId, IfcClass.Footing, e.Name ?? type.Name, new JsonObject { ["at"] = Place.Json2(r.Centre), ["rotation"] = Math.Round(r.RotationDeg, 3), [PadFootings.FollowKey] = false }, "PAD_FOOTING");
         edit.Add(footing);
         Spatial.Contain(edit, storey.Id, footing.Id);
         edit.Relate(IfcClass.RelDefinesByType, type.Id, footing.Id);

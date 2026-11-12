@@ -3,6 +3,17 @@
 import type { Language } from './index';
 
 export const LO: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "ຖານຮາກດ່ຽວໃຕ້ເສົາ",
+  "At the base of the column": "ຢູ່ຖານຂອງເສົາ",
+  "Its own top: it does not follow a column.": "ລະດັບເທິງຂອງມັນເອງ: ບໍ່ຕາມເສົາ.",
+  "No column over it: its type's bottom under its level.": "ບໍ່ມີເສົາຢູ່ເທິງ: ລຸ່ມຕາມປະເພດຂອງມັນ ໃຕ້ລະດັບຂອງມັນ.",
+  "Where its IFC file puts it.": "ບ່ອນທີ່ໄຟລ໌ IFC ວາງມັນ.",
+  "An elevation of its own for its top: it no longer follows the column": "ລະດັບຂອງມັນເອງສຳລັບດ້ານເທິງ: ບໍ່ຕາມເສົາອີກ",
+  "At the column's base": "ຢູ່ຖານຂອງເສົາ",
+  "Pad footing level": "ລະດັບຂອງຖານຮາກດ່ຽວ",
+  "Every column has a pad footing under it already.": "ທຸກເສົາມີຖານຮາກດ່ຽວຢູ່ໃຕ້ແລ້ວ.",
+  "Select the columns to put pad footings under.": "ເລືອກເສົາທີ່ຈະວາງຖານຮາກດ່ຽວຢູ່ໃຕ້.",
   // Decision 500: the partial structure display
   "Entire model": "ແບບຈຳລອງທັງໝົດ",
   "Every layer of walls, floors and roofs": "ທຸກຊັ້ນຂອງຝາ, ພື້ນ ແລະ ຫຼັງຄາ",

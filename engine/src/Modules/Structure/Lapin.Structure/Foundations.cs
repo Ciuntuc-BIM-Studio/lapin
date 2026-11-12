@@ -558,11 +558,105 @@ public static class PadFootings
         foreach (var s in Steps(type)) { yield return (s, z); z += s.Height; }
     }
 
+    // ------------------------------------------------------------ its level (decision 507)
+
+    /// <summary>The attribute holding a pad's own top, an absolute elevation (m): set, the pad stands there whatever is over it.</summary>
+    public const string TopKey = "top";
+    /// <summary>The attribute saying whether a pad follows the column over it; missing: it does unless it came from an IFC file.</summary>
+    public const string FollowKey = "followColumn";
+    /// <summary>How far (m) from a pad's point a column's point may be for the pad to be under it: no column is wider.</summary>
+    public const double Reach = 3.0;
+    /// <summary>A point this near (m) a column's outline is in it (a pad put on the column's edge by a snap).</summary>
+    public const double Edge = 1e-3;
+    /// <summary>Two column bases this near (m) are as low: the one whose point is nearest the pad's is taken, then the first by id.</summary>
+    const double SameBase = 1e-6;
+
+    /// <summary>Where a pad's top and bottom are (absolute, m), by which rule ("column", "own", "storey"), and the column it follows.</summary>
+    public sealed record PadLevel(double Top, double Bottom, string Rule, Entity? Column);
+
+    /// <summary>The steps' heights together.</summary>
+    public static double Height(Entity type) => Steps(type).Sum(s => s.Height);
+
+    /// <summary>Whether a pad follows the column over it: as it says, else unless it was recognised from an IFC file (an import reproduces the file).</summary>
+    public static bool Follows(Entity pad) =>
+        pad.Attrs[FollowKey] is JsonValue v && v.TryGetValue<bool>(out var b) ? b : pad.Attrs["imported"] == null;
+
+    /// <summary>A column's base: its storey's elevation and its base offset.</summary>
+    public static double ColumnBase(IModelView m, Entity column) => Place.Elevation(m, column) + column.Num("baseOffset");
+
+    /// <summary>A column's footprint: its type's section outline, turned and placed on its point.</summary>
+    public static Vec2[] ColumnFootprint(IModelView m, Entity column) =>
+        Place.Placed((Section.From(Place.TypeOf(m, column.Id)?.Attrs["section"]) ?? Section.Rectangle(0.3, 0.3)).Outline(), Place.Point(column), column.Num("rotation"));
+
+    /// <summary>
+    /// The column a point is under: of the columns (any storey) whose footprint holds the point (within <see cref="Edge"/>),
+    /// the one whose base is lowest; as low (within 1 µm), the one whose point is nearest, then the first by id. Null when none.
+    /// </summary>
+    public static Entity? ColumnAt(IModelView m, Vec2 p)
+    {
+        Entity? best = null;
+        var (bestBase, bestD) = (double.PositiveInfinity, double.PositiveInfinity);
+        foreach (var c in m.OfClass(IfcClass.Column))
+        {
+            var d = (Place.Point(c) - p).Length;
+            if (d > Reach || !Holds(ColumnFootprint(m, c), p)) continue;
+            var b = ColumnBase(m, c);
+            var lower = b < bestBase - SameBase;
+            var tie = !lower && Math.Abs(b - bestBase) <= SameBase && (d < bestD - 1e-9 || Math.Abs(d - bestD) <= 1e-9 && string.CompareOrdinal(c.Id, best!.Id) < 0);
+            if (lower || tie) (best, bestBase, bestD) = (c, b, d);
+        }
+        return best;
+    }
+
+    /// <summary>Whether the outline holds the point, or the point lies within <see cref="Edge"/> of it.</summary>
+    static bool Holds(IReadOnlyList<Vec2> outline, Vec2 p)
+    {
+        if (Polygon2.Inside([outline.ToArray()], p)) return true;
+        for (var i = 0; i < outline.Count; i++)
+        {
+            var (a, b) = (outline[i], outline[(i + 1) % outline.Count]);
+            var ab = b - a;
+            var l2 = Vec2.Dot(ab, ab);
+            var t = l2 < 1e-18 ? 0 : Math.Clamp(Vec2.Dot(p - a, ab) / l2, 0, 1);
+            if ((a + ab * t - p).Length <= Edge) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// A pad's level, worked out on every ask (never stored): its own top when it has one; else, following a column, its top
+    /// on the base of the column it is under (<see cref="ColumnAt"/>); else its storey's elevation (and offset) with its type's
+    /// bottom under it. Its bottom is its top less its steps' heights.
+    /// </summary>
+    public static PadLevel? Level(Entity pad, IModelView m)
+    {
+        if (Place.TypeOf(m, pad.Id) is not { } type || !IsPad(type)) return null;
+        var h = Height(type);
+        if (pad.NumOrNull(TopKey) is { } top) return new(top, top - h, "own", null);
+        if (Follows(pad) && ColumnAt(m, Place.Point(pad)) is { } column)
+        {
+            var b = ColumnBase(m, column);
+            return new(b, b - h, "column", column);
+        }
+        var bottom = Place.Elevation(m, pad) + type.Num("bottom", -1.8);
+        return new(bottom + h, bottom, "storey", null);
+    }
+
+    /// <summary>
+    /// The storey a pad whose bottom is at <paramref name="bottom"/> goes in: the highest whose elevation is at or below it
+    /// (within 1 mm), else the lowest. Null without storeys.
+    /// </summary>
+    public static Entity? InfrastructureStorey(IModelView m, double bottom)
+    {
+        var all = Spatial.Storeys(m).ToList();
+        return all.LastOrDefault(s => s.Num("elevation") <= bottom + 1e-3) ?? all.FirstOrDefault();
+    }
+
     public static Solid? Envelope(Entity pad, IModelView m)
     {
         if (Place.TypeOf(m, pad.Id) is not { } type || !IsPad(type)) return null;
         var steps = Steps(type);
-        var bottom = Place.Elevation(m, pad) + type.Num("bottom", -1.8);
+        var bottom = Level(pad, m)!.Bottom;
         // The steps' box: as long as the longest and as wide as the widest (a long low step under a square upper one).
         var (length, width) = (steps.Max(s => s.Length), steps.Max(s => s.Width));
         return Prism.ExtrudeFootprint(Place.Placed(Section.Rectangle(length, width).Outline(), Place.Point(pad), pad.Num("rotation")), bottom, steps.Sum(s => s.Height), "pad");
@@ -576,7 +670,7 @@ public static class PadFootings
         var parts = new List<GeometryPart>();
         var plan = new List<PlanItem>();
         var i = 0;
-        foreach (var (step, z) in Stack(type, Place.Elevation(m, pad) + type.Num("bottom", -1.8)))
+        foreach (var (step, z) in Stack(type, Level(pad, m)!.Bottom))
         {
             var fp = Place.Placed(Section.Rectangle(step.Length, step.Width).Outline(), at, pad.Num("rotation"));
             if (Prism.ExtrudeFootprint(fp, z, step.Height, "step") is { } solid) parts.Add(new GeometryPart($"Step {i + 1}", Materials.ColorOf(m, concrete), solid, concrete, $"step:{i}"));

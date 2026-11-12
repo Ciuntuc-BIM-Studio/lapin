@@ -18,7 +18,8 @@ La scheda **Struttura** contiene il telaio e le fondazioni.
 
 - **Trave di fondazione** (<kbd>SF</kbd>) corre sotto i muri. I suoi strati esterni sono tagliati a quartabuono agli angoli.
 - **Trave di fondazione curva** (<kbd>CF</kbd>) segue un arco.
-- **Plinto** (<kbd>PF</kbd>) va sotto un pilastro.
+- **Plinto** (<kbd>PF</kbd>): fai clic sotto un pilastro. Finché lo strumento è attivo, aggancia i centri dei pilastri del livello della pianta e del livello sopra.
+- **Plinti sotto i pilastri** mette un plinto sotto ogni pilastro selezionato che non ne ha, nel suo centro e ruotato come esso. Senza pilastri selezionati, prende i pilastri del livello della pianta (in una pianta delle fondazioni, quelli del livello sopra).
 
 Disegna le fondazioni sul livello **Foundations**, oppure dai loro una pianta propria.
 
@@ -28,7 +29,13 @@ Disegna le fondazioni sul livello **Foundations**, oppure dai loro una pianta pr
 
 **Nelle piante.** Una fondazione sta sotto il solaio, quindi una pianta la disegna tratteggiata nella pianta del livello su cui poggia, come la pianta di un edificio mostra ciò che c'è sotto. Per vederla tagliata e vista, usa una **pianta delle fondazioni**: nel browser di progetto il **+** accanto a **Piante** ne crea una per il livello attivo (taglio 0,50 m sotto, vista 2,50 m verso il basso).
 
-**Disegnare in una pianta delle fondazioni.** Mostra anche il livello sotto, e ciò che vi disegni con uno strumento per solaio, muro, pilastro o trave va su quel livello (le Fondazioni di un nuovo progetto, a −1,50); gli strumenti per le fondazioni mantengono il livello della pianta, il fondo di una fondazione essendo quello del suo tipo sotto di esso.
+**Disegnare in una pianta delle fondazioni.** Mostra anche il livello sotto, e ciò che vi disegni con uno strumento per solaio, muro, pilastro o trave va su quel livello (le Fondazioni di un nuovo progetto, a −1,50); gli strumenti per le fondazioni mantengono il livello della pianta. Un plinto disegnato lì sotto un pilastro sale alla base del pilastro; il fondo di una trave di fondazione è quello del suo tipo sotto il livello.
+
+**Un plinto sale al suo pilastro.** Un plinto il cui punto cade nella sezione di un pilastro (al millimetro) ha la sommità alla base del pilastro: il livello del pilastro più il suo **Offset di base**, i gradoni sotto. Sposta il pilastro, cambiane il livello o l'offset di base, e il plinto lo segue. Sotto pilastri posati uno sull'altro segue il più basso; di due ugualmente bassi, quello col centro più vicino. Un plinto senza pilastro sopra resta sul suo livello, col **Fondo** del suo tipo sotto. **Plinti sotto i pilastri** mette ogni plinto nel livello più alto a o sotto il suo fondo (le Fondazioni di un nuovo progetto), altrimenti nel più basso. Un plinto importato da un file IFC resta dove lo mette il file.
+
+In **Proprietà** un plinto mostra **Superiore** e **Inferiore** come quote e il pilastro che segue. Scrivi un **Superiore** per dargli una quota propria: non segue più il pilastro. **Alla base del pilastro** lo ricollega.
+
+![La quota di un plinto in Proprietà: alla base del suo pilastro](shots/structure-pad-level.webp)
 
 ![Pilastri, travi e plinti in 3D](shots/structure-3d.webp)
 

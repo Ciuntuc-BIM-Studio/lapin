@@ -193,7 +193,10 @@ public class SteelNodeTests
         var at = Args.TryPoint(col.Attrs["at"])!.Value;
         var type = (string)f.Run("structure.createPadType", new JsonObject { ["steps"] = new JsonArray(new JsonObject { ["length"] = 1.2, ["width"] = 1.2, ["height"] = 0.9 }), ["bottom"] = -1.0 })!["id"]!;
         var pad = (string)f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = at.X, ["y"] = at.Y, ["typeId"] = type })!["id"]!;
-        // The footing's top 100 mm under the column: the anchors 750 mm into it from there.
+        // Under the column it rises to its base (decision 507): the anchors 750 mm into it from there.
+        Assert.All(Parts(f, node.Id, "steel-anchor"), a => Assert.Equal(-0.75, Box(a).Min.Z, 6));
+        // Given its own top 100 mm under the column: the anchors 750 mm into it from there.
+        f.Run("structure.setPadLevel", new JsonObject { ["id"] = pad, ["top"] = -0.1 });
         var built = SteelNodes.Build(f.Model, node);
         Assert.Equal(pad, built.Footing?.Id);
         Assert.All(Parts(f, node.Id, "steel-anchor"), a => Assert.Equal(-0.1 - 0.75, Box(a).Min.Z, 6));

@@ -94,6 +94,8 @@ export interface ToolDef {
   properties?: ComponentType;
   /** The types it puts down: their class, and its current one read and set, so a quick slot holds the tool with a type (decision 260). */
   typed?: TypedTool;
+  /** Points it snaps to in a plan besides what the plan shows, given the plan's storey (a pad footing: the columns of the storey above, decision 507). */
+  snapPoints?: (storeyId: string | null) => Vec2[];
 }
 
 /** A tool's types, for a quick slot holding the tool with one of them and for the catalog (decision 263). */

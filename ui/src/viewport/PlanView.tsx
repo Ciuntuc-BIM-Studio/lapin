@@ -188,6 +188,9 @@ export function PlanView() {
   const snapItems = useMemo(() => shownItems(items, drawing, (id) => wholeOf(id, nodes, relations)), [items, drawing, nodes, relations]);
   const snapPoints = useMemo(() => snapItems.flatMap((r) => pairs(r.snaps ?? [])), [snapItems]);
   const markSnaps = useMemo(() => (drawing?.marks ?? []).flatMap((m) => pairs(m.snaps ?? [])), [drawing]);
+  // What the tool on snaps to besides (the Pad footing tool: the columns of the storey above, decision 507).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const toolSnaps = useMemo(() => tool?.snapPoints?.(storey?.id ?? null) ?? [], [tool, storey?.id, nodes, relations]);
 
   /** What the elements and the drawing's annotations span; null when the plan is empty. */
   const extent = useCallback((only?: Set<string>, clouds = true): Bounds | null => {
@@ -315,10 +318,10 @@ export function PlanView() {
       const ps = pairs(it.points);
       for (let i = 0; i + 1 < ps.length + (it.closed ? 1 : 0); i++) o.push({ type: 'line', a: ps[i], b: ps[(i + 1) % ps.length] });
     }
-    for (const q of [...snapPoints, ...markSnaps]) o.push({ type: 'line', a: q, b: q });
+    for (const q of [...snapPoints, ...markSnaps, ...toolSnaps]) o.push({ type: 'line', a: q, b: q });
     if (underDrawing) o.push(...snapShapes(underDrawing).shapes);
     return o;
-  }, [snapItems, snapPoints, markSnaps, underDrawing]);
+  }, [snapItems, snapPoints, markSnaps, toolSnaps, underDrawing]);
   const planViewOf = storey ? ownPlan ?? `plan:${storey.id}` : null;
   // The plan's scale: its view's (shown with modelling lines too, when no drawing is asked for), else its drawing's.
   const shownScale = Number((ownPlan ? nodes.get(ownPlan)?.props.scale : undefined) ?? drawing?.scale ?? 100);

@@ -18,7 +18,8 @@ Tabul **Structură** are cadrele și fundațiile.
 
 - **Fundație continuă** (<kbd>SF</kbd>) merge sub pereți. Straturile ei exterioare se îmbină la 45° în colțuri.
 - **Fundație continuă curbă** (<kbd>CF</kbd>) urmează un arc.
-- **Fundație izolată** (<kbd>PF</kbd>) stă sub un stâlp.
+- **Fundație izolată** (<kbd>PF</kbd>): dă clic sub un stâlp. Cât timp unealta e pornită, se agață de centrele stâlpilor nivelului planului și ai nivelului de deasupra.
+- **Fundații izolate sub stâlpi** pune o fundație izolată sub fiecare stâlp selectat care nu are una, în centrul lui și rotită ca el. Fără stâlpi selectați, ia stâlpii nivelului planului (într-un plan de fundații, pe cei ai nivelului de deasupra).
 
 Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
@@ -28,7 +29,13 @@ Desenează fundațiile pe nivelul **Foundations** sau dă-le un plan propriu.
 
 **În planuri.** O fundație stă sub planșeu, deci planul o desenează întrerupt în planul nivelului pe care stă, cum arată planul unei clădiri ce e dedesubt. Ca s-o vezi tăiată și văzută, folosește un **plan de fundații**: în browserul proiectului, **+** de lângă **Planuri** face unul pentru nivelul activ (tăiat la 0,50 m sub el, privind 2,50 m în jos).
 
-**Desenând într-un plan de fundații.** Arată și nivelul de dedesubt, iar ce desenezi acolo cu o unealtă de placă, perete, stâlp sau grindă stă pe acel nivel (Fundații la un proiect nou, la −1,50); uneltele de fundații păstrează nivelul planului, fața de jos a fundației fiind cea a tipului ei sub el.
+**Desenând într-un plan de fundații.** Arată și nivelul de dedesubt, iar ce desenezi acolo cu o unealtă de placă, perete, stâlp sau grindă stă pe acel nivel (Fundații la un proiect nou, la −1,50); uneltele de fundații păstrează nivelul planului. O fundație izolată desenată acolo sub un stâlp urcă la baza stâlpului; fața de jos a unei fundații continue e cea a tipului ei sub nivel.
+
+**O fundație izolată urcă la stâlpul ei.** O fundație izolată al cărei punct cade în secțiunea unui stâlp (la un milimetru) are fața de sus la baza stâlpului: nivelul stâlpului plus **Decalaj la bază**, treptele sub ea. Muți stâlpul, îi schimbi nivelul sau decalajul bazei, și fundația îl urmează. Sub stâlpi așezați unul pe altul îl urmează pe cel mai de jos; din doi la fel de jos, pe cel cu centrul mai aproape. O fundație fără stâlp deasupra stă pe nivelul ei, cu **Baza** tipului ei sub el. **Fundații izolate sub stâlpi** pune fiecare fundație în cel mai înalt nivel aflat la sau sub fața ei de jos (Fundații la un proiect nou), altfel în cel mai de jos. O fundație izolată importată dintr-un fișier IFC rămâne unde o pune fișierul.
+
+În **Proprietăți** o fundație izolată își arată cotele **Sus** și **Jos** și stâlpul pe care îl urmează. Scrie o cotă **Sus** ca să-i dai una proprie: nu mai urmează stâlpul. **La baza stâlpului** o leagă din nou.
+
+![Cota unei fundații izolate în Proprietăți: la baza stâlpului ei](shots/structure-pad-level.webp)
 
 ![Stâlpi, grinzi și fundații izolate în 3D](shots/structure-3d.webp)
 

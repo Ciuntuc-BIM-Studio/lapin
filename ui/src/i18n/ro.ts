@@ -1,6 +1,17 @@
 /** The interface in Romanian: each English phrase as the interface shows it, and its Romanian. */
 
 export const RO: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "Fundații izolate sub stâlpi",
+  "At the base of the column": "La baza stâlpului",
+  "Its own top: it does not follow a column.": "Are cota de sus a ei: nu urmează un stâlp.",
+  "No column over it: its type's bottom under its level.": "Niciun stâlp deasupra: baza la cota tipului ei, sub nivelul ei.",
+  "Where its IFC file puts it.": "Unde o pune fișierul IFC.",
+  "An elevation of its own for its top: it no longer follows the column": "O cotă proprie pentru partea de sus: nu mai urmează stâlpul",
+  "At the column's base": "La baza stâlpului",
+  "Pad footing level": "Cota fundației izolate",
+  "Every column has a pad footing under it already.": "Fiecare stâlp are deja o fundație izolată sub el.",
+  "Select the columns to put pad footings under.": "Selectați stâlpii sub care să puneți fundații izolate.",
   // Decision 500: the partial structure display
   "Entire model": "Întregul model",
   "Every layer of walls, floors and roofs": "Toate straturile pereților, planșeelor și acoperișurilor",

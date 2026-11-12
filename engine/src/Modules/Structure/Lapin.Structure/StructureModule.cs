@@ -172,6 +172,72 @@ public sealed class StructureModule : ILapinModule
             return new JsonObject { ["id"] = p.Id };
         });
 
+        // A pad's level (decision 507): its own top (an absolute elevation), or back to following the column over it.
+        r.Command("setPadLevel", "Pad footing level", (ctx, a) =>
+        {
+            var ids = Args.Ids(a);
+            if (ids.Count == 0) throw new CommandException("Select the pad footings.");
+            var top = Json.Number(a["top"]);
+            var follow = a["follow"] is JsonValue fv && fv.TryGetValue<bool>(out var fb) && fb;
+            if (top == null && !follow) throw new CommandException("Give the pad footing's top, or follow: true to put it at the column's base.");
+            foreach (var id in ids)
+            {
+                var e = ctx.Model.Get(id) is { Class: IfcClass.Footing } x && IsPad(ctx.Model, x) ? x : throw new CommandException("Not a pad footing.");
+                var attrs = e.CloneAttrs();
+                if (follow) { attrs.Remove(PadFootings.TopKey); attrs[PadFootings.FollowKey] = true; }
+                else attrs[PadFootings.TopKey] = top;
+                ctx.Replace(e.With(attrs: attrs));
+            }
+            return null;
+        });
+
+        // A pad footing under each column given (or, none given, each column of the storey; a storey without columns: of the
+        // storey above), at its point and turned with it, unless one is under it already; in the infrastructure storey.
+        r.Command("padsUnderColumns", "Pad footings under columns", (ctx, a) =>
+        {
+            var m = ctx.Model;
+            var given = Args.Ids(a);
+            List<Entity> columns;
+            if (given.Count > 0) columns = given.Select(m.Get).OfType<Entity>().Where(e => e.Class == IfcClass.Column).ToList();
+            else
+            {
+                var storey = Place.Storey(ctx, a);
+                List<Entity> On(Entity s) => m.RelatedOf(s.Id, IfcClass.RelContainedInSpatialStructure).Where(e => e.Class == IfcClass.Column).ToList();
+                columns = On(storey);
+                if (columns.Count == 0 && Spatial.Storeys(m).SkipWhile(s => s.Id != storey.Id).Skip(1).FirstOrDefault() is { } above) columns = On(above);
+            }
+            if (columns.Count == 0) throw new CommandException("Select the columns to put pad footings under.");
+            var type = Place.TypeFor(ctx, a, IfcClass.FootingType, () => PadFootings.DefaultType(ctx), PadFootings.IsPad);
+            var h = PadFootings.Height(type);
+            // The columns the project's pads are under already.
+            var taken = m.OfClass(IfcClass.Footing).Where(f => IsPad(m, f)).Select(f => PadFootings.ColumnAt(m, Place.Point(f))?.Id).OfType<string>().ToHashSet();
+            var ids = new JsonArray();
+            foreach (var c in columns)
+            {
+                // The pad goes under the lowest column at this one's point (a column on another stands on it).
+                var under = PadFootings.ColumnAt(m, Place.Point(c)) ?? c;
+                if (!taken.Add(under.Id)) continue;
+                var storey = PadFootings.InfrastructureStorey(m, PadFootings.ColumnBase(m, under) - h) ?? throw new CommandException("The project has no storey.");
+                var p = new Entity(ctx.NewId(), IfcClass.Footing, type.Name, new JsonObject { ["at"] = Place.Json2(Place.Point(under)), ["rotation"] = under.Num("rotation") }, "PAD_FOOTING");
+                ctx.Add(p);
+                Spatial.Contain(ctx, storey.Id, p.Id);
+                ctx.Relate(IfcClass.RelDefinesByType, type.Id, p.Id);
+                ids.Add((JsonNode)p.Id);
+            }
+            if (ids.Count == 0) throw new CommandException("Every column has a pad footing under it already.");
+            return new JsonObject { ["ids"] = ids };
+        });
+
+        // A pad's level as the properties panel shows it: top and bottom (absolute), the rule, the column it follows.
+        r.Query("padLevel", (q, a) =>
+        {
+            if (q.Model.Get((string?)a["id"] ?? "") is not { Class: IfcClass.Footing } pad || PadFootings.Level(pad, q.Model) is not { } level) return null;
+            var o = new JsonObject { ["top"] = level.Top, ["bottom"] = level.Bottom, ["rule"] = level.Rule, ["follows"] = PadFootings.Follows(pad) };
+            if (level.Column is { } c)
+                o["column"] = new JsonObject { ["id"] = c.Id, ["name"] = c.Name, ["storey"] = Spatial.StoreyOf(q.Model, c.Id)?.Name };
+            return o;
+        });
+
         // ------------------------------------------------------------ path elements: ends, types
         r.Command("updatePath", "Change", (ctx, a) =>
         {

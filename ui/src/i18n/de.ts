@@ -3,6 +3,17 @@
 import type { Language } from './index';
 
 export const DE: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "Einzelfundamente unter Stützen",
+  "At the base of the column": "Am Fuß der Stütze",
+  "Its own top: it does not follow a column.": "Eigene Oberkante: folgt keiner Stütze.",
+  "No column over it: its type's bottom under its level.": "Keine Stütze darüber: die Unterkante seines Typs unter seinem Geschoss.",
+  "Where its IFC file puts it.": "Wo seine IFC-Datei es hinsetzt.",
+  "An elevation of its own for its top: it no longer follows the column": "Eine eigene Höhe für die Oberkante: folgt der Stütze nicht mehr",
+  "At the column's base": "Am Fuß der Stütze",
+  "Pad footing level": "Höhe des Einzelfundaments",
+  "Every column has a pad footing under it already.": "Jede Stütze hat schon ein Einzelfundament darunter.",
+  "Select the columns to put pad footings under.": "Wählen Sie die Stützen, unter die Einzelfundamente kommen.",
   // Decision 500: the partial structure display
   "Entire model": "Gesamtes Modell",
   "Every layer of walls, floors and roofs": "Jede Schicht von Wänden, Decken und Dächern",

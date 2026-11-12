@@ -18,7 +18,8 @@ Fanen **Konstruktion** rummer bærende konstruktion og fundamenter.
 
 - **Stribefundament** (<kbd>SF</kbd>) løber under vægge. Dets ydre lag er geringsskåret i hjørnerne.
 - **Buet stribefundament** (<kbd>CF</kbd>) følger en bue.
-- **Punktfundament** (<kbd>PF</kbd>) placeres under en søjle.
+- **Punktfundament** (<kbd>PF</kbd>): klik under en søjle. Mens værktøjet er tændt, fanger det centrene af søjlerne på planens niveau og på niveauet over.
+- **Punktfundamenter under søjler** sætter et punktfundament under hver valgt søjle, der ikke har et, i dens centrum og drejet som den. Uden valgte søjler tager det søjlerne på planens niveau (i en fundamentsplan dem på niveauet over).
 
 Tegn fundamenter på niveauet **Foundations**, eller giv dem deres egen plan.
 
@@ -28,7 +29,13 @@ Tegn fundamenter på niveauet **Foundations**, eller giv dem deres egen plan.
 
 **I planerne.** Et fundament ligger under dækket, så en plan tegner det stiplet i planen for det niveau, det står på, som en bygnings plan viser, hvad der er under den. For at se det snittet og set brug en **fundamentsplan**: i projektbrowseren laver **+** ved siden af **Etageplaner** en til det aktive niveau (snit 0,50 m under det, med udsyn 2,50 m ned).
 
-**At tegne i en fundamentsplan.** Den viser også niveauet under, og det, du tegner dér med et dæk-, væg-, søjle- eller bjælkeværktøj, kommer på det niveau (Fundamenter i et nyt projekt, ved −1,50); fundamentsværktøjerne bevarer planens eget niveau, idet fundamentets underside er dets types under det.
+**At tegne i en fundamentsplan.** Den viser også niveauet under, og det, du tegner dér med et dæk-, væg-, søjle- eller bjælkeværktøj, kommer på det niveau (Fundamenter i et nyt projekt, ved −1,50); fundamentsværktøjerne bevarer planens eget niveau. Et punktfundament tegnet dér under en søjle løftes til søjlens fod; et stribefundaments underside er dets types under niveauet.
+
+**Et punktfundament løftes til sin søjle.** Et punktfundament, hvis punkt ligger inden for en søjles tværsnit (på en millimeter), har sin overkant ved søjlens fod: søjlens niveau plus dens **Fodforskydning**, trinene under. Flyt søjlen, skift dens niveau eller dens fodforskydning, og fundamentet følger med. Under søjler, der står på hinanden, følger det den nederste; af to lige lave den, hvis centrum er nærmest. Et fundament uden søjle over sig står på sit eget niveau med typens **Bund** under. **Punktfundamenter under søjler** lægger hvert fundament i det højeste niveau ved eller under dets underside (Fundamenter i et nyt projekt), ellers i det laveste. Et punktfundament importeret fra en IFC-fil bliver, hvor filen placerer det.
+
+I **Egenskaber** viser et punktfundament sin **Top** og **Bund** som koter og den søjle, det følger. Skriv en **Top** for at give det sin egen: så følger det ikke længere søjlen. **Ved søjlens fod** knytter det til igen.
+
+![Et punktfundaments kote i Egenskaber: ved søjlens fod](shots/structure-pad-level.webp)
 
 ![Søjler, bjælker og punktfundamenter i 3D](shots/structure-3d.webp)
 

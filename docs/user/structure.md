@@ -18,7 +18,8 @@ The **Structure** tab holds the frame and the foundations.
 
 - **Strip footing** (<kbd>SF</kbd>) runs under walls. Its outer layers are mitred at the corners.
 - **Curved strip footing** (<kbd>CF</kbd>) follows an arc.
-- **Pad footing** (<kbd>PF</kbd>) goes under a column.
+- **Pad footing** (<kbd>PF</kbd>): click under a column. While the tool is on, it snaps to the centres of the columns of the plan's level and of the level above.
+- **Pad footings under columns** puts a pad footing under each selected column that has none, at its centre and turned with it. With no column selected, it takes the columns of the plan's level (in a foundation plan, those of the level above).
 
 Draw foundations on the **Foundations** level, or give them a plan of their own.
 
@@ -28,7 +29,13 @@ Draw foundations on the **Foundations** level, or give them a plan of their own.
 
 **In the plans.** A footing lies under the floor, so a plan draws it dashed in the plan of the level it stands on, as a plan of a building shows what is under it. To see it cut and seen, use a **foundation plan**: in the project browser, the **+** beside **Floor plans** makes one for the active level (cut 0.50 m under it, seeing 2.50 m down).
 
-**Drawing in a foundation plan.** It shows the level under it too, and what you draw there with a floor, wall, column or beam tool goes on that level (the Foundations of a new project, at −1.50); the footing tools keep the plan's own level, a footing's bottom being its type's under it.
+**Drawing in a foundation plan.** It shows the level under it too, and what you draw there with a floor, wall, column or beam tool goes on that level (the Foundations of a new project, at −1.50); the footing tools keep the plan's own level. A pad footing drawn there under a column rises to the column's base; a strip footing's bottom is its type's under the level.
+
+**A pad footing rises to its column.** A pad footing whose point lies within a column's section (to a millimetre) has its top on the column's base: the column's level plus its **Base offset**, the steps under it. Move the column, change its level or its base offset, and the pad follows. Under columns standing on one another it follows the lowest; of two as low, the one whose centre is nearest. A pad with no column over it stands on its own level, its type's **Bottom** under it. **Pad footings under columns** puts each pad in the highest level at or under its bottom (the Foundations of a new project), else in the lowest. A pad footing imported from an IFC file stays where the file puts it.
+
+In **Properties** a pad footing shows its **Top** and **Bottom** as elevations and the column it follows. Type a **Top** to give it its own: it no longer follows the column. **At the column's base** links it back.
+
+![A pad footing's level in Properties: at the base of its column](shots/structure-pad-level.webp)
 
 ![Columns, beams and pad footings in 3D](shots/structure-3d.webp)
 

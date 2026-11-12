@@ -3,6 +3,17 @@
 import type { Language } from './index';
 
 export const PL: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "Stopy fundamentowe pod słupami",
+  "At the base of the column": "U podstawy słupa",
+  "Its own top: it does not follow a column.": "Własna rzędna wierzchu: nie podąża za słupem.",
+  "No column over it: its type's bottom under its level.": "Brak słupa nad nią: spód jej typu pod jej kondygnacją.",
+  "Where its IFC file puts it.": "Tam, gdzie umieszcza ją plik IFC.",
+  "An elevation of its own for its top: it no longer follows the column": "Własna rzędna wierzchu: przestaje podążać za słupem",
+  "At the column's base": "U podstawy słupa",
+  "Pad footing level": "Poziom stopy fundamentowej",
+  "Every column has a pad footing under it already.": "Każdy słup ma już pod sobą stopę fundamentową.",
+  "Select the columns to put pad footings under.": "Zaznacz słupy, pod którymi mają stanąć stopy fundamentowe.",
   // Decision 500: the partial structure display
   "Entire model": "Cały model",
   "Every layer of walls, floors and roofs": "Każda warstwa ścian, stropów i dachów",

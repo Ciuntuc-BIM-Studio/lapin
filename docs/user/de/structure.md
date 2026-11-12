@@ -18,7 +18,8 @@ Die Registerkarte **Tragwerk** enthält das Skelett und die Gründung.
 
 - **Streifenfundament** (<kbd>SF</kbd>) verläuft unter Wänden. Seine äußeren Schichten werden an den Ecken auf Gehrung gestoßen.
 - **Gebogenes Streifenfundament** (<kbd>CF</kbd>) folgt einem Bogen.
-- **Einzelfundament** (<kbd>PF</kbd>) kommt unter eine Stütze.
+- **Einzelfundament** (<kbd>PF</kbd>): unter eine Stütze klicken. Solange das Werkzeug an ist, fängt es die Mitten der Stützen der Ebene des Grundrisses und der Ebene darüber.
+- **Einzelfundamente unter Stützen** setzt unter jede gewählte Stütze ohne Fundament eines, in ihre Mitte und mit ihr gedreht. Ohne gewählte Stützen nimmt es die Stützen der Ebene des Grundrisses (in einem Fundamentgrundriss die der Ebene darüber).
 
 Zeichnen Sie die Gründung auf der Ebene **Foundations**, oder geben Sie ihr einen eigenen Grundriss.
 
@@ -28,7 +29,13 @@ Zeichnen Sie die Gründung auf der Ebene **Foundations**, oder geben Sie ihr ein
 
 **In den Grundrissen.** Ein Fundament liegt unter der Decke, darum zeichnet ein Grundriss es gestrichelt im Grundriss der Ebene, auf der es steht, wie ein Gebäudegrundriss zeigt, was darunter liegt. Um es geschnitten und gesehen zu sehen, nehmen Sie einen **Fundamentgrundriss**: im Projektbrowser legt das **+** neben **Grundrisse** einen für die aktive Ebene an (0,50 m darunter geschnitten, 2,50 m tief gesehen).
 
-**Zeichnen in einem Fundamentgrundriss.** Er zeigt auch die Ebene darunter, und was Sie dort mit einem Decken-, Wand-, Stützen- oder Trägerwerkzeug zeichnen, kommt auf diese Ebene (die Gründung eines neuen Projekts, bei −1,50); die Fundamentwerkzeuge behalten die Ebene des Grundrisses, die Unterkante eines Fundaments ist die seines Typs darunter.
+**Zeichnen in einem Fundamentgrundriss.** Er zeigt auch die Ebene darunter, und was Sie dort mit einem Decken-, Wand-, Stützen- oder Trägerwerkzeug zeichnen, kommt auf diese Ebene (die Gründung eines neuen Projekts, bei −1,50); die Fundamentwerkzeuge behalten die Ebene des Grundrisses. Ein dort unter einer Stütze gezeichnetes Einzelfundament steigt bis zum Fuß der Stütze; die Unterkante eines Streifenfundaments ist die seines Typs unter der Ebene.
+
+**Ein Einzelfundament steigt bis zu seiner Stütze.** Ein Einzelfundament, dessen Punkt im Querschnitt einer Stütze liegt (auf einen Millimeter), hat seine Oberkante am Fuß der Stütze: die Ebene der Stütze plus ihr **Versatz unten**, die Stufen darunter. Verschieben Sie die Stütze, ändern Sie ihre Ebene oder ihren Versatz unten, folgt das Fundament. Unter aufeinanderstehenden Stützen folgt es der untersten; von zwei gleich tiefen der, deren Mitte am nächsten liegt. Ein Fundament ohne Stütze darüber steht auf seiner eigenen Ebene, mit der Unterkante seines Typs darunter. **Einzelfundamente unter Stützen** legt jedes Fundament in die höchste Ebene auf oder unter seiner Unterkante (die Gründung eines neuen Projekts), sonst in die unterste. Ein aus einer IFC-Datei importiertes Einzelfundament bleibt, wo die Datei es hinsetzt.
+
+In **Eigenschaften** zeigt ein Einzelfundament **Oben** und **Unten** als Höhen und die Stütze, der es folgt. Geben Sie ein **Oben** ein, um ihm eine eigene Höhe zu geben: dann folgt es der Stütze nicht mehr. **Am Fuß der Stütze** verbindet es wieder.
+
+![Die Höhe eines Einzelfundaments in Eigenschaften: am Fuß seiner Stütze](shots/structure-pad-level.webp)
 
 ![Stützen, Träger und Einzelfundamente in 3D](shots/structure-3d.webp)
 

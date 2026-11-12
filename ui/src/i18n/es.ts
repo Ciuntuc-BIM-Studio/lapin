@@ -3,6 +3,17 @@
 import type { Language } from './index';
 
 export const ES: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "Zapatas aisladas bajo pilares",
+  "At the base of the column": "En la base del pilar",
+  "Its own top: it does not follow a column.": "Su propia cota superior: no sigue a un pilar.",
+  "No column over it: its type's bottom under its level.": "Sin pilar encima: el fondo de su tipo bajo su nivel.",
+  "Where its IFC file puts it.": "Donde la pone su archivo IFC.",
+  "An elevation of its own for its top: it no longer follows the column": "Una cota propia para su cara superior: deja de seguir al pilar",
+  "At the column's base": "En la base del pilar",
+  "Pad footing level": "Nivel de la zapata aislada",
+  "Every column has a pad footing under it already.": "Cada pilar ya tiene una zapata aislada debajo.",
+  "Select the columns to put pad footings under.": "Seleccione los pilares bajo los que poner zapatas aisladas.",
   // Decision 500: the partial structure display
   "Entire model": "Modelo completo",
   "Every layer of walls, floors and roofs": "Todas las capas de muros, losas y cubiertas",

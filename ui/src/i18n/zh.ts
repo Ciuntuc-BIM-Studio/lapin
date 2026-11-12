@@ -3,6 +3,17 @@
 import type { Language } from './index';
 
 export const ZH: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "柱下独立基础",
+  "At the base of the column": "位于柱底",
+  "Its own top: it does not follow a column.": "自定顶标高：不随柱。",
+  "No column over it: its type's bottom under its level.": "上方无柱：按其类型的底标高位于其楼层之下。",
+  "Where its IFC file puts it.": "按其 IFC 文件所放位置。",
+  "An elevation of its own for its top: it no longer follows the column": "顶部的自定标高：不再随柱",
+  "At the column's base": "位于柱底",
+  "Pad footing level": "独立基础标高",
+  "Every column has a pad footing under it already.": "每根柱下都已有独立基础。",
+  "Select the columns to put pad footings under.": "请选择要在其下放置独立基础的柱。",
   // Decision 500: the partial structure display
   "Entire model": "整个模型",
   "Every layer of walls, floors and roofs": "墙、楼板和屋顶的每一层",

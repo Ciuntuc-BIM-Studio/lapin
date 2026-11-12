@@ -18,7 +18,8 @@ La ficha **Estructura** contiene los pórticos y la cimentación.
 
 - **Zapata corrida** (<kbd>SF</kbd>) va bajo los muros. Sus capas exteriores se unen a inglete en las esquinas.
 - **Zapata corrida curva** (<kbd>CF</kbd>) sigue un arco.
-- **Zapata aislada** (<kbd>PF</kbd>) va bajo un pilar.
+- **Zapata aislada** (<kbd>PF</kbd>): haga clic bajo un pilar. Mientras la herramienta está activa, se ajusta a los centros de los pilares del nivel de la planta y del nivel superior.
+- **Zapatas aisladas bajo pilares** pone una zapata aislada bajo cada pilar seleccionado que no tiene ninguna, en su centro y girada como él. Sin pilares seleccionados, toma los pilares del nivel de la planta (en una planta de cimentación, los del nivel superior).
 
 Dibuje la cimentación en el nivel **Foundations**, o dele una planta propia.
 
@@ -28,7 +29,13 @@ Dibuje la cimentación en el nivel **Foundations**, o dele una planta propia.
 
 **En las plantas.** Una zapata queda bajo el forjado, así que una planta la dibuja a trazos en la planta del nivel en que está, como la planta de un edificio muestra lo que hay debajo. Para verla cortada y vista, use una **planta de cimentación**: en el navegador del proyecto, el **+** junto a **Plantas** crea una para el nivel activo (corte 0,50 m bajo él, vista 2,50 m hacia abajo).
 
-**Dibujar en una planta de cimentación.** Muestra también el nivel inferior, y lo que dibuje allí con una herramienta de losa, muro, pilar o viga va a ese nivel (la Cimentación de un proyecto nuevo, a −1,50); las herramientas de zapatas conservan el nivel de la planta, siendo la base de una zapata la de su tipo bajo él.
+**Dibujar en una planta de cimentación.** Muestra también el nivel inferior, y lo que dibuje allí con una herramienta de losa, muro, pilar o viga va a ese nivel (la Cimentación de un proyecto nuevo, a −1,50); las herramientas de zapatas conservan el nivel de la planta. Una zapata aislada dibujada allí bajo un pilar sube hasta la base del pilar; la base de una zapata corrida es la de su tipo bajo el nivel.
+
+**Una zapata aislada sube hasta su pilar.** Una zapata aislada cuyo punto cae dentro de la sección de un pilar (a un milímetro) tiene su cara superior en la base del pilar: el nivel del pilar más su **Desfase de base**, los escalones debajo. Mueva el pilar, cambie su nivel o su desfase de base, y la zapata lo sigue. Bajo pilares apoyados unos sobre otros sigue al más bajo; de dos igual de bajos, al de centro más cercano. Una zapata sin pilar encima queda en su propio nivel, con el **Fondo** de su tipo debajo. **Zapatas aisladas bajo pilares** pone cada zapata en el nivel más alto en o bajo su base (la Cimentación de un proyecto nuevo), si no en el más bajo. Una zapata aislada importada de un archivo IFC queda donde la pone el archivo.
+
+En **Propiedades** una zapata aislada muestra su **Superior** e **Inferior** como cotas y el pilar que sigue. Escriba un **Superior** para darle uno propio: deja de seguir al pilar. **En la base del pilar** la vuelve a enlazar.
+
+![El nivel de una zapata aislada en Propiedades: en la base de su pilar](shots/structure-pad-level.webp)
 
 ![Pilares, vigas y zapatas aisladas en 3D](shots/structure-3d.webp)
 

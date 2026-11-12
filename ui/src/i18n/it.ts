@@ -3,6 +3,17 @@
 import type { Language } from './index';
 
 export const IT: Record<string, string> = {
+  // Decision 507: pad footings under columns, their level
+  "Pad footings under columns": "Plinti sotto i pilastri",
+  "At the base of the column": "Alla base del pilastro",
+  "Its own top: it does not follow a column.": "Quota superiore propria: non segue un pilastro.",
+  "No column over it: its type's bottom under its level.": "Nessun pilastro sopra: il fondo del suo tipo sotto il suo livello.",
+  "Where its IFC file puts it.": "Dove lo mette il suo file IFC.",
+  "An elevation of its own for its top: it no longer follows the column": "Una quota propria per la sommità: non segue più il pilastro",
+  "At the column's base": "Alla base del pilastro",
+  "Pad footing level": "Quota del plinto",
+  "Every column has a pad footing under it already.": "Ogni pilastro ha già un plinto sotto.",
+  "Select the columns to put pad footings under.": "Selezionare i pilastri sotto cui mettere i plinti.",
   // Decision 500: the partial structure display
   "Entire model": "Modello intero",
   "Every layer of walls, floors and roofs": "Ogni strato di pareti, solai e coperture",

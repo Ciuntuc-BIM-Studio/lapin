@@ -3211,12 +3211,31 @@ export const scenes = [
       for (const y of [0, 6]) await t.cmd('structure.addBeam', { storeyId: s, x1: 0, y1: y, x2: 12, y2: y });
       for (const x of [0, 6, 12]) await t.cmd('structure.addBeam', { storeyId: s, x1: x, y1: 0, x2: x, y2: 6 });
       const f = await t.storey('Foundations');
-      for (const x of [0, 6, 12]) for (const y of [0, 6]) await t.cmd('structure.addPadFooting', { storeyId: f, x, y });
       await t.button('Structure', { exact: true });
       await t.shot('ribbon-structure', { of: '.topbar', pad: 0 });
+      // Decision 507: Pad footings under columns, nothing selected on the ground floor: one under each column, in the Foundations level, its top on the column's base.
+      await t.ui({ storeyId: s, selection: null, selected: [] });
+      await t.tool('structure.padsUnderColumns');
+      await t.wait(800);
+      const pads = (await t.nodes()).filter((n) => n.type === 'IfcFooting');
+      t.expect(pads.length === 6, `a pad footing under each column (${pads.length})`);
+      t.expect(pads.every((p) => (p.props.at?.[0] ?? -1) % 6 === 0), 'each pad at its column\'s point');
+      const inFoundations = await t.page.evaluate(async ([ids, f]) => {
+        const { useSession } = await import('/src/engine/session.ts');
+        const { relatingOf } = await import('/src/engine/model.ts');
+        return ids.every((id) => relatingOf(useSession.getState(), id, 'IfcRelContainedInSpatialStructure')?.id === f);
+      }, [pads.map((p) => p.id), f]);
+      t.expect(inFoundations, 'the pads are in the Foundations level');
       await open3d(t);
       await t.shot('structure-3d', { of: 'canvas', pad: 0 });
       t.expect((await t.nodes()).filter((n) => n.type === 'IfcColumn').length === 6, 'six columns');
+      // A pad's level in Properties: its top and bottom, the column it follows.
+      await select(t, pads[0].id);
+      await t.until(async () => (await t.page.locator('[data-testid=pad-level-rule]').count()) === 1, 'a pad footing shows its level');
+      t.expect(await t.page.locator('[data-testid=pad-follow]').count() === 0, 'a pad under a column follows it');
+      await t.wait(400);
+      await t.shot('structure-pad-level', { of: 'aside.props', pad: 0, maxHeight: 560 });
+      await t.ui({ selection: null, selected: [] });
       // Decision 427 (report #116): the strip footing is the concrete alone unless the wall is asked for, in the command line's bar.
       await t.tool('structure.strip');
       t.expect(await t.page.locator('[data-testid=strip-wall]').count() === 1, 'the strip footing tool offers its wall');
