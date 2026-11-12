@@ -106,8 +106,15 @@ The history of what was built, decision by decision, is in `docs/history.md`; th
 - Urban: `docs/plan-urban.md`
 - Apartment types: `docs/plan-units.md`
 - Editions' override points: `docs/overrides.md`
+- Python scripting (the `lapinbim` package in `python/`, the Script panel, the recorder, project scripts, script tools): `docs/plan-python-scripting.md` (decision 489, its stages and the user's answers), `docs/python.md` (developers), `docs/user/python.md`. The command catalogue (`scripts/command-catalogue.mjs` → `engine/src/Platform/Lapin.Protocol/catalogue.json`, served as `session.catalogue`) is shared with the MCP bridge; keep it fresh with `node scripts/command-catalogue.mjs --check`. `lapinbim` goes to PyPI only with app releases (`node scripts/publish-python.mjs --upload`, run by the user).
+- Extensions and the store: `docs/plan-extensions.md` (decision 499 and its §9 answers; stage 2: third-party paid extensions sold by their authors, 0 %). The catalogue is the public repo `Ciuntuc-BIM-Studio/lapin-extensions` (`../lapin-extensions`: manifests, `tools/validate.mjs`, `tools/build-index.mjs`, the store site in `site/`, legal drafts in `legal/`); a new extension comes by pull request, reviewed by Claude, approved by the user. The index and package copies are served at `https://lapinbim.com/extensions/` (lapin-web's nginx `location /extensions/`, files in `/opt/lapin/www/extensions/`; after a merge: `build-index.mjs --mirror https://lapinbim.com/extensions/files/`, then rsync). The store (stage 1) is `store.lapinbim.com`, its service in `deploy/store/`. Creating public repos or releases is refused to Claude in auto mode: the user runs those commands.
+- Lapin Pro, the premium platform (subscription, cloud + self-hosted, licences): its plan is private, in `../lapin-platform` (`Ciuntuc-BIM-Studio/lapin-platform`, `docs/plan-premium-platform.md`, §0.1 holds the user's answers). Only hooks go into this repo; never copy premium code, prices or plans here.
 
 Premium modules live in private sibling repos, each with its `products/<id>.json` and `"external"`: `../lapin-urban` (`urban`), `../lapin-mep` (`mep-pro`), `../lapin-rail` (`rail`), `../lapin-planning` (`planning-pro`). The BubbleBIM editions stay in private repos' `products/`, never here.
+
+Questions and ideas from users: the in-app reports (`./deploy/feedback/reports.sh list | show <n> | reply <n> "…" | close <n>`) and the forum https://forum.lapinbim.com (the user-level skill `lapin-forum`). Answers to users are drafted for the user's approval; the forum is in English. Release notes for testers are written in English, from the commit subjects since the version on the site (`https://ciuntucbimstudio.ro/downloads/lapin-update/darwin-aarch64-app.json`).
+
+Video tutorials are filmed with `../lapin-film` (`film.mjs`, its rules in `GHID-video-tutoriale.md`); the videos go to `~/Movies/Lapin tutorials/` and, once on YouTube, into `docs/user/videos/videos.json`.
 
 ## Next step
 
