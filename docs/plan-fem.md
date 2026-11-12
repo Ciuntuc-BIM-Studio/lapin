@@ -286,7 +286,7 @@ Butonul **Run analysis** în grupul Loads; o vedere analitică 3D: deformata, di
 - **Profilele nesimetrice** (T, U, L, I nesimetric): solverul le pune axa în centrul de greutate prin brațe rigide. Exportul SAV lasă bara pe linia ei (centrul cutiei, unde un profil parametric IFC își are originea), iar centrul de greutate îl spune profilul; `IfcRelConnectsWithEccentricity` are doar brațele îmbinărilor (`OffI`/`OffJ`), muchia barei mergând atunci între capetele ei, cu vârfuri proprii (schimbat la verificarea din §9.8: înainte exportul scria și centrul de greutate ca excentricitate, de două ori pentru un cititor care le ia pe amândouă).
 - **Forțele concentrate și liniare pe o placă fără bară dedesubt** se împart pe colțurile bucății cu ponderi consistente static (baricentrice, biliniare, Wachspress), integrate pe linie; colțurile fără reazem dau mai departe pe laturi după regula pârghiei.
 - **Un model fără bare** rulează: plăcile se duc direct în pereți, ca reacții.
-- **Rezolvitorul** (RCM + skyline LDLᵀ): 26.460 de grade de libertate în 14 s, 86.490 în 106 s (1,25 GB); peste 400 M de intrări în profil e refuzat. La S2 (plăcile, modelele mari) un Cholesky rar propriu (supernodal, cu reordonare AMD sau disecție imbricată) îl înlocuiește, tot cod al lui Lapin.
+- **Rezolvitorul** (RCM + skyline LDLᵀ): 26.460 de grade de libertate în 14 s, 86.490 în 106 s (1,25 GB); peste 400 M de intrări în profil e refuzat. La S2 (plăcile, modelele mari) un Cholesky rar propriu (supernodal, cu reordonare AMD sau disecție imbricată) îl înlocuiește, tot cod al lui Lapin. Făcut la S2 (§10.7): 86.490 de grade de libertate în 4 s, 0,4 GB.
 - **Verificat la dezvoltare:** un cadru spațial față de PyNite 3.2.1 (deplasările la 1e-15, reacțiile la 3e-16); vezi și §9.8.
 
 ### 9.8 Verificarea cu ifc_structural_mechanics și PyNite (12.11.2026)
@@ -328,3 +328,135 @@ Aprobat de utilizator (12.11.2026, „mergem pe recomandarea ta - continua - cu 
 Teste: `ClimateLoadTests` (μ1, ce(10) = 2,3523 la terenul II, cpe după h/d, corelarea; parametrii verificați și cazurile făcute într-un pas de undo; zăpada pe casa cu două ape la 45°, μ1 = 0,4, aglomerată 0,75; placa neacoperită 0,8 și cea acoperită fără; vântul pe cadrul 6 × 4: zonele D, E, A, B, C, F, G, H, I cu numerele calculate de mână, tot pus, jumătate din fațade în teren; hala: Tabelul 7.4a, panele duc zăpada, echilibrul), `AxialMemberTests`, `BeamLevelTests`, `StructuralIfcTests.The_view_leaves_out…`, `notes.test.ts`, `loads.test.ts`.
 
 **De hotărât de utilizator:** (a) combinațiile mixte ale Tabelului 7.4a (presiune pe apa din vânt, sucțiune pe cealaltă) și cpi (+0,2/−0,3): încă 8–16 cazuri de vânt; (b) aglomerarea pe acoperișurile în patru ape (lectura noastră) și vântul pe ele (Tabelul 7.5); (c) direcțiile vântului după axele proiectului sau ale clădirii; (d) valorile CR 1-1-4 pentru kr și ce (aici EN).
+## 10. S2: plăci (specificația)
+
+**Aprobat de utilizator (12.11.2026, „mergem pe recomandarea ta - continua - cu lipsurile si cu S2”).** Tot codul e al lui Lapin, MIT: niciun cod și nicio dependență din OpenSees, CalculiX, Code_Aster, BriefFiniteElement.NET, CSparse.NET, anaStruct, SuiteSparse / CHOLMOD, METIS sau Gmsh; elementele, rezolvitorul și mesherul sunt scrise după articolele și cărțile citate mai jos (și în comentariile codului).
+
+S2 are două părți. **S2a** (făcută pe 12.11.2026, în paralel cu lipsurile lui S1): biblioteca din `Lapin.Analysis/Solver/` și testele ei: elementul de placă, rezolvitorul rar, mesherul, netezirea rezultatelor. **S2b** (după ce ambele ramuri intră în `main`): plăcile și pereții modelului analitic în `analysis.run`, încărcările pe ele, rezultatele în interogări, izoliniile în 3D și în plan, ghidul (§10.10).
+
+### 10.1 Ce face S2
+
+Plăcile și pereții portanți devin elemente finite de placă (șase grade de libertate pe nod), pe aceleași noduri cu barele. Regula de 45° (§9.2) se retrage pentru plăcile discretizate: încărcările de suprafață stau pe placă, iar placa le duce singură pe grinzi, pereți și stâlpi, după rigiditatea lor. Pereții nu mai sunt reazeme liniare (§9.1): sunt console în planul lor (pereți de contravântuire) și plăci în afara lui. Rezultatele: deplasările, reacțiile, eforturile pe bare (ca la S1) și eforturile pe plăci (§10.6).
+
+### 10.2 Elementul
+
+**Patrulaterul: MITC4** (Dvorkin și Bathe, „A continuum mechanics based four-node shell element for general nonlinear analysis”, Eng. Comput. 1, 1984; Bathe și Dvorkin, „A four-node plate bending element based on Mindlin/Reissner plate theory and a mixed interpolation”, IJNME 21, 1985). Teoria Reissner–Mindlin, deci plăci groase și subțiri cu același element (o placă de 20 cm pe 4 m, un perete de 25 cm pe 3 m). w, θx, θy biliniare; lunecările transversale se interpolează din valorile lor covariante la mijlocul laturilor, așa că o placă subțire nu se blochează la forfecare, iar elementul nu are moduri parazite. Factorul de forfecare 5/6. De ce MITC4 și nu DKMQ (Katili, „A new discrete Kirchhoff-Mindlin element based on Mindlin-Reissner plate theory and assumed shear strain fields”, IJNME 36, 1993): amândouă sunt fără blocare; MITC4 e referința literaturii, cel mai simplu de scris și de verificat, și trece testul peticului pe elemente distorsionate. DKMQ e ce folosește PyNite: bun ca verificare încrucișată (§10.9), fiind altă formulare. DKT (Batoz 1980) e doar Kirchhoff, deci nu merge la plăci groase.
+
+**Triunghiul: MITC3** (Lee și Bathe, „Development of MITC isotropic triangular shell finite elements”, Comput. Struct. 82, 2004): forfecarea ca o constantă plus o rotire, legată de cele trei laturi. E mai rigid decât MITC4 pe plasă grosieră (tabelul de la §10.8); mesherul îl folosește doar unde triunghiurile nu se împerechează în patrulatere.
+
+**Membrana, cu rotirea de burghiu (drilling) adevărată**: interpolarea lui Allman („A compatible triangular element including vertex rotations for plane elasticity analysis”, Comput. Struct. 19, 1984): deplasarea normală a fiecărei laturi e pătratică, din rotirile de la capetele ei. Rotirea θz e legată de rotirea în plan a câmpului de deplasări, ω = ½(∂v/∂x − ∂u/∂y), printr-o penalizare γ·∫(θz − ω)² dA, ca la Hughes și Brezzi („On drilling degrees of freedom”, CMAME 72, 1989) și la patrulaterul lui Ibrahimbegović, Taylor și Wilson („A robust quadrilateral membrane finite element with drilling degrees of freedom”, IJNME 30, 1990), cu γ = G. Așa, la nodul unde un perete întâlnește o placă, o bară sau alt perete, toate cele șase grade de libertate au rigiditate proprie: nu e nevoie de un resort fictiv pe θz. Peretele în consolă (§10.8) arată că membrana duce și încovoierea în planul ei.
+
+**Integrarea**: 2 × 2 puncte Gauss pe patrulater, trei puncte pe triunghi (exact pentru integranzii lui, pătratici). **Elementul e plan**: nodurile lui sunt luate în planul lor mediu (`Warp` spune cât se abat). Bucățile din `ShellPieces` sunt plane, deci elementele lor sunt plane exact.
+
+**Axele locale**: z e normala (din ordinea nodurilor, invers trigonometric văzut dinspre ea); x e X global proiectat pe planul elementului la plăci (|n·Z| ≥ 0,7) și orizontala Z × n la pereți (y în sus); `ShellElement.Axis` le poate da altfel. Toate elementele unei suprafețe plane au aceleași axe, deci rezultatele lor se pot media direct.
+
+**Convenția eforturilor**: Nx, Ny, Nxy (kN/m), Mx = ∫σx·z dz, My, Mxy (kN·m/m), Qx, Qy (kN/m). Un moment pozitiv întinde fața dinspre normală. La o placă de planșeu cu normala în sus, momentul din câmp (fața de jos întinsă) e negativ; afișarea din S2b îl întoarce (§10.10).
+
+### 10.3 Discretizarea (`ShellMesher`)
+
+Fiecare bucată din `ShellPieces` (convexă, plană, fără goluri: golurile sunt deja scoase ca fâșii în jurul lor) se discretizează separat, dar laturile se taie la fel pentru toate:
+1. Fiecare latură a unei bucăți se taie întâi în **punctele obligatorii** de pe ea: nodurile barelor (`hard`) și colțurile celorlalte bucăți (o latură lungă care întâlnește două bucăți, în T).
+2. Fiecare parte dintre două puncte obligatorii se taie în segmente egale, nu mai lungi decât **dimensiunea țintă** (`size`). O parte e identificată prin nodurile ei de la capete, deci e tăiată o singură dată, oricare bucată o cere: bucățile vecine și barele de pe latură au aceleași noduri.
+3. O bucată cu patru colțuri, cu laturile opuse tăiate în tot atâtea segmente, se discretizează prin **interpolare transfinită** (Coons; Gordon și Hall, „Construction of curvilinear co-ordinate systems and applications to mesh generation”, IJNME 7, 1973): numai patrulatere. Orice altă bucată (triunghiuri, poligoane, patrulatere cu laturile opuse tăiate diferit): o rețea de puncte interioare la dimensiunea țintă, la cel puțin 0,45 din ea de margine; o triangulare Delaunay a lor și a conturului (prin flip-urile lui Lawson, „Software for C¹ surface interpolation”, 1977; conturul fiind convex, nu cere constrângeri); netezire laplaciană care nu întoarce niciun triunghi; apoi triunghiurile **împerecheate** în patrulatere, cel mai bun întâi (după cât de departe de unghiul drept e cel mai rău unghi al patrulaterului; nimic sub 0,35), ca la Lo și Lee („Generating quadrilateral elements on plane and over curved surfaces”, Comput. Struct. 31, 1989). Ce nu se împerechează rămâne triunghi (MITC3).
+4. **Fețele** sunt toate în sensul trigonometric față de normala bucății (cea dată, sau a colțurilor), deci axele locale ale elementelor unei suprafețe se potrivesc.
+
+Măsurat: un dreptunghi dă numai patrulatere; un triunghi, un pentagon, un hexagon, un octogon dau 86–91 % din arie în patrulatere. Nu facem un mesher general 3D (§6): plăcile sunt plane și convexe.
+
+### 10.4 Barele și plăcile pe aceleași noduri
+
+- **Nodurile comune**: mesherul primește nodurile modelului analitic (colțurile bucăților și nodurile barelor) și le păstrează indicii; nodurile noi vin după. O bară care stă pe laturi de plăci (o grindă sub marginea plăcii, o grindă de-a lungul unei linii de reazem, care la `ShellPieces` e deja o latură) se taie în bucăți între nodurile plasei de pe linia ei (`ShellMesh.NodesAlong(a, b)`). Eliberările de la capete rămân pe primul și ultimul segment; încărcările din deschidere se împart pe segmente după poziție (S2b).
+- **Grinda în placă (`offset_z`)**: barele orizontale sunt deja mutate în planul median al plăcii pe care o duc (decizia 357), cu distanța până la axa lor reală în `AFrame.OffsetZ`. În S2 bara rămâne pe nodurile plăcii și își ține axa reală prin **brațe rigide** verticale (`OffI = OffJ = (0, 0, −offset_z)`, ca excentricitățile de la §9.1). Așa se vede conlucrarea placă–grindă (secțiunea T): grinda întinsă în câmp, placa comprimată deasupra ei (testul de la §10.8).
+- **Peretele ca placă**: bucățile peretelui (de-a lungul × în sus, cu golurile scoase) se discretizează la fel; nodurile de la capul lui sunt ale plăcii de deasupra, cele de la talpă ale reazemului (fundația: translațiile și rotirile după `Footings`) sau ale plăcii de dedesubt. Stâlpii care intră în perete se leagă pe nodurile de pe latura comună.
+- **Un nod fără nicio rigiditate pe o rotire** (bare articulate care se întâlnesc) e ținut de resort ca la §9.7; la plăci nu se întâmplă, având toate cele șase grade de libertate rigide.
+
+### 10.5 Încărcările pe plăci
+
+- **De suprafață** (ale utilizatorului, finisajele, camerele, zăpada, greutatea plăcii, adică miezul γ·t): pe fiecare element, ca vector global pe m² (`CaseLoads.Surface`), cu cotele consistente ∫Nᵢ dA pe noduri (translațiile; fără momente, rotirile fiind interpolate separat). Zăpada pe proiecția orizontală: q·cos α pe aria reală.
+- **Greutatea proprie** a pereților: γ·t pe aria lor, în −Z.
+- **Liniare și concentrate** pe o placă: pe nodurile elementului de sub ele, cu ponderile funcțiilor de formă (la S1 erau colțurile bucății, §9.7); o forță pe un nod, direct pe el.
+- **Regula de 45°** rămâne doar pentru plăcile pe care utilizatorul nu le vrea calculate ca plăci (o opțiune a rulării) și pentru acoperișurile pe șarpantă (căpriorii duc astereala, §9.7).
+- **Echilibrul** se verifică la fiecare caz ca la S1: ΣR + ΣF = 0, cu ΣF incluzând încărcările pe plăci (aria fiecărui element).
+
+### 10.6 Rezultatele
+
+- Pe element: deplasările nodurilor în axele lui; eforturile (§10.2) în centru și la colțuri (patrulaterul: valorile din punctele Gauss extrapolate biliniar la colțuri; triunghiul: calculate la colțuri). `ShellResult.Combine` pentru combinații (suprapunere), ca la bare.
+- **La noduri**, pe suprafață (`ShellElement.Group`, elementul fizic): media colțurilor (`ShellSmoothing.AtNodes`) și **recuperarea pe petice** a lui Zienkiewicz și Zhu (`ShellSmoothing.Recovered`; „The superconvergent patch recovery and a posteriori error estimates”, IJNME 33, 1992): un câmp liniar ajustat prin cele mai mici pătrate pe valorile din centrele elementelor din jurul nodului (centrul e punctul cel mai exact al unui element biliniar: Barlow, „Optimal stress locations in finite element models”, IJNME 10, 1976), citit la nod; un nod de pe margine sau din colț ia media peticelor vecinilor. La marginea încastrată media colțurilor rămâne în urmă cu o jumătate de element (−12 % la 32 × 32), recuperarea nu (−0,9 %). Unde două suprafețe se întâlnesc în unghi, fiecare își păstrează valoarea.
+- Pentru dimensionare (S4): momentele de calcul după **Wood–Armer** (Wood, „The reinforcement of slabs in accordance with a pre-determined field of moments”, Concrete 2, 1968; Armer, aceeași revistă) din mx, my, mxy, pe fiecare față și direcție. Nu în S2.
+- Afișarea: izolinii și benzi colorate pe fiecare mărime (mx, my, mxy, nx, ny, nxy, vx, vy, w), cu valorile extreme etichetate (S2b).
+
+### 10.7 Rezolvitorul rar (`SparseCholesky`)
+
+Înlocuiește skyline-ul de la S1 (§9.7) ca implicit al lui `FrameSolver`; skyline-ul rămâne (`FactorKind.Skyline`), pentru comparație.
+- **L·Lᵀ = P·A·Pᵀ** pentru matricea simetrică, pozitiv definită după reazeme. Ecuațiile vin în grupuri (cele șase grade de libertate ale unui nod, mai puțin cele ținute), ordonate împreună.
+- **Reordonarea**, pe graful nodurilor: **gradul minim aproximativ** pe graful cât (Amestoy, Davis și Duff, „An approximate minimum degree ordering algorithm”, SIAM J. Matrix Anal. Appl. 17(4), 1996; George și Liu, „Computer Solution of Large Sparse Positive Definite Systems”, Prentice-Hall 1981, cap. 5) și **disecția imbricată** prin structuri de niveluri (George, „Nested dissection of a regular finite element mesh”, SIAM J. Numer. Anal. 10, 1973; George și Liu 1981, cap. 8), cu gradul minim pe părțile sub 200 de noduri. Se ia cea care prezice mai puțin lucru (Σ pe coloane a pătratului numărului de rânduri de sub diagonală, din numărătorile de coloane).
+- **Simbolic**: arborele de eliminare (Liu, „The role of elimination trees in sparse factorization”, SIAM J. Matrix Anal. Appl. 11(1), 1990), în postordine; numărătorile de coloane din subarborii rândurilor; supernodurile fundamentale (coloane la rând cu aceeași structură), fiecare un bloc dens, pe rânduri.
+- **Numeric**: supernodal, „left-looking” (Ng și Peyton, „Block sparse Cholesky algorithms on advanced uniprocessor computers”, SIAM J. Sci. Comput. 14(5), 1993; Davis, „Direct Methods for Sparse Linear Systems”, SIAM 2006, cap. 4 și 9): fiecare supernod adună actualizările supernodurilor de sub el prin liste legate după următorul lor rând, apoi își factorizează blocul dens. Nucleele: produse scalare vectorizate (`Vector<double>`), două rânduri pe două coloane deodată. Blocurile mari (peste 4·10⁶ de înmulțiri) se împart pe nucleele procesorului; în browser, unde nu sunt fire, rulează pe rând.
+- **Un factor, toate cazurile**: `Solve` pentru fiecare membru drept, după o singură factorizare.
+- **Mecanismul**: un pivot care nu e clar pozitiv (sub 10⁻¹¹ din diagonala ecuației) se spune cu ecuația lui, ca la skyline; resorturile pentru rotirile fără rigiditate (§9.7) merg la fel (apelul `hold`).
+- **Rafinarea iterativă** în `FrameSolver`: reziduul ecuațiilor libere, f − (K + resorturi)·u, din forțele elementelor, rezolvat din nou și adăugat, de până la trei ori cât scade (Higham, „Accuracy and Stability of Numerical Algorithms”, cap. 12). Ține echilibrul la 1e-9 pe modele prost condiționate oricare ar fi ordinea eliminării (portalul de la §9.5 cu A = 1000 m² ieșea la 2,3e-9 fără ea).
+- **Limita**: peste 400 M de intrări în factor (3,2 GB) calculul e refuzat, spus, ca la S1.
+
+### 10.8 Testele (soluții închise; cifrele din teorie)
+
+`ShellElementTests`, `ShellMesherTests`, `SparseCholeskyTests`. Raportul la teorie (1 = exact):
+
+| Test | Referința | 8 × 8 | 16 × 16 | 32 × 32 |
+|---|---|---|---|---|
+| Placă pătrată simplu rezemată, w în centru | 0,00406235 q a⁴/D (Navier; Timoshenko și Woinowsky-Krieger, „Theory of Plates and Shells”, §30, tabelul 8, ν = 0,3) | 0,99537 | 0,99926 | 1,00020 |
+| idem, Mx în centru | 0,0478864 q a² | 1,00038 | 1,00006 | 1,00001 |
+| Placă 2:1 simplu rezemată, w / Mx / My | 0,01013 q a⁴/D, 0,1017 q a², 0,0464 q a² (tabelul 8) | 0,986 / 0,982 / 0,982 | 0,997 / 0,995 / 0,995 | 0,9993 / 0,9987 / 0,9979 |
+| Placă pătrată încastrată, w în centru | 0,00126532 q a⁴/D (tabelul 35; Taylor și Govindjee, Commun. Numer. Meth. Engng 20, 2004) | 0,99038 | 0,99907 | 1,00126 (placa groasă a/t = 100 are cu 0,1 % peste Kirchhoff) |
+| idem, M în centru | 0,022905 q a² | 1,01767 | 1,00450 | 1,00125 |
+| idem, M la mijlocul marginii (recuperare pe petice) | −0,05133 q a² | | | 0,991 (media colțurilor: 0,876) |
+| Placă subțire a/t = 100, 1.000, 10.000, 8 × 8 | Kirchhoff | sub 3 %, fără blocare | | |
+| Triunghiuri MITC3, pătrat simplu rezemat, w | 0,00406235 q a⁴/D | 0,731 | 0,970 | 0,996 |
+| Peretele în consolă 3 × 12 m, forța în cap, δ | PH³/3EI + PH/(κGA), Timoshenko | 0,9796 (2 × 8) | 0,9922 (4 × 16) | 0,9961 (8 × 32) |
+| Acoperișul Scordelis–Lo, w la mijlocul marginii libere | 0,3024 (Scordelis și Lo, J. ACI 61, 1964; MacNeal și Harder, Finite Elem. Anal. Des. 1, 1985) | 0,30401 | 0,30169 | 0,30140 (24 × 24) |
+
+Și: șase moduri de corp rigid și niciun mod parazit (patrulater și triunghi distorsionate, înclinate în spațiu, t = 0,2 și 0,01); testul peticului lui MacNeal și Harder, membrana (cu rotirea de burghiu) și încovoierea cu curbură constantă, pe patrulatere și triunghiuri: exact (1e-12); placa pe patru grinzi pe brațe rigide sub ea, cu noduri comune, rezemată în colțuri: ΣR = ΣF la 1e-9, fiecare colț un sfert, grinzile întinse și placa comprimată în câmp; o placă tăiată pe diagonală în două bucăți triunghiulare, discretizată de mesher (214 patrulatere, 80 de triunghiuri): w la 1,1 %; reacțiile și momentul de răsturnare ale peretelui (P·H) exacte. Mesherul: dreptunghiul numai în patrulatere; trei bucăți în T cu nodul unui stâlp pe latura comună, fără noduri atârnate; fețele întoarse după normala cerută. Rezolvitorul: matrice aleatoare SPD față de factorizarea densă (1e-9), o rețea de plăci în disecție imbricată la reziduul ei (1e-9), o matrice singulară spusă și ținută de un resort, rezultatele cadrului aceleași cu ale skyline-ului (1e-9).
+
+### 10.9 Verificarea cu PyNite (dezvoltare)
+
+`scripts/fem-check/pynite_plate.py` (MIT, rulat cu venv-ul PyNite, ca la §9.8) rezolvă aceleași plăci cu patrulaterele lui PyNite 3.2.1, care sunt **DKMQ** (altă formulare decât MITC4):
+
+| Placa | Plasa | PyNite w / Mx | Lapin w / Mx |
+|---|---|---|---|
+| simplu rezemată | 8 × 8 | 0,99981 / 1,01111 | 0,99537 / 1,00038 |
+| simplu rezemată | 16 × 16 | 1,00027 / 1,00318 | 0,99926 / 1,00006 |
+| încastrată | 8 × 8 | 1,04454 / 1,06348 | 0,99038 / 1,01767 |
+| încastrată | 16 × 16 | 1,01270 / 1,01661 | 0,99907 / 1,00450 |
+
+Amândouă converg spre teorie, DKMQ de deasupra (mai moale), MITC4 de dedesubt la deplasări; la 16 × 16 Lapin e mai aproape.
+
+### 10.10 S2b: integrarea (planul)
+
+1. **Problema** (`StructuralProblem.Build`, după ce intră lipsurile lui S1): opțiunea `shells: "slabs" | "walls" | "both" | "none"` (implicit „both”) și `meshSize` (implicit 0,5 m; mai mic la plăcile mici: cel puțin 4 elemente pe latura cea mai scurtă a bucății). Bucățile `AShell` devin `MeshPiece` (colțurile prin `NodeIndex`, grupul = GlobalId-ul elementului, normala: în sus la plăci, orizontală la pereți); toate nodurile barelor sunt puncte obligatorii. `ShellMesher.Mesh` → nodurile noi în `FrameProblem`, elementele `ShellElement` cu E, ν din `StructuralMaterials` și grosimea miezului (`AnalyticalShell.Thickness`); un perete sau o placă fără E e lăsat ca la S1 (reazem, regula de 45°), spus.
+2. **Barele tăiate** pe nodurile plasei (`ShellMesh.NodesAlong`), cu eliberările la capetele lor reale; brațele rigide din `OffsetZ`; harta bară → bucăți, pentru stații și diagrame (rezultatele unei bare se recompun pe lungimea ei întreagă).
+3. **Reazemele**: pereții nu mai sunt reazeme liniare; tălpile lor iau condiția fundației (`Footings`).
+4. **Încărcările** (`LoadMapping`): cele de suprafață pe elementele de sub ele (punctul elementului în plan), cele liniare și concentrate pe nodurile elementului cu ponderile funcțiilor de formă; regula de 45° numai pentru plăcile lăsate afară.
+5. **Interogările**: `analysis.run` dă și `shells: {elements, nodes, quads, triangles, meshSize}`; `analysis.results {…, shellId?}` dă eforturile pe element și pe noduri (recuperate), extremele pe fiecare suprafață; `analysis.contours {case | combination | envelope, quantity: mx|my|mxy|nx|ny|nxy|vx|vy|w, levels?}` dă benzile și izoliniile în coordonatele lumii, pe fiecare suprafață, ca `analysis.diagram`.
+6. **Interfața**: benzile colorate și izoliniile în 3D (cardul `overlays3d` din S1b) și **în plan**, prin rezolvitorul de vizibilitate (`VisibilityGraphics`), ca planșele să le poată tipări; legenda cu scara, valorile extreme etichetate; mx afișat cu semnul inginerului (pozitiv = fața de jos întinsă la plăci, fața dinspre interior la pereți, spus în legendă); eforturile și deplasarea maximă ale unei plăci sau ale unui perete în Proprietăți.
+7. **Ghidul**: pagina Analysis în toate limbile, scena ei cu izolinii pe planșeul din ghid.
+8. **Testele** S2b: casa din ghid cu placa calculată ca placă (echilibrul, momentele grinzilor față de regula de 45°: mai mici în câmp, cu placa care conlucrează), verificarea față de ifc_structural_mechanics pe `guide-frame` (care calculează placa ca placă: diferențele de 10–17 % de la §9.8 ar trebui să scadă sub 5 %), un bloc mic de pereți (Bloc-P-4 după recunoaștere) cronometrat.
+
+### 10.11 Performanța
+
+Ținta: modele de mărimea lui Bloc-P-4 (100.000–200.000 de grade de libertate cu plăcile) în câteva secunde în .NET. Măsurat pe 12.11.2026 (Mac, Release, 10 nuclee):
+
+| Model | Grade de libertate | Skyline (S1) | Rar (S2) |
+|---|---|---|---|
+| Cadru 21 × 21 × 10 (`Grid` din teste) | 23.814 | 4,30 s, 143 MB | 0,73 s, 72 MB |
+| Cadru 31 × 31 × 15 | 80.724 | 76,4 s, 1.096 MB | 4,04 s, 403 MB |
+| Factorizarea singură: cadru 31 × 31 × 15, toate nodurile libere | 86.490 | | 3,75 s, 483 MB, 114 GFlop (disecție imbricată; gradul minim ar fi cerut 217 GFlop) |
+| Factorizarea singură: rețea de plăci 150 × 150 | 136.806 | | 0,89 s, 294 MB |
+| Factorizarea singură: rețea de plăci 180 × 180 | 196.566 | | 1,38 s, 446 MB |
+| Placă încastrată 30 × 30 m, t = 0,2, 150 × 150 patrulatere, tot solverul (elementele, asamblarea, factorizarea, rafinarea, eforturile) | 133.206 | | 3,6 s, 284 MB |
+| idem, 180 × 180 | 192.246 | | 3,6 s, 435 MB |
+
+(La S1, §9.7, skyline-ul dădea 26.460 de grade de libertate în 14 s și 86.490 în 106 s, 1,25 GB, pe modelele lor.) Un singur fir face ~8 GFlop/s: în browser (fără fire, wasm), de câteva ori mai lent decât pe desktop.
+
+### 10.12 Hotărât de utilizator (12.11.2026, „sunt de acord”)
+
+1. **Plasa implicită**: 0,5 m, cu cel puțin 4 elemente pe latura cea mai scurtă a unei bucăți; se schimbă din dialog.
+2. **Semnul momentelor** în interfață: la plăci, fața de jos întinsă e pozitivă (cum citește proiectantul); motorul păstrează convenția mecanicii, interfața o întoarce.
+3. **Pereții de zidărie** rămân reazeme liniare până dă utilizatorul valori din CR 6.

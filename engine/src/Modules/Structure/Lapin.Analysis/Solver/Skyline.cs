@@ -8,7 +8,7 @@ namespace Lapin.Analysis.Solver;
 /// One factorization solves every load case. A pivot that is not clearly positive (at most <see cref="PivotTolerance"/> of
 /// the equation's own diagonal) is a mechanism: <see cref="Factor"/> says which equation.
 /// </summary>
-public sealed class Skyline
+public sealed class Skyline : ISymmetricFactor
 {
     public const double PivotTolerance = 1e-11;
 

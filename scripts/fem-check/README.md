@@ -117,3 +117,14 @@ and PyNite's: the nodes' translations, the reactions and the bars' end forces ag
 
 The files are kept in the output folder: `sav/` (the dumps), `ism/<model>/` (their results.json, analyze.log,
 check.json), `pynite/<model>.json`.
+
+## Plates (stage S2)
+
+`pynite_plate.py` solves the plates of `ShellElementTests` (a 4 × 4 m square, t = 0.04 m, 10 kPa, simply supported or
+clamped, 8 × 8 and 16 × 16) with PyNite's quadrilaterals, which are DKMQ (Katili 1993) where Lapin's are MITC4, and
+prints both as shares of plate theory (docs/plan-fem.md §10.9):
+```sh
+~/fem-tools/pynite-venv/bin/python -I scripts/fem-check/pynite_plate.py
+```
+Lapin's numbers in it are those its tests printed on 12.11.2026; rerun the tests with `--logger "console;verbosity=detailed"`
+to see them again.
