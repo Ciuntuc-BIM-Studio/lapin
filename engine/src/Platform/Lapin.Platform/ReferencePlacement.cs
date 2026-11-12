@@ -11,13 +11,19 @@ namespace Lapin.Platform;
 /// the first time, and from then on it is an instance placed by its 12 numbers, so its copies (a row of chairs) share the
 /// triangles. A mirror makes a body of its own again, turned inside out back (a shared body is never drawn mirrored). What
 /// lies in world coordinates beside the body goes with it: the body before its openings cut it, the openings the file
-/// gave it, its own 2D and the direction its layers run. A link's elements stay read-only (the session refuses the edit).
+/// gave it (and the doors and windows filling them, <see cref="ReferenceFills"/>), its own 2D and the direction its layers run. A link's elements stay read-only (the session refuses the edit).
 /// </summary>
 public sealed class ReferencePlacement : IElementPlacement, IElementRise
 {
     public bool Handles(Entity e) => StoredBodies.Has(e);
 
-    public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving) => ctx.Replace(Carried(ctx, e, Of(t), t));
+    public void Transform(ICommandContext ctx, Entity e, Placement2D t, IReadOnlySet<string> moving)
+    {
+        ctx.Replace(Carried(ctx, e, Of(t), t));
+        // The doors and windows in its kept openings go with it, as a native wall's (one carried on its own is not carried twice).
+        foreach (var filler in ReferenceFills.Fillers(e).Distinct().Where(id => !moving.Contains(id)).ToList())
+            if (ctx.Model.Get(filler) is { } door && StoredBodies.Has(door)) ctx.Replace(Carried(ctx, door, Of(t), t));
+    }
 
     public string? Copy(ICommandContext ctx, Entity e, Placement2D t)
     {
@@ -26,16 +32,30 @@ public sealed class ReferencePlacement : IElementPlacement, IElementRise
         if (!ReferenceEquals(source, e)) ctx.Replace(source);
         var id = Placement.DeepCopy(ctx, source, Placement2D.Move(new Vec2(0, 0)));
         var copy = ctx.Model.Get(id)!;
-        // The file's openings are the original's (their GlobalIds, the elements filling them): the copy is its cut body alone.
+        // The file's openings go with the copy under GlobalIds of its own (an id is never written twice), and the doors and
+        // windows filling them are copied too, each filling the copy's opening, as a native wall's copy takes its doors.
         var attrs = copy.CloneAttrs();
-        foreach (var k in StoredBodies.ExportOnly) attrs.Remove(k);
+        if (attrs[StoredBodies.OpeningsKey] is JsonArray openings)
+            foreach (var o in openings.OfType<JsonObject>())
+            {
+                o["id"] = ctx.NewId();
+                o.Remove("rel");
+                var fills = new JsonArray();
+                foreach (var f in (o["fills"] as JsonArray ?? []).OfType<JsonObject>())
+                    if ((string?)f["id"] is { } filler && ctx.Model.Get(filler) is { } door && StoredBodies.Has(door))
+                        fills.Add((JsonNode)new JsonObject { ["id"] = Copy(ctx, door, t) });
+                o["fills"] = fills;
+            }
         ctx.Replace(Carried(ctx, copy.With(attrs: attrs), Of(t), t));
         return id;
     }
 
     public bool Lift(ICommandContext ctx, Entity e, double dz)
     {
-        ctx.Replace(Carried(ctx, e, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, dz], null));
+        double[] up = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, dz];
+        ctx.Replace(Carried(ctx, e, up, null));
+        foreach (var filler in ReferenceFills.Fillers(e).Distinct().ToList())
+            if (ctx.Model.Get(filler) is { } door && StoredBodies.Has(door)) ctx.Replace(Carried(ctx, door, up, null));
         return true;
     }
 

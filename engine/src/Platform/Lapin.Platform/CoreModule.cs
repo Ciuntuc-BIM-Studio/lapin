@@ -62,6 +62,10 @@ public sealed class CoreModule : ILapinModule
         var references = new ReferencePlacement();
         r.Service<IElementPlacement>(references);
         r.Service<IElementRise>(references);
+        // The doors and windows in a reference's kept openings go with it, and with its deletion (docs/spec-ifc.md, Golurile referințelor).
+        var fills = new ReferenceFills();
+        r.Service<IHostedPlacement>(fills);
+        r.Service<IDeletion>(fills);
         // Sections and elevations moved in plan: a section with its cut, an elevation's marker alone (decision 460).
         r.Service<IElementPlacement>(new ViewMarkerPlacement());
         GraphicsSets.Register(r);
