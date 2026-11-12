@@ -149,9 +149,18 @@ public sealed class ScriptingModule : ILapinModule, IPackageTexts, IDrivenElemen
 
     public bool Drives(IModelView m, Entity e) => e.Class == Class;
 
-    /// <summary>The core's edits of an element (rename, attributes, parameters, moves) refused on a script: its code and its hash go together, through scripting.save.</summary>
+    /// <summary>What a guest is told when a generic command reaches a project's script (the host's, as the scripting.* commands are).</summary>
+    public const string HostOnly = "Only the host can do that.";
+
+    /// <summary>
+    /// The core's edits of an element (rename, attributes, parameters, moves) refused on a script: its code and its hash go
+    /// together, through scripting.save. A guest of a shared session is refused every generic command on one, delete,
+    /// group, copy and move too, alone or in a batch (stage 4, the user's answer of 12.11.2026): a project's scripts are the
+    /// host's, as <c>EngineDispatcher.HostOnlyCommands</c> keeps <c>scripting.*</c>.
+    /// </summary>
     public void Before(ICommandContext ctx, DrivenEdit edit, DrivenOutcome outcome)
     {
+        if (HostFiles.GuestCall) throw new CommandException(HostOnly);
         if (edit.Command is "element.delete") return;
         throw new CommandException("A project's script is changed in the Script panel (View → Script), not here.");
     }

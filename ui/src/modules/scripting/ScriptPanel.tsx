@@ -11,11 +11,13 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, Copy, ExternalLink, FilePlus, FolderInput, Play, RotateCcw, Save, Square, SquareTerminal, Trash2, X, Eraser } from 'lucide-react';
+import { Circle, Copy, ExternalLink, FilePlus, FolderInput, Play, RotateCcw, Save, ShieldOff, Square, SquareTerminal, Trash2, X, Eraser } from 'lucide-react';
 import { engineInBrowser, useSession } from '../../engine/session';
 import { CodeEditor } from './CodeEditor';
 import { namespaces, scriptName, walk, type Completion } from './logic';
 import { trustQuestion, TRUST_WARNING } from './trust';
+import { parseHeader } from './header';
+import { forgetTrust, isTrusted } from './scriptTools';
 import {
   answerTrust, clearConsole, clearRecording, closePanel, copyRecording, deleteFromProject, deleteScript, dirty, follow, newScript, openProjectScript, openScript,
   projectScripts, recordedText, refreshStatus, restart, reveal, run, saveRecording, saveScript, saveToProject, setHeight, startRecording, stop, stopRecording, useScripting,
@@ -192,6 +194,9 @@ function Editor() {
   const save = async () => { const as = named(); if (as) await saveScript(as); };
   const keep = async () => { const as = named(); if (as) await saveToProject(as); };
   const changed = project ? project.code !== s.code || project.name !== scriptName(name) : dirty(s);
+  // Stage 4: the tool its header names (in My tools once saved), and trust in a project's script taken back.
+  const header = useMemo(() => parseHeader(s.code, shown || undefined), [s.code, shown]);
+  const trusted = project ? isTrusted(project.sha256) || s.trust.trusted.has(project.sha256) : false;
   return (
     <div className="script-main">
       <div className="script-toolbar">
@@ -205,6 +210,9 @@ function Editor() {
         <button type="button" className="btn" data-action="script-restart" onClick={() => void restart()} title="Restart Python: the console’s names are forgotten">
           <RotateCcw size={13} /> Restart</button>
         <span className="grow" />
+        {header?.tool && <span className="muted small script-tool-name" title="Its tool in My tools (the script's header)" data-field="script-tool"><span>Tool:</span> <b data-no-i18n>{header.tool}</b></span>}
+        {project && trusted && <button type="button" className="icon" data-action="script-untrust" title="Forget trust: this script asks again before it runs, and its tools leave My tools"
+          onClick={() => void forgetTrust(project.sha256)}><ShieldOff size={14} /></button>}
         <button type="button" className="icon" data-action="script-save" title="Save in Mine" onClick={() => void save()}><Save size={14} /></button>
         <button type="button" className="icon" data-action="script-save-project" title="Save in the project (one undo step; it goes with the file)" onClick={() => void keep()}><FolderInput size={14} /></button>
         <button type="button" className="icon" data-action="script-reveal" title="Open in external editor" disabled={!s.file} onClick={() => void reveal()}><ExternalLink size={14} /></button>

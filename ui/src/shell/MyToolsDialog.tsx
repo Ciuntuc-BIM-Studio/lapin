@@ -19,6 +19,7 @@ import {
 } from '../app/myTools';
 import { choices } from './QuickToolsDialog';
 import { exportMyTools, importMyTools, toolsById, toolOfDrag } from './MyToolsBand';
+import { useExtraTools } from '../platform/extraTools';
 import { useFlip } from './flip';
 import type { ToolDef } from '../platform/module';
 
@@ -28,6 +29,7 @@ export function MyToolsDialog() {
   useSession((s) => s.nodes);
   const stored = useMyTools((s) => myTab(s.tabs));
   const canUndo = useMyTools((s) => s.past.length > 0);
+  const extraRev = useExtraTools((s) => s.rev);
   const byId = toolsById();
   const tab = visibleTab(stored, (id) => byId.has(id));
   const [query, setQuery] = useState('');
@@ -36,7 +38,7 @@ export function MyToolsDialog() {
   const [focus, setFocus] = useState<string | null>(null);
   const right = useRef<HTMLDivElement>(null);
   const close = () => useUi.setState({ dialog: null });
-  const groups = useMemo(() => choices(), [byId.size]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const groups = useMemo(() => choices(), [byId.size, extraRev]);   // eslint-disable-line react-hooks/exhaustive-deps
   const q = query.trim().toLowerCase();
   const shown = groups.map((g) => ({ ...g, tools: g.tools.filter((x) => !q || x.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q)) })).filter((g) => g.tools.length > 0);
   const targetId = tab.groups.some((g) => g.id === target) ? target : tab.groups[tab.groups.length - 1]?.id ?? null;

@@ -92,11 +92,53 @@ for e in lapin.selection():
 
 Los campos de un elemento se leen por sus nombres y se cambian por asignación: `wall.height = 3` cambia el muro (un solo paso de deshacer, o parte de la Ejecución). `with lapin.step("Name"):` convierte varios comandos en un solo paso de deshacer, y cada uno sigue respondiendo al instante, de modo que uno posterior puede usar lo que creó uno anterior.
 
+## Un script como herramienta
+
+Un script puede ser una **herramienta**: un botón en **Mis herramientas** que lo ejecuta, para cualquiera, con los Extras para desarrolladores activados o no. Dilo en las primeras líneas del script, su *cabecera*:
+
+```python
+# lapin: name="Perimeter walls", version="1.0.0", tool="Perimeter walls", icon="square", run="perimeter"
+# lapin: tooltip="Four walls round a rectangle, one undo step"
+
+def perimeter():
+    v = lapin.ui.ask("Perimeter walls", {
+        "width": lapin.ui.number(8.0, unit="m", min=0.5),
+        "depth": lapin.ui.number(6.0, unit="m", min=0.5),
+        "storey": lapin.ui.storey(),
+    })
+    if v is None:          # Cancelar
+        return
+    w, d = v["width"], v["depth"]
+    corners = [(0, 0), (w, 0), (w, d), (0, d)]
+    for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
+        lapin.architecture.add_wall(storey_id=v["storey"].id, x1=x1, y1=y1, x2=x2, y2=y2)
+```
+
+- **tool**: el nombre del botón; **run**: la función a la que llama (sin ella se ejecuta todo el script); **icon**: uno de los iconos de Lapin (`wall`, `door`, `stair`…) o uno común (`square`, `ruler`, `layers`, `grid`, `star`…), si no una letra (`icon="P"`, o la primera del nombre); **tooltip**: lo que dice el botón al pasar el ratón por encima.
+- Guarda el script en **Míos** (o en el proyecto): su herramienta aparece en **Mis herramientas**, en un grupo **Scripts**, sin que se ejecute el script. Muévela, hazla pequeña o quítala como cualquier herramienta; **Comandos…** (Ctrl+K) también la encuentra.
+
+![Mis herramientas con la herramienta de un script](shots/python-tools-tab.webp)
+
+Un clic ejecuta el script como una sola **Ejecución**: todo lo que hace es **un solo paso de deshacer**, con el nombre de la herramienta. `lapin.ui.ask` muestra un diálogo del propio Lapin, hecho con los campos que nombra el script: un número con su unidad, un texto, una elección, una casilla, un elemento (el que seleccionas mientras tanto en el modelo: **Usar selección**), una planta, un tipo. **Aceptar** da los valores al script; **Cancelar** no le da nada.
+
+![La pregunta de la herramienta: las medidas y la planta](shots/python-tools-ask.webp)
+
+![Los cuatro muros de la herramienta; un solo Deshacer los quita](shots/python-tools-walls.webp)
+
+Un script también puede crear herramientas mientras se ejecuta: `@lapin.ui.tool("Name", icon="ruler")` sobre una función, ejecutado una vez desde el panel, pone esa herramienta en Mis herramientas.
+
+De dónde vienen las herramientas:
+- **Míos**: siempre;
+- **los scripts del proyecto**: solo cuando has confiado en su código en este ordenador, así que un proyecto de otra persona nunca pone un botón en tu cinta; **Olvidar la confianza** en el panel los quita;
+- **Lapin Extensions**: un script que instalas muestra su herramienta; el primer clic pregunta **Ejecutar una vez / Confiar / Cancelar**, y **Ejecutar script** en **Extensiones → Instaladas** también lo ejecuta.
+
+Un script borrado, desinstalado o en el que ya no se confía saca sus herramientas de Mis herramientas.
+
 ## Seguridad
 
-Un script puede hacer todo lo que tú puedes hacer en este ordenador: se ejecuta en tu propio Python, con tus derechos. Ejecuta scripts que hayas escrito tú o en los que confíes; un script del proyecto pregunta primero.
+Un script puede hacer todo lo que tú puedes hacer en este ordenador: se ejecuta en tu propio Python, con tus derechos. Ejecuta scripts que hayas escrito tú o en los que confíes; un script del proyecto y uno instalado preguntan primero.
 
-Un invitado de una sesión compartida no puede ejecutar scripts en tu ordenador ni poner uno en tu proyecto, y un script solo se conecta al Lapin de su propio ordenador.
+Un invitado de una sesión compartida no puede ejecutar scripts en tu ordenador, ni poner uno en tu proyecto, ni borrar, renombrar o mover uno de los scripts del proyecto; un script solo se conecta al Lapin de su propio ordenador, y sus preguntas se hacen solo en tu ventana.
 
 ## Para desarrolladores
 

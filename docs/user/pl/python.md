@@ -92,11 +92,53 @@ for e in lapin.selection():
 
 Pola elementu odczytuje się po nazwach, a zmienia przez przypisanie: `wall.height = 3` zmienia ścianę (jeden krok cofania albo część Uruchomienia). `with lapin.step("Name"):` robi z kilku poleceń jeden krok cofania, a każde nadal odpowiada od razu, więc późniejsze może użyć tego, co utworzyło wcześniejsze.
 
+## Skrypt jako narzędzie
+
+Skrypt może być **narzędziem**: przyciskiem w **Moje narzędzia**, który go uruchamia, dla każdego, z Dodatkami dla programistów włączonymi lub nie. Powiedz to w pierwszych liniach skryptu, jego *nagłówku*:
+
+```python
+# lapin: name="Perimeter walls", version="1.0.0", tool="Perimeter walls", icon="square", run="perimeter"
+# lapin: tooltip="Four walls round a rectangle, one undo step"
+
+def perimeter():
+    v = lapin.ui.ask("Perimeter walls", {
+        "width": lapin.ui.number(8.0, unit="m", min=0.5),
+        "depth": lapin.ui.number(6.0, unit="m", min=0.5),
+        "storey": lapin.ui.storey(),
+    })
+    if v is None:          # Anuluj
+        return
+    w, d = v["width"], v["depth"]
+    corners = [(0, 0), (w, 0), (w, d), (0, d)]
+    for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
+        lapin.architecture.add_wall(storey_id=v["storey"].id, x1=x1, y1=y1, x2=x2, y2=y2)
+```
+
+- **tool**: nazwa przycisku; **run**: funkcja, którą wywołuje (bez niej uruchamia się cały skrypt); **icon**: jedna z ikon Lapina (`wall`, `door`, `stair`…) albo zwykła (`square`, `ruler`, `layers`, `grid`, `star`…), w przeciwnym razie litera (`icon="P"` albo pierwsza z nazwy); **tooltip**: co mówi przycisk, gdy najedziesz na niego myszą.
+- Zapisz skrypt w **Moje** (albo w projekcie): jego narzędzie pojawia się w **Moje narzędzia**, w grupie **Skrypty**, bez uruchamiania skryptu. Przenieś je, zmniejsz albo usuń jak każde narzędzie; znajduje je też **Polecenia…** (Ctrl+K).
+
+![Moje narzędzia z narzędziem skryptu](shots/python-tools-tab.webp)
+
+Kliknięcie uruchamia skrypt jako jedno **Uruchomienie**: wszystko, co robi, to **jeden krok cofania**, nazwany od narzędzia. `lapin.ui.ask` pokazuje własne okno Lapina, zbudowane z pól, które skrypt wymienia: liczba z jednostką, tekst, wybór, pole wyboru, element (ten, który w międzyczasie zaznaczasz w modelu: **Użyj zaznaczenia**), kondygnacja, typ. **OK** daje skryptowi wartości; **Anuluj** nie daje mu nic.
+
+![Pytanie narzędzia: wymiary i kondygnacja](shots/python-tools-ask.webp)
+
+![Cztery ściany narzędzia; jedno Cofnij je usuwa](shots/python-tools-walls.webp)
+
+Skrypt może też tworzyć narzędzia w trakcie działania: `@lapin.ui.tool("Name", icon="ruler")` nad funkcją, uruchomione raz z panelu, umieszcza to narzędzie w Moje narzędzia.
+
+Skąd biorą się narzędzia:
+- **Moje**: zawsze;
+- **skrypty projektu**: tylko gdy zaufałeś ich kodowi na tym komputerze, więc projekt od kogoś innego nigdy nie wstawi przycisku do twojej wstążki; **Cofnij zaufanie** w panelu je usuwa;
+- **Lapin Extensions**: zainstalowany skrypt pokazuje swoje narzędzie; pierwsze kliknięcie pyta **Uruchom raz / Zaufaj / Anuluj**, a **Uruchom skrypt** w **Rozszerzenia → Zainstalowane** też go uruchamia.
+
+Skrypt usunięty, odinstalowany lub któremu już nie ufasz zabiera swoje narzędzia z Moje narzędzia.
+
 ## Bezpieczeństwo
 
-Skrypt może zrobić wszystko, co możesz zrobić na tym komputerze: działa w twoim własnym Pythonie, z twoimi uprawnieniami. Uruchamiaj skrypty, które sam napisałeś lub którym ufasz; skrypt projektu najpierw pyta.
+Skrypt może zrobić wszystko, co możesz zrobić na tym komputerze: działa w twoim własnym Pythonie, z twoimi uprawnieniami. Uruchamiaj skrypty, które sam napisałeś lub którym ufasz; skrypt projektu i zainstalowany najpierw pytają.
 
-Gość wspólnej sesji nie może uruchamiać skryptów na twoim komputerze ani wstawić żadnego do twojego projektu, a skrypt łączy się tylko z Lapinem na własnym komputerze.
+Gość wspólnej sesji nie może uruchamiać skryptów na twoim komputerze, wstawić żadnego do twojego projektu ani usunąć, zmienić nazwy czy przenieść skryptu projektu; skrypt łączy się tylko z Lapinem na własnym komputerze, a jego pytania są zadawane tylko w twoim oknie.
 
 ## Dla programistów
 

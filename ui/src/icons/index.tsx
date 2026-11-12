@@ -31,6 +31,15 @@ function icon(name: IconName): Icon {
   return C;
 }
 
+const named = new Map<string, Icon>();
+/** One of Lapin's own icons by its name in icons.json (a script's tool names one: `wall`, `door`…); null when there is none. */
+export function lapinIcon(name: string): Icon | null {
+  if (!Object.prototype.hasOwnProperty.call(shapes, name)) return null;
+  let i = named.get(name);
+  if (!i) named.set(name, (i = icon(name as IconName)));
+  return i;
+}
+
 export const WallIcon = icon('wall');
 /** Ask Me (the FAQ assistant): a minimal rabbit's head, Lapin's own. */
 export const BunnyIcon = icon('bunny');

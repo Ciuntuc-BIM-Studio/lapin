@@ -13,13 +13,16 @@ import queue
 import sys
 import threading
 import traceback
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from . import _discovery as discovery
 from ._catalogue import Catalogue, Namespace, bind, bundled, merge
 from ._frame import Obj, decode
 from ._model import Element, Model
 from ._ws import TEXT, ConnectionClosed, WebSocket
+
+if TYPE_CHECKING:
+    from ._ui import UI
 
 
 # The Script panel's kernel: the engine that started it gives its Python a token (docs/python.md, The kernel's own
@@ -465,6 +468,13 @@ class Lapin:
     def model(self) -> Model:
         """The open model's entities (``lapin.model.walls``)."""
         return Model(self)
+
+    @property
+    def ui(self) -> UI:
+        """Questions to the user and tools in My tools (``l.ui.ask(...)``; see lapinbim._ui)."""
+        from ._ui import UI
+
+        return UI(lambda: self)
 
     def _elements(self) -> dict[str, Element]:
         if self._elements_cache is None or self._dirty:

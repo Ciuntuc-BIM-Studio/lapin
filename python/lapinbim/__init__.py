@@ -23,14 +23,18 @@ from ._version import __version__
 from ._client import Batch, Deferred, Lapin, LapinError, Step
 from ._frame import Obj
 from ._model import Element, Model
+from ._ui import UI
 
 __all__ = [
     "__version__", "Lapin", "LapinError", "Batch", "Deferred", "Step", "Element", "Model", "Obj",
     "connect", "client", "close", "call", "execute", "query", "undo", "redo", "save", "info", "quantities",
-    "snapshot", "state", "batch", "step", "selection", "on", "catalogue", "ns", "command",
+    "snapshot", "state", "batch", "step", "selection", "on", "catalogue", "ns", "command", "ui", "UI",
 ]
 
 _default: Lapin | None = None
+
+#: Questions and tools (docs/python.md, stage 4): ``lapin.ui.ask(...)``, ``@lapin.ui.tool(...)``; on the module's connection.
+ui = UI(lambda: client())
 
 
 def connect(port: int | None = None, **options: Any) -> Lapin:

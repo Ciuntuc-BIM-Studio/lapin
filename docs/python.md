@@ -4,7 +4,7 @@ Every Lapin tool is an engine command with JSON arguments and one undo step. `la
 - shows at once in the window;
 - undoes with Ctrl+Z, one step per command (or per batch).
 
-It is stages 1–3 of `docs/plan-python-scripting.md` (decision 489): the client, the Script panel in the app, and the recorder with the project's scripts (below). Script tools and dialogs come in stage 4.
+It is stages 1–4 of `docs/plan-python-scripting.md` (decision 489): the client, the Script panel in the app, the recorder with the project's scripts, and scripts' tools and dialogs with the plug-in header (below).
 
 - **Python 3.11 or newer**, the standard library only: its own WebSocket client over `socket`, the engine's LPF1 frames read with `struct` and `memoryview`, JSON-RPC.
 - **127.0.0.1 only**: it drives the engine of this computer, never another's (decision 489, §7). A guest of a shared session has no way in.
@@ -208,7 +208,7 @@ The engine gives each kernel it starts a token of its own (32 random bytes, `LAP
 
 ### The project's scripts, trust, the selection (stage 3)
 
-- **`LapinScript`**, the open engine module `scripting` (`engine/src/Modules/Scripting/Lapin.Scripting`): a resource with its name (a file name ending `.py`, unique whatever its case), `code`, `language` (`python`), `description` and `sha256` (of the code, UTF-8, lowercase hex). Commands, one undo step each: `scripting.save {id?, name, code, description?}` (new, or by id changed and maybe renamed), `scripting.rename {id, name}`, `scripting.delete {id}`; queries `scripting.list` (no code), `scripting.get {id | name}`. The core's own edits (`element.update`, `element.rename`, `setParam`, moves) are refused on a script (its code and hash change together); `element.delete` takes it like any content. A guest is refused every `scripting.*` command, alone or in a batch (`EngineDispatcher.HostOnlyCommands`).
+- **`LapinScript`**, the open engine module `scripting` (`engine/src/Modules/Scripting/Lapin.Scripting`): a resource with its name (a file name ending `.py`, unique whatever its case), `code`, `language` (`python`), `description` and `sha256` (of the code, UTF-8, lowercase hex). Commands, one undo step each: `scripting.save {id?, name, code, description?}` (new, or by id changed and maybe renamed), `scripting.rename {id, name}`, `scripting.delete {id}`; queries `scripting.list` (no code), `scripting.get {id | name}`. The core's own edits (`element.update`, `element.rename`, `setParam`, moves) are refused on a script (its code and hash change together); `element.delete` takes it like any content, the host's only. A guest is refused every `scripting.*` command, alone or in a batch (`EngineDispatcher.HostOnlyCommands`), and every generic command on a script (delete, rename, group, copy, move; stage 4).
 - **In the .lapin**: each script is also written as `scripts/<name>` (UTF-8), a part listed in the manifest with `module: "scripting"` (`IPackageTexts`, `LapinPackage.TextFolders`); Lapin reads the entity, never the text. Another tool's files in `scripts/` are foreign parts, kept byte for byte beside them (decision 345); a project script named as one of them is what the package holds from then on. An edition without the module keeps the entities (decision 484) and writes their `scripts/` parts back as they came (`PackageForeign.ModuleParts`). Versions keep the scripts with the model.
 - **Trust** (`docs/plan-python-scripting.md` §7): a project's script never runs as it opens; the panel asks before its first run and after its code changed (Run once / Trust / Cancel). Trust is kept on this computer by the code's SHA-256 in `<user-dir>/scripting-trust.json`: `script.trusted {sha256}`, `script.trust {sha256}`. Code the user saves into the project is trusted as it is saved.
 - **The selection**: the window tells the host what it has selected as it changes (`script.selected {ids}`, a call with no id, with Developer extras on); `script.selection` answers it, `lapin.selection()` reads it as elements.
@@ -222,6 +222,64 @@ The Script panel's **Recorder** tab (`ui/src/modules/scripting/recorder.ts`) hea
 - Keywords where lapinbim maps them back to the engine's key (`camel(snake(k)) == k`); other keys, and a `None` (which a keyword would leave out), go in the dict passed first. A command the catalogue lacks is `lapin.execute("…", {…})`; a namespace named as one of the module's own names is `lapin.ns("…")`.
 - Not recorded: queries, the panel's own `scripting.*`, what a script does (its own connection's).
 - Record / Stop, Copy, Save as script (into Mine, opened in the editor). `python/tests/fixtures/recorded_walls.py` is what `recorder.test.ts` makes of a session and what `python/tests/test_steps.py` runs on a new project.
+
+## Tools and dialogs (stage 4)
+
+### `lapin.ui.ask`: a question to the user
+
+```python
+v = lapin.ui.ask("Perimeter walls", {
+    "width": lapin.ui.number(8.0, unit="m", min=0.5),      # a number, its unit written beside it
+    "count": 4,                                            # plain values: an int, a float, a str, a bool, a list (a choice)
+    "kind": lapin.ui.choice({"b": "Brick", "c": "Concrete"}),
+    "closed": lapin.ui.checkbox(True),
+    "wall": lapin.ui.element("IfcWall"),                   # picked in the model (the selection; Use selection)
+    "walls": lapin.ui.element("IfcWall", multiple=True),
+    "storey": lapin.ui.storey(),                           # the active storey first
+    "type": lapin.ui.type_of("IfcWallType"),
+}, text="Four walls round a rectangle.")
+if v is None: ...                                          # Cancel
+```
+
+- A dict of the values in the fields' order, or `None` when the user cancels. Numbers are floats (`integer=True` or a plain `int`: ints), an element, a storey or a type an `Element` read from the model (a list with `multiple=True`); `required=False` lets one be empty (`None`).
+- The dialog is the window's own (`ui/src/modules/scripting/AskDialog.tsx`, its logic `ask.ts`): only the kinds above, drawn from their JSON; nothing of the script is run in the window (no HTML, no JavaScript). It floats without a backdrop, so the user selects in the model while it is open.
+- Protocol: the host method **`script.ask {title, fields, text?, ok?}`** (the host's, refused to a guest), checked (1 to 64 fields, each key once, a kind of `number`, `text`, `choice`, `bool`, `element`, `storey`, `type`) and sent to this computer's windows as a `script.output` event `{type: "ask", ask, title, fields…}`; the first window to answer **`script.answer {ask, values}`** (or `{ask, cancel: true}`) ends it, and the others get `{type: "asked", ask}` and close theirs. The asking connection's reply comes when it is answered; its other calls go on meanwhile (`EngineHub.ReplyWhenAnswered`), so a Stop's rollback is never held up. A Stop of the panel answers the kernel's questions `{cancelled, stopped}`, on which lapinbim raises `KeyboardInterrupt` (the script never goes on as if the user had cancelled); a connection lost takes its questions away.
+- It works from a terminal too (any local connection asks; the window answers).
+
+### `lapin.ui.tool`: a tool in My tools
+
+```python
+@lapin.ui.tool("Perimeter walls", icon="square", tooltip="Four walls round a rectangle")
+def perimeter():
+    ...
+
+lapin.ui.tool("Whole script", icon="W")          # bare: the tool runs the whole script
+lapin.ui.tool("By name", run=some_function)
+```
+
+When the Script panel runs a saved script (Run), the kernel says back the tools it registered (`{type: "tools", source, tools}`) and the window keeps them (`lapin.scriptTools.registered` in the browser's storage) until the next Run of that script says otherwise. From a terminal `lapin.ui.tool` only gives the function back, so the script runs there unchanged.
+
+A tool's click is one Run, one undo step named after the tool: `script.run {code, name, tool: {name, call, main}, source}`. The kernel runs the script in a namespace of its own, as `__main__` when the tool is the whole script, else as a module (`__name__ == "__lapin_tool__"`, so code under `if __name__ == "__main__":` does not run), then calls the tool's function: `call`, a function of the script by its name, else the one `lapin.ui.tool` registered under the tool's name as the script loaded. The console's names are left alone.
+
+### The plug-in header
+
+```python
+# lapin: name="Perimeter walls", version="1.1.0", requires="scripting, lapin>=0.1.900"
+# lapin: tool="Perimeter walls", icon="square", tooltip="Four walls round a rectangle", run="perimeter"
+```
+
+`# lapin:` lines among the comments at the top of the script (before its code), each `key=value` pairs (quoted, or bare up to the next comma), read without running anything (`ui/src/modules/scripting/header.ts`; `script.files` gives each script of Mine's first 4 KB and hash for it):
+- `tool`: the tool's name (`tool=yes`: the script's `name`); `run`: the function it calls (a Python name; none: the whole script as `__main__`); `icon`: one of Lapin's icons (`ui/src/icons/icons.json`: `wall`, `door`, `stair`…) or of a set of lucide's (`square`, `ruler`, `layers`, `grid`, `star`, `wrench`…: `ui/src/modules/scripting/icons.tsx`), else a letter (`icon="P"`, else the name's first); `tooltip`;
+- `name`, `version`, `description`; `requires`: modules the edition must have and `lapin>=0.1.N` — a tool whose script needs what this Lapin lacks is not offered.
+
+### Where tools come from, and trust
+
+`ui/src/modules/scripting/tools.ts` (pure) and `scriptTools.ts` (the store): each tool is `script:<source>#<name>` among every tool (`ui/src/platform/extraTools.ts`, so in `allTools`, Customize My tools…, the quick tools and Commands…), and a tool seen the first time goes into My tools' group **Scripts**, once.
+- **Mine**: the header's tool and the registered ones.
+- **The project's scripts**: only when their code is trusted on this computer (`script.trusted`): an untrusted project never puts a button in the user's ribbon. `script.untrust {sha256}` (the panel's Forget trust) takes it back.
+- **Lapin Extensions** (the `script` kind, decision 499): the installed script's header tool shows; its first click asks Run once / Trust / Cancel by the code's SHA-256, like a project's script; Extensions → Installed → **Run script** runs it (its tool, else the whole script).
+- Tools work with Developer extras off; a run that fails says so in a notice when the panel is not open.
+- A guest of a shared session never deletes, renames, groups, copies or moves a project's script through the generic commands, alone or in a batch (`ScriptingModule.Before`, refused when `HostFiles.GuestCall`), besides `scripting.*` (`EngineDispatcher.HostOnlyCommands`).
 
 ## Tests
 

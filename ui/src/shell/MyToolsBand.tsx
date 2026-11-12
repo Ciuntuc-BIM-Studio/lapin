@@ -15,6 +15,7 @@ import { notify, useUi } from '../app/store';
 import { pickFile, safeFileName, saveFile } from '../engine/files';
 import { activate, allTools } from '../platform/modules';
 import type { ToolDef } from '../platform/module';
+import { useExtraTools } from '../platform/extraTools';
 import {
   MY_DRAG, MY_GROUP_DRAG, MY_TAB, NEW_GROUP, addGroup, addTool, addToNewGroup, changeMyTab, deleteGroup, exportTab, findGroup, getDragged, has, importMyTab, isEmpty,
   locate, moveGroup, myTab, nudgeGroup, removeTool, renameGroup, resetMyTab, setDragged, setSize, stepTool, undoMyTools, useMyTools, visibleTab, type MyGroup, type MyItem,
@@ -88,6 +89,9 @@ export async function importMyTools(): Promise<void> {
   if (!importMyTab(new TextDecoder().decode(file.bytes))) notify('The file is not a My tools file.');
 }
 
+/** A tool's hover text: its name and keys, then a script tool's own tooltip. */
+const titleOf = (tl: ToolDef, group?: string) => (tl.tooltip ? `${hint(tl.id, tl.label, group)}\n${tl.tooltip}` : hint(tl.id, tl.label, group));
+
 /** The tools of this edition, by id. */
 export const toolsById = (): Map<string, ToolDef> => new Map(allTools().map((t) => [t.id, t]));
 
@@ -102,6 +106,8 @@ const refocus = create<{ tool: string | null }>(() => ({ tool: null }));
 export function MyToolsBand({ icons, drop, onPicked }: { icons: boolean; drop?: boolean; onPicked?: () => void }) {
   const stored = useMyTools((s) => myTab(s.tabs));
   const tool = useUi((s) => s.tool);
+  // A script's tools come and go while the app runs (decision 489, stage 4).
+  useExtraTools((s) => s.rev);
   const byId = toolsById();
   const tab = visibleTab(stored, (id) => byId.has(id));
   const [over, setOver] = useState<Over>(null);
@@ -220,16 +226,16 @@ export function MyToolsBand({ icons, drop, onPicked }: { icons: boolean; drop?: 
       ...toolDragProps(it.tool, true),
     };
     if (icons) return (
-      <button key={it.tool} {...common} className={`tool icon-only${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={hint(tl.id, tl.label, g.label)} aria-label={tl.label}>
+      <button key={it.tool} {...common} className={`tool icon-only${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={titleOf(tl, g.label)} aria-label={tl.label}>
         <tl.icon size={18} strokeWidth={1.5} />
       </button>
     );
     return small ? (
-      <button key={it.tool} {...common} className={`tool small${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={hint(tl.id, tl.label)}>
+      <button key={it.tool} {...common} className={`tool small${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={titleOf(tl)}>
         <tl.icon size={14} strokeWidth={1.6} /><span>{tl.label}</span>
       </button>
     ) : (
-      <button key={it.tool} {...common} className={`tool${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={hint(tl.id, tl.label)}>
+      <button key={it.tool} {...common} className={`tool${tool === tl.id ? ' on' : ''}${mark(g, i)}`} title={titleOf(tl)}>
         <tl.icon size={22} strokeWidth={1.5} /><span>{tl.label}</span>
         {keys && <kbd className="tool-key" data-no-i18n>{keys.split(', ')[0]}</kbd>}
       </button>

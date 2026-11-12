@@ -92,11 +92,53 @@ for e in lapin.selection():
 
 Et elements felter læses ved deres navne og ændres ved tildeling: `wall.height = 3` ændrer væggen (ét fortryd-trin, eller en del af Kør). `with lapin.step("Name"):` gør flere kommandoer til ét fortryd-trin, mens hver stadig svarer med det samme, så en senere kan bruge det, en tidligere lavede.
 
+## Et script som værktøj
+
+Et script kan være et **værktøj**: en knap i **Mine værktøjer**, der kører det, for enhver, med Udviklerekstra slået til eller fra. Sig det i scriptets første linjer, dets *header*:
+
+```python
+# lapin: name="Perimeter walls", version="1.0.0", tool="Perimeter walls", icon="square", run="perimeter"
+# lapin: tooltip="Four walls round a rectangle, one undo step"
+
+def perimeter():
+    v = lapin.ui.ask("Perimeter walls", {
+        "width": lapin.ui.number(8.0, unit="m", min=0.5),
+        "depth": lapin.ui.number(6.0, unit="m", min=0.5),
+        "storey": lapin.ui.storey(),
+    })
+    if v is None:          # Annuller
+        return
+    w, d = v["width"], v["depth"]
+    corners = [(0, 0), (w, 0), (w, d), (0, d)]
+    for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
+        lapin.architecture.add_wall(storey_id=v["storey"].id, x1=x1, y1=y1, x2=x2, y2=y2)
+```
+
+- **tool**: knappens navn; **run**: den funktion, den kalder (uden den kører hele scriptet); **icon**: et af Lapins ikoner (`wall`, `door`, `stair`…) eller et almindeligt (`square`, `ruler`, `layers`, `grid`, `star`…), ellers et bogstav (`icon="P"`, eller navnets første); **tooltip**: hvad knappen siger, når du holder musen over den.
+- Gem scriptet under **Mine** (eller i projektet): dets værktøj vises i **Mine værktøjer**, i en gruppe **Scripts**, uden at scriptet køres. Flyt det, gør det lille eller tag det ud som ethvert værktøj; **Kommandoer…** (Ctrl+K) finder det også.
+
+![Mine værktøjer med et scripts værktøj](shots/python-tools-tab.webp)
+
+Et klik kører scriptet som én **Kørsel**: alt, hvad det gør, er **ét fortryd-trin**, opkaldt efter værktøjet. `lapin.ui.ask` viser en dialog fra Lapin selv, lavet af de felter, scriptet nævner: et tal med sin enhed, en tekst, et valg, et afkrydsningsfelt, et element (det, du i mellemtiden markerer i modellen: **Brug markering**), en etage, en type. **OK** giver scriptet værdierne; **Annuller** giver det ingenting.
+
+![Værktøjets spørgsmål: målene og etagen](shots/python-tools-ask.webp)
+
+![Værktøjets fire vægge; ét Fortryd fjerner dem](shots/python-tools-walls.webp)
+
+Et script kan også lave værktøjer, mens det kører: `@lapin.ui.tool("Name", icon="ruler")` over en funktion, kørt én gang fra panelet, lægger det værktøj i Mine værktøjer.
+
+Hvor værktøjer kommer fra:
+- **Mine**: altid;
+- **projektets scripts**: kun når du har stolet på deres kode på denne computer, så et projekt fra en anden aldrig lægger en knap i dit bånd; **Glem tillid** i panelet tager dem ud;
+- **Lapin Extensions**: et script, du installerer, viser sit værktøj; det første klik spørger **Kør én gang / Stol på / Annuller**, og **Kør script** i **Udvidelser → Installeret** kører det også.
+
+Et script, der er slettet, afinstalleret eller ikke længere betroet, tager sine værktøjer ud af Mine værktøjer.
+
 ## Sikkerhed
 
-Et script kan alt, hvad du kan på denne computer: det kører i din egen Python med dine rettigheder. Kør scripts, du selv har skrevet eller stoler på; et projekts script spørger først.
+Et script kan alt, hvad du kan på denne computer: det kører i din egen Python med dine rettigheder. Kør scripts, du selv har skrevet eller stoler på; et projekts script og et installeret spørger først.
 
-En gæst i en delt session kan hverken køre scripts på din computer eller lægge et i dit projekt, og et script forbinder kun til Lapin på sin egen computer.
+En gæst i en delt session kan hverken køre scripts på din computer, lægge et i dit projekt eller slette, omdøbe eller flytte et af projektets scripts; et script forbinder kun til Lapin på sin egen computer, og dets spørgsmål stilles kun i dit vindue.
 
 ## For udviklere
 

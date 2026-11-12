@@ -92,11 +92,53 @@ for e in lapin.selection():
 
 I campi di un elemento si leggono per nome e si cambiano per assegnazione: `wall.height = 3` cambia il muro (un solo passo di annullamento, o parte dell'Esecuzione). `with lapin.step("Name"):` rende più comandi un solo passo di annullamento, e ciascuno risponde comunque subito, così uno successivo può usare ciò che ha creato uno precedente.
 
+## Uno script come strumento
+
+Uno script può essere uno **strumento**: un pulsante in **I miei strumenti** che lo esegue, per chiunque, con gli Extra per sviluppatori attivi o no. Dillo nelle prime righe dello script, la sua *intestazione*:
+
+```python
+# lapin: name="Perimeter walls", version="1.0.0", tool="Perimeter walls", icon="square", run="perimeter"
+# lapin: tooltip="Four walls round a rectangle, one undo step"
+
+def perimeter():
+    v = lapin.ui.ask("Perimeter walls", {
+        "width": lapin.ui.number(8.0, unit="m", min=0.5),
+        "depth": lapin.ui.number(6.0, unit="m", min=0.5),
+        "storey": lapin.ui.storey(),
+    })
+    if v is None:          # Annulla
+        return
+    w, d = v["width"], v["depth"]
+    corners = [(0, 0), (w, 0), (w, d), (0, d)]
+    for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
+        lapin.architecture.add_wall(storey_id=v["storey"].id, x1=x1, y1=y1, x2=x2, y2=y2)
+```
+
+- **tool**: il nome del pulsante; **run**: la funzione che chiama (senza, gira l'intero script); **icon**: una delle icone di Lapin (`wall`, `door`, `stair`…) o una comune (`square`, `ruler`, `layers`, `grid`, `star`…), altrimenti una lettera (`icon="P"`, o la prima del nome); **tooltip**: ciò che il pulsante dice quando ci passi sopra con il mouse.
+- Salva lo script in **Miei** (o nel progetto): il suo strumento compare in **I miei strumenti**, in un gruppo **Script**, senza che lo script venga eseguito. Spostalo, rendilo piccolo o toglilo come qualsiasi strumento; lo trova anche **Comandi…** (Ctrl+K).
+
+![I miei strumenti con lo strumento di uno script](shots/python-tools-tab.webp)
+
+Un clic esegue lo script come una sola **Esecuzione**: tutto ciò che fa è **un solo passo di annullamento**, con il nome dello strumento. `lapin.ui.ask` mostra una finestra di Lapin stesso, fatta con i campi che lo script nomina: un numero con la sua unità, un testo, una scelta, una casella, un elemento (quello che intanto selezioni nel modello: **Usa la selezione**), un piano, un tipo. **OK** dà i valori allo script; **Annulla** non gli dà nulla.
+
+![La domanda dello strumento: le misure e il piano](shots/python-tools-ask.webp)
+
+![I quattro muri dello strumento; un solo Annulla li toglie](shots/python-tools-walls.webp)
+
+Uno script può anche creare strumenti mentre gira: `@lapin.ui.tool("Name", icon="ruler")` sopra una funzione, eseguito una volta dal pannello, mette quello strumento in I miei strumenti.
+
+Da dove vengono gli strumenti:
+- **Miei**: sempre;
+- **gli script del progetto**: solo quando ti sei fidato del loro codice su questo computer, così un progetto di qualcun altro non mette mai un pulsante nel tuo ribbon; **Dimentica la fiducia** nel pannello li toglie;
+- **Lapin Extensions**: uno script che installi mostra il suo strumento; il primo clic chiede **Esegui una volta / Fidati / Annulla**, e **Esegui script** in **Estensioni → Installate** lo esegue anch'esso.
+
+Uno script eliminato, disinstallato o di cui non ci si fida più toglie i suoi strumenti da I miei strumenti.
+
 ## Sicurezza
 
-Uno script può fare tutto ciò che puoi fare tu su questo computer: gira nel tuo Python, con i tuoi diritti. Esegui script scritti da te o di cui ti fidi; uno script del progetto chiede prima.
+Uno script può fare tutto ciò che puoi fare tu su questo computer: gira nel tuo Python, con i tuoi diritti. Esegui script scritti da te o di cui ti fidi; uno script del progetto e uno installato chiedono prima.
 
-Un ospite di una sessione condivisa non può eseguire script sul tuo computer né metterne uno nel tuo progetto, e uno script si collega solo al Lapin del proprio computer.
+Un ospite di una sessione condivisa non può eseguire script sul tuo computer, né metterne uno nel tuo progetto, né eliminare, rinominare o spostare uno script del progetto; uno script si collega solo al Lapin del proprio computer, e le sue domande si fanno solo nella tua finestra.
 
 ## Per gli sviluppatori
 

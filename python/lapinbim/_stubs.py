@@ -20,6 +20,7 @@ from typing import Any, Callable
 from ._client import Batch as Batch, Deferred as Deferred, Lapin as _Lapin, LapinError as LapinError, Step as Step
 from ._frame import Obj as Obj
 from ._model import Element as Element, Model as _Model
+from ._ui import UI as UI
 
 __version__: str
 __all__: list[str]
@@ -33,6 +34,8 @@ class Lapin(_Lapin):
 {members}
     @property
     def model(self) -> Model: ...
+    @property
+    def ui(self) -> UI: ...
 
 def connect(port: int | None = None, *, connect_timeout: float = 5.0) -> Lapin: ...
 def client() -> Lapin: ...
@@ -56,6 +59,7 @@ def ns(name: str) -> Any: ...
 def command(name: str) -> Any: ...
 
 model: Model
+ui: UI
 {modules}
 '''
 

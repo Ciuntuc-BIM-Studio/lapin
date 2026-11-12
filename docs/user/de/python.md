@@ -92,11 +92,53 @@ for e in lapin.selection():
 
 Die Felder eines Elements werden über ihre Namen gelesen und durch Zuweisung geändert: `wall.height = 3` ändert die Wand (ein Rückgängig-Schritt oder Teil des Ausführens). `with lapin.step("Name"):` macht mehrere Befehle zu einem Rückgängig-Schritt, wobei jeder weiterhin sofort antwortet, sodass ein späterer nutzen kann, was ein früherer erzeugt hat.
 
+## Ein Skript als Werkzeug
+
+Ein Skript kann ein **Werkzeug** sein: eine Schaltfläche in **Meine Werkzeuge**, die es ausführt, für jeden, mit Entwickler-Extras an oder aus. Sag es in den ersten Zeilen des Skripts, seinem *Header*:
+
+```python
+# lapin: name="Perimeter walls", version="1.0.0", tool="Perimeter walls", icon="square", run="perimeter"
+# lapin: tooltip="Four walls round a rectangle, one undo step"
+
+def perimeter():
+    v = lapin.ui.ask("Perimeter walls", {
+        "width": lapin.ui.number(8.0, unit="m", min=0.5),
+        "depth": lapin.ui.number(6.0, unit="m", min=0.5),
+        "storey": lapin.ui.storey(),
+    })
+    if v is None:          # Abbrechen
+        return
+    w, d = v["width"], v["depth"]
+    corners = [(0, 0), (w, 0), (w, d), (0, d)]
+    for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
+        lapin.architecture.add_wall(storey_id=v["storey"].id, x1=x1, y1=y1, x2=x2, y2=y2)
+```
+
+- **tool**: der Name der Schaltfläche; **run**: die Funktion, die sie aufruft (ohne sie läuft das ganze Skript); **icon**: eines der Lapin-Symbole (`wall`, `door`, `stair`…) oder ein gängiges (`square`, `ruler`, `layers`, `grid`, `star`…), sonst ein Buchstabe (`icon="P"`, oder der erste des Namens); **tooltip**: was die Schaltfläche sagt, wenn du mit der Maus darüber fährst.
+- Speichere das Skript unter **Meine** (oder im Projekt): sein Werkzeug erscheint in **Meine Werkzeuge**, in einer Gruppe **Skripte**, ohne dass das Skript ausgeführt wird. Verschiebe es, mach es klein oder nimm es heraus wie jedes Werkzeug; auch **Befehle…** (Strg+K) findet es.
+
+![Meine Werkzeuge mit dem Werkzeug eines Skripts](shots/python-tools-tab.webp)
+
+Ein Klick führt das Skript als eine einzige **Ausführung** aus: alles, was es tut, ist **ein einziger Rückgängig-Schritt**, nach dem Werkzeug benannt. `lapin.ui.ask` zeigt einen Dialog von Lapin selbst, gebaut aus den Feldern, die das Skript nennt: eine Zahl mit ihrer Einheit, ein Text, eine Auswahl, ein Kontrollkästchen, ein Element (das du währenddessen im Modell auswählst: **Auswahl verwenden**), ein Geschoss, ein Typ. **OK** gibt dem Skript die Werte; **Abbrechen** gibt ihm nichts.
+
+![Die Frage des Werkzeugs: die Maße und das Geschoss](shots/python-tools-ask.webp)
+
+![Die vier Wände des Werkzeugs; ein Rückgängig nimmt sie zurück](shots/python-tools-walls.webp)
+
+Ein Skript kann auch während des Laufs Werkzeuge anlegen: `@lapin.ui.tool("Name", icon="ruler")` über einer Funktion, einmal aus dem Fenster ausgeführt, legt dieses Werkzeug in Meine Werkzeuge.
+
+Woher Werkzeuge kommen:
+- **Meine**: immer;
+- **die Skripte des Projekts**: nur wenn du ihrem Code auf diesem Computer vertraut hast, sodass ein Projekt von jemand anderem nie eine Schaltfläche in dein Menüband legt; **Vertrauen entziehen** im Fenster nimmt sie heraus;
+- **Lapin Extensions**: ein Skript, das du installierst, zeigt sein Werkzeug; der erste Klick fragt **Einmal ausführen / Vertrauen / Abbrechen**, und **Skript ausführen** unter **Erweiterungen → Installiert** führt es ebenfalls aus.
+
+Ein gelöschtes, deinstalliertes oder nicht mehr vertrautes Skript nimmt seine Werkzeuge aus Meine Werkzeuge.
+
 ## Sicherheit
 
-Ein Skript kann alles, was du auf diesem Computer kannst: es läuft in deinem eigenen Python mit deinen Rechten. Führe Skripte aus, die du selbst geschrieben hast oder denen du vertraust; ein Projektskript fragt zuerst.
+Ein Skript kann alles, was du auf diesem Computer kannst: es läuft in deinem eigenen Python mit deinen Rechten. Führe Skripte aus, die du selbst geschrieben hast oder denen du vertraust; ein Projektskript und ein installiertes fragen zuerst.
 
-Ein Gast einer geteilten Sitzung kann weder Skripte auf deinem Computer ausführen noch eines in dein Projekt legen, und ein Skript verbindet sich nur mit dem Lapin auf seinem eigenen Computer.
+Ein Gast einer geteilten Sitzung kann weder Skripte auf deinem Computer ausführen noch eines in dein Projekt legen noch ein Skript des Projekts löschen, umbenennen oder verschieben; ein Skript verbindet sich nur mit dem Lapin auf seinem eigenen Computer, und seine Fragen werden nur in deinem Fenster gestellt.
 
 ## Für Entwickler
 

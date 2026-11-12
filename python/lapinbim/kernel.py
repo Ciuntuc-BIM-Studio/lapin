@@ -16,6 +16,13 @@ With an engine to connect to (``LAPIN_PORT``) each run is one step held open on 
 ``doc.commit`` when it ends well (one undo step named after the script, none when it changed nothing),
 ``doc.rollback`` when it raises or is stopped. A console run's last expression is shown as the Python prompt shows it.
 
+Stage 4: a run may be a script's tool's (``"tool": {"name", "call", "main"}``): the script runs in a namespace of its
+own, as ``__main__`` when the tool is the whole script (a header's ``tool=`` with no ``run=``), else as a module
+(``__name__ == "__lapin_tool__"``), and then the tool's function is called (``call``, a function of the script by its
+name, else the one ``lapin.ui.tool`` registered under the tool's name as the script loaded). A Run from the panel
+(``"source"``: the window's key for the script) says back the tools the script registered with ``lapin.ui.tool``:
+``{"type": "tools", "id", "source", "tools": [{"name", "icon", "tooltip", "call", "main"}]}``, before its ``done``.
+
 The engine gives the kernel a token (``LAPIN_SCRIPT_TOKEN``, taken out of the environment as lapinbim loads): every
 connection lapinbim opens to that engine shows it (``script.join``), so one a script opens itself joins the run's step
 (stage 3), and ``lapin.step()`` inside a run joins it too.
@@ -38,6 +45,7 @@ import traceback
 from typing import Any
 
 import lapinbim
+from lapinbim import _ui
 
 _lock = threading.Lock()
 _out = None
@@ -149,6 +157,8 @@ def _run(job: dict, namespace: dict, step: bool) -> dict:
     code = str(job.get("code") or "")
     name = str(job.get("name") or "Script")
     console = bool(job.get("console"))
+    tool = job.get("tool") if isinstance(job.get("tool"), dict) and not console else None
+    source = job.get("source") if isinstance(job.get("source"), str) else None
     filename = name if not console else "<console>"
     linecache.cache[filename] = (len(code), None, code.splitlines(True), filename)
     result: dict = {"ok": True, "interrupted": False, "kept": False, "error": None, "line": None, "traceback": None}
@@ -163,10 +173,24 @@ def _run(job: dict, namespace: dict, step: bool) -> dict:
             echo = ast.Expression(tree.body.pop().value)
         compiled = compile(tree, filename, "exec")
         shown = compile(echo, filename, "eval") if echo is not None else None
+        # What lapin.ui.tool registers while the script loads: a Run from the panel says it back; a tool's run finds its function there.
+        _ui._functions = {}
+        _ui._registered = [] if not console else None
+        if tool is not None:
+            # A tool's run: the script in a namespace of its own, never the console's.
+            namespace = {"__name__": "__main__" if tool.get("main") else "__lapin_tool__", "__builtins__": builtins, "lapin": lapinbim}
         _armed = True
         if _stop_asked:
             raise KeyboardInterrupt
         exec(compiled, namespace)
+        if tool is not None and not tool.get("main"):
+            call = tool.get("call")
+            target = namespace.get(call) if call else None
+            if target is None:
+                target = _ui._functions.get(str(tool.get("name") or ""))
+            if not callable(target):
+                raise LookupError(f"The script has no tool „{tool.get('name')}”: name its function in the header (run=…) or register it with lapin.ui.tool.")
+            target()
         if shown is not None:
             value = eval(shown, namespace)
             _armed = False
@@ -198,6 +222,10 @@ def _run(job: dict, namespace: dict, step: bool) -> dict:
                     pass
             except Exception as e:  # noqa: BLE001 - a commit the engine refused, or a lost engine
                 result.update(ok=False, kept=False, error=result["error"] or str(e))
+        registered, _ui._registered = _ui._registered, None
+        # A Run from the panel that ended well says which tools the script has now (none: its tools go).
+        if result["ok"] and tool is None and source is not None and registered is not None:
+            _emit({"type": "tools", "id": _current, "source": source, "tools": registered})
     return result
 
 

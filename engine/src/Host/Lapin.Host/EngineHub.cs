@@ -208,6 +208,8 @@ public sealed class EngineHub
         bool had;
         lock (_clients) had = _clients.Remove(c);
         c.Complete();
+        // The questions it asked (lapin.ui.ask) taken away: the windows close their dialogs.
+        Scripts.Forget(c);
         if (had && c.Participant != null) await BroadcastPresence();
         // A script's connection lost (its Python killed, stopped, crashed) with its step open: the step taken back, every window told.
         // A script's Python with several connections (one it opened itself) keeps its step until the last of them goes.
@@ -343,6 +345,16 @@ public sealed class EngineHub
                     client.StepKey = Scripts.KernelKey;
                     result = new JsonObject { ["joined"] = true };
                     break;
+                // Stage 4: lapin.ui.ask. The question goes to this computer's windows; the asking connection is answered when one of them
+                // answers, its other calls going on meanwhile (a Stop's rollback comes through it). Never a guest's, neither the asking nor the answer.
+                case "script.ask":
+                {
+                    if (caller.Remote) throw new CommandException("Only the host can do that.");
+                    if (client == null) throw new CommandException("A question is asked over a connection.");
+                    var answer = Scripts.Ask(p, client, ReferenceEquals(client.StepKey, Scripts.KernelKey));
+                    if (id != null) _ = ReplyWhenAnswered(client, id, answer);
+                    return null;
+                }
                 case var _ when method.StartsWith("script.", StringComparison.Ordinal):
                     if (caller.Remote) throw new CommandException("Only the host can do that.");
                     result = await Scripts.Handle(method, p);
@@ -359,6 +371,15 @@ public sealed class EngineHub
         {
             return id == null ? null : BinaryFrame.Encode(new Reply(id, null, ex.Message));
         }
+    }
+
+    /// <summary>A script's question answered (or cancelled): its reply posted to the connection that asked.</summary>
+    static async Task ReplyWhenAnswered(Client client, JsonNode id, Task<JsonObject> answer)
+    {
+        byte[] frame;
+        try { frame = BinaryFrame.Encode(new Reply(id, await answer)); }
+        catch (Exception ex) when (ex is CommandException or InvalidOperationException) { frame = BinaryFrame.Encode(new Reply(id, null, ex.Message)); }
+        client.Post(frame);
     }
 
     /// <summary>The participants now: the host and each guest connected, with where each is.</summary>

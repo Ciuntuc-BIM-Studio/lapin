@@ -2257,4 +2257,18 @@ mark.doc-missing.flash { animation: doc-flash 1.2s ease-out 2; }
 .script-trust p { margin: 0 0 6px; }
 .script-trust-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .script-trust-actions .btn { width: auto; padding: 4px 10px; font-size: 11.5px; }
+/* lapin.ui.ask (decision 489, stage 4): a dialog over the model without a backdrop, so the selection can be made meanwhile. */
+.script-ask { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); z-index: 31; min-width: min(420px, calc(100vw - 32px)); width: min(480px, calc(100vw - 32px)); }
+.script-ask .panel-title { display: inline-flex; align-items: center; gap: 6px; }
+.script-ask-body { display: grid; gap: 8px; }
+.script-ask-body p { margin: 0; }
+.script-ask-row { display: grid; grid-template-columns: minmax(110px, 38%) 1fr; align-items: center; gap: 10px; }
+.script-ask-row.wrong :is(input, select, textarea) { border-color: var(--danger, #c0392b); }
+.script-ask-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.script-ask-number { display: flex; align-items: center; gap: 6px; }
+.script-ask-number input { flex: 1; min-width: 0; text-align: right; }
+.script-ask-element { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.script-ask-element select, .script-ask-picked { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.script-ask-element .btn { width: auto; padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.script-tool-trust { max-width: 520px; }
 @media (max-width: 900px) { .script-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; } .script-library { border-right: 0; max-height: 90px; } }

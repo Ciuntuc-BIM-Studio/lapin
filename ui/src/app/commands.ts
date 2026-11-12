@@ -14,6 +14,7 @@ import { toggleGrid, toggleThinLines } from './display';
 import { chooseWorkspace, onInterfaceChange, useInterface, WORKSPACE_IDS, WORKSPACE_LABELS } from './interface';
 import { effectiveBindings, formatBinding, resolveAlias, resolveKeymap, useKeymap, type Binding, type CommandDef, type Keymap } from './shortcuts';
 import { activate, activateSlot, allTools, defaultHotbar, hotbarSlots, ribbonTabs } from '../platform/modules';
+import { extraTools, extraToolsRev } from '../platform/extraTools';
 import { redo, undo } from '../engine/session';
 import { deleteElements } from '../engine/dependents';
 import { runFileAction } from '../shell/fileActions';
@@ -84,10 +85,14 @@ const SAME: Record<string, string> = {
 };
 
 let cached: CommandDef[] | null = null;
+/** The extra tools (a script's) the cache was made with: a change makes it again. */
+let cachedRev = -1;
 
-/** Every command, once: the app's, the quick tool slots, then the ribbon's tools tab by tab (and the quick tools no tab has). */
+/** Every command, once: the app's, the quick tool slots, then the ribbon's tools tab by tab (and the quick tools no tab has), then the scripts' tools. */
 export function commands(): CommandDef[] {
-  if (cached) return cached;
+  if (cached && cachedRev === extraToolsRev()) return cached;
+  cachedRev = extraToolsRev();
+  memo = null;
   const out = [...appCommands(), ...hotbarCommands()];
   const seen = new Set(out.map((c) => c.id));
   const tool = (t: ReturnType<typeof allTools>[number], category: string, group?: string) => {
@@ -103,6 +108,7 @@ export function commands(): CommandDef[] {
   };
   for (const t of defaultHotbar()) if (!ribbonTabs().some((tab) => tab.groups.some((g) => [...g.tools, ...(g.small ?? [])].some((x) => x.id === t.id)))) tool(t, 'Quick tools');
   for (const tab of ribbonTabs()) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) tool(t, tab.label, g.label);
+  for (const t of extraTools()) tool(t, 'Scripts');
   for (const t of allTools()) tool(t, 'Other');
   cached = out;
   return out;
@@ -118,7 +124,7 @@ let memo: { state: unknown; map: Keymap; bindings: Record<string, Binding[]> } |
 /** The bindings in force and their keymap (recomputed when the user changes them). */
 export function current(): { map: Keymap; bindings: Record<string, Binding[]> } {
   const state = useKeymap.getState();
-  if (memo?.state === state) return memo;
+  if (memo?.state === state && cachedRev === extraToolsRev()) return memo;
   const cmds = commands();
   const bindings = effectiveBindings(cmds, state);
   const map = resolveKeymap(cmds, bindings, cliNames(), state.aliases);

@@ -16,6 +16,7 @@ import { addSelectionExpander } from './groups';
 import { snapGrip } from '../viewport/grips';
 import { askPlacement as ask } from './placement';
 import { replacementsOf, replacesAny, through, withReplacedTools, type Replacement } from './replaces';
+import { extraTools } from './extraTools';
 
 /** The product's modules, with the tools some of them replace in place (docs/overrides.md); as loaded when none does. */
 export const modules: readonly LapinModule[] = withReplacedTools(loaded);
@@ -69,7 +70,7 @@ export const similarOf = (cls: string) => modules.map((m) => m.similar?.[cls]).f
 export const setTypeOf = (cls: string) => modules.map((m) => m.setType?.[cls]).find(Boolean) ?? null;
 export const typeFieldsOf = (cls: string) => modules.map((m) => m.typeFields?.[cls]).find(Boolean) ?? null;
 
-/** Every tool of every module, once. */
+/** Every tool of every module, once; then the tools added while the app runs (a script's: platform/extraTools.ts). */
 export const allTools = (): ToolDef[] => {
   const seen = new Map<string, ToolDef>();
   for (const m of modules) {
@@ -77,6 +78,7 @@ export const allTools = (): ToolDef[] => {
     for (const tab of m.tabs ?? []) for (const g of tab.groups) for (const t of [...g.tools, ...(g.small ?? [])]) seen.set(t.id, t);
     for (const g of Object.values(m.sharedGroups ?? {})) for (const t of [...g.tools, ...(g.small ?? [])]) seen.set(t.id, t);
   }
+  for (const t of extraTools()) if (!seen.has(t.id)) seen.set(t.id, t);
   return [...seen.values()];
 };
 

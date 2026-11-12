@@ -92,11 +92,53 @@ for e in lapin.selection():
 
 Câmpurile unui element se citesc după nume și se schimbă prin atribuire: `wall.height = 3` schimbă peretele (un singur pas de anulare, sau parte din Rulare). `with lapin.step("Name"):` face din mai multe comenzi un singur pas de anulare, iar fiecare răspunde totuși pe loc, deci una de după poate folosi ce a făcut una de dinainte.
 
+## O unealtă dintr-un script
+
+Un script poate fi o **unealtă**: un buton din **Uneltele mele** care îl rulează, pentru oricine, cu Extra pentru dezvoltatori pornit sau oprit. Spune asta în primele rânduri ale scriptului, *antetul* lui:
+
+```python
+# lapin: name="Perimeter walls", version="1.0.0", tool="Perimeter walls", icon="square", run="perimeter"
+# lapin: tooltip="Four walls round a rectangle, one undo step"
+
+def perimeter():
+    v = lapin.ui.ask("Perimeter walls", {
+        "width": lapin.ui.number(8.0, unit="m", min=0.5),
+        "depth": lapin.ui.number(6.0, unit="m", min=0.5),
+        "storey": lapin.ui.storey(),
+    })
+    if v is None:          # Renunță
+        return
+    w, d = v["width"], v["depth"]
+    corners = [(0, 0), (w, 0), (w, d), (0, d)]
+    for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):
+        lapin.architecture.add_wall(storey_id=v["storey"].id, x1=x1, y1=y1, x2=x2, y2=y2)
+```
+
+- **tool**: numele butonului; **run**: funcția pe care o cheamă (fără ea rulează tot scriptul); **icon**: una dintre iconițele Lapin (`wall`, `door`, `stair`…) sau una obișnuită (`square`, `ruler`, `layers`, `grid`, `star`…), altfel o literă (`icon="P"`, sau prima literă a numelui); **tooltip**: ce spune butonul când treci cu mausul peste el.
+- Salvează scriptul la **Ale mele** (sau în proiect): unealta lui apare în **Uneltele mele**, într-un grup **Scripturi**, fără ca scriptul să fie rulat. Mut-o, fă-o mică sau scoate-o ca pe orice unealtă; o găsește și **Comenzi…** (Ctrl+K).
+
+![Uneltele mele cu unealta unui script](shots/python-tools-tab.webp)
+
+Un clic rulează scriptul ca o singură **Rulare**: tot ce face e **un singur pas de anulare**, numit după unealtă. `lapin.ui.ask` arată un dialog al lui Lapin, făcut din câmpurile pe care le numește scriptul: un număr cu unitatea lui, un text, o alegere, o casetă de bifat, un element (cel pe care îl selectezi între timp în model: **Folosește selecția**), un nivel, un tip. **OK** dă scriptului valorile; **Renunță** nu îi dă nimic.
+
+![Întrebarea unealtei: dimensiunile și nivelul](shots/python-tools-ask.webp)
+
+![Cei patru pereți ai uneltei; un singur Anulează îi ia înapoi](shots/python-tools-walls.webp)
+
+Un script poate face unelte și în timp ce rulează: `@lapin.ui.tool("Name", icon="ruler")` deasupra unei funcții, rulat o dată din panou, pune acea unealtă în Uneltele mele.
+
+De unde vin uneltele:
+- **Ale mele**: mereu;
+- **scripturile proiectului**: doar când ai dat încredere codului lor pe acest calculator, așa că un proiect de la altcineva nu pune niciodată un buton în ribbonul tău; **Retrage încrederea** din panou le scoate;
+- **Lapin Extensions**: un script instalat își arată unealta; primul clic întreabă **Rulează o dată / Am încredere / Renunță**, iar **Rulează scriptul** din **Extensii → Instalate** îl rulează și el.
+
+Un script șters, dezinstalat sau fără încredere nu mai are uneltele în Uneltele mele.
+
 ## Siguranța
 
-Un script poate face orice poți face tu pe acest calculator: rulează în Python-ul tău, cu drepturile tale. Rulează scripturi scrise de tine sau în care ai încredere; un script al proiectului întreabă mai întâi.
+Un script poate face orice poți face tu pe acest calculator: rulează în Python-ul tău, cu drepturile tale. Rulează scripturi scrise de tine sau în care ai încredere; un script al proiectului și unul instalat întreabă mai întâi.
 
-Un invitat al unei sesiuni partajate nu poate rula scripturi pe calculatorul tău și nici nu poate pune unul în proiectul tău, iar un script se conectează doar la Lapin-ul de pe propriul lui calculator.
+Un invitat al unei sesiuni partajate nu poate rula scripturi pe calculatorul tău, nu poate pune unul în proiectul tău și nici nu poate șterge, redenumi sau muta un script al proiectului; un script se conectează doar la Lapin-ul de pe propriul lui calculator, iar întrebările lui se pun doar în fereastra ta.
 
 ## Pentru dezvoltatori
 

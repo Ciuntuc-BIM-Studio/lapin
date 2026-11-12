@@ -15,6 +15,7 @@ import { defaultHotbar, hotbarIds, putInSlot, quickSlot, resetSlots, ribbonTabs,
 import { parseSlot } from '../app/hotbar';
 import { useSession } from '../engine/session';
 import type { ToolDef } from '../platform/module';
+import { extraTools } from '../platform/extraTools';
 
 /** The tools to choose from: each ribbon tab's, then the quick tools no tab has. */
 export function choices(): { label: string; tools: ToolDef[] }[] {
@@ -27,6 +28,8 @@ export function choices(): { label: string; tools: ToolDef[] }[] {
   };
   take('Quick tools', defaultHotbar().filter((t) => !ribbonTabs().some((tab) => tab.groups.some((g) => [...g.tools, ...(g.small ?? [])].some((x) => x.id === t.id)))));
   for (const tab of ribbonTabs()) take(tab.label, tab.groups.flatMap((g) => [...g.tools, ...(g.small ?? [])]));
+  // A script's tools (decision 489, stage 4): in no tab, offered here.
+  take('Scripts', extraTools());
   return out;
 }
 

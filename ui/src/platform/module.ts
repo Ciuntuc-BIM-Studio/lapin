@@ -79,6 +79,8 @@ export interface ToolDef {
   icon: Icon;
   /** Two-letter shortcut, as in Revit (WA, DR…). */
   shortcut?: string;
+  /** What its button says when hovered, after its name (a script's tool: its header's or lapin.ui.tool's tooltip, shown as written). */
+  tooltip?: string;
   /** A tool drawn in a view: its gesture and what it does at the end. */
   gesture?: Gesture;
   complete?: (input: ToolInput, ctx: ToolContext) => Promise<void> | void;

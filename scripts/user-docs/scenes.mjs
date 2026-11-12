@@ -6830,6 +6830,75 @@ export const scenes = [
     },
   },
   {
+    // Decision 489, stage 4: a script's tool. A script of Mine with a header (# lapin: tool=…, icon=…, run=…) puts its tool in
+    // My tools (group Scripts) without being run; a click runs it: its lapin.ui.ask dialog (sizes in metres, the storey) is the
+    // window's own; OK makes four walls as one undo step named after the tool; one Undo takes them away. Developer extras stay
+    // off: a tool is for anyone. Python is this computer's own: with none, the tool is photographed and the run left out.
+    id: 'python-tools',
+    touches: ['scripting', 'architecture', 'core'],
+    async run(t) {
+      await t.fresh();
+      const page = t.page;
+      const walls = async () => (await t.nodes()).filter((n) => n.type === 'IfcWall').length;
+      const file = `${say({ en: 'Perimeter walls', ro: 'Pereți perimetrali' }, t.lang)}.py`;
+      const tool = say({ en: 'Perimeter walls', ro: 'Pereți perimetrali' }, t.lang);
+      const code = [
+        `# lapin: name="${tool}", version="1.0.0", tool="${tool}", icon="square", run="perimeter"`,
+        `# lapin: tooltip="${say({ en: 'Four walls round a rectangle, one undo step', ro: 'Patru pereți în jurul unui dreptunghi, un singur pas de anulare' }, t.lang)}"`,
+        '',
+        'def perimeter():',
+        `    v = lapin.ui.ask("${tool}", {`,
+        `        "${say({ en: 'width', ro: 'lățime' }, t.lang)}": lapin.ui.number(8.0, unit="m", min=0.5),`,
+        `        "${say({ en: 'depth', ro: 'adâncime' }, t.lang)}": lapin.ui.number(6.0, unit="m", min=0.5),`,
+        `        "${say({ en: 'height', ro: 'înălțime' }, t.lang)}": lapin.ui.number(2.8, unit="m", min=0.5),`,
+        `        "${say({ en: 'storey', ro: 'nivel' }, t.lang)}": lapin.ui.storey(),`,
+        '    })',
+        '    if v is None:',
+        '        return',
+        `    w, d, h = v["${say({ en: 'width', ro: 'lățime' }, t.lang)}"], v["${say({ en: 'depth', ro: 'adâncime' }, t.lang)}"], v["${say({ en: 'height', ro: 'înălțime' }, t.lang)}"]`,
+        '    corners = [(0, 0), (w, 0), (w, d), (0, d)]',
+        '    for (x1, y1), (x2, y2) in zip(corners, corners[1:] + corners[:1]):',
+        `        lapin.architecture.add_wall(storey_id=v["${say({ en: 'storey', ro: 'nivel' }, t.lang)}"].id, x1=x1, y1=y1, x2=x2, y2=y2, height=h)`,
+        '',
+      ].join('\n');
+      try {
+        await page.evaluate(async () => { const m = await import('/src/app/myTools.ts'); m.useMyTools.setState({ tabs: [], past: [] }); localStorage.removeItem('lapin.scriptTools.added'); });
+        await t.call('script.save', { name: file, code });
+        // Mine read again (the panel's own refresh): the header's tool appears in My tools, without the script being run.
+        await page.evaluate(async () => { await (await import('/src/modules/scripting/store.ts')).refreshFiles(); await (await import('/src/modules/scripting/scriptTools.ts')).refreshTools(); });
+        const id = `script:mine:${file}#${tool}`;
+        await t.until(async () => page.evaluate(async (x) => (await import('/src/app/myTools.ts')).myTab().groups.some((g) => g.label === 'Scripts' && g.items.some((i) => i.tool === x)), id), 'the header\'s tool is put in My tools, group Scripts');
+        await page.locator('[data-tab=my-tools]').click();
+        await t.wait(400);
+        const button = page.locator(`.my-band [data-my-tool="${id}"]`);
+        await button.waitFor({ timeout: 10_000 });
+        await t.shot('python-tools-tab', { of: '.topbar', pad: 0 });
+        const status = await t.call('script.status', {});
+        if (!status.ok) { console.log(`  ! python-tools: ${status.message} The tool is not run.`); return; }
+        // A click: the script asks for the sizes in a dialog of Lapin's own.
+        await button.click();
+        const dialog = page.locator('[data-dialog=script-ask]');
+        await dialog.waitFor({ timeout: 60_000 });
+        await dialog.locator(`[data-ask-field="${say({ en: 'width', ro: 'lățime' }, t.lang)}"] input`).fill('10');
+        await t.wait(300);
+        await t.shot('python-tools-ask', { of: '[data-dialog=script-ask]', pad: 16 });
+        await dialog.locator('[data-action=ask-ok]').click();
+        await t.until(async () => (await walls()) === 4, 'OK: the tool makes four walls', 60_000);
+        await t.until(async () => (await page.evaluate(async () => (await import('/src/modules/scripting/store.ts')).useScripting.getState().running)) == null, 'the run ends');
+        const doc = await page.evaluate(async () => (await import('/src/engine/session.ts')).useSession.getState().doc);
+        t.expect(doc?.undoLabel === tool, `the tool's run is one undo step named after it (${doc?.undoLabel})`);
+        await t.fit();
+        await t.wait(600);
+        await t.shot('python-tools-walls');
+        // One Undo takes the four walls away.
+        await page.locator('.undo-btn').first().click();
+        await t.until(async () => (await walls()) === 0, 'one Undo takes the four walls away');
+      } finally {
+        await t.call('script.delete', { name: file }).catch(() => undefined);
+      }
+    },
+  },
+  {
     id: 'help',
     async run(t) {
       await t.fresh();

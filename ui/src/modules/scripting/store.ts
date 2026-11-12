@@ -17,7 +17,8 @@ import { Recording, type RecordedCall } from './recorder';
 import { asksTrust, EMPTY_TRUST, remember, sha256, type ScriptSource, type TrustState } from './trust';
 
 export interface ScriptStatus { enabled: boolean; ok: boolean; python?: string | null; version?: string | null; message?: string | null; alive?: boolean; running?: boolean; scripts?: string | null }
-export interface ScriptFile { name: string; modified: string; bytes: number }
+/** One of Mine: its name, and (stage 4) its first lines, where its plug-in header is, and the hash of its code. */
+export interface ScriptFile { name: string; modified: string; bytes: number; head?: string; sha256?: string }
 
 /** A project's script (a LapinScript entity) as the panel lists it. */
 export interface ProjectScript { id: string; name: string; code: string; sha256: string }
@@ -151,16 +152,21 @@ export async function run(code: string, console: boolean): Promise<void> {
       }
     }
   }
-  await start(code, name, console);
+  await start(code, name, console, console ? undefined : sourceKeyOf(sourceOf(s)));
 }
 
-async function start(code: string, name: string, console: boolean): Promise<void> {
+/** A script's key for the tools it registers (lapin.ui.tool; stage 4): `mine:<file>`, `project:<name>`; none for a new one. */
+export function sourceKeyOf(source: ScriptSource): string | undefined {
+  return source.kind === 'mine' ? `mine:${source.name}` : source.kind === 'project' ? `project:${source.name}` : undefined;
+}
+
+async function start(code: string, name: string, console: boolean, source?: string): Promise<void> {
   const s = get();
   if (console) set({ lines: [...s.lines, { kind: 'in', text: code }], history: rememberLine(s.history, code) });
   else set({ errorLine: null, lines: [...s.lines, { kind: 'info', text: `▶ ${name}` }] });
   try {
     // The run's start and end come as events (a quick one may end before this answer): its id is theirs.
-    await engine.call<{ run: number }>('script.run', { code, name, console, python: usePrefs.getState().pythonPath });
+    await engine.call<{ run: number }>('script.run', { code, name, console, python: usePrefs.getState().pythonPath, ...(source && !console ? { source } : {}) });
   } catch (e) {
     say('err', message(e));
     void refreshStatus();
@@ -170,13 +176,14 @@ async function start(code: string, name: string, console: boolean): Promise<void
 /** The answer to the trust question: Trust (kept on this computer by the code's SHA-256), Run once, or Cancel. */
 export async function answerTrust(answer: 'trust' | 'once' | 'cancel'): Promise<void> {
   const a = get().asking;
+  const source = sourceKeyOf(sourceOf());
   set({ asking: null });
   if (!a || answer === 'cancel') return;
   if (answer === 'trust') {
     try { await engine.call('script.trust', { sha256: a.sha }); } catch (e) { say('err', message(e)); return; }
     set({ trust: remember(get().trust, a.sha, 'trust') });
   }
-  await start(a.code, stepName(a.name, false), false);
+  await start(a.code, stepName(a.name, false), false, source);
 }
 
 export async function stop(): Promise<void> {
@@ -224,10 +231,20 @@ export async function saveScript(name?: string): Promise<boolean> {
   } catch (e) { say('err', message(e)); return false; }
 }
 
+/** What hears a script of Mine deleted (its tools leave My tools: scriptTools.ts). */
+const deletedListeners = new Set<(name: string) => void>();
+export const onScriptDeleted = (l: (name: string) => void): (() => void) => { deletedListeners.add(l); return () => deletedListeners.delete(l); };
+
 export async function deleteScript(): Promise<void> {
   const s = get();
   if (!s.file) return;
-  try { await engine.call('script.delete', { name: s.file }); newScript(); await refreshFiles(); } catch (e) { say('err', message(e)); }
+  const name = s.file;
+  try {
+    await engine.call('script.delete', { name });
+    newScript();
+    await refreshFiles();
+    for (const l of deletedListeners) l(name);
+  } catch (e) { say('err', message(e)); }
 }
 
 /** The script opened in an external editor (Preferences → Developer extras names it), saved first; the panel follows the file. */
