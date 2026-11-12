@@ -1,6 +1,6 @@
 /**
  * Wall types: the project's IfcWallTypes and their layer sets. Pick one to
- * edit its name and layers (material, thickness, the core), or make a new
+ * edit its name and layers (material, its hatches at hand: decision 493, thickness, the core), or make a new
  * one. Layers are listed from the face right of the drawn direction to the
  * left one; the core carries the axis. A type may also be composed in its
  * height: zones from the bottom up (a first course, the masonry, a ring
@@ -17,6 +17,7 @@ import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model
 import { formatLength, useStandards } from '../../engine/unitsStore';
 import { Cell, LengthField, NumberField } from '../../shell/cells';
 import { LayerThickness } from '../core/LayerThickness';
+import { MaterialHatchButton } from '../core/MaterialHatchButton';
 import { layerRankHint } from './layerRank';
 import { LintelRuleEditor } from './LintelRule';
 import { DEFAULT_RULE, type Rule } from './lintels';
@@ -167,7 +168,7 @@ export function WallTypesDialog() {
               <tbody>
                 {rows.map((r, i) => [
                   <tr key={i}>
-                    <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
+                    <td><span className="layer-material"><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /><MaterialHatchButton material={r.material} /></span></td>
                     <td className="num"><LayerThickness model={model} material={r.material} metres={r.thickness} onCommit={(m) => set(i, { thickness: m })} /></td>
                     <td><input type="radio" name="core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
                     <td><LengthField className="layer-height" testId="layer-from" metres={r.from} placeholder="0" readOnly={r.core} noUnit blank min={0} onCommit={(m) => set(i, { from: m })} /></td>
@@ -190,6 +191,7 @@ export function WallTypesDialog() {
                         {r.parts.map((p, k) => (
                           <span key={k} className="layer-part" data-testid="layer-part">
                             <MaterialPicker value={p.material} onChange={(material) => setPart(i, k, { material })} />
+                            <MaterialHatchButton material={p.material} />
                             <LengthField className="layer-height" metres={p.height} min={0} title="How high this piece goes" onCommit={(m) => { if (m != null && m > 0) setPart(i, k, { height: m }); }} />
                             <button type="button" className="icon mini" title="Remove the piece" onClick={() => set(i, { parts: r.parts.filter((_, j) => j !== k) })}><X size={11} /></button>
                           </span>

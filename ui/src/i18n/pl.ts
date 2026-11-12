@@ -1979,6 +1979,11 @@ export const PL: Record<string, string> = {
   "New sections at 1:": "Nowe przekroje w 1:",
   "New elevations at 1:": "Nowe elewacje w 1:",
   "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "Skala, którą dostaje nowy widok tego rodzaju; własna skala widoku, w jego rogu lub właściwościach, zmienia ją potem",
+  "Its material's hatches: cut and elevation (the material's own, as in Manage → Materials)": "Kreskowania jego materiału: w przekroju i w elewacji (materiału, jak w Zarządzaj → Materiały)",
+  "A new material: save the type first, then set its hatches": "Nowy materiał: najpierw zapisz typ, potem ustaw jego kreskowania",
+  "Material hatches": "Kreskowania materiału",
+  "Hatches of": "Kreskowania:",
+  "The material's own, as in Manage → Materials: every type and element made of it changes too.": "Należą do materiału, jak w Zarządzaj → Materiały: zmienia się też każdy typ i element z niego zrobiony.",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

@@ -95,6 +95,10 @@ Uno strato diverso dal nucleo può avere spessore 0, per un materiale troppo sot
 
 ![Uno strato di intonaco con piastrelle fino a 2100 e l’intonaco sopra](shots/wall-layer-parts.webp)
 
+**I tratteggi a portata di mano.** Accanto al materiale di ogni strato, un campione mostra come il materiale è tratteggiato dove è tagliato. Fai clic su di esso per impostare lì i tratteggi del materiale, senza andare in **Gestisci → Materiali**: il suo tratteggio dove lo taglia una sezione, dove lo taglia una pianta e dove lo vede un prospetto, ciascuno con scala, angolo, allineamento, riempimento e penna, come nella scheda **Grafica 2D** dei Materiali. Sono del materiale, quindi cambiano anche tutti i tipi e gli elementi fatti di esso, e ogni modifica è un passo di annullamento. I **Tipi di solaio** hanno lo stesso campione. Un clic fuori o <kbd>Esc</kbd> lo chiude.
+
+![Il campione di tratteggio di uno strato aperto in Tipi di muro: i tratteggi di taglio e di prospetto del materiale](shots/layer-hatch.webp)
+
 ![Tipi di muro: gli strati di un muro in laterizio](shots/wall-types.webp)
 
 La legenda sopra gli strati mostra il muro in pianta come lo mostra un muro selezionato: l’asse tratteggiato con una punta di freccia nel verso in cui è stato disegnato, **D** sulla faccia destra e **S** sulla faccia sinistra. Gli strati sono numerati da 1, sulla faccia D, all’ultimo, sulla faccia S, con gli stessi numeri delle righe della tabella; il nucleo, lungo cui corre la linea del muro, è evidenziato. Un muro capovolto con **Capovolgi** ha gli strati al contrario, da S a D. Il messaggio di un salvataggio rifiutato scompare appena modifichi di nuovo il tipo.

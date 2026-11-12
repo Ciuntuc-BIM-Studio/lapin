@@ -95,6 +95,10 @@ Eine Schicht außer dem Kern kann die Dicke 0 haben, für ein Material, das zu d
 
 ![Eine Putzschicht mit Fliesen bis 2100 und dem Putz darüber](shots/wall-layer-parts.webp)
 
+**Schraffuren zur Hand.** Neben dem Material jeder Schicht zeigt ein Muster, wie das Material geschraffiert ist, wo es geschnitten wird. Ein Klick darauf stellt die Schraffuren des Materials gleich dort ein, ohne Umweg über **Verwalten → Materialien**: seine Schraffur, wo ein Schnitt es schneidet, wo ein Grundriss es schneidet und wo eine Ansicht es sieht, jede mit Maßstab, Winkel, Ausrichtung, Füllung und Stift, wie auf der Registerkarte **2D-Grafik** der Materialien. Sie gehören dem Material, also ändert sich auch jeder Typ und jedes Element daraus, und jede Änderung ist ein Schritt zum Rückgängigmachen. **Deckentypen** haben dasselbe Muster. Ein Klick daneben oder <kbd>Esc</kbd> schließt es.
+
+![Das Schraffurmuster einer Schicht, geöffnet in Wandtypen: die Schnitt- und Ansichtsschraffuren des Materials](shots/layer-hatch.webp)
+
 ![Wandtypen: die Schichten einer Ziegelwand](shots/wall-types.webp)
 
 Die Legende über den Schichten zeigt die Wand im Grundriss so, wie eine ausgewählte Wand sie zeigt: die gestrichelte Achse mit einer Pfeilspitze in der Richtung, in der sie gezeichnet wurde, **R** auf ihrer rechten und **L** auf ihrer linken Seite. Die Schichten sind von 1 auf der Seite R bis zur letzten auf der Seite L nummeriert, mit denselben Nummern wie die Zeilen der Tabelle; der Kern, auf dem die Wandlinie liegt, ist hervorgehoben. Eine mit **Umkehren** gedrehte Wand hat ihre Schichten andersherum, von L nach R. Die Meldung einer abgelehnten Speicherung verschwindet, sobald Sie den Typ wieder ändern.

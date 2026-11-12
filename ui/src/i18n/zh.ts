@@ -1970,6 +1970,11 @@ export const ZH: Record<string, string> = {
   "New sections at 1:": "新剖面图比例 1:",
   "New elevations at 1:": "新立面图比例 1:",
   "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "此类新视图采用的比例；视图自身的比例（在其角落或属性中）之后可更改",
+  "Its material's hatches: cut and elevation (the material's own, as in Manage → Materials)": "其材质的填充图案：剖切和立面（材质自身的，与 管理 → 材料 中相同）",
+  "A new material: save the type first, then set its hatches": "新材质：请先保存类型，再设置其填充图案",
+  "Material hatches": "材质填充图案",
+  "Hatches of": "填充图案：",
+  "The material's own, as in Manage → Materials: every type and element made of it changes too.": "属于材质自身，与 管理 → 材料 中相同：由其制成的每个类型和构件也会随之改变.",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

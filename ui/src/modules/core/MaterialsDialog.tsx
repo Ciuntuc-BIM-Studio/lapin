@@ -19,7 +19,7 @@ import { Copy, FileUp, Library, MousePointerClick, Plus, Replace, RotateCcw, Sea
 import { notify, useUi } from '../../app/store';
 import { execute, query, useSession } from '../../engine/session';
 import type { NodeDto } from '../../engine/protocol';
-import { HatchSwatch } from './HatchSwatch';
+import { MaterialGraphicsTable, type HatchPattern as Hatch, type MaterialRow as Material } from './MaterialGraphicsTable';
 import { OwnImage } from './OwnImage';
 import { MaterialPreview } from './MaterialPreview';
 import { forgetPatterns, keepPatterns, myPatterns } from './myPatterns';
@@ -29,18 +29,12 @@ import { lookOf, LOOK_RANGES, type Look } from '../../viewport/look';
 import { LengthField } from '../../shell/cells';
 import { MaterialDataTab } from './MaterialDataTab';
 
-type Kind = 'section' | 'plan' | 'elevation';
 /** IfcMaterial.Category as the interface offers it (Materials.Categories in the engine). */
 const MATERIAL_CATEGORIES = ['Structure', 'Finish', 'Insulation', 'Membrane', 'Other'];
 
-type Resolved = { hatch: string | null; hatchScale: number; fill: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer'; membrane: boolean; drawJoints: boolean; source: 'own' | 'name' };
-type Own = { hatch?: string | null; hatchScale?: number; fill?: string | null; hatchPen?: number; hatchAngle?: number; hatchAlign?: 'view' | 'layer' };
 const TEXTURES = ['none', 'brick', 'brick-end', 'concrete', 'wood', 'wood-end', 'plaster', 'stone', 'metal', 'insulation', 'earth', 'tiles'];
-type Material = { id: string; name: string; color: string; inUse: boolean; category?: string | null; section: Resolved; plan: Resolved; elevation: Resolved; own: Partial<Record<Kind, Own>> };
-type Hatch = { name: string; description: string; solid: boolean; project: boolean };
 type LookKey = Exclude<keyof Look, 'emissive'>;
 
-const KINDS: { kind: Kind; label: string }[] = [{ kind: 'section', label: 'Cut (section)' }, { kind: 'plan', label: 'Cut (plan)' }, { kind: 'elevation', label: 'Elevation' }];
 /** The look's fields the editor offers as sliders, with their labels, steps and what they mean. */
 const SLIDERS: { key: LookKey; label: string; step: number; title: string }[] = [
   { key: 'roughness', label: 'Roughness', step: 0.01, title: '0: a mirror; 1: chalk. Glass and polished stone are low, plaster and concrete high.' },
@@ -76,13 +70,6 @@ export function MaterialsDialog() {
   const node = m ? nodes.get(m.id) : undefined;
   const shown = list.filter((x) => matches(x.name, search) && (!category || (category === '-' ? !x.category : x.category === category)));
   const update = (args: Record<string, unknown>) => m && void execute('material.update', { id: m.id, ...args });
-  const setView = (kind: Kind, patch: Own | null) => update({ [kind]: patch });
-  /** One field back to what the name (or, for a plan, the section) gives. */
-  const clearField = (kind: Kind, field: keyof Own) => {
-    const rest = { ...(m?.own[kind] ?? {}) };
-    delete rest[field];
-    update({ [kind]: Object.keys(rest).length ? rest : null, replace: true });
-  };
   // The material as the preview shows it: with the slider being dragged.
   const previewNode: NodeDto | undefined = useMemo(() => node && { ...node, props: { ...node.props, ...draft } }, [node, draft]);
   const look = lookOf(previewNode);
@@ -309,45 +296,7 @@ export function MaterialsDialog() {
                     <label className="check"><input type="checkbox" checked={m.section.membrane} onChange={(e) => update({ membrane: e.target.checked })} /> Membrane (a dashed line, not a band)</label>
                     <label className="check" title="Off (the default): where this material goes on from one element into another (two walls' cores, footings round a corner) no line is drawn between them. On: the joint is drawn."><input type="checkbox" checked={m.section.drawJoints} onChange={(e) => update({ drawJoints: e.target.checked })} /> Draw joints</label>
                   </div>
-                  <table className="material-views">
-                    <thead><tr><th /><th>Look</th><th>Hatch</th><th>Scale</th><th>Angle</th><th title="Where the hatch starts and turns: from the view's origin, or from each band it fills (along the band's longest edge)">Align</th><th>Fill</th><th>Pen</th></tr></thead>
-                    <tbody>
-                      {KINDS.map(({ kind, label }) => {
-                        const r = m[kind];
-                        const own = m.own[kind];
-                        const hatchValue = own && 'hatch' in own ? (own.hatch ?? '') : '*';
-                        // The hatch shown came from the name: none of its own (a plan's, none of the section's either). An elevation's guess is the facade's (brick, stone, boards; never BATT).
-                        const guessed = hatchValue === '*' && !(kind === 'plan' && m.own.section && 'hatch' in m.own.section);
-                        const fillMode = own?.fill === 'material' ? 'material' : own?.fill ? 'colour' : '';
-                        return (
-                          <tr key={kind}>
-                            <th>{label}{kind !== 'section' && own && <button type="button" className="icon mini" title="As the section" onClick={() => setView(kind, null)}><RotateCcw size={11} /></button>}</th>
-                            <td><HatchSwatch hatch={r.hatch} scale={r.hatchScale} fill={r.fill} membrane={kind !== 'elevation' && r.membrane} /></td>
-                            <td>
-                              <select value={hatchValue} onChange={(e) => (e.target.value === '*' ? clearField(kind, 'hatch') : setView(kind, { hatch: e.target.value || null }))}>
-                                <option value="*">{`from the name${guessed && r.hatch ? ` (${r.hatch})` : ''}`}</option>
-                                <option value="">none</option>
-                                {hatches.map((h) => <option key={h.name} value={h.name}>{h.name}{h.project ? ' (project)' : ''}</option>)}
-                              </select>
-                            </td>
-                            <td><input className="num" key={`${m.id}${kind}s${r.hatchScale}`} defaultValue={r.hatchScale}
-                              onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (v > 0 && v !== r.hatchScale) setView(kind, { hatchScale: v }); }} /></td>
-                            <td><input className="num" key={`${m.id}${kind}a${r.hatchAngle ?? 0}`} defaultValue={r.hatchAngle ?? 0}
-                              onBlur={(e) => { const v = Number(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v !== (r.hatchAngle ?? 0)) setView(kind, { hatchAngle: v }); }} /></td>
-                            <td><select value={r.hatchAlign ?? 'view'} onChange={(e) => setView(kind, { hatchAlign: e.target.value as 'view' | 'layer' })}><option value="view">view</option><option value="layer">layer</option></select></td>
-                            <td>
-                              <select value={fillMode} onChange={(e) => (e.target.value === '' ? clearField(kind, 'fill') : setView(kind, { fill: e.target.value === 'material' ? 'material' : (r.fill ?? '#ffffff') }))}>
-                                <option value="">none</option><option value="material">material colour</option><option value="colour">colour…</option>
-                              </select>
-                              {fillMode === 'colour' && <input type="color" value={own?.fill ?? '#ffffff'} onChange={(e) => setView(kind, { fill: e.target.value })} />}
-                            </td>
-                            <td><input className="num" key={`${m.id}${kind}p${r.hatchPen}`} defaultValue={r.hatchPen ?? ''} placeholder="—"
-                              onBlur={(e) => { const v = Number(e.target.value); if (e.target.value && v >= 1 && v <= 16 && v !== r.hatchPen) setView(kind, { hatchPen: v }); }} /></td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <MaterialGraphicsTable m={m} hatches={hatches} />
                   <p className="muted small">Hatches are paper millimetres at 1:1; a scale enlarges them. A fill is off unless asked.</p>
                   <div className="row">
                     <button type="button" className="btn" onClick={() => void execute('material.reset', { id: m.id })}><RotateCcw size={14} />From the name</button>

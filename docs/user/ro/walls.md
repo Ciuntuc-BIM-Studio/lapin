@@ -95,6 +95,10 @@ Un strat altul decât miezul poate avea grosimea 0, pentru un material prea sub�
 
 ![Un strat de tencuială cu faianță până la 2100 și tencuiala deasupra](shots/wall-layer-parts.webp)
 
+**Hașurile la îndemână.** Lângă materialul fiecărui strat, o mostră arată cum e hașurat materialul acolo unde e secționat. Clic pe ea ca să-i setezi hașurile chiar acolo, fără să mergi în **Gestionare → Materiale**: hașura lui unde îl taie o secțiune, unde îl taie un plan și unde îl vede o fațadă, fiecare cu scara, unghiul, alinierea, umplerea și penița ei, ca în fila **Grafică 2D** din Materiale. Sunt ale materialului, așa că se schimbă și fiecare tip și element făcut din el, iar fiecare schimbare e un pas de anulare. **Tipurile de plăci** au aceeași mostră. Un clic în afara ei sau <kbd>Esc</kbd> o închide.
+
+![Mostra hașurii unui strat, deschisă în Tipuri de pereți: hașurile de secțiune și de fațadă ale materialului](shots/layer-hatch.webp)
+
 ![Tipuri de pereți: straturile unui perete de cărămidă](shots/wall-types.webp)
 
 Legenda de deasupra straturilor arată peretele în plan așa cum îl arată un perete selectat: axa întreruptă cu o săgeată în sensul în care a fost desenat, **D** pe fața din dreapta și **S** pe cea din stânga. Straturile sunt numerotate de la 1, pe fața D, până la ultimul, pe fața S, cu aceleași numere ca rândurile tabelului; miezul, pe care merge linia peretelui, e evidențiat. Un perete întors cu **Întoarce** are straturile invers, de la S la D. Mesajul unei salvări refuzate dispare imediat ce schimbi din nou tipul.

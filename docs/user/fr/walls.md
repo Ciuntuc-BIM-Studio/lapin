@@ -95,6 +95,10 @@ Une couche autre que le noyau peut avoir une épaisseur de 0, pour un matériau 
 
 ![Une couche d’enduit avec du carrelage jusqu’à 2100 et l’enduit au-dessus](shots/wall-layer-parts.webp)
 
+**Les hachures à portée de main.** À côté du matériau de chaque couche, un échantillon montre comment le matériau est hachuré là où il est coupé. Cliquez dessus pour régler les hachures du matériau sur place, sans passer par **Gérer → Matériaux** : sa hachure là où une coupe le coupe, là où un plan le coupe et là où une élévation le voit, chacune avec son échelle, son angle, son alignement, son remplissage et sa plume, comme dans l’onglet **Graphisme 2D** des Matériaux. Elles appartiennent au matériau : chaque type et chaque élément qui en est fait change aussi, et chaque changement est une étape d’annulation. Les **Types de dalles** ont le même échantillon. Un clic en dehors ou <kbd>Échap</kbd> le ferme.
+
+![L’échantillon de hachure d’une couche ouvert dans Types de murs : les hachures de coupe et d’élévation du matériau](shots/layer-hatch.webp)
+
 ![Types de murs : les couches d’un mur en brique](shots/wall-types.webp)
 
 La légende au-dessus des couches montre le mur en plan comme le montre un mur sélectionné : l’axe en tirets avec une pointe de flèche dans le sens où il a été tracé, **D** sur sa face droite et **G** sur sa face gauche. Les couches sont numérotées de 1, sur la face D, à la dernière, sur la face G, avec les mêmes numéros que les lignes du tableau ; le noyau, qui porte la ligne du mur, est mis en évidence. Un mur retourné avec **Retourner** a ses couches dans l’autre sens, de G à D. Le message d’un enregistrement refusé disparaît dès que vous modifiez à nouveau le type.

@@ -1977,6 +1977,11 @@ export const RO: Record<string, string> = {
   "New sections at 1:": "Secțiuni noi la 1:",
   "New elevations at 1:": "Fațade noi la 1:",
   "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "Scara pe care o ia o vedere nouă de acest fel; scara proprie a vederii, din colțul ei sau din proprietăți, o schimbă apoi",
+  "Its material's hatches: cut and elevation (the material's own, as in Manage → Materials)": "Hașurile materialului său: în secțiune și în fațadă (ale materialului, ca în Gestionare → Materiale)",
+  "A new material: save the type first, then set its hatches": "Un material nou: salvează întâi tipul, apoi setează-i hașurile",
+  "Material hatches": "Hașurile materialului",
+  "Hatches of": "Hașurile pentru",
+  "The material's own, as in Manage → Materials: every type and element made of it changes too.": "Sunt ale materialului, ca în Gestionare → Materiale: se schimbă și fiecare tip și element făcut din el.",
 };
 
 /** Phrases with a number or a name in them. */

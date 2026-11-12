@@ -95,6 +95,10 @@ A layer other than the core may have a thickness of 0, for a material too thin t
 
 ![A plaster layer with ceramic tiles up to 2100 and the plaster above them](shots/wall-layer-parts.webp)
 
+**Hatches at hand.** Beside each layer's material, a swatch shows how the material is hatched where it is cut. Click it to set the material's hatches there, without going to **Manage → Materials**: its hatch where a section cuts it, where a plan cuts it and where an elevation sees it, each with its scale, angle, alignment, fill and pen, as on the **2D graphics** tab of Materials. They are the material's own, so every type and element made of it changes too, and each change is one step to undo. **Floor types** have the same swatch. A press outside it or <kbd>Esc</kbd> closes it.
+
+![A layer's hatch swatch open in Wall types: the material's cut and elevation hatches](shots/layer-hatch.webp)
+
 ![Wall types: the layers of a brick wall](shots/wall-types.webp)
 
 The legend above the layers shows the wall in plan the way a selected wall shows it: the dashed axis with an arrowhead the way it was drawn, **R** on its right face and **L** on its left face. The layers are numbered from 1, on the R face, to the last, on the L face, with the same numbers as the rows of the table; the core, which carries the wall's line, is shaded. A wall turned with **Flip** has its layers the other way round, from L to R. A message from a save that was refused goes away as soon as you change the type again.

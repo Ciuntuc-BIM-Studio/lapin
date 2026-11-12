@@ -95,6 +95,10 @@ Et andet lag end kernen kan have tykkelsen 0, for et materiale, der er for tyndt
 
 ![Et pudslag med fliser til 2100 og pudsen ovenover](shots/wall-layer-parts.webp)
 
+**Skraveringer ved hånden.** Ved siden af hvert lags materiale viser en prøve, hvordan materialet skraveres, hvor det er skåret. Klik på den for at indstille materialets skraveringer lige dér, uden at gå til **Administrer → Materialer**: dets skravering, hvor et snit skærer det, hvor en plan skærer det, og hvor en facade ser det, hver med sin skala, vinkel, justering, fyld og pen, som på fanen **2D-grafik** i Materialer. De er materialets egne, så hver type og hvert element af det ændres også, og hver ændring er ét trin at fortryde. **Dæktyper** har samme prøve. Et klik uden for den eller <kbd>Esc</kbd> lukker den.
+
+![Et lags skraveringsprøve åben i Vægtyper: materialets snit- og facadeskraveringer](shots/layer-hatch.webp)
+
 ![Vægtyper: lagene i en murstensvæg](shots/wall-types.webp)
 
 Signaturforklaringen over lagene viser væggen i plan, sådan som en markeret væg viser den: den stiplede akse med en pilespids i den retning, den blev tegnet, **H** på dens højre side og **V** på dens venstre. Lagene er nummereret fra 1 på H-siden til det sidste på V-siden med de samme numre som tabellens rækker; kernen, som væggens linje løber langs, er fremhævet. En væg vendt med **Vend** har lagene den anden vej, fra V til H. Beskeden fra en afvist gemning forsvinder, så snart du ændrer typen igen.

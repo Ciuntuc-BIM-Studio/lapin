@@ -1981,6 +1981,11 @@ export const IT: Record<string, string> = {
   "New sections at 1:": "Nuove sezioni a 1:",
   "New elevations at 1:": "Nuovi prospetti a 1:",
   "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "La scala che prende una nuova vista di questo tipo; quella della vista, nel suo angolo o nelle proprietà, la cambia poi",
+  "Its material's hatches: cut and elevation (the material's own, as in Manage → Materials)": "I tratteggi del suo materiale: in sezione e in prospetto (quelli del materiale, come in Gestisci → Materiali)",
+  "A new material: save the type first, then set its hatches": "Un materiale nuovo: salva prima il tipo, poi imposta i suoi tratteggi",
+  "Material hatches": "Tratteggi del materiale",
+  "Hatches of": "Tratteggi di",
+  "The material's own, as in Manage → Materials: every type and element made of it changes too.": "Sono del materiale, come in Gestisci → Materiali: cambiano anche tutti i tipi e gli elementi fatti di esso.",
 };
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;
 

@@ -2032,6 +2032,11 @@ export const LO: Record<string, string> = {
   "New sections at 1:": "ພາກຕັດໃໝ່ທີ່ 1:",
   "New elevations at 1:": "ດ້ານໜ້າໃໝ່ທີ່ 1:",
   "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "ມາດຕາສ່ວນທີ່ມຸມມອງໃໝ່ປະເພດນີ້ໄດ້ຮັບ; ມາດຕາສ່ວນຂອງມຸມມອງເອງ, ຢູ່ມຸມ ຫຼື ຄຸນສົມບັດຂອງມັນ, ປ່ຽນມັນໃນພາຍຫຼັງ",
+  "Its material's hatches: cut and elevation (the material's own, as in Manage → Materials)": "ລາຍແຮັດຂອງວັດສະດຸຂອງມັນ: ໃນພາກຕັດ ແລະ ດ້ານໜ້າ (ຂອງວັດສະດຸເອງ, ຄືໃນ ຈັດການ → ວັດສະດຸ)",
+  "A new material: save the type first, then set its hatches": "ວັດສະດຸໃໝ່: ບັນທຶກປະເພດກ່ອນ, ແລ້ວຈຶ່ງຕັ້ງລາຍແຮັດຂອງມັນ",
+  "Material hatches": "ລາຍແຮັດຂອງວັດສະດຸ",
+  "Hatches of": "ລາຍແຮັດຂອງ",
+  "The material's own, as in Manage → Materials: every type and element made of it changes too.": "ເປັນຂອງວັດສະດຸເອງ, ຄືໃນ ຈັດການ → ວັດສະດຸ: ທຸກປະເພດ ແລະ ອົງປະກອບທີ່ເຮັດຈາກມັນກໍ່ປ່ຽນຕາມ.",
 };
 
 /** Phrases with a number or a name in them. */

@@ -95,6 +95,10 @@ Una capa que no sea el núcleo puede tener espesor 0, para un material demasiado
 
 ![Una capa de enlucido con azulejos hasta 2100 y el enlucido encima](shots/wall-layer-parts.webp)
 
+**Los rayados a mano.** Junto al material de cada capa, una muestra enseña cómo se raya el material donde se corta. Haga clic en ella para ajustar ahí mismo los rayados del material, sin ir a **Gestionar → Materiales**: su rayado donde lo corta una sección, donde lo corta una planta y donde lo ve un alzado, cada uno con su escala, ángulo, alineación, relleno y pluma, como en la pestaña **Gráficos 2D** de Materiales. Son del material, así que cambian también todos los tipos y elementos hechos de él, y cada cambio es un paso de deshacer. Los **Tipos de losa** tienen la misma muestra. Un clic fuera de ella o <kbd>Esc</kbd> la cierra.
+
+![La muestra de rayado de una capa abierta en Tipos de muro: los rayados de corte y de alzado del material](shots/layer-hatch.webp)
+
 ![Tipos de muro: las capas de un muro de ladrillo](shots/wall-types.webp)
 
 La leyenda sobre las capas muestra el muro en planta tal como lo muestra un muro seleccionado: el eje discontinuo con una punta de flecha en el sentido en que se dibujó, **D** en su cara derecha e **I** en su cara izquierda. Las capas se numeran desde 1, en la cara D, hasta la última, en la cara I, con los mismos números que las filas de la tabla; el núcleo, por el que va la línea del muro, aparece resaltado. Un muro volteado con **Voltear** tiene las capas al revés, de I a D. El mensaje de un guardado rechazado desaparece en cuanto vuelve a cambiar el tipo.

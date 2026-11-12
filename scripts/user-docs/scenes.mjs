@@ -491,6 +491,24 @@ export const scenes = [
       await t.tool('architecture.wallTypes');
       t.expect(await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1, 'the wall types show their legend');
       await t.shot('wall-types', { of: '.dialog', pad: 0 });
+      // A layer's material hatches at hand (forum #30, decision 493): its swatch opens the material's 2D graphics, the same command as Materials.
+      const swatch = t.page.locator('.dialog [data-testid=layer-hatch]').first();
+      t.expect(await swatch.count() === 1 && await swatch.isEnabled(), 'each layer shows its material\'s hatch swatch');
+      await swatch.click();
+      await t.wait(500);
+      const editor = t.page.locator('[data-testid=material-hatch-editor]');
+      t.expect(await editor.locator('tbody tr').count() === 3, 'the swatch opens the material\'s cut and elevation hatches');
+      const layerMaterial = await t.page.locator('.dialog .layer-material select').first().inputValue();
+      await editor.locator('[data-field=material-hatch-section]').selectOption('CROSS');
+      await t.wait(800);
+      const own = await t.page.evaluate(async (name) => (await (await import('/src/engine/session.ts')).query('material.list')).find((m) => m.name === name)?.own?.section?.hatch, layerMaterial);
+      t.expect(own === 'CROSS', `the hatch picked there is the material's own, found ${own}`);
+      const [a, b] = [await swatch.boundingBox(), await editor.boundingBox()];
+      const x0 = Math.max(0, Math.min(a.x, b.x) - 12), y0 = Math.max(0, Math.min(a.y, b.y) - 12);
+      await t.shot('layer-hatch', { clip: { x: x0, y: y0, width: Math.max(a.x + a.width, b.x + b.width) + 12 - x0, height: Math.max(a.y + a.height, b.y + b.height) + 12 - y0 } });
+      await t.keys('Escape');
+      await t.wait(300);
+      t.expect(await editor.count() === 0 && await t.page.locator('.dialog [data-testid=wall-legend]').count() === 1, 'Esc closes the hatches, not Wall types');
     },
   },
   {

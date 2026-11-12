@@ -1973,6 +1973,11 @@ export const DA: Record<string, string> = {
   "New sections at 1:": "Nye snit i 1:",
   "New elevations at 1:": "Nye facader i 1:",
   "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "Den målestok, en ny visning af denne art får; visningens egen, i dens hjørne eller egenskaber, ændrer den bagefter",
+  "Its material's hatches: cut and elevation (the material's own, as in Manage → Materials)": "Dets materiales skraveringer: i snit og i facade (materialets egne, som i Administrer → Materialer)",
+  "A new material: save the type first, then set its hatches": "Et nyt materiale: gem først typen, og indstil så dets skraveringer",
+  "Material hatches": "Materialets skraveringer",
+  "Hatches of": "Skraveringer for",
+  "The material's own, as in Manage → Materials: every type and element made of it changes too.": "Materialets egne, som i Administrer → Materialer: hver type og hvert element af det ændres også.",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -1384,6 +1384,15 @@ button.mode-chip:hover { color: var(--accent); }
 .layer-thickness { display: inline-flex; align-items: center; gap: 2px; }
 .layer-thickness select.catalogue { width: 18px; padding: 0; border: none; background: transparent; color: var(--muted); cursor: pointer; }
 .layer-thickness .off-catalogue { color: var(--warn, #c77700); display: inline-flex; }
+/* A layer's material and its hatch swatch, which opens the material's 2D graphics beside it (forum #30, decision 493). */
+.layer-material { display: inline-flex; align-items: center; gap: 4px; }
+.hatch-pick { padding: 0; border: 1px solid transparent; border-radius: 2px; background: none; cursor: pointer; line-height: 0; flex: none; }
+.hatch-pick:hover:not(:disabled), .hatch-pick.on { border-color: var(--accent); }
+.hatch-pick:disabled { opacity: 0.45; cursor: default; }
+.material-hatch-editor { position: fixed; z-index: 45; width: max-content; max-width: calc(100vw - 16px); padding: 8px 10px; background: var(--panel); border: 1px solid var(--rule-strong); border-radius: 3px; box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22); }
+.material-hatch-editor > header { gap: 6px; }
+.material-hatch-editor .material-views { margin: 4px 0; }
+.material-hatch-editor p { margin: 4px 0 0; max-width: 520px; }
 .layer-note { min-width: 90px; }
 /* The clash report (decision 293): the item in front, the tools over the list. */
 .coordination .coordination-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 6px 0; }

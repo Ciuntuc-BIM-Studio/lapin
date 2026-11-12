@@ -95,6 +95,10 @@ Warstwa inna niż rdzeń może mieć grubość 0, dla materiału zbyt cienkiego,
 
 ![Warstwa tynku z płytkami ceramicznymi do 2100 i tynkiem powyżej](shots/wall-layer-parts.webp)
 
+**Kreskowania pod ręką.** Obok materiału każdej warstwy próbka pokazuje, jak materiał jest kreskowany tam, gdzie jest przecięty. Kliknij ją, aby ustawić kreskowania materiału na miejscu, bez przechodzenia do **Zarządzaj → Materiały**: jego kreskowanie tam, gdzie tnie go przekrój, gdzie tnie go rzut i gdzie widzi go elewacja, każde ze skalą, kątem, wyrównaniem, wypełnieniem i piórem, jak na karcie **Grafika 2D** Materiałów. Należą do materiału, więc zmienia się też każdy typ i element z niego zrobiony, a każda zmiana to jeden krok cofania. **Typy stropów** mają tę samą próbkę. Kliknięcie poza nią lub <kbd>Esc</kbd> ją zamyka.
+
+![Próbka kreskowania warstwy otwarta w Typach ścian: kreskowania przekroju i elewacji materiału](shots/layer-hatch.webp)
+
 ![Typy ścian: warstwy ściany ceglanej](shots/wall-types.webp)
 
 Legenda nad warstwami pokazuje ścianę na rzucie tak, jak pokazuje ją zaznaczona ściana: przerywaną oś z grotem strzałki w kierunku, w którym była rysowana, **P** na jej prawym licu i **L** na lewym. Warstwy są ponumerowane od 1 na licu P do ostatniej na licu L, tymi samymi numerami co wiersze tabeli; rdzeń, wzdłuż którego biegnie linia ściany, jest wyróżniony. Ściana odwrócona przyciskiem **Odwróć** ma warstwy w odwrotnej kolejności, od L do P. Komunikat o odrzuconym zapisie znika, gdy tylko znowu zmienisz typ.

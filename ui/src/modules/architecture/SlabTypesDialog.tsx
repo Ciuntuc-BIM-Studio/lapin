@@ -7,6 +7,7 @@ import { execute, useSession } from '../../engine/session';
 import { materialName, ofClass, relatedOf, typeLayers } from '../../engine/model';
 import { Cell } from '../../shell/cells';
 import { LayerThickness } from '../core/LayerThickness';
+import { MaterialHatchButton } from '../core/MaterialHatchButton';
 import { deleteType } from '../core/deleteType';
 import { MaterialPicker } from '../core/MaterialPicker';
 import { TypeFiles } from './TypeFiles';
@@ -67,7 +68,7 @@ export function SlabTypesDialog() {
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
-                    <td><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /></td>
+                    <td><span className="layer-material"><MaterialPicker value={r.material} onChange={(material) => set(i, { material })} /><MaterialHatchButton material={r.material} /></span></td>
                     <td className="num"><LayerThickness model={model} material={r.material} metres={r.thickness} onCommit={(m) => set(i, { thickness: m })} /></td>
                     <td><input type="radio" name="slab-core" checked={r.core} onChange={() => set(i, { core: true })} /></td>
                     <td><Cell className="layer-note" testId="layer-note" value={r.note ?? ''} placeholder="—" title="How the layer is laid in this build-up (a build-up tag writes it)" onCommit={(t) => set(i, { note: t })} /></td>

@@ -95,6 +95,10 @@ Uma camada que não é o núcleo pode ter espessura 0, para um material fino dem
 
 ![Uma camada de reboco com azulejos até 2100 e o reboco acima](shots/wall-layer-parts.webp)
 
+**As hachuras à mão.** Ao lado do material de cada camada, uma amostra mostra como o material é hachurado onde é cortado. Clique nela para ajustar ali mesmo as hachuras do material, sem ir a **Gerenciar → Materiais**: a hachura dele onde um corte o corta, onde uma planta o corta e onde uma elevação o vê, cada uma com sua escala, ângulo, alinhamento, preenchimento e pena, como na aba **Gráficos 2D** de Materiais. São do material, então mudam também todos os tipos e elementos feitos dele, e cada mudança é um passo de desfazer. Os **Tipos de piso** têm a mesma amostra. Um clique fora dela ou <kbd>Esc</kbd> a fecha.
+
+![A amostra de hachura de uma camada aberta em Tipos de parede: as hachuras de corte e de elevação do material](shots/layer-hatch.webp)
+
 ![Tipos de parede: as camadas de uma parede de tijolos](shots/wall-types.webp)
 
 A legenda acima das camadas mostra a parede em planta como uma parede selecionada a mostra: o eixo tracejado com uma ponta de seta no sentido em que foi desenhada, **D** na face direita e **E** na face esquerda. As camadas são numeradas de 1, na face D, até a última, na face E, com os mesmos números das linhas da tabela; o núcleo, por onde passa a linha da parede, fica destacado. Uma parede invertida com **Inverter** tem as camadas ao contrário, de E para D. A mensagem de um salvamento recusado some assim que você muda o tipo de novo.
