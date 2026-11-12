@@ -1968,6 +1968,16 @@ export const ES: Record<string, string> = {
   'New frameless door on floor spring': 'Puerta de vidrio sin marco nueva sobre muelle de suelo',
   // Decision 490: Match properties
   'Match properties': 'Igualar propiedades', 'Another source': 'Otro origen', 'What to carry': 'Qué se copia', 'Dimensions and settings': 'Dimensiones y ajustes', 'Layer, colour and hatch': 'Capa, color y sombreado', 'Never where an element stands, its shape or its GlobalId.': 'Nunca dónde está un elemento, su forma ni su GlobalId.', 'The element whose properties are carried': 'El elemento cuyas propiedades se copian',
+  "The view's scale: one of the project's standard scales, or your own (one undo step)": "La escala de la vista: una de las escalas estándar del proyecto, o una propia (un solo paso de deshacer)",
+  "Custom…": "Personalizada…",
+  "Default scales…": "Escalas predeterminadas…",
+  "A scale is 1:1 to 1:10000.": "Una escala va de 1:1 a 1:10000.",
+  "Standard scales": "Escalas estándar",
+  "The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones": "Las escalas que ofrece el selector de escala de cada vista (en su esquina, junto al zoom); vacío: las habituales",
+  "New plans at 1:": "Plantas nuevas a 1:",
+  "New sections at 1:": "Secciones nuevas a 1:",
+  "New elevations at 1:": "Alzados nuevos a 1:",
+  "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "La escala que toma una vista nueva de este tipo; la propia de la vista, en su esquina o en sus propiedades, la cambia después",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

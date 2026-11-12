@@ -93,12 +93,15 @@ public sealed record DraftLayer(string Id, string Name, string Color, bool Visib
 /// (decision 455) give them to both kinds.
 /// <see cref="AreaRounding"/> (report #76, decision 471): the step the areas of spaces are shown to (0.1, 0.5 or 1 m², ft² in
 /// an imperial project; null: as measured), presentation only (<see cref="Lapin.Drawing.AreaRounding"/>).
+/// <see cref="Scales"/> (forum #30, decision 492): the project's standard scales, the ones a view's scale picker offers
+/// (null: <see cref="Standards.DefaultViewScales"/>); <see cref="PlanScale"/>, <see cref="SectionScale"/> and
+/// <see cref="ElevationScale"/>: the scale a new view of that kind takes when none is asked for (null: 1:100).
 /// </summary>
 public sealed record StyleBook(
     IReadOnlyList<TextStyle> TextStyles, IReadOnlyList<DimStyle> DimStyles, IReadOnlyList<AxisStyle> AxisStyles,
     string DefaultAxisStyle, IReadOnlyList<TagType> TagTypes, IReadOnlyList<DraftLayer> Layers, IReadOnlyList<LayerGroup> LayerGroups,
     string LineCap = "round", string Units = "mm", double? SectionMarkSize = null, double? SectionMarkText = null, double? ElevationMarkSize = null, double? ElevationMarkText = null,
-    double? AreaRounding = null)
+    double? AreaRounding = null, IReadOnlyList<double>? Scales = null, double? PlanScale = null, double? SectionScale = null, double? ElevationScale = null)
 {
     public static StyleBook Default => Standards.Read(null);
 }
@@ -116,6 +119,27 @@ public static class Standards
     public const double DefaultMarkSize = 10;
     /// <summary>What a marker's symbol size and text height may be (paper mm).</summary>
     public const double MinMarkSize = 1, MaxMarkSize = 50, MinMarkText = 0.5, MaxMarkText = 20;
+
+    /// <summary>The scales a view's picker offers when the project names none of its own (decision 492).</summary>
+    public static readonly double[] DefaultViewScales = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
+    /// <summary>What a view's scale may be (1:1 to 1:10000, as a view's Scale field).</summary>
+    public const double MinViewScale = 1, MaxViewScale = 10000;
+
+    /// <summary>A scale within its range, or null.</summary>
+    public static double? ViewScale(JsonNode? v) => Lapin.Model.Json.Number(v) is { } d && double.IsFinite(d) && d >= MinViewScale && d <= MaxViewScale ? d : null;
+
+    /// <summary>A list of scales read tolerantly: those within range, sorted, each once; null when none is left.</summary>
+    public static IReadOnlyList<double>? ViewScales(JsonNode? v) =>
+        v is JsonArray a && a.Select(ViewScale).OfType<double>().Distinct().Order().ToList() is { Count: > 0 } list ? list : null;
+
+    /// <summary>The scales the project offers: its own, else the usual ones.</summary>
+    public static IReadOnlyList<double> ScalesOf(StyleBook b) => b.Scales ?? DefaultViewScales;
+
+    /// <summary>The scale a new view of a kind takes when none is asked for (plan, section, elevation; else null).</summary>
+    public static double? DefaultScaleOf(StyleBook b, string kind) => kind switch
+    {
+        "plan" => b.PlanScale, "section" => b.SectionScale, "elevation" => b.ElevationScale, _ => null,
+    };
 
     /// <summary>A marker size or text height within its range, or null.</summary>
     public static double? MarkValue(JsonNode? v, double min, double max) => Lapin.Model.Json.Number(v) is { } d && double.IsFinite(d) && d >= min && d <= max ? d : null;
@@ -277,7 +301,8 @@ public static class Standards
             OneOf(o["lineCap"], LineCaps, "round"), OneOf(o["units"], ProjectUnits, "mm"),
             MarkValue(o["sectionMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["sectionMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
             MarkValue(o["elevationMarkSize"] ?? o["markSize"], MinMarkSize, MaxMarkSize), MarkValue(o["elevationMarkText"] ?? o["markText"], MinMarkText, MaxMarkText),
-            Lapin.Drawing.AreaRounding.Read(Lapin.Model.Json.Number(o["areaRounding"])));
+            Lapin.Drawing.AreaRounding.Read(Lapin.Model.Json.Number(o["areaRounding"])),
+            ViewScales(o["scales"]), ViewScale(o["planScale"]), ViewScale(o["sectionScale"]), ViewScale(o["elevationScale"]));
     }
 
     public static JsonObject ToJson(StyleBook b) => (JsonObject)JsonSerializer.SerializeToNode(b, DrawingJson.Default.StyleBook)!;

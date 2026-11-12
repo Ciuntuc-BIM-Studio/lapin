@@ -46,9 +46,12 @@ public static class Views
         if (m.Get(id) is { Class: Class } v) return v;
         if (id == GraphicsSets.View3d) return GraphicsSets.As3dView(m);
         if (id.StartsWith("plan:", StringComparison.Ordinal) && m.Get(id[5..]) is { Class: IfcClass.BuildingStorey } storey)
-            return new Entity(id, Class, storey.Name, new JsonObject { ["kind"] = "plan", ["storeyId"] = storey.Id, ["cutHeight"] = DefaultCut, ["scale"] = 100 });
+            return new Entity(id, Class, storey.Name, new JsonObject { ["kind"] = "plan", ["storeyId"] = storey.Id, ["cutHeight"] = DefaultCut, ["scale"] = DefaultPlanScale(m) });
         return null;
     }
+
+    /// <summary>A level's default plan's scale: the project's for new plans (Drafting standards → Project, decision 492), else 1:100.</summary>
+    static double DefaultPlanScale(IModelView m) => Standards.ViewScale(Spatial.Project(m)?.Attrs["drafting"]?["planScale"]) ?? 100;
 
     public static ResolvedRange Range(IModelView m, Entity view)
     {
@@ -1261,7 +1264,8 @@ public static class Views
         r.Command("view.create", "New view", (ctx, a) =>
         {
             var kind = (string?)a["kind"] ?? "plan";
-            var attrs = new JsonObject { ["kind"] = kind, ["scale"] = Json.Number(a["scale"]) ?? 100 };
+            // No scale asked for: the project's for the kind (Drafting standards → Project, decision 492), else 1:100.
+            var attrs = new JsonObject { ["kind"] = kind, ["scale"] = Json.Number(a["scale"]) ?? Standards.DefaultScaleOf(DraftingResources.Book(ctx.Model), kind) ?? 100 };
             if ((string?)a["discipline"] is { Length: > 0 } discipline) attrs["discipline"] = discipline;
             string name;
             switch (kind)

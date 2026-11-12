@@ -41,7 +41,7 @@ import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
 import { actualScale, boundsOf, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type View2, type ZoomHost } from './zoom';
-import { ScaleChip } from './ScaleChip';
+import { ScaleChip, ScalePicker } from './ScaleChip';
 import { KeyPlan } from './KeyPlan';
 import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget';
 
@@ -300,6 +300,7 @@ export function DrawingView() {
             {drawing!.lineworkOrphans!.length} line edit(s) lost their edge · clean
           </button>
         )}
+        <ScalePicker viewId={id} scale={drawing?.scale ?? Number(node?.props.scale ?? 100)} />
         <ScaleChip pxPerMetre={v.scale} scale={drawing?.scale ?? 100} onActual={host.actual} />
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>

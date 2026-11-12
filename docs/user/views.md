@@ -20,6 +20,10 @@ A section need not be one straight line. **Jogged section** (<kbd>SJ</kbd>) draw
 
 Select the section in the browser to set its scale, its depth, its discipline and its style in the properties panel.
 
+**The view's scale.** At the top of a plan, a section or an elevation, beside the zoom (its size on screen against paper), the scale picker shows the view's scale and changes it: one of the project's standard scales, or **Custom…** for one of your own (1:75), in one step to undo. On a sheet, pick a view and its scale shows there too; changing it changes the view, on every sheet that shows it. **Default scales…** opens **Manage → Drafting standards → Project**: **Standard scales** are the scales the picker offers, and **New plans at 1:**, **New sections at 1:** and **New elevations at 1:** the scale each new view takes (empty: 1:100). A level's plan with no view of its own draws at the plan scale.
+
+![The scale picker at the top of a section, beside the zoom](shots/view-scale.webp)
+
 ### Where a section is marked
 
 A section's line is drawn in every plan, and the section is marked in every other section and elevation its plane crosses: a fine dashed line where the plane cuts the view, with the section's name and an arrow looking the way the section looks at its top, the same size on paper as in a plan. A section is never marked in itself. Click a marker to select the section, double-click it to open it.

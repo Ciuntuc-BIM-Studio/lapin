@@ -20,6 +20,10 @@ Um corte não precisa ser uma única linha reta. **Corte deslocado** (<kbd>SJ</k
 
 Selecione o corte no navegador para definir a sua escala, a sua profundidade, a sua disciplina e o seu estilo no painel de propriedades.
 
+**A escala da vista.** No topo de uma planta, de um corte ou de uma elevação, ao lado do zoom (o tamanho dela na tela em relação ao papel), o seletor de escala mostra a escala da vista e a muda: uma das escalas padrão do projeto, ou **Personalizada…** para uma sua (1:75), em um só passo de desfazer. Numa prancha, escolha uma vista e a escala dela aparece ali também; mudá-la muda a vista em todas as pranchas que a mostram. **Escalas padrão…** abre **Gerenciar → Padrões de desenho → Projeto**: **Escalas padrão** são as que o seletor oferece, e **Novas plantas a 1:**, **Novos cortes a 1:** e **Novas elevações a 1:** a escala que cada vista nova recebe (vazio: 1:100). A planta de um nível sem vista própria é desenhada na escala das plantas.
+
+![O seletor de escala no topo de um corte, ao lado do zoom](shots/view-scale.webp)
+
 ### Onde um corte é marcado
 
 A linha de um corte é desenhada em todas as plantas, e o corte é marcado em todos os outros cortes e elevações que o seu plano atravessa: uma linha tracejada fina onde o plano corta a vista, com o nome do corte e uma seta no topo apontando para onde o corte olha, com o mesmo tamanho no papel que em uma planta. Um corte nunca é marcado em si mesmo. Clique em um marcador para selecionar o corte e clique duas vezes para abri-lo.

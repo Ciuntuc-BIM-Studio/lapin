@@ -20,6 +20,10 @@ Ein Schnitt muss keine einzelne gerade Linie sein. **Versetzter Schnitt** (<kbd>
 
 Wählen Sie den Schnitt im Browser aus, um im Eigenschaftenbereich seinen Maßstab, seine Tiefe, seine Disziplin und seinen Stil festzulegen.
 
+**Der Maßstab der Ansicht.** Oben in einem Grundriss, einem Schnitt oder einer Ansicht, neben dem Zoom (ihre Größe auf dem Bildschirm im Vergleich zum Papier), zeigt die Maßstabsauswahl den Maßstab der Ansicht und ändert ihn: einer der Standardmaßstäbe des Projekts oder mit **Eigener…** ein eigener (1:75), in einem Schritt rückgängig zu machen. Auf einem Plan wählen Sie eine Ansicht, und ihr Maßstab erscheint auch dort; geändert, ändert er die Ansicht auf jedem Plan, der sie zeigt. **Standardmaßstäbe…** öffnet **Verwalten → Zeichnungsstandards → Projekt**: **Standardmaßstäbe** sind die Maßstäbe, die die Auswahl anbietet, und **Neue Grundrisse in 1:**, **Neue Schnitte in 1:** und **Neue Ansichten in 1:** der Maßstab, den jede neue Ansicht erhält (leer: 1:100). Der Grundriss einer Ebene ohne eigene Ansicht wird im Grundrissmaßstab gezeichnet.
+
+![Die Maßstabsauswahl oben in einem Schnitt, neben dem Zoom](shots/view-scale.webp)
+
 ### Wo ein Schnitt markiert wird
 
 Die Linie eines Schnitts wird in jedem Grundriss gezeichnet, und der Schnitt wird in jedem anderen Schnitt und jeder Ansicht markiert, die seine Ebene kreuzt: eine feine gestrichelte Linie, wo die Ebene die Ansicht schneidet, mit dem Namen des Schnitts und einem Pfeil in seine Blickrichtung oben, auf dem Papier so groß wie im Grundriss. Ein Schnitt wird nie in sich selbst markiert. Ein Klick auf einen Marker wählt den Schnitt aus, ein Doppelklick öffnet ihn.

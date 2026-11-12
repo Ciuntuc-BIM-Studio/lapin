@@ -20,6 +20,10 @@ Una sezione non deve per forza essere una sola linea retta. **Sezione spezzata**
 
 Seleziona la sezione nel browser per impostarne la scala, la profondità, la disciplina e lo stile nel pannello Proprietà.
 
+**La scala della vista.** In cima a una pianta, una sezione o un prospetto, accanto allo zoom (la sua grandezza sullo schermo rispetto alla carta), la scelta della scala mostra la scala della vista e la cambia: una delle scale standard del progetto, o **Personalizzata…** per una tua (1:75), in un solo passo di annullamento. Su una tavola, scegli una vista e la sua scala compare anche lì; cambiarla cambia la vista su ogni tavola che la mostra. **Scale predefinite…** apre **Gestisci → Standard di disegno → Progetto**: **Scale standard** sono quelle che la scelta offre, e **Nuove piante a 1:**, **Nuove sezioni a 1:** e **Nuovi prospetti a 1:** la scala che prende ogni nuova vista (vuoto: 1:100). La pianta di un livello senza vista propria si disegna alla scala delle piante.
+
+![La scelta della scala in cima a una sezione, accanto allo zoom](shots/view-scale.webp)
+
 ### Dove è segnata una sezione
 
 La linea di una sezione è disegnata in ogni pianta, e la sezione è segnata in ogni altra sezione e in ogni prospetto che il suo piano attraversa: una sottile linea tratteggiata dove il piano taglia la vista, con il nome della sezione e una freccia, in alto, rivolta dove guarda la sezione, della stessa dimensione sulla carta che in pianta. Una sezione non è mai segnata in sé stessa. Fai clic su un indicatore per selezionare la sezione, doppio clic per aprirla.

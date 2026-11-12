@@ -16,8 +16,11 @@ export const UNITS: Unit[] = ['mm', 'cm', 'm', 'ft-in', 'in'];
 export type AreaStep = 0.1 | 0.5 | 1 | null;
 export const AREA_STEPS: Exclude<AreaStep, null>[] = [0.1, 0.5, 1];
 
-interface Standards { units: Unit; lineCap: 'round' | 'square'; areaRounding: AreaStep }
-export const useStandards = create<Standards>(() => ({ units: 'mm', lineCap: 'round', areaRounding: null }));
+/** The scales a view's picker offers when the project's standards are not read yet (the engine's usual ones, decision 492). */
+export const DEFAULT_VIEW_SCALES = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000];
+
+interface Standards { units: Unit; lineCap: 'round' | 'square'; areaRounding: AreaStep; scales: number[] }
+export const useStandards = create<Standards>(() => ({ units: 'mm', lineCap: 'round', areaRounding: null, scales: DEFAULT_VIEW_SCALES }));
 
 export const unit = (): Unit => useStandards.getState().units;
 /** The unit's label after a shown length ('' for imperial, which carries its own marks). */

@@ -278,6 +278,9 @@ kbd { font: 11px var(--mono); padding: 1px 5px; border: 1px solid var(--rule-str
 .hud-map-tools .mini-select { margin-left: 0; max-width: 70px; }
 .chip.scale { cursor: pointer; background: none; border-color: var(--rule-strong); color: var(--ink-muted); text-transform: none; letter-spacing: 0; font-size: 11px; font-variant-numeric: tabular-nums; margin: 0 0 4px; }
 .chip.scale:hover { border-color: var(--accent); color: var(--accent); }
+/* The view's scale, picked in its corner (decision 492): as the zoom chip beside it, the scale in the ink. */
+.chip.scale-pick { cursor: pointer; background: none; border-color: var(--rule-strong); color: var(--ink); text-transform: none; letter-spacing: 0; font-size: 11px; font-variant-numeric: tabular-nums; margin: 0 0 4px 6px; max-width: 120px; }
+.chip.scale-pick:hover:not(:disabled) { border-color: var(--accent); }
 .hud-hint { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); padding: 6px 14px; background: var(--accent); color: var(--accent-ink); border-radius: 3px; font-weight: 600; letter-spacing: 0.04em; }
 .hotbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 6px; padding: 6px; background: var(--hud); border: 1px solid var(--rule); border-radius: 4px; backdrop-filter: blur(4px); }
 .slot { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--panel); cursor: pointer; }

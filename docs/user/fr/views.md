@@ -20,6 +20,10 @@ Une coupe n’est pas forcément une seule ligne droite. **Coupe brisée** (<kbd
 
 Sélectionnez la coupe dans l’arborescence pour régler son échelle, sa profondeur, sa discipline et son style dans le panneau des propriétés.
 
+**L’échelle de la vue.** En haut d’un plan, d’une coupe ou d’une élévation, à côté du zoom (sa taille à l’écran par rapport au papier), le choix d’échelle montre l’échelle de la vue et la change : une des échelles standard du projet, ou **Personnalisée…** pour la vôtre (1:75), en une seule étape d’annulation. Sur une feuille, choisissez une vue et son échelle s’y affiche aussi ; la changer change la vue, sur chaque feuille qui la montre. **Échelles par défaut…** ouvre **Gérer → Normes de dessin → Projet** : **Échelles standard** sont celles que propose le choix, et **Nouveaux plans au 1:**, **Nouvelles coupes au 1:** et **Nouvelles élévations au 1:** l’échelle que prend chaque nouvelle vue (vide : 1:100). Le plan d’un niveau sans vue propre se dessine à l’échelle des plans.
+
+![Le choix d’échelle en haut d’une coupe, à côté du zoom](shots/view-scale.webp)
+
 ### Où une coupe est repérée
 
 La ligne d’une coupe est dessinée dans chaque plan, et la coupe est repérée dans chaque autre coupe et élévation que son plan traverse : une fine ligne en tirets là où le plan coupe la vue, avec le nom de la coupe et une flèche dans la direction où elle regarde, en haut, de la même taille sur le papier que dans un plan. Une coupe n’est jamais repérée dans elle-même. Un clic sur un repère sélectionne la coupe, un double-clic l’ouvre.

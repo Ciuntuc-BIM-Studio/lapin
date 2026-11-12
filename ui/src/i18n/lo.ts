@@ -2022,6 +2022,16 @@ export const LO: Record<string, string> = {
   'New frameless door on floor spring': 'ປະຕູແກ້ວບໍ່ມີກອບໃໝ່ເທິງສະປິງພື້ນ',
   // Decision 490: Match properties
   'Match properties': 'ຖ່າຍທອດຄຸນສົມບັດ', 'Another source': 'ແຫຼ່ງອື່ນ', 'What to carry': 'ສິ່ງທີ່ຈະຖ່າຍທອດ', 'Dimensions and settings': 'ຂະໜາດ ແລະ ການຕັ້ງຄ່າ', 'Layer, colour and hatch': 'ຊັ້ນ, ສີ ແລະ ລາຍແຮເງົາ', 'Never where an element stands, its shape or its GlobalId.': 'ບໍ່ເຄີຍຖ່າຍທອດຕຳແໜ່ງ, ຮູບຮ່າງ ຫຼື GlobalId ຂອງອົງປະກອບ.', 'The element whose properties are carried': 'ອົງປະກອບທີ່ຖ່າຍທອດຄຸນສົມບັດ',
+  "The view's scale: one of the project's standard scales, or your own (one undo step)": "ມາດຕາສ່ວນຂອງມຸມມອງ: ໜຶ່ງໃນມາດຕາສ່ວນມາດຕະຖານຂອງໂຄງການ ຫຼື ຂອງທ່ານເອງ (ຍົກເລີກໄດ້ໃນຂັ້ນດຽວ)",
+  "Custom…": "ກຳນົດເອງ…",
+  "Default scales…": "ມາດຕາສ່ວນເລີ່ມຕົ້ນ…",
+  "A scale is 1:1 to 1:10000.": "ມາດຕາສ່ວນແມ່ນ 1:1 ຫາ 1:10000.",
+  "Standard scales": "ມາດຕາສ່ວນມາດຕະຖານ",
+  "The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones": "ມາດຕາສ່ວນທີ່ຕົວເລືອກມາດຕາສ່ວນຂອງທຸກມຸມມອງສະເໜີ (ຢູ່ມຸມຂອງມັນ, ຂ້າງການຊູມ); ຫວ່າງ: ອັນທີ່ໃຊ້ປົກກະຕິ",
+  "New plans at 1:": "ແຜນຜັງໃໝ່ທີ່ 1:",
+  "New sections at 1:": "ພາກຕັດໃໝ່ທີ່ 1:",
+  "New elevations at 1:": "ດ້ານໜ້າໃໝ່ທີ່ 1:",
+  "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "ມາດຕາສ່ວນທີ່ມຸມມອງໃໝ່ປະເພດນີ້ໄດ້ຮັບ; ມາດຕາສ່ວນຂອງມຸມມອງເອງ, ຢູ່ມຸມ ຫຼື ຄຸນສົມບັດຂອງມັນ, ປ່ຽນມັນໃນພາຍຫຼັງ",
 };
 
 /** Phrases with a number or a name in them. */

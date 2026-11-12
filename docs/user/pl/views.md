@@ -20,6 +20,10 @@ Przekrój nie musi być jedną prostą linią. **Przekrój łamany** (<kbd>SJ</k
 
 Zaznacz przekrój w przeglądarce, aby ustawić w panelu Właściwości jego skalę, głębokość, branżę i styl.
 
+**Skala widoku.** U góry rzutu, przekroju lub elewacji, obok powiększenia (jego wielkości na ekranie względem papieru), wybór skali pokazuje skalę widoku i ją zmienia: jedna ze standardowych skal projektu albo **Własna…** dla własnej (1:75), w jednym kroku cofania. Na arkuszu wybierz widok, a jego skala pojawi się i tam; jej zmiana zmienia widok na każdym arkuszu, który go pokazuje. **Domyślne skale…** otwiera **Zarządzaj → Standardy rysunkowe → Projekt**: **Standardowe skale** to te, które oferuje wybór, a **Nowe rzuty w 1:**, **Nowe przekroje w 1:** i **Nowe elewacje w 1:** skala, którą dostaje każdy nowy widok (puste: 1:100). Rzut kondygnacji bez własnego widoku rysuje się w skali rzutów.
+
+![Wybór skali u góry przekroju, obok powiększenia](shots/view-scale.webp)
+
 ### Gdzie przekrój jest oznaczony
 
 Linia przekroju jest rysowana na każdym rzucie, a przekrój jest oznaczony w każdym innym przekroju i elewacji, które przecina jego płaszczyzna: cienką linią przerywaną tam, gdzie płaszczyzna tnie widok, z nazwą przekroju i strzałką u góry pokazującą kierunek patrzenia, tej samej wielkości na papierze co na rzucie. Przekrój nigdy nie jest oznaczony w samym sobie. Kliknij znacznik, aby zaznaczyć przekrój, kliknij go dwukrotnie, aby go otworzyć.

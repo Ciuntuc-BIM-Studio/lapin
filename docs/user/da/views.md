@@ -20,6 +20,10 @@ Et snit behøver ikke være én lige linje. **Knækket snit** (<kbd>SJ</kbd>) te
 
 Markér snittet i browseren for at indstille dets skala, dybde, fagområde og stil i egenskabspanelet.
 
+**Visningens målestok.** Øverst i en plan, et snit eller en facade, ved siden af zoom (dens størrelse på skærmen i forhold til papiret), viser målestoksvælgeren visningens målestok og ændrer den: en af projektets standardmålestokke, eller **Egen…** for din egen (1:75), i ét trin at fortryde. På et tegningsark: vælg en visning, og dens målestok vises også dér; ændres den, ændres visningen på hvert ark, der viser den. **Standardmålestokke…** åbner **Administrer → Tegningsstandarder → Projekt**: **Standardmålestokke** er dem, vælgeren tilbyder, og **Nye planer i 1:**, **Nye snit i 1:** og **Nye facader i 1:** den målestok, hver ny visning får (tom: 1:100). En etages plan uden egen visning tegnes i planmålestokken.
+
+![Målestoksvælgeren øverst i et snit, ved siden af zoom](shots/view-scale.webp)
+
 ### Hvor et snit markeres
 
 Et snits linje tegnes i hver plan, og snittet markeres i hvert andet snit og hver facade, som dets plan krydser: en fin stiplet linje, hvor planet skærer visningen, med snittets navn og en pil, der ser den vej, snittet ser, øverst, i samme størrelse på papir som i en plan. Et snit markeres aldrig i sig selv. Klik på en markør for at vælge snittet, dobbeltklik for at åbne det.

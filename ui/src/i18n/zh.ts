@@ -1960,6 +1960,16 @@ export const ZH: Record<string, string> = {
   'New frameless door on floor spring': '新建地弹簧无框玻璃门',
   // Decision 490: Match properties
   'Match properties': '特性匹配', 'Another source': '其他源对象', 'What to carry': '要匹配的内容', 'Dimensions and settings': '尺寸和设置', 'Layer, colour and hatch': '图层、颜色和填充图案', 'Never where an element stands, its shape or its GlobalId.': '从不复制元素的位置、形状或 GlobalId.', 'The element whose properties are carried': '要复制其特性的元素',
+  "The view's scale: one of the project's standard scales, or your own (one undo step)": "视图的比例：项目的标准比例之一，或您自己的比例（一步撤销）",
+  "Custom…": "自定义…",
+  "Default scales…": "默认比例…",
+  "A scale is 1:1 to 1:10000.": "比例在 1:1 到 1:10000 之间.",
+  "Standard scales": "标准比例",
+  "The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones": "每个视图的比例选择器提供的比例（在其角落，缩放旁边）；留空：常用比例",
+  "New plans at 1:": "新平面图比例 1:",
+  "New sections at 1:": "新剖面图比例 1:",
+  "New elevations at 1:": "新立面图比例 1:",
+  "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "此类新视图采用的比例；视图自身的比例（在其角落或属性中）之后可更改",
 };
 
 export const ZH_PATTERNS: Language['patterns'] = [

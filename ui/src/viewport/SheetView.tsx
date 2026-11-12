@@ -26,6 +26,7 @@ import { DrawingLayer } from './DrawingLayer';
 import type { PenDto } from './drawing';
 import { printSheet } from './printSheet';
 import { VIEW_DRAG } from '../shell/browserSets';
+import { ScalePicker } from './ScaleChip';
 import { PX_PER_MM, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelZoom, type ZoomHost } from './zoom';
 
 interface Vp {
@@ -193,6 +194,7 @@ export function SheetView() {
     ...(b.content && b.page < b.pages && !(d?.viewports ?? []).some((o) => o.viewId === b.viewId && o.page === b.page + 1)
       ? [{ b, text: `${nodes.get(b.viewId)?.name ?? 'The schedule'} goes on: ${b.pages - b.page} more page(s)`, next: true }] : []),
   ]);
+  const activeVp = active ? d?.viewports.find((b) => b.id === active) ?? null : null;
   return (
     <div className="view-pane">
       <div className="view-toolbar">
@@ -209,6 +211,8 @@ export function SheetView() {
           <button type="button" className={`icon${showRemarks ? ' on' : ''}`} title="Remarks read from PDFs: show or hide (they never print); the number counts the open ones" data-testid="sheet-remarks-toggle"
             onClick={() => useRemarkUi.setState({ show: !showRemarks, highlight: null })}><MessageSquare size={14} />{remarkCount > 0 && <span className="small">{remarkCount}</span>}</button>
         )}
+        {/* The selected view's scale on the sheet (decision 492): its view's own, so every sheet that shows it follows. */}
+        {activeVp && !activeVp.content && <ScalePicker viewId={activeVp.viewId} scale={activeVp.scale} />}
         <button type="button" className="chip scale" title="The sheet's size on screen against paper · click for paper size (ZA)" onClick={host.actual}>{Math.round((v.k / PX_PER_MM) * 100)} %</button>
         <button type="button" className="icon" title="Fit (ZE)" onClick={fit}><Maximize size={14} /></button>
       </div>

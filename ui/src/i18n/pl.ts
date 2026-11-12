@@ -1969,6 +1969,16 @@ export const PL: Record<string, string> = {
   'New frameless door on floor spring': 'Nowe drzwi szklane bez ramy na samozamykaczu podłogowym',
   // Decision 490: Match properties
   'Match properties': 'Dopasuj właściwości', 'Another source': 'Inne źródło', 'What to carry': 'Co przenieść', 'Dimensions and settings': 'Wymiary i ustawienia', 'Layer, colour and hatch': 'Warstwa, kolor i kreskowanie', 'Never where an element stands, its shape or its GlobalId.': 'Nigdy położenie elementu, jego kształt ani GlobalId.', 'The element whose properties are carried': 'Element, którego właściwości są przenoszone',
+  "The view's scale: one of the project's standard scales, or your own (one undo step)": "Skala widoku: jedna ze standardowych skal projektu albo własna (jeden krok cofania)",
+  "Custom…": "Własna…",
+  "Default scales…": "Domyślne skale…",
+  "A scale is 1:1 to 1:10000.": "Skala to od 1:1 do 1:10000.",
+  "Standard scales": "Standardowe skale",
+  "The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones": "Skale, które oferuje wybór skali każdego widoku (w jego rogu, obok powiększenia); puste: zwykłe",
+  "New plans at 1:": "Nowe rzuty w 1:",
+  "New sections at 1:": "Nowe przekroje w 1:",
+  "New elevations at 1:": "Nowe elewacje w 1:",
+  "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "Skala, którą dostaje nowy widok tego rodzaju; własna skala widoku, w jego rogu lub właściwościach, zmienia ją potem",
 };
 /** The Polish plural: 1 → one; 2–4 (not 12–14) → few; else many. */
 const form = (count: string, one: string, few: string, many: string) => {

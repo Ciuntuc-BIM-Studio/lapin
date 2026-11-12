@@ -2,7 +2,8 @@
  * Drafting standards: the project's text styles, dimension styles, axis types
  * (and the default one), tag types (a box, or a door's or window's marker
  * across its wall in plan; their leaders, decision 331), layers and layer groups; on Project, the units, line ends and the
- * section and elevation markers' sizes, each kind its own (decisions 455, 460). Sizes are paper millimetres.
+ * section and elevation markers' sizes, each kind its own (decisions 455, 460), the standard scales and each kind's for a
+ * new view (decision 492). Sizes are paper millimetres.
  * Each change is one engine command; Standard (and layer 0) always stay.
  */
 
@@ -17,7 +18,7 @@ import { LeaderEditor, type LeaderEntry } from './LeaderEditor';
 import { BUILDUP_DEFAULTS, type BuildupEntry } from './buildupTag';
 
 type Entry = Record<string, string | number | boolean | null | undefined> & { id: string; name: string };
-type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number };
+type Book = { textStyles: Entry[]; dimStyles: Entry[]; axisStyles: Entry[]; tagTypes: Entry[]; defaultAxisStyle: string; layers: Entry[]; layerGroups: Entry[]; units?: string; lineCap?: string; sectionMarkSize?: number; sectionMarkText?: number; elevationMarkSize?: number; elevationMarkText?: number; areaRounding?: number; scales?: number[]; scaleChoices?: number[]; planScale?: number; sectionScale?: number; elevationScale?: number };
 type Col = { key: string; label: string; title?: string; kind: 'text' | 'mm' | 'number' | 'decimals' | 'bool' | 'color' | 'choice' | 'style' | 'group'; choices?: string[] };
 type Tab = { id: 'text' | 'dim' | 'axis' | 'tag' | 'layer'; label: string; list: keyof Book; cols: Col[]; fresh: Record<string, unknown> };
 
@@ -62,6 +63,16 @@ const MARK_ROWS: { key: MarkKey; field: string; size: boolean; label: string; ti
   { key: 'elevationMarkSize', field: 'elevation-mark-size', size: true, label: 'Elevation marker size', title: "The elevation markers' circle across, in paper mm, in plans, sheets and PDF; an elevation's own size in its properties goes before it" },
   { key: 'elevationMarkText', field: 'elevation-mark-text', size: false, label: 'Elevation marker text', title: "The height of the elevation markers' names, in paper mm; empty: the Standard text style's" },
 ];
+
+/** The scale each kind of new view takes (forum #30, decision 492); empty: 1:100. */
+type ScaleKey = 'planScale' | 'sectionScale' | 'elevationScale';
+const SCALE_ROWS: { key: ScaleKey; field: string; label: string }[] = [
+  { key: 'planScale', field: 'plan-scale', label: 'New plans at 1:' },
+  { key: 'sectionScale', field: 'section-scale', label: 'New sections at 1:' },
+  { key: 'elevationScale', field: 'elevation-scale', label: 'New elevations at 1:' },
+];
+/** A list of scales as typed: 1:50, 100; 200 (empty: none). */
+const scaleList = (text: string): number[] => text.split(/[,;\s]+/).map((x) => Number(x.replace(/^1[:/]/, ''))).filter((n) => Number.isFinite(n) && n > 0);
 
 /** How a tag's template reads the element (report #64), one phrase for the translations. */
 const TAG_HELP = 'A template reads the element: {mark}, {name}, {type}, {class}, any parameter by its name ({Fire rating}) or a standard one ({Pset_WallCommon.FireRating}); | starts a new line.';
@@ -144,6 +155,26 @@ export function StandardsDialog() {
       <dd><select value={String(book.lineCap ?? 'round')} onChange={(e) => void execute('standards.options', { lineCap: e.target.value })}>
         <option value="round">round</option><option value="square">square (mitred)</option>
       </select></dd>
+      {/* The project's standard scales, offered by every view's scale picker, and the scale each kind of new view takes (forum #30, decision 492). */}
+      <dt title="The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones">Standard scales</dt>
+      <dd><input data-field="standard-scales" key={`scales${(book.scales ?? []).join(',')}`} defaultValue={(book.scales ?? []).join(', ')} placeholder={(book.scaleChoices ?? []).join(', ')}
+        onBlur={(e) => {
+          const list = scaleList(e.target.value);
+          if (list.join(',') !== (book.scales ?? []).join(',')) void execute('standards.options', { scales: list.length ? list : null });
+        }} /></dd>
+      {SCALE_ROWS.map((row) => {
+        const was = book[row.key];
+        return [
+          <dt key={`${row.key}t`} title="The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards">{row.label}</dt>,
+          <dd key={`${row.key}d`}><input className="num" data-field={row.field} key={`${row.key}${was ?? ''}`} defaultValue={was == null ? '' : String(was)} placeholder="100"
+            onBlur={(e) => {
+              const t = e.target.value.trim().replace(/^1[:/]/, '');
+              if (t === '') { if (was != null) void execute('standards.options', { [row.key]: null }); return; }
+              const n = Number(t.replace(',', '.'));
+              if (Number.isFinite(n) && n >= 1 && n <= 10000 && n !== was) void execute('standards.options', { [row.key]: n });
+            }} /></dd>,
+        ];
+      })}
       {/* The section markers' and the elevation markers' symbol size and text height, each kind its own (decisions 455, 460); a marker's own, in its properties, goes before. */}
       {MARK_ROWS.map((row) => {
         const was = book[row.key];

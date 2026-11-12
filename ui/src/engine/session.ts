@@ -13,7 +13,7 @@ import { notify } from '../app/store';
 import type { Diff, DocState, NodeDto, RelationDto, RenderItem, SessionInfo, SharedMesh } from './protocol';
 import { storeys } from './model';
 import { useUi } from '../app/store';
-import { useStandards, type AreaStep, type Unit } from './unitsStore';
+import { DEFAULT_VIEW_SCALES, useStandards, type AreaStep, type Unit } from './unitsStore';
 
 export interface SessionState {
   connected: boolean;
@@ -207,8 +207,8 @@ async function refreshStandards(): Promise<void> {
   try {
     do {
       standardsAgain = false;
-      const b = await query<{ units?: Unit; lineCap?: 'round' | 'square'; areaRounding?: AreaStep }>('standards.get');
-      if (b) useStandards.setState({ units: b.units ?? 'mm', lineCap: b.lineCap ?? 'round', areaRounding: b.areaRounding ?? null });
+      const b = await query<{ units?: Unit; lineCap?: 'round' | 'square'; areaRounding?: AreaStep; scaleChoices?: number[] }>('standards.get');
+      if (b) useStandards.setState({ units: b.units ?? 'mm', lineCap: b.lineCap ?? 'round', areaRounding: b.areaRounding ?? null, scales: b.scaleChoices?.length ? b.scaleChoices : DEFAULT_VIEW_SCALES });
     } while (standardsAgain);
   } catch { /* no project open */ } finally { standardsPending = false; }
 }

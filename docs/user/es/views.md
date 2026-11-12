@@ -16,6 +16,10 @@ Elija **Vista → Sección** (<kbd>SE</kbd>), o haga clic en **+** junto a **Sec
 
 Seleccione la sección en el explorador para configurar su escala, su profundidad, su disciplina y su estilo en el panel de propiedades.
 
+**La escala de la vista.** Arriba de una planta, una sección o un alzado, junto al zoom (su tamaño en pantalla respecto al papel), el selector de escala muestra la escala de la vista y la cambia: una de las escalas estándar del proyecto, o **Personalizada…** para una propia (1:75), en un solo paso de deshacer. En una lámina, elija una vista y su escala aparece también allí; cambiarla cambia la vista en todas las láminas que la muestran. **Escalas predeterminadas…** abre **Gestionar → Normas de dibujo → Proyecto**: **Escalas estándar** son las que ofrece el selector, y **Plantas nuevas a 1:**, **Secciones nuevas a 1:** y **Alzados nuevos a 1:** la escala que toma cada vista nueva (vacío: 1:100). La planta de un nivel sin vista propia se dibuja a la escala de las plantas.
+
+![El selector de escala arriba de una sección, junto al zoom](shots/view-scale.webp)
+
 ### Dónde se marca una sección
 
 La línea de una sección se dibuja en todas las plantas, y la sección se marca en todas las demás secciones y alzados que atraviesa su plano: una línea fina discontinua donde el plano corta la vista, con el nombre de la sección y una flecha que mira hacia donde mira la sección, arriba, del mismo tamaño en papel que en una planta. Una sección nunca se marca en sí misma. Un clic en un marcador selecciona la sección; un doble clic la abre.

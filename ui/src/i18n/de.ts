@@ -1968,6 +1968,16 @@ export const DE: Record<string, string> = {
   'New frameless door on floor spring': 'Neue rahmenlose Glastür auf Bodentürschließer',
   // Decision 490: Match properties
   'Match properties': 'Eigenschaften übertragen', 'Another source': 'Andere Quelle', 'What to carry': 'Was übertragen wird', 'Dimensions and settings': 'Maße und Einstellungen', 'Layer, colour and hatch': 'Layer, Farbe und Schraffur', 'Never where an element stands, its shape or its GlobalId.': 'Nie den Ort eines Elements, seine Form oder seine GlobalId.', 'The element whose properties are carried': 'Das Element, dessen Eigenschaften übertragen werden',
+  "The view's scale: one of the project's standard scales, or your own (one undo step)": "Der Maßstab der Ansicht: einer der Standardmaßstäbe des Projekts oder ein eigener (ein Rückgängig-Schritt)",
+  "Custom…": "Eigener…",
+  "Default scales…": "Standardmaßstäbe…",
+  "A scale is 1:1 to 1:10000.": "Ein Maßstab liegt zwischen 1:1 und 1:10000.",
+  "Standard scales": "Standardmaßstäbe",
+  "The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones": "Die Maßstäbe, die die Maßstabsauswahl jeder Ansicht anbietet (in ihrer Ecke, neben dem Zoom); leer: die üblichen",
+  "New plans at 1:": "Neue Grundrisse in 1:",
+  "New sections at 1:": "Neue Schnitte in 1:",
+  "New elevations at 1:": "Neue Ansichten in 1:",
+  "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "Der Maßstab, den eine neue Ansicht dieser Art erhält; der eigene der Ansicht, in ihrer Ecke oder ihren Eigenschaften, ändert ihn danach",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

@@ -3567,6 +3567,18 @@ export const scenes = [
       await t.shot('browser', { of: 'nav.browser', pad: 0, maxHeight: 640 });
       await openFromBrowser(t, 'A-A', 2500);
       await t.shot('section-view');
+      // The view's scale picked in its corner (forum #30, decision 492): the project's standard scales, one undo step.
+      const sectionA = (await t.nodes()).find((n) => n.type === 'LapinView' && n.name === 'A-A');
+      const picker = t.page.locator('[data-testid=view-scale]').first();
+      t.expect(await picker.inputValue() === '50', 'the section\'s corner shows its scale, 1:50');
+      t.expect(await picker.locator('option[value=defaults]').count() === 1, 'the scale picker leads to the default scales');
+      await picker.selectOption('20');
+      await t.wait(900);
+      t.expect((await t.nodes()).find((n) => n.id === sectionA.id)?.props.scale === 20, 'a scale picked in the corner is the view\'s');
+      await t.shot('view-scale', { of: '.view-toolbar', pad: 0 });
+      await t.page.evaluate(async () => (await import('/src/engine/session.ts')).undo());
+      await t.wait(600);
+      t.expect((await t.nodes()).find((n) => n.id === sectionA.id)?.props.scale === 50, 'one undo takes the scale back');
       await openFromBrowser(t, 'B-B', 2500);
       await t.shot('section-jogged', { of: '[data-testid=drawing]', pad: 0 });
       const elevation = (await t.nodes()).find((n) => n.type === 'LapinView' && /elevation/i.test(n.name));
@@ -5543,6 +5555,9 @@ export const scenes = [
       await t.wait(400);
       // Area rounding (report #76, decision 471): rooms' areas to 0.1, 0.5 or 1 m² (docs/user/rooms.md).
       t.expect(await t.page.locator('.dialog [data-field=areaRounding]').count() === 1, 'the Project tab has Area rounding');
+      // The standard scales and each kind's scale for a new view (forum #30, decision 492).
+      t.expect(await t.page.locator('.dialog [data-field=standard-scales]').count() === 1, 'the Project tab has the standard scales');
+      t.expect(await t.page.locator('.dialog [data-field=plan-scale], .dialog [data-field=section-scale], .dialog [data-field=elevation-scale]').count() === 3, 'and the scales new plans, sections and elevations take');
       await t.shot('standards-project', { of: '.dialog', pad: 0 });
     },
   },
@@ -5570,6 +5585,8 @@ export const scenes = [
       await t.page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
       await t.wait(400);
       t.expect(await t.page.locator('[data-testid=sheet] .sheet-handle.crop').count() === 8, 'a view picked on the sheet shows its eight crop handles');
+      // Its view's scale beside the zoom (decision 492).
+      t.expect(await t.page.locator('[data-testid=view-scale]').first().inputValue() === '100', 'a view picked on the sheet shows its scale in the corner');
       await t.page.locator('[data-testid=sheet] .sheet-vp-tools select').first().selectOption(boundary.id);
       await t.wait(1000);
       const bound = (await t.nodes()).find((n) => n.id === sheet.id)?.props?.viewports?.find((v) => v.viewId === plan.id);

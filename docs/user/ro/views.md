@@ -20,6 +20,10 @@ O secțiune nu trebuie să fie o singură linie dreaptă. **Secțiune în trepte
 
 Selectează secțiunea în navigator ca să-i setezi scara, adâncimea, disciplina și stilul în panoul de proprietăți.
 
+**Scara vederii.** În capul unui plan, al unei secțiuni sau al unei fațade, lângă zoom (cât de mare se vede pe ecran față de hârtie), alegerea scării arată scara vederii și o schimbă: una dintre scările standard ale proiectului, sau **Alta…** pentru una a ta (1:75), într-un singur pas de anulare. Pe o planșă, alege o vedere și scara ei apare acolo; schimbată, se schimbă vederea, pe fiecare planșă care o arată. **Scări implicite…** deschide **Gestionare → Standarde de desen → Proiect**: **Scări standard** sunt scările pe care le oferă alegerea, iar **Planuri noi la 1:**, **Secțiuni noi la 1:** și **Fațade noi la 1:** scara pe care o ia fiecare vedere nouă (gol: 1:100). Planul unui nivel fără vedere proprie se desenează la scara planurilor.
+
+![Alegerea scării în capul unei secțiuni, lângă zoom](shots/view-scale.webp)
+
 ### Unde se marchează o secțiune
 
 Linia unei secțiuni se desenează în fiecare plan, iar secțiunea se marchează în fiecare altă secțiune și fațadă pe care o taie planul ei: o linie subțire întreruptă acolo unde planul taie vederea, cu numele secțiunii și o săgeată care privește încotro privește secțiunea, sus, la aceeași mărime pe hârtie ca în plan. O secțiune nu se marchează niciodată în ea însăși. Clic pe un marcator selectează secțiunea, dublu-clic o deschide.

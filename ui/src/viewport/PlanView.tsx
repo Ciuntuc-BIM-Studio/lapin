@@ -54,7 +54,7 @@ import { tagTargets, trackTagHover, useTagHover, viewHasTags } from './tagTarget
 import { carryBegin, carryBy, carryEnd, carrying, useTrace } from './moveTrace';
 import type { Shape } from './cad/shapes';
 import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, pushHistory, recall, remember, useZoomHost, wheelGesture, wheelZoom, type Bounds, type View2, type ZoomHost } from './zoom';
-import { ScaleChip } from './ScaleChip';
+import { ScaleChip, ScalePicker } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { axisLine, riseThrough } from './arc';
 import { useLang } from '../i18n';
@@ -312,6 +312,8 @@ export function PlanView() {
     return o;
   }, [snapItems, snapPoints, markSnaps, underDrawing]);
   const planViewOf = storey ? ownPlan ?? `plan:${storey.id}` : null;
+  // The plan's scale: its view's (shown with modelling lines too, when no drawing is asked for), else its drawing's.
+  const shownScale = Number((ownPlan ? nodes.get(ownPlan)?.props.scale : undefined) ?? drawing?.scale ?? 100);
   /** An element's modelling lines on this plan, as shapes (what MOVE and a dragged grip leave as the ghost and carry). */
   const outlines = useCallback((id: string): Shape[] => {
     const r = items.find((x) => x.nodeId === id);
@@ -768,7 +770,8 @@ export function PlanView() {
         {!siteView && <button type="button" className="icon" title="View range" onClick={() => useUi.setState({ dialog: 'viewRange' })}><Layers size={14} /></button>}
         <button type="button" className={`icon${planDrawing ? ' on' : ''}`} title={planDrawing ? 'Drawing: hatches and pens (click for modelling lines)' : 'Modelling lines (click for the drawing)'}
           onClick={() => useUi.setState({ planDrawing: !planDrawing })}><PenLine size={14} /></button>
-        <ScaleChip pxPerMetre={view.scale} scale={drawing?.scale ?? 100} onActual={host.actual} />
+        <ScalePicker viewId={planViewOf} scale={shownScale} />
+        <ScaleChip pxPerMetre={view.scale} scale={shownScale} onActual={host.actual} />
         {Math.abs(northAngle) > 1e-9 && (
           <button type="button" className={`icon${trueNorth ? ' on' : ''}`} data-testid="plan-true-north"
             title={trueNorth ? 'True north up: click for project north' : 'Project north up: click to turn the plan to true north'}

@@ -1963,6 +1963,16 @@ export const DA: Record<string, string> = {
   'New frameless door on floor spring': 'Ny rammeløs glasdør på gulvdørlukker',
   // Decision 490: Match properties
   'Match properties': 'Overfør egenskaber', 'Another source': 'Anden kilde', 'What to carry': 'Hvad der overføres', 'Dimensions and settings': 'Mål og indstillinger', 'Layer, colour and hatch': 'Lag, farve og skravering', 'Never where an element stands, its shape or its GlobalId.': 'Aldrig hvor et element står, dets form eller dets GlobalId.', 'The element whose properties are carried': 'Elementet, hvis egenskaber overføres',
+  "The view's scale: one of the project's standard scales, or your own (one undo step)": "Visningens målestok: en af projektets standardmålestokke eller din egen (ét fortryd-trin)",
+  "Custom…": "Egen…",
+  "Default scales…": "Standardmålestokke…",
+  "A scale is 1:1 to 1:10000.": "En målestok er fra 1:1 til 1:10000.",
+  "Standard scales": "Standardmålestokke",
+  "The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones": "De målestokke, som hver visnings målestoksvælger tilbyder (i dens hjørne, ved siden af zoom); tom: de sædvanlige",
+  "New plans at 1:": "Nye planer i 1:",
+  "New sections at 1:": "Nye snit i 1:",
+  "New elevations at 1:": "Nye facader i 1:",
+  "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "Den målestok, en ny visning af denne art får; visningens egen, i dens hjørne eller egenskaber, ændrer den bagefter",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '1' ? one : many}`;

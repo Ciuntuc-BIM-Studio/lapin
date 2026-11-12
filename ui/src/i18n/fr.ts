@@ -1972,6 +1972,16 @@ export const FR: Record<string, string> = {
   'New frameless door on floor spring': 'Nouvelle porte en verre sans cadre sur pivot de sol',
   // Decision 490: Match properties
   'Match properties': 'Appliquer les propriétés', 'Another source': 'Autre source', 'What to carry': 'Ce qui est appliqué', 'Dimensions and settings': 'Dimensions et réglages', 'Layer, colour and hatch': 'Calque, couleur et hachure', 'Never where an element stands, its shape or its GlobalId.': 'Jamais l’emplacement d’un élément, sa forme ni son GlobalId.', 'The element whose properties are carried': 'L’élément dont les propriétés sont appliquées',
+  "The view's scale: one of the project's standard scales, or your own (one undo step)": "L’échelle de la vue : une des échelles standard du projet, ou la vôtre (une seule étape d’annulation)",
+  "Custom…": "Personnalisée…",
+  "Default scales…": "Échelles par défaut…",
+  "A scale is 1:1 to 1:10000.": "Une échelle va de 1:1 à 1:10000.",
+  "Standard scales": "Échelles standard",
+  "The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones": "Les échelles que propose le choix d’échelle de chaque vue (dans son coin, à côté du zoom) ; vide : les habituelles",
+  "New plans at 1:": "Nouveaux plans au 1:",
+  "New sections at 1:": "Nouvelles coupes au 1:",
+  "New elevations at 1:": "Nouvelles élévations au 1:",
+  "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "L’échelle que prend une nouvelle vue de ce type ; celle de la vue, dans son coin ou ses propriétés, la change ensuite",
 };
 
 const n = (count: string, one: string, many: string) => `${count} ${count === '0' || count === '1' ? one : many}`;

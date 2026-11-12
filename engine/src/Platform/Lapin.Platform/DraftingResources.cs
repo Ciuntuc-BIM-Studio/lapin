@@ -393,7 +393,14 @@ public static class DraftingResources
         });
 
         // ------------------------------------------------------------ drafting standards
-        r.Query("standards.get", (q, _) => Standards.ToJson(Book(q.Model)));
+        // The standards, and the scales a view's picker offers (the project's own, else the usual ones: decision 492).
+        r.Query("standards.get", (q, _) =>
+        {
+            var book = Book(q.Model);
+            var o = Standards.ToJson(book);
+            o["scaleChoices"] = new JsonArray(Standards.ScalesOf(book).Select(x => (JsonNode)x).ToArray());
+            return o;
+        });
 
         // Add or change one entry: a text, dimension or axis style, a tag type, a layer or a layer group (read as a file would be: tolerantly).
         r.Command("standards.set", "Change drafting standards", (ctx, a) =>
@@ -473,6 +480,19 @@ public static class DraftingResources
             }
             raw.Remove("markSize");
             raw.Remove("markText");
+            // The project's standard scales and each kind's scale for a new view (forum #30, decision 492); null: the usual ones, 1:100.
+            if (a.ContainsKey("scales"))
+            {
+                if (a["scales"] is not JsonArray { Count: > 0 } list) raw.Remove("scales");
+                else if (list.Any(x => Standards.ViewScale(x) == null)) throw new CommandException($"A scale is 1:{Standards.MinViewScale} to 1:{Standards.MaxViewScale}.");
+                else raw["scales"] = new JsonArray(Standards.ViewScales(list)!.Select(x => (JsonNode)x).ToArray());
+            }
+            foreach (var key in new[] { "planScale", "sectionScale", "elevationScale" })
+            {
+                if (!a.ContainsKey(key)) continue;
+                if (a[key] == null) raw.Remove(key);
+                else raw[key] = Standards.ViewScale(a[key]) ?? throw new CommandException($"A scale is 1:{Standards.MinViewScale} to 1:{Standards.MaxViewScale}.");
+            }
             Write(ctx, raw);
             return null;
         });

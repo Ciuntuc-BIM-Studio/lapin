@@ -1967,6 +1967,16 @@ export const RO: Record<string, string> = {
   'New frameless door on floor spring': 'Ușă nouă din sticlă fără toc pe arc de pardoseală',
   // Decision 490: Match properties
   'Match properties': 'Preia proprietățile', 'Another source': 'Altă sursă', 'What to carry': 'Ce se preia', 'Dimensions and settings': 'Dimensiuni și setări', 'Layer, colour and hatch': 'Strat, culoare și hașură', 'Never where an element stands, its shape or its GlobalId.': 'Niciodată locul elementului, forma sau GlobalId-ul lui.', 'The element whose properties are carried': 'Elementul ale cărui proprietăți se preiau',
+  "The view's scale: one of the project's standard scales, or your own (one undo step)": "Scara vederii: una dintre scările standard ale proiectului, sau una a ta (un singur pas de anulare)",
+  "Custom…": "Alta…",
+  "Default scales…": "Scări implicite…",
+  "A scale is 1:1 to 1:10000.": "O scară e între 1:1 și 1:10000.",
+  "Standard scales": "Scări standard",
+  "The scales every view's scale picker offers (its corner, beside the zoom); empty: the usual ones": "Scările pe care le oferă alegerea scării din fiecare vedere (în colțul ei, lângă zoom); gol: cele obișnuite",
+  "New plans at 1:": "Planuri noi la 1:",
+  "New sections at 1:": "Secțiuni noi la 1:",
+  "New elevations at 1:": "Fațade noi la 1:",
+  "The scale a new view of this kind takes; a view's own, in its corner or its properties, changes it afterwards": "Scara pe care o ia o vedere nouă de acest fel; scara proprie a vederii, din colțul ei sau din proprietăți, o schimbă apoi",
 };
 
 /** Phrases with a number or a name in them. */
