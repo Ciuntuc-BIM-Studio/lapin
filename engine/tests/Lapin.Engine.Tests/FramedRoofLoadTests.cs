@@ -176,7 +176,7 @@ public class FramedRoofLoadTests
     [Fact]
     public void An_L_shaped_roof_whose_members_do_not_meet_exactly_takes_its_load_times_its_area()
     {
-        // The guard for decision 511's report: a 148 m² L roof at 1 kN/m² once placed 436 kN when its members did not meet at nodes.
+        // The guard for decision 512's report: a 148 m² L roof at 1 kN/m² once placed 436 kN when its members did not meet at nodes.
         var f = new Fixture(new Lapin.Analysis.AnalysisModule(), new LRoof());
         f.Run("analysis.defaultCases", []);
         var plan = new JsonArray(new JsonArray(0, 0), new JsonArray(12, 0), new JsonArray(12, 8), new JsonArray(6, 8), new JsonArray(6, 14), new JsonArray(0, 14));

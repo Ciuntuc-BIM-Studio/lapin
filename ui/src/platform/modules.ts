@@ -3,9 +3,7 @@
 import { create } from 'zustand';
 import loaded, { product } from 'virtual:lapin-modules';
 import type { ComponentType } from 'react';
-import type * as THREE from 'three';
-import type { PlacementRequest, Vec2, Grip, GripView, LapinModule, ModuleViewDef, PlanOverlayProps, DrawingOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
-import type { PlacementRequest, Vec2, Grip, GripView, LapinModule, ModuleViewDef, Overlay3DProps, PlanOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
+import type { PlacementRequest, Vec2, Grip, GripView, LapinModule, ModuleViewDef, Overlay3DProps, PlanOverlayProps, DrawingOverlayProps, RefLine, RibbonTabDef, ToolDef } from './module';
 import type { NodeDto } from '../engine/protocol';
 import { addModuleViews, toggleTool, useUi } from '../app/store';
 import { mergeTabs } from './ribbon';
