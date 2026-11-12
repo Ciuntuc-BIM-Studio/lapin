@@ -346,17 +346,16 @@ public class AnalysisRunTests
         var linked = a.Problem.Model.Links.Select(l => l.MemberId).ToHashSet();
         var bars = a.Problem.Model.Frames.Where(x => linked.Contains(x.Source.SourceId)).GroupBy(x => x.Source, ReferenceEqualityComparer.Instance).ToList();
         Assert.NotEmpty(bars);
-        // Pinned at both ends, unless one end meets nothing (the purlins' overhangs past the gables): a cantilever keeps its
-        // other end fixed, its free tip pinned (which holds nothing).
+        // Pinned at both ends, unless one end meets nothing (the purlins' overhangs past the gables): a cantilever keeps both
+        // ends fixed (its free tip's release would hinge on nothing).
         var uses = a.Problem.Model.Frames.SelectMany(x => new[] { x.I, x.J }).GroupBy(n => n).ToDictionary(g => g.Key, g => g.Count());
         bool Free(ANode n) => uses[n] <= 1 && n.Restraints == null && !a.Problem.Model.Shells.Any(sh => sh.Nodes.Contains(n));
         var (both, cantilevers) = (0, 0);
         foreach (var g in bars)
         {
             var (first, last) = (g.First(), g.Last());
-            var (ri, rj) = (a.Problem.Releases[first].I, a.Problem.Releases[last].J);
-            if (Free(last.J)) { cantilevers++; Assert.False(ri[4] || ri[5]); Assert.True(rj[4] && rj[5]); continue; }
-            if (Free(first.I)) { cantilevers++; Assert.False(rj[4] || rj[5]); continue; }
+            var (ri, rj) = (a.Problem.Releases.GetValueOrDefault(first)?.I ?? FrameReleases.Fixed, a.Problem.Releases.GetValueOrDefault(last)?.J ?? FrameReleases.Fixed);
+            if (Free(last.J) || Free(first.I)) { cantilevers++; Assert.False(ri[4] || ri[5] || rj[4] || rj[5]); continue; }
             both++;
             Assert.True(ri[4] && ri[5]);
             Assert.True(rj[4] && rj[5]);
@@ -435,5 +434,29 @@ public class AnalysisRunTests
         var res = Results(f, new JsonObject { ["case"] = "Q-A" });
         Assert.Empty(res["frames"]!.AsArray());
         Assert.Equal(48, res["reactions"]!.AsArray().Sum(r => (double)r!["f"]![2]!), 9);
+    }
+
+    [Fact]
+    public void A_hall_with_channel_purlins_runs_their_overhangs_free_tips_not_released()
+    {
+        // UPN purlins, rails and eaves beams: unsymmetric sections, so every bar sits on arms to its centroid. A purlin's
+        // overhang past a gable is a cantilever; a release at its free tip would leave the tip's node turning on its arm with
+        // nothing to hold it (a mechanism). Neither end of a cantilever is released.
+        var f = new Fixture(new Lapin.Structure.StructureModule(), new Lapin.Steel.SteelModule(), new Lapin.Drafting.DraftingModule(), new Lapin.Studio.StudioModule(), new Lapin.Analysis.AnalysisModule());
+        f.Run("steel.addHall", new JsonObject { ["storeyId"] = f.Storey, ["attrs"] = new JsonObject { ["purlin"] = "UPN 160", ["rail"] = "UPN 160", ["eavesBeamProfile"] = "UPN 160" } });
+        f.Run("analysis.defaultCases", []);
+        f.Run("material.setData", new JsonObject
+        {
+            ["id"] = f.Model.OfClass(IfcClass.Material).Single(m => m.Name == "Steel").Id,
+            ["params"] = new JsonArray(new JsonObject { ["pset"] = "Pset_MaterialMechanical", ["name"] = "YoungModulus", ["value"] = 210e9 }),
+        });
+        var run = Run(f);
+        Assert.True((bool)run["ok"]!, run["mechanism"]?.ToJsonString());
+        Assert.True((bool)run["cases"]!.AsArray().Single(c => (string?)c!["code"] == "G1")!["balanced"]!);
+        var a = AnalysisRun.Of(f.Session.Reader);
+        var uses = a.Problem.Model.Frames.SelectMany(x => new[] { x.I, x.J }).GroupBy(n => n).ToDictionary(g => g.Key, g => g.Count());
+        var tips = a.Problem.Model.Frames.Where(x => x.Source.Role?.StartsWith("pur") == true && (uses[x.I] == 1 || uses[x.J] == 1)).ToList();
+        Assert.NotEmpty(tips);
+        Assert.All(tips, x => Assert.False(a.Problem.Releases.TryGetValue(x, out var r) && (r.I.Any(b => b) || r.J.Any(b => b))));
     }
 }

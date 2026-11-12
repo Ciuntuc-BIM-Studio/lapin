@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Lapin.Geometry;
 using Lapin.Ifc;
 using Lapin.Model;
 using Lapin.Platform;
@@ -284,9 +285,23 @@ public class StructuralIfcTests
         var eccentric = step.OfType("IFCRELCONNECTSWITHECCENTRICITY").ToList();
         // Every bar end connected once, an eccentric one with its offset.
         Assert.Equal(2 * am.Frames.Count, plain.Count + eccentric.Count);
-        // As the analysis takes them: the joint's own offset plus an unsymmetric section's centroid off the line (the hall's C purlins').
-        Assert.Equal(am.Frames.Count(x => (x.OffI + AnalyticalModel.CentroidOffset(x)).Length > 1e-9) + am.Frames.Count(x => (x.OffJ + AnalyticalModel.CentroidOffset(x)).Length > 1e-9), eccentric.Count);
+        // The joints' own offsets (arms), not an unsymmetric section's centroid off the line (the hall's C purlins'): that is the
+        // profile's to say.
+        Assert.Equal(am.Frames.Count(x => x.OffI.Length > 1e-9) + am.Frames.Count(x => x.OffJ.Length > 1e-9), eccentric.Count);
         Assert.Contains(am.Frames, x => AnalyticalModel.CentroidOffset(x).Length > 1e-9);
+        // An eccentric bar's edge ends at its own vertex, the member's end, where the eccentricity's point on it is.
+        var bars = step.OfType("IFCSTRUCTURALCURVEMEMBER").ToDictionary(b => b.Id);
+        foreach (var r in eccentric)
+        {
+            var (edge, _) = Topology(step, bars[Ref(r[4])]);
+            var c = step.Get(r[10])!;
+            var end = new[] { edge[0], edge[1] }.Select(v => (List<object?>)step.Get(step.Get(v)![0])![0]!).Select(xs => new Vec3((double)xs[0]!, (double)xs[1]!, (double)xs[2]!));
+            var on = (List<object?>)step.Get(c[0])![0]!;
+            var at = new Vec3((double)on[0]!, (double)on[1]!, (double)on[2]!);
+            Assert.Contains(end, p => (p - at).Length < 1e-6);
+            var node = (List<object?>)step.Get(step.Get(c[1])![0])![0]!;
+            Assert.True((at - new Vec3((double)node[0]!, (double)node[1]!, (double)node[2]!)).Length > 1e-3);
+        }
         var ecc = step.Get(eccentric[0][10])!;
         Assert.Equal("IFCCONNECTIONPOINTECCENTRICITY", ecc.Type);
         Assert.Equal("IFCCARTESIANPOINT", step.Get(ecc[0])!.Type);
@@ -307,29 +322,126 @@ public class StructuralIfcTests
         Assert.All(concrete.OfType("IFCRELCONNECTSSTRUCTURALMEMBER"), r => Assert.False(r[6] is StepRef));
     }
     [Fact]
-    public void An_unsymmetric_bar_is_written_on_its_line_with_its_centroid_as_both_ends_eccentricity()
+    public void An_unsymmetric_bar_is_written_on_its_line_its_centroid_left_to_its_profile()
     {
-        // A UPN 200 column on a pad footing: the curve member on the box centre's line between its two nodes, as before; each
-        // end connected with the centroid's offset across the web, in the member's local axes, as the analysis takes it.
+        // A UPN 200 column on a pad footing: the curve member on the box centre's line between its two nodes, plainly connected
+        // at both ends; its profile a parametric U, whose origin IFC puts on the curve at the middle of its bounding box, so a
+        // reader finds the centroid off the line from the profile, as the analysis takes it (no eccentricity besides).
         var f = LoadCaseTests.F();
         var type = (string)f.Run("structure.createColumnType", new JsonObject { ["section"] = "UPN 200", ["material"] = "S355" })!["id"]!;
         f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 0, ["y"] = 0, ["typeId"] = type });
         f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = 0, ["y"] = 0 });
         var am = AnalyticalModel.Build(f.Model, f.Session.Reader.Services, new AnalyticalOptions());
         var bar = Assert.Single(am.Frames);
-        var c = AnalyticalModel.CentroidOffset(bar);
-        Assert.Equal(SectionProperties.Of(bar.Source.Section.Shape)!.Centroid.Length, c.Length, 9);
+        Assert.True(AnalyticalModel.CentroidOffset(bar).Length > 0.005);
         var step = Export(f);
-        Assert.Empty(step.OfType("IFCRELCONNECTSSTRUCTURALMEMBER"));
-        var ends = step.OfType("IFCRELCONNECTSWITHECCENTRICITY").ToList();
-        Assert.Equal(2, ends.Count);
-        foreach (var r in ends)
+        Assert.Empty(step.OfType("IFCRELCONNECTSWITHECCENTRICITY"));
+        Assert.Equal(2, step.OfType("IFCRELCONNECTSSTRUCTURALMEMBER").Count());
+        var member = Assert.Single(step.OfType("IFCSTRUCTURALCURVEMEMBER"));
+        var set = step.Get(step.OfType("IFCRELASSOCIATESMATERIAL").Single(r => Refs(r[4]).Contains(member.Id))[5])!;
+        var profile = step.Get(step.Get(new StepRef(Refs(set[2]).Single()))![3])!;
+        Assert.Equal("IFCUSHAPEPROFILEDEF", profile.Type);
+        // Its values as the analysis takes them, in Pset_ProfileMechanical (MomentOfInertiaY bending in the depth: I33).
+        var props = SectionProperties.Of(bar.Source.Section.Shape)!;
+        var pset = step.OfType("IFCPROFILEPROPERTIES").Single(p => Ref(p[3]) == profile.Id);
+        Assert.Equal("Pset_ProfileMechanical", (string?)pset[0]);
+        var values = Refs(pset[2]).Select(i => step.Entities[i]).ToDictionary(p => (string)p[0]!, p => (double)((StepTyped)p[2]!).Value!);
+        Assert.Equal(props.Area, values["CrossSectionArea"], 12);
+        Assert.Equal(1, values["MomentOfInertiaY"] / props.I33, 9);
+        Assert.Equal(1, values["MomentOfInertiaZ"] / props.I22, 9);
+        Assert.Equal(1, values["TorsionalConstantX"] / props.J, 9);
+    }
+
+    [Fact]
+    public void A_line_load_lies_on_the_bars_it_runs_along_and_the_materials_carry_what_the_analysis_takes()
+    {
+        // Three columns in a row and two beams 0–3 m and 3–6 m: a line load along both is two actions, each on its beam, over
+        // the stretch the beam covers (as the analysis maps it); one along a single beam stays one action, with its own id.
+        var f = LoadCaseTests.F();
+        var col = (string)f.Run("structure.createColumnType", new JsonObject { ["name"] = "C30x30", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 }, ["material"] = "Concrete C25/30" })!["id"]!;
+        var bt = (string)f.Run("structure.createBeamType", new JsonObject { ["name"] = "B30x50", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.5 }, ["material"] = "Concrete C25/30" })!["id"]!;
+        foreach (var x in new[] { 0.0, 3, 6 })
         {
-            var ecc = step.Get(r[10])!;
-            var local = Enumerable.Range(2, 3).Select(i => (double)ecc[i]!).ToArray();
-            // Square to the column: nothing along local 1, the centroid's offset across.
-            Assert.Equal(0, local[0], 9);
-            Assert.Equal(c.Length, Math.Sqrt(local[1] * local[1] + local[2] * local[2]), 6);
+            f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = x, ["y"] = 0, ["typeId"] = col });
+            f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = x, ["y"] = 0 });
         }
+        var beams = new[] { (0.0, 3.0), (3.0, 6.0) }.Select(b => (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = b.Item1, ["y1"] = 0, ["x2"] = b.Item2, ["y2"] = 0, ["typeId"] = bt })!["id"]!).ToArray();
+        f.Run("analysis.defaultCases", []);
+        var am = AnalyticalModel.Build(f.Model, f.Session.Reader.Services, new AnalyticalOptions());
+        var z = am.Nodes.Max(n => n.At.Z);
+        var both = (string)f.Run("analysis.addLineLoad", new JsonObject { ["storeyId"] = f.Storey, ["a"] = new JsonArray(0, 0), ["b"] = new JsonArray(6, 0), ["z"] = z, ["value"] = 10 })!["id"]!;
+        var one = (string)f.Run("analysis.addLineLoad", new JsonObject { ["storeyId"] = f.Storey, ["a"] = new JsonArray(0.5, 0), ["b"] = new JsonArray(2.5, 0), ["z"] = z, ["value"] = 4 })!["id"]!;
+        var step = Export(f);
+        var curves = step.OfType("IFCSTRUCTURALCURVEACTION").ToList();
+        Assert.Equal(3, curves.Count);
+        Assert.Single(curves, c => (string?)c[0] == one);
+        Assert.DoesNotContain(curves, c => (string?)c[0] == both);
+        var on = step.OfType("IFCRELCONNECTSSTRUCTURALACTIVITY").ToDictionary(r => Ref(r[5]), r => step.Get(r[4])!);
+        Assert.All(curves, c => Assert.Equal("IFCSTRUCTURALCURVEMEMBER", on[c.Id].Type));
+        // Each stretch from its beam's start to its end, on its beam.
+        foreach (var c in curves.Where(c => (string?)c[0] != one))
+        {
+            var (edge, _) = Topology(step, c);
+            var xs = new[] { edge[0], edge[1] }.Select(v => (double)((List<object?>)step.Get(step.Get(v)![0])![0]!)[0]!).Order().ToArray();
+            var beam = f.Model.Get(xs[0] < 1.5 ? beams[0] : beams[1])!;
+            Assert.Equal(xs[0] < 1.5 ? [0.0, 3.0] : [3.0, 6.0], xs.Select(x => Math.Round(x, 6)));
+            Assert.StartsWith(beam.Name, (string?)on[c.Id][2]);
+            Assert.Equal(-10000.0, (double)step.Get(c[7])![3]!, 6);
+        }
+        // The same GlobalIds at a second export.
+        Assert.Equal(curves.Select(c => (string)c[0]!).Order(), Export(f).OfType("IFCSTRUCTURALCURVEACTION").Select(c => (string)c[0]!).Order());
+
+        // The concrete's E and ν by its class (EN 1992-1-1), each saying so; nothing of it without the view.
+        var props = step.OfType("IFCPROPERTYSINGLEVALUE").ToList();
+        var e = props.Single(p => (string?)p[0] == "YoungModulus");
+        Assert.Equal(new StepTyped("IFCMODULUSOFELASTICITYMEASURE", 31e9), e[2]);
+        Assert.StartsWith("Lapin: EN 1992-1-1", (string?)e[1]);
+        Assert.Equal(new StepTyped("IFCPOSITIVERATIOMEASURE", 0.2), props.Single(p => (string?)p[0] == "PoissonRatio")[2]);
+        var mechanical = step.OfType("IFCMATERIALPROPERTIES").Single(m => (string?)m[0] == "Pset_MaterialMechanical");
+        Assert.Equal("Concrete C25/30", (string?)step.Get(mechanical[3])![0]);
+        Assert.DoesNotContain(Export(f, structural: false).OfType("IFCPROPERTYSINGLEVALUE"), p => (string?)p[0] is "YoungModulus" or "PoissonRatio");
+    }
+
+    [Fact]
+    public void A_materials_own_values_are_kept_and_its_density_added_only_where_it_has_none()
+    {
+        // The steel hall's steel states E, ν and its density: written once each, as the project has them (no source said).
+        var f = AnalysisRunTests.Hall();
+        var step = Export(f);
+        var steel = step.OfType("IFCMATERIAL").Single(m => (string?)m[0] == "Steel");
+        var mine = step.OfType("IFCMATERIALPROPERTIES").Where(m => Ref(m[3]) == steel.Id).SelectMany(m => Refs(m[2])).Select(i => step.Entities[i]).ToList();
+        foreach (var name in new[] { "YoungModulus", "PoissonRatio", "MassDensity" })
+        {
+            var p = Assert.Single(mine, x => (string?)x[0] == name);
+            Assert.Null(p[1]);
+        }
+    }
+
+    [Fact]
+    public void A_release_is_written_in_the_members_IFC_axes_its_Axis_as_z()
+    {
+        // A level beam pinned about its strong axis (Lapin's local 3, horizontal, square to it) at one end, and free to slide
+        // along its depth (Lapin's local 2) at the other: IFC's member axes have z on the Axis (local 2, up) and y = z × x, so
+        // the first is free about y, the second along z.
+        var f = LoadCaseTests.F();
+        var col = (string)f.Run("structure.createColumnType", new JsonObject { ["name"] = "C30x30", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.3 }, ["material"] = "Concrete C25/30" })!["id"]!;
+        var bt = (string)f.Run("structure.createBeamType", new JsonObject { ["name"] = "B30x50", ["section"] = new JsonObject { ["kind"] = "rectangle", ["width"] = 0.3, ["depth"] = 0.5 }, ["material"] = "Concrete C25/30" })!["id"]!;
+        foreach (var x in new[] { 0.0, 6 })
+        {
+            f.Run("structure.addColumn", new JsonObject { ["storeyId"] = f.Storey, ["x"] = x, ["y"] = 0, ["typeId"] = col });
+            f.Run("structure.addPadFooting", new JsonObject { ["storeyId"] = f.Storey, ["x"] = x, ["y"] = 0 });
+        }
+        var beam = (string)f.Run("structure.addBeam", new JsonObject { ["storeyId"] = f.Storey, ["x1"] = 0, ["y1"] = 0, ["x2"] = 6, ["y2"] = 0, ["typeId"] = bt })!["id"]!;
+        f.Run("analysis.setReleases", new JsonObject { ["ids"] = new JsonArray(beam), ["i"] = new JsonArray(false, false, false, false, false, true), ["j"] = new JsonArray(false, true, false, false, false, false) });
+        var step = Export(f);
+        var member = step.OfType("IFCSTRUCTURALCURVEMEMBER").Single(b => ((string?)b[2])!.StartsWith(f.Model.Get(beam)!.Name));
+        Assert.Equal(1.0, (double)((List<object?>)step.Get(member[8])![0]!)[2]!, 9);
+        var conds = step.OfType("IFCRELCONNECTSSTRUCTURALMEMBER").Where(r => Ref(r[4]) == member.Id && r[6] is StepRef)
+            .Select(r => (At: (double)((List<object?>)step.Get(Topology(step, step.Get(r[5])!).Item[0])![0]!)[0]!, C: step.Get(r[6])!)).OrderBy(x => x.At).ToList();
+        Assert.Equal(2, conds.Count);
+        StepTyped B(bool b) => new("IFCBOOLEAN", new StepEnum(b ? "T" : "F"));
+        Assert.Equal([B(true), B(true), B(true), B(true), B(false), B(true)], Enumerable.Range(1, 6).Select(i => conds[0].C[i]));
+        Assert.Equal("pinned about the strong axis", (string?)conds[0].C[0]);
+        Assert.Equal([B(true), B(true), B(false), B(true), B(true), B(true)], Enumerable.Range(1, 6).Select(i => conds[1].C[i]));
     }
 }

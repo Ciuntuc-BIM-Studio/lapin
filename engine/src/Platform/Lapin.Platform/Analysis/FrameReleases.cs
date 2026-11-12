@@ -21,8 +21,8 @@ public sealed record EndReleases(bool[] I, bool[] J, string Source)
 /// model — a roof of members pinned both ways is a mechanism without them), any other bar fixed (monolithic
 /// concrete, a steel frame's rigid joints; a steel base's own fixity is its support's). Pinned frees the two bending
 /// rotations (ry, rz); a bar pinned at both ends keeps its torsion held at its i end only (released at j), so it neither
-/// spins nor ties its nodes' rotations together. A member one of whose ends meets nothing (a cantilever) keeps its other
-/// end's default fixed; a roof's member is pinned only at an end where it bears on something (a support, a wall, a member
+/// spins nor ties its nodes' rotations together. A member one of whose ends meets nothing (a cantilever) keeps both its ends
+/// fixed: its support's, and its free tip's, where a release would hinge on nothing; a roof's member is pinned only at an end where it bears on something (a support, a wall, a member
 /// running through: a purlin, a wall plate), so where only members' ends meet (a corner's tails) they stay joined rigidly. A bar with its torsion released at both ends keeps it held at its i end
 /// (no mechanism). The releases
 /// are a member's own ends: its first piece's i end and its last piece's j end; where a member is split, its pieces stay
@@ -87,8 +87,10 @@ public static class FrameReleases
             var (endI, endJ) = (pieces[0].I, pieces[^1].J);
             // A roof's member pinned only where it bears on something, and not at the support of a cantilever.
             var roofs = def.SequenceEqual(PinnedStrong);
-            var i = (bool[])(ownI ?? (Free(endJ) || (roofs && !Bears(endI)) ? Fixed : def)).Clone();
-            var j = (bool[])(ownJ ?? (Free(endI) || (roofs && !Bears(endJ)) ? Fixed : def)).Clone();
+            // A free end itself is not released either: nothing meets it to hinge on, and a release there would leave its node
+            // turning on nothing (with an arm, an unsymmetric section's, a mechanism).
+            var i = (bool[])(ownI ?? (Free(endI) || Free(endJ) || (roofs && !Bears(endI)) ? Fixed : def)).Clone();
+            var j = (bool[])(ownJ ?? (Free(endI) || Free(endJ) || (roofs && !Bears(endJ)) ? Fixed : def)).Clone();
             // Pinned at both ends: the twist held at i only.
             if (i[4] && i[5] && j[4] && j[5] && !i[3]) j[3] = true;
             if (i[3] && j[3]) i[3] = false;

@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Lapin.Geometry;
 using Lapin.Model;
 using Lapin.Platform;
+using Lapin.Platform.Analysis;
 using static Lapin.Ifc.Step;
 
 namespace Lapin.Ifc;
@@ -634,6 +635,28 @@ public static partial class IfcExport
             return c <= v && (d < 0 || d >= v);
         }
 
+        /// <summary>
+        /// The element's IFC Status (Pset_…Common.Status, IFC4: NEW, EXISTING, DEMOLISH, TEMPORARY) from its phases, as the
+        /// phases module sees them: created and struck in one phase temporary; demolished (in the phase exported, or at all
+        /// when none is) demolish; created in an existing phase, or before the phase exported, existing; else new. Null for an
+        /// element without phases.
+        /// </summary>
+        string? PhaseStatus(Entity e)
+        {
+            var created = e.Str("phaseCreated");
+            var demolished = e.Str("phaseDemolished");
+            if (created == null && demolished == null) return null;
+            if (created != null && created == demolished) return "TEMPORARY";
+            var phases = ((project.Attrs["phases"] as JsonObject)?["phases"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
+            int Index(string? id) => id == null ? -1 : phases.FindIndex(p => (string?)p["id"] == id);
+            var v = Index(o.Phase);
+            var d = Index(demolished);
+            if (d >= 0 && (v < 0 || d <= v)) return "DEMOLISH";
+            var c = Index(created);
+            if (c < 0) c = phases.FindIndex(p => (string?)p["kind"] == "construction");
+            return c >= 0 && ((string?)phases[c]["kind"] == "existing" || v >= 0 && c < v) ? "EXISTING" : "NEW";
+        }
+
         string PhaseName(string id) =>
             ((project.Attrs["phases"] as JsonObject)?["phases"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault(p => (string?)p["id"] == id) is { } p ? (string?)p["name"] ?? id : id;
 
@@ -1159,9 +1182,12 @@ public static partial class IfcExport
             // Its Lapin id and attributes, so an import gives the material the same id and what refers to it (a column type, a zone) still finds it.
             if (mat != null) f.Add("IFCMATERIALPROPERTIES", S(IntentSetName), Null, L(IntentProperties(mat, null, [("LapinId", mat.Id)])), r);
             // Its parameters: the standard ones in IFC's own sets (Pset_MaterialThermal.ThermalConductivity, typed as IFC types them), the user's in Lapin_Material.
-            if (mat != null)
-                foreach (var (set, props) in MaterialSets(mat))
-                    f.Add("IFCMATERIALPROPERTIES", S(set), Null, L(props.Select(p => Single(p.Name, p.Value)).ToArray()), r);
+            var sets = mat != null ? MaterialSets(mat) : [];
+            // With the structural analysis view, the values its analysis takes that the material does not state (E and ν by its
+            // grade's standard, its density), each saying where it comes from (docs/plan-fem.md §8.7).
+            var sources = o.Structural ? AnalysisValues(mat ?? Materials.Find(m, id) ?? new Entity($"lapin-material-{id}", IfcClass.Material, id, []), sets) : null;
+            foreach (var (set, props) in sets)
+                f.Add("IFCMATERIALPROPERTIES", S(set), Null, L(props.Select(p => Single(p.Name, p.Value, sources?.GetValueOrDefault((set, p.Name)))).ToArray()), r);
             var style = Style(MaterialKey + id);
             f.Add("IFCMATERIALDEFINITIONREPRESENTATION", Null, Null,
                 L(new[] { f.Add("IFCSTYLEDREPRESENTATION", model, Null, Null, L(new[] { f.Add("IFCSTYLEDITEM", Null, L(new[] { style }), Null) })) }), r);
@@ -1507,6 +1533,9 @@ public static partial class IfcExport
             var carried = src != null ? IfcCarry.Writer.SetNames(src).ToHashSet() : [];
             // The common set: what Lapin knows, and what the user wrote into it (their value over Lapin's of the same name).
             var commonName = src == null && CommonSets.Contains(kind.Class) ? $"Pset_{kind.Class[3..]}Common" : null;
+            // Its Status from its phases (the user's own value over it), where the common set has one.
+            if (commonName != null && PhaseStatus(e) is { } status && StandardPsets.All.Any(x => x.Name == commonName && x.Properties.ContainsKey("Status")))
+                common.Add(("Status", Typed("IFCLABEL", S(status))));
             // The standard sets the element's module answers (a lift's capacity): into the common set, or sets of their own.
             var moduleSets = src == null ? s.Catalog.All<IIfcElementSets>().SelectMany(x => x.Sets(m, e)).ToList() : [];
             foreach (var set in moduleSets.Where(x => x.Name == commonName))
@@ -1594,18 +1623,23 @@ public static partial class IfcExport
             var own = new List<string>();
             foreach (var p in (e.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
-                if (Params.SetOf(p) != null || (string?)p["name"] is not { } pname || ParamValue(p, false) is not { } value) continue;
+                // A type's instance default is each element's, not the type's (TypeDefaults).
+                if (Params.SetOf(p) != null || Params.IsInstanceDefault(p) || (string?)p["name"] is not { } pname || ParamValue(p, false) is not { } value) continue;
                 own.Add(Single(pname, value));
             }
             return own.Count > 0 ? f.Add("IFCPROPERTYSET", gid, Null, S(ParamsSetName), Null, L(own)) : null;
         }
 
-        /// <summary>A parameter's value as IFC types it; a text in a standard set is a label, as IFC's Pset_…Common have them.</summary>
+        /// <summary>
+        /// A parameter's value as IFC types it, in any set (a standard one or the user's own): a length, an area, an angle as
+        /// their measures in the file's units (metres, square metres, radians: Lapin holds an angle in degrees), a number a real,
+        /// yes or no a boolean; a text in a standard set is a label, as IFC's Pset_…Common have them.
+        /// </summary>
         static string? ParamValue(JsonObject p, bool standard) => p["value"] is not { } pv ? null : (string?)p["kind"] switch
         {
             "length" => Json.Number(pv) is { } l ? Typed("IFCLENGTHMEASURE", R(l)) : null,
             "area" => Json.Number(pv) is { } ar ? Typed("IFCAREAMEASURE", R(ar)) : null,
-            "angle" => Json.Number(pv) is { } an ? Typed(standard ? "IFCPLANEANGLEMEASURE" : "IFCREAL", R(an)) : null,
+            "angle" => Json.Number(pv) is { } an ? Typed("IFCPLANEANGLEMEASURE", R(an * Math.PI / 180)) : null,
             "number" => Json.Number(pv) is { } nm ? Typed("IFCREAL", R(nm)) : null,
             "bool" => pv is JsonValue bv && bv.TryGetValue<bool>(out var yes) ? Typed("IFCBOOLEAN", yes ? True : False) : null,
             "choice" => Typed("IFCLABEL", S(pv.ToString())),
@@ -1630,13 +1664,37 @@ public static partial class IfcExport
             return sets;
         }
 
+        /// <summary>
+        /// A material's mechanical values for the structural analysis view (<see cref="StructuralMaterials"/>, as Lapin's analysis
+        /// takes them) added to its sets where it states none: Pset_MaterialMechanical's YoungModulus and PoissonRatio, and
+        /// Pset_MaterialCommon's MassDensity, in IFC's SI units. Returns each added value's source, for its description.
+        /// </summary>
+        Dictionary<(string Set, string Name), string> AnalysisValues(Entity mat, List<(string Set, List<(string Name, string Value)> Props)> sets)
+        {
+            var sources = new Dictionary<(string, string), string>();
+            var sm = StructuralMaterials.Of(m, mat);
+            void Add(string set, string name, MaterialValue? v)
+            {
+                if (v == null) return;
+                var i = sets.FindIndex(x => string.Equals(x.Set, set, StringComparison.OrdinalIgnoreCase));
+                if (i >= 0 && sets[i].Props.Any(p => p.Name == name)) return;
+                var value = Typed(StandardPsets.MaterialMeasures[name], R(v.Value));
+                if (i < 0) sets.Add((set, [(name, value)])); else sets[i].Props.Add((name, value));
+                sources[(i < 0 ? set : sets[i].Set, name)] = $"Lapin: {v.Source}";
+            }
+            Add("Pset_MaterialMechanical", "YoungModulus", sm.E);
+            Add("Pset_MaterialMechanical", "PoissonRatio", sm.Poisson);
+            Add("Pset_MaterialCommon", "MassDensity", sm.Density);
+            return sources;
+        }
+
         /// <summary>The user's parameters in named sets (Pset_DoorCommon, a set of their own), set by set.</summary>
         static List<(string Set, List<(string Name, string Value)> Props)> NamedParams(Entity e)
         {
             var sets = new List<(string Set, List<(string Name, string Value)> Props)>();
             foreach (var p in (e.Attrs["params"] as JsonArray)?.OfType<JsonObject>() ?? [])
             {
-                if (Params.SetOf(p) is not { } set || (string?)p["name"] is not { } name || ParamValue(p, StandardPsets.IsStandard(set)) is not { } value) continue;
+                if (Params.SetOf(p) is not { } set || Params.IsInstanceDefault(p) || (string?)p["name"] is not { } name || ParamValue(p, StandardPsets.IsStandard(set)) is not { } value) continue;
                 var i = sets.FindIndex(x => string.Equals(x.Set, set, StringComparison.OrdinalIgnoreCase));
                 if (i < 0) sets.Add((set, [(name, value)])); else sets[i].Props.Add((name, value));
             }
