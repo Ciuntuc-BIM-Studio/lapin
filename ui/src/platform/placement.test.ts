@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NodeDto } from '../engine/protocol';
-import { askPlacement, placedAt, placementKey, requestFor, resetPlacement, usePlacement, verdictFor } from './placement';
+import { askPlacement, placedAt, placementKey, reasonLines, requestFor, resetPlacement, usePlacement, verdictFor } from './placement';
 
 const wall = { id: 'w', type: 'IfcWall', name: 'W', props: { start: [0, 0], end: [6, 0] } } as unknown as NodeDto;
 const arc = { a: { x: 0, y: 0 }, b: { x: 6, y: 0 }, rise: 0 };
@@ -48,5 +48,17 @@ describe('wrapText', () => {
     const { wrapText } = await import('../viewport/wrapText');
     expect(wrapText('The door cannot go there: it is longer than the wall.', 20)).toEqual(['The door cannot go', 'there: it is longer', 'than the wall.']);
     expect(wrapText('', 20)).toEqual([]);
+  });
+});
+
+describe('a refusal\'s reason by the cursor', () => {
+  it('is said in the interface\'s language, then wrapped; nothing when it fits', async () => {
+    const { loadLanguage } = await import('../i18n');
+    await loadLanguage('ro');
+    expect(reasonLines({ ok: false, message: 'Ungroup' }, 'ro')).toEqual(['Degrupează']);
+    expect(reasonLines({ ok: false, message: 'Ungroup' }, 'en')).toEqual(['Ungroup']);
+    expect(reasonLines({ ok: false, message: 'A sentence no dictionary has, long enough to be wrapped onto a second line by the plan.' }, 'ro').length).toBe(2);
+    expect(reasonLines({ ok: true, message: 'Ungroup' }, 'ro')).toEqual([]);
+    expect(reasonLines(null)).toEqual([]);
   });
 });

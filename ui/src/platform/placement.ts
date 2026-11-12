@@ -8,6 +8,8 @@ import { create } from 'zustand';
 import type { NodeDto } from '../engine/protocol';
 import { arcOf, pointAt, project, type Arc } from '../viewport/arc';
 import type { PlacementRequest, PlacementVerdict, Vec2 } from './module';
+import { translate, type Lang } from '../i18n';
+import { wrapText } from '../viewport/wrapText';
 
 /** How far (m) from the offered place the cursor may be for the placement to snap to it. */
 export const SNAP_REACH = 1;
@@ -20,6 +22,15 @@ export function requestFor(host: NodeDto, at: Vec2, what: { kind: 'door' | 'wind
   const arc = arcOf(host.props);
   if (!arc) return null;
   return { req: { ...what, host, along: project(arc, at) }, arc };
+}
+
+/**
+ * A refusal's reason as the plan writes it by the cursor: in the interface's language (a module's sentence goes through
+ * its phrases and patterns like any text; it cannot once wrapped into lines), then wrapped. No lines when it fits.
+ */
+export function reasonLines(verdict: PlacementVerdict | null, lang?: Lang, width = 56): string[] {
+  if (!verdict || verdict.ok || !verdict.message) return [];
+  return wrapText(translate(verdict.message, lang) ?? verdict.message, width);
 }
 
 /** Requests that differ by less than a centimetre along the host are the same question. */

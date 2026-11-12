@@ -22,7 +22,7 @@ import { ownPlanOf } from './storeyPlan';
 import type { NodeDto, RenderItem } from '../engine/protocol';
 import type { FaceHit, Vec2 } from '../platform/module';
 import { askPlacement, findTool, useToolTick } from '../platform/modules';
-import { placedAt, requestFor, resetPlacement, usePlacement, verdictFor } from '../platform/placement';
+import { placedAt, reasonLines, requestFor, resetPlacement, usePlacement, verdictFor } from '../platform/placement';
 import { useGripEditor } from './GripLayer';
 import { LiveBar, LiveBox } from './LiveBox';
 import { liveBegin, liveCursor, liveEnd, livePoint, useLive } from './liveInput';
@@ -56,7 +56,7 @@ import { actualScale, boundsOf, coreBounds, framing, middleDouble, popHistory, p
 import { ScaleChip } from './ScaleChip';
 import { DASHES, planDetail, shownAt } from './planDetail';
 import { axisLine, riseThrough } from './arc';
-import { wrapText } from './wrapText';
+import { useLang } from '../i18n';
 import { others, reportPresence, useShare } from '../engine/share';
 
 /** The radius of the arc from a to b through p (Infinity: in line). */
@@ -95,6 +95,7 @@ export function PlanView() {
   // Space while a tool is on changes what its ghost shows.
   useToolTick((s) => s.n);
   usePlacement((s) => s.verdict); // a module's answer to whether a door or window fits where the cursor is
+  const lang = useLang((s) => s.lang); // its reason, written by the cursor, in the language the interface speaks
   const [ortho, setOrtho] = useState(false);
   /** A press: where, the view then, whether it moved; `carry`: the selection it was pressed on (a drag moves it, or copies it with Ctrl), from `base` (the press, snapped). */
   const drag = useRef<{ x: number; y: number; view: View; moved: boolean; carry?: string[]; copy?: boolean; base?: Vec2 } | null>(null);
@@ -672,7 +673,7 @@ export function PlanView() {
       const verdict = q ? verdictFor(q.req) : null;
       const put = q ? placedAt(q.arc, at, verdict) : { point: at, snapped: false };
       const bad = verdict?.ok === false && !put.snapped;
-      const label = verdict && !verdict.ok && verdict.message ? wrapText(verdict.message, 56) : [];
+      const label = reasonLines(verdict, lang);
       const tip = toScreen(at);
       return (
         <g className={`plan-preview${bad ? ' bad' : ''}`} data-testid="pick-ghost" data-fits={verdict ? String(verdict.ok || put.snapped) : undefined}>
