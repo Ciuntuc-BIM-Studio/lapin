@@ -3208,6 +3208,67 @@ export const scenes = [
     },
   },
   {
+    // Structural analysis, stage S0 (docs/plan-fem.md §8): the load cases, an area load by its tool, a room's imposed-load category, the summary and the combinations.
+    id: 'loads',
+    touches: ['core', 'architecture', 'structure', 'analysis'],
+    async run(t) {
+      await t.fresh();
+      const { storey } = await house(t, { roof: false });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 3, y: 4, name: 'Living room', function: 'Living' });
+      await t.cmd('architecture.addRoom', { storeyId: storey, x: 9.5, y: 4, name: 'Bedroom', function: 'Bedroom' });
+      const rooms = (await t.nodes()).filter((n) => n.type === 'IfcSpace');
+      t.expect(rooms.length === 2, `two rooms placed, found ${rooms.length}`);
+      await t.button('Structure', { exact: true });
+      await t.shot('ribbon-loads', { of: '.topbar', pad: 0 });
+      // Load cases… → the standard set.
+      await t.tool('analysis.cases');
+      const dialog = t.page.locator('[aria-label="Loads"]');
+      t.expect(await dialog.count() > 0, 'the Loads dialog opens');
+      await dialog.getByRole('button', { name: 'Add standard cases' }).click();
+      await t.until(async () => (await dialog.locator('tbody tr').count()) >= 5, 'the standard cases are listed');
+      await t.wait(400);
+      await t.shot('loads-cases', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+      // The Area load tool: a click at each corner of the room, Enter to finish; the value and the case in the command line's bar.
+      await t.tool('analysis.areaLoad');
+      t.expect(await t.page.locator('[data-testid=load-value]').count() === 1, 'the Area load tool offers its value');
+      await t.page.locator('[data-testid=load-value]').fill('2.5');
+      await t.ui({ keyPlan: false });
+      await t.fit();
+      await t.wait(400);
+      for (const [x, y] of [[0.5, 0.5], [6.5, 0.5], [6.5, 7.5], [0.5, 7.5]]) { const [px, py] = await t.planPoint(x, y); await t.page.mouse.move(px, py, { steps: 3 }); await t.page.mouse.click(px, py); await t.wait(250); }
+      await t.keys('Enter');
+      await t.wait(800);
+      const loads = await t.call('doc.query', { name: 'analysis.loads', args: {} });
+      const qa = loads.cases.find((c) => c.code === 'Q-A');
+      t.expect(qa && qa.userLoads === 1, `one area load in Q-A (${qa?.userLoads})`);
+      await t.keys('Escape', 'Escape');
+      await t.shot('loads-plan', { of: '[data-testid=plan]', pad: 0 });
+      // A room's imposed-load category: from its function unless set; the bedroom's chosen.
+      await select(t, rooms[1].id);
+      await t.wait(500);
+      const cat = t.page.locator('[data-field=load-category]');
+      t.expect(await cat.count() === 1, 'a room has its Imposed load category');
+      await cat.selectOption('B');
+      await t.wait(500);
+      await t.shot('loads-room', { of: 'aside.props', pad: 0, maxHeight: 620 });
+      // The Imposed loads, Summary and Combinations tabs.
+      await t.tool('analysis.cases');
+      await dialog.getByRole('tab', { name: 'Imposed loads' }).click();
+      await t.wait(400);
+      await t.shot('loads-imposed', { of: '.dialog', pad: 0 });
+      await dialog.getByRole('tab', { name: 'Summary' }).click();
+      await t.wait(500);
+      t.expect(/derived loads/i.test(await dialog.innerText()), 'the Summary lists the derived loads');
+      await t.shot('loads-summary', { of: '.dialog', pad: 0 });
+      await dialog.getByRole('tab', { name: 'Combinations' }).click();
+      await t.until(async () => (await dialog.locator('tbody tr').count()) > 0, 'the combinations are listed');
+      await t.wait(400);
+      await t.shot('loads-combinations', { of: '.dialog', pad: 0 });
+      await t.ui({ dialog: null });
+    },
+  },
+  {
     // Decision 445: File → Preferences (grid and snaps), the snap menu, a UCS in a plan, the project's points in 3D.
     id: 'preferences',
     touches: ['core', 'drafting'],

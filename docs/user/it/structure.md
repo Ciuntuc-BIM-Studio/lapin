@@ -53,3 +53,7 @@ Le fondazioni con profilo sono diritte o curve. Due che si incontrano in un ango
 ## Una vista strutturale
 
 La disciplina di una vista decide cosa mostra. Una vista **Struttura** mostra solo i nuclei portanti, senza le finiture. Scegli la disciplina nelle proprietà della vista. Vedi [Viste](views.md).
+
+## Carichi
+
+Il gruppo **Carichi** contiene ciò che serve a un'analisi strutturale: casi di carico, carichi di superficie, lineari e puntuali, e le combinazioni. Vedi [Carichi](loads.md).

@@ -176,9 +176,13 @@ public static partial class IfcImport
     /// <summary>What an intent set says: the attributes, and the Lapin class, predefined type and host it names.</summary>
     sealed record Intent(JsonObject Attrs, string? Class, string? Predefined, string? Host, string? LapinId);
 
-    /// <summary>An element of the file: a rooted product with a placement or a shape, not the spatial structure, an opening, an annotation, a space (those are read apart) or a port (carried with its element).</summary>
+    /// <summary>
+    /// An element of the file: a rooted product with a placement or a shape, not the spatial structure, an opening, an annotation, a space (those are read apart)
+    /// or a port (carried with its element), nor a structural analysis view's item or action (IfcStructural…: not read back yet, docs/plan-fem.md §8.7).
+    /// </summary>
     public static bool IsProductEntity(StepEntity e) =>
         e.Args.Count >= 7 && e[0] is string { Length: 22 } && !e.Type.StartsWith("IFCREL", StringComparison.Ordinal) && !e.Type.EndsWith("TYPE", StringComparison.Ordinal)
+        && !e.Type.StartsWith("IFCSTRUCTURAL", StringComparison.Ordinal)
         && (e[5] is StepRef || e[6] is StepRef)
         && e.Type is not ("IFCPROJECT" or "IFCSITE" or "IFCBUILDING" or "IFCBUILDINGSTOREY" or "IFCOPENINGELEMENT" or "IFCANNOTATION" or "IFCSPACE" or "IFCDISTRIBUTIONPORT");
 

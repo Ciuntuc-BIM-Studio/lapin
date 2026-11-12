@@ -53,3 +53,7 @@ Les semelles à profil sont droites ou courbes. Deux semelles qui se rencontrent
 ## Une vue structurelle
 
 La discipline d’une vue décide de ce qu’elle montre. Une vue **Structure** ne montre que les noyaux porteurs, sans les finitions. Vous choisissez la discipline dans les propriétés de la vue. Voir [Coupes, élévations et 3D](views.md).
+
+## Charges
+
+Le groupe **Charges** contient ce qu'il faut à un calcul de structure : cas de charge, charges surfaciques, linéiques et ponctuelles, et combinaisons. Voir [Charges](loads.md).

@@ -53,3 +53,7 @@ Typ ławy fundamentowej to typ standardowy, czyli ściana fundamentowa z warstwa
 ## Widok konstrukcyjny
 
 Branża widoku decyduje o tym, co on pokazuje. Widok **Konstrukcja** pokazuje tylko nośne rdzenie, bez wykończeń. Branżę wybierasz we właściwościach widoku. Zobacz [Widoki](views.md).
+
+## Obciążenia
+
+Grupa **Obciążenia** zawiera to, czego potrzebują obliczenia konstrukcji: przypadki obciążenia, obciążenia powierzchniowe, liniowe i punktowe oraz kombinacje. Zobacz [Obciążenia](loads.md).

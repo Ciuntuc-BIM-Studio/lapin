@@ -53,3 +53,7 @@ Profile footings run straight or curved. Two of them meeting in a corner are mit
 ## A structural view
 
 A view's discipline decides what it shows. A **Structure** view shows the load-bearing cores only, without the finishes. You choose the discipline in the view's properties. See [Views](views.md).
+
+## Loads
+
+The **Loads** group holds what a structural analysis needs: load cases, area, line and point loads, and the combinations. See [Loads](loads.md).

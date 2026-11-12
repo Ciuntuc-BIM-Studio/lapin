@@ -171,13 +171,13 @@ public class SiteTests
         var f = Site();
         var t = Slope(f);
         // A 10 % slope everywhere: one band, the whole ground.
-        var slope = Analysis.Of(f.Model, f.Model.Get(t)!, "slope")!;
+        var slope = Lapin.Civil.Analysis.Of(f.Model, f.Model.Get(t)!, "slope")!;
         Assert.All(slope.Cells, c => Assert.Equal("gentle", c.Band.Key));
         var legend = (JsonObject)f.Session.Query("civil.analysis", new JsonObject { ["id"] = t, ["kind"] = "slope" })!;
         Assert.InRange((double)legend["area"]!, 1500, 1600);
         // A platform at 2,0 over ground from 1,0 to 3,0: cut on the high side, fill on the low one.
         f.Run("civil.addPlatform", new JsonObject { ["terrainId"] = t, ["x1"] = 10, ["y1"] = 10, ["x2"] = 30, ["y2"] = 20, ["elevation"] = 2.0 });
-        var cutFill = Analysis.Of(f.Model, f.Model.Get(t)!, "cutfill")!;
+        var cutFill = Lapin.Civil.Analysis.Of(f.Model, f.Model.Get(t)!, "cutfill")!;
         Assert.Contains(cutFill.Cells, c => c.Band.Key.StartsWith("cut", StringComparison.Ordinal));
         Assert.Contains(cutFill.Cells, c => c.Band.Key.StartsWith("fill", StringComparison.Ordinal));
         Assert.Contains(cutFill.Cells, c => c.Band.Key == "level" && c.Min.X < 5);

@@ -53,3 +53,7 @@ Fundațiile cu profil merg drept sau curb. Două care se întâlnesc într-un co
 ## O vedere de structură
 
 Disciplina unei vederi decide ce arată. O vedere **Structură** arată doar miezurile portante, fără finisaje. Disciplina o alegi în proprietățile vederii. Vezi [Secțiuni, fațade și 3D](views.md).
+
+## Încărcări
+
+Grupul **Încărcări** are ce îi trebuie unui calcul structural: cazuri de încărcare, încărcări pe suprafață, liniare și punctuale, și combinațiile. Vezi [Încărcări](loads.md).

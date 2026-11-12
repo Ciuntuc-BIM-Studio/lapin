@@ -53,3 +53,7 @@ Fundamenter med profil kan være lige eller buede. To, der mødes i et hjørne, 
 ## En konstruktionsvisning
 
 En visnings fagområde afgør, hvad den viser. En visning med fagområdet **Konstruktion** viser kun de bærende kerner, uden overflader. Du vælger fagområdet i visningens egenskaber. Se [Snit, facader og 3D](views.md).
+
+## Belastninger
+
+Gruppen **Belastninger** rummer det, en statisk beregning skal bruge: lasttilfælde, flade-, linje- og punktlaster samt kombinationerne. Se [Belastninger](loads.md).

@@ -53,3 +53,7 @@ Fundamente mit Profil verlaufen gerade oder gekrümmt. Zwei, die sich in einer E
 ## Eine Tragwerksansicht
 
 Die Disziplin einer Ansicht entscheidet, was sie zeigt. Eine Ansicht der Disziplin **Tragwerk** zeigt nur die tragenden Kerne, ohne die Bekleidungen. Die Disziplin wählen Sie in den Eigenschaften der Ansicht. Siehe [Schnitte, Ansichten und 3D](views.md).
+
+## Lasten
+
+Die Gruppe **Lasten** enthält, was eine Tragwerksberechnung braucht: Lastfälle, Flächen-, Linien- und Punktlasten und die Kombinationen. Siehe [Lasten](loads.md).

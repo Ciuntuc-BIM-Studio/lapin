@@ -22,8 +22,9 @@ namespace Lapin.Ifc;
 /// <summary><paramref name="Exclude"/>: elements left out (the kinds and storeys not chosen, what the 3D view hides: <see cref="ModelSurvey.Excluded"/>).</summary>
 /// <summary><paramref name="Voids"/>: the openings also as solid voids (IfcBuildingElementProxy PROVISIONFORVOID, decision 289), of the kinds asked, their sides moved by the offset; off by default.</summary>
 public sealed record IfcExportOptions(string Schema = "IFC4", string Detail = "group", string? Phase = null, string Geometry = "brep", double Tolerance = 0, IReadOnlySet<string>? Exclude = null,
-    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false)
+    bool Voids = false, IReadOnlySet<string>? VoidKinds = null, double VoidOffset = 0, bool BonsaiStyles = false, bool Structural = false)
 {
+    // Structural: IFC's structural analysis view beside the building (docs/plan-fem.md §8.7): the analytical model, the load cases, their actions and combinations.
     // BonsaiStyles: the project's drawing styles for Bonsai beside the file (<see cref="Ifc.BonsaiStyles"/>), named in BBIM_Documentation on IfcProject.
     public bool Ifc43 => Schema.StartsWith("IFC4X3", StringComparison.OrdinalIgnoreCase);
     public bool Grouped => !string.Equals(Detail, "simple", StringComparison.OrdinalIgnoreCase);
@@ -55,7 +56,7 @@ public sealed record IfcExportResult(string Path, string Schema, int Elements, i
 /// export derives (parts, relationships, property sets) gets ids derived from
 /// its parent's id and a key, the same at every export.
 /// </summary>
-public static class IfcExport
+public static partial class IfcExport
 {
     // Lapin's own sets: no "Pset_" prefix, which IFC keeps for the sets its specification declares (IfcPropertySet).
     public const string IntentSetName = "Lapin_Intent";
@@ -206,7 +207,7 @@ public static class IfcExport
         "IfcMember", "IfcPlate", "IfcCovering", "IfcRailing", "IfcStair", "IfcRamp", "IfcChimney", IfcClass.BuildingElementProxy, "IfcTransportElement",
     ];
 
-    sealed class Writer(Session s, IfcExportOptions o)
+    sealed partial class Writer(Session s, IfcExportOptions o)
     {
         // The application that wrote it: the product (Lapin, or an edition under its own name).
         public readonly Step File = new() { Application = s.Product.Name };
@@ -265,6 +266,7 @@ public static class IfcExport
             Finish();
             Processes();
             Controls();
+            if (o.Structural) Structural();
         }
 
         // ─── Ids and small helpers ──────────────────────────────────────────
@@ -517,6 +519,8 @@ public static class IfcExport
                 f.Add("IFCSIUNIT", Derived, E("VOLUMEUNIT"), Null, E("CUBIC_METRE")),
                 f.Add("IFCSIUNIT", Derived, E("PLANEANGLEUNIT"), Null, E("RADIAN")),
             };
+            // The structural analysis view's forces: N, N/m and N/m² (docs/plan-fem.md §8.7), only when it is written.
+            if (o.Structural) unitList.AddRange(StructuralUnits());
             // The estimate's currency (docs/plan-4d5d.md, stage 6): the money its IfcCostValues are in.
             if (s.Catalog.All<IIfcControls>().SelectMany(c => c.CostSchedules(s.Reader)).Select(c => c.Currency).FirstOrDefault() is { Length: > 0 } currency)
                 unitList.Add(f.Add("IFCMONETARYUNIT", S(currency)));

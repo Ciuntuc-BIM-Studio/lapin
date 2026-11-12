@@ -25,6 +25,7 @@ public class CommandCatalogueTests
         new ArchitectureModule(), new StructureModule(), new DraftingModule(), new CivilModule(), new Lapin.Phases.PhasesModule(), new StudioModule(),
         new WoodModule(), new SteelModule(), new FurnitureModule(), new Lapin.Mep.MepModule(), new Lapin.Rebar.RebarModule(), new Lapin.SiteWorks.SiteWorksModule(),
         new Lapin.Planning.PlanningModule(), new Lapin.Cost.CostModule(), new Lapin.Transport.TransportModule(), new Lapin.Clash.ClashModule(),
+        new Lapin.Analysis.AnalysisModule(),
     ];
 
     static JsonObject Reply(EngineDispatcher d, string method, JsonObject p, Caller caller)

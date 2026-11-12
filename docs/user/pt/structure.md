@@ -53,3 +53,7 @@ As sapatas com perfil são retas ou curvas. Duas que se encontram num canto unem
 ## Uma vista estrutural
 
 A disciplina de uma vista decide o que ela mostra. Uma vista de **Estrutura** mostra só os núcleos portantes, sem os acabamentos. Você escolhe a disciplina nas propriedades da vista. Veja [Vistas](views.md).
+
+## Cargas
+
+O grupo **Cargas** tem o que uma análise estrutural precisa: casos de carga, cargas de superfície, lineares e pontuais, e as combinações. Ver [Cargas](loads.md).

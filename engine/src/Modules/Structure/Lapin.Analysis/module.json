@@ -1,0 +1,1 @@
+{ "id": "analysis", "name": "Structural analysis", "assembly": "Lapin.Analysis.dll", "requires": ["core"] }

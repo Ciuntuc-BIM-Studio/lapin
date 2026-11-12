@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Structural analysis (docs/plan-fem.md §8): load cases, the user's loads, the loads derived from the model, the EN 1990
+    combinations, and the loads in IFC's structural analysis view. It needs only the platform: it reads rooms, slabs and
+    walls by their class and geometry, never through architecture or structure.
+  -->
+  <PropertyGroup>
+    <LapinModuleId>analysis</LapinModuleId>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../Model/Lapin.Model/Lapin.Model.csproj" Private="false" />
+    <ProjectReference Include="../../../Platform/Lapin.Platform/Lapin.Platform.csproj" Private="false" />
+    <ProjectReference Include="$(LapinGeometryDir)Lapin.Geometry/Lapin.Geometry.csproj" Private="false" />
+  </ItemGroup>
+</Project>

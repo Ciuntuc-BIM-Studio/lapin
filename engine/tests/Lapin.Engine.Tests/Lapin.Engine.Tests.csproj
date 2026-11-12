@@ -27,6 +27,7 @@
     <ProjectReference Include="../../src/Modules/Architecture/Lapin.Architecture/Lapin.Architecture.csproj" />
     <ProjectReference Include="../../src/Modules/Structure/Lapin.Structure/Lapin.Structure.csproj" />
     <ProjectReference Include="../../src/Modules/Structure/Lapin.Rebar/Lapin.Rebar.csproj" />
+    <ProjectReference Include="../../src/Modules/Structure/Lapin.Analysis/Lapin.Analysis.csproj" />
     <ProjectReference Include="../../src/Modules/Wood/Lapin.Wood/Lapin.Wood.csproj" />
     <ProjectReference Include="../../src/Modules/Steel/Lapin.Steel/Lapin.Steel.csproj" />
     <ProjectReference Include="../../src/Modules/Drafting/Lapin.Drafting/Lapin.Drafting.csproj" />

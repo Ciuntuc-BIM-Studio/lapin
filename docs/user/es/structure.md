@@ -53,3 +53,7 @@ Las zapatas con perfil pueden ser rectas o curvas. Dos que se encuentran en una 
 ## Una vista estructural
 
 La disciplina de una vista decide lo que muestra. Una vista **Estructura** muestra solo los núcleos portantes, sin los acabados. La disciplina se elige en las propiedades de la vista. Consulte [Secciones, alzados y 3D](views.md).
+
+## Cargas
+
+El grupo **Cargas** tiene lo que necesita un cálculo estructural: hipótesis de carga, cargas superficiales, lineales y puntuales, y las combinaciones. Véase [Cargas](loads.md).
