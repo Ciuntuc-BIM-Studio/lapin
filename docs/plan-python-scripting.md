@@ -1,0 +1,110 @@
+# Scripturi Python în Lapin: plan
+
+Hotărârea utilizatorului (12.11.2026): „Scripturi Python în Lapin, legate de scripturi Python care conduc modelul prin protocol — Lapin rămâne C# și MIT, fără dependențe — livrat ca plug-in, chiar și în ediția gratuită implicită, în prima fază.” Cerut pe forum: un API pentru add-on-uri, o consolă Python care arată pașii interfeței ca cod (ca la Bonsai/IfcOpenShell), un comutator pentru dezvoltatori (ca la Blender). Doar planul; nimic implementat. Răspunsurile la întrebările din §11 hotărăsc etapele.
+
+## 1. Ce are Lapin azi
+
+- **Orice unealtă e o comandă a motorului** cu argumente JSON și un pas de undo (`doc.execute {command, args}`); întrebările care nu schimbă nimic sunt `doc.query`. `edit.batch {steps}` face mai multe comenzi într-un singur pas (`CoreModule`, eticheta lui e „Edit”).
+- **Protocolul**: JSON-RPC pe WebSocket la `127.0.0.1`, răspunsuri în cadre binare `LPF1` (antet JSON + tablouri brute, `BinaryFrame.cs`); diff-urile se trimit fiecărei interfețe conectate. Portul e în `<user-dir>/host.json` (`docs/mcp.md`).
+- **Podul MCP** (`scripts/lapin-mcp.mjs`, Node 22, fără dependențe) face deja ce va face clientul Python: găsește motorul, citește `session.info`, execută și întreabă. Argumentele comenzilor le scoate din sursele motorului de lângă el (`argsFromSource`), deci într-o aplicație instalată, fără surse, nu le are.
+- **`session.info`**: produsul, modulele, comenzile (nume, etichetă, fără argumente), clasele cu câmpurile lor, unitatea `m`.
+- **Apelantul**: o conexiune de pe calculator e `Caller.Local` (poate orice); un oaspete al unei sesiuni partajate trece doar prin `EngineDispatcher.AllowedRemote`; metodele gazdei (`share.*`, `cancel.long`) sunt refuzate oaspeților.
+- **Jurnalul de recuperare** ține tranzacțiile ca schimbări de entități (înainte/după), nu ca comenzi cu argumente: nu poate fi folosit direct de înregistratorul de macro (§5).
+- **Punctele de înlocuire** ale edițiilor (`docs/overrides.md`, decizia 344), **părțile străine** din `.lapin` (`dag/`, `source/`… păstrate octet cu octet, decizia 345), **conținutul unui modul absent** păstrat (decizia 484), **fila Uneltele mele** (decizia 479), **livrările de mai târziu** (`ctx.Deliveries`).
+
+## 2. Un singur API: pachetul Python `lapin`
+
+**Recomandare:** un pachet Python pur, scris de Lapin, MIT, **doar biblioteca standard** (fără `websockets`, `numpy` sau alte roți). Același pachet e folosit de scripturile din afară și de consola din aplicație, deci un script scris în consolă merge neschimbat din terminal, și invers.
+
+- **Transportul**: un client WebSocket minimal pe `socket` (strângerea de mână cu `hashlib`/`base64`, cadre mascate, fragmente, ping/pong; ~300 de rânduri), cititorul de cadre `LPF1` cu `struct` și `memoryview` (tablourile vin ca `array.array`/`memoryview`; cine are `numpy` face `numpy.frombuffer` singur, fără ca pachetul să-l ceară). Portul din `host.json`, ca la MCP, sau `LAPIN_PORT`. Un transport separat pentru browser (§3) sub aceeași interfață.
+- **Stratul 1, brut**: `lapin.execute("architecture.addWall", {...})`, `lapin.query("schedule.csv", {...})`, `lapin.undo()`, `lapin.redo()`, `lapin.save()`, `lapin.info()`.
+- **Stratul 2, tipizat, generat**: `lapin.architecture.add_wall(x1=0, y1=0, x2=5, y2=0, height=2.8)` (numele comenzii în snake_case, doar argumente cu nume). Generat la rulare din catalog (`__getattr__`), plus fișiere `.pyi` pentru completarea în editor (`python -m lapin stubs`). Clasele: `lapin.model.walls`, `lapin.model.of("IfcSlab")`, `lapin.model["e41"]` — proxy-uri care citesc câmpurile din catalog; o atribuire (`wall.height = 3`) trimite comanda de editare a clasei, unde există una (de stabilit pe clasă; la început doar citire și `element.update`/`setParam`).
+- **Unitățile**: metri și grade, ca motorul (decizia 112); niciun strat de conversie în stadiul 1.
+- **Pașii**: `with lapin.batch("Fațade"):` strânge comenzile și le trimite la ieșire ca un `edit.batch` (un pas de undo, rezultatele la ieșire). Mai târziu `with lapin.step("Fațade"):`, un pas deschis pe server (§8), în care fiecare comandă își întoarce rezultatul imediat.
+- **Evenimente**: `lapin.on("diff", f)`, `lapin.on("selection", f)`; diff-urile vin deja pe orice conexiune; selecția e a interfeței, deci interfața o anunță gazdei (un eveniment local, ca `presence`), iar `lapin.selection()` o citește.
+- **Catalogul argumentelor**: ca stratul 2 să meargă și într-o aplicație instalată, catalogul (comenzi, argumentele citite de fiecare handler, interogări) se generează **la build** din surse, cu codul `argsFromSource` mutat într-un script comun (`scripts/command-catalogue.mjs`), și se livrează cu motorul; `session.info` îl trimite (sau o interogare `session.catalogue`). Câștig colateral: podul MCP primește argumentele și în aplicația instalată. Pe termen lung, argumentele declarate în C# la `r.Command(...)` (mare: toate modulele) — nu acum.
+- **Numele pachetului**: `lapin` e deja luat pe PyPI (verificat 12.11.2026); `lapin-bim` și `lapinbim` sunt libere. Recomandare: distribuția și importul `lapinbim` (ca domeniul lapinbim.com), iar consola leagă numele `lapin` (`import lapinbim as lapin`). Exemplele din ghid folosesc `lapin.`.
+- **Versiunile Python**: 3.11 și mai noi (3.10 a ieșit din suport în octombrie 2026); testat pe 3.11–3.14 în CI.
+- **Livrarea**: `pip install lapinbim` și, fără internet, același fișier în aplicație (`<app>/python/lapinbim/`), pe care consola îl pune în `sys.path`; Help → Python → „Copy the lapin package…” îl scrie unde vrea utilizatorul.
+
+## 3. Python în Lapin, fără să-l livrăm
+
+| Variantă | Ce e | Licența | Pentru |
+|---|---|---|---|
+| **A. Python-ul utilizatorului** (recomandat, stadiul 1) | Gazda (`Lapin.Host`) pornește CPython-ul găsit (`python3` pe PATH, `py -3` pe Windows, python.org, Homebrew) sau ales în Preferences, ca proces copil; acesta se conectează înapoi pe același WebSocket | a utilizatorului; nimic livrat | desktop; orice pachet al lui (ifcopenshell, pandas) merge în consolă |
+| **B. „Python pentru Lapin”, descărcare opțională** | python.org *embeddable package*, despachetat în `<user-dir>/python/` la cerere | PSF, permisivă | **doar Windows**: python.org nu are pachet embeddable pentru macOS/Linux; acolo ar trebui *python-build-standalone*, ale cărui distribuții includ biblioteci cu licențe proprii (de verificat una câte una) |
+| **C. Pyodide în browser** | CPython în WebAssembly, încărcat într-un worker la cerere, care vorbește cu worker-ul motorului prin `postMessage` (același protocol, alt transport) | MPL-2.0 (copyleft slab, pe fișier) | ediția web |
+
+**Recomandare:** A în stadiul 1 (fără nicio dependență: Lapin nu livrează și nu descarcă Python; dacă nu găsește unul, panoul spune unde se ia de la python.org). B nu e o dependență a codului lui Lapin, dar e o componentă terță distribuită de noi: doar dacă cer utilizatorii Windows fără Python, și doar descărcată din python.org la clic, nu în installer. C nu intră în niciun build: regula „dependențe de producție permisive” o exclude din pachet; încărcată la cerere de pe CDN-ul Pyodide, nemodificată, n-ar fi „livrată”, dar e o hotărâre a utilizatorului (§11). Până atunci, ediția web arată panoul cu „Python merge în aplicația desktop”.
+
+- **Procesul**: unul pe sesiune, pornit la primul Run, cu `python -I -u -m lapinbim.kernel` (modul izolat, fără folderul curent în `sys.path`); primește codul de la gazdă, scoate ieșirea pe linii JSON (stdout, stderr, rezultat, eroare cu traceback), rămâne viu între rulări (variabilele consolei se păstrează), repornit cu „Restart”.
+- **Gazda**: metodele `script.run {code, name?}`, `script.stop`, `script.restart`, `script.status` și evenimentul `script.output`, în `EngineHub` (ca `cancel.long`): ale gazdei, refuzate oaspeților. Nu sunt comenzi ale modelului (nu schimbă modelul; scriptul schimbă modelul prin comenzi obișnuite).
+
+## 4. Forma plug-in-ului: modulul deschis `scripting`
+
+- **În `products/lapin.json`** (ediția gratuită), cu jumătate de motor și jumătate de interfață, doar prin cârligele modulelor (nimic din platformă nu știe de Python, în afară de metodele gazdei de la §3 și catalogul de la §2, care servesc și MCP-ul).
+- **Motorul** (`engine/src/Modules/Scripting/Lapin.Scripting`): clasa `LapinScript` (nume, descriere, cod, limbaj `python`, hash), comenzile `scripting.save`, `scripting.rename`, `scripting.delete` (fiecare un pas de undo), deci scripturile proiectului intră în undo, versiuni (`docs/versions.md`), sesiuni partajate și regula modulului absent (decizia 484) fără nimic nou. În pachet: codul fiecărui script scris și ca text, `scripts/<nume>.py` (o parte a modulului), ca să se citească fără Lapin (de verificat că pachetul ia părți text ale unui modul; altfel coloana `code` din Arrow).
+- **Interfața** (`ui/src/modules/scripting/`): panoul **Script** (consola: o linie de intrare cu istoric, ieșirea, înregistratorul, §5), editorul (Run, Stop, Restart, ieșirea dedesubt, erorile cu rândul lor), biblioteca: **Ale mele** (`<user-dir>/scripts/*.py`, fișiere obișnuite) și **Ale proiectului** (`LapinScript`), „Open in external editor” (fișierul urmărit, ca un editor ca VS Code să se poată folosi).
+- **Comutatorul de dezvoltator**: Preferences → **Developer extras** (oprit implicit, ca la Blender): arată panoul Script, înregistratorul, „Copy as Python” în meniul contextual al unei unelte și numele comenzii în tooltip-uri. Oprit, nimic din interfață nu se schimbă.
+- **Editorul de cod**: o zonă de text cu indentare și o colorare scrisă de noi (fără dependență) în stadiul 1; CodeMirror 6 (MIT) e o alternativă, încărcată doar de panou (§11).
+
+## 5. Înregistratorul: pașii interfeței ca cod
+
+- **Unde**: în interfață, la `EngineClient.execute` (singurul loc prin care trece orice unealtă, înlocuită sau nu, și în browser), nu în jurnal: jurnalul ține entități, nu comenzi. Interogările nu se înregistrează.
+- **Ce scrie**: o linie Python pe comandă, din același catalog: `lapin.architecture.add_wall(x1=0.0, y1=0.0, x2=5.0, y2=0.0, height=2.8)`; un `edit.batch` al unei unelte devine un bloc `with lapin.batch("…"):`. Undo/redo apar ca `lapin.undo()`.
+- **Id-urile**: o comandă pe elemente existente scrie id-ul (`lapin.model["e41"]`); id-urile întoarse de o comandă se leagă de variabile (`w1 = lapin.architecture.add_wall(...)`, apoi `w1.id` în pașii următori), ca un script copiat să meargă pe un proiect nou. Selecția curentă ca argument (`lapin.selection()`) e o opțiune a stadiului 3.
+- **Afișat** live în consolă (o filă „Recorder” cu Start/Stop), „Copy as script”, „Save as script”. Un pas făcut de un script nu se înregistrează a doua oară.
+
+## 6. Unelte și dialoguri din scripturi
+
+- **Unelte**: `lapin.ui.tool("Pereți perimetrali", run=f, icon="square")` înregistrează o unealtă care apare pe fila **Uneltele mele** (decizia 479), într-un grup „Scripturi”; clicul rulează funcția în procesul Python. O unealtă care cere puncte (`gesture="points"`) primește punctele alese în plan, ca argumentul unei unelte obișnuite.
+- **Dialoguri simple**: `lapin.ui.ask("Pereți", fields={"înălțime": 2.8, "tip": lapin.ui.choice([...])})` → un dialog al interfeței făcut din câmpuri (număr cu unitate, text, alegere, bifă, element ales din model); întoarce un dict cu valorile. Nimic HTML sau JS din script: interfața desenează câmpurile ei.
+- **Început pentru plug-in-uri și magazin**: un script cu antet (`# lapin: name, version, requires`) e primul plug-in; mai târziu, plug-in-uri semnate și un magazin. Ordinea din discuția despre API: **A** client Python (acest plan) → **B** plug-in-uri de interfață în JS (pe contractul `ui/src/platform/module.ts`) → **C** module C# (contractul motorului, `module.json`). Toate trei vorbesc același catalog de comenzi.
+
+## 7. Siguranța
+
+- **Pe desktop un script poate orice** poate utilizatorul (un proces CPython): Lapin nu îl închide într-o cutie și spune asta în panou.
+- **Scripturile din proiect nu rulează niciodată la deschidere**, și nici fără întrebare: prima rulare a unui script venit cu proiectul (sau schimbat de atunci) cere încrederea: „Scriptul acesta a venit cu proiectul X. Poate face orice poate utilizatorul pe acest calculator.” — Run once / Trust / Cancel; încrederea se ține pe calculator, după hash-ul codului (`<user-dir>/scripting-trust.json`). Fără evenimente „la deschidere” sau „la salvare” care să pornească scripturi singure în stadiile 1–3.
+- **Oaspeții unei sesiuni partajate**: **nu** rulează scripturi pe gazdă (`script.*` sunt ale gazdei, refuzate oaspeților), iar clientul Python se conectează doar la motorul de pe calculatorul lui (127.0.0.1). Scriptul gazdei, în timpul partajării, editează ca gazda (autorul ei, undo-ul ei); oaspeții văd diff-urile ca de obicei. Comenzile `scripting.*` nu intră în `AllowedRemote` (un oaspete nu poate pune un script în proiectul gazdei).
+- **Plug-in-uri semnate** mai târziu, cu magazinul.
+
+## 8. Viteza
+
+- **Un apel** pe loopback ~0,2–1 ms plus comanda; un script care pune 5 000 de elemente unul câte unul face 5 000 de pași de undo și câteva secunde. De aceea `lapin.batch()` (bucăți de câteva sute de comenzi, să nu țină sesiunea ocupată mult) și, la Run din panou, **o rulare = un pas de undo**, numit după script (cu `step` deschis pe server, mai jos).
+- **Pasul deschis pe server** (stadiul 2, schimbare de motor): `doc.begin {label}` / `doc.commit` / `doc.rollback`, legat de conexiune; comenzile intră în aceeași tranzacție, diff-ul pleacă la commit; o conexiune închisă sau un Stop face rollback; cât e deschis, editările interfeței sunt refuzate („Un script editează modelul”), citirile merg. Plus `label` opțional la `edit.batch`.
+- **Citirea în masă**: `doc.snapshot` (JSON, fără mesh-uri) ajunge până la zeci de mii de elemente; mesh-urile vin ca tablouri `LPF1`, citite fără copiere. Arrow nu se citește cu biblioteca standard: JSON în stadiul 1; o interogare cu coloane (`model.columns {class, fields}` → tablouri brute) dacă se măsoară nevoia.
+- **Interfața nu se blochează**: scriptul e alt proces; motorul face un apel pe rând, deci interfața așteaptă cel mult o comandă (sau o bucată de batch). **Stop**: întâi `KeyboardInterrupt` (SIGINT / CTRL_BREAK), după 2 s procesul e oprit; un batch în lucru se termină sau nu se face deloc (atomic); un `step` deschis face rollback.
+- **Undo**: ce a făcut scriptul se desface cu Ctrl+Z ca orice pas.
+
+## 9. Etape
+
+| Etapa | Ce aduce | Efort |
+|---|---|---|
+| **1. Clientul** | pachetul `lapinbim`: WebSocket, `LPF1`, `execute`/`query`/`undo`/`save`, `batch`, `on("diff")`; catalogul argumentelor la build (comun cu MCP); stratul tipizat dinamic + `.pyi`; exemple; teste | ~1 săptămână |
+| **2. Consola** | modulul `scripting` în ediția `lapin`; Python-ul utilizatorului găsit/ales; procesul gazdei, `script.*`; panoul Script (consolă, editor, Run/Stop/Restart), biblioteca Ale mele; Developer extras; `doc.begin/commit` și o rulare = un pas | ~1,5–2 săptămâni |
+| **3. Înregistratorul și proiectul** | înregistratorul (live, Copy/Save as script), `LapinScript` în proiect cu `scripts/*.py`, încrederea, `lapin.selection()`, proxy-urile de elemente | ~1 săptămână |
+| **4. Unelte și dialoguri** | `lapin.ui.tool` pe Uneltele mele, `lapin.ui.ask`, antetul de plug-in | ~1 săptămână |
+| **Mai târziu** | Pyodide în ediția web (dacă se hotărăște), „Python pentru Lapin” pe Windows, plug-in-uri semnate, magazinul, JS (B), C# (C) | — |
+
+- **Teste**: pachetul are testele lui cu `unittest` din biblioteca standard (fără pytest), rulate în CI pe Python 3.11 și 3.14 contra unui motor pornit pe un port liber (ca `scripts/lapin-mcp-check.mjs`): conectare, un perete, batch = un pas, undo, cadre binare, eroare de comandă, Stop în mijlocul unui script; xUnit pentru `script.*`, `doc.begin/commit/rollback` (inclusiv conexiune pierdută) și refuzul oaspeților; vitest pentru transformarea comandă → linie Python a înregistratorului; `pnpm test` le rulează pe toate (Python lipsă: testele Python sar, cu un mesaj).
+- **Ghidul**: `docs/user/scripting.md` și `docs/user/ro/scripting.md` (consola, înregistratorul, încrederea, primul script), o scenă `scripting` în `scripts/user-docs/scenes.mjs` (Python-ul mașinii de build); o pagină pentru dezvoltatori, `docs/python.md` (API-ul, ca `docs/mcp.md`). Șirurile noi în toate limbile din `ui/src/i18n`.
+- **Paralela MCP**: podul MCP și clientul Python citesc același catalog (§2) și aceleași `host.json`/protocol; ce se adaugă unei comenzi apare în amândouă. Un agent AI poate scrie un script prin MCP, iar consola îl poate rula.
+
+## 10. Ediția Lite-STEP
+
+Propunerea Lite-STEP (Ginnung Technologies, https://www.lite-step.org) e un DSL Python declarativ. **Licența ei nu e scrisă pe site**, deci nu se copiază nimic din ea (nici cod, nici nume de funcții, nici exemple). O ediție (decizia 344, `docs/overrides.md`) ar putea pune peste `lapinbim` un strat declarativ în stilul ei (un model descris în `source/model.py`, păstrat ca parte străină, decizia 345), cu înlocuiri de comenzi și unelte; compatibilitatea doar ca idee, după ce licența lor e cunoscută și permisivă. Pachetul `lapinbim` rămâne imperativ și al lui Lapin.
+
+## 11. Întrebări pentru utilizator
+
+1. Numele pachetului: `lapinbim` (PyPI și import, `lapin` în consolă) e bun? (`lapin` e luat pe PyPI.)
+2. Publicăm pe PyPI de la stadiul 1, sau doar fișierul livrat cu aplicația la început?
+3. Python-ul utilizatorului doar (A) în stadiul 1 — de acord? „Python pentru Lapin” pe Windows (B) îl vreți vreodată?
+4. Ediția web: Pyodide (MPL-2.0, încărcat de pe CDN-ul lui la cerere, nelivrat) e acceptabil față de regula licențelor permisive, sau Python rămâne doar pe desktop?
+5. Versiunea minimă: Python 3.11?
+6. „Developer extras” oprit implicit (panoul ascuns), sau panoul Script vizibil pentru toți?
+7. Editorul de cod: scris de noi (fără dependență) sau CodeMirror 6 (MIT, încărcat doar de panou)?
+8. O rulare din panou = un pas de undo (cere `doc.begin/commit` în motor, iar interfața nu editează cât rulează scriptul) — de acord?
+9. Scripturile proiectului: în model (`LapinScript`, cu undo și versiuni) plus `scripts/*.py` ca text în `.lapin` — sau doar fișiere în `scripts/`, fără undo?
+10. Oaspeții sesiunilor partajate nu rulează scripturi pe gazdă — confirmați?
+11. Unelte și dialoguri din scripturi (stadiul 4) intră în ediția gratuită, ca restul?
+12. Catalogul argumentelor generat la build din surse (recomandat acum) sau argumentele declarate în C# la fiecare comandă (mai curat, mult de lucru)?
