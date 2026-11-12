@@ -11,4 +11,7 @@
 
 import type { StoreKey } from './signature';
 
-export const STORE_KEYS: StoreKey[] = [];
+export const STORE_KEYS: StoreKey[] = [
+  // Made 12.11.2026 (scripts/store-key.mjs); the catalogue at lapinbim.com/extensions/ is signed with it from that day.
+  { id: '2daeb4d5dc6eae92', publicKey: 'H1oExDrtV+/4r0vlqZNSzlKWIKEmlvNiHSj91aKSSaQ=' },
+];
